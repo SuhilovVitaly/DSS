@@ -113,7 +113,7 @@ public sealed class SkiaWindow : IDisposable
         _input?.Dispose();
         _input = null;
 
-        _session?.Dispose();
+        _ = _session?.DisposeAsync();
         _session = null;
     }
 
@@ -278,7 +278,7 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         _session = new GameSessionHandle(_sessionFactory.CreateSession());
-        var gameScreen = new GameSessionScreen(_session.Connection);
+        var gameScreen = new GameSessionScreen(_session.Buffer);
 
         _screens.Replace(gameScreen);
     }
@@ -301,7 +301,7 @@ public sealed class SkiaWindow : IDisposable
     private void ReturnToMainMenu()
     {
         // End the game session explicitly
-        _session?.Dispose();
+        _ = _session?.DisposeAsync();
         _session = null;
 
         var mainMenu = new MainMenuScreen();
@@ -329,7 +329,7 @@ public sealed class SkiaWindow : IDisposable
             _input = null;
         }
 
-        _session?.Dispose();
+        _ = _session?.DisposeAsync();
         _session = null;
 
         _screens.DeactivateAll();

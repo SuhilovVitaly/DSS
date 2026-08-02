@@ -1,0 +1,29 @@
+using DeepSpaceSaga.Client;
+using DeepSpaceSaga.Contracts;
+
+namespace DeepSpaceSaga.Client.Tests;
+
+public class SnapshotBufferTests
+{
+    [Fact]
+    public void Update_replaces_previous_snapshot()
+    {
+        var buffer = new SnapshotBuffer();
+        var objects = new List<ObjectMotionSnapshot> { new("o1", 0, 0, 0, 0) };
+
+        var s1 = new AuthoritativeSnapshot(1, 1000, objects);
+        buffer.Update(s1);
+        Assert.Same(s1, buffer.Latest);
+
+        var s2 = new AuthoritativeSnapshot(2, 2000, objects);
+        buffer.Update(s2);
+        Assert.Same(s2, buffer.Latest);
+    }
+
+    [Fact]
+    public void Latest_returns_null_when_empty()
+    {
+        var buffer = new SnapshotBuffer();
+        Assert.Null(buffer.Latest);
+    }
+}
