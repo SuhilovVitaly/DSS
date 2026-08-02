@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Contracts;
+using Silk.NET.Input;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens;
@@ -21,6 +22,11 @@ public sealed class GameSessionScreen : IScreen
 
     public ScreenEvent OnMouseDown(float x, float y) => ScreenEvent.None;
     public bool OnMouseMove(float x, float y) => false;
+
+    public ScreenEvent OnKeyDown(Key key)
+    {
+        return key == Key.Escape ? ScreenEvent.OpenGameMenu : ScreenEvent.None;
+    }
 
     public void Render(SKCanvas canvas, int width, int height)
     {

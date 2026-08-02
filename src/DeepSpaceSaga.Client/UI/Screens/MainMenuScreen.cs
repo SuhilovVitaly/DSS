@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Client.UI.Controls;
+using Silk.NET.Input;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens;
@@ -18,6 +19,8 @@ public sealed class MainMenuScreen : IScreen
     }
 
     public void OnDeactivated() { }
+
+    public ScreenEvent OnKeyDown(Silk.NET.Input.Key key) => ScreenEvent.None;
 
     public ScreenEvent OnMouseDown(float x, float y)
     {
@@ -56,9 +59,9 @@ public sealed class MainMenuScreen : IScreen
 
         float cx = pl + MenuLayout.PanelWidth / 2f;
 
-        canvas.DrawText("Deep Space Saga", cx, pt + MenuLayout.TitleY, MenuStyle.TextTitle);
+        canvas.DrawText(GameInfo.Title, cx, pt + MenuLayout.TitleY, MenuStyle.TextTitle);
 
-        canvas.DrawText("Version 1.0.0", cx, pt + MenuLayout.VersionY, MenuStyle.TextVersion);
+        canvas.DrawText(GameInfo.Version, cx, pt + MenuLayout.VersionY, MenuStyle.TextVersion);
 
         DrawButton(canvas, pl, pt, MenuLayout.NewGameY, "NEW GAME", MenuButton.NewGame);
         DrawButton(canvas, pl, pt, MenuLayout.LoadY, "LOAD", MenuButton.Load);

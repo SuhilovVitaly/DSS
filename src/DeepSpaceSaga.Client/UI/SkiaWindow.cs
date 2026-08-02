@@ -20,10 +20,13 @@ public sealed class SkiaWindow : IDisposable
 
     private IInputContext? _input;
     private IMouse? _mouse;
+    private IKeyboard? _keyboard;
     private RawImage? _defaultCursorImage;
     private RawImage? _interactiveCursorImage;
 
     private IScreen _currentScreen;
+    private IScreen? _underlyingScreen;
+    private bool _prevEscPressed;
     private bool _disposed;
 
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory)
@@ -65,6 +68,7 @@ public sealed class SkiaWindow : IDisposable
         _grContext = GRContext.CreateGl(glInterface);
 
         _input = _window.CreateInput();
+
         _mouse = _input.Mice.FirstOrDefault();
         if (_mouse is not null)
         {
@@ -82,6 +86,8 @@ public sealed class SkiaWindow : IDisposable
                 _mouse.Cursor.HotspotY = 0;
             }
         }
+
+        _keyboard = _input.Keyboards.FirstOrDefault();
 
         _currentScreen.OnActivated();
     }
@@ -133,12 +139,9 @@ public sealed class SkiaWindow : IDisposable
         var windowSize = _window.Size;
         var fbSize = _window.FramebufferSize;
 
-        // Guard against zero window size (e.g. during minimize transition)
         if (windowSize.X <= 0 || windowSize.Y <= 0)
             return;
 
-        // HiDPI: render in logical (window) coordinates, scaled to physical framebuffer.
-        // Mouse coordinates use window coords, so hit-testing matches rendering naturally.
         float scaleX = (float)fbSize.X / windowSize.X;
         float scaleY = (float)fbSize.Y / windowSize.Y;
 
@@ -148,6 +151,23 @@ public sealed class SkiaWindow : IDisposable
         canvas.Restore();
 
         canvas.Flush();
+
+        // Poll keyboard (edge-detection for Esc to avoid per-frame repeats)
+        PollKeyboard();
+    }
+
+    private void PollKeyboard()
+    {
+        if (_keyboard is null)
+            return;
+
+        bool escDown = _keyboard.IsKeyPressed(Key.Escape);
+        if (escDown && !_prevEscPressed)
+        {
+            var screenEvent = _currentScreen.OnKeyDown(Key.Escape);
+            HandleScreenEvent(screenEvent);
+        }
+        _prevEscPressed = escDown;
     }
 
     private void OnFramebufferResize(Silk.NET.Maths.Vector2D<int> newSize)
@@ -203,6 +223,15 @@ public sealed class SkiaWindow : IDisposable
             case ScreenEvent.NewGame:
                 SwitchToGameSession();
                 break;
+            case ScreenEvent.OpenGameMenu:
+                OpenGameMenu();
+                break;
+            case ScreenEvent.Resume:
+                CloseOverlay();
+                break;
+            case ScreenEvent.MainMenu:
+                ReturnToMainMenu();
+                break;
             case ScreenEvent.Exit:
                 _window.Close();
                 break;
@@ -223,6 +252,41 @@ public sealed class SkiaWindow : IDisposable
         _currentScreen.OnActivated();
     }
 
+    private void OpenGameMenu()
+    {
+        // Guard: don't open game menu on top of itself
+        if (_currentScreen is GameMenuScreen)
+            return;
+
+        _underlyingScreen = _currentScreen;
+        _currentScreen.OnDeactivated();
+
+        var gameMenu = new GameMenuScreen();
+        _currentScreen = gameMenu;
+        _currentScreen.OnActivated();
+    }
+
+    private void CloseOverlay()
+    {
+        if (_underlyingScreen is null)
+            return;
+
+        _currentScreen.OnDeactivated();
+        _currentScreen = _underlyingScreen;
+        _underlyingScreen = null;
+        _currentScreen.OnActivated();
+    }
+
+    private void ReturnToMainMenu()
+    {
+        _currentScreen.OnDeactivated();
+        _underlyingScreen = null;
+
+        var mainMenu = new MainMenuScreen();
+        _currentScreen = mainMenu;
+        _currentScreen.OnActivated();
+    }
+
     public void Dispose()
     {
         if (_disposed)
@@ -236,12 +300,18 @@ public sealed class SkiaWindow : IDisposable
             _mouse.MouseMove -= OnMouseMove;
         }
 
-        _input?.Dispose();
         _currentScreen.OnDeactivated();
+        _underlyingScreen?.OnDeactivated();
+
+        // Skia and GL resources — while context is still alive
         _surface?.Dispose();
         _renderTarget?.Dispose();
         _grContext?.Dispose();
         _gl?.Dispose();
+
+        // Window disposal cleans up GLFW including its input context.
+        // Explicit _input.Dispose() would try to unregister callbacks from
+        // an already-invalid window handle, causing ExecutionEngineException.
         _window.Dispose();
     }
 }

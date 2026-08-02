@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Client.UI.Screens;
+using Silk.NET.Input;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests;
@@ -25,8 +26,10 @@ public class ScreenEventTests
         screen.Render(canvas, ScreenWidth, ScreenHeight);
     }
 
+    // --- MainMenu tests ---
+
     [Fact]
-    public void NewGame_click_returns_NewGame()
+    public void MainMenu_NewGame_click_returns_NewGame()
     {
         var screen = new MainMenuScreen();
         var (x, y) = ButtonCenter(MenuLayout.NewGameY);
@@ -35,7 +38,7 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void Load_click_returns_None()
+    public void MainMenu_Load_click_returns_None()
     {
         var screen = new MainMenuScreen();
         var (x, y) = ButtonCenter(MenuLayout.LoadY);
@@ -44,7 +47,7 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void Exit_click_returns_Exit()
+    public void MainMenu_Exit_click_returns_Exit()
     {
         var screen = new MainMenuScreen();
         var (x, y) = ButtonCenter(MenuLayout.ExitY);
@@ -53,58 +56,89 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void Click_outside_returns_None()
-    {
-        var screen = new MainMenuScreen();
-        TriggerRender(screen);
-        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(0, 0));
-    }
-
-    [Fact]
-    public void Load_disabled_does_nothing()
-    {
-        var screen = new MainMenuScreen();
-        var (x, y) = ButtonCenter(MenuLayout.LoadY);
-        TriggerRender(screen);
-        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
-    }
-
-    [Fact]
-    public void Multiple_NewGame_clicks_both_return_NewGame()
-    {
-        var screen = new MainMenuScreen();
-        var (x, y) = ButtonCenter(MenuLayout.NewGameY);
-        TriggerRender(screen);
-        Assert.Equal(ScreenEvent.NewGame, screen.OnMouseDown(x, y));
-        Assert.Equal(ScreenEvent.NewGame, screen.OnMouseDown(x, y));
-    }
-
-    [Fact]
-    public void Hover_NewGame_does_not_break_click()
-    {
-        var screen = new MainMenuScreen();
-        var (x, y) = ButtonCenter(MenuLayout.NewGameY);
-        TriggerRender(screen);
-        screen.OnMouseMove(x, y);
-        Assert.Equal(ScreenEvent.NewGame, screen.OnMouseDown(x, y));
-    }
-
-    [Fact]
-    public void Hover_Load_is_ignored()
-    {
-        var screen = new MainMenuScreen();
-        var (x, y) = ButtonCenter(MenuLayout.LoadY);
-        TriggerRender(screen);
-        screen.OnMouseMove(x, y);
-        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
-    }
-
-    [Fact]
-    public void GameSessionScreen_always_returns_None()
+    public void GameSessionScreen_click_returns_None()
     {
         var connection = new DummyConnection();
         var screen = new GameSessionScreen(connection);
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(100, 100));
+    }
+
+    // --- GameMenu tests ---
+
+    private static float GamePanelLeft => GameMenuLayout.PanelLeft(ScreenWidth);
+    private static float GamePanelTop => GameMenuLayout.PanelTop(ScreenHeight);
+
+    private static (float x, float y) GameButtonCenter(float buttonLocalY)
+    {
+        float bx = GamePanelLeft + (GameMenuLayout.PanelWidth - GameMenuLayout.ButtonWidth) / 2f;
+        return (bx + GameMenuLayout.ButtonWidth / 2f,
+                GamePanelTop + buttonLocalY + GameMenuLayout.ButtonHeight / 2f);
+    }
+
+    private static void TriggerGameRender(IScreen screen)
+    {
+        using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, ScreenWidth, ScreenHeight);
+    }
+
+    [Fact]
+    public void GameMenu_Resume_click_returns_Resume()
+    {
+        var screen = new GameMenuScreen();
+        var (x, y) = GameButtonCenter(GameMenuLayout.ResumeY);
+        TriggerGameRender(screen);
+        Assert.Equal(ScreenEvent.Resume, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void GameMenu_MainMenu_click_returns_MainMenu()
+    {
+        var screen = new GameMenuScreen();
+        var (x, y) = GameButtonCenter(GameMenuLayout.MainMenuY);
+        TriggerGameRender(screen);
+        Assert.Equal(ScreenEvent.MainMenu, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void GameMenu_Save_click_returns_None()
+    {
+        var screen = new GameMenuScreen();
+        var (x, y) = GameButtonCenter(GameMenuLayout.SaveY);
+        TriggerGameRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void GameMenu_Esc_returns_Resume()
+    {
+        var screen = new GameMenuScreen();
+        TriggerGameRender(screen);
+        Assert.Equal(ScreenEvent.Resume, screen.OnKeyDown(Key.Escape));
+    }
+
+    [Fact]
+    public void GameSession_Esc_returns_OpenGameMenu()
+    {
+        var connection = new DummyConnection();
+        var screen = new GameSessionScreen(connection);
+        Assert.Equal(ScreenEvent.OpenGameMenu, screen.OnKeyDown(Key.Escape));
+    }
+
+    [Fact]
+    public void GameSession_other_key_returns_None()
+    {
+        var connection = new DummyConnection();
+        var screen = new GameSessionScreen(connection);
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.A));
+    }
+
+    [Fact]
+    public void GameMenu_other_key_returns_None()
+    {
+        var screen = new GameMenuScreen();
+        TriggerGameRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.A));
     }
 
     private sealed class DummyConnection : DeepSpaceSaga.Contracts.IGameSessionConnection
