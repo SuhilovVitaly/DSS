@@ -17,19 +17,19 @@ public sealed class MenuLayout
 {
     // --- Panel ---
     public const float PanelWidth = 500f;
-    public const float PanelHeight = 480f;
+    public const float PanelHeight = 550f;
 
     // --- Button geometry (single source of truth) ---
     public const float ButtonWidth = 188f;
     public const float ButtonHeight = 58f;
 
     // --- Vertical positions (relative to panel top) ---
-    public const float TitleY = 40f;
-    public const float VersionY = 80f;
-    public const float NewGameY = 120f;
-    public const float LoadY = 194f;
-    public const float StatusY = 266f;
-    public const float ExitY = 374f;
+    public const float TitleY = 70f;
+    public const float VersionY = 110f;
+    public const float NewGameY = 150f;
+    public const float LoadY = 224f;
+    public const float StatusY = 296f;
+    public const float ExitY = 404f;
 
     /// <summary>Panel left edge, centered in screen.</summary>
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
