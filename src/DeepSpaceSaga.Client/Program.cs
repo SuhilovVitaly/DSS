@@ -1,6 +1,8 @@
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.LocalClient;
+using DeepSpaceSaga.Client.UI;
+using DeepSpaceSaga.Client.UI.Screens;
 
 namespace DeepSpaceSaga.Client;
 

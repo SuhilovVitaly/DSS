@@ -1,7 +1,7 @@
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 
-namespace DeepSpaceSaga.Client;
+namespace DeepSpaceSaga.Client.UI.Screens;
 
 public sealed class GameSessionScreen : IScreen
 {
@@ -16,22 +16,11 @@ public sealed class GameSessionScreen : IScreen
 
     public IGameSessionConnection Connection => _connection;
 
-    public void OnActivated()
-    {
-    }
+    public void OnActivated() { }
+    public void OnDeactivated() { }
 
-    public void OnDeactivated()
-    {
-    }
-
-    public ScreenEvent OnMouseDown(float x, float y)
-    {
-        return ScreenEvent.None;
-    }
-
-    public void OnMouseMove(float x, float y)
-    {
-    }
+    public ScreenEvent OnMouseDown(float x, float y) => ScreenEvent.None;
+    public bool OnMouseMove(float x, float y) => false;
 
     public void Render(SKCanvas canvas, int width, int height)
     {
