@@ -1,22 +1,24 @@
+using System.Diagnostics;
 using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Client;
 
 /// <summary>
 /// Thread-safe holder for the latest authoritative snapshot.
-/// Updated by the receive loop, read by the render thread.
-/// Uses immutable snapshot + atomic reference swap.
+/// Snapshot and its local receipt timestamp are published atomically,
+/// so renderer always reads a consistent pair.
 /// </summary>
 public sealed class SnapshotBuffer
 {
-    private AuthoritativeSnapshot? _latest;
+    private BufferedSnapshot? _latest;
 
-    /// <summary>Atomically replace the current snapshot.</summary>
+    /// <summary>Atomically replace the current snapshot with receipt timestamp.</summary>
     public void Update(AuthoritativeSnapshot snapshot)
     {
-        Interlocked.Exchange(ref _latest, snapshot);
+        var value = new BufferedSnapshot(snapshot, Stopwatch.GetTimestamp());
+        Interlocked.Exchange(ref _latest, value);
     }
 
-    /// <summary>Get the latest snapshot, or null if none received yet.</summary>
-    public AuthoritativeSnapshot? Latest => Volatile.Read(ref _latest);
+    /// <summary>Get the latest buffered snapshot, or null if none received yet.</summary>
+    public BufferedSnapshot? Latest => Volatile.Read(ref _latest);
 }

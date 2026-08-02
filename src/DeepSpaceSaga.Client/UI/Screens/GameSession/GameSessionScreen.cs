@@ -9,16 +9,14 @@ public sealed class GameSessionScreen : IScreen
 {
     private readonly SnapshotBuffer _buffer;
     private readonly IMotionPredictor _predictor;
-    private readonly ClientGameClock _clock;
     private readonly SKPaint _backgroundPaint;
     private readonly SKPaint _objectPaint;
     private readonly SKPaint _centerPaint;
 
-    public GameSessionScreen(SnapshotBuffer buffer, IMotionPredictor predictor, ClientGameClock clock)
+    public GameSessionScreen(SnapshotBuffer buffer, IMotionPredictor predictor)
     {
         _buffer = buffer;
         _predictor = predictor;
-        _clock = clock;
         _backgroundPaint = new SKPaint { Color = SKColors.Black, Style = SKPaintStyle.Fill };
         _objectPaint = new SKPaint { Color = SKColors.Cyan, Style = SKPaintStyle.Fill, IsAntialias = true };
         _centerPaint = new SKPaint { Color = new SKColor(40, 40, 40), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
@@ -39,7 +37,6 @@ public sealed class GameSessionScreen : IScreen
     {
         canvas.DrawRect(0, 0, width, height, _backgroundPaint);
 
-        // Center-based transform: Sun at screen center
         float cx = width / 2f;
         float cy = height / 2f;
 
@@ -47,21 +44,19 @@ public sealed class GameSessionScreen : IScreen
         canvas.DrawLine(cx - 10, cy, cx + 10, cy, _centerPaint);
         canvas.DrawLine(cx, cy - 10, cx, cy + 10, _centerPaint);
 
-        var snapshot = _buffer.Latest;
-        if (snapshot is null)
+        // Atomic read: snapshot + receipt timestamp
+        var buffered = _buffer.Latest;
+        if (buffered is null)
             return;
 
-        long predictionDelta = _clock.PredictionDeltaMs;
+        long predictionDelta = buffered.PredictionDeltaMs;
 
-        foreach (var obj in snapshot.Objects)
+        foreach (var obj in buffered.Snapshot.Objects)
         {
             var predicted = predictionDelta > 0
                 ? _predictor.Predict(obj, predictionDelta)
                 : obj;
 
-            // Center-based: world coords map directly
-            // DSS convention: 0°=up (negative Y), screen Y increases downward
-            // So world -Y maps upward on screen naturally
             float sx = cx + (float)predicted.X;
             float sy = cy + (float)predicted.Y;
 

@@ -280,7 +280,7 @@ public sealed class SkiaWindow : IDisposable
 
         _session = new GameSessionHandle(_sessionFactory.CreateSession());
         var predictor = new LinearMotionPredictor();
-        var gameScreen = new GameSessionScreen(_session.Buffer, predictor, _session.Clock);
+        var gameScreen = new GameSessionScreen(_session.Buffer, predictor);
 
         _screens.Replace(gameScreen);
     }

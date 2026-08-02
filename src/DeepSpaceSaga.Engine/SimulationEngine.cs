@@ -1,64 +1,72 @@
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Motion;
 
 namespace DeepSpaceSaga.Engine;
 
 /// <summary>
 /// Authoritative game simulation.
 /// Produces immutable snapshots on a fixed interval (1 Hz by default).
-/// No graphics, no UI, no network dependencies.
+/// Uses DeepSpaceSaga.Motion for deterministic position calculation —
+/// the same library the client uses for prediction.
 /// </summary>
 public sealed class SimulationEngine : IDisposable
 {
-    /// <summary>Internal simulation tick: 100 ms.</summary>
     public const int SimulationTickMs = 100;
-
-    /// <summary>Authoritative snapshot interval: 1000 ms.</summary>
     public const int SnapshotIntervalMs = 1000;
 
-    private ulong _nextSequence;
-    private readonly List<ObjectMotionSnapshot> _objects = new();
+    private readonly LinearMotionPredictor _motion = new();
+    private readonly List<(ObjectMotionSnapshot Initial, long StartTimeMs)> _testObjects = new();
     private readonly List<PlayerCommand> _pendingCommands = new();
+    private ulong _nextSequence;
     private bool _disposed;
 
     /// <summary>Number of commands received (test seam).</summary>
     internal int ReceivedCommandCount => _pendingCommands.Count;
 
-    /// <summary>
-    /// Receive a player command. Command execution (validation, conflict resolution, etc.)
-    /// is out of scope for P003 — commands are simply stored for future processing.
-    /// </summary>
     public void ReceiveCommand(PlayerCommand command)
     {
         _pendingCommands.Add(command);
     }
 
-    /// <summary>Add a test object for the render/prediction pipeline demo.</summary>
-    public void AddTestObject(ObjectMotionSnapshot obj)
+    /// <summary>Add a test object whose position is advanced deterministically each snapshot.</summary>
+    public void AddTestObject(ObjectMotionSnapshot initial)
     {
-        _objects.Add(obj);
+        _testObjects.Add((initial, 0)); // startTime set when engine runs
     }
 
-    /// <summary>
-    /// Run the simulation loop. Produces snapshots at SnapshotIntervalMs.
-    /// This is a minimal demo loop — a full authoritative turn pipeline
-    /// (CommandInbox, ConflictResolver, etc.) is out of scope for P003.
-    /// </summary>
     public async IAsyncEnumerable<AuthoritativeSnapshot> RunAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         long startTime = Environment.TickCount64;
+
+        // Record start time for each test object
+        for (int i = 0; i < _testObjects.Count; i++)
+        {
+            var (initial, _) = _testObjects[i];
+            _testObjects[i] = (initial, startTime);
+        }
 
         while (!cancellationToken.IsCancellationRequested && !_disposed)
         {
             await Task.Delay(SnapshotIntervalMs, cancellationToken);
 
             long gameTimeMs = Environment.TickCount64 - startTime;
+
+            // Advance each test object from its initial state to gameTimeMs
+            var objects = ImmutableArray.CreateBuilder<ObjectMotionSnapshot>(_testObjects.Count);
+            foreach (var (initial, objStartTime) in _testObjects)
+            {
+                long elapsed = gameTimeMs - (objStartTime - startTime);
+                // elapsed = gameTimeMs (all objects start at engine startTime)
+                objects.Add(_motion.Predict(initial, elapsed));
+            }
+
             var snapshot = new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
                 GameTimeMs: gameTimeMs,
-                Objects: _objects.ToImmutableArray());
+                Objects: objects.MoveToImmutable());
 
             yield return snapshot;
         }
