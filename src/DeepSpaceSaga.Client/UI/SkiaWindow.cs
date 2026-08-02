@@ -3,6 +3,7 @@ using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
+using DeepSpaceSaga.Motion;
 using Silk.NET.Core;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
@@ -113,7 +114,7 @@ public sealed class SkiaWindow : IDisposable
         _input?.Dispose();
         _input = null;
 
-        _session?.Dispose();
+        _ = _session?.DisposeAsync();
         _session = null;
     }
 
@@ -278,7 +279,8 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         _session = new GameSessionHandle(_sessionFactory.CreateSession());
-        var gameScreen = new GameSessionScreen(_session.Connection);
+        var predictor = new LinearMotionPredictor();
+        var gameScreen = new GameSessionScreen(_session.Buffer, predictor);
 
         _screens.Replace(gameScreen);
     }
@@ -301,7 +303,7 @@ public sealed class SkiaWindow : IDisposable
     private void ReturnToMainMenu()
     {
         // End the game session explicitly
-        _session?.Dispose();
+        _ = _session?.DisposeAsync();
         _session = null;
 
         var mainMenu = new MainMenuScreen();
@@ -329,7 +331,7 @@ public sealed class SkiaWindow : IDisposable
             _input = null;
         }
 
-        _session?.Dispose();
+        _ = _session?.DisposeAsync();
         _session = null;
 
         _screens.DeactivateAll();

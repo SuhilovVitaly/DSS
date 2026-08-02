@@ -61,8 +61,9 @@ public class ScreenEventTests
     [Fact]
     public void GameSessionScreen_click_returns_None()
     {
-        var connection = new DummyConnection();
-        var screen = new GameSessionScreen(connection);
+        var buffer = new DeepSpaceSaga.Client.SnapshotBuffer();
+        var predictor = new DeepSpaceSaga.Motion.LinearMotionPredictor();
+        var screen = new GameSessionScreen(buffer, predictor);
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(100, 100));
     }
 
@@ -123,16 +124,18 @@ public class ScreenEventTests
     [Fact]
     public void GameSession_Esc_returns_OpenGameMenu()
     {
-        var connection = new DummyConnection();
-        var screen = new GameSessionScreen(connection);
+        var buffer = new DeepSpaceSaga.Client.SnapshotBuffer();
+        var predictor = new DeepSpaceSaga.Motion.LinearMotionPredictor();
+        var screen = new GameSessionScreen(buffer, predictor);
         Assert.Equal(ScreenEvent.OpenGameMenu, screen.OnKeyDown(Key.Escape));
     }
 
     [Fact]
     public void GameSession_other_key_returns_None()
     {
-        var connection = new DummyConnection();
-        var screen = new GameSessionScreen(connection);
+        var buffer = new DeepSpaceSaga.Client.SnapshotBuffer();
+        var predictor = new DeepSpaceSaga.Motion.LinearMotionPredictor();
+        var screen = new GameSessionScreen(buffer, predictor);
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.A));
     }
 
@@ -144,11 +147,4 @@ public class ScreenEventTests
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.A));
     }
 
-    private sealed class DummyConnection : DeepSpaceSaga.Contracts.IGameSessionConnection
-    {
-        public void SendCommand(DeepSpaceSaga.Contracts.Command command) { }
-#pragma warning disable CS0067
-        public event Action<DeepSpaceSaga.Contracts.AuthoritativeSnapshot>? SnapshotReceived;
-#pragma warning restore CS0067
-    }
 }

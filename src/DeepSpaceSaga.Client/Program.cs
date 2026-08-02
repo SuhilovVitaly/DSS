@@ -22,6 +22,17 @@ public static class Program
         public IGameSessionConnection CreateSession()
         {
             var engine = new SimulationEngine();
+
+            // Minimal test object for the render/prediction pipeline demo.
+            // 1 unit = 100 m, Sun at (0, 0).
+            engine.AddTestObject(new ObjectMotionSnapshot(
+                ObjectId: "probe-1",
+                X: 500,
+                Y: 300,
+                SpeedKmS: 5,     // 5 km/s
+                Direction: 90    // 90° = right (clockwise from up)
+            ));
+
             return new LocalGameSessionConnection(engine);
         }
     }
