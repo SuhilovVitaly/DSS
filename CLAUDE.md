@@ -59,18 +59,19 @@ Engine → IGameSessionConnection → LocalGameSessionConnection → Client
 Engine (authoritative)
   │
   │  produces immutable AuthoritativeSnapshot every 1 s
+  │  uses DeepSpaceSaga.Motion for deterministic position calculation
   ▼
 IGameSessionConnection (async boundary)
   │
   │  IAsyncEnumerable<AuthoritativeSnapshot>
   ▼
-Client receive loop (background task)
+Client receive loop (background task, GameSessionHandle)
   │
   ▼
-SnapshotBuffer (atomic reference swap)
+SnapshotBuffer → BufferedSnapshot (snapshot + Stopwatch timestamp, atomic)
   │
   ▼
-MotionPredictor (client-side, between snapshots)
+MotionPredictor (client-side, LinearMotionPredictor from DeepSpaceSaga.Motion)
   │
   ▼
 Renderer @ 80 FPS (reads only client-side state)
@@ -82,6 +83,49 @@ Renderer @ 80 FPS (reads only client-side state)
 - `LocalGameSessionConnection` and future `NetworkGameSessionConnection` implement the same `IGameSessionConnection` — client code never knows the difference.
 - Motion prediction is client-side only; it never modifies authoritative state.
 - Unconfirmed commands do not affect prediction.
+- `BufferedSnapshot` bundles snapshot + receipt timestamp atomically (single `Interlocked.Exchange`).
+- Both Engine and Client use the same `DeepSpaceSaga.Motion` library for deterministic position calculation.
+
+### Motion conventions
+
+| Property | Convention |
+|----------|-----------|
+| Speed | km/s |
+| Direction | degrees, 0° = up, 90° = right, clockwise |
+| World units | 1 unit = 100 m, so 1 km/s = 10 world units/s |
+| Sun position | (0, 0) |
+| Map boundaries | farthest orbital radius + 10% |
+
+### Client navigation
+
+Screens are managed by `ScreenStack` (`UI/ScreenStack.cs`):
+
+| Method | Use |
+|--------|-----|
+| `SetRoot(screen)` | Set first screen |
+| `Push(screen)` | Open overlay (e.g. Esc → GameMenu) |
+| `Pop()` | Close overlay (e.g. RESUME) |
+| `Replace(screen)` | Transition (e.g. NEW GAME → GameSession) |
+| `ReplaceAll(screen)` | Return to root (e.g. MAIN MENU) |
+
+Screen folders:
+```
+UI/Screens/
+├── IScreen.cs              (shared interface + ScreenEvent enum)
+├── MainMenu/               (MainMenuScreen + MenuLayout)
+├── GameMenu/                (GameMenuScreen + GameMenuLayout)
+└── GameSession/             (GameSessionScreen)
+```
+
+Shared UI style: `UI/Controls/MenuStyle.cs` (Verdana fonts, DSS button colors, hover/pressed/disabled states).
+
+### Custom cursors
+
+PNG cursor images in `Images/Cursors/`:
+- `cursor.png` — default cursor (resized 26×26)
+- `cursor-selected.png` — hover over interactive elements
+
+Loaded at startup via Silk.NET `ICursor.Image`. Fallback to standard cursor if files missing.
 
 ### Composition root (`Program.cs`)
 
