@@ -161,4 +161,29 @@ public class ScreenStackTests
         Assert.Equal(1, newRoot.ActivatedCount);
         Assert.Same(newRoot, stack.Current);
     }
+
+    [Fact]
+    public void UnderCurrent_returns_screen_below_overlay()
+    {
+        var stack = new ScreenStack();
+        var root = new TestScreen();
+        var overlay = new TestScreen();
+
+        stack.SetRoot(root);
+        stack.Push(overlay);
+
+        Assert.Same(root, stack.UnderCurrent);
+        Assert.Same(overlay, stack.Current);
+    }
+
+    [Fact]
+    public void UnderCurrent_is_null_with_one_screen()
+    {
+        var stack = new ScreenStack();
+        var root = new TestScreen();
+
+        stack.SetRoot(root);
+
+        Assert.Null(stack.UnderCurrent);
+    }
 }

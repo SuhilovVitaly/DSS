@@ -17,7 +17,7 @@ public sealed class ScreenStack
 
     /// <summary>Returns the screen directly below the overlay, or null if none.</summary>
     public IScreen? UnderCurrent => _stack.Count > 1
-        ? _stack.Reverse().Skip(1).First()
+        ? _stack.Skip(1).First()
         : null;
 
     /// <summary>Set the initial screen.</summary>
