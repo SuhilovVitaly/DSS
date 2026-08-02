@@ -46,7 +46,7 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         PlayerCommand command,
         CancellationToken cancellationToken = default)
     {
-        // Engine runs in-process. Command processing is out of scope for P003.
+        _engine.ReceiveCommand(command);
         return ValueTask.CompletedTask;
     }
 

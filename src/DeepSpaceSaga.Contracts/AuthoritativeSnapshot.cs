@@ -1,11 +1,13 @@
+using System.Collections.Immutable;
+
 namespace DeepSpaceSaga.Contracts;
 
 /// <summary>
 /// Authoritative world snapshot produced by the engine.
-/// SnapshotSequence is monotonically increasing, allowing detection of
-/// duplicates, gaps, and out-of-order messages in a future network transport.
+/// Immutable — safe to share between threads and over the network.
+/// SnapshotSequence is monotonically increasing.
 /// </summary>
 public sealed record AuthoritativeSnapshot(
     ulong SnapshotSequence,
     long GameTimeMs,
-    IReadOnlyList<ObjectMotionSnapshot> Objects);
+    ImmutableArray<ObjectMotionSnapshot> Objects);

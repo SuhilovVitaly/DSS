@@ -28,9 +28,9 @@ public static class Program
             engine.AddTestObject(new ObjectMotionSnapshot(
                 ObjectId: "probe-1",
                 X: 500,
-                Y: 0,
-                Speed: 50,            // 50 units/sec = 5 km/s
-                Direction: Math.PI / 2 // moving "up" on screen
+                Y: 300,
+                SpeedKmS: 5,     // 5 km/s
+                Direction: 90    // 90° = right (clockwise from up)
             ));
 
             return new LocalGameSessionConnection(engine);

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Contracts.Tests;
@@ -7,7 +8,8 @@ public class ArchitectureTests
     [Fact]
     public void Snapshot_sequence_is_incrementing()
     {
-        var objects = new List<ObjectMotionSnapshot> { new("o1", 0, 0, 0, 0) };
+        var objects = ImmutableArray.Create(
+            new ObjectMotionSnapshot("o1", 0, 0, SpeedKmS: 0, Direction: 0));
 
         var s1 = new AuthoritativeSnapshot(1, 1000, objects);
         var s2 = new AuthoritativeSnapshot(2, 2000, objects);
@@ -20,12 +22,12 @@ public class ArchitectureTests
     [Fact]
     public void ObjectMotionSnapshot_holds_coordinates()
     {
-        var obj = new ObjectMotionSnapshot("probe-1", 500.0, 300.0, 50.0, Math.PI / 2);
+        var obj = new ObjectMotionSnapshot("probe-1", 500.0, 300.0, SpeedKmS: 5.0, Direction: 90);
 
         Assert.Equal("probe-1", obj.ObjectId);
         Assert.Equal(500.0, obj.X);
         Assert.Equal(300.0, obj.Y);
-        Assert.Equal(50.0, obj.Speed);
-        Assert.Equal(Math.PI / 2, obj.Direction);
+        Assert.Equal(5.0, obj.SpeedKmS);
+        Assert.Equal(90, obj.Direction);
     }
 }

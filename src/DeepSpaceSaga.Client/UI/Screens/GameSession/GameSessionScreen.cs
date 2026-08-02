@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Motion;
 using Silk.NET.Input;
 using SkiaSharp;
 
@@ -7,12 +8,14 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 public sealed class GameSessionScreen : IScreen
 {
     private readonly SnapshotBuffer _buffer;
+    private readonly IMotionPredictor _predictor;
     private readonly SKPaint _backgroundPaint;
     private readonly SKPaint _objectPaint;
 
-    public GameSessionScreen(SnapshotBuffer buffer)
+    public GameSessionScreen(SnapshotBuffer buffer, IMotionPredictor predictor)
     {
         _buffer = buffer;
+        _predictor = predictor;
         _backgroundPaint = new SKPaint { Color = SKColors.Black, Style = SKPaintStyle.Fill };
         _objectPaint = new SKPaint { Color = SKColors.Cyan, Style = SKPaintStyle.Fill, IsAntialias = true };
     }
@@ -32,19 +35,23 @@ public sealed class GameSessionScreen : IScreen
     {
         canvas.DrawRect(0, 0, width, height, _backgroundPaint);
 
-        // Render objects from the latest authoritative snapshot.
-        // No direct access to Engine or IGameSessionConnection.
         var snapshot = _buffer.Latest;
         if (snapshot is null)
             return;
 
+        // Predict from snapshot time to now
+        long nowMs = Environment.TickCount64;
+        long elapsedMs = nowMs - snapshot.GameTimeMs;
+
         foreach (var obj in snapshot.Objects)
         {
-            // Simple world-to-screen: 1 unit = 100 m, center on Sun
-            float sx = (float)obj.X;
-            float sy = height - (float)obj.Y; // flip Y for screen
+            var predicted = elapsedMs > 0
+                ? _predictor.Predict(obj, elapsedMs)
+                : obj;
 
-            // Draw object as a small circle
+            float sx = (float)predicted.X;
+            float sy = height - (float)predicted.Y; // flip Y for screen
+
             canvas.DrawCircle(sx, sy, 4, _objectPaint);
         }
     }

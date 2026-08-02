@@ -3,6 +3,7 @@ using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
+using DeepSpaceSaga.Motion;
 using Silk.NET.Core;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
@@ -278,7 +279,8 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         _session = new GameSessionHandle(_sessionFactory.CreateSession());
-        var gameScreen = new GameSessionScreen(_session.Buffer);
+        var predictor = new LinearMotionPredictor();
+        var gameScreen = new GameSessionScreen(_session.Buffer, predictor);
 
         _screens.Replace(gameScreen);
     }

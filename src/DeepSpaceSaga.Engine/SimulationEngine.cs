@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using DeepSpaceSaga.Contracts;
 
@@ -18,7 +19,17 @@ public sealed class SimulationEngine : IDisposable
 
     private ulong _nextSequence;
     private readonly List<ObjectMotionSnapshot> _objects = new();
+    private readonly List<PlayerCommand> _pendingCommands = new();
     private bool _disposed;
+
+    /// <summary>
+    /// Receive a player command. Command execution (validation, conflict resolution, etc.)
+    /// is out of scope for P003 — commands are simply stored for future processing.
+    /// </summary>
+    public void ReceiveCommand(PlayerCommand command)
+    {
+        _pendingCommands.Add(command);
+    }
 
     /// <summary>Add a test object for the render/prediction pipeline demo.</summary>
     public void AddTestObject(ObjectMotionSnapshot obj)
@@ -44,7 +55,7 @@ public sealed class SimulationEngine : IDisposable
             var snapshot = new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
                 GameTimeMs: gameTimeMs,
-                Objects: _objects.ToList()); // immutable copy
+                Objects: _objects.ToImmutableArray());
 
             yield return snapshot;
         }

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Contracts;
 
@@ -9,7 +10,8 @@ public class SnapshotBufferTests
     public void Update_replaces_previous_snapshot()
     {
         var buffer = new SnapshotBuffer();
-        var objects = new List<ObjectMotionSnapshot> { new("o1", 0, 0, 0, 0) };
+        var objects = ImmutableArray.Create(
+            new ObjectMotionSnapshot("o1", 0, 0, SpeedKmS: 0, Direction: 0));
 
         var s1 = new AuthoritativeSnapshot(1, 1000, objects);
         buffer.Update(s1);

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Contracts.Tests;
@@ -20,10 +21,8 @@ public class SmokeTests
     [Fact]
     public void AuthoritativeSnapshot_is_instantiable()
     {
-        var objects = new List<ObjectMotionSnapshot>
-        {
-            new("obj-1", 100, 200, 50, 0)
-        };
+        var objects = ImmutableArray.Create(
+            new ObjectMotionSnapshot("obj-1", 100, 200, SpeedKmS: 5, Direction: 90));
 
         var snapshot = new AuthoritativeSnapshot(
             SnapshotSequence: 1,

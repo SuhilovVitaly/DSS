@@ -2,11 +2,12 @@ namespace DeepSpaceSaga.Contracts;
 
 /// <summary>
 /// Minimal motion DTO for the render/prediction pipeline.
-/// Position in world units: 1 unit = 100 m, Sun at (0, 0).
+/// Speed in km/s. Direction in degrees: 0° = up, 90° = right, clockwise.
+/// World coordinates: 1 unit = 100 m, Sun at (0, 0).
 /// </summary>
 public sealed record ObjectMotionSnapshot(
     string ObjectId,
-    double X,
-    double Y,
-    double Speed,
-    double Direction);
+    double X,          // world units
+    double Y,          // world units
+    double SpeedKmS,   // km/s
+    double Direction); // degrees, 0° = up, clockwise
