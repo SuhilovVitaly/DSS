@@ -118,8 +118,8 @@ public class ScreenStackTests
 
         stack.ReplaceAll(mainMenu);
 
-        // root was deactivated by Push + by ReplaceAll's while loop = 2
-        Assert.Equal(2, root.DeactivatedCount);
+        // root deactivated once by Push; ReplaceAll only deactivates Current (overlay)
+        Assert.Equal(1, root.DeactivatedCount);
         Assert.Equal(1, overlay.DeactivatedCount);
         Assert.Equal(1, mainMenu.ActivatedCount);
         Assert.Same(mainMenu, stack.Current);
@@ -136,8 +136,8 @@ public class ScreenStackTests
 
         stack.DeactivateAll();
 
-        // root was deactivated by Push + by DeactivateAll's while loop = 2
-        Assert.Equal(2, root.DeactivatedCount);
+        // root deactivated once by Push; DeactivateAll only deactivates Current (overlay)
+        Assert.Equal(1, root.DeactivatedCount);
         Assert.Equal(1, overlay.DeactivatedCount);
         Assert.Equal(1, root.ActivatedCount);
         Assert.Equal(1, overlay.ActivatedCount);
@@ -155,8 +155,8 @@ public class ScreenStackTests
 
         stack.SetRoot(newRoot);
 
-        // root was deactivated by Push + by SetRoot's while loop = 2
-        Assert.Equal(2, root.DeactivatedCount);
+        // root deactivated once by Push; SetRoot only deactivates Current (overlay)
+        Assert.Equal(1, root.DeactivatedCount);
         Assert.Equal(1, overlay.DeactivatedCount);
         Assert.Equal(1, newRoot.ActivatedCount);
         Assert.Same(newRoot, stack.Current);

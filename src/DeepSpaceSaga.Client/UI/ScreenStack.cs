@@ -5,6 +5,8 @@ namespace DeepSpaceSaga.Client.UI;
 /// <summary>
 /// Stack-based screen navigation. Supports overlays (Push/Pop) and transitions (Replace).
 /// Activation lifecycle: each screen gets exactly one OnActivated/OnDeactivated per transition.
+/// Screens below the top are already inactive (deactivated by Push), so clearing the stack
+/// only deactivates Current — not every screen.
 /// </summary>
 public sealed class ScreenStack
 {
@@ -13,15 +15,19 @@ public sealed class ScreenStack
     public IScreen Current => _stack.Peek();
     public int Count => _stack.Count;
 
-    /// <summary>Returns all screens from bottom to top (for overlay rendering).</summary>
-    public IReadOnlyList<IScreen> GetAllScreens() => _stack.Reverse().ToList();
+    /// <summary>Returns the screen directly below the overlay, or null if none.</summary>
+    public IScreen? UnderCurrent => _stack.Count > 1
+        ? _stack.Reverse().Skip(1).First()
+        : null;
 
-    /// <summary>Set the initial screen (stack must be empty).</summary>
+    /// <summary>Set the initial screen.</summary>
     public void SetRoot(IScreen screen)
     {
-        while (_stack.Count > 0)
-            _stack.Pop().OnDeactivated();
+        // Only the top screen is active; deactivate it, then clear silently
+        if (_stack.Count > 0)
+            Current.OnDeactivated();
 
+        _stack.Clear();
         _stack.Push(screen);
         screen.OnActivated();
     }
@@ -64,9 +70,11 @@ public sealed class ScreenStack
     /// <summary>Replace the entire stack with a single screen (e.g. MAIN MENU from overlay).</summary>
     public void ReplaceAll(IScreen screen)
     {
-        while (_stack.Count > 0)
-            _stack.Pop().OnDeactivated();
+        // Only the top screen is active — deactivate it, then clear silently
+        if (_stack.Count > 0)
+            Current.OnDeactivated();
 
+        _stack.Clear();
         _stack.Push(screen);
         screen.OnActivated();
     }
@@ -74,7 +82,9 @@ public sealed class ScreenStack
     /// <summary>Deactivate all screens (for shutdown).</summary>
     public void DeactivateAll()
     {
-        while (_stack.Count > 0)
-            _stack.Pop().OnDeactivated();
+        if (_stack.Count > 0)
+            Current.OnDeactivated();
+
+        _stack.Clear();
     }
 }

@@ -2,9 +2,10 @@ using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Engine.LocalClient;
 
-public sealed class LocalGameSessionConnection : IGameSessionConnection
+public sealed class LocalGameSessionConnection : IGameSessionConnection, IDisposable
 {
     private readonly SimulationEngine _engine;
+    private bool _disposed;
 
     public LocalGameSessionConnection(SimulationEngine engine)
     {
@@ -21,5 +22,19 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     private void OnSnapshotReceived(AuthoritativeSnapshot snapshot)
     {
         SnapshotReceived?.Invoke(snapshot);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        DisposeEngine();
+    }
+
+    private void DisposeEngine()
+    {
+        (_engine as IDisposable)?.Dispose();
     }
 }

@@ -33,12 +33,6 @@ public sealed class SkiaWindow : IDisposable
     private bool _disposed;
     private bool _closing;
 
-    private readonly SKPaint _dimOverlay = new()
-    {
-        Color = new SKColor(0, 0, 0, 160),
-        Style = SKPaintStyle.Fill
-    };
-
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory)
     {
         _sessionFactory = sessionFactory;
@@ -179,11 +173,10 @@ public sealed class SkiaWindow : IDisposable
         canvas.Save();
         canvas.Scale(scaleX, scaleY);
 
-        // Overlay: render underlying screen first so the overlay can dim on top of it
-        if (_screens.Count > 1)
+        // Overlay: render underlying screen first so overlay dims on top of it
+        if (_screens.Count > 1 && _screens.UnderCurrent is { } under)
         {
-            var allScreens = _screens.GetAllScreens();
-            allScreens[^2].Render(canvas, windowSize.X, windowSize.Y);
+            under.Render(canvas, windowSize.X, windowSize.Y);
         }
 
         _screens.Current.Render(canvas, windowSize.X, windowSize.Y);

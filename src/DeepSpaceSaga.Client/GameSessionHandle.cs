@@ -24,6 +24,7 @@ public sealed class GameSessionHandle : IDisposable
 
         _disposed = true;
 
-        (Connection as IDisposable)?.Dispose();
+        if (Connection is IDisposable disposable)
+            disposable.Dispose();
     }
 }

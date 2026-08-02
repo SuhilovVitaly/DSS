@@ -1,5 +1,6 @@
 namespace DeepSpaceSaga.Engine;
 
-public sealed class SimulationEngine
+public sealed class SimulationEngine : IDisposable
 {
+    public void Dispose() { }
 }
