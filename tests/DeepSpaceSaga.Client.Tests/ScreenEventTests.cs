@@ -1,4 +1,7 @@
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.GameMenu;
+using DeepSpaceSaga.Client.UI.Screens.GameSession;
+using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 using Silk.NET.Input;
 using SkiaSharp;
 

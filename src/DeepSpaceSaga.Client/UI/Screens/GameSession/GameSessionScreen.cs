@@ -1,8 +1,9 @@
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Client.UI.Screens;
 using Silk.NET.Input;
 using SkiaSharp;
 
-namespace DeepSpaceSaga.Client.UI.Screens;
+namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 public sealed class GameSessionScreen : IScreen
 {

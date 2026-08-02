@@ -1,8 +1,10 @@
 using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 using Silk.NET.Input;
 using SkiaSharp;
 
-namespace DeepSpaceSaga.Client.UI.Screens;
+namespace DeepSpaceSaga.Client.UI.Screens.GameMenu;
 
 public sealed class GameMenuScreen : IScreen
 {

@@ -1,5 +1,8 @@
 using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.GameMenu;
+using DeepSpaceSaga.Client.UI.Screens.GameSession;
+using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 using Silk.NET.Core;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;

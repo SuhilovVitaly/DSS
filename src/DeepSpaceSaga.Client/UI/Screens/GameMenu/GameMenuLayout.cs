@@ -1,4 +1,4 @@
-namespace DeepSpaceSaga.Client.UI.Screens;
+namespace DeepSpaceSaga.Client.UI.Screens.GameMenu;
 
 public enum GameMenuButton
 {
@@ -12,19 +12,16 @@ public enum GameMenuButton
 
 /// <summary>
 /// Layout and hit-test geometry for the GameMenu overlay panel.
-/// Same panel size as MainMenu (500×550), 5 buttons matching reference positions.
+/// Same panel size as MainMenu (500×550).
 /// </summary>
 public sealed class GameMenuLayout
 {
-    // --- Panel (same size as MainMenu) ---
     public const float PanelWidth = 500f;
     public const float PanelHeight = 550f;
 
-    // --- Button geometry (same as MainMenu: 188×58) ---
     public const float ButtonWidth = 188f;
     public const float ButtonHeight = 58f;
 
-    // --- Vertical positions (relative to panel top, matching reference proportions) ---
     public const float ResumeY = 140f;
     public const float SaveY = 212f;
     public const float LoadY = 284f;
