@@ -130,7 +130,17 @@ public sealed class SkiaWindow : IDisposable
         }
 
         var canvas = _surface.Canvas;
-        _currentScreen.Render(canvas, _window.FramebufferSize.X, _window.FramebufferSize.Y);
+
+        // HiDPI: render in logical (window) coordinates, scaled to physical framebuffer.
+        // Mouse coordinates use window coords, so hit-testing matches rendering naturally.
+        float scaleX = (float)_window.FramebufferSize.X / _window.Size.X;
+        float scaleY = (float)_window.FramebufferSize.Y / _window.Size.Y;
+
+        canvas.Save();
+        canvas.Scale(scaleX, scaleY);
+        _currentScreen.Render(canvas, _window.Size.X, _window.Size.Y);
+        canvas.Restore();
+
         canvas.Flush();
     }
 
