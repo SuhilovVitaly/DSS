@@ -14,6 +14,12 @@ public sealed class GameMenuScreen : IScreen
     private GameMenuButton _hoveredButton = GameMenuButton.None;
     private GameMenuButton _pressedButton = GameMenuButton.None;
 
+    private static readonly SKPaint _dimPaint = new()
+    {
+        Color = new SKColor(0, 0, 0, 160),
+        Style = SKPaintStyle.Fill
+    };
+
     public void OnActivated()
     {
         _hoveredButton = GameMenuButton.None;
@@ -31,8 +37,10 @@ public sealed class GameMenuScreen : IScreen
     {
         var hit = GameMenuLayout.HitTest(x, y, _screenWidth, _screenHeight);
 
-        if (hit != GameMenuButton.None)
-            _pressedButton = hit;
+        if (!IsEnabled(hit))
+            return ScreenEvent.None;
+
+        _pressedButton = hit;
 
         return hit switch
         {
@@ -45,8 +53,8 @@ public sealed class GameMenuScreen : IScreen
     public bool OnMouseMove(float x, float y)
     {
         var hit = GameMenuLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        _hoveredButton = hit;
-        return hit != GameMenuButton.None;
+        _hoveredButton = IsEnabled(hit) ? hit : GameMenuButton.None;
+        return IsEnabled(hit);
     }
 
     public void Render(SKCanvas canvas, int width, int height)
@@ -55,7 +63,8 @@ public sealed class GameMenuScreen : IScreen
         _screenHeight = height;
         _pressedButton = GameMenuButton.None;
 
-        MenuStyle.DrawBackground(canvas, width, height);
+        // Dim background (overlay effect — underlying screen renders behind this)
+        canvas.DrawRect(0, 0, width, height, _dimPaint);
 
         float pl = GameMenuLayout.PanelLeft(width);
         float pt = GameMenuLayout.PanelTop(height);
@@ -74,8 +83,12 @@ public sealed class GameMenuScreen : IScreen
         DrawButton(canvas, pl, pt, GameMenuLayout.MainMenuY, "MAIN MENU", GameMenuButton.MainMenu);
     }
 
+    private static bool IsEnabled(GameMenuButton button) =>
+        button is GameMenuButton.Resume or GameMenuButton.MainMenu;
+
     private ButtonState GetState(GameMenuButton id)
     {
+        if (!IsEnabled(id)) return ButtonState.Disabled;
         if (_pressedButton == id) return ButtonState.Pressed;
         if (_hoveredButton == id) return ButtonState.Hovered;
         return ButtonState.Normal;

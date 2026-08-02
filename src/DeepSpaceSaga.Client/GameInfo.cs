@@ -36,26 +36,13 @@ public static class GameInfo
             // Use defaults
         }
 
-        string fullVersion = $"Version {baseVersion} (build {BuildNumber})";
-        return new Data(title, fullVersion);
-    }
+        var asm = Assembly.GetEntryAssembly();
+        var asmVersion = asm?.GetName().Version;
+        string fullVersion = asmVersion is { } ver && (ver.Build > 0 || ver.Revision > 0)
+            ? $"Version {baseVersion}.{ver.Build}.{ver.Revision}"
+            : $"Version {baseVersion}";
 
-    private static string BuildNumber
-    {
-        get
-        {
-            try
-            {
-                var asm = Assembly.GetEntryAssembly();
-                if (asm?.Location is { } path && File.Exists(path))
-                {
-                    var dt = File.GetLastWriteTimeUtc(path);
-                    return dt.ToString("yyyyMMdd.HHmm");
-                }
-            }
-            catch { }
-            return "dev";
-        }
+        return new Data(title, fullVersion);
     }
 
     private sealed record Data(string Title, string Version);
