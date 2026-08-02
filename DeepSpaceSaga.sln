@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeepSpaceSaga.Motion.Tests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeepSpaceSaga.Engine.Tests", "tests\DeepSpaceSaga.Engine.Tests\DeepSpaceSaga.Engine.Tests.csproj", "{F5D71F4F-4F97-41E7-B8FE-68D0552AE831}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeepSpaceSaga.Client.Tests", "tests\DeepSpaceSaga.Client.Tests\DeepSpaceSaga.Client.Tests.csproj", "{EF4BCBED-3198-437D-8408-B08DDFD925E9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -129,6 +131,18 @@ Global
 		{F5D71F4F-4F97-41E7-B8FE-68D0552AE831}.Release|x64.Build.0 = Release|Any CPU
 		{F5D71F4F-4F97-41E7-B8FE-68D0552AE831}.Release|x86.ActiveCfg = Release|Any CPU
 		{F5D71F4F-4F97-41E7-B8FE-68D0552AE831}.Release|x86.Build.0 = Release|Any CPU
+		{EF4BCBED-3198-437D-8408-B08DDFD925E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF4BCBED-3198-437D-8408-B08DDFD925E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF4BCBED-3198-437D-8408-B08DDFD925E9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EF4BCBED-3198-437D-8408-B08DDFD925E9}.Debug|x64.Build.0 = Debug|Any CPU
+		{EF4BCBED-3198-437D-8408-B08DDFD925E9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EF4BCBED-3198-437D-8408-B08DDFD925E9}.Debug|x86.Build.0 = Debug|Any CPU
+		{EF4BCBED-3198-437D-8408-B08DDFD925E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF4BCBED-3198-437D-8408-B08DDFD925E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF4BCBED-3198-437D-8408-B08DDFD925E9}.Release|x64.ActiveCfg = Release|Any CPU
+		{EF4BCBED-3198-437D-8408-B08DDFD925E9}.Release|x64.Build.0 = Release|Any CPU
+		{EF4BCBED-3198-437D-8408-B08DDFD925E9}.Release|x86.ActiveCfg = Release|Any CPU
+		{EF4BCBED-3198-437D-8408-B08DDFD925E9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -142,5 +156,6 @@ Global
 		{7C4C817A-BF29-49F2-A0BB-71DBBB071B50} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{D1FC801A-E6F2-4888-8F0C-B0BE386C77A9} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{F5D71F4F-4F97-41E7-B8FE-68D0552AE831} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{EF4BCBED-3198-437D-8408-B08DDFD925E9} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
