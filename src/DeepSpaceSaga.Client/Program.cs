@@ -2,7 +2,7 @@ using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.LocalClient;
 using DeepSpaceSaga.Client.UI;
-using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 
 namespace DeepSpaceSaga.Client;
 

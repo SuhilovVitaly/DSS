@@ -1,4 +1,4 @@
-using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 
 namespace DeepSpaceSaga.Client.Tests;
 

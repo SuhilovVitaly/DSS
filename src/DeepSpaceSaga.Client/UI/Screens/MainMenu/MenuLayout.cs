@@ -1,4 +1,4 @@
-namespace DeepSpaceSaga.Client.UI.Screens;
+namespace DeepSpaceSaga.Client.UI.Screens.MainMenu;
 
 public enum MenuButton
 {
@@ -11,19 +11,15 @@ public enum MenuButton
 /// <summary>
 /// Layout and hit-test geometry for the MainMenu panel.
 /// All dimensions in logical (window) coordinates.
-/// Visual style (colors, fonts) lives in MenuStyle — this class is pure geometry.
 /// </summary>
 public sealed class MenuLayout
 {
-    // --- Panel ---
     public const float PanelWidth = 500f;
     public const float PanelHeight = 550f;
 
-    // --- Button geometry (single source of truth) ---
     public const float ButtonWidth = 188f;
     public const float ButtonHeight = 58f;
 
-    // --- Vertical positions (relative to panel top) ---
     public const float TitleY = 70f;
     public const float VersionY = 110f;
     public const float NewGameY = 150f;
@@ -31,13 +27,9 @@ public sealed class MenuLayout
     public const float StatusY = 296f;
     public const float ExitY = 404f;
 
-    /// <summary>Panel left edge, centered in screen.</summary>
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
-
-    /// <summary>Panel top edge, centered in screen.</summary>
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
 
-    /// <summary>Hit-test: which menu button is at screen-space (x, y)?</summary>
     public static MenuButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight)
     {
         float panelLeft = PanelLeft(screenWidth);

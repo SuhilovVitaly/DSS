@@ -1,5 +1,8 @@
 using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.GameMenu;
+using DeepSpaceSaga.Client.UI.Screens.GameSession;
+using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 using Silk.NET.Core;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
@@ -12,6 +15,7 @@ public sealed class SkiaWindow : IDisposable
 {
     private readonly IWindow _window;
     private readonly IGameSessionFactory _sessionFactory;
+    private readonly ScreenStack _screens = new();
 
     private GL? _gl;
     private GRContext? _grContext;
@@ -20,16 +24,20 @@ public sealed class SkiaWindow : IDisposable
 
     private IInputContext? _input;
     private IMouse? _mouse;
+    private IKeyboard? _keyboard;
     private RawImage? _defaultCursorImage;
     private RawImage? _interactiveCursorImage;
 
-    private IScreen _currentScreen;
+    private GameSessionHandle? _session;
+    private bool _prevEscPressed;
     private bool _disposed;
+    private bool _closing;
 
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory)
     {
-        _currentScreen = initialScreen;
         _sessionFactory = sessionFactory;
+
+        _screens.SetRoot(initialScreen);
 
         var options = WindowOptions.Default with
         {
@@ -45,6 +53,7 @@ public sealed class SkiaWindow : IDisposable
         _window.Load += OnLoad;
         _window.Render += OnRender;
         _window.FramebufferResize += OnFramebufferResize;
+        _window.Closing += OnClosing;
     }
 
     public void Run() => _window.Run();
@@ -65,6 +74,7 @@ public sealed class SkiaWindow : IDisposable
         _grContext = GRContext.CreateGl(glInterface);
 
         _input = _window.CreateInput();
+
         _mouse = _input.Mice.FirstOrDefault();
         if (_mouse is not null)
         {
@@ -83,7 +93,28 @@ public sealed class SkiaWindow : IDisposable
             }
         }
 
-        _currentScreen.OnActivated();
+        _keyboard = _input.Keyboards.FirstOrDefault();
+    }
+
+    /// <summary>Clean up input while native window is still valid.</summary>
+    private void OnClosing()
+    {
+        if (_closing)
+            return;
+
+        _closing = true;
+
+        if (_mouse is not null)
+        {
+            _mouse.MouseDown -= OnMouseDown;
+            _mouse.MouseMove -= OnMouseMove;
+        }
+
+        _input?.Dispose();
+        _input = null;
+
+        _session?.Dispose();
+        _session = null;
     }
 
     private static RawImage? LoadCursorImage(string path)
@@ -118,7 +149,7 @@ public sealed class SkiaWindow : IDisposable
 
     private void OnRender(double deltaTime)
     {
-        if (_grContext is null || _gl is null)
+        if (_grContext is null || _gl is null || _closing)
             return;
 
         if (_surface is null)
@@ -133,21 +164,27 @@ public sealed class SkiaWindow : IDisposable
         var windowSize = _window.Size;
         var fbSize = _window.FramebufferSize;
 
-        // Guard against zero window size (e.g. during minimize transition)
         if (windowSize.X <= 0 || windowSize.Y <= 0)
             return;
 
-        // HiDPI: render in logical (window) coordinates, scaled to physical framebuffer.
-        // Mouse coordinates use window coords, so hit-testing matches rendering naturally.
         float scaleX = (float)fbSize.X / windowSize.X;
         float scaleY = (float)fbSize.Y / windowSize.Y;
 
         canvas.Save();
         canvas.Scale(scaleX, scaleY);
-        _currentScreen.Render(canvas, windowSize.X, windowSize.Y);
-        canvas.Restore();
 
+        // Overlay: render underlying screen first so overlay dims on top of it
+        if (_screens.Count > 1 && _screens.UnderCurrent is { } under)
+        {
+            under.Render(canvas, windowSize.X, windowSize.Y);
+        }
+
+        _screens.Current.Render(canvas, windowSize.X, windowSize.Y);
+
+        canvas.Restore();
         canvas.Flush();
+
+        PollKeyboard();
     }
 
     private void OnFramebufferResize(Silk.NET.Maths.Vector2D<int> newSize)
@@ -177,16 +214,19 @@ public sealed class SkiaWindow : IDisposable
 
     private void OnMouseDown(IMouse mouse, MouseButton button)
     {
-        if (button != MouseButton.Left)
+        if (button != MouseButton.Left || _closing)
             return;
 
-        var screenEvent = _currentScreen.OnMouseDown(mouse.Position.X, mouse.Position.Y);
+        var screenEvent = _screens.Current.OnMouseDown(mouse.Position.X, mouse.Position.Y);
         HandleScreenEvent(screenEvent);
     }
 
     private void OnMouseMove(IMouse mouse, System.Numerics.Vector2 position)
     {
-        bool overInteractive = _currentScreen.OnMouseMove(position.X, position.Y);
+        if (_closing)
+            return;
+
+        bool overInteractive = _screens.Current.OnMouseMove(position.X, position.Y);
 
         var targetImage = overInteractive ? _interactiveCursorImage : _defaultCursorImage;
         if (targetImage is not null)
@@ -196,12 +236,35 @@ public sealed class SkiaWindow : IDisposable
         }
     }
 
+    private void PollKeyboard()
+    {
+        if (_keyboard is null || _closing)
+            return;
+
+        bool escDown = _keyboard.IsKeyPressed(Key.Escape);
+        if (escDown && !_prevEscPressed)
+        {
+            var screenEvent = _screens.Current.OnKeyDown(Key.Escape);
+            HandleScreenEvent(screenEvent);
+        }
+        _prevEscPressed = escDown;
+    }
+
     private void HandleScreenEvent(ScreenEvent evt)
     {
         switch (evt)
         {
             case ScreenEvent.NewGame:
-                SwitchToGameSession();
+                StartGameSession();
+                break;
+            case ScreenEvent.OpenGameMenu:
+                OpenGameMenu();
+                break;
+            case ScreenEvent.Resume:
+                CloseOverlay();
+                break;
+            case ScreenEvent.MainMenu:
+                ReturnToMainMenu();
                 break;
             case ScreenEvent.Exit:
                 _window.Close();
@@ -209,18 +272,40 @@ public sealed class SkiaWindow : IDisposable
         }
     }
 
-    private void SwitchToGameSession()
+    private void StartGameSession()
     {
-        if (_currentScreen is GameSessionScreen)
+        if (_session is not null)
             return;
 
-        _currentScreen.OnDeactivated();
+        _session = new GameSessionHandle(_sessionFactory.CreateSession());
+        var gameScreen = new GameSessionScreen(_session.Connection);
 
-        var sessionConnection = _sessionFactory.CreateSession();
-        var gameScreen = new GameSessionScreen(sessionConnection);
+        _screens.Replace(gameScreen);
+    }
 
-        _currentScreen = gameScreen;
-        _currentScreen.OnActivated();
+    private void OpenGameMenu()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is GameMenuScreen)
+            return;
+
+        var gameMenu = new GameMenuScreen();
+        _screens.Push(gameMenu);
+    }
+
+    private void CloseOverlay()
+    {
+        _screens.Pop();
+    }
+
+    private void ReturnToMainMenu()
+    {
+        // End the game session explicitly
+        _session?.Dispose();
+        _session = null;
+
+        var mainMenu = new MainMenuScreen();
+        _screens.ReplaceAll(mainMenu);
     }
 
     public void Dispose()
@@ -230,14 +315,25 @@ public sealed class SkiaWindow : IDisposable
 
         _disposed = true;
 
-        if (_mouse is not null)
+        // OnClosing might not have fired (e.g. unhandled shutdown).
+        // If input still alive, dispose it before window.
+        if (!_closing)
         {
-            _mouse.MouseDown -= OnMouseDown;
-            _mouse.MouseMove -= OnMouseMove;
+            if (_mouse is not null)
+            {
+                _mouse.MouseDown -= OnMouseDown;
+                _mouse.MouseMove -= OnMouseMove;
+            }
+
+            _input?.Dispose();
+            _input = null;
         }
 
-        _input?.Dispose();
-        _currentScreen.OnDeactivated();
+        _session?.Dispose();
+        _session = null;
+
+        _screens.DeactivateAll();
+
         _surface?.Dispose();
         _renderTarget?.Dispose();
         _grContext?.Dispose();
