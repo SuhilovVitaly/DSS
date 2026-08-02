@@ -18,5 +18,5 @@ public sealed class SnapshotBuffer
     }
 
     /// <summary>Get the latest snapshot, or null if none received yet.</summary>
-    public AuthoritativeSnapshot? Latest => _latest;
+    public AuthoritativeSnapshot? Latest => Volatile.Read(ref _latest);
 }

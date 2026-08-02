@@ -19,13 +19,15 @@ public sealed class GameSessionHandle : IAsyncDisposable
         _connection = connection;
 
         Buffer = new SnapshotBuffer();
+        Clock = new ClientGameClock();
 
-        // Background loop: connection → buffer
+        // Background loop: connection → buffer + clock
         _receiveTask = Task.Run(() => ReceiveLoopAsync(_cts.Token));
     }
 
     public IGameSessionConnection Connection => _connection;
     public SnapshotBuffer Buffer { get; }
+    public ClientGameClock Clock { get; }
 
     private async Task ReceiveLoopAsync(CancellationToken ct)
     {
@@ -34,6 +36,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
             await foreach (var snapshot in _connection.ReadSnapshotsAsync(ct))
             {
                 Buffer.Update(snapshot);
+                Clock.OnSnapshotReceived(snapshot.GameTimeMs);
             }
         }
         catch (OperationCanceledException) { }

@@ -22,6 +22,9 @@ public sealed class SimulationEngine : IDisposable
     private readonly List<PlayerCommand> _pendingCommands = new();
     private bool _disposed;
 
+    /// <summary>Number of commands received (test seam).</summary>
+    internal int ReceivedCommandCount => _pendingCommands.Count;
+
     /// <summary>
     /// Receive a player command. Command execution (validation, conflict resolution, etc.)
     /// is out of scope for P003 — commands are simply stored for future processing.

@@ -14,6 +14,7 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     private readonly SimulationEngine _engine;
     private readonly Channel<AuthoritativeSnapshot> _snapshotChannel;
     private readonly CancellationTokenSource _cts = new();
+    private readonly Task _engineLoopTask;
     private bool _disposed;
 
     public LocalGameSessionConnection(SimulationEngine engine)
@@ -22,8 +23,7 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         _snapshotChannel = Channel.CreateUnbounded<AuthoritativeSnapshot>(
             new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
 
-        // Start engine loop in background — forwards snapshots to channel
-        _ = Task.Run(() => RunEngineLoopAsync(_cts.Token));
+        _engineLoopTask = Task.Run(() => RunEngineLoopAsync(_cts.Token));
     }
 
     private async Task RunEngineLoopAsync(CancellationToken ct)
@@ -67,11 +67,10 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         _disposed = true;
 
         _cts.Cancel();
+
+        try { await _engineLoopTask; } catch (OperationCanceledException) { }
+
         _cts.Dispose();
-
         (_engine as IDisposable)?.Dispose();
-
-        // Wait briefly for the background loop to complete
-        await Task.Delay(100);
     }
 }

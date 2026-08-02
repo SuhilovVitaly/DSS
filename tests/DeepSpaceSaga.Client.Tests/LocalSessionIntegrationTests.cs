@@ -40,11 +40,11 @@ public class LocalSessionIntegrationTests
         var engine = new SimulationEngine();
         await using var connection = new LocalGameSessionConnection(engine);
 
+        Assert.Equal(0, engine.ReceivedCommandCount);
+
         var command = new PlayerCommand("cmd-1", 1, "ship-1", "nav", "move");
         await connection.SendCommandAsync(command);
 
-        // Command was delivered across the boundary. Engine stores it for
-        // future processing (out of scope for P003).
-        Assert.True(true);
+        Assert.Equal(1, engine.ReceivedCommandCount);
     }
 }

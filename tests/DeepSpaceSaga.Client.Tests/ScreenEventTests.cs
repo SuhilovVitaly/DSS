@@ -63,7 +63,8 @@ public class ScreenEventTests
     {
         var buffer = new DeepSpaceSaga.Client.SnapshotBuffer();
         var predictor = new DeepSpaceSaga.Motion.LinearMotionPredictor();
-        var screen = new GameSessionScreen(buffer, predictor);
+        var clock = new DeepSpaceSaga.Client.ClientGameClock();
+        var screen = new GameSessionScreen(buffer, predictor, clock);
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(100, 100));
     }
 
@@ -126,7 +127,8 @@ public class ScreenEventTests
     {
         var buffer = new DeepSpaceSaga.Client.SnapshotBuffer();
         var predictor = new DeepSpaceSaga.Motion.LinearMotionPredictor();
-        var screen = new GameSessionScreen(buffer, predictor);
+        var clock = new DeepSpaceSaga.Client.ClientGameClock();
+        var screen = new GameSessionScreen(buffer, predictor, clock);
         Assert.Equal(ScreenEvent.OpenGameMenu, screen.OnKeyDown(Key.Escape));
     }
 
@@ -135,7 +137,8 @@ public class ScreenEventTests
     {
         var buffer = new DeepSpaceSaga.Client.SnapshotBuffer();
         var predictor = new DeepSpaceSaga.Motion.LinearMotionPredictor();
-        var screen = new GameSessionScreen(buffer, predictor);
+        var clock = new DeepSpaceSaga.Client.ClientGameClock();
+        var screen = new GameSessionScreen(buffer, predictor, clock);
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.A));
     }
 
