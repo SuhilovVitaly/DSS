@@ -9,47 +9,33 @@ public enum MenuButton
 }
 
 /// <summary>
-/// Layout constants matching the reference WinForms MainMenu design.
-/// A centered panel (800×660) with a border contains all menu elements.
-/// Y positions match reference: title at 50, NEW GAME 175, LOAD 254, EXIT 565.
+/// Layout and hit-test geometry for the MainMenu panel.
+/// All dimensions in logical (window) coordinates.
+/// Visual style (colors, fonts) lives in MenuStyle — this class is pure geometry.
 /// </summary>
 public sealed class MenuLayout
 {
     // --- Panel ---
-    public const float PanelWidth = 800f;
-    public const float PanelHeight = 660f;
-    public const float PanelBorderWidth = 2f;
+    public const float PanelWidth = 500f;
+    public const float PanelHeight = 480f;
 
-    // --- Button dimensions (reference: 188×58) ---
+    // --- Button geometry (single source of truth) ---
     public const float ButtonWidth = 188f;
     public const float ButtonHeight = 58f;
-    public const float ButtonCornerRadius = 0f;
 
-    // --- Font sizes (pt converted to px at 96dpi) ---
-    public const float TitleFontSize = 32f;       // 24pt Bold
-    public const float VersionFontSize = 13f;     // 10pt Regular
-    public const float ButtonFontSize = 14f;      // 10.8pt Bold
-    public const float StatusFontSize = 11f;      // 8pt Italic
-
-    // --- Vertical positions (relative to panel top, matching reference) ---
-    public const float TitleY = 50f;
-    public const float TitleToVersionGap = 10f;
-    public const float VersionToNewGameGap = 40f;
-    public const float NewGameY = 175f;
-    public const float LoadY = 254f;
-    public const float ButtonGapClose = 21f; // 254 - 175 - 58
-    public const float ExitY = 561f;
-    public const float StatusY = 330f;       // between LOAD and EXIT
-    public const float BigGap = 249f;        // 561 - 254 - 58
+    // --- Vertical positions (relative to panel top) ---
+    public const float TitleY = 40f;
+    public const float VersionY = 80f;
+    public const float NewGameY = 120f;
+    public const float LoadY = 194f;
+    public const float StatusY = 266f;
+    public const float ExitY = 374f;
 
     /// <summary>Panel left edge, centered in screen.</summary>
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
 
     /// <summary>Panel top edge, centered in screen.</summary>
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
-
-    /// <summary>Button X, centered in panel.</summary>
-    public static float ButtonLeft(int screenWidth) => PanelLeft(screenWidth) + (PanelWidth - ButtonWidth) / 2f;
 
     /// <summary>Hit-test: which menu button is at screen-space (x, y)?</summary>
     public static MenuButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight)

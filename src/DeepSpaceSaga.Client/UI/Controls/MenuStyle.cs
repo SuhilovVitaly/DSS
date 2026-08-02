@@ -36,15 +36,13 @@ public static class MenuStyle
     public static readonly SKColor ColorButtonPressed = new(78, 78, 78);
     public static readonly SKColor ColorBackground = SKColors.Black;
 
-    // --- Dimensions (reference: 188×58) ---
-    public const float ButtonWidth = 188f;
-    public const float ButtonHeight = 58f;
-    public const float ButtonCornerRadius = 0f;
-    public const float ButtonFontSize = 14f;      // 10.8pt ≈ 14px
-    public const float TitleFontSize = 32f;       // 24pt ≈ 32px
-    public const float VersionFontSize = 13f;     // 10pt ≈ 13px
-    public const float StatusFontSize = 11f;      // 8pt ≈ 11px
+    // --- Font sizes (visual property, not layout geometry) ---
+    public const float ButtonFontSize = 14f;      // 10.8pt Bold
+    public const float TitleFontSize = 32f;       // 24pt Bold
+    public const float VersionFontSize = 13f;     // 10pt Regular
+    public const float StatusFontSize = 11f;      // 8pt Regular
 
+    // --- Border widths (visual property) ---
     public const float PanelBorderWidth = 2f;
     public const float ButtonBorderWidth = 1f;
 
@@ -70,7 +68,7 @@ public static class MenuStyle
     /// <summary>Draw a menu-style button at the given rectangle.</summary>
     public static void DrawButton(SKCanvas canvas, SKRect rect, string text, ButtonState state)
     {
-        float cr = ButtonCornerRadius;
+        const float cr = 0f; // sharp corners, matching FlatStyle.Flat
 
         var fill = state switch
         {

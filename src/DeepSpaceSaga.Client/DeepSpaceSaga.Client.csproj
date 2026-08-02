@@ -1,12 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <Compile Remove="UI\Controls\Buttons\**" />
-    <EmbeddedResource Remove="UI\Controls\Buttons\**" />
-    <None Remove="UI\Controls\Buttons\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\DeepSpaceSaga.Contracts\DeepSpaceSaga.Contracts.csproj" />
     <ProjectReference Include="..\DeepSpaceSaga.Motion\DeepSpaceSaga.Motion.csproj" />
     <ProjectReference Include="..\DeepSpaceSaga.Engine.LocalClient\DeepSpaceSaga.Engine.LocalClient.csproj" />

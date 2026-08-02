@@ -51,8 +51,7 @@ public sealed class SkiaWindow : IDisposable
 
     private void OnLoad()
     {
-        var monitors = Silk.NET.Windowing.Monitor.GetMonitors(null);
-        var target = monitors.FirstOrDefault();
+        var target = Silk.NET.Windowing.Monitor.GetMainMonitor(null);
         if (target is not null)
         {
             _window.Position = target.Bounds.Origin;
@@ -131,14 +130,21 @@ public sealed class SkiaWindow : IDisposable
 
         var canvas = _surface.Canvas;
 
+        var windowSize = _window.Size;
+        var fbSize = _window.FramebufferSize;
+
+        // Guard against zero window size (e.g. during minimize transition)
+        if (windowSize.X <= 0 || windowSize.Y <= 0)
+            return;
+
         // HiDPI: render in logical (window) coordinates, scaled to physical framebuffer.
         // Mouse coordinates use window coords, so hit-testing matches rendering naturally.
-        float scaleX = (float)_window.FramebufferSize.X / _window.Size.X;
-        float scaleY = (float)_window.FramebufferSize.Y / _window.Size.Y;
+        float scaleX = (float)fbSize.X / windowSize.X;
+        float scaleY = (float)fbSize.Y / windowSize.Y;
 
         canvas.Save();
         canvas.Scale(scaleX, scaleY);
-        _currentScreen.Render(canvas, _window.Size.X, _window.Size.Y);
+        _currentScreen.Render(canvas, windowSize.X, windowSize.Y);
         canvas.Restore();
 
         canvas.Flush();

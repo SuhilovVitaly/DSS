@@ -58,8 +58,7 @@ public sealed class MainMenuScreen : IScreen
 
         canvas.DrawText("Deep Space Saga", cx, pt + MenuLayout.TitleY, MenuStyle.TextTitle);
 
-        float versionY = pt + MenuLayout.TitleY + MenuLayout.TitleToVersionGap + MenuLayout.VersionFontSize;
-        canvas.DrawText("Version 1.0.0", cx, versionY, MenuStyle.TextVersion);
+        canvas.DrawText("Version 1.0.0", cx, pt + MenuLayout.VersionY, MenuStyle.TextVersion);
 
         DrawButton(canvas, pl, pt, MenuLayout.NewGameY, "NEW GAME", MenuButton.NewGame);
         DrawButton(canvas, pl, pt, MenuLayout.LoadY, "LOAD", MenuButton.Load);
@@ -77,9 +76,9 @@ public sealed class MainMenuScreen : IScreen
     private void DrawButton(SKCanvas canvas, float panelLeft, float panelTop,
         float buttonLocalY, string text, MenuButton id)
     {
-        float bx = panelLeft + (MenuLayout.PanelWidth - MenuStyle.ButtonWidth) / 2f;
+        float bx = panelLeft + (MenuLayout.PanelWidth - MenuLayout.ButtonWidth) / 2f;
         float by = panelTop + buttonLocalY;
-        var rect = new SKRect(bx, by, bx + MenuStyle.ButtonWidth, by + MenuStyle.ButtonHeight);
+        var rect = new SKRect(bx, by, bx + MenuLayout.ButtonWidth, by + MenuLayout.ButtonHeight);
 
         bool active = id != MenuButton.Load;
         MenuStyle.DrawButton(canvas, rect, text, GetState(id, active));
