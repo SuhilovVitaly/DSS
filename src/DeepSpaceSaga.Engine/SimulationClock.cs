@@ -3,6 +3,11 @@ using DeepSpaceSaga.Contracts;
 namespace DeepSpaceSaga.Engine;
 
 /// <summary>
+/// Immutable snapshot of clock state, captured atomically under lock.
+/// </summary>
+public readonly record struct SimulationClockState(long GameTimeMs, SimulationSpeed Speed);
+
+/// <summary>
 /// Authoritative simulation clock that accumulates game time based on speed.
 /// Thread-safe: all public methods are atomic via internal lock.
 /// At Speed0, GameTimeMs does not advance regardless of real time passage.
@@ -37,6 +42,24 @@ public sealed class SimulationClock
             _lastRealTick = now;
 
             GameTimeMs += deltaReal * (int)Speed;
+        }
+    }
+
+    /// <summary>
+    /// Atomically advance the clock AND capture the resulting GameTimeMs + Speed.
+    /// Use this when building snapshots — guarantees the snapshot's time and speed
+    /// are consistent (no SetSpeed can interleave between the two reads).
+    /// </summary>
+    public SimulationClockState UpdateAndCapture()
+    {
+        lock (_lock)
+        {
+            long now = Environment.TickCount64;
+            long deltaReal = now - _lastRealTick;
+            _lastRealTick = now;
+
+            GameTimeMs += deltaReal * (int)Speed;
+            return new SimulationClockState(GameTimeMs, Speed);
         }
     }
 

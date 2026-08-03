@@ -63,21 +63,21 @@ public sealed class SimulationEngine : IDisposable
         {
             await Task.Delay(SnapshotIntervalMs, cancellationToken);
 
-            _clock.Update();
-            long gameTimeMs = _clock.GameTimeMs;
+            // Atomically advance clock and capture consistent GameTime + Speed
+            var clockState = _clock.UpdateAndCapture();
 
             // Advance each test object from its initial state by elapsed game time
             var objects = ImmutableArray.CreateBuilder<ObjectMotionSnapshot>(_testObjects.Count);
             foreach (var (initial, objStartGameTime) in _testObjects)
             {
-                long elapsed = gameTimeMs - objStartGameTime;
+                long elapsed = clockState.GameTimeMs - objStartGameTime;
                 objects.Add(_motion.Predict(initial, elapsed));
             }
 
             var snapshot = new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
-                GameTimeMs: gameTimeMs,
-                CurrentSpeed: _clock.Speed,
+                GameTimeMs: clockState.GameTimeMs,
+                CurrentSpeed: clockState.Speed,
                 Objects: objects.MoveToImmutable());
 
             yield return snapshot;

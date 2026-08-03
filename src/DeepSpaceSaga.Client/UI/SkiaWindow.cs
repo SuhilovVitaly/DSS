@@ -311,11 +311,9 @@ public sealed class SkiaWindow : IDisposable
             // Read current speed from the client-side authoritative tracker (not stale snapshot)
             _savedSpeed = _session.Buffer.CurrentSpeed;
 
-            // NOTE: for local connections this completes synchronously.
-            // A future network implementation should properly await this.
-            _session.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
-            _session.Buffer.CurrentSpeed = SimulationSpeed.Speed0;
-            _session.UpdateSpeed(SimulationSpeed.Speed0);
+            // Fire-and-forget: for local connections SetSpeedAsync completes synchronously.
+            // Buffer.CurrentSpeed is updated inside SetSpeedAsync after the await.
+            _ = _session.SetSpeedAsync(SimulationSpeed.Speed0);
         }
 
         _modalDepth++;
@@ -333,9 +331,7 @@ public sealed class SkiaWindow : IDisposable
         // Last modal closed: restore previous simulation speed
         if (_modalDepth == 0 && _session is not null)
         {
-            _session.Connection.SetSimulationSpeedAsync(_savedSpeed);
-            _session.Buffer.CurrentSpeed = _savedSpeed;
-            _session.UpdateSpeed(_savedSpeed);
+            _ = _session.SetSpeedAsync(_savedSpeed);
         }
     }
 
