@@ -107,9 +107,36 @@ public class SimulationClockTests
         long accumulated = clock.GameTimeMs;
         Assert.True(accumulated > 0);
 
-        // Change speed — accumulated time should be preserved
+        // Change speed — accumulated time must not decrease
         clock.SetSpeed(SimulationSpeed.Speed2);
-        Assert.Equal(accumulated, clock.GameTimeMs);
+        Assert.True(clock.GameTimeMs >= accumulated,
+            $"GameTimeMs ({clock.GameTimeMs}) should be >= accumulated ({accumulated})");
         Assert.Equal(SimulationSpeed.Speed2, clock.Speed);
+    }
+
+    [Fact]
+    public void SetSpeed_accumulates_partial_interval_before_switching()
+    {
+        // This test verifies the critical fix: when SetSpeed is called
+        // between snapshots, the elapsed time at the old speed is NOT lost.
+        var clock = new SimulationClock(SimulationSpeed.Speed1);
+
+        // Simulate a snapshot at t ≈ 20ms
+        Thread.Sleep(20);
+        clock.Update();
+        long timeAtSnapshot = clock.GameTimeMs;
+        Assert.True(timeAtSnapshot > 0);
+
+        // Wait additional time (simulating player opening menu between snapshots)
+        Thread.Sleep(100);
+
+        // SetSpeed must accumulate the 100ms at Speed1 before switching
+        clock.SetSpeed(SimulationSpeed.Speed0);
+
+        // GameTime should have advanced past the snapshot time
+        Assert.True(clock.GameTimeMs > timeAtSnapshot,
+            $"GameTimeMs ({clock.GameTimeMs}) should be > snapshot time ({timeAtSnapshot}). " +
+            "Partial interval time was lost!");
+        Assert.Equal(SimulationSpeed.Speed0, clock.Speed);
     }
 }

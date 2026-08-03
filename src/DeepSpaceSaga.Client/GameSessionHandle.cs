@@ -6,6 +6,8 @@ namespace DeepSpaceSaga.Client;
 /// Owns the lifetime of a game session.
 /// Starts a background receive loop that reads snapshots from the connection
 /// and feeds them into the SnapshotBuffer.
+/// Tracks authoritative simulation speed for immediate client access
+/// (without waiting for the next 1 Hz snapshot).
 /// </summary>
 public sealed class GameSessionHandle : IAsyncDisposable
 {
@@ -13,6 +15,13 @@ public sealed class GameSessionHandle : IAsyncDisposable
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _receiveTask;
     private bool _disposed;
+
+    /// <summary>
+    /// Client-side authoritative simulation speed.
+    /// Updated immediately after SetSimulationSpeedAsync completes,
+    /// so the renderer does not need to wait for the next snapshot.
+    /// </summary>
+    public SimulationSpeed CurrentSpeed { get; private set; } = SimulationSpeed.Speed1;
 
     public GameSessionHandle(IGameSessionConnection connection)
     {
@@ -26,6 +35,15 @@ public sealed class GameSessionHandle : IAsyncDisposable
 
     public IGameSessionConnection Connection => _connection;
     public SnapshotBuffer Buffer { get; }
+
+    /// <summary>
+    /// Update the client-side speed tracker immediately after a confirmed
+    /// speed change. For local connections this is synchronous and instant.
+    /// </summary>
+    public void UpdateSpeed(SimulationSpeed speed)
+    {
+        CurrentSpeed = speed;
+    }
 
     private async Task ReceiveLoopAsync(CancellationToken ct)
     {

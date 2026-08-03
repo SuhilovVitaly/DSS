@@ -4,10 +4,12 @@ namespace DeepSpaceSaga.Engine;
 
 /// <summary>
 /// Authoritative simulation clock that accumulates game time based on speed.
+/// Thread-safe: all public methods are atomic via internal lock.
 /// At Speed0, GameTimeMs does not advance regardless of real time passage.
 /// </summary>
 public sealed class SimulationClock
 {
+    private readonly object _lock = new();
     private long _lastRealTick;
 
     public SimulationClock(SimulationSpeed initialSpeed = SimulationSpeed.Speed1)
@@ -23,28 +25,41 @@ public sealed class SimulationClock
     public SimulationSpeed Speed { get; private set; }
 
     /// <summary>
-    /// Advance the clock by real time elapsed since last Update or SetSpeed,
+    /// Advance the clock by real time elapsed since last Update/SetSpeed/ResetRealBaseline,
     /// multiplied by the current speed. At Speed0 this adds zero.
     /// </summary>
     public void Update()
     {
-        long now = Environment.TickCount64;
-        long deltaReal = now - _lastRealTick;
-        _lastRealTick = now;
+        lock (_lock)
+        {
+            long now = Environment.TickCount64;
+            long deltaReal = now - _lastRealTick;
+            _lastRealTick = now;
 
-        int multiplier = (int)Speed;
-        GameTimeMs += deltaReal * multiplier;
+            GameTimeMs += deltaReal * (int)Speed;
+        }
     }
 
     /// <summary>
     /// Change the simulation speed.
-    /// Resets the real-time baseline to prevent accumulating a time jump
-    /// from real time that passed while the clock was at a different speed.
+    /// Atomically accumulates elapsed game time at the OLD speed first,
+    /// then switches to the new speed. This prevents losing game time
+    /// between the last snapshot and the speed change.
     /// </summary>
     public void SetSpeed(SimulationSpeed speed)
     {
-        _lastRealTick = Environment.TickCount64;
-        Speed = speed;
+        lock (_lock)
+        {
+            long now = Environment.TickCount64;
+            long deltaReal = now - _lastRealTick;
+
+            // Accumulate time at the current speed before switching
+            GameTimeMs += deltaReal * (int)Speed;
+
+            // Switch to new speed and reset baseline
+            _lastRealTick = now;
+            Speed = speed;
+        }
     }
 
     /// <summary>
@@ -53,6 +68,9 @@ public sealed class SimulationClock
     /// </summary>
     public void ResetRealBaseline()
     {
-        _lastRealTick = Environment.TickCount64;
+        lock (_lock)
+        {
+            _lastRealTick = Environment.TickCount64;
+        }
     }
 }

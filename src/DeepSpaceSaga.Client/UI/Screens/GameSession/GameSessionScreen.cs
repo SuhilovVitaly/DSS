@@ -74,8 +74,10 @@ public sealed class GameSessionScreen : IScreen
 
         long predictionDelta = buffered.PredictionDeltaMs;
 
-        // During pause (Speed0), do not predict forward — objects stay at snapshot position
-        bool isPaused = buffered.Snapshot.CurrentSpeed == Contracts.SimulationSpeed.Speed0;
+        // During pause (Speed0), do not predict forward — objects stay at snapshot position.
+        // Use the client-side authoritative speed tracker (updated immediately on speed change)
+        // rather than the snapshot speed (which lags by up to 1 second).
+        bool isPaused = _buffer.CurrentSpeed == Contracts.SimulationSpeed.Speed0;
         long effectiveDelta = isPaused ? 0 : predictionDelta;
 
         foreach (var obj in buffered.Snapshot.Objects)

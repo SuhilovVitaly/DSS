@@ -290,36 +290,70 @@ public sealed class SkiaWindow : IDisposable
         _screens.Replace(gameScreen);
     }
 
+    /// <summary>
+    /// Push a modal screen onto the stack.
+    /// First modal automatically pauses the authoritative simulation.
+    /// Use this for ALL modal screens (GameMenu, Settings, Save, Load, etc.).
+    /// </summary>
+    private void PushModal(IScreen screen)
+    {
+        _screens.Push(screen);
+
+        if (_session is null)
+        {
+            _modalDepth++;
+            return;
+        }
+
+        // First modal: pause the simulation
+        if (_modalDepth == 0)
+        {
+            // Read current speed from the client-side authoritative tracker (not stale snapshot)
+            _savedSpeed = _session.Buffer.CurrentSpeed;
+
+            // NOTE: for local connections this completes synchronously.
+            // A future network implementation should properly await this.
+            _session.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
+            _session.Buffer.CurrentSpeed = SimulationSpeed.Speed0;
+            _session.UpdateSpeed(SimulationSpeed.Speed0);
+        }
+
+        _modalDepth++;
+    }
+
+    /// <summary>
+    /// Pop the current modal screen.
+    /// Last modal automatically restores the previous simulation speed.
+    /// </summary>
+    private void PopModal()
+    {
+        _screens.Pop();
+        _modalDepth--;
+
+        // Last modal closed: restore previous simulation speed
+        if (_modalDepth == 0 && _session is not null)
+        {
+            _session.Connection.SetSimulationSpeedAsync(_savedSpeed);
+            _session.Buffer.CurrentSpeed = _savedSpeed;
+            _session.UpdateSpeed(_savedSpeed);
+        }
+    }
+
     private void OpenGameMenu()
     {
         // Guard: don't push overlay on top of another overlay
         if (_screens.Current is GameMenuScreen)
             return;
 
-        var gameMenu = new GameMenuScreen();
-        _screens.Push(gameMenu);
-
-        // First modal: pause the simulation
-        if (_modalDepth == 0)
-        {
-            _savedSpeed = _session?.Buffer.Latest?.Snapshot.CurrentSpeed ?? SimulationSpeed.Speed1;
-            _ = _session?.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
-        }
-
-        _modalDepth++;
+        PushModal(new GameMenuScreen());
     }
 
     private void CloseOverlay()
     {
-        _screens.Pop();
+        if (_modalDepth <= 0)
+            return;
 
-        _modalDepth--;
-
-        // Last modal closed: restore previous simulation speed
-        if (_modalDepth == 0)
-        {
-            _ = _session?.Connection.SetSimulationSpeedAsync(_savedSpeed);
-        }
+        PopModal();
     }
 
     private void ReturnToMainMenu()
