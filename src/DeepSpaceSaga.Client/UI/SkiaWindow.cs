@@ -216,13 +216,13 @@ public sealed class SkiaWindow : IDisposable
         _surface = SKSurface.Create(_grContext, _renderTarget, GRSurfaceOrigin.BottomLeft, SKColorType.Rgba8888);
     }
 
-    private void OnMouseDown(IMouse mouse, MouseButton button)
+    private async void OnMouseDown(IMouse mouse, MouseButton button)
     {
         if (button != MouseButton.Left || _closing)
             return;
 
         var screenEvent = _screens.Current.OnMouseDown(mouse.Position.X, mouse.Position.Y);
-        HandleScreenEvent(screenEvent);
+        await HandleScreenEvent(screenEvent);
     }
 
     private void OnMouseMove(IMouse mouse, System.Numerics.Vector2 position)
@@ -249,12 +249,12 @@ public sealed class SkiaWindow : IDisposable
         if (escDown && !_prevEscPressed)
         {
             var screenEvent = _screens.Current.OnKeyDown(Key.Escape);
-            HandleScreenEvent(screenEvent);
+            _ = HandleScreenEvent(screenEvent);
         }
         _prevEscPressed = escDown;
     }
 
-    private void HandleScreenEvent(ScreenEvent evt)
+    private async Task HandleScreenEvent(ScreenEvent evt)
     {
         switch (evt)
         {
@@ -262,10 +262,10 @@ public sealed class SkiaWindow : IDisposable
                 StartGameSession();
                 break;
             case ScreenEvent.OpenGameMenu:
-                OpenGameMenu();
+                await OpenGameMenuAsync();
                 break;
             case ScreenEvent.Resume:
-                CloseOverlay();
+                await CloseOverlayAsync();
                 break;
             case ScreenEvent.MainMenu:
                 ReturnToMainMenu();
@@ -292,10 +292,10 @@ public sealed class SkiaWindow : IDisposable
 
     /// <summary>
     /// Push a modal screen onto the stack.
-    /// First modal automatically pauses the authoritative simulation.
+    /// First modal awaits the authoritative Pause before returning.
     /// Use this for ALL modal screens (GameMenu, Settings, Save, Load, etc.).
     /// </summary>
-    private void PushModal(IScreen screen)
+    private async Task PushModalAsync(IScreen screen)
     {
         _screens.Push(screen);
 
@@ -305,15 +305,11 @@ public sealed class SkiaWindow : IDisposable
             return;
         }
 
-        // First modal: pause the simulation
+        // First modal: pause the simulation and wait for confirmation
         if (_modalDepth == 0)
         {
-            // Read current speed from the client-side authoritative tracker (not stale snapshot)
             _savedSpeed = _session.Buffer.CurrentSpeed;
-
-            // Fire-and-forget: for local connections SetSpeedAsync completes synchronously.
-            // Buffer.CurrentSpeed is updated inside SetSpeedAsync after the await.
-            _ = _session.SetSpeedAsync(SimulationSpeed.Speed0);
+            await _session.SetSpeedAsync(SimulationSpeed.Speed0);
         }
 
         _modalDepth++;
@@ -321,9 +317,9 @@ public sealed class SkiaWindow : IDisposable
 
     /// <summary>
     /// Pop the current modal screen.
-    /// Last modal automatically restores the previous simulation speed.
+    /// Last modal awaits the authoritative Resume (or speed restore) before returning.
     /// </summary>
-    private void PopModal()
+    private async Task PopModalAsync()
     {
         _screens.Pop();
         _modalDepth--;
@@ -331,25 +327,25 @@ public sealed class SkiaWindow : IDisposable
         // Last modal closed: restore previous simulation speed
         if (_modalDepth == 0 && _session is not null)
         {
-            _ = _session.SetSpeedAsync(_savedSpeed);
+            await _session.SetSpeedAsync(_savedSpeed);
         }
     }
 
-    private void OpenGameMenu()
+    private async Task OpenGameMenuAsync()
     {
         // Guard: don't push overlay on top of another overlay
         if (_screens.Current is GameMenuScreen)
             return;
 
-        PushModal(new GameMenuScreen());
+        await PushModalAsync(new GameMenuScreen());
     }
 
-    private void CloseOverlay()
+    private async Task CloseOverlayAsync()
     {
         if (_modalDepth <= 0)
             return;
 
-        PopModal();
+        await PopModalAsync();
     }
 
     private void ReturnToMainMenu()

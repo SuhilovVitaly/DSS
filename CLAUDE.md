@@ -157,7 +157,7 @@ Client rendering and UI continue to run at the target frame rate.
 
 When the first modal screen opens, the current simulation speed is saved. The previous speed is restored only after the last modal screen closes. Nested modal screens (e.g. GameMenu → Settings → Confirmation) pause only once on the first and resume only once on the last. If the game was already at `Speed0` before the modal, it stays at `Speed0` after.
 
-Session-control is done via `IGameSessionConnection.SetSimulationSpeedAsync(SimulationSpeed)`. Speed is part of `AuthoritativeSnapshot` so the client always reads authoritative speed from snapshots. Client-side motion prediction gates on snapshot speed: at `Speed0`, prediction delta is zero regardless of real elapsed time.
+Session-control is done via `IGameSessionConnection.SetSimulationSpeedAsync(SimulationSpeed)`. The confirmed speed is included in `AuthoritativeSnapshot.CurrentSpeed`. Additionally, `SnapshotBuffer.CurrentSpeed` stores the client-side authoritative speed tracker, updated immediately after `SetSimulationSpeedAsync` completes — this allows the renderer to gate prediction without waiting up to 1 second for the next snapshot. Client-side motion prediction reads `SnapshotBuffer.CurrentSpeed`: at `Speed0`, prediction delta is zero regardless of real elapsed time.
 
 ## Current state
 
