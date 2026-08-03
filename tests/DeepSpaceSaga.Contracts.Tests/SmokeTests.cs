@@ -27,6 +27,7 @@ public class SmokeTests
         var snapshot = new AuthoritativeSnapshot(
             SnapshotSequence: 1,
             GameTimeMs: 1000,
+            CurrentSpeed: SimulationSpeed.Speed1,
             Objects: objects);
 
         Assert.NotNull(snapshot);

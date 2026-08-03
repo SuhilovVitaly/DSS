@@ -10,4 +10,5 @@ namespace DeepSpaceSaga.Contracts;
 public sealed record AuthoritativeSnapshot(
     ulong SnapshotSequence,
     long GameTimeMs,
+    SimulationSpeed CurrentSpeed,
     ImmutableArray<ObjectMotionSnapshot> Objects);

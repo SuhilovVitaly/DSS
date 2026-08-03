@@ -3,6 +3,7 @@ using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
+using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using Silk.NET.Core;
 using Silk.NET.Input;
@@ -30,6 +31,8 @@ public sealed class SkiaWindow : IDisposable
     private RawImage? _interactiveCursorImage;
 
     private GameSessionHandle? _session;
+    private int _modalDepth;
+    private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _prevEscPressed;
     private bool _disposed;
     private bool _closing;
@@ -282,6 +285,8 @@ public sealed class SkiaWindow : IDisposable
         var predictor = new LinearMotionPredictor();
         var gameScreen = new GameSessionScreen(_session.Buffer, predictor);
 
+        _modalDepth = 0;
+        _savedSpeed = SimulationSpeed.Speed1;
         _screens.Replace(gameScreen);
     }
 
@@ -293,18 +298,38 @@ public sealed class SkiaWindow : IDisposable
 
         var gameMenu = new GameMenuScreen();
         _screens.Push(gameMenu);
+
+        // First modal: pause the simulation
+        if (_modalDepth == 0)
+        {
+            _savedSpeed = _session?.Buffer.Latest?.Snapshot.CurrentSpeed ?? SimulationSpeed.Speed1;
+            _ = _session?.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
+        }
+
+        _modalDepth++;
     }
 
     private void CloseOverlay()
     {
         _screens.Pop();
+
+        _modalDepth--;
+
+        // Last modal closed: restore previous simulation speed
+        if (_modalDepth == 0)
+        {
+            _ = _session?.Connection.SetSimulationSpeedAsync(_savedSpeed);
+        }
     }
 
     private void ReturnToMainMenu()
     {
-        // End the game session explicitly
+        // End the game session explicitly — no resume needed
         _ = _session?.DisposeAsync();
         _session = null;
+
+        _modalDepth = 0;
+        _savedSpeed = SimulationSpeed.Speed1;
 
         var mainMenu = new MainMenuScreen();
         _screens.ReplaceAll(mainMenu);

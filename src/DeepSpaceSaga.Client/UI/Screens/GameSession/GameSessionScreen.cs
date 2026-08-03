@@ -74,10 +74,14 @@ public sealed class GameSessionScreen : IScreen
 
         long predictionDelta = buffered.PredictionDeltaMs;
 
+        // During pause (Speed0), do not predict forward — objects stay at snapshot position
+        bool isPaused = buffered.Snapshot.CurrentSpeed == Contracts.SimulationSpeed.Speed0;
+        long effectiveDelta = isPaused ? 0 : predictionDelta;
+
         foreach (var obj in buffered.Snapshot.Objects)
         {
-            var predicted = predictionDelta > 0
-                ? _predictor.Predict(obj, predictionDelta)
+            var predicted = effectiveDelta > 0
+                ? _predictor.Predict(obj, effectiveDelta)
                 : obj;
 
             var (sx, sy) = _camera.WorldToScreen(predicted.X, predicted.Y, width, height);
