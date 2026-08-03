@@ -242,16 +242,17 @@ public sealed class SkiaWindow : IDisposable
     }
 
     private Task? _pendingKeyboardTransition;
+    private bool _prevIPressed;
 
     private void PollKeyboard()
     {
         if (_keyboard is null || _closing)
             return;
 
+        // Escape — navigation transition
         bool escDown = _keyboard.IsKeyPressed(Key.Escape);
         if (escDown && !_prevEscPressed)
         {
-            // Ignore keypress if a transition is already in flight
             if (_pendingKeyboardTransition is null || _pendingKeyboardTransition.IsCompleted)
             {
                 var screenEvent = _screens.Current.OnKeyDown(Key.Escape);
@@ -259,6 +260,18 @@ public sealed class SkiaWindow : IDisposable
             }
         }
         _prevEscPressed = escDown;
+
+        // Ctrl+I — forwarded to the current screen (non-navigation)
+        bool iDown = _keyboard.IsKeyPressed(Key.I);
+        bool ctrlDown = _keyboard.IsKeyPressed(Key.ControlLeft)
+                     || _keyboard.IsKeyPressed(Key.ControlRight);
+        bool ctrlIPressed = iDown && ctrlDown;
+
+        if (ctrlIPressed && !_prevIPressed)
+        {
+            _screens.Current.OnKeyDown(Key.I);
+        }
+        _prevIPressed = ctrlIPressed;
     }
 
     /// <summary>
