@@ -35,6 +35,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="DeepSpaceSaga.Client.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="gameinfo.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

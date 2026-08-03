@@ -24,17 +24,47 @@ public sealed class GameSessionScreen : IScreen
     private readonly SKPaint _panelBorderPaint;
     private readonly SKPaint _panelTextPaint;
     private readonly SKPaint _panelLabelPaint;
+    private readonly SKPaint _panelClosePaint;
 
     private int _viewportW;
     private int _viewportH;
     private float _mouseX;
     private float _mouseY;
 
+    // Panel state
+    private bool _panelVisible = true;
+    private SKRect _lastPanelRect;
+    private SKRect _lastCloseRect;
+
     // Panel layout constants
     private const float PanelPaddingX = 10f;
     private const float PanelPaddingY = 8f;
     private const float PanelLineHeight = 16f;
     private const float PanelFontSize = 12f;
+    private const float CloseButtonSize = 14f;
+    private const float CloseButtonMargin = 4f;
+
+    // Panel position
+    private const float PanelMargin = 8f;
+
+    // ── Test seams ──────────────────────────────────────────────
+
+    /// <summary>Whether the info panel is currently visible.</summary>
+    internal bool IsPanelVisible => _panelVisible;
+
+    /// <summary>Current camera focus world X (test seam).</summary>
+    internal double CameraFocusX => _camera.FocusX;
+
+    /// <summary>Current camera focus world Y (test seam).</summary>
+    internal double CameraFocusY => _camera.FocusY;
+
+    /// <summary>Last panel bounding rectangle (for hit-test verification).</summary>
+    internal SKRect LastPanelRect => _lastPanelRect;
+
+    /// <summary>Last close-button bounding rectangle.</summary>
+    internal SKRect LastCloseRect => _lastCloseRect;
+
+    // ── Constructor ─────────────────────────────────────────────
 
     public GameSessionScreen(SnapshotBuffer buffer, IMotionPredictor predictor)
     {
@@ -61,13 +91,14 @@ public sealed class GameSessionScreen : IScreen
             StrokeWidth = 1f,
         };
 
+        var typeface = SKTypeface.FromFamilyName("Consolas") ?? SKTypeface.Default;
+
         _panelTextPaint = new SKPaint
         {
             Color = new SKColor(200, 200, 200),
             TextSize = PanelFontSize,
             IsAntialias = true,
-            Typeface = SKTypeface.FromFamilyName("Consolas")
-                        ?? SKTypeface.Default,
+            Typeface = typeface,
         };
 
         _panelLabelPaint = new SKPaint
@@ -75,15 +106,40 @@ public sealed class GameSessionScreen : IScreen
             Color = new SKColor(140, 140, 140),
             TextSize = PanelFontSize,
             IsAntialias = true,
-            Typeface = _panelTextPaint.Typeface,
+            Typeface = typeface,
+        };
+
+        _panelClosePaint = new SKPaint
+        {
+            Color = new SKColor(180, 80, 80),
+            TextSize = CloseButtonSize,
+            IsAntialias = true,
+            Typeface = typeface,
+            TextAlign = SKTextAlign.Center,
         };
     }
+
+    // ── IScreen ─────────────────────────────────────────────────
 
     public void OnActivated() { }
     public void OnDeactivated() { }
 
     public ScreenEvent OnMouseDown(float x, float y)
     {
+        // 1. Close button hit → hide panel, consume click
+        if (_panelVisible && _lastCloseRect.Contains(x, y))
+        {
+            _panelVisible = false;
+            return ScreenEvent.None;
+        }
+
+        // 2. Panel hit (but not close) → consume click, don't move camera
+        if (_panelVisible && _lastPanelRect.Contains(x, y))
+        {
+            return ScreenEvent.None;
+        }
+
+        // 3. Map click → pan camera
         var (worldX, worldY) = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
         _camera.SetFocus(worldX, worldY);
         return ScreenEvent.None;
@@ -98,8 +154,21 @@ public sealed class GameSessionScreen : IScreen
 
     public ScreenEvent OnKeyDown(Key key)
     {
-        return key == Key.Escape ? ScreenEvent.OpenGameMenu : ScreenEvent.None;
+        // Escape always opens GameMenu
+        if (key == Key.Escape)
+            return ScreenEvent.OpenGameMenu;
+
+        // Ctrl+I opens the info panel (no-op if already visible)
+        if (key == Key.I)
+        {
+            _panelVisible = true;
+            return ScreenEvent.None;
+        }
+
+        return ScreenEvent.None;
     }
+
+    // ── Render ──────────────────────────────────────────────────
 
     public void Render(SKCanvas canvas, int width, int height)
     {
@@ -138,15 +207,68 @@ public sealed class GameSessionScreen : IScreen
             }
         }
 
-        // 5. Info panel — screen-space overlay, drawn last
-        DrawInfoPanel(canvas, buffered);
+        // 5. Info panel — screen-space overlay, drawn last (only when visible)
+        if (_panelVisible)
+            DrawInfoPanel(canvas, buffered);
     }
 
     // ── Info panel ──────────────────────────────────────────────
 
     private void DrawInfoPanel(SKCanvas canvas, BufferedSnapshot? buffered)
     {
-        // Build the line list
+        var lines = BuildPanelLines(buffered);
+
+        // Calculate panel size
+        float labelWidth = 0;
+        float valueWidth = 0;
+        foreach (var (label, value) in lines)
+        {
+            labelWidth = Math.Max(labelWidth, _panelLabelPaint.MeasureText(label));
+            valueWidth = Math.Max(valueWidth, _panelTextPaint.MeasureText(value));
+        }
+
+        float gap = 8f;
+        float extraForClose = CloseButtonSize + CloseButtonMargin;
+        float panelW = PanelPaddingX * 2 + labelWidth + gap + valueWidth + extraForClose;
+        float panelH = PanelPaddingY * 2 + lines.Count * PanelLineHeight;
+
+        // Position: bottom-left
+        float panelX = PanelMargin;
+        float panelY = _viewportH - panelH - PanelMargin;
+
+        _lastPanelRect = new SKRect(panelX, panelY, panelX + panelW, panelY + panelH);
+
+        // Close button: right side of panel, vertically centered in the top area
+        float closeX = panelX + panelW - CloseButtonMargin - CloseButtonSize / 2f;
+        float closeY = panelY + PanelPaddingY + CloseButtonSize - 2f;
+        _lastCloseRect = new SKRect(
+            closeX - CloseButtonSize / 2f - 2,
+            closeY - CloseButtonSize + 2,
+            closeX + CloseButtonSize / 2f + 2,
+            closeY + 4);
+
+        // Draw background and border
+        canvas.DrawRect(_lastPanelRect, _panelBgPaint);
+        canvas.DrawRect(_lastPanelRect, _panelBorderPaint);
+
+        // Draw close button
+        canvas.DrawText("×", closeX, closeY, _panelClosePaint);
+
+        // Draw text lines
+        float textY = panelY + PanelPaddingY + PanelLineHeight - 3f;
+        float labelX = panelX + PanelPaddingX;
+        float valueX = labelX + labelWidth + gap;
+
+        foreach (var (label, value) in lines)
+        {
+            canvas.DrawText(label, labelX, textY, _panelLabelPaint);
+            canvas.DrawText(value, valueX, textY, _panelTextPaint);
+            textY += PanelLineHeight;
+        }
+    }
+
+    private List<(string Label, string Value)> BuildPanelLines(BufferedSnapshot? buffered)
+    {
         var lines = new List<(string Label, string Value)>();
 
         // Game Time
@@ -186,39 +308,6 @@ public sealed class GameSessionScreen : IScreen
         int objectCount = buffered?.Snapshot.Objects.Length ?? 0;
         lines.Add(("Celestial objects", objectCount.ToString()));
 
-        // Calculate panel size
-        float labelWidth = 0;
-        float valueWidth = 0;
-        foreach (var (label, value) in lines)
-        {
-            labelWidth = Math.Max(labelWidth, _panelLabelPaint.MeasureText(label));
-            valueWidth = Math.Max(valueWidth, _panelTextPaint.MeasureText(value));
-        }
-
-        float gap = 8f;
-        float panelW = PanelPaddingX * 2 + labelWidth + gap + valueWidth + PanelPaddingX;
-        float panelH = PanelPaddingY * 2 + lines.Count * PanelLineHeight;
-
-        // Position: bottom-left
-        float panelX = 8;
-        float panelY = _viewportH - panelH - 8;
-
-        var panelRect = new SKRect(panelX, panelY, panelX + panelW, panelY + panelH);
-
-        // Draw background and border
-        canvas.DrawRect(panelRect, _panelBgPaint);
-        canvas.DrawRect(panelRect, _panelBorderPaint);
-
-        // Draw text lines
-        float textY = panelY + PanelPaddingY + PanelLineHeight - 3f;
-        float labelX = panelX + PanelPaddingX;
-        float valueX = labelX + labelWidth + gap;
-
-        foreach (var (label, value) in lines)
-        {
-            canvas.DrawText(label, labelX, textY, _panelLabelPaint);
-            canvas.DrawText(value, valueX, textY, _panelTextPaint);
-            textY += PanelLineHeight;
-        }
+        return lines;
     }
 }

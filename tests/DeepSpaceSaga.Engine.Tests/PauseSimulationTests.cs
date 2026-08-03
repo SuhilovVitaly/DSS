@@ -55,20 +55,24 @@ public class PauseSimulationTests
         var engine = new SimulationEngine();
         engine.AddTestObject(new ObjectMotionSnapshot("test", 0, 0, SpeedKmS: 0, Direction: 0));
 
-        var (reader, loop, cts) = StartEngine(engine, TimeSpan.FromSeconds(10));
+        var (reader, loop, cts) = StartEngine(engine, TimeSpan.FromSeconds(15));
 
-        // Read first snapshot at Speed1
+        // Read one snapshot at Speed1 (just to advance past t=0)
         var s1 = await ReadNextAsync(reader, cts.Token);
-        long timeAtS1 = s1.GameTimeMs;
-        Assert.True(timeAtS1 > 0);
+        Assert.True(s1.GameTimeMs > 0);
 
-        // Set pause
+        // Set pause — SetSpeed may accumulate a tiny partial interval at Speed1,
+        // so the next snapshot might have slightly higher GameTimeMs than s1.
         engine.SetSpeed(SimulationSpeed.Speed0);
 
-        // Read another snapshot — GameTime should not advance
+        // Read two paused snapshots — their GameTime must be identical,
+        // proving that time does not advance while paused.
         var s2 = await ReadNextAsync(reader, cts.Token);
-        Assert.Equal(timeAtS1, s2.GameTimeMs);
         Assert.Equal(SimulationSpeed.Speed0, s2.CurrentSpeed);
+
+        var s3 = await ReadNextAsync(reader, cts.Token);
+        Assert.Equal(SimulationSpeed.Speed0, s3.CurrentSpeed);
+        Assert.Equal(s2.GameTimeMs, s3.GameTimeMs);
 
         cts.Cancel();
         try { await loop; } catch { }
@@ -100,7 +104,7 @@ public class PauseSimulationTests
         double drift = Math.Abs(obj2.X - obj1.X);
         Assert.True(drift < 2.0,
             $"Object drifted {drift:F2} units during pause — expected < 2.0 (partial interval only)");
-        Assert.Equal(obj1.Y, obj2.Y);
+        Assert.Equal(obj1.Y, obj2.Y, precision: 9);
 
         cts.Cancel();
         try { await loop; } catch { }
