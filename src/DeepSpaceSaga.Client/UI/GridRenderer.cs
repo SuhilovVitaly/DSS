@@ -12,6 +12,10 @@ public sealed class GridRenderer
     private const double LowDetailScaleThreshold = 0.1;
     private const double MinGridStepPixels = 10.0;
 
+    private static readonly int[] HighDetailCandidates = { 1, 5, 10, 100, 1000, 10000 };
+    private static readonly int[] NormalDetailCandidates = { 10, 100, 1000, 10000 };
+    private static readonly int[] LowDetailCandidates = { 1000, 10000 };
+
     private static readonly (int WorldStep, SKColor Color)[] AllLevels =
     {
         (1,     new SKColor(8, 8, 8)),
@@ -72,12 +76,13 @@ public sealed class GridRenderer
 
         double pixelsPerUnit = camera.PixelsPerWorldUnit;
 
-        // 3. Select eligible grid levels
-        var eligibleLevels = GetEligibleLevels(pixelsPerUnit);
-
-        // 4. Draw grid levels from smallest to largest (larger steps paint over smaller)
-        foreach (var worldStep in eligibleLevels)
+        // 3. Draw grid levels from smallest to largest (larger steps paint over smaller)
+        var candidates = GetDetailModeCandidates(pixelsPerUnit);
+        foreach (int worldStep in candidates)
         {
+            if (worldStep * pixelsPerUnit < MinGridStepPixels)
+                continue;
+
             if (!_levelPaints.TryGetValue(worldStep, out var paint))
                 continue;
 
@@ -110,24 +115,18 @@ public sealed class GridRenderer
 
     /// <summary>
     /// Select candidate world steps based on the detail mode (high / normal / low).
+    /// Returns a reference to a static cached array — zero allocations.
     /// This does NOT filter by screen pixel spacing.
     /// </summary>
     public static int[] GetDetailModeCandidates(double pixelsPerWorldUnit)
     {
         if (pixelsPerWorldUnit >= HighDetailScaleThreshold)
-        {
-            // High detail: all levels including fine ones
-            return new[] { 1, 5, 10, 100, 1000, 10000 };
-        }
+            return HighDetailCandidates;
 
         if (pixelsPerWorldUnit <= LowDetailScaleThreshold)
-        {
-            // Low detail: only coarse levels
-            return new[] { 1000, 10000 };
-        }
+            return LowDetailCandidates;
 
-        // Normal detail: mid and coarse levels
-        return new[] { 10, 100, 1000, 10000 };
+        return NormalDetailCandidates;
     }
 
     /// <summary>
@@ -150,8 +149,6 @@ public sealed class GridRenderer
         int viewportWidth, int viewportHeight,
         SKPaint paint)
     {
-        double screenStep = worldStep * pixelsPerUnit;
-
         // Vertical lines (along X axis)
         double firstX = ComputeFirstWorldLine(worldLeft, worldStep);
         for (double wx = firstX; wx <= worldRight + worldStep; wx += worldStep)

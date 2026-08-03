@@ -1,8 +1,9 @@
 namespace DeepSpaceSaga.Client.UI;
 
 /// <summary>
-/// Immutable camera state defining the viewport transform.
+/// Camera state defining the viewport transform.
 /// Maps between world coordinates and screen coordinates.
+/// Focus is mutable via SetFocus to support camera movement.
 /// </summary>
 public sealed class CameraState
 {

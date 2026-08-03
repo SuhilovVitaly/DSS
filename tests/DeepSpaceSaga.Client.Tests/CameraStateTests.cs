@@ -115,4 +115,22 @@ public class CameraStateTests
 
         Assert.Equal(1060, sx);
     }
+
+    [Fact]
+    public void Object_at_camera_focus_renders_at_viewport_center()
+    {
+        // When an object's world position equals the camera focus,
+        // its screen position must be exactly the viewport center.
+        // This is the single authoritative world→screen transform contract.
+        var camera = new CameraState(focusX: 10000, focusY: 10000, pixelsPerWorldUnit: 1.0);
+
+        var (sx, sy) = camera.WorldToScreen(
+            worldX: camera.FocusX,
+            worldY: camera.FocusY,
+            viewportWidth: 1920,
+            viewportHeight: 1080);
+
+        Assert.Equal(960, sx);
+        Assert.Equal(540, sy);
+    }
 }

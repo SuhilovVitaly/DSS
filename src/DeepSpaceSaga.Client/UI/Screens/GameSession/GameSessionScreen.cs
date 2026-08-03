@@ -67,7 +67,7 @@ public sealed class GameSessionScreen : IScreen
         canvas.DrawLine(cx - 10, cy, cx + 10, cy, _centerPaint);
         canvas.DrawLine(cx, cy - 10, cx, cy + 10, _centerPaint);
 
-        // 4. Engine objects (legacy transform — will be unified with camera later)
+        // 4. Engine objects rendered through the same camera transform
         var buffered = _buffer.Latest;
         if (buffered is null)
             return;
@@ -80,8 +80,7 @@ public sealed class GameSessionScreen : IScreen
                 ? _predictor.Predict(obj, predictionDelta)
                 : obj;
 
-            float sx = cx + (float)predicted.X;
-            float sy = cy + (float)predicted.Y;
+            var (sx, sy) = _camera.WorldToScreen(predicted.X, predicted.Y, width, height);
 
             canvas.DrawCircle(sx, sy, 4, _objectPaint);
         }
