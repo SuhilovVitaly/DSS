@@ -120,10 +120,11 @@ public sealed class GridRenderer
     /// </summary>
     public static int[] GetDetailModeCandidates(double pixelsPerWorldUnit)
     {
-        if (pixelsPerWorldUnit >= HighDetailScaleThreshold)
+        // High: strictly above 5.0.  Normal: 0.1 through 5.0 inclusive.  Low: strictly below 0.1.
+        if (pixelsPerWorldUnit > HighDetailScaleThreshold)
             return HighDetailCandidates;
 
-        if (pixelsPerWorldUnit <= LowDetailScaleThreshold)
+        if (pixelsPerWorldUnit < LowDetailScaleThreshold)
             return LowDetailCandidates;
 
         return NormalDetailCandidates;

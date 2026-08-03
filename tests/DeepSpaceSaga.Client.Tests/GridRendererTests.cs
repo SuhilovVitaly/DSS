@@ -7,10 +7,18 @@ public class GridRendererTests
     // --- Detail mode selection ---
 
     [Fact]
-    public void Detail_mode_high_includes_all_levels()
+    public void Detail_mode_high_requires_above_5_0()
     {
+        // Exactly 5.0 is Normal, not High
         var candidates = GridRenderer.GetDetailModeCandidates(pixelsPerWorldUnit: 5.0);
+        Assert.Equal(new[] { 10, 100, 1000, 10000 }, candidates);
+    }
 
+    [Fact]
+    public void Detail_mode_high_at_scale_5_01()
+    {
+        // 5.01 is strictly above 5.0 → High
+        var candidates = GridRenderer.GetDetailModeCandidates(pixelsPerWorldUnit: 5.01);
         Assert.Equal(new[] { 1, 5, 10, 100, 1000, 10000 }, candidates);
     }
 
@@ -18,7 +26,6 @@ public class GridRendererTests
     public void Detail_mode_high_at_scale_10()
     {
         var candidates = GridRenderer.GetDetailModeCandidates(pixelsPerWorldUnit: 10.0);
-
         Assert.Contains(1, candidates);
         Assert.Contains(5, candidates);
     }
@@ -27,24 +34,30 @@ public class GridRendererTests
     public void Detail_mode_normal_excludes_fine_levels()
     {
         var candidates = GridRenderer.GetDetailModeCandidates(pixelsPerWorldUnit: 1.0);
+        Assert.Equal(new[] { 10, 100, 1000, 10000 }, candidates);
+    }
 
+    [Fact]
+    public void Detail_mode_normal_at_upper_bound()
+    {
+        // Exactly 5.0 is Normal
+        var candidates = GridRenderer.GetDetailModeCandidates(pixelsPerWorldUnit: 5.0);
         Assert.Equal(new[] { 10, 100, 1000, 10000 }, candidates);
     }
 
     [Fact]
     public void Detail_mode_normal_at_lower_bound()
     {
-        // Just above 0.1
-        var candidates = GridRenderer.GetDetailModeCandidates(pixelsPerWorldUnit: 0.11);
-
+        // Exactly 0.1 is Normal
+        var candidates = GridRenderer.GetDetailModeCandidates(pixelsPerWorldUnit: 0.1);
         Assert.Equal(new[] { 10, 100, 1000, 10000 }, candidates);
     }
 
     [Fact]
-    public void Detail_mode_low_only_coarse_levels()
+    public void Detail_mode_low_requires_below_0_1()
     {
-        var candidates = GridRenderer.GetDetailModeCandidates(pixelsPerWorldUnit: 0.1);
-
+        // 0.099 is strictly below 0.1 → Low
+        var candidates = GridRenderer.GetDetailModeCandidates(pixelsPerWorldUnit: 0.099);
         Assert.Equal(new[] { 1000, 10000 }, candidates);
     }
 
@@ -52,7 +65,6 @@ public class GridRendererTests
     public void Detail_mode_low_at_very_small_scale()
     {
         var candidates = GridRenderer.GetDetailModeCandidates(pixelsPerWorldUnit: 0.01);
-
         Assert.Equal(new[] { 1000, 10000 }, candidates);
     }
 
@@ -61,9 +73,9 @@ public class GridRendererTests
     [Fact]
     public void GetEligibleLevels_at_high_detail_filters_by_pixel_spacing()
     {
-        // scale = 5.0 → screenStep for step=1 is 5 px (< 10) → filtered out
-        // screenStep for step=5 is 25 px (>= 10) → kept
-        var levels = GridRenderer.GetEligibleLevels(pixelsPerWorldUnit: 5.0);
+        // scale = 5.01 → High detail → screenStep for step=1 is 5.01 px (< 10) → filtered out
+        // screenStep for step=5 is 25.05 px (>= 10) → kept
+        var levels = GridRenderer.GetEligibleLevels(pixelsPerWorldUnit: 5.01);
 
         Assert.DoesNotContain(1, levels); // 1 * 5 = 5 px → filtered
         Assert.Contains(5, levels);       // 5 * 5 = 25 px → kept
@@ -72,11 +84,11 @@ public class GridRendererTests
     [Fact]
     public void GetEligibleLevels_at_high_detail_keeps_levels_with_sufficient_spacing()
     {
-        // scale = 5.0
-        // step 1: 5 px → filtered
-        // step 5: 25 px → kept
-        // step 10: 50 px → kept
-        var levels = GridRenderer.GetEligibleLevels(pixelsPerWorldUnit: 5.0);
+        // scale = 5.01
+        // step 1: 5.01 px → filtered
+        // step 5: 25.05 px → kept
+        // step 10: 50.1 px → kept
+        var levels = GridRenderer.GetEligibleLevels(pixelsPerWorldUnit: 5.01);
 
         Assert.DoesNotContain(1, levels);
         Assert.Contains(5, levels);

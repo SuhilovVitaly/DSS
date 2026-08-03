@@ -13,22 +13,24 @@ public class ModalTransitionTests
 {
     /// <summary>
     /// A fake connection that introduces a controllable delay in SetSimulationSpeedAsync,
-    /// simulating network latency. Signals when a call starts via PendingSetSpeedTcs,
-    /// and blocks completion until CompletePending() is called.
+    /// simulating network latency. Each SetSpeedAsync call gets its own gate,
+    /// so multiple sequential calls can be individually blocked and released.
     /// </summary>
     private sealed class ControllableConnection : IGameSessionConnection
     {
-        private readonly TaskCompletionSource _delayGate = new();
+        private TaskCompletionSource? _currentGate;
 
         public SimulationSpeed LastSpeed { get; private set; } = SimulationSpeed.Speed1;
 
         /// <summary>Set before calling SetSpeedAsync to observe call-start.</summary>
         public TaskCompletionSource? PendingSetSpeedTcs { get; set; }
 
-        /// <summary>Unblock all pending SetSpeedAsync calls.</summary>
+        /// <summary>Complete the current SetSpeedAsync call (and prepare for the next).</summary>
         public void CompletePending()
         {
-            _delayGate.TrySetResult();
+            var gate = _currentGate;
+            _currentGate = null;
+            gate?.TrySetResult();
         }
 
         public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken ct = default)
@@ -41,8 +43,12 @@ public class ModalTransitionTests
             PendingSetSpeedTcs = null;
             tcs?.TrySetResult();
 
+            // Create a fresh gate for this call
+            var gate = new TaskCompletionSource();
+            _currentGate = gate;
+
             // Wait for the gate to be opened before completing
-            await _delayGate.Task;
+            await gate.Task;
 
             LastSpeed = speed;
         }
