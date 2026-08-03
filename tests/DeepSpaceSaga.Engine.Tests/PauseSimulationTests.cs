@@ -91,10 +91,15 @@ public class PauseSimulationTests
         // Pause
         engine.SetSpeed(SimulationSpeed.Speed0);
 
-        // Read another snapshot — position must be unchanged
+        // Read another snapshot — position must be effectively unchanged.
+        // SetSpeed accumulates partial-interval time at the old speed,
+        // so a tiny advance (a few ms of real time between snapshot read and SetSpeed)
+        // is expected and correct. The object must NOT have moved a full Speed1 step.
         var s2 = await ReadNextAsync(reader, cts.Token);
         var obj2 = s2.Objects[0];
-        Assert.Equal(obj1.X, obj2.X);
+        double drift = Math.Abs(obj2.X - obj1.X);
+        Assert.True(drift < 2.0,
+            $"Object drifted {drift:F2} units during pause — expected < 2.0 (partial interval only)");
         Assert.Equal(obj1.Y, obj2.Y);
 
         cts.Cancel();

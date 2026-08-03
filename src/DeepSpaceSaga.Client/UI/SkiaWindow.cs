@@ -31,6 +31,7 @@ public sealed class SkiaWindow : IDisposable
     private RawImage? _interactiveCursorImage;
 
     private GameSessionHandle? _session;
+    private readonly SemaphoreSlim _transitionLock = new(1, 1);
     private int _modalDepth;
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _prevEscPressed;
@@ -240,6 +241,8 @@ public sealed class SkiaWindow : IDisposable
         }
     }
 
+    private Task? _pendingKeyboardTransition;
+
     private void PollKeyboard()
     {
         if (_keyboard is null || _closing)
@@ -248,31 +251,49 @@ public sealed class SkiaWindow : IDisposable
         bool escDown = _keyboard.IsKeyPressed(Key.Escape);
         if (escDown && !_prevEscPressed)
         {
-            var screenEvent = _screens.Current.OnKeyDown(Key.Escape);
-            _ = HandleScreenEvent(screenEvent);
+            // Ignore keypress if a transition is already in flight
+            if (_pendingKeyboardTransition is null || _pendingKeyboardTransition.IsCompleted)
+            {
+                var screenEvent = _screens.Current.OnKeyDown(Key.Escape);
+                _pendingKeyboardTransition = HandleScreenEvent(screenEvent);
+            }
         }
         _prevEscPressed = escDown;
     }
 
+    /// <summary>
+    /// Serialized navigation transition. Only one screen transition
+    /// (modal open/close, new game, main menu) can be in flight at a time.
+    /// This prevents races where e.g. MAIN MENU is clicked while a Pause
+    /// request is still awaiting confirmation.
+    /// </summary>
     private async Task HandleScreenEvent(ScreenEvent evt)
     {
-        switch (evt)
+        await _transitionLock.WaitAsync();
+        try
         {
-            case ScreenEvent.NewGame:
-                StartGameSession();
-                break;
-            case ScreenEvent.OpenGameMenu:
-                await OpenGameMenuAsync();
-                break;
-            case ScreenEvent.Resume:
-                await CloseOverlayAsync();
-                break;
-            case ScreenEvent.MainMenu:
-                ReturnToMainMenu();
-                break;
-            case ScreenEvent.Exit:
-                _window.Close();
-                break;
+            switch (evt)
+            {
+                case ScreenEvent.NewGame:
+                    StartGameSession();
+                    break;
+                case ScreenEvent.OpenGameMenu:
+                    await OpenGameMenuAsync();
+                    break;
+                case ScreenEvent.Resume:
+                    await CloseOverlayAsync();
+                    break;
+                case ScreenEvent.MainMenu:
+                    ReturnToMainMenu();
+                    break;
+                case ScreenEvent.Exit:
+                    _window.Close();
+                    break;
+            }
+        }
+        finally
+        {
+            _transitionLock.Release();
         }
     }
 
@@ -292,32 +313,27 @@ public sealed class SkiaWindow : IDisposable
 
     /// <summary>
     /// Push a modal screen onto the stack.
-    /// First modal awaits the authoritative Pause before returning.
+    /// For the first modal: awaits authoritative Pause BEFORE showing the overlay.
+    /// For nested modals (modalDepth &gt; 0): pushes immediately (already paused).
     /// Use this for ALL modal screens (GameMenu, Settings, Save, Load, etc.).
     /// </summary>
     private async Task PushModalAsync(IScreen screen)
     {
-        _screens.Push(screen);
-
-        if (_session is null)
-        {
-            _modalDepth++;
-            return;
-        }
-
-        // First modal: pause the simulation and wait for confirmation
-        if (_modalDepth == 0)
+        // First modal: confirm authoritative Pause before showing anything
+        if (_modalDepth == 0 && _session is not null)
         {
             _savedSpeed = _session.Buffer.CurrentSpeed;
             await _session.SetSpeedAsync(SimulationSpeed.Speed0);
+            // Speed0 is now confirmed — safe to show the overlay
         }
 
+        _screens.Push(screen);
         _modalDepth++;
     }
 
     /// <summary>
     /// Pop the current modal screen.
-    /// Last modal awaits the authoritative Resume (or speed restore) before returning.
+    /// Last modal awaits the authoritative speed restore before returning.
     /// </summary>
     private async Task PopModalAsync()
     {
