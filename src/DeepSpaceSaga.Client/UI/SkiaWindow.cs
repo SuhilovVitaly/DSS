@@ -3,6 +3,7 @@ using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
+using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using Silk.NET.Core;
 using Silk.NET.Input;
@@ -30,6 +31,9 @@ public sealed class SkiaWindow : IDisposable
     private RawImage? _interactiveCursorImage;
 
     private GameSessionHandle? _session;
+    private readonly SemaphoreSlim _transitionLock = new(1, 1);
+    private int _modalDepth;
+    private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _prevEscPressed;
     private bool _disposed;
     private bool _closing;
@@ -213,13 +217,13 @@ public sealed class SkiaWindow : IDisposable
         _surface = SKSurface.Create(_grContext, _renderTarget, GRSurfaceOrigin.BottomLeft, SKColorType.Rgba8888);
     }
 
-    private void OnMouseDown(IMouse mouse, MouseButton button)
+    private async void OnMouseDown(IMouse mouse, MouseButton button)
     {
         if (button != MouseButton.Left || _closing)
             return;
 
         var screenEvent = _screens.Current.OnMouseDown(mouse.Position.X, mouse.Position.Y);
-        HandleScreenEvent(screenEvent);
+        await HandleScreenEvent(screenEvent);
     }
 
     private void OnMouseMove(IMouse mouse, System.Numerics.Vector2 position)
@@ -237,6 +241,8 @@ public sealed class SkiaWindow : IDisposable
         }
     }
 
+    private Task? _pendingKeyboardTransition;
+
     private void PollKeyboard()
     {
         if (_keyboard is null || _closing)
@@ -245,31 +251,49 @@ public sealed class SkiaWindow : IDisposable
         bool escDown = _keyboard.IsKeyPressed(Key.Escape);
         if (escDown && !_prevEscPressed)
         {
-            var screenEvent = _screens.Current.OnKeyDown(Key.Escape);
-            HandleScreenEvent(screenEvent);
+            // Ignore keypress if a transition is already in flight
+            if (_pendingKeyboardTransition is null || _pendingKeyboardTransition.IsCompleted)
+            {
+                var screenEvent = _screens.Current.OnKeyDown(Key.Escape);
+                _pendingKeyboardTransition = HandleScreenEvent(screenEvent);
+            }
         }
         _prevEscPressed = escDown;
     }
 
-    private void HandleScreenEvent(ScreenEvent evt)
+    /// <summary>
+    /// Serialized navigation transition. Only one screen transition
+    /// (modal open/close, new game, main menu) can be in flight at a time.
+    /// This prevents races where e.g. MAIN MENU is clicked while a Pause
+    /// request is still awaiting confirmation.
+    /// </summary>
+    private async Task HandleScreenEvent(ScreenEvent evt)
     {
-        switch (evt)
+        await _transitionLock.WaitAsync();
+        try
         {
-            case ScreenEvent.NewGame:
-                StartGameSession();
-                break;
-            case ScreenEvent.OpenGameMenu:
-                OpenGameMenu();
-                break;
-            case ScreenEvent.Resume:
-                CloseOverlay();
-                break;
-            case ScreenEvent.MainMenu:
-                ReturnToMainMenu();
-                break;
-            case ScreenEvent.Exit:
-                _window.Close();
-                break;
+            switch (evt)
+            {
+                case ScreenEvent.NewGame:
+                    StartGameSession();
+                    break;
+                case ScreenEvent.OpenGameMenu:
+                    await OpenGameMenuAsync();
+                    break;
+                case ScreenEvent.Resume:
+                    await CloseOverlayAsync();
+                    break;
+                case ScreenEvent.MainMenu:
+                    ReturnToMainMenu();
+                    break;
+                case ScreenEvent.Exit:
+                    _window.Close();
+                    break;
+            }
+        }
+        finally
+        {
+            _transitionLock.Release();
         }
     }
 
@@ -282,29 +306,72 @@ public sealed class SkiaWindow : IDisposable
         var predictor = new LinearMotionPredictor();
         var gameScreen = new GameSessionScreen(_session.Buffer, predictor);
 
+        _modalDepth = 0;
+        _savedSpeed = SimulationSpeed.Speed1;
         _screens.Replace(gameScreen);
     }
 
-    private void OpenGameMenu()
+    /// <summary>
+    /// Push a modal screen onto the stack.
+    /// For the first modal: awaits authoritative Pause BEFORE showing the overlay.
+    /// For nested modals (modalDepth &gt; 0): pushes immediately (already paused).
+    /// Use this for ALL modal screens (GameMenu, Settings, Save, Load, etc.).
+    /// </summary>
+    private async Task PushModalAsync(IScreen screen)
+    {
+        // First modal: confirm authoritative Pause before showing anything
+        if (_modalDepth == 0 && _session is not null)
+        {
+            _savedSpeed = _session.Buffer.CurrentSpeed;
+            await _session.SetSpeedAsync(SimulationSpeed.Speed0);
+            // Speed0 is now confirmed — safe to show the overlay
+        }
+
+        _screens.Push(screen);
+        _modalDepth++;
+    }
+
+    /// <summary>
+    /// Pop the current modal screen.
+    /// Last modal awaits the authoritative speed restore before returning.
+    /// </summary>
+    private async Task PopModalAsync()
+    {
+        _screens.Pop();
+        _modalDepth--;
+
+        // Last modal closed: restore previous simulation speed
+        if (_modalDepth == 0 && _session is not null)
+        {
+            await _session.SetSpeedAsync(_savedSpeed);
+        }
+    }
+
+    private async Task OpenGameMenuAsync()
     {
         // Guard: don't push overlay on top of another overlay
         if (_screens.Current is GameMenuScreen)
             return;
 
-        var gameMenu = new GameMenuScreen();
-        _screens.Push(gameMenu);
+        await PushModalAsync(new GameMenuScreen());
     }
 
-    private void CloseOverlay()
+    private async Task CloseOverlayAsync()
     {
-        _screens.Pop();
+        if (_modalDepth <= 0)
+            return;
+
+        await PopModalAsync();
     }
 
     private void ReturnToMainMenu()
     {
-        // End the game session explicitly
+        // End the game session explicitly — no resume needed
         _ = _session?.DisposeAsync();
         _session = null;
+
+        _modalDepth = 0;
+        _savedSpeed = SimulationSpeed.Speed1;
 
         var mainMenu = new MainMenuScreen();
         _screens.ReplaceAll(mainMenu);

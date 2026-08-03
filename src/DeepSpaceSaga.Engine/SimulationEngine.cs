@@ -13,11 +13,11 @@ namespace DeepSpaceSaga.Engine;
 /// </summary>
 public sealed class SimulationEngine : IDisposable
 {
-    public const int SimulationTickMs = 100;
     public const int SnapshotIntervalMs = 1000;
 
+    private readonly SimulationClock _clock = new(SimulationSpeed.Speed1);
     private readonly LinearMotionPredictor _motion = new();
-    private readonly List<(ObjectMotionSnapshot Initial, long StartTimeMs)> _testObjects = new();
+    private readonly List<(ObjectMotionSnapshot Initial, long StartGameTimeMs)> _testObjects = new();
     private readonly List<PlayerCommand> _pendingCommands = new();
     private ulong _nextSequence;
     private bool _disposed;
@@ -25,47 +25,59 @@ public sealed class SimulationEngine : IDisposable
     /// <summary>Number of commands received (test seam).</summary>
     internal int ReceivedCommandCount => _pendingCommands.Count;
 
+    /// <summary>Current authoritative simulation speed.</summary>
+    public SimulationSpeed CurrentSpeed => _clock.Speed;
+
     public void ReceiveCommand(PlayerCommand command)
     {
         _pendingCommands.Add(command);
     }
 
+    /// <summary>Set the authoritative simulation speed (e.g. Speed0 for pause).</summary>
+    public void SetSpeed(SimulationSpeed speed)
+    {
+        _clock.SetSpeed(speed);
+    }
+
     /// <summary>Add a test object whose position is advanced deterministically each snapshot.</summary>
     public void AddTestObject(ObjectMotionSnapshot initial)
     {
-        _testObjects.Add((initial, 0)); // startTime set when engine runs
+        _testObjects.Add((initial, 0)); // startGameTime set when engine runs
     }
 
     public async IAsyncEnumerable<AuthoritativeSnapshot> RunAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        long startTime = Environment.TickCount64;
+        // Stamp each test object with the current game time at engine start.
+        // Reset real baseline so the first Update() in the loop measures from now.
+        _clock.ResetRealBaseline();
+        long engineStartGameTime = _clock.GameTimeMs;
 
-        // Record start time for each test object
         for (int i = 0; i < _testObjects.Count; i++)
         {
             var (initial, _) = _testObjects[i];
-            _testObjects[i] = (initial, startTime);
+            _testObjects[i] = (initial, engineStartGameTime);
         }
 
         while (!cancellationToken.IsCancellationRequested && !_disposed)
         {
             await Task.Delay(SnapshotIntervalMs, cancellationToken);
 
-            long gameTimeMs = Environment.TickCount64 - startTime;
+            // Atomically advance clock and capture consistent GameTime + Speed
+            var clockState = _clock.UpdateAndCapture();
 
-            // Advance each test object from its initial state to gameTimeMs
+            // Advance each test object from its initial state by elapsed game time
             var objects = ImmutableArray.CreateBuilder<ObjectMotionSnapshot>(_testObjects.Count);
-            foreach (var (initial, objStartTime) in _testObjects)
+            foreach (var (initial, objStartGameTime) in _testObjects)
             {
-                long elapsed = gameTimeMs - (objStartTime - startTime);
-                // elapsed = gameTimeMs (all objects start at engine startTime)
+                long elapsed = clockState.GameTimeMs - objStartGameTime;
                 objects.Add(_motion.Predict(initial, elapsed));
             }
 
             var snapshot = new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
-                GameTimeMs: gameTimeMs,
+                GameTimeMs: clockState.GameTimeMs,
+                CurrentSpeed: clockState.Speed,
                 Objects: objects.MoveToImmutable());
 
             yield return snapshot;

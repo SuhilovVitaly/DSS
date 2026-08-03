@@ -50,6 +50,14 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         return ValueTask.CompletedTask;
     }
 
+    public ValueTask SetSimulationSpeedAsync(
+        SimulationSpeed speed,
+        CancellationToken cancellationToken = default)
+    {
+        _engine.SetSpeed(speed);
+        return ValueTask.CompletedTask;
+    }
+
     public async IAsyncEnumerable<AuthoritativeSnapshot> ReadSnapshotsAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {

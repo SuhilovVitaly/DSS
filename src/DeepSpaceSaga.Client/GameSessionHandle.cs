@@ -27,6 +27,18 @@ public sealed class GameSessionHandle : IAsyncDisposable
     public IGameSessionConnection Connection => _connection;
     public SnapshotBuffer Buffer { get; }
 
+    /// <summary>
+    /// Set the simulation speed and immediately update the client-side tracker.
+    /// Properly awaits the connection call — for local connections this completes
+    /// synchronously; for network connections the speed is confirmed before the
+    /// client-side state is updated.
+    /// </summary>
+    public async ValueTask SetSpeedAsync(SimulationSpeed speed)
+    {
+        await _connection.SetSimulationSpeedAsync(speed);
+        Buffer.CurrentSpeed = speed;
+    }
+
     private async Task ReceiveLoopAsync(CancellationToken ct)
     {
         try

@@ -141,6 +141,24 @@ Loaded at startup via Silk.NET `ICursor.Image`. Fallback to standard cursor if f
 - **Commands** addressed by `(objectId, moduleId)` key
 - Graphics/Skia/GL types must **never** cross the `IGameSessionConnection` boundary — only JSON-serializable domain DTOs
 
+## Modal Pause Rule
+
+**In single-player mode, any open modal screen automatically stops the authoritative simulation.**
+
+While at least one modal screen exists (modal depth ≥ 1):
+- `GameTimeMs` does not increase;
+- simulation ticks do not advance the game world;
+- object movement stops;
+- module cycles do not progress;
+- game turn processing / scheduled simulation events do not execute;
+- RNG simulation events do not execute.
+
+Client rendering and UI continue to run at the target frame rate.
+
+When the first modal screen opens, the current simulation speed is saved. The previous speed is restored only after the last modal screen closes. Nested modal screens (e.g. GameMenu → Settings → Confirmation) pause only once on the first and resume only once on the last. If the game was already at `Speed0` before the modal, it stays at `Speed0` after.
+
+Session-control is done via `IGameSessionConnection.SetSimulationSpeedAsync(SimulationSpeed)`. The confirmed speed is included in `AuthoritativeSnapshot.CurrentSpeed`. Additionally, `SnapshotBuffer.CurrentSpeed` stores the client-side authoritative speed tracker, updated immediately after `SetSimulationSpeedAsync` completes — this allows the renderer to gate prediction without waiting up to 1 second for the next snapshot. Client-side motion prediction reads `SnapshotBuffer.CurrentSpeed`: at `Speed0`, prediction delta is zero regardless of real elapsed time.
+
 ## Current state
 
 Architectural skeleton with end-to-end pipeline: Engine → Snapshot → Connection → Buffer → Renderer. MainMenu and GameMenu screens with overlay navigation. No gameplay mechanics yet.

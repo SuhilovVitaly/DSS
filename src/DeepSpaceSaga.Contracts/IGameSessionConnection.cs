@@ -15,6 +15,14 @@ public interface IGameSessionConnection : IAsyncDisposable
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Set the authoritative simulation speed (e.g. pause / resume).
+    /// Session-control — separate from gameplay module commands.
+    /// </summary>
+    ValueTask SetSimulationSpeedAsync(
+        SimulationSpeed speed,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Stream of authoritative snapshots from the engine to the client (~1 Hz).
     /// The client reads from this stream independently of the render loop.
     /// </summary>
