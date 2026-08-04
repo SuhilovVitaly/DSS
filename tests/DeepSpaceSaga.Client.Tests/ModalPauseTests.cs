@@ -123,6 +123,86 @@ public class ModalPauseTests
     }
 
     [Fact]
+    public void Buffer_CurrentSpeed_is_synced_from_first_snapshot()
+    {
+        var buffer = new SnapshotBuffer();
+        Assert.Equal(SimulationSpeed.Speed1, buffer.CurrentSpeed); // default
+
+        // Simulate first snapshot arriving with Speed0
+        buffer.Update(new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed0,
+            ImmutableArray<ObjectMotionSnapshot>.Empty));
+
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+    }
+
+    [Fact]
+    public void Buffer_CurrentSpeed_is_updated_on_every_snapshot()
+    {
+        var buffer = new SnapshotBuffer();
+
+        buffer.Update(new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed2,
+            ImmutableArray<ObjectMotionSnapshot>.Empty));
+        Assert.Equal(SimulationSpeed.Speed2, buffer.CurrentSpeed);
+
+        buffer.Update(new AuthoritativeSnapshot(2, 0, SimulationSpeed.Speed0,
+            ImmutableArray<ObjectMotionSnapshot>.Empty));
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+    }
+
+    [Fact]
+    public void Prediction_delta_is_multiplied_by_speed()
+    {
+        var buffer = new SnapshotBuffer();
+        var predictor = new LinearMotionPredictor();
+
+        var obj = new ObjectMotionSnapshot("mover", X: 0, Y: 0, SpeedKmS: 5, Direction: 90);
+
+        // Speed2 = 5x
+        buffer.CurrentSpeed = SimulationSpeed.Speed2;
+        buffer.Update(new AuthoritativeSnapshot(1, 1000, SimulationSpeed.Speed2,
+            ImmutableArray.Create(obj)));
+
+        var buffered = buffer.Latest;
+        Assert.NotNull(buffered);
+
+        long realDelta = buffered.PredictionDeltaMs;
+        int speedMultiplier = (int)buffer.CurrentSpeed;
+        long effectiveDelta = realDelta * speedMultiplier;
+
+        Assert.Equal(realDelta * 5, effectiveDelta);
+    }
+
+    [Fact]
+    public void First_snapshot_Speed0_moving_object_no_prediction()
+    {
+        var buffer = new SnapshotBuffer();
+        var predictor = new LinearMotionPredictor();
+
+        // Object moving at 5 km/s = 50 units/s
+        var obj = new ObjectMotionSnapshot("mover", X: 0, Y: 0, SpeedKmS: 5, Direction: 90);
+
+        // First snapshot arrives with Speed0
+        buffer.Update(new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed0,
+            ImmutableArray.Create(obj)));
+
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+
+        var buffered = buffer.Latest;
+        Assert.NotNull(buffered);
+
+        int speedMultiplier = (int)buffer.CurrentSpeed;
+        long effectiveDelta = speedMultiplier == 0 ? 0 : buffered.PredictionDeltaMs * speedMultiplier;
+
+        var predicted = effectiveDelta > 0
+            ? predictor.Predict(obj, effectiveDelta)
+            : obj;
+
+        // Must NOT have moved — Speed0 means no prediction
+        Assert.Equal(0, predicted.X);
+        Assert.Equal(0, predicted.Y);
+    }
+
+    [Fact]
     public void Saved_speed_comes_from_buffer_not_stale_snapshot()
     {
         var buffer = new SnapshotBuffer();

@@ -26,6 +26,12 @@ public sealed class SnapshotBuffer
     {
         var value = new BufferedSnapshot(snapshot, Stopwatch.GetTimestamp());
         Interlocked.Exchange(ref _latest, value);
+
+        // Sync client-side speed tracker from the authoritative snapshot.
+        // We intentionally update every snapshot so that speed changes
+        // (including Speed2/Speed3/Speed4 applied outside modal-pause)
+        // are reflected without waiting for a SetSpeedAsync round-trip.
+        CurrentSpeed = snapshot.CurrentSpeed;
     }
 
     /// <summary>Get the latest buffered snapshot, or null if none received yet.</summary>

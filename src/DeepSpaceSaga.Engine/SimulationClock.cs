@@ -47,8 +47,7 @@ public sealed class SimulationClock
 
     /// <summary>
     /// Atomically advance the clock AND capture the resulting GameTimeMs + Speed.
-    /// Use this when building snapshots — guarantees the snapshot's time and speed
-    /// are consistent (no SetSpeed can interleave between the two reads).
+    /// Use this when building snapshots from the delay loop.
     /// </summary>
     public SimulationClockState UpdateAndCapture()
     {
@@ -60,6 +59,33 @@ public sealed class SimulationClock
 
             GameTimeMs += deltaReal * (int)Speed;
             return new SimulationClockState(GameTimeMs, Speed);
+        }
+    }
+
+    /// <summary>
+    /// Atomically capture the current GameTimeMs + Speed WITHOUT advancing the clock.
+    /// Use for the initial snapshot (before any time has passed).
+    /// </summary>
+    public SimulationClockState Capture()
+    {
+        lock (_lock)
+        {
+            return new SimulationClockState(GameTimeMs, Speed);
+        }
+    }
+
+    /// <summary>
+    /// Reset the clock to a known initial state for New Game.
+    /// Sets GameTimeMs and Speed directly, without accumulating any real time.
+    /// Resets the real-time baseline so subsequent Update() calls measure from now.
+    /// </summary>
+    public void Reset(long gameTimeMs, SimulationSpeed speed)
+    {
+        lock (_lock)
+        {
+            GameTimeMs = gameTimeMs;
+            Speed = speed;
+            _lastRealTick = Environment.TickCount64;
         }
     }
 

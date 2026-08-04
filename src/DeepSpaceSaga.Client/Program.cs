@@ -1,6 +1,7 @@
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.LocalClient;
+using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 
@@ -23,15 +24,12 @@ public static class Program
         {
             var engine = new SimulationEngine();
 
-            // Minimal test object for the render/prediction pipeline demo.
-            // 1 unit = 100 m, Sun at (0, 0).
-            engine.AddTestObject(new ObjectMotionSnapshot(
-                ObjectId: "probe-1",
-                X: 500,
-                Y: 300,
-                SpeedKmS: 5,     // 5 km/s
-                Direction: 90    // 90° = right (clockwise from up)
-            ));
+            // Load the default scenario
+            string scenarioPath = Path.Combine(
+                AppContext.BaseDirectory, "Scenarios", "Default", "scenario.json");
+
+            var scenario = ScenarioLoader.LoadFromFile(scenarioPath);
+            engine.LoadScenario(scenario);
 
             return new LocalGameSessionConnection(engine);
         }

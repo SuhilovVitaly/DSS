@@ -14,10 +14,9 @@ public sealed class GameSessionScreen : IScreen
     private readonly CameraState _camera;
     private readonly GridRenderer _grid;
 
-    // Object / marker paints
+    // Object paints
     private readonly SKPaint _objectPaint;
     private readonly SKPaint _centerPaint;
-    private readonly SKPaint _markerPaint;
 
     // Info panel paints
     private readonly SKPaint _panelBgPaint;
@@ -82,7 +81,6 @@ public sealed class GameSessionScreen : IScreen
 
         _objectPaint = new SKPaint { Color = SKColors.Cyan, Style = SKPaintStyle.Fill, IsAntialias = true };
         _centerPaint = new SKPaint { Color = new SKColor(40, 40, 40), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
-        _markerPaint = new SKPaint { Color = new SKColor(220, 220, 60), Style = SKPaintStyle.Fill, IsAntialias = true };
 
         _panelBgPaint = new SKPaint
         {
@@ -195,23 +193,20 @@ public sealed class GameSessionScreen : IScreen
         // 1. Draw adaptive world grid (clears background internally)
         _grid.Draw(canvas, _camera, width, height);
 
-        // 2. Static marker at World(10000, 10000)
-        var (mx, my) = _camera.WorldToScreen(10000, 10000, width, height);
-        canvas.DrawCircle(mx, my, 20, _markerPaint);
-
-        // 3. Crosshair at viewport center
+        // 2. Crosshair at viewport center
         float cx = width / 2f;
         float cy = height / 2f;
         canvas.DrawLine(cx - 10, cy, cx + 10, cy, _centerPaint);
         canvas.DrawLine(cx, cy - 10, cx, cy + 10, _centerPaint);
 
-        // 4. Engine objects
+        // 3. Engine objects
         var buffered = _buffer.Latest;
         if (buffered is not null)
         {
             long predictionDelta = buffered.PredictionDeltaMs;
-            bool isPaused = _buffer.CurrentSpeed == SimulationSpeed.Speed0;
-            long effectiveDelta = isPaused ? 0 : predictionDelta;
+            int speedMultiplier = (int)_buffer.CurrentSpeed;
+            bool isPaused = speedMultiplier == 0;
+            long effectiveDelta = isPaused ? 0 : predictionDelta * speedMultiplier;
 
             foreach (var obj in buffered.Snapshot.Objects)
             {
@@ -224,7 +219,7 @@ public sealed class GameSessionScreen : IScreen
             }
         }
 
-        // 5. Info panel — screen-space overlay, drawn last (only when visible)
+        // 4. Info panel — screen-space overlay, drawn last (only when visible)
         if (_panelVisible)
             DrawInfoPanel(canvas, buffered);
     }
