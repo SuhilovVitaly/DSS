@@ -1,0 +1,9 @@
+{
+  "itemTypes": [
+    {
+      "typeId": "item.energy-cells",
+      "displayName": "Energy Cells",
+      "unitMassKg": 10
+    }
+  ]
+}

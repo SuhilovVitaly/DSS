@@ -1,0 +1,14 @@
+{
+  "moduleTypes": [
+    {
+      "typeId": "module.container.basic",
+      "displayName": "Container",
+      "slotSize": 4,
+      "massKg": 20000,
+      "structurePointsMax": 400,
+      "powerConsumptionW": 0,
+      "commandTypeIds": [],
+      "cargoCapacityKg": 100000
+    }
+  ]
+}

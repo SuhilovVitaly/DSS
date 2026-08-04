@@ -43,20 +43,22 @@ public sealed record SpaceObjectData(
 /// <summary>A ship module declared in a scenario.</summary>
 public sealed record ShipModuleData(
     [property: JsonPropertyName("moduleId")] string ModuleId,
-    [property: JsonPropertyName("moduleType")] string ModuleType,
-    [property: JsonPropertyName("slotSize")] int SlotSize,
+    [property: JsonPropertyName("moduleTypeId")] string ModuleTypeId,
     [property: JsonPropertyName("platformIndex")] int PlatformIndex,
     [property: JsonPropertyName("occupiedCells")] IReadOnlyList<int> OccupiedCells,
-    [property: JsonPropertyName("massKg")] long MassKg,
     [property: JsonPropertyName("structurePoints")] int StructurePoints,
-    [property: JsonPropertyName("structurePointsMax")] int StructurePointsMax,
     [property: JsonPropertyName("powerState")] string PowerState,
     [property: JsonPropertyName("operationalState")] string OperationalState,
-    [property: JsonPropertyName("capacityKg")] long? CapacityKg,
+    [property: JsonPropertyName("activeCycle")] ActiveCycleData? ActiveCycle,
     [property: JsonPropertyName("cargo")] IReadOnlyList<CargoStackData>? Cargo);
+
+/// <summary>Runtime progress for an active module cycle.</summary>
+public sealed record ActiveCycleData(
+    [property: JsonPropertyName("cycleId")] string CycleId,
+    [property: JsonPropertyName("startedGameTimeMs")] long StartedGameTimeMs,
+    [property: JsonPropertyName("durationMs")] long DurationMs);
 
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(
-    [property: JsonPropertyName("resourceType")] string ResourceType,
-    [property: JsonPropertyName("quantity")] long Quantity,
-    [property: JsonPropertyName("unitMassKg")] long UnitMassKg);
+    [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
+    [property: JsonPropertyName("quantity")] long Quantity);

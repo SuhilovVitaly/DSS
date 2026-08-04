@@ -26,6 +26,12 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         _engineLoopTask = Task.Run(() => RunEngineLoopAsync(_cts.Token));
     }
 
+    public static LocalGameSessionConnection CreateFromSettingsFile(string settingsPath)
+    {
+        var engine = SimulationEngine.CreateFromSettingsFile(settingsPath);
+        return new LocalGameSessionConnection(engine);
+    }
+
     private async Task RunEngineLoopAsync(CancellationToken ct)
     {
         try

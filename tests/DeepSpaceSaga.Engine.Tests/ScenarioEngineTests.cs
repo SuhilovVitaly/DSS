@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.Engine.Tests;
@@ -136,23 +137,23 @@ public class ScenarioEngineTests
     {
         // Walk up from the test output directory to find the repo root,
         // then into the Client project where the scenario lives.
-        string path = Path.GetFullPath(Path.Combine(
+        string scenarioPath = Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
             "..", "..", "..", "..", "..",
             "src", "DeepSpaceSaga.Client", "Scenarios", "Default", "scenario.json"));
 
         // Fallback for environments where the output structure differs (CI / dotnet test from sln dir)
-        if (!File.Exists(path))
+        if (!File.Exists(scenarioPath))
         {
-            path = Path.GetFullPath(Path.Combine(
+            scenarioPath = Path.GetFullPath(Path.Combine(
                 AppContext.BaseDirectory, "Scenarios", "Default", "scenario.json"));
         }
 
-        Assert.True(File.Exists(path),
-            $"Real scenario file not found at '{path}'. " +
+        Assert.True(File.Exists(scenarioPath),
+            $"Real scenario file not found at '{scenarioPath}'. " +
             "Ensure it is copied to the output directory or the test is running from the repo root.");
 
-        var scenario = ScenarioLoader.LoadFromFile(path);
+        var scenario = ScenarioLoader.LoadFromFile(scenarioPath);
         Assert.Equal("default", scenario.Metadata.ScenarioId);
         Assert.Equal("SPC-0001", scenario.GameState.PlayerShipObjectId);
         Assert.Equal(4, scenario.GameState.SpaceObjects.Count);
@@ -160,13 +161,139 @@ public class ScenarioEngineTests
         var playerShip = scenario.GameState.SpaceObjects
             .Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId);
         var cargoModule = Assert.Single(playerShip.Modules ?? []);
-        Assert.Equal("Container", cargoModule.ModuleType);
-        Assert.Equal(100_000, cargoModule.CapacityKg);
+        Assert.Equal("module.container.basic", cargoModule.ModuleTypeId);
 
         var energyCells = Assert.Single(cargoModule.Cargo ?? []);
-        Assert.Equal("Energy Cells", energyCells.ResourceType);
+        Assert.Equal("item.energy-cells", energyCells.ItemTypeId);
         Assert.Equal(1_000, energyCells.Quantity);
-        Assert.Equal(10, energyCells.UnitMassKg);
+    }
+
+    [Fact]
+    public void Can_create_engine_from_real_settings_file()
+    {
+        string settingsPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..", "..", "..", "..", "..",
+            "src", "DeepSpaceSaga.Client", "Settings.json"));
+
+        if (!File.Exists(settingsPath))
+        {
+            settingsPath = Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory, "Settings.json"));
+        }
+
+        var engine = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
+
+        Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
+        var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
+        var module = Assert.Single(playerShip.Modules);
+        Assert.Equal(0, module.ModuleTypeIndex);
+        var cargo = Assert.Single(module.Cargo);
+        Assert.Equal(0, cargo.ItemTypeIndex);
+    }
+
+    [Fact]
+    public void LoadScenario_rejects_module_cell_count_that_differs_from_type_slot_size()
+    {
+        var scenario = ScenarioLoader.LoadFromJson(ScenarioWithModule(occupiedCells: "1"));
+        var engine = CreateEngineWithBasicTypes();
+
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+    }
+
+    [Fact]
+    public void LoadScenario_rejects_duplicate_module_cells()
+    {
+        var scenario = ScenarioLoader.LoadFromJson(ScenarioWithModule(occupiedCells: "1, 1, 2, 3"));
+        var engine = CreateEngineWithBasicTypes();
+
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+    }
+
+    [Fact]
+    public void LoadScenario_rejects_modules_overlapping_on_same_platform()
+    {
+        const string extraModule = """
+        ,
+                  {
+                    "moduleId": "MOD-2",
+                    "moduleTypeId": "module.container.basic",
+                    "platformIndex": 0,
+                    "occupiedCells": [4, 5, 6, 7],
+                    "structurePoints": 400,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "cargo": []
+                  }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(ScenarioWithModule(extraModules: extraModule));
+        var engine = CreateEngineWithBasicTypes();
+
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+    }
+
+    [Fact]
+    public void LoadScenario_resolves_typeIds_case_sensitively()
+    {
+        var scenario = ScenarioLoader.LoadFromJson(
+            ScenarioWithModule(moduleTypeId: "Module.Container.Basic"));
+        var engine = CreateEngineWithBasicTypes();
+
+        Assert.Throws<ContentException>(() => engine.LoadScenario(scenario));
+    }
+
+    [Fact]
+    public void Public_engine_without_registry_rejects_scenarios_with_modules_explicitly()
+    {
+        var scenario = ScenarioLoader.LoadFromJson(ScenarioWithModule());
+        var engine = new SimulationEngine();
+
+        var ex = Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+        Assert.Contains("SimulationEngine.CreateFromSettingsFile", ex.Message);
+    }
+
+    [Fact]
+    public void Failed_LoadScenario_keeps_existing_engine_world()
+    {
+        var engine = CreateEngineWithBasicTypes();
+        var oldScenario = ScenarioLoader.LoadFromJson(ScenarioWithModule(
+            objectId: "OLD-SHIP",
+            currentSpeed: "Speed2"));
+        engine.LoadScenario(oldScenario);
+
+        var invalidScenario = ScenarioLoader.LoadFromJson(ScenarioWithModule(
+            objectId: "NEW-SHIP",
+            currentSpeed: "Speed3",
+            occupiedCells: "1"));
+
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(invalidScenario));
+
+        Assert.Equal("OLD-SHIP", engine.PlayerShipObjectId);
+        Assert.Equal(SimulationSpeed.Speed2, engine.CurrentSpeed);
+        var obj = Assert.Single(engine.RuntimeObjects);
+        Assert.Equal("OLD-SHIP", obj.InitialMotion.ObjectId);
+        Assert.Single(obj.Modules);
+    }
+
+    [Fact]
+    public void Public_settings_factory_loads_scenario_with_modules()
+    {
+        string settingsPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..", "..", "..", "..", "..",
+            "src", "DeepSpaceSaga.Client", "Settings.json"));
+
+        if (!File.Exists(settingsPath))
+        {
+            settingsPath = Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory, "Settings.json"));
+        }
+
+        var engine = SimulationEngine.CreateFromSettingsFile(settingsPath);
+
+        Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
+        Assert.Contains(engine.RuntimeObjects, o => o.Modules.Length > 0);
     }
 
     [Fact]
@@ -192,5 +319,75 @@ public class ScenarioEngineTests
         engine.LoadScenario(scenario);
 
         Assert.Equal(SimulationSpeed.Speed2, engine.CurrentSpeed);
+    }
+
+    private static SimulationEngine CreateEngineWithBasicTypes()
+    {
+        var registry = GameDataRegistry.Create(
+            [
+                new ModuleTypeDefinition(
+                    "module.container.basic",
+                    "Container",
+                    SlotSize: 4,
+                    MassKg: 20000,
+                    StructurePointsMax: 400,
+                    PowerConsumptionW: 0,
+                    CommandTypeIds: ImmutableArray<string>.Empty,
+                    CargoCapacityKg: 100000)
+            ],
+            [
+                new ItemTypeDefinition(
+                    "item.energy-cells",
+                    "Energy Cells",
+                    UnitMassKg: 10)
+            ],
+            []);
+
+        return new SimulationEngine(registry);
+    }
+
+    private static string ScenarioWithModule(
+        string objectId = "SHIP",
+        string currentSpeed = "Speed1",
+        string moduleTypeId = "module.container.basic",
+        string occupiedCells = "1, 2, 3, 4",
+        string extraModules = "")
+    {
+        return $$"""
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "gameTimeMs": 0,
+            "currentSpeed": "{{currentSpeed}}",
+            "playerShipObjectId": "{{objectId}}",
+            "spaceObjects": [
+              {
+                "objectId": "{{objectId}}",
+                "objectType": "PlayerShip",
+                "persistenceType": "Permanent",
+                "positionX": 0,
+                "positionY": 0,
+                "speedMps": 0,
+                "directionDegrees": 0,
+                "movementType": "Stationary",
+                "modules": [
+                  {
+                    "moduleId": "MOD-1",
+                    "moduleTypeId": "{{moduleTypeId}}",
+                    "platformIndex": 0,
+                    "occupiedCells": [{{occupiedCells}}],
+                    "structurePoints": 400,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "cargo": [
+                      { "itemTypeId": "item.energy-cells", "quantity": 1 }
+                    ]
+                  }{{extraModules}}
+                ]
+              }
+            ]
+          }
+        }
+        """;
     }
 }

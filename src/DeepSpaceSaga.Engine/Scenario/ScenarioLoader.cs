@@ -18,6 +18,12 @@ public static class ScenarioLoader
     private static readonly HashSet<string> KnownSpeeds = new(StringComparer.OrdinalIgnoreCase)
         { "Speed0", "Speed1", "Speed2", "Speed3", "Speed4" };
 
+    private static readonly HashSet<string> KnownPowerStates = new(StringComparer.OrdinalIgnoreCase)
+        { "On", "Off" };
+
+    private static readonly HashSet<string> KnownOperationalStates = new(StringComparer.OrdinalIgnoreCase)
+        { "Ready", "Disabled", "Damaged" };
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
@@ -167,6 +173,66 @@ public static class ScenarioLoader
             if (obj.MassKg is not { } m || m < 1_000_000 || m > 1_000_000_000)
                 throw new ScenarioException(
                     $"Asteroid '{obj.ObjectId}' massKg {obj.MassKg} is outside 1,000,000..1,000,000,000.");
+        }
+
+        if (obj.Modules is { Count: > 0 })
+        {
+            foreach (var module in obj.Modules)
+            {
+                ValidateModule(obj.ObjectId, module);
+            }
+        }
+    }
+
+    private static void ValidateModule(string objectId, ShipModuleData module)
+    {
+        if (module is null)
+            throw new ScenarioException($"Object '{objectId}' modules contains a null element.");
+
+        if (string.IsNullOrWhiteSpace(module.ModuleId))
+            throw new ScenarioException($"Object '{objectId}' has a module with empty moduleId.");
+        if (string.IsNullOrWhiteSpace(module.ModuleTypeId))
+            throw new ScenarioException($"Module '{module.ModuleId}' is missing moduleTypeId.");
+
+        if (module.PlatformIndex < 0)
+            throw new ScenarioException($"Module '{module.ModuleId}' has negative platformIndex.");
+
+        if (module.OccupiedCells is null || module.OccupiedCells.Count == 0)
+            throw new ScenarioException($"Module '{module.ModuleId}' must occupy at least one cell.");
+
+        if (module.StructurePoints < 0)
+            throw new ScenarioException($"Module '{module.ModuleId}' has negative structurePoints.");
+
+        if (string.IsNullOrWhiteSpace(module.PowerState) || !KnownPowerStates.Contains(module.PowerState))
+            throw new ScenarioException($"Module '{module.ModuleId}' has unknown powerState '{module.PowerState}'.");
+
+        if (string.IsNullOrWhiteSpace(module.OperationalState) ||
+            !KnownOperationalStates.Contains(module.OperationalState))
+            throw new ScenarioException(
+                $"Module '{module.ModuleId}' has unknown operationalState '{module.OperationalState}'.");
+
+        if (module.ActiveCycle is { } activeCycle)
+        {
+            if (string.IsNullOrWhiteSpace(activeCycle.CycleId))
+                throw new ScenarioException($"Module '{module.ModuleId}' has activeCycle with empty cycleId.");
+            if (activeCycle.StartedGameTimeMs < 0)
+                throw new ScenarioException($"Module '{module.ModuleId}' has activeCycle with negative startedGameTimeMs.");
+            if (activeCycle.DurationMs <= 0)
+                throw new ScenarioException($"Module '{module.ModuleId}' has activeCycle with non-positive durationMs.");
+        }
+
+        if (module.Cargo is { Count: > 0 })
+        {
+            foreach (var stack in module.Cargo)
+            {
+                if (stack is null)
+                    throw new ScenarioException($"Module '{module.ModuleId}' cargo contains a null element.");
+                if (string.IsNullOrWhiteSpace(stack.ItemTypeId))
+                    throw new ScenarioException($"Module '{module.ModuleId}' cargo stack is missing itemTypeId.");
+                if (stack.Quantity < 0)
+                    throw new ScenarioException(
+                        $"Module '{module.ModuleId}' cargo stack '{stack.ItemTypeId}' has negative quantity.");
+            }
         }
     }
 }
