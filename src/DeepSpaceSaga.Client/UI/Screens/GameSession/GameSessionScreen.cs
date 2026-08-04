@@ -2,6 +2,7 @@ using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
+using System.Diagnostics;
 using Silk.NET.Input;
 using SkiaSharp;
 
@@ -13,9 +14,12 @@ public sealed class GameSessionScreen : IScreen
     private readonly IMotionPredictor _predictor;
     private readonly CameraState _camera;
     private readonly GridRenderer _grid;
+    private readonly ObjectTrailStore _trailStore;
+    private readonly List<ObjectRenderState> _renderStates = new();
     private readonly GameSessionHandle? _handle;
 
     // Object paints
+    private readonly SKPaint _trailPaint;
     private readonly SKPaint _objectPaint;
     private readonly SKPaint _playerShipPaint;
     private readonly SKPaint _centerPaint;
@@ -37,6 +41,7 @@ public sealed class GameSessionScreen : IScreen
     private int _viewportH;
     private float _mouseX;
     private float _mouseY;
+    private bool _shouldBootstrapInitialTrails = true;
 
     // Info panel state
     private bool _panelVisible = true;
@@ -85,10 +90,15 @@ public sealed class GameSessionScreen : IScreen
     internal SKRect LastSpeedPanelRect => _lastSpeedPanelRect;
     internal IReadOnlyList<SKRect> SpeedButtonRects => _speedButtonRects;
     internal bool IsFocusAttachedToPlayer => _isFocusAttachedToPlayer;
+    internal IReadOnlyList<ObjectTrailPoint> GetObjectTrail(string objectId) => _trailStore.GetTrail(objectId);
 
     // ── Constructor ─────────────────────────────────────────────
 
-    public GameSessionScreen(SnapshotBuffer buffer, IMotionPredictor predictor, GameSessionHandle? handle = null)
+    public GameSessionScreen(
+        SnapshotBuffer buffer,
+        IMotionPredictor predictor,
+        GameSessionHandle? handle = null,
+        Func<long>? timestampProvider = null)
     {
         _buffer = buffer;
         _predictor = predictor;
@@ -96,7 +106,9 @@ public sealed class GameSessionScreen : IScreen
 
         _camera = new CameraState(focusX: 10000, focusY: 10000, pixelsPerWorldUnit: 1.0);
         _grid = new GridRenderer();
+        _trailStore = new ObjectTrailStore(_predictor, timestampProvider ?? Stopwatch.GetTimestamp);
 
+        _trailPaint = new SKPaint { Color = new SKColor(190, 190, 190, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 2f, IsAntialias = true };
         _objectPaint = new SKPaint { Color = SKColors.Cyan, Style = SKPaintStyle.Fill, IsAntialias = true };
         _playerShipPaint = new SKPaint { Color = SKColors.LimeGreen, Style = SKPaintStyle.Fill, IsAntialias = true };
         _centerPaint = new SKPaint { Color = new SKColor(40, 40, 40), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
@@ -234,7 +246,9 @@ public sealed class GameSessionScreen : IScreen
 
         var prediction = _buffer.LatestPrediction;
         var buffered = prediction?.BufferedSnapshot;
-        UpdateCameraFocusFromPlayer(prediction);
+        UpdateObjectRenderStates(prediction);
+
+        UpdateCameraFocusFromPlayer(_renderStates);
 
         // 1. Grid
         _grid.Draw(canvas, _camera, width, height);
@@ -245,51 +259,95 @@ public sealed class GameSessionScreen : IScreen
         canvas.DrawLine(cx - 10, cy, cx + 10, cy, _centerPaint);
         canvas.DrawLine(cx, cy - 10, cx, cy + 10, _centerPaint);
 
-        // 3. Engine objects
+        // 3. Object trails
         if (prediction is not null)
         {
-            long ed = prediction.EffectivePredictionDeltaMs;
-            string? playerShipObjectId = prediction.BufferedSnapshot.Snapshot.PlayerShipObjectId;
+            _trailStore.Update(
+                _renderStates,
+                prediction.CurrentSpeed,
+                GetPredictedGameTimeMs(prediction),
+                _shouldBootstrapInitialTrails);
+            _shouldBootstrapInitialTrails = false;
 
-            foreach (var obj in prediction.BufferedSnapshot.Snapshot.Objects)
+            DrawObjectTrails(canvas, width, height);
+
+            // 4. Engine objects
+            foreach (var state in _renderStates)
             {
-                var p = ed > 0 ? _predictor.Predict(obj, ed) : obj;
-                var (sx, sy) = _camera.WorldToScreen(p.X, p.Y, width, height);
-                var paint = obj.ObjectId == playerShipObjectId ? _playerShipPaint : _objectPaint;
+                var (sx, sy) = _camera.WorldToScreen(state.Predicted.X, state.Predicted.Y, width, height);
+                var paint = state.IsPlayerShip ? _playerShipPaint : _objectPaint;
                 canvas.DrawCircle(sx, sy, 4, paint);
             }
         }
 
-        // 4. Speed panel (top-right)
+        // 5. Speed panel (top-right)
         DrawSpeedPanel(canvas);
 
-        // 5. Info panel (bottom-left)
+        // 6. Info panel (bottom-left)
         if (_panelVisible)
             DrawInfoPanel(canvas, buffered);
     }
 
     // ── Speed panel ─────────────────────────────────────────────
 
-    private void UpdateCameraFocusFromPlayer(SnapshotPrediction? prediction)
+    private void UpdateObjectRenderStates(SnapshotPrediction? prediction)
     {
-        if (!_isFocusAttachedToPlayer || prediction is null)
+        _renderStates.Clear();
+
+        if (prediction is null)
             return;
 
+        long ed = prediction.EffectivePredictionDeltaMs;
         string? playerShipObjectId = prediction.BufferedSnapshot.Snapshot.PlayerShipObjectId;
-        if (string.IsNullOrWhiteSpace(playerShipObjectId))
+
+        foreach (var obj in prediction.BufferedSnapshot.Snapshot.Objects)
+        {
+            var predicted = ed > 0 ? _predictor.Predict(obj, ed) : obj;
+            _renderStates.Add(new ObjectRenderState(obj, predicted, obj.ObjectId == playerShipObjectId));
+        }
+    }
+
+    private void UpdateCameraFocusFromPlayer(IReadOnlyList<ObjectRenderState> renderStates)
+    {
+        if (!_isFocusAttachedToPlayer)
             return;
 
-        var playerShip = prediction.BufferedSnapshot.Snapshot.Objects
-            .FirstOrDefault(o => o.ObjectId == playerShipObjectId);
+        for (int i = 0; i < renderStates.Count; i++)
+        {
+            var state = renderStates[i];
+            if (!state.IsPlayerShip)
+                continue;
 
-        if (playerShip is null)
+            _camera.SetFocus(state.Predicted.X, state.Predicted.Y);
             return;
+        }
+    }
 
-        var predicted = prediction.EffectivePredictionDeltaMs > 0
-            ? _predictor.Predict(playerShip, prediction.EffectivePredictionDeltaMs)
-            : playerShip;
+    private static long GetPredictedGameTimeMs(SnapshotPrediction prediction)
+    {
+        return prediction.BufferedSnapshot.Snapshot.GameTimeMs + prediction.EffectivePredictionDeltaMs;
+    }
 
-        _camera.SetFocus(predicted.X, predicted.Y);
+    private void DrawObjectTrails(SKCanvas canvas, int width, int height)
+    {
+        foreach (var points in _trailStore.Trails)
+        {
+            if (points.Count < 2)
+                continue;
+
+            for (int i = 1; i < points.Count; i++)
+            {
+                var from = points[i - 1];
+                var to = points[i];
+                var (fromX, fromY) = _camera.WorldToScreen(from.X, from.Y, width, height);
+                var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
+
+                float t = (float)i / (points.Count - 1);
+                byte alpha = (byte)(40 + 120 * t);
+                _trailPaint.Color = new SKColor(190, 190, 190, alpha);
+                canvas.DrawLine(fromX, fromY, toX, toY, _trailPaint);
+            }
+        }
     }
 
     private void DrawSpeedPanel(SKCanvas canvas)
@@ -422,4 +480,10 @@ public sealed class GameSessionScreen : IScreen
 
         return lines;
     }
+
 }
+
+internal readonly record struct ObjectRenderState(
+    ObjectMotionSnapshot Source,
+    ObjectMotionSnapshot Predicted,
+    bool IsPlayerShip);

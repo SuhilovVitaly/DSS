@@ -3156,3 +3156,961 @@ CameraState.ScreenToWorld(mouseX, mouseY, viewportWidth, viewportHeight)
 13. Реализация проходит существующие тесты.
 14. Добавлены или обновлены focused-тесты на состояние курсора/панели, если это возможно без хрупкой проверки пикселей.
 ````
+
+## 55. ECS-архитектурный слой Engine для модулей, заводов и кораблей
+
+Эта секция интегрирует принципы документа `ECS-Architecture-Requirements.md` в общий requirements DSS.
+
+Если требования этой секции уточняют более ранние разделы про модули, склады, фабрики, корабли, runtime state или configuration loading, действует более конкретная формулировка этой секции. Если возникает конфликт с уже закреплённой границей `Engine / Contracts / Client` или Skia-rendering, действует общий документ DSS: ECS относится только к внутренней реализации authoritative Engine и не меняет клиентскую архитектуру.
+
+Не переносится из внешнего ECS-документа:
+
+- Python-термины, ссылки на Python-файлы и Python-реализацию;
+- MonoGame как presentation layer, поскольку в DSS уже закреплены Skia/Silk.NET и текущая граница Client / Engine;
+- любые UI-решения, которые дают Client прямой доступ к изменяемому состоянию Engine.
+
+Переносятся как обязательные архитектурные принципы:
+
+- Simulation Core остаётся чистым `.NET`-слоем без зависимости от Skia, Silk.NET, UI, окон, ввода и rendering;
+- доменные объекты моделируются через композицию данных и систем, а не через глубокую иерархию наследования;
+- immutable type definitions хранятся вне runtime-состояния;
+- runtime-состояние сущности хранит только живые изменяемые значения и компактные ссылки на типы;
+- порядок систем и порядок обработки должны быть детерминированными.
+
+### 55.1. Entity / Component / System в терминах DSS
+
+`Entity` в ECS не заменяет внешний стабильный `objectId` / `moduleId`.
+
+Внутри Engine ECS entity может быть числовым runtime-id, удобным для быстрых запросов и хранения компонентов. Для сохранения, загрузки, snapshot, command routing и журналирования authoritative идентификаторами остаются:
+
+```text
+objectId
+moduleId
+platformId? / stable platform index
+```
+
+Engine обязан поддерживать мост:
+
+```text
+stable domain id ↔ internal ECS entity
+```
+
+Этот мост является внутренней деталью Engine и не попадает напрямую в Contracts.
+
+`Component` — маленькие типизированные данные без доменной логики. Компонент не должен содержать массивы рецептов, списки ингредиентов, UI-строки, JSON-объекты или mutable configuration.
+
+`System` — детерминированная логика Engine, которая обходит сущности с нужным набором компонентов и меняет runtime state только в рамках authoritative tick/turn pipeline.
+
+### 55.2. Где живут данные
+
+Общее правило хранения:
+
+```text
+Immutable type data / blueprint
+    → registry/configuration, загружается один раз при старте сессии
+
+Mutable per-instance runtime state
+    → ECS component или другой authoritative runtime container Engine
+
+Ссылка instance на type
+    → int index / compact typed id, резолвится при загрузке
+```
+
+Примеры type data:
+
+- параметры типа корабельного модуля: `MassKg`, `SlotSize`, `StructurePointsMax`, `PowerConsumptionW`, `Commands[]`;
+- параметры команды модуля: `CycleTimeMs`, `ActivationPowerW`, range, success chance;
+- рецепт завода: `Inputs[]`, `Outputs[]`, `CycleTimeMs` или `CycleMinutes`;
+- параметры cargo item / resource: масса единицы, package/category, display name;
+- параметры platform type, ship template, generator, battery, scanner, drilling unit, combat laser.
+
+Примеры runtime state:
+
+- `PowerState`;
+- `OperationalState`;
+- `StructurePoints`;
+- `ActiveCycle`;
+- `BatteryChargeWh`;
+- накопитель расхода `Energy Cells`;
+- текущий cargo/fuel count;
+- позиция, скорость, направление;
+- knowledge state игрока;
+- pending command state и результаты authoritative turn.
+
+Для DSS это означает обязательное разделение:
+
+```text
+module type definition
+    typeId
+    kind
+    name / description / display metadata
+    MassKg
+    SlotSize
+    StructurePointsMax
+    PowerConsumptionW
+    Commands[]
+    optional capability parameters
+
+installed module instance
+    moduleId
+    moduleTypeId
+    platform placement / occupied cells
+    PowerState
+    OperationalState
+    StructurePoints
+    ActiveCycle?
+    capability runtime state
+```
+
+Поля `MassKg`, `SlotSize`, `StructurePointsMax`, `PowerConsumptionW` и `Commands[]` являются свойствами типа модуля. Они не должны дублироваться в каждом installed module instance, кроме специальных save/load migration cases, которые должны быть явно описаны отдельно.
+
+Для cargo item/resource действует тот же принцип:
+
+```text
+item/resource type definition
+    typeId
+    kind
+    name / display metadata
+    UnitMassKg
+    package/category metadata
+
+cargo stack instance
+    itemTypeId
+    Quantity
+```
+
+`UnitMassKg` не хранится в каждой cargo stack. Масса stack вычисляется через registry:
+
+```text
+CargoStackMassKg = Quantity * ItemType.UnitMassKg
+```
+
+Для заводов и рецептов:
+
+```text
+factory/recipe type definition
+    typeId
+    kind
+    Inputs[]
+    Outputs[]
+    CycleDuration
+
+factory instance runtime
+    instanceId / moduleId
+    factoryTypeId
+    Phase
+    ElapsedGameTime
+    PendingOutput?
+```
+
+`Inputs[]` и `Outputs[]` являются type data. Runtime instance хранит только ссылку на тип и живое состояние автомата.
+
+Запрещённые паттерны:
+
+- копировать recipe/type definition в каждый instance;
+- хранить `MassKg`, `SlotSize`, `StructurePointsMax`, `PowerConsumptionW`, `UnitMassKg`, `Inputs[]`, `Outputs[]` или `Commands[]` как обычные поля каждого runtime instance;
+- хранить `List<Ingredient>` или аналогичные reference-heavy структуры внутри горячего ECS-компонента;
+- использовать `float`/`double` для денег, количества ресурсов, массы груза, Structure Points, StoredEnergy или иных учётных величин;
+- парсить человекочитаемые duration strings в горячем simulation path.
+
+### 55.3. Type registry и configuration loading
+
+После загрузки `Settings.json` и тематических JSON Engine строит immutable configuration/registry.
+
+Registry является частью authoritative Engine configuration, а не частью Client, Contracts или render state.
+
+Минимально требуются отдельные logical registries:
+
+```text
+ModuleTypeRegistry
+ItemTypeRegistry / ResourceTypeRegistry
+FactoryTypeRegistry / RecipeRegistry
+ShipTemplateRegistry?       // если используются шаблоны кораблей
+PlatformTypeRegistry?       // если platform type data будет вынесена отдельно
+```
+
+Registry должен давать быстрый доступ по compact index:
+
+```text
+typeId string → int typeIndex
+int typeIndex → immutable type definition
+```
+
+`typeId` остаётся внешним стабильным идентификатором для JSON, debug, tooling, save/load и диагностики. В горячем runtime path предпочтительно использовать `int`/typed index.
+
+Internal `typeIndex` является runtime-производной величиной:
+
+- строится заново при загрузке configuration;
+- не является публичным контрактом;
+- не обязан сохраняться в JSON;
+- не должен попадать в `Contracts`;
+- может измениться между версиями configuration, если `typeId` и семантика type definition остались стабильными.
+
+Если save/runtime state временно хранит `typeIndex` для скорости, source of truth всё равно остаётся `typeId`; при load выполняется повторный resolve через registry.
+
+Порядок старта сессии уточняется так:
+
+```text
+1. Load Settings.json
+2. Load all referenced thematic type/config JSON files
+3. Strict JSON schema validation
+4. Build raw immutable type definitions
+5. Validate ids, kinds, numeric ranges and required fields
+6. Build registries and typeId → typeIndex maps
+7. Validate all cross-references between type definitions
+8. Load DefaultScenario / GeneralSaveState instances
+9. Resolve instance typeId references through registries
+10. Validate instance runtime state against resolved type definitions
+11. Construct authoritative in-memory simulation state
+```
+
+Все ссылки между type definitions валидируются при старте:
+
+- неизвестный `typeId` — критическая ошибка конфигурации;
+- duplicate id — критическая ошибка;
+- неверный `kind` / discriminator — критическая ошибка;
+- отсутствующий обязательный массив recipe/module commands — критическая ошибка, если тип требует эти данные;
+- recipe input/output с неизвестным `itemTypeId` — критическая ошибка;
+- installed module instance с неизвестным `moduleTypeId` — критическая ошибка при загрузке scenario/save;
+- cargo stack с неизвестным `itemTypeId` — критическая ошибка при загрузке scenario/save;
+- command definition с неизвестным или дублирующимся `commandType` внутри одного module type — критическая ошибка;
+- ship template, ссылающийся на неизвестный module type, — критическая ошибка;
+- factory type, ссылающийся на неизвестный recipe/item type, — критическая ошибка.
+
+Числовая validation type definitions выполняется до создания runtime state:
+
+- `MassKg >= 0`;
+- `UnitMassKg > 0` для cargo/resource item, который может попадать в cargo stack;
+- `SlotSize` только `1 | 2 | 4`;
+- `StructurePointsMax > 0`;
+- `PowerConsumptionW >= 0`;
+- `CapacityKg >= 0`, если поле применимо;
+- `CycleDuration > 0` для циклической команды или recipe;
+- `ActivationPowerW >= 0`;
+- `Inputs[]` и `Outputs[]` не содержат отрицательных quantity/count;
+- probabilities остаются целыми `0..100`, weights — целыми `>= 0` с уже закреплёнными правилами non-zero total для weighted tables.
+
+Instance validation использует уже построенный registry:
+
+- `StructurePoints` installed module не может быть меньше `0` или больше `ModuleType.StructurePointsMax`;
+- `occupiedCells` должны соответствовать `ModuleType.SlotSize` и правилам platform placement из раздела 44;
+- cargo stack mass не может превышать вместимость container module после вычисления через `ItemType.UnitMassKg`;
+- module command runtime state может ссылаться только на command, существующий в resolved module type;
+- factory runtime state может ссылаться только на resolved factory/recipe type.
+
+Registry не должен брать display name из instance, если оно уже определено в type definition. Instance может иметь только собственное имя, когда это имя является уникальным именем конкретного объекта или корабля, а не дублированием имени типа.
+
+Запущенная сессия не меняет registry при изменении файлов на диске.
+
+Изменение type/config files на диске применяется только к новой сессии или после явной перезагрузки save/session по будущим правилам миграции. Hot reload balance/configuration в первом этапе не является требованием.
+
+### 55.4. Blueprint JSON и instance/snapshot JSON
+
+В DSS различаются два класса JSON-данных.
+
+Blueprint/type definition JSON:
+
+- лежит в тематических data/config files;
+- содержит тяжёлые immutable данные;
+- может содержать массивы `Commands[]`, `Inputs[]`, `Outputs[]`, `Modules[]`;
+- загружается и валидируется один раз при старте сессии;
+- не является runtime-сохранением.
+
+На первом этапе preferred layout:
+
+```text
+Settings.json
+    moduleTypesPath
+    itemTypesPath
+    factoryTypesPath / recipesPath
+    shipTemplatesPath?
+    platformTypesPath?
+    defaultScenarioPath
+
+module-types.json
+item-types.json
+factory-types.json / recipes.json
+ship-templates.json?
+platform-types.json?
+```
+
+Точные имена файлов и полей могут быть уточнены при реализации, но граница ответственности фиксирована: `Settings.json` ссылается на type/config files, а scenario/save ссылается на уже загруженные type definitions через ids.
+
+Conceptual module type JSON:
+
+```json
+{
+  "typeId": "SSM-CRG-CGT-S-9101",
+  "kind": "CargoModule",
+  "name": "Spacecraft Cargo Container Small",
+  "massKg": 20000,
+  "slotSize": 4,
+  "structurePointsMax": 400,
+  "powerConsumptionW": 0,
+  "capacityKg": 100000,
+  "commands": []
+}
+```
+
+Conceptual item/resource type JSON:
+
+```json
+{
+  "typeId": "ITM-ENERGY-CELL",
+  "kind": "CargoItem",
+  "name": "Energy Cell",
+  "unitMassKg": 10,
+  "packageType": "Cargo"
+}
+```
+
+Conceptual factory/recipe type JSON:
+
+```json
+{
+  "typeId": "OPM-FTR-5000",
+  "kind": "Factory",
+  "name": "Water Factory",
+  "recipe": {
+    "inputs": [
+      { "itemTypeId": "RES-ICE", "count": 100 },
+      { "itemTypeId": "ITM-ENERGY-CELL", "count": 5 }
+    ],
+    "outputs": [
+      { "itemTypeId": "ITM-WATER", "count": 95 }
+    ],
+    "cycleTimeMs": 259200000
+  }
+}
+```
+
+В type/config JSON допускаются display fields (`name`, `description`, UI category), но они не используются как ключи доменной логики. Логика всегда ссылается на stable ids.
+
+Instance/save/snapshot JSON:
+
+- содержит стабильные ids и runtime state;
+- ссылается на type через `typeId`;
+- не копирует recipe, command definitions, module definitions или display metadata;
+- при загрузке резолвит `typeId` в internal `typeIndex`;
+- сохраняет всё, что нужно для продолжения deterministic simulation после save/load.
+
+Conceptual installed module instance в `DefaultScenario` / `GeneralSaveState`:
+
+```json
+{
+  "moduleId": "MOD-PLAYER-CARGO-01",
+  "moduleTypeId": "SSM-CRG-CGT-S-9101",
+  "platformIndex": 2,
+  "occupiedCells": [1, 2, 3, 4],
+  "powerState": "On",
+  "operationalState": "Ready",
+  "structurePoints": 400,
+  "activeCycle": null,
+  "cargo": [
+    {
+      "itemTypeId": "ITM-ENERGY-CELL",
+      "quantity": 1000
+    }
+  ]
+}
+```
+
+Conceptual factory instance:
+
+```json
+{
+  "instanceId": "FAC-CERES-WATER-01",
+  "factoryTypeId": "OPM-FTR-5000",
+  "phase": "Working",
+  "elapsedGameTimeMs": 86400000,
+  "pendingOutput": []
+}
+```
+
+В instance/save JSON запрещено дублировать:
+
+- module type display name;
+- module `MassKg`, `SlotSize`, `StructurePointsMax`, `PowerConsumptionW`, `Commands[]`;
+- item/resource display name и `UnitMassKg`;
+- recipe `Inputs[]`, `Outputs[]`, `CycleDuration`;
+- factory type display metadata.
+
+`DefaultScenario` — стартовый instance state. Он может содержать исходные корабли, станции, фабрики, установленные модули, cargo stacks и начальное состояние знаний игрока, но не должен становиться вторым источником type definitions.
+
+`GeneralSaveState` — полное authoritative continuation state. В отличие от `DefaultScenario`, он хранит runtime/session metadata, RNG streams, id counters, calculation tiers, active cycles, pending/deferred command state, watch log и всё, что требуется для продолжения сессии.
+
+`AuthoritativeSnapshot` — транспортная проекция для Client. Он не обязан содержать полный save state и не должен передавать type registries целиком на каждом snapshot. Если Client нужны display/type данные, они должны приходить отдельной стабильной client-readable проекцией или быть загружены через отдельный контракт, а не через прямой доступ к Engine internals.
+
+Если snapshot содержит type-related values для rendering/debug, они считаются projection data и не становятся source of truth. Authoritative source of truth остаётся в Engine state + immutable registries.
+
+Для DSS сохраняется уже закреплённый принцип:
+
+```text
+DefaultScenario / GeneralSaveState / AuthoritativeSnapshot
+    переиспользуют согласованную доменную структуру GameState,
+    но snapshot может быть render-relevant projection,
+    а internal ECS state остаётся деталью Engine.
+```
+
+### 55.5. Корабельные модули как ECS-композиция
+
+Корабль не должен проектироваться как монолитный класс с жёстко вшитыми возможностями.
+
+Корабль является композицией:
+
+```text
+Ship identity/state
++ platforms
++ installed module instances
++ runtime components/capabilities
+```
+
+Установленный module instance имеет стабильный `moduleId`, ссылку на module type и runtime state из разделов 34 и 43.
+
+Внешняя доменная модель корабля остаётся читаемой через стабильные ids:
+
+```text
+Ship
+    objectId
+    shipKind / objectType
+    platforms[]
+    installedModules[]
+
+Platform
+    stable platform index или platformId
+    StructurePoints
+    installed module refs
+
+InstalledModule
+    moduleId
+    moduleTypeId
+    platform placement
+    common runtime state
+    capability runtime state
+```
+
+Внутренняя ECS-модель может представлять корабль как одну entity с набором компонентов или как набор связанных entities (`Ship`, `Platform`, `InstalledModule`) — это implementation detail. Требование к поведению важнее конкретной раскладки: команды, урон, cargo, энергия и snapshot/save должны продолжать адресоваться стабильными `objectId` и `moduleId`.
+
+Module type задаёт capability contract. Installed module instance не выбирает логику по строковому имени модуля в горячем path; при загрузке `moduleTypeId` резолвится в registry и превращается в набор capabilities.
+
+При загрузке корабля module type разворачивается в необходимые runtime capabilities:
+
+- container module → cargo/fuel capacity и cargo state;
+- generator module → generation state и расход `Energy Cells`;
+- battery module → battery capacity/charge state;
+- scanner module → command definitions и active scan cycle state;
+- drilling unit → mining command/cycle state после детализации;
+- combat laser → weapon command/cycle state после детализации;
+- bridge/navigation module → command/control capability после детализации.
+
+Capability — это не обязательно один компонент. Например:
+
+```text
+Container capability
+    type data: CapacityKg
+    runtime state: CargoStacks[]
+
+Battery capability
+    type data: BatteryCapacityWh
+    runtime state: BatteryChargeWh
+
+Generator capability
+    type data: PowerOutputW, EnergyCellsPerHour
+    runtime state: fuel consumption accumulator
+
+Command-capable module
+    type data: Commands[]
+    runtime state: ActiveCycle?, OperationalState
+```
+
+Общие состояния `PowerState`, `OperationalState`, `StructurePoints` принадлежат installed module instance и применяются ко всем module kinds. Capability-specific runtime state добавляется только там, где он нужен конкретному capability.
+
+На первом этапе каждый установленный модуль обязан иметь `PowerState`, даже если его `PowerConsumptionW = 0`. Это сохраняет единый command/energy lifecycle и не создаёт отдельный класс пассивных модулей.
+
+Команды адресуются installed module, а не capability напрямую:
+
+```text
+PlayerCommand
+    objectId
+    moduleId
+    commandType
+```
+
+Engine находит module instance по `(objectId, moduleId)`, получает его resolved module type/capabilities, затем выполняет validation по общим состояниям и command definition. Если module type не содержит нужный `commandType`, команда отклоняется на authoritative validation.
+
+Размещение модулей на platforms остаётся runtime/instance state, но валидируется против immutable type data:
+
+- количество `occupiedCells` соответствует `ModuleType.SlotSize`;
+- cells находятся в диапазоне `1..4`;
+- `SlotSize = 2` занимает только горизонтальную пару `[1][2]` или `[3][4]`;
+- `SlotSize = 4` занимает всю platform;
+- модуль не пересекает границу platforms;
+- две living/non-destroyed module instances не занимают одну cell одновременно, если будущая механика явно не введёт иной режим.
+
+Масса корабля вычисляется из registry + runtime cargo/fuel state:
+
+```text
+ShipMassKg =
+    Σ PlatformType/Platform.MassKg
+  + Σ ModuleType.MassKg for installed modules
+  + Σ CargoStack.Quantity * ItemType.UnitMassKg
+  + Σ fuel stacks by the same cargo rule
+```
+
+`ModuleType.MassKg` и `ItemType.UnitMassKg` не копируются в module/cargo instance ради расчёта массы.
+
+Повреждение и уничтожение применяются к installed module/platform runtime state:
+
+- `StructurePoints` меняется в module/platform instance;
+- `StructurePointsMax` берётся из module type;
+- при `StructurePoints = 0` module получает `OperationalState = Destroyed`;
+- уничтоженный module сохраняет `moduleId` для журнала, save/load и истории событий, пока существует owning ship/save state;
+- destroyed module не участвует в hit selection как living module и не принимает новые gameplay commands;
+- последствия уничтожения platform остаются такими, как описано в разделе 44.
+
+Structural composition changes делятся на два класса:
+
+```text
+Frequent value updates
+    StructurePoints
+    PowerState
+    OperationalState
+    ActiveCycle progress
+    BatteryChargeWh
+    Cargo quantity
+    generator accumulator
+
+Rare structural changes
+    install module
+    remove module
+    destroy module/platform/ship
+    repair/rebuild module in future versions
+    add/remove capability due to upgrade
+```
+
+Частые value updates должны выполняться без пересоздания type definitions и без ненужных structural changes ECS archetype. Редкие structural changes выполняются только в authoritative Engine и должны создавать необходимые `ShipEvent` / log entries по уже закреплённым правилам.
+
+Итоговый инвариант: type data определяет, что модуль умеет и сколько он весит; installed module runtime state определяет, в каком состоянии находится конкретный модуль; ship-level systems агрегируют capabilities без копирования type definitions в instances.
+
+### 55.6. Заводы и производственные циклы
+
+Фабрики/заводы используют тот же принцип `type registry + runtime state`.
+
+Type definition завода содержит:
+
+```text
+FactoryTypeId
+Name / display metadata
+Recipe:
+    Inputs[]
+    Outputs[]
+    CycleDuration
+```
+
+Runtime state завода содержит:
+
+```text
+factoryInstanceId / moduleId
+factoryTypeIndex / recipeIndex
+Phase
+ElapsedGameTime
+PendingOutput?
+```
+
+Recipe arrays не копируются в runtime state. Система производства получает recipe из registry по index.
+
+`factoryTypeId` / `recipeTypeId` остаётся source of truth для save/load. Internal `factoryTypeIndex` / `recipeIndex` допускается только как runtime-resolved cache.
+
+Factory может быть:
+
+- отдельным установленным station module;
+- capability установленного module;
+- отдельной factory entity, связанной со station/body;
+- другим internal representation.
+
+Конкретная ECS-раскладка является implementation detail. Внешне factory instance должен иметь стабильный id и ссылку на owning station/body/module, достаточную для save/load, event log и диагностики.
+
+Минимальный conceptual runtime state:
+
+```text
+FactoryRuntime
+    instanceId
+    factoryTypeId
+    ownerObjectId / bodyId / moduleId?
+    Phase
+    ElapsedGameTimeMs
+    PendingOutput[]
+    LastBlockReason?
+```
+
+`PendingOutput[]` хранит только item ids и quantities, которые уже произведены, но ещё не помещены в склад/пул. Он не хранит recipe outputs как type data.
+
+Автомат завода сохраняется как обязательная модель:
+
+```text
+Idle → Loading → Working → Unloading
+```
+
+Смысл фаз:
+
+```text
+Idle
+    завод готов начать следующий цикл, но ещё не списал inputs
+
+Loading
+    короткая/логическая фаза резервирования и списания inputs
+    на первом этапе может быть выполнена в тот же tick, что и переход из Idle
+
+Working
+    elapsed time растёт по authoritative GameTime
+
+Unloading
+    попытка выдать outputs в склад/пул
+    если outputs не помещаются, формируется/сохраняется PendingOutput
+```
+
+Правила старта цикла:
+
+- новый цикл не стартует, пока `PendingOutput` не пуст;
+- цикл не стартует, пока недоступны все inputs recipe;
+- проверка доступности inputs выполняется против authoritative resource/cargo pool owner, а не против копии данных в factory component;
+- списание inputs должно быть atomic относительно одного factory cycle: нельзя списать часть inputs и оставить завод в неконсистентном состоянии;
+- если inputs доступны, они списываются один раз при старте/Loading, а не постепенно во время Working, если будущая механика явно не введёт потоковое потребление;
+- после списания inputs завод переходит в `Working` с `ElapsedGameTimeMs = 0`.
+
+Правила Working:
+
+- `ElapsedGameTimeMs` увеличивается только authoritative simulation time;
+- при `Pause / Speed0` прогресс не идёт;
+- при ускорениях `Speed1..Speed4` результат зависит только от прошедшего GameTime, а не от real time;
+- если tick пересекает конец цикла, Engine завершает cycle deterministically и не теряет overflow elapsed time без явно описанного правила;
+- `CycleDuration` хранится как целое игровое время (`CycleTimeMs` или согласованная целая единица), не как строка вроде `"3d"`.
+
+Правила Unloading / outputs:
+
+- outputs берутся из recipe type definition через registry;
+- выдача outputs означает операцию с authoritative body/station/cargo pool;
+- если весь output помещается, завод очищает `PendingOutput` и может вернуться в `Idle`;
+- если output помещается частично или не помещается, невмещённая часть сохраняется в `PendingOutput`;
+- пока `PendingOutput` не пуст, следующий cycle не стартует;
+- последующие ticks сначала пытаются разгрузить `PendingOutput`, а не создать новый output по recipe.
+
+Reason codes для состояния ожидания/блокировки должны быть машинно-читаемыми. Минимальные conceptual reasons:
+
+```text
+idle_no_input
+idle_no_power
+idle_no_space
+working
+unloading_pending_output
+```
+
+`Energy Cells`, если используются заводом как энергия первого этапа, считаются обычным входом recipe. Если не хватает только `Energy Cells`, reason code должен отличать `idle_no_power` от общего `idle_no_input`.
+
+В первой версии factory system не должна использовать floating point для учётных величин:
+
+- input/output counts — целые;
+- pending output counts — целые;
+- elapsed/cycle time — целые;
+- storage/cargo quantities — целые.
+
+Порядок обработки factory instances должен быть детерминированным. Если несколько заводов конкурируют за один resource pool, результат не может зависеть от hash-map order, ECS archetype order, thread scheduling или reflection order. До введения явной priority-механики используется стабильный порядок, например:
+
+```text
+ownerObjectId/bodyId → factoryInstanceId
+```
+
+или другой явно закреплённый stable key.
+
+Если в будущем вводятся приоритеты заводов, они должны быть type/config/runtime data с детерминированным tie-breaker, а не побочным эффектом порядка коллекций.
+
+### 55.7. Ресурсы, склады и общие пулы
+
+Ресурсы и cargo учитываются целыми величинами.
+
+Для небесного тела сохраняется принцип общего пула ресурсов/складов:
+
+```text
+bodyId → item/resource id → Int64 count
+```
+
+Для корабля сохраняется принцип общего доступа некоторых систем к cargo/fuel внутри включённых и исправных container modules того же корабля, если конкретная механика не задаёт ограничение.
+
+Переменно-размерные словари ресурсов не обязаны быть горячими ECS-компонентами. Их можно хранить как отдельный authoritative container Engine, связанный с entity/object id. ECS-системы обращаются к нему через явный сервис/контекст simulation tick, не через UI и не через Contracts.
+
+Минимальные conceptual containers:
+
+```text
+BodyResourcePool
+    bodyId
+    stacks: itemTypeId → Int64 quantity
+
+ShipCargoState
+    objectId
+    moduleId → ModuleCargoState
+
+ModuleCargoState
+    moduleId
+    stacks: itemTypeId → Int64 quantity
+```
+
+`BodyResourcePool` используется станциями, заводами и добычей на небесном теле как общий authoritative pool. Если на одном теле несколько складов/станций, их логическое содержимое образует единый pool, как уже закреплено в DSE-инварианте.
+
+`ShipCargoState` хранит физическое распределение cargo по container modules, потому что уничтожение container module, On/Off, исправность и вместимость зависят от конкретного module instance.
+
+Для систем, которым неважно физическое распределение груза, Engine предоставляет aggregated view:
+
+```text
+AvailableShipItemCount(shipId, itemTypeId)
+AvailableShipCargoMassKg(shipId)
+AvailableShipCapacityKg(shipId)
+```
+
+Эта aggregated view является вычисляемой authoritative read model, а не отдельным source of truth.
+
+Масса cargo всегда вычисляется через `ItemTypeRegistry`:
+
+```text
+StackMassKg = quantity * ItemType.UnitMassKg
+ContainerUsedMassKg = Σ StackMassKg
+ContainerFreeMassKg = ModuleType.CapacityKg - ContainerUsedMassKg
+```
+
+`UnitMassKg` не копируется в cargo stack. Если item type изменится между версиями configuration, save migration должна явно определить, как интерпретировать старые saves; автоматическое молчаливое изменение массы сохранённого мира недопустимо без migration policy.
+
+Операции с ресурсами должны быть atomic на уровне одной gameplay operation:
+
+```text
+TryConsume(pool, requiredStacks)
+    succeeds only if all required quantities are available
+    on failure changes nothing
+
+TryAdd(pool, outputStacks)
+    succeeds only if capacity rules allow full add
+    if partial add is allowed by specific mechanic, leftover must be returned explicitly
+```
+
+Factory input consumption, generator fuel consumption, cargo loading/unloading and mining output insertion must use these atomic semantics or an explicitly documented variant.
+
+Capacity rules:
+
+- cargo/fuel container capacity is mass-based (`CapacityKg`);
+- `quantity` is integer;
+- `quantity < 0` is invalid;
+- resulting stack quantity cannot become negative;
+- total module cargo mass cannot exceed `ModuleType.CapacityKg`;
+- `CapacityKg = 0` is valid only for types that intentionally cannot store cargo;
+- item/resource types with `UnitMassKg <= 0` cannot appear in cargo stacks unless a future special non-mass item category is explicitly designed.
+
+Ship-level access rules for the first stage:
+
+- generator may consume `Energy Cells` from any `On + non-destroyed` container module of the same ship;
+- other systems may use the same shared-ship-cargo rule only if their mechanic explicitly says so;
+- cargo in `Off` container modules remains physically present and counts toward mass, but availability to consuming systems follows the consuming system's access rule;
+- destroyed container modules remove or invalidate their cargo according to future destruction/cargo-loss rules; until those rules are detailed, destruction must not silently duplicate cargo.
+
+Body pool access rules:
+
+- factory inputs/outputs operate against the body/station pool identified by owner/body relation;
+- mining and unloading systems add to the correct body or ship pool according to the operation;
+- transferring resources between ship and body must be modeled as an authoritative operation with deterministic ordering and validation.
+
+Deterministic ordering matters when multiple systems access the same pool in one tick/turn. The order must be fixed by system order and stable ids, not by dictionary iteration order.
+
+Resource/cargo state must be saved in `GeneralSaveState`. Snapshot may expose only the subset needed by Client/UI; snapshot cargo display data must not become a separate source of truth.
+
+### 55.8. Детерминированный порядок систем
+
+ECS не должен нарушать уже закреплённый deterministic authoritative turn.
+
+Требования:
+
+- порядок систем фиксируется в коде;
+- порядок conflict rules фиксируется через явные ключи `Priority → RuleId`;
+- порядок обработки команд не зависит от enumeration order коллекций, DI registration order, reflection order, thread scheduling или порядка архетипов ECS-библиотеки;
+- если ECS query не гарантирует нужный порядок, Engine обязан явно сортировать или использовать стабильный command batch / stable id order на границах, где порядок влияет на результат;
+- все RNG-вызовы выполняются только через сохраняемые deterministic RNG streams.
+
+Детерминизм определяется не только порядком systems, но и порядком обработки entities внутри каждой system. Любой system, где порядок может изменить результат, обязан использовать stable ordering key.
+
+Stable ordering keys:
+
+```text
+Space object systems:
+    objectId
+
+Ship module systems:
+    objectId → moduleId
+
+Platform/module damage selection:
+    deterministic RNG stream + stable candidate list order
+
+Factory systems:
+    ownerObjectId/bodyId → factoryInstanceId
+
+Resource transfer systems:
+    sourceId → targetId → operationId
+
+Command pipeline:
+    authoritative turn time → received order/client sequence → commandId
+```
+
+Если порядок не влияет на результат, system может использовать быстрый ECS query order. Но это должно быть true by construction: например чистое обновление `ElapsedGameTimeMs += delta` без shared resource competition и без RNG.
+
+Запрещённые источники недетерминизма:
+
+- `Dictionary` / `HashSet` iteration order как gameplay order;
+- reflection order;
+- DI registration order;
+- thread scheduling;
+- task completion order;
+- filesystem enumeration order без explicit sort;
+- ECS archetype/chunk order, если он может измениться после structural changes;
+- current culture string ordering;
+- `DateTime.Now`, real UTC time или wall-clock time внутри simulation logic;
+- unsaved process-local counters for gameplay decisions;
+- system/global random generators.
+
+Parallelism может использоваться только если результат не зависит от порядка выполнения. Если parallel system пишет в общий resource pool, cargo, event list, command result list или RNG stream, она должна работать через deterministic collect-and-merge phase:
+
+```text
+parallel local calculation
+→ collect immutable intents/results
+→ sort by stable key
+→ single deterministic apply/merge
+```
+
+RNG rules inside ECS systems:
+
+- каждый gameplay subsystem использует named persisted RNG stream;
+- порядок RNG calls должен быть stable and documented;
+- нельзя вызывать RNG для entity, которая затем будет отброшена фильтром, если это меняет counter относительно другого порядка обхода;
+- failed validation не должна потреблять RNG, если результат не требует random roll;
+- random selection строится из stable candidate list, затем выполняется один deterministic roll.
+
+Event/result ordering:
+
+- `CommandResult` ordering in snapshot is deterministic;
+- `ShipEvent` ordering in snapshot/watch log is deterministic;
+- если несколько events имеют одинаковый `gameTimeMs`, используется stable tie-breaker, например `eventSequence` или `(objectId, moduleId, eventCode, localSequence)`;
+- event ids/sequences являются authoritative и сохраняются, если событие входит в persisted watch log или save continuation state.
+
+Save/load continuity:
+
+- после save/load при одинаковом `GameTimeMs`, registry ids, RNG states и runtime state дальнейшие ticks должны давать тот же authoritative result;
+- internal ECS entity ids and type indexes may be rebuilt, but stable domain ids and resolved semantics must reproduce the same behavior;
+- tests for deterministic systems should include at least one save/load continuation scenario when the system affects resources, RNG, command results or events.
+
+Structural changes:
+
+- adding/removing components may change ECS archetype order, so systems that affect shared state cannot rely on ECS query order after structural changes;
+- structural changes are applied at explicit safe points in the authoritative pipeline;
+- command execution and simulation systems must not observe half-applied module installation/removal/destruction.
+
+Концептуальный порядок дальнейшей детализации:
+
+```text
+session-control / SimulationClock
+→ command acceptance buffer
+→ authoritative turn cutoff
+→ execution validation against TurnStartState
+→ deterministic conflict resolution
+→ apply command starts/state changes
+→ apply queued structural changes at safe point
+→ simulation systems in fixed order
+→ deterministic resource/cargo/event merge phases where needed
+→ collect CommandResults / ShipEvents
+→ publish immutable AuthoritativeSnapshot
+```
+
+Точный список gameplay systems будет уточняться по мере реализации модулей.
+
+### 55.9. ECS-библиотека и граница зависимости
+
+Целевой подход совместим с archetype-based ECS. Рабочий кандидат для реализации — `Arch`, но добавление конкретной NuGet-зависимости является отдельным implementation decision и должно пройти через обычную синхронизацию проекта.
+
+До выбора библиотеки требования формулируются library-neutral:
+
+- `DeepSpaceSaga.Engine` может скрывать ECS за внутренними типами/адаптерами;
+- `DeepSpaceSaga.Contracts`, `DeepSpaceSaga.Motion` и `DeepSpaceSaga.Client` не должны зависеть от ECS-библиотеки;
+- external DTO не должны раскрывать ECS entity ids;
+- тесты Engine должны проверять доменное поведение, deterministic order и save/load continuity, а не детали конкретной ECS-библиотеки.
+
+Допустимое направление зависимости:
+
+```text
+DeepSpaceSaga.Engine
+    may reference ECS library
+
+DeepSpaceSaga.Engine.LocalClient
+    must not expose ECS types through public APIs
+
+DeepSpaceSaga.Contracts
+DeepSpaceSaga.Motion
+DeepSpaceSaga.Client
+tests outside Engine internals
+    must not reference ECS library
+```
+
+Если ECS-библиотека используется, она является implementation detail authoritative Engine. Public contracts остаются построены на DSS ids and DTO:
+
+```text
+objectId
+moduleId
+typeId
+AuthoritativeSnapshot DTOs
+PlayerCommand DTOs
+CommandResult / ShipEvent DTOs
+```
+
+Запрещено:
+
+- передавать ECS `Entity` / entity id в `Contracts`;
+- хранить ECS entity id как stable save id;
+- делать Client API, который читает ECS world/query напрямую;
+- завязывать scenario/save JSON на порядок ECS archetypes/chunks;
+- писать gameplay tests, которые проходят только потому, что конкретная ECS-библиотека сейчас обходит entities в удобном порядке.
+
+Критерии выбора ECS-библиотеки:
+
+- совместимость с `.NET 8`;
+- отсутствие зависимости от rendering/UI stack;
+- быстрый обход большого числа entities/components;
+- возможность работать с `struct` components без лишних аллокаций;
+- понятная модель structural changes;
+- возможность детерминированно управлять порядком там, где он влияет на результат;
+- нормальная интеграция с unit tests;
+- отсутствие необходимости протаскивать ECS types в Contracts/Client.
+
+`Arch` остаётся preferred candidate для будущего technical spike, потому что archetype-based layout соответствует частым value updates и редким structural changes DSS. Однако итоговое решение должно быть подтверждено маленьким spike/task, а не считаться уже реализованным требованием.
+
+Technical spike по ECS-библиотеке должен проверить минимум:
+
+```text
+1. create/load entities from resolved type registry
+2. update simple module/factory runtime component by deterministic tick
+3. map stable objectId/moduleId ↔ internal entity
+4. serialize authoritative state without ECS entity ids as source of truth
+5. reproduce same result after save/load/rebuild world
+6. prove Contracts/Client/Motion do not reference ECS package
+```
+
+Если выбранная библиотека мешает deterministic ordering, save/load continuity или clean dependency boundary, Engine должен либо изолировать это адаптером, либо отказаться от этой библиотеки.
+
+На ранних этапах допускается реализовать registry/data model and command-cycle domain logic без ECS package, если это ускоряет закрепление правильных save/scenario contracts. Подключение ECS не должно предшествовать разделению type definitions and runtime instances.
+
+### 55.10. Практический порядок внедрения
+
+Внедрять ECS-принципы нужно по частям, без большой одномоментной переписи.
+
+Рекомендуемый порядок:
+
+1. Зафиксировать immutable type registries для module types, item/resource types и command definitions.
+2. Разделить `typeId` и runtime instance state в scenario/save model.
+3. Реализовать module runtime state и command cycle state по разделам 34/43.
+4. Подключить deterministic command pipeline для одного-двух модулей, начиная со Scanner MK I.
+5. Добавить cargo/fuel containers и общий доступ generator к `Energy Cells`.
+6. Реализовать energy system и emergency shutdown.
+7. После этого деталировать Drilling Unit, factories и production/resource loops.
+
+Открытый вопрос для дальнейшего обсуждения: начинать ли фактическую реализацию ECS-механики с корабельного `Scanner MK I` как уже хорошо описанного циклического модуля, или сначала с registry/data model для module types и items.

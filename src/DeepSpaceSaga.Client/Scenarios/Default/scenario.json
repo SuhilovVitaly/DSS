@@ -12,39 +12,39 @@
       "objectId": "SPC-0001"
     },
     "spaceObjects": [
-      {
-        "objectId": "SPC-0001",
-        "objectType": "PlayerShip",
-        "persistenceType": "Permanent",
-        "name": "Player Ship",
-        "positionX": 10000.0,
-        "positionY": 10000.0,
-        "speedMps": 700,
-        "directionDegrees": 0,
-        "movementType": "Stationary",
-        "modules": [
-          {
-            "moduleId": "MOD-PLAYER-CARGO-01",
-            "moduleType": "Container",
-            "slotSize": 4,
-            "platformIndex": 2,
-            "occupiedCells": [1, 2, 3, 4],
-            "massKg": 20000,
-            "structurePoints": 400,
-            "structurePointsMax": 400,
-            "powerState": "On",
-            "operationalState": "Ready",
-            "capacityKg": 100000,
-            "cargo": [
-              {
-                "resourceType": "Energy Cells",
-                "quantity": 1000,
-                "unitMassKg": 10
-              }
+        {
+            "objectId": "SPC-0001",
+            "objectType": "PlayerShip",
+            "persistenceType": "Permanent",
+            "name": "Player Ship",
+            "positionX": 10000.0,
+            "positionY": 10000.0,
+            "speedMps": 700,
+            "directionDegrees": 0,
+            "movementType": "Linear",
+            "modules": [
+                {
+                    "moduleId": "MOD-PLAYER-CARGO-01",
+                    "moduleType": "Container",
+                    "slotSize": 4,
+                    "platformIndex": 2,
+                    "occupiedCells": [ 1, 2, 3, 4 ],
+                    "massKg": 20000,
+                    "structurePoints": 400,
+                    "structurePointsMax": 400,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "capacityKg": 100000,
+                    "cargo": [
+                        {
+                            "resourceType": "Energy Cells",
+                            "quantity": 1000,
+                            "unitMassKg": 10
+                        }
+                    ]
+                }
             ]
-          }
-        ]
-      },
+        },
       {
         "objectId": "SPC-0002",
         "objectType": "Station",
