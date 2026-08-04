@@ -57,7 +57,10 @@ public class PauseSimulationTests
 
         var (reader, loop, cts) = StartEngine(engine, TimeSpan.FromSeconds(15));
 
-        // Read one snapshot at Speed1 (just to advance past t=0)
+        // Discard immediate snapshot (GameTime=0)
+        await ReadNextAsync(reader, cts.Token);
+
+        // Read one snapshot at Speed1 (after the 1-second delay, GameTime > 0)
         var s1 = await ReadNextAsync(reader, cts.Token);
         Assert.True(s1.GameTimeMs > 0);
 
@@ -87,7 +90,10 @@ public class PauseSimulationTests
 
         var (reader, loop, cts) = StartEngine(engine, TimeSpan.FromSeconds(10));
 
-        // Read snapshot at Speed1 — object is moving
+        // Discard immediate snapshot (GameTime=0, object at initial position)
+        await ReadNextAsync(reader, cts.Token);
+
+        // Read snapshot at Speed1 — object has moved after 1-second delay
         var s1 = await ReadNextAsync(reader, cts.Token);
         var obj1 = s1.Objects[0];
         Assert.True(obj1.X > 0, "Object should have moved right");

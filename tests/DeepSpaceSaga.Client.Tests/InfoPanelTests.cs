@@ -218,4 +218,19 @@ public class InfoPanelTests
         Assert.True(screen.LastPanelRect.Height > 0);
         Assert.True(screen.LastCloseRect.Width > 0);
     }
+
+    [Fact]
+    public void Panel_lines_include_current_scale()
+    {
+        var (_, _, screen) = CreateScreen();
+        RenderScreen(screen);
+
+        var scaleLine = Assert.Single(screen.BuildPanelLines(null), line => line.Label == "Scale");
+        Assert.Equal("1 px/unit", scaleLine.Value);
+
+        screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, 1f);
+
+        scaleLine = Assert.Single(screen.BuildPanelLines(null), line => line.Label == "Scale");
+        Assert.Equal("1.25 px/unit", scaleLine.Value);
+    }
 }

@@ -11,4 +11,5 @@ public sealed record AuthoritativeSnapshot(
     ulong SnapshotSequence,
     long GameTimeMs,
     SimulationSpeed CurrentSpeed,
-    ImmutableArray<ObjectMotionSnapshot> Objects);
+    ImmutableArray<ObjectMotionSnapshot> Objects,
+    string? PlayerShipObjectId = null);

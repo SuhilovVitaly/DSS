@@ -1,0 +1,181 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using DeepSpaceSaga.Contracts;
+
+namespace DeepSpaceSaga.Engine.Scenario;
+
+/// <summary>
+/// Loads and validates a scenario JSON file.
+/// </summary>
+public static class ScenarioLoader
+{
+    private static readonly HashSet<string> KnownObjectTypes = new(StringComparer.OrdinalIgnoreCase)
+        { "PlayerShip", "Station", "Asteroid" };
+
+    private static readonly HashSet<string> KnownPersistenceTypes = new(StringComparer.OrdinalIgnoreCase)
+        { "Permanent", "Temporary" };
+
+    private static readonly HashSet<string> KnownSpeeds = new(StringComparer.OrdinalIgnoreCase)
+        { "Speed0", "Speed1", "Speed2", "Speed3", "Speed4" };
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+    };
+
+    public static ScenarioFile LoadFromFile(string path)
+    {
+        if (!File.Exists(path))
+            throw new ScenarioException($"Scenario file not found: {path}");
+
+        string json;
+        try
+        {
+            json = File.ReadAllText(path);
+        }
+        catch (Exception ex)
+        {
+            throw new ScenarioException($"Failed to read scenario file: {path}", ex);
+        }
+
+        return LoadFromJson(json);
+    }
+
+    public static ScenarioFile LoadFromJson(string json)
+    {
+        ScenarioFile scenario;
+        try
+        {
+            scenario = JsonSerializer.Deserialize<ScenarioFile>(json, JsonOptions)
+                       ?? throw new ScenarioException("Scenario JSON deserialized to null.");
+        }
+        catch (JsonException ex)
+        {
+            throw new ScenarioException($"Invalid scenario JSON: {ex.Message}", ex);
+        }
+
+        Validate(scenario);
+        return scenario;
+    }
+
+    /// <summary>Parse a speed string from the scenario. Throws on unknown values.</summary>
+    public static SimulationSpeed ParseSpeed(string speed)
+    {
+        if (!KnownSpeeds.Contains(speed))
+            throw new ScenarioException(
+                $"Unknown currentSpeed '{speed}'. Expected one of: {string.Join(", ", KnownSpeeds)}.");
+
+        return speed switch
+        {
+            "Speed0" => SimulationSpeed.Speed0,
+            "Speed1" => SimulationSpeed.Speed1,
+            "Speed2" => SimulationSpeed.Speed2,
+            "Speed3" => SimulationSpeed.Speed3,
+            "Speed4" => SimulationSpeed.Speed4,
+            _ => throw new ScenarioException($"Unknown currentSpeed: {speed}")
+        };
+    }
+
+    private static void Validate(ScenarioFile scenario)
+    {
+        var gs = scenario.GameState;
+        if (gs is null)
+            throw new ScenarioException("Missing gameState.");
+
+        if (string.IsNullOrWhiteSpace(gs.PlayerShipObjectId))
+            throw new ScenarioException("Missing playerShipObjectId.");
+
+        if (string.IsNullOrWhiteSpace(gs.CurrentSpeed))
+            throw new ScenarioException("Missing currentSpeed.");
+
+        // Validate speed string
+        ParseSpeed(gs.CurrentSpeed);
+
+        // Only New Game (gameTimeMs = 0) is supported
+        if (gs.GameTimeMs != 0)
+            throw new ScenarioException(
+                $"gameTimeMs must be 0 for New Game, got {gs.GameTimeMs}.");
+
+        var objects = gs.SpaceObjects;
+        if (objects is null || objects.Count == 0)
+            throw new ScenarioException("No spaceObjects in scenario.");
+
+        // Duplicate objectIds (also catches null elements)
+        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var obj in objects)
+        {
+            if (obj is null)
+                throw new ScenarioException("spaceObjects contains a null element.");
+            if (string.IsNullOrWhiteSpace(obj.ObjectId))
+                throw new ScenarioException("Space object has empty objectId.");
+            if (!ids.Add(obj.ObjectId))
+                throw new ScenarioException($"Duplicate objectId: {obj.ObjectId}");
+        }
+
+        // Player ship exists and has correct type
+        var playerShip = objects.FirstOrDefault(o =>
+            string.Equals(o.ObjectId, gs.PlayerShipObjectId, StringComparison.OrdinalIgnoreCase));
+        if (playerShip is null)
+            throw new ScenarioException($"Player ship '{gs.PlayerShipObjectId}' not found in spaceObjects.");
+
+        if (!string.Equals(playerShip.ObjectType, "PlayerShip", StringComparison.OrdinalIgnoreCase))
+            throw new ScenarioException(
+                $"Player ship '{playerShip.ObjectId}' has objectType '{playerShip.ObjectType}', expected 'PlayerShip'.");
+
+        // Validate each object (nulls already caught in the duplicate-check loop)
+        foreach (var obj in objects)
+        {
+            ValidateObject(obj);
+        }
+    }
+
+    private static void ValidateObject(SpaceObjectData obj)
+    {
+        if (string.IsNullOrWhiteSpace(obj.ObjectId))
+            throw new ScenarioException("Space object has empty objectId.");
+
+        if (string.IsNullOrWhiteSpace(obj.ObjectType))
+            throw new ScenarioException($"Missing objectType for '{obj.ObjectId}'.");
+        if (!KnownObjectTypes.Contains(obj.ObjectType))
+            throw new ScenarioException($"Unknown objectType '{obj.ObjectType}' for '{obj.ObjectId}'.");
+
+        if (string.IsNullOrWhiteSpace(obj.PersistenceType))
+            throw new ScenarioException($"Missing persistenceType for '{obj.ObjectId}'.");
+        if (!KnownPersistenceTypes.Contains(obj.PersistenceType))
+            throw new ScenarioException($"Unknown persistenceType '{obj.PersistenceType}' for '{obj.ObjectId}'.");
+
+        if (obj.DirectionDegrees < 0 || obj.DirectionDegrees > 359)
+            throw new ScenarioException(
+                $"directionDegrees {obj.DirectionDegrees} for '{obj.ObjectId}' is not in 0..359.");
+
+        if (!double.IsFinite(obj.PositionX) || !double.IsFinite(obj.PositionY))
+            throw new ScenarioException($"Non-finite coordinates for '{obj.ObjectId}'.");
+
+        // Temporary objects must be asteroids
+        if (string.Equals(obj.PersistenceType, "Temporary", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!string.Equals(obj.ObjectType, "Asteroid", StringComparison.OrdinalIgnoreCase))
+                throw new ScenarioException(
+                    $"Temporary object '{obj.ObjectId}' must be Asteroid, got '{obj.ObjectType}'.");
+
+            // Asteroid speed range: 100..20000 m/s
+            if (obj.SpeedMps < 100 || obj.SpeedMps > 20000)
+                throw new ScenarioException(
+                    $"Asteroid '{obj.ObjectId}' speedMps {obj.SpeedMps} is outside 100..20000.");
+
+            // Asteroid mass range: 1_000_000..1_000_000_000 kg
+            if (obj.MassKg is not { } m || m < 1_000_000 || m > 1_000_000_000)
+                throw new ScenarioException(
+                    $"Asteroid '{obj.ObjectId}' massKg {obj.MassKg} is outside 1,000,000..1,000,000,000.");
+        }
+    }
+}
+
+/// <summary>
+/// Thrown when scenario loading or validation fails.
+/// </summary>
+public sealed class ScenarioException : Exception
+{
+    public ScenarioException(string message) : base(message) { }
+    public ScenarioException(string message, Exception inner) : base(message, inner) { }
+}

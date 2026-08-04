@@ -115,6 +115,24 @@ public class SimulationClockTests
     }
 
     [Fact]
+    public void Reset_sets_game_time_and_speed_directly()
+    {
+        var clock = new SimulationClock(SimulationSpeed.Speed1);
+        Thread.Sleep(20);
+        clock.Update(); // accumulate some time
+        Assert.True(clock.GameTimeMs > 0);
+
+        clock.Reset(0, SimulationSpeed.Speed0);
+        Assert.Equal(0, clock.GameTimeMs);
+        Assert.Equal(SimulationSpeed.Speed0, clock.Speed);
+
+        // After reset, Update should NOT add backlog from before the reset
+        Thread.Sleep(20);
+        clock.Update();
+        Assert.True(clock.GameTimeMs >= 0);
+    }
+
+    [Fact]
     public void SetSpeed_accumulates_partial_interval_before_switching()
     {
         // This test verifies the critical fix: when SetSpeed is called

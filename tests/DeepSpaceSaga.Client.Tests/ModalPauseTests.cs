@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
@@ -7,6 +8,16 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class ModalPauseTests
 {
+    private sealed class FakeTimestamp
+    {
+        public long Timestamp { get; private set; }
+
+        public void AdvanceMs(long milliseconds)
+        {
+            Timestamp += (long)(milliseconds * Stopwatch.Frequency / 1000.0);
+        }
+    }
+
     [Fact]
     public void Prediction_stops_during_pause()
     {
@@ -25,9 +36,7 @@ public class ModalPauseTests
         var buffered = buffer.Latest;
         Assert.NotNull(buffered);
 
-        // Renderer logic: check buffer.CurrentSpeed (immediate), not snapshot speed
-        bool isPaused = buffer.CurrentSpeed == SimulationSpeed.Speed0;
-        long effectiveDelta = isPaused ? 0 : buffered.PredictionDeltaMs;
+        long effectiveDelta = buffer.EffectivePredictionDeltaMs;
 
         var predicted = effectiveDelta > 0
             ? predictor.Predict(obj, effectiveDelta)
@@ -52,14 +61,13 @@ public class ModalPauseTests
         var buffered = buffer.Latest;
         Assert.NotNull(buffered);
 
-        bool isPaused = buffer.CurrentSpeed == SimulationSpeed.Speed0;
-        long effectiveDelta = isPaused ? 0 : buffered.PredictionDeltaMs;
+        long effectiveDelta = buffer.EffectivePredictionDeltaMs;
 
         var predicted = effectiveDelta > 0
             ? predictor.Predict(obj, effectiveDelta)
             : obj;
 
-        if (buffered.PredictionDeltaMs > 0)
+        if (effectiveDelta > 0)
             Assert.True(predicted.X >= 0);
     }
 
@@ -120,6 +128,117 @@ public class ModalPauseTests
         // Renderer reads buffer.CurrentSpeed, NOT snapshot speed
         bool isPaused = buffer.CurrentSpeed == SimulationSpeed.Speed0;
         Assert.True(isPaused, "Renderer should see immediate pause, not wait for next snapshot");
+    }
+
+    [Fact]
+    public void Buffer_CurrentSpeed_is_synced_from_first_snapshot()
+    {
+        var buffer = new SnapshotBuffer();
+        Assert.Equal(SimulationSpeed.Speed1, buffer.CurrentSpeed); // default
+
+        // Simulate first snapshot arriving with Speed0
+        buffer.Update(new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed0,
+            ImmutableArray<ObjectMotionSnapshot>.Empty));
+
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+    }
+
+    [Fact]
+    public void Buffer_CurrentSpeed_is_updated_on_every_snapshot()
+    {
+        var buffer = new SnapshotBuffer();
+
+        buffer.Update(new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed2,
+            ImmutableArray<ObjectMotionSnapshot>.Empty));
+        Assert.Equal(SimulationSpeed.Speed2, buffer.CurrentSpeed);
+
+        buffer.Update(new AuthoritativeSnapshot(2, 0, SimulationSpeed.Speed0,
+            ImmutableArray<ObjectMotionSnapshot>.Empty));
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+    }
+
+    [Fact]
+    public void Prediction_delta_is_multiplied_by_speed()
+    {
+        var clock = new FakeTimestamp();
+        var buffer = new SnapshotBuffer(() => clock.Timestamp);
+
+        var obj = new ObjectMotionSnapshot("mover", X: 0, Y: 0, SpeedKmS: 5, Direction: 90);
+
+        // Speed2 = 5x
+        buffer.Update(new AuthoritativeSnapshot(1, 1000, SimulationSpeed.Speed2,
+            ImmutableArray.Create(obj)));
+
+        clock.AdvanceMs(200);
+
+        Assert.Equal(1000, buffer.EffectivePredictionDeltaMs);
+    }
+
+    [Fact]
+    public void Prediction_delta_preserves_speed_segments_between_snapshots()
+    {
+        var clock = new FakeTimestamp();
+        var buffer = new SnapshotBuffer(() => clock.Timestamp);
+
+        buffer.Update(new AuthoritativeSnapshot(1, 1000, SimulationSpeed.Speed1,
+            ImmutableArray<ObjectMotionSnapshot>.Empty));
+
+        clock.AdvanceMs(500);
+        buffer.CurrentSpeed = SimulationSpeed.Speed4;
+
+        // The 500 ms that already passed must stay at Speed1.
+        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
+
+        clock.AdvanceMs(100);
+
+        // Then only the new 100 ms segment runs at Speed4 / 100x.
+        Assert.Equal(10500, buffer.EffectivePredictionDeltaMs);
+    }
+
+    [Fact]
+    public void Prediction_delta_does_not_advance_after_pause_segment_starts()
+    {
+        var clock = new FakeTimestamp();
+        var buffer = new SnapshotBuffer(() => clock.Timestamp);
+
+        buffer.Update(new AuthoritativeSnapshot(1, 1000, SimulationSpeed.Speed1,
+            ImmutableArray<ObjectMotionSnapshot>.Empty));
+
+        clock.AdvanceMs(500);
+        buffer.CurrentSpeed = SimulationSpeed.Speed0;
+        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
+
+        clock.AdvanceMs(1000);
+        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
+    }
+
+    [Fact]
+    public void First_snapshot_Speed0_moving_object_no_prediction()
+    {
+        var buffer = new SnapshotBuffer();
+        var predictor = new LinearMotionPredictor();
+
+        // Object moving at 5 km/s = 50 units/s
+        var obj = new ObjectMotionSnapshot("mover", X: 0, Y: 0, SpeedKmS: 5, Direction: 90);
+
+        // First snapshot arrives with Speed0
+        buffer.Update(new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed0,
+            ImmutableArray.Create(obj)));
+
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+
+        var buffered = buffer.Latest;
+        Assert.NotNull(buffered);
+
+        long effectiveDelta = buffer.EffectivePredictionDeltaMs;
+
+        var predicted = effectiveDelta > 0
+            ? predictor.Predict(obj, effectiveDelta)
+            : obj;
+
+        // Must NOT have moved — Speed0 means no prediction
+        Assert.Equal(0, predicted.X);
+        Assert.Equal(0, predicted.Y);
     }
 
     [Fact]

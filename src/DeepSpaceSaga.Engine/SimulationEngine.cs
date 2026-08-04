@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 
 namespace DeepSpaceSaga.Engine;
@@ -15,9 +16,9 @@ public sealed class SimulationEngine : IDisposable
 {
     public const int SnapshotIntervalMs = 1000;
 
-    private readonly SimulationClock _clock = new(SimulationSpeed.Speed1);
+    private readonly SimulationClock _clock;
     private readonly LinearMotionPredictor _motion = new();
-    private readonly List<(ObjectMotionSnapshot Initial, long StartGameTimeMs)> _testObjects = new();
+    private readonly List<(ObjectMotionSnapshot Initial, long StartGameTimeMs)> _objects = new();
     private readonly List<PlayerCommand> _pendingCommands = new();
     private ulong _nextSequence;
     private bool _disposed;
@@ -27,6 +28,14 @@ public sealed class SimulationEngine : IDisposable
 
     /// <summary>Current authoritative simulation speed.</summary>
     public SimulationSpeed CurrentSpeed => _clock.Speed;
+
+    /// <summary>ObjectId of the player ship (set by scenario).</summary>
+    public string? PlayerShipObjectId { get; private set; }
+
+    public SimulationEngine()
+    {
+        _clock = new SimulationClock(SimulationSpeed.Speed1);
+    }
 
     public void ReceiveCommand(PlayerCommand command)
     {
@@ -39,49 +48,81 @@ public sealed class SimulationEngine : IDisposable
         _clock.SetSpeed(speed);
     }
 
-    /// <summary>Add a test object whose position is advanced deterministically each snapshot.</summary>
+    /// <summary>
+    /// Load initial state from a scenario file. Replaces any previously added objects.
+    /// Sets the clock speed and game time from scenario data.
+    /// </summary>
+    public void LoadScenario(ScenarioFile scenario)
+    {
+        var gs = scenario.GameState;
+
+        PlayerShipObjectId = gs.PlayerShipObjectId;
+        _clock.Reset(gs.GameTimeMs, ScenarioLoader.ParseSpeed(gs.CurrentSpeed));
+
+        _objects.Clear();
+
+        foreach (var obj in gs.SpaceObjects)
+        {
+            // Convert m/s to km/s for the existing motion system
+            double speedKmS = (double)obj.SpeedMps / 1000.0;
+
+            _objects.Add((new ObjectMotionSnapshot(
+                ObjectId: obj.ObjectId,
+                X: obj.PositionX,
+                Y: obj.PositionY,
+                SpeedKmS: speedKmS,
+                Direction: obj.DirectionDegrees), 0)); // startGameTime stamped at RunAsync
+        }
+    }
+
+    /// <summary>Add a test object (legacy — prefer LoadScenario for production).</summary>
     public void AddTestObject(ObjectMotionSnapshot initial)
     {
-        _testObjects.Add((initial, 0)); // startGameTime set when engine runs
+        _objects.Add((initial, 0));
     }
 
     public async IAsyncEnumerable<AuthoritativeSnapshot> RunAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // Stamp each test object with the current game time at engine start.
-        // Reset real baseline so the first Update() in the loop measures from now.
+        // Stamp objects with the current game time at engine start.
         _clock.ResetRealBaseline();
         long engineStartGameTime = _clock.GameTimeMs;
 
-        for (int i = 0; i < _testObjects.Count; i++)
+        for (int i = 0; i < _objects.Count; i++)
         {
-            var (initial, _) = _testObjects[i];
-            _testObjects[i] = (initial, engineStartGameTime);
+            var (initial, _) = _objects[i];
+            _objects[i] = (initial, engineStartGameTime);
         }
+
+        // Yield the initial snapshot immediately (before any delay).
+        // Capture atomically — no time has passed, so we read without advancing.
+        yield return BuildSnapshot(_clock.Capture());
 
         while (!cancellationToken.IsCancellationRequested && !_disposed)
         {
             await Task.Delay(SnapshotIntervalMs, cancellationToken);
 
-            // Atomically advance clock and capture consistent GameTime + Speed
-            var clockState = _clock.UpdateAndCapture();
-
-            // Advance each test object from its initial state by elapsed game time
-            var objects = ImmutableArray.CreateBuilder<ObjectMotionSnapshot>(_testObjects.Count);
-            foreach (var (initial, objStartGameTime) in _testObjects)
-            {
-                long elapsed = clockState.GameTimeMs - objStartGameTime;
-                objects.Add(_motion.Predict(initial, elapsed));
-            }
-
-            var snapshot = new AuthoritativeSnapshot(
-                SnapshotSequence: _nextSequence++,
-                GameTimeMs: clockState.GameTimeMs,
-                CurrentSpeed: clockState.Speed,
-                Objects: objects.MoveToImmutable());
-
-            yield return snapshot;
+            yield return BuildSnapshot(_clock.UpdateAndCapture());
         }
+    }
+
+    private AuthoritativeSnapshot BuildSnapshot(SimulationClockState clockState)
+    {
+        long gameTimeMs = clockState.GameTimeMs;
+
+        var objects = ImmutableArray.CreateBuilder<ObjectMotionSnapshot>(_objects.Count);
+        foreach (var (initial, objStartGameTime) in _objects)
+        {
+            long elapsed = gameTimeMs - objStartGameTime;
+            objects.Add(_motion.Predict(initial, elapsed));
+        }
+
+        return new AuthoritativeSnapshot(
+            SnapshotSequence: _nextSequence++,
+            GameTimeMs: gameTimeMs,
+            CurrentSpeed: clockState.Speed,
+            Objects: objects.MoveToImmutable(),
+            PlayerShipObjectId: PlayerShipObjectId);
     }
 
     public void Dispose()
