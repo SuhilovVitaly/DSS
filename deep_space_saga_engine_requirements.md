@@ -4103,14 +4103,259 @@ Technical spike по ECS-библиотеке должен проверить м
 
 Внедрять ECS-принципы нужно по частям, без большой одномоментной переписи.
 
-Рекомендуемый порядок:
+Эта дорожная карта фиксирует порядок архитектурных требований. Она не является перечнем конкретных файлов или классов реализации.
 
-1. Зафиксировать immutable type registries для module types, item/resource types и command definitions.
-2. Разделить `typeId` и runtime instance state в scenario/save model.
-3. Реализовать module runtime state и command cycle state по разделам 34/43.
-4. Подключить deterministic command pipeline для одного-двух модулей, начиная со Scanner MK I.
-5. Добавить cargo/fuel containers и общий доступ generator к `Energy Cells`.
-6. Реализовать energy system и emergency shutdown.
-7. После этого деталировать Drilling Unit, factories и production/resource loops.
+#### Stage 1 — Type registry foundation
 
-Открытый вопрос для дальнейшего обсуждения: начинать ли фактическую реализацию ECS-механики с корабельного `Scanner MK I` как уже хорошо описанного циклического модуля, или сначала с registry/data model для module types и items.
+Цель: закрепить immutable type definitions до изменения gameplay runtime.
+
+Обязательные результаты:
+
+- module types, item/resource types и command definitions отделены от runtime instances;
+- `typeId` остаётся внешним stable id;
+- Engine строит immutable registries and `typeId → internal index` maps;
+- validation ловит duplicate ids, unknown references, invalid `kind`, invalid numeric ranges;
+- Contracts/Client/Motion не знают о registry internals.
+
+Exit criteria:
+
+```text
+Scenario/save instances can reference module/item/command types by id,
+but no type-data fields are required inside each instance.
+```
+
+#### Stage 2 — Scenario/save split
+
+Цель: привести `DefaultScenario` и будущий `GeneralSaveState` к модели instance state.
+
+Обязательные результаты:
+
+- scenario/save хранят installed modules, cargo stacks, factory instances and runtime state как ссылки на type ids;
+- scenario/save не копируют `MassKg`, `SlotSize`, `StructurePointsMax`, `UnitMassKg`, `Commands[]`, recipe arrays;
+- load path сначала строит registries, затем резолвит instance references;
+- save/load source of truth остаётся на stable ids, а не на ECS entity ids or internal indexes.
+
+Exit criteria:
+
+```text
+A scenario can be loaded, validated against registries,
+and converted into authoritative runtime state without duplicating type data.
+```
+
+#### Stage 3 — Common module runtime model
+
+Цель: реализовать общую модель installed module, ещё без полной экономики.
+
+Обязательные результаты:
+
+- каждый installed module имеет `moduleId`, `moduleTypeId`, placement, `PowerState`, `OperationalState`, `StructurePoints`, optional `ActiveCycle`;
+- module placement валидируется против `SlotSize` and platform rules;
+- module damage/destroyed rules соответствуют разделам 34, 43, 44, 45;
+- ship mass вычисляется через platform/module/item type data plus runtime cargo quantities.
+
+Exit criteria:
+
+```text
+The player ship can be represented as platforms + installed modules,
+with runtime state separate from module type definitions.
+```
+
+#### Stage 4 — First deterministic command cycle
+
+Цель: подключить command lifecycle на одном хорошо описанном модуле.
+
+Preferred first module: `Scanner MK I`, потому что для него уже закреплены команды `GeneralScan` и `StructuralScan`, range, cycle time, success chance, target-loss rules and knowledge results.
+
+Обязательные результаты:
+
+- commands address `(objectId, moduleId)`;
+- AcceptanceValidation and ExecutionValidation use resolved module type + runtime state;
+- accepted command starts `ActiveCycle`;
+- cycle progress uses authoritative `GameTimeMs`;
+- command result and ship event ordering are deterministic;
+- RNG success roll uses persisted named RNG stream and occurs only when rules require it.
+
+Exit criteria:
+
+```text
+One cyclic module demonstrates the complete path:
+command → validation → active cycle → result/event → snapshot/watch-log projection.
+```
+
+#### Stage 5 — Cargo/fuel containers
+
+Цель: добавить authoritative cargo/resource state без переменно-размерных горячих компонентов.
+
+Обязательные результаты:
+
+- cargo stacks use `itemTypeId + quantity`;
+- `UnitMassKg` comes from `ItemTypeRegistry`;
+- container capacity is mass-based;
+- `ShipCargoState` and `ModuleCargoState` preserve physical distribution by module;
+- aggregated ship cargo views are computed, not source of truth;
+- resource operations use atomic consume/add semantics.
+
+Exit criteria:
+
+```text
+Energy Cells and other cargo can be stored, counted, massed,
+validated against capacity, saved and loaded deterministically.
+```
+
+#### Stage 6 — Energy system and generator fuel
+
+Цель: связать module power state, generator, battery and `Energy Cells`.
+
+Обязательные результаты:
+
+- generator consumes `Energy Cells` from eligible container modules;
+- fuel consumption uses deterministic integer/rational accumulator;
+- `TotalGenerationW`, `TotalConsumptionW`, battery charge/discharge follow sections 47–48;
+- emergency shutdown uses persisted deterministic RNG and produces command/event results;
+- Busy module power-loss behavior follows section 47.6.
+
+Exit criteria:
+
+```text
+Power availability affects module operation without floating-point accounting
+and without nondeterministic module shutdown order.
+```
+
+#### Stage 7 — Factories and production/resource loops
+
+Цель: включить factory/recipe systems after resource pools are stable.
+
+Обязательные результаты:
+
+- factory runtime references factory/recipe type by id;
+- inputs/outputs come from registry;
+- factory automaton follows `Idle → Loading → Working → Unloading`;
+- input consumption and output insertion use authoritative pools and atomic semantics;
+- `PendingOutput` blocks next cycle until unloaded;
+- competing factories use deterministic order or explicit priority + tie-breaker.
+
+Exit criteria:
+
+```text
+Production can run through save/load with identical results,
+including blocked inputs, blocked outputs and resource-pool competition.
+```
+
+#### Stage 8 — ECS package integration / optimization
+
+Цель: подключать ECS package only after domain contracts are stable.
+
+Обязательные результаты:
+
+- ECS remains internal to Engine;
+- stable ids map to internal entities;
+- structural changes happen at safe points;
+- deterministic ordering requirements remain enforced;
+- save/load does not depend on ECS entity ids;
+- Contracts/Client/Motion remain free of ECS dependency.
+
+Exit criteria:
+
+```text
+ECS improves internal storage/query performance without changing public behavior,
+save format, snapshots or client contracts.
+```
+
+Implementation priority:
+
+```text
+Correct data boundaries and deterministic behavior first.
+ECS package adoption second.
+Performance tuning third.
+```
+
+Open implementation choice for the future technical task: whether Stage 4 uses a temporary library-neutral internal model first or immediately runs through an ECS adapter. This choice must not change the requirements above.
+
+### 55.11. Что не класть в ECS и запрещённые антипаттерны
+
+ECS используется для большого количества однотипных runtime entities and components. Он не является универсальным контейнером для всех данных игры.
+
+Не должны становиться ECS components/entities по умолчанию:
+
+- immutable type definitions and registries;
+- `Settings.json` and loaded configuration metadata;
+- global session state: `sessionId`, current speed, modal pause state, lifecycle/disposal state;
+- `SimulationClock` as an authoritative service/state object;
+- RNG stream registry and persisted RNG counters;
+- id generation counters;
+- command inbox / pending command queue as a global queue;
+- command conflict rules and their ordering;
+- session log writer and diagnostics paths;
+- full `GeneralSaveState` object as a component;
+- full `AuthoritativeSnapshot` object as a component;
+- Client prediction state, visual state, camera, zoom, UI selection/hover state;
+- localization/display formatting;
+- rendering caches and Skia/Silk.NET objects;
+- external DTO objects from `Contracts` as mutable ECS components.
+
+Можно хранить в ECS или ECS-adjacent runtime state только те данные, которые являются live authoritative state конкретной entity/capability и выигрывают от component-style processing:
+
+```text
+Position / velocity-like movement state
+Module runtime state
+Factory runtime state
+Active cycle progress
+Damage/structure state
+Small fixed-size capability state
+Resolved compact references to registries
+```
+
+Variable-size data requires special care. Следующие структуры не должны автоматически попадать в hot ECS components:
+
+- cargo stacks dictionaries;
+- body resource pool dictionaries;
+- recipe input/output arrays;
+- command parameter dictionaries;
+- event parameter dictionaries;
+- watch log entry collections;
+- arbitrary JSON blobs.
+
+Если variable-size state связан с entity, он может храниться как ECS-adjacent authoritative container, keyed by stable domain id or internal entity id, with explicit save/load mapping. ECS systems may access it through a deterministic simulation context.
+
+Запрещённые data duplication antipatterns:
+
+- `ModuleInstance` содержит копию `ModuleType` целиком;
+- cargo stack содержит `UnitMassKg` instead of `itemTypeId`;
+- factory component contains recipe arrays;
+- command runtime state contains copied command definition arrays;
+- snapshot becomes the only place where a runtime value exists;
+- Client read model is written back into authoritative Engine state;
+- display name is used as gameplay id;
+- `typeIndex` is saved without `typeId` source of truth;
+- ECS entity id is used as save id, command target or log id.
+
+Запрещённые logic antipatterns:
+
+- system behavior depends on the order returned by ECS query when shared state, RNG, commands, resources or events are involved;
+- simulation logic uses wall-clock time, system random or current culture;
+- UI code mutates ECS world or authoritative components directly;
+- render loop queries Engine/ECS world directly;
+- command validation reads Client-only state;
+- systems perform partial resource mutations without atomic rollback or explicit leftover handling;
+- structural changes are applied immediately in the middle of command validation or shared-state system processing.
+
+Правило принятия решения:
+
+```text
+If data is immutable type/config data:
+    registry/configuration, not ECS component.
+
+If data is global session/service state:
+    Engine service/state object, not entity.
+
+If data is Client-only presentation state:
+    Client state, not Engine ECS.
+
+If data is variable-size authoritative collection:
+    ECS-adjacent container unless a measured reason says otherwise.
+
+If data is small live per-entity state processed by systems:
+    ECS component is allowed.
+```
+
+Любое исключение из этих правил должно быть явно мотивировано в implementation task: какой выигрыш оно даёт, как сохраняется deterministic order, как работает save/load, и почему это не протекает в Contracts/Client.
