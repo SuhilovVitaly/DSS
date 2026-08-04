@@ -36,6 +36,9 @@ public sealed class GameSessionScreen : IScreen
     private SKRect _lastPanelRect;
     private SKRect _lastCloseRect;
 
+    // Zoom constants
+    private const double ZoomStepFactor = 1.25;
+
     // Panel layout constants
     private const float PanelPaddingX = 10f;
     private const float PanelPaddingY = 8f;
@@ -57,6 +60,9 @@ public sealed class GameSessionScreen : IScreen
 
     /// <summary>Current camera focus world Y (test seam).</summary>
     internal double CameraFocusY => _camera.FocusY;
+
+    /// <summary>Current camera pixels per world unit (test seam).</summary>
+    internal double CameraPixelsPerWorldUnit => _camera.PixelsPerWorldUnit;
 
     /// <summary>Last panel bounding rectangle (for hit-test verification).</summary>
     internal SKRect LastPanelRect => _lastPanelRect;
@@ -150,6 +156,17 @@ public sealed class GameSessionScreen : IScreen
         _mouseX = x;
         _mouseY = y;
         return false;
+    }
+
+    public ScreenEvent OnMouseWheel(float x, float y, float delta)
+    {
+        if (delta == 0 || _viewportW <= 0 || _viewportH <= 0)
+            return ScreenEvent.None;
+
+        double factor = delta > 0 ? ZoomStepFactor : 1.0 / ZoomStepFactor;
+        _camera.ZoomAt(factor, x, y, _viewportW, _viewportH);
+
+        return ScreenEvent.None;
     }
 
     public ScreenEvent OnKeyDown(Key key)

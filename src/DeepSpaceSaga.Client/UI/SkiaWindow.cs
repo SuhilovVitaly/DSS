@@ -85,6 +85,7 @@ public sealed class SkiaWindow : IDisposable
         {
             _mouse.MouseDown += OnMouseDown;
             _mouse.MouseMove += OnMouseMove;
+            _mouse.Scroll += OnMouseScroll;
 
             _defaultCursorImage = LoadCursorImage("Images/Cursors/cursor.png");
             _interactiveCursorImage = LoadCursorImage("Images/Cursors/cursor-selected.png");
@@ -113,6 +114,7 @@ public sealed class SkiaWindow : IDisposable
         {
             _mouse.MouseDown -= OnMouseDown;
             _mouse.MouseMove -= OnMouseMove;
+            _mouse.Scroll -= OnMouseScroll;
         }
 
         _input?.Dispose();
@@ -239,6 +241,19 @@ public sealed class SkiaWindow : IDisposable
             mouse.Cursor.Type = CursorType.Custom;
             mouse.Cursor.Image = targetImage.Value;
         }
+    }
+
+    private void OnMouseScroll(IMouse mouse, ScrollWheel scroll)
+    {
+        if (_closing)
+            return;
+
+        var screenEvent = _screens.Current.OnMouseWheel(
+            mouse.Position.X,
+            mouse.Position.Y,
+            scroll.Y);
+
+        _ = HandleScreenEvent(screenEvent);
     }
 
     private Task? _pendingKeyboardTransition;
@@ -405,6 +420,7 @@ public sealed class SkiaWindow : IDisposable
             {
                 _mouse.MouseDown -= OnMouseDown;
                 _mouse.MouseMove -= OnMouseMove;
+                _mouse.Scroll -= OnMouseScroll;
             }
 
             _input?.Dispose();

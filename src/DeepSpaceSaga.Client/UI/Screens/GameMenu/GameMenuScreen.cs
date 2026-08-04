@@ -57,6 +57,8 @@ public sealed class GameMenuScreen : IScreen
         return IsEnabled(hit);
     }
 
+    public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
+
     public void Render(SKCanvas canvas, int width, int height)
     {
         _screenWidth = width;

@@ -45,6 +45,8 @@ public sealed class MainMenuScreen : IScreen
         return hit == MenuButton.NewGame || hit == MenuButton.Exit;
     }
 
+    public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
+
     public void Render(SKCanvas canvas, int width, int height)
     {
         _screenWidth = width;

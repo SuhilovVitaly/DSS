@@ -22,6 +22,8 @@ public class ScreenStackTests
 
         public bool OnMouseMove(float x, float y) { return IsInteractive; }
 
+        public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
+
         public ScreenEvent OnKeyDown(Key key) => NextKeyEvent ?? ScreenEvent.None;
 
         public void OnActivated() => ActivatedCount++;
