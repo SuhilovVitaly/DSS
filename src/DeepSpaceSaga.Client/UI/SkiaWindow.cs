@@ -258,6 +258,7 @@ public sealed class SkiaWindow : IDisposable
 
     private Task? _pendingKeyboardTransition;
     private bool _prevIPressed;
+    private bool _prevSpacePressed;
 
     private void PollKeyboard()
     {
@@ -287,6 +288,14 @@ public sealed class SkiaWindow : IDisposable
             _screens.Current.OnKeyDown(Key.I);
         }
         _prevIPressed = ctrlIPressed;
+
+        // Space — forwarded to current screen (speed toggle)
+        bool spaceDown = _keyboard.IsKeyPressed(Key.Space);
+        if (spaceDown && !_prevSpacePressed)
+        {
+            _screens.Current.OnKeyDown(Key.Space);
+        }
+        _prevSpacePressed = spaceDown;
     }
 
     /// <summary>
@@ -332,7 +341,7 @@ public sealed class SkiaWindow : IDisposable
 
         _session = new GameSessionHandle(_sessionFactory.CreateSession());
         var predictor = new LinearMotionPredictor();
-        var gameScreen = new GameSessionScreen(_session.Buffer, predictor);
+        var gameScreen = new GameSessionScreen(_session.Buffer, predictor, _session);
 
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed1;

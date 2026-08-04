@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
@@ -7,6 +8,16 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class ModalPauseTests
 {
+    private sealed class FakeTimestamp
+    {
+        public long Timestamp { get; private set; }
+
+        public void AdvanceMs(long milliseconds)
+        {
+            Timestamp += (long)(milliseconds * Stopwatch.Frequency / 1000.0);
+        }
+    }
+
     [Fact]
     public void Prediction_stops_during_pause()
     {
@@ -25,9 +36,7 @@ public class ModalPauseTests
         var buffered = buffer.Latest;
         Assert.NotNull(buffered);
 
-        // Renderer logic: check buffer.CurrentSpeed (immediate), not snapshot speed
-        bool isPaused = buffer.CurrentSpeed == SimulationSpeed.Speed0;
-        long effectiveDelta = isPaused ? 0 : buffered.PredictionDeltaMs;
+        long effectiveDelta = buffer.EffectivePredictionDeltaMs;
 
         var predicted = effectiveDelta > 0
             ? predictor.Predict(obj, effectiveDelta)
@@ -52,14 +61,13 @@ public class ModalPauseTests
         var buffered = buffer.Latest;
         Assert.NotNull(buffered);
 
-        bool isPaused = buffer.CurrentSpeed == SimulationSpeed.Speed0;
-        long effectiveDelta = isPaused ? 0 : buffered.PredictionDeltaMs;
+        long effectiveDelta = buffer.EffectivePredictionDeltaMs;
 
         var predicted = effectiveDelta > 0
             ? predictor.Predict(obj, effectiveDelta)
             : obj;
 
-        if (buffered.PredictionDeltaMs > 0)
+        if (effectiveDelta > 0)
             Assert.True(predicted.X >= 0);
     }
 
@@ -152,24 +160,56 @@ public class ModalPauseTests
     [Fact]
     public void Prediction_delta_is_multiplied_by_speed()
     {
-        var buffer = new SnapshotBuffer();
-        var predictor = new LinearMotionPredictor();
+        var clock = new FakeTimestamp();
+        var buffer = new SnapshotBuffer(() => clock.Timestamp);
 
         var obj = new ObjectMotionSnapshot("mover", X: 0, Y: 0, SpeedKmS: 5, Direction: 90);
 
         // Speed2 = 5x
-        buffer.CurrentSpeed = SimulationSpeed.Speed2;
         buffer.Update(new AuthoritativeSnapshot(1, 1000, SimulationSpeed.Speed2,
             ImmutableArray.Create(obj)));
 
-        var buffered = buffer.Latest;
-        Assert.NotNull(buffered);
+        clock.AdvanceMs(200);
 
-        long realDelta = buffered.PredictionDeltaMs;
-        int speedMultiplier = (int)buffer.CurrentSpeed;
-        long effectiveDelta = realDelta * speedMultiplier;
+        Assert.Equal(1000, buffer.EffectivePredictionDeltaMs);
+    }
 
-        Assert.Equal(realDelta * 5, effectiveDelta);
+    [Fact]
+    public void Prediction_delta_preserves_speed_segments_between_snapshots()
+    {
+        var clock = new FakeTimestamp();
+        var buffer = new SnapshotBuffer(() => clock.Timestamp);
+
+        buffer.Update(new AuthoritativeSnapshot(1, 1000, SimulationSpeed.Speed1,
+            ImmutableArray<ObjectMotionSnapshot>.Empty));
+
+        clock.AdvanceMs(500);
+        buffer.CurrentSpeed = SimulationSpeed.Speed4;
+
+        // The 500 ms that already passed must stay at Speed1.
+        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
+
+        clock.AdvanceMs(100);
+
+        // Then only the new 100 ms segment runs at Speed4 / 100x.
+        Assert.Equal(10500, buffer.EffectivePredictionDeltaMs);
+    }
+
+    [Fact]
+    public void Prediction_delta_does_not_advance_after_pause_segment_starts()
+    {
+        var clock = new FakeTimestamp();
+        var buffer = new SnapshotBuffer(() => clock.Timestamp);
+
+        buffer.Update(new AuthoritativeSnapshot(1, 1000, SimulationSpeed.Speed1,
+            ImmutableArray<ObjectMotionSnapshot>.Empty));
+
+        clock.AdvanceMs(500);
+        buffer.CurrentSpeed = SimulationSpeed.Speed0;
+        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
+
+        clock.AdvanceMs(1000);
+        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
     }
 
     [Fact]
@@ -190,8 +230,7 @@ public class ModalPauseTests
         var buffered = buffer.Latest;
         Assert.NotNull(buffered);
 
-        int speedMultiplier = (int)buffer.CurrentSpeed;
-        long effectiveDelta = speedMultiplier == 0 ? 0 : buffered.PredictionDeltaMs * speedMultiplier;
+        long effectiveDelta = buffer.EffectivePredictionDeltaMs;
 
         var predicted = effectiveDelta > 0
             ? predictor.Predict(obj, effectiveDelta)

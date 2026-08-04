@@ -121,7 +121,8 @@ public sealed class SimulationEngine : IDisposable
             SnapshotSequence: _nextSequence++,
             GameTimeMs: gameTimeMs,
             CurrentSpeed: clockState.Speed,
-            Objects: objects.MoveToImmutable());
+            Objects: objects.MoveToImmutable(),
+            PlayerShipObjectId: PlayerShipObjectId);
     }
 
     public void Dispose()

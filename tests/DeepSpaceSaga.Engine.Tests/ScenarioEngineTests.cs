@@ -60,6 +60,7 @@ public class ScenarioEngineTests
 
         Assert.NotNull(first);
         Assert.Equal(4, first.Objects.Length);
+        Assert.Equal("SPC-0001", first.PlayerShipObjectId);
 
         // Objects at expected positions (gameTime=0, Speed0, so no movement)
         Assert.Contains(first.Objects, o => o.ObjectId == "SPC-0001" && o.X == 10000 && o.Y == 10000);

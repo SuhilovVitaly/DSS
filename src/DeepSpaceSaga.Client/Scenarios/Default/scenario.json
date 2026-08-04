@@ -19,7 +19,7 @@
         "name": "Player Ship",
         "positionX": 10000.0,
         "positionY": 10000.0,
-        "speedMps": 0,
+        "speedMps": 700,
         "directionDegrees": 0,
         "movementType": "Stationary",
         "modules": [
