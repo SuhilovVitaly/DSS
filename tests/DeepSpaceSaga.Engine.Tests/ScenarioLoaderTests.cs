@@ -305,6 +305,52 @@ public class ScenarioLoaderTests
     }
 
     [Fact]
+    public void Module_instance_rejects_embedded_type_definition_data()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              {
+                "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "modules": [
+                  {
+                    "moduleId": "MOD-1",
+                    "moduleType": "Container",
+                    "slotSize": 4,
+                    "moduleTypeId": "module.container.basic",
+                    "platformIndex": 0,
+                    "occupiedCells": [1],
+                    "massKg": 20000,
+                    "structurePoints": 400,
+                    "structurePointsMax": 400,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "cargo": [
+                      {
+                        "itemTypeId": "item.energy-cells",
+                        "resourceType": "Energy Cells",
+                        "quantity": 1,
+                        "unitMassKg": 10
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        """;
+
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(json));
+    }
+
+    [Fact]
     public void Asteroid_mass_out_of_range_throws()
     {
         var json = """

@@ -25,21 +25,17 @@
             "modules": [
                 {
                     "moduleId": "MOD-PLAYER-CARGO-01",
-                    "moduleType": "Container",
-                    "slotSize": 4,
+                    "moduleTypeId": "module.container.basic",
                     "platformIndex": 2,
                     "occupiedCells": [ 1, 2, 3, 4 ],
-                    "massKg": 20000,
                     "structurePoints": 400,
-                    "structurePointsMax": 400,
                     "powerState": "On",
                     "operationalState": "Ready",
-                    "capacityKg": 100000,
+                    "activeCycle": null,
                     "cargo": [
                         {
-                            "resourceType": "Energy Cells",
-                            "quantity": 1000,
-                            "unitMassKg": 10
+                            "itemTypeId": "item.energy-cells",
+                            "quantity": 1000
                         }
                     ]
                 }

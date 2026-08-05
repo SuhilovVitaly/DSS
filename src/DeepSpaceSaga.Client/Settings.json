@@ -1,0 +1,10 @@
+{
+  "typeData": {
+    "moduleTypes": "Data/module-types.json",
+    "itemTypes": "Data/item-types.json",
+    "commandDefinitions": "Data/command-definitions.json",
+    "factoryTypes": "Data/factory-types.json",
+    "recipes": "Data/recipes.json"
+  },
+  "defaultScenario": "Scenarios/Default/scenario.json"
+}

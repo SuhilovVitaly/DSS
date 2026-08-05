@@ -4359,3 +4359,512 @@ If data is small live per-entity state processed by systems:
 ```
 
 Любое исключение из этих правил должно быть явно мотивировано в implementation task: какой выигрыш оно даёт, как сохраняется deterministic order, как работает save/load, и почему это не протекает в Contracts/Client.
+
+
+## 56. Первая итерация корабельных модулей и active commands
+
+Эта секция фиксирует решения после checkpoint v8/v9 для сужения первой продуктовой итерации.
+
+### 56.1. Scope первой итерации
+
+Заводы, station modules и body/station production loops выносятся за рамки первой итерации продукта.
+
+Секции про ECS, type registry, recipe/factory/runtime state и deterministic ordering остаются архитектурным направлением, но первый реализуемый gameplay focus:
+
+- корабли;
+- platforms;
+- installed ship modules;
+- module commands;
+- energy/fuel/cargo state корабля;
+- damage/structure state модулей;
+- snapshot/save/load continuation для корабельных runtime states.
+
+Первая итерация не обязана реализовывать factory cycles, station modules, station storage, body production pools или автоматическое производство.
+
+### 56.2. Общая модель module lifecycle
+
+Каждый installed module имеет общие runtime поля:
+
+```text
+moduleId
+moduleTypeId
+platform placement / occupied cells
+PowerState
+OperationalState
+StructurePoints
+```
+
+`PowerState`, `OperationalState` и `StructurePoints` есть как у active, так и у passive modules.
+
+Passive modules не имеют `ActiveCycle`.
+
+Active modules:
+
+- обязаны иметь минимум одну `CommandDefinition`;
+- могут иметь `ActiveCycle`;
+- одновременно выполняют не более одного `ActiveCycle`;
+- не принимают новую обычную команду, пока предыдущая команда не завершена, если только конкретная команда не является cancel/replacement command по явно описанному правилу.
+
+UI обязан блокировать или делать недоступной команду для module, который уже занят несовместимым `ActiveCycle`.
+
+Engine/session всё равно выполняет authoritative validation и обязан отклонить такую команду, даже если UI ошибся или команда пришла из другого клиента/tooling path.
+
+### 56.3. ModuleType cycle и command factors
+
+Базовая длительность цикла принадлежит конкретному `ModuleType`, а не отдельной команде:
+
+```text
+ModuleType
+    BaseCycleTimeMs
+    Commands[]
+```
+
+Примеры:
+
+```text
+Scanner MK I     BaseCycleTimeMs = 20000
+Scanner MK II    BaseCycleTimeMs = 16000
+```
+
+Если `BaseCycleTimeMs` отсутствует у active module type, оно считается:
+
+```text
+BaseCycleTimeMs = 0
+```
+
+Команда модифицирует базовые параметры module type через коллекцию factors:
+
+```text
+CommandDefinition
+    commandType
+    factors:
+        TimeFactor
+        ComplexityFactor
+        ConsumptionFactor
+        future factors...
+```
+
+Список factors расширяемый. Отсутствующий factor всегда считается:
+
+```text
+1.0
+```
+
+Factors в documentation и JSON записываются как человекочитаемые числа с точкой:
+
+```json
+{
+  "timeFactor": 1.2,
+  "complexityFactor": 0.75,
+  "consumptionFactor": 1.5
+}
+```
+
+При загрузке Engine нормализует factors во внутреннее fixed-point representation:
+
+```text
+1.0   -> 1000
+1.2   -> 1200
+0.75  -> 750
+```
+
+Точность fixed-point factors на первом этапе:
+
+```text
+1000 = 1.0
+```
+
+При записи обратно в JSON factors снова отображаются как decimal-like numbers с точкой.
+
+Использовать `double`/`float` как authoritative simulation representation для factors нельзя. Floating point допускается только как внешний формат чтения/записи JSON, после чего значение должно быть нормализовано.
+
+Допустимы нулевые factors:
+
+```text
+TimeFactor = 0
+ComplexityFactor = 0
+ConsumptionFactor = 0
+```
+
+Итоговая длительность команды:
+
+```text
+EffectiveCycleTimeMs =
+    Ceil(ModuleType.BaseCycleTimeMs * Command.TimeFactor)
+```
+
+Если `EffectiveCycleTimeMs = 0`, команда всё равно создаёт `ActiveCycle` и завершается не в том же authoritative turn/tick, а на следующем authoritative tick/turn. Это сохраняет единый lifecycle для active commands.
+
+`ConsumptionFactor` заменяет более узкий `EnergyConsumptionFactor`.
+
+`ConsumptionFactor` применяется к тому consumable/resource, который задан механикой конкретного module type:
+
+```text
+Engine          -> fuel kg
+Scanner         -> Energy Cells / future power rule
+Combat Laser    -> Energy Cells
+Drilling Unit   -> Energy Cells / future mining consumption rule
+```
+
+Будущие operator factors выносятся за рамки первой итерации. Позже operator factors могут добавляться от человека/экипажа или управляющего script/automation, который управляет module. Эти factors должны модифицировать итоговые параметры команды поверх factors самой команды.
+
+### 56.4. Activation cost и resource validation
+
+Для команд, которые используют `Energy Cells`, command definition может иметь:
+
+```text
+ActivationEnergyCellsCost
+```
+
+Если `ActivationEnergyCellsCost` отсутствует, оно считается:
+
+```text
+0
+```
+
+`ActivationEnergyCellsCost` хранится как целое количество `Energy Cells`.
+
+Итоговая стоимость activation:
+
+```text
+EffectiveActivationEnergyCellsCost =
+    Ceil(ActivationEnergyCellsCost * ConsumptionFactor)
+```
+
+Если `ConsumptionFactor = 0`, итоговая стоимость равна `0`.
+
+Если на корабле недостаточно доступных `Energy Cells` для successful validation команды, команда сразу отклоняется. Она не становится в очередь ожидания.
+
+Activation cost списывается при успешном старте команды:
+
+```text
+1. authoritative validation
+2. resource availability check
+3. consume activation cost
+4. create ActiveCycle
+```
+
+Если `ActiveCycle` затем прерывается, уже списанные consumables не возвращаются.
+
+Engine module является исключением из Energy Cells rule: двигатель использует fuel, а не `Energy Cells`.
+
+### 56.5. Success chance и command outcome
+
+Базовый шанс успеха принадлежит `ModuleType`:
+
+```text
+ModuleType
+    BaseSuccessChancePercent
+```
+
+`BaseSuccessChancePercent`:
+
+- необязателен;
+- если отсутствует, считается `100`;
+- хранится как целое значение `0..100`;
+- не допускает дробные проценты в первой итерации.
+
+`ComplexityFactor` команды модифицирует базовый шанс:
+
+```text
+If BaseSuccessChancePercent = 0:
+    EffectiveSuccessChancePercent = 0
+
+Else if ComplexityFactor = 0:
+    EffectiveSuccessChancePercent = 100
+
+Else:
+    EffectiveSuccessChancePercent =
+        Clamp(0, 100, BaseSuccessChancePercent / ComplexityFactor)
+```
+
+Семантика:
+
+```text
+ComplexityFactor = 1.0    normal difficulty
+ComplexityFactor < 1.0    easier than base, higher success chance
+ComplexityFactor > 1.0    harder than base, lower success chance
+ComplexityFactor = 0      automatic success unless BaseSuccessChancePercent = 0
+```
+
+Success roll выполняется при завершении `ActiveCycle`, а не при старте.
+
+Outcome первой итерации бинарный:
+
+```text
+Success
+Failed
+```
+
+Critical success, critical failure, partial success и quality grades не входят в первую итерацию.
+
+Если команда завершилась как `Failed`, полезный gameplay effect не применяется. Отдельные failure effects в первой итерации не моделируются.
+
+Для success roll используется отдельный named persisted RNG stream:
+
+```text
+RngStream.ModuleCommandResolution
+```
+
+Порядок RNG rolls должен быть детерминированным.
+
+Если в один authoritative tick завершаются несколько `ActiveCycle`, они обрабатываются по одному в stable order:
+
+```text
+objectId -> moduleId -> activeCycleId
+```
+
+Для каждого cycle порядок обработки:
+
+```text
+complete
+roll success
+apply result
+write CommandResult
+write ShipEvent
+```
+
+Сначала завершить все cycles, а затем отдельной фазой применить все results - не правило первой итерации.
+
+### 56.6. ActiveCycle identity, save/load и logging
+
+`ActiveCycle` имеет отдельный стабильный id:
+
+```text
+ActiveCycle
+    activeCycleId
+    objectId
+    moduleId
+    commandType
+    startedAtGameTimeMs
+    effectiveCycleTimeMs
+    consumablesSpent
+```
+
+`activeCycleId` уникален в пределах конкретного `(objectId, moduleId)`.
+
+Полный стабильный ключ:
+
+```text
+objectId + moduleId + activeCycleId
+```
+
+`activeCycleId` является строковым id с читаемым префиксом, производным от module kind/name:
+
+```text
+CYC-SCANNER-000001
+CYC-ENGINE-000014
+CYC-LASER-000003
+```
+
+Если module kind/name изменится в будущей версии configuration, уже сохранённые `activeCycleId` не переписываются. Это исторический id.
+
+`GeneralSaveState` обязан хранить состояние allocator/counters, чтобы после load не возникало повторного `activeCycleId`.
+
+Если active module во время `ActiveCycle` становится неспособен продолжать выполнение, cycle прерывается:
+
+- module switched off;
+- no power / no required runtime energy;
+- module destroyed;
+- module disabled;
+- другая incompatible state причина.
+
+При прерывании:
+
+- уже списанные consumables не возвращаются;
+- результат команды не применяется;
+- `ActiveCycle` очищается/закрывается;
+- пишется `CommandResult`/`ShipEvent` или эквивалентное событие в вахтенный журнал с machine-readable reason.
+
+Минимальные conceptual interruption reasons:
+
+```text
+power_off
+no_power
+module_destroyed
+module_disabled
+cancelled_by_command
+```
+
+Все успешные завершения команд первой итерации пишутся в `ShipEvent` / вахтенный журнал.
+
+Failed command completions также должны иметь `CommandResult` и log/watch entry, чтобы outcome был диагностируемым.
+
+В будущем игрок получит возможность конфигурировать фильтрацию вахтенного журнала, но это не входит в первую итерацию.
+
+### 56.7. Стартовые active modules
+
+В command/ActiveCycle модель первой итерации входят все стартовые active modules:
+
+```text
+Scanner
+Engine
+Combat Laser
+Drilling Unit
+```
+
+`Bridge`, `Container` и другие passive modules не имеют `ActiveCycle`, если их module type явно не получит active commands в будущих requirements.
+
+`Battery` и `Generator` остаются частью energy architecture, но их точные command/ActiveCycle rules должны быть уточнены отдельно, если они станут active command modules.
+
+### 56.8. Engine commands первой итерации
+
+Engine является active module и подчиняется общему правилу:
+
+```text
+один module -> не более одного ActiveCycle одновременно
+```
+
+Двигатель не может одновременно выполнять ускорение и поворот. Он выполняет только одну команду, как любой другой active module.
+
+Минимальный набор Engine commands первой итерации:
+
+```text
+Accelerate
+Brake
+MaintainSpeed
+TurnLeftStep
+TurnRightStep
+TurnLeftUntilCancel
+TurnRightUntilCancel
+MaintainCourse
+MatchTargetSpeed
+MatchTargetCourse
+```
+
+`Accelerate` и `Brake` пока не имеют параметра величины изменения скорости. Их эффект задаётся параметрами Engine module type.
+
+`MaintainSpeed` останавливает режим ускорения или торможения:
+
+```text
+Accelerate      -> requests acceleration behavior
+Brake           -> requests braking/deceleration behavior
+MaintainSpeed   -> stops acceleration/braking behavior and preserves current speed
+```
+
+Поворот делится на step commands и until-cancel commands:
+
+```text
+TurnLeftStep
+TurnRightStep
+    one-shot turn command
+    AngleDegrees default = 1
+    optional AngleDegrees parameter may request larger turn, e.g. 30 degrees
+
+TurnLeftUntilCancel
+TurnRightUntilCancel
+    repeating turn command until cancelled
+
+MaintainCourse
+    cancels current until-cancel turn behavior
+```
+
+`TurnRightUntilCancel` отменяет `TurnLeftUntilCancel`, и наоборот. Активен только один until-cancel turn behavior.
+
+Commands `...UntilCancel` реализуются как auto-repeat commands, а не как независимый persistent physics mode рядом с текущим `ActiveCycle`.
+
+После завершения одного cycle auto-repeat command автоматически запускает следующий cycle той же команды, пока:
+
+- command не отменён;
+- module не стал unable to continue;
+- не закончился требуемый consumable;
+- authoritative validation следующего repeat-cycle не провалилась.
+
+Cancel command, например `MaintainSpeed` или `MaintainCourse`, может прервать текущий auto-repeat cycle. Прерванный cycle не даёт gameplay effect, списанные consumables не возвращаются, и создаётся log/watch event.
+
+Точное правило, может ли любая новая Engine command прерывать auto-repeat cycle или только специальные cancel/replacement commands, остаётся открытым для следующего обсуждения.
+
+### 56.9. Match target commands
+
+`MatchTargetSpeed` требует обязательный параметр:
+
+```text
+targetObjectId
+```
+
+UI selection не является implicit authoritative target. Цель должна быть передана явно в `PlayerCommand`.
+
+При старте `MatchTargetSpeed`:
+
+- Engine валидирует `targetObjectId`;
+- сохраняет target scalar speed в `ActiveCycle` / command runtime state.
+
+При завершении `MatchTargetSpeed`:
+
+- корабль меняет только scalar speed;
+- course/direction не меняется;
+- используется captured target speed, даже если цель позже стала недоступной.
+
+`MatchTargetCourse` также требует:
+
+```text
+targetObjectId
+```
+
+При старте `MatchTargetCourse`:
+
+- Engine валидирует `targetObjectId`;
+- сохраняет target course/direction в `ActiveCycle` / command runtime state.
+
+При завершении `MatchTargetCourse`:
+
+- корабль меняет только course/direction;
+- scalar speed не меняется;
+- используется captured target direction, даже если цель позже стала недоступной.
+
+Полная синхронизация движения с целью требует двух отдельных commands:
+
+```text
+MatchTargetSpeed
+MatchTargetCourse
+```
+
+Так как Engine имеет только один `ActiveCycle`, эти commands выполняются последовательно.
+
+### 56.10. Engine fuel вместо Energy Cells
+
+Engine module не расходует `Energy Cells`.
+
+Двигатели используют fuel, хранящийся внутри Engine module.
+
+Fuel не является cargo и не хранится в `Container`.
+
+Для Engine module type:
+
+```text
+FuelCapacityKg
+```
+
+Для installed Engine module runtime state:
+
+```text
+FuelAmountKg
+```
+
+`FuelCapacityKg` и `FuelAmountKg` являются целыми значениями, предпочтительно `Int64`.
+
+Топливо учитывается в килограммах.
+
+Стартовый Engine в `DefaultScenario` начинает с половиной бака:
+
+```text
+InitialFuelAmountKg = Floor(FuelCapacityKg / 2)
+```
+
+Если `FuelCapacityKg` нечётный, половина округляется вниз.
+
+Fuel не попадает в обычный cargo stack и не использует `ItemType.UnitMassKg`.
+
+Будущий scope:
+
+- fuel tank module;
+- перекачка fuel между fuel tank module и Engine module;
+- правила повреждения/утечки/потери fuel;
+- UI для fuel state.
+
+Следующий открытый вопрос для продолжения:
+
+```text
+Базовый расход топлива Engine задаётся как BaseFuelConsumptionKgPerCycle
+или как FuelConsumptionKgPerSecond?
+```

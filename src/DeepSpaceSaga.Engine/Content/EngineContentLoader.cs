@@ -1,0 +1,158 @@
+using System.Collections.Immutable;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using DeepSpaceSaga.Engine.Scenario;
+
+namespace DeepSpaceSaga.Engine.Content;
+
+public static class EngineContentLoader
+{
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+    };
+
+    public static SimulationEngine CreateEngineFromSettingsFile(string settingsPath)
+    {
+        var loaded = LoadFromSettingsFile(settingsPath);
+        var engine = new SimulationEngine(loaded.Registry);
+        engine.LoadScenario(loaded.DefaultScenario);
+        return engine;
+    }
+
+    internal static LoadedEngineContent LoadFromSettingsFile(string settingsPath)
+    {
+        if (!File.Exists(settingsPath))
+            throw new ContentException($"Settings file not found: {settingsPath}");
+
+        string basePath = Path.GetDirectoryName(Path.GetFullPath(settingsPath)) ?? AppContext.BaseDirectory;
+        var settings = ReadJson<EngineSettingsFile>(settingsPath, "settings");
+
+        if (settings.TypeData is null)
+            throw new ContentException("Settings file is missing typeData.");
+        if (string.IsNullOrWhiteSpace(settings.DefaultScenario))
+            throw new ContentException("Settings file is missing defaultScenario.");
+
+        var commands = LoadCommandDefinitions(Resolve(basePath, settings.TypeData.CommandDefinitions));
+        var modules = LoadModuleTypes(Resolve(basePath, settings.TypeData.ModuleTypes));
+        var items = LoadItemTypes(Resolve(basePath, settings.TypeData.ItemTypes));
+        var registry = GameDataRegistry.Create(modules, items, commands);
+        var scenario = ScenarioLoader.LoadFromFile(Resolve(basePath, settings.DefaultScenario));
+
+        return new LoadedEngineContent(registry, scenario);
+    }
+
+    private static IReadOnlyList<ModuleTypeDefinition> LoadModuleTypes(string path)
+    {
+        var file = ReadJson<ModuleTypesFile>(path, "module types");
+        if (file.ModuleTypes is null)
+            throw new ContentException("module-types file is missing moduleTypes.");
+
+        return file.ModuleTypes.Select(dto =>
+        {
+            if (dto.CommandTypeIds is null)
+                throw new ContentException($"Module type '{dto.TypeId}' is missing commandTypeIds.");
+
+            return new ModuleTypeDefinition(
+                dto.TypeId,
+                dto.DisplayName,
+                dto.SlotSize,
+                dto.MassKg,
+                dto.StructurePointsMax,
+                dto.PowerConsumptionW,
+                dto.CommandTypeIds.ToImmutableArray(),
+                dto.CargoCapacityKg);
+        }).ToArray();
+    }
+
+    private static IReadOnlyList<ItemTypeDefinition> LoadItemTypes(string path)
+    {
+        var file = ReadJson<ItemTypesFile>(path, "item types");
+        if (file.ItemTypes is null)
+            throw new ContentException("item-types file is missing itemTypes.");
+
+        return file.ItemTypes.Select(dto =>
+            new ItemTypeDefinition(dto.TypeId, dto.DisplayName, dto.UnitMassKg)).ToArray();
+    }
+
+    private static IReadOnlyList<CommandDefinition> LoadCommandDefinitions(string path)
+    {
+        var file = ReadJson<CommandDefinitionsFile>(path, "command definitions");
+        if (file.CommandDefinitions is null)
+            throw new ContentException("command-definitions file is missing commandDefinitions.");
+
+        return file.CommandDefinitions.Select(dto =>
+            new CommandDefinition(dto.TypeId, dto.DisplayName)).ToArray();
+    }
+
+    private static T ReadJson<T>(string path, string description)
+    {
+        if (!File.Exists(path))
+            throw new ContentException($"{description} file not found: {path}");
+
+        try
+        {
+            return JsonSerializer.Deserialize<T>(File.ReadAllText(path), JsonOptions)
+                   ?? throw new ContentException($"{description} JSON deserialized to null.");
+        }
+        catch (JsonException ex)
+        {
+            throw new ContentException($"Invalid {description} JSON: {ex.Message}", ex);
+        }
+        catch (IOException ex)
+        {
+            throw new ContentException($"Failed to read {description} file: {path}", ex);
+        }
+    }
+
+    private static string Resolve(string basePath, string relativeOrAbsolutePath)
+    {
+        if (string.IsNullOrWhiteSpace(relativeOrAbsolutePath))
+            throw new ContentException("Settings file contains an empty content path.");
+
+        return Path.IsPathRooted(relativeOrAbsolutePath)
+            ? relativeOrAbsolutePath
+            : Path.GetFullPath(Path.Combine(basePath, relativeOrAbsolutePath));
+    }
+
+    internal sealed record LoadedEngineContent(GameDataRegistry Registry, ScenarioFile DefaultScenario);
+
+    private sealed record EngineSettingsFile(
+        [property: JsonPropertyName("typeData")] TypeDataPaths TypeData,
+        [property: JsonPropertyName("defaultScenario")] string DefaultScenario);
+
+    private sealed record TypeDataPaths(
+        [property: JsonPropertyName("moduleTypes")] string ModuleTypes,
+        [property: JsonPropertyName("itemTypes")] string ItemTypes,
+        [property: JsonPropertyName("commandDefinitions")] string CommandDefinitions,
+        [property: JsonPropertyName("factoryTypes")] string? FactoryTypes,
+        [property: JsonPropertyName("recipes")] string? Recipes);
+
+    private sealed record ModuleTypesFile(
+        [property: JsonPropertyName("moduleTypes")] IReadOnlyList<ModuleTypeDefinitionDto> ModuleTypes);
+
+    private sealed record ModuleTypeDefinitionDto(
+        [property: JsonPropertyName("typeId")] string TypeId,
+        [property: JsonPropertyName("displayName")] string DisplayName,
+        [property: JsonPropertyName("slotSize")] int SlotSize,
+        [property: JsonPropertyName("massKg")] long MassKg,
+        [property: JsonPropertyName("structurePointsMax")] int StructurePointsMax,
+        [property: JsonPropertyName("powerConsumptionW")] long PowerConsumptionW,
+        [property: JsonPropertyName("commandTypeIds")] IReadOnlyList<string> CommandTypeIds,
+        [property: JsonPropertyName("cargoCapacityKg")] long? CargoCapacityKg);
+
+    private sealed record ItemTypesFile(
+        [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto> ItemTypes);
+
+    private sealed record ItemTypeDefinitionDto(
+        [property: JsonPropertyName("typeId")] string TypeId,
+        [property: JsonPropertyName("displayName")] string DisplayName,
+        [property: JsonPropertyName("unitMassKg")] long UnitMassKg);
+
+    private sealed record CommandDefinitionsFile(
+        [property: JsonPropertyName("commandDefinitions")] IReadOnlyList<CommandDefinitionDto> CommandDefinitions);
+
+    private sealed record CommandDefinitionDto(
+        [property: JsonPropertyName("typeId")] string TypeId,
+        [property: JsonPropertyName("displayName")] string DisplayName);
+}
