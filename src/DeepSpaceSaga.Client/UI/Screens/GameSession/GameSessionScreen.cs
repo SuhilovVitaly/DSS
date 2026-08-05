@@ -59,6 +59,9 @@ public sealed class GameSessionScreen : IScreen
     private SKRect _lastPanelRect;
     private SKRect _lastCloseRect;
 
+    // Player ship info panel state
+    private SKRect _lastPlayerShipPanelRect;
+
     // Speed state
     private SimulationSpeed _lastNonPauseSpeed = SimulationSpeed.Speed1;
     private SKRect _lastSpeedPanelRect;
@@ -119,6 +122,7 @@ public sealed class GameSessionScreen : IScreen
     internal double CameraPixelsPerWorldUnit => _camera.PixelsPerWorldUnit;
     internal SKRect LastPanelRect => _lastPanelRect;
     internal SKRect LastCloseRect => _lastCloseRect;
+    internal SKRect LastPlayerShipPanelRect => _lastPlayerShipPanelRect;
     internal SimulationSpeed LastNonPauseSpeed => _lastNonPauseSpeed;
     internal SKRect LastSpeedPanelRect => _lastSpeedPanelRect;
     internal IReadOnlyList<SKRect> SpeedButtonRects => _speedButtonRects;
@@ -216,7 +220,13 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        // 5. Map click -> pan camera
+        // 5. Player ship info panel (consume, don't pan)
+        if (_lastPlayerShipPanelRect.Contains(x, y))
+        {
+            return ScreenEvent.None;
+        }
+
+        // 6. Map click -> pan camera
         var (worldX, worldY) = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
         _isFocusAttachedToPlayer = false;
         _camera.SetFocus(worldX, worldY);
@@ -402,6 +412,10 @@ public sealed class GameSessionScreen : IScreen
         // 7. Info panel (bottom-left)
         if (_panelVisible)
             DrawInfoPanel(canvas, buffered);
+
+        // 8. Player ship info panel (bottom-right)
+        var playerShip = FindPlayerShip(_renderStates);
+        DrawPlayerShipInfoPanel(canvas, playerShip);
     }
 
     // ── Speed panel ─────────────────────────────────────────────
@@ -722,6 +736,90 @@ public sealed class GameSessionScreen : IScreen
         lines.Add(("Celestial objects", objectCount.ToString()));
 
         return lines;
+    }
+
+    // ── Player ship info panel ───────────────────────────────────
+
+    private static ObjectRenderState? FindPlayerShip(IReadOnlyList<ObjectRenderState> renderStates)
+    {
+        for (int i = 0; i < renderStates.Count; i++)
+        {
+            if (renderStates[i].IsPlayerShip)
+                return renderStates[i];
+        }
+        return null;
+    }
+
+    private static string? GetActiveEngineCommandDisplayName(string? commandType)
+    {
+        return commandType switch
+        {
+            ShipEngineCommandTypes.Accelerate => "Accelerate",
+            ShipEngineCommandTypes.Brake => "Brake",
+            ShipEngineCommandTypes.TurnLeftUntilCancel => "Turn Left Until Cancel",
+            ShipEngineCommandTypes.TurnRightUntilCancel => "Turn Right Until Cancel",
+            _ => null
+        };
+    }
+
+    internal List<(string Label, string Value)> BuildPlayerShipPanelLines(ObjectRenderState? playerShip)
+    {
+        var lines = new List<(string Label, string Value)>();
+
+        if (playerShip is not null)
+        {
+            var p = playerShip.Value.Predicted;
+            lines.Add(("Speed", $"{p.SpeedKmS:0.###} km/s"));
+            lines.Add(("Course", $"{p.Direction:F0}°"));
+            lines.Add(("Location", $"({p.X:F0}, {p.Y:F0})"));
+
+            string engineDisplay = GetActiveEngineCommandDisplayName(p.ActiveEngineCommandType) ?? "—";
+            lines.Add(("Engine", engineDisplay));
+        }
+        else
+        {
+            lines.Add(("Speed", "—"));
+            lines.Add(("Course", "—"));
+            lines.Add(("Location", "(—, —)"));
+            lines.Add(("Engine", "—"));
+        }
+
+        return lines;
+    }
+
+    private void DrawPlayerShipInfoPanel(SKCanvas canvas, ObjectRenderState? playerShip)
+    {
+        var lines = BuildPlayerShipPanelLines(playerShip);
+
+        float labelWidth = 0, valueWidth = 0;
+        foreach (var (label, value) in lines)
+        {
+            labelWidth = Math.Max(labelWidth, _panelLabelPaint.MeasureText(label));
+            valueWidth = Math.Max(valueWidth, _panelTextPaint.MeasureText(value));
+        }
+
+        float gap = 8f;
+        float panelW = PanelPaddingX * 2 + labelWidth + gap + valueWidth;
+        float panelH = PanelPaddingY * 2 + lines.Count * PanelLineHeight;
+
+        float panelX = _viewportW - panelW - PanelMargin;
+        float panelY = _viewportH - panelH - PanelMargin;
+
+        _lastPlayerShipPanelRect = new SKRect(panelX, panelY, panelX + panelW, panelY + panelH);
+
+        canvas.DrawRect(_lastPlayerShipPanelRect, _panelBgPaint);
+        canvas.DrawRect(_lastPlayerShipPanelRect, _panelBorderPaint);
+
+        float textY = panelY + PanelPaddingY + PanelLineHeight - 3f;
+        float labelX = panelX + PanelPaddingX;
+        float valueX = labelX + labelWidth + gap;
+
+        foreach (var (label, value) in lines)
+        {
+            canvas.DrawText(label, labelX, textY, _panelLabelPaint);
+            canvas.DrawText(value, valueX, textY, _panelTextPaint);
+            textY += PanelLineHeight;
+        }
     }
 
 }
