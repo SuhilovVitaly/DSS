@@ -36,6 +36,34 @@ public class GameSessionPlayerShipTests
     }
 
     [Fact]
+    public void Player_ship_is_rendered_as_oriented_glyph()
+    {
+        var buffer = new SnapshotBuffer();
+        var playerShip = new ObjectMotionSnapshot("player", 10000, 10000, SpeedKmS: 0, Direction: 0);
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1,
+            GameTimeMs: 0,
+            CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(playerShip),
+            PlayerShipObjectId: "player"));
+
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
+
+        using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, ScreenWidth, ScreenHeight);
+
+        var nosePixel = bitmap.GetPixel(ScreenWidth / 2, ScreenHeight / 2 - 5);
+        Assert.True(nosePixel.Green > nosePixel.Blue);
+
+        var detachedMarkerPixel = bitmap.GetPixel(ScreenWidth / 2, ScreenHeight / 2 - 11);
+        Assert.False(
+            detachedMarkerPixel.Red > 220 &&
+            detachedMarkerPixel.Green > 180 &&
+            detachedMarkerPixel.Blue < 120);
+    }
+
+    [Fact]
     public void Camera_focus_follows_predicted_player_ship_position()
     {
         var clock = new FakeTimestamp();

@@ -52,6 +52,7 @@ public static class EngineContentLoader
         {
             if (dto.CommandTypeIds is null)
                 throw new ContentException($"Module type '{dto.TypeId}' is missing commandTypeIds.");
+            ValidateEngineParameters(dto);
 
             return new ModuleTypeDefinition(
                 dto.TypeId,
@@ -61,8 +62,21 @@ public static class EngineContentLoader
                 dto.StructurePointsMax,
                 dto.PowerConsumptionW,
                 dto.CommandTypeIds.ToImmutableArray(),
-                dto.CargoCapacityKg);
+                dto.CargoCapacityKg,
+                dto.MaxSpeedMps,
+                dto.TurnStepDegrees);
         }).ToArray();
+    }
+
+    private static void ValidateEngineParameters(ModuleTypeDefinitionDto dto)
+    {
+        if (!string.Equals(dto.TypeId, "module.engine.basic", StringComparison.Ordinal))
+            return;
+
+        if (dto.MaxSpeedMps is not > 0)
+            throw new ContentException("Module type 'module.engine.basic' requires maxSpeedMps greater than zero.");
+        if (dto.TurnStepDegrees is not > 0)
+            throw new ContentException("Module type 'module.engine.basic' requires turnStepDegrees greater than zero.");
     }
 
     private static IReadOnlyList<ItemTypeDefinition> LoadItemTypes(string path)
@@ -139,7 +153,9 @@ public static class EngineContentLoader
         [property: JsonPropertyName("structurePointsMax")] int StructurePointsMax,
         [property: JsonPropertyName("powerConsumptionW")] long PowerConsumptionW,
         [property: JsonPropertyName("commandTypeIds")] IReadOnlyList<string> CommandTypeIds,
-        [property: JsonPropertyName("cargoCapacityKg")] long? CargoCapacityKg);
+        [property: JsonPropertyName("cargoCapacityKg")] long? CargoCapacityKg,
+        [property: JsonPropertyName("maxSpeedMps")] int? MaxSpeedMps,
+        [property: JsonPropertyName("turnStepDegrees")] int? TurnStepDegrees);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto> ItemTypes);

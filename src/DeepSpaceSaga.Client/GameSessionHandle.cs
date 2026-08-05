@@ -12,6 +12,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
     private readonly IGameSessionConnection _connection;
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _receiveTask;
+    private long _nextClientSequence;
     private bool _disposed;
 
     public GameSessionHandle(IGameSessionConnection connection)
@@ -26,6 +27,23 @@ public sealed class GameSessionHandle : IAsyncDisposable
 
     public IGameSessionConnection Connection => _connection;
     public SnapshotBuffer Buffer { get; }
+
+    public ValueTask SendEngineCommandAsync(
+        string objectId,
+        string moduleId,
+        string commandType,
+        CancellationToken cancellationToken = default)
+    {
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        var command = new PlayerCommand(
+            CommandId: $"CMD-{sequence:D8}-{Guid.NewGuid():N}",
+            ClientSequence: sequence,
+            ObjectId: objectId,
+            ModuleId: moduleId,
+            CommandType: commandType);
+
+        return _connection.SendCommandAsync(command, cancellationToken);
+    }
 
     /// <summary>
     /// Set the simulation speed and immediately update the client-side tracker.

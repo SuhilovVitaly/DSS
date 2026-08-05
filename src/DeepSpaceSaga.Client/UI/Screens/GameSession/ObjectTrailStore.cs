@@ -48,7 +48,8 @@ internal sealed class ObjectTrailStore
         IReadOnlyList<ObjectRenderState> renderStates,
         SimulationSpeed currentSpeed,
         long currentGameTimeMs,
-        bool bootstrapMissingTrails = false)
+        bool bootstrapMissingTrails = false,
+        IReadOnlySet<string>? bootstrapObjectIds = null)
     {
         PruneMissingObjects(renderStates);
 
@@ -66,10 +67,16 @@ internal sealed class ObjectTrailStore
             {
                 points = new List<ObjectTrailPoint>();
                 _trails[obj.ObjectId] = points;
-                if (bootstrapMissingTrails)
+                bool shouldBootstrapObject = bootstrapMissingTrails &&
+                                             (bootstrapObjectIds is null || bootstrapObjectIds.Contains(obj.ObjectId));
+                if (shouldBootstrapObject)
+                {
                     BootstrapTrail(points, obj, currentGameTimeMs, rawNow);
+                }
                 else
+                {
                     AddCurrentPoint(points, obj, currentGameTimeMs, rawNow);
+                }
 
                 continue;
             }

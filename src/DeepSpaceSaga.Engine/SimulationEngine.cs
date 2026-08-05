@@ -21,12 +21,24 @@ public sealed class SimulationEngine : IDisposable
     private readonly GameDataRegistry _registry;
     private readonly LinearMotionPredictor _motion = new();
     private readonly List<SpaceObjectRuntime> _objects = new();
+    private readonly object _commandGate = new();
     private readonly List<PlayerCommand> _pendingCommands = new();
+    private int _receivedCommandCount;
     private ulong _nextSequence;
+    private ulong _nextEngineCycleId;
     private bool _disposed;
 
     /// <summary>Number of commands received (test seam).</summary>
-    internal int ReceivedCommandCount => _pendingCommands.Count;
+    internal int ReceivedCommandCount
+    {
+        get
+        {
+            lock (_commandGate)
+            {
+                return _receivedCommandCount;
+            }
+        }
+    }
 
     /// <summary>Current authoritative simulation speed.</summary>
     public SimulationSpeed CurrentSpeed => _clock.Speed;
@@ -52,7 +64,11 @@ public sealed class SimulationEngine : IDisposable
 
     public void ReceiveCommand(PlayerCommand command)
     {
-        _pendingCommands.Add(command);
+        lock (_commandGate)
+        {
+            _pendingCommands.Add(command);
+            _receivedCommandCount++;
+        }
     }
 
     /// <summary>Set the authoritative simulation speed (e.g. Speed0 for pause).</summary>
@@ -87,12 +103,15 @@ public sealed class SimulationEngine : IDisposable
                 Y: obj.PositionY,
                 SpeedKmS: speedKmS,
                 Direction: obj.DirectionDegrees),
+                ObjectType: obj.ObjectType,
                 StartGameTimeMs: 0,
                 Modules: modules)); // startGameTime stamped at RunAsync
         }
 
         PlayerShipObjectId = gs.PlayerShipObjectId;
         _clock.Reset(gs.GameTimeMs, speed);
+        _nextEngineCycleId = 0;
+        CollectLoadedEngineCycleIds(runtimeObjects);
 
         _objects.Clear();
         _objects.AddRange(runtimeObjects);
@@ -101,7 +120,7 @@ public sealed class SimulationEngine : IDisposable
     /// <summary>Add a test object (legacy — prefer LoadScenario for production).</summary>
     public void AddTestObject(ObjectMotionSnapshot initial)
     {
-        _objects.Add(new SpaceObjectRuntime(initial, 0, ImmutableArray<InstalledModuleRuntime>.Empty));
+        _objects.Add(new SpaceObjectRuntime(initial, "Test", 0, ImmutableArray<InstalledModuleRuntime>.Empty));
     }
 
     public async IAsyncEnumerable<AuthoritativeSnapshot> RunAsync(
@@ -131,12 +150,23 @@ public sealed class SimulationEngine : IDisposable
     private AuthoritativeSnapshot BuildSnapshot(SimulationClockState clockState)
     {
         long gameTimeMs = clockState.GameTimeMs;
+        if (clockState.Speed != SimulationSpeed.Speed0)
+            CompleteActiveEngineCycles(gameTimeMs);
+        ApplyPendingCommands(gameTimeMs);
 
         var objects = ImmutableArray.CreateBuilder<ObjectMotionSnapshot>(_objects.Count);
         foreach (var obj in _objects)
         {
             long elapsed = gameTimeMs - obj.StartGameTimeMs;
-            objects.Add(_motion.Predict(obj.InitialMotion, elapsed));
+            var motion = _motion.Predict(obj.InitialMotion, elapsed);
+            var cycleMotion = GetActiveEngineCycleMotion(obj, gameTimeMs);
+            objects.Add(motion with
+            {
+                ActiveEngineCommandType = cycleMotion.CommandType,
+                TurnStepDegrees = cycleMotion.TurnStepDegrees,
+                TurnStepRemainingMs = cycleMotion.TurnStepRemainingMs,
+                TurnStepIntervalMs = cycleMotion.TurnStepIntervalMs
+            });
         }
 
         return new AuthoritativeSnapshot(
@@ -261,10 +291,343 @@ public sealed class SimulationEngine : IDisposable
     }
 
     internal ImmutableArray<SpaceObjectRuntime> RuntimeObjects => _objects.ToImmutableArray();
+
+    internal AuthoritativeSnapshot CaptureSnapshotForTests(
+        long gameTimeMs = 0,
+        SimulationSpeed? speed = null)
+    {
+        return BuildSnapshot(new SimulationClockState(gameTimeMs, speed ?? _clock.Speed));
+    }
+
+    private void ApplyPendingCommands(long gameTimeMs)
+    {
+        var commands = DrainPendingCommands();
+        List<PlayerCommand>? deferred = null;
+
+        foreach (var command in commands)
+        {
+            if (TryStartEngineCommand(command, gameTimeMs) == CommandStartDisposition.Deferred)
+            {
+                deferred ??= [];
+                deferred.Add(command);
+            }
+        }
+
+        if (deferred is { Count: > 0 })
+            RequeueDeferredCommands(deferred);
+    }
+
+    private List<PlayerCommand> DrainPendingCommands()
+    {
+        lock (_commandGate)
+        {
+            if (_pendingCommands.Count == 0)
+                return [];
+
+            var commands = new List<PlayerCommand>(_pendingCommands);
+            _pendingCommands.Clear();
+            return commands;
+        }
+    }
+
+    private void RequeueDeferredCommands(List<PlayerCommand> commands)
+    {
+        lock (_commandGate)
+        {
+            _pendingCommands.InsertRange(0, commands);
+        }
+    }
+
+    private CommandStartDisposition TryStartEngineCommand(PlayerCommand command, long gameTimeMs)
+    {
+        if (!string.Equals(command.ObjectId, PlayerShipObjectId, StringComparison.Ordinal))
+            return CommandStartDisposition.Rejected;
+
+        int objectIndex = _objects.FindIndex(o =>
+            string.Equals(o.InitialMotion.ObjectId, command.ObjectId, StringComparison.Ordinal) &&
+            string.Equals(o.ObjectType, "PlayerShip", StringComparison.OrdinalIgnoreCase));
+        if (objectIndex < 0)
+            return CommandStartDisposition.Rejected;
+
+        var obj = _objects[objectIndex];
+        int moduleIndex = FindModuleIndex(obj.Modules, command.ModuleId);
+        if (moduleIndex < 0)
+            return CommandStartDisposition.Rejected;
+
+        var module = obj.Modules[moduleIndex];
+        var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+        if (!IsEngineCommandType(moduleType, command.CommandType))
+            return CommandStartDisposition.Rejected;
+
+        if (command.CommandType == ShipEngineCommandTypes.CancelAll)
+        {
+            _objects[objectIndex] = UpdateModule(obj, moduleIndex, module => module with { ActiveCycle = null });
+            return CommandStartDisposition.Started;
+        }
+
+        if (!CanExecuteEngineCommand(module, moduleType))
+            return CommandStartDisposition.Rejected;
+
+        if (module.ActiveCycle is { } activeCycle)
+        {
+            if (!activeCycle.IsAutoRepeat)
+                return CommandStartDisposition.Deferred;
+            if (string.Equals(command.CommandType, activeCycle.CommandType, StringComparison.Ordinal))
+                return CommandStartDisposition.Started;
+        }
+
+        bool isAutoRepeat = IsCyclicEngineCommand(command.CommandType);
+        _objects[objectIndex] = UpdateModule(
+            obj,
+            moduleIndex,
+            current => current with
+            {
+                ActiveCycle = CreateEngineCycle(command.CommandType, gameTimeMs, isAutoRepeat)
+            });
+        return CommandStartDisposition.Started;
+    }
+
+    private static int FindModuleIndex(ImmutableArray<InstalledModuleRuntime> modules, string moduleId)
+    {
+        for (int i = 0; i < modules.Length; i++)
+        {
+            if (string.Equals(modules[i].ModuleId, moduleId, StringComparison.Ordinal))
+                return i;
+        }
+
+        return -1;
+    }
+
+    private static bool IsEngineCommandType(ModuleTypeDefinition moduleType, string commandType)
+    {
+        return string.Equals(moduleType.TypeId, "module.engine.basic", StringComparison.Ordinal) &&
+               moduleType.CommandTypeIds.Contains(commandType, StringComparer.Ordinal);
+    }
+
+    private static bool CanExecuteEngineCommand(InstalledModuleRuntime module, ModuleTypeDefinition moduleType)
+    {
+        return moduleType.MaxSpeedMps is > 0 &&
+               moduleType.TurnStepDegrees is > 0 &&
+               string.Equals(module.PowerState, "On", StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(module.OperationalState, "Ready", StringComparison.OrdinalIgnoreCase) &&
+               module.StructurePoints > 0;
+    }
+
+    private ActiveCycleData CreateEngineCycle(string commandType, long gameTimeMs, bool isAutoRepeat)
+    {
+        string cycleId = $"CYC-ENGINE-{++_nextEngineCycleId:D6}";
+        long durationMs = IsUntilCancelTurn(commandType) ? 1000 : 0;
+        return new ActiveCycleData(cycleId, gameTimeMs, durationMs, commandType, isAutoRepeat);
+    }
+
+    private static bool IsUntilCancelTurn(string commandType)
+    {
+        return commandType == ShipEngineCommandTypes.TurnLeftUntilCancel ||
+               commandType == ShipEngineCommandTypes.TurnRightUntilCancel;
+    }
+
+    private static bool IsCyclicEngineCommand(string commandType)
+    {
+        return commandType == ShipEngineCommandTypes.Accelerate ||
+               commandType == ShipEngineCommandTypes.Brake ||
+               IsUntilCancelTurn(commandType);
+    }
+
+    private void CollectLoadedEngineCycleIds(IEnumerable<SpaceObjectRuntime> objects)
+    {
+        const string EngineCyclePrefix = "CYC-ENGINE-";
+        foreach (var obj in objects)
+        {
+            foreach (var module in obj.Modules)
+            {
+                if (module.ActiveCycle is not { } cycle)
+                    continue;
+
+                if (cycle.CycleId.StartsWith(EngineCyclePrefix, StringComparison.Ordinal) &&
+                    ulong.TryParse(cycle.CycleId[EngineCyclePrefix.Length..], out ulong loadedCycleNumber))
+                {
+                    _nextEngineCycleId = Math.Max(_nextEngineCycleId, loadedCycleNumber);
+                }
+            }
+        }
+    }
+
+    private ActiveEngineCycleMotion GetActiveEngineCycleMotion(SpaceObjectRuntime obj, long gameTimeMs)
+    {
+        for (int moduleIndex = 0; moduleIndex < obj.Modules.Length; moduleIndex++)
+        {
+            var module = obj.Modules[moduleIndex];
+            if (module.ActiveCycle is not { } cycle)
+                continue;
+
+            var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+            if (!IsEngineCommandType(moduleType, cycle.CommandType) || !CanExecuteEngineCommand(module, moduleType))
+                continue;
+
+            if (!IsUntilCancelTurn(cycle.CommandType))
+                return new ActiveEngineCycleMotion(cycle.CommandType, 0, 0, 0);
+
+            int turnSign = cycle.CommandType == ShipEngineCommandTypes.TurnLeftUntilCancel ? -1 : 1;
+            long remainingMs = Math.Max(1, cycle.StartedGameTimeMs + cycle.DurationMs - gameTimeMs);
+            return new ActiveEngineCycleMotion(
+                cycle.CommandType,
+                turnSign * moduleType.TurnStepDegrees!.Value,
+                remainingMs,
+                cycle.DurationMs);
+        }
+
+        return default;
+    }
+
+    private void CompleteActiveEngineCycles(long gameTimeMs)
+    {
+        for (int objectIndex = 0; objectIndex < _objects.Count; objectIndex++)
+        {
+            var obj = _objects[objectIndex];
+            if (!string.Equals(obj.InitialMotion.ObjectId, PlayerShipObjectId, StringComparison.Ordinal))
+                continue;
+
+            for (int moduleIndex = 0; moduleIndex < obj.Modules.Length; moduleIndex++)
+            {
+                while (true)
+                {
+                    var module = obj.Modules[moduleIndex];
+                    if (module.ActiveCycle is not { } cycle || gameTimeMs <= cycle.StartedGameTimeMs ||
+                        gameTimeMs - cycle.StartedGameTimeMs < cycle.DurationMs)
+                    {
+                        break;
+                    }
+
+                    var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+                    if (!IsEngineCommandType(moduleType, cycle.CommandType) || !CanExecuteEngineCommand(module, moduleType))
+                    {
+                        _objects[objectIndex] = UpdateModule(obj, moduleIndex, current => current with { ActiveCycle = null });
+                        obj = _objects[objectIndex];
+                        break;
+                    }
+
+                    long completionGameTimeMs = cycle.DurationMs == 0
+                        ? gameTimeMs
+                        : cycle.StartedGameTimeMs + cycle.DurationMs;
+                    ActiveCycleData? nextCycle = cycle.IsAutoRepeat
+                        ? CreateEngineCycle(cycle.CommandType, completionGameTimeMs, isAutoRepeat: true)
+                        : null;
+                    _objects[objectIndex] = ApplyCompletedEngineCommand(
+                        obj,
+                        moduleIndex,
+                        moduleType,
+                        cycle.CommandType,
+                        completionGameTimeMs,
+                        nextCycle);
+                    obj = _objects[objectIndex];
+
+                    if (!cycle.IsAutoRepeat)
+                        break;
+                }
+            }
+        }
+    }
+
+    private SpaceObjectRuntime ApplyCompletedEngineCommand(
+        SpaceObjectRuntime obj,
+        int moduleIndex,
+        ModuleTypeDefinition moduleType,
+        string commandType,
+        long gameTimeMs,
+        ActiveCycleData? nextCycle)
+    {
+        return commandType switch
+        {
+            ShipEngineCommandTypes.Accelerate => UpdateEngineMotion(
+                obj,
+                moduleIndex,
+                gameTimeMs,
+                module => module with { ActiveCycle = nextCycle },
+                motion => motion with { SpeedKmS = moduleType.MaxSpeedMps!.Value / 1000.0 }),
+
+            ShipEngineCommandTypes.Brake => UpdateEngineMotion(
+                obj,
+                moduleIndex,
+                gameTimeMs,
+                module => module with { ActiveCycle = nextCycle },
+                motion => motion with { SpeedKmS = 0 }),
+
+            ShipEngineCommandTypes.TurnLeftStep or ShipEngineCommandTypes.TurnLeftUntilCancel => ApplyTurn(
+                obj,
+                moduleIndex,
+                moduleType,
+                turnSign: -1,
+                gameTimeMs,
+                nextCycle),
+
+            ShipEngineCommandTypes.TurnRightStep or ShipEngineCommandTypes.TurnRightUntilCancel => ApplyTurn(
+                obj,
+                moduleIndex,
+                moduleType,
+                turnSign: 1,
+                gameTimeMs,
+                nextCycle),
+
+            _ => obj
+        };
+    }
+
+    private SpaceObjectRuntime ApplyTurn(
+        SpaceObjectRuntime obj,
+        int moduleIndex,
+        ModuleTypeDefinition moduleType,
+        int turnSign,
+        long gameTimeMs,
+        ActiveCycleData? nextCycle)
+    {
+        return UpdateEngineMotion(
+            obj,
+            moduleIndex,
+            gameTimeMs,
+            module => module with { ActiveCycle = nextCycle },
+            motion => motion with
+            {
+                Direction = NormalizeDirection(motion.Direction + turnSign * moduleType.TurnStepDegrees!.Value)
+            });
+    }
+
+    private SpaceObjectRuntime UpdateEngineMotion(
+        SpaceObjectRuntime obj,
+        int moduleIndex,
+        long gameTimeMs,
+        Func<InstalledModuleRuntime, InstalledModuleRuntime> updateModule,
+        Func<ObjectMotionSnapshot, ObjectMotionSnapshot> updateMotion)
+    {
+        long elapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
+        var currentMotion = _motion.Predict(obj.InitialMotion, elapsedMs);
+        var modules = obj.Modules.SetItem(moduleIndex, updateModule(obj.Modules[moduleIndex]));
+
+        return obj with
+        {
+            InitialMotion = updateMotion(currentMotion),
+            StartGameTimeMs = gameTimeMs,
+            Modules = modules
+        };
+    }
+
+    private static SpaceObjectRuntime UpdateModule(
+        SpaceObjectRuntime obj,
+        int moduleIndex,
+        Func<InstalledModuleRuntime, InstalledModuleRuntime> updateModule)
+    {
+        return obj with { Modules = obj.Modules.SetItem(moduleIndex, updateModule(obj.Modules[moduleIndex])) };
+    }
+
+    private static double NormalizeDirection(double degrees)
+    {
+        double normalized = degrees % 360;
+        return normalized < 0 ? normalized + 360 : normalized;
+    }
 }
 
 internal sealed record SpaceObjectRuntime(
     ObjectMotionSnapshot InitialMotion,
+    string ObjectType,
     long StartGameTimeMs,
     ImmutableArray<InstalledModuleRuntime> Modules);
 
@@ -282,3 +645,16 @@ internal sealed record InstalledModuleRuntime(
 internal sealed record CargoStackRuntime(
     int ItemTypeIndex,
     long Quantity);
+
+internal readonly record struct ActiveEngineCycleMotion(
+    string? CommandType,
+    int TurnStepDegrees,
+    long TurnStepRemainingMs,
+    long TurnStepIntervalMs);
+
+internal enum CommandStartDisposition
+{
+    Started,
+    Deferred,
+    Rejected
+}

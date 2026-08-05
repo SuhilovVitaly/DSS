@@ -3,6 +3,8 @@ namespace DeepSpaceSaga.Contracts;
 /// <summary>
 /// Minimal motion DTO for the render/prediction pipeline.
 /// Speed in km/s. Direction in degrees: 0° = up, 90° = right, clockwise.
+/// Active engine cycle metadata allows the client to predict discrete turns
+/// with the same step timing as the authoritative simulation.
 /// World coordinates: 1 unit = 100 m, Sun at (0, 0).
 /// </summary>
 public sealed record ObjectMotionSnapshot(
@@ -10,4 +12,8 @@ public sealed record ObjectMotionSnapshot(
     double X,          // world units
     double Y,          // world units
     double SpeedKmS,   // km/s
-    double Direction); // degrees, 0° = up, clockwise
+    double Direction,  // degrees, 0° = up, clockwise
+    string? ActiveEngineCommandType = null,
+    int TurnStepDegrees = 0,
+    long TurnStepRemainingMs = 0,
+    long TurnStepIntervalMs = 0);

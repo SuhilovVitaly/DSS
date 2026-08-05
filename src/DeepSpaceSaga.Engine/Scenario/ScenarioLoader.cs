@@ -215,10 +215,12 @@ public static class ScenarioLoader
         {
             if (string.IsNullOrWhiteSpace(activeCycle.CycleId))
                 throw new ScenarioException($"Module '{module.ModuleId}' has activeCycle with empty cycleId.");
+            if (string.IsNullOrWhiteSpace(activeCycle.CommandType))
+                throw new ScenarioException($"Module '{module.ModuleId}' has activeCycle with empty commandType.");
             if (activeCycle.StartedGameTimeMs < 0)
                 throw new ScenarioException($"Module '{module.ModuleId}' has activeCycle with negative startedGameTimeMs.");
-            if (activeCycle.DurationMs <= 0)
-                throw new ScenarioException($"Module '{module.ModuleId}' has activeCycle with non-positive durationMs.");
+            if (activeCycle.DurationMs < 0)
+                throw new ScenarioException($"Module '{module.ModuleId}' has activeCycle with negative durationMs.");
         }
 
         if (module.Cargo is { Count: > 0 })
