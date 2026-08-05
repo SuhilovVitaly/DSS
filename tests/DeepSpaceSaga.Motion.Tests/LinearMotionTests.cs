@@ -67,4 +67,46 @@ public class LinearMotionTests
         Assert.Equal(50.0, predicted.X, precision: 6);
         Assert.Equal(0.0, predicted.Y, precision: 6);
     }
+
+    [Fact]
+    public void Predict_with_discrete_turn_steps_matches_engine_cycle_timing()
+    {
+        var predictor = new LinearMotionPredictor();
+        var state = new ObjectMotionSnapshot(
+            "ship",
+            X: 0,
+            Y: 0,
+            SpeedKmS: 1,
+            Direction: 0,
+            TurnStepDegrees: 90,
+            TurnStepRemainingMs: 1000,
+            TurnStepIntervalMs: 1000);
+
+        var predicted = predictor.Predict(state, elapsedMs: 2000);
+
+        Assert.Equal(10, predicted.X, precision: 8);
+        Assert.Equal(-10, predicted.Y, precision: 8);
+        Assert.Equal(180, predicted.Direction, precision: 8);
+    }
+
+    [Fact]
+    public void Predict_backward_with_discrete_turn_steps_reconstructs_prior_trajectory()
+    {
+        var predictor = new LinearMotionPredictor();
+        var state = new ObjectMotionSnapshot(
+            "ship",
+            X: 10,
+            Y: -10,
+            SpeedKmS: 1,
+            Direction: 180,
+            TurnStepDegrees: 90,
+            TurnStepRemainingMs: 1000,
+            TurnStepIntervalMs: 1000);
+
+        var projected = predictor.Predict(state, elapsedMs: -2000);
+
+        Assert.Equal(0, projected.X, precision: 8);
+        Assert.Equal(0, projected.Y, precision: 8);
+        Assert.Equal(0, projected.Direction, precision: 8);
+    }
 }

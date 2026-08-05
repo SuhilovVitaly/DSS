@@ -131,12 +131,16 @@ public class PauseSimulationTests
         // Pause
         engine.SetSpeed(SimulationSpeed.Speed0);
         var s2 = await ReadNextAsync(reader, cts.Token);
-        Assert.Equal(t1, s2.GameTimeMs);
+        long pausedGameTimeMs = s2.GameTimeMs;
+        long pauseTransitionDeltaMs = pausedGameTimeMs - t1;
+        Assert.True(
+            pauseTransitionDeltaMs >= 0 && pauseTransitionDeltaMs < 100,
+            $"Pause transition advanced {pauseTransitionDeltaMs}ms; expected only a tiny pre-pause partial interval.");
 
         // Resume Speed1
         engine.SetSpeed(SimulationSpeed.Speed1);
         var s3 = await ReadNextAsync(reader, cts.Token);
-        Assert.True(s3.GameTimeMs > t1, "GameTime should advance after resume");
+        Assert.True(s3.GameTimeMs > pausedGameTimeMs, "GameTime should advance after resume");
 
         cts.Cancel();
         try { await loop; } catch { }

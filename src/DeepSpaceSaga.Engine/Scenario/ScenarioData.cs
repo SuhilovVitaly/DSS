@@ -56,7 +56,9 @@ public sealed record ShipModuleData(
 public sealed record ActiveCycleData(
     [property: JsonPropertyName("cycleId")] string CycleId,
     [property: JsonPropertyName("startedGameTimeMs")] long StartedGameTimeMs,
-    [property: JsonPropertyName("durationMs")] long DurationMs);
+    [property: JsonPropertyName("durationMs")] long DurationMs,
+    [property: JsonPropertyName("commandType")] string CommandType,
+    [property: JsonPropertyName("isAutoRepeat")] bool IsAutoRepeat);
 
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(

@@ -73,7 +73,7 @@ public class ObjectTrailStoreTests
     }
 
     [Fact]
-    public void Trail_is_bootstrapped_for_moving_object_while_paused()
+    public void Bootstrap_request_while_paused_creates_initial_visual_history()
     {
         var clock = new FakeTimestamp();
         var store = new ObjectTrailStore(() => clock.Timestamp);
@@ -81,6 +81,24 @@ public class ObjectTrailStoreTests
         store.Update(
             States(MovingObject("ship", x: 0)),
             SimulationSpeed.Speed0,
+            currentGameTimeMs: 0,
+            bootstrapMissingTrails: true);
+
+        var trail = store.GetTrail("ship");
+        Assert.True(trail.Count > 2);
+        Assert.Equal(-10_000, trail[0].Timestamp);
+        Assert.Equal(0, trail[^1].Timestamp);
+    }
+
+    [Fact]
+    public void Bootstrap_request_at_zero_game_time_creates_initial_visual_history()
+    {
+        var clock = new FakeTimestamp();
+        var store = new ObjectTrailStore(() => clock.Timestamp);
+
+        store.Update(
+            States(MovingObject("ship", x: 0)),
+            SimulationSpeed.Speed1,
             currentGameTimeMs: 0,
             bootstrapMissingTrails: true);
 
@@ -101,6 +119,7 @@ public class ObjectTrailStoreTests
             SimulationSpeed.Speed1,
             currentGameTimeMs: 0,
             bootstrapMissingTrails: true);
+        Assert.True(store.GetTrail("ship").Count > 2);
 
         clock.AdvanceMs(ObjectTrailStore.TrailSampleIntervalMs);
         store.Update(
@@ -125,7 +144,7 @@ public class ObjectTrailStoreTests
         store.Update(
             States(MovingObject("ship", x: 100)),
             SimulationSpeed.Speed1,
-            currentGameTimeMs: 0,
+            currentGameTimeMs: 10_000,
             bootstrapMissingTrails: true);
 
         var trail = store.GetTrail("ship");

@@ -1,3 +1,32 @@
 {
-  "commandDefinitions": []
+  "commandDefinitions": [
+    {
+      "typeId": "engine.accelerate",
+      "displayName": "Accelerate"
+    },
+    {
+      "typeId": "engine.brake",
+      "displayName": "Brake"
+    },
+    {
+      "typeId": "engine.turn-left-step",
+      "displayName": "Turn Left Step"
+    },
+    {
+      "typeId": "engine.turn-right-step",
+      "displayName": "Turn Right Step"
+    },
+    {
+      "typeId": "engine.turn-left-until-cancel",
+      "displayName": "Turn Left Until Cancel"
+    },
+    {
+      "typeId": "engine.turn-right-until-cancel",
+      "displayName": "Turn Right Until Cancel"
+    },
+    {
+      "typeId": "engine.cancel-all",
+      "displayName": "Cancel All Engine Commands"
+    }
+  ]
 }

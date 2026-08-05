@@ -9,6 +9,25 @@
       "powerConsumptionW": 0,
       "commandTypeIds": [],
       "cargoCapacityKg": 100000
+    },
+    {
+      "typeId": "module.engine.basic",
+      "displayName": "Engine",
+      "slotSize": 1,
+      "massKg": 5000,
+      "structurePointsMax": 100,
+      "powerConsumptionW": 0,
+      "commandTypeIds": [
+        "engine.accelerate",
+        "engine.brake",
+        "engine.turn-left-step",
+        "engine.turn-right-step",
+        "engine.turn-left-until-cancel",
+        "engine.turn-right-until-cancel",
+        "engine.cancel-all"
+      ],
+      "maxSpeedMps": 4000,
+      "turnStepDegrees": 1
     }
   ]
 }

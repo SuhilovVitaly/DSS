@@ -19,6 +19,13 @@ public class SmokeTests
     }
 
     [Fact]
+    public void ShipEngineCommandTypes_expose_stable_ids()
+    {
+        Assert.Equal("engine.accelerate", ShipEngineCommandTypes.Accelerate);
+        Assert.Equal("engine.cancel-all", ShipEngineCommandTypes.CancelAll);
+    }
+
+    [Fact]
     public void AuthoritativeSnapshot_is_instantiable()
     {
         var objects = ImmutableArray.Create(

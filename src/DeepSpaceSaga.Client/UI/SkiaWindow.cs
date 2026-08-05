@@ -34,13 +34,16 @@ public sealed class SkiaWindow : IDisposable
     private readonly SemaphoreSlim _transitionLock = new(1, 1);
     private int _modalDepth;
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
-    private bool _prevEscPressed;
+    private readonly KeyboardEdgeTracker _keyboardEdges = new();
+    private readonly Key[] _keyboardPressedKeys = new Key[7];
+    private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
     private bool _closing;
 
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory)
     {
         _sessionFactory = sessionFactory;
+        _handleKeyboardEdge = HandleKeyboardEdge;
 
         _screens.SetRoot(initialScreen);
 
@@ -84,6 +87,7 @@ public sealed class SkiaWindow : IDisposable
         if (_mouse is not null)
         {
             _mouse.MouseDown += OnMouseDown;
+            _mouse.MouseUp += OnMouseUp;
             _mouse.MouseMove += OnMouseMove;
             _mouse.Scroll += OnMouseScroll;
 
@@ -113,6 +117,7 @@ public sealed class SkiaWindow : IDisposable
         if (_mouse is not null)
         {
             _mouse.MouseDown -= OnMouseDown;
+            _mouse.MouseUp -= OnMouseUp;
             _mouse.MouseMove -= OnMouseMove;
             _mouse.Scroll -= OnMouseScroll;
         }
@@ -228,6 +233,12 @@ public sealed class SkiaWindow : IDisposable
         await HandleScreenEvent(screenEvent);
     }
 
+    private void OnMouseUp(IMouse mouse, MouseButton button)
+    {
+        if (button == MouseButton.Left && !_closing)
+            _screens.Current.OnMouseUp(mouse.Position.X, mouse.Position.Y);
+    }
+
     private void OnMouseMove(IMouse mouse, System.Numerics.Vector2 position)
     {
         if (_closing)
@@ -257,45 +268,31 @@ public sealed class SkiaWindow : IDisposable
     }
 
     private Task? _pendingKeyboardTransition;
-    private bool _prevIPressed;
-    private bool _prevSpacePressed;
 
     private void PollKeyboard()
     {
         if (_keyboard is null || _closing)
             return;
 
-        // Escape — navigation transition
-        bool escDown = _keyboard.IsKeyPressed(Key.Escape);
-        if (escDown && !_prevEscPressed)
+        int keyCount = _keyboardEdges.Poll(_keyboard, _keyboardPressedKeys);
+        for (int i = 0; i < keyCount; i++)
+            _handleKeyboardEdge(_keyboardPressedKeys[i]);
+    }
+
+    private void HandleKeyboardEdge(Key key)
+    {
+        if (key == Key.Escape)
         {
             if (_pendingKeyboardTransition is null || _pendingKeyboardTransition.IsCompleted)
             {
                 var screenEvent = _screens.Current.OnKeyDown(Key.Escape);
                 _pendingKeyboardTransition = HandleScreenEvent(screenEvent);
             }
-        }
-        _prevEscPressed = escDown;
 
-        // Ctrl+I — forwarded to the current screen (non-navigation)
-        bool iDown = _keyboard.IsKeyPressed(Key.I);
-        bool ctrlDown = _keyboard.IsKeyPressed(Key.ControlLeft)
-                     || _keyboard.IsKeyPressed(Key.ControlRight);
-        bool ctrlIPressed = iDown && ctrlDown;
-
-        if (ctrlIPressed && !_prevIPressed)
-        {
-            _screens.Current.OnKeyDown(Key.I);
+            return;
         }
-        _prevIPressed = ctrlIPressed;
 
-        // Space — forwarded to current screen (speed toggle)
-        bool spaceDown = _keyboard.IsKeyPressed(Key.Space);
-        if (spaceDown && !_prevSpacePressed)
-        {
-            _screens.Current.OnKeyDown(Key.Space);
-        }
-        _prevSpacePressed = spaceDown;
+        _screens.Current.OnKeyDown(key);
     }
 
     /// <summary>
@@ -428,6 +425,7 @@ public sealed class SkiaWindow : IDisposable
             if (_mouse is not null)
             {
                 _mouse.MouseDown -= OnMouseDown;
+                _mouse.MouseUp -= OnMouseUp;
                 _mouse.MouseMove -= OnMouseMove;
                 _mouse.Scroll -= OnMouseScroll;
             }

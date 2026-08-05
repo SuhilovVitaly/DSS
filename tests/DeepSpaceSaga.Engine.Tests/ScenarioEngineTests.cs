@@ -160,8 +160,14 @@ public class ScenarioEngineTests
 
         var playerShip = scenario.GameState.SpaceObjects
             .Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId);
-        var cargoModule = Assert.Single(playerShip.Modules ?? []);
+        Assert.Equal(2, playerShip.Modules?.Count);
+        var cargoModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         Assert.Equal("module.container.basic", cargoModule.ModuleTypeId);
+        var engineModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
+        Assert.Equal("module.engine.basic", engineModule.ModuleTypeId);
+        Assert.Equal([0], engineModule.OccupiedCells);
+        Assert.Equal("On", engineModule.PowerState);
+        Assert.Equal("Ready", engineModule.OperationalState);
 
         var energyCells = Assert.Single(cargoModule.Cargo ?? []);
         Assert.Equal("item.energy-cells", energyCells.ItemTypeId);
@@ -186,10 +192,60 @@ public class ScenarioEngineTests
 
         Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        var module = Assert.Single(playerShip.Modules);
-        Assert.Equal(0, module.ModuleTypeIndex);
-        var cargo = Assert.Single(module.Cargo);
+        Assert.Equal(2, playerShip.Modules.Length);
+        var cargoModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-CARGO-01");
+        var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
+        Assert.Equal(0, cargoModule.ModuleTypeIndex);
+        Assert.Equal(1, engineModule.ModuleTypeIndex);
+        Assert.Null(engineModule.ActiveCycle);
+        var cargo = Assert.Single(cargoModule.Cargo);
         Assert.Equal(0, cargo.ItemTypeIndex);
+    }
+
+    [Theory]
+    [InlineData("\"turnStepDegrees\": 1,")]
+    [InlineData("\"maxSpeedMps\": null, \"turnStepDegrees\": 1,")]
+    [InlineData("\"maxSpeedMps\": 0, \"turnStepDegrees\": 1,")]
+    [InlineData("\"maxSpeedMps\": -1, \"turnStepDegrees\": 1,")]
+    [InlineData("\"maxSpeedMps\": 4000,")]
+    [InlineData("\"maxSpeedMps\": 4000, \"turnStepDegrees\": 0,")]
+    [InlineData("\"maxSpeedMps\": 4000, \"turnStepDegrees\": -1,")]
+    public void Engine_content_requires_positive_engine_motion_parameters(string engineParameters)
+    {
+        string directory = Path.Combine(Path.GetTempPath(), $"dss-content-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "Settings.json"), """
+            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            """);
+            File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """{ "commandDefinitions": [] }""");
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), $$"""
+            {
+              "moduleTypes": [
+                {
+                  "typeId": "module.engine.basic",
+                  "displayName": "Engine",
+                  "slotSize": 1,
+                  "massKg": 1,
+                  "structurePointsMax": 1,
+                  "powerConsumptionW": 0,
+                  "cargoCapacityKg": null,
+                  {{engineParameters}}
+                  "commandTypeIds": []
+                }
+              ]
+            }
+            """);
+
+            var exception = Assert.Throws<ContentException>(() => EngineContentLoader.CreateEngineFromSettingsFile(
+                Path.Combine(directory, "Settings.json")));
+            Assert.Contains("requires", exception.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
     }
 
     [Fact]
@@ -333,7 +389,9 @@ public class ScenarioEngineTests
                     StructurePointsMax: 400,
                     PowerConsumptionW: 0,
                     CommandTypeIds: ImmutableArray<string>.Empty,
-                    CargoCapacityKg: 100000)
+                    CargoCapacityKg: 100000,
+                    MaxSpeedMps: null,
+                    TurnStepDegrees: null)
             ],
             [
                 new ItemTypeDefinition(

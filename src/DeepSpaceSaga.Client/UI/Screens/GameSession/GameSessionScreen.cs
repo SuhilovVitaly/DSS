@@ -16,13 +16,16 @@ public sealed class GameSessionScreen : IScreen
     private readonly GridRenderer _grid;
     private readonly ObjectTrailStore _trailStore;
     private readonly List<ObjectRenderState> _renderStates = new();
+    private readonly HashSet<string> _initialTrailBootstrapObjectIds = new(StringComparer.Ordinal);
     private readonly GameSessionHandle? _handle;
 
     // Object paints
     private readonly SKPaint _trailPaint;
     private readonly SKPaint _objectPaint;
     private readonly SKPaint _playerShipPaint;
+    private readonly SKPaint _playerShipOutlinePaint;
     private readonly SKPaint _centerPaint;
+    private readonly SKPath _playerShipGlyphPath = new();
 
     // Shared UI paints
     private readonly SKPaint _panelBgPaint;
@@ -37,11 +40,19 @@ public sealed class GameSessionScreen : IScreen
     private readonly SKPaint _speedBtnTextPaint;
     private readonly SKPaint _speedIndicatorPaint;
 
+    // Ship command panel paints
+    private readonly SKPaint _commandBtnNormalPaint;
+    private readonly SKPaint _commandBtnHoverPaint;
+    private readonly SKPaint _commandBtnPressedPaint;
+    private readonly SKPaint _commandBtnDisabledPaint;
+    private readonly SKPaint _commandBtnTextPaint;
+
     private int _viewportW;
     private int _viewportH;
     private float _mouseX;
     private float _mouseY;
     private bool _shouldBootstrapInitialTrails = true;
+    private bool _capturedInitialTrailBootstrapObjects;
 
     // Info panel state
     private bool _panelVisible = true;
@@ -52,6 +63,9 @@ public sealed class GameSessionScreen : IScreen
     private SimulationSpeed _lastNonPauseSpeed = SimulationSpeed.Speed1;
     private SKRect _lastSpeedPanelRect;
     private readonly SKRect[] _speedButtonRects = new SKRect[5];
+    private SKRect _lastCommandPanelRect;
+    private readonly SKRect[] _engineCommandButtonRects = new SKRect[EngineCommandButtons.Length];
+    private int _pressedEngineCommandButtonIndex = -1;
 
     // Camera state
     private bool _isFocusAttachedToPlayer = true;
@@ -74,9 +88,28 @@ public sealed class GameSessionScreen : IScreen
     private const float SpeedPanelPadY = 4f;
     private const float SpeedIndicatorSize = 8f;
 
+    // Ship command panel layout
+    private const string PlayerEngineModuleId = "MOD-PLAYER-ENGINE-01";
+    private const float CommandBtnSize = 32f;
+    private const float CommandBtnGap = 4f;
+    private const float CommandPanelPadX = 6f;
+    private const float CommandPanelPadY = 6f;
+    private const float CommandPanelBottomMargin = 10f;
+    private const float CommandIndicatorSize = 8f;
+
     private static readonly string[] SpeedLabels = { "II", "1x", "5x", "20x", "100x" };
     private static readonly SimulationSpeed[] SpeedValues =
         { SimulationSpeed.Speed0, SimulationSpeed.Speed1, SimulationSpeed.Speed2, SimulationSpeed.Speed3, SimulationSpeed.Speed4 };
+    private static readonly EngineCommandButton[] EngineCommandButtons =
+    [
+        new("^", ShipEngineCommandTypes.Accelerate),
+        new("_", ShipEngineCommandTypes.Brake),
+        new(">", ShipEngineCommandTypes.TurnRightStep),
+        new("<", ShipEngineCommandTypes.TurnLeftStep),
+        new(">>", ShipEngineCommandTypes.TurnRightUntilCancel),
+        new("<<", ShipEngineCommandTypes.TurnLeftUntilCancel),
+        new("X", ShipEngineCommandTypes.CancelAll),
+    ];
 
     // ── Test seams ──────────────────────────────────────────────
 
@@ -89,6 +122,10 @@ public sealed class GameSessionScreen : IScreen
     internal SimulationSpeed LastNonPauseSpeed => _lastNonPauseSpeed;
     internal SKRect LastSpeedPanelRect => _lastSpeedPanelRect;
     internal IReadOnlyList<SKRect> SpeedButtonRects => _speedButtonRects;
+    internal SKRect LastCommandPanelRect => _lastCommandPanelRect;
+    internal IReadOnlyList<SKRect> EngineCommandButtonRects => _engineCommandButtonRects;
+    internal int PressedEngineCommandButtonIndex => _pressedEngineCommandButtonIndex;
+    internal int ActiveEngineCommandButtonIndex { get; private set; } = -1;
     internal bool IsFocusAttachedToPlayer => _isFocusAttachedToPlayer;
     internal IReadOnlyList<ObjectTrailPoint> GetObjectTrail(string objectId) => _trailStore.GetTrail(objectId);
 
@@ -111,6 +148,7 @@ public sealed class GameSessionScreen : IScreen
         _trailPaint = new SKPaint { Color = new SKColor(190, 190, 190, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 2f, IsAntialias = true };
         _objectPaint = new SKPaint { Color = SKColors.Cyan, Style = SKPaintStyle.Fill, IsAntialias = true };
         _playerShipPaint = new SKPaint { Color = SKColors.LimeGreen, Style = SKPaintStyle.Fill, IsAntialias = true };
+        _playerShipOutlinePaint = new SKPaint { Color = new SKColor(145, 180, 150), Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f, IsAntialias = true };
         _centerPaint = new SKPaint { Color = new SKColor(40, 40, 40), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
 
         _panelBgPaint = new SKPaint { Color = new SKColor(0, 0, 0, 200), Style = SKPaintStyle.Fill };
@@ -126,6 +164,12 @@ public sealed class GameSessionScreen : IScreen
         _speedBtnActivePaint = new SKPaint { Color = new SKColor(50, 60, 50), Style = SKPaintStyle.Fill };
         _speedBtnTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 11f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
         _speedIndicatorPaint = new SKPaint { Color = new SKColor(80, 200, 80), Style = SKPaintStyle.Fill, IsAntialias = true };
+
+        _commandBtnNormalPaint = new SKPaint { Color = new SKColor(26, 28, 31), Style = SKPaintStyle.Fill };
+        _commandBtnHoverPaint = new SKPaint { Color = new SKColor(39, 45, 51), Style = SKPaintStyle.Fill };
+        _commandBtnPressedPaint = new SKPaint { Color = new SKColor(58, 75, 67), Style = SKPaintStyle.Fill };
+        _commandBtnDisabledPaint = new SKPaint { Color = new SKColor(18, 18, 18, 190), Style = SKPaintStyle.Fill };
+        _commandBtnTextPaint = new SKPaint { Color = new SKColor(210, 218, 214), TextSize = 11f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
     }
 
     // ── IScreen ─────────────────────────────────────────────────
@@ -143,20 +187,36 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        // 2. Info panel close button
+        // 2. Ship command panel buttons
+        int commandIdx = HitTestEngineCommandPanel(x, y);
+        if (commandIdx >= 0 && CanSendEngineCommand(
+                EngineCommandButtons[commandIdx].CommandType,
+                _buffer.Latest?.Snapshot))
+        {
+            _pressedEngineCommandButtonIndex = commandIdx;
+            SendEngineCommand(EngineCommandButtons[commandIdx].CommandType);
+            return ScreenEvent.None;
+        }
+
+        if (_lastCommandPanelRect.Contains(x, y))
+        {
+            return ScreenEvent.None;
+        }
+
+        // 3. Info panel close button
         if (_panelVisible && _lastCloseRect.Contains(x, y))
         {
             _panelVisible = false;
             return ScreenEvent.None;
         }
 
-        // 3. Info panel (consume, don't pan)
+        // 4. Info panel (consume, don't pan)
         if (_panelVisible && _lastPanelRect.Contains(x, y))
         {
             return ScreenEvent.None;
         }
 
-        // 4. Map click → pan camera
+        // 5. Map click -> pan camera
         var (worldX, worldY) = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
         _isFocusAttachedToPlayer = false;
         _camera.SetFocus(worldX, worldY);
@@ -168,6 +228,13 @@ public sealed class GameSessionScreen : IScreen
         _mouseX = x;
         _mouseY = y;
         return false;
+    }
+
+    public void OnMouseUp(float x, float y)
+    {
+        _mouseX = x;
+        _mouseY = y;
+        _pressedEngineCommandButtonIndex = -1;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
@@ -194,6 +261,21 @@ public sealed class GameSessionScreen : IScreen
         if (key == Key.Space)
         {
             TogglePause();
+            return ScreenEvent.None;
+        }
+
+        string? commandType = key switch
+        {
+            Key.Up => ShipEngineCommandTypes.Accelerate,
+            Key.Down => ShipEngineCommandTypes.Brake,
+            Key.Left => ShipEngineCommandTypes.TurnLeftStep,
+            Key.Right => ShipEngineCommandTypes.TurnRightStep,
+            _ => null
+        };
+
+        if (commandType is not null)
+        {
+            SendEngineCommand(commandType);
             return ScreenEvent.None;
         }
 
@@ -237,6 +319,26 @@ public sealed class GameSessionScreen : IScreen
         return -1;
     }
 
+    private int HitTestEngineCommandPanel(float x, float y)
+    {
+        for (int i = 0; i < _engineCommandButtonRects.Length; i++)
+        {
+            if (_engineCommandButtonRects[i].Contains(x, y))
+                return i;
+        }
+
+        return -1;
+    }
+
+    private void SendEngineCommand(string commandType)
+    {
+        var playerShipObjectId = _buffer.LatestPrediction?.BufferedSnapshot.Snapshot.PlayerShipObjectId;
+        if (_handle is null || string.IsNullOrWhiteSpace(playerShipObjectId))
+            return;
+
+        _ = _handle.SendEngineCommandAsync(playerShipObjectId, PlayerEngineModuleId, commandType);
+    }
+
     // ── Render ──────────────────────────────────────────────────
 
     public void Render(SKCanvas canvas, int width, int height)
@@ -262,12 +364,21 @@ public sealed class GameSessionScreen : IScreen
         // 3. Object trails
         if (prediction is not null)
         {
+            CaptureInitialTrailBootstrapObjects();
+            long predictedGameTimeMs = GetPredictedGameTimeMs(prediction);
+            bool shouldBootstrapInitialTrails = _shouldBootstrapInitialTrails;
+
             _trailStore.Update(
                 _renderStates,
                 prediction.CurrentSpeed,
-                GetPredictedGameTimeMs(prediction),
-                _shouldBootstrapInitialTrails);
-            _shouldBootstrapInitialTrails = false;
+                predictedGameTimeMs,
+                shouldBootstrapInitialTrails,
+                _initialTrailBootstrapObjectIds);
+            if (shouldBootstrapInitialTrails)
+            {
+                _shouldBootstrapInitialTrails = false;
+                _initialTrailBootstrapObjectIds.Clear();
+            }
 
             DrawObjectTrails(canvas, width, height);
 
@@ -275,15 +386,20 @@ public sealed class GameSessionScreen : IScreen
             foreach (var state in _renderStates)
             {
                 var (sx, sy) = _camera.WorldToScreen(state.Predicted.X, state.Predicted.Y, width, height);
-                var paint = state.IsPlayerShip ? _playerShipPaint : _objectPaint;
-                canvas.DrawCircle(sx, sy, 4, paint);
+                if (state.IsPlayerShip)
+                    DrawPlayerShipGlyph(canvas, sx, sy, state.Predicted.Direction);
+                else
+                    canvas.DrawCircle(sx, sy, 4, _objectPaint);
             }
         }
 
         // 5. Speed panel (top-right)
         DrawSpeedPanel(canvas);
 
-        // 6. Info panel (bottom-left)
+        // 6. Ship command panel (bottom-center)
+        DrawEngineCommandPanel(canvas, buffered);
+
+        // 7. Info panel (bottom-left)
         if (_panelVisible)
             DrawInfoPanel(canvas, buffered);
     }
@@ -326,6 +442,17 @@ public sealed class GameSessionScreen : IScreen
     private static long GetPredictedGameTimeMs(SnapshotPrediction prediction)
     {
         return prediction.BufferedSnapshot.Snapshot.GameTimeMs + prediction.EffectivePredictionDeltaMs;
+    }
+
+    private void CaptureInitialTrailBootstrapObjects()
+    {
+        if (_capturedInitialTrailBootstrapObjects)
+            return;
+
+        for (int i = 0; i < _renderStates.Count; i++)
+            _initialTrailBootstrapObjectIds.Add(_renderStates[i].Predicted.ObjectId);
+
+        _capturedInitialTrailBootstrapObjects = true;
     }
 
     private void DrawObjectTrails(SKCanvas canvas, int width, int height)
@@ -397,6 +524,122 @@ public sealed class GameSessionScreen : IScreen
 
             btnX += SpeedBtnW + SpeedBtnGap;
         }
+    }
+
+    private void DrawPlayerShipGlyph(SKCanvas canvas, float sx, float sy, double directionDegrees)
+    {
+        double radians = directionDegrees * Math.PI / 180.0;
+        float dx = (float)Math.Sin(radians);
+        float dy = -(float)Math.Cos(radians);
+        float rx = dy;
+        float ry = -dx;
+
+        var nose = new SKPoint(sx + dx * 7f, sy + dy * 7f);
+        var left = new SKPoint(sx - dx * 5f - rx * 5f, sy - dy * 5f - ry * 5f);
+        var right = new SKPoint(sx - dx * 5f + rx * 5f, sy - dy * 5f + ry * 5f);
+
+        _playerShipGlyphPath.Reset();
+        _playerShipGlyphPath.MoveTo(nose);
+        _playerShipGlyphPath.LineTo(left);
+        _playerShipGlyphPath.LineTo(right);
+        _playerShipGlyphPath.Close();
+
+        canvas.DrawPath(_playerShipGlyphPath, _playerShipPaint);
+        canvas.DrawPath(_playerShipGlyphPath, _playerShipOutlinePaint);
+    }
+
+    private void DrawEngineCommandPanel(SKCanvas canvas, BufferedSnapshot? buffered)
+    {
+        int btnCount = EngineCommandButtons.Length;
+        float totalW = CommandPanelPadX * 2 + btnCount * CommandBtnSize + (btnCount - 1) * CommandBtnGap;
+        float totalH = CommandPanelPadY * 2 + CommandBtnSize + CommandIndicatorSize + 2f;
+        float panelX = (_viewportW - totalW) / 2f;
+        float panelY = _viewportH - totalH - CommandPanelBottomMargin;
+
+        _lastCommandPanelRect = new SKRect(panelX, panelY, panelX + totalW, panelY + totalH);
+        canvas.DrawRect(_lastCommandPanelRect, _panelBgPaint);
+        canvas.DrawRect(_lastCommandPanelRect, _panelBorderPaint);
+
+        float btnX = panelX + CommandPanelPadX;
+        float btnY = panelY + CommandPanelPadY;
+
+        bool enabled = _handle is not null &&
+                       !string.IsNullOrWhiteSpace(buffered?.Snapshot.PlayerShipObjectId);
+        string? activeCommandType = GetActiveEngineCommandType(buffered?.Snapshot);
+        ActiveEngineCommandButtonIndex = -1;
+
+        for (int i = 0; i < btnCount; i++)
+        {
+            var rect = new SKRect(btnX, btnY, btnX + CommandBtnSize, btnY + CommandBtnSize);
+            _engineCommandButtonRects[i] = rect;
+
+            bool isHover = rect.Contains(_mouseX, _mouseY);
+            bool isPressed = i == _pressedEngineCommandButtonIndex && isHover;
+            var paint = enabled
+                ? isPressed ? _commandBtnPressedPaint : isHover ? _commandBtnHoverPaint : _commandBtnNormalPaint
+                : _commandBtnDisabledPaint;
+
+            canvas.DrawRect(rect, paint);
+            canvas.DrawRect(rect, _panelBorderPaint);
+
+            _commandBtnTextPaint.Color = enabled
+                ? new SKColor(210, 218, 214)
+                : new SKColor(96, 96, 96);
+            float textY = rect.MidY + _commandBtnTextPaint.TextSize / 3f;
+            canvas.DrawText(EngineCommandButtons[i].Label, rect.MidX, textY, _commandBtnTextPaint);
+
+            if (IsCyclicEngineCommand(EngineCommandButtons[i].CommandType) &&
+                EngineCommandButtons[i].CommandType == activeCommandType)
+            {
+                ActiveEngineCommandButtonIndex = i;
+                DrawCommandIndicator(canvas, rect);
+            }
+
+            btnX += CommandBtnSize + CommandBtnGap;
+        }
+    }
+
+    private bool CanSendEngineCommand(string commandType, AuthoritativeSnapshot? snapshot)
+    {
+        if (_handle is null || string.IsNullOrWhiteSpace(snapshot?.PlayerShipObjectId))
+            return false;
+
+        string? activeCommand = GetActiveEngineCommandType(snapshot);
+        return !IsCyclicEngineCommand(commandType) || commandType != activeCommand;
+    }
+
+    private static string? GetActiveEngineCommandType(AuthoritativeSnapshot? snapshot)
+    {
+        if (string.IsNullOrWhiteSpace(snapshot?.PlayerShipObjectId))
+            return null;
+
+        foreach (var obj in snapshot.Objects)
+        {
+            if (obj.ObjectId == snapshot.PlayerShipObjectId)
+                return obj.ActiveEngineCommandType;
+        }
+
+        return null;
+    }
+
+    private static bool IsCyclicEngineCommand(string commandType)
+    {
+        return commandType == ShipEngineCommandTypes.Accelerate ||
+               commandType == ShipEngineCommandTypes.Brake ||
+               commandType == ShipEngineCommandTypes.TurnLeftUntilCancel ||
+               commandType == ShipEngineCommandTypes.TurnRightUntilCancel;
+    }
+
+    private void DrawCommandIndicator(SKCanvas canvas, SKRect buttonRect)
+    {
+        float indicatorX = buttonRect.MidX - CommandIndicatorSize / 2f;
+        float indicatorY = buttonRect.Bottom + 1f;
+        _playerShipGlyphPath.Reset();
+        _playerShipGlyphPath.MoveTo(indicatorX, indicatorY);
+        _playerShipGlyphPath.LineTo(indicatorX + CommandIndicatorSize, indicatorY);
+        _playerShipGlyphPath.LineTo(indicatorX + CommandIndicatorSize / 2f, indicatorY + CommandIndicatorSize);
+        _playerShipGlyphPath.Close();
+        canvas.DrawPath(_playerShipGlyphPath, _speedIndicatorPaint);
     }
 
     // ── Info panel ──────────────────────────────────────────────
@@ -487,3 +730,5 @@ internal readonly record struct ObjectRenderState(
     ObjectMotionSnapshot Source,
     ObjectMotionSnapshot Predicted,
     bool IsPlayerShip);
+
+internal readonly record struct EngineCommandButton(string Label, string CommandType);

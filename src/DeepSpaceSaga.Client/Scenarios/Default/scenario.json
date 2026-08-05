@@ -38,6 +38,17 @@
                             "quantity": 1000
                         }
                     ]
+                },
+                {
+                    "moduleId": "MOD-PLAYER-ENGINE-01",
+                    "moduleTypeId": "module.engine.basic",
+                    "platformIndex": 0,
+                    "occupiedCells": [ 0 ],
+                    "structurePoints": 100,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
                 }
             ]
         },
