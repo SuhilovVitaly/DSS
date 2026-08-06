@@ -170,7 +170,7 @@ public class EngineCommandTests
     }
 
     [Fact]
-    public void New_engine_command_replaces_active_cyclic_command()
+    public void One_shot_command_is_rejected_when_auto_repeat_cycle_is_active()
     {
         var engine = CreateEngine(directionDegrees: 12);
 
@@ -181,9 +181,34 @@ public class EngineCommandTests
         Assert.Equal(0, initial.SpeedKmS);
         Assert.Equal(12, initial.Direction);
 
+        // TurnRightStep is rejected — incompatible with active Accelerate cycle.
+        // Speed changes from Accelerate, but direction stays unchanged.
         var completed = PlayerShipFrom(engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1));
-        Assert.Equal(0, completed.SpeedKmS);
-        Assert.Equal(13, completed.Direction);
+        Assert.Equal(4, completed.SpeedKmS);
+        Assert.Equal(12, completed.Direction);
+        Assert.Equal(ShipEngineCommandTypes.Accelerate, completed.ActiveEngineCommandType);
+    }
+
+    [Fact]
+    public void Until_cancel_turn_mutual_replacement_is_allowed()
+    {
+        var engine = CreateEngine(directionDegrees: 0);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightUntilCancel));
+        Assert.Equal(0, PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1)).Direction);
+        Assert.Equal(1, PlayerShipFrom(engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1)).Direction);
+
+        // TurnLeftUntilCancel replaces TurnRightUntilCancel (mutual replacement).
+        // CompleteActiveEngineCycles runs before ApplyPendingCommands, so
+        // the existing TurnRightUntilCancel cycle completes one more time (+1°)
+        // before TurnLeftUntilCancel takes over.
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnLeftUntilCancel));
+        var afterReplace = PlayerShipFrom(engine.CaptureSnapshotForTests(2000, SimulationSpeed.Speed1));
+        Assert.Equal(2, afterReplace.Direction);
+        Assert.Equal(ShipEngineCommandTypes.TurnLeftUntilCancel, afterReplace.ActiveEngineCommandType);
+
+        // TurnLeftUntilCancel now takes effect, reversing the direction.
+        Assert.Equal(1, PlayerShipFrom(engine.CaptureSnapshotForTests(3000, SimulationSpeed.Speed1)).Direction);
     }
 
     [Fact]

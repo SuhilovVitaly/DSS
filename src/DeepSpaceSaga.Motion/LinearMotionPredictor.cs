@@ -31,15 +31,16 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             long segmentMs = Math.Min(remainingMs, untilNextTurnMs);
             AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, segmentMs);
             remainingMs -= segmentMs;
+            untilNextTurnMs -= segmentMs;
 
-            if (segmentMs == untilNextTurnMs)
+            if (untilNextTurnMs == 0)
             {
                 direction = NormalizeDirection(direction + state.TurnStepDegrees);
                 untilNextTurnMs = state.TurnStepIntervalMs;
             }
         }
 
-        return state with { X = x, Y = y, Direction = direction };
+        return state with { X = x, Y = y, Direction = direction, TurnStepRemainingMs = untilNextTurnMs };
     }
 
     private static ObjectMotionSnapshot PredictBackwardTurnSteps(ObjectMotionSnapshot state, long elapsedMs)
