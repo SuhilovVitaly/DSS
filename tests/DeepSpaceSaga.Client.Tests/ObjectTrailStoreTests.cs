@@ -261,7 +261,8 @@ public class ObjectTrailStoreTests
             SnapshotSequence: 1,
             GameTimeMs: 0,
             CurrentSpeed: SimulationSpeed.Speed1,
-            Objects: ImmutableArray.Create(ship)));
+            Objects: ImmutableArray.Create(ship),
+            PlayerShipObjectId: "ship"));
 
         var screen = new GameSessionScreen(
             buffer,
@@ -291,7 +292,8 @@ public class ObjectTrailStoreTests
             SnapshotSequence: 1,
             GameTimeMs: 0,
             CurrentSpeed: SimulationSpeed.Speed0,
-            Objects: ImmutableArray.Create(ship)));
+            Objects: ImmutableArray.Create(ship),
+            PlayerShipObjectId: "ship"));
 
         var screen = new GameSessionScreen(
             buffer,
@@ -317,7 +319,8 @@ public class ObjectTrailStoreTests
             SnapshotSequence: 1,
             GameTimeMs: 0,
             CurrentSpeed: SimulationSpeed.Speed1,
-            Objects: ImmutableArray.Create(ship)));
+            Objects: ImmutableArray.Create(ship),
+            PlayerShipObjectId: "ship"));
 
         var screen = new GameSessionScreen(
             buffer,
@@ -332,7 +335,8 @@ public class ObjectTrailStoreTests
             SnapshotSequence: 2,
             GameTimeMs: 100,
             CurrentSpeed: SimulationSpeed.Speed1,
-            Objects: ImmutableArray.Create(ship with { X = 10001 }, probe)));
+            Objects: ImmutableArray.Create(ship with { X = 10001 }, probe),
+            PlayerShipObjectId: "ship"));
 
         Render(screen);
 
@@ -352,7 +356,8 @@ public class ObjectTrailStoreTests
             SnapshotSequence: 1,
             GameTimeMs: 0,
             CurrentSpeed: SimulationSpeed.Speed1,
-            Objects: ImmutableArray.Create(ship)));
+            Objects: ImmutableArray.Create(ship),
+            PlayerShipObjectId: "ship"));
 
         var screen = new GameSessionScreen(
             buffer,
@@ -367,7 +372,8 @@ public class ObjectTrailStoreTests
             SnapshotSequence: 2,
             GameTimeMs: 900,
             CurrentSpeed: SimulationSpeed.Speed1,
-            Objects: ImmutableArray.Create(ship with { X = 10009 })));
+            Objects: ImmutableArray.Create(ship with { X = 10009 }),
+            PlayerShipObjectId: "ship"));
 
         Render(screen);
 
@@ -419,7 +425,8 @@ public class ObjectTrailStoreTests
             SnapshotSequence: 1,
             GameTimeMs: 0,
             CurrentSpeed: speed,
-            Objects: ImmutableArray.Create(ship)));
+            Objects: ImmutableArray.Create(ship),
+            PlayerShipObjectId: "ship"));
 
         var screen = new GameSessionScreen(
             buffer,

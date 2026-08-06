@@ -6,5 +6,5 @@
     "factoryTypes": "Data/factory-types.json",
     "recipes": "Data/recipes.json"
   },
-  "defaultScenario": "Scenarios/Default/scenario.json"
+  "defaultScenario": "Scenarios/Default_500/scenario.json"
 }

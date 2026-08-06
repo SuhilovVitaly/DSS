@@ -15,12 +15,14 @@ public sealed class GameSessionScreen : IScreen
     private readonly CameraState _camera;
     private readonly GridRenderer _grid;
     private readonly ObjectTrailStore _trailStore;
+    private readonly FutureTrajectoryProjector _futureTrajectoryProjector;
     private readonly List<ObjectRenderState> _renderStates = new();
     private readonly HashSet<string> _initialTrailBootstrapObjectIds = new(StringComparer.Ordinal);
     private readonly GameSessionHandle? _handle;
 
     // Object paints
     private readonly SKPaint _trailPaint;
+    private readonly SKPaint _futureTrajectoryPaint;
     private readonly SKPaint _objectPaint;
     private readonly SKPaint _playerShipPaint;
     private readonly SKPaint _playerShipOutlinePaint;
@@ -148,8 +150,17 @@ public sealed class GameSessionScreen : IScreen
         _camera = new CameraState(focusX: 10000, focusY: 10000, pixelsPerWorldUnit: 1.0);
         _grid = new GridRenderer();
         _trailStore = new ObjectTrailStore(_predictor, timestampProvider ?? Stopwatch.GetTimestamp);
+        _futureTrajectoryProjector = new FutureTrajectoryProjector(_predictor);
 
         _trailPaint = new SKPaint { Color = new SKColor(190, 190, 190, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 2f, IsAntialias = true };
+        _futureTrajectoryPaint = new SKPaint
+        {
+            Color = new SKColor(30, 30, 30, 140),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1f,
+            IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash(new float[] { 8f, 6f }, 0f)
+        };
         _objectPaint = new SKPaint { Color = SKColors.Cyan, Style = SKPaintStyle.Fill, IsAntialias = true };
         _playerShipPaint = new SKPaint { Color = SKColors.LimeGreen, Style = SKPaintStyle.Fill, IsAntialias = true };
         _playerShipOutlinePaint = new SKPaint { Color = new SKColor(145, 180, 150), Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f, IsAntialias = true };
@@ -392,6 +403,9 @@ public sealed class GameSessionScreen : IScreen
 
             DrawObjectTrails(canvas, width, height);
 
+            // 3.5. Future trajectory (dashed, player ship only, after trails, before objects)
+            DrawFutureTrajectories(canvas, width, height);
+
             // 4. Engine objects
             foreach (var state in _renderStates)
             {
@@ -489,6 +503,51 @@ public sealed class GameSessionScreen : IScreen
                 canvas.DrawLine(fromX, fromY, toX, toY, _trailPaint);
             }
         }
+    }
+
+    // ── Future trajectory ────────────────────────────────────────
+
+    private void DrawFutureTrajectories(SKCanvas canvas, int width, int height)
+    {
+        foreach (var state in _renderStates)
+        {
+            if (!state.IsPlayerShip)
+                continue;
+
+            if (!FutureTrajectoryProjector.ShouldDraw(state.Predicted))
+                continue;
+
+            var points = _futureTrajectoryProjector.Project(state.Predicted);
+            if (points.Count < 2)
+                continue;
+
+            for (int i = 1; i < points.Count; i++)
+            {
+                var from = points[i - 1];
+                var to = points[i];
+                var (fromX, fromY) = _camera.WorldToScreen(from.X, from.Y, width, height);
+                var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
+                canvas.DrawLine(fromX, fromY, toX, toY, _futureTrajectoryPaint);
+            }
+        }
+    }
+
+    internal IReadOnlyList<FutureTrajectoryPoint> GetFutureTrajectory(string objectId)
+    {
+        foreach (var state in _renderStates)
+        {
+            if (state.Predicted.ObjectId == objectId)
+            {
+                if (!state.IsPlayerShip)
+                    return Array.Empty<FutureTrajectoryPoint>();
+
+                return FutureTrajectoryProjector.ShouldDraw(state.Predicted)
+                    ? _futureTrajectoryProjector.Project(state.Predicted)
+                    : Array.Empty<FutureTrajectoryPoint>();
+            }
+        }
+
+        return Array.Empty<FutureTrajectoryPoint>();
     }
 
     private void DrawSpeedPanel(SKCanvas canvas)
