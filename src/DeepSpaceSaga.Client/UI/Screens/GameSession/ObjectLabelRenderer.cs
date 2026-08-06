@@ -148,9 +148,13 @@ internal sealed class ObjectLabelRenderer
             _stripePaint.Color = new SKColor(sr, sg, sb);
             canvas.DrawRect(stripeRect, _stripePaint);
 
-            // Status square
-            _statusSquarePaint.Color = StatusSquareAnimator.GetStatusColor(objectColor, gameTimeMs, speed);
-            canvas.DrawRect(geometry.StatusRect, _statusSquarePaint);
+            // Status square — drawn only during the visible blink phase,
+            // with the original object color (no brightness shift)
+            if (StatusSquareAnimator.IsStatusSquareVisible(gameTimeMs, speed))
+            {
+                _statusSquarePaint.Color = objectColor;
+                canvas.DrawRect(geometry.StatusRect, _statusSquarePaint);
+            }
 
             // Text
             var textPaint = isUnknown ? _unknownTextPaint : _textPaint;

@@ -15,7 +15,6 @@ internal static class ObjectLabelLayout
     public const float TextPaddingX = 12f;
     public const float TextPaddingY = 3f;
     public const float StatusTextGap = 6f;
-    public const float LeaderEdgeMargin = 8f;
 
     /// <summary>
     /// Maps object direction to label angle.
@@ -99,15 +98,44 @@ internal static class ObjectLabelLayout
     }
 
     /// <summary>
-    /// Compute the leader-line endpoint on the bottom edge of the plaque,
-    /// clamped so the line never reaches the corners.
+    /// Compute the leader-line endpoint: the corner of the plaque
+    /// (top-left, top-right, bottom-left or bottom-right) that is closest
+    /// to the object's screen point by Euclidean distance.
     /// </summary>
     public static SKPoint GetLeaderEndPoint(SKPoint objectScreen, SKRect plaqueRect)
     {
-        float leaderEndX = Math.Clamp(objectScreen.X,
-            plaqueRect.Left + LeaderEdgeMargin,
-            plaqueRect.Right - LeaderEdgeMargin);
-        float leaderEndY = plaqueRect.Bottom;
-        return new SKPoint(leaderEndX, leaderEndY);
+        var topLeft = new SKPoint(plaqueRect.Left, plaqueRect.Top);
+        var topRight = new SKPoint(plaqueRect.Right, plaqueRect.Top);
+        var bottomLeft = new SKPoint(plaqueRect.Left, plaqueRect.Bottom);
+        var bottomRight = new SKPoint(plaqueRect.Right, plaqueRect.Bottom);
+
+        var nearest = topLeft;
+        double bestDistanceSquared = DistanceSquared(objectScreen, topLeft);
+
+        if (DistanceSquared(objectScreen, topRight) < bestDistanceSquared)
+        {
+            nearest = topRight;
+            bestDistanceSquared = DistanceSquared(objectScreen, topRight);
+        }
+
+        if (DistanceSquared(objectScreen, bottomLeft) < bestDistanceSquared)
+        {
+            nearest = bottomLeft;
+            bestDistanceSquared = DistanceSquared(objectScreen, bottomLeft);
+        }
+
+        if (DistanceSquared(objectScreen, bottomRight) < bestDistanceSquared)
+        {
+            nearest = bottomRight;
+        }
+
+        return nearest;
+    }
+
+    private static double DistanceSquared(SKPoint a, SKPoint b)
+    {
+        double dx = a.X - b.X;
+        double dy = a.Y - b.Y;
+        return dx * dx + dy * dy;
     }
 }

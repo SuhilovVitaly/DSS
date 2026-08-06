@@ -167,166 +167,103 @@ public class ObjectLabelTests
     // ── Leader line endpoint ─────────────────────────────────────
 
     [Fact]
-    public void Leader_endpoint_is_on_bottom_edge_of_plaque()
+    public void Geometry_leader_endpoint_is_one_of_plaque_corners()
     {
         var objScreen = new SKPoint(400, 300);
         var viewport = new SKSize(800, 600);
 
         var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, viewport);
 
-        Assert.Equal(geom.PlaqueRect.Bottom, geom.LeaderEndPoint.Y);
+        var plaque = geom.PlaqueRect;
+        var corners = new[]
+        {
+            new SKPoint(plaque.Left, plaque.Top),
+            new SKPoint(plaque.Right, plaque.Top),
+            new SKPoint(plaque.Left, plaque.Bottom),
+            new SKPoint(plaque.Right, plaque.Bottom)
+        };
+
+        Assert.Contains(geom.LeaderEndPoint, corners);
     }
 
-    [Fact]
-    public void Leader_endpoint_is_clamped_within_plaque_horizontal_bounds()
-    {
-        var objScreen = new SKPoint(400, 300);
-        var viewport = new SKSize(800, 600);
-
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, viewport);
-
-        Assert.True(geom.LeaderEndPoint.X >= geom.PlaqueRect.Left + ObjectLabelLayout.LeaderEdgeMargin);
-        Assert.True(geom.LeaderEndPoint.X <= geom.PlaqueRect.Right - ObjectLabelLayout.LeaderEdgeMargin);
-    }
+    // ── GetLeaderEndPoint (standalone, synthetic SKRect) ─────────
 
     [Fact]
-    public void Leader_endpoint_is_not_always_center_when_object_is_left_of_plaque()
-    {
-        // Object far to the left of where the plaque will appear
-        var objScreen = new SKPoint(50, 300);
-        var viewport = new SKSize(800, 600);
-
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, viewport);
-
-        // Object is to the left → leader should go to left portion of bottom edge
-        Assert.True(geom.LeaderEndPoint.X < geom.PlaqueRect.MidX,
-            $"Leader should be left-of-center when object is left. " +
-            $"LeaderX={geom.LeaderEndPoint.X}, MidX={geom.PlaqueRect.MidX}");
-    }
-
-    [Fact]
-    public void Leader_endpoint_is_not_always_center_when_object_is_right_of_plaque()
-    {
-        // Object far to the right of where the plaque will appear
-        var objScreen = new SKPoint(750, 300);
-        var viewport = new SKSize(800, 600);
-
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 270, textWidth: 80, viewport);
-
-        // Object is to the right → leader should go to right portion of bottom edge
-        Assert.True(geom.LeaderEndPoint.X > geom.PlaqueRect.MidX,
-            $"Leader should be right-of-center when object is right. " +
-            $"LeaderX={geom.LeaderEndPoint.X}, MidX={geom.PlaqueRect.MidX}");
-    }
-
-    [Fact]
-    public void Leader_endpoint_respects_edge_margin_even_when_object_is_far_outside()
-    {
-        // Object extremely far to the left
-        var objScreen = new SKPoint(-500, 300);
-        var viewport = new SKSize(800, 600);
-
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, viewport);
-
-        // Should be clamped to Left + LeaderEdgeMargin, not follow object off-screen
-        Assert.Equal(
-            geom.PlaqueRect.Left + ObjectLabelLayout.LeaderEdgeMargin,
-            geom.LeaderEndPoint.X);
-    }
-
-    // ── GetLeaderEndPoint (standalone) ───────────────────────────
-
-    [Fact]
-    public void GetLeaderEndPoint_returns_bottom_edge_point()
+    public void GetLeaderEndPoint_returns_nearest_corner_top_left()
     {
         var plaqueRect = new SKRect(200, 100, 320, 118);
-        var objScreen = new SKPoint(260, 200); // object directly below plaque center
+        var objScreen = new SKPoint(205, 103); // closest to top-left corner
 
         var endPoint = ObjectLabelLayout.GetLeaderEndPoint(objScreen, plaqueRect);
 
-        Assert.Equal(plaqueRect.Bottom, endPoint.Y);
-        Assert.Equal(260, endPoint.X); // centered → stays at object X within clamp range
+        Assert.Equal(new SKPoint(plaqueRect.Left, plaqueRect.Top), endPoint);
     }
 
     [Fact]
-    public void GetLeaderEndPoint_clamps_to_left_margin()
+    public void GetLeaderEndPoint_returns_nearest_corner_top_right()
     {
         var plaqueRect = new SKRect(200, 100, 320, 118);
-        var objScreen = new SKPoint(50, 200); // far left
+        var objScreen = new SKPoint(315, 105); // closest to top-right corner
 
         var endPoint = ObjectLabelLayout.GetLeaderEndPoint(objScreen, plaqueRect);
 
-        Assert.Equal(plaqueRect.Left + ObjectLabelLayout.LeaderEdgeMargin, endPoint.X);
+        Assert.Equal(new SKPoint(plaqueRect.Right, plaqueRect.Top), endPoint);
     }
 
     [Fact]
-    public void GetLeaderEndPoint_clamps_to_right_margin()
+    public void GetLeaderEndPoint_returns_nearest_corner_bottom_left()
     {
         var plaqueRect = new SKRect(200, 100, 320, 118);
-        var objScreen = new SKPoint(500, 200); // far right
+        var objScreen = new SKPoint(205, 114); // closest to bottom-left corner
 
         var endPoint = ObjectLabelLayout.GetLeaderEndPoint(objScreen, plaqueRect);
 
-        Assert.Equal(plaqueRect.Right - ObjectLabelLayout.LeaderEdgeMargin, endPoint.X);
-    }
-
-    // ── Status square smoothstep animation ───────────────────────
-
-    [Fact]
-    public void StatusSquare_shows_object_color_at_t0()
-    {
-        var objColor = new SKColor(85, 107, 47);
-        var result = StatusSquareAnimator.GetStatusColor(objColor, gameTimeMs: 0, SimulationSpeed.Speed1);
-        Assert.Equal(objColor, result);
+        Assert.Equal(new SKPoint(plaqueRect.Left, plaqueRect.Bottom), endPoint);
     }
 
     [Fact]
-    public void StatusSquare_returns_to_object_color_at_period_end()
+    public void GetLeaderEndPoint_returns_nearest_corner_bottom_right()
     {
-        var objColor = new SKColor(85, 107, 47);
-        var result = StatusSquareAnimator.GetStatusColor(objColor, gameTimeMs: 1500, SimulationSpeed.Speed1);
-        Assert.Equal(objColor, result);
+        var plaqueRect = new SKRect(200, 100, 320, 118);
+        var objScreen = new SKPoint(315, 114); // closest to bottom-right corner
+
+        var endPoint = ObjectLabelLayout.GetLeaderEndPoint(objScreen, plaqueRect);
+
+        Assert.Equal(new SKPoint(plaqueRect.Right, plaqueRect.Bottom), endPoint);
+    }
+
+    // ── Status square blink visibility ───────────────────────────
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(999)]
+    public void StatusSquare_visible_in_first_phase(long gameTimeMs)
+    {
+        Assert.True(StatusSquareAnimator.IsStatusSquareVisible(gameTimeMs, SimulationSpeed.Speed1));
+    }
+
+    [Theory]
+    [InlineData(1000)]
+    [InlineData(1999)]
+    public void StatusSquare_hidden_in_second_phase(long gameTimeMs)
+    {
+        Assert.False(StatusSquareAnimator.IsStatusSquareVisible(gameTimeMs, SimulationSpeed.Speed1));
     }
 
     [Fact]
-    public void StatusSquare_peaks_at_mid_period()
+    public void StatusSquare_visible_again_at_period_boundary()
     {
-        var objColor = new SKColor(100, 0, 0);
-        var result = StatusSquareAnimator.GetStatusColor(objColor, gameTimeMs: 750, SimulationSpeed.Speed1);
-
-        // At peak (t=1.0), phase=1.0 → fully shifted color
-        // Dark color → 85% toward white: R = 100 + 0.85*155 = 231
-        Assert.Equal(231, result.Red);
-        Assert.Equal(216, result.Green);
-        Assert.Equal(216, result.Blue);
+        // 2000 ms = full period → phase wraps back to the visible half
+        Assert.True(StatusSquareAnimator.IsStatusSquareVisible(2000, SimulationSpeed.Speed1));
     }
 
-    [Fact]
-    public void StatusSquare_smoothly_interpolates_between_frames()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(750)]
+    [InlineData(1999)]
+    public void StatusSquare_always_visible_when_paused(long gameTimeMs)
     {
-        var objColor = new SKColor(100, 0, 0);
-
-        // Two frames 16ms apart should produce close colors (not hard toggle)
-        var c1 = StatusSquareAnimator.GetStatusColor(objColor, gameTimeMs: 100, SimulationSpeed.Speed1);
-        var c2 = StatusSquareAnimator.GetStatusColor(objColor, gameTimeMs: 116, SimulationSpeed.Speed1);
-
-        int dR = Math.Abs(c1.Red - c2.Red);
-        int dG = Math.Abs(c1.Green - c2.Green);
-        int dB = Math.Abs(c1.Blue - c2.Blue);
-
-        // 16ms at 1500ms period → ~1% phase change → small delta
-        Assert.True(dR + dG + dB < 20,
-            $"Color jump too large: ΔR={dR} ΔG={dG} ΔB={dB}");
-    }
-
-    [Fact]
-    public void StatusSquare_frozen_when_paused()
-    {
-        var objColor = new SKColor(100, 150, 200);
-
-        Assert.Equal(objColor, StatusSquareAnimator.GetStatusColor(objColor, 0, SimulationSpeed.Speed0));
-        Assert.Equal(objColor, StatusSquareAnimator.GetStatusColor(objColor, 750, SimulationSpeed.Speed0));
-        Assert.Equal(objColor, StatusSquareAnimator.GetStatusColor(objColor, 1500, SimulationSpeed.Speed0));
+        Assert.True(StatusSquareAnimator.IsStatusSquareVisible(gameTimeMs, SimulationSpeed.Speed0));
     }
 
     // ── Plaque constants ─────────────────────────────────────────
@@ -356,21 +293,15 @@ public class ObjectLabelTests
     }
 
     [Fact]
-    public void Animation_period_is_1500ms()
+    public void Animation_period_is_2000ms()
     {
-        Assert.Equal(1500.0, StatusSquareAnimator.PeriodMs);
+        Assert.Equal(2000.0, StatusSquareAnimator.PeriodMs);
     }
 
     [Fact]
     public void Status_text_gap_is_6px()
     {
         Assert.Equal(6f, ObjectLabelLayout.StatusTextGap);
-    }
-
-    [Fact]
-    public void Leader_edge_margin_is_8px()
-    {
-        Assert.Equal(8f, ObjectLabelLayout.LeaderEdgeMargin);
     }
 
     // ── DisplayName resolution ───────────────────────────────────
