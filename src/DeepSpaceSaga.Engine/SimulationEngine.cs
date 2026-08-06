@@ -105,7 +105,8 @@ public sealed class SimulationEngine : IDisposable
                 Direction: obj.DirectionDegrees),
                 ObjectType: obj.ObjectType,
                 StartGameTimeMs: 0,
-                Modules: modules)); // startGameTime stamped at RunAsync
+                Modules: modules,
+                Name: obj.Name)); // startGameTime stamped at RunAsync
         }
 
         PlayerShipObjectId = gs.PlayerShipObjectId;
@@ -167,7 +168,8 @@ public sealed class SimulationEngine : IDisposable
                 TurnStepRemainingMs = cycleMotion.TurnStepRemainingMs,
                 TurnStepIntervalMs = cycleMotion.TurnStepIntervalMs,
                 ObjectType = obj.ObjectType,
-                RelationToPlayer = GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType)
+                RelationToPlayer = GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType),
+                DisplayName = obj.InitialMotion.ObjectId == PlayerShipObjectId ? obj.Name : null
             });
         }
 
@@ -325,7 +327,25 @@ public sealed class SimulationEngine : IDisposable
         }
 
         if (deferred is { Count: > 0 })
-            RequeueDeferredCommands(deferred);
+        {
+            // Complete any zero-duration one-shot cycles that were just started
+            // in the first pass — this gives deferred commands a second chance
+            // within the same snapshot instead of waiting a full second.
+            CompleteActiveEngineCycles(gameTimeMs);
+
+            List<PlayerCommand>? stillDeferred = null;
+            foreach (var command in deferred)
+            {
+                if (TryStartEngineCommand(command, gameTimeMs) == CommandStartDisposition.Deferred)
+                {
+                    stillDeferred ??= [];
+                    stillDeferred.Add(command);
+                }
+            }
+
+            if (stillDeferred is { Count: > 0 })
+                RequeueDeferredCommands(stillDeferred);
+        }
     }
 
     private List<PlayerCommand> DrainPendingCommands()
@@ -383,8 +403,15 @@ public sealed class SimulationEngine : IDisposable
         {
             if (!activeCycle.IsAutoRepeat)
                 return CommandStartDisposition.Deferred;
+
+            // Same command type — idempotent, continue existing cycle.
             if (string.Equals(command.CommandType, activeCycle.CommandType, StringComparison.Ordinal))
                 return CommandStartDisposition.Started;
+
+            // Only TurnLeftUntilCancel ↔ TurnRightUntilCancel mutual replacement is allowed.
+            // All other commands are rejected — they must not be queued as a hidden backlog.
+            if (!IsUntilCancelTurnReplacement(activeCycle.CommandType, command.CommandType))
+                return CommandStartDisposition.Rejected;
         }
 
         bool isAutoRepeat = IsCyclicEngineCommand(command.CommandType);
@@ -435,6 +462,11 @@ public sealed class SimulationEngine : IDisposable
     {
         return commandType == ShipEngineCommandTypes.TurnLeftUntilCancel ||
                commandType == ShipEngineCommandTypes.TurnRightUntilCancel;
+    }
+
+    private static bool IsUntilCancelTurnReplacement(string existing, string incoming)
+    {
+        return IsUntilCancelTurn(existing) && IsUntilCancelTurn(incoming);
     }
 
     private static bool IsCyclicEngineCommand(string commandType)
@@ -640,7 +672,8 @@ internal sealed record SpaceObjectRuntime(
     ObjectMotionSnapshot InitialMotion,
     string ObjectType,
     long StartGameTimeMs,
-    ImmutableArray<InstalledModuleRuntime> Modules);
+    ImmutableArray<InstalledModuleRuntime> Modules,
+    string? Name = null);
 
 internal sealed record InstalledModuleRuntime(
     string ModuleId,

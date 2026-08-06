@@ -132,14 +132,13 @@ public class FutureTrajectoryTests
         Assert.Equal(73.0, points[0].Y, precision: 6);
     }
 
-    // ── Continuous turn (circular motion) tests ────────────────────
+    // ── Discrete turn tests ──────────────────────────────────────
 
     [Fact]
-    public void Continuous_right_turn_produces_circular_arc()
+    public void Discrete_right_turn_applies_at_correct_intervals()
     {
         var projector = new FutureTrajectoryProjector(new LinearMotionPredictor());
-        // TurnRightUntilCancel: 90° per 1000ms → full circle in 4000ms
-        // Speed 1 km/s = 10 wu/s. Radius = v/ω = 10 / (π/2) ≈ 6.366 wu
+        // TurnRightUntilCancel: 90° per 1000ms. First turn fires at TurnStepRemainingMs.
         var state = new ObjectMotionSnapshot(
             "ship",
             X: 0, Y: 0,
@@ -147,7 +146,7 @@ public class FutureTrajectoryTests
             Direction: 0,
             ActiveEngineCommandType: ShipEngineCommandTypes.TurnRightUntilCancel,
             TurnStepDegrees: 90,
-            TurnStepRemainingMs: 500, // should be ignored for continuous turn
+            TurnStepRemainingMs: 1000, // first turn after 1000ms
             TurnStepIntervalMs: 1000);
 
         var points = projector.Project(state);
@@ -156,76 +155,42 @@ public class FutureTrajectoryTests
         Assert.Equal(0.0, points[0].X, precision: 6);
         Assert.Equal(0.0, points[0].Y, precision: 6);
 
-        // After 1000ms (90° right): direction 0→90°, ship should be at roughly (R, -R)
-        // R = v/ω = 10 / (π/2) ≈ 6.366. At 90°: pos ≈ (R, -R) = (6.366, -6.366)
-        var p1000 = points[4]; // 1000ms / 250ms = index 4
-        Assert.True(p1000.X > 0, "Should move right after 90° right turn");
-        Assert.True(p1000.Y < 0, "Should move up after starting up then turning right");
-
-        // After 2000ms (180° right): ship should be at roughly (2R, 0)
-        var p2000 = points[8]; // 2000ms / 250ms = index 8
-        Assert.True(p2000.X > 10, "Should be far right after 180° turn");
-        Assert.Equal(0.0, p2000.Y, precision: 1); // should be back at y≈0
-
-        // After 4000ms (360°): back to start
-        var p4000 = points[16]; // 4000ms / 250ms = index 16
-        Assert.Equal(0.0, p4000.X, precision: 3);
-        Assert.Equal(0.0, p4000.Y, precision: 3);
-    }
-
-    [Fact]
-    public void Continuous_left_turn_produces_opposite_arc()
-    {
-        var projector = new FutureTrajectoryProjector(new LinearMotionPredictor());
-        var state = new ObjectMotionSnapshot(
-            "ship",
-            X: 0, Y: 0,
-            SpeedKmS: 1,
-            Direction: 0,
-            ActiveEngineCommandType: ShipEngineCommandTypes.TurnLeftUntilCancel,
-            TurnStepDegrees: -90, // left = negative
-            TurnStepRemainingMs: 200,
-            TurnStepIntervalMs: 1000);
-
-        var points = projector.Project(state);
-
-        // t=0: (0, 0)
-        Assert.Equal(0.0, points[0].X, precision: 6);
-        Assert.Equal(0.0, points[0].Y, precision: 6);
-
-        // After 1000ms (90° left): direction 0→-90° (270°), ship should move left
+        // t=0..1000ms: moving up (direction 0°), speed 1 km/s = 10 wu/s
         var p1000 = points[4]; // 1000ms
-        Assert.True(p1000.X < 0, "Should move left after 90° left turn");
-        Assert.True(p1000.Y < 0, "Should have moved from origin");
+        Assert.Equal(0.0, p1000.X, precision: 6);
+        Assert.Equal(-10.0, p1000.Y, precision: 6); // y decreases (up is -y)
 
-        // After 4000ms (360° left): back to start
-        var p4000 = points[16]; // 4000ms
-        Assert.Equal(0.0, p4000.X, precision: 3);
-        Assert.Equal(0.0, p4000.Y, precision: 3);
+        // t=1000..2000ms: direction 90° (right after turn)
+        var p2000 = points[8]; // 2000ms
+        Assert.Equal(10.0, p2000.X, precision: 6);
+        Assert.Equal(-10.0, p2000.Y, precision: 6);
     }
 
     [Fact]
-    public void Continuous_turn_ignores_TurnStepRemainingMs()
+    public void TurnStepRemainingMs_affects_first_turn_timing()
     {
         var projector = new FutureTrajectoryProjector(new LinearMotionPredictor());
 
-        // Two states identical except for TurnStepRemainingMs
-        var state1 = new ObjectMotionSnapshot("ship", X: 0, Y: 0, SpeedKmS: 1, Direction: 0,
+        // First turn fires at 200ms, second at 1200ms
+        var stateEarly = new ObjectMotionSnapshot("ship", X: 0, Y: 0, SpeedKmS: 1, Direction: 0,
             ActiveEngineCommandType: ShipEngineCommandTypes.TurnRightUntilCancel,
-            TurnStepDegrees: 90, TurnStepRemainingMs: 100, TurnStepIntervalMs: 1000);
+            TurnStepDegrees: 90, TurnStepRemainingMs: 200, TurnStepIntervalMs: 1000);
 
-        var state2 = state1 with { TurnStepRemainingMs = 900 };
+        // First turn fires at 900ms, second at 1900ms
+        var stateLate = stateEarly with { TurnStepRemainingMs = 900 };
 
-        var points1 = projector.Project(state1);
-        var points2 = projector.Project(state2);
+        var earlyPoints = projector.Project(stateEarly);
+        var latePoints = projector.Project(stateLate);
 
-        // Both trajectories should be identical — TurnStepRemainingMs is ignored
-        Assert.Equal(points1.Count, points2.Count);
-        for (int i = 0; i < points1.Count; i++)
-        {
-            Assert.Equal(points1[i].X, points2[i].X, precision: 6);
-            Assert.Equal(points1[i].Y, points2[i].Y, precision: 6);
-        }
+        // At 1000ms the two trajectories differ because turns fired at different times.
+        var early1000 = earlyPoints[4];
+        var late1000 = latePoints[4];
+
+        bool positionsDiffer = Math.Abs(early1000.X - late1000.X) > 0.01
+                            || Math.Abs(early1000.Y - late1000.Y) > 0.01;
+        Assert.True(positionsDiffer,
+            "TurnStepRemainingMs must affect when the first turn fires — " +
+            $"early={early1000.X:F3},{early1000.Y:F3} late={late1000.X:F3},{late1000.Y:F3}");
     }
 
     [Fact]
@@ -258,10 +223,10 @@ public class FutureTrajectoryTests
     }
 
     [Fact]
-    public void Slow_continuous_turn_extends_horizon_to_close_circle()
+    public void All_turn_projections_use_fixed_200s_horizon()
     {
         var projector = new FutureTrajectoryProjector(new LinearMotionPredictor());
-        // 1° per 1000ms → circle period = 360 s. Horizon must be ≥ 360 s to close the circle.
+        // Slow turn (1° per 1000ms) — horizon is fixed at 200 s with the discrete model.
         var state = new ObjectMotionSnapshot(
             "ship",
             X: 0, Y: 0,
@@ -274,27 +239,18 @@ public class FutureTrajectoryTests
 
         var points = projector.Project(state);
 
-        // Horizon should be at least 360 s = 360_000 ms
-        int expectedMinSamples = 360_000 / FutureTrajectoryProjector.FutureTrajectorySampleIntervalMs + 1;
-        Assert.True(points.Count >= expectedMinSamples,
-            $"Expected at least {expectedMinSamples} samples for a 360 s horizon, got {points.Count}");
-
-        // Last sample should be at or beyond 360 s
-        // Verify the circle closes: first and last points should both be at origin
+        // Fixed 200 s horizon regardless of turn rate.
+        int expectedSamples = 200_000 / FutureTrajectoryProjector.FutureTrajectorySampleIntervalMs + 1;
+        Assert.Equal(expectedSamples, points.Count);
         Assert.Equal(0.0, points[0].X, precision: 6);
         Assert.Equal(0.0, points[0].Y, precision: 6);
-
-        // Find the point closest to one full period (360_000 ms)
-        int fullCircleIndex = 360_000 / FutureTrajectoryProjector.FutureTrajectorySampleIntervalMs;
-        Assert.Equal(0.0, points[fullCircleIndex].X, precision: 2);
-        Assert.Equal(0.0, points[fullCircleIndex].Y, precision: 2);
     }
 
     [Fact]
-    public void Fast_continuous_turn_keeps_minimum_200s_horizon()
+    public void Fast_turn_also_uses_fixed_200s_horizon()
     {
         var projector = new FutureTrajectoryProjector(new LinearMotionPredictor());
-        // 90° per 1000ms → circle period = 4 s. Horizon stays at 200 s minimum.
+        // 90° per 1000ms → circle period = 4 s. Horizon stays at 200 s.
         var state = new ObjectMotionSnapshot(
             "ship",
             X: 0, Y: 0,
@@ -307,7 +263,7 @@ public class FutureTrajectoryTests
 
         var points = projector.Project(state);
 
-        // Fast turn: horizon should be the minimum 200 s = 200_000 ms
+        // Horizon is always the fixed 200 s.
         int expectedSamples = 200_000 / FutureTrajectoryProjector.FutureTrajectorySampleIntervalMs + 1;
         Assert.Equal(expectedSamples, points.Count);
     }

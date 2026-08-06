@@ -18,4 +18,5 @@ public sealed record ObjectMotionSnapshot(
     long TurnStepRemainingMs = 0,
     long TurnStepIntervalMs = 0,
     string? ObjectType = null,
-    string? RelationToPlayer = null);
+    string? RelationToPlayer = null,
+    string? DisplayName = null);

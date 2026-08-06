@@ -117,7 +117,7 @@ public class GameSessionEngineCommandPanelTests
     }
 
     [Fact]
-    public async Task Active_cyclic_command_blocks_only_its_duplicate_and_marks_its_button()
+    public async Task Active_cyclic_command_blocks_duplicate_and_unrelated_commands()
     {
         await using var fixture = CreateFixture();
         var activeShip = new ObjectMotionSnapshot(
@@ -138,17 +138,22 @@ public class GameSessionEngineCommandPanelTests
             PlayerShipObjectId: PlayerShipId));
         Render(fixture.Screen);
 
+        // Duplicate — blocked.
         var sameTurn = fixture.Screen.EngineCommandButtonRects[4];
-        var accelerate = fixture.Screen.EngineCommandButtonRects[0];
         fixture.Screen.OnMouseDown(sameTurn.MidX, sameTurn.MidY);
-        fixture.Screen.OnMouseDown(accelerate.MidX, accelerate.MidY);
+        Assert.Empty(fixture.Connection.Commands);
 
-        Assert.Equal(ShipEngineCommandTypes.Accelerate, Assert.Single(fixture.Connection.Commands).CommandType);
+        // Unrelated cyclic (Accelerate) — blocked (only until-cancel turn mutual replacement allowed).
+        var accelerate = fixture.Screen.EngineCommandButtonRects[0];
+        fixture.Screen.OnMouseDown(accelerate.MidX, accelerate.MidY);
+        Assert.Empty(fixture.Connection.Commands);
+
         Assert.Equal(4, fixture.Screen.ActiveEngineCommandButtonIndex);
 
+        // Opposite until-cancel turn — allowed (mutual replacement).
         var oppositeTurn = fixture.Screen.EngineCommandButtonRects[5];
         fixture.Screen.OnMouseDown(oppositeTurn.MidX, oppositeTurn.MidY);
-        Assert.Equal(ShipEngineCommandTypes.TurnLeftUntilCancel, fixture.Connection.Commands[1].CommandType);
+        Assert.Equal(ShipEngineCommandTypes.TurnLeftUntilCancel, Assert.Single(fixture.Connection.Commands).CommandType);
     }
 
     private static TestFixture CreateFixture()

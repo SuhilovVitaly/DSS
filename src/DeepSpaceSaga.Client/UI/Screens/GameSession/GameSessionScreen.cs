@@ -16,6 +16,7 @@ public sealed class GameSessionScreen : IScreen
     private readonly GridRenderer _grid;
     private readonly ObjectTrailStore _trailStore;
     private readonly FutureTrajectoryProjector _futureTrajectoryProjector;
+    private readonly ObjectLabelRenderer _labelRenderer;
     private readonly List<ObjectRenderState> _renderStates = new();
     private readonly HashSet<string> _initialTrailBootstrapObjectIds = new(StringComparer.Ordinal);
     private readonly GameSessionHandle? _handle;
@@ -151,6 +152,7 @@ public sealed class GameSessionScreen : IScreen
         _grid = new GridRenderer();
         _trailStore = new ObjectTrailStore(_predictor, timestampProvider ?? Stopwatch.GetTimestamp);
         _futureTrajectoryProjector = new FutureTrajectoryProjector(_predictor);
+        _labelRenderer = new ObjectLabelRenderer();
 
         _trailPaint = new SKPaint { Color = new SKColor(190, 190, 190, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 2f, IsAntialias = true };
         _futureTrajectoryPaint = new SKPaint
@@ -294,7 +296,7 @@ public sealed class GameSessionScreen : IScreen
             _ => null
         };
 
-        if (commandType is not null)
+        if (commandType is not null && CanSendEngineCommand(commandType, _buffer.Latest?.Snapshot))
         {
             SendEngineCommand(commandType);
             return ScreenEvent.None;
@@ -406,6 +408,11 @@ public sealed class GameSessionScreen : IScreen
             // 3.5. Future trajectory (before objects, after historical trails)
             DrawFutureTrajectories(canvas, width, height);
 
+            // 3.75. Label leader lines (behind objects)
+            long gameTimeMs = predictedGameTimeMs;
+            var speed = prediction.CurrentSpeed;
+            _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
+
             // 4. Engine objects
             foreach (var state in _renderStates)
             {
@@ -421,6 +428,9 @@ public sealed class GameSessionScreen : IScreen
                     canvas.DrawCircle(sx, sy, 4, _objectPaint);
                 }
             }
+
+            // 4.5. Object label plaques (on top of objects, before UI panels)
+            _labelRenderer.DrawPlaques(canvas, _renderStates, gameTimeMs, speed, width, height, _camera);
         }
 
         // 5. Speed panel (top-right)
@@ -645,8 +655,8 @@ public sealed class GameSessionScreen : IScreen
         float btnX = panelX + CommandPanelPadX;
         float btnY = panelY + CommandPanelPadY;
 
-        bool enabled = _handle is not null &&
-                       !string.IsNullOrWhiteSpace(buffered?.Snapshot.PlayerShipObjectId);
+        bool panelEnabled = _handle is not null &&
+                            !string.IsNullOrWhiteSpace(buffered?.Snapshot.PlayerShipObjectId);
         string? activeCommandType = GetActiveEngineCommandType(buffered?.Snapshot);
         ActiveEngineCommandButtonIndex = -1;
 
@@ -655,16 +665,18 @@ public sealed class GameSessionScreen : IScreen
             var rect = new SKRect(btnX, btnY, btnX + CommandBtnSize, btnY + CommandBtnSize);
             _engineCommandButtonRects[i] = rect;
 
+            bool buttonEnabled = panelEnabled &&
+                                 CanSendEngineCommand(EngineCommandButtons[i].CommandType, buffered?.Snapshot);
             bool isHover = rect.Contains(_mouseX, _mouseY);
             bool isPressed = i == _pressedEngineCommandButtonIndex && isHover;
-            var paint = enabled
+            var paint = buttonEnabled
                 ? isPressed ? _commandBtnPressedPaint : isHover ? _commandBtnHoverPaint : _commandBtnNormalPaint
                 : _commandBtnDisabledPaint;
 
             canvas.DrawRect(rect, paint);
             canvas.DrawRect(rect, _panelBorderPaint);
 
-            _commandBtnTextPaint.Color = enabled
+            _commandBtnTextPaint.Color = buttonEnabled
                 ? new SKColor(210, 218, 214)
                 : new SKColor(96, 96, 96);
             float textY = rect.MidY + _commandBtnTextPaint.TextSize / 3f;
@@ -687,7 +699,24 @@ public sealed class GameSessionScreen : IScreen
             return false;
 
         string? activeCommand = GetActiveEngineCommandType(snapshot);
-        return !IsCyclicEngineCommand(commandType) || commandType != activeCommand;
+        if (activeCommand is null)
+            return true;
+
+        // Same cyclic command — idempotent, no need to send again.
+        if (commandType == activeCommand)
+            return false;
+
+        // CancelAll is always allowed — it explicitly cancels the active cycle.
+        if (commandType == ShipEngineCommandTypes.CancelAll)
+            return true;
+
+        // One-shot turns are rejected by the engine when an auto-repeat cycle is active.
+        if (!IsCyclicEngineCommand(commandType))
+            return false;
+
+        // Different cyclic command while another is active.
+        // Only TurnLeftUntilCancel ↔ TurnRightUntilCancel mutual replacement is allowed.
+        return IsUntilCancelTurnCommand(activeCommand) && IsUntilCancelTurnCommand(commandType);
     }
 
     private static string? GetActiveEngineCommandType(AuthoritativeSnapshot? snapshot)
@@ -709,6 +738,12 @@ public sealed class GameSessionScreen : IScreen
         return commandType == ShipEngineCommandTypes.Accelerate ||
                commandType == ShipEngineCommandTypes.Brake ||
                commandType == ShipEngineCommandTypes.TurnLeftUntilCancel ||
+               commandType == ShipEngineCommandTypes.TurnRightUntilCancel;
+    }
+
+    private static bool IsUntilCancelTurnCommand(string commandType)
+    {
+        return commandType == ShipEngineCommandTypes.TurnLeftUntilCancel ||
                commandType == ShipEngineCommandTypes.TurnRightUntilCancel;
     }
 
