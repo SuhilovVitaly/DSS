@@ -112,16 +112,21 @@ internal sealed class ObjectLabelRenderer
             var state = renderStates[i];
             var predicted = state.Predicted;
             string objectId = predicted.ObjectId;
-            _activeIds.Add(objectId);
 
             var (objSx, objSy) = camera.WorldToScreen(predicted.X, predicted.Y, viewportW, viewportH);
+
+            // Visibility filter: skip objects whose marker/glyph is fully outside viewport.
+            float markerRadius = state.IsPlayerShip ? 7f : ObjectLabelLayout.DefaultMarkerRadius;
+            if (objSx < -markerRadius || objSx > viewportW + markerRadius ||
+                objSy < -markerRadius || objSy > viewportH + markerRadius)
+                continue;
+
+            _activeIds.Add(objectId);
             var objectScreen = new SKPoint(objSx, objSy);
 
             string label = predicted.DisplayName ?? UnknownLabel;
             bool isUnknown = predicted.DisplayName is null;
             float textWidth = (isUnknown ? _unknownTextPaint : _textPaint).MeasureText(label);
-
-            float markerRadius = state.IsPlayerShip ? 7f : ObjectLabelLayout.DefaultMarkerRadius;
 
             // Target geometry from orbit layout (no smoothing).
             var targetGeom = ObjectLabelLayout.Create(objectScreen, predicted.Direction, textWidth,
@@ -137,8 +142,8 @@ internal sealed class ObjectLabelRenderer
                 viewportH,
                 reset: resetSmoothing);
 
-            // Recompute leader endpoint for the smoothed plaque position.
-            var leaderEndPoint = ObjectLabelLayout.GetLeaderEndPoint(objectScreen, visiblePlaque);
+            // Leader endpoint — always bottom-left corner of the visible plaque.
+            var leaderEndPoint = new SKPoint(visiblePlaque.Left, visiblePlaque.Bottom);
 
             // Recompute status rect and text origin relative to the visible plaque.
             float sqX = visiblePlaque.Left + ObjectLabelLayout.TextPaddingX + ObjectLabelLayout.ContentOffsetX;

@@ -65,8 +65,8 @@ internal static class ObjectLabelLayout
         // Clamp into viewport, trying to stay in the rear half-plane.
         plaqueRect = ClampWithRearConstraint(plaqueRect, objectScreen, directionDegrees, viewport);
 
-        // Leader line endpoint — nearest plaque corner to the object.
-        var leaderEndPoint = GetLeaderEndPoint(objectScreen, plaqueRect);
+        // Leader line endpoint — always bottom-left corner of the plaque.
+        var leaderEndPoint = new SKPoint(plaqueRect.Left, plaqueRect.Bottom);
 
         // Status square — with content offset applied.
         float sqX = plaqueRect.Left + TextPaddingX + ContentOffsetX;
@@ -273,36 +273,4 @@ internal static class ObjectLabelLayout
         }
     }
 
-    /// <summary>
-    /// Compute the leader-line endpoint: the corner of the plaque
-    /// closest to the object's screen point by Euclidean distance.
-    /// </summary>
-    public static SKPoint GetLeaderEndPoint(SKPoint objectScreen, SKRect plaqueRect)
-    {
-        var topLeft = new SKPoint(plaqueRect.Left, plaqueRect.Top);
-        var topRight = new SKPoint(plaqueRect.Right, plaqueRect.Top);
-        var bottomLeft = new SKPoint(plaqueRect.Left, plaqueRect.Bottom);
-        var bottomRight = new SKPoint(plaqueRect.Right, plaqueRect.Bottom);
-
-        var nearest = topLeft;
-        double best = DistanceSquared(objectScreen, topLeft);
-
-        double d = DistanceSquared(objectScreen, topRight);
-        if (d < best) { nearest = topRight; best = d; }
-
-        d = DistanceSquared(objectScreen, bottomLeft);
-        if (d < best) { nearest = bottomLeft; best = d; }
-
-        d = DistanceSquared(objectScreen, bottomRight);
-        if (d < best) { nearest = bottomRight; }
-
-        return nearest;
-    }
-
-    private static double DistanceSquared(SKPoint a, SKPoint b)
-    {
-        double dx = a.X - b.X;
-        double dy = a.Y - b.Y;
-        return dx * dx + dy * dy;
-    }
 }

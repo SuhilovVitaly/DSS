@@ -203,32 +203,32 @@ public class ObjectLabelTests
             $"Dot={dot:F3}, PlaqueCenter=({geom.PlaqueCenter.X:F1},{geom.PlaqueCenter.Y:F1})");
     }
 
-    // ── Leader line ────────────────────────────────────────────────
+    // ── Leader line (always bottom-left) ──────────────────────────
 
     [Fact]
-    public void Leader_endpoint_is_nearest_plaque_corner()
+    public void Leader_endpoint_is_always_bottom_left_of_plaque()
     {
         var objScreen = new SKPoint(400, 300);
 
+        // Verify across all cardinal and diagonal directions.
         for (int d = 0; d < 360; d += 45)
         {
             var geom = ObjectLabelLayout.Create(objScreen, d, textWidth: 80, TestViewport);
-            var plaque = geom.PlaqueRect;
 
-            var corners = new[]
-            {
-                new SKPoint(plaque.Left, plaque.Top),
-                new SKPoint(plaque.Right, plaque.Top),
-                new SKPoint(plaque.Left, plaque.Bottom),
-                new SKPoint(plaque.Right, plaque.Bottom)
-            };
-
-            Assert.Contains(geom.LeaderEndPoint, corners);
-
-            // Verify it's actually the closest corner.
-            var expected = ObjectLabelLayout.GetLeaderEndPoint(objScreen, plaque);
-            Assert.Equal(expected, geom.LeaderEndPoint);
+            Assert.Equal(geom.PlaqueRect.Left, geom.LeaderEndPoint.X, precision: 3);
+            Assert.Equal(geom.PlaqueRect.Bottom, geom.LeaderEndPoint.Y, precision: 3);
         }
+    }
+
+    [Fact]
+    public void Leader_endpoint_is_bottom_left_after_viewport_clamp()
+    {
+        // Object near top-right corner — plaque will be clamped.
+        var objScreen = new SKPoint(790, 10);
+        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 315, textWidth: 80, TestViewport);
+
+        Assert.Equal(geom.PlaqueRect.Left, geom.LeaderEndPoint.X, precision: 3);
+        Assert.Equal(geom.PlaqueRect.Bottom, geom.LeaderEndPoint.Y, precision: 3);
     }
 
     // ── Plaque geometry invariants ─────────────────────────────────
@@ -299,44 +299,6 @@ public class ObjectLabelTests
         Assert.Equal(
             geom.PlaqueRect.Top + ObjectLabelLayout.TextPaddingY + ObjectLabelLayout.ContentOffsetY,
             geom.TextOrigin.Y);
-    }
-
-    // ── GetLeaderEndPoint (standalone) ─────────────────────────────
-
-    [Fact]
-    public void GetLeaderEndPoint_returns_nearest_corner_top_left()
-    {
-        var plaqueRect = new SKRect(200, 100, 320, 118);
-        var objScreen = new SKPoint(205, 103);
-        var endPoint = ObjectLabelLayout.GetLeaderEndPoint(objScreen, plaqueRect);
-        Assert.Equal(new SKPoint(plaqueRect.Left, plaqueRect.Top), endPoint);
-    }
-
-    [Fact]
-    public void GetLeaderEndPoint_returns_nearest_corner_top_right()
-    {
-        var plaqueRect = new SKRect(200, 100, 320, 118);
-        var objScreen = new SKPoint(315, 105);
-        var endPoint = ObjectLabelLayout.GetLeaderEndPoint(objScreen, plaqueRect);
-        Assert.Equal(new SKPoint(plaqueRect.Right, plaqueRect.Top), endPoint);
-    }
-
-    [Fact]
-    public void GetLeaderEndPoint_returns_nearest_corner_bottom_left()
-    {
-        var plaqueRect = new SKRect(200, 100, 320, 118);
-        var objScreen = new SKPoint(205, 114);
-        var endPoint = ObjectLabelLayout.GetLeaderEndPoint(objScreen, plaqueRect);
-        Assert.Equal(new SKPoint(plaqueRect.Left, plaqueRect.Bottom), endPoint);
-    }
-
-    [Fact]
-    public void GetLeaderEndPoint_returns_nearest_corner_bottom_right()
-    {
-        var plaqueRect = new SKRect(200, 100, 320, 118);
-        var objScreen = new SKPoint(315, 114);
-        var endPoint = ObjectLabelLayout.GetLeaderEndPoint(objScreen, plaqueRect);
-        Assert.Equal(new SKPoint(plaqueRect.Right, plaqueRect.Bottom), endPoint);
     }
 
     // ── Status square blink visibility ───────────────────────────
