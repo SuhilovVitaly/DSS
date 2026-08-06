@@ -18,6 +18,12 @@ internal static class ObjectLabelLayout
     public const float TextPaddingY = 3f;
     public const float StatusTextGap = 6f;
 
+    /// <summary>Horizontal offset applied to status square and text inside the plaque.</summary>
+    public const float ContentOffsetX = -8f;
+
+    /// <summary>Vertical offset applied to status square and text inside the plaque.</summary>
+    public const float ContentOffsetY = -3f;
+
     /// <summary>Default marker radius for non-player objects (circle).</summary>
     public const float DefaultMarkerRadius = 4f;
 
@@ -62,15 +68,15 @@ internal static class ObjectLabelLayout
         // Leader line endpoint — nearest plaque corner to the object.
         var leaderEndPoint = GetLeaderEndPoint(objectScreen, plaqueRect);
 
-        // Status square.
-        float sqX = plaqueRect.Left + TextPaddingX;
-        float sqY = plaqueRect.Top + (plaqueH - StatusSquareSize) / 2f;
+        // Status square — with content offset applied.
+        float sqX = plaqueRect.Left + TextPaddingX + ContentOffsetX;
+        float sqY = plaqueRect.Top + (plaqueH - StatusSquareSize) / 2f + ContentOffsetY;
         var statusRect = new SKRect(sqX, sqY,
             sqX + StatusSquareSize, sqY + StatusSquareSize);
 
-        // Text origin.
+        // Text origin — with same content offset.
         float textX = statusRect.Right + StatusTextGap;
-        float textY = plaqueRect.Top + TextPaddingY;
+        float textY = plaqueRect.Top + TextPaddingY + ContentOffsetY;
         var textOrigin = new SKPoint(textX, textY);
 
         // Plaque center (for smoothing interpolation by renderer).

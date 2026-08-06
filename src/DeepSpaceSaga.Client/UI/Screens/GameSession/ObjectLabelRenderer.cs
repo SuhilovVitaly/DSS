@@ -141,13 +141,14 @@ internal sealed class ObjectLabelRenderer
             var leaderEndPoint = ObjectLabelLayout.GetLeaderEndPoint(objectScreen, visiblePlaque);
 
             // Recompute status rect and text origin relative to the visible plaque.
-            float sqX = visiblePlaque.Left + ObjectLabelLayout.TextPaddingX;
-            float sqY = visiblePlaque.Top + (visiblePlaque.Height - ObjectLabelLayout.StatusSquareSize) / 2f;
+            float sqX = visiblePlaque.Left + ObjectLabelLayout.TextPaddingX + ObjectLabelLayout.ContentOffsetX;
+            float sqY = visiblePlaque.Top + (visiblePlaque.Height - ObjectLabelLayout.StatusSquareSize) / 2f
+                        + ObjectLabelLayout.ContentOffsetY;
             var statusRect = new SKRect(sqX, sqY,
                 sqX + ObjectLabelLayout.StatusSquareSize, sqY + ObjectLabelLayout.StatusSquareSize);
 
             float textX = statusRect.Right + ObjectLabelLayout.StatusTextGap;
-            float textY = visiblePlaque.Top + ObjectLabelLayout.TextPaddingY;
+            float textY = visiblePlaque.Top + ObjectLabelLayout.TextPaddingY + ObjectLabelLayout.ContentOffsetY;
 
             _geometries[objectId] = new ObjectLabelGeometry(
                 visiblePlaque, leaderEndPoint, statusRect, new SKPoint(textX, textY),

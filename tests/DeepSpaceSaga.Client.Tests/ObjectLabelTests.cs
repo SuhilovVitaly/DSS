@@ -262,19 +262,19 @@ public class ObjectLabelTests
     }
 
     [Fact]
-    public void Geometry_status_rect_starts_at_text_padding_x()
+    public void Geometry_status_rect_starts_at_text_padding_x_plus_content_offset()
     {
         var objScreen = new SKPoint(400, 300);
 
         var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, TestViewport);
 
         Assert.Equal(
-            geom.PlaqueRect.Left + ObjectLabelLayout.TextPaddingX,
+            geom.PlaqueRect.Left + ObjectLabelLayout.TextPaddingX + ObjectLabelLayout.ContentOffsetX,
             geom.StatusRect.Left);
     }
 
     [Fact]
-    public void Geometry_status_rect_is_vertically_centered_in_plaque()
+    public void Geometry_status_rect_is_vertically_shifted_by_content_offset()
     {
         var objScreen = new SKPoint(400, 300);
 
@@ -282,11 +282,12 @@ public class ObjectLabelTests
 
         float plaqueMidY = geom.PlaqueRect.Top + geom.PlaqueRect.Height / 2f;
         float sqMidY = geom.StatusRect.Top + geom.StatusRect.Height / 2f;
-        Assert.Equal(plaqueMidY, sqMidY, precision: 3);
+        // Status square is shifted by ContentOffsetY relative to the plaque center.
+        Assert.Equal(plaqueMidY + ObjectLabelLayout.ContentOffsetY, sqMidY, precision: 3);
     }
 
     [Fact]
-    public void Geometry_text_origin_is_after_status_square_with_gap()
+    public void Geometry_text_origin_is_after_status_square_with_gap_and_offset()
     {
         var objScreen = new SKPoint(400, 300);
 
@@ -296,7 +297,7 @@ public class ObjectLabelTests
             geom.StatusRect.Right + ObjectLabelLayout.StatusTextGap,
             geom.TextOrigin.X);
         Assert.Equal(
-            geom.PlaqueRect.Top + ObjectLabelLayout.TextPaddingY,
+            geom.PlaqueRect.Top + ObjectLabelLayout.TextPaddingY + ObjectLabelLayout.ContentOffsetY,
             geom.TextOrigin.Y);
     }
 
