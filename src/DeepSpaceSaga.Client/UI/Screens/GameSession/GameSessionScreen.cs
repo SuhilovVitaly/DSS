@@ -161,9 +161,9 @@ public sealed class GameSessionScreen : IScreen
             IsAntialias = true,
             PathEffect = SKPathEffect.CreateDash(new float[] { 8f, 6f }, 0f)
         };
-        _objectPaint = new SKPaint { Color = SKColors.Cyan, Style = SKPaintStyle.Fill, IsAntialias = true };
-        _playerShipPaint = new SKPaint { Color = SKColors.LimeGreen, Style = SKPaintStyle.Fill, IsAntialias = true };
-        _playerShipOutlinePaint = new SKPaint { Color = new SKColor(145, 180, 150), Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f, IsAntialias = true };
+        _objectPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
+        _playerShipPaint = new SKPaint { Color = new SKColor(85, 107, 47), Style = SKPaintStyle.Fill, IsAntialias = true };
+        _playerShipOutlinePaint = new SKPaint { Color = new SKColor(100, 122, 62), Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f, IsAntialias = true };
         _centerPaint = new SKPaint { Color = new SKColor(40, 40, 40), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
 
         _panelBgPaint = new SKPaint { Color = new SKColor(0, 0, 0, 200), Style = SKPaintStyle.Fill };
@@ -411,9 +411,15 @@ public sealed class GameSessionScreen : IScreen
             {
                 var (sx, sy) = _camera.WorldToScreen(state.Predicted.X, state.Predicted.Y, width, height);
                 if (state.IsPlayerShip)
+                {
                     DrawPlayerShipGlyph(canvas, sx, sy, state.Predicted.Direction);
+                }
                 else
+                {
+                    _objectPaint.Color = SpaceMapColorResolver.GetColor(
+                        state.Predicted.ObjectType, state.Predicted.RelationToPlayer);
                     canvas.DrawCircle(sx, sy, 4, _objectPaint);
+                }
             }
         }
 

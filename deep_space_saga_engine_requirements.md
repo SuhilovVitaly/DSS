@@ -1557,26 +1557,38 @@ SuccessChancePercent = 85
 
 Все размеры маркеров задаются в screen pixels и не изменяются при zoom.
 
-Текущая схема:
+Цветовая гамма маркеров игровой карты фиксируется в отдельном документе:
 
 ```text
-UnknownSpaceObject → серый,     10 px
-Asteroid           → белый,     10 px
-Station            → жёлтый,    10 px
-NpcShip            → голубой,   10 px
-PlayerShip         → зелёный,   10 px
-Planet             → белый,     25 px
-Sun                → оранжевый, 50 px
+Docs/TacticalMapColors.md
 ```
 
-Для `NpcShip` голубой цвет временный. В будущем цвет будет зависеть от отношения фракции корабля к игроку.
+Этот документ является источником истины для цветов client-side tactical map rendering. В требованиях ниже сохраняется только сводка по размерам и игровому поведению маркеров.
+
+Текущая сводная схема:
+
+```text
+UnknownSpaceObject → fallback color, 10 px
+Asteroid           → WhiteSmoke,     10 px
+Station            → Orange,         10 px
+NpcShip neutral    → DarkGray,       10 px
+NpcShip enemy      → DarkRed,        10 px
+NpcShip friend     → SeaGreen,       10 px
+PlayerShip         → DarkOliveGreen, 10 px
+Planet             → WhiteSmoke,     25 px
+Sun                → Orange,         50 px
+```
+
+Для `NpcShip` цвет зависит от отношения корабля к игроку. Если отношение неизвестно или ещё не передано в render snapshot, используется neutral-вариант.
+
+Цвета являются client-side presentation concern. Engine не должен зависеть от графических типов (`System.Drawing.Color`, `SKColor`, Silk.NET/SkiaSharp types) и не должен вычислять rendering palette.
 
 После успешного GeneralScan маркер неизвестного объекта немедленно меняет цвет согласно раскрытому `ObjectType`. Например:
 
 ```text
 UnknownSpaceObject (grey)
     ↓ GeneralScan success
-Station (yellow)
+Station (Orange)
 ```
 
 Размер маркера при этом остаётся постоянным.

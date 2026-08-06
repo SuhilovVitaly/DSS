@@ -491,9 +491,9 @@ public class FutureTrajectoryTests
         Assert.NotEmpty(trajectory);
         Assert.True(trajectory.Count >= 2);
 
-        // Object should be rendered: center pixel should be cyan (non-player ship)
+        // Object should be rendered: center pixel should be player ship glyph (DarkOliveGreen)
         var centerPixel = bitmap.GetPixel(ScreenWidth / 2, ScreenHeight / 2);
-        Assert.True(centerPixel.Blue > 200 || centerPixel.Green > 200 || centerPixel.Red > 200,
+        Assert.True(centerPixel.Green > 50 || centerPixel.Red > 50,
             "Center pixel should have some color from rendering (object, trail, or trajectory)");
     }
 

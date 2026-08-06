@@ -165,7 +165,9 @@ public sealed class SimulationEngine : IDisposable
                 ActiveEngineCommandType = cycleMotion.CommandType,
                 TurnStepDegrees = cycleMotion.TurnStepDegrees,
                 TurnStepRemainingMs = cycleMotion.TurnStepRemainingMs,
-                TurnStepIntervalMs = cycleMotion.TurnStepIntervalMs
+                TurnStepIntervalMs = cycleMotion.TurnStepIntervalMs,
+                ObjectType = obj.ObjectType,
+                RelationToPlayer = GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType)
             });
         }
 
@@ -291,6 +293,15 @@ public sealed class SimulationEngine : IDisposable
     }
 
     internal ImmutableArray<SpaceObjectRuntime> RuntimeObjects => _objects.ToImmutableArray();
+
+    private string? GetRelationToPlayer(string objectId, string objectType)
+    {
+        if (objectId == PlayerShipObjectId)
+            return PlayerRelation.Self;
+        if (objectType == SpaceObjectType.NpcShip)
+            return PlayerRelation.Neutral; // future: faction system
+        return null;
+    }
 
     internal AuthoritativeSnapshot CaptureSnapshotForTests(
         long gameTimeMs = 0,
