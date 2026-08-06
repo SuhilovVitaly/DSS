@@ -7,6 +7,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// <summary>
 /// Draws compact object labels on the tactical map:
 /// leader line → dark plaque → bottom accent stripe → status square → text.
+/// Uses orbit-based layout and per-object smoothing for plaque position.
 /// </summary>
 internal sealed class ObjectLabelRenderer
 {
@@ -19,6 +20,19 @@ internal sealed class ObjectLabelRenderer
     private readonly SKPaint _unknownTextPaint;
     private readonly SKPaint _statusSquarePaint;
     private readonly SKPaint _stripePaint;
+
+    /// <summary>Per-object smoothed visible positions.</summary>
+    private readonly ObjectLabelSmoother _smoother = new();
+
+    /// <summary>
+    /// Geometries computed during the last <see cref="ComputeGeometries"/> call,
+    /// keyed by object ID — reused between leader and plaque passes so both see
+    /// the same smoothed position.
+    /// </summary>
+    private readonly Dictionary<string, ObjectLabelGeometry> _geometries = new(StringComparer.Ordinal);
+
+    /// <summary>Active object IDs from the current frame.</summary>
+    private readonly HashSet<string> _activeIds = new(StringComparer.Ordinal);
 
     public ObjectLabelRenderer()
     {
@@ -74,6 +88,76 @@ internal sealed class ObjectLabelRenderer
     }
 
     /// <summary>
+    /// Compute smoothed label geometries for all visible objects.
+    /// Must be called once per frame before DrawLeaders/DrawPlaques.
+    /// </summary>
+    public void ComputeGeometries(
+        IReadOnlyList<ObjectRenderState> renderStates,
+        double deltaSeconds,
+        int viewportW,
+        int viewportH,
+        CameraState camera,
+        bool resetSmoothing = false)
+    {
+        _geometries.Clear();
+        _activeIds.Clear();
+
+        if (resetSmoothing)
+            _smoother.ResetAll();
+
+        var viewport = new SKSize(viewportW, viewportH);
+
+        for (int i = 0; i < renderStates.Count; i++)
+        {
+            var state = renderStates[i];
+            var predicted = state.Predicted;
+            string objectId = predicted.ObjectId;
+            _activeIds.Add(objectId);
+
+            var (objSx, objSy) = camera.WorldToScreen(predicted.X, predicted.Y, viewportW, viewportH);
+            var objectScreen = new SKPoint(objSx, objSy);
+
+            string label = predicted.DisplayName ?? UnknownLabel;
+            bool isUnknown = predicted.DisplayName is null;
+            float textWidth = (isUnknown ? _unknownTextPaint : _textPaint).MeasureText(label);
+
+            float markerRadius = state.IsPlayerShip ? 7f : ObjectLabelLayout.DefaultMarkerRadius;
+
+            // Target geometry from orbit layout (no smoothing).
+            var targetGeom = ObjectLabelLayout.Create(objectScreen, predicted.Direction, textWidth,
+                viewport, markerRadius);
+
+            // Apply smoothing to get the visible plaque position.
+            SKRect visiblePlaque = _smoother.Update(
+                objectId,
+                targetGeom.PlaqueRect,
+                targetGeom.PlaqueCenter,
+                deltaSeconds,
+                viewportW,
+                viewportH,
+                reset: resetSmoothing);
+
+            // Recompute leader endpoint for the smoothed plaque position.
+            var leaderEndPoint = ObjectLabelLayout.GetLeaderEndPoint(objectScreen, visiblePlaque);
+
+            // Recompute status rect and text origin relative to the visible plaque.
+            float sqX = visiblePlaque.Left + ObjectLabelLayout.TextPaddingX;
+            float sqY = visiblePlaque.Top + (visiblePlaque.Height - ObjectLabelLayout.StatusSquareSize) / 2f;
+            var statusRect = new SKRect(sqX, sqY,
+                sqX + ObjectLabelLayout.StatusSquareSize, sqY + ObjectLabelLayout.StatusSquareSize);
+
+            float textX = statusRect.Right + ObjectLabelLayout.StatusTextGap;
+            float textY = visiblePlaque.Top + ObjectLabelLayout.TextPaddingY;
+
+            _geometries[objectId] = new ObjectLabelGeometry(
+                visiblePlaque, leaderEndPoint, statusRect, new SKPoint(textX, textY),
+                targetGeom.PlaqueCenter);
+        }
+
+        _smoother.RemoveStaleExcept(_activeIds);
+    }
+
+    /// <summary>
     /// Draw leader lines only — called BEFORE object glyphs so lines go behind ships.
     /// </summary>
     public void DrawLeaders(
@@ -85,15 +169,12 @@ internal sealed class ObjectLabelRenderer
     {
         for (int i = 0; i < renderStates.Count; i++)
         {
+            string objectId = renderStates[i].Predicted.ObjectId;
+            if (!_geometries.TryGetValue(objectId, out var geometry))
+                continue;
+
             var predicted = renderStates[i].Predicted;
             var (objSx, objSy) = camera.WorldToScreen(predicted.X, predicted.Y, viewportW, viewportH);
-            var objectScreen = new SKPoint(objSx, objSy);
-
-            string label = predicted.DisplayName ?? UnknownLabel;
-            bool isUnknown = predicted.DisplayName is null;
-            float textWidth = (isUnknown ? _unknownTextPaint : _textPaint).MeasureText(label);
-            var geometry = ObjectLabelLayout.Create(objectScreen, predicted.Direction, textWidth,
-                new SKSize(viewportW, viewportH));
 
             canvas.DrawLine(objSx, objSy,
                 geometry.LeaderEndPoint.X, geometry.LeaderEndPoint.Y,
@@ -117,19 +198,15 @@ internal sealed class ObjectLabelRenderer
         for (int i = 0; i < renderStates.Count; i++)
         {
             var state = renderStates[i];
+            string objectId = state.Predicted.ObjectId;
+            if (!_geometries.TryGetValue(objectId, out var geometry))
+                continue;
+
             var predicted = state.Predicted;
-            var (objSx, objSy) = camera.WorldToScreen(predicted.X, predicted.Y, viewportW, viewportH);
-            var objectScreen = new SKPoint(objSx, objSy);
 
             SKColor objectColor = state.IsPlayerShip
                 ? SpaceMapColorResolver.PlayerShipColor
                 : SpaceMapColorResolver.GetColor(predicted.ObjectType, predicted.RelationToPlayer);
-
-            string label = predicted.DisplayName ?? UnknownLabel;
-            bool isUnknown = predicted.DisplayName is null;
-            float textWidth = (isUnknown ? _unknownTextPaint : _textPaint).MeasureText(label);
-            var geometry = ObjectLabelLayout.Create(objectScreen, predicted.Direction, textWidth,
-                new SKSize(viewportW, viewportH));
 
             // Plaque background + border
             canvas.DrawRect(geometry.PlaqueRect, _plaqueBgPaint);
@@ -148,8 +225,7 @@ internal sealed class ObjectLabelRenderer
             _stripePaint.Color = new SKColor(sr, sg, sb);
             canvas.DrawRect(stripeRect, _stripePaint);
 
-            // Status square — drawn only during the visible blink phase,
-            // with the original object color (no brightness shift)
+            // Status square
             if (StatusSquareAnimator.IsStatusSquareVisible(gameTimeMs, speed))
             {
                 _statusSquarePaint.Color = objectColor;
@@ -157,6 +233,8 @@ internal sealed class ObjectLabelRenderer
             }
 
             // Text
+            string label = predicted.DisplayName ?? UnknownLabel;
+            bool isUnknown = predicted.DisplayName is null;
             var textPaint = isUnknown ? _unknownTextPaint : _textPaint;
             if (!isUnknown)
             {

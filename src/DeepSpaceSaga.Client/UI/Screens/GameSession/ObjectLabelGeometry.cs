@@ -10,5 +10,6 @@ internal readonly record struct ObjectLabelGeometry(
     SKRect PlaqueRect,
     SKPoint LeaderEndPoint,
     SKRect StatusRect,
-    SKPoint TextOrigin
+    SKPoint TextOrigin,
+    SKPoint PlaqueCenter
 );

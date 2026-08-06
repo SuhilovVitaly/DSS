@@ -52,10 +52,14 @@ public sealed class GameSessionScreen : IScreen
 
     private int _viewportW;
     private int _viewportH;
+    private int _lastViewportW;
+    private int _lastViewportH;
     private float _mouseX;
     private float _mouseY;
     private bool _shouldBootstrapInitialTrails = true;
     private bool _capturedInitialTrailBootstrapObjects;
+    private long _lastFrameTimestamp;
+    private bool _hasLastFrameTimestamp;
 
     // Info panel state
     private bool _panelVisible = true;
@@ -369,6 +373,23 @@ public sealed class GameSessionScreen : IScreen
         _viewportW = width;
         _viewportH = height;
 
+        // Frame timing for label smoothing.
+        long now = Stopwatch.GetTimestamp();
+        double deltaSeconds = 0.02; // reasonable default (~50 fps)
+        if (_hasLastFrameTimestamp)
+        {
+            long deltaTicks = now - _lastFrameTimestamp;
+            deltaSeconds = (double)deltaTicks / Stopwatch.Frequency;
+            if (deltaSeconds <= 0) deltaSeconds = 0.016; // floor at ~60 fps
+            if (deltaSeconds > 0.5) deltaSeconds = 0.5;   // cap at 500 ms
+        }
+        _lastFrameTimestamp = now;
+        _hasLastFrameTimestamp = true;
+
+        bool viewportResized = width != _lastViewportW || height != _lastViewportH;
+        _lastViewportW = width;
+        _lastViewportH = height;
+
         var prediction = _buffer.LatestPrediction;
         var buffered = prediction?.BufferedSnapshot;
         UpdateObjectRenderStates(prediction);
@@ -408,9 +429,14 @@ public sealed class GameSessionScreen : IScreen
             // 3.5. Future trajectory (before objects, after historical trails)
             DrawFutureTrajectories(canvas, width, height);
 
-            // 3.75. Label leader lines (behind objects)
+            // Compute smoothed label geometries once per frame so both
+            // DrawLeaders and DrawPlaques see the same positions.
             long gameTimeMs = predictedGameTimeMs;
             var speed = prediction.CurrentSpeed;
+            bool resetSmoothing = viewportResized;
+            _labelRenderer.ComputeGeometries(_renderStates, deltaSeconds, width, height, _camera, resetSmoothing);
+
+            // 3.75. Label leader lines (behind objects)
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
 
             // 4. Engine objects
