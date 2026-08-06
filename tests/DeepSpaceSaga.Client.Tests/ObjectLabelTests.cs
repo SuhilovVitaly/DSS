@@ -6,100 +6,240 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class ObjectLabelTests
 {
-    // ── Label angle mapping ──────────────────────────────────────
+    private static readonly SKSize TestViewport = new(800, 600);
+
+    // ── Orbit layout: rear half-plane ──────────────────────────────
 
     [Theory]
-    [InlineData(1, 315)]
-    [InlineData(45, 315)]
-    [InlineData(90, 315)]
-    [InlineData(179, 315)]
-    public void GetLabelAngle_0_to_180_returns_315(double dir, float expected)
+    [InlineData(0)]    // up → plaque behind = below on screen (+y)
+    [InlineData(90)]   // right → plaque behind = left on screen (-x)
+    [InlineData(180)]  // down → plaque behind = above on screen (-y)
+    [InlineData(270)]  // left → plaque behind = right on screen (+x)
+    public void Plaque_center_is_in_rear_half_plane_for_cardinal_directions(double dir)
     {
-        Assert.Equal(expected, ObjectLabelLayout.GetLabelAngle(dir));
-    }
+        var objScreen = new SKPoint(400, 300);
+        var geom = ObjectLabelLayout.Create(objScreen, dir, textWidth: 80, TestViewport);
 
-    [Theory]
-    [InlineData(181, 45)]
-    [InlineData(225, 45)]
-    [InlineData(270, 45)]
-    public void GetLabelAngle_180_to_270_returns_45(double dir, float expected)
-    {
-        Assert.Equal(expected, ObjectLabelLayout.GetLabelAngle(dir));
-    }
+        // Forward vector: (sin(rad), -cos(rad)) in screen coords.
+        double rad = dir * Math.PI / 180.0;
+        float fx = (float)Math.Sin(rad);
+        float fy = -(float)Math.Cos(rad);
 
-    [Theory]
-    [InlineData(271, 135)]
-    [InlineData(315, 135)]
-    [InlineData(359, 135)]
-    public void GetLabelAngle_270_to_360_returns_135(double dir, float expected)
-    {
-        Assert.Equal(expected, ObjectLabelLayout.GetLabelAngle(dir));
-    }
+        // Vector from object to plaque center.
+        float dx = geom.PlaqueCenter.X - objScreen.X;
+        float dy = geom.PlaqueCenter.Y - objScreen.Y;
 
-    [Theory]
-    [InlineData(0, 315)]
-    [InlineData(180, 315)]
-    public void GetLabelAngle_edge_cases(double dir, float expected)
-    {
-        Assert.Equal(expected, ObjectLabelLayout.GetLabelAngle(dir));
-    }
-
-    // ── ComputeLabelOrigin ───────────────────────────────────────
-
-    [Fact]
-    public void Label_origin_offset_is_45px_from_object()
-    {
-        var objPos = new SKPoint(100, 100);
-        // 315° → cos≈0.707, sin≈-0.707 → offset right and down in screen coords
-        var origin = ObjectLabelLayout.ComputeLabelOrigin(objPos, 315f);
-
-        float dx = origin.X - objPos.X;
-        float dy = origin.Y - objPos.Y;
-        Assert.True(dx > 0, "315° should offset right");
-        Assert.True(dy > 0, "315° should offset down in screen Y");
-    }
-
-    // ── Clamp to viewport ────────────────────────────────────────
-
-    [Fact]
-    public void Label_clamped_to_viewport_when_outside()
-    {
-        var origin = new SKPoint(-50, -50);
-        var size = new SKSize(120, 18);
-        var viewport = new SKSize(800, 600);
-
-        var clamped = ObjectLabelLayout.ClampToViewport(origin, size, viewport);
-
-        Assert.True(clamped.X >= 2);
-        Assert.True(clamped.Y >= 2);
-        Assert.True(clamped.X + size.Width <= viewport.Width + 2);
-        Assert.True(clamped.Y + size.Height <= viewport.Height + 2);
+        // Dot with forward should be ≤ 0 (rear half-plane).
+        float dot = dx * fx + dy * fy;
+        Assert.True(dot <= 0.01f,
+            $"Direction {dir}°: plaque center dot={dot:F3} should be ≤ 0 (rear half-plane). " +
+            $"PlaqueCenter=({geom.PlaqueCenter.X:F1},{geom.PlaqueCenter.Y:F1})");
     }
 
     [Fact]
-    public void Label_stays_when_inside_viewport()
+    public void No_jump_at_179_to_181_boundary()
     {
-        var origin = new SKPoint(200, 200);
-        var size = new SKSize(120, 18);
-        var viewport = new SKSize(800, 600);
+        var objScreen = new SKPoint(400, 300);
 
-        var clamped = ObjectLabelLayout.ClampToViewport(origin, size, viewport);
+        var geom179 = ObjectLabelLayout.Create(objScreen, 179, textWidth: 80, TestViewport);
+        var geom181 = ObjectLabelLayout.Create(objScreen, 181, textWidth: 80, TestViewport);
 
-        Assert.Equal(200, clamped.X);
-        Assert.Equal(200, clamped.Y);
+        float dx = geom181.PlaqueCenter.X - geom179.PlaqueCenter.X;
+        float dy = geom181.PlaqueCenter.Y - geom179.PlaqueCenter.Y;
+        float jump = MathF.Sqrt(dx * dx + dy * dy);
+
+        // A 2° direction change should produce a tiny position delta, not a sector flip.
+        Assert.True(jump < 10f,
+            $"Jump from 179° to 181° is {jump:F1} px — should be < 10 px. " +
+            $"179°: ({geom179.PlaqueCenter.X:F1},{geom179.PlaqueCenter.Y:F1}), " +
+            $"181°: ({geom181.PlaqueCenter.X:F1},{geom181.PlaqueCenter.Y:F1})");
     }
 
-    // ── ObjectLabelGeometry ──────────────────────────────────────
+    [Fact]
+    public void No_jump_at_269_to_271_boundary()
+    {
+        var objScreen = new SKPoint(400, 300);
+
+        var geom269 = ObjectLabelLayout.Create(objScreen, 269, textWidth: 80, TestViewport);
+        var geom271 = ObjectLabelLayout.Create(objScreen, 271, textWidth: 80, TestViewport);
+
+        float dx = geom271.PlaqueCenter.X - geom269.PlaqueCenter.X;
+        float dy = geom271.PlaqueCenter.Y - geom269.PlaqueCenter.Y;
+        float jump = MathF.Sqrt(dx * dx + dy * dy);
+
+        Assert.True(jump < 10f,
+            $"Jump from 269° to 271° is {jump:F1} px — should be < 10 px. " +
+            $"269°: ({geom269.PlaqueCenter.X:F1},{geom269.PlaqueCenter.Y:F1}), " +
+            $"271°: ({geom271.PlaqueCenter.X:F1},{geom271.PlaqueCenter.Y:F1})");
+    }
+
+    [Fact]
+    public void Plaque_center_moves_smoothly_with_direction()
+    {
+        var objScreen = new SKPoint(400, 300);
+
+        // Sample directions every 10° and verify no single-step jump exceeds
+        // the expected orbit chord length for that step plus a small margin.
+        SKPoint? prev = null;
+        float maxJump = 0f;
+        for (int d = 0; d <= 360; d += 10)
+        {
+            var geom = ObjectLabelLayout.Create(objScreen, d, textWidth: 80, TestViewport);
+            if (prev is { } p)
+            {
+                float dx = geom.PlaqueCenter.X - p.X;
+                float dy = geom.PlaqueCenter.Y - p.Y;
+                float step = MathF.Sqrt(dx * dx + dy * dy);
+                if (step > maxJump) maxJump = step;
+                // 10° step on a ~79px orbit: chord ≈ 2*79*sin(5°) ≈ 13.8 px.
+                Assert.True(step < 20f,
+                    $"Step {d - 10}° → {d}° jump is {step:F1} px — should be smooth.");
+            }
+
+            prev = geom.PlaqueCenter;
+        }
+
+        // Verify the orbit isn't degenerate — there must be meaningful movement.
+        Assert.True(maxJump > 5f, $"Max step {maxJump:F1} px — orbit should produce visible movement.");
+    }
+
+    // ── Safe area ──────────────────────────────────────────────────
+
+    [Fact]
+    public void Plaque_does_not_overlap_default_safe_area()
+    {
+        var objScreen = new SKPoint(400, 300);
+        float safeRadius = ObjectLabelLayout.DefaultMarkerRadius + ObjectLabelLayout.SafeMarginPx; // 4 + 8 = 12
+
+        for (int d = 0; d < 360; d += 30)
+        {
+            var geom = ObjectLabelLayout.Create(objScreen, d, textWidth: 80, TestViewport);
+            float dist = DistanceFromRectToPoint(geom.PlaqueRect, objScreen);
+            Assert.True(dist >= safeRadius - 0.01f,
+                $"Direction {d}°: plaque distance {dist:F2} < safe radius {safeRadius}");
+        }
+    }
+
+    [Fact]
+    public void Plaque_does_not_overlap_larger_player_marker()
+    {
+        var objScreen = new SKPoint(400, 300);
+        float markerRadius = 7f; // player ship glyph
+        float safeRadius = markerRadius + ObjectLabelLayout.SafeMarginPx; // 7 + 8 = 15
+
+        for (int d = 0; d < 360; d += 30)
+        {
+            var geom = ObjectLabelLayout.Create(objScreen, d, textWidth: 80, TestViewport, markerRadius);
+            float dist = DistanceFromRectToPoint(geom.PlaqueRect, objScreen);
+            Assert.True(dist >= safeRadius - 0.01f,
+                $"Direction {d}° with player marker: plaque distance {dist:F2} < safe radius {safeRadius}");
+        }
+    }
+
+    // ── Viewport clamp ─────────────────────────────────────────────
+
+    [Fact]
+    public void Plaque_clamped_when_object_near_left_edge()
+    {
+        // Object at left edge, moving up (0°). Plaque should be clamped within viewport.
+        var objScreen = new SKPoint(5, 300);
+        var geom = ObjectLabelLayout.Create(objScreen, 0, textWidth: 80, TestViewport);
+
+        Assert.True(geom.PlaqueRect.Left >= 2f - 0.1f,
+            $"Plaque left={geom.PlaqueRect.Left:F1} should be >= 2");
+        Assert.True(geom.PlaqueRect.Right <= TestViewport.Width - 2f + 0.1f,
+            $"Plaque right={geom.PlaqueRect.Right:F1} should be <= {TestViewport.Width - 2}");
+    }
+
+    [Fact]
+    public void Plaque_clamped_when_object_near_right_edge()
+    {
+        var objScreen = new SKPoint(795, 300);
+        var geom = ObjectLabelLayout.Create(objScreen, 0, textWidth: 80, TestViewport);
+
+        Assert.True(geom.PlaqueRect.Right <= TestViewport.Width - 2f + 0.1f,
+            $"Plaque right={geom.PlaqueRect.Right:F1} should be within viewport");
+    }
+
+    [Fact]
+    public void Plaque_clamped_when_object_near_top_edge()
+    {
+        var objScreen = new SKPoint(400, 5);
+        var geom = ObjectLabelLayout.Create(objScreen, 90, textWidth: 80, TestViewport);
+
+        Assert.True(geom.PlaqueRect.Top >= 2f - 0.1f,
+            $"Plaque top={geom.PlaqueRect.Top:F1} should be >= 2");
+    }
+
+    [Fact]
+    public void Plaque_clamped_when_object_near_bottom_edge()
+    {
+        var objScreen = new SKPoint(400, 595);
+        var geom = ObjectLabelLayout.Create(objScreen, 90, textWidth: 80, TestViewport);
+
+        Assert.True(geom.PlaqueRect.Bottom <= TestViewport.Height - 2f + 0.1f,
+            $"Plaque bottom={geom.PlaqueRect.Bottom:F1} should be within viewport");
+    }
+
+    [Fact]
+    public void Clamp_at_edge_does_not_place_plaque_in_front_of_object()
+    {
+        // Object at bottom-left corner moving down-right (135°).
+        // Plaque behind is up-left; if clamping forces it to the right of the object,
+        // that's in the forward half-plane. The layout should avoid that.
+        var objScreen = new SKPoint(5, 595);
+        var geom = ObjectLabelLayout.Create(objScreen, 135, textWidth: 80, TestViewport);
+
+        double rad = 135 * Math.PI / 180.0;
+        float fx = (float)Math.Sin(rad);
+        float fy = -(float)Math.Cos(rad);
+
+        float dx = geom.PlaqueCenter.X - objScreen.X;
+        float dy = geom.PlaqueCenter.Y - objScreen.Y;
+        float dot = dx * fx + dy * fy;
+
+        Assert.True(dot <= 0.01f,
+            $"After clamp at corner, plaque should stay behind object. " +
+            $"Dot={dot:F3}, PlaqueCenter=({geom.PlaqueCenter.X:F1},{geom.PlaqueCenter.Y:F1})");
+    }
+
+    // ── Leader line (always bottom-left) ──────────────────────────
+
+    [Fact]
+    public void Leader_endpoint_is_always_bottom_left_of_plaque()
+    {
+        var objScreen = new SKPoint(400, 300);
+
+        // Verify across all cardinal and diagonal directions.
+        for (int d = 0; d < 360; d += 45)
+        {
+            var geom = ObjectLabelLayout.Create(objScreen, d, textWidth: 80, TestViewport);
+
+            Assert.Equal(geom.PlaqueRect.Left, geom.LeaderEndPoint.X, precision: 3);
+            Assert.Equal(geom.PlaqueRect.Bottom, geom.LeaderEndPoint.Y, precision: 3);
+        }
+    }
+
+    [Fact]
+    public void Leader_endpoint_is_bottom_left_after_viewport_clamp()
+    {
+        // Object near top-right corner — plaque will be clamped.
+        var objScreen = new SKPoint(790, 10);
+        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 315, textWidth: 80, TestViewport);
+
+        Assert.Equal(geom.PlaqueRect.Left, geom.LeaderEndPoint.X, precision: 3);
+        Assert.Equal(geom.PlaqueRect.Bottom, geom.LeaderEndPoint.Y, precision: 3);
+    }
+
+    // ── Plaque geometry invariants ─────────────────────────────────
 
     [Fact]
     public void Geometry_plaque_width_includes_status_square_and_gaps()
     {
-        // Use text wide enough to exceed MinPlaqueWidth so the formula, not the minimum, sets the width
         float textWidth = 100f;
         var objScreen = new SKPoint(400, 300);
-        var viewport = new SKSize(800, 600);
 
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth, viewport);
+        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth, TestViewport);
 
         float expectedW = ObjectLabelLayout.TextPaddingX
             + ObjectLabelLayout.StatusSquareSize
@@ -113,220 +253,85 @@ public class ObjectLabelTests
     [Fact]
     public void Geometry_plaque_width_respects_minimum()
     {
-        float textWidth = 5f; // very short label
+        float textWidth = 5f;
         var objScreen = new SKPoint(400, 300);
-        var viewport = new SKSize(800, 600);
 
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth, viewport);
+        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth, TestViewport);
 
         Assert.Equal(ObjectLabelLayout.MinPlaqueWidth, geom.PlaqueRect.Width, precision: 3);
     }
 
     [Fact]
-    public void Geometry_status_rect_starts_at_text_padding_x()
+    public void Geometry_status_rect_starts_at_text_padding_x_plus_content_offset()
     {
         var objScreen = new SKPoint(400, 300);
-        var viewport = new SKSize(800, 600);
 
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, viewport);
+        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, TestViewport);
 
         Assert.Equal(
-            geom.PlaqueRect.Left + ObjectLabelLayout.TextPaddingX,
+            geom.PlaqueRect.Left + ObjectLabelLayout.TextPaddingX + ObjectLabelLayout.ContentOffsetX,
             geom.StatusRect.Left);
     }
 
     [Fact]
-    public void Geometry_status_rect_is_vertically_centered_in_plaque()
+    public void Geometry_status_rect_is_vertically_shifted_by_content_offset()
     {
         var objScreen = new SKPoint(400, 300);
-        var viewport = new SKSize(800, 600);
 
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, viewport);
+        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, TestViewport);
 
         float plaqueMidY = geom.PlaqueRect.Top + geom.PlaqueRect.Height / 2f;
         float sqMidY = geom.StatusRect.Top + geom.StatusRect.Height / 2f;
-        Assert.Equal(plaqueMidY, sqMidY, precision: 3);
+        // Status square is shifted by ContentOffsetY relative to the plaque center.
+        Assert.Equal(plaqueMidY + ObjectLabelLayout.ContentOffsetY, sqMidY, precision: 3);
     }
 
     [Fact]
-    public void Geometry_text_origin_is_after_status_square_with_gap()
+    public void Geometry_text_origin_is_after_status_square_with_gap_and_offset()
     {
         var objScreen = new SKPoint(400, 300);
-        var viewport = new SKSize(800, 600);
 
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, viewport);
+        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, TestViewport);
 
         Assert.Equal(
             geom.StatusRect.Right + ObjectLabelLayout.StatusTextGap,
             geom.TextOrigin.X);
         Assert.Equal(
-            geom.PlaqueRect.Top + ObjectLabelLayout.TextPaddingY,
+            geom.PlaqueRect.Top + ObjectLabelLayout.TextPaddingY + ObjectLabelLayout.ContentOffsetY,
             geom.TextOrigin.Y);
     }
 
-    // ── Leader line endpoint ─────────────────────────────────────
+    // ── Status square blink visibility ───────────────────────────
 
-    [Fact]
-    public void Leader_endpoint_is_on_bottom_edge_of_plaque()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(999)]
+    public void StatusSquare_visible_in_first_phase(long gameTimeMs)
     {
-        var objScreen = new SKPoint(400, 300);
-        var viewport = new SKSize(800, 600);
+        Assert.True(StatusSquareAnimator.IsStatusSquareVisible(gameTimeMs, SimulationSpeed.Speed1));
+    }
 
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, viewport);
-
-        Assert.Equal(geom.PlaqueRect.Bottom, geom.LeaderEndPoint.Y);
+    [Theory]
+    [InlineData(1000)]
+    [InlineData(1999)]
+    public void StatusSquare_hidden_in_second_phase(long gameTimeMs)
+    {
+        Assert.False(StatusSquareAnimator.IsStatusSquareVisible(gameTimeMs, SimulationSpeed.Speed1));
     }
 
     [Fact]
-    public void Leader_endpoint_is_clamped_within_plaque_horizontal_bounds()
+    public void StatusSquare_visible_again_at_period_boundary()
     {
-        var objScreen = new SKPoint(400, 300);
-        var viewport = new SKSize(800, 600);
-
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, viewport);
-
-        Assert.True(geom.LeaderEndPoint.X >= geom.PlaqueRect.Left + ObjectLabelLayout.LeaderEdgeMargin);
-        Assert.True(geom.LeaderEndPoint.X <= geom.PlaqueRect.Right - ObjectLabelLayout.LeaderEdgeMargin);
+        Assert.True(StatusSquareAnimator.IsStatusSquareVisible(2000, SimulationSpeed.Speed1));
     }
 
-    [Fact]
-    public void Leader_endpoint_is_not_always_center_when_object_is_left_of_plaque()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(750)]
+    [InlineData(1999)]
+    public void StatusSquare_always_visible_when_paused(long gameTimeMs)
     {
-        // Object far to the left of where the plaque will appear
-        var objScreen = new SKPoint(50, 300);
-        var viewport = new SKSize(800, 600);
-
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, viewport);
-
-        // Object is to the left → leader should go to left portion of bottom edge
-        Assert.True(geom.LeaderEndPoint.X < geom.PlaqueRect.MidX,
-            $"Leader should be left-of-center when object is left. " +
-            $"LeaderX={geom.LeaderEndPoint.X}, MidX={geom.PlaqueRect.MidX}");
-    }
-
-    [Fact]
-    public void Leader_endpoint_is_not_always_center_when_object_is_right_of_plaque()
-    {
-        // Object far to the right of where the plaque will appear
-        var objScreen = new SKPoint(750, 300);
-        var viewport = new SKSize(800, 600);
-
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 270, textWidth: 80, viewport);
-
-        // Object is to the right → leader should go to right portion of bottom edge
-        Assert.True(geom.LeaderEndPoint.X > geom.PlaqueRect.MidX,
-            $"Leader should be right-of-center when object is right. " +
-            $"LeaderX={geom.LeaderEndPoint.X}, MidX={geom.PlaqueRect.MidX}");
-    }
-
-    [Fact]
-    public void Leader_endpoint_respects_edge_margin_even_when_object_is_far_outside()
-    {
-        // Object extremely far to the left
-        var objScreen = new SKPoint(-500, 300);
-        var viewport = new SKSize(800, 600);
-
-        var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth: 80, viewport);
-
-        // Should be clamped to Left + LeaderEdgeMargin, not follow object off-screen
-        Assert.Equal(
-            geom.PlaqueRect.Left + ObjectLabelLayout.LeaderEdgeMargin,
-            geom.LeaderEndPoint.X);
-    }
-
-    // ── GetLeaderEndPoint (standalone) ───────────────────────────
-
-    [Fact]
-    public void GetLeaderEndPoint_returns_bottom_edge_point()
-    {
-        var plaqueRect = new SKRect(200, 100, 320, 118);
-        var objScreen = new SKPoint(260, 200); // object directly below plaque center
-
-        var endPoint = ObjectLabelLayout.GetLeaderEndPoint(objScreen, plaqueRect);
-
-        Assert.Equal(plaqueRect.Bottom, endPoint.Y);
-        Assert.Equal(260, endPoint.X); // centered → stays at object X within clamp range
-    }
-
-    [Fact]
-    public void GetLeaderEndPoint_clamps_to_left_margin()
-    {
-        var plaqueRect = new SKRect(200, 100, 320, 118);
-        var objScreen = new SKPoint(50, 200); // far left
-
-        var endPoint = ObjectLabelLayout.GetLeaderEndPoint(objScreen, plaqueRect);
-
-        Assert.Equal(plaqueRect.Left + ObjectLabelLayout.LeaderEdgeMargin, endPoint.X);
-    }
-
-    [Fact]
-    public void GetLeaderEndPoint_clamps_to_right_margin()
-    {
-        var plaqueRect = new SKRect(200, 100, 320, 118);
-        var objScreen = new SKPoint(500, 200); // far right
-
-        var endPoint = ObjectLabelLayout.GetLeaderEndPoint(objScreen, plaqueRect);
-
-        Assert.Equal(plaqueRect.Right - ObjectLabelLayout.LeaderEdgeMargin, endPoint.X);
-    }
-
-    // ── Status square smoothstep animation ───────────────────────
-
-    [Fact]
-    public void StatusSquare_shows_object_color_at_t0()
-    {
-        var objColor = new SKColor(85, 107, 47);
-        var result = StatusSquareAnimator.GetStatusColor(objColor, gameTimeMs: 0, SimulationSpeed.Speed1);
-        Assert.Equal(objColor, result);
-    }
-
-    [Fact]
-    public void StatusSquare_returns_to_object_color_at_period_end()
-    {
-        var objColor = new SKColor(85, 107, 47);
-        var result = StatusSquareAnimator.GetStatusColor(objColor, gameTimeMs: 1500, SimulationSpeed.Speed1);
-        Assert.Equal(objColor, result);
-    }
-
-    [Fact]
-    public void StatusSquare_peaks_at_mid_period()
-    {
-        var objColor = new SKColor(100, 0, 0);
-        var result = StatusSquareAnimator.GetStatusColor(objColor, gameTimeMs: 750, SimulationSpeed.Speed1);
-
-        // At peak (t=1.0), phase=1.0 → fully shifted color
-        // Dark color → 85% toward white: R = 100 + 0.85*155 = 231
-        Assert.Equal(231, result.Red);
-        Assert.Equal(216, result.Green);
-        Assert.Equal(216, result.Blue);
-    }
-
-    [Fact]
-    public void StatusSquare_smoothly_interpolates_between_frames()
-    {
-        var objColor = new SKColor(100, 0, 0);
-
-        // Two frames 16ms apart should produce close colors (not hard toggle)
-        var c1 = StatusSquareAnimator.GetStatusColor(objColor, gameTimeMs: 100, SimulationSpeed.Speed1);
-        var c2 = StatusSquareAnimator.GetStatusColor(objColor, gameTimeMs: 116, SimulationSpeed.Speed1);
-
-        int dR = Math.Abs(c1.Red - c2.Red);
-        int dG = Math.Abs(c1.Green - c2.Green);
-        int dB = Math.Abs(c1.Blue - c2.Blue);
-
-        // 16ms at 1500ms period → ~1% phase change → small delta
-        Assert.True(dR + dG + dB < 20,
-            $"Color jump too large: ΔR={dR} ΔG={dG} ΔB={dB}");
-    }
-
-    [Fact]
-    public void StatusSquare_frozen_when_paused()
-    {
-        var objColor = new SKColor(100, 150, 200);
-
-        Assert.Equal(objColor, StatusSquareAnimator.GetStatusColor(objColor, 0, SimulationSpeed.Speed0));
-        Assert.Equal(objColor, StatusSquareAnimator.GetStatusColor(objColor, 750, SimulationSpeed.Speed0));
-        Assert.Equal(objColor, StatusSquareAnimator.GetStatusColor(objColor, 1500, SimulationSpeed.Speed0));
+        Assert.True(StatusSquareAnimator.IsStatusSquareVisible(gameTimeMs, SimulationSpeed.Speed0));
     }
 
     // ── Plaque constants ─────────────────────────────────────────
@@ -344,21 +349,15 @@ public class ObjectLabelTests
     }
 
     [Fact]
-    public void Label_offset_is_45px()
-    {
-        Assert.Equal(45f, ObjectLabelLayout.LabelOffsetPx);
-    }
-
-    [Fact]
     public void Status_square_size_is_8px()
     {
         Assert.Equal(8f, ObjectLabelLayout.StatusSquareSize);
     }
 
     [Fact]
-    public void Animation_period_is_1500ms()
+    public void Animation_period_is_2000ms()
     {
-        Assert.Equal(1500.0, StatusSquareAnimator.PeriodMs);
+        Assert.Equal(2000.0, StatusSquareAnimator.PeriodMs);
     }
 
     [Fact]
@@ -367,20 +366,14 @@ public class ObjectLabelTests
         Assert.Equal(6f, ObjectLabelLayout.StatusTextGap);
     }
 
-    [Fact]
-    public void Leader_edge_margin_is_8px()
-    {
-        Assert.Equal(8f, ObjectLabelLayout.LeaderEdgeMargin);
-    }
+    // ── Helpers ──────────────────────────────────────────────────
 
-    // ── DisplayName resolution ───────────────────────────────────
-
-    [Fact]
-    public void Label_renderer_has_unknown_label_constant()
+    private static float DistanceFromRectToPoint(SKRect rect, SKPoint point)
     {
-        // ObjectLabelRenderer uses "Unknown Celestial Object" as fallback
-        // Verified via reflection to ensure the constant exists
-        var rendererType = typeof(ObjectLabelRenderer);
-        Assert.NotNull(rendererType);
+        float cx = Math.Clamp(point.X, rect.Left, rect.Right);
+        float cy = Math.Clamp(point.Y, rect.Top, rect.Bottom);
+        float dx = point.X - cx;
+        float dy = point.Y - cy;
+        return MathF.Sqrt(dx * dx + dy * dy);
     }
 }
