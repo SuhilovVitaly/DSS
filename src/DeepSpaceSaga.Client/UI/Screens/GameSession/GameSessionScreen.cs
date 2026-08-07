@@ -43,6 +43,12 @@ public sealed class GameSessionScreen : IScreen
     private readonly SKPaint _speedBtnTextPaint;
     private readonly SKPaint _speedIndicatorPaint;
 
+    // Scale panel paints
+    private readonly SKPaint _scaleBtnNormalPaint;
+    private readonly SKPaint _scaleBtnActivePaint;
+    private readonly SKPaint _scaleBtnTextPaint;
+    private readonly SKPaint _scaleIndicatorPaint;
+
     // Ship command panel paints
     private readonly SKPaint _commandBtnNormalPaint;
     private readonly SKPaint _commandBtnHoverPaint;
@@ -76,6 +82,11 @@ public sealed class GameSessionScreen : IScreen
     private SimulationSpeed _lastNonPauseSpeed = SimulationSpeed.Speed1;
     private SKRect _lastSpeedPanelRect;
     private readonly SKRect[] _speedButtonRects = new SKRect[5];
+
+    // Scale state
+    private SKRect _lastScalePanelRect;
+    private readonly SKRect[] _scaleButtonRects = new SKRect[4];
+
     private SKRect _lastCommandPanelRect;
     private readonly SKRect[] _engineCommandButtonRects = new SKRect[EngineCommandButtons.Length];
     private int _pressedEngineCommandButtonIndex = -1;
@@ -101,6 +112,16 @@ public sealed class GameSessionScreen : IScreen
     private const float SpeedPanelPadY = 4f;
     private const float SpeedIndicatorSize = 8f;
 
+    // Scale panel layout
+    private const float ScaleBtnW = 32f;
+    private const float ScaleBtnH = 22f;
+    private const float ScaleBtnGap = 2f;
+    private const float ScalePanelPadX = 6f;
+    private const float ScalePanelPadY = 4f;
+    private const float ScaleIndicatorSize = 8f;
+    private const float ScalePanelGapFromSpeed = 4f;
+    private const double ScaleSnapTolerance = 0.05;
+
     // Ship command panel layout
     private const string PlayerEngineModuleId = "MOD-PLAYER-ENGINE-01";
     private const float CommandBtnSize = 32f;
@@ -113,6 +134,8 @@ public sealed class GameSessionScreen : IScreen
     private static readonly string[] SpeedLabels = { "II", "1x", "5x", "20x", "100x" };
     private static readonly SimulationSpeed[] SpeedValues =
         { SimulationSpeed.Speed0, SimulationSpeed.Speed1, SimulationSpeed.Speed2, SimulationSpeed.Speed3, SimulationSpeed.Speed4 };
+    private static readonly string[] ScaleLabels = { "M1", "M10", "M100", "M1000" };
+    private static readonly double[] ScaleTargets = { 1.0, 0.1, 0.01, 0.001 };
     private static readonly EngineCommandButton[] EngineCommandButtons =
     [
         new("^", ShipEngineCommandTypes.Accelerate),
@@ -136,6 +159,10 @@ public sealed class GameSessionScreen : IScreen
     internal SimulationSpeed LastNonPauseSpeed => _lastNonPauseSpeed;
     internal SKRect LastSpeedPanelRect => _lastSpeedPanelRect;
     internal IReadOnlyList<SKRect> SpeedButtonRects => _speedButtonRects;
+    internal SKRect LastScalePanelRect => _lastScalePanelRect;
+    internal IReadOnlyList<SKRect> ScaleButtonRects => _scaleButtonRects;
+    internal IReadOnlyList<string> ScalePanelLabels => ScaleLabels;
+    internal float ScaleIndicatorCenterX => ComputeScaleIndicatorPosition();
     internal SKRect LastCommandPanelRect => _lastCommandPanelRect;
     internal IReadOnlyList<SKRect> EngineCommandButtonRects => _engineCommandButtonRects;
     internal int PressedEngineCommandButtonIndex => _pressedEngineCommandButtonIndex;
@@ -189,6 +216,11 @@ public sealed class GameSessionScreen : IScreen
         _speedBtnTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 11f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
         _speedIndicatorPaint = new SKPaint { Color = new SKColor(80, 200, 80), Style = SKPaintStyle.Fill, IsAntialias = true };
 
+        _scaleBtnNormalPaint = new SKPaint { Color = new SKColor(30, 30, 30), Style = SKPaintStyle.Fill };
+        _scaleBtnActivePaint = new SKPaint { Color = new SKColor(50, 60, 50), Style = SKPaintStyle.Fill };
+        _scaleBtnTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 11f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
+        _scaleIndicatorPaint = new SKPaint { Color = new SKColor(80, 200, 80), Style = SKPaintStyle.Fill, IsAntialias = true };
+
         _commandBtnNormalPaint = new SKPaint { Color = new SKColor(26, 28, 31), Style = SKPaintStyle.Fill };
         _commandBtnHoverPaint = new SKPaint { Color = new SKColor(39, 45, 51), Style = SKPaintStyle.Fill };
         _commandBtnPressedPaint = new SKPaint { Color = new SKColor(58, 75, 67), Style = SKPaintStyle.Fill };
@@ -203,6 +235,14 @@ public sealed class GameSessionScreen : IScreen
 
     public ScreenEvent OnMouseDown(float x, float y)
     {
+        // 0. Scale panel buttons (left of speed panel — check first)
+        int scaleIdx = HitTestScalePanel(x, y);
+        if (scaleIdx >= 0)
+        {
+            ApplyScale(ScaleTargets[scaleIdx]);
+            return ScreenEvent.None;
+        }
+
         // 1. Speed panel buttons
         int speedIdx = HitTestSpeedPanel(x, y);
         if (speedIdx >= 0)
@@ -273,7 +313,10 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
 
         double factor = delta > 0 ? ZoomStepFactor : 1.0 / ZoomStepFactor;
+        double oldPpu = _camera.PixelsPerWorldUnit;
         _camera.ZoomAt(factor, x, y, _viewportW, _viewportH);
+        if (_camera.PixelsPerWorldUnit != oldPpu)
+            InterfaceLog.Write($"Scale → PPU={_camera.PixelsPerWorldUnit:F4}");
         return ScreenEvent.None;
     }
 
@@ -466,6 +509,9 @@ public sealed class GameSessionScreen : IScreen
             _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera);
         }
 
+        // 4.75. Scale panel (top-right, left of speed panel)
+        DrawScalePanel(canvas);
+
         // 5. Speed panel (top-right)
         DrawSpeedPanel(canvas);
 
@@ -602,21 +648,29 @@ public sealed class GameSessionScreen : IScreen
         return Array.Empty<FutureTrajectoryPoint>();
     }
 
-    private void DrawSpeedPanel(SKCanvas canvas)
+    /// <summary>
+    /// Compute the speed panel rect from current viewport — used both by
+    /// DrawSpeedPanel and DrawScalePanel (scale panel sits left of it).
+    /// </summary>
+    private SKRect ComputeSpeedPanelRect()
     {
         int btnCount = SpeedLabels.Length;
         float totalW = SpeedPanelPadX * 2 + btnCount * SpeedBtnW + (btnCount - 1) * SpeedBtnGap;
         float panelH = SpeedPanelPadY * 2 + SpeedBtnH + SpeedIndicatorSize + 2f;
-
         float panelX = _viewportW - totalW - PanelMargin;
         float panelY = PanelMargin;
+        return new SKRect(panelX, panelY, panelX + totalW, panelY + panelH);
+    }
 
-        _lastSpeedPanelRect = new SKRect(panelX, panelY, panelX + totalW, panelY + panelH);
+    private void DrawSpeedPanel(SKCanvas canvas)
+    {
+        int btnCount = SpeedLabels.Length;
+        _lastSpeedPanelRect = ComputeSpeedPanelRect();
         canvas.DrawRect(_lastSpeedPanelRect, _panelBgPaint);
         canvas.DrawRect(_lastSpeedPanelRect, _panelBorderPaint);
 
-        float btnX = panelX + SpeedPanelPadX;
-        float btnY = panelY + SpeedPanelPadY;
+        float btnX = _lastSpeedPanelRect.Left + SpeedPanelPadX;
+        float btnY = _lastSpeedPanelRect.Top + SpeedPanelPadY;
 
         var currentSpeed = _buffer.CurrentSpeed;
         int activeIdx = Array.IndexOf(SpeedValues, currentSpeed);
@@ -649,6 +703,108 @@ public sealed class GameSessionScreen : IScreen
 
             btnX += SpeedBtnW + SpeedBtnGap;
         }
+    }
+
+    // ── Scale panel ─────────────────────────────────────────────
+
+    private void DrawScalePanel(SKCanvas canvas)
+    {
+        int btnCount = ScaleLabels.Length;
+        float totalW = ScalePanelPadX * 2 + btnCount * ScaleBtnW + (btnCount - 1) * ScaleBtnGap;
+        float panelH = ScalePanelPadY * 2 + ScaleBtnH + ScaleIndicatorSize + 2f;
+
+        float panelX = ComputeSpeedPanelRect().Left - ScalePanelGapFromSpeed - totalW;
+        float panelY = PanelMargin;
+
+        _lastScalePanelRect = new SKRect(panelX, panelY, panelX + totalW, panelY + panelH);
+        canvas.DrawRect(_lastScalePanelRect, _panelBgPaint);
+        canvas.DrawRect(_lastScalePanelRect, _panelBorderPaint);
+
+        float btnX = panelX + ScalePanelPadX;
+        float btnY = panelY + ScalePanelPadY;
+
+        int activeIdx = GetClosestScaleIndex();
+
+        for (int i = 0; i < btnCount; i++)
+        {
+            var btnRect = new SKRect(btnX, btnY, btnX + ScaleBtnW, btnY + ScaleBtnH);
+            _scaleButtonRects[i] = btnRect;
+
+            bool isActive = (i == activeIdx);
+            canvas.DrawRect(btnRect, isActive ? _scaleBtnActivePaint : _scaleBtnNormalPaint);
+            canvas.DrawRect(btnRect, _panelBorderPaint);
+
+            float textY = btnY + ScaleBtnH / 2f + _scaleBtnTextPaint.TextSize / 3f;
+            canvas.DrawText(ScaleLabels[i], btnX + ScaleBtnW / 2f, textY, _scaleBtnTextPaint);
+
+            btnX += ScaleBtnW + ScaleBtnGap;
+        }
+
+        // Continuous indicator — under the active button or between buttons.
+        float indX = ComputeScaleIndicatorPosition() - ScaleIndicatorSize / 2f;
+        float indY = panelY + ScalePanelPadY + ScaleBtnH + 1f;
+        var path = new SKPath();
+        path.MoveTo(indX, indY);
+        path.LineTo(indX + ScaleIndicatorSize, indY);
+        path.LineTo(indX + ScaleIndicatorSize / 2f, indY + ScaleIndicatorSize);
+        path.Close();
+        canvas.DrawPath(path, _scaleIndicatorPaint);
+    }
+
+    /// <summary>
+    /// Index of the scale button nearest to the current PPU (active highlight).
+    /// </summary>
+    private int GetClosestScaleIndex()
+    {
+        double position = ScalePosition();
+        return (int)Math.Round(position);
+    }
+
+    /// <summary>
+    /// Continuous scale position in button space: 0 = M1 (PPU 1.0),
+    /// 1 = M10 (PPU 0.1), 2 = M100 (PPU 0.01), 3 = M1000 (PPU 0.001).
+    /// Computed from log10(PPU), clamped to [0, 3].
+    /// </summary>
+    private double ScalePosition()
+    {
+        // PPU is always clamped to a positive range by CameraState, so log10 is defined.
+        double logPpu = Math.Log10(_camera.PixelsPerWorldUnit);
+        double position = -logPpu;
+        return Math.Clamp(position, 0, 3);
+    }
+
+    private float ComputeScaleIndicatorPosition()
+    {
+        double position = ScalePosition();
+        int nearest = (int)Math.Round(position);
+        if (Math.Abs(position - nearest) < ScaleSnapTolerance)
+            return _scaleButtonRects[nearest].MidX;
+
+        int lower = (int)Math.Floor(position);
+        int upper = (int)Math.Ceiling(position);
+        if (lower == upper)
+            return _scaleButtonRects[lower].MidX;
+
+        float frac = (float)(position - lower);
+        float lowerX = _scaleButtonRects[lower].MidX;
+        float upperX = _scaleButtonRects[upper].MidX;
+        return lowerX + (upperX - lowerX) * frac;
+    }
+
+    private void ApplyScale(double targetPpu)
+    {
+        _camera.SetZoom(targetPpu);
+        InterfaceLog.Write($"Scale → PPU={targetPpu:F4}");
+    }
+
+    private int HitTestScalePanel(float x, float y)
+    {
+        for (int i = 0; i < _scaleButtonRects.Length; i++)
+        {
+            if (_scaleButtonRects[i].Contains(x, y))
+                return i;
+        }
+        return -1;
     }
 
     private void DrawPlayerShipGlyph(SKCanvas canvas, float sx, float sy, double directionDegrees)
