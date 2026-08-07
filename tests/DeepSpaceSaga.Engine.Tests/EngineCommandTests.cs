@@ -91,8 +91,31 @@ public class EngineCommandTests
         engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightUntilCancel));
         Assert.Equal(0, PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0)).Direction);
 
-        Assert.Equal(0, PlayerShipFrom(engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed0)).Direction);
-        Assert.Equal(1, PlayerShipFrom(engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1)).Direction);
+        // Genuine pause: SimulationClock's own invariant is that GameTimeMs does not
+        // advance at Speed0, so repeated captures at the SAME gameTimeMs must not
+        // progress the turn — regardless of how many times a snapshot is captured.
+        Assert.Equal(0, PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0)).Direction);
+        Assert.Equal(0, PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0)).Direction);
+    }
+
+    [Fact]
+    public void Cycles_due_during_a_running_period_complete_even_if_the_snapshot_reports_paused()
+    {
+        // Regression test: the engine's snapshot loop yields once per real second
+        // regardless of speed. If a pause command lands mid-interval, the FIRST snapshot
+        // built after it can carry a GameTimeMs that already includes the running period
+        // from before the pause (SimulationClock correctly accumulates that time before
+        // switching speed) — even though THIS snapshot's own reported CurrentSpeed is
+        // already Speed0. Any turn-cycle step genuinely due during that running portion
+        // must still complete; it must not wait for the next non-paused snapshot to catch
+        // up (which produces a visible snap once several steps complete at once).
+        var engine = CreateEngine(directionDegrees: 0);
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightUntilCancel));
+        Assert.Equal(0, PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1)).Direction);
+
+        var afterPause = PlayerShipFrom(engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed0));
+
+        Assert.Equal(1, afterPause.Direction);
     }
 
     [Fact]

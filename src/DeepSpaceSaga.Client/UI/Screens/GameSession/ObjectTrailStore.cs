@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 
@@ -25,6 +26,8 @@ internal sealed class ObjectTrailStore
     private readonly List<string> _objectIdsToRemove = new();
     private readonly IMotionPredictor _predictor;
     private readonly Func<long> _timestampProvider;
+    private SimulationSpeed _previousSpeed = SimulationSpeed.Speed1;
+    private ulong? _previousSnapshotSequence;
 
     internal ObjectTrailStore()
         : this(new LinearMotionPredictor(), Stopwatch.GetTimestamp)
@@ -49,9 +52,16 @@ internal sealed class ObjectTrailStore
         SimulationSpeed currentSpeed,
         long currentGameTimeMs,
         bool bootstrapMissingTrails = false,
-        IReadOnlySet<string>? bootstrapObjectIds = null)
+        IReadOnlySet<string>? bootstrapObjectIds = null,
+        ulong? snapshotSequence = null)
     {
         PruneMissingObjects(renderStates);
+
+        bool transitionToPause = currentSpeed == SimulationSpeed.Speed0 && _previousSpeed != SimulationSpeed.Speed0;
+        bool pausedSnapshotChanged = currentSpeed == SimulationSpeed.Speed0 &&
+                                     snapshotSequence.HasValue &&
+                                     _previousSnapshotSequence.HasValue &&
+                                     snapshotSequence.Value != _previousSnapshotSequence.Value;
 
         long rawNow = _timestampProvider();
         foreach (var state in renderStates)
@@ -82,7 +92,43 @@ internal sealed class ObjectTrailStore
             }
 
             if (currentSpeed == SimulationSpeed.Speed0)
+            {
+                bool predictionBaselineRewound = points.Count > 0 && currentGameTimeMs < points[^1].Timestamp;
+                bool endpointChanged = points.Count > 0 &&
+                                       !EndpointMatches(points[^1], obj, currentGameTimeMs);
+
+                // Keep the whole trail in the same visual baseline as the paused object.
+                if ((transitionToPause || pausedSnapshotChanged || predictionBaselineRewound) && endpointChanged)
+                {
+                    if (PauseResumeDiagnostics.Enabled)
+                    {
+                        var oldEndpoint = points.Count > 0 ? points[^1] : default;
+                        var oldOldest = points.Count > 0 ? points[0] : default;
+                        PauseResumeDiagnostics.Write(
+                            $"TRAIL TRANSLATE id={obj.ObjectId} transitionToPause={transitionToPause} " +
+                            $"pausedSnapshotChanged={pausedSnapshotChanged} predictionBaselineRewound={predictionBaselineRewound} " +
+                            $"oldCount={points.Count} " +
+                            $"oldOldestX={oldOldest.X:F3} oldOldestY={oldOldest.Y:F3} oldOldestT={oldOldest.Timestamp} " +
+                            $"oldEndpointX={oldEndpoint.X:F3} oldEndpointY={oldEndpoint.Y:F3} oldEndpointT={oldEndpoint.Timestamp} " +
+                            $"objDir={obj.Direction:F3} objTurnStepDeg={obj.TurnStepDegrees} objTurnStepRemainingMs={obj.TurnStepRemainingMs} " +
+                            $"newX={obj.X:F3} newY={obj.Y:F3} newT={currentGameTimeMs}");
+
+                        TranslateTrail(points, obj, currentGameTimeMs);
+
+                        var newOldest = points.Count > 0 ? points[0] : default;
+                        var newEndpoint = points.Count > 0 ? points[^1] : default;
+                        PauseResumeDiagnostics.Write(
+                            $"TRAIL TRANSLATED id={obj.ObjectId} newCount={points.Count} " +
+                            $"newOldestX={newOldest.X:F3} newOldestY={newOldest.Y:F3} newOldestT={newOldest.Timestamp} " +
+                            $"newEndpointX={newEndpoint.X:F3} newEndpointY={newEndpoint.Y:F3} newEndpointT={newEndpoint.Timestamp}");
+                    }
+                    else
+                    {
+                        TranslateTrail(points, obj, currentGameTimeMs);
+                    }
+                }
                 continue;
+            }
 
             long visualGameTimeMs = GetMonotonicGameTimeMs(points, currentGameTimeMs);
             PruneOldPoints(points, visualGameTimeMs);
@@ -93,6 +139,10 @@ internal sealed class ObjectTrailStore
                 _lastSampleTimestamps[obj.ObjectId] = rawNow;
             }
         }
+
+        _previousSpeed = currentSpeed;
+        if (snapshotSequence.HasValue)
+            _previousSnapshotSequence = snapshotSequence.Value;
     }
 
     internal IReadOnlyList<ObjectTrailPoint> GetTrail(string objectId)
@@ -135,6 +185,43 @@ internal sealed class ObjectTrailStore
 
         if (removeCount > 0)
             points.RemoveRange(0, removeCount);
+    }
+
+    /// <summary>
+    /// Reconnect the trail's endpoint with the object's current authoritative pose by
+    /// shifting every existing point by the same offset — preserving the actual recorded
+    /// shape of the path. Rebuilding from scratch (projecting backward from the CURRENT
+    /// turn state) would silently assume the object had been turning at its current rate
+    /// for the entire history window, which is wrong whenever a turn started partway
+    /// through it — producing a visibly different trail shape on every pause/resume for
+    /// any object with an active turn cycle.
+    /// </summary>
+    private static void TranslateTrail(
+        List<ObjectTrailPoint> points,
+        ObjectMotionSnapshot obj,
+        long currentGameTimeMs)
+    {
+        var last = points[^1];
+        double offsetX = obj.X - last.X;
+        double offsetY = obj.Y - last.Y;
+
+        for (int i = 0; i < points.Count; i++)
+        {
+            var p = points[i];
+            points[i] = p with { X = p.X + offsetX, Y = p.Y + offsetY };
+        }
+
+        points[^1] = points[^1] with { X = obj.X, Y = obj.Y, Timestamp = currentGameTimeMs };
+    }
+
+    private static bool EndpointMatches(
+        ObjectTrailPoint endpoint,
+        ObjectMotionSnapshot obj,
+        long currentGameTimeMs)
+    {
+        return endpoint.Timestamp == currentGameTimeMs &&
+               endpoint.X == obj.X &&
+               endpoint.Y == obj.Y;
     }
 
     private void BootstrapTrail(
