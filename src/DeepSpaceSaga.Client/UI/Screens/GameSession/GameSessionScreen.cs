@@ -61,6 +61,9 @@ public sealed class GameSessionScreen : IScreen
     private long _lastFrameTimestamp;
     private bool _hasLastFrameTimestamp;
 
+    /// <summary>Monotonic start reference for UI-time (status square blink).</summary>
+    private long _uiTimeStartTimestamp = Stopwatch.GetTimestamp();
+
     // Info panel state
     private bool _panelVisible = true;
     private SKRect _lastPanelRect;
@@ -386,6 +389,12 @@ public sealed class GameSessionScreen : IScreen
         _lastFrameTimestamp = now;
         _hasLastFrameTimestamp = true;
 
+        // UI time in milliseconds — monotonic, independent of simulation
+        // speed and game time. Drives the status square blink.
+        long uiTimeMs = (long)((now - _uiTimeStartTimestamp) * 1000.0 / Stopwatch.Frequency);
+        if (uiTimeMs < 0)
+            uiTimeMs = 0;
+
         bool viewportResized = width != _lastViewportW || height != _lastViewportH;
         _lastViewportW = width;
         _lastViewportH = height;
@@ -431,8 +440,6 @@ public sealed class GameSessionScreen : IScreen
 
             // Compute smoothed label geometries once per frame so both
             // DrawLeaders and DrawPlaques see the same positions.
-            long gameTimeMs = predictedGameTimeMs;
-            var speed = prediction.CurrentSpeed;
             bool resetSmoothing = viewportResized;
             _labelRenderer.ComputeGeometries(_renderStates, deltaSeconds, width, height, _camera, resetSmoothing);
 
@@ -456,7 +463,7 @@ public sealed class GameSessionScreen : IScreen
             }
 
             // 4.5. Object label plaques (on top of objects, before UI panels)
-            _labelRenderer.DrawPlaques(canvas, _renderStates, gameTimeMs, speed, width, height, _camera);
+            _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera);
         }
 
         // 5. Speed panel (top-right)
