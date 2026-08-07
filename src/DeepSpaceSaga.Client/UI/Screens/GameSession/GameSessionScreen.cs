@@ -18,8 +18,13 @@ public sealed class GameSessionScreen : IScreen
     private readonly FutureTrajectoryProjector _futureTrajectoryProjector;
     private readonly ObjectLabelRenderer _labelRenderer;
     private readonly List<ObjectRenderState> _renderStates = new();
+    private readonly Dictionary<string, ObjectMotionSnapshot> _pausedVisualAnchors = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, VisualCorrection> _visualCorrections = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _currentVisualObjectIds = new(StringComparer.Ordinal);
+    private readonly List<string> _visualObjectIdsToRemove = new();
     private readonly HashSet<string> _initialTrailBootstrapObjectIds = new(StringComparer.Ordinal);
     private readonly GameSessionHandle? _handle;
+    private readonly Func<long> _timestampProvider;
 
     // Object paints
     private readonly SKPaint _trailPaint;
@@ -66,9 +71,10 @@ public sealed class GameSessionScreen : IScreen
     private bool _capturedInitialTrailBootstrapObjects;
     private long _lastFrameTimestamp;
     private bool _hasLastFrameTimestamp;
+    private SimulationSpeed _previousRenderSpeed = SimulationSpeed.Speed1;
 
     /// <summary>Monotonic start reference for UI-time (status square blink).</summary>
-    private long _uiTimeStartTimestamp = Stopwatch.GetTimestamp();
+    private readonly long _uiTimeStartTimestamp;
 
     // Info panel state
     private bool _panelVisible = true;
@@ -103,6 +109,7 @@ public sealed class GameSessionScreen : IScreen
     private const float CloseButtonSize = 14f;
     private const float CloseButtonMargin = 4f;
     private const float PanelMargin = 8f;
+    private const double VisualReconciliationDurationSeconds = 0.3;
 
     // Speed panel layout
     private const float SpeedBtnW = 32f;
@@ -181,10 +188,12 @@ public sealed class GameSessionScreen : IScreen
         _buffer = buffer;
         _predictor = predictor;
         _handle = handle;
+        _timestampProvider = timestampProvider ?? Stopwatch.GetTimestamp;
+        _uiTimeStartTimestamp = _timestampProvider();
 
         _camera = new CameraState(focusX: 10000, focusY: 10000, pixelsPerWorldUnit: 1.0);
         _grid = new GridRenderer();
-        _trailStore = new ObjectTrailStore(_predictor, timestampProvider ?? Stopwatch.GetTimestamp);
+        _trailStore = new ObjectTrailStore(_predictor, _timestampProvider);
         _futureTrajectoryProjector = new FutureTrajectoryProjector(_predictor);
         _labelRenderer = new ObjectLabelRenderer();
 
@@ -427,7 +436,7 @@ public sealed class GameSessionScreen : IScreen
         _viewportH = height;
 
         // Frame timing for label smoothing.
-        long now = Stopwatch.GetTimestamp();
+        long now = _timestampProvider();
         double deltaSeconds = 0.02; // reasonable default (~50 fps)
         if (_hasLastFrameTimestamp)
         {
@@ -451,7 +460,7 @@ public sealed class GameSessionScreen : IScreen
 
         var prediction = _buffer.LatestPrediction;
         var buffered = prediction?.BufferedSnapshot;
-        UpdateObjectRenderStates(prediction);
+        UpdateObjectRenderStates(prediction, deltaSeconds);
 
         UpdateCameraFocusFromPlayer(_renderStates);
 
@@ -476,7 +485,8 @@ public sealed class GameSessionScreen : IScreen
                 prediction.CurrentSpeed,
                 predictedGameTimeMs,
                 shouldBootstrapInitialTrails,
-                _initialTrailBootstrapObjectIds);
+                _initialTrailBootstrapObjectIds,
+                prediction.BufferedSnapshot.Snapshot.SnapshotSequence);
             if (shouldBootstrapInitialTrails)
             {
                 _shouldBootstrapInitialTrails = false;
@@ -536,12 +546,32 @@ public sealed class GameSessionScreen : IScreen
 
     // ── Speed panel ─────────────────────────────────────────────
 
-    private void UpdateObjectRenderStates(SnapshotPrediction? prediction)
+    private void UpdateObjectRenderStates(SnapshotPrediction? prediction, double deltaSeconds)
     {
-        _renderStates.Clear();
-
         if (prediction is null)
+        {
+            _renderStates.Clear();
             return;
+        }
+
+        bool isPaused = prediction.CurrentSpeed == SimulationSpeed.Speed0;
+        bool enteringPause = isPaused && _previousRenderSpeed != SimulationSpeed.Speed0;
+        bool resuming = !isPaused && _previousRenderSpeed == SimulationSpeed.Speed0;
+
+        if (enteringPause)
+        {
+            _pausedVisualAnchors.Clear();
+            for (int i = 0; i < _renderStates.Count; i++)
+            {
+                var state = _renderStates[i];
+                _pausedVisualAnchors[state.Predicted.ObjectId] = state.Predicted;
+            }
+
+            _visualCorrections.Clear();
+        }
+
+        _renderStates.Clear();
+        _currentVisualObjectIds.Clear();
 
         long ed = prediction.EffectivePredictionDeltaMs;
         string? playerShipObjectId = prediction.BufferedSnapshot.Snapshot.PlayerShipObjectId;
@@ -549,8 +579,126 @@ public sealed class GameSessionScreen : IScreen
         foreach (var obj in prediction.BufferedSnapshot.Snapshot.Objects)
         {
             var predicted = ed > 0 ? _predictor.Predict(obj, ed) : obj;
+            _currentVisualObjectIds.Add(obj.ObjectId);
+
+            if (isPaused)
+            {
+                if (!_pausedVisualAnchors.TryGetValue(obj.ObjectId, out var anchor))
+                {
+                    anchor = predicted;
+                    _pausedVisualAnchors[obj.ObjectId] = anchor;
+                }
+
+                predicted = ApplyVisualPose(predicted, anchor);
+            }
+            else
+            {
+                bool correctionCreated = false;
+                if (resuming && _pausedVisualAnchors.TryGetValue(obj.ObjectId, out var anchor))
+                {
+                    var newCorrection = CreateVisualCorrection(anchor, predicted);
+                    if (newCorrection.HasOffset)
+                    {
+                        _visualCorrections[obj.ObjectId] = newCorrection;
+                        correctionCreated = true;
+                    }
+                }
+
+                if (_visualCorrections.TryGetValue(obj.ObjectId, out var correction))
+                {
+                    if (!correctionCreated)
+                        correction = correction with { ElapsedSeconds = correction.ElapsedSeconds + deltaSeconds };
+
+                    predicted = ApplyVisualCorrection(predicted, correction);
+                    if (correction.ElapsedSeconds >= VisualReconciliationDurationSeconds)
+                        _visualCorrections.Remove(obj.ObjectId);
+                    else
+                        _visualCorrections[obj.ObjectId] = correction;
+                }
+            }
+
             _renderStates.Add(new ObjectRenderState(obj, predicted, obj.ObjectId == playerShipObjectId));
         }
+
+        RemoveMissingVisualStates(_pausedVisualAnchors);
+        RemoveMissingVisualStates(_visualCorrections);
+
+        if (resuming)
+            _pausedVisualAnchors.Clear();
+
+        _previousRenderSpeed = prediction.CurrentSpeed;
+    }
+
+    private static ObjectMotionSnapshot ApplyVisualPose(
+        ObjectMotionSnapshot target,
+        ObjectMotionSnapshot visualPose)
+    {
+        return target with
+        {
+            X = visualPose.X,
+            Y = visualPose.Y,
+            Direction = visualPose.Direction
+        };
+    }
+
+    private static VisualCorrection CreateVisualCorrection(
+        ObjectMotionSnapshot visualPose,
+        ObjectMotionSnapshot target)
+    {
+        return new VisualCorrection(
+            visualPose.X - target.X,
+            visualPose.Y - target.Y,
+            ShortestDirectionDelta(visualPose.Direction, target.Direction),
+            ElapsedSeconds: 0);
+    }
+
+    private static ObjectMotionSnapshot ApplyVisualCorrection(
+        ObjectMotionSnapshot target,
+        VisualCorrection correction)
+    {
+        double progress = Math.Clamp(
+            correction.ElapsedSeconds / VisualReconciliationDurationSeconds,
+            0,
+            1);
+        double smoothProgress = progress * progress * (3 - 2 * progress);
+        double remaining = 1 - smoothProgress;
+
+        return target with
+        {
+            X = target.X + correction.OffsetX * remaining,
+            Y = target.Y + correction.OffsetY * remaining,
+            Direction = NormalizeDirection(target.Direction + correction.DirectionOffset * remaining)
+        };
+    }
+
+    private static double ShortestDirectionDelta(double visualDirection, double targetDirection)
+    {
+        double delta = (visualDirection - targetDirection) % 360;
+        if (delta > 180)
+            delta -= 360;
+        else if (delta < -180)
+            delta += 360;
+
+        return delta;
+    }
+
+    private static double NormalizeDirection(double direction)
+    {
+        double normalized = direction % 360;
+        return normalized < 0 ? normalized + 360 : normalized;
+    }
+
+    private void RemoveMissingVisualStates<T>(Dictionary<string, T> states)
+    {
+        _visualObjectIdsToRemove.Clear();
+        foreach (string objectId in states.Keys)
+        {
+            if (!_currentVisualObjectIds.Contains(objectId))
+                _visualObjectIdsToRemove.Add(objectId);
+        }
+
+        for (int i = 0; i < _visualObjectIdsToRemove.Count; i++)
+            states.Remove(_visualObjectIdsToRemove[i]);
     }
 
     private void UpdateCameraFocusFromPlayer(IReadOnlyList<ObjectRenderState> renderStates)
@@ -1119,6 +1267,15 @@ public sealed class GameSessionScreen : IScreen
             canvas.DrawText(value, valueX, textY, _panelTextPaint);
             textY += PanelLineHeight;
         }
+    }
+
+    private readonly record struct VisualCorrection(
+        double OffsetX,
+        double OffsetY,
+        double DirectionOffset,
+        double ElapsedSeconds)
+    {
+        internal bool HasOffset => OffsetX != 0 || OffsetY != 0 || DirectionOffset != 0;
     }
 
 }

@@ -21,6 +21,7 @@ public sealed class SnapshotBuffer
     private readonly Func<long> _timestampProvider;
     private BufferedSnapshot? _latest;
     private SimulationSpeed _currentSpeed = SimulationSpeed.Speed1;
+    private SimulationSpeed? _pendingConfirmedSpeed;
     private long _predictionSegmentStartedAtTimestamp;
     private long _accumulatedPredictionGameTimeMs;
 
@@ -60,17 +61,36 @@ public sealed class SnapshotBuffer
 
         lock (_sync)
         {
+            long previousPredictedGameTimeMs = snapshot.GameTimeMs;
+            if (_latest is not null)
+            {
+                long previousPredictionDeltaMs = _accumulatedPredictionGameTimeMs
+                    + RealTicksToGameMs(now - _predictionSegmentStartedAtTimestamp, _currentSpeed);
+                previousPredictedGameTimeMs = _latest.Snapshot.GameTimeMs + previousPredictionDeltaMs;
+            }
+
             _latest = value;
 
-            // A new authoritative snapshot is the new prediction baseline.
-            _accumulatedPredictionGameTimeMs = 0;
+            // A newer authoritative baseline must not make visual game time run backward.
+            _accumulatedPredictionGameTimeMs = Math.Max(
+                0,
+                previousPredictedGameTimeMs - snapshot.GameTimeMs);
             _predictionSegmentStartedAtTimestamp = now;
 
-            // Sync client-side speed tracker from the authoritative snapshot.
-            // We intentionally update every snapshot so that speed changes
-            // (including Speed2/Speed3/Speed4 applied outside modal-pause)
-            // are reflected without waiting for a SetSpeedAsync round-trip.
-            _currentSpeed = snapshot.CurrentSpeed;
+            if (_pendingConfirmedSpeed is { } pendingSpeed)
+            {
+                // A snapshot captured before the latest confirmed speed command may
+                // still be queued. It must not roll the renderer back to stale speed.
+                if (snapshot.CurrentSpeed == pendingSpeed)
+                {
+                    _currentSpeed = pendingSpeed;
+                    _pendingConfirmedSpeed = null;
+                }
+            }
+            else
+            {
+                _currentSpeed = snapshot.CurrentSpeed;
+            }
         }
     }
 
@@ -130,6 +150,8 @@ public sealed class SnapshotBuffer
 
         lock (_sync)
         {
+            _pendingConfirmedSpeed = speed;
+
             if (speed == _currentSpeed)
                 return;
 

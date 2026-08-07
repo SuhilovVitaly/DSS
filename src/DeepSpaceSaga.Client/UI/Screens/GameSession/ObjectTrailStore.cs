@@ -25,6 +25,8 @@ internal sealed class ObjectTrailStore
     private readonly List<string> _objectIdsToRemove = new();
     private readonly IMotionPredictor _predictor;
     private readonly Func<long> _timestampProvider;
+    private SimulationSpeed _previousSpeed = SimulationSpeed.Speed1;
+    private ulong? _previousSnapshotSequence;
 
     internal ObjectTrailStore()
         : this(new LinearMotionPredictor(), Stopwatch.GetTimestamp)
@@ -49,9 +51,16 @@ internal sealed class ObjectTrailStore
         SimulationSpeed currentSpeed,
         long currentGameTimeMs,
         bool bootstrapMissingTrails = false,
-        IReadOnlySet<string>? bootstrapObjectIds = null)
+        IReadOnlySet<string>? bootstrapObjectIds = null,
+        ulong? snapshotSequence = null)
     {
         PruneMissingObjects(renderStates);
+
+        bool transitionToPause = currentSpeed == SimulationSpeed.Speed0 && _previousSpeed != SimulationSpeed.Speed0;
+        bool pausedSnapshotChanged = currentSpeed == SimulationSpeed.Speed0 &&
+                                     snapshotSequence.HasValue &&
+                                     _previousSnapshotSequence.HasValue &&
+                                     snapshotSequence.Value != _previousSnapshotSequence.Value;
 
         long rawNow = _timestampProvider();
         foreach (var state in renderStates)
@@ -82,7 +91,18 @@ internal sealed class ObjectTrailStore
             }
 
             if (currentSpeed == SimulationSpeed.Speed0)
+            {
+                bool predictionBaselineRewound = points.Count > 0 && currentGameTimeMs < points[^1].Timestamp;
+                bool endpointChanged = points.Count > 0 &&
+                                       !EndpointMatches(points[^1], obj, currentGameTimeMs);
+
+                // Keep the whole trail in the same visual baseline as the paused object.
+                if ((transitionToPause || pausedSnapshotChanged || predictionBaselineRewound) && endpointChanged)
+                {
+                    RebuildTrail(points, obj, currentGameTimeMs, rawNow);
+                }
                 continue;
+            }
 
             long visualGameTimeMs = GetMonotonicGameTimeMs(points, currentGameTimeMs);
             PruneOldPoints(points, visualGameTimeMs);
@@ -93,6 +113,10 @@ internal sealed class ObjectTrailStore
                 _lastSampleTimestamps[obj.ObjectId] = rawNow;
             }
         }
+
+        _previousSpeed = currentSpeed;
+        if (snapshotSequence.HasValue)
+            _previousSnapshotSequence = snapshotSequence.Value;
     }
 
     internal IReadOnlyList<ObjectTrailPoint> GetTrail(string objectId)
@@ -135,6 +159,26 @@ internal sealed class ObjectTrailStore
 
         if (removeCount > 0)
             points.RemoveRange(0, removeCount);
+    }
+
+    private void RebuildTrail(
+        List<ObjectTrailPoint> points,
+        ObjectMotionSnapshot obj,
+        long currentGameTimeMs,
+        long rawNow)
+    {
+        points.Clear();
+        BootstrapTrail(points, obj, currentGameTimeMs, rawNow);
+    }
+
+    private static bool EndpointMatches(
+        ObjectTrailPoint endpoint,
+        ObjectMotionSnapshot obj,
+        long currentGameTimeMs)
+    {
+        return endpoint.Timestamp == currentGameTimeMs &&
+               endpoint.X == obj.X &&
+               endpoint.Y == obj.Y;
     }
 
     private void BootstrapTrail(

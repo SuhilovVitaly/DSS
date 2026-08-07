@@ -58,13 +58,15 @@ public class ObjectTrailStoreTests
         clock.AdvanceMs(ObjectTrailStore.TrailSampleIntervalMs);
         store.Update(States(MovingObject("ship", x: 5)), SimulationSpeed.Speed1, currentGameTimeMs: 50);
 
-        int countBeforePause = store.GetTrail("ship").Count;
-
+        // Transition to Speed0: catch-up may add a final point at current position
         store.Update(States(MovingObject("ship", x: 10)), SimulationSpeed.Speed0, currentGameTimeMs: 50);
+        int countAfterCatchUp = store.GetTrail("ship").Count;
+
+        // Sustained pause: no further growth
         clock.AdvanceMs(1_000);
         store.Update(States(MovingObject("ship", x: 20)), SimulationSpeed.Speed0, currentGameTimeMs: 50);
 
-        Assert.Equal(countBeforePause, store.GetTrail("ship").Count);
+        Assert.Equal(countAfterCatchUp, store.GetTrail("ship").Count);
 
         clock.AdvanceMs(ObjectTrailStore.TrailSampleIntervalMs);
         store.Update(States(MovingObject("ship", x: 25)), SimulationSpeed.Speed1, currentGameTimeMs: 100);
@@ -448,6 +450,213 @@ public class ObjectTrailStoreTests
         {
             Timestamp += milliseconds * Stopwatch.Frequency / 1000;
         }
+    }
+
+    [Fact]
+    public void Trail_catches_up_to_object_position_on_Speed4_to_Speed0_transition()
+    {
+        var clock = new FakeTimestamp();
+        var store = new ObjectTrailStore(() => clock.Timestamp);
+
+        // Build a tail at Speed4 with a large game time jump
+        store.Update(States(MovingObject("ship", x: 0)), SimulationSpeed.Speed4, currentGameTimeMs: 0);
+        clock.AdvanceMs(ObjectTrailStore.TrailSampleIntervalMs);
+        store.Update(States(MovingObject("ship", x: 100)), SimulationSpeed.Speed4, currentGameTimeMs: 5_000);
+
+        int countBeforePause = store.GetTrail("ship").Count;
+
+        // Transition to Speed0 — catch-up should add final point at object position
+        clock.AdvanceMs(1_000); // real time passes, but at Speed0 game time doesn't advance
+        store.Update(States(MovingObject("ship", x: 100)), SimulationSpeed.Speed0, currentGameTimeMs: 5_000);
+
+        var trail = store.GetTrail("ship");
+        Assert.True(trail.Count >= countBeforePause);
+        // Last point must match object position at pause time
+        Assert.Equal(100, trail[^1].X);
+        Assert.Equal(5_000, trail[^1].Timestamp);
+        Assert.True(TimestampsAreMonotonic(trail));
+    }
+
+    [Fact]
+    public void Trail_does_not_grow_during_sustained_Speed0_after_catch_up()
+    {
+        var clock = new FakeTimestamp();
+        var store = new ObjectTrailStore(() => clock.Timestamp);
+
+        store.Update(States(MovingObject("ship", x: 0)), SimulationSpeed.Speed1, currentGameTimeMs: 0);
+        clock.AdvanceMs(ObjectTrailStore.TrailSampleIntervalMs);
+        store.Update(States(MovingObject("ship", x: 5)), SimulationSpeed.Speed1, currentGameTimeMs: 50);
+
+        // Transition Speed1 → Speed0 (catch-up happens here)
+        clock.AdvanceMs(ObjectTrailStore.TrailSampleIntervalMs);
+        store.Update(States(MovingObject("ship", x: 5)), SimulationSpeed.Speed0, currentGameTimeMs: 50);
+
+        int countAfterCatchUp = store.GetTrail("ship").Count;
+        Assert.True(countAfterCatchUp > 0);
+
+        // Several subsequent updates at Speed0 — count must not grow
+        clock.AdvanceMs(1_000);
+        store.Update(States(MovingObject("ship", x: 5)), SimulationSpeed.Speed0, currentGameTimeMs: 50);
+
+        clock.AdvanceMs(1_000);
+        store.Update(States(MovingObject("ship", x: 5)), SimulationSpeed.Speed0, currentGameTimeMs: 50);
+
+        Assert.Equal(countAfterCatchUp, store.GetTrail("ship").Count);
+    }
+
+    [Fact]
+    public void Trail_resumes_normally_after_Speed0_to_Speed1_transition()
+    {
+        var clock = new FakeTimestamp();
+        var store = new ObjectTrailStore(() => clock.Timestamp);
+
+        store.Update(States(MovingObject("ship", x: 0)), SimulationSpeed.Speed1, currentGameTimeMs: 0);
+        clock.AdvanceMs(ObjectTrailStore.TrailSampleIntervalMs);
+        store.Update(States(MovingObject("ship", x: 5)), SimulationSpeed.Speed1, currentGameTimeMs: 50);
+
+        // Pause
+        clock.AdvanceMs(1_000);
+        store.Update(States(MovingObject("ship", x: 5)), SimulationSpeed.Speed0, currentGameTimeMs: 50);
+
+        int countAtPause = store.GetTrail("ship").Count;
+
+        // Resume
+        clock.AdvanceMs(ObjectTrailStore.TrailSampleIntervalMs);
+        store.Update(States(MovingObject("ship", x: 10)), SimulationSpeed.Speed1, currentGameTimeMs: 100);
+
+        var trail = store.GetTrail("ship");
+        Assert.True(trail.Count > countAtPause);
+        Assert.Equal(10, trail[^1].X);
+        Assert.Equal(100, trail[^1].Timestamp);
+        Assert.True(TimestampsAreMonotonic(trail));
+    }
+
+    [Fact]
+    public void Trail_rebuilds_when_pause_baseline_rewinds()
+    {
+        var clock = new FakeTimestamp();
+        var store = new ObjectTrailStore(() => clock.Timestamp);
+
+        // Speed4: predicted game time ahead of authoritative.
+        // Use separate authoritative (behind) and predicted (ahead) snapshots.
+        var auth = new ObjectMotionSnapshot("ship", 50, 0, SpeedKmS: 1, Direction: 90);
+        var predicted = new ObjectMotionSnapshot("ship", 60, 0, SpeedKmS: 1, Direction: 90);
+
+        // First frame at Speed4: seed the first point
+        store.Update(
+            StatesWithPredicted(new ObjectMotionSnapshot("ship", 0, 0, SpeedKmS: 1, Direction: 90),
+                               new ObjectMotionSnapshot("ship", 0, 0, SpeedKmS: 1, Direction: 90)),
+            SimulationSpeed.Speed4,
+            currentGameTimeMs: 0);
+
+        // Next frame: prediction jumps ahead. Distance > 1.0 → point added at predicted position.
+        clock.AdvanceMs(16);
+        store.Update(
+            StatesWithPredicted(auth, predicted),
+            SimulationSpeed.Speed4,
+            currentGameTimeMs: 6_000); // predicted game time includes delta
+
+        int countBeforePause = store.GetTrail("ship").Count;
+
+        // Reconciliation replaces the predicted baseline with an earlier paused state.
+        store.Update(
+            StatesWithPredicted(auth, auth),
+            SimulationSpeed.Speed0,
+            currentGameTimeMs: 5_000); // authoritative game time, no prediction
+
+        var trail = store.GetTrail("ship");
+        Assert.True(trail.Count > countBeforePause,
+            $"Expected trail to rebuild from {countBeforePause} points, got {trail.Count}");
+
+        Assert.True(TimestampsAreMonotonic(trail));
+        Assert.All(trail, point => Assert.True(point.Timestamp <= 5_000));
+
+        // Last point at authoritative object position
+        Assert.Equal(50, trail[^1].X);
+        Assert.Equal(5_000, trail[^1].Timestamp);
+    }
+
+    [Fact]
+    public void Game_session_screen_keeps_visual_pose_when_paused_snapshot_replaces_prediction()
+    {
+        var clock = new FakeTimestamp();
+        var buffer = new SnapshotBuffer(() => clock.Timestamp);
+        var ship = new ObjectMotionSnapshot("ship", 0, 0, SpeedKmS: 1, Direction: 90);
+
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1,
+            GameTimeMs: 0,
+            CurrentSpeed: SimulationSpeed.Speed4,
+            Objects: ImmutableArray.Create(ship),
+            PlayerShipObjectId: "ship"));
+
+        var screen = new GameSessionScreen(
+            buffer,
+            new LinearMotionPredictor(),
+            timestampProvider: () => clock.Timestamp);
+
+        Render(screen);
+        clock.AdvanceMs(900);
+        Render(screen);
+
+        buffer.CurrentSpeed = SimulationSpeed.Speed0;
+        Render(screen);
+        Assert.Equal(900, screen.GetObjectTrail("ship")[^1].X);
+        Assert.Equal(900, screen.CameraFocusX);
+
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 2,
+            GameTimeMs: 50_000,
+            CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(ship with { X = 500 }),
+            PlayerShipObjectId: "ship"));
+
+        Render(screen);
+
+        var trail = screen.GetObjectTrail("ship");
+        Assert.True(TimestampsAreMonotonic(trail));
+        Assert.All(trail, point => Assert.True(point.Timestamp <= 90_000));
+        Assert.Equal(900, trail[^1].X);
+        Assert.Equal(90_000, trail[^1].Timestamp);
+        Assert.Equal(900, screen.CameraFocusX);
+
+        buffer.CurrentSpeed = SimulationSpeed.Speed1;
+        Render(screen);
+        Assert.Equal(900, screen.CameraFocusX);
+
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 3,
+            GameTimeMs: 50_000,
+            CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(ship with { X = 500 }),
+            PlayerShipObjectId: "ship"));
+
+        Render(screen);
+        Assert.Equal(SimulationSpeed.Speed1, buffer.CurrentSpeed);
+        Assert.Equal(900, screen.CameraFocusX);
+
+        clock.AdvanceMs(400);
+        Render(screen);
+        Assert.Equal(904, screen.CameraFocusX, precision: 6);
+        Assert.Equal(904, screen.GetObjectTrail("ship")[^1].X, precision: 6);
+
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 4,
+            GameTimeMs: 90_000,
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray.Create(ship with { X = 900 }),
+            PlayerShipObjectId: "ship"));
+
+        Render(screen);
+        Assert.Equal(904, screen.CameraFocusX, precision: 6);
+        Assert.Equal(904, screen.GetObjectTrail("ship")[^1].X, precision: 6);
+    }
+
+    private static ObjectRenderState[] StatesWithPredicted(
+        ObjectMotionSnapshot authoritative,
+        ObjectMotionSnapshot predicted)
+    {
+        return new[] { new ObjectRenderState(authoritative, predicted, IsPlayerShip: false) };
     }
 
     private sealed class FakeMotionPredictor : IMotionPredictor
