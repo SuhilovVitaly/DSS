@@ -193,23 +193,58 @@ public class EngineCommandTests
     }
 
     [Fact]
-    public void One_shot_command_is_rejected_when_auto_repeat_cycle_is_active()
+    public void One_shot_command_cancels_active_auto_repeat_cycle_and_executes()
     {
         var engine = CreateEngine(directionDegrees: 12);
 
+        // Start Accelerate (enqueue; applied on next BuildSnapshot tick).
         engine.ReceiveCommand(Command(ShipEngineCommandTypes.Accelerate));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        // Accelerate completes after 100 ms of game time.
+        var running = PlayerShipFrom(engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1));
+        Assert.Equal(4.0, running.SpeedKmS);
+        Assert.Equal(ShipEngineCommandTypes.Accelerate, running.ActiveEngineCommandType);
+
+        // TurnRightStep cancels the auto-repeating Accelerate and executes.
+        // Speed stays at the achieved value (not rolled back).
         engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightStep));
+        engine.CaptureSnapshotForTests(200, SimulationSpeed.Speed1); // TurnRightStep starts this tick
+        // One-shot turn completes on the next tick.
+        var afterTurn = PlayerShipFrom(engine.CaptureSnapshotForTests(300, SimulationSpeed.Speed1));
+        Assert.Equal(4.0, afterTurn.SpeedKmS);
+        Assert.Equal(13, afterTurn.Direction);
+        // One-shot turn completed; no active cycle remains.
+        Assert.Null(afterTurn.ActiveEngineCommandType);
+    }
 
-        var initial = PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1));
-        Assert.Equal(0, initial.SpeedKmS);
-        Assert.Equal(12, initial.Direction);
+    [Fact]
+    public void Different_periodic_command_cancels_and_replaces_active_cycle()
+    {
+        var engine = CreateEngine();
 
-        // TurnRightStep is rejected — incompatible with active Accelerate cycle.
-        // Speed changes from Accelerate, but direction stays unchanged.
-        var completed = PlayerShipFrom(engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1));
-        Assert.Equal(4, completed.SpeedKmS);
-        Assert.Equal(12, completed.Direction);
-        Assert.Equal(ShipEngineCommandTypes.Accelerate, completed.ActiveEngineCommandType);
+        // Start Accelerate and let it complete once.
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.Accelerate));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        var running = PlayerShipFrom(engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1));
+        Assert.Equal(4.0, running.SpeedKmS);
+        Assert.Equal(ShipEngineCommandTypes.Accelerate, running.ActiveEngineCommandType);
+
+        // Brake cancels Accelerate and takes over.
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.Brake));
+        engine.CaptureSnapshotForTests(200, SimulationSpeed.Speed1); // Brake starts this tick
+        var afterBrake = PlayerShipFrom(engine.CaptureSnapshotForTests(300, SimulationSpeed.Speed1));
+        Assert.Equal(0, afterBrake.SpeedKmS);
+        Assert.Equal(ShipEngineCommandTypes.Brake, afterBrake.ActiveEngineCommandType);
+    }
+
+    [Fact]
+    public void Snapshot_reports_max_speed_km_s_for_engine_equipped_object()
+    {
+        var engine = CreateEngine();
+        var ship = PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1));
+
+        // Test registry has MaxSpeedMps: 4000 → 4.0 km/s.
+        Assert.Equal(4.0, ship.MaxSpeedKmS);
     }
 
     [Fact]

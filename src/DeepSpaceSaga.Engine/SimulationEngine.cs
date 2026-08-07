@@ -181,7 +181,8 @@ public sealed class SimulationEngine : IDisposable
                 TurnStepIntervalMs = cycleMotion.TurnStepIntervalMs,
                 ObjectType = obj.ObjectType,
                 RelationToPlayer = GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType),
-                DisplayName = obj.InitialMotion.ObjectId == PlayerShipObjectId ? obj.Name : null
+                DisplayName = obj.InitialMotion.ObjectId == PlayerShipObjectId ? obj.Name : null,
+                MaxSpeedKmS = GetMaxSpeedKmS(obj)
             });
         }
 
@@ -420,10 +421,8 @@ public sealed class SimulationEngine : IDisposable
             if (string.Equals(command.CommandType, activeCycle.CommandType, StringComparison.Ordinal))
                 return CommandStartDisposition.Started;
 
-            // Only TurnLeftUntilCancel ↔ TurnRightUntilCancel mutual replacement is allowed.
-            // All other commands are rejected — they must not be queued as a hidden backlog.
-            if (!IsUntilCancelTurnReplacement(activeCycle.CommandType, command.CommandType))
-                return CommandStartDisposition.Rejected;
+            // Any other engine command implicitly cancels the active periodic
+            // (auto-repeat) cycle and falls through to start its own cycle below.
         }
 
         bool isAutoRepeat = IsCyclicEngineCommand(command.CommandType);
@@ -476,11 +475,6 @@ public sealed class SimulationEngine : IDisposable
                commandType == ShipEngineCommandTypes.TurnRightUntilCancel;
     }
 
-    private static bool IsUntilCancelTurnReplacement(string existing, string incoming)
-    {
-        return IsUntilCancelTurn(existing) && IsUntilCancelTurn(incoming);
-    }
-
     private static bool IsCyclicEngineCommand(string commandType)
     {
         return commandType == ShipEngineCommandTypes.Accelerate ||
@@ -505,6 +499,18 @@ public sealed class SimulationEngine : IDisposable
                 }
             }
         }
+    }
+
+    private double? GetMaxSpeedKmS(SpaceObjectRuntime obj)
+    {
+        foreach (var module in obj.Modules)
+        {
+            var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+            if (string.Equals(moduleType.TypeId, "module.engine.basic", StringComparison.Ordinal) &&
+                moduleType.MaxSpeedMps is > 0)
+                return moduleType.MaxSpeedMps.Value / 1000.0;
+        }
+        return null;
     }
 
     private ActiveEngineCycleMotion GetActiveEngineCycleMotion(SpaceObjectRuntime obj, long gameTimeMs)

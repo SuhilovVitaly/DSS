@@ -1114,25 +1114,39 @@ public sealed class GameSessionScreen : IScreen
         if (_handle is null || string.IsNullOrWhiteSpace(snapshot?.PlayerShipObjectId))
             return false;
 
-        string? activeCommand = GetActiveEngineCommandType(snapshot);
-        if (activeCommand is null)
-            return true;
-
-        // Same cyclic command — idempotent, no need to send again.
-        if (commandType == activeCommand)
+        var ship = FindPlayerShipMotion(snapshot);
+        if (ship is null)
             return false;
 
-        // CancelAll is always allowed — it explicitly cancels the active cycle.
-        if (commandType == ShipEngineCommandTypes.CancelAll)
-            return true;
-
-        // One-shot turns are rejected by the engine when an auto-repeat cycle is active.
-        if (!IsCyclicEngineCommand(commandType))
+        // Rule 1: only the button matching the currently active periodic
+        // (cyclic) command is disabled — every other button stays active.
+        if (IsCyclicEngineCommand(commandType) && commandType == ship.ActiveEngineCommandType)
             return false;
 
-        // Different cyclic command while another is active.
-        // Only TurnLeftUntilCancel ↔ TurnRightUntilCancel mutual replacement is allowed.
-        return IsUntilCancelTurnCommand(activeCommand) && IsUntilCancelTurnCommand(commandType);
+        // Rule 2: Brake is disabled at zero speed.
+        if (commandType == ShipEngineCommandTypes.Brake && ship.SpeedKmS <= 0)
+            return false;
+
+        // Rule 3: Accelerate is disabled at max speed.
+        if (commandType == ShipEngineCommandTypes.Accelerate &&
+            ship.MaxSpeedKmS is { } max && ship.SpeedKmS >= max)
+            return false;
+
+        return true;
+    }
+
+    private static ObjectMotionSnapshot? FindPlayerShipMotion(AuthoritativeSnapshot? snapshot)
+    {
+        if (string.IsNullOrWhiteSpace(snapshot?.PlayerShipObjectId))
+            return null;
+
+        foreach (var obj in snapshot.Objects)
+        {
+            if (obj.ObjectId == snapshot.PlayerShipObjectId)
+                return obj;
+        }
+
+        return null;
     }
 
     private static string? GetActiveEngineCommandType(AuthoritativeSnapshot? snapshot)
@@ -1154,12 +1168,6 @@ public sealed class GameSessionScreen : IScreen
         return commandType == ShipEngineCommandTypes.Accelerate ||
                commandType == ShipEngineCommandTypes.Brake ||
                commandType == ShipEngineCommandTypes.TurnLeftUntilCancel ||
-               commandType == ShipEngineCommandTypes.TurnRightUntilCancel;
-    }
-
-    private static bool IsUntilCancelTurnCommand(string commandType)
-    {
-        return commandType == ShipEngineCommandTypes.TurnLeftUntilCancel ||
                commandType == ShipEngineCommandTypes.TurnRightUntilCancel;
     }
 

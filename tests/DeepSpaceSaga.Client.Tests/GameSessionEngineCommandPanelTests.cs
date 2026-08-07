@@ -117,14 +117,14 @@ public class GameSessionEngineCommandPanelTests
     }
 
     [Fact]
-    public async Task Active_cyclic_command_blocks_duplicate_and_unrelated_commands()
+    public async Task Active_periodic_command_blocks_only_its_own_button()
     {
         await using var fixture = CreateFixture();
         var activeShip = new ObjectMotionSnapshot(
             PlayerShipId,
             10000,
             10000,
-            SpeedKmS: 0,
+            SpeedKmS: 1.0,
             Direction: 0,
             ActiveEngineCommandType: ShipEngineCommandTypes.TurnRightUntilCancel,
             TurnStepDegrees: 1,
@@ -138,29 +138,96 @@ public class GameSessionEngineCommandPanelTests
             PlayerShipObjectId: PlayerShipId));
         Render(fixture.Screen);
 
-        // Duplicate — blocked.
+        // Own button (TurnRightUntilCancel) — blocked (idempotent).
         var sameTurn = fixture.Screen.EngineCommandButtonRects[4];
         fixture.Screen.OnMouseDown(sameTurn.MidX, sameTurn.MidY);
         Assert.Empty(fixture.Connection.Commands);
 
-        // Unrelated cyclic (Accelerate) — blocked (only until-cancel turn mutual replacement allowed).
-        var accelerate = fixture.Screen.EngineCommandButtonRects[0];
-        fixture.Screen.OnMouseDown(accelerate.MidX, accelerate.MidY);
-        Assert.Empty(fixture.Connection.Commands);
-
         Assert.Equal(4, fixture.Screen.ActiveEngineCommandButtonIndex);
 
-        // Opposite until-cancel turn — allowed (mutual replacement).
+        // Unrelated cyclic (Accelerate) — allowed (cancel-and-replace).
+        var accelerate = fixture.Screen.EngineCommandButtonRects[0];
+        fixture.Screen.OnMouseDown(accelerate.MidX, accelerate.MidY);
+        Assert.Equal(ShipEngineCommandTypes.Accelerate, Assert.Single(fixture.Connection.Commands).CommandType);
+        fixture.Connection.Commands.Clear();
+
+        // Opposite until-cancel turn — allowed (mutual replacement, now a special case).
         var oppositeTurn = fixture.Screen.EngineCommandButtonRects[5];
         fixture.Screen.OnMouseDown(oppositeTurn.MidX, oppositeTurn.MidY);
         Assert.Equal(ShipEngineCommandTypes.TurnLeftUntilCancel, Assert.Single(fixture.Connection.Commands).CommandType);
     }
 
-    private static TestFixture CreateFixture()
+    [Fact]
+    public async Task Brake_button_disabled_at_zero_speed()
+    {
+        await using var fixture = CreateFixture(speedKmS: 0);
+        Render(fixture.Screen);
+
+        var brake = fixture.Screen.EngineCommandButtonRects[1];
+        fixture.Screen.OnMouseDown(brake.MidX, brake.MidY);
+        Assert.Empty(fixture.Connection.Commands);
+    }
+
+    [Fact]
+    public async Task Accelerate_button_disabled_at_max_speed()
+    {
+        await using var fixture = CreateFixture();
+        var maxShip = new ObjectMotionSnapshot(
+            PlayerShipId,
+            10000,
+            10000,
+            SpeedKmS: 4.0,
+            Direction: 0,
+            MaxSpeedKmS: 4.0);
+        fixture.Handle.Buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 2,
+            GameTimeMs: 0,
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray.Create(maxShip),
+            PlayerShipObjectId: PlayerShipId));
+        Render(fixture.Screen);
+
+        var accelerate = fixture.Screen.EngineCommandButtonRects[0];
+        fixture.Screen.OnMouseDown(accelerate.MidX, accelerate.MidY);
+        Assert.Empty(fixture.Connection.Commands);
+    }
+
+    [Fact]
+    public async Task Turn_step_buttons_stay_enabled_while_periodic_command_active()
+    {
+        await using var fixture = CreateFixture();
+        var activeShip = new ObjectMotionSnapshot(
+            PlayerShipId,
+            10000,
+            10000,
+            SpeedKmS: 1.0,
+            Direction: 0,
+            ActiveEngineCommandType: ShipEngineCommandTypes.Accelerate);
+        fixture.Handle.Buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 2,
+            GameTimeMs: 0,
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray.Create(activeShip),
+            PlayerShipObjectId: PlayerShipId));
+        Render(fixture.Screen);
+
+        // TurnRightStep enabled while Accelerate is active.
+        var turnRight = fixture.Screen.EngineCommandButtonRects[2];
+        fixture.Screen.OnMouseDown(turnRight.MidX, turnRight.MidY);
+        Assert.Equal(ShipEngineCommandTypes.TurnRightStep, Assert.Single(fixture.Connection.Commands).CommandType);
+        fixture.Connection.Commands.Clear();
+
+        // TurnLeftStep enabled while Accelerate is active.
+        var turnLeft = fixture.Screen.EngineCommandButtonRects[3];
+        fixture.Screen.OnMouseDown(turnLeft.MidX, turnLeft.MidY);
+        Assert.Equal(ShipEngineCommandTypes.TurnLeftStep, Assert.Single(fixture.Connection.Commands).CommandType);
+    }
+
+    private static TestFixture CreateFixture(double speedKmS = 1.0)
     {
         var connection = new RecordingConnection();
         var handle = new GameSessionHandle(connection);
-        var ship = new ObjectMotionSnapshot(PlayerShipId, 10000, 10000, SpeedKmS: 0, Direction: 0);
+        var ship = new ObjectMotionSnapshot(PlayerShipId, 10000, 10000, SpeedKmS: speedKmS, Direction: 0);
         handle.Buffer.Update(new AuthoritativeSnapshot(
             SnapshotSequence: 1,
             GameTimeMs: 0,
