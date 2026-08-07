@@ -12,27 +12,33 @@ public class EngineCommandTests
     private const string EngineModuleId = "ENGINE-1";
 
     [Fact]
-    public void Accelerate_completes_on_the_next_authoritative_tick()
+    public void Accelerate_ramps_up_speed_bounded_by_linear_inertia()
     {
-        var engine = CreateEngine();
+        var engine = CreateEngine(linearInertiaMps2: 2000); // 2.0 km/s per game second.
 
         engine.ReceiveCommand(Command(ShipEngineCommandTypes.Accelerate));
         Assert.Equal(0, PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1)).SpeedKmS);
-        var ship = PlayerShipFrom(engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1));
-
-        Assert.Equal(4.0, ship.SpeedKmS);
+        // dt = 1 s → delta = 2.0 km/s.
+        Assert.Equal(2.0, PlayerShipFrom(engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1)).SpeedKmS);
+        // dt = 1 s → 2.0 + 2.0 == MaxSpeedKmS (4.0).
+        Assert.Equal(4.0, PlayerShipFrom(engine.CaptureSnapshotForTests(2000, SimulationSpeed.Speed1)).SpeedKmS);
+        // Clamped at MaxSpeedKmS, never exceeds it.
+        Assert.Equal(4.0, PlayerShipFrom(engine.CaptureSnapshotForTests(3000, SimulationSpeed.Speed1)).SpeedKmS);
     }
 
     [Fact]
-    public void Brake_completes_on_the_next_authoritative_tick()
+    public void Brake_ramps_down_speed_bounded_by_linear_inertia()
     {
-        var engine = CreateEngine(speedMps: 700);
+        var engine = CreateEngine(speedMps: 3000, linearInertiaMps2: 2000); // Start 3.0 km/s.
 
         engine.ReceiveCommand(Command(ShipEngineCommandTypes.Brake));
-        Assert.Equal(0.7, PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1)).SpeedKmS);
-        var ship = PlayerShipFrom(engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1));
-
-        Assert.Equal(0, ship.SpeedKmS);
+        Assert.Equal(3.0, PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1)).SpeedKmS);
+        // dt = 1 s → 3.0 - 2.0.
+        Assert.Equal(1.0, PlayerShipFrom(engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1)).SpeedKmS);
+        // 1.0 - 2.0 clamps to 0.
+        Assert.Equal(0, PlayerShipFrom(engine.CaptureSnapshotForTests(2000, SimulationSpeed.Speed1)).SpeedKmS);
+        // Never goes negative.
+        Assert.Equal(0, PlayerShipFrom(engine.CaptureSnapshotForTests(3000, SimulationSpeed.Speed1)).SpeedKmS);
     }
 
     [Theory]
@@ -353,6 +359,18 @@ public class EngineCommandTests
         Assert.Equal(12, ship.Direction);
     }
 
+    [Fact]
+    public void Engine_without_linear_inertia_rejects_engine_commands()
+    {
+        var engine = CreateEngine(speedMps: 700, directionDegrees: 12, linearInertiaMps2: 0);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.Accelerate));
+        var ship = PlayerShipFrom(engine.CaptureSnapshotForTests());
+
+        Assert.Equal(0.7, ship.SpeedKmS);
+        Assert.Equal(12, ship.Direction);
+    }
+
     private static PlayerCommand Command(string commandType)
     {
         return new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, commandType);
@@ -369,9 +387,10 @@ public class EngineCommandTests
         string powerState = "On",
         string operationalState = "Ready",
         int structurePoints = 100,
-        string activeCycleJson = "null")
+        string activeCycleJson = "null",
+        int linearInertiaMps2 = 40000)
     {
-        var engine = new SimulationEngine(CreateRegistry());
+        var engine = new SimulationEngine(CreateRegistry(linearInertiaMps2));
         engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
         {
           "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
@@ -434,7 +453,7 @@ public class EngineCommandTests
         return engine;
     }
 
-    private static GameDataRegistry CreateRegistry()
+    private static GameDataRegistry CreateRegistry(int linearInertiaMps2 = 40000)
     {
         string[] commandIds =
         [
@@ -459,7 +478,8 @@ public class EngineCommandTests
                     CommandTypeIds: commandIds.ToImmutableArray(),
                     CargoCapacityKg: null,
                     MaxSpeedMps: 4000,
-                    TurnStepDegrees: 1)
+                    TurnStepDegrees: 1,
+                    LinearInertiaMps2: linearInertiaMps2)
             ],
             [],
             commandIds.Select(id => new CommandDefinition(id, id)));

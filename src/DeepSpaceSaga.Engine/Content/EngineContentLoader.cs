@@ -64,7 +64,8 @@ public static class EngineContentLoader
                 dto.CommandTypeIds.ToImmutableArray(),
                 dto.CargoCapacityKg,
                 dto.MaxSpeedMps,
-                dto.TurnStepDegrees);
+                dto.TurnStepDegrees,
+                dto.LinearInertiaMps2);
         }).ToArray();
     }
 
@@ -77,6 +78,8 @@ public static class EngineContentLoader
             throw new ContentException("Module type 'module.engine.basic' requires maxSpeedMps greater than zero.");
         if (dto.TurnStepDegrees is not > 0)
             throw new ContentException("Module type 'module.engine.basic' requires turnStepDegrees greater than zero.");
+        if (dto.LinearInertiaMps2 is not > 0)
+            throw new ContentException("Module type 'module.engine.basic' requires linearInertiaMps2 greater than zero.");
     }
 
     private static IReadOnlyList<ItemTypeDefinition> LoadItemTypes(string path)
@@ -155,7 +158,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("commandTypeIds")] IReadOnlyList<string> CommandTypeIds,
         [property: JsonPropertyName("cargoCapacityKg")] long? CargoCapacityKg,
         [property: JsonPropertyName("maxSpeedMps")] int? MaxSpeedMps,
-        [property: JsonPropertyName("turnStepDegrees")] int? TurnStepDegrees);
+        [property: JsonPropertyName("turnStepDegrees")] int? TurnStepDegrees,
+        [property: JsonPropertyName("linearInertiaMps2")] int? LinearInertiaMps2);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto> ItemTypes);

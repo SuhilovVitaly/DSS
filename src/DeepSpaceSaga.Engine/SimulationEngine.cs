@@ -457,6 +457,7 @@ public sealed class SimulationEngine : IDisposable
     {
         return moduleType.MaxSpeedMps is > 0 &&
                moduleType.TurnStepDegrees is > 0 &&
+               moduleType.LinearInertiaMps2 is > 0 &&
                string.Equals(module.PowerState, "On", StringComparison.OrdinalIgnoreCase) &&
                string.Equals(module.OperationalState, "Ready", StringComparison.OrdinalIgnoreCase) &&
                module.StructurePoints > 0;
@@ -604,14 +605,24 @@ public sealed class SimulationEngine : IDisposable
                 moduleIndex,
                 gameTimeMs,
                 module => module with { ActiveCycle = nextCycle },
-                motion => motion with { SpeedKmS = moduleType.MaxSpeedMps!.Value / 1000.0 }),
+                motion => motion with
+                {
+                    SpeedKmS = Math.Min(
+                        moduleType.MaxSpeedMps!.Value / 1000.0,
+                        motion.SpeedKmS + ComputeLinearInertiaDeltaKmS(obj, moduleType, gameTimeMs))
+                }),
 
             ShipEngineCommandTypes.Brake => UpdateEngineMotion(
                 obj,
                 moduleIndex,
                 gameTimeMs,
                 module => module with { ActiveCycle = nextCycle },
-                motion => motion with { SpeedKmS = 0 }),
+                motion => motion with
+                {
+                    SpeedKmS = Math.Max(
+                        0,
+                        motion.SpeedKmS - ComputeLinearInertiaDeltaKmS(obj, moduleType, gameTimeMs))
+                }),
 
             ShipEngineCommandTypes.TurnLeftStep or ShipEngineCommandTypes.TurnLeftUntilCancel => ApplyTurn(
                 obj,
@@ -631,6 +642,13 @@ public sealed class SimulationEngine : IDisposable
 
             _ => obj
         };
+    }
+
+    private static double ComputeLinearInertiaDeltaKmS(
+        SpaceObjectRuntime obj, ModuleTypeDefinition moduleType, long gameTimeMs)
+    {
+        long elapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
+        return moduleType.LinearInertiaMps2!.Value / 1000.0 * (elapsedMs / 1000.0);
     }
 
     private SpaceObjectRuntime ApplyTurn(
