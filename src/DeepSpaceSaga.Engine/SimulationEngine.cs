@@ -151,8 +151,20 @@ public sealed class SimulationEngine : IDisposable
     private AuthoritativeSnapshot BuildSnapshot(SimulationClockState clockState)
     {
         long gameTimeMs = clockState.GameTimeMs;
-        if (clockState.Speed != SimulationSpeed.Speed0)
-            CompleteActiveEngineCycles(gameTimeMs);
+
+        // Gating this on the CURRENT speed (rather than always calling it) is wrong: the
+        // snapshot loop yields once per real second regardless of speed, so the first
+        // snapshot built right after a pause can carry a gameTimeMs that already includes
+        // a running period from before the pause took effect (SimulationClock.SetSpeed
+        // correctly accumulates that time before switching). Skipping cycle completion for
+        // that snapshot leaves turn-cycle steps that are genuinely due un-applied — the
+        // object's stored Direction goes stale, TurnStepRemainingMs's Math.Max(1, ...)
+        // clamp silently hides how overdue it is, and the NEXT running snapshot's
+        // completion loop then catches up several steps at once, visible as an unexplained
+        // snap. Completion is itself correctly gated on gameTimeMs progression already (its
+        // loop condition no-ops when no time has passed), so no external speed check is
+        // needed here.
+        CompleteActiveEngineCycles(gameTimeMs);
         ApplyPendingCommands(gameTimeMs);
 
         var objects = ImmutableArray.CreateBuilder<ObjectMotionSnapshot>(_objects.Count);

@@ -20,6 +20,11 @@ public sealed class GameSessionScreen : IScreen
     private readonly List<ObjectRenderState> _renderStates = new();
     private readonly Dictionary<string, ObjectMotionSnapshot> _pausedVisualAnchors = new(StringComparer.Ordinal);
     private readonly Dictionary<string, VisualCorrection> _visualCorrections = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ObjectMotionSnapshot> _lastSnapshotBaselineObjects = new(StringComparer.Ordinal);
+    private ulong _lastSnapshotBaselineSequence;
+    private long _lastSnapshotBaselineGameTimeMs;
+    private bool _hasSnapshotBaseline;
+    private bool _diagInterestingFrame;
     private readonly HashSet<string> _currentVisualObjectIds = new(StringComparer.Ordinal);
     private readonly List<string> _visualObjectIdsToRemove = new();
     private readonly HashSet<string> _initialTrailBootstrapObjectIds = new(StringComparer.Ordinal);
@@ -110,6 +115,8 @@ public sealed class GameSessionScreen : IScreen
     private const float CloseButtonMargin = 4f;
     private const float PanelMargin = 8f;
     private const double VisualReconciliationDurationSeconds = 0.3;
+    private const double ReconciliationCorrectionToleranceWorldUnitsSq = 0.25; // 0.5 world unit (~50 m)
+    private const double ReconciliationCorrectionToleranceDegrees = 0.25;
 
     // Speed panel layout
     private const float SpeedBtnW = 32f;
@@ -464,6 +471,13 @@ public sealed class GameSessionScreen : IScreen
 
         UpdateCameraFocusFromPlayer(_renderStates);
 
+        if (_diagInterestingFrame && PauseResumeDiagnostics.Enabled)
+        {
+            PauseResumeDiagnostics.Write(
+                $"CAMERA focusX={_camera.FocusX:F3} focusY={_camera.FocusY:F3} attached={_isFocusAttachedToPlayer}");
+            _diagInterestingFrame = false;
+        }
+
         // 1. Grid
         _grid.Draw(canvas, _camera, width, height);
 
@@ -574,9 +588,24 @@ public sealed class GameSessionScreen : IScreen
         _currentVisualObjectIds.Clear();
 
         long ed = prediction.EffectivePredictionDeltaMs;
-        string? playerShipObjectId = prediction.BufferedSnapshot.Snapshot.PlayerShipObjectId;
+        var snapshot = prediction.BufferedSnapshot.Snapshot;
+        string? playerShipObjectId = snapshot.PlayerShipObjectId;
 
-        foreach (var obj in prediction.BufferedSnapshot.Snapshot.Objects)
+        // A fresh authoritative snapshot can reveal that the object's real trajectory
+        // (velocity/heading) differed from what the client had been extrapolating from
+        // the PREVIOUS snapshot — e.g. an engine command or turn cycle progressed while
+        // paused/off-screen, or the engine's and client's clocks simply disagree by a few
+        // ms (amplified hugely at Speed4). Either way, "what the client was already
+        // showing, carried forward to the same target time" is the previous baseline
+        // object extrapolated to now — NOT the new snapshot's own object (which is the
+        // discontinuity itself, not a continuity reference). Must apply exactly once (the
+        // first frame that observes this snapshot as latest) and smooth like a resume
+        // correction, otherwise it snaps instantly on whichever frame receives it — not
+        // necessarily the pause/resume transition frame at all.
+        bool newSnapshotArrived = _hasSnapshotBaseline && snapshot.SnapshotSequence != _lastSnapshotBaselineSequence;
+        long targetGameTimeMs = snapshot.GameTimeMs + ed;
+
+        foreach (var obj in snapshot.Objects)
         {
             var predicted = ed > 0 ? _predictor.Predict(obj, ed) : obj;
             _currentVisualObjectIds.Add(obj.ObjectId);
@@ -603,6 +632,21 @@ public sealed class GameSessionScreen : IScreen
                         correctionCreated = true;
                     }
                 }
+                else if (newSnapshotArrived &&
+                         _lastSnapshotBaselineObjects.TryGetValue(obj.ObjectId, out var prevBaseline))
+                {
+                    long elapsedFromPrevBaseline = targetGameTimeMs - _lastSnapshotBaselineGameTimeMs;
+                    var continuityExpected = elapsedFromPrevBaseline > 0
+                        ? _predictor.Predict(prevBaseline, elapsedFromPrevBaseline)
+                        : prevBaseline;
+
+                    var newCorrection = CreateVisualCorrection(continuityExpected, predicted);
+                    if (IsMeaningfulCorrection(newCorrection))
+                    {
+                        _visualCorrections[obj.ObjectId] = newCorrection;
+                        correctionCreated = true;
+                    }
+                }
 
                 if (_visualCorrections.TryGetValue(obj.ObjectId, out var correction))
                 {
@@ -617,14 +661,35 @@ public sealed class GameSessionScreen : IScreen
                 }
             }
 
+            if (PauseResumeDiagnostics.Enabled && obj.ObjectId == playerShipObjectId &&
+                (enteringPause || resuming || newSnapshotArrived ||
+                 _visualCorrections.ContainsKey(obj.ObjectId) || isPaused))
+            {
+                _diagInterestingFrame = true;
+                PauseResumeDiagnostics.Write(
+                    $"OBJECT id={obj.ObjectId} isPaused={isPaused} enteringPause={enteringPause} resuming={resuming} " +
+                    $"newSnapshotArrived={newSnapshotArrived} " +
+                    $"snapSeq={snapshot.SnapshotSequence} snapGameTimeMs={snapshot.GameTimeMs} ed={ed} " +
+                    $"authX={obj.X:F3} authY={obj.Y:F3} authDir={obj.Direction:F3} " +
+                    $"visualX={predicted.X:F3} visualY={predicted.Y:F3} visualDir={predicted.Direction:F3} " +
+                    $"turnStepDeg={obj.TurnStepDegrees} turnStepRemainingMs={obj.TurnStepRemainingMs} " +
+                    $"correctionActive={_visualCorrections.ContainsKey(obj.ObjectId)}");
+            }
+
+            _lastSnapshotBaselineObjects[obj.ObjectId] = obj;
             _renderStates.Add(new ObjectRenderState(obj, predicted, obj.ObjectId == playerShipObjectId));
         }
 
         RemoveMissingVisualStates(_pausedVisualAnchors);
         RemoveMissingVisualStates(_visualCorrections);
+        RemoveMissingVisualStates(_lastSnapshotBaselineObjects);
 
         if (resuming)
             _pausedVisualAnchors.Clear();
+
+        _lastSnapshotBaselineGameTimeMs = snapshot.GameTimeMs;
+        _lastSnapshotBaselineSequence = snapshot.SnapshotSequence;
+        _hasSnapshotBaseline = true;
 
         _previousRenderSpeed = prediction.CurrentSpeed;
     }
@@ -669,6 +734,13 @@ public sealed class GameSessionScreen : IScreen
             Y = target.Y + correction.OffsetY * remaining,
             Direction = NormalizeDirection(target.Direction + correction.DirectionOffset * remaining)
         };
+    }
+
+    private static bool IsMeaningfulCorrection(VisualCorrection correction)
+    {
+        double distanceSq = correction.OffsetX * correction.OffsetX + correction.OffsetY * correction.OffsetY;
+        return distanceSq > ReconciliationCorrectionToleranceWorldUnitsSq ||
+               Math.Abs(correction.DirectionOffset) > ReconciliationCorrectionToleranceDegrees;
     }
 
     private static double ShortestDirectionDelta(double visualDirection, double targetDirection)

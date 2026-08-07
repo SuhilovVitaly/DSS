@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Client;
@@ -6,7 +7,8 @@ namespace DeepSpaceSaga.Client;
 public sealed record SnapshotPrediction(
     BufferedSnapshot BufferedSnapshot,
     long EffectivePredictionDeltaMs,
-    SimulationSpeed CurrentSpeed);
+    SimulationSpeed CurrentSpeed,
+    long ReconciliationForwardJumpMs);
 
 /// <summary>
 /// Thread-safe holder for the latest authoritative snapshot.
@@ -24,6 +26,8 @@ public sealed class SnapshotBuffer
     private SimulationSpeed? _pendingConfirmedSpeed;
     private long _predictionSegmentStartedAtTimestamp;
     private long _accumulatedPredictionGameTimeMs;
+    private long _lastReconciliationForwardJumpMs;
+    private bool _awaitingFirstSnapshotAfterResume;
 
     public SnapshotBuffer()
         : this(Stopwatch.GetTimestamp)
@@ -72,9 +76,16 @@ public sealed class SnapshotBuffer
             _latest = value;
 
             // A newer authoritative baseline must not make visual game time run backward.
-            _accumulatedPredictionGameTimeMs = Math.Max(
-                0,
-                previousPredictedGameTimeMs - snapshot.GameTimeMs);
+            long rawDeltaMs = previousPredictedGameTimeMs - snapshot.GameTimeMs;
+            _accumulatedPredictionGameTimeMs = Math.Max(0, rawDeltaMs);
+
+            // The opposite case: the new snapshot's GameTimeMs lands AHEAD of what the
+            // client had already predicted (e.g. the engine's real-time clock and the
+            // client's prediction clock disagree by a few real ms — amplified by the
+            // current speed multiplier). Unlike a rewind, a forward jump is not clamped
+            // away here, so the renderer must know about it to smooth it visually instead
+            // of snapping straight to it.
+            _lastReconciliationForwardJumpMs = Math.Max(0, -rawDeltaMs);
             _predictionSegmentStartedAtTimestamp = now;
 
             if (_pendingConfirmedSpeed is { } pendingSpeed)
@@ -90,6 +101,25 @@ public sealed class SnapshotBuffer
             else
             {
                 _currentSpeed = snapshot.CurrentSpeed;
+            }
+
+            if (PauseResumeDiagnostics.Enabled)
+            {
+                PauseResumeDiagnostics.Write(
+                    $"SNAPSHOT seq={snapshot.SnapshotSequence} gameTimeMs={snapshot.GameTimeMs} " +
+                    $"snapshotSpeed={snapshot.CurrentSpeed} rawDeltaMs={rawDeltaMs} " +
+                    $"accumMs={_accumulatedPredictionGameTimeMs} fwdJumpMs={_lastReconciliationForwardJumpMs} " +
+                    $"pendingConfirmedSpeed={_pendingConfirmedSpeed} -> currentSpeed={_currentSpeed}");
+
+                if (_awaitingFirstSnapshotAfterResume)
+                {
+                    _awaitingFirstSnapshotAfterResume = false;
+                    long effectiveDelta = _accumulatedPredictionGameTimeMs
+                        + RealTicksToGameMs(now - _predictionSegmentStartedAtTimestamp, _currentSpeed);
+                    PauseResumeDiagnostics.Write(
+                        $"RESUME STATE: first snapshot after resume{Environment.NewLine}" +
+                        FormatSnapshotState(snapshot, effectiveDelta, now));
+                }
             }
         }
     }
@@ -125,7 +155,7 @@ public sealed class SnapshotBuffer
                 long effectiveDelta = _accumulatedPredictionGameTimeMs
                     + RealTicksToGameMs(now - _predictionSegmentStartedAtTimestamp, _currentSpeed);
 
-                return new SnapshotPrediction(_latest, effectiveDelta, _currentSpeed);
+                return new SnapshotPrediction(_latest, effectiveDelta, _currentSpeed, _lastReconciliationForwardJumpMs);
             }
         }
     }
@@ -153,7 +183,35 @@ public sealed class SnapshotBuffer
             _pendingConfirmedSpeed = speed;
 
             if (speed == _currentSpeed)
+            {
+                if (PauseResumeDiagnostics.Enabled)
+                    PauseResumeDiagnostics.Write($"SETSPEED requested={speed} (no-op, already current)");
                 return;
+            }
+
+            if (PauseResumeDiagnostics.Enabled)
+            {
+                long frozenAccumMs = _accumulatedPredictionGameTimeMs + RealTicksToGameMs(
+                    now - _predictionSegmentStartedAtTimestamp,
+                    _currentSpeed);
+                PauseResumeDiagnostics.Write(
+                    $"SETSPEED {_currentSpeed} -> {speed}  frozenAccumMs={frozenAccumMs} " +
+                    $"baselineGameTimeMs={_latest?.Snapshot.GameTimeMs}");
+
+                if (speed == SimulationSpeed.Speed0 && _latest is not null)
+                {
+                    PauseResumeDiagnostics.Write(
+                        $"PAUSE STATE: last snapshot at moment of pause{Environment.NewLine}" +
+                        FormatSnapshotState(_latest.Snapshot, frozenAccumMs, now));
+                }
+                else if (_currentSpeed == SimulationSpeed.Speed0)
+                {
+                    // Resuming from pause — the interesting state is the FIRST snapshot
+                    // received after this point, not this instant (nothing new has
+                    // arrived yet). Update() logs it once that snapshot lands.
+                    _awaitingFirstSnapshotAfterResume = true;
+                }
+            }
 
             _accumulatedPredictionGameTimeMs += RealTicksToGameMs(
                 now - _predictionSegmentStartedAtTimestamp,
@@ -162,6 +220,28 @@ public sealed class SnapshotBuffer
             _predictionSegmentStartedAtTimestamp = now;
             _currentSpeed = speed;
         }
+    }
+
+    private static string FormatSnapshotState(AuthoritativeSnapshot snapshot, long effectiveDeltaMs, long receiptTimestamp)
+    {
+        long predictedGameTimeMs = snapshot.GameTimeMs + effectiveDeltaMs;
+        var lines = new List<string>
+        {
+            $"  seq={snapshot.SnapshotSequence} gameTimeMs={snapshot.GameTimeMs} speed={snapshot.CurrentSpeed} " +
+            $"effectiveDeltaMs={effectiveDeltaMs} predictedGameTimeMs={predictedGameTimeMs} " +
+            $"playerShipObjectId={snapshot.PlayerShipObjectId}"
+        };
+
+        foreach (var obj in snapshot.Objects)
+        {
+            lines.Add(
+                $"  OBJ id={obj.ObjectId} X={obj.X:F3} Y={obj.Y:F3} speedKmS={obj.SpeedKmS:F3} " +
+                $"direction={obj.Direction:F3} activeEngineCommand={obj.ActiveEngineCommandType} " +
+                $"turnStepDeg={obj.TurnStepDegrees} turnStepRemainingMs={obj.TurnStepRemainingMs} " +
+                $"turnStepIntervalMs={obj.TurnStepIntervalMs}");
+        }
+
+        return string.Join(Environment.NewLine, lines);
     }
 
     private static long RealTicksToGameMs(long elapsedTicks, SimulationSpeed speed)

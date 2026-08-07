@@ -532,7 +532,7 @@ public class ObjectTrailStoreTests
     }
 
     [Fact]
-    public void Trail_rebuilds_when_pause_baseline_rewinds()
+    public void Trail_translates_when_pause_baseline_rewinds()
     {
         var clock = new FakeTimestamp();
         var store = new ObjectTrailStore(() => clock.Timestamp);
@@ -565,8 +565,12 @@ public class ObjectTrailStoreTests
             currentGameTimeMs: 5_000); // authoritative game time, no prediction
 
         var trail = store.GetTrail("ship");
-        Assert.True(trail.Count > countBeforePause,
-            $"Expected trail to rebuild from {countBeforePause} points, got {trail.Count}");
+
+        // Translate preserves the actual recorded shape (same point count) instead of
+        // fabricating history by projecting backward from the current state — which would
+        // be wrong for any object whose motion (e.g. an active turn) changed partway
+        // through the trail's window.
+        Assert.Equal(countBeforePause, trail.Count);
 
         Assert.True(TimestampsAreMonotonic(trail));
         Assert.All(trail, point => Assert.True(point.Timestamp <= 5_000));
@@ -574,6 +578,62 @@ public class ObjectTrailStoreTests
         // Last point at authoritative object position
         Assert.Equal(50, trail[^1].X);
         Assert.Equal(5_000, trail[^1].Timestamp);
+    }
+
+    [Fact]
+    public void Translate_preserves_curved_trail_shape_for_a_turning_object()
+    {
+        // Regression test: rebuilding the trail from scratch (projecting backward from the
+        // CURRENT turn state, as the old implementation did) assumes the object had been
+        // turning at its current rate for the entire history window — wrong whenever the
+        // turn only started partway through it, and it would flatten/distort a genuinely
+        // curved recorded path. Translate must instead reconnect the endpoint while leaving
+        // the relative shape of the earlier points untouched.
+        var clock = new FakeTimestamp();
+        var store = new ObjectTrailStore(() => clock.Timestamp);
+
+        // Build a trail along a curved (non-linear) path across several running frames.
+        var curvePoints = new (double X, double Y)[] { (0, 0), (5, 1), (9, 4), (11, 9), (10, 14) };
+        for (int i = 0; i < curvePoints.Length; i++)
+        {
+            clock.AdvanceMs(ObjectTrailStore.TrailSampleIntervalMs);
+            var (x, y) = curvePoints[i];
+            store.Update(
+                States(new ObjectMotionSnapshot("ship", x, y, SpeedKmS: 1, Direction: 90)),
+                SimulationSpeed.Speed1,
+                currentGameTimeMs: i * 1000);
+        }
+
+        var beforeTrail = store.GetTrail("ship").ToArray();
+        Assert.True(beforeTrail.Length >= curvePoints.Length, "trail should have recorded the curved history");
+
+        // Entering pause with a slightly different endpoint (as a stale visual anchor
+        // would produce) triggers a translate.
+        var pausedAnchor = new ObjectMotionSnapshot("ship", 10.6, 14.4, SpeedKmS: 1, Direction: 45);
+        store.Update(
+            States(pausedAnchor),
+            SimulationSpeed.Speed0,
+            currentGameTimeMs: (curvePoints.Length - 1) * 1000);
+
+        var afterTrail = store.GetTrail("ship").ToArray();
+
+        Assert.Equal(beforeTrail.Length, afterTrail.Length);
+
+        // The relative shape (vector between consecutive points) must be unchanged —
+        // only a uniform shift is allowed.
+        for (int i = 1; i < beforeTrail.Length; i++)
+        {
+            double beforeDx = beforeTrail[i].X - beforeTrail[i - 1].X;
+            double beforeDy = beforeTrail[i].Y - beforeTrail[i - 1].Y;
+            double afterDx = afterTrail[i].X - afterTrail[i - 1].X;
+            double afterDy = afterTrail[i].Y - afterTrail[i - 1].Y;
+
+            Assert.Equal(beforeDx, afterDx, precision: 6);
+            Assert.Equal(beforeDy, afterDy, precision: 6);
+        }
+
+        Assert.Equal(pausedAnchor.X, afterTrail[^1].X, precision: 6);
+        Assert.Equal(pausedAnchor.Y, afterTrail[^1].Y, precision: 6);
     }
 
     [Fact]
