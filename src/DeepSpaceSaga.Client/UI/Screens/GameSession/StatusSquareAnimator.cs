@@ -4,27 +4,32 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 /// <summary>
 /// Binary visibility of the status square on the tactical map.
-/// The square is drawn during the first 1000 ms of each 2000 ms period
-/// and not drawn during the second half. Freezes visible when paused (Speed0).
+/// The square blinks once per second in real/UI time — a full
+/// visible → hidden → visible cycle every 1000 ms — independent of
+/// simulation speed, zoom and game time.
+/// When the simulation is paused (Speed0), the square stays always
+/// visible to indicate the frozen state.
 /// </summary>
 internal static class StatusSquareAnimator
 {
-    public const double PeriodMs = 2000.0;
+    public const double PeriodMs = 1000.0;
 
-    private const double VisiblePhaseMs = 1000.0;
+    private const double VisiblePhaseMs = 500.0;
 
     /// <summary>
     /// Returns true while the status square should be drawn.
-    /// Visible during [0, 1000) ms of each 2000 ms period, hidden during
-    /// [1000, 2000) ms, then the cycle repeats. At Speed0 the square stays
-    /// visible — it never blinks while paused.
+    /// Visible during [0, 500) ms of each 1000 ms UI-time period,
+    /// hidden during [500, 1000) ms, then the cycle repeats.
+    /// When <paramref name="speed"/> is <see cref="SimulationSpeed.Speed0"/>,
+    /// always returns true — the square stays continuously visible
+    /// to indicate the paused state.
     /// </summary>
-    public static bool IsStatusSquareVisible(long gameTimeMs, SimulationSpeed speed)
+    public static bool IsStatusSquareVisible(long uiTimeMs, SimulationSpeed speed)
     {
         if (speed == SimulationSpeed.Speed0)
             return true;
 
-        double phase = gameTimeMs % (long)PeriodMs;
+        double phase = uiTimeMs % (long)PeriodMs;
         if (phase < 0)
             phase += PeriodMs;
 

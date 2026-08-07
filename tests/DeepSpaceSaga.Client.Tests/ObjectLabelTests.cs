@@ -274,7 +274,7 @@ public class ObjectLabelTests
     }
 
     [Fact]
-    public void Geometry_status_rect_is_vertically_shifted_by_content_offset()
+    public void Geometry_status_rect_is_vertically_shifted_by_status_offset()
     {
         var objScreen = new SKPoint(400, 300);
 
@@ -282,8 +282,8 @@ public class ObjectLabelTests
 
         float plaqueMidY = geom.PlaqueRect.Top + geom.PlaqueRect.Height / 2f;
         float sqMidY = geom.StatusRect.Top + geom.StatusRect.Height / 2f;
-        // Status square is shifted by ContentOffsetY relative to the plaque center.
-        Assert.Equal(plaqueMidY + ObjectLabelLayout.ContentOffsetY, sqMidY, precision: 3);
+        // Status square is shifted by StatusOffsetY relative to the plaque center.
+        Assert.Equal(plaqueMidY + ObjectLabelLayout.StatusOffsetY, sqMidY, precision: 3);
     }
 
     [Fact]
@@ -297,41 +297,58 @@ public class ObjectLabelTests
             geom.StatusRect.Right + ObjectLabelLayout.StatusTextGap,
             geom.TextOrigin.X);
         Assert.Equal(
-            geom.PlaqueRect.Top + ObjectLabelLayout.TextPaddingY + ObjectLabelLayout.ContentOffsetY,
+            geom.PlaqueRect.Top + ObjectLabelLayout.TextPaddingY + ObjectLabelLayout.TextOffsetY,
             geom.TextOrigin.Y);
     }
 
-    // ── Status square blink visibility ───────────────────────────
+    [Fact]
+    public void Status_offset_is_1px_above_plaque_center()
+    {
+        // Acceptance: indicator moved down 2 px vs the old shared -3f offset → -1f
+        Assert.Equal(-1f, ObjectLabelLayout.StatusOffsetY);
+    }
+
+    [Fact]
+    public void Text_offset_is_4px_above_plaque_top()
+    {
+        // Acceptance: text moved up 1 px vs the old shared -3f offset → -4f
+        Assert.Equal(-4f, ObjectLabelLayout.TextOffsetY);
+    }
+
+    // ── Status square blink visibility (real/UI time) ────────────
+    // Blink is driven by UI time and gated by simulation speed —
+    // when paused (Speed0), the square stays always visible.
 
     [Theory]
     [InlineData(0)]
-    [InlineData(999)]
-    public void StatusSquare_visible_in_first_phase(long gameTimeMs)
+    [InlineData(499)]
+    public void StatusSquare_visible_in_first_phase(long uiTimeMs)
     {
-        Assert.True(StatusSquareAnimator.IsStatusSquareVisible(gameTimeMs, SimulationSpeed.Speed1));
+        Assert.True(StatusSquareAnimator.IsStatusSquareVisible(uiTimeMs, SimulationSpeed.Speed1));
     }
 
     [Theory]
-    [InlineData(1000)]
-    [InlineData(1999)]
-    public void StatusSquare_hidden_in_second_phase(long gameTimeMs)
+    [InlineData(500)]
+    [InlineData(999)]
+    public void StatusSquare_hidden_in_second_phase(long uiTimeMs)
     {
-        Assert.False(StatusSquareAnimator.IsStatusSquareVisible(gameTimeMs, SimulationSpeed.Speed1));
+        Assert.False(StatusSquareAnimator.IsStatusSquareVisible(uiTimeMs, SimulationSpeed.Speed1));
     }
 
     [Fact]
     public void StatusSquare_visible_again_at_period_boundary()
     {
-        Assert.True(StatusSquareAnimator.IsStatusSquareVisible(2000, SimulationSpeed.Speed1));
+        Assert.True(StatusSquareAnimator.IsStatusSquareVisible(1000, SimulationSpeed.Speed1));
     }
 
     [Theory]
     [InlineData(0)]
-    [InlineData(750)]
-    [InlineData(1999)]
-    public void StatusSquare_always_visible_when_paused(long gameTimeMs)
+    [InlineData(500)]
+    [InlineData(999)]
+    [InlineData(1500)]
+    public void StatusSquare_always_visible_when_paused(long uiTimeMs)
     {
-        Assert.True(StatusSquareAnimator.IsStatusSquareVisible(gameTimeMs, SimulationSpeed.Speed0));
+        Assert.True(StatusSquareAnimator.IsStatusSquareVisible(uiTimeMs, SimulationSpeed.Speed0));
     }
 
     // ── Plaque constants ─────────────────────────────────────────
@@ -355,9 +372,9 @@ public class ObjectLabelTests
     }
 
     [Fact]
-    public void Animation_period_is_2000ms()
+    public void Animation_period_is_1000ms()
     {
-        Assert.Equal(2000.0, StatusSquareAnimator.PeriodMs);
+        Assert.Equal(1000.0, StatusSquareAnimator.PeriodMs);
     }
 
     [Fact]

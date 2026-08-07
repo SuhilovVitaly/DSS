@@ -148,12 +148,12 @@ internal sealed class ObjectLabelRenderer
             // Recompute status rect and text origin relative to the visible plaque.
             float sqX = visiblePlaque.Left + ObjectLabelLayout.TextPaddingX + ObjectLabelLayout.ContentOffsetX;
             float sqY = visiblePlaque.Top + (visiblePlaque.Height - ObjectLabelLayout.StatusSquareSize) / 2f
-                        + ObjectLabelLayout.ContentOffsetY;
+                        + ObjectLabelLayout.StatusOffsetY;
             var statusRect = new SKRect(sqX, sqY,
                 sqX + ObjectLabelLayout.StatusSquareSize, sqY + ObjectLabelLayout.StatusSquareSize);
 
             float textX = statusRect.Right + ObjectLabelLayout.StatusTextGap;
-            float textY = visiblePlaque.Top + ObjectLabelLayout.TextPaddingY + ObjectLabelLayout.ContentOffsetY;
+            float textY = visiblePlaque.Top + ObjectLabelLayout.TextPaddingY + ObjectLabelLayout.TextOffsetY;
 
             _geometries[objectId] = new ObjectLabelGeometry(
                 visiblePlaque, leaderEndPoint, statusRect, new SKPoint(textX, textY),
@@ -195,7 +195,7 @@ internal sealed class ObjectLabelRenderer
     public void DrawPlaques(
         SKCanvas canvas,
         IReadOnlyList<ObjectRenderState> renderStates,
-        long gameTimeMs,
+        long uiTimeMs,
         SimulationSpeed speed,
         int viewportW,
         int viewportH,
@@ -231,8 +231,8 @@ internal sealed class ObjectLabelRenderer
             _stripePaint.Color = new SKColor(sr, sg, sb);
             canvas.DrawRect(stripeRect, _stripePaint);
 
-            // Status square
-            if (StatusSquareAnimator.IsStatusSquareVisible(gameTimeMs, speed))
+            // Status square — blink driven by real/UI time, not game time
+            if (StatusSquareAnimator.IsStatusSquareVisible(uiTimeMs, speed))
             {
                 _statusSquarePaint.Color = objectColor;
                 canvas.DrawRect(geometry.StatusRect, _statusSquarePaint);
