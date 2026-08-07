@@ -1,5 +1,5 @@
 ---
-name: chatgpt-phase1-2-grounding-plan
+name: Планировщик
 description: Агент для Phase 1 (Grounding) и Phase 2 (Plan / Orchestrate). Создаёт Stories/Iteration-* и сохраняет plan-*.md. Запускается оператором вручную для планирования новой фичи.
 tools: ["*"]
 ---
