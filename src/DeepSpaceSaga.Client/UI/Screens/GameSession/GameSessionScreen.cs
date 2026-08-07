@@ -337,6 +337,13 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
+        // Number keys 1..5 → Speed0..Speed4 (index in SpeedValues)
+        if (key >= Key.Number1 && key <= Key.Number5)
+        {
+            ApplySpeed(SpeedValues[(int)(key - Key.Number1)]);
+            return ScreenEvent.None;
+        }
+
         string? commandType = key switch
         {
             Key.Up => ShipEngineCommandTypes.Accelerate,

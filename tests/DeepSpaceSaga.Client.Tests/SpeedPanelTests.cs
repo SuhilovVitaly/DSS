@@ -104,6 +104,97 @@ public class SpeedPanelTests
         Assert.Equal(SimulationSpeed.Speed3, screen.LastNonPauseSpeed); // unchanged
     }
 
+    // ── Number keys 1–5 ─────────────────────────────────────────
+
+    [Fact]
+    public void Key_1_sets_Speed0()
+    {
+        var (buffer, screen) = CreateScreen();
+        Render(screen);
+
+        // Set Speed2 first, then press 1 → pause
+        screen.OnKeyDown(Key.Number3);
+        Assert.Equal(SimulationSpeed.Speed2, buffer.CurrentSpeed);
+
+        screen.OnKeyDown(Key.Number1);
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+    }
+
+    [Fact]
+    public void Key_2_sets_Speed1()
+    {
+        var (buffer, screen) = CreateScreen();
+        Render(screen);
+
+        screen.OnKeyDown(Key.Number2);
+
+        Assert.Equal(SimulationSpeed.Speed1, buffer.CurrentSpeed);
+    }
+
+    [Fact]
+    public void Key_3_sets_Speed2()
+    {
+        var (buffer, screen) = CreateScreen();
+        Render(screen);
+
+        screen.OnKeyDown(Key.Number3);
+
+        Assert.Equal(SimulationSpeed.Speed2, buffer.CurrentSpeed);
+    }
+
+    [Fact]
+    public void Key_4_sets_Speed3()
+    {
+        var (buffer, screen) = CreateScreen();
+        Render(screen);
+
+        screen.OnKeyDown(Key.Number4);
+
+        Assert.Equal(SimulationSpeed.Speed3, buffer.CurrentSpeed);
+    }
+
+    [Fact]
+    public void Key_5_sets_Speed4()
+    {
+        var (buffer, screen) = CreateScreen();
+        Render(screen);
+
+        screen.OnKeyDown(Key.Number5);
+
+        Assert.Equal(SimulationSpeed.Speed4, buffer.CurrentSpeed);
+    }
+
+    [Fact]
+    public void Key_2_then_Space_pause_and_resume()
+    {
+        var (buffer, screen) = CreateScreen();
+        Render(screen);
+
+        screen.OnKeyDown(Key.Number2); // Speed1
+        Assert.Equal(SimulationSpeed.Speed1, buffer.CurrentSpeed);
+
+        screen.OnKeyDown(Key.Space); // pause
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+        Assert.Equal(SimulationSpeed.Speed1, screen.LastNonPauseSpeed);
+
+        screen.OnKeyDown(Key.Space); // resume
+        Assert.Equal(SimulationSpeed.Speed1, buffer.CurrentSpeed);
+    }
+
+    [Theory]
+    [InlineData(Key.Number1)]
+    [InlineData(Key.Number2)]
+    [InlineData(Key.Number3)]
+    [InlineData(Key.Number4)]
+    [InlineData(Key.Number5)]
+    public void Keys_1_to_5_return_ScreenEvent_None(Key key)
+    {
+        var (_, screen) = CreateScreen();
+        Render(screen);
+
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(key));
+    }
+
     // ── Space key ───────────────────────────────────────────────
 
     [Fact]
