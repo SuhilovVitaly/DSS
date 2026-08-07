@@ -210,6 +210,9 @@ public class ScenarioEngineTests
     [InlineData("\"maxSpeedMps\": 4000,")]
     [InlineData("\"maxSpeedMps\": 4000, \"turnStepDegrees\": 0,")]
     [InlineData("\"maxSpeedMps\": 4000, \"turnStepDegrees\": -1,")]
+    [InlineData("\"maxSpeedMps\": 4000, \"turnStepDegrees\": 1,")]
+    [InlineData("\"maxSpeedMps\": 4000, \"turnStepDegrees\": 1, \"linearInertiaMps2\": 0,")]
+    [InlineData("\"maxSpeedMps\": 4000, \"turnStepDegrees\": 1, \"linearInertiaMps2\": -1,")]
     public void Engine_content_requires_positive_engine_motion_parameters(string engineParameters)
     {
         string directory = Path.Combine(Path.GetTempPath(), $"dss-content-{Guid.NewGuid():N}");
@@ -391,7 +394,8 @@ public class ScenarioEngineTests
                     CommandTypeIds: ImmutableArray<string>.Empty,
                     CargoCapacityKg: 100000,
                     MaxSpeedMps: null,
-                    TurnStepDegrees: null)
+                    TurnStepDegrees: null,
+                    LinearInertiaMps2: null)
             ],
             [
                 new ItemTypeDefinition(

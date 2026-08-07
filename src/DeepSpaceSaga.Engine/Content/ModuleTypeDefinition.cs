@@ -12,4 +12,5 @@ internal sealed record ModuleTypeDefinition(
     ImmutableArray<string> CommandTypeIds,
     long? CargoCapacityKg,
     int? MaxSpeedMps,
-    int? TurnStepDegrees) : ITypeDefinition;
+    int? TurnStepDegrees,
+    int? LinearInertiaMps2) : ITypeDefinition;

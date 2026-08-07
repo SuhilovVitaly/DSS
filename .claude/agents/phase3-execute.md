@@ -1,5 +1,5 @@
 ---
-name: phase3-execute
+name: Исполнитель
 description: Агент-исполнитель Claude Code для Phase 3 (Execute). Сам находит последнюю итерацию в Stories/, берет последнее ТЗ как промпт и реализует его.
 tools: ["*"]
 ---
