@@ -807,10 +807,20 @@ public sealed class GameSessionScreen : IScreen
 
     private void DrawObjectTrails(SKCanvas canvas, int width, int height)
     {
-        foreach (var points in _trailStore.Trails)
+        var shipIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var state in _renderStates)
         {
+            if (state.IsPlayerShip)
+                shipIds.Add(state.Predicted.ObjectId);
+        }
+
+        foreach (var kvp in _trailStore.Trails)
+        {
+            var points = kvp.Value;
             if (points.Count < 2)
                 continue;
+
+            bool isShip = shipIds.Contains(kvp.Key);
 
             for (int i = 1; i < points.Count; i++)
             {
@@ -820,11 +830,24 @@ public sealed class GameSessionScreen : IScreen
                 var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
 
                 float t = (float)i / (points.Count - 1);
-                byte alpha = (byte)(40 + 120 * t);
-                _trailPaint.Color = new SKColor(190, 190, 190, alpha);
+                _trailPaint.Color = GetTrailSegmentColor(t, isShip);
                 canvas.DrawLine(fromX, fromY, toX, toY, _trailPaint);
             }
         }
+    }
+
+    /// <summary>
+    /// Trail color by position fraction t (0 = tail's far/oldest end, 1 = at the object).
+    /// For ships, the final third renders as fiery red (hot exhaust).
+    /// Non-ship objects render plain gray throughout.
+    /// Alpha fades from 40 at the tail to 160 at the object.
+    /// </summary>
+    internal static SKColor GetTrailSegmentColor(float t, bool isShip)
+    {
+        byte alpha = (byte)(40 + 120 * t);
+        return isShip && t > 2.0f / 3.0f
+            ? new SKColor(220, 30, 20, alpha)
+            : new SKColor(190, 190, 190, alpha);
     }
 
     // ── Future trajectory ────────────────────────────────────────

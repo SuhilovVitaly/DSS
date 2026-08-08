@@ -45,7 +45,9 @@ internal sealed class ObjectTrailStore
         _timestampProvider = timestampProvider;
     }
 
-    internal IEnumerable<IReadOnlyList<ObjectTrailPoint>> Trails => _trails.Values;
+    internal IEnumerable<KeyValuePair<string, IReadOnlyList<ObjectTrailPoint>>> Trails =>
+        _trails.Select(kvp =>
+            new KeyValuePair<string, IReadOnlyList<ObjectTrailPoint>>(kvp.Key, kvp.Value));
 
     internal void Update(
         IReadOnlyList<ObjectRenderState> renderStates,
