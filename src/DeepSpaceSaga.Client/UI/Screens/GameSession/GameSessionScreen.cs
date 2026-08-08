@@ -100,7 +100,7 @@ public sealed class GameSessionScreen : IScreen
 
     // Scale state
     private SKRect _lastScalePanelRect;
-    private readonly SKRect[] _scaleButtonRects = new SKRect[4];
+    private readonly SKRect[] _scaleButtonRects = new SKRect[ScaleLabels.Length];
 
     private SKRect _lastCommandPanelRect;
     private readonly SKRect[] _engineCommandButtonRects = new SKRect[EngineCommandButtons.Length];
@@ -152,8 +152,8 @@ public sealed class GameSessionScreen : IScreen
     private static readonly string[] SpeedLabels = { "II", "1x", "5x", "20x", "100x" };
     private static readonly SimulationSpeed[] SpeedValues =
         { SimulationSpeed.Speed0, SimulationSpeed.Speed1, SimulationSpeed.Speed2, SimulationSpeed.Speed3, SimulationSpeed.Speed4 };
-    private static readonly string[] ScaleLabels = { "M1", "M10", "M100", "M1000" };
-    private static readonly double[] ScaleTargets = { 1.0, 0.1, 0.01, 0.001 };
+    private static readonly string[] ScaleLabels = { "M0.5", "M1", "M10", "M100", "M1000" };
+    private static readonly double[] ScaleTargets = { 2.0, 1.0, 0.1, 0.01, 0.001 };
     private static readonly double WheelMinPpu = ScaleTargets.Min();
     private static readonly double WheelMaxPpu = ScaleTargets.Max();
     private static readonly EngineCommandButton[] EngineCommandButtons =
@@ -1021,16 +1021,31 @@ public sealed class GameSessionScreen : IScreen
     }
 
     /// <summary>
-    /// Continuous scale position in button space: 0 = M1 (PPU 1.0),
-    /// 1 = M10 (PPU 0.1), 2 = M100 (PPU 0.01), 3 = M1000 (PPU 0.001).
-    /// Computed from log10(PPU), clamped to [0, 3].
+    /// Continuous scale position in button space: 0 = M0.5 (PPU 2.0),
+    /// 1 = M1 (PPU 1.0), 2 = M10 (PPU 0.1), 3 = M100 (PPU 0.01),
+    /// 4 = M1000 (PPU 0.001). Piecewise-log interpolation between
+    /// neighboring buttons (ScaleTargets sorted by descending PPU),
+    /// clamped to [0, ScaleTargets.Length - 1]. Exact button values
+    /// yield integer positions, so the indicator sits exactly under
+    /// the active button.
     /// </summary>
     private double ScalePosition()
     {
         // PPU is always clamped to a positive range by CameraState, so log10 is defined.
         double logPpu = Math.Log10(_camera.PixelsPerWorldUnit);
-        double position = -logPpu;
-        return Math.Clamp(position, 0, 3);
+
+        for (int i = 0; i < ScaleTargets.Length - 1; i++)
+        {
+            double logHigh = Math.Log10(ScaleTargets[i]);
+            double logLow = Math.Log10(ScaleTargets[i + 1]);
+            if (logPpu <= logHigh && logPpu >= logLow)
+            {
+                double position = i + (logHigh - logPpu) / (logHigh - logLow);
+                return Math.Clamp(position, 0, ScaleTargets.Length - 1);
+            }
+        }
+
+        return logPpu > Math.Log10(ScaleTargets[0]) ? 0 : ScaleTargets.Length - 1;
     }
 
     private float ComputeScaleIndicatorPosition()
