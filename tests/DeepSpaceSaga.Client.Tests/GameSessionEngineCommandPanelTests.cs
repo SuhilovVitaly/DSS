@@ -27,8 +27,8 @@ public class GameSessionEngineCommandPanelTests
         Assert.Equal(7, fixture.Screen.EngineCommandButtonRects.Count);
         foreach (var rect in fixture.Screen.EngineCommandButtonRects)
         {
-            Assert.Equal(32f, rect.Width);
-            Assert.Equal(32f, rect.Height);
+            Assert.Equal(64f, rect.Width);
+            Assert.Equal(64f, rect.Height);
         }
     }
 
@@ -154,6 +154,29 @@ public class GameSessionEngineCommandPanelTests
         var oppositeTurn = fixture.Screen.EngineCommandButtonRects[5];
         fixture.Screen.OnMouseDown(oppositeTurn.MidX, oppositeTurn.MidY);
         Assert.Equal(ShipEngineCommandTypes.TurnLeftUntilCancel, Assert.Single(fixture.Connection.Commands).CommandType);
+    }
+
+    [Fact]
+    public void Engine_command_button_icon_file_names_match_expected_mapping()
+    {
+        var expected = new (string CommandType, string IconFileName)[]
+        {
+            (ShipEngineCommandTypes.Accelerate, "button_accelerate.png"),
+            (ShipEngineCommandTypes.Brake, "button_brake.png"),
+            (ShipEngineCommandTypes.TurnRightStep, "button_turn_right_step.png"),
+            (ShipEngineCommandTypes.TurnLeftStep, "button_turn_left_step.png"),
+            (ShipEngineCommandTypes.TurnRightUntilCancel, "button_turn_right_until_cancel.png"),
+            (ShipEngineCommandTypes.TurnLeftUntilCancel, "button_turn_left_until_cancel.png"),
+            (ShipEngineCommandTypes.CancelAll, "button_cancel_all.png"),
+        };
+
+        Assert.Equal(expected.Length, GameSessionScreen.EngineCommandButtons.Length);
+
+        for (int i = 0; i < expected.Length; i++)
+        {
+            Assert.Equal(expected[i].CommandType, GameSessionScreen.EngineCommandButtons[i].CommandType);
+            Assert.Equal(expected[i].IconFileName, GameSessionScreen.EngineCommandButtons[i].IconFileName);
+        }
     }
 
     private static TestFixture CreateFixture()
