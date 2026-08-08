@@ -4,9 +4,11 @@ using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
+using Xunit;
 
 namespace DeepSpaceSaga.Client.Tests;
 
+[Collection("InterfaceLog")]
 public class GameSessionZoomTests
 {
     private const int ScreenWidth = 1920;
@@ -25,17 +27,6 @@ public class GameSessionZoomTests
         using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
         using var canvas = new SKCanvas(bitmap);
         screen.Render(canvas, ScreenWidth, ScreenHeight);
-    }
-
-    private static string ReadLogLines()
-    {
-        string path = Path.Combine(Environment.CurrentDirectory, InterfaceLog.FileName);
-        if (!File.Exists(path))
-            return string.Empty;
-
-        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        using var reader = new StreamReader(stream);
-        return reader.ReadToEnd();
     }
 
     [Fact]
@@ -167,15 +158,7 @@ public class GameSessionZoomTests
 
         screen.OnMouseWheel(960, 540, 1.0f); // zoom-in at boundary → no change
 
-        long lengthAfter = File.Exists(logPath) ? new FileInfo(logPath).Length : 0;
-        string tail = string.Empty;
-        if (lengthAfter > lengthBefore)
-        {
-            using var stream = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            stream.Seek(lengthBefore, SeekOrigin.Begin);
-            using var reader = new StreamReader(stream);
-            tail = reader.ReadToEnd();
-        }
+        string tail = LogTailReader.ReadTail(lengthBefore);
 
         bool scaleLineFound = tail.Contains("Scale → PPU=", StringComparison.Ordinal);
         Assert.False(scaleLineFound, "Wheel zoom at boundary should NOT log 'Scale → PPU='");

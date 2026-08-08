@@ -5,9 +5,11 @@ using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
+using Xunit;
 
 namespace DeepSpaceSaga.Client.Tests;
 
+[Collection("InterfaceLog")]
 public class GameSessionScalePanelTests
 {
     private const int ScreenWidth = 1920;
@@ -238,15 +240,7 @@ public class GameSessionScalePanelTests
 
         screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, 1.0f);
 
-        long lengthAfter = File.Exists(logPath) ? new FileInfo(logPath).Length : 0;
-        string tail = string.Empty;
-        if (lengthAfter > lengthBefore)
-        {
-            using var stream = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            stream.Seek(lengthBefore, SeekOrigin.Begin);
-            using var reader = new StreamReader(stream);
-            tail = reader.ReadToEnd();
-        }
+        string tail = LogTailReader.ReadTail(lengthBefore);
 
         Assert.True(tail.Contains("Scale → PPU=", StringComparison.Ordinal),
             "Wheel zoom should append a 'Scale → PPU=' line to Interface.log");
