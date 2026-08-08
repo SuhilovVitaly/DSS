@@ -820,11 +820,23 @@ public sealed class GameSessionScreen : IScreen
                 var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
 
                 float t = (float)i / (points.Count - 1);
-                byte alpha = (byte)(40 + 120 * t);
-                _trailPaint.Color = new SKColor(190, 190, 190, alpha);
+                _trailPaint.Color = GetTrailSegmentColor(t);
                 canvas.DrawLine(fromX, fromY, toX, toY, _trailPaint);
             }
         }
+    }
+
+    /// <summary>
+    /// Trail color by position fraction t (0 = tail's far/oldest end, 1 = at the ship).
+    /// The final third nearest the ship renders as fiery red (hot exhaust); the rest
+    /// fades as plain gray, same as before this feature.
+    /// </summary>
+    internal static SKColor GetTrailSegmentColor(float t)
+    {
+        byte alpha = (byte)(40 + 120 * t);
+        return t > 2.0f / 3.0f
+            ? new SKColor(220, 30, 20, alpha)
+            : new SKColor(190, 190, 190, alpha);
     }
 
     // ── Future trajectory ────────────────────────────────────────
