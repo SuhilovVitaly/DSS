@@ -27,8 +27,8 @@ public class GameSessionEngineCommandPanelTests
         Assert.Equal(7, fixture.Screen.EngineCommandButtonRects.Count);
         foreach (var rect in fixture.Screen.EngineCommandButtonRects)
         {
-            Assert.Equal(32f, rect.Width);
-            Assert.Equal(32f, rect.Height);
+            Assert.Equal(64f, rect.Width);
+            Assert.Equal(64f, rect.Height);
         }
     }
 

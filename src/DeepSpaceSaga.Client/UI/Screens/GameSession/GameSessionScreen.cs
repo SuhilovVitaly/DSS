@@ -65,6 +65,10 @@ public sealed class GameSessionScreen : IScreen
     private readonly SKPaint _commandBtnPressedPaint;
     private readonly SKPaint _commandBtnDisabledPaint;
     private readonly SKPaint _commandBtnTextPaint;
+    private readonly SKPaint _commandBtnIconPaint;
+    private readonly SKPaint _commandBtnHoverBorderPaint;
+    private readonly SKPaint _commandBtnPressedBorderPaint;
+    private readonly SKBitmap?[] _engineCommandButtonIcons;
 
     private int _viewportW;
     private int _viewportH;
@@ -138,7 +142,7 @@ public sealed class GameSessionScreen : IScreen
 
     // Ship command panel layout
     private const string PlayerEngineModuleId = "MOD-PLAYER-ENGINE-01";
-    private const float CommandBtnSize = 32f;
+    private const float CommandBtnSize = 64f;
     private const float CommandBtnGap = 4f;
     private const float CommandPanelPadX = 6f;
     private const float CommandPanelPadY = 6f;
@@ -152,13 +156,13 @@ public sealed class GameSessionScreen : IScreen
     private static readonly double[] ScaleTargets = { 1.0, 0.1, 0.01, 0.001 };
     private static readonly EngineCommandButton[] EngineCommandButtons =
     [
-        new("^", ShipEngineCommandTypes.Accelerate),
-        new("_", ShipEngineCommandTypes.Brake),
-        new(">", ShipEngineCommandTypes.TurnRightStep),
-        new("<", ShipEngineCommandTypes.TurnLeftStep),
-        new(">>", ShipEngineCommandTypes.TurnRightUntilCancel),
-        new("<<", ShipEngineCommandTypes.TurnLeftUntilCancel),
-        new("X", ShipEngineCommandTypes.CancelAll),
+        new("^", ShipEngineCommandTypes.Accelerate, "button_accelerate.png"),
+        new("_", ShipEngineCommandTypes.Brake, "button_brake.png"),
+        new(">", ShipEngineCommandTypes.TurnRightStep, "button_turn_right_step.png"),
+        new("<", ShipEngineCommandTypes.TurnLeftStep, "button_turn_left_step.png"),
+        new(">>", ShipEngineCommandTypes.TurnRightUntilCancel, "button_turn_right_until_cancel.png"),
+        new("<<", ShipEngineCommandTypes.TurnLeftUntilCancel, "button_turn_left_until_cancel.png"),
+        new("X", ShipEngineCommandTypes.CancelAll, "button_cancel_all.png"),
     ];
 
     // ── Test seams ──────────────────────────────────────────────
@@ -242,6 +246,10 @@ public sealed class GameSessionScreen : IScreen
         _commandBtnPressedPaint = new SKPaint { Color = new SKColor(58, 75, 67), Style = SKPaintStyle.Fill };
         _commandBtnDisabledPaint = new SKPaint { Color = new SKColor(18, 18, 18, 190), Style = SKPaintStyle.Fill };
         _commandBtnTextPaint = new SKPaint { Color = new SKColor(210, 218, 214), TextSize = 11f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
+        _commandBtnIconPaint = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.High };
+        _commandBtnHoverBorderPaint = new SKPaint { Color = new SKColor(90, 100, 96), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
+        _commandBtnPressedBorderPaint = new SKPaint { Color = new SKColor(120, 160, 140), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
+        _engineCommandButtonIcons = LoadEngineCommandIcons();
     }
 
     // ── IScreen ─────────────────────────────────────────────────
@@ -1113,13 +1121,28 @@ public sealed class GameSessionScreen : IScreen
                 : _commandBtnDisabledPaint;
 
             canvas.DrawRect(rect, paint);
-            canvas.DrawRect(rect, _panelBorderPaint);
 
-            _commandBtnTextPaint.Color = buttonEnabled
-                ? new SKColor(210, 218, 214)
-                : new SKColor(96, 96, 96);
-            float textY = rect.MidY + _commandBtnTextPaint.TextSize / 3f;
-            canvas.DrawText(EngineCommandButtons[i].Label, rect.MidX, textY, _commandBtnTextPaint);
+            var icon = _engineCommandButtonIcons[i];
+            if (icon is not null)
+            {
+                byte iconAlpha = buttonEnabled ? (byte)255 : (byte)110;
+                _commandBtnIconPaint.Color = new SKColor(255, 255, 255, iconAlpha);
+                canvas.DrawBitmap(icon, rect, _commandBtnIconPaint);
+
+                var borderPaint = isPressed
+                    ? _commandBtnPressedBorderPaint
+                    : isHover ? _commandBtnHoverBorderPaint : _panelBorderPaint;
+                canvas.DrawRect(rect, borderPaint);
+            }
+            else
+            {
+                canvas.DrawRect(rect, _panelBorderPaint);
+                _commandBtnTextPaint.Color = buttonEnabled
+                    ? new SKColor(210, 218, 214)
+                    : new SKColor(96, 96, 96);
+                float textY = rect.MidY + _commandBtnTextPaint.TextSize / 3f;
+                canvas.DrawText(EngineCommandButtons[i].Label, rect.MidX, textY, _commandBtnTextPaint);
+            }
 
             if (IsCyclicEngineCommand(EngineCommandButtons[i].CommandType) &&
                 EngineCommandButtons[i].CommandType == activeCommandType)
@@ -1204,6 +1227,40 @@ public sealed class GameSessionScreen : IScreen
         _playerShipGlyphPath.LineTo(indicatorX + CommandIndicatorSize / 2f, indicatorY + CommandIndicatorSize);
         _playerShipGlyphPath.Close();
         canvas.DrawPath(_playerShipGlyphPath, _speedIndicatorPaint);
+    }
+
+    // ── Icon loading ────────────────────────────────────────────
+
+    private static SKBitmap?[] LoadEngineCommandIcons()
+    {
+        var icons = new SKBitmap?[EngineCommandButtons.Length];
+        for (int i = 0; i < EngineCommandButtons.Length; i++)
+        {
+            icons[i] = LoadButtonIcon(
+                $"Images/UI/GameSessionScreenUI/navigation-panel/{EngineCommandButtons[i].IconFileName}");
+        }
+        return icons;
+    }
+
+    private static SKBitmap? LoadButtonIcon(string path)
+    {
+        try
+        {
+            if (!File.Exists(path))
+                return null;
+
+            using var bitmap = SKBitmap.Decode(path);
+            if (bitmap is null)
+                return null;
+
+            return bitmap.Resize(
+                new SKSizeI((int)CommandBtnSize, (int)CommandBtnSize),
+                SKFilterQuality.High);
+        }
+        catch (IOException)
+        {
+            return null;
+        }
     }
 
     // ── Info panel ──────────────────────────────────────────────
@@ -1388,4 +1445,4 @@ internal readonly record struct ObjectRenderState(
     ObjectMotionSnapshot Predicted,
     bool IsPlayerShip);
 
-internal readonly record struct EngineCommandButton(string Label, string CommandType);
+internal readonly record struct EngineCommandButton(string Label, string CommandType, string IconFileName);
