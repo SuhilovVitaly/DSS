@@ -5,9 +5,11 @@ using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
+using Xunit;
 
 namespace DeepSpaceSaga.Client.Tests;
 
+[Collection("InterfaceLog")]
 public class GameSessionScalePanelTests
 {
     private const int ScreenWidth = 1920;
@@ -79,13 +81,13 @@ public class GameSessionScalePanelTests
     }
 
     [Fact]
-    public void Scale_panel_has_4_buttons_with_correct_labels()
+    public void Scale_panel_has_5_buttons_with_correct_labels()
     {
         var (_, screen) = CreateScreen();
         Render(screen);
 
-        Assert.Equal(4, screen.ScaleButtonRects.Count);
-        Assert.Equal(new[] { "M1", "M10", "M100", "M1000" }, screen.ScalePanelLabels);
+        Assert.Equal(5, screen.ScaleButtonRects.Count);
+        Assert.Equal(new[] { "M0.5", "M1", "M10", "M100", "M1000" }, screen.ScalePanelLabels);
 
         var panel = screen.LastScalePanelRect;
         for (int i = 0; i < screen.ScaleButtonRects.Count; i++)
@@ -101,6 +103,18 @@ public class GameSessionScalePanelTests
     // ── Clicks set target PPU ────────────────────────────────────
 
     [Fact]
+    public void Click_M0_5_sets_ppu_to_2()
+    {
+        var (_, screen) = CreateScreen();
+        Render(screen);
+
+        // Default PPU is 1.0 — click M0.5 to zoom in to the new maximum (PPU = 2.0).
+        screen.OnMouseDown(screen.ScaleButtonRects[0].MidX, screen.ScaleButtonRects[0].MidY);
+
+        Assert.Equal(2.0, screen.CameraPixelsPerWorldUnit);
+    }
+
+    [Fact]
     public void Click_M1_sets_ppu_to_1()
     {
         var (_, screen) = CreateScreen();
@@ -110,7 +124,7 @@ public class GameSessionScalePanelTests
         screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, -1.0f);
         Assert.True(screen.CameraPixelsPerWorldUnit < 1.0);
 
-        screen.OnMouseDown(screen.ScaleButtonRects[0].MidX, screen.ScaleButtonRects[0].MidY);
+        screen.OnMouseDown(screen.ScaleButtonRects[1].MidX, screen.ScaleButtonRects[1].MidY);
 
         Assert.Equal(1.0, screen.CameraPixelsPerWorldUnit);
     }
@@ -121,7 +135,7 @@ public class GameSessionScalePanelTests
         var (_, screen) = CreateScreen();
         Render(screen);
 
-        screen.OnMouseDown(screen.ScaleButtonRects[1].MidX, screen.ScaleButtonRects[1].MidY);
+        screen.OnMouseDown(screen.ScaleButtonRects[2].MidX, screen.ScaleButtonRects[2].MidY);
 
         Assert.Equal(0.1, screen.CameraPixelsPerWorldUnit);
     }
@@ -132,7 +146,7 @@ public class GameSessionScalePanelTests
         var (_, screen) = CreateScreen();
         Render(screen);
 
-        screen.OnMouseDown(screen.ScaleButtonRects[2].MidX, screen.ScaleButtonRects[2].MidY);
+        screen.OnMouseDown(screen.ScaleButtonRects[3].MidX, screen.ScaleButtonRects[3].MidY);
 
         Assert.Equal(0.01, screen.CameraPixelsPerWorldUnit);
     }
@@ -143,7 +157,7 @@ public class GameSessionScalePanelTests
         var (_, screen) = CreateScreen();
         Render(screen);
 
-        screen.OnMouseDown(screen.ScaleButtonRects[3].MidX, screen.ScaleButtonRects[3].MidY);
+        screen.OnMouseDown(screen.ScaleButtonRects[4].MidX, screen.ScaleButtonRects[4].MidY);
 
         Assert.Equal(0.001, screen.CameraPixelsPerWorldUnit);
     }
@@ -151,12 +165,24 @@ public class GameSessionScalePanelTests
     // ── Indicator position ───────────────────────────────────────
 
     [Fact]
+    public void Indicator_under_M0_5_when_ppu_is_exactly_2()
+    {
+        var (_, screen) = CreateScreen();
+        Render(screen);
+
+        screen.OnMouseDown(screen.ScaleButtonRects[0].MidX, screen.ScaleButtonRects[0].MidY);
+        Assert.Equal(2.0, screen.CameraPixelsPerWorldUnit);
+
+        Assert.Equal(screen.ScaleButtonRects[0].MidX, screen.ScaleIndicatorCenterX);
+    }
+
+    [Fact]
     public void Indicator_under_M1_when_ppu_is_exactly_1()
     {
         var (_, screen) = CreateScreen();
         Render(screen); // default PPU = 1.0
 
-        Assert.Equal(screen.ScaleButtonRects[0].MidX, screen.ScaleIndicatorCenterX);
+        Assert.Equal(screen.ScaleButtonRects[1].MidX, screen.ScaleIndicatorCenterX);
     }
 
     [Fact]
@@ -165,9 +191,9 @@ public class GameSessionScalePanelTests
         var (_, screen) = CreateScreen();
         Render(screen);
 
-        screen.OnMouseDown(screen.ScaleButtonRects[1].MidX, screen.ScaleButtonRects[1].MidY);
+        screen.OnMouseDown(screen.ScaleButtonRects[2].MidX, screen.ScaleButtonRects[2].MidY);
 
-        Assert.Equal(screen.ScaleButtonRects[1].MidX, screen.ScaleIndicatorCenterX);
+        Assert.Equal(screen.ScaleButtonRects[2].MidX, screen.ScaleIndicatorCenterX);
     }
 
     [Fact]
@@ -177,22 +203,22 @@ public class GameSessionScalePanelTests
         Render(screen);
 
         // M10 → PPU = 0.1, then one wheel step out → PPU = 0.08
-        screen.OnMouseDown(screen.ScaleButtonRects[1].MidX, screen.ScaleButtonRects[1].MidY);
+        screen.OnMouseDown(screen.ScaleButtonRects[2].MidX, screen.ScaleButtonRects[2].MidY);
         screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, -1.0f);
         double ppu = screen.CameraPixelsPerWorldUnit;
         Assert.Equal(0.08, ppu, precision: 12);
 
         float indX = screen.ScaleIndicatorCenterX;
-        float lowerX = screen.ScaleButtonRects[1].MidX;
-        float upperX = screen.ScaleButtonRects[2].MidX;
+        float lowerX = screen.ScaleButtonRects[2].MidX;
+        float upperX = screen.ScaleButtonRects[3].MidX;
 
-        // position = -log10(0.08) ≈ 1.09691 → interpolate between buttons 1 and 2
+        // Piecewise-log position ≈ 2.09691 → interpolate between buttons 2 and 3 (M10, M100).
         Assert.True(indX > lowerX && indX < upperX,
             $"Indicator X={indX} should sit between {lowerX} and {upperX}");
 
-        double position = -Math.Log10(ppu);
-        float frac = (float)(position - Math.Floor(position));
-        float expected = lowerX + (upperX - lowerX) * frac;
+        // frac inside the [M10, M100] decade (×10 step → log span of 1).
+        double frac = (Math.Log10(0.1) - Math.Log10(ppu)) / (Math.Log10(0.1) - Math.Log10(0.01));
+        float expected = lowerX + (upperX - lowerX) * (float)frac;
         Assert.Equal(expected, indX, precision: 1);
     }
 
@@ -204,21 +230,20 @@ public class GameSessionScalePanelTests
         var (_, screen) = CreateScreen();
         Render(screen);
 
-        string marker = "WHEEL-LOG-" + Guid.NewGuid().ToString("N");
-        InterfaceLog.Write(marker);
+        // Zoom out first so PPU is not at the upper boundary (M0.5 = 2.0),
+        // otherwise zoom-in won't change PPU and won't log.
+        screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, -1.0f);
+
+        // Read only the tail appended after the action to isolate from parallel test writers.
+        string logPath = Path.Combine(Environment.CurrentDirectory, InterfaceLog.FileName);
+        long lengthBefore = File.Exists(logPath) ? new FileInfo(logPath).Length : 0;
 
         screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, 1.0f);
 
-        string[] lines = ReadLogLines()
-            .Split('\n')
-            .Select(l => l.TrimEnd('\r'))
-            .ToArray();
-        int markerIndex = Array.FindIndex(lines, l => l.Contains(marker, StringComparison.Ordinal));
-        Assert.True(markerIndex >= 0, "Marker line not found in Interface.log");
+        string tail = LogTailReader.ReadTail(lengthBefore);
 
-        bool scaleLineFound = lines.Skip(markerIndex + 1)
-            .Any(l => l.Contains("Scale → PPU=", StringComparison.Ordinal));
-        Assert.True(scaleLineFound, "Wheel zoom should append a 'Scale → PPU=' line to Interface.log");
+        Assert.True(tail.Contains("Scale → PPU=", StringComparison.Ordinal),
+            "Wheel zoom should append a 'Scale → PPU=' line to Interface.log");
     }
 
     // ── Isolation ────────────────────────────────────────────────
@@ -233,8 +258,8 @@ public class GameSessionScalePanelTests
         screen.OnMouseDown(screen.SpeedButtonRects[2].MidX, screen.SpeedButtonRects[2].MidY);
         Assert.Equal(SimulationSpeed.Speed2, buffer.CurrentSpeed);
 
-        // Click scale button — speed must stay untouched
-        screen.OnMouseDown(screen.ScaleButtonRects[1].MidX, screen.ScaleButtonRects[1].MidY);
+        // Click scale button (M10) — speed must stay untouched
+        screen.OnMouseDown(screen.ScaleButtonRects[2].MidX, screen.ScaleButtonRects[2].MidY);
 
         Assert.Equal(SimulationSpeed.Speed2, buffer.CurrentSpeed);
         Assert.Equal(0.1, screen.CameraPixelsPerWorldUnit);
@@ -249,7 +274,7 @@ public class GameSessionScalePanelTests
         double fxBefore = screen.CameraFocusX;
         double fyBefore = screen.CameraFocusY;
 
-        screen.OnMouseDown(screen.ScaleButtonRects[2].MidX, screen.ScaleButtonRects[2].MidY);
+        screen.OnMouseDown(screen.ScaleButtonRects[3].MidX, screen.ScaleButtonRects[3].MidY);
 
         Assert.Equal(fxBefore, screen.CameraFocusX);
         Assert.Equal(fyBefore, screen.CameraFocusY);

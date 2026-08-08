@@ -228,9 +228,10 @@ public class InfoPanelTests
         var scaleLine = Assert.Single(screen.BuildPanelLines(null), line => line.Label == "Scale");
         Assert.Equal("1 px/unit", scaleLine.Value);
 
-        screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, 1f);
+        // Zoom out (not in — default PPU=1.0 is now the wheel upper boundary).
+        screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, -1f);
 
         scaleLine = Assert.Single(screen.BuildPanelLines(null), line => line.Label == "Scale");
-        Assert.Equal("1.25 px/unit", scaleLine.Value);
+        Assert.Equal("0.8 px/unit", scaleLine.Value);
     }
 }
