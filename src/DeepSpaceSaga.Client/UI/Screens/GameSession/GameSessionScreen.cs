@@ -154,6 +154,8 @@ public sealed class GameSessionScreen : IScreen
         { SimulationSpeed.Speed0, SimulationSpeed.Speed1, SimulationSpeed.Speed2, SimulationSpeed.Speed3, SimulationSpeed.Speed4 };
     private static readonly string[] ScaleLabels = { "M1", "M10", "M100", "M1000" };
     private static readonly double[] ScaleTargets = { 1.0, 0.1, 0.01, 0.001 };
+    private static readonly double WheelMinPpu = ScaleTargets.Min();
+    private static readonly double WheelMaxPpu = ScaleTargets.Max();
     private static readonly EngineCommandButton[] EngineCommandButtons =
     [
         new("^", ShipEngineCommandTypes.Accelerate, "button_accelerate.png"),
@@ -338,7 +340,7 @@ public sealed class GameSessionScreen : IScreen
 
         double factor = delta > 0 ? ZoomStepFactor : 1.0 / ZoomStepFactor;
         double oldPpu = _camera.PixelsPerWorldUnit;
-        _camera.ZoomAt(factor, x, y, _viewportW, _viewportH);
+        _camera.ZoomAt(factor, x, y, _viewportW, _viewportH, minPpu: WheelMinPpu, maxPpu: WheelMaxPpu);
         if (_camera.PixelsPerWorldUnit != oldPpu)
             InterfaceLog.Write($"Scale → PPU={_camera.PixelsPerWorldUnit:F4}");
         return ScreenEvent.None;

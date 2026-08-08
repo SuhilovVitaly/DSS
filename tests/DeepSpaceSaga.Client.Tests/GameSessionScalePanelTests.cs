@@ -204,21 +204,28 @@ public class GameSessionScalePanelTests
         var (_, screen) = CreateScreen();
         Render(screen);
 
-        string marker = "WHEEL-LOG-" + Guid.NewGuid().ToString("N");
-        InterfaceLog.Write(marker);
+        // Zoom out first so PPU is not at the upper boundary (M1 = 1.0),
+        // otherwise zoom-in won't change PPU and won't log.
+        screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, -1.0f);
+
+        // Read only the tail appended after the action to isolate from parallel test writers.
+        string logPath = Path.Combine(Environment.CurrentDirectory, InterfaceLog.FileName);
+        long lengthBefore = File.Exists(logPath) ? new FileInfo(logPath).Length : 0;
 
         screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, 1.0f);
 
-        string[] lines = ReadLogLines()
-            .Split('\n')
-            .Select(l => l.TrimEnd('\r'))
-            .ToArray();
-        int markerIndex = Array.FindIndex(lines, l => l.Contains(marker, StringComparison.Ordinal));
-        Assert.True(markerIndex >= 0, "Marker line not found in Interface.log");
+        long lengthAfter = File.Exists(logPath) ? new FileInfo(logPath).Length : 0;
+        string tail = string.Empty;
+        if (lengthAfter > lengthBefore)
+        {
+            using var stream = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            stream.Seek(lengthBefore, SeekOrigin.Begin);
+            using var reader = new StreamReader(stream);
+            tail = reader.ReadToEnd();
+        }
 
-        bool scaleLineFound = lines.Skip(markerIndex + 1)
-            .Any(l => l.Contains("Scale → PPU=", StringComparison.Ordinal));
-        Assert.True(scaleLineFound, "Wheel zoom should append a 'Scale → PPU=' line to Interface.log");
+        Assert.True(tail.Contains("Scale → PPU=", StringComparison.Ordinal),
+            "Wheel zoom should append a 'Scale → PPU=' line to Interface.log");
     }
 
     // ── Isolation ────────────────────────────────────────────────
