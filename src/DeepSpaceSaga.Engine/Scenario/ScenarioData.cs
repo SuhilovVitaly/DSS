@@ -94,6 +94,20 @@ public sealed record ShipModuleData(
 /// later target changes or the target disappearing do not affect the result.
 /// Persisted in save and restored on load.
 /// </param>
+/// <param name="CommandId">
+/// PlayerCommand.CommandId that started this cycle. Stored so completion, cancellation,
+/// or interruption can publish a final <see cref="DeepSpaceSaga.Contracts.CommandResult"/>
+/// (§56.5: complete → roll → apply → write CommandResult → write ShipEvent). Null for
+/// cycles loaded from a save written before this field existed, and for auto-repeat
+/// renewal cycles (which inherit the original CommandId via CreateEngineCycle).
+/// </param>
+/// <param name="ObjectId">
+/// ObjectId of the module that owns this cycle. Stored together with CommandId so
+/// completion can reconstruct a full CommandResult without threading extra state.
+/// </param>
+/// <param name="ModuleId">
+/// ModuleId of the module that owns this cycle. Same rationale as ObjectId.
+/// </param>
 public sealed record ActiveCycleData(
     [property: JsonPropertyName("cycleId")] string CycleId,
     [property: JsonPropertyName("startedGameTimeMs")] long StartedGameTimeMs,
@@ -102,7 +116,10 @@ public sealed record ActiveCycleData(
     [property: JsonPropertyName("isAutoRepeat")] bool IsAutoRepeat,
     [property: JsonPropertyName("targetObjectId")] string? TargetObjectId = null,
     [property: JsonPropertyName("capturedTargetSpeedKmS")] double? CapturedTargetSpeedKmS = null,
-    [property: JsonPropertyName("capturedTargetCourseDegrees")] double? CapturedTargetCourseDegrees = null);
+    [property: JsonPropertyName("capturedTargetCourseDegrees")] double? CapturedTargetCourseDegrees = null,
+    [property: JsonPropertyName("commandId")] string? CommandId = null,
+    [property: JsonPropertyName("objectId")] string? ObjectId = null,
+    [property: JsonPropertyName("moduleId")] string? ModuleId = null);
 
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(

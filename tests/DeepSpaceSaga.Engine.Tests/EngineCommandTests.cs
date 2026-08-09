@@ -377,10 +377,17 @@ public class EngineCommandTests
         var engine = CreateEngine();
 
         engine.ReceiveCommand(new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.Accelerate));
-        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        // t=0: cycle started (zero-duration guard prevents completion in the starting tick).
+        // No CommandResult yet — Executed appears on completion (§56.5).
+        var snapshot0 = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        Assert.Empty(snapshot0.CommandResults);
+
+        // t=100: cycle completes → CommandResult(Executed).
+        var snapshot = engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
 
         // AC1: exactly one result, Executed, all fields match, no reason code,
-        // effective game time equals the snapshot's game time.
+        // effective game time equals the completion time.
         var result = Assert.Single(snapshot.CommandResults);
         Assert.Equal(CommandResultStatus.Executed, result.Status);
         Assert.Equal("cmd-1", result.CommandId);
@@ -388,7 +395,7 @@ public class EngineCommandTests
         Assert.Equal(EngineModuleId, result.ModuleId);
         Assert.Equal(ShipEngineCommandTypes.Accelerate, result.CommandType);
         Assert.Null(result.ReasonCode);
-        Assert.Equal(snapshot.GameTimeMs, result.EffectiveGameTimeMs);
+        Assert.Equal(100, result.EffectiveGameTimeMs);
     }
 
     [Theory]
@@ -424,29 +431,31 @@ public class EngineCommandTests
         engine.ReceiveCommand(new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
         engine.ReceiveCommand(new PlayerCommand("cmd-2", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
 
+        // t=0: cmd-1 starts a zero-duration cycle (no CommandResult at start per §56.5);
+        // cmd-2 is Deferred. Zero-duration guard prevents cmd-1 from completing in its
+        // starting tick, so only the Deferred result is visible.
         var first = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
-        Assert.Equal(2, first.CommandResults.Length);
-        var cmd1 = first.CommandResults[0];
-        Assert.Equal("cmd-1", cmd1.CommandId);
-        Assert.Equal(CommandResultStatus.Executed, cmd1.Status);
-        Assert.Null(cmd1.ReasonCode);
-        var cmd2 = first.CommandResults[1];
-        Assert.Equal("cmd-2", cmd2.CommandId);
-        Assert.Equal(CommandResultStatus.Deferred, cmd2.Status);
-        Assert.Equal(CommandReasonCodes.Busy, cmd2.ReasonCode);
+        var cmd2Deferred = Assert.Single(first.CommandResults);
+        Assert.Equal("cmd-2", cmd2Deferred.CommandId);
+        Assert.Equal(CommandResultStatus.Deferred, cmd2Deferred.Status);
+        Assert.Equal(CommandReasonCodes.Busy, cmd2Deferred.ReasonCode);
 
-        // The deferred command completes and executes on the next snapshot.
+        // t=100: cmd-1's zero-duration cycle completes → Executed. cmd-2 starts from
+        // the deferred queue and gets its own zero-duration cycle (no result yet).
         var second = engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
         Assert.Equal(1, PlayerShipFrom(second).Direction);
-        var cmd2Result = Assert.Single(second.CommandResults);
-        Assert.Equal("cmd-2", cmd2Result.CommandId);
-        Assert.Equal(CommandResultStatus.Executed, cmd2Result.Status);
-        Assert.Null(cmd2Result.ReasonCode);
+        var cmd1Executed = Assert.Single(second.CommandResults);
+        Assert.Equal("cmd-1", cmd1Executed.CommandId);
+        Assert.Equal(CommandResultStatus.Executed, cmd1Executed.Status);
+        Assert.Null(cmd1Executed.ReasonCode);
 
-        // No duplicate Deferred/Executed results in later snapshots — each command
-        // is published exactly once.
+        // t=200: cmd-2's zero-duration cycle completes → Executed. No more pending.
         var third = engine.CaptureSnapshotForTests(200, SimulationSpeed.Speed1);
-        Assert.Empty(third.CommandResults);
+        Assert.Equal(2, PlayerShipFrom(third).Direction);
+        var cmd2Executed = Assert.Single(third.CommandResults);
+        Assert.Equal("cmd-2", cmd2Executed.CommandId);
+        Assert.Equal(CommandResultStatus.Executed, cmd2Executed.Status);
+        Assert.Null(cmd2Executed.ReasonCode);
     }
 
     [Fact]
@@ -454,24 +463,28 @@ public class EngineCommandTests
     {
         var engine = CreateEngine();
 
+        // cmd-1 (Accelerate) starts a zero-duration cycle at t=0. No CommandResult at start
+        // per §56.5 — Executed appears on cycle completion.
         engine.ReceiveCommand(new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.Accelerate));
         var snapshotA = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
-        var resultA = Assert.Single(snapshotA.CommandResults);
-        Assert.Equal(CommandResultStatus.Executed, resultA.Status);
+        Assert.Empty(snapshotA.CommandResults);
 
-        // Process another command; snapshot B carries only the new result.
+        // Process another command; the previous cycle (cmd-1) completes at t=100.
+        // cmd-2 (Brake) starts a new zero-duration cycle — no CommandResult at start.
         engine.ReceiveCommand(new PlayerCommand("cmd-2", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.Brake));
         var snapshotB = engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
 
-        // AC4: the already published snapshot is not mutated by later processing.
-        Assert.Single(snapshotA.CommandResults);
-        Assert.Same(resultA, snapshotA.CommandResults[0]);
-        Assert.Equal(CommandResultStatus.Executed, snapshotA.CommandResults[0].Status);
+        // AC4: snapshot A is not mutated by later processing.
+        Assert.Empty(snapshotA.CommandResults);
 
-        Assert.Single(snapshotB.CommandResults);
-        var resultB = snapshotB.CommandResults[0];
-        Assert.Equal("cmd-2", resultB.CommandId);
-        Assert.Equal(CommandResultStatus.Executed, resultB.Status);
+        // snapshot B: cmd-1's auto-repeat Accelerate completed one step at t=100
+        // (Executed), then Brake implicitly cancelled the renewed cycle (Cancelled).
+        // Dedup by CommandId keeps the last disposition → Cancelled. cmd-2 has no
+        // result yet — its cycle completes at t=200.
+        var resultB = Assert.Single(snapshotB.CommandResults);
+        Assert.Equal("cmd-1", resultB.CommandId);
+        Assert.Equal(CommandResultStatus.Cancelled, resultB.Status);
+        Assert.Equal(ShipEventReasonCodes.CancelledByCommand, resultB.ReasonCode);
     }
 
     [Theory]
@@ -773,10 +786,11 @@ public class EngineCommandTests
             "cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.MatchTargetSpeed,
             TargetObjectId: "OTHER"));
 
-        // t=0: cycle starts (Executed); a zero-duration one-shot does not complete in
-        // its starting tick (guard gameTimeMs > StartedGameTimeMs).
+        // t=0: cycle starts. No CommandResult at start per §56.5 — Executed appears
+        // on completion. A zero-duration one-shot does not complete in its starting
+        // tick (guard gameTimeMs > StartedGameTimeMs).
         var snapshot0 = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
-        Assert.Equal(CommandResultStatus.Executed, Assert.Single(snapshot0.CommandResults).Status);
+        Assert.Empty(snapshot0.CommandResults);
 
         var module = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId).Modules.Single();
         Assert.Equal("OTHER", module.ActiveCycle!.TargetObjectId);
@@ -802,7 +816,7 @@ public class EngineCommandTests
             TargetObjectId: "OTHER"));
 
         var snapshot0 = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
-        Assert.Equal(CommandResultStatus.Executed, Assert.Single(snapshot0.CommandResults).Status);
+        Assert.Empty(snapshot0.CommandResults);
 
         var module = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId).Modules.Single();
         Assert.Equal("OTHER", module.ActiveCycle!.TargetObjectId);

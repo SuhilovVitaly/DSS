@@ -625,10 +625,13 @@ public sealed class SimulationEngine : IDisposable
                 deferred ??= [];
                 deferred.Add(command);
             }
-            else
+            else if (outcome.Disposition == CommandStartDisposition.Rejected)
             {
-                RecordCommandResult(command, outcome, gameTimeMs);
+                // Rejected immediately — no cycle was created.
+                RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, outcome.ReasonCode);
             }
+            // Started: the cycle was created. The final CommandResult is written later
+            // by CompleteActiveEngineCycles on completion/interruption (§56.5).
         }
 
         if (deferred is { Count: > 0 })
@@ -647,10 +650,11 @@ public sealed class SimulationEngine : IDisposable
                     stillDeferred ??= [];
                     stillDeferred.Add(command);
                 }
-                else
+                else if (outcome.Disposition == CommandStartDisposition.Rejected)
                 {
-                    RecordCommandResult(command, outcome, gameTimeMs);
+                    RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, outcome.ReasonCode);
                 }
+                // Started: cycle created, result on completion.
             }
 
             if (stillDeferred is { Count: > 0 })
@@ -658,10 +662,14 @@ public sealed class SimulationEngine : IDisposable
                 // Actually requeued — deferred for the remainder of this tick.
                 foreach (var command in stillDeferred)
                 {
-                    RecordCommandResult(
-                        command,
-                        new CommandStartOutcome(CommandStartDisposition.Deferred, CommandReasonCodes.Busy),
-                        gameTimeMs);
+                    _commandResults.Add(new CommandResult(
+                        command.CommandId,
+                        command.ObjectId,
+                        command.ModuleId,
+                        command.CommandType,
+                        CommandResultStatus.Deferred,
+                        gameTimeMs,
+                        CommandReasonCodes.Busy));
                 }
 
                 RequeueDeferredCommands(stillDeferred);
@@ -669,23 +677,33 @@ public sealed class SimulationEngine : IDisposable
         }
     }
 
-    private void RecordCommandResult(PlayerCommand command, CommandStartOutcome outcome, long gameTimeMs)
+    private void RecordCommandResult(
+        PlayerCommand command, CommandResultStatus status, long gameTimeMs, string? reasonCode = null)
     {
-        CommandResultStatus status = outcome.Disposition switch
-        {
-            CommandStartDisposition.Started => CommandResultStatus.Executed,
-            CommandStartDisposition.Rejected => CommandResultStatus.Rejected,
-            _ => CommandResultStatus.Deferred
-        };
+        _commandResults.Add(new CommandResult(
+            command.CommandId,
+            command.ObjectId,
+            command.ModuleId,
+            command.CommandType,
+            status,
+            gameTimeMs,
+            reasonCode));
+    }
+
+    private void RecordCommandResultFromCycle(
+        ActiveCycleData cycle, CommandResultStatus status, long gameTimeMs, string? reasonCode = null)
+    {
+        if (cycle.CommandId is null)
+            return; // legacy save: cycle has no command tracing — nothing to report
 
         _commandResults.Add(new CommandResult(
-            CommandId: command.CommandId,
-            ObjectId: command.ObjectId,
-            ModuleId: command.ModuleId,
-            CommandType: command.CommandType,
-            Status: status,
-            EffectiveGameTimeMs: gameTimeMs,
-            ReasonCode: outcome.ReasonCode));
+            cycle.CommandId,
+            cycle.ObjectId ?? "",
+            cycle.ModuleId ?? "",
+            cycle.CommandType,
+            status,
+            gameTimeMs,
+            reasonCode));
     }
 
     private void RecordShipEvent(string objectId, string moduleId, string eventType, string? reasonCode, long gameTimeMs)
@@ -756,11 +774,18 @@ public sealed class SimulationEngine : IDisposable
 
         if (command.CommandType == ShipEngineCommandTypes.CancelAll)
         {
-            if (module.ActiveCycle is { })
+            if (module.ActiveCycle is { } cancelledCycle)
+            {
+                // §56.5: complete → apply → write CommandResult → write ShipEvent.
+                RecordCommandResultFromCycle(cancelledCycle, CommandResultStatus.Cancelled, gameTimeMs,
+                    ShipEventReasonCodes.CancelledByCommand);
                 RecordShipEvent(command.ObjectId, command.ModuleId,
                     ShipEventTypes.CycleCancelled, ShipEventReasonCodes.CancelledByCommand, gameTimeMs);
+            }
 
             _objects[objectIndex] = UpdateModule(obj, moduleIndex, module => module with { ActiveCycle = null });
+            // CancelAll itself succeeded — write its own CommandResult.
+            RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
             return CommandStartOutcome.Started;
         }
 
@@ -774,10 +799,20 @@ public sealed class SimulationEngine : IDisposable
 
             // Same command type — idempotent, continue existing cycle.
             if (string.Equals(command.CommandType, activeCycle.CommandType, StringComparison.Ordinal))
+            {
+                // Idempotent re-send: the cycle continues. Write Executed for the
+                // re-sent command (the original command's final result comes on
+                // completion). This keeps the client informed that the re-send was
+                // accepted without waiting for the next cycle step.
+                RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
                 return CommandStartOutcome.Started;
+            }
 
             // Any other engine command implicitly cancels the active periodic
             // (auto-repeat) cycle and falls through to start its own cycle below.
+            // §56.5: write CommandResult(Cancelled) for the old cycle, then ShipEvent.
+            RecordCommandResultFromCycle(activeCycle, CommandResultStatus.Cancelled, gameTimeMs,
+                ShipEventReasonCodes.CancelledByCommand);
             RecordShipEvent(command.ObjectId, command.ModuleId,
                 ShipEventTypes.CycleCancelled, ShipEventReasonCodes.CancelledByCommand, gameTimeMs);
         }
@@ -816,7 +851,10 @@ public sealed class SimulationEngine : IDisposable
                     moduleType,
                     targetObjectId,
                     capturedTargetSpeedKmS,
-                    capturedTargetCourseDegrees)
+                    capturedTargetCourseDegrees,
+                    commandId: command.CommandId,
+                    objectId: command.ObjectId,
+                    moduleId: command.ModuleId)
             });
         return CommandStartOutcome.Started;
     }
@@ -855,7 +893,10 @@ public sealed class SimulationEngine : IDisposable
         ModuleTypeDefinition moduleType,
         string? targetObjectId = null,
         double? capturedTargetSpeedKmS = null,
-        double? capturedTargetCourseDegrees = null)
+        double? capturedTargetCourseDegrees = null,
+        string? commandId = null,
+        string? objectId = null,
+        string? moduleId = null)
     {
         string cycleId = $"CYC-ENGINE-{++_nextEngineCycleId:D6}";
         long durationMs = ComputeEffectiveCycleTimeMs(moduleType, commandType);
@@ -867,7 +908,10 @@ public sealed class SimulationEngine : IDisposable
             isAutoRepeat,
             targetObjectId,
             capturedTargetSpeedKmS,
-            capturedTargetCourseDegrees);
+            capturedTargetCourseDegrees,
+            commandId,
+            objectId,
+            moduleId);
     }
 
     /// <summary>
@@ -991,6 +1035,8 @@ public sealed class SimulationEngine : IDisposable
                                     ? ShipEventReasonCodes.ModuleDisabled
                                     : ShipEventReasonCodes.IncompatibleState;
 
+                        // §56.5: write CommandResult(Cancelled) → write ShipEvent.
+                        RecordCommandResultFromCycle(cycle, CommandResultStatus.Cancelled, gameTimeMs, interruptReason);
                         _objects[objectIndex] = UpdateModule(obj, moduleIndex, current => current with { ActiveCycle = null });
                         obj = _objects[objectIndex];
                         RecordShipEvent(obj.InitialMotion.ObjectId, module.ModuleId,
@@ -1002,7 +1048,8 @@ public sealed class SimulationEngine : IDisposable
                         ? gameTimeMs
                         : cycle.StartedGameTimeMs + cycle.DurationMs;
                     ActiveCycleData? nextCycle = cycle.IsAutoRepeat
-                        ? CreateEngineCycle(cycle.CommandType, completionGameTimeMs, isAutoRepeat: true, moduleType)
+                        ? CreateEngineCycle(cycle.CommandType, completionGameTimeMs, isAutoRepeat: true, moduleType,
+                            commandId: cycle.CommandId, objectId: cycle.ObjectId, moduleId: cycle.ModuleId)
                         : null;
                     _objects[objectIndex] = ApplyCompletedEngineCommand(
                         obj,
@@ -1013,6 +1060,8 @@ public sealed class SimulationEngine : IDisposable
                         nextCycle);
                     obj = _objects[objectIndex];
 
+                    // §56.5: write CommandResult(Executed) → write ShipEvent(CommandCompleted).
+                    RecordCommandResultFromCycle(cycle, CommandResultStatus.Executed, completionGameTimeMs);
                     RecordShipEvent(obj.InitialMotion.ObjectId, module.ModuleId,
                         ShipEventTypes.CommandCompleted, reasonCode: null, completionGameTimeMs);
 
