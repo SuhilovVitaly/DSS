@@ -853,7 +853,7 @@ public class EngineCommandTests
             { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
             """);
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "fuelCapacityKg": 1 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
@@ -887,7 +887,7 @@ public class EngineCommandTests
             { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
             """);
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "fuelCapacityKg": 1 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
@@ -993,7 +993,7 @@ public class EngineCommandTests
             { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
             """);
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "fuelCapacityKg": 1 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
@@ -1027,7 +1027,7 @@ public class EngineCommandTests
             """);
             // Active module (has commandTypeIds) but no baseCycleTimeMs.
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": ["engine.accelerate"], "cargoCapacityKg": null, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": ["engine.accelerate"], "cargoCapacityKg": null, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "fuelCapacityKg": 1 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
@@ -1062,6 +1062,229 @@ public class EngineCommandTests
         // t=50: cycle completes (50 > 0 and duration=0, so 50-0 >= 0).
         var snapshot50 = engine.CaptureSnapshotForTests(50, SimulationSpeed.Speed1);
         Assert.Equal(1, PlayerShipFrom(snapshot50).Direction);
+    }
+
+    // ── Fuel state tests (ТЗ-07) ──────────────────────────────────
+
+    [Fact]
+    public void Engine_module_type_without_fuel_capacity_throws()
+    {
+        // AC1: engine module type without valid FuelCapacityKg is rejected on load.
+        string directory = Path.Combine(Path.GetTempPath(), $"dss-fuel-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "Settings.json"), """
+            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            """);
+            File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """{ "commandDefinitions": [] }""");
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), """
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400 } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
+            File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
+
+            var ex = Assert.Throws<ContentException>(() =>
+                EngineContentLoader.LoadRegistryFromSettingsFile(
+                    Path.Combine(directory, "Settings.json"), out _, out _));
+            Assert.Contains("fuelCapacityKg", ex.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Installed_engine_with_fuel_out_of_range_throws()
+    {
+        // AC2: installed engine with FuelAmountKg outside 0..FuelCapacityKg is rejected.
+        var registry = GameDataRegistry.Create(
+            [
+                new ModuleTypeDefinition(
+                    "module.engine.basic",
+                    "Engine",
+                    SlotSize: 1,
+                    MassKg: 5000,
+                    StructurePointsMax: 100,
+                    PowerConsumptionW: 0,
+                    CommandTypeIds: ImmutableArray<string>.Empty,
+                    CargoCapacityKg: null,
+                    MaxSpeedMps: 4000,
+                    TurnStepDegrees: 1,
+                    LinearInertiaMps2: 400,
+                    FuelCapacityKg: 1000)
+            ],
+            [],
+            []);
+
+        var engine = new SimulationEngine(registry);
+        var ex = Assert.Throws<ScenarioException>(() =>
+            engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
+            {
+              "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
+              "gameState": {
+                "gameTimeMs": 0, "currentSpeed": "Speed0",
+                "playerShipObjectId": "{{PlayerShipId}}",
+                "spaceObjects": [
+                  { "objectId": "{{PlayerShipId}}", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                    "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                    "movementType": "Stationary",
+                    "modules": [
+                      { "moduleId": "{{EngineModuleId}}", "moduleTypeId": "module.engine.basic", "platformIndex": 0,
+                        "occupiedCells": [0], "structurePoints": 100, "powerState": "On", "operationalState": "Ready",
+                        "activeCycle": null, "cargo": [], "fuelAmountKg": 2000 }
+                    ]
+                  }
+                ]
+              }
+            }
+            """)));
+        Assert.Contains("fuelAmountKg", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Default_scenario_engine_starts_with_half_tank()
+    {
+        // AC3: the default scenario file has an engine with fuelAmountKg exactly half of fuelCapacityKg.
+        string scenarioPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..", "..", "..", "..", "..",
+            "src", "DeepSpaceSaga.Client", "Scenarios", "Default", "scenario.json"));
+
+        if (!File.Exists(scenarioPath))
+        {
+            scenarioPath = Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory, "Scenarios", "Default", "scenario.json"));
+        }
+
+        string settingsPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..", "..", "..", "..", "..",
+            "src", "DeepSpaceSaga.Client", "Settings.json"));
+
+        if (!File.Exists(settingsPath))
+        {
+            settingsPath = Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory, "Settings.json"));
+        }
+
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settingsPath, out _, out _);
+        var engineModuleType = registry.ModuleTypes.GetDefinition(
+            registry.ModuleTypes.GetIndex("module.engine.basic"));
+        Assert.True(engineModuleType.FuelCapacityKg is > 0);
+
+        var scenario = ScenarioLoader.LoadFromFile(scenarioPath);
+        var engine = new SimulationEngine(registry);
+        engine.LoadScenario(scenario);
+
+        var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
+        var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
+        long expectedHalf = engineModuleType.FuelCapacityKg!.Value / 2;
+        Assert.Equal(expectedHalf, engineModule.FuelAmountKg);
+    }
+
+    [Fact]
+    public void Save_load_preserves_fuel_amount()
+    {
+        // AC4: save/load round-trip preserves FuelAmountKg.
+        var registry = GameDataRegistry.Create(
+            [
+                new ModuleTypeDefinition(
+                    "module.engine.basic",
+                    "Engine",
+                    SlotSize: 1,
+                    MassKg: 5000,
+                    StructurePointsMax: 100,
+                    PowerConsumptionW: 0,
+                    CommandTypeIds: ImmutableArray<string>.Empty,
+                    CargoCapacityKg: null,
+                    MaxSpeedMps: 4000,
+                    TurnStepDegrees: 1,
+                    LinearInertiaMps2: 400,
+                    FuelCapacityKg: 10000)
+            ],
+            [],
+            []);
+
+        var engine = new SimulationEngine(registry);
+        engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
+        {
+          "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed0",
+            "playerShipObjectId": "{{PlayerShipId}}",
+            "spaceObjects": [
+              { "objectId": "{{PlayerShipId}}", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "modules": [
+                  { "moduleId": "{{EngineModuleId}}", "moduleTypeId": "module.engine.basic", "platformIndex": 0,
+                    "occupiedCells": [0], "structurePoints": 100, "powerState": "On", "operationalState": "Ready",
+                    "activeCycle": null, "cargo": [], "fuelAmountKg": 7500 }
+                ]
+              }
+            ]
+          }
+        }
+        """));
+
+        // Verify initial state.
+        var initialModule = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId).Modules.Single();
+        Assert.Equal(7500, initialModule.FuelAmountKg);
+
+        // Save and reload into a fresh engine.
+        var saveState = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed1);
+        var loadedEngine = new SimulationEngine(registry);
+        loadedEngine.LoadScenario(saveState);
+
+        var restoredModule = loadedEngine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId).Modules.Single();
+        Assert.Equal(7500, restoredModule.FuelAmountKg);
+    }
+
+    [Fact]
+    public void Non_engine_module_ignores_fuel_amount()
+    {
+        // Container modules don't have FuelCapacityKg → FuelAmountKg stays 0, no validation.
+        var registry = GameDataRegistry.Create(
+            [
+                new ModuleTypeDefinition(
+                    "module.container.basic",
+                    "Container",
+                    SlotSize: 4,
+                    MassKg: 20000,
+                    StructurePointsMax: 400,
+                    PowerConsumptionW: 0,
+                    CommandTypeIds: ImmutableArray<string>.Empty,
+                    CargoCapacityKg: 100000)
+            ],
+            [],
+            []);
+
+        var engine = new SimulationEngine(registry);
+        engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
+        {
+          "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed0",
+            "playerShipObjectId": "{{PlayerShipId}}",
+            "spaceObjects": [
+              { "objectId": "{{PlayerShipId}}", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "modules": [
+                  { "moduleId": "MOD-CONTAINER", "moduleTypeId": "module.container.basic", "platformIndex": 0,
+                    "occupiedCells": [1, 2, 3, 4], "structurePoints": 400, "powerState": "On", "operationalState": "Ready",
+                    "activeCycle": null, "cargo": [] }
+                ]
+              }
+            ]
+          }
+        }
+        """));
+
+        var module = engine.RuntimeObjects.Single().Modules.Single();
+        Assert.Equal(0, module.FuelAmountKg);
     }
 
     private const string DefaultScenarioJson = """

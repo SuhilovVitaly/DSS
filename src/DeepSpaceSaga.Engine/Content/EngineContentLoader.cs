@@ -107,7 +107,8 @@ public static class EngineContentLoader
                 dto.MaxSpeedMps,
                 dto.TurnStepDegrees,
                 dto.LinearInertiaMps2,
-                baseCycleTimeMs);
+                baseCycleTimeMs,
+                dto.FuelCapacityKg);
         }).ToArray();
     }
 
@@ -122,6 +123,8 @@ public static class EngineContentLoader
             throw new ContentException("Module type 'module.engine.basic' requires turnStepDegrees greater than zero.");
         if (dto.LinearInertiaMps2 is not > 0)
             throw new ContentException("Module type 'module.engine.basic' requires linearInertiaMps2 greater than zero.");
+        if (dto.FuelCapacityKg is not > 0)
+            throw new ContentException("Module type 'module.engine.basic' requires fuelCapacityKg greater than zero.");
     }
 
     private static IReadOnlyList<ItemTypeDefinition> LoadItemTypes(string path)
@@ -268,7 +271,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("maxSpeedMps")] int? MaxSpeedMps,
         [property: JsonPropertyName("turnStepDegrees")] int? TurnStepDegrees,
         [property: JsonPropertyName("linearInertiaMps2")] int? LinearInertiaMps2,
-        [property: JsonPropertyName("baseCycleTimeMs")] long? BaseCycleTimeMs);
+        [property: JsonPropertyName("baseCycleTimeMs")] long? BaseCycleTimeMs,
+        [property: JsonPropertyName("fuelCapacityKg")] long? FuelCapacityKg);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto> ItemTypes);

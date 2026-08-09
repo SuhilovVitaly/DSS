@@ -71,7 +71,8 @@ public sealed record ShipModuleData(
     [property: JsonPropertyName("powerState")] string PowerState,
     [property: JsonPropertyName("operationalState")] string OperationalState,
     [property: JsonPropertyName("activeCycle")] ActiveCycleData? ActiveCycle,
-    [property: JsonPropertyName("cargo")] IReadOnlyList<CargoStackData>? Cargo);
+    [property: JsonPropertyName("cargo")] IReadOnlyList<CargoStackData>? Cargo,
+    [property: JsonPropertyName("fuelAmountKg")] long? FuelAmountKg = null);
 
 /// <summary>
 /// Runtime progress for an active module cycle.

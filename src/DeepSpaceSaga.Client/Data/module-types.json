@@ -32,7 +32,8 @@
       "maxSpeedMps": 4000,
       "turnStepDegrees": 1,
       "linearInertiaMps2": 400,
-      "baseCycleTimeMs": 1000
+      "baseCycleTimeMs": 1000,
+      "fuelCapacityKg": 10000
     }
   ]
 }

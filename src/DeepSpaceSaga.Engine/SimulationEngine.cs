@@ -400,7 +400,8 @@ public sealed class SimulationEngine : IDisposable
                 PowerState: module.PowerState,
                 OperationalState: module.OperationalState,
                 ActiveCycle: module.ActiveCycle,
-                Cargo: BuildSaveCargo(module)));
+                Cargo: BuildSaveCargo(module),
+                FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null));
         }
 
         return modules;
@@ -469,6 +470,12 @@ public sealed class SimulationEngine : IDisposable
             }
 
             var cargo = BuildRuntimeCargo(obj, module);
+
+            // Fuel: engine module types carry a FuelCapacityKg; the installed instance
+            // stores its current FuelAmountKg. If the JSON omits FuelAmountKg for an
+            // engine module, default to a full tank (§56.10).
+            long fuelAmountKg = ResolveFuelAmountKg(module, moduleType, obj.ObjectId);
+
             modules.Add(new InstalledModuleRuntime(
                 module.ModuleId,
                 moduleTypeIndex,
@@ -478,7 +485,8 @@ public sealed class SimulationEngine : IDisposable
                 module.OperationalState,
                 module.StructurePoints,
                 module.ActiveCycle,
-                cargo));
+                cargo,
+                fuelAmountKg));
         }
 
         return modules.ToImmutable();
@@ -543,6 +551,29 @@ public sealed class SimulationEngine : IDisposable
         }
 
         return cargo.ToImmutable();
+    }
+
+    /// <summary>
+    /// Resolve and validate <see cref="InstalledModuleRuntime.FuelAmountKg"/> from JSON data.
+    /// Engine modules (<see cref="ModuleTypeDefinition.FuelCapacityKg"/> &gt; 0) require
+    /// 0 ≤ FuelAmountKg ≤ FuelCapacityKg. If the JSON omits the field (null), default to
+    /// a full tank. Non-engine modules get 0 and skip validation (§56.10).
+    /// </summary>
+    private static long ResolveFuelAmountKg(ShipModuleData module, ModuleTypeDefinition moduleType, string objectId)
+    {
+        if (moduleType.FuelCapacityKg is not ( > 0))
+            return 0;
+
+        long fuelAmountKg = module.FuelAmountKg ?? moduleType.FuelCapacityKg.Value;
+
+        if (fuelAmountKg < 0 || fuelAmountKg > moduleType.FuelCapacityKg.Value)
+        {
+            throw new ScenarioException(
+                $"Module '{module.ModuleId}' on '{objectId}' fuelAmountKg {fuelAmountKg} " +
+                $"is outside 0..{moduleType.FuelCapacityKg.Value}.");
+        }
+
+        return fuelAmountKg;
     }
 
     internal ImmutableArray<SpaceObjectRuntime> RuntimeObjects => _objects.ToImmutableArray();
@@ -1139,7 +1170,8 @@ internal sealed record InstalledModuleRuntime(
     string OperationalState,
     int StructurePoints,
     ActiveCycleData? ActiveCycle,
-    ImmutableArray<CargoStackRuntime> Cargo);
+    ImmutableArray<CargoStackRuntime> Cargo,
+    long FuelAmountKg = 0);
 
 internal sealed record CargoStackRuntime(
     int ItemTypeIndex,
