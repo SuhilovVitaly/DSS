@@ -766,6 +766,7 @@ public sealed class SimulationEngine : IDisposable
                     command.CommandType,
                     gameTimeMs,
                     isAutoRepeat,
+                    moduleType,
                     targetObjectId,
                     capturedTargetSpeedKmS,
                     capturedTargetCourseDegrees)
@@ -804,12 +805,13 @@ public sealed class SimulationEngine : IDisposable
         string commandType,
         long gameTimeMs,
         bool isAutoRepeat,
+        ModuleTypeDefinition moduleType,
         string? targetObjectId = null,
         double? capturedTargetSpeedKmS = null,
         double? capturedTargetCourseDegrees = null)
     {
         string cycleId = $"CYC-ENGINE-{++_nextEngineCycleId:D6}";
-        long durationMs = IsUntilCancelTurn(commandType) ? 1000 : 0;
+        long durationMs = ComputeEffectiveCycleTimeMs(moduleType, commandType);
         return new ActiveCycleData(
             cycleId,
             gameTimeMs,
@@ -819,6 +821,19 @@ public sealed class SimulationEngine : IDisposable
             targetObjectId,
             capturedTargetSpeedKmS,
             capturedTargetCourseDegrees);
+    }
+
+    /// <summary>
+    /// Compute the effective cycle duration from the module type's base cycle time
+    /// and the command definition's time factor (§56.3).
+    /// EffectiveCycleTimeMs = Ceil(BaseCycleTimeMs * TimeFactor / 1000).
+    /// </summary>
+    private long ComputeEffectiveCycleTimeMs(ModuleTypeDefinition moduleType, string commandType)
+    {
+        int commandIndex = _registry.CommandDefinitions.GetIndex(commandType);
+        var commandDef = _registry.CommandDefinitions.GetDefinition(commandIndex);
+        long numerator = moduleType.BaseCycleTimeMs * commandDef.TimeFactor;
+        return (numerator + CommandDefinition.Neutral - 1) / CommandDefinition.Neutral;
     }
 
     private static bool IsUntilCancelTurn(string commandType)
@@ -940,7 +955,7 @@ public sealed class SimulationEngine : IDisposable
                         ? gameTimeMs
                         : cycle.StartedGameTimeMs + cycle.DurationMs;
                     ActiveCycleData? nextCycle = cycle.IsAutoRepeat
-                        ? CreateEngineCycle(cycle.CommandType, completionGameTimeMs, isAutoRepeat: true)
+                        ? CreateEngineCycle(cycle.CommandType, completionGameTimeMs, isAutoRepeat: true, moduleType)
                         : null;
                     _objects[objectIndex] = ApplyCompletedEngineCommand(
                         obj,

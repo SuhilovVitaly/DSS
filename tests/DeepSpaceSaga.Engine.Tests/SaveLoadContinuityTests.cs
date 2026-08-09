@@ -340,7 +340,8 @@ public class SaveLoadContinuityTests
                     CargoCapacityKg: null,
                     MaxSpeedMps: 4000,
                     TurnStepDegrees: 1,
-                    LinearInertiaMps2: 400),
+                    LinearInertiaMps2: 400,
+                    BaseCycleTimeMs: 1000),
                 new ModuleTypeDefinition(
                     "module.container.basic",
                     "Container",
@@ -357,6 +358,12 @@ public class SaveLoadContinuityTests
             [
                 new ItemTypeDefinition("item.energy-cells", "Energy Cells", UnitMassKg: 10)
             ],
-            engineCommandIds.Select(id => new CommandDefinition(id, id)));
+            engineCommandIds.Select(id => new CommandDefinition(
+                id,
+                id,
+                TimeFactor: id is ShipEngineCommandTypes.TurnLeftUntilCancel
+                    or ShipEngineCommandTypes.TurnRightUntilCancel
+                    ? 1000
+                    : 0)));
     }
 }

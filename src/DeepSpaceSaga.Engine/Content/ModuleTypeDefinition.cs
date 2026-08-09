@@ -13,4 +13,5 @@ internal sealed record ModuleTypeDefinition(
     long? CargoCapacityKg,
     int? MaxSpeedMps,
     int? TurnStepDegrees,
-    int? LinearInertiaMps2) : ITypeDefinition;
+    int? LinearInertiaMps2,
+    long BaseCycleTimeMs = 0) : ITypeDefinition;

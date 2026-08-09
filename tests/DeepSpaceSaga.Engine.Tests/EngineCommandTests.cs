@@ -839,6 +839,246 @@ public class EngineCommandTests
         Assert.Equal(0, ship.Direction);
     }
 
+    // ── Factor model tests (ТЗ-06) ────────────────────────────────
+
+    [Fact]
+    public void TimeFactor_is_stored_as_fixed_point_int()
+    {
+        // AC1: timeFactor 1.2 in JSON → 1200 fixed-point.
+        string directory = Path.Combine(Path.GetTempPath(), $"dss-factor-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "Settings.json"), """
+            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            """);
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), """
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400 } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
+            File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
+            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A", "timeFactor": 1.2 } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
+
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(
+                Path.Combine(directory, "Settings.json"), out _, out _);
+
+            var cmd = registry.CommandDefinitions.GetDefinition(0);
+            Assert.Equal(1200, cmd.TimeFactor);
+            Assert.Equal(1000, cmd.ComplexityFactor); // default
+            Assert.Equal(1000, cmd.ConsumptionFactor); // default
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ComplexityFactor_is_stored_as_fixed_point_int()
+    {
+        // AC2: complexityFactor 0.75 in JSON → 750 fixed-point.
+        string directory = Path.Combine(Path.GetTempPath(), $"dss-factor-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "Settings.json"), """
+            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            """);
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), """
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400 } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
+            File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
+            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A", "timeFactor": 1.0, "complexityFactor": 0.75 } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
+
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(
+                Path.Combine(directory, "Settings.json"), out _, out _);
+
+            var cmd = registry.CommandDefinitions.GetDefinition(0);
+            Assert.Equal(750, cmd.ComplexityFactor);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Effective_cycle_time_comes_from_content_data_not_hardcode()
+    {
+        // AC3: EffectiveCycleTimeMs is computed from ModuleTypeDefinition.BaseCycleTimeMs
+        // and CommandDefinition.TimeFactor, not from a hardcoded IsUntilCancelTurn switch.
+        // Give TurnRightUntilCancel a timeFactor of 2.0 → EffectiveCycleTimeMs = 2000.
+        string[] commandIds =
+        [
+            ShipEngineCommandTypes.TurnRightUntilCancel
+        ];
+
+        var registry = GameDataRegistry.Create(
+            [
+                new ModuleTypeDefinition(
+                    "module.engine.basic",
+                    "Engine",
+                    SlotSize: 1,
+                    MassKg: 5000,
+                    StructurePointsMax: 100,
+                    PowerConsumptionW: 0,
+                    CommandTypeIds: commandIds.ToImmutableArray(),
+                    CargoCapacityKg: null,
+                    MaxSpeedMps: 4000,
+                    TurnStepDegrees: 1,
+                    LinearInertiaMps2: 400,
+                    BaseCycleTimeMs: 1000)
+            ],
+            [],
+            [
+                new CommandDefinition(
+                    ShipEngineCommandTypes.TurnRightUntilCancel,
+                    "Turn Right Until Cancel",
+                    TimeFactor: 2000) // 2.0 → Ceil(1000 * 2000 / 1000) = 2000 ms
+            ]);
+
+        var engine = new SimulationEngine(registry);
+        engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
+        {
+          "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed0",
+            "playerShipObjectId": "{{PlayerShipId}}",
+            "spaceObjects": [
+              { "objectId": "{{PlayerShipId}}", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "modules": [
+                  { "moduleId": "{{EngineModuleId}}", "moduleTypeId": "module.engine.basic", "platformIndex": 0,
+                    "occupiedCells": [0], "structurePoints": 100, "powerState": "On", "operationalState": "Ready",
+                    "activeCycle": null, "cargo": [] }
+                ]
+              }
+            ]
+          }
+        }
+        """));
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightUntilCancel));
+
+        // t=0: cycle starts, direction unchanged (zero-duration guard).
+        Assert.Equal(0, PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1)).Direction);
+
+        // t=1000: old hardcode would complete here. With timeFactor 2.0, duration is 2000 ms →
+        // the cycle should NOT complete at t=1000.
+        Assert.Equal(0, PlayerShipFrom(engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1)).Direction);
+
+        // t=2000: cycle should complete now.
+        Assert.Equal(1, PlayerShipFrom(engine.CaptureSnapshotForTests(2000, SimulationSpeed.Speed1)).Direction);
+
+        // Verify the active cycle's duration was stored as 2000.
+        var module = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId).Modules.Single();
+        Assert.Equal(2000, module.ActiveCycle!.DurationMs);
+    }
+
+    [Fact]
+    public void Missing_factor_defaults_to_neutral_1000()
+    {
+        // AC2 (partial): a command definition without timeFactor → TimeFactor = 1000 (1.0).
+        string directory = Path.Combine(Path.GetTempPath(), $"dss-factor-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "Settings.json"), """
+            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            """);
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), """
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400 } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
+            File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
+            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A" } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
+
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(
+                Path.Combine(directory, "Settings.json"), out _, out _);
+
+            var cmd = registry.CommandDefinitions.GetDefinition(0);
+            Assert.Equal(1000, cmd.TimeFactor);
+            Assert.Equal(1000, cmd.ComplexityFactor);
+            Assert.Equal(1000, cmd.ConsumptionFactor);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Active_module_type_without_base_cycle_time_throws()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), $"dss-factor-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "Settings.json"), """
+            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            """);
+            // Active module (has commandTypeIds) but no baseCycleTimeMs.
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), """
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": ["engine.accelerate"], "cargoCapacityKg": null, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400 } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
+            File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
+            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A" } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
+
+            var ex = Assert.Throws<ContentException>(() =>
+                EngineContentLoader.LoadRegistryFromSettingsFile(
+                    Path.Combine(directory, "Settings.json"), out _, out _));
+            Assert.Contains("baseCycleTimeMs", ex.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Zero_duration_cycle_completes_no_earlier_than_next_tick()
+    {
+        // AC4: a zero-duration cycle started at gameTimeMs=X must complete at
+        // gameTimeMs > X, never at gameTimeMs == X.
+        var engine = CreateEngine(directionDegrees: 0);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightStep));
+
+        // t=0: guard prevents zero-duration cycle from completing in its starting tick.
+        var snapshot0 = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        Assert.Equal(0, PlayerShipFrom(snapshot0).Direction);
+
+        // t=50: cycle completes (50 > 0 and duration=0, so 50-0 >= 0).
+        var snapshot50 = engine.CaptureSnapshotForTests(50, SimulationSpeed.Speed1);
+        Assert.Equal(1, PlayerShipFrom(snapshot50).Direction);
+    }
+
+    private const string DefaultScenarioJson = """
+    {
+      "scenarioMetadata": { "scenarioId": "default", "name": "Default Scenario" },
+      "gameState": {
+        "gameTimeMs": 0, "currentSpeed": "Speed0",
+        "playerShipObjectId": "SPC-0001",
+        "spaceObjects": [
+          { "objectId": "SPC-0001", "objectType": "PlayerShip", "persistenceType": "Permanent",
+            "positionX": 10000, "positionY": 10000, "speedMps": 0, "directionDegrees": 0,
+            "movementType": "Stationary" }
+        ]
+      }
+    }
+    """;
+
     private static PlayerCommand Command(string commandType)
     {
         return new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, commandType);
@@ -951,9 +1191,16 @@ public class EngineCommandTests
                     CargoCapacityKg: null,
                     MaxSpeedMps: 4000,
                     TurnStepDegrees: 1,
-                    LinearInertiaMps2: linearInertiaMps2)
+                    LinearInertiaMps2: linearInertiaMps2,
+                    BaseCycleTimeMs: 1000)
             ],
             [],
-            commandIds.Select(id => new CommandDefinition(id, id)));
+            commandIds.Select(id => new CommandDefinition(
+                id,
+                id,
+                TimeFactor: id is ShipEngineCommandTypes.TurnLeftUntilCancel
+                    or ShipEngineCommandTypes.TurnRightUntilCancel
+                    ? 1000
+                    : 0)));
     }
 }

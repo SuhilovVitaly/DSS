@@ -85,6 +85,16 @@ public static class EngineContentLoader
                 throw new ContentException($"Module type '{dto.TypeId}' is missing commandTypeIds.");
             ValidateEngineParameters(dto);
 
+            long baseCycleTimeMs = dto.BaseCycleTimeMs ?? 0;
+
+            // Active module types (those that declare commandTypeIds) MUST specify a
+            // positive BaseCycleTimeMs (§56.3).
+            if (baseCycleTimeMs <= 0 && dto.CommandTypeIds.Count > 0)
+            {
+                throw new ContentException(
+                    $"Active module type '{dto.TypeId}' must specify a positive baseCycleTimeMs.");
+            }
+
             return new ModuleTypeDefinition(
                 dto.TypeId,
                 dto.DisplayName,
@@ -96,7 +106,8 @@ public static class EngineContentLoader
                 dto.CargoCapacityKg,
                 dto.MaxSpeedMps,
                 dto.TurnStepDegrees,
-                dto.LinearInertiaMps2);
+                dto.LinearInertiaMps2,
+                baseCycleTimeMs);
         }).ToArray();
     }
 
@@ -130,7 +141,24 @@ public static class EngineContentLoader
             throw new ContentException("command-definitions file is missing commandDefinitions.");
 
         return file.CommandDefinitions.Select(dto =>
-            new CommandDefinition(dto.TypeId, dto.DisplayName)).ToArray();
+            new CommandDefinition(
+                dto.TypeId,
+                dto.DisplayName,
+                ParseFixedPointFactor(dto.TimeFactor),
+                ParseFixedPointFactor(dto.ComplexityFactor),
+                ParseFixedPointFactor(dto.ConsumptionFactor))).ToArray();
+    }
+
+    /// <summary>
+    /// Convert a JSON decimal factor into a fixed-point integer where 1000 = 1.0.
+    /// A missing (null) value defaults to the neutral factor 1000 (§56.3).
+    /// </summary>
+    private static int ParseFixedPointFactor(decimal? jsonValue)
+    {
+        if (jsonValue is null)
+            return CommandDefinition.Neutral;
+
+        return (int)Math.Round(jsonValue.Value * CommandDefinition.Neutral, MidpointRounding.AwayFromZero);
     }
 
     private static IReadOnlyList<FactoryTypeDefinition> LoadFactoryTypes(string path)
@@ -239,7 +267,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("cargoCapacityKg")] long? CargoCapacityKg,
         [property: JsonPropertyName("maxSpeedMps")] int? MaxSpeedMps,
         [property: JsonPropertyName("turnStepDegrees")] int? TurnStepDegrees,
-        [property: JsonPropertyName("linearInertiaMps2")] int? LinearInertiaMps2);
+        [property: JsonPropertyName("linearInertiaMps2")] int? LinearInertiaMps2,
+        [property: JsonPropertyName("baseCycleTimeMs")] long? BaseCycleTimeMs);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto> ItemTypes);
@@ -254,7 +283,10 @@ public static class EngineContentLoader
 
     private sealed record CommandDefinitionDto(
         [property: JsonPropertyName("typeId")] string TypeId,
-        [property: JsonPropertyName("displayName")] string DisplayName);
+        [property: JsonPropertyName("displayName")] string DisplayName,
+        [property: JsonPropertyName("timeFactor")] decimal? TimeFactor,
+        [property: JsonPropertyName("complexityFactor")] decimal? ComplexityFactor,
+        [property: JsonPropertyName("consumptionFactor")] decimal? ConsumptionFactor);
 
     private sealed record FactoryTypesFile(
         [property: JsonPropertyName("factoryTypes")] IReadOnlyList<FactoryTypeDefinitionDto> FactoryTypes);
