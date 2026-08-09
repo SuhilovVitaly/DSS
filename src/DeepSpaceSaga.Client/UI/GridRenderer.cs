@@ -16,14 +16,20 @@ public sealed class GridRenderer
     private static readonly int[] NormalDetailCandidates = { 10, 100, 1000, 10000 };
     private static readonly int[] LowDetailCandidates = { 1000, 10000 };
 
+    // Brightness grows as 8 + 6*log10(worldStep) — a logarithmic curve so each step up
+    // in scale reads as an even, gradual increase instead of the old near-linear ramp
+    // that made the largest (most zoomed-out) cells flash much brighter than the rest.
+    // The coefficient is kept low so even the coarsest (10000) level stays soft against
+    // the black background — it's usually the only level on screen at that zoom, so it
+    // has no darker neighbor to be judged against.
     private static readonly (int WorldStep, SKColor Color)[] AllLevels =
     {
         (1,     new SKColor(8, 8, 8)),
-        (5,     new SKColor(10, 10, 10)),
-        (10,    new SKColor(12, 12, 12)),
-        (100,   new SKColor(22, 22, 22)),
-        (1000,  new SKColor(42, 42, 42)),
-        (10000, new SKColor(62, 62, 62)),
+        (5,     new SKColor(12, 12, 12)),
+        (10,    new SKColor(14, 14, 14)),
+        (100,   new SKColor(20, 20, 20)),
+        (1000,  new SKColor(26, 26, 26)),
+        (10000, new SKColor(32, 32, 32)),
     };
 
     private readonly SKPaint _backgroundPaint;
@@ -40,9 +46,9 @@ public sealed class GridRenderer
 
         _axisPaint = new SKPaint
         {
-            Color = new SKColor(90, 90, 90),
+            Color = new SKColor(44, 44, 44),
             Style = SKPaintStyle.Stroke,
-            StrokeWidth = 2f,
+            StrokeWidth = 1f,
             IsAntialias = true,
         };
 
