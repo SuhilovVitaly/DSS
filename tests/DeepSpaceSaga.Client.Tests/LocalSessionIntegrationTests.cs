@@ -137,4 +137,102 @@ public class LocalSessionIntegrationTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await connection.SaveAsync());
     }
+
+    [Fact]
+    public async Task MasterSeedWasMissingOnLoad_surfaces_through_the_connection_for_legacy_saves()
+    {
+        // Closes the plumbing ТЗ-02A relies on: Program.cs's LocalGameSessionFactory checks
+        // this connection-level property (not the engine directly) to decide whether to
+        // write an InterfaceLog warning after CreateFromSaveFile.
+        const string legacySaveJson = """
+        {
+          "scenarioMetadata": { "scenarioId": "quicksave", "name": "Quicksave" },
+          "saveFormatVersion": 1,
+          "gameState": {
+            "gameTimeMs": 1000, "currentSpeed": "Speed0",
+            "playerShipObjectId": "test",
+            "spaceObjects": [
+              { "objectId": "test", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary" }
+            ]
+          }
+        }
+        """;
+
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-save-legacy-{Guid.NewGuid():N}");
+        string savePath = Path.Combine(dir, "quicksave.json");
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(savePath, legacySaveJson);
+
+        string settingsPath = ResolveRealSettingsPath();
+
+        try
+        {
+            await using var connection = LocalGameSessionConnection.CreateFromSaveFile(settingsPath, savePath);
+
+            Assert.True(connection.MasterSeedWasMissingOnLoad);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task MasterSeedWasMissingOnLoad_is_false_when_the_save_already_carries_one()
+    {
+        const string saveJson = """
+        {
+          "scenarioMetadata": { "scenarioId": "quicksave", "name": "Quicksave" },
+          "saveFormatVersion": 1,
+          "gameState": {
+            "gameTimeMs": 1000, "currentSpeed": "Speed0",
+            "playerShipObjectId": "test",
+            "masterSeed": 42,
+            "spaceObjects": [
+              { "objectId": "test", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary" }
+            ]
+          }
+        }
+        """;
+
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-save-withseed-{Guid.NewGuid():N}");
+        string savePath = Path.Combine(dir, "quicksave.json");
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(savePath, saveJson);
+
+        string settingsPath = ResolveRealSettingsPath();
+
+        try
+        {
+            await using var connection = LocalGameSessionConnection.CreateFromSaveFile(settingsPath, savePath);
+
+            Assert.False(connection.MasterSeedWasMissingOnLoad);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    private static string ResolveRealSettingsPath()
+    {
+        string settingsPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..", "..", "..", "..", "..",
+            "src", "DeepSpaceSaga.Client", "Settings.json"));
+
+        if (!File.Exists(settingsPath))
+        {
+            settingsPath = Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory, "Settings.json"));
+        }
+
+        return settingsPath;
+    }
 }

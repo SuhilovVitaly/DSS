@@ -25,12 +25,20 @@ public sealed record ScenarioMetadata(
     [property: JsonPropertyName("name")] string Name);
 
 /// <summary>Initial game state.</summary>
+/// <param name="MasterSeed">
+/// One per session, immutable for its lifetime. Absent (null) in New Game scenario files —
+/// SimulationEngine.LoadScenario generates a fresh random value whenever this is null,
+/// which covers both New Game (expected) and a legacy save missing it (unexpected — the
+/// caller is expected to warn; see SimulationEngine.MasterSeedWasMissingOnLoad). Present
+/// and reused as-is when continuing/restoring a save.
+/// </param>
 public sealed record GameStateData(
     [property: JsonPropertyName("gameTimeMs")] long GameTimeMs,
     [property: JsonPropertyName("currentSpeed")] string CurrentSpeed,
     [property: JsonPropertyName("playerShipObjectId")] string PlayerShipObjectId,
     [property: JsonPropertyName("focus")] FocusData? Focus,
-    [property: JsonPropertyName("spaceObjects")] IReadOnlyList<SpaceObjectData> SpaceObjects);
+    [property: JsonPropertyName("spaceObjects")] IReadOnlyList<SpaceObjectData> SpaceObjects,
+    [property: JsonPropertyName("masterSeed")] ulong? MasterSeed = null);
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(

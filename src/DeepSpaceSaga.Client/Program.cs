@@ -29,7 +29,19 @@ public static class Program
 
         public IGameSessionConnection CreateSessionFromSave()
         {
-            return LocalGameSessionConnection.CreateFromSaveFile(SettingsPath, SavePath);
+            var connection = LocalGameSessionConnection.CreateFromSaveFile(SettingsPath, SavePath);
+
+            // A missing masterSeed here means a legacy save predating it — the engine
+            // already generated and is using a fresh one; this is only about surfacing the
+            // warning requirements §15 calls for (New Game's own missing-masterSeed case is
+            // expected and never reaches this method).
+            if (connection.MasterSeedWasMissingOnLoad)
+            {
+                InterfaceLog.Write(
+                    "QuickLoad: save file had no masterSeed (legacy save) — generated and will save a new one.");
+            }
+
+            return connection;
         }
 
         public bool HasQuickSave()

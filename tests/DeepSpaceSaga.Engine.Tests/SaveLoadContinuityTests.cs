@@ -19,6 +19,55 @@ public class SaveLoadContinuityTests
     private const string AsteroidId = "AST-1";
 
     [Fact]
+    public void LoadScenario_stamps_StartGameTimeMs_from_scenario_gameTimeMs_not_zero()
+    {
+        // P1 regression (external PR review): LoadScenario used to always stamp every
+        // object's StartGameTimeMs = 0, regardless of gs.GameTimeMs. The correct value is
+        // only re-stamped later, inside RunAsync's prologue — which runs asynchronously via
+        // Task.Run from LocalGameSessionConnection's constructor. CaptureSaveState() (and
+        // BuildSnapshot) are reachable in the window between construction and RunAsync's
+        // first iteration — e.g. F5 fired right after F9, or CaptureSaveState() called
+        // directly on a freshly bootstrapped engine, as reproduced here via LoadScenario
+        // with NO RunAsync call at all. With the bug, elapsed = gameTimeMs - 0 double-counted
+        // the save's own gameTimeMs as extra travel from the saved position, instead of the
+        // correct elapsed = 0 (no time has passed since the save was captured).
+        const int speedMps = 500; // nonzero — position visibly drifts under the bug
+        const long gameTimeMs = 12345;
+
+        string saveJson = $$"""
+        {
+          "scenarioMetadata": { "scenarioId": "quicksave", "name": "Quicksave" },
+          "saveFormatVersion": 1,
+          "gameState": {
+            "gameTimeMs": {{gameTimeMs}},
+            "currentSpeed": "Speed1",
+            "playerShipObjectId": "{{PlayerShipId}}",
+            "spaceObjects": [
+              {
+                "objectId": "{{PlayerShipId}}", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 1000, "positionY": 2000,
+                "speedMps": {{speedMps}}, "directionDegrees": 0, "movementType": "Linear"
+              }
+            ]
+          }
+        }
+        """;
+
+        var save = ScenarioLoader.LoadFromJson(saveJson, allowNonZeroGameTime: true);
+
+        var engine = new SimulationEngine();
+        engine.LoadScenario(save); // deliberately no RunAsync — reproduces the vulnerable window
+
+        // Capturing immediately at the SAME gameTimeMs the save claims must reproduce
+        // exactly the same position: zero elapsed time, not gameTimeMs worth of travel.
+        var recaptured = engine.CaptureSaveStateForTests(gameTimeMs, SimulationSpeed.Speed1);
+        var ship = recaptured.GameState.SpaceObjects.Single(o => o.ObjectId == PlayerShipId);
+
+        Assert.Equal(1000, ship.PositionX, precision: 6);
+        Assert.Equal(2000, ship.PositionY, precision: 6);
+    }
+
+    [Fact]
     public async Task Round_trip_continues_active_turn_cycle_identically()
     {
         var engine = CreateEngine(speedMps: 100, directionDegrees: 0);

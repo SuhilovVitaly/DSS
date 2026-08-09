@@ -51,6 +51,16 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         return new LocalGameSessionConnection(engine, savePath);
     }
 
+    /// <summary>
+    /// True if the save/scenario just loaded into this connection's engine had no
+    /// masterSeed, so the engine generated a fresh one. Legitimate composition-root callers
+    /// (Program.cs) check this after CreateFromSaveFile specifically — not after
+    /// CreateFromSettingsFile, where a missing masterSeed is the expected New Game case —
+    /// to decide whether to surface a legacy-save warning to InterfaceLog (Engine itself
+    /// cannot reference InterfaceLog; it lives in Client).
+    /// </summary>
+    public bool MasterSeedWasMissingOnLoad => _engine.MasterSeedWasMissingOnLoad;
+
     private async Task RunEngineLoopAsync(CancellationToken ct)
     {
         try

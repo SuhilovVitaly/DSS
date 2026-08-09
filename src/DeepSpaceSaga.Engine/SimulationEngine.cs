@@ -47,6 +47,22 @@ public sealed class SimulationEngine : IDisposable
     /// <summary>ObjectId of the player ship (set by scenario).</summary>
     public string? PlayerShipObjectId { get; private set; }
 
+    /// <summary>
+    /// One per session, immutable for the session's lifetime (requirements §15). Set by
+    /// LoadScenario: reused as-is when the incoming scenario/save already carries one,
+    /// otherwise freshly randomly generated (New Game, or a legacy save missing it).
+    /// </summary>
+    public ulong MasterSeed { get; private set; }
+
+    /// <summary>
+    /// True if the most recent LoadScenario call had to generate MasterSeed because the
+    /// incoming scenario/save didn't carry one. True for every New Game (expected — the
+    /// DefaultScenario never specifies masterSeed) and for a legacy save missing it
+    /// (unexpected — callers loading from a save file are expected to surface a warning;
+    /// see Program.cs's LocalGameSessionFactory.CreateSessionFromSave).
+    /// </summary>
+    public bool MasterSeedWasMissingOnLoad { get; private set; }
+
     public SimulationEngine()
         : this(GameDataRegistry.Empty)
     {
@@ -114,9 +130,19 @@ public sealed class SimulationEngine : IDisposable
                 SpeedKmS: speedKmS,
                 Direction: obj.DirectionDegrees),
                 ObjectType: obj.ObjectType,
-                StartGameTimeMs: 0,
+                // Must equal gs.GameTimeMs, not 0: PositionX/Y/SpeedMps/DirectionDegrees are
+                // defined as "state AT gs.GameTimeMs", so elapsed-time math (BuildSnapshot,
+                // CaptureSaveState) must start counting from there. RunAsync's prologue
+                // re-stamps this from the clock too (engineStartGameTime = _clock.GameTimeMs,
+                // which SimulationClock.Reset just set to this same gs.GameTimeMs above) —
+                // that makes RunAsync's stamp an idempotent no-op, not a second source of
+                // truth. Without this, CaptureSaveState/BuildSnapshot called in the window
+                // between construction and RunAsync's first iteration (e.g. F5 right after
+                // F9, or CaptureSaveState() called directly on a freshly bootstrapped engine)
+                // would double-count gs.GameTimeMs as elapsed motion from position zero.
+                StartGameTimeMs: gs.GameTimeMs,
                 Modules: modules,
-                Name: obj.Name, // startGameTime stamped at RunAsync
+                Name: obj.Name,
                 PersistenceType: obj.PersistenceType,
                 MassKg: obj.MassKg,
                 CompositionType: obj.CompositionType,
@@ -130,9 +156,33 @@ public sealed class SimulationEngine : IDisposable
             _nextEngineCycleId = 0;
             CollectLoadedEngineCycleIds(runtimeObjects);
 
+            // masterSeed: reuse whatever the scenario/save already carries (continuing a
+            // session must not reshuffle it). A missing value covers two distinct cases the
+            // caller tells apart by context, not by this flag alone — New Game's
+            // DefaultScenario never specifies one (expected, no warning warranted), while a
+            // legacy save missing it is unexpected (callers loading from a save file are
+            // expected to check MasterSeedWasMissingOnLoad and warn).
+            if (gs.MasterSeed is { } masterSeed)
+            {
+                MasterSeed = masterSeed;
+                MasterSeedWasMissingOnLoad = false;
+            }
+            else
+            {
+                MasterSeed = GenerateRandomMasterSeed();
+                MasterSeedWasMissingOnLoad = true;
+            }
+
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
         }
+    }
+
+    private static ulong GenerateRandomMasterSeed()
+    {
+        Span<byte> bytes = stackalloc byte[8];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
+        return BitConverter.ToUInt64(bytes);
     }
 
     /// <summary>Add a test object (legacy — prefer LoadScenario for production).</summary>
@@ -144,13 +194,25 @@ public sealed class SimulationEngine : IDisposable
     public async IAsyncEnumerable<AuthoritativeSnapshot> RunAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // Stamp objects with the current game time at engine start.
-        _clock.ResetRealBaseline();
-        long engineStartGameTime = _clock.GameTimeMs;
-
-        for (int i = 0; i < _objects.Count; i++)
+        // Stamp objects with the current game time at engine start. Same value LoadScenario
+        // already stamped (gs.GameTimeMs) in the common case — this re-stamp only matters
+        // when a session-control call (e.g. SetSimulationSpeedAsync) lands in the window
+        // between LoadScenario and RunAsync's first iteration and nudges the clock forward
+        // by whatever tiny real time elapsed at the pre-RunAsync speed. Locked because
+        // CaptureSaveState()/BuildSnapshot are publicly reachable in that same window (e.g.
+        // SaveAsync called immediately after construction, before this loop runs) and every
+        // other _objects read/mutation goes through _worldStateLock — an unlocked mutation
+        // here raced a concurrent foreach over _objects and threw
+        // InvalidOperationException("Collection was modified").
+        lock (_worldStateLock)
         {
-            _objects[i] = _objects[i] with { StartGameTimeMs = engineStartGameTime };
+            _clock.ResetRealBaseline();
+            long engineStartGameTime = _clock.GameTimeMs;
+
+            for (int i = 0; i < _objects.Count; i++)
+            {
+                _objects[i] = _objects[i] with { StartGameTimeMs = engineStartGameTime };
+            }
         }
 
         // Yield the initial snapshot immediately (before any delay).
@@ -285,7 +347,8 @@ public sealed class SimulationEngine : IDisposable
             CurrentSpeed: clockState.Speed.ToString(),
             PlayerShipObjectId: PlayerShipObjectId ?? string.Empty,
             Focus: null, // camera/focus is client-side only — never saved (decision G.20)
-            SpaceObjects: spaceObjects);
+            SpaceObjects: spaceObjects,
+            MasterSeed: MasterSeed);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
