@@ -380,6 +380,151 @@ public class ScenarioEngineTests
         Assert.Equal(SimulationSpeed.Speed2, engine.CurrentSpeed);
     }
 
+    [Fact]
+    public void Empty_factory_and_recipe_files_load_successfully()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, factoryTypesPath: "factory-types.json", recipesPath: "recipes.json");
+            WriteMinimalContent(directory);
+            File.WriteAllText(Path.Combine(directory, "factory-types.json"), """{ "factoryTypes": [] }""");
+            File.WriteAllText(Path.Combine(directory, "recipes.json"), """{ "recipes": [] }""");
+
+            string settingsPath = Path.Combine(directory, "Settings.json");
+            Assert.NotNull(EngineContentLoader.CreateEngineFromSettingsFile(settingsPath));
+
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settingsPath, out _, out _);
+            Assert.Equal(0, registry.FactoryTypes.Count);
+            Assert.Equal(0, registry.Recipes.Count);
+        });
+    }
+
+    [Fact]
+    public void Missing_declared_factory_types_file_throws()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, factoryTypesPath: "missing-factory-types.json");
+            WriteMinimalContent(directory);
+
+            var exception = Assert.Throws<ContentException>(() =>
+                EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(directory, "Settings.json")));
+            Assert.Contains("factory types", exception.Message, StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
+    public void Missing_declared_recipes_file_throws()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, recipesPath: "missing-recipes.json");
+            WriteMinimalContent(directory);
+
+            var exception = Assert.Throws<ContentException>(() =>
+                EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(directory, "Settings.json")));
+            Assert.Contains("recipes", exception.Message, StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
+    public void Extra_field_in_recipes_file_throws()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, recipesPath: "recipes.json");
+            WriteMinimalContent(directory);
+            File.WriteAllText(Path.Combine(directory, "recipes.json"), """{ "recipes": [], "unexpected": 1 }""");
+
+            Assert.Throws<ContentException>(() =>
+                EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(directory, "Settings.json")));
+        });
+    }
+
+    [Fact]
+    public void Extra_field_inside_recipe_entry_throws()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, recipesPath: "recipes.json");
+            WriteMinimalContent(directory);
+            File.WriteAllText(Path.Combine(directory, "recipes.json"), """
+            {
+              "recipes": [
+                { "typeId": "r1", "displayName": "R", "inputs": [], "outputs": [], "cycleDurationMs": 100, "bogus": 0 }
+              ]
+            }
+            """);
+
+            Assert.Throws<ContentException>(() =>
+                EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(directory, "Settings.json")));
+        });
+    }
+
+    [Fact]
+    public void Factory_and_recipe_content_lands_in_registry()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, factoryTypesPath: "factory-types.json", recipesPath: "recipes.json");
+            WriteMinimalContent(directory);
+            File.WriteAllText(Path.Combine(directory, "factory-types.json"), """
+            {
+              "factoryTypes": [
+                {
+                  "typeId": "fac-1",
+                  "displayName": "Water Factory",
+                  "recipe": {
+                    "inputs": [ { "itemTypeId": "item.energy-cells", "count": 5 } ],
+                    "outputs": [ { "itemTypeId": "item.water", "count": 95 } ],
+                    "cycleTimeMs": 1000
+                  }
+                }
+              ]
+            }
+            """);
+            File.WriteAllText(Path.Combine(directory, "recipes.json"), """
+            {
+              "recipes": [
+                { "typeId": "rec-1", "displayName": "Recipe", "inputs": [], "outputs": [], "cycleDurationMs": 2000 }
+              ]
+            }
+            """);
+
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(
+                Path.Combine(directory, "Settings.json"), out _, out _);
+
+            Assert.Equal(1, registry.FactoryTypes.Count);
+            Assert.Equal(1, registry.Recipes.Count);
+            Assert.Equal("item.energy-cells", registry.FactoryTypes.GetDefinition(0).Recipe.Inputs[0].ItemTypeId);
+            Assert.Equal("item.water", registry.FactoryTypes.GetDefinition(0).Recipe.Outputs[0].ItemTypeId);
+            Assert.Equal(1000, registry.FactoryTypes.GetDefinition(0).Recipe.CycleDurationMs);
+            Assert.Equal(2000, registry.Recipes.GetDefinition(0).CycleDurationMs);
+        });
+    }
+
+    [Fact]
+    public void Duplicate_factory_type_id_is_rejected()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, factoryTypesPath: "factory-types.json");
+            WriteMinimalContent(directory);
+            File.WriteAllText(Path.Combine(directory, "factory-types.json"), """
+            {
+              "factoryTypes": [
+                { "typeId": "fac-1", "displayName": "A", "recipe": { "inputs": [], "outputs": [], "cycleTimeMs": 100 } },
+                { "typeId": "fac-1", "displayName": "B", "recipe": { "inputs": [], "outputs": [], "cycleTimeMs": 200 } }
+              ]
+            }
+            """);
+
+            var exception = Assert.Throws<ContentException>(() =>
+                EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(directory, "Settings.json")));
+            Assert.Contains("duplicate typeId 'fac-1'", exception.Message, StringComparison.Ordinal);
+        });
+    }
+
     private static SimulationEngine CreateEngineWithBasicTypes()
     {
         var registry = GameDataRegistry.Create(
@@ -451,5 +596,36 @@ public class ScenarioEngineTests
           }
         }
         """;
+    }
+
+    private static void WithContentDirectory(Action<string> action)
+    {
+        string directory = Path.Combine(Path.GetTempPath(), $"dss-content-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            action(directory);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    private static void WriteSettings(string directory, string? factoryTypesPath = null, string? recipesPath = null)
+    {
+        string factoryTypesEntry = factoryTypesPath is null ? "" : ", \"factoryTypes\": \"" + factoryTypesPath + "\"";
+        string recipesEntry = recipesPath is null ? "" : ", \"recipes\": \"" + recipesPath + "\"";
+        File.WriteAllText(Path.Combine(directory, "Settings.json"), $$"""
+        { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json"{{factoryTypesEntry}}{{recipesEntry}} }, "defaultScenario": "scenario.json" }
+        """);
+    }
+
+    private static void WriteMinimalContent(string directory)
+    {
+        File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """{ "commandDefinitions": [] }""");
+        File.WriteAllText(Path.Combine(directory, "module-types.json"), """{ "moduleTypes": [] }""");
+        File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
+        File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
     }
 }

@@ -43,7 +43,7 @@ public static class EngineContentLoader
         return new LoadedEngineContent(registry, scenario);
     }
 
-    private static GameDataRegistry LoadRegistryFromSettingsFile(
+    internal static GameDataRegistry LoadRegistryFromSettingsFile(
         string settingsPath, out string basePath, out EngineSettingsFile settings)
     {
         if (!File.Exists(settingsPath))
@@ -60,7 +60,17 @@ public static class EngineContentLoader
         var commands = LoadCommandDefinitions(Resolve(basePath, settings.TypeData.CommandDefinitions));
         var modules = LoadModuleTypes(Resolve(basePath, settings.TypeData.ModuleTypes));
         var items = LoadItemTypes(Resolve(basePath, settings.TypeData.ItemTypes));
-        return GameDataRegistry.Create(modules, items, commands);
+
+        // Factory/recipe files are loaded by declaration: a key present in Settings.json makes
+        // the file mandatory (missing file → ContentException); an absent key skips loading.
+        var factoryTypes = settings.TypeData.FactoryTypes is null
+            ? null
+            : LoadFactoryTypes(Resolve(basePath, settings.TypeData.FactoryTypes));
+        var recipes = settings.TypeData.Recipes is null
+            ? null
+            : LoadRecipes(Resolve(basePath, settings.TypeData.Recipes));
+
+        return GameDataRegistry.Create(modules, items, commands, factoryTypes, recipes);
     }
 
     private static IReadOnlyList<ModuleTypeDefinition> LoadModuleTypes(string path)
@@ -123,6 +133,55 @@ public static class EngineContentLoader
             new CommandDefinition(dto.TypeId, dto.DisplayName)).ToArray();
     }
 
+    private static IReadOnlyList<FactoryTypeDefinition> LoadFactoryTypes(string path)
+    {
+        var file = ReadJson<FactoryTypesFile>(path, "factory types");
+        if (file.FactoryTypes is null)
+            throw new ContentException("factory-types file is missing factoryTypes.");
+
+        return file.FactoryTypes.Select(dto =>
+        {
+            if (dto.Recipe is null)
+                throw new ContentException($"Factory type '{dto.TypeId}' is missing recipe.");
+            if (dto.Recipe.Inputs is null)
+                throw new ContentException($"Factory type '{dto.TypeId}' recipe is missing inputs.");
+            if (dto.Recipe.Outputs is null)
+                throw new ContentException($"Factory type '{dto.TypeId}' recipe is missing outputs.");
+
+            return new FactoryTypeDefinition(
+                dto.TypeId,
+                dto.DisplayName,
+                new RecipeDefinition(
+                    dto.TypeId,
+                    dto.DisplayName,
+                    dto.Recipe.Inputs.Select(m => new RecipeMaterial(m.ItemTypeId, m.Count)).ToImmutableArray(),
+                    dto.Recipe.Outputs.Select(m => new RecipeMaterial(m.ItemTypeId, m.Count)).ToImmutableArray(),
+                    dto.Recipe.CycleTimeMs));
+        }).ToArray();
+    }
+
+    private static IReadOnlyList<RecipeDefinition> LoadRecipes(string path)
+    {
+        var file = ReadJson<RecipesFile>(path, "recipes");
+        if (file.Recipes is null)
+            throw new ContentException("recipes file is missing recipes.");
+
+        return file.Recipes.Select(dto =>
+        {
+            if (dto.Inputs is null)
+                throw new ContentException($"Recipe '{dto.TypeId}' is missing inputs.");
+            if (dto.Outputs is null)
+                throw new ContentException($"Recipe '{dto.TypeId}' is missing outputs.");
+
+            return new RecipeDefinition(
+                dto.TypeId,
+                dto.DisplayName,
+                dto.Inputs.Select(m => new RecipeMaterial(m.ItemTypeId, m.Count)).ToImmutableArray(),
+                dto.Outputs.Select(m => new RecipeMaterial(m.ItemTypeId, m.Count)).ToImmutableArray(),
+                dto.CycleDurationMs);
+        }).ToArray();
+    }
+
     private static T ReadJson<T>(string path, string description)
     {
         if (!File.Exists(path))
@@ -155,11 +214,11 @@ public static class EngineContentLoader
 
     internal sealed record LoadedEngineContent(GameDataRegistry Registry, ScenarioFile DefaultScenario);
 
-    private sealed record EngineSettingsFile(
+    internal sealed record EngineSettingsFile(
         [property: JsonPropertyName("typeData")] TypeDataPaths TypeData,
         [property: JsonPropertyName("defaultScenario")] string DefaultScenario);
 
-    private sealed record TypeDataPaths(
+    internal sealed record TypeDataPaths(
         [property: JsonPropertyName("moduleTypes")] string ModuleTypes,
         [property: JsonPropertyName("itemTypes")] string ItemTypes,
         [property: JsonPropertyName("commandDefinitions")] string CommandDefinitions,
@@ -196,4 +255,31 @@ public static class EngineContentLoader
     private sealed record CommandDefinitionDto(
         [property: JsonPropertyName("typeId")] string TypeId,
         [property: JsonPropertyName("displayName")] string DisplayName);
+
+    private sealed record FactoryTypesFile(
+        [property: JsonPropertyName("factoryTypes")] IReadOnlyList<FactoryTypeDefinitionDto> FactoryTypes);
+
+    private sealed record FactoryTypeDefinitionDto(
+        [property: JsonPropertyName("typeId")] string TypeId,
+        [property: JsonPropertyName("displayName")] string DisplayName,
+        [property: JsonPropertyName("recipe")] RecipeDto? Recipe);
+
+    private sealed record RecipeDto(
+        [property: JsonPropertyName("inputs")] IReadOnlyList<RecipeMaterialDto> Inputs,
+        [property: JsonPropertyName("outputs")] IReadOnlyList<RecipeMaterialDto> Outputs,
+        [property: JsonPropertyName("cycleTimeMs")] long CycleTimeMs);
+
+    private sealed record RecipesFile(
+        [property: JsonPropertyName("recipes")] IReadOnlyList<RecipeDefinitionDto> Recipes);
+
+    private sealed record RecipeDefinitionDto(
+        [property: JsonPropertyName("typeId")] string TypeId,
+        [property: JsonPropertyName("displayName")] string DisplayName,
+        [property: JsonPropertyName("inputs")] IReadOnlyList<RecipeMaterialDto> Inputs,
+        [property: JsonPropertyName("outputs")] IReadOnlyList<RecipeMaterialDto> Outputs,
+        [property: JsonPropertyName("cycleDurationMs")] long CycleDurationMs);
+
+    private sealed record RecipeMaterialDto(
+        [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
+        [property: JsonPropertyName("count")] long Count);
 }
