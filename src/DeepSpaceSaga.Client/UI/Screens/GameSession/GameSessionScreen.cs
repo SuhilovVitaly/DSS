@@ -363,6 +363,12 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
+        if (key == Key.F5)
+            return ScreenEvent.QuickSave;
+
+        if (key == Key.F9)
+            return ScreenEvent.QuickLoad;
+
         // Number keys 1..5 → Speed0..Speed4 (index in SpeedValues)
         if (key >= Key.Number1 && key <= Key.Number5)
         {

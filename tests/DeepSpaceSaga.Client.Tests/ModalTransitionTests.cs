@@ -60,6 +60,8 @@ public class ModalTransitionTests
                 ImmutableArray<ObjectMotionSnapshot>.Empty);
         }
 
+        public ValueTask SaveAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
+
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 

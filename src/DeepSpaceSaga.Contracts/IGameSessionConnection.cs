@@ -28,4 +28,11 @@ public interface IGameSessionConnection : IAsyncDisposable
     /// </summary>
     IAsyncEnumerable<AuthoritativeSnapshot> ReadSnapshotsAsync(
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Capture the current authoritative world state and persist it (quicksave).
+    /// There is no matching LoadAsync — loading a save always goes through the
+    /// session-factory bootstrap path, replacing the whole session/connection.
+    /// </summary>
+    ValueTask SaveAsync(CancellationToken cancellationToken = default);
 }

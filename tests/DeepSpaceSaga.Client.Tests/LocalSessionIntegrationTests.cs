@@ -1,6 +1,7 @@
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.LocalClient;
+using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.Client.Tests;
 
@@ -46,5 +47,94 @@ public class LocalSessionIntegrationTests
         await connection.SendCommandAsync(command);
 
         Assert.Equal(1, engine.ReceivedCommandCount);
+    }
+
+    [Fact]
+    public async Task SaveAsync_writes_a_valid_parsable_save_file()
+    {
+        var engine = new SimulationEngine();
+        engine.LoadScenario(ScenarioLoader.LoadFromJson("""
+        {
+          "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "test",
+            "spaceObjects": [
+              { "objectId": "test", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 100, "positionY": 200, "speedMps": 1000, "directionDegrees": 45,
+                "movementType": "Linear" }
+            ]
+          }
+        }
+        """));
+
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-save-test-{Guid.NewGuid():N}");
+        string savePath = Path.Combine(dir, "Saves", "quicksave.json");
+
+        await using var connection = new LocalGameSessionConnection(engine, savePath);
+        try
+        {
+            // Saves/ does not exist yet — SaveAsync must create it.
+            await connection.SaveAsync();
+
+            Assert.True(File.Exists(savePath));
+            var loaded = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true);
+            Assert.NotNull(loaded);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task SaveAsync_does_not_race_with_the_background_engine_loop()
+    {
+        var engine = new SimulationEngine();
+        engine.LoadScenario(ScenarioLoader.LoadFromJson("""
+        {
+          "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "test",
+            "spaceObjects": [
+              { "objectId": "test", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary" }
+            ]
+          }
+        }
+        """));
+
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-save-race-{Guid.NewGuid():N}");
+        string savePath = Path.Combine(dir, "Saves", "quicksave.json");
+
+        await using var connection = new LocalGameSessionConnection(engine, savePath);
+        try
+        {
+            // Several concurrent SaveAsync calls while the background 1 Hz engine loop is
+            // ticking — every completed write is an atomic temp-file + rename, so the file
+            // on disk must always be fully valid, never partially written or corrupted.
+            var saveTasks = Enumerable.Range(0, 5).Select(_ => connection.SaveAsync().AsTask()).ToArray();
+            await Task.WhenAll(saveTasks);
+
+            var loaded = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true);
+            Assert.NotNull(loaded);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task SaveAsync_throws_when_no_save_path_is_configured()
+    {
+        var engine = new SimulationEngine();
+        await using var connection = new LocalGameSessionConnection(engine);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await connection.SaveAsync());
     }
 }

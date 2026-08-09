@@ -18,10 +18,23 @@ public static class Program
 
     private sealed class LocalGameSessionFactory : IGameSessionFactory
     {
+        // The only place that knows about Saves/quicksave.json on disk (mirrors Settings.json).
+        private static string SettingsPath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
+        private static string SavePath => Path.Combine(AppContext.BaseDirectory, "Saves", "quicksave.json");
+
         public IGameSessionConnection CreateSession()
         {
-            string settingsPath = Path.Combine(AppContext.BaseDirectory, "Settings.json");
-            return LocalGameSessionConnection.CreateFromSettingsFile(settingsPath);
+            return LocalGameSessionConnection.CreateFromSettingsFile(SettingsPath, SavePath);
+        }
+
+        public IGameSessionConnection CreateSessionFromSave()
+        {
+            return LocalGameSessionConnection.CreateFromSaveFile(SettingsPath, SavePath);
+        }
+
+        public bool HasQuickSave()
+        {
+            return File.Exists(SavePath);
         }
     }
 }

@@ -2,10 +2,22 @@ using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Engine.Scenario;
 
-/// <summary>Root of the scenario JSON file.</summary>
+/// <summary>Save file format version constants.</summary>
+public static class SaveFormat
+{
+    /// <summary>
+    /// Current save format version written by <see cref="SimulationEngine.CaptureSaveState"/>.
+    /// Bump when the save schema changes incompatibly (see requirements §3891 migration policy —
+    /// not implemented yet, only the version field is laid down in this iteration).
+    /// </summary>
+    public const int CurrentSaveFormatVersion = 1;
+}
+
+/// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
 public sealed record ScenarioFile(
     [property: JsonPropertyName("scenarioMetadata")] ScenarioMetadata Metadata,
-    [property: JsonPropertyName("gameState")] GameStateData GameState);
+    [property: JsonPropertyName("gameState")] GameStateData GameState,
+    [property: JsonPropertyName("saveFormatVersion")] int SaveFormatVersion = 0);
 
 /// <summary>Scenario identification.</summary>
 public sealed record ScenarioMetadata(
@@ -38,7 +50,8 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("movementType")] string MovementType,
     [property: JsonPropertyName("massKg")] long? MassKg,
     [property: JsonPropertyName("compositionType")] string? CompositionType,
-    [property: JsonPropertyName("modules")] IReadOnlyList<ShipModuleData>? Modules);
+    [property: JsonPropertyName("modules")] IReadOnlyList<ShipModuleData>? Modules,
+    [property: JsonPropertyName("isKnown")] bool IsKnown = false);
 
 /// <summary>A ship module declared in a scenario.</summary>
 public sealed record ShipModuleData(

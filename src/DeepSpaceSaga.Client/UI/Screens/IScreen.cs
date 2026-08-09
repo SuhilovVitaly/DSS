@@ -22,5 +22,7 @@ public enum ScreenEvent
     Exit,
     OpenGameMenu,
     Resume,
-    MainMenu
+    MainMenu,
+    QuickSave,
+    QuickLoad
 }
