@@ -371,6 +371,165 @@ public class EngineCommandTests
         Assert.Equal(12, ship.Direction);
     }
 
+    [Fact]
+    public void Executed_command_appears_in_next_snapshot_with_full_details()
+    {
+        var engine = CreateEngine();
+
+        engine.ReceiveCommand(new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.Accelerate));
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        // AC1: exactly one result, Executed, all fields match, no reason code,
+        // effective game time equals the snapshot's game time.
+        var result = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Executed, result.Status);
+        Assert.Equal("cmd-1", result.CommandId);
+        Assert.Equal(PlayerShipId, result.ObjectId);
+        Assert.Equal(EngineModuleId, result.ModuleId);
+        Assert.Equal(ShipEngineCommandTypes.Accelerate, result.CommandType);
+        Assert.Null(result.ReasonCode);
+        Assert.Equal(snapshot.GameTimeMs, result.EffectiveGameTimeMs);
+    }
+
+    [Theory]
+    [InlineData("OTHER", EngineModuleId, ShipEngineCommandTypes.Accelerate, CommandReasonCodes.UnknownObject)]
+    [InlineData(PlayerShipId, "MISSING", ShipEngineCommandTypes.Accelerate, CommandReasonCodes.UnknownModule)]
+    [InlineData(PlayerShipId, EngineModuleId, "engine.unknown", CommandReasonCodes.UnknownCommandType)]
+    public void Invalid_commands_are_rejected_with_machine_readable_reason_codes(
+        string objectId,
+        string moduleId,
+        string commandType,
+        string expectedReason)
+    {
+        var engine = CreateEngine();
+
+        engine.ReceiveCommand(new PlayerCommand("cmd-1", 1, objectId, moduleId, commandType));
+        var snapshot = engine.CaptureSnapshotForTests();
+
+        // AC2: wrong object / wrong module / wrong type → Rejected with the
+        // matching snake_case reason code.
+        var result = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Rejected, result.Status);
+        Assert.Equal(expectedReason, result.ReasonCode);
+        Assert.Equal(commandType, result.CommandType);
+    }
+
+    [Fact]
+    public void Deferred_command_is_reported_once_and_executed_on_the_next_snapshot()
+    {
+        var engine = CreateEngine(directionDegrees: 0);
+
+        // AC3: two one-shot TurnRightStep commands in the same tick — the module
+        // is busy for the second one, which is genuinely requeued.
+        engine.ReceiveCommand(new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
+        engine.ReceiveCommand(new PlayerCommand("cmd-2", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
+
+        var first = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        Assert.Equal(2, first.CommandResults.Length);
+        var cmd1 = first.CommandResults[0];
+        Assert.Equal("cmd-1", cmd1.CommandId);
+        Assert.Equal(CommandResultStatus.Executed, cmd1.Status);
+        Assert.Null(cmd1.ReasonCode);
+        var cmd2 = first.CommandResults[1];
+        Assert.Equal("cmd-2", cmd2.CommandId);
+        Assert.Equal(CommandResultStatus.Deferred, cmd2.Status);
+        Assert.Equal(CommandReasonCodes.Busy, cmd2.ReasonCode);
+
+        // The deferred command completes and executes on the next snapshot.
+        var second = engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
+        Assert.Equal(1, PlayerShipFrom(second).Direction);
+        var cmd2Result = Assert.Single(second.CommandResults);
+        Assert.Equal("cmd-2", cmd2Result.CommandId);
+        Assert.Equal(CommandResultStatus.Executed, cmd2Result.Status);
+        Assert.Null(cmd2Result.ReasonCode);
+
+        // No duplicate Deferred/Executed results in later snapshots — each command
+        // is published exactly once.
+        var third = engine.CaptureSnapshotForTests(200, SimulationSpeed.Speed1);
+        Assert.Empty(third.CommandResults);
+    }
+
+    [Fact]
+    public void Command_results_are_immutable_after_snapshot_publication()
+    {
+        var engine = CreateEngine();
+
+        engine.ReceiveCommand(new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.Accelerate));
+        var snapshotA = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        var resultA = Assert.Single(snapshotA.CommandResults);
+        Assert.Equal(CommandResultStatus.Executed, resultA.Status);
+
+        // Process another command; snapshot B carries only the new result.
+        engine.ReceiveCommand(new PlayerCommand("cmd-2", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.Brake));
+        var snapshotB = engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
+
+        // AC4: the already published snapshot is not mutated by later processing.
+        Assert.Single(snapshotA.CommandResults);
+        Assert.Same(resultA, snapshotA.CommandResults[0]);
+        Assert.Equal(CommandResultStatus.Executed, snapshotA.CommandResults[0].Status);
+
+        Assert.Single(snapshotB.CommandResults);
+        var resultB = snapshotB.CommandResults[0];
+        Assert.Equal("cmd-2", resultB.CommandId);
+        Assert.Equal(CommandResultStatus.Executed, resultB.Status);
+    }
+
+    [Theory]
+    [InlineData("Off", "Ready", 100)]
+    [InlineData("On", "Disabled", 100)]
+    [InlineData("On", "Ready", 0)]
+    public void Unavailable_engine_module_rejects_with_module_unavailable_reason(
+        string powerState,
+        string operationalState,
+        int structurePoints)
+    {
+        var engine = CreateEngine(
+            speedMps: 700,
+            directionDegrees: 12,
+            powerState: powerState,
+            operationalState: operationalState,
+            structurePoints: structurePoints);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.Accelerate));
+        var snapshot = engine.CaptureSnapshotForTests();
+
+        var result = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Rejected, result.Status);
+        Assert.Equal(CommandReasonCodes.ModuleUnavailable, result.ReasonCode);
+    }
+
+    [Fact]
+    public void Save_in_deferred_window_does_not_duplicate_command_results()
+    {
+        // Regression test for review finding 7.1:
+        // CaptureSaveStateCore also calls ApplyPendingCommands — the drain in
+        // BuildSnapshot must deduplicate by CommandId so a command processed
+        // twice in one drain window (once by BuildSnapshot, once by
+        // CaptureSaveStateCore) appears exactly once in the snapshot.
+        var engine = CreateEngine(speedMps: 700, directionDegrees: 12);
+
+        // Two one-shot commands on the same tick: first starts, second is deferred (busy).
+        engine.ReceiveCommand(new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.Accelerate));
+        engine.ReceiveCommand(new PlayerCommand("cmd-2", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.Accelerate));
+
+        // Simulate F5 save right after the commands, inside the deferred window.
+        // This calls CaptureSaveStateCore → ApplyPendingCommands → RecordCommandResult
+        // for both commands, populating _commandResults with Deferred for cmd-2.
+        engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed1);
+
+        // Advance time so the deferred command executes.
+        var snapshot = engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
+
+        // No duplicates: at most one CommandResult per CommandId.
+        var byId = snapshot.CommandResults.GroupBy(r => r.CommandId).ToList();
+        foreach (var group in byId)
+            Assert.Single(group);
+
+        // Verify the content is correct (not just "no duplicates").
+        Assert.Contains(snapshot.CommandResults, r => r.CommandId == "cmd-1" && r.Status == CommandResultStatus.Executed);
+        Assert.Contains(snapshot.CommandResults, r => r.CommandId == "cmd-2");
+    }
+
     private static PlayerCommand Command(string commandType)
     {
         return new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, commandType);

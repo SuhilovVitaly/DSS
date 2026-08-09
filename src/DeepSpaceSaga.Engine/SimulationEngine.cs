@@ -24,6 +24,7 @@ public sealed class SimulationEngine : IDisposable
     private readonly object _commandGate = new();
     private readonly object _worldStateLock = new();
     private readonly List<PlayerCommand> _pendingCommands = new();
+    private readonly List<CommandResult> _commandResults = new();
     private int _receivedCommandCount;
     private ulong _nextSequence;
     private ulong _nextEngineCycleId;
@@ -267,12 +268,27 @@ public sealed class SimulationEngine : IDisposable
                 });
             }
 
+            // Drain results of commands processed since the previous snapshot.
+            // Results accumulated by ApplyPendingCommands from CaptureSaveStateCore
+            // are published by this next BuildSnapshot — correct: the command was
+            // processed "since the previous snapshot".
+            // Deduplicate by CommandId: keep only the last (final) disposition.
+            // Both BuildSnapshot and CaptureSaveStateCore call ApplyPendingCommands,
+            // so a command processed twice in one drain window produces two entries
+            // — the last one is authoritative (e.g. Deferred then Executed).
+            var commandResults = _commandResults
+                .GroupBy(r => r.CommandId)
+                .Select(g => g.Last())
+                .ToImmutableArray();
+            _commandResults.Clear();
+
             return new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
                 GameTimeMs: gameTimeMs,
                 CurrentSpeed: clockState.Speed,
                 Objects: objects.MoveToImmutable(),
-                PlayerShipObjectId: PlayerShipObjectId);
+                PlayerShipObjectId: PlayerShipObjectId,
+                CommandResults: commandResults);
         }
     }
 
@@ -544,10 +560,17 @@ public sealed class SimulationEngine : IDisposable
 
         foreach (var command in commands)
         {
-            if (TryStartEngineCommand(command, gameTimeMs) == CommandStartDisposition.Deferred)
+            var outcome = TryStartEngineCommand(command, gameTimeMs);
+            if (outcome.Disposition == CommandStartDisposition.Deferred)
             {
+                // Final disposition unknown yet — the command gets a second chance
+                // below; its result is recorded after the second pass.
                 deferred ??= [];
                 deferred.Add(command);
+            }
+            else
+            {
+                RecordCommandResult(command, outcome, gameTimeMs);
             }
         }
 
@@ -561,16 +584,51 @@ public sealed class SimulationEngine : IDisposable
             List<PlayerCommand>? stillDeferred = null;
             foreach (var command in deferred)
             {
-                if (TryStartEngineCommand(command, gameTimeMs) == CommandStartDisposition.Deferred)
+                var outcome = TryStartEngineCommand(command, gameTimeMs);
+                if (outcome.Disposition == CommandStartDisposition.Deferred)
                 {
                     stillDeferred ??= [];
                     stillDeferred.Add(command);
                 }
+                else
+                {
+                    RecordCommandResult(command, outcome, gameTimeMs);
+                }
             }
 
             if (stillDeferred is { Count: > 0 })
+            {
+                // Actually requeued — deferred for the remainder of this tick.
+                foreach (var command in stillDeferred)
+                {
+                    RecordCommandResult(
+                        command,
+                        new CommandStartOutcome(CommandStartDisposition.Deferred, CommandReasonCodes.Busy),
+                        gameTimeMs);
+                }
+
                 RequeueDeferredCommands(stillDeferred);
+            }
         }
+    }
+
+    private void RecordCommandResult(PlayerCommand command, CommandStartOutcome outcome, long gameTimeMs)
+    {
+        CommandResultStatus status = outcome.Disposition switch
+        {
+            CommandStartDisposition.Started => CommandResultStatus.Executed,
+            CommandStartDisposition.Rejected => CommandResultStatus.Rejected,
+            _ => CommandResultStatus.Deferred
+        };
+
+        _commandResults.Add(new CommandResult(
+            CommandId: command.CommandId,
+            ObjectId: command.ObjectId,
+            ModuleId: command.ModuleId,
+            CommandType: command.CommandType,
+            Status: status,
+            EffectiveGameTimeMs: gameTimeMs,
+            ReasonCode: outcome.ReasonCode));
     }
 
     private List<PlayerCommand> DrainPendingCommands()
@@ -594,44 +652,44 @@ public sealed class SimulationEngine : IDisposable
         }
     }
 
-    private CommandStartDisposition TryStartEngineCommand(PlayerCommand command, long gameTimeMs)
+    private CommandStartOutcome TryStartEngineCommand(PlayerCommand command, long gameTimeMs)
     {
         if (!string.Equals(command.ObjectId, PlayerShipObjectId, StringComparison.Ordinal))
-            return CommandStartDisposition.Rejected;
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
 
         int objectIndex = _objects.FindIndex(o =>
             string.Equals(o.InitialMotion.ObjectId, command.ObjectId, StringComparison.Ordinal) &&
             string.Equals(o.ObjectType, "PlayerShip", StringComparison.OrdinalIgnoreCase));
         if (objectIndex < 0)
-            return CommandStartDisposition.Rejected;
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
 
         var obj = _objects[objectIndex];
         int moduleIndex = FindModuleIndex(obj.Modules, command.ModuleId);
         if (moduleIndex < 0)
-            return CommandStartDisposition.Rejected;
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
 
         var module = obj.Modules[moduleIndex];
         var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
         if (!IsEngineCommandType(moduleType, command.CommandType))
-            return CommandStartDisposition.Rejected;
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
 
         if (command.CommandType == ShipEngineCommandTypes.CancelAll)
         {
             _objects[objectIndex] = UpdateModule(obj, moduleIndex, module => module with { ActiveCycle = null });
-            return CommandStartDisposition.Started;
+            return CommandStartOutcome.Started;
         }
 
         if (!CanExecuteEngineCommand(module, moduleType))
-            return CommandStartDisposition.Rejected;
+            return CommandStartOutcome.Rejected(CommandReasonCodes.ModuleUnavailable);
 
         if (module.ActiveCycle is { } activeCycle)
         {
             if (!activeCycle.IsAutoRepeat)
-                return CommandStartDisposition.Deferred;
+                return CommandStartOutcome.Deferred(CommandReasonCodes.Busy);
 
             // Same command type — idempotent, continue existing cycle.
             if (string.Equals(command.CommandType, activeCycle.CommandType, StringComparison.Ordinal))
-                return CommandStartDisposition.Started;
+                return CommandStartOutcome.Started;
 
             // Any other engine command implicitly cancels the active periodic
             // (auto-repeat) cycle and falls through to start its own cycle below.
@@ -645,7 +703,7 @@ public sealed class SimulationEngine : IDisposable
             {
                 ActiveCycle = CreateEngineCycle(command.CommandType, gameTimeMs, isAutoRepeat)
             });
-        return CommandStartDisposition.Started;
+        return CommandStartOutcome.Started;
     }
 
     private static int FindModuleIndex(ImmutableArray<InstalledModuleRuntime> modules, string moduleId)
@@ -953,4 +1011,19 @@ internal enum CommandStartDisposition
     Started,
     Deferred,
     Rejected
+}
+
+/// <summary>
+/// Internal result of <see cref="SimulationEngine"/> command start: disposition plus
+/// a machine-readable reason code for non-started commands (snake_case, §56.6 style).
+/// </summary>
+internal readonly record struct CommandStartOutcome(
+    CommandStartDisposition Disposition,
+    string? ReasonCode)
+{
+    public static CommandStartOutcome Started => new(CommandStartDisposition.Started, null);
+
+    public static CommandStartOutcome Deferred(string reasonCode) => new(CommandStartDisposition.Deferred, reasonCode);
+
+    public static CommandStartOutcome Rejected(string reasonCode) => new(CommandStartDisposition.Rejected, reasonCode);
 }
