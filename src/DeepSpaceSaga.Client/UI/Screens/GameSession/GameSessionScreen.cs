@@ -160,11 +160,12 @@ public sealed class GameSessionScreen : IScreen
     [
         new("^", ShipEngineCommandTypes.Accelerate, "button_accelerate.png"),
         new("_", ShipEngineCommandTypes.Brake, "button_brake.png"),
+        new("=", ShipEngineCommandTypes.MaintainSpeed, "button_maintain_speed.png"),
         new(">", ShipEngineCommandTypes.TurnRightStep, "button_turn_right_step.png"),
         new("<", ShipEngineCommandTypes.TurnLeftStep, "button_turn_left_step.png"),
         new(">>", ShipEngineCommandTypes.TurnRightUntilCancel, "button_turn_right_until_cancel.png"),
         new("<<", ShipEngineCommandTypes.TurnLeftUntilCancel, "button_turn_left_until_cancel.png"),
-        new("X", ShipEngineCommandTypes.CancelAll, "button_cancel_all.png"),
+        new("°", ShipEngineCommandTypes.MaintainCourse, "button_maintain_course.png"),
     ];
 
     // ── Test seams ──────────────────────────────────────────────
@@ -186,6 +187,9 @@ public sealed class GameSessionScreen : IScreen
     internal SKRect LastCommandPanelRect => _lastCommandPanelRect;
     internal IReadOnlyList<SKRect> EngineCommandButtonRects => _engineCommandButtonRects;
     internal int PressedEngineCommandButtonIndex => _pressedEngineCommandButtonIndex;
+
+    /// <summary>Current frame's render list (scale-filtered, client-side).</summary>
+    internal IReadOnlyList<ObjectRenderState> RenderStates => _renderStates;
     internal int ActiveEngineCommandButtonIndex { get; private set; } = -1;
     internal bool IsFocusAttachedToPlayer => _isFocusAttachedToPlayer;
     internal IReadOnlyList<ObjectTrailPoint> GetObjectTrail(string objectId) => _trailStore.GetTrail(objectId);
@@ -540,15 +544,20 @@ public sealed class GameSessionScreen : IScreen
             foreach (var state in _renderStates)
             {
                 var (sx, sy) = _camera.WorldToScreen(state.Predicted.X, state.Predicted.Y, width, height);
+                // Marker radius from the shared policy (screen-space, zoom-independent).
+                // The player ship's render type comes from identity (IsPlayerShip), not
+                // the payload — legacy payloads without RenderObjectType still draw as a ship.
+                float r = TacticalMapMarkerPolicy.GetMarkerRadiusPx(
+                    state.IsPlayerShip ? SpaceObjectType.PlayerShip : state.Predicted.RenderObjectType);
                 if (state.IsPlayerShip)
                 {
-                    DrawPlayerShipGlyph(canvas, sx, sy, state.Predicted.Direction);
+                    DrawPlayerShipGlyph(canvas, sx, sy, state.Predicted.Direction, r);
                 }
                 else
                 {
                     _objectPaint.Color = SpaceMapColorResolver.GetColor(
-                        state.Predicted.ObjectType, state.Predicted.RelationToPlayer);
-                    canvas.DrawCircle(sx, sy, 4, _objectPaint);
+                        state.Predicted.RenderObjectType, state.Predicted.RelationToPlayer);
+                    canvas.DrawCircle(sx, sy, r, _objectPaint);
                 }
             }
 
@@ -693,6 +702,17 @@ public sealed class GameSessionScreen : IScreen
             }
 
             _lastSnapshotBaselineObjects[obj.ObjectId] = obj;
+
+            // ТЗ-10 scale visibility filter — client-side only: hidden objects
+            // remain in the snapshot/buffer, only the render list is filtered.
+            // The player ship resolves via identity so legacy payloads without
+            // RenderObjectType stay visible at every scale.
+            string renderType = obj.ObjectId == playerShipObjectId
+                ? SpaceObjectType.PlayerShip
+                : (obj.RenderObjectType ?? SpaceObjectType.UnknownSpaceObject);
+            if (!TacticalMapMarkerPolicy.ShouldRenderAtScale(renderType, _camera.PixelsPerWorldUnit))
+                continue;
+
             _renderStates.Add(new ObjectRenderState(obj, predicted, obj.ObjectId == playerShipObjectId));
         }
 
@@ -1088,17 +1108,23 @@ public sealed class GameSessionScreen : IScreen
         return -1;
     }
 
-    private void DrawPlayerShipGlyph(SKCanvas canvas, float sx, float sy, double directionDegrees)
+    /// <summary>
+    /// Draw the player ship glyph scaled to the policy marker radius
+    /// (10 px diameter at default scale): nose = radius, half-width =
+    /// radius * 5/7 — the whole glyph fits inside the 10 px marker.
+    /// </summary>
+    private void DrawPlayerShipGlyph(SKCanvas canvas, float sx, float sy, double directionDegrees, float radius)
     {
         double radians = directionDegrees * Math.PI / 180.0;
         float dx = (float)Math.Sin(radians);
         float dy = -(float)Math.Cos(radians);
         float rx = dy;
         float ry = -dx;
+        float halfWidth = radius * 5f / 7f;
 
-        var nose = new SKPoint(sx + dx * 7f, sy + dy * 7f);
-        var left = new SKPoint(sx - dx * 5f - rx * 5f, sy - dy * 5f - ry * 5f);
-        var right = new SKPoint(sx - dx * 5f + rx * 5f, sy - dy * 5f + ry * 5f);
+        var nose = new SKPoint(sx + dx * radius, sy + dy * radius);
+        var left = new SKPoint(sx - dx * halfWidth - rx * halfWidth, sy - dy * halfWidth - ry * halfWidth);
+        var right = new SKPoint(sx - dx * halfWidth + rx * halfWidth, sy - dy * halfWidth + ry * halfWidth);
 
         _playerShipGlyphPath.Reset();
         _playerShipGlyphPath.MoveTo(nose);

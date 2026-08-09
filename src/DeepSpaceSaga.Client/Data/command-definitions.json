@@ -2,31 +2,73 @@
   "commandDefinitions": [
     {
       "typeId": "engine.accelerate",
-      "displayName": "Accelerate"
+      "displayName": "Accelerate",
+      "timeFactor": 0.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0
     },
     {
       "typeId": "engine.brake",
-      "displayName": "Brake"
+      "displayName": "Brake",
+      "timeFactor": 0.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0
+    },
+    {
+      "typeId": "engine.maintain-speed",
+      "displayName": "Maintain Speed",
+      "timeFactor": 0.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0
     },
     {
       "typeId": "engine.turn-left-step",
-      "displayName": "Turn Left Step"
+      "displayName": "Turn Left Step",
+      "timeFactor": 0.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0
     },
     {
       "typeId": "engine.turn-right-step",
-      "displayName": "Turn Right Step"
+      "displayName": "Turn Right Step",
+      "timeFactor": 0.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0
     },
     {
       "typeId": "engine.turn-left-until-cancel",
-      "displayName": "Turn Left Until Cancel"
+      "displayName": "Turn Left Until Cancel",
+      "timeFactor": 1.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0
     },
     {
       "typeId": "engine.turn-right-until-cancel",
-      "displayName": "Turn Right Until Cancel"
+      "displayName": "Turn Right Until Cancel",
+      "timeFactor": 1.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0
     },
     {
-      "typeId": "engine.cancel-all",
-      "displayName": "Cancel All Engine Commands"
+      "typeId": "engine.maintain-course",
+      "displayName": "Maintain Course",
+      "timeFactor": 0.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0
+    },
+    {
+      "typeId": "engine.match-target-speed",
+      "displayName": "Match Target Speed",
+      "timeFactor": 0.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0
+    },
+    {
+      "typeId": "engine.match-target-course",
+      "displayName": "Match Target Course",
+      "timeFactor": 0.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0
     }
   ]
 }

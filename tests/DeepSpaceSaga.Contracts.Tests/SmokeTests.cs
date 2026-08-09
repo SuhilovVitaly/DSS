@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Contracts.Tests;
@@ -16,12 +17,77 @@ public class SmokeTests
             CommandType: "move");
 
         Assert.NotNull(command);
+        Assert.Null(command.TargetObjectId);
+    }
+
+    [Fact]
+    public void PlayerCommand_carries_explicit_target_object_id()
+    {
+        var command = new PlayerCommand(
+            CommandId: "cmd-2",
+            ClientSequence: 2,
+            ObjectId: "ship-1",
+            ModuleId: "nav",
+            CommandType: "engine.match-target-speed",
+            TargetObjectId: "obj-2");
+
+        Assert.Equal("obj-2", command.TargetObjectId);
+    }
+
+    [Fact]
+    public void PlayerCommand_serialization_round_trip_preserves_target_object_id()
+    {
+        // AC4: a match command's explicit target survives serialization/deserialization —
+        // required so the target reaches the authoritative engine across the connection.
+        var command = new PlayerCommand(
+            CommandId: "cmd-1",
+            ClientSequence: 1,
+            ObjectId: "ship-1",
+            ModuleId: "engine-1",
+            CommandType: "engine.match-target-speed",
+            TargetObjectId: "obj-2");
+
+        var json = JsonSerializer.Serialize(command);
+        var roundTripped = JsonSerializer.Deserialize<PlayerCommand>(json);
+
+        Assert.NotNull(roundTripped);
+        Assert.Equal("cmd-1", roundTripped!.CommandId);
+        Assert.Equal(1ul, roundTripped.ClientSequence);
+        Assert.Equal("ship-1", roundTripped.ObjectId);
+        Assert.Equal("engine-1", roundTripped.ModuleId);
+        Assert.Equal("engine.match-target-speed", roundTripped.CommandType);
+        Assert.Equal("obj-2", roundTripped.TargetObjectId);
+    }
+
+    [Fact]
+    public void PlayerCommand_serialization_round_trip_preserves_null_target()
+    {
+        // AC4 (null-target branch): a command without a target stays without one
+        // after the round trip.
+        var command = new PlayerCommand(
+            CommandId: "cmd-2",
+            ClientSequence: 2,
+            ObjectId: "ship-1",
+            ModuleId: "engine-1",
+            CommandType: "engine.accelerate");
+
+        var json = JsonSerializer.Serialize(command);
+        var roundTripped = JsonSerializer.Deserialize<PlayerCommand>(json);
+
+        Assert.NotNull(roundTripped);
+        Assert.Equal("cmd-2", roundTripped!.CommandId);
+        Assert.Equal("engine.accelerate", roundTripped.CommandType);
+        Assert.Null(roundTripped.TargetObjectId);
     }
 
     [Fact]
     public void ShipEngineCommandTypes_expose_stable_ids()
     {
         Assert.Equal("engine.accelerate", ShipEngineCommandTypes.Accelerate);
+        Assert.Equal("engine.maintain-speed", ShipEngineCommandTypes.MaintainSpeed);
+        Assert.Equal("engine.maintain-course", ShipEngineCommandTypes.MaintainCourse);
+        Assert.Equal("engine.match-target-speed", ShipEngineCommandTypes.MatchTargetSpeed);
+        Assert.Equal("engine.match-target-course", ShipEngineCommandTypes.MatchTargetCourse);
         Assert.Equal("engine.cancel-all", ShipEngineCommandTypes.CancelAll);
     }
 

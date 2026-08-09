@@ -1,5 +1,24 @@
 namespace DeepSpaceSaga.Engine.Content;
 
+/// <summary>
+/// Factor values are stored as fixed-point integers where 1000 = 1.0.
+/// This avoids <see cref="double"/> / <see cref="float"/> as the authoritative
+/// runtime representation (§56.3).
+/// </summary>
 internal sealed record CommandDefinition(
     string TypeId,
-    string DisplayName) : ITypeDefinition;
+    string DisplayName,
+    int TimeFactor = FactorDefaults.Default,
+    int ComplexityFactor = FactorDefaults.Default,
+    int ConsumptionFactor = FactorDefaults.Default) : ITypeDefinition
+{
+    /// <summary>Fixed-point constant for the neutral factor value 1.0.</summary>
+    public const int Neutral = 1000;
+}
+
+/// <summary>Well-known fixed-point factor defaults for command definitions.</summary>
+internal static class FactorDefaults
+{
+    /// <summary>1000 = 1.0 — the neutral multiplicative identity.</summary>
+    public const int Default = 1000;
+}

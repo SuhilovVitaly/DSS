@@ -71,15 +71,55 @@ public sealed record ShipModuleData(
     [property: JsonPropertyName("powerState")] string PowerState,
     [property: JsonPropertyName("operationalState")] string OperationalState,
     [property: JsonPropertyName("activeCycle")] ActiveCycleData? ActiveCycle,
-    [property: JsonPropertyName("cargo")] IReadOnlyList<CargoStackData>? Cargo);
+    [property: JsonPropertyName("cargo")] IReadOnlyList<CargoStackData>? Cargo,
+    [property: JsonPropertyName("fuelAmountKg")] long? FuelAmountKg = null);
 
-/// <summary>Runtime progress for an active module cycle.</summary>
+/// <summary>
+/// Runtime progress for an active module cycle.
+/// </summary>
+/// <param name="TargetObjectId">
+/// ObjectId of the target for match commands (engine.match-target-speed /
+/// engine.match-target-course, requirements §56.9). Filled when a match cycle starts;
+/// always set for match cycles (diagnostics + §1253-1298 restore), null otherwise.
+/// </param>
+/// <param name="CapturedTargetSpeedKmS">
+/// Target scalar speed captured at cycle start (km/s). Filled only for
+/// engine.match-target-speed. Cycle completion applies only this captured value —
+/// later target changes or the target disappearing do not affect the result.
+/// Persisted in save and restored on load.
+/// </param>
+/// <param name="CapturedTargetCourseDegrees">
+/// Target course captured at cycle start (degrees). Filled only for
+/// engine.match-target-course. Cycle completion applies only this captured value —
+/// later target changes or the target disappearing do not affect the result.
+/// Persisted in save and restored on load.
+/// </param>
+/// <param name="CommandId">
+/// PlayerCommand.CommandId that started this cycle. Stored so completion, cancellation,
+/// or interruption can publish a final <see cref="DeepSpaceSaga.Contracts.CommandResult"/>
+/// (§56.5: complete → roll → apply → write CommandResult → write ShipEvent). Null for
+/// cycles loaded from a save written before this field existed, and for auto-repeat
+/// renewal cycles (which inherit the original CommandId via CreateEngineCycle).
+/// </param>
+/// <param name="ObjectId">
+/// ObjectId of the module that owns this cycle. Stored together with CommandId so
+/// completion can reconstruct a full CommandResult without threading extra state.
+/// </param>
+/// <param name="ModuleId">
+/// ModuleId of the module that owns this cycle. Same rationale as ObjectId.
+/// </param>
 public sealed record ActiveCycleData(
     [property: JsonPropertyName("cycleId")] string CycleId,
     [property: JsonPropertyName("startedGameTimeMs")] long StartedGameTimeMs,
     [property: JsonPropertyName("durationMs")] long DurationMs,
     [property: JsonPropertyName("commandType")] string CommandType,
-    [property: JsonPropertyName("isAutoRepeat")] bool IsAutoRepeat);
+    [property: JsonPropertyName("isAutoRepeat")] bool IsAutoRepeat,
+    [property: JsonPropertyName("targetObjectId")] string? TargetObjectId = null,
+    [property: JsonPropertyName("capturedTargetSpeedKmS")] double? CapturedTargetSpeedKmS = null,
+    [property: JsonPropertyName("capturedTargetCourseDegrees")] double? CapturedTargetCourseDegrees = null,
+    [property: JsonPropertyName("commandId")] string? CommandId = null,
+    [property: JsonPropertyName("objectId")] string? ObjectId = null,
+    [property: JsonPropertyName("moduleId")] string? ModuleId = null);
 
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(

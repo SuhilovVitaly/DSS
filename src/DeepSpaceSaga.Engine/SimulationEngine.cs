@@ -24,9 +24,12 @@ public sealed class SimulationEngine : IDisposable
     private readonly object _commandGate = new();
     private readonly object _worldStateLock = new();
     private readonly List<PlayerCommand> _pendingCommands = new();
+    private readonly List<CommandResult> _commandResults = new();
+    private readonly List<ShipEvent> _shipEvents = new();
     private int _receivedCommandCount;
     private ulong _nextSequence;
     private ulong _nextEngineCycleId;
+    private ulong _nextShipEventId;
     private bool _disposed;
 
     /// <summary>Number of commands received (test seam).</summary>
@@ -154,6 +157,8 @@ public sealed class SimulationEngine : IDisposable
             PlayerShipObjectId = gs.PlayerShipObjectId;
             _clock.Reset(gs.GameTimeMs, speed);
             _nextEngineCycleId = 0;
+            _nextShipEventId = 0;
+            _shipEvents.Clear();
             CollectLoadedEngineCycleIds(runtimeObjects);
 
             // masterSeed: reuse whatever the scenario/save already carries (continuing a
@@ -254,25 +259,53 @@ public sealed class SimulationEngine : IDisposable
                 long elapsed = gameTimeMs - obj.StartGameTimeMs;
                 var motion = _motion.Predict(obj.InitialMotion, elapsed);
                 var cycleMotion = GetActiveEngineCycleMotion(obj, gameTimeMs);
+                // Render projection: the client may only see factual data
+                // (type, relation, name) for objects the player knows about.
+                // The player ship is always known — protects legacy saves
+                // without isKnown. Unknown objects get the sentinel render type
+                // and null factual fields.
+                bool known = obj.IsKnown || obj.InitialMotion.ObjectId == PlayerShipObjectId;
                 objects.Add(motion with
                 {
                     ActiveEngineCommandType = cycleMotion.CommandType,
                     TurnStepDegrees = cycleMotion.TurnStepDegrees,
                     TurnStepRemainingMs = cycleMotion.TurnStepRemainingMs,
                     TurnStepIntervalMs = cycleMotion.TurnStepIntervalMs,
-                    ObjectType = obj.ObjectType,
-                    RelationToPlayer = GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType),
-                    DisplayName = obj.InitialMotion.ObjectId == PlayerShipObjectId ? obj.Name : null,
+                    ObjectType = known ? obj.ObjectType : null,
+                    RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
+                    RelationToPlayer = known ? GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType) : null,
+                    DisplayName = known ? obj.Name : null,
                     MaxSpeedKmS = GetMaxSpeedKmS(obj)
                 });
             }
+
+            // Drain results of commands processed since the previous snapshot.
+            // Results accumulated by ApplyPendingCommands from CaptureSaveStateCore
+            // are published by this next BuildSnapshot — correct: the command was
+            // processed "since the previous snapshot".
+            // Deduplicate by CommandId: keep only the last (final) disposition.
+            // Both BuildSnapshot and CaptureSaveStateCore call ApplyPendingCommands,
+            // so a command processed twice in one drain window produces two entries
+            // — the last one is authoritative (e.g. Deferred then Executed).
+            var commandResults = _commandResults
+                .GroupBy(r => r.CommandId)
+                .Select(g => g.Last())
+                .ToImmutableArray();
+            _commandResults.Clear();
+
+            // Drain ship events — no deduplication needed: each event has a
+            // unique EventId and is recorded exactly once.
+            var shipEvents = _shipEvents.ToImmutableArray();
+            _shipEvents.Clear();
 
             return new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
                 GameTimeMs: gameTimeMs,
                 CurrentSpeed: clockState.Speed,
                 Objects: objects.MoveToImmutable(),
-                PlayerShipObjectId: PlayerShipObjectId);
+                PlayerShipObjectId: PlayerShipObjectId,
+                CommandResults: commandResults,
+                ShipEvents: shipEvents);
         }
     }
 
@@ -374,7 +407,8 @@ public sealed class SimulationEngine : IDisposable
                 PowerState: module.PowerState,
                 OperationalState: module.OperationalState,
                 ActiveCycle: module.ActiveCycle,
-                Cargo: BuildSaveCargo(module)));
+                Cargo: BuildSaveCargo(module),
+                FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null));
         }
 
         return modules;
@@ -443,6 +477,12 @@ public sealed class SimulationEngine : IDisposable
             }
 
             var cargo = BuildRuntimeCargo(obj, module);
+
+            // Fuel: engine module types carry a FuelCapacityKg; the installed instance
+            // stores its current FuelAmountKg. If the JSON omits FuelAmountKg for an
+            // engine module, default to a full tank (§56.10).
+            long fuelAmountKg = ResolveFuelAmountKg(module, moduleType, obj.ObjectId);
+
             modules.Add(new InstalledModuleRuntime(
                 module.ModuleId,
                 moduleTypeIndex,
@@ -452,7 +492,8 @@ public sealed class SimulationEngine : IDisposable
                 module.OperationalState,
                 module.StructurePoints,
                 module.ActiveCycle,
-                cargo));
+                cargo,
+                fuelAmountKg));
         }
 
         return modules.ToImmutable();
@@ -464,6 +505,12 @@ public sealed class SimulationEngine : IDisposable
         ModuleTypeDefinition moduleType,
         Dictionary<int, HashSet<int>> occupiedCellsByPlatform)
     {
+        if (module.PlatformIndex < 0)
+        {
+            throw new ScenarioException(
+                $"Module '{module.ModuleId}' on '{objectId}' has negative platformIndex {module.PlatformIndex}.");
+        }
+
         if (module.OccupiedCells.Count != moduleType.SlotSize)
         {
             throw new ScenarioException(
@@ -476,6 +523,9 @@ public sealed class SimulationEngine : IDisposable
         {
             if (cell < 0)
                 throw new ScenarioException($"Module '{module.ModuleId}' on '{objectId}' has negative occupied cell {cell}.");
+            if (cell > 3)
+                throw new ScenarioException(
+                    $"Module '{module.ModuleId}' on '{objectId}' has occupied cell {cell} outside the 2x2 platform grid (0..3).");
 
             if (!moduleCells.Add(cell))
                 throw new ScenarioException($"Module '{module.ModuleId}' on '{objectId}' duplicates occupied cell {cell}.");
@@ -519,6 +569,29 @@ public sealed class SimulationEngine : IDisposable
         return cargo.ToImmutable();
     }
 
+    /// <summary>
+    /// Resolve and validate <see cref="InstalledModuleRuntime.FuelAmountKg"/> from JSON data.
+    /// Engine modules (<see cref="ModuleTypeDefinition.FuelCapacityKg"/> &gt; 0) require
+    /// 0 ≤ FuelAmountKg ≤ FuelCapacityKg. If the JSON omits the field (null), default to
+    /// a full tank. Non-engine modules get 0 and skip validation (§56.10).
+    /// </summary>
+    private static long ResolveFuelAmountKg(ShipModuleData module, ModuleTypeDefinition moduleType, string objectId)
+    {
+        if (moduleType.FuelCapacityKg is not ( > 0))
+            return 0;
+
+        long fuelAmountKg = module.FuelAmountKg ?? moduleType.FuelCapacityKg.Value;
+
+        if (fuelAmountKg < 0 || fuelAmountKg > moduleType.FuelCapacityKg.Value)
+        {
+            throw new ScenarioException(
+                $"Module '{module.ModuleId}' on '{objectId}' fuelAmountKg {fuelAmountKg} " +
+                $"is outside 0..{moduleType.FuelCapacityKg.Value}.");
+        }
+
+        return fuelAmountKg;
+    }
+
     internal ImmutableArray<SpaceObjectRuntime> RuntimeObjects => _objects.ToImmutableArray();
 
     private string? GetRelationToPlayer(string objectId, string objectType)
@@ -544,11 +617,21 @@ public sealed class SimulationEngine : IDisposable
 
         foreach (var command in commands)
         {
-            if (TryStartEngineCommand(command, gameTimeMs) == CommandStartDisposition.Deferred)
+            var outcome = TryStartEngineCommand(command, gameTimeMs);
+            if (outcome.Disposition == CommandStartDisposition.Deferred)
             {
+                // Final disposition unknown yet — the command gets a second chance
+                // below; its result is recorded after the second pass.
                 deferred ??= [];
                 deferred.Add(command);
             }
+            else if (outcome.Disposition == CommandStartDisposition.Rejected)
+            {
+                // Rejected immediately — no cycle was created.
+                RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, outcome.ReasonCode);
+            }
+            // Started: the cycle was created. The final CommandResult is written later
+            // by CompleteActiveEngineCycles on completion/interruption (§56.5).
         }
 
         if (deferred is { Count: > 0 })
@@ -561,16 +644,72 @@ public sealed class SimulationEngine : IDisposable
             List<PlayerCommand>? stillDeferred = null;
             foreach (var command in deferred)
             {
-                if (TryStartEngineCommand(command, gameTimeMs) == CommandStartDisposition.Deferred)
+                var outcome = TryStartEngineCommand(command, gameTimeMs);
+                if (outcome.Disposition == CommandStartDisposition.Deferred)
                 {
                     stillDeferred ??= [];
                     stillDeferred.Add(command);
                 }
+                else if (outcome.Disposition == CommandStartDisposition.Rejected)
+                {
+                    RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, outcome.ReasonCode);
+                }
+                // Started: cycle created, result on completion.
             }
 
             if (stillDeferred is { Count: > 0 })
+            {
+                // Actually requeued — deferred for the remainder of this tick.
+                foreach (var command in stillDeferred)
+                {
+                    _commandResults.Add(new CommandResult(
+                        command.CommandId,
+                        command.ObjectId,
+                        command.ModuleId,
+                        command.CommandType,
+                        CommandResultStatus.Deferred,
+                        gameTimeMs,
+                        CommandReasonCodes.Busy));
+                }
+
                 RequeueDeferredCommands(stillDeferred);
+            }
         }
+    }
+
+    private void RecordCommandResult(
+        PlayerCommand command, CommandResultStatus status, long gameTimeMs, string? reasonCode = null)
+    {
+        _commandResults.Add(new CommandResult(
+            command.CommandId,
+            command.ObjectId,
+            command.ModuleId,
+            command.CommandType,
+            status,
+            gameTimeMs,
+            reasonCode));
+    }
+
+    private void RecordCommandResultFromCycle(
+        ActiveCycleData cycle, CommandResultStatus status, long gameTimeMs, string? reasonCode = null)
+    {
+        if (cycle.CommandId is null)
+            return; // legacy save: cycle has no command tracing — nothing to report
+
+        _commandResults.Add(new CommandResult(
+            cycle.CommandId,
+            cycle.ObjectId ?? "",
+            cycle.ModuleId ?? "",
+            cycle.CommandType,
+            status,
+            gameTimeMs,
+            reasonCode));
+    }
+
+    private void RecordShipEvent(string objectId, string moduleId, string eventType, string? reasonCode, long gameTimeMs)
+    {
+        string eventId = $"EVE-{++_nextShipEventId:D6}";
+        _shipEvents.Add(new ShipEvent(eventId, objectId, moduleId, eventType, reasonCode, gameTimeMs));
     }
 
     private List<PlayerCommand> DrainPendingCommands()
@@ -594,58 +733,130 @@ public sealed class SimulationEngine : IDisposable
         }
     }
 
-    private CommandStartDisposition TryStartEngineCommand(PlayerCommand command, long gameTimeMs)
+    private CommandStartOutcome TryStartEngineCommand(PlayerCommand command, long gameTimeMs)
     {
         if (!string.Equals(command.ObjectId, PlayerShipObjectId, StringComparison.Ordinal))
-            return CommandStartDisposition.Rejected;
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
 
         int objectIndex = _objects.FindIndex(o =>
             string.Equals(o.InitialMotion.ObjectId, command.ObjectId, StringComparison.Ordinal) &&
             string.Equals(o.ObjectType, "PlayerShip", StringComparison.OrdinalIgnoreCase));
         if (objectIndex < 0)
-            return CommandStartDisposition.Rejected;
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
 
         var obj = _objects[objectIndex];
         int moduleIndex = FindModuleIndex(obj.Modules, command.ModuleId);
         if (moduleIndex < 0)
-            return CommandStartDisposition.Rejected;
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
 
         var module = obj.Modules[moduleIndex];
         var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
         if (!IsEngineCommandType(moduleType, command.CommandType))
-            return CommandStartDisposition.Rejected;
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
+
+        // Match commands (engine.match-target-speed / engine.match-target-course, §56.9)
+        // carry an explicit, authoritative target. Parameter validation comes right after
+        // UnknownCommandType and before CancelAll/state checks: a parameter-level error
+        // (missing/unknown target) is more specific than a module-state error and is
+        // published deterministically. A whitespace-only target id counts as missing.
+        // The target may be the ship itself — it exists in the world, §56.9 does not forbid it.
+        int? matchTargetIndex = null;
+        if (IsMatchEngineCommand(command.CommandType))
+        {
+            if (string.IsNullOrWhiteSpace(command.TargetObjectId))
+                return CommandStartOutcome.Rejected(CommandReasonCodes.MissingTarget);
+
+            matchTargetIndex = _objects.FindIndex(o =>
+                string.Equals(o.InitialMotion.ObjectId, command.TargetObjectId, StringComparison.Ordinal));
+            if (matchTargetIndex < 0)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownTarget);
+        }
 
         if (command.CommandType == ShipEngineCommandTypes.CancelAll)
         {
+            if (module.ActiveCycle is { } cancelledCycle)
+            {
+                // §56.5: complete → apply → write CommandResult → write ShipEvent.
+                RecordCommandResultFromCycle(cancelledCycle, CommandResultStatus.Cancelled, gameTimeMs,
+                    ShipEventReasonCodes.CancelledByCommand);
+                RecordShipEvent(command.ObjectId, command.ModuleId,
+                    ShipEventTypes.CycleCancelled, ShipEventReasonCodes.CancelledByCommand, gameTimeMs);
+            }
+
             _objects[objectIndex] = UpdateModule(obj, moduleIndex, module => module with { ActiveCycle = null });
-            return CommandStartDisposition.Started;
+            // CancelAll itself succeeded — write its own CommandResult.
+            RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
+            return CommandStartOutcome.Started;
         }
 
         if (!CanExecuteEngineCommand(module, moduleType))
-            return CommandStartDisposition.Rejected;
+            return CommandStartOutcome.Rejected(CommandReasonCodes.ModuleUnavailable);
 
         if (module.ActiveCycle is { } activeCycle)
         {
             if (!activeCycle.IsAutoRepeat)
-                return CommandStartDisposition.Deferred;
+                return CommandStartOutcome.Deferred(CommandReasonCodes.Busy);
 
             // Same command type — idempotent, continue existing cycle.
             if (string.Equals(command.CommandType, activeCycle.CommandType, StringComparison.Ordinal))
-                return CommandStartDisposition.Started;
+            {
+                // Idempotent re-send: the cycle continues. Write Executed for the
+                // re-sent command (the original command's final result comes on
+                // completion). This keeps the client informed that the re-send was
+                // accepted without waiting for the next cycle step.
+                RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
+                return CommandStartOutcome.Started;
+            }
 
             // Any other engine command implicitly cancels the active periodic
             // (auto-repeat) cycle and falls through to start its own cycle below.
+            // §56.5: write CommandResult(Cancelled) for the old cycle, then ShipEvent.
+            RecordCommandResultFromCycle(activeCycle, CommandResultStatus.Cancelled, gameTimeMs,
+                ShipEventReasonCodes.CancelledByCommand);
+            RecordShipEvent(command.ObjectId, command.ModuleId,
+                ShipEventTypes.CycleCancelled, ShipEventReasonCodes.CancelledByCommand, gameTimeMs);
         }
 
         bool isAutoRepeat = IsCyclicEngineCommand(command.CommandType);
+
+        // Capture the target's scalar state at cycle start (§56.9): cycle completion reads
+        // ONLY the captured value stored in ActiveCycle, so later target changes or the
+        // target disappearing do not affect the result. MatchTargetSpeed captures speed
+        // only, MatchTargetCourse captures course only; TargetObjectId is always stored
+        // (diagnostics + restore after save/load, §1253-1298).
+        string? targetObjectId = null;
+        double? capturedTargetSpeedKmS = null;
+        double? capturedTargetCourseDegrees = null;
+        if (matchTargetIndex is { } targetIndex)
+        {
+            var target = _objects[targetIndex];
+            long targetElapsedMs = Math.Max(0, gameTimeMs - target.StartGameTimeMs);
+            var targetMotion = _motion.Predict(target.InitialMotion, targetElapsedMs);
+            targetObjectId = command.TargetObjectId;
+            if (command.CommandType == ShipEngineCommandTypes.MatchTargetSpeed)
+                capturedTargetSpeedKmS = targetMotion.SpeedKmS;
+            else
+                capturedTargetCourseDegrees = targetMotion.Direction;
+        }
+
         _objects[objectIndex] = UpdateModule(
             obj,
             moduleIndex,
             current => current with
             {
-                ActiveCycle = CreateEngineCycle(command.CommandType, gameTimeMs, isAutoRepeat)
+                ActiveCycle = CreateEngineCycle(
+                    command.CommandType,
+                    gameTimeMs,
+                    isAutoRepeat,
+                    moduleType,
+                    targetObjectId,
+                    capturedTargetSpeedKmS,
+                    capturedTargetCourseDegrees,
+                    commandId: command.CommandId,
+                    objectId: command.ObjectId,
+                    moduleId: command.ModuleId)
             });
-        return CommandStartDisposition.Started;
+        return CommandStartOutcome.Started;
     }
 
     private static int FindModuleIndex(ImmutableArray<InstalledModuleRuntime> modules, string moduleId)
@@ -675,11 +886,45 @@ public sealed class SimulationEngine : IDisposable
                module.StructurePoints > 0;
     }
 
-    private ActiveCycleData CreateEngineCycle(string commandType, long gameTimeMs, bool isAutoRepeat)
+    private ActiveCycleData CreateEngineCycle(
+        string commandType,
+        long gameTimeMs,
+        bool isAutoRepeat,
+        ModuleTypeDefinition moduleType,
+        string? targetObjectId = null,
+        double? capturedTargetSpeedKmS = null,
+        double? capturedTargetCourseDegrees = null,
+        string? commandId = null,
+        string? objectId = null,
+        string? moduleId = null)
     {
         string cycleId = $"CYC-ENGINE-{++_nextEngineCycleId:D6}";
-        long durationMs = IsUntilCancelTurn(commandType) ? 1000 : 0;
-        return new ActiveCycleData(cycleId, gameTimeMs, durationMs, commandType, isAutoRepeat);
+        long durationMs = ComputeEffectiveCycleTimeMs(moduleType, commandType);
+        return new ActiveCycleData(
+            cycleId,
+            gameTimeMs,
+            durationMs,
+            commandType,
+            isAutoRepeat,
+            targetObjectId,
+            capturedTargetSpeedKmS,
+            capturedTargetCourseDegrees,
+            commandId,
+            objectId,
+            moduleId);
+    }
+
+    /// <summary>
+    /// Compute the effective cycle duration from the module type's base cycle time
+    /// and the command definition's time factor (§56.3).
+    /// EffectiveCycleTimeMs = Ceil(BaseCycleTimeMs * TimeFactor / 1000).
+    /// </summary>
+    private long ComputeEffectiveCycleTimeMs(ModuleTypeDefinition moduleType, string commandType)
+    {
+        int commandIndex = _registry.CommandDefinitions.GetIndex(commandType);
+        var commandDef = _registry.CommandDefinitions.GetDefinition(commandIndex);
+        long numerator = moduleType.BaseCycleTimeMs * commandDef.TimeFactor;
+        return (numerator + CommandDefinition.Neutral - 1) / CommandDefinition.Neutral;
     }
 
     private static bool IsUntilCancelTurn(string commandType)
@@ -693,6 +938,12 @@ public sealed class SimulationEngine : IDisposable
         return commandType == ShipEngineCommandTypes.Accelerate ||
                commandType == ShipEngineCommandTypes.Brake ||
                IsUntilCancelTurn(commandType);
+    }
+
+    private static bool IsMatchEngineCommand(string commandType)
+    {
+        return commandType == ShipEngineCommandTypes.MatchTargetSpeed ||
+               commandType == ShipEngineCommandTypes.MatchTargetCourse;
     }
 
     private void CollectLoadedEngineCycleIds(IEnumerable<SpaceObjectRuntime> objects)
@@ -775,8 +1026,21 @@ public sealed class SimulationEngine : IDisposable
                     var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
                     if (!IsEngineCommandType(moduleType, cycle.CommandType) || !CanExecuteEngineCommand(module, moduleType))
                     {
+                        // Derive interruption reason from module state before clearing the cycle.
+                        string? interruptReason = module.StructurePoints <= 0
+                            ? ShipEventReasonCodes.ModuleDestroyed
+                            : !string.Equals(module.PowerState, "On", StringComparison.Ordinal)
+                                ? ShipEventReasonCodes.PowerOff
+                                : !string.Equals(module.OperationalState, "Ready", StringComparison.Ordinal)
+                                    ? ShipEventReasonCodes.ModuleDisabled
+                                    : ShipEventReasonCodes.IncompatibleState;
+
+                        // §56.5: write CommandResult(Cancelled) → write ShipEvent.
+                        RecordCommandResultFromCycle(cycle, CommandResultStatus.Cancelled, gameTimeMs, interruptReason);
                         _objects[objectIndex] = UpdateModule(obj, moduleIndex, current => current with { ActiveCycle = null });
                         obj = _objects[objectIndex];
+                        RecordShipEvent(obj.InitialMotion.ObjectId, module.ModuleId,
+                            ShipEventTypes.CycleInterrupted, interruptReason, gameTimeMs);
                         break;
                     }
 
@@ -784,16 +1048,22 @@ public sealed class SimulationEngine : IDisposable
                         ? gameTimeMs
                         : cycle.StartedGameTimeMs + cycle.DurationMs;
                     ActiveCycleData? nextCycle = cycle.IsAutoRepeat
-                        ? CreateEngineCycle(cycle.CommandType, completionGameTimeMs, isAutoRepeat: true)
+                        ? CreateEngineCycle(cycle.CommandType, completionGameTimeMs, isAutoRepeat: true, moduleType,
+                            commandId: cycle.CommandId, objectId: cycle.ObjectId, moduleId: cycle.ModuleId)
                         : null;
                     _objects[objectIndex] = ApplyCompletedEngineCommand(
                         obj,
                         moduleIndex,
                         moduleType,
-                        cycle.CommandType,
+                        cycle,
                         completionGameTimeMs,
                         nextCycle);
                     obj = _objects[objectIndex];
+
+                    // §56.5: write CommandResult(Executed) → write ShipEvent(CommandCompleted).
+                    RecordCommandResultFromCycle(cycle, CommandResultStatus.Executed, completionGameTimeMs);
+                    RecordShipEvent(obj.InitialMotion.ObjectId, module.ModuleId,
+                        ShipEventTypes.CommandCompleted, reasonCode: null, completionGameTimeMs);
 
                     if (!cycle.IsAutoRepeat)
                         break;
@@ -806,11 +1076,11 @@ public sealed class SimulationEngine : IDisposable
         SpaceObjectRuntime obj,
         int moduleIndex,
         ModuleTypeDefinition moduleType,
-        string commandType,
+        ActiveCycleData cycle,
         long gameTimeMs,
         ActiveCycleData? nextCycle)
     {
-        return commandType switch
+        return cycle.CommandType switch
         {
             ShipEngineCommandTypes.Accelerate => UpdateEngineMotion(
                 obj,
@@ -851,6 +1121,35 @@ public sealed class SimulationEngine : IDisposable
                 turnSign: 1,
                 gameTimeMs,
                 nextCycle),
+
+            // Match cycles (§56.9) complete using ONLY the scalar captured at cycle start —
+            // later target changes or the target disappearing do not affect the result.
+            // MatchTargetSpeed changes only the scalar speed (course untouched),
+            // MatchTargetCourse changes only the course (speed untouched).
+            // The captured value may exceed the ship's own MaxSpeedKmS (it came from a real
+            // object), so speed is clamped the same way Accelerate clamps.
+            // Legacy-save guard: a match cycle loaded from a save written by older code may
+            // have a null captured field (match commands then passed without a target) —
+            // such a cycle completes as a no-op instead of throwing.
+            ShipEngineCommandTypes.MatchTargetSpeed when cycle.CapturedTargetSpeedKmS is { } capturedSpeedKmS => UpdateEngineMotion(
+                obj,
+                moduleIndex,
+                gameTimeMs,
+                module => module with { ActiveCycle = nextCycle },
+                motion => motion with
+                {
+                    SpeedKmS = Math.Min(moduleType.MaxSpeedMps!.Value / 1000.0, capturedSpeedKmS)
+                }),
+
+            ShipEngineCommandTypes.MatchTargetCourse when cycle.CapturedTargetCourseDegrees is { } capturedCourseDegrees => UpdateEngineMotion(
+                obj,
+                moduleIndex,
+                gameTimeMs,
+                module => module with { ActiveCycle = nextCycle },
+                motion => motion with
+                {
+                    Direction = NormalizeDirection(capturedCourseDegrees)
+                }),
 
             _ => obj
         };
@@ -936,7 +1235,8 @@ internal sealed record InstalledModuleRuntime(
     string OperationalState,
     int StructurePoints,
     ActiveCycleData? ActiveCycle,
-    ImmutableArray<CargoStackRuntime> Cargo);
+    ImmutableArray<CargoStackRuntime> Cargo,
+    long FuelAmountKg = 0);
 
 internal sealed record CargoStackRuntime(
     int ItemTypeIndex,
@@ -953,4 +1253,19 @@ internal enum CommandStartDisposition
     Started,
     Deferred,
     Rejected
+}
+
+/// <summary>
+/// Internal result of <see cref="SimulationEngine"/> command start: disposition plus
+/// a machine-readable reason code for non-started commands (snake_case, §56.6 style).
+/// </summary>
+internal readonly record struct CommandStartOutcome(
+    CommandStartDisposition Disposition,
+    string? ReasonCode)
+{
+    public static CommandStartOutcome Started => new(CommandStartDisposition.Started, null);
+
+    public static CommandStartOutcome Deferred(string reasonCode) => new(CommandStartDisposition.Deferred, reasonCode);
+
+    public static CommandStartOutcome Rejected(string reasonCode) => new(CommandStartDisposition.Rejected, reasonCode);
 }

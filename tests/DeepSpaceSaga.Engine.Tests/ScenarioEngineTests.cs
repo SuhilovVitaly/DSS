@@ -160,14 +160,39 @@ public class ScenarioEngineTests
 
         var playerShip = scenario.GameState.SpaceObjects
             .Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId);
-        Assert.Equal(2, playerShip.Modules?.Count);
+        Assert.Equal(9, playerShip.Modules?.Count);
         var cargoModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         Assert.Equal("module.container.basic", cargoModule.ModuleTypeId);
+        Assert.Equal(2, cargoModule.PlatformIndex);
+        Assert.Equal([0, 1, 2, 3], cargoModule.OccupiedCells);
         var engineModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
         Assert.Equal("module.engine.basic", engineModule.ModuleTypeId);
-        Assert.Equal([0], engineModule.OccupiedCells);
+        Assert.Equal(1, engineModule.PlatformIndex);
+        Assert.Equal([1], engineModule.OccupiedCells);
         Assert.Equal("On", engineModule.PowerState);
         Assert.Equal("Ready", engineModule.OperationalState);
+
+        var bridgeModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-BRIDGE-01");
+        Assert.Equal("module.bridge-navigation-computer.basic", bridgeModule.ModuleTypeId);
+        Assert.Equal(1, bridgeModule.PlatformIndex);
+        var generatorModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-GENERATOR-01");
+        Assert.Equal("module.generator.basic", generatorModule.ModuleTypeId);
+        Assert.Equal(1, generatorModule.PlatformIndex);
+        var batteryModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-BATTERY-01");
+        Assert.Equal("module.battery.basic", batteryModule.ModuleTypeId);
+        Assert.Equal(1, batteryModule.PlatformIndex);
+        var drillingModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-DRILLING-01");
+        Assert.Equal("module.drilling-unit.basic", drillingModule.ModuleTypeId);
+        Assert.Equal(3, drillingModule.PlatformIndex);
+        var scannerModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-SCANNER-01");
+        Assert.Equal("module.scanner.mk1", scannerModule.ModuleTypeId);
+        Assert.Equal(3, scannerModule.PlatformIndex);
+        var habitationModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-HABITATION-01");
+        Assert.Equal("module.habitation.basic", habitationModule.ModuleTypeId);
+        Assert.Equal(3, habitationModule.PlatformIndex);
+        var combatLaserModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-COMBAT-LASER-01");
+        Assert.Equal("module.combat-laser.basic", combatLaserModule.ModuleTypeId);
+        Assert.Equal(3, combatLaserModule.PlatformIndex);
 
         var energyCells = Assert.Single(cargoModule.Cargo ?? []);
         Assert.Equal("item.energy-cells", energyCells.ItemTypeId);
@@ -192,14 +217,88 @@ public class ScenarioEngineTests
 
         Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        Assert.Equal(2, playerShip.Modules.Length);
+        Assert.Equal(9, playerShip.Modules.Length);
         var cargoModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
-        Assert.Equal(0, cargoModule.ModuleTypeIndex);
+        Assert.Equal(4, cargoModule.ModuleTypeIndex);
         Assert.Equal(1, engineModule.ModuleTypeIndex);
         Assert.Null(engineModule.ActiveCycle);
+        Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-BRIDGE-01");
+        Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-GENERATOR-01");
+        Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-BATTERY-01");
+        Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-DRILLING-01");
+        Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-SCANNER-01");
+        Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-HABITATION-01");
+        Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-COMBAT-LASER-01");
         var cargo = Assert.Single(cargoModule.Cargo);
         Assert.Equal(0, cargo.ItemTypeIndex);
+    }
+
+    [Fact]
+    public void Real_default_scenario_occupies_12_cells_on_3_platforms()
+    {
+        string settingsPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..", "..", "..", "..", "..",
+            "src", "DeepSpaceSaga.Client", "Settings.json"));
+
+        if (!File.Exists(settingsPath))
+        {
+            settingsPath = Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory, "Settings.json"));
+        }
+
+        var engine = SimulationEngine.CreateFromSettingsFile(settingsPath);
+
+        var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
+        Assert.Equal(9, playerShip.Modules.Length);
+        Assert.Equal([1, 2, 3], playerShip.Modules.Select(m => m.PlatformIndex).Distinct().OrderBy(x => x));
+
+        int totalCells = playerShip.Modules.Sum(m => m.OccupiedCells.Length);
+        Assert.Equal(12, totalCells);
+
+        // Each of the 3 platforms has exactly 4 distinct cells occupied:
+        // no overlaps within a platform and no free cells (§50.9).
+        foreach (var platformGroup in playerShip.Modules.GroupBy(m => m.PlatformIndex))
+        {
+            int distinctCells = platformGroup.SelectMany(m => m.OccupiedCells).Distinct().Count();
+            Assert.Equal(4, distinctCells);
+        }
+    }
+
+    [Fact]
+    public void Real_default_scenario_command_type_ids_only_for_engine()
+    {
+        string settingsPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..", "..", "..", "..", "..",
+            "src", "DeepSpaceSaga.Client", "Settings.json"));
+
+        if (!File.Exists(settingsPath))
+        {
+            settingsPath = Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory, "Settings.json"));
+        }
+
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settingsPath, out _, out _);
+
+        var activeTypes = Enumerable.Range(0, registry.ModuleTypes.Count)
+            .Select(i => registry.ModuleTypes.GetDefinition(i))
+            .Where(t => t.CommandTypeIds.Length > 0)
+            .ToArray();
+
+        var engineType = Assert.Single(activeTypes);
+        Assert.Equal("module.engine.basic", engineType.TypeId);
+        Assert.Equal(10, engineType.CommandTypeIds.Length);
+        foreach (string commandTypeId in engineType.CommandTypeIds)
+        {
+            Assert.True(registry.CommandDefinitions.Contains(commandTypeId),
+                $"Command '{commandTypeId}' of 'module.engine.basic' is missing from the command definitions registry.");
+        }
+
+        int passiveTypes = Enumerable.Range(0, registry.ModuleTypes.Count)
+            .Count(i => registry.ModuleTypes.GetDefinition(i).CommandTypeIds.Length == 0);
+        Assert.Equal(8, passiveTypes);
     }
 
     [Theory]
@@ -293,6 +392,17 @@ public class ScenarioEngineTests
     }
 
     [Fact]
+    public void LoadScenario_rejects_cell_outside_2x2_grid()
+    {
+        // Container occupies exactly 4 cells (slotSize 4), so the count check passes;
+        // cell 4 is outside the 0..3 grid of a 2x2 platform and must be rejected.
+        var scenario = ScenarioLoader.LoadFromJson(ScenarioWithModule(occupiedCells: "0, 1, 2, 4"));
+        var engine = CreateEngineWithBasicTypes();
+
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+    }
+
+    [Fact]
     public void LoadScenario_resolves_typeIds_case_sensitively()
     {
         var scenario = ScenarioLoader.LoadFromJson(
@@ -380,6 +490,151 @@ public class ScenarioEngineTests
         Assert.Equal(SimulationSpeed.Speed2, engine.CurrentSpeed);
     }
 
+    [Fact]
+    public void Empty_factory_and_recipe_files_load_successfully()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, factoryTypesPath: "factory-types.json", recipesPath: "recipes.json");
+            WriteMinimalContent(directory);
+            File.WriteAllText(Path.Combine(directory, "factory-types.json"), """{ "factoryTypes": [] }""");
+            File.WriteAllText(Path.Combine(directory, "recipes.json"), """{ "recipes": [] }""");
+
+            string settingsPath = Path.Combine(directory, "Settings.json");
+            Assert.NotNull(EngineContentLoader.CreateEngineFromSettingsFile(settingsPath));
+
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settingsPath, out _, out _);
+            Assert.Equal(0, registry.FactoryTypes.Count);
+            Assert.Equal(0, registry.Recipes.Count);
+        });
+    }
+
+    [Fact]
+    public void Missing_declared_factory_types_file_throws()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, factoryTypesPath: "missing-factory-types.json");
+            WriteMinimalContent(directory);
+
+            var exception = Assert.Throws<ContentException>(() =>
+                EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(directory, "Settings.json")));
+            Assert.Contains("factory types", exception.Message, StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
+    public void Missing_declared_recipes_file_throws()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, recipesPath: "missing-recipes.json");
+            WriteMinimalContent(directory);
+
+            var exception = Assert.Throws<ContentException>(() =>
+                EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(directory, "Settings.json")));
+            Assert.Contains("recipes", exception.Message, StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
+    public void Extra_field_in_recipes_file_throws()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, recipesPath: "recipes.json");
+            WriteMinimalContent(directory);
+            File.WriteAllText(Path.Combine(directory, "recipes.json"), """{ "recipes": [], "unexpected": 1 }""");
+
+            Assert.Throws<ContentException>(() =>
+                EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(directory, "Settings.json")));
+        });
+    }
+
+    [Fact]
+    public void Extra_field_inside_recipe_entry_throws()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, recipesPath: "recipes.json");
+            WriteMinimalContent(directory);
+            File.WriteAllText(Path.Combine(directory, "recipes.json"), """
+            {
+              "recipes": [
+                { "typeId": "r1", "displayName": "R", "inputs": [], "outputs": [], "cycleDurationMs": 100, "bogus": 0 }
+              ]
+            }
+            """);
+
+            Assert.Throws<ContentException>(() =>
+                EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(directory, "Settings.json")));
+        });
+    }
+
+    [Fact]
+    public void Factory_and_recipe_content_lands_in_registry()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, factoryTypesPath: "factory-types.json", recipesPath: "recipes.json");
+            WriteMinimalContent(directory);
+            File.WriteAllText(Path.Combine(directory, "factory-types.json"), """
+            {
+              "factoryTypes": [
+                {
+                  "typeId": "fac-1",
+                  "displayName": "Water Factory",
+                  "recipe": {
+                    "inputs": [ { "itemTypeId": "item.energy-cells", "count": 5 } ],
+                    "outputs": [ { "itemTypeId": "item.water", "count": 95 } ],
+                    "cycleTimeMs": 1000
+                  }
+                }
+              ]
+            }
+            """);
+            File.WriteAllText(Path.Combine(directory, "recipes.json"), """
+            {
+              "recipes": [
+                { "typeId": "rec-1", "displayName": "Recipe", "inputs": [], "outputs": [], "cycleDurationMs": 2000 }
+              ]
+            }
+            """);
+
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(
+                Path.Combine(directory, "Settings.json"), out _, out _);
+
+            Assert.Equal(1, registry.FactoryTypes.Count);
+            Assert.Equal(1, registry.Recipes.Count);
+            Assert.Equal("item.energy-cells", registry.FactoryTypes.GetDefinition(0).Recipe.Inputs[0].ItemTypeId);
+            Assert.Equal("item.water", registry.FactoryTypes.GetDefinition(0).Recipe.Outputs[0].ItemTypeId);
+            Assert.Equal(1000, registry.FactoryTypes.GetDefinition(0).Recipe.CycleDurationMs);
+            Assert.Equal(2000, registry.Recipes.GetDefinition(0).CycleDurationMs);
+        });
+    }
+
+    [Fact]
+    public void Duplicate_factory_type_id_is_rejected()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory, factoryTypesPath: "factory-types.json");
+            WriteMinimalContent(directory);
+            File.WriteAllText(Path.Combine(directory, "factory-types.json"), """
+            {
+              "factoryTypes": [
+                { "typeId": "fac-1", "displayName": "A", "recipe": { "inputs": [], "outputs": [], "cycleTimeMs": 100 } },
+                { "typeId": "fac-1", "displayName": "B", "recipe": { "inputs": [], "outputs": [], "cycleTimeMs": 200 } }
+              ]
+            }
+            """);
+
+            var exception = Assert.Throws<ContentException>(() =>
+                EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(directory, "Settings.json")));
+            Assert.Contains("duplicate typeId 'fac-1'", exception.Message, StringComparison.Ordinal);
+        });
+    }
+
     private static SimulationEngine CreateEngineWithBasicTypes()
     {
         var registry = GameDataRegistry.Create(
@@ -412,7 +667,7 @@ public class ScenarioEngineTests
         string objectId = "SHIP",
         string currentSpeed = "Speed1",
         string moduleTypeId = "module.container.basic",
-        string occupiedCells = "1, 2, 3, 4",
+        string occupiedCells = "0, 1, 2, 3",
         string extraModules = "")
     {
         return $$"""
@@ -451,5 +706,36 @@ public class ScenarioEngineTests
           }
         }
         """;
+    }
+
+    private static void WithContentDirectory(Action<string> action)
+    {
+        string directory = Path.Combine(Path.GetTempPath(), $"dss-content-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            action(directory);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    private static void WriteSettings(string directory, string? factoryTypesPath = null, string? recipesPath = null)
+    {
+        string factoryTypesEntry = factoryTypesPath is null ? "" : ", \"factoryTypes\": \"" + factoryTypesPath + "\"";
+        string recipesEntry = recipesPath is null ? "" : ", \"recipes\": \"" + recipesPath + "\"";
+        File.WriteAllText(Path.Combine(directory, "Settings.json"), $$"""
+        { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json"{{factoryTypesEntry}}{{recipesEntry}} }, "defaultScenario": "scenario.json" }
+        """);
+    }
+
+    private static void WriteMinimalContent(string directory)
+    {
+        File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """{ "commandDefinitions": [] }""");
+        File.WriteAllText(Path.Combine(directory, "module-types.json"), """{ "moduleTypes": [] }""");
+        File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
+        File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
     }
 }

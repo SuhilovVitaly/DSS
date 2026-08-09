@@ -43,7 +43,7 @@ public static class EngineContentLoader
         return new LoadedEngineContent(registry, scenario);
     }
 
-    private static GameDataRegistry LoadRegistryFromSettingsFile(
+    internal static GameDataRegistry LoadRegistryFromSettingsFile(
         string settingsPath, out string basePath, out EngineSettingsFile settings)
     {
         if (!File.Exists(settingsPath))
@@ -60,7 +60,17 @@ public static class EngineContentLoader
         var commands = LoadCommandDefinitions(Resolve(basePath, settings.TypeData.CommandDefinitions));
         var modules = LoadModuleTypes(Resolve(basePath, settings.TypeData.ModuleTypes));
         var items = LoadItemTypes(Resolve(basePath, settings.TypeData.ItemTypes));
-        return GameDataRegistry.Create(modules, items, commands);
+
+        // Factory/recipe files are loaded by declaration: a key present in Settings.json makes
+        // the file mandatory (missing file → ContentException); an absent key skips loading.
+        var factoryTypes = settings.TypeData.FactoryTypes is null
+            ? null
+            : LoadFactoryTypes(Resolve(basePath, settings.TypeData.FactoryTypes));
+        var recipes = settings.TypeData.Recipes is null
+            ? null
+            : LoadRecipes(Resolve(basePath, settings.TypeData.Recipes));
+
+        return GameDataRegistry.Create(modules, items, commands, factoryTypes, recipes);
     }
 
     private static IReadOnlyList<ModuleTypeDefinition> LoadModuleTypes(string path)
@@ -75,6 +85,16 @@ public static class EngineContentLoader
                 throw new ContentException($"Module type '{dto.TypeId}' is missing commandTypeIds.");
             ValidateEngineParameters(dto);
 
+            long baseCycleTimeMs = dto.BaseCycleTimeMs ?? 0;
+
+            // Active module types (those that declare commandTypeIds) MUST specify a
+            // positive BaseCycleTimeMs (§56.3).
+            if (baseCycleTimeMs <= 0 && dto.CommandTypeIds.Count > 0)
+            {
+                throw new ContentException(
+                    $"Active module type '{dto.TypeId}' must specify a positive baseCycleTimeMs.");
+            }
+
             return new ModuleTypeDefinition(
                 dto.TypeId,
                 dto.DisplayName,
@@ -86,7 +106,9 @@ public static class EngineContentLoader
                 dto.CargoCapacityKg,
                 dto.MaxSpeedMps,
                 dto.TurnStepDegrees,
-                dto.LinearInertiaMps2);
+                dto.LinearInertiaMps2,
+                baseCycleTimeMs,
+                dto.FuelCapacityKg);
         }).ToArray();
     }
 
@@ -101,6 +123,8 @@ public static class EngineContentLoader
             throw new ContentException("Module type 'module.engine.basic' requires turnStepDegrees greater than zero.");
         if (dto.LinearInertiaMps2 is not > 0)
             throw new ContentException("Module type 'module.engine.basic' requires linearInertiaMps2 greater than zero.");
+        if (dto.FuelCapacityKg is not > 0)
+            throw new ContentException("Module type 'module.engine.basic' requires fuelCapacityKg greater than zero.");
     }
 
     private static IReadOnlyList<ItemTypeDefinition> LoadItemTypes(string path)
@@ -120,7 +144,73 @@ public static class EngineContentLoader
             throw new ContentException("command-definitions file is missing commandDefinitions.");
 
         return file.CommandDefinitions.Select(dto =>
-            new CommandDefinition(dto.TypeId, dto.DisplayName)).ToArray();
+            new CommandDefinition(
+                dto.TypeId,
+                dto.DisplayName,
+                ParseFixedPointFactor(dto.TimeFactor),
+                ParseFixedPointFactor(dto.ComplexityFactor),
+                ParseFixedPointFactor(dto.ConsumptionFactor))).ToArray();
+    }
+
+    /// <summary>
+    /// Convert a JSON decimal factor into a fixed-point integer where 1000 = 1.0.
+    /// A missing (null) value defaults to the neutral factor 1000 (§56.3).
+    /// </summary>
+    private static int ParseFixedPointFactor(decimal? jsonValue)
+    {
+        if (jsonValue is null)
+            return CommandDefinition.Neutral;
+
+        return (int)Math.Round(jsonValue.Value * CommandDefinition.Neutral, MidpointRounding.AwayFromZero);
+    }
+
+    private static IReadOnlyList<FactoryTypeDefinition> LoadFactoryTypes(string path)
+    {
+        var file = ReadJson<FactoryTypesFile>(path, "factory types");
+        if (file.FactoryTypes is null)
+            throw new ContentException("factory-types file is missing factoryTypes.");
+
+        return file.FactoryTypes.Select(dto =>
+        {
+            if (dto.Recipe is null)
+                throw new ContentException($"Factory type '{dto.TypeId}' is missing recipe.");
+            if (dto.Recipe.Inputs is null)
+                throw new ContentException($"Factory type '{dto.TypeId}' recipe is missing inputs.");
+            if (dto.Recipe.Outputs is null)
+                throw new ContentException($"Factory type '{dto.TypeId}' recipe is missing outputs.");
+
+            return new FactoryTypeDefinition(
+                dto.TypeId,
+                dto.DisplayName,
+                new RecipeDefinition(
+                    dto.TypeId,
+                    dto.DisplayName,
+                    dto.Recipe.Inputs.Select(m => new RecipeMaterial(m.ItemTypeId, m.Count)).ToImmutableArray(),
+                    dto.Recipe.Outputs.Select(m => new RecipeMaterial(m.ItemTypeId, m.Count)).ToImmutableArray(),
+                    dto.Recipe.CycleTimeMs));
+        }).ToArray();
+    }
+
+    private static IReadOnlyList<RecipeDefinition> LoadRecipes(string path)
+    {
+        var file = ReadJson<RecipesFile>(path, "recipes");
+        if (file.Recipes is null)
+            throw new ContentException("recipes file is missing recipes.");
+
+        return file.Recipes.Select(dto =>
+        {
+            if (dto.Inputs is null)
+                throw new ContentException($"Recipe '{dto.TypeId}' is missing inputs.");
+            if (dto.Outputs is null)
+                throw new ContentException($"Recipe '{dto.TypeId}' is missing outputs.");
+
+            return new RecipeDefinition(
+                dto.TypeId,
+                dto.DisplayName,
+                dto.Inputs.Select(m => new RecipeMaterial(m.ItemTypeId, m.Count)).ToImmutableArray(),
+                dto.Outputs.Select(m => new RecipeMaterial(m.ItemTypeId, m.Count)).ToImmutableArray(),
+                dto.CycleDurationMs);
+        }).ToArray();
     }
 
     private static T ReadJson<T>(string path, string description)
@@ -155,11 +245,11 @@ public static class EngineContentLoader
 
     internal sealed record LoadedEngineContent(GameDataRegistry Registry, ScenarioFile DefaultScenario);
 
-    private sealed record EngineSettingsFile(
+    internal sealed record EngineSettingsFile(
         [property: JsonPropertyName("typeData")] TypeDataPaths TypeData,
         [property: JsonPropertyName("defaultScenario")] string DefaultScenario);
 
-    private sealed record TypeDataPaths(
+    internal sealed record TypeDataPaths(
         [property: JsonPropertyName("moduleTypes")] string ModuleTypes,
         [property: JsonPropertyName("itemTypes")] string ItemTypes,
         [property: JsonPropertyName("commandDefinitions")] string CommandDefinitions,
@@ -180,7 +270,9 @@ public static class EngineContentLoader
         [property: JsonPropertyName("cargoCapacityKg")] long? CargoCapacityKg,
         [property: JsonPropertyName("maxSpeedMps")] int? MaxSpeedMps,
         [property: JsonPropertyName("turnStepDegrees")] int? TurnStepDegrees,
-        [property: JsonPropertyName("linearInertiaMps2")] int? LinearInertiaMps2);
+        [property: JsonPropertyName("linearInertiaMps2")] int? LinearInertiaMps2,
+        [property: JsonPropertyName("baseCycleTimeMs")] long? BaseCycleTimeMs,
+        [property: JsonPropertyName("fuelCapacityKg")] long? FuelCapacityKg);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto> ItemTypes);
@@ -195,5 +287,35 @@ public static class EngineContentLoader
 
     private sealed record CommandDefinitionDto(
         [property: JsonPropertyName("typeId")] string TypeId,
-        [property: JsonPropertyName("displayName")] string DisplayName);
+        [property: JsonPropertyName("displayName")] string DisplayName,
+        [property: JsonPropertyName("timeFactor")] decimal? TimeFactor,
+        [property: JsonPropertyName("complexityFactor")] decimal? ComplexityFactor,
+        [property: JsonPropertyName("consumptionFactor")] decimal? ConsumptionFactor);
+
+    private sealed record FactoryTypesFile(
+        [property: JsonPropertyName("factoryTypes")] IReadOnlyList<FactoryTypeDefinitionDto> FactoryTypes);
+
+    private sealed record FactoryTypeDefinitionDto(
+        [property: JsonPropertyName("typeId")] string TypeId,
+        [property: JsonPropertyName("displayName")] string DisplayName,
+        [property: JsonPropertyName("recipe")] RecipeDto? Recipe);
+
+    private sealed record RecipeDto(
+        [property: JsonPropertyName("inputs")] IReadOnlyList<RecipeMaterialDto> Inputs,
+        [property: JsonPropertyName("outputs")] IReadOnlyList<RecipeMaterialDto> Outputs,
+        [property: JsonPropertyName("cycleTimeMs")] long CycleTimeMs);
+
+    private sealed record RecipesFile(
+        [property: JsonPropertyName("recipes")] IReadOnlyList<RecipeDefinitionDto> Recipes);
+
+    private sealed record RecipeDefinitionDto(
+        [property: JsonPropertyName("typeId")] string TypeId,
+        [property: JsonPropertyName("displayName")] string DisplayName,
+        [property: JsonPropertyName("inputs")] IReadOnlyList<RecipeMaterialDto> Inputs,
+        [property: JsonPropertyName("outputs")] IReadOnlyList<RecipeMaterialDto> Outputs,
+        [property: JsonPropertyName("cycleDurationMs")] long CycleDurationMs);
+
+    private sealed record RecipeMaterialDto(
+        [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
+        [property: JsonPropertyName("count")] long Count);
 }

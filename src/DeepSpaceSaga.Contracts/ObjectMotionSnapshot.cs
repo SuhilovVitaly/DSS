@@ -21,4 +21,5 @@ public sealed record ObjectMotionSnapshot(
     string? ObjectType = null,
     string? RelationToPlayer = null,
     string? DisplayName = null,
+    string? RenderObjectType = null,
     double? MaxSpeedKmS = null);

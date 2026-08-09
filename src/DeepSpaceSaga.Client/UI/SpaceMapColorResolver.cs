@@ -16,6 +16,7 @@ internal static class SpaceMapColorResolver
     {
         return objectType switch
         {
+            SpaceObjectType.UnknownSpaceObject => FallbackColor,
             SpaceObjectType.PlayerShip => PlayerShipColor,
             SpaceObjectType.NpcShip => relationToPlayer switch
             {

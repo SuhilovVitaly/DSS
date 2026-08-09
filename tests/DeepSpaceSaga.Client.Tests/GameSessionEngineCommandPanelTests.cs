@@ -15,7 +15,7 @@ public class GameSessionEngineCommandPanelTests
     private const string EngineModuleId = "MOD-PLAYER-ENGINE-01";
 
     [Fact]
-    public async Task Engine_command_panel_renders_bottom_center_with_7_square_buttons()
+    public async Task Engine_command_panel_renders_bottom_center_with_8_square_buttons()
     {
         await using var fixture = CreateFixture();
 
@@ -24,7 +24,7 @@ public class GameSessionEngineCommandPanelTests
         var panel = fixture.Screen.LastCommandPanelRect;
         Assert.Equal(ScreenWidth / 2f, panel.MidX, precision: 3);
         Assert.True(panel.MidY > ScreenHeight / 2f);
-        Assert.Equal(7, fixture.Screen.EngineCommandButtonRects.Count);
+        Assert.Equal(8, fixture.Screen.EngineCommandButtonRects.Count);
         foreach (var rect in fixture.Screen.EngineCommandButtonRects)
         {
             Assert.Equal(64f, rect.Width);
@@ -35,11 +35,12 @@ public class GameSessionEngineCommandPanelTests
     [Theory]
     [InlineData(0, ShipEngineCommandTypes.Accelerate)]
     [InlineData(1, ShipEngineCommandTypes.Brake)]
-    [InlineData(2, ShipEngineCommandTypes.TurnRightStep)]
-    [InlineData(3, ShipEngineCommandTypes.TurnLeftStep)]
-    [InlineData(4, ShipEngineCommandTypes.TurnRightUntilCancel)]
-    [InlineData(5, ShipEngineCommandTypes.TurnLeftUntilCancel)]
-    [InlineData(6, ShipEngineCommandTypes.CancelAll)]
+    [InlineData(2, ShipEngineCommandTypes.MaintainSpeed)]
+    [InlineData(3, ShipEngineCommandTypes.TurnRightStep)]
+    [InlineData(4, ShipEngineCommandTypes.TurnLeftStep)]
+    [InlineData(5, ShipEngineCommandTypes.TurnRightUntilCancel)]
+    [InlineData(6, ShipEngineCommandTypes.TurnLeftUntilCancel)]
+    [InlineData(7, ShipEngineCommandTypes.MaintainCourse)]
     public async Task Engine_command_button_click_sends_expected_player_command(int buttonIndex, string expectedCommandType)
     {
         await using var fixture = CreateFixture();
@@ -139,11 +140,11 @@ public class GameSessionEngineCommandPanelTests
         Render(fixture.Screen);
 
         // Own button (TurnRightUntilCancel) — blocked (idempotent).
-        var sameTurn = fixture.Screen.EngineCommandButtonRects[4];
+        var sameTurn = fixture.Screen.EngineCommandButtonRects[5];
         fixture.Screen.OnMouseDown(sameTurn.MidX, sameTurn.MidY);
         Assert.Empty(fixture.Connection.Commands);
 
-        Assert.Equal(4, fixture.Screen.ActiveEngineCommandButtonIndex);
+        Assert.Equal(5, fixture.Screen.ActiveEngineCommandButtonIndex);
 
         // Unrelated cyclic (Accelerate) — allowed (cancel-and-replace).
         var accelerate = fixture.Screen.EngineCommandButtonRects[0];
@@ -152,7 +153,7 @@ public class GameSessionEngineCommandPanelTests
         fixture.Connection.Commands.Clear();
 
         // Opposite until-cancel turn — allowed (mutual replacement, now a special case).
-        var oppositeTurn = fixture.Screen.EngineCommandButtonRects[5];
+        var oppositeTurn = fixture.Screen.EngineCommandButtonRects[6];
         fixture.Screen.OnMouseDown(oppositeTurn.MidX, oppositeTurn.MidY);
         Assert.Equal(ShipEngineCommandTypes.TurnLeftUntilCancel, Assert.Single(fixture.Connection.Commands).CommandType);
     }
@@ -212,13 +213,13 @@ public class GameSessionEngineCommandPanelTests
         Render(fixture.Screen);
 
         // TurnRightStep enabled while Accelerate is active.
-        var turnRight = fixture.Screen.EngineCommandButtonRects[2];
+        var turnRight = fixture.Screen.EngineCommandButtonRects[3];
         fixture.Screen.OnMouseDown(turnRight.MidX, turnRight.MidY);
         Assert.Equal(ShipEngineCommandTypes.TurnRightStep, Assert.Single(fixture.Connection.Commands).CommandType);
         fixture.Connection.Commands.Clear();
 
         // TurnLeftStep enabled while Accelerate is active.
-        var turnLeft = fixture.Screen.EngineCommandButtonRects[3];
+        var turnLeft = fixture.Screen.EngineCommandButtonRects[4];
         fixture.Screen.OnMouseDown(turnLeft.MidX, turnLeft.MidY);
         Assert.Equal(ShipEngineCommandTypes.TurnLeftStep, Assert.Single(fixture.Connection.Commands).CommandType);
     }

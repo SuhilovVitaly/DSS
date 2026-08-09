@@ -10,7 +10,9 @@ internal sealed record ModuleTypeDefinition(
     int StructurePointsMax,
     long PowerConsumptionW,
     ImmutableArray<string> CommandTypeIds,
-    long? CargoCapacityKg,
-    int? MaxSpeedMps,
-    int? TurnStepDegrees,
-    int? LinearInertiaMps2) : ITypeDefinition;
+    long? CargoCapacityKg = null,
+    int? MaxSpeedMps = null,
+    int? TurnStepDegrees = null,
+    int? LinearInertiaMps2 = null,
+    long BaseCycleTimeMs = 0,
+    long? FuelCapacityKg = null) : ITypeDefinition;

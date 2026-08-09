@@ -22,12 +22,58 @@
             "speedMps": 700,
             "directionDegrees": 0,
             "movementType": "Linear",
+            "isKnown": true,
             "modules": [
+                {
+                    "moduleId": "MOD-PLAYER-BRIDGE-01",
+                    "moduleTypeId": "module.bridge-navigation-computer.basic",
+                    "platformIndex": 1,
+                    "occupiedCells": [ 0 ],
+                    "structurePoints": 80,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
+                },
+                {
+                    "moduleId": "MOD-PLAYER-ENGINE-01",
+                    "moduleTypeId": "module.engine.basic",
+                    "platformIndex": 1,
+                    "occupiedCells": [ 1 ],
+                    "structurePoints": 100,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": [],
+                    "fuelAmountKg": 5000
+                },
+                {
+                    "moduleId": "MOD-PLAYER-GENERATOR-01",
+                    "moduleTypeId": "module.generator.basic",
+                    "platformIndex": 1,
+                    "occupiedCells": [ 2 ],
+                    "structurePoints": 180,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
+                },
+                {
+                    "moduleId": "MOD-PLAYER-BATTERY-01",
+                    "moduleTypeId": "module.battery.basic",
+                    "platformIndex": 1,
+                    "occupiedCells": [ 3 ],
+                    "structurePoints": 120,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
+                },
                 {
                     "moduleId": "MOD-PLAYER-CARGO-01",
                     "moduleTypeId": "module.container.basic",
                     "platformIndex": 2,
-                    "occupiedCells": [ 1, 2, 3, 4 ],
+                    "occupiedCells": [ 0, 1, 2, 3 ],
                     "structurePoints": 400,
                     "powerState": "On",
                     "operationalState": "Ready",
@@ -40,11 +86,44 @@
                     ]
                 },
                 {
-                    "moduleId": "MOD-PLAYER-ENGINE-01",
-                    "moduleTypeId": "module.engine.basic",
-                    "platformIndex": 0,
+                    "moduleId": "MOD-PLAYER-DRILLING-01",
+                    "moduleTypeId": "module.drilling-unit.basic",
+                    "platformIndex": 3,
                     "occupiedCells": [ 0 ],
-                    "structurePoints": 100,
+                    "structurePoints": 150,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
+                },
+                {
+                    "moduleId": "MOD-PLAYER-SCANNER-01",
+                    "moduleTypeId": "module.scanner.mk1",
+                    "platformIndex": 3,
+                    "occupiedCells": [ 1 ],
+                    "structurePoints": 60,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
+                },
+                {
+                    "moduleId": "MOD-PLAYER-HABITATION-01",
+                    "moduleTypeId": "module.habitation.basic",
+                    "platformIndex": 3,
+                    "occupiedCells": [ 2 ],
+                    "structurePoints": 200,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
+                },
+                {
+                    "moduleId": "MOD-PLAYER-COMBAT-LASER-01",
+                    "moduleTypeId": "module.combat-laser.basic",
+                    "platformIndex": 3,
+                    "occupiedCells": [ 3 ],
+                    "structurePoints": 150,
                     "powerState": "On",
                     "operationalState": "Ready",
                     "activeCycle": null,
@@ -61,7 +140,8 @@
         "positionY": 11000.0,
         "speedMps": 0,
         "directionDegrees": 0,
-        "movementType": "Stationary"
+        "movementType": "Stationary",
+        "isKnown": true
       },
       {
         "objectId": "SPC-0003",

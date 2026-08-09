@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Contracts;
 
@@ -12,4 +13,8 @@ public sealed record AuthoritativeSnapshot(
     long GameTimeMs,
     SimulationSpeed CurrentSpeed,
     ImmutableArray<ObjectMotionSnapshot> Objects,
-    string? PlayerShipObjectId = null);
+    string? PlayerShipObjectId = null,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CommandResult>))]
+    ImmutableArray<CommandResult> CommandResults = default,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ShipEvent>))]
+    ImmutableArray<ShipEvent> ShipEvents = default);
