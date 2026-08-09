@@ -57,6 +57,12 @@ public sealed class GameSessionHandle : IAsyncDisposable
         Buffer.CurrentSpeed = speed;
     }
 
+    /// <summary>Capture and persist the current authoritative world state (quicksave).</summary>
+    public ValueTask SaveAsync(CancellationToken cancellationToken = default)
+    {
+        return _connection.SaveAsync(cancellationToken);
+    }
+
     private async Task ReceiveLoopAsync(CancellationToken ct)
     {
         try

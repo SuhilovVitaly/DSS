@@ -29,7 +29,17 @@ public static class ScenarioLoader
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
     };
 
-    public static ScenarioFile LoadFromFile(string path)
+    private static readonly JsonSerializerOptions WriteJsonOptions = new()
+    {
+        WriteIndented = true,
+    };
+
+    /// <param name="allowNonZeroGameTime">
+    /// New Game scenarios must start at gameTimeMs = 0. Save files legitimately carry
+    /// gameTimeMs &gt; 0 — pass true only for the explicit save/load bootstrap path
+    /// (see SimulationEngine.CreateFromSaveFile / EngineContentLoader.CreateEngineFromSaveFile).
+    /// </param>
+    public static ScenarioFile LoadFromFile(string path, bool allowNonZeroGameTime = false)
     {
         if (!File.Exists(path))
             throw new ScenarioException($"Scenario file not found: {path}");
@@ -44,10 +54,10 @@ public static class ScenarioLoader
             throw new ScenarioException($"Failed to read scenario file: {path}", ex);
         }
 
-        return LoadFromJson(json);
+        return LoadFromJson(json, allowNonZeroGameTime);
     }
 
-    public static ScenarioFile LoadFromJson(string json)
+    public static ScenarioFile LoadFromJson(string json, bool allowNonZeroGameTime = false)
     {
         ScenarioFile scenario;
         try
@@ -60,8 +70,17 @@ public static class ScenarioLoader
             throw new ScenarioException($"Invalid scenario JSON: {ex.Message}", ex);
         }
 
-        Validate(scenario);
+        Validate(scenario, allowNonZeroGameTime);
         return scenario;
+    }
+
+    /// <summary>
+    /// Serialize a scenario/save-state to JSON using the same schema LoadFromJson reads.
+    /// Centralized here (Engine) so save-file writers never duplicate JSON format decisions.
+    /// </summary>
+    public static string Serialize(ScenarioFile scenario)
+    {
+        return JsonSerializer.Serialize(scenario, WriteJsonOptions);
     }
 
     /// <summary>Parse a speed string from the scenario. Throws on unknown values.</summary>
@@ -82,7 +101,7 @@ public static class ScenarioLoader
         };
     }
 
-    private static void Validate(ScenarioFile scenario)
+    private static void Validate(ScenarioFile scenario, bool allowNonZeroGameTime = false)
     {
         var gs = scenario.GameState;
         if (gs is null)
@@ -97,8 +116,9 @@ public static class ScenarioLoader
         // Validate speed string
         ParseSpeed(gs.CurrentSpeed);
 
-        // Only New Game (gameTimeMs = 0) is supported
-        if (gs.GameTimeMs != 0)
+        // New Game scenarios must start at gameTimeMs = 0. Save files (allowNonZeroGameTime: true)
+        // are the sole exception — they represent a paused, already-in-progress game.
+        if (!allowNonZeroGameTime && gs.GameTimeMs != 0)
             throw new ScenarioException(
                 $"gameTimeMs must be 0 for New Game, got {gs.GameTimeMs}.");
 

@@ -279,6 +279,11 @@ public class GameSessionEngineCommandPanelTests
             yield break;
         }
 
+        public ValueTask SaveAsync(CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+
         public ValueTask DisposeAsync()
         {
             return ValueTask.CompletedTask;

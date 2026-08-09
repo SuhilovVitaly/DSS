@@ -350,6 +350,97 @@ public class ScenarioLoaderTests
         Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(json));
     }
 
+    // 4.1 backward compatibility: saveFormatVersion / isKnown are new, optional fields.
+    // Existing scenario files that don't mention them must keep loading unchanged.
+    [Fact]
+    public void LoadFromJson_defaults_saveFormatVersion_and_isKnown_when_absent()
+    {
+        var scenario = ScenarioLoader.LoadFromJson(ValidJson);
+
+        Assert.Equal(0, scenario.SaveFormatVersion);
+        Assert.All(scenario.GameState.SpaceObjects, o => Assert.False(o.IsKnown));
+    }
+
+    [Fact]
+    public void LoadFromJson_reads_saveFormatVersion_and_isKnown_when_present()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "saveFormatVersion": 1,
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary", "isKnown": true }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+
+        Assert.Equal(1, scenario.SaveFormatVersion);
+        Assert.True(scenario.GameState.SpaceObjects.Single().IsKnown);
+    }
+
+    // gameTimeMs > 0 — New Game rejects it by default; the explicit save-load
+    // mode (allowNonZeroGameTime: true) accepts it. Regression coverage for 4.2:
+    // the default parameter value must keep every existing (New Game) call site
+    // behaving exactly as before.
+    private const string NonZeroGameTimeJson = """
+    {
+      "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+      "gameState": {
+        "gameTimeMs": 42000, "currentSpeed": "Speed1",
+        "playerShipObjectId": "SHIP",
+        "spaceObjects": [
+          { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+            "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+            "movementType": "Stationary" }
+        ]
+      }
+    }
+    """;
+
+    [Fact]
+    public void LoadFromJson_throws_on_nonzero_gameTime_by_default()
+    {
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(NonZeroGameTimeJson));
+    }
+
+    [Fact]
+    public void LoadFromJson_throws_on_nonzero_gameTime_when_explicitly_disallowed()
+    {
+        Assert.Throws<ScenarioException>(
+            () => ScenarioLoader.LoadFromJson(NonZeroGameTimeJson, allowNonZeroGameTime: false));
+    }
+
+    [Fact]
+    public void LoadFromJson_allows_nonzero_gameTime_when_explicitly_permitted()
+    {
+        var scenario = ScenarioLoader.LoadFromJson(NonZeroGameTimeJson, allowNonZeroGameTime: true);
+        Assert.Equal(42000, scenario.GameState.GameTimeMs);
+    }
+
+    [Fact]
+    public void LoadFromFile_allows_nonzero_gameTime_when_explicitly_permitted()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"dss-save-{Guid.NewGuid():N}.json");
+        File.WriteAllText(path, NonZeroGameTimeJson);
+        try
+        {
+            var scenario = ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true);
+            Assert.Equal(42000, scenario.GameState.GameTimeMs);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     [Fact]
     public void Asteroid_mass_out_of_range_throws()
     {

@@ -16,6 +16,8 @@ internal sealed class KeyboardEdgeTracker
     private bool _prevDownPressed;
     private bool _prevLeftPressed;
     private bool _prevRightPressed;
+    private bool _prevF5Pressed;
+    private bool _prevF9Pressed;
 
     public int Poll(IKeyboard keyboard, Span<Key> pressed)
     {
@@ -37,6 +39,8 @@ internal sealed class KeyboardEdgeTracker
         AddEdge(Key.Down, keyboard.IsKeyPressed(Key.Down), ref _prevDownPressed, pressed, ref count);
         AddEdge(Key.Left, keyboard.IsKeyPressed(Key.Left), ref _prevLeftPressed, pressed, ref count);
         AddEdge(Key.Right, keyboard.IsKeyPressed(Key.Right), ref _prevRightPressed, pressed, ref count);
+        AddEdge(Key.F5, keyboard.IsKeyPressed(Key.F5), ref _prevF5Pressed, pressed, ref count);
+        AddEdge(Key.F9, keyboard.IsKeyPressed(Key.F9), ref _prevF9Pressed, pressed, ref count);
 
         return count;
     }
@@ -61,6 +65,8 @@ internal sealed class KeyboardEdgeTracker
         AddEdge(Key.Down, isKeyPressed(Key.Down), ref _prevDownPressed, pressed, ref count);
         AddEdge(Key.Left, isKeyPressed(Key.Left), ref _prevLeftPressed, pressed, ref count);
         AddEdge(Key.Right, isKeyPressed(Key.Right), ref _prevRightPressed, pressed, ref count);
+        AddEdge(Key.F5, isKeyPressed(Key.F5), ref _prevF5Pressed, pressed, ref count);
+        AddEdge(Key.F9, isKeyPressed(Key.F9), ref _prevF9Pressed, pressed, ref count);
 
         return count;
     }

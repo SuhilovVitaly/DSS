@@ -37,7 +37,7 @@ public class KeyboardEdgeTrackerTests
 
     private static Key[] Poll(KeyboardEdgeTracker tracker, HashSet<Key> pressed)
     {
-        Span<Key> buffer = stackalloc Key[7];
+        Span<Key> buffer = stackalloc Key[16];
         int count = tracker.Poll(pressed.Contains, buffer);
         return buffer[..count].ToArray();
     }

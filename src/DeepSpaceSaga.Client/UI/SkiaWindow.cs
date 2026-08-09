@@ -34,8 +34,9 @@ public sealed class SkiaWindow : IDisposable
     private readonly SemaphoreSlim _transitionLock = new(1, 1);
     private int _modalDepth;
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
+    private bool _quickSaveLoadInFlight;
     private readonly KeyboardEdgeTracker _keyboardEdges = new();
-    private readonly Key[] _keyboardPressedKeys = new Key[7];
+    private readonly Key[] _keyboardPressedKeys = new Key[16]; // must cover every key KeyboardEdgeTracker.Poll can report in one call
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
     private bool _closing;
@@ -281,11 +282,11 @@ public sealed class SkiaWindow : IDisposable
 
     private void HandleKeyboardEdge(Key key)
     {
-        if (key == Key.Escape)
+        if (key == Key.Escape || key == Key.F5 || key == Key.F9)
         {
             if (_pendingKeyboardTransition is null || _pendingKeyboardTransition.IsCompleted)
             {
-                var screenEvent = _screens.Current.OnKeyDown(Key.Escape);
+                var screenEvent = _screens.Current.OnKeyDown(key);
                 _pendingKeyboardTransition = HandleScreenEvent(screenEvent);
             }
 
@@ -322,6 +323,12 @@ public sealed class SkiaWindow : IDisposable
                     break;
                 case ScreenEvent.Exit:
                     _window.Close();
+                    break;
+                case ScreenEvent.QuickSave:
+                    await QuickSaveAsync();
+                    break;
+                case ScreenEvent.QuickLoad:
+                    await QuickLoadAsync();
                     break;
             }
         }
@@ -396,6 +403,90 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         await PopModalAsync();
+    }
+
+    /// <summary>
+    /// F5 — quicksave. No modal/UI window is ever shown. Pauses the session first
+    /// (authoritative Speed0, awaited before capturing state) and, per F.18,
+    /// deliberately leaves the game at Speed0 afterwards — it does not restore the
+    /// pre-save speed. Debounced: a save already in flight makes a new F5 a no-op.
+    /// </summary>
+    private async Task QuickSaveAsync()
+    {
+        if (_session is null || _quickSaveLoadInFlight)
+            return;
+
+        _quickSaveLoadInFlight = true;
+        try
+        {
+            await _session.SetSpeedAsync(SimulationSpeed.Speed0);
+            await _session.SaveAsync();
+            InterfaceLog.Write("QuickSave: wrote Saves/quicksave.json");
+        }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"QuickSave failed: {ex.Message}");
+        }
+        finally
+        {
+            _quickSaveLoadInFlight = false;
+        }
+    }
+
+    /// <summary>
+    /// F9 — quickload. No modal/UI window is ever shown. Builds the replacement
+    /// session/screen fully in local variables first; only on success is the old
+    /// session disposed and swapped in — a broken/missing save file never destroys
+    /// the currently running session. Per F.19, the new session is forced to Speed0
+    /// regardless of the speed recorded in the save file. Camera/zoom/focus are never
+    /// restored — GameSessionScreen always starts with its default camera, which falls
+    /// out naturally from constructing a brand new screen instance.
+    /// Debounced: a load already in flight makes a new F9 a no-op.
+    /// </summary>
+    private async Task QuickLoadAsync()
+    {
+        if (_quickSaveLoadInFlight)
+            return;
+
+        _quickSaveLoadInFlight = true;
+        try
+        {
+            if (!_sessionFactory.HasQuickSave())
+            {
+                InterfaceLog.Write("QuickLoad: no save file found, ignored.");
+                return;
+            }
+
+            GameSessionHandle newSession;
+            GameSessionScreen newScreen;
+            try
+            {
+                newSession = new GameSessionHandle(_sessionFactory.CreateSessionFromSave());
+                var predictor = new LinearMotionPredictor();
+                newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession);
+            }
+            catch (Exception ex)
+            {
+                InterfaceLog.Write($"QuickLoad failed: {ex.Message}");
+                return;
+            }
+
+            var oldSession = _session;
+            if (oldSession is not null)
+                await oldSession.DisposeAsync();
+
+            _session = newSession;
+            await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
+            _modalDepth = 0;
+            _savedSpeed = SimulationSpeed.Speed0;
+            _screens.Replace(newScreen);
+
+            InterfaceLog.Write("QuickLoad: loaded Saves/quicksave.json");
+        }
+        finally
+        {
+            _quickSaveLoadInFlight = false;
+        }
     }
 
     private void ReturnToMainMenu()

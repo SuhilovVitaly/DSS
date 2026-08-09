@@ -2,10 +2,22 @@ using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Engine.Scenario;
 
-/// <summary>Root of the scenario JSON file.</summary>
+/// <summary>Save file format version constants.</summary>
+public static class SaveFormat
+{
+    /// <summary>
+    /// Current save format version written by <see cref="SimulationEngine.CaptureSaveState"/>.
+    /// Bump when the save schema changes incompatibly (see requirements §3891 migration policy —
+    /// not implemented yet, only the version field is laid down in this iteration).
+    /// </summary>
+    public const int CurrentSaveFormatVersion = 1;
+}
+
+/// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
 public sealed record ScenarioFile(
     [property: JsonPropertyName("scenarioMetadata")] ScenarioMetadata Metadata,
-    [property: JsonPropertyName("gameState")] GameStateData GameState);
+    [property: JsonPropertyName("gameState")] GameStateData GameState,
+    [property: JsonPropertyName("saveFormatVersion")] int SaveFormatVersion = 0);
 
 /// <summary>Scenario identification.</summary>
 public sealed record ScenarioMetadata(
@@ -13,12 +25,20 @@ public sealed record ScenarioMetadata(
     [property: JsonPropertyName("name")] string Name);
 
 /// <summary>Initial game state.</summary>
+/// <param name="MasterSeed">
+/// One per session, immutable for its lifetime. Absent (null) in New Game scenario files —
+/// SimulationEngine.LoadScenario generates a fresh random value whenever this is null,
+/// which covers both New Game (expected) and a legacy save missing it (unexpected — the
+/// caller is expected to warn; see SimulationEngine.MasterSeedWasMissingOnLoad). Present
+/// and reused as-is when continuing/restoring a save.
+/// </param>
 public sealed record GameStateData(
     [property: JsonPropertyName("gameTimeMs")] long GameTimeMs,
     [property: JsonPropertyName("currentSpeed")] string CurrentSpeed,
     [property: JsonPropertyName("playerShipObjectId")] string PlayerShipObjectId,
     [property: JsonPropertyName("focus")] FocusData? Focus,
-    [property: JsonPropertyName("spaceObjects")] IReadOnlyList<SpaceObjectData> SpaceObjects);
+    [property: JsonPropertyName("spaceObjects")] IReadOnlyList<SpaceObjectData> SpaceObjects,
+    [property: JsonPropertyName("masterSeed")] ulong? MasterSeed = null);
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(
@@ -38,7 +58,8 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("movementType")] string MovementType,
     [property: JsonPropertyName("massKg")] long? MassKg,
     [property: JsonPropertyName("compositionType")] string? CompositionType,
-    [property: JsonPropertyName("modules")] IReadOnlyList<ShipModuleData>? Modules);
+    [property: JsonPropertyName("modules")] IReadOnlyList<ShipModuleData>? Modules,
+    [property: JsonPropertyName("isKnown")] bool IsKnown = false);
 
 /// <summary>A ship module declared in a scenario.</summary>
 public sealed record ShipModuleData(

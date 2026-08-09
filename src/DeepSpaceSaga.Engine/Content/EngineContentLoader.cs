@@ -20,13 +20,37 @@ public static class EngineContentLoader
         return engine;
     }
 
+    /// <summary>
+    /// Bootstrap a new engine from a save file instead of the settings' defaultScenario.
+    /// Same type registry loading as CreateEngineFromSettingsFile; the scenario source is
+    /// the save file, loaded with allowNonZeroGameTime: true (a save legitimately carries
+    /// gameTimeMs &gt; 0 — New Game scenarios never do).
+    /// </summary>
+    public static SimulationEngine CreateEngineFromSaveFile(string settingsPath, string savePath)
+    {
+        var registry = LoadRegistryFromSettingsFile(settingsPath, out _, out _);
+        var saveScenario = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true);
+        var engine = new SimulationEngine(registry);
+        engine.LoadScenario(saveScenario);
+        return engine;
+    }
+
     internal static LoadedEngineContent LoadFromSettingsFile(string settingsPath)
+    {
+        var registry = LoadRegistryFromSettingsFile(settingsPath, out string basePath, out var settings);
+        var scenario = ScenarioLoader.LoadFromFile(Resolve(basePath, settings.DefaultScenario));
+
+        return new LoadedEngineContent(registry, scenario);
+    }
+
+    private static GameDataRegistry LoadRegistryFromSettingsFile(
+        string settingsPath, out string basePath, out EngineSettingsFile settings)
     {
         if (!File.Exists(settingsPath))
             throw new ContentException($"Settings file not found: {settingsPath}");
 
-        string basePath = Path.GetDirectoryName(Path.GetFullPath(settingsPath)) ?? AppContext.BaseDirectory;
-        var settings = ReadJson<EngineSettingsFile>(settingsPath, "settings");
+        basePath = Path.GetDirectoryName(Path.GetFullPath(settingsPath)) ?? AppContext.BaseDirectory;
+        settings = ReadJson<EngineSettingsFile>(settingsPath, "settings");
 
         if (settings.TypeData is null)
             throw new ContentException("Settings file is missing typeData.");
@@ -36,10 +60,7 @@ public static class EngineContentLoader
         var commands = LoadCommandDefinitions(Resolve(basePath, settings.TypeData.CommandDefinitions));
         var modules = LoadModuleTypes(Resolve(basePath, settings.TypeData.ModuleTypes));
         var items = LoadItemTypes(Resolve(basePath, settings.TypeData.ItemTypes));
-        var registry = GameDataRegistry.Create(modules, items, commands);
-        var scenario = ScenarioLoader.LoadFromFile(Resolve(basePath, settings.DefaultScenario));
-
-        return new LoadedEngineContent(registry, scenario);
+        return GameDataRegistry.Create(modules, items, commands);
     }
 
     private static IReadOnlyList<ModuleTypeDefinition> LoadModuleTypes(string path)
