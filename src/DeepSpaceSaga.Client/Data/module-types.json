@@ -20,11 +20,14 @@
       "commandTypeIds": [
         "engine.accelerate",
         "engine.brake",
+        "engine.maintain-speed",
         "engine.turn-left-step",
         "engine.turn-right-step",
         "engine.turn-left-until-cancel",
         "engine.turn-right-until-cancel",
-        "engine.cancel-all"
+        "engine.maintain-course",
+        "engine.match-target-speed",
+        "engine.match-target-course"
       ],
       "maxSpeedMps": 4000,
       "turnStepDegrees": 1,

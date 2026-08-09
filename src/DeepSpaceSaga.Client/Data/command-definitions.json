@@ -9,6 +9,10 @@
       "displayName": "Brake"
     },
     {
+      "typeId": "engine.maintain-speed",
+      "displayName": "Maintain Speed"
+    },
+    {
       "typeId": "engine.turn-left-step",
       "displayName": "Turn Left Step"
     },
@@ -25,8 +29,16 @@
       "displayName": "Turn Right Until Cancel"
     },
     {
-      "typeId": "engine.cancel-all",
-      "displayName": "Cancel All Engine Commands"
+      "typeId": "engine.maintain-course",
+      "displayName": "Maintain Course"
+    },
+    {
+      "typeId": "engine.match-target-speed",
+      "displayName": "Match Target Speed"
+    },
+    {
+      "typeId": "engine.match-target-course",
+      "displayName": "Match Target Course"
     }
   ]
 }

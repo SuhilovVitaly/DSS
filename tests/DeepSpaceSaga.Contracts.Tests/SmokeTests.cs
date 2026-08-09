@@ -16,12 +16,31 @@ public class SmokeTests
             CommandType: "move");
 
         Assert.NotNull(command);
+        Assert.Null(command.TargetObjectId);
+    }
+
+    [Fact]
+    public void PlayerCommand_carries_explicit_target_object_id()
+    {
+        var command = new PlayerCommand(
+            CommandId: "cmd-2",
+            ClientSequence: 2,
+            ObjectId: "ship-1",
+            ModuleId: "nav",
+            CommandType: "engine.match-target-speed",
+            TargetObjectId: "obj-2");
+
+        Assert.Equal("obj-2", command.TargetObjectId);
     }
 
     [Fact]
     public void ShipEngineCommandTypes_expose_stable_ids()
     {
         Assert.Equal("engine.accelerate", ShipEngineCommandTypes.Accelerate);
+        Assert.Equal("engine.maintain-speed", ShipEngineCommandTypes.MaintainSpeed);
+        Assert.Equal("engine.maintain-course", ShipEngineCommandTypes.MaintainCourse);
+        Assert.Equal("engine.match-target-speed", ShipEngineCommandTypes.MatchTargetSpeed);
+        Assert.Equal("engine.match-target-course", ShipEngineCommandTypes.MatchTargetCourse);
         Assert.Equal("engine.cancel-all", ShipEngineCommandTypes.CancelAll);
     }
 

@@ -160,11 +160,12 @@ public sealed class GameSessionScreen : IScreen
     [
         new("^", ShipEngineCommandTypes.Accelerate, "button_accelerate.png"),
         new("_", ShipEngineCommandTypes.Brake, "button_brake.png"),
+        new("=", ShipEngineCommandTypes.MaintainSpeed, "button_maintain_speed.png"),
         new(">", ShipEngineCommandTypes.TurnRightStep, "button_turn_right_step.png"),
         new("<", ShipEngineCommandTypes.TurnLeftStep, "button_turn_left_step.png"),
         new(">>", ShipEngineCommandTypes.TurnRightUntilCancel, "button_turn_right_until_cancel.png"),
         new("<<", ShipEngineCommandTypes.TurnLeftUntilCancel, "button_turn_left_until_cancel.png"),
-        new("X", ShipEngineCommandTypes.CancelAll, "button_cancel_all.png"),
+        new("°", ShipEngineCommandTypes.MaintainCourse, "button_maintain_course.png"),
     ];
 
     // ── Test seams ──────────────────────────────────────────────
