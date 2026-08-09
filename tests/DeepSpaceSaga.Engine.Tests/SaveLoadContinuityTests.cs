@@ -270,7 +270,7 @@ public class SaveLoadContinuityTests
                     "moduleId": "{{CargoModuleId}}",
                     "moduleTypeId": "module.container.basic",
                     "platformIndex": 1,
-                    "occupiedCells": [1, 2, 3, 4],
+                    "occupiedCells": [0, 1, 2, 3],
                     "structurePoints": 250,
                     "powerState": "Off",
                     "operationalState": "Damaged",

@@ -1,14 +1,14 @@
 {
   "moduleTypes": [
     {
-      "typeId": "module.container.basic",
-      "displayName": "Container",
-      "slotSize": 4,
-      "massKg": 20000,
-      "structurePointsMax": 400,
+      "typeId": "module.bridge-navigation-computer.basic",
+      "displayName": "Bridge Navigation Computer",
+      "slotSize": 1,
+      "massKg": 4000,
+      "structurePointsMax": 80,
       "powerConsumptionW": 0,
       "commandTypeIds": [],
-      "cargoCapacityKg": 100000
+      "baseCycleTimeMs": 0
     },
     {
       "typeId": "module.engine.basic",
@@ -34,6 +34,76 @@
       "linearInertiaMps2": 400,
       "baseCycleTimeMs": 1000,
       "fuelCapacityKg": 10000
+    },
+    {
+      "typeId": "module.generator.basic",
+      "displayName": "Generator",
+      "slotSize": 1,
+      "massKg": 12000,
+      "structurePointsMax": 180,
+      "powerConsumptionW": 0,
+      "commandTypeIds": [],
+      "baseCycleTimeMs": 0
+    },
+    {
+      "typeId": "module.battery.basic",
+      "displayName": "Battery",
+      "slotSize": 1,
+      "massKg": 8000,
+      "structurePointsMax": 120,
+      "powerConsumptionW": 0,
+      "commandTypeIds": [],
+      "baseCycleTimeMs": 0
+    },
+    {
+      "typeId": "module.container.basic",
+      "displayName": "Container",
+      "slotSize": 4,
+      "massKg": 20000,
+      "structurePointsMax": 400,
+      "powerConsumptionW": 0,
+      "commandTypeIds": [],
+      "cargoCapacityKg": 100000
+    },
+    {
+      "typeId": "module.drilling-unit.basic",
+      "displayName": "Drilling Unit",
+      "slotSize": 1,
+      "massKg": 8000,
+      "structurePointsMax": 150,
+      "powerConsumptionW": 0,
+      "commandTypeIds": [],
+      "baseCycleTimeMs": 0
+    },
+    {
+      "typeId": "module.scanner.mk1",
+      "displayName": "Scanner MK I",
+      "slotSize": 1,
+      "massKg": 2000,
+      "structurePointsMax": 60,
+      "powerConsumptionW": 0,
+      "commandTypeIds": [],
+      "baseCycleTimeMs": 20000
+    },
+    {
+      "typeId": "module.habitation.basic",
+      "displayName": "Habitation Module",
+      "slotSize": 1,
+      "massKg": 15000,
+      "structurePointsMax": 200,
+      "powerConsumptionW": 0,
+      "commandTypeIds": [],
+      "baseCycleTimeMs": 0
+    },
+    {
+      "typeId": "module.combat-laser.basic",
+      "displayName": "Combat Laser",
+      "slotSize": 1,
+      "massKg": 10000,
+      "structurePointsMax": 150,
+      "powerConsumptionW": 0,
+      "commandTypeIds": [],
+      "baseCycleTimeMs": 0
     }
   ]
 }

@@ -1274,7 +1274,7 @@ public class EngineCommandTests
                 "movementType": "Stationary",
                 "modules": [
                   { "moduleId": "MOD-CONTAINER", "moduleTypeId": "module.container.basic", "platformIndex": 0,
-                    "occupiedCells": [1, 2, 3, 4], "structurePoints": 400, "powerState": "On", "operationalState": "Ready",
+                    "occupiedCells": [0, 1, 2, 3], "structurePoints": 400, "powerState": "On", "operationalState": "Ready",
                     "activeCycle": null, "cargo": [] }
                 ]
               }

@@ -498,6 +498,12 @@ public sealed class SimulationEngine : IDisposable
         ModuleTypeDefinition moduleType,
         Dictionary<int, HashSet<int>> occupiedCellsByPlatform)
     {
+        if (module.PlatformIndex < 0)
+        {
+            throw new ScenarioException(
+                $"Module '{module.ModuleId}' on '{objectId}' has negative platformIndex {module.PlatformIndex}.");
+        }
+
         if (module.OccupiedCells.Count != moduleType.SlotSize)
         {
             throw new ScenarioException(
@@ -510,6 +516,9 @@ public sealed class SimulationEngine : IDisposable
         {
             if (cell < 0)
                 throw new ScenarioException($"Module '{module.ModuleId}' on '{objectId}' has negative occupied cell {cell}.");
+            if (cell > 3)
+                throw new ScenarioException(
+                    $"Module '{module.ModuleId}' on '{objectId}' has occupied cell {cell} outside the 2x2 platform grid (0..3).");
 
             if (!moduleCells.Add(cell))
                 throw new ScenarioException($"Module '{module.ModuleId}' on '{objectId}' duplicates occupied cell {cell}.");
