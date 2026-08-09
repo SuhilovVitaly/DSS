@@ -12,6 +12,14 @@ public static class SpaceObjectType
     public const string Explosion = "Explosion";
     public const string Planet = "Planet";
     public const string Sun = "Sun";
+
+    /// <summary>
+    /// Client-visible projection of an object the player has not yet discovered:
+    /// the client must not show the factual type, so the render projection is
+    /// this sentinel instead. (Authoritative <see cref="ObjectMotionSnapshot.ObjectType"/>
+    /// stays null for such objects.)
+    /// </summary>
+    public const string UnknownSpaceObject = "UnknownSpaceObject";
 }
 
 /// <summary>Relation of an object to the local player (for color selection).</summary>

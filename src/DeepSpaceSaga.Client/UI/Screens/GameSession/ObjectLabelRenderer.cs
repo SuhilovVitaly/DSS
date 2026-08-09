@@ -11,8 +11,6 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// </summary>
 internal sealed class ObjectLabelRenderer
 {
-    private const string UnknownLabel = "Unknown Celestial Object";
-
     private readonly SKPaint _leaderLinePaint;
     private readonly SKPaint _plaqueBgPaint;
     private readonly SKPaint _plaqueBorderPaint;
@@ -116,7 +114,10 @@ internal sealed class ObjectLabelRenderer
             var (objSx, objSy) = camera.WorldToScreen(predicted.X, predicted.Y, viewportW, viewportH);
 
             // Visibility filter: skip objects whose marker/glyph is fully outside viewport.
-            float markerRadius = state.IsPlayerShip ? 7f : ObjectLabelLayout.DefaultMarkerRadius;
+            // Marker radius from the shared policy (player ship included) so the
+            // viewport culling matches the drawn marker size.
+            float markerRadius = TacticalMapMarkerPolicy.GetMarkerRadiusPx(
+                state.IsPlayerShip ? SpaceObjectType.PlayerShip : predicted.RenderObjectType);
             if (objSx < -markerRadius || objSx > viewportW + markerRadius ||
                 objSy < -markerRadius || objSy > viewportH + markerRadius)
                 continue;
@@ -124,8 +125,8 @@ internal sealed class ObjectLabelRenderer
             _activeIds.Add(objectId);
             var objectScreen = new SKPoint(objSx, objSy);
 
-            string label = predicted.DisplayName ?? UnknownLabel;
-            bool isUnknown = predicted.DisplayName is null;
+            string label = ObjectLabelText.Build(predicted.RenderObjectType, predicted.DisplayName, predicted.ObjectId);
+            bool isUnknown = predicted.RenderObjectType == SpaceObjectType.UnknownSpaceObject;
             float textWidth = (isUnknown ? _unknownTextPaint : _textPaint).MeasureText(label);
 
             // Target geometry from orbit layout (no smoothing).
@@ -212,7 +213,7 @@ internal sealed class ObjectLabelRenderer
 
             SKColor objectColor = state.IsPlayerShip
                 ? SpaceMapColorResolver.PlayerShipColor
-                : SpaceMapColorResolver.GetColor(predicted.ObjectType, predicted.RelationToPlayer);
+                : SpaceMapColorResolver.GetColor(predicted.RenderObjectType, predicted.RelationToPlayer);
 
             // Plaque background + border
             canvas.DrawRect(geometry.PlaqueRect, _plaqueBgPaint);
@@ -239,8 +240,8 @@ internal sealed class ObjectLabelRenderer
             }
 
             // Text
-            string label = predicted.DisplayName ?? UnknownLabel;
-            bool isUnknown = predicted.DisplayName is null;
+            string label = ObjectLabelText.Build(predicted.RenderObjectType, predicted.DisplayName, predicted.ObjectId);
+            bool isUnknown = predicted.RenderObjectType == SpaceObjectType.UnknownSpaceObject;
             var textPaint = isUnknown ? _unknownTextPaint : _textPaint;
             if (!isUnknown)
             {

@@ -22,6 +22,7 @@
             "speedMps": 700,
             "directionDegrees": 0,
             "movementType": "Linear",
+            "isKnown": true,
             "modules": [
                 {
                     "moduleId": "MOD-PLAYER-BRIDGE-01",
@@ -139,7 +140,8 @@
         "positionY": 11000.0,
         "speedMps": 0,
         "directionDegrees": 0,
-        "movementType": "Stationary"
+        "movementType": "Stationary",
+        "isKnown": true
       },
       {
         "objectId": "SPC-0003",

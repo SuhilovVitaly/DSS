@@ -93,6 +93,13 @@ public class SpaceMapColorResolverTests
     }
 
     [Fact]
+    public void UnknownSpaceObject_returns_fallback()
+    {
+        var c = SpaceMapColorResolver.GetColor(SpaceObjectType.UnknownSpaceObject, null);
+        Assert.Equal(Fallback, c);
+    }
+
+    [Fact]
     public void Null_type_returns_fallback()
     {
         var c = SpaceMapColorResolver.GetColor(null, null);

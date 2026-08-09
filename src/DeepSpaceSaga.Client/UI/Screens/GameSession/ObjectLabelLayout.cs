@@ -27,9 +27,6 @@ internal static class ObjectLabelLayout
     /// <summary>Vertical offset of the text baseline origin relative to the plaque top.</summary>
     public const float TextOffsetY = -4f;
 
-    /// <summary>Default marker radius for non-player objects (circle).</summary>
-    public const float DefaultMarkerRadius = 4f;
-
     /// <summary>Extra margin beyond marker edge before plaque may sit.</summary>
     public const float SafeMarginPx = 8f;
 
@@ -45,12 +42,15 @@ internal static class ObjectLabelLayout
     /// then clamped to the viewport while preserving the rear-half-plane constraint
     /// whenever possible.
     /// </summary>
+    /// <param name="markerRadius">Screen-space marker radius — comes from
+    /// <see cref="TacticalMapMarkerPolicy.GetMarkerRadiusPx"/> so labels and
+    /// drawing share one source (ТЗ-10 AC 7).</param>
     public static ObjectLabelGeometry Create(
         SKPoint objectScreen,
         double directionDegrees,
         float textWidth,
         SKSize viewport,
-        float markerRadius = DefaultMarkerRadius)
+        float markerRadius)
     {
         float plaqueW = Math.Max(MinPlaqueWidth,
             TextPaddingX + StatusSquareSize + StatusTextGap + textWidth + TextPaddingX);

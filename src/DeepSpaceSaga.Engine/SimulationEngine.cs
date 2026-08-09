@@ -259,15 +259,22 @@ public sealed class SimulationEngine : IDisposable
                 long elapsed = gameTimeMs - obj.StartGameTimeMs;
                 var motion = _motion.Predict(obj.InitialMotion, elapsed);
                 var cycleMotion = GetActiveEngineCycleMotion(obj, gameTimeMs);
+                // Render projection: the client may only see factual data
+                // (type, relation, name) for objects the player knows about.
+                // The player ship is always known — protects legacy saves
+                // without isKnown. Unknown objects get the sentinel render type
+                // and null factual fields.
+                bool known = obj.IsKnown || obj.InitialMotion.ObjectId == PlayerShipObjectId;
                 objects.Add(motion with
                 {
                     ActiveEngineCommandType = cycleMotion.CommandType,
                     TurnStepDegrees = cycleMotion.TurnStepDegrees,
                     TurnStepRemainingMs = cycleMotion.TurnStepRemainingMs,
                     TurnStepIntervalMs = cycleMotion.TurnStepIntervalMs,
-                    ObjectType = obj.ObjectType,
-                    RelationToPlayer = GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType),
-                    DisplayName = obj.InitialMotion.ObjectId == PlayerShipObjectId ? obj.Name : null,
+                    ObjectType = known ? obj.ObjectType : null,
+                    RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
+                    RelationToPlayer = known ? GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType) : null,
+                    DisplayName = known ? obj.Name : null,
                     MaxSpeedKmS = GetMaxSpeedKmS(obj)
                 });
             }
