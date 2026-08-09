@@ -530,6 +530,194 @@ public class EngineCommandTests
         Assert.Contains(snapshot.CommandResults, r => r.CommandId == "cmd-2");
     }
 
+    // ── ShipEvent tests (ТЗ-02) ────────────────────────────────────
+
+    [Fact]
+    public void TurnRightStep_completion_publishes_command_completed_event()
+    {
+        // AC1: a completed one-shot command publishes a command_completed ShipEvent
+        // with the completion game time (first tick where gameTimeMs > StartedGameTimeMs).
+        var engine = CreateEngine();
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightStep));
+
+        // t=0: zero-duration cycle guard prevents completion in the starting tick.
+        var snapshot0 = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        Assert.Empty(snapshot0.ShipEvents);
+
+        // t=100: duration 0 cycle completes at gameTimeMs=100.
+        var snapshot100 = engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
+        var e = Assert.Single(snapshot100.ShipEvents);
+        Assert.Equal("EVE-000001", e.EventId);
+        Assert.Equal(PlayerShipId, e.ObjectId);
+        Assert.Equal(EngineModuleId, e.ModuleId);
+        Assert.Equal(ShipEventTypes.CommandCompleted, e.EventType);
+        Assert.Null(e.ReasonCode);
+        Assert.Equal(100, e.GameTimeMs);
+
+        // t=200: events drained — nothing new.
+        var snapshot200 = engine.CaptureSnapshotForTests(200, SimulationSpeed.Speed1);
+        Assert.Empty(snapshot200.ShipEvents);
+    }
+
+    [Fact]
+    public void Auto_repeat_publishes_command_completed_per_step()
+    {
+        var engine = CreateEngine();
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightUntilCancel));
+
+        // t=0: guard prevents zero-duration completion.
+        var snapshot0 = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        Assert.Empty(snapshot0.ShipEvents);
+
+        // t=1000: first step completes (1000 ms duration).
+        var snapshot1000 = engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1);
+        var e1 = Assert.Single(snapshot1000.ShipEvents);
+        Assert.Equal("EVE-000001", e1.EventId);
+        Assert.Equal(ShipEventTypes.CommandCompleted, e1.EventType);
+        Assert.Equal(1000, e1.GameTimeMs);
+
+        // t=2000: second step completes.
+        var snapshot2000 = engine.CaptureSnapshotForTests(2000, SimulationSpeed.Speed1);
+        var e2 = Assert.Single(snapshot2000.ShipEvents);
+        Assert.Equal("EVE-000002", e2.EventId);
+        Assert.Equal(ShipEventTypes.CommandCompleted, e2.EventType);
+        Assert.Equal(2000, e2.GameTimeMs);
+    }
+
+    [Fact]
+    public void CancelAll_publishes_cycle_cancelled_event()
+    {
+        // AC2: CancelAll cancels an active auto-repeat cycle and publishes
+        // a cycle_cancelled event with cancelled_by_command reason.
+        var engine = CreateEngine();
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightUntilCancel));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.CancelAll));
+        var snapshot = engine.CaptureSnapshotForTests(500, SimulationSpeed.Speed1);
+
+        // cycle_cancelled at t=500 (the tick CancelAll was processed).
+        var cancelled = Assert.Single(snapshot.ShipEvents);
+        Assert.Equal(ShipEventTypes.CycleCancelled, cancelled.EventType);
+        Assert.Equal(ShipEventReasonCodes.CancelledByCommand, cancelled.ReasonCode);
+        Assert.Equal(500, cancelled.GameTimeMs);
+
+        // No completion event — the cycle was cancelled before its duration elapsed
+        // (500 < 1000 ms TurnRightUntilCancel duration).
+        Assert.DoesNotContain(snapshot.ShipEvents,
+            e => e.EventType == ShipEventTypes.CommandCompleted);
+
+        // Later snapshot: no stale events.
+        var snapshot1500 = engine.CaptureSnapshotForTests(1500, SimulationSpeed.Speed1);
+        Assert.Empty(snapshot1500.ShipEvents);
+    }
+
+    [Fact]
+    public void Implicit_cancel_publishes_cycle_cancelled_and_then_completed()
+    {
+        // AC2: sending a one-shot command of a different type while an auto-repeat
+        // cycle is running implicitly cancels the auto-repeat and starts the one-shot.
+        var engine = CreateEngine();
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightUntilCancel));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnLeftStep));
+        var snapshot = engine.CaptureSnapshotForTests(500, SimulationSpeed.Speed1);
+
+        // t=500: cycle_cancelled (implicit cancel processed at this tick).
+        var cancelled = Assert.Single(snapshot.ShipEvents, e => e.EventType == ShipEventTypes.CycleCancelled);
+        Assert.Equal(ShipEventReasonCodes.CancelledByCommand, cancelled.ReasonCode);
+        Assert.Equal(500, cancelled.GameTimeMs);
+
+        // t=600: TurnLeftStep completes (500 + 100 ms duration).
+        var snapshot600 = engine.CaptureSnapshotForTests(600, SimulationSpeed.Speed1);
+        var completed = Assert.Single(snapshot600.ShipEvents, e => e.EventType == ShipEventTypes.CommandCompleted);
+        Assert.Null(completed.ReasonCode);
+        Assert.Equal(600, completed.GameTimeMs);
+    }
+
+    [Theory]
+    [InlineData("Off", "Ready", 100, "power_off")]
+    [InlineData("On", "Disabled", 100, "module_disabled")]
+    [InlineData("On", "Ready", 0, "module_destroyed")]
+    public void Interruption_publishes_cycle_interrupted_with_correct_reason(
+        string powerState, string operationalState, int structurePoints, string expectedReason)
+    {
+        // Load a scenario with an active auto-repeat cycle on an unavailable module.
+        // The cycle reaches its completion time at startedGameTimeMs + durationMs = 1000.
+        string activeCycleJson = $$"""
+        {
+          "cycleId": "CYC-ENGINE-000001",
+          "commandType": "engine.turn_right_until_cancel",
+          "startedGameTimeMs": 0,
+          "durationMs": 1000,
+          "isAutoRepeat": true
+        }
+        """;
+
+        var engine = CreateEngine(
+            powerState: powerState,
+            operationalState: operationalState,
+            structurePoints: structurePoints,
+            activeCycleJson: activeCycleJson);
+
+        var snapshot = engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1);
+
+        var interrupted = Assert.Single(snapshot.ShipEvents);
+        Assert.Equal(ShipEventTypes.CycleInterrupted, interrupted.EventType);
+        Assert.Equal(expectedReason, interrupted.ReasonCode);
+        Assert.Equal(1000, interrupted.GameTimeMs);
+
+        // No completion event — cycle was interrupted before completing.
+        Assert.DoesNotContain(snapshot.ShipEvents,
+            e => e.EventType == ShipEventTypes.CommandCompleted);
+    }
+
+    [Fact]
+    public void Save_in_cancel_window_does_not_duplicate_ship_events()
+    {
+        // Regression: CaptureSaveStateCore calls ApplyPendingCommands which may
+        // process CancelAll — the drain must not duplicate ShipEvents.
+        var engine = CreateEngine();
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightUntilCancel));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.CancelAll));
+        engine.CaptureSaveStateForTests(500, SimulationSpeed.Speed1);
+
+        var snapshot = engine.CaptureSnapshotForTests(500, SimulationSpeed.Speed1);
+
+        // Each EventId appears at most once.
+        var byId = snapshot.ShipEvents.GroupBy(e => e.EventId).ToList();
+        foreach (var group in byId)
+            Assert.Single(group);
+
+        Assert.Single(snapshot.ShipEvents,
+            e => e.EventType == ShipEventTypes.CycleCancelled);
+    }
+
+    [Fact]
+    public void Ship_events_are_immutable_after_snapshot_publication()
+    {
+        var engine = CreateEngine();
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightStep));
+
+        // t=100: ApplyPendingCommands creates the cycle (after CompleteActiveEngineCycles).
+        engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
+
+        // t=200: CompleteActiveEngineCycles finds the cycle and completes it → ShipEvent.
+        var snapshotA = engine.CaptureSnapshotForTests(200, SimulationSpeed.Speed1);
+        Assert.Single(snapshotA.ShipEvents);
+
+        // Process another command; snapshot A must not be mutated.
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnLeftStep));
+        engine.CaptureSnapshotForTests(300, SimulationSpeed.Speed1);
+
+        Assert.Single(snapshotA.ShipEvents);
+        Assert.Equal("EVE-000001", snapshotA.ShipEvents[0].EventId);
+        Assert.Equal(ShipEventTypes.CommandCompleted, snapshotA.ShipEvents[0].EventType);
+    }
+
     private static PlayerCommand Command(string commandType)
     {
         return new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, commandType);

@@ -15,4 +15,6 @@ public sealed record AuthoritativeSnapshot(
     ImmutableArray<ObjectMotionSnapshot> Objects,
     string? PlayerShipObjectId = null,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CommandResult>))]
-    ImmutableArray<CommandResult> CommandResults = default);
+    ImmutableArray<CommandResult> CommandResults = default,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ShipEvent>))]
+    ImmutableArray<ShipEvent> ShipEvents = default);

@@ -25,9 +25,11 @@ public sealed class SimulationEngine : IDisposable
     private readonly object _worldStateLock = new();
     private readonly List<PlayerCommand> _pendingCommands = new();
     private readonly List<CommandResult> _commandResults = new();
+    private readonly List<ShipEvent> _shipEvents = new();
     private int _receivedCommandCount;
     private ulong _nextSequence;
     private ulong _nextEngineCycleId;
+    private ulong _nextShipEventId;
     private bool _disposed;
 
     /// <summary>Number of commands received (test seam).</summary>
@@ -155,6 +157,8 @@ public sealed class SimulationEngine : IDisposable
             PlayerShipObjectId = gs.PlayerShipObjectId;
             _clock.Reset(gs.GameTimeMs, speed);
             _nextEngineCycleId = 0;
+            _nextShipEventId = 0;
+            _shipEvents.Clear();
             CollectLoadedEngineCycleIds(runtimeObjects);
 
             // masterSeed: reuse whatever the scenario/save already carries (continuing a
@@ -282,13 +286,19 @@ public sealed class SimulationEngine : IDisposable
                 .ToImmutableArray();
             _commandResults.Clear();
 
+            // Drain ship events — no deduplication needed: each event has a
+            // unique EventId and is recorded exactly once.
+            var shipEvents = _shipEvents.ToImmutableArray();
+            _shipEvents.Clear();
+
             return new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
                 GameTimeMs: gameTimeMs,
                 CurrentSpeed: clockState.Speed,
                 Objects: objects.MoveToImmutable(),
                 PlayerShipObjectId: PlayerShipObjectId,
-                CommandResults: commandResults);
+                CommandResults: commandResults,
+                ShipEvents: shipEvents);
         }
     }
 
@@ -631,6 +641,12 @@ public sealed class SimulationEngine : IDisposable
             ReasonCode: outcome.ReasonCode));
     }
 
+    private void RecordShipEvent(string objectId, string moduleId, string eventType, string? reasonCode, long gameTimeMs)
+    {
+        string eventId = $"EVE-{++_nextShipEventId:D6}";
+        _shipEvents.Add(new ShipEvent(eventId, objectId, moduleId, eventType, reasonCode, gameTimeMs));
+    }
+
     private List<PlayerCommand> DrainPendingCommands()
     {
         lock (_commandGate)
@@ -675,6 +691,10 @@ public sealed class SimulationEngine : IDisposable
 
         if (command.CommandType == ShipEngineCommandTypes.CancelAll)
         {
+            if (module.ActiveCycle is { })
+                RecordShipEvent(command.ObjectId, command.ModuleId,
+                    ShipEventTypes.CycleCancelled, ShipEventReasonCodes.CancelledByCommand, gameTimeMs);
+
             _objects[objectIndex] = UpdateModule(obj, moduleIndex, module => module with { ActiveCycle = null });
             return CommandStartOutcome.Started;
         }
@@ -693,6 +713,8 @@ public sealed class SimulationEngine : IDisposable
 
             // Any other engine command implicitly cancels the active periodic
             // (auto-repeat) cycle and falls through to start its own cycle below.
+            RecordShipEvent(command.ObjectId, command.ModuleId,
+                ShipEventTypes.CycleCancelled, ShipEventReasonCodes.CancelledByCommand, gameTimeMs);
         }
 
         bool isAutoRepeat = IsCyclicEngineCommand(command.CommandType);
@@ -833,8 +855,19 @@ public sealed class SimulationEngine : IDisposable
                     var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
                     if (!IsEngineCommandType(moduleType, cycle.CommandType) || !CanExecuteEngineCommand(module, moduleType))
                     {
+                        // Derive interruption reason from module state before clearing the cycle.
+                        string? interruptReason = module.StructurePoints <= 0
+                            ? ShipEventReasonCodes.ModuleDestroyed
+                            : !string.Equals(module.PowerState, "On", StringComparison.Ordinal)
+                                ? ShipEventReasonCodes.PowerOff
+                                : !string.Equals(module.OperationalState, "Ready", StringComparison.Ordinal)
+                                    ? ShipEventReasonCodes.ModuleDisabled
+                                    : ShipEventReasonCodes.IncompatibleState;
+
                         _objects[objectIndex] = UpdateModule(obj, moduleIndex, current => current with { ActiveCycle = null });
                         obj = _objects[objectIndex];
+                        RecordShipEvent(obj.InitialMotion.ObjectId, module.ModuleId,
+                            ShipEventTypes.CycleInterrupted, interruptReason, gameTimeMs);
                         break;
                     }
 
@@ -852,6 +885,9 @@ public sealed class SimulationEngine : IDisposable
                         completionGameTimeMs,
                         nextCycle);
                     obj = _objects[objectIndex];
+
+                    RecordShipEvent(obj.InitialMotion.ObjectId, module.ModuleId,
+                        ShipEventTypes.CommandCompleted, reasonCode: null, completionGameTimeMs);
 
                     if (!cycle.IsAutoRepeat)
                         break;

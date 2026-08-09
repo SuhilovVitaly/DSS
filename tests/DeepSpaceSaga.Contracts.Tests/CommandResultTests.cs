@@ -148,6 +148,7 @@ public class CommandResultTests
 
         Assert.NotNull(roundTripped);
         Assert.True(roundTripped!.CommandResults.IsDefaultOrEmpty);
+        Assert.True(roundTripped!.ShipEvents.IsDefaultOrEmpty);
     }
 
     [Fact]
