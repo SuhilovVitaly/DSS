@@ -718,6 +718,127 @@ public class EngineCommandTests
         Assert.Equal(ShipEventTypes.CommandCompleted, snapshotA.ShipEvents[0].EventType);
     }
 
+    // ── Match command tests (ТЗ-04) ───────────────────────────────
+
+    [Fact]
+    public void MatchTargetSpeed_without_target_publishes_rejected()
+    {
+        // AC1: a match command without targetObjectId is rejected with missing_target
+        // (§56.9) — before any module-state check. Ship motion is untouched, no cycle starts.
+        var engine = CreateEngine();
+
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.MatchTargetSpeed));
+
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        var result = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Rejected, result.Status);
+        Assert.Equal(CommandReasonCodes.MissingTarget, result.ReasonCode);
+
+        var ship = PlayerShipFrom(snapshot);
+        Assert.Equal(0, ship.SpeedKmS);
+        Assert.Equal(0, ship.Direction);
+        Assert.Null(ship.ActiveEngineCommandType);
+    }
+
+    [Fact]
+    public void MatchTargetCourse_with_unknown_target_publishes_rejected()
+    {
+        // AC2: a match command referencing an object that does not exist in the world
+        // is rejected with unknown_target (§56.9).
+        var engine = CreateEngine();
+
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.MatchTargetCourse,
+            TargetObjectId: "GHOST"));
+
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        var result = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Rejected, result.Status);
+        Assert.Equal(CommandReasonCodes.UnknownTarget, result.ReasonCode);
+    }
+
+    [Fact]
+    public void MatchTargetSpeed_captures_target_speed_at_cycle_start()
+    {
+        // AC3: at cycle start the ActiveCycle stores TargetObjectId and the captured
+        // scalar speed; completion applies ONLY the captured value, so later target
+        // changes or the target disappearing do not affect the result (§56.9).
+        // Course is not captured and not changed.
+        var engine = CreateEngine(targetSpeedMps: 2500); // OTHER = 2.5 km/s, ship = 0.
+
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.MatchTargetSpeed,
+            TargetObjectId: "OTHER"));
+
+        // t=0: cycle starts (Executed); a zero-duration one-shot does not complete in
+        // its starting tick (guard gameTimeMs > StartedGameTimeMs).
+        var snapshot0 = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        Assert.Equal(CommandResultStatus.Executed, Assert.Single(snapshot0.CommandResults).Status);
+
+        var module = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId).Modules.Single();
+        Assert.Equal("OTHER", module.ActiveCycle!.TargetObjectId);
+        Assert.Equal(2.5, module.ActiveCycle!.CapturedTargetSpeedKmS);
+        Assert.Null(module.ActiveCycle!.CapturedTargetCourseDegrees);
+
+        // t=100: cycle completes — ship speed matches the captured target speed,
+        // direction unchanged (MatchTargetSpeed changes only scalar speed).
+        var ship = PlayerShipFrom(engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1));
+        Assert.Equal(2.5, ship.SpeedKmS);
+        Assert.Equal(0, ship.Direction);
+    }
+
+    [Fact]
+    public void MatchTargetCourse_captures_target_course_at_cycle_start()
+    {
+        // AC3: MatchTargetCourse captures the target course only; speed is not
+        // captured and not changed (MatchTargetCourse changes only course).
+        var engine = CreateEngine(speedMps: 700, directionDegrees: 12, targetDirectionDegrees: 180);
+
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.MatchTargetCourse,
+            TargetObjectId: "OTHER"));
+
+        var snapshot0 = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        Assert.Equal(CommandResultStatus.Executed, Assert.Single(snapshot0.CommandResults).Status);
+
+        var module = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId).Modules.Single();
+        Assert.Equal("OTHER", module.ActiveCycle!.TargetObjectId);
+        Assert.Equal(180, module.ActiveCycle!.CapturedTargetCourseDegrees);
+        Assert.Null(module.ActiveCycle!.CapturedTargetSpeedKmS);
+
+        var ship = PlayerShipFrom(engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1));
+        Assert.Equal(180, ship.Direction);
+        Assert.Equal(0.7, ship.SpeedKmS);
+    }
+
+    [Fact]
+    public void Match_cycle_captured_scalars_survive_save_load()
+    {
+        // AC3 + §1253-1298: the captured scalar is persisted in the save and restored
+        // on load — completion after F9 uses the restored captured value and does not
+        // depend on the original target object.
+        var engine = CreateEngine(targetSpeedMps: 2500);
+
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.MatchTargetSpeed,
+            TargetObjectId: "OTHER"));
+
+        // Save in the active-cycle window (cycle started, not yet completed).
+        var saveState = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed1);
+
+        // Continue in a fresh engine (SaveLoadContinuityTests pattern): the save's
+        // gameTimeMs is 0, so LoadScenario's StartGameTimeMs stamp is already correct.
+        var loadedEngine = new SimulationEngine(CreateRegistry());
+        loadedEngine.LoadScenario(saveState);
+
+        var ship = PlayerShipFrom(loadedEngine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1));
+        Assert.Equal(2.5, ship.SpeedKmS);
+        Assert.Equal(0, ship.Direction);
+    }
+
     private static PlayerCommand Command(string commandType)
     {
         return new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, commandType);
@@ -735,7 +856,9 @@ public class EngineCommandTests
         string operationalState = "Ready",
         int structurePoints = 100,
         string activeCycleJson = "null",
-        int linearInertiaMps2 = 40000)
+        int linearInertiaMps2 = 40000,
+        int targetSpeedMps = 0,
+        int targetDirectionDegrees = 0)
     {
         var engine = new SimulationEngine(CreateRegistry(linearInertiaMps2));
         engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
@@ -775,8 +898,8 @@ public class EngineCommandTests
                 "persistenceType": "Permanent",
                 "positionX": 0,
                 "positionY": 0,
-                "speedMps": 0,
-                "directionDegrees": 0,
+                "speedMps": {{targetSpeedMps}},
+                "directionDegrees": {{targetDirectionDegrees}},
                 "movementType": "Stationary",
                 "modules": [
                   {
@@ -810,6 +933,8 @@ public class EngineCommandTests
             ShipEngineCommandTypes.TurnRightStep,
             ShipEngineCommandTypes.TurnLeftUntilCancel,
             ShipEngineCommandTypes.TurnRightUntilCancel,
+            ShipEngineCommandTypes.MatchTargetSpeed,
+            ShipEngineCommandTypes.MatchTargetCourse,
             ShipEngineCommandTypes.CancelAll
         ];
 

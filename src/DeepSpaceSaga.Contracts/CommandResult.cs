@@ -82,4 +82,10 @@ public static class CommandReasonCodes
 
     /// <summary>Module is busy with an active non-auto-repeat cycle; command deferred.</summary>
     public const string Busy = "busy";
+
+    /// <summary>Match command (e.g. match-target-speed) arrived without the required targetObjectId (§56.9).</summary>
+    public const string MissingTarget = "missing_target";
+
+    /// <summary>Match command referenced a targetObjectId that does not exist in the world (§56.9).</summary>
+    public const string UnknownTarget = "unknown_target";
 }

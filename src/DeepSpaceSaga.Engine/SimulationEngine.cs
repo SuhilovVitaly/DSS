@@ -689,6 +689,24 @@ public sealed class SimulationEngine : IDisposable
         if (!IsEngineCommandType(moduleType, command.CommandType))
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
 
+        // Match commands (engine.match-target-speed / engine.match-target-course, §56.9)
+        // carry an explicit, authoritative target. Parameter validation comes right after
+        // UnknownCommandType and before CancelAll/state checks: a parameter-level error
+        // (missing/unknown target) is more specific than a module-state error and is
+        // published deterministically. A whitespace-only target id counts as missing.
+        // The target may be the ship itself — it exists in the world, §56.9 does not forbid it.
+        int? matchTargetIndex = null;
+        if (IsMatchEngineCommand(command.CommandType))
+        {
+            if (string.IsNullOrWhiteSpace(command.TargetObjectId))
+                return CommandStartOutcome.Rejected(CommandReasonCodes.MissingTarget);
+
+            matchTargetIndex = _objects.FindIndex(o =>
+                string.Equals(o.InitialMotion.ObjectId, command.TargetObjectId, StringComparison.Ordinal));
+            if (matchTargetIndex < 0)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownTarget);
+        }
+
         if (command.CommandType == ShipEngineCommandTypes.CancelAll)
         {
             if (module.ActiveCycle is { })
@@ -718,12 +736,39 @@ public sealed class SimulationEngine : IDisposable
         }
 
         bool isAutoRepeat = IsCyclicEngineCommand(command.CommandType);
+
+        // Capture the target's scalar state at cycle start (§56.9): cycle completion reads
+        // ONLY the captured value stored in ActiveCycle, so later target changes or the
+        // target disappearing do not affect the result. MatchTargetSpeed captures speed
+        // only, MatchTargetCourse captures course only; TargetObjectId is always stored
+        // (diagnostics + restore after save/load, §1253-1298).
+        string? targetObjectId = null;
+        double? capturedTargetSpeedKmS = null;
+        double? capturedTargetCourseDegrees = null;
+        if (matchTargetIndex is { } targetIndex)
+        {
+            var target = _objects[targetIndex];
+            long targetElapsedMs = Math.Max(0, gameTimeMs - target.StartGameTimeMs);
+            var targetMotion = _motion.Predict(target.InitialMotion, targetElapsedMs);
+            targetObjectId = command.TargetObjectId;
+            if (command.CommandType == ShipEngineCommandTypes.MatchTargetSpeed)
+                capturedTargetSpeedKmS = targetMotion.SpeedKmS;
+            else
+                capturedTargetCourseDegrees = targetMotion.Direction;
+        }
+
         _objects[objectIndex] = UpdateModule(
             obj,
             moduleIndex,
             current => current with
             {
-                ActiveCycle = CreateEngineCycle(command.CommandType, gameTimeMs, isAutoRepeat)
+                ActiveCycle = CreateEngineCycle(
+                    command.CommandType,
+                    gameTimeMs,
+                    isAutoRepeat,
+                    targetObjectId,
+                    capturedTargetSpeedKmS,
+                    capturedTargetCourseDegrees)
             });
         return CommandStartOutcome.Started;
     }
@@ -755,11 +800,25 @@ public sealed class SimulationEngine : IDisposable
                module.StructurePoints > 0;
     }
 
-    private ActiveCycleData CreateEngineCycle(string commandType, long gameTimeMs, bool isAutoRepeat)
+    private ActiveCycleData CreateEngineCycle(
+        string commandType,
+        long gameTimeMs,
+        bool isAutoRepeat,
+        string? targetObjectId = null,
+        double? capturedTargetSpeedKmS = null,
+        double? capturedTargetCourseDegrees = null)
     {
         string cycleId = $"CYC-ENGINE-{++_nextEngineCycleId:D6}";
         long durationMs = IsUntilCancelTurn(commandType) ? 1000 : 0;
-        return new ActiveCycleData(cycleId, gameTimeMs, durationMs, commandType, isAutoRepeat);
+        return new ActiveCycleData(
+            cycleId,
+            gameTimeMs,
+            durationMs,
+            commandType,
+            isAutoRepeat,
+            targetObjectId,
+            capturedTargetSpeedKmS,
+            capturedTargetCourseDegrees);
     }
 
     private static bool IsUntilCancelTurn(string commandType)
@@ -773,6 +832,12 @@ public sealed class SimulationEngine : IDisposable
         return commandType == ShipEngineCommandTypes.Accelerate ||
                commandType == ShipEngineCommandTypes.Brake ||
                IsUntilCancelTurn(commandType);
+    }
+
+    private static bool IsMatchEngineCommand(string commandType)
+    {
+        return commandType == ShipEngineCommandTypes.MatchTargetSpeed ||
+               commandType == ShipEngineCommandTypes.MatchTargetCourse;
     }
 
     private void CollectLoadedEngineCycleIds(IEnumerable<SpaceObjectRuntime> objects)
@@ -881,7 +946,7 @@ public sealed class SimulationEngine : IDisposable
                         obj,
                         moduleIndex,
                         moduleType,
-                        cycle.CommandType,
+                        cycle,
                         completionGameTimeMs,
                         nextCycle);
                     obj = _objects[objectIndex];
@@ -900,11 +965,11 @@ public sealed class SimulationEngine : IDisposable
         SpaceObjectRuntime obj,
         int moduleIndex,
         ModuleTypeDefinition moduleType,
-        string commandType,
+        ActiveCycleData cycle,
         long gameTimeMs,
         ActiveCycleData? nextCycle)
     {
-        return commandType switch
+        return cycle.CommandType switch
         {
             ShipEngineCommandTypes.Accelerate => UpdateEngineMotion(
                 obj,
@@ -945,6 +1010,35 @@ public sealed class SimulationEngine : IDisposable
                 turnSign: 1,
                 gameTimeMs,
                 nextCycle),
+
+            // Match cycles (§56.9) complete using ONLY the scalar captured at cycle start —
+            // later target changes or the target disappearing do not affect the result.
+            // MatchTargetSpeed changes only the scalar speed (course untouched),
+            // MatchTargetCourse changes only the course (speed untouched).
+            // The captured value may exceed the ship's own MaxSpeedKmS (it came from a real
+            // object), so speed is clamped the same way Accelerate clamps.
+            // Legacy-save guard: a match cycle loaded from a save written by older code may
+            // have a null captured field (match commands then passed without a target) —
+            // such a cycle completes as a no-op instead of throwing.
+            ShipEngineCommandTypes.MatchTargetSpeed when cycle.CapturedTargetSpeedKmS is { } capturedSpeedKmS => UpdateEngineMotion(
+                obj,
+                moduleIndex,
+                gameTimeMs,
+                module => module with { ActiveCycle = nextCycle },
+                motion => motion with
+                {
+                    SpeedKmS = Math.Min(moduleType.MaxSpeedMps!.Value / 1000.0, capturedSpeedKmS)
+                }),
+
+            ShipEngineCommandTypes.MatchTargetCourse when cycle.CapturedTargetCourseDegrees is { } capturedCourseDegrees => UpdateEngineMotion(
+                obj,
+                moduleIndex,
+                gameTimeMs,
+                module => module with { ActiveCycle = nextCycle },
+                motion => motion with
+                {
+                    Direction = NormalizeDirection(capturedCourseDegrees)
+                }),
 
             _ => obj
         };

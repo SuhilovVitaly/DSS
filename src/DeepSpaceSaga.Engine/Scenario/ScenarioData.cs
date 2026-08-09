@@ -73,13 +73,35 @@ public sealed record ShipModuleData(
     [property: JsonPropertyName("activeCycle")] ActiveCycleData? ActiveCycle,
     [property: JsonPropertyName("cargo")] IReadOnlyList<CargoStackData>? Cargo);
 
-/// <summary>Runtime progress for an active module cycle.</summary>
+/// <summary>
+/// Runtime progress for an active module cycle.
+/// </summary>
+/// <param name="TargetObjectId">
+/// ObjectId of the target for match commands (engine.match-target-speed /
+/// engine.match-target-course, requirements §56.9). Filled when a match cycle starts;
+/// always set for match cycles (diagnostics + §1253-1298 restore), null otherwise.
+/// </param>
+/// <param name="CapturedTargetSpeedKmS">
+/// Target scalar speed captured at cycle start (km/s). Filled only for
+/// engine.match-target-speed. Cycle completion applies only this captured value —
+/// later target changes or the target disappearing do not affect the result.
+/// Persisted in save and restored on load.
+/// </param>
+/// <param name="CapturedTargetCourseDegrees">
+/// Target course captured at cycle start (degrees). Filled only for
+/// engine.match-target-course. Cycle completion applies only this captured value —
+/// later target changes or the target disappearing do not affect the result.
+/// Persisted in save and restored on load.
+/// </param>
 public sealed record ActiveCycleData(
     [property: JsonPropertyName("cycleId")] string CycleId,
     [property: JsonPropertyName("startedGameTimeMs")] long StartedGameTimeMs,
     [property: JsonPropertyName("durationMs")] long DurationMs,
     [property: JsonPropertyName("commandType")] string CommandType,
-    [property: JsonPropertyName("isAutoRepeat")] bool IsAutoRepeat);
+    [property: JsonPropertyName("isAutoRepeat")] bool IsAutoRepeat,
+    [property: JsonPropertyName("targetObjectId")] string? TargetObjectId = null,
+    [property: JsonPropertyName("capturedTargetSpeedKmS")] double? CapturedTargetSpeedKmS = null,
+    [property: JsonPropertyName("capturedTargetCourseDegrees")] double? CapturedTargetCourseDegrees = null);
 
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(
