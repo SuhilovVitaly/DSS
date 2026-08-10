@@ -18,7 +18,7 @@ public sealed class CommandsPanel
     public const float PanelWidth = 360f;
 
     /// <summary>Panel Caption height.</summary>
-    public const float CaptionHeight = 40f;
+    public const float CaptionHeight = 32f;
 
     /// <summary>Height of one module row (caption + body).</summary>
     public const float ModuleRowHeight = 200f;
@@ -31,7 +31,7 @@ public sealed class CommandsPanel
 
     // ── Button geometry ─────────────────────────────────────────
     public const float ButtonSize = 26f;
-    public const float ButtonLeftPadding = 10f;
+    public const float ButtonLeftPadding = 0f;
     private const float ButtonGap = 4f;
 
     private SKRect _hideShowButtonRect;
@@ -123,7 +123,7 @@ public sealed class CommandsPanel
 
     // ── Layout helpers ──────────────────────────────────────────
 
-    private float ButtonTop => Margin + (CaptionHeight - ButtonSize) / 2f;
+    private float ButtonTop => Margin; // top-aligned at caption origin
 
     private void LayoutButtons()
     {
@@ -201,7 +201,7 @@ public sealed class CommandsPanel
         return _captionRect.Contains(x, y) || _bodyRect.Contains(x, y);
     }
 
-    public void OnMouseMove(float x, float y)
+    public bool OnMouseMove(float x, float y)
     {
         if (_hideShowButtonRect.Contains(x, y))
             _hoveredButtonIndex = 0;
@@ -211,6 +211,8 @@ public sealed class CommandsPanel
             _hoveredButtonIndex = 2;
         else
             _hoveredButtonIndex = -1;
+
+        return _hoveredButtonIndex >= 0 || _moduleRows.Any(r => r.CaptionRect.Contains(x, y));
     }
 
     public void OnMouseUp(float x, float y)
@@ -302,8 +304,6 @@ public sealed class CommandsPanel
             canvas.DrawBitmap(_captionBackgroundImage, _captionRect);
         else
             canvas.DrawRect(_captionRect, _panelBgPaint);
-
-        canvas.DrawRect(_captionRect, _panelBorderPaint);
 
         // HideShow button: hide icon when open, show icon when closed.
         var hideShowImage = _state == CommandsPanelState.Closed ? _showImage : _hideImage;

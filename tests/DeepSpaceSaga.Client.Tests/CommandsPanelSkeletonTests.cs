@@ -34,11 +34,11 @@ public class CommandsPanelSkeletonTests
         var screen = CreateScreen();
         Render(screen);
 
-        // Caption always 360×40 at (8,8).
-        Assert.Equal(new SKRect(8, 8, 368, 48), screen.CommandsPanel.CaptionRect);
+        // Caption always 360×32 at (8,8).
+        Assert.Equal(new SKRect(8, 8, 368, 40), screen.CommandsPanel.CaptionRect);
 
         // Body: one opened module row = 200 px height (caption 30 + body 170).
-        Assert.Equal(new SKRect(8, 48, 368, 248), screen.CommandsPanel.BodyRect);
+        Assert.Equal(new SKRect(8, 40, 368, 240), screen.CommandsPanel.BodyRect);
         Assert.Equal(screen.CommandsPanel.CaptionRect.Left, screen.CommandsPanel.BodyRect.Left);
         Assert.Equal(screen.CommandsPanel.CaptionRect.Bottom, screen.CommandsPanel.BodyRect.Top);
     }
@@ -148,22 +148,22 @@ public class CommandsPanelSkeletonTests
     // ── Buttons geometry ────────────────────────────────────────
 
     [Fact]
-    public void Buttons_are_26x26_positioned_left_in_caption_with_10px_padding()
+    public void Buttons_are_26x26_positioned_at_caption_start()
     {
         var screen = CreateScreen();
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        Assert.Equal(new SKRect(18, 15, 44, 41), panel.HideShowButtonRect);
+        Assert.Equal(new SKRect(8, 8, 34, 34), panel.HideShowButtonRect);
         Assert.Equal(CommandsPanel.ButtonSize, panel.HideShowButtonRect.Width);
         Assert.Equal(CommandsPanel.ButtonSize, panel.HideShowButtonRect.Height);
 
-        Assert.Equal(new SKRect(48, 15, 74, 41), panel.ShowButtonRect);
-        Assert.Equal(new SKRect(78, 15, 104, 41), panel.ShowActiveButtonRect);
+        Assert.Equal(new SKRect(38, 8, 64, 34), panel.ShowButtonRect);
+        Assert.Equal(new SKRect(68, 8, 94, 34), panel.ShowActiveButtonRect);
 
-        Assert.Equal(15f, panel.HideShowButtonRect.Top);
-        Assert.Equal(15f, panel.ShowButtonRect.Top);
-        Assert.Equal(15f, panel.ShowActiveButtonRect.Top);
+        Assert.Equal(8f, panel.HideShowButtonRect.Top);
+        Assert.Equal(8f, panel.ShowButtonRect.Top);
+        Assert.Equal(8f, panel.ShowActiveButtonRect.Top);
 
         Assert.True(panel.CaptionRect.Contains(panel.HideShowButtonRect));
         Assert.True(panel.CaptionRect.Contains(panel.ShowButtonRect));
@@ -350,8 +350,8 @@ public class CommandsPanelSkeletonTests
         Assert.Equal(2, rows.Count);
         Assert.Equal(0, rows[0].Position);  // Position 0 first (sorted)
         Assert.Equal(2, rows[1].Position);
-        Assert.Equal(48f, rows[0].CaptionRect.Top);    // first row starts at caption bottom
-        Assert.Equal(248f, rows[1].CaptionRect.Top);   // second row 200 px below
+        Assert.Equal(40f, rows[0].CaptionRect.Top);    // first row starts at caption bottom
+        Assert.Equal(240f, rows[1].CaptionRect.Top);   // second row 200 px below
     }
 
     [Fact]
@@ -454,7 +454,7 @@ public class CommandsPanelSkeletonTests
         var panel = screen.CommandsPanel;
 
         Assert.Empty(panel.ModuleRows);
-        Assert.Equal(new SKRect(8, 48, 368, 48), panel.BodyRect); // zero-height body
+        Assert.Equal(new SKRect(8, 40, 368, 40), panel.BodyRect); // zero-height body
     }
 
     // ── Helpers ─────────────────────────────────────────────────
