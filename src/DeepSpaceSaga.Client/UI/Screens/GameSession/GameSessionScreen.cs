@@ -1,5 +1,7 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using System.Diagnostics;
@@ -108,6 +110,9 @@ public sealed class GameSessionScreen : IScreen
     private readonly SKRect[] _engineCommandButtonRects = new SKRect[EngineCommandButtons.Length];
     private int _pressedEngineCommandButtonIndex = -1;
 
+    // Commands Panel (top-left) — skeleton, ТЗ подзадача 1 (CommandPanelPlan.md)
+    private readonly CommandsPanel _commandsPanel = new();
+
     // Camera state
     private bool _isFocusAttachedToPlayer = true;
 
@@ -196,6 +201,7 @@ public sealed class GameSessionScreen : IScreen
     internal SKRect LastCommandPanelRect => _lastCommandPanelRect;
     internal IReadOnlyList<SKRect> EngineCommandButtonRects => _engineCommandButtonRects;
     internal int PressedEngineCommandButtonIndex => _pressedEngineCommandButtonIndex;
+    internal CommandsPanel CommandsPanel => _commandsPanel;
 
     /// <summary>Current frame's render list (scale-filtered, client-side).</summary>
     internal IReadOnlyList<ObjectRenderState> RenderStates => _renderStates;
@@ -317,6 +323,10 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
+        // 2.5. Commands Panel (top-left) — consume clicks, don't pan (ТЗ подзадача 1)
+        if (_commandsPanel.OnMouseDown(x, y))
+            return ScreenEvent.None;
+
         // 3. Info panel close button
         if (_panelVisible && _lastCloseRect.Contains(x, y))
         {
@@ -360,6 +370,7 @@ public sealed class GameSessionScreen : IScreen
     {
         _mouseX = x;
         _mouseY = y;
+        _commandsPanel.OnMouseMove(x, y);
         return false;
     }
 
@@ -368,6 +379,7 @@ public sealed class GameSessionScreen : IScreen
         _mouseX = x;
         _mouseY = y;
         _pressedEngineCommandButtonIndex = -1;
+        _commandsPanel.OnMouseUp(x, y);
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
@@ -663,6 +675,10 @@ public sealed class GameSessionScreen : IScreen
 
         // 6. Ship command panel (bottom-center)
         DrawEngineCommandPanel(canvas, buffered);
+
+        // 6.5. Commands Panel (top-left)
+        _commandsPanel.Render(canvas,
+            buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty);
 
         // 7. Info panel (bottom-left)
         if (_panelVisible)

@@ -78,14 +78,18 @@
       "baseCycleTimeMs": 0
     },
     {
-      "typeId": "module.scanner.mk1",
-      "displayName": "Scanner MK I",
-      "slotSize": 1,
-      "massKg": 2000,
-      "structurePointsMax": 60,
-      "powerConsumptionW": 0,
-      "commandTypeIds": [],
-      "baseCycleTimeMs": 20000
+        "typeId": "module.scanner.mk1",
+        "displayName": "Scanner MK I",
+        "slotSize": 1,
+        "massKg": 2000,
+        "structurePointsMax": 60,
+        "powerConsumptionW": 0,
+        "commandTypeIds": [
+            "scanner.deep-scan",
+            "scanner.common-scan",
+            "scanner.direct-scan"
+        ],
+        "baseCycleTimeMs": 20000
     },
     {
       "typeId": "module.habitation.basic",

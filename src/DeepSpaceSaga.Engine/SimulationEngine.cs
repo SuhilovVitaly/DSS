@@ -301,6 +301,8 @@ public sealed class SimulationEngine : IDisposable
             var shipEvents = _shipEvents.ToImmutableArray();
             _shipEvents.Clear();
 
+            var installedModules = BuildInstalledModuleProjection();
+
             return new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
                 GameTimeMs: gameTimeMs,
@@ -308,8 +310,43 @@ public sealed class SimulationEngine : IDisposable
                 Objects: objects.MoveToImmutable(),
                 PlayerShipObjectId: PlayerShipObjectId,
                 CommandResults: commandResults,
-                ShipEvents: shipEvents);
+                ShipEvents: shipEvents,
+                InstalledModules: installedModules);
         }
+    }
+
+    /// <summary>
+    /// Build a minimal UI projection of installed modules for the player ship.
+    /// The full list (including modules with empty CommandTypeIds) is returned —
+    /// the Commands Panel performs its own data-driven filtering.
+    /// Returns empty when there is no player ship or no module type registry.
+    /// </summary>
+    private ImmutableArray<InstalledModuleSnapshot> BuildInstalledModuleProjection()
+    {
+        if (string.IsNullOrWhiteSpace(PlayerShipObjectId))
+            return ImmutableArray<InstalledModuleSnapshot>.Empty;
+
+        var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
+        if (ship == null || ship.Modules.IsEmpty)
+            return ImmutableArray<InstalledModuleSnapshot>.Empty;
+
+        if (_registry.ModuleTypes.Count == 0)
+            return ImmutableArray<InstalledModuleSnapshot>.Empty;
+
+        var builder = ImmutableArray.CreateBuilder<InstalledModuleSnapshot>(ship.Modules.Length);
+        for (int i = 0; i < ship.Modules.Length; i++)
+        {
+            var module = ship.Modules[i];
+            var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+            builder.Add(new InstalledModuleSnapshot(
+                ModuleId: module.ModuleId,
+                ModuleTypeId: moduleType.TypeId,
+                DisplayName: moduleType.DisplayName,
+                Position: i,
+                CommandTypeIds: moduleType.CommandTypeIds));
+        }
+
+        return builder.MoveToImmutable();
     }
 
     /// <summary>

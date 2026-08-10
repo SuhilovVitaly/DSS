@@ -17,4 +17,6 @@ public sealed record AuthoritativeSnapshot(
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CommandResult>))]
     ImmutableArray<CommandResult> CommandResults = default,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ShipEvent>))]
-    ImmutableArray<ShipEvent> ShipEvents = default);
+    ImmutableArray<ShipEvent> ShipEvents = default,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<InstalledModuleSnapshot>))]
+    ImmutableArray<InstalledModuleSnapshot> InstalledModules = default);
