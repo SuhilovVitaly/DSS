@@ -271,6 +271,9 @@ public sealed class SimulationEngine : IDisposable
                     TurnStepDegrees = cycleMotion.TurnStepDegrees,
                     TurnStepRemainingMs = cycleMotion.TurnStepRemainingMs,
                     TurnStepIntervalMs = cycleMotion.TurnStepIntervalMs,
+                    NavigationTargetX = cycleMotion.NavigationTargetX,
+                    NavigationTargetY = cycleMotion.NavigationTargetY,
+                    NavigationAngularInertiaDegPerSec = cycleMotion.NavigationAngularInertiaDegPerSec,
                     ObjectType = known ? obj.ObjectType : null,
                     RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
                     RelationToPlayer = known ? GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType) : null,
@@ -792,6 +795,28 @@ public sealed class SimulationEngine : IDisposable
                 return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownTarget);
         }
 
+        // Navigate-to-point (engine.navigate-to-point) carries an explicit, authoritative
+        // world-coordinate target. Like match-parameter validation, this runs right after
+        // UnknownCommandType and before CancelAll/state checks: a parameter-level error is
+        // more specific than a module-state error and is published deterministically.
+        // Both coordinates are required and must be finite (NaN/±Infinity would poison
+        // the deterministic navigation math).
+        double? navigateTargetX = null;
+        double? navigateTargetY = null;
+        if (command.CommandType == ShipEngineCommandTypes.NavigateToPoint)
+        {
+            if (command.TargetWorldX is not { } targetWorldX ||
+                command.TargetWorldY is not { } targetWorldY ||
+                !double.IsFinite(targetWorldX) ||
+                !double.IsFinite(targetWorldY))
+            {
+                return CommandStartOutcome.Rejected(CommandReasonCodes.InvalidTargetCoordinates);
+            }
+
+            navigateTargetX = targetWorldX;
+            navigateTargetY = targetWorldY;
+        }
+
         if (command.CommandType == ShipEngineCommandTypes.CancelAll)
         {
             if (module.ActiveCycle is { } cancelledCycle)
@@ -835,15 +860,25 @@ public sealed class SimulationEngine : IDisposable
             if (!activeCycle.IsAutoRepeat)
                 return CommandStartOutcome.Deferred(CommandReasonCodes.Busy);
 
-            // Same command type — idempotent, continue existing cycle.
+            // Same command type — idempotent, continue existing cycle. Navigation is an
+            // exception: idempotent only when the world target matches exactly; a
+            // navigate command with a DIFFERENT target is not a no-op — it falls through
+            // to the cancel-and-replace branch below (AC8: new Ctrl+Click replaces the
+            // old trajectory, old cycle Cancelled + ShipEvent).
             if (string.Equals(command.CommandType, activeCycle.CommandType, StringComparison.Ordinal))
             {
-                // Idempotent re-send: the cycle continues. Write Executed for the
-                // re-sent command (the original command's final result comes on
-                // completion). This keeps the client informed that the re-send was
-                // accepted without waiting for the next cycle step.
-                RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
-                return CommandStartOutcome.Started;
+                bool sameNavigateTarget = command.CommandType != ShipEngineCommandTypes.NavigateToPoint ||
+                                          (command.TargetWorldX == activeCycle.TargetWorldX &&
+                                           command.TargetWorldY == activeCycle.TargetWorldY);
+                if (sameNavigateTarget)
+                {
+                    // Idempotent re-send: the cycle continues. Write Executed for the
+                    // re-sent command (the original command's final result comes on
+                    // completion). This keeps the client informed that the re-send was
+                    // accepted without waiting for the next cycle step.
+                    RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
+                    return CommandStartOutcome.Started;
+                }
             }
 
             // Any other engine command implicitly cancels the active periodic
@@ -892,7 +927,9 @@ public sealed class SimulationEngine : IDisposable
                     capturedTargetCourseDegrees,
                     commandId: command.CommandId,
                     objectId: command.ObjectId,
-                    moduleId: command.ModuleId)
+                    moduleId: command.ModuleId,
+                    targetWorldX: navigateTargetX,
+                    targetWorldY: navigateTargetY)
             });
         return CommandStartOutcome.Started;
     }
@@ -935,10 +972,15 @@ public sealed class SimulationEngine : IDisposable
         double? capturedTargetCourseDegrees = null,
         string? commandId = null,
         string? objectId = null,
-        string? moduleId = null)
+        string? moduleId = null,
+        double? targetWorldX = null,
+        double? targetWorldY = null)
     {
         string cycleId = $"CYC-ENGINE-{++_nextEngineCycleId:D6}";
-        long durationMs = ComputeEffectiveCycleTimeMs(moduleType, commandType);
+        long durationMs = commandType == ShipEngineCommandTypes.NavigateToPoint &&
+                          moduleType.AngularInertiaDegPerSec is { } inertia
+            ? MinTurnIntervalMs(inertia)
+            : ComputeEffectiveCycleTimeMs(moduleType, commandType);
         return new ActiveCycleData(
             cycleId,
             gameTimeMs,
@@ -950,7 +992,9 @@ public sealed class SimulationEngine : IDisposable
             capturedTargetCourseDegrees,
             commandId,
             objectId,
-            moduleId);
+            moduleId,
+            targetWorldX,
+            targetWorldY);
     }
 
     /// <summary>
@@ -992,7 +1036,8 @@ public sealed class SimulationEngine : IDisposable
     {
         return commandType == ShipEngineCommandTypes.Accelerate ||
                commandType == ShipEngineCommandTypes.Brake ||
-               IsUntilCancelTurn(commandType);
+               IsUntilCancelTurn(commandType) ||
+               commandType == ShipEngineCommandTypes.NavigateToPoint;
     }
 
     private static bool IsMatchEngineCommand(string commandType)
@@ -1044,15 +1089,31 @@ public sealed class SimulationEngine : IDisposable
             if (!IsEngineCommandType(moduleType, cycle.CommandType) || !CanExecuteEngineCommand(module, moduleType))
                 continue;
 
+            if (cycle.CommandType == ShipEngineCommandTypes.NavigateToPoint)
+            {
+                // Navigation cycles report their authoritative world target and the
+                // module's angular inertia — the client-side trajectory projector uses
+                // these to draw the future path without any engine math of its own.
+                long remainingMs = Math.Max(1, cycle.StartedGameTimeMs + cycle.DurationMs - gameTimeMs);
+                return new ActiveEngineCycleMotion(
+                    cycle.CommandType,
+                    Math.Abs(moduleType.TurnStepDegrees!.Value),
+                    remainingMs,
+                    cycle.DurationMs,
+                    cycle.TargetWorldX,
+                    cycle.TargetWorldY,
+                    moduleType.AngularInertiaDegPerSec ?? 0);
+            }
+
             if (!IsUntilCancelTurn(cycle.CommandType))
                 return new ActiveEngineCycleMotion(cycle.CommandType, 0, 0, 0);
 
             int turnSign = cycle.CommandType == ShipEngineCommandTypes.TurnLeftUntilCancel ? -1 : 1;
-            long remainingMs = Math.Max(1, cycle.StartedGameTimeMs + cycle.DurationMs - gameTimeMs);
+            long turnRemainingMs = Math.Max(1, cycle.StartedGameTimeMs + cycle.DurationMs - gameTimeMs);
             return new ActiveEngineCycleMotion(
                 cycle.CommandType,
                 turnSign * moduleType.TurnStepDegrees!.Value,
-                remainingMs,
+                turnRemainingMs,
                 cycle.DurationMs);
         }
 
@@ -1104,7 +1165,8 @@ public sealed class SimulationEngine : IDisposable
                         : cycle.StartedGameTimeMs + cycle.DurationMs;
                     ActiveCycleData? nextCycle = cycle.IsAutoRepeat
                         ? CreateEngineCycle(cycle.CommandType, completionGameTimeMs, isAutoRepeat: true, moduleType,
-                            commandId: cycle.CommandId, objectId: cycle.ObjectId, moduleId: cycle.ModuleId)
+                            commandId: cycle.CommandId, objectId: cycle.ObjectId, moduleId: cycle.ModuleId,
+                            targetWorldX: cycle.TargetWorldX, targetWorldY: cycle.TargetWorldY)
                         : null;
                     _objects[objectIndex] = ApplyCompletedEngineCommand(
                         obj,
@@ -1206,6 +1268,18 @@ public sealed class SimulationEngine : IDisposable
                     Direction = NormalizeDirection(capturedCourseDegrees)
                 }),
 
+            // Navigation (engine.navigate-to-point): one discrete turn step per cycle
+            // (DurationMs = MinTurnIntervalMs, so ~250 ms per step at 4 deg/sec), heading
+            // for the authoritative world target. On arrival the auto-repeat chain is cut
+            // (nextCycle = null) — the cycle completes normally, writing CommandResult(Executed)
+            // + ShipEvent(CommandCompleted) in CompleteActiveEngineCycles. Legacy-save guard:
+            // a navigation cycle loaded from a save written by older code may have null
+            // target coordinates — such a cycle completes as a no-op instead of throwing.
+            ShipEngineCommandTypes.NavigateToPoint when cycle.TargetWorldX is { } targetX && cycle.TargetWorldY is { } targetY =>
+                ApplyNavigationStep(obj, moduleIndex, moduleType, targetX, targetY, gameTimeMs, nextCycle),
+
+            ShipEngineCommandTypes.NavigateToPoint => obj,
+
             _ => obj
         };
     }
@@ -1234,6 +1308,53 @@ public sealed class SimulationEngine : IDisposable
             {
                 Direction = NormalizeDirection(motion.Direction + turnSign * moduleType.TurnStepDegrees!.Value)
             });
+    }
+
+    /// <summary>
+    /// Apply one discrete navigation step toward an authoritative world target
+    /// (engine.navigate-to-point). Uses the same roll-then-apply shape as every other
+    /// cycle completion (via <see cref="UpdateEngineMotion"/>): the ship's motion is
+    /// rolled forward to the completion time, then NavigationWaypointMath decides the
+    /// turn delta for THIS step. When the ship has arrived (within ArrivalEpsilon, or
+    /// course-locked with the target dead ahead), nextCycle is dropped — the auto-repeat
+    /// chain stops and the cycle completes.
+    /// </summary>
+    private SpaceObjectRuntime ApplyNavigationStep(
+        SpaceObjectRuntime obj,
+        int moduleIndex,
+        ModuleTypeDefinition moduleType,
+        double targetX,
+        double targetY,
+        long gameTimeMs,
+        ActiveCycleData? nextCycle)
+    {
+        long elapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
+        var currentMotion = _motion.Predict(obj.InitialMotion, elapsedMs);
+        var step = NavigationWaypointMath.Step(
+            currentMotion.X,
+            currentMotion.Y,
+            currentMotion.Direction,
+            currentMotion.SpeedKmS,
+            targetX,
+            targetY,
+            moduleType.TurnStepDegrees!.Value,
+            moduleType.AngularInertiaDegPerSec!.Value);
+
+        if (step.IsArrived)
+            nextCycle = null;
+
+        return UpdateEngineMotion(
+            obj,
+            moduleIndex,
+            gameTimeMs,
+            module => module with
+            {
+                ActiveCycle = nextCycle,
+                LastTurnGameTimeMs = step.TurnDeltaDegrees != 0 ? gameTimeMs : module.LastTurnGameTimeMs
+            },
+            motion => step.TurnDeltaDegrees != 0
+                ? motion with { Direction = NormalizeDirection(motion.Direction + step.TurnDeltaDegrees) }
+                : motion);
     }
 
     private SpaceObjectRuntime UpdateEngineMotion(
@@ -1302,7 +1423,10 @@ internal readonly record struct ActiveEngineCycleMotion(
     string? CommandType,
     int TurnStepDegrees,
     long TurnStepRemainingMs,
-    long TurnStepIntervalMs);
+    long TurnStepIntervalMs,
+    double? NavigationTargetX = null,
+    double? NavigationTargetY = null,
+    int NavigationAngularInertiaDegPerSec = 0);
 
 internal enum CommandStartDisposition
 {

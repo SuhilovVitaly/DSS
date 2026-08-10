@@ -18,4 +18,18 @@ public sealed record PlayerCommand(
     /// <see cref="CommandReasonCodes.MissingTarget"/> / <see cref="CommandReasonCodes.UnknownTarget"/>.
     /// Null when the command has no target.
     /// </summary>
-    string? TargetObjectId = null);
+    string? TargetObjectId = null,
+    /// <summary>
+    /// Explicit world-coordinate target for <see cref="ShipEngineCommandTypes.NavigateToPoint"/>
+    /// (world units, same coordinate system as <see cref="ObjectMotionSnapshot.X"/>).
+    /// Both coordinates are required and must be finite for navigate-to-point; the engine
+    /// validates this authoritatively and rejects the command with
+    /// <see cref="CommandReasonCodes.InvalidTargetCoordinates"/> otherwise. Null when the
+    /// command has no world target.
+    /// </summary>
+    double? TargetWorldX = null,
+    /// <summary>
+    /// Explicit world-coordinate target for <see cref="ShipEngineCommandTypes.NavigateToPoint"/>
+    /// (world units). See <see cref="TargetWorldX"/>.
+    /// </summary>
+    double? TargetWorldY = null);

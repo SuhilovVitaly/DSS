@@ -18,6 +18,20 @@ public sealed record ObjectMotionSnapshot(
     int TurnStepDegrees = 0,
     long TurnStepRemainingMs = 0,
     long TurnStepIntervalMs = 0,
+    /// <summary>
+    /// World-coordinate target of the active navigation cycle
+    /// (<see cref="ShipEngineCommandTypes.NavigateToPoint"/>), world units.
+    /// Null when no navigation cycle is active.
+    /// </summary>
+    double? NavigationTargetX = null,
+    /// <summary>World-coordinate target of the active navigation cycle; see <see cref="NavigationTargetX"/>.</summary>
+    double? NavigationTargetY = null,
+    /// <summary>
+    /// Angular inertia of the engine module running the navigation cycle (degrees per
+    /// second) — the client projects the same deterministic step math with it.
+    /// 0 when no navigation cycle is active.
+    /// </summary>
+    int NavigationAngularInertiaDegPerSec = 0,
     string? ObjectType = null,
     string? RelationToPlayer = null,
     string? DisplayName = null,

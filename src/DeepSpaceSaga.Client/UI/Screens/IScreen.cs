@@ -11,6 +11,7 @@ public interface IScreen
     bool OnMouseMove(float x, float y);
     ScreenEvent OnMouseWheel(float x, float y, float delta);
     ScreenEvent OnKeyDown(Key key);
+    void OnKeyUp(Key key) { }
     void OnActivated();
     void OnDeactivated();
 }

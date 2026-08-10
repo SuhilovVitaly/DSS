@@ -69,6 +69,13 @@
       "timeFactor": 0.0,
       "complexityFactor": 1.0,
       "consumptionFactor": 1.0
+    },
+    {
+      "typeId": "engine.navigate-to-point",
+      "displayName": "Navigate To Point",
+      "timeFactor": 1.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0
     }
   ]
 }

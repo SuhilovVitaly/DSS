@@ -289,7 +289,7 @@ public class ScenarioEngineTests
 
         var engineType = Assert.Single(activeTypes);
         Assert.Equal("module.engine.basic", engineType.TypeId);
-        Assert.Equal(10, engineType.CommandTypeIds.Length);
+        Assert.Equal(11, engineType.CommandTypeIds.Length); // 10 legacy + engine.navigate-to-point (ТЗ 4.2)
         foreach (string commandTypeId in engineType.CommandTypeIds)
         {
             Assert.True(registry.CommandDefinitions.Contains(commandTypeId),

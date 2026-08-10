@@ -120,7 +120,16 @@ public sealed record ActiveCycleData(
     [property: JsonPropertyName("capturedTargetCourseDegrees")] double? CapturedTargetCourseDegrees = null,
     [property: JsonPropertyName("commandId")] string? CommandId = null,
     [property: JsonPropertyName("objectId")] string? ObjectId = null,
-    [property: JsonPropertyName("moduleId")] string? ModuleId = null);
+    [property: JsonPropertyName("moduleId")] string? ModuleId = null,
+    /// <summary>
+    /// World-coordinate target of a navigation cycle (engine.navigate-to-point, world units).
+    /// Always set for navigation cycles; null for every other command type. Persisted in
+    /// save and restored on load — a loaded navigation cycle keeps heading for the same
+    /// point (AC9). Null targets are tolerated as a no-op (legacy-save guard).
+    /// </summary>
+    [property: JsonPropertyName("targetWorldX")] double? TargetWorldX = null,
+    /// <summary>World-coordinate target of a navigation cycle; see <see cref="TargetWorldX"/>.</summary>
+    [property: JsonPropertyName("targetWorldY")] double? TargetWorldY = null);
 
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(

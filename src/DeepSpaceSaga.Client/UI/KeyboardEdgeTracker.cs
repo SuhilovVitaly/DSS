@@ -18,6 +18,8 @@ internal sealed class KeyboardEdgeTracker
     private bool _prevRightPressed;
     private bool _prevF5Pressed;
     private bool _prevF9Pressed;
+    private bool _prevCtrlLeftPressed;
+    private bool _prevCtrlRightPressed;
 
     public int Poll(IKeyboard keyboard, Span<Key> pressed)
     {
@@ -71,6 +73,28 @@ internal sealed class KeyboardEdgeTracker
         return count;
     }
 
+    /// <summary>
+    /// Report Ctrl release edges (ControlLeft/ControlRight) since the last poll.
+    /// Used to clear the Ctrl-drag navigation state (Ctrl+Click modifier) when the
+    /// key is released — with or without a mouse button event in between.
+    /// </summary>
+    public int PollUpKeys(IKeyboard keyboard, Span<Key> released)
+    {
+        int count = 0;
+        AddUpEdge(Key.ControlLeft, keyboard.IsKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, released, ref count);
+        AddUpEdge(Key.ControlRight, keyboard.IsKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, released, ref count);
+        return count;
+    }
+
+    /// <summary>Test seam for <see cref="PollUpKeys(IKeyboard, Span{Key})"/>.</summary>
+    internal int PollUpKeys(Func<Key, bool> isKeyPressed, Span<Key> released)
+    {
+        int count = 0;
+        AddUpEdge(Key.ControlLeft, isKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, released, ref count);
+        AddUpEdge(Key.ControlRight, isKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, released, ref count);
+        return count;
+    }
+
     private static void AddEdge(
         Key key,
         bool isPressed,
@@ -80,6 +104,19 @@ internal sealed class KeyboardEdgeTracker
     {
         if (isPressed && !previous)
             pressed[count++] = key;
+
+        previous = isPressed;
+    }
+
+    private static void AddUpEdge(
+        Key key,
+        bool isPressed,
+        ref bool previous,
+        Span<Key> released,
+        ref int count)
+    {
+        if (!isPressed && previous)
+            released[count++] = key;
 
         previous = isPressed;
     }

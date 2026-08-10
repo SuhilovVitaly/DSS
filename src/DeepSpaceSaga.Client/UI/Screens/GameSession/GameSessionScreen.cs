@@ -16,6 +16,7 @@ public sealed class GameSessionScreen : IScreen
     private readonly GridRenderer _grid;
     private readonly ObjectTrailStore _trailStore;
     private readonly FutureTrajectoryProjector _futureTrajectoryProjector;
+    private readonly NavigationTrajectoryProjector _navigationTrajectoryProjector;
     private readonly ObjectLabelRenderer _labelRenderer;
     private readonly List<ObjectRenderState> _renderStates = new();
     private readonly Dictionary<string, ObjectMotionSnapshot> _pausedVisualAnchors = new(StringComparer.Ordinal);
@@ -34,6 +35,7 @@ public sealed class GameSessionScreen : IScreen
     // Object paints
     private readonly SKPaint _trailPaint;
     private readonly SKPaint _futureTrajectoryPaint;
+    private readonly SKPaint _navigationTrajectoryPaint;
     private readonly SKPaint _objectPaint;
     private readonly SKPaint _playerShipPaint;
     private readonly SKPaint _playerShipOutlinePaint;
@@ -109,6 +111,10 @@ public sealed class GameSessionScreen : IScreen
     // Camera state
     private bool _isFocusAttachedToPlayer = true;
 
+    // Navigation (Ctrl+Click) state — ТЗ: Navigation Waypoints
+    private bool _isCtrlDown;
+    private (double X, double Y)? _pendingNavigationTarget;
+
     // Layout constants
     private const double ZoomStepFactor = 1.25;
     private const float PanelPaddingX = 10f;
@@ -143,6 +149,9 @@ public sealed class GameSessionScreen : IScreen
     // Ship command panel layout
     private const string PlayerEngineModuleId = "MOD-PLAYER-ENGINE-01";
     private const float CommandBtnSize = 64f;
+
+    /// <summary>Approved click slack for Ctrl+Click object hit-test (+4 px, ТЗ 4.6).</summary>
+    private const float HitTestSlackPx = 4f;
     private const float CommandBtnGap = 4f;
     private const float CommandPanelPadX = 6f;
     private const float CommandPanelPadY = 6f;
@@ -212,6 +221,7 @@ public sealed class GameSessionScreen : IScreen
         _grid = new GridRenderer();
         _trailStore = new ObjectTrailStore(_predictor, _timestampProvider);
         _futureTrajectoryProjector = new FutureTrajectoryProjector(_predictor);
+        _navigationTrajectoryProjector = new NavigationTrajectoryProjector();
         _labelRenderer = new ObjectLabelRenderer();
 
         _trailPaint = new SKPaint { Color = new SKColor(190, 190, 190, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 2f, IsAntialias = true };
@@ -222,6 +232,16 @@ public sealed class GameSessionScreen : IScreen
             StrokeWidth = 1f,
             IsAntialias = true,
             PathEffect = SKPathEffect.CreateDash(new float[] { 8f, 6f }, 0f)
+        };
+        // Navigation trajectory: visually distinct from the future trajectory —
+        // golden dashed line (ТЗ 4.7; exact shade is UI polish, _futureTrajectoryPaint untouched).
+        _navigationTrajectoryPaint = new SKPaint
+        {
+            Color = new SKColor(255, 200, 60),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 2f,
+            IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash(new float[] { 10f, 8f }, 0f)
         };
         _objectPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
         _playerShipPaint = new SKPaint { Color = new SKColor(85, 107, 47), Style = SKPaintStyle.Fill, IsAntialias = true };
@@ -316,6 +336,19 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
+        // 5.5. Ctrl+Click navigation: on free map area (no object under the cursor)
+        // send exactly one engine.navigate-to-point command with world coordinates.
+        // The camera focus is NOT changed and no command is sent when the click lands
+        // on an object (hit-test includes a +4 px slack) — panels were already consumed
+        // above. AC2, AC1 preserved.
+        if (_isCtrlDown)
+        {
+            var (navWorldX, navWorldY) = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
+            if (!HitTestObject(x, y))
+                SendNavigationCommand(navWorldX, navWorldY);
+            return ScreenEvent.None;
+        }
+
         // 6. Map click -> pan camera
         var (worldX, worldY) = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
         _isFocusAttachedToPlayer = false;
@@ -352,6 +385,12 @@ public sealed class GameSessionScreen : IScreen
 
     public ScreenEvent OnKeyDown(Key key)
     {
+        if (key == Key.ControlLeft || key == Key.ControlRight)
+        {
+            _isCtrlDown = true;
+            return ScreenEvent.None;
+        }
+
         if (key == Key.Escape)
             return ScreenEvent.OpenGameMenu;
 
@@ -396,6 +435,12 @@ public sealed class GameSessionScreen : IScreen
         }
 
         return ScreenEvent.None;
+    }
+
+    public void OnKeyUp(Key key)
+    {
+        if (key == Key.ControlLeft || key == Key.ControlRight)
+            _isCtrlDown = false;
     }
 
     // ── Speed control ───────────────────────────────────────────
@@ -453,6 +498,47 @@ public sealed class GameSessionScreen : IScreen
             return;
 
         _ = _handle.SendEngineCommandAsync(playerShipObjectId, PlayerEngineModuleId, commandType);
+    }
+
+    /// <summary>
+    /// Ctrl+Click navigation: send exactly one engine.navigate-to-point command with
+    /// the clicked world coordinates and remember the pending target for the AC3
+    /// preview line (drawn until the authoritative NavigationTarget* appears in a
+    /// snapshot — or the command is rejected).
+    /// </summary>
+    private void SendNavigationCommand(double worldX, double worldY)
+    {
+        var playerShipObjectId = _buffer.LatestPrediction?.BufferedSnapshot.Snapshot.PlayerShipObjectId;
+        if (_handle is null || string.IsNullOrWhiteSpace(playerShipObjectId))
+            return;
+
+        _ = _handle.SendEngineCommandAsync(
+            playerShipObjectId, PlayerEngineModuleId, ShipEngineCommandTypes.NavigateToPoint, worldX, worldY);
+        _pendingNavigationTarget = (worldX, worldY);
+    }
+
+    /// <summary>
+    /// Hit-test an object under the cursor using the SAME marker radii the renderer
+    /// draws, plus the approved +4 px slack (ТЗ 4.6). Ctrl+Click on an object sends
+    /// no navigation command.
+    /// </summary>
+    private bool HitTestObject(float x, float y)
+    {
+        for (int i = 0; i < _renderStates.Count; i++)
+        {
+            var state = _renderStates[i];
+            string renderType = state.IsPlayerShip
+                ? SpaceObjectType.PlayerShip
+                : (state.Predicted.RenderObjectType ?? SpaceObjectType.UnknownSpaceObject);
+            float radius = TacticalMapMarkerPolicy.GetMarkerRadiusPx(renderType) + HitTestSlackPx;
+            var (sx, sy) = _camera.WorldToScreen(state.Predicted.X, state.Predicted.Y, _viewportW, _viewportH);
+            float dx = x - sx;
+            float dy = y - sy;
+            if (dx * dx + dy * dy <= radius * radius)
+                return true;
+        }
+
+        return false;
     }
 
     // ── Render ──────────────────────────────────────────────────
@@ -531,6 +617,10 @@ public sealed class GameSessionScreen : IScreen
 
             // 3.5. Future trajectory (before objects, after historical trails)
             DrawFutureTrajectories(canvas, width, height);
+
+            // 3.55. Navigation trajectory (Ctrl+Click) — after future trajectory,
+            // visually distinct (golden dash vs dark dash)
+            DrawNavigationTrajectories(canvas, width, height);
 
             // Compute smoothed label geometries once per frame so both
             // DrawLeaders and DrawPlaques see the same positions.
@@ -914,7 +1004,82 @@ public sealed class GameSessionScreen : IScreen
         }
     }
 
+    // ── Navigation trajectory ────────────────────────────────────
+
+    /// <summary>
+    /// Draw the navigation trajectory (AC3/AC4/AC10): the authoritative-projected
+    /// path when the snapshot carries an active navigate cycle (same
+    /// NavigationWaypointMath as the engine), otherwise the pending preview — a plain
+    /// straight line to the last Ctrl+Click target, drawn strictly client-side until
+    /// the authoritative target arrives (≤1 s) or the command is rejected. Unconfirmed
+    /// commands never affect motion prediction (architectural invariant).
+    /// </summary>
+    private void DrawNavigationTrajectories(SKCanvas canvas, int width, int height)
+    {
+        var snapshot = _buffer.Latest?.Snapshot;
+        if (snapshot is not null)
+        {
+            var playerShip = FindPlayerShipMotion(snapshot);
+            bool confirmed = playerShip?.NavigationTargetX is not null;
+            bool rejected = !snapshot.CommandResults.IsDefaultOrEmpty &&
+                            snapshot.CommandResults.Any(r =>
+                                r.CommandType == ShipEngineCommandTypes.NavigateToPoint &&
+                                r.Status == CommandResultStatus.Rejected);
+            if (confirmed || rejected)
+                _pendingNavigationTarget = null;
+        }
+
+        foreach (var state in _renderStates)
+        {
+            if (!state.IsPlayerShip)
+                continue;
+
+            var predicted = state.Predicted;
+            if (predicted.NavigationTargetX is not null)
+            {
+                var points = _navigationTrajectoryProjector.Project(predicted);
+                if (points.Count < 2)
+                    continue;
+
+                for (int i = 1; i < points.Count; i++)
+                {
+                    var from = points[i - 1];
+                    var to = points[i];
+                    var (fromX, fromY) = _camera.WorldToScreen(from.X, from.Y, width, height);
+                    var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
+                    canvas.DrawLine(fromX, fromY, toX, toY, _navigationTrajectoryPaint);
+                }
+            }
+            else if (_pendingNavigationTarget is { } pending)
+            {
+                var (sx, sy) = _camera.WorldToScreen(predicted.X, predicted.Y, width, height);
+                var (tx, ty) = _camera.WorldToScreen(pending.X, pending.Y, width, height);
+                canvas.DrawLine(sx, sy, tx, ty, _navigationTrajectoryPaint);
+            }
+        }
+    }
+
     // ── Test seams for future trajectory ─────────────────────────
+
+    /// <summary>
+    /// Test seam: navigation trajectory of the given object (player ship only).
+    /// Empty when the object has no authoritative navigation target in the snapshot.
+    /// </summary>
+    internal IReadOnlyList<FutureTrajectoryPoint> GetNavigationTrajectory(string objectId)
+    {
+        foreach (var state in _renderStates)
+        {
+            if (state.Predicted.ObjectId == objectId)
+            {
+                if (!state.IsPlayerShip || state.Predicted.NavigationTargetX is null)
+                    return Array.Empty<FutureTrajectoryPoint>();
+
+                return _navigationTrajectoryProjector.Project(state.Predicted);
+            }
+        }
+
+        return Array.Empty<FutureTrajectoryPoint>();
+    }
 
     internal IReadOnlyList<FutureTrajectoryPoint> GetFutureTrajectory(string objectId)
     {
