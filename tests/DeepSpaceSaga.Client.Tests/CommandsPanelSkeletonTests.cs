@@ -47,7 +47,7 @@ public class CommandsPanelSkeletonTests
     public void Panel_state_is_Opened_by_default()
     {
         var screen = CreateScreen();
-        Assert.Equal(CommandsPanelState.Opened, screen.CommandsPanel.State);
+        Assert.Equal(CommandsPanelState.AllModules, screen.CommandsPanel.State);
     }
 
     [Fact]
@@ -158,18 +158,18 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        Assert.Equal(new SKRect(18, 12, 50, 44), panel.HideButtonRect);
-        Assert.Equal(CommandsPanel.ButtonSize, panel.HideButtonRect.Width);
-        Assert.Equal(CommandsPanel.ButtonSize, panel.HideButtonRect.Height);
+        Assert.Equal(new SKRect(18, 12, 50, 44), panel.HideShowButtonRect);
+        Assert.Equal(CommandsPanel.ButtonSize, panel.HideShowButtonRect.Width);
+        Assert.Equal(CommandsPanel.ButtonSize, panel.HideShowButtonRect.Height);
 
         Assert.Equal(new SKRect(54, 12, 86, 44), panel.ShowButtonRect);
         Assert.Equal(new SKRect(90, 12, 122, 44), panel.ShowActiveButtonRect);
 
-        Assert.Equal(12f, panel.HideButtonRect.Top);
+        Assert.Equal(12f, panel.HideShowButtonRect.Top);
         Assert.Equal(12f, panel.ShowButtonRect.Top);
         Assert.Equal(12f, panel.ShowActiveButtonRect.Top);
 
-        Assert.True(panel.CaptionRect.Contains(panel.HideButtonRect));
+        Assert.True(panel.CaptionRect.Contains(panel.HideShowButtonRect));
         Assert.True(panel.CaptionRect.Contains(panel.ShowButtonRect));
         Assert.True(panel.CaptionRect.Contains(panel.ShowActiveButtonRect));
     }
@@ -183,7 +183,7 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        var hideBtn = panel.HideButtonRect;
+        var hideBtn = panel.HideShowButtonRect;
         screen.OnMouseDown(hideBtn.MidX, hideBtn.MidY);
         Render(screen);
 
@@ -200,7 +200,7 @@ public class CommandsPanelSkeletonTests
         var panel = screen.CommandsPanel;
 
         // Go to Closed first.
-        screen.OnMouseDown(panel.HideButtonRect.MidX, panel.HideButtonRect.MidY);
+        screen.OnMouseDown(panel.HideShowButtonRect.MidX, panel.HideShowButtonRect.MidY);
         Render(screen);
         Assert.Equal(CommandsPanelState.Closed, panel.State);
         Assert.Empty(panel.ModuleRows);
@@ -209,7 +209,7 @@ public class CommandsPanelSkeletonTests
         screen.OnMouseDown(panel.ShowButtonRect.MidX, panel.ShowButtonRect.MidY);
         Render(screen);
 
-        Assert.Equal(CommandsPanelState.Opened, panel.State);
+        Assert.Equal(CommandsPanelState.AllModules, panel.State);
         Assert.NotEmpty(panel.ModuleRows);
         Assert.True(panel.BodyRect.Height > 0);
     }
@@ -242,7 +242,7 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        foreach (var btn in new[] { panel.HideButtonRect, panel.ShowButtonRect, panel.ShowActiveButtonRect })
+        foreach (var btn in new[] { panel.HideShowButtonRect, panel.ShowButtonRect, panel.ShowActiveButtonRect })
         {
             screen.OnMouseDown(panel.ShowButtonRect.MidX, panel.ShowButtonRect.MidY);
             Render(screen);
@@ -265,7 +265,7 @@ public class CommandsPanelSkeletonTests
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
-        fixture.Screen.OnMouseDown(panel.HideButtonRect.MidX, panel.HideButtonRect.MidY);
+        fixture.Screen.OnMouseDown(panel.HideShowButtonRect.MidX, panel.HideShowButtonRect.MidY);
         Render(fixture.Screen);
 
         fixture.Screen.OnMouseDown(panel.ShowButtonRect.MidX, panel.ShowButtonRect.MidY);
@@ -286,7 +286,7 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        screen.OnMouseMove(panel.HideButtonRect.MidX, panel.HideButtonRect.MidY);
+        screen.OnMouseMove(panel.HideShowButtonRect.MidX, panel.HideShowButtonRect.MidY);
         Assert.Equal(0, panel.HoveredButtonIndex);
 
         screen.OnMouseMove(panel.ShowButtonRect.MidX, panel.ShowButtonRect.MidY);
@@ -306,10 +306,10 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        screen.OnMouseDown(panel.HideButtonRect.MidX, panel.HideButtonRect.MidY);
+        screen.OnMouseDown(panel.HideShowButtonRect.MidX, panel.HideShowButtonRect.MidY);
         Assert.Equal(0, panel.PressedButtonIndex);
 
-        screen.OnMouseUp(panel.HideButtonRect.MidX, panel.HideButtonRect.MidY);
+        screen.OnMouseUp(panel.HideShowButtonRect.MidX, panel.HideShowButtonRect.MidY);
         Assert.Equal(-1, panel.PressedButtonIndex);
     }
 

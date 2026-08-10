@@ -37,7 +37,7 @@ public sealed class CommandsPanel
     public const float ButtonLeftPadding = 10f;
     private const float ButtonGap = 4f;
 
-    private SKRect _hideButtonRect;
+    private SKRect _hideShowButtonRect;
     private SKRect _showButtonRect;
     private SKRect _showActiveButtonRect;
 
@@ -67,7 +67,12 @@ public sealed class CommandsPanel
 
     private readonly SKPaint _moduleCaptionTextPaint;
 
-    private CommandsPanelState _state = CommandsPanelState.Opened;
+    // ── Button images ────────────────────────────────────────────
+    private readonly SKBitmap? _hideImage;
+    private readonly SKBitmap? _showAllImage;
+
+    private CommandsPanelState _state = CommandsPanelState.AllModules;
+    private CommandsPanelState _previousNonClosedState = CommandsPanelState.AllModules;
 
     public CommandsPanel()
     {
@@ -85,15 +90,25 @@ public sealed class CommandsPanel
         _btnIconPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 9f, IsAntialias = true, Typeface = typeface };
 
         _moduleCaptionTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 14f, IsAntialias = true, Typeface = typeface };
+
+        _hideImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-hide.png");
+        _showAllImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-show.png");
+    }
+
+    private static SKBitmap? LoadImage(string path)
+    {
+        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
+        catch { return null; }
     }
 
     // ── Test seams ──────────────────────────────────────────────
 
     public CommandsPanelState State => _state;
+    public CommandsPanelState PreviousNonClosedState => _previousNonClosedState;
     public SKRect CaptionRect => _captionRect;
     public SKRect BodyRect => _bodyRect;
 
-    public SKRect HideButtonRect => _hideButtonRect;
+    public SKRect HideShowButtonRect => _hideShowButtonRect;
     public SKRect ShowButtonRect => _showButtonRect;
     public SKRect ShowActiveButtonRect => _showActiveButtonRect;
 
@@ -112,7 +127,7 @@ public sealed class CommandsPanel
         float x = Margin + ButtonLeftPadding;
         float y = ButtonTop;
 
-        _hideButtonRect = new SKRect(x, y, x + ButtonSize, y + ButtonSize);
+        _hideShowButtonRect = new SKRect(x, y, x + ButtonSize, y + ButtonSize);
         x += ButtonSize + ButtonGap;
 
         _showButtonRect = new SKRect(x, y, x + ButtonSize, y + ButtonSize);
@@ -132,17 +147,24 @@ public sealed class CommandsPanel
     public bool OnMouseDown(float x, float y)
     {
         // 1. Panel state buttons.
-        if (_hideButtonRect.Contains(x, y))
+        if (_hideShowButtonRect.Contains(x, y))
         {
             _pressedButtonIndex = 0;
-            _state = CommandsPanelState.Closed;
+            if (_state == CommandsPanelState.Closed)
+                _state = _previousNonClosedState;
+            else
+            {
+                _previousNonClosedState = _state;
+                _state = CommandsPanelState.Closed;
+            }
+
             return true;
         }
 
         if (_showButtonRect.Contains(x, y))
         {
             _pressedButtonIndex = 1;
-            _state = CommandsPanelState.Opened;
+            _state = CommandsPanelState.AllModules;
             return true;
         }
 
@@ -178,7 +200,7 @@ public sealed class CommandsPanel
 
     public void OnMouseMove(float x, float y)
     {
-        if (_hideButtonRect.Contains(x, y))
+        if (_hideShowButtonRect.Contains(x, y))
             _hoveredButtonIndex = 0;
         else if (_showButtonRect.Contains(x, y))
             _hoveredButtonIndex = 1;
@@ -274,7 +296,10 @@ public sealed class CommandsPanel
         canvas.DrawRect(_captionRect, _panelBgPaint);
         canvas.DrawRect(_captionRect, _panelBorderPaint);
 
-        DrawButton(canvas, _hideButtonRect, 0, "—");    // em-dash
+        // HideShow button: hide icon when open, show-all icon when closed.
+        var hideShowImage = _state == CommandsPanelState.Closed ? _showAllImage : _hideImage;
+        DrawButton(canvas, _hideShowButtonRect, 0, hideShowImage);
+
         DrawButton(canvas, _showButtonRect, 1, "□");    // white square
         DrawButton(canvas, _showActiveButtonRect, 2, "○"); // white circle
 
@@ -304,10 +329,29 @@ public sealed class CommandsPanel
         canvas.DrawText(icon, iconX, iconY, _btnIconPaint);
     }
 
+    private void DrawButton(SKCanvas canvas, SKRect rect, int buttonIndex, SKBitmap? image)
+    {
+        SKPaint fill;
+        if (buttonIndex == _pressedButtonIndex && buttonIndex == _hoveredButtonIndex)
+            fill = _btnPressedPaint;
+        else if (buttonIndex == _hoveredButtonIndex)
+            fill = _btnHoverPaint;
+        else if (IsActiveButton(buttonIndex))
+            fill = _btnActivePaint;
+        else
+            fill = _btnNormalPaint;
+
+        canvas.DrawRect(rect, fill);
+        canvas.DrawRect(rect, _btnBorderPaint);
+
+        if (image is not null)
+            canvas.DrawBitmap(image, rect);
+    }
+
     private bool IsActiveButton(int buttonIndex) => buttonIndex switch
     {
         0 => _state == CommandsPanelState.Closed,
-        1 => _state == CommandsPanelState.Opened,
+        1 => _state == CommandsPanelState.AllModules,
         2 => _state == CommandsPanelState.ActiveModules,
         _ => false,
     };
@@ -337,7 +381,7 @@ public sealed class CommandsPanel
 public enum CommandsPanelState
 {
     /// <summary>Caption + all modules visible.</summary>
-    Opened,
+    AllModules,
 
     /// <summary>Caption + only modules with state Opened visible.</summary>
     ActiveModules,
