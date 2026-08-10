@@ -370,8 +370,7 @@ public sealed class GameSessionScreen : IScreen
     {
         _mouseX = x;
         _mouseY = y;
-        _commandsPanel.OnMouseMove(x, y);
-        return false;
+        return _commandsPanel.OnMouseMove(x, y);
     }
 
     public void OnMouseUp(float x, float y)

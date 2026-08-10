@@ -46,16 +46,19 @@
     <None Update="gameinfo.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Images\UI\GameSessionScreenUI\module-panel-caption-background.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\module-panel-body-background.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Images\UI\GameSessionScreenUI\title-bar\title-bar-button-hide.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Images\UI\GameSessionScreenUI\title-bar\title-bar-button-show-active.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\UI\GameSessionScreenUI\title-bar\title-bar-button-show-all.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="Images\UI\GameSessionScreenUI\title-bar\title-bar-button-show.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\command-panel-caption-background.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Settings.json">

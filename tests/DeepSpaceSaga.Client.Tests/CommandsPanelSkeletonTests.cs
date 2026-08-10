@@ -8,10 +8,6 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests;
 
-/// <summary>
-/// Commands Panel tests (ТЗ подзадачи 1+2, CommandPanelPlan.md + CommandPanelSlim):
-/// geometry, hit-test consumption, state-machine, buttons, module rows, data-driven filtering.
-/// </summary>
 public class CommandsPanelSkeletonTests
 {
     private const int ScreenWidth = 1280;
@@ -26,25 +22,20 @@ public class CommandsPanelSkeletonTests
     private static readonly ImmutableArray<InstalledModuleSnapshot> OneEngineModule = ImmutableArray.Create(
         new InstalledModuleSnapshot(EngineModuleId, "module.engine.basic", "Engine", Position: 1, EngineCommandTypeIds));
 
-    // ── Skeleton geometry (updated for data-driven body) ─────────
+    // ── Geometry ────────────────────────────────────────────────
 
     [Fact]
-    public void Panel_renders_top_left_with_caption_360x40_and_body_depends_on_modules()
+    public void Panel_renders_top_left_with_caption_360x32_and_body_depends_on_modules()
     {
         var screen = CreateScreen();
         Render(screen);
 
-        // Caption always 360×40 at (8,8).
-        Assert.Equal(new SKRect(8, 8, 368, 48), screen.CommandsPanel.CaptionRect);
-
-        // Body: one opened module row = 200 px height (caption 30 + body 170).
-        Assert.Equal(new SKRect(8, 48, 368, 248), screen.CommandsPanel.BodyRect);
-        Assert.Equal(screen.CommandsPanel.CaptionRect.Left, screen.CommandsPanel.BodyRect.Left);
-        Assert.Equal(screen.CommandsPanel.CaptionRect.Bottom, screen.CommandsPanel.BodyRect.Top);
+        Assert.Equal(new SKRect(8, 8, 368, 40), screen.CommandsPanel.CaptionRect);
+        Assert.Equal(new SKRect(8, 40, 368, 240), screen.CommandsPanel.BodyRect);
     }
 
     [Fact]
-    public void Panel_state_is_Opened_by_default()
+    public void Panel_state_is_AllModules_by_default()
     {
         var screen = CreateScreen();
         Assert.Equal(CommandsPanelState.AllModules, screen.CommandsPanel.State);
@@ -92,7 +83,6 @@ public class CommandsPanelSkeletonTests
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
-        // Module opened by default → body exists immediately.
         var row = Assert.Single(panel.ModuleRows);
         Assert.True(row.Opened);
         Assert.True(row.BodyRect.Height > 0);
@@ -145,110 +135,55 @@ public class CommandsPanelSkeletonTests
         Assert.Empty(fixture.Connection.Commands);
     }
 
-    // ── Buttons geometry ────────────────────────────────────────
+    // ── Toggle button ──────────────────────────────────────────
 
     [Fact]
-    public void Buttons_are_32x32_positioned_left_in_caption_with_10px_padding()
+    public void Toggle_button_is_26x26_at_caption_start()
     {
         var screen = CreateScreen();
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        Assert.Equal(new SKRect(18, 12, 50, 44), panel.HideShowButtonRect);
+        Assert.Equal(new SKRect(10, 10, 36, 36), panel.HideShowButtonRect);
         Assert.Equal(CommandsPanel.ButtonSize, panel.HideShowButtonRect.Width);
         Assert.Equal(CommandsPanel.ButtonSize, panel.HideShowButtonRect.Height);
-
-        Assert.Equal(new SKRect(54, 12, 86, 44), panel.ShowButtonRect);
-        Assert.Equal(new SKRect(90, 12, 122, 44), panel.ShowActiveButtonRect);
-
-        Assert.Equal(12f, panel.HideShowButtonRect.Top);
-        Assert.Equal(12f, panel.ShowButtonRect.Top);
-        Assert.Equal(12f, panel.ShowActiveButtonRect.Top);
-
-        Assert.True(panel.CaptionRect.Contains(panel.HideShowButtonRect));
-        Assert.True(panel.CaptionRect.Contains(panel.ShowButtonRect));
-        Assert.True(panel.CaptionRect.Contains(panel.ShowActiveButtonRect));
     }
 
-    // ── State machine ───────────────────────────────────────────
-
     [Fact]
-    public void Hide_button_sets_state_Closed_and_body_height_is_zero()
+    public void Toggle_button_closes_panel_and_saves_previous_state()
     {
         var screen = CreateScreen();
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        var hideBtn = panel.HideShowButtonRect;
-        screen.OnMouseDown(hideBtn.MidX, hideBtn.MidY);
+        Assert.Equal(CommandsPanelState.AllModules, panel.State);
+
+        screen.OnMouseDown(panel.HideShowButtonRect.MidX, panel.HideShowButtonRect.MidY);
         Render(screen);
 
         Assert.Equal(CommandsPanelState.Closed, panel.State);
+        Assert.Equal(CommandsPanelState.AllModules, panel.PreviousNonClosedState);
         Assert.Equal(0f, panel.BodyRect.Height);
         Assert.Empty(panel.ModuleRows);
     }
 
     [Fact]
-    public void Show_button_sets_state_Opened_and_module_rows_are_visible()
+    public void Toggle_button_restores_previous_state_when_closed()
     {
         var screen = CreateScreen();
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        // Go to Closed first.
         screen.OnMouseDown(panel.HideShowButtonRect.MidX, panel.HideShowButtonRect.MidY);
         Render(screen);
         Assert.Equal(CommandsPanelState.Closed, panel.State);
-        Assert.Empty(panel.ModuleRows);
 
-        // Now Show → Opened, modules visible again.
-        screen.OnMouseDown(panel.ShowButtonRect.MidX, panel.ShowButtonRect.MidY);
+        screen.OnMouseDown(panel.HideShowButtonRect.MidX, panel.HideShowButtonRect.MidY);
         Render(screen);
 
         Assert.Equal(CommandsPanelState.AllModules, panel.State);
         Assert.NotEmpty(panel.ModuleRows);
         Assert.True(panel.BodyRect.Height > 0);
-    }
-
-    [Fact]
-    public void ShowActive_button_sets_state_ActiveModules()
-    {
-        var screen = CreateScreen();
-        Render(screen);
-        var panel = screen.CommandsPanel;
-
-        // Module already opened by default.
-
-        // Go to ActiveModules — opened rows visible.
-        screen.OnMouseDown(panel.ShowActiveButtonRect.MidX, panel.ShowActiveButtonRect.MidY);
-        Render(screen);
-
-        Assert.Equal(CommandsPanelState.ActiveModules, panel.State);
-        Assert.NotEmpty(panel.ModuleRows);
-        Assert.True(panel.ModuleRows.All(r => r.Opened));
-    }
-
-    [Fact]
-    public void Button_clicks_consume_the_click_and_do_not_pan()
-    {
-        var screen = CreateScreen();
-        Render(screen);
-        var panel = screen.CommandsPanel;
-
-        foreach (var btn in new[] { panel.HideShowButtonRect, panel.ShowButtonRect, panel.ShowActiveButtonRect })
-        {
-            screen.OnMouseDown(panel.ShowButtonRect.MidX, panel.ShowButtonRect.MidY);
-            Render(screen);
-
-            double fxBefore = screen.CameraFocusX;
-            double fyBefore = screen.CameraFocusY;
-
-            var result = screen.OnMouseDown(btn.MidX, btn.MidY);
-
-            Assert.Equal(ScreenEvent.None, result);
-            Assert.Equal(fxBefore, screen.CameraFocusX);
-            Assert.Equal(fyBefore, screen.CameraFocusY);
-        }
     }
 
     [Fact]
@@ -261,19 +196,16 @@ public class CommandsPanelSkeletonTests
         fixture.Screen.OnMouseDown(panel.HideShowButtonRect.MidX, panel.HideShowButtonRect.MidY);
         Render(fixture.Screen);
 
-        fixture.Screen.OnMouseDown(panel.ShowButtonRect.MidX, panel.ShowButtonRect.MidY);
-        Render(fixture.Screen);
-
-        fixture.Screen.OnMouseDown(panel.ShowActiveButtonRect.MidX, panel.ShowActiveButtonRect.MidY);
+        fixture.Screen.OnMouseDown(panel.HideShowButtonRect.MidX, panel.HideShowButtonRect.MidY);
         Render(fixture.Screen);
 
         Assert.Empty(fixture.Connection.Commands);
     }
 
-    // ── Hover tracking ──────────────────────────────────────────
+    // ── Hover / pressed ────────────────────────────────────────
 
     [Fact]
-    public void OnMouseMove_tracks_hover_over_buttons()
+    public void OnMouseMove_tracks_hover_over_toggle_button()
     {
         var screen = CreateScreen();
         Render(screen);
@@ -281,12 +213,6 @@ public class CommandsPanelSkeletonTests
 
         screen.OnMouseMove(panel.HideShowButtonRect.MidX, panel.HideShowButtonRect.MidY);
         Assert.Equal(0, panel.HoveredButtonIndex);
-
-        screen.OnMouseMove(panel.ShowButtonRect.MidX, panel.ShowButtonRect.MidY);
-        Assert.Equal(1, panel.HoveredButtonIndex);
-
-        screen.OnMouseMove(panel.ShowActiveButtonRect.MidX, panel.ShowActiveButtonRect.MidY);
-        Assert.Equal(2, panel.HoveredButtonIndex);
 
         screen.OnMouseMove(1000, 500);
         Assert.Equal(-1, panel.HoveredButtonIndex);
@@ -309,7 +235,7 @@ public class CommandsPanelSkeletonTests
     // ── Module row geometry ─────────────────────────────────────
 
     [Fact]
-    public void Module_caption_is_full_width_30px_and_body_is_360x170()
+    public void Module_caption_is_full_width_36px_and_body_is_360x164()
     {
         var screen = CreateScreen();
         Render(screen);
@@ -317,16 +243,14 @@ public class CommandsPanelSkeletonTests
 
         var row = Assert.Single(panel.ModuleRows);
 
-        // Opened by default: caption (360×30) + body (360×170).
         Assert.True(row.Opened);
-        Assert.Equal(CommandsPanel.PanelWidth, row.CaptionRect.Width);           // 360
-        Assert.Equal(CommandsPanel.ModuleCaptionHeight, row.CaptionRect.Height); // 30
-        Assert.Equal(CommandsPanel.PanelWidth, row.BodyRect.Width);              // 360
-        Assert.Equal(170f, row.BodyRect.Height);                                 // 200 - 30
-        Assert.Equal(row.CaptionRect.Bottom, row.BodyRect.Top);                  // body below caption
-        Assert.Equal(row.CaptionRect.Left, row.BodyRect.Left);                   // aligned left
+        Assert.Equal(CommandsPanel.PanelWidth, row.CaptionRect.Width);
+        Assert.Equal(CommandsPanel.ModuleCaptionHeight, row.CaptionRect.Height);
+        Assert.Equal(CommandsPanel.PanelWidth, row.BodyRect.Width);
+        Assert.Equal(164f, row.BodyRect.Height);
+        Assert.Equal(row.CaptionRect.Bottom, row.BodyRect.Top);
+        Assert.Equal(row.CaptionRect.Left, row.BodyRect.Left);
 
-        // Toggle closed → body disappears.
         screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
         Render(screen);
 
@@ -338,7 +262,6 @@ public class CommandsPanelSkeletonTests
     [Fact]
     public void Module_rows_ordered_by_Position()
     {
-        // Two modules: Position 2 first in snapshot, Position 0 second.
         var modules = ImmutableArray.Create(
             new InstalledModuleSnapshot("M2", "mt.a", "Alpha", Position: 2, EngineCommandTypeIds),
             new InstalledModuleSnapshot("M0", "mt.b", "Beta", Position: 0, EngineCommandTypeIds));
@@ -348,16 +271,15 @@ public class CommandsPanelSkeletonTests
 
         var rows = screen.CommandsPanel.ModuleRows;
         Assert.Equal(2, rows.Count);
-        Assert.Equal(0, rows[0].Position);  // Position 0 first (sorted)
+        Assert.Equal(0, rows[0].Position);
         Assert.Equal(2, rows[1].Position);
-        Assert.Equal(48f, rows[0].CaptionRect.Top);    // first row starts at caption bottom
-        Assert.Equal(248f, rows[1].CaptionRect.Top);   // second row 200 px below
+        Assert.Equal(40f, rows[0].CaptionRect.Top);
+        Assert.Equal(240f, rows[1].CaptionRect.Top);
     }
 
     [Fact]
     public void Engine_module_always_sorts_first()
     {
-        // engine at Position 5, scanner at Position 0 → engine comes first.
         var modules = ImmutableArray.Create(
             new InstalledModuleSnapshot("M-E", "module.engine.basic", "Engine", Position: 5, EngineCommandTypeIds),
             new InstalledModuleSnapshot("M-S", "module.scanner.mk1", "Scanner MK I", Position: 0,
@@ -379,20 +301,18 @@ public class CommandsPanelSkeletonTests
         var panel = screen.CommandsPanel;
 
         var row = Assert.Single(panel.ModuleRows);
-        Assert.True(row.Opened);  // default opened
+        Assert.True(row.Opened);
 
-        // Click caption → toggle closed.
         screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
         Render(screen);
         Assert.False(Assert.Single(panel.ModuleRows).Opened);
 
-        // Click caption again → toggle open.
         screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
         Render(screen);
         Assert.True(Assert.Single(panel.ModuleRows).Opened);
     }
 
-    // ── Data-driven filtering ───────────────────────────────────
+    // ── Filtering ───────────────────────────────────────────────
 
     [Fact]
     public void Module_with_empty_CommandTypeIds_is_not_shown()
@@ -412,7 +332,6 @@ public class CommandsPanelSkeletonTests
     [Fact]
     public void Only_modules_with_nonempty_CommandTypeIds_are_active()
     {
-        // Default fixture has just the engine module with non-empty CommandTypeIds.
         var screen = CreateScreen();
         Render(screen);
 
@@ -423,30 +342,6 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void ShowActive_hides_closed_modules()
-    {
-        var screen = CreateScreen();
-        Render(screen);
-        var panel = screen.CommandsPanel;
-
-        // Default: one module, opened.
-        Assert.Single(panel.ModuleRows);
-        Assert.True(panel.ModuleRows[0].Opened);
-
-        // Close the module first.
-        screen.OnMouseDown(panel.ModuleRows[0].CaptionRect.MidX, panel.ModuleRows[0].CaptionRect.MidY);
-        Render(screen);
-        Assert.False(Assert.Single(panel.ModuleRows).Opened);
-
-        // Show Active → module is closed, so it's hidden.
-        screen.OnMouseDown(panel.ShowActiveButtonRect.MidX, panel.ShowActiveButtonRect.MidY);
-        Render(screen);
-
-        Assert.Equal(CommandsPanelState.ActiveModules, panel.State);
-        Assert.Empty(panel.ModuleRows);  // No opened modules → empty.
-    }
-
-    [Fact]
     public void Empty_snapshot_shows_only_caption()
     {
         var screen = CreateScreen(ImmutableArray<InstalledModuleSnapshot>.Empty);
@@ -454,7 +349,7 @@ public class CommandsPanelSkeletonTests
         var panel = screen.CommandsPanel;
 
         Assert.Empty(panel.ModuleRows);
-        Assert.Equal(new SKRect(8, 48, 368, 48), panel.BodyRect); // zero-height body
+        Assert.Equal(new SKRect(8, 40, 368, 40), panel.BodyRect);
     }
 
     // ── Helpers ─────────────────────────────────────────────────
