@@ -293,16 +293,34 @@ public class EngineCommandTests
     }
 
     [Fact]
-    public void Rapid_one_shot_commands_are_deferred_until_the_module_is_free()
+    public void Rapid_turn_commands_are_blocked_by_angular_inertia()
     {
+        // Angular inertia (4 deg/sec → 250 ms window): two TurnRightStep commands in
+        // the same tick. cmd-2 defers (busy) at t=0 and is retried on the second pass
+        // at t=100 — by then cmd-1 completed (LastTurn=100) and 100 - 100 < 250, so
+        // the retry is Rejected with turn_inertia_blocked. Direction changes only once.
         var engine = CreateEngine(directionDegrees: 0);
 
-        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightStep));
-        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightStep));
+        engine.ReceiveCommand(new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
+        engine.ReceiveCommand(new PlayerCommand("cmd-2", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
 
-        Assert.Equal(0, PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1)).Direction);
-        Assert.Equal(1, PlayerShipFrom(engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1)).Direction);
-        Assert.Equal(2, PlayerShipFrom(engine.CaptureSnapshotForTests(200, SimulationSpeed.Speed1)).Direction);
+        var first = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        Assert.Equal(0, PlayerShipFrom(first).Direction);
+        var deferred = Assert.Single(first.CommandResults);
+        Assert.Equal("cmd-2", deferred.CommandId);
+        Assert.Equal(CommandResultStatus.Deferred, deferred.Status);
+
+        var snapshot = engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
+        Assert.Equal(1, PlayerShipFrom(snapshot).Direction);
+        Assert.Equal(2, snapshot.CommandResults.Length);
+        var rejected = snapshot.CommandResults.Single(r => r.CommandId == "cmd-2");
+        Assert.Equal(CommandResultStatus.Rejected, rejected.Status);
+        Assert.Equal(CommandReasonCodes.TurnInertiaBlocked, rejected.ReasonCode);
+        var executed = snapshot.CommandResults.Single(r => r.CommandId == "cmd-1");
+        Assert.Equal(CommandResultStatus.Executed, executed.Status);
+
+        // The rejected turn was never applied: direction stays 1.
+        Assert.Equal(1, PlayerShipFrom(engine.CaptureSnapshotForTests(200, SimulationSpeed.Speed1)).Direction);
     }
 
     [Fact]
@@ -372,6 +390,20 @@ public class EngineCommandTests
     }
 
     [Fact]
+    public void Engine_without_angular_inertia_rejects_turn_commands()
+    {
+        // AngularInertiaDegPerSec is part of CanExecuteEngineCommand (same pattern as
+        // LinearInertiaMps2): with 0, the module is unavailable → ModuleUnavailable.
+        var engine = CreateEngine(speedMps: 700, directionDegrees: 12, angularInertiaDegPerSec: 0);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.Accelerate));
+        var ship = PlayerShipFrom(engine.CaptureSnapshotForTests());
+
+        Assert.Equal(0.7, ship.SpeedKmS);
+        Assert.Equal(12, ship.Direction);
+    }
+
+    [Fact]
     public void Executed_command_appears_in_next_snapshot_with_full_details()
     {
         var engine = CreateEngine();
@@ -424,12 +456,15 @@ public class EngineCommandTests
     [Fact]
     public void Deferred_command_is_reported_once_and_executed_on_the_next_snapshot()
     {
-        var engine = CreateEngine(directionDegrees: 0);
+        var engine = CreateEngine(speedMps: 0, directionDegrees: 0, targetSpeedMps: 2500);
 
-        // AC3: two one-shot TurnRightStep commands in the same tick — the module
-        // is busy for the second one, which is genuinely requeued.
-        engine.ReceiveCommand(new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
-        engine.ReceiveCommand(new PlayerCommand("cmd-2", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
+        // AC3: two one-shot MatchTargetSpeed commands in the same tick — the module is
+        // busy for the second one, which is genuinely requeued. (MatchTargetSpeed instead
+        // of TurnRightStep: a deferred turn would be Rejected by angular inertia on its
+        // retry, so the pure deferred-mechanics flow is pinned with a non-turn command —
+        // Accelerate would be an idempotent auto-repeat re-send rather than a deferral.)
+        engine.ReceiveCommand(new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.MatchTargetSpeed, TargetObjectId: "OTHER"));
+        engine.ReceiveCommand(new PlayerCommand("cmd-2", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.MatchTargetSpeed, TargetObjectId: "OTHER"));
 
         // t=0: cmd-1 starts a zero-duration cycle (no CommandResult at start per §56.5);
         // cmd-2 is Deferred. Zero-duration guard prevents cmd-1 from completing in its
@@ -440,10 +475,11 @@ public class EngineCommandTests
         Assert.Equal(CommandResultStatus.Deferred, cmd2Deferred.Status);
         Assert.Equal(CommandReasonCodes.Busy, cmd2Deferred.ReasonCode);
 
-        // t=100: cmd-1's zero-duration cycle completes → Executed. cmd-2 starts from
-        // the deferred queue and gets its own zero-duration cycle (no result yet).
+        // t=100: cmd-1's zero-duration cycle completes → Executed (speed > 0).
+        // cmd-2 starts from the deferred queue and gets its own zero-duration cycle
+        // (no result yet).
         var second = engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
-        Assert.Equal(1, PlayerShipFrom(second).Direction);
+        Assert.True(PlayerShipFrom(second).SpeedKmS > 0);
         var cmd1Executed = Assert.Single(second.CommandResults);
         Assert.Equal("cmd-1", cmd1Executed.CommandId);
         Assert.Equal(CommandResultStatus.Executed, cmd1Executed.Status);
@@ -451,11 +487,151 @@ public class EngineCommandTests
 
         // t=200: cmd-2's zero-duration cycle completes → Executed. No more pending.
         var third = engine.CaptureSnapshotForTests(200, SimulationSpeed.Speed1);
-        Assert.Equal(2, PlayerShipFrom(third).Direction);
         var cmd2Executed = Assert.Single(third.CommandResults);
         Assert.Equal("cmd-2", cmd2Executed.CommandId);
         Assert.Equal(CommandResultStatus.Executed, cmd2Executed.Status);
         Assert.Null(cmd2Executed.ReasonCode);
+    }
+
+    [Fact]
+    public void Turn_again_exactly_at_inertia_interval_is_allowed()
+    {
+        // inertia = 4 deg/sec → MinTurnIntervalMs = Ceil(1000/4) = 250 ms.
+        // A turn command at exactly 250 ms after the previous turn completed is
+        // allowed (250 < 250 is false); it completes on the next tick as Executed.
+        var engine = CreateEngine(directionDegrees: 0);
+
+        engine.ReceiveCommand(new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        engine.CaptureSnapshotForTests(50, SimulationSpeed.Speed1); // first turn completes → LastTurn = 50
+
+        engine.ReceiveCommand(new PlayerCommand("cmd-2", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
+        // t=300: exactly 250 ms after the last turn — starts without rejection.
+        var start = engine.CaptureSnapshotForTests(300, SimulationSpeed.Speed1);
+        Assert.Equal(1, PlayerShipFrom(start).Direction);
+        Assert.DoesNotContain(start.CommandResults, r => r.Status == CommandResultStatus.Rejected);
+
+        // The second turn completes on the next tick: direction 2, Executed.
+        var completed = engine.CaptureSnapshotForTests(350, SimulationSpeed.Speed1);
+        Assert.Equal(2, PlayerShipFrom(completed).Direction);
+        var result = Assert.Single(completed.CommandResults);
+        Assert.Equal(CommandResultStatus.Executed, result.Status);
+        Assert.Null(result.ReasonCode);
+    }
+
+    [Fact]
+    public void First_turn_is_never_blocked_even_after_other_commands()
+    {
+        // LastTurnGameTimeMs is null until a turn actually completes: Accelerate does
+        // not set it, so the first turn right after an Accelerate is never blocked.
+        var engine = CreateEngine(directionDegrees: 0);
+
+        engine.ReceiveCommand(new PlayerCommand("cmd-acc", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.Accelerate));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1); // Accelerate completes
+
+        engine.ReceiveCommand(new PlayerCommand("cmd-turn", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
+        var snapshot = engine.CaptureSnapshotForTests(200, SimulationSpeed.Speed1);
+        Assert.DoesNotContain(snapshot.CommandResults, r => r.Status == CommandResultStatus.Rejected);
+        Assert.Equal(0, PlayerShipFrom(snapshot).Direction); // not applied yet (zero-duration guard)
+
+        var applied = engine.CaptureSnapshotForTests(250, SimulationSpeed.Speed1);
+        Assert.Equal(1, PlayerShipFrom(applied).Direction);
+    }
+
+    [Fact]
+    public void Until_cancel_auto_repeat_is_not_blocked_by_angular_inertia()
+    {
+        // Auto-repeat steps land every 1000 ms (base cycle at timeFactor 1.0) — far
+        // outside the 250 ms inertia window at 4 deg/sec, and auto-repeat renewal
+        // never passes through TryStartEngineCommand anyway.
+        var engine = CreateEngine(directionDegrees: 0);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnLeftUntilCancel));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1);
+        Assert.Equal(358, PlayerShipFrom(engine.CaptureSnapshotForTests(2000, SimulationSpeed.Speed1)).Direction);
+        Assert.Equal(357, PlayerShipFrom(engine.CaptureSnapshotForTests(3000, SimulationSpeed.Speed1)).Direction);
+    }
+
+    [Fact]
+    public void Rejected_spam_does_not_cancel_active_until_cancel_cycle()
+    {
+        // The inertia check runs BEFORE the busy/auto-repeat branches: a spam turn in
+        // the window is Rejected without touching the active auto-repeat cycle.
+        var engine = CreateEngine(directionDegrees: 0);
+
+        engine.ReceiveCommand(new PlayerCommand("cmd-left", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnLeftUntilCancel));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1); // step: 359, LastTurn = 1000
+
+        engine.ReceiveCommand(new PlayerCommand("cmd-spam", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
+        var snapshot = engine.CaptureSnapshotForTests(1100, SimulationSpeed.Speed1);
+        var rejected = Assert.Single(snapshot.CommandResults);
+        Assert.Equal("cmd-spam", rejected.CommandId);
+        Assert.Equal(CommandResultStatus.Rejected, rejected.Status);
+        Assert.Equal(CommandReasonCodes.TurnInertiaBlocked, rejected.ReasonCode);
+        Assert.Equal(359, PlayerShipFrom(snapshot).Direction);
+
+        // The until-cancel cycle keeps auto-repeating.
+        Assert.Equal(358, PlayerShipFrom(engine.CaptureSnapshotForTests(2000, SimulationSpeed.Speed1)).Direction);
+    }
+
+    [Fact]
+    public void Non_turn_commands_are_not_blocked_by_angular_inertia()
+    {
+        // The inertia window only applies to turn commands: Accelerate, Brake and
+        // match commands remain executable right after a turn completed.
+        var engine = CreateEngine(directionDegrees: 0);
+
+        // Establish a last-turn timestamp.
+        engine.ReceiveCommand(new PlayerCommand("cmd-turn", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        engine.CaptureSnapshotForTests(50, SimulationSpeed.Speed1); // LastTurn = 50
+
+        // Accelerate inside the inertia window — not a turn command → allowed.
+        engine.ReceiveCommand(new PlayerCommand("cmd-accel", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.Accelerate));
+        var accelStart = engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
+        Assert.DoesNotContain(accelStart.CommandResults, r => r.Status == CommandResultStatus.Rejected);
+
+        // Brake replaces the active Accelerate cycle — allowed too.
+        engine.ReceiveCommand(new PlayerCommand("cmd-brake", 3, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.Brake));
+        var brakeStart = engine.CaptureSnapshotForTests(200, SimulationSpeed.Speed1);
+        Assert.DoesNotContain(brakeStart.CommandResults, r => r.Status == CommandResultStatus.Rejected);
+
+        // Match commands — allowed as well.
+        engine.ReceiveCommand(new PlayerCommand("cmd-match", 4, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.MatchTargetCourse, TargetObjectId: "OTHER"));
+        var matchStart = engine.CaptureSnapshotForTests(300, SimulationSpeed.Speed1);
+        Assert.DoesNotContain(matchStart.CommandResults, r => r.Status == CommandResultStatus.Rejected);
+    }
+
+    [Fact]
+    public void Save_load_preserves_last_turn_timestamp()
+    {
+        // lastTurnGameTimeMs survives a save/load round trip: a turn inside the
+        // inertia window is Rejected after loading, exactly as without a save.
+        var engine = CreateEngine(directionDegrees: 0);
+
+        engine.ReceiveCommand(new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        engine.CaptureSnapshotForTests(50, SimulationSpeed.Speed1); // LastTurn = 50, direction 1
+
+        var saveState = engine.CaptureSaveStateForTests(100, SimulationSpeed.Speed1);
+        var savedModule = saveState.GameState.SpaceObjects
+            .Single(o => o.ObjectId == PlayerShipId).Modules!.Single(m => m.ModuleId == EngineModuleId);
+        Assert.Equal(50, savedModule.LastTurnGameTimeMs);
+
+        // The loaded engine inherits the timestamp: a turn at t=100 is inside the
+        // 250 ms window (100 - 50 < 250) → Rejected.
+        var loadedEngine = new SimulationEngine(CreateRegistry());
+        loadedEngine.LoadScenario(saveState);
+        loadedEngine.ReceiveCommand(new PlayerCommand("cmd-2", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnRightStep));
+        var snapshot = loadedEngine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
+        var rejected = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Rejected, rejected.Status);
+        Assert.Equal(CommandReasonCodes.TurnInertiaBlocked, rejected.ReasonCode);
+        Assert.Equal(1, PlayerShipFrom(snapshot).Direction);
     }
 
     [Fact]
@@ -867,7 +1043,7 @@ public class EngineCommandTests
             { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
             """);
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "fuelCapacityKg": 1 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4, "fuelCapacityKg": 1 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
@@ -901,7 +1077,7 @@ public class EngineCommandTests
             { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
             """);
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "fuelCapacityKg": 1 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4, "fuelCapacityKg": 1 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
@@ -946,6 +1122,7 @@ public class EngineCommandTests
                     MaxSpeedMps: 4000,
                     TurnStepDegrees: 1,
                     LinearInertiaMps2: 400,
+                    AngularInertiaDegPerSec: 4,
                     BaseCycleTimeMs: 1000)
             ],
             [],
@@ -1007,7 +1184,7 @@ public class EngineCommandTests
             { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
             """);
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "fuelCapacityKg": 1 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4, "fuelCapacityKg": 1 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
@@ -1041,7 +1218,7 @@ public class EngineCommandTests
             """);
             // Active module (has commandTypeIds) but no baseCycleTimeMs.
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": ["engine.accelerate"], "cargoCapacityKg": null, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "fuelCapacityKg": 1 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": ["engine.accelerate"], "cargoCapacityKg": null, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4, "fuelCapacityKg": 1 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
@@ -1093,7 +1270,7 @@ public class EngineCommandTests
             """);
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """{ "commandDefinitions": [] }""");
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
@@ -1102,6 +1279,35 @@ public class EngineCommandTests
                 EngineContentLoader.LoadRegistryFromSettingsFile(
                     Path.Combine(directory, "Settings.json"), out _, out _));
             Assert.Contains("fuelCapacityKg", ex.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Engine_module_type_without_angular_inertia_throws()
+    {
+        // Engine module type without valid AngularInertiaDegPerSec is rejected on load.
+        string directory = Path.Combine(Path.GetTempPath(), $"dss-inertia-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "Settings.json"), """
+            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            """);
+            File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """{ "commandDefinitions": [] }""");
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), """
+            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "fuelCapacityKg": 1 } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
+            File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
+
+            var ex = Assert.Throws<ContentException>(() =>
+                EngineContentLoader.LoadRegistryFromSettingsFile(
+                    Path.Combine(directory, "Settings.json"), out _, out _));
+            Assert.Contains("angularInertiaDegPerSec", ex.Message, StringComparison.Ordinal);
         }
         finally
         {
@@ -1334,10 +1540,11 @@ public class EngineCommandTests
         int structurePoints = 100,
         string activeCycleJson = "null",
         int linearInertiaMps2 = 40000,
+        int angularInertiaDegPerSec = 4,
         int targetSpeedMps = 0,
         int targetDirectionDegrees = 0)
     {
-        var engine = new SimulationEngine(CreateRegistry(linearInertiaMps2));
+        var engine = new SimulationEngine(CreateRegistry(linearInertiaMps2, angularInertiaDegPerSec));
         engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
         {
           "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
@@ -1400,7 +1607,7 @@ public class EngineCommandTests
         return engine;
     }
 
-    private static GameDataRegistry CreateRegistry(int linearInertiaMps2 = 40000)
+    private static GameDataRegistry CreateRegistry(int linearInertiaMps2 = 40000, int angularInertiaDegPerSec = 4)
     {
         string[] commandIds =
         [
@@ -1429,6 +1636,7 @@ public class EngineCommandTests
                     MaxSpeedMps: 4000,
                     TurnStepDegrees: 1,
                     LinearInertiaMps2: linearInertiaMps2,
+                    AngularInertiaDegPerSec: angularInertiaDegPerSec,
                     BaseCycleTimeMs: 1000)
             ],
             [],

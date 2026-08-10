@@ -88,4 +88,7 @@ public static class CommandReasonCodes
 
     /// <summary>Match command referenced a targetObjectId that does not exist in the world (§56.9).</summary>
     public const string UnknownTarget = "unknown_target";
+
+    /// <summary>Turn command arrived inside the angular-inertia window since the previous turn.</summary>
+    public const string TurnInertiaBlocked = "turn_inertia_blocked";
 }
