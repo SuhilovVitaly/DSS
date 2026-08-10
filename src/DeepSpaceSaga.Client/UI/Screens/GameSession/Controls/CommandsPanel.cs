@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
@@ -5,9 +7,10 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 /// <summary>
 /// Commands Panel (top-left) — the module-addressed command widget from
 /// Stories/CommandPanelPlan.md. Self-contained UI component: a Caption (360×40)
-/// with state-toggle buttons (Hide / Show / Show Active, 32×32 each) + a Body
-/// whose visibility depends on the panel state. No Engine commands — the panel
-/// only owns geometry, rendering, hit-test consumption and in-memory state.
+/// with state-toggle buttons (Hide / Show / Show Active, 32×32 each) + a list of
+/// module rows (60×200 caption + 300×200 body each) for active modules whose
+/// <c>CommandTypeIds</c> is not empty. No Engine commands — the panel only owns
+/// geometry, rendering, hit-test consumption and in-memory UI state.
 /// </summary>
 public sealed class CommandsPanel
 {
@@ -17,11 +20,14 @@ public sealed class CommandsPanel
     /// <summary>Panel Caption height.</summary>
     public const float CaptionHeight = 40f;
 
-    /// <summary>
-    /// Placeholder height of the Body — the height of one future module row
-    /// (CommandPanelPlan.md: Module Caption 60×200 / Module Body 300×200).
-    /// </summary>
+    /// <summary>Height of one module row (caption + body).</summary>
     public const float ModuleRowHeight = 200f;
+
+    /// <summary>Module Caption width (vertical text area).</summary>
+    public const float ModuleCaptionWidth = 60f;
+
+    /// <summary>Module Body width (placeholder, no buttons).</summary>
+    public const float ModuleBodyWidth = 300f;
 
     private const float Margin = 8f;   // = PanelMargin of GameSessionScreen
     private const float Padding = 6f;
@@ -38,6 +44,14 @@ public sealed class CommandsPanel
     private int _hoveredButtonIndex = -1;  // 0=Hide, 1=Show, 2=ShowActive, -1=none
     private int _pressedButtonIndex = -1;
 
+    // ── Module state (in-memory, per session) ───────────────────
+    private readonly Dictionary<string, bool> _moduleOpenedById = new(StringComparer.Ordinal);
+
+    // ── Layout cache (built in Render, read by test seams) ──────
+    private readonly List<ModuleRowGeometry> _moduleRows = [];
+    private SKRect _captionRect;
+    private SKRect _bodyRect;
+
     // ── Paints ──────────────────────────────────────────────────
 
     private readonly SKPaint _panelBgPaint;
@@ -51,9 +65,9 @@ public sealed class CommandsPanel
     private readonly SKPaint _btnBorderPaint;
     private readonly SKPaint _btnIconPaint;
 
+    private readonly SKPaint _moduleCaptionTextPaint;
+
     private CommandsPanelState _state = CommandsPanelState.Opened;
-    private SKRect _captionRect;
-    private SKRect _bodyRect;
 
     public CommandsPanel()
     {
@@ -69,6 +83,8 @@ public sealed class CommandsPanel
         _btnActivePaint = new SKPaint { Color = new SKColor(50, 80, 50, 230), Style = SKPaintStyle.Fill };
         _btnBorderPaint = new SKPaint { Color = new SKColor(80, 80, 80), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
         _btnIconPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 9f, IsAntialias = true, Typeface = typeface };
+
+        _moduleCaptionTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 14f, IsAntialias = true, Typeface = typeface };
     }
 
     // ── Test seams ──────────────────────────────────────────────
@@ -84,12 +100,13 @@ public sealed class CommandsPanel
     public int HoveredButtonIndex => _hoveredButtonIndex;
     public int PressedButtonIndex => _pressedButtonIndex;
 
+    /// <summary>Module row geometry from the last <see cref="Render"/> call.</summary>
+    public IReadOnlyList<ModuleRowGeometry> ModuleRows => _moduleRows;
+
     // ── Layout helpers ──────────────────────────────────────────
 
-    /// <summary>Compute button Y so they're vertically centred in the caption.</summary>
     private float ButtonTop => Margin + (CaptionHeight - ButtonSize) / 2f;
 
-    /// <summary>Compute the three button rects from the current layout.</summary>
     private void LayoutButtons()
     {
         float x = Margin + ButtonLeftPadding;
@@ -107,14 +124,14 @@ public sealed class CommandsPanel
     // ── Input ───────────────────────────────────────────────────
 
     /// <summary>
-    /// Hit-test. Returns <c>true</c> when the click lands on the panel (Caption or Body
-    /// — or on a button, which also changes panel state). Returns <c>false</c> when the
-    /// click is outside the panel and should fall through to map pan/selection.
+    /// Hit-test. Returns <c>true</c> when the click lands on the panel (buttons,
+    /// module captions, module bodies, or panel caption/body). Returns <c>false</c>
+    /// when the click is outside and should fall through to map pan/selection.
     /// Never sends Engine commands.
     /// </summary>
     public bool OnMouseDown(float x, float y)
     {
-        // Buttons in caption — check before generic caption consumption.
+        // 1. Panel state buttons.
         if (_hideButtonRect.Contains(x, y))
         {
             _pressedButtonIndex = 0;
@@ -136,6 +153,26 @@ public sealed class CommandsPanel
             return true;
         }
 
+        // 2. Module caption rects — toggle per-module Opened/Closed.
+        foreach (var row in _moduleRows)
+        {
+            if (row.CaptionRect.Contains(x, y))
+            {
+                string id = row.ModuleId;
+                bool wasOpened = _moduleOpenedById.TryGetValue(id, out bool o) && o;
+                _moduleOpenedById[id] = !wasOpened;
+                return true;
+            }
+        }
+
+        // 3. Module body rects (only opened rows) — consumed, no action.
+        foreach (var row in _moduleRows)
+        {
+            if (row is { Opened: true, BodyRect: var br } && br.Contains(x, y))
+                return true;
+        }
+
+        // 4. Panel caption / body — consumed, no action.
         return _captionRect.Contains(x, y) || _bodyRect.Contains(x, y);
     }
 
@@ -161,7 +198,9 @@ public sealed class CommandsPanel
     /// <summary>
     /// Layout + draw the panel. Screen-space, painted over the map, no world transform.
     /// </summary>
-    public void Render(SKCanvas canvas)
+    /// <param name="canvas">Skia canvas.</param>
+    /// <param name="modules">Installed modules from the latest snapshot (may be empty).</param>
+    public void Render(SKCanvas canvas, IReadOnlyList<InstalledModuleSnapshot> modules)
     {
         LayoutButtons();
 
@@ -169,15 +208,65 @@ public sealed class CommandsPanel
             Margin, Margin,
             Margin + PanelWidth, Margin + CaptionHeight);
 
-        // Body: zero-height when Closed (Caption only).
-        float bodyHeight = _state == CommandsPanelState.Closed ? 0f : ModuleRowHeight;
+        // Build visible module rows.
+        _moduleRows.Clear();
+
+        if (_state != CommandsPanelState.Closed)
+        {
+            // Guard against default ImmutableArray from old snapshots without the field.
+            var safeModules = modules is ImmutableArray<InstalledModuleSnapshot> { IsDefault: false } arr
+                ? arr
+                : ImmutableArray<InstalledModuleSnapshot>.Empty;
+
+            // Data-driven: only modules with non-empty CommandTypeIds.
+            var activeModules = safeModules
+                .Where(m => m.CommandTypeIds.Length > 0)
+                .OrderBy(m => m.Position)
+                .ToList();
+
+            // Forget per-module state for modules no longer active.
+            var activeIds = new HashSet<string>(activeModules.Select(m => m.ModuleId), StringComparer.Ordinal);
+            foreach (string staleId in _moduleOpenedById.Keys.Except(activeIds).ToList())
+                _moduleOpenedById.Remove(staleId);
+
+            float rowY = _captionRect.Bottom;
+            foreach (var mod in activeModules)
+            {
+                bool opened = _moduleOpenedById.TryGetValue(mod.ModuleId, out bool o) && o;
+
+                // In ActiveModules state, only rows with Opened state are visible.
+                if (_state == CommandsPanelState.ActiveModules && !opened)
+                    continue;
+
+                var captionRect = new SKRect(
+                    Margin, rowY,
+                    Margin + ModuleCaptionWidth, rowY + ModuleRowHeight);
+
+                var bodyRect = opened
+                    ? new SKRect(
+                        Margin + ModuleCaptionWidth, rowY,
+                        Margin + PanelWidth, rowY + ModuleRowHeight)
+                    : SKRect.Empty;
+
+                _moduleRows.Add(new ModuleRowGeometry(
+                    mod.ModuleId, mod.DisplayName, mod.Position, opened, captionRect, bodyRect));
+
+                rowY += ModuleRowHeight;
+            }
+        }
+
+        // Body rect: from caption bottom to the bottom of the last module row.
+        float bodyBottom = _moduleRows.Count > 0
+            ? _moduleRows[^1].CaptionRect.Bottom
+            : _captionRect.Bottom;
         _bodyRect = new SKRect(
             Margin, _captionRect.Bottom,
-            Margin + PanelWidth, _captionRect.Bottom + bodyHeight);
+            Margin + PanelWidth, bodyBottom);
 
+        // Draw.
         DrawCaption(canvas);
-        if (_state != CommandsPanelState.Closed)
-            DrawBody(canvas);
+        foreach (var row in _moduleRows)
+            DrawModuleRow(canvas, row);
     }
 
     private void DrawCaption(SKCanvas canvas)
@@ -185,11 +274,10 @@ public sealed class CommandsPanel
         canvas.DrawRect(_captionRect, _panelBgPaint);
         canvas.DrawRect(_captionRect, _panelBorderPaint);
 
-        DrawButton(canvas, _hideButtonRect, 0, "—");
-        DrawButton(canvas, _showButtonRect, 1, "□");
-        DrawButton(canvas, _showActiveButtonRect, 2, "○");
+        DrawButton(canvas, _hideButtonRect, 0, "—");    // em-dash
+        DrawButton(canvas, _showButtonRect, 1, "□");    // white square
+        DrawButton(canvas, _showActiveButtonRect, 2, "○"); // white circle
 
-        // "Modules" label to the right of the last button.
         float textX = _showActiveButtonRect.Right + Padding + 2f;
         float textY = _captionRect.MidY + _titlePaint.TextSize / 3f;
         canvas.DrawText("Modules", textX, textY, _titlePaint);
@@ -216,7 +304,6 @@ public sealed class CommandsPanel
         canvas.DrawText(icon, iconX, iconY, _btnIconPaint);
     }
 
-    /// <summary>Whether <paramref name="buttonIndex"/> corresponds to the current <see cref="_state"/>.</summary>
     private bool IsActiveButton(int buttonIndex) => buttonIndex switch
     {
         0 => _state == CommandsPanelState.Closed,
@@ -225,13 +312,24 @@ public sealed class CommandsPanel
         _ => false,
     };
 
-    private void DrawBody(SKCanvas canvas)
+    private void DrawModuleRow(SKCanvas canvas, ModuleRowGeometry row)
     {
-        if (_bodyRect.Height <= 0)
-            return;
+        // Caption: 60×200, bg + border, vertical text.
+        canvas.DrawRect(row.CaptionRect, _panelBgPaint);
+        canvas.DrawRect(row.CaptionRect, _panelBorderPaint);
 
-        canvas.DrawRect(_bodyRect, _panelBgPaint);
-        canvas.DrawRect(_bodyRect, _panelBorderPaint);
+        canvas.Save();
+        canvas.RotateDegrees(-90f, row.CaptionRect.MidX, row.CaptionRect.MidY);
+        float textY = row.CaptionRect.MidY + _moduleCaptionTextPaint.TextSize / 3f;
+        canvas.DrawText(row.DisplayName, row.CaptionRect.MidX, textY, _moduleCaptionTextPaint);
+        canvas.Restore();
+
+        // Body: 300×200, empty placeholder (no buttons — AC7).
+        if (row.Opened && row.BodyRect.Height > 0)
+        {
+            canvas.DrawRect(row.BodyRect, _panelBgPaint);
+            canvas.DrawRect(row.BodyRect, _panelBorderPaint);
+        }
     }
 }
 
@@ -247,3 +345,12 @@ public enum CommandsPanelState
     /// <summary>Caption only, Body hidden.</summary>
     Closed,
 }
+
+/// <summary>Per-module geometry produced during <see cref="CommandsPanel.Render"/>.</summary>
+public readonly record struct ModuleRowGeometry(
+    string ModuleId,
+    string DisplayName,
+    int Position,
+    bool Opened,
+    SKRect CaptionRect,
+    SKRect BodyRect);

@@ -267,7 +267,7 @@ public class ScenarioEngineTests
     }
 
     [Fact]
-    public void Real_default_scenario_command_type_ids_only_for_engine()
+    public void Real_default_scenario_active_module_types_have_valid_command_type_ids()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
@@ -287,8 +287,9 @@ public class ScenarioEngineTests
             .Where(t => t.CommandTypeIds.Length > 0)
             .ToArray();
 
-        var engineType = Assert.Single(activeTypes);
-        Assert.Equal("module.engine.basic", engineType.TypeId);
+        Assert.Equal(2, activeTypes.Length); // engine + scanner
+
+        var engineType = Assert.Single(activeTypes, t => t.TypeId == "module.engine.basic");
         Assert.Equal(11, engineType.CommandTypeIds.Length); // 10 legacy + engine.navigate-to-point (ТЗ 4.2)
         foreach (string commandTypeId in engineType.CommandTypeIds)
         {
@@ -296,9 +297,17 @@ public class ScenarioEngineTests
                 $"Command '{commandTypeId}' of 'module.engine.basic' is missing from the command definitions registry.");
         }
 
+        var scannerType = Assert.Single(activeTypes, t => t.TypeId == "module.scanner.mk1");
+        Assert.Equal(3, scannerType.CommandTypeIds.Length); // deep-scan, common-scan, direct-scan
+        foreach (string commandTypeId in scannerType.CommandTypeIds)
+        {
+            Assert.True(registry.CommandDefinitions.Contains(commandTypeId),
+                $"Command '{commandTypeId}' of 'module.scanner.mk1' is missing from the command definitions registry.");
+        }
+
         int passiveTypes = Enumerable.Range(0, registry.ModuleTypes.Count)
             .Count(i => registry.ModuleTypes.GetDefinition(i).CommandTypeIds.Length == 0);
-        Assert.Equal(8, passiveTypes);
+        Assert.Equal(7, passiveTypes);
     }
 
     [Theory]

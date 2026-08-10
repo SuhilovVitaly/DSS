@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
@@ -676,7 +677,8 @@ public sealed class GameSessionScreen : IScreen
         DrawEngineCommandPanel(canvas, buffered);
 
         // 6.5. Commands Panel (top-left)
-        _commandsPanel.Render(canvas);
+        _commandsPanel.Render(canvas,
+            buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty);
 
         // 7. Info panel (bottom-left)
         if (_panelVisible)
