@@ -361,6 +361,36 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
+    public void Opened_modules_sort_before_closed_modules()
+    {
+        // M2 (Pos=2) toggled open, M0 (Pos=0) stayed closed → M2 first, M0 second.
+        var modules = ImmutableArray.Create(
+            new InstalledModuleSnapshot("M2", "mt.a", "Alpha", Position: 2, EngineCommandTypeIds),
+            new InstalledModuleSnapshot("M0", "mt.b", "Beta", Position: 0, EngineCommandTypeIds));
+
+        var screen = CreateScreen(modules);
+        Render(screen);
+        var panel = screen.CommandsPanel;
+
+        // Both closed → ordered by Position: 0, 2.
+        Assert.Equal(2, panel.ModuleRows.Count);
+        Assert.Equal(0, panel.ModuleRows[0].Position);
+        Assert.Equal(2, panel.ModuleRows[1].Position);
+
+        // Toggle M2 open.
+        var rowM2 = panel.ModuleRows.Single(r => r.Position == 2);
+        screen.OnMouseDown(rowM2.CaptionRect.MidX, rowM2.CaptionRect.MidY);
+        Render(screen);
+
+        // Now M2 (opened) should be before M0 (closed).
+        Assert.Equal(2, panel.ModuleRows.Count);
+        Assert.True(panel.ModuleRows[0].Opened);
+        Assert.Equal(2, panel.ModuleRows[0].Position);  // opened first
+        Assert.False(panel.ModuleRows[1].Opened);
+        Assert.Equal(0, panel.ModuleRows[1].Position);  // closed second
+    }
+
+    [Fact]
     public void Module_toggle_switches_Opened_state()
     {
         var screen = CreateScreen();

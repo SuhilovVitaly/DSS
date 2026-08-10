@@ -245,9 +245,11 @@ public sealed class CommandsPanel
                 : ImmutableArray<InstalledModuleSnapshot>.Empty;
 
             // Data-driven: only modules with non-empty CommandTypeIds.
+            // Opened modules first (by Position), then closed modules (by Position).
             var activeModules = safeModules
                 .Where(m => m.CommandTypeIds.Length > 0)
-                .OrderBy(m => m.Position)
+                .OrderBy(m => _moduleOpenedById.TryGetValue(m.ModuleId, out bool o) && o ? 0 : 1)
+                .ThenBy(m => m.Position)
                 .ToList();
 
             // Forget per-module state for modules no longer active.
