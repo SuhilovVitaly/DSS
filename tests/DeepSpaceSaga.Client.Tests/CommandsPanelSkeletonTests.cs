@@ -355,33 +355,20 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Opened_modules_sort_before_closed_modules()
+    public void Engine_module_always_sorts_first()
     {
-        // M2 (Pos=2) and M0 (Pos=0), both opened by default.
+        // engine at Position 5, scanner at Position 0 → engine comes first.
         var modules = ImmutableArray.Create(
-            new InstalledModuleSnapshot("M2", "mt.a", "Alpha", Position: 2, EngineCommandTypeIds),
-            new InstalledModuleSnapshot("M0", "mt.b", "Beta", Position: 0, EngineCommandTypeIds));
+            new InstalledModuleSnapshot("M-E", "module.engine.basic", "Engine", Position: 5, EngineCommandTypeIds),
+            new InstalledModuleSnapshot("M-S", "module.scanner.mk1", "Scanner MK I", Position: 0,
+                ImmutableArray.Create("scanner.deep-scan")));
 
         var screen = CreateScreen(modules);
         Render(screen);
-        var panel = screen.CommandsPanel;
 
-        // Both opened → ordered by Position: 0, 2.
-        Assert.Equal(2, panel.ModuleRows.Count);
-        Assert.Equal(0, panel.ModuleRows[0].Position);
-        Assert.Equal(2, panel.ModuleRows[1].Position);
-
-        // Close M0 (Position 0) → M2 (opened) should now be first.
-        var rowM0 = panel.ModuleRows.Single(r => r.Position == 0);
-        screen.OnMouseDown(rowM0.CaptionRect.MidX, rowM0.CaptionRect.MidY);
-        Render(screen);
-
-        // M2 (opened) before M0 (closed).
-        Assert.Equal(2, panel.ModuleRows.Count);
-        Assert.True(panel.ModuleRows[0].Opened);
-        Assert.Equal(2, panel.ModuleRows[0].Position);  // opened first
-        Assert.False(panel.ModuleRows[1].Opened);
-        Assert.Equal(0, panel.ModuleRows[1].Position);  // closed second
+        Assert.Equal(2, screen.CommandsPanel.ModuleRows.Count);
+        Assert.Equal("Engine", screen.CommandsPanel.ModuleRows[0].DisplayName);
+        Assert.Equal("Scanner MK I", screen.CommandsPanel.ModuleRows[1].DisplayName);
     }
 
     [Fact]

@@ -244,11 +244,10 @@ public sealed class CommandsPanel
                 : ImmutableArray<InstalledModuleSnapshot>.Empty;
 
             // Data-driven: only modules with non-empty CommandTypeIds.
-            // Opened modules first (by Position), then closed modules (by Position).
-            // Default opened: a missing key means the module was never toggled → opened.
+            // Order: module.engine.basic always first, then by Position (loaded order, stable).
             var activeModules = safeModules
                 .Where(m => m.CommandTypeIds.Length > 0)
-                .OrderBy(m => !_moduleOpenedById.TryGetValue(m.ModuleId, out bool o) || o ? 0 : 1)
+                .OrderBy(m => m.ModuleTypeId == "module.engine.basic" ? -1 : 0)
                 .ThenBy(m => m.Position)
                 .ToList();
 
