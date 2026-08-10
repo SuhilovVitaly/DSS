@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Images\UI\GameSessionScreenUI\title-bar\" />
     <Folder Include="UI\Screens\" />
   </ItemGroup>
 
@@ -43,6 +44,18 @@
 
   <ItemGroup>
     <None Update="gameinfo.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\title-bar\title-bar-button-hide.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\title-bar\title-bar-button-show-active.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\title-bar\title-bar-button-show-all.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\title-bar\title-bar-button-show.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Settings.json">
