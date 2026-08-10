@@ -30,7 +30,7 @@ public sealed class CommandsPanel
     private const float Padding = 6f;
 
     // ── Button geometry ─────────────────────────────────────────
-    public const float ButtonSize = 32f;
+    public const float ButtonSize = 26f;
     public const float ButtonLeftPadding = 10f;
     private const float ButtonGap = 4f;
 
@@ -64,7 +64,8 @@ public sealed class CommandsPanel
 
     private readonly SKPaint _moduleCaptionTextPaint;
 
-    // ── Button images ────────────────────────────────────────────
+    // ── Images ──────────────────────────────────────────────────
+    private readonly SKBitmap? _captionBackgroundImage;
     private readonly SKBitmap? _hideImage;
     private readonly SKBitmap? _showImage;
     private readonly SKBitmap? _showAllModulesImage;
@@ -90,6 +91,7 @@ public sealed class CommandsPanel
 
         _moduleCaptionTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 14f, IsAntialias = true, Typeface = typeface };
 
+        _captionBackgroundImage = LoadImage("Images/UI/GameSessionScreenUI/command-panel-caption-background.png");
         _hideImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-hide.png");
         _showImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-show.png");
         _showAllModulesImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-show-all.png");
@@ -296,7 +298,11 @@ public sealed class CommandsPanel
 
     private void DrawCaption(SKCanvas canvas)
     {
-        canvas.DrawRect(_captionRect, _panelBgPaint);
+        if (_captionBackgroundImage is not null)
+            canvas.DrawBitmap(_captionBackgroundImage, _captionRect);
+        else
+            canvas.DrawRect(_captionRect, _panelBgPaint);
+
         canvas.DrawRect(_captionRect, _panelBorderPaint);
 
         // HideShow button: hide icon when open, show icon when closed.

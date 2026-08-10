@@ -148,22 +148,22 @@ public class CommandsPanelSkeletonTests
     // ── Buttons geometry ────────────────────────────────────────
 
     [Fact]
-    public void Buttons_are_32x32_positioned_left_in_caption_with_10px_padding()
+    public void Buttons_are_26x26_positioned_left_in_caption_with_10px_padding()
     {
         var screen = CreateScreen();
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        Assert.Equal(new SKRect(18, 12, 50, 44), panel.HideShowButtonRect);
+        Assert.Equal(new SKRect(18, 15, 44, 41), panel.HideShowButtonRect);
         Assert.Equal(CommandsPanel.ButtonSize, panel.HideShowButtonRect.Width);
         Assert.Equal(CommandsPanel.ButtonSize, panel.HideShowButtonRect.Height);
 
-        Assert.Equal(new SKRect(54, 12, 86, 44), panel.ShowButtonRect);
-        Assert.Equal(new SKRect(90, 12, 122, 44), panel.ShowActiveButtonRect);
+        Assert.Equal(new SKRect(48, 15, 74, 41), panel.ShowButtonRect);
+        Assert.Equal(new SKRect(78, 15, 104, 41), panel.ShowActiveButtonRect);
 
-        Assert.Equal(12f, panel.HideShowButtonRect.Top);
-        Assert.Equal(12f, panel.ShowButtonRect.Top);
-        Assert.Equal(12f, panel.ShowActiveButtonRect.Top);
+        Assert.Equal(15f, panel.HideShowButtonRect.Top);
+        Assert.Equal(15f, panel.ShowButtonRect.Top);
+        Assert.Equal(15f, panel.ShowActiveButtonRect.Top);
 
         Assert.True(panel.CaptionRect.Contains(panel.HideShowButtonRect));
         Assert.True(panel.CaptionRect.Contains(panel.ShowButtonRect));
