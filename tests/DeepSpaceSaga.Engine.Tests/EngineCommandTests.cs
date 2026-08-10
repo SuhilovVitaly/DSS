@@ -1507,6 +1507,275 @@ public class EngineCommandTests
         Assert.Equal(0, module.FuelAmountKg);
     }
 
+    // ── Navigation tests (ТЗ-05) ─────────────────────────────────
+    // Geometry: the player ship starts at (0, 0). Movement convention: direction 0°
+    // = up (y decreasing), 90° = right. Speed 4000 m/s → 40 world units/s, turn
+    // radius R = v/ω = 4·1000 / (4·π/180) / 100 ≈ 573 units. Speed 1000 m/s → R ≈ 143 units.
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData(double.NaN, 0.0)]
+    [InlineData(0.0, double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity, -100.0)]
+    public void Navigate_without_finite_coordinates_is_rejected(
+        double? targetWorldX, double? targetWorldY)
+    {
+        // ТЗ-05.1: navigate-to-point requires finite world coordinates. Missing, NaN
+        // and ±Infinity are all rejected with invalid_target_coordinates — the
+        // parameter check runs before CancelAll/module-state checks.
+        var engine = CreateEngine(speedMps: 4000, directionDegrees: 12);
+
+        engine.ReceiveCommand(Command(
+            ShipEngineCommandTypes.NavigateToPoint,
+            targetWorldX: targetWorldX,
+            targetWorldY: targetWorldY));
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        var result = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Rejected, result.Status);
+        Assert.Equal(CommandReasonCodes.InvalidTargetCoordinates, result.ReasonCode);
+
+        // No cycle was created, motion untouched.
+        var ship = PlayerShipFrom(snapshot);
+        Assert.Null(ship.ActiveEngineCommandType);
+        Assert.Equal(12, ship.Direction);
+        Assert.Equal(4.0, ship.SpeedKmS);
+    }
+
+    [Fact]
+    public void Navigate_starts_auto_repeat_cycle_with_min_turn_interval_duration()
+    {
+        // ТЗ-05.2: the navigation cycle is auto-repeat (like until-cancel) and its
+        // duration overrides the command time factor: MinTurnIntervalMs(4) = 250 ms.
+        var engine = CreateEngine(speedMps: 4000);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.NavigateToPoint, targetWorldX: 1000, targetWorldY: -3000));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        var module = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId).Modules.Single();
+        Assert.NotNull(module.ActiveCycle);
+        Assert.Equal(ShipEngineCommandTypes.NavigateToPoint, module.ActiveCycle!.CommandType);
+        Assert.True(module.ActiveCycle!.IsAutoRepeat);
+        Assert.Equal(250, module.ActiveCycle!.DurationMs);
+        Assert.Equal(1000, module.ActiveCycle!.TargetWorldX);
+        Assert.Equal(-3000, module.ActiveCycle!.TargetWorldY);
+    }
+
+    [Fact]
+    public void Navigate_aimed_at_target_keeps_course_and_completes_after_overshoot()
+    {
+        // ТЗ-05.3 (AC5): ship aimed straight at the target (0,-20), direction 0° = up.
+        // TurnDelta stays 0 on every cycle step (already on course), direction never
+        // changes, and the cycle completes once the ship is within ArrivalEpsilon
+        // (passes through the point) — Executed + CommandCompleted.
+        var engine = CreateEngine(speedMps: 4000, directionDegrees: 0);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.NavigateToPoint, targetWorldX: 0, targetWorldY: -20));
+        var start = PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1));
+        Assert.Equal(0, start.Direction);
+        Assert.Equal(ShipEngineCommandTypes.NavigateToPoint, start.ActiveEngineCommandType);
+
+        // 250 ms step: ship is at (0,-10), still on course — no turn.
+        var mid = PlayerShipFrom(engine.CaptureSnapshotForTests(250, SimulationSpeed.Speed1));
+        Assert.Equal(0, mid.Direction);
+
+        // 500 ms: ship reached (0,-20) → Arrived → auto-repeat chain cut.
+        var done = engine.CaptureSnapshotForTests(500, SimulationSpeed.Speed1);
+        var ship = PlayerShipFrom(done);
+        Assert.Equal(0, ship.Direction);
+        Assert.Null(ship.ActiveEngineCommandType);
+        var executed = Assert.Single(done.CommandResults);
+        Assert.Equal(CommandResultStatus.Executed, executed.Status);
+        Assert.Equal(ShipEngineCommandTypes.NavigateToPoint, executed.CommandType);
+        var completed = Assert.Single(done.ShipEvents, e => e.EventType == ShipEventTypes.CommandCompleted);
+        Assert.Equal(500, completed.GameTimeMs);
+
+        // Later: cycle is gone, direction unchanged.
+        var later = PlayerShipFrom(engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1));
+        Assert.Equal(0, later.Direction);
+        Assert.Null(later.ActiveEngineCommandType);
+    }
+
+    [Fact]
+    public void Navigate_turns_increments_only_on_cycle_steps_when_r_ge_R()
+    {
+        // ТЗ-05.4 (AC6): target far ahead-side (1000,-3000), r ≈ 3162 ≥ R ≈ 573 →
+        // the ship turns toward the bearing, one TurnStepDegree per 250 ms cycle step
+        // and never between steps.
+        var engine = CreateEngine(speedMps: 4000, directionDegrees: 0);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.NavigateToPoint, targetWorldX: 1000, targetWorldY: -3000));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        // t=100 is between cycle steps — direction must NOT change.
+        Assert.Equal(0, PlayerShipFrom(engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1)).Direction);
+        Assert.Equal(1, PlayerShipFrom(engine.CaptureSnapshotForTests(250, SimulationSpeed.Speed1)).Direction);
+        Assert.Equal(1, PlayerShipFrom(engine.CaptureSnapshotForTests(400, SimulationSpeed.Speed1)).Direction);
+        Assert.Equal(2, PlayerShipFrom(engine.CaptureSnapshotForTests(500, SimulationSpeed.Speed1)).Direction);
+        Assert.Equal(3, PlayerShipFrom(engine.CaptureSnapshotForTests(750, SimulationSpeed.Speed1)).Direction);
+    }
+
+    [Fact]
+    public void Navigate_with_target_inside_turn_radius_flies_straight_then_turns()
+    {
+        // ТЗ-05.5 (AC7): approved R = v/ω model. Ship at 1 km/s → R ≈ 143 units.
+        // Target (100, 70): r ≈ 122 < R → turning now would miss — the ship flies
+        // straight while r grows (ship heads up, target recedes below). Once r ≥ R
+        // the stepwise turn begins.
+        var engine = CreateEngine(speedMps: 1000, directionDegrees: 0);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.NavigateToPoint, targetWorldX: 100, targetWorldY: 70));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        // 8 cycle steps (2 s): r < R the whole time → direction untouched.
+        var waiting = PlayerShipFrom(engine.CaptureSnapshotForTests(2000, SimulationSpeed.Speed1));
+        Assert.Equal(0, waiting.Direction);
+
+        // 4 s: r ≈ 148.7 ≥ R → turning began.
+        var turning = PlayerShipFrom(engine.CaptureSnapshotForTests(4000, SimulationSpeed.Speed1));
+        Assert.True(turning.Direction > 0, $"expected direction > 0 after R was reached, got {turning.Direction}");
+    }
+
+    [Fact]
+    public void Navigate_with_different_target_replaces_old_cycle()
+    {
+        // ТЗ-05.6 (AC8): a second navigate command with a DIFFERENT world target is
+        // not idempotent — the old cycle is Cancelled + ShipEvent(CycleCancelled),
+        // and the new cycle starts immediately.
+        var engine = CreateEngine(speedMps: 4000);
+
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.NavigateToPoint,
+            TargetWorldX: 1000, TargetWorldY: -3000));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-2", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.NavigateToPoint,
+            TargetWorldX: 2000, TargetWorldY: -3000));
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        var cancelled = Assert.Single(snapshot.CommandResults);
+        Assert.Equal("cmd-1", cancelled.CommandId);
+        Assert.Equal(CommandResultStatus.Cancelled, cancelled.Status);
+        Assert.Equal(ShipEventReasonCodes.CancelledByCommand, cancelled.ReasonCode);
+        var cancelledEvent = Assert.Single(snapshot.ShipEvents, e => e.EventType == ShipEventTypes.CycleCancelled);
+        Assert.Equal(ShipEventReasonCodes.CancelledByCommand, cancelledEvent.ReasonCode);
+
+        // The new cycle is active with the new target.
+        var module = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId).Modules.Single();
+        Assert.Equal("cmd-2", module.ActiveCycle!.CommandId);
+        Assert.Equal(2000, module.ActiveCycle!.TargetWorldX);
+        Assert.Equal(-3000, module.ActiveCycle!.TargetWorldY);
+    }
+
+    [Fact]
+    public void Navigate_same_target_is_idempotent_and_does_not_recreate_cycle()
+    {
+        // ТЗ-05.7: repeating the exact same world target is a no-op — Executed, the
+        // original cycle keeps running (same CycleId, no cancellation event).
+        var engine = CreateEngine(speedMps: 4000);
+
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-1", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.NavigateToPoint,
+            TargetWorldX: 1000, TargetWorldY: -3000));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        string? cycleId = engine.RuntimeObjects
+            .Single(o => o.InitialMotion.ObjectId == PlayerShipId).Modules.Single().ActiveCycle?.CycleId;
+
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-2", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.NavigateToPoint,
+            TargetWorldX: 1000, TargetWorldY: -3000));
+        var snapshot = engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
+
+        var executed = Assert.Single(snapshot.CommandResults);
+        Assert.Equal("cmd-2", executed.CommandId);
+        Assert.Equal(CommandResultStatus.Executed, executed.Status);
+        Assert.Null(executed.ReasonCode);
+        Assert.DoesNotContain(snapshot.CommandResults, r => r.CommandId == "cmd-1" && r.Status == CommandResultStatus.Cancelled);
+        Assert.DoesNotContain(snapshot.ShipEvents, e => e.EventType == ShipEventTypes.CycleCancelled);
+
+        var module = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId).Modules.Single();
+        Assert.Equal(cycleId, module.ActiveCycle?.CycleId);
+        Assert.Equal(1000, module.ActiveCycle?.TargetWorldX);
+    }
+
+    [Fact]
+    public void Manual_turn_command_cancels_navigation()
+    {
+        // ТЗ-05.8: any other engine command (here TurnLeftUntilCancel) implicitly
+        // cancels the navigation cycle — Cancelled + ShipEvent, new cycle takes over.
+        var engine = CreateEngine(speedMps: 4000, directionDegrees: 0);
+
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-nav", 1, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.NavigateToPoint,
+            TargetWorldX: 1000, TargetWorldY: -3000));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-turn", 2, PlayerShipId, EngineModuleId, ShipEngineCommandTypes.TurnLeftUntilCancel));
+        var snapshot = engine.CaptureSnapshotForTests(100, SimulationSpeed.Speed1);
+
+        var cancelled = Assert.Single(snapshot.CommandResults, r => r.CommandId == "cmd-nav");
+        Assert.Equal(CommandResultStatus.Cancelled, cancelled.Status);
+        Assert.Contains(snapshot.ShipEvents, e => e.EventType == ShipEventTypes.CycleCancelled);
+
+        var ship = PlayerShipFrom(snapshot);
+        Assert.Equal(ShipEngineCommandTypes.TurnLeftUntilCancel, ship.ActiveEngineCommandType);
+        Assert.Null(ship.NavigationTargetX);
+    }
+
+    [Fact]
+    public void Save_load_preserves_navigation_target_and_cycle_continues()
+    {
+        // ТЗ-05.9 (AC9): targetWorldX/targetWorldY are persisted in ActiveCycleData.
+        // After load the navigation cycle resumes: direction keeps changing and the
+        // target stays reachable.
+        var engine = CreateEngine(speedMps: 4000, directionDegrees: 0);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.NavigateToPoint, targetWorldX: 1000, targetWorldY: -3000));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        var saveState = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed1);
+        var savedCycle = saveState.GameState.SpaceObjects
+            .Single(o => o.ObjectId == PlayerShipId).Modules!.Single(m => m.ModuleId == EngineModuleId).ActiveCycle;
+        Assert.NotNull(savedCycle);
+        Assert.Equal(1000, savedCycle!.TargetWorldX);
+        Assert.Equal(-3000, savedCycle!.TargetWorldY);
+        Assert.Equal(250, savedCycle.DurationMs);
+
+        // Continue in a fresh engine.
+        var loadedEngine = new SimulationEngine(CreateRegistry());
+        loadedEngine.LoadScenario(saveState);
+
+        // First step after load: turn by 1° toward the bearing (r ≈ 3162 ≥ R).
+        Assert.Equal(1, PlayerShipFrom(loadedEngine.CaptureSnapshotForTests(250, SimulationSpeed.Speed1)).Direction);
+        Assert.Equal(2, PlayerShipFrom(loadedEngine.CaptureSnapshotForTests(500, SimulationSpeed.Speed1)).Direction);
+
+        // Target remains visible in the snapshot projection.
+        var projected = PlayerShipFrom(loadedEngine.CaptureSnapshotForTests(750, SimulationSpeed.Speed1));
+        Assert.Equal(1000, projected.NavigationTargetX);
+        Assert.Equal(-3000, projected.NavigationTargetY);
+    }
+
+    [Fact]
+    public void Navigate_snapshot_publishes_navigation_projection_fields()
+    {
+        // ТЗ-05.10: the snapshot carries everything the client-side trajectory
+        // projector needs: authoritative target, angular inertia, turn timing.
+        var engine = CreateEngine(speedMps: 4000, directionDegrees: 0);
+
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.NavigateToPoint, targetWorldX: 1000, targetWorldY: -3000));
+        var ship = PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1));
+
+        Assert.Equal(ShipEngineCommandTypes.NavigateToPoint, ship.ActiveEngineCommandType);
+        Assert.Equal(1000, ship.NavigationTargetX);
+        Assert.Equal(-3000, ship.NavigationTargetY);
+        Assert.Equal(4, ship.NavigationAngularInertiaDegPerSec);
+        Assert.Equal(1, ship.TurnStepDegrees);
+        Assert.Equal(250, ship.TurnStepIntervalMs);
+        Assert.Equal(250, ship.TurnStepRemainingMs);
+    }
+
     private const string DefaultScenarioJson = """
     {
       "scenarioMetadata": { "scenarioId": "default", "name": "Default Scenario" },
@@ -1522,9 +1791,14 @@ public class EngineCommandTests
     }
     """;
 
-    private static PlayerCommand Command(string commandType)
+    private static PlayerCommand Command(
+        string commandType,
+        double? targetWorldX = null,
+        double? targetWorldY = null)
     {
-        return new PlayerCommand("cmd-1", 1, PlayerShipId, EngineModuleId, commandType);
+        return new PlayerCommand(
+            "cmd-1", 1, PlayerShipId, EngineModuleId, commandType,
+            TargetWorldX: targetWorldX, TargetWorldY: targetWorldY);
     }
 
     private static ObjectMotionSnapshot PlayerShipFrom(AuthoritativeSnapshot snapshot)
@@ -1619,6 +1893,7 @@ public class EngineCommandTests
             ShipEngineCommandTypes.TurnRightUntilCancel,
             ShipEngineCommandTypes.MatchTargetSpeed,
             ShipEngineCommandTypes.MatchTargetCourse,
+            ShipEngineCommandTypes.NavigateToPoint,
             ShipEngineCommandTypes.CancelAll
         ];
 
@@ -1645,6 +1920,7 @@ public class EngineCommandTests
                 id,
                 TimeFactor: id is ShipEngineCommandTypes.TurnLeftUntilCancel
                     or ShipEngineCommandTypes.TurnRightUntilCancel
+                    or ShipEngineCommandTypes.NavigateToPoint
                     ? 1000
                     : 0)));
     }

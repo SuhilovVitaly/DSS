@@ -37,6 +37,7 @@ public sealed class SkiaWindow : IDisposable
     private bool _quickSaveLoadInFlight;
     private readonly KeyboardEdgeTracker _keyboardEdges = new();
     private readonly Key[] _keyboardPressedKeys = new Key[16]; // must cover every key KeyboardEdgeTracker.Poll can report in one call
+    private readonly Key[] _keyboardReleasedKeys = new Key[2]; // Ctrl release edges only (left/right)
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
     private bool _closing;
@@ -278,6 +279,10 @@ public sealed class SkiaWindow : IDisposable
         int keyCount = _keyboardEdges.Poll(_keyboard, _keyboardPressedKeys);
         for (int i = 0; i < keyCount; i++)
             _handleKeyboardEdge(_keyboardPressedKeys[i]);
+
+        int releaseCount = _keyboardEdges.PollUpKeys(_keyboard, _keyboardReleasedKeys);
+        for (int i = 0; i < releaseCount; i++)
+            _screens.Current.OnKeyUp(_keyboardReleasedKeys[i]);
     }
 
     private void HandleKeyboardEdge(Key key)

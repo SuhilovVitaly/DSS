@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.LocalClient;
@@ -218,6 +219,48 @@ public class LocalSessionIntegrationTests
             if (Directory.Exists(dir))
                 Directory.Delete(dir, recursive: true);
         }
+    }
+
+    [Fact]
+    public async Task Navigate_command_propagates_authoritative_target_into_snapshots_and_client_projection()
+    {
+        // ТЗ-08.7 (AC8/AC9/AC10): an engine.navigate-to-point command sent through
+        // the real connection surfaces as an authoritative NavigationTarget* on the
+        // player ship in a snapshot, and the client-side NavigationTrajectoryProjector
+        // then builds a non-empty trajectory from that snapshot alone.
+        string settingsPath = ResolveRealSettingsPath();
+
+        await using var connection = LocalGameSessionConnection.CreateFromSettingsFile(settingsPath);
+        await using var handle = new GameSessionHandle(connection);
+
+        await handle.SendEngineCommandAsync(
+            "SPC-0001",
+            "MOD-PLAYER-ENGINE-01",
+            ShipEngineCommandTypes.NavigateToPoint,
+            10300,
+            9800);
+
+        ObjectMotionSnapshot? shipWithTarget = null;
+        var deadline = DateTime.UtcNow.AddSeconds(4);
+        while (DateTime.UtcNow < deadline)
+        {
+            var ship = handle.Buffer.Latest?.Snapshot.Objects
+                .FirstOrDefault(o => o.ObjectId == "SPC-0001");
+            if (ship?.NavigationTargetX is not null)
+            {
+                shipWithTarget = ship;
+                break;
+            }
+
+            await Task.Delay(25);
+        }
+
+        Assert.NotNull(shipWithTarget);
+        Assert.Equal(10300.0, shipWithTarget.NavigationTargetX!.Value, precision: 6);
+        Assert.Equal(9800.0, shipWithTarget.NavigationTargetY!.Value, precision: 6);
+
+        var points = new NavigationTrajectoryProjector().Project(shipWithTarget);
+        Assert.NotEmpty(points);
     }
 
     private static string ResolveRealSettingsPath()

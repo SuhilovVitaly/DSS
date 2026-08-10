@@ -91,4 +91,7 @@ public static class CommandReasonCodes
 
     /// <summary>Turn command arrived inside the angular-inertia window since the previous turn.</summary>
     public const string TurnInertiaBlocked = "turn_inertia_blocked";
+
+    /// <summary>Navigate-to-point command arrived without finite world target coordinates.</summary>
+    public const string InvalidTargetCoordinates = "invalid_target_coordinates";
 }

@@ -34,13 +34,31 @@ public sealed class GameSessionHandle : IAsyncDisposable
         string commandType,
         CancellationToken cancellationToken = default)
     {
+        return SendEngineCommandAsync(objectId, moduleId, commandType, targetWorldX: null, targetWorldY: null, cancellationToken);
+    }
+
+    /// <summary>
+    /// Send an engine command with an explicit world-coordinate target
+    /// (engine.navigate-to-point). The target is validated authoritatively by the
+    /// engine (missing/non-finite → invalid_target_coordinates).
+    /// </summary>
+    public ValueTask SendEngineCommandAsync(
+        string objectId,
+        string moduleId,
+        string commandType,
+        double? targetWorldX,
+        double? targetWorldY,
+        CancellationToken cancellationToken = default)
+    {
         ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
         var command = new PlayerCommand(
             CommandId: $"CMD-{sequence:D8}-{Guid.NewGuid():N}",
             ClientSequence: sequence,
             ObjectId: objectId,
             ModuleId: moduleId,
-            CommandType: commandType);
+            CommandType: commandType,
+            TargetWorldX: targetWorldX,
+            TargetWorldY: targetWorldY);
 
         return _connection.SendCommandAsync(command, cancellationToken);
     }
