@@ -69,7 +69,9 @@ public sealed class CommandsPanel
 
     // ── Button images ────────────────────────────────────────────
     private readonly SKBitmap? _hideImage;
-    private readonly SKBitmap? _showAllImage;
+    private readonly SKBitmap? _showImage;
+    private readonly SKBitmap? _showAllModulesImage;
+    private readonly SKBitmap? _showActiveImage;
 
     private CommandsPanelState _state = CommandsPanelState.AllModules;
     private CommandsPanelState _previousNonClosedState = CommandsPanelState.AllModules;
@@ -92,7 +94,9 @@ public sealed class CommandsPanel
         _moduleCaptionTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 14f, IsAntialias = true, Typeface = typeface };
 
         _hideImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-hide.png");
-        _showAllImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-show.png");
+        _showImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-show.png");
+        _showAllModulesImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-show-all.png");
+        _showActiveImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-show-active.png");
     }
 
     private static SKBitmap? LoadImage(string path)
@@ -296,12 +300,12 @@ public sealed class CommandsPanel
         canvas.DrawRect(_captionRect, _panelBgPaint);
         canvas.DrawRect(_captionRect, _panelBorderPaint);
 
-        // HideShow button: hide icon when open, show-all icon when closed.
-        var hideShowImage = _state == CommandsPanelState.Closed ? _showAllImage : _hideImage;
+        // HideShow button: hide icon when open, show icon when closed.
+        var hideShowImage = _state == CommandsPanelState.Closed ? _showImage : _hideImage;
         DrawButton(canvas, _hideShowButtonRect, 0, hideShowImage);
 
-        DrawButton(canvas, _showButtonRect, 1, "□");    // white square
-        DrawButton(canvas, _showActiveButtonRect, 2, "○"); // white circle
+        DrawButton(canvas, _showButtonRect, 1, _showAllModulesImage);
+        DrawButton(canvas, _showActiveButtonRect, 2, _showActiveImage);
 
         float textX = _showActiveButtonRect.Right + Padding + 2f;
         float textY = _captionRect.MidY + _titlePaint.TextSize / 3f;
