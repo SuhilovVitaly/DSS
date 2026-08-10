@@ -408,7 +408,10 @@ public sealed class SimulationEngine : IDisposable
                 OperationalState: module.OperationalState,
                 ActiveCycle: module.ActiveCycle,
                 Cargo: BuildSaveCargo(module),
-                FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null));
+                FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null,
+                LastTurnGameTimeMs: moduleType.AngularInertiaDegPerSec is > 0
+                    ? module.LastTurnGameTimeMs
+                    : null));
         }
 
         return modules;
@@ -483,6 +486,11 @@ public sealed class SimulationEngine : IDisposable
             // engine module, default to a full tank (§56.10).
             long fuelAmountKg = ResolveFuelAmountKg(module, moduleType, obj.ObjectId);
 
+            // Last-turn timestamp: only engine modules with angular inertia track it.
+            // A JSON null means the module never turned (or the save predates the field)
+            // — valid, and it must not block the first turn.
+            long? lastTurnGameTimeMs = ResolveLastTurnGameTimeMs(module, moduleType);
+
             modules.Add(new InstalledModuleRuntime(
                 module.ModuleId,
                 moduleTypeIndex,
@@ -493,7 +501,8 @@ public sealed class SimulationEngine : IDisposable
                 module.StructurePoints,
                 module.ActiveCycle,
                 cargo,
-                fuelAmountKg));
+                fuelAmountKg,
+                lastTurnGameTimeMs));
         }
 
         return modules.ToImmutable();
@@ -590,6 +599,17 @@ public sealed class SimulationEngine : IDisposable
         }
 
         return fuelAmountKg;
+    }
+
+    /// <summary>
+    /// Resolve <see cref="InstalledModuleRuntime.LastTurnGameTimeMs"/> from JSON data.
+    /// Only engine modules with angular inertia (<see cref="ModuleTypeDefinition.AngularInertiaDegPerSec"/>
+    /// &gt; 0) track the last-turn timestamp; all other modules get null. A missing JSON
+    /// field (null) is valid — the module never turned (or the save predates the field).
+    /// </summary>
+    private static long? ResolveLastTurnGameTimeMs(ShipModuleData module, ModuleTypeDefinition moduleType)
+    {
+        return moduleType.AngularInertiaDegPerSec is > 0 ? module.LastTurnGameTimeMs : null;
     }
 
     internal ImmutableArray<SpaceObjectRuntime> RuntimeObjects => _objects.ToImmutableArray();
@@ -792,6 +812,24 @@ public sealed class SimulationEngine : IDisposable
         if (!CanExecuteEngineCommand(module, moduleType))
             return CommandStartOutcome.Rejected(CommandReasonCodes.ModuleUnavailable);
 
+        // Angular inertia anti-spam: a step-turn command arriving sooner than
+        // 1 / AngularInertiaDegPerSec seconds after the previous turn is Rejected
+        // BEFORE the busy/auto-repeat branches — so a Rejected turn neither defers
+        // nor cancels an active cycle. First turn (LastTurnGameTimeMs null) is never
+        // blocked. Applies to repeated attempts of deferred commands too, since
+        // TryStartEngineCommand runs the same check on the second pass.
+        // Until-cancel commands are intentionally NOT blocked: mutual replacement
+        // (TurnLeftUntilCancel ↔ TurnRightUntilCancel) and idempotent re-sends are
+        // legitimate flows, and auto-repeat steps land ≥ 1000 ms apart — far outside
+        // the 250 ms window at 4 deg/sec (decision: operator, 2026-08-10).
+        if (IsStepTurnCommand(command.CommandType) &&
+            moduleType.AngularInertiaDegPerSec is { } inertia &&
+            module.LastTurnGameTimeMs is { } lastTurn &&
+            gameTimeMs - lastTurn < MinTurnIntervalMs(inertia))
+        {
+            return CommandStartOutcome.Rejected(CommandReasonCodes.TurnInertiaBlocked);
+        }
+
         if (module.ActiveCycle is { } activeCycle)
         {
             if (!activeCycle.IsAutoRepeat)
@@ -881,6 +919,7 @@ public sealed class SimulationEngine : IDisposable
         return moduleType.MaxSpeedMps is > 0 &&
                moduleType.TurnStepDegrees is > 0 &&
                moduleType.LinearInertiaMps2 is > 0 &&
+               moduleType.AngularInertiaDegPerSec is > 0 &&
                string.Equals(module.PowerState, "On", StringComparison.OrdinalIgnoreCase) &&
                string.Equals(module.OperationalState, "Ready", StringComparison.OrdinalIgnoreCase) &&
                module.StructurePoints > 0;
@@ -931,6 +970,22 @@ public sealed class SimulationEngine : IDisposable
     {
         return commandType == ShipEngineCommandTypes.TurnLeftUntilCancel ||
                commandType == ShipEngineCommandTypes.TurnRightUntilCancel;
+    }
+
+    private static bool IsStepTurnCommand(string commandType)
+    {
+        return commandType == ShipEngineCommandTypes.TurnLeftStep ||
+               commandType == ShipEngineCommandTypes.TurnRightStep;
+    }
+
+    /// <summary>
+    /// Minimum interval between two turns enforced by angular inertia:
+    /// Ceil(1000 / AngularInertiaDegPerSec) milliseconds (integer ceil).
+    /// E.g. 4 deg/sec → 250 ms, 1 deg/sec → 1000 ms.
+    /// </summary>
+    private static long MinTurnIntervalMs(int inertiaDegPerSec)
+    {
+        return (1000 + inertiaDegPerSec - 1) / inertiaDegPerSec;
     }
 
     private static bool IsCyclicEngineCommand(string commandType)
@@ -1174,7 +1229,7 @@ public sealed class SimulationEngine : IDisposable
             obj,
             moduleIndex,
             gameTimeMs,
-            module => module with { ActiveCycle = nextCycle },
+            module => module with { ActiveCycle = nextCycle, LastTurnGameTimeMs = gameTimeMs },
             motion => motion with
             {
                 Direction = NormalizeDirection(motion.Direction + turnSign * moduleType.TurnStepDegrees!.Value)
@@ -1236,7 +1291,8 @@ internal sealed record InstalledModuleRuntime(
     int StructurePoints,
     ActiveCycleData? ActiveCycle,
     ImmutableArray<CargoStackRuntime> Cargo,
-    long FuelAmountKg = 0);
+    long FuelAmountKg = 0,
+    long? LastTurnGameTimeMs = null);
 
 internal sealed record CargoStackRuntime(
     int ItemTypeIndex,

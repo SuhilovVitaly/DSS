@@ -14,5 +14,6 @@ internal sealed record ModuleTypeDefinition(
     int? MaxSpeedMps = null,
     int? TurnStepDegrees = null,
     int? LinearInertiaMps2 = null,
+    int? AngularInertiaDegPerSec = null,
     long BaseCycleTimeMs = 0,
     long? FuelCapacityKg = null) : ITypeDefinition;

@@ -341,6 +341,7 @@ public class SaveLoadContinuityTests
                     MaxSpeedMps: 4000,
                     TurnStepDegrees: 1,
                     LinearInertiaMps2: 400,
+                    AngularInertiaDegPerSec: 4,
                     BaseCycleTimeMs: 1000),
                 new ModuleTypeDefinition(
                     "module.container.basic",

@@ -107,6 +107,7 @@ public static class EngineContentLoader
                 dto.MaxSpeedMps,
                 dto.TurnStepDegrees,
                 dto.LinearInertiaMps2,
+                dto.AngularInertiaDegPerSec,
                 baseCycleTimeMs,
                 dto.FuelCapacityKg);
         }).ToArray();
@@ -123,6 +124,8 @@ public static class EngineContentLoader
             throw new ContentException("Module type 'module.engine.basic' requires turnStepDegrees greater than zero.");
         if (dto.LinearInertiaMps2 is not > 0)
             throw new ContentException("Module type 'module.engine.basic' requires linearInertiaMps2 greater than zero.");
+        if (dto.AngularInertiaDegPerSec is not > 0)
+            throw new ContentException("Module type 'module.engine.basic' requires angularInertiaDegPerSec greater than zero.");
         if (dto.FuelCapacityKg is not > 0)
             throw new ContentException("Module type 'module.engine.basic' requires fuelCapacityKg greater than zero.");
     }
@@ -271,6 +274,7 @@ public static class EngineContentLoader
         [property: JsonPropertyName("maxSpeedMps")] int? MaxSpeedMps,
         [property: JsonPropertyName("turnStepDegrees")] int? TurnStepDegrees,
         [property: JsonPropertyName("linearInertiaMps2")] int? LinearInertiaMps2,
+        [property: JsonPropertyName("angularInertiaDegPerSec")] int? AngularInertiaDegPerSec,
         [property: JsonPropertyName("baseCycleTimeMs")] long? BaseCycleTimeMs,
         [property: JsonPropertyName("fuelCapacityKg")] long? FuelCapacityKg);
 
