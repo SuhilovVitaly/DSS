@@ -24,14 +24,14 @@ public sealed class CommandsPanel
     public const float ModuleRowHeight = 200f;
 
     /// <summary>Module Caption height (horizontal bar above the body).</summary>
-    public const float ModuleCaptionHeight = 30f;
+    public const float ModuleCaptionHeight = 36f;
 
     private const float Margin = 8f;   // = PanelMargin of GameSessionScreen
     private const float Padding = 6f;
 
     // ── Button geometry ─────────────────────────────────────────
     public const float ButtonSize = 26f;
-    public const float ButtonLeftPadding = 0f;
+    public const float ButtonLeftPadding = 2f;
     private const float ButtonGap = 4f;
 
     private SKRect _hideShowButtonRect;
@@ -66,6 +66,8 @@ public sealed class CommandsPanel
 
     // ── Images ──────────────────────────────────────────────────
     private readonly SKBitmap? _captionBackgroundImage;
+    private readonly SKBitmap? _moduleCaptionBackgroundImage;
+    private readonly SKBitmap? _moduleBodyBackgroundImage;
     private readonly SKBitmap? _hideImage;
     private readonly SKBitmap? _showImage;
     private readonly SKBitmap? _showAllModulesImage;
@@ -89,9 +91,12 @@ public sealed class CommandsPanel
         _btnBorderPaint = new SKPaint { Color = new SKColor(80, 80, 80), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
         _btnIconPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 9f, IsAntialias = true, Typeface = typeface };
 
-        _moduleCaptionTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 14f, IsAntialias = true, Typeface = typeface };
+        var boldTypeface = SKTypeface.FromFamilyName("Consolas", SKFontStyle.Bold) ?? typeface;
+        _moduleCaptionTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 14f, IsAntialias = true, Typeface = boldTypeface };
 
         _captionBackgroundImage = LoadImage("Images/UI/GameSessionScreenUI/command-panel-caption-background.png");
+        _moduleCaptionBackgroundImage = LoadImage("Images/UI/GameSessionScreenUI/module-panel-caption-background.png");
+        _moduleBodyBackgroundImage = LoadImage("Images/UI/GameSessionScreenUI/module-panel-body-background.png");
         _hideImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-hide.png");
         _showImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-show.png");
         _showAllModulesImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-show-all.png");
@@ -123,7 +128,7 @@ public sealed class CommandsPanel
 
     // ── Layout helpers ──────────────────────────────────────────
 
-    private float ButtonTop => Margin; // top-aligned at caption origin
+    private float ButtonTop => Margin + 2f;
 
     private void LayoutButtons()
     {
@@ -367,19 +372,23 @@ public sealed class CommandsPanel
 
     private void DrawModuleRow(SKCanvas canvas, ModuleRowGeometry row)
     {
-        // Caption: full width × ModuleCaptionHeight, bg + border, horizontal text.
-        canvas.DrawRect(row.CaptionRect, _panelBgPaint);
-        canvas.DrawRect(row.CaptionRect, _panelBorderPaint);
+        // Caption: full width × ModuleCaptionHeight, bg from image, horizontal text, no border.
+        if (_moduleCaptionBackgroundImage is not null)
+            canvas.DrawBitmap(_moduleCaptionBackgroundImage, row.CaptionRect);
+        else
+            canvas.DrawRect(row.CaptionRect, _panelBgPaint);
 
-        float textX = row.CaptionRect.Left + Padding;
+        float textX = row.CaptionRect.Left + 40f;
         float textY = row.CaptionRect.MidY + _moduleCaptionTextPaint.TextSize / 3f;
         canvas.DrawText(row.DisplayName, textX, textY, _moduleCaptionTextPaint);
 
-        // Body: full width × remaining height, empty placeholder (no buttons).
+        // Body: full width × remaining height, bg from image, no border.
         if (row.Opened && row.BodyRect.Height > 0)
         {
-            canvas.DrawRect(row.BodyRect, _panelBgPaint);
-            canvas.DrawRect(row.BodyRect, _panelBorderPaint);
+            if (_moduleBodyBackgroundImage is not null)
+                canvas.DrawBitmap(_moduleBodyBackgroundImage, row.BodyRect);
+            else
+                canvas.DrawRect(row.BodyRect, _panelBgPaint);
         }
     }
 }

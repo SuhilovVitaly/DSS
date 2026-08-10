@@ -154,16 +154,16 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        Assert.Equal(new SKRect(8, 8, 34, 34), panel.HideShowButtonRect);
+        Assert.Equal(new SKRect(10, 10, 36, 36), panel.HideShowButtonRect);
         Assert.Equal(CommandsPanel.ButtonSize, panel.HideShowButtonRect.Width);
         Assert.Equal(CommandsPanel.ButtonSize, panel.HideShowButtonRect.Height);
 
-        Assert.Equal(new SKRect(38, 8, 64, 34), panel.ShowButtonRect);
-        Assert.Equal(new SKRect(68, 8, 94, 34), panel.ShowActiveButtonRect);
+        Assert.Equal(new SKRect(40, 10, 66, 36), panel.ShowButtonRect);
+        Assert.Equal(new SKRect(70, 10, 96, 36), panel.ShowActiveButtonRect);
 
-        Assert.Equal(8f, panel.HideShowButtonRect.Top);
-        Assert.Equal(8f, panel.ShowButtonRect.Top);
-        Assert.Equal(8f, panel.ShowActiveButtonRect.Top);
+        Assert.Equal(10f, panel.HideShowButtonRect.Top);
+        Assert.Equal(10f, panel.ShowButtonRect.Top);
+        Assert.Equal(10f, panel.ShowActiveButtonRect.Top);
 
         Assert.True(panel.CaptionRect.Contains(panel.HideShowButtonRect));
         Assert.True(panel.CaptionRect.Contains(panel.ShowButtonRect));
@@ -309,7 +309,7 @@ public class CommandsPanelSkeletonTests
     // ── Module row geometry ─────────────────────────────────────
 
     [Fact]
-    public void Module_caption_is_full_width_30px_and_body_is_360x170()
+    public void Module_caption_is_full_width_36px_and_body_is_360x164()
     {
         var screen = CreateScreen();
         Render(screen);
@@ -317,12 +317,12 @@ public class CommandsPanelSkeletonTests
 
         var row = Assert.Single(panel.ModuleRows);
 
-        // Opened by default: caption (360×30) + body (360×170).
+        // Opened by default: caption (360×36) + body (360×164).
         Assert.True(row.Opened);
         Assert.Equal(CommandsPanel.PanelWidth, row.CaptionRect.Width);           // 360
-        Assert.Equal(CommandsPanel.ModuleCaptionHeight, row.CaptionRect.Height); // 30
+        Assert.Equal(CommandsPanel.ModuleCaptionHeight, row.CaptionRect.Height); // 36
         Assert.Equal(CommandsPanel.PanelWidth, row.BodyRect.Width);              // 360
-        Assert.Equal(170f, row.BodyRect.Height);                                 // 200 - 30
+        Assert.Equal(164f, row.BodyRect.Height);                                 // 200 - 36
         Assert.Equal(row.CaptionRect.Bottom, row.BodyRect.Top);                  // body below caption
         Assert.Equal(row.CaptionRect.Left, row.BodyRect.Left);                   // aligned left
 
