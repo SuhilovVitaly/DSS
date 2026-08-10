@@ -23,11 +23,8 @@ public sealed class CommandsPanel
     /// <summary>Height of one module row (caption + body).</summary>
     public const float ModuleRowHeight = 200f;
 
-    /// <summary>Module Caption width (vertical text area).</summary>
-    public const float ModuleCaptionWidth = 60f;
-
-    /// <summary>Module Body width (placeholder, no buttons).</summary>
-    public const float ModuleBodyWidth = 300f;
+    /// <summary>Module Caption height (horizontal bar above the body).</summary>
+    public const float ModuleCaptionHeight = 30f;
 
     private const float Margin = 8f;   // = PanelMargin of GameSessionScreen
     private const float Padding = 6f;
@@ -185,7 +182,7 @@ public sealed class CommandsPanel
             if (row.CaptionRect.Contains(x, y))
             {
                 string id = row.ModuleId;
-                bool wasOpened = _moduleOpenedById.TryGetValue(id, out bool o) && o;
+                bool wasOpened = !_moduleOpenedById.TryGetValue(id, out bool o) || o;
                 _moduleOpenedById[id] = !wasOpened;
                 return true;
             }
@@ -237,6 +234,8 @@ public sealed class CommandsPanel
         // Build visible module rows.
         _moduleRows.Clear();
 
+        float rowY = _captionRect.Bottom;
+
         if (_state != CommandsPanelState.Closed)
         {
             // Guard against default ImmutableArray from old snapshots without the field.
@@ -246,9 +245,10 @@ public sealed class CommandsPanel
 
             // Data-driven: only modules with non-empty CommandTypeIds.
             // Opened modules first (by Position), then closed modules (by Position).
+            // Default opened: a missing key means the module was never toggled → opened.
             var activeModules = safeModules
                 .Where(m => m.CommandTypeIds.Length > 0)
-                .OrderBy(m => _moduleOpenedById.TryGetValue(m.ModuleId, out bool o) && o ? 0 : 1)
+                .OrderBy(m => !_moduleOpenedById.TryGetValue(m.ModuleId, out bool o) || o ? 0 : 1)
                 .ThenBy(m => m.Position)
                 .ToList();
 
@@ -257,10 +257,10 @@ public sealed class CommandsPanel
             foreach (string staleId in _moduleOpenedById.Keys.Except(activeIds).ToList())
                 _moduleOpenedById.Remove(staleId);
 
-            float rowY = _captionRect.Bottom;
             foreach (var mod in activeModules)
             {
-                bool opened = _moduleOpenedById.TryGetValue(mod.ModuleId, out bool o) && o;
+                // Default opened — module starts visible with body.
+                bool opened = !_moduleOpenedById.TryGetValue(mod.ModuleId, out bool o) || o;
 
                 // In ActiveModules state, only rows with Opened state are visible.
                 if (_state == CommandsPanelState.ActiveModules && !opened)
@@ -268,25 +268,23 @@ public sealed class CommandsPanel
 
                 var captionRect = new SKRect(
                     Margin, rowY,
-                    Margin + ModuleCaptionWidth, rowY + ModuleRowHeight);
+                    Margin + PanelWidth, rowY + ModuleCaptionHeight);
 
                 var bodyRect = opened
                     ? new SKRect(
-                        Margin + ModuleCaptionWidth, rowY,
+                        Margin, rowY + ModuleCaptionHeight,
                         Margin + PanelWidth, rowY + ModuleRowHeight)
                     : SKRect.Empty;
 
                 _moduleRows.Add(new ModuleRowGeometry(
                     mod.ModuleId, mod.DisplayName, mod.Position, opened, captionRect, bodyRect));
 
-                rowY += ModuleRowHeight;
+                rowY += opened ? ModuleRowHeight : ModuleCaptionHeight;
             }
         }
 
         // Body rect: from caption bottom to the bottom of the last module row.
-        float bodyBottom = _moduleRows.Count > 0
-            ? _moduleRows[^1].CaptionRect.Bottom
-            : _captionRect.Bottom;
+        float bodyBottom = rowY;
         _bodyRect = new SKRect(
             Margin, _captionRect.Bottom,
             Margin + PanelWidth, bodyBottom);
@@ -364,17 +362,15 @@ public sealed class CommandsPanel
 
     private void DrawModuleRow(SKCanvas canvas, ModuleRowGeometry row)
     {
-        // Caption: 60×200, bg + border, vertical text.
+        // Caption: full width × ModuleCaptionHeight, bg + border, horizontal text.
         canvas.DrawRect(row.CaptionRect, _panelBgPaint);
         canvas.DrawRect(row.CaptionRect, _panelBorderPaint);
 
-        canvas.Save();
-        canvas.RotateDegrees(-90f, row.CaptionRect.MidX, row.CaptionRect.MidY);
+        float textX = row.CaptionRect.Left + Padding;
         float textY = row.CaptionRect.MidY + _moduleCaptionTextPaint.TextSize / 3f;
-        canvas.DrawText(row.DisplayName, row.CaptionRect.MidX, textY, _moduleCaptionTextPaint);
-        canvas.Restore();
+        canvas.DrawText(row.DisplayName, textX, textY, _moduleCaptionTextPaint);
 
-        // Body: 300×200, empty placeholder (no buttons — AC7).
+        // Body: full width × remaining height, empty placeholder (no buttons).
         if (row.Opened && row.BodyRect.Height > 0)
         {
             canvas.DrawRect(row.BodyRect, _panelBgPaint);

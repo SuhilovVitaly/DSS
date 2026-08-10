@@ -37,7 +37,7 @@ public class CommandsPanelSkeletonTests
         // Caption always 360×40 at (8,8).
         Assert.Equal(new SKRect(8, 8, 368, 48), screen.CommandsPanel.CaptionRect);
 
-        // Body: one closed module row = 200 px height (caption-only, 60×200).
+        // Body: one opened module row = 200 px height (caption 30 + body 170).
         Assert.Equal(new SKRect(8, 48, 368, 248), screen.CommandsPanel.BodyRect);
         Assert.Equal(screen.CommandsPanel.CaptionRect.Left, screen.CommandsPanel.BodyRect.Left);
         Assert.Equal(screen.CommandsPanel.CaptionRect.Bottom, screen.CommandsPanel.BodyRect.Top);
@@ -92,12 +92,8 @@ public class CommandsPanelSkeletonTests
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
-        // First toggle the module open so it has a body.
+        // Module opened by default → body exists immediately.
         var row = Assert.Single(panel.ModuleRows);
-        fixture.Screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
-        Render(fixture.Screen);
-
-        row = Assert.Single(panel.ModuleRows);
         Assert.True(row.Opened);
         Assert.True(row.BodyRect.Height > 0);
 
@@ -221,12 +217,9 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        // Toggle a module open first.
-        var row = Assert.Single(panel.ModuleRows);
-        screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
-        Render(screen);
+        // Module already opened by default.
 
-        // Now go to ActiveModules — only opened rows visible.
+        // Go to ActiveModules — opened rows visible.
         screen.OnMouseDown(panel.ShowActiveButtonRect.MidX, panel.ShowActiveButtonRect.MidY);
         Render(screen);
 
@@ -316,7 +309,7 @@ public class CommandsPanelSkeletonTests
     // ── Module row geometry ─────────────────────────────────────
 
     [Fact]
-    public void Module_caption_is_60x200_and_body_is_300x200()
+    public void Module_caption_is_full_width_30px_and_body_is_360x170()
     {
         var screen = CreateScreen();
         Render(screen);
@@ -324,21 +317,22 @@ public class CommandsPanelSkeletonTests
 
         var row = Assert.Single(panel.ModuleRows);
 
-        // Closed row: caption only, body empty.
-        Assert.False(row.Opened);
-        Assert.Equal(CommandsPanel.ModuleCaptionWidth, row.CaptionRect.Width);   // 60
-        Assert.Equal(CommandsPanel.ModuleRowHeight, row.CaptionRect.Height);    // 200
-        Assert.Equal(0f, row.BodyRect.Height);
+        // Opened by default: caption (360×30) + body (360×170).
+        Assert.True(row.Opened);
+        Assert.Equal(CommandsPanel.PanelWidth, row.CaptionRect.Width);           // 360
+        Assert.Equal(CommandsPanel.ModuleCaptionHeight, row.CaptionRect.Height); // 30
+        Assert.Equal(CommandsPanel.PanelWidth, row.BodyRect.Width);              // 360
+        Assert.Equal(170f, row.BodyRect.Height);                                 // 200 - 30
+        Assert.Equal(row.CaptionRect.Bottom, row.BodyRect.Top);                  // body below caption
+        Assert.Equal(row.CaptionRect.Left, row.BodyRect.Left);                   // aligned left
 
-        // Toggle open.
+        // Toggle closed → body disappears.
         screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
         Render(screen);
 
         row = Assert.Single(panel.ModuleRows);
-        Assert.True(row.Opened);
-        Assert.Equal(CommandsPanel.ModuleBodyWidth, row.BodyRect.Width);        // 300
-        Assert.Equal(CommandsPanel.ModuleRowHeight, row.BodyRect.Height);       // 200
-        Assert.Equal(row.CaptionRect.Right, row.BodyRect.Left);                 // body starts at caption right edge
+        Assert.False(row.Opened);
+        Assert.Equal(0f, row.BodyRect.Height);
     }
 
     [Fact]
@@ -363,7 +357,7 @@ public class CommandsPanelSkeletonTests
     [Fact]
     public void Opened_modules_sort_before_closed_modules()
     {
-        // M2 (Pos=2) toggled open, M0 (Pos=0) stayed closed → M2 first, M0 second.
+        // M2 (Pos=2) and M0 (Pos=0), both opened by default.
         var modules = ImmutableArray.Create(
             new InstalledModuleSnapshot("M2", "mt.a", "Alpha", Position: 2, EngineCommandTypeIds),
             new InstalledModuleSnapshot("M0", "mt.b", "Beta", Position: 0, EngineCommandTypeIds));
@@ -372,17 +366,17 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        // Both closed → ordered by Position: 0, 2.
+        // Both opened → ordered by Position: 0, 2.
         Assert.Equal(2, panel.ModuleRows.Count);
         Assert.Equal(0, panel.ModuleRows[0].Position);
         Assert.Equal(2, panel.ModuleRows[1].Position);
 
-        // Toggle M2 open.
-        var rowM2 = panel.ModuleRows.Single(r => r.Position == 2);
-        screen.OnMouseDown(rowM2.CaptionRect.MidX, rowM2.CaptionRect.MidY);
+        // Close M0 (Position 0) → M2 (opened) should now be first.
+        var rowM0 = panel.ModuleRows.Single(r => r.Position == 0);
+        screen.OnMouseDown(rowM0.CaptionRect.MidX, rowM0.CaptionRect.MidY);
         Render(screen);
 
-        // Now M2 (opened) should be before M0 (closed).
+        // M2 (opened) before M0 (closed).
         Assert.Equal(2, panel.ModuleRows.Count);
         Assert.True(panel.ModuleRows[0].Opened);
         Assert.Equal(2, panel.ModuleRows[0].Position);  // opened first
@@ -398,17 +392,17 @@ public class CommandsPanelSkeletonTests
         var panel = screen.CommandsPanel;
 
         var row = Assert.Single(panel.ModuleRows);
-        Assert.False(row.Opened);
+        Assert.True(row.Opened);  // default opened
 
-        // Click caption → toggle open.
-        screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
-        Render(screen);
-        Assert.True(Assert.Single(panel.ModuleRows).Opened);
-
-        // Click caption again → toggle closed.
+        // Click caption → toggle closed.
         screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
         Render(screen);
         Assert.False(Assert.Single(panel.ModuleRows).Opened);
+
+        // Click caption again → toggle open.
+        screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
+        Render(screen);
+        Assert.True(Assert.Single(panel.ModuleRows).Opened);
     }
 
     // ── Data-driven filtering ───────────────────────────────────
@@ -448,8 +442,14 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        // Default: Opened state, one module, closed.
+        // Default: one module, opened.
         Assert.Single(panel.ModuleRows);
+        Assert.True(panel.ModuleRows[0].Opened);
+
+        // Close the module first.
+        screen.OnMouseDown(panel.ModuleRows[0].CaptionRect.MidX, panel.ModuleRows[0].CaptionRect.MidY);
+        Render(screen);
+        Assert.False(Assert.Single(panel.ModuleRows).Opened);
 
         // Show Active → module is closed, so it's hidden.
         screen.OnMouseDown(panel.ShowActiveButtonRect.MidX, panel.ShowActiveButtonRect.MidY);
