@@ -369,6 +369,7 @@ public sealed class GameSessionScreen : IScreen
     {
         _mouseX = x;
         _mouseY = y;
+        _commandsPanel.OnMouseMove(x, y);
         return false;
     }
 
@@ -377,6 +378,7 @@ public sealed class GameSessionScreen : IScreen
         _mouseX = x;
         _mouseY = y;
         _pressedEngineCommandButtonIndex = -1;
+        _commandsPanel.OnMouseUp(x, y);
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
