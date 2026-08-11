@@ -524,7 +524,11 @@ public sealed class SkiaWindow : IDisposable
         if (selectedMonitorIndex < 0 || selectedMonitorIndex >= monitorNames.Length)
             selectedMonitorIndex = 0;
 
-        await PushModalAsync(new SettingsScreen(monitorNames, selectedMonitorIndex, SaveSelectedMonitorIndex));
+        int interfaceScale = GetInterfaceScale();
+
+        await PushModalAsync(new SettingsScreen(
+            monitorNames, selectedMonitorIndex, SaveSelectedMonitorIndex,
+            interfaceScale, SaveInterfaceScale));
     }
 
     private static string SettingsFilePath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
@@ -576,6 +580,51 @@ public sealed class SkiaWindow : IDisposable
         catch (Exception ex)
         {
             InterfaceLog.Write($"Settings: failed to save selectedMonitorIndex: {ex.Message}");
+        }
+    }
+
+    private static int GetInterfaceScale()
+    {
+        try
+        {
+            if (!File.Exists(SettingsFilePath))
+                return 100;
+
+            using var doc = JsonDocument.Parse(File.ReadAllText(SettingsFilePath));
+            if (doc.RootElement.TryGetProperty("gameSettings", out var gs) &&
+                gs.TryGetProperty("interfaceScale", out var scale))
+                return scale.GetInt32();
+
+            return 100;
+        }
+        catch
+        {
+            return 100;
+        }
+    }
+
+    private static void SaveInterfaceScale(int scalePercent)
+    {
+        try
+        {
+            var root = File.Exists(SettingsFilePath)
+                ? JsonNode.Parse(File.ReadAllText(SettingsFilePath)) as JsonObject ?? new JsonObject()
+                : new JsonObject();
+
+            if (root["gameSettings"] is not JsonObject gameSettings)
+            {
+                gameSettings = new JsonObject();
+                root["gameSettings"] = gameSettings;
+            }
+
+            gameSettings["interfaceScale"] = scalePercent;
+
+            File.WriteAllText(SettingsFilePath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            InterfaceLog.Write($"Settings: interfaceScale saved = {scalePercent}");
+        }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"Settings: failed to save interfaceScale: {ex.Message}");
         }
     }
 

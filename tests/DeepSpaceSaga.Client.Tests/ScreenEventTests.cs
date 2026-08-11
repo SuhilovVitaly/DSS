@@ -178,8 +178,11 @@ public class ScreenEventTests
 
     private static readonly string[] TestMonitorNames = { "Monitor 1 (1920x1080)", "Monitor 2 (2560x1440)" };
 
-    private static SettingsScreen NewSettingsScreen(int selectedMonitorIndex = 0, Action<int>? onMonitorSelected = null) =>
-        new(TestMonitorNames, selectedMonitorIndex, onMonitorSelected ?? (_ => { }));
+    private static SettingsScreen NewSettingsScreen(
+        int selectedMonitorIndex = 0, Action<int>? onMonitorSelected = null,
+        int selectedInterfaceScale = 100, Action<int>? onInterfaceScaleSelected = null) =>
+        new(TestMonitorNames, selectedMonitorIndex, onMonitorSelected ?? (_ => { }),
+            selectedInterfaceScale, onInterfaceScaleSelected ?? (_ => { }));
 
     private static (float x, float y) SettingsMonitorComboCenter()
     {

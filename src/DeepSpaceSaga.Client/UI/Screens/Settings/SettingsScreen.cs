@@ -7,8 +7,11 @@ namespace DeepSpaceSaga.Client.UI.Screens.Settings;
 
 public sealed class SettingsScreen : IScreen
 {
+    private static readonly int[] InterfaceScaleValues = { 80, 100, 120, 150 };
+
     private readonly IReadOnlyList<string> _monitorNames;
     private readonly Action<int> _onMonitorSelected;
+    private readonly Action<int> _onInterfaceScaleSelected;
 
     private int _screenWidth;
     private int _screenHeight;
@@ -16,6 +19,10 @@ public sealed class SettingsScreen : IScreen
     private int _selectedMonitorIndex;
     private bool _isMonitorComboOpen;
     private int _hoveredMonitorOption = -1;
+
+    private int _selectedInterfaceScaleIndex;
+    private bool _isInterfaceScaleComboOpen;
+    private int _hoveredInterfaceScaleOption = -1;
 
     private SettingsButton _hoveredButton = SettingsButton.None;
     private SettingsButton _pressedButton = SettingsButton.None;
@@ -33,11 +40,17 @@ public sealed class SettingsScreen : IScreen
         IsAntialias = true
     };
 
-    public SettingsScreen(IReadOnlyList<string> monitorNames, int selectedMonitorIndex, Action<int> onMonitorSelected)
+    public SettingsScreen(
+        IReadOnlyList<string> monitorNames, int selectedMonitorIndex, Action<int> onMonitorSelected,
+        int selectedInterfaceScale, Action<int> onInterfaceScaleSelected)
     {
         _monitorNames = monitorNames.Count > 0 ? monitorNames : new[] { "Monitor 1" };
         _selectedMonitorIndex = Math.Clamp(selectedMonitorIndex, 0, _monitorNames.Count - 1);
         _onMonitorSelected = onMonitorSelected;
+
+        int scaleIndex = Array.IndexOf(InterfaceScaleValues, selectedInterfaceScale);
+        _selectedInterfaceScaleIndex = scaleIndex >= 0 ? scaleIndex : Array.IndexOf(InterfaceScaleValues, 100);
+        _onInterfaceScaleSelected = onInterfaceScaleSelected;
     }
 
     public void OnActivated()
@@ -46,6 +59,8 @@ public sealed class SettingsScreen : IScreen
         _pressedButton = SettingsButton.None;
         _isMonitorComboOpen = false;
         _hoveredMonitorOption = -1;
+        _isInterfaceScaleComboOpen = false;
+        _hoveredInterfaceScaleOption = -1;
     }
 
     public void OnDeactivated() { }
@@ -58,6 +73,12 @@ public sealed class SettingsScreen : IScreen
         if (_isMonitorComboOpen)
         {
             _isMonitorComboOpen = false;
+            return ScreenEvent.None;
+        }
+
+        if (_isInterfaceScaleComboOpen)
+        {
+            _isInterfaceScaleComboOpen = false;
             return ScreenEvent.None;
         }
 
@@ -80,11 +101,32 @@ public sealed class SettingsScreen : IScreen
             return ScreenEvent.None;
         }
 
+        if (_isInterfaceScaleComboOpen)
+        {
+            int option = SettingsLayout.HitTestInterfaceScaleOption(
+                x, y, _screenWidth, _screenHeight, InterfaceScaleValues.Length);
+            _isInterfaceScaleComboOpen = false;
+
+            if (option >= 0 && option != _selectedInterfaceScaleIndex)
+            {
+                _selectedInterfaceScaleIndex = option;
+                _onInterfaceScaleSelected(InterfaceScaleValues[option]);
+            }
+
+            return ScreenEvent.None;
+        }
+
         var hit = SettingsLayout.HitTest(x, y, _screenWidth, _screenHeight);
 
         if (hit == SettingsButton.MonitorCombo)
         {
             _isMonitorComboOpen = true;
+            return ScreenEvent.None;
+        }
+
+        if (hit == SettingsButton.InterfaceScaleCombo)
+        {
+            _isInterfaceScaleComboOpen = true;
             return ScreenEvent.None;
         }
 
@@ -101,6 +143,13 @@ public sealed class SettingsScreen : IScreen
         if (_isMonitorComboOpen)
         {
             _hoveredMonitorOption = SettingsLayout.HitTestMonitorOption(x, y, _screenWidth, _screenHeight, _monitorNames.Count);
+            return true;
+        }
+
+        if (_isInterfaceScaleComboOpen)
+        {
+            _hoveredInterfaceScaleOption = SettingsLayout.HitTestInterfaceScaleOption(
+                x, y, _screenWidth, _screenHeight, InterfaceScaleValues.Length);
             return true;
         }
 
@@ -130,7 +179,37 @@ public sealed class SettingsScreen : IScreen
         canvas.DrawText("SETTINGS", cx, pt + SettingsLayout.TitleY, MenuStyle.TextTitle);
 
         DrawMonitorCombo(canvas, pl, pt, cx);
+        DrawInterfaceScaleCombo(canvas, pl, pt, cx);
         DrawButton(canvas, pl, pt, SettingsLayout.ExitY, "EXIT", SettingsButton.Exit);
+    }
+
+    private void DrawInterfaceScaleCombo(SKCanvas canvas, float panelLeft, float panelTop, float centerX)
+    {
+        canvas.DrawText("INTERFACE SCALE", centerX, panelTop + SettingsLayout.InterfaceScaleLabelY, MenuStyle.TextStatus);
+
+        float bx = panelLeft + (SettingsLayout.PanelWidth - SettingsLayout.InterfaceScaleComboWidth) / 2f;
+        float by = panelTop + SettingsLayout.InterfaceScaleComboY;
+        var boxRect = new SKRect(bx, by, bx + SettingsLayout.InterfaceScaleComboWidth, by + SettingsLayout.InterfaceScaleComboHeight);
+
+        bool boxHighlighted = _isInterfaceScaleComboOpen || _hoveredButton == SettingsButton.InterfaceScaleCombo;
+        MenuStyle.DrawButton(canvas, boxRect, $"{InterfaceScaleValues[_selectedInterfaceScaleIndex]}%",
+            boxHighlighted ? ButtonState.Hovered : ButtonState.Normal);
+        DrawDropdownArrow(canvas, boxRect, _isInterfaceScaleComboOpen);
+
+        if (_isInterfaceScaleComboOpen)
+        {
+            for (int i = 0; i < InterfaceScaleValues.Length; i++)
+            {
+                float oy = by + SettingsLayout.InterfaceScaleComboHeight + i * SettingsLayout.InterfaceScaleOptionHeight;
+                var optionRect = new SKRect(bx, oy, bx + SettingsLayout.InterfaceScaleComboWidth, oy + SettingsLayout.InterfaceScaleOptionHeight);
+
+                var optionState = i == _selectedInterfaceScaleIndex ? ButtonState.Pressed
+                    : i == _hoveredInterfaceScaleOption ? ButtonState.Hovered
+                    : ButtonState.Normal;
+
+                MenuStyle.DrawButton(canvas, optionRect, $"{InterfaceScaleValues[i]}%", optionState);
+            }
+        }
     }
 
     private void DrawMonitorCombo(SKCanvas canvas, float panelLeft, float panelTop, float centerX)
