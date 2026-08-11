@@ -20,6 +20,7 @@ public sealed class GameSessionScreen : IScreen
     private readonly FutureTrajectoryProjector _futureTrajectoryProjector;
     private readonly NavigationTrajectoryProjector _navigationTrajectoryProjector;
     private readonly ObjectLabelRenderer _labelRenderer;
+    private readonly TacticalMapDepthRenderer _depthRenderer;
     private readonly List<ObjectRenderState> _renderStates = new();
     private readonly Dictionary<string, ObjectMotionSnapshot> _pausedVisualAnchors = new(StringComparer.Ordinal);
     private readonly Dictionary<string, VisualCorrection> _visualCorrections = new(StringComparer.Ordinal);
@@ -37,14 +38,6 @@ public sealed class GameSessionScreen : IScreen
 
     // Object paints
     private readonly SKPaint _trailPaint;
-    private readonly SKPaint _futureTrajectoryShadowPaint;
-    private readonly SKPaint _futureTrajectoryPaint;
-    private readonly SKPaint _navigationTrajectoryShadowPaint;
-    private readonly SKPaint _navigationTrajectoryPaint;
-    private readonly SKPaint _navigationTargetPaint;
-    private readonly SKPaint _objectPaint;
-    private readonly SKPaint _playerShipPaint;
-    private readonly SKPaint _playerShipOutlinePaint;
     private readonly SKPaint _centerPaint;
     private readonly SKPath _playerShipGlyphPath = new();
 
@@ -238,53 +231,9 @@ public sealed class GameSessionScreen : IScreen
         _futureTrajectoryProjector = new FutureTrajectoryProjector(_predictor);
         _navigationTrajectoryProjector = new NavigationTrajectoryProjector();
         _labelRenderer = new ObjectLabelRenderer();
+        _depthRenderer = new TacticalMapDepthRenderer();
 
         _trailPaint = new SKPaint { Color = new SKColor(190, 190, 190, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 2f, IsAntialias = true };
-        // Future trajectory: dark glow shadow + main gray dashed line.
-        _futureTrajectoryShadowPaint = new SKPaint
-        {
-            Color = new SKColor(0, 0, 0, 80),
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 3f,
-            IsAntialias = true,
-            StrokeCap = SKStrokeCap.Round,
-            MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 1.2f)
-        };
-        _futureTrajectoryPaint = new SKPaint
-        {
-            Color = new SKColor(60, 60, 60, 180),
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1f,
-            IsAntialias = true,
-            StrokeCap = SKStrokeCap.Round
-        };
-        // Navigation trajectory: glow shadow + slightly brighter main line.
-        _navigationTrajectoryShadowPaint = new SKPaint
-        {
-            Color = new SKColor(0, 0, 0, 90),
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 4f,
-            IsAntialias = true,
-            StrokeCap = SKStrokeCap.Round,
-            MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 1.5f)
-        };
-        _navigationTrajectoryPaint = new SKPaint
-        {
-            Color = new SKColor(70, 70, 70, 200),
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 2f,
-            IsAntialias = true,
-            StrokeCap = SKStrokeCap.Round
-        };
-        _navigationTargetPaint = new SKPaint
-        {
-            Color = new SKColor(30, 30, 30, 200),
-            Style = SKPaintStyle.Fill,
-            IsAntialias = true
-        };
-        _objectPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
-        _playerShipPaint = new SKPaint { Color = new SKColor(85, 107, 47), Style = SKPaintStyle.Fill, IsAntialias = true };
-        _playerShipOutlinePaint = new SKPaint { Color = new SKColor(100, 122, 62), Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f, IsAntialias = true };
         _centerPaint = new SKPaint { Color = new SKColor(40, 40, 40), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
 
         _panelBgPaint = new SKPaint { Color = new SKColor(0, 0, 0, 200), Style = SKPaintStyle.Fill };
@@ -732,9 +681,9 @@ public sealed class GameSessionScreen : IScreen
                 }
                 else
                 {
-                    _objectPaint.Color = SpaceMapColorResolver.GetColor(
+                    var markerColor = SpaceMapColorResolver.GetColor(
                         state.Predicted.RenderObjectType, state.Predicted.RelationToPlayer);
-                    canvas.DrawCircle(sx, sy, r, _objectPaint);
+                    _depthRenderer.DrawSphericalMarker(canvas, sx, sy, r, markerColor);
                 }
             }
 
@@ -1086,16 +1035,7 @@ public sealed class GameSessionScreen : IScreen
             if (points.Count < 2)
                 continue;
 
-            for (int i = 1; i < points.Count; i++)
-            {
-                var from = points[i - 1];
-                var to = points[i];
-                var (fromX, fromY) = _camera.WorldToScreen(from.X, from.Y, width, height);
-                var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
-
-                canvas.DrawLine(fromX, fromY, toX, toY, _futureTrajectoryShadowPaint);
-                canvas.DrawLine(fromX, fromY, toX, toY, _futureTrajectoryPaint);
-            }
+            _depthRenderer.DrawFutureTrajectory(canvas, points, _camera, width, height);
         }
     }
 
@@ -1124,17 +1064,7 @@ public sealed class GameSessionScreen : IScreen
             {
                 var points = _navigationTrajectoryProjector.Project(predicted);
                 if (points.Count >= 2)
-                {
-                    for (int i = 1; i < points.Count; i++)
-                    {
-                        var from = points[i - 1];
-                        var to = points[i];
-                        var (fromX, fromY) = _camera.WorldToScreen(from.X, from.Y, width, height);
-                        var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
-                        canvas.DrawLine(fromX, fromY, toX, toY, _navigationTrajectoryShadowPaint);
-                        canvas.DrawLine(fromX, fromY, toX, toY, _navigationTrajectoryPaint);
-                    }
-                }
+                    _depthRenderer.DrawNavigationTrajectory(canvas, points, _camera, width, height);
 
                 DrawNavigationTargetMarker(canvas, predicted.NavigationTargetX.Value, predicted.NavigationTargetY!.Value, width, height);
             }
@@ -1144,7 +1074,7 @@ public sealed class GameSessionScreen : IScreen
     private void DrawNavigationTargetMarker(SKCanvas canvas, double worldX, double worldY, int width, int height)
     {
         var (x, y) = _camera.WorldToScreen(worldX, worldY, width, height);
-        canvas.DrawCircle(x, y, 1.5f, _navigationTargetPaint);
+        _depthRenderer.DrawNavigationTarget(canvas, x, y);
     }
 
     // ── Test seams for future trajectory ─────────────────────────
@@ -1385,8 +1315,11 @@ public sealed class GameSessionScreen : IScreen
         _playerShipGlyphPath.LineTo(right);
         _playerShipGlyphPath.Close();
 
-        canvas.DrawPath(_playerShipGlyphPath, _playerShipPaint);
-        canvas.DrawPath(_playerShipGlyphPath, _playerShipOutlinePaint);
+        _depthRenderer.DrawPlayerShipGlyph(
+            canvas,
+            _playerShipGlyphPath,
+            radius,
+            SpaceMapColorResolver.PlayerShipColor);
     }
 
     private void DrawEngineCommandPanel(SKCanvas canvas, BufferedSnapshot? buffered)
