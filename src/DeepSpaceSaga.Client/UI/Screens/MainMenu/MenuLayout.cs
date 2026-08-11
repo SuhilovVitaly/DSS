@@ -5,6 +5,7 @@ public enum MenuButton
     None,
     NewGame,
     Load,
+    Settings,
     Exit
 }
 
@@ -25,6 +26,7 @@ public sealed class MenuLayout
     public const float NewGameY = 150f;
     public const float LoadY = 224f;
     public const float StatusY = 296f;
+    public const float SettingsY = 298f;
     public const float ExitY = 404f;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
@@ -40,6 +42,7 @@ public sealed class MenuLayout
 
         if (IsInButton(lx, ly, NewGameY)) return MenuButton.NewGame;
         if (IsInButton(lx, ly, LoadY)) return MenuButton.Load;
+        if (IsInButton(lx, ly, SettingsY)) return MenuButton.Settings;
         if (IsInButton(lx, ly, ExitY)) return MenuButton.Exit;
         return MenuButton.None;
     }

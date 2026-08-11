@@ -27,12 +27,13 @@ public sealed class MainMenuScreen : IScreen
     {
         var hit = MenuLayout.HitTest(x, y, _screenWidth, _screenHeight);
 
-        if (hit == MenuButton.NewGame || hit == MenuButton.Exit)
+        if (hit == MenuButton.NewGame || hit == MenuButton.Settings || hit == MenuButton.Exit)
             _pressedButton = hit;
 
         return hit switch
         {
             MenuButton.NewGame => ScreenEvent.NewGame,
+            MenuButton.Settings => ScreenEvent.OpenSettings,
             MenuButton.Exit => ScreenEvent.Exit,
             _ => ScreenEvent.None
         };
@@ -42,7 +43,7 @@ public sealed class MainMenuScreen : IScreen
     {
         var hit = MenuLayout.HitTest(x, y, _screenWidth, _screenHeight);
         _hoveredButton = (hit == MenuButton.Load) ? MenuButton.None : hit;
-        return hit == MenuButton.NewGame || hit == MenuButton.Exit;
+        return hit == MenuButton.NewGame || hit == MenuButton.Settings || hit == MenuButton.Exit;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -67,6 +68,7 @@ public sealed class MainMenuScreen : IScreen
 
         DrawButton(canvas, pl, pt, MenuLayout.NewGameY, "NEW GAME", MenuButton.NewGame);
         DrawButton(canvas, pl, pt, MenuLayout.LoadY, "LOAD", MenuButton.Load);
+        DrawButton(canvas, pl, pt, MenuLayout.SettingsY, "SETTINGS", MenuButton.Settings);
         DrawButton(canvas, pl, pt, MenuLayout.ExitY, "EXIT", MenuButton.Exit);
     }
 
