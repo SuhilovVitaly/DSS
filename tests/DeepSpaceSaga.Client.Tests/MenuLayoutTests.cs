@@ -45,10 +45,17 @@ public class MenuLayoutTests
     }
 
     [Fact]
+    public void HitTest_Settings_center_returns_Settings()
+    {
+        var (x, y) = ButtonCenterInScreen(MenuLayout.SettingsY);
+        Assert.Equal(MenuButton.Settings, MenuLayout.HitTest(x, y, ScreenWidth, ScreenHeight));
+    }
+
+    [Fact]
     public void HitTest_between_buttons_returns_None()
     {
         float cx = ScreenWidth / 2f;
-        float midY = PanelTop + (MenuLayout.LoadY + MenuLayout.ExitY) / 2f;
+        float midY = PanelTop + (MenuLayout.SettingsY + MenuLayout.ButtonHeight + MenuLayout.ExitY) / 2f;
         Assert.Equal(MenuButton.None, MenuLayout.HitTest(cx, midY, ScreenWidth, ScreenHeight));
     }
 

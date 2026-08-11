@@ -25,5 +25,7 @@ public enum ScreenEvent
     Resume,
     MainMenu,
     QuickSave,
-    QuickLoad
+    QuickLoad,
+    OpenSettings,
+    CloseSettings
 }

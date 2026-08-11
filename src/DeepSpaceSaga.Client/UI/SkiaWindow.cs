@@ -4,6 +4,7 @@ using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
+using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using Silk.NET.Core;
@@ -42,6 +43,12 @@ public sealed class SkiaWindow : IDisposable
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
     private bool _closing;
+    private bool _isFocused = true;
+    // Deliberately not long.MinValue: Environment.TickCount64 - long.MinValue overflows,
+    // which would wrap around to a small/negative gap and wrongly suppress the very
+    // first Escape press of a session (before any real focus event has ever fired).
+    private long _focusRegainedAtMs = long.MinValue / 2;
+    private const long MenuOpenFocusRegainGuardMs = 1500;
 
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory)
     {
@@ -64,6 +71,7 @@ public sealed class SkiaWindow : IDisposable
         _window.Load += OnLoad;
         _window.Render += OnRender;
         _window.FramebufferResize += OnFramebufferResize;
+        _window.FocusChanged += OnFocusChanged;
         _window.Closing += OnClosing;
     }
 
@@ -76,6 +84,7 @@ public sealed class SkiaWindow : IDisposable
         {
             _window.Position = target.Bounds.Origin;
             _window.Size = target.VideoMode.Resolution ?? target.Bounds.Size;
+
         }
 
         _gl = _window.CreateOpenGL();
@@ -208,6 +217,31 @@ public sealed class SkiaWindow : IDisposable
             CreateRenderSurface();
     }
 
+    /// <summary>
+    /// While an OS overlay owns focus (e.g. Windows' Print Screen key opening the
+    /// Snipping Tool over this borderless window), the OS is still mid-transition
+    /// delivering/withholding key messages — polling during that window can read
+    /// garbage and misfire an edge (a phantom Escape) before focus even returns.
+    /// PollKeyboard is skipped entirely while unfocused, and state is re-baselined
+    /// the moment focus comes back — see
+    /// <see cref="KeyboardEdgeTracker.ResyncToCurrentState"/>.
+    /// </summary>
+    private void OnFocusChanged(bool isFocused)
+    {
+        bool? printScreenDown = _keyboard?.IsKeyPressed(Key.PrintScreen);
+        InterfaceLog.Write(
+            $"DIAG FocusChanged isFocused={isFocused} screen={_screens.Current.GetType().Name} " +
+            $"depth={_screens.Count} printScreenDown={printScreenDown}");
+
+        _isFocused = isFocused;
+
+        if (isFocused)
+        {
+            _focusRegainedAtMs = Environment.TickCount64;
+            _keyboardEdges.ResyncToCurrentState(_keyboard);
+        }
+    }
+
     private void CreateRenderSurface()
     {
         _surface?.Dispose();
@@ -274,11 +308,21 @@ public sealed class SkiaWindow : IDisposable
 
     private void PollKeyboard()
     {
-        if (_keyboard is null || _closing)
+        if (_keyboard is null || _closing || !_isFocused)
             return;
 
         var (pressedCount, releasedCount) = _keyboardEdges.PollBoth(
             _keyboard, _keyboardPressedKeys, _keyboardReleasedKeys);
+
+        if (pressedCount > 0 || releasedCount > 0)
+        {
+            InterfaceLog.Write(
+                $"DIAG PollKeyboard pressed=[{string.Join(',', _keyboardPressedKeys[..pressedCount])}] " +
+                $"released=[{string.Join(',', _keyboardReleasedKeys[..releasedCount])}] " +
+                $"screen={_screens.Current.GetType().Name} depth={_screens.Count} " +
+                $"msSinceFocusRegain={Environment.TickCount64 - _focusRegainedAtMs} " +
+                $"printScreenDown={_keyboard.IsKeyPressed(Key.PrintScreen)}");
+        }
 
         for (int i = 0; i < pressedCount; i++)
             _handleKeyboardEdge(_keyboardPressedKeys[i]);
@@ -311,6 +355,12 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task HandleScreenEvent(ScreenEvent evt)
     {
+        if (evt != ScreenEvent.None)
+        {
+            InterfaceLog.Write(
+                $"DIAG HandleScreenEvent evt={evt} screen={_screens.Current.GetType().Name} depth={_screens.Count}");
+        }
+
         await _transitionLock.WaitAsync();
         try
         {
@@ -336,6 +386,12 @@ public sealed class SkiaWindow : IDisposable
                     break;
                 case ScreenEvent.QuickLoad:
                     await QuickLoadAsync();
+                    break;
+                case ScreenEvent.OpenSettings:
+                    await OpenSettingsAsync();
+                    break;
+                case ScreenEvent.CloseSettings:
+                    await CloseOverlayAsync();
                     break;
             }
         }
@@ -423,7 +479,28 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is GameMenuScreen)
             return;
 
+        long msSinceFocusRegain = Environment.TickCount64 - _focusRegainedAtMs;
+        if (msSinceFocusRegain < MenuOpenFocusRegainGuardMs)
+        {
+            // Keep the menu hidden: an Escape landing this soon after the window
+            // regained OS focus is almost always fallout from whatever stole focus
+            // (e.g. Windows' Print Screen -> Snipping Tool) rather than a deliberate
+            // request to pause and open the menu. A real Escape press a beat later
+            // still opens it normally.
+            InterfaceLog.Write($"DIAG OpenGameMenu kept hidden msSinceFocusRegain={msSinceFocusRegain}");
+            return;
+        }
+
         await PushModalAsync(new GameMenuScreen());
+    }
+
+    private async Task OpenSettingsAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is SettingsScreen)
+            return;
+
+        await PushModalAsync(new SettingsScreen());
     }
 
     private async Task CloseOverlayAsync()

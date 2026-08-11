@@ -1,19 +1,16 @@
-namespace DeepSpaceSaga.Client.UI.Screens.MainMenu;
+namespace DeepSpaceSaga.Client.UI.Screens.Settings;
 
-public enum MenuButton
+public enum SettingsButton
 {
     None,
-    NewGame,
-    Load,
-    Settings,
     Exit
 }
 
 /// <summary>
-/// Layout and hit-test geometry for the MainMenu panel.
-/// All dimensions in logical (window) coordinates.
+/// Layout and hit-test geometry for the Settings overlay panel.
+/// Same panel size and position as MainMenu (500×550).
 /// </summary>
-public sealed class MenuLayout
+public sealed class SettingsLayout
 {
     public const float PanelWidth = 500f;
     public const float PanelHeight = 550f;
@@ -22,17 +19,12 @@ public sealed class MenuLayout
     public const float ButtonHeight = 58f;
 
     public const float TitleY = 70f;
-    public const float VersionY = 110f;
-    public const float NewGameY = 150f;
-    public const float LoadY = 224f;
-    public const float StatusY = 296f;
-    public const float SettingsY = 298f;
-    public const float ExitY = 404f;
+    public const float ExitY = 470f;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
 
-    public static MenuButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight)
+    public static SettingsButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight)
     {
         float panelLeft = PanelLeft(screenWidth);
         float panelTop = PanelTop(screenHeight);
@@ -40,11 +32,8 @@ public sealed class MenuLayout
         float lx = screenX - panelLeft;
         float ly = screenY - panelTop;
 
-        if (IsInButton(lx, ly, NewGameY)) return MenuButton.NewGame;
-        if (IsInButton(lx, ly, LoadY)) return MenuButton.Load;
-        if (IsInButton(lx, ly, SettingsY)) return MenuButton.Settings;
-        if (IsInButton(lx, ly, ExitY)) return MenuButton.Exit;
-        return MenuButton.None;
+        if (IsInButton(lx, ly, ExitY)) return SettingsButton.Exit;
+        return SettingsButton.None;
     }
 
     private static bool IsInButton(float localX, float localY, float buttonY)

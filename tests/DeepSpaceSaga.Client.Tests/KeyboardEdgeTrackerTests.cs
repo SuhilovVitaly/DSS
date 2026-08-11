@@ -128,6 +128,28 @@ public class KeyboardEdgeTrackerTests
         Assert.Empty(r);
     }
 
+    [Fact]
+    public void Resync_on_focus_regain_suppresses_phantom_escape_edge()
+    {
+        // Regression: an OS overlay (e.g. Print Screen -> Windows Snipping Tool)
+        // stealing and returning focus can leave Escape reporting as "down" without
+        // a real edge ever having been polled. Resyncing on focus-regain must adopt
+        // that state as the baseline instead of surfacing it as a fresh press —
+        // otherwise it pops the game menu open on its own.
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new HashSet<Key> { Key.Escape };
+
+        tracker.ResyncToCurrentState(pressed.Contains);
+        Assert.Empty(Poll(tracker, pressed)); // no phantom press edge
+
+        pressed.Remove(Key.Escape);
+        Assert.Empty(Poll(tracker, pressed)); // release of a never-reported press is also silent
+
+        // A genuine Escape press afterwards must still open the menu.
+        pressed.Add(Key.Escape);
+        Assert.Equal([Key.Escape], Poll(tracker, pressed));
+    }
+
     private static Key[] Poll(KeyboardEdgeTracker tracker, HashSet<Key> pressed)
     {
         Span<Key> buffer = stackalloc Key[16];

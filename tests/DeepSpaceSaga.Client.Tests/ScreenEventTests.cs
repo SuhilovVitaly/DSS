@@ -2,6 +2,7 @@ using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
+using DeepSpaceSaga.Client.UI.Screens.Settings;
 using Silk.NET.Input;
 using SkiaSharp;
 
@@ -56,6 +57,15 @@ public class ScreenEventTests
         var (x, y) = ButtonCenter(MenuLayout.ExitY);
         TriggerRender(screen);
         Assert.Equal(ScreenEvent.Exit, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void MainMenu_Settings_click_returns_OpenSettings()
+    {
+        var screen = new MainMenuScreen();
+        var (x, y) = ButtonCenter(MenuLayout.SettingsY);
+        TriggerRender(screen);
+        Assert.Equal(ScreenEvent.OpenSettings, screen.OnMouseDown(x, y));
     }
 
     [Fact]
@@ -145,6 +155,67 @@ public class ScreenEventTests
         var screen = new GameMenuScreen();
         TriggerGameRender(screen);
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.A));
+    }
+
+    // --- Settings tests ---
+
+    private static float SettingsPanelLeft => SettingsLayout.PanelLeft(ScreenWidth);
+    private static float SettingsPanelTop => SettingsLayout.PanelTop(ScreenHeight);
+
+    private static (float x, float y) SettingsButtonCenter(float buttonLocalY)
+    {
+        float bx = SettingsPanelLeft + (SettingsLayout.PanelWidth - SettingsLayout.ButtonWidth) / 2f;
+        return (bx + SettingsLayout.ButtonWidth / 2f,
+                SettingsPanelTop + buttonLocalY + SettingsLayout.ButtonHeight / 2f);
+    }
+
+    private static void TriggerSettingsRender(IScreen screen)
+    {
+        using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, ScreenWidth, ScreenHeight);
+    }
+
+    [Fact]
+    public void Settings_Exit_click_returns_CloseSettings()
+    {
+        var screen = new SettingsScreen();
+        var (x, y) = SettingsButtonCenter(SettingsLayout.ExitY);
+        TriggerSettingsRender(screen);
+        Assert.Equal(ScreenEvent.CloseSettings, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void Settings_Esc_returns_CloseSettings()
+    {
+        var screen = new SettingsScreen();
+        TriggerSettingsRender(screen);
+        Assert.Equal(ScreenEvent.CloseSettings, screen.OnKeyDown(Key.Escape));
+    }
+
+    [Fact]
+    public void Settings_other_key_returns_None()
+    {
+        var screen = new SettingsScreen();
+        TriggerSettingsRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.A));
+    }
+
+    [Fact]
+    public void Settings_click_outside_button_returns_None()
+    {
+        var screen = new SettingsScreen();
+        TriggerSettingsRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(0, 0));
+    }
+
+    [Fact]
+    public void Settings_panel_same_size_and_position_as_MainMenu()
+    {
+        Assert.Equal(MenuLayout.PanelWidth, SettingsLayout.PanelWidth);
+        Assert.Equal(MenuLayout.PanelHeight, SettingsLayout.PanelHeight);
+        Assert.Equal(MenuLayout.PanelLeft(ScreenWidth), SettingsLayout.PanelLeft(ScreenWidth));
+        Assert.Equal(MenuLayout.PanelTop(ScreenHeight), SettingsLayout.PanelTop(ScreenHeight));
     }
 
 }

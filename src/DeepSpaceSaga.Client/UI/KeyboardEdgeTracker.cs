@@ -183,6 +183,45 @@ internal sealed class KeyboardEdgeTracker
         previous = isPressed;
     }
 
+    /// <summary>
+    /// Re-baselines every tracked key to whatever the keyboard currently reports,
+    /// without emitting press/release edges. Call this when the window regains focus:
+    /// an OS-level overlay stealing focus (e.g. Windows' Print Screen key opening the
+    /// Snipping Tool over a borderless game window) can leave the underlying key-state
+    /// array stale, which otherwise surfaces on the next poll as a spurious edge — most
+    /// visibly a phantom Escape that pops the game menu open right as focus returns.
+    /// </summary>
+    public void ResyncToCurrentState(IKeyboard? keyboard)
+    {
+        if (keyboard is null)
+            return;
+
+        ResyncToCurrentState(keyboard.IsKeyPressed);
+    }
+
+    /// <summary>Test seam.</summary>
+    internal void ResyncToCurrentState(Func<Key, bool> isKeyPressed)
+    {
+        _prevEscPressed = isKeyPressed(Key.Escape);
+        _prevIPressed = isKeyPressed(Key.I)
+            && (isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight));
+        _prevCtrlLeftPressed = isKeyPressed(Key.ControlLeft);
+        _prevCtrlRightPressed = isKeyPressed(Key.ControlRight);
+        _prevSpacePressed = isKeyPressed(Key.Space);
+        _prev1Pressed = isKeyPressed(Key.Number1);
+        _prev2Pressed = isKeyPressed(Key.Number2);
+        _prev3Pressed = isKeyPressed(Key.Number3);
+        _prev4Pressed = isKeyPressed(Key.Number4);
+        _prev5Pressed = isKeyPressed(Key.Number5);
+        _prevUpPressed = isKeyPressed(Key.Up);
+        _prevDownPressed = isKeyPressed(Key.Down);
+        _prevLeftPressed = isKeyPressed(Key.Left);
+        _prevRightPressed = isKeyPressed(Key.Right);
+        _prevF5Pressed = isKeyPressed(Key.F5);
+        _prevF9Pressed = isKeyPressed(Key.F9);
+        _prevCPressed = isKeyPressed(Key.C);
+    }
+
     private static void AddUpEdge(
         Key key, bool isPressed, ref bool previous,
         Span<Key> released, ref int count)
