@@ -246,11 +246,10 @@ public sealed class GameSessionScreen : IScreen
             IsAntialias = true,
             PathEffect = SKPathEffect.CreateDash(new float[] { 8f, 6f }, 0f)
         };
-        // Navigation trajectory: visually distinct from the future trajectory —
-        // golden dashed line (ТЗ 4.7; exact shade is UI polish, _futureTrajectoryPaint untouched).
+        // Navigation trajectory: same gray dashed style as future trajectory.
         _navigationTrajectoryPaint = new SKPaint
         {
-            Color = new SKColor(255, 200, 60),
+            Color = new SKColor(30, 30, 30, 140),
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 2f,
             IsAntialias = true,
@@ -258,7 +257,7 @@ public sealed class GameSessionScreen : IScreen
         };
         _navigationTargetPaint = new SKPaint
         {
-            Color = new SKColor(255, 40, 40),
+            Color = new SKColor(30, 30, 30, 200),
             Style = SKPaintStyle.Fill,
             IsAntialias = true
         };
@@ -1086,6 +1085,9 @@ public sealed class GameSessionScreen : IScreen
     /// </summary>
     private void DrawNavigationTrajectories(SKCanvas canvas, int width, int height)
     {
+        if (!_showTrajectoryPrediction)
+            return;
+
         var snapshot = _buffer.Latest?.Snapshot;
         if (snapshot is not null)
         {
@@ -1135,7 +1137,7 @@ public sealed class GameSessionScreen : IScreen
     private void DrawNavigationTargetMarker(SKCanvas canvas, double worldX, double worldY, int width, int height)
     {
         var (x, y) = _camera.WorldToScreen(worldX, worldY, width, height);
-        canvas.DrawCircle(x, y, 5f, _navigationTargetPaint);
+        canvas.DrawCircle(x, y, 1.5f, _navigationTargetPaint);
     }
 
     // ── Test seams for future trajectory ─────────────────────────
