@@ -20,6 +20,7 @@ public sealed class GameSessionScreen : IScreen
     private readonly FutureTrajectoryProjector _futureTrajectoryProjector;
     private readonly NavigationTrajectoryProjector _navigationTrajectoryProjector;
     private readonly ObjectLabelRenderer _labelRenderer;
+    private readonly TacticalMapDepthRenderer _depthRenderer;
     private readonly List<ObjectRenderState> _renderStates = new();
     private readonly Dictionary<string, ObjectMotionSnapshot> _pausedVisualAnchors = new(StringComparer.Ordinal);
     private readonly Dictionary<string, VisualCorrection> _visualCorrections = new(StringComparer.Ordinal);
@@ -33,14 +34,10 @@ public sealed class GameSessionScreen : IScreen
     private readonly HashSet<string> _initialTrailBootstrapObjectIds = new(StringComparer.Ordinal);
     private readonly GameSessionHandle? _handle;
     private readonly Func<long> _timestampProvider;
+    private readonly bool _showTrajectoryPrediction;
 
     // Object paints
     private readonly SKPaint _trailPaint;
-    private readonly SKPaint _futureTrajectoryPaint;
-    private readonly SKPaint _navigationTrajectoryPaint;
-    private readonly SKPaint _objectPaint;
-    private readonly SKPaint _playerShipPaint;
-    private readonly SKPaint _playerShipOutlinePaint;
     private readonly SKPaint _centerPaint;
     private readonly SKPath _playerShipGlyphPath = new();
 
@@ -117,8 +114,10 @@ public sealed class GameSessionScreen : IScreen
     private bool _isFocusAttachedToPlayer = true;
 
     // Navigation (Ctrl+Click) state — ТЗ: Navigation Waypoints
-    private bool _isCtrlDown;
-    private (double X, double Y)? _pendingNavigationTarget;
+    private bool _isCtrlLeftDown;
+    private bool _isCtrlRightDown;
+    private bool IsCtrlDown => _isCtrlLeftDown || _isCtrlRightDown;
+
 
     // Layout constants
     private const double ZoomStepFactor = 1.25;
@@ -180,6 +179,7 @@ public sealed class GameSessionScreen : IScreen
         new(">>", ShipEngineCommandTypes.TurnRightUntilCancel, "button_turn_right_until_cancel.png"),
         new("<<", ShipEngineCommandTypes.TurnLeftUntilCancel, "button_turn_left_until_cancel.png"),
         new("°", ShipEngineCommandTypes.MaintainCourse, "button_maintain_course.png"),
+        new("X", ShipEngineCommandTypes.CancelAll, "button_cancel_all.png"),
     ];
 
     // ── Test seams ──────────────────────────────────────────────
@@ -215,12 +215,14 @@ public sealed class GameSessionScreen : IScreen
         SnapshotBuffer buffer,
         IMotionPredictor predictor,
         GameSessionHandle? handle = null,
-        Func<long>? timestampProvider = null)
+        Func<long>? timestampProvider = null,
+        bool showTrajectoryPrediction = true)
     {
         _buffer = buffer;
         _predictor = predictor;
         _handle = handle;
         _timestampProvider = timestampProvider ?? Stopwatch.GetTimestamp;
+        _showTrajectoryPrediction = showTrajectoryPrediction;
         _uiTimeStartTimestamp = _timestampProvider();
 
         _camera = new CameraState(focusX: 10000, focusY: 10000, pixelsPerWorldUnit: 1.0);
@@ -229,29 +231,9 @@ public sealed class GameSessionScreen : IScreen
         _futureTrajectoryProjector = new FutureTrajectoryProjector(_predictor);
         _navigationTrajectoryProjector = new NavigationTrajectoryProjector();
         _labelRenderer = new ObjectLabelRenderer();
+        _depthRenderer = new TacticalMapDepthRenderer();
 
         _trailPaint = new SKPaint { Color = new SKColor(190, 190, 190, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 2f, IsAntialias = true };
-        _futureTrajectoryPaint = new SKPaint
-        {
-            Color = new SKColor(30, 30, 30, 140),
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1f,
-            IsAntialias = true,
-            PathEffect = SKPathEffect.CreateDash(new float[] { 8f, 6f }, 0f)
-        };
-        // Navigation trajectory: visually distinct from the future trajectory —
-        // golden dashed line (ТЗ 4.7; exact shade is UI polish, _futureTrajectoryPaint untouched).
-        _navigationTrajectoryPaint = new SKPaint
-        {
-            Color = new SKColor(255, 200, 60),
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 2f,
-            IsAntialias = true,
-            PathEffect = SKPathEffect.CreateDash(new float[] { 10f, 8f }, 0f)
-        };
-        _objectPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
-        _playerShipPaint = new SKPaint { Color = new SKColor(85, 107, 47), Style = SKPaintStyle.Fill, IsAntialias = true };
-        _playerShipOutlinePaint = new SKPaint { Color = new SKColor(100, 122, 62), Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f, IsAntialias = true };
         _centerPaint = new SKPaint { Color = new SKColor(40, 40, 40), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
 
         _panelBgPaint = new SKPaint { Color = new SKColor(0, 0, 0, 200), Style = SKPaintStyle.Fill };
@@ -287,7 +269,11 @@ public sealed class GameSessionScreen : IScreen
     // ── IScreen ─────────────────────────────────────────────────
 
     public void OnActivated() { }
-    public void OnDeactivated() { }
+    public void OnDeactivated()
+    {
+        _isCtrlLeftDown = false;
+        _isCtrlRightDown = false;
+    }
 
     public ScreenEvent OnMouseDown(float x, float y)
     {
@@ -351,7 +337,7 @@ public sealed class GameSessionScreen : IScreen
         // The camera focus is NOT changed and no command is sent when the click lands
         // on an object (hit-test includes a +4 px slack) — panels were already consumed
         // above. AC2, AC1 preserved.
-        if (_isCtrlDown)
+        if (IsCtrlDown)
         {
             var (navWorldX, navWorldY) = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
             if (!HitTestObject(x, y))
@@ -396,9 +382,21 @@ public sealed class GameSessionScreen : IScreen
 
     public ScreenEvent OnKeyDown(Key key)
     {
-        if (key == Key.ControlLeft || key == Key.ControlRight)
+        if (key == Key.ControlLeft)
         {
-            _isCtrlDown = true;
+            _isCtrlLeftDown = true;
+            return ScreenEvent.None;
+        }
+
+        if (key == Key.ControlRight)
+        {
+            _isCtrlRightDown = true;
+            return ScreenEvent.None;
+        }
+
+        if (key == Key.C && IsCtrlDown)
+        {
+            _isFocusAttachedToPlayer = true;
             return ScreenEvent.None;
         }
 
@@ -450,8 +448,10 @@ public sealed class GameSessionScreen : IScreen
 
     public void OnKeyUp(Key key)
     {
-        if (key == Key.ControlLeft || key == Key.ControlRight)
-            _isCtrlDown = false;
+        if (key == Key.ControlLeft)
+            _isCtrlLeftDown = false;
+        else if (key == Key.ControlRight)
+            _isCtrlRightDown = false;
     }
 
     // ── Speed control ───────────────────────────────────────────
@@ -519,13 +519,38 @@ public sealed class GameSessionScreen : IScreen
     /// </summary>
     private void SendNavigationCommand(double worldX, double worldY)
     {
-        var playerShipObjectId = _buffer.LatestPrediction?.BufferedSnapshot.Snapshot.PlayerShipObjectId;
-        if (_handle is null || string.IsNullOrWhiteSpace(playerShipObjectId))
+        var buffer = _buffer.LatestPrediction;
+        if (_handle is null || buffer is null)
             return;
+
+        var playerShipObjectId = buffer.BufferedSnapshot.Snapshot.PlayerShipObjectId;
+        if (string.IsNullOrWhiteSpace(playerShipObjectId))
+            return;
+
+        // Client-side precheck: predict current ship state and validate target safety.
+        // Avoids sending a command the engine would reject, and prevents drawing a
+        // looping pending trajectory.
+        var motion = _predictor.Predict(
+            FindPlayerShipMotion(buffer.BufferedSnapshot.Snapshot) ?? throw new InvalidOperationException("Player ship missing"),
+            buffer.EffectivePredictionDeltaMs);
+
+        // Use the active navigation angular inertia if present; otherwise fall back
+        // to the engine module's known value (4 deg/sec). Without an active cycle
+        // the snapshot carries 0, but the safety check needs the real value.
+        int angularInertia = motion.NavigationAngularInertiaDegPerSec > 0
+            ? motion.NavigationAngularInertiaDegPerSec
+            : 4;
+
+        if (!NavigationWaypointMath.IsTargetSafe(
+                motion.X, motion.Y, motion.Direction, motion.SpeedKmS,
+                worldX, worldY,
+                angularInertia))
+        {
+            return;
+        }
 
         _ = _handle.SendEngineCommandAsync(
             playerShipObjectId, PlayerEngineModuleId, ShipEngineCommandTypes.NavigateToPoint, worldX, worldY);
-        _pendingNavigationTarget = (worldX, worldY);
     }
 
     /// <summary>
@@ -656,9 +681,9 @@ public sealed class GameSessionScreen : IScreen
                 }
                 else
                 {
-                    _objectPaint.Color = SpaceMapColorResolver.GetColor(
+                    var markerColor = SpaceMapColorResolver.GetColor(
                         state.Predicted.RenderObjectType, state.Predicted.RelationToPlayer);
-                    canvas.DrawCircle(sx, sy, r, _objectPaint);
+                    _depthRenderer.DrawSphericalMarker(canvas, sx, sy, r, markerColor);
                 }
             }
 
@@ -995,6 +1020,9 @@ public sealed class GameSessionScreen : IScreen
 
     private void DrawFutureTrajectories(SKCanvas canvas, int width, int height)
     {
+        if (!_showTrajectoryPrediction)
+            return;
+
         foreach (var state in _renderStates)
         {
             if (!state.IsPlayerShip)
@@ -1007,15 +1035,7 @@ public sealed class GameSessionScreen : IScreen
             if (points.Count < 2)
                 continue;
 
-            for (int i = 1; i < points.Count; i++)
-            {
-                var from = points[i - 1];
-                var to = points[i];
-                var (fromX, fromY) = _camera.WorldToScreen(from.X, from.Y, width, height);
-                var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
-
-                canvas.DrawLine(fromX, fromY, toX, toY, _futureTrajectoryPaint);
-            }
+            _depthRenderer.DrawFutureTrajectory(canvas, points, _camera, width, height);
         }
     }
 
@@ -1031,18 +1051,8 @@ public sealed class GameSessionScreen : IScreen
     /// </summary>
     private void DrawNavigationTrajectories(SKCanvas canvas, int width, int height)
     {
-        var snapshot = _buffer.Latest?.Snapshot;
-        if (snapshot is not null)
-        {
-            var playerShip = FindPlayerShipMotion(snapshot);
-            bool confirmed = playerShip?.NavigationTargetX is not null;
-            bool rejected = !snapshot.CommandResults.IsDefaultOrEmpty &&
-                            snapshot.CommandResults.Any(r =>
-                                r.CommandType == ShipEngineCommandTypes.NavigateToPoint &&
-                                r.Status == CommandResultStatus.Rejected);
-            if (confirmed || rejected)
-                _pendingNavigationTarget = null;
-        }
+        if (!_showTrajectoryPrediction)
+            return;
 
         foreach (var state in _renderStates)
         {
@@ -1053,25 +1063,18 @@ public sealed class GameSessionScreen : IScreen
             if (predicted.NavigationTargetX is not null)
             {
                 var points = _navigationTrajectoryProjector.Project(predicted);
-                if (points.Count < 2)
-                    continue;
+                if (points.Count >= 2)
+                    _depthRenderer.DrawNavigationTrajectory(canvas, points, _camera, width, height);
 
-                for (int i = 1; i < points.Count; i++)
-                {
-                    var from = points[i - 1];
-                    var to = points[i];
-                    var (fromX, fromY) = _camera.WorldToScreen(from.X, from.Y, width, height);
-                    var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
-                    canvas.DrawLine(fromX, fromY, toX, toY, _navigationTrajectoryPaint);
-                }
-            }
-            else if (_pendingNavigationTarget is { } pending)
-            {
-                var (sx, sy) = _camera.WorldToScreen(predicted.X, predicted.Y, width, height);
-                var (tx, ty) = _camera.WorldToScreen(pending.X, pending.Y, width, height);
-                canvas.DrawLine(sx, sy, tx, ty, _navigationTrajectoryPaint);
+                DrawNavigationTargetMarker(canvas, predicted.NavigationTargetX.Value, predicted.NavigationTargetY!.Value, width, height);
             }
         }
+    }
+
+    private void DrawNavigationTargetMarker(SKCanvas canvas, double worldX, double worldY, int width, int height)
+    {
+        var (x, y) = _camera.WorldToScreen(worldX, worldY, width, height);
+        _depthRenderer.DrawNavigationTarget(canvas, x, y);
     }
 
     // ── Test seams for future trajectory ─────────────────────────
@@ -1312,8 +1315,11 @@ public sealed class GameSessionScreen : IScreen
         _playerShipGlyphPath.LineTo(right);
         _playerShipGlyphPath.Close();
 
-        canvas.DrawPath(_playerShipGlyphPath, _playerShipPaint);
-        canvas.DrawPath(_playerShipGlyphPath, _playerShipOutlinePaint);
+        _depthRenderer.DrawPlayerShipGlyph(
+            canvas,
+            _playerShipGlyphPath,
+            radius,
+            SpaceMapColorResolver.PlayerShipColor);
     }
 
     private void DrawEngineCommandPanel(SKCanvas canvas, BufferedSnapshot? buffered)

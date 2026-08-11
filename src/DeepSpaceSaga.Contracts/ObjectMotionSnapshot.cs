@@ -32,8 +32,23 @@ public sealed record ObjectMotionSnapshot(
     /// 0 when no navigation cycle is active.
     /// </summary>
     int NavigationAngularInertiaDegPerSec = 0,
+    /// <summary>
+    /// Locked straight-line course for the active navigation cycle (degrees).
+    /// When non-null the ship has locked onto a course and should not turn further —
+    /// client-side prediction must use NavigationWaypointMath instead of generic turn steps.
+    /// </summary>
+    double? NavigationLockedCourseDegrees = null,
     string? ObjectType = null,
     string? RelationToPlayer = null,
     string? DisplayName = null,
     string? RenderObjectType = null,
-    double? MaxSpeedKmS = null);
+    double? MaxSpeedKmS = null,
+    /// <summary>
+    /// Current staged navigation phase for <see cref="ShipEngineCommandTypes.NavigateToPoint"/>.
+    /// Null means standard approach for saves/snapshots created before staged navigation.
+    /// </summary>
+    string? NavigationPhase = null,
+    /// <summary>Escape course used by the close-target escape phases, degrees.</summary>
+    double? NavigationEscapeCourseDegrees = null,
+    /// <summary>Required distance from the target before leaving the escape-depart phase.</summary>
+    double? NavigationRequiredDepartureDistance = null);

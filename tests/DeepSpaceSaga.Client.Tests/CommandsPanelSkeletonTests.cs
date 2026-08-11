@@ -121,7 +121,7 @@ public class CommandsPanelSkeletonTests
         Render(fixture.Screen);
 
         Assert.Equal(ScreenWidth / 2f, fixture.Screen.LastCommandPanelRect.MidX, precision: 3);
-        Assert.Equal(8, fixture.Screen.EngineCommandButtonRects.Count);
+        Assert.Equal(9, fixture.Screen.EngineCommandButtonRects.Count);
     }
 
     [Fact]

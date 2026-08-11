@@ -46,16 +46,31 @@ internal sealed class NavigationTrajectoryProjector
 
         points.Add(new FutureTrajectoryPoint(x, y));
 
-        // Phase until the first cycle step: straight flight with the CURRENT course
-        // (the engine rolls the motion forward to the completion time before deciding
-        // the turn).
+        // Phase until the first cycle step: straight flight with the CURRENT course.
+        double phaseStartX = x, phaseStartY = y;
         (x, y) = AdvanceStraight(x, y, direction, speedKmS, phaseMs);
+
+        // Check segment arrival after phase flight.
+        var phaseArrival = NavigationWaypointMath.CheckSegmentArrival(
+            phaseStartX, phaseStartY, x, y, targetX, targetY);
+        if (phaseArrival.IsArrived)
+        {
+            points.Add(new FutureTrajectoryPoint(phaseArrival.ClosestX, phaseArrival.ClosestY));
+            return points;
+        }
+
         points.Add(new FutureTrajectoryPoint(x, y));
 
         long elapsedMs = phaseMs;
+        double? lockedCourse = predicted.NavigationLockedCourseDegrees;
+        string? navigationPhase = predicted.NavigationPhase;
+        double? escapeCourse = predicted.NavigationEscapeCourseDegrees;
+        double? requiredDepartureDistance = predicted.NavigationRequiredDepartureDistance;
         while (elapsedMs < FutureTrajectoryHorizonMs)
         {
-            var step = NavigationWaypointMath.Step(
+            double stepStartX = x, stepStartY = y;
+
+            var step = NavigationWaypointMath.StagedStep(
                 x,
                 y,
                 direction,
@@ -63,19 +78,64 @@ internal sealed class NavigationTrajectoryProjector
                 targetX,
                 targetY,
                 turnStepDegrees,
-                predicted.NavigationAngularInertiaDegPerSec);
+                predicted.NavigationAngularInertiaDegPerSec,
+                stepTimeMs: intervalMs,
+                phase: navigationPhase,
+                lockedCourseDegrees: lockedCourse,
+                escapeCourseDegrees: escapeCourse,
+                requiredDepartureDistance: requiredDepartureDistance);
 
-            if (step.IsArrived)
-                break;
+            lockedCourse = step.LockedCourseDegrees ?? lockedCourse;
+            navigationPhase = step.NextNavigationPhase ?? navigationPhase;
+            escapeCourse = step.EscapeCourseDegrees ?? escapeCourse;
+            requiredDepartureDistance = step.RequiredDepartureDistance ?? requiredDepartureDistance;
+            if (step.NextNavigationPhase == "Approach")
+            {
+                lockedCourse = null;
+            }
 
             direction = NormalizeDirection(direction + step.TurnDeltaDegrees);
+
+            if (step.IsArrived)
+            {
+                // Snap final point at the closest approach to the target on this segment.
+                (double cx, double cy) = ClosestApproach(x, y, direction, speedKmS, intervalMs, targetX, targetY);
+                points.Add(new FutureTrajectoryPoint(cx, cy));
+                break;
+            }
+
             (x, y) = AdvanceStraight(x, y, direction, speedKmS, intervalMs);
             points.Add(new FutureTrajectoryPoint(x, y));
+
+            // Check segment arrival after this advance.
+            var segArrival = NavigationWaypointMath.CheckSegmentArrival(
+                stepStartX, stepStartY, x, y, targetX, targetY);
+            if (segArrival.IsArrived)
+            {
+                points[^1] = new FutureTrajectoryPoint(segArrival.ClosestX, segArrival.ClosestY);
+                break;
+            }
 
             elapsedMs += intervalMs;
         }
 
         return points;
+    }
+
+    private static (double X, double Y) ClosestApproach(
+        double x, double y, double directionDegrees, double speedKmS, long intervalMs,
+        double targetX, double targetY)
+    {
+        double stepDist = speedKmS * (intervalMs / 1000.0) * 10.0;
+        double angleRad = directionDegrees * Math.PI / 180.0;
+        double segDx = stepDist * Math.Sin(angleRad);
+        double segDy = -stepDist * Math.Cos(angleRad);
+        double tDx = targetX - x;
+        double tDy = targetY - y;
+        double dot = tDx * segDx + tDy * segDy;
+        double lenSq = segDx * segDx + segDy * segDy;
+        double t = lenSq > 0 ? Math.Clamp(dot / lenSq, 0.0, 1.0) : 0.0;
+        return (x + t * segDx, y + t * segDy);
     }
 
     private static (double X, double Y) AdvanceStraight(
