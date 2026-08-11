@@ -4,7 +4,7 @@ public enum SettingsButton
 {
     None,
     MonitorCombo,
-    InterfaceScaleCombo,
+    UiScaleCombo,
     Exit
 }
 
@@ -30,11 +30,11 @@ public sealed class SettingsLayout
     public const float MonitorOptionHeight = 36f;
     public const float MonitorNoteY = 218f;
 
-    public const float InterfaceScaleLabelY = 270f;
-    public const float InterfaceScaleComboY = 292f;
-    public const float InterfaceScaleComboWidth = 320f;
-    public const float InterfaceScaleComboHeight = 40f;
-    public const float InterfaceScaleOptionHeight = 36f;
+    public const float UiScaleLabelY = 270f;
+    public const float UiScaleComboY = 292f;
+    public const float UiScaleComboWidth = 320f;
+    public const float UiScaleComboHeight = 40f;
+    public const float UiScaleOptionHeight = 36f;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
@@ -48,7 +48,7 @@ public sealed class SettingsLayout
         float ly = screenY - panelTop;
 
         if (IsInMonitorCombo(lx, ly)) return SettingsButton.MonitorCombo;
-        if (IsInInterfaceScaleCombo(lx, ly)) return SettingsButton.InterfaceScaleCombo;
+        if (IsInUiScaleCombo(lx, ly)) return SettingsButton.UiScaleCombo;
         if (IsInButton(lx, ly, ExitY)) return SettingsButton.Exit;
         return SettingsButton.None;
     }
@@ -85,7 +85,7 @@ public sealed class SettingsLayout
     /// Hit-tests the open interface-scale dropdown's option rows (rendered directly
     /// below the combo box). Returns the option index, or -1 if none was hit.
     /// </summary>
-    public static int HitTestInterfaceScaleOption(
+    public static int HitTestUiScaleOption(
         float screenX, float screenY, int screenWidth, int screenHeight, int optionCount)
     {
         float panelLeft = PanelLeft(screenWidth);
@@ -94,15 +94,15 @@ public sealed class SettingsLayout
         float lx = screenX - panelLeft;
         float ly = screenY - panelTop;
 
-        float bx = (PanelWidth - InterfaceScaleComboWidth) / 2f;
-        if (lx < bx || lx > bx + InterfaceScaleComboWidth)
+        float bx = (PanelWidth - UiScaleComboWidth) / 2f;
+        if (lx < bx || lx > bx + UiScaleComboWidth)
             return -1;
 
-        float listTop = InterfaceScaleComboY + InterfaceScaleComboHeight;
+        float listTop = UiScaleComboY + UiScaleComboHeight;
         for (int i = 0; i < optionCount; i++)
         {
-            float optionTop = listTop + i * InterfaceScaleOptionHeight;
-            if (ly >= optionTop && ly <= optionTop + InterfaceScaleOptionHeight)
+            float optionTop = listTop + i * UiScaleOptionHeight;
+            if (ly >= optionTop && ly <= optionTop + UiScaleOptionHeight)
                 return i;
         }
 
@@ -116,11 +116,11 @@ public sealed class SettingsLayout
             && localY >= MonitorComboY && localY <= MonitorComboY + MonitorComboHeight;
     }
 
-    private static bool IsInInterfaceScaleCombo(float localX, float localY)
+    private static bool IsInUiScaleCombo(float localX, float localY)
     {
-        float bx = (PanelWidth - InterfaceScaleComboWidth) / 2f;
-        return localX >= bx && localX <= bx + InterfaceScaleComboWidth
-            && localY >= InterfaceScaleComboY && localY <= InterfaceScaleComboY + InterfaceScaleComboHeight;
+        float bx = (PanelWidth - UiScaleComboWidth) / 2f;
+        return localX >= bx && localX <= bx + UiScaleComboWidth
+            && localY >= UiScaleComboY && localY <= UiScaleComboY + UiScaleComboHeight;
     }
 
     private static bool IsInButton(float localX, float localY, float buttonY)

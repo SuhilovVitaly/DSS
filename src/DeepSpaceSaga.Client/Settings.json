@@ -10,6 +10,6 @@
   "gameSettings": {
     "showTrajectoryPrediction": true,
     "selectedMonitorIndex": 0,
-    "interfaceScale": 100
+    "uiScale": 1.0
   }
 }
