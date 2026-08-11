@@ -82,14 +82,27 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         if (untilNextTurnMs > 0)
         {
             long segmentMs = Math.Min(remainingMs, untilNextTurnMs);
+            double prevX = x, prevY = y;
             AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, segmentMs);
             remainingMs -= segmentMs;
             untilNextTurnMs -= segmentMs;
+
+            // Check segment arrival after phase (catch pass-through).
+            var phaseArrival = NavigationWaypointMath.CheckSegmentArrival(
+                prevX, prevY, x, y, targetX, targetY);
+            if (phaseArrival.IsArrived)
+            {
+                x = phaseArrival.ClosestX;
+                y = phaseArrival.ClosestY;
+                return ClearNavigation(state, x, y, direction, untilNextTurnMs);
+            }
         }
 
         // Step loop: each full interval, decide turn via shared navigation math.
         while (remainingMs >= intervalMs)
         {
+            double stepStartX = x, stepStartY = y;
+
             var step = NavigationWaypointMath.Step(
                 x, y, direction, state.SpeedKmS,
                 targetX, targetY,
@@ -104,16 +117,23 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 
             if (step.IsArrived)
             {
-                // Engine will cancel the cycle next snapshot — fly remaining time straight.
                 AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, remainingMs);
-                remainingMs = 0;
-                untilNextTurnMs = intervalMs;
-                break;
+                return ClearNavigation(state, x, y, direction, intervalMs);
             }
 
             AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, intervalMs);
             remainingMs -= intervalMs;
             untilNextTurnMs = intervalMs;
+
+            // Check segment arrival after this advance.
+            var segArrival = NavigationWaypointMath.CheckSegmentArrival(
+                stepStartX, stepStartY, x, y, targetX, targetY);
+            if (segArrival.IsArrived)
+            {
+                x = segArrival.ClosestX;
+                y = segArrival.ClosestY;
+                return ClearNavigation(state, x, y, direction, intervalMs);
+            }
         }
 
         // Partial remainder (< intervalMs): fly straight, phase carries forward.
@@ -159,6 +179,26 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         }
 
         return state with { X = x, Y = y, Direction = direction };
+    }
+
+    /// <summary>Return state with navigation metadata cleared after arrival.</summary>
+    private static ObjectMotionSnapshot ClearNavigation(
+        ObjectMotionSnapshot state, double x, double y, double direction, long turnStepRemainingMs)
+    {
+        return state with
+        {
+            X = x,
+            Y = y,
+            Direction = direction,
+            ActiveEngineCommandType = null,
+            TurnStepDegrees = 0,
+            TurnStepRemainingMs = turnStepRemainingMs,
+            TurnStepIntervalMs = 0,
+            NavigationTargetX = null,
+            NavigationTargetY = null,
+            NavigationAngularInertiaDegPerSec = 0,
+            NavigationLockedCourseDegrees = null,
+        };
     }
 
     private static ObjectMotionSnapshot PredictStraight(ObjectMotionSnapshot state, long elapsedMs, double direction)

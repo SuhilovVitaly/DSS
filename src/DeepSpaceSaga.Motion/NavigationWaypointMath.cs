@@ -33,6 +33,94 @@ public static class NavigationWaypointMath
     public const double ArrivalEpsilon = 1.0;
 
     /// <summary>
+    /// Check whether a straight-line segment from (startX, startY) to (endX, endY)
+    /// passes within <see cref="ArrivalEpsilon"/> of the target. Used by callers
+    /// after each straight advance to detect pass-through arrival before the next
+    /// <see cref="Step"/> call — prevents re-steering toward an already-passed target.
+    /// </summary>
+    /// <returns>Tuple: IsArrived, ClosestX, ClosestY (the closest point on the segment to the target).</returns>
+    public static (bool IsArrived, double ClosestX, double ClosestY) CheckSegmentArrival(
+        double startX, double startY,
+        double endX, double endY,
+        double targetX, double targetY)
+    {
+        double segDx = endX - startX;
+        double segDy = endY - startY;
+        double lenSq = segDx * segDx + segDy * segDy;
+
+        if (lenSq <= 0)
+        {
+            double d = Math.Sqrt((targetX - startX) * (targetX - startX) + (targetY - startY) * (targetY - startY));
+            return d <= ArrivalEpsilon ? (true, startX, startY) : (false, 0, 0);
+        }
+
+        double tDx = targetX - startX;
+        double tDy = targetY - startY;
+        double t = Math.Clamp((tDx * segDx + tDy * segDy) / lenSq, 0.0, 1.0);
+
+        double closestX = startX + t * segDx;
+        double closestY = startY + t * segDy;
+        double dist = Math.Sqrt(
+            (targetX - closestX) * (targetX - closestX) +
+            (targetY - closestY) * (targetY - closestY));
+
+        return dist <= ArrivalEpsilon ? (true, closestX, closestY) : (false, 0, 0);
+    }
+
+    /// <summary>
+    /// Evaluate whether a navigate-to-point target is safe (reachable without infinite
+    /// circling). Shared by Engine (authoritative) and Client (precheck).
+    /// </summary>
+    /// <returns>
+    /// True when the target is safe to navigate to; false when the target is too close
+    /// and should be rejected with <c>navigation_target_too_close</c>.
+    /// </returns>
+    public static bool IsTargetSafe(
+        double shipX, double shipY,
+        double directionDegrees,
+        double speedKmS,
+        double targetX, double targetY,
+        int angularInertiaDegPerSec)
+    {
+        double dx = targetX - shipX;
+        double dy = targetY - shipY;
+        double distance = Math.Sqrt(dx * dx + dy * dy);
+
+        // Already on top of the target — too close, would loop.
+        if (distance <= ArrivalEpsilon)
+            return false;
+
+        // Stationary ship can rotate in place — only blocked if inside ArrivalEpsilon.
+        if (speedKmS <= 0 || angularInertiaDegPerSec <= 0)
+            return true;
+
+        double turnRadiusUnits = speedKmS * 1000.0
+            / (angularInertiaDegPerSec * Math.PI / 180.0) / 100.0;
+
+        // Target is outside the turn radius — reachable with standard stepwise turning.
+        if (distance >= turnRadiusUnits)
+            return true;
+
+        // Target is inside the turn radius. Only safe if it lies on the current
+        // straight-line path (ahead + perpendicular miss distance ≤ ArrivalEpsilon).
+        double bearingDegrees = BearingDegrees(dx, dy);
+        double delta = ShortestSignedAngleDegrees(directionDegrees, bearingDegrees);
+        double directionRad = directionDegrees * Math.PI / 180.0;
+
+        // Target ahead (dot > 0)?
+        bool ahead = dx * Math.Sin(directionRad) - dy * Math.Cos(directionRad) > 0;
+        if (!ahead)
+            return false;
+
+        // Perpendicular distance from target to the ship's forward ray:
+        // direction vector v = (sin θ, -cos θ), |v| = 1.
+        // Perp distance = |dx × v| / |v| = |dx * v_y - dy * v_x| = |dx * (-cos θ) - dy * sin θ|.
+        double perpDistance = Math.Abs(dx * Math.Cos(directionRad) + dy * Math.Sin(directionRad));
+
+        return perpDistance <= ArrivalEpsilon;
+    }
+
+    /// <summary>
     /// Compute one navigation step from the ship's current state toward the target.
     /// </summary>
     /// <param name="lockedCourseDegrees">
@@ -64,12 +152,17 @@ public static class NavigationWaypointMath
             return new NavigationStepResult(0, IsArrived: true);
 
         // If we already locked a course, hold it and just check arrival.
+        // (The locked-course path checks dot ≤ 0 internally — terminal pass-through.)
         if (lockedCourseDegrees is { } locked)
         {
             return HoldLockedCourse(
                 x, y, directionDegrees, locked, speedKmS,
                 targetX, targetY, turnStepDegrees, stepTimeMs);
         }
+
+        // Target behind the ship while NOT locked onto a course: the ship has not yet
+        // started navigating toward this target — don't mark arrival prematurely.
+        // Fall through to bearing/delta computation and turn logic.
 
         double bearingDegrees = BearingDegrees(dx, dy);
         double delta = ShortestSignedAngleDegrees(directionDegrees, bearingDegrees);

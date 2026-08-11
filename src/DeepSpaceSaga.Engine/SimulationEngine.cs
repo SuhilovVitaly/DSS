@@ -853,6 +853,17 @@ public sealed class SimulationEngine : IDisposable
 
             navigateTargetX = targetWorldX;
             navigateTargetY = targetWorldY;
+
+            // Reject close-side/close-rear targets that would loop forever (shared safety check).
+            long elapsed = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
+            var motion = _motion.Predict(obj.InitialMotion, elapsed);
+            if (!DeepSpaceSaga.Motion.NavigationWaypointMath.IsTargetSafe(
+                    motion.X, motion.Y, motion.Direction, motion.SpeedKmS,
+                    targetWorldX, targetWorldY,
+                    moduleType.AngularInertiaDegPerSec ?? 0))
+            {
+                return CommandStartOutcome.Rejected(CommandReasonCodes.NavigationTargetTooClose);
+            }
         }
 
         if (command.CommandType == ShipEngineCommandTypes.CancelAll)
@@ -1368,7 +1379,28 @@ public sealed class SimulationEngine : IDisposable
         ActiveCycleData? nextCycle)
     {
         long elapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
+        var durationMs = nextCycle?.DurationMs ?? 250;
         var currentMotion = _motion.Predict(obj.InitialMotion, elapsedMs);
+
+        // Check segment arrival: did the ship pass through the target between the
+        // previous cycle step and now? If so, terminal — no re-steering.
+        long prevElapsedMs = Math.Max(0, elapsedMs - durationMs);
+        var prevMotion = prevElapsedMs == elapsedMs
+            ? obj.InitialMotion
+            : _motion.Predict(obj.InitialMotion, prevElapsedMs);
+        var segmentArrival = DeepSpaceSaga.Motion.NavigationWaypointMath.CheckSegmentArrival(
+            prevMotion.X, prevMotion.Y,
+            currentMotion.X, currentMotion.Y,
+            targetX, targetY);
+
+        if (segmentArrival.IsArrived)
+        {
+            return UpdateEngineMotion(
+                obj, moduleIndex, gameTimeMs,
+                module => module with { ActiveCycle = null },
+                motion => motion); // no turn — fly straight
+        }
+
         double? lockedCourse = obj.Modules[moduleIndex].ActiveCycle?.NavigationLockedCourseDegrees;
         var step = NavigationWaypointMath.Step(
             currentMotion.X,

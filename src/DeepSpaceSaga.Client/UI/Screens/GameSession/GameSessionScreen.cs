@@ -523,9 +523,29 @@ public sealed class GameSessionScreen : IScreen
     /// </summary>
     private void SendNavigationCommand(double worldX, double worldY)
     {
-        var playerShipObjectId = _buffer.LatestPrediction?.BufferedSnapshot.Snapshot.PlayerShipObjectId;
-        if (_handle is null || string.IsNullOrWhiteSpace(playerShipObjectId))
+        var buffer = _buffer.LatestPrediction;
+        if (_handle is null || buffer is null)
             return;
+
+        var playerShipObjectId = buffer.BufferedSnapshot.Snapshot.PlayerShipObjectId;
+        if (string.IsNullOrWhiteSpace(playerShipObjectId))
+            return;
+
+        // Client-side precheck: predict current ship state and validate target safety.
+        // Avoids sending a command the engine would reject, and prevents drawing a
+        // looping pending trajectory.
+        var motion = _predictor.Predict(
+            FindPlayerShipMotion(buffer.BufferedSnapshot.Snapshot) ?? throw new InvalidOperationException("Player ship missing"),
+            buffer.EffectivePredictionDeltaMs);
+
+        if (!NavigationWaypointMath.IsTargetSafe(
+                motion.X, motion.Y, motion.Direction, motion.SpeedKmS,
+                worldX, worldY,
+                motion.NavigationAngularInertiaDegPerSec))
+        {
+            _pendingNavigationTarget = null;
+            return;
+        }
 
         _ = _handle.SendEngineCommandAsync(
             playerShipObjectId, PlayerEngineModuleId, ShipEngineCommandTypes.NavigateToPoint, worldX, worldY);

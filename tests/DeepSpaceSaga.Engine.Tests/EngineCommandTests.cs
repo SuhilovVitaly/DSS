@@ -1616,24 +1616,22 @@ public class EngineCommandTests
     }
 
     [Fact]
-    public void Navigate_with_target_inside_turn_radius_flies_straight_then_turns()
+    public void Navigate_with_target_inside_turn_radius_is_rejected_as_too_close()
     {
         // ТЗ-05.5 (AC7): approved R = v/ω model. Ship at 1 km/s → R ≈ 143 units.
-        // Target (100, 70): r ≈ 122 < R → turning now would miss — the ship flies
-        // straight while r grows (ship heads up, target recedes below). Once r ≥ R
-        // the stepwise turn begins.
+        // Target (100, 70): r ≈ 122 < R, target is to the side/rear → would loop.
+        // Must be rejected BEFORE starting a navigation cycle.
         var engine = CreateEngine(speedMps: 1000, directionDegrees: 0);
 
         engine.ReceiveCommand(Command(ShipEngineCommandTypes.NavigateToPoint, targetWorldX: 100, targetWorldY: 70));
-        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+        var snap = engine.CaptureSnapshotForTests(250, SimulationSpeed.Speed1);
 
-        // 8 cycle steps (2 s): r < R the whole time → direction untouched.
-        var waiting = PlayerShipFrom(engine.CaptureSnapshotForTests(2000, SimulationSpeed.Speed1));
-        Assert.Equal(0, waiting.Direction);
+        var ship = PlayerShipFrom(snap);
+        Assert.Null(ship.ActiveEngineCommandType); // no cycle was created
 
-        // 4 s: r ≈ 148.7 ≥ R → turning began.
-        var turning = PlayerShipFrom(engine.CaptureSnapshotForTests(4000, SimulationSpeed.Speed1));
-        Assert.True(turning.Direction > 0, $"expected direction > 0 after R was reached, got {turning.Direction}");
+        var result = Assert.Single(snap.CommandResults);
+        Assert.Equal(CommandResultStatus.Rejected, result.Status);
+        Assert.Equal(CommandReasonCodes.NavigationTargetTooClose, result.ReasonCode);
     }
 
     [Fact]

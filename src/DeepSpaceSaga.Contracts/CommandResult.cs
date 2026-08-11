@@ -94,4 +94,7 @@ public static class CommandReasonCodes
 
     /// <summary>Navigate-to-point command arrived without finite world target coordinates.</summary>
     public const string InvalidTargetCoordinates = "invalid_target_coordinates";
+
+    /// <summary>Navigate-to-point target is too close — inside the turn radius and not on the current straight-line path.</summary>
+    public const string NavigationTargetTooClose = "navigation_target_too_close";
 }
