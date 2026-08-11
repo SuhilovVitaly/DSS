@@ -445,6 +445,12 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
+        if (key == Key.C && IsCtrlDown)
+        {
+            _isFocusAttachedToPlayer = true;
+            return ScreenEvent.None;
+        }
+
         if (key == Key.Escape)
             return ScreenEvent.OpenGameMenu;
 

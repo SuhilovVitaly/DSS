@@ -18,6 +18,7 @@ internal sealed class KeyboardEdgeTracker
     private bool _prevRightPressed;
     private bool _prevF5Pressed;
     private bool _prevF9Pressed;
+    private bool _prevCPressed;
     private bool _prevCtrlLeftPressed;
     private bool _prevCtrlRightPressed;
 
@@ -54,6 +55,7 @@ internal sealed class KeyboardEdgeTracker
         AddBoth(Key.Right, keyboard.IsKeyPressed(Key.Right), ref _prevRightPressed, pressed, ref p, released, ref r);
         AddBoth(Key.F5, keyboard.IsKeyPressed(Key.F5), ref _prevF5Pressed, pressed, ref p, released, ref r);
         AddBoth(Key.F9, keyboard.IsKeyPressed(Key.F9), ref _prevF9Pressed, pressed, ref p, released, ref r);
+        AddBoth(Key.C, keyboard.IsKeyPressed(Key.C), ref _prevCPressed, pressed, ref p, released, ref r);
 
         return (p, r);
     }
@@ -86,6 +88,7 @@ internal sealed class KeyboardEdgeTracker
         AddBoth(Key.Right, isKeyPressed(Key.Right), ref _prevRightPressed, pressed, ref p, released, ref r);
         AddBoth(Key.F5, isKeyPressed(Key.F5), ref _prevF5Pressed, pressed, ref p, released, ref r);
         AddBoth(Key.F9, isKeyPressed(Key.F9), ref _prevF9Pressed, pressed, ref p, released, ref r);
+        AddBoth(Key.C, isKeyPressed(Key.C), ref _prevCPressed, pressed, ref p, released, ref r);
 
         return (p, r);
     }
@@ -113,6 +116,7 @@ internal sealed class KeyboardEdgeTracker
         AddEdge(Key.Right, keyboard.IsKeyPressed(Key.Right), ref _prevRightPressed, pressed, ref count);
         AddEdge(Key.F5, keyboard.IsKeyPressed(Key.F5), ref _prevF5Pressed, pressed, ref count);
         AddEdge(Key.F9, keyboard.IsKeyPressed(Key.F9), ref _prevF9Pressed, pressed, ref count);
+        AddEdge(Key.C, keyboard.IsKeyPressed(Key.C), ref _prevCPressed, pressed, ref count);
         return count;
     }
 
@@ -137,6 +141,7 @@ internal sealed class KeyboardEdgeTracker
         AddEdge(Key.Right, isKeyPressed(Key.Right), ref _prevRightPressed, pressed, ref count);
         AddEdge(Key.F5, isKeyPressed(Key.F5), ref _prevF5Pressed, pressed, ref count);
         AddEdge(Key.F9, isKeyPressed(Key.F9), ref _prevF9Pressed, pressed, ref count);
+        AddEdge(Key.C, isKeyPressed(Key.C), ref _prevCPressed, pressed, ref count);
         return count;
     }
 
