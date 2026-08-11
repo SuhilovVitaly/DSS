@@ -124,7 +124,7 @@ public sealed class GameSessionScreen : IScreen
     private bool _isCtrlLeftDown;
     private bool _isCtrlRightDown;
     private bool IsCtrlDown => _isCtrlLeftDown || _isCtrlRightDown;
-    private (double X, double Y)? _pendingNavigationTarget;
+
 
     // Layout constants
     private const double ZoomStepFactor = 1.25;
@@ -256,8 +256,7 @@ public sealed class GameSessionScreen : IScreen
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 1f,
             IsAntialias = true,
-            StrokeCap = SKStrokeCap.Round,
-            PathEffect = SKPathEffect.CreateDash(new float[] { 8f, 6f }, 0f)
+            StrokeCap = SKStrokeCap.Round
         };
         // Navigation trajectory: glow shadow + slightly brighter main line.
         _navigationTrajectoryShadowPaint = new SKPaint
@@ -275,8 +274,7 @@ public sealed class GameSessionScreen : IScreen
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 2f,
             IsAntialias = true,
-            StrokeCap = SKStrokeCap.Round,
-            PathEffect = SKPathEffect.CreateDash(new float[] { 10f, 8f }, 0f)
+            StrokeCap = SKStrokeCap.Round
         };
         _navigationTargetPaint = new SKPaint
         {
@@ -593,13 +591,11 @@ public sealed class GameSessionScreen : IScreen
                 worldX, worldY,
                 angularInertia))
         {
-            _pendingNavigationTarget = null;
             return;
         }
 
         _ = _handle.SendEngineCommandAsync(
             playerShipObjectId, PlayerEngineModuleId, ShipEngineCommandTypes.NavigateToPoint, worldX, worldY);
-        _pendingNavigationTarget = (worldX, worldY);
     }
 
     /// <summary>
@@ -1112,19 +1108,6 @@ public sealed class GameSessionScreen : IScreen
         if (!_showTrajectoryPrediction)
             return;
 
-        var snapshot = _buffer.Latest?.Snapshot;
-        if (snapshot is not null)
-        {
-            var playerShip = FindPlayerShipMotion(snapshot);
-            bool confirmed = playerShip?.NavigationTargetX is not null;
-            bool rejected = !snapshot.CommandResults.IsDefaultOrEmpty &&
-                            snapshot.CommandResults.Any(r =>
-                                r.CommandType == ShipEngineCommandTypes.NavigateToPoint &&
-                                r.Status == CommandResultStatus.Rejected);
-            if (confirmed || rejected)
-                _pendingNavigationTarget = null;
-        }
-
         foreach (var state in _renderStates)
         {
             if (!state.IsPlayerShip)
@@ -1148,14 +1131,6 @@ public sealed class GameSessionScreen : IScreen
                 }
 
                 DrawNavigationTargetMarker(canvas, predicted.NavigationTargetX.Value, predicted.NavigationTargetY!.Value, width, height);
-            }
-            else if (_pendingNavigationTarget is { } pending)
-            {
-                var (sx, sy) = _camera.WorldToScreen(predicted.X, predicted.Y, width, height);
-                var (tx, ty) = _camera.WorldToScreen(pending.X, pending.Y, width, height);
-                canvas.DrawLine(sx, sy, tx, ty, _navigationTrajectoryShadowPaint);
-                canvas.DrawLine(sx, sy, tx, ty, _navigationTrajectoryPaint);
-                DrawNavigationTargetMarker(canvas, pending.X, pending.Y, width, height);
             }
         }
     }
