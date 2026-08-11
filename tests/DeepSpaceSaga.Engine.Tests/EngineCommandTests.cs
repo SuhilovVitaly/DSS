@@ -1616,22 +1616,23 @@ public class EngineCommandTests
     }
 
     [Fact]
-    public void Navigate_with_target_inside_turn_radius_is_rejected_as_too_close()
+    public void Navigate_with_target_inside_turn_radius_starts_escape_turn_phase()
     {
         // ТЗ-05.5 (AC7): approved R = v/ω model. Ship at 1 km/s → R ≈ 143 units.
-        // Target (100, 70): r ≈ 122 < R, target is to the side/rear → would loop.
-        // Must be rejected BEFORE starting a navigation cycle.
+        // Target (100, 70): r ≈ 122 < R, target is to the side/rear — close but
+        // reachable via staged maneuver (EscapeTurn → EscapeDepart → Approach).
         var engine = CreateEngine(speedMps: 1000, directionDegrees: 0);
 
         engine.ReceiveCommand(Command(ShipEngineCommandTypes.NavigateToPoint, targetWorldX: 100, targetWorldY: 70));
-        var snap = engine.CaptureSnapshotForTests(250, SimulationSpeed.Speed1);
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
 
+        // After a few cycle steps the ship is turning away from the target.
+        var snap = engine.CaptureSnapshotForTests(750, SimulationSpeed.Speed1);
         var ship = PlayerShipFrom(snap);
-        Assert.Null(ship.ActiveEngineCommandType); // no cycle was created
-
-        var result = Assert.Single(snap.CommandResults);
-        Assert.Equal(CommandResultStatus.Rejected, result.Status);
-        Assert.Equal(CommandReasonCodes.NavigationTargetTooClose, result.ReasonCode);
+        Assert.Equal(ShipEngineCommandTypes.NavigateToPoint, ship.ActiveEngineCommandType);
+        Assert.Equal("EscapeTurn", ship.NavigationPhase);
+        Assert.NotNull(ship.NavigationEscapeCourseDegrees);
+        Assert.True(ship.Direction != 0, "Expected turn away from target (escape turn)");
     }
 
     [Fact]

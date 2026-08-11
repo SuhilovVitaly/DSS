@@ -42,4 +42,13 @@ public sealed record ObjectMotionSnapshot(
     string? RelationToPlayer = null,
     string? DisplayName = null,
     string? RenderObjectType = null,
-    double? MaxSpeedKmS = null);
+    double? MaxSpeedKmS = null,
+    /// <summary>
+    /// Current staged navigation phase for <see cref="ShipEngineCommandTypes.NavigateToPoint"/>.
+    /// Null means standard approach for saves/snapshots created before staged navigation.
+    /// </summary>
+    string? NavigationPhase = null,
+    /// <summary>Escape course used by the close-target escape phases, degrees.</summary>
+    double? NavigationEscapeCourseDegrees = null,
+    /// <summary>Required distance from the target before leaving the escape-depart phase.</summary>
+    double? NavigationRequiredDepartureDistance = null);

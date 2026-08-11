@@ -63,11 +63,14 @@ internal sealed class NavigationTrajectoryProjector
 
         long elapsedMs = phaseMs;
         double? lockedCourse = predicted.NavigationLockedCourseDegrees;
+        string? navigationPhase = predicted.NavigationPhase;
+        double? escapeCourse = predicted.NavigationEscapeCourseDegrees;
+        double? requiredDepartureDistance = predicted.NavigationRequiredDepartureDistance;
         while (elapsedMs < FutureTrajectoryHorizonMs)
         {
             double stepStartX = x, stepStartY = y;
 
-            var step = NavigationWaypointMath.Step(
+            var step = NavigationWaypointMath.StagedStep(
                 x,
                 y,
                 direction,
@@ -77,9 +80,19 @@ internal sealed class NavigationTrajectoryProjector
                 turnStepDegrees,
                 predicted.NavigationAngularInertiaDegPerSec,
                 stepTimeMs: intervalMs,
-                lockedCourseDegrees: lockedCourse);
+                phase: navigationPhase,
+                lockedCourseDegrees: lockedCourse,
+                escapeCourseDegrees: escapeCourse,
+                requiredDepartureDistance: requiredDepartureDistance);
 
-            lockedCourse = step.LockedCourseDegrees;
+            lockedCourse = step.LockedCourseDegrees ?? lockedCourse;
+            navigationPhase = step.NextNavigationPhase ?? navigationPhase;
+            escapeCourse = step.EscapeCourseDegrees ?? escapeCourse;
+            requiredDepartureDistance = step.RequiredDepartureDistance ?? requiredDepartureDistance;
+            if (step.NextNavigationPhase == "Approach")
+            {
+                lockedCourse = null;
+            }
 
             direction = NormalizeDirection(direction + step.TurnDeltaDegrees);
 

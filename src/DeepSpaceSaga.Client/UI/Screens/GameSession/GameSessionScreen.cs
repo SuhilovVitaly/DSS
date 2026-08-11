@@ -39,6 +39,7 @@ public sealed class GameSessionScreen : IScreen
     private readonly SKPaint _trailPaint;
     private readonly SKPaint _futureTrajectoryPaint;
     private readonly SKPaint _navigationTrajectoryPaint;
+    private readonly SKPaint _navigationTargetPaint;
     private readonly SKPaint _objectPaint;
     private readonly SKPaint _playerShipPaint;
     private readonly SKPaint _playerShipOutlinePaint;
@@ -252,6 +253,12 @@ public sealed class GameSessionScreen : IScreen
             StrokeWidth = 2f,
             IsAntialias = true,
             PathEffect = SKPathEffect.CreateDash(new float[] { 10f, 8f }, 0f)
+        };
+        _navigationTargetPaint = new SKPaint
+        {
+            Color = new SKColor(255, 40, 40),
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true
         };
         _objectPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
         _playerShipPaint = new SKPaint { Color = new SKColor(85, 107, 47), Style = SKPaintStyle.Fill, IsAntialias = true };
@@ -1087,25 +1094,34 @@ public sealed class GameSessionScreen : IScreen
             if (predicted.NavigationTargetX is not null)
             {
                 var points = _navigationTrajectoryProjector.Project(predicted);
-                if (points.Count < 2)
-                    continue;
-
-                for (int i = 1; i < points.Count; i++)
+                if (points.Count >= 2)
                 {
-                    var from = points[i - 1];
-                    var to = points[i];
-                    var (fromX, fromY) = _camera.WorldToScreen(from.X, from.Y, width, height);
-                    var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
-                    canvas.DrawLine(fromX, fromY, toX, toY, _navigationTrajectoryPaint);
+                    for (int i = 1; i < points.Count; i++)
+                    {
+                        var from = points[i - 1];
+                        var to = points[i];
+                        var (fromX, fromY) = _camera.WorldToScreen(from.X, from.Y, width, height);
+                        var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
+                        canvas.DrawLine(fromX, fromY, toX, toY, _navigationTrajectoryPaint);
+                    }
                 }
+
+                DrawNavigationTargetMarker(canvas, predicted.NavigationTargetX.Value, predicted.NavigationTargetY!.Value, width, height);
             }
             else if (_pendingNavigationTarget is { } pending)
             {
                 var (sx, sy) = _camera.WorldToScreen(predicted.X, predicted.Y, width, height);
                 var (tx, ty) = _camera.WorldToScreen(pending.X, pending.Y, width, height);
                 canvas.DrawLine(sx, sy, tx, ty, _navigationTrajectoryPaint);
+                DrawNavigationTargetMarker(canvas, pending.X, pending.Y, width, height);
             }
         }
+    }
+
+    private void DrawNavigationTargetMarker(SKCanvas canvas, double worldX, double worldY, int width, int height)
+    {
+        var (x, y) = _camera.WorldToScreen(worldX, worldY, width, height);
+        canvas.DrawCircle(x, y, 5f, _navigationTargetPaint);
     }
 
     // ── Test seams for future trajectory ─────────────────────────

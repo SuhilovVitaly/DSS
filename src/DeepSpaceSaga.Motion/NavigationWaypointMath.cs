@@ -32,6 +32,158 @@ public static class NavigationWaypointMath
     /// <summary>Distance (world units) at or below which the ship has arrived.</summary>
     public const double ArrivalEpsilon = 1.0;
 
+    /// <summary>Safety factor for the full-turn reserve distance (10% margin).</summary>
+    public const double TurnReserveSafetyFactor = 1.10;
+
+    /// <summary>
+    /// Compute the required departure distance for a close-target staged maneuver.
+    /// After reaching this distance from the target, the ship can safely turn around
+    /// and approach on a straight-line course.
+    /// </summary>
+    /// <param name="speedKmS">Ship speed, km/s.</param>
+    /// <param name="angularInertiaDegPerSec">Angular inertia, degrees per second.</param>
+    /// <param name="turnStepIntervalMs">Turn step interval, milliseconds (e.g. 250).</param>
+    /// <returns>Required distance in world units.</returns>
+    public static double RequiredDepartureDistance(
+        double speedKmS,
+        int angularInertiaDegPerSec,
+        long turnStepIntervalMs)
+    {
+        if (speedKmS <= 0 || angularInertiaDegPerSec <= 0)
+            return 0;
+
+        double speedUnitsPerSec = speedKmS * 10.0;
+        double angularVelocityRadPerSec = angularInertiaDegPerSec * Math.PI / 180.0;
+        double turnRadiusUnits = speedUnitsPerSec / angularVelocityRadPerSec;
+        double distancePerTurnStep = speedUnitsPerSec * turnStepIntervalMs / 1000.0;
+
+        return 2.0 * turnRadiusUnits * TurnReserveSafetyFactor
+               + Math.Max(distancePerTurnStep, 5.0 * ArrivalEpsilon);
+    }
+
+    /// <summary>
+    /// Result of a staged navigation step.
+    /// </summary>
+    /// <param name="TurnDeltaDegrees">Turn to apply (0 = fly straight).</param>
+    /// <param name="IsArrived">Terminal arrival — ship passed through the target.</param>
+    /// <param name="LockedCourseDegrees">Course lock for the next step.</param>
+    /// <param name="NextNavigationPhase">Next phase (null = no change).</param>
+    /// <param name="EscapeCourseDegrees">Escape course to use (set when entering EscapeTurn).</param>
+    /// <param name="RequiredDepartureDistance">Required departure distance (set when entering EscapeDepart).</param>
+    public readonly record struct StagedNavigationStepResult(
+        double TurnDeltaDegrees,
+        bool IsArrived,
+        double? LockedCourseDegrees = null,
+        string? NextNavigationPhase = null,
+        double? EscapeCourseDegrees = null,
+        double? RequiredDepartureDistance = null);
+
+    /// <summary>
+    /// Compute one step of a staged navigation maneuver.
+    /// </summary>
+    /// <param name="phase">Current phase: "Approach", "EscapeTurn", or "EscapeDepart". Null/empty/unknown defaults to Approach.</param>
+    /// <param name="escapeCourseDegrees">Current escape course (EscapeTurn/EscapeDepart).</param>
+    /// <param name="requiredDepartureDistance">Required departure distance (EscapeDepart).</param>
+    public static StagedNavigationStepResult StagedStep(
+        double x, double y,
+        double directionDegrees,
+        double speedKmS,
+        double targetX, double targetY,
+        int turnStepDegrees,
+        int angularInertiaDegPerSec,
+        long stepTimeMs,
+        string? phase,
+        double? lockedCourseDegrees = null,
+        double? escapeCourseDegrees = null,
+        double? requiredDepartureDistance = null)
+    {
+        if (phase == "EscapeTurn")
+            return EscapeTurnStep(x, y, directionDegrees, speedKmS, targetX, targetY,
+                turnStepDegrees, angularInertiaDegPerSec, stepTimeMs,
+                escapeCourseDegrees);
+
+        if (phase == "EscapeDepart")
+            return EscapeDepartStep(x, y, directionDegrees, speedKmS, targetX, targetY,
+                turnStepDegrees, angularInertiaDegPerSec, stepTimeMs,
+                escapeCourseDegrees, requiredDepartureDistance);
+
+        // Default: Approach. If this approach belongs to a staged close-target
+        // maneuver, the ship has already spent time departing to create room; do
+        // not fall back into the old "inside turn radius => fly straight" wait,
+        // because that is exactly what creates the wide pursuit loops.
+        bool stagedApproach = escapeCourseDegrees is not null || requiredDepartureDistance is not null;
+        var step = StepCore(x, y, directionDegrees, speedKmS, targetX, targetY,
+            turnStepDegrees, angularInertiaDegPerSec, stepTimeMs, lockedCourseDegrees,
+            enforceTurnRadius: !stagedApproach);
+        return new StagedNavigationStepResult(step.TurnDeltaDegrees, step.IsArrived,
+            LockedCourseDegrees: step.LockedCourseDegrees);
+    }
+
+    private static StagedNavigationStepResult EscapeTurnStep(
+        double x, double y,
+        double directionDegrees,
+        double speedKmS,
+        double targetX, double targetY,
+        int turnStepDegrees,
+        int angularInertiaDegPerSec,
+        long stepTimeMs,
+        double? escapeCourseDegrees)
+    {
+        // Compute or use existing escape course: bearing from target to ship.
+        double escCourse = escapeCourseDegrees
+            ?? BearingDegrees(x - targetX, y - targetY);
+
+        double delta = ShortestSignedAngleDegrees(directionDegrees, escCourse);
+
+        // On escape course → transition to EscapeDepart.
+        if (Math.Abs(delta) <= turnStepDegrees / 2.0)
+        {
+            double lockTurnDelta = Math.Abs(delta) <= turnStepDegrees ? delta : 0;
+            double reqDist = RequiredDepartureDistance(speedKmS, angularInertiaDegPerSec, stepTimeMs);
+            return new StagedNavigationStepResult(lockTurnDelta, IsArrived: false,
+                LockedCourseDegrees: escCourse,
+                NextNavigationPhase: "EscapeDepart",
+                EscapeCourseDegrees: escCourse,
+                RequiredDepartureDistance: reqDist);
+        }
+
+        // Turn toward escape course.
+        double turnDelta = Math.Sign(delta) * Math.Min(Math.Abs(delta), turnStepDegrees);
+        return new StagedNavigationStepResult(turnDelta, IsArrived: false,
+            EscapeCourseDegrees: escCourse);
+    }
+
+    private static StagedNavigationStepResult EscapeDepartStep(
+        double x, double y,
+        double directionDegrees,
+        double speedKmS,
+        double targetX, double targetY,
+        int turnStepDegrees,
+        int angularInertiaDegPerSec,
+        long stepTimeMs,
+        double? escapeCourseDegrees,
+        double? requiredDepartureDistance)
+    {
+        double escCourse = escapeCourseDegrees ?? 0;
+        double reqDist = requiredDepartureDistance ?? 0;
+        double r = Math.Sqrt((targetX - x) * (targetX - x) + (targetY - y) * (targetY - y));
+
+        // Far enough → transition to Approach (no locked course yet — fresh start).
+        if (r >= reqDist)
+            return new StagedNavigationStepResult(0, IsArrived: false,
+                NextNavigationPhase: "Approach");
+
+        // Still departing: hold the escape course.
+        double lockDelta = ShortestSignedAngleDegrees(directionDegrees, escCourse);
+        double turnDelta = Math.Abs(lockDelta) <= turnStepDegrees / 2.0 ? 0
+            : Math.Sign(lockDelta) * Math.Min(Math.Abs(lockDelta), turnStepDegrees);
+
+        return new StagedNavigationStepResult(turnDelta, IsArrived: false,
+            LockedCourseDegrees: escCourse,
+            EscapeCourseDegrees: escCourse,
+            RequiredDepartureDistance: reqDist);
+    }
+
     /// <summary>
     /// Check whether a straight-line segment from (startX, startY) to (endX, endY)
     /// passes within <see cref="ArrivalEpsilon"/> of the target. Used by callers
@@ -68,13 +220,13 @@ public static class NavigationWaypointMath
     }
 
     /// <summary>
-    /// Evaluate whether a navigate-to-point target is safe (reachable without infinite
-    /// circling). Shared by Engine (authoritative) and Client (precheck).
+    /// Evaluate whether a navigate-to-point target is trivially unreachable.
+    /// Only rejects targets within <see cref="ArrivalEpsilon"/> (already on the point).
+    /// Close targets that were previously rejected now use a staged maneuver
+    /// (EscapeTurn → EscapeDepart → Approach) handled by the Engine.
+    /// Shared by Engine (authoritative) and Client (precheck).
     /// </summary>
-    /// <returns>
-    /// True when the target is safe to navigate to; false when the target is too close
-    /// and should be rejected with <c>navigation_target_too_close</c>.
-    /// </returns>
+    /// <returns>False only when the target is inside ArrivalEpsilon and should be rejected.</returns>
     public static bool IsTargetSafe(
         double shipX, double shipY,
         double directionDegrees,
@@ -86,38 +238,8 @@ public static class NavigationWaypointMath
         double dy = targetY - shipY;
         double distance = Math.Sqrt(dx * dx + dy * dy);
 
-        // Already on top of the target — too close, would loop.
-        if (distance <= ArrivalEpsilon)
-            return false;
-
-        // Stationary ship can rotate in place — only blocked if inside ArrivalEpsilon.
-        if (speedKmS <= 0 || angularInertiaDegPerSec <= 0)
-            return true;
-
-        double turnRadiusUnits = speedKmS * 1000.0
-            / (angularInertiaDegPerSec * Math.PI / 180.0) / 100.0;
-
-        // Target is outside the turn radius — reachable with standard stepwise turning.
-        if (distance >= turnRadiusUnits)
-            return true;
-
-        // Target is inside the turn radius. Only safe if it lies on the current
-        // straight-line path (ahead + perpendicular miss distance ≤ ArrivalEpsilon).
-        double bearingDegrees = BearingDegrees(dx, dy);
-        double delta = ShortestSignedAngleDegrees(directionDegrees, bearingDegrees);
-        double directionRad = directionDegrees * Math.PI / 180.0;
-
-        // Target ahead (dot > 0)?
-        bool ahead = dx * Math.Sin(directionRad) - dy * Math.Cos(directionRad) > 0;
-        if (!ahead)
-            return false;
-
-        // Perpendicular distance from target to the ship's forward ray:
-        // direction vector v = (sin θ, -cos θ), |v| = 1.
-        // Perp distance = |dx × v| / |v| = |dx * v_y - dy * v_x| = |dx * (-cos θ) - dy * sin θ|.
-        double perpDistance = Math.Abs(dx * Math.Cos(directionRad) + dy * Math.Sin(directionRad));
-
-        return perpDistance <= ArrivalEpsilon;
+        // Already on top of the target — degenerate, would loop endlessly.
+        return distance > ArrivalEpsilon;
     }
 
     /// <summary>
@@ -143,6 +265,27 @@ public static class NavigationWaypointMath
         int angularInertiaDegPerSec,
         long stepTimeMs = 0,
         double? lockedCourseDegrees = null)
+    {
+        return StepCore(
+            x, y, directionDegrees, speedKmS,
+            targetX, targetY,
+            turnStepDegrees, angularInertiaDegPerSec,
+            stepTimeMs, lockedCourseDegrees,
+            enforceTurnRadius: true);
+    }
+
+    private static NavigationStepResult StepCore(
+        double x,
+        double y,
+        double directionDegrees,
+        double speedKmS,
+        double targetX,
+        double targetY,
+        int turnStepDegrees,
+        int angularInertiaDegPerSec,
+        long stepTimeMs,
+        double? lockedCourseDegrees,
+        bool enforceTurnRadius)
     {
         double dx = targetX - x;
         double dy = targetY - y;
@@ -178,16 +321,21 @@ public static class NavigationWaypointMath
                 isNewLock: true);
         }
 
-        // Turn radius check.
-        if (angularInertiaDegPerSec <= 0)
-            return new NavigationStepResult(0, IsArrived: false);
+        // Turn radius check for normal approach. Staged approach explicitly bypasses
+        // this after the escape/departure phases, otherwise it can re-enter the loop
+        // this maneuver exists to avoid.
+        if (enforceTurnRadius)
+        {
+            if (angularInertiaDegPerSec <= 0)
+                return new NavigationStepResult(0, IsArrived: false);
 
-        double turnRadiusUnits = speedKmS <= 0
-            ? 0
-            : speedKmS * 1000.0 / (angularInertiaDegPerSec * Math.PI / 180.0) / 100.0;
+            double turnRadiusUnits = speedKmS <= 0
+                ? 0
+                : speedKmS * 1000.0 / (angularInertiaDegPerSec * Math.PI / 180.0) / 100.0;
 
-        if (r < turnRadiusUnits)
-            return new NavigationStepResult(0, IsArrived: false);
+            if (r < turnRadiusUnits)
+                return new NavigationStepResult(0, IsArrived: false);
+        }
 
         double turnDelta = Math.Sign(delta) * Math.Min(Math.Abs(delta), turnStepDegrees);
 

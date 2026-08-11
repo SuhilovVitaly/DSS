@@ -275,6 +275,9 @@ public sealed class SimulationEngine : IDisposable
                     NavigationTargetY = cycleMotion.NavigationTargetY,
                     NavigationAngularInertiaDegPerSec = cycleMotion.NavigationAngularInertiaDegPerSec,
                     NavigationLockedCourseDegrees = cycleMotion.NavigationLockedCourseDegrees,
+                    NavigationPhase = cycleMotion.NavigationPhase,
+                    NavigationEscapeCourseDegrees = cycleMotion.NavigationEscapeCourseDegrees,
+                    NavigationRequiredDepartureDistance = cycleMotion.NavigationRequiredDepartureDistance,
                     ObjectType = known ? obj.ObjectType : null,
                     RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
                     RelationToPlayer = known ? GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType) : null,
@@ -841,6 +844,9 @@ public sealed class SimulationEngine : IDisposable
         // the deterministic navigation math).
         double? navigateTargetX = null;
         double? navigateTargetY = null;
+        string? navPhase = null;
+        double? initialEscapeCourse = null;
+        double? initialRequiredDistance = null;
         if (command.CommandType == ShipEngineCommandTypes.NavigateToPoint)
         {
             if (command.TargetWorldX is not { } targetWorldX ||
@@ -854,15 +860,43 @@ public sealed class SimulationEngine : IDisposable
             navigateTargetX = targetWorldX;
             navigateTargetY = targetWorldY;
 
-            // Reject close-side/close-rear targets that would loop forever (shared safety check).
+            // Staged maneuver: determine initial phase based on target proximity.
             long elapsed = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
             var motion = _motion.Predict(obj.InitialMotion, elapsed);
+            int navInertia = moduleType.AngularInertiaDegPerSec ?? 0;
             if (!DeepSpaceSaga.Motion.NavigationWaypointMath.IsTargetSafe(
                     motion.X, motion.Y, motion.Direction, motion.SpeedKmS,
-                    targetWorldX, targetWorldY,
-                    moduleType.AngularInertiaDegPerSec ?? 0))
+                    targetWorldX, targetWorldY, navInertia))
             {
                 return CommandStartOutcome.Rejected(CommandReasonCodes.NavigationTargetTooClose);
+            }
+
+            // Determine initial navigation phase based on target proximity.
+            if (navInertia > 0 && motion.SpeedKmS > 0)
+            {
+                double speedUnitsPerSec = motion.SpeedKmS * 10.0;
+                double angularVelocity = navInertia * Math.PI / 180.0;
+                double turnR = speedUnitsPerSec / angularVelocity;
+                double dist = Math.Sqrt(
+                    (targetWorldX - motion.X) * (targetWorldX - motion.X) +
+                    (targetWorldY - motion.Y) * (targetWorldY - motion.Y));
+
+                if (dist < turnR)
+                {
+                    // Inside turn radius — check if target is straight ahead.
+                    double dx = targetWorldX - motion.X;
+                    double dy = targetWorldY - motion.Y;
+                    double dirRad = motion.Direction * Math.PI / 180.0;
+                    bool ahead = dx * Math.Sin(dirRad) - dy * Math.Cos(dirRad) > 0;
+                    double perpDist = Math.Abs(dx * Math.Cos(dirRad) + dy * Math.Sin(dirRad));
+
+                    if (!ahead || perpDist > NavigationWaypointMath.ArrivalEpsilon)
+                    {
+                        navPhase = "EscapeTurn";
+                        double escDeg = Math.Atan2(motion.X - targetWorldX, -(motion.Y - targetWorldY)) * 180.0 / Math.PI;
+                        initialEscapeCourse = escDeg < 0 ? escDeg + 360 : escDeg;
+                    }
+                }
             }
         }
 
@@ -978,7 +1012,10 @@ public sealed class SimulationEngine : IDisposable
                     objectId: command.ObjectId,
                     moduleId: command.ModuleId,
                     targetWorldX: navigateTargetX,
-                    targetWorldY: navigateTargetY)
+                    targetWorldY: navigateTargetY,
+                    navigationPhase: navPhase,
+                    navigationEscapeCourseDegrees: initialEscapeCourse,
+                    navigationRequiredDepartureDistance: initialRequiredDistance)
             });
         return CommandStartOutcome.Started;
     }
@@ -1023,7 +1060,10 @@ public sealed class SimulationEngine : IDisposable
         string? objectId = null,
         string? moduleId = null,
         double? targetWorldX = null,
-        double? targetWorldY = null)
+        double? targetWorldY = null,
+        string? navigationPhase = null,
+        double? navigationEscapeCourseDegrees = null,
+        double? navigationRequiredDepartureDistance = null)
     {
         string cycleId = $"CYC-ENGINE-{++_nextEngineCycleId:D6}";
         long durationMs = commandType == ShipEngineCommandTypes.NavigateToPoint &&
@@ -1043,7 +1083,10 @@ public sealed class SimulationEngine : IDisposable
             objectId,
             moduleId,
             targetWorldX,
-            targetWorldY);
+            targetWorldY,
+            NavigationPhase: navigationPhase,
+            NavigationEscapeCourseDegrees: navigationEscapeCourseDegrees,
+            NavigationRequiredDepartureDistance: navigationRequiredDepartureDistance);
     }
 
     /// <summary>
@@ -1152,7 +1195,10 @@ public sealed class SimulationEngine : IDisposable
                     cycle.TargetWorldX,
                     cycle.TargetWorldY,
                     moduleType.AngularInertiaDegPerSec ?? 0,
-                    NavigationLockedCourseDegrees: cycle.NavigationLockedCourseDegrees);
+                    NavigationLockedCourseDegrees: cycle.NavigationLockedCourseDegrees,
+                    NavigationPhase: cycle.NavigationPhase,
+                    NavigationEscapeCourseDegrees: cycle.NavigationEscapeCourseDegrees,
+                    NavigationRequiredDepartureDistance: cycle.NavigationRequiredDepartureDistance);
             }
 
             if (!IsUntilCancelTurn(cycle.CommandType))
@@ -1216,7 +1262,10 @@ public sealed class SimulationEngine : IDisposable
                     ActiveCycleData? nextCycle = cycle.IsAutoRepeat
                         ? CreateEngineCycle(cycle.CommandType, completionGameTimeMs, isAutoRepeat: true, moduleType,
                             commandId: cycle.CommandId, objectId: cycle.ObjectId, moduleId: cycle.ModuleId,
-                            targetWorldX: cycle.TargetWorldX, targetWorldY: cycle.TargetWorldY)
+                            targetWorldX: cycle.TargetWorldX, targetWorldY: cycle.TargetWorldY,
+                            navigationPhase: cycle.NavigationPhase,
+                            navigationEscapeCourseDegrees: cycle.NavigationEscapeCourseDegrees,
+                            navigationRequiredDepartureDistance: cycle.NavigationRequiredDepartureDistance)
                         : null;
                     _objects[objectIndex] = ApplyCompletedEngineCommand(
                         obj,
@@ -1378,12 +1427,12 @@ public sealed class SimulationEngine : IDisposable
         long gameTimeMs,
         ActiveCycleData? nextCycle)
     {
+        var cycle = obj.Modules[moduleIndex].ActiveCycle;
         long elapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
         var durationMs = nextCycle?.DurationMs ?? 250;
         var currentMotion = _motion.Predict(obj.InitialMotion, elapsedMs);
 
-        // Check segment arrival: did the ship pass through the target between the
-        // previous cycle step and now? If so, terminal — no re-steering.
+        // Check segment arrival (pass-through detection).
         long prevElapsedMs = Math.Max(0, elapsedMs - durationMs);
         var prevMotion = prevElapsedMs == elapsedMs
             ? obj.InitialMotion
@@ -1398,26 +1447,39 @@ public sealed class SimulationEngine : IDisposable
             return UpdateEngineMotion(
                 obj, moduleIndex, gameTimeMs,
                 module => module with { ActiveCycle = null },
-                motion => motion); // no turn — fly straight
+                motion => motion);
         }
 
-        double? lockedCourse = obj.Modules[moduleIndex].ActiveCycle?.NavigationLockedCourseDegrees;
-        var step = NavigationWaypointMath.Step(
-            currentMotion.X,
-            currentMotion.Y,
-            currentMotion.Direction,
-            currentMotion.SpeedKmS,
-            targetX,
-            targetY,
+        // Staged navigation: use StagedStep for EscapeTurn / EscapeDepart / Approach.
+        var stepTimeMs = MinTurnIntervalMs(moduleType.AngularInertiaDegPerSec!.Value);
+        var staged = NavigationWaypointMath.StagedStep(
+            currentMotion.X, currentMotion.Y,
+            currentMotion.Direction, currentMotion.SpeedKmS,
+            targetX, targetY,
             moduleType.TurnStepDegrees!.Value,
             moduleType.AngularInertiaDegPerSec!.Value,
-            stepTimeMs: MinTurnIntervalMs(moduleType.AngularInertiaDegPerSec!.Value),
-            lockedCourseDegrees: lockedCourse);
+            stepTimeMs,
+            phase: cycle?.NavigationPhase,
+            lockedCourseDegrees: cycle?.NavigationLockedCourseDegrees,
+            escapeCourseDegrees: cycle?.NavigationEscapeCourseDegrees,
+            requiredDepartureDistance: cycle?.NavigationRequiredDepartureDistance);
 
-        if (step.IsArrived)
+        if (staged.IsArrived)
             nextCycle = null;
-        else if (step.LockedCourseDegrees is { } lc)
-            nextCycle = nextCycle! with { NavigationLockedCourseDegrees = lc };
+        else if (nextCycle is not null)
+        {
+            bool enteringApproach = string.Equals(
+                staged.NextNavigationPhase, "Approach", StringComparison.Ordinal);
+            nextCycle = nextCycle with
+            {
+                NavigationLockedCourseDegrees = enteringApproach
+                    ? null
+                    : staged.LockedCourseDegrees ?? nextCycle.NavigationLockedCourseDegrees,
+                NavigationPhase = staged.NextNavigationPhase ?? nextCycle.NavigationPhase,
+                NavigationEscapeCourseDegrees = staged.EscapeCourseDegrees ?? nextCycle.NavigationEscapeCourseDegrees,
+                NavigationRequiredDepartureDistance = staged.RequiredDepartureDistance ?? nextCycle.NavigationRequiredDepartureDistance,
+            };
+        }
 
         return UpdateEngineMotion(
             obj,
@@ -1426,10 +1488,10 @@ public sealed class SimulationEngine : IDisposable
             module => module with
             {
                 ActiveCycle = nextCycle,
-                LastTurnGameTimeMs = step.TurnDeltaDegrees != 0 ? gameTimeMs : module.LastTurnGameTimeMs
+                LastTurnGameTimeMs = staged.TurnDeltaDegrees != 0 ? gameTimeMs : module.LastTurnGameTimeMs
             },
-            motion => step.TurnDeltaDegrees != 0
-                ? motion with { Direction = NormalizeDirection(motion.Direction + step.TurnDeltaDegrees) }
+            motion => staged.TurnDeltaDegrees != 0
+                ? motion with { Direction = NormalizeDirection(motion.Direction + staged.TurnDeltaDegrees) }
                 : motion);
     }
 
@@ -1503,7 +1565,10 @@ internal readonly record struct ActiveEngineCycleMotion(
     double? NavigationTargetX = null,
     double? NavigationTargetY = null,
     int NavigationAngularInertiaDegPerSec = 0,
-    double? NavigationLockedCourseDegrees = null);
+    double? NavigationLockedCourseDegrees = null,
+    string? NavigationPhase = null,
+    double? NavigationEscapeCourseDegrees = null,
+    double? NavigationRequiredDepartureDistance = null);
 
 internal enum CommandStartDisposition
 {

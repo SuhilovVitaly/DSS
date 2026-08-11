@@ -77,6 +77,9 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         double y = state.Y;
         double direction = state.Direction;
         double? lockedCourse = state.NavigationLockedCourseDegrees;
+        string? navigationPhase = state.NavigationPhase;
+        double? escapeCourse = state.NavigationEscapeCourseDegrees;
+        double? requiredDepartureDistance = state.NavigationRequiredDepartureDistance;
 
         // Combined phase + step loop: fly straight segments, call Step at each
         // turn boundary (even if the remaining time is less than a full interval —
@@ -87,16 +90,26 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             // Must happen BEFORE flying the segment, matching Engine order (P1 fix).
             if (untilNextTurnMs == 0)
             {
-                var navStep = NavigationWaypointMath.Step(
+                var navStep = NavigationWaypointMath.StagedStep(
                     x, y, direction, state.SpeedKmS,
                     targetX, targetY,
                     turnStep,
                     state.NavigationAngularInertiaDegPerSec,
                     stepTimeMs: intervalMs,
-                    lockedCourseDegrees: lockedCourse);
+                    phase: navigationPhase,
+                    lockedCourseDegrees: lockedCourse,
+                    escapeCourseDegrees: escapeCourse,
+                    requiredDepartureDistance: requiredDepartureDistance);
 
                 direction = NormalizeDirection(direction + navStep.TurnDeltaDegrees);
-                lockedCourse = navStep.LockedCourseDegrees;
+                lockedCourse = navStep.LockedCourseDegrees ?? lockedCourse;
+                navigationPhase = navStep.NextNavigationPhase ?? navigationPhase;
+                escapeCourse = navStep.EscapeCourseDegrees ?? escapeCourse;
+                requiredDepartureDistance = navStep.RequiredDepartureDistance ?? requiredDepartureDistance;
+                if (navStep.NextNavigationPhase == "Approach")
+                {
+                    lockedCourse = null;
+                }
                 untilNextTurnMs = intervalMs;
 
                 if (navStep.IsArrived)
@@ -130,6 +143,9 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             Direction = direction,
             TurnStepRemainingMs = untilNextTurnMs, // real phase — P1 fix
             NavigationLockedCourseDegrees = lockedCourse,
+            NavigationPhase = navigationPhase,
+            NavigationEscapeCourseDegrees = escapeCourse,
+            NavigationRequiredDepartureDistance = requiredDepartureDistance,
         };
     }
 
@@ -177,6 +193,9 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             NavigationTargetY = null,
             NavigationAngularInertiaDegPerSec = 0,
             NavigationLockedCourseDegrees = null,
+            NavigationPhase = null,
+            NavigationEscapeCourseDegrees = null,
+            NavigationRequiredDepartureDistance = null,
         };
     }
 

@@ -67,6 +67,29 @@ public class NavigationWaypointMathTests
     }
 
     [Fact]
+    public void Staged_approach_keeps_turning_inside_turn_radius()
+    {
+        // Close-target staged navigation already performed EscapeTurn/EscapeDepart.
+        // Once in Approach, it must not re-enter the old r < R wait, or it draws
+        // a wide loop around the destination.
+        var result = NavigationWaypointMath.StagedStep(
+            0, 0,
+            directionDegrees: 0,
+            speedKmS: 1,
+            targetX: 100,
+            targetY: 70,
+            TurnStepDegrees,
+            AngularInertiaDegPerSec,
+            stepTimeMs: 250,
+            phase: "Approach",
+            escapeCourseDegrees: 305,
+            requiredDepartureDistance: 320);
+
+        Assert.False(result.IsArrived);
+        Assert.NotEqual(0, result.TurnDeltaDegrees);
+    }
+
+    [Fact]
     public void Target_far_side_r_above_R_turns_by_step()
     {
         // Target (1000, -3000) far ahead-side at 4 km/s: r ≈ 3162 ≥ R ≈ 573.

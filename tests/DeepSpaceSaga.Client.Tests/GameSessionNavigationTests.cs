@@ -228,6 +228,36 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
+    public void Navigation_trajectory_projects_escape_turn_for_close_target()
+    {
+        // Regression: close side/rear targets use staged navigation. The client
+        // projector must mirror EscapeTurn instead of falling back to the old
+        // pure-approach loop around the target.
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 0,
+            SpeedKmS: 1,
+            Direction: 0,
+            ActiveEngineCommandType: ShipEngineCommandTypes.NavigateToPoint,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 250,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: 100,
+            NavigationTargetY: 70,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationPhase: "EscapeTurn",
+            NavigationEscapeCourseDegrees: 305);
+
+        var projector = new NavigationTrajectoryProjector();
+        var points = projector.Project(ship);
+
+        Assert.True(points.Count >= 3, "Expected staged projection points");
+        Assert.True(points.Any(p => p.X < -1),
+            "EscapeTurn should project motion away from the close target, not loop toward it");
+        AssertArrival(points, 100, 70, tolerance: 3.0);
+    }
+
+    [Fact]
     public void Navigation_trajectory_completes_in_under_horizon()
     {
         // The projection must stop at IsArrived, not run the full 3000 ms.
