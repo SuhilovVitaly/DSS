@@ -119,7 +119,9 @@ public sealed class GameSessionScreen : IScreen
     private bool _isFocusAttachedToPlayer = true;
 
     // Navigation (Ctrl+Click) state — ТЗ: Navigation Waypoints
-    private bool _isCtrlDown;
+    private bool _isCtrlLeftDown;
+    private bool _isCtrlRightDown;
+    private bool IsCtrlDown => _isCtrlLeftDown || _isCtrlRightDown;
     private (double X, double Y)? _pendingNavigationTarget;
 
     // Layout constants
@@ -298,7 +300,11 @@ public sealed class GameSessionScreen : IScreen
     // ── IScreen ─────────────────────────────────────────────────
 
     public void OnActivated() { }
-    public void OnDeactivated() { }
+    public void OnDeactivated()
+    {
+        _isCtrlLeftDown = false;
+        _isCtrlRightDown = false;
+    }
 
     public ScreenEvent OnMouseDown(float x, float y)
     {
@@ -362,7 +368,7 @@ public sealed class GameSessionScreen : IScreen
         // The camera focus is NOT changed and no command is sent when the click lands
         // on an object (hit-test includes a +4 px slack) — panels were already consumed
         // above. AC2, AC1 preserved.
-        if (_isCtrlDown)
+        if (IsCtrlDown)
         {
             var (navWorldX, navWorldY) = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
             if (!HitTestObject(x, y))
@@ -407,9 +413,15 @@ public sealed class GameSessionScreen : IScreen
 
     public ScreenEvent OnKeyDown(Key key)
     {
-        if (key == Key.ControlLeft || key == Key.ControlRight)
+        if (key == Key.ControlLeft)
         {
-            _isCtrlDown = true;
+            _isCtrlLeftDown = true;
+            return ScreenEvent.None;
+        }
+
+        if (key == Key.ControlRight)
+        {
+            _isCtrlRightDown = true;
             return ScreenEvent.None;
         }
 
@@ -461,8 +473,10 @@ public sealed class GameSessionScreen : IScreen
 
     public void OnKeyUp(Key key)
     {
-        if (key == Key.ControlLeft || key == Key.ControlRight)
-            _isCtrlDown = false;
+        if (key == Key.ControlLeft)
+            _isCtrlLeftDown = false;
+        else if (key == Key.ControlRight)
+            _isCtrlRightDown = false;
     }
 
     // ── Speed control ───────────────────────────────────────────

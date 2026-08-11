@@ -314,6 +314,55 @@ public class GameSessionNavigationTests
         Assert.Empty(trajectory);
     }
 
+    [Fact]
+    public async Task Ctrl_click_then_ctrl_release_then_plain_click_pans_without_second_navigation()
+    {
+        // Regression: after Ctrl+Click sends NavigateToPoint, releasing Ctrl and
+        // plain-clicking must pan the camera — NOT send a second navigation command.
+        await using var fixture = CreateFixture();
+        Render(fixture.Screen);
+
+        // 1. Ctrl+Click → one navigation command.
+        fixture.Screen.OnKeyDown(Key.ControlLeft);
+        fixture.Screen.OnMouseDown(1000, 500);
+
+        var command = Assert.Single(fixture.Connection.Commands);
+        Assert.Equal(ShipEngineCommandTypes.NavigateToPoint, command.CommandType);
+
+        // 2. Release Ctrl.
+        fixture.Screen.OnKeyUp(Key.ControlLeft);
+
+        // 3. Plain click elsewhere → must pan camera, no second command.
+        double fxBefore = fixture.Screen.CameraFocusX;
+        double fyBefore = fixture.Screen.CameraFocusY;
+
+        fixture.Screen.OnMouseDown(900, 600);
+
+        Assert.Single(fixture.Connection.Commands); // still only one
+        Assert.NotEqual(fxBefore, fixture.Screen.CameraFocusX); // camera panned
+        Assert.NotEqual(fyBefore, fixture.Screen.CameraFocusY);
+    }
+
+    [Fact]
+    public async Task Ctrl_click_with_ctrl_right_then_release_then_plain_click_pans()
+    {
+        // Same as above but with ControlRight.
+        await using var fixture = CreateFixture();
+        Render(fixture.Screen);
+
+        fixture.Screen.OnKeyDown(Key.ControlRight);
+        fixture.Screen.OnMouseDown(1000, 500);
+        Assert.Single(fixture.Connection.Commands);
+
+        fixture.Screen.OnKeyUp(Key.ControlRight);
+
+        double fxBefore = fixture.Screen.CameraFocusX;
+        fixture.Screen.OnMouseDown(900, 600);
+
+        Assert.Single(fixture.Connection.Commands);
+        Assert.NotEqual(fxBefore, fixture.Screen.CameraFocusX);
+    }
+
     // ── Test helpers (same fixture pattern as GameSessionEngineCommandPanelTests) ──
 
     private static TestFixture CreateFixture(double speedKmS = 1.0)

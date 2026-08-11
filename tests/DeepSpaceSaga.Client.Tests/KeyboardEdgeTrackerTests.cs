@@ -93,6 +93,41 @@ public class KeyboardEdgeTrackerTests
         Assert.Equal([Key.ControlRight], PollUpKeys(tracker, pressed));
     }
 
+    [Fact]
+    public void PollBoth_reports_press_and_release_in_same_frame()
+    {
+        // Real SkiaWindow calls Poll (which mutates previous) before PollUpKeys
+        // (which needs old previous). PollBoth captures both from one snapshot.
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new HashSet<Key> { Key.ControlLeft };
+        PollBoth(tracker, pressed, out var p, out var r);
+        Assert.Equal([Key.ControlLeft], p);
+        Assert.Empty(r);
+
+        // Ctrl still held — no edges.
+        PollBoth(tracker, pressed, out p, out r);
+        Assert.Empty(p);
+        Assert.Empty(r);
+
+        // Ctrl released — must see release edge even on the very next PollBoth.
+        pressed.Remove(Key.ControlLeft);
+        PollBoth(tracker, pressed, out p, out r);
+        Assert.Empty(p);
+        Assert.Equal([Key.ControlLeft], r); // P1 fix: release NOT lost
+    }
+
+    [Fact]
+    public void Ctrl_i_reports_both_edges_via_poll_both()
+    {
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new HashSet<Key> { Key.ControlLeft, Key.I };
+
+        PollBoth(tracker, pressed, out var p, out var r);
+        Assert.Contains(Key.ControlLeft, p);
+        Assert.Contains(Key.I, p);
+        Assert.Empty(r);
+    }
+
     private static Key[] Poll(KeyboardEdgeTracker tracker, HashSet<Key> pressed)
     {
         Span<Key> buffer = stackalloc Key[16];
@@ -105,5 +140,15 @@ public class KeyboardEdgeTrackerTests
         Span<Key> buffer = stackalloc Key[16];
         int count = tracker.PollUpKeys(pressed.Contains, buffer);
         return buffer[..count].ToArray();
+    }
+
+    private static void PollBoth(KeyboardEdgeTracker tracker,
+        HashSet<Key> pressed, out Key[] p, out Key[] r)
+    {
+        Span<Key> pBuf = stackalloc Key[16];
+        Span<Key> rBuf = stackalloc Key[16];
+        var (pc, rc) = tracker.PollBoth(pressed.Contains, pBuf, rBuf);
+        p = pBuf[..pc].ToArray();
+        r = rBuf[..rc].ToArray();
     }
 }

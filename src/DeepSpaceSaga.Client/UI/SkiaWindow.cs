@@ -277,12 +277,13 @@ public sealed class SkiaWindow : IDisposable
         if (_keyboard is null || _closing)
             return;
 
-        int keyCount = _keyboardEdges.Poll(_keyboard, _keyboardPressedKeys);
-        for (int i = 0; i < keyCount; i++)
+        var (pressedCount, releasedCount) = _keyboardEdges.PollBoth(
+            _keyboard, _keyboardPressedKeys, _keyboardReleasedKeys);
+
+        for (int i = 0; i < pressedCount; i++)
             _handleKeyboardEdge(_keyboardPressedKeys[i]);
 
-        int releaseCount = _keyboardEdges.PollUpKeys(_keyboard, _keyboardReleasedKeys);
-        for (int i = 0; i < releaseCount; i++)
+        for (int i = 0; i < releasedCount; i++)
             _screens.Current.OnKeyUp(_keyboardReleasedKeys[i]);
     }
 
