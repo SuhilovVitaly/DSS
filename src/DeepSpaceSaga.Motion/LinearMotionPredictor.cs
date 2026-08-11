@@ -78,70 +78,49 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         double direction = state.Direction;
         double? lockedCourse = state.NavigationLockedCourseDegrees;
 
-        // Phase: fly straight until the first turn interval boundary.
-        if (untilNextTurnMs > 0)
+        // Combined phase + step loop: fly straight segments, call Step at each
+        // turn boundary (even if the remaining time is less than a full interval —
+        // the Engine always runs the turn decision at the boundary).
+        while (remainingMs > 0)
         {
+            // At a turn boundary, decide the turn via shared navigation math.
+            // Must happen BEFORE flying the segment, matching Engine order (P1 fix).
+            if (untilNextTurnMs == 0)
+            {
+                var navStep = NavigationWaypointMath.Step(
+                    x, y, direction, state.SpeedKmS,
+                    targetX, targetY,
+                    turnStep,
+                    state.NavigationAngularInertiaDegPerSec,
+                    stepTimeMs: intervalMs,
+                    lockedCourseDegrees: lockedCourse);
+
+                direction = NormalizeDirection(direction + navStep.TurnDeltaDegrees);
+                lockedCourse = navStep.LockedCourseDegrees;
+                untilNextTurnMs = intervalMs;
+
+                if (navStep.IsArrived)
+                {
+                    AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, remainingMs);
+                    return ClearNavigation(state, x, y, direction, untilNextTurnMs);
+                }
+            }
+
             long segmentMs = Math.Min(remainingMs, untilNextTurnMs);
-            double prevX = x, prevY = y;
+            double segStartX = x, segStartY = y;
             AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, segmentMs);
             remainingMs -= segmentMs;
             untilNextTurnMs -= segmentMs;
 
-            // Check segment arrival after phase (catch pass-through).
-            var phaseArrival = NavigationWaypointMath.CheckSegmentArrival(
-                prevX, prevY, x, y, targetX, targetY);
-            if (phaseArrival.IsArrived)
-            {
-                x = phaseArrival.ClosestX;
-                y = phaseArrival.ClosestY;
-                return ClearNavigation(state, x, y, direction, untilNextTurnMs);
-            }
-        }
-
-        // Step loop: each full interval, decide turn via shared navigation math.
-        while (remainingMs >= intervalMs)
-        {
-            double stepStartX = x, stepStartY = y;
-
-            var step = NavigationWaypointMath.Step(
-                x, y, direction, state.SpeedKmS,
-                targetX, targetY,
-                turnStep,
-                state.NavigationAngularInertiaDegPerSec,
-                stepTimeMs: intervalMs,
-                lockedCourseDegrees: lockedCourse);
-
-            // Apply turn first (even if arrived — Engine does the same: P2 fix).
-            direction = NormalizeDirection(direction + step.TurnDeltaDegrees);
-            lockedCourse = step.LockedCourseDegrees;
-
-            if (step.IsArrived)
-            {
-                AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, remainingMs);
-                return ClearNavigation(state, x, y, direction, intervalMs);
-            }
-
-            AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, intervalMs);
-            remainingMs -= intervalMs;
-            untilNextTurnMs = intervalMs;
-
-            // Check segment arrival after this advance.
+            // Check segment arrival after this advance (catch pass-through).
             var segArrival = NavigationWaypointMath.CheckSegmentArrival(
-                stepStartX, stepStartY, x, y, targetX, targetY);
+                segStartX, segStartY, x, y, targetX, targetY);
             if (segArrival.IsArrived)
             {
                 x = segArrival.ClosestX;
                 y = segArrival.ClosestY;
-                return ClearNavigation(state, x, y, direction, intervalMs);
+                return ClearNavigation(state, x, y, direction, untilNextTurnMs);
             }
-        }
-
-        // Partial remainder (< intervalMs): fly straight, phase carries forward.
-        if (remainingMs > 0)
-        {
-            AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, remainingMs);
-            untilNextTurnMs -= remainingMs;
-            remainingMs = 0;
         }
 
         return state with

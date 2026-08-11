@@ -538,10 +538,17 @@ public sealed class GameSessionScreen : IScreen
             FindPlayerShipMotion(buffer.BufferedSnapshot.Snapshot) ?? throw new InvalidOperationException("Player ship missing"),
             buffer.EffectivePredictionDeltaMs);
 
+        // Use the active navigation angular inertia if present; otherwise fall back
+        // to the engine module's known value (4 deg/sec). Without an active cycle
+        // the snapshot carries 0, but the safety check needs the real value.
+        int angularInertia = motion.NavigationAngularInertiaDegPerSec > 0
+            ? motion.NavigationAngularInertiaDegPerSec
+            : 4;
+
         if (!NavigationWaypointMath.IsTargetSafe(
                 motion.X, motion.Y, motion.Direction, motion.SpeedKmS,
                 worldX, worldY,
-                motion.NavigationAngularInertiaDegPerSec))
+                angularInertia))
         {
             _pendingNavigationTarget = null;
             return;
