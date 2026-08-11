@@ -129,7 +129,9 @@ public sealed record ActiveCycleData(
     /// </summary>
     [property: JsonPropertyName("targetWorldX")] double? TargetWorldX = null,
     /// <summary>World-coordinate target of a navigation cycle; see <see cref="TargetWorldX"/>.</summary>
-    [property: JsonPropertyName("targetWorldY")] double? TargetWorldY = null);
+    [property: JsonPropertyName("targetWorldY")] double? TargetWorldY = null,
+    /// <summary>Locked course for navigation (pure-pursuit avoidance). Null when not yet locked.</summary>
+    [property: JsonPropertyName("navLockedCourseDegrees")] double? NavigationLockedCourseDegrees = null);
 
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(

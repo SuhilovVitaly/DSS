@@ -53,6 +53,7 @@ internal sealed class NavigationTrajectoryProjector
         points.Add(new FutureTrajectoryPoint(x, y));
 
         long elapsedMs = phaseMs;
+        double? lockedCourse = predicted.NavigationLockedCourseDegrees;
         while (elapsedMs < FutureTrajectoryHorizonMs)
         {
             var step = NavigationWaypointMath.Step(
@@ -63,12 +64,32 @@ internal sealed class NavigationTrajectoryProjector
                 targetX,
                 targetY,
                 turnStepDegrees,
-                predicted.NavigationAngularInertiaDegPerSec);
+                predicted.NavigationAngularInertiaDegPerSec,
+                stepTimeMs: intervalMs,
+                lockedCourseDegrees: lockedCourse);
 
-            if (step.IsArrived)
-                break;
+            lockedCourse = step.LockedCourseDegrees;
 
             direction = NormalizeDirection(direction + step.TurnDeltaDegrees);
+
+            if (step.IsArrived)
+            {
+                // Snap final point at the closest approach to the target on this segment.
+                double stepDist = speedKmS * (intervalMs / 1000.0) * 10.0;
+                double angleRad = direction * Math.PI / 180.0;
+                double segDx = stepDist * Math.Sin(angleRad);
+                double segDy = -stepDist * Math.Cos(angleRad);
+                double tDx = targetX - x;
+                double tDy = targetY - y;
+                double dot = tDx * segDx + tDy * segDy;
+                double lenSq = segDx * segDx + segDy * segDy;
+                double t = lenSq > 0 ? Math.Clamp(dot / lenSq, 0.0, 1.0) : 0.0;
+                double arrivedX = x + t * segDx;
+                double arrivedY = y + t * segDy;
+                points.Add(new FutureTrajectoryPoint(arrivedX, arrivedY));
+                break;
+            }
+
             (x, y) = AdvanceStraight(x, y, direction, speedKmS, intervalMs);
             points.Add(new FutureTrajectoryPoint(x, y));
 

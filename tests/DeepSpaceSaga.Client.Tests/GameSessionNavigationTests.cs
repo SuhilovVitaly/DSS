@@ -199,14 +199,67 @@ public class GameSessionNavigationTests
         AssertArrival(turnPoints, 3, -150);
     }
 
-    private static void AssertArrival(IReadOnlyList<FutureTrajectoryPoint> points, double targetX, double targetY)
+    [Fact]
+    public void Navigation_trajectory_arrives_for_lateral_miss_target()
+    {
+        // Regression: lateral miss (1000,-3000) at 4 km/s with 1°/250ms turn.
+        // Before the segment-arrival fix this would circle forever.
+        // R = 4000 / (4π/180) / 100 ≈ 573 wu; r = sqrt(1000²+3000²) ≈ 3162 wu ≥ R → turns possible.
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 0,
+            SpeedKmS: 4,
+            Direction: 0,
+            ActiveEngineCommandType: ShipEngineCommandTypes.NavigateToPoint,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 250,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: 1000,
+            NavigationTargetY: -3000,
+            NavigationAngularInertiaDegPerSec: 4);
+
+        var projector = new NavigationTrajectoryProjector();
+        var points = projector.Project(ship);
+
+        Assert.True(points.Count >= 2, "Expected at least a start point and one step");
+        // Discrete steps at 4 km/s × 250ms = 10 wu/step; arrival tolerance must allow
+        // up to one step distance plus the proximity epsilon.
+        AssertArrival(points, 1000, -3000, tolerance: 11.0);
+    }
+
+    [Fact]
+    public void Navigation_trajectory_completes_in_under_horizon()
+    {
+        // The projection must stop at IsArrived, not run the full 3000 ms.
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 0,
+            SpeedKmS: 4,
+            Direction: 0,
+            ActiveEngineCommandType: ShipEngineCommandTypes.NavigateToPoint,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 250,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: 0,
+            NavigationTargetY: -100,
+            NavigationAngularInertiaDegPerSec: 4);
+
+        var projector = new NavigationTrajectoryProjector();
+        var points = projector.Project(ship);
+
+        Assert.True(points.Count < NavigationTrajectoryProjector.FutureTrajectoryHorizonMs / 250,
+            $"Projection must stop at IsArrived, not run full horizon. Got {points.Count} points.");
+        AssertArrival(points, 0, -100);
+    }
+
+    private static void AssertArrival(IReadOnlyList<FutureTrajectoryPoint> points, double targetX, double targetY, double tolerance = 1.0)
     {
         double dx = points[^1].X - targetX;
         double dy = points[^1].Y - targetY;
         double distanceToTarget = Math.Sqrt(dx * dx + dy * dy);
-        Assert.True(distanceToTarget <= 1.0 + 1e-6,
+        Assert.True(distanceToTarget <= tolerance + 1e-6,
             $"Projection must stop at arrival, last point {points[^1].X:F3},{points[^1].Y:F3} " +
-            $"is {distanceToTarget:F3} from the target");
+            $"is {distanceToTarget:F3} from the target (tolerance {tolerance:F1})");
         Assert.True(points.Count < NavigationTrajectoryProjector.FutureTrajectoryHorizonMs / 250,
             "Projection must stop at IsArrived, not run the full horizon");
     }

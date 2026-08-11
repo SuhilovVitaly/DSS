@@ -274,6 +274,7 @@ public sealed class SimulationEngine : IDisposable
                     NavigationTargetX = cycleMotion.NavigationTargetX,
                     NavigationTargetY = cycleMotion.NavigationTargetY,
                     NavigationAngularInertiaDegPerSec = cycleMotion.NavigationAngularInertiaDegPerSec,
+                    NavigationLockedCourseDegrees = cycleMotion.NavigationLockedCourseDegrees,
                     ObjectType = known ? obj.ObjectType : null,
                     RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
                     RelationToPlayer = known ? GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType) : null,
@@ -1139,7 +1140,8 @@ public sealed class SimulationEngine : IDisposable
                     cycle.DurationMs,
                     cycle.TargetWorldX,
                     cycle.TargetWorldY,
-                    moduleType.AngularInertiaDegPerSec ?? 0);
+                    moduleType.AngularInertiaDegPerSec ?? 0,
+                    NavigationLockedCourseDegrees: cycle.NavigationLockedCourseDegrees);
             }
 
             if (!IsUntilCancelTurn(cycle.CommandType))
@@ -1367,6 +1369,7 @@ public sealed class SimulationEngine : IDisposable
     {
         long elapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
         var currentMotion = _motion.Predict(obj.InitialMotion, elapsedMs);
+        double? lockedCourse = obj.Modules[moduleIndex].ActiveCycle?.NavigationLockedCourseDegrees;
         var step = NavigationWaypointMath.Step(
             currentMotion.X,
             currentMotion.Y,
@@ -1375,10 +1378,14 @@ public sealed class SimulationEngine : IDisposable
             targetX,
             targetY,
             moduleType.TurnStepDegrees!.Value,
-            moduleType.AngularInertiaDegPerSec!.Value);
+            moduleType.AngularInertiaDegPerSec!.Value,
+            stepTimeMs: MinTurnIntervalMs(moduleType.AngularInertiaDegPerSec!.Value),
+            lockedCourseDegrees: lockedCourse);
 
         if (step.IsArrived)
             nextCycle = null;
+        else if (step.LockedCourseDegrees is { } lc)
+            nextCycle = nextCycle! with { NavigationLockedCourseDegrees = lc };
 
         return UpdateEngineMotion(
             obj,
@@ -1463,7 +1470,8 @@ internal readonly record struct ActiveEngineCycleMotion(
     long TurnStepIntervalMs,
     double? NavigationTargetX = null,
     double? NavigationTargetY = null,
-    int NavigationAngularInertiaDegPerSec = 0);
+    int NavigationAngularInertiaDegPerSec = 0,
+    double? NavigationLockedCourseDegrees = null);
 
 internal enum CommandStartDisposition
 {

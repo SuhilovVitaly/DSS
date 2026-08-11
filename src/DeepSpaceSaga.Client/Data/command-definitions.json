@@ -97,6 +97,13 @@
             "timeFactor": 100.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0
+        },
+        {
+            "typeId": "engine.cancel-all",
+            "displayName": "Cancel All Commands",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0
         }
     ]
 }

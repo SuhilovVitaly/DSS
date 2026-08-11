@@ -181,6 +181,7 @@ public sealed class GameSessionScreen : IScreen
         new(">>", ShipEngineCommandTypes.TurnRightUntilCancel, "button_turn_right_until_cancel.png"),
         new("<<", ShipEngineCommandTypes.TurnLeftUntilCancel, "button_turn_left_until_cancel.png"),
         new("°", ShipEngineCommandTypes.MaintainCourse, "button_maintain_course.png"),
+        new("X", ShipEngineCommandTypes.CancelAll, "button_cancel_all.png"),
     ];
 
     // ── Test seams ──────────────────────────────────────────────

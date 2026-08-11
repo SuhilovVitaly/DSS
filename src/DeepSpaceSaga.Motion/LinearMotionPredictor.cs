@@ -6,6 +6,13 @@ namespace DeepSpaceSaga.Motion;
 /// DSS-correct linear motion prediction.
 /// Speed: km/s. Direction: degrees, 0° = up, clockwise.
 /// 1 km/s = 10 world units/s (since 1 unit = 100 m).
+///
+/// For active NavigateToPoint cycles the predictor delegates turn decisions to
+/// <see cref="NavigationWaypointMath.Step"/> so that client-side live prediction
+/// matches the authoritative engine behaviour — including course-locking after
+/// the ship aligns to the target bearing. Without this, the generic "turn every
+/// interval" logic would keep rotating the ship between snapshots, producing the
+/// visible "deviate → snap back" jitter.
 /// </summary>
 public sealed class LinearMotionPredictor : IMotionPredictor
 {
@@ -13,6 +20,16 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 
     public ObjectMotionSnapshot Predict(ObjectMotionSnapshot state, long elapsedMs)
     {
+        // Navigation cycle with locked or lockable course — use shared step math.
+        if (state.ActiveEngineCommandType == ShipEngineCommandTypes.NavigateToPoint &&
+            state.NavigationTargetX is { } targetX &&
+            state.NavigationTargetY is { } targetY &&
+            state.NavigationAngularInertiaDegPerSec > 0)
+        {
+            return PredictNavigation(state, elapsedMs, targetX, targetY);
+        }
+
+        // Generic turn-step prediction (until-cancel turns, step turns).
         if (state.TurnStepDegrees == 0 || state.TurnStepIntervalMs <= 0)
             return PredictStraight(state, elapsedMs, state.Direction);
         if (elapsedMs < 0)
@@ -41,6 +58,80 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         }
 
         return state with { X = x, Y = y, Direction = direction, TurnStepRemainingMs = untilNextTurnMs };
+    }
+
+    private static ObjectMotionSnapshot PredictNavigation(
+        ObjectMotionSnapshot state, long elapsedMs, double targetX, double targetY)
+    {
+        if (elapsedMs <= 0)
+            return state;
+
+        int turnStep = Math.Abs(state.TurnStepDegrees);
+        if (turnStep == 0 || state.TurnStepIntervalMs <= 0)
+            return PredictStraight(state, elapsedMs, state.Direction);
+
+        long intervalMs = state.TurnStepIntervalMs;
+        long remainingMs = elapsedMs;
+        long untilNextTurnMs = state.TurnStepRemainingMs;
+        double x = state.X;
+        double y = state.Y;
+        double direction = state.Direction;
+        double? lockedCourse = state.NavigationLockedCourseDegrees;
+
+        // Phase: fly straight until the first turn interval boundary.
+        if (untilNextTurnMs > 0)
+        {
+            long segmentMs = Math.Min(remainingMs, untilNextTurnMs);
+            AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, segmentMs);
+            remainingMs -= segmentMs;
+            untilNextTurnMs -= segmentMs;
+        }
+
+        // Step loop: each full interval, decide turn via shared navigation math.
+        while (remainingMs >= intervalMs)
+        {
+            var step = NavigationWaypointMath.Step(
+                x, y, direction, state.SpeedKmS,
+                targetX, targetY,
+                turnStep,
+                state.NavigationAngularInertiaDegPerSec,
+                stepTimeMs: intervalMs,
+                lockedCourseDegrees: lockedCourse);
+
+            // Apply turn first (even if arrived — Engine does the same: P2 fix).
+            direction = NormalizeDirection(direction + step.TurnDeltaDegrees);
+            lockedCourse = step.LockedCourseDegrees;
+
+            if (step.IsArrived)
+            {
+                // Engine will cancel the cycle next snapshot — fly remaining time straight.
+                AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, remainingMs);
+                remainingMs = 0;
+                untilNextTurnMs = intervalMs;
+                break;
+            }
+
+            AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, intervalMs);
+            remainingMs -= intervalMs;
+            untilNextTurnMs = intervalMs;
+        }
+
+        // Partial remainder (< intervalMs): fly straight, phase carries forward.
+        if (remainingMs > 0)
+        {
+            AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, remainingMs);
+            untilNextTurnMs -= remainingMs;
+            remainingMs = 0;
+        }
+
+        return state with
+        {
+            X = x,
+            Y = y,
+            Direction = direction,
+            TurnStepRemainingMs = untilNextTurnMs, // real phase — P1 fix
+            NavigationLockedCourseDegrees = lockedCourse,
+        };
     }
 
     private static ObjectMotionSnapshot PredictBackwardTurnSteps(ObjectMotionSnapshot state, long elapsedMs)

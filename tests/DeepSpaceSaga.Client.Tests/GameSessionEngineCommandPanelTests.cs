@@ -15,7 +15,7 @@ public class GameSessionEngineCommandPanelTests
     private const string EngineModuleId = "MOD-PLAYER-ENGINE-01";
 
     [Fact]
-    public async Task Engine_command_panel_renders_bottom_center_with_8_square_buttons()
+    public async Task Engine_command_panel_renders_bottom_center_with_9_square_buttons()
     {
         await using var fixture = CreateFixture();
 
@@ -24,7 +24,7 @@ public class GameSessionEngineCommandPanelTests
         var panel = fixture.Screen.LastCommandPanelRect;
         Assert.Equal(ScreenWidth / 2f, panel.MidX, precision: 3);
         Assert.True(panel.MidY > ScreenHeight / 2f);
-        Assert.Equal(8, fixture.Screen.EngineCommandButtonRects.Count);
+        Assert.Equal(9, fixture.Screen.EngineCommandButtonRects.Count);
         foreach (var rect in fixture.Screen.EngineCommandButtonRects)
         {
             Assert.Equal(64f, rect.Width);

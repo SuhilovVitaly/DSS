@@ -2,21 +2,30 @@ namespace DeepSpaceSaga.Motion;
 
 /// <summary>
 /// Result of one navigation waypoint step: the signed turn delta to apply (degrees,
-/// 0 = fly straight) and whether the ship has arrived at (or flown past) the target.
+/// 0 = fly straight), whether the ship has arrived, and the locked-on course (if any).
 /// </summary>
-public readonly record struct NavigationStepResult(double TurnDeltaDegrees, bool IsArrived);
+/// <param name="TurnDeltaDegrees">Turn to apply this step (0 = fly straight).</param>
+/// <param name="IsArrived">Ship has reached or flown past the target.</param>
+/// <param name="LockedCourseDegrees">
+/// When non-null the ship has locked onto a straight-line course through the target
+/// and must hold this course until arrival. Pass this value back as
+/// <c>lockedCourseDegrees</c> on the next call to prevent re-computing the bearing.
+/// </param>
+public readonly record struct NavigationStepResult(
+    double TurnDeltaDegrees,
+    bool IsArrived,
+    double? LockedCourseDegrees = null);
 
 /// <summary>
 /// Pure, deterministic step math for navigation to a world point (shared by Engine and
 /// Client). No state, no Engine/Contracts references — only numbers.
 ///
-/// Model (approved): a turn now would overshoot iff the distance to the target is
-/// r &lt; R, where R = v/ω is the turn radius (v = speed m/s, ω = angular inertia
-/// rad/s; world units R/100). While r &lt; R the ship waits — it flies straight.
-/// When r ≥ R a turn is possible and applied in steps of at most TurnStepDegrees.
+/// Model: once the ship's angular error is within tolerance, the current bearing is
+/// locked as the final straight-line course. The ship then flies straight until
+/// segment-based arrival or dot-behind arrival. This prevents the pure-pursuit
+/// circling that occurs when the bearing is recomputed every step.
 ///
-/// Direction convention: degrees, 0° = up, 90° = right, clockwise (same as the
-/// rest of the motion system).
+/// Direction convention: degrees, 0° = up, 90° = right, clockwise.
 /// </summary>
 public static class NavigationWaypointMath
 {
@@ -26,14 +35,15 @@ public static class NavigationWaypointMath
     /// <summary>
     /// Compute one navigation step from the ship's current state toward the target.
     /// </summary>
-    /// <param name="x">Ship position X, world units.</param>
-    /// <param name="y">Ship position Y, world units.</param>
-    /// <param name="directionDegrees">Ship course, degrees (0° = up, clockwise).</param>
-    /// <param name="speedKmS">Ship speed, km/s.</param>
-    /// <param name="targetX">Target X, world units.</param>
-    /// <param name="targetY">Target Y, world units.</param>
-    /// <param name="turnStepDegrees">Maximum turn per step (module TurnStepDegrees).</param>
-    /// <param name="angularInertiaDegPerSec">Angular inertia, degrees per second.</param>
+    /// <param name="lockedCourseDegrees">
+    /// When non-null the ship already locked a straight-line course through the target
+    /// — do not re-compute the bearing; just hold the lock and check arrival.
+    /// The caller should pass the <see cref="NavigationStepResult.LockedCourseDegrees"/>
+    /// from the previous step.
+    /// </param>
+    /// <param name="stepTimeMs">
+    /// Step time in ms (e.g. 250). Used for segment-based arrival detection.
+    /// </param>
     public static NavigationStepResult Step(
         double x,
         double y,
@@ -42,7 +52,9 @@ public static class NavigationWaypointMath
         double targetX,
         double targetY,
         int turnStepDegrees,
-        int angularInertiaDegPerSec)
+        int angularInertiaDegPerSec,
+        long stepTimeMs = 0,
+        double? lockedCourseDegrees = null)
     {
         double dx = targetX - x;
         double dy = targetY - y;
@@ -51,45 +63,145 @@ public static class NavigationWaypointMath
         if (r <= ArrivalEpsilon)
             return new NavigationStepResult(0, IsArrived: true);
 
+        // If we already locked a course, hold it and just check arrival.
+        if (lockedCourseDegrees is { } locked)
+        {
+            return HoldLockedCourse(
+                x, y, directionDegrees, locked, speedKmS,
+                targetX, targetY, turnStepDegrees, stepTimeMs);
+        }
+
         double bearingDegrees = BearingDegrees(dx, dy);
         double delta = ShortestSignedAngleDegrees(directionDegrees, bearingDegrees);
 
+        // On course (± half a turn step): lock this bearing as the final course.
+        // The residual lock delta is returned as TurnDeltaDegrees so the Engine
+        // actually applies the final small correction (P1 fix).
         if (Math.Abs(delta) <= turnStepDegrees / 2.0)
         {
-            // On course: keep the current heading (AC5). If the target is at or behind
-            // the ship (dot ≤ 0) the ship has flown past it — arrived.
-            double directionRad = directionDegrees * Math.PI / 180.0;
-            double dot = dx * Math.Sin(directionRad) - dy * Math.Cos(directionRad);
-            return dot <= 0
-                ? new NavigationStepResult(0, IsArrived: true)
-                : new NavigationStepResult(0, IsArrived: false);
+            return HoldLockedCourse(
+                x, y, directionDegrees, bearingDegrees, speedKmS,
+                targetX, targetY, turnStepDegrees, stepTimeMs,
+                isNewLock: true);
         }
 
-        // Turn radius R = v/ω in world units (1 unit = 100 m, so /100).
+        // Turn radius check.
         if (angularInertiaDegPerSec <= 0)
-            return new NavigationStepResult(0, IsArrived: false); // cannot turn — fly straight
+            return new NavigationStepResult(0, IsArrived: false);
 
         double turnRadiusUnits = speedKmS <= 0
-            ? 0 // stationary — a turn on the spot is always possible
+            ? 0
             : speedKmS * 1000.0 / (angularInertiaDegPerSec * Math.PI / 180.0) / 100.0;
 
         if (r < turnRadiusUnits)
-            return new NavigationStepResult(0, IsArrived: false); // wait — turning now would miss
+            return new NavigationStepResult(0, IsArrived: false);
 
-        // r ≥ R: turn toward the bearing, at most one step (partial turns are fine,
-        // never faster than the angular inertia allows).
         double turnDelta = Math.Sign(delta) * Math.Min(Math.Abs(delta), turnStepDegrees);
+
+        // Segment crossing check with post-turn direction.
+        if (stepTimeMs > 0)
+        {
+            double finalDirection = directionDegrees + turnDelta;
+            if (SegmentCrossesTarget(
+                    x, y, finalDirection, speedKmS, stepTimeMs, targetX, targetY))
+                return new NavigationStepResult(turnDelta, IsArrived: true);
+        }
+
         return new NavigationStepResult(turnDelta, IsArrived: false);
     }
 
-    /// <summary>Bearing from (0,0) toward (dx, dy) in degrees, 0° = up, clockwise, in [0, 360).</summary>
+    private static NavigationStepResult HoldLockedCourse(
+        double x, double y,
+        double directionDegrees,
+        double lockedCourseDegrees,
+        double speedKmS,
+        double targetX,
+        double targetY,
+        int turnStepDegrees,
+        long stepTimeMs,
+        bool isNewLock = false)
+    {
+        // Turn toward the locked course if not already aligned.
+        double lockDelta = ShortestSignedAngleDegrees(directionDegrees, lockedCourseDegrees);
+
+        double turnDelta;
+        if (Math.Abs(lockDelta) <= turnStepDegrees / 2.0)
+        {
+            // On (or nearly on) the locked course.
+            // When first locking, return the residual delta so the Engine applies it
+            // (otherwise a sub-turn-step error is permanently lost — P1 fix).
+            turnDelta = isNewLock && Math.Abs(lockDelta) <= turnStepDegrees ? lockDelta : 0;
+        }
+        else
+        {
+            turnDelta = Math.Sign(lockDelta) * Math.Min(Math.Abs(lockDelta), turnStepDegrees);
+        }
+
+        // Arrival checks.
+        double dx = targetX - x;
+        double dy = targetY - y;
+        double directionRad = (directionDegrees + turnDelta) * Math.PI / 180.0;
+
+        // Target behind us (dot ≤ 0) while on or locking to course.
+        if (Math.Abs(lockDelta) <= turnStepDegrees / 2.0)
+        {
+            double dot = dx * Math.Sin(directionRad) - dy * Math.Cos(directionRad);
+            if (dot <= 0)
+                return new NavigationStepResult(turnDelta, IsArrived: true);
+        }
+
+        // Segment crossing check with (post-turn) direction.
+        if (stepTimeMs > 0)
+        {
+            double finalDir = directionDegrees + turnDelta;
+            if (SegmentCrossesTarget(
+                    x, y, finalDir, speedKmS, stepTimeMs, targetX, targetY))
+                return new NavigationStepResult(turnDelta, IsArrived: true);
+        }
+
+        return new NavigationStepResult(turnDelta, IsArrived: false,
+            LockedCourseDegrees: lockedCourseDegrees);
+    }
+
+    private static bool SegmentCrossesTarget(
+        double x, double y,
+        double directionDegrees,
+        double speedKmS,
+        long stepTimeMs,
+        double targetX,
+        double targetY)
+    {
+        double stepDistance = speedKmS * (stepTimeMs / 1000.0) * 10.0;
+        if (stepDistance <= 0)
+            return false;
+
+        double angleRad = directionDegrees * Math.PI / 180.0;
+        double segDx = stepDistance * Math.Sin(angleRad);
+        double segDy = -stepDistance * Math.Cos(angleRad);
+
+        double tDx = targetX - x;
+        double tDy = targetY - y;
+
+        double dot = tDx * segDx + tDy * segDy;
+        double lenSq = segDx * segDx + segDy * segDy;
+        double t = lenSq > 0 ? Math.Clamp(dot / lenSq, 0.0, 1.0) : 0.0;
+
+        double closestX = x + t * segDx;
+        double closestY = y + t * segDy;
+
+        double dist = Math.Sqrt(
+            (targetX - closestX) * (targetX - closestX) +
+            (targetY - closestY) * (targetY - closestY));
+
+        return dist <= ArrivalEpsilon;
+    }
+
     private static double BearingDegrees(double dx, double dy)
     {
         double degrees = Math.Atan2(dx, -dy) * 180.0 / Math.PI;
         return degrees < 0 ? degrees + 360 : degrees;
     }
 
-    /// <summary>Shortest signed angle from course to bearing, in (-180, 180].</summary>
     private static double ShortestSignedAngleDegrees(double fromDegrees, double toDegrees)
     {
         double raw = (toDegrees - fromDegrees) % 360;

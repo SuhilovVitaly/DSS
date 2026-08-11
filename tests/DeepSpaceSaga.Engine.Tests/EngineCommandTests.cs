@@ -1565,9 +1565,10 @@ public class EngineCommandTests
     public void Navigate_aimed_at_target_keeps_course_and_completes_after_overshoot()
     {
         // ТЗ-05.3 (AC5): ship aimed straight at the target (0,-20), direction 0° = up.
-        // TurnDelta stays 0 on every cycle step (already on course), direction never
-        // changes, and the cycle completes once the ship is within ArrivalEpsilon
-        // (passes through the point) — Executed + CommandCompleted.
+        // TurnDelta stays 0 (already on course), direction never changes.
+        // Segment-based arrival detects crossing at the 250 ms step (the segment from
+        // (0,-10) to (0,-20) passes exactly through the target), so the cycle completes
+        // earlier than the old proximity-only check — Executed + CommandCompleted.
         var engine = CreateEngine(speedMps: 4000, directionDegrees: 0);
 
         engine.ReceiveCommand(Command(ShipEngineCommandTypes.NavigateToPoint, targetWorldX: 0, targetWorldY: -20));
@@ -1575,22 +1576,21 @@ public class EngineCommandTests
         Assert.Equal(0, start.Direction);
         Assert.Equal(ShipEngineCommandTypes.NavigateToPoint, start.ActiveEngineCommandType);
 
-        // 250 ms step: ship is at (0,-10), still on course — no turn.
-        var mid = PlayerShipFrom(engine.CaptureSnapshotForTests(250, SimulationSpeed.Speed1));
-        Assert.Equal(0, mid.Direction);
-
-        // 500 ms: ship reached (0,-20) → Arrived → auto-repeat chain cut.
-        var done = engine.CaptureSnapshotForTests(500, SimulationSpeed.Speed1);
-        var ship = PlayerShipFrom(done);
-        Assert.Equal(0, ship.Direction);
-        Assert.Null(ship.ActiveEngineCommandType);
-        var executed = Assert.Single(done.CommandResults);
+        // 250 ms step: segment from (0,-10) to (0,-20) passes through target → arrived.
+        var mid = engine.CaptureSnapshotForTests(250, SimulationSpeed.Speed1);
+        var midShip = PlayerShipFrom(mid);
+        Assert.Equal(0, midShip.Direction);
+        Assert.Null(midShip.ActiveEngineCommandType); // cycle completed
+        var executed = Assert.Single(mid.CommandResults);
         Assert.Equal(CommandResultStatus.Executed, executed.Status);
         Assert.Equal(ShipEngineCommandTypes.NavigateToPoint, executed.CommandType);
-        var completed = Assert.Single(done.ShipEvents, e => e.EventType == ShipEventTypes.CommandCompleted);
-        Assert.Equal(500, completed.GameTimeMs);
 
-        // Later: cycle is gone, direction unchanged.
+        // 500 ms: cycle already gone, direction unchanged.
+        var done = PlayerShipFrom(engine.CaptureSnapshotForTests(500, SimulationSpeed.Speed1));
+        Assert.Equal(0, done.Direction);
+        Assert.Null(done.ActiveEngineCommandType);
+
+        // Later: still clean.
         var later = PlayerShipFrom(engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1));
         Assert.Equal(0, later.Direction);
         Assert.Null(later.ActiveEngineCommandType);
