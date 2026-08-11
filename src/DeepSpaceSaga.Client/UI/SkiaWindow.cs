@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
@@ -79,12 +80,21 @@ public sealed class SkiaWindow : IDisposable
 
     private void OnLoad()
     {
-        var target = Silk.NET.Windowing.Monitor.GetMainMonitor(null);
+        var monitors = Silk.NET.Windowing.Monitor.GetMonitors(_window).ToArray();
+        InterfaceLog.Write(
+            $"DIAG OnLoad monitors found: {monitors.Length} — " +
+            string.Join(" | ", monitors.Select(m =>
+                $"idx={m.Index} name={m.Name} origin=({m.Bounds.Origin.X},{m.Bounds.Origin.Y}) " +
+                $"boundsSize={m.Bounds.Size.X}x{m.Bounds.Size.Y} videoMode={m.VideoMode.Resolution?.X}x{m.VideoMode.Resolution?.Y}")));
+        int selectedMonitorIndex = GetSelectedMonitorIndex();
+        var target = selectedMonitorIndex >= 0 && selectedMonitorIndex < monitors.Length
+            ? monitors[selectedMonitorIndex]
+            : Silk.NET.Windowing.Monitor.GetMainMonitor(_window);
+
         if (target is not null)
         {
             _window.Position = target.Bounds.Origin;
             _window.Size = target.VideoMode.Resolution ?? target.Bounds.Size;
-
         }
 
         _gl = _window.CreateOpenGL();
@@ -420,11 +430,10 @@ public sealed class SkiaWindow : IDisposable
     {
         try
         {
-            string settingsPath = Path.Combine(AppContext.BaseDirectory, "Settings.json");
-            if (!File.Exists(settingsPath))
+            if (!File.Exists(SettingsFilePath))
                 return true;
 
-            using var doc = JsonDocument.Parse(File.ReadAllText(settingsPath));
+            using var doc = JsonDocument.Parse(File.ReadAllText(SettingsFilePath));
             if (doc.RootElement.TryGetProperty("gameSettings", out var gs) &&
                 gs.TryGetProperty("showTrajectoryPrediction", out var stp))
                 return stp.GetBoolean();
@@ -500,7 +509,74 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is SettingsScreen)
             return;
 
-        await PushModalAsync(new SettingsScreen());
+        var monitors = Silk.NET.Windowing.Monitor.GetMonitors(_window).ToArray();
+        InterfaceLog.Write(
+            $"DIAG Monitors found: {monitors.Length} — " +
+            string.Join(" | ", monitors.Select(m =>
+                $"idx={m.Index} name={m.Name} origin=({m.Bounds.Origin.X},{m.Bounds.Origin.Y}) " +
+                $"boundsSize={m.Bounds.Size.X}x{m.Bounds.Size.Y} videoMode={m.VideoMode.Resolution?.X}x{m.VideoMode.Resolution?.Y}")));
+
+        var monitorNames = monitors.Length > 0
+            ? monitors.Select((m, i) => $"Monitor {i + 1} ({m.Bounds.Size.X}x{m.Bounds.Size.Y})").ToArray()
+            : new[] { "Monitor 1" };
+
+        int selectedMonitorIndex = GetSelectedMonitorIndex();
+        if (selectedMonitorIndex < 0 || selectedMonitorIndex >= monitorNames.Length)
+            selectedMonitorIndex = 0;
+
+        await PushModalAsync(new SettingsScreen(monitorNames, selectedMonitorIndex, SaveSelectedMonitorIndex));
+    }
+
+    private static string SettingsFilePath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
+
+    private static int GetSelectedMonitorIndex()
+    {
+        try
+        {
+            if (!File.Exists(SettingsFilePath))
+                return 0;
+
+            using var doc = JsonDocument.Parse(File.ReadAllText(SettingsFilePath));
+            if (doc.RootElement.TryGetProperty("gameSettings", out var gs) &&
+                gs.TryGetProperty("selectedMonitorIndex", out var smi))
+                return smi.GetInt32();
+
+            return 0;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// Persists the chosen monitor immediately (per requirements), but the running
+    /// window is not moved — monitor placement is only read once, at startup
+    /// (<see cref="OnLoad"/>), so the choice takes effect on the next launch.
+    /// </summary>
+    private static void SaveSelectedMonitorIndex(int index)
+    {
+        try
+        {
+            var root = File.Exists(SettingsFilePath)
+                ? JsonNode.Parse(File.ReadAllText(SettingsFilePath)) as JsonObject ?? new JsonObject()
+                : new JsonObject();
+
+            if (root["gameSettings"] is not JsonObject gameSettings)
+            {
+                gameSettings = new JsonObject();
+                root["gameSettings"] = gameSettings;
+            }
+
+            gameSettings["selectedMonitorIndex"] = index;
+
+            File.WriteAllText(SettingsFilePath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            InterfaceLog.Write($"Settings: selectedMonitorIndex saved = {index} (applies after restart)");
+        }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"Settings: failed to save selectedMonitorIndex: {ex.Message}");
+        }
     }
 
     private async Task CloseOverlayAsync()
