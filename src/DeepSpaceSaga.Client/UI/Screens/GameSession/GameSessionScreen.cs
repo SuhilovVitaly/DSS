@@ -37,7 +37,9 @@ public sealed class GameSessionScreen : IScreen
 
     // Object paints
     private readonly SKPaint _trailPaint;
+    private readonly SKPaint _futureTrajectoryShadowPaint;
     private readonly SKPaint _futureTrajectoryPaint;
+    private readonly SKPaint _navigationTrajectoryShadowPaint;
     private readonly SKPaint _navigationTrajectoryPaint;
     private readonly SKPaint _navigationTargetPaint;
     private readonly SKPaint _objectPaint;
@@ -238,21 +240,42 @@ public sealed class GameSessionScreen : IScreen
         _labelRenderer = new ObjectLabelRenderer();
 
         _trailPaint = new SKPaint { Color = new SKColor(190, 190, 190, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 2f, IsAntialias = true };
+        // Future trajectory: dark glow shadow + main gray dashed line.
+        _futureTrajectoryShadowPaint = new SKPaint
+        {
+            Color = new SKColor(0, 0, 0, 80),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 3f,
+            IsAntialias = true,
+            StrokeCap = SKStrokeCap.Round,
+            MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 1.2f)
+        };
         _futureTrajectoryPaint = new SKPaint
         {
-            Color = new SKColor(30, 30, 30, 140),
+            Color = new SKColor(60, 60, 60, 180),
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 1f,
             IsAntialias = true,
+            StrokeCap = SKStrokeCap.Round,
             PathEffect = SKPathEffect.CreateDash(new float[] { 8f, 6f }, 0f)
         };
-        // Navigation trajectory: same gray dashed style as future trajectory.
+        // Navigation trajectory: glow shadow + slightly brighter main line.
+        _navigationTrajectoryShadowPaint = new SKPaint
+        {
+            Color = new SKColor(0, 0, 0, 90),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 4f,
+            IsAntialias = true,
+            StrokeCap = SKStrokeCap.Round,
+            MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 1.5f)
+        };
         _navigationTrajectoryPaint = new SKPaint
         {
-            Color = new SKColor(30, 30, 30, 140),
+            Color = new SKColor(70, 70, 70, 200),
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 2f,
             IsAntialias = true,
+            StrokeCap = SKStrokeCap.Round,
             PathEffect = SKPathEffect.CreateDash(new float[] { 10f, 8f }, 0f)
         };
         _navigationTargetPaint = new SKPaint
@@ -1068,6 +1091,7 @@ public sealed class GameSessionScreen : IScreen
                 var (fromX, fromY) = _camera.WorldToScreen(from.X, from.Y, width, height);
                 var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
 
+                canvas.DrawLine(fromX, fromY, toX, toY, _futureTrajectoryShadowPaint);
                 canvas.DrawLine(fromX, fromY, toX, toY, _futureTrajectoryPaint);
             }
         }
@@ -1118,6 +1142,7 @@ public sealed class GameSessionScreen : IScreen
                         var to = points[i];
                         var (fromX, fromY) = _camera.WorldToScreen(from.X, from.Y, width, height);
                         var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
+                        canvas.DrawLine(fromX, fromY, toX, toY, _navigationTrajectoryShadowPaint);
                         canvas.DrawLine(fromX, fromY, toX, toY, _navigationTrajectoryPaint);
                     }
                 }
@@ -1128,6 +1153,7 @@ public sealed class GameSessionScreen : IScreen
             {
                 var (sx, sy) = _camera.WorldToScreen(predicted.X, predicted.Y, width, height);
                 var (tx, ty) = _camera.WorldToScreen(pending.X, pending.Y, width, height);
+                canvas.DrawLine(sx, sy, tx, ty, _navigationTrajectoryShadowPaint);
                 canvas.DrawLine(sx, sy, tx, ty, _navigationTrajectoryPaint);
                 DrawNavigationTargetMarker(canvas, pending.X, pending.Y, width, height);
             }
