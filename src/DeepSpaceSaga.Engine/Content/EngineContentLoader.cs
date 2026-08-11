@@ -250,7 +250,11 @@ public static class EngineContentLoader
 
     internal sealed record EngineSettingsFile(
         [property: JsonPropertyName("typeData")] TypeDataPaths TypeData,
-        [property: JsonPropertyName("defaultScenario")] string DefaultScenario);
+        [property: JsonPropertyName("defaultScenario")] string DefaultScenario,
+        [property: JsonPropertyName("gameSettings")] GameSettingsRecord? GameSettings = null);
+
+    internal sealed record GameSettingsRecord(
+        [property: JsonPropertyName("showTrajectoryPrediction")] bool ShowTrajectoryPrediction = true);
 
     internal sealed record TypeDataPaths(
         [property: JsonPropertyName("moduleTypes")] string ModuleTypes,

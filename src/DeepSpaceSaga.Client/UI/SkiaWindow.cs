@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
@@ -350,11 +351,33 @@ public sealed class SkiaWindow : IDisposable
 
         _session = new GameSessionHandle(_sessionFactory.CreateSession());
         var predictor = new LinearMotionPredictor();
-        var gameScreen = new GameSessionScreen(_session.Buffer, predictor, _session);
+        var gameScreen = new GameSessionScreen(_session.Buffer, predictor, _session,
+            showTrajectoryPrediction: GetShowTrajectoryPrediction());
 
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed1;
         _screens.Replace(gameScreen);
+    }
+
+    private static bool GetShowTrajectoryPrediction()
+    {
+        try
+        {
+            string settingsPath = Path.Combine(AppContext.BaseDirectory, "Settings.json");
+            if (!File.Exists(settingsPath))
+                return true;
+
+            using var doc = JsonDocument.Parse(File.ReadAllText(settingsPath));
+            if (doc.RootElement.TryGetProperty("gameSettings", out var gs) &&
+                gs.TryGetProperty("showTrajectoryPrediction", out var stp))
+                return stp.GetBoolean();
+
+            return true;
+        }
+        catch
+        {
+            return true;
+        }
     }
 
     /// <summary>
@@ -468,7 +491,8 @@ public sealed class SkiaWindow : IDisposable
             {
                 newSession = new GameSessionHandle(_sessionFactory.CreateSessionFromSave());
                 var predictor = new LinearMotionPredictor();
-                newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession);
+                newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
+                    showTrajectoryPrediction: GetShowTrajectoryPrediction());
             }
             catch (Exception ex)
             {

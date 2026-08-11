@@ -33,6 +33,7 @@ public sealed class GameSessionScreen : IScreen
     private readonly HashSet<string> _initialTrailBootstrapObjectIds = new(StringComparer.Ordinal);
     private readonly GameSessionHandle? _handle;
     private readonly Func<long> _timestampProvider;
+    private readonly bool _showTrajectoryPrediction;
 
     // Object paints
     private readonly SKPaint _trailPaint;
@@ -215,12 +216,14 @@ public sealed class GameSessionScreen : IScreen
         SnapshotBuffer buffer,
         IMotionPredictor predictor,
         GameSessionHandle? handle = null,
-        Func<long>? timestampProvider = null)
+        Func<long>? timestampProvider = null,
+        bool showTrajectoryPrediction = true)
     {
         _buffer = buffer;
         _predictor = predictor;
         _handle = handle;
         _timestampProvider = timestampProvider ?? Stopwatch.GetTimestamp;
+        _showTrajectoryPrediction = showTrajectoryPrediction;
         _uiTimeStartTimestamp = _timestampProvider();
 
         _camera = new CameraState(focusX: 10000, focusY: 10000, pixelsPerWorldUnit: 1.0);
@@ -995,6 +998,9 @@ public sealed class GameSessionScreen : IScreen
 
     private void DrawFutureTrajectories(SKCanvas canvas, int width, int height)
     {
+        if (!_showTrajectoryPrediction)
+            return;
+
         foreach (var state in _renderStates)
         {
             if (!state.IsPlayerShip)
