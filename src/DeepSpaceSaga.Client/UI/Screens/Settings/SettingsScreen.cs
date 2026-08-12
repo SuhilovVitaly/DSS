@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.Settings;
 
 public sealed class SettingsScreen : IScreen
 {
-    private static readonly double[] UiScaleValues = { 1.0, 1.2, 1.5 };
+    private static readonly double[] UiScaleValues = { 0.8, 1.0, 1.2, 1.5 };
 
     private readonly IReadOnlyList<string> _monitorNames;
     private readonly Action<int> _onMonitorSelected;

@@ -43,6 +43,7 @@ public class GameSessionUiScaleTests
     }
 
     [Theory]
+    [InlineData(0.8f)]
     [InlineData(1.0f)]
     [InlineData(1.2f)]
     [InlineData(1.5f)]
@@ -53,7 +54,7 @@ public class GameSessionUiScaleTests
     }
 
     [Theory]
-    [InlineData(0.8f)]
+    [InlineData(0.7f)]
     [InlineData(0f)]
     [InlineData(-1f)]
     [InlineData(2.0f)]
@@ -71,7 +72,7 @@ public class GameSessionUiScaleTests
         screen.SetUiScale(1.5f);
         Assert.Equal(1.5f, screen.UiScale);
 
-        screen.SetUiScale(0.8f); // not in the allowed set
+        screen.SetUiScale(0.7f); // not in the allowed set
         Assert.Equal(1.0f, screen.UiScale);
     }
 

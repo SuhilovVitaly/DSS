@@ -35,7 +35,7 @@ public sealed class SkiaWindow : IDisposable
 
     private GameSessionHandle? _session;
     private GameSessionScreen? _gameSessionScreen;
-    private static readonly double[] AllowedUiScales = { 1.0, 1.2, 1.5 };
+    private static readonly double[] AllowedUiScales = { 0.8, 1.0, 1.2, 1.5 };
     private readonly SemaphoreSlim _transitionLock = new(1, 1);
     private int _modalDepth;
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;

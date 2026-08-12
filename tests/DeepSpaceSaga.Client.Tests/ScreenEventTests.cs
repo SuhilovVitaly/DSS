@@ -333,7 +333,7 @@ public class ScreenEventTests
         var (comboX, comboY) = SettingsUiScaleComboCenter();
         screen.OnMouseDown(comboX, comboY); // open dropdown
 
-        var (optX, optY) = SettingsUiScaleOptionCenter(2); // 150%
+        var (optX, optY) = SettingsUiScaleOptionCenter(3); // 150%
         var evt = screen.OnMouseDown(optX, optY);
 
         Assert.Equal(ScreenEvent.None, evt);
@@ -350,26 +350,43 @@ public class ScreenEventTests
         var (comboX, comboY) = SettingsUiScaleComboCenter();
         screen.OnMouseDown(comboX, comboY); // open dropdown
 
-        var (optX, optY) = SettingsUiScaleOptionCenter(0); // re-pick already-selected 100%
+        var (optX, optY) = SettingsUiScaleOptionCenter(1); // re-pick already-selected 100%
         screen.OnMouseDown(optX, optY);
 
         Assert.Equal(0, callCount);
     }
 
     [Fact]
-    public void Settings_invalid_persisted_uiscale_falls_back_to_100_percent()
+    public void Settings_selecting_80_percent_saves_immediately()
     {
-        // A corrupted/out-of-set persisted value (e.g. an old 80% or garbage) must
-        // never break Settings — it falls back to 100% (index of 1.0), so re-picking
-        // the 100% slot is a no-op while picking any other slot still fires.
-        int callCount = 0;
-        var screen = NewSettingsScreen(selectedUiScale: 0.8, onUiScaleSelected: _ => callCount++);
+        double? saved = null;
+        var screen = NewSettingsScreen(selectedUiScale: 1.0, onUiScaleSelected: v => saved = v);
         TriggerSettingsRender(screen);
 
         var (comboX, comboY) = SettingsUiScaleComboCenter();
         screen.OnMouseDown(comboX, comboY); // open dropdown
 
-        var (optX, optY) = SettingsUiScaleOptionCenter(0); // 100% slot — already selected via fallback
+        var (optX, optY) = SettingsUiScaleOptionCenter(0); // 80%
+        var evt = screen.OnMouseDown(optX, optY);
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Equal(0.8, saved);
+    }
+
+    [Fact]
+    public void Settings_invalid_persisted_uiscale_falls_back_to_100_percent()
+    {
+        // A corrupted/out-of-set persisted value (e.g. garbage or a removed option)
+        // must never break Settings — it falls back to 100% (index of 1.0), so
+        // re-picking the 100% slot is a no-op while picking any other slot still fires.
+        int callCount = 0;
+        var screen = NewSettingsScreen(selectedUiScale: 0.95, onUiScaleSelected: _ => callCount++);
+        TriggerSettingsRender(screen);
+
+        var (comboX, comboY) = SettingsUiScaleComboCenter();
+        screen.OnMouseDown(comboX, comboY); // open dropdown
+
+        var (optX, optY) = SettingsUiScaleOptionCenter(1); // 100% slot — already selected via fallback
         screen.OnMouseDown(optX, optY);
 
         Assert.Equal(0, callCount);
