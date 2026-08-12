@@ -36,6 +36,16 @@ public sealed class GameSessionScreen : IScreen
     private readonly Func<long> _timestampProvider;
     private readonly bool _showTrajectoryPrediction;
 
+    /// <summary>
+    /// UI-only scale factor applied to the GameSession overlay panels (top-left
+    /// Commands Panel, top-right scale/speed panels, bottom-center engine command
+    /// panel, bottom info panels). Never affects the tactical map, camera, or
+    /// hit-testing against map objects — only the UI-pass canvas transform and the
+    /// UI-space mouse coordinates derived from it.
+    /// </summary>
+    private float _uiScale = 1.0f;
+    private static readonly float[] AllowedUiScales = { 0.8f, 1.0f, 1.2f, 1.5f };
+
     // Object paints
     private readonly SKPaint _trailPaint;
     private readonly SKPaint _centerPaint;
@@ -73,10 +83,14 @@ public sealed class GameSessionScreen : IScreen
 
     private int _viewportW;
     private int _viewportH;
+    private float _uiViewportW;
+    private float _uiViewportH;
     private int _lastViewportW;
     private int _lastViewportH;
     private float _mouseX;
     private float _mouseY;
+    private float _uiMouseX;
+    private float _uiMouseY;
     private bool _shouldBootstrapInitialTrails = true;
     private bool _capturedInitialTrailBootstrapObjects;
     private long _lastFrameTimestamp;
@@ -202,6 +216,7 @@ public sealed class GameSessionScreen : IScreen
     internal IReadOnlyList<SKRect> EngineCommandButtonRects => _engineCommandButtonRects;
     internal int PressedEngineCommandButtonIndex => _pressedEngineCommandButtonIndex;
     internal CommandsPanel CommandsPanel => _commandsPanel;
+    internal float UiScale => _uiScale;
 
     /// <summary>Current frame's render list (scale-filtered, client-side).</summary>
     internal IReadOnlyList<ObjectRenderState> RenderStates => _renderStates;
@@ -216,13 +231,15 @@ public sealed class GameSessionScreen : IScreen
         IMotionPredictor predictor,
         GameSessionHandle? handle = null,
         Func<long>? timestampProvider = null,
-        bool showTrajectoryPrediction = true)
+        bool showTrajectoryPrediction = true,
+        float uiScale = 1.0f)
     {
         _buffer = buffer;
         _predictor = predictor;
         _handle = handle;
         _timestampProvider = timestampProvider ?? Stopwatch.GetTimestamp;
         _showTrajectoryPrediction = showTrajectoryPrediction;
+        _uiScale = ValidateUiScale(uiScale);
         _uiTimeStartTimestamp = _timestampProvider();
 
         _camera = new CameraState(focusX: 10000, focusY: 10000, pixelsPerWorldUnit: 1.0);
@@ -266,6 +283,20 @@ public sealed class GameSessionScreen : IScreen
         _engineCommandButtonIcons = LoadEngineCommandIcons();
     }
 
+    /// <summary>
+    /// Falls back to 1.0 (100%) whenever the requested scale is outside the allowed
+    /// set — an invalid uiScale must never break rendering.
+    /// </summary>
+    private static float ValidateUiScale(float scale) =>
+        Array.Exists(AllowedUiScales, v => Math.Abs(v - scale) < 0.001f) ? scale : 1.0f;
+
+    /// <summary>
+    /// Applies a new UI scale immediately to this already-open session screen
+    /// (called from Settings while the game session is running). The map, camera,
+    /// and simulation state are never touched by this call.
+    /// </summary>
+    internal void SetUiScale(float scale) => _uiScale = ValidateUiScale(scale);
+
     // ── IScreen ─────────────────────────────────────────────────
 
     public void OnActivated() { }
@@ -277,8 +308,14 @@ public sealed class GameSessionScreen : IScreen
 
     public ScreenEvent OnMouseDown(float x, float y)
     {
+        // UI panels are laid out and hit-tested in logical (unscaled) space — the
+        // raw window coordinates must be converted before testing against them.
+        // The map (below) always uses the raw x, y.
+        float uiX = x / _uiScale;
+        float uiY = y / _uiScale;
+
         // 0. Scale panel buttons (left of speed panel — check first)
-        int scaleIdx = HitTestScalePanel(x, y);
+        int scaleIdx = HitTestScalePanel(uiX, uiY);
         if (scaleIdx >= 0)
         {
             ApplyScale(ScaleTargets[scaleIdx]);
@@ -286,7 +323,7 @@ public sealed class GameSessionScreen : IScreen
         }
 
         // 1. Speed panel buttons
-        int speedIdx = HitTestSpeedPanel(x, y);
+        int speedIdx = HitTestSpeedPanel(uiX, uiY);
         if (speedIdx >= 0)
         {
             ApplySpeed(SpeedValues[speedIdx]);
@@ -294,7 +331,7 @@ public sealed class GameSessionScreen : IScreen
         }
 
         // 2. Ship command panel buttons
-        int commandIdx = HitTestEngineCommandPanel(x, y);
+        int commandIdx = HitTestEngineCommandPanel(uiX, uiY);
         if (commandIdx >= 0 && CanSendEngineCommand(
                 EngineCommandButtons[commandIdx].CommandType,
                 _buffer.Latest?.Snapshot))
@@ -304,30 +341,30 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        if (_lastCommandPanelRect.Contains(x, y))
+        if (_lastCommandPanelRect.Contains(uiX, uiY))
         {
             return ScreenEvent.None;
         }
 
         // 2.5. Commands Panel (top-left) — consume clicks, don't pan (ТЗ подзадача 1)
-        if (_commandsPanel.OnMouseDown(x, y))
+        if (_commandsPanel.OnMouseDown(uiX, uiY))
             return ScreenEvent.None;
 
         // 3. Info panel close button
-        if (_panelVisible && _lastCloseRect.Contains(x, y))
+        if (_panelVisible && _lastCloseRect.Contains(uiX, uiY))
         {
             _panelVisible = false;
             return ScreenEvent.None;
         }
 
         // 4. Info panel (consume, don't pan)
-        if (_panelVisible && _lastPanelRect.Contains(x, y))
+        if (_panelVisible && _lastPanelRect.Contains(uiX, uiY))
         {
             return ScreenEvent.None;
         }
 
         // 5. Player ship info panel (consume, don't pan)
-        if (_lastPlayerShipPanelRect.Contains(x, y))
+        if (_lastPlayerShipPanelRect.Contains(uiX, uiY))
         {
             return ScreenEvent.None;
         }
@@ -354,17 +391,24 @@ public sealed class GameSessionScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
+        // _mouseX/_mouseY stay raw (displayed as "Cursor Window" and used to compute
+        // "Cursor Game" via the camera); _uiMouseX/_uiMouseY are the logical-space
+        // coordinates UI panels hover-test against.
         _mouseX = x;
         _mouseY = y;
-        return _commandsPanel.OnMouseMove(x, y);
+        _uiMouseX = x / _uiScale;
+        _uiMouseY = y / _uiScale;
+        return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY);
     }
 
     public void OnMouseUp(float x, float y)
     {
         _mouseX = x;
         _mouseY = y;
+        _uiMouseX = x / _uiScale;
+        _uiMouseY = y / _uiScale;
         _pressedEngineCommandButtonIndex = -1;
-        _commandsPanel.OnMouseUp(x, y);
+        _commandsPanel.OnMouseUp(_uiMouseX, _uiMouseY);
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
@@ -691,6 +735,17 @@ public sealed class GameSessionScreen : IScreen
             _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera);
         }
 
+        // UI overlay pass — everything from here on is a GameSession UI panel, never
+        // the tactical map. Panels are laid out in logical (unscaled) coordinates;
+        // the canvas transform is the only thing that grows them to _uiScale. Text
+        // scales vectorially as part of this transform — base font sizes are never
+        // multiplied, and the transform is never combined with a TextSize change.
+        _uiViewportW = width / _uiScale;
+        _uiViewportH = height / _uiScale;
+
+        canvas.Save();
+        canvas.Scale(_uiScale);
+
         // 4.75. Scale panel (top-right, left of speed panel)
         DrawScalePanel(canvas);
 
@@ -711,6 +766,8 @@ public sealed class GameSessionScreen : IScreen
         // 8. Player ship info panel (bottom-right)
         var playerShip = FindPlayerShip(_renderStates);
         DrawPlayerShipInfoPanel(canvas, playerShip);
+
+        canvas.Restore();
     }
 
     // ── Speed panel ─────────────────────────────────────────────
@@ -1126,7 +1183,7 @@ public sealed class GameSessionScreen : IScreen
         int btnCount = SpeedLabels.Length;
         float totalW = SpeedPanelPadX * 2 + btnCount * SpeedBtnW + (btnCount - 1) * SpeedBtnGap;
         float panelH = SpeedPanelPadY * 2 + SpeedBtnH + SpeedIndicatorSize + 2f;
-        float panelX = _viewportW - totalW - PanelMargin;
+        float panelX = _uiViewportW - totalW - PanelMargin;
         float panelY = PanelMargin;
         return new SKRect(panelX, panelY, panelX + totalW, panelY + panelH);
     }
@@ -1327,8 +1384,8 @@ public sealed class GameSessionScreen : IScreen
         int btnCount = EngineCommandButtons.Length;
         float totalW = CommandPanelPadX * 2 + btnCount * CommandBtnSize + (btnCount - 1) * CommandBtnGap;
         float totalH = CommandPanelPadY * 2 + CommandBtnSize + CommandIndicatorSize + 2f;
-        float panelX = (_viewportW - totalW) / 2f;
-        float panelY = _viewportH - totalH - CommandPanelBottomMargin;
+        float panelX = (_uiViewportW - totalW) / 2f;
+        float panelY = _uiViewportH - totalH - CommandPanelBottomMargin;
 
         _lastCommandPanelRect = new SKRect(panelX, panelY, panelX + totalW, panelY + totalH);
         canvas.DrawRect(_lastCommandPanelRect, _panelBgPaint);
@@ -1349,7 +1406,7 @@ public sealed class GameSessionScreen : IScreen
 
             bool buttonEnabled = panelEnabled &&
                                  CanSendEngineCommand(EngineCommandButtons[i].CommandType, buffered?.Snapshot);
-            bool isHover = rect.Contains(_mouseX, _mouseY);
+            bool isHover = rect.Contains(_uiMouseX, _uiMouseY);
             bool isPressed = i == _pressedEngineCommandButtonIndex && isHover;
             var paint = buttonEnabled
                 ? isPressed ? _commandBtnPressedPaint : isHover ? _commandBtnHoverPaint : _commandBtnNormalPaint
@@ -1517,7 +1574,7 @@ public sealed class GameSessionScreen : IScreen
         float panelH = PanelPaddingY * 2 + lines.Count * PanelLineHeight;
 
         float panelX = PanelMargin;
-        float panelY = _viewportH - panelH - PanelMargin;
+        float panelY = _uiViewportH - panelH - PanelMargin;
 
         _lastPanelRect = new SKRect(panelX, panelY, panelX + panelW, panelY + panelH);
 
@@ -1644,8 +1701,8 @@ public sealed class GameSessionScreen : IScreen
         float panelW = PanelPaddingX * 2 + labelWidth + gap + valueWidth;
         float panelH = PanelPaddingY * 2 + lines.Count * PanelLineHeight;
 
-        float panelX = _viewportW - panelW - PanelMargin;
-        float panelY = _viewportH - panelH - PanelMargin;
+        float panelX = _uiViewportW - panelW - PanelMargin;
+        float panelY = _uiViewportH - panelH - PanelMargin;
 
         _lastPlayerShipPanelRect = new SKRect(panelX, panelY, panelX + panelW, panelY + panelH);
 

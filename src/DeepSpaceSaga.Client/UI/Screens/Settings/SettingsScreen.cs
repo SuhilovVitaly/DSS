@@ -7,8 +7,11 @@ namespace DeepSpaceSaga.Client.UI.Screens.Settings;
 
 public sealed class SettingsScreen : IScreen
 {
+    private static readonly double[] UiScaleValues = { 0.8, 1.0, 1.2, 1.5 };
+
     private readonly IReadOnlyList<string> _monitorNames;
     private readonly Action<int> _onMonitorSelected;
+    private readonly Action<double> _onUiScaleSelected;
 
     private int _screenWidth;
     private int _screenHeight;
@@ -16,6 +19,10 @@ public sealed class SettingsScreen : IScreen
     private int _selectedMonitorIndex;
     private bool _isMonitorComboOpen;
     private int _hoveredMonitorOption = -1;
+
+    private int _selectedUiScaleIndex;
+    private bool _isUiScaleComboOpen;
+    private int _hoveredUiScaleOption = -1;
 
     private SettingsButton _hoveredButton = SettingsButton.None;
     private SettingsButton _pressedButton = SettingsButton.None;
@@ -33,11 +40,17 @@ public sealed class SettingsScreen : IScreen
         IsAntialias = true
     };
 
-    public SettingsScreen(IReadOnlyList<string> monitorNames, int selectedMonitorIndex, Action<int> onMonitorSelected)
+    public SettingsScreen(
+        IReadOnlyList<string> monitorNames, int selectedMonitorIndex, Action<int> onMonitorSelected,
+        double selectedUiScale, Action<double> onUiScaleSelected)
     {
         _monitorNames = monitorNames.Count > 0 ? monitorNames : new[] { "Monitor 1" };
         _selectedMonitorIndex = Math.Clamp(selectedMonitorIndex, 0, _monitorNames.Count - 1);
         _onMonitorSelected = onMonitorSelected;
+
+        int scaleIndex = Array.FindIndex(UiScaleValues, v => Math.Abs(v - selectedUiScale) < 0.001);
+        _selectedUiScaleIndex = scaleIndex >= 0 ? scaleIndex : Array.IndexOf(UiScaleValues, 1.0);
+        _onUiScaleSelected = onUiScaleSelected;
     }
 
     public void OnActivated()
@@ -46,6 +59,8 @@ public sealed class SettingsScreen : IScreen
         _pressedButton = SettingsButton.None;
         _isMonitorComboOpen = false;
         _hoveredMonitorOption = -1;
+        _isUiScaleComboOpen = false;
+        _hoveredUiScaleOption = -1;
     }
 
     public void OnDeactivated() { }
@@ -58,6 +73,12 @@ public sealed class SettingsScreen : IScreen
         if (_isMonitorComboOpen)
         {
             _isMonitorComboOpen = false;
+            return ScreenEvent.None;
+        }
+
+        if (_isUiScaleComboOpen)
+        {
+            _isUiScaleComboOpen = false;
             return ScreenEvent.None;
         }
 
@@ -80,11 +101,32 @@ public sealed class SettingsScreen : IScreen
             return ScreenEvent.None;
         }
 
+        if (_isUiScaleComboOpen)
+        {
+            int option = SettingsLayout.HitTestUiScaleOption(
+                x, y, _screenWidth, _screenHeight, UiScaleValues.Length);
+            _isUiScaleComboOpen = false;
+
+            if (option >= 0 && option != _selectedUiScaleIndex)
+            {
+                _selectedUiScaleIndex = option;
+                _onUiScaleSelected(UiScaleValues[option]);
+            }
+
+            return ScreenEvent.None;
+        }
+
         var hit = SettingsLayout.HitTest(x, y, _screenWidth, _screenHeight);
 
         if (hit == SettingsButton.MonitorCombo)
         {
             _isMonitorComboOpen = true;
+            return ScreenEvent.None;
+        }
+
+        if (hit == SettingsButton.UiScaleCombo)
+        {
+            _isUiScaleComboOpen = true;
             return ScreenEvent.None;
         }
 
@@ -101,6 +143,13 @@ public sealed class SettingsScreen : IScreen
         if (_isMonitorComboOpen)
         {
             _hoveredMonitorOption = SettingsLayout.HitTestMonitorOption(x, y, _screenWidth, _screenHeight, _monitorNames.Count);
+            return true;
+        }
+
+        if (_isUiScaleComboOpen)
+        {
+            _hoveredUiScaleOption = SettingsLayout.HitTestUiScaleOption(
+                x, y, _screenWidth, _screenHeight, UiScaleValues.Length);
             return true;
         }
 
@@ -130,8 +179,40 @@ public sealed class SettingsScreen : IScreen
         canvas.DrawText("SETTINGS", cx, pt + SettingsLayout.TitleY, MenuStyle.TextTitle);
 
         DrawMonitorCombo(canvas, pl, pt, cx);
+        DrawUiScaleCombo(canvas, pl, pt, cx);
         DrawButton(canvas, pl, pt, SettingsLayout.ExitY, "EXIT", SettingsButton.Exit);
     }
+
+    private void DrawUiScaleCombo(SKCanvas canvas, float panelLeft, float panelTop, float centerX)
+    {
+        canvas.DrawText("INTERFACE SCALE", centerX, panelTop + SettingsLayout.UiScaleLabelY, MenuStyle.TextStatus);
+
+        float bx = panelLeft + (SettingsLayout.PanelWidth - SettingsLayout.UiScaleComboWidth) / 2f;
+        float by = panelTop + SettingsLayout.UiScaleComboY;
+        var boxRect = new SKRect(bx, by, bx + SettingsLayout.UiScaleComboWidth, by + SettingsLayout.UiScaleComboHeight);
+
+        bool boxHighlighted = _isUiScaleComboOpen || _hoveredButton == SettingsButton.UiScaleCombo;
+        MenuStyle.DrawButton(canvas, boxRect, FormatScaleLabel(UiScaleValues[_selectedUiScaleIndex]),
+            boxHighlighted ? ButtonState.Hovered : ButtonState.Normal);
+        DrawDropdownArrow(canvas, boxRect, _isUiScaleComboOpen);
+
+        if (_isUiScaleComboOpen)
+        {
+            for (int i = 0; i < UiScaleValues.Length; i++)
+            {
+                float oy = by + SettingsLayout.UiScaleComboHeight + i * SettingsLayout.UiScaleOptionHeight;
+                var optionRect = new SKRect(bx, oy, bx + SettingsLayout.UiScaleComboWidth, oy + SettingsLayout.UiScaleOptionHeight);
+
+                var optionState = i == _selectedUiScaleIndex ? ButtonState.Pressed
+                    : i == _hoveredUiScaleOption ? ButtonState.Hovered
+                    : ButtonState.Normal;
+
+                MenuStyle.DrawButton(canvas, optionRect, FormatScaleLabel(UiScaleValues[i]), optionState);
+            }
+        }
+    }
+
+    private static string FormatScaleLabel(double scale) => $"{(int)Math.Round(scale * 100)}%";
 
     private void DrawMonitorCombo(SKCanvas canvas, float panelLeft, float panelTop, float centerX)
     {

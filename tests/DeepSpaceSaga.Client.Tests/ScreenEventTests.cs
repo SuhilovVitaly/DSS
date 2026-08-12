@@ -178,8 +178,11 @@ public class ScreenEventTests
 
     private static readonly string[] TestMonitorNames = { "Monitor 1 (1920x1080)", "Monitor 2 (2560x1440)" };
 
-    private static SettingsScreen NewSettingsScreen(int selectedMonitorIndex = 0, Action<int>? onMonitorSelected = null) =>
-        new(TestMonitorNames, selectedMonitorIndex, onMonitorSelected ?? (_ => { }));
+    private static SettingsScreen NewSettingsScreen(
+        int selectedMonitorIndex = 0, Action<int>? onMonitorSelected = null,
+        double selectedUiScale = 1.0, Action<double>? onUiScaleSelected = null) =>
+        new(TestMonitorNames, selectedMonitorIndex, onMonitorSelected ?? (_ => { }),
+            selectedUiScale, onUiScaleSelected ?? (_ => { }));
 
     private static (float x, float y) SettingsMonitorComboCenter()
     {
@@ -292,6 +295,101 @@ public class ScreenEventTests
         Assert.Equal(MenuLayout.PanelHeight, SettingsLayout.PanelHeight);
         Assert.Equal(MenuLayout.PanelLeft(ScreenWidth), SettingsLayout.PanelLeft(ScreenWidth));
         Assert.Equal(MenuLayout.PanelTop(ScreenHeight), SettingsLayout.PanelTop(ScreenHeight));
+    }
+
+    // --- Settings: UI scale combo (100% / 120% / 150%) ---
+
+    private static (float x, float y) SettingsUiScaleComboCenter()
+    {
+        float bx = SettingsPanelLeft + (SettingsLayout.PanelWidth - SettingsLayout.UiScaleComboWidth) / 2f;
+        return (bx + SettingsLayout.UiScaleComboWidth / 2f,
+                SettingsPanelTop + SettingsLayout.UiScaleComboY + SettingsLayout.UiScaleComboHeight / 2f);
+    }
+
+    private static (float x, float y) SettingsUiScaleOptionCenter(int optionIndex)
+    {
+        float bx = SettingsPanelLeft + (SettingsLayout.PanelWidth - SettingsLayout.UiScaleComboWidth) / 2f;
+        float oy = SettingsPanelTop + SettingsLayout.UiScaleComboY + SettingsLayout.UiScaleComboHeight
+            + optionIndex * SettingsLayout.UiScaleOptionHeight;
+        return (bx + SettingsLayout.UiScaleComboWidth / 2f, oy + SettingsLayout.UiScaleOptionHeight / 2f);
+    }
+
+    [Fact]
+    public void Settings_uiscale_combo_click_opens_dropdown_without_screen_event()
+    {
+        var screen = NewSettingsScreen();
+        TriggerSettingsRender(screen);
+        var (x, y) = SettingsUiScaleComboCenter();
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void Settings_selecting_uiscale_option_saves_immediately_and_stays_open()
+    {
+        double? saved = null;
+        var screen = NewSettingsScreen(selectedUiScale: 1.0, onUiScaleSelected: v => saved = v);
+        TriggerSettingsRender(screen);
+
+        var (comboX, comboY) = SettingsUiScaleComboCenter();
+        screen.OnMouseDown(comboX, comboY); // open dropdown
+
+        var (optX, optY) = SettingsUiScaleOptionCenter(3); // 150%
+        var evt = screen.OnMouseDown(optX, optY);
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Equal(1.5, saved);
+    }
+
+    [Fact]
+    public void Settings_reselecting_same_uiscale_does_not_invoke_callback()
+    {
+        int callCount = 0;
+        var screen = NewSettingsScreen(selectedUiScale: 1.0, onUiScaleSelected: _ => callCount++);
+        TriggerSettingsRender(screen);
+
+        var (comboX, comboY) = SettingsUiScaleComboCenter();
+        screen.OnMouseDown(comboX, comboY); // open dropdown
+
+        var (optX, optY) = SettingsUiScaleOptionCenter(1); // re-pick already-selected 100%
+        screen.OnMouseDown(optX, optY);
+
+        Assert.Equal(0, callCount);
+    }
+
+    [Fact]
+    public void Settings_selecting_80_percent_saves_immediately()
+    {
+        double? saved = null;
+        var screen = NewSettingsScreen(selectedUiScale: 1.0, onUiScaleSelected: v => saved = v);
+        TriggerSettingsRender(screen);
+
+        var (comboX, comboY) = SettingsUiScaleComboCenter();
+        screen.OnMouseDown(comboX, comboY); // open dropdown
+
+        var (optX, optY) = SettingsUiScaleOptionCenter(0); // 80%
+        var evt = screen.OnMouseDown(optX, optY);
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Equal(0.8, saved);
+    }
+
+    [Fact]
+    public void Settings_invalid_persisted_uiscale_falls_back_to_100_percent()
+    {
+        // A corrupted/out-of-set persisted value (e.g. garbage or a removed option)
+        // must never break Settings — it falls back to 100% (index of 1.0), so
+        // re-picking the 100% slot is a no-op while picking any other slot still fires.
+        int callCount = 0;
+        var screen = NewSettingsScreen(selectedUiScale: 0.95, onUiScaleSelected: _ => callCount++);
+        TriggerSettingsRender(screen);
+
+        var (comboX, comboY) = SettingsUiScaleComboCenter();
+        screen.OnMouseDown(comboX, comboY); // open dropdown
+
+        var (optX, optY) = SettingsUiScaleOptionCenter(1); // 100% slot — already selected via fallback
+        screen.OnMouseDown(optX, optY);
+
+        Assert.Equal(0, callCount);
     }
 
 }

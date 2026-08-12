@@ -9,6 +9,7 @@
   "defaultScenario": "Scenarios/Default/scenario.json",
   "gameSettings": {
     "showTrajectoryPrediction": true,
-    "selectedMonitorIndex": 0
+    "selectedMonitorIndex": 0,
+    "uiScale": 1.0
   }
 }

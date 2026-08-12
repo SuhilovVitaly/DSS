@@ -255,7 +255,8 @@ public static class EngineContentLoader
 
     internal sealed record GameSettingsRecord(
         [property: JsonPropertyName("showTrajectoryPrediction")] bool ShowTrajectoryPrediction = true,
-        [property: JsonPropertyName("selectedMonitorIndex")] int SelectedMonitorIndex = 0);
+        [property: JsonPropertyName("selectedMonitorIndex")] int SelectedMonitorIndex = 0,
+        [property: JsonPropertyName("uiScale")] double UiScale = 1.0);
 
     internal sealed record TypeDataPaths(
         [property: JsonPropertyName("moduleTypes")] string ModuleTypes,

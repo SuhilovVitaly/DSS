@@ -34,6 +34,8 @@ public sealed class SkiaWindow : IDisposable
     private RawImage? _interactiveCursorImage;
 
     private GameSessionHandle? _session;
+    private GameSessionScreen? _gameSessionScreen;
+    private static readonly double[] AllowedUiScales = { 0.8, 1.0, 1.2, 1.5 };
     private readonly SemaphoreSlim _transitionLock = new(1, 1);
     private int _modalDepth;
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
@@ -419,8 +421,10 @@ public sealed class SkiaWindow : IDisposable
         _session = new GameSessionHandle(_sessionFactory.CreateSession());
         var predictor = new LinearMotionPredictor();
         var gameScreen = new GameSessionScreen(_session.Buffer, predictor, _session,
-            showTrajectoryPrediction: GetShowTrajectoryPrediction());
+            showTrajectoryPrediction: GetShowTrajectoryPrediction(),
+            uiScale: (float)GetUiScale());
 
+        _gameSessionScreen = gameScreen;
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed1;
         _screens.Replace(gameScreen);
@@ -524,7 +528,11 @@ public sealed class SkiaWindow : IDisposable
         if (selectedMonitorIndex < 0 || selectedMonitorIndex >= monitorNames.Length)
             selectedMonitorIndex = 0;
 
-        await PushModalAsync(new SettingsScreen(monitorNames, selectedMonitorIndex, SaveSelectedMonitorIndex));
+        double uiScale = GetUiScale();
+
+        await PushModalAsync(new SettingsScreen(
+            monitorNames, selectedMonitorIndex, SaveSelectedMonitorIndex,
+            uiScale, SaveUiScale));
     }
 
     private static string SettingsFilePath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
@@ -577,6 +585,64 @@ public sealed class SkiaWindow : IDisposable
         {
             InterfaceLog.Write($"Settings: failed to save selectedMonitorIndex: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Falls back to 1.0 (100%) whenever the persisted value is missing, malformed,
+    /// or outside the allowed set — an invalid uiScale must never break startup.
+    /// </summary>
+    private static double ValidateUiScale(double scale) =>
+        Array.Exists(AllowedUiScales, v => Math.Abs(v - scale) < 0.001) ? scale : 1.0;
+
+    private static double GetUiScale()
+    {
+        try
+        {
+            if (!File.Exists(SettingsFilePath))
+                return 1.0;
+
+            using var doc = JsonDocument.Parse(File.ReadAllText(SettingsFilePath));
+            if (doc.RootElement.TryGetProperty("gameSettings", out var gs) &&
+                gs.TryGetProperty("uiScale", out var scale))
+                return ValidateUiScale(scale.GetDouble());
+
+            return 1.0;
+        }
+        catch
+        {
+            return 1.0;
+        }
+    }
+
+    /// <summary>
+    /// Persists the chosen UI scale and applies it immediately to the currently
+    /// open GameSessionScreen, if any (the Settings screen itself never scales).
+    /// </summary>
+    private void SaveUiScale(double scale)
+    {
+        try
+        {
+            var root = File.Exists(SettingsFilePath)
+                ? JsonNode.Parse(File.ReadAllText(SettingsFilePath)) as JsonObject ?? new JsonObject()
+                : new JsonObject();
+
+            if (root["gameSettings"] is not JsonObject gameSettings)
+            {
+                gameSettings = new JsonObject();
+                root["gameSettings"] = gameSettings;
+            }
+
+            gameSettings["uiScale"] = scale;
+
+            File.WriteAllText(SettingsFilePath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            InterfaceLog.Write($"Settings: uiScale saved = {scale}");
+        }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"Settings: failed to save uiScale: {ex.Message}");
+        }
+
+        _gameSessionScreen?.SetUiScale((float)scale);
     }
 
     private async Task CloseOverlayAsync()
@@ -646,7 +712,8 @@ public sealed class SkiaWindow : IDisposable
                 newSession = new GameSessionHandle(_sessionFactory.CreateSessionFromSave());
                 var predictor = new LinearMotionPredictor();
                 newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
-                    showTrajectoryPrediction: GetShowTrajectoryPrediction());
+                    showTrajectoryPrediction: GetShowTrajectoryPrediction(),
+                    uiScale: (float)GetUiScale());
             }
             catch (Exception ex)
             {
@@ -659,6 +726,7 @@ public sealed class SkiaWindow : IDisposable
                 await oldSession.DisposeAsync();
 
             _session = newSession;
+            _gameSessionScreen = newScreen;
             await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
             _modalDepth = 0;
             _savedSpeed = SimulationSpeed.Speed0;
@@ -677,6 +745,7 @@ public sealed class SkiaWindow : IDisposable
         // End the game session explicitly — no resume needed
         _ = _session?.DisposeAsync();
         _session = null;
+        _gameSessionScreen = null;
 
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed1;
