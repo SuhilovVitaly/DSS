@@ -36,7 +36,8 @@
       "linearInertiaMps2": 400,
       "angularInertiaDegPerSec": 4,
       "baseCycleTimeMs": 1000,
-      "fuelCapacityKg": 10000
+      "fuelCapacityKg": 10000,
+      "baseSuccessChancePercent": 100
     },
     {
       "typeId": "module.generator.basic",
@@ -90,7 +91,8 @@
             "scanner.common-scan",
             "scanner.direct-scan"
         ],
-        "baseCycleTimeMs": 20000
+        "baseCycleTimeMs": 20000,
+        "baseSuccessChancePercent": 100
     },
     {
       "typeId": "module.habitation.basic",
