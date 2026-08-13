@@ -85,6 +85,15 @@ public static class EngineContentLoader
                 throw new ContentException($"Module type '{dto.TypeId}' is missing commandTypeIds.");
             ValidateEngineParameters(dto);
 
+            // A missing/null baseSuccessChancePercent normalizes to 100 (§56.5).
+            int baseSuccessChancePercent = dto.BaseSuccessChancePercent ?? 100;
+            if (baseSuccessChancePercent is < 0 or > 100)
+            {
+                throw new ContentException(
+                    $"Module type '{dto.TypeId}' has baseSuccessChancePercent " +
+                    $"'{baseSuccessChancePercent}' outside the valid range 0..100.");
+            }
+
             long baseCycleTimeMs = dto.BaseCycleTimeMs ?? 0;
 
             // Active module types (those that declare commandTypeIds) MUST specify a
@@ -109,7 +118,8 @@ public static class EngineContentLoader
                 dto.LinearInertiaMps2,
                 dto.AngularInertiaDegPerSec,
                 baseCycleTimeMs,
-                dto.FuelCapacityKg);
+                dto.FuelCapacityKg,
+                baseSuccessChancePercent);
         }).ToArray();
     }
 
@@ -282,7 +292,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("linearInertiaMps2")] int? LinearInertiaMps2,
         [property: JsonPropertyName("angularInertiaDegPerSec")] int? AngularInertiaDegPerSec,
         [property: JsonPropertyName("baseCycleTimeMs")] long? BaseCycleTimeMs,
-        [property: JsonPropertyName("fuelCapacityKg")] long? FuelCapacityKg);
+        [property: JsonPropertyName("fuelCapacityKg")] long? FuelCapacityKg,
+        [property: JsonPropertyName("baseSuccessChancePercent")] int? BaseSuccessChancePercent);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto> ItemTypes);

@@ -291,6 +291,7 @@ public class ScenarioEngineTests
 
         var engineType = Assert.Single(activeTypes, t => t.TypeId == "module.engine.basic");
         Assert.Equal(12, engineType.CommandTypeIds.Length); // 11 + engine.cancel-all
+        Assert.Equal(100, engineType.BaseSuccessChancePercent);
         foreach (string commandTypeId in engineType.CommandTypeIds)
         {
             Assert.True(registry.CommandDefinitions.Contains(commandTypeId),
@@ -299,6 +300,7 @@ public class ScenarioEngineTests
 
         var scannerType = Assert.Single(activeTypes, t => t.TypeId == "module.scanner.mk1");
         Assert.Equal(3, scannerType.CommandTypeIds.Length); // deep-scan, common-scan, direct-scan
+        Assert.Equal(100, scannerType.BaseSuccessChancePercent);
         foreach (string commandTypeId in scannerType.CommandTypeIds)
         {
             Assert.True(registry.CommandDefinitions.Contains(commandTypeId),
@@ -308,6 +310,110 @@ public class ScenarioEngineTests
         int passiveTypes = Enumerable.Range(0, registry.ModuleTypes.Count)
             .Count(i => registry.ModuleTypes.GetDefinition(i).CommandTypeIds.Length == 0);
         Assert.Equal(7, passiveTypes);
+    }
+
+    [Theory]
+    [InlineData(null, 100)]
+    [InlineData(0, 0)]
+    [InlineData(1, 1)]
+    [InlineData(99, 99)]
+    [InlineData(100, 100)]
+    public void Module_type_base_success_chance_percent_loads_expected_value(int? jsonValue, int expected)
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory);
+            WriteMinimalContent(directory);
+            string field = jsonValue is null ? "" : $"\"baseSuccessChancePercent\": {jsonValue.Value},";
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), $$"""
+            {
+              "moduleTypes": [
+                {
+                  "typeId": "module.test.passive",
+                  "displayName": "Test",
+                  "slotSize": 1,
+                  "massKg": 1,
+                  "structurePointsMax": 1,
+                  "powerConsumptionW": 0,
+                  "commandTypeIds": [],
+                  {{field}}
+                  "baseCycleTimeMs": 0
+                }
+              ]
+            }
+            """);
+
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(
+                Path.Combine(directory, "Settings.json"), out _, out _);
+
+            Assert.Equal(expected, registry.ModuleTypes.GetDefinition(0).BaseSuccessChancePercent);
+        });
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(101)]
+    public void Module_type_base_success_chance_percent_out_of_range_throws(int invalidValue)
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory);
+            WriteMinimalContent(directory);
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), $$"""
+            {
+              "moduleTypes": [
+                {
+                  "typeId": "module.test.passive",
+                  "displayName": "Test",
+                  "slotSize": 1,
+                  "massKg": 1,
+                  "structurePointsMax": 1,
+                  "powerConsumptionW": 0,
+                  "commandTypeIds": [],
+                  "baseSuccessChancePercent": {{invalidValue}},
+                  "baseCycleTimeMs": 0
+                }
+              ]
+            }
+            """);
+
+            var exception = Assert.Throws<ContentException>(() =>
+                EngineContentLoader.LoadRegistryFromSettingsFile(
+                    Path.Combine(directory, "Settings.json"), out _, out _));
+            Assert.Contains("module.test.passive", exception.Message, StringComparison.Ordinal);
+            Assert.Contains("baseSuccessChancePercent", exception.Message, StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
+    public void Module_type_base_success_chance_percent_rejects_fractional_value()
+    {
+        WithContentDirectory(directory =>
+        {
+            WriteSettings(directory);
+            WriteMinimalContent(directory);
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), """
+            {
+              "moduleTypes": [
+                {
+                  "typeId": "module.test.passive",
+                  "displayName": "Test",
+                  "slotSize": 1,
+                  "massKg": 1,
+                  "structurePointsMax": 1,
+                  "powerConsumptionW": 0,
+                  "commandTypeIds": [],
+                  "baseSuccessChancePercent": 99.5,
+                  "baseCycleTimeMs": 0
+                }
+              ]
+            }
+            """);
+
+            Assert.Throws<ContentException>(() =>
+                EngineContentLoader.LoadRegistryFromSettingsFile(
+                    Path.Combine(directory, "Settings.json"), out _, out _));
+        });
     }
 
     [Theory]
