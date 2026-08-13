@@ -85,8 +85,11 @@ public sealed class SettingsScreen : IScreen
         return ScreenEvent.CloseSettings;
     }
 
-    public ScreenEvent OnMouseDown(float x, float y)
+    public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
+        if (button != MouseButton.Left)
+            return ScreenEvent.None;
+
         if (_isMonitorComboOpen)
         {
             int option = SettingsLayout.HitTestMonitorOption(x, y, _screenWidth, _screenHeight, _monitorNames.Count);
@@ -137,6 +140,9 @@ public sealed class SettingsScreen : IScreen
 
         return hit == SettingsButton.Exit ? ScreenEvent.CloseSettings : ScreenEvent.None;
     }
+
+    /// <summary>Convenience shortcut for a left click — kept for existing call sites/tests.</summary>
+    public ScreenEvent OnMouseDown(float x, float y) => OnMouseDown(x, y, MouseButton.Left);
 
     public bool OnMouseMove(float x, float y)
     {

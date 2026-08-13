@@ -18,7 +18,7 @@ public class ScreenStackTests
 
         public void Render(SKCanvas canvas, int width, int height) => RenderedCount++;
 
-        public ScreenEvent OnMouseDown(float x, float y) => NextMouseEvent ?? ScreenEvent.None;
+        public ScreenEvent OnMouseDown(float x, float y, MouseButton button) => NextMouseEvent ?? ScreenEvent.None;
 
         public bool OnMouseMove(float x, float y) { return IsInteractive; }
 

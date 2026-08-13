@@ -93,6 +93,15 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         return ValueTask.CompletedTask;
     }
 
+    public ValueTask SetObjectInteractionStateAsync(
+        string? activeObjectId,
+        string? selectedObjectId,
+        CancellationToken cancellationToken = default)
+    {
+        _engine.SetObjectInteractionState(activeObjectId, selectedObjectId);
+        return ValueTask.CompletedTask;
+    }
+
     public async IAsyncEnumerable<AuthoritativeSnapshot> ReadSnapshotsAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {

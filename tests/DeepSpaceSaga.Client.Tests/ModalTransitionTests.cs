@@ -53,6 +53,12 @@ public class ModalTransitionTests
             LastSpeed = speed;
         }
 
+        public ValueTask SetObjectInteractionStateAsync(
+            string? activeObjectId, string? selectedObjectId, CancellationToken ct = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+
         public async IAsyncEnumerable<AuthoritativeSnapshot> ReadSnapshotsAsync(
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
         {

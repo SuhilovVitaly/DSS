@@ -23,8 +23,11 @@ public sealed class MainMenuScreen : IScreen
 
     public ScreenEvent OnKeyDown(Key key) => ScreenEvent.None;
 
-    public ScreenEvent OnMouseDown(float x, float y)
+    public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
+        if (button != MouseButton.Left)
+            return ScreenEvent.None;
+
         var hit = MenuLayout.HitTest(x, y, _screenWidth, _screenHeight);
 
         if (hit == MenuButton.NewGame || hit == MenuButton.Settings || hit == MenuButton.Exit)
@@ -38,6 +41,9 @@ public sealed class MainMenuScreen : IScreen
             _ => ScreenEvent.None
         };
     }
+
+    /// <summary>Convenience shortcut for a left click — kept for existing call sites/tests.</summary>
+    public ScreenEvent OnMouseDown(float x, float y) => OnMouseDown(x, y, MouseButton.Left);
 
     public bool OnMouseMove(float x, float y)
     {

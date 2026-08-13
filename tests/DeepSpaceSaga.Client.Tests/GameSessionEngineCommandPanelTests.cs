@@ -273,6 +273,12 @@ public class GameSessionEngineCommandPanelTests
             return ValueTask.CompletedTask;
         }
 
+        public ValueTask SetObjectInteractionStateAsync(
+            string? activeObjectId, string? selectedObjectId, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+
         public async IAsyncEnumerable<AuthoritativeSnapshot> ReadSnapshotsAsync(
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {

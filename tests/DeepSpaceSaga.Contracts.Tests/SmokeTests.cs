@@ -113,4 +113,71 @@ public class SmokeTests
         var type = typeof(IGameSessionConnection);
         Assert.True(type.IsInterface);
     }
+
+    [Fact]
+    public void IGameSessionConnection_declares_SetObjectInteractionStateAsync()
+    {
+        var method = typeof(IGameSessionConnection).GetMethod("SetObjectInteractionStateAsync");
+        Assert.NotNull(method);
+    }
+
+    [Fact]
+    public void AuthoritativeSnapshot_defaults_object_interaction_ids_to_null()
+    {
+        // Backward compatibility: existing callers that never mention the new
+        // trailing parameters must still compile and get null for both.
+        var objects = ImmutableArray.Create(
+            new ObjectMotionSnapshot("obj-1", 100, 200, SpeedKmS: 5, Direction: 90));
+
+        var snapshot = new AuthoritativeSnapshot(
+            SnapshotSequence: 1,
+            GameTimeMs: 1000,
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: objects);
+
+        Assert.Null(snapshot.ActiveObjectId);
+        Assert.Null(snapshot.SelectedObjectId);
+    }
+
+    [Fact]
+    public void AuthoritativeSnapshot_serialization_round_trip_preserves_object_interaction_ids()
+    {
+        var objects = ImmutableArray.Create(
+            new ObjectMotionSnapshot("obj-1", 100, 200, SpeedKmS: 5, Direction: 90));
+
+        var snapshot = new AuthoritativeSnapshot(
+            SnapshotSequence: 1,
+            GameTimeMs: 1000,
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: objects,
+            ActiveObjectId: "obj-1",
+            SelectedObjectId: "obj-2");
+
+        var json = JsonSerializer.Serialize(snapshot);
+        var roundTripped = JsonSerializer.Deserialize<AuthoritativeSnapshot>(json);
+
+        Assert.NotNull(roundTripped);
+        Assert.Equal("obj-1", roundTripped!.ActiveObjectId);
+        Assert.Equal("obj-2", roundTripped.SelectedObjectId);
+    }
+
+    [Fact]
+    public void AuthoritativeSnapshot_serialization_round_trip_preserves_null_object_interaction_ids()
+    {
+        var objects = ImmutableArray.Create(
+            new ObjectMotionSnapshot("obj-1", 100, 200, SpeedKmS: 5, Direction: 90));
+
+        var snapshot = new AuthoritativeSnapshot(
+            SnapshotSequence: 1,
+            GameTimeMs: 1000,
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: objects);
+
+        var json = JsonSerializer.Serialize(snapshot);
+        var roundTripped = JsonSerializer.Deserialize<AuthoritativeSnapshot>(json);
+
+        Assert.NotNull(roundTripped);
+        Assert.Null(roundTripped!.ActiveObjectId);
+        Assert.Null(roundTripped.SelectedObjectId);
+    }
 }

@@ -132,6 +132,18 @@ public sealed class GameSessionScreen : IScreen
     private bool _isCtrlRightDown;
     private bool IsCtrlDown => _isCtrlLeftDown || _isCtrlRightDown;
 
+    // Object interaction state — ТЗ: ActiveObject and SelectedObject
+    private string? _activeObjectId;
+    private string? _selectedObjectId;
+    /// <summary>
+    /// True once a real OnMouseMove has reported a position on THIS activation of the
+    /// screen. False before the first-ever move (avoids treating the (0,0) field default
+    /// as a real cursor position) and reset on every OnActivated/OnDeactivated so a modal
+    /// round-trip (e.g. GameMenu closing) never reuses a stale pre-modal position — the
+    /// panel/Engine correctly show no ActiveObjectId until a fresh move arrives.
+    /// </summary>
+    private bool _hasMousePosition;
+
 
     // Layout constants
     private const double ZoomStepFactor = 1.25;
@@ -168,8 +180,12 @@ public sealed class GameSessionScreen : IScreen
     private const string PlayerEngineModuleId = "MOD-PLAYER-ENGINE-01";
     private const float CommandBtnSize = 64f;
 
-    /// <summary>Approved click slack for Ctrl+Click object hit-test (+4 px, ТЗ 4.6).</summary>
-    private const float HitTestSlackPx = 4f;
+    /// <summary>
+    /// Fixed screen-space hit-test radius for ActiveObjectId/SelectedObjectId (ТЗ §54):
+    /// exactly 30 px from the drawn marker center (ObjectRenderState.Predicted),
+    /// independent of zoom, marker size, and uiScale. Border-inclusive (&lt;=).
+    /// </summary>
+    private const float ObjectHitTestRadiusPx = 30f;
     private const float CommandBtnGap = 4f;
     private const float CommandPanelPadX = 6f;
     private const float CommandPanelPadY = 6f;
@@ -223,6 +239,8 @@ public sealed class GameSessionScreen : IScreen
     internal int ActiveEngineCommandButtonIndex { get; private set; } = -1;
     internal bool IsFocusAttachedToPlayer => _isFocusAttachedToPlayer;
     internal IReadOnlyList<ObjectTrailPoint> GetObjectTrail(string objectId) => _trailStore.GetTrail(objectId);
+    internal string? ActiveObjectId => _activeObjectId;
+    internal string? SelectedObjectId => _selectedObjectId;
 
     // ── Constructor ─────────────────────────────────────────────
 
@@ -299,20 +317,45 @@ public sealed class GameSessionScreen : IScreen
 
     // ── IScreen ─────────────────────────────────────────────────
 
-    public void OnActivated() { }
+    public void OnActivated()
+    {
+        // Wait for a fresh MouseMove before hit-testing again — the position we had
+        // before this screen was last deactivated (e.g. under a since-closed modal) is
+        // stale and must not silently reactivate an object under it.
+        _hasMousePosition = false;
+    }
+
     public void OnDeactivated()
     {
         _isCtrlLeftDown = false;
         _isCtrlRightDown = false;
+        _hasMousePosition = false;
+        SetActiveObjectId(null);
     }
 
-    public ScreenEvent OnMouseDown(float x, float y)
+    public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
         // UI panels are laid out and hit-tested in logical (unscaled) space — the
         // raw window coordinates must be converted before testing against them.
         // The map (below) always uses the raw x, y.
         float uiX = x / _uiScale;
         float uiY = y / _uiScale;
+
+        if (button == MouseButton.Right)
+        {
+            // Right-click on a UI panel is not a map click — it must not reset the
+            // selection (ТЗ §54). Elsewhere on the map, right-click always clears
+            // SelectedObjectId (regardless of hitting an object or empty space),
+            // never touches ActiveObjectId, and never moves the camera or sends a
+            // navigation command.
+            if (!IsClickOnUiPanel(uiX, uiY))
+                SetSelectedObjectId(null);
+
+            return ScreenEvent.None;
+        }
+
+        if (button != MouseButton.Left)
+            return ScreenEvent.None;
 
         // 0. Scale panel buttons (left of speed panel — check first)
         int scaleIdx = HitTestScalePanel(uiX, uiY);
@@ -369,16 +412,24 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        // 5.5. Ctrl+Click navigation: on free map area (no object under the cursor)
-        // send exactly one engine.navigate-to-point command with world coordinates.
-        // The camera focus is NOT changed and no command is sent when the click lands
-        // on an object (hit-test includes a +4 px slack) — panels were already consumed
-        // above. AC2, AC1 preserved.
+        // 5.5. Object selection takes priority over both plain pan and Ctrl+Click
+        // navigation (ТЗ §54): a left click within the 30 px hit radius of a visible
+        // object selects it — the camera does not move and no navigation command is
+        // sent, whether or not Ctrl is held.
+        string? hitObjectId = FindNearestObjectId(x, y);
+        if (hitObjectId is not null)
+        {
+            SetSelectedObjectId(hitObjectId);
+            return ScreenEvent.None;
+        }
+
+        // 5.6. Ctrl+Click navigation: free map area only (object case handled above)
+        // — send exactly one engine.navigate-to-point command with world coordinates.
+        // The camera focus is NOT changed.
         if (IsCtrlDown)
         {
             var (navWorldX, navWorldY) = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
-            if (!HitTestObject(x, y))
-                SendNavigationCommand(navWorldX, navWorldY);
+            SendNavigationCommand(navWorldX, navWorldY);
             return ScreenEvent.None;
         }
 
@@ -389,6 +440,9 @@ public sealed class GameSessionScreen : IScreen
         return ScreenEvent.None;
     }
 
+    /// <summary>Convenience shortcut for a left click — kept for existing call sites/tests.</summary>
+    public ScreenEvent OnMouseDown(float x, float y) => OnMouseDown(x, y, MouseButton.Left);
+
     public bool OnMouseMove(float x, float y)
     {
         // _mouseX/_mouseY stay raw (displayed as "Cursor Window" and used to compute
@@ -398,6 +452,8 @@ public sealed class GameSessionScreen : IScreen
         _mouseY = y;
         _uiMouseX = x / _uiScale;
         _uiMouseY = y / _uiScale;
+        _hasMousePosition = true;
+        RecomputeActiveObjectId();
         return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY);
     }
 
@@ -598,25 +654,119 @@ public sealed class GameSessionScreen : IScreen
     }
 
     /// <summary>
-    /// Hit-test an object under the cursor using the SAME marker radii the renderer
-    /// draws, plus the approved +4 px slack (ТЗ 4.6). Ctrl+Click on an object sends
-    /// no navigation command.
+    /// Nearest visible object within <see cref="ObjectHitTestRadiusPx"/> screen pixels of
+    /// (x, y), or null if none qualifies (ТЗ §54). Only objects currently in
+    /// <see cref="_renderStates"/> (i.e. passing the scale visibility filter) participate.
+    /// Distance comparisons use squared distance (no sqrt); ties (equal squared distance)
+    /// break on the lexicographically smaller ObjectId (Ordinal) so the result never
+    /// depends on iteration/snapshot order.
     /// </summary>
-    private bool HitTestObject(float x, float y)
+    private string? FindNearestObjectId(float x, float y)
     {
+        string? bestId = null;
+        double bestDistanceSq = double.MaxValue;
+        const double radiusSq = (double)ObjectHitTestRadiusPx * ObjectHitTestRadiusPx;
+
         for (int i = 0; i < _renderStates.Count; i++)
         {
             var state = _renderStates[i];
-            string renderType = state.IsPlayerShip
-                ? SpaceObjectType.PlayerShip
-                : (state.Predicted.RenderObjectType ?? SpaceObjectType.UnknownSpaceObject);
-            float radius = TacticalMapMarkerPolicy.GetMarkerRadiusPx(renderType) + HitTestSlackPx;
             var (sx, sy) = _camera.WorldToScreen(state.Predicted.X, state.Predicted.Y, _viewportW, _viewportH);
-            float dx = x - sx;
-            float dy = y - sy;
-            if (dx * dx + dy * dy <= radius * radius)
-                return true;
+            double dx = x - sx;
+            double dy = y - sy;
+            double distanceSq = dx * dx + dy * dy;
+            if (distanceSq > radiusSq)
+                continue;
+
+            if (bestId is null ||
+                distanceSq < bestDistanceSq ||
+                (distanceSq == bestDistanceSq &&
+                 string.CompareOrdinal(state.Predicted.ObjectId, bestId) < 0))
+            {
+                bestId = state.Predicted.ObjectId;
+                bestDistanceSq = distanceSq;
+            }
         }
+
+        return bestId;
+    }
+
+    /// <summary>
+    /// Recompute ActiveObjectId from the current cursor position against the current
+    /// <see cref="_renderStates"/> (ТЗ §54). Called on every OnMouseMove and again every
+    /// Render (after render states/camera are refreshed) so that camera pan/zoom, object
+    /// motion under a stationary cursor, and objects appearing/disappearing all keep it
+    /// current without waiting on an extra input event.
+    /// Requires a real position: before the first-ever OnMouseMove (or right after
+    /// reactivation, before a fresh one arrives) <see cref="_hasMousePosition"/> is
+    /// false, so the (0,0) field default never masquerades as "cursor at the top-left
+    /// corner". Silk.NET/SkiaWindow have no mouse-leave signal, so a position outside
+    /// the current viewport (possible once the OS cursor has actually left the window
+    /// and no further OnMouseMove arrives) is also treated as "no cursor" rather than
+    /// hit-testing against a stale in-window position.
+    /// </summary>
+    private void RecomputeActiveObjectId()
+    {
+        bool cursorInViewport = _hasMousePosition &&
+            _viewportW > 0 && _viewportH > 0 &&
+            _mouseX >= 0 && _mouseX <= _viewportW &&
+            _mouseY >= 0 && _mouseY <= _viewportH;
+
+        string? candidate = cursorInViewport ? FindNearestObjectId(_mouseX, _mouseY) : null;
+        SetActiveObjectId(candidate);
+    }
+
+    private void SetActiveObjectId(string? objectId)
+    {
+        if (_activeObjectId == objectId)
+            return;
+
+        _activeObjectId = objectId;
+        NotifyInteractionStateChanged();
+    }
+
+    private void SetSelectedObjectId(string? objectId)
+    {
+        if (_selectedObjectId == objectId)
+            return;
+
+        _selectedObjectId = objectId;
+        NotifyInteractionStateChanged();
+    }
+
+    /// <summary>
+    /// Push the full (ActiveObjectId, SelectedObjectId) pair to the engine — only when
+    /// running with a real session (_handle is null in tests that construct the screen
+    /// directly against a SnapshotBuffer). Non-blocking: GameSessionHandle queues and
+    /// sends in the background (ТЗ §54 "Ограничение частоты").
+    /// </summary>
+    private void NotifyInteractionStateChanged()
+    {
+        _handle?.UpdateObjectInteractionState(_activeObjectId, _selectedObjectId);
+    }
+
+    /// <summary>
+    /// True when (uiX, uiY) lands on any currently-drawn UI panel/button — used to keep
+    /// a right-click on a panel from being treated as a map click (ТЗ §54: "Правый клик
+    /// по UI-панели не считается кликом по карте и не должен сбрасывать выбор"). Mirrors
+    /// every panel hit-test the left-click handler already consumes clicks on, using the
+    /// same rects computed by the last Render.
+    /// </summary>
+    private bool IsClickOnUiPanel(float uiX, float uiY)
+    {
+        if (HitTestScalePanel(uiX, uiY) >= 0)
+            return true;
+        if (HitTestSpeedPanel(uiX, uiY) >= 0)
+            return true;
+        if (HitTestEngineCommandPanel(uiX, uiY) >= 0)
+            return true;
+        if (_lastCommandPanelRect.Contains(uiX, uiY))
+            return true;
+        if (_commandsPanel.CaptionRect.Contains(uiX, uiY) || _commandsPanel.BodyRect.Contains(uiX, uiY))
+            return true;
+        if (_panelVisible && (_lastCloseRect.Contains(uiX, uiY) || _lastPanelRect.Contains(uiX, uiY)))
+            return true;
+        if (_lastPlayerShipPanelRect.Contains(uiX, uiY))
+            return true;
 
         return false;
     }
@@ -656,6 +806,12 @@ public sealed class GameSessionScreen : IScreen
         UpdateObjectRenderStates(prediction, deltaSeconds);
 
         UpdateCameraFocusFromPlayer(_renderStates);
+
+        // Recompute after render states + camera focus are current for this frame —
+        // covers pan/zoom, camera-focus changes, and an object moving under a
+        // stationary cursor (ТЗ §54). OnMouseMove already recomputes eagerly on input;
+        // this catches every other trigger that isn't a mouse-move event.
+        RecomputeActiveObjectId();
 
         if (_diagInterestingFrame && PauseResumeDiagnostics.Enabled)
         {
@@ -913,6 +1069,14 @@ public sealed class GameSessionScreen : IScreen
         _lastSnapshotBaselineGameTimeMs = snapshot.GameTimeMs;
         _lastSnapshotBaselineSequence = snapshot.SnapshotSequence;
         _hasSnapshotBaseline = true;
+
+        // SelectedObjectId survives a scale-filter change (it isn't recomputed from
+        // _renderStates like ActiveObjectId) but must still be cleared the moment the
+        // object no longer exists in the authoritative world at all — checked against
+        // every object in this snapshot, not just the scale-filtered _renderStates
+        // (ТЗ §54 "Жизненный цикл объекта").
+        if (_selectedObjectId is not null && !_currentVisualObjectIds.Contains(_selectedObjectId))
+            SetSelectedObjectId(null);
 
         _previousRenderSpeed = prediction.CurrentSpeed;
     }
@@ -1628,8 +1792,8 @@ public sealed class GameSessionScreen : IScreen
             lines.Add(("Cursor Game", "(—, —)"));
         }
 
-        lines.Add(("Selected Id", "—"));
-        lines.Add(("Active Id", "—"));
+        lines.Add(("Selected Id", _selectedObjectId ?? "—"));
+        lines.Add(("Active Id", _activeObjectId ?? "—"));
 
         int objectCount = buffered?.Snapshot.Objects.Length ?? 0;
         lines.Add(("Celestial objects", objectCount.ToString()));

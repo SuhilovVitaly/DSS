@@ -51,6 +51,37 @@ public class LocalSessionIntegrationTests
     }
 
     [Fact]
+    public async Task SetObjectInteractionStateAsync_delivers_to_engine()
+    {
+        var engine = new SimulationEngine();
+        engine.AddTestObject(new ObjectMotionSnapshot("obj-1", 0, 0, SpeedKmS: 0, Direction: 0));
+        await using var connection = new LocalGameSessionConnection(engine);
+
+        await connection.SetObjectInteractionStateAsync("obj-1", "obj-1");
+
+        Assert.Equal("obj-1", engine.ActiveObjectId);
+        Assert.Equal("obj-1", engine.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task GameSessionHandle_UpdateObjectInteractionState_reaches_the_engine()
+    {
+        var engine = new SimulationEngine();
+        engine.AddTestObject(new ObjectMotionSnapshot("obj-1", 0, 0, SpeedKmS: 0, Direction: 0));
+        var connection = new LocalGameSessionConnection(engine);
+        await using var handle = new GameSessionHandle(connection);
+
+        handle.UpdateObjectInteractionState("obj-1", null);
+
+        var deadline = DateTime.UtcNow.AddSeconds(4);
+        while (DateTime.UtcNow < deadline && engine.ActiveObjectId is null)
+            await Task.Delay(25);
+
+        Assert.Equal("obj-1", engine.ActiveObjectId);
+        Assert.Null(engine.SelectedObjectId);
+    }
+
+    [Fact]
     public async Task SaveAsync_writes_a_valid_parsable_save_file()
     {
         var engine = new SimulationEngine();

@@ -19,4 +19,6 @@ public sealed record AuthoritativeSnapshot(
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ShipEvent>))]
     ImmutableArray<ShipEvent> ShipEvents = default,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<InstalledModuleSnapshot>))]
-    ImmutableArray<InstalledModuleSnapshot> InstalledModules = default);
+    ImmutableArray<InstalledModuleSnapshot> InstalledModules = default,
+    string? ActiveObjectId = null,
+    string? SelectedObjectId = null);
