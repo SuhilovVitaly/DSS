@@ -2,7 +2,7 @@
 
 Дата подготовки: 2026-08-09
 
-Основание: `CLAUDE.md`, `deep_space_saga_engine_requirements.md`, `Docs/TacticalMapColors.md`, текущий код `src/` и тесты `tests/`.
+Основание: `CLAUDE.md`, `deep_space_saga_engine_requirements.md`, `Docs/TacticalMapSpecification.md`, текущий код `src/` и тесты `tests/`.
 
 Общие ограничения для всех заданий:
 
@@ -319,7 +319,7 @@ Acceptance Criteria:
 
 Источники и текущий код:
 
-- Требования: секции 3, 39, 42 и `Docs/TacticalMapColors.md`.
+- Требования: секции 3, 39, 42 и `Docs/TacticalMapSpecification.md`.
 - Сейчас: `ObjectMotionSnapshot.ObjectType` передает фактический тип, `DisplayName` задан только для player ship, а unknown label в `ObjectLabelRenderer` равен `Unknown Celestial Object`.
 
 Область изменений:

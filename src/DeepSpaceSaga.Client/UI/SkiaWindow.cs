@@ -275,10 +275,10 @@ public sealed class SkiaWindow : IDisposable
 
     private async void OnMouseDown(IMouse mouse, MouseButton button)
     {
-        if (button != MouseButton.Left || _closing)
+        if (_closing || (button != MouseButton.Left && button != MouseButton.Right))
             return;
 
-        var screenEvent = _screens.Current.OnMouseDown(mouse.Position.X, mouse.Position.Y);
+        var screenEvent = _screens.Current.OnMouseDown(mouse.Position.X, mouse.Position.Y, button);
         await HandleScreenEvent(screenEvent);
     }
 

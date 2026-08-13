@@ -51,6 +51,20 @@ public sealed class SimulationEngine : IDisposable
     public string? PlayerShipObjectId { get; private set; }
 
     /// <summary>
+    /// Client-reported tactical-map ActiveObjectId (hover), authoritative once validated
+    /// against the current world (§54). Reset to null by every LoadScenario (New Game,
+    /// Quick Load) — it is session-interaction state, never persisted to save files.
+    /// </summary>
+    public string? ActiveObjectId { get; private set; }
+
+    /// <summary>
+    /// Client-reported tactical-map SelectedObjectId (click), authoritative once validated
+    /// against the current world (§54). Reset to null by every LoadScenario (New Game,
+    /// Quick Load) — it is session-interaction state, never persisted to save files.
+    /// </summary>
+    public string? SelectedObjectId { get; private set; }
+
+    /// <summary>
     /// One per session, immutable for the session's lifetime (requirements §15). Set by
     /// LoadScenario: reused as-is when the incoming scenario/save already carries one,
     /// otherwise freshly randomly generated (New Game, or a legacy save missing it).
@@ -107,6 +121,42 @@ public sealed class SimulationEngine : IDisposable
     }
 
     /// <summary>
+    /// Accept the client's tactical-map ActiveObjectId (hover) and SelectedObjectId
+    /// (click) as the new session-interaction state (§54). Each id is validated
+    /// independently against the current world under <see cref="_worldStateLock"/> — an
+    /// id that doesn't reference an object currently in the world normalizes to null.
+    /// Works at any SimulationSpeed, including Speed0: pause stops the simulation, not
+    /// UI/transport/session-control. Selection never starts simulation events or affects
+    /// object motion.
+    /// </summary>
+    public void SetObjectInteractionState(string? activeObjectId, string? selectedObjectId)
+    {
+        lock (_worldStateLock)
+        {
+            ActiveObjectId = NormalizeObjectId(activeObjectId);
+            SelectedObjectId = NormalizeObjectId(selectedObjectId);
+        }
+    }
+
+    /// <summary>Caller must hold <see cref="_worldStateLock"/>.</summary>
+    private string? NormalizeObjectId(string? objectId)
+    {
+        return !string.IsNullOrEmpty(objectId) && ObjectExists(objectId) ? objectId : null;
+    }
+
+    /// <summary>Caller must hold <see cref="_worldStateLock"/>.</summary>
+    private bool ObjectExists(string objectId)
+    {
+        for (int i = 0; i < _objects.Count; i++)
+        {
+            if (string.Equals(_objects[i].InitialMotion.ObjectId, objectId, StringComparison.Ordinal))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Load initial state from a scenario file. Replaces any previously added objects.
     /// Sets the clock speed and game time from scenario data.
     /// </summary>
@@ -155,6 +205,12 @@ public sealed class SimulationEngine : IDisposable
         lock (_worldStateLock)
         {
             PlayerShipObjectId = gs.PlayerShipObjectId;
+            // Session-interaction state (§54) — never carried over from the previous
+            // world, and never read from scenario/save data. Every New Game and Quick
+            // Load starts with both null; the first snapshot of the new session reports
+            // null for both.
+            ActiveObjectId = null;
+            SelectedObjectId = null;
             _clock.Reset(gs.GameTimeMs, speed);
             _nextEngineCycleId = 0;
             _nextShipEventId = 0;
@@ -253,6 +309,13 @@ public sealed class SimulationEngine : IDisposable
             CompleteActiveEngineCycles(gameTimeMs);
             ApplyPendingCommands(gameTimeMs);
 
+            // Re-validate on every snapshot (not only when the client reports new
+            // interaction state): if the selected/active object disappeared from the
+            // world, the property and every subsequent snapshot must reflect that
+            // immediately (§54 "Жизненный цикл объекта").
+            ActiveObjectId = NormalizeObjectId(ActiveObjectId);
+            SelectedObjectId = NormalizeObjectId(SelectedObjectId);
+
             var objects = ImmutableArray.CreateBuilder<ObjectMotionSnapshot>(_objects.Count);
             foreach (var obj in _objects)
             {
@@ -315,7 +378,9 @@ public sealed class SimulationEngine : IDisposable
                 PlayerShipObjectId: PlayerShipObjectId,
                 CommandResults: commandResults,
                 ShipEvents: shipEvents,
-                InstalledModules: installedModules);
+                InstalledModules: installedModules,
+                ActiveObjectId: ActiveObjectId,
+                SelectedObjectId: SelectedObjectId);
         }
     }
 

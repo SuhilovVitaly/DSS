@@ -23,6 +23,18 @@ public interface IGameSessionConnection : IAsyncDisposable
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Report the client's current tactical-map ActiveObjectId (hover) and
+    /// SelectedObjectId (click) so the engine can hold them as authoritative state.
+    /// Session-control — not a module command, not a ShipEngineCommandType. The
+    /// caller always sends the full pair; the engine independently normalizes each
+    /// id to null if it doesn't reference an object currently in the world.
+    /// </summary>
+    ValueTask SetObjectInteractionStateAsync(
+        string? activeObjectId,
+        string? selectedObjectId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Stream of authoritative snapshots from the engine to the client (~1 Hz).
     /// The client reads from this stream independently of the render loop.
     /// </summary>
