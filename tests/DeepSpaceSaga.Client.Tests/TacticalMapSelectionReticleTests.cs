@@ -45,6 +45,18 @@ public sealed class TacticalMapSelectionReticleTests
 
 
     [Fact]
+    public void Active_rotates_clockwise_faster_than_selected_rotates_counter_clockwise()
+    {
+        const long elapsedUiTimeMs = 1_000;
+        float activeAngle = TacticalMapDepthRenderer.GetActiveReticleRotationDegrees(elapsedUiTimeMs);
+        float selectedAngle = TacticalMapDepthRenderer.GetSelectedReticleRotationDegrees(elapsedUiTimeMs);
+
+        Assert.True(activeAngle > 0f);
+        Assert.True(selectedAngle < 0f);
+        Assert.True(Math.Abs(activeAngle) > Math.Abs(selectedAngle));
+    }
+
+    [Fact]
     public void Selection_reticle_scales_with_large_object_marker()
     {
         using var bitmap = new SKBitmap(128, 128);

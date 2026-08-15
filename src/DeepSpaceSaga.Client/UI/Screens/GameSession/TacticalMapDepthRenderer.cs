@@ -13,6 +13,8 @@ internal sealed class TacticalMapDepthRenderer
     private const float LightOffsetX = -0.45f;
     private const float LightOffsetY = -0.45f;
     private const float TrajectoryShadowOffset = 1.25f;
+    private const long ActiveReticleRotationPeriodMs = 3_500;
+    private const long SelectedReticleRotationPeriodMs = 9_000;
 
     private readonly SKPaint _markerShadowPaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
     private readonly SKPaint _markerBasePaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
@@ -167,9 +169,10 @@ internal sealed class TacticalMapDepthRenderer
         SKCanvas canvas,
         float centerX,
         float centerY,
-        float markerRadius)
+        float markerRadius,
+        long uiTimeMs = 0)
     {
-        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(226, 232, 238));
+        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(226, 232, 238), GetSelectedReticleRotationDegrees(uiTimeMs));
     }
 
     /// <summary>
@@ -180,9 +183,10 @@ internal sealed class TacticalMapDepthRenderer
         SKCanvas canvas,
         float centerX,
         float centerY,
-        float markerRadius)
+        float markerRadius,
+        long uiTimeMs = 0)
     {
-        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(255, 165, 0));
+        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(255, 165, 0), GetActiveReticleRotationDegrees(uiTimeMs));
     }
 
     private void DrawObjectReticle(
@@ -190,7 +194,8 @@ internal sealed class TacticalMapDepthRenderer
         float centerX,
         float centerY,
         float markerRadius,
-        SKColor color)
+        SKColor color,
+        float rotationDegrees)
     {
         _selectionGlowPaint.Color = new SKColor(color.Red, color.Green, color.Blue, 42);
         _selectionPaint.Color = new SKColor(color.Red, color.Green, color.Blue, 125);
@@ -198,8 +203,27 @@ internal sealed class TacticalMapDepthRenderer
         float ringRadius = (markerRadius + 3.5f) * 2f;
         float crossExtent = ringRadius + 4f;
 
-        DrawSelectionGeometry(canvas, centerX, centerY, ringRadius, crossExtent, _selectionGlowPaint);
-        DrawSelectionGeometry(canvas, centerX, centerY, ringRadius, crossExtent, _selectionPaint);
+        DrawReticleGeometry(canvas, centerX, centerY, ringRadius, crossExtent, rotationDegrees, _selectionGlowPaint);
+        DrawReticleGeometry(canvas, centerX, centerY, ringRadius, crossExtent, rotationDegrees, _selectionPaint);
+    }
+
+    internal static float GetActiveReticleRotationDegrees(long uiTimeMs)
+    {
+        return GetReticleRotationDegrees(uiTimeMs, ActiveReticleRotationPeriodMs, 1f);
+    }
+
+    internal static float GetSelectedReticleRotationDegrees(long uiTimeMs)
+    {
+        return GetReticleRotationDegrees(uiTimeMs, SelectedReticleRotationPeriodMs, -1f);
+    }
+
+    private static float GetReticleRotationDegrees(
+        long uiTimeMs,
+        long rotationPeriodMs,
+        float direction)
+    {
+        long normalizedTimeMs = Math.Max(0L, uiTimeMs) % rotationPeriodMs;
+        return direction * normalizedTimeMs * 360f / rotationPeriodMs;
     }
 
     public void DrawPlayerShipGlyph(
@@ -308,18 +332,26 @@ internal sealed class TacticalMapDepthRenderer
         canvas.Restore();
     }
 
-    private static void DrawSelectionGeometry(
+    private static void DrawReticleGeometry(
         SKCanvas canvas,
         float centerX,
         float centerY,
         float ringRadius,
         float crossExtent,
+        float rotationDegrees,
         SKPaint paint)
     {
-        canvas.DrawLine(centerX - crossExtent, centerY, centerX - ringRadius, centerY, paint);
-        canvas.DrawLine(centerX + ringRadius, centerY, centerX + crossExtent, centerY, paint);
-        canvas.DrawLine(centerX, centerY - crossExtent, centerX, centerY - ringRadius, paint);
-        canvas.DrawLine(centerX, centerY + ringRadius, centerX, centerY + crossExtent, paint);
+        double startRadians = rotationDegrees * Math.PI / 180.0;
+
+        for (int arm = 0; arm < 4; arm++)
+        {
+            double angleRadians = startRadians + arm * Math.PI / 2.0;
+            float dx = (float)Math.Cos(angleRadians);
+            float dy = (float)Math.Sin(angleRadians);
+
+            canvas.DrawLine(centerX + dx * crossExtent, centerY + dy * crossExtent, centerX + dx * ringRadius, centerY + dy * ringRadius, paint);
+        }
+
         canvas.DrawCircle(centerX, centerY, ringRadius, paint);
     }
 

@@ -943,9 +943,9 @@ public sealed class GameSessionScreen : IScreen
                 // Active (hovered) uses the orange variant and takes visual priority;
                 // when the pointer leaves, a selected object keeps its pale reticle.
                 if (state.Predicted.ObjectId == _activeObjectId)
-                    _depthRenderer.DrawActiveObjectReticle(canvas, sx, sy, r);
+                    _depthRenderer.DrawActiveObjectReticle(canvas, sx, sy, r, uiTimeMs);
                 else if (state.Predicted.ObjectId == _selectedObjectId)
-                    _depthRenderer.DrawSelectionReticle(canvas, sx, sy, r);
+                    _depthRenderer.DrawSelectionReticle(canvas, sx, sy, r, uiTimeMs);
 
                 if (state.IsPlayerShip)
                 {
