@@ -28,8 +28,7 @@
         "engine.maintain-course",
         "engine.match-target-speed",
         "engine.match-target-course",
-        "engine.navigate-to-point",
-        "engine.cancel-all"
+        "engine.navigate-to-point"
       ],
       "maxSpeedMps": 4000,
       "turnStepDegrees": 1,

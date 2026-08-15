@@ -53,6 +53,20 @@ Engine → IGameSessionConnection → LocalGameSessionConnection → Client
 
 **Direction rule:** `Client` → `Engine.LocalClient` → `Engine`. `Client` does **NOT** reference `Engine` directly. `Contracts` references nothing. Only `Client` pulls in graphics packages (SkiaSharp, Silk.NET).
 
+### Content-driven simulation data
+
+The engine holds no hardcoded game data. `EngineContentLoader` reads `Client/Settings.json` (copied to the output next to the client executable), which lists the type-data JSON files in `Client/Data/`:
+
+| File | Defines |
+|------|---------|
+| `module-types.json` | Module types — slots, mass, structure points, power draw, `commandTypeIds`, base cycle time, fuel, inertia, success chance |
+| `item-types.json` | Item types |
+| `command-definitions.json` | Commands, addressed by `(objectId, moduleId)` |
+| `factory-types.json` | Factory types (loaded only when referenced by Settings) |
+| `recipes.json` | Recipes (loaded only when referenced by Settings) |
+
+All definitions land in `GameDataRegistry` (`Engine/Content/`). Scenarios (`Client/Scenarios/<name>/scenario.json`, e.g. `Default`, `Default_500`) are loaded by `ScenarioLoader` (`Engine/Scenario/`) and describe world state: game time, speed, player ship id, space objects with their installed modules. A scenario may carry a `masterSeed`; the `Default` scenario does not, so New Game generates one. RNG streams are derived from the master seed (`Engine/Rng/RngStreamSeedDerivation.cs`) — same seed + same command sequence ⇒ identical world. Save files (`Saves/quicksave.json` next to the client executable) are scenario JSON plus extra engine state and are loaded through the same `ScenarioLoader` with `allowNonZeroGameTime: true`.
+
 ### Client ↔ Engine data flow
 
 ```
@@ -114,7 +128,8 @@ UI/Screens/
 ├── IScreen.cs              (shared interface + ScreenEvent enum)
 ├── MainMenu/               (MainMenuScreen + MenuLayout)
 ├── GameMenu/                (GameMenuScreen + GameMenuLayout)
-└── GameSession/             (GameSessionScreen)
+├── GameSession/             (GameSessionScreen + command panel, tactical map, labels, trails)
+└── Settings/                (SettingsScreen + SettingsLayout)
 ```
 
 Shared UI style: `UI/Controls/MenuStyle.cs` (Verdana fonts, DSS button colors, hover/pressed/disabled states).
@@ -161,4 +176,4 @@ Session-control is done via `IGameSessionConnection.SetSimulationSpeedAsync(Simu
 
 ## Current state
 
-Architectural skeleton with end-to-end pipeline: Engine → Snapshot → Connection → Buffer → Renderer. MainMenu and GameMenu screens with overlay navigation. No gameplay mechanics yet.
+Playable end-to-end pipeline: Engine → Snapshot → Connection → Buffer → Renderer, with content-driven simulation (module/item/command/factory/recipe definitions from JSON), scenario loading, master-seed RNG, save/load, tactical map with object selection, ship command panel, object labels and trails, camera pan/zoom, UI scale (100/120/150%), settings screen, and modal pause. Engine behavior requirements live in `deep_space_saga_engine_requirements.md` (source of truth; see `AGENTS.md`).
