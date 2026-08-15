@@ -92,6 +92,13 @@ public class SmokeTests
     }
 
     [Fact]
+    public void ScannerCommandTypes_expose_stable_ids()
+    {
+        Assert.Equal("scanner.general-scan", ScannerCommandTypes.GeneralScan);
+        Assert.Equal("scanner.structural-scan", ScannerCommandTypes.StructuralScan);
+    }
+
+    [Fact]
     public void AuthoritativeSnapshot_is_instantiable()
     {
         var objects = ImmutableArray.Create(

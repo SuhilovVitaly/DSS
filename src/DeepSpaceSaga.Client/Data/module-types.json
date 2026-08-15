@@ -86,9 +86,8 @@
         "structurePointsMax": 60,
         "powerConsumptionW": 0,
         "commandTypeIds": [
-            "scanner.deep-scan",
-            "scanner.common-scan",
-            "scanner.direct-scan"
+            "scanner.general-scan",
+            "scanner.structural-scan"
         ],
         "baseCycleTimeMs": 20000,
         "baseSuccessChancePercent": 100

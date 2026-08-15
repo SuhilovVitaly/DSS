@@ -283,7 +283,7 @@ public class CommandsPanelSkeletonTests
         var modules = ImmutableArray.Create(
             new InstalledModuleSnapshot("M-E", "module.engine.basic", "Engine", Position: 5, EngineCommandTypeIds),
             new InstalledModuleSnapshot("M-S", "module.scanner.mk1", "Scanner MK I", Position: 0,
-                ImmutableArray.Create("scanner.deep-scan")));
+                ImmutableArray.Create("scanner.general-scan")));
 
         var screen = CreateScreen(modules);
         Render(screen);

@@ -299,8 +299,10 @@ public class ScenarioEngineTests
         }
 
         var scannerType = Assert.Single(activeTypes, t => t.TypeId == "module.scanner.mk1");
-        Assert.Equal(3, scannerType.CommandTypeIds.Length); // deep-scan, common-scan, direct-scan
+        Assert.Equal(2, scannerType.CommandTypeIds.Length);
         Assert.Equal(100, scannerType.BaseSuccessChancePercent);
+        Assert.Contains("scanner.general-scan", scannerType.CommandTypeIds);
+        Assert.Contains("scanner.structural-scan", scannerType.CommandTypeIds);
         foreach (string commandTypeId in scannerType.CommandTypeIds)
         {
             Assert.True(registry.CommandDefinitions.Contains(commandTypeId),

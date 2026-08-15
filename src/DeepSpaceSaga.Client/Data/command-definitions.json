@@ -78,23 +78,16 @@
             "consumptionFactor": 1.0
         },
         {
-            "typeId": "scanner.deep-scan",
-            "displayName": "Deep object scanning",
-            "timeFactor": 60.0,
+            "typeId": "scanner.general-scan",
+            "displayName": "General Scan",
+            "timeFactor": 0.4,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0
         },
         {
-            "typeId": "scanner.common-scan",
-            "displayName": "Common object scanning",
-            "timeFactor": 10.0,
-            "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
-        },
-        {
-            "typeId": "scanner.direct-scan",
-            "displayName": "Direct  object scanning",
-            "timeFactor": 100.0,
+            "typeId": "scanner.structural-scan",
+            "displayName": "Structural Scan",
+            "timeFactor": 3.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0
         }
