@@ -94,7 +94,8 @@
             "timeFactor": 0.4,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
-            "target": "object"
+            "target": "object",
+            "activationEnergyCellsCost": 2
         },
         {
             "typeId": "scanner.structural-scan",

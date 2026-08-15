@@ -150,20 +150,31 @@ public static class EngineContentLoader
             new ItemTypeDefinition(dto.TypeId, dto.DisplayName, dto.UnitMassKg)).ToArray();
     }
 
-    private static IReadOnlyList<CommandDefinition> LoadCommandDefinitions(string path)
+    internal static IReadOnlyList<CommandDefinition> LoadCommandDefinitions(string path)
     {
         var file = ReadJson<CommandDefinitionsFile>(path, "command definitions");
         if (file.CommandDefinitions is null)
             throw new ContentException("command-definitions file is missing commandDefinitions.");
 
         return file.CommandDefinitions.Select(dto =>
-            new CommandDefinition(
+        {
+            int activationEnergyCellsCost = dto.ActivationEnergyCellsCost ?? 0;
+            if (activationEnergyCellsCost < 0)
+            {
+                throw new ContentException(
+                    $"Command definition '{dto.TypeId}' has activationEnergyCellsCost " +
+                    $"'{activationEnergyCellsCost}' which must be >= 0.");
+            }
+
+            return new CommandDefinition(
                 dto.TypeId,
                 dto.DisplayName,
                 ParseFixedPointFactor(dto.TimeFactor),
                 ParseFixedPointFactor(dto.ComplexityFactor),
                 ParseFixedPointFactor(dto.ConsumptionFactor),
-                dto.Target ?? "none")).ToArray();
+                dto.Target ?? "none",
+                activationEnergyCellsCost);
+        }).ToArray();
     }
 
     /// <summary>
@@ -313,7 +324,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("timeFactor")] decimal? TimeFactor,
         [property: JsonPropertyName("complexityFactor")] decimal? ComplexityFactor,
         [property: JsonPropertyName("consumptionFactor")] decimal? ConsumptionFactor,
-        [property: JsonPropertyName("target")] string? Target);
+        [property: JsonPropertyName("target")] string? Target,
+        [property: JsonPropertyName("activationEnergyCellsCost")] int? ActivationEnergyCellsCost);
 
     private sealed record FactoryTypesFile(
         [property: JsonPropertyName("factoryTypes")] IReadOnlyList<FactoryTypeDefinitionDto> FactoryTypes);
