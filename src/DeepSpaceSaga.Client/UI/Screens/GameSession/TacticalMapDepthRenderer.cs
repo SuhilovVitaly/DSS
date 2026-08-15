@@ -169,7 +169,33 @@ internal sealed class TacticalMapDepthRenderer
         float centerY,
         float markerRadius)
     {
-        float ringRadius = markerRadius + 3.5f;
+        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(226, 232, 238));
+    }
+
+    /// <summary>
+    /// Draws the same soft reticle for the object currently under the pointer,
+    /// tinted orange to distinguish the transient active state from selection.
+    /// </summary>
+    public void DrawActiveObjectReticle(
+        SKCanvas canvas,
+        float centerX,
+        float centerY,
+        float markerRadius)
+    {
+        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(255, 165, 0));
+    }
+
+    private void DrawObjectReticle(
+        SKCanvas canvas,
+        float centerX,
+        float centerY,
+        float markerRadius,
+        SKColor color)
+    {
+        _selectionGlowPaint.Color = new SKColor(color.Red, color.Green, color.Blue, 42);
+        _selectionPaint.Color = new SKColor(color.Red, color.Green, color.Blue, 125);
+
+        float ringRadius = (markerRadius + 3.5f) * 2f;
         float crossExtent = ringRadius + 4f;
 
         DrawSelectionGeometry(canvas, centerX, centerY, ringRadius, crossExtent, _selectionGlowPaint);

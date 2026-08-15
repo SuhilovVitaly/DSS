@@ -940,10 +940,11 @@ public sealed class GameSessionScreen : IScreen
                 float r = TacticalMapMarkerPolicy.GetMarkerRadiusPx(
                     state.IsPlayerShip ? SpaceObjectType.PlayerShip : state.Predicted.RenderObjectType);
 
-                // The selected-object sight is screen-space and sits behind the
-                // object, so the marker remains legible while the surrounding ring
-                // and four cross arms stay visible at every zoom level.
-                if (state.Predicted.ObjectId == _selectedObjectId)
+                // Active (hovered) uses the orange variant and takes visual priority;
+                // when the pointer leaves, a selected object keeps its pale reticle.
+                if (state.Predicted.ObjectId == _activeObjectId)
+                    _depthRenderer.DrawActiveObjectReticle(canvas, sx, sy, r);
+                else if (state.Predicted.ObjectId == _selectedObjectId)
                     _depthRenderer.DrawSelectionReticle(canvas, sx, sy, r);
 
                 if (state.IsPlayerShip)
