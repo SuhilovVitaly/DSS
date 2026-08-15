@@ -412,7 +412,12 @@ public sealed class SimulationEngine : IDisposable
                 ModuleTypeId: moduleType.TypeId,
                 DisplayName: moduleType.DisplayName,
                 Position: i,
-                CommandTypeIds: moduleType.CommandTypeIds));
+                CommandTypeIds: moduleType.CommandTypeIds,
+                PowerState: module.PowerState,
+                OperationalState: module.OperationalState,
+                StructurePoints: module.StructurePoints,
+                ActiveCommandType: module.ActiveCycle?.CommandType,
+                FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null));
         }
 
         return builder.MoveToImmutable();

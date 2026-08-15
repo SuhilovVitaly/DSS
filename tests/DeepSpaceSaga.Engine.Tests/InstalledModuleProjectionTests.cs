@@ -29,6 +29,11 @@ public class InstalledModuleProjectionTests
         Assert.Equal(0, engineMod.Position);
         Assert.NotEmpty(engineMod.CommandTypeIds);
         Assert.Contains("engine.accelerate", engineMod.CommandTypeIds);
+        Assert.Equal("On", engineMod.PowerState);
+        Assert.Equal("Ready", engineMod.OperationalState);
+        Assert.Equal(100, engineMod.StructurePoints);
+        Assert.Null(engineMod.ActiveCommandType);
+        Assert.Equal(1000, engineMod.FuelAmountKg);
 
         var scannerMod = snapshot.InstalledModules[1];
         Assert.Equal("MOD-SCN-01", scannerMod.ModuleId);
@@ -36,6 +41,11 @@ public class InstalledModuleProjectionTests
         Assert.Equal("Scanner MK I", scannerMod.DisplayName);
         Assert.Equal(1, scannerMod.Position);
         Assert.Empty(scannerMod.CommandTypeIds);
+        Assert.Equal("On", scannerMod.PowerState);
+        Assert.Equal("Ready", scannerMod.OperationalState);
+        Assert.Equal(50, scannerMod.StructurePoints);
+        Assert.Null(scannerMod.ActiveCommandType);
+        Assert.Null(scannerMod.FuelAmountKg);
     }
 
     [Fact]
@@ -84,7 +94,8 @@ public class InstalledModuleProjectionTests
                     StructurePointsMax: 100, PowerConsumptionW: 0,
                     CommandTypeIds: ImmutableArray.Create("engine.accelerate", "engine.navigate-to-point"),
                     MaxSpeedMps: 4000, TurnStepDegrees: 1,
-                    LinearInertiaMps2: 40000, AngularInertiaDegPerSec: 4),
+                    LinearInertiaMps2: 40000, AngularInertiaDegPerSec: 4,
+                    FuelCapacityKg: 2000),
                 new ModuleTypeDefinition(
                     "module.scanner.mk1", "Scanner MK I", SlotSize: 1, MassKg: 1000,
                     StructurePointsMax: 50, PowerConsumptionW: 100,
