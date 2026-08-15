@@ -5,98 +5,105 @@
             "displayName": "Accelerate",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
+            "consumptionFactor": 1.0,
+            "target": "none"
         },
         {
             "typeId": "engine.brake",
             "displayName": "Brake",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
+            "consumptionFactor": 1.0,
+            "target": "none"
         },
         {
             "typeId": "engine.maintain-speed",
             "displayName": "Maintain Speed",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
+            "consumptionFactor": 1.0,
+            "target": "none"
         },
         {
             "typeId": "engine.turn-left-step",
             "displayName": "Turn Left Step",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
+            "consumptionFactor": 1.0,
+            "target": "none"
         },
         {
             "typeId": "engine.turn-right-step",
             "displayName": "Turn Right Step",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
+            "consumptionFactor": 1.0,
+            "target": "none"
         },
         {
             "typeId": "engine.turn-left-until-cancel",
             "displayName": "Turn Left Until Cancel",
             "timeFactor": 1.0,
             "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
+            "consumptionFactor": 1.0,
+            "target": "none"
         },
         {
             "typeId": "engine.turn-right-until-cancel",
             "displayName": "Turn Right Until Cancel",
             "timeFactor": 1.0,
             "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
+            "consumptionFactor": 1.0,
+            "target": "none"
         },
         {
             "typeId": "engine.maintain-course",
             "displayName": "Maintain Course",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
+            "consumptionFactor": 1.0,
+            "target": "none"
         },
         {
             "typeId": "engine.match-target-speed",
             "displayName": "Match Target Speed",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
+            "consumptionFactor": 1.0,
+            "target": "object"
         },
         {
             "typeId": "engine.match-target-course",
             "displayName": "Match Target Course",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
+            "consumptionFactor": 1.0,
+            "target": "object"
         },
         {
             "typeId": "engine.navigate-to-point",
             "displayName": "Navigate To Point",
             "timeFactor": 1.0,
             "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
+            "consumptionFactor": 1.0,
+            "target": "point"
         },
         {
-            "typeId": "scanner.deep-scan",
-            "displayName": "Deep object scanning",
-            "timeFactor": 60.0,
+            "typeId": "scanner.general-scan",
+            "displayName": "General Scan",
+            "timeFactor": 0.4,
             "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
+            "consumptionFactor": 1.0,
+            "target": "object",
+            "activationEnergyCellsCost": 2
         },
         {
-            "typeId": "scanner.common-scan",
-            "displayName": "Common object scanning",
-            "timeFactor": 10.0,
+            "typeId": "scanner.structural-scan",
+            "displayName": "Structural Scan",
+            "timeFactor": 3.0,
             "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
-        },
-        {
-            "typeId": "scanner.direct-scan",
-            "displayName": "Direct  object scanning",
-            "timeFactor": 100.0,
-            "complexityFactor": 1.0,
-            "consumptionFactor": 1.0
+            "consumptionFactor": 1.0,
+            "target": "object"
         }
     ]
 }
