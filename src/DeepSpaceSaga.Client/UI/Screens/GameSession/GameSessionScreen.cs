@@ -939,6 +939,13 @@ public sealed class GameSessionScreen : IScreen
                 // the payload — legacy payloads without RenderObjectType still draw as a ship.
                 float r = TacticalMapMarkerPolicy.GetMarkerRadiusPx(
                     state.IsPlayerShip ? SpaceObjectType.PlayerShip : state.Predicted.RenderObjectType);
+
+                // The selected-object sight is screen-space and sits behind the
+                // object, so the marker remains legible while the surrounding ring
+                // and four cross arms stay visible at every zoom level.
+                if (state.Predicted.ObjectId == _selectedObjectId)
+                    _depthRenderer.DrawSelectionReticle(canvas, sx, sy, r);
+
                 if (state.IsPlayerShip)
                 {
                     DrawPlayerShipGlyph(canvas, sx, sy, state.Predicted.Direction, r);

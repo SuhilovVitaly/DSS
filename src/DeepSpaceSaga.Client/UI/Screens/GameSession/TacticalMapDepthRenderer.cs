@@ -28,6 +28,24 @@ internal sealed class TacticalMapDepthRenderer
     private readonly SKPaint _glintHaloPaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
     private readonly SKPaint _glintCorePaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
 
+    private readonly SKPaint _selectionGlowPaint = new()
+    {
+        Color = new SKColor(220, 228, 236, 42),
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 2f,
+        StrokeCap = SKStrokeCap.Round,
+        IsAntialias = true,
+        MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 2.2f)
+    };
+    private readonly SKPaint _selectionPaint = new()
+    {
+        Color = new SKColor(226, 232, 238, 125),
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 0.8f,
+        StrokeCap = SKStrokeCap.Round,
+        IsAntialias = true
+    };
+
     /// <summary>
     /// Radius-multiplier/alpha pairs for the glint halo, largest and faintest
     /// first, so each subsequent layer paints a smaller and brighter ring on
@@ -140,6 +158,24 @@ internal sealed class TacticalMapDepthRenderer
         canvas.DrawCircle(centerX, centerY, Math.Max(0.9f, radius * 0.45f), _glintCorePaint);
     }
 
+    /// <summary>
+    /// Draws the selected-object reticle in screen space: a faint circular ring
+    /// with four short sight lines that approach it only from the outside. The
+    /// lines stop at the ring and never cross the selected object.
+    /// </summary>
+    public void DrawSelectionReticle(
+        SKCanvas canvas,
+        float centerX,
+        float centerY,
+        float markerRadius)
+    {
+        float ringRadius = markerRadius + 3.5f;
+        float crossExtent = ringRadius + 4f;
+
+        DrawSelectionGeometry(canvas, centerX, centerY, ringRadius, crossExtent, _selectionGlowPaint);
+        DrawSelectionGeometry(canvas, centerX, centerY, ringRadius, crossExtent, _selectionPaint);
+    }
+
     public void DrawPlayerShipGlyph(
         SKCanvas canvas,
         SKPath glyphPath,
@@ -244,6 +280,21 @@ internal sealed class TacticalMapDepthRenderer
         canvas.Translate(offsetX, offsetY);
         canvas.DrawPath(path, paint);
         canvas.Restore();
+    }
+
+    private static void DrawSelectionGeometry(
+        SKCanvas canvas,
+        float centerX,
+        float centerY,
+        float ringRadius,
+        float crossExtent,
+        SKPaint paint)
+    {
+        canvas.DrawLine(centerX - crossExtent, centerY, centerX - ringRadius, centerY, paint);
+        canvas.DrawLine(centerX + ringRadius, centerY, centerX + crossExtent, centerY, paint);
+        canvas.DrawLine(centerX, centerY - crossExtent, centerX, centerY - ringRadius, paint);
+        canvas.DrawLine(centerX, centerY + ringRadius, centerX, centerY + crossExtent, paint);
+        canvas.DrawCircle(centerX, centerY, ringRadius, paint);
     }
 
     private static SKColor ScaleColor(SKColor color, float scale, byte alpha)
