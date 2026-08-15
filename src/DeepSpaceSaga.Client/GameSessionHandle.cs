@@ -44,6 +44,30 @@ public sealed class GameSessionHandle : IAsyncDisposable
     public IGameSessionConnection Connection => _connection;
     public SnapshotBuffer Buffer { get; }
 
+    /// <summary>
+    /// Send a module-addressed command (Commands Panel). The target object id is
+    /// passed explicitly — UI selection is never an implicit authoritative target
+    /// (the engine validates targetObjectId for target-requiring commands).
+    /// </summary>
+    public ValueTask SendCommandAsync(
+        string objectId,
+        string moduleId,
+        string commandType,
+        string? targetObjectId = null,
+        CancellationToken cancellationToken = default)
+    {
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        var command = new PlayerCommand(
+            CommandId: $"CMD-{sequence:D8}-{Guid.NewGuid():N}",
+            ClientSequence: sequence,
+            ObjectId: objectId,
+            ModuleId: moduleId,
+            CommandType: commandType,
+            TargetObjectId: targetObjectId);
+
+        return _connection.SendCommandAsync(command, cancellationToken);
+    }
+
     public ValueTask SendEngineCommandAsync(
         string objectId,
         string moduleId,

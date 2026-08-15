@@ -10,7 +10,13 @@ internal sealed record CommandDefinition(
     string DisplayName,
     int TimeFactor = FactorDefaults.Default,
     int ComplexityFactor = FactorDefaults.Default,
-    int ConsumptionFactor = FactorDefaults.Default) : ITypeDefinition
+    int ConsumptionFactor = FactorDefaults.Default,
+    /// <summary>
+    /// Target requirement: "none" (no target), "point" (world-coordinate target,
+    /// e.g. engine.navigate-to-point), "object" (target object id required, e.g.
+    /// match and scanner commands). Drives client-side command button enablement.
+    /// </summary>
+    string Target = "none") : ITypeDefinition
 {
     /// <summary>Fixed-point constant for the neutral factor value 1.0.</summary>
     public const int Neutral = 1000;

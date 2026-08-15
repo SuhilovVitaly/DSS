@@ -417,7 +417,31 @@ public sealed class SimulationEngine : IDisposable
                 OperationalState: module.OperationalState,
                 StructurePoints: module.StructurePoints,
                 ActiveCommandType: module.ActiveCycle?.CommandType,
-                FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null));
+                FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null,
+                Commands: BuildModuleCommands(moduleType.CommandTypeIds)));
+        }
+
+        return builder.MoveToImmutable();
+    }
+
+    /// <summary>
+    /// Per-module command metadata (display name + target requirement) for the
+    /// Commands Panel UI. One entry per CommandTypeId, in declaration order, filled
+    /// from the command definitions registry. Every commandTypeId is guaranteed to
+    /// resolve: GameDataRegistry.Create rejects module types that reference an
+    /// unknown command definition.
+    /// </summary>
+    private ImmutableArray<ModuleCommandSnapshot> BuildModuleCommands(ImmutableArray<string> commandTypeIds)
+    {
+        if (commandTypeIds.IsDefaultOrEmpty)
+            return ImmutableArray<ModuleCommandSnapshot>.Empty;
+
+        var builder = ImmutableArray.CreateBuilder<ModuleCommandSnapshot>(commandTypeIds.Length);
+        foreach (string commandTypeId in commandTypeIds)
+        {
+            var commandDef = _registry.CommandDefinitions.GetDefinition(
+                _registry.CommandDefinitions.GetIndex(commandTypeId));
+            builder.Add(new ModuleCommandSnapshot(commandTypeId, commandDef.DisplayName, commandDef.Target));
         }
 
         return builder.MoveToImmutable();

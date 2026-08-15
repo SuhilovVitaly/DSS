@@ -4,6 +4,7 @@ using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
+using Silk.NET.Input;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests;
@@ -14,13 +15,66 @@ public class CommandsPanelSkeletonTests
     private const int ScreenHeight = 720;
     private const string PlayerShipId = "SPC-0001";
     private const string EngineModuleId = "MOD-PLAYER-ENGINE-01";
+    private const string ScannerModuleId = "MOD-PLAYER-SCANNER-01";
+
+    /// <summary>
+    /// Display names and targets mirror Client/Data/command-definitions.json —
+    /// the panel must render labels and enablement from this metadata.
+    /// </summary>
+    private static readonly Dictionary<string, (string Name, string Target)> CommandMetadata = new()
+    {
+        ["engine.accelerate"] = ("Accelerate", "none"),
+        ["engine.brake"] = ("Brake", "none"),
+        ["engine.maintain-speed"] = ("Maintain Speed", "none"),
+        ["engine.turn-left-step"] = ("Turn Left Step", "none"),
+        ["engine.turn-right-step"] = ("Turn Right Step", "none"),
+        ["engine.turn-left-until-cancel"] = ("Turn Left Until Cancel", "none"),
+        ["engine.turn-right-until-cancel"] = ("Turn Right Until Cancel", "none"),
+        ["engine.maintain-course"] = ("Maintain Course", "none"),
+        ["engine.match-target-speed"] = ("Match Target Speed", "object"),
+        ["engine.match-target-course"] = ("Match Target Course", "object"),
+        ["engine.navigate-to-point"] = ("Navigate To Point", "point"),
+        ["scanner.general-scan"] = ("General Scan", "object"),
+        ["scanner.structural-scan"] = ("Structural Scan", "object"),
+    };
+
+    private static ImmutableArray<ModuleCommandSnapshot> CommandsFor(ImmutableArray<string> typeIds) =>
+        typeIds.Select(id => CommandMetadata.TryGetValue(id, out var meta)
+            ? new ModuleCommandSnapshot(id, meta.Name, meta.Target)
+            : new ModuleCommandSnapshot(id, id, "none")).ToImmutableArray();
 
     private static readonly ImmutableArray<string> EngineCommandTypeIds = ImmutableArray.Create(
         "engine.accelerate", "engine.brake", "engine.maintain-speed",
         "engine.navigate-to-point");
 
+    private static readonly ImmutableArray<string> FullEngineCommandTypeIds = ImmutableArray.Create(
+        "engine.accelerate", "engine.brake", "engine.maintain-speed",
+        "engine.turn-left-step", "engine.turn-right-step",
+        "engine.turn-left-until-cancel", "engine.turn-right-until-cancel",
+        "engine.maintain-course",
+        "engine.match-target-speed", "engine.match-target-course",
+        "engine.navigate-to-point");
+
+    private static readonly ImmutableArray<string> ScannerCommandTypeIds = ImmutableArray.Create(
+        "scanner.general-scan", "scanner.structural-scan");
+
     private static readonly ImmutableArray<InstalledModuleSnapshot> OneEngineModule = ImmutableArray.Create(
-        new InstalledModuleSnapshot(EngineModuleId, "module.engine.basic", "Engine", Position: 1, EngineCommandTypeIds));
+        new InstalledModuleSnapshot(
+            EngineModuleId, "module.engine.basic", "Engine", Position: 1, EngineCommandTypeIds,
+            Commands: CommandsFor(EngineCommandTypeIds)));
+
+    private static readonly ImmutableArray<InstalledModuleSnapshot> EngineAndScannerModules = ImmutableArray.Create(
+        new InstalledModuleSnapshot(
+            EngineModuleId, "module.engine.basic", "Engine", Position: 1, EngineCommandTypeIds,
+            Commands: CommandsFor(EngineCommandTypeIds)),
+        new InstalledModuleSnapshot(
+            ScannerModuleId, "module.scanner.mk1", "Scanner MK I", Position: 2, ScannerCommandTypeIds,
+            Commands: CommandsFor(ScannerCommandTypeIds)));
+
+    private static readonly ImmutableArray<InstalledModuleSnapshot> FullEngineModule = ImmutableArray.Create(
+        new InstalledModuleSnapshot(
+            EngineModuleId, "module.engine.basic", "Engine", Position: 1, FullEngineCommandTypeIds,
+            Commands: CommandsFor(FullEngineCommandTypeIds)));
 
     // ── Geometry ────────────────────────────────────────────────
 
@@ -77,7 +131,7 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public async Task Click_on_module_body_is_consumed_and_sends_no_command()
+    public async Task Click_on_module_body_gap_is_consumed_and_sends_no_command()
     {
         await using var fixture = CreateFixture();
         Render(fixture.Screen);
@@ -90,7 +144,13 @@ public class CommandsPanelSkeletonTests
         double fxBefore = fixture.Screen.CameraFocusX;
         double fyBefore = fixture.Screen.CameraFocusY;
 
-        var result = fixture.Screen.OnMouseDown(row.BodyRect.MidX, row.BodyRect.MidY);
+        // Guaranteed gap: below the command button grid, inside the module body
+        // (the engine row's 4 buttons occupy the top 32px of the body).
+        var gap = (panel.BodyRect.Left + 4f, panel.BodyRect.Bottom - 4f);
+        Assert.True(row.BodyRect.Contains(gap.Item1, gap.Item2));
+        Assert.DoesNotContain(panel.AllCommandButtons, b => b.Rect.Contains(gap.Item1, gap.Item2));
+
+        var result = fixture.Screen.OnMouseDown(gap.Item1, gap.Item2);
 
         Assert.Equal(ScreenEvent.None, result);
         Assert.Equal(fxBefore, fixture.Screen.CameraFocusX);
@@ -352,6 +412,294 @@ public class CommandsPanelSkeletonTests
         Assert.Equal(new SKRect(8, 40, 368, 40), panel.BodyRect);
     }
 
+    // ── Command buttons (ТЗ-04, AC1: one button per CommandTypeIds entry) ───────
+
+    [Fact]
+    public void Opened_row_draws_one_button_per_CommandTypeIds_entry_in_order()
+    {
+        var screen = CreateScreen();
+        Render(screen);
+        var panel = screen.CommandsPanel;
+
+        var row = Assert.Single(panel.ModuleRows);
+        Assert.Equal(4, row.Buttons.Length);
+        Assert.Equal(4, panel.AllCommandButtons.Count);
+
+        Assert.Equal(EngineCommandTypeIds, row.Buttons.Select(b => b.CommandTypeId));
+        Assert.Equal(EngineCommandTypeIds, panel.AllCommandButtons.Select(b => b.CommandTypeId));
+    }
+
+    [Fact]
+    public void Command_button_grid_layout_is_4_columns_with_expected_geometry()
+    {
+        var screen = CreateScreen();
+        Render(screen);
+        var row = Assert.Single(screen.CommandsPanel.ModuleRows);
+
+        // Module body (8, 76, 368, 240); grid origin = body + (6, 6);
+        // button 84x32, gap 4 → columns at x = 14, 102, 190, 278.
+        Assert.Equal(new SKRect(14, 82, 98, 114), row.Buttons[0].Rect);
+        Assert.Equal(new SKRect(102, 82, 186, 114), row.Buttons[1].Rect);
+        Assert.Equal(new SKRect(190, 82, 274, 114), row.Buttons[2].Rect);
+        Assert.Equal(new SKRect(278, 82, 362, 114), row.Buttons[3].Rect);
+
+        Assert.Equal(84f, row.Buttons[0].Rect.Width);
+        Assert.Equal(32f, row.Buttons[0].Rect.Height);
+    }
+
+    [Fact]
+    public void Eleven_command_ids_wrap_into_three_rows_of_4_4_3()
+    {
+        var screen = CreateScreen(FullEngineModule);
+        Render(screen);
+        var panel = screen.CommandsPanel;
+
+        var row = Assert.Single(panel.ModuleRows);
+        Assert.Equal(11, row.Buttons.Length);
+        Assert.Equal(11, panel.AllCommandButtons.Count);
+
+        // Row 0 (y 82..114): 4 buttons; row 1 (y 118..150): 4; row 2 (y 154..186): 3.
+        Assert.Equal(new SKRect(14, 82, 98, 114), row.Buttons[0].Rect);
+        Assert.Equal(new SKRect(278, 82, 362, 114), row.Buttons[3].Rect);
+        Assert.Equal(new SKRect(14, 118, 98, 150), row.Buttons[4].Rect);
+        Assert.Equal(new SKRect(278, 118, 362, 150), row.Buttons[7].Rect);
+        Assert.Equal(new SKRect(14, 154, 98, 186), row.Buttons[8].Rect);
+        Assert.Equal(new SKRect(102, 154, 186, 186), row.Buttons[9].Rect);
+        Assert.Equal(new SKRect(190, 154, 274, 186), row.Buttons[10].Rect);
+    }
+
+    [Fact]
+    public void Collapsed_row_has_no_command_buttons()
+    {
+        var screen = CreateScreen();
+        Render(screen);
+        var panel = screen.CommandsPanel;
+
+        var row = Assert.Single(panel.ModuleRows);
+        screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
+        Render(screen);
+
+        row = Assert.Single(panel.ModuleRows);
+        Assert.False(row.Opened);
+        Assert.Empty(row.Buttons);
+        Assert.Empty(panel.AllCommandButtons);
+    }
+
+    // ── Command button hover / pressed seams ───────────────────
+
+    [Fact]
+    public async Task OnMouseMove_tracks_hover_over_command_button()
+    {
+        await using var fixture = CreateFixture();
+        Render(fixture.Screen);
+        var panel = fixture.Screen.CommandsPanel;
+
+        var button = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.accelerate");
+        fixture.Screen.OnMouseMove(button.Rect.MidX, button.Rect.MidY);
+        Assert.Equal(0, panel.HoveredCommandButtonIndex);
+
+        fixture.Screen.OnMouseMove(1000, 500);
+        Assert.Equal(-1, panel.HoveredCommandButtonIndex);
+    }
+
+    [Fact]
+    public async Task Command_button_pressed_state_clears_on_mouse_up()
+    {
+        await using var fixture = CreateFixture();
+        Render(fixture.Screen);
+        var panel = fixture.Screen.CommandsPanel;
+
+        var button = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.accelerate");
+        Assert.True(button.Enabled);
+
+        fixture.Screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
+        Assert.Equal(0, panel.PressedCommandButtonIndex);
+
+        fixture.Screen.OnMouseUp(button.Rect.MidX, button.Rect.MidY);
+        Assert.Equal(-1, panel.PressedCommandButtonIndex);
+    }
+
+    // ── Command delivery (ТЗ-04, AC2: click sends PlayerCommand to row's ModuleId) ─
+
+    [Fact]
+    public async Task Click_engine_command_button_sends_player_command_to_engine_module()
+    {
+        await using var fixture = CreateFixture();
+        Render(fixture.Screen);
+        var panel = fixture.Screen.CommandsPanel;
+
+        var accelerate = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.accelerate");
+        Assert.True(accelerate.Enabled);
+
+        fixture.Screen.OnMouseDown(accelerate.Rect.MidX, accelerate.Rect.MidY);
+
+        var command = Assert.Single(fixture.Connection.Commands);
+        Assert.False(string.IsNullOrWhiteSpace(command.CommandId));
+        Assert.Equal(1UL, command.ClientSequence);
+        Assert.Equal(PlayerShipId, command.ObjectId);
+        Assert.Equal(EngineModuleId, command.ModuleId);
+        Assert.Equal("engine.accelerate", command.CommandType);
+        Assert.Null(command.TargetObjectId);
+    }
+
+    [Fact]
+    public async Task Click_scanner_command_button_sends_command_to_scanner_module()
+    {
+        await using var fixture = CreateFixture(EngineAndScannerModules, extraObjects: [ObjAt("OBJ-1", 10060)]);
+        Render(fixture.Screen);
+
+        // Scanner commands target an object — select one to enable the button (AC3).
+        fixture.Screen.OnMouseDown(640, 420); // OBJ-1 at screen (640, 420), within 30 px
+        Render(fixture.Screen);
+        var panel = fixture.Screen.CommandsPanel;
+
+        var scannerRow = panel.ModuleRows.Single(r => r.ModuleId == ScannerModuleId);
+        var generalScan = Assert.Single(scannerRow.Buttons, b => b.CommandTypeId == "scanner.general-scan");
+        Assert.True(generalScan.Enabled);
+
+        fixture.Screen.OnMouseDown(generalScan.Rect.MidX, generalScan.Rect.MidY);
+
+        var command = Assert.Single(fixture.Connection.Commands);
+        Assert.Equal(ScannerModuleId, command.ModuleId);
+        Assert.Equal("scanner.general-scan", command.CommandType);
+        Assert.Equal("OBJ-1", command.TargetObjectId);
+    }
+
+    // ── Target-requiring commands (ТЗ-04, AC3: disabled without SelectedObjectId) ─
+
+    [Fact]
+    public async Task Scanner_buttons_disabled_without_selection_and_enabled_with_selection()
+    {
+        await using var fixture = CreateFixture(
+            EngineAndScannerModules, extraObjects: [ObjAt("OBJ-1", 10060)]);
+        Render(fixture.Screen);
+        var panel = fixture.Screen.CommandsPanel;
+
+        var scannerRow = panel.ModuleRows.Single(r => r.ModuleId == ScannerModuleId);
+        var generalScan = Assert.Single(scannerRow.Buttons, b => b.CommandTypeId == "scanner.general-scan");
+        var structuralScan = Assert.Single(scannerRow.Buttons, b => b.CommandTypeId == "scanner.structural-scan");
+
+        // Without a selection both scanner commands are disabled; clicking sends nothing.
+        Assert.False(generalScan.Enabled);
+        Assert.False(structuralScan.Enabled);
+        fixture.Screen.OnMouseDown(generalScan.Rect.MidX, generalScan.Rect.MidY);
+        Assert.Empty(fixture.Connection.Commands);
+
+        // Select a map object → buttons enable; click passes TargetObjectId explicitly.
+        fixture.Screen.OnMouseDown(640, 420); // OBJ-1 at screen (640, 420), within 30 px
+        Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
+        Render(fixture.Screen);
+
+        generalScan = Assert.Single(panel.ModuleRows.Single(r => r.ModuleId == ScannerModuleId).Buttons,
+            b => b.CommandTypeId == "scanner.general-scan");
+        Assert.True(generalScan.Enabled);
+
+        fixture.Screen.OnMouseDown(generalScan.Rect.MidX, generalScan.Rect.MidY);
+
+        var command = Assert.Single(fixture.Connection.Commands);
+        Assert.Equal(ScannerModuleId, command.ModuleId);
+        Assert.Equal("scanner.general-scan", command.CommandType);
+        Assert.Equal("OBJ-1", command.TargetObjectId);
+
+        // Clear the selection (right-click on empty map) → disabled again.
+        fixture.Screen.OnMouseDown(1000, 500, MouseButton.Right);
+        Assert.Null(fixture.Screen.SelectedObjectId);
+        Render(fixture.Screen);
+
+        generalScan = Assert.Single(panel.ModuleRows.Single(r => r.ModuleId == ScannerModuleId).Buttons,
+            b => b.CommandTypeId == "scanner.general-scan");
+        Assert.False(generalScan.Enabled);
+        fixture.Connection.Commands.Clear();
+        fixture.Screen.OnMouseDown(generalScan.Rect.MidX, generalScan.Rect.MidY);
+        Assert.Empty(fixture.Connection.Commands);
+    }
+
+    [Fact]
+    public async Task Match_command_buttons_require_selection_like_scanner_commands()
+    {
+        await using var fixture = CreateFixture(FullEngineModule, extraObjects: [ObjAt("OBJ-1", 10060)]);
+        Render(fixture.Screen);
+        var panel = fixture.Screen.CommandsPanel;
+
+        var matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.match-target-speed");
+        var matchCourse = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.match-target-course");
+
+        Assert.False(matchSpeed.Enabled);
+        Assert.False(matchCourse.Enabled);
+        fixture.Screen.OnMouseDown(matchSpeed.Rect.MidX, matchSpeed.Rect.MidY);
+        Assert.Empty(fixture.Connection.Commands);
+
+        fixture.Screen.OnMouseDown(640, 420); // select OBJ-1
+        Render(fixture.Screen);
+
+        matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.match-target-speed");
+        Assert.True(matchSpeed.Enabled);
+        fixture.Screen.OnMouseDown(matchSpeed.Rect.MidX, matchSpeed.Rect.MidY);
+
+        var command = Assert.Single(fixture.Connection.Commands);
+        Assert.Equal("engine.match-target-speed", command.CommandType);
+        Assert.Equal("OBJ-1", command.TargetObjectId);
+    }
+
+    // ── AC4: clicks never move the camera or change selection ──────────────────
+
+    [Fact]
+    public async Task Command_button_click_never_moves_camera_or_changes_selection()
+    {
+        await using var fixture = CreateFixture(EngineAndScannerModules, extraObjects: [ObjAt("OBJ-1", 10060)]);
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(640, 420); // select OBJ-1
+        Render(fixture.Screen);
+        Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
+
+        double fxBefore = fixture.Screen.CameraFocusX;
+        double fyBefore = fixture.Screen.CameraFocusY;
+        var panel = fixture.Screen.CommandsPanel;
+        var accelerate = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.accelerate");
+
+        var result = fixture.Screen.OnMouseDown(accelerate.Rect.MidX, accelerate.Rect.MidY);
+
+        Assert.Equal(ScreenEvent.None, result);
+        Assert.Equal(fxBefore, fixture.Screen.CameraFocusX);
+        Assert.Equal(fyBefore, fixture.Screen.CameraFocusY);
+        Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
+
+        var command = Assert.Single(fixture.Connection.Commands);
+        Assert.NotEqual(ShipEngineCommandTypes.NavigateToPoint, command.CommandType);
+    }
+
+    [Fact]
+    public async Task Navigate_to_point_button_is_always_disabled()
+    {
+        await using var fixture = CreateFixture();
+        Render(fixture.Screen);
+        var panel = fixture.Screen.CommandsPanel;
+
+        var navigate = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.navigate-to-point");
+        Assert.False(navigate.Enabled);
+
+        fixture.Screen.OnMouseDown(navigate.Rect.MidX, navigate.Rect.MidY);
+        Assert.Empty(fixture.Connection.Commands);
+    }
+
+    [Fact]
+    public async Task Right_click_on_command_button_does_not_clear_selection()
+    {
+        await using var fixture = CreateFixture(EngineAndScannerModules, extraObjects: [ObjAt("OBJ-1", 10060)]);
+        Render(fixture.Screen);
+        fixture.Screen.OnMouseDown(640, 420);
+        Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
+
+        var panel = fixture.Screen.CommandsPanel;
+        var accelerate = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.accelerate");
+
+        var result = fixture.Screen.OnMouseDown(accelerate.Rect.MidX, accelerate.Rect.MidY, MouseButton.Right);
+
+        Assert.Equal(ScreenEvent.None, result);
+        Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
+    }
+
     // ── Helpers ─────────────────────────────────────────────────
 
     private static GameSessionScreen CreateScreen(
@@ -370,7 +718,8 @@ public class CommandsPanelSkeletonTests
     }
 
     private static TestFixture CreateFixture(
-        ImmutableArray<InstalledModuleSnapshot>? installedModules = null)
+        ImmutableArray<InstalledModuleSnapshot>? installedModules = null,
+        IEnumerable<ObjectMotionSnapshot>? extraObjects = null)
     {
         var connection = new RecordingConnection();
         var handle = new GameSessionHandle(connection);
@@ -379,13 +728,17 @@ public class CommandsPanelSkeletonTests
             SnapshotSequence: 1,
             GameTimeMs: 0,
             CurrentSpeed: SimulationSpeed.Speed0,
-            Objects: ImmutableArray.Create(ship),
+            Objects: ImmutableArray.Create(ship).AddRange(extraObjects ?? []),
             PlayerShipObjectId: PlayerShipId,
             InstalledModules: installedModules ?? OneEngineModule));
 
         var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);
         return new TestFixture(connection, handle, screen);
     }
+
+    /// <summary>Object at world (10000, worldY) — renders at screen (640, 360 + worldY - 10000) when the camera focuses the player ship at (10000, 10000).</summary>
+    private static ObjectMotionSnapshot ObjAt(string id, double worldY) =>
+        new(id, X: 10000, Y: worldY, SpeedKmS: 0, Direction: 0);
 
     private static void Render(GameSessionScreen screen)
     {

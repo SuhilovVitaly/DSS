@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Contracts;
 
@@ -18,4 +19,6 @@ public sealed record InstalledModuleSnapshot(
     string OperationalState = "Ready",
     int StructurePoints = 0,
     string? ActiveCommandType = null,
-    long? FuelAmountKg = null);
+    long? FuelAmountKg = null,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ModuleCommandSnapshot>))]
+    ImmutableArray<ModuleCommandSnapshot> Commands = default);

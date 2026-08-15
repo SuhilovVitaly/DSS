@@ -162,7 +162,8 @@ public static class EngineContentLoader
                 dto.DisplayName,
                 ParseFixedPointFactor(dto.TimeFactor),
                 ParseFixedPointFactor(dto.ComplexityFactor),
-                ParseFixedPointFactor(dto.ConsumptionFactor))).ToArray();
+                ParseFixedPointFactor(dto.ConsumptionFactor),
+                dto.Target ?? "none")).ToArray();
     }
 
     /// <summary>
@@ -311,7 +312,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("displayName")] string DisplayName,
         [property: JsonPropertyName("timeFactor")] decimal? TimeFactor,
         [property: JsonPropertyName("complexityFactor")] decimal? ComplexityFactor,
-        [property: JsonPropertyName("consumptionFactor")] decimal? ConsumptionFactor);
+        [property: JsonPropertyName("consumptionFactor")] decimal? ConsumptionFactor,
+        [property: JsonPropertyName("target")] string? Target);
 
     private sealed record FactoryTypesFile(
         [property: JsonPropertyName("factoryTypes")] IReadOnlyList<FactoryTypeDefinitionDto> FactoryTypes);

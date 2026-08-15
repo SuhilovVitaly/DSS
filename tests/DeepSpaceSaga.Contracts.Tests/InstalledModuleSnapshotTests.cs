@@ -56,4 +56,37 @@ public class InstalledModuleSnapshotTests
         Assert.Null(roundTripped.ActiveCommandType);
         Assert.Null(roundTripped.FuelAmountKg);
     }
+
+    [Fact]
+    public void Serialization_round_trip_preserves_commands_metadata()
+    {
+        var snapshot = new InstalledModuleSnapshot(
+            ModuleId: "MOD-ENG-01",
+            ModuleTypeId: "module.engine.basic",
+            DisplayName: "Engine",
+            Position: 0,
+            CommandTypeIds: ImmutableArray.Create("engine.accelerate", "engine.navigate-to-point"),
+            Commands: ImmutableArray.Create(
+                new ModuleCommandSnapshot("engine.accelerate", "Accelerate", "none"),
+                new ModuleCommandSnapshot("engine.navigate-to-point", "Navigate To Point", "point")));
+
+        var json = JsonSerializer.Serialize(snapshot);
+        var roundTripped = JsonSerializer.Deserialize<InstalledModuleSnapshot>(json);
+
+        Assert.NotNull(roundTripped);
+        Assert.False(roundTripped!.Commands.IsDefault);
+        Assert.Equal(2, roundTripped.Commands.Length);
+        Assert.Equal("engine.accelerate", roundTripped.Commands[0].CommandTypeId);
+        Assert.Equal("Accelerate", roundTripped.Commands[0].DisplayName);
+        Assert.Equal("none", roundTripped.Commands[0].Target);
+        Assert.Equal("engine.navigate-to-point", roundTripped.Commands[1].CommandTypeId);
+        Assert.Equal("point", roundTripped.Commands[1].Target);
+    }
+
+    [Fact]
+    public void Commands_metadata_defaults_to_none_target()
+    {
+        var command = new ModuleCommandSnapshot("engine.accelerate", "Accelerate");
+        Assert.Equal("none", command.Target);
+    }
 }

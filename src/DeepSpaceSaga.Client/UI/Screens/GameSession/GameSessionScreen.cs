@@ -121,8 +121,8 @@ public sealed class GameSessionScreen : IScreen
     private readonly SKRect[] _engineCommandButtonRects = new SKRect[EngineCommandButtons.Length];
     private int _pressedEngineCommandButtonIndex = -1;
 
-    // Commands Panel (top-left) — skeleton, ТЗ подзадача 1 (CommandPanelPlan.md)
-    private readonly CommandsPanel _commandsPanel = new();
+    // Commands Panel (top-left) — ТЗ подзадача 1 skeleton + ТЗ-04 data-driven buttons
+    private readonly CommandsPanel _commandsPanel;
 
     // Camera state
     private bool _isFocusAttachedToPlayer = true;
@@ -298,6 +298,8 @@ public sealed class GameSessionScreen : IScreen
         _commandBtnHoverBorderPaint = new SKPaint { Color = new SKColor(90, 100, 96), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
         _commandBtnPressedBorderPaint = new SKPaint { Color = new SKColor(120, 160, 140), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
         _engineCommandButtonIcons = LoadEngineCommandIcons();
+
+        _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendModuleCommand);
     }
 
     /// <summary>
@@ -608,6 +610,69 @@ public sealed class GameSessionScreen : IScreen
             return;
 
         _ = _handle.SendEngineCommandAsync(playerShipObjectId, PlayerEngineModuleId, commandType);
+    }
+
+    // ── Commands Panel (top-left) hooks — ТЗ-04 ─────────────────
+
+    /// <summary>
+    /// Data-driven enablement for Commands Panel buttons: the target requirement
+    /// comes from the snapshot's per-module command metadata. "point" commands are
+    /// never enabled from the panel (Ctrl+Click map navigation is the only path);
+    /// "object" commands (match/scanner) require SelectedObjectId; engine commands
+    /// additionally respect the engine command panel rules. Metadata missing → enabled.
+    /// </summary>
+    private bool IsModuleCommandEnabled(string commandType)
+    {
+        string? target = FindCommandTarget(commandType);
+        switch (target)
+        {
+            case "point":
+                return false;
+            case "object":
+                return _selectedObjectId is not null;
+            case "none":
+                return commandType.StartsWith("engine.", StringComparison.Ordinal)
+                    ? CanSendEngineCommand(commandType, _buffer.Latest?.Snapshot)
+                    : true;
+            default:
+                return true; // metadata missing
+        }
+    }
+
+    /// <summary>
+    /// Send a command from a Commands Panel button. Fire-and-forget like the engine
+    /// panel — the authoritative engine validates the command and its target.
+    /// </summary>
+    private void SendModuleCommand(string moduleId, string commandType)
+    {
+        var playerShipObjectId = _buffer.LatestPrediction?.BufferedSnapshot.Snapshot.PlayerShipObjectId;
+        if (_handle is null || string.IsNullOrWhiteSpace(playerShipObjectId))
+            return;
+
+        string? targetObjectId = FindCommandTarget(commandType) == "object" ? _selectedObjectId : null;
+        _ = _handle.SendCommandAsync(playerShipObjectId, moduleId, commandType, targetObjectId);
+    }
+
+    /// <summary>Target requirement ("none"/"point"/"object") for a command type, from the buffered snapshot's Commands metadata.</summary>
+    private string? FindCommandTarget(string commandType)
+    {
+        var snapshot = _buffer.Latest?.Snapshot;
+        if (snapshot is null)
+            return null;
+
+        foreach (var module in snapshot.InstalledModules)
+        {
+            if (module.Commands.IsDefaultOrEmpty)
+                continue;
+
+            foreach (var command in module.Commands)
+            {
+                if (command.CommandTypeId == commandType)
+                    return command.Target;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
