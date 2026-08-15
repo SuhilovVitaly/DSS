@@ -947,7 +947,14 @@ public sealed class GameSessionScreen : IScreen
                 {
                     var markerColor = SpaceMapColorResolver.GetColor(
                         state.Predicted.RenderObjectType, state.Predicted.RelationToPlayer);
-                    _depthRenderer.DrawSphericalMarker(canvas, sx, sy, r, markerColor);
+                    if (TacticalMapMarkerPolicy.UsesGlintMarker(state.Predicted.RenderObjectType))
+                    {
+                        _depthRenderer.DrawGlintMarker(canvas, sx, sy, r, markerColor);
+                    }
+                    else
+                    {
+                        _depthRenderer.DrawSphericalMarker(canvas, sx, sy, r, markerColor);
+                    }
                 }
             }
 

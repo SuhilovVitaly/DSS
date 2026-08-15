@@ -25,6 +25,24 @@ internal sealed class TacticalMapDepthRenderer
         IsAntialias = true
     };
 
+    private readonly SKPaint _glintHaloPaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
+    private readonly SKPaint _glintCorePaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
+
+    /// <summary>
+    /// Radius-multiplier/alpha pairs for the glint halo, largest and faintest
+    /// first, so each subsequent layer paints a smaller and brighter ring on
+    /// top of the previous one for a smooth continuous glow (no banding).
+    /// </summary>
+    private static readonly (float RadiusMultiplier, byte Alpha)[] GlintHaloLayers =
+    [
+        (2.6f, 12),
+        (2.2f, 22),
+        (1.8f, 38),
+        (1.5f, 60),
+        (1.25f, 90),
+        (1.05f, 130)
+    ];
+
     private readonly SKPaint _glyphShadowPaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
     private readonly SKPaint _glyphBasePaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
     private readonly SKPaint _glyphHighlightPaint = new()
@@ -96,6 +114,30 @@ internal sealed class TacticalMapDepthRenderer
 
         _markerRimPaint.Color = ScaleColor(baseColor, 0.28f, 235);
         canvas.DrawCircle(centerX, centerY, radius, _markerRimPaint);
+    }
+
+    /// <summary>
+    /// Draws a soft glinting point of light (bright core + fading, symmetric
+    /// halo) for distant/unresolved sensor contacts — unknown objects and
+    /// asteroids. Unlike <see cref="DrawSphericalMarker"/>, every layer is
+    /// centered on (centerX, centerY) with no offset, so the result is
+    /// direction-symmetric: no directional lighting, streak, or ray.
+    /// </summary>
+    public void DrawGlintMarker(
+        SKCanvas canvas,
+        float centerX,
+        float centerY,
+        float radius,
+        SKColor baseColor)
+    {
+        foreach ((float radiusMultiplier, byte alpha) in GlintHaloLayers)
+        {
+            _glintHaloPaint.Color = MixWithWhite(baseColor, 0.55f, alpha);
+            canvas.DrawCircle(centerX, centerY, radius * radiusMultiplier, _glintHaloPaint);
+        }
+
+        _glintCorePaint.Color = MixWithWhite(baseColor, 0.8f, 250);
+        canvas.DrawCircle(centerX, centerY, Math.Max(0.9f, radius * 0.45f), _glintCorePaint);
     }
 
     public void DrawPlayerShipGlyph(

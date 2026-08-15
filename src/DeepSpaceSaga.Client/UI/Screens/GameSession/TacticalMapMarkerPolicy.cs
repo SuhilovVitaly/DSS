@@ -3,9 +3,10 @@ using DeepSpaceSaga.Contracts;
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 /// <summary>
-/// Single source of truth for tactical-map marker sizes and scale
-/// visibility (ТЗ-10, §39/§39.1). Marker sizes are screen-space pixels,
-/// zoom-independent — no zoom parameter exists by design.
+/// Single source of truth for tactical-map marker sizes, scale
+/// visibility (ТЗ-10, §39/§39.1), and marker style selection (spherical
+/// vs. glint). Marker sizes are screen-space pixels, zoom-independent —
+/// no zoom parameter exists by design.
 /// Pure client-side policy, no Skia dependencies.
 /// </summary>
 internal static class TacticalMapMarkerPolicy
@@ -62,5 +63,17 @@ internal static class TacticalMapMarkerPolicy
             or SpaceObjectType.Planet
             or SpaceObjectType.Station
             or SpaceObjectType.PlayerShip;
+    }
+
+    /// <summary>
+    /// Whether the given client-visible render type should draw as a soft
+    /// glinting point of light (bright core + fading halo, no directional
+    /// shading) instead of the default shaded-sphere marker. True for
+    /// unresolved sensor contacts (UnknownSpaceObject) and asteroids;
+    /// false — including for null — for every other type.
+    /// </summary>
+    public static bool UsesGlintMarker(string? renderObjectType)
+    {
+        return renderObjectType is SpaceObjectType.UnknownSpaceObject or SpaceObjectType.Asteroid;
     }
 }
