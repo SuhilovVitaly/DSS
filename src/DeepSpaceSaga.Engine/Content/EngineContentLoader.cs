@@ -119,7 +119,8 @@ public static class EngineContentLoader
                 dto.AngularInertiaDegPerSec,
                 baseCycleTimeMs,
                 dto.FuelCapacityKg,
-                baseSuccessChancePercent);
+                baseSuccessChancePercent,
+                dto.CabinesCount);
         }).ToArray();
     }
 
@@ -305,7 +306,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("angularInertiaDegPerSec")] int? AngularInertiaDegPerSec,
         [property: JsonPropertyName("baseCycleTimeMs")] long? BaseCycleTimeMs,
         [property: JsonPropertyName("fuelCapacityKg")] long? FuelCapacityKg,
-        [property: JsonPropertyName("baseSuccessChancePercent")] int? BaseSuccessChancePercent);
+        [property: JsonPropertyName("baseSuccessChancePercent")] int? BaseSuccessChancePercent,
+        [property: JsonPropertyName("cabines")] int? CabinesCount);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto> ItemTypes);

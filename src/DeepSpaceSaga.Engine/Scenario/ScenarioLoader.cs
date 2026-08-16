@@ -214,11 +214,17 @@ public static class ScenarioLoader
         if (string.IsNullOrWhiteSpace(module.ModuleTypeId))
             throw new ScenarioException($"Module '{module.ModuleId}' is missing moduleTypeId.");
 
-        if (module.PlatformIndex < 0)
-            throw new ScenarioException($"Module '{module.ModuleId}' has negative platformIndex.");
-
         if (module.OccupiedCells is null || module.OccupiedCells.Count == 0)
             throw new ScenarioException($"Module '{module.ModuleId}' must occupy at least one cell.");
+
+        foreach (var cell in module.OccupiedCells)
+        {
+            if (cell is null)
+                throw new ScenarioException($"Module '{module.ModuleId}' occupiedCells contains a null element.");
+            if (cell.X < 0 || cell.Y < 0)
+                throw new ScenarioException(
+                    $"Module '{module.ModuleId}' has occupied cell ({cell.X},{cell.Y}) with a negative coordinate.");
+        }
 
         if (module.StructurePoints < 0)
             throw new ScenarioException($"Module '{module.ModuleId}' has negative structurePoints.");

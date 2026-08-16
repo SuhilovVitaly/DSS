@@ -61,7 +61,7 @@
     {
       "typeId": "module.container.basic",
       "displayName": "Container",
-      "slotSize": 4,
+      "slotSize": 1,
       "massKg": 20000,
       "structurePointsMax": 400,
       "powerConsumptionW": 0,
@@ -111,6 +111,17 @@
       "powerConsumptionW": 0,
       "commandTypeIds": [],
       "baseCycleTimeMs": 0
+    },
+    {
+      "typeId": "living-quarters.mk1",
+      "displayName": "Living quarters MK I",
+      "slotSize": 1,
+      "massKg": 2000,
+      "structurePointsMax": 60,
+      "powerConsumptionW": 0,
+      "commandTypeIds": [],
+      "baseCycleTimeMs": 0,
+      "cabines": 2
     }
   ]
 }

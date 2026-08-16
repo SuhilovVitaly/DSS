@@ -324,8 +324,7 @@ public class ScenarioLoaderTests
                     "moduleType": "Container",
                     "slotSize": 4,
                     "moduleTypeId": "module.container.basic",
-                    "platformIndex": 0,
-                    "occupiedCells": [1],
+                    "occupiedCells": [ { "x": 1, "y": 0 } ],
                     "massKg": 20000,
                     "structurePoints": 400,
                     "structurePointsMax": 400,
@@ -439,6 +438,44 @@ public class ScenarioLoaderTests
         {
             File.Delete(path);
         }
+    }
+
+    // requirements §57 form-check: a negative hull-cell coordinate is rejected at the
+    // ScenarioLoader.ValidateModule level (before any hull-layout/domain validation runs).
+    [Fact]
+    public void LoadFromJson_throws_on_negative_module_cell_coordinate()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              {
+                "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "hullLayout": { "width": 1, "height": 1, "cells": [ { "x": 0, "y": 0 } ] },
+                "modules": [
+                  {
+                    "moduleId": "MOD-1",
+                    "moduleTypeId": "module.container.basic",
+                    "occupiedCells": [ { "x": -1, "y": 0 } ],
+                    "structurePoints": 400,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "cargo": []
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        """;
+
+        var ex = Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(json));
+        Assert.Contains("negative coordinate", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]

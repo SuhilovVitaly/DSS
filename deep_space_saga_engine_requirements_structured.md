@@ -274,19 +274,21 @@
 
 ## 4. Корабль, модули и ресурсы
 
-### 4.1. Корабельная платформа
+### 4.1. Корпус корабля (hull grid)
 
 Требования:
 
-- Корабль состоит из platforms.
-- Platform имеет geometry, mounting cells, placement rules и собственные параметры.
-- Размещение modules валидируется по cells и slot size.
-- Разрушение platform влияет на размещённые modules.
+- Корабль (ship-объект) имеет `hullLayout`: `Width`, `Height` и список structural cells `{x, y}`. Понятия platform в этой модели нет.
+- Module занимает список координат `occupiedCells: [{x, y}]`, каждая из которых обязана входить в `hullLayout.Cells` того же объекта.
+- Координаты модулей одного объекта не пересекаются между собой; `occupiedCells.Count` равен `ModuleType.SlotSize`.
+- Если у объекта есть modules, `hullLayout` обязателен; иначе — ошибка загрузки сценария.
+- Разрушение module влияет на его собственный `StructurePoints`; последствия для несущей конструкции корпуса при hull-grid модели формализованы разделом 57 частично (см. `45. Попадания и распределение урона по кораблю` — требует отдельного пересмотра).
 
 Источники:
 
-- `44. Платформенная конструкция корабля`
-- `50. Стартовый корабль игрока`
+- `57. Tetrarch Class — замена стартового корабля и hull grid`
+- `44. Платформенная конструкция корабля` (отменён разделом 57, сохранён как исторический контекст)
+- `50. Стартовый корабль игрока` (заменён разделом 57)
 - `55.5. Корабельные модули как ECS-композиция`
 
 ### 4.2. Общая модель модуля
@@ -304,19 +306,22 @@
 - `43. Общая модель корабельного модуля`
 - `56.2. Общая модель module lifecycle`
 
-### 4.3. Стартовый корабль
+### 4.3. Стартовый корабль (Tetrarch Class)
 
 Требования:
 
-- Стартовый корабль состоит из трёх connected platforms.
-- Все 12 mounting cells заняты.
-- Минимальные modules: Bridge/Navigation Computer, Engine, Generator, Battery, Container, Drilling Unit, Scanner, Habitation Module, Combat Laser.
-- Container занимает `SlotSize = 4` на второй platform.
+- Стартовый `PlayerShip` (SPC-0001) — Tetrarch Class: hull grid `9×9`, 10 structural cells.
+- Ровно 6 стартовых модулей, каждый на своей координате: Navigation Computer `(4,0)`, Living quarters `(4,1)` (`living-quarters.mk1`), Cargo hold `(4,2)` (`module.container.basic`), Scanner `(4,3)`, Reactor/Generator `(4,4)`, Engine `(4,5)`.
+- 4 из 10 hull cells остаются незанятыми модулями.
+- Battery, Drilling Unit, Combat Laser и старый Habitation Module в стартовом loadout отсутствуют (типы модулей остаются в каталоге).
+- Container (`module.container.basic`) имеет `SlotSize = 1` (изменено с `4`).
+- Cargo hold стартует с 1000 `Energy Cells`; Engine стартует без явно заданного `fuelAmountKg` (используется полный `fuelCapacityKg`).
 
 Источники:
 
+- `57. Tetrarch Class — замена стартового корабля и hull grid`
 - `49. Обязательный Command Module / Bridge`
-- `50. Стартовый корабль игрока`
+- `50. Стартовый корабль игрока` (заменён разделом 57)
 - `56.7. Стартовые active modules`
 
 ### 4.4. Commands и ActiveCycle

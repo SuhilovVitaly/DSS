@@ -199,7 +199,8 @@ public sealed class SimulationEngine : IDisposable
                 PersistenceType: obj.PersistenceType,
                 MassKg: obj.MassKg,
                 CompositionType: obj.CompositionType,
-                IsKnown: obj.IsKnown));
+                IsKnown: obj.IsKnown,
+                HullLayout: obj.HullLayout));
         }
 
         lock (_worldStateLock)
@@ -510,7 +511,8 @@ public sealed class SimulationEngine : IDisposable
                 MassKg: obj.MassKg,
                 CompositionType: obj.CompositionType,
                 Modules: BuildSaveModules(obj),
-                IsKnown: obj.IsKnown));
+                IsKnown: obj.IsKnown,
+                HullLayout: obj.HullLayout));
         }
 
         var gameState = new GameStateData(
@@ -539,8 +541,9 @@ public sealed class SimulationEngine : IDisposable
             modules.Add(new ShipModuleData(
                 ModuleId: module.ModuleId,
                 ModuleTypeId: moduleType.TypeId,
-                PlatformIndex: module.PlatformIndex,
-                OccupiedCells: module.OccupiedCells,
+                OccupiedCells: module.OccupiedCells
+                    .Select(cell => new HullCellCoordinate(cell.X, cell.Y))
+                    .ToArray(),
                 StructurePoints: module.StructurePoints,
                 PowerState: module.PowerState,
                 OperationalState: module.OperationalState,
@@ -599,7 +602,11 @@ public sealed class SimulationEngine : IDisposable
 
         var modules = ImmutableArray.CreateBuilder<InstalledModuleRuntime>(obj.Modules.Count);
         var moduleIds = new HashSet<string>(StringComparer.Ordinal);
-        var occupiedCellsByPlatform = new Dictionary<int, HashSet<int>>();
+
+        // Hull cells occupied so far by any module on this object — checked and filled as
+        // one flat set across the whole ship (requirements §57 replaces the old
+        // per-platform Dictionary<int,HashSet<int>> model).
+        var occupiedHullCells = new HashSet<(int X, int Y)>();
 
         foreach (var module in obj.Modules)
         {
@@ -610,7 +617,7 @@ public sealed class SimulationEngine : IDisposable
 
             int moduleTypeIndex = _registry.ModuleTypes.GetIndex(module.ModuleTypeId);
             var moduleType = _registry.ModuleTypes.GetDefinition(moduleTypeIndex);
-            ValidateModulePlacement(obj.ObjectId, module, moduleType, occupiedCellsByPlatform);
+            var placedCells = ValidateModulePlacement(obj.ObjectId, obj.HullLayout, module, moduleType, occupiedHullCells);
             if (module.StructurePoints < 0 || module.StructurePoints > moduleType.StructurePointsMax)
             {
                 throw new ScenarioException(
@@ -632,8 +639,7 @@ public sealed class SimulationEngine : IDisposable
             modules.Add(new InstalledModuleRuntime(
                 module.ModuleId,
                 moduleTypeIndex,
-                module.PlatformIndex,
-                module.OccupiedCells.ToImmutableArray(),
+                placedCells,
                 module.PowerState,
                 module.OperationalState,
                 module.StructurePoints,
@@ -646,18 +652,21 @@ public sealed class SimulationEngine : IDisposable
         return modules.ToImmutable();
     }
 
-    private static void ValidateModulePlacement(
+    /// <summary>
+    /// Validate a module's hull-grid placement (requirements §57): the occupied cell
+    /// count must match the module type's SlotSize, every cell must belong to the
+    /// object's HullLayout, and no cell may already be occupied by another module on
+    /// the same object. Returns the module's occupied cells as a coordinate tuple array
+    /// for the runtime model, and adds them to <paramref name="occupiedHullCells"/> so
+    /// subsequent modules on the same object are checked against them too.
+    /// </summary>
+    private static ImmutableArray<(int X, int Y)> ValidateModulePlacement(
         string objectId,
+        HullLayoutData? hullLayout,
         ShipModuleData module,
         ModuleTypeDefinition moduleType,
-        Dictionary<int, HashSet<int>> occupiedCellsByPlatform)
+        HashSet<(int X, int Y)> occupiedHullCells)
     {
-        if (module.PlatformIndex < 0)
-        {
-            throw new ScenarioException(
-                $"Module '{module.ModuleId}' on '{objectId}' has negative platformIndex {module.PlatformIndex}.");
-        }
-
         if (module.OccupiedCells.Count != moduleType.SlotSize)
         {
             throw new ScenarioException(
@@ -665,34 +674,44 @@ public sealed class SimulationEngine : IDisposable
                 $"but module type '{moduleType.TypeId}' requires {moduleType.SlotSize}.");
         }
 
-        var moduleCells = new HashSet<int>();
-        foreach (int cell in module.OccupiedCells)
+        if (hullLayout is null)
         {
-            if (cell < 0)
-                throw new ScenarioException($"Module '{module.ModuleId}' on '{objectId}' has negative occupied cell {cell}.");
-            if (cell > 3)
-                throw new ScenarioException(
-                    $"Module '{module.ModuleId}' on '{objectId}' has occupied cell {cell} outside the 2x2 platform grid (0..3).");
-
-            if (!moduleCells.Add(cell))
-                throw new ScenarioException($"Module '{module.ModuleId}' on '{objectId}' duplicates occupied cell {cell}.");
+            throw new ScenarioException(
+                $"Object '{objectId}' has modules but no hullLayout to place them on.");
         }
 
-        if (!occupiedCellsByPlatform.TryGetValue(module.PlatformIndex, out var platformCells))
-        {
-            platformCells = new HashSet<int>();
-            occupiedCellsByPlatform.Add(module.PlatformIndex, platformCells);
-        }
+        var hullCells = new HashSet<(int X, int Y)>(hullLayout.Cells.Select(c => (c.X, c.Y)));
 
-        foreach (int cell in moduleCells)
+        var placedCells = ImmutableArray.CreateBuilder<(int X, int Y)>(module.OccupiedCells.Count);
+        var moduleCells = new HashSet<(int X, int Y)>();
+        foreach (var cell in module.OccupiedCells)
         {
-            if (!platformCells.Add(cell))
+            var coordinate = (cell.X, cell.Y);
+
+            if (!moduleCells.Add(coordinate))
             {
                 throw new ScenarioException(
-                    $"Module '{module.ModuleId}' on '{objectId}' overlaps occupied cell {cell} " +
-                    $"on platform {module.PlatformIndex}.");
+                    $"Module '{module.ModuleId}' on '{objectId}' duplicates occupied cell ({cell.X},{cell.Y}).");
             }
+
+            if (!hullCells.Contains(coordinate))
+            {
+                throw new ScenarioException(
+                    $"Module '{module.ModuleId}' on '{objectId}' occupies cell ({cell.X},{cell.Y}) " +
+                    "which is outside the object's hull layout.");
+            }
+
+            if (!occupiedHullCells.Add(coordinate))
+            {
+                throw new ScenarioException(
+                    $"Module '{module.ModuleId}' on '{objectId}' overlaps occupied cell ({cell.X},{cell.Y}) " +
+                    "with another module.");
+            }
+
+            placedCells.Add(coordinate);
         }
+
+        return placedCells.MoveToImmutable();
     }
 
     private ImmutableArray<CargoStackRuntime> BuildRuntimeCargo(SpaceObjectData obj, ShipModuleData module)
@@ -1632,13 +1651,17 @@ internal sealed record SpaceObjectRuntime(
     string PersistenceType = "Permanent",
     long? MassKg = null,
     string? CompositionType = null,
-    bool IsKnown = false);
+    bool IsKnown = false,
+    /// <summary>
+    /// Hull grid geometry carried forward from the scenario/save (requirements §57).
+    /// Required (non-null) whenever Modules is non-empty — see ValidateModulePlacement.
+    /// </summary>
+    HullLayoutData? HullLayout = null);
 
 internal sealed record InstalledModuleRuntime(
     string ModuleId,
     int ModuleTypeIndex,
-    int PlatformIndex,
-    ImmutableArray<int> OccupiedCells,
+    ImmutableArray<(int X, int Y)> OccupiedCells,
     string PowerState,
     string OperationalState,
     int StructurePoints,

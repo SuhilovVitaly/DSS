@@ -162,13 +162,14 @@ public class InstalledModuleProjectionTests
                 "name": "Player Ship",
                 "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
                 "movementType": "Stationary",
+                "hullLayout": { "width": 2, "height": 1, "cells": [ {"x":0,"y":0},{"x":1,"y":0} ] },
                 "modules": [
                   { "moduleId": "MOD-ENG-01", "moduleTypeId": "module.engine.basic",
-                    "platformIndex": 0, "occupiedCells": [0],
+                    "occupiedCells": [ {"x":0,"y":0} ],
                     "powerState": "On", "operationalState": "Ready", "structurePoints": 100,
                     "fuelAmountKg": 1000 },
                   { "moduleId": "MOD-SCN-01", "moduleTypeId": "module.scanner.mk1",
-                    "platformIndex": 0, "occupiedCells": [1],
+                    "occupiedCells": [ {"x":1,"y":0} ],
                     "powerState": "On", "operationalState": "Ready", "structurePoints": 50 }
                 ]
               }
@@ -212,9 +213,10 @@ public class InstalledModuleProjectionTests
                 "name": "Player Ship",
                 "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
                 "movementType": "Stationary",
+                "hullLayout": { "width": 1, "height": 1, "cells": [ {"x":0,"y":0} ] },
                 "modules": [
                   { "moduleId": "MOD-SCN-01", "moduleTypeId": "module.scanner.mk1",
-                    "platformIndex": 0, "occupiedCells": [0],
+                    "occupiedCells": [ {"x":0,"y":0} ],
                     "powerState": "On", "operationalState": "Ready", "structurePoints": 50 }
                 ]
               }

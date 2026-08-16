@@ -1144,9 +1144,10 @@ public class EngineCommandTests
               { "objectId": "{{PlayerShipId}}", "objectType": "PlayerShip", "persistenceType": "Permanent",
                 "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
                 "movementType": "Stationary",
+                "hullLayout": { "width": 1, "height": 1, "cells": [ {"x":0,"y":0} ] },
                 "modules": [
-                  { "moduleId": "{{EngineModuleId}}", "moduleTypeId": "module.engine.basic", "platformIndex": 0,
-                    "occupiedCells": [0], "structurePoints": 100, "powerState": "On", "operationalState": "Ready",
+                  { "moduleId": "{{EngineModuleId}}", "moduleTypeId": "module.engine.basic",
+                    "occupiedCells": [ {"x":0,"y":0} ], "structurePoints": 100, "powerState": "On", "operationalState": "Ready",
                     "activeCycle": null, "cargo": [] }
                 ]
               }
@@ -1350,9 +1351,10 @@ public class EngineCommandTests
                   { "objectId": "{{PlayerShipId}}", "objectType": "PlayerShip", "persistenceType": "Permanent",
                     "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
                     "movementType": "Stationary",
+                    "hullLayout": { "width": 1, "height": 1, "cells": [ {"x":0,"y":0} ] },
                     "modules": [
-                      { "moduleId": "{{EngineModuleId}}", "moduleTypeId": "module.engine.basic", "platformIndex": 0,
-                        "occupiedCells": [0], "structurePoints": 100, "powerState": "On", "operationalState": "Ready",
+                      { "moduleId": "{{EngineModuleId}}", "moduleTypeId": "module.engine.basic",
+                        "occupiedCells": [ {"x":0,"y":0} ], "structurePoints": 100, "powerState": "On", "operationalState": "Ready",
                         "activeCycle": null, "cargo": [], "fuelAmountKg": 2000 }
                     ]
                   }
@@ -1364,9 +1366,11 @@ public class EngineCommandTests
     }
 
     [Fact]
-    public void Default_scenario_engine_starts_with_half_tank()
+    public void Default_scenario_engine_starts_with_full_tank()
     {
-        // AC3: the default scenario file has an engine with fuelAmountKg exactly half of fuelCapacityKg.
+        // requirements §57 / story-20260816-204408 Batch B: the Tetrarch default scenario
+        // no longer specifies fuelAmountKg explicitly for MOD-PLAYER-ENGINE-01, so the
+        // ResolveFuelAmountKg default rule (§56.10) applies — a full tank.
         string scenarioPath = Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
             "..", "..", "..", "..", "..",
@@ -1400,8 +1404,7 @@ public class EngineCommandTests
 
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
         var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
-        long expectedHalf = engineModuleType.FuelCapacityKg!.Value / 2;
-        Assert.Equal(expectedHalf, engineModule.FuelAmountKg);
+        Assert.Equal(engineModuleType.FuelCapacityKg!.Value, engineModule.FuelAmountKg);
     }
 
     [Fact]
@@ -1438,9 +1441,10 @@ public class EngineCommandTests
               { "objectId": "{{PlayerShipId}}", "objectType": "PlayerShip", "persistenceType": "Permanent",
                 "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
                 "movementType": "Stationary",
+                "hullLayout": { "width": 1, "height": 1, "cells": [ {"x":0,"y":0} ] },
                 "modules": [
-                  { "moduleId": "{{EngineModuleId}}", "moduleTypeId": "module.engine.basic", "platformIndex": 0,
-                    "occupiedCells": [0], "structurePoints": 100, "powerState": "On", "operationalState": "Ready",
+                  { "moduleId": "{{EngineModuleId}}", "moduleTypeId": "module.engine.basic",
+                    "occupiedCells": [ {"x":0,"y":0} ], "structurePoints": 100, "powerState": "On", "operationalState": "Ready",
                     "activeCycle": null, "cargo": [], "fuelAmountKg": 7500 }
                 ]
               }
@@ -1492,9 +1496,10 @@ public class EngineCommandTests
               { "objectId": "{{PlayerShipId}}", "objectType": "PlayerShip", "persistenceType": "Permanent",
                 "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
                 "movementType": "Stationary",
+                "hullLayout": { "width": 2, "height": 2, "cells": [ {"x":0,"y":0},{"x":1,"y":0},{"x":0,"y":1},{"x":1,"y":1} ] },
                 "modules": [
-                  { "moduleId": "MOD-CONTAINER", "moduleTypeId": "module.container.basic", "platformIndex": 0,
-                    "occupiedCells": [0, 1, 2, 3], "structurePoints": 400, "powerState": "On", "operationalState": "Ready",
+                  { "moduleId": "MOD-CONTAINER", "moduleTypeId": "module.container.basic",
+                    "occupiedCells": [ {"x":0,"y":0},{"x":1,"y":0},{"x":0,"y":1},{"x":1,"y":1} ], "structurePoints": 400, "powerState": "On", "operationalState": "Ready",
                     "activeCycle": null, "cargo": [] }
                 ]
               }
@@ -1835,12 +1840,12 @@ public class EngineCommandTests
                 "speedMps": {{speedMps}},
                 "directionDegrees": {{directionDegrees}},
                 "movementType": "Linear",
+                "hullLayout": { "width": 1, "height": 1, "cells": [ {"x":0,"y":0} ] },
                 "modules": [
                   {
                     "moduleId": "{{EngineModuleId}}",
                     "moduleTypeId": "module.engine.basic",
-                    "platformIndex": 0,
-                    "occupiedCells": [0],
+                    "occupiedCells": [ {"x":0,"y":0} ],
                     "structurePoints": {{structurePoints}},
                     "powerState": "{{powerState}}",
                     "operationalState": "{{operationalState}}",
@@ -1858,12 +1863,12 @@ public class EngineCommandTests
                 "speedMps": {{targetSpeedMps}},
                 "directionDegrees": {{targetDirectionDegrees}},
                 "movementType": "Stationary",
+                "hullLayout": { "width": 1, "height": 1, "cells": [ {"x":0,"y":0} ] },
                 "modules": [
                   {
                     "moduleId": "{{EngineModuleId}}",
                     "moduleTypeId": "module.engine.basic",
-                    "platformIndex": 0,
-                    "occupiedCells": [0],
+                    "occupiedCells": [ {"x":0,"y":0} ],
                     "structurePoints": 100,
                     "powerState": "On",
                     "operationalState": "Ready",
