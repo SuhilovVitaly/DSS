@@ -15,6 +15,7 @@ internal sealed class TacticalMapDepthRenderer
     private const float TrajectoryShadowOffset = 1.25f;
     private const long ActiveReticleRotationPeriodMs = 3_500;
     private const long SelectedReticleRotationPeriodMs = 9_000;
+    private const long FlamePulsePeriodMs = 180;
 
     private readonly SKPaint _markerShadowPaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
     private readonly SKPaint _markerBasePaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
@@ -79,6 +80,20 @@ internal sealed class TacticalMapDepthRenderer
         IsAntialias = true,
         StrokeJoin = SKStrokeJoin.Round
     };
+
+    private readonly SKPaint _engineFlameOuterPaint = new()
+    {
+        Color = new SKColor(255, 90, 20, 140),
+        Style = SKPaintStyle.Fill,
+        IsAntialias = true
+    };
+    private readonly SKPaint _engineFlameInnerPaint = new()
+    {
+        Color = new SKColor(255, 220, 120, 200),
+        Style = SKPaintStyle.Fill,
+        IsAntialias = true
+    };
+    private readonly SKPath _engineFlamePath = new();
 
     private readonly SKPath _trajectoryPath = new();
     private readonly TrajectoryPaintSet _futureTrajectoryPaints = new(
@@ -245,6 +260,64 @@ internal sealed class TacticalMapDepthRenderer
 
         _glyphRimPaint.Color = ScaleColor(baseColor, 0.3f, 240);
         canvas.DrawPath(glyphPath, _glyphRimPaint);
+    }
+
+    /// <summary>
+    /// Draws an animated engine-thrust flame behind the player ship, visible
+    /// only while the engine is actively accelerating. Flat-fill (no shaders
+    /// or blur), directional along the ship's heading, with a deterministic
+    /// sine-based flicker keyed to <paramref name="uiTimeMs"/> — mirrors the
+    /// same normalization idiom as the reticle rotation animation. Must be
+    /// drawn before (behind) <see cref="DrawPlayerShipGlyph"/> so the ship's
+    /// own triangle sits on top of the flame's base.
+    /// </summary>
+    public void DrawEngineFlame(
+        SKCanvas canvas,
+        float shipX,
+        float shipY,
+        double directionDegrees,
+        float radius,
+        long uiTimeMs)
+    {
+        double radians = directionDegrees * Math.PI / 180.0;
+        float dx = (float)Math.Sin(radians);
+        float dy = -(float)Math.Cos(radians);
+        float rx = dy;
+        float ry = -dx;
+
+        long normalizedTimeMs = Math.Max(0L, uiTimeMs) % FlamePulsePeriodMs;
+        float flicker = 0.75f + 0.25f * (float)Math.Sin(2.0 * Math.PI * normalizedTimeMs / FlamePulsePeriodMs);
+
+        float baseX = shipX - dx * radius * 0.7f;
+        float baseY = shipY - dy * radius * 0.7f;
+
+        DrawFlameLayer(canvas, baseX, baseY, dx, dy, rx, ry, radius * 0.5f, radius * 1.3f * flicker, _engineFlameOuterPaint);
+        DrawFlameLayer(canvas, baseX, baseY, dx, dy, rx, ry, radius * 0.3f, radius * 0.9f * flicker, _engineFlameInnerPaint);
+    }
+
+    private void DrawFlameLayer(
+        SKCanvas canvas,
+        float baseX,
+        float baseY,
+        float dx,
+        float dy,
+        float rx,
+        float ry,
+        float halfWidth,
+        float length,
+        SKPaint paint)
+    {
+        var left = new SKPoint(baseX - rx * halfWidth, baseY - ry * halfWidth);
+        var right = new SKPoint(baseX + rx * halfWidth, baseY + ry * halfWidth);
+        var tip = new SKPoint(baseX - dx * length, baseY - dy * length);
+
+        _engineFlamePath.Reset();
+        _engineFlamePath.MoveTo(left);
+        _engineFlamePath.LineTo(right);
+        _engineFlamePath.LineTo(tip);
+        _engineFlamePath.Close();
+
+        canvas.DrawPath(_engineFlamePath, paint);
     }
 
     public void DrawFutureTrajectory(

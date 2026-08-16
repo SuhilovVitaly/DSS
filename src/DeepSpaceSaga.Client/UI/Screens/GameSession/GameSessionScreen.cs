@@ -949,6 +949,10 @@ public sealed class GameSessionScreen : IScreen
 
                 if (state.IsPlayerShip)
                 {
+                    if (state.Predicted.ActiveEngineCommandType == ShipEngineCommandTypes.Accelerate)
+                    {
+                        _depthRenderer.DrawEngineFlame(canvas, sx, sy, state.Predicted.Direction, r, uiTimeMs);
+                    }
                     DrawPlayerShipGlyph(canvas, sx, sy, state.Predicted.Direction, r);
                 }
                 else

@@ -163,6 +163,68 @@ public class TacticalMapDepthRendererTests
         Assert.True(highlight.Red > highlight.Blue);
     }
 
+    [Fact]
+    public void Engine_flame_draws_visible_pixels_behind_the_ship()
+    {
+        var renderer = new TacticalMapDepthRenderer();
+
+        using var bitmap = new SKBitmap(CanvasSize, CanvasSize);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Black);
+
+        // Ship faces "up" on screen (direction 0 degrees => dx=0, dy=-1), so
+        // the flame trails behind it, toward +y (downward on screen).
+        renderer.DrawEngineFlame(canvas, 32, 32, directionDegrees: 0, radius: 10, uiTimeMs: 0);
+
+        SKColor behind = bitmap.GetPixel(32, 32 + 8);
+
+        Assert.True(
+            Luminance(behind) > 0,
+            $"Expected visible flame pixels behind the ship; behind={behind}");
+    }
+
+    [Fact]
+    public void Engine_flame_is_directional_and_does_not_paint_ahead_of_the_ship()
+    {
+        var renderer = new TacticalMapDepthRenderer();
+
+        using var bitmap = new SKBitmap(CanvasSize, CanvasSize);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Black);
+
+        renderer.DrawEngineFlame(canvas, 32, 32, directionDegrees: 0, radius: 10, uiTimeMs: 0);
+
+        SKColor ahead = bitmap.GetPixel(32, 32 - 8);
+
+        Assert.Equal(SKColors.Black, ahead);
+    }
+
+    [Fact]
+    public void Engine_flame_flicker_animates_with_uiTimeMs()
+    {
+        var renderer = new TacticalMapDepthRenderer();
+
+        // uiTimeMs=45 lands at a quarter of the 180ms period (flicker at its
+        // maximum, 1.0); uiTimeMs=135 lands at three-quarters (flicker at its
+        // minimum, 0.5) — the two extremes of the sine-driven pulse.
+        using var bitmapA = new SKBitmap(CanvasSize, CanvasSize);
+        using var canvasA = new SKCanvas(bitmapA);
+        canvasA.Clear(SKColors.Black);
+        renderer.DrawEngineFlame(canvasA, 32, 32, directionDegrees: 0, radius: 10, uiTimeMs: 45);
+
+        using var bitmapB = new SKBitmap(CanvasSize, CanvasSize);
+        using var canvasB = new SKCanvas(bitmapB);
+        canvasB.Clear(SKColors.Black);
+        renderer.DrawEngineFlame(canvasB, 32, 32, directionDegrees: 0, radius: 10, uiTimeMs: 135);
+
+        // Sample near the far tip of the flame, where flicker-driven length
+        // changes are most visible.
+        SKColor tipA = bitmapA.GetPixel(32, 32 + 12);
+        SKColor tipB = bitmapB.GetPixel(32, 32 + 12);
+
+        Assert.NotEqual(Luminance(tipA), Luminance(tipB));
+    }
+
     private static int Luminance(SKColor color)
     {
         return color.Red + color.Green + color.Blue;
