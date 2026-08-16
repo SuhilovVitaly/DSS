@@ -13,6 +13,8 @@ internal sealed class TacticalMapDepthRenderer
     private const float LightOffsetX = -0.45f;
     private const float LightOffsetY = -0.45f;
     private const float TrajectoryShadowOffset = 1.25f;
+    private const long ActiveReticleRotationPeriodMs = 3_500;
+    private const long SelectedReticleRotationPeriodMs = 9_000;
 
     private readonly SKPaint _markerShadowPaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
     private readonly SKPaint _markerBasePaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
@@ -24,6 +26,42 @@ internal sealed class TacticalMapDepthRenderer
         StrokeWidth = 1f,
         IsAntialias = true
     };
+
+    private readonly SKPaint _glintHaloPaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
+    private readonly SKPaint _glintCorePaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
+
+    private readonly SKPaint _selectionGlowPaint = new()
+    {
+        Color = new SKColor(220, 228, 236, 42),
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 2f,
+        StrokeCap = SKStrokeCap.Round,
+        IsAntialias = true,
+        MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 2.2f)
+    };
+    private readonly SKPaint _selectionPaint = new()
+    {
+        Color = new SKColor(226, 232, 238, 125),
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 0.8f,
+        StrokeCap = SKStrokeCap.Round,
+        IsAntialias = true
+    };
+
+    /// <summary>
+    /// Radius-multiplier/alpha pairs for the glint halo, largest and faintest
+    /// first, so each subsequent layer paints a smaller and brighter ring on
+    /// top of the previous one for a smooth continuous glow (no banding).
+    /// </summary>
+    private static readonly (float RadiusMultiplier, byte Alpha)[] GlintHaloLayers =
+    [
+        (2.6f, 12),
+        (2.2f, 22),
+        (1.8f, 38),
+        (1.5f, 60),
+        (1.25f, 90),
+        (1.05f, 130)
+    ];
 
     private readonly SKPaint _glyphShadowPaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
     private readonly SKPaint _glyphBasePaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
@@ -96,6 +134,96 @@ internal sealed class TacticalMapDepthRenderer
 
         _markerRimPaint.Color = ScaleColor(baseColor, 0.28f, 235);
         canvas.DrawCircle(centerX, centerY, radius, _markerRimPaint);
+    }
+
+    /// <summary>
+    /// Draws a soft glinting point of light (bright core + fading, symmetric
+    /// halo) for distant/unresolved sensor contacts — unknown objects and
+    /// asteroids. Unlike <see cref="DrawSphericalMarker"/>, every layer is
+    /// centered on (centerX, centerY) with no offset, so the result is
+    /// direction-symmetric: no directional lighting, streak, or ray.
+    /// </summary>
+    public void DrawGlintMarker(
+        SKCanvas canvas,
+        float centerX,
+        float centerY,
+        float radius,
+        SKColor baseColor)
+    {
+        foreach ((float radiusMultiplier, byte alpha) in GlintHaloLayers)
+        {
+            _glintHaloPaint.Color = MixWithWhite(baseColor, 0.55f, alpha);
+            canvas.DrawCircle(centerX, centerY, radius * radiusMultiplier, _glintHaloPaint);
+        }
+
+        _glintCorePaint.Color = MixWithWhite(baseColor, 0.8f, 250);
+        canvas.DrawCircle(centerX, centerY, Math.Max(0.9f, radius * 0.45f), _glintCorePaint);
+    }
+
+    /// <summary>
+    /// Draws the selected-object reticle in screen space: a faint circular ring
+    /// with four short sight lines that approach it only from the outside. The
+    /// lines stop at the ring and never cross the selected object.
+    /// </summary>
+    public void DrawSelectionReticle(
+        SKCanvas canvas,
+        float centerX,
+        float centerY,
+        float markerRadius,
+        long uiTimeMs = 0)
+    {
+        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(226, 232, 238), GetSelectedReticleRotationDegrees(uiTimeMs));
+    }
+
+    /// <summary>
+    /// Draws the same soft reticle for the object currently under the pointer,
+    /// tinted orange to distinguish the transient active state from selection.
+    /// </summary>
+    public void DrawActiveObjectReticle(
+        SKCanvas canvas,
+        float centerX,
+        float centerY,
+        float markerRadius,
+        long uiTimeMs = 0)
+    {
+        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(255, 165, 0), GetActiveReticleRotationDegrees(uiTimeMs));
+    }
+
+    private void DrawObjectReticle(
+        SKCanvas canvas,
+        float centerX,
+        float centerY,
+        float markerRadius,
+        SKColor color,
+        float rotationDegrees)
+    {
+        _selectionGlowPaint.Color = new SKColor(color.Red, color.Green, color.Blue, 42);
+        _selectionPaint.Color = new SKColor(color.Red, color.Green, color.Blue, 125);
+
+        float ringRadius = (markerRadius + 3.5f) * 2f;
+        float crossExtent = ringRadius + 4f;
+
+        DrawReticleGeometry(canvas, centerX, centerY, ringRadius, crossExtent, rotationDegrees, _selectionGlowPaint);
+        DrawReticleGeometry(canvas, centerX, centerY, ringRadius, crossExtent, rotationDegrees, _selectionPaint);
+    }
+
+    internal static float GetActiveReticleRotationDegrees(long uiTimeMs)
+    {
+        return GetReticleRotationDegrees(uiTimeMs, ActiveReticleRotationPeriodMs, 1f);
+    }
+
+    internal static float GetSelectedReticleRotationDegrees(long uiTimeMs)
+    {
+        return GetReticleRotationDegrees(uiTimeMs, SelectedReticleRotationPeriodMs, -1f);
+    }
+
+    private static float GetReticleRotationDegrees(
+        long uiTimeMs,
+        long rotationPeriodMs,
+        float direction)
+    {
+        long normalizedTimeMs = Math.Max(0L, uiTimeMs) % rotationPeriodMs;
+        return direction * normalizedTimeMs * 360f / rotationPeriodMs;
     }
 
     public void DrawPlayerShipGlyph(
@@ -202,6 +330,29 @@ internal sealed class TacticalMapDepthRenderer
         canvas.Translate(offsetX, offsetY);
         canvas.DrawPath(path, paint);
         canvas.Restore();
+    }
+
+    private static void DrawReticleGeometry(
+        SKCanvas canvas,
+        float centerX,
+        float centerY,
+        float ringRadius,
+        float crossExtent,
+        float rotationDegrees,
+        SKPaint paint)
+    {
+        double startRadians = rotationDegrees * Math.PI / 180.0;
+
+        for (int arm = 0; arm < 4; arm++)
+        {
+            double angleRadians = startRadians + arm * Math.PI / 2.0;
+            float dx = (float)Math.Cos(angleRadians);
+            float dy = (float)Math.Sin(angleRadians);
+
+            canvas.DrawLine(centerX + dx * crossExtent, centerY + dy * crossExtent, centerX + dx * ringRadius, centerY + dy * ringRadius, paint);
+        }
+
+        canvas.DrawCircle(centerX, centerY, ringRadius, paint);
     }
 
     private static SKColor ScaleColor(SKColor color, float scale, byte alpha)

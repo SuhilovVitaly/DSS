@@ -939,6 +939,14 @@ public sealed class GameSessionScreen : IScreen
                 // the payload — legacy payloads without RenderObjectType still draw as a ship.
                 float r = TacticalMapMarkerPolicy.GetMarkerRadiusPx(
                     state.IsPlayerShip ? SpaceObjectType.PlayerShip : state.Predicted.RenderObjectType);
+
+                // Selection takes visual priority when the same object is also active;
+                // orange is reserved for hovered objects that are not selected.
+                if (state.Predicted.ObjectId == _selectedObjectId)
+                    _depthRenderer.DrawSelectionReticle(canvas, sx, sy, r, uiTimeMs);
+                else if (state.Predicted.ObjectId == _activeObjectId)
+                    _depthRenderer.DrawActiveObjectReticle(canvas, sx, sy, r, uiTimeMs);
+
                 if (state.IsPlayerShip)
                 {
                     DrawPlayerShipGlyph(canvas, sx, sy, state.Predicted.Direction, r);
@@ -947,7 +955,14 @@ public sealed class GameSessionScreen : IScreen
                 {
                     var markerColor = SpaceMapColorResolver.GetColor(
                         state.Predicted.RenderObjectType, state.Predicted.RelationToPlayer);
-                    _depthRenderer.DrawSphericalMarker(canvas, sx, sy, r, markerColor);
+                    if (TacticalMapMarkerPolicy.UsesGlintMarker(state.Predicted.RenderObjectType))
+                    {
+                        _depthRenderer.DrawGlintMarker(canvas, sx, sy, r, markerColor);
+                    }
+                    else
+                    {
+                        _depthRenderer.DrawSphericalMarker(canvas, sx, sy, r, markerColor);
+                    }
                 }
             }
 

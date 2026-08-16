@@ -107,4 +107,26 @@ public class TacticalMapMarkerPolicyTests
         foreach (var type in SmallScaleVisibleTypes)
             Assert.True(TacticalMapMarkerPolicy.ShouldRenderAtScale(type, ppu), $"{type} visible at PPU={ppu}");
     }
+
+    // ── Marker style selection (glint vs spherical) ──────────────
+
+    [Theory]
+    [InlineData(SpaceObjectType.Asteroid)]
+    [InlineData(SpaceObjectType.UnknownSpaceObject)]
+    public void UsesGlintMarker_is_true_for_asteroids_and_unknown_objects(string renderType)
+    {
+        Assert.True(TacticalMapMarkerPolicy.UsesGlintMarker(renderType));
+    }
+
+    [Theory]
+    [InlineData(SpaceObjectType.NpcShip)]
+    [InlineData(SpaceObjectType.Station)]
+    [InlineData(SpaceObjectType.Planet)]
+    [InlineData(SpaceObjectType.Sun)]
+    [InlineData(SpaceObjectType.PlayerShip)]
+    [InlineData(null)]
+    public void UsesGlintMarker_is_false_for_other_types(string? renderType)
+    {
+        Assert.False(TacticalMapMarkerPolicy.UsesGlintMarker(renderType));
+    }
 }

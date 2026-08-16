@@ -46,6 +46,76 @@ public class TacticalMapDepthRendererTests
     }
 
     [Fact]
+    public void Glint_marker_has_a_bright_core_that_fades_toward_the_halo_edge()
+    {
+        var renderer = new TacticalMapDepthRenderer();
+
+        using var bitmap = new SKBitmap(CanvasSize, CanvasSize);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Black);
+
+        renderer.DrawGlintMarker(canvas, 32, 32, 10, SpaceMapColorResolver.AsteroidColor);
+
+        SKColor core = bitmap.GetPixel(32, 32);
+        SKColor haloEdge = bitmap.GetPixel(32, 32 - 21); // near outer halo radius (10 * 2.2 = 22)
+
+        Assert.True(
+            Luminance(core) > Luminance(haloEdge),
+            $"Expected bright core to fade toward the halo edge; core={core}, haloEdge={haloEdge}");
+    }
+
+    [Fact]
+    public void Glint_marker_is_direction_symmetric_with_no_directional_streak()
+    {
+        var renderer = new TacticalMapDepthRenderer();
+
+        using var bitmap = new SKBitmap(CanvasSize, CanvasSize);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Black);
+
+        renderer.DrawGlintMarker(canvas, 32, 32, 10, SpaceMapColorResolver.AsteroidColor);
+
+        // Two points equidistant from center in different directions, mirroring the
+        // offsets the spherical-marker test uses to detect directional lighting.
+        SKColor left = bitmap.GetPixel(32 - 6, 32);
+        SKColor upperRight = bitmap.GetPixel(32 + 4, 32 - 4);
+
+        Assert.True(
+            Math.Abs(Luminance(left) - Luminance(upperRight)) <= 6,
+            $"Expected direction-symmetric glow (no directional streak); left={left}, upperRight={upperRight}");
+    }
+
+    [Fact]
+    public void Glint_marker_halo_keeps_the_base_color_visually_distinguishable()
+    {
+        var renderer = new TacticalMapDepthRenderer();
+
+        using var bitmap = new SKBitmap(CanvasSize, CanvasSize);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Black);
+
+        const float radius = 10;
+        renderer.DrawGlintMarker(canvas, 16, 32, radius, SpaceMapColorResolver.FallbackColor);
+        renderer.DrawGlintMarker(canvas, 48, 32, radius, SpaceMapColorResolver.AsteroidColor);
+
+        // Sample within the halo band (radius * 1.5) rather than the core or the
+        // outermost faint edge.
+        SKColor unknownHalo = bitmap.GetPixel(16, 32 - (int)(radius * 1.5f));
+        SKColor asteroidHalo = bitmap.GetPixel(48, 32 - (int)(radius * 1.5f));
+
+        int totalChannelDifference =
+            Math.Abs(unknownHalo.Red - asteroidHalo.Red) +
+            Math.Abs(unknownHalo.Green - asteroidHalo.Green) +
+            Math.Abs(unknownHalo.Blue - asteroidHalo.Blue);
+
+        Assert.True(
+            totalChannelDifference > 70,
+            $"Expected the dark-navy UnknownSpaceObject halo and the near-white Asteroid halo to remain " +
+            $"visually distinguishable; unknownHalo={unknownHalo}, asteroidHalo={asteroidHalo}, " +
+            $"totalChannelDifference={totalChannelDifference}");
+    }
+
+    [Fact]
     public void Future_trajectory_is_a_lit_tube_with_upper_left_highlight_and_lower_right_shadow()
     {
         var renderer = new TacticalMapDepthRenderer();
