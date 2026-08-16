@@ -150,16 +150,21 @@ public class GameSessionObjectInteractionTests
     }
 
     [Fact]
-    public async Task Camera_pan_recomputes_ActiveObjectId_without_a_new_mouse_move()
+    public async Task Camera_drag_pan_recomputes_ActiveObjectId()
     {
+        // Click alone no longer jumps the camera (disabled — it fought with
+        // click-and-drag panning), so triggering a pan now requires a drag
+        // (OnMouseDown + OnMouseMove), not OnMouseDown alone.
         await using var fixture = CreateFixture([ObjAt("OBJ-1", 10000)]); // at camera focus, screen center
         Render(fixture.Screen);
         fixture.Screen.OnMouseMove(640, 360);
         Assert.Equal("OBJ-1", fixture.Screen.ActiveObjectId);
 
-        // Pan far away via a click well outside the object's hit radius — the cursor
-        // itself never moves, only the camera does.
+        // Drag the camera far away — the object's screen position moves well
+        // outside the cursor's 30 px hit radius even though the object itself
+        // never moved in world space.
         fixture.Screen.OnMouseDown(100, 100);
+        fixture.Screen.OnMouseMove(400, 400);
         Render(fixture.Screen);
 
         Assert.Null(fixture.Screen.ActiveObjectId);
@@ -277,6 +282,166 @@ public class GameSessionObjectInteractionTests
         var command = Assert.Single(fixture.Connection.Commands);
         Assert.Equal(ShipEngineCommandTypes.NavigateToPoint, command.CommandType);
         Assert.Null(fixture.Screen.SelectedObjectId);
+    }
+
+    // ── Camera follow-on-select (ТЗ: camera focus follows the selected object) ─────
+
+    [Fact]
+    public void Selecting_a_non_player_object_makes_camera_follow_it_continuously()
+    {
+        // Uses a fake, fully controllable clock (same pattern as
+        // Moving_object_under_stationary_cursor_clears_ActiveObjectId) and a running
+        // simulation (Speed1) so a position change between snapshots isn't held by the
+        // paused-visual-anchor freeze, and advances real wall-clock time past the 0.3 s
+        // visual-reconciliation smoothing window so the new position is fully applied.
+        var clock = new FakeClock();
+        var ship = new ObjectMotionSnapshot(PlayerShipId, 10000, 10000, SpeedKmS: 0, Direction: 0);
+        var buffer = new SnapshotBuffer(clock.Now);
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1,
+            GameTimeMs: 0,
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray.Create(ship, ObjAt("OBJ-1", 10000 + 50)), // screen (640,410)
+            PlayerShipObjectId: PlayerShipId));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), handle: null, timestampProvider: clock.Now);
+
+        Render(screen);
+        screen.OnMouseDown(640, 410);
+
+        Assert.Equal("OBJ-1", screen.SelectedObjectId);
+        Assert.False(screen.IsFocusAttachedToPlayer);
+        Assert.Equal("OBJ-1", screen.CameraFollowObjectId);
+
+        clock.AdvanceMs(400);
+        Render(screen);
+        Assert.Equal(10000, screen.CameraFocusX);
+        Assert.Equal(10050, screen.CameraFocusY);
+
+        // OBJ-1 moves to a new position in a fresh snapshot — proves per-frame
+        // following, not a one-time jump to where it was at selection time.
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 2,
+            GameTimeMs: 1000,
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray.Create(ship, ObjAt("OBJ-1", 10000 + 200, worldX: 10000 + 100)),
+            PlayerShipObjectId: PlayerShipId));
+        clock.AdvanceMs(400);
+        Render(screen); // the frame that observes the new snapshot creates a fresh
+                         // reconciliation correction (eases in over subsequent frames)
+        clock.AdvanceMs(400); // past the 0.3 s reconciliation smoothing window
+        Render(screen);
+
+        Assert.Equal(10100, screen.CameraFocusX);
+        Assert.Equal(10200, screen.CameraFocusY);
+    }
+
+    [Fact]
+    public async Task Selecting_the_player_ship_after_following_another_object_reattaches_player_follow()
+    {
+        await using var fixture = CreateFixtureWithPlayerShipAndObjects([ObjAt("OBJ-1", 10000 + 50)]); // screen (640,410)
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(640, 410); // select+follow OBJ-1
+        Assert.Equal("OBJ-1", fixture.Screen.CameraFollowObjectId);
+        Assert.False(fixture.Screen.IsFocusAttachedToPlayer);
+
+        fixture.Screen.OnMouseDown(640, 360); // select the player ship (camera hasn't moved yet)
+
+        Assert.Equal(PlayerShipId, fixture.Screen.SelectedObjectId);
+        Assert.True(fixture.Screen.IsFocusAttachedToPlayer);
+        Assert.Null(fixture.Screen.CameraFollowObjectId);
+    }
+
+    [Fact]
+    public async Task CtrlC_from_a_free_map_point_reattaches_player_follow()
+    {
+        // Pre-existing behavior — must still hold after generalizing camera-follow.
+        await using var fixture = CreateFixtureWithPlayerShip();
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(100, 100);
+        fixture.Screen.OnMouseMove(300, 300); // drag -> detaches from player
+        Assert.False(fixture.Screen.IsFocusAttachedToPlayer);
+
+        fixture.Screen.OnKeyDown(Key.ControlLeft);
+        fixture.Screen.OnKeyDown(Key.C);
+
+        Assert.True(fixture.Screen.IsFocusAttachedToPlayer);
+        Assert.Null(fixture.Screen.CameraFollowObjectId);
+    }
+
+    [Fact]
+    public void CtrlC_while_following_a_non_player_object_detaches_and_freezes_at_its_position()
+    {
+        var clock = new FakeClock();
+        var ship = new ObjectMotionSnapshot(PlayerShipId, 10000, 10000, SpeedKmS: 0, Direction: 0);
+        var buffer = new SnapshotBuffer(clock.Now);
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1,
+            GameTimeMs: 0,
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray.Create(ship, ObjAt("OBJ-1", 10000 + 50)), // screen (640,410)
+            PlayerShipObjectId: PlayerShipId));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), handle: null, timestampProvider: clock.Now);
+
+        Render(screen);
+        screen.OnMouseDown(640, 410); // select+follow OBJ-1
+        clock.AdvanceMs(400);
+        Render(screen);
+        Assert.Equal(10000, screen.CameraFocusX);
+        Assert.Equal(10050, screen.CameraFocusY);
+
+        screen.OnKeyDown(Key.ControlLeft);
+        screen.OnKeyDown(Key.C);
+
+        Assert.Null(screen.CameraFollowObjectId);
+        Assert.False(screen.IsFocusAttachedToPlayer);
+        // Frozen exactly where OBJ-1 was — not jumped to the player ship at (10000,10000).
+        Assert.Equal(10000, screen.CameraFocusX);
+        Assert.Equal(10050, screen.CameraFocusY);
+
+        // OBJ-1 keeps moving in a fresh snapshot — camera must NOT follow it anymore.
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 2,
+            GameTimeMs: 1000,
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray.Create(ship, ObjAt("OBJ-1", 10000 + 500, worldX: 10000 + 500)),
+            PlayerShipObjectId: PlayerShipId));
+        clock.AdvanceMs(400);
+        Render(screen);
+
+        Assert.Equal(10000, screen.CameraFocusX);
+        Assert.Equal(10050, screen.CameraFocusY);
+    }
+
+    [Fact]
+    public async Task Starting_a_manual_drag_while_following_a_non_player_object_detaches_follow()
+    {
+        await using var fixture = CreateFixtureWithPlayerShipAndObjects([ObjAt("OBJ-1", 10000 + 50)]); // screen (640,410)
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(640, 410); // select+follow OBJ-1
+        Render(fixture.Screen);
+        Assert.Equal("OBJ-1", fixture.Screen.CameraFollowObjectId);
+        double focusXBeforeDrag = fixture.Screen.CameraFocusX;
+        double focusYBeforeDrag = fixture.Screen.CameraFocusY;
+
+        // Plain map click far from any object (ship and OBJ-1 both render near screen
+        // center now that OBJ-1 is followed) starts a drag-pan.
+        fixture.Screen.OnMouseDown(200, 200);
+        Assert.Null(fixture.Screen.CameraFollowObjectId);
+
+        fixture.Screen.OnMouseMove(250, 240); // drag delta (50, 40)
+
+        double ppu = fixture.Screen.CameraPixelsPerWorldUnit;
+        double expectedX = focusXBeforeDrag - 50 / ppu;
+        double expectedY = focusYBeforeDrag - 40 / ppu;
+        Assert.Equal(expectedX, fixture.Screen.CameraFocusX);
+        Assert.Equal(expectedY, fixture.Screen.CameraFocusY);
+
+        Render(fixture.Screen); // confirm it does NOT snap back to following OBJ-1
+        Assert.Equal(expectedX, fixture.Screen.CameraFocusX);
+        Assert.Equal(expectedY, fixture.Screen.CameraFocusY);
     }
 
     // ── Right click: clear selection ─────────────────────────────────────────────
@@ -548,6 +713,26 @@ public class GameSessionObjectInteractionTests
             GameTimeMs: 0,
             CurrentSpeed: SimulationSpeed.Speed0,
             Objects: ImmutableArray.Create(ship),
+            PlayerShipObjectId: PlayerShipId));
+
+        var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);
+        return new TestFixture(connection, handle, screen);
+    }
+
+    /// <summary>Ship at (10000,10000) plus extra objects — for camera-follow-on-select tests
+    /// that need both a real player ship AND at least one other selectable object.</summary>
+    private static TestFixture CreateFixtureWithPlayerShipAndObjects(IEnumerable<ObjectMotionSnapshot> extraObjects)
+    {
+        var connection = new RecordingConnection();
+        var handle = new GameSessionHandle(connection);
+        var ship = new ObjectMotionSnapshot(PlayerShipId, 10000, 10000, SpeedKmS: 0, Direction: 0);
+        var objects = new List<ObjectMotionSnapshot> { ship };
+        objects.AddRange(extraObjects);
+        handle.Buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1,
+            GameTimeMs: 0,
+            CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: objects.ToImmutableArray(),
             PlayerShipObjectId: PlayerShipId));
 
         var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);

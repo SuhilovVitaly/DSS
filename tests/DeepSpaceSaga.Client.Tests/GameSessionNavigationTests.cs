@@ -45,18 +45,21 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
-    public async Task Plain_click_sends_no_command_and_changes_focus()
+    public async Task Plain_click_sends_no_command_and_does_not_change_focus()
     {
-        // ТЗ-08.2 (AC1): plain click without Ctrl keeps the old behavior — camera pans,
-        // no command is sent.
+        // ТЗ-08.2 (AC1) + drag-pan follow-up: a plain click without Ctrl sends no
+        // command. The camera no longer jumps to the clicked point by itself — that
+        // jump fought with click-and-drag panning and was disabled; only actual
+        // mouse movement while held pans the camera now (see GameSessionNavigationTests
+        // drag-pan tests further down this file).
         await using var fixture = CreateFixture();
         Render(fixture.Screen);
 
         fixture.Screen.OnMouseDown(1000, 500);
 
         Assert.Empty(fixture.Connection.Commands);
-        Assert.Equal(10360.0, fixture.Screen.CameraFocusX, precision: 6);
-        Assert.Equal(10140.0, fixture.Screen.CameraFocusY, precision: 6);
+        Assert.Equal(10000.0, fixture.Screen.CameraFocusX, precision: 6);
+        Assert.Equal(10000.0, fixture.Screen.CameraFocusY, precision: 6);
     }
 
     [Fact]
@@ -315,10 +318,13 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
-    public async Task Ctrl_click_then_ctrl_release_then_plain_click_pans_without_second_navigation()
+    public async Task Ctrl_click_then_ctrl_release_then_plain_click_and_drag_pans_without_second_navigation()
     {
         // Regression: after Ctrl+Click sends NavigateToPoint, releasing Ctrl and
-        // plain-clicking must pan the camera — NOT send a second navigation command.
+        // plain-click-and-dragging must pan the camera — NOT send a second
+        // navigation command. A plain click alone (no drag) no longer pans by
+        // itself — the click-to-center jump was disabled (see
+        // Plain_click_sends_no_command_and_does_not_change_focus).
         await using var fixture = CreateFixture();
         Render(fixture.Screen);
 
@@ -332,21 +338,29 @@ public class GameSessionNavigationTests
         // 2. Release Ctrl.
         fixture.Screen.OnKeyUp(Key.ControlLeft);
 
-        // 3. Plain click elsewhere → must pan camera, no second command.
+        // 3. Plain click elsewhere, alone, sends no second command and does not pan.
         double fxBefore = fixture.Screen.CameraFocusX;
         double fyBefore = fixture.Screen.CameraFocusY;
 
         fixture.Screen.OnMouseDown(900, 600);
 
         Assert.Single(fixture.Connection.Commands); // still only one
-        Assert.NotEqual(fxBefore, fixture.Screen.CameraFocusX); // camera panned
-        Assert.NotEqual(fyBefore, fixture.Screen.CameraFocusY);
+        Assert.Equal(fxBefore, fixture.Screen.CameraFocusX); // no jump on click alone
+        Assert.Equal(fyBefore, fixture.Screen.CameraFocusY);
+
+        // 4. Dragging afterward (still held) pans by the exact screen-space delta.
+        fixture.Screen.OnMouseMove(920, 580); // dx=+20, dy=-20, PPU=1.0
+
+        Assert.Single(fixture.Connection.Commands); // dragging still sends nothing
+        Assert.Equal(fxBefore - 20.0, fixture.Screen.CameraFocusX, precision: 6);
+        Assert.Equal(fyBefore + 20.0, fixture.Screen.CameraFocusY, precision: 6);
     }
 
     [Fact]
-    public async Task Ctrl_click_with_ctrl_right_then_release_then_plain_click_pans()
+    public async Task Ctrl_click_with_ctrl_right_then_release_then_plain_click_does_not_pan_alone()
     {
-        // Same as above but with ControlRight.
+        // Same as above but with ControlRight, checking only the no-jump-on-click-
+        // alone part (drag coverage lives in the ControlLeft variant above).
         await using var fixture = CreateFixture();
         Render(fixture.Screen);
 
@@ -360,7 +374,80 @@ public class GameSessionNavigationTests
         fixture.Screen.OnMouseDown(900, 600);
 
         Assert.Single(fixture.Connection.Commands);
-        Assert.NotEqual(fxBefore, fixture.Screen.CameraFocusX);
+        Assert.Equal(fxBefore, fixture.Screen.CameraFocusX);
+    }
+
+    [Fact]
+    public async Task Drag_after_plain_click_pans_camera_by_mouse_delta_in_real_time()
+    {
+        // Dragging (OnMouseMove while still held after a plain map OnMouseDown)
+        // must continuously shift the camera by the mouse-movement delta, in
+        // real time, independent of whatever the focus was right after the
+        // mouse-down (which itself no longer jumps — see the click-alone tests).
+        await using var fixture = CreateFixture();
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(1000, 500);
+
+        double focusXAfterDown = fixture.Screen.CameraFocusX;
+        double focusYAfterDown = fixture.Screen.CameraFocusY;
+
+        // PPU is 1.0 by default (see GameSessionScreen ctor / CameraState default).
+        const double ppu = 1.0;
+        float dx = 30f;
+        float dy = -20f;
+        fixture.Screen.OnMouseMove(1000 + dx, 500 + dy);
+
+        Assert.Equal(focusXAfterDown - dx / ppu, fixture.Screen.CameraFocusX, precision: 6);
+        Assert.Equal(focusYAfterDown - dy / ppu, fixture.Screen.CameraFocusY, precision: 6);
+    }
+
+    [Fact]
+    public async Task Drag_stops_panning_after_mouse_up()
+    {
+        await using var fixture = CreateFixture();
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(1000, 500);
+        fixture.Screen.OnMouseMove(1030, 480);
+
+        double focusXAfterMove = fixture.Screen.CameraFocusX;
+        double focusYAfterMove = fixture.Screen.CameraFocusY;
+
+        fixture.Screen.OnMouseUp(1030, 480);
+        fixture.Screen.OnMouseMove(1100, 400);
+
+        Assert.Equal(focusXAfterMove, fixture.Screen.CameraFocusX, precision: 6);
+        Assert.Equal(focusYAfterMove, fixture.Screen.CameraFocusY, precision: 6);
+    }
+
+    [Fact]
+    public async Task Drag_starting_on_object_or_panel_does_not_pan_map()
+    {
+        await using var fixture = CreateFixture();
+        Render(fixture.Screen);
+
+        // Ship renders at screen center (640, 360) — click lands on the object,
+        // not the "plain map click" branch, so no panning drag should start.
+        fixture.Screen.OnMouseDown(ScreenWidth / 2f, ScreenHeight / 2f);
+        double focusXAfterObjectClick = fixture.Screen.CameraFocusX;
+        double focusYAfterObjectClick = fixture.Screen.CameraFocusY;
+
+        fixture.Screen.OnMouseMove(ScreenWidth / 2f + 50f, ScreenHeight / 2f + 50f);
+
+        Assert.Equal(focusXAfterObjectClick, fixture.Screen.CameraFocusX);
+        Assert.Equal(focusYAfterObjectClick, fixture.Screen.CameraFocusY);
+
+        // Command panel padding (outside any button) consumes the click too.
+        var panel = fixture.Screen.LastCommandPanelRect;
+        fixture.Screen.OnMouseDown(panel.Left + 2f, panel.MidY);
+        double focusXAfterPanelClick = fixture.Screen.CameraFocusX;
+        double focusYAfterPanelClick = fixture.Screen.CameraFocusY;
+
+        fixture.Screen.OnMouseMove(panel.Left + 60f, panel.MidY + 60f);
+
+        Assert.Equal(focusXAfterPanelClick, fixture.Screen.CameraFocusX);
+        Assert.Equal(focusYAfterPanelClick, fixture.Screen.CameraFocusY);
     }
 
     // ── Test helpers (same fixture pattern as GameSessionEngineCommandPanelTests) ──

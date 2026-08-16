@@ -48,7 +48,6 @@ public sealed class GameSessionScreen : IScreen
 
     // Object paints
     private readonly SKPaint _trailPaint;
-    private readonly SKPaint _centerPaint;
     private readonly SKPath _playerShipGlyphPath = new();
 
     // Shared UI paints
@@ -91,6 +90,9 @@ public sealed class GameSessionScreen : IScreen
     private float _mouseY;
     private float _uiMouseX;
     private float _uiMouseY;
+    private bool _isPanningMap;
+    private float _panLastScreenX;
+    private float _panLastScreenY;
     private bool _shouldBootstrapInitialTrails = true;
     private bool _capturedInitialTrailBootstrapObjects;
     private long _lastFrameTimestamp;
@@ -126,6 +128,7 @@ public sealed class GameSessionScreen : IScreen
 
     // Camera state
     private bool _isFocusAttachedToPlayer = true;
+    private string? _cameraFollowObjectId;
 
     // Navigation (Ctrl+Click) state — ТЗ: Navigation Waypoints
     private bool _isCtrlLeftDown;
@@ -237,6 +240,7 @@ public sealed class GameSessionScreen : IScreen
     internal IReadOnlyList<ObjectRenderState> RenderStates => _renderStates;
     internal int ActiveEngineCommandButtonIndex { get; private set; } = -1;
     internal bool IsFocusAttachedToPlayer => _isFocusAttachedToPlayer;
+    internal string? CameraFollowObjectId => _cameraFollowObjectId;
     internal IReadOnlyList<ObjectTrailPoint> GetObjectTrail(string objectId) => _trailStore.GetTrail(objectId);
     internal string? ActiveObjectId => _activeObjectId;
     internal string? SelectedObjectId => _selectedObjectId;
@@ -268,7 +272,6 @@ public sealed class GameSessionScreen : IScreen
         _depthRenderer = new TacticalMapDepthRenderer();
 
         _trailPaint = new SKPaint { Color = new SKColor(190, 190, 190, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 2f, IsAntialias = true };
-        _centerPaint = new SKPaint { Color = new SKColor(40, 40, 40), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
 
         _panelBgPaint = new SKPaint { Color = new SKColor(0, 0, 0, 200), Style = SKPaintStyle.Fill };
         _panelBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
@@ -421,6 +424,18 @@ public sealed class GameSessionScreen : IScreen
         if (hitObjectId is not null)
         {
             SetSelectedObjectId(hitObjectId);
+
+            if (hitObjectId == _buffer.Latest?.Snapshot.PlayerShipObjectId)
+            {
+                _isFocusAttachedToPlayer = true;
+                _cameraFollowObjectId = null;
+            }
+            else
+            {
+                _isFocusAttachedToPlayer = false;
+                _cameraFollowObjectId = hitObjectId;
+            }
+
             return ScreenEvent.None;
         }
 
@@ -434,10 +449,15 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        // 6. Map click -> pan camera
-        var (worldX, worldY) = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
+        // 6. Map click -> start a potential drag-pan. The camera no longer jumps/
+        // re-centers on a plain click by itself (disabled per user feedback: the
+        // jump fought with dragging, making it feel broken) — only actual mouse
+        // movement while held pans the camera, in OnMouseMove below.
         _isFocusAttachedToPlayer = false;
-        _camera.SetFocus(worldX, worldY);
+        _cameraFollowObjectId = null;
+        _isPanningMap = true;
+        _panLastScreenX = x;
+        _panLastScreenY = y;
         return ScreenEvent.None;
     }
 
@@ -454,6 +474,20 @@ public sealed class GameSessionScreen : IScreen
         _uiMouseX = x / _uiScale;
         _uiMouseY = y / _uiScale;
         _hasMousePosition = true;
+
+        if (_isPanningMap)
+        {
+            float dx = x - _panLastScreenX;
+            float dy = y - _panLastScreenY;
+            if (dx != 0f || dy != 0f)
+            {
+                double ppu = _camera.PixelsPerWorldUnit;
+                _camera.SetFocus(_camera.FocusX - dx / ppu, _camera.FocusY - dy / ppu);
+            }
+            _panLastScreenX = x;
+            _panLastScreenY = y;
+        }
+
         RecomputeActiveObjectId();
         return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY);
     }
@@ -465,6 +499,7 @@ public sealed class GameSessionScreen : IScreen
         _uiMouseX = x / _uiScale;
         _uiMouseY = y / _uiScale;
         _pressedEngineCommandButtonIndex = -1;
+        _isPanningMap = false;
         _commandsPanel.OnMouseUp(_uiMouseX, _uiMouseY);
     }
 
@@ -497,7 +532,18 @@ public sealed class GameSessionScreen : IScreen
 
         if (key == Key.C && IsCtrlDown)
         {
-            _isFocusAttachedToPlayer = true;
+            if (_cameraFollowObjectId is not null)
+            {
+                // Was following a non-player object — detach and freeze the focus
+                // exactly where that object currently is (UpdateCameraFocusFromPlayer
+                // already re-centers on it every frame, so the camera is already
+                // sitting there); do NOT jump to the player ship in this case.
+                _cameraFollowObjectId = null;
+            }
+            else
+            {
+                _isFocusAttachedToPlayer = true;
+            }
             return ScreenEvent.None;
         }
 
@@ -887,11 +933,10 @@ public sealed class GameSessionScreen : IScreen
         // 1. Grid
         _grid.Draw(canvas, _camera, width, height);
 
-        // 2. Crosshair
+        // 2. Camera focus indicator
         float cx = width / 2f;
         float cy = height / 2f;
-        canvas.DrawLine(cx - 10, cy, cx + 10, cy, _centerPaint);
-        canvas.DrawLine(cx, cy - 10, cx, cy + 10, _centerPaint);
+        _depthRenderer.DrawFocusIndicator(canvas, cx, cy);
 
         // 3. Object trails
         if (prediction is not null)
@@ -949,6 +994,10 @@ public sealed class GameSessionScreen : IScreen
 
                 if (state.IsPlayerShip)
                 {
+                    if (state.Predicted.ActiveEngineCommandType == ShipEngineCommandTypes.Accelerate)
+                    {
+                        _depthRenderer.DrawEngineFlame(canvas, sx, sy, state.Predicted.Direction, r, uiTimeMs);
+                    }
                     DrawPlayerShipGlyph(canvas, sx, sy, state.Predicted.Direction, r);
                 }
                 else
@@ -1241,17 +1290,34 @@ public sealed class GameSessionScreen : IScreen
 
     private void UpdateCameraFocusFromPlayer(IReadOnlyList<ObjectRenderState> renderStates)
     {
-        if (!_isFocusAttachedToPlayer)
-            return;
-
-        for (int i = 0; i < renderStates.Count; i++)
+        if (_isFocusAttachedToPlayer)
         {
-            var state = renderStates[i];
-            if (!state.IsPlayerShip)
-                continue;
+            for (int i = 0; i < renderStates.Count; i++)
+            {
+                var state = renderStates[i];
+                if (!state.IsPlayerShip)
+                    continue;
 
-            _camera.SetFocus(state.Predicted.X, state.Predicted.Y);
+                _camera.SetFocus(state.Predicted.X, state.Predicted.Y);
+                return;
+            }
             return;
+        }
+
+        if (_cameraFollowObjectId is not null)
+        {
+            for (int i = 0; i < renderStates.Count; i++)
+            {
+                var state = renderStates[i];
+                if (state.Predicted.ObjectId != _cameraFollowObjectId)
+                    continue;
+
+                _camera.SetFocus(state.Predicted.X, state.Predicted.Y);
+                return;
+            }
+            // Followed object not present this frame (e.g. removed/out of range) —
+            // leave the camera focus exactly where it last was; do not clear
+            // _cameraFollowObjectId here (it may reappear next frame).
         }
     }
 
