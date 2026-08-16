@@ -287,35 +287,52 @@ public class GameSessionObjectInteractionTests
     // ── Camera follow-on-select (ТЗ: camera focus follows the selected object) ─────
 
     [Fact]
-    public async Task Selecting_a_non_player_object_makes_camera_follow_it_continuously()
+    public void Selecting_a_non_player_object_makes_camera_follow_it_continuously()
     {
-        await using var fixture = CreateFixtureWithPlayerShipAndObjects([ObjAt("OBJ-1", 10000 + 50)]); // screen (640,410)
-        Render(fixture.Screen);
+        // Uses a fake, fully controllable clock (same pattern as
+        // Moving_object_under_stationary_cursor_clears_ActiveObjectId) and a running
+        // simulation (Speed1) so a position change between snapshots isn't held by the
+        // paused-visual-anchor freeze, and advances real wall-clock time past the 0.3 s
+        // visual-reconciliation smoothing window so the new position is fully applied.
+        var clock = new FakeClock();
+        var ship = new ObjectMotionSnapshot(PlayerShipId, 10000, 10000, SpeedKmS: 0, Direction: 0);
+        var buffer = new SnapshotBuffer(clock.Now);
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1,
+            GameTimeMs: 0,
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray.Create(ship, ObjAt("OBJ-1", 10000 + 50)), // screen (640,410)
+            PlayerShipObjectId: PlayerShipId));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), handle: null, timestampProvider: clock.Now);
 
-        fixture.Screen.OnMouseDown(640, 410);
+        Render(screen);
+        screen.OnMouseDown(640, 410);
 
-        Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
-        Assert.False(fixture.Screen.IsFocusAttachedToPlayer);
-        Assert.Equal("OBJ-1", fixture.Screen.CameraFollowObjectId);
+        Assert.Equal("OBJ-1", screen.SelectedObjectId);
+        Assert.False(screen.IsFocusAttachedToPlayer);
+        Assert.Equal("OBJ-1", screen.CameraFollowObjectId);
 
-        Render(fixture.Screen);
-        Assert.Equal(10000, fixture.Screen.CameraFocusX);
-        Assert.Equal(10050, fixture.Screen.CameraFocusY);
+        clock.AdvanceMs(400);
+        Render(screen);
+        Assert.Equal(10000, screen.CameraFocusX);
+        Assert.Equal(10050, screen.CameraFocusY);
 
         // OBJ-1 moves to a new position in a fresh snapshot — proves per-frame
         // following, not a one-time jump to where it was at selection time.
-        fixture.Handle.Buffer.Update(new AuthoritativeSnapshot(
+        buffer.Update(new AuthoritativeSnapshot(
             SnapshotSequence: 2,
             GameTimeMs: 1000,
-            CurrentSpeed: SimulationSpeed.Speed0,
-            Objects: ImmutableArray.Create(
-                new ObjectMotionSnapshot(PlayerShipId, 10000, 10000, SpeedKmS: 0, Direction: 0),
-                ObjAt("OBJ-1", 10000 + 200, worldX: 10000 + 100)),
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray.Create(ship, ObjAt("OBJ-1", 10000 + 200, worldX: 10000 + 100)),
             PlayerShipObjectId: PlayerShipId));
-        Render(fixture.Screen);
+        clock.AdvanceMs(400);
+        Render(screen); // the frame that observes the new snapshot creates a fresh
+                         // reconciliation correction (eases in over subsequent frames)
+        clock.AdvanceMs(400); // past the 0.3 s reconciliation smoothing window
+        Render(screen);
 
-        Assert.Equal(10100, fixture.Screen.CameraFocusX);
-        Assert.Equal(10200, fixture.Screen.CameraFocusY);
+        Assert.Equal(10100, screen.CameraFocusX);
+        Assert.Equal(10200, screen.CameraFocusY);
     }
 
     [Fact]
@@ -354,38 +371,47 @@ public class GameSessionObjectInteractionTests
     }
 
     [Fact]
-    public async Task CtrlC_while_following_a_non_player_object_detaches_and_freezes_at_its_position()
+    public void CtrlC_while_following_a_non_player_object_detaches_and_freezes_at_its_position()
     {
-        await using var fixture = CreateFixtureWithPlayerShipAndObjects([ObjAt("OBJ-1", 10000 + 50)]); // screen (640,410)
-        Render(fixture.Screen);
+        var clock = new FakeClock();
+        var ship = new ObjectMotionSnapshot(PlayerShipId, 10000, 10000, SpeedKmS: 0, Direction: 0);
+        var buffer = new SnapshotBuffer(clock.Now);
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1,
+            GameTimeMs: 0,
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray.Create(ship, ObjAt("OBJ-1", 10000 + 50)), // screen (640,410)
+            PlayerShipObjectId: PlayerShipId));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), handle: null, timestampProvider: clock.Now);
 
-        fixture.Screen.OnMouseDown(640, 410); // select+follow OBJ-1
-        Render(fixture.Screen);
-        Assert.Equal(10000, fixture.Screen.CameraFocusX);
-        Assert.Equal(10050, fixture.Screen.CameraFocusY);
+        Render(screen);
+        screen.OnMouseDown(640, 410); // select+follow OBJ-1
+        clock.AdvanceMs(400);
+        Render(screen);
+        Assert.Equal(10000, screen.CameraFocusX);
+        Assert.Equal(10050, screen.CameraFocusY);
 
-        fixture.Screen.OnKeyDown(Key.ControlLeft);
-        fixture.Screen.OnKeyDown(Key.C);
+        screen.OnKeyDown(Key.ControlLeft);
+        screen.OnKeyDown(Key.C);
 
-        Assert.Null(fixture.Screen.CameraFollowObjectId);
-        Assert.False(fixture.Screen.IsFocusAttachedToPlayer);
+        Assert.Null(screen.CameraFollowObjectId);
+        Assert.False(screen.IsFocusAttachedToPlayer);
         // Frozen exactly where OBJ-1 was — not jumped to the player ship at (10000,10000).
-        Assert.Equal(10000, fixture.Screen.CameraFocusX);
-        Assert.Equal(10050, fixture.Screen.CameraFocusY);
+        Assert.Equal(10000, screen.CameraFocusX);
+        Assert.Equal(10050, screen.CameraFocusY);
 
         // OBJ-1 keeps moving in a fresh snapshot — camera must NOT follow it anymore.
-        fixture.Handle.Buffer.Update(new AuthoritativeSnapshot(
+        buffer.Update(new AuthoritativeSnapshot(
             SnapshotSequence: 2,
             GameTimeMs: 1000,
-            CurrentSpeed: SimulationSpeed.Speed0,
-            Objects: ImmutableArray.Create(
-                new ObjectMotionSnapshot(PlayerShipId, 10000, 10000, SpeedKmS: 0, Direction: 0),
-                ObjAt("OBJ-1", 10000 + 500, worldX: 10000 + 500)),
+            CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray.Create(ship, ObjAt("OBJ-1", 10000 + 500, worldX: 10000 + 500)),
             PlayerShipObjectId: PlayerShipId));
-        Render(fixture.Screen);
+        clock.AdvanceMs(400);
+        Render(screen);
 
-        Assert.Equal(10000, fixture.Screen.CameraFocusX);
-        Assert.Equal(10050, fixture.Screen.CameraFocusY);
+        Assert.Equal(10000, screen.CameraFocusX);
+        Assert.Equal(10050, screen.CameraFocusY);
     }
 
     [Fact]

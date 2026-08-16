@@ -48,7 +48,6 @@ public sealed class GameSessionScreen : IScreen
 
     // Object paints
     private readonly SKPaint _trailPaint;
-    private readonly SKPaint _centerPaint;
     private readonly SKPath _playerShipGlyphPath = new();
 
     // Shared UI paints
@@ -273,7 +272,6 @@ public sealed class GameSessionScreen : IScreen
         _depthRenderer = new TacticalMapDepthRenderer();
 
         _trailPaint = new SKPaint { Color = new SKColor(190, 190, 190, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 2f, IsAntialias = true };
-        _centerPaint = new SKPaint { Color = new SKColor(40, 40, 40), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
 
         _panelBgPaint = new SKPaint { Color = new SKColor(0, 0, 0, 200), Style = SKPaintStyle.Fill };
         _panelBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
@@ -935,11 +933,10 @@ public sealed class GameSessionScreen : IScreen
         // 1. Grid
         _grid.Draw(canvas, _camera, width, height);
 
-        // 2. Crosshair
+        // 2. Camera focus indicator
         float cx = width / 2f;
         float cy = height / 2f;
-        canvas.DrawLine(cx - 10, cy, cx + 10, cy, _centerPaint);
-        canvas.DrawLine(cx, cy - 10, cx, cy + 10, _centerPaint);
+        _depthRenderer.DrawFocusIndicator(canvas, cx, cy);
 
         // 3. Object trails
         if (prediction is not null)
