@@ -108,8 +108,17 @@ public class GameSessionPlayerShipTests
 
         screen.OnMouseDown(ScreenWidth / 2f + 100, ScreenHeight / 2f);
 
+        // A map click detaches player-follow immediately, but no longer jumps the
+        // camera by itself (that jump fought with click-and-drag panning and was
+        // disabled) — focus stays exactly where player-follow last placed it.
         Assert.False(screen.IsFocusAttachedToPlayer);
-        Assert.Equal(10100, screen.CameraFocusX, precision: 6);
+        Assert.Equal(10000, screen.CameraFocusX, precision: 6);
+        Assert.Equal(10000, screen.CameraFocusY, precision: 6);
+
+        // Dragging afterward still pans normally.
+        screen.OnMouseMove(ScreenWidth / 2f + 150, ScreenHeight / 2f);
+
+        Assert.Equal(9950, screen.CameraFocusX, precision: 6);
         Assert.Equal(10000, screen.CameraFocusY, precision: 6);
     }
 

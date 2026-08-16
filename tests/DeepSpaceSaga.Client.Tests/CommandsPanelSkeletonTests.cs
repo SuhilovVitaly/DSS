@@ -159,7 +159,7 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Click_outside_panel_still_pans_camera()
+    public void Click_outside_panel_is_not_swallowed_and_drag_still_pans_camera()
     {
         var screen = CreateScreen();
         Render(screen);
@@ -169,7 +169,16 @@ public class CommandsPanelSkeletonTests
 
         var result = screen.OnMouseDown(1000, 500);
 
+        // Click alone no longer jumps the camera by itself (disabled — see
+        // GameSessionNavigationTests), but it must still reach the map's
+        // pan-start branch rather than being swallowed by panel hit-testing —
+        // proven below by dragging actually panning afterward.
         Assert.Equal(ScreenEvent.None, result);
+        Assert.Equal(fxBefore, screen.CameraFocusX);
+        Assert.Equal(fyBefore, screen.CameraFocusY);
+
+        screen.OnMouseMove(1030, 470);
+
         Assert.NotEqual(fxBefore, screen.CameraFocusX);
         Assert.NotEqual(fyBefore, screen.CameraFocusY);
     }

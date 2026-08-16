@@ -150,16 +150,21 @@ public class GameSessionObjectInteractionTests
     }
 
     [Fact]
-    public async Task Camera_pan_recomputes_ActiveObjectId_without_a_new_mouse_move()
+    public async Task Camera_drag_pan_recomputes_ActiveObjectId()
     {
+        // Click alone no longer jumps the camera (disabled — it fought with
+        // click-and-drag panning), so triggering a pan now requires a drag
+        // (OnMouseDown + OnMouseMove), not OnMouseDown alone.
         await using var fixture = CreateFixture([ObjAt("OBJ-1", 10000)]); // at camera focus, screen center
         Render(fixture.Screen);
         fixture.Screen.OnMouseMove(640, 360);
         Assert.Equal("OBJ-1", fixture.Screen.ActiveObjectId);
 
-        // Pan far away via a click well outside the object's hit radius — the cursor
-        // itself never moves, only the camera does.
+        // Drag the camera far away — the object's screen position moves well
+        // outside the cursor's 30 px hit radius even though the object itself
+        // never moved in world space.
         fixture.Screen.OnMouseDown(100, 100);
+        fixture.Screen.OnMouseMove(400, 400);
         Render(fixture.Screen);
 
         Assert.Null(fixture.Screen.ActiveObjectId);

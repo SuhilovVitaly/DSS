@@ -91,6 +91,9 @@ public sealed class GameSessionScreen : IScreen
     private float _mouseY;
     private float _uiMouseX;
     private float _uiMouseY;
+    private bool _isPanningMap;
+    private float _panLastScreenX;
+    private float _panLastScreenY;
     private bool _shouldBootstrapInitialTrails = true;
     private bool _capturedInitialTrailBootstrapObjects;
     private long _lastFrameTimestamp;
@@ -434,10 +437,14 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        // 6. Map click -> pan camera
-        var (worldX, worldY) = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
+        // 6. Map click -> start a potential drag-pan. The camera no longer jumps/
+        // re-centers on a plain click by itself (disabled per user feedback: the
+        // jump fought with dragging, making it feel broken) — only actual mouse
+        // movement while held pans the camera, in OnMouseMove below.
         _isFocusAttachedToPlayer = false;
-        _camera.SetFocus(worldX, worldY);
+        _isPanningMap = true;
+        _panLastScreenX = x;
+        _panLastScreenY = y;
         return ScreenEvent.None;
     }
 
@@ -454,6 +461,20 @@ public sealed class GameSessionScreen : IScreen
         _uiMouseX = x / _uiScale;
         _uiMouseY = y / _uiScale;
         _hasMousePosition = true;
+
+        if (_isPanningMap)
+        {
+            float dx = x - _panLastScreenX;
+            float dy = y - _panLastScreenY;
+            if (dx != 0f || dy != 0f)
+            {
+                double ppu = _camera.PixelsPerWorldUnit;
+                _camera.SetFocus(_camera.FocusX - dx / ppu, _camera.FocusY - dy / ppu);
+            }
+            _panLastScreenX = x;
+            _panLastScreenY = y;
+        }
+
         RecomputeActiveObjectId();
         return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY);
     }
@@ -465,6 +486,7 @@ public sealed class GameSessionScreen : IScreen
         _uiMouseX = x / _uiScale;
         _uiMouseY = y / _uiScale;
         _pressedEngineCommandButtonIndex = -1;
+        _isPanningMap = false;
         _commandsPanel.OnMouseUp(_uiMouseX, _uiMouseY);
     }
 
