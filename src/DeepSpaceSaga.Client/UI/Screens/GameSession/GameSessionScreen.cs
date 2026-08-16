@@ -129,6 +129,7 @@ public sealed class GameSessionScreen : IScreen
 
     // Camera state
     private bool _isFocusAttachedToPlayer = true;
+    private string? _cameraFollowObjectId;
 
     // Navigation (Ctrl+Click) state — ТЗ: Navigation Waypoints
     private bool _isCtrlLeftDown;
@@ -240,6 +241,7 @@ public sealed class GameSessionScreen : IScreen
     internal IReadOnlyList<ObjectRenderState> RenderStates => _renderStates;
     internal int ActiveEngineCommandButtonIndex { get; private set; } = -1;
     internal bool IsFocusAttachedToPlayer => _isFocusAttachedToPlayer;
+    internal string? CameraFollowObjectId => _cameraFollowObjectId;
     internal IReadOnlyList<ObjectTrailPoint> GetObjectTrail(string objectId) => _trailStore.GetTrail(objectId);
     internal string? ActiveObjectId => _activeObjectId;
     internal string? SelectedObjectId => _selectedObjectId;
@@ -424,6 +426,18 @@ public sealed class GameSessionScreen : IScreen
         if (hitObjectId is not null)
         {
             SetSelectedObjectId(hitObjectId);
+
+            if (hitObjectId == _buffer.Latest?.Snapshot.PlayerShipObjectId)
+            {
+                _isFocusAttachedToPlayer = true;
+                _cameraFollowObjectId = null;
+            }
+            else
+            {
+                _isFocusAttachedToPlayer = false;
+                _cameraFollowObjectId = hitObjectId;
+            }
+
             return ScreenEvent.None;
         }
 
@@ -442,6 +456,7 @@ public sealed class GameSessionScreen : IScreen
         // jump fought with dragging, making it feel broken) — only actual mouse
         // movement while held pans the camera, in OnMouseMove below.
         _isFocusAttachedToPlayer = false;
+        _cameraFollowObjectId = null;
         _isPanningMap = true;
         _panLastScreenX = x;
         _panLastScreenY = y;
@@ -519,7 +534,18 @@ public sealed class GameSessionScreen : IScreen
 
         if (key == Key.C && IsCtrlDown)
         {
-            _isFocusAttachedToPlayer = true;
+            if (_cameraFollowObjectId is not null)
+            {
+                // Was following a non-player object — detach and freeze the focus
+                // exactly where that object currently is (UpdateCameraFocusFromPlayer
+                // already re-centers on it every frame, so the camera is already
+                // sitting there); do NOT jump to the player ship in this case.
+                _cameraFollowObjectId = null;
+            }
+            else
+            {
+                _isFocusAttachedToPlayer = true;
+            }
             return ScreenEvent.None;
         }
 
@@ -1267,17 +1293,34 @@ public sealed class GameSessionScreen : IScreen
 
     private void UpdateCameraFocusFromPlayer(IReadOnlyList<ObjectRenderState> renderStates)
     {
-        if (!_isFocusAttachedToPlayer)
-            return;
-
-        for (int i = 0; i < renderStates.Count; i++)
+        if (_isFocusAttachedToPlayer)
         {
-            var state = renderStates[i];
-            if (!state.IsPlayerShip)
-                continue;
+            for (int i = 0; i < renderStates.Count; i++)
+            {
+                var state = renderStates[i];
+                if (!state.IsPlayerShip)
+                    continue;
 
-            _camera.SetFocus(state.Predicted.X, state.Predicted.Y);
+                _camera.SetFocus(state.Predicted.X, state.Predicted.Y);
+                return;
+            }
             return;
+        }
+
+        if (_cameraFollowObjectId is not null)
+        {
+            for (int i = 0; i < renderStates.Count; i++)
+            {
+                var state = renderStates[i];
+                if (state.Predicted.ObjectId != _cameraFollowObjectId)
+                    continue;
+
+                _camera.SetFocus(state.Predicted.X, state.Predicted.Y);
+                return;
+            }
+            // Followed object not present this frame (e.g. removed/out of range) —
+            // leave the camera focus exactly where it last was; do not clear
+            // _cameraFollowObjectId here (it may reappear next frame).
         }
     }
 
