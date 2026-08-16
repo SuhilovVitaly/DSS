@@ -2075,19 +2075,12 @@ command start
 
 
 ## 44. Платформенная конструкция корабля
-
-Корабль строится как линейная цепочка отдельных платформ, концептуально похожая на состав из вагонов.
-
 Каждая платформа — самостоятельный structural object корабля.
 
 ### 44.1. Геометрия platform
 
-Каждая платформа имеет фиксированную сетку `2×2`:
+Каждая платформа имеет фиксированную сетку `1×1`:
 
-```text
-[1][2]
-[3][4]
-```
 
 Платформа может существовать полностью пустой.
 
@@ -2150,6 +2143,8 @@ StructurePoints = 0
 
 
 ## 45. Попадания и распределение урона по кораблю
+
+Требует пересмотра под hull-grid модель (раздел 57, Tetrarch Class — замена стартового корабля и hull grid); формула выбора module при попадании не переопределена в рамках задачи, вводившей раздел 57, так как на тот момент не реализована в рантайме. Текст ниже сохранён как зафиксированное намерение до отдельного пересмотра.
 
 На первом этапе точность оружия работает на уровне platform, а не отдельного установленного module.
 
@@ -2489,6 +2484,8 @@ EnergyCellsPerHour = 4
 
 ## 49. Обязательный Command Module / Bridge
 
+Уточнено разделом 57 (Tetrarch Class — замена стартового корабля и hull grid): требование сохраняется, Navigation Computer остаётся обязательным модулем, изменилась только модель его размещения — координата hull grid вместо platform/occupiedCells.
+
 Каждый корабль обязан иметь управляющий module:
 
 ```text
@@ -2508,6 +2505,8 @@ SlotSize = 1
 
 
 ## 50. Стартовый корабль игрока
+
+Заменено разделом 57 (Tetrarch Class — замена стартового корабля и hull grid): состав, описанный ниже (три platform, 12 mounting cells, Battery/Drilling Unit/Combat Laser/Habitation Module), заменён составом Tetrarch Class. Текст ниже сохранён как исторический контекст.
 
 Для первой версии стартовый `PlayerShip` строится из трёх последовательно соединённых платформ `2×2`.
 
@@ -3505,6 +3504,8 @@ Instance/save/snapshot JSON:
 - при загрузке резолвит `typeId` в internal `typeIndex`;
 - сохраняет всё, что нужно для продолжения deterministic simulation после save/load.
 
+Пара полей `platformIndex`/`occupiedCells` (список чисел `1..4`) в примере ниже устарела; актуальная форма размещения — `occupiedCells: [{x, y}]` на module instance плюс `hullLayout` на ship-объекте, см. раздел 57 (Tetrarch Class — замена стартового корабля и hull grid).
+
 Conceptual installed module instance в `DefaultScenario` / `GeneralSaveState`:
 
 ```json
@@ -3564,6 +3565,8 @@ DefaultScenario / GeneralSaveState / AuthoritativeSnapshot
 ```
 
 ### 55.5. Корабельные модули как ECS-композиция
+
+Правила размещения модулей ниже (`occupiedCells` в диапазоне `1..4`, `SlotSize = 2`/`SlotSize = 4` относительно platform, запрет пересекать границу platforms) устарели; актуальные правила размещения — раздел 57.1 (Tetrarch Class — замена стартового корабля и hull grid).
 
 Корабль не должен проектироваться как монолитный класс с жёстко вшитыми возможностями.
 
@@ -4879,3 +4882,85 @@ Fuel не попадает в обычный cargo stack и не использ�
 Базовый расход топлива Engine задаётся как BaseFuelConsumptionKgPerCycle
 или как FuelConsumptionKgPerSecond?
 ```
+
+## 57. Tetrarch Class — замена стартового корабля и hull grid
+
+Этот раздел отменяет platform-геометрию корабля (раздел 44) и заменяет модель размещения модулей моделью hull grid. Он также заменяет состав стартового корабля игрока (раздел 50) на корабль класса Tetrarch.
+
+### 57.1. Модель hull grid
+
+У ship-объекта (не только у `PlayerShip` — у любого объекта с типом, допускающим модули) есть `hullLayout`:
+
+```text
+HullLayout
+    Width: Int32
+    Height: Int32
+    Cells: [{x, y}]
+```
+
+`Cells` — список structural cells корпуса в целочисленных координатах `(x, y)`, `0 <= x < Width`, `0 <= y < Height`. Понятие platform (раздел 44) в этой модели отсутствует: корпус — это плоский набор клеток, а не цепочка platform-объектов `2×2`.
+
+Установленный module занимает список координат:
+
+```text
+InstalledModule.OccupiedCells: [{x, y}]
+```
+
+Правила размещения:
+
+- каждая координата модуля обязана входить в `hullLayout.Cells` того же объекта;
+- координаты модулей одного объекта не пересекаются между собой;
+- `OccupiedCells.Count` обязан быть равен `ModuleType.SlotSize`;
+- если у объекта есть хотя бы один module, у объекта обязан быть непустой `hullLayout`; отсутствие `hullLayout` при наличии modules — ошибка загрузки сценария.
+
+Раздел не вводит отдельную геометрию для `SlotSize > 1` (аналог горизонтальной пары `[1][2]` из раздела 44.2): на момент внесения этого раздела все module type в каталоге имеют `SlotSize = 1`, а general-case footprint для `SlotSize > 1` остаётся открытым вопросом для будущей сессии.
+
+### 57.2. Схема корпуса Tetrarch Class
+
+Корпус 9×9, 10 structural cells (`Y0..Y8`, `P` — занятая структурная клетка):
+
+```text
+Y0: ....P....
+Y1: ...PPP...
+Y2: ....P....
+Y3: ....P....
+Y4: ....P....
+Y5: ...PPP...
+Y6: .........
+Y7: .........
+Y8: .........
+```
+
+Список из 10 клеток:
+
+```text
+(4,0); (3,1); (4,1); (5,1); (4,2); (4,3); (4,4); (3,5); (4,5); (5,5)
+```
+
+4 из 10 клеток корпуса в стартовой комплектации остаются незанятыми модулями.
+
+### 57.3. Стартовые модули Tetrarch Class
+
+| Координата | Роль | typeId |
+|---|---|---|
+| (4,0) | Navigation Computer | `module.bridge-navigation-computer.basic` |
+| (4,1) | Living quarters | `living-quarters.mk1` |
+| (4,2) | Cargo hold | `module.container.basic` |
+| (4,3) | Scanner | `module.scanner.mk1` |
+| (4,4) | Reactor (Generator) | `module.generator.basic` |
+| (4,5) | Engine | `module.engine.basic` |
+
+Cargo hold стартует с 1000 `Energy Cells` (без изменений относительно предыдущей комплектации). Engine не получает явно заданный `fuelAmountKg` в `DefaultScenario` — применяется общее правило: если `fuelAmountKg` не указан, используется полный `fuelCapacityKg`.
+
+Из стартового loadout исключены: Battery, Drilling Unit, Combat Laser, старый Habitation Module. Соответствующие module type (`module.battery.basic`, `module.drilling-unit.basic`, `module.combat-laser.basic`, `module.habitation.basic`) остаются определены в каталоге для будущего использования — из каталога они не удалены.
+
+`module.container.basic.SlotSize` изменён с `4` на `1` (Container больше не занимает всю platform `2×2` — понятия platform в этой модели нет).
+
+### 57.4. Явные последствия для существующих разделов
+
+- Раздел 44 (Платформенная конструкция корабля) — отменён. Platform-геометрия `2×2`, mounting cells `[1]..[4]` и понятие platform как structural object корабля больше не действуют; их заменяет модель hull grid из 57.1.
+- Раздел 45 (Попадания и распределение урона по platform → module с весом `SlotSize`) — требует пересмотра под hull-grid модель. Формула выбора platform/module при попадании не переопределена в рамках данной задачи, так как на момент внесения этого раздела она не реализована в рантайме (отсутствует код применения damage/weapon-fire). Текст раздела 45 сохранён как зафиксированное намерение до отдельного пересмотра.
+- Раздел 49 (Обязательный Command Module / Bridge) — требование сохраняется без изменений по существу: Navigation Computer остаётся обязательным управляющим module корабля. Изменилась только модель его размещения — координата hull grid (57.2/57.3) вместо `platformIndex`/`occupiedCells` в диапазоне `1..4`.
+- Раздел 50 (Стартовый корабль игрока) — состав, описанный в разделе 50 (три platform, 12 mounting cells, Battery/Drilling Unit/Combat Laser/Habitation Module), заменён составом Tetrarch Class из 57.2/57.3.
+- Раздел 55.4 (Blueprint JSON и instance/snapshot JSON) — пример `Conceptual installed module instance` с парой полей `"platformIndex": 2, "occupiedCells": [1, 2, 3, 4]` устарел. Актуальная форма: `"occupiedCells": [{"x": .., "y": ..}, ...]` на module instance и `"hullLayout": {"width", "height", "cells": [{"x","y"}, ...]}` на ship-объекте.
+- Раздел 55.5 (Корабельные модули как ECS-композиция) — описание правил размещения (`occupiedCells` в диапазоне `1..4`, `SlotSize = 2` как горизонтальная пара, `SlotSize = 4` как вся platform, запрет пересекать границу platforms) заменяется правилами из 57.1: членство координат модуля в `hullLayout.Cells` объекта и отсутствие пересечений координат между модулями одного объекта.

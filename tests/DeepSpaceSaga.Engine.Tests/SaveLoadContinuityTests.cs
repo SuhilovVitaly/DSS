@@ -190,7 +190,6 @@ public class SaveLoadContinuityTests
                 var actualModule = actualModules.Single(m => m.ModuleId == expectedModule.ModuleId);
 
                 Assert.Equal(expectedModule.ModuleTypeId, actualModule.ModuleTypeId);
-                Assert.Equal(expectedModule.PlatformIndex, actualModule.PlatformIndex);
                 Assert.Equal(expectedModule.OccupiedCells, actualModule.OccupiedCells);
                 Assert.Equal(expectedModule.StructurePoints, actualModule.StructurePoints);
                 Assert.Equal(expectedModule.PowerState, actualModule.PowerState);
@@ -254,12 +253,19 @@ public class SaveLoadContinuityTests
                 "speedMps": {{speedMps}},
                 "directionDegrees": {{directionDegrees}},
                 "movementType": "Linear",
+                "hullLayout": {
+                  "width": 3, "height": 2,
+                  "cells": [
+                    {"x":0,"y":0},
+                    {"x":1,"y":0},{"x":2,"y":0},
+                    {"x":1,"y":1},{"x":2,"y":1}
+                  ]
+                },
                 "modules": [
                   {
                     "moduleId": "{{EngineModuleId}}",
                     "moduleTypeId": "module.engine.basic",
-                    "platformIndex": 0,
-                    "occupiedCells": [0],
+                    "occupiedCells": [ {"x":0,"y":0} ],
                     "structurePoints": 100,
                     "powerState": "On",
                     "operationalState": "Ready",
@@ -269,8 +275,7 @@ public class SaveLoadContinuityTests
                   {
                     "moduleId": "{{CargoModuleId}}",
                     "moduleTypeId": "module.container.basic",
-                    "platformIndex": 1,
-                    "occupiedCells": [0, 1, 2, 3],
+                    "occupiedCells": [ {"x":1,"y":0},{"x":2,"y":0},{"x":1,"y":1},{"x":2,"y":1} ],
                     "structurePoints": 250,
                     "powerState": "Off",
                     "operationalState": "Damaged",

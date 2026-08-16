@@ -9,8 +9,10 @@ public static class SaveFormat
     /// Current save format version written by <see cref="SimulationEngine.CaptureSaveState"/>.
     /// Bump when the save schema changes incompatibly (see requirements §3891 migration policy —
     /// not implemented yet, only the version field is laid down in this iteration).
+    /// Bumped to 2 when module placement moved from platformIndex+occupiedCells(0..3) to a
+    /// hull-grid coordinate model (requirements §57) — no migration of old saves is provided.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 1;
+    public const int CurrentSaveFormatVersion = 2;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -59,14 +61,20 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("massKg")] long? MassKg,
     [property: JsonPropertyName("compositionType")] string? CompositionType,
     [property: JsonPropertyName("modules")] IReadOnlyList<ShipModuleData>? Modules,
-    [property: JsonPropertyName("isKnown")] bool IsKnown = false);
+    [property: JsonPropertyName("isKnown")] bool IsKnown = false,
+    /// <summary>
+    /// Hull grid geometry (width/height + structural cells) for any ship-like object that
+    /// carries modules (requirements §57 — replaces the platformIndex/occupiedCells(0..3)
+    /// model). Nullable at the DTO level; the domain requires it whenever Modules is
+    /// non-empty (see SimulationEngine.ValidateModulePlacement).
+    /// </summary>
+    [property: JsonPropertyName("hullLayout")] HullLayoutData? HullLayout = null);
 
 /// <summary>A ship module declared in a scenario.</summary>
 public sealed record ShipModuleData(
     [property: JsonPropertyName("moduleId")] string ModuleId,
     [property: JsonPropertyName("moduleTypeId")] string ModuleTypeId,
-    [property: JsonPropertyName("platformIndex")] int PlatformIndex,
-    [property: JsonPropertyName("occupiedCells")] IReadOnlyList<int> OccupiedCells,
+    [property: JsonPropertyName("occupiedCells")] IReadOnlyList<HullCellCoordinate> OccupiedCells,
     [property: JsonPropertyName("structurePoints")] int StructurePoints,
     [property: JsonPropertyName("powerState")] string PowerState,
     [property: JsonPropertyName("operationalState")] string OperationalState,
@@ -74,6 +82,20 @@ public sealed record ShipModuleData(
     [property: JsonPropertyName("cargo")] IReadOnlyList<CargoStackData>? Cargo,
     [property: JsonPropertyName("fuelAmountKg")] long? FuelAmountKg = null,
     [property: JsonPropertyName("lastTurnGameTimeMs")] long? LastTurnGameTimeMs = null);
+
+/// <summary>A single structural cell coordinate on a ship's hull grid (requirements §57).</summary>
+public sealed record HullCellCoordinate(
+    [property: JsonPropertyName("x")] int X,
+    [property: JsonPropertyName("y")] int Y);
+
+/// <summary>
+/// Hull grid geometry for a ship-like object: overall bounding size plus the set of
+/// structural cells modules may occupy (requirements §57).
+/// </summary>
+public sealed record HullLayoutData(
+    [property: JsonPropertyName("width")] int Width,
+    [property: JsonPropertyName("height")] int Height,
+    [property: JsonPropertyName("cells")] IReadOnlyList<HullCellCoordinate> Cells);
 
 /// <summary>
 /// Runtime progress for an active module cycle.

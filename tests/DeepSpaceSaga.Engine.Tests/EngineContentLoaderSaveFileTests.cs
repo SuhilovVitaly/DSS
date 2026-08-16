@@ -31,12 +31,12 @@ public class EngineContentLoaderSaveFileTests
                 "name": "Player Ship",
                 "positionX": 10000.0, "positionY": 10000.0,
                 "speedMps": 0, "directionDegrees": 90, "movementType": "Stationary",
+                "hullLayout": { "width": 1, "height": 1, "cells": [ {"x":0,"y":0} ] },
                 "modules": [
                   {
                     "moduleId": "MOD-PLAYER-ENGINE-01",
                     "moduleTypeId": "module.engine.basic",
-                    "platformIndex": 0,
-                    "occupiedCells": [0],
+                    "occupiedCells": [ {"x":0,"y":0} ],
                     "structurePoints": 100,
                     "powerState": "On",
                     "operationalState": "Ready",

@@ -160,39 +160,41 @@ public class ScenarioEngineTests
 
         var playerShip = scenario.GameState.SpaceObjects
             .Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId);
-        Assert.Equal(9, playerShip.Modules?.Count);
+
+        // Tetrarch-class hull (requirements §57): 9x9 grid, 10 structural cells.
+        Assert.NotNull(playerShip.HullLayout);
+        Assert.Equal(9, playerShip.HullLayout!.Width);
+        Assert.Equal(9, playerShip.HullLayout.Height);
+        Assert.Equal(10, playerShip.HullLayout.Cells.Count);
+
+        Assert.Equal(6, playerShip.Modules?.Count);
         var cargoModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         Assert.Equal("module.container.basic", cargoModule.ModuleTypeId);
-        Assert.Equal(2, cargoModule.PlatformIndex);
-        Assert.Equal([0, 1, 2, 3], cargoModule.OccupiedCells);
+        Assert.Equal([new HullCellCoordinate(4, 2)], cargoModule.OccupiedCells);
         var engineModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
         Assert.Equal("module.engine.basic", engineModule.ModuleTypeId);
-        Assert.Equal(1, engineModule.PlatformIndex);
-        Assert.Equal([1], engineModule.OccupiedCells);
+        Assert.Equal([new HullCellCoordinate(4, 5)], engineModule.OccupiedCells);
         Assert.Equal("On", engineModule.PowerState);
         Assert.Equal("Ready", engineModule.OperationalState);
 
         var bridgeModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-BRIDGE-01");
         Assert.Equal("module.bridge-navigation-computer.basic", bridgeModule.ModuleTypeId);
-        Assert.Equal(1, bridgeModule.PlatformIndex);
+        Assert.Equal([new HullCellCoordinate(4, 0)], bridgeModule.OccupiedCells);
+        var livingQuartersModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
+        Assert.Equal("living-quarters.mk1", livingQuartersModule.ModuleTypeId);
+        Assert.Equal([new HullCellCoordinate(4, 1)], livingQuartersModule.OccupiedCells);
         var generatorModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-GENERATOR-01");
         Assert.Equal("module.generator.basic", generatorModule.ModuleTypeId);
-        Assert.Equal(1, generatorModule.PlatformIndex);
-        var batteryModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-BATTERY-01");
-        Assert.Equal("module.battery.basic", batteryModule.ModuleTypeId);
-        Assert.Equal(1, batteryModule.PlatformIndex);
-        var drillingModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-DRILLING-01");
-        Assert.Equal("module.drilling-unit.basic", drillingModule.ModuleTypeId);
-        Assert.Equal(3, drillingModule.PlatformIndex);
+        Assert.Equal([new HullCellCoordinate(4, 4)], generatorModule.OccupiedCells);
         var scannerModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-SCANNER-01");
         Assert.Equal("module.scanner.mk1", scannerModule.ModuleTypeId);
-        Assert.Equal(3, scannerModule.PlatformIndex);
-        var habitationModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-HABITATION-01");
-        Assert.Equal("module.habitation.basic", habitationModule.ModuleTypeId);
-        Assert.Equal(3, habitationModule.PlatformIndex);
-        var combatLaserModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-COMBAT-LASER-01");
-        Assert.Equal("module.combat-laser.basic", combatLaserModule.ModuleTypeId);
-        Assert.Equal(3, combatLaserModule.PlatformIndex);
+        Assert.Equal([new HullCellCoordinate(4, 3)], scannerModule.OccupiedCells);
+
+        // Battery/Drilling Unit/Habitation/Combat Laser were removed from the loadout (requirements §57/§50).
+        Assert.DoesNotContain(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-BATTERY-01");
+        Assert.DoesNotContain(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-DRILLING-01");
+        Assert.DoesNotContain(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-HABITATION-01");
+        Assert.DoesNotContain(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-COMBAT-LASER-01");
 
         var energyCells = Assert.Single(cargoModule.Cargo ?? []);
         Assert.Equal("item.energy-cells", energyCells.ItemTypeId);
@@ -217,25 +219,22 @@ public class ScenarioEngineTests
 
         Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        Assert.Equal(9, playerShip.Modules.Length);
+        Assert.Equal(6, playerShip.Modules.Length);
         var cargoModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
         Assert.Equal(4, cargoModule.ModuleTypeIndex);
         Assert.Equal(1, engineModule.ModuleTypeIndex);
         Assert.Null(engineModule.ActiveCycle);
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-BRIDGE-01");
+        Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-GENERATOR-01");
-        Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-BATTERY-01");
-        Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-DRILLING-01");
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-SCANNER-01");
-        Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-HABITATION-01");
-        Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-COMBAT-LASER-01");
         var cargo = Assert.Single(cargoModule.Cargo);
         Assert.Equal(0, cargo.ItemTypeIndex);
     }
 
     [Fact]
-    public void Real_default_scenario_occupies_12_cells_on_3_platforms()
+    public void Real_default_scenario_occupies_6_of_10_hull_cells()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
@@ -251,19 +250,23 @@ public class ScenarioEngineTests
         var engine = SimulationEngine.CreateFromSettingsFile(settingsPath);
 
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        Assert.Equal(9, playerShip.Modules.Length);
-        Assert.Equal([1, 2, 3], playerShip.Modules.Select(m => m.PlatformIndex).Distinct().OrderBy(x => x));
+        Assert.Equal(6, playerShip.Modules.Length);
+        Assert.NotNull(playerShip.HullLayout);
+        Assert.Equal(10, playerShip.HullLayout!.Cells.Count);
 
-        int totalCells = playerShip.Modules.Sum(m => m.OccupiedCells.Length);
-        Assert.Equal(12, totalCells);
+        // Each module occupies exactly 1 hull cell (requirements §57: all real module
+        // types are slotSize 1), and no two modules share a cell.
+        var occupiedCells = playerShip.Modules.SelectMany(m => m.OccupiedCells).ToArray();
+        Assert.Equal(6, occupiedCells.Length);
+        Assert.Equal(6, occupiedCells.Distinct().Count());
 
-        // Each of the 3 platforms has exactly 4 distinct cells occupied:
-        // no overlaps within a platform and no free cells (§50.9).
-        foreach (var platformGroup in playerShip.Modules.GroupBy(m => m.PlatformIndex))
-        {
-            int distinctCells = platformGroup.SelectMany(m => m.OccupiedCells).Distinct().Count();
-            Assert.Equal(4, distinctCells);
-        }
+        // Every occupied cell must belong to the object's hull layout.
+        var hullCells = playerShip.HullLayout.Cells.Select(c => (c.X, c.Y)).ToHashSet();
+        Assert.All(occupiedCells, cell => Assert.Contains(cell, hullCells));
+
+        // 4 of the 10 structural cells (the Y1/Y5 side wings) remain unoccupied.
+        int freeCells = hullCells.Count - occupiedCells.Distinct().Count();
+        Assert.Equal(4, freeCells);
     }
 
     [Fact]
@@ -311,7 +314,7 @@ public class ScenarioEngineTests
 
         int passiveTypes = Enumerable.Range(0, registry.ModuleTypes.Count)
             .Count(i => registry.ModuleTypes.GetDefinition(i).CommandTypeIds.Length == 0);
-        Assert.Equal(7, passiveTypes);
+        Assert.Equal(8, passiveTypes); // includes living-quarters.mk1 (requirements §57)
     }
 
     [Theory]
@@ -470,7 +473,8 @@ public class ScenarioEngineTests
     [Fact]
     public void LoadScenario_rejects_module_cell_count_that_differs_from_type_slot_size()
     {
-        var scenario = ScenarioLoader.LoadFromJson(ScenarioWithModule(occupiedCells: "1"));
+        // Only 1 cell for a module type whose slotSize is 4.
+        var scenario = ScenarioLoader.LoadFromJson(ScenarioWithModule(occupiedCells: [(0, 0)]));
         var engine = CreateEngineWithBasicTypes();
 
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
@@ -479,22 +483,23 @@ public class ScenarioEngineTests
     [Fact]
     public void LoadScenario_rejects_duplicate_module_cells()
     {
-        var scenario = ScenarioLoader.LoadFromJson(ScenarioWithModule(occupiedCells: "1, 1, 2, 3"));
+        var scenario = ScenarioLoader.LoadFromJson(
+            ScenarioWithModule(occupiedCells: [(0, 0), (0, 0), (1, 0), (0, 1)]));
         var engine = CreateEngineWithBasicTypes();
 
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
     }
 
     [Fact]
-    public void LoadScenario_rejects_modules_overlapping_on_same_platform()
+    public void LoadScenario_rejects_modules_overlapping_hull_cells()
     {
+        // MOD-1 (default cells) occupies (0,0),(1,0),(0,1),(1,1); MOD-2 overlaps at (1,1).
         const string extraModule = """
         ,
                   {
                     "moduleId": "MOD-2",
                     "moduleTypeId": "module.container.basic",
-                    "platformIndex": 0,
-                    "occupiedCells": [4, 5, 6, 7],
+                    "occupiedCells": [ { "x": 1, "y": 1 }, { "x": 2, "y": 0 }, { "x": 0, "y": 2 }, { "x": 2, "y": 2 } ],
                     "structurePoints": 400,
                     "powerState": "On",
                     "operationalState": "Ready",
@@ -505,18 +510,32 @@ public class ScenarioEngineTests
         var scenario = ScenarioLoader.LoadFromJson(ScenarioWithModule(extraModules: extraModule));
         var engine = CreateEngineWithBasicTypes();
 
-        Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+        var ex = Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+        Assert.Contains("overlaps occupied cell", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void LoadScenario_rejects_cell_outside_2x2_grid()
+    public void LoadScenario_rejects_cell_outside_hull_layout()
     {
         // Container occupies exactly 4 cells (slotSize 4), so the count check passes;
-        // cell 4 is outside the 0..3 grid of a 2x2 platform and must be rejected.
-        var scenario = ScenarioLoader.LoadFromJson(ScenarioWithModule(occupiedCells: "0, 1, 2, 4"));
+        // (9,9) is outside the default 3x3 hull layout and must be rejected.
+        var scenario = ScenarioLoader.LoadFromJson(
+            ScenarioWithModule(occupiedCells: [(0, 0), (1, 0), (0, 1), (9, 9)]));
         var engine = CreateEngineWithBasicTypes();
 
-        Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+        var ex = Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+        Assert.Contains("outside the object's hull layout", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LoadScenario_rejects_module_with_no_hull_layout_on_object()
+    {
+        // requirements §57: an object with modules must declare a hullLayout.
+        var scenario = ScenarioLoader.LoadFromJson(ScenarioWithModule(includeHullLayout: false));
+        var engine = CreateEngineWithBasicTypes();
+
+        var ex = Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+        Assert.Contains("hullLayout", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -551,7 +570,7 @@ public class ScenarioEngineTests
         var invalidScenario = ScenarioLoader.LoadFromJson(ScenarioWithModule(
             objectId: "NEW-SHIP",
             currentSpeed: "Speed3",
-            occupiedCells: "1"));
+            occupiedCells: [(0, 0)]));
 
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(invalidScenario));
 
@@ -560,6 +579,98 @@ public class ScenarioEngineTests
         var obj = Assert.Single(engine.RuntimeObjects);
         Assert.Equal("OLD-SHIP", obj.InitialMotion.ObjectId);
         Assert.Single(obj.Modules);
+    }
+
+    // --- requirements §57 domain invariants (SimulationEngine.ValidateModulePlacement) ---
+    // Minimal synthetic fixtures, independent of ScenarioWithModule, per plan Batch D item 1.
+
+    [Fact]
+    public void Module_placed_outside_object_hull_layout_throws_ScenarioException()
+    {
+        var registry = CreateSingleCellModuleTypeRegistry();
+        var engine = new SimulationEngine(registry);
+
+        const string json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              {
+                "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "hullLayout": { "width": 1, "height": 1, "cells": [ { "x": 0, "y": 0 } ] },
+                "modules": [
+                  {
+                    "moduleId": "MOD-1",
+                    "moduleTypeId": "module.test.cell",
+                    "occupiedCells": [ { "x": 1, "y": 0 } ],
+                    "structurePoints": 10,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "cargo": []
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var ex = Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+        Assert.Contains("outside the object's hull layout", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Two_modules_sharing_a_hull_cell_throw_ScenarioException()
+    {
+        var registry = CreateSingleCellModuleTypeRegistry();
+        var engine = new SimulationEngine(registry);
+
+        const string json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              {
+                "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "hullLayout": { "width": 2, "height": 1, "cells": [ { "x": 0, "y": 0 }, { "x": 1, "y": 0 } ] },
+                "modules": [
+                  {
+                    "moduleId": "MOD-1",
+                    "moduleTypeId": "module.test.cell",
+                    "occupiedCells": [ { "x": 0, "y": 0 } ],
+                    "structurePoints": 10,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "cargo": []
+                  },
+                  {
+                    "moduleId": "MOD-2",
+                    "moduleTypeId": "module.test.cell",
+                    "occupiedCells": [ { "x": 0, "y": 0 } ],
+                    "structurePoints": 10,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "cargo": []
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var ex = Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+        Assert.Contains("overlaps occupied cell", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -780,13 +891,50 @@ public class ScenarioEngineTests
         return new SimulationEngine(registry);
     }
 
+    /// <summary>Minimal single-cell passive module type, used by the two hull-invariant Facts.</summary>
+    private static GameDataRegistry CreateSingleCellModuleTypeRegistry()
+    {
+        return GameDataRegistry.Create(
+            [
+                new ModuleTypeDefinition(
+                    "module.test.cell",
+                    "Test Cell Module",
+                    SlotSize: 1,
+                    MassKg: 1000,
+                    StructurePointsMax: 10,
+                    PowerConsumptionW: 0,
+                    CommandTypeIds: ImmutableArray<string>.Empty)
+            ],
+            [],
+            []);
+    }
+
+    // Default hull layout for ScenarioWithModule: a 3x3 block, (0,0)..(2,2).
+    private static readonly (int X, int Y)[] DefaultHullCells =
+    [
+        (0, 0), (1, 0), (2, 0),
+        (0, 1), (1, 1), (2, 1),
+        (0, 2), (1, 2), (2, 2)
+    ];
+
+    // Default module cells: a 2x2 corner of the default hull, matching container.basic's SlotSize 4.
+    private static readonly (int X, int Y)[] DefaultModuleCells = [(0, 0), (1, 0), (0, 1), (1, 1)];
+
+    private static string CellsJson(IEnumerable<(int X, int Y)> cells) =>
+        string.Join(", ", cells.Select(c => $$"""{ "x": {{c.X}}, "y": {{c.Y}} }"""));
+
     private static string ScenarioWithModule(
         string objectId = "SHIP",
         string currentSpeed = "Speed1",
         string moduleTypeId = "module.container.basic",
-        string occupiedCells = "0, 1, 2, 3",
+        (int X, int Y)[]? occupiedCells = null,
+        bool includeHullLayout = true,
         string extraModules = "")
     {
+        string hullLayoutJson = includeHullLayout
+            ? "\"hullLayout\": { \"width\": 3, \"height\": 3, \"cells\": [ " + CellsJson(DefaultHullCells) + " ] },"
+            : "";
+
         return $$"""
         {
           "scenarioMetadata": { "scenarioId": "x", "name": "x" },
@@ -804,12 +952,12 @@ public class ScenarioEngineTests
                 "speedMps": 0,
                 "directionDegrees": 0,
                 "movementType": "Stationary",
+                {{hullLayoutJson}}
                 "modules": [
                   {
                     "moduleId": "MOD-1",
                     "moduleTypeId": "{{moduleTypeId}}",
-                    "platformIndex": 0,
-                    "occupiedCells": [{{occupiedCells}}],
+                    "occupiedCells": [ {{CellsJson(occupiedCells ?? DefaultModuleCells)}} ],
                     "structurePoints": 400,
                     "powerState": "On",
                     "operationalState": "Ready",

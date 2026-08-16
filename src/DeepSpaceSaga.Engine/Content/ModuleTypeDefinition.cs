@@ -17,4 +17,9 @@ internal sealed record ModuleTypeDefinition(
     int? AngularInertiaDegPerSec = null,
     long BaseCycleTimeMs = 0,
     long? FuelCapacityKg = null,
-    int BaseSuccessChancePercent = 100) : ITypeDefinition;
+    int BaseSuccessChancePercent = 100,
+    /// <summary>
+    /// Number of crew cabins provided by this module type (e.g. living quarters).
+    /// Null for module types that do not house crew.
+    /// </summary>
+    int? CabinesCount = null) : ITypeDefinition;
