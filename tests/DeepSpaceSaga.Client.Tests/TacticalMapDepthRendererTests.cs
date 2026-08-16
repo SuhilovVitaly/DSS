@@ -206,7 +206,7 @@ public class TacticalMapDepthRendererTests
 
         // uiTimeMs=45 lands at a quarter of the 180ms period (flicker at its
         // maximum, 1.0); uiTimeMs=135 lands at three-quarters (flicker at its
-        // minimum, 0.5) — the two extremes of the sine-driven pulse.
+        // minimum, 0.6) — the two extremes of the sine-driven pulse.
         using var bitmapA = new SKBitmap(CanvasSize, CanvasSize);
         using var canvasA = new SKCanvas(bitmapA);
         canvasA.Clear(SKColors.Black);
@@ -217,10 +217,12 @@ public class TacticalMapDepthRendererTests
         canvasB.Clear(SKColors.Black);
         renderer.DrawEngineFlame(canvasB, 32, 32, directionDegrees: 0, radius: 10, uiTimeMs: 135);
 
-        // Sample near the far tip of the flame, where flicker-driven length
-        // changes are most visible.
-        SKColor tipA = bitmapA.GetPixel(32, 32 + 12);
-        SKColor tipB = bitmapB.GetPixel(32, 32 + 12);
+        // At radius=10, the outer layer's tip sits at ~29px behind center at peak
+        // flicker (1.0) and ~20px at the trough (0.6). Sample at 24px — inside the
+        // flame at peak, beyond it at the trough — so only the longer extreme
+        // reaches this point, making the flicker-driven length change unambiguous.
+        SKColor tipA = bitmapA.GetPixel(32, 32 + 24);
+        SKColor tipB = bitmapB.GetPixel(32, 32 + 24);
 
         Assert.NotEqual(Luminance(tipA), Luminance(tipB));
     }

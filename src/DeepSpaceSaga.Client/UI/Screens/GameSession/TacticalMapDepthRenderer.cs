@@ -286,13 +286,22 @@ internal sealed class TacticalMapDepthRenderer
         float ry = -dx;
 
         long normalizedTimeMs = Math.Max(0L, uiTimeMs) % FlamePulsePeriodMs;
-        float flicker = 0.75f + 0.25f * (float)Math.Sin(2.0 * Math.PI * normalizedTimeMs / FlamePulsePeriodMs);
+        // Wide swing (0.6..1.0, a 40% range) — at the marker's real ~5px radius, a
+        // subtle flicker (e.g. the original 0.75..1.0) is smoothed away by
+        // antialiasing and reads as static rather than animated.
+        float flicker = 0.8f + 0.2f * (float)Math.Sin(2.0 * Math.PI * normalizedTimeMs / FlamePulsePeriodMs);
 
         float baseX = shipX - dx * radius * 0.7f;
         float baseY = shipY - dy * radius * 0.7f;
 
-        DrawFlameLayer(canvas, baseX, baseY, dx, dy, rx, ry, radius * 0.5f, radius * 1.3f * flicker, _engineFlameOuterPaint);
-        DrawFlameLayer(canvas, baseX, baseY, dx, dy, rx, ry, radius * 0.3f, radius * 0.9f * flicker, _engineFlameInnerPaint);
+        // Base length extends well past the ship glyph itself (radius*2.2/1.5 vs.
+        // the glyph's own radius*1.0 nose) so the flame reads as a distinct shape
+        // rather than a sliver mostly hidden behind the ship at small marker sizes.
+        // Half-width exceeds the ship glyph's own back-edge half-width (radius*5/7
+        // ≈ radius*0.714) so the flame visibly flares past the ship's silhouette
+        // on both sides instead of being fully covered by its opaque fill.
+        DrawFlameLayer(canvas, baseX, baseY, dx, dy, rx, ry, radius * 0.9f, radius * 2.2f * flicker, _engineFlameOuterPaint);
+        DrawFlameLayer(canvas, baseX, baseY, dx, dy, rx, ry, radius * 0.55f, radius * 1.5f * flicker, _engineFlameInnerPaint);
     }
 
     private void DrawFlameLayer(
