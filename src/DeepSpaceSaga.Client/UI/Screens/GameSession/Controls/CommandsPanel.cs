@@ -527,10 +527,19 @@ public sealed class CommandsPanel
         var icon = _commandIcons.GetValueOrDefault(button.CommandTypeId);
         if (icon is not null)
         {
-            // Icon commands render as a bare image — no button chrome (fill/border).
-            // The clickable area (button.Rect) and hover/press tracking are
-            // unchanged, so the cursor still switches to the interactive glyph and
-            // clicks still land exactly as they would on a regular button.
+            // Icon commands render as a bare image — no button chrome at rest.
+            // On hover/press a lighter fill appears behind the icon (no border),
+            // matching the regular button's hover feedback. The clickable area
+            // (button.Rect) and hover/press tracking are unchanged either way, so
+            // the cursor still switches to the interactive glyph and clicks still
+            // land exactly as they would on a regular button.
+            bool isHovered = button.Enabled && index == _hoveredCommandButtonIndex;
+            if (isHovered)
+            {
+                bool isPressed = index == _pressedCommandButtonIndex;
+                canvas.DrawRect(button.Rect, isPressed ? _commandBtnPressedPaint : _commandBtnHoverPaint);
+            }
+
             float iconX = button.Rect.MidX - CommandIconSize / 2f;
             float iconY = button.Rect.MidY - CommandIconSize / 2f;
             var iconRect = new SKRect(iconX, iconY, iconX + CommandIconSize, iconY + CommandIconSize);

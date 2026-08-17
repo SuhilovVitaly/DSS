@@ -61,6 +61,12 @@
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-maintain-speed.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-orbit.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-navigation-dock.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-navigation-stations-list.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
