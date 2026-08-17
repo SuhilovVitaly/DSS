@@ -53,10 +53,15 @@ public sealed class SkiaWindow : IDisposable
     private long _focusRegainedAtMs = long.MinValue / 2;
     private const long MenuOpenFocusRegainGuardMs = 1500;
 
-    public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory)
+    // TEMP DIAG — startup timing investigation, remove once resolved.
+    private readonly System.Diagnostics.Stopwatch? _startupStopwatch;
+    private bool _firstFrameLogged;
+
+    public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory, System.Diagnostics.Stopwatch? startupStopwatch = null)
     {
         _sessionFactory = sessionFactory;
         _handleKeyboardEdge = HandleKeyboardEdge;
+        _startupStopwatch = startupStopwatch;
 
         _screens.SetRoot(initialScreen);
 
@@ -76,6 +81,10 @@ public sealed class SkiaWindow : IDisposable
         _window.FramebufferResize += OnFramebufferResize;
         _window.FocusChanged += OnFocusChanged;
         _window.Closing += OnClosing;
+
+        // TEMP DIAG — startup timing investigation, remove once resolved.
+        if (_startupStopwatch is not null)
+            InterfaceLog.Write($"STARTUP DIAG: after Window.Create — {_startupStopwatch.ElapsedMilliseconds} ms since Main() start");
     }
 
     public void Run() => _window.Run();
@@ -128,6 +137,10 @@ public sealed class SkiaWindow : IDisposable
         }
 
         _keyboard = _input.Keyboards.FirstOrDefault();
+
+        // TEMP DIAG — startup timing investigation, remove once resolved.
+        if (_startupStopwatch is not null)
+            InterfaceLog.Write($"STARTUP DIAG: OnLoad complete — {_startupStopwatch.ElapsedMilliseconds} ms since Main() start");
     }
 
     /// <summary>Clean up input while native window is still valid.</summary>
@@ -188,12 +201,21 @@ public sealed class SkiaWindow : IDisposable
         if (_grContext is null || _gl is null || _closing)
             return;
 
+        // TEMP DIAG — startup timing investigation, remove once resolved.
+        bool isFirstFrame = !_firstFrameLogged;
+        var diagSw = isFirstFrame ? System.Diagnostics.Stopwatch.StartNew() : null;
+        if (isFirstFrame && _startupStopwatch is not null)
+            InterfaceLog.Write($"STARTUP DIAG: OnRender first entered — {_startupStopwatch.ElapsedMilliseconds} ms since Main() start");
+
         if (_surface is null)
         {
             CreateRenderSurface();
             if (_surface is null)
                 return;
         }
+
+        if (isFirstFrame)
+            InterfaceLog.Write($"STARTUP DIAG: first-frame CreateRenderSurface done — {diagSw!.ElapsedMilliseconds} ms into OnRender");
 
         var canvas = _surface.Canvas;
 
@@ -217,8 +239,22 @@ public sealed class SkiaWindow : IDisposable
 
         _screens.Current.Render(canvas, windowSize.X, windowSize.Y);
 
+        if (isFirstFrame)
+            InterfaceLog.Write($"STARTUP DIAG: first-frame screen.Render (recording) done — {diagSw!.ElapsedMilliseconds} ms into OnRender");
+
         canvas.Restore();
         canvas.Flush();
+
+        if (isFirstFrame)
+            InterfaceLog.Write($"STARTUP DIAG: first-frame canvas.Flush done — {diagSw!.ElapsedMilliseconds} ms into OnRender");
+
+        // TEMP DIAG — startup timing investigation, remove once resolved.
+        if (!_firstFrameLogged)
+        {
+            _firstFrameLogged = true;
+            if (_startupStopwatch is not null)
+                InterfaceLog.Write($"STARTUP DIAG: first frame flushed — {_startupStopwatch.ElapsedMilliseconds} ms since Main() start");
+        }
 
         PollKeyboard();
     }

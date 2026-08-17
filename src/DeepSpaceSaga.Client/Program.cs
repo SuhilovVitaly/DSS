@@ -9,10 +9,19 @@ public static class Program
 {
     public static void Main()
     {
+        // TEMP DIAG — startup timing investigation, remove once resolved.
+        var startupStopwatch = System.Diagnostics.Stopwatch.StartNew();
+        using (var proc = System.Diagnostics.Process.GetCurrentProcess())
+        {
+            var beforeMain = DateTime.Now - proc.StartTime;
+            InterfaceLog.Write(
+                $"STARTUP DIAG: OS process start to Main() entry — {beforeMain.TotalMilliseconds:F0} ms (.NET host/runtime init)");
+        }
+
         var factory = new LocalGameSessionFactory();
         var mainMenu = new MainMenuScreen();
 
-        using var window = new SkiaWindow(mainMenu, factory);
+        using var window = new SkiaWindow(mainMenu, factory, startupStopwatch);
         window.Run();
     }
 
