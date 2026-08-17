@@ -5,16 +5,16 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 
 /// <summary>
-/// Commands Panel (top-left) — the module-addressed command widget.
+/// Commands Panel (top-left) — the fixed command-group widget.
 /// A Caption (360×32) with a Hide/Show toggle button (26×26) + a list of
-/// module rows (caption 360×36 + body 360×164) for active modules.
+/// fixed command-panel groups (Navigation, Maneuver, Engine, Space Control),
+/// each caption 360×36 with a body sized to its command count.
 /// </summary>
 public sealed class CommandsPanel
 {
     public const float PanelWidth = 360f;
     public const float CaptionHeight = 32f;
-    public const float ModuleRowHeight = 200f;
-    public const float ModuleCaptionHeight = 36f;
+    public const float PanelCaptionHeight = 36f;
 
     private const float Margin = 8f;
     private const float Padding = 6f;
@@ -34,6 +34,32 @@ public sealed class CommandsPanel
     public const float CommandButtonWidth =
         (PanelWidth - 2 * BodyPaddingX - (CommandButtonColumns - 1) * CommandButtonGap) / CommandButtonColumns;
 
+    /// <summary>
+    /// Fixed command-panel groups, in display order. Each panel's CommandTypeIds
+    /// are rendered strictly in the declared order — this is not derived from
+    /// installed modules.
+    /// </summary>
+    public static readonly ImmutableArray<CommandPanelDefinition> Panels = ImmutableArray.Create(
+        new CommandPanelDefinition("Navigation", ImmutableArray.Create(
+            NavigationComputerCommandTypes.Dock,
+            NavigationComputerCommandTypes.StationsList,
+            ShipEngineCommandTypes.Orbit,
+            ShipEngineCommandTypes.SpeedSynchronization,
+            ShipEngineCommandTypes.DirectionSynchronization)),
+        new CommandPanelDefinition("Maneuver", ImmutableArray.Create(
+            ShipEngineCommandTypes.MaintainCourse,
+            ShipEngineCommandTypes.TurnLeftStep,
+            ShipEngineCommandTypes.TurnRightStep,
+            ShipEngineCommandTypes.TurnLeftUntilCancel,
+            ShipEngineCommandTypes.TurnRightUntilCancel)),
+        new CommandPanelDefinition("Engine", ImmutableArray.Create(
+            ShipEngineCommandTypes.Accelerate,
+            ShipEngineCommandTypes.Brake,
+            ShipEngineCommandTypes.MaintainSpeed)),
+        new CommandPanelDefinition("Space Control", ImmutableArray.Create(
+            ScannerCommandTypes.GeneralScan,
+            ScannerCommandTypes.StructuralScan)));
+
     private SKRect _hideShowButtonRect;
 
     private int _hoveredButtonIndex = -1;  // 0=toggle, -1=none
@@ -43,19 +69,19 @@ public sealed class CommandsPanel
     private int _pressedCommandButtonIndex = -1;
     private int _commandButtonDrawOrdinal;
 
-    // ── Module state (in-memory, per session) ───────────────────
-    private readonly Dictionary<string, bool> _moduleOpenedById = new(StringComparer.Ordinal);
+    // ── Panel state (in-memory, per session) ─────────────────────
+    private readonly Dictionary<string, bool> _panelOpenedByName = new(StringComparer.Ordinal);
 
     // ── Layout cache (built in Render, read by test seams) ──────
-    private readonly List<ModuleRowGeometry> _moduleRows = [];
-    private readonly List<(string ModuleId, string Label, CommandButtonGeometry Button)> _commandButtons = [];
+    private readonly List<CommandPanelGeometry> _panelRows = [];
+    private readonly List<(string Label, CommandButtonGeometry Button)> _commandButtons = [];
     private readonly List<CommandButtonGeometry> _allCommandButtons = [];
     private SKRect _captionRect;
     private SKRect _bodyRect;
 
     // ── Hooks (ТЗ-04, injected by the screen) ───────────────────
     private readonly Func<string, bool> _isCommandEnabled;
-    private readonly Action<string, string> _commandClicked;
+    private readonly Action<string> _commandClicked;
 
     // ── Paints ──────────────────────────────────────────────────
     private readonly SKPaint _panelBgPaint;
@@ -86,20 +112,20 @@ public sealed class CommandsPanel
     private readonly SKBitmap? _hideImage;
     private readonly SKBitmap? _showImage;
 
-    private CommandsPanelState _state = CommandsPanelState.AllModules;
-    private CommandsPanelState _previousNonClosedState = CommandsPanelState.AllModules;
+    private CommandsPanelState _state = CommandsPanelState.AllPanels;
+    private CommandsPanelState _previousNonClosedState = CommandsPanelState.AllPanels;
 
     /// <summary>
     /// <paramref name="isCommandEnabled"/> decides per-command button enablement
-    /// (default: all enabled); <paramref name="commandClicked"/> receives
-    /// (moduleId, commandType) when an enabled button is clicked (default: no-op).
+    /// (default: all enabled); <paramref name="commandClicked"/> receives the
+    /// commandType when an enabled button is clicked (default: no-op).
     /// </summary>
     public CommandsPanel(
         Func<string, bool>? isCommandEnabled = null,
-        Action<string, string>? commandClicked = null)
+        Action<string>? commandClicked = null)
     {
         _isCommandEnabled = isCommandEnabled ?? (_ => true);
-        _commandClicked = commandClicked ?? ((_, _) => { });
+        _commandClicked = commandClicked ?? (_ => { });
 
         var typeface = SKTypeface.FromFamilyName("Consolas") ?? SKTypeface.Default;
 
@@ -152,7 +178,7 @@ public sealed class CommandsPanel
     public int HoveredCommandButtonIndex => _hoveredCommandButtonIndex;
     public int PressedCommandButtonIndex => _pressedCommandButtonIndex;
 
-    public IReadOnlyList<ModuleRowGeometry> ModuleRows => _moduleRows;
+    public IReadOnlyList<CommandPanelGeometry> CommandPanelRows => _panelRows;
     public IReadOnlyList<CommandButtonGeometry> AllCommandButtons => _allCommandButtons;
 
     // ── Layout helpers ──────────────────────────────────────────
@@ -164,6 +190,18 @@ public sealed class CommandsPanel
         float x = Margin + ButtonLeftPadding;
         float y = ButtonTop;
         _hideShowButtonRect = new SKRect(x, y, x + ButtonSize, y + ButtonSize);
+    }
+
+    /// <summary>
+    /// Body height for a panel with <paramref name="commandCount"/> buttons laid
+    /// out in a top-down grid of <see cref="CommandButtonColumns"/> columns.
+    /// </summary>
+    public static float ComputePanelBodyHeight(int commandCount)
+    {
+        int rows = (int)Math.Ceiling(commandCount / (double)CommandButtonColumns);
+        rows = Math.Max(rows, 0);
+        float gaps = Math.Max(rows - 1, 0) * CommandButtonGap;
+        return 2 * BodyPaddingY + rows * CommandButtonHeight + gaps;
     }
 
     // ── Input ───────────────────────────────────────────────────
@@ -185,14 +223,14 @@ public sealed class CommandsPanel
             return true;
         }
 
-        // Module captions — toggle per-module Opened/Closed.
-        foreach (var row in _moduleRows)
+        // Panel captions — toggle per-panel Opened/Closed.
+        foreach (var row in _panelRows)
         {
             if (row.CaptionRect.Contains(x, y))
             {
-                string id = row.ModuleId;
-                bool wasOpened = !_moduleOpenedById.TryGetValue(id, out bool o) || o;
-                _moduleOpenedById[id] = !wasOpened;
+                string name = row.Name;
+                bool wasOpened = !_panelOpenedByName.TryGetValue(name, out bool o) || o;
+                _panelOpenedByName[name] = !wasOpened;
                 return true;
             }
         }
@@ -206,15 +244,15 @@ public sealed class CommandsPanel
                 if (_commandButtons[i].Button.Enabled)
                 {
                     _pressedCommandButtonIndex = i;
-                    _commandClicked(_commandButtons[i].ModuleId, _commandButtons[i].Button.CommandTypeId);
+                    _commandClicked(_commandButtons[i].Button.CommandTypeId);
                 }
 
                 return true;
             }
         }
 
-        // Module bodies (only opened rows) — consumed, no action.
-        foreach (var row in _moduleRows)
+        // Panel bodies (only opened rows) — consumed, no action.
+        foreach (var row in _panelRows)
         {
             if (row is { Opened: true, BodyRect: var br } && br.Contains(x, y))
                 return true;
@@ -240,7 +278,7 @@ public sealed class CommandsPanel
 
         return _hoveredButtonIndex >= 0 ||
                _hoveredCommandButtonIndex >= 0 ||
-               _moduleRows.Any(r => r.CaptionRect.Contains(x, y));
+               _panelRows.Any(r => r.CaptionRect.Contains(x, y));
     }
 
     public void OnMouseUp(float x, float y)
@@ -259,7 +297,7 @@ public sealed class CommandsPanel
             Margin, Margin,
             Margin + PanelWidth, Margin + CaptionHeight);
 
-        _moduleRows.Clear();
+        _panelRows.Clear();
         _commandButtons.Clear();
         _allCommandButtons.Clear();
 
@@ -271,41 +309,33 @@ public sealed class CommandsPanel
                 ? arr
                 : ImmutableArray<InstalledModuleSnapshot>.Empty;
 
-            var activeModules = safeModules
-                .Where(m => m.CommandTypeIds.Length > 0)
-                .OrderBy(m => m.ModuleTypeId == "module.engine.basic" ? -1 : 0)
-                .ThenBy(m => m.Position)
-                .ToList();
-
-            var activeIds = new HashSet<string>(activeModules.Select(m => m.ModuleId), StringComparer.Ordinal);
-            foreach (string staleId in _moduleOpenedById.Keys.Except(activeIds).ToList())
-                _moduleOpenedById.Remove(staleId);
-
-            foreach (var mod in activeModules)
+            foreach (var panel in Panels)
             {
-                bool opened = !_moduleOpenedById.TryGetValue(mod.ModuleId, out bool o) || o;
+                bool opened = !_panelOpenedByName.TryGetValue(panel.Name, out bool o) || o;
 
-                if (_state == CommandsPanelState.ActiveModules && !opened)
+                if (_state == CommandsPanelState.ActivePanels && !opened)
                     continue;
 
                 var captionRect = new SKRect(
                     Margin, rowY,
-                    Margin + PanelWidth, rowY + ModuleCaptionHeight);
+                    Margin + PanelWidth, rowY + PanelCaptionHeight);
+
+                float bodyHeight = ComputePanelBodyHeight(panel.CommandTypeIds.Length);
 
                 var bodyRect = opened
                     ? new SKRect(
-                        Margin, rowY + ModuleCaptionHeight,
-                        Margin + PanelWidth, rowY + ModuleRowHeight)
+                        Margin, rowY + PanelCaptionHeight,
+                        Margin + PanelWidth, rowY + PanelCaptionHeight + bodyHeight)
                     : SKRect.Empty;
 
                 var buttons = opened
-                    ? BuildCommandButtons(mod, bodyRect)
+                    ? BuildCommandButtons(panel, safeModules, bodyRect)
                     : ImmutableArray<CommandButtonGeometry>.Empty;
 
-                _moduleRows.Add(new ModuleRowGeometry(
-                    mod.ModuleId, mod.DisplayName, mod.Position, opened, captionRect, bodyRect, buttons));
+                _panelRows.Add(new CommandPanelGeometry(
+                    panel.Name, opened, captionRect, bodyRect, buttons));
 
-                rowY += opened ? ModuleRowHeight : ModuleCaptionHeight;
+                rowY += opened ? (PanelCaptionHeight + bodyHeight) : PanelCaptionHeight;
             }
         }
 
@@ -316,23 +346,24 @@ public sealed class CommandsPanel
 
         _commandButtonDrawOrdinal = 0;
         DrawCaption(canvas);
-        foreach (var row in _moduleRows)
-            DrawModuleRow(canvas, row);
+        foreach (var row in _panelRows)
+            DrawCommandPanel(canvas, row);
     }
 
     /// <summary>
-    /// One button per CommandTypeIds entry, in declaration order, laid out in a
-    /// top-down grid of 4 columns. The label comes from the snapshot's Commands
-    /// metadata (fallback: the type id); enablement from the injected hook.
+    /// One button per the panel's fixed CommandTypeIds, in declaration order, laid
+    /// out in a top-down grid of 4 columns. The label comes from the first
+    /// installed module (ordered by Position) exposing matching Commands metadata
+    /// (fallback: the type id); enablement from the injected hook.
     /// </summary>
     private ImmutableArray<CommandButtonGeometry> BuildCommandButtons(
-        InstalledModuleSnapshot module, SKRect bodyRect)
+        CommandPanelDefinition panel, IReadOnlyList<InstalledModuleSnapshot> modules, SKRect bodyRect)
     {
-        var builder = ImmutableArray.CreateBuilder<CommandButtonGeometry>(module.CommandTypeIds.Length);
-        for (int i = 0; i < module.CommandTypeIds.Length; i++)
+        var builder = ImmutableArray.CreateBuilder<CommandButtonGeometry>(panel.CommandTypeIds.Length);
+        for (int i = 0; i < panel.CommandTypeIds.Length; i++)
         {
-            string commandTypeId = module.CommandTypeIds[i];
-            var metadata = FindCommandMetadata(module, commandTypeId);
+            string commandTypeId = panel.CommandTypeIds[i];
+            var metadata = FindCommandMetadataAcrossModules(modules, commandTypeId);
             string label = metadata?.DisplayName ?? commandTypeId;
 
             int col = i % (int)CommandButtonColumns;
@@ -346,22 +377,31 @@ public sealed class CommandsPanel
                 _isCommandEnabled(commandTypeId));
 
             builder.Add(geometry);
-            _commandButtons.Add((module.ModuleId, label, geometry));
+            _commandButtons.Add((label, geometry));
             _allCommandButtons.Add(geometry);
         }
 
         return builder.MoveToImmutable();
     }
 
-    private static ModuleCommandSnapshot? FindCommandMetadata(InstalledModuleSnapshot module, string commandTypeId)
+    /// <summary>
+    /// Finds command metadata for <paramref name="commandTypeId"/> across all
+    /// installed modules, ordered by Position ascending, returning the first
+    /// match — consistent with the click-time module resolution.
+    /// </summary>
+    private static ModuleCommandSnapshot? FindCommandMetadataAcrossModules(
+        IReadOnlyList<InstalledModuleSnapshot> modules, string commandTypeId)
     {
-        if (module.Commands.IsDefaultOrEmpty)
-            return null;
-
-        foreach (var command in module.Commands)
+        foreach (var module in modules.OrderBy(m => m.Position))
         {
-            if (command.CommandTypeId == commandTypeId)
-                return command;
+            if (module.Commands.IsDefaultOrEmpty)
+                continue;
+
+            foreach (var command in module.Commands)
+            {
+                if (command.CommandTypeId == commandTypeId)
+                    return command;
+            }
         }
 
         return null;
@@ -380,7 +420,7 @@ public sealed class CommandsPanel
 
         float textX = _hideShowButtonRect.Right + Padding + 2f;
         float textY = _captionRect.MidY + _titlePaint.TextSize / 3f;
-        canvas.DrawText("Modules", textX, textY, _titlePaint);
+        canvas.DrawText("Command Panels", textX, textY, _titlePaint);
     }
 
     private void DrawButton(SKCanvas canvas, SKRect rect, int buttonIndex, SKBitmap? image)
@@ -404,7 +444,7 @@ public sealed class CommandsPanel
 
     private bool IsActiveButton(int buttonIndex) => buttonIndex == 0 && _state == CommandsPanelState.Closed;
 
-    private void DrawModuleRow(SKCanvas canvas, ModuleRowGeometry row)
+    private void DrawCommandPanel(SKCanvas canvas, CommandPanelGeometry row)
     {
         if (_moduleCaptionBackgroundImage is not null)
             canvas.DrawBitmap(_moduleCaptionBackgroundImage, row.CaptionRect);
@@ -413,7 +453,7 @@ public sealed class CommandsPanel
 
         float textX = row.CaptionRect.Left + 40f;
         float textY = row.CaptionRect.MidY + _moduleCaptionTextPaint.TextSize / 3f;
-        canvas.DrawText(row.DisplayName, textX, textY, _moduleCaptionTextPaint);
+        canvas.DrawText(row.Name, textX, textY, _moduleCaptionTextPaint);
 
         if (row.Opened && row.BodyRect.Height > 0)
         {
@@ -434,7 +474,7 @@ public sealed class CommandsPanel
 
     private void DrawCommandButton(SKCanvas canvas, int index)
     {
-        var (_, label, button) = _commandButtons[index];
+        var (label, button) = _commandButtons[index];
 
         SKPaint fill;
         if (button.Enabled)
@@ -478,15 +518,20 @@ public sealed class CommandsPanel
 
 public enum CommandsPanelState
 {
-    AllModules,
-    ActiveModules,
+    AllPanels,
+    ActivePanels,
     Closed,
 }
 
-public readonly record struct ModuleRowGeometry(
-    string ModuleId,
-    string DisplayName,
-    int Position,
+/// <summary>
+/// A fixed, gameplay-grouped set of command types shown as one Commands Panel
+/// row. Not derived from installed modules — the panel/command order is fixed
+/// by design (see ТЗ "Command Panels по наборам команд").
+/// </summary>
+public sealed record CommandPanelDefinition(string Name, ImmutableArray<string> CommandTypeIds);
+
+public readonly record struct CommandPanelGeometry(
+    string Name,
     bool Opened,
     SKRect CaptionRect,
     SKRect BodyRect,

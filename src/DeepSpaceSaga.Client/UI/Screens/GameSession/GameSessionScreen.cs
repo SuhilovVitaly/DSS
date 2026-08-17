@@ -302,7 +302,7 @@ public sealed class GameSessionScreen : IScreen
         _commandBtnPressedBorderPaint = new SKPaint { Color = new SKColor(120, 160, 140), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
         _engineCommandButtonIcons = LoadEngineCommandIcons();
 
-        _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendModuleCommand);
+        _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel);
     }
 
     /// <summary>
@@ -665,10 +665,19 @@ public sealed class GameSessionScreen : IScreen
     /// comes from the snapshot's per-module command metadata. "point" commands are
     /// never enabled from the panel (Ctrl+Click map navigation is the only path);
     /// "object" commands (match/scanner) require SelectedObjectId; engine commands
-    /// additionally respect the engine command panel rules. Metadata missing → enabled.
+    /// additionally respect the engine command panel rules. A button is also
+    /// disabled when no installed module currently exposes the commandType, or when
+    /// its target metadata is missing (never send a command blind). navigation.stations-list
+    /// has no station-list screen yet, so it stays visible but always disabled.
     /// </summary>
     private bool IsModuleCommandEnabled(string commandType)
     {
+        if (commandType == NavigationComputerCommandTypes.StationsList)
+            return false; // no station-list screen yet — visible, always disabled this pass
+
+        if (ResolveModuleId(commandType) is null)
+            return false; // no installed module exposes this commandType
+
         string? target = FindCommandTarget(commandType);
         switch (target)
         {
@@ -681,22 +690,45 @@ public sealed class GameSessionScreen : IScreen
                     ? CanSendEngineCommand(commandType, _buffer.Latest?.Snapshot)
                     : true;
             default:
-                return true; // metadata missing
+                return false; // metadata missing — never send a command blind
         }
     }
 
     /// <summary>
     /// Send a command from a Commands Panel button. Fire-and-forget like the engine
-    /// panel — the authoritative engine validates the command and its target.
+    /// panel — the authoritative engine validates the command and its target. The
+    /// panel groups commands by gameplay meaning, so the addressed installed module
+    /// is resolved here by matching CommandTypeIds (first module by Position).
     /// </summary>
-    private void SendModuleCommand(string moduleId, string commandType)
+    private void SendCommandFromPanel(string commandType)
     {
+        string? moduleId = ResolveModuleId(commandType);
+        if (moduleId is null)
+            return; // defensive — IsModuleCommandEnabled already gates this
+
         var playerShipObjectId = _buffer.LatestPrediction?.BufferedSnapshot.Snapshot.PlayerShipObjectId;
         if (_handle is null || string.IsNullOrWhiteSpace(playerShipObjectId))
             return;
 
         string? targetObjectId = FindCommandTarget(commandType) == "object" ? _selectedObjectId : null;
         _ = _handle.SendCommandAsync(playerShipObjectId, moduleId, commandType, targetObjectId);
+    }
+
+    /// <summary>
+    /// Resolves the installed module that should receive <paramref name="commandType"/>:
+    /// the first module (ordered by Position) whose CommandTypeIds contains it.
+    /// </summary>
+    private string? ResolveModuleId(string commandType)
+    {
+        var modules = _buffer.Latest?.Snapshot.InstalledModules;
+        if (modules is null || modules.Value.IsDefaultOrEmpty)
+            return null; // no snapshot yet, or InstalledModules left at its default (uninitialized) value
+
+        return modules.Value
+            .Where(m => m.CommandTypeIds.Contains(commandType))
+            .OrderBy(m => m.Position)
+            .Select(m => m.ModuleId)
+            .FirstOrDefault();
     }
 
     /// <summary>Target requirement ("none"/"point"/"object") for a command type, from the buffered snapshot's Commands metadata.</summary>

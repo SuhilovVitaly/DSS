@@ -359,8 +359,10 @@ public class GameSessionObjectInteractionTests
         await using var fixture = CreateFixtureWithPlayerShip();
         Render(fixture.Screen);
 
-        fixture.Screen.OnMouseDown(100, 100);
-        fixture.Screen.OnMouseMove(300, 300); // drag -> detaches from player
+        // Off the (now always-visible, 4-group) Commands Panel footprint — a real
+        // free map point, not swallowed as a UI-panel click.
+        fixture.Screen.OnMouseDown(1000, 500);
+        fixture.Screen.OnMouseMove(1200, 700); // drag -> detaches from player
         Assert.False(fixture.Screen.IsFocusAttachedToPlayer);
 
         fixture.Screen.OnKeyDown(Key.ControlLeft);
@@ -427,11 +429,12 @@ public class GameSessionObjectInteractionTests
         double focusYBeforeDrag = fixture.Screen.CameraFocusY;
 
         // Plain map click far from any object (ship and OBJ-1 both render near screen
-        // center now that OBJ-1 is followed) starts a drag-pan.
-        fixture.Screen.OnMouseDown(200, 200);
+        // center now that OBJ-1 is followed) and off the (now always-visible, 4-group)
+        // Commands Panel footprint starts a drag-pan.
+        fixture.Screen.OnMouseDown(1000, 500);
         Assert.Null(fixture.Screen.CameraFollowObjectId);
 
-        fixture.Screen.OnMouseMove(250, 240); // drag delta (50, 40)
+        fixture.Screen.OnMouseMove(1050, 540); // drag delta (50, 40)
 
         double ppu = fixture.Screen.CameraPixelsPerWorldUnit;
         double expectedX = focusXBeforeDrag - 50 / ppu;
@@ -474,7 +477,9 @@ public class GameSessionObjectInteractionTests
 
         double fx = fixture.Screen.CameraFocusX;
         double fy = fixture.Screen.CameraFocusY;
-        fixture.Screen.OnMouseDown(100, 100, MouseButton.Right);
+        // Off the (now always-visible, 4-group) Commands Panel footprint — a real
+        // free map point, not swallowed as a UI-panel click.
+        fixture.Screen.OnMouseDown(1000, 500, MouseButton.Right);
 
         Assert.Null(fixture.Screen.SelectedObjectId);
         Assert.Equal(fx, fixture.Screen.CameraFocusX);

@@ -1,5 +1,10 @@
 # AGENTS.md
 
+## Image Assets
+
+- Save all generated or edited project images under `DSS-Images\temp`.
+- Do not use other `DSS-Images` subfolders for new image outputs unless the user explicitly asks for a different destination.
+
 ## Requirements Engineering
 
 When the user asks to turn a feature idea into a technical assignment, implementation spec, acceptance criteria, AI-ready feature task, PRD-to-implementation plan, or DSS requirements planning artifact, use `$requirements-engineer`.
