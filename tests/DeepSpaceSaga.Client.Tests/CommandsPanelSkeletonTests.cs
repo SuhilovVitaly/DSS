@@ -500,10 +500,17 @@ public class CommandsPanelSkeletonTests
     }
 
     [Theory]
+    [InlineData("engine.accelerate")]
+    [InlineData("engine.brake")]
+    [InlineData("engine.maintain-course")]
+    [InlineData("engine.maintain-speed")]
     [InlineData("engine.turn-left-step")]
     [InlineData("engine.turn-left-until-cancel")]
     [InlineData("engine.turn-right-step")]
     [InlineData("engine.turn-right-until-cancel")]
+    [InlineData("navigation.stations-list")]
+    [InlineData("scanner.general-scan")]
+    [InlineData("scanner.structural-scan")]
     public void Commands_with_a_declared_icon_file_load_it_successfully(string commandTypeId)
     {
         var screen = CreateScreen();
@@ -513,15 +520,22 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Only_the_four_turn_commands_have_a_declared_icon()
+    public void Exactly_the_eleven_commands_with_asset_files_have_a_declared_icon()
     {
         Assert.Equal(
             new[]
             {
+                "engine.accelerate",
+                "engine.brake",
+                "engine.maintain-course",
+                "engine.maintain-speed",
                 "engine.turn-left-step",
                 "engine.turn-left-until-cancel",
                 "engine.turn-right-step",
                 "engine.turn-right-until-cancel",
+                "navigation.stations-list",
+                "scanner.general-scan",
+                "scanner.structural-scan",
             },
             CommandsPanel.CommandIconFileNames.Keys.OrderBy(k => k, StringComparer.Ordinal));
     }
@@ -531,8 +545,28 @@ public class CommandsPanelSkeletonTests
     {
         var screen = CreateScreen();
 
-        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.accelerate"));
-        Assert.False(screen.CommandsPanel.HasLoadedIconFor("scanner.general-scan"));
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("navigation.dock"));
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.orbit"));
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.speed-synchronization"));
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.direction-synchronization"));
+    }
+
+    [Fact]
+    public void Icon_commands_render_bare_without_button_chrome_but_keep_the_clickable_rect()
+    {
+        var screen = CreateScreen(FullEngineModule);
+        Render(screen);
+
+        var engineRow = screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Engine");
+        var accelerateButton = engineRow.Buttons.Single(b => b.CommandTypeId == "engine.accelerate");
+
+        // Same 84×32 clickable/hover/cursor area as a regular button — only the
+        // drawn chrome (fill/border) is skipped for icon commands.
+        Assert.Equal(CommandsPanel.CommandButtonWidth, accelerateButton.Rect.Width);
+        Assert.Equal(CommandsPanel.CommandButtonHeight, accelerateButton.Rect.Height);
+
+        bool overInteractive = screen.OnMouseMove(accelerateButton.Rect.MidX, accelerateButton.Rect.MidY);
+        Assert.True(overInteractive);
     }
 
     [Fact]

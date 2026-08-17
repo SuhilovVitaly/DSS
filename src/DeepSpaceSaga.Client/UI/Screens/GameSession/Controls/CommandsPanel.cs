@@ -67,17 +67,26 @@ public sealed class CommandsPanel
     /// <summary>
     /// Per-command icon files under Images/UI/GameSessionScreenUI/commands-panel/.
     /// A command without an entry (or whose file is missing on disk) falls back to
-    /// the plain text-label button. Icons are drawn at a fixed 32×32 (before UI
-    /// scaling), centered in the button — source assets may be higher-resolution
-    /// (e.g. 64×64) for crisp downscaling.
+    /// the plain text-label button. Icons are drawn bare (no button chrome) at a
+    /// fixed 32×32 (before UI scaling), centered on the command's clickable area —
+    /// source assets may be higher-resolution (e.g. 64×64) for crisp downscaling.
+    /// The clickable area, hover/press tracking and cursor-over-interactive
+    /// signalling are unchanged from a regular button (see <see cref="OnMouseMove"/>).
     /// </summary>
     internal static readonly IReadOnlyDictionary<string, string> CommandIconFileNames =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
+            [ShipEngineCommandTypes.Accelerate] = "command-panel-button-engine-accelerate.png",
+            [ShipEngineCommandTypes.Brake] = "command-panel-button-engine-brake.png",
+            [ShipEngineCommandTypes.MaintainCourse] = "command-panel-button-engine-maintain-course.png",
+            [ShipEngineCommandTypes.MaintainSpeed] = "command-panel-button-engine-maintain-speed.png",
             [ShipEngineCommandTypes.TurnLeftStep] = "command-panel-button-turn-left.png",
             [ShipEngineCommandTypes.TurnLeftUntilCancel] = "command-panel-button-turn-left-continuous.png",
             [ShipEngineCommandTypes.TurnRightStep] = "command-panel-button-turn-right.png",
             [ShipEngineCommandTypes.TurnRightUntilCancel] = "command-panel-button-turn-right-continuous.png",
+            [NavigationComputerCommandTypes.StationsList] = "command-panel-button-navigation-stations-list.png",
+            [ScannerCommandTypes.GeneralScan] = "command-panel-button-scanner-general-scan.png",
+            [ScannerCommandTypes.StructuralScan] = "command-panel-button-scanner-structural-scan.png",
         };
 
     private const float CommandIconSize = 32f;
@@ -515,6 +524,23 @@ public sealed class CommandsPanel
     {
         var (label, button) = _commandButtons[index];
 
+        var icon = _commandIcons.GetValueOrDefault(button.CommandTypeId);
+        if (icon is not null)
+        {
+            // Icon commands render as a bare image — no button chrome (fill/border).
+            // The clickable area (button.Rect) and hover/press tracking are
+            // unchanged, so the cursor still switches to the interactive glyph and
+            // clicks still land exactly as they would on a regular button.
+            float iconX = button.Rect.MidX - CommandIconSize / 2f;
+            float iconY = button.Rect.MidY - CommandIconSize / 2f;
+            var iconRect = new SKRect(iconX, iconY, iconX + CommandIconSize, iconY + CommandIconSize);
+
+            byte iconAlpha = button.Enabled ? (byte)255 : (byte)110;
+            _commandBtnIconPaint.Color = new SKColor(255, 255, 255, iconAlpha);
+            canvas.DrawBitmap(icon, iconRect, _commandBtnIconPaint);
+            return;
+        }
+
         SKPaint fill;
         if (button.Enabled)
         {
@@ -533,24 +559,10 @@ public sealed class CommandsPanel
         canvas.DrawRect(button.Rect, fill);
         canvas.DrawRect(button.Rect, _commandBtnBorderPaint);
 
-        var icon = _commandIcons.GetValueOrDefault(button.CommandTypeId);
-        if (icon is not null)
-        {
-            float iconX = button.Rect.MidX - CommandIconSize / 2f;
-            float iconY = button.Rect.MidY - CommandIconSize / 2f;
-            var iconRect = new SKRect(iconX, iconY, iconX + CommandIconSize, iconY + CommandIconSize);
-
-            byte iconAlpha = button.Enabled ? (byte)255 : (byte)110;
-            _commandBtnIconPaint.Color = new SKColor(255, 255, 255, iconAlpha);
-            canvas.DrawBitmap(icon, iconRect, _commandBtnIconPaint);
-        }
-        else
-        {
-            var textPaint = button.Enabled ? _commandBtnTextPaint : _commandBtnTextDisabledPaint;
-            string displayLabel = TruncateLabel(label, textPaint, button.Rect.Width - 8f);
-            float textY = button.Rect.MidY + textPaint.TextSize / 3f;
-            canvas.DrawText(displayLabel, button.Rect.MidX, textY, textPaint);
-        }
+        var textPaint = button.Enabled ? _commandBtnTextPaint : _commandBtnTextDisabledPaint;
+        string displayLabel = TruncateLabel(label, textPaint, button.Rect.Width - 8f);
+        float textY = button.Rect.MidY + textPaint.TextSize / 3f;
+        canvas.DrawText(displayLabel, button.Rect.MidX, textY, textPaint);
     }
 
     private static string TruncateLabel(string label, SKPaint paint, float maxWidth)
