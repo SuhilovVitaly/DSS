@@ -29,7 +29,7 @@ public sealed class CommandsPanel
 
     // ── Command button grid (ТЗ-04) ─────────────────────────────
     public const float CommandButtonColumns = 4f;
-    public const float CommandButtonHeight = 32f;
+    public const float CommandButtonHeight = 48f;
     public const float CommandButtonGap = 4f;
     public const float BodyPaddingX = 6f;
     public const float BodyPaddingY = 6f;
@@ -68,7 +68,7 @@ public sealed class CommandsPanel
     /// Per-command icon files under Images/UI/GameSessionScreenUI/commands-panel/.
     /// A command without an entry (or whose file is missing on disk) falls back to
     /// the plain text-label button. Icons are drawn bare (no button chrome) at a
-    /// fixed 32×32 (before UI scaling), centered on the command's clickable area —
+    /// fixed 48×48 (before UI scaling), centered on the command's clickable area —
     /// source assets may be higher-resolution (e.g. 64×64) for crisp downscaling.
     /// Each entry has a matching "-active" file (e.g. "…-brake.png" /
     /// "…-brake-active.png") swapped in on hover, in place of a background
@@ -94,7 +94,7 @@ public sealed class CommandsPanel
             [ScannerCommandTypes.StructuralScan] = "command-panel-button-scanner-structural-scan.png",
         };
 
-    private const float CommandIconSize = 32f;
+    private const float CommandIconSize = 48f;
 
     private readonly record struct CommandIconPair(SKBitmap? Normal, SKBitmap? Active);
 
@@ -214,7 +214,7 @@ public sealed class CommandsPanel
 
     /// <summary>
     /// Decodes and downscales a command icon to the fixed <see cref="CommandIconSize"/>
-    /// (32×32, before UI scaling) — source assets may be higher-resolution for a
+    /// (48×48, before UI scaling) — source assets may be higher-resolution for a
     /// crisp result. Mirrors <c>GameSessionScreen.LoadButtonIcon</c>.
     /// </summary>
     private static SKBitmap? LoadCommandIcon(string path)
