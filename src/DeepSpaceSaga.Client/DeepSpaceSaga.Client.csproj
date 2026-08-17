@@ -23,6 +23,9 @@
     <None Update="Images\UI\GameSessionScreenUI\navigation-panel\*.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\*.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -44,6 +47,27 @@
 
   <ItemGroup>
     <None Update="gameinfo.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-accelerate.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-brake.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-maintain-course.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-maintain-speed.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-navigation-stations-list.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-scanner-general-scan.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-scanner-structural-scan.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Images\UI\GameSessionScreenUI\module-panel-caption-background.png">

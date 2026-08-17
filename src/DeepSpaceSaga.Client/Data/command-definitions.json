@@ -130,6 +130,22 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "none"
+        },
+        {
+            "typeId": "mining.extract-ice",
+            "displayName": "Extract Ice",
+            "timeFactor": 1.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "object"
+        },
+        {
+            "typeId": "mining.stop-extraction",
+            "displayName": "Stop Extraction",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none"
         }
     ]
 }

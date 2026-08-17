@@ -78,8 +78,11 @@
       "massKg": 8000,
       "structurePointsMax": 150,
       "powerConsumptionW": 0,
-      "commandTypeIds": [],
-      "baseCycleTimeMs": 0
+      "commandTypeIds": [
+        "mining.extract-ice",
+        "mining.stop-extraction"
+      ],
+      "baseCycleTimeMs": 10000
     },
     {
         "typeId": "module.scanner.mk1",

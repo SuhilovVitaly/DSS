@@ -290,7 +290,7 @@ public class ScenarioEngineTests
             .Where(t => t.CommandTypeIds.Length > 0)
             .ToArray();
 
-        Assert.Equal(3, activeTypes.Length); // engine + scanner + bridge-navigation-computer
+        Assert.Equal(4, activeTypes.Length); // engine + scanner + bridge-navigation-computer + drilling unit
 
         var engineType = Assert.Single(activeTypes, t => t.TypeId == "module.engine.basic");
         Assert.Equal(11, engineType.CommandTypeIds.Length);
@@ -323,9 +323,19 @@ public class ScenarioEngineTests
                 $"Command '{commandTypeId}' of 'module.bridge-navigation-computer.basic' is missing from the command definitions registry.");
         }
 
+
+        var drillingType = Assert.Single(activeTypes, t => t.TypeId == "module.drilling-unit.basic");
+        Assert.Equal(2, drillingType.CommandTypeIds.Length);
+        Assert.Contains("mining.extract-ice", drillingType.CommandTypeIds);
+        Assert.Contains("mining.stop-extraction", drillingType.CommandTypeIds);
+        foreach (string commandTypeId in drillingType.CommandTypeIds)
+        {
+            Assert.True(registry.CommandDefinitions.Contains(commandTypeId),
+                $"Command '{commandTypeId}' of 'module.drilling-unit.basic' is missing from the command definitions registry.");
+        }
         int passiveTypes = Enumerable.Range(0, registry.ModuleTypes.Count)
             .Count(i => registry.ModuleTypes.GetDefinition(i).CommandTypeIds.Length == 0);
-        Assert.Equal(7, passiveTypes); // includes living-quarters.mk1 (requirements §57)
+        Assert.Equal(6, passiveTypes); // includes living-quarters.mk1 (requirements §57)
     }
 
     [Theory]

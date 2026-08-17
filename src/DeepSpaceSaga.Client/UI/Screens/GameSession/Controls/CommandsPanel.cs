@@ -64,6 +64,24 @@ public sealed class CommandsPanel
             ScannerCommandTypes.GeneralScan,
             ScannerCommandTypes.StructuralScan)));
 
+    /// <summary>
+    /// Per-command icon files under Images/UI/GameSessionScreenUI/commands-panel/.
+    /// A command without an entry (or whose file is missing on disk) falls back to
+    /// the plain text-label button. Icons are drawn at a fixed 32×32 (before UI
+    /// scaling), centered in the button — source assets may be higher-resolution
+    /// (e.g. 64×64) for crisp downscaling.
+    /// </summary>
+    internal static readonly IReadOnlyDictionary<string, string> CommandIconFileNames =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [ShipEngineCommandTypes.TurnLeftStep] = "command-panel-button-turn-left.png",
+            [ShipEngineCommandTypes.TurnLeftUntilCancel] = "command-panel-button-turn-left-continuous.png",
+            [ShipEngineCommandTypes.TurnRightStep] = "command-panel-button-turn-right.png",
+            [ShipEngineCommandTypes.TurnRightUntilCancel] = "command-panel-button-turn-right-continuous.png",
+        };
+
+    private const float CommandIconSize = 32f;
+
     private SKRect _hideShowButtonRect;
 
     private int _hoveredButtonIndex = -1;  // 0=toggle, -1=none
@@ -108,6 +126,7 @@ public sealed class CommandsPanel
     private readonly SKPaint _commandBtnTextPaint;
     private readonly SKPaint _commandBtnTextDisabledPaint;
     private readonly SKPaint _commandBtnBorderPaint;
+    private readonly SKPaint _commandBtnIconPaint;
 
     // ── Images ──────────────────────────────────────────────────
     private readonly SKBitmap? _captionBackgroundImage;
@@ -115,6 +134,7 @@ public sealed class CommandsPanel
     private readonly SKBitmap? _moduleBodyBackgroundImage;
     private readonly SKBitmap? _hideImage;
     private readonly SKBitmap? _showImage;
+    private readonly Dictionary<string, SKBitmap?> _commandIcons = new(StringComparer.Ordinal);
 
     private CommandsPanelState _state = CommandsPanelState.AllPanels;
     private CommandsPanelState _previousNonClosedState = CommandsPanelState.AllPanels;
@@ -150,6 +170,7 @@ public sealed class CommandsPanel
         _commandBtnTextPaint = new SKPaint { Color = new SKColor(210, 218, 214), TextSize = 10f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
         _commandBtnTextDisabledPaint = new SKPaint { Color = new SKColor(96, 96, 96), TextSize = 10f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
         _commandBtnBorderPaint = new SKPaint { Color = new SKColor(80, 80, 80), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
+        _commandBtnIconPaint = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.High };
 
         var boldTypeface = SKTypeface.FromFamilyName("Consolas", SKFontStyle.Bold) ?? typeface;
         _moduleCaptionTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 14f, IsAntialias = true, Typeface = boldTypeface };
@@ -159,12 +180,36 @@ public sealed class CommandsPanel
         _moduleBodyBackgroundImage = LoadImage("Images/UI/GameSessionScreenUI/module-panel-body-background.png");
         _hideImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-hide.png");
         _showImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-show.png");
+
+        foreach (var (commandTypeId, fileName) in CommandIconFileNames)
+            _commandIcons[commandTypeId] = LoadCommandIcon($"Images/UI/GameSessionScreenUI/commands-panel/{fileName}");
     }
 
     private static SKBitmap? LoadImage(string path)
     {
         try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
         catch { return null; }
+    }
+
+    /// <summary>
+    /// Decodes and downscales a command icon to the fixed <see cref="CommandIconSize"/>
+    /// (32×32, before UI scaling) — source assets may be higher-resolution for a
+    /// crisp result. Mirrors <c>GameSessionScreen.LoadButtonIcon</c>.
+    /// </summary>
+    private static SKBitmap? LoadCommandIcon(string path)
+    {
+        try
+        {
+            if (!File.Exists(path))
+                return null;
+
+            using var bitmap = SKBitmap.Decode(path);
+            return bitmap?.Resize(new SKSizeI((int)CommandIconSize, (int)CommandIconSize), SKFilterQuality.High);
+        }
+        catch (IOException)
+        {
+            return null;
+        }
     }
 
     // ── Test seams ──────────────────────────────────────────────
@@ -181,6 +226,10 @@ public sealed class CommandsPanel
 
     public int HoveredCommandButtonIndex => _hoveredCommandButtonIndex;
     public int PressedCommandButtonIndex => _pressedCommandButtonIndex;
+
+    /// <summary>True if an icon file for <paramref name="commandTypeId"/> was found and decoded at construction time.</summary>
+    internal bool HasLoadedIconFor(string commandTypeId) =>
+        _commandIcons.TryGetValue(commandTypeId, out var bitmap) && bitmap is not null;
 
     public IReadOnlyList<CommandPanelGeometry> CommandPanelRows => _panelRows;
     public IReadOnlyList<CommandButtonGeometry> AllCommandButtons => _allCommandButtons;
@@ -484,10 +533,24 @@ public sealed class CommandsPanel
         canvas.DrawRect(button.Rect, fill);
         canvas.DrawRect(button.Rect, _commandBtnBorderPaint);
 
-        var textPaint = button.Enabled ? _commandBtnTextPaint : _commandBtnTextDisabledPaint;
-        string displayLabel = TruncateLabel(label, textPaint, button.Rect.Width - 8f);
-        float textY = button.Rect.MidY + textPaint.TextSize / 3f;
-        canvas.DrawText(displayLabel, button.Rect.MidX, textY, textPaint);
+        var icon = _commandIcons.GetValueOrDefault(button.CommandTypeId);
+        if (icon is not null)
+        {
+            float iconX = button.Rect.MidX - CommandIconSize / 2f;
+            float iconY = button.Rect.MidY - CommandIconSize / 2f;
+            var iconRect = new SKRect(iconX, iconY, iconX + CommandIconSize, iconY + CommandIconSize);
+
+            byte iconAlpha = button.Enabled ? (byte)255 : (byte)110;
+            _commandBtnIconPaint.Color = new SKColor(255, 255, 255, iconAlpha);
+            canvas.DrawBitmap(icon, iconRect, _commandBtnIconPaint);
+        }
+        else
+        {
+            var textPaint = button.Enabled ? _commandBtnTextPaint : _commandBtnTextDisabledPaint;
+            string displayLabel = TruncateLabel(label, textPaint, button.Rect.Width - 8f);
+            float textY = button.Rect.MidY + textPaint.TextSize / 3f;
+            canvas.DrawText(displayLabel, button.Rect.MidX, textY, textPaint);
+        }
     }
 
     private static string TruncateLabel(string label, SKPaint paint, float maxWidth)

@@ -499,6 +499,42 @@ public class CommandsPanelSkeletonTests
         Assert.Equal(32f, engineRow.Buttons[0].Rect.Height);
     }
 
+    [Theory]
+    [InlineData("engine.turn-left-step")]
+    [InlineData("engine.turn-left-until-cancel")]
+    [InlineData("engine.turn-right-step")]
+    [InlineData("engine.turn-right-until-cancel")]
+    public void Commands_with_a_declared_icon_file_load_it_successfully(string commandTypeId)
+    {
+        var screen = CreateScreen();
+
+        Assert.True(CommandsPanel.CommandIconFileNames.ContainsKey(commandTypeId));
+        Assert.True(screen.CommandsPanel.HasLoadedIconFor(commandTypeId));
+    }
+
+    [Fact]
+    public void Only_the_four_turn_commands_have_a_declared_icon()
+    {
+        Assert.Equal(
+            new[]
+            {
+                "engine.turn-left-step",
+                "engine.turn-left-until-cancel",
+                "engine.turn-right-step",
+                "engine.turn-right-until-cancel",
+            },
+            CommandsPanel.CommandIconFileNames.Keys.OrderBy(k => k, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void Commands_without_a_declared_icon_have_none_loaded()
+    {
+        var screen = CreateScreen();
+
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.accelerate"));
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("scanner.general-scan"));
+    }
+
     [Fact]
     public void Five_command_ids_wrap_into_two_rows_of_4_and_1()
     {
