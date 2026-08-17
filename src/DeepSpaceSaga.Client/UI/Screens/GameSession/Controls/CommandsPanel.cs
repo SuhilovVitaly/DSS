@@ -8,13 +8,17 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 /// Commands Panel (top-left) — the fixed command-group widget.
 /// A Caption (360×32) with a Hide/Show toggle button (26×26) + a list of
 /// fixed command-panel groups (Navigation, Maneuver, Engine, Space Control),
-/// each caption 360×36 with a body sized to its command count.
+/// each caption 360×36 with a fixed-height body (same size for every panel,
+/// regardless of how many commands it holds).
 /// </summary>
 public sealed class CommandsPanel
 {
     public const float PanelWidth = 360f;
     public const float CaptionHeight = 32f;
     public const float PanelCaptionHeight = 36f;
+
+    /// <summary>Fixed body height for every panel (restored pre-ТЗ-04 constant: 200f row − 36f caption).</summary>
+    public const float PanelBodyHeight = 164f;
 
     private const float Margin = 8f;
     private const float Padding = 6f;
@@ -192,18 +196,6 @@ public sealed class CommandsPanel
         _hideShowButtonRect = new SKRect(x, y, x + ButtonSize, y + ButtonSize);
     }
 
-    /// <summary>
-    /// Body height for a panel with <paramref name="commandCount"/> buttons laid
-    /// out in a top-down grid of <see cref="CommandButtonColumns"/> columns.
-    /// </summary>
-    public static float ComputePanelBodyHeight(int commandCount)
-    {
-        int rows = (int)Math.Ceiling(commandCount / (double)CommandButtonColumns);
-        rows = Math.Max(rows, 0);
-        float gaps = Math.Max(rows - 1, 0) * CommandButtonGap;
-        return 2 * BodyPaddingY + rows * CommandButtonHeight + gaps;
-    }
-
     // ── Input ───────────────────────────────────────────────────
 
     public bool OnMouseDown(float x, float y)
@@ -320,12 +312,10 @@ public sealed class CommandsPanel
                     Margin, rowY,
                     Margin + PanelWidth, rowY + PanelCaptionHeight);
 
-                float bodyHeight = ComputePanelBodyHeight(panel.CommandTypeIds.Length);
-
                 var bodyRect = opened
                     ? new SKRect(
                         Margin, rowY + PanelCaptionHeight,
-                        Margin + PanelWidth, rowY + PanelCaptionHeight + bodyHeight)
+                        Margin + PanelWidth, rowY + PanelCaptionHeight + PanelBodyHeight)
                     : SKRect.Empty;
 
                 var buttons = opened
@@ -335,7 +325,7 @@ public sealed class CommandsPanel
                 _panelRows.Add(new CommandPanelGeometry(
                     panel.Name, opened, captionRect, bodyRect, buttons));
 
-                rowY += opened ? (PanelCaptionHeight + bodyHeight) : PanelCaptionHeight;
+                rowY += opened ? (PanelCaptionHeight + PanelBodyHeight) : PanelCaptionHeight;
             }
         }
 

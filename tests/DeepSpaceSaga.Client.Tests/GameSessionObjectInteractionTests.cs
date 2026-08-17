@@ -607,15 +607,21 @@ public class GameSessionObjectInteractionTests
     public async Task Closed_info_panel_does_not_disable_hit_testing_or_engine_sync()
     {
         await using var fixture = CreateFixture([ObjAt("OBJ-1", 10000)]);
-        Render(fixture.Screen);
+        // Taller viewport than the file default: with all 4 Commands Panel groups
+        // open (fixed PanelBodyHeight per group) the panel's body now extends to
+        // ~840px from the top, which would otherwise overlap the bottom-anchored
+        // info panel's close button on a 720px-tall canvas.
+        Render(fixture.Screen, height: 1000);
 
         fixture.Screen.OnMouseDown(fixture.Screen.LastCloseRect.MidX, fixture.Screen.LastCloseRect.MidY);
         Assert.False(fixture.Screen.IsPanelVisible);
 
-        fixture.Screen.OnMouseMove(640, 360);
+        // Screen center for the 1280×1000 viewport used by this test (not the file's
+        // default 1280×720), where OBJ-1 renders.
+        fixture.Screen.OnMouseMove(640, 500);
         Assert.Equal("OBJ-1", fixture.Screen.ActiveObjectId);
 
-        fixture.Screen.OnMouseDown(640, 360);
+        fixture.Screen.OnMouseDown(640, 500);
         Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
 
         var calls = await WaitForCallsAsync(fixture.Connection, minCount: 1);
@@ -744,11 +750,11 @@ public class GameSessionObjectInteractionTests
         return new TestFixture(connection, handle, screen);
     }
 
-    private static void Render(GameSessionScreen screen)
+    private static void Render(GameSessionScreen screen, int height = ScreenHeight)
     {
-        using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
+        using var bitmap = new SKBitmap(ScreenWidth, height);
         using var canvas = new SKCanvas(bitmap);
-        screen.Render(canvas, ScreenWidth, ScreenHeight);
+        screen.Render(canvas, ScreenWidth, height);
     }
 
     private static async Task<List<(string? ActiveObjectId, string? SelectedObjectId)>> WaitForCallsAsync(

@@ -158,8 +158,8 @@ public class CommandsPanelSkeletonTests
         var screen = CreateScreen();
         Render(screen);
 
-        float expectedBottom = CommandsPanel.Panels.Sum(p =>
-            CommandsPanel.PanelCaptionHeight + CommandsPanel.ComputePanelBodyHeight(p.CommandTypeIds.Length));
+        float expectedBottom = CommandsPanel.Panels.Length *
+            (CommandsPanel.PanelCaptionHeight + CommandsPanel.PanelBodyHeight);
 
         Assert.Equal(new SKRect(8, 8, 368, 40), screen.CommandsPanel.CaptionRect);
         Assert.Equal(new SKRect(8, 40, 368, 40 + expectedBottom), screen.CommandsPanel.BodyRect);
@@ -398,7 +398,7 @@ public class CommandsPanelSkeletonTests
     // ── Command panel row geometry ────────────────────────────────
 
     [Fact]
-    public void Panel_caption_is_full_width_36px_and_body_height_matches_command_count()
+    public void Panel_caption_is_full_width_36px_and_body_height_is_fixed_for_every_panel()
     {
         var screen = CreateScreen();
         Render(screen);
@@ -407,13 +407,12 @@ public class CommandsPanelSkeletonTests
         foreach (var definition in CommandsPanel.Panels)
         {
             var row = panel.CommandPanelRows.Single(r => r.Name == definition.Name);
-            float expectedBodyHeight = CommandsPanel.ComputePanelBodyHeight(definition.CommandTypeIds.Length);
 
             Assert.True(row.Opened);
             Assert.Equal(CommandsPanel.PanelWidth, row.CaptionRect.Width);
             Assert.Equal(CommandsPanel.PanelCaptionHeight, row.CaptionRect.Height);
             Assert.Equal(CommandsPanel.PanelWidth, row.BodyRect.Width);
-            Assert.Equal(expectedBodyHeight, row.BodyRect.Height);
+            Assert.Equal(CommandsPanel.PanelBodyHeight, row.BodyRect.Height);
             Assert.Equal(row.CaptionRect.Bottom, row.BodyRect.Top);
             Assert.Equal(row.CaptionRect.Left, row.BodyRect.Left);
         }
@@ -489,11 +488,12 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var engineRow = screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Engine");
 
-        // Engine body top = 308 (after Navigation 80 + Maneuver 80 + two captions);
+        // Engine body top = 476 (after Navigation 164 + Maneuver 164, fixed
+        // PanelBodyHeight per panel, + three 36px captions);
         // grid origin = body + (6, 6); button 84x32, gap 4 → columns at x = 14, 102, 190.
-        Assert.Equal(new SKRect(14, 314, 98, 346), engineRow.Buttons[0].Rect);
-        Assert.Equal(new SKRect(102, 314, 186, 346), engineRow.Buttons[1].Rect);
-        Assert.Equal(new SKRect(190, 314, 274, 346), engineRow.Buttons[2].Rect);
+        Assert.Equal(new SKRect(14, 482, 98, 514), engineRow.Buttons[0].Rect);
+        Assert.Equal(new SKRect(102, 482, 186, 514), engineRow.Buttons[1].Rect);
+        Assert.Equal(new SKRect(190, 482, 274, 514), engineRow.Buttons[2].Rect);
 
         Assert.Equal(84f, engineRow.Buttons[0].Rect.Width);
         Assert.Equal(32f, engineRow.Buttons[0].Rect.Height);
