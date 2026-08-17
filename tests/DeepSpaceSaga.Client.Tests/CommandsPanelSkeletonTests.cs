@@ -490,13 +490,13 @@ public class CommandsPanelSkeletonTests
 
         // Engine body top = 476 (after Navigation 164 + Maneuver 164, fixed
         // PanelBodyHeight per panel, + three 36px captions);
-        // grid origin = body + (6, 6); button 84x32, gap 4 → columns at x = 14, 102, 190.
-        Assert.Equal(new SKRect(14, 482, 98, 514), engineRow.Buttons[0].Rect);
-        Assert.Equal(new SKRect(102, 482, 186, 514), engineRow.Buttons[1].Rect);
-        Assert.Equal(new SKRect(190, 482, 274, 514), engineRow.Buttons[2].Rect);
+        // grid origin = body + (6, 6); button 84x48, gap 4 → columns at x = 14, 102, 190.
+        Assert.Equal(new SKRect(14, 482, 98, 530), engineRow.Buttons[0].Rect);
+        Assert.Equal(new SKRect(102, 482, 186, 530), engineRow.Buttons[1].Rect);
+        Assert.Equal(new SKRect(190, 482, 274, 530), engineRow.Buttons[2].Rect);
 
         Assert.Equal(84f, engineRow.Buttons[0].Rect.Width);
-        Assert.Equal(32f, engineRow.Buttons[0].Rect.Height);
+        Assert.Equal(48f, engineRow.Buttons[0].Rect.Height);
     }
 
     [Theory]
@@ -504,10 +504,12 @@ public class CommandsPanelSkeletonTests
     [InlineData("engine.brake")]
     [InlineData("engine.maintain-course")]
     [InlineData("engine.maintain-speed")]
+    [InlineData("engine.orbit")]
     [InlineData("engine.turn-left-step")]
     [InlineData("engine.turn-left-until-cancel")]
     [InlineData("engine.turn-right-step")]
     [InlineData("engine.turn-right-until-cancel")]
+    [InlineData("navigation.dock")]
     [InlineData("navigation.stations-list")]
     [InlineData("scanner.general-scan")]
     [InlineData("scanner.structural-scan")]
@@ -520,7 +522,7 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Exactly_the_eleven_commands_with_asset_files_have_a_declared_icon()
+    public void Exactly_the_thirteen_commands_with_asset_files_have_a_declared_icon()
     {
         Assert.Equal(
             new[]
@@ -529,10 +531,12 @@ public class CommandsPanelSkeletonTests
                 "engine.brake",
                 "engine.maintain-course",
                 "engine.maintain-speed",
+                "engine.orbit",
                 "engine.turn-left-step",
                 "engine.turn-left-until-cancel",
                 "engine.turn-right-step",
                 "engine.turn-right-until-cancel",
+                "navigation.dock",
                 "navigation.stations-list",
                 "scanner.general-scan",
                 "scanner.structural-scan",
@@ -545,10 +549,42 @@ public class CommandsPanelSkeletonTests
     {
         var screen = CreateScreen();
 
-        Assert.False(screen.CommandsPanel.HasLoadedIconFor("navigation.dock"));
-        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.orbit"));
         Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.speed-synchronization"));
         Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.direction-synchronization"));
+    }
+
+    [Theory]
+    [InlineData("engine.accelerate")]
+    [InlineData("engine.brake")]
+    [InlineData("engine.maintain-course")]
+    [InlineData("engine.maintain-speed")]
+    [InlineData("engine.orbit")]
+    [InlineData("engine.turn-left-step")]
+    [InlineData("engine.turn-left-until-cancel")]
+    [InlineData("engine.turn-right-step")]
+    [InlineData("engine.turn-right-until-cancel")]
+    [InlineData("navigation.dock")]
+    [InlineData("navigation.stations-list")]
+    [InlineData("scanner.general-scan")]
+    [InlineData("scanner.structural-scan")]
+    public void Commands_with_a_declared_icon_also_have_an_active_hover_variant(string commandTypeId)
+    {
+        var screen = CreateScreen();
+
+        Assert.True(screen.CommandsPanel.HasLoadedActiveIconFor(commandTypeId));
+    }
+
+    [Fact]
+    public void Missing_active_hover_file_would_still_load_the_normal_icon()
+    {
+        // Every declared icon currently ships a matching "-active" asset, so this
+        // exercises the fallback path directly rather than relying on some file
+        // being absent (which HasLoadedIconFor/HasLoadedActiveIconFor above would
+        // silently stop covering the day the last missing asset is added).
+        var screen = CreateScreen();
+
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("no.such.command"));
+        Assert.False(screen.CommandsPanel.HasLoadedActiveIconFor("no.such.command"));
     }
 
     [Fact]
@@ -578,10 +614,10 @@ public class CommandsPanelSkeletonTests
 
         Assert.Equal(5, navigationRow.Buttons.Length);
 
-        // Navigation body top = 76; row 0 (y 82..114): 4 buttons; row 1 (y 118..150): 1.
-        Assert.Equal(new SKRect(14, 82, 98, 114), navigationRow.Buttons[0].Rect);
-        Assert.Equal(new SKRect(278, 82, 362, 114), navigationRow.Buttons[3].Rect);
-        Assert.Equal(new SKRect(14, 118, 98, 150), navigationRow.Buttons[4].Rect);
+        // Navigation body top = 76; row 0 (y 82..130): 4 buttons; row 1 (y 134..182): 1.
+        Assert.Equal(new SKRect(14, 82, 98, 130), navigationRow.Buttons[0].Rect);
+        Assert.Equal(new SKRect(278, 82, 362, 130), navigationRow.Buttons[3].Rect);
+        Assert.Equal(new SKRect(14, 134, 98, 182), navigationRow.Buttons[4].Rect);
     }
 
     [Fact]

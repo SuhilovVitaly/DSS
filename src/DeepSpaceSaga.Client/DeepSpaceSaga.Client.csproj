@@ -49,31 +49,79 @@
     <None Update="gameinfo.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-accelerate-active.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-accelerate.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-brake-active.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-brake.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-maintain-course-active.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-maintain-course.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-maintain-speed-active.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-maintain-speed.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-orbit-active.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-engine-orbit.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-navigation-dock-active.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-navigation-dock.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-navigation-stations-list-active.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-navigation-stations-list.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-scanner-general-scan-active.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-scanner-general-scan.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-scanner-structural-scan-active.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-scanner-structural-scan.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-turn-left-active.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-turn-left-continuous-active.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-turn-left-continuous.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-turn-left.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-turn-right-active.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-turn-right-continuous.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\command-panel-button-turn-right.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Images\UI\GameSessionScreenUI\module-panel-caption-background.png">
