@@ -16,6 +16,10 @@ public class CommandsPanelSkeletonTests
     private const string PlayerShipId = "SPC-0001";
     private const string EngineModuleId = "MOD-PLAYER-ENGINE-01";
     private const string ScannerModuleId = "MOD-PLAYER-SCANNER-01";
+    private const string NavigationComputerModuleId = "MOD-PLAYER-NAV-COMPUTER-01";
+
+    private static readonly ImmutableArray<string> PanelOrder = ImmutableArray.Create(
+        "Navigation", "Maneuver", "Engine", "Space Control");
 
     /// <summary>
     /// Display names and targets mirror Client/Data/command-definitions.json —
@@ -31,11 +35,13 @@ public class CommandsPanelSkeletonTests
         ["engine.turn-left-until-cancel"] = ("Turn Left Until Cancel", "none"),
         ["engine.turn-right-until-cancel"] = ("Turn Right Until Cancel", "none"),
         ["engine.maintain-course"] = ("Maintain Course", "none"),
-        ["engine.match-target-speed"] = ("Match Target Speed", "object"),
-        ["engine.match-target-course"] = ("Match Target Course", "object"),
-        ["engine.navigate-to-point"] = ("Navigate To Point", "point"),
+        ["engine.speed-synchronization"] = ("Speed Synchronization", "object"),
+        ["engine.direction-synchronization"] = ("Direction Synchronization", "object"),
+        ["engine.orbit"] = ("Orbit", "point"),
         ["scanner.general-scan"] = ("General Scan", "object"),
         ["scanner.structural-scan"] = ("Structural Scan", "object"),
+        ["navigation.dock"] = ("Dock", "object"),
+        ["navigation.stations-list"] = ("Stations List", "none"),
     };
 
     private static ImmutableArray<ModuleCommandSnapshot> CommandsFor(ImmutableArray<string> typeIds) =>
@@ -45,15 +51,15 @@ public class CommandsPanelSkeletonTests
 
     private static readonly ImmutableArray<string> EngineCommandTypeIds = ImmutableArray.Create(
         "engine.accelerate", "engine.brake", "engine.maintain-speed",
-        "engine.navigate-to-point");
+        "engine.orbit");
 
     private static readonly ImmutableArray<string> FullEngineCommandTypeIds = ImmutableArray.Create(
         "engine.accelerate", "engine.brake", "engine.maintain-speed",
         "engine.turn-left-step", "engine.turn-right-step",
         "engine.turn-left-until-cancel", "engine.turn-right-until-cancel",
         "engine.maintain-course",
-        "engine.match-target-speed", "engine.match-target-course",
-        "engine.navigate-to-point");
+        "engine.speed-synchronization", "engine.direction-synchronization",
+        "engine.orbit");
 
     private static readonly ImmutableArray<string> ScannerCommandTypeIds = ImmutableArray.Create(
         "scanner.general-scan", "scanner.structural-scan");
@@ -76,23 +82,110 @@ public class CommandsPanelSkeletonTests
             EngineModuleId, "module.engine.basic", "Engine", Position: 1, FullEngineCommandTypeIds,
             Commands: CommandsFor(FullEngineCommandTypeIds)));
 
+    /// <summary>Two installed modules whose CommandTypeIds both cover engine.accelerate, at
+    /// different Position — the click resolver must pick the lower-Position module.</summary>
+    private static readonly ImmutableArray<InstalledModuleSnapshot> TwoEngineModulesSharingAccelerate = ImmutableArray.Create(
+        new InstalledModuleSnapshot(
+            "MOD-ENGINE-HI-POSITION", "module.engine.basic", "Engine Hi", Position: 5,
+            ImmutableArray.Create(ShipEngineCommandTypes.Accelerate),
+            Commands: CommandsFor(ImmutableArray.Create(ShipEngineCommandTypes.Accelerate))),
+        new InstalledModuleSnapshot(
+            "MOD-ENGINE-LO-POSITION", "module.engine.basic", "Engine Lo", Position: 1,
+            ImmutableArray.Create(ShipEngineCommandTypes.Accelerate),
+            Commands: CommandsFor(ImmutableArray.Create(ShipEngineCommandTypes.Accelerate))));
+
+    /// <summary>Engine module plus an installed Navigation Computer exposing both
+    /// navigation.dock and navigation.stations-list.</summary>
+    private static readonly ImmutableArray<InstalledModuleSnapshot> EngineAndNavigationComputerModules = ImmutableArray.Create(
+        new InstalledModuleSnapshot(
+            EngineModuleId, "module.engine.basic", "Engine", Position: 1, EngineCommandTypeIds,
+            Commands: CommandsFor(EngineCommandTypeIds)),
+        new InstalledModuleSnapshot(
+            NavigationComputerModuleId, "module.bridge-navigation-computer.basic", "Navigation Computer", Position: 0,
+            ImmutableArray.Create(NavigationComputerCommandTypes.Dock, NavigationComputerCommandTypes.StationsList),
+            Commands: CommandsFor(ImmutableArray.Create(
+                NavigationComputerCommandTypes.Dock, NavigationComputerCommandTypes.StationsList))));
+
+    // ── Fixed panel composition (ТЗ "Панели и порядок") ──────────
+
+    [Fact]
+    public void Panels_are_declared_in_fixed_order_with_fixed_command_composition()
+    {
+        Assert.Equal(4, CommandsPanel.Panels.Length);
+        Assert.Equal(PanelOrder, CommandsPanel.Panels.Select(p => p.Name));
+
+        Assert.Equal(
+            new[]
+            {
+                NavigationComputerCommandTypes.Dock,
+                NavigationComputerCommandTypes.StationsList,
+                ShipEngineCommandTypes.Orbit,
+                ShipEngineCommandTypes.SpeedSynchronization,
+                ShipEngineCommandTypes.DirectionSynchronization,
+            },
+            CommandsPanel.Panels[0].CommandTypeIds);
+
+        Assert.Equal(
+            new[]
+            {
+                ShipEngineCommandTypes.MaintainCourse,
+                ShipEngineCommandTypes.TurnLeftStep,
+                ShipEngineCommandTypes.TurnRightStep,
+                ShipEngineCommandTypes.TurnLeftUntilCancel,
+                ShipEngineCommandTypes.TurnRightUntilCancel,
+            },
+            CommandsPanel.Panels[1].CommandTypeIds);
+
+        Assert.Equal(
+            new[]
+            {
+                ShipEngineCommandTypes.Accelerate,
+                ShipEngineCommandTypes.Brake,
+                ShipEngineCommandTypes.MaintainSpeed,
+            },
+            CommandsPanel.Panels[2].CommandTypeIds);
+
+        Assert.Equal(
+            new[] { ScannerCommandTypes.GeneralScan, ScannerCommandTypes.StructuralScan },
+            CommandsPanel.Panels[3].CommandTypeIds);
+    }
+
     // ── Geometry ────────────────────────────────────────────────
 
     [Fact]
-    public void Panel_renders_top_left_with_caption_360x32_and_body_depends_on_modules()
+    public void Panel_renders_top_left_with_caption_360x32_and_body_spans_all_four_panels()
     {
         var screen = CreateScreen();
         Render(screen);
 
+        float expectedBottom = CommandsPanel.Panels.Length *
+            (CommandsPanel.PanelCaptionHeight + CommandsPanel.PanelBodyHeight);
+
         Assert.Equal(new SKRect(8, 8, 368, 40), screen.CommandsPanel.CaptionRect);
-        Assert.Equal(new SKRect(8, 40, 368, 240), screen.CommandsPanel.BodyRect);
+        Assert.Equal(new SKRect(8, 40, 368, 40 + expectedBottom), screen.CommandsPanel.BodyRect);
     }
 
     [Fact]
-    public void Panel_state_is_AllModules_by_default()
+    public void Panel_state_is_AllPanels_by_default()
     {
         var screen = CreateScreen();
-        Assert.Equal(CommandsPanelState.AllModules, screen.CommandsPanel.State);
+        Assert.Equal(CommandsPanelState.AllPanels, screen.CommandsPanel.State);
+    }
+
+    [Fact]
+    public void Four_panels_are_always_shown_regardless_of_installed_modules()
+    {
+        var withNoModules = CreateScreen(ImmutableArray<InstalledModuleSnapshot>.Empty);
+        Render(withNoModules);
+        Assert.Equal(PanelOrder, withNoModules.CommandsPanel.CommandPanelRows.Select(r => r.Name));
+
+        var withOneModule = CreateScreen(OneEngineModule);
+        Render(withOneModule);
+        Assert.Equal(PanelOrder, withOneModule.CommandsPanel.CommandPanelRows.Select(r => r.Name));
+
+        var withFullModule = CreateScreen(FullEngineModule);
+        Render(withFullModule);
+        Assert.Equal(PanelOrder, withFullModule.CommandsPanel.CommandPanelRows.Select(r => r.Name));
     }
 
     [Fact]
@@ -113,14 +206,14 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public async Task Click_on_module_caption_is_consumed_and_does_not_pan()
+    public async Task Click_on_panel_caption_is_consumed_and_does_not_pan()
     {
         await using var fixture = CreateFixture();
         Render(fixture.Screen);
 
         double fxBefore = fixture.Screen.CameraFocusX;
         double fyBefore = fixture.Screen.CameraFocusY;
-        var row = Assert.Single(fixture.Screen.CommandsPanel.ModuleRows);
+        var row = fixture.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Navigation");
 
         var result = fixture.Screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
 
@@ -131,24 +224,25 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public async Task Click_on_module_body_gap_is_consumed_and_sends_no_command()
+    public async Task Click_on_panel_body_gap_is_consumed_and_sends_no_command()
     {
         await using var fixture = CreateFixture();
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
-        var row = Assert.Single(panel.ModuleRows);
+        // "Engine" carries 3 command buttons in a 4-column grid — the 4th column
+        // cell is a guaranteed gap: inside the body, not covered by any button.
+        var row = panel.CommandPanelRows.Single(r => r.Name == "Engine");
         Assert.True(row.Opened);
         Assert.True(row.BodyRect.Height > 0);
+        Assert.Equal(3, row.Buttons.Length);
+
+        var gap = (row.BodyRect.Right - 4f, row.BodyRect.Top + 4f);
+        Assert.True(row.BodyRect.Contains(gap.Item1, gap.Item2));
+        Assert.DoesNotContain(panel.AllCommandButtons, b => b.Rect.Contains(gap.Item1, gap.Item2));
 
         double fxBefore = fixture.Screen.CameraFocusX;
         double fyBefore = fixture.Screen.CameraFocusY;
-
-        // Guaranteed gap: below the command button grid, inside the module body
-        // (the engine row's 4 buttons occupy the top 32px of the body).
-        var gap = (panel.BodyRect.Left + 4f, panel.BodyRect.Bottom - 4f);
-        Assert.True(row.BodyRect.Contains(gap.Item1, gap.Item2));
-        Assert.DoesNotContain(panel.AllCommandButtons, b => b.Rect.Contains(gap.Item1, gap.Item2));
 
         var result = fixture.Screen.OnMouseDown(gap.Item1, gap.Item2);
 
@@ -225,15 +319,15 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        Assert.Equal(CommandsPanelState.AllModules, panel.State);
+        Assert.Equal(CommandsPanelState.AllPanels, panel.State);
 
         screen.OnMouseDown(panel.HideShowButtonRect.MidX, panel.HideShowButtonRect.MidY);
         Render(screen);
 
         Assert.Equal(CommandsPanelState.Closed, panel.State);
-        Assert.Equal(CommandsPanelState.AllModules, panel.PreviousNonClosedState);
+        Assert.Equal(CommandsPanelState.AllPanels, panel.PreviousNonClosedState);
         Assert.Equal(0f, panel.BodyRect.Height);
-        Assert.Empty(panel.ModuleRows);
+        Assert.Empty(panel.CommandPanelRows);
     }
 
     [Fact]
@@ -250,8 +344,8 @@ public class CommandsPanelSkeletonTests
         screen.OnMouseDown(panel.HideShowButtonRect.MidX, panel.HideShowButtonRect.MidY);
         Render(screen);
 
-        Assert.Equal(CommandsPanelState.AllModules, panel.State);
-        Assert.NotEmpty(panel.ModuleRows);
+        Assert.Equal(CommandsPanelState.AllPanels, panel.State);
+        Assert.Equal(4, panel.CommandPanelRows.Count);
         Assert.True(panel.BodyRect.Height > 0);
     }
 
@@ -301,141 +395,90 @@ public class CommandsPanelSkeletonTests
         Assert.Equal(-1, panel.PressedButtonIndex);
     }
 
-    // ── Module row geometry ─────────────────────────────────────
+    // ── Command panel row geometry ────────────────────────────────
 
     [Fact]
-    public void Module_caption_is_full_width_36px_and_body_is_360x164()
+    public void Panel_caption_is_full_width_36px_and_body_height_is_fixed_for_every_panel()
     {
         var screen = CreateScreen();
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        var row = Assert.Single(panel.ModuleRows);
+        foreach (var definition in CommandsPanel.Panels)
+        {
+            var row = panel.CommandPanelRows.Single(r => r.Name == definition.Name);
 
-        Assert.True(row.Opened);
-        Assert.Equal(CommandsPanel.PanelWidth, row.CaptionRect.Width);
-        Assert.Equal(CommandsPanel.ModuleCaptionHeight, row.CaptionRect.Height);
-        Assert.Equal(CommandsPanel.PanelWidth, row.BodyRect.Width);
-        Assert.Equal(164f, row.BodyRect.Height);
-        Assert.Equal(row.CaptionRect.Bottom, row.BodyRect.Top);
-        Assert.Equal(row.CaptionRect.Left, row.BodyRect.Left);
+            Assert.True(row.Opened);
+            Assert.Equal(CommandsPanel.PanelWidth, row.CaptionRect.Width);
+            Assert.Equal(CommandsPanel.PanelCaptionHeight, row.CaptionRect.Height);
+            Assert.Equal(CommandsPanel.PanelWidth, row.BodyRect.Width);
+            Assert.Equal(CommandsPanel.PanelBodyHeight, row.BodyRect.Height);
+            Assert.Equal(row.CaptionRect.Bottom, row.BodyRect.Top);
+            Assert.Equal(row.CaptionRect.Left, row.BodyRect.Left);
+        }
 
-        screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
+        var engineRow = panel.CommandPanelRows.Single(r => r.Name == "Engine");
+        screen.OnMouseDown(engineRow.CaptionRect.MidX, engineRow.CaptionRect.MidY);
         Render(screen);
 
-        row = Assert.Single(panel.ModuleRows);
-        Assert.False(row.Opened);
-        Assert.Equal(0f, row.BodyRect.Height);
+        engineRow = panel.CommandPanelRows.Single(r => r.Name == "Engine");
+        Assert.False(engineRow.Opened);
+        Assert.Equal(0f, engineRow.BodyRect.Height);
     }
 
     [Fact]
-    public void Module_rows_ordered_by_Position()
-    {
-        var modules = ImmutableArray.Create(
-            new InstalledModuleSnapshot("M2", "mt.a", "Alpha", Position: 2, EngineCommandTypeIds),
-            new InstalledModuleSnapshot("M0", "mt.b", "Beta", Position: 0, EngineCommandTypeIds));
-
-        var screen = CreateScreen(modules);
-        Render(screen);
-
-        var rows = screen.CommandsPanel.ModuleRows;
-        Assert.Equal(2, rows.Count);
-        Assert.Equal(0, rows[0].Position);
-        Assert.Equal(2, rows[1].Position);
-        Assert.Equal(40f, rows[0].CaptionRect.Top);
-        Assert.Equal(240f, rows[1].CaptionRect.Top);
-    }
-
-    [Fact]
-    public void Engine_module_always_sorts_first()
-    {
-        var modules = ImmutableArray.Create(
-            new InstalledModuleSnapshot("M-E", "module.engine.basic", "Engine", Position: 5, EngineCommandTypeIds),
-            new InstalledModuleSnapshot("M-S", "module.scanner.mk1", "Scanner MK I", Position: 0,
-                ImmutableArray.Create("scanner.general-scan")));
-
-        var screen = CreateScreen(modules);
-        Render(screen);
-
-        Assert.Equal(2, screen.CommandsPanel.ModuleRows.Count);
-        Assert.Equal("Engine", screen.CommandsPanel.ModuleRows[0].DisplayName);
-        Assert.Equal("Scanner MK I", screen.CommandsPanel.ModuleRows[1].DisplayName);
-    }
-
-    [Fact]
-    public void Module_toggle_switches_Opened_state()
+    public void Panel_toggle_switches_Opened_state_for_that_panel_only()
     {
         var screen = CreateScreen();
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        var row = Assert.Single(panel.ModuleRows);
-        Assert.True(row.Opened);
+        var engineRow = panel.CommandPanelRows.Single(r => r.Name == "Engine");
+        Assert.True(engineRow.Opened);
 
-        screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
+        screen.OnMouseDown(engineRow.CaptionRect.MidX, engineRow.CaptionRect.MidY);
         Render(screen);
-        Assert.False(Assert.Single(panel.ModuleRows).Opened);
+        Assert.False(panel.CommandPanelRows.Single(r => r.Name == "Engine").Opened);
 
-        screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
+        // Other panels are unaffected by toggling one panel.
+        Assert.True(panel.CommandPanelRows.Single(r => r.Name == "Navigation").Opened);
+        Assert.True(panel.CommandPanelRows.Single(r => r.Name == "Maneuver").Opened);
+        Assert.True(panel.CommandPanelRows.Single(r => r.Name == "Space Control").Opened);
+
+        screen.OnMouseDown(engineRow.CaptionRect.MidX, engineRow.CaptionRect.MidY);
         Render(screen);
-        Assert.True(Assert.Single(panel.ModuleRows).Opened);
-    }
-
-    // ── Filtering ───────────────────────────────────────────────
-
-    [Fact]
-    public void Module_with_empty_CommandTypeIds_is_not_shown()
-    {
-        var modules = ImmutableArray.Create(
-            new InstalledModuleSnapshot("M-E", "module.engine.basic", "Engine", Position: 0, EngineCommandTypeIds),
-            new InstalledModuleSnapshot("M-S", "module.scanner.mk1", "Scanner MK I", Position: 1, ImmutableArray<string>.Empty));
-
-        var screen = CreateScreen(modules);
-        Render(screen);
-
-        var rows = screen.CommandsPanel.ModuleRows;
-        Assert.Single(rows);
-        Assert.Equal("Engine", rows[0].DisplayName);
+        Assert.True(panel.CommandPanelRows.Single(r => r.Name == "Engine").Opened);
     }
 
     [Fact]
-    public void Only_modules_with_nonempty_CommandTypeIds_are_active()
-    {
-        var screen = CreateScreen();
-        Render(screen);
-
-        var rows = screen.CommandsPanel.ModuleRows;
-        Assert.Single(rows);
-        Assert.Equal("Engine", rows[0].DisplayName);
-        Assert.Equal(EngineModuleId, rows[0].ModuleId);
-    }
-
-    [Fact]
-    public void Empty_snapshot_shows_only_caption()
+    public void Empty_installed_modules_still_shows_all_four_panels_with_disabled_buttons()
     {
         var screen = CreateScreen(ImmutableArray<InstalledModuleSnapshot>.Empty);
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        Assert.Empty(panel.ModuleRows);
-        Assert.Equal(new SKRect(8, 40, 368, 40), panel.BodyRect);
+        Assert.Equal(4, panel.CommandPanelRows.Count);
+        Assert.Equal(PanelOrder, panel.CommandPanelRows.Select(r => r.Name));
+
+        int expectedTotalButtons = CommandsPanel.Panels.Sum(p => p.CommandTypeIds.Length);
+        Assert.Equal(expectedTotalButtons, panel.AllCommandButtons.Count);
+        Assert.All(panel.AllCommandButtons, b => Assert.False(b.Enabled));
     }
 
-    // ── Command buttons (ТЗ-04, AC1: one button per CommandTypeIds entry) ───────
+    // ── Command buttons — fixed composition per panel, in declared order ───────
 
     [Fact]
-    public void Opened_row_draws_one_button_per_CommandTypeIds_entry_in_order()
+    public void Opened_panel_draws_one_button_per_CommandTypeIds_entry_in_order()
     {
         var screen = CreateScreen();
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        var row = Assert.Single(panel.ModuleRows);
-        Assert.Equal(4, row.Buttons.Length);
-        Assert.Equal(4, panel.AllCommandButtons.Count);
-
-        Assert.Equal(EngineCommandTypeIds, row.Buttons.Select(b => b.CommandTypeId));
-        Assert.Equal(EngineCommandTypeIds, panel.AllCommandButtons.Select(b => b.CommandTypeId));
+        var engineRow = panel.CommandPanelRows.Single(r => r.Name == "Engine");
+        Assert.Equal(3, engineRow.Buttons.Length);
+        Assert.Equal(
+            new[] { "engine.accelerate", "engine.brake", "engine.maintain-speed" },
+            engineRow.Buttons.Select(b => b.CommandTypeId));
     }
 
     [Fact]
@@ -443,55 +486,120 @@ public class CommandsPanelSkeletonTests
     {
         var screen = CreateScreen();
         Render(screen);
-        var row = Assert.Single(screen.CommandsPanel.ModuleRows);
+        var engineRow = screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Engine");
 
-        // Module body (8, 76, 368, 240); grid origin = body + (6, 6);
-        // button 84x32, gap 4 → columns at x = 14, 102, 190, 278.
-        Assert.Equal(new SKRect(14, 82, 98, 114), row.Buttons[0].Rect);
-        Assert.Equal(new SKRect(102, 82, 186, 114), row.Buttons[1].Rect);
-        Assert.Equal(new SKRect(190, 82, 274, 114), row.Buttons[2].Rect);
-        Assert.Equal(new SKRect(278, 82, 362, 114), row.Buttons[3].Rect);
+        // Engine body top = 476 (after Navigation 164 + Maneuver 164, fixed
+        // PanelBodyHeight per panel, + three 36px captions);
+        // grid origin = body + (6, 6); button 84x32, gap 4 → columns at x = 14, 102, 190.
+        Assert.Equal(new SKRect(14, 482, 98, 514), engineRow.Buttons[0].Rect);
+        Assert.Equal(new SKRect(102, 482, 186, 514), engineRow.Buttons[1].Rect);
+        Assert.Equal(new SKRect(190, 482, 274, 514), engineRow.Buttons[2].Rect);
 
-        Assert.Equal(84f, row.Buttons[0].Rect.Width);
-        Assert.Equal(32f, row.Buttons[0].Rect.Height);
+        Assert.Equal(84f, engineRow.Buttons[0].Rect.Width);
+        Assert.Equal(32f, engineRow.Buttons[0].Rect.Height);
+    }
+
+    [Theory]
+    [InlineData("engine.accelerate")]
+    [InlineData("engine.brake")]
+    [InlineData("engine.maintain-course")]
+    [InlineData("engine.maintain-speed")]
+    [InlineData("engine.turn-left-step")]
+    [InlineData("engine.turn-left-until-cancel")]
+    [InlineData("engine.turn-right-step")]
+    [InlineData("engine.turn-right-until-cancel")]
+    [InlineData("navigation.stations-list")]
+    [InlineData("scanner.general-scan")]
+    [InlineData("scanner.structural-scan")]
+    public void Commands_with_a_declared_icon_file_load_it_successfully(string commandTypeId)
+    {
+        var screen = CreateScreen();
+
+        Assert.True(CommandsPanel.CommandIconFileNames.ContainsKey(commandTypeId));
+        Assert.True(screen.CommandsPanel.HasLoadedIconFor(commandTypeId));
     }
 
     [Fact]
-    public void Eleven_command_ids_wrap_into_three_rows_of_4_4_3()
+    public void Exactly_the_eleven_commands_with_asset_files_have_a_declared_icon()
+    {
+        Assert.Equal(
+            new[]
+            {
+                "engine.accelerate",
+                "engine.brake",
+                "engine.maintain-course",
+                "engine.maintain-speed",
+                "engine.turn-left-step",
+                "engine.turn-left-until-cancel",
+                "engine.turn-right-step",
+                "engine.turn-right-until-cancel",
+                "navigation.stations-list",
+                "scanner.general-scan",
+                "scanner.structural-scan",
+            },
+            CommandsPanel.CommandIconFileNames.Keys.OrderBy(k => k, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void Commands_without_a_declared_icon_have_none_loaded()
+    {
+        var screen = CreateScreen();
+
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("navigation.dock"));
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.orbit"));
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.speed-synchronization"));
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.direction-synchronization"));
+    }
+
+    [Fact]
+    public void Icon_commands_render_bare_without_button_chrome_but_keep_the_clickable_rect()
     {
         var screen = CreateScreen(FullEngineModule);
         Render(screen);
-        var panel = screen.CommandsPanel;
 
-        var row = Assert.Single(panel.ModuleRows);
-        Assert.Equal(11, row.Buttons.Length);
-        Assert.Equal(11, panel.AllCommandButtons.Count);
+        var engineRow = screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Engine");
+        var accelerateButton = engineRow.Buttons.Single(b => b.CommandTypeId == "engine.accelerate");
 
-        // Row 0 (y 82..114): 4 buttons; row 1 (y 118..150): 4; row 2 (y 154..186): 3.
-        Assert.Equal(new SKRect(14, 82, 98, 114), row.Buttons[0].Rect);
-        Assert.Equal(new SKRect(278, 82, 362, 114), row.Buttons[3].Rect);
-        Assert.Equal(new SKRect(14, 118, 98, 150), row.Buttons[4].Rect);
-        Assert.Equal(new SKRect(278, 118, 362, 150), row.Buttons[7].Rect);
-        Assert.Equal(new SKRect(14, 154, 98, 186), row.Buttons[8].Rect);
-        Assert.Equal(new SKRect(102, 154, 186, 186), row.Buttons[9].Rect);
-        Assert.Equal(new SKRect(190, 154, 274, 186), row.Buttons[10].Rect);
+        // Same 84×32 clickable/hover/cursor area as a regular button — only the
+        // drawn chrome (fill/border) is skipped for icon commands.
+        Assert.Equal(CommandsPanel.CommandButtonWidth, accelerateButton.Rect.Width);
+        Assert.Equal(CommandsPanel.CommandButtonHeight, accelerateButton.Rect.Height);
+
+        bool overInteractive = screen.OnMouseMove(accelerateButton.Rect.MidX, accelerateButton.Rect.MidY);
+        Assert.True(overInteractive);
     }
 
     [Fact]
-    public void Collapsed_row_has_no_command_buttons()
+    public void Five_command_ids_wrap_into_two_rows_of_4_and_1()
+    {
+        var screen = CreateScreen();
+        Render(screen);
+        var navigationRow = screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Navigation");
+
+        Assert.Equal(5, navigationRow.Buttons.Length);
+
+        // Navigation body top = 76; row 0 (y 82..114): 4 buttons; row 1 (y 118..150): 1.
+        Assert.Equal(new SKRect(14, 82, 98, 114), navigationRow.Buttons[0].Rect);
+        Assert.Equal(new SKRect(278, 82, 362, 114), navigationRow.Buttons[3].Rect);
+        Assert.Equal(new SKRect(14, 118, 98, 150), navigationRow.Buttons[4].Rect);
+    }
+
+    [Fact]
+    public void Collapsed_panel_has_no_command_buttons()
     {
         var screen = CreateScreen();
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        var row = Assert.Single(panel.ModuleRows);
-        screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
+        var engineRow = panel.CommandPanelRows.Single(r => r.Name == "Engine");
+        screen.OnMouseDown(engineRow.CaptionRect.MidX, engineRow.CaptionRect.MidY);
         Render(screen);
 
-        row = Assert.Single(panel.ModuleRows);
-        Assert.False(row.Opened);
-        Assert.Empty(row.Buttons);
-        Assert.Empty(panel.AllCommandButtons);
+        engineRow = panel.CommandPanelRows.Single(r => r.Name == "Engine");
+        Assert.False(engineRow.Opened);
+        Assert.Empty(engineRow.Buttons);
+        Assert.DoesNotContain(panel.AllCommandButtons, b =>
+            b.CommandTypeId is "engine.accelerate" or "engine.brake" or "engine.maintain-speed");
     }
 
     // ── Command button hover / pressed seams ───────────────────
@@ -503,9 +611,13 @@ public class CommandsPanelSkeletonTests
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
+        // Flat draw ordinal: Navigation (5) + Maneuver (5) precede Engine's
+        // first button (engine.accelerate) at index 10.
+        int expectedIndex = CommandsPanel.Panels[0].CommandTypeIds.Length + CommandsPanel.Panels[1].CommandTypeIds.Length;
+
         var button = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.accelerate");
         fixture.Screen.OnMouseMove(button.Rect.MidX, button.Rect.MidY);
-        Assert.Equal(0, panel.HoveredCommandButtonIndex);
+        Assert.Equal(expectedIndex, panel.HoveredCommandButtonIndex);
 
         fixture.Screen.OnMouseMove(1000, 500);
         Assert.Equal(-1, panel.HoveredCommandButtonIndex);
@@ -518,17 +630,19 @@ public class CommandsPanelSkeletonTests
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
+        int expectedIndex = CommandsPanel.Panels[0].CommandTypeIds.Length + CommandsPanel.Panels[1].CommandTypeIds.Length;
+
         var button = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.accelerate");
         Assert.True(button.Enabled);
 
         fixture.Screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
-        Assert.Equal(0, panel.PressedCommandButtonIndex);
+        Assert.Equal(expectedIndex, panel.PressedCommandButtonIndex);
 
         fixture.Screen.OnMouseUp(button.Rect.MidX, button.Rect.MidY);
         Assert.Equal(-1, panel.PressedCommandButtonIndex);
     }
 
-    // ── Command delivery (ТЗ-04, AC2: click sends PlayerCommand to row's ModuleId) ─
+    // ── Command delivery (AC: click sends PlayerCommand to the resolved module) ─
 
     [Fact]
     public async Task Click_engine_command_button_sends_player_command_to_engine_module()
@@ -557,13 +671,12 @@ public class CommandsPanelSkeletonTests
         await using var fixture = CreateFixture(EngineAndScannerModules, extraObjects: [ObjAt("OBJ-1", 10060)]);
         Render(fixture.Screen);
 
-        // Scanner commands target an object — select one to enable the button (AC3).
+        // Scanner commands target an object — select one to enable the button.
         fixture.Screen.OnMouseDown(640, 420); // OBJ-1 at screen (640, 420), within 30 px
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
-        var scannerRow = panel.ModuleRows.Single(r => r.ModuleId == ScannerModuleId);
-        var generalScan = Assert.Single(scannerRow.Buttons, b => b.CommandTypeId == "scanner.general-scan");
+        var generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.general-scan");
         Assert.True(generalScan.Enabled);
 
         fixture.Screen.OnMouseDown(generalScan.Rect.MidX, generalScan.Rect.MidY);
@@ -574,7 +687,63 @@ public class CommandsPanelSkeletonTests
         Assert.Equal("OBJ-1", command.TargetObjectId);
     }
 
-    // ── Target-requiring commands (ТЗ-04, AC3: disabled without SelectedObjectId) ─
+    // ── Resolve-by-Position (new in Batch 2) ────────────────────
+
+    [Fact]
+    public async Task Click_resolves_the_installed_module_with_the_lowest_Position_when_several_modules_share_the_commandType()
+    {
+        await using var fixture = CreateFixture(TwoEngineModulesSharingAccelerate);
+        Render(fixture.Screen);
+        var panel = fixture.Screen.CommandsPanel;
+
+        var accelerate = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.accelerate");
+        Assert.True(accelerate.Enabled);
+
+        fixture.Screen.OnMouseDown(accelerate.Rect.MidX, accelerate.Rect.MidY);
+
+        var command = Assert.Single(fixture.Connection.Commands);
+        Assert.Equal("engine.accelerate", command.CommandType);
+        Assert.Equal("MOD-ENGINE-LO-POSITION", command.ModuleId);
+    }
+
+    // ── navigation.stations-list carve-out (new in Batch 2) ─────
+
+    [Fact]
+    public async Task Stations_list_button_is_always_disabled_even_when_navigation_computer_is_installed()
+    {
+        await using var fixture = CreateFixture(EngineAndNavigationComputerModules);
+        Render(fixture.Screen);
+        var panel = fixture.Screen.CommandsPanel;
+
+        var stationsList = Assert.Single(
+            panel.AllCommandButtons, b => b.CommandTypeId == NavigationComputerCommandTypes.StationsList);
+        Assert.False(stationsList.Enabled);
+
+        fixture.Screen.OnMouseDown(stationsList.Rect.MidX, stationsList.Rect.MidY);
+        Assert.Empty(fixture.Connection.Commands);
+    }
+
+    // ── No covering installed module → disabled (new in Batch 2) ────
+
+    [Fact]
+    public async Task Command_without_any_installed_module_covering_it_is_disabled_and_does_not_send()
+    {
+        // OneEngineModule exposes only engine.* commands — the Space Control
+        // panel's scanner commands have no covering installed module.
+        await using var fixture = CreateFixture(OneEngineModule);
+        Render(fixture.Screen);
+        var panel = fixture.Screen.CommandsPanel;
+
+        var spaceControlRow = panel.CommandPanelRows.Single(r => r.Name == "Space Control");
+        Assert.Equal(2, spaceControlRow.Buttons.Length);
+        Assert.All(spaceControlRow.Buttons, b => Assert.False(b.Enabled));
+
+        var generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.general-scan");
+        fixture.Screen.OnMouseDown(generalScan.Rect.MidX, generalScan.Rect.MidY);
+        Assert.Empty(fixture.Connection.Commands);
+    }
+
+    // ── Target-requiring commands (disabled without SelectedObjectId) ─
 
     [Fact]
     public async Task Scanner_buttons_disabled_without_selection_and_enabled_with_selection()
@@ -584,9 +753,8 @@ public class CommandsPanelSkeletonTests
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
-        var scannerRow = panel.ModuleRows.Single(r => r.ModuleId == ScannerModuleId);
-        var generalScan = Assert.Single(scannerRow.Buttons, b => b.CommandTypeId == "scanner.general-scan");
-        var structuralScan = Assert.Single(scannerRow.Buttons, b => b.CommandTypeId == "scanner.structural-scan");
+        var generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.general-scan");
+        var structuralScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.structural-scan");
 
         // Without a selection both scanner commands are disabled; clicking sends nothing.
         Assert.False(generalScan.Enabled);
@@ -599,8 +767,7 @@ public class CommandsPanelSkeletonTests
         Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
         Render(fixture.Screen);
 
-        generalScan = Assert.Single(panel.ModuleRows.Single(r => r.ModuleId == ScannerModuleId).Buttons,
-            b => b.CommandTypeId == "scanner.general-scan");
+        generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.general-scan");
         Assert.True(generalScan.Enabled);
 
         fixture.Screen.OnMouseDown(generalScan.Rect.MidX, generalScan.Rect.MidY);
@@ -615,8 +782,7 @@ public class CommandsPanelSkeletonTests
         Assert.Null(fixture.Screen.SelectedObjectId);
         Render(fixture.Screen);
 
-        generalScan = Assert.Single(panel.ModuleRows.Single(r => r.ModuleId == ScannerModuleId).Buttons,
-            b => b.CommandTypeId == "scanner.general-scan");
+        generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.general-scan");
         Assert.False(generalScan.Enabled);
         fixture.Connection.Commands.Clear();
         fixture.Screen.OnMouseDown(generalScan.Rect.MidX, generalScan.Rect.MidY);
@@ -630,8 +796,8 @@ public class CommandsPanelSkeletonTests
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
-        var matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.match-target-speed");
-        var matchCourse = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.match-target-course");
+        var matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.speed-synchronization");
+        var matchCourse = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.direction-synchronization");
 
         Assert.False(matchSpeed.Enabled);
         Assert.False(matchCourse.Enabled);
@@ -641,16 +807,16 @@ public class CommandsPanelSkeletonTests
         fixture.Screen.OnMouseDown(640, 420); // select OBJ-1
         Render(fixture.Screen);
 
-        matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.match-target-speed");
+        matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.speed-synchronization");
         Assert.True(matchSpeed.Enabled);
         fixture.Screen.OnMouseDown(matchSpeed.Rect.MidX, matchSpeed.Rect.MidY);
 
         var command = Assert.Single(fixture.Connection.Commands);
-        Assert.Equal("engine.match-target-speed", command.CommandType);
+        Assert.Equal("engine.speed-synchronization", command.CommandType);
         Assert.Equal("OBJ-1", command.TargetObjectId);
     }
 
-    // ── AC4: clicks never move the camera or change selection ──────────────────
+    // ── Clicks never move the camera or change selection ──────────────────
 
     [Fact]
     public async Task Command_button_click_never_moves_camera_or_changes_selection()
@@ -675,20 +841,20 @@ public class CommandsPanelSkeletonTests
         Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
 
         var command = Assert.Single(fixture.Connection.Commands);
-        Assert.NotEqual(ShipEngineCommandTypes.NavigateToPoint, command.CommandType);
+        Assert.NotEqual(ShipEngineCommandTypes.Orbit, command.CommandType);
     }
 
     [Fact]
-    public async Task Navigate_to_point_button_is_always_disabled()
+    public async Task Orbit_button_is_always_disabled()
     {
         await using var fixture = CreateFixture();
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
-        var navigate = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.navigate-to-point");
-        Assert.False(navigate.Enabled);
+        var orbit = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.orbit");
+        Assert.False(orbit.Enabled);
 
-        fixture.Screen.OnMouseDown(navigate.Rect.MidX, navigate.Rect.MidY);
+        fixture.Screen.OnMouseDown(orbit.Rect.MidX, orbit.Rect.MidY);
         Assert.Empty(fixture.Connection.Commands);
     }
 

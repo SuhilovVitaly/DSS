@@ -20,7 +20,7 @@ public sealed record ObjectMotionSnapshot(
     long TurnStepIntervalMs = 0,
     /// <summary>
     /// World-coordinate target of the active navigation cycle
-    /// (<see cref="ShipEngineCommandTypes.NavigateToPoint"/>), world units.
+    /// (<see cref="ShipEngineCommandTypes.Orbit"/>), world units.
     /// Null when no navigation cycle is active.
     /// </summary>
     double? NavigationTargetX = null,
@@ -44,7 +44,7 @@ public sealed record ObjectMotionSnapshot(
     string? RenderObjectType = null,
     double? MaxSpeedKmS = null,
     /// <summary>
-    /// Current staged navigation phase for <see cref="ShipEngineCommandTypes.NavigateToPoint"/>.
+    /// Current staged navigation phase for <see cref="ShipEngineCommandTypes.Orbit"/>.
     /// Null means standard approach for saves/snapshots created before staged navigation.
     /// </summary>
     string? NavigationPhase = null,

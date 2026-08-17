@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Motion;
 /// Speed: km/s. Direction: degrees, 0° = up, clockwise.
 /// 1 km/s = 10 world units/s (since 1 unit = 100 m).
 ///
-/// For active NavigateToPoint cycles the predictor delegates turn decisions to
+/// For active Orbit cycles the predictor delegates turn decisions to
 /// <see cref="NavigationWaypointMath.Step"/> so that client-side live prediction
 /// matches the authoritative engine behaviour — including course-locking after
 /// the ship aligns to the target bearing. Without this, the generic "turn every
@@ -21,7 +21,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
     public ObjectMotionSnapshot Predict(ObjectMotionSnapshot state, long elapsedMs)
     {
         // Navigation cycle with locked or lockable course — use shared step math.
-        if (state.ActiveEngineCommandType == ShipEngineCommandTypes.NavigateToPoint &&
+        if (state.ActiveEngineCommandType == ShipEngineCommandTypes.Orbit &&
             state.NavigationTargetX is { } targetX &&
             state.NavigationTargetY is { } targetY &&
             state.NavigationAngularInertiaDegPerSec > 0)

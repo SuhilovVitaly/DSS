@@ -143,7 +143,7 @@
 
 - UI отправляет команды с явным `(objectId, moduleId)`.
 - UI не должен позволять запуск несовместимой команды на busy module.
-- UI selection не является implicit authoritative target: target для `MatchTargetSpeed` и `MatchTargetCourse` передаётся явно.
+- UI selection не является implicit authoritative target: target для `SpeedSynchronization` и `DirectionSynchronization` передаётся явно.
 - Engine всегда выполняет authoritative validation независимо от UI.
 
 Источники:
@@ -351,8 +351,8 @@
 
 - Engine является active module.
 - Двигатель выполняет только один active command одновременно.
-- Минимальный набор команд: `Accelerate`, `Brake`, `MaintainSpeed`, `TurnLeftStep`, `TurnRightStep`, `TurnLeftUntilCancel`, `TurnRightUntilCancel`, `MaintainCourse`, `MatchTargetSpeed`, `MatchTargetCourse`.
-- `MatchTargetSpeed` и `MatchTargetCourse` требуют явный `targetObjectId`.
+- Минимальный набор команд: `Accelerate`, `Brake`, `MaintainSpeed`, `TurnLeftStep`, `TurnRightStep`, `TurnLeftUntilCancel`, `TurnRightUntilCancel`, `MaintainCourse`, `SpeedSynchronization`, `DirectionSynchronization`.
+- `SpeedSynchronization` и `DirectionSynchronization` требуют явный `targetObjectId`.
 
 Источники:
 

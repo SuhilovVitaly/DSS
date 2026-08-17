@@ -5,4 +5,5 @@ public static class ScannerCommandTypes
 {
     public const string GeneralScan = "scanner.general-scan";
     public const string StructuralScan = "scanner.structural-scan";
+    public const string NearbySignatures = "scanner.nearby-signatures";
 }

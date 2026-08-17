@@ -65,10 +65,10 @@ public class InstalledModuleSnapshotTests
             ModuleTypeId: "module.engine.basic",
             DisplayName: "Engine",
             Position: 0,
-            CommandTypeIds: ImmutableArray.Create("engine.accelerate", "engine.navigate-to-point"),
+            CommandTypeIds: ImmutableArray.Create("engine.accelerate", "engine.orbit"),
             Commands: ImmutableArray.Create(
                 new ModuleCommandSnapshot("engine.accelerate", "Accelerate", "none"),
-                new ModuleCommandSnapshot("engine.navigate-to-point", "Navigate To Point", "point")));
+                new ModuleCommandSnapshot("engine.orbit", "Orbit", "point")));
 
         var json = JsonSerializer.Serialize(snapshot);
         var roundTripped = JsonSerializer.Deserialize<InstalledModuleSnapshot>(json);
@@ -79,7 +79,7 @@ public class InstalledModuleSnapshotTests
         Assert.Equal("engine.accelerate", roundTripped.Commands[0].CommandTypeId);
         Assert.Equal("Accelerate", roundTripped.Commands[0].DisplayName);
         Assert.Equal("none", roundTripped.Commands[0].Target);
-        Assert.Equal("engine.navigate-to-point", roundTripped.Commands[1].CommandTypeId);
+        Assert.Equal("engine.orbit", roundTripped.Commands[1].CommandTypeId);
         Assert.Equal("point", roundTripped.Commands[1].Target);
     }
 

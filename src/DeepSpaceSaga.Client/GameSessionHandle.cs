@@ -79,7 +79,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
 
     /// <summary>
     /// Send an engine command with an explicit world-coordinate target
-    /// (engine.navigate-to-point). The target is validated authoritatively by the
+    /// (engine.orbit). The target is validated authoritatively by the
     /// engine (missing/non-finite → invalid_target_coordinates).
     /// </summary>
     public ValueTask SendEngineCommandAsync(

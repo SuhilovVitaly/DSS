@@ -11,9 +11,9 @@ public static class ShipEngineCommandTypes
     public const string TurnLeftUntilCancel = "engine.turn-left-until-cancel";
     public const string TurnRightUntilCancel = "engine.turn-right-until-cancel";
     public const string MaintainCourse = "engine.maintain-course";
-    public const string MatchTargetSpeed = "engine.match-target-speed";
-    public const string MatchTargetCourse = "engine.match-target-course";
-    public const string NavigateToPoint = "engine.navigate-to-point";
+    public const string SpeedSynchronization = "engine.speed-synchronization";
+    public const string DirectionSynchronization = "engine.direction-synchronization";
+    public const string Orbit = "engine.orbit";
 
     /// <summary>
     /// Legacy command type ID. Not part of the canonical set from §56.8; kept only for

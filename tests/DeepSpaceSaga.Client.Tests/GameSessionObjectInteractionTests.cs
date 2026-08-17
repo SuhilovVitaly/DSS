@@ -280,7 +280,7 @@ public class GameSessionObjectInteractionTests
         fixture.Screen.OnMouseDown(1000, 500); // far from the ship at screen center
 
         var command = Assert.Single(fixture.Connection.Commands);
-        Assert.Equal(ShipEngineCommandTypes.NavigateToPoint, command.CommandType);
+        Assert.Equal(ShipEngineCommandTypes.Orbit, command.CommandType);
         Assert.Null(fixture.Screen.SelectedObjectId);
     }
 
@@ -359,8 +359,10 @@ public class GameSessionObjectInteractionTests
         await using var fixture = CreateFixtureWithPlayerShip();
         Render(fixture.Screen);
 
-        fixture.Screen.OnMouseDown(100, 100);
-        fixture.Screen.OnMouseMove(300, 300); // drag -> detaches from player
+        // Off the (now always-visible, 4-group) Commands Panel footprint — a real
+        // free map point, not swallowed as a UI-panel click.
+        fixture.Screen.OnMouseDown(1000, 500);
+        fixture.Screen.OnMouseMove(1200, 700); // drag -> detaches from player
         Assert.False(fixture.Screen.IsFocusAttachedToPlayer);
 
         fixture.Screen.OnKeyDown(Key.ControlLeft);
@@ -427,11 +429,12 @@ public class GameSessionObjectInteractionTests
         double focusYBeforeDrag = fixture.Screen.CameraFocusY;
 
         // Plain map click far from any object (ship and OBJ-1 both render near screen
-        // center now that OBJ-1 is followed) starts a drag-pan.
-        fixture.Screen.OnMouseDown(200, 200);
+        // center now that OBJ-1 is followed) and off the (now always-visible, 4-group)
+        // Commands Panel footprint starts a drag-pan.
+        fixture.Screen.OnMouseDown(1000, 500);
         Assert.Null(fixture.Screen.CameraFollowObjectId);
 
-        fixture.Screen.OnMouseMove(250, 240); // drag delta (50, 40)
+        fixture.Screen.OnMouseMove(1050, 540); // drag delta (50, 40)
 
         double ppu = fixture.Screen.CameraPixelsPerWorldUnit;
         double expectedX = focusXBeforeDrag - 50 / ppu;
@@ -474,7 +477,9 @@ public class GameSessionObjectInteractionTests
 
         double fx = fixture.Screen.CameraFocusX;
         double fy = fixture.Screen.CameraFocusY;
-        fixture.Screen.OnMouseDown(100, 100, MouseButton.Right);
+        // Off the (now always-visible, 4-group) Commands Panel footprint — a real
+        // free map point, not swallowed as a UI-panel click.
+        fixture.Screen.OnMouseDown(1000, 500, MouseButton.Right);
 
         Assert.Null(fixture.Screen.SelectedObjectId);
         Assert.Equal(fx, fixture.Screen.CameraFocusX);
@@ -602,15 +607,21 @@ public class GameSessionObjectInteractionTests
     public async Task Closed_info_panel_does_not_disable_hit_testing_or_engine_sync()
     {
         await using var fixture = CreateFixture([ObjAt("OBJ-1", 10000)]);
-        Render(fixture.Screen);
+        // Taller viewport than the file default: with all 4 Commands Panel groups
+        // open (fixed PanelBodyHeight per group) the panel's body now extends to
+        // ~840px from the top, which would otherwise overlap the bottom-anchored
+        // info panel's close button on a 720px-tall canvas.
+        Render(fixture.Screen, height: 1000);
 
         fixture.Screen.OnMouseDown(fixture.Screen.LastCloseRect.MidX, fixture.Screen.LastCloseRect.MidY);
         Assert.False(fixture.Screen.IsPanelVisible);
 
-        fixture.Screen.OnMouseMove(640, 360);
+        // Screen center for the 1280×1000 viewport used by this test (not the file's
+        // default 1280×720), where OBJ-1 renders.
+        fixture.Screen.OnMouseMove(640, 500);
         Assert.Equal("OBJ-1", fixture.Screen.ActiveObjectId);
 
-        fixture.Screen.OnMouseDown(640, 360);
+        fixture.Screen.OnMouseDown(640, 500);
         Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
 
         var calls = await WaitForCallsAsync(fixture.Connection, minCount: 1);
@@ -739,11 +750,11 @@ public class GameSessionObjectInteractionTests
         return new TestFixture(connection, handle, screen);
     }
 
-    private static void Render(GameSessionScreen screen)
+    private static void Render(GameSessionScreen screen, int height = ScreenHeight)
     {
-        using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
+        using var bitmap = new SKBitmap(ScreenWidth, height);
         using var canvas = new SKCanvas(bitmap);
-        screen.Render(canvas, ScreenWidth, ScreenHeight);
+        screen.Render(canvas, ScreenWidth, height);
     }
 
     private static async Task<List<(string? ActiveObjectId, string? SelectedObjectId)>> WaitForCallsAsync(

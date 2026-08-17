@@ -255,7 +255,7 @@ public class LocalSessionIntegrationTests
     [Fact]
     public async Task Navigate_command_propagates_authoritative_target_into_snapshots_and_client_projection()
     {
-        // ТЗ-08.7 (AC8/AC9/AC10): an engine.navigate-to-point command sent through
+        // ТЗ-08.7 (AC8/AC9/AC10): an engine.orbit command sent through
         // the real connection surfaces as an authoritative NavigationTarget* on the
         // player ship in a snapshot, and the client-side NavigationTrajectoryProjector
         // then builds a non-empty trajectory from that snapshot alone.
@@ -267,7 +267,7 @@ public class LocalSessionIntegrationTests
         await handle.SendEngineCommandAsync(
             "SPC-0001",
             "MOD-PLAYER-ENGINE-01",
-            ShipEngineCommandTypes.NavigateToPoint,
+            ShipEngineCommandTypes.Orbit,
             10300,
             9800);
 

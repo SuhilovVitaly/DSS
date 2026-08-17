@@ -28,7 +28,7 @@ public class SmokeTests
             ClientSequence: 2,
             ObjectId: "ship-1",
             ModuleId: "nav",
-            CommandType: "engine.match-target-speed",
+            CommandType: "engine.speed-synchronization",
             TargetObjectId: "obj-2");
 
         Assert.Equal("obj-2", command.TargetObjectId);
@@ -44,7 +44,7 @@ public class SmokeTests
             ClientSequence: 1,
             ObjectId: "ship-1",
             ModuleId: "engine-1",
-            CommandType: "engine.match-target-speed",
+            CommandType: "engine.speed-synchronization",
             TargetObjectId: "obj-2");
 
         var json = JsonSerializer.Serialize(command);
@@ -55,7 +55,7 @@ public class SmokeTests
         Assert.Equal(1ul, roundTripped.ClientSequence);
         Assert.Equal("ship-1", roundTripped.ObjectId);
         Assert.Equal("engine-1", roundTripped.ModuleId);
-        Assert.Equal("engine.match-target-speed", roundTripped.CommandType);
+        Assert.Equal("engine.speed-synchronization", roundTripped.CommandType);
         Assert.Equal("obj-2", roundTripped.TargetObjectId);
     }
 
@@ -86,8 +86,8 @@ public class SmokeTests
         Assert.Equal("engine.accelerate", ShipEngineCommandTypes.Accelerate);
         Assert.Equal("engine.maintain-speed", ShipEngineCommandTypes.MaintainSpeed);
         Assert.Equal("engine.maintain-course", ShipEngineCommandTypes.MaintainCourse);
-        Assert.Equal("engine.match-target-speed", ShipEngineCommandTypes.MatchTargetSpeed);
-        Assert.Equal("engine.match-target-course", ShipEngineCommandTypes.MatchTargetCourse);
+        Assert.Equal("engine.speed-synchronization", ShipEngineCommandTypes.SpeedSynchronization);
+        Assert.Equal("engine.direction-synchronization", ShipEngineCommandTypes.DirectionSynchronization);
         Assert.Equal("engine.cancel-all", ShipEngineCommandTypes.CancelAll);
     }
 

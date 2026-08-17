@@ -220,7 +220,7 @@ public static class NavigationWaypointMath
     }
 
     /// <summary>
-    /// Evaluate whether a navigate-to-point target is trivially unreachable.
+    /// Evaluate whether an orbit target is trivially unreachable.
     /// Only rejects targets within <see cref="ArrivalEpsilon"/> (already on the point).
     /// Close targets that were previously rejected now use a staged maneuver
     /// (EscapeTurn → EscapeDepart → Approach) handled by the Engine.
