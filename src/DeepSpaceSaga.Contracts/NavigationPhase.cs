@@ -1,7 +1,7 @@
 namespace DeepSpaceSaga.Contracts;
 
 /// <summary>
-/// Phase of a staged navigation maneuver (engine.navigate-to-point).
+/// Phase of a staged navigation maneuver (engine.orbit).
 /// Published in <see cref="ObjectMotionSnapshot"/> so the client-side predictor
 /// and trajectory projector can mirror the authoritative engine behaviour.
 /// </summary>

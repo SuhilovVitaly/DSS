@@ -13,7 +13,7 @@ internal sealed record CommandDefinition(
     int ConsumptionFactor = FactorDefaults.Default,
     /// <summary>
     /// Target requirement: "none" (no target), "point" (world-coordinate target,
-    /// e.g. engine.navigate-to-point), "object" (target object id required, e.g.
+    /// e.g. engine.orbit), "object" (target object id required, e.g.
     /// match and scanner commands). Drives client-side command button enablement.
     /// </summary>
     string Target = "none",

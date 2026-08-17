@@ -4742,8 +4742,8 @@ TurnRightStep
 TurnLeftUntilCancel
 TurnRightUntilCancel
 MaintainCourse
-MatchTargetSpeed
-MatchTargetCourse
+SpeedSynchronization
+DirectionSynchronization
 ```
 
 `Accelerate` и `Brake` пока не имеют параметра величины изменения скорости. Их эффект задаётся параметрами Engine module type.
@@ -4788,9 +4788,9 @@ Cancel command, например `MaintainSpeed` или `MaintainCourse`, мож
 
 Точное правило, может ли любая новая Engine command прерывать auto-repeat cycle или только специальные cancel/replacement commands, остаётся открытым для следующего обсуждения.
 
-### 56.9. Match target commands
+### 56.9. Synchronization commands (speed/direction)
 
-`MatchTargetSpeed` требует обязательный параметр:
+`SpeedSynchronization` требует обязательный параметр:
 
 ```text
 targetObjectId
@@ -4798,29 +4798,29 @@ targetObjectId
 
 UI selection не является implicit authoritative target. Цель должна быть передана явно в `PlayerCommand`.
 
-При старте `MatchTargetSpeed`:
+При старте `SpeedSynchronization`:
 
 - Engine валидирует `targetObjectId`;
 - сохраняет target scalar speed в `ActiveCycle` / command runtime state.
 
-При завершении `MatchTargetSpeed`:
+При завершении `SpeedSynchronization`:
 
 - корабль меняет только scalar speed;
 - course/direction не меняется;
 - используется captured target speed, даже если цель позже стала недоступной.
 
-`MatchTargetCourse` также требует:
+`DirectionSynchronization` также требует:
 
 ```text
 targetObjectId
 ```
 
-При старте `MatchTargetCourse`:
+При старте `DirectionSynchronization`:
 
 - Engine валидирует `targetObjectId`;
 - сохраняет target course/direction в `ActiveCycle` / command runtime state.
 
-При завершении `MatchTargetCourse`:
+При завершении `DirectionSynchronization`:
 
 - корабль меняет только course/direction;
 - scalar speed не меняется;
@@ -4829,11 +4829,29 @@ targetObjectId
 Полная синхронизация движения с целью требует двух отдельных commands:
 
 ```text
-MatchTargetSpeed
-MatchTargetCourse
+SpeedSynchronization
+DirectionSynchronization
 ```
 
 Так как Engine имеет только один `ActiveCycle`, эти commands выполняются последовательно.
+
+> **Известный факт (сознательно не устраняется в рамках этой задачи):** `engine.orbit`
+> (multi-stage manoeuvre к произвольной мировой точке, запускается только через Ctrl+Click по
+> карте, вне Commands Panel) сохраняет `target:"point"` (мировые координаты) и остаётся недоступен
+> из Commands Panel, хотя название команды логически предполагает выбор небесного объекта
+> (`target:"object"`). Это унаследованное несоответствие имени и target-типа, а не баг.
+
+> **Примечание (новые catalog-only команды):** в дополнение к переименованию, в каталог модулей
+> (`module-types.json` / `command-definitions.json`) добавлены три новые команды —
+> `navigation.dock`, `navigation.stations-list` (модуль Navigation Computer) и
+> `scanner.nearby-signatures` (модуль Scanner). Они проходят валидацию реестра
+> (`GameDataRegistry.Create`) и отображаются как кнопки в UI, но **не имеют server-side
+> реализации/обработчика** в `SimulationEngine` — это сознательное ограничение объёма задачи, а не
+> забытая реализация (по аналогии с уже существующими catalog-only командами Scanner
+> `general-scan`/`structural-scan`). Предусловия `navigation.dock` зафиксированы как doc-комментарии
+> для будущей реализации: Station selected; Station in range < 200; Station speed and direction
+> synchronized — и пока не проверяются во время выполнения. `navigation.stations-list` и
+> `scanner.nearby-signatures` предусловий не имеют.
 
 ### 56.10. Engine fuel вместо Energy Cells
 

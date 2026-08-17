@@ -280,7 +280,7 @@ public class GameSessionObjectInteractionTests
         fixture.Screen.OnMouseDown(1000, 500); // far from the ship at screen center
 
         var command = Assert.Single(fixture.Connection.Commands);
-        Assert.Equal(ShipEngineCommandTypes.NavigateToPoint, command.CommandType);
+        Assert.Equal(ShipEngineCommandTypes.Orbit, command.CommandType);
         Assert.Null(fixture.Screen.SelectedObjectId);
     }
 

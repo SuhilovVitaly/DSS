@@ -65,24 +65,24 @@
             "target": "none"
         },
         {
-            "typeId": "engine.match-target-speed",
-            "displayName": "Match Target Speed",
+            "typeId": "engine.speed-synchronization",
+            "displayName": "Speed Synchronization",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "object"
         },
         {
-            "typeId": "engine.match-target-course",
-            "displayName": "Match Target Course",
+            "typeId": "engine.direction-synchronization",
+            "displayName": "Direction Synchronization",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "object"
         },
         {
-            "typeId": "engine.navigate-to-point",
-            "displayName": "Navigate To Point",
+            "typeId": "engine.orbit",
+            "displayName": "Orbit",
             "timeFactor": 1.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
@@ -104,6 +104,32 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "object"
+        },
+        {
+            "typeId": "scanner.nearby-signatures",
+            "displayName": "Nearby Signatures",
+            "timeFactor": 0.4,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "activationEnergyCellsCost": 2
+        },
+        {
+            "typeId": "navigation.dock",
+            "displayName": "Dock",
+            "timeFactor": 2.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "object",
+            "activationEnergyCellsCost": 3
+        },
+        {
+            "typeId": "navigation.stations-list",
+            "displayName": "Stations List",
+            "timeFactor": 0.1,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none"
         }
     ]
 }

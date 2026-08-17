@@ -7,8 +7,11 @@
       "massKg": 4000,
       "structurePointsMax": 80,
       "powerConsumptionW": 0,
-      "commandTypeIds": [],
-      "baseCycleTimeMs": 0
+      "commandTypeIds": [
+        "navigation.dock",
+        "navigation.stations-list"
+      ],
+      "baseCycleTimeMs": 1000
     },
     {
       "typeId": "module.engine.basic",
@@ -26,9 +29,9 @@
         "engine.turn-left-until-cancel",
         "engine.turn-right-until-cancel",
         "engine.maintain-course",
-        "engine.match-target-speed",
-        "engine.match-target-course",
-        "engine.navigate-to-point"
+        "engine.speed-synchronization",
+        "engine.direction-synchronization",
+        "engine.orbit"
       ],
       "maxSpeedMps": 4000,
       "turnStepDegrees": 1,
@@ -87,7 +90,8 @@
         "powerConsumptionW": 0,
         "commandTypeIds": [
             "scanner.general-scan",
-            "scanner.structural-scan"
+            "scanner.structural-scan",
+            "scanner.nearby-signatures"
         ],
         "baseCycleTimeMs": 20000,
         "baseSuccessChancePercent": 100

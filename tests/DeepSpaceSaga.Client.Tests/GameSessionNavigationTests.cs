@@ -27,7 +27,7 @@ public class GameSessionNavigationTests
     public async Task Ctrl_click_on_free_area_sends_exactly_one_navigate_command_with_world_coordinates()
     {
         // ТЗ-08.1 (AC2): Ctrl+Click over free map area sends exactly one
-        // engine.navigate-to-point command with the clicked world coordinates.
+        // engine.orbit command with the clicked world coordinates.
         await using var fixture = CreateFixture();
         Render(fixture.Screen);
 
@@ -35,7 +35,7 @@ public class GameSessionNavigationTests
         fixture.Screen.OnMouseDown(1000, 500);
 
         var command = Assert.Single(fixture.Connection.Commands);
-        Assert.Equal(ShipEngineCommandTypes.NavigateToPoint, command.CommandType);
+        Assert.Equal(ShipEngineCommandTypes.Orbit, command.CommandType);
         Assert.Equal(PlayerShipId, command.ObjectId);
         Assert.Equal(EngineModuleId, command.ModuleId);
         Assert.Equal(10360.0, command.TargetWorldX!.Value, precision: 6);
@@ -120,7 +120,7 @@ public class GameSessionNavigationTests
             X: 0, Y: 0,
             SpeedKmS: 0.7,
             Direction: 0,
-            ActiveEngineCommandType: ShipEngineCommandTypes.NavigateToPoint,
+            ActiveEngineCommandType: ShipEngineCommandTypes.Orbit,
             TurnStepDegrees: 1,
             TurnStepRemainingMs: 250,
             TurnStepIntervalMs: 250,
@@ -146,7 +146,7 @@ public class GameSessionNavigationTests
             X: 0, Y: 0,
             SpeedKmS: 1,
             Direction: 0,
-            ActiveEngineCommandType: ShipEngineCommandTypes.NavigateToPoint,
+            ActiveEngineCommandType: ShipEngineCommandTypes.Orbit,
             TurnStepDegrees: 1,
             TurnStepRemainingMs: 250,
             TurnStepIntervalMs: 250,
@@ -213,7 +213,7 @@ public class GameSessionNavigationTests
             X: 0, Y: 0,
             SpeedKmS: 4,
             Direction: 0,
-            ActiveEngineCommandType: ShipEngineCommandTypes.NavigateToPoint,
+            ActiveEngineCommandType: ShipEngineCommandTypes.Orbit,
             TurnStepDegrees: 1,
             TurnStepRemainingMs: 250,
             TurnStepIntervalMs: 250,
@@ -241,7 +241,7 @@ public class GameSessionNavigationTests
             X: 0, Y: 0,
             SpeedKmS: 1,
             Direction: 0,
-            ActiveEngineCommandType: ShipEngineCommandTypes.NavigateToPoint,
+            ActiveEngineCommandType: ShipEngineCommandTypes.Orbit,
             TurnStepDegrees: 1,
             TurnStepRemainingMs: 250,
             TurnStepIntervalMs: 250,
@@ -269,7 +269,7 @@ public class GameSessionNavigationTests
             X: 0, Y: 0,
             SpeedKmS: 4,
             Direction: 0,
-            ActiveEngineCommandType: ShipEngineCommandTypes.NavigateToPoint,
+            ActiveEngineCommandType: ShipEngineCommandTypes.Orbit,
             TurnStepDegrees: 1,
             TurnStepRemainingMs: 250,
             TurnStepIntervalMs: 250,
@@ -320,7 +320,7 @@ public class GameSessionNavigationTests
     [Fact]
     public async Task Ctrl_click_then_ctrl_release_then_plain_click_and_drag_pans_without_second_navigation()
     {
-        // Regression: after Ctrl+Click sends NavigateToPoint, releasing Ctrl and
+        // Regression: after Ctrl+Click sends Orbit, releasing Ctrl and
         // plain-click-and-dragging must pan the camera — NOT send a second
         // navigation command. A plain click alone (no drag) no longer pans by
         // itself — the click-to-center jump was disabled (see
@@ -333,7 +333,7 @@ public class GameSessionNavigationTests
         fixture.Screen.OnMouseDown(1000, 500);
 
         var command = Assert.Single(fixture.Connection.Commands);
-        Assert.Equal(ShipEngineCommandTypes.NavigateToPoint, command.CommandType);
+        Assert.Equal(ShipEngineCommandTypes.Orbit, command.CommandType);
 
         // 2. Release Ctrl.
         fixture.Screen.OnKeyUp(Key.ControlLeft);

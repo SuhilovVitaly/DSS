@@ -440,7 +440,7 @@ public sealed class GameSessionScreen : IScreen
         }
 
         // 5.6. Ctrl+Click navigation: free map area only (object case handled above)
-        // — send exactly one engine.navigate-to-point command with world coordinates.
+        // — send exactly one engine.orbit command with world coordinates.
         // The camera focus is NOT changed.
         if (IsCtrlDown)
         {
@@ -722,7 +722,7 @@ public sealed class GameSessionScreen : IScreen
     }
 
     /// <summary>
-    /// Ctrl+Click navigation: send exactly one engine.navigate-to-point command with
+    /// Ctrl+Click navigation: send exactly one engine.orbit command with
     /// the clicked world coordinates and remember the pending target for the AC3
     /// preview line (drawn until the authoritative NavigationTarget* appears in a
     /// snapshot — or the command is rejected).
@@ -760,7 +760,7 @@ public sealed class GameSessionScreen : IScreen
         }
 
         _ = _handle.SendEngineCommandAsync(
-            playerShipObjectId, PlayerEngineModuleId, ShipEngineCommandTypes.NavigateToPoint, worldX, worldY);
+            playerShipObjectId, PlayerEngineModuleId, ShipEngineCommandTypes.Orbit, worldX, worldY);
     }
 
     /// <summary>

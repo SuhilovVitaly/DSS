@@ -31,9 +31,9 @@ public class CommandsPanelSkeletonTests
         ["engine.turn-left-until-cancel"] = ("Turn Left Until Cancel", "none"),
         ["engine.turn-right-until-cancel"] = ("Turn Right Until Cancel", "none"),
         ["engine.maintain-course"] = ("Maintain Course", "none"),
-        ["engine.match-target-speed"] = ("Match Target Speed", "object"),
-        ["engine.match-target-course"] = ("Match Target Course", "object"),
-        ["engine.navigate-to-point"] = ("Navigate To Point", "point"),
+        ["engine.speed-synchronization"] = ("Speed Synchronization", "object"),
+        ["engine.direction-synchronization"] = ("Direction Synchronization", "object"),
+        ["engine.orbit"] = ("Orbit", "point"),
         ["scanner.general-scan"] = ("General Scan", "object"),
         ["scanner.structural-scan"] = ("Structural Scan", "object"),
     };
@@ -45,15 +45,15 @@ public class CommandsPanelSkeletonTests
 
     private static readonly ImmutableArray<string> EngineCommandTypeIds = ImmutableArray.Create(
         "engine.accelerate", "engine.brake", "engine.maintain-speed",
-        "engine.navigate-to-point");
+        "engine.orbit");
 
     private static readonly ImmutableArray<string> FullEngineCommandTypeIds = ImmutableArray.Create(
         "engine.accelerate", "engine.brake", "engine.maintain-speed",
         "engine.turn-left-step", "engine.turn-right-step",
         "engine.turn-left-until-cancel", "engine.turn-right-until-cancel",
         "engine.maintain-course",
-        "engine.match-target-speed", "engine.match-target-course",
-        "engine.navigate-to-point");
+        "engine.speed-synchronization", "engine.direction-synchronization",
+        "engine.orbit");
 
     private static readonly ImmutableArray<string> ScannerCommandTypeIds = ImmutableArray.Create(
         "scanner.general-scan", "scanner.structural-scan");
@@ -630,8 +630,8 @@ public class CommandsPanelSkeletonTests
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
-        var matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.match-target-speed");
-        var matchCourse = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.match-target-course");
+        var matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.speed-synchronization");
+        var matchCourse = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.direction-synchronization");
 
         Assert.False(matchSpeed.Enabled);
         Assert.False(matchCourse.Enabled);
@@ -641,12 +641,12 @@ public class CommandsPanelSkeletonTests
         fixture.Screen.OnMouseDown(640, 420); // select OBJ-1
         Render(fixture.Screen);
 
-        matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.match-target-speed");
+        matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.speed-synchronization");
         Assert.True(matchSpeed.Enabled);
         fixture.Screen.OnMouseDown(matchSpeed.Rect.MidX, matchSpeed.Rect.MidY);
 
         var command = Assert.Single(fixture.Connection.Commands);
-        Assert.Equal("engine.match-target-speed", command.CommandType);
+        Assert.Equal("engine.speed-synchronization", command.CommandType);
         Assert.Equal("OBJ-1", command.TargetObjectId);
     }
 
@@ -675,17 +675,17 @@ public class CommandsPanelSkeletonTests
         Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
 
         var command = Assert.Single(fixture.Connection.Commands);
-        Assert.NotEqual(ShipEngineCommandTypes.NavigateToPoint, command.CommandType);
+        Assert.NotEqual(ShipEngineCommandTypes.Orbit, command.CommandType);
     }
 
     [Fact]
-    public async Task Navigate_to_point_button_is_always_disabled()
+    public async Task Orbit_button_is_always_disabled()
     {
         await using var fixture = CreateFixture();
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
-        var navigate = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.navigate-to-point");
+        var navigate = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.orbit");
         Assert.False(navigate.Enabled);
 
         fixture.Screen.OnMouseDown(navigate.Rect.MidX, navigate.Rect.MidY);

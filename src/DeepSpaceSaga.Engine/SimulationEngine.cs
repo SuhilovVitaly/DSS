@@ -931,7 +931,7 @@ public sealed class SimulationEngine : IDisposable
         if (!IsEngineCommandType(moduleType, command.CommandType))
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
 
-        // Match commands (engine.match-target-speed / engine.match-target-course, §56.9)
+        // Match commands (engine.speed-synchronization / engine.direction-synchronization, §56.9)
         // carry an explicit, authoritative target. Parameter validation comes right after
         // UnknownCommandType and before CancelAll/state checks: a parameter-level error
         // (missing/unknown target) is more specific than a module-state error and is
@@ -949,7 +949,7 @@ public sealed class SimulationEngine : IDisposable
                 return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownTarget);
         }
 
-        // Navigate-to-point (engine.navigate-to-point) carries an explicit, authoritative
+        // Navigate-to-point (engine.orbit) carries an explicit, authoritative
         // world-coordinate target. Like match-parameter validation, this runs right after
         // UnknownCommandType and before CancelAll/state checks: a parameter-level error is
         // more specific than a module-state error and is published deterministically.
@@ -960,7 +960,7 @@ public sealed class SimulationEngine : IDisposable
         string? navPhase = null;
         double? initialEscapeCourse = null;
         double? initialRequiredDistance = null;
-        if (command.CommandType == ShipEngineCommandTypes.NavigateToPoint)
+        if (command.CommandType == ShipEngineCommandTypes.Orbit)
         {
             if (command.TargetWorldX is not { } targetWorldX ||
                 command.TargetWorldY is not { } targetWorldY ||
@@ -1063,7 +1063,7 @@ public sealed class SimulationEngine : IDisposable
             // old trajectory, old cycle Cancelled + ShipEvent).
             if (string.Equals(command.CommandType, activeCycle.CommandType, StringComparison.Ordinal))
             {
-                bool sameNavigateTarget = command.CommandType != ShipEngineCommandTypes.NavigateToPoint ||
+                bool sameNavigateTarget = command.CommandType != ShipEngineCommandTypes.Orbit ||
                                           (command.TargetWorldX == activeCycle.TargetWorldX &&
                                            command.TargetWorldY == activeCycle.TargetWorldY);
                 if (sameNavigateTarget)
@@ -1090,8 +1090,8 @@ public sealed class SimulationEngine : IDisposable
 
         // Capture the target's scalar state at cycle start (§56.9): cycle completion reads
         // ONLY the captured value stored in ActiveCycle, so later target changes or the
-        // target disappearing do not affect the result. MatchTargetSpeed captures speed
-        // only, MatchTargetCourse captures course only; TargetObjectId is always stored
+        // target disappearing do not affect the result. SpeedSynchronization captures speed
+        // only, DirectionSynchronization captures course only; TargetObjectId is always stored
         // (diagnostics + restore after save/load, §1253-1298).
         string? targetObjectId = null;
         double? capturedTargetSpeedKmS = null;
@@ -1102,7 +1102,7 @@ public sealed class SimulationEngine : IDisposable
             long targetElapsedMs = Math.Max(0, gameTimeMs - target.StartGameTimeMs);
             var targetMotion = _motion.Predict(target.InitialMotion, targetElapsedMs);
             targetObjectId = command.TargetObjectId;
-            if (command.CommandType == ShipEngineCommandTypes.MatchTargetSpeed)
+            if (command.CommandType == ShipEngineCommandTypes.SpeedSynchronization)
                 capturedTargetSpeedKmS = targetMotion.SpeedKmS;
             else
                 capturedTargetCourseDegrees = targetMotion.Direction;
@@ -1179,7 +1179,7 @@ public sealed class SimulationEngine : IDisposable
         double? navigationRequiredDepartureDistance = null)
     {
         string cycleId = $"CYC-ENGINE-{++_nextEngineCycleId:D6}";
-        long durationMs = commandType == ShipEngineCommandTypes.NavigateToPoint &&
+        long durationMs = commandType == ShipEngineCommandTypes.Orbit &&
                           moduleType.AngularInertiaDegPerSec is { } inertia
             ? MinTurnIntervalMs(inertia)
             : ComputeEffectiveCycleTimeMs(moduleType, commandType);
@@ -1242,13 +1242,13 @@ public sealed class SimulationEngine : IDisposable
         return commandType == ShipEngineCommandTypes.Accelerate ||
                commandType == ShipEngineCommandTypes.Brake ||
                IsUntilCancelTurn(commandType) ||
-               commandType == ShipEngineCommandTypes.NavigateToPoint;
+               commandType == ShipEngineCommandTypes.Orbit;
     }
 
     private static bool IsMatchEngineCommand(string commandType)
     {
-        return commandType == ShipEngineCommandTypes.MatchTargetSpeed ||
-               commandType == ShipEngineCommandTypes.MatchTargetCourse;
+        return commandType == ShipEngineCommandTypes.SpeedSynchronization ||
+               commandType == ShipEngineCommandTypes.DirectionSynchronization;
     }
 
     private void CollectLoadedEngineCycleIds(IEnumerable<SpaceObjectRuntime> objects)
@@ -1294,7 +1294,7 @@ public sealed class SimulationEngine : IDisposable
             if (!IsEngineCommandType(moduleType, cycle.CommandType) || !CanExecuteEngineCommand(module, moduleType))
                 continue;
 
-            if (cycle.CommandType == ShipEngineCommandTypes.NavigateToPoint)
+            if (cycle.CommandType == ShipEngineCommandTypes.Orbit)
             {
                 // Navigation cycles report their authoritative world target and the
                 // module's angular inertia — the client-side trajectory projector uses
@@ -1453,14 +1453,14 @@ public sealed class SimulationEngine : IDisposable
 
             // Match cycles (§56.9) complete using ONLY the scalar captured at cycle start —
             // later target changes or the target disappearing do not affect the result.
-            // MatchTargetSpeed changes only the scalar speed (course untouched),
-            // MatchTargetCourse changes only the course (speed untouched).
+            // SpeedSynchronization changes only the scalar speed (course untouched),
+            // DirectionSynchronization changes only the course (speed untouched).
             // The captured value may exceed the ship's own MaxSpeedKmS (it came from a real
             // object), so speed is clamped the same way Accelerate clamps.
             // Legacy-save guard: a match cycle loaded from a save written by older code may
             // have a null captured field (match commands then passed without a target) —
             // such a cycle completes as a no-op instead of throwing.
-            ShipEngineCommandTypes.MatchTargetSpeed when cycle.CapturedTargetSpeedKmS is { } capturedSpeedKmS => UpdateEngineMotion(
+            ShipEngineCommandTypes.SpeedSynchronization when cycle.CapturedTargetSpeedKmS is { } capturedSpeedKmS => UpdateEngineMotion(
                 obj,
                 moduleIndex,
                 gameTimeMs,
@@ -1470,7 +1470,7 @@ public sealed class SimulationEngine : IDisposable
                     SpeedKmS = Math.Min(moduleType.MaxSpeedMps!.Value / 1000.0, capturedSpeedKmS)
                 }),
 
-            ShipEngineCommandTypes.MatchTargetCourse when cycle.CapturedTargetCourseDegrees is { } capturedCourseDegrees => UpdateEngineMotion(
+            ShipEngineCommandTypes.DirectionSynchronization when cycle.CapturedTargetCourseDegrees is { } capturedCourseDegrees => UpdateEngineMotion(
                 obj,
                 moduleIndex,
                 gameTimeMs,
@@ -1480,17 +1480,17 @@ public sealed class SimulationEngine : IDisposable
                     Direction = NormalizeDirection(capturedCourseDegrees)
                 }),
 
-            // Navigation (engine.navigate-to-point): one discrete turn step per cycle
+            // Navigation (engine.orbit): one discrete turn step per cycle
             // (DurationMs = MinTurnIntervalMs, so ~250 ms per step at 4 deg/sec), heading
             // for the authoritative world target. On arrival the auto-repeat chain is cut
             // (nextCycle = null) — the cycle completes normally, writing CommandResult(Executed)
             // + ShipEvent(CommandCompleted) in CompleteActiveEngineCycles. Legacy-save guard:
             // a navigation cycle loaded from a save written by older code may have null
             // target coordinates — such a cycle completes as a no-op instead of throwing.
-            ShipEngineCommandTypes.NavigateToPoint when cycle.TargetWorldX is { } targetX && cycle.TargetWorldY is { } targetY =>
+            ShipEngineCommandTypes.Orbit when cycle.TargetWorldX is { } targetX && cycle.TargetWorldY is { } targetY =>
                 ApplyNavigationStep(obj, moduleIndex, moduleType, targetX, targetY, gameTimeMs, nextCycle),
 
-            ShipEngineCommandTypes.NavigateToPoint => obj,
+            ShipEngineCommandTypes.Orbit => obj,
 
             _ => obj
         };
@@ -1524,7 +1524,7 @@ public sealed class SimulationEngine : IDisposable
 
     /// <summary>
     /// Apply one discrete navigation step toward an authoritative world target
-    /// (engine.navigate-to-point). Uses the same roll-then-apply shape as every other
+    /// (engine.orbit). Uses the same roll-then-apply shape as every other
     /// cycle completion (via <see cref="UpdateEngineMotion"/>): the ship's motion is
     /// rolled forward to the completion time, then NavigationWaypointMath decides the
     /// turn delta for THIS step. When the ship has arrived (within ArrivalEpsilon, or

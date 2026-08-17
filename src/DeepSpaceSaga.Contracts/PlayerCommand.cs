@@ -10,8 +10,8 @@ public sealed record PlayerCommand(
     string ModuleId,
     string CommandType,
     /// <summary>
-    /// Explicit target object id, required for <see cref="ShipEngineCommandTypes.MatchTargetSpeed"/>
-    /// and <see cref="ShipEngineCommandTypes.MatchTargetCourse"/>. UI selection is not an implicit
+    /// Explicit target object id, required for <see cref="ShipEngineCommandTypes.SpeedSynchronization"/>
+    /// and <see cref="ShipEngineCommandTypes.DirectionSynchronization"/>. UI selection is not an implicit
     /// authoritative target — the target must always be passed explicitly in the command.
     /// The engine validates this value authoritatively for match commands: a command without
     /// a target (or with a target that does not exist in the world) is rejected with
@@ -20,16 +20,16 @@ public sealed record PlayerCommand(
     /// </summary>
     string? TargetObjectId = null,
     /// <summary>
-    /// Explicit world-coordinate target for <see cref="ShipEngineCommandTypes.NavigateToPoint"/>
+    /// Explicit world-coordinate target for <see cref="ShipEngineCommandTypes.Orbit"/>
     /// (world units, same coordinate system as <see cref="ObjectMotionSnapshot.X"/>).
-    /// Both coordinates are required and must be finite for navigate-to-point; the engine
+    /// Both coordinates are required and must be finite for orbit; the engine
     /// validates this authoritatively and rejects the command with
     /// <see cref="CommandReasonCodes.InvalidTargetCoordinates"/> otherwise. Null when the
     /// command has no world target.
     /// </summary>
     double? TargetWorldX = null,
     /// <summary>
-    /// Explicit world-coordinate target for <see cref="ShipEngineCommandTypes.NavigateToPoint"/>
+    /// Explicit world-coordinate target for <see cref="ShipEngineCommandTypes.Orbit"/>
     /// (world units). See <see cref="TargetWorldX"/>.
     /// </summary>
     double? TargetWorldY = null);

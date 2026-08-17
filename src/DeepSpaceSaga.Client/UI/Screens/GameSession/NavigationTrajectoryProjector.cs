@@ -5,7 +5,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 /// <summary>
 /// Projects the future trajectory of an active navigation cycle
-/// (engine.navigate-to-point) using EXACTLY the same deterministic math as the
+/// (engine.orbit) using EXACTLY the same deterministic math as the
 /// engine: <see cref="NavigationWaypointMath.Step"/> for the turn decision and the
 /// same straight-line advance formula as <see cref="LinearMotionPredictor"/>.
 /// The cycle phase comes from the authoritative snapshot (TurnStepRemainingMs,

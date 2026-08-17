@@ -62,8 +62,8 @@ public class InstalledModuleProjectionTests
         Assert.Equal("Accelerate", engineMod.Commands[0].DisplayName);
         Assert.Equal("none", engineMod.Commands[0].Target);
 
-        Assert.Equal("engine.navigate-to-point", engineMod.Commands[1].CommandTypeId);
-        Assert.Equal("Navigate", engineMod.Commands[1].DisplayName);
+        Assert.Equal("engine.orbit", engineMod.Commands[1].CommandTypeId);
+        Assert.Equal("Orbit", engineMod.Commands[1].DisplayName);
         Assert.Equal("point", engineMod.Commands[1].Target);
     }
 
@@ -84,8 +84,8 @@ public class InstalledModuleProjectionTests
         Assert.Equal("Structural Scan", scannerMod.Commands[1].DisplayName);
         Assert.Equal("object", scannerMod.Commands[1].Target);
 
-        Assert.Equal("engine.match-target-speed", scannerMod.Commands[2].CommandTypeId);
-        Assert.Equal("Match Target Speed", scannerMod.Commands[2].DisplayName);
+        Assert.Equal("engine.speed-synchronization", scannerMod.Commands[2].CommandTypeId);
+        Assert.Equal("Speed Synchronization", scannerMod.Commands[2].DisplayName);
         Assert.Equal("object", scannerMod.Commands[2].Target);
     }
 
@@ -133,7 +133,7 @@ public class InstalledModuleProjectionTests
                 new ModuleTypeDefinition(
                     "module.engine.basic", "Engine", SlotSize: 1, MassKg: 5000,
                     StructurePointsMax: 100, PowerConsumptionW: 0,
-                    CommandTypeIds: ImmutableArray.Create("engine.accelerate", "engine.navigate-to-point"),
+                    CommandTypeIds: ImmutableArray.Create("engine.accelerate", "engine.orbit"),
                     MaxSpeedMps: 4000, TurnStepDegrees: 1,
                     LinearInertiaMps2: 40000, AngularInertiaDegPerSec: 4,
                     FuelCapacityKg: 2000),
@@ -146,7 +146,7 @@ public class InstalledModuleProjectionTests
             commandDefinitions:
             [
                 new CommandDefinition("engine.accelerate", "Accelerate", Target: "none"),
-                new CommandDefinition("engine.navigate-to-point", "Navigate", Target: "point")
+                new CommandDefinition("engine.orbit", "Orbit", Target: "point")
             ]);
 
         var engine = new SimulationEngine(registry);
@@ -190,14 +190,14 @@ public class InstalledModuleProjectionTests
                     "module.scanner.mk1", "Scanner MK I", SlotSize: 1, MassKg: 1000,
                     StructurePointsMax: 50, PowerConsumptionW: 100,
                     CommandTypeIds: ImmutableArray.Create(
-                        "scanner.general-scan", "scanner.structural-scan", "engine.match-target-speed"))
+                        "scanner.general-scan", "scanner.structural-scan", "engine.speed-synchronization"))
             ],
             itemTypes: [],
             commandDefinitions:
             [
                 new CommandDefinition("scanner.general-scan", "General Scan", Target: "object"),
                 new CommandDefinition("scanner.structural-scan", "Structural Scan", Target: "object"),
-                new CommandDefinition("engine.match-target-speed", "Match Target Speed", Target: "object")
+                new CommandDefinition("engine.speed-synchronization", "Speed Synchronization", Target: "object")
             ]);
 
         var engine = new SimulationEngine(registry);
