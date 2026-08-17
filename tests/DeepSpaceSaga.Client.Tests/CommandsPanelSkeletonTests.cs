@@ -504,10 +504,12 @@ public class CommandsPanelSkeletonTests
     [InlineData("engine.brake")]
     [InlineData("engine.maintain-course")]
     [InlineData("engine.maintain-speed")]
+    [InlineData("engine.orbit")]
     [InlineData("engine.turn-left-step")]
     [InlineData("engine.turn-left-until-cancel")]
     [InlineData("engine.turn-right-step")]
     [InlineData("engine.turn-right-until-cancel")]
+    [InlineData("navigation.dock")]
     [InlineData("navigation.stations-list")]
     [InlineData("scanner.general-scan")]
     [InlineData("scanner.structural-scan")]
@@ -520,7 +522,7 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Exactly_the_eleven_commands_with_asset_files_have_a_declared_icon()
+    public void Exactly_the_thirteen_commands_with_asset_files_have_a_declared_icon()
     {
         Assert.Equal(
             new[]
@@ -529,10 +531,12 @@ public class CommandsPanelSkeletonTests
                 "engine.brake",
                 "engine.maintain-course",
                 "engine.maintain-speed",
+                "engine.orbit",
                 "engine.turn-left-step",
                 "engine.turn-left-until-cancel",
                 "engine.turn-right-step",
                 "engine.turn-right-until-cancel",
+                "navigation.dock",
                 "navigation.stations-list",
                 "scanner.general-scan",
                 "scanner.structural-scan",
@@ -545,10 +549,39 @@ public class CommandsPanelSkeletonTests
     {
         var screen = CreateScreen();
 
-        Assert.False(screen.CommandsPanel.HasLoadedIconFor("navigation.dock"));
-        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.orbit"));
         Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.speed-synchronization"));
         Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.direction-synchronization"));
+    }
+
+    [Theory]
+    [InlineData("engine.accelerate")]
+    [InlineData("engine.brake")]
+    [InlineData("engine.maintain-course")]
+    [InlineData("engine.maintain-speed")]
+    [InlineData("engine.orbit")]
+    [InlineData("engine.turn-left-step")]
+    [InlineData("engine.turn-left-until-cancel")]
+    [InlineData("engine.turn-right-step")]
+    [InlineData("navigation.dock")]
+    [InlineData("navigation.stations-list")]
+    [InlineData("scanner.general-scan")]
+    [InlineData("scanner.structural-scan")]
+    public void Commands_with_a_declared_icon_also_have_an_active_hover_variant(string commandTypeId)
+    {
+        var screen = CreateScreen();
+
+        Assert.True(screen.CommandsPanel.HasLoadedActiveIconFor(commandTypeId));
+    }
+
+    [Fact]
+    public void Icon_without_an_active_hover_file_still_loads_its_normal_icon()
+    {
+        // No "…-turn-right-continuous-active.png" asset exists yet — the button
+        // must not crash and must keep showing its normal icon on hover.
+        var screen = CreateScreen();
+
+        Assert.True(screen.CommandsPanel.HasLoadedIconFor("engine.turn-right-until-cancel"));
+        Assert.False(screen.CommandsPanel.HasLoadedActiveIconFor("engine.turn-right-until-cancel"));
     }
 
     [Fact]

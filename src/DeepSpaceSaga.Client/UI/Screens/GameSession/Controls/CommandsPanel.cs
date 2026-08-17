@@ -70,6 +70,9 @@ public sealed class CommandsPanel
     /// the plain text-label button. Icons are drawn bare (no button chrome) at a
     /// fixed 32×32 (before UI scaling), centered on the command's clickable area —
     /// source assets may be higher-resolution (e.g. 64×64) for crisp downscaling.
+    /// Each entry has a matching "-active" file (e.g. "…-brake.png" /
+    /// "…-brake-active.png") swapped in on hover, in place of a background
+    /// highlight; if the active file is missing the normal icon is kept on hover.
     /// The clickable area, hover/press tracking and cursor-over-interactive
     /// signalling are unchanged from a regular button (see <see cref="OnMouseMove"/>).
     /// </summary>
@@ -80,16 +83,20 @@ public sealed class CommandsPanel
             [ShipEngineCommandTypes.Brake] = "command-panel-button-engine-brake.png",
             [ShipEngineCommandTypes.MaintainCourse] = "command-panel-button-engine-maintain-course.png",
             [ShipEngineCommandTypes.MaintainSpeed] = "command-panel-button-engine-maintain-speed.png",
+            [ShipEngineCommandTypes.Orbit] = "command-panel-button-engine-orbit.png",
             [ShipEngineCommandTypes.TurnLeftStep] = "command-panel-button-turn-left.png",
             [ShipEngineCommandTypes.TurnLeftUntilCancel] = "command-panel-button-turn-left-continuous.png",
             [ShipEngineCommandTypes.TurnRightStep] = "command-panel-button-turn-right.png",
             [ShipEngineCommandTypes.TurnRightUntilCancel] = "command-panel-button-turn-right-continuous.png",
+            [NavigationComputerCommandTypes.Dock] = "command-panel-button-navigation-dock.png",
             [NavigationComputerCommandTypes.StationsList] = "command-panel-button-navigation-stations-list.png",
             [ScannerCommandTypes.GeneralScan] = "command-panel-button-scanner-general-scan.png",
             [ScannerCommandTypes.StructuralScan] = "command-panel-button-scanner-structural-scan.png",
         };
 
     private const float CommandIconSize = 32f;
+
+    private readonly record struct CommandIconPair(SKBitmap? Normal, SKBitmap? Active);
 
     private SKRect _hideShowButtonRect;
 
@@ -143,7 +150,7 @@ public sealed class CommandsPanel
     private readonly SKBitmap? _moduleBodyBackgroundImage;
     private readonly SKBitmap? _hideImage;
     private readonly SKBitmap? _showImage;
-    private readonly Dictionary<string, SKBitmap?> _commandIcons = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, CommandIconPair> _commandIcons = new(StringComparer.Ordinal);
 
     private CommandsPanelState _state = CommandsPanelState.AllPanels;
     private CommandsPanelState _previousNonClosedState = CommandsPanelState.AllPanels;
@@ -191,7 +198,12 @@ public sealed class CommandsPanel
         _showImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-show.png");
 
         foreach (var (commandTypeId, fileName) in CommandIconFileNames)
-            _commandIcons[commandTypeId] = LoadCommandIcon($"Images/UI/GameSessionScreenUI/commands-panel/{fileName}");
+        {
+            string activeFileName = Path.ChangeExtension(fileName, null) + "-active" + Path.GetExtension(fileName);
+            _commandIcons[commandTypeId] = new CommandIconPair(
+                LoadCommandIcon($"Images/UI/GameSessionScreenUI/commands-panel/{fileName}"),
+                LoadCommandIcon($"Images/UI/GameSessionScreenUI/commands-panel/{activeFileName}"));
+        }
     }
 
     private static SKBitmap? LoadImage(string path)
@@ -236,9 +248,13 @@ public sealed class CommandsPanel
     public int HoveredCommandButtonIndex => _hoveredCommandButtonIndex;
     public int PressedCommandButtonIndex => _pressedCommandButtonIndex;
 
-    /// <summary>True if an icon file for <paramref name="commandTypeId"/> was found and decoded at construction time.</summary>
+    /// <summary>True if the normal-state icon file for <paramref name="commandTypeId"/> was found and decoded at construction time.</summary>
     internal bool HasLoadedIconFor(string commandTypeId) =>
-        _commandIcons.TryGetValue(commandTypeId, out var bitmap) && bitmap is not null;
+        _commandIcons.TryGetValue(commandTypeId, out var pair) && pair.Normal is not null;
+
+    /// <summary>True if the hover-state ("-active") icon file for <paramref name="commandTypeId"/> was found and decoded at construction time.</summary>
+    internal bool HasLoadedActiveIconFor(string commandTypeId) =>
+        _commandIcons.TryGetValue(commandTypeId, out var pair) && pair.Active is not null;
 
     public IReadOnlyList<CommandPanelGeometry> CommandPanelRows => _panelRows;
     public IReadOnlyList<CommandButtonGeometry> AllCommandButtons => _allCommandButtons;
@@ -524,21 +540,20 @@ public sealed class CommandsPanel
     {
         var (label, button) = _commandButtons[index];
 
-        var icon = _commandIcons.GetValueOrDefault(button.CommandTypeId);
+        var iconPair = _commandIcons.GetValueOrDefault(button.CommandTypeId);
+        var icon = iconPair.Normal;
         if (icon is not null)
         {
-            // Icon commands render as a bare image — no button chrome at rest.
-            // On hover/press a lighter fill appears behind the icon (no border),
-            // matching the regular button's hover feedback. The clickable area
-            // (button.Rect) and hover/press tracking are unchanged either way, so
-            // the cursor still switches to the interactive glyph and clicks still
-            // land exactly as they would on a regular button.
+            // Icon commands render as a bare image — no button chrome, ever. On
+            // hover the "-active" variant is swapped in instead of a background
+            // highlight (falling back to the normal icon if no active file was
+            // found). The clickable area (button.Rect) and hover/press tracking
+            // are unchanged either way, so the cursor still switches to the
+            // interactive glyph and clicks still land exactly as they would on a
+            // regular button.
             bool isHovered = button.Enabled && index == _hoveredCommandButtonIndex;
-            if (isHovered)
-            {
-                bool isPressed = index == _pressedCommandButtonIndex;
-                canvas.DrawRect(button.Rect, isPressed ? _commandBtnPressedPaint : _commandBtnHoverPaint);
-            }
+            if (isHovered && iconPair.Active is not null)
+                icon = iconPair.Active;
 
             float iconX = button.Rect.MidX - CommandIconSize / 2f;
             float iconY = button.Rect.MidY - CommandIconSize / 2f;
