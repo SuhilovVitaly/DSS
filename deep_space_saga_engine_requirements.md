@@ -4993,8 +4993,8 @@ Y8: .........
 
 | Координата | Роль | typeId |
 |---|---|---|
-| (4,0) | Navigation Computer | `module.bridge-navigation-computer.basic` |
-| (4,1) | Living quarters | `living-quarters.mk1` |
+| (4,0) | Navigation Computer | `module.bridge.navigation.computer.basic` |
+| (4,1) | Living quarters | `living.quarters.mk1` |
 | (4,2) | Cargo hold | `module.container.basic` |
 | (4,3) | Scanner | `module.scanner.mk1` |
 | (4,4) | Reactor (Generator) | `module.generator.basic` |
@@ -5002,7 +5002,7 @@ Y8: .........
 
 Cargo hold стартует с 1000 `Energy Cells` (без изменений относительно предыдущей комплектации). Engine не получает явно заданный `fuelAmountKg` в `DefaultScenario` — применяется общее правило: если `fuelAmountKg` не указан, используется полный `fuelCapacityKg`.
 
-Из стартового loadout исключены: Battery, Drilling Unit, Combat Laser, старый Habitation Module. Соответствующие module type (`module.battery.basic`, `module.drilling-unit.basic`, `module.combat-laser.basic`, `module.habitation.basic`) остаются определены в каталоге для будущего использования — из каталога они не удалены.
+Из стартового loadout исключены: Battery, Drilling Unit, Combat Laser, старый Habitation Module. Соответствующие module type (`module.battery.basic`, `module.drilling.unit.basic`, `module.combat.laser.basic`, `module.habitation.basic`) остаются определены в каталоге для будущего использования — из каталога они не удалены.
 
 `module.container.basic.SlotSize` изменён с `4` на `1` (Container больше не занимает всю platform `2×2` — понятия platform в этой модели нет).
 

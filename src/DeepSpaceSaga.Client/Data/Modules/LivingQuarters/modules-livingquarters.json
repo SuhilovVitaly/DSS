@@ -1,9 +1,9 @@
 {
   "moduleImplementations": [
     {
-      "typeId": "living-quarters.mk1",
+      "typeId": "living.quarters.mk1",
       "displayName": "Living quarters MK I",
-      "type": "living-quarters",
+      "type": "living.quarters",
       "massKg": 2000,
       "structurePointsMax": 60,
       "powerConsumptionW": 0,

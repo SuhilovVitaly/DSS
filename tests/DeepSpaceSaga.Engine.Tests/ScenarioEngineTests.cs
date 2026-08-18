@@ -178,10 +178,10 @@ public class ScenarioEngineTests
         Assert.Equal("Ready", engineModule.OperationalState);
 
         var bridgeModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-BRIDGE-01");
-        Assert.Equal("module.bridge-navigation-computer.basic", bridgeModule.ModuleTypeId);
+        Assert.Equal("module.bridge.navigation.computer.basic", bridgeModule.ModuleTypeId);
         Assert.Equal([new HullCellCoordinate(4, 0)], bridgeModule.OccupiedCells);
         var livingQuartersModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
-        Assert.Equal("living-quarters.mk1", livingQuartersModule.ModuleTypeId);
+        Assert.Equal("living.quarters.mk1", livingQuartersModule.ModuleTypeId);
         Assert.Equal([new HullCellCoordinate(4, 1)], livingQuartersModule.OccupiedCells);
         var generatorModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-GENERATOR-01");
         Assert.Equal("module.generator.basic", generatorModule.ModuleTypeId);
@@ -315,29 +315,29 @@ public class ScenarioEngineTests
                 $"Command '{commandTypeId}' of 'module.scanner.mk1' is missing from the command definitions registry.");
         }
 
-        var navigationComputerType = Assert.Single(activeTypes, t => t.TypeId == "module.bridge-navigation-computer.basic");
+        var navigationComputerType = Assert.Single(activeTypes, t => t.TypeId == "module.bridge.navigation.computer.basic");
         Assert.Equal(2, navigationComputerType.CommandTypeIds.Length);
         Assert.Contains("navigation.dock", navigationComputerType.CommandTypeIds);
         Assert.Contains("navigation.stationsList", navigationComputerType.CommandTypeIds);
         foreach (string commandTypeId in navigationComputerType.CommandTypeIds)
         {
             Assert.True(registry.CommandDefinitions.Contains(commandTypeId),
-                $"Command '{commandTypeId}' of 'module.bridge-navigation-computer.basic' is missing from the command definitions registry.");
+                $"Command '{commandTypeId}' of 'module.bridge.navigation.computer.basic' is missing from the command definitions registry.");
         }
 
 
-        var drillingType = Assert.Single(activeTypes, t => t.TypeId == "module.drilling-unit.basic");
+        var drillingType = Assert.Single(activeTypes, t => t.TypeId == "module.drilling.unit.basic");
         Assert.Equal(2, drillingType.CommandTypeIds.Length);
         Assert.Contains("mining.extractIce", drillingType.CommandTypeIds);
         Assert.Contains("mining.stopExtraction", drillingType.CommandTypeIds);
         foreach (string commandTypeId in drillingType.CommandTypeIds)
         {
             Assert.True(registry.CommandDefinitions.Contains(commandTypeId),
-                $"Command '{commandTypeId}' of 'module.drilling-unit.basic' is missing from the command definitions registry.");
+                $"Command '{commandTypeId}' of 'module.drilling.unit.basic' is missing from the command definitions registry.");
         }
         int passiveTypes = Enumerable.Range(0, registry.ModuleTypes.Count)
             .Count(i => registry.ModuleTypes.GetDefinition(i).CommandTypeIds.Length == 0);
-        Assert.Equal(6, passiveTypes); // includes living-quarters.mk1 (requirements §57)
+        Assert.Equal(6, passiveTypes); // includes living.quarters.mk1 (requirements §57)
     }
 
     [Theory]

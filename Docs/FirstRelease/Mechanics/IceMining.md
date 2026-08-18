@@ -11,14 +11,14 @@
 ## Уже существующая основа
 
 - В мире есть `Asteroid`.
-- В данных есть `module.drilling-unit.basic`.
+- В данных есть `module.drilling.unit.basic`.
 - В новой стартовой комплектации Tetrarch Class `Drilling Unit` отсутствует.
 - Есть cargo/container module для перевозки добытого ресурса.
 
 ## Решение первого релиза
 
 - Mining capability реализуется через отдельный модуль Drilling Unit.
-- Базовый module type первого релиза: `module.drilling-unit.basic`.
+- Базовый module type первого релиза: `module.drilling.unit.basic`.
 - Игрок не получает Drilling Unit бесплатно; его можно купить и установить на станции.
 - До установки Drilling Unit команды добычи недоступны.
 - Для модуля реализуются команды `mining.extractIce` и `mining.stopExtraction`.
@@ -50,7 +50,7 @@
 
 | Команда | Цель | Условия |
 | --- | --- | --- |
-| `mining.extractIce` | `Asteroid` | На корабле есть установленный и рабочий `module.drilling-unit.basic`; выбран asteroid; asteroid просканирован через `scanner.structuralScan`; scan result подтверждает доступный лед; дистанция до asteroid `<= 100 km`; скорость и направление синхронизированы с asteroid; в cargo есть свободная вместимость; asteroid содержит доступный лед |
+| `mining.extractIce` | `Asteroid` | На корабле есть установленный и рабочий `module.drilling.unit.basic`; выбран asteroid; asteroid просканирован через `scanner.structuralScan`; scan result подтверждает доступный лед; дистанция до asteroid `<= 100 km`; скорость и направление синхронизированы с asteroid; в cargo есть свободная вместимость; asteroid содержит доступный лед |
 | `mining.stopExtraction` | Нет | На корабле есть активный mining cycle |
 
 ## Требования первого релиза
@@ -70,4 +70,4 @@
 
 ## За рамками первого релиза
 
-- Детальная цена и условия установки `module.drilling-unit.basic` на станции.
+- Детальная цена и условия установки `module.drilling.unit.basic` на станции.

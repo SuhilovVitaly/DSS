@@ -1,9 +1,9 @@
 {
   "moduleImplementations": [
     {
-      "typeId": "module.bridge-navigation-computer.basic",
+      "typeId": "module.bridge.navigation.computer.basic",
       "displayName": "Bridge Navigation Computer",
-      "type": "module.bridge-navigation-computer",
+      "type": "module.bridge.navigation.computer",
       "massKg": 4000,
       "structurePointsMax": 80,
       "powerConsumptionW": 0,

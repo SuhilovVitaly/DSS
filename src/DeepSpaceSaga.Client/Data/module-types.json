@@ -1,7 +1,7 @@
 {
   "moduleTypes": [
     {
-      "typeId": "module.bridge-navigation-computer",
+      "typeId": "module.bridge.navigation.computer",
       "displayName": "Bridge Navigation Computer",
       "slotSize": 1,
       "commandTypeIds": [
@@ -46,7 +46,7 @@
       "commandTypeIds": []
     },
     {
-      "typeId": "module.drilling-unit",
+      "typeId": "module.drilling.unit",
       "displayName": "Drilling Unit",
       "slotSize": 1,
       "commandTypeIds": [
@@ -71,13 +71,13 @@
       "commandTypeIds": []
     },
     {
-      "typeId": "module.combat-laser",
+      "typeId": "module.combat.laser",
       "displayName": "Combat Laser",
       "slotSize": 1,
       "commandTypeIds": []
     },
     {
-      "typeId": "living-quarters",
+      "typeId": "living.quarters",
       "displayName": "Living quarters",
       "slotSize": 1,
       "commandTypeIds": []

@@ -101,7 +101,7 @@ public class CommandsPanelSkeletonTests
             EngineModuleId, "module.engine.basic", "Engine", Position: 1, EngineCommandTypeIds,
             Commands: CommandsFor(EngineCommandTypeIds)),
         new InstalledModuleSnapshot(
-            NavigationComputerModuleId, "module.bridge-navigation-computer.basic", "Navigation Computer", Position: 0,
+            NavigationComputerModuleId, "module.bridge.navigation.computer.basic", "Navigation Computer", Position: 0,
             ImmutableArray.Create(NavigationComputerCommandTypes.Dock, NavigationComputerCommandTypes.StationsList),
             Commands: CommandsFor(ImmutableArray.Create(
                 NavigationComputerCommandTypes.Dock, NavigationComputerCommandTypes.StationsList))));
