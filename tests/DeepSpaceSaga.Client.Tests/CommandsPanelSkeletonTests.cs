@@ -502,9 +502,11 @@ public class CommandsPanelSkeletonTests
     [Theory]
     [InlineData("engine.accelerate")]
     [InlineData("engine.brake")]
+    [InlineData("engine.directionSynchronization")]
     [InlineData("engine.maintainCourse")]
     [InlineData("engine.maintainSpeed")]
     [InlineData("engine.orbit")]
+    [InlineData("engine.speedSynchronization")]
     [InlineData("engine.turnLeftStep")]
     [InlineData("engine.turnLeftUntilCancel")]
     [InlineData("engine.turnRightStep")]
@@ -522,16 +524,18 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Exactly_the_thirteen_commands_with_asset_files_have_a_declared_icon()
+    public void Exactly_the_fifteen_commands_with_asset_files_have_a_declared_icon()
     {
         Assert.Equal(
             new[]
             {
                 "engine.accelerate",
                 "engine.brake",
+                "engine.directionSynchronization",
                 "engine.maintainCourse",
                 "engine.maintainSpeed",
                 "engine.orbit",
+                "engine.speedSynchronization",
                 "engine.turnLeftStep",
                 "engine.turnLeftUntilCancel",
                 "engine.turnRightStep",
@@ -549,16 +553,18 @@ public class CommandsPanelSkeletonTests
     {
         var screen = CreateScreen();
 
-        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.speedSynchronization"));
-        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.directionSynchronization"));
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("scanner.nearbySignatures"));
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.cancelAll"));
     }
 
     [Theory]
     [InlineData("engine.accelerate")]
     [InlineData("engine.brake")]
+    [InlineData("engine.directionSynchronization")]
     [InlineData("engine.maintainCourse")]
     [InlineData("engine.maintainSpeed")]
     [InlineData("engine.orbit")]
+    [InlineData("engine.speedSynchronization")]
     [InlineData("engine.turnLeftStep")]
     [InlineData("engine.turnLeftUntilCancel")]
     [InlineData("engine.turnRightStep")]
@@ -577,7 +583,7 @@ public class CommandsPanelSkeletonTests
     [Fact]
     public void Missing_active_hover_file_would_still_load_the_normal_icon()
     {
-        // Every declared icon currently ships a matching "-active" asset, so this
+        // Every declared icon currently ships a matching ".active" asset, so this
         // exercises the fallback path directly rather than relying on some file
         // being absent (which HasLoadedIconFor/HasLoadedActiveIconFor above would
         // silently stop covering the day the last missing asset is added).

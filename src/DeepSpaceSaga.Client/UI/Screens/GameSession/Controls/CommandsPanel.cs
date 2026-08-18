@@ -89,6 +89,8 @@ public sealed class CommandsPanel
             [ShipEngineCommandTypes.TurnLeftUntilCancel] = "engine.turnLeftUntilCancel.png",
             [ShipEngineCommandTypes.TurnRightStep] = "engine.turnRightStep.png",
             [ShipEngineCommandTypes.TurnRightUntilCancel] = "engine.turnRightUntilCancel.png",
+            [ShipEngineCommandTypes.SpeedSynchronization] = "engine.speedSynchronization.png",
+            [ShipEngineCommandTypes.DirectionSynchronization] = "engine.directionSynchronization.png",
             [NavigationComputerCommandTypes.Dock] = "navigation.dock.png",
             [NavigationComputerCommandTypes.StationsList] = "navigation.stationsList.png",
             [ScannerCommandTypes.GeneralScan] = "scanner.generalScan.png",

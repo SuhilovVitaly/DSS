@@ -79,6 +79,18 @@
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\engine.orbit.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\engine.speedSynchronization.active.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\engine.speedSynchronization.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\engine.directionSynchronization.active.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\GameSessionScreenUI\commands-panel\engine.directionSynchronization.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\navigation.dock.active.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
