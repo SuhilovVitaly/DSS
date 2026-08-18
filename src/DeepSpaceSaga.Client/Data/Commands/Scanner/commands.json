@@ -1,0 +1,33 @@
+{
+    "commandDefinitions": [
+        {
+            "typeId": "scanner.generalScan",
+            "displayName": "General Scan",
+            "timeFactor": 0.4,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "object",
+            "activationEnergyCellsCost": 2,
+            "type": "module.scanner"
+        },
+        {
+            "typeId": "scanner.structuralScan",
+            "displayName": "Structural Scan",
+            "timeFactor": 3.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "object",
+            "type": "module.scanner"
+        },
+        {
+            "typeId": "scanner.nearbySignatures",
+            "displayName": "Nearby Signatures",
+            "timeFactor": 0.4,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "activationEnergyCellsCost": 2,
+            "type": "module.scanner"
+        }
+    ]
+}

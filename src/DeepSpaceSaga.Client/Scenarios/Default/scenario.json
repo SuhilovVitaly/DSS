@@ -38,7 +38,7 @@
             "modules": [
                 {
                     "moduleId": "MOD-PLAYER-BRIDGE-01",
-                    "moduleTypeId": "module.bridge-navigation-computer.basic",
+                    "moduleTypeId": "module.bridge.navigation.computer.basic",
                     "occupiedCells": [ {"x":4,"y":0} ],
                     "structurePoints": 80,
                     "powerState": "On",
@@ -48,7 +48,7 @@
                 },
                 {
                     "moduleId": "MOD-PLAYER-LIVING-QUARTERS-01",
-                    "moduleTypeId": "living-quarters.mk1",
+                    "moduleTypeId": "living.quarters.mk1",
                     "occupiedCells": [ {"x":4,"y":1} ],
                     "structurePoints": 60,
                     "powerState": "On",

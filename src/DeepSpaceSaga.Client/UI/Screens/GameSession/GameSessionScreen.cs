@@ -667,7 +667,7 @@ public sealed class GameSessionScreen : IScreen
     /// "object" commands (match/scanner) require SelectedObjectId; engine commands
     /// additionally respect the engine command panel rules. A button is also
     /// disabled when no installed module currently exposes the commandType, or when
-    /// its target metadata is missing (never send a command blind). navigation.stations-list
+    /// its target metadata is missing (never send a command blind). navigation.stationsList
     /// has no station-list screen yet, so it stays visible but always disabled.
     /// </summary>
     private bool IsModuleCommandEnabled(string commandType)

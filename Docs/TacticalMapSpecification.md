@@ -105,13 +105,13 @@ Hex: #1E2D41
 | Commands panel module caption | Сворачивает или раскрывает тело конкретного module row. |
 | Engine button Accelerate | Отправляет `engine.accelerate`, если команда доступна. |
 | Engine button Brake | Отправляет `engine.brake`, если команда доступна. |
-| Engine button Maintain Speed | Отправляет `engine.maintain-speed`, если команда доступна. |
-| Engine button Turn Right Step | Отправляет `engine.turn-right-step`, если команда доступна. |
-| Engine button Turn Left Step | Отправляет `engine.turn-left-step`, если команда доступна. |
-| Engine button Turn Right Until Cancel | Отправляет `engine.turn-right-until-cancel`, если команда доступна. |
-| Engine button Turn Left Until Cancel | Отправляет `engine.turn-left-until-cancel`, если команда доступна. |
-| Engine button Maintain Course | Отправляет `engine.maintain-course`, если команда доступна. |
-| Engine button Cancel All | Legacy/current UI entry: отправляет `engine.cancel-all`, если эта кнопка присутствует и команда доступна. Не считать новой канонической hotkey-командой без отдельного требования. |
+| Engine button Maintain Speed | Отправляет `engine.maintainSpeed`, если команда доступна. |
+| Engine button Turn Right Step | Отправляет `engine.turnRightStep`, если команда доступна. |
+| Engine button Turn Left Step | Отправляет `engine.turnLeftStep`, если команда доступна. |
+| Engine button Turn Right Until Cancel | Отправляет `engine.turnRightUntilCancel`, если команда доступна. |
+| Engine button Turn Left Until Cancel | Отправляет `engine.turnLeftUntilCancel`, если команда доступна. |
+| Engine button Maintain Course | Отправляет `engine.maintainCourse`, если команда доступна. |
+| Engine button Cancel All | Legacy/current UI entry: отправляет `engine.cancelAll`, если эта кнопка присутствует и команда доступна. Не считать новой канонической hotkey-командой без отдельного требования. |
 
 ## Клавиатура
 
@@ -138,14 +138,14 @@ Hex: #1E2D41
 | `5` | Устанавливает `Speed4`. |
 | `Up` | Отправляет `engine.accelerate`, если команда доступна. |
 | `Down` | Отправляет `engine.brake`, если команда доступна. |
-| `Left` | Отправляет `engine.turn-left-step`, если команда доступна. |
-| `Right` | Отправляет `engine.turn-right-step`, если команда доступна. |
+| `Left` | Отправляет `engine.turnLeftStep`, если команда доступна. |
+| `Right` | Отправляет `engine.turnRightStep`, если команда доступна. |
 
 ### Команды без текущей keyboard hotkey
 
-- `engine.maintain-speed` доступна через UI-кнопку Engine panel.
-- `engine.maintain-course` доступна через UI-кнопку Engine panel.
-- `engine.turn-left-until-cancel` доступна через UI-кнопку Engine panel.
-- `engine.turn-right-until-cancel` доступна через UI-кнопку Engine panel.
+- `engine.maintainSpeed` доступна через UI-кнопку Engine panel.
+- `engine.maintainCourse` доступна через UI-кнопку Engine panel.
+- `engine.turnLeftUntilCancel` доступна через UI-кнопку Engine panel.
+- `engine.turnRightUntilCancel` доступна через UI-кнопку Engine panel.
 - `engine.match-target-speed` и `engine.match-target-course` требуют явный `targetObjectId`; `SelectedObjectId` не является implicit authoritative target.
-- `engine.cancel-all` является legacy/current UI entry, если кнопка присутствует; не имеет отдельной keyboard hotkey.
+- `engine.cancelAll` является legacy/current UI entry, если кнопка присутствует; не имеет отдельной keyboard hotkey.

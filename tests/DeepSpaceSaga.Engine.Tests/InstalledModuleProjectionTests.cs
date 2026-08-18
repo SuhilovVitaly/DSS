@@ -76,15 +76,15 @@ public class InstalledModuleProjectionTests
         var scannerMod = Assert.Single(snapshot.InstalledModules);
         Assert.Equal(3, scannerMod.Commands.Length);
 
-        Assert.Equal("scanner.general-scan", scannerMod.Commands[0].CommandTypeId);
+        Assert.Equal("scanner.generalScan", scannerMod.Commands[0].CommandTypeId);
         Assert.Equal("General Scan", scannerMod.Commands[0].DisplayName);
         Assert.Equal("object", scannerMod.Commands[0].Target);
 
-        Assert.Equal("scanner.structural-scan", scannerMod.Commands[1].CommandTypeId);
+        Assert.Equal("scanner.structuralScan", scannerMod.Commands[1].CommandTypeId);
         Assert.Equal("Structural Scan", scannerMod.Commands[1].DisplayName);
         Assert.Equal("object", scannerMod.Commands[1].Target);
 
-        Assert.Equal("engine.speed-synchronization", scannerMod.Commands[2].CommandTypeId);
+        Assert.Equal("engine.speedSynchronization", scannerMod.Commands[2].CommandTypeId);
         Assert.Equal("Speed Synchronization", scannerMod.Commands[2].DisplayName);
         Assert.Equal("object", scannerMod.Commands[2].Target);
     }
@@ -128,6 +128,15 @@ public class InstalledModuleProjectionTests
     private static SimulationEngine CreateEngineWithTwoModules()
     {
         var registry = GameDataRegistry.Create(
+            moduleCategories:
+            [
+                new ModuleCategoryDefinition(
+                    "module.engine.basic", "Engine", SlotSize: 1,
+                    CommandTypeIds: ImmutableArray.Create("engine.accelerate", "engine.orbit")),
+                new ModuleCategoryDefinition(
+                    "module.scanner.mk1", "Scanner MK I", SlotSize: 1,
+                    CommandTypeIds: ImmutableArray<string>.Empty)
+            ],
             moduleTypes:
             [
                 new ModuleTypeDefinition(
@@ -145,8 +154,8 @@ public class InstalledModuleProjectionTests
             itemTypes: [],
             commandDefinitions:
             [
-                new CommandDefinition("engine.accelerate", "Accelerate", Target: "none"),
-                new CommandDefinition("engine.orbit", "Orbit", Target: "point")
+                new CommandDefinition("engine.accelerate", "Accelerate", Target: "none", Type: "module.engine.basic"),
+                new CommandDefinition("engine.orbit", "Orbit", Target: "point", Type: "module.engine.basic")
             ]);
 
         var engine = new SimulationEngine(registry);
@@ -184,20 +193,27 @@ public class InstalledModuleProjectionTests
     private static SimulationEngine CreateEngineWithScannerCommands()
     {
         var registry = GameDataRegistry.Create(
+            moduleCategories:
+            [
+                new ModuleCategoryDefinition(
+                    "module.scanner.mk1", "Scanner MK I", SlotSize: 1,
+                    CommandTypeIds: ImmutableArray.Create(
+                        "scanner.generalScan", "scanner.structuralScan", "engine.speedSynchronization"))
+            ],
             moduleTypes:
             [
                 new ModuleTypeDefinition(
                     "module.scanner.mk1", "Scanner MK I", SlotSize: 1, MassKg: 1000,
                     StructurePointsMax: 50, PowerConsumptionW: 100,
                     CommandTypeIds: ImmutableArray.Create(
-                        "scanner.general-scan", "scanner.structural-scan", "engine.speed-synchronization"))
+                        "scanner.generalScan", "scanner.structuralScan", "engine.speedSynchronization"))
             ],
             itemTypes: [],
             commandDefinitions:
             [
-                new CommandDefinition("scanner.general-scan", "General Scan", Target: "object"),
-                new CommandDefinition("scanner.structural-scan", "Structural Scan", Target: "object"),
-                new CommandDefinition("engine.speed-synchronization", "Speed Synchronization", Target: "object")
+                new CommandDefinition("scanner.generalScan", "General Scan", Target: "object", Type: "module.scanner.mk1"),
+                new CommandDefinition("scanner.structuralScan", "Structural Scan", Target: "object", Type: "module.scanner.mk1"),
+                new CommandDefinition("engine.speedSynchronization", "Speed Synchronization", Target: "object", Type: "module.scanner.mk1")
             ]);
 
         var engine = new SimulationEngine(registry);

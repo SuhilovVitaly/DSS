@@ -1,134 +1,86 @@
 {
   "moduleTypes": [
     {
-      "typeId": "module.bridge-navigation-computer.basic",
+      "typeId": "module.bridge.navigation.computer",
       "displayName": "Bridge Navigation Computer",
       "slotSize": 1,
-      "massKg": 4000,
-      "structurePointsMax": 80,
-      "powerConsumptionW": 0,
       "commandTypeIds": [
         "navigation.dock",
-        "navigation.stations-list"
-      ],
-      "baseCycleTimeMs": 1000
+        "navigation.stationsList"
+      ]
     },
     {
-      "typeId": "module.engine.basic",
+      "typeId": "module.engine",
       "displayName": "Engine",
       "slotSize": 1,
-      "massKg": 5000,
-      "structurePointsMax": 100,
-      "powerConsumptionW": 0,
       "commandTypeIds": [
         "engine.accelerate",
         "engine.brake",
-        "engine.maintain-speed",
-        "engine.turn-left-step",
-        "engine.turn-right-step",
-        "engine.turn-left-until-cancel",
-        "engine.turn-right-until-cancel",
-        "engine.maintain-course",
-        "engine.speed-synchronization",
-        "engine.direction-synchronization",
+        "engine.maintainSpeed",
+        "engine.turnLeftStep",
+        "engine.turnRightStep",
+        "engine.turnLeftUntilCancel",
+        "engine.turnRightUntilCancel",
+        "engine.maintainCourse",
+        "engine.speedSynchronization",
+        "engine.directionSynchronization",
         "engine.orbit"
-      ],
-      "maxSpeedMps": 4000,
-      "turnStepDegrees": 1,
-      "linearInertiaMps2": 400,
-      "angularInertiaDegPerSec": 4,
-      "baseCycleTimeMs": 1000,
-      "fuelCapacityKg": 10000,
-      "baseSuccessChancePercent": 100
+      ]
     },
     {
-      "typeId": "module.generator.basic",
+      "typeId": "module.generator",
       "displayName": "Generator",
       "slotSize": 1,
-      "massKg": 12000,
-      "structurePointsMax": 180,
-      "powerConsumptionW": 0,
-      "commandTypeIds": [],
-      "baseCycleTimeMs": 0
+      "commandTypeIds": []
     },
     {
-      "typeId": "module.battery.basic",
+      "typeId": "module.battery",
       "displayName": "Battery",
       "slotSize": 1,
-      "massKg": 8000,
-      "structurePointsMax": 120,
-      "powerConsumptionW": 0,
-      "commandTypeIds": [],
-      "baseCycleTimeMs": 0
+      "commandTypeIds": []
     },
     {
-      "typeId": "module.container.basic",
+      "typeId": "module.container",
       "displayName": "Container",
       "slotSize": 1,
-      "massKg": 20000,
-      "structurePointsMax": 400,
-      "powerConsumptionW": 0,
-      "commandTypeIds": [],
-      "cargoCapacityKg": 100000
+      "commandTypeIds": []
     },
     {
-      "typeId": "module.drilling-unit.basic",
+      "typeId": "module.drilling.unit",
       "displayName": "Drilling Unit",
       "slotSize": 1,
-      "massKg": 8000,
-      "structurePointsMax": 150,
-      "powerConsumptionW": 0,
       "commandTypeIds": [
-        "mining.extract-ice",
-        "mining.stop-extraction"
-      ],
-      "baseCycleTimeMs": 10000
+        "mining.extractIce",
+        "mining.stopExtraction"
+      ]
     },
     {
-        "typeId": "module.scanner.mk1",
-        "displayName": "Scanner MK I",
-        "slotSize": 1,
-        "massKg": 2000,
-        "structurePointsMax": 60,
-        "powerConsumptionW": 0,
-        "commandTypeIds": [
-            "scanner.general-scan",
-            "scanner.structural-scan",
-            "scanner.nearby-signatures"
-        ],
-        "baseCycleTimeMs": 20000,
-        "baseSuccessChancePercent": 100
+      "typeId": "module.scanner",
+      "displayName": "Scanner",
+      "slotSize": 1,
+      "commandTypeIds": [
+        "scanner.generalScan",
+        "scanner.structuralScan",
+        "scanner.nearbySignatures"
+      ]
     },
     {
-      "typeId": "module.habitation.basic",
+      "typeId": "module.habitation",
       "displayName": "Habitation Module",
       "slotSize": 1,
-      "massKg": 15000,
-      "structurePointsMax": 200,
-      "powerConsumptionW": 0,
-      "commandTypeIds": [],
-      "baseCycleTimeMs": 0
+      "commandTypeIds": []
     },
     {
-      "typeId": "module.combat-laser.basic",
+      "typeId": "module.combat.laser",
       "displayName": "Combat Laser",
       "slotSize": 1,
-      "massKg": 10000,
-      "structurePointsMax": 150,
-      "powerConsumptionW": 0,
-      "commandTypeIds": [],
-      "baseCycleTimeMs": 0
+      "commandTypeIds": []
     },
     {
-      "typeId": "living-quarters.mk1",
-      "displayName": "Living quarters MK I",
+      "typeId": "living.quarters",
+      "displayName": "Living quarters",
       "slotSize": 1,
-      "massKg": 2000,
-      "structurePointsMax": 60,
-      "powerConsumptionW": 0,
-      "commandTypeIds": [],
-      "baseCycleTimeMs": 0,
-      "cabines": 2
+      "commandTypeIds": []
     }
   ]
 }

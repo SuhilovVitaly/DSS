@@ -58,7 +58,9 @@ public static class EngineContentLoader
             throw new ContentException("Settings file is missing defaultScenario.");
 
         var commands = LoadCommandDefinitions(Resolve(basePath, settings.TypeData.CommandDefinitions));
-        var modules = LoadModuleTypes(Resolve(basePath, settings.TypeData.ModuleTypes));
+        var moduleCategories = LoadModuleCategories(Resolve(basePath, settings.TypeData.ModuleTypes));
+        var moduleImplementations = LoadModuleImplementations(
+            Resolve(basePath, settings.TypeData.ModuleImplementations), moduleCategories);
         var items = LoadItemTypes(Resolve(basePath, settings.TypeData.ItemTypes));
 
         // Factory/recipe files are loaded by declaration: a key present in Settings.json makes
@@ -70,10 +72,14 @@ public static class EngineContentLoader
             ? null
             : LoadRecipes(Resolve(basePath, settings.TypeData.Recipes));
 
-        return GameDataRegistry.Create(modules, items, commands, factoryTypes, recipes);
+        return GameDataRegistry.Create(moduleCategories, moduleImplementations, items, commands, factoryTypes, recipes);
     }
 
-    private static IReadOnlyList<ModuleTypeDefinition> LoadModuleTypes(string path)
+    /// <summary>
+    /// Loads the abstract module TYPE layer ("module-types.json"): commandTypeIds + slotSize
+    /// only. A single file, not a directory (mirrors the pre-split module-types.json layout).
+    /// </summary>
+    internal static IReadOnlyList<ModuleCategoryDefinition> LoadModuleCategories(string path)
     {
         var file = ReadJson<ModuleTypesFile>(path, "module types");
         if (file.ModuleTypes is null)
@@ -83,7 +89,73 @@ public static class EngineContentLoader
         {
             if (dto.CommandTypeIds is null)
                 throw new ContentException($"Module type '{dto.TypeId}' is missing commandTypeIds.");
-            ValidateEngineParameters(dto);
+
+            return new ModuleCategoryDefinition(
+                dto.TypeId,
+                dto.DisplayName,
+                dto.SlotSize,
+                dto.CommandTypeIds.ToImmutableArray());
+        }).ToArray();
+    }
+
+    /// <summary>
+    /// Loads the concrete module IMPLEMENTATION layer (e.g. "Data/Modules/Engine/modules-engine.json"):
+    /// each implementation's "type" field resolves its owning <see cref="ModuleCategoryDefinition"/>,
+    /// from which SlotSize and CommandTypeIds are pulled to construct the flat, unchanged
+    /// <see cref="ModuleTypeDefinition"/> runtime record. Supports either a single JSON file or a
+    /// directory (recursively merges every "*.json" file found under it), mirroring
+    /// <see cref="LoadCommandDefinitions"/>'s dual-mode support.
+    /// </summary>
+    internal static IReadOnlyList<ModuleTypeDefinition> LoadModuleImplementations(
+        string path, IReadOnlyList<ModuleCategoryDefinition> categories)
+    {
+        var categoriesByTypeId = categories.ToDictionary(c => c.TypeId, StringComparer.Ordinal);
+
+        if (Directory.Exists(path))
+        {
+            var files = Directory.EnumerateFiles(path, "*.json", SearchOption.AllDirectories)
+                .OrderBy(f => f, StringComparer.Ordinal)
+                .ToArray();
+
+            if (files.Length == 0)
+            {
+                throw new ContentException(
+                    $"module-implementations directory contains no *.json files: {path}");
+            }
+
+            return files.SelectMany(file => ReadModuleImplementationsFile(file, categoriesByTypeId)).ToArray();
+        }
+
+        if (File.Exists(path))
+            return ReadModuleImplementationsFile(path, categoriesByTypeId).ToArray();
+
+        throw new ContentException(
+            $"module-implementations path not found (neither file nor directory): {path}");
+    }
+
+    private static IEnumerable<ModuleTypeDefinition> ReadModuleImplementationsFile(
+        string filePath, IReadOnlyDictionary<string, ModuleCategoryDefinition> categoriesByTypeId)
+    {
+        var file = ReadJson<ModuleImplementationsFile>(filePath, "module implementations");
+        if (file.ModuleImplementations is null)
+            throw new ContentException("module-implementations file is missing moduleImplementations.");
+
+        return file.ModuleImplementations.Select(dto =>
+        {
+            if (string.IsNullOrWhiteSpace(dto.Type))
+            {
+                throw new ContentException(
+                    $"Module implementation '{dto.TypeId}' is missing required 'type' " +
+                    "(owning module type id).");
+            }
+
+            if (!categoriesByTypeId.TryGetValue(dto.Type, out var category))
+            {
+                throw new ContentException(
+                    $"Module implementation '{dto.TypeId}' references unknown module type '{dto.Type}'.");
+            }
+
+            ValidateEngineParameters(dto, category);
 
             // A missing/null baseSuccessChancePercent normalizes to 100 (§56.5).
             int baseSuccessChancePercent = dto.BaseSuccessChancePercent ?? 100;
@@ -96,9 +168,9 @@ public static class EngineContentLoader
 
             long baseCycleTimeMs = dto.BaseCycleTimeMs ?? 0;
 
-            // Active module types (those that declare commandTypeIds) MUST specify a
-            // positive BaseCycleTimeMs (§56.3).
-            if (baseCycleTimeMs <= 0 && dto.CommandTypeIds.Count > 0)
+            // Active module types (those whose owning category declares commandTypeIds) MUST
+            // specify a positive BaseCycleTimeMs (§56.3).
+            if (baseCycleTimeMs <= 0 && category.CommandTypeIds.Length > 0)
             {
                 throw new ContentException(
                     $"Active module type '{dto.TypeId}' must specify a positive baseCycleTimeMs.");
@@ -107,11 +179,11 @@ public static class EngineContentLoader
             return new ModuleTypeDefinition(
                 dto.TypeId,
                 dto.DisplayName,
-                dto.SlotSize,
+                category.SlotSize,
                 dto.MassKg,
                 dto.StructurePointsMax,
                 dto.PowerConsumptionW,
-                dto.CommandTypeIds.ToImmutableArray(),
+                category.CommandTypeIds,
                 dto.CargoCapacityKg,
                 dto.MaxSpeedMps,
                 dto.TurnStepDegrees,
@@ -121,24 +193,24 @@ public static class EngineContentLoader
                 dto.FuelCapacityKg,
                 baseSuccessChancePercent,
                 dto.CabinesCount);
-        }).ToArray();
+        });
     }
 
-    private static void ValidateEngineParameters(ModuleTypeDefinitionDto dto)
+    private static void ValidateEngineParameters(ModuleImplementationDto dto, ModuleCategoryDefinition category)
     {
-        if (!string.Equals(dto.TypeId, "module.engine.basic", StringComparison.Ordinal))
+        if (!string.Equals(category.TypeId, "module.engine", StringComparison.Ordinal))
             return;
 
         if (dto.MaxSpeedMps is not > 0)
-            throw new ContentException("Module type 'module.engine.basic' requires maxSpeedMps greater than zero.");
+            throw new ContentException($"Module type '{dto.TypeId}' requires maxSpeedMps greater than zero.");
         if (dto.TurnStepDegrees is not > 0)
-            throw new ContentException("Module type 'module.engine.basic' requires turnStepDegrees greater than zero.");
+            throw new ContentException($"Module type '{dto.TypeId}' requires turnStepDegrees greater than zero.");
         if (dto.LinearInertiaMps2 is not > 0)
-            throw new ContentException("Module type 'module.engine.basic' requires linearInertiaMps2 greater than zero.");
+            throw new ContentException($"Module type '{dto.TypeId}' requires linearInertiaMps2 greater than zero.");
         if (dto.AngularInertiaDegPerSec is not > 0)
-            throw new ContentException("Module type 'module.engine.basic' requires angularInertiaDegPerSec greater than zero.");
+            throw new ContentException($"Module type '{dto.TypeId}' requires angularInertiaDegPerSec greater than zero.");
         if (dto.FuelCapacityKg is not > 0)
-            throw new ContentException("Module type 'module.engine.basic' requires fuelCapacityKg greater than zero.");
+            throw new ContentException($"Module type '{dto.TypeId}' requires fuelCapacityKg greater than zero.");
     }
 
     private static IReadOnlyList<ItemTypeDefinition> LoadItemTypes(string path)
@@ -151,9 +223,42 @@ public static class EngineContentLoader
             new ItemTypeDefinition(dto.TypeId, dto.DisplayName, dto.UnitMassKg)).ToArray();
     }
 
+    /// <summary>
+    /// Loads command definitions from either a single JSON file (legacy layout) or a
+    /// directory (recursively merges every "*.json" file found under it — the physical
+    /// per-module-type layout, e.g. "Data/Commands/Engine/commands.json"). Directory
+    /// traversal order is sorted (<see cref="StringComparer.Ordinal"/>) so the merge is
+    /// deterministic regardless of on-disk enumeration order. All files are merged into a
+    /// single sequence before being handed to <see cref="TypeRegistry{TDefinition}.Create"/>
+    /// so duplicate typeIds across files are still caught.
+    /// </summary>
     internal static IReadOnlyList<CommandDefinition> LoadCommandDefinitions(string path)
     {
-        var file = ReadJson<CommandDefinitionsFile>(path, "command definitions");
+        if (Directory.Exists(path))
+        {
+            var files = Directory.EnumerateFiles(path, "*.json", SearchOption.AllDirectories)
+                .OrderBy(f => f, StringComparer.Ordinal)
+                .ToArray();
+
+            if (files.Length == 0)
+            {
+                throw new ContentException(
+                    $"command-definitions directory contains no *.json files: {path}");
+            }
+
+            return files.SelectMany(ReadCommandDefinitionsFile).ToArray();
+        }
+
+        if (File.Exists(path))
+            return ReadCommandDefinitionsFile(path).ToArray();
+
+        throw new ContentException(
+            $"command-definitions path not found (neither file nor directory): {path}");
+    }
+
+    private static IEnumerable<CommandDefinition> ReadCommandDefinitionsFile(string filePath)
+    {
+        var file = ReadJson<CommandDefinitionsFile>(filePath, "command definitions");
         if (file.CommandDefinitions is null)
             throw new ContentException("command-definitions file is missing commandDefinitions.");
 
@@ -167,6 +272,13 @@ public static class EngineContentLoader
                     $"'{activationEnergyCellsCost}' which must be >= 0.");
             }
 
+            if (string.IsNullOrWhiteSpace(dto.Type))
+            {
+                throw new ContentException(
+                    $"Command definition '{dto.TypeId}' is missing required 'type' " +
+                    "(owning module type id).");
+            }
+
             return new CommandDefinition(
                 dto.TypeId,
                 dto.DisplayName,
@@ -174,8 +286,9 @@ public static class EngineContentLoader
                 ParseFixedPointFactor(dto.ComplexityFactor),
                 ParseFixedPointFactor(dto.ConsumptionFactor),
                 dto.Target ?? "none",
-                activationEnergyCellsCost);
-        }).ToArray();
+                activationEnergyCellsCost,
+                dto.Type);
+        });
     }
 
     /// <summary>
@@ -283,22 +396,31 @@ public static class EngineContentLoader
 
     internal sealed record TypeDataPaths(
         [property: JsonPropertyName("moduleTypes")] string ModuleTypes,
+        [property: JsonPropertyName("moduleImplementations")] string ModuleImplementations,
         [property: JsonPropertyName("itemTypes")] string ItemTypes,
         [property: JsonPropertyName("commandDefinitions")] string CommandDefinitions,
         [property: JsonPropertyName("factoryTypes")] string? FactoryTypes,
         [property: JsonPropertyName("recipes")] string? Recipes);
 
     private sealed record ModuleTypesFile(
-        [property: JsonPropertyName("moduleTypes")] IReadOnlyList<ModuleTypeDefinitionDto> ModuleTypes);
+        [property: JsonPropertyName("moduleTypes")] IReadOnlyList<ModuleCategoryDefinitionDto> ModuleTypes);
 
-    private sealed record ModuleTypeDefinitionDto(
+    private sealed record ModuleCategoryDefinitionDto(
         [property: JsonPropertyName("typeId")] string TypeId,
         [property: JsonPropertyName("displayName")] string DisplayName,
         [property: JsonPropertyName("slotSize")] int SlotSize,
+        [property: JsonPropertyName("commandTypeIds")] IReadOnlyList<string> CommandTypeIds);
+
+    private sealed record ModuleImplementationsFile(
+        [property: JsonPropertyName("moduleImplementations")] IReadOnlyList<ModuleImplementationDto> ModuleImplementations);
+
+    private sealed record ModuleImplementationDto(
+        [property: JsonPropertyName("typeId")] string TypeId,
+        [property: JsonPropertyName("displayName")] string DisplayName,
+        [property: JsonPropertyName("type")] string? Type,
         [property: JsonPropertyName("massKg")] long MassKg,
         [property: JsonPropertyName("structurePointsMax")] int StructurePointsMax,
         [property: JsonPropertyName("powerConsumptionW")] long PowerConsumptionW,
-        [property: JsonPropertyName("commandTypeIds")] IReadOnlyList<string> CommandTypeIds,
         [property: JsonPropertyName("cargoCapacityKg")] long? CargoCapacityKg,
         [property: JsonPropertyName("maxSpeedMps")] int? MaxSpeedMps,
         [property: JsonPropertyName("turnStepDegrees")] int? TurnStepDegrees,
@@ -327,7 +449,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("complexityFactor")] decimal? ComplexityFactor,
         [property: JsonPropertyName("consumptionFactor")] decimal? ConsumptionFactor,
         [property: JsonPropertyName("target")] string? Target,
-        [property: JsonPropertyName("activationEnergyCellsCost")] int? ActivationEnergyCellsCost);
+        [property: JsonPropertyName("activationEnergyCellsCost")] int? ActivationEnergyCellsCost,
+        [property: JsonPropertyName("type")] string? Type);
 
     private sealed record FactoryTypesFile(
         [property: JsonPropertyName("factoryTypes")] IReadOnlyList<FactoryTypeDefinitionDto> FactoryTypes);

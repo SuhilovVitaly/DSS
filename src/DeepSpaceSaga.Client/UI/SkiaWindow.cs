@@ -53,10 +53,15 @@ public sealed class SkiaWindow : IDisposable
     private long _focusRegainedAtMs = long.MinValue / 2;
     private const long MenuOpenFocusRegainGuardMs = 1500;
 
-    public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory)
+    // TEMP DIAG — startup timing investigation, remove once resolved.
+    private readonly System.Diagnostics.Stopwatch? _startupStopwatch;
+    private bool _firstFrameLogged;
+
+    public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory, System.Diagnostics.Stopwatch? startupStopwatch = null)
     {
         _sessionFactory = sessionFactory;
         _handleKeyboardEdge = HandleKeyboardEdge;
+        _startupStopwatch = startupStopwatch;
 
         _screens.SetRoot(initialScreen);
 
@@ -65,6 +70,13 @@ public sealed class SkiaWindow : IDisposable
             Title = "Deep Space Saga",
             WindowBorder = WindowBorder.Hidden,
             WindowState = WindowState.Normal,
+            // Since the window is deliberately 1px shorter than the monitor (see
+            // OnLoad) so Windows doesn't classify it as fullscreen, the taskbar no
+            // longer auto-hides behind it on its own — start TopMost so it still
+            // covers the taskbar. Toggled off whenever the window loses focus (see
+            // OnFocusChanged) so it doesn't stay pinned over the Snipping Tool
+            // (Print Screen) or whatever the user alt-tabs to.
+            TopMost = true,
             FramesPerSecond = 80,
             VSync = false,
             API = new GraphicsAPI(ContextAPI.OpenGL, ContextProfile.Core, ContextFlags.Default, new APIVersion(3, 3))
@@ -76,6 +88,10 @@ public sealed class SkiaWindow : IDisposable
         _window.FramebufferResize += OnFramebufferResize;
         _window.FocusChanged += OnFocusChanged;
         _window.Closing += OnClosing;
+
+        // TEMP DIAG — startup timing investigation, remove once resolved.
+        if (_startupStopwatch is not null)
+            InterfaceLog.Write($"STARTUP DIAG: after Window.Create — {_startupStopwatch.ElapsedMilliseconds} ms since Main() start");
     }
 
     public void Run() => _window.Run();
@@ -96,7 +112,19 @@ public sealed class SkiaWindow : IDisposable
         if (target is not null)
         {
             _window.Position = target.Bounds.Origin;
-            _window.Size = target.VideoMode.Resolution ?? target.Bounds.Size;
+
+            // Deliberately 1px shorter than the monitor's native resolution. A
+            // borderless window whose size exactly matches the monitor is picked up
+            // by Windows' "fullscreen optimizations" heuristic and treated like an
+            // exclusive-fullscreen app even though this is a plain windowed OpenGL
+            // context. That heuristic is what makes every monitor briefly blank and
+            // renegotiate its mode at startup, and it's also why Print Screen
+            // captures this window as solid black — DWM stops compositing it
+            // normally and hands it a direct hardware flip path instead. Being 1px
+            // short keeps the window out of that path while staying visually
+            // indistinguishable from true fullscreen.
+            var resolution = target.VideoMode.Resolution ?? target.Bounds.Size;
+            _window.Size = new Silk.NET.Maths.Vector2D<int>(resolution.X, resolution.Y - 1);
         }
 
         _gl = _window.CreateOpenGL();
@@ -128,6 +156,10 @@ public sealed class SkiaWindow : IDisposable
         }
 
         _keyboard = _input.Keyboards.FirstOrDefault();
+
+        // TEMP DIAG — startup timing investigation, remove once resolved.
+        if (_startupStopwatch is not null)
+            InterfaceLog.Write($"STARTUP DIAG: OnLoad complete — {_startupStopwatch.ElapsedMilliseconds} ms since Main() start");
     }
 
     /// <summary>Clean up input while native window is still valid.</summary>
@@ -188,12 +220,21 @@ public sealed class SkiaWindow : IDisposable
         if (_grContext is null || _gl is null || _closing)
             return;
 
+        // TEMP DIAG — startup timing investigation, remove once resolved.
+        bool isFirstFrame = !_firstFrameLogged;
+        var diagSw = isFirstFrame ? System.Diagnostics.Stopwatch.StartNew() : null;
+        if (isFirstFrame && _startupStopwatch is not null)
+            InterfaceLog.Write($"STARTUP DIAG: OnRender first entered — {_startupStopwatch.ElapsedMilliseconds} ms since Main() start");
+
         if (_surface is null)
         {
             CreateRenderSurface();
             if (_surface is null)
                 return;
         }
+
+        if (isFirstFrame)
+            InterfaceLog.Write($"STARTUP DIAG: first-frame CreateRenderSurface done — {diagSw!.ElapsedMilliseconds} ms into OnRender");
 
         var canvas = _surface.Canvas;
 
@@ -217,8 +258,22 @@ public sealed class SkiaWindow : IDisposable
 
         _screens.Current.Render(canvas, windowSize.X, windowSize.Y);
 
+        if (isFirstFrame)
+            InterfaceLog.Write($"STARTUP DIAG: first-frame screen.Render (recording) done — {diagSw!.ElapsedMilliseconds} ms into OnRender");
+
         canvas.Restore();
         canvas.Flush();
+
+        if (isFirstFrame)
+            InterfaceLog.Write($"STARTUP DIAG: first-frame canvas.Flush done — {diagSw!.ElapsedMilliseconds} ms into OnRender");
+
+        // TEMP DIAG — startup timing investigation, remove once resolved.
+        if (!_firstFrameLogged)
+        {
+            _firstFrameLogged = true;
+            if (_startupStopwatch is not null)
+                InterfaceLog.Write($"STARTUP DIAG: first frame flushed — {_startupStopwatch.ElapsedMilliseconds} ms since Main() start");
+        }
 
         PollKeyboard();
     }
@@ -246,6 +301,12 @@ public sealed class SkiaWindow : IDisposable
             $"depth={_screens.Count} printScreenDown={printScreenDown}");
 
         _isFocused = isFocused;
+
+        // Only cover the taskbar (see WindowOptions.TopMost above) while the game
+        // itself is the foreground window. Keeping TopMost on while unfocused would
+        // pin the game over whatever the user switched to — e.g. the Snipping Tool
+        // that Print Screen just opened, or an alt-tabbed app.
+        _window.TopMost = isFocused;
 
         if (isFocused)
         {
@@ -345,6 +406,12 @@ public sealed class SkiaWindow : IDisposable
 
     private void HandleKeyboardEdge(Key key)
     {
+        if (key == Key.F10)
+        {
+            CaptureScreenshot();
+            return;
+        }
+
         if (key == Key.Escape || key == Key.F5 || key == Key.F9)
         {
             if (_pendingKeyboardTransition is null || _pendingKeyboardTransition.IsCompleted)
@@ -357,6 +424,40 @@ public sealed class SkiaWindow : IDisposable
         }
 
         _screens.Current.OnKeyDown(key);
+    }
+
+    private const string ScreenshotsDirectory = "Screenshots";
+
+    /// <summary>
+    /// F10 — screenshot. Captures whatever is currently in the flushed render
+    /// surface (the frame this same OnRender call just drew) and saves it as a
+    /// uniquely-named PNG under <see cref="ScreenshotsDirectory"/> next to
+    /// <see cref="InterfaceLog"/>. No modal/UI window is shown; the action (and any
+    /// failure) is recorded via <see cref="InterfaceLog"/> instead.
+    /// </summary>
+    private void CaptureScreenshot()
+    {
+        if (_surface is null)
+            return;
+
+        try
+        {
+            Directory.CreateDirectory(ScreenshotsDirectory);
+
+            string fileName = $"screenshot_{DateTime.UtcNow:yyyy-MM-dd'T'HH-mm-ss-fff'Z'}.png";
+            string path = Path.Combine(ScreenshotsDirectory, fileName);
+
+            using var image = _surface.Snapshot();
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            using var stream = File.Create(path);
+            data.SaveTo(stream);
+
+            InterfaceLog.Write($"Screenshot saved: {path}");
+        }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"Screenshot failed: {ex.Message}");
+        }
     }
 
     /// <summary>

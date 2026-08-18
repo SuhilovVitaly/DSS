@@ -9,5 +9,5 @@ public static class NavigationComputerCommandTypes
     /// </remarks>
     public const string Dock = "navigation.dock";
 
-    public const string StationsList = "navigation.stations-list";
+    public const string StationsList = "navigation.stationsList";
 }

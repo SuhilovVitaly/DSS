@@ -3431,6 +3431,7 @@ Blueprint/type definition JSON:
 ```text
 Settings.json
     moduleTypesPath
+    moduleImplementationsPath
     itemTypesPath
     factoryTypesPath / recipesPath
     shipTemplatesPath?
@@ -3438,6 +3439,7 @@ Settings.json
     defaultScenarioPath
 
 module-types.json
+Data/Modules/<Type>/modules-<type>.json (file or directory, merged recursively)
 item-types.json
 factory-types.json / recipes.json
 ship-templates.json?
@@ -3446,21 +3448,37 @@ platform-types.json?
 
 Точные имена файлов и полей могут быть уточнены при реализации, но граница ответственности фиксирована: `Settings.json` ссылается на type/config files, а scenario/save ссылается на уже загруженные type definitions через ids.
 
-Conceptual module type JSON:
+Module type data разделены на два слоя: абстрактный module TYPE (категория) и конкретную module IMPLEMENTATION.
+
+Conceptual module type (category) JSON — `module-types.json`, ключ `moduleTypes`:
+
+```json
+{
+  "typeId": "module.container",
+  "displayName": "Container",
+  "slotSize": 4,
+  "commandTypeIds": []
+}
+```
+
+Category содержит только `typeId`, `displayName`, `slotSize` и `commandTypeIds` — общие для всех implementations этой категории.
+
+Conceptual module implementation JSON — `Data/Modules/<Type>/modules-<type>.json` (одиночный файл ИЛИ директория, рекурсивно объединяющая все `*.json`), ключ `moduleImplementations`:
 
 ```json
 {
   "typeId": "SSM-CRG-CGT-S-9101",
-  "kind": "CargoModule",
-  "name": "Spacecraft Cargo Container Small",
+  "displayName": "Spacecraft Cargo Container Small",
+  "type": "module.container",
   "massKg": 20000,
-  "slotSize": 4,
   "structurePointsMax": 400,
   "powerConsumptionW": 0,
-  "capacityKg": 100000,
-  "commands": []
+  "baseCycleTimeMs": 0,
+  "cargoCapacityKg": 100000
 }
 ```
+
+Implementation содержит конкретные характеристики (`massKg`, `structurePointsMax`, `powerConsumptionW`, `baseCycleTimeMs`) и опциональные, специфичные для типа модуля поля (`cargoCapacityKg`, `maxSpeedMps`, `turnStepDegrees`, `linearInertiaMps2`, `angularInertiaDegPerSec`, `fuelCapacityKg`, `baseSuccessChancePercent`, `cabines`). Обязательное поле `type` ссылается на `typeId` владеющей категории; `slotSize` и `commandTypeIds` implementation наследует от category и не задаёт их напрямую.
 
 Conceptual item/resource type JSON:
 
@@ -4843,15 +4861,29 @@ DirectionSynchronization
 
 > **Примечание (новые catalog-only команды):** в дополнение к переименованию, в каталог модулей
 > (`module-types.json` / `command-definitions.json`) добавлены три новые команды —
-> `navigation.dock`, `navigation.stations-list` (модуль Navigation Computer) и
-> `scanner.nearby-signatures` (модуль Scanner). Они проходят валидацию реестра
+> `navigation.dock`, `navigation.stationsList` (модуль Navigation Computer) и
+> `scanner.nearbySignatures` (модуль Scanner). Они проходят валидацию реестра
 > (`GameDataRegistry.Create`) и отображаются как кнопки в UI, но **не имеют server-side
 > реализации/обработчика** в `SimulationEngine` — это сознательное ограничение объёма задачи, а не
 > забытая реализация (по аналогии с уже существующими catalog-only командами Scanner
 > `general-scan`/`structural-scan`). Предусловия `navigation.dock` зафиксированы как doc-комментарии
 > для будущей реализации: Station selected; Station in range < 200; Station speed and direction
-> synchronized — и пока не проверяются во время выполнения. `navigation.stations-list` и
-> `scanner.nearby-signatures` предусловий не имеют.
+> synchronized — и пока не проверяются во время выполнения. `navigation.stationsList` и
+> `scanner.nearbySignatures` предусловий не имеют.
+
+> **Примечание (структура каталога команд):** `command-definitions.json` перестал быть единым
+> файлом — каталог разбит на несколько файлов, сгруппированных по типу владеющего модуля:
+> `Data/Commands/<ModuleType>/commands.json` (сейчас 4 файла — Engine, Scanner,
+> NavigationComputer, DrillingUnit — по числу module types, у которых есть команды). Каждая
+> запись команды содержит поле `type` — typeId владеющего module type (например
+> `module.engine`, т.е. абстрактный тип модуля, а не конкретная реализация вроде
+> `module.engine.basic` — см. §55.4 о разделении типа и реализации модуля) — используемое
+> для перекрёстной валидации согласованности с `ModuleCategoryDefinition.CommandTypeIds` при
+> загрузке реестра (`GameDataRegistry.Create`); расхождение приводит к ошибке загрузки.
+> Загрузчик (`EngineContentLoader.LoadCommandDefinitions`)
+> поддерживает оба режима: одиночный файл (обратная совместимость с существующими тестовыми
+> фикстурами) и директорию — рекурсивно мёржит все `*.json` внутри неё. `Settings.json` теперь
+> указывает `typeData.commandDefinitions` на директорию `Data/Commands`, а не на единый файл.
 
 ### 56.10. Engine fuel вместо Energy Cells
 
@@ -4961,8 +4993,8 @@ Y8: .........
 
 | Координата | Роль | typeId |
 |---|---|---|
-| (4,0) | Navigation Computer | `module.bridge-navigation-computer.basic` |
-| (4,1) | Living quarters | `living-quarters.mk1` |
+| (4,0) | Navigation Computer | `module.bridge.navigation.computer.basic` |
+| (4,1) | Living quarters | `living.quarters.mk1` |
 | (4,2) | Cargo hold | `module.container.basic` |
 | (4,3) | Scanner | `module.scanner.mk1` |
 | (4,4) | Reactor (Generator) | `module.generator.basic` |
@@ -4970,7 +5002,7 @@ Y8: .........
 
 Cargo hold стартует с 1000 `Energy Cells` (без изменений относительно предыдущей комплектации). Engine не получает явно заданный `fuelAmountKg` в `DefaultScenario` — применяется общее правило: если `fuelAmountKg` не указан, используется полный `fuelCapacityKg`.
 
-Из стартового loadout исключены: Battery, Drilling Unit, Combat Laser, старый Habitation Module. Соответствующие module type (`module.battery.basic`, `module.drilling-unit.basic`, `module.combat-laser.basic`, `module.habitation.basic`) остаются определены в каталоге для будущего использования — из каталога они не удалены.
+Из стартового loadout исключены: Battery, Drilling Unit, Combat Laser, старый Habitation Module. Соответствующие module type (`module.battery.basic`, `module.drilling.unit.basic`, `module.combat.laser.basic`, `module.habitation.basic`) остаются определены в каталоге для будущего использования — из каталога они не удалены.
 
 `module.container.basic.SlotSize` изменён с `4` на `1` (Container больше не занимает всю platform `2×2` — понятия platform в этой модели нет).
 

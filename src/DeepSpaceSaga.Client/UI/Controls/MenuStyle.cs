@@ -16,14 +16,25 @@ public enum ButtonState
 
 public static class MenuStyle
 {
-    // --- Fonts (Verdana, matching reference) ---
-    public static readonly SKTypeface TypefaceRegular =
-        SKTypeface.FromFamilyName("Verdana", SKFontStyleWeight.Normal, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright)
-        ?? SKTypeface.Default;
+    // TEMP DIAG — startup timing investigation, remove once resolved. Must be the
+    // first field so it's initialized before anything it measures below.
+    private static readonly System.Diagnostics.Stopwatch DiagStopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-    public static readonly SKTypeface TypefaceBold =
-        SKTypeface.FromFamilyName("Verdana", SKFontStyleWeight.Bold, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright)
-        ?? SKTypeface.Default;
+    // --- Fonts (Verdana, matching reference) ---
+    public static readonly SKTypeface TypefaceRegular = LoadTypefaceDiag("Regular", SKFontStyleWeight.Normal);
+    public static readonly SKTypeface TypefaceBold = LoadTypefaceDiag("Bold", SKFontStyleWeight.Bold);
+
+    // TEMP DIAG — startup timing investigation, remove once resolved.
+    private static SKTypeface LoadTypefaceDiag(string label, SKFontStyleWeight weight)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var typeface =
+            SKTypeface.FromFamilyName("Verdana", weight, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright)
+            ?? SKTypeface.Default;
+        DeepSpaceSaga.Client.UI.InterfaceLog.Write(
+            $"STARTUP DIAG: MenuStyle SKTypeface.FromFamilyName(Verdana {label}) took {sw.ElapsedMilliseconds} ms");
+        return typeface;
+    }
 
     // --- Colors (exact from reference) ---
     public static readonly SKColor ColorText = new(220, 220, 220);
@@ -108,5 +119,13 @@ public static class MenuStyle
             TextAlign = SKTextAlign.Center,
             Typeface = bold ? TypefaceBold : TypefaceRegular
         };
+    }
+
+    // TEMP DIAG — startup timing investigation, remove once resolved. Runs after
+    // every static field above has been initialized (fonts + all SKPaint objects).
+    static MenuStyle()
+    {
+        DeepSpaceSaga.Client.UI.InterfaceLog.Write(
+            $"STARTUP DIAG: MenuStyle static init complete (fonts+paints) — {DiagStopwatch.ElapsedMilliseconds} ms total");
     }
 }

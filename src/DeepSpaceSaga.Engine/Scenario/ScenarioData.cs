@@ -101,19 +101,19 @@ public sealed record HullLayoutData(
 /// Runtime progress for an active module cycle.
 /// </summary>
 /// <param name="TargetObjectId">
-/// ObjectId of the target for match commands (engine.speed-synchronization /
-/// engine.direction-synchronization, requirements §56.9). Filled when a match cycle starts;
+/// ObjectId of the target for match commands (engine.speedSynchronization /
+/// engine.directionSynchronization, requirements §56.9). Filled when a match cycle starts;
 /// always set for match cycles (diagnostics + §1253-1298 restore), null otherwise.
 /// </param>
 /// <param name="CapturedTargetSpeedKmS">
 /// Target scalar speed captured at cycle start (km/s). Filled only for
-/// engine.speed-synchronization. Cycle completion applies only this captured value —
+/// engine.speedSynchronization. Cycle completion applies only this captured value —
 /// later target changes or the target disappearing do not affect the result.
 /// Persisted in save and restored on load.
 /// </param>
 /// <param name="CapturedTargetCourseDegrees">
 /// Target course captured at cycle start (degrees). Filled only for
-/// engine.direction-synchronization. Cycle completion applies only this captured value —
+/// engine.directionSynchronization. Cycle completion applies only this captured value —
 /// later target changes or the target disappearing do not affect the result.
 /// Persisted in save and restored on load.
 /// </param>

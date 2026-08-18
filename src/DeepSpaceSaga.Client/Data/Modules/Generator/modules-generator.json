@@ -1,0 +1,13 @@
+{
+  "moduleImplementations": [
+    {
+      "typeId": "module.generator.basic",
+      "displayName": "Generator",
+      "type": "module.generator",
+      "massKg": 12000,
+      "structurePointsMax": 180,
+      "powerConsumptionW": 0,
+      "baseCycleTimeMs": 0
+    }
+  ]
+}

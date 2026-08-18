@@ -5,14 +5,14 @@ public static class ShipEngineCommandTypes
 {
     public const string Accelerate = "engine.accelerate";
     public const string Brake = "engine.brake";
-    public const string MaintainSpeed = "engine.maintain-speed";
-    public const string TurnLeftStep = "engine.turn-left-step";
-    public const string TurnRightStep = "engine.turn-right-step";
-    public const string TurnLeftUntilCancel = "engine.turn-left-until-cancel";
-    public const string TurnRightUntilCancel = "engine.turn-right-until-cancel";
-    public const string MaintainCourse = "engine.maintain-course";
-    public const string SpeedSynchronization = "engine.speed-synchronization";
-    public const string DirectionSynchronization = "engine.direction-synchronization";
+    public const string MaintainSpeed = "engine.maintainSpeed";
+    public const string TurnLeftStep = "engine.turnLeftStep";
+    public const string TurnRightStep = "engine.turnRightStep";
+    public const string TurnLeftUntilCancel = "engine.turnLeftUntilCancel";
+    public const string TurnRightUntilCancel = "engine.turnRightUntilCancel";
+    public const string MaintainCourse = "engine.maintainCourse";
+    public const string SpeedSynchronization = "engine.speedSynchronization";
+    public const string DirectionSynchronization = "engine.directionSynchronization";
     public const string Orbit = "engine.orbit";
 
     /// <summary>
@@ -20,5 +20,5 @@ public static class ShipEngineCommandTypes
     /// backward-compatible handling of old data inside the Engine. Never used by canonical
     /// command definitions or the command panel UI.
     /// </summary>
-    public const string CancelAll = "engine.cancel-all";
+    public const string CancelAll = "engine.cancelAll";
 }

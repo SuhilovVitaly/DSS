@@ -28,8 +28,8 @@
 
 | Координата | Код | Модуль | `typeId` | Роль |
 | --- | --- | --- | --- | --- |
-| `(4,0)` | N | Navigation Computer | `module.bridge-navigation-computer.basic` | Active |
-| `(4,1)` | L | Living quarters | `living-quarters.mk1` | Passive |
+| `(4,0)` | N | Navigation Computer | `module.bridge.navigation.computer.basic` | Active |
+| `(4,1)` | L | Living quarters | `living.quarters.mk1` | Passive |
 | `(4,2)` | C | Cargo hold | `module.container.basic` | Passive |
 | `(4,3)` | S | Scanner | `module.scanner.mk1` | Active |
 | `(4,4)` | R | Reactor | `module.generator.basic` | Passive |
@@ -64,4 +64,4 @@
 
 ## За рамками первого релиза
 
-- Детальная цена и условия установки `module.drilling-unit.basic` на станции.
+- Детальная цена и условия установки `module.drilling.unit.basic` на станции.

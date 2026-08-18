@@ -311,7 +311,7 @@
 Требования:
 
 - Стартовый `PlayerShip` (SPC-0001) — Tetrarch Class: hull grid `9×9`, 10 structural cells.
-- Ровно 6 стартовых модулей, каждый на своей координате: Navigation Computer `(4,0)`, Living quarters `(4,1)` (`living-quarters.mk1`), Cargo hold `(4,2)` (`module.container.basic`), Scanner `(4,3)`, Reactor/Generator `(4,4)`, Engine `(4,5)`.
+- Ровно 6 стартовых модулей, каждый на своей координате: Navigation Computer `(4,0)`, Living quarters `(4,1)` (`living.quarters.mk1`), Cargo hold `(4,2)` (`module.container.basic`), Scanner `(4,3)`, Reactor/Generator `(4,4)`, Engine `(4,5)`.
 - 4 из 10 hull cells остаются незанятыми модулями.
 - Battery, Drilling Unit, Combat Laser и старый Habitation Module в стартовом loadout отсутствуют (типы модулей остаются в каталоге).
 - Container (`module.container.basic`) имеет `SlotSize = 1` (изменено с `4`).

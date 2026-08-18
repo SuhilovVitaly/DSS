@@ -68,7 +68,7 @@ public class CommandResultTests
                 CommandId: "cmd-2",
                 ObjectId: "ship-1",
                 ModuleId: "engine-1",
-                CommandType: "engine.turn-right-step",
+                CommandType: "engine.turnRightStep",
                 Status: CommandResultStatus.Deferred,
                 EffectiveGameTimeMs: 1000,
                 ReasonCode: CommandReasonCodes.Busy),

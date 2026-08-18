@@ -1,0 +1,103 @@
+{
+    "commandDefinitions": [
+        {
+            "typeId": "engine.accelerate",
+            "displayName": "Accelerate",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.engine"
+        },
+        {
+            "typeId": "engine.brake",
+            "displayName": "Brake",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.engine"
+        },
+        {
+            "typeId": "engine.maintainSpeed",
+            "displayName": "Maintain Speed",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.engine"
+        },
+        {
+            "typeId": "engine.turnLeftStep",
+            "displayName": "Turn Left Step",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.engine"
+        },
+        {
+            "typeId": "engine.turnRightStep",
+            "displayName": "Turn Right Step",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.engine"
+        },
+        {
+            "typeId": "engine.turnLeftUntilCancel",
+            "displayName": "Turn Left Until Cancel",
+            "timeFactor": 1.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.engine"
+        },
+        {
+            "typeId": "engine.turnRightUntilCancel",
+            "displayName": "Turn Right Until Cancel",
+            "timeFactor": 1.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.engine"
+        },
+        {
+            "typeId": "engine.maintainCourse",
+            "displayName": "Maintain Course",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.engine"
+        },
+        {
+            "typeId": "engine.speedSynchronization",
+            "displayName": "Speed Synchronization",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "object",
+            "type": "module.engine"
+        },
+        {
+            "typeId": "engine.directionSynchronization",
+            "displayName": "Direction Synchronization",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "object",
+            "type": "module.engine"
+        },
+        {
+            "typeId": "engine.orbit",
+            "displayName": "Orbit",
+            "timeFactor": 1.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "point",
+            "type": "module.engine"
+        }
+    ]
+}

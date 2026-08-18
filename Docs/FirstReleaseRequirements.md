@@ -55,7 +55,7 @@
 - `GameSessionScreen` уже содержит тактическую карту, камеру, масштабирование, панель скоростей, панель команд модулей, выбор объектов, подписи, трейлы и прогноз движения.
 - Движение корабля уже основано на module-addressed командах двигателя.
 - Стартовый корабль игрока заменен на Tetrarch Class: `Navigation Computer`, `Living quarters`, `Cargo hold`, `Scanner`, `Reactor`, `Engine`.
-- В данных уже есть стартовые модули Tetrarch: `module.bridge-navigation-computer.basic`, `living-quarters.mk1`, `module.container.basic`, `module.scanner.mk1`, `module.generator.basic`, `module.engine.basic`.
+- В данных уже есть стартовые модули Tetrarch: `module.bridge.navigation.computer.basic`, `living.quarters.mk1`, `module.container.basic`, `module.scanner.mk1`, `module.generator.basic`, `module.engine.basic`.
 - В каталоге также остаются будущие/не стартовые модули: `Drilling Unit`, `Battery`, `Combat Laser`, старый `Habitation Module`.
 - `module.engine.basic` уже содержит `fuelCapacityKg`, что подходит для решения первого релиза: `Fuel` хранится в баках двигателя.
 - В требованиях уже есть hull grid Tetrarch, грузовая вместимость по массе, `Energy Cells` как ресурс реактора/генератора и `Fuel` как ресурс двигателя.
@@ -67,8 +67,8 @@
 - `Living quarters MK I` имеет `cabines = 2`.
 - Стартовый экипаж - `1` персонаж, главный герой.
 - Командные панели первого релиза: Navigation, Maneuver, Engine, Space Control.
-- `scanner.nearby-signatures` показывается на панели Space Control.
-- Mining capability реализуется через Drilling Unit и команды `mining.extract-ice`, `mining.stop-extraction`.
+- `scanner.nearbySignatures` показывается на панели Space Control.
+- Mining capability реализуется через Drilling Unit и команды `mining.extractIce`, `mining.stopExtraction`.
 - `Energy Cells` остаются в игре как отдельный товар.
 - `Energy Cells` можно складировать в грузовом контейнере, покупать и продавать.
 - `Energy Cells` нужны для реактора/генератора и электричества, питающего active modules.
@@ -115,7 +115,7 @@ Tetrarch Class является стартовым кораблем игрока
 
 ### Командные панели
 
-Команды корабля группируются по смыслу в четыре панели: Navigation, Maneuver, Engine и Space Control. Панели отображают module-addressed команды Navigation Computer, Engine, Scanner и Drilling Unit. `scanner.nearby-signatures` показывается на Space Control panel.
+Команды корабля группируются по смыслу в четыре панели: Navigation, Maneuver, Engine и Space Control. Панели отображают module-addressed команды Navigation Computer, Engine, Scanner и Drilling Unit. `scanner.nearbySignatures` показывается на Space Control panel.
 
 Детали: `Docs/FirstRelease/Mechanics/CommandPanels.md`.
 
@@ -169,7 +169,7 @@ Tetrarch Class является стартовым кораблем игрока
 
 ### Экипаж, пассажиры и жилой модуль
 
-Экипаж и пассажиры являются людьми на корабле. Для их размещения нужен `Living quarters` с каютами; стартовый `living-quarters.mk1` имеет `cabines = 2`. На старте новой игры на корабле один персонаж - главный герой; пассажира можно взять через станционный контракт при наличии свободной каюты.
+Экипаж и пассажиры являются людьми на корабле. Для их размещения нужен `Living quarters` с каютами; стартовый `living.quarters.mk1` имеет `cabines = 2`. На старте новой игры на корабле один персонаж - главный герой; пассажира можно взять через станционный контракт при наличии свободной каюты.
 
 Детали: `Docs/FirstRelease/Mechanics/CrewAndHabitation.md`.
 
@@ -187,7 +187,7 @@ Tetrarch Class является стартовым кораблем игрока
 
 ### Добыча льда
 
-Игрок добывает лед с астероидов через купленный и установленный на станции Drilling Unit командами `mining.extract-ice` и `mining.stop-extraction`. Для добычи нужен `scanner.structural-scan`, дистанция `<= 100 km`, синхронизация скорости/направления и свободное место в cargo. Запас льда asteroid конечный: `100..5000` единиц; добыча за цикл `10000 ms`: `100..200` единиц.
+Игрок добывает лед с астероидов через купленный и установленный на станции Drilling Unit командами `mining.extractIce` и `mining.stopExtraction`. Для добычи нужен `scanner.structuralScan`, дистанция `<= 100 km`, синхронизация скорости/направления и свободное место в cargo. Запас льда asteroid конечный: `100..5000` единиц; добыча за цикл `10000 ms`: `100..200` единиц.
 
 Детали: `Docs/FirstRelease/Mechanics/IceMining.md`.
 
@@ -204,5 +204,5 @@ Tetrarch Class является стартовым кораблем игрока
 ## За рамками первого релиза
 
 - Fuel cost для команд двигателя/навигации.
-- Детальная цена и условия установки `module.drilling-unit.basic` на станции.
+- Детальная цена и условия установки `module.drilling.unit.basic` на станции.
 - Сложная экономика пассажирских перевозок.

@@ -16,13 +16,14 @@ public class CommandDefinitionLoaderTests
         {
           "commandDefinitions": [
             {
-              "typeId": "scanner.general-scan",
+              "typeId": "scanner.generalScan",
               "displayName": "General Scan",
               "timeFactor": 0.4,
               "complexityFactor": 1.0,
               "consumptionFactor": 1.0,
               "target": "object",
-              "activationEnergyCellsCost": 5
+              "activationEnergyCellsCost": 5,
+              "type": "module.scanner.mk1"
             }
           ]
         }
@@ -49,12 +50,13 @@ public class CommandDefinitionLoaderTests
         {
           "commandDefinitions": [
             {
-              "typeId": "scanner.structural-scan",
+              "typeId": "scanner.structuralScan",
               "displayName": "Structural Scan",
               "timeFactor": 3.0,
               "complexityFactor": 1.0,
               "consumptionFactor": 1.0,
-              "target": "object"
+              "target": "object",
+              "type": "module.scanner.mk1"
             }
           ]
         }
@@ -81,13 +83,14 @@ public class CommandDefinitionLoaderTests
         {
           "commandDefinitions": [
             {
-              "typeId": "scanner.general-scan",
+              "typeId": "scanner.generalScan",
               "displayName": "General Scan",
               "timeFactor": 0.4,
               "complexityFactor": 1.0,
               "consumptionFactor": 1.0,
               "target": "object",
-              "activationEnergyCellsCost": -1
+              "activationEnergyCellsCost": -1,
+              "type": "module.scanner.mk1"
             }
           ]
         }

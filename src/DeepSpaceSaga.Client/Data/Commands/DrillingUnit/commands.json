@@ -1,0 +1,22 @@
+{
+    "commandDefinitions": [
+        {
+            "typeId": "mining.extractIce",
+            "displayName": "Extract Ice",
+            "timeFactor": 1.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "object",
+            "type": "module.drilling.unit"
+        },
+        {
+            "typeId": "mining.stopExtraction",
+            "displayName": "Stop Extraction",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.drilling.unit"
+        }
+    ]
+}
