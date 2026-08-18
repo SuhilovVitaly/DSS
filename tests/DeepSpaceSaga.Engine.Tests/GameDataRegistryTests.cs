@@ -5,15 +5,22 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 /// <summary>
 /// Covers "GameDataRegistry.Create" cross-checking a command's owning "Type" against the
-/// module type that references it via "CommandTypeIds" (module→command remains the source of
-/// truth; "Type" is the physical-organization field being cross-validated against it) —
-/// story-20260818-085340, Batch 1, U3/U5.
+/// module type (category) that references it via "CommandTypeIds" (module→command remains the
+/// source of truth; "Type" is the physical-organization field being cross-validated against it)
+/// — story-20260818-085340, Batch 1, U3/U5.
 /// </summary>
 public class GameDataRegistryTests
 {
     [Fact]
     public void Create_throws_when_command_type_does_not_match_owning_module_type()
     {
+        var moduleCategories = new[]
+        {
+            new ModuleCategoryDefinition(
+                "module.engine.basic", "Engine", SlotSize: 1,
+                CommandTypeIds: ImmutableArray.Create("engine.accelerate"))
+        };
+
         var moduleTypes = new[]
         {
             new ModuleTypeDefinition(
@@ -30,7 +37,7 @@ public class GameDataRegistryTests
         };
 
         var ex = Assert.Throws<ContentException>(() =>
-            GameDataRegistry.Create(moduleTypes, itemTypes: [], commandDefinitions));
+            GameDataRegistry.Create(moduleCategories, moduleTypes, itemTypes: [], commandDefinitions));
 
         Assert.Contains("module.scanner.mk1", ex.Message, StringComparison.Ordinal);
         Assert.Contains("module.engine.basic", ex.Message, StringComparison.Ordinal);
@@ -39,6 +46,13 @@ public class GameDataRegistryTests
     [Fact]
     public void Create_succeeds_when_command_type_matches_owning_module_type()
     {
+        var moduleCategories = new[]
+        {
+            new ModuleCategoryDefinition(
+                "module.engine.basic", "Engine", SlotSize: 1,
+                CommandTypeIds: ImmutableArray.Create("engine.accelerate"))
+        };
+
         var moduleTypes = new[]
         {
             new ModuleTypeDefinition(
@@ -52,7 +66,7 @@ public class GameDataRegistryTests
             new CommandDefinition("engine.accelerate", "Accelerate", Type: "module.engine.basic")
         };
 
-        var registry = GameDataRegistry.Create(moduleTypes, itemTypes: [], commandDefinitions);
+        var registry = GameDataRegistry.Create(moduleCategories, moduleTypes, itemTypes: [], commandDefinitions);
 
         Assert.True(registry.CommandDefinitions.Contains("engine.accelerate"));
     }

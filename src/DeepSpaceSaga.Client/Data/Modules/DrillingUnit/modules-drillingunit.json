@@ -1,0 +1,13 @@
+{
+  "moduleImplementations": [
+    {
+      "typeId": "module.drilling-unit.basic",
+      "displayName": "Drilling Unit",
+      "type": "module.drilling-unit",
+      "massKg": 8000,
+      "structurePointsMax": 150,
+      "powerConsumptionW": 0,
+      "baseCycleTimeMs": 10000
+    }
+  ]
+}

@@ -8,7 +8,7 @@
             "consumptionFactor": 1.0,
             "target": "object",
             "activationEnergyCellsCost": 2,
-            "type": "module.scanner.mk1"
+            "type": "module.scanner"
         },
         {
             "typeId": "scanner.structuralScan",
@@ -17,7 +17,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "object",
-            "type": "module.scanner.mk1"
+            "type": "module.scanner"
         },
         {
             "typeId": "scanner.nearbySignatures",
@@ -27,7 +27,7 @@
             "consumptionFactor": 1.0,
             "target": "none",
             "activationEnergyCellsCost": 2,
-            "type": "module.scanner.mk1"
+            "type": "module.scanner"
         }
     ]
 }

@@ -1,0 +1,13 @@
+{
+  "moduleImplementations": [
+    {
+      "typeId": "module.habitation.basic",
+      "displayName": "Habitation Module",
+      "type": "module.habitation",
+      "massKg": 15000,
+      "structurePointsMax": 200,
+      "powerConsumptionW": 0,
+      "baseCycleTimeMs": 0
+    }
+  ]
+}

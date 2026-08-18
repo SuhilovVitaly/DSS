@@ -1,0 +1,13 @@
+{
+  "moduleImplementations": [
+    {
+      "typeId": "module.combat-laser.basic",
+      "displayName": "Combat Laser",
+      "type": "module.combat-laser",
+      "massKg": 10000,
+      "structurePointsMax": 150,
+      "powerConsumptionW": 0,
+      "baseCycleTimeMs": 0
+    }
+  ]
+}

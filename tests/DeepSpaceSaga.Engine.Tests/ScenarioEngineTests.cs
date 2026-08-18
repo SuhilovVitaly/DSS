@@ -222,8 +222,10 @@ public class ScenarioEngineTests
         Assert.Equal(6, playerShip.Modules.Length);
         var cargoModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
-        Assert.Equal(4, cargoModule.ModuleTypeIndex);
-        Assert.Equal(1, engineModule.ModuleTypeIndex);
+        // Module type registry order follows the deterministic (ordinal) sort of
+        // Data/Modules/**/*.json file paths, not the historical flat module-types.json order.
+        Assert.Equal(2, cargoModule.ModuleTypeIndex);
+        Assert.Equal(4, engineModule.ModuleTypeIndex);
         Assert.Null(engineModule.ActiveCycle);
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-BRIDGE-01");
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
@@ -351,17 +353,28 @@ public class ScenarioEngineTests
             WriteSettings(directory);
             WriteMinimalContent(directory);
             string field = jsonValue is null ? "" : $"\"baseSuccessChancePercent\": {jsonValue.Value},";
-            File.WriteAllText(Path.Combine(directory, "module-types.json"), $$"""
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), """
             {
               "moduleTypes": [
                 {
                   "typeId": "module.test.passive",
                   "displayName": "Test",
                   "slotSize": 1,
+                  "commandTypeIds": []
+                }
+              ]
+            }
+            """);
+            File.WriteAllText(Path.Combine(directory, "modules.json"), $$"""
+            {
+              "moduleImplementations": [
+                {
+                  "typeId": "module.test.passive",
+                  "displayName": "Test",
+                  "type": "module.test.passive",
                   "massKg": 1,
                   "structurePointsMax": 1,
                   "powerConsumptionW": 0,
-                  "commandTypeIds": [],
                   {{field}}
                   "baseCycleTimeMs": 0
                 }
@@ -385,17 +398,28 @@ public class ScenarioEngineTests
         {
             WriteSettings(directory);
             WriteMinimalContent(directory);
-            File.WriteAllText(Path.Combine(directory, "module-types.json"), $$"""
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), """
             {
               "moduleTypes": [
                 {
                   "typeId": "module.test.passive",
                   "displayName": "Test",
                   "slotSize": 1,
+                  "commandTypeIds": []
+                }
+              ]
+            }
+            """);
+            File.WriteAllText(Path.Combine(directory, "modules.json"), $$"""
+            {
+              "moduleImplementations": [
+                {
+                  "typeId": "module.test.passive",
+                  "displayName": "Test",
+                  "type": "module.test.passive",
                   "massKg": 1,
                   "structurePointsMax": 1,
                   "powerConsumptionW": 0,
-                  "commandTypeIds": [],
                   "baseSuccessChancePercent": {{invalidValue}},
                   "baseCycleTimeMs": 0
                 }
@@ -425,10 +449,21 @@ public class ScenarioEngineTests
                   "typeId": "module.test.passive",
                   "displayName": "Test",
                   "slotSize": 1,
+                  "commandTypeIds": []
+                }
+              ]
+            }
+            """);
+            File.WriteAllText(Path.Combine(directory, "modules.json"), """
+            {
+              "moduleImplementations": [
+                {
+                  "typeId": "module.test.passive",
+                  "displayName": "Test",
+                  "type": "module.test.passive",
                   "massKg": 1,
                   "structurePointsMax": 1,
                   "powerConsumptionW": 0,
-                  "commandTypeIds": [],
                   "baseSuccessChancePercent": 99.5,
                   "baseCycleTimeMs": 0
                 }
@@ -460,22 +495,34 @@ public class ScenarioEngineTests
         try
         {
             File.WriteAllText(Path.Combine(directory, "Settings.json"), """
-            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            { "typeData": { "moduleTypes": "module-types.json", "moduleImplementations": "modules.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
             """);
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """{ "commandDefinitions": [] }""");
-            File.WriteAllText(Path.Combine(directory, "module-types.json"), $$"""
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), """
             {
               "moduleTypes": [
                 {
-                  "typeId": "module.engine.basic",
+                  "typeId": "module.engine",
                   "displayName": "Engine",
                   "slotSize": 1,
+                  "commandTypeIds": []
+                }
+              ]
+            }
+            """);
+            File.WriteAllText(Path.Combine(directory, "modules.json"), $$"""
+            {
+              "moduleImplementations": [
+                {
+                  "typeId": "module.engine.basic",
+                  "displayName": "Engine",
+                  "type": "module.engine",
                   "massKg": 1,
                   "structurePointsMax": 1,
                   "powerConsumptionW": 0,
                   "cargoCapacityKg": null,
                   {{engineParameters}}
-                  "commandTypeIds": []
+                  "baseCycleTimeMs": 1
                 }
               ]
             }
@@ -888,6 +935,13 @@ public class ScenarioEngineTests
     {
         var registry = GameDataRegistry.Create(
             [
+                new ModuleCategoryDefinition(
+                    "module.container.basic",
+                    "Container",
+                    SlotSize: 4,
+                    CommandTypeIds: ImmutableArray<string>.Empty)
+            ],
+            [
                 new ModuleTypeDefinition(
                     "module.container.basic",
                     "Container",
@@ -916,6 +970,13 @@ public class ScenarioEngineTests
     private static GameDataRegistry CreateSingleCellModuleTypeRegistry()
     {
         return GameDataRegistry.Create(
+            [
+                new ModuleCategoryDefinition(
+                    "module.test.cell",
+                    "Test Cell Module",
+                    SlotSize: 1,
+                    CommandTypeIds: ImmutableArray<string>.Empty)
+            ],
             [
                 new ModuleTypeDefinition(
                     "module.test.cell",
@@ -1013,7 +1074,7 @@ public class ScenarioEngineTests
         string factoryTypesEntry = factoryTypesPath is null ? "" : ", \"factoryTypes\": \"" + factoryTypesPath + "\"";
         string recipesEntry = recipesPath is null ? "" : ", \"recipes\": \"" + recipesPath + "\"";
         File.WriteAllText(Path.Combine(directory, "Settings.json"), $$"""
-        { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json"{{factoryTypesEntry}}{{recipesEntry}} }, "defaultScenario": "scenario.json" }
+        { "typeData": { "moduleTypes": "module-types.json", "moduleImplementations": "modules.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json"{{factoryTypesEntry}}{{recipesEntry}} }, "defaultScenario": "scenario.json" }
         """);
     }
 
@@ -1021,6 +1082,7 @@ public class ScenarioEngineTests
     {
         File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """{ "commandDefinitions": [] }""");
         File.WriteAllText(Path.Combine(directory, "module-types.json"), """{ "moduleTypes": [] }""");
+        File.WriteAllText(Path.Combine(directory, "modules.json"), """{ "moduleImplementations": [] }""");
         File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
         File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
     }

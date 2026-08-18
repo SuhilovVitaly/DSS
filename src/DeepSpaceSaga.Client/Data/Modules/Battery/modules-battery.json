@@ -1,0 +1,13 @@
+{
+  "moduleImplementations": [
+    {
+      "typeId": "module.battery.basic",
+      "displayName": "Battery",
+      "type": "module.battery",
+      "massKg": 8000,
+      "structurePointsMax": 120,
+      "powerConsumptionW": 0,
+      "baseCycleTimeMs": 0
+    }
+  ]
+}

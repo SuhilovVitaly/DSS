@@ -128,6 +128,15 @@ public class InstalledModuleProjectionTests
     private static SimulationEngine CreateEngineWithTwoModules()
     {
         var registry = GameDataRegistry.Create(
+            moduleCategories:
+            [
+                new ModuleCategoryDefinition(
+                    "module.engine.basic", "Engine", SlotSize: 1,
+                    CommandTypeIds: ImmutableArray.Create("engine.accelerate", "engine.orbit")),
+                new ModuleCategoryDefinition(
+                    "module.scanner.mk1", "Scanner MK I", SlotSize: 1,
+                    CommandTypeIds: ImmutableArray<string>.Empty)
+            ],
             moduleTypes:
             [
                 new ModuleTypeDefinition(
@@ -184,6 +193,13 @@ public class InstalledModuleProjectionTests
     private static SimulationEngine CreateEngineWithScannerCommands()
     {
         var registry = GameDataRegistry.Create(
+            moduleCategories:
+            [
+                new ModuleCategoryDefinition(
+                    "module.scanner.mk1", "Scanner MK I", SlotSize: 1,
+                    CommandTypeIds: ImmutableArray.Create(
+                        "scanner.generalScan", "scanner.structuralScan", "engine.speedSynchronization"))
+            ],
             moduleTypes:
             [
                 new ModuleTypeDefinition(

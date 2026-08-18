@@ -1,0 +1,14 @@
+{
+  "moduleImplementations": [
+    {
+      "typeId": "module.scanner.mk1",
+      "displayName": "Scanner MK I",
+      "type": "module.scanner",
+      "massKg": 2000,
+      "structurePointsMax": 60,
+      "powerConsumptionW": 0,
+      "baseCycleTimeMs": 20000,
+      "baseSuccessChancePercent": 100
+    }
+  ]
+}

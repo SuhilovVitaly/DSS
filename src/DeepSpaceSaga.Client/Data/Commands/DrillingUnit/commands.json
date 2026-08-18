@@ -7,7 +7,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "object",
-            "type": "module.drilling-unit.basic"
+            "type": "module.drilling-unit"
         },
         {
             "typeId": "mining.stopExtraction",
@@ -16,7 +16,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "none",
-            "type": "module.drilling-unit.basic"
+            "type": "module.drilling-unit"
         }
     ]
 }

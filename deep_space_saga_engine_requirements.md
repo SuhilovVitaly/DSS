@@ -3431,6 +3431,7 @@ Blueprint/type definition JSON:
 ```text
 Settings.json
     moduleTypesPath
+    moduleImplementationsPath
     itemTypesPath
     factoryTypesPath / recipesPath
     shipTemplatesPath?
@@ -3438,6 +3439,7 @@ Settings.json
     defaultScenarioPath
 
 module-types.json
+Data/Modules/<Type>/modules-<type>.json (file or directory, merged recursively)
 item-types.json
 factory-types.json / recipes.json
 ship-templates.json?
@@ -3446,21 +3448,37 @@ platform-types.json?
 
 Точные имена файлов и полей могут быть уточнены при реализации, но граница ответственности фиксирована: `Settings.json` ссылается на type/config files, а scenario/save ссылается на уже загруженные type definitions через ids.
 
-Conceptual module type JSON:
+Module type data разделены на два слоя: абстрактный module TYPE (категория) и конкретную module IMPLEMENTATION.
+
+Conceptual module type (category) JSON — `module-types.json`, ключ `moduleTypes`:
+
+```json
+{
+  "typeId": "module.container",
+  "displayName": "Container",
+  "slotSize": 4,
+  "commandTypeIds": []
+}
+```
+
+Category содержит только `typeId`, `displayName`, `slotSize` и `commandTypeIds` — общие для всех implementations этой категории.
+
+Conceptual module implementation JSON — `Data/Modules/<Type>/modules-<type>.json` (одиночный файл ИЛИ директория, рекурсивно объединяющая все `*.json`), ключ `moduleImplementations`:
 
 ```json
 {
   "typeId": "SSM-CRG-CGT-S-9101",
-  "kind": "CargoModule",
-  "name": "Spacecraft Cargo Container Small",
+  "displayName": "Spacecraft Cargo Container Small",
+  "type": "module.container",
   "massKg": 20000,
-  "slotSize": 4,
   "structurePointsMax": 400,
   "powerConsumptionW": 0,
-  "capacityKg": 100000,
-  "commands": []
+  "baseCycleTimeMs": 0,
+  "cargoCapacityKg": 100000
 }
 ```
+
+Implementation содержит конкретные характеристики (`massKg`, `structurePointsMax`, `powerConsumptionW`, `baseCycleTimeMs`) и опциональные, специфичные для типа модуля поля (`cargoCapacityKg`, `maxSpeedMps`, `turnStepDegrees`, `linearInertiaMps2`, `angularInertiaDegPerSec`, `fuelCapacityKg`, `baseSuccessChancePercent`, `cabines`). Обязательное поле `type` ссылается на `typeId` владеющей категории; `slotSize` и `commandTypeIds` implementation наследует от category и не задаёт их напрямую.
 
 Conceptual item/resource type JSON:
 
@@ -4858,9 +4876,11 @@ DirectionSynchronization
 > `Data/Commands/<ModuleType>/commands.json` (сейчас 4 файла — Engine, Scanner,
 > NavigationComputer, DrillingUnit — по числу module types, у которых есть команды). Каждая
 > запись команды содержит поле `type` — typeId владеющего module type (например
-> `module.engine.basic`) — используемое для перекрёстной валидации согласованности с
-> `ModuleTypeDefinition.CommandTypeIds` при загрузке реестра (`GameDataRegistry.Create`);
-> расхождение приводит к ошибке загрузки. Загрузчик (`EngineContentLoader.LoadCommandDefinitions`)
+> `module.engine`, т.е. абстрактный тип модуля, а не конкретная реализация вроде
+> `module.engine.basic` — см. §55.4 о разделении типа и реализации модуля) — используемое
+> для перекрёстной валидации согласованности с `ModuleCategoryDefinition.CommandTypeIds` при
+> загрузке реестра (`GameDataRegistry.Create`); расхождение приводит к ошибке загрузки.
+> Загрузчик (`EngineContentLoader.LoadCommandDefinitions`)
 > поддерживает оба режима: одиночный файл (обратная совместимость с существующими тестовыми
 > фикстурами) и директорию — рекурсивно мёржит все `*.json` внутри неё. `Settings.json` теперь
 > указывает `typeData.commandDefinitions` на директорию `Data/Commands`, а не на единый файл.

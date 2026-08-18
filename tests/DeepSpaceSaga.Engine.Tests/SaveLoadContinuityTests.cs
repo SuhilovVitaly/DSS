@@ -334,6 +334,18 @@ public class SaveLoadContinuityTests
 
         return GameDataRegistry.Create(
             [
+                new ModuleCategoryDefinition(
+                    "module.engine.basic",
+                    "Engine",
+                    SlotSize: 1,
+                    CommandTypeIds: engineCommandIds.ToImmutableArray()),
+                new ModuleCategoryDefinition(
+                    "module.container.basic",
+                    "Container",
+                    SlotSize: 4,
+                    CommandTypeIds: ImmutableArray<string>.Empty)
+            ],
+            [
                 new ModuleTypeDefinition(
                     "module.engine.basic",
                     "Engine",

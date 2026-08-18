@@ -7,7 +7,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "none",
-            "type": "module.engine.basic"
+            "type": "module.engine"
         },
         {
             "typeId": "engine.brake",
@@ -16,7 +16,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "none",
-            "type": "module.engine.basic"
+            "type": "module.engine"
         },
         {
             "typeId": "engine.maintainSpeed",
@@ -25,7 +25,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "none",
-            "type": "module.engine.basic"
+            "type": "module.engine"
         },
         {
             "typeId": "engine.turnLeftStep",
@@ -34,7 +34,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "none",
-            "type": "module.engine.basic"
+            "type": "module.engine"
         },
         {
             "typeId": "engine.turnRightStep",
@@ -43,7 +43,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "none",
-            "type": "module.engine.basic"
+            "type": "module.engine"
         },
         {
             "typeId": "engine.turnLeftUntilCancel",
@@ -52,7 +52,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "none",
-            "type": "module.engine.basic"
+            "type": "module.engine"
         },
         {
             "typeId": "engine.turnRightUntilCancel",
@@ -61,7 +61,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "none",
-            "type": "module.engine.basic"
+            "type": "module.engine"
         },
         {
             "typeId": "engine.maintainCourse",
@@ -70,7 +70,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "none",
-            "type": "module.engine.basic"
+            "type": "module.engine"
         },
         {
             "typeId": "engine.speedSynchronization",
@@ -79,7 +79,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "object",
-            "type": "module.engine.basic"
+            "type": "module.engine"
         },
         {
             "typeId": "engine.directionSynchronization",
@@ -88,7 +88,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "object",
-            "type": "module.engine.basic"
+            "type": "module.engine"
         },
         {
             "typeId": "engine.orbit",
@@ -97,7 +97,7 @@
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
             "target": "point",
-            "type": "module.engine.basic"
+            "type": "module.engine"
         }
     ]
 }

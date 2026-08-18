@@ -1040,10 +1040,13 @@ public class EngineCommandTests
         try
         {
             File.WriteAllText(Path.Combine(directory, "Settings.json"), """
-            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            { "typeData": { "moduleTypes": "module-types.json", "moduleImplementations": "modules.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
             """);
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4, "fuelCapacityKg": 1 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine", "displayName": "E", "slotSize": 1, "commandTypeIds": [] } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "modules.json"), """
+            { "moduleImplementations": [ { "typeId": "module.engine.basic", "displayName": "E", "type": "module.engine", "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4, "fuelCapacityKg": 1 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
@@ -1074,10 +1077,13 @@ public class EngineCommandTests
         try
         {
             File.WriteAllText(Path.Combine(directory, "Settings.json"), """
-            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            { "typeData": { "moduleTypes": "module-types.json", "moduleImplementations": "modules.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
             """);
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4, "fuelCapacityKg": 1 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine", "displayName": "E", "slotSize": 1, "commandTypeIds": [] } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "modules.json"), """
+            { "moduleImplementations": [ { "typeId": "module.engine.basic", "displayName": "E", "type": "module.engine", "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4, "fuelCapacityKg": 1 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
@@ -1109,6 +1115,13 @@ public class EngineCommandTests
         ];
 
         var registry = GameDataRegistry.Create(
+            [
+                new ModuleCategoryDefinition(
+                    "module.engine.basic",
+                    "Engine",
+                    SlotSize: 1,
+                    CommandTypeIds: commandIds.ToImmutableArray())
+            ],
             [
                 new ModuleTypeDefinition(
                     "module.engine.basic",
@@ -1183,10 +1196,13 @@ public class EngineCommandTests
         try
         {
             File.WriteAllText(Path.Combine(directory, "Settings.json"), """
-            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            { "typeData": { "moduleTypes": "module-types.json", "moduleImplementations": "modules.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
             """);
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4, "fuelCapacityKg": 1 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine", "displayName": "E", "slotSize": 1, "commandTypeIds": [] } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "modules.json"), """
+            { "moduleImplementations": [ { "typeId": "module.engine.basic", "displayName": "E", "type": "module.engine", "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4, "fuelCapacityKg": 1 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
@@ -1216,15 +1232,18 @@ public class EngineCommandTests
         try
         {
             File.WriteAllText(Path.Combine(directory, "Settings.json"), """
-            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            { "typeData": { "moduleTypes": "module-types.json", "moduleImplementations": "modules.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
             """);
             // Active module (has commandTypeIds) but no baseCycleTimeMs.
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": ["engine.accelerate"], "cargoCapacityKg": null, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4, "fuelCapacityKg": 1 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine", "displayName": "E", "slotSize": 1, "commandTypeIds": ["engine.accelerate"] } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "modules.json"), """
+            { "moduleImplementations": [ { "typeId": "module.engine.basic", "displayName": "E", "type": "module.engine", "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4, "fuelCapacityKg": 1 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
-            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A", "type": "module.engine.basic" } ] }
+            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A", "type": "module.engine" } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
 
@@ -1268,11 +1287,14 @@ public class EngineCommandTests
         try
         {
             File.WriteAllText(Path.Combine(directory, "Settings.json"), """
-            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            { "typeData": { "moduleTypes": "module-types.json", "moduleImplementations": "modules.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
             """);
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """{ "commandDefinitions": [] }""");
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine", "displayName": "E", "slotSize": 1, "commandTypeIds": [] } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "modules.json"), """
+            { "moduleImplementations": [ { "typeId": "module.engine.basic", "displayName": "E", "type": "module.engine", "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
@@ -1297,11 +1319,14 @@ public class EngineCommandTests
         try
         {
             File.WriteAllText(Path.Combine(directory, "Settings.json"), """
-            { "typeData": { "moduleTypes": "module-types.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
+            { "typeData": { "moduleTypes": "module-types.json", "moduleImplementations": "modules.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" }, "defaultScenario": "scenario.json" }
             """);
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """{ "commandDefinitions": [] }""");
             File.WriteAllText(Path.Combine(directory, "module-types.json"), """
-            { "moduleTypes": [ { "typeId": "module.engine.basic", "displayName": "E", "slotSize": 1, "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "commandTypeIds": [], "cargoCapacityKg": null, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "fuelCapacityKg": 1 } ] }
+            { "moduleTypes": [ { "typeId": "module.engine", "displayName": "E", "slotSize": 1, "commandTypeIds": [] } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "modules.json"), """
+            { "moduleImplementations": [ { "typeId": "module.engine.basic", "displayName": "E", "type": "module.engine", "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "fuelCapacityKg": 1 } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
@@ -1322,6 +1347,13 @@ public class EngineCommandTests
     {
         // AC2: installed engine with FuelAmountKg outside 0..FuelCapacityKg is rejected.
         var registry = GameDataRegistry.Create(
+            [
+                new ModuleCategoryDefinition(
+                    "module.engine.basic",
+                    "Engine",
+                    SlotSize: 1,
+                    CommandTypeIds: ImmutableArray<string>.Empty)
+            ],
             [
                 new ModuleTypeDefinition(
                     "module.engine.basic",
@@ -1414,6 +1446,13 @@ public class EngineCommandTests
         // AC4: save/load round-trip preserves FuelAmountKg.
         var registry = GameDataRegistry.Create(
             [
+                new ModuleCategoryDefinition(
+                    "module.engine.basic",
+                    "Engine",
+                    SlotSize: 1,
+                    CommandTypeIds: ImmutableArray<string>.Empty)
+            ],
+            [
                 new ModuleTypeDefinition(
                     "module.engine.basic",
                     "Engine",
@@ -1472,6 +1511,13 @@ public class EngineCommandTests
     {
         // Container modules don't have FuelCapacityKg → FuelAmountKg stays 0, no validation.
         var registry = GameDataRegistry.Create(
+            [
+                new ModuleCategoryDefinition(
+                    "module.container.basic",
+                    "Container",
+                    SlotSize: 4,
+                    CommandTypeIds: ImmutableArray<string>.Empty)
+            ],
             [
                 new ModuleTypeDefinition(
                     "module.container.basic",
@@ -1903,6 +1949,13 @@ public class EngineCommandTests
         ];
 
         return GameDataRegistry.Create(
+            [
+                new ModuleCategoryDefinition(
+                    "module.engine.basic",
+                    "Engine",
+                    SlotSize: 1,
+                    CommandTypeIds: commandIds.ToImmutableArray())
+            ],
             [
                 new ModuleTypeDefinition(
                     "module.engine.basic",
