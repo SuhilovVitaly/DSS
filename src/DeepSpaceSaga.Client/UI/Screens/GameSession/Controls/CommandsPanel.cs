@@ -70,28 +70,29 @@ public sealed class CommandsPanel
     /// the plain text-label button. Icons are drawn bare (no button chrome) at a
     /// fixed 48×48 (before UI scaling), centered on the command's clickable area —
     /// source assets may be higher-resolution (e.g. 64×64) for crisp downscaling.
-    /// Each entry has a matching "-active" file (e.g. "…-brake.png" /
-    /// "…-brake-active.png") swapped in on hover, in place of a background
-    /// highlight; if the active file is missing the normal icon is kept on hover.
-    /// The clickable area, hover/press tracking and cursor-over-interactive
+    /// Each file name matches its command type id (e.g. <see cref="ShipEngineCommandTypes.Brake"/>
+    /// → "engine.brake.png"). Each entry has a matching ".active" file (e.g.
+    /// "engine.brake.png" / "engine.brake.active.png") swapped in on hover, in place
+    /// of a background highlight; if the active file is missing the normal icon is
+    /// kept on hover. The clickable area, hover/press tracking and cursor-over-interactive
     /// signalling are unchanged from a regular button (see <see cref="OnMouseMove"/>).
     /// </summary>
     internal static readonly IReadOnlyDictionary<string, string> CommandIconFileNames =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            [ShipEngineCommandTypes.Accelerate] = "command-panel-button-engine-accelerate.png",
-            [ShipEngineCommandTypes.Brake] = "command-panel-button-engine-brake.png",
-            [ShipEngineCommandTypes.MaintainCourse] = "command-panel-button-engine-maintain-course.png",
-            [ShipEngineCommandTypes.MaintainSpeed] = "command-panel-button-engine-maintain-speed.png",
-            [ShipEngineCommandTypes.Orbit] = "command-panel-button-engine-orbit.png",
-            [ShipEngineCommandTypes.TurnLeftStep] = "command-panel-button-turn-left.png",
-            [ShipEngineCommandTypes.TurnLeftUntilCancel] = "command-panel-button-turn-left-continuous.png",
-            [ShipEngineCommandTypes.TurnRightStep] = "command-panel-button-turn-right.png",
-            [ShipEngineCommandTypes.TurnRightUntilCancel] = "command-panel-button-turn-right-continuous.png",
-            [NavigationComputerCommandTypes.Dock] = "command-panel-button-navigation-dock.png",
-            [NavigationComputerCommandTypes.StationsList] = "command-panel-button-navigation-stations-list.png",
-            [ScannerCommandTypes.GeneralScan] = "command-panel-button-scanner-general-scan.png",
-            [ScannerCommandTypes.StructuralScan] = "command-panel-button-scanner-structural-scan.png",
+            [ShipEngineCommandTypes.Accelerate] = "engine.accelerate.png",
+            [ShipEngineCommandTypes.Brake] = "engine.brake.png",
+            [ShipEngineCommandTypes.MaintainCourse] = "engine.maintainCourse.png",
+            [ShipEngineCommandTypes.MaintainSpeed] = "engine.maintainSpeed.png",
+            [ShipEngineCommandTypes.Orbit] = "engine.orbit.png",
+            [ShipEngineCommandTypes.TurnLeftStep] = "engine.turnLeftStep.png",
+            [ShipEngineCommandTypes.TurnLeftUntilCancel] = "engine.turnLeftUntilCancel.png",
+            [ShipEngineCommandTypes.TurnRightStep] = "engine.turnRightStep.png",
+            [ShipEngineCommandTypes.TurnRightUntilCancel] = "engine.turnRightUntilCancel.png",
+            [NavigationComputerCommandTypes.Dock] = "navigation.dock.png",
+            [NavigationComputerCommandTypes.StationsList] = "navigation.stationsList.png",
+            [ScannerCommandTypes.GeneralScan] = "scanner.generalScan.png",
+            [ScannerCommandTypes.StructuralScan] = "scanner.structuralScan.png",
         };
 
     private const float CommandIconSize = 48f;
@@ -199,7 +200,7 @@ public sealed class CommandsPanel
 
         foreach (var (commandTypeId, fileName) in CommandIconFileNames)
         {
-            string activeFileName = Path.ChangeExtension(fileName, null) + "-active" + Path.GetExtension(fileName);
+            string activeFileName = Path.ChangeExtension(fileName, null) + ".active" + Path.GetExtension(fileName);
             _commandIcons[commandTypeId] = new CommandIconPair(
                 LoadCommandIcon($"Images/UI/GameSessionScreenUI/commands-panel/{fileName}"),
                 LoadCommandIcon($"Images/UI/GameSessionScreenUI/commands-panel/{activeFileName}"));
