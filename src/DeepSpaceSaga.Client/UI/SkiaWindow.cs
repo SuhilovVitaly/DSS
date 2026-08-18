@@ -381,6 +381,12 @@ public sealed class SkiaWindow : IDisposable
 
     private void HandleKeyboardEdge(Key key)
     {
+        if (key == Key.F10)
+        {
+            CaptureScreenshot();
+            return;
+        }
+
         if (key == Key.Escape || key == Key.F5 || key == Key.F9)
         {
             if (_pendingKeyboardTransition is null || _pendingKeyboardTransition.IsCompleted)
@@ -393,6 +399,40 @@ public sealed class SkiaWindow : IDisposable
         }
 
         _screens.Current.OnKeyDown(key);
+    }
+
+    private const string ScreenshotsDirectory = "Screenshots";
+
+    /// <summary>
+    /// F10 — screenshot. Captures whatever is currently in the flushed render
+    /// surface (the frame this same OnRender call just drew) and saves it as a
+    /// uniquely-named PNG under <see cref="ScreenshotsDirectory"/> next to
+    /// <see cref="InterfaceLog"/>. No modal/UI window is shown; the action (and any
+    /// failure) is recorded via <see cref="InterfaceLog"/> instead.
+    /// </summary>
+    private void CaptureScreenshot()
+    {
+        if (_surface is null)
+            return;
+
+        try
+        {
+            Directory.CreateDirectory(ScreenshotsDirectory);
+
+            string fileName = $"screenshot_{DateTime.UtcNow:yyyy-MM-dd'T'HH-mm-ss-fff'Z'}.png";
+            string path = Path.Combine(ScreenshotsDirectory, fileName);
+
+            using var image = _surface.Snapshot();
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            using var stream = File.Create(path);
+            data.SaveTo(stream);
+
+            InterfaceLog.Write($"Screenshot saved: {path}");
+        }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"Screenshot failed: {ex.Message}");
+        }
     }
 
     /// <summary>

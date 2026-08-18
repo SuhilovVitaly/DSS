@@ -23,6 +23,25 @@ public class KeyboardEdgeTrackerTests
     }
 
     [Fact]
+    public void F10_is_reported_on_press_edge()
+    {
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new HashSet<Key>();
+
+        Assert.Empty(Poll(tracker, pressed));
+
+        pressed.Add(Key.F10);
+        Assert.Equal([Key.F10], Poll(tracker, pressed));
+        Assert.Empty(Poll(tracker, pressed)); // held — not reported again
+
+        pressed.Remove(Key.F10);
+        Assert.Empty(Poll(tracker, pressed));
+
+        pressed.Add(Key.F10);
+        Assert.Equal([Key.F10], Poll(tracker, pressed));
+    }
+
+    [Fact]
     public void Control_keys_are_reported_on_press_edge()
     {
         var tracker = new KeyboardEdgeTracker();
