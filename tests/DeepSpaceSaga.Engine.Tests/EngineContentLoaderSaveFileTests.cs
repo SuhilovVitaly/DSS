@@ -44,7 +44,7 @@ public class EngineContentLoaderSaveFileTests
                       "cycleId": "CYC-ENGINE-000001",
                       "startedGameTimeMs": 4500,
                       "durationMs": 1000,
-                      "commandType": "engine.turn-right-until-cancel",
+                      "commandType": "engine.turnRightUntilCancel",
                       "isAutoRepeat": true
                     },
                     "cargo": []

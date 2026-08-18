@@ -32,9 +32,9 @@
 ## Требующие проектирования элементы UI
 
 - Четыре смысловые командные панели: Navigation, Maneuver, Engine, Space Control.
-- Команды `navigation.dock` и `navigation.stations-list` навигационного компьютера.
-- Команды Scanner: `scanner.general-scan`, `scanner.structural-scan`, `scanner.nearby-signatures`.
-- Команды Drilling Unit: `mining.extract-ice`, `mining.stop-extraction`.
+- Команды `navigation.dock` и `navigation.stationsList` навигационного компьютера.
+- Команды Scanner: `scanner.generalScan`, `scanner.structuralScan`, `scanner.nearbySignatures`.
+- Команды Drilling Unit: `mining.extractIce`, `mining.stopExtraction`.
 - Панель грузового отсека.
 - Панель `Fuel`.
 - Вход в диалоги экипажа.

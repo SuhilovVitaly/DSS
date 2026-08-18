@@ -67,8 +67,8 @@
 - `Living quarters MK I` имеет `cabines = 2`.
 - Стартовый экипаж - `1` персонаж, главный герой.
 - Командные панели первого релиза: Navigation, Maneuver, Engine, Space Control.
-- `scanner.nearby-signatures` показывается на панели Space Control.
-- Mining capability реализуется через Drilling Unit и команды `mining.extract-ice`, `mining.stop-extraction`.
+- `scanner.nearbySignatures` показывается на панели Space Control.
+- Mining capability реализуется через Drilling Unit и команды `mining.extractIce`, `mining.stopExtraction`.
 - `Energy Cells` остаются в игре как отдельный товар.
 - `Energy Cells` можно складировать в грузовом контейнере, покупать и продавать.
 - `Energy Cells` нужны для реактора/генератора и электричества, питающего active modules.
@@ -115,7 +115,7 @@ Tetrarch Class является стартовым кораблем игрока
 
 ### Командные панели
 
-Команды корабля группируются по смыслу в четыре панели: Navigation, Maneuver, Engine и Space Control. Панели отображают module-addressed команды Navigation Computer, Engine, Scanner и Drilling Unit. `scanner.nearby-signatures` показывается на Space Control panel.
+Команды корабля группируются по смыслу в четыре панели: Navigation, Maneuver, Engine и Space Control. Панели отображают module-addressed команды Navigation Computer, Engine, Scanner и Drilling Unit. `scanner.nearbySignatures` показывается на Space Control panel.
 
 Детали: `Docs/FirstRelease/Mechanics/CommandPanels.md`.
 
@@ -187,7 +187,7 @@ Tetrarch Class является стартовым кораблем игрока
 
 ### Добыча льда
 
-Игрок добывает лед с астероидов через купленный и установленный на станции Drilling Unit командами `mining.extract-ice` и `mining.stop-extraction`. Для добычи нужен `scanner.structural-scan`, дистанция `<= 100 km`, синхронизация скорости/направления и свободное место в cargo. Запас льда asteroid конечный: `100..5000` единиц; добыча за цикл `10000 ms`: `100..200` единиц.
+Игрок добывает лед с астероидов через купленный и установленный на станции Drilling Unit командами `mining.extractIce` и `mining.stopExtraction`. Для добычи нужен `scanner.structuralScan`, дистанция `<= 100 km`, синхронизация скорости/направления и свободное место в cargo. Запас льда asteroid конечный: `100..5000` единиц; добыча за цикл `10000 ms`: `100..200` единиц.
 
 Детали: `Docs/FirstRelease/Mechanics/IceMining.md`.
 

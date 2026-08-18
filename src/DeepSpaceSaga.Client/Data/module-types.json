@@ -9,7 +9,7 @@
       "powerConsumptionW": 0,
       "commandTypeIds": [
         "navigation.dock",
-        "navigation.stations-list"
+        "navigation.stationsList"
       ],
       "baseCycleTimeMs": 1000
     },
@@ -23,14 +23,14 @@
       "commandTypeIds": [
         "engine.accelerate",
         "engine.brake",
-        "engine.maintain-speed",
-        "engine.turn-left-step",
-        "engine.turn-right-step",
-        "engine.turn-left-until-cancel",
-        "engine.turn-right-until-cancel",
-        "engine.maintain-course",
-        "engine.speed-synchronization",
-        "engine.direction-synchronization",
+        "engine.maintainSpeed",
+        "engine.turnLeftStep",
+        "engine.turnRightStep",
+        "engine.turnLeftUntilCancel",
+        "engine.turnRightUntilCancel",
+        "engine.maintainCourse",
+        "engine.speedSynchronization",
+        "engine.directionSynchronization",
         "engine.orbit"
       ],
       "maxSpeedMps": 4000,
@@ -79,8 +79,8 @@
       "structurePointsMax": 150,
       "powerConsumptionW": 0,
       "commandTypeIds": [
-        "mining.extract-ice",
-        "mining.stop-extraction"
+        "mining.extractIce",
+        "mining.stopExtraction"
       ],
       "baseCycleTimeMs": 10000
     },
@@ -92,9 +92,9 @@
         "structurePointsMax": 60,
         "powerConsumptionW": 0,
         "commandTypeIds": [
-            "scanner.general-scan",
-            "scanner.structural-scan",
-            "scanner.nearby-signatures"
+            "scanner.generalScan",
+            "scanner.structuralScan",
+            "scanner.nearbySignatures"
         ],
         "baseCycleTimeMs": 20000,
         "baseSuccessChancePercent": 100

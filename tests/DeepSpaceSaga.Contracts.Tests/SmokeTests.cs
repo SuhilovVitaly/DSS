@@ -28,7 +28,7 @@ public class SmokeTests
             ClientSequence: 2,
             ObjectId: "ship-1",
             ModuleId: "nav",
-            CommandType: "engine.speed-synchronization",
+            CommandType: "engine.speedSynchronization",
             TargetObjectId: "obj-2");
 
         Assert.Equal("obj-2", command.TargetObjectId);
@@ -44,7 +44,7 @@ public class SmokeTests
             ClientSequence: 1,
             ObjectId: "ship-1",
             ModuleId: "engine-1",
-            CommandType: "engine.speed-synchronization",
+            CommandType: "engine.speedSynchronization",
             TargetObjectId: "obj-2");
 
         var json = JsonSerializer.Serialize(command);
@@ -55,7 +55,7 @@ public class SmokeTests
         Assert.Equal(1ul, roundTripped.ClientSequence);
         Assert.Equal("ship-1", roundTripped.ObjectId);
         Assert.Equal("engine-1", roundTripped.ModuleId);
-        Assert.Equal("engine.speed-synchronization", roundTripped.CommandType);
+        Assert.Equal("engine.speedSynchronization", roundTripped.CommandType);
         Assert.Equal("obj-2", roundTripped.TargetObjectId);
     }
 
@@ -84,18 +84,18 @@ public class SmokeTests
     public void ShipEngineCommandTypes_expose_stable_ids()
     {
         Assert.Equal("engine.accelerate", ShipEngineCommandTypes.Accelerate);
-        Assert.Equal("engine.maintain-speed", ShipEngineCommandTypes.MaintainSpeed);
-        Assert.Equal("engine.maintain-course", ShipEngineCommandTypes.MaintainCourse);
-        Assert.Equal("engine.speed-synchronization", ShipEngineCommandTypes.SpeedSynchronization);
-        Assert.Equal("engine.direction-synchronization", ShipEngineCommandTypes.DirectionSynchronization);
-        Assert.Equal("engine.cancel-all", ShipEngineCommandTypes.CancelAll);
+        Assert.Equal("engine.maintainSpeed", ShipEngineCommandTypes.MaintainSpeed);
+        Assert.Equal("engine.maintainCourse", ShipEngineCommandTypes.MaintainCourse);
+        Assert.Equal("engine.speedSynchronization", ShipEngineCommandTypes.SpeedSynchronization);
+        Assert.Equal("engine.directionSynchronization", ShipEngineCommandTypes.DirectionSynchronization);
+        Assert.Equal("engine.cancelAll", ShipEngineCommandTypes.CancelAll);
     }
 
     [Fact]
     public void ScannerCommandTypes_expose_stable_ids()
     {
-        Assert.Equal("scanner.general-scan", ScannerCommandTypes.GeneralScan);
-        Assert.Equal("scanner.structural-scan", ScannerCommandTypes.StructuralScan);
+        Assert.Equal("scanner.generalScan", ScannerCommandTypes.GeneralScan);
+        Assert.Equal("scanner.structuralScan", ScannerCommandTypes.StructuralScan);
     }
 
     [Fact]

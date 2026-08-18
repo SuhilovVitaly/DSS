@@ -4843,15 +4843,15 @@ DirectionSynchronization
 
 > **Примечание (новые catalog-only команды):** в дополнение к переименованию, в каталог модулей
 > (`module-types.json` / `command-definitions.json`) добавлены три новые команды —
-> `navigation.dock`, `navigation.stations-list` (модуль Navigation Computer) и
-> `scanner.nearby-signatures` (модуль Scanner). Они проходят валидацию реестра
+> `navigation.dock`, `navigation.stationsList` (модуль Navigation Computer) и
+> `scanner.nearbySignatures` (модуль Scanner). Они проходят валидацию реестра
 > (`GameDataRegistry.Create`) и отображаются как кнопки в UI, но **не имеют server-side
 > реализации/обработчика** в `SimulationEngine` — это сознательное ограничение объёма задачи, а не
 > забытая реализация (по аналогии с уже существующими catalog-only командами Scanner
 > `general-scan`/`structural-scan`). Предусловия `navigation.dock` зафиксированы как doc-комментарии
 > для будущей реализации: Station selected; Station in range < 200; Station speed and direction
-> synchronized — и пока не проверяются во время выполнения. `navigation.stations-list` и
-> `scanner.nearby-signatures` предусловий не имеют.
+> synchronized — и пока не проверяются во время выполнения. `navigation.stationsList` и
+> `scanner.nearbySignatures` предусловий не имеют.
 
 > **Примечание (структура каталога команд):** `command-definitions.json` перестал быть единым
 > файлом — каталог разбит на несколько файлов, сгруппированных по типу владеющего модуля:

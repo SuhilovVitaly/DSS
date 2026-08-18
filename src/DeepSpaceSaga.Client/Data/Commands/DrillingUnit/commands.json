@@ -1,7 +1,7 @@
 {
     "commandDefinitions": [
         {
-            "typeId": "mining.extract-ice",
+            "typeId": "mining.extractIce",
             "displayName": "Extract Ice",
             "timeFactor": 1.0,
             "complexityFactor": 1.0,
@@ -10,7 +10,7 @@
             "type": "module.drilling-unit.basic"
         },
         {
-            "typeId": "mining.stop-extraction",
+            "typeId": "mining.stopExtraction",
             "displayName": "Stop Extraction",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,

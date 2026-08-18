@@ -304,9 +304,9 @@ public class ScenarioEngineTests
         var scannerType = Assert.Single(activeTypes, t => t.TypeId == "module.scanner.mk1");
         Assert.Equal(3, scannerType.CommandTypeIds.Length);
         Assert.Equal(100, scannerType.BaseSuccessChancePercent);
-        Assert.Contains("scanner.general-scan", scannerType.CommandTypeIds);
-        Assert.Contains("scanner.structural-scan", scannerType.CommandTypeIds);
-        Assert.Contains("scanner.nearby-signatures", scannerType.CommandTypeIds);
+        Assert.Contains("scanner.generalScan", scannerType.CommandTypeIds);
+        Assert.Contains("scanner.structuralScan", scannerType.CommandTypeIds);
+        Assert.Contains("scanner.nearbySignatures", scannerType.CommandTypeIds);
         foreach (string commandTypeId in scannerType.CommandTypeIds)
         {
             Assert.True(registry.CommandDefinitions.Contains(commandTypeId),
@@ -316,7 +316,7 @@ public class ScenarioEngineTests
         var navigationComputerType = Assert.Single(activeTypes, t => t.TypeId == "module.bridge-navigation-computer.basic");
         Assert.Equal(2, navigationComputerType.CommandTypeIds.Length);
         Assert.Contains("navigation.dock", navigationComputerType.CommandTypeIds);
-        Assert.Contains("navigation.stations-list", navigationComputerType.CommandTypeIds);
+        Assert.Contains("navigation.stationsList", navigationComputerType.CommandTypeIds);
         foreach (string commandTypeId in navigationComputerType.CommandTypeIds)
         {
             Assert.True(registry.CommandDefinitions.Contains(commandTypeId),
@@ -326,8 +326,8 @@ public class ScenarioEngineTests
 
         var drillingType = Assert.Single(activeTypes, t => t.TypeId == "module.drilling-unit.basic");
         Assert.Equal(2, drillingType.CommandTypeIds.Length);
-        Assert.Contains("mining.extract-ice", drillingType.CommandTypeIds);
-        Assert.Contains("mining.stop-extraction", drillingType.CommandTypeIds);
+        Assert.Contains("mining.extractIce", drillingType.CommandTypeIds);
+        Assert.Contains("mining.stopExtraction", drillingType.CommandTypeIds);
         foreach (string commandTypeId in drillingType.CommandTypeIds)
         {
             Assert.True(registry.CommandDefinitions.Contains(commandTypeId),

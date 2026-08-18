@@ -1,7 +1,7 @@
 {
     "commandDefinitions": [
         {
-            "typeId": "scanner.general-scan",
+            "typeId": "scanner.generalScan",
             "displayName": "General Scan",
             "timeFactor": 0.4,
             "complexityFactor": 1.0,
@@ -11,7 +11,7 @@
             "type": "module.scanner.mk1"
         },
         {
-            "typeId": "scanner.structural-scan",
+            "typeId": "scanner.structuralScan",
             "displayName": "Structural Scan",
             "timeFactor": 3.0,
             "complexityFactor": 1.0,
@@ -20,7 +20,7 @@
             "type": "module.scanner.mk1"
         },
         {
-            "typeId": "scanner.nearby-signatures",
+            "typeId": "scanner.nearbySignatures",
             "displayName": "Nearby Signatures",
             "timeFactor": 0.4,
             "complexityFactor": 1.0,

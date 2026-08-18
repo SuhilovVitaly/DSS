@@ -16,7 +16,7 @@ public class CommandDefinitionLoaderTests
         {
           "commandDefinitions": [
             {
-              "typeId": "scanner.general-scan",
+              "typeId": "scanner.generalScan",
               "displayName": "General Scan",
               "timeFactor": 0.4,
               "complexityFactor": 1.0,
@@ -50,7 +50,7 @@ public class CommandDefinitionLoaderTests
         {
           "commandDefinitions": [
             {
-              "typeId": "scanner.structural-scan",
+              "typeId": "scanner.structuralScan",
               "displayName": "Structural Scan",
               "timeFactor": 3.0,
               "complexityFactor": 1.0,
@@ -83,7 +83,7 @@ public class CommandDefinitionLoaderTests
         {
           "commandDefinitions": [
             {
-              "typeId": "scanner.general-scan",
+              "typeId": "scanner.generalScan",
               "displayName": "General Scan",
               "timeFactor": 0.4,
               "complexityFactor": 1.0,

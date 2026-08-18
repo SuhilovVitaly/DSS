@@ -931,7 +931,7 @@ public sealed class SimulationEngine : IDisposable
         if (!IsEngineCommandType(moduleType, command.CommandType))
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
 
-        // Match commands (engine.speed-synchronization / engine.direction-synchronization, §56.9)
+        // Match commands (engine.speedSynchronization / engine.directionSynchronization, §56.9)
         // carry an explicit, authoritative target. Parameter validation comes right after
         // UnknownCommandType and before CancelAll/state checks: a parameter-level error
         // (missing/unknown target) is more specific than a module-state error and is

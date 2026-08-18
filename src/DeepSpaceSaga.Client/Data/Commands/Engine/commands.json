@@ -19,7 +19,7 @@
             "type": "module.engine.basic"
         },
         {
-            "typeId": "engine.maintain-speed",
+            "typeId": "engine.maintainSpeed",
             "displayName": "Maintain Speed",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
@@ -28,7 +28,7 @@
             "type": "module.engine.basic"
         },
         {
-            "typeId": "engine.turn-left-step",
+            "typeId": "engine.turnLeftStep",
             "displayName": "Turn Left Step",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
@@ -37,7 +37,7 @@
             "type": "module.engine.basic"
         },
         {
-            "typeId": "engine.turn-right-step",
+            "typeId": "engine.turnRightStep",
             "displayName": "Turn Right Step",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
@@ -46,7 +46,7 @@
             "type": "module.engine.basic"
         },
         {
-            "typeId": "engine.turn-left-until-cancel",
+            "typeId": "engine.turnLeftUntilCancel",
             "displayName": "Turn Left Until Cancel",
             "timeFactor": 1.0,
             "complexityFactor": 1.0,
@@ -55,7 +55,7 @@
             "type": "module.engine.basic"
         },
         {
-            "typeId": "engine.turn-right-until-cancel",
+            "typeId": "engine.turnRightUntilCancel",
             "displayName": "Turn Right Until Cancel",
             "timeFactor": 1.0,
             "complexityFactor": 1.0,
@@ -64,7 +64,7 @@
             "type": "module.engine.basic"
         },
         {
-            "typeId": "engine.maintain-course",
+            "typeId": "engine.maintainCourse",
             "displayName": "Maintain Course",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
@@ -73,7 +73,7 @@
             "type": "module.engine.basic"
         },
         {
-            "typeId": "engine.speed-synchronization",
+            "typeId": "engine.speedSynchronization",
             "displayName": "Speed Synchronization",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
@@ -82,7 +82,7 @@
             "type": "module.engine.basic"
         },
         {
-            "typeId": "engine.direction-synchronization",
+            "typeId": "engine.directionSynchronization",
             "displayName": "Direction Synchronization",
             "timeFactor": 0.0,
             "complexityFactor": 1.0,

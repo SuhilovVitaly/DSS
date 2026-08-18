@@ -11,7 +11,7 @@
             "type": "module.bridge-navigation-computer.basic"
         },
         {
-            "typeId": "navigation.stations-list",
+            "typeId": "navigation.stationsList",
             "displayName": "Stations List",
             "timeFactor": 0.1,
             "complexityFactor": 1.0,

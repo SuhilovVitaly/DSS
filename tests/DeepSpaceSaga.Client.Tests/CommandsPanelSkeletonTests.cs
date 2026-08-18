@@ -29,19 +29,19 @@ public class CommandsPanelSkeletonTests
     {
         ["engine.accelerate"] = ("Accelerate", "none"),
         ["engine.brake"] = ("Brake", "none"),
-        ["engine.maintain-speed"] = ("Maintain Speed", "none"),
-        ["engine.turn-left-step"] = ("Turn Left Step", "none"),
-        ["engine.turn-right-step"] = ("Turn Right Step", "none"),
-        ["engine.turn-left-until-cancel"] = ("Turn Left Until Cancel", "none"),
-        ["engine.turn-right-until-cancel"] = ("Turn Right Until Cancel", "none"),
-        ["engine.maintain-course"] = ("Maintain Course", "none"),
-        ["engine.speed-synchronization"] = ("Speed Synchronization", "object"),
-        ["engine.direction-synchronization"] = ("Direction Synchronization", "object"),
+        ["engine.maintainSpeed"] = ("Maintain Speed", "none"),
+        ["engine.turnLeftStep"] = ("Turn Left Step", "none"),
+        ["engine.turnRightStep"] = ("Turn Right Step", "none"),
+        ["engine.turnLeftUntilCancel"] = ("Turn Left Until Cancel", "none"),
+        ["engine.turnRightUntilCancel"] = ("Turn Right Until Cancel", "none"),
+        ["engine.maintainCourse"] = ("Maintain Course", "none"),
+        ["engine.speedSynchronization"] = ("Speed Synchronization", "object"),
+        ["engine.directionSynchronization"] = ("Direction Synchronization", "object"),
         ["engine.orbit"] = ("Orbit", "point"),
-        ["scanner.general-scan"] = ("General Scan", "object"),
-        ["scanner.structural-scan"] = ("Structural Scan", "object"),
+        ["scanner.generalScan"] = ("General Scan", "object"),
+        ["scanner.structuralScan"] = ("Structural Scan", "object"),
         ["navigation.dock"] = ("Dock", "object"),
-        ["navigation.stations-list"] = ("Stations List", "none"),
+        ["navigation.stationsList"] = ("Stations List", "none"),
     };
 
     private static ImmutableArray<ModuleCommandSnapshot> CommandsFor(ImmutableArray<string> typeIds) =>
@@ -50,19 +50,19 @@ public class CommandsPanelSkeletonTests
             : new ModuleCommandSnapshot(id, id, "none")).ToImmutableArray();
 
     private static readonly ImmutableArray<string> EngineCommandTypeIds = ImmutableArray.Create(
-        "engine.accelerate", "engine.brake", "engine.maintain-speed",
+        "engine.accelerate", "engine.brake", "engine.maintainSpeed",
         "engine.orbit");
 
     private static readonly ImmutableArray<string> FullEngineCommandTypeIds = ImmutableArray.Create(
-        "engine.accelerate", "engine.brake", "engine.maintain-speed",
-        "engine.turn-left-step", "engine.turn-right-step",
-        "engine.turn-left-until-cancel", "engine.turn-right-until-cancel",
-        "engine.maintain-course",
-        "engine.speed-synchronization", "engine.direction-synchronization",
+        "engine.accelerate", "engine.brake", "engine.maintainSpeed",
+        "engine.turnLeftStep", "engine.turnRightStep",
+        "engine.turnLeftUntilCancel", "engine.turnRightUntilCancel",
+        "engine.maintainCourse",
+        "engine.speedSynchronization", "engine.directionSynchronization",
         "engine.orbit");
 
     private static readonly ImmutableArray<string> ScannerCommandTypeIds = ImmutableArray.Create(
-        "scanner.general-scan", "scanner.structural-scan");
+        "scanner.generalScan", "scanner.structuralScan");
 
     private static readonly ImmutableArray<InstalledModuleSnapshot> OneEngineModule = ImmutableArray.Create(
         new InstalledModuleSnapshot(
@@ -95,7 +95,7 @@ public class CommandsPanelSkeletonTests
             Commands: CommandsFor(ImmutableArray.Create(ShipEngineCommandTypes.Accelerate))));
 
     /// <summary>Engine module plus an installed Navigation Computer exposing both
-    /// navigation.dock and navigation.stations-list.</summary>
+    /// navigation.dock and navigation.stationsList.</summary>
     private static readonly ImmutableArray<InstalledModuleSnapshot> EngineAndNavigationComputerModules = ImmutableArray.Create(
         new InstalledModuleSnapshot(
             EngineModuleId, "module.engine.basic", "Engine", Position: 1, EngineCommandTypeIds,
@@ -477,7 +477,7 @@ public class CommandsPanelSkeletonTests
         var engineRow = panel.CommandPanelRows.Single(r => r.Name == "Engine");
         Assert.Equal(3, engineRow.Buttons.Length);
         Assert.Equal(
-            new[] { "engine.accelerate", "engine.brake", "engine.maintain-speed" },
+            new[] { "engine.accelerate", "engine.brake", "engine.maintainSpeed" },
             engineRow.Buttons.Select(b => b.CommandTypeId));
     }
 
@@ -502,17 +502,17 @@ public class CommandsPanelSkeletonTests
     [Theory]
     [InlineData("engine.accelerate")]
     [InlineData("engine.brake")]
-    [InlineData("engine.maintain-course")]
-    [InlineData("engine.maintain-speed")]
+    [InlineData("engine.maintainCourse")]
+    [InlineData("engine.maintainSpeed")]
     [InlineData("engine.orbit")]
-    [InlineData("engine.turn-left-step")]
-    [InlineData("engine.turn-left-until-cancel")]
-    [InlineData("engine.turn-right-step")]
-    [InlineData("engine.turn-right-until-cancel")]
+    [InlineData("engine.turnLeftStep")]
+    [InlineData("engine.turnLeftUntilCancel")]
+    [InlineData("engine.turnRightStep")]
+    [InlineData("engine.turnRightUntilCancel")]
     [InlineData("navigation.dock")]
-    [InlineData("navigation.stations-list")]
-    [InlineData("scanner.general-scan")]
-    [InlineData("scanner.structural-scan")]
+    [InlineData("navigation.stationsList")]
+    [InlineData("scanner.generalScan")]
+    [InlineData("scanner.structuralScan")]
     public void Commands_with_a_declared_icon_file_load_it_successfully(string commandTypeId)
     {
         var screen = CreateScreen();
@@ -529,17 +529,17 @@ public class CommandsPanelSkeletonTests
             {
                 "engine.accelerate",
                 "engine.brake",
-                "engine.maintain-course",
-                "engine.maintain-speed",
+                "engine.maintainCourse",
+                "engine.maintainSpeed",
                 "engine.orbit",
-                "engine.turn-left-step",
-                "engine.turn-left-until-cancel",
-                "engine.turn-right-step",
-                "engine.turn-right-until-cancel",
+                "engine.turnLeftStep",
+                "engine.turnLeftUntilCancel",
+                "engine.turnRightStep",
+                "engine.turnRightUntilCancel",
                 "navigation.dock",
-                "navigation.stations-list",
-                "scanner.general-scan",
-                "scanner.structural-scan",
+                "navigation.stationsList",
+                "scanner.generalScan",
+                "scanner.structuralScan",
             },
             CommandsPanel.CommandIconFileNames.Keys.OrderBy(k => k, StringComparer.Ordinal));
     }
@@ -549,24 +549,24 @@ public class CommandsPanelSkeletonTests
     {
         var screen = CreateScreen();
 
-        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.speed-synchronization"));
-        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.direction-synchronization"));
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.speedSynchronization"));
+        Assert.False(screen.CommandsPanel.HasLoadedIconFor("engine.directionSynchronization"));
     }
 
     [Theory]
     [InlineData("engine.accelerate")]
     [InlineData("engine.brake")]
-    [InlineData("engine.maintain-course")]
-    [InlineData("engine.maintain-speed")]
+    [InlineData("engine.maintainCourse")]
+    [InlineData("engine.maintainSpeed")]
     [InlineData("engine.orbit")]
-    [InlineData("engine.turn-left-step")]
-    [InlineData("engine.turn-left-until-cancel")]
-    [InlineData("engine.turn-right-step")]
-    [InlineData("engine.turn-right-until-cancel")]
+    [InlineData("engine.turnLeftStep")]
+    [InlineData("engine.turnLeftUntilCancel")]
+    [InlineData("engine.turnRightStep")]
+    [InlineData("engine.turnRightUntilCancel")]
     [InlineData("navigation.dock")]
-    [InlineData("navigation.stations-list")]
-    [InlineData("scanner.general-scan")]
-    [InlineData("scanner.structural-scan")]
+    [InlineData("navigation.stationsList")]
+    [InlineData("scanner.generalScan")]
+    [InlineData("scanner.structuralScan")]
     public void Commands_with_a_declared_icon_also_have_an_active_hover_variant(string commandTypeId)
     {
         var screen = CreateScreen();
@@ -635,7 +635,7 @@ public class CommandsPanelSkeletonTests
         Assert.False(engineRow.Opened);
         Assert.Empty(engineRow.Buttons);
         Assert.DoesNotContain(panel.AllCommandButtons, b =>
-            b.CommandTypeId is "engine.accelerate" or "engine.brake" or "engine.maintain-speed");
+            b.CommandTypeId is "engine.accelerate" or "engine.brake" or "engine.maintainSpeed");
     }
 
     // ── Command button hover / pressed seams ───────────────────
@@ -712,14 +712,14 @@ public class CommandsPanelSkeletonTests
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
-        var generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.general-scan");
+        var generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.generalScan");
         Assert.True(generalScan.Enabled);
 
         fixture.Screen.OnMouseDown(generalScan.Rect.MidX, generalScan.Rect.MidY);
 
         var command = Assert.Single(fixture.Connection.Commands);
         Assert.Equal(ScannerModuleId, command.ModuleId);
-        Assert.Equal("scanner.general-scan", command.CommandType);
+        Assert.Equal("scanner.generalScan", command.CommandType);
         Assert.Equal("OBJ-1", command.TargetObjectId);
     }
 
@@ -742,7 +742,7 @@ public class CommandsPanelSkeletonTests
         Assert.Equal("MOD-ENGINE-LO-POSITION", command.ModuleId);
     }
 
-    // ── navigation.stations-list carve-out (new in Batch 2) ─────
+    // ── navigation.stationsList carve-out (new in Batch 2) ─────
 
     [Fact]
     public async Task Stations_list_button_is_always_disabled_even_when_navigation_computer_is_installed()
@@ -774,7 +774,7 @@ public class CommandsPanelSkeletonTests
         Assert.Equal(2, spaceControlRow.Buttons.Length);
         Assert.All(spaceControlRow.Buttons, b => Assert.False(b.Enabled));
 
-        var generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.general-scan");
+        var generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.generalScan");
         fixture.Screen.OnMouseDown(generalScan.Rect.MidX, generalScan.Rect.MidY);
         Assert.Empty(fixture.Connection.Commands);
     }
@@ -789,8 +789,8 @@ public class CommandsPanelSkeletonTests
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
-        var generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.general-scan");
-        var structuralScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.structural-scan");
+        var generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.generalScan");
+        var structuralScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.structuralScan");
 
         // Without a selection both scanner commands are disabled; clicking sends nothing.
         Assert.False(generalScan.Enabled);
@@ -803,14 +803,14 @@ public class CommandsPanelSkeletonTests
         Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
         Render(fixture.Screen);
 
-        generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.general-scan");
+        generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.generalScan");
         Assert.True(generalScan.Enabled);
 
         fixture.Screen.OnMouseDown(generalScan.Rect.MidX, generalScan.Rect.MidY);
 
         var command = Assert.Single(fixture.Connection.Commands);
         Assert.Equal(ScannerModuleId, command.ModuleId);
-        Assert.Equal("scanner.general-scan", command.CommandType);
+        Assert.Equal("scanner.generalScan", command.CommandType);
         Assert.Equal("OBJ-1", command.TargetObjectId);
 
         // Clear the selection (right-click on empty map) → disabled again.
@@ -818,7 +818,7 @@ public class CommandsPanelSkeletonTests
         Assert.Null(fixture.Screen.SelectedObjectId);
         Render(fixture.Screen);
 
-        generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.general-scan");
+        generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.generalScan");
         Assert.False(generalScan.Enabled);
         fixture.Connection.Commands.Clear();
         fixture.Screen.OnMouseDown(generalScan.Rect.MidX, generalScan.Rect.MidY);
@@ -832,8 +832,8 @@ public class CommandsPanelSkeletonTests
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
-        var matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.speed-synchronization");
-        var matchCourse = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.direction-synchronization");
+        var matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.speedSynchronization");
+        var matchCourse = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.directionSynchronization");
 
         Assert.False(matchSpeed.Enabled);
         Assert.False(matchCourse.Enabled);
@@ -843,12 +843,12 @@ public class CommandsPanelSkeletonTests
         fixture.Screen.OnMouseDown(640, 420); // select OBJ-1
         Render(fixture.Screen);
 
-        matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.speed-synchronization");
+        matchSpeed = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.speedSynchronization");
         Assert.True(matchSpeed.Enabled);
         fixture.Screen.OnMouseDown(matchSpeed.Rect.MidX, matchSpeed.Rect.MidY);
 
         var command = Assert.Single(fixture.Connection.Commands);
-        Assert.Equal("engine.speed-synchronization", command.CommandType);
+        Assert.Equal("engine.speedSynchronization", command.CommandType);
         Assert.Equal("OBJ-1", command.TargetObjectId);
     }
 

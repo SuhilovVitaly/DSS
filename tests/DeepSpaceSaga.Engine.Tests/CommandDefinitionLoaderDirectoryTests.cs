@@ -26,7 +26,7 @@ public class CommandDefinitionLoaderDirectoryTests
             WriteFile(directory, "b-scanner.json", """
             {
               "commandDefinitions": [
-                { "typeId": "scanner.general-scan", "displayName": "General Scan", "type": "module.scanner.mk1" }
+                { "typeId": "scanner.generalScan", "displayName": "General Scan", "type": "module.scanner.mk1" }
               ]
             }
             """);
@@ -36,7 +36,7 @@ public class CommandDefinitionLoaderDirectoryTests
             Assert.Equal(3, definitions.Count);
             Assert.Contains(definitions, d => d.TypeId == "engine.accelerate");
             Assert.Contains(definitions, d => d.TypeId == "engine.brake");
-            Assert.Contains(definitions, d => d.TypeId == "scanner.general-scan");
+            Assert.Contains(definitions, d => d.TypeId == "scanner.generalScan");
         }
         finally
         {
