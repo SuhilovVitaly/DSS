@@ -70,6 +70,13 @@ public sealed class SkiaWindow : IDisposable
             Title = "Deep Space Saga",
             WindowBorder = WindowBorder.Hidden,
             WindowState = WindowState.Normal,
+            // Since the window is deliberately 1px shorter than the monitor (see
+            // OnLoad) so Windows doesn't classify it as fullscreen, the taskbar no
+            // longer auto-hides behind it on its own — start TopMost so it still
+            // covers the taskbar. Toggled off whenever the window loses focus (see
+            // OnFocusChanged) so it doesn't stay pinned over the Snipping Tool
+            // (Print Screen) or whatever the user alt-tabs to.
+            TopMost = true,
             FramesPerSecond = 80,
             VSync = false,
             API = new GraphicsAPI(ContextAPI.OpenGL, ContextProfile.Core, ContextFlags.Default, new APIVersion(3, 3))
@@ -105,7 +112,19 @@ public sealed class SkiaWindow : IDisposable
         if (target is not null)
         {
             _window.Position = target.Bounds.Origin;
-            _window.Size = target.VideoMode.Resolution ?? target.Bounds.Size;
+
+            // Deliberately 1px shorter than the monitor's native resolution. A
+            // borderless window whose size exactly matches the monitor is picked up
+            // by Windows' "fullscreen optimizations" heuristic and treated like an
+            // exclusive-fullscreen app even though this is a plain windowed OpenGL
+            // context. That heuristic is what makes every monitor briefly blank and
+            // renegotiate its mode at startup, and it's also why Print Screen
+            // captures this window as solid black — DWM stops compositing it
+            // normally and hands it a direct hardware flip path instead. Being 1px
+            // short keeps the window out of that path while staying visually
+            // indistinguishable from true fullscreen.
+            var resolution = target.VideoMode.Resolution ?? target.Bounds.Size;
+            _window.Size = new Silk.NET.Maths.Vector2D<int>(resolution.X, resolution.Y - 1);
         }
 
         _gl = _window.CreateOpenGL();
@@ -282,6 +301,12 @@ public sealed class SkiaWindow : IDisposable
             $"depth={_screens.Count} printScreenDown={printScreenDown}");
 
         _isFocused = isFocused;
+
+        // Only cover the taskbar (see WindowOptions.TopMost above) while the game
+        // itself is the foreground window. Keeping TopMost on while unfocused would
+        // pin the game over whatever the user switched to — e.g. the Snipping Tool
+        // that Print Screen just opened, or an alt-tabbed app.
+        _window.TopMost = isFocused;
 
         if (isFocused)
         {
