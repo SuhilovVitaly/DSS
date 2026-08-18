@@ -52,6 +52,15 @@ internal sealed class GameDataRegistry
                     throw new ContentException(
                         $"Module type '{moduleType.TypeId}' references unknown command definition '{commandTypeId}'.");
                 }
+
+                var command = commandRegistry.GetDefinition(commandRegistry.GetIndex(commandTypeId));
+                if (!string.Equals(command.Type, moduleType.TypeId, StringComparison.Ordinal))
+                {
+                    throw new ContentException(
+                        $"Command definition '{commandTypeId}' declares owning module type " +
+                        $"'{command.Type}' but is referenced by module type '{moduleType.TypeId}' " +
+                        $"via commandTypeIds — the two must match.");
+                }
             }
         }
 

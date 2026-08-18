@@ -6,7 +6,8 @@
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
-            "target": "none"
+            "target": "none",
+            "type": "module.engine.basic"
         },
         {
             "typeId": "engine.brake",
@@ -14,7 +15,8 @@
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
-            "target": "none"
+            "target": "none",
+            "type": "module.engine.basic"
         },
         {
             "typeId": "engine.maintain-speed",
@@ -22,7 +24,8 @@
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
-            "target": "none"
+            "target": "none",
+            "type": "module.engine.basic"
         },
         {
             "typeId": "engine.turn-left-step",
@@ -30,7 +33,8 @@
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
-            "target": "none"
+            "target": "none",
+            "type": "module.engine.basic"
         },
         {
             "typeId": "engine.turn-right-step",
@@ -38,7 +42,8 @@
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
-            "target": "none"
+            "target": "none",
+            "type": "module.engine.basic"
         },
         {
             "typeId": "engine.turn-left-until-cancel",
@@ -46,7 +51,8 @@
             "timeFactor": 1.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
-            "target": "none"
+            "target": "none",
+            "type": "module.engine.basic"
         },
         {
             "typeId": "engine.turn-right-until-cancel",
@@ -54,7 +60,8 @@
             "timeFactor": 1.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
-            "target": "none"
+            "target": "none",
+            "type": "module.engine.basic"
         },
         {
             "typeId": "engine.maintain-course",
@@ -62,7 +69,8 @@
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
-            "target": "none"
+            "target": "none",
+            "type": "module.engine.basic"
         },
         {
             "typeId": "engine.speed-synchronization",
@@ -70,7 +78,8 @@
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
-            "target": "object"
+            "target": "object",
+            "type": "module.engine.basic"
         },
         {
             "typeId": "engine.direction-synchronization",
@@ -78,7 +87,8 @@
             "timeFactor": 0.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
-            "target": "object"
+            "target": "object",
+            "type": "module.engine.basic"
         },
         {
             "typeId": "engine.orbit",
@@ -86,66 +96,8 @@
             "timeFactor": 1.0,
             "complexityFactor": 1.0,
             "consumptionFactor": 1.0,
-            "target": "point"
-        },
-        {
-            "typeId": "scanner.general-scan",
-            "displayName": "General Scan",
-            "timeFactor": 0.4,
-            "complexityFactor": 1.0,
-            "consumptionFactor": 1.0,
-            "target": "object",
-            "activationEnergyCellsCost": 2
-        },
-        {
-            "typeId": "scanner.structural-scan",
-            "displayName": "Structural Scan",
-            "timeFactor": 3.0,
-            "complexityFactor": 1.0,
-            "consumptionFactor": 1.0,
-            "target": "object"
-        },
-        {
-            "typeId": "scanner.nearby-signatures",
-            "displayName": "Nearby Signatures",
-            "timeFactor": 0.4,
-            "complexityFactor": 1.0,
-            "consumptionFactor": 1.0,
-            "target": "none",
-            "activationEnergyCellsCost": 2
-        },
-        {
-            "typeId": "navigation.dock",
-            "displayName": "Dock",
-            "timeFactor": 2.0,
-            "complexityFactor": 1.0,
-            "consumptionFactor": 1.0,
-            "target": "object",
-            "activationEnergyCellsCost": 3
-        },
-        {
-            "typeId": "navigation.stations-list",
-            "displayName": "Stations List",
-            "timeFactor": 0.1,
-            "complexityFactor": 1.0,
-            "consumptionFactor": 1.0,
-            "target": "none"
-        },
-        {
-            "typeId": "mining.extract-ice",
-            "displayName": "Extract Ice",
-            "timeFactor": 1.0,
-            "complexityFactor": 1.0,
-            "consumptionFactor": 1.0,
-            "target": "object"
-        },
-        {
-            "typeId": "mining.stop-extraction",
-            "displayName": "Stop Extraction",
-            "timeFactor": 0.0,
-            "complexityFactor": 1.0,
-            "consumptionFactor": 1.0,
-            "target": "none"
+            "target": "point",
+            "type": "module.engine.basic"
         }
     ]
 }

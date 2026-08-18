@@ -145,8 +145,8 @@ public class InstalledModuleProjectionTests
             itemTypes: [],
             commandDefinitions:
             [
-                new CommandDefinition("engine.accelerate", "Accelerate", Target: "none"),
-                new CommandDefinition("engine.orbit", "Orbit", Target: "point")
+                new CommandDefinition("engine.accelerate", "Accelerate", Target: "none", Type: "module.engine.basic"),
+                new CommandDefinition("engine.orbit", "Orbit", Target: "point", Type: "module.engine.basic")
             ]);
 
         var engine = new SimulationEngine(registry);
@@ -195,9 +195,9 @@ public class InstalledModuleProjectionTests
             itemTypes: [],
             commandDefinitions:
             [
-                new CommandDefinition("scanner.general-scan", "General Scan", Target: "object"),
-                new CommandDefinition("scanner.structural-scan", "Structural Scan", Target: "object"),
-                new CommandDefinition("engine.speed-synchronization", "Speed Synchronization", Target: "object")
+                new CommandDefinition("scanner.general-scan", "General Scan", Target: "object", Type: "module.scanner.mk1"),
+                new CommandDefinition("scanner.structural-scan", "Structural Scan", Target: "object", Type: "module.scanner.mk1"),
+                new CommandDefinition("engine.speed-synchronization", "Speed Synchronization", Target: "object", Type: "module.scanner.mk1")
             ]);
 
         var engine = new SimulationEngine(registry);

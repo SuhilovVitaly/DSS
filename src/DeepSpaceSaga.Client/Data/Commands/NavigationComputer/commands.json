@@ -1,0 +1,23 @@
+{
+    "commandDefinitions": [
+        {
+            "typeId": "navigation.dock",
+            "displayName": "Dock",
+            "timeFactor": 2.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "object",
+            "activationEnergyCellsCost": 3,
+            "type": "module.bridge-navigation-computer.basic"
+        },
+        {
+            "typeId": "navigation.stations-list",
+            "displayName": "Stations List",
+            "timeFactor": 0.1,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.bridge-navigation-computer.basic"
+        }
+    ]
+}

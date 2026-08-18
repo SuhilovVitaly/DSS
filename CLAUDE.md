@@ -61,7 +61,7 @@ The engine holds no hardcoded game data. `EngineContentLoader` reads `Client/Set
 |------|---------|
 | `module-types.json` | Module types — slots, mass, structure points, power draw, `commandTypeIds`, base cycle time, fuel, inertia, success chance |
 | `item-types.json` | Item types |
-| `command-definitions.json` | Commands, addressed by `(objectId, moduleId)` |
+| `Data/Commands/<ModuleType>/commands.json` | Commands, addressed by `(objectId, moduleId)`; split per owning module type (Engine, Scanner, NavigationComputer, DrillingUnit), each entry carries a `type` field cross-checked against `ModuleTypeDefinition.CommandTypeIds` |
 | `factory-types.json` | Factory types (loaded only when referenced by Settings) |
 | `recipes.json` | Recipes (loaded only when referenced by Settings) |
 

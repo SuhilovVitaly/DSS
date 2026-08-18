@@ -151,9 +151,42 @@ public static class EngineContentLoader
             new ItemTypeDefinition(dto.TypeId, dto.DisplayName, dto.UnitMassKg)).ToArray();
     }
 
+    /// <summary>
+    /// Loads command definitions from either a single JSON file (legacy layout) or a
+    /// directory (recursively merges every "*.json" file found under it — the physical
+    /// per-module-type layout, e.g. "Data/Commands/Engine/commands.json"). Directory
+    /// traversal order is sorted (<see cref="StringComparer.Ordinal"/>) so the merge is
+    /// deterministic regardless of on-disk enumeration order. All files are merged into a
+    /// single sequence before being handed to <see cref="TypeRegistry{TDefinition}.Create"/>
+    /// so duplicate typeIds across files are still caught.
+    /// </summary>
     internal static IReadOnlyList<CommandDefinition> LoadCommandDefinitions(string path)
     {
-        var file = ReadJson<CommandDefinitionsFile>(path, "command definitions");
+        if (Directory.Exists(path))
+        {
+            var files = Directory.EnumerateFiles(path, "*.json", SearchOption.AllDirectories)
+                .OrderBy(f => f, StringComparer.Ordinal)
+                .ToArray();
+
+            if (files.Length == 0)
+            {
+                throw new ContentException(
+                    $"command-definitions directory contains no *.json files: {path}");
+            }
+
+            return files.SelectMany(ReadCommandDefinitionsFile).ToArray();
+        }
+
+        if (File.Exists(path))
+            return ReadCommandDefinitionsFile(path).ToArray();
+
+        throw new ContentException(
+            $"command-definitions path not found (neither file nor directory): {path}");
+    }
+
+    private static IEnumerable<CommandDefinition> ReadCommandDefinitionsFile(string filePath)
+    {
+        var file = ReadJson<CommandDefinitionsFile>(filePath, "command definitions");
         if (file.CommandDefinitions is null)
             throw new ContentException("command-definitions file is missing commandDefinitions.");
 
@@ -167,6 +200,13 @@ public static class EngineContentLoader
                     $"'{activationEnergyCellsCost}' which must be >= 0.");
             }
 
+            if (string.IsNullOrWhiteSpace(dto.Type))
+            {
+                throw new ContentException(
+                    $"Command definition '{dto.TypeId}' is missing required 'type' " +
+                    "(owning module type id).");
+            }
+
             return new CommandDefinition(
                 dto.TypeId,
                 dto.DisplayName,
@@ -174,8 +214,9 @@ public static class EngineContentLoader
                 ParseFixedPointFactor(dto.ComplexityFactor),
                 ParseFixedPointFactor(dto.ConsumptionFactor),
                 dto.Target ?? "none",
-                activationEnergyCellsCost);
-        }).ToArray();
+                activationEnergyCellsCost,
+                dto.Type);
+        });
     }
 
     /// <summary>
@@ -327,7 +368,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("complexityFactor")] decimal? ComplexityFactor,
         [property: JsonPropertyName("consumptionFactor")] decimal? ConsumptionFactor,
         [property: JsonPropertyName("target")] string? Target,
-        [property: JsonPropertyName("activationEnergyCellsCost")] int? ActivationEnergyCellsCost);
+        [property: JsonPropertyName("activationEnergyCellsCost")] int? ActivationEnergyCellsCost,
+        [property: JsonPropertyName("type")] string? Type);
 
     private sealed record FactoryTypesFile(
         [property: JsonPropertyName("factoryTypes")] IReadOnlyList<FactoryTypeDefinitionDto> FactoryTypes);

@@ -4853,6 +4853,18 @@ DirectionSynchronization
 > synchronized — и пока не проверяются во время выполнения. `navigation.stations-list` и
 > `scanner.nearby-signatures` предусловий не имеют.
 
+> **Примечание (структура каталога команд):** `command-definitions.json` перестал быть единым
+> файлом — каталог разбит на несколько файлов, сгруппированных по типу владеющего модуля:
+> `Data/Commands/<ModuleType>/commands.json` (сейчас 4 файла — Engine, Scanner,
+> NavigationComputer, DrillingUnit — по числу module types, у которых есть команды). Каждая
+> запись команды содержит поле `type` — typeId владеющего module type (например
+> `module.engine.basic`) — используемое для перекрёстной валидации согласованности с
+> `ModuleTypeDefinition.CommandTypeIds` при загрузке реестра (`GameDataRegistry.Create`);
+> расхождение приводит к ошибке загрузки. Загрузчик (`EngineContentLoader.LoadCommandDefinitions`)
+> поддерживает оба режима: одиночный файл (обратная совместимость с существующими тестовыми
+> фикстурами) и директорию — рекурсивно мёржит все `*.json` внутри неё. `Settings.json` теперь
+> указывает `typeData.commandDefinitions` на директорию `Data/Commands`, а не на единый файл.
+
 ### 56.10. Engine fuel вместо Energy Cells
 
 Engine module не расходует `Energy Cells`.

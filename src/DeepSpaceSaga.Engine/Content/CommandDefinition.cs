@@ -22,7 +22,15 @@ internal sealed record CommandDefinition(
     /// 0 = no activation cost. Schema/validation prep only: the Engine does not
     /// yet debit this value (the energy system is not implemented).
     /// </summary>
-    int ActivationEnergyCellsCost = 0) : ITypeDefinition
+    int ActivationEnergyCellsCost = 0,
+    /// <summary>
+    /// TypeId of the owning module type (e.g. "module.engine.basic") that this command is
+    /// physically filed under and cross-validated against. The source of truth for which
+    /// commands a module type exposes remains <see cref="ModuleTypeDefinition.CommandTypeIds"/>
+    /// (module→command); this field exists for physical content organization and cross-checking
+    /// that organization against that source of truth, not as an alternative ownership link.
+    /// </summary>
+    string Type = "") : ITypeDefinition
 {
     /// <summary>Fixed-point constant for the neutral factor value 1.0.</summary>
     public const int Neutral = 1000;

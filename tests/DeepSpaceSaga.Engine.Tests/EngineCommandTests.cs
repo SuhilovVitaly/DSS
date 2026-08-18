@@ -1047,7 +1047,7 @@ public class EngineCommandTests
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
-            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A", "timeFactor": 1.2 } ] }
+            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A", "timeFactor": 1.2, "type": "module.engine.basic" } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
 
@@ -1081,7 +1081,7 @@ public class EngineCommandTests
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
-            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A", "timeFactor": 1.0, "complexityFactor": 0.75 } ] }
+            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A", "timeFactor": 1.0, "complexityFactor": 0.75, "type": "module.engine.basic" } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
 
@@ -1130,7 +1130,8 @@ public class EngineCommandTests
                 new CommandDefinition(
                     ShipEngineCommandTypes.TurnRightUntilCancel,
                     "Turn Right Until Cancel",
-                    TimeFactor: 2000) // 2.0 → Ceil(1000 * 2000 / 1000) = 2000 ms
+                    TimeFactor: 2000, // 2.0 → Ceil(1000 * 2000 / 1000) = 2000 ms
+                    Type: "module.engine.basic")
             ]);
 
         var engine = new SimulationEngine(registry);
@@ -1189,7 +1190,7 @@ public class EngineCommandTests
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
-            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A" } ] }
+            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A", "type": "module.engine.basic" } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
 
@@ -1223,7 +1224,7 @@ public class EngineCommandTests
             """);
             File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
             File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
-            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A" } ] }
+            { "commandDefinitions": [ { "typeId": "engine.accelerate", "displayName": "A", "type": "module.engine.basic" } ] }
             """);
             File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
 
@@ -1926,6 +1927,7 @@ public class EngineCommandTests
                     or ShipEngineCommandTypes.TurnRightUntilCancel
                     or ShipEngineCommandTypes.Orbit
                     ? 1000
-                    : 0)));
+                    : 0,
+                Type: "module.engine.basic")));
     }
 }

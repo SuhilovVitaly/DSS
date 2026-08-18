@@ -370,6 +370,7 @@ public class SaveLoadContinuityTests
                 TimeFactor: id is ShipEngineCommandTypes.TurnLeftUntilCancel
                     or ShipEngineCommandTypes.TurnRightUntilCancel
                     ? 1000
-                    : 0)));
+                    : 0,
+                Type: "module.engine.basic")));
     }
 }
