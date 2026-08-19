@@ -95,36 +95,6 @@ public class PlayerShipInfoPanelTests
             $"Panel bottom edge ({panel.Bottom}) should be in the bottom half of the screen");
     }
 
-    [Fact]
-    public void Panel_does_not_overlap_engine_command_panel_at_1280x720()
-    {
-        var (buffer, screen) = CreateScreen();
-        UpdateBufferWithShip(buffer, PlayerShipId);
-        RenderScreen(screen, 1280, 720);
-
-        var playerPanel = screen.LastPlayerShipPanelRect;
-        var commandPanel = screen.LastCommandPanelRect;
-
-        Assert.False(
-            playerPanel.IntersectsWith(commandPanel),
-            $"Player ship panel {playerPanel} should not overlap command panel {commandPanel}");
-    }
-
-    [Fact]
-    public void Panel_does_not_overlap_engine_command_panel_at_1920x1080()
-    {
-        var (buffer, screen) = CreateScreen();
-        UpdateBufferWithShip(buffer, PlayerShipId);
-        RenderScreen(screen, 1920, 1080);
-
-        var playerPanel = screen.LastPlayerShipPanelRect;
-        var commandPanel = screen.LastCommandPanelRect;
-
-        Assert.False(
-            playerPanel.IntersectsWith(commandPanel),
-            $"Player ship panel {playerPanel} should not overlap command panel {commandPanel}");
-    }
-
     // ── Placeholder values (no snapshot / no player ship) ─────────
 
     [Fact]

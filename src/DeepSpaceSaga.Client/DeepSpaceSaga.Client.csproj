@@ -20,9 +20,6 @@
     <None Update="Images\Cursors\cursor.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Images\UI\GameSessionScreenUI\navigation-panel\*.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="Images\UI\GameSessionScreenUI\commands-panel\*.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
