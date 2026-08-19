@@ -494,8 +494,12 @@ public class GameSessionObjectInteractionTests
         fixture.Screen.OnMouseDown(640, 360);
         Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
 
-        var panel = fixture.Screen.LastCommandPanelRect;
-        var result = fixture.Screen.OnMouseDown(panel.Left + 2f, panel.MidY, MouseButton.Right);
+        // A point on the Commands Panel header away from the hide/show button —
+        // consumed by CommandsPanel.OnMouseDown's final "caption/body" fallback
+        // with no side effect (ТЗ §54: right-click on a UI panel must not clear
+        // the selection).
+        var panel = fixture.Screen.CommandsPanel.CaptionRect;
+        var result = fixture.Screen.OnMouseDown(panel.Right - 5f, panel.MidY, MouseButton.Right);
 
         Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
         Assert.Equal(ScreenEvent.None, result);

@@ -38,10 +38,10 @@ public sealed class GameSessionScreen : IScreen
 
     /// <summary>
     /// UI-only scale factor applied to the GameSession overlay panels (top-left
-    /// Commands Panel, top-right scale/speed panels, bottom-center engine command
-    /// panel, bottom info panels). Never affects the tactical map, camera, or
-    /// hit-testing against map objects — only the UI-pass canvas transform and the
-    /// UI-space mouse coordinates derived from it.
+    /// Commands Panel, top-right scale/speed panels, bottom info panels). Never
+    /// affects the tactical map, camera, or hit-testing against map objects — only
+    /// the UI-pass canvas transform and the UI-space mouse coordinates derived
+    /// from it.
     /// </summary>
     private float _uiScale = 1.0f;
     private static readonly float[] AllowedUiScales = { 0.8f, 1.0f, 1.2f, 1.5f };
@@ -68,17 +68,6 @@ public sealed class GameSessionScreen : IScreen
     private readonly SKPaint _scaleBtnActivePaint;
     private readonly SKPaint _scaleBtnTextPaint;
     private readonly SKPaint _scaleIndicatorPaint;
-
-    // Ship command panel paints
-    private readonly SKPaint _commandBtnNormalPaint;
-    private readonly SKPaint _commandBtnHoverPaint;
-    private readonly SKPaint _commandBtnPressedPaint;
-    private readonly SKPaint _commandBtnDisabledPaint;
-    private readonly SKPaint _commandBtnTextPaint;
-    private readonly SKPaint _commandBtnIconPaint;
-    private readonly SKPaint _commandBtnHoverBorderPaint;
-    private readonly SKPaint _commandBtnPressedBorderPaint;
-    private readonly SKBitmap?[] _engineCommandButtonIcons;
 
     private int _viewportW;
     private int _viewportH;
@@ -118,10 +107,6 @@ public sealed class GameSessionScreen : IScreen
     // Scale state
     private SKRect _lastScalePanelRect;
     private readonly SKRect[] _scaleButtonRects = new SKRect[ScaleLabels.Length];
-
-    private SKRect _lastCommandPanelRect;
-    private readonly SKRect[] _engineCommandButtonRects = new SKRect[EngineCommandButtons.Length];
-    private int _pressedEngineCommandButtonIndex = -1;
 
     // Commands Panel (top-left) — ТЗ подзадача 1 skeleton + ТЗ-04 data-driven buttons
     private readonly CommandsPanel _commandsPanel;
@@ -179,9 +164,7 @@ public sealed class GameSessionScreen : IScreen
     private const float ScalePanelGapFromSpeed = 4f;
     private const double ScaleSnapTolerance = 0.05;
 
-    // Ship command panel layout
     private const string PlayerEngineModuleId = "MOD-PLAYER-ENGINE-01";
-    private const float CommandBtnSize = 64f;
 
     /// <summary>
     /// Fixed screen-space hit-test radius for ActiveObjectId/SelectedObjectId (ТЗ §54):
@@ -189,11 +172,6 @@ public sealed class GameSessionScreen : IScreen
     /// independent of zoom, marker size, and uiScale. Border-inclusive (&lt;=).
     /// </summary>
     private const float ObjectHitTestRadiusPx = 30f;
-    private const float CommandBtnGap = 4f;
-    private const float CommandPanelPadX = 6f;
-    private const float CommandPanelPadY = 6f;
-    private const float CommandPanelBottomMargin = 10f;
-    private const float CommandIndicatorSize = 8f;
 
     private static readonly string[] SpeedLabels = { "II", "1x", "5x", "20x", "100x" };
     private static readonly SimulationSpeed[] SpeedValues =
@@ -202,17 +180,6 @@ public sealed class GameSessionScreen : IScreen
     private static readonly double[] ScaleTargets = { 2.0, 1.0, 0.1, 0.01, 0.001 };
     private static readonly double WheelMinPpu = ScaleTargets.Min();
     private static readonly double WheelMaxPpu = ScaleTargets.Max();
-    private static readonly EngineCommandButton[] EngineCommandButtons =
-    [
-        new("^", ShipEngineCommandTypes.Accelerate, "button_accelerate.png"),
-        new("_", ShipEngineCommandTypes.Brake, "button_brake.png"),
-        new("=", ShipEngineCommandTypes.MaintainSpeed, "button_maintain_speed.png"),
-        new(">", ShipEngineCommandTypes.TurnRightStep, "button_turn_right_step.png"),
-        new("<", ShipEngineCommandTypes.TurnLeftStep, "button_turn_left_step.png"),
-        new(">>", ShipEngineCommandTypes.TurnRightUntilCancel, "button_turn_right_until_cancel.png"),
-        new("<<", ShipEngineCommandTypes.TurnLeftUntilCancel, "button_turn_left_until_cancel.png"),
-        new("°", ShipEngineCommandTypes.MaintainCourse, "button_maintain_course.png"),
-    ];
 
     // ── Test seams ──────────────────────────────────────────────
 
@@ -230,15 +197,11 @@ public sealed class GameSessionScreen : IScreen
     internal IReadOnlyList<SKRect> ScaleButtonRects => _scaleButtonRects;
     internal IReadOnlyList<string> ScalePanelLabels => ScaleLabels;
     internal float ScaleIndicatorCenterX => ComputeScaleIndicatorPosition();
-    internal SKRect LastCommandPanelRect => _lastCommandPanelRect;
-    internal IReadOnlyList<SKRect> EngineCommandButtonRects => _engineCommandButtonRects;
-    internal int PressedEngineCommandButtonIndex => _pressedEngineCommandButtonIndex;
     internal CommandsPanel CommandsPanel => _commandsPanel;
     internal float UiScale => _uiScale;
 
     /// <summary>Current frame's render list (scale-filtered, client-side).</summary>
     internal IReadOnlyList<ObjectRenderState> RenderStates => _renderStates;
-    internal int ActiveEngineCommandButtonIndex { get; private set; } = -1;
     internal bool IsFocusAttachedToPlayer => _isFocusAttachedToPlayer;
     internal string? CameraFollowObjectId => _cameraFollowObjectId;
     internal IReadOnlyList<ObjectTrailPoint> GetObjectTrail(string objectId) => _trailStore.GetTrail(objectId);
@@ -291,16 +254,6 @@ public sealed class GameSessionScreen : IScreen
         _scaleBtnActivePaint = new SKPaint { Color = new SKColor(50, 60, 50), Style = SKPaintStyle.Fill };
         _scaleBtnTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 11f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
         _scaleIndicatorPaint = new SKPaint { Color = new SKColor(80, 200, 80), Style = SKPaintStyle.Fill, IsAntialias = true };
-
-        _commandBtnNormalPaint = new SKPaint { Color = new SKColor(26, 28, 31), Style = SKPaintStyle.Fill };
-        _commandBtnHoverPaint = new SKPaint { Color = new SKColor(39, 45, 51), Style = SKPaintStyle.Fill };
-        _commandBtnPressedPaint = new SKPaint { Color = new SKColor(58, 75, 67), Style = SKPaintStyle.Fill };
-        _commandBtnDisabledPaint = new SKPaint { Color = new SKColor(18, 18, 18, 190), Style = SKPaintStyle.Fill };
-        _commandBtnTextPaint = new SKPaint { Color = new SKColor(210, 218, 214), TextSize = 11f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
-        _commandBtnIconPaint = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.High };
-        _commandBtnHoverBorderPaint = new SKPaint { Color = new SKColor(90, 100, 96), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
-        _commandBtnPressedBorderPaint = new SKPaint { Color = new SKColor(120, 160, 140), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
-        _engineCommandButtonIcons = LoadEngineCommandIcons();
 
         _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel);
     }
@@ -377,23 +330,7 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        // 2. Ship command panel buttons
-        int commandIdx = HitTestEngineCommandPanel(uiX, uiY);
-        if (commandIdx >= 0 && CanSendEngineCommand(
-                EngineCommandButtons[commandIdx].CommandType,
-                _buffer.Latest?.Snapshot))
-        {
-            _pressedEngineCommandButtonIndex = commandIdx;
-            SendEngineCommand(EngineCommandButtons[commandIdx].CommandType);
-            return ScreenEvent.None;
-        }
-
-        if (_lastCommandPanelRect.Contains(uiX, uiY))
-        {
-            return ScreenEvent.None;
-        }
-
-        // 2.5. Commands Panel (top-left) — consume clicks, don't pan (ТЗ подзадача 1)
+        // 2. Commands Panel (top-left) — consume clicks, don't pan (ТЗ подзадача 1)
         if (_commandsPanel.OnMouseDown(uiX, uiY))
             return ScreenEvent.None;
 
@@ -498,7 +435,6 @@ public sealed class GameSessionScreen : IScreen
         _mouseY = y;
         _uiMouseX = x / _uiScale;
         _uiMouseY = y / _uiScale;
-        _pressedEngineCommandButtonIndex = -1;
         _isPanningMap = false;
         _commandsPanel.OnMouseUp(_uiMouseX, _uiMouseY);
     }
@@ -635,17 +571,6 @@ public sealed class GameSessionScreen : IScreen
             if (_speedButtonRects[i].Contains(x, y))
                 return i;
         }
-        return -1;
-    }
-
-    private int HitTestEngineCommandPanel(float x, float y)
-    {
-        for (int i = 0; i < _engineCommandButtonRects.Length; i++)
-        {
-            if (_engineCommandButtonRects[i].Contains(x, y))
-                return i;
-        }
-
         return -1;
     }
 
@@ -899,10 +824,6 @@ public sealed class GameSessionScreen : IScreen
             return true;
         if (HitTestSpeedPanel(uiX, uiY) >= 0)
             return true;
-        if (HitTestEngineCommandPanel(uiX, uiY) >= 0)
-            return true;
-        if (_lastCommandPanelRect.Contains(uiX, uiY))
-            return true;
         if (_commandsPanel.CaptionRect.Contains(uiX, uiY) || _commandsPanel.BodyRect.Contains(uiX, uiY))
             return true;
         if (_panelVisible && (_lastCloseRect.Contains(uiX, uiY) || _lastPanelRect.Contains(uiX, uiY)))
@@ -1068,10 +989,7 @@ public sealed class GameSessionScreen : IScreen
         // 5. Speed panel (top-right)
         DrawSpeedPanel(canvas);
 
-        // 6. Ship command panel (bottom-center)
-        DrawEngineCommandPanel(canvas, buffered);
-
-        // 6.5. Commands Panel (top-left)
+        // 6. Commands Panel (top-left)
         _commandsPanel.Render(canvas,
             buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty);
 
@@ -1720,74 +1638,6 @@ public sealed class GameSessionScreen : IScreen
             SpaceMapColorResolver.PlayerShipColor);
     }
 
-    private void DrawEngineCommandPanel(SKCanvas canvas, BufferedSnapshot? buffered)
-    {
-        int btnCount = EngineCommandButtons.Length;
-        float totalW = CommandPanelPadX * 2 + btnCount * CommandBtnSize + (btnCount - 1) * CommandBtnGap;
-        float totalH = CommandPanelPadY * 2 + CommandBtnSize + CommandIndicatorSize + 2f;
-        float panelX = (_uiViewportW - totalW) / 2f;
-        float panelY = _uiViewportH - totalH - CommandPanelBottomMargin;
-
-        _lastCommandPanelRect = new SKRect(panelX, panelY, panelX + totalW, panelY + totalH);
-        canvas.DrawRect(_lastCommandPanelRect, _panelBgPaint);
-        canvas.DrawRect(_lastCommandPanelRect, _panelBorderPaint);
-
-        float btnX = panelX + CommandPanelPadX;
-        float btnY = panelY + CommandPanelPadY;
-
-        bool panelEnabled = _handle is not null &&
-                            !string.IsNullOrWhiteSpace(buffered?.Snapshot.PlayerShipObjectId);
-        string? activeCommandType = GetActiveEngineCommandType(buffered?.Snapshot);
-        ActiveEngineCommandButtonIndex = -1;
-
-        for (int i = 0; i < btnCount; i++)
-        {
-            var rect = new SKRect(btnX, btnY, btnX + CommandBtnSize, btnY + CommandBtnSize);
-            _engineCommandButtonRects[i] = rect;
-
-            bool buttonEnabled = panelEnabled &&
-                                 CanSendEngineCommand(EngineCommandButtons[i].CommandType, buffered?.Snapshot);
-            bool isHover = rect.Contains(_uiMouseX, _uiMouseY);
-            bool isPressed = i == _pressedEngineCommandButtonIndex && isHover;
-            var paint = buttonEnabled
-                ? isPressed ? _commandBtnPressedPaint : isHover ? _commandBtnHoverPaint : _commandBtnNormalPaint
-                : _commandBtnDisabledPaint;
-
-            canvas.DrawRect(rect, paint);
-
-            var icon = _engineCommandButtonIcons[i];
-            if (icon is not null)
-            {
-                byte iconAlpha = buttonEnabled ? (byte)255 : (byte)110;
-                _commandBtnIconPaint.Color = new SKColor(255, 255, 255, iconAlpha);
-                canvas.DrawBitmap(icon, rect, _commandBtnIconPaint);
-
-                var borderPaint = isPressed
-                    ? _commandBtnPressedBorderPaint
-                    : isHover ? _commandBtnHoverBorderPaint : _panelBorderPaint;
-                canvas.DrawRect(rect, borderPaint);
-            }
-            else
-            {
-                canvas.DrawRect(rect, _panelBorderPaint);
-                _commandBtnTextPaint.Color = buttonEnabled
-                    ? new SKColor(210, 218, 214)
-                    : new SKColor(96, 96, 96);
-                float textY = rect.MidY + _commandBtnTextPaint.TextSize / 3f;
-                canvas.DrawText(EngineCommandButtons[i].Label, rect.MidX, textY, _commandBtnTextPaint);
-            }
-
-            if (IsCyclicEngineCommand(EngineCommandButtons[i].CommandType) &&
-                EngineCommandButtons[i].CommandType == activeCommandType)
-            {
-                ActiveEngineCommandButtonIndex = i;
-                DrawCommandIndicator(canvas, rect);
-            }
-
-            btnX += CommandBtnSize + CommandBtnGap;
-        }
-    }
-
     private bool CanSendEngineCommand(string commandType, AuthoritativeSnapshot? snapshot)
     {
         if (_handle is null || string.IsNullOrWhiteSpace(snapshot?.PlayerShipObjectId))
@@ -1828,72 +1678,12 @@ public sealed class GameSessionScreen : IScreen
         return null;
     }
 
-    private static string? GetActiveEngineCommandType(AuthoritativeSnapshot? snapshot)
-    {
-        if (string.IsNullOrWhiteSpace(snapshot?.PlayerShipObjectId))
-            return null;
-
-        foreach (var obj in snapshot.Objects)
-        {
-            if (obj.ObjectId == snapshot.PlayerShipObjectId)
-                return obj.ActiveEngineCommandType;
-        }
-
-        return null;
-    }
-
     private static bool IsCyclicEngineCommand(string commandType)
     {
         return commandType == ShipEngineCommandTypes.Accelerate ||
                commandType == ShipEngineCommandTypes.Brake ||
                commandType == ShipEngineCommandTypes.TurnLeftUntilCancel ||
                commandType == ShipEngineCommandTypes.TurnRightUntilCancel;
-    }
-
-    private void DrawCommandIndicator(SKCanvas canvas, SKRect buttonRect)
-    {
-        float indicatorX = buttonRect.MidX - CommandIndicatorSize / 2f;
-        float indicatorY = buttonRect.Bottom + 1f;
-        _playerShipGlyphPath.Reset();
-        _playerShipGlyphPath.MoveTo(indicatorX, indicatorY);
-        _playerShipGlyphPath.LineTo(indicatorX + CommandIndicatorSize, indicatorY);
-        _playerShipGlyphPath.LineTo(indicatorX + CommandIndicatorSize / 2f, indicatorY + CommandIndicatorSize);
-        _playerShipGlyphPath.Close();
-        canvas.DrawPath(_playerShipGlyphPath, _speedIndicatorPaint);
-    }
-
-    // ── Icon loading ────────────────────────────────────────────
-
-    private static SKBitmap?[] LoadEngineCommandIcons()
-    {
-        var icons = new SKBitmap?[EngineCommandButtons.Length];
-        for (int i = 0; i < EngineCommandButtons.Length; i++)
-        {
-            icons[i] = LoadButtonIcon(
-                $"Images/UI/GameSessionScreenUI/navigation-panel/{EngineCommandButtons[i].IconFileName}");
-        }
-        return icons;
-    }
-
-    private static SKBitmap? LoadButtonIcon(string path)
-    {
-        try
-        {
-            if (!File.Exists(path))
-                return null;
-
-            using var bitmap = SKBitmap.Decode(path);
-            if (bitmap is null)
-                return null;
-
-            return bitmap.Resize(
-                new SKSizeI((int)CommandBtnSize, (int)CommandBtnSize),
-                SKFilterQuality.High);
-        }
-        catch (IOException)
-        {
-            return null;
-        }
     }
 
     // ── Info panel ──────────────────────────────────────────────
@@ -2077,5 +1867,3 @@ internal readonly record struct ObjectRenderState(
     ObjectMotionSnapshot Source,
     ObjectMotionSnapshot Predicted,
     bool IsPlayerShip);
-
-internal readonly record struct EngineCommandButton(string Label, string CommandType, string IconFileName);

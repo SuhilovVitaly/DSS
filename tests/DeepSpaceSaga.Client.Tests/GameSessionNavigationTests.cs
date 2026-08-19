@@ -94,9 +94,10 @@ public class GameSessionNavigationTests
         fixture.Screen.OnMouseDown(ScreenWidth / 2f, ScreenHeight / 2f);
         Assert.Empty(fixture.Connection.Commands);
 
-        // Command panel padding (outside any button) consumes the click.
-        var panel = fixture.Screen.LastCommandPanelRect;
-        fixture.Screen.OnMouseDown(panel.Left + 2f, panel.MidY);
+        // Commands Panel header, away from the hide/show button — consumed by
+        // CommandsPanel.OnMouseDown's final "caption/body" fallback, no action.
+        var panel = fixture.Screen.CommandsPanel.CaptionRect;
+        fixture.Screen.OnMouseDown(panel.Right - 5f, panel.MidY);
         Assert.Empty(fixture.Connection.Commands);
     }
 
@@ -438,19 +439,20 @@ public class GameSessionNavigationTests
         Assert.Equal(focusXAfterObjectClick, fixture.Screen.CameraFocusX);
         Assert.Equal(focusYAfterObjectClick, fixture.Screen.CameraFocusY);
 
-        // Command panel padding (outside any button) consumes the click too.
-        var panel = fixture.Screen.LastCommandPanelRect;
-        fixture.Screen.OnMouseDown(panel.Left + 2f, panel.MidY);
+        // Commands Panel header, away from the hide/show button — consumed by
+        // CommandsPanel.OnMouseDown's final "caption/body" fallback, no action.
+        var panel = fixture.Screen.CommandsPanel.CaptionRect;
+        fixture.Screen.OnMouseDown(panel.Right - 5f, panel.MidY);
         double focusXAfterPanelClick = fixture.Screen.CameraFocusX;
         double focusYAfterPanelClick = fixture.Screen.CameraFocusY;
 
-        fixture.Screen.OnMouseMove(panel.Left + 60f, panel.MidY + 60f);
+        fixture.Screen.OnMouseMove(panel.Right + 60f, panel.MidY + 60f);
 
         Assert.Equal(focusXAfterPanelClick, fixture.Screen.CameraFocusX);
         Assert.Equal(focusYAfterPanelClick, fixture.Screen.CameraFocusY);
     }
 
-    // ── Test helpers (same fixture pattern as GameSessionEngineCommandPanelTests) ──
+    // ── Test helpers ────────────────────────────────────────────────────────────
 
     private static TestFixture CreateFixture(double speedKmS = 1.0)
     {

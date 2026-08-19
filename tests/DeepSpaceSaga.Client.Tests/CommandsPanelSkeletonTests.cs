@@ -278,16 +278,6 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public async Task Bottom_center_engine_panel_still_renders()
-    {
-        await using var fixture = CreateFixture();
-        Render(fixture.Screen);
-
-        Assert.Equal(ScreenWidth / 2f, fixture.Screen.LastCommandPanelRect.MidX, precision: 3);
-        Assert.Equal(8, fixture.Screen.EngineCommandButtonRects.Count);
-    }
-
-    [Fact]
     public async Task Click_outside_panel_on_empty_map_sends_no_commands()
     {
         await using var fixture = CreateFixture();
