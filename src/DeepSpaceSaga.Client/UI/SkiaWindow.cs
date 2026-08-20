@@ -4,7 +4,9 @@ using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
+using DeepSpaceSaga.Client.UI.Screens.Load;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
+using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
@@ -41,7 +43,7 @@ public sealed class SkiaWindow : IDisposable
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _quickSaveLoadInFlight;
     private readonly KeyboardEdgeTracker _keyboardEdges = new();
-    private readonly Key[] _keyboardPressedKeys = new Key[16]; // must cover every key KeyboardEdgeTracker.Poll can report in one call
+    private readonly Key[] _keyboardPressedKeys = new Key[19]; // must cover every key KeyboardEdgeTracker.PollBoth can report in one call
     private readonly Key[] _keyboardReleasedKeys = new Key[2]; // Ctrl release edges only (left/right)
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
@@ -156,6 +158,8 @@ public sealed class SkiaWindow : IDisposable
         }
 
         _keyboard = _input.Keyboards.FirstOrDefault();
+        if (_keyboard is not null)
+            _keyboard.KeyChar += OnKeyChar;
 
         // TEMP DIAG — startup timing investigation, remove once resolved.
         if (_startupStopwatch is not null)
@@ -177,6 +181,9 @@ public sealed class SkiaWindow : IDisposable
             _mouse.MouseMove -= OnMouseMove;
             _mouse.Scroll -= OnMouseScroll;
         }
+
+        if (_keyboard is not null)
+            _keyboard.KeyChar -= OnKeyChar;
 
         _input?.Dispose();
         _input = null;
@@ -339,8 +346,20 @@ public sealed class SkiaWindow : IDisposable
         if (_closing || (button != MouseButton.Left && button != MouseButton.Right))
             return;
 
-        var screenEvent = _screens.Current.OnMouseDown(mouse.Position.X, mouse.Position.Y, button);
-        await HandleScreenEvent(screenEvent);
+        // Capture the current screen and (if relevant) its click payload synchronously,
+        // in this same call frame, before HandleScreenEvent's first await. This is what
+        // makes ScreenEvent.LoadSlotRequested's slot id race-safe: even if a rapid
+        // double-click queues two of these calls back-to-back, each one's payload is
+        // read here — while _screens.Current is still guaranteed to be the LoadScreen
+        // that produced it — never re-derived later from (possibly stale) screen state
+        // inside the locked HandleScreenEvent switch. See LoadScreen's doc comment.
+        var currentScreen = _screens.Current;
+        var screenEvent = currentScreen.OnMouseDown(mouse.Position.X, mouse.Position.Y, button);
+        string? payload = screenEvent == ScreenEvent.LoadSlotRequested && currentScreen is LoadScreen loadScreen
+            ? loadScreen.LastRequestedSlotId
+            : null;
+
+        await HandleScreenEvent(screenEvent, payload);
     }
 
     private void OnMouseUp(IMouse mouse, MouseButton button)
@@ -375,6 +394,14 @@ public sealed class SkiaWindow : IDisposable
             scroll.Y);
 
         _ = HandleScreenEvent(screenEvent);
+    }
+
+    private void OnKeyChar(IKeyboard keyboard, char c)
+    {
+        if (_closing)
+            return;
+
+        _screens.Current.OnTextInput(c);
     }
 
     private Task? _pendingKeyboardTransition;
@@ -466,7 +493,13 @@ public sealed class SkiaWindow : IDisposable
     /// This prevents races where e.g. MAIN MENU is clicked while a Pause
     /// request is still awaiting confirmation.
     /// </summary>
-    private async Task HandleScreenEvent(ScreenEvent evt)
+    /// <param name="payload">
+    /// Event-specific data captured synchronously by the caller at dispatch time (e.g.
+    /// the target slot id for <see cref="ScreenEvent.LoadSlotRequested"/>). Deliberately
+    /// threaded through as a parameter rather than read back from screen state once this
+    /// method has acquired <see cref="_transitionLock"/> — see <see cref="OnMouseDown(IMouse, MouseButton)"/>.
+    /// </param>
+    private async Task HandleScreenEvent(ScreenEvent evt, string? payload = null)
     {
         if (evt != ScreenEvent.None)
         {
@@ -505,6 +538,22 @@ public sealed class SkiaWindow : IDisposable
                     break;
                 case ScreenEvent.CloseSettings:
                     await CloseOverlayAsync();
+                    break;
+                case ScreenEvent.OpenSaveWindow:
+                    await OpenSaveWindowAsync();
+                    break;
+                case ScreenEvent.CloseSaveWindow:
+                    await CloseOverlayAsync();
+                    break;
+                case ScreenEvent.OpenLoadWindow:
+                    await OpenLoadWindowAsync();
+                    break;
+                case ScreenEvent.CloseLoadWindow:
+                    await CloseOverlayAsync();
+                    break;
+                case ScreenEvent.LoadSlotRequested:
+                    if (payload is not null)
+                        await LoadSlotAsync(payload);
                     break;
             }
         }
@@ -634,6 +683,110 @@ public sealed class SkiaWindow : IDisposable
         await PushModalAsync(new SettingsScreen(
             monitorNames, selectedMonitorIndex, SaveSelectedMonitorIndex,
             uiScale, SaveUiScale));
+    }
+
+    /// <summary>
+    /// Push the Save overlay. New Save/Overwrite and Delete are bound directly to
+    /// <see cref="_session"/>/<see cref="_sessionFactory"/> — SaveScreen itself has no
+    /// knowledge of either type. New Save/Overwrite is fire-and-forget
+    /// (<see cref="SaveToSlotAsync"/> properly awaits <c>SaveAsync</c> off of
+    /// <see cref="SaveScreen.OnMouseDown"/>'s synchronous return, matching the "render
+    /// loop must never await the connection synchronously" rule from
+    /// <see cref="IGameSessionConnection"/> and mirroring <see cref="QuickSaveAsync"/>);
+    /// SaveScreen is notified once the write lands so it can refresh its slot list. Delete
+    /// stays a direct synchronous call — <see cref="IGameSessionFactory.DeleteSaveSlot"/>
+    /// has no awaited I/O.
+    /// The reserved quicksave slot (<see cref="SaveSlots.Quicksave"/>) is filtered out of
+    /// the list shown here so a player can never see/overwrite/delete it from this window
+    /// and silently break F9 quickload; SaveScreen separately rejects it as a New-Save name.
+    /// </summary>
+    private async Task OpenSaveWindowAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is SaveScreen)
+            return;
+
+        if (_session is null)
+            return;
+
+        var saveScreen = new SaveScreen(
+            () => SaveSlots.ExcludeReserved(_sessionFactory.ListSaveSlots()),
+            slotId => _ = SaveToSlotAsync(slotId),
+            DeleteSaveSlotSafely);
+
+        await PushModalAsync(saveScreen);
+    }
+
+    /// <summary>Delete callback for SaveScreen's two-stage Delete button. Synchronous —
+    /// filesystem delete has no awaited I/O — but guarded so a locked/missing file never
+    /// crashes the render loop, for consistency with how every other save action here
+    /// logs and swallows its own failures.</summary>
+    private void DeleteSaveSlotSafely(string slotId)
+    {
+        try
+        {
+            _sessionFactory.DeleteSaveSlot(slotId);
+        }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"Delete save slot '{slotId}' failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Fire-and-forget target for SaveScreen's New Save/Overwrite actions. Mirrors
+    /// <see cref="QuickSaveAsync"/>'s await/log-on-failure shape, but doesn't touch
+    /// simulation speed (the modal is already paused) and notifies the still-open
+    /// SaveScreen to refresh its list once the write completes. Guarded so a save
+    /// finishing after the player has already closed the Save window is a safe no-op.
+    /// </summary>
+    private async Task SaveToSlotAsync(string slotId)
+    {
+        if (_session is null)
+            return;
+
+        try
+        {
+            await _session.SaveAsync(slotId);
+            InterfaceLog.Write($"Save: wrote Saves/{slotId}.json");
+        }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"Save failed for slot '{slotId}': {ex.Message}");
+        }
+
+        if (_screens.Current is SaveScreen saveScreen)
+            saveScreen.NotifySaveCompleted(slotId);
+    }
+
+    /// <summary>
+    /// Push the Load overlay. Mirrors <see cref="OpenSaveWindowAsync"/> but deliberately
+    /// WITHOUT its <c>if (_session is null) return;</c> guard: Load must work from
+    /// <see cref="MainMenuScreen"/>, where there is no session yet. This is safe for the
+    /// same reason <see cref="OpenSettingsAsync"/> already works from both MainMenu (no
+    /// session) and GameMenu (active session) — <see cref="PushModalAsync"/> itself
+    /// null-guards <see cref="_session"/> and simply skips the pause/speed-save step when
+    /// there is nothing to pause. Delete is bound directly to
+    /// <see cref="_sessionFactory"/>; loading a row is NOT bound here — LoadScreen instead
+    /// returns <see cref="ScreenEvent.LoadSlotRequested"/> (with the slot id carried
+    /// alongside it, see <see cref="OnMouseDown(IMouse, MouseButton)"/>) so the actual
+    /// session swap runs inside <see cref="HandleScreenEvent"/>'s <see cref="_transitionLock"/>
+    /// like every other operation that disposes/replaces <see cref="_session"/>.
+    /// The reserved quicksave slot is filtered out of the list here exactly like
+    /// <see cref="OpenSaveWindowAsync"/> does, so a player can never load/delete it from
+    /// this window and silently interfere with F9 quickload.
+    /// </summary>
+    private async Task OpenLoadWindowAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is LoadScreen)
+            return;
+
+        var loadScreen = new LoadScreen(
+            () => SaveSlots.ExcludeReserved(_sessionFactory.ListSaveSlots()),
+            DeleteSaveSlotSafely);
+
+        await PushModalAsync(loadScreen);
     }
 
     private static string SettingsFilePath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
@@ -769,7 +922,7 @@ public sealed class SkiaWindow : IDisposable
         try
         {
             await _session.SetSpeedAsync(SimulationSpeed.Speed0);
-            await _session.SaveAsync();
+            await _session.SaveAsync(SaveSlots.Quicksave);
             InterfaceLog.Write("QuickSave: wrote Saves/quicksave.json");
         }
         catch (Exception ex)
@@ -783,14 +936,13 @@ public sealed class SkiaWindow : IDisposable
     }
 
     /// <summary>
-    /// F9 — quickload. No modal/UI window is ever shown. Builds the replacement
-    /// session/screen fully in local variables first; only on success is the old
-    /// session disposed and swapped in — a broken/missing save file never destroys
-    /// the currently running session. Per F.19, the new session is forced to Speed0
-    /// regardless of the speed recorded in the save file. Camera/zoom/focus are never
-    /// restored — GameSessionScreen always starts with its default camera, which falls
-    /// out naturally from constructing a brand new screen instance.
-    /// Debounced: a load already in flight makes a new F9 a no-op.
+    /// F9 — quickload. No modal/UI window is ever shown. Keeps its own
+    /// <see cref="IGameSessionFactory.HasQuickSave"/> pre-check and its own
+    /// "QuickLoad: ..." log messages, but delegates the actual session-swap body to
+    /// <see cref="LoadSlotCoreAsync"/> — the same core <see cref="LoadSlotAsync"/> uses
+    /// for a UI-triggered Load, generalized only by slot id. Debounced via the shared
+    /// <see cref="_quickSaveLoadInFlight"/> guard: a load already in flight (from either
+    /// F9 or the Load window) makes a new F9 a no-op, so F9 and a UI Load can never race.
     /// </summary>
     private async Task QuickLoadAsync()
     {
@@ -806,39 +958,90 @@ public sealed class SkiaWindow : IDisposable
                 return;
             }
 
-            GameSessionHandle newSession;
-            GameSessionScreen newScreen;
-            try
-            {
-                newSession = new GameSessionHandle(_sessionFactory.CreateSessionFromSave());
-                var predictor = new LinearMotionPredictor();
-                newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
-                    showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                    uiScale: (float)GetUiScale());
-            }
-            catch (Exception ex)
-            {
-                InterfaceLog.Write($"QuickLoad failed: {ex.Message}");
-                return;
-            }
-
-            var oldSession = _session;
-            if (oldSession is not null)
-                await oldSession.DisposeAsync();
-
-            _session = newSession;
-            _gameSessionScreen = newScreen;
-            await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
-            _modalDepth = 0;
-            _savedSpeed = SimulationSpeed.Speed0;
-            _screens.Replace(newScreen);
-
-            InterfaceLog.Write("QuickLoad: loaded Saves/quicksave.json");
+            if (await LoadSlotCoreAsync(SaveSlots.Quicksave, "QuickLoad"))
+                InterfaceLog.Write("QuickLoad: loaded Saves/quicksave.json");
         }
         finally
         {
             _quickSaveLoadInFlight = false;
         }
+    }
+
+    /// <summary>
+    /// Load an arbitrary save slot chosen from the Load window (UI-triggered, via
+    /// <see cref="ScreenEvent.LoadSlotRequested"/>). Shares <see cref="LoadSlotCoreAsync"/>
+    /// and the <see cref="_quickSaveLoadInFlight"/> re-entrancy guard with
+    /// <see cref="QuickLoadAsync"/>. Because both are only ever invoked from inside
+    /// <see cref="HandleScreenEvent"/>'s <c>_transitionLock</c>-guarded switch, F9 and a UI
+    /// Load (or two rapid UI Load clicks) can never actually race each other for this guard
+    /// — each call runs to completion, including resetting the flag in its own
+    /// <c>finally</c>, before the next queued call is admitted. A rapid double-click on LOAD
+    /// is therefore never unsafe, but it is not a no-op either: it produces a redundant
+    /// second load of the same (or a different) slot, not a skipped one.
+    /// </summary>
+    private async Task LoadSlotAsync(string slotId)
+    {
+        if (_quickSaveLoadInFlight)
+            return;
+
+        _quickSaveLoadInFlight = true;
+        try
+        {
+            if (await LoadSlotCoreAsync(slotId, "Load"))
+                InterfaceLog.Write($"Load: loaded Saves/{slotId}.json");
+        }
+        finally
+        {
+            _quickSaveLoadInFlight = false;
+        }
+    }
+
+    /// <summary>
+    /// Shared session-swap core for <see cref="QuickLoadAsync"/>/<see cref="LoadSlotAsync"/>.
+    /// Builds the replacement session/screen fully in local variables first; only on
+    /// success is the old session disposed and swapped in — a broken/missing save file
+    /// never destroys the currently running session (returns false, logging via
+    /// <paramref name="logPrefix"/>, and leaves everything untouched). The new session is
+    /// forced to Speed0 regardless of the speed recorded in the save file (per F.19 for
+    /// quickload; same behavior generalizes cleanly to any slot). Camera/zoom/focus are
+    /// never restored — GameSessionScreen always starts with its default camera.
+    /// Uses <see cref="ScreenStack.ReplaceAll"/> (not <see cref="ScreenStack.Replace"/>):
+    /// a UI Load can be triggered from a stack 2 or 3 deep (MainMenu -&gt; LoadScreen, or
+    /// GameSessionScreen -&gt; GameMenu -&gt; LoadScreen), and ReplaceAll is
+    /// behavior-identical to Replace at depth 1, so QuickLoadAsync (always depth ≤ 1) is
+    /// unaffected by sharing it here.
+    /// Callers are responsible for the <see cref="_quickSaveLoadInFlight"/> guard.
+    /// </summary>
+    private async Task<bool> LoadSlotCoreAsync(string slotId, string logPrefix)
+    {
+        GameSessionHandle newSession;
+        GameSessionScreen newScreen;
+        try
+        {
+            newSession = new GameSessionHandle(_sessionFactory.CreateSessionFromSave(slotId));
+            var predictor = new LinearMotionPredictor();
+            newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
+                showTrajectoryPrediction: GetShowTrajectoryPrediction(),
+                uiScale: (float)GetUiScale());
+        }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"{logPrefix} failed: {ex.Message}");
+            return false;
+        }
+
+        var oldSession = _session;
+        if (oldSession is not null)
+            await oldSession.DisposeAsync();
+
+        _session = newSession;
+        _gameSessionScreen = newScreen;
+        await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
+        _modalDepth = 0;
+        _savedSpeed = SimulationSpeed.Speed0;
+        _screens.ReplaceAll(newScreen);
+
+        return true;
     }
 
     private void ReturnToMainMenu()
@@ -873,6 +1076,9 @@ public sealed class SkiaWindow : IDisposable
                 _mouse.MouseMove -= OnMouseMove;
                 _mouse.Scroll -= OnMouseScroll;
             }
+
+            if (_keyboard is not null)
+                _keyboard.KeyChar -= OnKeyChar;
 
             _input?.Dispose();
             _input = null;

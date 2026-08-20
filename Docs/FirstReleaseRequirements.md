@@ -28,11 +28,22 @@
 ## Документы релиза
 
 - `Docs/FirstRelease/Screens/MainMenu.md` - главное меню.
+- `Docs/FirstRelease/Screens/ScreenCatalog.md` - минимальный набор окон первого релиза и связи между ними.
 - `Docs/FirstRelease/Screens/GameSession.md` - экран игровой сессии и тактическая карта.
 - `Docs/FirstRelease/Screens/Station.md` - экран пристыкованной станции.
 - `Docs/FirstRelease/Screens/Trade.md` - экран торговли.
 - `Docs/FirstRelease/Screens/GameMenu.md` - игровое меню поверх сессии.
 - `Docs/FirstRelease/Screens/Settings.md` - настройки.
+- `Docs/FirstRelease/Screens/Save.md` - окно сохранения.
+- `Docs/FirstRelease/Screens/Load.md` - окно загрузки.
+- `Docs/FirstRelease/Screens/Dialog.md` - универсальное окно диалога.
+- `Docs/FirstRelease/Screens/Ship.md` - окно корабля.
+- `Docs/FirstRelease/Screens/Cargo.md` - окно грузового отсека.
+- `Docs/FirstRelease/Screens/Loot.md` - окно подбора/добычи предметов.
+- `Docs/FirstRelease/Screens/CharacterCommunication.md` - окно общения с персонажами.
+- `Docs/FirstRelease/Screens/Finance.md` - окно финансов.
+- `Docs/FirstRelease/Screens/Hire.md` - окно найма.
+- `Docs/FirstRelease/TechnicalTasks/ScreenNamingConventionRefactor.md` - техническое задание на приведение существующих экранов к naming convention.
 - `Docs/FirstRelease/Mechanics/TetrarchClass.md` - стартовый корабль игрока Tetrarch Class.
 - `Docs/FirstRelease/Mechanics/CommandPanels.md` - смысловые командные панели корабля.
 - `Docs/FirstRelease/Mechanics/TacticalMapAndManeuvering.md` - тактическая карта и маневрирование.
@@ -60,6 +71,52 @@
 - `module.engine.basic` уже содержит `fuelCapacityKg`, что подходит для решения первого релиза: `Fuel` хранится в баках двигателя.
 - В требованиях уже есть hull grid Tetrarch, грузовая вместимость по массе, `Energy Cells` как ресурс реактора/генератора и `Fuel` как ресурс двигателя.
 - Экранный стек уже поддерживает `MainMenu`, `GameSession`, `GameMenu`, `Settings` и модальную паузу.
+- По схеме минимального набора экранов первого релиза частично реализованными считаются `MainMenu`, `Settings`, `Session`/`GameSession` и `GameMenu`.
+- В коде также уже существует `SaveScreen`.
+- `Load` присутствует как кнопка в `MainMenu` и `GameMenu`, но отдельного `LoadScreen` пока нет; название окна в требованиях первого релиза - `Load`.
+- Naming convention для игровых окон: каждое окно в коде должно начинаться с `Screen`, например `ScreenMainMenu`, `ScreenGameSession`, `ScreenGameMenu`, `ScreenSettings`, `ScreenSave`.
+- Текущие частично/полностью реализованные экранные классы пока не соответствуют новой конвенции, потому что используют суффикс `Screen`; их переименование описано в `Docs/FirstRelease/TechnicalTasks/ScreenNamingConventionRefactor.md`.
+
+## Минимальный набор окон первого релиза
+
+Таблица ниже сверена с текущим кодом клиента и схемой экранов от 2026-08-20. Зеленые узлы на схеме трактуются как частично реализованные.
+
+| Окно | Статус по коду | Документ | Основные переходы первого релиза |
+|---|---|---|---|
+| `Main Menu` | Частично реализовано: `MainMenuScreen`; `Load` нарисован, но отключен. | `Docs/FirstRelease/Screens/MainMenu.md` | `Load`, `Settings`, `Session`. |
+| `Load` | Не реализовано отдельным экраном; есть disabled-кнопка `LOAD` в `MainMenu` и `GameMenu`. | `Docs/FirstRelease/Screens/Load.md` | Из `Main Menu` и `Game Menu`; после выбора сохранения открывает `Session`. |
+| `Settings` | Частично реализовано: `SettingsScreen`. | `Docs/FirstRelease/Screens/Settings.md` | Из `Main Menu` и `Game Menu`; закрытие возвращает на предыдущий экран. |
+| `Session` | Частично реализовано как `GameSessionScreen`. | `Docs/FirstRelease/Screens/GameSession.md` | Открывает `Game Menu`, `Station`, `Ship`, `Loot`, `Character Communication`, `Cargo`, `Dialog`. |
+| `Game Menu` | Частично реализовано: `GameMenuScreen`; `Load` и `Settings` нарисованы, но пока отключены. | `Docs/FirstRelease/Screens/GameMenu.md` | `Save`, `Load`, `Settings`, возврат в `Session`, выход в `Main Menu`. |
+| `Save` | Реализовано как `SaveScreen`. | `Docs/FirstRelease/Screens/Save.md` | Из `Game Menu`; закрытие возвращает в `Game Menu`. |
+| `Dialog` | Не реализовано. | `Docs/FirstRelease/Screens/Dialog.md` | Из `Session` для простых линейных диалогов. |
+| `Station` | Не реализовано. | `Docs/FirstRelease/Screens/Station.md` | Из `Session` после успешного `navigation.dock`; открывает `Trade`, `Hire`, `Finance`. |
+| `Ship` | Не реализовано. | `Docs/FirstRelease/Screens/Ship.md` | Из `Session`; открывает `Character Communication`. |
+| `Loot` | Не реализовано. | `Docs/FirstRelease/Screens/Loot.md` | Из `Session`; используется для результатов добычи/подбора. |
+| `Character Communication` | Не реализовано. | `Docs/FirstRelease/Screens/CharacterCommunication.md` | Из `Session` и `Ship`; показывает общение с членами экипажа и персонажами. |
+| `Cargo` | Не реализовано. | `Docs/FirstRelease/Screens/Cargo.md` | Из `Session`; показывает грузовой отсек корабля. |
+| `Finance` | Не реализовано. | `Docs/FirstRelease/Screens/Finance.md` | Из `Station`; показывает финансовые станционные операции/сводку. |
+| `Hire` | Не реализовано. | `Docs/FirstRelease/Screens/Hire.md` | Из `Station`; используется для найма/пассажирских контрактов. |
+| `Trade` | Не реализовано. | `Docs/FirstRelease/Screens/Trade.md` | Из `Station`; покупка, продажа и заправка `Fuel`. |
+
+## Naming convention экранов
+
+Все игровые окна в коде должны начинаться с префикса `Screen`.
+
+Правильный формат имени экранного класса: `Screen{Name}`.
+
+Примеры:
+
+- `ScreenMainMenu`
+- `ScreenGameSession`
+- `ScreenGameMenu`
+- `ScreenSettings`
+- `ScreenSave`
+- `ScreenLoad`
+- `ScreenStation`
+- `ScreenTrade`
+
+Папки, namespaces, layout/helper-классы и тесты должны быть приведены к этой модели отдельной технической задачей. Интерфейс `IScreen` не переименовывается, потому что это контракт типа, а не конкретное окно.
 
 ## Решения первого релиза
 

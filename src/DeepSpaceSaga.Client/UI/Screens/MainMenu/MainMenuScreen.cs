@@ -30,12 +30,13 @@ public sealed class MainMenuScreen : IScreen
 
         var hit = MenuLayout.HitTest(x, y, _screenWidth, _screenHeight);
 
-        if (hit == MenuButton.NewGame || hit == MenuButton.Settings || hit == MenuButton.Exit)
+        if (hit == MenuButton.NewGame || hit == MenuButton.Load || hit == MenuButton.Settings || hit == MenuButton.Exit)
             _pressedButton = hit;
 
         return hit switch
         {
             MenuButton.NewGame => ScreenEvent.NewGame,
+            MenuButton.Load => ScreenEvent.OpenLoadWindow,
             MenuButton.Settings => ScreenEvent.OpenSettings,
             MenuButton.Exit => ScreenEvent.Exit,
             _ => ScreenEvent.None
@@ -48,8 +49,8 @@ public sealed class MainMenuScreen : IScreen
     public bool OnMouseMove(float x, float y)
     {
         var hit = MenuLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        _hoveredButton = (hit == MenuButton.Load) ? MenuButton.None : hit;
-        return hit == MenuButton.NewGame || hit == MenuButton.Settings || hit == MenuButton.Exit;
+        _hoveredButton = hit;
+        return hit == MenuButton.NewGame || hit == MenuButton.Load || hit == MenuButton.Settings || hit == MenuButton.Exit;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -93,7 +94,6 @@ public sealed class MainMenuScreen : IScreen
         float by = panelTop + buttonLocalY;
         var rect = new SKRect(bx, by, bx + MenuLayout.ButtonWidth, by + MenuLayout.ButtonHeight);
 
-        bool active = id != MenuButton.Load;
-        MenuStyle.DrawButton(canvas, rect, text, GetState(id, active));
+        MenuStyle.DrawButton(canvas, rect, text, GetState(id, active: true));
     }
 }

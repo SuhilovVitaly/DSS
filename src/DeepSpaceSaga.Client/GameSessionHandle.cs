@@ -115,10 +115,10 @@ public sealed class GameSessionHandle : IAsyncDisposable
         Buffer.CurrentSpeed = speed;
     }
 
-    /// <summary>Capture and persist the current authoritative world state (quicksave).</summary>
-    public ValueTask SaveAsync(CancellationToken cancellationToken = default)
+    /// <summary>Capture and persist the current authoritative world state into the given save slot.</summary>
+    public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default)
     {
-        return _connection.SaveAsync(cancellationToken);
+        return _connection.SaveAsync(slotId, cancellationToken);
     }
 
     /// <summary>
