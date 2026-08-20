@@ -108,8 +108,21 @@ public sealed class GameSessionScreen : IScreen
     private SKRect _lastScalePanelRect;
     private readonly SKRect[] _scaleButtonRects = new SKRect[ScaleLabels.Length];
 
+    // Mechanics panel (bottom-center) state — holds the Finance/Ship/... buttons
+    // (Docs/FirstRelease/Screens/Finance.md, Docs/FirstRelease/Screens/Ship.md)
+    private SKRect _lastMechanicsPanelRect;
+    private SKRect _lastFinanceButtonRect;
+    private SKRect _lastShipButtonRect;
+    private bool _isFinanceButtonHovered;
+    private bool _isShipButtonHovered;
+
     // Commands Panel (top-left) — ТЗ подзадача 1 skeleton + ТЗ-04 data-driven buttons
     private readonly CommandsPanel _commandsPanel;
+
+    // Mechanics panel paints (bottom-center)
+    private readonly SKPaint _mechanicsBtnNormalPaint;
+    private readonly SKPaint _mechanicsBtnHoverPaint;
+    private readonly SKPaint _mechanicsBtnTextPaint;
 
     // Camera state
     private bool _isFocusAttachedToPlayer = true;
@@ -164,6 +177,13 @@ public sealed class GameSessionScreen : IScreen
     private const float ScalePanelGapFromSpeed = 4f;
     private const double ScaleSnapTolerance = 0.05;
 
+    // Mechanics panel (bottom-center) layout — one button per gameplay-mechanic
+    // window (Finance, Ship, ...), all sharing the same button size.
+    private const float MechanicsPanelPadding = 6f;
+    private const float MechanicsButtonWidth = 56f;
+    private const float MechanicsButtonHeight = 32f;
+    private const float MechanicsButtonGap = 6f;
+
     private const string PlayerEngineModuleId = "MOD-PLAYER-ENGINE-01";
 
     /// <summary>
@@ -195,6 +215,9 @@ public sealed class GameSessionScreen : IScreen
     internal IReadOnlyList<SKRect> SpeedButtonRects => _speedButtonRects;
     internal SKRect LastScalePanelRect => _lastScalePanelRect;
     internal IReadOnlyList<SKRect> ScaleButtonRects => _scaleButtonRects;
+    internal SKRect LastMechanicsPanelRect => _lastMechanicsPanelRect;
+    internal SKRect LastFinanceButtonRect => _lastFinanceButtonRect;
+    internal SKRect LastShipButtonRect => _lastShipButtonRect;
     internal IReadOnlyList<string> ScalePanelLabels => ScaleLabels;
     internal float ScaleIndicatorCenterX => ComputeScaleIndicatorPosition();
     internal CommandsPanel CommandsPanel => _commandsPanel;
@@ -254,6 +277,10 @@ public sealed class GameSessionScreen : IScreen
         _scaleBtnActivePaint = new SKPaint { Color = new SKColor(50, 60, 50), Style = SKPaintStyle.Fill };
         _scaleBtnTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 11f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
         _scaleIndicatorPaint = new SKPaint { Color = new SKColor(80, 200, 80), Style = SKPaintStyle.Fill, IsAntialias = true };
+
+        _mechanicsBtnNormalPaint = new SKPaint { Color = new SKColor(30, 30, 30), Style = SKPaintStyle.Fill };
+        _mechanicsBtnHoverPaint = new SKPaint { Color = new SKColor(55, 55, 55), Style = SKPaintStyle.Fill };
+        _mechanicsBtnTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 13f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
         _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel);
     }
@@ -329,6 +356,12 @@ public sealed class GameSessionScreen : IScreen
             ApplySpeed(SpeedValues[speedIdx]);
             return ScreenEvent.None;
         }
+
+        // 1.5. Mechanics panel buttons (bottom-center)
+        if (_lastFinanceButtonRect.Contains(uiX, uiY))
+            return ScreenEvent.OpenFinance;
+        if (_lastShipButtonRect.Contains(uiX, uiY))
+            return ScreenEvent.OpenShip;
 
         // 2. Commands Panel (top-left) — consume clicks, don't pan (ТЗ подзадача 1)
         if (_commandsPanel.OnMouseDown(uiX, uiY))
@@ -426,7 +459,9 @@ public sealed class GameSessionScreen : IScreen
         }
 
         RecomputeActiveObjectId();
-        return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY);
+        _isFinanceButtonHovered = _lastFinanceButtonRect.Contains(_uiMouseX, _uiMouseY);
+        _isShipButtonHovered = _lastShipButtonRect.Contains(_uiMouseX, _uiMouseY);
+        return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY) || _isFinanceButtonHovered || _isShipButtonHovered;
     }
 
     public void OnMouseUp(float x, float y)
@@ -491,6 +526,15 @@ public sealed class GameSessionScreen : IScreen
             _panelVisible = true;
             return ScreenEvent.None;
         }
+
+        // Only ever arrives as Ctrl+F — KeyboardEdgeTracker gates the F edge on Ctrl,
+        // mirroring Ctrl+I above.
+        if (key == Key.F)
+            return ScreenEvent.OpenFinance;
+
+        // Only ever arrives as Ctrl+S — same gating as Ctrl+F/Ctrl+I above.
+        if (key == Key.S)
+            return ScreenEvent.OpenShip;
 
         if (key == Key.Space)
         {
@@ -824,6 +868,10 @@ public sealed class GameSessionScreen : IScreen
             return true;
         if (HitTestSpeedPanel(uiX, uiY) >= 0)
             return true;
+        if (_lastFinanceButtonRect.Contains(uiX, uiY))
+            return true;
+        if (_lastShipButtonRect.Contains(uiX, uiY))
+            return true;
         if (_commandsPanel.CaptionRect.Contains(uiX, uiY) || _commandsPanel.BodyRect.Contains(uiX, uiY))
             return true;
         if (_panelVisible && (_lastCloseRect.Contains(uiX, uiY) || _lastPanelRect.Contains(uiX, uiY)))
@@ -1000,6 +1048,9 @@ public sealed class GameSessionScreen : IScreen
         // 8. Player ship info panel (bottom-right)
         var playerShip = FindPlayerShip(_renderStates);
         DrawPlayerShipInfoPanel(canvas, playerShip);
+
+        // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
+        DrawMechanicsPanel(canvas);
 
         canvas.Restore();
     }
@@ -1850,6 +1901,46 @@ public sealed class GameSessionScreen : IScreen
             canvas.DrawText(value, valueX, textY, _panelTextPaint);
             textY += PanelLineHeight;
         }
+    }
+
+    /// <summary>
+    /// Bottom-center panel holding one button per gameplay-mechanic window — "F"
+    /// opens Finance (Docs/FirstRelease/Screens/Finance.md), "S" opens Ship
+    /// (Docs/FirstRelease/Screens/Ship.md). Ctrl+F / Ctrl+S open the same overlays
+    /// without needing the buttons (see OnKeyDown). Clicking pushes
+    /// ScreenEvent.OpenFinance / OpenShip, handled by SkiaWindow's generic
+    /// PushModalAsync — pause-on-open/resume-on-close needs no logic here.
+    /// </summary>
+    private void DrawMechanicsPanel(SKCanvas canvas)
+    {
+        const int buttonCount = 2;
+        float panelW = MechanicsButtonWidth * buttonCount + MechanicsButtonGap * (buttonCount - 1) + MechanicsPanelPadding * 2;
+        float panelH = MechanicsButtonHeight + MechanicsPanelPadding * 2;
+        float panelX = (_uiViewportW - panelW) / 2f;
+        float panelY = _uiViewportH - panelH - PanelMargin;
+
+        _lastMechanicsPanelRect = new SKRect(panelX, panelY, panelX + panelW, panelY + panelH);
+        canvas.DrawRect(_lastMechanicsPanelRect, _panelBgPaint);
+        canvas.DrawRect(_lastMechanicsPanelRect, _panelBorderPaint);
+
+        float btnX = panelX + MechanicsPanelPadding;
+        float btnY = panelY + MechanicsPanelPadding;
+
+        _lastFinanceButtonRect = new SKRect(btnX, btnY, btnX + MechanicsButtonWidth, btnY + MechanicsButtonHeight);
+        DrawMechanicsButton(canvas, _lastFinanceButtonRect, "F", _isFinanceButtonHovered);
+
+        btnX += MechanicsButtonWidth + MechanicsButtonGap;
+        _lastShipButtonRect = new SKRect(btnX, btnY, btnX + MechanicsButtonWidth, btnY + MechanicsButtonHeight);
+        DrawMechanicsButton(canvas, _lastShipButtonRect, "S", _isShipButtonHovered);
+    }
+
+    private void DrawMechanicsButton(SKCanvas canvas, SKRect rect, string label, bool hovered)
+    {
+        canvas.DrawRect(rect, hovered ? _mechanicsBtnHoverPaint : _mechanicsBtnNormalPaint);
+        canvas.DrawRect(rect, _panelBorderPaint);
+
+        float textY = rect.MidY + _mechanicsBtnTextPaint.TextSize / 3f;
+        canvas.DrawText(label, rect.MidX, textY, _mechanicsBtnTextPaint);
     }
 
     private readonly record struct VisualCorrection(

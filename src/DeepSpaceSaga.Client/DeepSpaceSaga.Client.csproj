@@ -148,6 +148,12 @@
     <None Update="Images\UI\GameSessionScreenUI\command-panel-caption-background.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Images\UI\mechanics-window-background-titlebar-1400x900.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\UI\mechanics-window-background-titlebar-1700x1200.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

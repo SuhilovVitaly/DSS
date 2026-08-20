@@ -19,3 +19,7 @@
 - `CrewAndHabitation`.
 - `CrewDialogues`.
 - `IceMining`.
+
+## Размер окна
+
+1700×1200 px — стандартный размер окна игровых механик (см. `ScreenCatalog.md`).

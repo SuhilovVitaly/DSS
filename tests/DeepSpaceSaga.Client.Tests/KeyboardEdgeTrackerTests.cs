@@ -148,6 +148,94 @@ public class KeyboardEdgeTrackerTests
     }
 
     [Fact]
+    public void Ctrl_f_reports_f_and_ctrl_when_control_is_down()
+    {
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new HashSet<Key> { Key.F };
+
+        Assert.Empty(Poll(tracker, pressed));
+
+        pressed.Add(Key.ControlLeft);
+        // Both ControlLeft and F are press edges on the same frame.
+        var result = Poll(tracker, pressed);
+        Assert.Contains(Key.F, result);
+        Assert.Contains(Key.ControlLeft, result);
+
+        Assert.Empty(Poll(tracker, pressed));
+    }
+
+    [Fact]
+    public void Ctrl_f_reports_both_edges_via_poll_both()
+    {
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new HashSet<Key> { Key.ControlLeft, Key.F };
+
+        PollBoth(tracker, pressed, out var p, out var r);
+        Assert.Contains(Key.ControlLeft, p);
+        Assert.Contains(Key.F, p);
+        Assert.Empty(r);
+    }
+
+    [Fact]
+    public void F_without_ctrl_is_never_reported()
+    {
+        // The Finance overlay must only open on Ctrl+F, never a bare F press
+        // (F alone is free for other uses / typed text elsewhere).
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new HashSet<Key> { Key.F };
+
+        Assert.Empty(Poll(tracker, pressed));
+
+        PollBoth(tracker, pressed, out var p, out var r);
+        Assert.Empty(p);
+        Assert.Empty(r);
+    }
+
+    [Fact]
+    public void Ctrl_s_reports_s_and_ctrl_when_control_is_down()
+    {
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new HashSet<Key> { Key.S };
+
+        Assert.Empty(Poll(tracker, pressed));
+
+        pressed.Add(Key.ControlLeft);
+        // Both ControlLeft and S are press edges on the same frame.
+        var result = Poll(tracker, pressed);
+        Assert.Contains(Key.S, result);
+        Assert.Contains(Key.ControlLeft, result);
+
+        Assert.Empty(Poll(tracker, pressed));
+    }
+
+    [Fact]
+    public void Ctrl_s_reports_both_edges_via_poll_both()
+    {
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new HashSet<Key> { Key.ControlLeft, Key.S };
+
+        PollBoth(tracker, pressed, out var p, out var r);
+        Assert.Contains(Key.ControlLeft, p);
+        Assert.Contains(Key.S, p);
+        Assert.Empty(r);
+    }
+
+    [Fact]
+    public void S_without_ctrl_is_never_reported()
+    {
+        // The Ship overlay must only open on Ctrl+S, never a bare S press
+        // (S alone is free for other uses / typed text elsewhere).
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new HashSet<Key> { Key.S };
+
+        Assert.Empty(Poll(tracker, pressed));
+
+        PollBoth(tracker, pressed, out var p, out var r);
+        Assert.Empty(p);
+        Assert.Empty(r);
+    }
+
+    [Fact]
     public void Backspace_is_reported_on_press_edge()
     {
         var tracker = new KeyboardEdgeTracker();
@@ -233,14 +321,14 @@ public class KeyboardEdgeTrackerTests
 
     private static Key[] Poll(KeyboardEdgeTracker tracker, HashSet<Key> pressed)
     {
-        Span<Key> buffer = stackalloc Key[19];
+        Span<Key> buffer = stackalloc Key[21];
         int count = tracker.Poll(pressed.Contains, buffer);
         return buffer[..count].ToArray();
     }
 
     private static Key[] PollUpKeys(KeyboardEdgeTracker tracker, HashSet<Key> pressed)
     {
-        Span<Key> buffer = stackalloc Key[19];
+        Span<Key> buffer = stackalloc Key[21];
         int count = tracker.PollUpKeys(pressed.Contains, buffer);
         return buffer[..count].ToArray();
     }
@@ -248,8 +336,8 @@ public class KeyboardEdgeTrackerTests
     private static void PollBoth(KeyboardEdgeTracker tracker,
         HashSet<Key> pressed, out Key[] p, out Key[] r)
     {
-        Span<Key> pBuf = stackalloc Key[19];
-        Span<Key> rBuf = stackalloc Key[19];
+        Span<Key> pBuf = stackalloc Key[21];
+        Span<Key> rBuf = stackalloc Key[21];
         var (pc, rc) = tracker.PollBoth(pressed.Contains, pBuf, rBuf);
         p = pBuf[..pc].ToArray();
         r = rBuf[..rc].ToArray();

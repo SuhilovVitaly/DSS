@@ -6,6 +6,8 @@ internal sealed class KeyboardEdgeTracker
 {
     private bool _prevEscPressed;
     private bool _prevIPressed;
+    private bool _prevFPressed;
+    private bool _prevSPressed;
     private bool _prevSpacePressed;
     private bool _prev1Pressed;
     private bool _prev2Pressed;
@@ -42,6 +44,12 @@ internal sealed class KeyboardEdgeTracker
         bool ctrlDown = keyboard.IsKeyPressed(Key.ControlLeft) || keyboard.IsKeyPressed(Key.ControlRight);
         AddBoth(Key.I, iDown && ctrlDown, ref _prevIPressed, pressed, ref p, released, ref r);
 
+        bool fDown = keyboard.IsKeyPressed(Key.F);
+        AddBoth(Key.F, fDown && ctrlDown, ref _prevFPressed, pressed, ref p, released, ref r);
+
+        bool sDown = keyboard.IsKeyPressed(Key.S);
+        AddBoth(Key.S, sDown && ctrlDown, ref _prevSPressed, pressed, ref p, released, ref r);
+
         AddBoth(Key.ControlLeft, keyboard.IsKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref p, released, ref r);
         AddBoth(Key.ControlRight, keyboard.IsKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref p, released, ref r);
 
@@ -77,6 +85,12 @@ internal sealed class KeyboardEdgeTracker
         bool ctrlDown = isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight);
         AddBoth(Key.I, iDown && ctrlDown, ref _prevIPressed, pressed, ref p, released, ref r);
 
+        bool fDown = isKeyPressed(Key.F);
+        AddBoth(Key.F, fDown && ctrlDown, ref _prevFPressed, pressed, ref p, released, ref r);
+
+        bool sDown = isKeyPressed(Key.S);
+        AddBoth(Key.S, sDown && ctrlDown, ref _prevSPressed, pressed, ref p, released, ref r);
+
         AddBoth(Key.ControlLeft, isKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref p, released, ref r);
         AddBoth(Key.ControlRight, isKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref p, released, ref r);
 
@@ -108,6 +122,10 @@ internal sealed class KeyboardEdgeTracker
         bool iDown = keyboard.IsKeyPressed(Key.I);
         bool ctrlDown = keyboard.IsKeyPressed(Key.ControlLeft) || keyboard.IsKeyPressed(Key.ControlRight);
         AddEdge(Key.I, iDown && ctrlDown, ref _prevIPressed, pressed, ref count);
+        bool fDown = keyboard.IsKeyPressed(Key.F);
+        AddEdge(Key.F, fDown && ctrlDown, ref _prevFPressed, pressed, ref count);
+        bool sDown = keyboard.IsKeyPressed(Key.S);
+        AddEdge(Key.S, sDown && ctrlDown, ref _prevSPressed, pressed, ref count);
         AddEdge(Key.ControlLeft, keyboard.IsKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref count);
         AddEdge(Key.ControlRight, keyboard.IsKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref count);
         AddEdge(Key.Space, keyboard.IsKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref count);
@@ -135,6 +153,10 @@ internal sealed class KeyboardEdgeTracker
         bool iDown = isKeyPressed(Key.I);
         bool ctrlDown = isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight);
         AddEdge(Key.I, iDown && ctrlDown, ref _prevIPressed, pressed, ref count);
+        bool fDown = isKeyPressed(Key.F);
+        AddEdge(Key.F, fDown && ctrlDown, ref _prevFPressed, pressed, ref count);
+        bool sDown = isKeyPressed(Key.S);
+        AddEdge(Key.S, sDown && ctrlDown, ref _prevSPressed, pressed, ref count);
         AddEdge(Key.ControlLeft, isKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref count);
         AddEdge(Key.ControlRight, isKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref count);
         AddEdge(Key.Space, isKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref count);
@@ -214,6 +236,10 @@ internal sealed class KeyboardEdgeTracker
     {
         _prevEscPressed = isKeyPressed(Key.Escape);
         _prevIPressed = isKeyPressed(Key.I)
+            && (isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight));
+        _prevFPressed = isKeyPressed(Key.F)
+            && (isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight));
+        _prevSPressed = isKeyPressed(Key.S)
             && (isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight));
         _prevCtrlLeftPressed = isKeyPressed(Key.ControlLeft);
         _prevCtrlRightPressed = isKeyPressed(Key.ControlRight);

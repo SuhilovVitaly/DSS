@@ -2,12 +2,14 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.Finance;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.Load;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
+using DeepSpaceSaga.Client.UI.Screens.Ship;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using Silk.NET.Core;
@@ -43,7 +45,7 @@ public sealed class SkiaWindow : IDisposable
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _quickSaveLoadInFlight;
     private readonly KeyboardEdgeTracker _keyboardEdges = new();
-    private readonly Key[] _keyboardPressedKeys = new Key[19]; // must cover every key KeyboardEdgeTracker.PollBoth can report in one call
+    private readonly Key[] _keyboardPressedKeys = new Key[21]; // must cover every key KeyboardEdgeTracker.PollBoth can report in one call
     private readonly Key[] _keyboardReleasedKeys = new Key[2]; // Ctrl release edges only (left/right)
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
@@ -439,7 +441,7 @@ public sealed class SkiaWindow : IDisposable
             return;
         }
 
-        if (key == Key.Escape || key == Key.F5 || key == Key.F9)
+        if (key == Key.Escape || key == Key.F5 || key == Key.F9 || key == Key.F || key == Key.S)
         {
             if (_pendingKeyboardTransition is null || _pendingKeyboardTransition.IsCompleted)
             {
@@ -555,6 +557,18 @@ public sealed class SkiaWindow : IDisposable
                     if (payload is not null)
                         await LoadSlotAsync(payload);
                     break;
+                case ScreenEvent.OpenFinance:
+                    await OpenFinanceAsync();
+                    break;
+                case ScreenEvent.CloseFinance:
+                    await CloseOverlayAsync();
+                    break;
+                case ScreenEvent.OpenShip:
+                    await OpenShipAsync();
+                    break;
+                case ScreenEvent.CloseShip:
+                    await CloseOverlayAsync();
+                    break;
             }
         }
         finally
@@ -655,6 +669,36 @@ public sealed class SkiaWindow : IDisposable
         }
 
         await PushModalAsync(new GameMenuScreen());
+    }
+
+    /// <summary>
+    /// Push the Finance overlay (Docs/FirstRelease/Screens/Finance.md). Opened via the
+    /// bottom-center Finance panel button or Ctrl+F. Uses the same generic
+    /// PushModalAsync pause-on-open behavior as every other modal — no Finance-specific
+    /// speed logic needed.
+    /// </summary>
+    private async Task OpenFinanceAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is FinanceScreen)
+            return;
+
+        await PushModalAsync(new FinanceScreen());
+    }
+
+    /// <summary>
+    /// Push the Ship overlay (Docs/FirstRelease/Screens/Ship.md). Opened via the
+    /// bottom-center Ship panel button or Ctrl+S. Uses the same generic
+    /// PushModalAsync pause-on-open behavior as every other modal — no Ship-specific
+    /// speed logic needed.
+    /// </summary>
+    private async Task OpenShipAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is ShipScreen)
+            return;
+
+        await PushModalAsync(new ShipScreen());
     }
 
     private async Task OpenSettingsAsync()
