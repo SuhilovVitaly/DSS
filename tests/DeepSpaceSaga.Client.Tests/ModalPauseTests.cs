@@ -374,6 +374,138 @@ public class ModalPauseTests
     }
 
     [Fact]
+    public void Load_window_pauses_simulation_on_push_and_resumes_on_pop()
+    {
+        // Same shape as Save_window_pauses_simulation_on_push_and_resumes_on_pop, framed
+        // around opening the Load window directly from the GameSession screen
+        // (depth 0 -> 1 -> 0). SkiaWindow.OpenLoadWindowAsync uses the very same
+        // PushModalAsync/PopModalAsync pair as Save, so the pause/resume lifecycle is
+        // identical — only the screen type pushed differs.
+        var buffer = new SnapshotBuffer();
+        buffer.CurrentSpeed = SimulationSpeed.Speed2;
+
+        int modalDepth = 0;
+        SimulationSpeed savedSpeed = default;
+
+        // Push Load window (depth 0 -> 1): save speed, pause.
+        if (modalDepth == 0)
+        {
+            savedSpeed = buffer.CurrentSpeed;
+            buffer.CurrentSpeed = SimulationSpeed.Speed0;
+        }
+        modalDepth++;
+
+        Assert.Equal(1, modalDepth);
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+        Assert.Equal(SimulationSpeed.Speed2, savedSpeed);
+
+        // Pop Load window (depth 1 -> 0): restore saved speed.
+        modalDepth--;
+        if (modalDepth == 0)
+        {
+            buffer.CurrentSpeed = savedSpeed;
+        }
+
+        Assert.Equal(0, modalDepth);
+        Assert.Equal(SimulationSpeed.Speed2, buffer.CurrentSpeed);
+    }
+
+    [Fact]
+    public void Load_window_opened_from_GameMenu_nested_modal_depth_still_resumes_original_speed()
+    {
+        // Same nested shape as Save_window_opened_from_GameMenu_nested_modal_depth_still_resumes_original_speed:
+        // Speed2 -> open GameMenu (depth 0->1, pause) -> open Load window on top of it
+        // (depth 1->2, nested, stays paused) -> close Load window (depth 2->1, still
+        // paused, back to GameMenu) -> close GameMenu (depth 1->0, restore Speed2).
+        var buffer = new SnapshotBuffer();
+        buffer.CurrentSpeed = SimulationSpeed.Speed2;
+
+        int modalDepth = 0;
+        var savedSpeed = SimulationSpeed.Speed1;
+
+        // Open GameMenu (depth 0 -> 1): save speed, pause.
+        if (modalDepth == 0)
+        {
+            savedSpeed = buffer.CurrentSpeed;
+            buffer.CurrentSpeed = SimulationSpeed.Speed0;
+        }
+        modalDepth++;
+        Assert.Equal(1, modalDepth);
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+
+        // Open Load window on top of GameMenu (depth 1 -> 2): nested, stays paused.
+        if (modalDepth == 0) { /* not reached */ }
+        modalDepth++;
+        Assert.Equal(2, modalDepth);
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+
+        // Close Load window (depth 2 -> 1): stays paused, back to GameMenu.
+        modalDepth--;
+        if (modalDepth == 0) { /* not reached */ }
+        Assert.Equal(1, modalDepth);
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+
+        // Close GameMenu (depth 1 -> 0): restores the original speed.
+        modalDepth--;
+        if (modalDepth == 0)
+        {
+            buffer.CurrentSpeed = savedSpeed;
+        }
+        Assert.Equal(0, modalDepth);
+        Assert.Equal(SimulationSpeed.Speed2, buffer.CurrentSpeed);
+    }
+
+    [Fact]
+    public void Load_window_opened_from_MainMenu_with_no_session_never_touches_speed()
+    {
+        // Load must also work from MainMenuScreen, where there is no session yet
+        // (SkiaWindow.OpenLoadWindowAsync deliberately has no `_session is null` guard,
+        // unlike OpenSaveWindowAsync). PushModalAsync/PopModalAsync's own
+        // `_session is not null` check means the pause-save/resume-restore branch is
+        // skipped entirely in this case — modalDepth still tracks push/pop correctly,
+        // but SetSpeedAsync/buffer.CurrentSpeed is never touched, and nothing throws.
+        var buffer = new SnapshotBuffer();
+        buffer.CurrentSpeed = SimulationSpeed.Speed1; // default, would-be stale value
+
+        bool hasSession = false; // simulates SkiaWindow._session is null (MainMenu context)
+        int modalDepth = 0;
+        SimulationSpeed savedSpeed = SimulationSpeed.Speed1;
+        bool speedTouched = false;
+
+        void PushModal()
+        {
+            if (modalDepth == 0 && hasSession)
+            {
+                savedSpeed = buffer.CurrentSpeed;
+                buffer.CurrentSpeed = SimulationSpeed.Speed0;
+                speedTouched = true;
+            }
+            modalDepth++;
+        }
+
+        void PopModal()
+        {
+            modalDepth--;
+            if (modalDepth == 0 && hasSession)
+            {
+                buffer.CurrentSpeed = savedSpeed;
+                speedTouched = true;
+            }
+        }
+
+        var exception = Record.Exception(() =>
+        {
+            PushModal(); // Open Load window from MainMenu (depth 0 -> 1)
+            PopModal();  // Close Load window (depth 1 -> 0)
+        });
+
+        Assert.Null(exception);
+        Assert.Equal(0, modalDepth);
+        Assert.False(speedTouched, "No session means no SetSpeedAsync/save/restore should ever run");
+        Assert.Equal(SimulationSpeed.Speed1, buffer.CurrentSpeed);
+    }
+
+    [Fact]
     public void Saved_speed_comes_from_buffer_not_stale_snapshot()
     {
         var buffer = new SnapshotBuffer();

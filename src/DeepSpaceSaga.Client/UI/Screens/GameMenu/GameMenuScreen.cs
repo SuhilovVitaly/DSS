@@ -49,6 +49,7 @@ public sealed class GameMenuScreen : IScreen
         {
             GameMenuButton.Resume => ScreenEvent.Resume,
             GameMenuButton.Save => ScreenEvent.OpenSaveWindow,
+            GameMenuButton.Load => ScreenEvent.OpenLoadWindow,
             GameMenuButton.MainMenu => ScreenEvent.MainMenu,
             _ => ScreenEvent.None
         };
@@ -93,7 +94,7 @@ public sealed class GameMenuScreen : IScreen
     }
 
     private static bool IsEnabled(GameMenuButton button) =>
-        button is GameMenuButton.Resume or GameMenuButton.Save or GameMenuButton.MainMenu;
+        button is GameMenuButton.Resume or GameMenuButton.Save or GameMenuButton.Load or GameMenuButton.MainMenu;
 
     private ButtonState GetState(GameMenuButton id)
     {

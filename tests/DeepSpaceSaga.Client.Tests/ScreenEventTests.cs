@@ -1,6 +1,7 @@
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
+using DeepSpaceSaga.Client.UI.Screens.Load;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
@@ -44,12 +45,23 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void MainMenu_Load_click_returns_None()
+    public void MainMenu_Load_click_returns_OpenLoadWindow()
     {
         var screen = new MainMenuScreen();
         var (x, y) = ButtonCenter(MenuLayout.LoadY);
         TriggerRender(screen);
-        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+        Assert.Equal(ScreenEvent.OpenLoadWindow, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void MainMenu_Load_hover_is_reported_interactive()
+    {
+        // Load is no longer suppressed/disabled — hovering it behaves like every
+        // other MainMenu button (used by SkiaWindow to pick the interactive cursor).
+        var screen = new MainMenuScreen();
+        var (x, y) = ButtonCenter(MenuLayout.LoadY);
+        TriggerRender(screen);
+        Assert.True(screen.OnMouseMove(x, y));
     }
 
     [Fact]
@@ -126,13 +138,21 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void GameMenu_Load_click_returns_None()
+    public void GameMenu_Load_click_returns_OpenLoadWindow()
     {
-        // LOAD stays disabled/out of scope for the save-window story.
         var screen = new GameMenuScreen();
         var (x, y) = GameButtonCenter(GameMenuLayout.LoadY);
         TriggerGameRender(screen);
-        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+        Assert.Equal(ScreenEvent.OpenLoadWindow, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void GameMenu_Load_hover_is_reported_interactive()
+    {
+        var screen = new GameMenuScreen();
+        var (x, y) = GameButtonCenter(GameMenuLayout.LoadY);
+        TriggerGameRender(screen);
+        Assert.True(screen.OnMouseMove(x, y));
     }
 
     [Fact]
@@ -784,5 +804,255 @@ public class ScreenEventTests
         // The newly-appeared row is now clickable, proving RefreshSlots() picked up the update.
         screen.OnMouseDown(x, y);
         Assert.Equal("slot-b", saved);
+    }
+
+    // --- Load tests ---
+
+    private static float LoadPanelLeft => LoadLayout.PanelLeft(ScreenWidth);
+    private static float LoadPanelTop => LoadLayout.PanelTop(ScreenHeight);
+
+    private static (float x, float y) LoadCenter((float X, float Y, float W, float H) local) =>
+        (LoadPanelLeft + local.X + local.W / 2f, LoadPanelTop + local.Y + local.H / 2f);
+
+    private static void TriggerLoadRender(IScreen screen)
+    {
+        using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, ScreenWidth, ScreenHeight);
+    }
+
+    private static LoadScreen NewLoadScreen(
+        IReadOnlyList<SaveSlotInfo>? slots = null,
+        Action<string>? deleteSlot = null,
+        Func<long>? nowMs = null)
+    {
+        var currentSlots = slots ?? Array.Empty<SaveSlotInfo>();
+        return new LoadScreen(() => currentSlots, deleteSlot ?? (_ => { }), nowMs);
+    }
+
+    [Fact]
+    public void Load_Close_click_returns_CloseLoadWindow()
+    {
+        var screen = NewLoadScreen();
+        TriggerLoadRender(screen);
+        var (x, y) = LoadCenter(LoadLayout.CloseButtonRect());
+        Assert.Equal(ScreenEvent.CloseLoadWindow, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void Load_Esc_returns_CloseLoadWindow()
+    {
+        var screen = NewLoadScreen();
+        TriggerLoadRender(screen);
+        Assert.Equal(ScreenEvent.CloseLoadWindow, screen.OnKeyDown(Key.Escape));
+    }
+
+    [Fact]
+    public void Load_other_key_returns_None()
+    {
+        var screen = NewLoadScreen();
+        TriggerLoadRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.A));
+    }
+
+    [Fact]
+    public void Load_click_outside_button_returns_None()
+    {
+        var screen = NewLoadScreen();
+        TriggerLoadRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(0, 0));
+    }
+
+    [Fact]
+    public void Load_row_click_returns_LoadSlotRequested_with_the_row_SlotId_retrievable()
+    {
+        var slots = new[] { Slot("slot-a", "Slot A", DateTime.UtcNow) };
+        var screen = NewLoadScreen(slots: slots);
+        TriggerLoadRender(screen);
+
+        var (x, y) = LoadCenter(LoadLayout.LoadButtonRect(0));
+        var evt = screen.OnMouseDown(x, y);
+
+        Assert.Equal(ScreenEvent.LoadSlotRequested, evt);
+        // Mirrors how SkiaWindow's mouse-dispatch site reads this: synchronously, in the
+        // same call frame, immediately after OnMouseDown returns.
+        Assert.Equal("slot-a", screen.LastRequestedSlotId);
+    }
+
+    [Fact]
+    public void Load_row_click_selects_the_correct_row_among_several()
+    {
+        var slots = new[]
+        {
+            Slot("slot-a", "Slot A", DateTime.UtcNow),
+            Slot("slot-b", "Slot B", DateTime.UtcNow)
+        };
+        var screen = NewLoadScreen(slots: slots);
+        TriggerLoadRender(screen);
+
+        var (x, y) = LoadCenter(LoadLayout.LoadButtonRect(1));
+        var evt = screen.OnMouseDown(x, y);
+
+        Assert.Equal(ScreenEvent.LoadSlotRequested, evt);
+        Assert.Equal("slot-b", screen.LastRequestedSlotId);
+    }
+
+    [Fact]
+    public void Load_reserved_quicksave_slot_is_not_shown_when_caller_excludes_it()
+    {
+        // LoadScreen itself has no knowledge of the reserved slot id — it only ever sees
+        // whatever listSlots returns, so this proves the row-click flow behaves correctly
+        // once the caller (mirroring SkiaWindow.OpenLoadWindowAsync's use of
+        // SaveSlots.ExcludeReserved) has already filtered it out.
+        var slots = SaveSlots.ExcludeReserved(new[]
+        {
+            Slot(SaveSlots.Quicksave, "Quicksave", DateTime.UtcNow),
+            Slot("slot-a", "Slot A", DateTime.UtcNow)
+        });
+        var screen = NewLoadScreen(slots: slots);
+        TriggerLoadRender(screen);
+
+        var (x, y) = LoadCenter(LoadLayout.LoadButtonRect(0));
+        var evt = screen.OnMouseDown(x, y);
+
+        Assert.Equal(ScreenEvent.LoadSlotRequested, evt);
+        Assert.Equal("slot-a", screen.LastRequestedSlotId);
+
+        // Row index 1 doesn't exist — the reserved slot was excluded before construction.
+        var (x1, y1) = LoadCenter(LoadLayout.LoadButtonRect(1));
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x1, y1));
+    }
+
+    [Fact]
+    public void Load_Delete_first_click_does_not_delete()
+    {
+        bool called = false;
+        var slots = new[] { Slot("slot-a", "Slot A", DateTime.UtcNow) };
+        var screen = NewLoadScreen(slots: slots, deleteSlot: _ => called = true);
+        TriggerLoadRender(screen);
+
+        var (x, y) = LoadCenter(LoadLayout.DeleteButtonRect(0));
+        var evt = screen.OnMouseDown(x, y);
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Load_Delete_second_click_within_window_deletes()
+    {
+        string? deleted = null;
+        long fakeNow = 0;
+        var slots = new[] { Slot("slot-a", "Slot A", DateTime.UtcNow) };
+        var screen = NewLoadScreen(slots: slots, deleteSlot: id => deleted = id, nowMs: () => fakeNow);
+        TriggerLoadRender(screen);
+
+        var (x, y) = LoadCenter(LoadLayout.DeleteButtonRect(0));
+        screen.OnMouseDown(x, y); // first click → CONFIRM
+        fakeNow += 500;
+        var evt = screen.OnMouseDown(x, y); // second click within window → deletes
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Equal("slot-a", deleted);
+    }
+
+    [Fact]
+    public void Load_Delete_second_click_after_timeout_does_not_delete()
+    {
+        bool called = false;
+        long fakeNow = 0;
+        var slots = new[] { Slot("slot-a", "Slot A", DateTime.UtcNow) };
+        var screen = NewLoadScreen(slots: slots, deleteSlot: _ => called = true, nowMs: () => fakeNow);
+        TriggerLoadRender(screen);
+
+        var (x, y) = LoadCenter(LoadLayout.DeleteButtonRect(0));
+        screen.OnMouseDown(x, y); // first click → CONFIRM
+        fakeNow += 5000; // past the confirm window
+        screen.OnMouseDown(x, y); // treated as a fresh first click, not a delete
+
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Load_Delete_click_elsewhere_clears_confirm_state()
+    {
+        bool called = false;
+        var slots = new[]
+        {
+            Slot("slot-a", "Slot A", DateTime.UtcNow),
+            Slot("slot-b", "Slot B", DateTime.UtcNow)
+        };
+        var screen = NewLoadScreen(slots: slots, deleteSlot: _ => called = true);
+        TriggerLoadRender(screen);
+
+        var (dx, dy) = LoadCenter(LoadLayout.DeleteButtonRect(0));
+        screen.OnMouseDown(dx, dy); // first click on row 0 → CONFIRM
+
+        var (lx, ly) = LoadCenter(LoadLayout.LoadButtonRect(1));
+        screen.OnMouseDown(lx, ly); // click elsewhere (a LOAD click) clears the confirm state
+
+        var evt = screen.OnMouseDown(dx, dy); // this is now a fresh first click again
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Load_Delete_click_on_different_row_clears_previous_confirm_and_arms_new_row()
+    {
+        // Regression mirroring Save_Delete_click_on_different_row_clears_previous_confirm_and_arms_new_row.
+        string? deleted = null;
+        long fakeNow = 0;
+        var slots = new[]
+        {
+            Slot("slot-a", "Slot A", DateTime.UtcNow),
+            Slot("slot-b", "Slot B", DateTime.UtcNow)
+        };
+        var screen = NewLoadScreen(slots: slots, deleteSlot: id => deleted = id, nowMs: () => fakeNow);
+        TriggerLoadRender(screen);
+
+        var (d0x, d0y) = LoadCenter(LoadLayout.DeleteButtonRect(0));
+        var (d1x, d1y) = LoadCenter(LoadLayout.DeleteButtonRect(1));
+
+        screen.OnMouseDown(d0x, d0y); // first click on row 0 → CONFIRM armed for row 0
+
+        var evt = screen.OnMouseDown(d1x, d1y);
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Null(deleted);
+
+        fakeNow += 500;
+        var evtRow0Again = screen.OnMouseDown(d0x, d0y);
+        Assert.Equal(ScreenEvent.None, evtRow0Again);
+        Assert.Null(deleted);
+
+        fakeNow += 100;
+        screen.OnMouseDown(d1x, d1y); // fresh first click on row 1 (clears row 0's re-arm)
+        fakeNow += 500;
+        var evtRow1Confirm = screen.OnMouseDown(d1x, d1y); // second click within window → deletes
+
+        Assert.Equal(ScreenEvent.None, evtRow1Confirm);
+        Assert.Equal("slot-b", deleted);
+    }
+
+    [Fact]
+    public void Load_row_click_after_a_pending_delete_confirm_on_the_same_row_still_loads_and_clears_confirm()
+    {
+        // A LOAD click on a row that currently has an armed DELETE confirm must not be
+        // swallowed by the delete state machine — it clears the confirm and proceeds to
+        // request a load, exactly like an Overwrite click does on Save's screen.
+        string? deleted = null;
+        var slots = new[] { Slot("slot-a", "Slot A", DateTime.UtcNow) };
+        var screen = NewLoadScreen(slots: slots, deleteSlot: id => deleted = id);
+        TriggerLoadRender(screen);
+
+        var (dx, dy) = LoadCenter(LoadLayout.DeleteButtonRect(0));
+        screen.OnMouseDown(dx, dy); // first click → CONFIRM armed
+
+        var (lx, ly) = LoadCenter(LoadLayout.LoadButtonRect(0));
+        var evt = screen.OnMouseDown(lx, ly);
+
+        Assert.Equal(ScreenEvent.LoadSlotRequested, evt);
+        Assert.Equal("slot-a", screen.LastRequestedSlotId);
+        Assert.Null(deleted);
     }
 }

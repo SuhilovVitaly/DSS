@@ -38,9 +38,10 @@ public static class Program
             return LocalGameSessionConnection.CreateFromSettingsFile(SettingsPath, SaveDirectory);
         }
 
-        public IGameSessionConnection CreateSessionFromSave()
+        public IGameSessionConnection CreateSessionFromSave(string slotId)
         {
-            var connection = LocalGameSessionConnection.CreateFromSaveFile(SettingsPath, QuickSavePath, SaveDirectory);
+            string savePath = Path.Combine(SaveDirectory, SaveSlotNaming.ToFileName(slotId));
+            var connection = LocalGameSessionConnection.CreateFromSaveFile(SettingsPath, savePath, SaveDirectory);
 
             // A missing masterSeed here means a legacy save predating it — the engine
             // already generated and is using a fresh one; this is only about surfacing the
@@ -49,7 +50,7 @@ public static class Program
             if (connection.MasterSeedWasMissingOnLoad)
             {
                 InterfaceLog.Write(
-                    "QuickLoad: save file had no masterSeed (legacy save) — generated and will save a new one.");
+                    $"Load: save file '{slotId}' had no masterSeed (legacy save) — generated and will save a new one.");
             }
 
             return connection;

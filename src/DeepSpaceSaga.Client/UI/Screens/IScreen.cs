@@ -31,5 +31,8 @@ public enum ScreenEvent
     OpenSettings,
     CloseSettings,
     OpenSaveWindow,
-    CloseSaveWindow
+    CloseSaveWindow,
+    OpenLoadWindow,
+    CloseLoadWindow,
+    LoadSlotRequested
 }
