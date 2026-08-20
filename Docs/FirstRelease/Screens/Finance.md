@@ -18,3 +18,7 @@
 - `Money`.
 - `Trading`.
 - `StationInventory`.
+
+## Размер окна
+
+1400×900 px — стандартный размер окна игровых механик (см. `ScreenCatalog.md`).

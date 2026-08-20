@@ -34,5 +34,7 @@ public enum ScreenEvent
     CloseSaveWindow,
     OpenLoadWindow,
     CloseLoadWindow,
-    LoadSlotRequested
+    LoadSlotRequested,
+    OpenFinance,
+    CloseFinance
 }
