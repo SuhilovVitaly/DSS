@@ -148,6 +148,49 @@ public class KeyboardEdgeTrackerTests
     }
 
     [Fact]
+    public void Backspace_is_reported_on_press_edge()
+    {
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new HashSet<Key>();
+
+        Assert.Empty(Poll(tracker, pressed));
+
+        pressed.Add(Key.Backspace);
+        Assert.Equal([Key.Backspace], Poll(tracker, pressed));
+        Assert.Empty(Poll(tracker, pressed)); // held — not reported again
+
+        pressed.Remove(Key.Backspace);
+        Assert.Empty(Poll(tracker, pressed));
+
+        pressed.Add(Key.Backspace);
+        Assert.Equal([Key.Backspace], Poll(tracker, pressed));
+    }
+
+    [Fact]
+    public void Backspace_press_edge_is_reported_via_poll_both_without_disturbing_other_keys()
+    {
+        // Real SkiaWindow uses PollBoth, not the legacy Poll — confirm Backspace
+        // surfaces there too, alongside an unrelated key in the same frame.
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new HashSet<Key> { Key.Backspace, Key.Up };
+
+        PollBoth(tracker, pressed, out var p, out var r);
+        Assert.Contains(Key.Backspace, p);
+        Assert.Contains(Key.Up, p);
+        Assert.Empty(r);
+
+        // Held — no repeat edges.
+        PollBoth(tracker, pressed, out p, out r);
+        Assert.Empty(p);
+        Assert.Empty(r);
+
+        pressed.Remove(Key.Backspace);
+        PollBoth(tracker, pressed, out p, out r);
+        Assert.Empty(p);
+        Assert.Equal([Key.Backspace], r);
+    }
+
+    [Fact]
     public void Resync_on_focus_regain_suppresses_phantom_escape_edge()
     {
         // Regression: an OS overlay (e.g. Print Screen -> Windows Snipping Tool)
@@ -169,16 +212,35 @@ public class KeyboardEdgeTrackerTests
         Assert.Equal([Key.Escape], Poll(tracker, pressed));
     }
 
+    [Fact]
+    public void Resync_on_focus_regain_suppresses_phantom_backspace_edge()
+    {
+        // Same guarantee as Escape's resync regression, extended to the newly tracked
+        // Backspace edge: a key already held when focus returns must not surface as
+        // a fresh press.
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new HashSet<Key> { Key.Backspace };
+
+        tracker.ResyncToCurrentState(pressed.Contains);
+        Assert.Empty(Poll(tracker, pressed)); // no phantom press edge
+
+        pressed.Remove(Key.Backspace);
+        Assert.Empty(Poll(tracker, pressed)); // release of a never-reported press is also silent
+
+        pressed.Add(Key.Backspace);
+        Assert.Equal([Key.Backspace], Poll(tracker, pressed));
+    }
+
     private static Key[] Poll(KeyboardEdgeTracker tracker, HashSet<Key> pressed)
     {
-        Span<Key> buffer = stackalloc Key[16];
+        Span<Key> buffer = stackalloc Key[19];
         int count = tracker.Poll(pressed.Contains, buffer);
         return buffer[..count].ToArray();
     }
 
     private static Key[] PollUpKeys(KeyboardEdgeTracker tracker, HashSet<Key> pressed)
     {
-        Span<Key> buffer = stackalloc Key[16];
+        Span<Key> buffer = stackalloc Key[19];
         int count = tracker.PollUpKeys(pressed.Contains, buffer);
         return buffer[..count].ToArray();
     }
@@ -186,8 +248,8 @@ public class KeyboardEdgeTrackerTests
     private static void PollBoth(KeyboardEdgeTracker tracker,
         HashSet<Key> pressed, out Key[] p, out Key[] r)
     {
-        Span<Key> pBuf = stackalloc Key[16];
-        Span<Key> rBuf = stackalloc Key[16];
+        Span<Key> pBuf = stackalloc Key[19];
+        Span<Key> rBuf = stackalloc Key[19];
         var (pc, rc) = tracker.PollBoth(pressed.Contains, pBuf, rBuf);
         p = pBuf[..pc].ToArray();
         r = rBuf[..rc].ToArray();

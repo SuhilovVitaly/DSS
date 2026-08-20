@@ -16,39 +16,45 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     private readonly Channel<AuthoritativeSnapshot> _snapshotChannel;
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _engineLoopTask;
-    private readonly string? _savePath;
+    private readonly string? _saveDirectory;
     private readonly SemaphoreSlim _saveGate = new(1, 1);
     private bool _disposed;
 
-    /// <param name="savePath">
-    /// Path SaveAsync writes to. The only place that decides this path is the client's
-    /// composition root (Program.cs) — this class just remembers whatever it's given.
-    /// Optional so existing callers/tests that never save keep working unchanged.
+    /// <param name="saveDirectory">
+    /// Directory SaveAsync writes slot files into — each slot becomes
+    /// "&lt;sanitized-slot-id&gt;.json" inside it (see SaveSlotNaming). The only place
+    /// that decides this directory is the client's composition root (Program.cs) —
+    /// this class just remembers whatever it's given. Optional so existing
+    /// callers/tests that never save keep working unchanged.
     /// </param>
-    public LocalGameSessionConnection(SimulationEngine engine, string? savePath = null)
+    public LocalGameSessionConnection(SimulationEngine engine, string? saveDirectory = null)
     {
         _engine = engine;
-        _savePath = savePath;
+        _saveDirectory = saveDirectory;
         _snapshotChannel = Channel.CreateUnbounded<AuthoritativeSnapshot>(
             new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
 
         _engineLoopTask = Task.Run(() => RunEngineLoopAsync(_cts.Token));
     }
 
-    public static LocalGameSessionConnection CreateFromSettingsFile(string settingsPath, string? savePath = null)
+    public static LocalGameSessionConnection CreateFromSettingsFile(string settingsPath, string? saveDirectory = null)
     {
         var engine = SimulationEngine.CreateFromSettingsFile(settingsPath);
-        return new LocalGameSessionConnection(engine, savePath);
+        return new LocalGameSessionConnection(engine, saveDirectory);
     }
 
     /// <summary>
     /// Bootstrap a new connection from a save file (F9 quickload path). Mirrors
     /// CreateFromSettingsFile but loads save-format JSON (gameTimeMs may be &gt; 0).
+    /// saveDirectory defaults to savePath's own directory when omitted, so a bare
+    /// two-argument call keeps saving future slots (e.g. a quicksave overwrite) next
+    /// to the file it just loaded from.
     /// </summary>
-    public static LocalGameSessionConnection CreateFromSaveFile(string settingsPath, string savePath)
+    public static LocalGameSessionConnection CreateFromSaveFile(
+        string settingsPath, string savePath, string? saveDirectory = null)
     {
         var engine = SimulationEngine.CreateFromSaveFile(settingsPath, savePath);
-        return new LocalGameSessionConnection(engine, savePath);
+        return new LocalGameSessionConnection(engine, saveDirectory ?? Path.GetDirectoryName(savePath));
     }
 
     /// <summary>
@@ -113,34 +119,36 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
 
     /// <summary>
     /// Capture the current world state (thread-safe against the background engine loop —
-    /// see SimulationEngine._worldStateLock) and write it atomically: serialize to a unique
-    /// temp file, then rename over the target path. A crash mid-write never corrupts the
-    /// previous save. The write itself (temp-file + rename) is additionally serialized via
-    /// _saveGate — concurrent SaveAsync calls each capture their own independent snapshot,
-    /// but their file writes queue up one at a time rather than racing each other's rename
-    /// onto the same destination path (which Windows can reject outright, and which would
-    /// otherwise make "which save actually landed" nondeterministic anyway).
+    /// see SimulationEngine._worldStateLock) and write it atomically to the given slot:
+    /// serialize to a unique temp file, then rename over the slot's target path
+    /// (saveDirectory/&lt;sanitized-slot-id&gt;.json, see SaveSlotNaming). A crash mid-write
+    /// never corrupts the previous save for that slot. The write itself (temp-file +
+    /// rename) is additionally serialized via _saveGate — concurrent SaveAsync calls
+    /// (whether to the same slot or different slots) each capture their own independent
+    /// snapshot, but their file writes queue up one at a time rather than racing each
+    /// other's rename (which Windows can reject outright, and which would otherwise make
+    /// "which save actually landed" nondeterministic anyway). Different slots write to
+    /// different destination paths, so they never collide on disk regardless.
     /// </summary>
-    public async ValueTask SaveAsync(CancellationToken cancellationToken = default)
+    public async ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(_savePath))
+        if (string.IsNullOrWhiteSpace(_saveDirectory))
             throw new InvalidOperationException(
-                "This LocalGameSessionConnection has no save path configured.");
+                "This LocalGameSessionConnection has no save directory configured.");
 
         var saveState = _engine.CaptureSaveState();
         string json = ScenarioLoader.Serialize(saveState);
 
-        string? directory = Path.GetDirectoryName(_savePath);
-        if (!string.IsNullOrEmpty(directory))
-            Directory.CreateDirectory(directory);
+        Directory.CreateDirectory(_saveDirectory);
 
-        string tempPath = $"{_savePath}.{Guid.NewGuid():N}.tmp";
+        string targetPath = Path.Combine(_saveDirectory, SaveSlotNaming.ToFileName(slotId));
+        string tempPath = $"{targetPath}.{Guid.NewGuid():N}.tmp";
         await File.WriteAllTextAsync(tempPath, json, cancellationToken);
 
         await _saveGate.WaitAsync(cancellationToken);
         try
         {
-            File.Move(tempPath, _savePath, overwrite: true);
+            File.Move(tempPath, targetPath, overwrite: true);
         }
         finally
         {

@@ -66,7 +66,7 @@ public class ModalTransitionTests
                 ImmutableArray<ObjectMotionSnapshot>.Empty);
         }
 
-        public ValueTask SaveAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
+        public ValueTask SaveAsync(string slotId, CancellationToken ct = default) => ValueTask.CompletedTask;
 
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
@@ -99,6 +99,61 @@ public class ModalTransitionTests
         conn.CompletePending();
         await pauseTask;
         Assert.True(handle.Buffer.CurrentSpeed == SimulationSpeed.Speed0);
+    }
+
+    /// <summary>
+    /// Same nested-modal shape as <see cref="Nested_modal_preserves_saved_speed_through_delayed_connection"/>,
+    /// framed explicitly around the Save window's own pause/resume lifecycle: GameMenu is
+    /// opened first (depth 0->1, pause), then the Save window is opened on top of it
+    /// (depth 1->2, nested — no additional SetSpeedAsync call), and closing back down
+    /// through Save window (depth 2->1) then GameMenu (depth 1->0) restores the speed
+    /// that was authoritative before GameMenu was ever opened.
+    /// </summary>
+    [Fact]
+    public async Task Save_window_opened_from_GameMenu_resumes_original_speed_through_delayed_connection()
+    {
+        var conn = new ControllableConnection();
+        var handle = new GameSessionHandle(conn);
+
+        while (handle.Buffer.Latest is null)
+            await Task.Delay(10);
+
+        // Set to Speed2 (the speed in effect before GameMenu is opened).
+        var startedTcs = new TaskCompletionSource();
+        conn.PendingSetSpeedTcs = startedTcs;
+        var speed2Task = handle.SetSpeedAsync(SimulationSpeed.Speed2);
+        await startedTcs.Task;
+        conn.CompletePending();
+        await speed2Task;
+        Assert.True(handle.Buffer.CurrentSpeed == SimulationSpeed.Speed2);
+
+        // Open GameMenu (depth 0 -> 1): save speed, pause to Speed0.
+        var savedSpeed = handle.Buffer.CurrentSpeed;
+        Assert.True(savedSpeed == SimulationSpeed.Speed2);
+
+        startedTcs = new TaskCompletionSource();
+        conn.PendingSetSpeedTcs = startedTcs;
+        var pauseTask = handle.SetSpeedAsync(SimulationSpeed.Speed0);
+        await startedTcs.Task;
+        conn.CompletePending();
+        await pauseTask;
+        Assert.True(handle.Buffer.CurrentSpeed == SimulationSpeed.Speed0);
+
+        // Open Save window on top of GameMenu (depth 1 -> 2): nested — no SetSpeedAsync
+        // call at all, simulation stays paused exactly as PushModalAsync's modalDepth>0 branch does.
+        Assert.True(handle.Buffer.CurrentSpeed == SimulationSpeed.Speed0);
+
+        // Close Save window (depth 2 -> 1): still nested — no SetSpeedAsync call, stays paused.
+        Assert.True(handle.Buffer.CurrentSpeed == SimulationSpeed.Speed0);
+
+        // Close GameMenu (depth 1 -> 0): restore the speed saved before GameMenu opened.
+        startedTcs = new TaskCompletionSource();
+        conn.PendingSetSpeedTcs = startedTcs;
+        var restoreTask = handle.SetSpeedAsync(savedSpeed);
+        await startedTcs.Task;
+        conn.CompletePending();
+        await restoreTask;
+        Assert.True(handle.Buffer.CurrentSpeed == SimulationSpeed.Speed2);
     }
 
     [Fact]

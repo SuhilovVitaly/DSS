@@ -42,9 +42,12 @@ public interface IGameSessionConnection : IAsyncDisposable
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Capture the current authoritative world state and persist it (quicksave).
-    /// There is no matching LoadAsync — loading a save always goes through the
+    /// Capture the current authoritative world state and persist it to the given save
+    /// slot. There is no matching LoadAsync — loading a save always goes through the
     /// session-factory bootstrap path, replacing the whole session/connection.
+    /// Multiple independent slots are supported (see IGameSessionFactory.ListSaveSlots
+    /// in the Client project); quicksave (F5/F9) is simply the reserved slot id the
+    /// client always saves/loads through.
     /// </summary>
-    ValueTask SaveAsync(CancellationToken cancellationToken = default);
+    ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default);
 }

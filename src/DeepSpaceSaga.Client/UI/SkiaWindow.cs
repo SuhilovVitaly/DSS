@@ -5,6 +5,7 @@ using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
+using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
@@ -41,7 +42,7 @@ public sealed class SkiaWindow : IDisposable
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _quickSaveLoadInFlight;
     private readonly KeyboardEdgeTracker _keyboardEdges = new();
-    private readonly Key[] _keyboardPressedKeys = new Key[16]; // must cover every key KeyboardEdgeTracker.Poll can report in one call
+    private readonly Key[] _keyboardPressedKeys = new Key[19]; // must cover every key KeyboardEdgeTracker.PollBoth can report in one call
     private readonly Key[] _keyboardReleasedKeys = new Key[2]; // Ctrl release edges only (left/right)
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
@@ -156,6 +157,8 @@ public sealed class SkiaWindow : IDisposable
         }
 
         _keyboard = _input.Keyboards.FirstOrDefault();
+        if (_keyboard is not null)
+            _keyboard.KeyChar += OnKeyChar;
 
         // TEMP DIAG — startup timing investigation, remove once resolved.
         if (_startupStopwatch is not null)
@@ -177,6 +180,9 @@ public sealed class SkiaWindow : IDisposable
             _mouse.MouseMove -= OnMouseMove;
             _mouse.Scroll -= OnMouseScroll;
         }
+
+        if (_keyboard is not null)
+            _keyboard.KeyChar -= OnKeyChar;
 
         _input?.Dispose();
         _input = null;
@@ -377,6 +383,14 @@ public sealed class SkiaWindow : IDisposable
         _ = HandleScreenEvent(screenEvent);
     }
 
+    private void OnKeyChar(IKeyboard keyboard, char c)
+    {
+        if (_closing)
+            return;
+
+        _screens.Current.OnTextInput(c);
+    }
+
     private Task? _pendingKeyboardTransition;
 
     private void PollKeyboard()
@@ -504,6 +518,12 @@ public sealed class SkiaWindow : IDisposable
                     await OpenSettingsAsync();
                     break;
                 case ScreenEvent.CloseSettings:
+                    await CloseOverlayAsync();
+                    break;
+                case ScreenEvent.OpenSaveWindow:
+                    await OpenSaveWindowAsync();
+                    break;
+                case ScreenEvent.CloseSaveWindow:
                     await CloseOverlayAsync();
                     break;
             }
@@ -634,6 +654,80 @@ public sealed class SkiaWindow : IDisposable
         await PushModalAsync(new SettingsScreen(
             monitorNames, selectedMonitorIndex, SaveSelectedMonitorIndex,
             uiScale, SaveUiScale));
+    }
+
+    /// <summary>
+    /// Push the Save overlay. New Save/Overwrite and Delete are bound directly to
+    /// <see cref="_session"/>/<see cref="_sessionFactory"/> — SaveScreen itself has no
+    /// knowledge of either type. New Save/Overwrite is fire-and-forget
+    /// (<see cref="SaveToSlotAsync"/> properly awaits <c>SaveAsync</c> off of
+    /// <see cref="SaveScreen.OnMouseDown"/>'s synchronous return, matching the "render
+    /// loop must never await the connection synchronously" rule from
+    /// <see cref="IGameSessionConnection"/> and mirroring <see cref="QuickSaveAsync"/>);
+    /// SaveScreen is notified once the write lands so it can refresh its slot list. Delete
+    /// stays a direct synchronous call — <see cref="IGameSessionFactory.DeleteSaveSlot"/>
+    /// has no awaited I/O.
+    /// The reserved quicksave slot (<see cref="SaveSlots.Quicksave"/>) is filtered out of
+    /// the list shown here so a player can never see/overwrite/delete it from this window
+    /// and silently break F9 quickload; SaveScreen separately rejects it as a New-Save name.
+    /// </summary>
+    private async Task OpenSaveWindowAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is SaveScreen)
+            return;
+
+        if (_session is null)
+            return;
+
+        var saveScreen = new SaveScreen(
+            () => SaveSlots.ExcludeReserved(_sessionFactory.ListSaveSlots()),
+            slotId => _ = SaveToSlotAsync(slotId),
+            DeleteSaveSlotSafely);
+
+        await PushModalAsync(saveScreen);
+    }
+
+    /// <summary>Delete callback for SaveScreen's two-stage Delete button. Synchronous —
+    /// filesystem delete has no awaited I/O — but guarded so a locked/missing file never
+    /// crashes the render loop, for consistency with how every other save action here
+    /// logs and swallows its own failures.</summary>
+    private void DeleteSaveSlotSafely(string slotId)
+    {
+        try
+        {
+            _sessionFactory.DeleteSaveSlot(slotId);
+        }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"Delete save slot '{slotId}' failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Fire-and-forget target for SaveScreen's New Save/Overwrite actions. Mirrors
+    /// <see cref="QuickSaveAsync"/>'s await/log-on-failure shape, but doesn't touch
+    /// simulation speed (the modal is already paused) and notifies the still-open
+    /// SaveScreen to refresh its list once the write completes. Guarded so a save
+    /// finishing after the player has already closed the Save window is a safe no-op.
+    /// </summary>
+    private async Task SaveToSlotAsync(string slotId)
+    {
+        if (_session is null)
+            return;
+
+        try
+        {
+            await _session.SaveAsync(slotId);
+            InterfaceLog.Write($"Save: wrote Saves/{slotId}.json");
+        }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"Save failed for slot '{slotId}': {ex.Message}");
+        }
+
+        if (_screens.Current is SaveScreen saveScreen)
+            saveScreen.NotifySaveCompleted(slotId);
     }
 
     private static string SettingsFilePath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
@@ -769,7 +863,7 @@ public sealed class SkiaWindow : IDisposable
         try
         {
             await _session.SetSpeedAsync(SimulationSpeed.Speed0);
-            await _session.SaveAsync();
+            await _session.SaveAsync(SaveSlots.Quicksave);
             InterfaceLog.Write("QuickSave: wrote Saves/quicksave.json");
         }
         catch (Exception ex)
@@ -873,6 +967,9 @@ public sealed class SkiaWindow : IDisposable
                 _mouse.MouseMove -= OnMouseMove;
                 _mouse.Scroll -= OnMouseScroll;
             }
+
+            if (_keyboard is not null)
+                _keyboard.KeyChar -= OnKeyChar;
 
             _input?.Dispose();
             _input = null;

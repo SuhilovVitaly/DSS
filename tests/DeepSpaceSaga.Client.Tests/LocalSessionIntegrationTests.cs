@@ -1,8 +1,10 @@
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
+using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.LocalClient;
 using DeepSpaceSaga.Engine.Scenario;
+using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests;
 
@@ -81,8 +83,7 @@ public class LocalSessionIntegrationTests
         Assert.Null(engine.SelectedObjectId);
     }
 
-    [Fact]
-    public async Task SaveAsync_writes_a_valid_parsable_save_file()
+    private static SimulationEngine CreateEngineWithTestScenario()
     {
         var engine = new SimulationEngine();
         engine.LoadScenario(ScenarioLoader.LoadFromJson("""
@@ -99,18 +100,54 @@ public class LocalSessionIntegrationTests
           }
         }
         """));
+        return engine;
+    }
+
+    [Fact]
+    public async Task SaveAsync_writes_a_valid_parsable_save_file()
+    {
+        var engine = CreateEngineWithTestScenario();
 
         string dir = Path.Combine(Path.GetTempPath(), $"dss-save-test-{Guid.NewGuid():N}");
-        string savePath = Path.Combine(dir, "Saves", "quicksave.json");
+        string saveDirectory = Path.Combine(dir, "Saves");
 
-        await using var connection = new LocalGameSessionConnection(engine, savePath);
+        await using var connection = new LocalGameSessionConnection(engine, saveDirectory);
         try
         {
             // Saves/ does not exist yet — SaveAsync must create it.
-            await connection.SaveAsync();
+            await connection.SaveAsync("quicksave");
 
+            string savePath = Path.Combine(saveDirectory, "quicksave.json");
             Assert.True(File.Exists(savePath));
             var loaded = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true);
+            Assert.NotNull(loaded);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task SaveAsync_writes_to_a_file_named_after_the_sanitized_slot_id()
+    {
+        var engine = CreateEngineWithTestScenario();
+
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-save-slotname-{Guid.NewGuid():N}");
+        string saveDirectory = Path.Combine(dir, "Saves");
+
+        await using var connection = new LocalGameSessionConnection(engine, saveDirectory);
+        try
+        {
+            // Illegal characters (':', '#', '!') must be stripped by the shared
+            // SaveSlotNaming helper, giving a predictable on-disk file name.
+            await connection.SaveAsync("My Save #1!");
+
+            string expectedPath = Path.Combine(saveDirectory, "My Save 1.json");
+            Assert.True(File.Exists(expectedPath));
+
+            var loaded = ScenarioLoader.LoadFromFile(expectedPath, allowNonZeroGameTime: true);
             Assert.NotNull(loaded);
         }
         finally
@@ -140,17 +177,19 @@ public class LocalSessionIntegrationTests
         """));
 
         string dir = Path.Combine(Path.GetTempPath(), $"dss-save-race-{Guid.NewGuid():N}");
-        string savePath = Path.Combine(dir, "Saves", "quicksave.json");
+        string saveDirectory = Path.Combine(dir, "Saves");
 
-        await using var connection = new LocalGameSessionConnection(engine, savePath);
+        await using var connection = new LocalGameSessionConnection(engine, saveDirectory);
         try
         {
-            // Several concurrent SaveAsync calls while the background 1 Hz engine loop is
-            // ticking — every completed write is an atomic temp-file + rename, so the file
-            // on disk must always be fully valid, never partially written or corrupted.
-            var saveTasks = Enumerable.Range(0, 5).Select(_ => connection.SaveAsync().AsTask()).ToArray();
+            // Several concurrent SaveAsync calls (same slot) while the background 1 Hz
+            // engine loop is ticking — every completed write is an atomic temp-file +
+            // rename, so the file on disk must always be fully valid, never partially
+            // written or corrupted.
+            var saveTasks = Enumerable.Range(0, 5).Select(_ => connection.SaveAsync("quicksave").AsTask()).ToArray();
             await Task.WhenAll(saveTasks);
 
+            string savePath = Path.Combine(saveDirectory, "quicksave.json");
             var loaded = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true);
             Assert.NotNull(loaded);
         }
@@ -162,12 +201,42 @@ public class LocalSessionIntegrationTests
     }
 
     [Fact]
-    public async Task SaveAsync_throws_when_no_save_path_is_configured()
+    public async Task Concurrent_saves_to_different_slots_do_not_collide()
+    {
+        var engine = CreateEngineWithTestScenario();
+
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-save-multislot-{Guid.NewGuid():N}");
+        string saveDirectory = Path.Combine(dir, "Saves");
+
+        await using var connection = new LocalGameSessionConnection(engine, saveDirectory);
+        try
+        {
+            string[] slotIds = ["slot-a", "slot-b", "slot-c"];
+            var saveTasks = slotIds.Select(slotId => connection.SaveAsync(slotId).AsTask()).ToArray();
+            await Task.WhenAll(saveTasks);
+
+            foreach (var slotId in slotIds)
+            {
+                string savePath = Path.Combine(saveDirectory, $"{slotId}.json");
+                Assert.True(File.Exists(savePath), $"Expected {savePath} to exist");
+                var loaded = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true);
+                Assert.NotNull(loaded);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task SaveAsync_throws_when_no_save_directory_is_configured()
     {
         var engine = new SimulationEngine();
         await using var connection = new LocalGameSessionConnection(engine);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await connection.SaveAsync());
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await connection.SaveAsync("quicksave"));
     }
 
     [Fact]
@@ -292,6 +361,63 @@ public class LocalSessionIntegrationTests
 
         var points = new NavigationTrajectoryProjector().Project(shipWithTarget);
         Assert.NotEmpty(points);
+    }
+
+    [Fact]
+    public async Task SaveScreen_New_Save_action_produces_a_listable_slot_file_end_to_end()
+    {
+        // Wires SaveScreen exactly as SkiaWindow.OpenSaveWindowAsync does — bound to a
+        // real GameSessionHandle/LocalGameSessionConnection and SaveSlotRepository, not
+        // fakes — to prove the New-Save UI path actually reaches disk and becomes
+        // listable, not just that individual pieces work in isolation.
+        var engine = CreateEngineWithTestScenario();
+
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-save-uiflow-{Guid.NewGuid():N}");
+        string saveDirectory = Path.Combine(dir, "Saves");
+
+        var connection = new LocalGameSessionConnection(engine, saveDirectory);
+        await using var handle = new GameSessionHandle(connection);
+        try
+        {
+            var saveScreen = new SaveScreen(
+                () => SaveSlotRepository.ListSlots(saveDirectory),
+                slotId => handle.SaveAsync(slotId).AsTask().GetAwaiter().GetResult(),
+                slotId => SaveSlotRepository.DeleteSlot(saveDirectory, slotId));
+
+            // Render once so the screen captures screen width/height (mirrors real usage).
+            using var bitmap = new SKBitmap(1920, 1080);
+            using var canvas = new SKCanvas(bitmap);
+            saveScreen.Render(canvas, 1920, 1080);
+
+            var (nx, ny) = Center(SaveLayout.NewSaveButtonRect());
+            saveScreen.OnMouseDown(nx, ny); // reveal the name field
+
+            foreach (char c in "My Playthrough")
+                saveScreen.OnTextInput(c);
+
+            var (cx, cy) = Center(SaveLayout.ConfirmButtonRect());
+            saveScreen.OnMouseDown(cx, cy); // confirm → SaveAsync → refresh list
+
+            var slots = SaveSlotRepository.ListSlots(saveDirectory);
+            var written = Assert.Single(slots, s => s.SlotId == "My Playthrough");
+            Assert.True(File.Exists(Path.Combine(saveDirectory, "My Playthrough.json")));
+
+            var loaded = ScenarioLoader.LoadFromFile(
+                Path.Combine(saveDirectory, "My Playthrough.json"), allowNonZeroGameTime: true);
+            Assert.NotNull(loaded);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    private static (float x, float y) Center((float X, float Y, float W, float H) local)
+    {
+        float panelLeft = SaveLayout.PanelLeft(1920);
+        float panelTop = SaveLayout.PanelTop(1080);
+        return (panelLeft + local.X + local.W / 2f, panelTop + local.Y + local.H / 2f);
     }
 
     private static string ResolveRealSettingsPath()

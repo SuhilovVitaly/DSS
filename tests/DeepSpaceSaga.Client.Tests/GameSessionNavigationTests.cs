@@ -516,7 +516,7 @@ public class GameSessionNavigationTests
             yield break;
         }
 
-        public ValueTask SaveAsync(CancellationToken cancellationToken = default)
+        public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default)
         {
             return ValueTask.CompletedTask;
         }

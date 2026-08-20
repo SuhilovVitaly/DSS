@@ -11,4 +11,10 @@ public interface IGameSessionFactory
 
     /// <summary>Whether a quicksave file currently exists on disk.</summary>
     bool HasQuickSave();
+
+    /// <summary>List every save slot currently on disk, most recently saved first.</summary>
+    SaveSlotInfo[] ListSaveSlots();
+
+    /// <summary>Delete a save slot's file, if present. No-op if the slot doesn't exist.</summary>
+    void DeleteSaveSlot(string slotId);
 }

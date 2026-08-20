@@ -26,6 +26,10 @@ public class ScreenStackTests
 
         public ScreenEvent OnKeyDown(Key key) => NextKeyEvent ?? ScreenEvent.None;
 
+        public readonly List<char> ReceivedTextInput = new();
+
+        public void OnTextInput(char c) => ReceivedTextInput.Add(c);
+
         public void OnActivated() => ActivatedCount++;
 
         public void OnDeactivated() => DeactivatedCount++;
@@ -187,5 +191,41 @@ public class ScreenStackTests
         stack.SetRoot(root);
 
         Assert.Null(stack.UnderCurrent);
+    }
+
+    [Fact]
+    public void OnTextInput_dispatched_via_Current_reaches_only_the_top_screen()
+    {
+        // Mirrors what SkiaWindow's IKeyboard.KeyChar handler does: forward the char
+        // to _screens.Current.OnTextInput. A screen beneath a modal overlay must not
+        // receive characters typed while the overlay is on top.
+        var stack = new ScreenStack();
+        var root = new TestScreen();
+        var overlay = new TestScreen();
+        stack.SetRoot(root);
+        stack.Push(overlay);
+
+        stack.Current.OnTextInput('a');
+        stack.Current.OnTextInput('b');
+
+        Assert.Equal(['a', 'b'], overlay.ReceivedTextInput);
+        Assert.Empty(root.ReceivedTextInput);
+    }
+
+    [Fact]
+    public void OnTextInput_reaches_new_top_screen_after_pop()
+    {
+        var stack = new ScreenStack();
+        var root = new TestScreen();
+        var overlay = new TestScreen();
+        stack.SetRoot(root);
+        stack.Push(overlay);
+        stack.Current.OnTextInput('x'); // goes to overlay
+
+        stack.Pop();
+        stack.Current.OnTextInput('y'); // now root is current
+
+        Assert.Equal(['x'], overlay.ReceivedTextInput);
+        Assert.Equal(['y'], root.ReceivedTextInput);
     }
 }

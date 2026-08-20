@@ -27,18 +27,20 @@ public static class Program
 
     private sealed class LocalGameSessionFactory : IGameSessionFactory
     {
-        // The only place that knows about Saves/quicksave.json on disk (mirrors Settings.json).
+        // The only place that knows about Saves/ on disk (mirrors Settings.json).
         private static string SettingsPath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
-        private static string SavePath => Path.Combine(AppContext.BaseDirectory, "Saves", "quicksave.json");
+        private static string SaveDirectory => Path.Combine(AppContext.BaseDirectory, "Saves");
+        private static string QuickSavePath =>
+            Path.Combine(SaveDirectory, SaveSlotNaming.ToFileName(SaveSlots.Quicksave));
 
         public IGameSessionConnection CreateSession()
         {
-            return LocalGameSessionConnection.CreateFromSettingsFile(SettingsPath, SavePath);
+            return LocalGameSessionConnection.CreateFromSettingsFile(SettingsPath, SaveDirectory);
         }
 
         public IGameSessionConnection CreateSessionFromSave()
         {
-            var connection = LocalGameSessionConnection.CreateFromSaveFile(SettingsPath, SavePath);
+            var connection = LocalGameSessionConnection.CreateFromSaveFile(SettingsPath, QuickSavePath, SaveDirectory);
 
             // A missing masterSeed here means a legacy save predating it — the engine
             // already generated and is using a fresh one; this is only about surfacing the
@@ -55,7 +57,17 @@ public static class Program
 
         public bool HasQuickSave()
         {
-            return File.Exists(SavePath);
+            return File.Exists(QuickSavePath);
+        }
+
+        public SaveSlotInfo[] ListSaveSlots()
+        {
+            return SaveSlotRepository.ListSlots(SaveDirectory);
+        }
+
+        public void DeleteSaveSlot(string slotId)
+        {
+            SaveSlotRepository.DeleteSlot(SaveDirectory, slotId);
         }
     }
 }

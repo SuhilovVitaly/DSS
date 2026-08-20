@@ -295,6 +295,85 @@ public class ModalPauseTests
     }
 
     [Fact]
+    public void Save_window_pauses_simulation_on_push_and_resumes_on_pop()
+    {
+        // Simulates SkiaWindow.PushModalAsync/PopModalAsync exactly as GameMenu/Settings
+        // are already covered above, but framed around opening the Save window directly
+        // from the GameSession screen (depth 0 -> 1 -> 0).
+        var buffer = new SnapshotBuffer();
+        buffer.CurrentSpeed = SimulationSpeed.Speed2;
+
+        int modalDepth = 0;
+        SimulationSpeed savedSpeed = default;
+
+        // Push Save window (depth 0 -> 1): save speed, pause.
+        if (modalDepth == 0)
+        {
+            savedSpeed = buffer.CurrentSpeed;
+            buffer.CurrentSpeed = SimulationSpeed.Speed0;
+        }
+        modalDepth++;
+
+        Assert.Equal(1, modalDepth);
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+        Assert.Equal(SimulationSpeed.Speed2, savedSpeed);
+
+        // Pop Save window (depth 1 -> 0): restore saved speed.
+        modalDepth--;
+        if (modalDepth == 0)
+        {
+            buffer.CurrentSpeed = savedSpeed;
+        }
+
+        Assert.Equal(0, modalDepth);
+        Assert.Equal(SimulationSpeed.Speed2, buffer.CurrentSpeed);
+    }
+
+    [Fact]
+    public void Save_window_opened_from_GameMenu_nested_modal_depth_still_resumes_original_speed()
+    {
+        // Simulates: Speed2 -> open GameMenu (depth 0->1, pause) -> open Save window on
+        // top of it (depth 1->2, nested, stays paused) -> close Save window (depth 2->1,
+        // still paused, back to GameMenu) -> close GameMenu (depth 1->0, restore Speed2).
+        var buffer = new SnapshotBuffer();
+        buffer.CurrentSpeed = SimulationSpeed.Speed2;
+
+        int modalDepth = 0;
+        var savedSpeed = SimulationSpeed.Speed1;
+
+        // Open GameMenu (depth 0 -> 1): save speed, pause.
+        if (modalDepth == 0)
+        {
+            savedSpeed = buffer.CurrentSpeed;
+            buffer.CurrentSpeed = SimulationSpeed.Speed0;
+        }
+        modalDepth++;
+        Assert.Equal(1, modalDepth);
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+
+        // Open Save window on top of GameMenu (depth 1 -> 2): nested, stays paused.
+        if (modalDepth == 0) { /* not reached */ }
+        modalDepth++;
+        Assert.Equal(2, modalDepth);
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+
+        // Close Save window (depth 2 -> 1): stays paused, back to GameMenu.
+        modalDepth--;
+        if (modalDepth == 0) { /* not reached */ }
+        Assert.Equal(1, modalDepth);
+        Assert.Equal(SimulationSpeed.Speed0, buffer.CurrentSpeed);
+
+        // Close GameMenu (depth 1 -> 0): restores the original speed.
+        modalDepth--;
+        if (modalDepth == 0)
+        {
+            buffer.CurrentSpeed = savedSpeed;
+        }
+        Assert.Equal(0, modalDepth);
+        Assert.Equal(SimulationSpeed.Speed2, buffer.CurrentSpeed);
+    }
+
+    [Fact]
     public void Saved_speed_comes_from_buffer_not_stale_snapshot()
     {
         var buffer = new SnapshotBuffer();

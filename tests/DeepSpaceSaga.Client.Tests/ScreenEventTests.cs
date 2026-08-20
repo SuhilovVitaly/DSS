@@ -2,7 +2,9 @@ using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
+using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
+using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
 using SkiaSharp;
 
@@ -115,10 +117,20 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void GameMenu_Save_click_returns_None()
+    public void GameMenu_Save_click_returns_OpenSaveWindow()
     {
         var screen = new GameMenuScreen();
         var (x, y) = GameButtonCenter(GameMenuLayout.SaveY);
+        TriggerGameRender(screen);
+        Assert.Equal(ScreenEvent.OpenSaveWindow, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void GameMenu_Load_click_returns_None()
+    {
+        // LOAD stays disabled/out of scope for the save-window story.
+        var screen = new GameMenuScreen();
+        var (x, y) = GameButtonCenter(GameMenuLayout.LoadY);
         TriggerGameRender(screen);
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
     }
@@ -392,4 +404,385 @@ public class ScreenEventTests
         Assert.Equal(0, callCount);
     }
 
+    // --- Save tests ---
+
+    private static float SavePanelLeft => SaveLayout.PanelLeft(ScreenWidth);
+    private static float SavePanelTop => SaveLayout.PanelTop(ScreenHeight);
+
+    private static (float x, float y) SaveCenter((float X, float Y, float W, float H) local) =>
+        (SavePanelLeft + local.X + local.W / 2f, SavePanelTop + local.Y + local.H / 2f);
+
+    private static void TriggerSaveRender(IScreen screen)
+    {
+        using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, ScreenWidth, ScreenHeight);
+    }
+
+    private static SaveSlotInfo Slot(string id, string displayName, DateTime savedAtUtc) =>
+        new(id, displayName, savedAtUtc);
+
+    private static SaveScreen NewSaveScreen(
+        IReadOnlyList<SaveSlotInfo>? slots = null,
+        Action<string>? saveSlot = null,
+        Action<string>? deleteSlot = null,
+        Func<long>? nowMs = null)
+    {
+        var currentSlots = slots ?? Array.Empty<SaveSlotInfo>();
+        return new SaveScreen(
+            () => currentSlots,
+            saveSlot ?? (_ => { }),
+            deleteSlot ?? (_ => { }),
+            nowMs);
+    }
+
+    [Fact]
+    public void Save_Close_click_returns_CloseSaveWindow()
+    {
+        var screen = NewSaveScreen();
+        TriggerSaveRender(screen);
+        var (x, y) = SaveCenter(SaveLayout.CloseButtonRect());
+        Assert.Equal(ScreenEvent.CloseSaveWindow, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void Save_Esc_returns_CloseSaveWindow()
+    {
+        var screen = NewSaveScreen();
+        TriggerSaveRender(screen);
+        Assert.Equal(ScreenEvent.CloseSaveWindow, screen.OnKeyDown(Key.Escape));
+    }
+
+    [Fact]
+    public void Save_other_key_returns_None()
+    {
+        var screen = NewSaveScreen();
+        TriggerSaveRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.A));
+    }
+
+    [Fact]
+    public void Save_click_outside_button_returns_None()
+    {
+        var screen = NewSaveScreen();
+        TriggerSaveRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(0, 0));
+    }
+
+    [Fact]
+    public void Save_NewSave_click_activates_name_entry_without_screen_event()
+    {
+        var screen = NewSaveScreen();
+        TriggerSaveRender(screen);
+        var (x, y) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void Save_Esc_while_new_save_active_cancels_without_closing_window()
+    {
+        var screen = NewSaveScreen();
+        TriggerSaveRender(screen);
+
+        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        screen.OnMouseDown(nx, ny); // activate name entry
+
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Escape));
+        // Save window itself is still open — a second Escape now closes it.
+        Assert.Equal(ScreenEvent.CloseSaveWindow, screen.OnKeyDown(Key.Escape));
+    }
+
+    [Fact]
+    public void Save_ConfirmNewSave_with_empty_name_does_not_call_saveSlot()
+    {
+        bool called = false;
+        var screen = NewSaveScreen(saveSlot: _ => called = true);
+        TriggerSaveRender(screen);
+
+        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        screen.OnMouseDown(nx, ny);
+        TriggerSaveRender(screen);
+
+        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
+        var evt = screen.OnMouseDown(cx, cy);
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Save_ConfirmNewSave_with_typed_name_calls_saveSlot_with_that_name()
+    {
+        string? savedName = null;
+        var screen = NewSaveScreen(saveSlot: id => savedName = id);
+        TriggerSaveRender(screen);
+
+        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        screen.OnMouseDown(nx, ny);
+        TriggerSaveRender(screen);
+
+        foreach (char c in "My Save")
+            screen.OnTextInput(c);
+
+        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
+        var evt = screen.OnMouseDown(cx, cy);
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Equal("My Save", savedName);
+    }
+
+    [Fact]
+    public void Save_ConfirmNewSave_reserved_quicksave_name_does_not_call_saveSlot()
+    {
+        // Must be rejected even though "quicksave" is NOT in the current slot list (e.g.
+        // F5 has never been pressed yet) — the reserved-name check is unconditional, not
+        // just a side effect of the ordinary duplicate-in-list check.
+        bool called = false;
+        var screen = NewSaveScreen(saveSlot: _ => called = true);
+        TriggerSaveRender(screen);
+
+        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        screen.OnMouseDown(nx, ny);
+        TriggerSaveRender(screen);
+
+        foreach (char c in "quicksave")
+            screen.OnTextInput(c);
+
+        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
+        var evt = screen.OnMouseDown(cx, cy);
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Save_ConfirmNewSave_reserved_quicksave_name_is_rejected_case_insensitively()
+    {
+        bool called = false;
+        var screen = NewSaveScreen(saveSlot: _ => called = true);
+        TriggerSaveRender(screen);
+
+        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        screen.OnMouseDown(nx, ny);
+        TriggerSaveRender(screen);
+
+        foreach (char c in "QuickSave")
+            screen.OnTextInput(c);
+
+        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
+        screen.OnMouseDown(cx, cy);
+
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Save_ConfirmNewSave_duplicate_name_does_not_call_saveSlot()
+    {
+        bool called = false;
+        var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots, saveSlot: _ => called = true);
+        TriggerSaveRender(screen);
+
+        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        screen.OnMouseDown(nx, ny);
+        TriggerSaveRender(screen);
+
+        foreach (char c in "Existing")
+            screen.OnTextInput(c);
+
+        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
+        screen.OnMouseDown(cx, cy);
+
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Save_CancelNewSave_click_discards_typed_name()
+    {
+        bool called = false;
+        var screen = NewSaveScreen(saveSlot: _ => called = true);
+        TriggerSaveRender(screen);
+
+        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        screen.OnMouseDown(nx, ny);
+        TriggerSaveRender(screen);
+
+        foreach (char c in "Whatever")
+            screen.OnTextInput(c);
+
+        var (canx, cany) = SaveCenter(SaveLayout.CancelButtonRect());
+        var evt = screen.OnMouseDown(canx, cany);
+        TriggerSaveRender(screen);
+
+        Assert.Equal(ScreenEvent.None, evt);
+
+        // Back to collapsed state — clicking NEW SAVE again starts from empty text.
+        var (nx2, ny2) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        screen.OnMouseDown(nx2, ny2);
+        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
+        screen.OnMouseDown(cx, cy); // empty name → rejected, saveSlot still never called
+
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Save_Overwrite_click_calls_saveSlot_with_the_row_SlotId()
+    {
+        string? saved = null;
+        var slots = new[] { Slot("slot-a", "Slot A", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots, saveSlot: id => saved = id);
+        TriggerSaveRender(screen);
+
+        var (x, y) = SaveCenter(SaveLayout.OverwriteButtonRect(0));
+        var evt = screen.OnMouseDown(x, y);
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Equal("slot-a", saved);
+    }
+
+    [Fact]
+    public void Save_Delete_first_click_does_not_delete()
+    {
+        bool called = false;
+        var slots = new[] { Slot("slot-a", "Slot A", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots, deleteSlot: _ => called = true);
+        TriggerSaveRender(screen);
+
+        var (x, y) = SaveCenter(SaveLayout.DeleteButtonRect(0));
+        var evt = screen.OnMouseDown(x, y);
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Save_Delete_second_click_within_window_deletes()
+    {
+        string? deleted = null;
+        long fakeNow = 0;
+        var slots = new[] { Slot("slot-a", "Slot A", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots, deleteSlot: id => deleted = id, nowMs: () => fakeNow);
+        TriggerSaveRender(screen);
+
+        var (x, y) = SaveCenter(SaveLayout.DeleteButtonRect(0));
+        screen.OnMouseDown(x, y); // first click → CONFIRM
+        fakeNow += 500;
+        var evt = screen.OnMouseDown(x, y); // second click within window → deletes
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Equal("slot-a", deleted);
+    }
+
+    [Fact]
+    public void Save_Delete_second_click_after_timeout_does_not_delete()
+    {
+        bool called = false;
+        long fakeNow = 0;
+        var slots = new[] { Slot("slot-a", "Slot A", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots, deleteSlot: _ => called = true, nowMs: () => fakeNow);
+        TriggerSaveRender(screen);
+
+        var (x, y) = SaveCenter(SaveLayout.DeleteButtonRect(0));
+        screen.OnMouseDown(x, y); // first click → CONFIRM
+        fakeNow += 5000; // past the confirm window
+        screen.OnMouseDown(x, y); // treated as a fresh first click, not a delete
+
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Save_Delete_click_elsewhere_clears_confirm_state()
+    {
+        bool called = false;
+        var slots = new[]
+        {
+            Slot("slot-a", "Slot A", DateTime.UtcNow),
+            Slot("slot-b", "Slot B", DateTime.UtcNow)
+        };
+        var screen = NewSaveScreen(slots: slots, deleteSlot: _ => called = true);
+        TriggerSaveRender(screen);
+
+        var (dx, dy) = SaveCenter(SaveLayout.DeleteButtonRect(0));
+        screen.OnMouseDown(dx, dy); // first click on row 0 → CONFIRM
+
+        var (ox, oy) = SaveCenter(SaveLayout.OverwriteButtonRect(1));
+        screen.OnMouseDown(ox, oy); // click elsewhere clears the confirm state
+
+        var evt = screen.OnMouseDown(dx, dy); // this is now a fresh first click again
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Save_Delete_click_on_different_row_clears_previous_confirm_and_arms_new_row()
+    {
+        // Regression for clicking DELETE on a *different* row while another row is
+        // already armed (as opposed to clicking Overwrite on a different row, already
+        // covered by Save_Delete_click_elsewhere_clears_confirm_state above). The single
+        // _deleteConfirmIndex field must be reset to the newly clicked row, not left
+        // pointing at the old one and not treated as that old row's confirming click.
+        string? deleted = null;
+        long fakeNow = 0;
+        var slots = new[]
+        {
+            Slot("slot-a", "Slot A", DateTime.UtcNow),
+            Slot("slot-b", "Slot B", DateTime.UtcNow)
+        };
+        var screen = NewSaveScreen(slots: slots, deleteSlot: id => deleted = id, nowMs: () => fakeNow);
+        TriggerSaveRender(screen);
+
+        var (d0x, d0y) = SaveCenter(SaveLayout.DeleteButtonRect(0));
+        var (d1x, d1y) = SaveCenter(SaveLayout.DeleteButtonRect(1));
+
+        screen.OnMouseDown(d0x, d0y); // first click on row 0 → CONFIRM armed for row 0
+
+        // Clicking DELETE on a different row (row 1) must not delete either row: it's a
+        // fresh first click for row 1, and it must clear row 0's armed state.
+        var evt = screen.OnMouseDown(d1x, d1y);
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Null(deleted);
+
+        // Row 0's arm was cleared by the click above: clicking it again now is a fresh
+        // first click too (not a delete), even though it's within the confirm window.
+        fakeNow += 500;
+        var evtRow0Again = screen.OnMouseDown(d0x, d0y);
+        Assert.Equal(ScreenEvent.None, evtRow0Again);
+        Assert.Null(deleted);
+
+        // Row 1's own arm/confirm cycle still works correctly from a fresh start.
+        fakeNow += 100;
+        screen.OnMouseDown(d1x, d1y); // fresh first click on row 1 (clears row 0's re-arm)
+        fakeNow += 500;
+        var evtRow1Confirm = screen.OnMouseDown(d1x, d1y); // second click within window → deletes
+
+        Assert.Equal(ScreenEvent.None, evtRow1Confirm);
+        Assert.Equal("slot-b", deleted);
+    }
+
+    [Fact]
+    public void Save_NotifySaveCompleted_refreshes_the_slot_list()
+    {
+        // Mirrors what SkiaWindow.SaveToSlotAsync calls once a fire-and-forget New
+        // Save/Overwrite write completes, so the still-open window's list reflects it
+        // without the click itself having blocked for the save's duration.
+        var currentSlots = new List<SaveSlotInfo> { Slot("slot-a", "Slot A", DateTime.UtcNow) };
+        string? saved = null;
+        var screen = new SaveScreen(() => currentSlots, id => saved = id, _ => { });
+        TriggerSaveRender(screen);
+
+        // Before the notify, row index 1 doesn't exist yet — clicking there hits nothing.
+        var (x, y) = SaveCenter(SaveLayout.OverwriteButtonRect(1));
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+        Assert.Null(saved);
+
+        currentSlots.Add(Slot("slot-b", "Slot B", DateTime.UtcNow));
+        var exception = Record.Exception(() => screen.NotifySaveCompleted("slot-b"));
+        Assert.Null(exception);
+        TriggerSaveRender(screen);
+
+        // The newly-appeared row is now clickable, proving RefreshSlots() picked up the update.
+        screen.OnMouseDown(x, y);
+        Assert.Equal("slot-b", saved);
+    }
 }

@@ -12,6 +12,8 @@ public interface IScreen
     ScreenEvent OnMouseWheel(float x, float y, float delta);
     ScreenEvent OnKeyDown(Key key);
     void OnKeyUp(Key key) { }
+    /// <summary>Printable-character input, forwarded from Silk.NET's <c>IKeyboard.KeyChar</c>.</summary>
+    void OnTextInput(char c) { }
     void OnActivated();
     void OnDeactivated();
 }
@@ -27,5 +29,7 @@ public enum ScreenEvent
     QuickSave,
     QuickLoad,
     OpenSettings,
-    CloseSettings
+    CloseSettings,
+    OpenSaveWindow,
+    CloseSaveWindow
 }
