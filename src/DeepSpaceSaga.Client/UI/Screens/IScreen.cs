@@ -36,5 +36,7 @@ public enum ScreenEvent
     CloseLoadWindow,
     LoadSlotRequested,
     OpenFinance,
-    CloseFinance
+    CloseFinance,
+    OpenShip,
+    CloseShip
 }
