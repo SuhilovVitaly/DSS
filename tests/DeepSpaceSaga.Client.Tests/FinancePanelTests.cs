@@ -164,7 +164,7 @@ public class FinanceScreenTests
     }
 
     [Fact]
-    public void Click_outside_close_button_returns_None()
+    public void Click_inside_panel_outside_close_button_returns_None()
     {
         var screen = new FinanceScreen();
         RenderScreen(screen);
@@ -173,6 +173,27 @@ public class FinanceScreenTests
         float py = FinanceLayout.PanelTop(ScreenHeight) + FinanceLayout.PanelHeight / 2f;
 
         var result = screen.OnMouseDown(px, py);
+        Assert.Equal(ScreenEvent.None, result);
+    }
+
+    [Fact]
+    public void Click_outside_panel_returns_CloseFinance()
+    {
+        var screen = new FinanceScreen();
+        RenderScreen(screen);
+
+        // Top-left corner of the screen — well outside the centered panel.
+        var result = screen.OnMouseDown(2f, 2f);
+        Assert.Equal(ScreenEvent.CloseFinance, result);
+    }
+
+    [Fact]
+    public void Right_click_outside_panel_does_not_close()
+    {
+        var screen = new FinanceScreen();
+        RenderScreen(screen);
+
+        var result = screen.OnMouseDown(2f, 2f, MouseButton.Right);
         Assert.Equal(ScreenEvent.None, result);
     }
 }

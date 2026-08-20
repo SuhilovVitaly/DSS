@@ -10,7 +10,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.Finance;
 /// the Money/Trading/StationInventory mechanics it will report on are not yet
 /// implemented in the Engine, so every section shows a "not available yet" line
 /// instead of fabricated numbers. Opened via the bottom-center Finance panel
-/// button or Ctrl+F; closes via the × button or Escape. Pause-on-open/resume-on-close
+/// button or Ctrl+F; closes via the × button, Escape, or a click outside the
+/// panel (on the dimmed background). Pause-on-open/resume-on-close
 /// is handled generically by SkiaWindow's PushModalAsync/PopModalAsync — this
 /// screen has no speed/pause logic of its own.
 /// </summary>
@@ -43,7 +44,14 @@ public sealed class FinanceScreen : IScreen
             return ScreenEvent.None;
 
         var hit = FinanceLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        return hit == FinanceButton.Close ? ScreenEvent.CloseFinance : ScreenEvent.None;
+        if (hit == FinanceButton.Close)
+            return ScreenEvent.CloseFinance;
+
+        // Click on the dimmed background outside the panel also closes it.
+        if (!FinanceLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
+            return ScreenEvent.CloseFinance;
+
+        return ScreenEvent.None;
     }
 
     /// <summary>Convenience shortcut for a left click — kept for existing call sites/tests.</summary>

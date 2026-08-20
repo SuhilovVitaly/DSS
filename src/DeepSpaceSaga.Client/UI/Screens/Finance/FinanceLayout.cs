@@ -38,6 +38,16 @@ public sealed class FinanceLayout
         return (left, top, right, bottom);
     }
 
+    /// <summary>True when (screenX, screenY) lands inside the panel rect (screen space).</summary>
+    public static bool IsInsidePanel(float screenX, float screenY, int screenWidth, int screenHeight)
+    {
+        float panelLeft = PanelLeft(screenWidth);
+        float panelTop = PanelTop(screenHeight);
+
+        return screenX >= panelLeft && screenX <= panelLeft + PanelWidth
+            && screenY >= panelTop && screenY <= panelTop + PanelHeight;
+    }
+
     public static FinanceButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight)
     {
         float panelLeft = PanelLeft(screenWidth);
