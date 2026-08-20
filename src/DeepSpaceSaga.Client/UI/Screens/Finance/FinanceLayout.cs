@@ -7,7 +7,7 @@ public enum FinanceButton
 }
 
 /// <summary>
-/// Layout and hit-test geometry for the Finance overlay panel. 1400×900 is the
+/// Layout and hit-test geometry for the Finance overlay panel. 1700×1200 is the
 /// standard panel size for gameplay-mechanic windows (Docs/FirstRelease/Screens/
 /// ScreenCatalog.md — Station, Trade, Hire, Cargo, Loot, Ship, Character
 /// Communication, Dialog, Finance), distinct from the smaller meta/menu screens
@@ -15,8 +15,8 @@ public enum FinanceButton
 /// </summary>
 public sealed class FinanceLayout
 {
-    public const float PanelWidth = 1400f;
-    public const float PanelHeight = 900f;
+    public const float PanelWidth = 1700f;
+    public const float PanelHeight = 1200f;
 
     public const float TitleY = 50f;
     public const float BodyStartY = 100f;

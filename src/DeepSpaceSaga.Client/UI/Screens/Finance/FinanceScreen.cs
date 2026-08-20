@@ -25,13 +25,13 @@ public sealed class FinanceScreen : IScreen
     private static readonly SKPaint DimPaint = new() { Color = DimColor, Style = SKPaintStyle.Fill };
 
     /// <summary>
-    /// Panel background with title bar, at the exact 1400×900 panel size (ТЗ
+    /// Panel background with title bar, at the exact 1700×1200 panel size (ТЗ
     /// ScreenCatalog.md standard for gameplay-mechanic windows). Loaded once and
     /// shared by every FinanceScreen instance; falls back to MenuStyle.DrawPanel's
     /// plain fill if the file is missing.
     /// </summary>
     private static readonly SKBitmap? BackgroundImage =
-        LoadImage("Images/UI/mechanics-window-background-titlebar-1400x900.png");
+        LoadImage("Images/UI/mechanics-window-background-titlebar-1700x1200.png");
 
     private static SKBitmap? LoadImage(string path)
     {

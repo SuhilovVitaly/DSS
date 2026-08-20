@@ -7,14 +7,14 @@ public enum ShipButton
 }
 
 /// <summary>
-/// Layout and hit-test geometry for the Ship overlay panel. 1400×900 — the
+/// Layout and hit-test geometry for the Ship overlay panel. 1700×1200 — the
 /// standard panel size for gameplay-mechanic windows (Docs/FirstRelease/Screens/
 /// ScreenCatalog.md), same as Finance.
 /// </summary>
 public sealed class ShipLayout
 {
-    public const float PanelWidth = 1400f;
-    public const float PanelHeight = 900f;
+    public const float PanelWidth = 1700f;
+    public const float PanelHeight = 1200f;
 
     public const float TitleY = 50f;
     public const float BodyStartY = 100f;
