@@ -75,6 +75,17 @@ public sealed class LoadScreen : IScreen
         Typeface = MenuStyle.TypefaceRegular
     };
 
+    private static readonly SKPaint _buttonTextPaint = new()
+    {
+        Color = MenuStyle.ColorText,
+        TextSize = MenuStyle.ButtonFontSize,
+        IsAntialias = true,
+        TextAlign = SKTextAlign.Left,
+        Typeface = MenuStyle.TypefaceBold
+    };
+
+    private const float ButtonIconPadding = 6f;
+
     private static readonly SKBitmap? _closeIcon = LoadImage("Images/UI/GameLoadScreen/common.close.png");
     private static readonly SKBitmap? _closeIconActive = LoadImage("Images/UI/GameLoadScreen/common.close.active.png");
     private static readonly SKBitmap? _loadIcon = LoadImage("Images/UI/GameLoadScreen/load.load.png");
@@ -205,7 +216,7 @@ public sealed class LoadScreen : IScreen
         canvas.DrawText("LOAD GAME", cx, pt + LoadLayout.TitleY, MenuStyle.TextTitle);
 
         DrawSlotList(canvas, pl, pt);
-        DrawIconButton(canvas, CombinedRect(pl, pt, LoadLayout.CloseButtonRect()), LoadZone.Close, -1, _closeIcon, _closeIconActive);
+        DrawIconTextButton(canvas, CombinedRect(pl, pt, LoadLayout.CloseButtonRect()), "CLOSE", LoadZone.Close, -1, _closeIcon, _closeIconActive);
     }
 
     private void DrawSlotList(SKCanvas canvas, float panelLeft, float panelTop)
@@ -224,29 +235,48 @@ public sealed class LoadScreen : IScreen
                 slot.SavedAtUtc.ToLocalTime().ToString("g"),
                 rowRect.Left + 10f, rowRect.MidY + 14f, _rowDatePaint);
 
-            DrawIconButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.LoadButtonRect(i)), LoadZone.Load, i, _loadIcon, _loadIconActive);
+            DrawIconTextButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.LoadButtonRect(i)), "LOAD", LoadZone.Load, i, _loadIcon, _loadIconActive);
 
             int absoluteIndex = _scrollOffset + i;
             bool isConfirming = _deleteConfirmIndex == absoluteIndex && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
-            DrawIconButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.DeleteButtonRect(i)), LoadZone.Delete, i,
-                _deleteIcon, _deleteIconActive, forceActive: isConfirming);
+            DrawIconTextButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.DeleteButtonRect(i)),
+                isConfirming ? "CONFIRM?" : "DELETE", LoadZone.Delete, i, _deleteIcon, _deleteIconActive, forceActive: isConfirming);
         }
     }
 
     /// <summary>
-    /// Draws a per-zone icon button: the "active" bitmap (baked-in orange border) when
-    /// hovered on this exact row/zone or when <paramref name="forceActive"/> is set (the
-    /// two-stage delete confirm window, which must read as active even without hover).
+    /// Draws a button combining the previous fill/border/label chrome with an
+    /// <c>Images/UI/GameLoadScreen</c> icon to the left of the label: fill+border swap on
+    /// hover (as before), and the label's icon swaps to its "active" bitmap (baked-in
+    /// orange border) on that same hover or when <paramref name="forceActive"/> is set
+    /// (the two-stage delete confirm window, which must read as active even without
+    /// hover). Icon+label are centered as one group within <paramref name="rect"/>.
     /// <paramref name="rowIndex"/> is -1 for non-row zones (Close), matching the -1
     /// default on <see cref="LoadHit.RowIndex"/> for those zones.
     /// </summary>
-    private void DrawIconButton(
-        SKCanvas canvas, SKRect rect, LoadZone zone, int rowIndex, SKBitmap? normal, SKBitmap? active, bool forceActive = false)
+    private void DrawIconTextButton(
+        SKCanvas canvas, SKRect rect, string text, LoadZone zone, int rowIndex,
+        SKBitmap? iconNormal, SKBitmap? iconActive, bool forceActive = false)
     {
         bool isHovered = _hoveredZone == zone && _hoveredRowIndex == rowIndex;
-        var bitmap = (isHovered || forceActive) ? active : normal;
-        if (bitmap is not null)
-            canvas.DrawBitmap(bitmap, rect);
+
+        canvas.DrawRect(rect, isHovered ? MenuStyle.ButtonFillHover : MenuStyle.ButtonFillNormal);
+        canvas.DrawRect(rect, MenuStyle.ButtonBorder);
+
+        var icon = (isHovered || forceActive) ? iconActive : iconNormal;
+        float iconSize = icon is not null ? rect.Height - ButtonIconPadding * 2f : 0f;
+        float gap = icon is not null ? ButtonIconPadding : 0f;
+        float textWidth = _buttonTextPaint.MeasureText(text);
+        float startX = rect.MidX - (iconSize + gap + textWidth) / 2f;
+
+        if (icon is not null)
+        {
+            var iconRect = new SKRect(startX, rect.MidY - iconSize / 2f, startX + iconSize, rect.MidY + iconSize / 2f);
+            canvas.DrawBitmap(icon, iconRect);
+        }
+
+        float textY = rect.MidY + _buttonTextPaint.TextSize / 3f;
+        canvas.DrawText(text, startX + iconSize + gap, textY, _buttonTextPaint);
     }
 
     private static SKRect CombinedRect(float panelLeft, float panelTop, (float X, float Y, float W, float H) local) =>
