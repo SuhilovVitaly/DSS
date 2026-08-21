@@ -35,6 +35,7 @@ public sealed class SaveScreen : IScreen
     private int _screenHeight;
 
     private SaveZone _hoveredZone = SaveZone.None;
+    private int _hoveredRowIndex = -1;
 
     private static readonly SKPaint _dimPaint = new()
     {
@@ -94,6 +95,7 @@ public sealed class SaveScreen : IScreen
         _nameInput.Clear();
         _deleteConfirmIndex = -1;
         _hoveredZone = SaveZone.None;
+        _hoveredRowIndex = -1;
         RefreshSlots();
     }
 
@@ -215,6 +217,7 @@ public sealed class SaveScreen : IScreen
     {
         var hit = SaveLayout.HitTest(x, y, _screenWidth, _screenHeight, VisibleSlotCount, _isNewSaveActive);
         _hoveredZone = hit.Zone;
+        _hoveredRowIndex = hit.RowIndex;
         return hit.Zone != SaveZone.None;
     }
 
@@ -284,18 +287,18 @@ public sealed class SaveScreen : IScreen
                 slot.SavedAtUtc.ToLocalTime().ToString("g"),
                 rowRect.Left + 10f, rowRect.MidY + 14f, _rowDatePaint);
 
-            DrawButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.OverwriteButtonRect(i)), "OVERWRITE", SaveZone.Overwrite);
+            DrawButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.OverwriteButtonRect(i)), "OVERWRITE", SaveZone.Overwrite, i);
 
             int absoluteIndex = _scrollOffset + i;
             bool isConfirming = _deleteConfirmIndex == absoluteIndex && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
             DrawButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.DeleteButtonRect(i)),
-                isConfirming ? "CONFIRM?" : "DELETE", SaveZone.Delete);
+                isConfirming ? "CONFIRM?" : "DELETE", SaveZone.Delete, i);
         }
     }
 
-    private void DrawButton(SKCanvas canvas, SKRect rect, string text, SaveZone zone)
+    private void DrawButton(SKCanvas canvas, SKRect rect, string text, SaveZone zone, int rowIndex = -1)
     {
-        var state = _hoveredZone == zone ? ButtonState.Hovered : ButtonState.Normal;
+        var state = _hoveredZone == zone && _hoveredRowIndex == rowIndex ? ButtonState.Hovered : ButtonState.Normal;
         MenuStyle.DrawButton(canvas, rect, text, state);
     }
 

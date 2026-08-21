@@ -40,6 +40,7 @@ public sealed class LoadScreen : IScreen
     private int _screenHeight;
 
     private LoadZone _hoveredZone = LoadZone.None;
+    private int _hoveredRowIndex = -1;
 
     /// <summary>
     /// The slot id of the most recent LOAD click that returned
@@ -92,6 +93,7 @@ public sealed class LoadScreen : IScreen
     {
         _deleteConfirmIndex = -1;
         _hoveredZone = LoadZone.None;
+        _hoveredRowIndex = -1;
         RefreshSlots();
     }
 
@@ -162,6 +164,7 @@ public sealed class LoadScreen : IScreen
     {
         var hit = LoadLayout.HitTest(x, y, _screenWidth, _screenHeight, VisibleSlotCount);
         _hoveredZone = hit.Zone;
+        _hoveredRowIndex = hit.RowIndex;
         return hit.Zone != LoadZone.None;
     }
 
@@ -207,18 +210,18 @@ public sealed class LoadScreen : IScreen
                 slot.SavedAtUtc.ToLocalTime().ToString("g"),
                 rowRect.Left + 10f, rowRect.MidY + 14f, _rowDatePaint);
 
-            DrawButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.LoadButtonRect(i)), "LOAD", LoadZone.Load);
+            DrawButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.LoadButtonRect(i)), "LOAD", LoadZone.Load, i);
 
             int absoluteIndex = _scrollOffset + i;
             bool isConfirming = _deleteConfirmIndex == absoluteIndex && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
             DrawButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.DeleteButtonRect(i)),
-                isConfirming ? "CONFIRM?" : "DELETE", LoadZone.Delete);
+                isConfirming ? "CONFIRM?" : "DELETE", LoadZone.Delete, i);
         }
     }
 
-    private void DrawButton(SKCanvas canvas, SKRect rect, string text, LoadZone zone)
+    private void DrawButton(SKCanvas canvas, SKRect rect, string text, LoadZone zone, int rowIndex = -1)
     {
-        var state = _hoveredZone == zone ? ButtonState.Hovered : ButtonState.Normal;
+        var state = _hoveredZone == zone && _hoveredRowIndex == rowIndex ? ButtonState.Hovered : ButtonState.Normal;
         MenuStyle.DrawButton(canvas, rect, text, state);
     }
 
