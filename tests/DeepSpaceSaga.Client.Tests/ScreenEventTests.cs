@@ -596,8 +596,10 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void Save_ConfirmNewSave_duplicate_name_does_not_call_saveSlot()
+    public void Save_ConfirmNewSave_duplicate_name_first_click_arms_overwrite_without_calling_saveSlot()
     {
+        // First SAVE click on a duplicate name only arms the overwrite confirm — it
+        // must not overwrite yet (mirrors the per-row DELETE button's first click).
         bool called = false;
         var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
         var screen = NewSaveScreen(slots: slots, saveSlot: _ => called = true);
@@ -612,6 +614,85 @@ public class ScreenEventTests
 
         var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
         screen.OnMouseDown(cx, cy);
+
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Save_ConfirmNewSave_duplicate_name_second_click_within_window_overwrites()
+    {
+        string? saved = null;
+        long fakeNow = 0;
+        var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots, saveSlot: id => saved = id, nowMs: () => fakeNow);
+        TriggerSaveRender(screen);
+
+        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        screen.OnMouseDown(nx, ny);
+        TriggerSaveRender(screen);
+
+        foreach (char c in "Existing")
+            screen.OnTextInput(c);
+
+        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
+        screen.OnMouseDown(cx, cy); // first click → arms overwrite
+        fakeNow += 500;
+        var evt = screen.OnMouseDown(cx, cy); // second click within window → overwrites
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Equal("Existing", saved);
+    }
+
+    [Fact]
+    public void Save_ConfirmNewSave_duplicate_name_second_click_after_timeout_re_arms_instead_of_overwriting()
+    {
+        bool called = false;
+        long fakeNow = 0;
+        var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots, saveSlot: _ => called = true, nowMs: () => fakeNow);
+        TriggerSaveRender(screen);
+
+        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        screen.OnMouseDown(nx, ny);
+        TriggerSaveRender(screen);
+
+        foreach (char c in "Existing")
+            screen.OnTextInput(c);
+
+        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
+        screen.OnMouseDown(cx, cy); // first click → arms overwrite
+        fakeNow += 5000; // past the confirm window
+        screen.OnMouseDown(cx, cy); // treated as a fresh first click, not an overwrite
+
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Save_CancelNewSave_clears_pending_overwrite_so_reopening_requires_arming_again()
+    {
+        bool called = false;
+        var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots, saveSlot: _ => called = true);
+        TriggerSaveRender(screen);
+
+        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
+        var (canx, cany) = SaveCenter(SaveLayout.CancelButtonRect());
+
+        screen.OnMouseDown(nx, ny); // open name entry
+        TriggerSaveRender(screen);
+        foreach (char c in "Existing")
+            screen.OnTextInput(c);
+        screen.OnMouseDown(cx, cy); // first click → arms overwrite
+
+        screen.OnMouseDown(canx, cany); // cancel discards the armed state
+        TriggerSaveRender(screen);
+
+        screen.OnMouseDown(nx, ny); // reopen name entry
+        TriggerSaveRender(screen);
+        foreach (char c in "Existing")
+            screen.OnTextInput(c);
+        screen.OnMouseDown(cx, cy); // this must be a fresh first click again, not an overwrite
 
         Assert.False(called);
     }
