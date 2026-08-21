@@ -50,8 +50,11 @@ public static class SaveLayout
     public const float RowSpacing = 6f;
     public const int VisibleRows = 6;
 
-    public const float RowButtonWidth = 130f;
-    public const float RowButtonHeight = 36f;
+    // Fixed regardless of label: wide enough for the longest row label ("OVERWRITE",
+    // measured ~96.6px at ButtonFontSize 14 bold) plus icon and padding. Shared by
+    // NewSave/Overwrite/Delete so all three read as one consistent button size.
+    public const float RowButtonWidth = 160f;
+    public const float RowButtonHeight = 40f;
     public const float RowButtonGap = 10f;
 
     public const float CloseButtonWidth = 100f;

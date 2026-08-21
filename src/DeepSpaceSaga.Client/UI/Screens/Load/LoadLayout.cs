@@ -40,8 +40,10 @@ public static class LoadLayout
     public const float RowSpacing = 6f;
     public const int VisibleRows = 8;
 
-    public const float RowButtonWidth = 130f;
-    public const float RowButtonHeight = 36f;
+    // Fixed regardless of label: wide enough for the longest row label ("CONFIRM?",
+    // measured ~83.5px at ButtonFontSize 14 bold) plus icon and padding.
+    public const float RowButtonWidth = 150f;
+    public const float RowButtonHeight = 40f;
     public const float RowButtonGap = 10f;
 
     public const float CloseButtonWidth = 100f;
