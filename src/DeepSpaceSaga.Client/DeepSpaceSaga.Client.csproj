@@ -217,6 +217,9 @@
     <None Update="Images\UI\GameLoadScreen\*.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Images\UI\GameSaveScreen\*.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

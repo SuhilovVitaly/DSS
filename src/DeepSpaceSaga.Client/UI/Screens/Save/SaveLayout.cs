@@ -39,7 +39,6 @@ public static class SaveLayout
 
     public const float NewSaveRowY = 90f;
     public const float NewSaveRowHeight = 44f;
-    public const float NewSaveButtonWidth = 200f;
 
     public const float NameInputWidth = 300f;
     public const float NameConfirmButtonWidth = 90f;
@@ -51,13 +50,12 @@ public static class SaveLayout
     public const float RowSpacing = 6f;
     public const int VisibleRows = 6;
 
-    public const float RowButtonWidth = 100f;
-    public const float RowButtonHeight = 36f;
+    public const float RowButtonWidth = 40f;
+    public const float RowButtonHeight = 40f;
     public const float RowButtonGap = 10f;
 
-    public const float CloseButtonWidth = 188f;
-    public const float CloseButtonHeight = 58f;
-    public const float CloseButtonY = PanelHeight - 80f;
+    public const float CloseButtonSize = 32f;
+    public const float CloseButtonMargin = 16f;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
@@ -88,7 +86,7 @@ public static class SaveLayout
     }
 
     public static (float X, float Y, float W, float H) NewSaveButtonRect() =>
-        (Margin, NewSaveRowY, NewSaveButtonWidth, NewSaveRowHeight);
+        (Margin, NewSaveRowY + (NewSaveRowHeight - RowButtonHeight) / 2f, RowButtonWidth, RowButtonHeight);
 
     public static (float X, float Y, float W, float H) NameInputRect() =>
         (Margin, NewSaveRowY, NameInputWidth, NewSaveRowHeight);
@@ -105,8 +103,9 @@ public static class SaveLayout
         return (confirm.X + confirm.W + NameFieldGap, NewSaveRowY, NameCancelButtonWidth, NewSaveRowHeight);
     }
 
+    /// <summary>Top-right corner of the panel, matching a title-bar close icon.</summary>
     public static (float X, float Y, float W, float H) CloseButtonRect() =>
-        ((PanelWidth - CloseButtonWidth) / 2f, CloseButtonY, CloseButtonWidth, CloseButtonHeight);
+        (PanelWidth - CloseButtonMargin - CloseButtonSize, CloseButtonMargin, CloseButtonSize, CloseButtonSize);
 
     /// <summary>
     /// Hit-tests a click at screen coordinates. <paramref name="visibleSlotCount"/> is the

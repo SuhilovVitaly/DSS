@@ -7,8 +7,11 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Save;
 
 /// <summary>
-/// Modal overlay listing save slots, with New Save / Overwrite / Delete actions.
-/// Mirrors <see cref="Settings.SettingsScreen"/>'s dim-background overlay pattern.
+/// Modal overlay listing save slots, with New Save / Overwrite / two-stage DELETE icon
+/// actions (Images/UI/GameSaveScreen) and a CLOSE icon in the panel's top-right corner.
+/// The name-entry SAVE/CANCEL row (shown after New Save is clicked) has no icon assets
+/// and stays text-based. Mirrors <see cref="Settings.SettingsScreen"/>'s dim-background
+/// overlay pattern.
 /// <see cref="saveSlot"/>/<see cref="deleteSlot"/> are injected by the caller (SkiaWindow),
 /// bound to <c>_session.SaveAsync</c>/<c>_sessionFactory.DeleteSaveSlot</c> — this class
 /// has no knowledge of the session/factory types, keeping it independently testable.
@@ -69,6 +72,21 @@ public sealed class SaveScreen : IScreen
         TextAlign = SKTextAlign.Left,
         Typeface = MenuStyle.TypefaceRegular
     };
+
+    private static readonly SKBitmap? _closeIcon = LoadImage("Images/UI/GameSaveScreen/common.close.png");
+    private static readonly SKBitmap? _closeIconActive = LoadImage("Images/UI/GameSaveScreen/common.close.active.png");
+    private static readonly SKBitmap? _newSaveIcon = LoadImage("Images/UI/GameSaveScreen/save.new.png");
+    private static readonly SKBitmap? _newSaveIconActive = LoadImage("Images/UI/GameSaveScreen/save.new.active.png");
+    private static readonly SKBitmap? _overwriteIcon = LoadImage("Images/UI/GameSaveScreen/save.overwrite.png");
+    private static readonly SKBitmap? _overwriteIconActive = LoadImage("Images/UI/GameSaveScreen/save.overwrite.active.png");
+    private static readonly SKBitmap? _deleteIcon = LoadImage("Images/UI/GameSaveScreen/save.delete.png");
+    private static readonly SKBitmap? _deleteIconActive = LoadImage("Images/UI/GameSaveScreen/save.delete.active.png");
+
+    private static SKBitmap? LoadImage(string path)
+    {
+        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
+        catch { return null; }
+    }
 
     /// <param name="listSlots">Enumerates every save slot on disk. Called at construction and after every mutating action.</param>
     /// <param name="saveSlot">Create/overwrite a slot by id (New Save and per-row Overwrite).</param>
@@ -245,7 +263,7 @@ public sealed class SaveScreen : IScreen
 
         DrawNewSaveRow(canvas, pl, pt);
         DrawSlotList(canvas, pl, pt);
-        DrawButton(canvas, CombinedRect(pl, pt, SaveLayout.CloseButtonRect()), "CLOSE", SaveZone.Close);
+        DrawIconButton(canvas, CombinedRect(pl, pt, SaveLayout.CloseButtonRect()), SaveZone.Close, -1, _closeIcon, _closeIconActive);
     }
 
     private void DrawNewSaveRow(SKCanvas canvas, float panelLeft, float panelTop)
@@ -267,7 +285,7 @@ public sealed class SaveScreen : IScreen
         }
         else
         {
-            DrawButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.NewSaveButtonRect()), "NEW SAVE", SaveZone.NewSave);
+            DrawIconButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.NewSaveButtonRect()), SaveZone.NewSave, -1, _newSaveIcon, _newSaveIconActive);
         }
     }
 
@@ -287,13 +305,29 @@ public sealed class SaveScreen : IScreen
                 slot.SavedAtUtc.ToLocalTime().ToString("g"),
                 rowRect.Left + 10f, rowRect.MidY + 14f, _rowDatePaint);
 
-            DrawButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.OverwriteButtonRect(i)), "OVERWRITE", SaveZone.Overwrite, i);
+            DrawIconButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.OverwriteButtonRect(i)), SaveZone.Overwrite, i, _overwriteIcon, _overwriteIconActive);
 
             int absoluteIndex = _scrollOffset + i;
             bool isConfirming = _deleteConfirmIndex == absoluteIndex && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
-            DrawButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.DeleteButtonRect(i)),
-                isConfirming ? "CONFIRM?" : "DELETE", SaveZone.Delete, i);
+            DrawIconButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.DeleteButtonRect(i)), SaveZone.Delete, i,
+                _deleteIcon, _deleteIconActive, forceActive: isConfirming);
         }
+    }
+
+    /// <summary>
+    /// Draws a per-zone icon button: the "active" bitmap (baked-in orange border) when
+    /// hovered on this exact row/zone or when <paramref name="forceActive"/> is set (the
+    /// two-stage delete confirm window, which must read as active even without hover).
+    /// <paramref name="rowIndex"/> is -1 for non-row zones (NewSave, Close), matching the
+    /// -1 default on <see cref="SaveHit.RowIndex"/> for those zones.
+    /// </summary>
+    private void DrawIconButton(
+        SKCanvas canvas, SKRect rect, SaveZone zone, int rowIndex, SKBitmap? normal, SKBitmap? active, bool forceActive = false)
+    {
+        bool isHovered = _hoveredZone == zone && _hoveredRowIndex == rowIndex;
+        var bitmap = (isHovered || forceActive) ? active : normal;
+        if (bitmap is not null)
+            canvas.DrawBitmap(bitmap, rect);
     }
 
     private void DrawButton(SKCanvas canvas, SKRect rect, string text, SaveZone zone, int rowIndex = -1)
