@@ -816,9 +816,11 @@ public sealed class SkiaWindow : IDisposable
     /// alongside it, see <see cref="OnMouseDown(IMouse, MouseButton)"/>) so the actual
     /// session swap runs inside <see cref="HandleScreenEvent"/>'s <see cref="_transitionLock"/>
     /// like every other operation that disposes/replaces <see cref="_session"/>.
-    /// The reserved quicksave slot is filtered out of the list here exactly like
-    /// <see cref="OpenSaveWindowAsync"/> does, so a player can never load/delete it from
-    /// this window and silently interfere with F9 quickload.
+    /// Unlike <see cref="OpenSaveWindowAsync"/>, the reserved quicksave slot is NOT
+    /// filtered out of the list here — a player must be able to load their last
+    /// quicksave from this window. <see cref="LoadScreen"/> itself refuses to delete it
+    /// (no DELETE button on that row, and the click handler no-ops on it), so it can
+    /// never be removed here and silently break F9 quickload/F5 quicksave.
     /// </summary>
     private async Task OpenLoadWindowAsync()
     {
@@ -827,7 +829,7 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         var loadScreen = new LoadScreen(
-            () => SaveSlots.ExcludeReserved(_sessionFactory.ListSaveSlots()),
+            () => _sessionFactory.ListSaveSlots(),
             DeleteSaveSlotSafely);
 
         await PushModalAsync(loadScreen);

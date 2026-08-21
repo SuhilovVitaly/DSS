@@ -1019,10 +1019,11 @@ public class ScreenEventTests
     [Fact]
     public void Load_reserved_quicksave_slot_is_not_shown_when_caller_excludes_it()
     {
-        // LoadScreen itself has no knowledge of the reserved slot id — it only ever sees
-        // whatever listSlots returns, so this proves the row-click flow behaves correctly
-        // once the caller (mirroring SkiaWindow.OpenLoadWindowAsync's use of
-        // SaveSlots.ExcludeReserved) has already filtered it out.
+        // LoadScreen doesn't require the caller to include the reserved slot — if it
+        // happens to be pre-filtered out, row-click indexing still behaves correctly.
+        // (In production, SkiaWindow.OpenLoadWindowAsync no longer filters it out — see
+        // the quicksave-protection tests below — but LoadScreen still checks the id
+        // directly to protect it from deletion regardless of what the caller passes.)
         var slots = SaveSlots.ExcludeReserved(new[]
         {
             Slot(SaveSlots.Quicksave, "Quicksave", DateTime.UtcNow),
@@ -1040,6 +1041,42 @@ public class ScreenEventTests
         // Row index 1 doesn't exist — the reserved slot was excluded before construction.
         var (x1, y1) = LoadCenter(LoadLayout.LoadButtonRect(1));
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x1, y1));
+    }
+
+    [Fact]
+    public void Load_quicksave_slot_is_shown_and_can_be_loaded()
+    {
+        var slots = new[]
+        {
+            Slot(SaveSlots.Quicksave, "quicksave", DateTime.UtcNow),
+            Slot("slot-a", "Slot A", DateTime.UtcNow)
+        };
+        var screen = NewLoadScreen(slots: slots);
+        TriggerLoadRender(screen);
+
+        var (x, y) = LoadCenter(LoadLayout.LoadButtonRect(0));
+        var evt = screen.OnMouseDown(x, y);
+
+        Assert.Equal(ScreenEvent.LoadSlotRequested, evt);
+        Assert.Equal(SaveSlots.Quicksave, screen.LastRequestedSlotId);
+    }
+
+    [Fact]
+    public void Load_quicksave_slot_delete_click_is_a_no_op_even_after_two_clicks()
+    {
+        bool called = false;
+        long fakeNow = 0;
+        var slots = new[] { Slot(SaveSlots.Quicksave, "quicksave", DateTime.UtcNow) };
+        var screen = NewLoadScreen(slots: slots, deleteSlot: _ => called = true, nowMs: () => fakeNow);
+        TriggerLoadRender(screen);
+
+        var (x, y) = LoadCenter(LoadLayout.DeleteButtonRect(0));
+        screen.OnMouseDown(x, y); // would arm CONFIRM for an ordinary slot
+        fakeNow += 500;
+        var evt = screen.OnMouseDown(x, y); // would delete an ordinary slot on this second click
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.False(called);
     }
 
     [Fact]

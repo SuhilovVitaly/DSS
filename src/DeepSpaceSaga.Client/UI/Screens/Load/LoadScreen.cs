@@ -12,6 +12,11 @@ namespace DeepSpaceSaga.Client.UI.Screens.Load;
 /// Structural port of <see cref="Save.SaveScreen"/> (dim overlay, panel, scrollable row
 /// list, pure <see cref="LoadLayout.HitTest"/> geometry), minus the New Save/Overwrite/
 /// text-input machinery Load has no use for.
+/// Unlike Save (which excludes the reserved <see cref="SaveSlots.Quicksave"/> slot from
+/// its list entirely), Load shows it — a player must be able to load their last
+/// quicksave from here — but it is never deletable: its row renders with no DELETE
+/// button and a Delete click on it is a no-op, both checked directly against
+/// <see cref="SaveSlotInfo.SlotId"/> rather than relying on the caller to filter it out.
 /// <see cref="_deleteSlot"/> is injected by the caller (SkiaWindow), bound to
 /// <c>_sessionFactory.DeleteSaveSlot</c> — this class has no knowledge of the factory type.
 /// Loading itself is NOT fire-and-forget from here: a LOAD click returns
@@ -160,6 +165,9 @@ public sealed class LoadScreen : IScreen
                 if (index < 0 || index >= _slots.Count)
                     return ScreenEvent.None;
 
+                if (_slots[index].SlotId == SaveSlots.Quicksave)
+                    return ScreenEvent.None; // protected slot — never deletable from here
+
                 bool isConfirmedSecondClick =
                     _deleteConfirmIndex == index && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
 
@@ -250,10 +258,13 @@ public sealed class LoadScreen : IScreen
 
             DrawIconTextButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.LoadButtonRect(i)), "LOAD", LoadZone.Load, i, _loadIcon, _loadIconActive);
 
-            int absoluteIndex = _scrollOffset + i;
-            bool isConfirming = _deleteConfirmIndex == absoluteIndex && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
-            DrawIconTextButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.DeleteButtonRect(i)),
-                isConfirming ? "CONFIRM?" : "DELETE", LoadZone.Delete, i, _deleteIcon, _deleteIconActive, forceActive: isConfirming);
+            if (slot.SlotId != SaveSlots.Quicksave)
+            {
+                int absoluteIndex = _scrollOffset + i;
+                bool isConfirming = _deleteConfirmIndex == absoluteIndex && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
+                DrawIconTextButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.DeleteButtonRect(i)),
+                    isConfirming ? "CONFIRM?" : "DELETE", LoadZone.Delete, i, _deleteIcon, _deleteIconActive, forceActive: isConfirming);
+            }
         }
     }
 
