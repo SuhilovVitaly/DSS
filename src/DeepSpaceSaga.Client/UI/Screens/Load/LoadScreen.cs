@@ -250,7 +250,9 @@ public sealed class LoadScreen : IScreen
     /// hover (as before), and the label's icon swaps to its "active" bitmap (baked-in
     /// orange border) on that same hover or when <paramref name="forceActive"/> is set
     /// (the two-stage delete confirm window, which must read as active even without
-    /// hover). Icon+label are centered as one group within <paramref name="rect"/>.
+    /// hover). The icon is pinned to the button's left edge (fixed-width buttons, so a
+    /// centered icon+label group would drift depending on label length); the label
+    /// follows immediately after it.
     /// <paramref name="rowIndex"/> is -1 for non-row zones (Close), matching the -1
     /// default on <see cref="LoadHit.RowIndex"/> for those zones.
     /// </summary>
@@ -266,17 +268,17 @@ public sealed class LoadScreen : IScreen
         var icon = (isHovered || forceActive) ? iconActive : iconNormal;
         float iconSize = icon is not null ? rect.Height - ButtonIconPadding * 2f : 0f;
         float gap = icon is not null ? ButtonIconPadding : 0f;
-        float textWidth = _buttonTextPaint.MeasureText(text);
-        float startX = rect.MidX - (iconSize + gap + textWidth) / 2f;
+        float textX = rect.Left + ButtonIconPadding + iconSize + gap;
 
         if (icon is not null)
         {
-            var iconRect = new SKRect(startX, rect.MidY - iconSize / 2f, startX + iconSize, rect.MidY + iconSize / 2f);
+            var iconRect = new SKRect(rect.Left + ButtonIconPadding, rect.MidY - iconSize / 2f,
+                rect.Left + ButtonIconPadding + iconSize, rect.MidY + iconSize / 2f);
             canvas.DrawBitmap(icon, iconRect);
         }
 
         float textY = rect.MidY + _buttonTextPaint.TextSize / 3f;
-        canvas.DrawText(text, startX + iconSize + gap, textY, _buttonTextPaint);
+        canvas.DrawText(text, textX, textY, _buttonTextPaint);
     }
 
     private static SKRect CombinedRect(float panelLeft, float panelTop, (float X, float Y, float W, float H) local) =>
