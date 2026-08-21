@@ -7,10 +7,11 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Load;
 
 /// <summary>
-/// Modal overlay listing save slots, with LOAD / two-stage DELETE actions per row.
+/// Modal overlay listing save slots, with LOAD / two-stage DELETE icon actions per row
+/// (Images/UI/GameLoadScreen) and a CLOSE icon in the panel's top-right corner.
 /// Structural port of <see cref="Save.SaveScreen"/> (dim overlay, panel, scrollable row
-/// list, <c>MenuStyle</c> hover states, pure <see cref="LoadLayout.HitTest"/> geometry),
-/// minus the New Save/Overwrite/text-input machinery Load has no use for.
+/// list, pure <see cref="LoadLayout.HitTest"/> geometry), minus the New Save/Overwrite/
+/// text-input machinery Load has no use for.
 /// <see cref="_deleteSlot"/> is injected by the caller (SkiaWindow), bound to
 /// <c>_sessionFactory.DeleteSaveSlot</c> — this class has no knowledge of the factory type.
 /// Loading itself is NOT fire-and-forget from here: a LOAD click returns
@@ -73,6 +74,19 @@ public sealed class LoadScreen : IScreen
         TextAlign = SKTextAlign.Left,
         Typeface = MenuStyle.TypefaceRegular
     };
+
+    private static readonly SKBitmap? _closeIcon = LoadImage("Images/UI/GameLoadScreen/common.close.png");
+    private static readonly SKBitmap? _closeIconActive = LoadImage("Images/UI/GameLoadScreen/common.close.active.png");
+    private static readonly SKBitmap? _loadIcon = LoadImage("Images/UI/GameLoadScreen/load.load.png");
+    private static readonly SKBitmap? _loadIconActive = LoadImage("Images/UI/GameLoadScreen/load.load.active.png");
+    private static readonly SKBitmap? _deleteIcon = LoadImage("Images/UI/GameLoadScreen/load.delete.png");
+    private static readonly SKBitmap? _deleteIconActive = LoadImage("Images/UI/GameLoadScreen/load.delete.active.png");
+
+    private static SKBitmap? LoadImage(string path)
+    {
+        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
+        catch { return null; }
+    }
 
     /// <param name="listSlots">Enumerates every save slot on disk. Called at construction and after every mutating action.</param>
     /// <param name="deleteSlot">Delete a slot by id (second click of the two-stage per-row Delete button).</param>
@@ -191,7 +205,7 @@ public sealed class LoadScreen : IScreen
         canvas.DrawText("LOAD GAME", cx, pt + LoadLayout.TitleY, MenuStyle.TextTitle);
 
         DrawSlotList(canvas, pl, pt);
-        DrawButton(canvas, CombinedRect(pl, pt, LoadLayout.CloseButtonRect()), "CLOSE", LoadZone.Close);
+        DrawIconButton(canvas, CombinedRect(pl, pt, LoadLayout.CloseButtonRect()), LoadZone.Close, -1, _closeIcon, _closeIconActive);
     }
 
     private void DrawSlotList(SKCanvas canvas, float panelLeft, float panelTop)
@@ -210,19 +224,29 @@ public sealed class LoadScreen : IScreen
                 slot.SavedAtUtc.ToLocalTime().ToString("g"),
                 rowRect.Left + 10f, rowRect.MidY + 14f, _rowDatePaint);
 
-            DrawButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.LoadButtonRect(i)), "LOAD", LoadZone.Load, i);
+            DrawIconButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.LoadButtonRect(i)), LoadZone.Load, i, _loadIcon, _loadIconActive);
 
             int absoluteIndex = _scrollOffset + i;
             bool isConfirming = _deleteConfirmIndex == absoluteIndex && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
-            DrawButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.DeleteButtonRect(i)),
-                isConfirming ? "CONFIRM?" : "DELETE", LoadZone.Delete, i);
+            DrawIconButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.DeleteButtonRect(i)), LoadZone.Delete, i,
+                _deleteIcon, _deleteIconActive, forceActive: isConfirming);
         }
     }
 
-    private void DrawButton(SKCanvas canvas, SKRect rect, string text, LoadZone zone, int rowIndex = -1)
+    /// <summary>
+    /// Draws a per-zone icon button: the "active" bitmap (baked-in orange border) when
+    /// hovered on this exact row/zone or when <paramref name="forceActive"/> is set (the
+    /// two-stage delete confirm window, which must read as active even without hover).
+    /// <paramref name="rowIndex"/> is -1 for non-row zones (Close), matching the -1
+    /// default on <see cref="LoadHit.RowIndex"/> for those zones.
+    /// </summary>
+    private void DrawIconButton(
+        SKCanvas canvas, SKRect rect, LoadZone zone, int rowIndex, SKBitmap? normal, SKBitmap? active, bool forceActive = false)
     {
-        var state = _hoveredZone == zone && _hoveredRowIndex == rowIndex ? ButtonState.Hovered : ButtonState.Normal;
-        MenuStyle.DrawButton(canvas, rect, text, state);
+        bool isHovered = _hoveredZone == zone && _hoveredRowIndex == rowIndex;
+        var bitmap = (isHovered || forceActive) ? active : normal;
+        if (bitmap is not null)
+            canvas.DrawBitmap(bitmap, rect);
     }
 
     private static SKRect CombinedRect(float panelLeft, float panelTop, (float X, float Y, float W, float H) local) =>
