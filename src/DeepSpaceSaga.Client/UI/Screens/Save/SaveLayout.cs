@@ -61,6 +61,10 @@ public static class SaveLayout
     public const float CloseButtonHeight = 32f;
     public const float CloseButtonMargin = 16f;
 
+    public const float ScrollbarWidth = 6f;
+    public const float ScrollbarGap = 10f;
+    public const float ScrollbarThumbMinHeight = 20f;
+
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
 
@@ -110,6 +114,33 @@ public static class SaveLayout
     /// <summary>Top-right corner of the panel, matching a title-bar close button.</summary>
     public static (float X, float Y, float W, float H) CloseButtonRect() =>
         (PanelWidth - CloseButtonMargin - CloseButtonWidth, CloseButtonMargin, CloseButtonWidth, CloseButtonHeight);
+
+    /// <summary>
+    /// Vertical track spanning the full visible row list, in the right margin strip just
+    /// past where the row buttons end (<see cref="RowRect"/>'s right edge is
+    /// <c>PanelWidth - Margin</c>, well clear of this). Only meaningful — and only drawn
+    /// by the caller — when there are more slots than <see cref="VisibleRows"/>.
+    /// </summary>
+    public static (float X, float Y, float W, float H) ScrollbarTrackRect() =>
+        (PanelWidth - Margin + ScrollbarGap, ListTop, ScrollbarWidth, VisibleRows * RowHeight - RowSpacing);
+
+    /// <summary>
+    /// Thumb position/size within <see cref="ScrollbarTrackRect"/> for the given scroll
+    /// state. <paramref name="totalSlotCount"/> must be greater than <see cref="VisibleRows"/>
+    /// (the caller only renders the scrollbar in that case); <paramref name="scrollOffset"/>
+    /// is the same 0..(totalSlotCount-VisibleRows) value the screen clamps in OnMouseWheel.
+    /// </summary>
+    public static (float X, float Y, float W, float H) ScrollbarThumbRect(int scrollOffset, int totalSlotCount)
+    {
+        var track = ScrollbarTrackRect();
+        float thumbHeight = Math.Max(ScrollbarThumbMinHeight, track.H * VisibleRows / totalSlotCount);
+
+        int maxOffset = totalSlotCount - VisibleRows;
+        float travel = track.H - thumbHeight;
+        float thumbY = track.Y + (maxOffset > 0 ? travel * scrollOffset / maxOffset : 0f);
+
+        return (track.X, thumbY, track.W, thumbHeight);
+    }
 
     /// <summary>
     /// Hit-tests a click at screen coordinates. <paramref name="visibleSlotCount"/> is the

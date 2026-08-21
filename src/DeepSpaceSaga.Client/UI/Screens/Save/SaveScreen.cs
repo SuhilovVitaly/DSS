@@ -274,7 +274,20 @@ public sealed class SaveScreen : IScreen
 
         DrawNewSaveRow(canvas, pl, pt);
         DrawSlotList(canvas, pl, pt);
+        if (_slots.Count > SaveLayout.VisibleRows)
+            DrawScrollbar(canvas, pl, pt);
         DrawIconTextButton(canvas, CombinedRect(pl, pt, SaveLayout.CloseButtonRect()), "CLOSE", SaveZone.Close, -1, _closeIcon, _closeIconActive);
+    }
+
+    /// <summary>Only rendered when the slot list overflows <see cref="SaveLayout.VisibleRows"/>; scrolling itself works via <see cref="OnMouseWheel"/> regardless.</summary>
+    private void DrawScrollbar(SKCanvas canvas, float panelLeft, float panelTop)
+    {
+        var track = CombinedRect(panelLeft, panelTop, SaveLayout.ScrollbarTrackRect());
+        canvas.DrawRect(track, MenuStyle.ButtonFillNormal);
+        canvas.DrawRect(track, MenuStyle.ButtonBorder);
+
+        var thumb = CombinedRect(panelLeft, panelTop, SaveLayout.ScrollbarThumbRect(_scrollOffset, _slots.Count));
+        canvas.DrawRect(thumb, MenuStyle.ButtonFillHover);
     }
 
     private void DrawNewSaveRow(SKCanvas canvas, float panelLeft, float panelTop)

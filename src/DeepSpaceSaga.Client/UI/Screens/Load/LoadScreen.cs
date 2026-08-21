@@ -216,7 +216,20 @@ public sealed class LoadScreen : IScreen
         canvas.DrawText("LOAD GAME", cx, pt + LoadLayout.TitleY, MenuStyle.TextTitle);
 
         DrawSlotList(canvas, pl, pt);
+        if (_slots.Count > LoadLayout.VisibleRows)
+            DrawScrollbar(canvas, pl, pt);
         DrawIconTextButton(canvas, CombinedRect(pl, pt, LoadLayout.CloseButtonRect()), "CLOSE", LoadZone.Close, -1, _closeIcon, _closeIconActive);
+    }
+
+    /// <summary>Only rendered when the slot list overflows <see cref="LoadLayout.VisibleRows"/>; scrolling itself works via <see cref="OnMouseWheel"/> regardless.</summary>
+    private void DrawScrollbar(SKCanvas canvas, float panelLeft, float panelTop)
+    {
+        var track = CombinedRect(panelLeft, panelTop, LoadLayout.ScrollbarTrackRect());
+        canvas.DrawRect(track, MenuStyle.ButtonFillNormal);
+        canvas.DrawRect(track, MenuStyle.ButtonBorder);
+
+        var thumb = CombinedRect(panelLeft, panelTop, LoadLayout.ScrollbarThumbRect(_scrollOffset, _slots.Count));
+        canvas.DrawRect(thumb, MenuStyle.ButtonFillHover);
     }
 
     private void DrawSlotList(SKCanvas canvas, float panelLeft, float panelTop)

@@ -100,4 +100,48 @@ public class LoadLayoutTests
         Assert.Equal(SaveLayout.RowButtonWidth, LoadLayout.RowButtonWidth);
         Assert.Equal(SaveLayout.RowButtonHeight, LoadLayout.RowButtonHeight);
     }
+
+    // --- Scrollbar geometry (shown only when slots.Count > VisibleRows) ---
+
+    [Fact]
+    public void ScrollbarThumb_at_top_when_scrollOffset_is_zero()
+    {
+        var track = LoadLayout.ScrollbarTrackRect();
+        var thumb = LoadLayout.ScrollbarThumbRect(scrollOffset: 0, totalSlotCount: LoadLayout.VisibleRows + 5);
+        Assert.Equal(track.Y, thumb.Y);
+    }
+
+    [Fact]
+    public void ScrollbarThumb_at_bottom_when_scrollOffset_is_maxOffset()
+    {
+        int total = LoadLayout.VisibleRows + 5;
+        int maxOffset = total - LoadLayout.VisibleRows;
+        var track = LoadLayout.ScrollbarTrackRect();
+        var thumb = LoadLayout.ScrollbarThumbRect(scrollOffset: maxOffset, totalSlotCount: total);
+        Assert.Equal(track.Y + track.H - thumb.H, thumb.Y, precision: 3);
+    }
+
+    [Fact]
+    public void ScrollbarThumb_shrinks_as_totalSlotCount_grows()
+    {
+        var thumbFewExtra = LoadLayout.ScrollbarThumbRect(scrollOffset: 0, totalSlotCount: LoadLayout.VisibleRows + 1);
+        var thumbManyExtra = LoadLayout.ScrollbarThumbRect(scrollOffset: 0, totalSlotCount: LoadLayout.VisibleRows + 50);
+        Assert.True(thumbManyExtra.H < thumbFewExtra.H);
+    }
+
+    [Fact]
+    public void ScrollbarThumb_never_shrinks_below_minimum_height()
+    {
+        var thumb = LoadLayout.ScrollbarThumbRect(scrollOffset: 0, totalSlotCount: LoadLayout.VisibleRows + 500);
+        Assert.True(thumb.H >= LoadLayout.ScrollbarThumbMinHeight);
+    }
+
+    [Fact]
+    public void ScrollbarTrack_does_not_overlap_row_buttons()
+    {
+        // The track sits in the right margin strip, clear of where DeleteButtonRect ends.
+        var track = LoadLayout.ScrollbarTrackRect();
+        var deleteButton = LoadLayout.DeleteButtonRect(0);
+        Assert.True(track.X >= deleteButton.X + deleteButton.W);
+    }
 }

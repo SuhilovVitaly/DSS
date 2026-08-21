@@ -806,6 +806,44 @@ public class ScreenEventTests
         Assert.Equal("slot-b", saved);
     }
 
+    [Fact]
+    public void Save_MouseWheel_scrolls_row_zero_through_overflowing_slots_and_clamps_at_both_ends()
+    {
+        int extra = 3;
+        var slots = Enumerable.Range(0, SaveLayout.VisibleRows + extra)
+            .Select(i => Slot($"slot-{i}", $"Slot {i}", DateTime.UtcNow))
+            .ToArray();
+
+        var (ox, oy) = SaveCenter(SaveLayout.OverwriteButtonRect(0));
+
+        string? saved = null;
+        var screenWithCallback = NewSaveScreen(slots: slots, saveSlot: id => saved = id);
+        TriggerSaveRender(screenWithCallback);
+
+        screenWithCallback.OnMouseDown(ox, oy);
+        Assert.Equal("slot-0", saved);
+
+        for (int i = 0; i < extra; i++)
+            screenWithCallback.OnMouseWheel(0, 0, -1); // scroll down one row at a time
+
+        TriggerSaveRender(screenWithCallback);
+        screenWithCallback.OnMouseDown(ox, oy);
+        Assert.Equal($"slot-{extra}", saved);
+
+        // Further downward scrolling past the last row is clamped, not out of range.
+        screenWithCallback.OnMouseWheel(0, 0, -1);
+        TriggerSaveRender(screenWithCallback);
+        screenWithCallback.OnMouseDown(ox, oy);
+        Assert.Equal($"slot-{extra}", saved);
+
+        // Scrolling back up returns to (and clamps at) the top.
+        for (int i = 0; i < extra + 1; i++)
+            screenWithCallback.OnMouseWheel(0, 0, 1);
+        TriggerSaveRender(screenWithCallback);
+        screenWithCallback.OnMouseDown(ox, oy);
+        Assert.Equal("slot-0", saved);
+    }
+
     // --- Load tests ---
 
     private static float LoadPanelLeft => LoadLayout.PanelLeft(ScreenWidth);
@@ -1054,5 +1092,42 @@ public class ScreenEventTests
         Assert.Equal(ScreenEvent.LoadSlotRequested, evt);
         Assert.Equal("slot-a", screen.LastRequestedSlotId);
         Assert.Null(deleted);
+    }
+
+    [Fact]
+    public void Load_MouseWheel_scrolls_row_zero_through_overflowing_slots_and_clamps_at_both_ends()
+    {
+        // VisibleRows + 3 slots so there's exactly 3 steps of scroll room.
+        int extra = 3;
+        var slots = Enumerable.Range(0, LoadLayout.VisibleRows + extra)
+            .Select(i => Slot($"slot-{i}", $"Slot {i}", DateTime.UtcNow))
+            .ToArray();
+        var screen = NewLoadScreen(slots: slots);
+        TriggerLoadRender(screen);
+
+        var (lx, ly) = LoadCenter(LoadLayout.LoadButtonRect(0));
+
+        screen.OnMouseDown(lx, ly);
+        Assert.Equal("slot-0", screen.LastRequestedSlotId);
+
+        for (int i = 0; i < extra; i++)
+            screen.OnMouseWheel(0, 0, -1); // scroll down one row at a time
+
+        TriggerLoadRender(screen);
+        screen.OnMouseDown(lx, ly);
+        Assert.Equal($"slot-{extra}", screen.LastRequestedSlotId);
+
+        // Further downward scrolling past the last row is clamped, not out of range.
+        screen.OnMouseWheel(0, 0, -1);
+        TriggerLoadRender(screen);
+        screen.OnMouseDown(lx, ly);
+        Assert.Equal($"slot-{extra}", screen.LastRequestedSlotId);
+
+        // Scrolling back up returns to (and clamps at) the top.
+        for (int i = 0; i < extra + 1; i++)
+            screen.OnMouseWheel(0, 0, 1);
+        TriggerLoadRender(screen);
+        screen.OnMouseDown(lx, ly);
+        Assert.Equal("slot-0", screen.LastRequestedSlotId);
     }
 }
