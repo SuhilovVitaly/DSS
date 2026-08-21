@@ -115,4 +115,48 @@ public class SaveLayoutTests
         Assert.Equal((ScreenWidth - SaveLayout.PanelWidth) / 2f, SaveLayout.PanelLeft(ScreenWidth));
         Assert.Equal((ScreenHeight - SaveLayout.PanelHeight) / 2f, SaveLayout.PanelTop(ScreenHeight));
     }
+
+    // --- Scrollbar geometry (shown only when slots.Count > VisibleRows) ---
+
+    [Fact]
+    public void ScrollbarThumb_at_top_when_scrollOffset_is_zero()
+    {
+        var track = SaveLayout.ScrollbarTrackRect();
+        var thumb = SaveLayout.ScrollbarThumbRect(scrollOffset: 0, totalSlotCount: SaveLayout.VisibleRows + 5);
+        Assert.Equal(track.Y, thumb.Y);
+    }
+
+    [Fact]
+    public void ScrollbarThumb_at_bottom_when_scrollOffset_is_maxOffset()
+    {
+        int total = SaveLayout.VisibleRows + 5;
+        int maxOffset = total - SaveLayout.VisibleRows;
+        var track = SaveLayout.ScrollbarTrackRect();
+        var thumb = SaveLayout.ScrollbarThumbRect(scrollOffset: maxOffset, totalSlotCount: total);
+        Assert.Equal(track.Y + track.H - thumb.H, thumb.Y, precision: 3);
+    }
+
+    [Fact]
+    public void ScrollbarThumb_shrinks_as_totalSlotCount_grows()
+    {
+        var thumbFewExtra = SaveLayout.ScrollbarThumbRect(scrollOffset: 0, totalSlotCount: SaveLayout.VisibleRows + 1);
+        var thumbManyExtra = SaveLayout.ScrollbarThumbRect(scrollOffset: 0, totalSlotCount: SaveLayout.VisibleRows + 50);
+        Assert.True(thumbManyExtra.H < thumbFewExtra.H);
+    }
+
+    [Fact]
+    public void ScrollbarThumb_never_shrinks_below_minimum_height()
+    {
+        var thumb = SaveLayout.ScrollbarThumbRect(scrollOffset: 0, totalSlotCount: SaveLayout.VisibleRows + 500);
+        Assert.True(thumb.H >= SaveLayout.ScrollbarThumbMinHeight);
+    }
+
+    [Fact]
+    public void ScrollbarTrack_does_not_overlap_row_buttons()
+    {
+        // The track sits in the right margin strip, clear of where DeleteButtonRect ends.
+        var track = SaveLayout.ScrollbarTrackRect();
+        var deleteButton = SaveLayout.DeleteButtonRect(0);
+        Assert.True(track.X >= deleteButton.X + deleteButton.W);
+    }
 }

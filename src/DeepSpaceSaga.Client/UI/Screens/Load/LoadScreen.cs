@@ -7,10 +7,11 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Load;
 
 /// <summary>
-/// Modal overlay listing save slots, with LOAD / two-stage DELETE actions per row.
+/// Modal overlay listing save slots, with LOAD / two-stage DELETE icon actions per row
+/// (Images/UI/GameLoadScreen) and a CLOSE icon in the panel's top-right corner.
 /// Structural port of <see cref="Save.SaveScreen"/> (dim overlay, panel, scrollable row
-/// list, <c>MenuStyle</c> hover states, pure <see cref="LoadLayout.HitTest"/> geometry),
-/// minus the New Save/Overwrite/text-input machinery Load has no use for.
+/// list, pure <see cref="LoadLayout.HitTest"/> geometry), minus the New Save/Overwrite/
+/// text-input machinery Load has no use for.
 /// <see cref="_deleteSlot"/> is injected by the caller (SkiaWindow), bound to
 /// <c>_sessionFactory.DeleteSaveSlot</c> — this class has no knowledge of the factory type.
 /// Loading itself is NOT fire-and-forget from here: a LOAD click returns
@@ -40,6 +41,7 @@ public sealed class LoadScreen : IScreen
     private int _screenHeight;
 
     private LoadZone _hoveredZone = LoadZone.None;
+    private int _hoveredRowIndex = -1;
 
     /// <summary>
     /// The slot id of the most recent LOAD click that returned
@@ -73,6 +75,30 @@ public sealed class LoadScreen : IScreen
         Typeface = MenuStyle.TypefaceRegular
     };
 
+    private static readonly SKPaint _buttonTextPaint = new()
+    {
+        Color = MenuStyle.ColorText,
+        TextSize = MenuStyle.ButtonFontSize,
+        IsAntialias = true,
+        TextAlign = SKTextAlign.Left,
+        Typeface = MenuStyle.TypefaceBold
+    };
+
+    private const float ButtonIconPadding = 6f;
+
+    private static readonly SKBitmap? _closeIcon = LoadImage("Images/UI/GameLoadScreen/common.close.png");
+    private static readonly SKBitmap? _closeIconActive = LoadImage("Images/UI/GameLoadScreen/common.close.active.png");
+    private static readonly SKBitmap? _loadIcon = LoadImage("Images/UI/GameLoadScreen/load.load.png");
+    private static readonly SKBitmap? _loadIconActive = LoadImage("Images/UI/GameLoadScreen/load.load.active.png");
+    private static readonly SKBitmap? _deleteIcon = LoadImage("Images/UI/GameLoadScreen/load.delete.png");
+    private static readonly SKBitmap? _deleteIconActive = LoadImage("Images/UI/GameLoadScreen/load.delete.active.png");
+
+    private static SKBitmap? LoadImage(string path)
+    {
+        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
+        catch { return null; }
+    }
+
     /// <param name="listSlots">Enumerates every save slot on disk. Called at construction and after every mutating action.</param>
     /// <param name="deleteSlot">Delete a slot by id (second click of the two-stage per-row Delete button).</param>
     /// <param name="nowMs">Clock used for the delete-confirm timeout window; defaults to <see cref="Environment.TickCount64"/>. Overridable for tests.</param>
@@ -92,6 +118,7 @@ public sealed class LoadScreen : IScreen
     {
         _deleteConfirmIndex = -1;
         _hoveredZone = LoadZone.None;
+        _hoveredRowIndex = -1;
         RefreshSlots();
     }
 
@@ -162,6 +189,7 @@ public sealed class LoadScreen : IScreen
     {
         var hit = LoadLayout.HitTest(x, y, _screenWidth, _screenHeight, VisibleSlotCount);
         _hoveredZone = hit.Zone;
+        _hoveredRowIndex = hit.RowIndex;
         return hit.Zone != LoadZone.None;
     }
 
@@ -188,7 +216,20 @@ public sealed class LoadScreen : IScreen
         canvas.DrawText("LOAD GAME", cx, pt + LoadLayout.TitleY, MenuStyle.TextTitle);
 
         DrawSlotList(canvas, pl, pt);
-        DrawButton(canvas, CombinedRect(pl, pt, LoadLayout.CloseButtonRect()), "CLOSE", LoadZone.Close);
+        if (_slots.Count > LoadLayout.VisibleRows)
+            DrawScrollbar(canvas, pl, pt);
+        DrawIconTextButton(canvas, CombinedRect(pl, pt, LoadLayout.CloseButtonRect()), "CLOSE", LoadZone.Close, -1, _closeIcon, _closeIconActive);
+    }
+
+    /// <summary>Only rendered when the slot list overflows <see cref="LoadLayout.VisibleRows"/>; scrolling itself works via <see cref="OnMouseWheel"/> regardless.</summary>
+    private void DrawScrollbar(SKCanvas canvas, float panelLeft, float panelTop)
+    {
+        var track = CombinedRect(panelLeft, panelTop, LoadLayout.ScrollbarTrackRect());
+        canvas.DrawRect(track, MenuStyle.ButtonFillNormal);
+        canvas.DrawRect(track, MenuStyle.ButtonBorder);
+
+        var thumb = CombinedRect(panelLeft, panelTop, LoadLayout.ScrollbarThumbRect(_scrollOffset, _slots.Count));
+        canvas.DrawRect(thumb, MenuStyle.ButtonFillHover);
     }
 
     private void DrawSlotList(SKCanvas canvas, float panelLeft, float panelTop)
@@ -207,19 +248,50 @@ public sealed class LoadScreen : IScreen
                 slot.SavedAtUtc.ToLocalTime().ToString("g"),
                 rowRect.Left + 10f, rowRect.MidY + 14f, _rowDatePaint);
 
-            DrawButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.LoadButtonRect(i)), "LOAD", LoadZone.Load);
+            DrawIconTextButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.LoadButtonRect(i)), "LOAD", LoadZone.Load, i, _loadIcon, _loadIconActive);
 
             int absoluteIndex = _scrollOffset + i;
             bool isConfirming = _deleteConfirmIndex == absoluteIndex && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
-            DrawButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.DeleteButtonRect(i)),
-                isConfirming ? "CONFIRM?" : "DELETE", LoadZone.Delete);
+            DrawIconTextButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.DeleteButtonRect(i)),
+                isConfirming ? "CONFIRM?" : "DELETE", LoadZone.Delete, i, _deleteIcon, _deleteIconActive, forceActive: isConfirming);
         }
     }
 
-    private void DrawButton(SKCanvas canvas, SKRect rect, string text, LoadZone zone)
+    /// <summary>
+    /// Draws a button combining the previous fill/border/label chrome with an
+    /// <c>Images/UI/GameLoadScreen</c> icon to the left of the label: fill+border swap on
+    /// hover (as before), and the label's icon swaps to its "active" bitmap (baked-in
+    /// orange border) on that same hover or when <paramref name="forceActive"/> is set
+    /// (the two-stage delete confirm window, which must read as active even without
+    /// hover). The icon is pinned to the button's left edge (fixed-width buttons, so a
+    /// centered icon+label group would drift depending on label length); the label
+    /// follows immediately after it.
+    /// <paramref name="rowIndex"/> is -1 for non-row zones (Close), matching the -1
+    /// default on <see cref="LoadHit.RowIndex"/> for those zones.
+    /// </summary>
+    private void DrawIconTextButton(
+        SKCanvas canvas, SKRect rect, string text, LoadZone zone, int rowIndex,
+        SKBitmap? iconNormal, SKBitmap? iconActive, bool forceActive = false)
     {
-        var state = _hoveredZone == zone ? ButtonState.Hovered : ButtonState.Normal;
-        MenuStyle.DrawButton(canvas, rect, text, state);
+        bool isHovered = _hoveredZone == zone && _hoveredRowIndex == rowIndex;
+
+        canvas.DrawRect(rect, isHovered ? MenuStyle.ButtonFillHover : MenuStyle.ButtonFillNormal);
+        canvas.DrawRect(rect, MenuStyle.ButtonBorder);
+
+        var icon = (isHovered || forceActive) ? iconActive : iconNormal;
+        float iconSize = icon is not null ? rect.Height - ButtonIconPadding * 2f : 0f;
+        float gap = icon is not null ? ButtonIconPadding : 0f;
+        float textX = rect.Left + ButtonIconPadding + iconSize + gap;
+
+        if (icon is not null)
+        {
+            var iconRect = new SKRect(rect.Left + ButtonIconPadding, rect.MidY - iconSize / 2f,
+                rect.Left + ButtonIconPadding + iconSize, rect.MidY + iconSize / 2f);
+            canvas.DrawBitmap(icon, iconRect);
+        }
+
+        float textY = rect.MidY + _buttonTextPaint.TextSize / 3f;
+        canvas.DrawText(text, textX, textY, _buttonTextPaint);
     }
 
     private static SKRect CombinedRect(float panelLeft, float panelTop, (float X, float Y, float W, float H) local) =>
