@@ -40,9 +40,10 @@ public static class LoadLayout
     public const float RowSpacing = 6f;
     public const int VisibleRows = 8;
 
-    // Fixed regardless of label: wide enough for the longest row label ("CONFIRM?",
-    // measured ~83.5px at ButtonFontSize 14 bold) plus icon and padding.
-    public const float RowButtonWidth = 150f;
+    // Matches Save.SaveLayout.RowButtonWidth/Height so the two overlays' button
+    // columns line up visually — sized for Save's longest row label ("OVERWRITE",
+    // measured ~96.6px at ButtonFontSize 14 bold), which is wider than Load needs.
+    public const float RowButtonWidth = 160f;
     public const float RowButtonHeight = 40f;
     public const float RowButtonGap = 10f;
 

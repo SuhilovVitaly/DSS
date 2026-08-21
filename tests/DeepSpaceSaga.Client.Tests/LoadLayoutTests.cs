@@ -91,4 +91,13 @@ public class LoadLayoutTests
         Assert.Equal(SaveLayout.PanelWidth, LoadLayout.PanelWidth);
         Assert.Equal(SaveLayout.PanelHeight, LoadLayout.PanelHeight);
     }
+
+    [Fact]
+    public void RowButton_size_matches_SaveLayout()
+    {
+        // The LOAD/DELETE button columns must line up visually with Save's
+        // OVERWRITE/DELETE columns, so both overlays share one fixed button size.
+        Assert.Equal(SaveLayout.RowButtonWidth, LoadLayout.RowButtonWidth);
+        Assert.Equal(SaveLayout.RowButtonHeight, LoadLayout.RowButtonHeight);
+    }
 }
