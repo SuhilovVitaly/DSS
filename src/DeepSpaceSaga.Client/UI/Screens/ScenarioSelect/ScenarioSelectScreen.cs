@@ -93,6 +93,37 @@ public sealed class ScenarioSelectScreen : IScreen
     /// <summary>True if the panel PNG file was found and decoded at startup.</summary>
     internal static bool HasLoadedContentPanel => PanelImage is not null;
 
+    /// <summary>
+    /// The nine-sliced button texture for BACK/PLAY on the action panel. Same
+    /// <see cref="NinePatch"/> approach as <see cref="PanelImage"/>: corners cut 1:1,
+    /// edges sampled from the middle and stretched — see <see cref="DrawImageButton"/>.
+    /// </summary>
+    private static readonly SKBitmap? ButtonImage =
+        LoadImage("Images/UI/Buttons/button.png");
+
+    /// <summary>
+    /// Corner/edge-sample size (in ButtonImage source pixels) — measured extent of the
+    /// button's rounded corner is ~11px; 18 leaves a safety margin while still well under
+    /// half of the shortest button rect DSS draws it at (ActionButtonHeight/2 = 22).
+    /// </summary>
+    private const float ButtonCornerInset = 18f;
+
+    /// <summary>True if the button PNG file was found and decoded at startup.</summary>
+    internal static bool HasLoadedButtonImage => ButtonImage is not null;
+
+    /// <summary>Faint highlight painted over the button texture on hover — there's no separate hover art.</summary>
+    private static readonly SKPaint _buttonHoverOverlay = new()
+    {
+        Color = new SKColor(255, 255, 255, 30),
+        Style = SKPaintStyle.Fill
+    };
+
+    /// <summary>Dims the whole nine-sliced draw for a disabled button (no separate disabled art either).</summary>
+    private static readonly SKPaint _buttonDisabledOverlay = new()
+    {
+        Color = new SKColor(255, 255, 255, 110)
+    };
+
     private static readonly SKPaint _titleTextPaint = MenuStyle.TextTitle;
 
     private static readonly SKPaint _rowNamePaint = new()
@@ -333,7 +364,7 @@ public sealed class ScenarioSelectScreen : IScreen
         }
 
         var backRect = CombinedRect(actionLeft, actionTop, ScenarioSelectLayout.BackButtonRect());
-        MenuStyle.DrawButton(canvas, backRect, "BACK",
+        DrawImageButton(canvas, backRect, "BACK",
             _hoveredZone == ScenarioSelectZone.Back ? ButtonState.Hovered : ButtonState.Normal);
 
         bool canPlay = _selectedIndex >= 0 && _selectedIndex < _scenarios.Count;
@@ -341,7 +372,30 @@ public sealed class ScenarioSelectScreen : IScreen
         var playState = !canPlay
             ? ButtonState.Disabled
             : _hoveredZone == ScenarioSelectZone.Play ? ButtonState.Hovered : ButtonState.Normal;
-        MenuStyle.DrawButton(canvas, playRect, "PLAY", playState);
+        DrawImageButton(canvas, playRect, "PLAY", playState);
+    }
+
+    /// <summary>
+    /// BACK/PLAY drawn with the nine-sliced button.png instead of MenuStyle's flat fill —
+    /// there's only one button texture (no separate hover/disabled art), so hover adds a
+    /// faint white overlay and disabled dims the whole draw; falls back to
+    /// MenuStyle.DrawButton's flat style if the asset failed to load.
+    /// </summary>
+    private void DrawImageButton(SKCanvas canvas, SKRect rect, string text, ButtonState state)
+    {
+        if (ButtonImage is null)
+        {
+            MenuStyle.DrawButton(canvas, rect, text, state);
+            return;
+        }
+
+        var paint = state == ButtonState.Disabled ? _buttonDisabledOverlay : null;
+        NinePatch.Draw(canvas, ButtonImage, rect, ButtonCornerInset, paint);
+        if (state == ButtonState.Hovered)
+            canvas.DrawRect(rect, _buttonHoverOverlay);
+
+        var textPaint = state == ButtonState.Disabled ? MenuStyle.TextButtonDim : MenuStyle.TextButton;
+        canvas.DrawText(text, rect.MidX, VerticalCenterBaseline(rect, textPaint), textPaint);
     }
 
     /// <summary>

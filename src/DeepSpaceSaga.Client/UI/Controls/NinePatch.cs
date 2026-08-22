@@ -26,9 +26,11 @@ public static class NinePatch
     /// Draws <paramref name="source"/> into <paramref name="dest"/> using
     /// <paramref name="corner"/>×<paramref name="corner"/> source pixels for each corner
     /// and edge sample (clamped down if the source or destination is too small to fit
-    /// two full corners along an axis).
+    /// two full corners along an axis). <paramref name="paint"/>, if given, is passed
+    /// through to every blit — e.g. a paint whose Color.Alpha is less than 255 dims the
+    /// whole draw uniformly (used for a disabled-looking button).
     /// </summary>
-    public static void Draw(SKCanvas canvas, SKBitmap source, SKRect dest, float corner)
+    public static void Draw(SKCanvas canvas, SKBitmap source, SKRect dest, float corner, SKPaint? paint = null)
     {
         float sw = source.Width;
         float sh = source.Height;
@@ -62,24 +64,24 @@ public static class NinePatch
         float dInnerLeft = dLeft + dc, dInnerRight = dRight - dc;
         float dInnerTop = dTop + dc, dInnerBottom = dBottom - dc;
 
-        Blit(canvas, source, srcTopLeft, new SKRect(dLeft, dTop, dInnerLeft, dInnerTop));
-        Blit(canvas, source, srcTopRight, new SKRect(dInnerRight, dTop, dRight, dInnerTop));
-        Blit(canvas, source, srcBottomLeft, new SKRect(dLeft, dInnerBottom, dInnerLeft, dBottom));
-        Blit(canvas, source, srcBottomRight, new SKRect(dInnerRight, dInnerBottom, dRight, dBottom));
+        Blit(canvas, source, srcTopLeft, new SKRect(dLeft, dTop, dInnerLeft, dInnerTop), paint);
+        Blit(canvas, source, srcTopRight, new SKRect(dInnerRight, dTop, dRight, dInnerTop), paint);
+        Blit(canvas, source, srcBottomLeft, new SKRect(dLeft, dInnerBottom, dInnerLeft, dBottom), paint);
+        Blit(canvas, source, srcBottomRight, new SKRect(dInnerRight, dInnerBottom, dRight, dBottom), paint);
 
-        Blit(canvas, source, srcTop, new SKRect(dInnerLeft, dTop, dInnerRight, dInnerTop));
-        Blit(canvas, source, srcBottom, new SKRect(dInnerLeft, dInnerBottom, dInnerRight, dBottom));
-        Blit(canvas, source, srcLeft, new SKRect(dLeft, dInnerTop, dInnerLeft, dInnerBottom));
-        Blit(canvas, source, srcRight, new SKRect(dInnerRight, dInnerTop, dRight, dInnerBottom));
+        Blit(canvas, source, srcTop, new SKRect(dInnerLeft, dTop, dInnerRight, dInnerTop), paint);
+        Blit(canvas, source, srcBottom, new SKRect(dInnerLeft, dInnerBottom, dInnerRight, dBottom), paint);
+        Blit(canvas, source, srcLeft, new SKRect(dLeft, dInnerTop, dInnerLeft, dInnerBottom), paint);
+        Blit(canvas, source, srcRight, new SKRect(dInnerRight, dInnerTop, dRight, dInnerBottom), paint);
 
-        Blit(canvas, source, srcCenter, new SKRect(dInnerLeft, dInnerTop, dInnerRight, dInnerBottom));
+        Blit(canvas, source, srcCenter, new SKRect(dInnerLeft, dInnerTop, dInnerRight, dInnerBottom), paint);
     }
 
-    private static void Blit(SKCanvas canvas, SKBitmap source, SKRect src, SKRect dst)
+    private static void Blit(SKCanvas canvas, SKBitmap source, SKRect src, SKRect dst, SKPaint? paint)
     {
         if (dst.Width <= 0 || dst.Height <= 0 || src.Width <= 0 || src.Height <= 0)
             return;
 
-        canvas.DrawBitmap(source, src, dst);
+        canvas.DrawBitmap(source, src, dst, paint);
     }
 }
