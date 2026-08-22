@@ -5,12 +5,14 @@ public enum ScenarioSelectZone
 {
     None,
     Back,
-    Play
+    Play,
+    /// <summary>A scenario row — selects it (see <see cref="ScenarioSelectHit.RowIndex"/>); does not play it.</summary>
+    Row
 }
 
 /// <summary>
 /// Result of a <see cref="ScenarioSelectLayout.HitTest"/>. <see cref="RowIndex"/> is only
-/// meaningful for <see cref="ScenarioSelectZone.Play"/> and is relative to the currently
+/// meaningful for <see cref="ScenarioSelectZone.Row"/> and is relative to the currently
 /// visible window (the caller adds the scroll offset to get the absolute scenario index).
 /// </summary>
 public readonly record struct ScenarioSelectHit(ScenarioSelectZone Zone, int RowIndex = -1)
@@ -23,29 +25,34 @@ public readonly record struct ScenarioSelectHit(ScenarioSelectZone Zone, int Row
 /// scenario, before the game session starts). Pure geometry — no SKCanvas dependency —
 /// following the same pattern as <see cref="Load.LoadLayout"/>. A full top-level screen
 /// (like MainMenu), not a paused-game overlay, so it owns its own full-screen background
-/// rather than dimming an underlying screen. Each row is two lines tall (scenario Name,
-/// then a dimmer Description line) to fit the new description field, wider than Load's
-/// single-line slot rows.
+/// rather than dimming an underlying screen.
+///
+/// Two side-by-side nine-sliced panels sit on the outer background: a left content panel
+/// holding the (row-selectable, button-free) scenario list, and a right action panel
+/// holding the shared PLAY/BACK buttons at its bottom — one PLAY for whichever scenario
+/// row is currently selected, replacing the old per-row PLAY button, plus BACK moved down
+/// from its old top-right spot on the outer panel.
 /// </summary>
 public static class ScenarioSelectLayout
 {
     public const float PanelWidth = 900f;
     public const float PanelHeight = 620f;
 
-    public const float Margin = 40f;
-
     public const float TitleY = 50f;
 
-    /// <summary>
-    /// The nine-sliced <c>micro-panel.png</c> content panel that holds the scenario list
-    /// (Docs request: x=50, y=150, 800×380), positioned relative to the outer PanelLeft/Top.
-    /// </summary>
+    /// <summary>Left panel: the nine-sliced scenario list (Docs request: x=50, y=150, 450 wide).</summary>
     public const float ContentPanelX = 50f;
     public const float ContentPanelY = 150f;
-    public const float ContentPanelWidth = 800f;
+    public const float ContentPanelWidth = 450f;
     public const float ContentPanelHeight = 380f;
 
-    /// <summary>Breathing room between the content panel's border artwork and the row list/scrollbar it holds.</summary>
+    /// <summary>Right panel: the nine-sliced action panel (Docs request: x=500, y=150, 350 wide).</summary>
+    public const float ActionPanelX = 500f;
+    public const float ActionPanelY = 150f;
+    public const float ActionPanelWidth = 350f;
+    public const float ActionPanelHeight = ContentPanelHeight;
+
+    /// <summary>Breathing room between a panel's border artwork and the content it holds.</summary>
     public const float ContentPadding = 20f;
 
     public const float ListTop = ContentPanelY + ContentPadding;
@@ -53,12 +60,10 @@ public static class ScenarioSelectLayout
     public const float RowSpacing = 8f;
     public const int VisibleRows = 6;
 
-    public const float PlayButtonWidth = 120f;
-    public const float PlayButtonHeight = 40f;
-
-    public const float BackButtonWidth = 100f;
-    public const float BackButtonHeight = 32f;
-    public const float BackButtonMargin = 16f;
+    public const float ActionButtonWidth = 140f;
+    public const float ActionButtonHeight = 44f;
+    public const float ActionButtonGap = 20f;
+    public const float ActionButtonBottomMargin = 24f;
 
     public const float ScrollbarWidth = 6f;
     public const float ScrollbarGap = 10f;
@@ -77,22 +82,30 @@ public static class ScenarioSelectLayout
         return (ListLeft, y, ListWidth, RowHeight - RowSpacing);
     }
 
-    public static (float X, float Y, float W, float H) PlayButtonRect(int visibleRowIndex)
+    /// <summary>
+    /// BACK button rect, local to the action panel (add ActionPanelX/Y for outer-panel-local
+    /// coordinates). Sits left of PLAY at the panel's bottom, matching the Cancel/OK
+    /// convention (secondary action left, primary action right).
+    /// </summary>
+    public static (float X, float Y, float W, float H) BackButtonRect()
     {
-        var row = RowRect(visibleRowIndex);
-        float x = row.X + row.W - PlayButtonWidth;
-        float y = row.Y + (row.H - PlayButtonHeight) / 2f;
-        return (x, y, PlayButtonWidth, PlayButtonHeight);
+        float totalWidth = 2 * ActionButtonWidth + ActionButtonGap;
+        float x = (ActionPanelWidth - totalWidth) / 2f;
+        float y = ActionPanelHeight - ActionButtonBottomMargin - ActionButtonHeight;
+        return (x, y, ActionButtonWidth, ActionButtonHeight);
     }
 
-    /// <summary>Top-right corner of the panel, matching Load's CLOSE button chrome.</summary>
-    public static (float X, float Y, float W, float H) BackButtonRect() =>
-        (PanelWidth - BackButtonMargin - BackButtonWidth, BackButtonMargin, BackButtonWidth, BackButtonHeight);
+    /// <summary>PLAY button rect, local to the action panel — see <see cref="BackButtonRect"/>.</summary>
+    public static (float X, float Y, float W, float H) PlayButtonRect()
+    {
+        var back = BackButtonRect();
+        return (back.X + ActionButtonWidth + ActionButtonGap, back.Y, ActionButtonWidth, ActionButtonHeight);
+    }
 
     /// <summary>
-    /// Vertical track spanning the full visible row list, in the right margin strip just
-    /// past where the row's PLAY button ends. Only meaningful — and only drawn by the
-    /// caller — when there are more scenarios than <see cref="VisibleRows"/>.
+    /// Vertical track spanning the full visible row list, in the content panel's right
+    /// margin strip. Only meaningful — and only drawn by the caller — when there are more
+    /// scenarios than <see cref="VisibleRows"/>.
     /// </summary>
     public static (float X, float Y, float W, float H) ScrollbarTrackRect() =>
         (ListLeft + ListWidth + ScrollbarGap, ListTop, ScrollbarWidth, VisibleRows * RowHeight - RowSpacing);
@@ -122,13 +135,17 @@ public static class ScenarioSelectLayout
         float lx = screenX - panelLeft;
         float ly = screenY - panelTop;
 
-        if (IsInRect(lx, ly, BackButtonRect()))
+        float alx = lx - ActionPanelX;
+        float aly = ly - ActionPanelY;
+        if (IsInRect(alx, aly, BackButtonRect()))
             return new ScenarioSelectHit(ScenarioSelectZone.Back);
+        if (IsInRect(alx, aly, PlayButtonRect()))
+            return new ScenarioSelectHit(ScenarioSelectZone.Play);
 
         for (int i = 0; i < visibleScenarioCount; i++)
         {
-            if (IsInRect(lx, ly, PlayButtonRect(i)))
-                return new ScenarioSelectHit(ScenarioSelectZone.Play, i);
+            if (IsInRect(lx, ly, RowRect(i)))
+                return new ScenarioSelectHit(ScenarioSelectZone.Row, i);
         }
 
         return ScenarioSelectHit.None;

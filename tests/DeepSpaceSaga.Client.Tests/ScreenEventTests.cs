@@ -1258,6 +1258,11 @@ public class ScreenEventTests
     private static (float x, float y) ScenarioSelectCenter((float X, float Y, float W, float H) local) =>
         (ScenarioSelectPanelLeft + local.X + local.W / 2f, ScenarioSelectPanelTop + local.Y + local.H / 2f);
 
+    /// <summary>BACK/PLAY rects are local to the action panel — add its offset too.</summary>
+    private static (float x, float y) ScenarioSelectActionCenter((float X, float Y, float W, float H) local) =>
+        (ScenarioSelectPanelLeft + ScenarioSelectLayout.ActionPanelX + local.X + local.W / 2f,
+         ScenarioSelectPanelTop + ScenarioSelectLayout.ActionPanelY + local.Y + local.H / 2f);
+
     private static void TriggerScenarioSelectRender(IScreen screen)
     {
         using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
@@ -1279,7 +1284,7 @@ public class ScreenEventTests
     {
         var screen = NewScenarioSelectScreen();
         TriggerScenarioSelectRender(screen);
-        var (x, y) = ScenarioSelectCenter(ScenarioSelectLayout.BackButtonRect());
+        var (x, y) = ScenarioSelectActionCenter(ScenarioSelectLayout.BackButtonRect());
         Assert.Equal(ScreenEvent.MainMenu, screen.OnMouseDown(x, y));
     }
 
@@ -1308,13 +1313,13 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void ScenarioSelect_Play_click_returns_ScenarioSelected_with_the_row_ScenarioPath_retrievable()
+    public void ScenarioSelect_first_scenario_is_selected_by_default_so_Play_works_without_a_row_click()
     {
         var scenarios = new[] { Scenario("default", "Default Scenario", "A basic start.") };
         var screen = NewScenarioSelectScreen(scenarios);
         TriggerScenarioSelectRender(screen);
 
-        var (x, y) = ScenarioSelectCenter(ScenarioSelectLayout.PlayButtonRect(0));
+        var (x, y) = ScenarioSelectActionCenter(ScenarioSelectLayout.PlayButtonRect());
         var evt = screen.OnMouseDown(x, y);
 
         Assert.Equal(ScreenEvent.ScenarioSelected, evt);
@@ -1324,7 +1329,17 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void ScenarioSelect_Play_click_selects_the_correct_row_among_several()
+    public void ScenarioSelect_Play_with_no_scenarios_returns_None()
+    {
+        var screen = NewScenarioSelectScreen();
+        TriggerScenarioSelectRender(screen);
+
+        var (x, y) = ScenarioSelectActionCenter(ScenarioSelectLayout.PlayButtonRect());
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void ScenarioSelect_clicking_a_row_selects_it_without_playing()
     {
         var scenarios = new[]
         {
@@ -1334,8 +1349,29 @@ public class ScreenEventTests
         var screen = NewScenarioSelectScreen(scenarios);
         TriggerScenarioSelectRender(screen);
 
-        var (x, y) = ScenarioSelectCenter(ScenarioSelectLayout.PlayButtonRect(1));
-        var evt = screen.OnMouseDown(x, y);
+        var (rowX, rowY) = ScenarioSelectCenter(ScenarioSelectLayout.RowRect(1));
+        var evt = screen.OnMouseDown(rowX, rowY);
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Null(screen.LastSelectedScenarioPath);
+    }
+
+    [Fact]
+    public void ScenarioSelect_Play_click_plays_whichever_row_was_last_selected()
+    {
+        var scenarios = new[]
+        {
+            Scenario("default", "Default Scenario", "A basic start."),
+            Scenario("docked", "Docked at Station", "Start docked.")
+        };
+        var screen = NewScenarioSelectScreen(scenarios);
+        TriggerScenarioSelectRender(screen);
+
+        var (rowX, rowY) = ScenarioSelectCenter(ScenarioSelectLayout.RowRect(1));
+        screen.OnMouseDown(rowX, rowY);
+
+        var (playX, playY) = ScenarioSelectActionCenter(ScenarioSelectLayout.PlayButtonRect());
+        var evt = screen.OnMouseDown(playX, playY);
 
         Assert.Equal(ScreenEvent.ScenarioSelected, evt);
         Assert.Equal("/fake/docked/scenario.json", screen.LastSelectedScenarioPath);
@@ -1351,29 +1387,36 @@ public class ScreenEventTests
         var screen = NewScenarioSelectScreen(scenarios);
         TriggerScenarioSelectRender(screen);
 
-        var (x, y) = ScenarioSelectCenter(ScenarioSelectLayout.PlayButtonRect(0));
+        var (rowX, rowY) = ScenarioSelectCenter(ScenarioSelectLayout.RowRect(0));
+        var (playX, playY) = ScenarioSelectActionCenter(ScenarioSelectLayout.PlayButtonRect());
 
-        screen.OnMouseDown(x, y);
+        void SelectRowZeroThenPlay()
+        {
+            screen.OnMouseDown(rowX, rowY);
+            screen.OnMouseDown(playX, playY);
+        }
+
+        SelectRowZeroThenPlay();
         Assert.Equal("/fake/scenario-0/scenario.json", screen.LastSelectedScenarioPath);
 
         for (int i = 0; i < extra; i++)
             screen.OnMouseWheel(0, 0, -1); // scroll down one row at a time
 
         TriggerScenarioSelectRender(screen);
-        screen.OnMouseDown(x, y);
+        SelectRowZeroThenPlay();
         Assert.Equal($"/fake/scenario-{extra}/scenario.json", screen.LastSelectedScenarioPath);
 
         // Further downward scrolling past the last row is clamped, not out of range.
         screen.OnMouseWheel(0, 0, -1);
         TriggerScenarioSelectRender(screen);
-        screen.OnMouseDown(x, y);
+        SelectRowZeroThenPlay();
         Assert.Equal($"/fake/scenario-{extra}/scenario.json", screen.LastSelectedScenarioPath);
 
         // Scrolling back up returns to (and clamps at) the top.
         for (int i = 0; i < extra + 1; i++)
             screen.OnMouseWheel(0, 0, 1);
         TriggerScenarioSelectRender(screen);
-        screen.OnMouseDown(x, y);
+        SelectRowZeroThenPlay();
         Assert.Equal("/fake/scenario-0/scenario.json", screen.LastSelectedScenarioPath);
     }
 }

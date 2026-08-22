@@ -8,7 +8,12 @@ namespace DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 
 /// <summary>
 /// New Game -&gt; scenario picker: full-screen list of every scenario found under the
-/// Scenarios/ directory, each with its Name and Description, and a PLAY button per row.
+/// Scenarios/ directory, each with its Name and Description. Two nine-sliced panels sit
+/// side by side on the outer background — a left content panel with the (button-free)
+/// scenario list, and a right action panel holding the shared PLAY/BACK buttons at its
+/// bottom. Clicking a row selects it (<see cref="ScenarioSelectZone.Row"/>, highlighted,
+/// does not play); PLAY then acts on whichever scenario is currently selected — replacing
+/// the old one-PLAY-button-per-row design, where every row played immediately.
 /// Structural sibling of <see cref="Load.LoadScreen"/> (dim-free, since this is a
 /// top-level screen replacing MainMenu rather than an overlay on top of a paused game;
 /// scrollable row list; pure <see cref="ScenarioSelectLayout.HitTest"/> geometry), minus
@@ -28,6 +33,9 @@ public sealed class ScenarioSelectScreen : IScreen
 
     private IReadOnlyList<ScenarioInfo> _scenarios = Array.Empty<ScenarioInfo>();
     private int _scrollOffset;
+
+    /// <summary>Absolute index into <see cref="_scenarios"/> of the row PLAY currently acts on, or -1 if none.</summary>
+    private int _selectedIndex = -1;
 
     private int _screenWidth;
     private int _screenHeight;
@@ -61,23 +69,24 @@ public sealed class ScenarioSelectScreen : IScreen
     internal static bool HasLoadedBackground => BackgroundImage is not null;
 
     /// <summary>
-    /// The nine-sliced content panel that holds the scenario list (see
-    /// <see cref="ScenarioSelectLayout.ContentPanelX"/>/Y/Width/Height). Drawn via
-    /// <see cref="NinePatch"/> so a single small source image covers any panel size
-    /// while its rounded, transparent corners stay unscaled and unstretched.
+    /// The nine-sliced panel image shared by the content panel (scenario list) and the
+    /// action panel (PLAY/BACK) — see <see cref="ScenarioSelectLayout.ContentPanelX"/>/Y/
+    /// Width/Height and <see cref="ScenarioSelectLayout.ActionPanelX"/>/Y/Width/Height.
+    /// Drawn via <see cref="NinePatch"/> so a single small source image covers any panel
+    /// size while its rounded, transparent corners stay unscaled and unstretched.
     /// </summary>
-    private static readonly SKBitmap? ContentPanelImage =
+    private static readonly SKBitmap? PanelImage =
         LoadImage("Images/UI/Panels/micro-panel.png");
 
     /// <summary>
-    /// Corner/edge-sample size (in ContentPanelImage source pixels) for
-    /// <see cref="NinePatch"/> — a 20×20 cut at each corner, and a 20×20 sample from the
-    /// middle of each edge for the stretched borders.
+    /// Corner/edge-sample size (in PanelImage source pixels) for <see cref="NinePatch"/> —
+    /// a 20×20 cut at each corner, and a 20×20 sample from the middle of each edge for the
+    /// stretched borders.
     /// </summary>
-    private const float ContentPanelCornerInset = 20f;
+    private const float PanelCornerInset = 20f;
 
-    /// <summary>True if the content panel PNG file was found and decoded at startup.</summary>
-    internal static bool HasLoadedContentPanel => ContentPanelImage is not null;
+    /// <summary>True if the panel PNG file was found and decoded at startup.</summary>
+    internal static bool HasLoadedContentPanel => PanelImage is not null;
 
     private static readonly SKPaint _titleTextPaint = MenuStyle.TextTitle;
 
@@ -99,13 +108,17 @@ public sealed class ScenarioSelectScreen : IScreen
         Typeface = MenuStyle.TypefaceRegular
     };
 
-    private static readonly SKPaint _buttonTextPaint = new()
+    /// <summary>
+    /// Selection is shown as a bright outline, not a lighter fill — ButtonFillPressed
+    /// (78,78,78) sits too close to ColorTextDim (90,90,90) for the description line to
+    /// stay legible against it, so the row fill always stays at its normal/hovered
+    /// darkness and only the border brightens.
+    /// </summary>
+    private static readonly SKPaint _selectedRowBorder = new()
     {
         Color = MenuStyle.ColorText,
-        TextSize = MenuStyle.ButtonFontSize,
-        IsAntialias = true,
-        TextAlign = SKTextAlign.Center,
-        Typeface = MenuStyle.TypefaceBold
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 2f
     };
 
     /// <param name="listScenarios">Enumerates every playable scenario found on disk. Called at construction and on every activation.</param>
@@ -141,13 +154,16 @@ public sealed class ScenarioSelectScreen : IScreen
 
             case ScenarioSelectZone.Play:
             {
-                int index = AbsoluteIndex(hit.RowIndex);
-                if (index < 0 || index >= _scenarios.Count)
+                if (_selectedIndex < 0 || _selectedIndex >= _scenarios.Count)
                     return ScreenEvent.None;
 
-                LastSelectedScenarioPath = _scenarios[index].ScenarioPath;
+                LastSelectedScenarioPath = _scenarios[_selectedIndex].ScenarioPath;
                 return ScreenEvent.ScenarioSelected;
             }
+
+            case ScenarioSelectZone.Row:
+                _selectedIndex = AbsoluteIndex(hit.RowIndex);
+                return ScreenEvent.None;
 
             default:
                 return ScreenEvent.None;
@@ -190,26 +206,42 @@ public sealed class ScenarioSelectScreen : IScreen
         float cx = pl + ScenarioSelectLayout.PanelWidth / 2f;
         canvas.DrawText("SELECT SCENARIO", cx, pt + ScenarioSelectLayout.TitleY, _titleTextPaint);
 
-        DrawContentPanel(canvas, pl, pt);
+        DrawPanel(canvas, pl + ScenarioSelectLayout.ContentPanelX, pt + ScenarioSelectLayout.ContentPanelY,
+            ScenarioSelectLayout.ContentPanelWidth, ScenarioSelectLayout.ContentPanelHeight);
         DrawScenarioList(canvas, pl, pt);
         if (_scenarios.Count > ScenarioSelectLayout.VisibleRows)
             DrawScrollbar(canvas, pl, pt);
 
-        DrawButton(canvas, CombinedRect(pl, pt, ScenarioSelectLayout.BackButtonRect()), "BACK", ScenarioSelectZone.Back, -1);
+        DrawActionPanel(canvas, pl, pt);
     }
 
-    private void DrawContentPanel(SKCanvas canvas, float panelLeft, float panelTop)
+    private void DrawPanel(SKCanvas canvas, float left, float top, float width, float height)
     {
-        var rect = new SKRect(
-            panelLeft + ScenarioSelectLayout.ContentPanelX,
-            panelTop + ScenarioSelectLayout.ContentPanelY,
-            panelLeft + ScenarioSelectLayout.ContentPanelX + ScenarioSelectLayout.ContentPanelWidth,
-            panelTop + ScenarioSelectLayout.ContentPanelY + ScenarioSelectLayout.ContentPanelHeight);
-
-        if (ContentPanelImage is not null)
-            NinePatch.Draw(canvas, ContentPanelImage, rect, ContentPanelCornerInset);
+        var rect = new SKRect(left, top, left + width, top + height);
+        if (PanelImage is not null)
+            NinePatch.Draw(canvas, PanelImage, rect, PanelCornerInset);
         else
             MenuStyle.DrawPanel(canvas, rect);
+    }
+
+    private void DrawActionPanel(SKCanvas canvas, float panelLeft, float panelTop)
+    {
+        DrawPanel(canvas, panelLeft + ScenarioSelectLayout.ActionPanelX, panelTop + ScenarioSelectLayout.ActionPanelY,
+            ScenarioSelectLayout.ActionPanelWidth, ScenarioSelectLayout.ActionPanelHeight);
+
+        float actionLeft = panelLeft + ScenarioSelectLayout.ActionPanelX;
+        float actionTop = panelTop + ScenarioSelectLayout.ActionPanelY;
+
+        var backRect = CombinedRect(actionLeft, actionTop, ScenarioSelectLayout.BackButtonRect());
+        MenuStyle.DrawButton(canvas, backRect, "BACK",
+            _hoveredZone == ScenarioSelectZone.Back ? ButtonState.Hovered : ButtonState.Normal);
+
+        bool canPlay = _selectedIndex >= 0 && _selectedIndex < _scenarios.Count;
+        var playRect = CombinedRect(actionLeft, actionTop, ScenarioSelectLayout.PlayButtonRect());
+        var playState = !canPlay
+            ? ButtonState.Disabled
+            : _hoveredZone == ScenarioSelectZone.Play ? ButtonState.Hovered : ButtonState.Normal;
+        MenuStyle.DrawButton(canvas, playRect, "PLAY", playState);
     }
 
     private void DrawScrollbar(SKCanvas canvas, float panelLeft, float panelTop)
@@ -230,28 +262,19 @@ public sealed class ScenarioSelectScreen : IScreen
             var row = ScenarioSelectLayout.RowRect(i);
             var rowRect = CombinedRect(panelLeft, panelTop, row);
 
-            canvas.DrawRect(rowRect, MenuStyle.ButtonFillNormal);
-            canvas.DrawRect(rowRect, MenuStyle.ButtonBorder);
+            bool isSelected = AbsoluteIndex(i) == _selectedIndex;
+            bool isHovered = _hoveredZone == ScenarioSelectZone.Row && _hoveredRowIndex == i;
+            var fill = isHovered ? MenuStyle.ButtonFillHover : MenuStyle.ButtonFillNormal;
+
+            canvas.DrawRect(rowRect, fill);
+            canvas.DrawRect(rowRect, isSelected ? _selectedRowBorder : MenuStyle.ButtonBorder);
 
             canvas.Save();
-            canvas.ClipRect(new SKRect(rowRect.Left, rowRect.Top, rowRect.Right - ScenarioSelectLayout.PlayButtonWidth - 10f, rowRect.Bottom));
+            canvas.ClipRect(rowRect);
             canvas.DrawText(scenario.Name, rowRect.Left + 10f, rowRect.Top + 22f, _rowNamePaint);
             canvas.DrawText(scenario.Description, rowRect.Left + 10f, rowRect.Top + 42f, _rowDescriptionPaint);
             canvas.Restore();
-
-            DrawButton(canvas, CombinedRect(panelLeft, panelTop, ScenarioSelectLayout.PlayButtonRect(i)), "PLAY", ScenarioSelectZone.Play, i);
         }
-    }
-
-    private void DrawButton(SKCanvas canvas, SKRect rect, string text, ScenarioSelectZone zone, int rowIndex)
-    {
-        bool isHovered = _hoveredZone == zone && _hoveredRowIndex == rowIndex;
-
-        canvas.DrawRect(rect, isHovered ? MenuStyle.ButtonFillHover : MenuStyle.ButtonFillNormal);
-        canvas.DrawRect(rect, MenuStyle.ButtonBorder);
-
-        float textY = rect.MidY + _buttonTextPaint.TextSize / 3f;
-        canvas.DrawText(text, rect.MidX, textY, _buttonTextPaint);
     }
 
     private static SKRect CombinedRect(float panelLeft, float panelTop, (float X, float Y, float W, float H) local) =>
@@ -262,6 +285,7 @@ public sealed class ScenarioSelectScreen : IScreen
         _scenarios = _listScenarios() ?? Array.Empty<ScenarioInfo>();
         int maxOffset = Math.Max(0, _scenarios.Count - ScenarioSelectLayout.VisibleRows);
         _scrollOffset = Math.Clamp(_scrollOffset, 0, maxOffset);
+        _selectedIndex = _scenarios.Count > 0 ? 0 : -1;
     }
 
     private int VisibleScenarioCount => Math.Max(0, Math.Min(ScenarioSelectLayout.VisibleRows, _scenarios.Count - _scrollOffset));
