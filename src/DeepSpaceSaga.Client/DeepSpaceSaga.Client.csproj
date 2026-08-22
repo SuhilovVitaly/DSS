@@ -14,6 +14,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Any image under Images\ (any subfolder, added now or later) copies to the
+         output directory whenever it changes, with no per-file entry needed. Placed
+         before the specific entries below so those can still override this default
+         (e.g. Always instead of PreserveNewest) for individual files. -->
+    <None Update="Images\**\*.png;Images\**\*.jpg;Images\**\*.jpeg;Images\**\*.bmp;Images\**\*.gif;Images\**\*.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Images\Cursors\cursor-selected.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
