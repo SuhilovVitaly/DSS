@@ -17,14 +17,4 @@ public class ScenarioSelectScreenTests
         // CopyToOutputDirectory, or the panel silently falls back to a plain fill.
         Assert.True(ScenarioSelectScreen.HasLoadedBackground);
     }
-
-    [Fact]
-    public void Content_panel_image_is_loaded()
-    {
-        // Regression: the micro-panel.png asset (nine-sliced by NinePatch — see
-        // NinePatchTests.cs) must resolve at the client's working directory and be
-        // registered in the .csproj with CopyToOutputDirectory, or the scenario list's
-        // content panel silently falls back to a plain fill.
-        Assert.True(ScenarioSelectScreen.HasLoadedContentPanel);
-    }
 }
