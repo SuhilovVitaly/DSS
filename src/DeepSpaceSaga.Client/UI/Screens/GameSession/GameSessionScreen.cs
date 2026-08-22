@@ -136,6 +136,10 @@ public sealed class GameSessionScreen : IScreen
     // Object interaction state — ТЗ: ActiveObject and SelectedObject
     private string? _activeObjectId;
     private string? _selectedObjectId;
+
+    /// <summary>Last snapshot sequence <see cref="ConsumePendingAutoTransition"/> already
+    /// checked for a freshly-Executed navigation.dock CommandResult — see that method.</summary>
+    private ulong? _lastAutoTransitionCheckedSnapshotSequence;
     /// <summary>
     /// True once a real OnMouseMove has reported a position on THIS activation of the
     /// screen. False before the first-ever move (avoids treating the (0,0) field default
@@ -406,14 +410,22 @@ public sealed class GameSessionScreen : IScreen
                 _cameraFollowObjectId = hitObjectId;
             }
 
-            // The selected object is the station the player ship is currently docked to
-            // (authoritative IsDocked/DockedStationObjectId from the snapshot, requirements
-            // Docking.md/Station.md) — clicking it (re)opens the Station screen instead of
-            // just selecting it. Docking itself is unaffected by this click either way.
+            // While docked, a successful navigation.dock physically snaps the ship onto
+            // the station with only a (1, 1) world-unit offset (requirements Docking.md)
+            // — at any normal zoom the two markers sit within 1-2 screen px of each other,
+            // so FindNearestObjectId's nearest/tie-break result between them is effectively
+            // unpredictable pixel-by-pixel. Clicking either the docked station OR the
+            // player ship itself (authoritative IsDocked/DockedStationObjectId from the
+            // snapshot) therefore (re)opens the Station screen — clicking "the ship" and
+            // clicking "the station" are the same physical spot once docked. Docking
+            // itself is unaffected by this click either way.
             var snapshot = _buffer.Latest?.Snapshot;
             var playerShip = snapshot?.Objects.FirstOrDefault(o => o.ObjectId == snapshot.PlayerShipObjectId);
-            if (playerShip is { IsDocked: true } && playerShip.DockedStationObjectId == hitObjectId)
+            if (playerShip is { IsDocked: true } dockedShip &&
+                (hitObjectId == dockedShip.DockedStationObjectId || hitObjectId == dockedShip.ObjectId))
+            {
                 return ScreenEvent.OpenStation;
+            }
 
             return ScreenEvent.None;
         }
@@ -1696,6 +1708,30 @@ public sealed class GameSessionScreen : IScreen
             _playerShipGlyphPath,
             radius,
             SpaceMapColorResolver.PlayerShipColor);
+    }
+
+    /// <summary>
+    /// Polled once per frame by SkiaWindow's render loop (unlike every other ScreenEvent
+    /// here, this one isn't produced by a direct input handler — a successful Dock is an
+    /// authoritative outcome the client only learns about from the next snapshot, not
+    /// synchronously when the button is clicked). Requirements Docking.md: "После
+    /// успешного Dock экран станции открывается автоматически" — this is that wiring.
+    /// Edge-triggered on SnapshotSequence so it fires at most once per completed Dock
+    /// command, not on every frame the same snapshot stays "Latest" (which would also
+    /// fight a player who deliberately closes the Station screen right after auto-open).
+    /// </summary>
+    internal ScreenEvent ConsumePendingAutoTransition()
+    {
+        var snapshot = _buffer.Latest?.Snapshot;
+        if (snapshot is null || snapshot.SnapshotSequence == _lastAutoTransitionCheckedSnapshotSequence)
+            return ScreenEvent.None;
+
+        _lastAutoTransitionCheckedSnapshotSequence = snapshot.SnapshotSequence;
+
+        bool justDocked = !snapshot.CommandResults.IsDefaultOrEmpty && snapshot.CommandResults.Any(r =>
+            r.CommandType == NavigationComputerCommandTypes.Dock && r.Status == CommandResultStatus.Executed);
+
+        return justDocked ? ScreenEvent.OpenStation : ScreenEvent.None;
     }
 
     private bool CanSendEngineCommand(string commandType, AuthoritativeSnapshot? snapshot)

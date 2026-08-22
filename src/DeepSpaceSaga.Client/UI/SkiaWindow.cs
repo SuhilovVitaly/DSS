@@ -287,6 +287,26 @@ public sealed class SkiaWindow : IDisposable
         }
 
         PollKeyboard();
+        PollGameSessionAutoTransition();
+    }
+
+    /// <summary>
+    /// GameSessionScreen has no way to return a ScreenEvent outside a direct input
+    /// handler, but a successful navigation.dock is an authoritative outcome the client
+    /// only learns about from the next snapshot (Docking.md: the Station screen opens
+    /// automatically after a successful Dock, not only when the player clicks the
+    /// already-docked station again). Polled once per frame, only while GameSessionScreen
+    /// is actually the foreground screen — never while a modal (GameMenu, Station itself,
+    /// ...) is already on top of it, matching every other Open*Async guard here.
+    /// </summary>
+    private void PollGameSessionAutoTransition()
+    {
+        if (_screens.Current is not GameSessionScreen gameSessionScreen)
+            return;
+
+        var evt = gameSessionScreen.ConsumePendingAutoTransition();
+        if (evt != ScreenEvent.None)
+            _ = HandleScreenEvent(evt);
     }
 
     private void OnFramebufferResize(Silk.NET.Maths.Vector2D<int> newSize)

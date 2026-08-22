@@ -487,6 +487,35 @@ public class GameSessionObjectInteractionTests
         Assert.Equal("STATION-1", fixture.Screen.SelectedObjectId);
     }
 
+    [Fact]
+    public async Task Left_click_on_the_players_own_ship_while_docked_also_returns_OpenStation()
+    {
+        // A successful Dock snaps the ship onto the station with only a (1, 1) world-unit
+        // offset — at normal zoom the two markers are 1-2 screen px apart, so relying on
+        // clicking the station's marker specifically (as opposed to the ship's, which sits
+        // right next to/under it) is not reliably clickable. Clicking the ship itself must
+        // open Station too whenever it's docked.
+        await using var fixture = CreateFixtureWithDockedShipAndStation(dockedStationObjectId: "STATION-1");
+        Render(fixture.Screen);
+
+        var result = fixture.Screen.OnMouseDown(640, 360); // the player ship itself, at screen center
+
+        Assert.Equal(ScreenEvent.OpenStation, result);
+        Assert.Equal(PlayerShipId, fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Left_click_on_the_players_own_ship_while_not_docked_returns_None()
+    {
+        await using var fixture = CreateFixtureWithDockedShipAndStation(dockedStationObjectId: null);
+        Render(fixture.Screen);
+
+        var result = fixture.Screen.OnMouseDown(640, 360);
+
+        Assert.Equal(ScreenEvent.None, result);
+        Assert.Equal(PlayerShipId, fixture.Screen.SelectedObjectId);
+    }
+
     /// <summary>Player ship at (10000,10000) — screen center — plus a Station object
     /// "STATION-1" at (10050,10000) — screen (690,360). The ship's IsDocked/
     /// DockedStationObjectId are set directly on its ObjectMotionSnapshot, exactly as
