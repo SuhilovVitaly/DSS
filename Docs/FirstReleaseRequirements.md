@@ -79,6 +79,7 @@
 - Клик по тактической карте теперь выбирает объект по приоритету типа, если в 30 px радиусе несколько объектов сразу: `Station` > корабль игрока > другой корабль > всё остальное; расстояние до курсора — только tie-break внутри одного приоритета (`GameSessionScreen.FindNearestObjectId`).
 - Кнопка `TRADE` на `StationScreen` реальная (не placeholder-строка): открывает `TradeScreen` (тоже заглушка) вложенным modal поверх `Station`.
 - Кнопка `HIRE` на `StationScreen` тоже реальная: открывает `HireScreen` (заглушка) тем же вложенным modal поверх `Station`.
+- Кнопка `FINANCE` на `StationScreen` тоже реальная — но открывает уже существовавший `FinanceScreen` (ранее доступный только с панели механик `GameSessionScreen`, кнопка `F`/`Ctrl+F`), а не новый экран.
 - `Load` присутствует как кнопка в `MainMenu` и `GameMenu`, но отдельного `LoadScreen` пока нет; название окна в требованиях первого релиза - `Load`.
 - Naming convention для игровых окон: каждое окно в коде должно начинаться с `Screen`, например `ScreenMainMenu`, `ScreenGameSession`, `ScreenGameMenu`, `ScreenSettings`, `ScreenSave`.
 - Текущие частично/полностью реализованные экранные классы пока не соответствуют новой конвенции, потому что используют суффикс `Screen`; их переименование описано в `Docs/FirstRelease/TechnicalTasks/ScreenNamingConventionRefactor.md`.
@@ -102,7 +103,7 @@
 | `Loot` | Не реализовано. | `Docs/FirstRelease/Screens/Loot.md` | Из `Session`; используется для результатов добычи/подбора. |
 | `Character Communication` | Не реализовано. | `Docs/FirstRelease/Screens/CharacterCommunication.md` | Из `Session` и `Ship`; показывает общение с членами экипажа и персонажами. |
 | `Cargo` | Не реализовано. | `Docs/FirstRelease/Screens/Cargo.md` | Из `Session`; показывает грузовой отсек корабля. |
-| `Finance` | Не реализовано. | `Docs/FirstRelease/Screens/Finance.md` | Из `Station`; показывает финансовые станционные операции/сводку. |
+| `Finance` | Реализована заглушка: `FinanceScreen`. | `Docs/FirstRelease/Screens/Finance.md` | Из `Session` (кнопка `F`/`Ctrl+F`) или из `Station` (кнопка `FINANCE`, вложенный modal); закрытие возвращает туда, откуда открыли. Финансовые станционные операции/сводка не реализованы. |
 | `Hire` | Реализована заглушка: `HireScreen`. | `Docs/FirstRelease/Screens/Hire.md` | Из `Station` (кнопка `HIRE`, вложенный modal); закрытие возвращает в `Station`. Найм/пассажирские контракты не реализованы. |
 | `Trade` | Реализована заглушка: `TradeScreen`. | `Docs/FirstRelease/Screens/Trade.md` | Из `Station` (кнопка `TRADE`, вложенный modal); закрытие возвращает в `Station`. Покупка, продажа и заправка `Fuel` не реализованы. |
 

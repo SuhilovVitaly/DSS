@@ -5,7 +5,8 @@ public enum StationButton
     None,
     Close,
     Trade,
-    Hire
+    Hire,
+    Finance
 }
 
 /// <summary>
@@ -26,17 +27,26 @@ public sealed class StationLayout
     public const float CloseButtonSize = 28f;
     public const float CloseButtonMargin = 14f;
 
+    // 24 px tall, not the 28 px BodyLineHeight — real buttons on adjacent rows (Trade
+    // row 0 / Finance row 1) must not overlap under the shared "-20" vertical offset
+    // below; a height equal to or greater than BodyLineHeight would collide there
+    // (caught by StationScreenTests.Trade_Hire_and_Finance_buttons_do_not_overlap).
     public const float TradeButtonWidth = 160f;
-    public const float TradeButtonHeight = 32f;
+    public const float TradeButtonHeight = 24f;
 
     public const float HireButtonWidth = 160f;
-    public const float HireButtonHeight = 32f;
+    public const float HireButtonHeight = 24f;
+
+    public const float FinanceButtonWidth = 160f;
+    public const float FinanceButtonHeight = 24f;
 
     /// <summary>Body row index of each real button, matching Station.md's "Минимальные
     /// кнопки" order (`Trade`, `Finance`, `Representatives`, `Install Drilling Unit`,
     /// `Hire`, `Undock`) — the remaining placeholder lines keep their row regardless of
     /// which entries have since become real buttons.</summary>
     private const int HireRowIndex = 4;
+
+    private const int FinanceRowIndex = 1;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
@@ -77,6 +87,22 @@ public sealed class StationLayout
         return (left, top, left + HireButtonWidth, top + HireButtonHeight);
     }
 
+    /// <summary>
+    /// FINANCE button rect, local to the panel — occupies the row `Finance`'s placeholder
+    /// text used to sit in (Docs/FirstRelease/Screens/Station.md: "Позволяет открыть
+    /// финансовую сводку/операции кнопкой `Finance`"), same styling/centering as
+    /// <see cref="TradeButtonLocalRect"/>/<see cref="HireButtonLocalRect"/>. Unlike Trade
+    /// and Hire, this opens the pre-existing <see cref="Finance.FinanceScreen"/> (already
+    /// reachable from GameSessionScreen's Mechanics panel / Ctrl+F) rather than a new
+    /// screen class.
+    /// </summary>
+    public static (float Left, float Top, float Right, float Bottom) FinanceButtonLocalRect()
+    {
+        float left = PanelWidth / 2f - FinanceButtonWidth / 2f;
+        float top = BodyStartY + FinanceRowIndex * BodyLineHeight - 20f;
+        return (left, top, left + FinanceButtonWidth, top + FinanceButtonHeight);
+    }
+
     /// <summary>True when (screenX, screenY) lands inside the panel rect (screen space).</summary>
     public static bool IsInsidePanel(float screenX, float screenY, int screenWidth, int screenHeight)
     {
@@ -106,6 +132,10 @@ public sealed class StationLayout
         var (hireLeft, hireTop, hireRight, hireBottom) = HireButtonLocalRect();
         if (lx >= hireLeft && lx <= hireRight && ly >= hireTop && ly <= hireBottom)
             return StationButton.Hire;
+
+        var (financeLeft, financeTop, financeRight, financeBottom) = FinanceButtonLocalRect();
+        if (lx >= financeLeft && lx <= financeRight && ly >= financeTop && ly <= financeBottom)
+            return StationButton.Finance;
 
         return StationButton.None;
     }

@@ -48,11 +48,12 @@
 - Панель `1400×900` (стандарт игровых окон), закрытие `×`/`Escape`/кликом по затемнённому фону вне панели — без отмены самой стыковки; `Back` из списка кнопок выше реализован именно так (не отдельной кнопкой).
 - Modal pause rule — как у любого другого модального окна поверх сессии (`PushModalAsync`/`PopModalAsync`, без собственной speed-логики).
 - Кнопки `Trade` и `Hire` — реальные, кликабельные (не placeholder-строки): открывают `TradeScreen`/`HireScreen` (обе заглушки) вложенным modal поверх `Station`, тем же `PushModalAsync`/`PopModalAsync`, что и `GameMenu → Save/Load`. Закрытие возвращает на `Station`. Детали: `Docs/FirstRelease/Screens/Trade.md`, `Docs/FirstRelease/Screens/Hire.md`.
+- Кнопка `Finance` тоже реальная — но, в отличие от `Trade`/`Hire`, открывает не новый экран, а уже существовавший `FinanceScreen` (ранее доступный только с кнопки `F`/`Ctrl+F` на панели механик `GameSessionScreen`). Детали: `Docs/FirstRelease/Screens/Finance.md`.
 
 Не реализовано — экран показывает placeholder-строки "not available yet" вместо этого:
 
 - Название станции и список доступных станционных действий (данные не читаются из snapshot).
-- Кнопки `Finance`, `Representatives`, `Install Drilling Unit`, `Undock` — сейчас это статичные текстовые строки, не интерактивные элементы (в отличие от `Trade`/`Hire`, см. выше).
+- Кнопки `Representatives`, `Install Drilling Unit`, `Undock` — сейчас это статичные текстовые строки, не интерактивные элементы (в отличие от `Trade`/`Hire`/`Finance`, см. выше).
 - Собственно отстыковка (Undock) — нигде не реализована, ни как кнопка здесь, ни как authoritative-действие в Engine.
 
 ## Архитектурные требования

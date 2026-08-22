@@ -7,17 +7,20 @@ namespace DeepSpaceSaga.Client.UI.Screens.Station;
 
 /// <summary>
 /// Station overlay (Docs/FirstRelease/Screens/Station.md). Placeholder shell:
-/// Finance/Representatives/Install Drilling Unit/Undock are not yet implemented, so
-/// the panel shows a "not available yet" line for each of them. `Trade` and `Hire`
-/// are real buttons — they open <see cref="Trade.TradeScreen"/>/<see cref="Hire.HireScreen"/>
-/// (both stubs, same open/close/pause-only shell) as a nested modal on top of this
-/// one. Opened from GameSessionScreen by left-clicking the station the player ship
-/// is currently docked to (ScreenEvent.OpenStation); closes via the × button,
-/// Escape, or a click outside the panel (on the dimmed background), returning to
-/// GameSessionScreen while the docked state itself is untouched — clicking the
-/// station again reopens this screen. Pause-on-open/resume-on-close is handled
-/// generically by SkiaWindow's PushModalAsync/PopModalAsync — this screen has no
-/// speed/pause logic of its own. Structural twin of <see cref="Finance.FinanceScreen"/>.
+/// Representatives/Install Drilling Unit/Undock are not yet implemented, so the
+/// panel shows a "not available yet" line for each of them. `Trade`, `Hire` and
+/// `Finance` are real buttons — `Trade`/`Hire` open <see cref="Trade.TradeScreen"/>/
+/// <see cref="Hire.HireScreen"/> (stubs, same open/close/pause-only shell as this
+/// screen); `Finance` opens the pre-existing <see cref="Finance.FinanceScreen"/>
+/// (already reachable from GameSessionScreen's Mechanics panel / Ctrl+F) — all three
+/// as a nested modal on top of this one. Opened from GameSessionScreen by
+/// left-clicking the station the player ship is currently docked to
+/// (ScreenEvent.OpenStation); closes via the × button, Escape, or a click outside
+/// the panel (on the dimmed background), returning to GameSessionScreen while the
+/// docked state itself is untouched — clicking the station again reopens this
+/// screen. Pause-on-open/resume-on-close is handled generically by SkiaWindow's
+/// PushModalAsync/PopModalAsync — this screen has no speed/pause logic of its own.
+/// Structural twin of <see cref="Finance.FinanceScreen"/>.
 /// </summary>
 public sealed class StationScreen : IScreen
 {
@@ -32,12 +35,11 @@ public sealed class StationScreen : IScreen
     /// Remaining not-yet-implemented lines, tagged with the body row they occupy
     /// (Station.md's "Минимальные кнопки" order: Trade=0, Finance=1,
     /// Representatives=2, Install Drilling Unit=3, Hire=4, Undock=5) — rows already
-    /// converted to real buttons (Trade, Hire) are simply absent here, so the
-    /// remaining lines keep their original row instead of repacking upward.
+    /// converted to real buttons (Trade, Finance, Hire) are simply absent here, so
+    /// the remaining lines keep their original row instead of repacking upward.
     /// </summary>
     private static readonly (int Row, string Text)[] PlaceholderLines =
     {
-        (1, "Finance: not available yet"),
         (2, "Representatives: not available yet"),
         (3, "Install Drilling Unit: not available yet"),
         (5, "Undock: not available yet"),
@@ -62,6 +64,8 @@ public sealed class StationScreen : IScreen
             return ScreenEvent.OpenTrade;
         if (hit == StationButton.Hire)
             return ScreenEvent.OpenHire;
+        if (hit == StationButton.Finance)
+            return ScreenEvent.OpenFinance;
 
         // Click on the dimmed background outside the panel also closes it.
         if (!StationLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
@@ -99,6 +103,7 @@ public sealed class StationScreen : IScreen
 
         DrawTradeButton(canvas, pl, pt);
         DrawHireButton(canvas, pl, pt);
+        DrawFinanceButton(canvas, pl, pt);
 
         foreach (var (row, text) in PlaceholderLines)
         {
@@ -125,6 +130,15 @@ public sealed class StationScreen : IScreen
 
         MenuStyle.DrawButton(canvas, rect, "HIRE",
             _hoveredButton == StationButton.Hire ? ButtonState.Hovered : ButtonState.Normal);
+    }
+
+    private void DrawFinanceButton(SKCanvas canvas, float panelLeft, float panelTop)
+    {
+        var (left, top, right, bottom) = StationLayout.FinanceButtonLocalRect();
+        var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
+
+        MenuStyle.DrawButton(canvas, rect, "FINANCE",
+            _hoveredButton == StationButton.Finance ? ButtonState.Hovered : ButtonState.Normal);
     }
 
     private void DrawCloseButton(SKCanvas canvas, float panelLeft, float panelTop)
