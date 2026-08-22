@@ -94,14 +94,26 @@ public sealed class ScenarioSelectScreen : IScreen
     };
 
     /// <summary>
-    /// Selection is shown as a bright outline, not a lighter fill — ButtonFillPressed
-    /// (78,78,78) sits too close to ColorTextDim (90,90,90) for the description line to
-    /// stay legible against it, so the row fill always stays at its normal/hovered
-    /// darkness and only the border brightens.
+    /// Selection is shown as a full-height accent line down the row's left edge, not a
+    /// fill or outline — colored to match the action panel's LABEL | VALUE separator
+    /// (see <see cref="_infoSeparatorPaint"/>'s 0xFF8404) so the two read as the same
+    /// "this is the selected one" accent across both panels.
     /// </summary>
-    private static readonly SKPaint _selectedRowBorder = new()
+    private static readonly SKPaint _selectedRowIndicator = new()
     {
-        Color = MenuStyle.ColorText,
+        Color = new SKColor(0xFF, 0x84, 0x04),
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = ScenarioSelectLayout.InfoSeparatorStrokeWidth
+    };
+
+    /// <summary>
+    /// Hover outline for an unselected row — rows have no fill at all (fully transparent
+    /// over the content panel), so hover/selection is shown by outline alone; the selected
+    /// row's white outline always wins over this one, even while hovered.
+    /// </summary>
+    private static readonly SKPaint _hoveredRowBorder = new()
+    {
+        Color = MenuStyle.ColorTextDim,
         Style = SKPaintStyle.Stroke,
         StrokeWidth = 2f
     };
@@ -344,12 +356,16 @@ public sealed class ScenarioSelectScreen : IScreen
         {
             var rowRect = CombinedRect(panelLeft, panelTop, ScenarioSelectLayout.RowRect(row.Y, row.Height));
 
+            // Rows have no fill — fully transparent over the content panel. The selected
+            // row gets a full-height accent line down its left edge (always, even while
+            // hovered); any other row gets a dark gray outline on hover; otherwise nothing.
             bool isSelected = row.AbsoluteIndex == _selectedIndex;
             bool isHovered = _hoveredZone == ScenarioSelectZone.Row && _hoveredScenarioIndex == row.AbsoluteIndex;
-            var fill = isHovered ? MenuStyle.ButtonFillHover : MenuStyle.ButtonFillNormal;
 
-            canvas.DrawRect(rowRect, fill);
-            canvas.DrawRect(rowRect, isSelected ? _selectedRowBorder : MenuStyle.ButtonBorder);
+            if (isSelected)
+                canvas.DrawLine(rowRect.Left, rowRect.Top, rowRect.Left, rowRect.Bottom, _selectedRowIndicator);
+            else if (isHovered)
+                canvas.DrawRect(rowRect, _hoveredRowBorder);
 
             canvas.Save();
             canvas.ClipRect(rowRect);
