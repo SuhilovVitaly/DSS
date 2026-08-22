@@ -403,12 +403,14 @@ public static class EngineContentLoader
     internal sealed record EngineSettingsFile(
         [property: JsonPropertyName("typeData")] TypeDataPaths TypeData,
         [property: JsonPropertyName("defaultScenario")] string DefaultScenario,
-        [property: JsonPropertyName("gameSettings")] GameSettingsRecord? GameSettings = null);
-
-    internal sealed record GameSettingsRecord(
-        [property: JsonPropertyName("showTrajectoryPrediction")] bool ShowTrajectoryPrediction = true,
-        [property: JsonPropertyName("selectedMonitorIndex")] int SelectedMonitorIndex = 0,
-        [property: JsonPropertyName("uiScale")] double UiScale = 1.0);
+        // Display/UI preferences (language, uiScale, selectedMonitorIndex, ...) are properties
+        // of the client application, not of a game session — the engine has no business
+        // knowing their shape. Typed as an opaque JsonElement (rather than a matching record)
+        // so UnmappedMemberHandling.Disallow only ever validates what the engine actually
+        // consumes (typeData/defaultScenario); the client (SkiaWindow.cs GetLanguage/
+        // SaveLanguage, GetUiScale, etc.) can add, rename, or remove gameSettings fields
+        // freely without ever touching engine code again.
+        [property: JsonPropertyName("gameSettings")] JsonElement GameSettings = default);
 
     internal sealed record TypeDataPaths(
         [property: JsonPropertyName("moduleTypes")] string ModuleTypes,

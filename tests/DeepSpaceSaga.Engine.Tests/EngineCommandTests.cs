@@ -1069,6 +1069,50 @@ public class EngineCommandTests
     }
 
     [Fact]
+    public void GameSettings_language_field_does_not_break_settings_loading()
+    {
+        // Regression: the client persists an arbitrary set of UI-only fields (including
+        // "language") into Settings.json's gameSettings object, e.g. via SkiaWindow.
+        // SaveLanguage. gameSettings is a client/application concern, not a game-session
+        // one — EngineSettingsFile.GameSettings is deliberately an opaque JsonElement so
+        // the engine never validates its shape and the client can add/rename/remove
+        // fields freely. This reproduces the original bug (before that) with "language"
+        // specifically, and guards against regressing back to a matching-record shape.
+        string directory = Path.Combine(Path.GetTempPath(), $"dss-gamesettings-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "Settings.json"), """
+            {
+              "typeData": { "moduleTypes": "module-types.json", "moduleImplementations": "modules.json", "itemTypes": "item-types.json", "commandDefinitions": "command-definitions.json" },
+              "defaultScenario": "scenario.json",
+              "gameSettings": { "showTrajectoryPrediction": true, "selectedMonitorIndex": 0, "uiScale": 1.0, "language": "English" }
+            }
+            """);
+            File.WriteAllText(Path.Combine(directory, "module-types.json"), """
+            { "moduleTypes": [ { "typeId": "module.engine", "displayName": "E", "slotSize": 1, "commandTypeIds": [] } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "modules.json"), """
+            { "moduleImplementations": [ { "typeId": "module.engine.basic", "displayName": "E", "type": "module.engine", "massKg": 1, "structurePointsMax": 1, "powerConsumptionW": 0, "baseCycleTimeMs": 1000, "maxSpeedMps": 4000, "turnStepDegrees": 1, "linearInertiaMps2": 400, "angularInertiaDegPerSec": 4, "fuelCapacityKg": 1 } ] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "item-types.json"), """{ "itemTypes": [] }""");
+            File.WriteAllText(Path.Combine(directory, "command-definitions.json"), """
+            { "commandDefinitions": [] }
+            """);
+            File.WriteAllText(Path.Combine(directory, "scenario.json"), DefaultScenarioJson);
+
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(
+                Path.Combine(directory, "Settings.json"), out _, out _);
+
+            Assert.NotNull(registry);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void ComplexityFactor_is_stored_as_fixed_point_int()
     {
         // AC2: complexityFactor 0.75 in JSON → 750 fixed-point.

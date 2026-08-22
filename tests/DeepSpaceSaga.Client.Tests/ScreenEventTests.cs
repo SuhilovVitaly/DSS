@@ -213,21 +213,23 @@ public class ScreenEventTests
 
     private static SettingsScreen NewSettingsScreen(
         int selectedMonitorIndex = 0, Action<int>? onMonitorSelected = null,
-        double selectedUiScale = 1.0, Action<double>? onUiScaleSelected = null) =>
+        double selectedUiScale = 1.0, Action<double>? onUiScaleSelected = null,
+        string selectedLanguage = "English", Action<string>? onLanguageSelected = null) =>
         new(TestMonitorNames, selectedMonitorIndex, onMonitorSelected ?? (_ => { }),
-            selectedUiScale, onUiScaleSelected ?? (_ => { }));
+            selectedUiScale, onUiScaleSelected ?? (_ => { }),
+            selectedLanguage, onLanguageSelected ?? (_ => { }));
 
     private static (float x, float y) SettingsMonitorComboCenter()
     {
-        float bx = SettingsPanelLeft + (SettingsLayout.PanelWidth - SettingsLayout.MonitorComboWidth) / 2f;
+        float bx = SettingsPanelLeft + SettingsLayout.RowRightX - SettingsLayout.MonitorComboWidth;
         return (bx + SettingsLayout.MonitorComboWidth / 2f,
-                SettingsPanelTop + SettingsLayout.MonitorComboY + SettingsLayout.MonitorComboHeight / 2f);
+                SettingsPanelTop + SettingsLayout.MonitorRowY + SettingsLayout.MonitorComboHeight / 2f);
     }
 
     private static (float x, float y) SettingsMonitorOptionCenter(int optionIndex)
     {
-        float bx = SettingsPanelLeft + (SettingsLayout.PanelWidth - SettingsLayout.MonitorComboWidth) / 2f;
-        float oy = SettingsPanelTop + SettingsLayout.MonitorComboY + SettingsLayout.MonitorComboHeight
+        float bx = SettingsPanelLeft + SettingsLayout.RowRightX - SettingsLayout.MonitorComboWidth;
+        float oy = SettingsPanelTop + SettingsLayout.MonitorRowY + SettingsLayout.MonitorComboHeight
             + optionIndex * SettingsLayout.MonitorOptionHeight;
         return (bx + SettingsLayout.MonitorComboWidth / 2f, oy + SettingsLayout.MonitorOptionHeight / 2f);
     }
@@ -334,15 +336,15 @@ public class ScreenEventTests
 
     private static (float x, float y) SettingsUiScaleComboCenter()
     {
-        float bx = SettingsPanelLeft + (SettingsLayout.PanelWidth - SettingsLayout.UiScaleComboWidth) / 2f;
+        float bx = SettingsPanelLeft + SettingsLayout.RowRightX - SettingsLayout.UiScaleComboWidth;
         return (bx + SettingsLayout.UiScaleComboWidth / 2f,
-                SettingsPanelTop + SettingsLayout.UiScaleComboY + SettingsLayout.UiScaleComboHeight / 2f);
+                SettingsPanelTop + SettingsLayout.UiScaleRowY + SettingsLayout.UiScaleComboHeight / 2f);
     }
 
     private static (float x, float y) SettingsUiScaleOptionCenter(int optionIndex)
     {
-        float bx = SettingsPanelLeft + (SettingsLayout.PanelWidth - SettingsLayout.UiScaleComboWidth) / 2f;
-        float oy = SettingsPanelTop + SettingsLayout.UiScaleComboY + SettingsLayout.UiScaleComboHeight
+        float bx = SettingsPanelLeft + SettingsLayout.RowRightX - SettingsLayout.UiScaleComboWidth;
+        float oy = SettingsPanelTop + SettingsLayout.UiScaleRowY + SettingsLayout.UiScaleComboHeight
             + optionIndex * SettingsLayout.UiScaleOptionHeight;
         return (bx + SettingsLayout.UiScaleComboWidth / 2f, oy + SettingsLayout.UiScaleOptionHeight / 2f);
     }

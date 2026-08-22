@@ -73,7 +73,17 @@ public sealed class ScenarioSelectScreen : IScreen
     /// <summary>True if the background PNG file was found and decoded at startup.</summary>
     internal static bool HasLoadedBackground => BackgroundImage is not null;
 
-    private static readonly SKPaint _titleTextPaint = MenuStyle.TextTitle;
+    /// <summary>Same size/color/alignment as <see cref="MenuStyle.TextTitle"/>, but in
+    /// Humaroid — a local copy rather than mutating the shared paint, which other screens
+    /// (GameMenu, Trade, Station, ...) also draw their own titles with.</summary>
+    private static readonly SKPaint _titleTextPaint = new()
+    {
+        Color = MenuStyle.ColorText,
+        TextSize = MenuStyle.TitleFontSize,
+        IsAntialias = true,
+        TextAlign = SKTextAlign.Center,
+        Typeface = MenuStyle.TypefaceHumaroid
+    };
 
     private static readonly SKPaint _rowNamePaint = new()
     {
@@ -81,9 +91,15 @@ public sealed class ScenarioSelectScreen : IScreen
         TextSize = MenuStyle.ButtonFontSize,
         IsAntialias = true,
         TextAlign = SKTextAlign.Left,
-        Typeface = MenuStyle.TypefaceBold
+        Typeface = MenuStyle.TypefaceHumaroid
     };
 
+    /// <summary>
+    /// Kept in the regular body font, not Humaroid — Humaroid is a wide display face
+    /// (fine for short titles/labels/buttons); at StatusFontSize on a paragraph-length
+    /// scenario description it wraps to far more lines and can blow through the row-list's
+    /// height budget, leaving little/no room for the rows below it.
+    /// </summary>
     private static readonly SKPaint _rowDescriptionPaint = new()
     {
         Color = MenuStyle.ColorTextDim,
@@ -127,7 +143,7 @@ public sealed class ScenarioSelectScreen : IScreen
         TextSize = 20f,
         IsAntialias = true,
         TextAlign = SKTextAlign.Center,
-        Typeface = MenuStyle.TypefaceBold
+        Typeface = MenuStyle.TypefaceHumaroid
     };
 
     private static readonly SKPaint _infoLabelPaint = new()
@@ -136,7 +152,7 @@ public sealed class ScenarioSelectScreen : IScreen
         TextSize = MenuStyle.ButtonFontSize,
         IsAntialias = true,
         TextAlign = SKTextAlign.Left,
-        Typeface = MenuStyle.TypefaceBold
+        Typeface = MenuStyle.TypefaceHumaroid
     };
 
     private static readonly SKPaint _infoValuePaint = new()
@@ -145,7 +161,7 @@ public sealed class ScenarioSelectScreen : IScreen
         TextSize = MenuStyle.ButtonFontSize,
         IsAntialias = true,
         TextAlign = SKTextAlign.Right,
-        Typeface = MenuStyle.TypefaceRegular
+        Typeface = MenuStyle.TypefaceHumaroid
     };
 
     private static readonly SKPaint _infoSeparatorPaint = new()
@@ -161,11 +177,11 @@ public sealed class ScenarioSelectScreen : IScreen
     /// (same spirit as the "not available yet" placeholders on Station/Trade/Finance)
     /// until the Engine exposes real per-scenario metadata.
     /// </summary>
-    private static readonly (string Label, string Value)[] InfoRows =
+    private static (string Label, string Value)[] InfoRows => new (string, string)[]
     {
-        ("DIFFICULTY", "NORMAL"),
-        ("ENVIRONMENT", "OPEN SPACE"),
-        ("CREW", "1 person"),
+        (Localization.Get("ScenarioSelect.Difficulty"), Localization.Get("ScenarioSelect.DifficultyNormal")),
+        (Localization.Get("ScenarioSelect.Environment"), Localization.Get("ScenarioSelect.EnvironmentOpenSpace")),
+        (Localization.Get("ScenarioSelect.Crew"), Localization.Get("ScenarioSelect.CrewOnePerson")),
     };
 
     /// <summary>One currently-visible scenario row, with its description already word-wrapped and its height resolved.</summary>
@@ -267,7 +283,7 @@ public sealed class ScenarioSelectScreen : IScreen
             pl + ScenarioSelectLayout.TitleRectX, pt + ScenarioSelectLayout.TitleRectY,
             pl + ScenarioSelectLayout.TitleRectX + ScenarioSelectLayout.TitleRectWidth,
             pt + ScenarioSelectLayout.TitleRectY + ScenarioSelectLayout.TitleRectHeight);
-        canvas.DrawText("SELECT SCENARIO", titleRect.MidX, MenuStyle.VerticalCenterBaseline(titleRect, _titleTextPaint), _titleTextPaint);
+        canvas.DrawText(Localization.Get("ScenarioSelect.Title"), titleRect.MidX, MenuStyle.VerticalCenterBaseline(titleRect, _titleTextPaint), _titleTextPaint);
 
         ImagePanel.Draw(canvas, new SKRect(
             pl + ScenarioSelectLayout.ContentPanelX, pt + ScenarioSelectLayout.ContentPanelY,
@@ -309,15 +325,16 @@ public sealed class ScenarioSelectScreen : IScreen
         }
 
         var backRect = CombinedRect(actionLeft, actionTop, ScenarioSelectLayout.BackButtonRect());
-        ImageButton.Draw(canvas, backRect, "BACK",
-            _hoveredZone == ScenarioSelectZone.Back ? ButtonState.Hovered : ButtonState.Normal);
+        ImageButton.Draw(canvas, backRect, Localization.Get("ScenarioSelect.Back"),
+            _hoveredZone == ScenarioSelectZone.Back ? ButtonState.Hovered : ButtonState.Normal,
+            MenuStyle.TypefaceHumaroid);
 
         bool canPlay = _selectedIndex >= 0 && _selectedIndex < _scenarios.Count;
         var playRect = CombinedRect(actionLeft, actionTop, ScenarioSelectLayout.PlayButtonRect());
         var playState = !canPlay
             ? ButtonState.Disabled
             : _hoveredZone == ScenarioSelectZone.Play ? ButtonState.Hovered : ButtonState.Normal;
-        ImageButton.Draw(canvas, playRect, "PLAY", playState);
+        ImageButton.Draw(canvas, playRect, Localization.Get("ScenarioSelect.Play"), playState, MenuStyle.TypefaceHumaroid);
     }
 
     /// <summary>

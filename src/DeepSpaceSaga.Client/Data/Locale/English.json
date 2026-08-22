@@ -1,0 +1,23 @@
+{
+  "MainMenu.NewGame": "NEW GAME",
+  "MainMenu.Load": "LOAD",
+  "MainMenu.Settings": "SETTINGS",
+  "MainMenu.Exit": "EXIT",
+
+  "Settings.Title": "SETTINGS",
+  "Settings.Language": "LANGUAGE",
+  "Settings.InterfaceScale": "INTERFACE SCALE",
+  "Settings.Monitor": "MONITOR",
+  "Settings.RestartNote": "Changes apply after game restart",
+  "Settings.Exit": "EXIT",
+
+  "ScenarioSelect.Title": "SELECT SCENARIO",
+  "ScenarioSelect.Back": "BACK",
+  "ScenarioSelect.Play": "PLAY",
+  "ScenarioSelect.Difficulty": "DIFFICULTY",
+  "ScenarioSelect.DifficultyNormal": "NORMAL",
+  "ScenarioSelect.Environment": "ENVIRONMENT",
+  "ScenarioSelect.EnvironmentOpenSpace": "OPEN SPACE",
+  "ScenarioSelect.Crew": "CREW",
+  "ScenarioSelect.CrewOnePerson": "1 person"
+}
