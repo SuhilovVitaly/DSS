@@ -20,6 +20,16 @@ public sealed class ScreenStack
         ? _stack.Skip(1).First()
         : null;
 
+    /// <summary>
+    /// Every screen in the stack, ordered bottom (root) to top (current). Used for
+    /// rendering: each screen's dim overlay must draw over the fully-rendered screen
+    /// beneath it, not just over whatever was left on the canvas from two-or-more
+    /// levels down (see SkiaWindow.OnRender — with three or more nested screens,
+    /// rendering only Current + UnderCurrent leaves the root screen unrendered and
+    /// its dim overlay paints over a blank/black canvas instead).
+    /// </summary>
+    public IEnumerable<IScreen> AllBottomToTop() => _stack.Reverse();
+
     /// <summary>Set the initial screen.</summary>
     public void SetRoot(IScreen screen)
     {

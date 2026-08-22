@@ -21,9 +21,6 @@ public sealed class FinanceScreen : IScreen
     private int _screenHeight;
     private bool _isCloseHovered;
 
-    private static readonly SKColor DimColor = new(0, 0, 0, 160);
-    private static readonly SKPaint DimPaint = new() { Color = DimColor, Style = SKPaintStyle.Fill };
-
     /// <summary>
     /// Panel background with title bar, at the exact 1400×900 panel size (ТЗ
     /// ScreenCatalog.md standard for gameplay-mechanic windows). Loaded once and
@@ -88,9 +85,6 @@ public sealed class FinanceScreen : IScreen
     {
         _screenWidth = width;
         _screenHeight = height;
-
-        // Dim background (overlay effect — underlying GameSessionScreen renders behind this)
-        canvas.DrawRect(0, 0, width, height, DimPaint);
 
         float pl = FinanceLayout.PanelLeft(width);
         float pt = FinanceLayout.PanelTop(height);

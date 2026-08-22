@@ -24,9 +24,6 @@ public sealed class HireScreen : IScreen
     private int _screenHeight;
     private bool _isCloseHovered;
 
-    private static readonly SKColor DimColor = new(0, 0, 0, 160);
-    private static readonly SKPaint DimPaint = new() { Color = DimColor, Style = SKPaintStyle.Fill };
-
     private const string PlaceholderLine = "Crew hiring: not available yet";
 
     public void OnActivated() => _isCloseHovered = false;
@@ -68,9 +65,6 @@ public sealed class HireScreen : IScreen
     {
         _screenWidth = width;
         _screenHeight = height;
-
-        // Dim background (overlay effect — underlying screens render behind this)
-        canvas.DrawRect(0, 0, width, height, DimPaint);
 
         float pl = HireLayout.PanelLeft(width);
         float pt = HireLayout.PanelTop(height);

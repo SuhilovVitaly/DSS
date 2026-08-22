@@ -30,9 +30,6 @@ public sealed class StationScreen : IScreen
     private int _screenHeight;
     private StationButton _hoveredButton = StationButton.None;
 
-    private static readonly SKColor DimColor = new(0, 0, 0, 160);
-    private static readonly SKPaint DimPaint = new() { Color = DimColor, Style = SKPaintStyle.Fill };
-
     /// <summary>
     /// Remaining not-yet-implemented lines, tagged with the body row they occupy
     /// (Station.md's "Минимальные кнопки" order: Trade=0, Finance=1,
@@ -94,9 +91,6 @@ public sealed class StationScreen : IScreen
     {
         _screenWidth = width;
         _screenHeight = height;
-
-        // Dim background (overlay effect — underlying GameSessionScreen renders behind this)
-        canvas.DrawRect(0, 0, width, height, DimPaint);
 
         float pl = StationLayout.PanelLeft(width);
         float pt = StationLayout.PanelTop(height);

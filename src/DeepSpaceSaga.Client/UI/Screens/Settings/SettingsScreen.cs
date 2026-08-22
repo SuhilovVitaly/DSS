@@ -27,12 +27,6 @@ public sealed class SettingsScreen : IScreen
     private SettingsButton _hoveredButton = SettingsButton.None;
     private SettingsButton _pressedButton = SettingsButton.None;
 
-    private static readonly SKPaint _dimPaint = new()
-    {
-        Color = new SKColor(0, 0, 0, 160),
-        Style = SKPaintStyle.Fill
-    };
-
     private static readonly SKPaint _arrowPaint = new()
     {
         Color = MenuStyle.ColorText,
@@ -171,9 +165,6 @@ public sealed class SettingsScreen : IScreen
         _screenWidth = width;
         _screenHeight = height;
         _pressedButton = SettingsButton.None;
-
-        // Dim background (overlay effect — underlying screen renders behind this)
-        canvas.DrawRect(0, 0, width, height, _dimPaint);
 
         float pl = SettingsLayout.PanelLeft(width);
         float pt = SettingsLayout.PanelTop(height);

@@ -46,6 +46,7 @@ public static class MenuStyle
     public static readonly SKColor ColorButtonHover = new(58, 58, 58);
     public static readonly SKColor ColorButtonPressed = new(78, 78, 78);
     public static readonly SKColor ColorBackground = SKColors.Black;
+    public static readonly SKColor ColorDimOverlay = new(0, 0, 0, 160);
 
     // --- Font sizes (visual property, not layout geometry) ---
     public const float ButtonFontSize = 14f;      // 10.8pt Bold
@@ -62,6 +63,7 @@ public static class MenuStyle
     public static SKPaint PanelFill { get; } = new() { Color = ColorPanelBg, Style = SKPaintStyle.Fill };
     public static SKPaint PanelBorder { get; } = new() { Color = ColorPanelBorder, Style = SKPaintStyle.Stroke, StrokeWidth = PanelBorderWidth };
     public static SKPaint BackgroundFill { get; } = new() { Color = ColorBackground, Style = SKPaintStyle.Fill };
+    public static SKPaint DimOverlayFill { get; } = new() { Color = ColorDimOverlay, Style = SKPaintStyle.Fill };
 
     public static SKPaint ButtonFillNormal { get; } = new() { Color = ColorButtonBg, Style = SKPaintStyle.Fill };
     public static SKPaint ButtonFillHover { get; } = new() { Color = ColorButtonHover, Style = SKPaintStyle.Fill };
@@ -107,6 +109,18 @@ public static class MenuStyle
     public static void DrawBackground(SKCanvas canvas, int width, int height)
     {
         canvas.DrawRect(0, 0, width, height, BackgroundFill);
+    }
+
+    /// <summary>
+    /// Draw the fullscreen dim overlay used behind a modal panel. Drawn exactly once
+    /// by SkiaWindow.OnRender between the interactive root screen and the bottom-most
+    /// overlay — individual overlay screens (Station, Trade, GameMenu, Settings, ...)
+    /// must not draw their own copy, or stacking overlays (e.g. Trade opened from
+    /// Station) would compound the dimming and look darker than a single overlay.
+    /// </summary>
+    public static void DrawDimOverlay(SKCanvas canvas, int width, int height)
+    {
+        canvas.DrawRect(0, 0, width, height, DimOverlayFill);
     }
 
     private static SKPaint MakeText(float size, bool bold, bool dim = false)

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using DeepSpaceSaga.Client;
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.Finance;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
@@ -264,13 +265,21 @@ public sealed class SkiaWindow : IDisposable
         canvas.Save();
         canvas.Scale(scaleX, scaleY);
 
-        // Overlay: render underlying screen first so overlay dims on top of it
-        if (_screens.Count > 1 && _screens.UnderCurrent is { } under)
+        // Overlay: render the whole stack bottom-to-top so every overlay panel draws
+        // on top of the interactive root screen instead of a blank canvas. The dim
+        // rect itself is drawn exactly once, right before the first (bottom-most)
+        // overlay — individual screens no longer draw their own, so stacking overlays
+        // (e.g. Trade opened from Station) look exactly as dim as a single overlay
+        // instead of compounding darker with each nested level.
+        int index = 0;
+        foreach (var screen in _screens.AllBottomToTop())
         {
-            under.Render(canvas, windowSize.X, windowSize.Y);
-        }
+            if (index == 1)
+                MenuStyle.DrawDimOverlay(canvas, windowSize.X, windowSize.Y);
 
-        _screens.Current.Render(canvas, windowSize.X, windowSize.Y);
+            screen.Render(canvas, windowSize.X, windowSize.Y);
+            index++;
+        }
 
         if (isFirstFrame)
             InterfaceLog.Write($"STARTUP DIAG: first-frame screen.Render (recording) done — {diagSw!.ElapsedMilliseconds} ms into OnRender");

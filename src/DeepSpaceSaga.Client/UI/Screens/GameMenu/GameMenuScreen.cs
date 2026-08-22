@@ -14,12 +14,6 @@ public sealed class GameMenuScreen : IScreen
     private GameMenuButton _hoveredButton = GameMenuButton.None;
     private GameMenuButton _pressedButton = GameMenuButton.None;
 
-    private static readonly SKPaint _dimPaint = new()
-    {
-        Color = new SKColor(0, 0, 0, 160),
-        Style = SKPaintStyle.Fill
-    };
-
     public void OnActivated()
     {
         _hoveredButton = GameMenuButton.None;
@@ -72,9 +66,6 @@ public sealed class GameMenuScreen : IScreen
         _screenWidth = width;
         _screenHeight = height;
         _pressedButton = GameMenuButton.None;
-
-        // Dim background (overlay effect — underlying screen renders behind this)
-        canvas.DrawRect(0, 0, width, height, _dimPaint);
 
         float pl = GameMenuLayout.PanelLeft(width);
         float pt = GameMenuLayout.PanelTop(height);
