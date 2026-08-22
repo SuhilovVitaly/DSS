@@ -30,12 +30,23 @@ public static class Program
         // The only place that knows about Saves/ on disk (mirrors Settings.json).
         private static string SettingsPath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
         private static string SaveDirectory => Path.Combine(AppContext.BaseDirectory, "Saves");
+        private static string ScenariosDirectory => Path.Combine(AppContext.BaseDirectory, "Scenarios");
         private static string QuickSavePath =>
             Path.Combine(SaveDirectory, SaveSlotNaming.ToFileName(SaveSlots.Quicksave));
 
         public IGameSessionConnection CreateSession()
         {
             return LocalGameSessionConnection.CreateFromSettingsFile(SettingsPath, SaveDirectory);
+        }
+
+        public IGameSessionConnection CreateSessionFromScenario(string scenarioPath)
+        {
+            return LocalGameSessionConnection.CreateFromScenarioFile(SettingsPath, scenarioPath, SaveDirectory);
+        }
+
+        public ScenarioInfo[] ListScenarios()
+        {
+            return ScenarioRepository.ListScenarios(ScenariosDirectory);
         }
 
         public IGameSessionConnection CreateSessionFromSave(string slotId)

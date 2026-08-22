@@ -1,7 +1,8 @@
 {
   "scenarioMetadata": {
     "scenarioId": "docked",
-    "name": "Docked at Station"
+    "name": "Docked at Station",
+    "description": "Start already docked at the station — ship stationary at the station's position, ready to trade or resupply before undocking."
   },
   "gameState": {
     "gameTimeMs": 0,

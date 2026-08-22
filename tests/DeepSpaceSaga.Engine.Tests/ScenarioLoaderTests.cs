@@ -39,6 +39,35 @@ public class ScenarioLoaderTests
     }
 
     [Fact]
+    public void LoadFromJson_missing_description_defaults_to_null()
+    {
+        // Backward compatibility: scenario/save files predating the description field
+        // (and every save file, which never sets it) must still load.
+        var scenario = ScenarioLoader.LoadFromJson(ValidJson);
+        Assert.Null(scenario.Metadata.Description);
+    }
+
+    [Fact]
+    public void LoadFromJson_reads_description_when_present()
+    {
+        const string json = """
+        {
+          "scenarioMetadata": { "scenarioId": "default", "name": "Default", "description": "A starter scenario." },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1", "playerShipObjectId": "SPC-0001",
+            "spaceObjects": [
+              { "objectId": "SPC-0001", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0, "movementType": "Stationary" }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        Assert.Equal("A starter scenario.", scenario.Metadata.Description);
+    }
+
+    [Fact]
     public void LoadFromJson_has_correct_object_count()
     {
         var scenario = ScenarioLoader.LoadFromJson(ValidJson);

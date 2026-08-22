@@ -35,6 +35,21 @@ public static class EngineContentLoader
         return engine;
     }
 
+    /// <summary>
+    /// Bootstrap a new engine from an explicitly chosen scenario file instead of settings'
+    /// defaultScenario (the New Game -&gt; scenario picker path). New Game semantics —
+    /// gameTimeMs must be 0, same as CreateEngineFromSettingsFile — unlike
+    /// CreateEngineFromSaveFile's allowNonZeroGameTime: true.
+    /// </summary>
+    public static SimulationEngine CreateEngineFromScenarioFile(string settingsPath, string scenarioPath)
+    {
+        var registry = LoadRegistryFromSettingsFile(settingsPath, out _, out _);
+        var scenario = ScenarioLoader.LoadFromFile(scenarioPath);
+        var engine = new SimulationEngine(registry);
+        engine.LoadScenario(scenario);
+        return engine;
+    }
+
     internal static LoadedEngineContent LoadFromSettingsFile(string settingsPath)
     {
         var registry = LoadRegistryFromSettingsFile(settingsPath, out string basePath, out var settings);

@@ -4,6 +4,7 @@ using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.Load;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 using DeepSpaceSaga.Client.UI.Screens.Save;
+using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
@@ -1247,5 +1248,132 @@ public class ScreenEventTests
         TriggerLoadRender(screen);
         screen.OnMouseDown(lx, ly);
         Assert.Equal("slot-0", screen.LastRequestedSlotId);
+    }
+
+    // --- ScenarioSelect tests ---
+
+    private static float ScenarioSelectPanelLeft => ScenarioSelectLayout.PanelLeft(ScreenWidth);
+    private static float ScenarioSelectPanelTop => ScenarioSelectLayout.PanelTop(ScreenHeight);
+
+    private static (float x, float y) ScenarioSelectCenter((float X, float Y, float W, float H) local) =>
+        (ScenarioSelectPanelLeft + local.X + local.W / 2f, ScenarioSelectPanelTop + local.Y + local.H / 2f);
+
+    private static void TriggerScenarioSelectRender(IScreen screen)
+    {
+        using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, ScreenWidth, ScreenHeight);
+    }
+
+    private static ScenarioInfo Scenario(string id, string name, string description) =>
+        new($"/fake/{id}/scenario.json", id, name, description);
+
+    private static ScenarioSelectScreen NewScenarioSelectScreen(IReadOnlyList<ScenarioInfo>? scenarios = null)
+    {
+        var currentScenarios = scenarios ?? Array.Empty<ScenarioInfo>();
+        return new ScenarioSelectScreen(() => currentScenarios);
+    }
+
+    [Fact]
+    public void ScenarioSelect_Back_click_returns_MainMenu()
+    {
+        var screen = NewScenarioSelectScreen();
+        TriggerScenarioSelectRender(screen);
+        var (x, y) = ScenarioSelectCenter(ScenarioSelectLayout.BackButtonRect());
+        Assert.Equal(ScreenEvent.MainMenu, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void ScenarioSelect_Esc_returns_MainMenu()
+    {
+        var screen = NewScenarioSelectScreen();
+        TriggerScenarioSelectRender(screen);
+        Assert.Equal(ScreenEvent.MainMenu, screen.OnKeyDown(Key.Escape));
+    }
+
+    [Fact]
+    public void ScenarioSelect_other_key_returns_None()
+    {
+        var screen = NewScenarioSelectScreen();
+        TriggerScenarioSelectRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.A));
+    }
+
+    [Fact]
+    public void ScenarioSelect_click_outside_button_returns_None()
+    {
+        var screen = NewScenarioSelectScreen();
+        TriggerScenarioSelectRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(0, 0));
+    }
+
+    [Fact]
+    public void ScenarioSelect_Play_click_returns_ScenarioSelected_with_the_row_ScenarioPath_retrievable()
+    {
+        var scenarios = new[] { Scenario("default", "Default Scenario", "A basic start.") };
+        var screen = NewScenarioSelectScreen(scenarios);
+        TriggerScenarioSelectRender(screen);
+
+        var (x, y) = ScenarioSelectCenter(ScenarioSelectLayout.PlayButtonRect(0));
+        var evt = screen.OnMouseDown(x, y);
+
+        Assert.Equal(ScreenEvent.ScenarioSelected, evt);
+        // Mirrors how SkiaWindow's mouse-dispatch site reads this: synchronously, in the
+        // same call frame, immediately after OnMouseDown returns.
+        Assert.Equal("/fake/default/scenario.json", screen.LastSelectedScenarioPath);
+    }
+
+    [Fact]
+    public void ScenarioSelect_Play_click_selects_the_correct_row_among_several()
+    {
+        var scenarios = new[]
+        {
+            Scenario("default", "Default Scenario", "A basic start."),
+            Scenario("docked", "Docked at Station", "Start docked.")
+        };
+        var screen = NewScenarioSelectScreen(scenarios);
+        TriggerScenarioSelectRender(screen);
+
+        var (x, y) = ScenarioSelectCenter(ScenarioSelectLayout.PlayButtonRect(1));
+        var evt = screen.OnMouseDown(x, y);
+
+        Assert.Equal(ScreenEvent.ScenarioSelected, evt);
+        Assert.Equal("/fake/docked/scenario.json", screen.LastSelectedScenarioPath);
+    }
+
+    [Fact]
+    public void ScenarioSelect_MouseWheel_scrolls_row_zero_through_overflowing_scenarios_and_clamps_at_both_ends()
+    {
+        int extra = 3;
+        var scenarios = Enumerable.Range(0, ScenarioSelectLayout.VisibleRows + extra)
+            .Select(i => Scenario($"scenario-{i}", $"Scenario {i}", "Desc"))
+            .ToArray();
+        var screen = NewScenarioSelectScreen(scenarios);
+        TriggerScenarioSelectRender(screen);
+
+        var (x, y) = ScenarioSelectCenter(ScenarioSelectLayout.PlayButtonRect(0));
+
+        screen.OnMouseDown(x, y);
+        Assert.Equal("/fake/scenario-0/scenario.json", screen.LastSelectedScenarioPath);
+
+        for (int i = 0; i < extra; i++)
+            screen.OnMouseWheel(0, 0, -1); // scroll down one row at a time
+
+        TriggerScenarioSelectRender(screen);
+        screen.OnMouseDown(x, y);
+        Assert.Equal($"/fake/scenario-{extra}/scenario.json", screen.LastSelectedScenarioPath);
+
+        // Further downward scrolling past the last row is clamped, not out of range.
+        screen.OnMouseWheel(0, 0, -1);
+        TriggerScenarioSelectRender(screen);
+        screen.OnMouseDown(x, y);
+        Assert.Equal($"/fake/scenario-{extra}/scenario.json", screen.LastSelectedScenarioPath);
+
+        // Scrolling back up returns to (and clamps at) the top.
+        for (int i = 0; i < extra + 1; i++)
+            screen.OnMouseWheel(0, 0, 1);
+        TriggerScenarioSelectRender(screen);
+        screen.OnMouseDown(x, y);
+        Assert.Equal("/fake/scenario-0/scenario.json", screen.LastSelectedScenarioPath);
     }
 }

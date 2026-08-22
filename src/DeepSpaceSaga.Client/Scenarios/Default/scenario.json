@@ -1,7 +1,8 @@
 {
   "scenarioMetadata": {
     "scenarioId": "default",
-    "name": "Default Scenario"
+    "name": "Default Scenario",
+    "description": "A fully equipped starter ship drifting in open space near a station, with a couple of nearby asteroids to scan and approach."
   },
   "gameState": {
     "gameTimeMs": 0,

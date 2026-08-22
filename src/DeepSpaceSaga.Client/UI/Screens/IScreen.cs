@@ -22,6 +22,7 @@ public enum ScreenEvent
 {
     None,
     NewGame,
+    ScenarioSelected,
     Exit,
     OpenGameMenu,
     Resume,

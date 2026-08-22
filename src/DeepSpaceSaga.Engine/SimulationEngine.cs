@@ -99,6 +99,17 @@ public sealed class SimulationEngine : IDisposable
         return EngineContentLoader.CreateEngineFromSaveFile(settingsPath, savePath);
     }
 
+    /// <summary>
+    /// Bootstrap a new engine from an explicitly chosen scenario file (the New Game -&gt;
+    /// scenario picker path) instead of settings' defaultScenario. Mirrors
+    /// CreateFromSettingsFile's New Game semantics (gameTimeMs must be 0) but reads the
+    /// scenario from an arbitrary path rather than settings.DefaultScenario.
+    /// </summary>
+    public static SimulationEngine CreateFromScenarioFile(string settingsPath, string scenarioPath)
+    {
+        return EngineContentLoader.CreateEngineFromScenarioFile(settingsPath, scenarioPath);
+    }
+
     internal SimulationEngine(GameDataRegistry registry)
     {
         _registry = registry;

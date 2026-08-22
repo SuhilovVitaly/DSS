@@ -58,6 +58,21 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     }
 
     /// <summary>
+    /// Bootstrap a new connection from an explicitly chosen scenario file (the New Game -&gt;
+    /// scenario picker path) instead of settings' defaultScenario. Mirrors
+    /// CreateFromSettingsFile — unlike CreateFromSaveFile, saveDirectory is NOT defaulted
+    /// from scenarioPath's directory (a scenario file under Scenarios/ is not a place to
+    /// write future saves into); callers pass the real Saves/ directory explicitly, same as
+    /// CreateFromSettingsFile's callers do.
+    /// </summary>
+    public static LocalGameSessionConnection CreateFromScenarioFile(
+        string settingsPath, string scenarioPath, string? saveDirectory = null)
+    {
+        var engine = SimulationEngine.CreateFromScenarioFile(settingsPath, scenarioPath);
+        return new LocalGameSessionConnection(engine, saveDirectory);
+    }
+
+    /// <summary>
     /// True if the save/scenario just loaded into this connection's engine had no
     /// masterSeed, so the engine generated a fresh one. Legitimate composition-root callers
     /// (Program.cs) check this after CreateFromSaveFile specifically — not after

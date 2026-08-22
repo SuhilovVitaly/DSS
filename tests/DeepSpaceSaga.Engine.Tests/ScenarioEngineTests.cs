@@ -272,6 +272,42 @@ public class ScenarioEngineTests
     }
 
     [Fact]
+    public void CreateFromScenarioFile_loads_an_explicitly_chosen_scenario_instead_of_the_settings_default()
+    {
+        // The New Game -> scenario picker path: SimulationEngine.CreateFromScenarioFile
+        // must read the given scenario file, not settings.json's defaultScenario, while
+        // still using the settings file's type registry (module/item/command definitions).
+        string settingsPath = ResolveRealSettingsPath();
+        string dockedScenarioPath = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(settingsPath)!, "Scenarios", "Docked", "scenario.json"));
+
+        var engine = SimulationEngine.CreateFromScenarioFile(settingsPath, dockedScenarioPath);
+
+        var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
+        var station = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0002");
+
+        Assert.Equal(station.InitialMotion.X, playerShip.InitialMotion.X);
+        Assert.Equal(station.InitialMotion.Y, playerShip.InitialMotion.Y);
+        Assert.Equal(0, playerShip.InitialMotion.SpeedKmS);
+    }
+
+    private static string ResolveRealSettingsPath()
+    {
+        string settingsPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..", "..", "..", "..", "..",
+            "src", "DeepSpaceSaga.Client", "Settings.json"));
+
+        if (!File.Exists(settingsPath))
+        {
+            settingsPath = Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory, "Settings.json"));
+        }
+
+        return settingsPath;
+    }
+
+    [Fact]
     public void Real_default_scenario_active_module_types_have_valid_command_type_ids()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
