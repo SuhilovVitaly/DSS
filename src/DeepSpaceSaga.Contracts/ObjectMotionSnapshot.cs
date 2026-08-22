@@ -51,4 +51,13 @@ public sealed record ObjectMotionSnapshot(
     /// <summary>Escape course used by the close-target escape phases, degrees.</summary>
     double? NavigationEscapeCourseDegrees = null,
     /// <summary>Required distance from the target before leaving the escape-depart phase.</summary>
-    double? NavigationRequiredDepartureDistance = null);
+    double? NavigationRequiredDepartureDistance = null,
+    /// <summary>
+    /// True when this object (the player ship) is authoritatively docked to a station
+    /// (<see cref="NavigationComputerCommandTypes.Dock"/>). Always false for every other
+    /// object. Source of truth is <c>SpaceObjectRuntime.IsDocked</c> — projected onto the
+    /// outgoing snapshot row the same way <see cref="ObjectType"/>/<see cref="DisplayName"/> are.
+    /// </summary>
+    bool IsDocked = false,
+    /// <summary>ObjectId of the station this object is docked to. Null unless <see cref="IsDocked"/>.</summary>
+    string? DockedStationObjectId = null);

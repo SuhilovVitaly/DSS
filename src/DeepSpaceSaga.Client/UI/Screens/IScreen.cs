@@ -39,5 +39,7 @@ public enum ScreenEvent
     OpenFinance,
     CloseFinance,
     OpenShip,
-    CloseShip
+    CloseShip,
+    OpenStation,
+    CloseStation
 }

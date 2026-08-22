@@ -406,6 +406,15 @@ public sealed class GameSessionScreen : IScreen
                 _cameraFollowObjectId = hitObjectId;
             }
 
+            // The selected object is the station the player ship is currently docked to
+            // (authoritative IsDocked/DockedStationObjectId from the snapshot, requirements
+            // Docking.md/Station.md) — clicking it (re)opens the Station screen instead of
+            // just selecting it. Docking itself is unaffected by this click either way.
+            var snapshot = _buffer.Latest?.Snapshot;
+            var playerShip = snapshot?.Objects.FirstOrDefault(o => o.ObjectId == snapshot.PlayerShipObjectId);
+            if (playerShip is { IsDocked: true } && playerShip.DockedStationObjectId == hitObjectId)
+                return ScreenEvent.OpenStation;
+
             return ScreenEvent.None;
         }
 

@@ -30,7 +30,14 @@ internal sealed record CommandDefinition(
     /// (module→command); this field exists for physical content organization and cross-checking
     /// that organization against that source of truth, not as an alternative ownership link.
     /// </summary>
-    string Type = "") : ITypeDefinition
+    string Type = "",
+    /// <summary>
+    /// Maximum distance in kilometers for a target-object command whose validation is
+    /// range-gated (currently only <c>navigation.dock</c>, requirements Docking.md:
+    /// "Значение 200 km должно быть параметром command definition команды Dock, а не
+    /// hardcoded-числом"). Null for every command that isn't range-gated.
+    /// </summary>
+    int? RangeKm = null) : ITypeDefinition
 {
     /// <summary>Fixed-point constant for the neutral factor value 1.0.</summary>
     public const int Neutral = 1000;

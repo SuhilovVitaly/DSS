@@ -11,6 +11,7 @@ using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Client.UI.Screens.Ship;
+using DeepSpaceSaga.Client.UI.Screens.Station;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using Silk.NET.Core;
@@ -576,6 +577,12 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.CloseShip:
                     await CloseOverlayAsync();
                     break;
+                case ScreenEvent.OpenStation:
+                    await OpenStationAsync();
+                    break;
+                case ScreenEvent.CloseStation:
+                    await CloseOverlayAsync();
+                    break;
             }
         }
         finally
@@ -719,6 +726,22 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         await PushModalAsync(new ShipScreen());
+    }
+
+    /// <summary>
+    /// Push the Station overlay (Docs/FirstRelease/Screens/Station.md). Opened by
+    /// left-clicking, on the tactical map, the station the player ship is currently
+    /// docked to (GameSessionScreen.OnMouseDown → ScreenEvent.OpenStation). Uses the
+    /// same generic PushModalAsync pause-on-open behavior as every other modal — no
+    /// Station-specific speed/docking logic needed here.
+    /// </summary>
+    private async Task OpenStationAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is StationScreen)
+            return;
+
+        await PushModalAsync(new StationScreen());
     }
 
     private async Task OpenSettingsAsync()

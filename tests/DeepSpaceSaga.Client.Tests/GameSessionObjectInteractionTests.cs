@@ -447,6 +447,72 @@ public class GameSessionObjectInteractionTests
         Assert.Equal(expectedY, fixture.Screen.CameraFocusY);
     }
 
+    // ── Left click on a docked station opens the Station screen ─────────────────
+
+    [Fact]
+    public async Task Left_click_on_the_station_the_ship_is_docked_to_returns_OpenStation()
+    {
+        await using var fixture = CreateFixtureWithDockedShipAndStation(dockedStationObjectId: "STATION-1");
+        Render(fixture.Screen);
+
+        var result = fixture.Screen.OnMouseDown(690, 360); // STATION-1 at world (10050,10000)
+
+        Assert.Equal(ScreenEvent.OpenStation, result);
+        Assert.Equal("STATION-1", fixture.Screen.SelectedObjectId); // still selects it, same as any other click
+    }
+
+    [Fact]
+    public async Task Left_click_on_a_station_the_ship_is_not_docked_to_returns_None()
+    {
+        // IsDocked is true, but for a DIFFERENT station id than the one clicked here —
+        // the click must not open the Station screen for an arbitrary station.
+        await using var fixture = CreateFixtureWithDockedShipAndStation(dockedStationObjectId: "STATION-OTHER");
+        Render(fixture.Screen);
+
+        var result = fixture.Screen.OnMouseDown(690, 360); // STATION-1, not STATION-OTHER
+
+        Assert.Equal(ScreenEvent.None, result);
+        Assert.Equal("STATION-1", fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Left_click_on_a_station_while_not_docked_returns_None()
+    {
+        await using var fixture = CreateFixtureWithDockedShipAndStation(dockedStationObjectId: null);
+        Render(fixture.Screen);
+
+        var result = fixture.Screen.OnMouseDown(690, 360);
+
+        Assert.Equal(ScreenEvent.None, result);
+        Assert.Equal("STATION-1", fixture.Screen.SelectedObjectId);
+    }
+
+    /// <summary>Player ship at (10000,10000) — screen center — plus a Station object
+    /// "STATION-1" at (10050,10000) — screen (690,360). The ship's IsDocked/
+    /// DockedStationObjectId are set directly on its ObjectMotionSnapshot, exactly as
+    /// SimulationEngine.BuildSnapshot projects them from SpaceObjectRuntime.</summary>
+    private static TestFixture CreateFixtureWithDockedShipAndStation(string? dockedStationObjectId)
+    {
+        var connection = new RecordingConnection();
+        var handle = new GameSessionHandle(connection);
+        var ship = new ObjectMotionSnapshot(
+            PlayerShipId, X: 10000, Y: 10000, SpeedKmS: 0, Direction: 0,
+            IsDocked: dockedStationObjectId is not null,
+            DockedStationObjectId: dockedStationObjectId);
+        var station = new ObjectMotionSnapshot(
+            "STATION-1", X: 10050, Y: 10000, SpeedKmS: 0, Direction: 0,
+            ObjectType: SpaceObjectType.Station, RenderObjectType: SpaceObjectType.Station);
+        handle.Buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1,
+            GameTimeMs: 0,
+            CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(ship, station),
+            PlayerShipObjectId: PlayerShipId));
+
+        var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);
+        return new TestFixture(connection, handle, screen);
+    }
+
     // ── Right click: clear selection ─────────────────────────────────────────────
 
     [Fact]

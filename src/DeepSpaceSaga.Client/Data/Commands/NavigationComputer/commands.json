@@ -8,7 +8,8 @@
             "consumptionFactor": 1.0,
             "target": "object",
             "activationEnergyCellsCost": 3,
-            "type": "module.bridge.navigation.computer"
+            "type": "module.bridge.navigation.computer",
+            "rangeKm": 200
         },
         {
             "typeId": "navigation.stationsList",

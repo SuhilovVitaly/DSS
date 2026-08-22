@@ -74,7 +74,15 @@ public sealed record SpaceObjectData(
     /// model). Nullable at the DTO level; the domain requires it whenever Modules is
     /// non-empty (see SimulationEngine.ValidateModulePlacement).
     /// </summary>
-    [property: JsonPropertyName("hullLayout")] HullLayoutData? HullLayout = null);
+    [property: JsonPropertyName("hullLayout")] HullLayoutData? HullLayout = null,
+    /// <summary>
+    /// True when this object (the player ship) is docked to a station
+    /// (navigation.dock). Persisted across save/load. Absent/false for every
+    /// scenario/save file predating docking and for every non-ship object.
+    /// </summary>
+    [property: JsonPropertyName("isDocked")] bool IsDocked = false,
+    /// <summary>ObjectId of the station this object is docked to. Null unless <see cref="IsDocked"/>.</summary>
+    [property: JsonPropertyName("dockedStationObjectId")] string? DockedStationObjectId = null);
 
 /// <summary>A ship module declared in a scenario.</summary>
 public sealed record ShipModuleData(
