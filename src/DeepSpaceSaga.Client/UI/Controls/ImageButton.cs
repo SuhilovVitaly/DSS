@@ -31,18 +31,42 @@ public static class ImageButton
         catch { return null; }
     }
 
-    private static readonly SKPaint _textNormal = MakeTextPaint(MenuStyle.ColorText);
+    private static readonly SKPaint _textNormal = MakeTextPaint(MenuStyle.ColorText, MenuStyle.TypefaceBold, MenuStyle.ButtonFontSize);
     private static readonly SKPaint _textDisabled = MenuStyle.TextButtonDim;
-    private static readonly SKPaint _textHover = MakeTextPaint(new SKColor(0xDA, 0x93, 0x07));
+    private static readonly SKPaint _textHover = MakeTextPaint(new SKColor(0xDA, 0x93, 0x07), MenuStyle.TypefaceBold, MenuStyle.ButtonFontSize);
 
-    private static SKPaint MakeTextPaint(SKColor color) => new()
+    /// <summary>Text paints for a non-default typeface/size, built lazily and cached per (typeface, size).</summary>
+    private static readonly Dictionary<(SKTypeface Typeface, float Size), (SKPaint Normal, SKPaint Hover, SKPaint Disabled)> _customTextPaints = new();
+
+    private static SKPaint MakeTextPaint(SKColor color, SKTypeface typeface, float size) => new()
     {
         Color = color,
-        TextSize = MenuStyle.ButtonFontSize,
+        TextSize = size,
         IsAntialias = true,
         TextAlign = SKTextAlign.Center,
-        Typeface = MenuStyle.TypefaceBold
+        Typeface = typeface
     };
+
+    private static (SKPaint Normal, SKPaint Hover, SKPaint Disabled) GetTextPaints(SKTypeface? typeface, float? fontSize)
+    {
+        if (typeface is null && fontSize is null)
+            return (_textNormal, _textHover, _textDisabled);
+
+        var resolvedTypeface = typeface ?? MenuStyle.TypefaceBold;
+        var resolvedSize = fontSize ?? MenuStyle.ButtonFontSize;
+        var key = (resolvedTypeface, resolvedSize);
+
+        if (!_customTextPaints.TryGetValue(key, out var paints))
+        {
+            paints = (
+                MakeTextPaint(MenuStyle.ColorText, resolvedTypeface, resolvedSize),
+                MakeTextPaint(new SKColor(0xDA, 0x93, 0x07), resolvedTypeface, resolvedSize),
+                MakeTextPaint(MenuStyle.ColorTextDim, resolvedTypeface, resolvedSize));
+            _customTextPaints[key] = paints;
+        }
+
+        return paints;
+    }
 
     /// <summary>Dims the whole nine-sliced draw for a disabled button (no separate disabled art).</summary>
     private static readonly SKPaint _disabledOverlay = new() { Color = new SKColor(255, 255, 255, 110) };
@@ -50,9 +74,11 @@ public static class ImageButton
     /// <summary>
     /// Draws the button at <paramref name="rect"/> with <paramref name="text"/> centered
     /// on it. Falls back to <see cref="MenuStyle.DrawButton"/>'s flat style if the texture
-    /// failed to load.
+    /// failed to load. Pass <paramref name="typeface"/> and/or <paramref name="fontSize"/>
+    /// to override the default bold label font/size (e.g. <see cref="MenuStyle.TypefaceHumaroid"/>
+    /// for the MainMenu buttons).
     /// </summary>
-    public static void Draw(SKCanvas canvas, SKRect rect, string text, ButtonState state)
+    public static void Draw(SKCanvas canvas, SKRect rect, string text, ButtonState state, SKTypeface? typeface = null, float? fontSize = null)
     {
         if (Image is null)
         {
@@ -63,11 +89,12 @@ public static class ImageButton
         var backgroundPaint = state == ButtonState.Disabled ? _disabledOverlay : null;
         NinePatch.Draw(canvas, Image, rect, CornerInset, backgroundPaint);
 
+        var paints = GetTextPaints(typeface, fontSize);
         var textPaint = state switch
         {
-            ButtonState.Disabled => _textDisabled,
-            ButtonState.Hovered => _textHover,
-            _ => _textNormal
+            ButtonState.Disabled => paints.Disabled,
+            ButtonState.Hovered => paints.Hover,
+            _ => paints.Normal
         };
         canvas.DrawText(text, rect.MidX, MenuStyle.VerticalCenterBaseline(rect, textPaint), textPaint);
     }

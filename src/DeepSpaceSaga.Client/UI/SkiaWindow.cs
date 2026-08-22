@@ -556,7 +556,7 @@ public sealed class SkiaWindow : IDisposable
                     break;
                 case ScreenEvent.ScenarioSelected:
                     if (payload is not null)
-                        StartGameSession(payload);
+                        await StartGameSessionAsync(payload);
                     break;
                 case ScreenEvent.OpenGameMenu:
                     await OpenGameMenuAsync();
@@ -636,6 +636,17 @@ public sealed class SkiaWindow : IDisposable
                     break;
             }
         }
+        catch (Exception ex)
+        {
+            // This runs on the native GLFW mouse/keyboard callback stack (via async void
+            // OnMouseDown/OnMouseScroll/HandleKeyboardEdge) — letting an exception escape
+            // unhandled here doesn't crash cleanly, it wedges the whole window: GLFW stops
+            // dispatching further input/render callbacks, and the process sits at
+            // "Not Responding" forever with no further InterfaceLog output. Catching and
+            // logging here is what turns a screen-transition bug into a visible log line
+            // instead of a silent freeze.
+            InterfaceLog.Write($"HandleScreenEvent evt={evt} failed: {ex}");
+        }
         finally
         {
             _transitionLock.Release();
@@ -647,7 +658,7 @@ public sealed class SkiaWindow : IDisposable
     /// full top-level screen replacing MainMenu, not a paused-game overlay, so no
     /// PushModalAsync/speed-save dance is needed: there is never an active session to
     /// pause at this point). The actual session only starts once the player picks a row —
-    /// see <see cref="StartGameSession(string)"/>.
+    /// see <see cref="StartGameSessionAsync(string)"/>.
     /// </summary>
     private void OpenScenarioSelect()
     {
@@ -655,12 +666,22 @@ public sealed class SkiaWindow : IDisposable
         _screens.Replace(screen);
     }
 
-    private void StartGameSession(string scenarioPath)
+    /// <summary>
+    /// Bootstraps the session off the UI thread: <c>CreateSessionFromScenario</c> reads and
+    /// parses several JSON files synchronously, and if that disk I/O stalls (e.g. antivirus
+    /// scanning freshly built output), running it inline here would block Silk.NET's message
+    /// pump — the whole window would stop rendering and responding to input (observed as
+    /// Windows "Not Responding") for as long as the stall lasts. GameSessionHandle/
+    /// GameSessionScreen construction stays on the UI thread since it's effectively free.
+    /// </summary>
+    private async Task StartGameSessionAsync(string scenarioPath)
     {
         if (_session is not null)
             return;
 
-        _session = new GameSessionHandle(_sessionFactory.CreateSessionFromScenario(scenarioPath));
+        var connection = await Task.Run(() => _sessionFactory.CreateSessionFromScenario(scenarioPath));
+
+        _session = new GameSessionHandle(connection);
         var predictor = new LinearMotionPredictor();
         var gameScreen = new GameSessionScreen(_session.Buffer, predictor, _session,
             showTrajectoryPrediction: GetShowTrajectoryPrediction(),
@@ -1262,7 +1283,11 @@ public sealed class SkiaWindow : IDisposable
         GameSessionScreen newScreen;
         try
         {
-            newSession = new GameSessionHandle(_sessionFactory.CreateSessionFromSave(slotId));
+            // Offloaded for the same reason as StartGameSessionAsync: a synchronous
+            // CreateSessionFromSave call here would block Silk.NET's message pump if disk I/O
+            // stalls, freezing the whole window for both the Load screen and QuickLoad (F9).
+            var connection = await Task.Run(() => _sessionFactory.CreateSessionFromSave(slotId));
+            newSession = new GameSessionHandle(connection);
             var predictor = new LinearMotionPredictor();
             newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),

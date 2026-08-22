@@ -53,6 +53,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="UI\Fonts\humaroid.regular.otf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="gameinfo.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -24,6 +24,13 @@ public static class MenuStyle
     public static readonly SKTypeface TypefaceRegular = LoadTypefaceDiag("Regular", SKFontStyleWeight.Normal);
     public static readonly SKTypeface TypefaceBold = LoadTypefaceDiag("Bold", SKFontStyleWeight.Bold);
 
+    /// <summary>
+    /// Custom display font for the MainMenu buttons. Falls back to <see cref="TypefaceBold"/>
+    /// if the .otf file is missing or fails to load.
+    /// </summary>
+    public static readonly SKTypeface TypefaceHumaroid =
+        LoadCustomTypeface("UI/Fonts/humaroid.regular.otf") ?? TypefaceBold;
+
     // TEMP DIAG — startup timing investigation, remove once resolved.
     private static SKTypeface LoadTypefaceDiag(string label, SKFontStyleWeight weight)
     {
@@ -34,6 +41,12 @@ public static class MenuStyle
         DeepSpaceSaga.Client.UI.InterfaceLog.Write(
             $"STARTUP DIAG: MenuStyle SKTypeface.FromFamilyName(Verdana {label}) took {sw.ElapsedMilliseconds} ms");
         return typeface;
+    }
+
+    private static SKTypeface? LoadCustomTypeface(string path)
+    {
+        try { return File.Exists(path) ? SKTypeface.FromFile(path) : null; }
+        catch { return null; }
     }
 
     // --- Colors (exact from reference) ---
@@ -53,6 +66,10 @@ public static class MenuStyle
     public const float TitleFontSize = 32f;       // 24pt Bold
     public const float VersionFontSize = 13f;     // 10pt Regular
     public const float StatusFontSize = 11f;      // 8pt Regular
+
+    /// <summary>Label size for the MainMenu's Humaroid-styled buttons — larger than the default
+    /// <see cref="ButtonFontSize"/> to match the font's lighter visual weight.</summary>
+    public const float MainMenuButtonFontSize = 20f;
 
     // --- Border widths (visual property) ---
     public const float PanelBorderWidth = 2f;

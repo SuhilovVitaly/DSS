@@ -408,7 +408,12 @@ public static class EngineContentLoader
     internal sealed record GameSettingsRecord(
         [property: JsonPropertyName("showTrajectoryPrediction")] bool ShowTrajectoryPrediction = true,
         [property: JsonPropertyName("selectedMonitorIndex")] int SelectedMonitorIndex = 0,
-        [property: JsonPropertyName("uiScale")] double UiScale = 1.0);
+        [property: JsonPropertyName("uiScale")] double UiScale = 1.0,
+        // Client-only UI copy language (Client\UI\SkiaWindow.cs GetLanguage/SaveLanguage) —
+        // the engine never reads it, but it lives under the same gameSettings object in
+        // Settings.json, and UnmappedMemberHandling.Disallow rejects the whole file if any
+        // client-written key here isn't mirrored on this record.
+        [property: JsonPropertyName("language")] string? Language = null);
 
     internal sealed record TypeDataPaths(
         [property: JsonPropertyName("moduleTypes")] string ModuleTypes,
