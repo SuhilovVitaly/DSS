@@ -10,10 +10,10 @@ namespace DeepSpaceSaga.Client.Tests;
 /// the station the player ship is docked to — see
 /// GameSessionObjectInteractionTests's docked-station-click tests). Placeholder shell:
 /// Representatives/Install Drilling Unit/Undock aren't in the Engine yet, so there's no
-/// real station data to assert on for those; `Trade`, `Hire` and `Finance` are real
-/// buttons — `Trade`/`Hire` open their own stub screens (TradeScreenTests/HireScreenTests),
-/// `Finance` opens the pre-existing FinanceScreen (FinanceScreenTests). Structural twin
-/// of FinanceScreenTests.
+/// real station data to assert on for those; `Trade`, `Hire`, `Finance` and `Contracts`
+/// are real buttons — `Trade`/`Hire`/`Contracts` open their own stub screens
+/// (TradeScreenTests/HireScreenTests/ContractsScreenTests), `Finance` opens the
+/// pre-existing FinanceScreen (FinanceScreenTests). Structural twin of FinanceScreenTests.
 /// </summary>
 public class StationScreenTests
 {
@@ -155,13 +155,47 @@ public class StationScreenTests
     }
 
     [Fact]
-    public void Trade_Hire_and_Finance_buttons_do_not_overlap()
+    public void Contracts_button_click_returns_OpenContracts()
+    {
+        var screen = new StationScreen();
+        RenderScreen(screen);
+
+        var hit = StationLayout.HitTest(
+            StationLayout.PanelLeft(ScreenWidth) + StationLayout.ContractsButtonLocalRect().Left + 1f,
+            StationLayout.PanelTop(ScreenHeight) + StationLayout.ContractsButtonLocalRect().Top + 1f,
+            ScreenWidth, ScreenHeight);
+        Assert.Equal(StationButton.Contracts, hit);
+
+        var (left, top, right, bottom) = StationLayout.ContractsButtonLocalRect();
+        float cx = StationLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
+        float cy = StationLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
+
+        var result = screen.OnMouseDown(cx, cy);
+        Assert.Equal(ScreenEvent.OpenContracts, result);
+    }
+
+    [Fact]
+    public void Contracts_button_hover_is_reported_interactive()
+    {
+        var screen = new StationScreen();
+        RenderScreen(screen);
+
+        var (left, top, right, bottom) = StationLayout.ContractsButtonLocalRect();
+        float cx = StationLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
+        float cy = StationLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
+
+        Assert.True(screen.OnMouseMove(cx, cy));
+    }
+
+    [Fact]
+    public void Trade_Hire_Finance_and_Contracts_buttons_do_not_overlap()
     {
         var buttons = new[]
         {
             StationLayout.TradeButtonLocalRect(),
             StationLayout.HireButtonLocalRect(),
             StationLayout.FinanceButtonLocalRect(),
+            StationLayout.ContractsButtonLocalRect(),
         };
 
         for (int i = 0; i < buttons.Length; i++)

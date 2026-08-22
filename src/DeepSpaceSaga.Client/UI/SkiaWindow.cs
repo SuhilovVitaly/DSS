@@ -11,6 +11,7 @@ using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Client.UI.Screens.Ship;
+using DeepSpaceSaga.Client.UI.Screens.Contracts;
 using DeepSpaceSaga.Client.UI.Screens.Hire;
 using DeepSpaceSaga.Client.UI.Screens.Station;
 using DeepSpaceSaga.Client.UI.Screens.Trade;
@@ -617,6 +618,12 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.CloseHire:
                     await CloseOverlayAsync();
                     break;
+                case ScreenEvent.OpenContracts:
+                    await OpenContractsAsync();
+                    break;
+                case ScreenEvent.CloseContracts:
+                    await CloseOverlayAsync();
+                    break;
             }
         }
         finally
@@ -806,6 +813,21 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         await PushModalAsync(new HireScreen());
+    }
+
+    /// <summary>
+    /// Push the Contracts overlay (Docs/FirstRelease/Screens/Contracts.md) on top of
+    /// Station (StationScreen's `CONTRACTS` button → ScreenEvent.OpenContracts). Split
+    /// out of Hire (passenger contracts vs. crew hiring) — a nested modal exactly like
+    /// Trade/Hire, no Contracts-specific handling needed.
+    /// </summary>
+    private async Task OpenContractsAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is ContractsScreen)
+            return;
+
+        await PushModalAsync(new ContractsScreen());
     }
 
     private async Task OpenSettingsAsync()

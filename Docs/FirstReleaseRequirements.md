@@ -43,7 +43,8 @@
 - `Docs/FirstRelease/Screens/Loot.md` - окно подбора/добычи предметов.
 - `Docs/FirstRelease/Screens/CharacterCommunication.md` - окно общения с персонажами.
 - `Docs/FirstRelease/Screens/Finance.md` - окно финансов.
-- `Docs/FirstRelease/Screens/Hire.md` - окно найма.
+- `Docs/FirstRelease/Screens/Hire.md` - окно найма экипажа.
+- `Docs/FirstRelease/Screens/Contracts.md` - окно пассажирских контрактов (выделено из `Hire`).
 - `Docs/FirstRelease/TechnicalTasks/ScreenNamingConventionRefactor.md` - техническое задание на приведение существующих экранов к naming convention.
 - `Docs/FirstRelease/Mechanics/TetrarchClass.md` - стартовый корабль игрока Tetrarch Class.
 - `Docs/FirstRelease/Mechanics/CommandPanels.md` - смысловые командные панели корабля.
@@ -79,6 +80,7 @@
 - Клик по тактической карте теперь выбирает объект по приоритету типа, если в 30 px радиусе несколько объектов сразу: `Station` > корабль игрока > другой корабль > всё остальное; расстояние до курсора — только tie-break внутри одного приоритета (`GameSessionScreen.FindNearestObjectId`).
 - Кнопка `TRADE` на `StationScreen` реальная (не placeholder-строка): открывает `TradeScreen` (тоже заглушка) вложенным modal поверх `Station`.
 - Кнопка `HIRE` на `StationScreen` тоже реальная: открывает `HireScreen` (заглушка) тем же вложенным modal поверх `Station`.
+- `Hire` разделён на `Hire` (наём экипажа) и `Contracts` (пассажирские контракты) — раньше одно окно `Hire` обслуживало оба смысла. Кнопка `CONTRACTS` на `StationScreen` открывает новый `ContractsScreen` (заглушка) тем же вложенным modal, новым рядом `6` панели (не переиспользует старую позицию `Hire`).
 - Кнопка `FINANCE` на `StationScreen` тоже реальная — но открывает уже существовавший `FinanceScreen` (ранее доступный только с панели механик `GameSessionScreen`, кнопка `F`/`Ctrl+F`), а не новый экран.
 - `Load` присутствует как кнопка в `MainMenu` и `GameMenu`, но отдельного `LoadScreen` пока нет; название окна в требованиях первого релиза - `Load`.
 - Naming convention для игровых окон: каждое окно в коде должно начинаться с `Screen`, например `ScreenMainMenu`, `ScreenGameSession`, `ScreenGameMenu`, `ScreenSettings`, `ScreenSave`.
@@ -104,7 +106,8 @@
 | `Character Communication` | Не реализовано. | `Docs/FirstRelease/Screens/CharacterCommunication.md` | Из `Session` и `Ship`; показывает общение с членами экипажа и персонажами. |
 | `Cargo` | Не реализовано. | `Docs/FirstRelease/Screens/Cargo.md` | Из `Session`; показывает грузовой отсек корабля. |
 | `Finance` | Реализована заглушка: `FinanceScreen`. | `Docs/FirstRelease/Screens/Finance.md` | Из `Session` (кнопка `F`/`Ctrl+F`) или из `Station` (кнопка `FINANCE`, вложенный modal); закрытие возвращает туда, откуда открыли. Финансовые станционные операции/сводка не реализованы. |
-| `Hire` | Реализована заглушка: `HireScreen`. | `Docs/FirstRelease/Screens/Hire.md` | Из `Station` (кнопка `HIRE`, вложенный modal); закрытие возвращает в `Station`. Найм/пассажирские контракты не реализованы. |
+| `Hire` | Реализована заглушка: `HireScreen`. | `Docs/FirstRelease/Screens/Hire.md` | Из `Station` (кнопка `HIRE`, вложенный modal); закрытие возвращает в `Station`. Наём экипажа не реализован (полностью за рамками первого релиза). |
+| `Contracts` | Реализована заглушка: `ContractsScreen`. | `Docs/FirstRelease/Screens/Contracts.md` | Из `Station` (кнопка `CONTRACTS`, вложенный modal); закрытие возвращает в `Station`. Выделено из `Hire`; пассажирские контракты не реализованы. |
 | `Trade` | Реализована заглушка: `TradeScreen`. | `Docs/FirstRelease/Screens/Trade.md` | Из `Station` (кнопка `TRADE`, вложенный modal); закрытие возвращает в `Station`. Покупка, продажа и заправка `Fuel` не реализованы. |
 
 ## Naming convention экранов
@@ -125,6 +128,7 @@
 - `ScreenStation`
 - `ScreenTrade`
 - `ScreenHire`
+- `ScreenContracts`
 
 Папки, namespaces, layout/helper-классы и тесты должны быть приведены к этой модели отдельной технической задачей. Интерфейс `IScreen` не переименовывается, потому что это контракт типа, а не конкретное окно.
 
@@ -244,7 +248,7 @@ Tetrarch Class является стартовым кораблем игрока
 
 Экипаж и пассажиры являются людьми на корабле. Для их размещения нужен `Living quarters` с каютами; стартовый `living.quarters.mk1` имеет `cabines = 2`. На старте новой игры на корабле один персонаж - главный герой; пассажира можно взять через станционный контракт при наличии свободной каюты.
 
-Реализована пока только заглушка экрана контрактов (`HireScreen`: открытие кнопкой `HIRE` со `Station`, закрытие, пауза) — сам список контрактов и их принятие не реализованы.
+Реализована пока только заглушка экрана контрактов (`ContractsScreen`: открытие кнопкой `CONTRACTS` со `Station`, закрытие, пауза; выделен из `Hire`, который теперь означает наём экипажа) — сам список контрактов и их принятие не реализованы.
 
 Детали: `Docs/FirstRelease/Mechanics/CrewAndHabitation.md`.
 

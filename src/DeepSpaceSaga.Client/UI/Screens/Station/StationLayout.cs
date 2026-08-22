@@ -6,13 +6,14 @@ public enum StationButton
     Close,
     Trade,
     Hire,
-    Finance
+    Finance,
+    Contracts
 }
 
 /// <summary>
 /// Layout and hit-test geometry for the Station overlay panel. 1400×900 is the
 /// standard panel size for gameplay-mechanic windows (Docs/FirstRelease/Screens/
-/// ScreenCatalog.md — Station, Trade, Hire, Cargo, Loot, Ship, Character
+/// ScreenCatalog.md — Station, Trade, Hire, Contracts, Cargo, Loot, Ship, Character
 /// Communication, Dialog, Finance). Structural twin of <see cref="Finance.FinanceLayout"/>.
 /// </summary>
 public sealed class StationLayout
@@ -40,6 +41,9 @@ public sealed class StationLayout
     public const float FinanceButtonWidth = 160f;
     public const float FinanceButtonHeight = 24f;
 
+    public const float ContractsButtonWidth = 160f;
+    public const float ContractsButtonHeight = 24f;
+
     /// <summary>Body row index of each real button, matching Station.md's "Минимальные
     /// кнопки" order (`Trade`, `Finance`, `Representatives`, `Install Drilling Unit`,
     /// `Hire`, `Undock`) — the remaining placeholder lines keep their row regardless of
@@ -47,6 +51,13 @@ public sealed class StationLayout
     private const int HireRowIndex = 4;
 
     private const int FinanceRowIndex = 1;
+
+    /// <summary>
+    /// `Contracts` was split out of `Hire` (passenger contracts vs. crew hiring) after
+    /// the original six-row layout was already fixed — rather than renumber Undock (row
+    /// 5) and every reference to it, Contracts gets its own new row appended at the end.
+    /// </summary>
+    private const int ContractsRowIndex = 6;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
@@ -103,6 +114,20 @@ public sealed class StationLayout
         return (left, top, left + FinanceButtonWidth, top + FinanceButtonHeight);
     }
 
+    /// <summary>
+    /// CONTRACTS button rect, local to the panel — a new row appended after `Undock`
+    /// (row 6), not a converted placeholder line: `Contracts` was split out of `Hire`
+    /// (Docs/FirstRelease/Screens/Contracts.md — passenger contracts, separate from
+    /// `Hire`'s now crew-hiring-specific scope) after the original six-row layout was
+    /// already fixed. Same styling/centering as the other row buttons.
+    /// </summary>
+    public static (float Left, float Top, float Right, float Bottom) ContractsButtonLocalRect()
+    {
+        float left = PanelWidth / 2f - ContractsButtonWidth / 2f;
+        float top = BodyStartY + ContractsRowIndex * BodyLineHeight - 20f;
+        return (left, top, left + ContractsButtonWidth, top + ContractsButtonHeight);
+    }
+
     /// <summary>True when (screenX, screenY) lands inside the panel rect (screen space).</summary>
     public static bool IsInsidePanel(float screenX, float screenY, int screenWidth, int screenHeight)
     {
@@ -136,6 +161,10 @@ public sealed class StationLayout
         var (financeLeft, financeTop, financeRight, financeBottom) = FinanceButtonLocalRect();
         if (lx >= financeLeft && lx <= financeRight && ly >= financeTop && ly <= financeBottom)
             return StationButton.Finance;
+
+        var (contractsLeft, contractsTop, contractsRight, contractsBottom) = ContractsButtonLocalRect();
+        if (lx >= contractsLeft && lx <= contractsRight && ly >= contractsTop && ly <= contractsBottom)
+            return StationButton.Contracts;
 
         return StationButton.None;
     }

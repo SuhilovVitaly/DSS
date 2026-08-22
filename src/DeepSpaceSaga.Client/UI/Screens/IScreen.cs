@@ -45,5 +45,7 @@ public enum ScreenEvent
     OpenTrade,
     CloseTrade,
     OpenHire,
-    CloseHire
+    CloseHire,
+    OpenContracts,
+    CloseContracts
 }

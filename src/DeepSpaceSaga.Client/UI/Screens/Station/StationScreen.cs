@@ -8,11 +8,13 @@ namespace DeepSpaceSaga.Client.UI.Screens.Station;
 /// <summary>
 /// Station overlay (Docs/FirstRelease/Screens/Station.md). Placeholder shell:
 /// Representatives/Install Drilling Unit/Undock are not yet implemented, so the
-/// panel shows a "not available yet" line for each of them. `Trade`, `Hire` and
-/// `Finance` are real buttons — `Trade`/`Hire` open <see cref="Trade.TradeScreen"/>/
-/// <see cref="Hire.HireScreen"/> (stubs, same open/close/pause-only shell as this
-/// screen); `Finance` opens the pre-existing <see cref="Finance.FinanceScreen"/>
-/// (already reachable from GameSessionScreen's Mechanics panel / Ctrl+F) — all three
+/// panel shows a "not available yet" line for each of them. `Trade`, `Hire`,
+/// `Finance` and `Contracts` are real buttons — `Trade`/`Hire`/`Contracts` open
+/// <see cref="Trade.TradeScreen"/>/<see cref="Hire.HireScreen"/>/
+/// <see cref="Contracts.ContractsScreen"/> (stubs, same open/close/pause-only shell
+/// as this screen; `Contracts` was split out of `Hire` — passenger contracts vs.
+/// crew hiring); `Finance` opens the pre-existing <see cref="Finance.FinanceScreen"/>
+/// (already reachable from GameSessionScreen's Mechanics panel / Ctrl+F) — all four
 /// as a nested modal on top of this one. Opened from GameSessionScreen by
 /// left-clicking the station the player ship is currently docked to
 /// (ScreenEvent.OpenStation); closes via the × button, Escape, or a click outside
@@ -34,9 +36,10 @@ public sealed class StationScreen : IScreen
     /// <summary>
     /// Remaining not-yet-implemented lines, tagged with the body row they occupy
     /// (Station.md's "Минимальные кнопки" order: Trade=0, Finance=1,
-    /// Representatives=2, Install Drilling Unit=3, Hire=4, Undock=5) — rows already
-    /// converted to real buttons (Trade, Finance, Hire) are simply absent here, so
-    /// the remaining lines keep their original row instead of repacking upward.
+    /// Representatives=2, Install Drilling Unit=3, Hire=4, Undock=5; Contracts=6 is a
+    /// newly appended row, not one of these original six) — rows already converted to
+    /// real buttons (Trade, Finance, Hire) are simply absent here, so the remaining
+    /// lines keep their original row instead of repacking upward.
     /// </summary>
     private static readonly (int Row, string Text)[] PlaceholderLines =
     {
@@ -66,6 +69,8 @@ public sealed class StationScreen : IScreen
             return ScreenEvent.OpenHire;
         if (hit == StationButton.Finance)
             return ScreenEvent.OpenFinance;
+        if (hit == StationButton.Contracts)
+            return ScreenEvent.OpenContracts;
 
         // Click on the dimmed background outside the panel also closes it.
         if (!StationLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
@@ -104,6 +109,7 @@ public sealed class StationScreen : IScreen
         DrawTradeButton(canvas, pl, pt);
         DrawHireButton(canvas, pl, pt);
         DrawFinanceButton(canvas, pl, pt);
+        DrawContractsButton(canvas, pl, pt);
 
         foreach (var (row, text) in PlaceholderLines)
         {
@@ -139,6 +145,15 @@ public sealed class StationScreen : IScreen
 
         MenuStyle.DrawButton(canvas, rect, "FINANCE",
             _hoveredButton == StationButton.Finance ? ButtonState.Hovered : ButtonState.Normal);
+    }
+
+    private void DrawContractsButton(SKCanvas canvas, float panelLeft, float panelTop)
+    {
+        var (left, top, right, bottom) = StationLayout.ContractsButtonLocalRect();
+        var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
+
+        MenuStyle.DrawButton(canvas, rect, "CONTRACTS",
+            _hoveredButton == StationButton.Contracts ? ButtonState.Hovered : ButtonState.Normal);
     }
 
     private void DrawCloseButton(SKCanvas canvas, float panelLeft, float panelTop)
