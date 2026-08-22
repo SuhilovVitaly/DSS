@@ -43,5 +43,7 @@ public enum ScreenEvent
     OpenStation,
     CloseStation,
     OpenTrade,
-    CloseTrade
+    CloseTrade,
+    OpenHire,
+    CloseHire
 }

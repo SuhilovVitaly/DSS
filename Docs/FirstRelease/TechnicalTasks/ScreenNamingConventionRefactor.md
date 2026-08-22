@@ -19,6 +19,7 @@
 - `ScreenLoad`
 - `ScreenStation`
 - `ScreenTrade`
+- `ScreenHire`
 
 ## Область применения
 
@@ -45,6 +46,7 @@
 | `SaveScreen` | `ScreenSave` | `src/DeepSpaceSaga.Client/UI/Screens/Save/SaveScreen.cs` | `src/DeepSpaceSaga.Client/UI/Screens/ScreenSave/ScreenSave.cs` |
 | `StationScreen` | `ScreenStation` | `src/DeepSpaceSaga.Client/UI/Screens/Station/StationScreen.cs` | `src/DeepSpaceSaga.Client/UI/Screens/ScreenStation/ScreenStation.cs` |
 | `TradeScreen` | `ScreenTrade` | `src/DeepSpaceSaga.Client/UI/Screens/Trade/TradeScreen.cs` | `src/DeepSpaceSaga.Client/UI/Screens/ScreenTrade/ScreenTrade.cs` |
+| `HireScreen` | `ScreenHire` | `src/DeepSpaceSaga.Client/UI/Screens/Hire/HireScreen.cs` | `src/DeepSpaceSaga.Client/UI/Screens/ScreenHire/ScreenHire.cs` |
 
 ## Layout/helper classes
 
@@ -58,6 +60,7 @@
 - `SaveLayout` может остаться `SaveLayout` внутри namespace `...Screens.ScreenSave`.
 - `StationLayout` может остаться `StationLayout` внутри namespace `...Screens.ScreenStation`.
 - `TradeLayout` может остаться `TradeLayout` внутри namespace `...Screens.ScreenTrade`.
+- `HireLayout` может остаться `HireLayout` внутри namespace `...Screens.ScreenHire`.
 
 Если helper-класс является общим для нескольких экранов, его можно оставить вне конкретной папки экрана.
 
@@ -74,7 +77,6 @@
 | `Loot` | `ScreenLoot` |
 | `Character Communication` | `ScreenCharacterCommunication` |
 | `Finance` | `ScreenFinance` |
-| `Hire` | `ScreenHire` |
 
 ## Требования к выполнению
 
@@ -89,6 +91,6 @@
 ## Проверка
 
 - `dotnet test DeepSpaceSaga.sln` проходит.
-- `rg "MainMenuScreen|ScenarioSelectScreen|GameSessionScreen|GameMenuScreen|SettingsScreen|SaveScreen|StationScreen|TradeScreen" src tests Docs` не находит старых имен, кроме changelog/исторических заметок, если они будут явно заведены.
-- `rg "namespace DeepSpaceSaga.Client.UI.Screens.(MainMenu|ScenarioSelect|GameSession|GameMenu|Settings|Save|Station|Trade)" src tests` не находит старых namespaces.
+- `rg "MainMenuScreen|ScenarioSelectScreen|GameSessionScreen|GameMenuScreen|SettingsScreen|SaveScreen|StationScreen|TradeScreen|HireScreen" src tests Docs` не находит старых имен, кроме changelog/исторических заметок, если они будут явно заведены.
+- `rg "namespace DeepSpaceSaga.Client.UI.Screens.(MainMenu|ScenarioSelect|GameSession|GameMenu|Settings|Save|Station|Trade|Hire)" src tests` не находит старых namespaces.
 - Все существующие UI tests проходят без изменения ожидаемого поведения.

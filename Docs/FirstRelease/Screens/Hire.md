@@ -1,6 +1,8 @@
 # Hire
 
-Статус: экран не реализован.
+Статус: реализована заглушка (открытие/закрытие/пауза, без данных механик) — по тому же паттерну, что `Station`/`Trade`/`Finance`/`Ship`.
+
+Код: `src/DeepSpaceSaga.Client/UI/Screens/Hire/` (`HireScreen.cs`, `HireLayout.cs`).
 
 ## Назначение
 
@@ -17,3 +19,9 @@
 
 - `CrewAndHabitation`.
 - `PassengerContracts`.
+
+## Статус реализации (MVP)
+
+Реализовано: открытие кнопкой `HIRE` на `StationScreen` (нажатие возвращает `ScreenEvent.OpenHire`, `SkiaWindow` пушит `HireScreen` поверх `StationScreen` — вложенный modal, как `GameMenu → Save/Load`), закрытие `×`/`Escape`/кликом по фону вне панели (возврат на `Station`), панель `1400×900`, modal pause через существующий `PushModalAsync`/`PopModalAsync`.
+
+Не реализовано — экран показывает одну placeholder-строку "not available yet" вместо этого: список пассажирских контрактов, принятие контракта, проверка свободной каюты. Ничего из раздела «Функциональность первого релиза» выше фактически не работает.

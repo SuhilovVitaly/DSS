@@ -140,7 +140,8 @@ UI/Screens/
 ├── Finance/                 (FinanceScreen + FinanceLayout)
 ├── Ship/                    (ShipScreen + ShipLayout)
 ├── Station/                 (StationScreen + StationLayout — docked-state hub, stub)
-└── Trade/                   (TradeScreen + TradeLayout — opened from Station's TRADE button, stub)
+├── Trade/                   (TradeScreen + TradeLayout — opened from Station's TRADE button, stub)
+└── Hire/                    (HireScreen + HireLayout — opened from Station's HIRE button, stub)
 ```
 
 Shared UI style: `UI/Controls/MenuStyle.cs` (Verdana fonts, DSS button colors, hover/pressed/disabled states).
@@ -151,7 +152,7 @@ Shared UI style: `UI/Controls/MenuStyle.cs` (Verdana fonts, DSS button colors, h
 
 `StationScreen` (stub — open/close/pause only, same pattern as `FinanceScreen`/`ShipScreen`) opens two ways: automatically once a snapshot's `CommandResults` shows `navigation.dock` `Executed` (`GameSessionScreen.ConsumePendingAutoTransition`, polled once per frame by `SkiaWindow.PollGameSessionAutoTransition` — the only `ScreenEvent` here not produced directly by an input handler, since a successful Dock is only known from the *next* snapshot), or by left-clicking, on the map, either the docked station or the player's own ship while docked (their markers sit only `(1,1)` world units apart — 1-2 screen px at normal zoom — so both must open it). Undock is not implemented; closing `StationScreen` returns to `GameSessionScreen` without clearing `IsDocked`.
 
-`StationScreen`'s `TRADE` button is a real clickable element (unlike its other five placeholder lines — Finance/Representatives/Install Drilling Unit/Hire/Undock) and opens `TradeScreen`, itself a stub, as a nested modal on top of `StationScreen` (`SkiaWindow.OpenTradeAsync` → `PushModalAsync`, same generic modal-depth mechanism `GameMenu → Save/Load` already uses). Closing `TradeScreen` returns to `StationScreen`.
+`StationScreen`'s `TRADE` and `HIRE` buttons are real clickable elements (unlike its other four placeholder lines — Finance/Representatives/Install Drilling Unit/Undock) and open `TradeScreen`/`HireScreen`, themselves stubs, as nested modals on top of `StationScreen` (`SkiaWindow.OpenTradeAsync`/`OpenHireAsync` → `PushModalAsync`, same generic modal-depth mechanism `GameMenu → Save/Load` already uses). Closing either returns to `StationScreen`. Each button/placeholder line occupies a fixed body row in `StationLayout` (0..5, `Station.md`'s button order) — converting a row to a button never repacks the remaining placeholder rows.
 
 `GameSessionScreen.FindNearestObjectId` (map click/hover hit-testing, `30 px` radius) picks by type priority first, distance only as a tiebreak within the same tier: `Station` > the player's own ship (by `IsPlayerShip` identity) > any other ship (`NpcShip`) > everything else. This exists specifically because of the docking offset above — without it, clicking near a docked ship+station cluster would unpredictably hit whichever marker's pixel center happened to be nanometers closer.
 

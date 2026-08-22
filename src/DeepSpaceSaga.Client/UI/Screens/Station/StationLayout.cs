@@ -4,7 +4,8 @@ public enum StationButton
 {
     None,
     Close,
-    Trade
+    Trade,
+    Hire
 }
 
 /// <summary>
@@ -27,6 +28,15 @@ public sealed class StationLayout
 
     public const float TradeButtonWidth = 160f;
     public const float TradeButtonHeight = 32f;
+
+    public const float HireButtonWidth = 160f;
+    public const float HireButtonHeight = 32f;
+
+    /// <summary>Body row index of each real button, matching Station.md's "Минимальные
+    /// кнопки" order (`Trade`, `Finance`, `Representatives`, `Install Drilling Unit`,
+    /// `Hire`, `Undock`) — the remaining placeholder lines keep their row regardless of
+    /// which entries have since become real buttons.</summary>
+    private const int HireRowIndex = 4;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
@@ -54,6 +64,19 @@ public sealed class StationLayout
         return (left, top, left + TradeButtonWidth, top + TradeButtonHeight);
     }
 
+    /// <summary>
+    /// HIRE button rect, local to the panel — occupies the row `Hire`'s placeholder text
+    /// used to sit in (Docs/FirstRelease/Screens/Station.md: "Позволяет открыть окно
+    /// `Hire` для пассажирских контрактов"), same styling/centering as
+    /// <see cref="TradeButtonLocalRect"/>.
+    /// </summary>
+    public static (float Left, float Top, float Right, float Bottom) HireButtonLocalRect()
+    {
+        float left = PanelWidth / 2f - HireButtonWidth / 2f;
+        float top = BodyStartY + HireRowIndex * BodyLineHeight - 20f;
+        return (left, top, left + HireButtonWidth, top + HireButtonHeight);
+    }
+
     /// <summary>True when (screenX, screenY) lands inside the panel rect (screen space).</summary>
     public static bool IsInsidePanel(float screenX, float screenY, int screenWidth, int screenHeight)
     {
@@ -79,6 +102,10 @@ public sealed class StationLayout
         var (tradeLeft, tradeTop, tradeRight, tradeBottom) = TradeButtonLocalRect();
         if (lx >= tradeLeft && lx <= tradeRight && ly >= tradeTop && ly <= tradeBottom)
             return StationButton.Trade;
+
+        var (hireLeft, hireTop, hireRight, hireBottom) = HireButtonLocalRect();
+        if (lx >= hireLeft && lx <= hireRight && ly >= hireTop && ly <= hireBottom)
+            return StationButton.Hire;
 
         return StationButton.None;
     }

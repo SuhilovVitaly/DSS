@@ -78,6 +78,7 @@
 - `navigation.dock` теперь настоящая authoritative команда (`SimulationEngine.TryStartNavigationCommand`), а не catalog-only заглушка: проверяет target/дистанцию (`rangeKm` из command definition)/синхронизацию, при успехе синхронизирует корабль со станцией и выставляет `IsDocked`/`DockedStationObjectId` (персистентны через save/load). `StationScreen` (заглушка, по паттерну `Finance`/`Ship`) открывается автоматически после успешного дока или повторным кликом по станции/кораблю игрока. Отстыковка не реализована. Детали: `Docs/FirstRelease/Mechanics/Docking.md`, `Docs/FirstRelease/Screens/Station.md`.
 - Клик по тактической карте теперь выбирает объект по приоритету типа, если в 30 px радиусе несколько объектов сразу: `Station` > корабль игрока > другой корабль > всё остальное; расстояние до курсора — только tie-break внутри одного приоритета (`GameSessionScreen.FindNearestObjectId`).
 - Кнопка `TRADE` на `StationScreen` реальная (не placeholder-строка): открывает `TradeScreen` (тоже заглушка) вложенным modal поверх `Station`.
+- Кнопка `HIRE` на `StationScreen` тоже реальная: открывает `HireScreen` (заглушка) тем же вложенным modal поверх `Station`.
 - `Load` присутствует как кнопка в `MainMenu` и `GameMenu`, но отдельного `LoadScreen` пока нет; название окна в требованиях первого релиза - `Load`.
 - Naming convention для игровых окон: каждое окно в коде должно начинаться с `Screen`, например `ScreenMainMenu`, `ScreenGameSession`, `ScreenGameMenu`, `ScreenSettings`, `ScreenSave`.
 - Текущие частично/полностью реализованные экранные классы пока не соответствуют новой конвенции, потому что используют суффикс `Screen`; их переименование описано в `Docs/FirstRelease/TechnicalTasks/ScreenNamingConventionRefactor.md`.
@@ -102,7 +103,7 @@
 | `Character Communication` | Не реализовано. | `Docs/FirstRelease/Screens/CharacterCommunication.md` | Из `Session` и `Ship`; показывает общение с членами экипажа и персонажами. |
 | `Cargo` | Не реализовано. | `Docs/FirstRelease/Screens/Cargo.md` | Из `Session`; показывает грузовой отсек корабля. |
 | `Finance` | Не реализовано. | `Docs/FirstRelease/Screens/Finance.md` | Из `Station`; показывает финансовые станционные операции/сводку. |
-| `Hire` | Не реализовано. | `Docs/FirstRelease/Screens/Hire.md` | Из `Station`; используется для найма/пассажирских контрактов. |
+| `Hire` | Реализована заглушка: `HireScreen`. | `Docs/FirstRelease/Screens/Hire.md` | Из `Station` (кнопка `HIRE`, вложенный modal); закрытие возвращает в `Station`. Найм/пассажирские контракты не реализованы. |
 | `Trade` | Реализована заглушка: `TradeScreen`. | `Docs/FirstRelease/Screens/Trade.md` | Из `Station` (кнопка `TRADE`, вложенный modal); закрытие возвращает в `Station`. Покупка, продажа и заправка `Fuel` не реализованы. |
 
 ## Naming convention экранов
@@ -122,6 +123,7 @@
 - `ScreenLoad`
 - `ScreenStation`
 - `ScreenTrade`
+- `ScreenHire`
 
 Папки, namespaces, layout/helper-классы и тесты должны быть приведены к этой модели отдельной технической задачей. Интерфейс `IScreen` не переименовывается, потому что это контракт типа, а не конкретное окно.
 
@@ -240,6 +242,8 @@ Tetrarch Class является стартовым кораблем игрока
 ### Экипаж, пассажиры и жилой модуль
 
 Экипаж и пассажиры являются людьми на корабле. Для их размещения нужен `Living quarters` с каютами; стартовый `living.quarters.mk1` имеет `cabines = 2`. На старте новой игры на корабле один персонаж - главный герой; пассажира можно взять через станционный контракт при наличии свободной каюты.
+
+Реализована пока только заглушка экрана контрактов (`HireScreen`: открытие кнопкой `HIRE` со `Station`, закрытие, пауза) — сам список контрактов и их принятие не реализованы.
 
 Детали: `Docs/FirstRelease/Mechanics/CrewAndHabitation.md`.
 

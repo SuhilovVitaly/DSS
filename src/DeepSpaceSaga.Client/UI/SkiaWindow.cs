@@ -11,6 +11,7 @@ using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Client.UI.Screens.Ship;
+using DeepSpaceSaga.Client.UI.Screens.Hire;
 using DeepSpaceSaga.Client.UI.Screens.Station;
 using DeepSpaceSaga.Client.UI.Screens.Trade;
 using DeepSpaceSaga.Contracts;
@@ -610,6 +611,12 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.CloseTrade:
                     await CloseOverlayAsync();
                     break;
+                case ScreenEvent.OpenHire:
+                    await OpenHireAsync();
+                    break;
+                case ScreenEvent.CloseHire:
+                    await CloseOverlayAsync();
+                    break;
             }
         }
         finally
@@ -784,6 +791,21 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         await PushModalAsync(new TradeScreen());
+    }
+
+    /// <summary>
+    /// Push the Hire overlay (Docs/FirstRelease/Screens/Hire.md) on top of Station
+    /// (StationScreen's `HIRE` button → ScreenEvent.OpenHire). A nested modal exactly
+    /// like Trade — PushModalAsync/PopModalAsync's generic modal-depth tracking needs no
+    /// Hire-specific handling.
+    /// </summary>
+    private async Task OpenHireAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is HireScreen)
+            return;
+
+        await PushModalAsync(new HireScreen());
     }
 
     private async Task OpenSettingsAsync()

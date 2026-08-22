@@ -5055,7 +5055,7 @@ Cargo hold стартует с 1000 `Energy Cells` (без изменений о
 
 ## 58. Стыковка (Docking) и экран станции
 
-Статус: реализован MVP первого релиза. Раздел `30` описывал `navigation.dock` как ещё не обработанную клиентом команду; Story 2026-08-17 завела её в каталог команд Navigation Computer как catalog-only (без authoritative-обработчика в Engine). Этот раздел фиксирует фактическую реализацию: `navigation.dock` теперь настоящая authoritative команда, а `Station` и открываемый с неё кнопкой `Trade` экран `Trade` — реализованные экраны-заглушки (открытие/закрытие/пауза, без самой торговой механики). Полный станционный функционал (реальные `Trade`/`Finance`/`Hire`/`Undock`, покупка/установка Drilling Unit) остаётся за рамками MVP — см. `58.3`, `58.4` и Docs/FirstRelease/Mechanics/Docking.md / Docs/FirstRelease/Screens/Station.md / Docs/FirstRelease/Screens/Trade.md.
+Статус: реализован MVP первого релиза. Раздел `30` описывал `navigation.dock` как ещё не обработанную клиентом команду; Story 2026-08-17 завела её в каталог команд Navigation Computer как catalog-only (без authoritative-обработчика в Engine). Этот раздел фиксирует фактическую реализацию: `navigation.dock` теперь настоящая authoritative команда, а `Station` и открываемые с неё кнопками `Trade`/`Hire` экраны `Trade`/`Hire` — реализованные экраны-заглушки (открытие/закрытие/пауза, без самой торговой/наёмной механики). Полный станционный функционал (реальные `Trade`/`Finance`/`Hire`/`Undock`, покупка/установка Drilling Unit) остаётся за рамками MVP — см. `58.3`–`58.5` и Docs/FirstRelease/Mechanics/Docking.md / Docs/FirstRelease/Screens/Station.md / Docs/FirstRelease/Screens/Trade.md / Docs/FirstRelease/Screens/Hire.md.
 
 ### 58.1. Команда navigation.dock
 
@@ -5095,7 +5095,7 @@ Cargo hold стартует с 1000 `Energy Cells` (без изменений о
 
 ### 58.3. Экран Station (заглушка)
 
-Статус: реализована заглушка (открытие/закрытие/пауза, без данных механик) — тот же паттерн, что `Finance`/`Ship`. Панель `1400×900` (стандартный размер игровых окон, ScreenCatalog.md), модальная пауза через существующий `PushModalAsync`/`PopModalAsync` (`31.1`, `52`) — Station не содержит собственной speed/pause-логики. `Trade` — единственная из шести кнопок из UI первого релиза (`Trade`, `Finance`, `Representatives`, `Install Drilling Unit`, `Hire`, `Undock`), реализованная как настоящий кликабельный элемент (`58.4`); остальные пять остаются placeholder-строками "not available yet" вместо выдуманных данных, по тому же принципу, что `Finance` (раздел `54.8`-соседних решений, Docs/FirstRelease/Screens/Finance.md).
+Статус: реализована заглушка (открытие/закрытие/пауза, без данных механик) — тот же паттерн, что `Finance`/`Ship`. Панель `1400×900` (стандартный размер игровых окон, ScreenCatalog.md), модальная пауза через существующий `PushModalAsync`/`PopModalAsync` (`31.1`, `52`) — Station не содержит собственной speed/pause-логики. Из шести кнопок UI первого релиза (`Trade`, `Finance`, `Representatives`, `Install Drilling Unit`, `Hire`, `Undock`) две реализованы как настоящие кликабельные элементы — `Trade` (`58.4`) и `Hire` (`58.5`); остальные четыре остаются placeholder-строками "not available yet" вместо выдуманных данных, по тому же принципу, что `Finance` (раздел `54.8`-соседних решений, Docs/FirstRelease/Screens/Finance.md). Каждая кнопка/строка занимает свой фиксированный ряд тела панели (`StationLayout`, ряды 0..5 в порядке из UI первого релиза выше) независимо от того, сколько соседних строк уже стали кнопками — превращение строки в кнопку не переупаковывает оставшиеся placeholder-строки вверх.
 
 ### 58.4. Экран Trade (заглушка), открываемая кнопкой Trade
 
@@ -5104,3 +5104,11 @@ Cargo hold стартует с 1000 `Energy Cells` (без изменений о
 `TradeScreen` (`src/DeepSpaceSaga.Client/UI/Screens/Trade/`) — структурный близнец `StationScreen`/`FinanceScreen`: панель `1400×900`, одна placeholder-строка "Trade: not available yet" вместо реальных данных торговли (баланс `Credits`, товары станции/игрока, покупка/продажа, заправка `Fuel` — ничего из этого не реализовано), закрытие `×`/`Escape`/кликом по фону.
 
 Открывается вложенным modal поверх `Station` (`SkiaWindow.OpenTradeAsync` → `PushModalAsync(new TradeScreen())`) — тот же generic modal-depth механизм, что `GameMenu → Save/Load`, без Trade-специфичной логики. Закрытие `TradeScreen` возвращает на `Station`, а не на `GameSessionScreen`.
+
+### 58.5. Экран Hire (заглушка), открываемая кнопкой Hire
+
+Статус: реализована заглушка, структурно идентичная `58.4` (`Trade`) — `Station` рисует `Hire` как настоящую кнопку (`StationLayout.HireButtonLocalRect`, ряд `4` тела панели) вместо placeholder-текста; клик по ней возвращает `ScreenEvent.OpenHire`.
+
+`HireScreen` (`src/DeepSpaceSaga.Client/UI/Screens/Hire/`) — структурный близнец `TradeScreen`/`StationScreen`: панель `1400×900`, одна placeholder-строка "Hire: not available yet" вместо реальных данных найма (список пассажирских контрактов, принятие контракта, проверка свободной каюты — ничего из этого не реализовано), закрытие `×`/`Escape`/кликом по фону.
+
+Открывается вложенным modal поверх `Station` (`SkiaWindow.OpenHireAsync` → `PushModalAsync(new HireScreen())`) — без Hire-специфичной логики. Закрытие `HireScreen` возвращает на `Station`, а не на `GameSessionScreen`.

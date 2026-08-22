@@ -7,18 +7,17 @@ namespace DeepSpaceSaga.Client.UI.Screens.Station;
 
 /// <summary>
 /// Station overlay (Docs/FirstRelease/Screens/Station.md). Placeholder shell:
-/// Finance/Hire/Representatives/Install Drilling Unit/Undock are not yet
-/// implemented, so the panel shows a "not available yet" line for each of them.
-/// `Trade` is the first real button — it opens <see cref="Trade.TradeScreen"/>
-/// (itself a stub, same open/close/pause-only shell) as a nested modal on top of
-/// this one. Opened from GameSessionScreen by left-clicking the station the
-/// player ship is currently docked to (ScreenEvent.OpenStation); closes via the
-/// × button, Escape, or a click outside the panel (on the dimmed background),
-/// returning to GameSessionScreen while the docked state itself is untouched —
-/// clicking the station again reopens this screen. Pause-on-open/resume-on-close
-/// is handled generically by SkiaWindow's PushModalAsync/PopModalAsync — this
-/// screen has no speed/pause logic of its own. Structural twin of
-/// <see cref="Finance.FinanceScreen"/>.
+/// Finance/Representatives/Install Drilling Unit/Undock are not yet implemented, so
+/// the panel shows a "not available yet" line for each of them. `Trade` and `Hire`
+/// are real buttons — they open <see cref="Trade.TradeScreen"/>/<see cref="Hire.HireScreen"/>
+/// (both stubs, same open/close/pause-only shell) as a nested modal on top of this
+/// one. Opened from GameSessionScreen by left-clicking the station the player ship
+/// is currently docked to (ScreenEvent.OpenStation); closes via the × button,
+/// Escape, or a click outside the panel (on the dimmed background), returning to
+/// GameSessionScreen while the docked state itself is untouched — clicking the
+/// station again reopens this screen. Pause-on-open/resume-on-close is handled
+/// generically by SkiaWindow's PushModalAsync/PopModalAsync — this screen has no
+/// speed/pause logic of its own. Structural twin of <see cref="Finance.FinanceScreen"/>.
 /// </summary>
 public sealed class StationScreen : IScreen
 {
@@ -29,13 +28,19 @@ public sealed class StationScreen : IScreen
     private static readonly SKColor DimColor = new(0, 0, 0, 160);
     private static readonly SKPaint DimPaint = new() { Color = DimColor, Style = SKPaintStyle.Fill };
 
-    private static readonly string[] PlaceholderLines =
+    /// <summary>
+    /// Remaining not-yet-implemented lines, tagged with the body row they occupy
+    /// (Station.md's "Минимальные кнопки" order: Trade=0, Finance=1,
+    /// Representatives=2, Install Drilling Unit=3, Hire=4, Undock=5) — rows already
+    /// converted to real buttons (Trade, Hire) are simply absent here, so the
+    /// remaining lines keep their original row instead of repacking upward.
+    /// </summary>
+    private static readonly (int Row, string Text)[] PlaceholderLines =
     {
-        "Finance: not available yet",
-        "Representatives: not available yet",
-        "Install Drilling Unit: not available yet",
-        "Hire: not available yet",
-        "Undock: not available yet",
+        (1, "Finance: not available yet"),
+        (2, "Representatives: not available yet"),
+        (3, "Install Drilling Unit: not available yet"),
+        (5, "Undock: not available yet"),
     };
 
     public void OnActivated() => _hoveredButton = StationButton.None;
@@ -55,6 +60,8 @@ public sealed class StationScreen : IScreen
             return ScreenEvent.CloseStation;
         if (hit == StationButton.Trade)
             return ScreenEvent.OpenTrade;
+        if (hit == StationButton.Hire)
+            return ScreenEvent.OpenHire;
 
         // Click on the dimmed background outside the panel also closes it.
         if (!StationLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
@@ -91,12 +98,12 @@ public sealed class StationScreen : IScreen
         canvas.DrawText("STATION", cx, pt + StationLayout.TitleY, MenuStyle.TextTitle);
 
         DrawTradeButton(canvas, pl, pt);
+        DrawHireButton(canvas, pl, pt);
 
-        float textY = pt + StationLayout.BodyStartY + StationLayout.BodyLineHeight;
-        foreach (var line in PlaceholderLines)
+        foreach (var (row, text) in PlaceholderLines)
         {
-            canvas.DrawText(line, cx, textY, MenuStyle.TextStatus);
-            textY += StationLayout.BodyLineHeight;
+            float textY = pt + StationLayout.BodyStartY + row * StationLayout.BodyLineHeight;
+            canvas.DrawText(text, cx, textY, MenuStyle.TextStatus);
         }
 
         DrawCloseButton(canvas, pl, pt);
@@ -109,6 +116,15 @@ public sealed class StationScreen : IScreen
 
         MenuStyle.DrawButton(canvas, rect, "TRADE",
             _hoveredButton == StationButton.Trade ? ButtonState.Hovered : ButtonState.Normal);
+    }
+
+    private void DrawHireButton(SKCanvas canvas, float panelLeft, float panelTop)
+    {
+        var (left, top, right, bottom) = StationLayout.HireButtonLocalRect();
+        var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
+
+        MenuStyle.DrawButton(canvas, rect, "HIRE",
+            _hoveredButton == StationButton.Hire ? ButtonState.Hovered : ButtonState.Normal);
     }
 
     private void DrawCloseButton(SKCanvas canvas, float panelLeft, float panelTop)
