@@ -13,6 +13,23 @@ public sealed class MainMenuScreen : IScreen
     private MenuButton _hoveredButton = MenuButton.None;
     private MenuButton _pressedButton = MenuButton.None;
 
+    /// <summary>
+    /// Panel background at the exact 500×550 panel size. Loaded once and shared by
+    /// every MainMenuScreen instance; falls back to MenuStyle.DrawPanel's plain fill
+    /// if the file is missing.
+    /// </summary>
+    private static readonly SKBitmap? BackgroundImage =
+        LoadImage("Images/UI/window-background-500x550.png");
+
+    private static SKBitmap? LoadImage(string path)
+    {
+        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
+        catch { return null; }
+    }
+
+    /// <summary>True if the background PNG file was found and decoded at startup.</summary>
+    internal static bool HasLoadedBackground => BackgroundImage is not null;
+
     public void OnActivated()
     {
         _hoveredButton = MenuButton.None;
@@ -66,7 +83,10 @@ public sealed class MainMenuScreen : IScreen
         float pl = MenuLayout.PanelLeft(width);
         float pt = MenuLayout.PanelTop(height);
         var panelRect = new SKRect(pl, pt, pl + MenuLayout.PanelWidth, pt + MenuLayout.PanelHeight);
-        MenuStyle.DrawPanel(canvas, panelRect);
+        if (BackgroundImage is not null)
+            canvas.DrawBitmap(BackgroundImage, panelRect);
+        else
+            MenuStyle.DrawPanel(canvas, panelRect);
 
         float cx = pl + MenuLayout.PanelWidth / 2f;
 
