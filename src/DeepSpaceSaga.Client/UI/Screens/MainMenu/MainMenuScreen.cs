@@ -114,6 +114,6 @@ public sealed class MainMenuScreen : IScreen
         float by = panelTop + buttonLocalY;
         var rect = new SKRect(bx, by, bx + MenuLayout.ButtonWidth, by + MenuLayout.ButtonHeight);
 
-        MenuStyle.DrawButton(canvas, rect, text, GetState(id, active: true));
+        ImageButton.Draw(canvas, rect, text, GetState(id, active: true));
     }
 }
