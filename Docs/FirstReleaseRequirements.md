@@ -75,6 +75,8 @@
 - По схеме минимального набора экранов первого релиза частично реализованными считаются `MainMenu`, `Settings`, `Session`/`GameSession` и `GameMenu`.
 - В коде также уже существует `SaveScreen`.
 - `New Game` из `MainMenu` открывает `ScenarioSelectScreen` (полностью реализован, не заглушка): список сценариев `Scenarios/*/scenario.json` с `Name`/`Description`, `PLAY` стартует сессию из выбранного файла. `scenarioMetadata` получил необязательное поле `description` для этого экрана.
+- `navigation.dock` теперь настоящая authoritative команда (`SimulationEngine.TryStartNavigationCommand`), а не catalog-only заглушка: проверяет target/дистанцию (`rangeKm` из command definition)/синхронизацию, при успехе синхронизирует корабль со станцией и выставляет `IsDocked`/`DockedStationObjectId` (персистентны через save/load). `StationScreen` (заглушка, по паттерну `Finance`/`Ship`) открывается автоматически после успешного дока или повторным кликом по станции/кораблю игрока. Отстыковка не реализована. Детали: `Docs/FirstRelease/Mechanics/Docking.md`, `Docs/FirstRelease/Screens/Station.md`.
+- Клик по тактической карте теперь выбирает объект по приоритету типа, если в 30 px радиусе несколько объектов сразу: `Station` > корабль игрока > другой корабль > всё остальное; расстояние до курсора — только tie-break внутри одного приоритета (`GameSessionScreen.FindNearestObjectId`).
 - `Load` присутствует как кнопка в `MainMenu` и `GameMenu`, но отдельного `LoadScreen` пока нет; название окна в требованиях первого релиза - `Load`.
 - Naming convention для игровых окон: каждое окно в коде должно начинаться с `Screen`, например `ScreenMainMenu`, `ScreenGameSession`, `ScreenGameMenu`, `ScreenSettings`, `ScreenSave`.
 - Текущие частично/полностью реализованные экранные классы пока не соответствуют новой конвенции, потому что используют суффикс `Screen`; их переименование описано в `Docs/FirstRelease/TechnicalTasks/ScreenNamingConventionRefactor.md`.
@@ -93,7 +95,7 @@
 | `Game Menu` | Частично реализовано: `GameMenuScreen`; `Load` и `Settings` нарисованы, но пока отключены. | `Docs/FirstRelease/Screens/GameMenu.md` | `Save`, `Load`, `Settings`, возврат в `Session`, выход в `Main Menu`. |
 | `Save` | Реализовано как `SaveScreen`. | `Docs/FirstRelease/Screens/Save.md` | Из `Game Menu`; закрытие возвращает в `Game Menu`. |
 | `Dialog` | Не реализовано. | `Docs/FirstRelease/Screens/Dialog.md` | Из `Session` для простых линейных диалогов. |
-| `Station` | Не реализовано. | `Docs/FirstRelease/Screens/Station.md` | Из `Session` после успешного `navigation.dock`; открывает `Trade`, `Hire`, `Finance`. |
+| `Station` | Реализована заглушка: `StationScreen`. | `Docs/FirstRelease/Screens/Station.md` | Из `Session` автоматически после успешного `navigation.dock`, либо повторным кликом по станции/кораблю игрока; закрытие возвращает в `Session`. Планируется открывать `Trade`, `Hire`, `Finance`. |
 | `Ship` | Не реализовано. | `Docs/FirstRelease/Screens/Ship.md` | Из `Session`; открывает `Character Communication`. |
 | `Loot` | Не реализовано. | `Docs/FirstRelease/Screens/Loot.md` | Из `Session`; используется для результатов добычи/подбора. |
 | `Character Communication` | Не реализовано. | `Docs/FirstRelease/Screens/CharacterCommunication.md` | Из `Session` и `Ship`; показывает общение с членами экипажа и персонажами. |
@@ -190,11 +192,15 @@ Tetrarch Class является стартовым кораблем игрока
 
 Станция доступна через явную стыковку. `Dock` является командой Navigation Computer. `Dock` доступен при выбранной станции, дистанции `< 200 km`, синхронизированной скорости и синхронизированном направлении. Успешная стыковка синхронизирует корабль со станцией с local offset `(1, 1)` world unit и автоматически открывает экран станции. Отстыковка выполняется как станционное действие.
 
+Реализовано как MVP: сама команда `navigation.dock` (валидация + физическая синхронизация + authoritative `IsDocked`/`DockedStationObjectId`, персистентные через save/load) и автоматическое открытие `StationScreen`-заглушки. Не реализовано: отстыковка и блокировка обычных engine-команд корабля во время дока.
+
 Детали: `Docs/FirstRelease/Mechanics/Docking.md`.
 
 ### Экран станции
 
 Экран станции является modal hub-экраном пристыкованного состояния. С него игрок открывает торговлю, диалоги представителей станции, покупку/установку Drilling Unit, пассажирские контракты и отстыковку; пока экран открыт, симуляция на паузе.
+
+Реализована заглушка (`StationScreen`, открытие/закрытие/пауза): открывается автоматически после успешного `Dock` или повторным кликом по станции/кораблю игрока, закрывается `×`/`Escape`/кликом по фону без отмены стыковки. Показывает placeholder-строки вместо реальных Trade/Finance/Representatives/Install Drilling Unit/Hire/Undock — ни один из них ещё не реализован.
 
 Детали: `Docs/FirstRelease/Screens/Station.md`.
 

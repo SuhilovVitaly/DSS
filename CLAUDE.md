@@ -138,10 +138,19 @@ UI/Screens/
 ├── Save/                    (SaveScreen + SaveLayout)
 ├── Load/                    (LoadScreen + LoadLayout)
 ├── Finance/                 (FinanceScreen + FinanceLayout)
-└── Ship/                    (ShipScreen + ShipLayout)
+├── Ship/                    (ShipScreen + ShipLayout)
+└── Station/                 (StationScreen + StationLayout — docked-state hub, stub)
 ```
 
 Shared UI style: `UI/Controls/MenuStyle.cs` (Verdana fonts, DSS button colors, hover/pressed/disabled states).
+
+### Docking (navigation.dock) and the Station screen
+
+`navigation.dock` is the only implemented NavigationComputer command. Unlike Engine-module commands (`SimulationEngine.TryStartEngineCommand`, timed `ActiveCycle`), it's handled by a separate, deliberately non-generalized path — `SimulationEngine.TryStartNavigationCommand`, an instant one-shot action dispatched from `TryStartCommand` purely by `CommandType`. It validates target-is-a-Station / distance (content-driven `rangeKm` on the command definition, `Data/Commands/NavigationComputer/commands.json`) / speed+direction synchronization, then on success snaps the ship onto the station (`local offset (1, 1)` world units) and sets authoritative `IsDocked`/`DockedStationObjectId` on the player ship — projected into `ObjectMotionSnapshot` (same mechanism as `ObjectType`/`DisplayName`) and persisted via the scenario/save schema's `isDocked`/`dockedStationObjectId`.
+
+`StationScreen` (stub — open/close/pause only, same pattern as `FinanceScreen`/`ShipScreen`) opens two ways: automatically once a snapshot's `CommandResults` shows `navigation.dock` `Executed` (`GameSessionScreen.ConsumePendingAutoTransition`, polled once per frame by `SkiaWindow.PollGameSessionAutoTransition` — the only `ScreenEvent` here not produced directly by an input handler, since a successful Dock is only known from the *next* snapshot), or by left-clicking, on the map, either the docked station or the player's own ship while docked (their markers sit only `(1,1)` world units apart — 1-2 screen px at normal zoom — so both must open it). Undock is not implemented; closing `StationScreen` returns to `GameSessionScreen` without clearing `IsDocked`.
+
+`GameSessionScreen.FindNearestObjectId` (map click/hover hit-testing, `30 px` radius) picks by type priority first, distance only as a tiebreak within the same tier: `Station` > the player's own ship (by `IsPlayerShip` identity) > any other ship (`NpcShip`) > everything else. This exists specifically because of the docking offset above — without it, clicking near a docked ship+station cluster would unpredictably hit whichever marker's pixel center happened to be nanometers closer.
 
 ### Custom cursors
 

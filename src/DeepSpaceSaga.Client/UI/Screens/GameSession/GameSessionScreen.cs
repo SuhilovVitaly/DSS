@@ -786,16 +786,39 @@ public sealed class GameSessionScreen : IScreen
     }
 
     /// <summary>
-    /// Nearest visible object within <see cref="ObjectHitTestRadiusPx"/> screen pixels of
-    /// (x, y), or null if none qualifies (ТЗ §54). Only objects currently in
-    /// <see cref="_renderStates"/> (i.e. passing the scale visibility filter) participate.
-    /// Distance comparisons use squared distance (no sqrt); ties (equal squared distance)
-    /// break on the lexicographically smaller ObjectId (Ordinal) so the result never
-    /// depends on iteration/snapshot order.
+    /// Click-selection priority when several objects fall within the hit-test radius at
+    /// once (lower number wins): Station, then the player's own ship, then any other ship
+    /// (NPC), then everything else (asteroids, planets, the sun, unknown objects, ...).
+    /// Distance is only the tiebreaker within the same tier — see
+    /// <see cref="FindNearestObjectId"/>. IsPlayerShip (identity), not RenderObjectType, is
+    /// what marks the player's own ship — RenderObjectType for it is
+    /// <see cref="SpaceObjectType.PlayerShip"/> too, but IsPlayerShip is the authoritative
+    /// signal used everywhere else in this file for the same distinction.
+    /// </summary>
+    private static int GetClickPriority(ObjectRenderState state)
+    {
+        if (state.Predicted.RenderObjectType == SpaceObjectType.Station)
+            return 0;
+        if (state.IsPlayerShip)
+            return 1;
+        if (state.Predicted.RenderObjectType == SpaceObjectType.NpcShip)
+            return 2;
+        return 3;
+    }
+
+    /// <summary>
+    /// Highest-priority (see <see cref="GetClickPriority"/>), then nearest, visible object
+    /// within <see cref="ObjectHitTestRadiusPx"/> screen pixels of (x, y), or null if none
+    /// qualifies (ТЗ §54). Only objects currently in <see cref="_renderStates"/> (i.e.
+    /// passing the scale visibility filter) participate. Distance comparisons use squared
+    /// distance (no sqrt); ties (equal priority AND equal squared distance) break on the
+    /// lexicographically smaller ObjectId (Ordinal) so the result never depends on
+    /// iteration/snapshot order.
     /// </summary>
     private string? FindNearestObjectId(float x, float y)
     {
         string? bestId = null;
+        int bestPriority = int.MaxValue;
         double bestDistanceSq = double.MaxValue;
         const double radiusSq = (double)ObjectHitTestRadiusPx * ObjectHitTestRadiusPx;
 
@@ -809,12 +832,17 @@ public sealed class GameSessionScreen : IScreen
             if (distanceSq > radiusSq)
                 continue;
 
+            int priority = GetClickPriority(state);
+
             if (bestId is null ||
-                distanceSq < bestDistanceSq ||
-                (distanceSq == bestDistanceSq &&
-                 string.CompareOrdinal(state.Predicted.ObjectId, bestId) < 0))
+                priority < bestPriority ||
+                (priority == bestPriority &&
+                 (distanceSq < bestDistanceSq ||
+                  (distanceSq == bestDistanceSq &&
+                   string.CompareOrdinal(state.Predicted.ObjectId, bestId) < 0))))
             {
                 bestId = state.Predicted.ObjectId;
+                bestPriority = priority;
                 bestDistanceSq = distanceSq;
             }
         }

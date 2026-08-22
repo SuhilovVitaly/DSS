@@ -447,6 +447,91 @@ public class GameSessionObjectInteractionTests
         Assert.Equal(expectedY, fixture.Screen.CameraFocusY);
     }
 
+    // ── Click priority: Station > PlayerShip > (other) Ship > everything else ───
+
+    private static ObjectMotionSnapshot TypedObjAt(string id, string objectType, double worldY, double worldX = 10000)
+        => new(id, X: worldX, Y: worldY, SpeedKmS: 0, Direction: 0, ObjectType: objectType, RenderObjectType: objectType);
+
+    [Fact]
+    public async Task Station_wins_selection_over_a_closer_player_ship()
+    {
+        // Ship sits exactly at the click point (distance 0); the station is farther
+        // (20 px) but still inside the 30 px radius — priority must still pick it.
+        await using var fixture = CreateFixtureWithPlayerShipAndObjects([
+            TypedObjAt("STATION-1", SpaceObjectType.Station, 10000, worldX: 10000 + 20)]); // screen (660,360)
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(640, 360); // exactly on the player ship
+
+        Assert.Equal("STATION-1", fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Station_wins_selection_over_a_closer_npc_ship()
+    {
+        await using var fixture = CreateFixture([
+            TypedObjAt("NPC-1", SpaceObjectType.NpcShip, 10000), // screen (640,360) — distance 0
+            TypedObjAt("STATION-1", SpaceObjectType.Station, 10000, worldX: 10000 + 20)]); // screen (660,360)
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(640, 360);
+
+        Assert.Equal("STATION-1", fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Player_ship_wins_selection_over_a_closer_npc_ship()
+    {
+        await using var fixture = CreateFixtureWithPlayerShipAndObjects([
+            TypedObjAt("NPC-1", SpaceObjectType.NpcShip, 10000, worldX: 10000 + 5)]); // screen (645,360), closer to the click point below
+        Render(fixture.Screen);
+
+        // Click nearer to NPC-1 than to the player ship — NPC-1 is the nearest object,
+        // but the player ship still outranks it.
+        fixture.Screen.OnMouseDown(645, 360);
+
+        Assert.Equal(PlayerShipId, fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Player_ship_wins_selection_over_a_closer_asteroid()
+    {
+        await using var fixture = CreateFixtureWithPlayerShipAndObjects([
+            TypedObjAt("AST-1", SpaceObjectType.Asteroid, 10000, worldX: 10000 + 5)]);
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(645, 360);
+
+        Assert.Equal(PlayerShipId, fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Npc_ship_wins_selection_over_a_closer_asteroid()
+    {
+        await using var fixture = CreateFixture([
+            TypedObjAt("AST-1", SpaceObjectType.Asteroid, 10000), // screen (640,360) — distance 0
+            TypedObjAt("NPC-1", SpaceObjectType.NpcShip, 10000, worldX: 10000 + 20)]); // screen (660,360)
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(640, 360);
+
+        Assert.Equal("NPC-1", fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Nearest_still_wins_within_the_same_priority_tier()
+    {
+        // Both Asteroids — same (lowest) tier — the ordinary nearest-object rule applies.
+        await using var fixture = CreateFixture([
+            TypedObjAt("AST-FAR", SpaceObjectType.Asteroid, 10000 + 20),
+            TypedObjAt("AST-NEAR", SpaceObjectType.Asteroid, 10000 + 5)]);
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(640, 360);
+
+        Assert.Equal("AST-NEAR", fixture.Screen.SelectedObjectId);
+    }
+
     // ── Left click on a docked station opens the Station screen ─────────────────
 
     [Fact]

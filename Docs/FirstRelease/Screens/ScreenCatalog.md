@@ -46,7 +46,7 @@
 | `Game Menu` | Частично реализовано; требует переименования в `ScreenGameMenu` | `src/DeepSpaceSaga.Client/UI/Screens/GameMenu/GameMenuScreen.cs` | Модальное меню поверх сессии. | `Save`, `Load`, `Settings`, возврат в `Session`, выход в `Main Menu`. |
 | `Save` | Реализовано; требует переименования в `ScreenSave` | `src/DeepSpaceSaga.Client/UI/Screens/Save/SaveScreen.cs` | Сохранение в слот, overwrite, delete. | Из `Game Menu`; закрытие возвращает в `Game Menu`. |
 | `Dialog` | Не реализовано | - | Универсальный линейный диалог. | Из `Session`; закрытие возвращает в предыдущий экран. |
-| `Station` | Не реализовано | - | Hub пристыкованного состояния. | Из `Session`; открывает `Trade`, `Hire`, `Finance`. |
+| `Station` | Реализована заглушка (открытие/закрытие/пауза, без данных механик); требует переименования в `ScreenStation` | `src/DeepSpaceSaga.Client/UI/Screens/Station/StationScreen.cs` | Hub пристыкованного состояния. | Из `Session` автоматически после успешного `navigation.dock`, либо повторным левым кликом по станции/кораблю игрока, пока корабль пристыкован; закрытие возвращает в `Session` без отмены стыковки. Планируется открывать `Trade`, `Hire`, `Finance`. |
 | `Ship` | Реализована заглушка (открытие/закрытие/пауза, без данных механик); требует переименования в `ScreenShip` | `src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipScreen.cs` | Обзор корабля и доступ к внутренним корабельным действиям. | Из `Session` (кнопка `S` / Ctrl+S на панели механик); открывает `Character Communication`. |
 | `Loot` | Не реализовано | - | Подбор/получение добычи, включая результаты добычи льда. | Из `Session`; закрытие возвращает в `Session`. |
 | `Character Communication` | Не реализовано | - | Общение с членами экипажа и другими персонажами. | Из `Session` и `Ship`; закрытие возвращает назад. |
@@ -60,5 +60,5 @@
 1. `Main Menu` по `New Game` открывает `Scenario Select`; выбор сценария там открывает новую `Session`. `Main Menu` также открывает будущий `Load`.
 2. В `Session` игрок управляет кораблем, открывает `Game Menu`, корабельные окна и станционные окна после стыковки.
 3. `Game Menu` открывает `Save`, будущий `Load` и `Settings`.
-4. `Station` является hub-экраном для `Trade`, `Hire` и `Finance`.
+4. `Station` открывается автоматически после успешного `navigation.dock` либо повторным кликом по станции/кораблю игрока и является hub-экраном для `Trade`, `Hire` и `Finance` (пока не реализованы — экран сейчас заглушка).
 5. Диалоги персонажей идут через `Dialog` или специализированное окно `Character Communication`, если нужен список/выбор персонажа.
