@@ -4,7 +4,8 @@ namespace DeepSpaceSaga.Client.Tests;
 
 /// <summary>
 /// Pure hit-test geometry tests for <see cref="ScenarioSelectLayout"/> — no SKCanvas, no
-/// ScenarioSelectScreen. Mirrors <see cref="LoadLayoutTests"/>.
+/// SKPaint, no ScenarioSelectScreen (row heights/wrapping are the screen's job; here rows
+/// are just arbitrary (Y, Height) pairs the caller hands in). Mirrors <see cref="LoadLayoutTests"/>.
 /// </summary>
 public class ScenarioSelectLayoutTests
 {
@@ -22,10 +23,13 @@ public class ScenarioSelectLayoutTests
         (PanelLeft + ScenarioSelectLayout.ActionPanelX + local.X + local.W / 2f,
          PanelTop + ScenarioSelectLayout.ActionPanelY + local.Y + local.H / 2f);
 
+    private static ScenarioSelectLayout.VisibleRow Row(int absoluteIndex, float y, float height) =>
+        new(absoluteIndex, y, height);
+
     [Fact]
     public void HitTest_outside_panel_returns_None()
     {
-        var hit = ScenarioSelectLayout.HitTest(0, 0, ScreenWidth, ScreenHeight, visibleScenarioCount: 0);
+        var hit = ScenarioSelectLayout.HitTest(0, 0, ScreenWidth, ScreenHeight, Array.Empty<ScenarioSelectLayout.VisibleRow>());
         Assert.Equal(ScenarioSelectZone.None, hit.Zone);
     }
 
@@ -33,7 +37,7 @@ public class ScenarioSelectLayoutTests
     public void HitTest_Back_returns_Back()
     {
         var (x, y) = ActionCenter(ScenarioSelectLayout.BackButtonRect());
-        var hit = ScenarioSelectLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleScenarioCount: 0);
+        var hit = ScenarioSelectLayout.HitTest(x, y, ScreenWidth, ScreenHeight, Array.Empty<ScenarioSelectLayout.VisibleRow>());
         Assert.Equal(ScenarioSelectZone.Back, hit.Zone);
     }
 
@@ -41,24 +45,27 @@ public class ScenarioSelectLayoutTests
     public void HitTest_Play_returns_Play()
     {
         var (x, y) = ActionCenter(ScenarioSelectLayout.PlayButtonRect());
-        var hit = ScenarioSelectLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleScenarioCount: 3);
+        var hit = ScenarioSelectLayout.HitTest(x, y, ScreenWidth, ScreenHeight, Array.Empty<ScenarioSelectLayout.VisibleRow>());
         Assert.Equal(ScenarioSelectZone.Play, hit.Zone);
     }
 
     [Fact]
-    public void HitTest_Row_returns_row_index()
+    public void HitTest_Row_returns_its_absolute_index()
     {
-        var (x, y) = Center(ScenarioSelectLayout.RowRect(2));
-        var hit = ScenarioSelectLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleScenarioCount: 3);
+        var rows = new[] { Row(0, 170, 54), Row(1, 232, 54), Row(7, 294, 70) };
+        var (x, y) = Center(ScenarioSelectLayout.RowRect(rows[2].Y, rows[2].Height));
+
+        var hit = ScenarioSelectLayout.HitTest(x, y, ScreenWidth, ScreenHeight, rows);
+
         Assert.Equal(ScenarioSelectZone.Row, hit.Zone);
-        Assert.Equal(2, hit.RowIndex);
+        Assert.Equal(7, hit.RowIndex);
     }
 
     [Fact]
-    public void HitTest_Row_beyond_visibleScenarioCount_is_not_hit()
+    public void HitTest_below_the_last_visible_row_is_not_hit()
     {
-        var (x, y) = Center(ScenarioSelectLayout.RowRect(1));
-        var hit = ScenarioSelectLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleScenarioCount: 1);
+        var rows = new[] { Row(0, 170, 54) };
+        var hit = ScenarioSelectLayout.HitTest(PanelLeft + ScenarioSelectLayout.ListLeft + 10, PanelTop + 400, ScreenWidth, ScreenHeight, rows);
         Assert.Equal(ScenarioSelectZone.None, hit.Zone);
     }
 
@@ -83,23 +90,41 @@ public class ScenarioSelectLayoutTests
         Assert.True(play.X >= back.X + back.W);
     }
 
-    // --- Scrollbar geometry (shown only when scenarios.Count > VisibleRows) ---
+    // --- Row height grows with wrapped description line count ---
+
+    [Fact]
+    public void RowHeightFor_grows_with_more_description_lines()
+    {
+        float oneLine = ScenarioSelectLayout.RowHeightFor(1);
+        float threeLines = ScenarioSelectLayout.RowHeightFor(3);
+        Assert.True(threeLines > oneLine);
+        Assert.Equal(2 * ScenarioSelectLayout.RowDescriptionLineHeight, threeLines - oneLine);
+    }
+
+    [Fact]
+    public void RowHeightFor_treats_zero_lines_as_one()
+    {
+        Assert.Equal(ScenarioSelectLayout.RowHeightFor(1), ScenarioSelectLayout.RowHeightFor(0));
+    }
+
+    // --- Scrollbar geometry (shown only when the caller decides the list overflows) ---
 
     [Fact]
     public void ScrollbarThumb_at_top_when_scrollOffset_is_zero()
     {
         var track = ScenarioSelectLayout.ScrollbarTrackRect();
-        var thumb = ScenarioSelectLayout.ScrollbarThumbRect(scrollOffset: 0, totalScenarioCount: ScenarioSelectLayout.VisibleRows + 5);
+        var thumb = ScenarioSelectLayout.ScrollbarThumbRect(scrollOffset: 0, totalScenarioCount: 11, visibleRowCount: 6);
         Assert.Equal(track.Y, thumb.Y);
     }
 
     [Fact]
     public void ScrollbarThumb_at_bottom_when_scrollOffset_is_maxOffset()
     {
-        int total = ScenarioSelectLayout.VisibleRows + 5;
-        int maxOffset = total - ScenarioSelectLayout.VisibleRows;
+        int total = 11;
+        int visible = 6;
+        int maxOffset = total - visible;
         var track = ScenarioSelectLayout.ScrollbarTrackRect();
-        var thumb = ScenarioSelectLayout.ScrollbarThumbRect(scrollOffset: maxOffset, totalScenarioCount: total);
+        var thumb = ScenarioSelectLayout.ScrollbarThumbRect(scrollOffset: maxOffset, totalScenarioCount: total, visibleRowCount: visible);
         Assert.Equal(track.Y + track.H - thumb.H, thumb.Y, precision: 3);
     }
 
@@ -107,7 +132,7 @@ public class ScenarioSelectLayoutTests
     public void ScrollbarTrack_does_not_overlap_the_row_list()
     {
         var track = ScenarioSelectLayout.ScrollbarTrackRect();
-        var row = ScenarioSelectLayout.RowRect(0);
+        var row = ScenarioSelectLayout.RowRect(ScenarioSelectLayout.ListTop, 54);
         Assert.True(track.X >= row.X + row.W);
     }
 }

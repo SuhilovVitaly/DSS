@@ -12,8 +12,11 @@ public enum ScenarioSelectZone
 
 /// <summary>
 /// Result of a <see cref="ScenarioSelectLayout.HitTest"/>. <see cref="RowIndex"/> is only
-/// meaningful for <see cref="ScenarioSelectZone.Row"/> and is relative to the currently
-/// visible window (the caller adds the scroll offset to get the absolute scenario index).
+/// meaningful for <see cref="ScenarioSelectZone.Row"/> and is already the absolute index
+/// into the full scenario list (the caller's <see cref="ScenarioSelectLayout.VisibleRow"/>
+/// entries carry that, not a scroll-relative position — unlike the old fixed-row-height
+/// design, row heights vary with wrapped description length, so the caller must resolve
+/// positions itself instead of Layout deriving them from a bare visible-row count).
 /// </summary>
 public readonly record struct ScenarioSelectHit(ScenarioSelectZone Zone, int RowIndex = -1)
 {
@@ -22,31 +25,40 @@ public readonly record struct ScenarioSelectHit(ScenarioSelectZone Zone, int Row
 
 /// <summary>
 /// Layout and hit-test geometry for the ScenarioSelect screen (New Game -&gt; pick a
-/// scenario, before the game session starts). Pure geometry — no SKCanvas dependency —
-/// following the same pattern as <see cref="Load.LoadLayout"/>. A full top-level screen
-/// (like MainMenu), not a paused-game overlay, so it owns its own full-screen background
-/// rather than dimming an underlying screen.
+/// scenario, before the game session starts). Pure geometry — no SKCanvas/SKPaint
+/// dependency — following the same pattern as <see cref="Load.LoadLayout"/>.
 ///
 /// Two side-by-side nine-sliced panels sit on the outer background: a left content panel
 /// holding the (row-selectable, button-free) scenario list, and a right action panel
-/// holding the shared PLAY/BACK buttons at its bottom — one PLAY for whichever scenario
-/// row is currently selected, replacing the old per-row PLAY button, plus BACK moved down
-/// from its old top-right spot on the outer panel.
+/// holding the shared PLAY/BACK buttons at its bottom.
+///
+/// Row height is not fixed: each row's description word-wraps to however many lines its
+/// text needs at the list's width, and the row grows to fit them (<see cref="RowHeightFor"/>).
+/// Wrapping itself needs font metrics, so it's the caller's job (ScenarioSelectScreen, which
+/// owns the SKPaint) — Layout only turns already-known per-row heights into positions and
+/// hit-test rects via <see cref="VisibleRow"/>.
 /// </summary>
 public static class ScenarioSelectLayout
 {
     public const float PanelWidth = 900f;
     public const float PanelHeight = 620f;
 
-    public const float TitleY = 50f;
+    /// <summary>
+    /// "SELECT SCENARIO" title rect, local to the outer panel (x=96, y=60, 630×45) — the
+    /// title is centered inside this rect, not across the whole panel width.
+    /// </summary>
+    public const float TitleRectX = 96f;
+    public const float TitleRectY = 60f;
+    public const float TitleRectWidth = 630f;
+    public const float TitleRectHeight = 45f;
 
-    /// <summary>Left panel: the nine-sliced scenario list (Docs request: x=50, y=150, 450 wide).</summary>
+    /// <summary>Left panel: the nine-sliced scenario list (x=50, y=150, 450 wide).</summary>
     public const float ContentPanelX = 50f;
     public const float ContentPanelY = 150f;
     public const float ContentPanelWidth = 450f;
     public const float ContentPanelHeight = 380f;
 
-    /// <summary>Right panel: the nine-sliced action panel (Docs request: x=500, y=150, 350 wide).</summary>
+    /// <summary>Right panel: the nine-sliced action panel (x=500, y=150, 350 wide).</summary>
     public const float ActionPanelX = 500f;
     public const float ActionPanelY = 150f;
     public const float ActionPanelWidth = 350f;
@@ -56,9 +68,41 @@ public static class ScenarioSelectLayout
     public const float ContentPadding = 20f;
 
     public const float ListTop = ContentPanelY + ContentPadding;
-    public const float RowHeight = 58f;
+    /// <summary>Total vertical budget available for stacked scenario rows.</summary>
+    public const float ListHeight = ContentPanelHeight - 2 * ContentPadding;
+
     public const float RowSpacing = 8f;
-    public const int VisibleRows = 6;
+    /// <summary>
+    /// Single-line-description row height (50) plus RowSpacing (8) reproduces the old
+    /// fixed 58px row step exactly — six single-line rows still fill ListHeight (340) with
+    /// no gap; only a description that wraps to more lines grows the row beyond this floor.
+    /// </summary>
+    public const float RowMinHeight = 50f;
+    /// <summary>Baseline offset (from the row's top) of the bold scenario name line.</summary>
+    public const float RowNameBaselineY = 22f;
+    /// <summary>Baseline offset (from the row's top) of the first wrapped description line.</summary>
+    public const float RowDescriptionFirstBaselineY = 42f;
+    /// <summary>Baseline-to-baseline spacing between wrapped description lines.</summary>
+    public const float RowDescriptionLineHeight = 16f;
+    /// <summary>Space kept below the last description line before the row's border.</summary>
+    public const float RowBottomPadding = 8f;
+
+    /// <summary>Baseline of the selected scenario's name heading at the top of the action panel.</summary>
+    public const float InfoNameBaselineY = 42f;
+
+    /// <summary>Baseline of the first LABEL | VALUE info row.</summary>
+    public const float InfoRowsTopY = 110f;
+
+    /// <summary>Baseline-to-baseline spacing between info rows.</summary>
+    public const float InfoRowSpacing = 44f;
+
+    /// <summary>Left/right margin from the action panel's edges for an info row's label/value.</summary>
+    public const float InfoSideMargin = 30f;
+
+    /// <summary>How far (above ascent, below descent) the separator line extends, so it reads taller than the text next to it.</summary>
+    public const float InfoSeparatorOverhang = 4f;
+
+    public const float InfoSeparatorStrokeWidth = 2f;
 
     public const float ActionButtonWidth = 140f;
     public const float ActionButtonHeight = 44f;
@@ -75,12 +119,19 @@ public static class ScenarioSelectLayout
     public static float ListLeft => ContentPanelX + ContentPadding;
     public static float ListWidth => ContentPanelWidth - 2 * ContentPadding;
 
-    /// <summary>Top-left-relative rect for a visible row (before scroll offset is applied by the caller).</summary>
-    public static (float X, float Y, float W, float H) RowRect(int visibleRowIndex)
+    /// <summary>
+    /// Row height for a description wrapped into <paramref name="descriptionLineCount"/>
+    /// lines (treated as at least 1) — grows by RowDescriptionLineHeight per extra line.
+    /// </summary>
+    public static float RowHeightFor(int descriptionLineCount)
     {
-        float y = ListTop + visibleRowIndex * RowHeight;
-        return (ListLeft, y, ListWidth, RowHeight - RowSpacing);
+        int lines = Math.Max(1, descriptionLineCount);
+        float height = RowDescriptionFirstBaselineY + (lines - 1) * RowDescriptionLineHeight + RowBottomPadding;
+        return Math.Max(RowMinHeight, height);
     }
+
+    public static (float X, float Y, float W, float H) RowRect(float y, float height) =>
+        (ListLeft, y, ListWidth, height);
 
     /// <summary>
     /// BACK button rect, local to the action panel (add ActionPanelX/Y for outer-panel-local
@@ -103,31 +154,34 @@ public static class ScenarioSelectLayout
     }
 
     /// <summary>
-    /// Vertical track spanning the full visible row list, in the content panel's right
-    /// margin strip. Only meaningful — and only drawn by the caller — when there are more
-    /// scenarios than <see cref="VisibleRows"/>.
+    /// Vertical track spanning the content panel's full row-list budget, in its right
+    /// margin strip. Only meaningful — and only drawn by the caller — when the scenario
+    /// list overflows what's currently visible.
     /// </summary>
     public static (float X, float Y, float W, float H) ScrollbarTrackRect() =>
-        (ListLeft + ListWidth + ScrollbarGap, ListTop, ScrollbarWidth, VisibleRows * RowHeight - RowSpacing);
+        (ListLeft + ListWidth + ScrollbarGap, ListTop, ScrollbarWidth, ListHeight);
 
-    public static (float X, float Y, float W, float H) ScrollbarThumbRect(int scrollOffset, int totalScenarioCount)
+    public static (float X, float Y, float W, float H) ScrollbarThumbRect(int scrollOffset, int totalScenarioCount, int visibleRowCount)
     {
         var track = ScrollbarTrackRect();
-        float thumbHeight = Math.Max(ScrollbarThumbMinHeight, track.H * VisibleRows / totalScenarioCount);
+        float thumbHeight = Math.Max(ScrollbarThumbMinHeight, track.H * visibleRowCount / totalScenarioCount);
 
-        int maxOffset = totalScenarioCount - VisibleRows;
+        int maxOffset = Math.Max(0, totalScenarioCount - visibleRowCount);
         float travel = track.H - thumbHeight;
         float thumbY = track.Y + (maxOffset > 0 ? travel * scrollOffset / maxOffset : 0f);
 
         return (track.X, thumbY, track.W, thumbHeight);
     }
 
+    /// <summary>One currently-visible scenario row's already-computed position, for hit-testing.</summary>
+    public readonly record struct VisibleRow(int AbsoluteIndex, float Y, float Height);
+
     /// <summary>
-    /// Hit-tests a click at screen coordinates. <paramref name="visibleScenarioCount"/> is
-    /// the number of rows actually rendered (min(total scenarios, VisibleRows)).
+    /// Hit-tests a click at screen coordinates. <paramref name="visibleRows"/> must be the
+    /// caller's current visible-row list (position/height already resolved from wrapping).
     /// </summary>
     public static ScenarioSelectHit HitTest(
-        float screenX, float screenY, int screenWidth, int screenHeight, int visibleScenarioCount)
+        float screenX, float screenY, int screenWidth, int screenHeight, IReadOnlyList<VisibleRow> visibleRows)
     {
         float panelLeft = PanelLeft(screenWidth);
         float panelTop = PanelTop(screenHeight);
@@ -142,10 +196,10 @@ public static class ScenarioSelectLayout
         if (IsInRect(alx, aly, PlayButtonRect()))
             return new ScenarioSelectHit(ScenarioSelectZone.Play);
 
-        for (int i = 0; i < visibleScenarioCount; i++)
+        foreach (var row in visibleRows)
         {
-            if (IsInRect(lx, ly, RowRect(i)))
-                return new ScenarioSelectHit(ScenarioSelectZone.Row, i);
+            if (IsInRect(lx, ly, RowRect(row.Y, row.Height)))
+                return new ScenarioSelectHit(ScenarioSelectZone.Row, row.AbsoluteIndex);
         }
 
         return ScenarioSelectHit.None;
