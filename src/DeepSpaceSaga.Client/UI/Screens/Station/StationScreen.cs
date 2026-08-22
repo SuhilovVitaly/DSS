@@ -7,9 +7,11 @@ namespace DeepSpaceSaga.Client.UI.Screens.Station;
 
 /// <summary>
 /// Station overlay (Docs/FirstRelease/Screens/Station.md). Placeholder shell:
-/// Trade/Finance/Hire/Representatives/Install Drilling Unit/Undock are not yet
-/// implemented, so the panel shows a "not available yet" line instead of live
-/// station data. Opened from GameSessionScreen by left-clicking the station the
+/// Finance/Hire/Representatives/Install Drilling Unit/Undock are not yet
+/// implemented, so the panel shows a "not available yet" line for each of them.
+/// `Trade` is the first real button — it opens <see cref="Trade.TradeScreen"/>
+/// (itself a stub, same open/close/pause-only shell) as a nested modal on top of
+/// this one. Opened from GameSessionScreen by left-clicking the station the
 /// player ship is currently docked to (ScreenEvent.OpenStation); closes via the
 /// × button, Escape, or a click outside the panel (on the dimmed background),
 /// returning to GameSessionScreen while the docked state itself is untouched —
@@ -22,14 +24,13 @@ public sealed class StationScreen : IScreen
 {
     private int _screenWidth;
     private int _screenHeight;
-    private bool _isCloseHovered;
+    private StationButton _hoveredButton = StationButton.None;
 
     private static readonly SKColor DimColor = new(0, 0, 0, 160);
     private static readonly SKPaint DimPaint = new() { Color = DimColor, Style = SKPaintStyle.Fill };
 
     private static readonly string[] PlaceholderLines =
     {
-        "Trade: not available yet",
         "Finance: not available yet",
         "Representatives: not available yet",
         "Install Drilling Unit: not available yet",
@@ -37,7 +38,7 @@ public sealed class StationScreen : IScreen
         "Undock: not available yet",
     };
 
-    public void OnActivated() => _isCloseHovered = false;
+    public void OnActivated() => _hoveredButton = StationButton.None;
 
     public void OnDeactivated() { }
 
@@ -52,6 +53,8 @@ public sealed class StationScreen : IScreen
         var hit = StationLayout.HitTest(x, y, _screenWidth, _screenHeight);
         if (hit == StationButton.Close)
             return ScreenEvent.CloseStation;
+        if (hit == StationButton.Trade)
+            return ScreenEvent.OpenTrade;
 
         // Click on the dimmed background outside the panel also closes it.
         if (!StationLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
@@ -65,9 +68,8 @@ public sealed class StationScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
-        var hit = StationLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        _isCloseHovered = hit == StationButton.Close;
-        return _isCloseHovered;
+        _hoveredButton = StationLayout.HitTest(x, y, _screenWidth, _screenHeight);
+        return _hoveredButton != StationButton.None;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -88,7 +90,9 @@ public sealed class StationScreen : IScreen
         float cx = pl + StationLayout.PanelWidth / 2f;
         canvas.DrawText("STATION", cx, pt + StationLayout.TitleY, MenuStyle.TextTitle);
 
-        float textY = pt + StationLayout.BodyStartY;
+        DrawTradeButton(canvas, pl, pt);
+
+        float textY = pt + StationLayout.BodyStartY + StationLayout.BodyLineHeight;
         foreach (var line in PlaceholderLines)
         {
             canvas.DrawText(line, cx, textY, MenuStyle.TextStatus);
@@ -98,11 +102,21 @@ public sealed class StationScreen : IScreen
         DrawCloseButton(canvas, pl, pt);
     }
 
+    private void DrawTradeButton(SKCanvas canvas, float panelLeft, float panelTop)
+    {
+        var (left, top, right, bottom) = StationLayout.TradeButtonLocalRect();
+        var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
+
+        MenuStyle.DrawButton(canvas, rect, "TRADE",
+            _hoveredButton == StationButton.Trade ? ButtonState.Hovered : ButtonState.Normal);
+    }
+
     private void DrawCloseButton(SKCanvas canvas, float panelLeft, float panelTop)
     {
         var (left, top, right, bottom) = StationLayout.CloseButtonLocalRect();
         var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
 
-        MenuStyle.DrawButton(canvas, rect, "×", _isCloseHovered ? ButtonState.Hovered : ButtonState.Normal);
+        MenuStyle.DrawButton(canvas, rect, "×",
+            _hoveredButton == StationButton.Close ? ButtonState.Hovered : ButtonState.Normal);
     }
 }

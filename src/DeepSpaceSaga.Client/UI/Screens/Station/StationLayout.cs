@@ -3,7 +3,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.Station;
 public enum StationButton
 {
     None,
-    Close
+    Close,
+    Trade
 }
 
 /// <summary>
@@ -24,6 +25,9 @@ public sealed class StationLayout
     public const float CloseButtonSize = 28f;
     public const float CloseButtonMargin = 14f;
 
+    public const float TradeButtonWidth = 160f;
+    public const float TradeButtonHeight = 32f;
+
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
 
@@ -35,6 +39,19 @@ public sealed class StationLayout
         float top = CloseButtonMargin;
         float bottom = top + CloseButtonSize;
         return (left, top, right, bottom);
+    }
+
+    /// <summary>
+    /// TRADE button rect, local to the panel — occupies the first body row (the other
+    /// placeholder lines start one row below it). Centered horizontally like the
+    /// placeholder text it replaces (Docs/FirstRelease/Screens/Station.md: "Позволяет
+    /// открыть экран торговли кнопкой Trade").
+    /// </summary>
+    public static (float Left, float Top, float Right, float Bottom) TradeButtonLocalRect()
+    {
+        float left = PanelWidth / 2f - TradeButtonWidth / 2f;
+        float top = BodyStartY - 20f;
+        return (left, top, left + TradeButtonWidth, top + TradeButtonHeight);
     }
 
     /// <summary>True when (screenX, screenY) lands inside the panel rect (screen space).</summary>
@@ -55,9 +72,13 @@ public sealed class StationLayout
         float lx = screenX - panelLeft;
         float ly = screenY - panelTop;
 
-        var (left, top, right, bottom) = CloseButtonLocalRect();
-        if (lx >= left && lx <= right && ly >= top && ly <= bottom)
+        var (closeLeft, closeTop, closeRight, closeBottom) = CloseButtonLocalRect();
+        if (lx >= closeLeft && lx <= closeRight && ly >= closeTop && ly <= closeBottom)
             return StationButton.Close;
+
+        var (tradeLeft, tradeTop, tradeRight, tradeBottom) = TradeButtonLocalRect();
+        if (lx >= tradeLeft && lx <= tradeRight && ly >= tradeTop && ly <= tradeBottom)
+            return StationButton.Trade;
 
         return StationButton.None;
     }

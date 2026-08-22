@@ -12,6 +12,7 @@ using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Client.UI.Screens.Ship;
 using DeepSpaceSaga.Client.UI.Screens.Station;
+using DeepSpaceSaga.Client.UI.Screens.Trade;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using Silk.NET.Core;
@@ -603,6 +604,12 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.CloseStation:
                     await CloseOverlayAsync();
                     break;
+                case ScreenEvent.OpenTrade:
+                    await OpenTradeAsync();
+                    break;
+                case ScreenEvent.CloseTrade:
+                    await CloseOverlayAsync();
+                    break;
             }
         }
         finally
@@ -762,6 +769,21 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         await PushModalAsync(new StationScreen());
+    }
+
+    /// <summary>
+    /// Push the Trade overlay (Docs/FirstRelease/Screens/Trade.md) on top of Station
+    /// (StationScreen's `TRADE` button → ScreenEvent.OpenTrade). A nested modal exactly
+    /// like GameMenu → Save/Load — PushModalAsync/PopModalAsync's generic modal-depth
+    /// tracking needs no Trade-specific handling.
+    /// </summary>
+    private async Task OpenTradeAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is TradeScreen)
+            return;
+
+        await PushModalAsync(new TradeScreen());
     }
 
     private async Task OpenSettingsAsync()

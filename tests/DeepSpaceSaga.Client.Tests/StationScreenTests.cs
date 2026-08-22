@@ -54,6 +54,39 @@ public class StationScreenTests
     }
 
     [Fact]
+    public void Trade_button_click_returns_OpenTrade()
+    {
+        var screen = new StationScreen();
+        RenderScreen(screen);
+
+        var hit = StationLayout.HitTest(
+            StationLayout.PanelLeft(ScreenWidth) + StationLayout.TradeButtonLocalRect().Left + 1f,
+            StationLayout.PanelTop(ScreenHeight) + StationLayout.TradeButtonLocalRect().Top + 1f,
+            ScreenWidth, ScreenHeight);
+        Assert.Equal(StationButton.Trade, hit);
+
+        var (left, top, right, bottom) = StationLayout.TradeButtonLocalRect();
+        float cx = StationLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
+        float cy = StationLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
+
+        var result = screen.OnMouseDown(cx, cy);
+        Assert.Equal(ScreenEvent.OpenTrade, result);
+    }
+
+    [Fact]
+    public void Trade_button_hover_is_reported_interactive()
+    {
+        var screen = new StationScreen();
+        RenderScreen(screen);
+
+        var (left, top, right, bottom) = StationLayout.TradeButtonLocalRect();
+        float cx = StationLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
+        float cy = StationLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
+
+        Assert.True(screen.OnMouseMove(cx, cy));
+    }
+
+    [Fact]
     public void Click_inside_panel_outside_close_button_returns_None()
     {
         var screen = new StationScreen();
