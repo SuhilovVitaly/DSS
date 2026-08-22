@@ -105,6 +105,17 @@ public static class MenuStyle
         canvas.DrawRect(rect, PanelBorder);
     }
 
+    /// <summary>
+    /// Exact baseline Y that vertically centers text in <paramref name="rect"/> using the
+    /// paint's real font metrics (Ascent/Descent) — more precise than a TextSize/3 rule of
+    /// thumb, which matters for a shallow rect (e.g. a title bar).
+    /// </summary>
+    public static float VerticalCenterBaseline(SKRect rect, SKPaint paint)
+    {
+        var metrics = paint.FontMetrics;
+        return rect.MidY - (metrics.Ascent + metrics.Descent) / 2f;
+    }
+
     /// <summary>Draw fullscreen black background.</summary>
     public static void DrawBackground(SKCanvas canvas, int width, int height)
     {

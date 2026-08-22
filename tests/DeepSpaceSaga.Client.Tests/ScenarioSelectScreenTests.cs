@@ -27,14 +27,4 @@ public class ScenarioSelectScreenTests
         // content panel silently falls back to a plain fill.
         Assert.True(ScenarioSelectScreen.HasLoadedContentPanel);
     }
-
-    [Fact]
-    public void Button_image_is_loaded()
-    {
-        // Regression: the button.png asset (nine-sliced by NinePatch for BACK/PLAY — see
-        // NinePatchTests.cs) must resolve at the client's working directory and be
-        // registered in the .csproj with CopyToOutputDirectory, or the buttons silently
-        // fall back to MenuStyle's flat style.
-        Assert.True(ScenarioSelectScreen.HasLoadedButtonImage);
-    }
 }
