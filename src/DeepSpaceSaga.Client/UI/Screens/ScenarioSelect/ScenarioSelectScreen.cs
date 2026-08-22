@@ -161,11 +161,11 @@ public sealed class ScenarioSelectScreen : IScreen
     /// (same spirit as the "not available yet" placeholders on Station/Trade/Finance)
     /// until the Engine exposes real per-scenario metadata.
     /// </summary>
-    private static readonly (string Label, string Value)[] InfoRows =
+    private static (string Label, string Value)[] InfoRows => new (string, string)[]
     {
-        ("DIFFICULTY", "NORMAL"),
-        ("ENVIRONMENT", "OPEN SPACE"),
-        ("CREW", "1 person"),
+        (Localization.Get("ScenarioSelect.Difficulty"), Localization.Get("ScenarioSelect.DifficultyNormal")),
+        (Localization.Get("ScenarioSelect.Environment"), Localization.Get("ScenarioSelect.EnvironmentOpenSpace")),
+        (Localization.Get("ScenarioSelect.Crew"), Localization.Get("ScenarioSelect.CrewOnePerson")),
     };
 
     /// <summary>One currently-visible scenario row, with its description already word-wrapped and its height resolved.</summary>
@@ -267,7 +267,7 @@ public sealed class ScenarioSelectScreen : IScreen
             pl + ScenarioSelectLayout.TitleRectX, pt + ScenarioSelectLayout.TitleRectY,
             pl + ScenarioSelectLayout.TitleRectX + ScenarioSelectLayout.TitleRectWidth,
             pt + ScenarioSelectLayout.TitleRectY + ScenarioSelectLayout.TitleRectHeight);
-        canvas.DrawText("SELECT SCENARIO", titleRect.MidX, MenuStyle.VerticalCenterBaseline(titleRect, _titleTextPaint), _titleTextPaint);
+        canvas.DrawText(Localization.Get("ScenarioSelect.Title"), titleRect.MidX, MenuStyle.VerticalCenterBaseline(titleRect, _titleTextPaint), _titleTextPaint);
 
         ImagePanel.Draw(canvas, new SKRect(
             pl + ScenarioSelectLayout.ContentPanelX, pt + ScenarioSelectLayout.ContentPanelY,
@@ -309,7 +309,7 @@ public sealed class ScenarioSelectScreen : IScreen
         }
 
         var backRect = CombinedRect(actionLeft, actionTop, ScenarioSelectLayout.BackButtonRect());
-        ImageButton.Draw(canvas, backRect, "BACK",
+        ImageButton.Draw(canvas, backRect, Localization.Get("ScenarioSelect.Back"),
             _hoveredZone == ScenarioSelectZone.Back ? ButtonState.Hovered : ButtonState.Normal);
 
         bool canPlay = _selectedIndex >= 0 && _selectedIndex < _scenarios.Count;
@@ -317,7 +317,7 @@ public sealed class ScenarioSelectScreen : IScreen
         var playState = !canPlay
             ? ButtonState.Disabled
             : _hoveredZone == ScenarioSelectZone.Play ? ButtonState.Hovered : ButtonState.Normal;
-        ImageButton.Draw(canvas, playRect, "PLAY", playState);
+        ImageButton.Draw(canvas, playRect, Localization.Get("ScenarioSelect.Play"), playState);
     }
 
     /// <summary>

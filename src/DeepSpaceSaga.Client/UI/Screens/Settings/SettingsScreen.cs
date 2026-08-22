@@ -303,12 +303,12 @@ public sealed class SettingsScreen : IScreen
 
         float cx = pl + SettingsLayout.PanelWidth / 2f;
 
-        canvas.DrawText("SETTINGS", cx, pt + SettingsLayout.TitleY, MenuStyle.TextTitle);
+        canvas.DrawText(Localization.Get("Settings.Title"), cx, pt + SettingsLayout.TitleY, MenuStyle.TextTitle);
 
         DrawMonitorRow(canvas, pl, pt, cx);
         DrawLanguageRow(canvas, pl, pt);
         DrawUiScaleRow(canvas, pl, pt);
-        DrawButton(canvas, pl, pt, SettingsLayout.ExitY, "EXIT", SettingsButton.Exit);
+        DrawButton(canvas, pl, pt, SettingsLayout.ExitY, Localization.Get("Settings.Exit"), SettingsButton.Exit);
 
         // An open dropdown's option list is drawn last, as a final overlay pass, so it is
         // never covered by a row positioned below it (at most one combo is ever open at a
@@ -327,7 +327,7 @@ public sealed class SettingsScreen : IScreen
         float by = panelTop + SettingsLayout.LanguageRowY;
         var boxRect = new SKRect(bx, by, bx + SettingsLayout.LanguageComboWidth, by + SettingsLayout.LanguageComboHeight);
 
-        canvas.DrawText("LANGUAGE", panelLeft + SettingsLayout.RowLabelX,
+        canvas.DrawText(Localization.Get("Settings.Language"), panelLeft + SettingsLayout.RowLabelX,
             MenuStyle.VerticalCenterBaseline(boxRect, _labelPaint), _labelPaint);
 
         bool boxHighlighted = _isLanguageComboOpen || _hoveredButton == SettingsButton.LanguageCombo;
@@ -359,7 +359,7 @@ public sealed class SettingsScreen : IScreen
         float by = panelTop + SettingsLayout.UiScaleRowY;
         var boxRect = new SKRect(bx, by, bx + SettingsLayout.UiScaleComboWidth, by + SettingsLayout.UiScaleComboHeight);
 
-        canvas.DrawText("INTERFACE SCALE", panelLeft + SettingsLayout.RowLabelX,
+        canvas.DrawText(Localization.Get("Settings.InterfaceScale"), panelLeft + SettingsLayout.RowLabelX,
             MenuStyle.VerticalCenterBaseline(boxRect, _labelPaint), _labelPaint);
 
         bool boxHighlighted = _isUiScaleComboOpen || _hoveredButton == SettingsButton.UiScaleCombo;
@@ -393,7 +393,7 @@ public sealed class SettingsScreen : IScreen
         float by = panelTop + SettingsLayout.MonitorRowY;
         var boxRect = new SKRect(bx, by, bx + SettingsLayout.MonitorComboWidth, by + SettingsLayout.MonitorComboHeight);
 
-        canvas.DrawText("MONITOR", panelLeft + SettingsLayout.RowLabelX,
+        canvas.DrawText(Localization.Get("Settings.Monitor"), panelLeft + SettingsLayout.RowLabelX,
             MenuStyle.VerticalCenterBaseline(boxRect, _labelPaint), _labelPaint);
 
         bool boxHighlighted = _isMonitorComboOpen || _hoveredButton == SettingsButton.MonitorCombo;
@@ -401,7 +401,7 @@ public sealed class SettingsScreen : IScreen
         DrawDropdownArrow(canvas, boxRect, _isMonitorComboOpen);
 
         if (!_isMonitorComboOpen)
-            canvas.DrawText("Changes apply after game restart", centerX, panelTop + SettingsLayout.MonitorNoteY, MenuStyle.TextStatus);
+            canvas.DrawText(Localization.Get("Settings.RestartNote"), centerX, panelTop + SettingsLayout.MonitorNoteY, MenuStyle.TextStatus);
     }
 
     private void DrawMonitorOptions(SKCanvas canvas, float panelLeft, float panelTop)

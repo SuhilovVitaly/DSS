@@ -2,5 +2,22 @@
   "MainMenu.NewGame": "НОВАЯ ИГРА",
   "MainMenu.Load": "ЗАГРУЗИТЬ",
   "MainMenu.Settings": "НАСТРОЙКИ",
-  "MainMenu.Exit": "ВЫХОД"
+  "MainMenu.Exit": "ВЫХОД",
+
+  "Settings.Title": "НАСТРОЙКИ",
+  "Settings.Language": "ЯЗЫК",
+  "Settings.InterfaceScale": "МАСШТАБ ИНТЕРФЕЙСА",
+  "Settings.Monitor": "МОНИТОР",
+  "Settings.RestartNote": "Изменения вступят в силу после перезапуска игры",
+  "Settings.Exit": "ВЫХОД",
+
+  "ScenarioSelect.Title": "ВЫБОР СЦЕНАРИЯ",
+  "ScenarioSelect.Back": "НАЗАД",
+  "ScenarioSelect.Play": "ИГРАТЬ",
+  "ScenarioSelect.Difficulty": "СЛОЖНОСТЬ",
+  "ScenarioSelect.DifficultyNormal": "НОРМАЛЬНАЯ",
+  "ScenarioSelect.Environment": "ОКРУЖЕНИЕ",
+  "ScenarioSelect.EnvironmentOpenSpace": "ОТКРЫТЫЙ КОСМОС",
+  "ScenarioSelect.Crew": "ЭКИПАЖ",
+  "ScenarioSelect.CrewOnePerson": "1 человек"
 }

@@ -10,18 +10,29 @@ namespace DeepSpaceSaga.Client.Tests;
 /// </summary>
 public class LocalizationTests
 {
+    private static readonly string[] RequiredKeys =
+    {
+        "MainMenu.NewGame", "MainMenu.Load", "MainMenu.Settings", "MainMenu.Exit",
+
+        "Settings.Title", "Settings.Language", "Settings.InterfaceScale",
+        "Settings.Monitor", "Settings.RestartNote", "Settings.Exit",
+
+        "ScenarioSelect.Title", "ScenarioSelect.Back", "ScenarioSelect.Play",
+        "ScenarioSelect.Difficulty", "ScenarioSelect.DifficultyNormal",
+        "ScenarioSelect.Environment", "ScenarioSelect.EnvironmentOpenSpace",
+        "ScenarioSelect.Crew", "ScenarioSelect.CrewOnePerson",
+    };
+
     [Theory]
     [InlineData("English")]
     [InlineData("Russian")]
-    public void Locale_file_defines_all_MainMenu_keys(string language)
+    public void Locale_file_defines_all_MainMenu_Settings_and_ScenarioSelect_keys(string language)
     {
         var strings = Localization.LoadLocaleFile(language);
 
         Assert.NotNull(strings);
-        Assert.True(strings!.ContainsKey("MainMenu.NewGame"));
-        Assert.True(strings.ContainsKey("MainMenu.Load"));
-        Assert.True(strings.ContainsKey("MainMenu.Settings"));
-        Assert.True(strings.ContainsKey("MainMenu.Exit"));
+        foreach (var key in RequiredKeys)
+            Assert.True(strings!.ContainsKey(key), $"{language}.json is missing key '{key}'");
     }
 
     [Fact]
