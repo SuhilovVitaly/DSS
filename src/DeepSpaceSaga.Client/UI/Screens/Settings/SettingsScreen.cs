@@ -8,10 +8,12 @@ namespace DeepSpaceSaga.Client.UI.Screens.Settings;
 public sealed class SettingsScreen : IScreen
 {
     private static readonly double[] UiScaleValues = { 0.8, 1.0, 1.2, 1.5 };
+    private static readonly string[] LanguageValues = { "English", "Russian" };
 
     private readonly IReadOnlyList<string> _monitorNames;
     private readonly Action<int> _onMonitorSelected;
     private readonly Action<double> _onUiScaleSelected;
+    private readonly Action<string> _onLanguageSelected;
 
     private int _screenWidth;
     private int _screenHeight;
@@ -23,6 +25,10 @@ public sealed class SettingsScreen : IScreen
     private int _selectedUiScaleIndex;
     private bool _isUiScaleComboOpen;
     private int _hoveredUiScaleOption = -1;
+
+    private int _selectedLanguageIndex;
+    private bool _isLanguageComboOpen;
+    private int _hoveredLanguageOption = -1;
 
     private SettingsButton _hoveredButton = SettingsButton.None;
     private SettingsButton _pressedButton = SettingsButton.None;
@@ -36,7 +42,8 @@ public sealed class SettingsScreen : IScreen
 
     public SettingsScreen(
         IReadOnlyList<string> monitorNames, int selectedMonitorIndex, Action<int> onMonitorSelected,
-        double selectedUiScale, Action<double> onUiScaleSelected)
+        double selectedUiScale, Action<double> onUiScaleSelected,
+        string selectedLanguage, Action<string> onLanguageSelected)
     {
         _monitorNames = monitorNames.Count > 0 ? monitorNames : new[] { "Monitor 1" };
         _selectedMonitorIndex = Math.Clamp(selectedMonitorIndex, 0, _monitorNames.Count - 1);
@@ -45,6 +52,10 @@ public sealed class SettingsScreen : IScreen
         int scaleIndex = Array.FindIndex(UiScaleValues, v => Math.Abs(v - selectedUiScale) < 0.001);
         _selectedUiScaleIndex = scaleIndex >= 0 ? scaleIndex : Array.IndexOf(UiScaleValues, 1.0);
         _onUiScaleSelected = onUiScaleSelected;
+
+        int languageIndex = Array.IndexOf(LanguageValues, selectedLanguage);
+        _selectedLanguageIndex = languageIndex >= 0 ? languageIndex : 0;
+        _onLanguageSelected = onLanguageSelected;
     }
 
     public void OnActivated()
@@ -55,6 +66,8 @@ public sealed class SettingsScreen : IScreen
         _hoveredMonitorOption = -1;
         _isUiScaleComboOpen = false;
         _hoveredUiScaleOption = -1;
+        _isLanguageComboOpen = false;
+        _hoveredLanguageOption = -1;
     }
 
     public void OnDeactivated() { }
@@ -73,6 +86,12 @@ public sealed class SettingsScreen : IScreen
         if (_isUiScaleComboOpen)
         {
             _isUiScaleComboOpen = false;
+            return ScreenEvent.None;
+        }
+
+        if (_isLanguageComboOpen)
+        {
+            _isLanguageComboOpen = false;
             return ScreenEvent.None;
         }
 
@@ -113,6 +132,21 @@ public sealed class SettingsScreen : IScreen
             return ScreenEvent.None;
         }
 
+        if (_isLanguageComboOpen)
+        {
+            int option = SettingsLayout.HitTestLanguageOption(
+                x, y, _screenWidth, _screenHeight, LanguageValues.Length);
+            _isLanguageComboOpen = false;
+
+            if (option >= 0 && option != _selectedLanguageIndex)
+            {
+                _selectedLanguageIndex = option;
+                _onLanguageSelected(LanguageValues[option]);
+            }
+
+            return ScreenEvent.None;
+        }
+
         var hit = SettingsLayout.HitTest(x, y, _screenWidth, _screenHeight);
 
         if (hit == SettingsButton.MonitorCombo)
@@ -124,6 +158,12 @@ public sealed class SettingsScreen : IScreen
         if (hit == SettingsButton.UiScaleCombo)
         {
             _isUiScaleComboOpen = true;
+            return ScreenEvent.None;
+        }
+
+        if (hit == SettingsButton.LanguageCombo)
+        {
+            _isLanguageComboOpen = true;
             return ScreenEvent.None;
         }
 
@@ -153,6 +193,13 @@ public sealed class SettingsScreen : IScreen
             return true;
         }
 
+        if (_isLanguageComboOpen)
+        {
+            _hoveredLanguageOption = SettingsLayout.HitTestLanguageOption(
+                x, y, _screenWidth, _screenHeight, LanguageValues.Length);
+            return true;
+        }
+
         var hit = SettingsLayout.HitTest(x, y, _screenWidth, _screenHeight);
         _hoveredButton = hit;
         return hit != SettingsButton.None;
@@ -177,7 +224,37 @@ public sealed class SettingsScreen : IScreen
 
         DrawMonitorCombo(canvas, pl, pt, cx);
         DrawUiScaleCombo(canvas, pl, pt, cx);
+        DrawLanguageCombo(canvas, pl, pt, cx);
         DrawButton(canvas, pl, pt, SettingsLayout.ExitY, "EXIT", SettingsButton.Exit);
+    }
+
+    private void DrawLanguageCombo(SKCanvas canvas, float panelLeft, float panelTop, float centerX)
+    {
+        canvas.DrawText("LANGUAGE", centerX, panelTop + SettingsLayout.LanguageLabelY, MenuStyle.TextStatus);
+
+        float bx = panelLeft + (SettingsLayout.PanelWidth - SettingsLayout.LanguageComboWidth) / 2f;
+        float by = panelTop + SettingsLayout.LanguageComboY;
+        var boxRect = new SKRect(bx, by, bx + SettingsLayout.LanguageComboWidth, by + SettingsLayout.LanguageComboHeight);
+
+        bool boxHighlighted = _isLanguageComboOpen || _hoveredButton == SettingsButton.LanguageCombo;
+        MenuStyle.DrawButton(canvas, boxRect, LanguageValues[_selectedLanguageIndex],
+            boxHighlighted ? ButtonState.Hovered : ButtonState.Normal);
+        DrawDropdownArrow(canvas, boxRect, _isLanguageComboOpen);
+
+        if (_isLanguageComboOpen)
+        {
+            for (int i = 0; i < LanguageValues.Length; i++)
+            {
+                float oy = by + SettingsLayout.LanguageComboHeight + i * SettingsLayout.LanguageOptionHeight;
+                var optionRect = new SKRect(bx, oy, bx + SettingsLayout.LanguageComboWidth, oy + SettingsLayout.LanguageOptionHeight);
+
+                var optionState = i == _selectedLanguageIndex ? ButtonState.Pressed
+                    : i == _hoveredLanguageOption ? ButtonState.Hovered
+                    : ButtonState.Normal;
+
+                MenuStyle.DrawButton(canvas, optionRect, LanguageValues[i], optionState);
+            }
+        }
     }
 
     private void DrawUiScaleCombo(SKCanvas canvas, float panelLeft, float panelTop, float centerX)

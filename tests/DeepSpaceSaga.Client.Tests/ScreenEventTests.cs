@@ -213,9 +213,11 @@ public class ScreenEventTests
 
     private static SettingsScreen NewSettingsScreen(
         int selectedMonitorIndex = 0, Action<int>? onMonitorSelected = null,
-        double selectedUiScale = 1.0, Action<double>? onUiScaleSelected = null) =>
+        double selectedUiScale = 1.0, Action<double>? onUiScaleSelected = null,
+        string selectedLanguage = "English", Action<string>? onLanguageSelected = null) =>
         new(TestMonitorNames, selectedMonitorIndex, onMonitorSelected ?? (_ => { }),
-            selectedUiScale, onUiScaleSelected ?? (_ => { }));
+            selectedUiScale, onUiScaleSelected ?? (_ => { }),
+            selectedLanguage, onLanguageSelected ?? (_ => { }));
 
     private static (float x, float y) SettingsMonitorComboCenter()
     {

@@ -5,6 +5,7 @@ public enum SettingsButton
     None,
     MonitorCombo,
     UiScaleCombo,
+    LanguageCombo,
     Exit
 }
 
@@ -36,6 +37,12 @@ public sealed class SettingsLayout
     public const float UiScaleComboHeight = 40f;
     public const float UiScaleOptionHeight = 36f;
 
+    public const float LanguageLabelY = 362f;
+    public const float LanguageComboY = 384f;
+    public const float LanguageComboWidth = 320f;
+    public const float LanguageComboHeight = 40f;
+    public const float LanguageOptionHeight = 36f;
+
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
 
@@ -49,6 +56,7 @@ public sealed class SettingsLayout
 
         if (IsInMonitorCombo(lx, ly)) return SettingsButton.MonitorCombo;
         if (IsInUiScaleCombo(lx, ly)) return SettingsButton.UiScaleCombo;
+        if (IsInLanguageCombo(lx, ly)) return SettingsButton.LanguageCombo;
         if (IsInButton(lx, ly, ExitY)) return SettingsButton.Exit;
         return SettingsButton.None;
     }
@@ -109,6 +117,34 @@ public sealed class SettingsLayout
         return -1;
     }
 
+    /// <summary>
+    /// Hit-tests the open language dropdown's option rows (rendered directly below
+    /// the combo box). Returns the option index, or -1 if none was hit.
+    /// </summary>
+    public static int HitTestLanguageOption(
+        float screenX, float screenY, int screenWidth, int screenHeight, int optionCount)
+    {
+        float panelLeft = PanelLeft(screenWidth);
+        float panelTop = PanelTop(screenHeight);
+
+        float lx = screenX - panelLeft;
+        float ly = screenY - panelTop;
+
+        float bx = (PanelWidth - LanguageComboWidth) / 2f;
+        if (lx < bx || lx > bx + LanguageComboWidth)
+            return -1;
+
+        float listTop = LanguageComboY + LanguageComboHeight;
+        for (int i = 0; i < optionCount; i++)
+        {
+            float optionTop = listTop + i * LanguageOptionHeight;
+            if (ly >= optionTop && ly <= optionTop + LanguageOptionHeight)
+                return i;
+        }
+
+        return -1;
+    }
+
     private static bool IsInMonitorCombo(float localX, float localY)
     {
         float bx = (PanelWidth - MonitorComboWidth) / 2f;
@@ -121,6 +157,13 @@ public sealed class SettingsLayout
         float bx = (PanelWidth - UiScaleComboWidth) / 2f;
         return localX >= bx && localX <= bx + UiScaleComboWidth
             && localY >= UiScaleComboY && localY <= UiScaleComboY + UiScaleComboHeight;
+    }
+
+    private static bool IsInLanguageCombo(float localX, float localY)
+    {
+        float bx = (PanelWidth - LanguageComboWidth) / 2f;
+        return localX >= bx && localX <= bx + LanguageComboWidth
+            && localY >= LanguageComboY && localY <= LanguageComboY + LanguageComboHeight;
     }
 
     private static bool IsInButton(float localX, float localY, float buttonY)

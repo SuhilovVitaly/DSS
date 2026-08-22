@@ -46,6 +46,7 @@ public sealed class SkiaWindow : IDisposable
     private GameSessionHandle? _session;
     private GameSessionScreen? _gameSessionScreen;
     private static readonly double[] AllowedUiScales = { 0.8, 1.0, 1.2, 1.5 };
+    private static readonly string[] AllowedLanguages = { "English", "Russian" };
     private readonly SemaphoreSlim _transitionLock = new(1, 1);
     private int _modalDepth;
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
@@ -861,10 +862,12 @@ public sealed class SkiaWindow : IDisposable
             selectedMonitorIndex = 0;
 
         double uiScale = GetUiScale();
+        string language = GetLanguage();
 
         await PushModalAsync(new SettingsScreen(
             monitorNames, selectedMonitorIndex, SaveSelectedMonitorIndex,
-            uiScale, SaveUiScale));
+            uiScale, SaveUiScale,
+            language, SaveLanguage));
     }
 
     /// <summary>
@@ -1081,6 +1084,63 @@ public sealed class SkiaWindow : IDisposable
         }
 
         _gameSessionScreen?.SetUiScale((float)scale);
+    }
+
+    /// <summary>
+    /// Falls back to "English" whenever the persisted value is missing, malformed,
+    /// or outside the allowed set — an invalid language must never break startup.
+    /// </summary>
+    private static string ValidateLanguage(string? language) =>
+        language is not null && Array.Exists(AllowedLanguages, v => v == language) ? language : "English";
+
+    private static string GetLanguage()
+    {
+        try
+        {
+            if (!File.Exists(SettingsFilePath))
+                return "English";
+
+            using var doc = JsonDocument.Parse(File.ReadAllText(SettingsFilePath));
+            if (doc.RootElement.TryGetProperty("gameSettings", out var gs) &&
+                gs.TryGetProperty("language", out var language))
+                return ValidateLanguage(language.GetString());
+
+            return "English";
+        }
+        catch
+        {
+            return "English";
+        }
+    }
+
+    /// <summary>
+    /// Persists the chosen language immediately (per requirements), but there is no
+    /// runtime localization system yet — same "applies after restart" caveat as
+    /// <see cref="SaveSelectedMonitorIndex"/> until one is wired up.
+    /// </summary>
+    private static void SaveLanguage(string language)
+    {
+        try
+        {
+            var root = File.Exists(SettingsFilePath)
+                ? JsonNode.Parse(File.ReadAllText(SettingsFilePath)) as JsonObject ?? new JsonObject()
+                : new JsonObject();
+
+            if (root["gameSettings"] is not JsonObject gameSettings)
+            {
+                gameSettings = new JsonObject();
+                root["gameSettings"] = gameSettings;
+            }
+
+            gameSettings["language"] = language;
+
+            File.WriteAllText(SettingsFilePath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            InterfaceLog.Write($"Settings: language saved = {language}");
+        }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"Settings: failed to save language: {ex.Message}");
+        }
     }
 
     private async Task CloseOverlayAsync()
