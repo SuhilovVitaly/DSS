@@ -43,6 +43,42 @@ public sealed class ScenarioSelectScreen : IScreen
     /// </summary>
     public string? LastSelectedScenarioPath { get; private set; }
 
+    /// <summary>
+    /// Panel background at the exact 900×620 panel size. Loaded once and shared by
+    /// every ScenarioSelectScreen instance; falls back to MenuStyle.DrawPanel's plain
+    /// fill if the file is missing.
+    /// </summary>
+    private static readonly SKBitmap? BackgroundImage =
+        LoadImage("Images/UI/window-background-900x620.png");
+
+    private static SKBitmap? LoadImage(string path)
+    {
+        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
+        catch { return null; }
+    }
+
+    /// <summary>True if the background PNG file was found and decoded at startup.</summary>
+    internal static bool HasLoadedBackground => BackgroundImage is not null;
+
+    /// <summary>
+    /// The nine-sliced content panel that holds the scenario list (see
+    /// <see cref="ScenarioSelectLayout.ContentPanelX"/>/Y/Width/Height). Drawn via
+    /// <see cref="NinePatch"/> so a single small source image covers any panel size
+    /// while its rounded, transparent corners stay unscaled and unstretched.
+    /// </summary>
+    private static readonly SKBitmap? ContentPanelImage =
+        LoadImage("Images/UI/Panels/micro-panel.png");
+
+    /// <summary>
+    /// Corner/edge-sample size (in ContentPanelImage source pixels) for
+    /// <see cref="NinePatch"/> — a 20×20 cut at each corner, and a 20×20 sample from the
+    /// middle of each edge for the stretched borders.
+    /// </summary>
+    private const float ContentPanelCornerInset = 20f;
+
+    /// <summary>True if the content panel PNG file was found and decoded at startup.</summary>
+    internal static bool HasLoadedContentPanel => ContentPanelImage is not null;
+
     private static readonly SKPaint _titleTextPaint = MenuStyle.TextTitle;
 
     private static readonly SKPaint _rowNamePaint = new()
@@ -146,16 +182,34 @@ public sealed class ScenarioSelectScreen : IScreen
         float pl = ScenarioSelectLayout.PanelLeft(width);
         float pt = ScenarioSelectLayout.PanelTop(height);
         var panelRect = new SKRect(pl, pt, pl + ScenarioSelectLayout.PanelWidth, pt + ScenarioSelectLayout.PanelHeight);
-        MenuStyle.DrawPanel(canvas, panelRect);
+        if (BackgroundImage is not null)
+            canvas.DrawBitmap(BackgroundImage, panelRect);
+        else
+            MenuStyle.DrawPanel(canvas, panelRect);
 
         float cx = pl + ScenarioSelectLayout.PanelWidth / 2f;
         canvas.DrawText("SELECT SCENARIO", cx, pt + ScenarioSelectLayout.TitleY, _titleTextPaint);
 
+        DrawContentPanel(canvas, pl, pt);
         DrawScenarioList(canvas, pl, pt);
         if (_scenarios.Count > ScenarioSelectLayout.VisibleRows)
             DrawScrollbar(canvas, pl, pt);
 
         DrawButton(canvas, CombinedRect(pl, pt, ScenarioSelectLayout.BackButtonRect()), "BACK", ScenarioSelectZone.Back, -1);
+    }
+
+    private void DrawContentPanel(SKCanvas canvas, float panelLeft, float panelTop)
+    {
+        var rect = new SKRect(
+            panelLeft + ScenarioSelectLayout.ContentPanelX,
+            panelTop + ScenarioSelectLayout.ContentPanelY,
+            panelLeft + ScenarioSelectLayout.ContentPanelX + ScenarioSelectLayout.ContentPanelWidth,
+            panelTop + ScenarioSelectLayout.ContentPanelY + ScenarioSelectLayout.ContentPanelHeight);
+
+        if (ContentPanelImage is not null)
+            NinePatch.Draw(canvas, ContentPanelImage, rect, ContentPanelCornerInset);
+        else
+            MenuStyle.DrawPanel(canvas, rect);
     }
 
     private void DrawScrollbar(SKCanvas canvas, float panelLeft, float panelTop)

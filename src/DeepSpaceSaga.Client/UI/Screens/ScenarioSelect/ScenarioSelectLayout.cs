@@ -36,8 +36,20 @@ public static class ScenarioSelectLayout
 
     public const float TitleY = 50f;
 
-    public const float ListTop = 110f;
-    public const float RowHeight = 64f;
+    /// <summary>
+    /// The nine-sliced <c>micro-panel.png</c> content panel that holds the scenario list
+    /// (Docs request: x=50, y=150, 800×380), positioned relative to the outer PanelLeft/Top.
+    /// </summary>
+    public const float ContentPanelX = 50f;
+    public const float ContentPanelY = 150f;
+    public const float ContentPanelWidth = 800f;
+    public const float ContentPanelHeight = 380f;
+
+    /// <summary>Breathing room between the content panel's border artwork and the row list/scrollbar it holds.</summary>
+    public const float ContentPadding = 20f;
+
+    public const float ListTop = ContentPanelY + ContentPadding;
+    public const float RowHeight = 58f;
     public const float RowSpacing = 8f;
     public const int VisibleRows = 6;
 
@@ -55,13 +67,14 @@ public static class ScenarioSelectLayout
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
 
-    public static float ListWidth => PanelWidth - 2 * Margin;
+    public static float ListLeft => ContentPanelX + ContentPadding;
+    public static float ListWidth => ContentPanelWidth - 2 * ContentPadding;
 
     /// <summary>Top-left-relative rect for a visible row (before scroll offset is applied by the caller).</summary>
     public static (float X, float Y, float W, float H) RowRect(int visibleRowIndex)
     {
         float y = ListTop + visibleRowIndex * RowHeight;
-        return (Margin, y, ListWidth, RowHeight - RowSpacing);
+        return (ListLeft, y, ListWidth, RowHeight - RowSpacing);
     }
 
     public static (float X, float Y, float W, float H) PlayButtonRect(int visibleRowIndex)
@@ -82,7 +95,7 @@ public static class ScenarioSelectLayout
     /// caller — when there are more scenarios than <see cref="VisibleRows"/>.
     /// </summary>
     public static (float X, float Y, float W, float H) ScrollbarTrackRect() =>
-        (PanelWidth - Margin + ScrollbarGap, ListTop, ScrollbarWidth, VisibleRows * RowHeight - RowSpacing);
+        (ListLeft + ListWidth + ScrollbarGap, ListTop, ScrollbarWidth, VisibleRows * RowHeight - RowSpacing);
 
     public static (float X, float Y, float W, float H) ScrollbarThumbRect(int scrollOffset, int totalScenarioCount)
     {
