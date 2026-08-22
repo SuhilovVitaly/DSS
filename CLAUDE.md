@@ -65,7 +65,9 @@ The engine holds no hardcoded game data. `EngineContentLoader` reads `Client/Set
 | `factory-types.json` | Factory types (loaded only when referenced by Settings) |
 | `recipes.json` | Recipes (loaded only when referenced by Settings) |
 
-All definitions land in `GameDataRegistry` (`Engine/Content/`). Scenarios (`Client/Scenarios/<name>/scenario.json`, e.g. `Default`, `Default_500`) are loaded by `ScenarioLoader` (`Engine/Scenario/`) and describe world state: game time, speed, player ship id, space objects with their installed modules. A scenario may carry a `masterSeed`; the `Default` scenario does not, so New Game generates one. RNG streams are derived from the master seed (`Engine/Rng/RngStreamSeedDerivation.cs`) — same seed + same command sequence ⇒ identical world. Save files (`Saves/quicksave.json` next to the client executable) are scenario JSON plus extra engine state and are loaded through the same `ScenarioLoader` with `allowNonZeroGameTime: true`.
+All definitions land in `GameDataRegistry` (`Engine/Content/`). Scenarios (`Client/Scenarios/<name>/scenario.json`, e.g. `Default`, `Default_500`, `Docked`) are loaded by `ScenarioLoader` (`Engine/Scenario/`) and describe world state: game time, speed, player ship id, space objects with their installed modules. `scenarioMetadata` also carries an optional player-facing `description`, shown in the client's `ScenarioSelectScreen` (New Game picker); save files never set it. A scenario may carry a `masterSeed`; the `Default` scenario does not, so New Game generates one. RNG streams are derived from the master seed (`Engine/Rng/RngStreamSeedDerivation.cs`) — same seed + same command sequence ⇒ identical world. Save files (`Saves/quicksave.json` next to the client executable) are scenario JSON plus extra engine state and are loaded through the same `ScenarioLoader` with `allowNonZeroGameTime: true`.
+
+`ScenarioRepository.ListScenarios` (`Engine.LocalClient/`) recursively finds every `scenario.json` under `Client/Scenarios/` for the New Game picker (`IGameSessionFactory.ListScenarios`), skipping any file that fails to parse/validate. Starting a session from a specific picked scenario (rather than `Settings.json`'s `defaultScenario`) goes through `IGameSessionFactory.CreateSessionFromScenario` → `LocalGameSessionConnection.CreateFromScenarioFile` → `SimulationEngine.CreateFromScenarioFile` → `EngineContentLoader.CreateEngineFromScenarioFile`.
 
 ### Client ↔ Engine data flow
 
@@ -119,17 +121,24 @@ Screens are managed by `ScreenStack` (`UI/ScreenStack.cs`):
 | `SetRoot(screen)` | Set first screen |
 | `Push(screen)` | Open overlay (e.g. Esc → GameMenu) |
 | `Pop()` | Close overlay (e.g. RESUME) |
-| `Replace(screen)` | Transition (e.g. NEW GAME → GameSession) |
+| `Replace(screen)` | Transition (e.g. NEW GAME → ScenarioSelect, or picking a row → GameSession) |
 | `ReplaceAll(screen)` | Return to root (e.g. MAIN MENU) |
+
+NEW GAME from `MainMenuScreen` no longer starts a session directly — it replaces the current screen with `ScenarioSelectScreen`; only picking a row there (`ScreenEvent.ScenarioSelected`, scenario path carried the same way `LoadSlotRequested` carries a slot id) actually creates the session and replaces the screen with `GameSessionScreen`.
 
 Screen folders:
 ```
 UI/Screens/
 ├── IScreen.cs              (shared interface + ScreenEvent enum)
 ├── MainMenu/               (MainMenuScreen + MenuLayout)
+├── ScenarioSelect/          (ScenarioSelectScreen + ScenarioSelectLayout — New Game scenario picker)
 ├── GameMenu/                (GameMenuScreen + GameMenuLayout)
 ├── GameSession/             (GameSessionScreen + command panel, tactical map, labels, trails)
-└── Settings/                (SettingsScreen + SettingsLayout)
+├── Settings/                (SettingsScreen + SettingsLayout)
+├── Save/                    (SaveScreen + SaveLayout)
+├── Load/                    (LoadScreen + LoadLayout)
+├── Finance/                 (FinanceScreen + FinanceLayout)
+└── Ship/                    (ShipScreen + ShipLayout)
 ```
 
 Shared UI style: `UI/Controls/MenuStyle.cs` (Verdana fonts, DSS button colors, hover/pressed/disabled states).

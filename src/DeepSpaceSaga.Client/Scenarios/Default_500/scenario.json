@@ -1,7 +1,8 @@
 ﻿{
   "scenarioMetadata": {
     "scenarioId": "default_500",
-    "name": "500 Asteroids Stress Test"
+    "name": "500 Asteroids Stress Test",
+    "description": "Performance/stress test scenario: the default starter ship surrounded by a dense field of asteroids for exercising rendering and simulation load."
   },
   "gameState": {
     "gameTimeMs": 0,

@@ -4,6 +4,7 @@ using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.Load;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 using DeepSpaceSaga.Client.UI.Screens.Save;
+using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
@@ -596,8 +597,10 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void Save_ConfirmNewSave_duplicate_name_does_not_call_saveSlot()
+    public void Save_ConfirmNewSave_duplicate_name_first_click_arms_overwrite_without_calling_saveSlot()
     {
+        // First SAVE click on a duplicate name only arms the overwrite confirm — it
+        // must not overwrite yet (mirrors the per-row DELETE button's first click).
         bool called = false;
         var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
         var screen = NewSaveScreen(slots: slots, saveSlot: _ => called = true);
@@ -612,6 +615,85 @@ public class ScreenEventTests
 
         var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
         screen.OnMouseDown(cx, cy);
+
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Save_ConfirmNewSave_duplicate_name_second_click_within_window_overwrites()
+    {
+        string? saved = null;
+        long fakeNow = 0;
+        var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots, saveSlot: id => saved = id, nowMs: () => fakeNow);
+        TriggerSaveRender(screen);
+
+        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        screen.OnMouseDown(nx, ny);
+        TriggerSaveRender(screen);
+
+        foreach (char c in "Existing")
+            screen.OnTextInput(c);
+
+        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
+        screen.OnMouseDown(cx, cy); // first click → arms overwrite
+        fakeNow += 500;
+        var evt = screen.OnMouseDown(cx, cy); // second click within window → overwrites
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Equal("Existing", saved);
+    }
+
+    [Fact]
+    public void Save_ConfirmNewSave_duplicate_name_second_click_after_timeout_re_arms_instead_of_overwriting()
+    {
+        bool called = false;
+        long fakeNow = 0;
+        var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots, saveSlot: _ => called = true, nowMs: () => fakeNow);
+        TriggerSaveRender(screen);
+
+        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        screen.OnMouseDown(nx, ny);
+        TriggerSaveRender(screen);
+
+        foreach (char c in "Existing")
+            screen.OnTextInput(c);
+
+        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
+        screen.OnMouseDown(cx, cy); // first click → arms overwrite
+        fakeNow += 5000; // past the confirm window
+        screen.OnMouseDown(cx, cy); // treated as a fresh first click, not an overwrite
+
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void Save_CancelNewSave_clears_pending_overwrite_so_reopening_requires_arming_again()
+    {
+        bool called = false;
+        var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots, saveSlot: _ => called = true);
+        TriggerSaveRender(screen);
+
+        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
+        var (canx, cany) = SaveCenter(SaveLayout.CancelButtonRect());
+
+        screen.OnMouseDown(nx, ny); // open name entry
+        TriggerSaveRender(screen);
+        foreach (char c in "Existing")
+            screen.OnTextInput(c);
+        screen.OnMouseDown(cx, cy); // first click → arms overwrite
+
+        screen.OnMouseDown(canx, cany); // cancel discards the armed state
+        TriggerSaveRender(screen);
+
+        screen.OnMouseDown(nx, ny); // reopen name entry
+        TriggerSaveRender(screen);
+        foreach (char c in "Existing")
+            screen.OnTextInput(c);
+        screen.OnMouseDown(cx, cy); // this must be a fresh first click again, not an overwrite
 
         Assert.False(called);
     }
@@ -938,10 +1020,11 @@ public class ScreenEventTests
     [Fact]
     public void Load_reserved_quicksave_slot_is_not_shown_when_caller_excludes_it()
     {
-        // LoadScreen itself has no knowledge of the reserved slot id — it only ever sees
-        // whatever listSlots returns, so this proves the row-click flow behaves correctly
-        // once the caller (mirroring SkiaWindow.OpenLoadWindowAsync's use of
-        // SaveSlots.ExcludeReserved) has already filtered it out.
+        // LoadScreen doesn't require the caller to include the reserved slot — if it
+        // happens to be pre-filtered out, row-click indexing still behaves correctly.
+        // (In production, SkiaWindow.OpenLoadWindowAsync no longer filters it out — see
+        // the quicksave-protection tests below — but LoadScreen still checks the id
+        // directly to protect it from deletion regardless of what the caller passes.)
         var slots = SaveSlots.ExcludeReserved(new[]
         {
             Slot(SaveSlots.Quicksave, "Quicksave", DateTime.UtcNow),
@@ -959,6 +1042,42 @@ public class ScreenEventTests
         // Row index 1 doesn't exist — the reserved slot was excluded before construction.
         var (x1, y1) = LoadCenter(LoadLayout.LoadButtonRect(1));
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x1, y1));
+    }
+
+    [Fact]
+    public void Load_quicksave_slot_is_shown_and_can_be_loaded()
+    {
+        var slots = new[]
+        {
+            Slot(SaveSlots.Quicksave, "quicksave", DateTime.UtcNow),
+            Slot("slot-a", "Slot A", DateTime.UtcNow)
+        };
+        var screen = NewLoadScreen(slots: slots);
+        TriggerLoadRender(screen);
+
+        var (x, y) = LoadCenter(LoadLayout.LoadButtonRect(0));
+        var evt = screen.OnMouseDown(x, y);
+
+        Assert.Equal(ScreenEvent.LoadSlotRequested, evt);
+        Assert.Equal(SaveSlots.Quicksave, screen.LastRequestedSlotId);
+    }
+
+    [Fact]
+    public void Load_quicksave_slot_delete_click_is_a_no_op_even_after_two_clicks()
+    {
+        bool called = false;
+        long fakeNow = 0;
+        var slots = new[] { Slot(SaveSlots.Quicksave, "quicksave", DateTime.UtcNow) };
+        var screen = NewLoadScreen(slots: slots, deleteSlot: _ => called = true, nowMs: () => fakeNow);
+        TriggerLoadRender(screen);
+
+        var (x, y) = LoadCenter(LoadLayout.DeleteButtonRect(0));
+        screen.OnMouseDown(x, y); // would arm CONFIRM for an ordinary slot
+        fakeNow += 500;
+        var evt = screen.OnMouseDown(x, y); // would delete an ordinary slot on this second click
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.False(called);
     }
 
     [Fact]
@@ -1129,5 +1248,132 @@ public class ScreenEventTests
         TriggerLoadRender(screen);
         screen.OnMouseDown(lx, ly);
         Assert.Equal("slot-0", screen.LastRequestedSlotId);
+    }
+
+    // --- ScenarioSelect tests ---
+
+    private static float ScenarioSelectPanelLeft => ScenarioSelectLayout.PanelLeft(ScreenWidth);
+    private static float ScenarioSelectPanelTop => ScenarioSelectLayout.PanelTop(ScreenHeight);
+
+    private static (float x, float y) ScenarioSelectCenter((float X, float Y, float W, float H) local) =>
+        (ScenarioSelectPanelLeft + local.X + local.W / 2f, ScenarioSelectPanelTop + local.Y + local.H / 2f);
+
+    private static void TriggerScenarioSelectRender(IScreen screen)
+    {
+        using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, ScreenWidth, ScreenHeight);
+    }
+
+    private static ScenarioInfo Scenario(string id, string name, string description) =>
+        new($"/fake/{id}/scenario.json", id, name, description);
+
+    private static ScenarioSelectScreen NewScenarioSelectScreen(IReadOnlyList<ScenarioInfo>? scenarios = null)
+    {
+        var currentScenarios = scenarios ?? Array.Empty<ScenarioInfo>();
+        return new ScenarioSelectScreen(() => currentScenarios);
+    }
+
+    [Fact]
+    public void ScenarioSelect_Back_click_returns_MainMenu()
+    {
+        var screen = NewScenarioSelectScreen();
+        TriggerScenarioSelectRender(screen);
+        var (x, y) = ScenarioSelectCenter(ScenarioSelectLayout.BackButtonRect());
+        Assert.Equal(ScreenEvent.MainMenu, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void ScenarioSelect_Esc_returns_MainMenu()
+    {
+        var screen = NewScenarioSelectScreen();
+        TriggerScenarioSelectRender(screen);
+        Assert.Equal(ScreenEvent.MainMenu, screen.OnKeyDown(Key.Escape));
+    }
+
+    [Fact]
+    public void ScenarioSelect_other_key_returns_None()
+    {
+        var screen = NewScenarioSelectScreen();
+        TriggerScenarioSelectRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.A));
+    }
+
+    [Fact]
+    public void ScenarioSelect_click_outside_button_returns_None()
+    {
+        var screen = NewScenarioSelectScreen();
+        TriggerScenarioSelectRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(0, 0));
+    }
+
+    [Fact]
+    public void ScenarioSelect_Play_click_returns_ScenarioSelected_with_the_row_ScenarioPath_retrievable()
+    {
+        var scenarios = new[] { Scenario("default", "Default Scenario", "A basic start.") };
+        var screen = NewScenarioSelectScreen(scenarios);
+        TriggerScenarioSelectRender(screen);
+
+        var (x, y) = ScenarioSelectCenter(ScenarioSelectLayout.PlayButtonRect(0));
+        var evt = screen.OnMouseDown(x, y);
+
+        Assert.Equal(ScreenEvent.ScenarioSelected, evt);
+        // Mirrors how SkiaWindow's mouse-dispatch site reads this: synchronously, in the
+        // same call frame, immediately after OnMouseDown returns.
+        Assert.Equal("/fake/default/scenario.json", screen.LastSelectedScenarioPath);
+    }
+
+    [Fact]
+    public void ScenarioSelect_Play_click_selects_the_correct_row_among_several()
+    {
+        var scenarios = new[]
+        {
+            Scenario("default", "Default Scenario", "A basic start."),
+            Scenario("docked", "Docked at Station", "Start docked.")
+        };
+        var screen = NewScenarioSelectScreen(scenarios);
+        TriggerScenarioSelectRender(screen);
+
+        var (x, y) = ScenarioSelectCenter(ScenarioSelectLayout.PlayButtonRect(1));
+        var evt = screen.OnMouseDown(x, y);
+
+        Assert.Equal(ScreenEvent.ScenarioSelected, evt);
+        Assert.Equal("/fake/docked/scenario.json", screen.LastSelectedScenarioPath);
+    }
+
+    [Fact]
+    public void ScenarioSelect_MouseWheel_scrolls_row_zero_through_overflowing_scenarios_and_clamps_at_both_ends()
+    {
+        int extra = 3;
+        var scenarios = Enumerable.Range(0, ScenarioSelectLayout.VisibleRows + extra)
+            .Select(i => Scenario($"scenario-{i}", $"Scenario {i}", "Desc"))
+            .ToArray();
+        var screen = NewScenarioSelectScreen(scenarios);
+        TriggerScenarioSelectRender(screen);
+
+        var (x, y) = ScenarioSelectCenter(ScenarioSelectLayout.PlayButtonRect(0));
+
+        screen.OnMouseDown(x, y);
+        Assert.Equal("/fake/scenario-0/scenario.json", screen.LastSelectedScenarioPath);
+
+        for (int i = 0; i < extra; i++)
+            screen.OnMouseWheel(0, 0, -1); // scroll down one row at a time
+
+        TriggerScenarioSelectRender(screen);
+        screen.OnMouseDown(x, y);
+        Assert.Equal($"/fake/scenario-{extra}/scenario.json", screen.LastSelectedScenarioPath);
+
+        // Further downward scrolling past the last row is clamped, not out of range.
+        screen.OnMouseWheel(0, 0, -1);
+        TriggerScenarioSelectRender(screen);
+        screen.OnMouseDown(x, y);
+        Assert.Equal($"/fake/scenario-{extra}/scenario.json", screen.LastSelectedScenarioPath);
+
+        // Scrolling back up returns to (and clamps at) the top.
+        for (int i = 0; i < extra + 1; i++)
+            screen.OnMouseWheel(0, 0, 1);
+        TriggerScenarioSelectRender(screen);
+        screen.OnMouseDown(x, y);
+        Assert.Equal("/fake/scenario-0/scenario.json", screen.LastSelectedScenarioPath);
     }
 }

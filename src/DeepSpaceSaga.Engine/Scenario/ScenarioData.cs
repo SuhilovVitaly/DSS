@@ -22,9 +22,15 @@ public sealed record ScenarioFile(
     [property: JsonPropertyName("saveFormatVersion")] int SaveFormatVersion = 0);
 
 /// <summary>Scenario identification.</summary>
+/// <param name="Description">
+/// Player-facing summary shown in the client's New Game scenario picker. Optional (null)
+/// for backward compatibility with scenario/save files predating it — a save's metadata
+/// is never shown in that picker, so it never needs one.
+/// </param>
 public sealed record ScenarioMetadata(
     [property: JsonPropertyName("scenarioId")] string ScenarioId,
-    [property: JsonPropertyName("name")] string Name);
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("description")] string? Description = null);
 
 /// <summary>Initial game state.</summary>
 /// <param name="MasterSeed">

@@ -15,6 +15,7 @@
 Примеры:
 
 - `ScreenMainMenu`
+- `ScreenScenarioSelect`
 - `ScreenGameSession`
 - `ScreenGameMenu`
 - `ScreenSettings`
@@ -31,13 +32,14 @@
 
 Закрытие окна игровой механики: кнопка `×`, `Escape` или клик по затемнённому фону за пределами панели — единообразно для всех окон этого стандарта (см. `FinanceScreen`/`ShipScreen`).
 
-Меню/системные экраны (`Main Menu`, `Settings`, `Game Menu`, `Save`, `Load`) в этот стандарт не входят и сохраняют свои текущие размеры.
+Меню/системные экраны (`Main Menu`, `Scenario Select`, `Settings`, `Game Menu`, `Save`, `Load`) в этот стандарт не входят и сохраняют свои текущие размеры.
 
 ## Таблица окон
 
 | Окно | Статус по коду | Существующий код | Назначение | Переходы |
 |---|---|---|---|---|
-| `Main Menu` | Частично реализовано; требует переименования в `ScreenMainMenu` | `src/DeepSpaceSaga.Client/UI/Screens/MainMenu/MainMenuScreen.cs` | Вход в игру. | `Load`, `Settings`, `Session`. |
+| `Main Menu` | Частично реализовано; требует переименования в `ScreenMainMenu` | `src/DeepSpaceSaga.Client/UI/Screens/MainMenu/MainMenuScreen.cs` | Вход в игру. | `Load`, `Settings`, `Scenario Select`. |
+| `Scenario Select` | Реализовано; требует переименования в `ScreenScenarioSelect` | `src/DeepSpaceSaga.Client/UI/Screens/ScenarioSelect/ScenarioSelectScreen.cs` | Выбор одного из сценариев `Scenarios/*/scenario.json` (Name + Description) для новой игры. | Из `Main Menu` по `New Game`; выбор сценария (`PLAY`) открывает `Session`; `BACK`/`Escape` возвращают в `Main Menu`. |
 | `Load` | Не реализовано отдельным экраном | Disabled-кнопка `LOAD` в `MainMenuScreen` и `GameMenuScreen` | Выбор сохранения для загрузки. | Из `Main Menu` и `Game Menu`; после загрузки открывает `Session`. |
 | `Settings` | Частично реализовано; требует переименования в `ScreenSettings` | `src/DeepSpaceSaga.Client/UI/Screens/Settings/SettingsScreen.cs` | Клиентские настройки. | Из `Main Menu` и `Game Menu`; закрытие возвращает назад. |
 | `Session` | Частично реализовано; требует переименования в `ScreenGameSession` | `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` | Основной игровой экран с тактической картой. | `Game Menu`, `Station`, `Ship`, `Loot`, `Character Communication`, `Cargo`, `Dialog`. |
@@ -55,7 +57,7 @@
 
 ## Минимальный flow
 
-1. `Main Menu` открывает новую `Session` или будущий `Load`.
+1. `Main Menu` по `New Game` открывает `Scenario Select`; выбор сценария там открывает новую `Session`. `Main Menu` также открывает будущий `Load`.
 2. В `Session` игрок управляет кораблем, открывает `Game Menu`, корабельные окна и станционные окна после стыковки.
 3. `Game Menu` открывает `Save`, будущий `Load` и `Settings`.
 4. `Station` является hub-экраном для `Trade`, `Hire` и `Finance`.

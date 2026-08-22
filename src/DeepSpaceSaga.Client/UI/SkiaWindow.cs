@@ -8,6 +8,7 @@ using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.Load;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 using DeepSpaceSaga.Client.UI.Screens.Save;
+using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Client.UI.Screens.Ship;
 using DeepSpaceSaga.Contracts;
@@ -359,7 +360,9 @@ public sealed class SkiaWindow : IDisposable
         var screenEvent = currentScreen.OnMouseDown(mouse.Position.X, mouse.Position.Y, button);
         string? payload = screenEvent == ScreenEvent.LoadSlotRequested && currentScreen is LoadScreen loadScreen
             ? loadScreen.LastRequestedSlotId
-            : null;
+            : screenEvent == ScreenEvent.ScenarioSelected && currentScreen is ScenarioSelectScreen scenarioSelectScreen
+                ? scenarioSelectScreen.LastSelectedScenarioPath
+                : null;
 
         await HandleScreenEvent(screenEvent, payload);
     }
@@ -515,7 +518,11 @@ public sealed class SkiaWindow : IDisposable
             switch (evt)
             {
                 case ScreenEvent.NewGame:
-                    StartGameSession();
+                    OpenScenarioSelect();
+                    break;
+                case ScreenEvent.ScenarioSelected:
+                    if (payload is not null)
+                        StartGameSession(payload);
                     break;
                 case ScreenEvent.OpenGameMenu:
                     await OpenGameMenuAsync();
@@ -577,12 +584,25 @@ public sealed class SkiaWindow : IDisposable
         }
     }
 
-    private void StartGameSession()
+    /// <summary>
+    /// NEW GAME no longer starts a session directly — it opens the scenario picker (a
+    /// full top-level screen replacing MainMenu, not a paused-game overlay, so no
+    /// PushModalAsync/speed-save dance is needed: there is never an active session to
+    /// pause at this point). The actual session only starts once the player picks a row —
+    /// see <see cref="StartGameSession(string)"/>.
+    /// </summary>
+    private void OpenScenarioSelect()
+    {
+        var screen = new ScenarioSelectScreen(() => _sessionFactory.ListScenarios());
+        _screens.Replace(screen);
+    }
+
+    private void StartGameSession(string scenarioPath)
     {
         if (_session is not null)
             return;
 
-        _session = new GameSessionHandle(_sessionFactory.CreateSession());
+        _session = new GameSessionHandle(_sessionFactory.CreateSessionFromScenario(scenarioPath));
         var predictor = new LinearMotionPredictor();
         var gameScreen = new GameSessionScreen(_session.Buffer, predictor, _session,
             showTrajectoryPrediction: GetShowTrajectoryPrediction(),
@@ -816,9 +836,11 @@ public sealed class SkiaWindow : IDisposable
     /// alongside it, see <see cref="OnMouseDown(IMouse, MouseButton)"/>) so the actual
     /// session swap runs inside <see cref="HandleScreenEvent"/>'s <see cref="_transitionLock"/>
     /// like every other operation that disposes/replaces <see cref="_session"/>.
-    /// The reserved quicksave slot is filtered out of the list here exactly like
-    /// <see cref="OpenSaveWindowAsync"/> does, so a player can never load/delete it from
-    /// this window and silently interfere with F9 quickload.
+    /// Unlike <see cref="OpenSaveWindowAsync"/>, the reserved quicksave slot is NOT
+    /// filtered out of the list here — a player must be able to load their last
+    /// quicksave from this window. <see cref="LoadScreen"/> itself refuses to delete it
+    /// (no DELETE button on that row, and the click handler no-ops on it), so it can
+    /// never be removed here and silently break F9 quickload/F5 quicksave.
     /// </summary>
     private async Task OpenLoadWindowAsync()
     {
@@ -827,7 +849,7 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         var loadScreen = new LoadScreen(
-            () => SaveSlots.ExcludeReserved(_sessionFactory.ListSaveSlots()),
+            () => _sessionFactory.ListSaveSlots(),
             DeleteSaveSlotSafely);
 
         await PushModalAsync(loadScreen);

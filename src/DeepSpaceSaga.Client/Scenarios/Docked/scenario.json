@@ -1,8 +1,8 @@
 {
   "scenarioMetadata": {
-    "scenarioId": "default",
-    "name": "Default Scenario",
-    "description": "A fully equipped starter ship drifting in open space near a station, with a couple of nearby asteroids to scan and approach."
+    "scenarioId": "docked",
+    "name": "Docked at Station",
+    "description": "Start already docked at the station — ship stationary at the station's position, ready to trade or resupply before undocking."
   },
   "gameState": {
     "gameTimeMs": 0,
@@ -18,11 +18,11 @@
             "objectType": "PlayerShip",
             "persistenceType": "Permanent",
             "name": "Player Ship",
-            "positionX": 10000.0,
-            "positionY": 10000.0,
-            "speedMps": 700,
+            "positionX": 11000.0,
+            "positionY": 11000.0,
+            "speedMps": 0,
             "directionDegrees": 0,
-            "movementType": "Linear",
+            "movementType": "Stationary",
             "isKnown": true,
             "hullLayout": {
                 "width": 9,

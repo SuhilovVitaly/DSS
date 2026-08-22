@@ -413,6 +413,90 @@ public class LocalSessionIntegrationTests
         }
     }
 
+    [Fact]
+    public async Task CreateFromScenarioFile_starts_a_session_from_an_explicitly_chosen_scenario()
+    {
+        // The New Game -> scenario picker path: LocalGameSessionConnection.CreateFromScenarioFile
+        // must bootstrap from the given scenario file, not settings.json's defaultScenario.
+        string settingsPath = ResolveRealSettingsPath();
+        string dockedScenarioPath = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(settingsPath)!, "Scenarios", "Docked", "scenario.json"));
+
+        await using var connection = LocalGameSessionConnection.CreateFromScenarioFile(settingsPath, dockedScenarioPath);
+        await using var handle = new GameSessionHandle(connection);
+
+        var deadline = DateTime.UtcNow.AddSeconds(4);
+        while (DateTime.UtcNow < deadline && handle.Buffer.Latest is null)
+            await Task.Delay(25);
+
+        var ship = handle.Buffer.Latest?.Snapshot.Objects.FirstOrDefault(o => o.ObjectId == "SPC-0001");
+        Assert.NotNull(ship);
+        Assert.Equal(0, ship!.SpeedKmS);
+    }
+
+    [Fact]
+    public void ScenarioRepository_lists_every_scenario_json_found_under_the_real_Scenarios_directory()
+    {
+        // Exercises the real on-disk Scenarios/ tree (Default, Default_500, Docked) the
+        // same way SkiaWindow's ListScenarios() will at runtime — proving Name/Description
+        // round-trip through ScenarioLoader rather than just testing an isolated temp dir.
+        string settingsPath = ResolveRealSettingsPath();
+        string scenariosDirectory = Path.Combine(Path.GetDirectoryName(settingsPath)!, "Scenarios");
+
+        var scenarios = ScenarioRepository.ListScenarios(scenariosDirectory);
+
+        Assert.Contains(scenarios, s => s.ScenarioId == "default" && !string.IsNullOrWhiteSpace(s.Description));
+        Assert.Contains(scenarios, s => s.ScenarioId == "docked" && !string.IsNullOrWhiteSpace(s.Description));
+        Assert.All(scenarios, s => Assert.True(File.Exists(s.ScenarioPath)));
+    }
+
+    [Fact]
+    public void ScenarioRepository_ListScenarios_returns_empty_for_a_missing_directory()
+    {
+        string missingDirectory = Path.Combine(Path.GetTempPath(), $"dss-no-scenarios-{Guid.NewGuid():N}");
+
+        var scenarios = ScenarioRepository.ListScenarios(missingDirectory);
+
+        Assert.Empty(scenarios);
+    }
+
+    [Fact]
+    public void ScenarioRepository_ListScenarios_skips_an_invalid_scenario_file_without_throwing()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-scenarios-invalid-{Guid.NewGuid():N}");
+        string validDir = Path.Combine(dir, "Good");
+        string invalidDir = Path.Combine(dir, "Bad");
+        Directory.CreateDirectory(validDir);
+        Directory.CreateDirectory(invalidDir);
+
+        File.WriteAllText(Path.Combine(validDir, "scenario.json"), """
+        {
+          "scenarioMetadata": { "scenarioId": "good", "name": "Good", "description": "Works fine." },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed0", "playerShipObjectId": "SPC-0001",
+            "spaceObjects": [
+              { "objectId": "SPC-0001", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0, "movementType": "Stationary" }
+            ]
+          }
+        }
+        """);
+        File.WriteAllText(Path.Combine(invalidDir, "scenario.json"), "{ not valid json");
+
+        try
+        {
+            var scenarios = ScenarioRepository.ListScenarios(dir);
+
+            var good = Assert.Single(scenarios);
+            Assert.Equal("good", good.ScenarioId);
+            Assert.Equal("Works fine.", good.Description);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
     private static (float x, float y) Center((float X, float Y, float W, float H) local)
     {
         float panelLeft = SaveLayout.PanelLeft(1920);
