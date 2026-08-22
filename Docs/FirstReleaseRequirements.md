@@ -28,6 +28,7 @@
 ## Документы релиза
 
 - `Docs/FirstRelease/Screens/MainMenu.md` - главное меню.
+- `Docs/FirstRelease/Screens/ScenarioSelect.md` - экран выбора сценария новой игры.
 - `Docs/FirstRelease/Screens/ScreenCatalog.md` - минимальный набор окон первого релиза и связи между ними.
 - `Docs/FirstRelease/Screens/GameSession.md` - экран игровой сессии и тактическая карта.
 - `Docs/FirstRelease/Screens/Station.md` - экран пристыкованной станции.
@@ -70,9 +71,10 @@
 - В каталоге также остаются будущие/не стартовые модули: `Drilling Unit`, `Battery`, `Combat Laser`, старый `Habitation Module`.
 - `module.engine.basic` уже содержит `fuelCapacityKg`, что подходит для решения первого релиза: `Fuel` хранится в баках двигателя.
 - В требованиях уже есть hull grid Tetrarch, грузовая вместимость по массе, `Energy Cells` как ресурс реактора/генератора и `Fuel` как ресурс двигателя.
-- Экранный стек уже поддерживает `MainMenu`, `GameSession`, `GameMenu`, `Settings` и модальную паузу.
+- Экранный стек уже поддерживает `MainMenu`, `ScenarioSelect`, `GameSession`, `GameMenu`, `Settings` и модальную паузу.
 - По схеме минимального набора экранов первого релиза частично реализованными считаются `MainMenu`, `Settings`, `Session`/`GameSession` и `GameMenu`.
 - В коде также уже существует `SaveScreen`.
+- `New Game` из `MainMenu` открывает `ScenarioSelectScreen` (полностью реализован, не заглушка): список сценариев `Scenarios/*/scenario.json` с `Name`/`Description`, `PLAY` стартует сессию из выбранного файла. `scenarioMetadata` получил необязательное поле `description` для этого экрана.
 - `Load` присутствует как кнопка в `MainMenu` и `GameMenu`, но отдельного `LoadScreen` пока нет; название окна в требованиях первого релиза - `Load`.
 - Naming convention для игровых окон: каждое окно в коде должно начинаться с `Screen`, например `ScreenMainMenu`, `ScreenGameSession`, `ScreenGameMenu`, `ScreenSettings`, `ScreenSave`.
 - Текущие частично/полностью реализованные экранные классы пока не соответствуют новой конвенции, потому что используют суффикс `Screen`; их переименование описано в `Docs/FirstRelease/TechnicalTasks/ScreenNamingConventionRefactor.md`.
@@ -83,7 +85,8 @@
 
 | Окно | Статус по коду | Документ | Основные переходы первого релиза |
 |---|---|---|---|
-| `Main Menu` | Частично реализовано: `MainMenuScreen`; `Load` нарисован, но отключен. | `Docs/FirstRelease/Screens/MainMenu.md` | `Load`, `Settings`, `Session`. |
+| `Main Menu` | Частично реализовано: `MainMenuScreen`; `Load` нарисован, но отключен. | `Docs/FirstRelease/Screens/MainMenu.md` | `Load`, `Settings`, `Scenario Select`. |
+| `Scenario Select` | Реализовано: `ScenarioSelectScreen`. | `Docs/FirstRelease/Screens/ScenarioSelect.md` | Из `Main Menu` по `New Game`; выбор сценария открывает `Session`; `BACK`/`Escape` возвращают в `Main Menu`. |
 | `Load` | Не реализовано отдельным экраном; есть disabled-кнопка `LOAD` в `MainMenu` и `GameMenu`. | `Docs/FirstRelease/Screens/Load.md` | Из `Main Menu` и `Game Menu`; после выбора сохранения открывает `Session`. |
 | `Settings` | Частично реализовано: `SettingsScreen`. | `Docs/FirstRelease/Screens/Settings.md` | Из `Main Menu` и `Game Menu`; закрытие возвращает на предыдущий экран. |
 | `Session` | Частично реализовано как `GameSessionScreen`. | `Docs/FirstRelease/Screens/GameSession.md` | Открывает `Game Menu`, `Station`, `Ship`, `Loot`, `Character Communication`, `Cargo`, `Dialog`. |
@@ -108,6 +111,7 @@
 Примеры:
 
 - `ScreenMainMenu`
+- `ScreenScenarioSelect`
 - `ScreenGameSession`
 - `ScreenGameMenu`
 - `ScreenSettings`

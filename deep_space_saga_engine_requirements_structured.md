@@ -59,15 +59,17 @@
 
 Требования:
 
-- `New Game` создаёт новую локальную игровую сессию.
-- При `New Game` создаётся новый случайный `masterSeed`, чтобы разные новые игры давали разную процедурную генерацию.
+- `New Game` открывает `Scenario Select` (см. `2.6`), а не создаёт сессию напрямую.
+- Новая локальная игровая сессия создаётся только после выбора сценария на `Scenario Select`.
+- При создании сессии генерируется новый случайный `masterSeed`, чтобы разные новые игры давали разную процедурную генерацию.
 - `masterSeed` сохраняется и загружается вместе с игрой.
-- Переход из Main Menu в игровую сессию выполняется через экран игровой сессии.
+- Переход из Main Menu в игровую сессию выполняется через `Scenario Select`, а не напрямую в экран игровой сессии.
 
 Источники:
 
 - `30. New Game и стартовый сценарий`
 - `30.1. Стартовые временные астероиды текущего DefaultScenario`
+- `30.2. Экран выбора сценария (Scenario Select)`
 - `15. Генераторы случайных чисел`
 
 ### 2.2. Game Session Screen
@@ -154,6 +156,24 @@
 - `56.2. Общая модель module lifecycle`
 - `56.8. Engine commands первой итерации`
 - `56.9. Match target commands`
+
+### 2.6. Scenario Select
+
+Назначение: экран выбора стартового сценария между `Main Menu` и `Game Session Screen`, открываемый по `New Game`.
+
+Требования:
+
+- Полноэкранный top-level экран, заменяющий `Main Menu` в стеке экранов (не модальное окно поверх сессии — активной сессии на этот момент ещё нет).
+- Показывает список сценариев, найденных под клиентской директорией `Scenarios/`, каждый со своими `Name` и `Description`.
+- Выбор сценария (`PLAY`) создаёт сессию строго из выбранного файла и переводит игрока на `Game Session Screen`.
+- `BACK`/`Escape` возвращают в `Main Menu` без побочных эффектов.
+- Modal pause rule (`31.1`, `52`) на этот экран не распространяется.
+
+Источники:
+
+- `30. New Game и стартовый сценарий`
+- `30.2. Экран выбора сценария (Scenario Select)`
+- `6.2. Scenario, save and load`
 
 ## 3. Игровые механики мира
 
@@ -482,7 +502,8 @@
 
 Требования:
 
-- `DefaultScenario` задаёт стартовый мир.
+- `DefaultScenario` задаёт стартовый мир и остаётся сценарием по умолчанию, но не единственным: `Scenario Select` (`2.6`, `30.2`) показывает и любые другие scenario-файлы под `Scenarios/`.
+- `scenarioMetadata` включает необязательное поле `description` — player-facing текст для `Scenario Select`; save-файлы его не заполняют.
 - General Save State является authoritative форматом сохранения/восстановления.
 - Save/load сохраняет GameState, RNG state, ID counters, runtime calculation state и `masterSeed`.
 - ActiveCycle ids и allocator/counters сохраняются, чтобы после load не было повторов.
@@ -493,6 +514,7 @@
 - `11. Сохранение`
 - `28. AuthoritativeSnapshot и точка продолжения`
 - `30. New Game и стартовый сценарий`
+- `30.2. Экран выбора сценария (Scenario Select)`
 - `56.6. ActiveCycle identity, save/load и logging`
 
 ### 6.3. Identifiers
@@ -690,7 +712,7 @@ DSS Requirements
 | Старый раздел | Новое место |
 | --- | --- |
 | 1, 16, 36, 53 | `00. Product Scope / Concept and First Stage` |
-| 30, 30.1 | `10. Screens and User Flows / Main Menu and New Game` |
+| 30, 30.1, 30.2 | `10. Screens and User Flows / Main Menu and New Game` |
 | 19, 20, 31.2, 39, 40, 41, 42, 54 | `10. Screens and User Flows / Game Session Screen` and `Tactical Map` |
 | 31, 31.1, 52 | `10. Screens and User Flows / Game Menu and Modal Pause` |
 | 24, 25, 26, 56.8, 56.9 | `10. Screens and User Flows / Module Command UI` and `30. Ship, Modules and Resources / Commands` |
