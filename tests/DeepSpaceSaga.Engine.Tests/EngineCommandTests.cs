@@ -1073,9 +1073,11 @@ public class EngineCommandTests
     {
         // Regression: the client persists an arbitrary set of UI-only fields (including
         // "language") into Settings.json's gameSettings object, e.g. via SkiaWindow.
-        // SaveLanguage. UnmappedMemberHandling.Disallow means any such field missing from
-        // GameSettingsRecord makes LoadRegistryFromSettingsFile throw for every New
-        // Game/Load — this reproduces that with "language" specifically.
+        // SaveLanguage. gameSettings is a client/application concern, not a game-session
+        // one — EngineSettingsFile.GameSettings is deliberately an opaque JsonElement so
+        // the engine never validates its shape and the client can add/rename/remove
+        // fields freely. This reproduces the original bug (before that) with "language"
+        // specifically, and guards against regressing back to a matching-record shape.
         string directory = Path.Combine(Path.GetTempPath(), $"dss-gamesettings-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
         try
