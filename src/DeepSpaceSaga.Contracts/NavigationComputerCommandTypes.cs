@@ -4,8 +4,10 @@ namespace DeepSpaceSaga.Contracts;
 public static class NavigationComputerCommandTypes
 {
     /// <remarks>
-    /// Preconditions (documentation only, not enforced at runtime yet):
-    /// Station selected; Station in range &lt; 200; Station speed and direction synchronized.
+    /// Preconditions, enforced authoritatively by SimulationEngine.TryStartNavigationCommand:
+    /// target must be a Station; distance &lt; the command definition's rangeKm (200 by
+    /// default); ship speed and direction must already match the station's. Undock is not
+    /// implemented yet — see Docs/FirstRelease/Mechanics/Docking.md.
     /// </remarks>
     public const string Dock = "navigation.dock";
 

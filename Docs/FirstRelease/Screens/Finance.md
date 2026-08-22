@@ -1,6 +1,8 @@
 # Finance
 
-Статус: экран не реализован.
+Статус: реализована заглушка (открытие/закрытие/пауза, без данных механик) — по тому же паттерну, что `Station`/`Trade`/`Hire`/`Ship`.
+
+Код: `src/DeepSpaceSaga.Client/UI/Screens/Finance/` (`FinanceScreen.cs`, `FinanceLayout.cs`).
 
 ## Назначение
 
@@ -22,3 +24,9 @@
 ## Размер окна
 
 1400×900 px — стандартный размер окна игровых механик (см. `ScreenCatalog.md`).
+
+## Статус реализации (MVP)
+
+Реализовано: панель `1400×900`, закрытие `×`/`Escape`/кликом по фону вне панели, modal pause через существующий `PushModalAsync`/`PopModalAsync`. Открывается двумя путями: кнопкой `F` / `Ctrl+F` на панели механик `GameSessionScreen` (уже существовало), и кнопкой `FINANCE` на `StationScreen` (новое — вложенный modal поверх `Station`, тем же `PushModalAsync`/`PopModalAsync`, что `GameMenu → Save/Load`; закрытие возвращает на `Station`, а не на карту).
+
+Не реализовано — экран показывает placeholder-строки "not available yet" вместо этого: баланс `Credits` игрока, сводка цен станции, финансовый результат последних торговых операций.

@@ -211,7 +211,9 @@ public sealed class SimulationEngine : IDisposable
                 MassKg: obj.MassKg,
                 CompositionType: obj.CompositionType,
                 IsKnown: obj.IsKnown,
-                HullLayout: obj.HullLayout));
+                HullLayout: obj.HullLayout,
+                IsDocked: obj.IsDocked,
+                DockedStationObjectId: obj.DockedStationObjectId));
         }
 
         lock (_worldStateLock)
@@ -357,7 +359,9 @@ public sealed class SimulationEngine : IDisposable
                     RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
                     RelationToPlayer = known ? GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType) : null,
                     DisplayName = known ? obj.Name : null,
-                    MaxSpeedKmS = GetMaxSpeedKmS(obj)
+                    MaxSpeedKmS = GetMaxSpeedKmS(obj),
+                    IsDocked = obj.IsDocked,
+                    DockedStationObjectId = obj.DockedStationObjectId
                 });
             }
 
@@ -523,7 +527,9 @@ public sealed class SimulationEngine : IDisposable
                 CompositionType: obj.CompositionType,
                 Modules: BuildSaveModules(obj),
                 IsKnown: obj.IsKnown,
-                HullLayout: obj.HullLayout));
+                HullLayout: obj.HullLayout,
+                IsDocked: obj.IsDocked,
+                DockedStationObjectId: obj.DockedStationObjectId));
         }
 
         var gameState = new GameStateData(
@@ -805,7 +811,7 @@ public sealed class SimulationEngine : IDisposable
 
         foreach (var command in commands)
         {
-            var outcome = TryStartEngineCommand(command, gameTimeMs);
+            var outcome = TryStartCommand(command, gameTimeMs);
             if (outcome.Disposition == CommandStartDisposition.Deferred)
             {
                 // Final disposition unknown yet — the command gets a second chance
@@ -832,7 +838,7 @@ public sealed class SimulationEngine : IDisposable
             List<PlayerCommand>? stillDeferred = null;
             foreach (var command in deferred)
             {
-                var outcome = TryStartEngineCommand(command, gameTimeMs);
+                var outcome = TryStartCommand(command, gameTimeMs);
                 if (outcome.Disposition == CommandStartDisposition.Deferred)
                 {
                     stillDeferred ??= [];
@@ -919,6 +925,152 @@ public sealed class SimulationEngine : IDisposable
         {
             _pendingCommands.InsertRange(0, commands);
         }
+    }
+
+    /// <summary>
+    /// Routes a pending command to the handler owned by its module type. Engine module
+    /// commands (module.engine.basic) go through the existing, heavily-tested
+    /// <see cref="TryStartEngineCommand"/> unchanged; navigation.dock is the only
+    /// currently-implemented NavigationComputer command and goes through
+    /// <see cref="TryStartNavigationCommand"/> instead. Everything else (including
+    /// navigation.stationsList, not implemented yet) falls through to
+    /// TryStartEngineCommand, which rejects it with UnknownCommandType exactly as before
+    /// this dispatcher existed.
+    /// </summary>
+    private CommandStartOutcome TryStartCommand(PlayerCommand command, long gameTimeMs)
+    {
+        if (command.CommandType == NavigationComputerCommandTypes.Dock)
+            return TryStartNavigationCommand(command, gameTimeMs);
+
+        return TryStartEngineCommand(command, gameTimeMs);
+    }
+
+    /// <summary>1 world unit = 100 m (CLAUDE.md motion conventions), so 1 km = 10 world units.</summary>
+    private const double WorldUnitsPerKm = 10.0;
+
+    /// <summary>
+    /// Fallback range if a Dock command definition omits rangeKm (should not happen with
+    /// real content — Data/Commands/NavigationComputer/commands.json always sets it).
+    /// Matches the documented first-release default (Docking.md).
+    /// </summary>
+    private const double DefaultDockRangeKm = 200.0;
+
+    /// <summary>
+    /// Handles navigation.dock — the only implemented NavigationComputer command
+    /// (requirements Docking.md, Station.md). Unlike Engine module commands, this is an
+    /// immediate one-shot authoritative action (no ActiveCycle/duration): it validates the
+    /// target station, range, and speed/direction synchronization, then physically snaps
+    /// the ship onto the station (position/speed/direction, local offset (1, 1) world units
+    /// per the documented old synchronization model) and marks it docked. A proper timed
+    /// docking maneuver through the shared ActiveCycle pipeline is deferred — see the
+    /// dispatcher's doc comment on why this is a separate method rather than an extension
+    /// of TryStartEngineCommand.
+    /// </summary>
+    private CommandStartOutcome TryStartNavigationCommand(PlayerCommand command, long gameTimeMs)
+    {
+        if (!string.Equals(command.ObjectId, PlayerShipObjectId, StringComparison.Ordinal))
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
+
+        int objectIndex = _objects.FindIndex(o =>
+            string.Equals(o.InitialMotion.ObjectId, command.ObjectId, StringComparison.Ordinal) &&
+            string.Equals(o.ObjectType, "PlayerShip", StringComparison.OrdinalIgnoreCase));
+        if (objectIndex < 0)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
+
+        var obj = _objects[objectIndex];
+        int moduleIndex = FindModuleIndex(obj.Modules, command.ModuleId);
+        if (moduleIndex < 0)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
+
+        var module = obj.Modules[moduleIndex];
+        var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+        if (!IsNavigationCommandType(moduleType, command.CommandType))
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
+
+        if (!CanExecuteModuleCommand(module))
+            return CommandStartOutcome.Rejected(CommandReasonCodes.ModuleUnavailable);
+
+        if (string.IsNullOrWhiteSpace(command.TargetObjectId))
+            return CommandStartOutcome.Rejected(CommandReasonCodes.MissingTarget);
+
+        int targetIndex = _objects.FindIndex(o =>
+            string.Equals(o.InitialMotion.ObjectId, command.TargetObjectId, StringComparison.Ordinal));
+        if (targetIndex < 0)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownTarget);
+
+        var target = _objects[targetIndex];
+        if (!string.Equals(target.ObjectType, SpaceObjectType.Station, StringComparison.OrdinalIgnoreCase))
+            return CommandStartOutcome.Rejected(CommandReasonCodes.DockTargetNotStation);
+
+        long shipElapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
+        var shipMotion = _motion.Predict(obj.InitialMotion, shipElapsedMs);
+        long targetElapsedMs = Math.Max(0, gameTimeMs - target.StartGameTimeMs);
+        var targetMotion = _motion.Predict(target.InitialMotion, targetElapsedMs);
+
+        double dx = targetMotion.X - shipMotion.X;
+        double dy = targetMotion.Y - shipMotion.Y;
+        double distanceWorldUnits = Math.Sqrt(dx * dx + dy * dy);
+
+        int commandIndex = _registry.CommandDefinitions.GetIndex(command.CommandType);
+        var commandDef = _registry.CommandDefinitions.GetDefinition(commandIndex);
+        double rangeWorldUnits = (commandDef.RangeKm ?? DefaultDockRangeKm) * WorldUnitsPerKm;
+        if (distanceWorldUnits > rangeWorldUnits)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.DockOutOfRange);
+
+        // Synchronization tolerance: floating-point safety margin only, not a gameplay
+        // allowance — SpeedSynchronization/DirectionSynchronization capture and apply the
+        // target's exact value, so a genuinely synchronized ship matches almost exactly.
+        // No direction wraparound handling (e.g. 359.999 vs 0.001): stations are always
+        // Stationary in the current content, so this does not arise in practice.
+        const double speedEpsilonKmS = 1e-6;
+        const double directionEpsilonDeg = 1e-6;
+        if (Math.Abs(shipMotion.SpeedKmS - targetMotion.SpeedKmS) > speedEpsilonKmS ||
+            Math.Abs(shipMotion.Direction - targetMotion.Direction) > directionEpsilonDeg)
+        {
+            return CommandStartOutcome.Rejected(CommandReasonCodes.DockNotSynchronized);
+        }
+
+        // Physically synchronize with the station: local offset (1, 1) world units per the
+        // documented old synchronization model (Docking.md). Re-baseline StartGameTimeMs to
+        // the dock moment so future BuildSnapshot/CaptureSaveState predictions compute
+        // elapsed time from here, not from session start.
+        var dockedMotion = obj.InitialMotion with
+        {
+            X = targetMotion.X + 1.0,
+            Y = targetMotion.Y + 1.0,
+            SpeedKmS = targetMotion.SpeedKmS,
+            Direction = targetMotion.Direction
+        };
+
+        _objects[objectIndex] = obj with
+        {
+            InitialMotion = dockedMotion,
+            StartGameTimeMs = gameTimeMs,
+            IsDocked = true,
+            DockedStationObjectId = target.InitialMotion.ObjectId
+        };
+
+        RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
+        return CommandStartOutcome.Started;
+    }
+
+    private static bool IsNavigationCommandType(ModuleTypeDefinition moduleType, string commandType)
+    {
+        return string.Equals(moduleType.TypeId, "module.bridge.navigation.computer.basic", StringComparison.Ordinal) &&
+               moduleType.CommandTypeIds.Contains(commandType, StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// Generic module-state gate for non-Engine module commands: power/operational/structure
+    /// only. Unlike <see cref="CanExecuteEngineCommand"/>, this does NOT check propulsion
+    /// parameters (MaxSpeedMps/TurnStepDegrees/inertia) — NavigationComputer (and other
+    /// non-Engine module types) never define those.
+    /// </summary>
+    private static bool CanExecuteModuleCommand(InstalledModuleRuntime module)
+    {
+        return string.Equals(module.PowerState, "On", StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(module.OperationalState, "Ready", StringComparison.OrdinalIgnoreCase) &&
+               module.StructurePoints > 0;
     }
 
     private CommandStartOutcome TryStartEngineCommand(PlayerCommand command, long gameTimeMs)
@@ -1667,7 +1819,13 @@ internal sealed record SpaceObjectRuntime(
     /// Hull grid geometry carried forward from the scenario/save (requirements §57).
     /// Required (non-null) whenever Modules is non-empty — see ValidateModulePlacement.
     /// </summary>
-    HullLayoutData? HullLayout = null);
+    HullLayoutData? HullLayout = null,
+    /// <summary>Authoritative docking state (navigation.dock). Source of truth for
+    /// <see cref="ObjectMotionSnapshot.IsDocked"/>, projected onto the outgoing snapshot
+    /// row in BuildSnapshot the same way ObjectType/DisplayName are.</summary>
+    bool IsDocked = false,
+    /// <summary>ObjectId of the station this object is docked to. Null unless <see cref="IsDocked"/>.</summary>
+    string? DockedStationObjectId = null);
 
 internal sealed record InstalledModuleRuntime(
     string ModuleId,

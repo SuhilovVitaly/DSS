@@ -1,6 +1,8 @@
 # Trade
 
-Статус: новый экран первого релиза, требует реализации.
+Статус: реализована заглушка (открытие/закрытие/пауза, без данных механик) — по тому же паттерну, что `Station`/`Finance`/`Ship`.
+
+Код: `src/DeepSpaceSaga.Client/UI/Screens/Trade/` (`TradeScreen.cs`, `TradeLayout.cs`).
 
 ## Назначение
 
@@ -37,3 +39,9 @@
 - Торговые операции являются authoritative действиями Engine.
 - Client не должен самостоятельно изменять балансы, склад или cargo state без подтверждения Engine.
 - Открытие экрана торговли должно приостанавливать authoritative simulation через существующий modal pause mechanism.
+
+## Статус реализации (MVP)
+
+Реализовано: открытие кнопкой `TRADE` на `StationScreen` (нажатие возвращает `ScreenEvent.OpenTrade`, `SkiaWindow` пушит `TradeScreen` поверх `StationScreen` — вложенный modal, как `GameMenu → Save/Load`), закрытие `×`/`Escape`/кликом по фону вне панели (возврат на `Station`), панель `1400×900`, modal pause через существующий `PushModalAsync`/`PopModalAsync`.
+
+Не реализовано — экран показывает одну placeholder-строку "not available yet" вместо этого: баланс `Credits`, товары станции/игрока, покупка/продажа, заправка `Fuel`. Ничего из раздела «Функциональность первого релиза» выше фактически не работает.

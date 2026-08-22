@@ -302,7 +302,8 @@ public static class EngineContentLoader
                 ParseFixedPointFactor(dto.ConsumptionFactor),
                 dto.Target ?? "none",
                 activationEnergyCellsCost,
-                dto.Type);
+                dto.Type,
+                dto.RangeKm);
         });
     }
 
@@ -465,7 +466,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("consumptionFactor")] decimal? ConsumptionFactor,
         [property: JsonPropertyName("target")] string? Target,
         [property: JsonPropertyName("activationEnergyCellsCost")] int? ActivationEnergyCellsCost,
-        [property: JsonPropertyName("type")] string? Type);
+        [property: JsonPropertyName("type")] string? Type,
+        [property: JsonPropertyName("rangeKm")] int? RangeKm = null);
 
     private sealed record FactoryTypesFile(
         [property: JsonPropertyName("factoryTypes")] IReadOnlyList<FactoryTypeDefinitionDto> FactoryTypes);

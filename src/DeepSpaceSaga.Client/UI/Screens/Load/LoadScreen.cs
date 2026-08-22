@@ -56,12 +56,6 @@ public sealed class LoadScreen : IScreen
     /// </summary>
     public string? LastRequestedSlotId { get; private set; }
 
-    private static readonly SKPaint _dimPaint = new()
-    {
-        Color = new SKColor(0, 0, 0, 160),
-        Style = SKPaintStyle.Fill
-    };
-
     private static readonly SKPaint _rowTextPaint = new()
     {
         Color = MenuStyle.ColorText,
@@ -212,8 +206,6 @@ public sealed class LoadScreen : IScreen
     {
         _screenWidth = width;
         _screenHeight = height;
-
-        canvas.DrawRect(0, 0, width, height, _dimPaint);
 
         float pl = LoadLayout.PanelLeft(width);
         float pt = LoadLayout.PanelTop(height);

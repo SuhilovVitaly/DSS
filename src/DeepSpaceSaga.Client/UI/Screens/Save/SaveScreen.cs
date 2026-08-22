@@ -45,12 +45,6 @@ public sealed class SaveScreen : IScreen
     private SaveZone _hoveredZone = SaveZone.None;
     private int _hoveredRowIndex = -1;
 
-    private static readonly SKPaint _dimPaint = new()
-    {
-        Color = new SKColor(0, 0, 0, 160),
-        Style = SKPaintStyle.Fill
-    };
-
     private static readonly SKPaint _errorPaint = new()
     {
         Color = new SKColor(220, 80, 80),
@@ -268,8 +262,6 @@ public sealed class SaveScreen : IScreen
     {
         _screenWidth = width;
         _screenHeight = height;
-
-        canvas.DrawRect(0, 0, width, height, _dimPaint);
 
         float pl = SaveLayout.PanelLeft(width);
         float pt = SaveLayout.PanelTop(height);

@@ -1,6 +1,6 @@
 # Стыковка
 
-Статус: решение первого релиза принято, требует реализации.
+Статус: MVP реализован. `navigation.dock` — настоящая authoritative команда, а не catalog-only заглушка; полный станционный функционал (Trade/Finance/Hire/Undock/установка Drilling Unit) остаётся за рамками MVP — см. «Статус реализации (MVP)» ниже.
 
 Связанные документы: `CommandPanels.md`, `TacticalMapAndManeuvering.md`, `Station.md`.
 
@@ -34,3 +34,22 @@
 - Отстыковка должна быть доступна только если корабль уже пристыкован.
 - Если цель не станция, дистанция больше допустимой или стыковка невозможна, Engine отклоняет команду с понятным результатом.
 - При стыковке движение корабля больше не рассчитывается как независимое маневрирование, пока корабль остается пристыкованным.
+
+## Статус реализации (MVP)
+
+Реализовано (`SimulationEngine.TryStartNavigationCommand`, `src/DeepSpaceSaga.Engine/SimulationEngine.cs`):
+
+- `navigation.dock` валидирует target/дистанцию/синхронизацию в порядке из раздела «Требования первого релиза» и отклоняет команду с machine-readable reason code (`dock_target_not_station`, `dock_out_of_range`, `dock_not_synchronized`, плюс общие `missing_target`/`unknown_target`).
+- Дистанция `< 200 km` читается из `rangeKm` command definition (`Data/Commands/NavigationComputer/commands.json`), не hardcoded.
+- При успехе корабль физически синхронизируется со станцией (`local offset (1, 1)` world unit, скорость/направление станции) и получает authoritative `IsDocked`/`DockedStationObjectId`.
+- Docking state сохраняется и загружается (`isDocked`/`dockedStationObjectId` в scenario/save JSON, оба поля необязательные).
+- После успешного `Dock` экран станции открывается автоматически (`GameSessionScreen.ConsumePendingAutoTransition`) — см. `Docs/FirstRelease/Screens/Station.md`.
+
+Реализовано как упрощение MVP (отличается от команды «мгновенно» вместо описанного выше «через `Dock` module-addressed command model» timing): `navigation.dock` — мгновенное one-shot действие, а не timed `ActiveCycle` через `timeFactor` команды (2 секунды). Полноценная генерализация `ActiveCycle`-пайплайна под немоторные модули оставлена отдельной задачей.
+
+Не реализовано:
+
+- Отстыковка (Undock) как станционное действие — из «Решений первого релиза» выше.
+- Блокировка обычных engine-команд корабля, пока он пристыкован: технически можно отправить engine-команду и физически уплыть от станции, оставаясь помеченным `IsDocked = true`.
+- `navigation.stationsList`.
+- Полный функционал экрана станции (Trade/Finance/Representatives/Install Drilling Unit/Hire) — см. `Docs/FirstRelease/Screens/Station.md`.

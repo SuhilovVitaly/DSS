@@ -286,9 +286,16 @@ public class ScenarioEngineTests
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
         var station = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0002");
 
-        Assert.Equal(station.InitialMotion.X, playerShip.InitialMotion.X);
-        Assert.Equal(station.InitialMotion.Y, playerShip.InitialMotion.Y);
+        // (1, 1) world-unit offset — matches exactly what a real successful navigation.dock
+        // command produces (SimulationEngine.TryStartNavigationCommand), not the station's
+        // own coordinates: two objects at literally identical coordinates are unselectable
+        // apart from each other on the tactical map (FindNearestObjectId's tie-break always
+        // picks the lexicographically smaller object id — the ship, "SPC-0001" < "SPC-0002").
+        Assert.Equal(station.InitialMotion.X + 1.0, playerShip.InitialMotion.X);
+        Assert.Equal(station.InitialMotion.Y + 1.0, playerShip.InitialMotion.Y);
         Assert.Equal(0, playerShip.InitialMotion.SpeedKmS);
+        Assert.True(playerShip.IsDocked);
+        Assert.Equal("SPC-0002", playerShip.DockedStationObjectId);
     }
 
     private static string ResolveRealSettingsPath()

@@ -447,6 +447,186 @@ public class GameSessionObjectInteractionTests
         Assert.Equal(expectedY, fixture.Screen.CameraFocusY);
     }
 
+    // ── Click priority: Station > PlayerShip > (other) Ship > everything else ───
+
+    private static ObjectMotionSnapshot TypedObjAt(string id, string objectType, double worldY, double worldX = 10000)
+        => new(id, X: worldX, Y: worldY, SpeedKmS: 0, Direction: 0, ObjectType: objectType, RenderObjectType: objectType);
+
+    [Fact]
+    public async Task Station_wins_selection_over_a_closer_player_ship()
+    {
+        // Ship sits exactly at the click point (distance 0); the station is farther
+        // (20 px) but still inside the 30 px radius — priority must still pick it.
+        await using var fixture = CreateFixtureWithPlayerShipAndObjects([
+            TypedObjAt("STATION-1", SpaceObjectType.Station, 10000, worldX: 10000 + 20)]); // screen (660,360)
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(640, 360); // exactly on the player ship
+
+        Assert.Equal("STATION-1", fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Station_wins_selection_over_a_closer_npc_ship()
+    {
+        await using var fixture = CreateFixture([
+            TypedObjAt("NPC-1", SpaceObjectType.NpcShip, 10000), // screen (640,360) — distance 0
+            TypedObjAt("STATION-1", SpaceObjectType.Station, 10000, worldX: 10000 + 20)]); // screen (660,360)
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(640, 360);
+
+        Assert.Equal("STATION-1", fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Player_ship_wins_selection_over_a_closer_npc_ship()
+    {
+        await using var fixture = CreateFixtureWithPlayerShipAndObjects([
+            TypedObjAt("NPC-1", SpaceObjectType.NpcShip, 10000, worldX: 10000 + 5)]); // screen (645,360), closer to the click point below
+        Render(fixture.Screen);
+
+        // Click nearer to NPC-1 than to the player ship — NPC-1 is the nearest object,
+        // but the player ship still outranks it.
+        fixture.Screen.OnMouseDown(645, 360);
+
+        Assert.Equal(PlayerShipId, fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Player_ship_wins_selection_over_a_closer_asteroid()
+    {
+        await using var fixture = CreateFixtureWithPlayerShipAndObjects([
+            TypedObjAt("AST-1", SpaceObjectType.Asteroid, 10000, worldX: 10000 + 5)]);
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(645, 360);
+
+        Assert.Equal(PlayerShipId, fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Npc_ship_wins_selection_over_a_closer_asteroid()
+    {
+        await using var fixture = CreateFixture([
+            TypedObjAt("AST-1", SpaceObjectType.Asteroid, 10000), // screen (640,360) — distance 0
+            TypedObjAt("NPC-1", SpaceObjectType.NpcShip, 10000, worldX: 10000 + 20)]); // screen (660,360)
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(640, 360);
+
+        Assert.Equal("NPC-1", fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Nearest_still_wins_within_the_same_priority_tier()
+    {
+        // Both Asteroids — same (lowest) tier — the ordinary nearest-object rule applies.
+        await using var fixture = CreateFixture([
+            TypedObjAt("AST-FAR", SpaceObjectType.Asteroid, 10000 + 20),
+            TypedObjAt("AST-NEAR", SpaceObjectType.Asteroid, 10000 + 5)]);
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(640, 360);
+
+        Assert.Equal("AST-NEAR", fixture.Screen.SelectedObjectId);
+    }
+
+    // ── Left click on a docked station opens the Station screen ─────────────────
+
+    [Fact]
+    public async Task Left_click_on_the_station_the_ship_is_docked_to_returns_OpenStation()
+    {
+        await using var fixture = CreateFixtureWithDockedShipAndStation(dockedStationObjectId: "STATION-1");
+        Render(fixture.Screen);
+
+        var result = fixture.Screen.OnMouseDown(690, 360); // STATION-1 at world (10050,10000)
+
+        Assert.Equal(ScreenEvent.OpenStation, result);
+        Assert.Equal("STATION-1", fixture.Screen.SelectedObjectId); // still selects it, same as any other click
+    }
+
+    [Fact]
+    public async Task Left_click_on_a_station_the_ship_is_not_docked_to_returns_None()
+    {
+        // IsDocked is true, but for a DIFFERENT station id than the one clicked here —
+        // the click must not open the Station screen for an arbitrary station.
+        await using var fixture = CreateFixtureWithDockedShipAndStation(dockedStationObjectId: "STATION-OTHER");
+        Render(fixture.Screen);
+
+        var result = fixture.Screen.OnMouseDown(690, 360); // STATION-1, not STATION-OTHER
+
+        Assert.Equal(ScreenEvent.None, result);
+        Assert.Equal("STATION-1", fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Left_click_on_a_station_while_not_docked_returns_None()
+    {
+        await using var fixture = CreateFixtureWithDockedShipAndStation(dockedStationObjectId: null);
+        Render(fixture.Screen);
+
+        var result = fixture.Screen.OnMouseDown(690, 360);
+
+        Assert.Equal(ScreenEvent.None, result);
+        Assert.Equal("STATION-1", fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Left_click_on_the_players_own_ship_while_docked_also_returns_OpenStation()
+    {
+        // A successful Dock snaps the ship onto the station with only a (1, 1) world-unit
+        // offset — at normal zoom the two markers are 1-2 screen px apart, so relying on
+        // clicking the station's marker specifically (as opposed to the ship's, which sits
+        // right next to/under it) is not reliably clickable. Clicking the ship itself must
+        // open Station too whenever it's docked.
+        await using var fixture = CreateFixtureWithDockedShipAndStation(dockedStationObjectId: "STATION-1");
+        Render(fixture.Screen);
+
+        var result = fixture.Screen.OnMouseDown(640, 360); // the player ship itself, at screen center
+
+        Assert.Equal(ScreenEvent.OpenStation, result);
+        Assert.Equal(PlayerShipId, fixture.Screen.SelectedObjectId);
+    }
+
+    [Fact]
+    public async Task Left_click_on_the_players_own_ship_while_not_docked_returns_None()
+    {
+        await using var fixture = CreateFixtureWithDockedShipAndStation(dockedStationObjectId: null);
+        Render(fixture.Screen);
+
+        var result = fixture.Screen.OnMouseDown(640, 360);
+
+        Assert.Equal(ScreenEvent.None, result);
+        Assert.Equal(PlayerShipId, fixture.Screen.SelectedObjectId);
+    }
+
+    /// <summary>Player ship at (10000,10000) — screen center — plus a Station object
+    /// "STATION-1" at (10050,10000) — screen (690,360). The ship's IsDocked/
+    /// DockedStationObjectId are set directly on its ObjectMotionSnapshot, exactly as
+    /// SimulationEngine.BuildSnapshot projects them from SpaceObjectRuntime.</summary>
+    private static TestFixture CreateFixtureWithDockedShipAndStation(string? dockedStationObjectId)
+    {
+        var connection = new RecordingConnection();
+        var handle = new GameSessionHandle(connection);
+        var ship = new ObjectMotionSnapshot(
+            PlayerShipId, X: 10000, Y: 10000, SpeedKmS: 0, Direction: 0,
+            IsDocked: dockedStationObjectId is not null,
+            DockedStationObjectId: dockedStationObjectId);
+        var station = new ObjectMotionSnapshot(
+            "STATION-1", X: 10050, Y: 10000, SpeedKmS: 0, Direction: 0,
+            ObjectType: SpaceObjectType.Station, RenderObjectType: SpaceObjectType.Station);
+        handle.Buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1,
+            GameTimeMs: 0,
+            CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(ship, station),
+            PlayerShipObjectId: PlayerShipId));
+
+        var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);
+        return new TestFixture(connection, handle, screen);
+    }
+
     // ── Right click: clear selection ─────────────────────────────────────────────
 
     [Fact]

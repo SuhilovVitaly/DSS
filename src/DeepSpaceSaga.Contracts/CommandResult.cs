@@ -97,4 +97,13 @@ public static class CommandReasonCodes
 
     /// <summary>Navigate-to-point target is too close — inside the turn radius and not on the current straight-line path.</summary>
     public const string NavigationTargetTooClose = "navigation_target_too_close";
+
+    /// <summary>Dock command's targetObjectId does not resolve to a Station object.</summary>
+    public const string DockTargetNotStation = "dock_target_not_station";
+
+    /// <summary>Dock command's target station is farther than the command's configured range.</summary>
+    public const string DockOutOfRange = "dock_out_of_range";
+
+    /// <summary>Dock command arrived before the ship's speed and direction matched the target station's.</summary>
+    public const string DockNotSynchronized = "dock_not_synchronized";
 }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using DeepSpaceSaga.Client;
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.Finance;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
@@ -11,6 +12,10 @@ using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Client.UI.Screens.Ship;
+using DeepSpaceSaga.Client.UI.Screens.Contracts;
+using DeepSpaceSaga.Client.UI.Screens.Hire;
+using DeepSpaceSaga.Client.UI.Screens.Station;
+using DeepSpaceSaga.Client.UI.Screens.Trade;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using Silk.NET.Core;
@@ -260,13 +265,21 @@ public sealed class SkiaWindow : IDisposable
         canvas.Save();
         canvas.Scale(scaleX, scaleY);
 
-        // Overlay: render underlying screen first so overlay dims on top of it
-        if (_screens.Count > 1 && _screens.UnderCurrent is { } under)
+        // Overlay: render the whole stack bottom-to-top so every overlay panel draws
+        // on top of the interactive root screen instead of a blank canvas. The dim
+        // rect itself is drawn exactly once, right before the first (bottom-most)
+        // overlay — individual screens no longer draw their own, so stacking overlays
+        // (e.g. Trade opened from Station) look exactly as dim as a single overlay
+        // instead of compounding darker with each nested level.
+        int index = 0;
+        foreach (var screen in _screens.AllBottomToTop())
         {
-            under.Render(canvas, windowSize.X, windowSize.Y);
-        }
+            if (index == 1)
+                MenuStyle.DrawDimOverlay(canvas, windowSize.X, windowSize.Y);
 
-        _screens.Current.Render(canvas, windowSize.X, windowSize.Y);
+            screen.Render(canvas, windowSize.X, windowSize.Y);
+            index++;
+        }
 
         if (isFirstFrame)
             InterfaceLog.Write($"STARTUP DIAG: first-frame screen.Render (recording) done — {diagSw!.ElapsedMilliseconds} ms into OnRender");
@@ -286,6 +299,26 @@ public sealed class SkiaWindow : IDisposable
         }
 
         PollKeyboard();
+        PollGameSessionAutoTransition();
+    }
+
+    /// <summary>
+    /// GameSessionScreen has no way to return a ScreenEvent outside a direct input
+    /// handler, but a successful navigation.dock is an authoritative outcome the client
+    /// only learns about from the next snapshot (Docking.md: the Station screen opens
+    /// automatically after a successful Dock, not only when the player clicks the
+    /// already-docked station again). Polled once per frame, only while GameSessionScreen
+    /// is actually the foreground screen — never while a modal (GameMenu, Station itself,
+    /// ...) is already on top of it, matching every other Open*Async guard here.
+    /// </summary>
+    private void PollGameSessionAutoTransition()
+    {
+        if (_screens.Current is not GameSessionScreen gameSessionScreen)
+            return;
+
+        var evt = gameSessionScreen.ConsumePendingAutoTransition();
+        if (evt != ScreenEvent.None)
+            _ = HandleScreenEvent(evt);
     }
 
     private void OnFramebufferResize(Silk.NET.Maths.Vector2D<int> newSize)
@@ -576,6 +609,30 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.CloseShip:
                     await CloseOverlayAsync();
                     break;
+                case ScreenEvent.OpenStation:
+                    await OpenStationAsync();
+                    break;
+                case ScreenEvent.CloseStation:
+                    await CloseOverlayAsync();
+                    break;
+                case ScreenEvent.OpenTrade:
+                    await OpenTradeAsync();
+                    break;
+                case ScreenEvent.CloseTrade:
+                    await CloseOverlayAsync();
+                    break;
+                case ScreenEvent.OpenHire:
+                    await OpenHireAsync();
+                    break;
+                case ScreenEvent.CloseHire:
+                    await CloseOverlayAsync();
+                    break;
+                case ScreenEvent.OpenContracts:
+                    await OpenContractsAsync();
+                    break;
+                case ScreenEvent.CloseContracts:
+                    await CloseOverlayAsync();
+                    break;
             }
         }
         finally
@@ -719,6 +776,67 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         await PushModalAsync(new ShipScreen());
+    }
+
+    /// <summary>
+    /// Push the Station overlay (Docs/FirstRelease/Screens/Station.md). Opened by
+    /// left-clicking, on the tactical map, the station the player ship is currently
+    /// docked to (GameSessionScreen.OnMouseDown → ScreenEvent.OpenStation). Uses the
+    /// same generic PushModalAsync pause-on-open behavior as every other modal — no
+    /// Station-specific speed/docking logic needed here.
+    /// </summary>
+    private async Task OpenStationAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is StationScreen)
+            return;
+
+        await PushModalAsync(new StationScreen());
+    }
+
+    /// <summary>
+    /// Push the Trade overlay (Docs/FirstRelease/Screens/Trade.md) on top of Station
+    /// (StationScreen's `TRADE` button → ScreenEvent.OpenTrade). A nested modal exactly
+    /// like GameMenu → Save/Load — PushModalAsync/PopModalAsync's generic modal-depth
+    /// tracking needs no Trade-specific handling.
+    /// </summary>
+    private async Task OpenTradeAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is TradeScreen)
+            return;
+
+        await PushModalAsync(new TradeScreen());
+    }
+
+    /// <summary>
+    /// Push the Hire overlay (Docs/FirstRelease/Screens/Hire.md) on top of Station
+    /// (StationScreen's `HIRE` button → ScreenEvent.OpenHire). A nested modal exactly
+    /// like Trade — PushModalAsync/PopModalAsync's generic modal-depth tracking needs no
+    /// Hire-specific handling.
+    /// </summary>
+    private async Task OpenHireAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is HireScreen)
+            return;
+
+        await PushModalAsync(new HireScreen());
+    }
+
+    /// <summary>
+    /// Push the Contracts overlay (Docs/FirstRelease/Screens/Contracts.md) on top of
+    /// Station (StationScreen's `CONTRACTS` button → ScreenEvent.OpenContracts). Split
+    /// out of Hire (passenger contracts vs. crew hiring) — a nested modal exactly like
+    /// Trade/Hire, no Contracts-specific handling needed.
+    /// </summary>
+    private async Task OpenContractsAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is ContractsScreen)
+            return;
+
+        await PushModalAsync(new ContractsScreen());
     }
 
     private async Task OpenSettingsAsync()
