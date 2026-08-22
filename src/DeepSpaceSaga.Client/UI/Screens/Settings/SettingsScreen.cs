@@ -67,7 +67,29 @@ public sealed class SettingsScreen : IScreen
         TextSize = MenuStyle.StatusFontSize,
         IsAntialias = true,
         TextAlign = SKTextAlign.Left,
-        Typeface = MenuStyle.TypefaceRegular
+        Typeface = MenuStyle.TypefaceHumaroid
+    };
+
+    /// <summary>Same size/color/alignment as <see cref="MenuStyle.TextTitle"/>, but in
+    /// Humaroid — a local copy rather than mutating the shared paint, which other screens
+    /// (GameMenu, Trade, Station, ...) also draw their own titles with.</summary>
+    private static readonly SKPaint _titleTextPaint = new()
+    {
+        Color = MenuStyle.ColorText,
+        TextSize = MenuStyle.TitleFontSize,
+        IsAntialias = true,
+        TextAlign = SKTextAlign.Center,
+        Typeface = MenuStyle.TypefaceHumaroid
+    };
+
+    /// <summary>Same size/color/alignment as <see cref="MenuStyle.TextStatus"/>, but in Humaroid.</summary>
+    private static readonly SKPaint _noteTextPaint = new()
+    {
+        Color = MenuStyle.ColorText,
+        TextSize = MenuStyle.StatusFontSize,
+        IsAntialias = true,
+        TextAlign = SKTextAlign.Center,
+        Typeface = MenuStyle.TypefaceHumaroid
     };
 
     /// <summary>
@@ -86,7 +108,7 @@ public sealed class SettingsScreen : IScreen
         TextSize = MenuStyle.ButtonFontSize,
         IsAntialias = true,
         TextAlign = SKTextAlign.Center,
-        Typeface = MenuStyle.TypefaceRegular
+        Typeface = MenuStyle.TypefaceHumaroid
     };
 
     /// <summary>Draws the shared dark-gray background + border spanning every option row of an open dropdown.</summary>
@@ -303,7 +325,7 @@ public sealed class SettingsScreen : IScreen
 
         float cx = pl + SettingsLayout.PanelWidth / 2f;
 
-        canvas.DrawText(Localization.Get("Settings.Title"), cx, pt + SettingsLayout.TitleY, MenuStyle.TextTitle);
+        canvas.DrawText(Localization.Get("Settings.Title"), cx, pt + SettingsLayout.TitleY, _titleTextPaint);
 
         DrawMonitorRow(canvas, pl, pt, cx);
         DrawLanguageRow(canvas, pl, pt);
@@ -401,7 +423,7 @@ public sealed class SettingsScreen : IScreen
         DrawDropdownArrow(canvas, boxRect, _isMonitorComboOpen);
 
         if (!_isMonitorComboOpen)
-            canvas.DrawText(Localization.Get("Settings.RestartNote"), centerX, panelTop + SettingsLayout.MonitorNoteY, MenuStyle.TextStatus);
+            canvas.DrawText(Localization.Get("Settings.RestartNote"), centerX, panelTop + SettingsLayout.MonitorNoteY, _noteTextPaint);
     }
 
     private void DrawMonitorOptions(SKCanvas canvas, float panelLeft, float panelTop)
@@ -466,6 +488,6 @@ public sealed class SettingsScreen : IScreen
         float by = panelTop + buttonLocalY;
         var rect = new SKRect(bx, by, bx + SettingsLayout.ButtonWidth, by + SettingsLayout.ButtonHeight);
 
-        ImageButton.Draw(canvas, rect, text, GetState(id));
+        ImageButton.Draw(canvas, rect, text, GetState(id), MenuStyle.TypefaceHumaroid);
     }
 }

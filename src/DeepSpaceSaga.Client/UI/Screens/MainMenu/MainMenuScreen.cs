@@ -30,6 +30,28 @@ public sealed class MainMenuScreen : IScreen
     /// <summary>True if the background PNG file was found and decoded at startup.</summary>
     internal static bool HasLoadedBackground => BackgroundImage is not null;
 
+    /// <summary>Same size/color/alignment as <see cref="MenuStyle.TextTitle"/>, but in
+    /// Humaroid — a local copy rather than mutating the shared paint, which other screens
+    /// (GameMenu, Trade, Station, ...) also draw their own titles with.</summary>
+    private static readonly SKPaint _titleTextPaint = new()
+    {
+        Color = MenuStyle.ColorText,
+        TextSize = MenuStyle.TitleFontSize,
+        IsAntialias = true,
+        TextAlign = SKTextAlign.Center,
+        Typeface = MenuStyle.TypefaceHumaroid
+    };
+
+    /// <summary>Same size/color/alignment as <see cref="MenuStyle.TextVersion"/>, but in Humaroid.</summary>
+    private static readonly SKPaint _versionTextPaint = new()
+    {
+        Color = MenuStyle.ColorText,
+        TextSize = MenuStyle.VersionFontSize,
+        IsAntialias = true,
+        TextAlign = SKTextAlign.Center,
+        Typeface = MenuStyle.TypefaceHumaroid
+    };
+
     public void OnActivated()
     {
         _hoveredButton = MenuButton.None;
@@ -90,8 +112,8 @@ public sealed class MainMenuScreen : IScreen
 
         float cx = pl + MenuLayout.PanelWidth / 2f;
 
-        canvas.DrawText(GameInfo.Title, cx, pt + MenuLayout.TitleY, MenuStyle.TextTitle);
-        canvas.DrawText(GameInfo.Version, cx, pt + MenuLayout.VersionY, MenuStyle.TextVersion);
+        canvas.DrawText(GameInfo.Title, cx, pt + MenuLayout.TitleY, _titleTextPaint);
+        canvas.DrawText(GameInfo.Version, cx, pt + MenuLayout.VersionY, _versionTextPaint);
 
         DrawButton(canvas, pl, pt, MenuLayout.NewGameY, Localization.Get("MainMenu.NewGame"), MenuButton.NewGame);
         DrawButton(canvas, pl, pt, MenuLayout.LoadY, Localization.Get("MainMenu.Load"), MenuButton.Load);
