@@ -12,6 +12,10 @@ public enum SettingsButton
 /// <summary>
 /// Layout and hit-test geometry for the Settings overlay panel.
 /// Same panel size and position as MainMenu (500×550).
+///
+/// Each setting is a single row: its label sits left-aligned at <see cref="RowLabelX"/>
+/// and its combo box is right-aligned to <see cref="RowRightX"/> — the same right edge
+/// for every row, so the boxes read as one aligned column of values next to their labels.
 /// </summary>
 public sealed class SettingsLayout
 {
@@ -22,24 +26,27 @@ public sealed class SettingsLayout
     public const float ButtonHeight = 58f;
 
     public const float TitleY = 70f;
-    public const float ExitY = 470f;
+    /// <summary>Same local Y as MainMenu's EXIT button (<see cref="MainMenu.MenuLayout.ExitY"/>) — same panel size/position, so this lines the two buttons up exactly.</summary>
+    public const float ExitY = 404f;
 
-    public const float MonitorLabelY = 140f;
-    public const float MonitorComboY = 162f;
-    public const float MonitorComboWidth = 320f;
+    /// <summary>Left inset, from the panel's left edge, for every row's label text.</summary>
+    public const float RowLabelX = 40f;
+    /// <summary>Right edge, from the panel's left edge, that every row's combo box aligns to.</summary>
+    public const float RowRightX = 460f;
+
+    public const float MonitorRowY = 140f;
+    public const float MonitorComboWidth = 240f;
     public const float MonitorComboHeight = 40f;
     public const float MonitorOptionHeight = 36f;
-    public const float MonitorNoteY = 218f;
+    public const float MonitorNoteY = 196f;
 
-    public const float UiScaleLabelY = 270f;
-    public const float UiScaleComboY = 292f;
-    public const float UiScaleComboWidth = 320f;
+    public const float UiScaleRowY = 320f;
+    public const float UiScaleComboWidth = 240f;
     public const float UiScaleComboHeight = 40f;
     public const float UiScaleOptionHeight = 36f;
 
-    public const float LanguageLabelY = 362f;
-    public const float LanguageComboY = 384f;
-    public const float LanguageComboWidth = 320f;
+    public const float LanguageRowY = 230f;
+    public const float LanguageComboWidth = 240f;
     public const float LanguageComboHeight = 40f;
     public const float LanguageOptionHeight = 36f;
 
@@ -74,11 +81,11 @@ public sealed class SettingsLayout
         float lx = screenX - panelLeft;
         float ly = screenY - panelTop;
 
-        float bx = (PanelWidth - MonitorComboWidth) / 2f;
+        float bx = RowRightX - MonitorComboWidth;
         if (lx < bx || lx > bx + MonitorComboWidth)
             return -1;
 
-        float listTop = MonitorComboY + MonitorComboHeight;
+        float listTop = MonitorRowY + MonitorComboHeight;
         for (int i = 0; i < monitorCount; i++)
         {
             float optionTop = listTop + i * MonitorOptionHeight;
@@ -102,11 +109,11 @@ public sealed class SettingsLayout
         float lx = screenX - panelLeft;
         float ly = screenY - panelTop;
 
-        float bx = (PanelWidth - UiScaleComboWidth) / 2f;
+        float bx = RowRightX - UiScaleComboWidth;
         if (lx < bx || lx > bx + UiScaleComboWidth)
             return -1;
 
-        float listTop = UiScaleComboY + UiScaleComboHeight;
+        float listTop = UiScaleRowY + UiScaleComboHeight;
         for (int i = 0; i < optionCount; i++)
         {
             float optionTop = listTop + i * UiScaleOptionHeight;
@@ -130,11 +137,11 @@ public sealed class SettingsLayout
         float lx = screenX - panelLeft;
         float ly = screenY - panelTop;
 
-        float bx = (PanelWidth - LanguageComboWidth) / 2f;
+        float bx = RowRightX - LanguageComboWidth;
         if (lx < bx || lx > bx + LanguageComboWidth)
             return -1;
 
-        float listTop = LanguageComboY + LanguageComboHeight;
+        float listTop = LanguageRowY + LanguageComboHeight;
         for (int i = 0; i < optionCount; i++)
         {
             float optionTop = listTop + i * LanguageOptionHeight;
@@ -147,23 +154,23 @@ public sealed class SettingsLayout
 
     private static bool IsInMonitorCombo(float localX, float localY)
     {
-        float bx = (PanelWidth - MonitorComboWidth) / 2f;
+        float bx = RowRightX - MonitorComboWidth;
         return localX >= bx && localX <= bx + MonitorComboWidth
-            && localY >= MonitorComboY && localY <= MonitorComboY + MonitorComboHeight;
+            && localY >= MonitorRowY && localY <= MonitorRowY + MonitorComboHeight;
     }
 
     private static bool IsInUiScaleCombo(float localX, float localY)
     {
-        float bx = (PanelWidth - UiScaleComboWidth) / 2f;
+        float bx = RowRightX - UiScaleComboWidth;
         return localX >= bx && localX <= bx + UiScaleComboWidth
-            && localY >= UiScaleComboY && localY <= UiScaleComboY + UiScaleComboHeight;
+            && localY >= UiScaleRowY && localY <= UiScaleRowY + UiScaleComboHeight;
     }
 
     private static bool IsInLanguageCombo(float localX, float localY)
     {
-        float bx = (PanelWidth - LanguageComboWidth) / 2f;
+        float bx = RowRightX - LanguageComboWidth;
         return localX >= bx && localX <= bx + LanguageComboWidth
-            && localY >= LanguageComboY && localY <= LanguageComboY + LanguageComboHeight;
+            && localY >= LanguageRowY && localY <= LanguageRowY + LanguageComboHeight;
     }
 
     private static bool IsInButton(float localX, float localY, float buttonY)
