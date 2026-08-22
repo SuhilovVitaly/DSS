@@ -93,10 +93,10 @@ public sealed class MainMenuScreen : IScreen
         canvas.DrawText(GameInfo.Title, cx, pt + MenuLayout.TitleY, MenuStyle.TextTitle);
         canvas.DrawText(GameInfo.Version, cx, pt + MenuLayout.VersionY, MenuStyle.TextVersion);
 
-        DrawButton(canvas, pl, pt, MenuLayout.NewGameY, "NEW GAME", MenuButton.NewGame);
-        DrawButton(canvas, pl, pt, MenuLayout.LoadY, "LOAD", MenuButton.Load);
-        DrawButton(canvas, pl, pt, MenuLayout.SettingsY, "SETTINGS", MenuButton.Settings);
-        DrawButton(canvas, pl, pt, MenuLayout.ExitY, "EXIT", MenuButton.Exit);
+        DrawButton(canvas, pl, pt, MenuLayout.NewGameY, Localization.Get("MainMenu.NewGame"), MenuButton.NewGame);
+        DrawButton(canvas, pl, pt, MenuLayout.LoadY, Localization.Get("MainMenu.Load"), MenuButton.Load);
+        DrawButton(canvas, pl, pt, MenuLayout.SettingsY, Localization.Get("MainMenu.Settings"), MenuButton.Settings);
+        DrawButton(canvas, pl, pt, MenuLayout.ExitY, Localization.Get("MainMenu.Exit"), MenuButton.Exit);
     }
 
     private ButtonState GetState(MenuButton id, bool active)
