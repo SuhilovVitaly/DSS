@@ -46,7 +46,13 @@ public sealed record GameStateData(
     [property: JsonPropertyName("playerShipObjectId")] string PlayerShipObjectId,
     [property: JsonPropertyName("focus")] FocusData? Focus,
     [property: JsonPropertyName("spaceObjects")] IReadOnlyList<SpaceObjectData> SpaceObjects,
-    [property: JsonPropertyName("masterSeed")] ulong? MasterSeed = null);
+    [property: JsonPropertyName("masterSeed")] ulong? MasterSeed = null,
+    /// <summary>
+    /// Player's Credits balance (Docs\FirstRelease\Mechanics\Money.md). Null means "not yet
+    /// resolved" — SimulationEngine.LoadScenario treats a missing value as 0 (a New Game
+    /// player always starts with 0 Credits; this is a plain default, never randomized).
+    /// </summary>
+    [property: JsonPropertyName("playerCredits")] long? PlayerCredits = null);
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(
@@ -82,7 +88,26 @@ public sealed record SpaceObjectData(
     /// </summary>
     [property: JsonPropertyName("isDocked")] bool IsDocked = false,
     /// <summary>ObjectId of the station this object is docked to. Null unless <see cref="IsDocked"/>.</summary>
-    [property: JsonPropertyName("dockedStationObjectId")] string? DockedStationObjectId = null);
+    [property: JsonPropertyName("dockedStationObjectId")] string? DockedStationObjectId = null,
+    /// <summary>
+    /// Station's Credits balance (Docs\FirstRelease\Mechanics\Money.md). Only meaningful for
+    /// ObjectType == Station. Null means "not yet resolved" — SimulationEngine.LoadScenario
+    /// generates a deterministic value from masterSeed the first time; a subsequent save
+    /// always carries the resolved value explicitly, so it is never regenerated again.
+    /// </summary>
+    [property: JsonPropertyName("credits")] long? Credits = null,
+    /// <summary>
+    /// Station's price coefficient, fixed-point where 1000 == 1.0x (Docs\FirstRelease\
+    /// Mechanics\StationInventory.md's 0.5..2.0 range == 500..2000 here — the project
+    /// forbids float/double for authoritative values). Same "null == not yet resolved,
+    /// resolved once and then always explicit" rule as <see cref="Credits"/>.
+    /// </summary>
+    [property: JsonPropertyName("priceCoefficient")] int? PriceCoefficient = null,
+    /// <summary>
+    /// Station's tradeable stock, one entry per sellable item type. Same "null == not yet
+    /// resolved" rule as <see cref="Credits"/>.
+    /// </summary>
+    [property: JsonPropertyName("inventory")] IReadOnlyList<StationInventoryItemData>? Inventory = null);
 
 /// <summary>A ship module declared in a scenario.</summary>
 public sealed record ShipModuleData(
@@ -177,5 +202,10 @@ public sealed record ActiveCycleData(
 
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(
+    [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
+    [property: JsonPropertyName("quantity")] long Quantity);
+
+/// <summary>One tradeable item's stock on a station (see StationInventoryItemRuntime).</summary>
+public sealed record StationInventoryItemData(
     [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
     [property: JsonPropertyName("quantity")] long Quantity);

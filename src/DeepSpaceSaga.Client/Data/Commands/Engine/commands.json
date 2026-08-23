@@ -98,6 +98,15 @@
             "consumptionFactor": 1.0,
             "target": "point",
             "type": "module.engine"
+        },
+        {
+            "typeId": "trade.refuel",
+            "displayName": "Refuel",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.engine"
         }
     ]
 }

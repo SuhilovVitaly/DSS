@@ -21,4 +21,11 @@ public sealed record InstalledModuleSnapshot(
     string? ActiveCommandType = null,
     long? FuelAmountKg = null,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ModuleCommandSnapshot>))]
-    ImmutableArray<ModuleCommandSnapshot> Commands = default);
+    ImmutableArray<ModuleCommandSnapshot> Commands = default,
+    /// <summary>
+    /// Cargo carried inside this specific module. Empty for modules without
+    /// CargoCapacityKg. Cargo of this module-container only — aggregation across
+    /// multiple modules is a Client concern, not an Engine one.
+    /// </summary>
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CargoStackSnapshot>))]
+    ImmutableArray<CargoStackSnapshot> Cargo = default);

@@ -24,7 +24,8 @@
         "engine.maintainCourse",
         "engine.speedSynchronization",
         "engine.directionSynchronization",
-        "engine.orbit"
+        "engine.orbit",
+        "trade.refuel"
       ]
     },
     {
@@ -43,7 +44,10 @@
       "typeId": "module.container",
       "displayName": "Container",
       "slotSize": 1,
-      "commandTypeIds": []
+      "commandTypeIds": [
+        "trade.buy",
+        "trade.sell"
+      ]
     },
     {
       "typeId": "module.drilling.unit",

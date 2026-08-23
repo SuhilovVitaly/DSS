@@ -104,6 +104,36 @@ public sealed class GameSessionHandle : IAsyncDisposable
     }
 
     /// <summary>
+    /// Send a trade command (Buy/Sell/Refuel) carrying ItemTypeId/Quantity. Unlike
+    /// SendCommandAsync/SendEngineCommandAsync (fire-and-forget, no CommandId returned —
+    /// callers infer success from resulting world-state changes, e.g. Dock's IsDocked),
+    /// this returns the generated CommandId synchronously: a Trade rejection produces NO
+    /// observable state change, so the caller (TradeScreen) must correlate the CommandId
+    /// against the next snapshot's CommandResults to show a rejection reason at all. The
+    /// actual send to the connection still happens fire-and-forget in the background,
+    /// exactly like every other command — only ID generation is synchronous.
+    /// </summary>
+    public string SendTradeCommand(
+        string objectId, string moduleId, string commandType, string itemTypeId, long quantity,
+        CancellationToken cancellationToken = default)
+    {
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        string commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
+        var command = new PlayerCommand(
+            CommandId: commandId,
+            ClientSequence: sequence,
+            ObjectId: objectId,
+            ModuleId: moduleId,
+            CommandType: commandType,
+            ItemTypeId: itemTypeId,
+            Quantity: quantity);
+
+        _ = _connection.SendCommandAsync(command, cancellationToken).AsTask();
+
+        return commandId;
+    }
+
+    /// <summary>
     /// Set the simulation speed and immediately update the client-side tracker.
     /// Properly awaits the connection call — for local connections this completes
     /// synchronously; for network connections the speed is confirmed before the

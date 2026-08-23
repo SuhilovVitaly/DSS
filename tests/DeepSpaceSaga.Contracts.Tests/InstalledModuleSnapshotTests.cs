@@ -89,4 +89,42 @@ public class InstalledModuleSnapshotTests
         var command = new ModuleCommandSnapshot("engine.accelerate", "Accelerate");
         Assert.Equal("none", command.Target);
     }
+
+    [Fact]
+    public void Cargo_defaults_to_default_or_empty()
+    {
+        var snapshot = new InstalledModuleSnapshot(
+            ModuleId: "MOD-CNT-01",
+            ModuleTypeId: "module.container.basic",
+            DisplayName: "Cargo Bay",
+            Position: 2,
+            CommandTypeIds: ImmutableArray<string>.Empty);
+
+        Assert.True(snapshot.Cargo.IsDefaultOrEmpty);
+    }
+
+    [Fact]
+    public void Cargo_round_trips_via_json_with_populated_stacks()
+    {
+        var snapshot = new InstalledModuleSnapshot(
+            ModuleId: "MOD-CNT-01",
+            ModuleTypeId: "module.container.basic",
+            DisplayName: "Cargo Bay",
+            Position: 2,
+            CommandTypeIds: ImmutableArray<string>.Empty,
+            Cargo: ImmutableArray.Create(
+                new CargoStackSnapshot("item.ice", 12),
+                new CargoStackSnapshot("item.energyCells", 3)));
+
+        var json = JsonSerializer.Serialize(snapshot);
+        var roundTripped = JsonSerializer.Deserialize<InstalledModuleSnapshot>(json);
+
+        Assert.NotNull(roundTripped);
+        Assert.False(roundTripped!.Cargo.IsDefault);
+        Assert.Equal(2, roundTripped.Cargo.Length);
+        Assert.Equal("item.ice", roundTripped.Cargo[0].ItemTypeId);
+        Assert.Equal(12, roundTripped.Cargo[0].Quantity);
+        Assert.Equal("item.energyCells", roundTripped.Cargo[1].ItemTypeId);
+        Assert.Equal(3, roundTripped.Cargo[1].Quantity);
+    }
 }

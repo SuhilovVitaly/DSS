@@ -1,0 +1,22 @@
+{
+    "commandDefinitions": [
+        {
+            "typeId": "trade.buy",
+            "displayName": "Buy",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.container"
+        },
+        {
+            "typeId": "trade.sell",
+            "displayName": "Sell",
+            "timeFactor": 0.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.container"
+        }
+    ]
+}

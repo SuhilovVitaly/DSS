@@ -235,7 +235,7 @@ public static class EngineContentLoader
             throw new ContentException("item-types file is missing itemTypes.");
 
         return file.ItemTypes.Select(dto =>
-            new ItemTypeDefinition(dto.TypeId, dto.DisplayName, dto.UnitMassKg)).ToArray();
+            new ItemTypeDefinition(dto.TypeId, dto.DisplayName, dto.UnitMassKg, dto.BasePriceCredits)).ToArray();
     }
 
     /// <summary>
@@ -455,7 +455,8 @@ public static class EngineContentLoader
     private sealed record ItemTypeDefinitionDto(
         [property: JsonPropertyName("typeId")] string TypeId,
         [property: JsonPropertyName("displayName")] string DisplayName,
-        [property: JsonPropertyName("unitMassKg")] long UnitMassKg);
+        [property: JsonPropertyName("unitMassKg")] long UnitMassKg,
+        [property: JsonPropertyName("basePriceCredits")] long? BasePriceCredits = null);
 
     private sealed record CommandDefinitionsFile(
         [property: JsonPropertyName("commandDefinitions")] IReadOnlyList<CommandDefinitionDto> CommandDefinitions);
