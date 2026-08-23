@@ -54,6 +54,52 @@ public class CommandResultTests
     }
 
     [Fact]
+    public void Trade_CommandReasonCodes_are_snake_case()
+    {
+        Assert.Equal("insufficient_player_credits", CommandReasonCodes.InsufficientPlayerCredits);
+        Assert.Equal("insufficient_station_stock", CommandReasonCodes.InsufficientStationStock);
+        Assert.Equal("cargo_capacity_exceeded", CommandReasonCodes.CargoCapacityExceeded);
+        Assert.Equal("fuel_capacity_exceeded", CommandReasonCodes.FuelCapacityExceeded);
+        Assert.Equal("unknown_item_type", CommandReasonCodes.UnknownItemType);
+        Assert.Equal("not_docked", CommandReasonCodes.NotDocked);
+        Assert.Equal("insufficient_cargo_quantity", CommandReasonCodes.InsufficientCargoQuantity);
+        Assert.Equal("invalid_quantity", CommandReasonCodes.InvalidQuantity);
+    }
+
+    [Fact]
+    public void CommandResult_executed_quantity_defaults_to_null()
+    {
+        var result = new CommandResult(
+            CommandId: "cmd-1",
+            ObjectId: "ship-1",
+            ModuleId: "container-1",
+            CommandType: TradeCommandTypes.Sell,
+            Status: CommandResultStatus.Executed,
+            EffectiveGameTimeMs: 1000);
+
+        Assert.Null(result.ExecutedQuantity);
+    }
+
+    [Fact]
+    public void CommandResult_executed_quantity_round_trips_via_json()
+    {
+        var result = new CommandResult(
+            CommandId: "cmd-1",
+            ObjectId: "ship-1",
+            ModuleId: "container-1",
+            CommandType: TradeCommandTypes.Sell,
+            Status: CommandResultStatus.Executed,
+            EffectiveGameTimeMs: 1000,
+            ExecutedQuantity: 7);
+
+        var json = JsonSerializer.Serialize(result);
+        var roundTripped = JsonSerializer.Deserialize<CommandResult>(json);
+
+        Assert.NotNull(roundTripped);
+        Assert.Equal(7, roundTripped!.ExecutedQuantity);
+    }
+
+    [Fact]
     public void AuthoritativeSnapshot_round_trips_command_results()
     {
         var results = ImmutableArray.Create(

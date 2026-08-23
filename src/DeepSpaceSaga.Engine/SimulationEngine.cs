@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
+using DeepSpaceSaga.Engine.Rng;
 using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 
@@ -79,6 +80,14 @@ public sealed class SimulationEngine : IDisposable
     /// see Program.cs's LocalGameSessionFactory.CreateSessionFromSave).
     /// </summary>
     public bool MasterSeedWasMissingOnLoad { get; private set; }
+
+    /// <summary>
+    /// Player's Credits balance (Docs\FirstRelease\Mechanics\Money.md). Never negative.
+    /// A New Game player starts at 0 (plain default — never RNG-generated). Set by
+    /// LoadScenario and projected back into GameStateData.PlayerCredits by
+    /// CaptureSaveStateCore.
+    /// </summary>
+    public long PlayerCredits { get; private set; }
 
     public SimulationEngine()
         : this(GameDataRegistry.Empty)
@@ -177,6 +186,28 @@ public sealed class SimulationEngine : IDisposable
         var speed = ScenarioLoader.ParseSpeed(gs.CurrentSpeed);
         var runtimeObjects = new List<SpaceObjectRuntime>(gs.SpaceObjects.Count);
 
+        // masterSeed: reuse whatever the scenario/save already carries (continuing a
+        // session must not reshuffle it). A missing value covers two distinct cases the
+        // caller tells apart by context, not by this flag alone — New Game's
+        // DefaultScenario never specifies one (expected, no warning warranted), while a
+        // legacy save missing it is unexpected (callers loading from a save file are
+        // expected to check MasterSeedWasMissingOnLoad and warn). Resolved here, before the
+        // object-building loop below, because station Credits/PriceCoefficient/Inventory
+        // generation (ResolveStation*) needs a masterSeed to deterministically seed from —
+        // it must not be deferred until the later lock block.
+        ulong resolvedMasterSeed;
+        bool resolvedMasterSeedWasMissingOnLoad;
+        if (gs.MasterSeed is { } masterSeedFromScenario)
+        {
+            resolvedMasterSeed = masterSeedFromScenario;
+            resolvedMasterSeedWasMissingOnLoad = false;
+        }
+        else
+        {
+            resolvedMasterSeed = GenerateRandomMasterSeed();
+            resolvedMasterSeedWasMissingOnLoad = true;
+        }
+
         // Build the full runtime world before mutating engine state. A scenario with
         // invalid type references or placement must not destroy the currently loaded world.
         foreach (var obj in gs.SpaceObjects)
@@ -185,6 +216,13 @@ public sealed class SimulationEngine : IDisposable
             double speedKmS = (double)obj.SpeedMps / 1000.0;
 
             var modules = BuildRuntimeModules(obj);
+
+            bool isStation = obj.ObjectType == SpaceObjectType.Station;
+            long credits = isStation ? ResolveStationCredits(obj, resolvedMasterSeed) : 0;
+            int priceCoefficient = isStation ? ResolveStationPriceCoefficient(obj, resolvedMasterSeed) : 1000;
+            var inventory = isStation
+                ? ResolveStationInventory(obj, resolvedMasterSeed)
+                : ImmutableArray<StationInventoryItemRuntime>.Empty;
 
             runtimeObjects.Add(new SpaceObjectRuntime(
                 new ObjectMotionSnapshot(
@@ -213,7 +251,10 @@ public sealed class SimulationEngine : IDisposable
                 IsKnown: obj.IsKnown,
                 HullLayout: obj.HullLayout,
                 IsDocked: obj.IsDocked,
-                DockedStationObjectId: obj.DockedStationObjectId));
+                DockedStationObjectId: obj.DockedStationObjectId,
+                Credits: credits,
+                PriceCoefficient: priceCoefficient,
+                Inventory: inventory));
         }
 
         lock (_worldStateLock)
@@ -231,22 +272,16 @@ public sealed class SimulationEngine : IDisposable
             _shipEvents.Clear();
             CollectLoadedEngineCycleIds(runtimeObjects);
 
-            // masterSeed: reuse whatever the scenario/save already carries (continuing a
-            // session must not reshuffle it). A missing value covers two distinct cases the
-            // caller tells apart by context, not by this flag alone — New Game's
-            // DefaultScenario never specifies one (expected, no warning warranted), while a
-            // legacy save missing it is unexpected (callers loading from a save file are
-            // expected to check MasterSeedWasMissingOnLoad and warn).
-            if (gs.MasterSeed is { } masterSeed)
-            {
-                MasterSeed = masterSeed;
-                MasterSeedWasMissingOnLoad = false;
-            }
-            else
-            {
-                MasterSeed = GenerateRandomMasterSeed();
-                MasterSeedWasMissingOnLoad = true;
-            }
+            // Assign the masterSeed resolved above (before the object-building loop) —
+            // not recomputed here, so this stays a pure assignment of the single value
+            // already used to seed station generation.
+            MasterSeed = resolvedMasterSeed;
+            MasterSeedWasMissingOnLoad = resolvedMasterSeedWasMissingOnLoad;
+
+            // Player Credits (Docs\FirstRelease\Mechanics\Money.md): a New Game player
+            // always starts with 0 — plain default, never randomized (unlike station
+            // Credits, which the docs explicitly call out as RNG-generated).
+            PlayerCredits = gs.PlayerCredits ?? 0;
 
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
@@ -396,8 +431,49 @@ public sealed class SimulationEngine : IDisposable
                 ShipEvents: shipEvents,
                 InstalledModules: installedModules,
                 ActiveObjectId: ActiveObjectId,
-                SelectedObjectId: SelectedObjectId);
+                SelectedObjectId: SelectedObjectId,
+                PlayerCredits: PlayerCredits,
+                DockedStationTrade: BuildDockedStationTradeProjection());
         }
+    }
+
+    /// <summary>
+    /// Build the docked station's tradeable inventory projection (Docs\FirstRelease\
+    /// Mechanics\{Money,StationInventory,Trading}.md), story-20260822-193700 Batch 4.
+    /// Non-null only while the player ship is actually docked to a station.
+    /// The station's raw <see cref="SpaceObjectRuntime.Credits"/> balance is never
+    /// serialized here — only the derived <see cref="StationInventoryItemSnapshot.
+    /// MaxSellableQuantity"/> (see CP-1 in the story), so the client never learns the
+    /// station's hidden balance.
+    /// </summary>
+    private StationTradeSnapshot? BuildDockedStationTradeProjection()
+    {
+        if (string.IsNullOrWhiteSpace(PlayerShipObjectId))
+            return null;
+
+        var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
+        if (ship is null || !ship.IsDocked || ship.DockedStationObjectId is null)
+            return null;
+
+        var station = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == ship.DockedStationObjectId);
+        if (station is null || station.Inventory.IsDefaultOrEmpty)
+            return null;
+
+        var items = ImmutableArray.CreateBuilder<StationInventoryItemSnapshot>(station.Inventory.Length);
+        foreach (var item in station.Inventory)
+        {
+            var itemType = _registry.ItemTypes.GetDefinition(item.ItemTypeIndex);
+            long unitPrice = StationPricing.ComputeUnitPriceCredits(itemType.BasePriceCredits ?? 0, station.PriceCoefficient);
+            long maxSellable = unitPrice > 0 ? station.Credits / unitPrice : 0;
+
+            items.Add(new StationInventoryItemSnapshot(
+                ItemTypeId: itemType.TypeId,
+                StockQuantity: item.StockQuantity,
+                UnitPriceCredits: unitPrice,
+                MaxSellableQuantity: maxSellable));
+        }
+
+        return new StationTradeSnapshot(station.InitialMotion.ObjectId, items.MoveToImmutable());
     }
 
     /// <summary>
@@ -434,8 +510,27 @@ public sealed class SimulationEngine : IDisposable
                 StructurePoints: module.StructurePoints,
                 ActiveCommandType: module.ActiveCycle?.CommandType,
                 FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null,
-                Commands: BuildModuleCommands(moduleType.CommandTypeIds)));
+                Commands: BuildModuleCommands(moduleType.CommandTypeIds),
+                Cargo: BuildCargoProjection(module.Cargo)));
         }
+
+        return builder.MoveToImmutable();
+    }
+
+    /// <summary>
+    /// Project a module's cargo stacks (item type index -> item type id) for the
+    /// <see cref="InstalledModuleSnapshot.Cargo"/> field (story-20260822-193700 Batch 4).
+    /// Empty for modules that carry no cargo — mirrors the module.Cargo shape as-is,
+    /// no cross-module aggregation (that's a Client concern).
+    /// </summary>
+    private ImmutableArray<CargoStackSnapshot> BuildCargoProjection(ImmutableArray<CargoStackRuntime> cargo)
+    {
+        if (cargo.IsDefaultOrEmpty)
+            return ImmutableArray<CargoStackSnapshot>.Empty;
+
+        var builder = ImmutableArray.CreateBuilder<CargoStackSnapshot>(cargo.Length);
+        foreach (var stack in cargo)
+            builder.Add(new CargoStackSnapshot(_registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).TypeId, stack.Quantity));
 
         return builder.MoveToImmutable();
     }
@@ -512,6 +607,7 @@ public sealed class SimulationEngine : IDisposable
         {
             long elapsed = gameTimeMs - obj.StartGameTimeMs;
             var motion = _motion.Predict(obj.InitialMotion, elapsed);
+            bool isStation = obj.ObjectType == SpaceObjectType.Station;
 
             spaceObjects.Add(new SpaceObjectData(
                 ObjectId: obj.InitialMotion.ObjectId,
@@ -529,7 +625,12 @@ public sealed class SimulationEngine : IDisposable
                 IsKnown: obj.IsKnown,
                 HullLayout: obj.HullLayout,
                 IsDocked: obj.IsDocked,
-                DockedStationObjectId: obj.DockedStationObjectId));
+                DockedStationObjectId: obj.DockedStationObjectId,
+                Credits: isStation ? obj.Credits : null,
+                PriceCoefficient: isStation ? obj.PriceCoefficient : null,
+                Inventory: isStation && !obj.Inventory.IsDefaultOrEmpty
+                    ? obj.Inventory.Select(BuildSaveInventoryItem).ToList()
+                    : null));
         }
 
         var gameState = new GameStateData(
@@ -538,7 +639,8 @@ public sealed class SimulationEngine : IDisposable
             PlayerShipObjectId: PlayerShipObjectId ?? string.Empty,
             Focus: null, // camera/focus is client-side only — never saved (decision G.20)
             SpaceObjects: spaceObjects,
-            MasterSeed: MasterSeed);
+            MasterSeed: MasterSeed,
+            PlayerCredits: PlayerCredits);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
@@ -588,6 +690,12 @@ public sealed class SimulationEngine : IDisposable
         }
 
         return cargo;
+    }
+
+    private StationInventoryItemData BuildSaveInventoryItem(StationInventoryItemRuntime item)
+    {
+        var itemType = _registry.ItemTypes.GetDefinition(item.ItemTypeIndex);
+        return new StationInventoryItemData(ItemTypeId: itemType.TypeId, Quantity: item.StockQuantity);
     }
 
     private static int ToDirectionDegreesInt(double direction)
@@ -786,6 +894,86 @@ public sealed class SimulationEngine : IDisposable
         return moduleType.AngularInertiaDegPerSec is > 0 ? module.LastTurnGameTimeMs : null;
     }
 
+    /// <summary>
+    /// Resolve a station's Credits balance (Docs\FirstRelease\Mechanics\Money.md): explicit
+    /// scenario/save value used as-is, otherwise a deterministic value in 10,000..50,000
+    /// (inclusive) derived from masterSeed via the station's own named RNG stream — so
+    /// generation never regenerates once the value has been resolved and saved once.
+    /// </summary>
+    private static long ResolveStationCredits(SpaceObjectData obj, ulong masterSeed)
+    {
+        if (obj.Credits is { } explicitCredits)
+            return explicitCredits;
+
+        var random = RngStreamNames.CreateDeterministicRandom(
+            RngStreamSeedDerivation.DeriveStreamSeed(masterSeed, RngStreamNames.StationCredits(obj.ObjectId)));
+        // NextInt64(min, max) has an exclusive upper bound — +1 to include 50,000.
+        return random.NextInt64(10_000, 50_001);
+    }
+
+    /// <summary>
+    /// Resolve a station's price coefficient (Docs\FirstRelease\Mechanics\
+    /// StationInventory.md): explicit scenario/save value used as-is, otherwise a
+    /// deterministic value in 500..2000 (inclusive) — fixed-point representation of the
+    /// documented 0.5..2.0 range (1000 == 1.0x; the project forbids float/double for
+    /// authoritative values) — derived from masterSeed via the station's own named RNG
+    /// stream.
+    /// </summary>
+    private static int ResolveStationPriceCoefficient(SpaceObjectData obj, ulong masterSeed)
+    {
+        if (obj.PriceCoefficient is { } explicitCoefficient)
+            return explicitCoefficient;
+
+        var random = RngStreamNames.CreateDeterministicRandom(
+            RngStreamSeedDerivation.DeriveStreamSeed(masterSeed, RngStreamNames.StationPriceCoefficient(obj.ObjectId)));
+        // Next(min, max) has an exclusive upper bound — +1 to include 2000.
+        return random.Next(500, 2001);
+    }
+
+    /// <summary>
+    /// Resolve a station's tradeable stock (Docs\FirstRelease\Mechanics\
+    /// StationInventory.md): one entry per registered item type that carries a
+    /// BasePriceCredits (i.e. is currently sellable by a station at all). Each entry uses
+    /// its explicit scenario/save quantity when present, otherwise a deterministic value in
+    /// 20..500 (inclusive) derived from masterSeed via a stream named for this specific
+    /// (station, item type) pair — not one shared stream for the whole station's
+    /// inventory — so a future tradeable good never shifts the sequence already consumed
+    /// by an existing one for the same station.
+    /// </summary>
+    private ImmutableArray<StationInventoryItemRuntime> ResolveStationInventory(SpaceObjectData obj, ulong masterSeed)
+    {
+        if (_registry.ItemTypes.Count == 0)
+            return ImmutableArray<StationInventoryItemRuntime>.Empty;
+
+        var explicitByItemTypeId = obj.Inventory?.ToDictionary(
+            i => i.ItemTypeId, i => i.Quantity, StringComparer.Ordinal);
+
+        var inventory = ImmutableArray.CreateBuilder<StationInventoryItemRuntime>();
+        for (int i = 0; i < _registry.ItemTypes.Count; i++)
+        {
+            var itemType = _registry.ItemTypes.GetDefinition(i);
+            if (itemType.BasePriceCredits is null)
+                continue;
+
+            long stockQuantity;
+            if (explicitByItemTypeId is not null && explicitByItemTypeId.TryGetValue(itemType.TypeId, out long explicitQuantity))
+            {
+                stockQuantity = explicitQuantity;
+            }
+            else
+            {
+                var random = RngStreamNames.CreateDeterministicRandom(
+                    RngStreamSeedDerivation.DeriveStreamSeed(masterSeed, RngStreamNames.StationInventory(obj.ObjectId, itemType.TypeId)));
+                // NextInt64(min, max) has an exclusive upper bound — +1 to include 500.
+                stockQuantity = random.NextInt64(20, 501);
+            }
+
+            inventory.Add(new StationInventoryItemRuntime(i, stockQuantity));
+        }
+
+        return inventory.ToImmutable();
+    }
+
     internal ImmutableArray<SpaceObjectRuntime> RuntimeObjects => _objects.ToImmutableArray();
 
     private string? GetRelationToPlayer(string objectId, string objectType)
@@ -872,7 +1060,8 @@ public sealed class SimulationEngine : IDisposable
     }
 
     private void RecordCommandResult(
-        PlayerCommand command, CommandResultStatus status, long gameTimeMs, string? reasonCode = null)
+        PlayerCommand command, CommandResultStatus status, long gameTimeMs, string? reasonCode = null,
+        long? executedQuantity = null)
     {
         _commandResults.Add(new CommandResult(
             command.CommandId,
@@ -881,7 +1070,8 @@ public sealed class SimulationEngine : IDisposable
             command.CommandType,
             status,
             gameTimeMs,
-            reasonCode));
+            reasonCode,
+            executedQuantity));
     }
 
     private void RecordCommandResultFromCycle(
@@ -932,7 +1122,9 @@ public sealed class SimulationEngine : IDisposable
     /// commands (module.engine.basic) go through the existing, heavily-tested
     /// <see cref="TryStartEngineCommand"/> unchanged; navigation.dock is the only
     /// currently-implemented NavigationComputer command and goes through
-    /// <see cref="TryStartNavigationCommand"/> instead. Everything else (including
+    /// <see cref="TryStartNavigationCommand"/> instead; trade.buy/trade.sell/trade.refuel
+    /// (station trading, Docs\FirstRelease\Mechanics\{Money,StationInventory,Trading}.md) go
+    /// through <see cref="TryStartTradeCommand"/>. Everything else (including
     /// navigation.stationsList, not implemented yet) falls through to
     /// TryStartEngineCommand, which rejects it with UnknownCommandType exactly as before
     /// this dispatcher existed.
@@ -941,6 +1133,9 @@ public sealed class SimulationEngine : IDisposable
     {
         if (command.CommandType == NavigationComputerCommandTypes.Dock)
             return TryStartNavigationCommand(command, gameTimeMs);
+
+        if (command.CommandType is TradeCommandTypes.Buy or TradeCommandTypes.Sell or TradeCommandTypes.Refuel)
+            return TryStartTradeCommand(command, gameTimeMs);
 
         return TryStartEngineCommand(command, gameTimeMs);
     }
@@ -1071,6 +1266,170 @@ public sealed class SimulationEngine : IDisposable
         return string.Equals(module.PowerState, "On", StringComparison.OrdinalIgnoreCase) &&
                string.Equals(module.OperationalState, "Ready", StringComparison.OrdinalIgnoreCase) &&
                module.StructurePoints > 0;
+    }
+
+    /// <summary>
+    /// Handles trade.buy / trade.sell / trade.refuel — station trading (requirements
+    /// Docs\FirstRelease\Mechanics\{Money,StationInventory,Trading}.md). Like navigation.dock,
+    /// these are immediate one-shot authoritative actions (no ActiveCycle/duration) validated
+    /// only by <see cref="CanExecuteModuleCommand"/> (power/operational/structure) — a trade
+    /// module is never "busy", so trade commands are always either Started or Rejected, never
+    /// Deferred. Buy and Refuel are all-or-nothing (CP-2); only Sell may execute partially, when
+    /// the station's hidden Credits balance cannot afford the full request (Money.md) — see
+    /// <see cref="CommandResult.ExecutedQuantity"/>.
+    /// </summary>
+    private CommandStartOutcome TryStartTradeCommand(PlayerCommand command, long gameTimeMs)
+    {
+        if (!string.Equals(command.ObjectId, PlayerShipObjectId, StringComparison.Ordinal))
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
+
+        int objectIndex = _objects.FindIndex(o =>
+            string.Equals(o.InitialMotion.ObjectId, command.ObjectId, StringComparison.Ordinal) &&
+            string.Equals(o.ObjectType, "PlayerShip", StringComparison.OrdinalIgnoreCase));
+        if (objectIndex < 0)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
+
+        var obj = _objects[objectIndex];
+        int moduleIndex = FindModuleIndex(obj.Modules, command.ModuleId);
+        if (moduleIndex < 0)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
+
+        var module = obj.Modules[moduleIndex];
+        var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+        // Whether the addressed module supports this trade command type at all — this is also
+        // the "right kind of module" check: Buy/Sell land on module.container.basic, Refuel on
+        // module.engine.basic, purely through content wiring (Data\Commands\Container,
+        // module-types.json), no separate hardcoded module-type check needed.
+        if (!moduleType.CommandTypeIds.Contains(command.CommandType, StringComparer.Ordinal))
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
+
+        if (!CanExecuteModuleCommand(module))
+            return CommandStartOutcome.Rejected(CommandReasonCodes.ModuleUnavailable);
+
+        if (!obj.IsDocked)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.NotDocked);
+
+        int stationIndex = _objects.FindIndex(o =>
+            string.Equals(o.InitialMotion.ObjectId, obj.DockedStationObjectId, StringComparison.Ordinal));
+        if (stationIndex < 0)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.NotDocked);
+
+        if (command.Quantity is not { } qty || qty <= 0)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.InvalidQuantity);
+
+        if (string.IsNullOrWhiteSpace(command.ItemTypeId) || !_registry.ItemTypes.Contains(command.ItemTypeId))
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownItemType);
+
+        int itemTypeIndex = _registry.ItemTypes.GetIndex(command.ItemTypeId);
+        var itemType = _registry.ItemTypes.GetDefinition(itemTypeIndex);
+
+        var station = _objects[stationIndex];
+        int stationInventoryIndex = FindInventoryIndex(station.Inventory, itemTypeIndex);
+        if (stationInventoryIndex < 0)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownItemType);
+
+        var stationInventoryItem = station.Inventory[stationInventoryIndex];
+        long unitPriceCredits = StationPricing.ComputeUnitPriceCredits(itemType.BasePriceCredits ?? 0, station.PriceCoefficient);
+
+        if (command.CommandType == TradeCommandTypes.Buy)
+        {
+            long cargoCapacityKg = moduleType.CargoCapacityKg ?? 0;
+            long cost = unitPriceCredits * qty;
+            if (cost > PlayerCredits)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientPlayerCredits);
+
+            if (qty > stationInventoryItem.StockQuantity)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientStationStock);
+
+            long currentCargoMassKg = 0;
+            foreach (var stack in module.Cargo)
+                currentCargoMassKg += stack.Quantity * _registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).UnitMassKg;
+
+            long addedMassKg = qty * itemType.UnitMassKg;
+            if (currentCargoMassKg + addedMassKg > cargoCapacityKg)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.CargoCapacityExceeded);
+
+            PlayerCredits -= cost;
+
+            var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
+                stationInventoryItem with { StockQuantity = stationInventoryItem.StockQuantity - qty });
+            _objects[stationIndex] = station with { Credits = station.Credits + cost, Inventory = updatedInventory };
+
+            _objects[objectIndex] = UpdateModule(obj, moduleIndex, m =>
+            {
+                int stackIndex = FindCargoStackIndex(m.Cargo, itemTypeIndex);
+                var updatedCargo = stackIndex >= 0
+                    ? m.Cargo.SetItem(stackIndex, m.Cargo[stackIndex] with { Quantity = m.Cargo[stackIndex].Quantity + qty })
+                    : m.Cargo.Add(new CargoStackRuntime(itemTypeIndex, qty));
+                return m with { Cargo = updatedCargo };
+            });
+
+            RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
+            return CommandStartOutcome.Started;
+        }
+
+        if (command.CommandType == TradeCommandTypes.Sell)
+        {
+            int stackIndex = FindCargoStackIndex(module.Cargo, itemTypeIndex);
+            long playerQty = stackIndex >= 0 ? module.Cargo[stackIndex].Quantity : 0;
+            if (qty > playerQty)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientCargoQuantity);
+
+            // Partial fill: the only direction where the station's hidden Credits balance can
+            // limit the operation (CP-1/Money.md) — Buy/Refuel only ever add to it.
+            long maxStationCanAfford = unitPriceCredits > 0 ? station.Credits / unitPriceCredits : long.MaxValue;
+            long executedQty = Math.Min(qty, maxStationCanAfford);
+            if (executedQty <= 0)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientStationStock);
+
+            long proceeds = unitPriceCredits * executedQty;
+            PlayerCredits += proceeds;
+
+            var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
+                stationInventoryItem with { StockQuantity = stationInventoryItem.StockQuantity + executedQty });
+            _objects[stationIndex] = station with { Credits = station.Credits - proceeds, Inventory = updatedInventory };
+
+            _objects[objectIndex] = UpdateModule(obj, moduleIndex, m =>
+            {
+                int idx = FindCargoStackIndex(m.Cargo, itemTypeIndex);
+                long remaining = m.Cargo[idx].Quantity - executedQty;
+                var updatedCargo = remaining > 0
+                    ? m.Cargo.SetItem(idx, m.Cargo[idx] with { Quantity = remaining })
+                    : m.Cargo.RemoveAt(idx);
+                return m with { Cargo = updatedCargo };
+            });
+
+            RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs,
+                executedQuantity: executedQty < qty ? executedQty : null);
+            return CommandStartOutcome.Started;
+        }
+
+        // TradeCommandTypes.Refuel — all-or-nothing, like Buy, but fills the module's fuel tank
+        // (kg directly, since item.fuel's UnitMassKg is 0 — Quantity already is the mass) rather
+        // than a Cargo stack.
+        {
+            long fuelCapacityKg = moduleType.FuelCapacityKg ?? 0;
+            long cost = unitPriceCredits * qty;
+            if (cost > PlayerCredits)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientPlayerCredits);
+
+            if (qty > stationInventoryItem.StockQuantity)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientStationStock);
+
+            if (module.FuelAmountKg + qty > fuelCapacityKg)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.FuelCapacityExceeded);
+
+            PlayerCredits -= cost;
+
+            var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
+                stationInventoryItem with { StockQuantity = stationInventoryItem.StockQuantity - qty });
+            _objects[stationIndex] = station with { Credits = station.Credits + cost, Inventory = updatedInventory };
+
+            _objects[objectIndex] = UpdateModule(obj, moduleIndex, m => m with { FuelAmountKg = m.FuelAmountKg + qty });
+
+            RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
+            return CommandStartOutcome.Started;
+        }
     }
 
     private CommandStartOutcome TryStartEngineCommand(PlayerCommand command, long gameTimeMs)
@@ -1301,6 +1660,31 @@ public sealed class SimulationEngine : IDisposable
         for (int i = 0; i < modules.Length; i++)
         {
             if (string.Equals(modules[i].ModuleId, moduleId, StringComparison.Ordinal))
+                return i;
+        }
+
+        return -1;
+    }
+
+    private static int FindCargoStackIndex(ImmutableArray<CargoStackRuntime> cargo, int itemTypeIndex)
+    {
+        for (int i = 0; i < cargo.Length; i++)
+        {
+            if (cargo[i].ItemTypeIndex == itemTypeIndex)
+                return i;
+        }
+
+        return -1;
+    }
+
+    private static int FindInventoryIndex(ImmutableArray<StationInventoryItemRuntime> inventory, int itemTypeIndex)
+    {
+        if (inventory.IsDefaultOrEmpty)
+            return -1;
+
+        for (int i = 0; i < inventory.Length; i++)
+        {
+            if (inventory[i].ItemTypeIndex == itemTypeIndex)
                 return i;
         }
 
@@ -1825,7 +2209,23 @@ internal sealed record SpaceObjectRuntime(
     /// row in BuildSnapshot the same way ObjectType/DisplayName are.</summary>
     bool IsDocked = false,
     /// <summary>ObjectId of the station this object is docked to. Null unless <see cref="IsDocked"/>.</summary>
-    string? DockedStationObjectId = null);
+    string? DockedStationObjectId = null,
+    /// <summary>
+    /// Station's Credits balance (Docs\FirstRelease\Mechanics\Money.md). Only meaningful for
+    /// ObjectType == Station; 0 for every other object type (never RNG-resolved for them).
+    /// </summary>
+    long Credits = 0,
+    /// <summary>
+    /// Station's price coefficient, fixed-point where 1000 == 1.0x (Docs\FirstRelease\
+    /// Mechanics\StationInventory.md's 0.5..2.0 range == 500..2000). Only meaningful for
+    /// ObjectType == Station; 1000 (neutral) for every other object type.
+    /// </summary>
+    int PriceCoefficient = 1000,
+    /// <summary>
+    /// Station's tradeable stock, one entry per sellable item type. Only meaningful for
+    /// ObjectType == Station; empty for every other object type.
+    /// </summary>
+    ImmutableArray<StationInventoryItemRuntime> Inventory = default);
 
 internal sealed record InstalledModuleRuntime(
     string ModuleId,
@@ -1842,6 +2242,11 @@ internal sealed record InstalledModuleRuntime(
 internal sealed record CargoStackRuntime(
     int ItemTypeIndex,
     long Quantity);
+
+/// <summary>One tradeable item's stock on a station (see StationInventoryItemData).</summary>
+internal sealed record StationInventoryItemRuntime(
+    int ItemTypeIndex,
+    long StockQuantity);
 
 internal readonly record struct ActiveEngineCycleMotion(
     string? CommandType,

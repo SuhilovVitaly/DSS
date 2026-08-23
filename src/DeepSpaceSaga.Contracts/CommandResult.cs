@@ -60,7 +60,15 @@ public sealed record CommandResult(
     string CommandType,
     CommandResultStatus Status,
     long EffectiveGameTimeMs,
-    string? ReasonCode = null);
+    string? ReasonCode = null,
+    /// <summary>
+    /// Actually executed quantity for a trade command. Null for all non-trade commands
+    /// and for trade commands that executed fully. For <see cref="TradeCommandTypes.Sell"/>
+    /// executed partially because the station's hidden Credits balance ran out
+    /// (Docs\FirstRelease\Mechanics\Money.md), carries the quantity actually sold
+    /// (less than the requested <see cref="PlayerCommand.Quantity"/>).
+    /// </summary>
+    long? ExecutedQuantity = null);
 
 /// <summary>
 /// Machine-readable reason codes for non-executed command results (snake_case,
@@ -106,4 +114,28 @@ public static class CommandReasonCodes
 
     /// <summary>Dock command arrived before the ship's speed and direction matched the target station's.</summary>
     public const string DockNotSynchronized = "dock_not_synchronized";
+
+    /// <summary>Player does not have enough Credits to buy/refuel the requested quantity (Buy/Refuel are rejected in full, all-or-nothing).</summary>
+    public const string InsufficientPlayerCredits = "insufficient_player_credits";
+
+    /// <summary>Station does not have enough stock of the item to sell the requested quantity to the player.</summary>
+    public const string InsufficientStationStock = "insufficient_station_stock";
+
+    /// <summary>Buying the requested quantity would exceed the target container module's CargoCapacityKg.</summary>
+    public const string CargoCapacityExceeded = "cargo_capacity_exceeded";
+
+    /// <summary>Refueling the requested quantity would exceed the target module's FuelCapacityKg.</summary>
+    public const string FuelCapacityExceeded = "fuel_capacity_exceeded";
+
+    /// <summary>The command's ItemTypeId does not resolve to any known tradeable item.</summary>
+    public const string UnknownItemType = "unknown_item_type";
+
+    /// <summary>A Buy/Sell/Refuel command arrived while the ship is not docked to a station.</summary>
+    public const string NotDocked = "not_docked";
+
+    /// <summary>Sell command requested more of an item than the addressed module's cargo currently holds.</summary>
+    public const string InsufficientCargoQuantity = "insufficient_cargo_quantity";
+
+    /// <summary>Trade command's Quantity was missing, zero, or negative.</summary>
+    public const string InvalidQuantity = "invalid_quantity";
 }

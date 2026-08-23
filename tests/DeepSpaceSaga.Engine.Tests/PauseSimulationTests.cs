@@ -2,6 +2,8 @@ using System.Collections.Immutable;
 using System.Threading.Channels;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
+using DeepSpaceSaga.Engine.Content;
+using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
@@ -240,5 +242,122 @@ public class PauseSimulationTests
 
         cts.Cancel();
         try { await loop; } catch { }
+    }
+
+    // --- story-20260822-193700 Batch 4.4: Trade-modal-open-while-paused regression guard ---
+    // Not new behavior — BuildSnapshot has always run independently of SimulationSpeed (see
+    // CompleteActiveEngineCycles/ApplyPendingCommands calls at the top of BuildSnapshot, which
+    // are not gated on speed). This test pins that existing behavior specifically for the new
+    // Trade projection: a player who opens the Trade modal (which pauses the world, per
+    // Docs\FirstRelease\Mechanics\Trading.md) must still see command confirmations and an
+    // up-to-date DockedStationTrade in the next ~1 Hz snapshot even though gameplay is frozen.
+
+    private const string PlayerShipId = "SPC-0001";
+    private const string CargoModuleId = "MOD-CARGO-01";
+    private const string StationId = "STATION-01";
+    private const string EnergyCellsId = "item.energy-cells";
+
+    private static SimulationEngine CreateDockedTradeEngine()
+    {
+        var registry = GameDataRegistry.Create(
+            [
+                new ModuleCategoryDefinition(
+                    "module.container", "Container", SlotSize: 1,
+                    CommandTypeIds: ImmutableArray.Create(TradeCommandTypes.Buy, TradeCommandTypes.Sell))
+            ],
+            [
+                new ModuleTypeDefinition(
+                    "module.container.basic", "Container", SlotSize: 1, MassKg: 20000,
+                    StructurePointsMax: 400, PowerConsumptionW: 0,
+                    CommandTypeIds: ImmutableArray.Create(TradeCommandTypes.Buy, TradeCommandTypes.Sell),
+                    CargoCapacityKg: 1000,
+                    BaseCycleTimeMs: 1000)
+            ],
+            [
+                new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 10, BasePriceCredits: 200)
+            ],
+            [
+                new CommandDefinition(TradeCommandTypes.Buy, "Buy", Target: "none", Type: "module.container"),
+                new CommandDefinition(TradeCommandTypes.Sell, "Sell", Target: "none", Type: "module.container")
+            ]);
+
+        var engine = new SimulationEngine(registry);
+        engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
+        {
+          "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
+          "gameState": {
+            "gameTimeMs": 0,
+            "currentSpeed": "Speed0",
+            "playerShipObjectId": "{{PlayerShipId}}",
+            "playerCredits": 5000,
+            "spaceObjects": [
+              {
+                "objectId": "{{PlayerShipId}}",
+                "objectType": "PlayerShip",
+                "persistenceType": "Permanent",
+                "positionX": 10000,
+                "positionY": 10000,
+                "speedMps": 0,
+                "directionDegrees": 0,
+                "movementType": "Stationary",
+                "isDocked": true,
+                "dockedStationObjectId": "{{StationId}}",
+                "hullLayout": { "width": 1, "height": 1, "cells": [ {"x":0,"y":0} ] },
+                "modules": [
+                  {
+                    "moduleId": "{{CargoModuleId}}",
+                    "moduleTypeId": "module.container.basic",
+                    "occupiedCells": [ {"x":0,"y":0} ],
+                    "structurePoints": 400,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
+                  }
+                ]
+              },
+              {
+                "objectId": "{{StationId}}",
+                "objectType": "Station",
+                "persistenceType": "Permanent",
+                "credits": 1000000,
+                "priceCoefficient": 1000,
+                "inventory": [ { "itemTypeId": "{{EnergyCellsId}}", "quantity": 100 } ],
+                "positionX": 10001,
+                "positionY": 10000,
+                "speedMps": 0,
+                "directionDegrees": 0,
+                "movementType": "Stationary"
+              }
+            ]
+          }
+        }
+        """));
+
+        return engine;
+    }
+
+    [Fact]
+    public void Snapshot_at_Speed0_still_publishes_command_results_and_trade_projection()
+    {
+        var engine = CreateDockedTradeEngine();
+
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-buy", 1, PlayerShipId, CargoModuleId, TradeCommandTypes.Buy,
+            ItemTypeId: EnergyCellsId, Quantity: 10));
+
+        // Explicitly Speed0 — the world is paused (as it would be with the Trade modal open).
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
+
+        Assert.Equal(SimulationSpeed.Speed0, snapshot.CurrentSpeed);
+
+        var result = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Executed, result.Status);
+
+        Assert.Equal(3000, snapshot.PlayerCredits); // 5000 - 10*200
+
+        Assert.NotNull(snapshot.DockedStationTrade);
+        var energyCells = Assert.Single(snapshot.DockedStationTrade!.Items);
+        Assert.Equal(90, energyCells.StockQuantity); // 100 - 10 bought
     }
 }

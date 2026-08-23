@@ -3,7 +3,20 @@
     {
       "typeId": "item.energy-cells",
       "displayName": "Energy Cells",
-      "unitMassKg": 10
+      "unitMassKg": 10,
+      "basePriceCredits": 200
+    },
+    {
+      "typeId": "item.fuel",
+      "displayName": "Fuel",
+      "unitMassKg": 0,
+      "basePriceCredits": 200
+    },
+    {
+      "typeId": "item.ice",
+      "displayName": "Ice",
+      "unitMassKg": 10,
+      "basePriceCredits": 30
     }
   ]
 }

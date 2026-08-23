@@ -32,4 +32,21 @@ public sealed record PlayerCommand(
     /// Explicit world-coordinate target for <see cref="ShipEngineCommandTypes.Orbit"/>
     /// (world units). See <see cref="TargetWorldX"/>.
     /// </summary>
-    double? TargetWorldY = null);
+    double? TargetWorldY = null,
+    /// <summary>
+    /// Item type id being traded, required for <see cref="TradeCommandTypes.Buy"/>,
+    /// <see cref="TradeCommandTypes.Sell"/> and <see cref="TradeCommandTypes.Refuel"/>.
+    /// The engine validates this value authoritatively and rejects the command with
+    /// <see cref="CommandReasonCodes.UnknownItemType"/> when it does not resolve to a
+    /// known tradeable item. Null when the command is not a trade command.
+    /// </summary>
+    string? ItemTypeId = null,
+    /// <summary>
+    /// Requested quantity for <see cref="TradeCommandTypes.Buy"/>,
+    /// <see cref="TradeCommandTypes.Sell"/> and <see cref="TradeCommandTypes.Refuel"/>.
+    /// The engine validates this value authoritatively against the player's Credits,
+    /// the station's stock, and the target module's capacity, and rejects or partially
+    /// executes the command accordingly (see <see cref="CommandResult.ExecutedQuantity"/>).
+    /// Null when the command is not a trade command.
+    /// </summary>
+    long? Quantity = null);

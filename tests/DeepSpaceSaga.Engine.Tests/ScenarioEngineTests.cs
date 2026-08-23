@@ -335,10 +335,10 @@ public class ScenarioEngineTests
             .Where(t => t.CommandTypeIds.Length > 0)
             .ToArray();
 
-        Assert.Equal(4, activeTypes.Length); // engine + scanner + bridge-navigation-computer + drilling unit
+        Assert.Equal(5, activeTypes.Length); // engine + scanner + bridge-navigation-computer + drilling unit + container
 
         var engineType = Assert.Single(activeTypes, t => t.TypeId == "module.engine.basic");
-        Assert.Equal(11, engineType.CommandTypeIds.Length);
+        Assert.Equal(12, engineType.CommandTypeIds.Length); // + trade.refuel (story-20260822-193700, Batch 3)
         Assert.Equal(100, engineType.BaseSuccessChancePercent);
         foreach (string commandTypeId in engineType.CommandTypeIds)
         {
@@ -378,9 +378,20 @@ public class ScenarioEngineTests
             Assert.True(registry.CommandDefinitions.Contains(commandTypeId),
                 $"Command '{commandTypeId}' of 'module.drilling.unit.basic' is missing from the command definitions registry.");
         }
+
+        var containerType = Assert.Single(activeTypes, t => t.TypeId == "module.container.basic");
+        Assert.Equal(2, containerType.CommandTypeIds.Length);
+        Assert.Contains("trade.buy", containerType.CommandTypeIds);
+        Assert.Contains("trade.sell", containerType.CommandTypeIds);
+        foreach (string commandTypeId in containerType.CommandTypeIds)
+        {
+            Assert.True(registry.CommandDefinitions.Contains(commandTypeId),
+                $"Command '{commandTypeId}' of 'module.container.basic' is missing from the command definitions registry.");
+        }
+
         int passiveTypes = Enumerable.Range(0, registry.ModuleTypes.Count)
             .Count(i => registry.ModuleTypes.GetDefinition(i).CommandTypeIds.Length == 0);
-        Assert.Equal(6, passiveTypes); // includes living.quarters.mk1 (requirements §57)
+        Assert.Equal(5, passiveTypes); // includes living.quarters.mk1 (requirements §57); container moved to active (story-20260822-193700, Batch 3)
     }
 
     [Theory]

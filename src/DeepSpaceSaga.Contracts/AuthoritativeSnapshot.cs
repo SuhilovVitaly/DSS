@@ -21,4 +21,14 @@ public sealed record AuthoritativeSnapshot(
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<InstalledModuleSnapshot>))]
     ImmutableArray<InstalledModuleSnapshot> InstalledModules = default,
     string? ActiveObjectId = null,
-    string? SelectedObjectId = null);
+    string? SelectedObjectId = null,
+    /// <summary>
+    /// Current player Credits balance (Docs\FirstRelease\Mechanics\Money.md). Always
+    /// present.
+    /// </summary>
+    long PlayerCredits = 0,
+    /// <summary>
+    /// The docked station's tradeable inventory. Non-null only while the player ship is
+    /// actually docked to a station; null otherwise.
+    /// </summary>
+    StationTradeSnapshot? DockedStationTrade = null);
