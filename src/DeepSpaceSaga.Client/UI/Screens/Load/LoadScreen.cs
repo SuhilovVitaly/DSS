@@ -7,16 +7,18 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Load;
 
 /// <summary>
-/// Modal overlay listing save slots, with LOAD / two-stage DELETE icon actions per row
-/// (Images/UI/GameLoadScreen) and a CLOSE icon in the panel's top-right corner.
-/// Structural port of <see cref="Save.SaveScreen"/> (dim overlay, panel, scrollable row
-/// list, pure <see cref="LoadLayout.HitTest"/> geometry), minus the New Save/Overwrite/
-/// text-input machinery Load has no use for.
+/// Modal overlay listing save slots. Redesigned after
+/// <see cref="ScenarioSelect.ScenarioSelectScreen"/>: clicking a row only selects it
+/// (highlighted, does not load/delete); a single LOAD / two-stage DELETE button pair at the
+/// panel's bottom then acts on whichever row is currently selected — replacing the previous
+/// per-row LOAD/DELETE icon buttons. A CLOSE icon still sits in the panel's top-right corner
+/// (unaffected by this redesign — it was never per-row).
 /// Unlike Save (which excludes the reserved <see cref="SaveSlots.Quicksave"/> slot from
 /// its list entirely), Load shows it — a player must be able to load their last
-/// quicksave from here — but it is never deletable: its row renders with no DELETE
-/// button and a Delete click on it is a no-op, both checked directly against
-/// <see cref="SaveSlotInfo.SlotId"/> rather than relying on the caller to filter it out.
+/// quicksave from here — but it is never deletable: DELETE is disabled while it is the
+/// selected slot, and a Delete click against it (however triggered) is a no-op, both
+/// checked directly against <see cref="SaveSlotInfo.SlotId"/> rather than relying on the
+/// caller to filter it out.
 /// <see cref="_deleteSlot"/> is injected by the caller (SkiaWindow), bound to
 /// <c>_sessionFactory.DeleteSaveSlot</c> — this class has no knowledge of the factory type.
 /// Loading itself is NOT fire-and-forget from here: a LOAD click returns
@@ -39,6 +41,9 @@ public sealed class LoadScreen : IScreen
     private IReadOnlyList<SaveSlotInfo> _slots = Array.Empty<SaveSlotInfo>();
     private int _scrollOffset;
 
+    /// <summary>Absolute index into <see cref="_slots"/> of the row LOAD/DELETE currently act on, or -1 if none.</summary>
+    private int _selectedIndex = -1;
+
     private int _deleteConfirmIndex = -1;
     private long _deleteConfirmStartedAtMs;
 
@@ -46,6 +51,8 @@ public sealed class LoadScreen : IScreen
     private int _screenHeight;
 
     private LoadZone _hoveredZone = LoadZone.None;
+
+    /// <summary>Absolute index of the hovered row, meaningful only when <see cref="_hoveredZone"/> is Row.</summary>
     private int _hoveredRowIndex = -1;
 
     /// <summary>
@@ -55,6 +62,26 @@ public sealed class LoadScreen : IScreen
     /// the same call frame as the click dispatch — see the type doc comment.
     /// </summary>
     public string? LastRequestedSlotId { get; private set; }
+
+    /// <summary>
+    /// Panel background at the exact 700×600 panel size. Loaded once and shared by every
+    /// LoadScreen instance; falls back to MenuStyle.DrawPanel's plain fill if the file is
+    /// missing.
+    /// </summary>
+    private static readonly SKBitmap? BackgroundImage =
+        LoadImage("Images/UI/window-background-700x600.png");
+
+    /// <summary>True if the background PNG file was found and decoded at startup.</summary>
+    internal static bool HasLoadedBackground => BackgroundImage is not null;
+
+    private static readonly SKPaint _titleTextPaint = new()
+    {
+        Color = MenuStyle.ColorText,
+        TextSize = MenuStyle.TitleFontSize,
+        IsAntialias = true,
+        TextAlign = SKTextAlign.Center,
+        Typeface = MenuStyle.TypefaceHumaroid
+    };
 
     private static readonly SKPaint _rowTextPaint = new()
     {
@@ -83,14 +110,28 @@ public sealed class LoadScreen : IScreen
         Typeface = MenuStyle.TypefaceBold
     };
 
+    /// <summary>Selection is shown as a full-height accent line down the row's left edge — same
+    /// convention/color as <see cref="ScenarioSelect.ScenarioSelectScreen"/>'s row selection.</summary>
+    private static readonly SKPaint _selectedRowIndicator = new()
+    {
+        Color = new SKColor(0xFF, 0x84, 0x04),
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 2f
+    };
+
+    /// <summary>Hover outline for an unselected row — rows have no fill (transparent over the
+    /// content panel); hover/selection is shown by outline alone.</summary>
+    private static readonly SKPaint _hoveredRowBorder = new()
+    {
+        Color = MenuStyle.ColorTextDim,
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 2f
+    };
+
     private const float ButtonIconPadding = 6f;
 
     private static readonly SKBitmap? _closeIcon = LoadImage("Images/UI/GameLoadScreen/common.close.png");
     private static readonly SKBitmap? _closeIconActive = LoadImage("Images/UI/GameLoadScreen/common.close.active.png");
-    private static readonly SKBitmap? _loadIcon = LoadImage("Images/UI/GameLoadScreen/load.load.png");
-    private static readonly SKBitmap? _loadIconActive = LoadImage("Images/UI/GameLoadScreen/load.load.active.png");
-    private static readonly SKBitmap? _deleteIcon = LoadImage("Images/UI/GameLoadScreen/load.delete.png");
-    private static readonly SKBitmap? _deleteIconActive = LoadImage("Images/UI/GameLoadScreen/load.delete.active.png");
 
     private static SKBitmap? LoadImage(string path)
     {
@@ -99,7 +140,7 @@ public sealed class LoadScreen : IScreen
     }
 
     /// <param name="listSlots">Enumerates every save slot on disk. Called at construction and after every mutating action.</param>
-    /// <param name="deleteSlot">Delete a slot by id (second click of the two-stage per-row Delete button).</param>
+    /// <param name="deleteSlot">Delete a slot by id (second click of the two-stage DELETE button).</param>
     /// <param name="nowMs">Clock used for the delete-confirm timeout window; defaults to <see cref="Environment.TickCount64"/>. Overridable for tests.</param>
     public LoadScreen(
         Func<IReadOnlyList<SaveSlotInfo>> listSlots,
@@ -133,9 +174,9 @@ public sealed class LoadScreen : IScreen
 
         var hit = LoadLayout.HitTest(x, y, _screenWidth, _screenHeight, VisibleSlotCount);
 
-        // Two-stage delete: any click that isn't a second click on the same confirming
-        // row clears the pending confirm state back to plain DELETE.
-        if (!(hit.Zone == LoadZone.Delete && AbsoluteIndex(hit.RowIndex) == _deleteConfirmIndex))
+        // Two-stage delete: any click that isn't a second DELETE click on the still-selected
+        // row that armed it clears the pending confirm state back to plain DELETE.
+        if (!(hit.Zone == LoadZone.Delete && _selectedIndex == _deleteConfirmIndex))
             _deleteConfirmIndex = -1;
 
         switch (hit.Zone)
@@ -143,37 +184,43 @@ public sealed class LoadScreen : IScreen
             case LoadZone.Close:
                 return ScreenEvent.CloseLoadWindow;
 
-            case LoadZone.Load:
+            case LoadZone.Row:
             {
                 int index = AbsoluteIndex(hit.RowIndex);
-                if (index < 0 || index >= _slots.Count)
+                if (index >= 0 && index < _slots.Count)
+                    _selectedIndex = index;
+                return ScreenEvent.None;
+            }
+
+            case LoadZone.Load:
+            {
+                if (_selectedIndex < 0 || _selectedIndex >= _slots.Count)
                     return ScreenEvent.None;
 
-                LastRequestedSlotId = _slots[index].SlotId;
+                LastRequestedSlotId = _slots[_selectedIndex].SlotId;
                 return ScreenEvent.LoadSlotRequested;
             }
 
             case LoadZone.Delete:
             {
-                int index = AbsoluteIndex(hit.RowIndex);
-                if (index < 0 || index >= _slots.Count)
+                if (_selectedIndex < 0 || _selectedIndex >= _slots.Count)
                     return ScreenEvent.None;
 
-                if (_slots[index].SlotId == SaveSlots.Quicksave)
+                if (_slots[_selectedIndex].SlotId == SaveSlots.Quicksave)
                     return ScreenEvent.None; // protected slot — never deletable from here
 
                 bool isConfirmedSecondClick =
-                    _deleteConfirmIndex == index && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
+                    _deleteConfirmIndex == _selectedIndex && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
 
                 if (isConfirmedSecondClick)
                 {
-                    _deleteSlot(_slots[index].SlotId);
+                    _deleteSlot(_slots[_selectedIndex].SlotId);
                     _deleteConfirmIndex = -1;
                     RefreshSlots();
                 }
                 else
                 {
-                    _deleteConfirmIndex = index;
+                    _deleteConfirmIndex = _selectedIndex;
                     _deleteConfirmStartedAtMs = _nowMs();
                 }
                 return ScreenEvent.None;
@@ -210,15 +257,22 @@ public sealed class LoadScreen : IScreen
         float pl = LoadLayout.PanelLeft(width);
         float pt = LoadLayout.PanelTop(height);
         var panelRect = new SKRect(pl, pt, pl + LoadLayout.PanelWidth, pt + LoadLayout.PanelHeight);
-        MenuStyle.DrawPanel(canvas, panelRect);
+        if (BackgroundImage is not null)
+            canvas.DrawBitmap(BackgroundImage, panelRect);
+        else
+            MenuStyle.DrawPanel(canvas, panelRect);
 
         float cx = pl + LoadLayout.PanelWidth / 2f;
-        canvas.DrawText("LOAD GAME", cx, pt + LoadLayout.TitleY, MenuStyle.TextTitle);
+        canvas.DrawText("LOAD GAME", cx, pt + LoadLayout.TitleY, _titleTextPaint);
+
+        ImagePanel.Draw(canvas, CombinedRect(pl, pt, LoadLayout.ContentPanelRect()));
 
         DrawSlotList(canvas, pl, pt);
         if (_slots.Count > LoadLayout.VisibleRows)
             DrawScrollbar(canvas, pl, pt);
-        DrawIconTextButton(canvas, CombinedRect(pl, pt, LoadLayout.CloseButtonRect()), "CLOSE", LoadZone.Close, -1, _closeIcon, _closeIconActive);
+
+        DrawActionButtons(canvas, pl, pt);
+        DrawIconTextButton(canvas, CombinedRect(pl, pt, LoadLayout.CloseButtonRect()), "CLOSE", LoadZone.Close, _closeIcon, _closeIconActive);
     }
 
     /// <summary>Only rendered when the slot list overflows <see cref="LoadLayout.VisibleRows"/>; scrolling itself works via <see cref="OnMouseWheel"/> regardless.</summary>
@@ -236,52 +290,67 @@ public sealed class LoadScreen : IScreen
     {
         for (int i = 0; i < VisibleSlotCount; i++)
         {
-            var slot = _slots[_scrollOffset + i];
-            var row = LoadLayout.RowRect(i);
-            var rowRect = CombinedRect(panelLeft, panelTop, row);
+            int absoluteIndex = _scrollOffset + i;
+            var slot = _slots[absoluteIndex];
+            var rowRect = CombinedRect(panelLeft, panelTop, LoadLayout.RowRect(i));
 
-            canvas.DrawRect(rowRect, MenuStyle.ButtonFillNormal);
-            canvas.DrawRect(rowRect, MenuStyle.ButtonBorder);
+            // Rows have no fill — fully transparent over the content panel. The selected
+            // row gets a full-height accent line down its left edge (always, even while
+            // hovered); any other row gets a dim outline on hover; otherwise nothing.
+            bool isSelected = absoluteIndex == _selectedIndex;
+            bool isHovered = _hoveredZone == LoadZone.Row && AbsoluteIndex(_hoveredRowIndex) == absoluteIndex;
 
+            if (isSelected)
+                canvas.DrawLine(rowRect.Left, rowRect.Top, rowRect.Left, rowRect.Bottom, _selectedRowIndicator);
+            else if (isHovered)
+                canvas.DrawRect(rowRect, _hoveredRowBorder);
+
+            canvas.Save();
+            canvas.ClipRect(rowRect);
             canvas.DrawText(slot.DisplayName, rowRect.Left + 10f, rowRect.MidY - 4f, _rowTextPaint);
             canvas.DrawText(
                 slot.SavedAtUtc.ToLocalTime().ToString("g"),
                 rowRect.Left + 10f, rowRect.MidY + 14f, _rowDatePaint);
-
-            DrawIconTextButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.LoadButtonRect(i)), "LOAD", LoadZone.Load, i, _loadIcon, _loadIconActive);
-
-            if (slot.SlotId != SaveSlots.Quicksave)
-            {
-                int absoluteIndex = _scrollOffset + i;
-                bool isConfirming = _deleteConfirmIndex == absoluteIndex && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
-                DrawIconTextButton(canvas, CombinedRect(panelLeft, panelTop, LoadLayout.DeleteButtonRect(i)),
-                    isConfirming ? "CONFIRM?" : "DELETE", LoadZone.Delete, i, _deleteIcon, _deleteIconActive, forceActive: isConfirming);
-            }
+            canvas.Restore();
         }
     }
 
+    private void DrawActionButtons(SKCanvas canvas, float pl, float pt)
+    {
+        bool hasSelection = _selectedIndex >= 0 && _selectedIndex < _slots.Count;
+        bool isQuicksaveSelected = hasSelection && _slots[_selectedIndex].SlotId == SaveSlots.Quicksave;
+        bool isConfirming = hasSelection && _deleteConfirmIndex == _selectedIndex
+            && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
+
+        var deleteRect = CombinedRect(pl, pt, LoadLayout.DeleteButtonRect());
+        var deleteState = !hasSelection || isQuicksaveSelected
+            ? ButtonState.Disabled
+            : _hoveredZone == LoadZone.Delete ? ButtonState.Hovered : ButtonState.Normal;
+        ImageButton.Draw(canvas, deleteRect, isConfirming ? "CONFIRM?" : "DELETE", deleteState, MenuStyle.TypefaceHumaroid);
+
+        var loadRect = CombinedRect(pl, pt, LoadLayout.LoadButtonRect());
+        var loadState = !hasSelection
+            ? ButtonState.Disabled
+            : _hoveredZone == LoadZone.Load ? ButtonState.Hovered : ButtonState.Normal;
+        ImageButton.Draw(canvas, loadRect, "LOAD", loadState, MenuStyle.TypefaceHumaroid);
+    }
+
     /// <summary>
-    /// Draws a button combining the previous fill/border/label chrome with an
+    /// Draws the CLOSE button combining the previous fill/border/label chrome with its
     /// <c>Images/UI/GameLoadScreen</c> icon to the left of the label: fill+border swap on
-    /// hover (as before), and the label's icon swaps to its "active" bitmap (baked-in
-    /// orange border) on that same hover or when <paramref name="forceActive"/> is set
-    /// (the two-stage delete confirm window, which must read as active even without
-    /// hover). The icon is pinned to the button's left edge (fixed-width buttons, so a
-    /// centered icon+label group would drift depending on label length); the label
-    /// follows immediately after it.
-    /// <paramref name="rowIndex"/> is -1 for non-row zones (Close), matching the -1
-    /// default on <see cref="LoadHit.RowIndex"/> for those zones.
+    /// hover, and the icon swaps to its "active" bitmap (baked-in orange border) on that
+    /// same hover. Unaffected by the LOAD/DELETE redesign — CLOSE was never per-row.
     /// </summary>
     private void DrawIconTextButton(
-        SKCanvas canvas, SKRect rect, string text, LoadZone zone, int rowIndex,
-        SKBitmap? iconNormal, SKBitmap? iconActive, bool forceActive = false)
+        SKCanvas canvas, SKRect rect, string text, LoadZone zone,
+        SKBitmap? iconNormal, SKBitmap? iconActive)
     {
-        bool isHovered = _hoveredZone == zone && _hoveredRowIndex == rowIndex;
+        bool isHovered = _hoveredZone == zone;
 
         canvas.DrawRect(rect, isHovered ? MenuStyle.ButtonFillHover : MenuStyle.ButtonFillNormal);
         canvas.DrawRect(rect, MenuStyle.ButtonBorder);
 
-        var icon = (isHovered || forceActive) ? iconActive : iconNormal;
+        var icon = isHovered ? iconActive : iconNormal;
         float iconSize = icon is not null ? rect.Height - ButtonIconPadding * 2f : 0f;
         float gap = icon is not null ? ButtonIconPadding : 0f;
         float textX = rect.Left + ButtonIconPadding + iconSize + gap;
@@ -300,11 +369,14 @@ public sealed class LoadScreen : IScreen
     private static SKRect CombinedRect(float panelLeft, float panelTop, (float X, float Y, float W, float H) local) =>
         new(panelLeft + local.X, panelTop + local.Y, panelLeft + local.X + local.W, panelTop + local.Y + local.H);
 
+    /// <summary>Reloads the slot list and defaults the selection to the first slot — mirrors
+    /// <see cref="ScenarioSelect.ScenarioSelectScreen"/>'s RefreshScenarios.</summary>
     private void RefreshSlots()
     {
         _slots = _listSlots() ?? Array.Empty<SaveSlotInfo>();
         int maxOffset = Math.Max(0, _slots.Count - LoadLayout.VisibleRows);
         _scrollOffset = Math.Clamp(_scrollOffset, 0, maxOffset);
+        _selectedIndex = _slots.Count > 0 ? 0 : -1;
     }
 
     private int VisibleSlotCount => Math.Max(0, Math.Min(LoadLayout.VisibleRows, _slots.Count - _scrollOffset));

@@ -57,6 +57,23 @@ public sealed class TradeScreen : IScreen
     private int _hoveredInventoryRow = -1;
     private int _hoveredCargoRow = -1;
 
+    /// <summary>
+    /// Panel background at the exact 1400×900 panel size — loaded once and shared by
+    /// every TradeScreen instance; falls back to MenuStyle.DrawPanel's plain fill if the
+    /// file is missing.
+    /// </summary>
+    private static readonly SKBitmap? BackgroundImage =
+        LoadImage("Images/UI/window-background-1400x900.png");
+
+    private static SKBitmap? LoadImage(string path)
+    {
+        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
+        catch { return null; }
+    }
+
+    /// <summary>True if the background PNG file was found and decoded at startup.</summary>
+    internal static bool HasLoadedBackground => BackgroundImage is not null;
+
     /// <summary>Currently selected station item for Buy/Sell — null means "nothing selected yet".</summary>
     private string? _selectedItemTypeId;
 
@@ -95,6 +112,10 @@ public sealed class TradeScreen : IScreen
         _hoveredButton = TradeButton.None;
         _hoveredInventoryRow = -1;
         _hoveredCargoRow = -1;
+
+        var trade = _buffer.Latest?.Snapshot?.DockedStationTrade;
+        if (trade is not null && !trade.Items.IsDefaultOrEmpty)
+            _selectedItemTypeId = trade.Items[0].ItemTypeId;
     }
 
     public void OnDeactivated() { }
@@ -355,7 +376,7 @@ public sealed class TradeScreen : IScreen
     private static readonly SKPaint _titlePaint = new()
     {
         Color = MenuStyle.ColorText, TextSize = MenuStyle.TitleFontSize, IsAntialias = true,
-        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceHumaroid
+        TextAlign = SKTextAlign.Center, Typeface = MenuStyle.TypefaceHumaroid
     };
 
     private static readonly SKPaint _subtitlePaint = new()
@@ -431,15 +452,18 @@ public sealed class TradeScreen : IScreen
         float pl = TradeLayout.PanelLeft(width);
         float pt = TradeLayout.PanelTop(height);
         var panelRect = new SKRect(pl, pt, pl + TradeLayout.PanelWidth, pt + TradeLayout.PanelHeight);
-        MenuStyle.DrawPanel(canvas, panelRect);
+        if (BackgroundImage is not null)
+            canvas.DrawBitmap(BackgroundImage, panelRect);
+        else
+            MenuStyle.DrawPanel(canvas, panelRect);
 
         DrawHeader(canvas, pl, pt, snapshot);
-        DrawCloseButton(canvas, pl, pt);
 
         var trade = snapshot?.DockedStationTrade;
         if (snapshot is null || trade is null)
         {
             DrawNotDockedStatus(canvas, pl, pt);
+            DrawExitButton(canvas, pl, pt);
             return;
         }
 
@@ -454,11 +478,12 @@ public sealed class TradeScreen : IScreen
         DrawCargoColumn(canvas, pl, pt, containerModule);
         DrawFuelPanel(canvas, pl, pt, engineModule);
         DrawSummaryRow(canvas, pl, pt, snapshot, trade);
+        DrawExitButton(canvas, pl, pt); // drawn last: DrawSummaryRow's ImagePanel would otherwise paint over it
     }
 
     private void DrawHeader(SKCanvas canvas, float pl, float pt, AuthoritativeSnapshot? snapshot)
     {
-        canvas.DrawText(Localization.Get("Trade.Title"), pl + TradeLayout.HeaderLeftX, pt + TradeLayout.TitleBaselineY, _titlePaint);
+        canvas.DrawText(Localization.Get("Trade.Title"), pl + TradeLayout.PanelWidth / 2f, pt + TradeLayout.TitleBaselineY, _titlePaint);
 
         string subtitle;
         if (snapshot?.DockedStationTrade is { } trade)
@@ -476,12 +501,11 @@ public sealed class TradeScreen : IScreen
         canvas.DrawText(subtitle, pl + TradeLayout.HeaderLeftX, pt + TradeLayout.SubtitleBaselineY, _subtitlePaint);
     }
 
-    private void DrawCloseButton(SKCanvas canvas, float panelLeft, float panelTop)
+    private void DrawExitButton(SKCanvas canvas, float pl, float pt)
     {
-        var (left, top, right, bottom) = TradeLayout.CloseButtonLocalRect();
-        var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
-
-        MenuStyle.DrawButton(canvas, rect, "×", _hoveredButton == TradeButton.Close ? ButtonState.Hovered : ButtonState.Normal);
+        var rect = CombinedRect(pl, pt, TradeLayout.ExitButtonRect());
+        var state = _hoveredButton == TradeButton.Close ? ButtonState.Hovered : ButtonState.Normal;
+        ImageButton.Draw(canvas, rect, Localization.Get("Trade.Exit"), state, MenuStyle.TypefaceHumaroid);
     }
 
     private void DrawNotDockedStatus(SKCanvas canvas, float pl, float pt)
@@ -664,7 +688,8 @@ public sealed class TradeScreen : IScreen
         long transactionTotal = selectedItem?.UnitPriceCredits * _quantity ?? 0;
         long projectedBalance = snapshot.PlayerCredits - transactionTotal;
 
-        float blockWidth = (summaryRect.Width - TradeLayout.CancelButtonWidth - TradeLayout.CancelButtonMargin - 2 * TradeLayout.SummaryPadding) / 3f;
+        float blockWidth = (summaryRect.Width - TradeLayout.CancelButtonWidth - TradeLayout.ExitButtonWidth - TradeLayout.ExitButtonGap
+            - TradeLayout.CancelButtonMargin - 2 * TradeLayout.SummaryPadding) / 3f;
         float x0 = summaryRect.Left + TradeLayout.SummaryPadding;
 
         DrawSummaryValue(canvas, x0, summaryRect.Top + TradeLayout.SummaryValuesBaselineY, Localization.Get("Trade.CurrentCredits"), snapshot.PlayerCredits.ToString());

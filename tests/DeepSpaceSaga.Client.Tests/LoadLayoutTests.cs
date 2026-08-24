@@ -1,11 +1,11 @@
 using DeepSpaceSaga.Client.UI.Screens.Load;
-using DeepSpaceSaga.Client.UI.Screens.Save;
 
 namespace DeepSpaceSaga.Client.Tests;
 
 /// <summary>
 /// Pure hit-test geometry tests for <see cref="LoadLayout"/> — no SKCanvas, no LoadScreen.
-/// Mirrors <see cref="SaveLayoutTests"/>.
+/// Mirrors <see cref="ScenarioSelectLayoutTests"/> after the redesign that replaced
+/// per-row LOAD/DELETE buttons with selectable rows plus a single LOAD/DELETE pair.
 /// </summary>
 public class LoadLayoutTests
 {
@@ -34,46 +34,45 @@ public class LoadLayoutTests
     }
 
     [Fact]
-    public void HitTest_Load_returns_row_index()
+    public void HitTest_Load_returns_Load()
     {
-        var (x, y) = Center(LoadLayout.LoadButtonRect(2));
-        var hit = LoadLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleSlotCount: 3);
+        var (x, y) = Center(LoadLayout.LoadButtonRect());
+        var hit = LoadLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleSlotCount: 0);
         Assert.Equal(LoadZone.Load, hit.Zone);
+    }
+
+    [Fact]
+    public void HitTest_Delete_returns_Delete()
+    {
+        var (x, y) = Center(LoadLayout.DeleteButtonRect());
+        var hit = LoadLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleSlotCount: 0);
+        Assert.Equal(LoadZone.Delete, hit.Zone);
+    }
+
+    [Fact]
+    public void HitTest_Row_returns_its_visible_row_index()
+    {
+        var (x, y) = Center(LoadLayout.RowRect(2));
+        var hit = LoadLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleSlotCount: 3);
+        Assert.Equal(LoadZone.Row, hit.Zone);
         Assert.Equal(2, hit.RowIndex);
     }
 
     [Fact]
-    public void HitTest_Delete_returns_row_index()
+    public void HitTest_row_beyond_visibleSlotCount_is_not_hit()
     {
-        var (x, y) = Center(LoadLayout.DeleteButtonRect(1));
-        var hit = LoadLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleSlotCount: 3);
-        Assert.Equal(LoadZone.Delete, hit.Zone);
-        Assert.Equal(1, hit.RowIndex);
+        // Only 1 slot visible — row index 1's rect must not register a Row hit.
+        var (x, y) = Center(LoadLayout.RowRect(1));
+        var hit = LoadLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleSlotCount: 1);
+        Assert.Equal(LoadZone.None, hit.Zone);
     }
 
     [Fact]
-    public void HitTest_row_buttons_beyond_visibleSlotCount_are_not_hit()
+    public void LoadButton_sits_right_of_DeleteButton()
     {
-        // Only 1 slot visible — row index 1's Load/Delete rects must not register a hit.
-        var (lx, ly) = Center(LoadLayout.LoadButtonRect(1));
-        var hitLoad = LoadLayout.HitTest(lx, ly, ScreenWidth, ScreenHeight, visibleSlotCount: 1);
-        Assert.Equal(LoadZone.None, hitLoad.Zone);
-
-        var (dx, dy) = Center(LoadLayout.DeleteButtonRect(1));
-        var hitDelete = LoadLayout.HitTest(dx, dy, ScreenWidth, ScreenHeight, visibleSlotCount: 1);
-        Assert.Equal(LoadZone.None, hitDelete.Zone);
-    }
-
-    [Fact]
-    public void HitTest_Load_and_Delete_do_not_overlap()
-    {
-        var (lx, ly) = Center(LoadLayout.LoadButtonRect(0));
-        var hitAtLoadCenter = LoadLayout.HitTest(lx, ly, ScreenWidth, ScreenHeight, visibleSlotCount: 1);
-        Assert.Equal(LoadZone.Load, hitAtLoadCenter.Zone);
-
-        var (dx, dy) = Center(LoadLayout.DeleteButtonRect(0));
-        var hitAtDeleteCenter = LoadLayout.HitTest(dx, dy, ScreenWidth, ScreenHeight, visibleSlotCount: 1);
-        Assert.Equal(LoadZone.Delete, hitAtDeleteCenter.Zone);
+        var delete = LoadLayout.DeleteButtonRect();
+        var load = LoadLayout.LoadButtonRect();
+        Assert.True(load.X >= delete.X + delete.W);
     }
 
     [Fact]
@@ -84,21 +83,19 @@ public class LoadLayoutTests
     }
 
     [Fact]
-    public void Panel_same_size_as_SaveLayout()
+    public void ContentPanel_sits_above_the_action_buttons_with_no_overlap()
     {
-        // Load and Save share the same panel footprint per the story's design ("in the
-        // same style" as Save).
-        Assert.Equal(SaveLayout.PanelWidth, LoadLayout.PanelWidth);
-        Assert.Equal(SaveLayout.PanelHeight, LoadLayout.PanelHeight);
+        var content = LoadLayout.ContentPanelRect();
+        var delete = LoadLayout.DeleteButtonRect();
+        Assert.True(content.Y + content.H <= delete.Y + 0.01f);
     }
 
     [Fact]
-    public void RowButton_size_matches_SaveLayout()
+    public void RowList_fits_within_the_content_panel()
     {
-        // The LOAD/DELETE button columns must line up visually with Save's
-        // OVERWRITE/DELETE columns, so both overlays share one fixed button size.
-        Assert.Equal(SaveLayout.RowButtonWidth, LoadLayout.RowButtonWidth);
-        Assert.Equal(SaveLayout.RowButtonHeight, LoadLayout.RowButtonHeight);
+        var content = LoadLayout.ContentPanelRect();
+        var lastRow = LoadLayout.RowRect(LoadLayout.VisibleRows - 1);
+        Assert.True(lastRow.Y + lastRow.H <= content.Y + content.H + 0.01f);
     }
 
     // --- Scrollbar geometry (shown only when slots.Count > VisibleRows) ---
@@ -137,11 +134,10 @@ public class LoadLayoutTests
     }
 
     [Fact]
-    public void ScrollbarTrack_does_not_overlap_row_buttons()
+    public void ScrollbarTrack_does_not_overlap_the_row_list()
     {
-        // The track sits in the right margin strip, clear of where DeleteButtonRect ends.
         var track = LoadLayout.ScrollbarTrackRect();
-        var deleteButton = LoadLayout.DeleteButtonRect(0);
-        Assert.True(track.X >= deleteButton.X + deleteButton.W);
+        var row = LoadLayout.RowRect(0);
+        Assert.True(track.X >= row.X + row.W);
     }
 }

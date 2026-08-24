@@ -6,14 +6,18 @@ public enum LoadZone
     None,
     Close,
     Load,
-    Delete
+    Delete,
+    /// <summary>A save-slot row — selects it (see <see cref="LoadHit.RowIndex"/>); does not load it.</summary>
+    Row
 }
 
 /// <summary>
-/// Result of a <see cref="LoadLayout.HitTest"/>. <see cref="RowIndex"/> is only
-/// meaningful for <see cref="LoadZone.Load"/>/<see cref="LoadZone.Delete"/> and is
-/// relative to the currently visible window (the caller adds the scroll offset to get
-/// the absolute slot index).
+/// Result of a <see cref="LoadLayout.HitTest"/>. <see cref="RowIndex"/> is only meaningful
+/// for <see cref="LoadZone.Row"/> and is relative to the currently visible window (the
+/// caller adds the scroll offset to get the absolute slot index) — slot rows are all the
+/// same fixed height, unlike <see cref="ScenarioSelect.ScenarioSelectLayout"/>'s
+/// description-wrapped variable-height rows, so Layout can resolve visible-row hits itself
+/// without the caller precomputing positions.
 /// </summary>
 public readonly record struct LoadHit(LoadZone Zone, int RowIndex = -1)
 {
@@ -22,9 +26,10 @@ public readonly record struct LoadHit(LoadZone Zone, int RowIndex = -1)
 
 /// <summary>
 /// Layout and hit-test geometry for the Load overlay panel. Pure geometry — no SKCanvas
-/// dependency — following the same pattern as <see cref="Save.SaveLayout"/>. Structurally
-/// simpler than Save: no New Save/Overwrite row, so the slot list starts right below the
-/// title and each row shows a LOAD button plus the same two-stage in-place DELETE button.
+/// dependency. Redesigned after <see cref="ScenarioSelect.ScenarioSelectLayout"/>: rows are
+/// selectable (click to select, does not act) and a single LOAD/DELETE button pair at the
+/// panel's bottom acts on whichever row is currently selected — replacing the previous
+/// design's LOAD/DELETE buttons repeated on every row.
 /// </summary>
 public static class LoadLayout
 {
@@ -35,17 +40,19 @@ public static class LoadLayout
 
     public const float TitleY = 50f;
 
-    public const float ListTop = 110f;
+    /// <summary>Breathing room between the content panel's border artwork and the row list it holds.</summary>
+    public const float ContentPadding = 20f;
+    public const float ContentPanelY = 90f;
+
+    public const float ListTop = ContentPanelY + ContentPadding;
     public const float RowHeight = 50f;
     public const float RowSpacing = 6f;
     public const int VisibleRows = 8;
 
-    // Matches Save.SaveLayout.RowButtonWidth/Height so the two overlays' button
-    // columns line up visually — sized for Save's longest row label ("OVERWRITE",
-    // measured ~96.6px at ButtonFontSize 14 bold), which is wider than Load needs.
-    public const float RowButtonWidth = 160f;
-    public const float RowButtonHeight = 40f;
-    public const float RowButtonGap = 10f;
+    public const float ActionButtonWidth = 140f;
+    public const float ActionButtonHeight = 44f;
+    public const float ActionButtonGap = 20f;
+    public const float ActionButtonBottomMargin = 24f;
 
     public const float CloseButtonWidth = 100f;
     public const float CloseButtonHeight = 32f;
@@ -60,6 +67,16 @@ public static class LoadLayout
 
     public static float ListWidth => PanelWidth - 2 * Margin;
 
+    /// <summary>
+    /// The content panel (nine-sliced background) holding the row list — spans from just
+    /// below the title down to just above the LOAD/DELETE button row.
+    /// </summary>
+    public static (float X, float Y, float W, float H) ContentPanelRect()
+    {
+        float bottom = DeleteButtonRect().Y - ActionButtonGap;
+        return (Margin, ContentPanelY, ListWidth, bottom - ContentPanelY);
+    }
+
     /// <summary>Top-left-relative rect for a visible row (before scroll offset is applied by the caller).</summary>
     public static (float X, float Y, float W, float H) RowRect(int visibleRowIndex)
     {
@@ -67,20 +84,24 @@ public static class LoadLayout
         return (Margin, y, ListWidth, RowHeight - RowSpacing);
     }
 
-    public static (float X, float Y, float W, float H) LoadButtonRect(int visibleRowIndex)
+    /// <summary>
+    /// DELETE button rect — secondary/destructive action, on the left of the pair (mirrors
+    /// <see cref="ScenarioSelect.ScenarioSelectLayout.BackButtonRect"/>'s "secondary action
+    /// left, primary action right" convention). Acts on whichever row is currently selected.
+    /// </summary>
+    public static (float X, float Y, float W, float H) DeleteButtonRect()
     {
-        var row = RowRect(visibleRowIndex);
-        float x = row.X + row.W - (RowButtonWidth * 2 + RowButtonGap);
-        float y = row.Y + (row.H - RowButtonHeight) / 2f;
-        return (x, y, RowButtonWidth, RowButtonHeight);
+        float totalWidth = 2 * ActionButtonWidth + ActionButtonGap;
+        float x = (PanelWidth - totalWidth) / 2f;
+        float y = PanelHeight - ActionButtonBottomMargin - ActionButtonHeight;
+        return (x, y, ActionButtonWidth, ActionButtonHeight);
     }
 
-    public static (float X, float Y, float W, float H) DeleteButtonRect(int visibleRowIndex)
+    /// <summary>LOAD button rect — primary action, right of DELETE. Acts on the selected row.</summary>
+    public static (float X, float Y, float W, float H) LoadButtonRect()
     {
-        var row = RowRect(visibleRowIndex);
-        float x = row.X + row.W - RowButtonWidth;
-        float y = row.Y + (row.H - RowButtonHeight) / 2f;
-        return (x, y, RowButtonWidth, RowButtonHeight);
+        var delete = DeleteButtonRect();
+        return (delete.X + ActionButtonWidth + ActionButtonGap, delete.Y, ActionButtonWidth, ActionButtonHeight);
     }
 
     /// <summary>Top-right corner of the panel, matching a title-bar close button.</summary>
@@ -89,9 +110,8 @@ public static class LoadLayout
 
     /// <summary>
     /// Vertical track spanning the full visible row list, in the right margin strip just
-    /// past where the row buttons end (<see cref="RowRect"/>'s right edge is
-    /// <c>PanelWidth - Margin</c>, well clear of this). Only meaningful — and only drawn
-    /// by the caller — when there are more slots than <see cref="VisibleRows"/>.
+    /// past where the row list ends. Only meaningful — and only drawn by the caller — when
+    /// there are more slots than <see cref="VisibleRows"/>.
     /// </summary>
     public static (float X, float Y, float W, float H) ScrollbarTrackRect() =>
         (PanelWidth - Margin + ScrollbarGap, ListTop, ScrollbarWidth, VisibleRows * RowHeight - RowSpacing);
@@ -129,13 +149,15 @@ public static class LoadLayout
 
         if (IsInRect(lx, ly, CloseButtonRect()))
             return new LoadHit(LoadZone.Close);
+        if (IsInRect(lx, ly, DeleteButtonRect()))
+            return new LoadHit(LoadZone.Delete);
+        if (IsInRect(lx, ly, LoadButtonRect()))
+            return new LoadHit(LoadZone.Load);
 
         for (int i = 0; i < visibleSlotCount; i++)
         {
-            if (IsInRect(lx, ly, LoadButtonRect(i)))
-                return new LoadHit(LoadZone.Load, i);
-            if (IsInRect(lx, ly, DeleteButtonRect(i)))
-                return new LoadHit(LoadZone.Delete, i);
+            if (IsInRect(lx, ly, RowRect(i)))
+                return new LoadHit(LoadZone.Row, i);
         }
 
         return LoadHit.None;

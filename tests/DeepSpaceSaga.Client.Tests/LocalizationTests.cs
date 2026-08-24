@@ -25,7 +25,7 @@ public class LocalizationTests
         "Trade.Title", "Trade.Docked", "Trade.NotDocked", "Trade.Credits", "Trade.Cargo",
         "Trade.Fuel", "Trade.StationInventory", "Trade.Transaction", "Trade.YourCargo",
         "Trade.UnitPrice", "Trade.Quantity", "Trade.TotalPrice", "Trade.Buy", "Trade.Sell",
-        "Trade.Refuel", "Trade.Cancel", "Trade.AccountSummary", "Trade.CurrentCredits",
+        "Trade.Refuel", "Trade.Cancel", "Trade.Exit", "Trade.AccountSummary", "Trade.CurrentCredits",
         "Trade.TransactionTotal", "Trade.ProjectedBalance", "Trade.SelectItemPrompt",
         "Trade.ItemEnergyCells", "Trade.ItemFuel", "Trade.ItemIce",
         "Trade.StatusBuySuccess", "Trade.StatusSellSuccess", "Trade.StatusSellPartial",

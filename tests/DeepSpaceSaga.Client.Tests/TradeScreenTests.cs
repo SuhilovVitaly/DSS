@@ -28,6 +28,15 @@ public class TradeScreenTests
         screen.Render(canvas, ScreenWidth, ScreenHeight);
     }
 
+    [Fact]
+    public void Background_image_is_loaded()
+    {
+        // Regression: the window-background-1400x900.png asset must resolve at the
+        // client's working directory and be registered in the .csproj with
+        // CopyToOutputDirectory, or the panel silently falls back to a plain fill.
+        Assert.True(TradeScreen.HasLoadedBackground);
+    }
+
     // ── Open/close (structural twin of the old placeholder tests) ─────────────
 
     [Fact]
@@ -41,16 +50,12 @@ public class TradeScreenTests
     }
 
     [Fact]
-    public async Task Close_button_click_returns_CloseTrade()
+    public async Task Exit_button_click_returns_CloseTrade()
     {
         await using var fixture = CreateDockedFixture();
         RenderScreen(fixture.Screen);
 
-        var (left, top, right, bottom) = TradeLayout.CloseButtonLocalRect();
-        float cx = TradeLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
-        float cy = TradeLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
-
-        var result = fixture.Screen.OnMouseDown(cx, cy);
+        var result = ClickButtonAndGetEvent(fixture.Screen, TradeLayout.ExitButtonRect());
         Assert.Equal(ScreenEvent.CloseTrade, result);
     }
 
@@ -99,6 +104,30 @@ public class TradeScreenTests
     }
 
     // ── Docked with inventory — selection, stepper, sends ───────────────────────
+
+    [Fact]
+    public async Task OnActivated_preselects_the_first_station_inventory_item()
+    {
+        await using var fixture = CreateDockedFixture();
+
+        fixture.Screen.OnActivated();
+
+        Assert.Equal("item.energy-cells", fixture.Screen.SelectedItemTypeId);
+        Assert.Equal(1, fixture.Screen.Quantity);
+    }
+
+    [Fact]
+    public async Task OnActivated_does_not_throw_when_not_docked()
+    {
+        var connection = new RecordingConnection();
+        var handle = new GameSessionHandle(connection);
+        var screen = new TradeScreen(handle.Buffer, handle);
+
+        screen.OnActivated(); // must not throw even though Buffer.Latest is null
+
+        Assert.Null(screen.SelectedItemTypeId);
+        await handle.DisposeAsync();
+    }
 
     [Fact]
     public async Task Clicking_a_station_inventory_row_selects_that_item()
@@ -240,11 +269,14 @@ public class TradeScreenTests
         fixture.Screen.OnMouseDown(cx, cy);
     }
 
-    private static void ClickButton(TradeScreen screen, (float X, float Y, float W, float H) localRect)
+    private static void ClickButton(TradeScreen screen, (float X, float Y, float W, float H) localRect) =>
+        ClickButtonAndGetEvent(screen, localRect);
+
+    private static ScreenEvent ClickButtonAndGetEvent(TradeScreen screen, (float X, float Y, float W, float H) localRect)
     {
         float cx = TradeLayout.PanelLeft(ScreenWidth) + localRect.X + localRect.W / 2f;
         float cy = TradeLayout.PanelTop(ScreenHeight) + localRect.Y + localRect.H / 2f;
-        screen.OnMouseDown(cx, cy);
+        return screen.OnMouseDown(cx, cy);
     }
 
     private static AuthoritativeSnapshot BaseSnapshot(ulong sequence)

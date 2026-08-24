@@ -59,14 +59,24 @@ public class TradeLayoutTests
     }
 
     [Fact]
-    public void Close_button_hit_test_returns_Close()
+    public void Exit_button_hit_test_returns_Close()
     {
-        var (left, top, right, bottom) = TradeLayout.CloseButtonLocalRect();
-        float cx = TradeLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
-        float cy = TradeLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
+        var rect = TradeLayout.ExitButtonRect();
+        float cx = TradeLayout.PanelLeft(ScreenWidth) + rect.X + rect.W / 2f;
+        float cy = TradeLayout.PanelTop(ScreenHeight) + rect.Y + rect.H / 2f;
 
         var hit = TradeLayout.HitTest(cx, cy, ScreenWidth, ScreenHeight);
         Assert.Equal(TradeButton.Close, hit);
+    }
+
+    [Fact]
+    public void Exit_button_sits_left_of_cancel_button_with_no_overlap()
+    {
+        var exit = TradeLayout.ExitButtonRect();
+        var cancel = TradeLayout.CancelButtonRect();
+
+        Assert.True(exit.X + exit.W <= cancel.X + 0.01f);
+        Assert.Equal(exit.Y, cancel.Y, precision: 3);
     }
 
     [Fact]
