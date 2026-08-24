@@ -112,6 +112,10 @@ public sealed class TradeScreen : IScreen
         _hoveredButton = TradeButton.None;
         _hoveredInventoryRow = -1;
         _hoveredCargoRow = -1;
+
+        var trade = _buffer.Latest?.Snapshot?.DockedStationTrade;
+        if (trade is not null && !trade.Items.IsDefaultOrEmpty)
+            _selectedItemTypeId = trade.Items[0].ItemTypeId;
     }
 
     public void OnDeactivated() { }
@@ -454,7 +458,7 @@ public sealed class TradeScreen : IScreen
             MenuStyle.DrawPanel(canvas, panelRect);
 
         DrawHeader(canvas, pl, pt, snapshot);
-        DrawCloseButton(canvas, pl, pt);
+        DrawExitButton(canvas, pl, pt);
 
         var trade = snapshot?.DockedStationTrade;
         if (snapshot is null || trade is null)
@@ -496,12 +500,11 @@ public sealed class TradeScreen : IScreen
         canvas.DrawText(subtitle, pl + TradeLayout.HeaderLeftX, pt + TradeLayout.SubtitleBaselineY, _subtitlePaint);
     }
 
-    private void DrawCloseButton(SKCanvas canvas, float panelLeft, float panelTop)
+    private void DrawExitButton(SKCanvas canvas, float pl, float pt)
     {
-        var (left, top, right, bottom) = TradeLayout.CloseButtonLocalRect();
-        var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
-
-        MenuStyle.DrawButton(canvas, rect, "×", _hoveredButton == TradeButton.Close ? ButtonState.Hovered : ButtonState.Normal);
+        var rect = CombinedRect(pl, pt, TradeLayout.ExitButtonRect());
+        var state = _hoveredButton == TradeButton.Close ? ButtonState.Hovered : ButtonState.Normal;
+        ImageButton.Draw(canvas, rect, Localization.Get("Trade.Exit"), state, MenuStyle.TypefaceHumaroid);
     }
 
     private void DrawNotDockedStatus(SKCanvas canvas, float pl, float pt)
@@ -684,7 +687,8 @@ public sealed class TradeScreen : IScreen
         long transactionTotal = selectedItem?.UnitPriceCredits * _quantity ?? 0;
         long projectedBalance = snapshot.PlayerCredits - transactionTotal;
 
-        float blockWidth = (summaryRect.Width - TradeLayout.CancelButtonWidth - TradeLayout.CancelButtonMargin - 2 * TradeLayout.SummaryPadding) / 3f;
+        float blockWidth = (summaryRect.Width - TradeLayout.CancelButtonWidth - TradeLayout.ExitButtonWidth - TradeLayout.ExitButtonGap
+            - TradeLayout.CancelButtonMargin - 2 * TradeLayout.SummaryPadding) / 3f;
         float x0 = summaryRect.Left + TradeLayout.SummaryPadding;
 
         DrawSummaryValue(canvas, x0, summaryRect.Top + TradeLayout.SummaryValuesBaselineY, Localization.Get("Trade.CurrentCredits"), snapshot.PlayerCredits.ToString());

@@ -37,6 +37,7 @@
   "Trade.Sell": "ПРОДАТЬ",
   "Trade.Refuel": "ЗАПРАВИТЬ",
   "Trade.Cancel": "ОТМЕНА",
+  "Trade.Exit": "ВЫХОД",
   "Trade.AccountSummary": "СЧЁТ",
   "Trade.CurrentCredits": "ТЕКУЩИЕ КРЕДИТЫ",
   "Trade.TransactionTotal": "СУММА СДЕЛКИ",

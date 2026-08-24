@@ -37,6 +37,7 @@
   "Trade.Sell": "SELL",
   "Trade.Refuel": "REFUEL",
   "Trade.Cancel": "CANCEL",
+  "Trade.Exit": "EXIT",
   "Trade.AccountSummary": "ACCOUNT",
   "Trade.CurrentCredits": "CURRENT CREDITS",
   "Trade.TransactionTotal": "TRANSACTION TOTAL",

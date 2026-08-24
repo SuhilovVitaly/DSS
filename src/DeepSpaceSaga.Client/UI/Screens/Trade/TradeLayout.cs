@@ -39,9 +39,6 @@ public static class TradeLayout
     public const float TitleBaselineY = 46f;
     public const float SubtitleBaselineY = 74f;
 
-    public const float CloseButtonSize = 28f;
-    public const float CloseButtonMargin = 14f;
-
     // ── Stats row (CREDITS / CARGO / FUEL) ─────────────────────────────────────
     public const float ContentMargin = 40f;
     public const float StatsRowY = 96f;
@@ -109,18 +106,13 @@ public static class TradeLayout
     public const float CancelButtonHeight = 44f;
     public const float CancelButtonMargin = 20f;
 
+    /// <summary>Exit (leave Trade) button — a normal bottom-row button, same size as Cancel,
+    /// placed directly to its left in the summary row (see Exit_button_click_returns_CloseTrade).</summary>
+    public const float ExitButtonWidth = 140f;
+    public const float ExitButtonGap = 20f;
+
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
-
-    /// <summary>Close button rect, local to the panel (add PanelLeft/PanelTop for screen space).</summary>
-    public static (float Left, float Top, float Right, float Bottom) CloseButtonLocalRect()
-    {
-        float right = PanelWidth - CloseButtonMargin;
-        float left = right - CloseButtonSize;
-        float top = CloseButtonMargin;
-        float bottom = top + CloseButtonSize;
-        return (left, top, right, bottom);
-    }
 
     // ── Column rects, local to the panel ───────────────────────────────────────
     public static (float X, float Y, float W, float H) StationColumnRect() => (StationColumnX, ColumnsTopY, ColumnWidth, ColumnsHeight);
@@ -220,6 +212,14 @@ public static class TradeLayout
         return (x, y, CancelButtonWidth, CancelButtonHeight);
     }
 
+    /// <summary>Exit button rect — directly left of Cancel, same row/height.</summary>
+    public static (float X, float Y, float W, float H) ExitButtonRect()
+    {
+        var cancel = CancelButtonRect();
+        float x = cancel.X - ExitButtonGap - ExitButtonWidth;
+        return (x, cancel.Y, ExitButtonWidth, cancel.H);
+    }
+
     /// <summary>True when (screenX, screenY) lands inside the panel rect (screen space).</summary>
     public static bool IsInsidePanel(float screenX, float screenY, int screenWidth, int screenHeight)
     {
@@ -243,8 +243,7 @@ public static class TradeLayout
         float lx = screenX - panelLeft;
         float ly = screenY - panelTop;
 
-        var (left, top, right, bottom) = CloseButtonLocalRect();
-        if (lx >= left && lx <= right && ly >= top && ly <= bottom)
+        if (IsInRect(lx, ly, ExitButtonRect()))
             return TradeButton.Close;
 
         var stepper = QuantityStepperRect();
