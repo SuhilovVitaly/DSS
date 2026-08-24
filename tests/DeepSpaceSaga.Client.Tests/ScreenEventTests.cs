@@ -953,6 +953,15 @@ public class ScreenEventTests
     }
 
     [Fact]
+    public void Load_background_image_is_loaded()
+    {
+        // Regression: the window-background-700x600.png asset must resolve at the
+        // client's working directory and be registered in the .csproj with
+        // CopyToOutputDirectory, or the panel silently falls back to a plain fill.
+        Assert.True(LoadScreen.HasLoadedBackground);
+    }
+
+    [Fact]
     public void Load_Close_click_returns_CloseLoadWindow()
     {
         var screen = NewLoadScreen();
@@ -986,13 +995,13 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void Load_row_click_returns_LoadSlotRequested_with_the_row_SlotId_retrievable()
+    public void Load_first_slot_is_selected_by_default_so_LOAD_works_without_a_row_click()
     {
         var slots = new[] { Slot("slot-a", "Slot A", DateTime.UtcNow) };
         var screen = NewLoadScreen(slots: slots);
         TriggerLoadRender(screen);
 
-        var (x, y) = LoadCenter(LoadLayout.LoadButtonRect(0));
+        var (x, y) = LoadCenter(LoadLayout.LoadButtonRect());
         var evt = screen.OnMouseDown(x, y);
 
         Assert.Equal(ScreenEvent.LoadSlotRequested, evt);
@@ -1002,7 +1011,17 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void Load_row_click_selects_the_correct_row_among_several()
+    public void Load_LOAD_with_no_slots_returns_None()
+    {
+        var screen = NewLoadScreen();
+        TriggerLoadRender(screen);
+
+        var (x, y) = LoadCenter(LoadLayout.LoadButtonRect());
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void Load_clicking_a_row_selects_it_without_loading()
     {
         var slots = new[]
         {
@@ -1012,8 +1031,29 @@ public class ScreenEventTests
         var screen = NewLoadScreen(slots: slots);
         TriggerLoadRender(screen);
 
-        var (x, y) = LoadCenter(LoadLayout.LoadButtonRect(1));
+        var (x, y) = LoadCenter(LoadLayout.RowRect(1));
         var evt = screen.OnMouseDown(x, y);
+
+        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Null(screen.LastRequestedSlotId);
+    }
+
+    [Fact]
+    public void Load_LOAD_click_loads_whichever_row_was_last_selected()
+    {
+        var slots = new[]
+        {
+            Slot("slot-a", "Slot A", DateTime.UtcNow),
+            Slot("slot-b", "Slot B", DateTime.UtcNow)
+        };
+        var screen = NewLoadScreen(slots: slots);
+        TriggerLoadRender(screen);
+
+        var (rowX, rowY) = LoadCenter(LoadLayout.RowRect(1));
+        screen.OnMouseDown(rowX, rowY);
+
+        var (loadX, loadY) = LoadCenter(LoadLayout.LoadButtonRect());
+        var evt = screen.OnMouseDown(loadX, loadY);
 
         Assert.Equal(ScreenEvent.LoadSlotRequested, evt);
         Assert.Equal("slot-b", screen.LastRequestedSlotId);
@@ -1023,7 +1063,8 @@ public class ScreenEventTests
     public void Load_reserved_quicksave_slot_is_not_shown_when_caller_excludes_it()
     {
         // LoadScreen doesn't require the caller to include the reserved slot — if it
-        // happens to be pre-filtered out, row-click indexing still behaves correctly.
+        // happens to be pre-filtered out, the remaining slots are still all that's
+        // selectable/loadable.
         // (In production, SkiaWindow.OpenLoadWindowAsync no longer filters it out — see
         // the quicksave-protection tests below — but LoadScreen still checks the id
         // directly to protect it from deletion regardless of what the caller passes.)
@@ -1035,15 +1076,13 @@ public class ScreenEventTests
         var screen = NewLoadScreen(slots: slots);
         TriggerLoadRender(screen);
 
-        var (x, y) = LoadCenter(LoadLayout.LoadButtonRect(0));
+        // Only one row exists (the reserved slot was excluded before construction) — the
+        // default selection (row 0) is "slot-a".
+        var (x, y) = LoadCenter(LoadLayout.LoadButtonRect());
         var evt = screen.OnMouseDown(x, y);
 
         Assert.Equal(ScreenEvent.LoadSlotRequested, evt);
         Assert.Equal("slot-a", screen.LastRequestedSlotId);
-
-        // Row index 1 doesn't exist — the reserved slot was excluded before construction.
-        var (x1, y1) = LoadCenter(LoadLayout.LoadButtonRect(1));
-        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x1, y1));
     }
 
     [Fact]
@@ -1057,7 +1096,8 @@ public class ScreenEventTests
         var screen = NewLoadScreen(slots: slots);
         TriggerLoadRender(screen);
 
-        var (x, y) = LoadCenter(LoadLayout.LoadButtonRect(0));
+        // Default selection is row 0 — the quicksave slot.
+        var (x, y) = LoadCenter(LoadLayout.LoadButtonRect());
         var evt = screen.OnMouseDown(x, y);
 
         Assert.Equal(ScreenEvent.LoadSlotRequested, evt);
@@ -1073,7 +1113,7 @@ public class ScreenEventTests
         var screen = NewLoadScreen(slots: slots, deleteSlot: _ => called = true, nowMs: () => fakeNow);
         TriggerLoadRender(screen);
 
-        var (x, y) = LoadCenter(LoadLayout.DeleteButtonRect(0));
+        var (x, y) = LoadCenter(LoadLayout.DeleteButtonRect());
         screen.OnMouseDown(x, y); // would arm CONFIRM for an ordinary slot
         fakeNow += 500;
         var evt = screen.OnMouseDown(x, y); // would delete an ordinary slot on this second click
@@ -1090,7 +1130,7 @@ public class ScreenEventTests
         var screen = NewLoadScreen(slots: slots, deleteSlot: _ => called = true);
         TriggerLoadRender(screen);
 
-        var (x, y) = LoadCenter(LoadLayout.DeleteButtonRect(0));
+        var (x, y) = LoadCenter(LoadLayout.DeleteButtonRect());
         var evt = screen.OnMouseDown(x, y);
 
         Assert.Equal(ScreenEvent.None, evt);
@@ -1106,7 +1146,7 @@ public class ScreenEventTests
         var screen = NewLoadScreen(slots: slots, deleteSlot: id => deleted = id, nowMs: () => fakeNow);
         TriggerLoadRender(screen);
 
-        var (x, y) = LoadCenter(LoadLayout.DeleteButtonRect(0));
+        var (x, y) = LoadCenter(LoadLayout.DeleteButtonRect());
         screen.OnMouseDown(x, y); // first click → CONFIRM
         fakeNow += 500;
         var evt = screen.OnMouseDown(x, y); // second click within window → deletes
@@ -1124,7 +1164,7 @@ public class ScreenEventTests
         var screen = NewLoadScreen(slots: slots, deleteSlot: _ => called = true, nowMs: () => fakeNow);
         TriggerLoadRender(screen);
 
-        var (x, y) = LoadCenter(LoadLayout.DeleteButtonRect(0));
+        var (x, y) = LoadCenter(LoadLayout.DeleteButtonRect());
         screen.OnMouseDown(x, y); // first click → CONFIRM
         fakeNow += 5000; // past the confirm window
         screen.OnMouseDown(x, y); // treated as a fresh first click, not a delete
@@ -1136,18 +1176,14 @@ public class ScreenEventTests
     public void Load_Delete_click_elsewhere_clears_confirm_state()
     {
         bool called = false;
-        var slots = new[]
-        {
-            Slot("slot-a", "Slot A", DateTime.UtcNow),
-            Slot("slot-b", "Slot B", DateTime.UtcNow)
-        };
+        var slots = new[] { Slot("slot-a", "Slot A", DateTime.UtcNow) };
         var screen = NewLoadScreen(slots: slots, deleteSlot: _ => called = true);
         TriggerLoadRender(screen);
 
-        var (dx, dy) = LoadCenter(LoadLayout.DeleteButtonRect(0));
-        screen.OnMouseDown(dx, dy); // first click on row 0 → CONFIRM
+        var (dx, dy) = LoadCenter(LoadLayout.DeleteButtonRect());
+        screen.OnMouseDown(dx, dy); // first click → CONFIRM
 
-        var (lx, ly) = LoadCenter(LoadLayout.LoadButtonRect(1));
+        var (lx, ly) = LoadCenter(LoadLayout.LoadButtonRect());
         screen.OnMouseDown(lx, ly); // click elsewhere (a LOAD click) clears the confirm state
 
         var evt = screen.OnMouseDown(dx, dy); // this is now a fresh first click again
@@ -1157,9 +1193,12 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void Load_Delete_click_on_different_row_clears_previous_confirm_and_arms_new_row()
+    public void Load_Delete_click_after_selecting_a_different_row_clears_previous_confirm_and_arms_new_row()
     {
-        // Regression mirroring Save_Delete_click_on_different_row_clears_previous_confirm_and_arms_new_row.
+        // Regression mirroring the old per-row
+        // Load_Delete_click_on_different_row_clears_previous_confirm_and_arms_new_row —
+        // "different row" is now expressed as a Row click changing the selection between
+        // DELETE clicks, since DELETE itself is a single button acting on the selection.
         string? deleted = null;
         long fakeNow = 0;
         var slots = new[]
@@ -1170,44 +1209,38 @@ public class ScreenEventTests
         var screen = NewLoadScreen(slots: slots, deleteSlot: id => deleted = id, nowMs: () => fakeNow);
         TriggerLoadRender(screen);
 
-        var (d0x, d0y) = LoadCenter(LoadLayout.DeleteButtonRect(0));
-        var (d1x, d1y) = LoadCenter(LoadLayout.DeleteButtonRect(1));
+        var (deleteX, deleteY) = LoadCenter(LoadLayout.DeleteButtonRect());
+        var (row1X, row1Y) = LoadCenter(LoadLayout.RowRect(1));
 
-        screen.OnMouseDown(d0x, d0y); // first click on row 0 → CONFIRM armed for row 0
+        screen.OnMouseDown(deleteX, deleteY); // first click on row 0 (default selection) → CONFIRM armed
 
-        var evt = screen.OnMouseDown(d1x, d1y);
-        Assert.Equal(ScreenEvent.None, evt);
+        screen.OnMouseDown(row1X, row1Y); // select row 1 instead — clears row 0's armed confirm
+        fakeNow += 500;
+        var evtRow1FirstClick = screen.OnMouseDown(deleteX, deleteY); // fresh first click on row 1
+        Assert.Equal(ScreenEvent.None, evtRow1FirstClick);
         Assert.Null(deleted);
 
         fakeNow += 500;
-        var evtRow0Again = screen.OnMouseDown(d0x, d0y);
-        Assert.Equal(ScreenEvent.None, evtRow0Again);
-        Assert.Null(deleted);
-
-        fakeNow += 100;
-        screen.OnMouseDown(d1x, d1y); // fresh first click on row 1 (clears row 0's re-arm)
-        fakeNow += 500;
-        var evtRow1Confirm = screen.OnMouseDown(d1x, d1y); // second click within window → deletes
-
+        var evtRow1Confirm = screen.OnMouseDown(deleteX, deleteY); // second click within window → deletes
         Assert.Equal(ScreenEvent.None, evtRow1Confirm);
         Assert.Equal("slot-b", deleted);
     }
 
     [Fact]
-    public void Load_row_click_after_a_pending_delete_confirm_on_the_same_row_still_loads_and_clears_confirm()
+    public void Load_row_click_after_a_pending_delete_confirm_still_loads_and_clears_confirm()
     {
-        // A LOAD click on a row that currently has an armed DELETE confirm must not be
-        // swallowed by the delete state machine — it clears the confirm and proceeds to
-        // request a load, exactly like an Overwrite click does on Save's screen.
+        // A LOAD click while a DELETE confirm is armed for the currently selected row must
+        // not be swallowed by the delete state machine — it clears the confirm and proceeds
+        // to request a load, exactly like an Overwrite click does on Save's screen.
         string? deleted = null;
         var slots = new[] { Slot("slot-a", "Slot A", DateTime.UtcNow) };
         var screen = NewLoadScreen(slots: slots, deleteSlot: id => deleted = id);
         TriggerLoadRender(screen);
 
-        var (dx, dy) = LoadCenter(LoadLayout.DeleteButtonRect(0));
+        var (dx, dy) = LoadCenter(LoadLayout.DeleteButtonRect());
         screen.OnMouseDown(dx, dy); // first click → CONFIRM armed
 
-        var (lx, ly) = LoadCenter(LoadLayout.LoadButtonRect(0));
+        var (lx, ly) = LoadCenter(LoadLayout.LoadButtonRect());
         var evt = screen.OnMouseDown(lx, ly);
 
         Assert.Equal(ScreenEvent.LoadSlotRequested, evt);
@@ -1226,29 +1259,36 @@ public class ScreenEventTests
         var screen = NewLoadScreen(slots: slots);
         TriggerLoadRender(screen);
 
-        var (lx, ly) = LoadCenter(LoadLayout.LoadButtonRect(0));
+        var (rowX, rowY) = LoadCenter(LoadLayout.RowRect(0));
+        var (loadX, loadY) = LoadCenter(LoadLayout.LoadButtonRect());
 
-        screen.OnMouseDown(lx, ly);
+        void SelectRowZeroThenLoad()
+        {
+            screen.OnMouseDown(rowX, rowY);
+            screen.OnMouseDown(loadX, loadY);
+        }
+
+        SelectRowZeroThenLoad();
         Assert.Equal("slot-0", screen.LastRequestedSlotId);
 
         for (int i = 0; i < extra; i++)
             screen.OnMouseWheel(0, 0, -1); // scroll down one row at a time
 
         TriggerLoadRender(screen);
-        screen.OnMouseDown(lx, ly);
+        SelectRowZeroThenLoad();
         Assert.Equal($"slot-{extra}", screen.LastRequestedSlotId);
 
         // Further downward scrolling past the last row is clamped, not out of range.
         screen.OnMouseWheel(0, 0, -1);
         TriggerLoadRender(screen);
-        screen.OnMouseDown(lx, ly);
+        SelectRowZeroThenLoad();
         Assert.Equal($"slot-{extra}", screen.LastRequestedSlotId);
 
         // Scrolling back up returns to (and clamps at) the top.
         for (int i = 0; i < extra + 1; i++)
             screen.OnMouseWheel(0, 0, 1);
         TriggerLoadRender(screen);
-        screen.OnMouseDown(lx, ly);
+        SelectRowZeroThenLoad();
         Assert.Equal("slot-0", screen.LastRequestedSlotId);
     }
 
