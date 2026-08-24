@@ -458,12 +458,12 @@ public sealed class TradeScreen : IScreen
             MenuStyle.DrawPanel(canvas, panelRect);
 
         DrawHeader(canvas, pl, pt, snapshot);
-        DrawExitButton(canvas, pl, pt);
 
         var trade = snapshot?.DockedStationTrade;
         if (snapshot is null || trade is null)
         {
             DrawNotDockedStatus(canvas, pl, pt);
+            DrawExitButton(canvas, pl, pt);
             return;
         }
 
@@ -478,6 +478,7 @@ public sealed class TradeScreen : IScreen
         DrawCargoColumn(canvas, pl, pt, containerModule);
         DrawFuelPanel(canvas, pl, pt, engineModule);
         DrawSummaryRow(canvas, pl, pt, snapshot, trade);
+        DrawExitButton(canvas, pl, pt); // drawn last: DrawSummaryRow's ImagePanel would otherwise paint over it
     }
 
     private void DrawHeader(SKCanvas canvas, float pl, float pt, AuthoritativeSnapshot? snapshot)
