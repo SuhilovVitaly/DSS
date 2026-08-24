@@ -26,10 +26,12 @@ public readonly record struct LoadHit(LoadZone Zone, int RowIndex = -1)
 
 /// <summary>
 /// Layout and hit-test geometry for the Load overlay panel. Pure geometry — no SKCanvas
-/// dependency. Redesigned after <see cref="ScenarioSelect.ScenarioSelectLayout"/>: rows are
-/// selectable (click to select, does not act) and a single LOAD/DELETE button pair at the
-/// panel's bottom acts on whichever row is currently selected — replacing the previous
-/// design's LOAD/DELETE buttons repeated on every row.
+/// dependency. Structured after <see cref="ScenarioSelect.ScenarioSelectLayout"/>: a left
+/// content panel holds the selectable row list, a right action panel holds LOAD/DELETE
+/// (stacked vertically — the action panel is narrower than ScenarioSelect's, with no
+/// scenario name/stats block to show), and CLOSE sits on its own at the very bottom of the
+/// window, below both panels — mirroring <see cref="Trade.TradeLayout"/>'s bottom exit
+/// button rather than a per-panel corner icon.
 /// </summary>
 public static class LoadLayout
 {
@@ -38,25 +40,50 @@ public static class LoadLayout
 
     public const float Margin = 40f;
 
-    public const float TitleY = 50f;
+    /// <summary>
+    /// Vertical band of the background art's title bar (sampled from
+    /// window-background-700x600.png) — the title is vertically centered inside this band,
+    /// not pinned to a fixed baseline.
+    /// </summary>
+    public const float TitleBarY = 16f;
+    public const float TitleBarHeight = 72f;
 
-    /// <summary>Breathing room between the content panel's border artwork and the row list it holds.</summary>
+    /// <summary>Breathing room between a panel's border artwork and the content it holds.</summary>
     public const float ContentPadding = 20f;
-    public const float ContentPanelY = 90f;
 
-    public const float ListTop = ContentPanelY + ContentPadding;
-    public const float RowHeight = 50f;
-    public const float RowSpacing = 6f;
-    public const int VisibleRows = 8;
+    public const float ContentPanelY = 100f;
+
+    /// <summary>Left panel: the nine-sliced, selectable row list.</summary>
+    public const float ContentPanelX = Margin;
+    public const float ContentPanelWidth = 440f;
+
+    /// <summary>Right panel: the nine-sliced LOAD/DELETE action panel — immediately right of the content panel, no gap.</summary>
+    public static float ActionPanelX => ContentPanelX + ContentPanelWidth;
+    public const float ActionPanelWidth = PanelWidth - 2 * Margin - ContentPanelWidth;
 
     public const float ActionButtonWidth = 140f;
     public const float ActionButtonHeight = 44f;
+    /// <summary>Vertical gap between the stacked LOAD/DELETE buttons.</summary>
     public const float ActionButtonGap = 20f;
-    public const float ActionButtonBottomMargin = 24f;
 
-    public const float CloseButtonWidth = 100f;
-    public const float CloseButtonHeight = 32f;
-    public const float CloseButtonMargin = 16f;
+    public const float CloseButtonWidth = 140f;
+    public const float CloseButtonHeight = 44f;
+    public const float CloseButtonBottomMargin = 24f;
+
+    /// <summary>Gap kept between the bottom of the content/action panels and the CLOSE button below them.</summary>
+    public const float PanelToCloseGap = 20f;
+
+    public static float PanelHeightForContent =>
+        PanelHeight - CloseButtonBottomMargin - CloseButtonHeight - PanelToCloseGap - ContentPanelY;
+
+    public const float RowHeight = 50f;
+    public const float RowSpacing = 6f;
+
+    public static float ListTop => ContentPanelY + ContentPadding;
+    public static float ListWidth => ContentPanelWidth - 2 * ContentPadding;
+    public static float ListHeight => PanelHeightForContent - 2 * ContentPadding;
+
+    public static readonly int VisibleRows = (int)((ListHeight + RowSpacing) / RowHeight);
 
     public const float ScrollbarWidth = 6f;
     public const float ScrollbarGap = 10f;
@@ -65,56 +92,57 @@ public static class LoadLayout
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
 
-    public static float ListWidth => PanelWidth - 2 * Margin;
+    public static (float X, float Y, float W, float H) ContentPanelRect() =>
+        (ContentPanelX, ContentPanelY, ContentPanelWidth, PanelHeightForContent);
 
-    /// <summary>
-    /// The content panel (nine-sliced background) holding the row list — spans from just
-    /// below the title down to just above the LOAD/DELETE button row.
-    /// </summary>
-    public static (float X, float Y, float W, float H) ContentPanelRect()
-    {
-        float bottom = DeleteButtonRect().Y - ActionButtonGap;
-        return (Margin, ContentPanelY, ListWidth, bottom - ContentPanelY);
-    }
+    public static (float X, float Y, float W, float H) ActionPanelRect() =>
+        (ActionPanelX, ContentPanelY, ActionPanelWidth, PanelHeightForContent);
 
     /// <summary>Top-left-relative rect for a visible row (before scroll offset is applied by the caller).</summary>
     public static (float X, float Y, float W, float H) RowRect(int visibleRowIndex)
     {
         float y = ListTop + visibleRowIndex * RowHeight;
-        return (Margin, y, ListWidth, RowHeight - RowSpacing);
+        return (ContentPanelX + ContentPadding, y, ListWidth, RowHeight - RowSpacing);
     }
 
     /// <summary>
-    /// DELETE button rect — secondary/destructive action, on the left of the pair (mirrors
-    /// <see cref="ScenarioSelect.ScenarioSelectLayout.BackButtonRect"/>'s "secondary action
-    /// left, primary action right" convention). Acts on whichever row is currently selected.
+    /// LOAD button rect — primary action, stacked above DELETE within the action panel.
+    /// Acts on whichever row is currently selected.
     /// </summary>
-    public static (float X, float Y, float W, float H) DeleteButtonRect()
+    public static (float X, float Y, float W, float H) LoadButtonRect()
     {
-        float totalWidth = 2 * ActionButtonWidth + ActionButtonGap;
-        float x = (PanelWidth - totalWidth) / 2f;
-        float y = PanelHeight - ActionButtonBottomMargin - ActionButtonHeight;
+        float totalHeight = 2 * ActionButtonHeight + ActionButtonGap;
+        float x = ActionPanelX + (ActionPanelWidth - ActionButtonWidth) / 2f;
+        float y = ContentPanelY + (PanelHeightForContent - totalHeight) / 2f;
         return (x, y, ActionButtonWidth, ActionButtonHeight);
     }
 
-    /// <summary>LOAD button rect — primary action, right of DELETE. Acts on the selected row.</summary>
-    public static (float X, float Y, float W, float H) LoadButtonRect()
+    /// <summary>DELETE button rect — secondary/destructive action, stacked below LOAD. Acts on the selected row.</summary>
+    public static (float X, float Y, float W, float H) DeleteButtonRect()
     {
-        var delete = DeleteButtonRect();
-        return (delete.X + ActionButtonWidth + ActionButtonGap, delete.Y, ActionButtonWidth, ActionButtonHeight);
+        var load = LoadButtonRect();
+        return (load.X, load.Y + ActionButtonHeight + ActionButtonGap, ActionButtonWidth, ActionButtonHeight);
     }
 
-    /// <summary>Top-right corner of the panel, matching a title-bar close button.</summary>
-    public static (float X, float Y, float W, float H) CloseButtonRect() =>
-        (PanelWidth - CloseButtonMargin - CloseButtonWidth, CloseButtonMargin, CloseButtonWidth, CloseButtonHeight);
+    /// <summary>
+    /// CLOSE button rect — a normal bottom-of-window button (mirrors
+    /// <see cref="Trade.TradeLayout.ExitButtonRect"/>), centered below both panels, not a
+    /// per-panel corner icon.
+    /// </summary>
+    public static (float X, float Y, float W, float H) CloseButtonRect()
+    {
+        float x = (PanelWidth - CloseButtonWidth) / 2f;
+        float y = PanelHeight - CloseButtonBottomMargin - CloseButtonHeight;
+        return (x, y, CloseButtonWidth, CloseButtonHeight);
+    }
 
     /// <summary>
-    /// Vertical track spanning the full visible row list, in the right margin strip just
-    /// past where the row list ends. Only meaningful — and only drawn by the caller — when
-    /// there are more slots than <see cref="VisibleRows"/>.
+    /// Vertical track spanning the full visible row list, in the content panel's right
+    /// margin strip just past where the row list ends. Only meaningful — and only drawn by
+    /// the caller — when there are more slots than <see cref="VisibleRows"/>.
     /// </summary>
     public static (float X, float Y, float W, float H) ScrollbarTrackRect() =>
-        (PanelWidth - Margin + ScrollbarGap, ListTop, ScrollbarWidth, VisibleRows * RowHeight - RowSpacing);
+        (ContentPanelX + ContentPadding + ListWidth + ScrollbarGap, ListTop, ScrollbarWidth, VisibleRows * RowHeight - RowSpacing);
 
     /// <summary>
     /// Thumb position/size within <see cref="ScrollbarTrackRect"/> for the given scroll
