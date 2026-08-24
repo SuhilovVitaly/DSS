@@ -57,6 +57,24 @@ public sealed class TradeScreen : IScreen
     private int _hoveredInventoryRow = -1;
     private int _hoveredCargoRow = -1;
 
+    /// <summary>
+    /// Panel background with title bar, at the exact 1400×900 panel size (same asset as
+    /// Finance/Ship, which share this panel size) — loaded once and shared by every
+    /// TradeScreen instance; falls back to MenuStyle.DrawPanel's plain fill if the file
+    /// is missing.
+    /// </summary>
+    private static readonly SKBitmap? BackgroundImage =
+        LoadImage("Images/UI/mechanics-window-background-titlebar-1400x900.png");
+
+    private static SKBitmap? LoadImage(string path)
+    {
+        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
+        catch { return null; }
+    }
+
+    /// <summary>True if the background PNG file was found and decoded at startup.</summary>
+    internal static bool HasLoadedBackground => BackgroundImage is not null;
+
     /// <summary>Currently selected station item for Buy/Sell — null means "nothing selected yet".</summary>
     private string? _selectedItemTypeId;
 
@@ -431,7 +449,10 @@ public sealed class TradeScreen : IScreen
         float pl = TradeLayout.PanelLeft(width);
         float pt = TradeLayout.PanelTop(height);
         var panelRect = new SKRect(pl, pt, pl + TradeLayout.PanelWidth, pt + TradeLayout.PanelHeight);
-        MenuStyle.DrawPanel(canvas, panelRect);
+        if (BackgroundImage is not null)
+            canvas.DrawBitmap(BackgroundImage, panelRect);
+        else
+            MenuStyle.DrawPanel(canvas, panelRect);
 
         DrawHeader(canvas, pl, pt, snapshot);
         DrawCloseButton(canvas, pl, pt);

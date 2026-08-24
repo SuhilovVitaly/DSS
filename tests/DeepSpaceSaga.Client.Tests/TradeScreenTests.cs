@@ -28,6 +28,15 @@ public class TradeScreenTests
         screen.Render(canvas, ScreenWidth, ScreenHeight);
     }
 
+    [Fact]
+    public void Background_image_is_loaded()
+    {
+        // Regression: the mechanics-window-background-titlebar-1400x900.png asset must
+        // resolve at the client's working directory and be registered in the .csproj
+        // with CopyToOutputDirectory, or the panel silently falls back to a plain fill.
+        Assert.True(TradeScreen.HasLoadedBackground);
+    }
+
     // ── Open/close (structural twin of the old placeholder tests) ─────────────
 
     [Fact]
