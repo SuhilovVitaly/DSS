@@ -372,7 +372,7 @@ public sealed class TradeScreen : IScreen
     private static readonly SKPaint _titlePaint = new()
     {
         Color = MenuStyle.ColorText, TextSize = MenuStyle.TitleFontSize, IsAntialias = true,
-        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceHumaroid
+        TextAlign = SKTextAlign.Center, Typeface = MenuStyle.TypefaceHumaroid
     };
 
     private static readonly SKPaint _subtitlePaint = new()
@@ -478,7 +478,7 @@ public sealed class TradeScreen : IScreen
 
     private void DrawHeader(SKCanvas canvas, float pl, float pt, AuthoritativeSnapshot? snapshot)
     {
-        canvas.DrawText(Localization.Get("Trade.Title"), pl + TradeLayout.HeaderLeftX, pt + TradeLayout.TitleBaselineY, _titlePaint);
+        canvas.DrawText(Localization.Get("Trade.Title"), pl + TradeLayout.PanelWidth / 2f, pt + TradeLayout.TitleBaselineY, _titlePaint);
 
         string subtitle;
         if (snapshot?.DockedStationTrade is { } trade)
