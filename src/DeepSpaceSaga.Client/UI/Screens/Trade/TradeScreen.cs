@@ -58,13 +58,12 @@ public sealed class TradeScreen : IScreen
     private int _hoveredCargoRow = -1;
 
     /// <summary>
-    /// Panel background with title bar, at the exact 1400×900 panel size (same asset as
-    /// Finance/Ship, which share this panel size) — loaded once and shared by every
-    /// TradeScreen instance; falls back to MenuStyle.DrawPanel's plain fill if the file
-    /// is missing.
+    /// Panel background at the exact 1400×900 panel size — loaded once and shared by
+    /// every TradeScreen instance; falls back to MenuStyle.DrawPanel's plain fill if the
+    /// file is missing.
     /// </summary>
     private static readonly SKBitmap? BackgroundImage =
-        LoadImage("Images/UI/mechanics-window-background-titlebar-1400x900.png");
+        LoadImage("Images/UI/window-background-1400x900.png");
 
     private static SKBitmap? LoadImage(string path)
     {
