@@ -45,15 +45,6 @@ public static class ScenarioSelectLayout
     public const float PanelWidth = 900f;
     public const float PanelHeight = 620f;
 
-    /// <summary>
-    /// "SELECT SCENARIO" title rect, local to the outer panel (x=96, y=60, 630×45) — the
-    /// title is centered inside this rect, not across the whole panel width.
-    /// </summary>
-    public const float TitleRectX = 96f;
-    public const float TitleRectY = 60f;
-    public const float TitleRectWidth = 630f;
-    public const float TitleRectHeight = 45f;
-
     /// <summary>Left panel: the nine-sliced scenario list (x=50, y=145, 450 wide, 395 tall).</summary>
     public const float ContentPanelX = 50f;
     public const float ContentPanelY = 145f;

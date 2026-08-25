@@ -12,6 +12,12 @@ public static class GenericWindowTypeA
 {
     internal const string ShellPath = "Images/UI/Themes/Xenon/Window/window-shell.png";
 
+    /// <summary>
+    /// Distance from the window's top edge to the typographic top of every Type A title.
+    /// The baseline itself depends on the selected font, so it must not be shared directly.
+    /// </summary>
+    public const float TitleTopInset = 34f;
+
     private static readonly SKBitmap? Shell = UiAssetLoader.LoadBitmap(ShellPath);
 
     internal static bool HasAssets => Shell is not null;
@@ -29,5 +35,22 @@ public static class GenericWindowTypeA
         }
 
         MenuStyle.DrawPanel(canvas, bounds);
+    }
+
+    /// <summary>
+    /// Returns the common Type A title anchor: horizontally centered in the window with
+    /// its font ascent starting at <see cref="TitleTopInset"/> from the top edge.
+    /// </summary>
+    public static SKPoint TitlePosition(SKRect bounds, SKPaint paint)
+    {
+        var metrics = paint.FontMetrics;
+        return new SKPoint(bounds.MidX, bounds.Top + TitleTopInset - metrics.Ascent);
+    }
+
+    /// <summary>Draws a title at the shared Type A title position.</summary>
+    public static void DrawTitle(SKCanvas canvas, SKRect bounds, string title, SKPaint paint)
+    {
+        var position = TitlePosition(bounds, paint);
+        canvas.DrawText(title, position.X, position.Y, paint);
     }
 }

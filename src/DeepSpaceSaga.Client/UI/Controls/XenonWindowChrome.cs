@@ -15,15 +15,14 @@ public static class XenonWindowChrome
     {
         GenericWindowTypeA.Draw(canvas, bounds);
 
-        DrawHeaderText(canvas, headerRect, title, subtitle);
+        GenericWindowTypeA.DrawTitle(canvas, bounds, title, XenonStyle.TitleText);
+        DrawHeaderSubtitle(canvas, headerRect, subtitle);
         DrawFooter(canvas, footerRect, footerLeft, footerRight);
     }
 
-    private static void DrawHeaderText(SKCanvas canvas, SKRect rect, string title, string subtitle)
+    private static void DrawHeaderSubtitle(SKCanvas canvas, SKRect rect, string subtitle)
     {
-        float titleBaseline = rect.Top + 30f;
         float subtitleBaseline = rect.Top + 57f;
-        canvas.DrawText(title, rect.MidX, titleBaseline, XenonStyle.TitleText);
         float subtitleWidth = XenonStyle.SubtitleText.MeasureText(subtitle);
         float dotX = rect.MidX - subtitleWidth / 2f - 11f;
         canvas.DrawCircle(dotX, subtitleBaseline - 4f, 7f, XenonStyle.StatusGlow);

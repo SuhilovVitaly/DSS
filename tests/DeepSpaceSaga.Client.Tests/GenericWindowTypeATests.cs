@@ -31,4 +31,20 @@ public class GenericWindowTypeATests
         Assert.True(bitmap.GetPixel((int)bounds.MidX, (int)bounds.Top + 2).Alpha > 0);
         Assert.True(bitmap.GetPixel((int)bounds.Left + 2, (int)bounds.MidY).Alpha > 0);
     }
+
+    [Theory]
+    [InlineData(10, 20, 500, 550, 23)]
+    [InlineData(40, 60, 900, 620, 32)]
+    public void Title_position_is_centered_and_has_the_shared_top_inset(
+        float left, float top, float width, float height, float textSize)
+    {
+        using var paint = new SKPaint { TextSize = textSize, TextAlign = SKTextAlign.Center };
+        var bounds = new SKRect(left, top, left + width, top + height);
+
+        var position = GenericWindowTypeA.TitlePosition(bounds, paint);
+
+        Assert.Equal(bounds.MidX, position.X);
+        Assert.Equal(bounds.Top + GenericWindowTypeA.TitleTopInset,
+            position.Y + paint.FontMetrics.Ascent, precision: 3);
+    }
 }

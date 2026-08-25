@@ -99,7 +99,7 @@ public sealed class MainMenuScreen : IScreen
 
         float cx = pl + MenuLayout.PanelWidth / 2f;
 
-        canvas.DrawText(GameInfo.Title, cx, pt + MenuLayout.TitleY, _titleTextPaint);
+        GenericWindowTypeA.DrawTitle(canvas, MenuLayout.PanelRect(width, height), GameInfo.Title, _titleTextPaint);
         canvas.DrawText(GameInfo.Version, cx, pt + MenuLayout.VersionY, _versionTextPaint);
 
         DrawButton(canvas, pl, pt, MenuLayout.NewGameY, Localization.Get("MainMenu.NewGame"), MenuButton.NewGame);

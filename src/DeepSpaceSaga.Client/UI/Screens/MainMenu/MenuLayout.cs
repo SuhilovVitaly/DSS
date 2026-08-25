@@ -24,7 +24,6 @@ public sealed class MenuLayout
     public const float ButtonWidth = 384f;
     public const float ButtonHeight = 56f;
 
-    public const float TitleY = 70f;
     public const float VersionY = 110f;
     public const float NewGameY = 132f;
     public const float LoadY = 198f;

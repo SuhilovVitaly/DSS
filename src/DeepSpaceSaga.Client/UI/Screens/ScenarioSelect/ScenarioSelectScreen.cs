@@ -260,11 +260,8 @@ public sealed class ScenarioSelectScreen : IScreen
         float pt = ScenarioSelectLayout.PanelTop(height);
         DrawWindowShell(canvas, ScenarioSelectLayout.PanelRect(width, height));
 
-        var titleRect = new SKRect(
-            pl + ScenarioSelectLayout.TitleRectX, pt + ScenarioSelectLayout.TitleRectY,
-            pl + ScenarioSelectLayout.TitleRectX + ScenarioSelectLayout.TitleRectWidth,
-            pt + ScenarioSelectLayout.TitleRectY + ScenarioSelectLayout.TitleRectHeight);
-        canvas.DrawText(Localization.Get("ScenarioSelect.Title"), titleRect.MidX, MenuStyle.VerticalCenterBaseline(titleRect, _titleTextPaint), _titleTextPaint);
+        GenericWindowTypeA.DrawTitle(canvas, ScenarioSelectLayout.PanelRect(width, height),
+            Localization.Get("ScenarioSelect.Title"), _titleTextPaint);
 
         ImagePanel.Draw(canvas, new SKRect(
             pl + ScenarioSelectLayout.ContentPanelX, pt + ScenarioSelectLayout.ContentPanelY,
