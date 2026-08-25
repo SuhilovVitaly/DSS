@@ -588,7 +588,7 @@ public class ScreenEventTests
         var (sx, sy) = SaveCenter(SaveLayout.SaveButtonRect());
         var evt = screen.OnMouseDown(sx, sy);
 
-        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Equal(ScreenEvent.CloseSaveWindow, evt);
         Assert.Equal("My Save", savedName);
     }
 
@@ -660,7 +660,7 @@ public class ScreenEventTests
         var (sx, sy) = SaveCenter(SaveLayout.SaveButtonRect());
         var evt = screen.OnMouseDown(sx, sy);
 
-        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Equal(ScreenEvent.CloseSaveWindow, evt);
         Assert.Equal("Existing", saved);
     }
 
@@ -710,6 +710,28 @@ public class ScreenEventTests
     }
 
     [Fact]
+    public void Save_typing_an_existing_name_selects_and_scrolls_to_the_matching_row()
+    {
+        var slots = Enumerable.Range(0, SaveLayout.VisibleRows + 2)
+            .Select(i => Slot($"slot-{i}", $"Slot {i}", DateTime.UtcNow))
+            .ToArray();
+        var screen = NewSaveScreen(slots: slots);
+        TriggerSaveRender(screen);
+
+        foreach (char c in $"Slot {SaveLayout.VisibleRows + 1}")
+            screen.OnTextInput(c);
+
+        Assert.Equal($"slot-{SaveLayout.VisibleRows + 1}", screen.SelectedSlotId);
+        Assert.Equal(2, screen.ScrollOffset);
+        Assert.Equal("OVERWRITE", screen.SaveActionLabel);
+
+        screen.OnKeyDown(Key.Backspace);
+
+        Assert.Null(screen.SelectedSlotId);
+        Assert.Equal("NEW SAVE", screen.SaveActionLabel);
+    }
+
+    [Fact]
     public void Save_Overwrite_click_calls_saveSlot_with_the_row_SlotId()
     {
         string? saved = null;
@@ -722,7 +744,7 @@ public class ScreenEventTests
         var (x, y) = SaveCenter(SaveLayout.SaveButtonRect());
         var evt = screen.OnMouseDown(x, y);
 
-        Assert.Equal(ScreenEvent.None, evt);
+        Assert.Equal(ScreenEvent.CloseSaveWindow, evt);
         Assert.Equal("slot-a", saved);
     }
 
@@ -734,6 +756,8 @@ public class ScreenEventTests
         var screen = NewSaveScreen(slots: slots, deleteSlot: _ => called = true);
         TriggerSaveRender(screen);
 
+        var (rx, ry) = SaveCenter(SaveLayout.RowRect(0));
+        screen.OnMouseDown(rx, ry);
         var (x, y) = SaveCenter(SaveLayout.DeleteButtonRect());
         var evt = screen.OnMouseDown(x, y);
 
@@ -750,6 +774,8 @@ public class ScreenEventTests
         var screen = NewSaveScreen(slots: slots, deleteSlot: id => deleted = id, nowMs: () => fakeNow);
         TriggerSaveRender(screen);
 
+        var (rx, ry) = SaveCenter(SaveLayout.RowRect(0));
+        screen.OnMouseDown(rx, ry);
         var (x, y) = SaveCenter(SaveLayout.DeleteButtonRect());
         screen.OnMouseDown(x, y); // first click → CONFIRM
         fakeNow += 500;
@@ -768,6 +794,8 @@ public class ScreenEventTests
         var screen = NewSaveScreen(slots: slots, deleteSlot: _ => called = true, nowMs: () => fakeNow);
         TriggerSaveRender(screen);
 
+        var (rx, ry) = SaveCenter(SaveLayout.RowRect(0));
+        screen.OnMouseDown(rx, ry);
         var (x, y) = SaveCenter(SaveLayout.DeleteButtonRect());
         screen.OnMouseDown(x, y); // first click → CONFIRM
         fakeNow += 5000; // past the confirm window
@@ -788,11 +816,12 @@ public class ScreenEventTests
         var screen = NewSaveScreen(slots: slots, deleteSlot: _ => called = true);
         TriggerSaveRender(screen);
 
+        var (rowX, rowY) = SaveCenter(SaveLayout.RowRect(0));
+        screen.OnMouseDown(rowX, rowY);
         var (dx, dy) = SaveCenter(SaveLayout.DeleteButtonRect());
         screen.OnMouseDown(dx, dy); // first click on row 0 → CONFIRM
 
-        var (ox, oy) = SaveCenter(SaveLayout.SaveButtonRect());
-        screen.OnMouseDown(ox, oy); // click elsewhere clears the confirm state
+        screen.OnMouseDown(0, 0); // click elsewhere clears the confirm state
 
         var evt = screen.OnMouseDown(dx, dy); // this is now a fresh first click again
 
@@ -822,6 +851,7 @@ public class ScreenEventTests
         var (row0X, row0Y) = SaveCenter(SaveLayout.RowRect(0));
         var (row1X, row1Y) = SaveCenter(SaveLayout.RowRect(1));
 
+        screen.OnMouseDown(row0X, row0Y);
         screen.OnMouseDown(deleteX, deleteY); // first click on selected row 0 → CONFIRM
 
         screen.OnMouseDown(row1X, row1Y); // selecting another row clears row 0's arm

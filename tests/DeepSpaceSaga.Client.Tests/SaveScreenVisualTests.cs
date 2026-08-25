@@ -73,15 +73,19 @@ public class SaveScreenVisualTests
         canvas.Flush();
         Assert.False(ContainsColor(bitmap, button, XenonStyle.OrangeAccent));
 
-        var row = SaveLayout.RowRect(0);
-        screen.OnMouseDown(
-            panel.Left + row.X + row.W / 2f,
-            panel.Top + row.Y + row.H / 2f);
+        foreach (char c in "Existing Save")
+            screen.OnTextInput(c);
         bitmap.Erase(SKColors.Transparent);
         screen.Render(canvas, bitmap.Width, bitmap.Height);
         canvas.Flush();
 
+        var row = SaveLayout.RowRect(0);
+        var selectedRow = new SKRect(
+            panel.Left + row.X, panel.Top + row.Y,
+            panel.Left + row.X + row.W, panel.Top + row.Y + row.H);
         Assert.Equal("OVERWRITE", screen.SaveActionLabel);
+        Assert.Equal("slot-1", screen.SelectedSlotId);
+        Assert.True(ContainsColor(bitmap, selectedRow, XenonStyle.OrangeAccent));
         Assert.True(ContainsColor(bitmap, button, XenonStyle.OrangeAccent));
     }
 

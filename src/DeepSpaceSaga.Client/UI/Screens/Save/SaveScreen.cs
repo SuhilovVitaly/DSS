@@ -138,6 +138,7 @@ public sealed class SaveScreen : IScreen
         {
             _nameInput.OnKeyDown(key);
             _inlineError = null;
+            SyncSelectionToEnteredName();
             return ScreenEvent.None;
         }
 
@@ -148,6 +149,7 @@ public sealed class SaveScreen : IScreen
     {
         _nameInput.OnTextInput(c);
         _inlineError = null;
+        SyncSelectionToEnteredName();
     }
 
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
@@ -165,8 +167,9 @@ public sealed class SaveScreen : IScreen
         switch (hit.Zone)
         {
             case SaveZone.Save:
-                SaveEnteredName();
-                return ScreenEvent.None;
+                return SaveEnteredName()
+                    ? ScreenEvent.CloseSaveWindow
+                    : ScreenEvent.None;
 
             case SaveZone.Close:
                 return ScreenEvent.CloseSaveWindow;
@@ -176,8 +179,8 @@ public sealed class SaveScreen : IScreen
                 int index = AbsoluteIndex(hit.RowIndex);
                 if (index >= 0 && index < _slots.Count)
                 {
-                    _selectedIndex = index;
                     SetEnteredName(_slots[index].DisplayName);
+                    SyncSelectionToEnteredName();
                     _inlineError = null;
                 }
                 return ScreenEvent.None;
@@ -325,14 +328,14 @@ public sealed class SaveScreen : IScreen
     private static SKRect CombinedRect(float panelLeft, float panelTop, (float X, float Y, float W, float H) local) =>
         new(panelLeft + local.X, panelTop + local.Y, panelLeft + local.X + local.W, panelTop + local.Y + local.H);
 
-    private void SaveEnteredName()
+    private bool SaveEnteredName()
     {
         string name = _nameInput.Text.Trim();
 
         if (name.Length == 0)
         {
             _inlineError = "Enter a name for the save.";
-            return;
+            return false;
         }
 
         // Rejected unconditionally — not just when it happens to already be in the
@@ -342,7 +345,7 @@ public sealed class SaveScreen : IScreen
         if (string.Equals(name, SaveSlots.Quicksave, StringComparison.OrdinalIgnoreCase))
         {
             _inlineError = "That name is reserved for quicksave.";
-            return;
+            return false;
         }
 
         var existingSlot = FindMatchingSlot();
@@ -350,6 +353,7 @@ public sealed class SaveScreen : IScreen
         _nameInput.Clear();
         _inlineError = null;
         RefreshSlots();
+        return true;
     }
 
     private SaveSlotInfo? FindMatchingSlot()
@@ -359,8 +363,36 @@ public sealed class SaveScreen : IScreen
             string.Equals(slot.DisplayName, name, StringComparison.OrdinalIgnoreCase));
     }
 
+    private void SyncSelectionToEnteredName()
+    {
+        string name = _nameInput.Text.Trim();
+        int matchingIndex = -1;
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            if (string.Equals(_slots[i].DisplayName, name, StringComparison.OrdinalIgnoreCase))
+            {
+                matchingIndex = i;
+                break;
+            }
+        }
+
+        _selectedIndex = matchingIndex;
+        if (matchingIndex < 0)
+            return;
+
+        if (matchingIndex < _scrollOffset)
+            _scrollOffset = matchingIndex;
+        else if (matchingIndex >= _scrollOffset + SaveLayout.VisibleRows)
+            _scrollOffset = matchingIndex - SaveLayout.VisibleRows + 1;
+    }
+
     internal string SaveActionLabel => FindMatchingSlot() is null ? "NEW SAVE" : "OVERWRITE";
     internal string EnteredName => _nameInput.Text;
+    internal string? SelectedSlotId =>
+        _selectedIndex >= 0 && _selectedIndex < _slots.Count
+            ? _slots[_selectedIndex].SlotId
+            : null;
+    internal int ScrollOffset => _scrollOffset;
 
     private void SetEnteredName(string value)
     {
@@ -374,7 +406,7 @@ public sealed class SaveScreen : IScreen
         _slots = _listSlots() ?? Array.Empty<SaveSlotInfo>();
         int maxOffset = Math.Max(0, _slots.Count - SaveLayout.VisibleRows);
         _scrollOffset = Math.Clamp(_scrollOffset, 0, maxOffset);
-        _selectedIndex = _slots.Count > 0 ? Math.Clamp(_selectedIndex, 0, _slots.Count - 1) : -1;
+        SyncSelectionToEnteredName();
     }
 
     private int VisibleSlotCount => Math.Max(0, Math.Min(SaveLayout.VisibleRows, _slots.Count - _scrollOffset));
