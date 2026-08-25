@@ -94,7 +94,79 @@ public class ItemCatalogTests
         return path;
     }
 
-    // --- Real Data/item-types.json catalog content (§59 acceptance criteria) -----------------
+    // --- EngineContentLoader.LoadItemTypes directory mode (mirrors LoadModuleImplementations'
+    // directory dual-mode: Data/Items/<category>/items-<category>.json) --------------------------
+
+    [Fact]
+    public void LoadItemTypes_merges_all_json_files_in_directory()
+    {
+        string directory = CreateTempDirectory();
+        try
+        {
+            WriteFile(directory, "resource.json", """
+            {
+              "itemTypes": [
+                { "typeId": "item.test-resource", "displayName": "Test Resource", "unitMassKg": 1,
+                  "basePriceCredits": 10, "tradeCategory": "Resource", "catalogCode": "RES-9001" }
+              ]
+            }
+            """);
+            WriteFile(directory, "good.json", """
+            {
+              "itemTypes": [
+                { "typeId": "item.test-good", "displayName": "Test Good", "unitMassKg": 1,
+                  "basePriceCredits": 20, "tradeCategory": "Good", "catalogCode": "ITM-9001" }
+              ]
+            }
+            """);
+
+            var items = EngineContentLoader.LoadItemTypes(directory);
+
+            Assert.Equal(2, items.Count);
+            Assert.Contains(items, i => i.TypeId == "item.test-resource" && i.Category == TradeCategory.Resource);
+            Assert.Contains(items, i => i.TypeId == "item.test-good" && i.Category == TradeCategory.Good);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void LoadItemTypes_rejects_empty_directory_with_no_json_files()
+    {
+        string directory = CreateTempDirectory();
+        try
+        {
+            var ex = Assert.Throws<ContentException>(() => EngineContentLoader.LoadItemTypes(directory));
+            Assert.Contains(directory, ex.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void LoadItemTypes_rejects_path_that_is_neither_file_nor_directory()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"dss-itemtypes-missing-{Guid.NewGuid():N}");
+
+        var ex = Assert.Throws<ContentException>(() => EngineContentLoader.LoadItemTypes(path));
+        Assert.Contains(path, ex.Message, StringComparison.Ordinal);
+    }
+
+    private static string CreateTempDirectory()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), $"dss-itemtypes-dir-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        return directory;
+    }
+
+    private static void WriteFile(string directory, string fileName, string json) =>
+        File.WriteAllText(Path.Combine(directory, fileName), json);
+
+    // --- Real Data/Items catalog content (§59 acceptance criteria) ---------------------------
 
     private static GameDataRegistry LoadRealRegistry()
     {

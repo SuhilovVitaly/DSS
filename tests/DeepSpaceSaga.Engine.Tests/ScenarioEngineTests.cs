@@ -232,10 +232,12 @@ public class ScenarioEngineTests
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-GENERATOR-01");
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-SCANNER-01");
         var cargo = Assert.Single(cargoModule.Cargo);
-        // item.energy-cells is index 6 in the real 10-entry catalog (story-20260825-084409
-        // Batch 1, U1) — Resource entries (Ice/Iron Ore/Silicon/Magnesium Ore) sort first,
-        // then Good (Water/Steel/Energy Cells/Fuel/Protein mass/Food Rations).
-        Assert.Equal(6, cargo.ItemTypeIndex);
+        // item.energy-cells is index 2 in the real 10-entry catalog. Item-catalog registry order
+        // follows the deterministic (ordinal) sort of Data/Items/<Category>/*.json file paths
+        // (Good < Resource alphabetically), not the historical flat item-types.json order — so
+        // Good entries (Water/Steel/Energy Cells/Fuel/Protein mass/Food Rations) sort first,
+        // then Resource (Ice/Iron Ore/Silicon/Magnesium Ore).
+        Assert.Equal(2, cargo.ItemTypeIndex);
     }
 
     [Fact]

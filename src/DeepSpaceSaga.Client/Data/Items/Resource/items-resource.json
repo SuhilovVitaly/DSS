@@ -1,0 +1,36 @@
+{
+  "itemTypes": [
+    {
+      "typeId": "item.ice",
+      "displayName": "Ice",
+      "unitMassKg": 1,
+      "basePriceCredits": 10,
+      "tradeCategory": "Resource",
+      "catalogCode": "RES-2001"
+    },
+    {
+      "typeId": "item.iron-ore",
+      "displayName": "Iron Ore",
+      "unitMassKg": 1,
+      "basePriceCredits": 5,
+      "tradeCategory": "Resource",
+      "catalogCode": "RES-2002"
+    },
+    {
+      "typeId": "item.silicon",
+      "displayName": "Silicon",
+      "unitMassKg": 1,
+      "basePriceCredits": 40,
+      "tradeCategory": "Resource",
+      "catalogCode": "RES-2003"
+    },
+    {
+      "typeId": "item.magnesium-ore",
+      "displayName": "Magnesium Ore",
+      "unitMassKg": 1,
+      "basePriceCredits": 30,
+      "tradeCategory": "Resource",
+      "catalogCode": "RES-2004"
+    }
+  ]
+}

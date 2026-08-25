@@ -229,9 +229,39 @@ public static class EngineContentLoader
             throw new ContentException($"Module type '{dto.TypeId}' requires fuelCapacityKg greater than zero.");
     }
 
+    /// <summary>
+    /// Loads the item catalog (e.g. "Data/Items/Resource/items-resource.json") from either a
+    /// single JSON file (legacy layout) or a directory (recursively merges every "*.json" file
+    /// found under it — the physical per-tradeCategory layout, e.g. "Data/Items/Good/items-good.json"),
+    /// mirroring <see cref="LoadModuleImplementations"/>'s dual-mode support.
+    /// </summary>
     internal static IReadOnlyList<ItemTypeDefinition> LoadItemTypes(string path)
     {
-        var file = ReadJson<ItemTypesFile>(path, "item types");
+        if (Directory.Exists(path))
+        {
+            var files = Directory.EnumerateFiles(path, "*.json", SearchOption.AllDirectories)
+                .OrderBy(f => f, StringComparer.Ordinal)
+                .ToArray();
+
+            if (files.Length == 0)
+            {
+                throw new ContentException(
+                    $"item-types directory contains no *.json files: {path}");
+            }
+
+            return files.SelectMany(ReadItemTypesFile).ToArray();
+        }
+
+        if (File.Exists(path))
+            return ReadItemTypesFile(path).ToArray();
+
+        throw new ContentException(
+            $"item-types path not found (neither file nor directory): {path}");
+    }
+
+    private static IEnumerable<ItemTypeDefinition> ReadItemTypesFile(string filePath)
+    {
+        var file = ReadJson<ItemTypesFile>(filePath, "item types");
         if (file.ItemTypes is null)
             throw new ContentException("item-types file is missing itemTypes.");
 
@@ -242,7 +272,7 @@ public static class EngineContentLoader
                 dto.UnitMassKg,
                 dto.BasePriceCredits,
                 ParseTradeCategory(dto.TypeId, dto.TradeCategory),
-                dto.CatalogCode)).ToArray();
+                dto.CatalogCode));
     }
 
     /// <summary>
