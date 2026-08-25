@@ -389,14 +389,11 @@ public class LocalSessionIntegrationTests
             using var canvas = new SKCanvas(bitmap);
             saveScreen.Render(canvas, 1920, 1080);
 
-            var (nx, ny) = Center(SaveLayout.NewSaveButtonRect());
-            saveScreen.OnMouseDown(nx, ny); // reveal the name field
-
             foreach (char c in "My Playthrough")
                 saveScreen.OnTextInput(c);
 
-            var (cx, cy) = Center(SaveLayout.ConfirmButtonRect());
-            saveScreen.OnMouseDown(cx, cy); // confirm → SaveAsync → refresh list
+            var (sx, sy) = Center(SaveLayout.SaveButtonRect());
+            saveScreen.OnMouseDown(sx, sy); // NEW SAVE → SaveAsync → refresh list
 
             var slots = SaveSlotRepository.ListSlots(saveDirectory);
             var written = Assert.Single(slots, s => s.SlotId == "My Playthrough");

@@ -30,6 +30,12 @@ public static class GenericWindowTypeA
     };
 
     private static readonly SKBitmap? Shell = UiAssetLoader.LoadBitmap(ShellPath);
+    private static readonly SKPaint OpaqueBackgroundFill = new()
+    {
+        Color = new SKColor(2, 12, 22),
+        Style = SKPaintStyle.Fill,
+        IsAntialias = true
+    };
 
     internal static bool HasAssets => Shell is not null;
 
@@ -46,6 +52,28 @@ public static class GenericWindowTypeA
         }
 
         MenuStyle.DrawPanel(canvas, bounds);
+    }
+
+    /// <summary>
+    /// Draws an opaque clipped-corner background before the ordinary Type A shell.
+    /// Use for modal windows whose underlying screen must not show through the shell's
+    /// intentionally translucent center texture.
+    /// </summary>
+    public static void DrawOpaque(SKCanvas canvas, SKRect bounds)
+    {
+        float corner = Math.Min(20f, Math.Min(bounds.Width, bounds.Height) / 2f);
+        using var path = new SKPath();
+        path.MoveTo(bounds.Left + corner, bounds.Top);
+        path.LineTo(bounds.Right - corner, bounds.Top);
+        path.LineTo(bounds.Right, bounds.Top + corner);
+        path.LineTo(bounds.Right, bounds.Bottom - corner);
+        path.LineTo(bounds.Right - corner, bounds.Bottom);
+        path.LineTo(bounds.Left + corner, bounds.Bottom);
+        path.LineTo(bounds.Left, bounds.Bottom - corner);
+        path.LineTo(bounds.Left, bounds.Top + corner);
+        path.Close();
+        canvas.DrawPath(path, OpaqueBackgroundFill);
+        Draw(canvas, bounds);
     }
 
     /// <summary>

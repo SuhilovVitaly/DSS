@@ -29,4 +29,31 @@ public class GenericButtonTypeATests
         Assert.True(bitmap.GetPixel((int)bounds.MidX, (int)bounds.MidY).Alpha > 0);
         Assert.True(bitmap.GetPixel((int)bounds.Left + 2, (int)bounds.MidY).Alpha > 0);
     }
+
+    [Fact]
+    public void Draw_supports_a_caller_provided_text_color()
+    {
+        using var bitmap = new SKBitmap(240, 72);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+        var bounds = new SKRect(8, 8, 232, 64);
+
+        GenericButtonTypeA.Draw(canvas, bounds, "OVERWRITE", ButtonState.Normal,
+            XenonStyle.OrangeAccent);
+        canvas.Flush();
+
+        Assert.True(ContainsColor(bitmap, bounds, XenonStyle.OrangeAccent));
+    }
+
+    private static bool ContainsColor(SKBitmap bitmap, SKRect bounds, SKColor color)
+    {
+        for (int y = (int)bounds.Top; y < (int)bounds.Bottom; y++)
+        for (int x = (int)bounds.Left; x < (int)bounds.Right; x++)
+        {
+            if (bitmap.GetPixel(x, y) == color)
+                return true;
+        }
+
+        return false;
+    }
 }

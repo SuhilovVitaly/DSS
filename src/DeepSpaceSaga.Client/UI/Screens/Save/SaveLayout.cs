@@ -6,11 +6,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.Save;
 public enum SaveZone
 {
     None,
-    NewSave,
-    ConfirmNewSave,
-    CancelNewSave,
+    Save,
     Close,
-    Overwrite,
     Delete,
     Row
 }
@@ -26,8 +23,8 @@ public readonly record struct SaveHit(SaveZone Zone, int RowIndex = -1)
 
 /// <summary>
 /// Layout and hit-test geometry for the Generic Type A Save overlay. A single content
-/// panel owns either the selectable save list or the New Save name field; every action
-/// button is in the bottom row.
+/// panel owns both the always-visible name field and the selectable save list; every
+/// action button is in the bottom row.
 /// </summary>
 public static class SaveLayout
 {
@@ -44,19 +41,19 @@ public static class SaveLayout
 
     public const float NameInputWidth = 600f;
     public const float NameInputHeight = 44f;
-    public const float NameInputY = 220f;
+    public const float NameInputY = ContentPanelY + ContentPadding;
 
-    public const float ListTop = ContentPanelY + ContentPadding;
+    public const float NameToListGap = 36f;
+    public const float ListTop = NameInputY + NameInputHeight + NameToListGap;
     public const float RowHeight = 50f;
     public const float RowSpacing = 6f;
-    public const int VisibleRows = 6;
+    public const int VisibleRows = 5;
 
     public const float BottomButtonWidth = 200f;
     public const float BottomButtonHeight = 56f;
     public const float BottomButtonGap = 10f;
-    public const float BottomButtonsX = 35f;
+    public const float BottomButtonsX = 140f;
     public const float BottomButtonsY = 510f;
-    public const float NewSaveButtonsX = 140f;
 
     public const float ScrollbarWidth = 6f;
     public const float ScrollbarGap = 10f;
@@ -84,10 +81,7 @@ public static class SaveLayout
         return (ContentPanelX + ContentPadding, y, ListWidth, RowHeight - RowSpacing);
     }
 
-    public static (float X, float Y, float W, float H) NewSaveButtonRect() =>
-        BottomButtonRect(3);
-
-    public static (float X, float Y, float W, float H) OverwriteButtonRect() =>
+    public static (float X, float Y, float W, float H) SaveButtonRect() =>
         BottomButtonRect(2);
 
     public static (float X, float Y, float W, float H) DeleteButtonRect() =>
@@ -96,14 +90,8 @@ public static class SaveLayout
     public static (float X, float Y, float W, float H) NameInputRect() =>
         ((PanelWidth - NameInputWidth) / 2f, NameInputY, NameInputWidth, NameInputHeight);
 
-    public static (float X, float Y, float W, float H) ConfirmButtonRect() =>
-        NewSaveBottomButtonRect(2);
-
-    public static (float X, float Y, float W, float H) CancelButtonRect() =>
-        NewSaveBottomButtonRect(1);
-
-    public static (float X, float Y, float W, float H) CloseButtonRect(bool isNewSaveActive = false) =>
-        isNewSaveActive ? NewSaveBottomButtonRect(0) : BottomButtonRect(0);
+    public static (float X, float Y, float W, float H) CloseButtonRect() =>
+        BottomButtonRect(0);
 
     /// <summary>
     /// Vertical track spanning the full visible row list, in the gap between the rows
@@ -135,12 +123,10 @@ public static class SaveLayout
     /// <summary>
     /// Hit-tests a click at screen coordinates. <paramref name="visibleSlotCount"/> is the
     /// number of slot rows actually rendered (min(total slots, VisibleRows)).
-    /// <paramref name="isNewSaveActive"/> switches the content panel from the slot list
-    /// to the name-entry state and replaces the bottom action group.
     /// </summary>
     public static SaveHit HitTest(
         float screenX, float screenY, int screenWidth, int screenHeight,
-        int visibleSlotCount, bool isNewSaveActive)
+        int visibleSlotCount)
     {
         float panelLeft = PanelLeft(screenWidth);
         float panelTop = PanelTop(screenHeight);
@@ -148,31 +134,17 @@ public static class SaveLayout
         float lx = screenX - panelLeft;
         float ly = screenY - panelTop;
 
-        if (isNewSaveActive)
-        {
-            if (IsInRect(lx, ly, CloseButtonRect(isNewSaveActive: true)))
-                return new SaveHit(SaveZone.Close);
-            if (IsInRect(lx, ly, ConfirmButtonRect()))
-                return new SaveHit(SaveZone.ConfirmNewSave);
-            if (IsInRect(lx, ly, CancelButtonRect()))
-                return new SaveHit(SaveZone.CancelNewSave);
-        }
-        else
-        {
-            if (IsInRect(lx, ly, CloseButtonRect()))
-                return new SaveHit(SaveZone.Close);
-            if (IsInRect(lx, ly, DeleteButtonRect()))
-                return new SaveHit(SaveZone.Delete);
-            if (IsInRect(lx, ly, OverwriteButtonRect()))
-                return new SaveHit(SaveZone.Overwrite);
-            if (IsInRect(lx, ly, NewSaveButtonRect()))
-                return new SaveHit(SaveZone.NewSave);
+        if (IsInRect(lx, ly, CloseButtonRect()))
+            return new SaveHit(SaveZone.Close);
+        if (IsInRect(lx, ly, DeleteButtonRect()))
+            return new SaveHit(SaveZone.Delete);
+        if (IsInRect(lx, ly, SaveButtonRect()))
+            return new SaveHit(SaveZone.Save);
 
-            for (int i = 0; i < visibleSlotCount; i++)
-            {
-                if (IsInRect(lx, ly, RowRect(i)))
-                    return new SaveHit(SaveZone.Row, i);
-            }
+        for (int i = 0; i < visibleSlotCount; i++)
+        {
+            if (IsInRect(lx, ly, RowRect(i)))
+                return new SaveHit(SaveZone.Row, i);
         }
 
         return SaveHit.None;
@@ -180,10 +152,6 @@ public static class SaveLayout
 
     private static (float X, float Y, float W, float H) BottomButtonRect(int index) =>
         (BottomButtonsX + index * (BottomButtonWidth + BottomButtonGap),
-            BottomButtonsY, BottomButtonWidth, BottomButtonHeight);
-
-    private static (float X, float Y, float W, float H) NewSaveBottomButtonRect(int index) =>
-        (NewSaveButtonsX + index * (BottomButtonWidth + BottomButtonGap),
             BottomButtonsY, BottomButtonWidth, BottomButtonHeight);
 
     private static bool IsInRect(float localX, float localY, (float X, float Y, float W, float H) rect) =>
