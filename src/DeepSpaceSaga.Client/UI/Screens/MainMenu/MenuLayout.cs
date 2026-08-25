@@ -1,3 +1,5 @@
+using SkiaSharp;
+
 namespace DeepSpaceSaga.Client.UI.Screens.MainMenu;
 
 public enum MenuButton
@@ -31,6 +33,13 @@ public sealed class MenuLayout
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
+
+    public static SKRect PanelRect(int screenWidth, int screenHeight)
+    {
+        float left = PanelLeft(screenWidth);
+        float top = PanelTop(screenHeight);
+        return new SKRect(left, top, left + PanelWidth, top + PanelHeight);
+    }
 
     public static MenuButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight)
     {

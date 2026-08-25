@@ -1,20 +1,32 @@
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
+using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests;
 
 /// <summary>
-/// The MainMenu screen's background image. Open/close/hover behavior is already
-/// covered by ScreenEventTests.cs — this only guards the asset regression, mirroring
-/// FinanceScreenTests.cs/ShipScreenTests.cs.
+/// MainMenu's Type A shell. Open/close/hover behavior is covered by ScreenEventTests.cs.
 /// </summary>
 public class MainMenuScreenTests
 {
     [Fact]
-    public void Background_image_is_loaded()
+    public void Generic_type_A_shell_asset_is_loaded()
     {
-        // Regression: the window-background-500x550.png asset must resolve at the
-        // client's working directory and be registered in the .csproj with
-        // CopyToOutputDirectory, or the panel silently falls back to a plain fill.
-        Assert.True(MainMenuScreen.HasLoadedBackground);
+        Assert.True(GenericWindowTypeA.HasAssets);
+    }
+
+    [Fact]
+    public void Window_shell_draws_the_Type_A_frame_at_the_MainMenu_bounds()
+    {
+        using var bitmap = new SKBitmap(520, 570);
+        using var canvas = new SKCanvas(bitmap);
+        var panel = new SKRect(10, 10, 510, 560);
+
+        MainMenuScreen.DrawWindowShell(canvas, panel);
+        canvas.Flush();
+
+        var borderPixel = bitmap.GetPixel((int)panel.MidX, (int)panel.Top + 2);
+        var interiorPixel = bitmap.GetPixel((int)panel.MidX, (int)panel.Top + 30);
+        Assert.NotEqual(borderPixel, interiorPixel);
     }
 }
