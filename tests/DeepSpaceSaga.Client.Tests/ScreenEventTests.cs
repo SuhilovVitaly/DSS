@@ -543,25 +543,21 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void Save_NewSave_click_activates_name_entry_without_screen_event()
+    public void Save_action_is_available_without_a_separate_name_entry_mode()
     {
         var screen = NewSaveScreen();
         TriggerSaveRender(screen);
-        var (x, y) = SaveCenter(SaveLayout.NewSaveButtonRect());
+        var (x, y) = SaveCenter(SaveLayout.SaveButtonRect());
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+        Assert.Equal("", screen.EnteredName);
     }
 
     [Fact]
-    public void Save_Esc_while_new_save_active_cancels_without_closing_window()
+    public void Save_Esc_always_closes_the_single_state_window()
     {
         var screen = NewSaveScreen();
         TriggerSaveRender(screen);
 
-        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
-        screen.OnMouseDown(nx, ny); // activate name entry
-
-        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Escape));
-        // Save window itself is still open — a second Escape now closes it.
         Assert.Equal(ScreenEvent.CloseSaveWindow, screen.OnKeyDown(Key.Escape));
     }
 
@@ -572,12 +568,8 @@ public class ScreenEventTests
         var screen = NewSaveScreen(saveSlot: _ => called = true);
         TriggerSaveRender(screen);
 
-        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
-        screen.OnMouseDown(nx, ny);
-        TriggerSaveRender(screen);
-
-        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
-        var evt = screen.OnMouseDown(cx, cy);
+        var (sx, sy) = SaveCenter(SaveLayout.SaveButtonRect());
+        var evt = screen.OnMouseDown(sx, sy);
 
         Assert.Equal(ScreenEvent.None, evt);
         Assert.False(called);
@@ -590,15 +582,11 @@ public class ScreenEventTests
         var screen = NewSaveScreen(saveSlot: id => savedName = id);
         TriggerSaveRender(screen);
 
-        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
-        screen.OnMouseDown(nx, ny);
-        TriggerSaveRender(screen);
-
         foreach (char c in "My Save")
             screen.OnTextInput(c);
 
-        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
-        var evt = screen.OnMouseDown(cx, cy);
+        var (sx, sy) = SaveCenter(SaveLayout.SaveButtonRect());
+        var evt = screen.OnMouseDown(sx, sy);
 
         Assert.Equal(ScreenEvent.None, evt);
         Assert.Equal("My Save", savedName);
@@ -614,15 +602,11 @@ public class ScreenEventTests
         var screen = NewSaveScreen(saveSlot: _ => called = true);
         TriggerSaveRender(screen);
 
-        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
-        screen.OnMouseDown(nx, ny);
-        TriggerSaveRender(screen);
-
         foreach (char c in "quicksave")
             screen.OnTextInput(c);
 
-        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
-        var evt = screen.OnMouseDown(cx, cy);
+        var (sx, sy) = SaveCenter(SaveLayout.SaveButtonRect());
+        var evt = screen.OnMouseDown(sx, sy);
 
         Assert.Equal(ScreenEvent.None, evt);
         Assert.False(called);
@@ -635,148 +619,94 @@ public class ScreenEventTests
         var screen = NewSaveScreen(saveSlot: _ => called = true);
         TriggerSaveRender(screen);
 
-        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
-        screen.OnMouseDown(nx, ny);
-        TriggerSaveRender(screen);
-
         foreach (char c in "QuickSave")
             screen.OnTextInput(c);
 
-        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
-        screen.OnMouseDown(cx, cy);
+        var (sx, sy) = SaveCenter(SaveLayout.SaveButtonRect());
+        screen.OnMouseDown(sx, sy);
 
         Assert.False(called);
     }
 
     [Fact]
-    public void Save_ConfirmNewSave_duplicate_name_first_click_arms_overwrite_without_calling_saveSlot()
-    {
-        // First SAVE click on a duplicate name only arms the overwrite confirm — it
-        // must not overwrite yet (mirrors the DELETE action's first click).
-        bool called = false;
-        var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
-        var screen = NewSaveScreen(slots: slots, saveSlot: _ => called = true);
-        TriggerSaveRender(screen);
-
-        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
-        screen.OnMouseDown(nx, ny);
-        TriggerSaveRender(screen);
-
-        foreach (char c in "Existing")
-            screen.OnTextInput(c);
-
-        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
-        screen.OnMouseDown(cx, cy);
-
-        Assert.False(called);
-    }
-
-    [Fact]
-    public void Save_ConfirmNewSave_duplicate_name_second_click_within_window_overwrites()
+    public void Save_existing_name_uses_Overwrite_label_and_overwrites_matching_slot_id()
     {
         string? saved = null;
-        long fakeNow = 0;
-        var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
-        var screen = NewSaveScreen(slots: slots, saveSlot: id => saved = id, nowMs: () => fakeNow);
-        TriggerSaveRender(screen);
-
-        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
-        screen.OnMouseDown(nx, ny);
+        var slots = new[] { Slot("slot-id", "Existing", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots, saveSlot: id => saved = id);
         TriggerSaveRender(screen);
 
         foreach (char c in "Existing")
             screen.OnTextInput(c);
 
-        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
-        screen.OnMouseDown(cx, cy); // first click → arms overwrite
-        fakeNow += 500;
-        var evt = screen.OnMouseDown(cx, cy); // second click within window → overwrites
+        Assert.Equal("OVERWRITE", screen.SaveActionLabel);
+        var (sx, sy) = SaveCenter(SaveLayout.SaveButtonRect());
+        screen.OnMouseDown(sx, sy);
+
+        Assert.Equal("slot-id", saved);
+    }
+
+    [Fact]
+    public void Save_existing_name_overwrites_on_one_explicit_Overwrite_click()
+    {
+        string? saved = null;
+        var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots, saveSlot: id => saved = id);
+        TriggerSaveRender(screen);
+
+        foreach (char c in "Existing")
+            screen.OnTextInput(c);
+
+        var (sx, sy) = SaveCenter(SaveLayout.SaveButtonRect());
+        var evt = screen.OnMouseDown(sx, sy);
 
         Assert.Equal(ScreenEvent.None, evt);
         Assert.Equal("Existing", saved);
     }
 
     [Fact]
-    public void Save_ConfirmNewSave_duplicate_name_second_click_after_timeout_re_arms_instead_of_overwriting()
+    public void Save_existing_name_match_is_case_insensitive()
     {
-        bool called = false;
-        long fakeNow = 0;
+        string? saved = null;
         var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
-        var screen = NewSaveScreen(slots: slots, saveSlot: _ => called = true, nowMs: () => fakeNow);
+        var screen = NewSaveScreen(slots: slots, saveSlot: id => saved = id);
         TriggerSaveRender(screen);
 
-        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
-        screen.OnMouseDown(nx, ny);
-        TriggerSaveRender(screen);
-
-        foreach (char c in "Existing")
+        foreach (char c in "eXiStInG")
             screen.OnTextInput(c);
 
-        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
-        screen.OnMouseDown(cx, cy); // first click → arms overwrite
-        fakeNow += 5000; // past the confirm window
-        screen.OnMouseDown(cx, cy); // treated as a fresh first click, not an overwrite
+        Assert.Equal("OVERWRITE", screen.SaveActionLabel);
+        var (sx, sy) = SaveCenter(SaveLayout.SaveButtonRect());
+        screen.OnMouseDown(sx, sy);
 
-        Assert.False(called);
+        Assert.Equal("Existing", saved);
     }
 
     [Fact]
-    public void Save_CancelNewSave_clears_pending_overwrite_so_reopening_requires_arming_again()
+    public void Save_unique_name_keeps_NewSave_label()
     {
-        bool called = false;
         var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
-        var screen = NewSaveScreen(slots: slots, saveSlot: _ => called = true);
+        var screen = NewSaveScreen(slots: slots);
         TriggerSaveRender(screen);
 
-        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
-        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
-        var (canx, cany) = SaveCenter(SaveLayout.CancelButtonRect());
-
-        screen.OnMouseDown(nx, ny); // open name entry
-        TriggerSaveRender(screen);
-        foreach (char c in "Existing")
+        foreach (char c in "Unique")
             screen.OnTextInput(c);
-        screen.OnMouseDown(cx, cy); // first click → arms overwrite
 
-        screen.OnMouseDown(canx, cany); // cancel discards the armed state
-        TriggerSaveRender(screen);
-
-        screen.OnMouseDown(nx, ny); // reopen name entry
-        TriggerSaveRender(screen);
-        foreach (char c in "Existing")
-            screen.OnTextInput(c);
-        screen.OnMouseDown(cx, cy); // this must be a fresh first click again, not an overwrite
-
-        Assert.False(called);
+        Assert.Equal("NEW SAVE", screen.SaveActionLabel);
     }
 
     [Fact]
-    public void Save_CancelNewSave_click_discards_typed_name()
+    public void Save_row_click_puts_the_existing_display_name_into_the_textbox()
     {
-        bool called = false;
-        var screen = NewSaveScreen(saveSlot: _ => called = true);
+        var slots = new[] { Slot("slot-a", "Existing Name", DateTime.UtcNow) };
+        var screen = NewSaveScreen(slots: slots);
         TriggerSaveRender(screen);
 
-        var (nx, ny) = SaveCenter(SaveLayout.NewSaveButtonRect());
-        screen.OnMouseDown(nx, ny);
-        TriggerSaveRender(screen);
+        var (rx, ry) = SaveCenter(SaveLayout.RowRect(0));
+        screen.OnMouseDown(rx, ry);
 
-        foreach (char c in "Whatever")
-            screen.OnTextInput(c);
-
-        var (canx, cany) = SaveCenter(SaveLayout.CancelButtonRect());
-        var evt = screen.OnMouseDown(canx, cany);
-        TriggerSaveRender(screen);
-
-        Assert.Equal(ScreenEvent.None, evt);
-
-        // Back to collapsed state — clicking NEW SAVE again starts from empty text.
-        var (nx2, ny2) = SaveCenter(SaveLayout.NewSaveButtonRect());
-        screen.OnMouseDown(nx2, ny2);
-        var (cx, cy) = SaveCenter(SaveLayout.ConfirmButtonRect());
-        screen.OnMouseDown(cx, cy); // empty name → rejected, saveSlot still never called
-
-        Assert.False(called);
+        Assert.Equal("Existing Name", screen.EnteredName);
+        Assert.Equal("OVERWRITE", screen.SaveActionLabel);
     }
 
     [Fact]
@@ -787,7 +717,9 @@ public class ScreenEventTests
         var screen = NewSaveScreen(slots: slots, saveSlot: id => saved = id);
         TriggerSaveRender(screen);
 
-        var (x, y) = SaveCenter(SaveLayout.OverwriteButtonRect());
+        var (rx, ry) = SaveCenter(SaveLayout.RowRect(0));
+        screen.OnMouseDown(rx, ry);
+        var (x, y) = SaveCenter(SaveLayout.SaveButtonRect());
         var evt = screen.OnMouseDown(x, y);
 
         Assert.Equal(ScreenEvent.None, evt);
@@ -859,7 +791,7 @@ public class ScreenEventTests
         var (dx, dy) = SaveCenter(SaveLayout.DeleteButtonRect());
         screen.OnMouseDown(dx, dy); // first click on row 0 → CONFIRM
 
-        var (ox, oy) = SaveCenter(SaveLayout.OverwriteButtonRect());
+        var (ox, oy) = SaveCenter(SaveLayout.SaveButtonRect());
         screen.OnMouseDown(ox, oy); // click elsewhere clears the confirm state
 
         var evt = screen.OnMouseDown(dx, dy); // this is now a fresh first click again
@@ -928,7 +860,7 @@ public class ScreenEventTests
 
         // Before the notify, row index 1 doesn't exist yet — clicking there hits nothing.
         var (rowX, rowY) = SaveCenter(SaveLayout.RowRect(1));
-        var (overwriteX, overwriteY) = SaveCenter(SaveLayout.OverwriteButtonRect());
+        var (overwriteX, overwriteY) = SaveCenter(SaveLayout.SaveButtonRect());
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(rowX, rowY));
         Assert.Null(saved);
 
@@ -951,7 +883,7 @@ public class ScreenEventTests
             .Select(i => Slot($"slot-{i}", $"Slot {i}", DateTime.UtcNow))
             .ToArray();
 
-        var (ox, oy) = SaveCenter(SaveLayout.OverwriteButtonRect());
+        var (ox, oy) = SaveCenter(SaveLayout.SaveButtonRect());
         var (rowX, rowY) = SaveCenter(SaveLayout.RowRect(0));
 
         string? saved = null;

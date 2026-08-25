@@ -7,18 +7,16 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Save;
 
 /// <summary>
-/// Generic Type A modal overlay listing selectable save slots. CLOSE, DELETE, OVERWRITE,
-/// and NEW SAVE share the bottom action row; New Save mode replaces them with
-/// CLOSE/CANCEL/SAVE while the name field is shown inside the content panel.
+/// Opaque Generic Type A modal overlay with an always-visible save-name field and a
+/// selectable slot list. CLOSE, DELETE, and a dynamic NEW SAVE/OVERWRITE action share
+/// the bottom row. The action label and target are derived from the entered name.
 /// <see cref="saveSlot"/>/<see cref="deleteSlot"/> are injected by the caller (SkiaWindow),
 /// bound to <c>_session.SaveAsync</c>/<c>_sessionFactory.DeleteSaveSlot</c> — this class
 /// has no knowledge of the session/factory types, keeping it independently testable.
 /// </summary>
 public sealed class SaveScreen : IScreen
 {
-    // Shared by the two-stage DELETE confirm and the New Save duplicate-name
-    // overwrite confirm below — both require a second click within this window.
-    private const long ConfirmWindowMs = 3000;
+    private const long DeleteConfirmWindowMs = 3000;
 
     private readonly Func<IReadOnlyList<SaveSlotInfo>> _listSlots;
     private readonly Action<string> _saveSlot;
@@ -29,11 +27,7 @@ public sealed class SaveScreen : IScreen
     private IReadOnlyList<SaveSlotInfo> _slots = Array.Empty<SaveSlotInfo>();
     private int _scrollOffset;
     private int _selectedIndex = -1;
-    private bool _isNewSaveActive;
     private string? _inlineError;
-
-    private string? _pendingOverwriteName;
-    private long _pendingOverwriteStartedAtMs;
 
     private int _deleteConfirmIndex = -1;
     private long _deleteConfirmStartedAtMs;
@@ -97,7 +91,7 @@ public sealed class SaveScreen : IScreen
     /// <param name="listSlots">Enumerates every save slot on disk. Called at construction and after every mutating action.</param>
     /// <param name="saveSlot">Create a slot by name or overwrite the selected slot by id.</param>
     /// <param name="deleteSlot">Delete the selected slot after the second confirmation click.</param>
-    /// <param name="nowMs">Clock used for the delete-confirm and duplicate-name-overwrite-confirm timeout windows; defaults to <see cref="Environment.TickCount64"/>. Overridable for tests.</param>
+    /// <param name="nowMs">Clock used for the delete-confirm timeout window; defaults to <see cref="Environment.TickCount64"/>. Overridable for tests.</param>
     public SaveScreen(
         Func<IReadOnlyList<SaveSlotInfo>> listSlots,
         Action<string> saveSlot,
@@ -117,10 +111,8 @@ public sealed class SaveScreen : IScreen
 
     public void OnActivated()
     {
-        _isNewSaveActive = false;
         _inlineError = null;
         _nameInput.Clear();
-        _pendingOverwriteName = null;
         _deleteConfirmIndex = -1;
         _hoveredZone = SaveZone.None;
         _hoveredRowIndex = -1;
@@ -142,20 +134,10 @@ public sealed class SaveScreen : IScreen
 
     public ScreenEvent OnKeyDown(Key key)
     {
-        if (_isNewSaveActive)
+        if (key == Key.Backspace)
         {
-            if (key == Key.Escape)
-            {
-                CancelNewSave();
-                return ScreenEvent.None;
-            }
-
-            if (key == Key.Backspace)
-            {
-                _nameInput.OnKeyDown(key);
-                return ScreenEvent.None;
-            }
-
+            _nameInput.OnKeyDown(key);
+            _inlineError = null;
             return ScreenEvent.None;
         }
 
@@ -164,8 +146,8 @@ public sealed class SaveScreen : IScreen
 
     public void OnTextInput(char c)
     {
-        if (_isNewSaveActive)
-            _nameInput.OnTextInput(c);
+        _nameInput.OnTextInput(c);
+        _inlineError = null;
     }
 
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
@@ -173,7 +155,7 @@ public sealed class SaveScreen : IScreen
         if (button != MouseButton.Left)
             return ScreenEvent.None;
 
-        var hit = SaveLayout.HitTest(x, y, _screenWidth, _screenHeight, VisibleSlotCount, _isNewSaveActive);
+        var hit = SaveLayout.HitTest(x, y, _screenWidth, _screenHeight, VisibleSlotCount);
 
         // Two-stage delete: any click that isn't a second click for the selected row
         // clears the pending confirm state back to plain DELETE.
@@ -182,19 +164,8 @@ public sealed class SaveScreen : IScreen
 
         switch (hit.Zone)
         {
-            case SaveZone.NewSave:
-                _isNewSaveActive = true;
-                _nameInput.Clear();
-                _inlineError = null;
-                _pendingOverwriteName = null;
-                return ScreenEvent.None;
-
-            case SaveZone.ConfirmNewSave:
-                ConfirmNewSave();
-                return ScreenEvent.None;
-
-            case SaveZone.CancelNewSave:
-                CancelNewSave();
+            case SaveZone.Save:
+                SaveEnteredName();
                 return ScreenEvent.None;
 
             case SaveZone.Close:
@@ -204,16 +175,10 @@ public sealed class SaveScreen : IScreen
             {
                 int index = AbsoluteIndex(hit.RowIndex);
                 if (index >= 0 && index < _slots.Count)
-                    _selectedIndex = index;
-                return ScreenEvent.None;
-            }
-
-            case SaveZone.Overwrite:
-            {
-                if (_selectedIndex >= 0 && _selectedIndex < _slots.Count)
                 {
-                    _saveSlot(_slots[_selectedIndex].SlotId);
-                    RefreshSlots();
+                    _selectedIndex = index;
+                    SetEnteredName(_slots[index].DisplayName);
+                    _inlineError = null;
                 }
                 return ScreenEvent.None;
             }
@@ -224,7 +189,7 @@ public sealed class SaveScreen : IScreen
                     return ScreenEvent.None;
 
                 bool isConfirmedSecondClick =
-                    _deleteConfirmIndex == _selectedIndex && _nowMs() - _deleteConfirmStartedAtMs <= ConfirmWindowMs;
+                    _deleteConfirmIndex == _selectedIndex && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
 
                 if (isConfirmedSecondClick)
                 {
@@ -250,7 +215,7 @@ public sealed class SaveScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
-        var hit = SaveLayout.HitTest(x, y, _screenWidth, _screenHeight, VisibleSlotCount, _isNewSaveActive);
+        var hit = SaveLayout.HitTest(x, y, _screenWidth, _screenHeight, VisibleSlotCount);
         _hoveredZone = hit.Zone;
         _hoveredRowIndex = hit.RowIndex;
         return hit.Zone != SaveZone.None;
@@ -271,19 +236,14 @@ public sealed class SaveScreen : IScreen
         float pl = SaveLayout.PanelLeft(width);
         float pt = SaveLayout.PanelTop(height);
         var panelRect = SaveLayout.PanelRect(width, height);
-        GenericWindowTypeA.Draw(canvas, panelRect);
+        GenericWindowTypeA.DrawOpaque(canvas, panelRect);
         GenericWindowTypeA.DrawTitle(canvas, panelRect, "SAVE GAME", _titleTextPaint);
 
         ImagePanel.Draw(canvas, CombinedRect(pl, pt, SaveLayout.ContentPanelRect()));
-
-        if (_isNewSaveActive)
-            DrawNewSaveEditor(canvas, pl, pt);
-        else
-        {
-            DrawSlotList(canvas, pl, pt);
-            if (_slots.Count > SaveLayout.VisibleRows)
-                DrawScrollbar(canvas, pl, pt);
-        }
+        DrawNameEditor(canvas, pl, pt);
+        DrawSlotList(canvas, pl, pt);
+        if (_slots.Count > SaveLayout.VisibleRows)
+            DrawScrollbar(canvas, pl, pt);
 
         DrawBottomButtons(canvas, pl, pt);
     }
@@ -299,7 +259,7 @@ public sealed class SaveScreen : IScreen
         canvas.DrawRect(thumb, MenuStyle.ButtonFillHover);
     }
 
-    private void DrawNewSaveEditor(SKCanvas canvas, float panelLeft, float panelTop)
+    private void DrawNameEditor(SKCanvas canvas, float panelLeft, float panelTop)
     {
         var inputRect = CombinedRect(panelLeft, panelTop, SaveLayout.NameInputRect());
         _nameInput.Render(canvas, inputRect);
@@ -340,23 +300,9 @@ public sealed class SaveScreen : IScreen
 
     private void DrawBottomButtons(SKCanvas canvas, float panelLeft, float panelTop)
     {
-        if (_isNewSaveActive)
-        {
-            GenericButtonTypeA.Draw(canvas,
-                CombinedRect(panelLeft, panelTop, SaveLayout.CloseButtonRect(isNewSaveActive: true)),
-                "CLOSE", StateFor(SaveZone.Close));
-            GenericButtonTypeA.Draw(canvas,
-                CombinedRect(panelLeft, panelTop, SaveLayout.CancelButtonRect()),
-                "CANCEL", StateFor(SaveZone.CancelNewSave));
-            GenericButtonTypeA.Draw(canvas,
-                CombinedRect(panelLeft, panelTop, SaveLayout.ConfirmButtonRect()),
-                "SAVE", StateFor(SaveZone.ConfirmNewSave));
-            return;
-        }
-
         bool hasSelection = _selectedIndex >= 0 && _selectedIndex < _slots.Count;
         bool isConfirming = hasSelection && _deleteConfirmIndex == _selectedIndex
-            && _nowMs() - _deleteConfirmStartedAtMs <= ConfirmWindowMs;
+            && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
 
         GenericButtonTypeA.Draw(canvas,
             CombinedRect(panelLeft, panelTop, SaveLayout.CloseButtonRect()),
@@ -367,11 +313,8 @@ public sealed class SaveScreen : IScreen
             !hasSelection ? ButtonState.Disabled
                 : isConfirming ? ButtonState.Hovered : StateFor(SaveZone.Delete));
         GenericButtonTypeA.Draw(canvas,
-            CombinedRect(panelLeft, panelTop, SaveLayout.OverwriteButtonRect()),
-            "OVERWRITE", hasSelection ? StateFor(SaveZone.Overwrite) : ButtonState.Disabled);
-        GenericButtonTypeA.Draw(canvas,
-            CombinedRect(panelLeft, panelTop, SaveLayout.NewSaveButtonRect()),
-            "NEW SAVE", StateFor(SaveZone.NewSave));
+            CombinedRect(panelLeft, panelTop, SaveLayout.SaveButtonRect()),
+            SaveActionLabel, StateFor(SaveZone.Save));
     }
 
     private ButtonState StateFor(SaveZone zone) =>
@@ -380,14 +323,13 @@ public sealed class SaveScreen : IScreen
     private static SKRect CombinedRect(float panelLeft, float panelTop, (float X, float Y, float W, float H) local) =>
         new(panelLeft + local.X, panelTop + local.Y, panelLeft + local.X + local.W, panelTop + local.Y + local.H);
 
-    private void ConfirmNewSave()
+    private void SaveEnteredName()
     {
         string name = _nameInput.Text.Trim();
 
         if (name.Length == 0)
         {
             _inlineError = "Enter a name for the save.";
-            _pendingOverwriteName = null;
             return;
         }
 
@@ -398,44 +340,31 @@ public sealed class SaveScreen : IScreen
         if (string.Equals(name, SaveSlots.Quicksave, StringComparison.OrdinalIgnoreCase))
         {
             _inlineError = "That name is reserved for quicksave.";
-            _pendingOverwriteName = null;
             return;
         }
 
-        bool isDuplicate = _slots.Any(s => string.Equals(s.DisplayName, name, StringComparison.OrdinalIgnoreCase));
-        if (isDuplicate)
-        {
-            // Same two-stage pattern as DELETE: the first SAVE click on a
-            // duplicate name only arms the overwrite (and re-arms if the name changed
-            // since the last arm, or the window lapsed) — it takes a second SAVE click
-            // on that same name within ConfirmWindowMs to actually overwrite.
-            bool isConfirmedOverwrite =
-                string.Equals(_pendingOverwriteName, name, StringComparison.OrdinalIgnoreCase)
-                && _nowMs() - _pendingOverwriteStartedAtMs <= ConfirmWindowMs;
-
-            if (!isConfirmedOverwrite)
-            {
-                _pendingOverwriteName = name;
-                _pendingOverwriteStartedAtMs = _nowMs();
-                _inlineError = "A save with that name already exists. Click SAVE again to overwrite.";
-                return;
-            }
-        }
-
-        _saveSlot(name);
-        _isNewSaveActive = false;
+        var existingSlot = FindMatchingSlot();
+        _saveSlot(existingSlot?.SlotId ?? name);
         _nameInput.Clear();
         _inlineError = null;
-        _pendingOverwriteName = null;
         RefreshSlots();
     }
 
-    private void CancelNewSave()
+    private SaveSlotInfo? FindMatchingSlot()
     {
-        _isNewSaveActive = false;
+        string name = _nameInput.Text.Trim();
+        return _slots.FirstOrDefault(slot =>
+            string.Equals(slot.DisplayName, name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    internal string SaveActionLabel => FindMatchingSlot() is null ? "NEW SAVE" : "OVERWRITE";
+    internal string EnteredName => _nameInput.Text;
+
+    private void SetEnteredName(string value)
+    {
         _nameInput.Clear();
-        _inlineError = null;
-        _pendingOverwriteName = null;
+        foreach (char c in value)
+            _nameInput.TryAppendChar(c);
     }
 
     private void RefreshSlots()

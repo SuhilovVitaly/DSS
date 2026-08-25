@@ -32,6 +32,21 @@ public class GenericWindowTypeATests
         Assert.True(bitmap.GetPixel((int)bounds.Left + 2, (int)bounds.MidY).Alpha > 0);
     }
 
+    [Fact]
+    public void DrawOpaque_makes_the_window_center_fully_opaque()
+    {
+        using var bitmap = new SKBitmap(320, 240);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+        var bounds = new SKRect(20, 20, 300, 220);
+
+        GenericWindowTypeA.DrawOpaque(canvas, bounds);
+        canvas.Flush();
+
+        Assert.Equal(255, bitmap.GetPixel((int)bounds.MidX, (int)bounds.MidY).Alpha);
+        Assert.Equal(0, bitmap.GetPixel(0, 0).Alpha);
+    }
+
     [Theory]
     [InlineData(10, 20, 500, 550, 23)]
     [InlineData(40, 60, 900, 620, 32)]
