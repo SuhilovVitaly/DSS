@@ -56,6 +56,9 @@
     <None Update="UI\Fonts\humaroid.regular.otf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="UI\Fonts\**\*.ttf;UI\Fonts\**\*.otf;UI\Fonts\**\*.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -215,16 +218,10 @@
     <None Update="Settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Data\*.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Data\Commands\**\*.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Data\Modules\**\*.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Data\Locale\**\*.json">
+    <!-- Engine content is directory-based and may gain new category folders. Keep one
+         recursive rule so a source catalog can never silently disappear from the shipped
+         output merely because its folder is new (Data/Items exposed this failure). -->
+    <None Update="Data\**\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Scenarios\Default\scenario.json">

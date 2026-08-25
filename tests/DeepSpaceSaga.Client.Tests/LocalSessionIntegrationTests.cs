@@ -434,6 +434,47 @@ public class LocalSessionIntegrationTests
         Assert.Equal(0, ship!.SpeedKmS);
     }
 
+    [Theory]
+    [InlineData("default")]
+    [InlineData("docked")]
+    public async Task Client_build_output_starts_scenario_and_publishes_first_snapshot(string scenarioId)
+    {
+        // Regression: Settings.json now points itemTypes at the split Data/Items directory.
+        // Source-tree tests still pass when that directory is absent from Client/bin, while
+        // the real New Game path fails before publishing a snapshot. Exercise the packaged
+        // paths and the local connection together, with a hard timeout against a silent hang.
+        string settingsPath = ResolveClientBuildOutputSettingsPath();
+        string scenariosDirectory = Path.Combine(Path.GetDirectoryName(settingsPath)!, "Scenarios");
+        var selectedScenario = Assert.Single(
+            ScenarioRepository.ListScenarios(scenariosDirectory),
+            scenario => scenario.ScenarioId == scenarioId);
+
+        await using var connection = await Task.Run(() =>
+                LocalGameSessionConnection.CreateFromScenarioFile(
+                    settingsPath,
+                    selectedScenario.ScenarioPath))
+            .WaitAsync(TimeSpan.FromSeconds(5));
+        await using var handle = new GameSessionHandle(connection);
+
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (DateTime.UtcNow < deadline && handle.Buffer.Latest is null)
+            await Task.Delay(25);
+
+        var snapshot = handle.Buffer.Latest;
+        Assert.NotNull(snapshot);
+        Assert.Equal("SPC-0001", snapshot!.Snapshot.PlayerShipObjectId);
+        Assert.Contains(snapshot.Snapshot.Objects, obj => obj.ObjectId == "SPC-0002");
+
+        if (scenarioId == "docked")
+        {
+            Assert.Equal(SimulationSpeed.Speed0, snapshot.Snapshot.CurrentSpeed);
+            var playerShip = Assert.Single(snapshot.Snapshot.Objects,
+                obj => obj.ObjectId == snapshot.Snapshot.PlayerShipObjectId);
+            Assert.True(playerShip.IsDocked);
+            Assert.Equal("SPC-0002", playerShip.DockedStationObjectId);
+        }
+    }
+
     [Fact]
     public void ScenarioRepository_lists_every_scenario_json_found_under_the_real_Scenarios_directory()
     {
@@ -448,6 +489,23 @@ public class LocalSessionIntegrationTests
         Assert.Contains(scenarios, s => s.ScenarioId == "default" && !string.IsNullOrWhiteSpace(s.Description));
         Assert.Contains(scenarios, s => s.ScenarioId == "docked" && !string.IsNullOrWhiteSpace(s.Description));
         Assert.All(scenarios, s => Assert.True(File.Exists(s.ScenarioPath)));
+    }
+
+    private static string ResolveClientBuildOutputSettingsPath()
+    {
+        string repositoryRoot = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        string clientBinRoot = Path.Combine(repositoryRoot, "src", "DeepSpaceSaga.Client", "bin");
+
+        foreach (string configuration in new[] { "Debug", "Release" })
+        {
+            string candidate = Path.Combine(clientBinRoot, configuration, "net8.0", "Settings.json");
+            if (File.Exists(candidate))
+                return candidate;
+        }
+
+        throw new FileNotFoundException(
+            $"DeepSpaceSaga.Client build output was not found under '{clientBinRoot}'.");
     }
 
     [Fact]

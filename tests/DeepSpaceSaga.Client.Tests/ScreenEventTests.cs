@@ -157,6 +157,43 @@ public class ScreenEventTests
     }
 
     [Fact]
+    public void GameMenu_Close_click_returns_Resume()
+    {
+        var screen = new GameMenuScreen();
+        TriggerGameRender(screen);
+        var close = GameMenuLayout.CloseRect(ScreenWidth, ScreenHeight);
+        Assert.True(screen.OnMouseMove(close.MidX, close.MidY));
+        Assert.Equal(ScreenEvent.Resume, screen.OnMouseDown(close.MidX, close.MidY));
+    }
+
+    [Fact]
+    public void GameMenu_Settings_is_disabled_for_hover_and_click()
+    {
+        var screen = new GameMenuScreen();
+        var (x, y) = GameButtonCenter(GameMenuLayout.SettingsY);
+        TriggerGameRender(screen);
+        Assert.False(screen.OnMouseMove(x, y));
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void GameMenu_right_click_does_not_activate_controls()
+    {
+        var screen = new GameMenuScreen();
+        var (x, y) = GameButtonCenter(GameMenuLayout.ResumeY);
+        TriggerGameRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y, MouseButton.Right));
+    }
+
+    [Fact]
+    public void GameMenu_click_outside_panel_does_nothing()
+    {
+        var screen = new GameMenuScreen();
+        TriggerGameRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(0, 0));
+    }
+
+    [Fact]
     public void GameMenu_Esc_returns_Resume()
     {
         var screen = new GameMenuScreen();
