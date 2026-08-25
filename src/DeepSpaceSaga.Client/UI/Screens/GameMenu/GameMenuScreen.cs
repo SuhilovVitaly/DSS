@@ -96,8 +96,6 @@ public sealed class GameMenuScreen : IScreen
             canvas,
             GameMenuLayout.PanelRect(width, height),
             GameMenuLayout.HeaderRect(width, height),
-            GameMenuLayout.LeftRulerRect(width, height),
-            GameMenuLayout.RightRulerRect(width, height),
             GameMenuLayout.FooterRect(width, height),
             GameMenuLayout.CloseRect(width, height),
             _title,

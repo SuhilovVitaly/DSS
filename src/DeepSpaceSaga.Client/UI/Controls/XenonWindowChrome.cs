@@ -7,40 +7,29 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 public static class XenonWindowChrome
 {
     internal const string ShellPath = "Images/UI/Themes/Xenon/Window/window-shell.png";
-    internal const string HeaderPath = "Images/UI/Themes/Xenon/Window/window-header.png";
-    internal const string RulerPath = "Images/UI/Themes/Xenon/Window/window-side-ruler.png";
     internal const string ClosePath = "Images/UI/Themes/Xenon/Icons/close.png";
     internal const string CloseActivePath = "Images/UI/Themes/Xenon/Icons/close-active.png";
 
     private static readonly SKBitmap? Shell = UiAssetLoader.LoadBitmap(ShellPath);
-    private static readonly SKBitmap? Header = UiAssetLoader.LoadBitmap(HeaderPath);
-    private static readonly SKBitmap? Ruler = UiAssetLoader.LoadBitmap(RulerPath);
     private static readonly SKBitmap? Close = UiAssetLoader.LoadBitmap(ClosePath);
     private static readonly SKBitmap? CloseActive = UiAssetLoader.LoadBitmap(CloseActivePath);
 
-    internal static bool HasChromeAssets => Shell is not null && Header is not null && Ruler is not null;
+    internal static bool HasChromeAssets => Shell is not null;
 
     /// <summary>Forces bitmap decoding before the render loop.</summary>
     public static void Preload() { }
 
     public static void Draw(SKCanvas canvas, SKRect bounds, SKRect headerRect,
-        SKRect leftRulerRect, SKRect rightRulerRect, SKRect footerRect, SKRect closeRect,
+        SKRect footerRect, SKRect closeRect,
         string title, string subtitle, string footerLeft, string footerRight, ButtonState closeState)
     {
         if (HasChromeAssets)
         {
             NinePatch.Draw(canvas, Shell!, bounds, XenonStyle.WindowSliceInset);
-            canvas.DrawBitmap(Header!, headerRect);
-            canvas.DrawBitmap(Ruler!, leftRulerRect);
-            canvas.Save();
-            canvas.Translate(rightRulerRect.Left + rightRulerRect.Right, 0);
-            canvas.Scale(-1, 1);
-            canvas.DrawBitmap(Ruler!, rightRulerRect);
-            canvas.Restore();
         }
         else
         {
-            DrawFallbackFrame(canvas, bounds, headerRect, leftRulerRect, rightRulerRect);
+            DrawFallbackFrame(canvas, bounds);
         }
 
         DrawHeaderText(canvas, headerRect, title, subtitle);
@@ -48,17 +37,9 @@ public static class XenonWindowChrome
         DrawClose(canvas, closeRect, closeState);
     }
 
-    private static void DrawFallbackFrame(SKCanvas canvas, SKRect bounds, SKRect headerRect,
-        SKRect leftRulerRect, SKRect rightRulerRect)
+    private static void DrawFallbackFrame(SKCanvas canvas, SKRect bounds)
     {
         MenuStyle.DrawPanel(canvas, bounds);
-        canvas.DrawRect(headerRect, XenonStyle.HeaderFallbackFill);
-        canvas.DrawLine(headerRect.Left, headerRect.Bottom, headerRect.Right, headerRect.Bottom,
-            XenonStyle.ThinCyanStroke);
-        canvas.DrawLine(leftRulerRect.MidX, leftRulerRect.Top, leftRulerRect.MidX, leftRulerRect.Bottom,
-            XenonStyle.DimCyanStroke);
-        canvas.DrawLine(rightRulerRect.MidX, rightRulerRect.Top, rightRulerRect.MidX, rightRulerRect.Bottom,
-            XenonStyle.DimCyanStroke);
     }
 
     private static void DrawHeaderText(SKCanvas canvas, SKRect rect, string title, string subtitle)

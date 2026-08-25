@@ -22,8 +22,6 @@ public class XenonWindowChromeTests
             XenonWindowChrome.Draw(canvas,
                 new SKRect(10, 10, 510, 560),
                 new SKRect(68, 34, 452, 110),
-                new SKRect(34, 122, 56, 464),
-                new SKRect(464, 122, 486, 464),
                 new SKRect(68, 486, 452, 542),
                 new SKRect(460, 30, 492, 62),
                 "DEEP SPACE SAGA", "GAME MENU // SIMULATION PAUSED", "ESC  RESUME", "Version 1.0", state);

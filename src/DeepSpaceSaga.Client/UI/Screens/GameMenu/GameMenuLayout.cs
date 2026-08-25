@@ -33,9 +33,6 @@ public static class GameMenuLayout
     public const float CloseX = 450f;
     public const float CloseY = 20f;
     public const float CloseSize = 32f;
-    public const float RulerY = 112f;
-    public const float RulerWidth = 22f;
-    public const float RulerHeight = 342f;
     public const float FooterY = 476f;
     public const float FooterHeight = 56f;
 
@@ -50,12 +47,6 @@ public static class GameMenuLayout
 
     public static SKRect CloseRect(int screenWidth, int screenHeight) =>
         OffsetRect(CloseX, CloseY, CloseSize, CloseSize, screenWidth, screenHeight);
-
-    public static SKRect LeftRulerRect(int screenWidth, int screenHeight) =>
-        OffsetRect(24f, RulerY, RulerWidth, RulerHeight, screenWidth, screenHeight);
-
-    public static SKRect RightRulerRect(int screenWidth, int screenHeight) =>
-        OffsetRect(PanelWidth - 24f - RulerWidth, RulerY, RulerWidth, RulerHeight, screenWidth, screenHeight);
 
     public static SKRect FooterRect(int screenWidth, int screenHeight) =>
         OffsetRect(InnerPadding, FooterY, ButtonWidth, FooterHeight, screenWidth, screenHeight);
