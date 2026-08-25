@@ -17,6 +17,16 @@ public static class GenericWindowTypeA
     /// The baseline itself depends on the selected font, so it must not be shared directly.
     /// </summary>
     public const float TitleTopInset = 34f;
+    public const float VersionBaselineInset = 110f;
+
+    private static readonly SKPaint VersionTextPaint = new()
+    {
+        Color = MenuStyle.ColorText,
+        TextSize = MenuStyle.VersionFontSize,
+        IsAntialias = true,
+        TextAlign = SKTextAlign.Center,
+        Typeface = MenuStyle.TypefaceHumaroid
+    };
 
     private static readonly SKBitmap? Shell = UiAssetLoader.LoadBitmap(ShellPath);
 
@@ -53,4 +63,8 @@ public static class GenericWindowTypeA
         var position = TitlePosition(bounds, paint);
         canvas.DrawText(title, position.X, position.Y, paint);
     }
+
+    /// <summary>Draws the shared Type A version label below the title.</summary>
+    public static void DrawVersion(SKCanvas canvas, SKRect bounds, string version) =>
+        canvas.DrawText(version, bounds.MidX, bounds.Top + VersionBaselineInset, VersionTextPaint);
 }

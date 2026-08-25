@@ -27,8 +27,6 @@ public static class GameMenuLayout
     public const float SettingsY = 330f;
     public const float MainMenuY = 396f;
 
-    public const float HeaderY = 24f;
-    public const float HeaderHeight = 76f;
     public const float FooterY = 476f;
     public const float FooterHeight = 56f;
 
@@ -37,9 +35,6 @@ public static class GameMenuLayout
 
     public static SKRect PanelRect(int screenWidth, int screenHeight) =>
         OffsetRect(0, 0, PanelWidth, PanelHeight, screenWidth, screenHeight);
-
-    public static SKRect HeaderRect(int screenWidth, int screenHeight) =>
-        OffsetRect(InnerPadding, HeaderY, ButtonWidth, HeaderHeight, screenWidth, screenHeight);
 
     public static SKRect FooterRect(int screenWidth, int screenHeight) =>
         OffsetRect(InnerPadding, FooterY, ButtonWidth, FooterHeight, screenWidth, screenHeight);

@@ -16,7 +16,6 @@ public sealed class GameMenuScreen : IScreen
 
     private readonly string _title;
     private readonly string _version;
-    private readonly string _status;
     private readonly string _resume;
     private readonly string _save;
     private readonly string _load;
@@ -32,7 +31,6 @@ public sealed class GameMenuScreen : IScreen
 
         _title = GameInfo.Title;
         _version = GameInfo.Version;
-        _status = Localization.Get("GameMenu.Status");
         _resume = Localization.Get("GameMenu.Resume");
         _save = Localization.Get("GameMenu.Save");
         _load = Localization.Get("GameMenu.Load");
@@ -95,12 +93,10 @@ public sealed class GameMenuScreen : IScreen
         XenonWindowChrome.Draw(
             canvas,
             GameMenuLayout.PanelRect(width, height),
-            GameMenuLayout.HeaderRect(width, height),
             GameMenuLayout.FooterRect(width, height),
             _title,
-            _status,
-            _escResume,
-            _version);
+            _version,
+            _escResume);
 
         DrawButton(canvas, width, height, _resume, GameMenuButton.Resume);
         DrawButton(canvas, width, height, _save, GameMenuButton.Save);

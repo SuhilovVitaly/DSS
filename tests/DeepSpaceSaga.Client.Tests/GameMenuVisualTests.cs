@@ -13,11 +13,9 @@ public class GameMenuVisualTests
     {
         var strings = Localization.LoadLocaleFile(language);
         Assert.NotNull(strings);
-        Assert.True(XenonStyle.SubtitleText.MeasureText(strings!["GameMenu.Status"])
-            <= GameMenuLayout.ButtonWidth - 24f);
 
         foreach (var key in new[] { "Resume", "Save", "Load", "Settings", "MainMenu" })
-            Assert.True(XenonStyle.ButtonText.MeasureText(strings[$"GameMenu.{key}"])
+            Assert.True(XenonStyle.ButtonText.MeasureText(strings![$"GameMenu.{key}"])
                 <= GameMenuLayout.ButtonWidth - 112f);
     }
 

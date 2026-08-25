@@ -19,8 +19,7 @@ public class XenonWindowChromeTests
         using var canvas = new SKCanvas(bitmap);
         XenonWindowChrome.Draw(canvas,
             new SKRect(10, 10, 510, 560),
-            new SKRect(68, 34, 452, 110),
             new SKRect(68, 486, 452, 542),
-            "DEEP SPACE SAGA", "GAME MENU // SIMULATION PAUSED", "ESC  RESUME", "Version 1.0");
+            "DEEP SPACE SAGA", "Version 1.0", "ESC  RESUME");
     }
 }

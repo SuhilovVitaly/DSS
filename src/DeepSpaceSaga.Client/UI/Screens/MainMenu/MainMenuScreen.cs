@@ -25,16 +25,6 @@ public sealed class MainMenuScreen : IScreen
         Typeface = MenuStyle.TypefaceHumaroid
     };
 
-    /// <summary>Same size/color/alignment as <see cref="MenuStyle.TextVersion"/>, but in Humaroid.</summary>
-    private static readonly SKPaint _versionTextPaint = new()
-    {
-        Color = MenuStyle.ColorText,
-        TextSize = MenuStyle.VersionFontSize,
-        IsAntialias = true,
-        TextAlign = SKTextAlign.Center,
-        Typeface = MenuStyle.TypefaceHumaroid
-    };
-
     public MainMenuScreen()
     {
         GenericWindowTypeA.Preload();
@@ -97,10 +87,9 @@ public sealed class MainMenuScreen : IScreen
         float pt = MenuLayout.PanelTop(height);
         DrawWindowShell(canvas, MenuLayout.PanelRect(width, height));
 
-        float cx = pl + MenuLayout.PanelWidth / 2f;
-
-        GenericWindowTypeA.DrawTitle(canvas, MenuLayout.PanelRect(width, height), GameInfo.Title, _titleTextPaint);
-        canvas.DrawText(GameInfo.Version, cx, pt + MenuLayout.VersionY, _versionTextPaint);
+        var panelRect = MenuLayout.PanelRect(width, height);
+        GenericWindowTypeA.DrawTitle(canvas, panelRect, GameInfo.Title, _titleTextPaint);
+        GenericWindowTypeA.DrawVersion(canvas, panelRect, GameInfo.Version);
 
         DrawButton(canvas, pl, pt, MenuLayout.NewGameY, Localization.Get("MainMenu.NewGame"), MenuButton.NewGame);
         DrawButton(canvas, pl, pt, MenuLayout.LoadY, Localization.Get("MainMenu.Load"), MenuButton.Load);
