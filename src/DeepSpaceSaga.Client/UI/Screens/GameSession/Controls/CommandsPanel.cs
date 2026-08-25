@@ -133,6 +133,8 @@ public sealed class CommandsPanel
 
     // ── Paints ──────────────────────────────────────────────────
     private readonly SKPaint _panelBgPaint;
+    private readonly SKPaint _mainCaptionBgPaint;
+    private readonly SKPaint _moduleCaptionBgPaint;
     private readonly SKPaint _panelBorderPaint;
     private readonly SKPaint _titlePaint;
 
@@ -155,8 +157,6 @@ public sealed class CommandsPanel
     private readonly SKPaint _commandBtnIconPaint;
 
     // ── Images ──────────────────────────────────────────────────
-    private readonly SKBitmap? _captionBackgroundImage;
-    private readonly SKBitmap? _moduleCaptionBackgroundImage;
     private readonly SKBitmap? _moduleBodyBackgroundImage;
     private readonly SKBitmap? _hideImage;
     private readonly SKBitmap? _showImage;
@@ -192,6 +192,18 @@ public sealed class CommandsPanel
             Style = SKPaintStyle.Fill,
             BlendMode = SKBlendMode.Src
         };
+        _mainCaptionBgPaint = new SKPaint
+        {
+            Color = new SKColor(2, 14, 22),
+            Style = SKPaintStyle.Fill,
+            BlendMode = SKBlendMode.Src
+        };
+        _moduleCaptionBgPaint = new SKPaint
+        {
+            Color = new SKColor(8, 35, 50),
+            Style = SKPaintStyle.Fill,
+            BlendMode = SKBlendMode.Src
+        };
         _panelBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
         _titlePaint = new SKPaint
         {
@@ -218,8 +230,6 @@ public sealed class CommandsPanel
 
         _moduleCaptionTextPaint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 14f, IsAntialias = true, Typeface = XenonStyle.TypefaceSemibold };
 
-        _captionBackgroundImage = LoadImage($"{XenonAssetsPath}/header-strip.png");
-        _moduleCaptionBackgroundImage = LoadImage($"{XenonAssetsPath}/header-strip.png");
         _moduleBodyBackgroundImage = LoadImage($"{XenonAssetsPath}/module-body.png");
         _hideImage = LoadImage($"{XenonAssetsPath}/collapse-normal.png");
         _hideHoverImage = LoadImage($"{XenonAssetsPath}/collapse-hover.png");
@@ -292,8 +302,6 @@ public sealed class CommandsPanel
 
     /// <summary>True when the complete Xenon command-panel chrome was found.</summary>
     internal bool HasLoadedXenonChrome =>
-        _captionBackgroundImage is not null &&
-        _moduleCaptionBackgroundImage is not null &&
         _moduleBodyBackgroundImage is not null &&
         _hideImage is not null && _hideHoverImage is not null && _hidePressedImage is not null &&
         _showImage is not null && _showHoverImage is not null && _showPressedImage is not null &&
@@ -518,9 +526,7 @@ public sealed class CommandsPanel
 
     private void DrawCaption(SKCanvas canvas)
     {
-        canvas.DrawRect(_captionRect, _panelBgPaint);
-        if (_captionBackgroundImage is not null)
-            NinePatch.Draw(canvas, _captionBackgroundImage, _captionRect, 6f);
+        canvas.DrawRect(_captionRect, _mainCaptionBgPaint);
 
         // HideShow toggle: hide icon when open, show icon when closed.
         var hideShowImage = ResolveHideShowImage();
@@ -568,9 +574,7 @@ public sealed class CommandsPanel
 
     private void DrawCommandPanel(SKCanvas canvas, CommandPanelGeometry row)
     {
-        canvas.DrawRect(row.CaptionRect, _panelBgPaint);
-        if (_moduleCaptionBackgroundImage is not null)
-            NinePatch.Draw(canvas, _moduleCaptionBackgroundImage, row.CaptionRect, 6f);
+        canvas.DrawRect(row.CaptionRect, _moduleCaptionBgPaint);
 
         float textX = row.CaptionRect.Left + 40f;
         float textY = row.CaptionRect.MidY + _moduleCaptionTextPaint.TextSize / 3f + ModuleTitleOffsetY;

@@ -189,6 +189,14 @@ public class CommandsPanelSkeletonTests
         Assert.Equal(255, bitmap.GetPixel(350, 20).Alpha);
         Assert.Equal(255, bitmap.GetPixel(350, 54).Alpha);
         Assert.Equal(255, bitmap.GetPixel(350, 120).Alpha);
+
+        var mainCaptionColor = bitmap.GetPixel(240, 20);
+        var moduleCaptionColor = bitmap.GetPixel(200, 54);
+        Assert.Equal(mainCaptionColor, bitmap.GetPixel(340, 20));
+        Assert.Equal(moduleCaptionColor, bitmap.GetPixel(340, 54));
+        Assert.True(mainCaptionColor.Red < moduleCaptionColor.Red);
+        Assert.True(mainCaptionColor.Green < moduleCaptionColor.Green);
+        Assert.True(mainCaptionColor.Blue < moduleCaptionColor.Blue);
     }
 
     [Fact]
