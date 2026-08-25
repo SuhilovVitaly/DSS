@@ -29,7 +29,7 @@ public static class GenericButtonTypeA
 
     public static void Draw(
         SKCanvas canvas, SKRect bounds, string text, ButtonState state,
-        SKColor? textColorOverride = null)
+        SKColor? textColorOverride = null, bool showMarker = true)
     {
         if (HasAssets)
         {
@@ -47,7 +47,8 @@ public static class GenericButtonTypeA
             MenuStyle.DrawButton(canvas, bounds, text, state);
         }
 
-        DrawMarker(canvas, bounds, state);
+        if (showMarker)
+            DrawMarker(canvas, bounds, state);
         if (!HasAssets)
             return;
 
@@ -62,10 +63,18 @@ public static class GenericButtonTypeA
         // Keep long labels clear of the fixed left marker while preserving the centered
         // Type A composition. Most labels retain the theme font size; only labels that
         // would enter the marker's breathing room are scaled down.
-        float markerSize = MarkerSize(bounds);
-        float markerLeftInset = MarkerLeftInset(bounds);
-        float markerClearanceX = bounds.Left + markerLeftInset + markerSize + 8f;
-        float maxTextWidth = Math.Max(1f, 2f * (bounds.MidX - markerClearanceX));
+        float maxTextWidth;
+        if (showMarker)
+        {
+            float markerSize = MarkerSize(bounds);
+            float markerLeftInset = MarkerLeftInset(bounds);
+            float markerClearanceX = bounds.Left + markerLeftInset + markerSize + 8f;
+            maxTextWidth = Math.Max(1f, 2f * (bounds.MidX - markerClearanceX));
+        }
+        else
+        {
+            maxTextWidth = Math.Max(1f, bounds.Width - 16f);
+        }
         float textWidth = textPaint.MeasureText(text);
 
         if (textWidth > maxTextWidth || textColorOverride.HasValue)

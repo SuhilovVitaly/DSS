@@ -36,12 +36,11 @@ public static class TradeLayout
 
     // ── Header ──────────────────────────────────────────────────────────────────
     public const float HeaderLeftX = 40f;
-    public const float TitleBaselineY = 46f;
-    public const float SubtitleBaselineY = 74f;
+    public const float SubtitleBaselineY = 86f;
 
     // ── Stats row (CREDITS / CARGO / FUEL) ─────────────────────────────────────
     public const float ContentMargin = 40f;
-    public const float StatsRowY = 96f;
+    public const float StatsRowY = 105f;
     public const float StatsRowHeight = 50f;
     public const float StatsBlockGap = 20f;
 
@@ -75,7 +74,7 @@ public static class TradeLayout
     public const float TransactionStepperHeight = 44f;
     public const float TransactionTotalBaselineY = TransactionStepperY + TransactionStepperHeight + 34f;
     public const float TransactionButtonsY = TransactionTotalBaselineY + 26f;
-    public const float TransactionButtonHeight = 44f;
+    public const float TransactionButtonHeight = 56f;
     public const float TransactionButtonGap = 20f;
 
     // ── YOUR CARGO / FUEL column split ─────────────────────────────────────────
@@ -102,17 +101,24 @@ public static class TradeLayout
     public const float SummaryTitleBaselineY = SummaryPadding + 16f;
     public const float SummaryValuesBaselineY = SummaryPadding + 60f;
 
-    public const float CancelButtonWidth = 140f;
-    public const float CancelButtonHeight = 44f;
+    public const float CancelButtonWidth = 200f;
+    public const float CancelButtonHeight = 56f;
     public const float CancelButtonMargin = 20f;
 
     /// <summary>Exit (leave Trade) button — a normal bottom-row button, same size as Cancel,
     /// placed directly to its left in the summary row (see Exit_button_click_returns_CloseTrade).</summary>
-    public const float ExitButtonWidth = 140f;
+    public const float ExitButtonWidth = 200f;
     public const float ExitButtonGap = 20f;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
+
+    public static SkiaSharp.SKRect PanelRect(int screenWidth, int screenHeight)
+    {
+        float left = PanelLeft(screenWidth);
+        float top = PanelTop(screenHeight);
+        return new SkiaSharp.SKRect(left, top, left + PanelWidth, top + PanelHeight);
+    }
 
     // ── Column rects, local to the panel ───────────────────────────────────────
     public static (float X, float Y, float W, float H) StationColumnRect() => (StationColumnX, ColumnsTopY, ColumnWidth, ColumnsHeight);

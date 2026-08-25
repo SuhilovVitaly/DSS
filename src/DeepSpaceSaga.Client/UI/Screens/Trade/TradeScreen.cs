@@ -13,7 +13,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.Trade;
 /// Refuel the engine module, all authoritative (Engine confirms every mutation; this
 /// screen never mutates Credits/stock/cargo/fuel itself). Opened from
 /// <see cref="Station.StationScreen"/>'s `TRADE` button (ScreenEvent.OpenTrade) as a
-/// nested modal on top of it; closes via the × button, Escape, or a click outside the
+/// nested modal on top of it; closes via the EXIT button, Escape, or a click outside the
 /// panel, returning to <see cref="Station.StationScreen"/>. Pause-on-open/resume-on-close
 /// is handled generically by SkiaWindow's PushModalAsync/PopModalAsync.
 ///
@@ -57,23 +57,6 @@ public sealed class TradeScreen : IScreen
     private int _hoveredInventoryRow = -1;
     private int _hoveredCargoRow = -1;
 
-    /// <summary>
-    /// Panel background at the exact 1400×900 panel size — loaded once and shared by
-    /// every TradeScreen instance; falls back to MenuStyle.DrawPanel's plain fill if the
-    /// file is missing.
-    /// </summary>
-    private static readonly SKBitmap? BackgroundImage =
-        LoadImage("Images/UI/window-background-1400x900.png");
-
-    private static SKBitmap? LoadImage(string path)
-    {
-        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
-        catch { return null; }
-    }
-
-    /// <summary>True if the background PNG file was found and decoded at startup.</summary>
-    internal static bool HasLoadedBackground => BackgroundImage is not null;
-
     /// <summary>Currently selected station item for Buy/Sell — null means "nothing selected yet".</summary>
     private string? _selectedItemTypeId;
 
@@ -112,6 +95,9 @@ public sealed class TradeScreen : IScreen
 
     public TradeScreen(SnapshotBuffer buffer, GameSessionHandle? handle)
     {
+        GenericWindowTypeA.Preload();
+        GenericButtonTypeA.Preload();
+
         _buffer = buffer;
         _handle = handle;
     }
@@ -481,7 +467,7 @@ public sealed class TradeScreen : IScreen
     };
 
     /// <summary>Accent color for the selected row/highlighted values — same orange used elsewhere (ScenarioSelect, ProgressBar default fill).</summary>
-    private static readonly SKColor _accentColor = new(0xFF, 0x84, 0x04);
+    private static readonly SKColor _accentColor = XenonStyle.OrangeAccent;
 
     private static readonly SKPaint _selectedRowIndicator = new()
     {
@@ -510,11 +496,9 @@ public sealed class TradeScreen : IScreen
 
         float pl = TradeLayout.PanelLeft(width);
         float pt = TradeLayout.PanelTop(height);
-        var panelRect = new SKRect(pl, pt, pl + TradeLayout.PanelWidth, pt + TradeLayout.PanelHeight);
-        if (BackgroundImage is not null)
-            canvas.DrawBitmap(BackgroundImage, panelRect);
-        else
-            MenuStyle.DrawPanel(canvas, panelRect);
+        var panelRect = TradeLayout.PanelRect(width, height);
+        GenericWindowTypeA.DrawOpaque(canvas, panelRect);
+        GenericWindowTypeA.DrawTitle(canvas, panelRect, Localization.Get("Trade.Title"), _titlePaint);
 
         DrawHeader(canvas, pl, pt, snapshot);
 
@@ -542,8 +526,6 @@ public sealed class TradeScreen : IScreen
 
     private void DrawHeader(SKCanvas canvas, float pl, float pt, AuthoritativeSnapshot? snapshot)
     {
-        canvas.DrawText(Localization.Get("Trade.Title"), pl + TradeLayout.PanelWidth / 2f, pt + TradeLayout.TitleBaselineY, _titlePaint);
-
         string subtitle;
         if (snapshot?.DockedStationTrade is { } trade)
         {
@@ -564,7 +546,7 @@ public sealed class TradeScreen : IScreen
     {
         var rect = CombinedRect(pl, pt, TradeLayout.ExitButtonRect());
         var state = _hoveredButton == TradeButton.Close ? ButtonState.Hovered : ButtonState.Normal;
-        ImageButton.Draw(canvas, rect, Localization.Get("Trade.Exit"), state, MenuStyle.TypefaceHumaroid);
+        GenericButtonTypeA.Draw(canvas, rect, Localization.Get("Trade.Exit"), state);
     }
 
     private void DrawNotDockedStatus(SKCanvas canvas, float pl, float pt)
@@ -668,11 +650,11 @@ public sealed class TradeScreen : IScreen
         bool canTrade = selectedItem is not null && containerModule is not null;
         var buyRect = CombinedRect(pl, pt, TradeLayout.BuyButtonRect());
         var buyState = !canTrade ? ButtonState.Disabled : _hoveredButton == TradeButton.Buy ? ButtonState.Hovered : ButtonState.Normal;
-        ImageButton.Draw(canvas, buyRect, Localization.Get("Trade.Buy"), buyState, MenuStyle.TypefaceHumaroid);
+        GenericButtonTypeA.Draw(canvas, buyRect, Localization.Get("Trade.Buy"), buyState);
 
         var sellRect = CombinedRect(pl, pt, TradeLayout.SellButtonRect());
         var sellState = !canTrade ? ButtonState.Disabled : _hoveredButton == TradeButton.Sell ? ButtonState.Hovered : ButtonState.Normal;
-        ImageButton.Draw(canvas, sellRect, Localization.Get("Trade.Sell"), sellState, MenuStyle.TypefaceHumaroid);
+        GenericButtonTypeA.Draw(canvas, sellRect, Localization.Get("Trade.Sell"), sellState);
 
         if (!string.IsNullOrEmpty(_lastStatusMessage))
         {
@@ -729,7 +711,7 @@ public sealed class TradeScreen : IScreen
 
         var refuelRect = CombinedRect(pl, pt, TradeLayout.RefuelButtonRect());
         var refuelState = engineModule is null ? ButtonState.Disabled : _hoveredButton == TradeButton.Refuel ? ButtonState.Hovered : ButtonState.Normal;
-        ImageButton.Draw(canvas, refuelRect, Localization.Get("Trade.Refuel"), refuelState, MenuStyle.TypefaceHumaroid);
+        GenericButtonTypeA.Draw(canvas, refuelRect, Localization.Get("Trade.Refuel"), refuelState);
     }
 
     private void DrawSummaryRow(SKCanvas canvas, float pl, float pt, AuthoritativeSnapshot snapshot, StationTradeSnapshot trade)
@@ -756,8 +738,8 @@ public sealed class TradeScreen : IScreen
         DrawSummaryValue(canvas, x0 + 2 * blockWidth, summaryRect.Top + TradeLayout.SummaryValuesBaselineY, Localization.Get("Trade.ProjectedBalance"), projectedBalance.ToString());
 
         var cancelRect = CombinedRect(pl, pt, TradeLayout.CancelButtonRect());
-        ImageButton.Draw(canvas, cancelRect, Localization.Get("Trade.Cancel"),
-            _hoveredButton == TradeButton.Cancel ? ButtonState.Hovered : ButtonState.Normal, MenuStyle.TypefaceHumaroid);
+        GenericButtonTypeA.Draw(canvas, cancelRect, Localization.Get("Trade.Cancel"),
+            _hoveredButton == TradeButton.Cancel ? ButtonState.Hovered : ButtonState.Normal);
     }
 
     private void DrawSummaryValue(SKCanvas canvas, float x, float baselineY, string label, string value)

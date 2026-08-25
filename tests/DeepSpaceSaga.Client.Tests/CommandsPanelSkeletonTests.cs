@@ -159,10 +159,45 @@ public class CommandsPanelSkeletonTests
         Render(screen);
 
         float expectedBottom = CommandsPanel.Panels.Length *
-            (CommandsPanel.PanelCaptionHeight + CommandsPanel.PanelBodyHeight);
+            (CommandsPanel.PanelCaptionHeight + CommandsPanel.PanelBodyHeight) +
+            CommandsPanel.MainCaptionToPanelsGap;
 
         Assert.Equal(new SKRect(8, 8, 368, 40), screen.CommandsPanel.CaptionRect);
         Assert.Equal(new SKRect(8, 40, 368, 40 + expectedBottom), screen.CommandsPanel.BodyRect);
+    }
+
+    [Fact]
+    public void Xenon_chrome_assets_are_loaded_without_changing_the_360x832_footprint()
+    {
+        var screen = CreateScreen();
+        Render(screen);
+
+        Assert.True(screen.CommandsPanel.HasLoadedXenonChrome);
+        Assert.Equal(CommandsPanel.PanelWidth, screen.CommandsPanel.CaptionRect.Width);
+        Assert.Equal(834f, screen.CommandsPanel.CaptionRect.Height + screen.CommandsPanel.BodyRect.Height);
+    }
+
+    [Fact]
+    public void Xenon_panel_caption_and_module_bodies_are_fully_opaque()
+    {
+        var panel = new CommandsPanel();
+        using var bitmap = new SKBitmap(384, 856);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Transparent);
+
+        panel.Render(canvas, ImmutableArray<InstalledModuleSnapshot>.Empty);
+
+        Assert.Equal(255, bitmap.GetPixel(350, 20).Alpha);
+        Assert.Equal(255, bitmap.GetPixel(350, 54).Alpha);
+        Assert.Equal(255, bitmap.GetPixel(350, 120).Alpha);
+
+        var mainCaptionColor = bitmap.GetPixel(240, 20);
+        var moduleCaptionColor = bitmap.GetPixel(200, 54);
+        Assert.Equal(mainCaptionColor, bitmap.GetPixel(340, 20));
+        Assert.Equal(moduleCaptionColor, bitmap.GetPixel(340, 54));
+        Assert.True(mainCaptionColor.Red < moduleCaptionColor.Red);
+        Assert.True(mainCaptionColor.Green < moduleCaptionColor.Green);
+        Assert.True(mainCaptionColor.Blue < moduleCaptionColor.Blue);
     }
 
     [Fact]
@@ -441,6 +476,32 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
+    public void Collapsed_panels_have_a_2px_gap_between_adjacent_captions_only()
+    {
+        var screen = CreateScreen();
+        Render(screen);
+
+        foreach (var definition in CommandsPanel.Panels)
+        {
+            var row = screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == definition.Name);
+            screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
+            Render(screen);
+        }
+
+        var rows = screen.CommandsPanel.CommandPanelRows;
+        Assert.All(rows, row => Assert.False(row.Opened));
+        Assert.Equal(CommandsPanel.MainCaptionToPanelsGap,
+            rows[0].CaptionRect.Top - screen.CommandsPanel.CaptionRect.Bottom);
+        for (int i = 1; i < rows.Count; i++)
+            Assert.Equal(CommandsPanel.CollapsedPanelGap, rows[i].CaptionRect.Top - rows[i - 1].CaptionRect.Bottom);
+
+        float expectedHeight = CommandsPanel.MainCaptionToPanelsGap +
+                               rows.Count * CommandsPanel.PanelCaptionHeight +
+                               (rows.Count - 1) * CommandsPanel.CollapsedPanelGap;
+        Assert.Equal(expectedHeight, screen.CommandsPanel.BodyRect.Height);
+    }
+
+    [Fact]
     public void Empty_installed_modules_still_shows_all_four_panels_with_disabled_buttons()
     {
         var screen = CreateScreen(ImmutableArray<InstalledModuleSnapshot>.Empty);
@@ -481,9 +542,9 @@ public class CommandsPanelSkeletonTests
         // Engine body top = 476 (after Navigation 164 + Maneuver 164, fixed
         // PanelBodyHeight per panel, + three 36px captions);
         // grid origin = body + (6, 6); button 84x48, gap 4 → columns at x = 14, 102, 190.
-        Assert.Equal(new SKRect(14, 482, 98, 530), engineRow.Buttons[0].Rect);
-        Assert.Equal(new SKRect(102, 482, 186, 530), engineRow.Buttons[1].Rect);
-        Assert.Equal(new SKRect(190, 482, 274, 530), engineRow.Buttons[2].Rect);
+        Assert.Equal(new SKRect(14, 484, 98, 532), engineRow.Buttons[0].Rect);
+        Assert.Equal(new SKRect(102, 484, 186, 532), engineRow.Buttons[1].Rect);
+        Assert.Equal(new SKRect(190, 484, 274, 532), engineRow.Buttons[2].Rect);
 
         Assert.Equal(84f, engineRow.Buttons[0].Rect.Width);
         Assert.Equal(48f, engineRow.Buttons[0].Rect.Height);
@@ -611,9 +672,9 @@ public class CommandsPanelSkeletonTests
         Assert.Equal(5, navigationRow.Buttons.Length);
 
         // Navigation body top = 76; row 0 (y 82..130): 4 buttons; row 1 (y 134..182): 1.
-        Assert.Equal(new SKRect(14, 82, 98, 130), navigationRow.Buttons[0].Rect);
-        Assert.Equal(new SKRect(278, 82, 362, 130), navigationRow.Buttons[3].Rect);
-        Assert.Equal(new SKRect(14, 134, 98, 182), navigationRow.Buttons[4].Rect);
+        Assert.Equal(new SKRect(14, 84, 98, 132), navigationRow.Buttons[0].Rect);
+        Assert.Equal(new SKRect(278, 84, 362, 132), navigationRow.Buttons[3].Rect);
+        Assert.Equal(new SKRect(14, 136, 98, 184), navigationRow.Buttons[4].Rect);
     }
 
     [Fact]
