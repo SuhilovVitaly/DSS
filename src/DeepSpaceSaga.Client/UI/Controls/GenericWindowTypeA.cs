@@ -17,12 +17,13 @@ public static class GenericWindowTypeA
     /// The baseline itself depends on the selected font, so it must not be shared directly.
     /// </summary>
     public const float TitleTopInset = 34f;
-    public const float VersionBaselineInset = 110f;
+    public const float VersionBaselineInset = 102f;
+    public const float VersionFontSize = 15f;
 
     private static readonly SKPaint VersionTextPaint = new()
     {
         Color = MenuStyle.ColorText,
-        TextSize = MenuStyle.VersionFontSize,
+        TextSize = VersionFontSize,
         IsAntialias = true,
         TextAlign = SKTextAlign.Center,
         Typeface = MenuStyle.TypefaceHumaroid
