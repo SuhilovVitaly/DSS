@@ -1,0 +1,51 @@
+{
+  "itemTypes": [
+    {
+      "typeId": "item.water",
+      "displayName": "Water",
+      "unitMassKg": 1,
+      "basePriceCredits": 14,
+      "tradeCategory": "Good",
+      "catalogCode": "ITM-3001"
+    },
+    {
+      "typeId": "item.steel",
+      "displayName": "Steel",
+      "unitMassKg": 1,
+      "basePriceCredits": 40,
+      "tradeCategory": "Good",
+      "catalogCode": "ITM-3002"
+    },
+    {
+      "typeId": "item.energy-cells",
+      "displayName": "Energy Cells",
+      "unitMassKg": 1,
+      "basePriceCredits": 50,
+      "tradeCategory": "Good",
+      "catalogCode": "ITM-3003"
+    },
+    {
+      "typeId": "item.fuel",
+      "displayName": "Fuel",
+      "unitMassKg": 1,
+      "basePriceCredits": 10,
+      "tradeCategory": "Good",
+      "catalogCode": "ITM-3004"
+    },
+    {
+      "typeId": "item.protein-mass",
+      "displayName": "Protein mass",
+      "unitMassKg": 1,
+      "basePriceCredits": 110,
+      "tradeCategory": "Good",
+      "catalogCode": "ITM-3005"
+    },
+    {
+      "typeId": "item.food-rations",
+      "displayName": "Food Rations",
+      "unitMassKg": 1,
+      "basePriceCredits": 20,
+      "tradeCategory": "Good"
+    }
+  ]
+}

@@ -2,7 +2,7 @@
   "typeData": {
     "moduleTypes": "Data/module-types.json",
     "moduleImplementations": "Data/Modules",
-    "itemTypes": "Data/item-types.json",
+    "itemTypes": "Data/Items",
     "commandDefinitions": "Data/Commands",
     "factoryTypes": "Data/factory-types.json",
     "recipes": "Data/recipes.json"

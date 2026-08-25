@@ -223,6 +223,13 @@ public sealed class SimulationEngine : IDisposable
             var inventory = isStation
                 ? ResolveStationInventory(obj, resolvedMasterSeed)
                 : ImmutableArray<StationInventoryItemRuntime>.Empty;
+            var stationSize = isStation ? ResolveStationSize(obj) : StationSize.Medium;
+            var producingModules = isStation
+                ? ResolveStationProducingModules(obj)
+                : ImmutableArray<StationProducingModuleRuntime>.Empty;
+            var events = isStation
+                ? ResolveStationEvents(obj)
+                : ImmutableArray<StationEventRuntime>.Empty;
 
             runtimeObjects.Add(new SpaceObjectRuntime(
                 new ObjectMotionSnapshot(
@@ -254,7 +261,10 @@ public sealed class SimulationEngine : IDisposable
                 DockedStationObjectId: obj.DockedStationObjectId,
                 Credits: credits,
                 PriceCoefficient: priceCoefficient,
-                Inventory: inventory));
+                Inventory: inventory,
+                StationSize: stationSize,
+                ProducingModules: producingModules,
+                Events: events));
         }
 
         lock (_worldStateLock)
@@ -463,14 +473,23 @@ public sealed class SimulationEngine : IDisposable
         foreach (var item in station.Inventory)
         {
             var itemType = _registry.ItemTypes.GetDefinition(item.ItemTypeIndex);
-            long unitPrice = StationPricing.ComputeUnitPriceCredits(itemType.BasePriceCredits ?? 0, station.PriceCoefficient);
-            long maxSellable = unitPrice > 0 ? station.Credits / unitPrice : 0;
+            // Story-20260825-084409 Batch 2 (U5/U7/U8): station-size factor (by category and
+            // ConsumedResource status) plus any applicable station-event factors. Legacy
+            // station.PriceCoefficient still never participates in this formula (§59).
+            var factors = ResolveStationPriceFactors(station, item.ItemTypeIndex, itemType);
+            long unitPrice = StationPricing.ComputeUnitPriceCredits(itemType.BasePriceCredits ?? 0, factors);
+            long rawMaxSellable = unitPrice > 0 ? station.Credits / unitPrice : 0;
+            // MaxSellableQuantity must floor to whole sell packages (§59) so the UI hint never
+            // promises a quantity the authoritative Sell package-validation (U9) would reject.
+            long packageSizeKg = SellPackageSizeKg(itemType.Category);
+            long maxSellable = rawMaxSellable / packageSizeKg * packageSizeKg;
 
             items.Add(new StationInventoryItemSnapshot(
                 ItemTypeId: itemType.TypeId,
                 StockQuantity: item.StockQuantity,
                 UnitPriceCredits: unitPrice,
-                MaxSellableQuantity: maxSellable));
+                MaxSellableQuantity: maxSellable,
+                Category: ToTradeItemCategory(itemType.Category)));
         }
 
         return new StationTradeSnapshot(station.InitialMotion.ObjectId, items.MoveToImmutable());
@@ -630,6 +649,13 @@ public sealed class SimulationEngine : IDisposable
                 PriceCoefficient: isStation ? obj.PriceCoefficient : null,
                 Inventory: isStation && !obj.Inventory.IsDefaultOrEmpty
                     ? obj.Inventory.Select(BuildSaveInventoryItem).ToList()
+                    : null,
+                StationSize: isStation ? obj.StationSize.ToString() : null,
+                ProducingModules: isStation && !obj.ProducingModules.IsDefaultOrEmpty
+                    ? obj.ProducingModules.Select(BuildSaveProducingModule).ToList()
+                    : null,
+                Events: isStation && !obj.Events.IsDefaultOrEmpty
+                    ? obj.Events.Select(BuildSaveEvent).ToList()
                     : null));
         }
 
@@ -696,6 +722,37 @@ public sealed class SimulationEngine : IDisposable
     {
         var itemType = _registry.ItemTypes.GetDefinition(item.ItemTypeIndex);
         return new StationInventoryItemData(ItemTypeId: itemType.TypeId, Quantity: item.StockQuantity);
+    }
+
+    private StationProducingModuleData BuildSaveProducingModule(StationProducingModuleRuntime module)
+    {
+        var factoryType = _registry.FactoryTypes.GetDefinition(module.FactoryTypeIndex);
+        return new StationProducingModuleData(
+            ProducingModuleTypeId: factoryType.TypeId,
+            Active: module.Active);
+    }
+
+    private StationEventData BuildSaveEvent(StationEventRuntime evt)
+    {
+        return new StationEventData(
+            EventId: evt.EventId,
+            DisplayName: evt.DisplayName,
+            Description: evt.Description,
+            StartedGameTimeMs: evt.StartedGameTimeMs,
+            DurationMs: evt.DurationMs,
+            PriceFactors: evt.PriceFactors.Select(BuildSaveEventPriceFactor).ToList());
+    }
+
+    private StationEventPriceFactorData BuildSaveEventPriceFactor(StationEventPriceFactorRuntime factor)
+    {
+        string? itemTypeId = factor.ItemTypeIndex is { } index
+            ? _registry.ItemTypes.GetDefinition(index).TypeId
+            : null;
+
+        return new StationEventPriceFactorData(
+            Category: factor.Category?.ToString(),
+            ItemTypeId: itemTypeId,
+            Factor: factor.Factor);
     }
 
     private static int ToDirectionDegreesInt(double direction)
@@ -972,6 +1029,197 @@ public sealed class SimulationEngine : IDisposable
         }
 
         return inventory.ToImmutable();
+    }
+
+    /// <summary>
+    /// Resolve a station's size (requirements §59, Docs\FirstRelease\TechnicalTasks\
+    /// StationEconomyProductionAndSizing.md "Размеры станции"): explicit scenario/save value
+    /// used as-is, otherwise a fixed fallback — <b>never</b> RNG-generated (unlike
+    /// Credits/PriceCoefficient/Inventory above; story-20260825-084409 Batch 2 explicitly
+    /// forbids randomizing StationSize).
+    /// </summary>
+    /// <remarks>
+    /// Fallback choice: <see cref="StationSize.Medium"/>. §59 defines StationSize only as a
+    /// per-station property and gives no guidance for a station whose scenario/save omits it
+    /// (every real station the game ships an explicit size for — SPC-0002 gets "Large" per
+    /// the acceptance criteria — this fallback only matters for content/test fixtures that
+    /// predate the field). Medium sits in the middle of both coefficient tables it drives
+    /// (§59 "Коэффициенты общих ресурсов" 1.00..1.20 и "Коэффициенты товаров" 1.00..1.20) —
+    /// it is deliberately not the cheapest (Outpost) nor the most expensive (Huge/Outpost,
+    /// depending on category) extreme in either table, making it the least-surprising
+    /// "typical station" default absent other information.
+    /// </remarks>
+    private static StationSize ResolveStationSize(SpaceObjectData obj)
+    {
+        if (obj.StationSize is { } explicitValue)
+        {
+            if (!Enum.TryParse<StationSize>(explicitValue, ignoreCase: true, out var parsed))
+            {
+                throw new ScenarioException(
+                    $"Station '{obj.ObjectId}' has unknown stationSize '{explicitValue}' " +
+                    "(expected Huge, Large, Medium, or Outpost).");
+            }
+
+            return parsed;
+        }
+
+        return StationSize.Medium;
+    }
+
+    /// <summary>
+    /// Resolve a station's producing-module instances (§59 "Производящие модули станции"):
+    /// fully explicit, never RNG-generated. Missing/empty scenario data resolves to an empty
+    /// list (the common case — most stations have no producing modules).
+    /// </summary>
+    private ImmutableArray<StationProducingModuleRuntime> ResolveStationProducingModules(SpaceObjectData obj)
+    {
+        if (obj.ProducingModules is not { Count: > 0 })
+            return ImmutableArray<StationProducingModuleRuntime>.Empty;
+
+        var modules = ImmutableArray.CreateBuilder<StationProducingModuleRuntime>(obj.ProducingModules.Count);
+        foreach (var module in obj.ProducingModules)
+        {
+            // Unknown factory type id surfaces as ContentException — same convention as
+            // BuildRuntimeModules' module.ModuleTypeId -> _registry.ModuleTypes.GetIndex.
+            int factoryTypeIndex = _registry.FactoryTypes.GetIndex(module.ProducingModuleTypeId);
+            modules.Add(new StationProducingModuleRuntime(factoryTypeIndex, module.Active));
+        }
+
+        return modules.ToImmutable();
+    }
+
+    /// <summary>
+    /// Resolve a station's active events/buffs/debuffs (§59 "События, бафы и дебафы
+    /// станции") — schema + persistence only (story-20260825-084409 CP-3): no scenario ever
+    /// populates this today, so the common path is always the empty-list fast return, but a
+    /// synthetic test/save station carrying explicit events round-trips them faithfully.
+    /// </summary>
+    private ImmutableArray<StationEventRuntime> ResolveStationEvents(SpaceObjectData obj)
+    {
+        if (obj.Events is not { Count: > 0 })
+            return ImmutableArray<StationEventRuntime>.Empty;
+
+        var events = ImmutableArray.CreateBuilder<StationEventRuntime>(obj.Events.Count);
+        foreach (var evt in obj.Events)
+        {
+            if (string.IsNullOrWhiteSpace(evt.EventId))
+                throw new ScenarioException($"Station '{obj.ObjectId}' has an event with empty eventId.");
+
+            // A missing/null "priceFactors" array is tolerated as "this event contributes no
+            // price factors" rather than a hard load error — schema-only (CP-3), so an event
+            // that exists purely for its display name/description (no price effect yet) is a
+            // legitimate authoring choice, not malformed data.
+            var priceFactorsData = evt.PriceFactors ?? Array.Empty<StationEventPriceFactorData>();
+            var factors = ImmutableArray.CreateBuilder<StationEventPriceFactorRuntime>(priceFactorsData.Count);
+            foreach (var factor in priceFactorsData)
+            {
+                TradeCategory? category = null;
+                if (factor.Category is { } categoryValue)
+                {
+                    if (!Enum.TryParse<TradeCategory>(categoryValue, ignoreCase: true, out var parsedCategory))
+                    {
+                        throw new ScenarioException(
+                            $"Station '{obj.ObjectId}' event '{evt.EventId}' has unknown price factor " +
+                            $"category '{categoryValue}' (expected Resource or Good).");
+                    }
+
+                    category = parsedCategory;
+                }
+
+                // Unknown itemTypeId surfaces as ContentException — same convention as every
+                // other type-registry lookup in this file.
+                int? itemTypeIndex = factor.ItemTypeId is { } itemTypeId
+                    ? _registry.ItemTypes.GetIndex(itemTypeId)
+                    : null;
+
+                factors.Add(new StationEventPriceFactorRuntime(category, itemTypeIndex, factor.Factor));
+            }
+
+            events.Add(new StationEventRuntime(
+                evt.EventId, evt.DisplayName, evt.Description, evt.StartedGameTimeMs, evt.DurationMs,
+                factors.ToImmutable()));
+        }
+
+        return events.ToImmutable();
+    }
+
+    /// <summary>
+    /// True when <paramref name="itemTypeId"/> is a <see cref="TradeCategory.Resource"/> input
+    /// of at least one of the station's currently active producing modules (§59 "Минимальное
+    /// правило для торговли": "если станция имеет производящий модуль, которому нужен
+    /// Resource, этот Resource считается ConsumedResource... если один ресурс нужен нескольким
+    /// производящим модулям, для выбора категории достаточно факта потребления хотя бы одним
+    /// модулем"). Inactive producing modules (<see cref="StationProducingModuleRuntime.Active"/>
+    /// == false) do not make their inputs ConsumedResource.
+    /// </summary>
+    private bool IsConsumedResource(SpaceObjectRuntime station, string itemTypeId)
+    {
+        if (station.ProducingModules.IsDefaultOrEmpty)
+            return false;
+
+        foreach (var producingModule in station.ProducingModules)
+        {
+            if (!producingModule.Active)
+                continue;
+
+            var factoryType = _registry.FactoryTypes.GetDefinition(producingModule.FactoryTypeIndex);
+            if (factoryType.Recipe.Inputs.Any(input => string.Equals(input.ItemTypeId, itemTypeId, StringComparison.Ordinal)))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Resolve every applicable <c>StationPriceFactor</c> (§59 "Формула цены" — "Минимальные
+    /// применимые факторы: коэффициент размера станции по категории номенклатуры;
+    /// коэффициенты station events / buffs / debuffs") for one tradeable item at one station,
+    /// in a fixed, deterministic order: the station-size factor first, then each applicable
+    /// station-event factor ordered by (StartedGameTimeMs, EventId) (§59 "deterministic
+    /// порядок применения при одинаковом времени начала") — though
+    /// <see cref="StationPricing.ComputeUnitPriceCredits"/> multiplies in one pass and its
+    /// result is provably order-independent regardless, so this ordering is for
+    /// determinism/readability, not correctness.
+    /// </summary>
+    private ImmutableArray<int> ResolveStationPriceFactors(SpaceObjectRuntime station, int itemTypeIndex, ItemTypeDefinition itemType)
+    {
+        bool isConsumedResource = itemType.Category == TradeCategory.Resource
+            && IsConsumedResource(station, itemType.TypeId);
+
+        var factors = ImmutableArray.CreateBuilder<int>();
+        factors.Add(StationSizeFactors.Resolve(station.StationSize, itemType.Category, isConsumedResource));
+
+        if (!station.Events.IsDefaultOrEmpty)
+        {
+            var applicableEventFactors = station.Events
+                .OrderBy(e => e.StartedGameTimeMs)
+                .ThenBy(e => e.EventId, StringComparer.Ordinal)
+                .SelectMany(e => e.PriceFactors)
+                .Where(f => StationEventPriceFactorApplies(f, itemTypeIndex, itemType.Category));
+
+            foreach (var factor in applicableEventFactors)
+                factors.Add(factor.Factor);
+        }
+
+        return factors.ToImmutable();
+    }
+
+    /// <summary>
+    /// Addressing rule for a <see cref="StationEventPriceFactorRuntime"/> (see
+    /// <see cref="StationEventPriceFactorData"/>): a factor with a specific
+    /// <see cref="StationEventPriceFactorRuntime.ItemTypeIndex"/> applies only to that item; a
+    /// factor with only a <see cref="StationEventPriceFactorRuntime.Category"/> applies to
+    /// every item of that category; a factor with neither applies station-wide.
+    /// </summary>
+    private static bool StationEventPriceFactorApplies(StationEventPriceFactorRuntime factor, int itemTypeIndex, TradeCategory category)
+    {
+        if (factor.ItemTypeIndex is { } expectedIndex)
+            return expectedIndex == itemTypeIndex;
+
+        if (factor.Category is { } expectedCategory)
+            return expectedCategory == category;
+
+        return true;
     }
 
     internal ImmutableArray<SpaceObjectRuntime> RuntimeObjects => _objects.ToImmutableArray();
@@ -1329,7 +1577,10 @@ public sealed class SimulationEngine : IDisposable
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownItemType);
 
         var stationInventoryItem = station.Inventory[stationInventoryIndex];
-        long unitPriceCredits = StationPricing.ComputeUnitPriceCredits(itemType.BasePriceCredits ?? 0, station.PriceCoefficient);
+        // Story-20260825-084409 Batch 2 (U5/U7/U8) — see BuildDockedStationTradeProjection's
+        // identical comment. Legacy station.PriceCoefficient no longer participates (§59).
+        var priceFactors = ResolveStationPriceFactors(station, itemTypeIndex, itemType);
+        long unitPriceCredits = StationPricing.ComputeUnitPriceCredits(itemType.BasePriceCredits ?? 0, priceFactors);
 
         if (command.CommandType == TradeCommandTypes.Buy)
         {
@@ -1370,15 +1621,27 @@ public sealed class SimulationEngine : IDisposable
 
         if (command.CommandType == TradeCommandTypes.Sell)
         {
+            // Authoritative package-size validation (§59 "Продажа" / acceptance criteria):
+            // Resource sells only in multiples of 100 kg, Good (incl. Fuel — story-20260825-084409
+            // decision 3) only in multiples of 10 kg. Checked — and rejected — before any state
+            // mutation or cargo-quantity check.
+            long sellPackageSizeKg = SellPackageSizeKg(itemType.Category);
+            if (qty % sellPackageSizeKg != 0)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.InvalidPackageQuantity);
+
             int stackIndex = FindCargoStackIndex(module.Cargo, itemTypeIndex);
             long playerQty = stackIndex >= 0 ? module.Cargo[stackIndex].Quantity : 0;
             if (qty > playerQty)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientCargoQuantity);
 
             // Partial fill: the only direction where the station's hidden Credits balance can
-            // limit the operation (CP-1/Money.md) — Buy/Refuel only ever add to it.
+            // limit the operation (CP-1/Money.md) — Buy/Refuel only ever add to it. A partial
+            // fill must still land on a whole number of sell packages (§59) — qty itself is
+            // already package-aligned (rejected above otherwise), but maxStationCanAfford
+            // generally is not, so floor down after the Min.
             long maxStationCanAfford = unitPriceCredits > 0 ? station.Credits / unitPriceCredits : long.MaxValue;
             long executedQty = Math.Min(qty, maxStationCanAfford);
+            executedQty = executedQty / sellPackageSizeKg * sellPackageSizeKg;
             if (executedQty <= 0)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientStationStock);
 
@@ -1405,8 +1668,10 @@ public sealed class SimulationEngine : IDisposable
         }
 
         // TradeCommandTypes.Refuel — all-or-nothing, like Buy, but fills the module's fuel tank
-        // (kg directly, since item.fuel's UnitMassKg is 0 — Quantity already is the mass) rather
-        // than a Cargo stack.
+        // (kg directly — Quantity is the mass) rather than a Cargo stack; item.fuel's
+        // UnitMassKg is never consulted here regardless of its content value (story-20260825-
+        // 084409 decision 3: Fuel is only special-cased for Buy/Refuel routing, not for how its
+        // mass is measured on this branch).
         {
             long fuelCapacityKg = moduleType.FuelCapacityKg ?? 0;
             long cost = unitPriceCredits * qty;
@@ -1431,6 +1696,33 @@ public sealed class SimulationEngine : IDisposable
             return CommandStartOutcome.Started;
         }
     }
+
+    /// <summary>
+    /// Sell package size in kg by trade category (§59 "Продажа"): Resource sells only in
+    /// multiples of 100 kg, Good (including Fuel — story-20260825-084409 decision 3) only in
+    /// multiples of 10 kg. Module is out of scope entirely — no <see cref="ItemTypeDefinition"/>
+    /// ever carries <see cref="TradeCategory"/> for a Module, so this switch never needs a
+    /// Module case.
+    /// </summary>
+    private static long SellPackageSizeKg(TradeCategory category) => category switch
+    {
+        TradeCategory.Resource => 100,
+        TradeCategory.Good => 10,
+        _ => throw new ArgumentOutOfRangeException(nameof(category), category, "Unknown TradeCategory.")
+    };
+
+    /// <summary>
+    /// Maps the Engine-internal <see cref="TradeCategory"/> to the Contracts-side string mirror
+    /// (<see cref="TradeItemCategories"/>) published on <see cref="StationInventoryItemSnapshot.
+    /// Category"/> — see that field's doc comment for why it is a string, not a duplicate enum
+    /// (story-20260825-084409 Batch 3, U10).
+    /// </summary>
+    private static string ToTradeItemCategory(TradeCategory category) => category switch
+    {
+        TradeCategory.Resource => TradeItemCategories.Resource,
+        TradeCategory.Good => TradeItemCategories.Good,
+        _ => throw new ArgumentOutOfRangeException(nameof(category), category, "Unknown TradeCategory.")
+    };
 
     private CommandStartOutcome TryStartEngineCommand(PlayerCommand command, long gameTimeMs)
     {
@@ -2225,7 +2517,56 @@ internal sealed record SpaceObjectRuntime(
     /// Station's tradeable stock, one entry per sellable item type. Only meaningful for
     /// ObjectType == Station; empty for every other object type.
     /// </summary>
-    ImmutableArray<StationInventoryItemRuntime> Inventory = default);
+    ImmutableArray<StationInventoryItemRuntime> Inventory = default,
+    /// <summary>
+    /// Station's size classification (§59), resolved once by
+    /// <see cref="SimulationEngine.ResolveStationSize"/> and then persisted explicitly — same
+    /// "resolved once, explicit from then on" shape as <see cref="Credits"/>, except this is
+    /// never RNG-generated (story-20260825-084409 Batch 2 instruction). Only meaningful for
+    /// ObjectType == Station; <see cref="StationSize.Medium"/> (neutral placeholder, never
+    /// read) for every other object type.
+    /// </summary>
+    StationSize StationSize = StationSize.Medium,
+    /// <summary>
+    /// Station's producing-module instances (§59 "Производящие модули станции"). Fully
+    /// explicit, never RNG-generated. Only meaningful for ObjectType == Station; empty for
+    /// every other object type.
+    /// </summary>
+    ImmutableArray<StationProducingModuleRuntime> ProducingModules = default,
+    /// <summary>
+    /// Station's active events/buffs/debuffs (§59, story-20260825-084409 CP-3 — schema +
+    /// persistence only). Only meaningful for ObjectType == Station; empty for every other
+    /// object type and for every station no scenario/save ever populates one for.
+    /// </summary>
+    ImmutableArray<StationEventRuntime> Events = default);
+
+/// <summary>
+/// One producing-module instance installed on a station (see <see cref="StationProducingModuleData"/>).
+/// <see cref="FactoryTypeIndex"/> indexes <see cref="GameDataRegistry.FactoryTypes"/>.
+/// </summary>
+internal sealed record StationProducingModuleRuntime(int FactoryTypeIndex, bool Active);
+
+/// <summary>
+/// One station event/buff/debuff (see <see cref="StationEventData"/>) — schema + persistence
+/// only, story-20260825-084409 CP-3.
+/// </summary>
+internal sealed record StationEventRuntime(
+    string EventId,
+    string DisplayName,
+    string? Description,
+    long StartedGameTimeMs,
+    long? DurationMs,
+    ImmutableArray<StationEventPriceFactorRuntime> PriceFactors);
+
+/// <summary>
+/// One multiplicative price factor contributed by a <see cref="StationEventRuntime"/>. See
+/// <see cref="StationEventPriceFactorData"/> for the addressing-mode rules (specific item,
+/// category-wide, or station-wide when both are null).
+/// </summary>
+internal sealed record StationEventPriceFactorRuntime(
+    TradeCategory? Category,
+    int? ItemTypeIndex,
+    int Factor);
 
 internal sealed record InstalledModuleRuntime(
     string ModuleId,

@@ -46,6 +46,13 @@
   "Trade.ItemEnergyCells": "Энергоблоки",
   "Trade.ItemFuel": "Топливо",
   "Trade.ItemIce": "Лёд",
+  "Trade.ItemIronOre": "Железная руда",
+  "Trade.ItemSilicon": "Кремний",
+  "Trade.ItemMagnesiumOre": "Магниевая руда",
+  "Trade.ItemWater": "Вода",
+  "Trade.ItemSteel": "Сталь",
+  "Trade.ItemProteinMass": "Белковая масса",
+  "Trade.ItemFoodRations": "Продовольственный паёк",
   "Trade.StatusBuySuccess": "Покупка выполнена",
   "Trade.StatusSellSuccess": "Продажа выполнена",
   "Trade.StatusSellPartial": "Продано {0} из {1} — у станции закончились кредиты",
@@ -57,5 +64,6 @@
   "Trade.ReasonUnknownItemType": "Неизвестный тип товара",
   "Trade.ReasonNotDocked": "Корабль не пристыкован к станции",
   "Trade.ReasonInsufficientCargoQuantity": "Недостаточно этого товара в грузе",
-  "Trade.ReasonInvalidQuantity": "Некорректное количество"
+  "Trade.ReasonInvalidQuantity": "Некорректное количество",
+  "Trade.ReasonInvalidPackageQuantity": "Количество должно быть кратно размеру упаковки этого товара"
 }

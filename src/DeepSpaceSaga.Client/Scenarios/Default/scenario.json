@@ -114,7 +114,17 @@
         "speedMps": 0,
         "directionDegrees": 0,
         "movementType": "Stationary",
-        "isKnown": true
+        "isKnown": true,
+        "stationSize": "Large",
+        "inventory": [
+          { "itemTypeId": "item.food-rations", "quantity": 500 },
+          { "itemTypeId": "item.energy-cells", "quantity": 350 },
+          { "itemTypeId": "item.fuel", "quantity": 700 },
+          { "itemTypeId": "item.ice", "quantity": 320 },
+          { "itemTypeId": "item.iron-ore", "quantity": 410 },
+          { "itemTypeId": "item.silicon", "quantity": 70 },
+          { "itemTypeId": "item.magnesium-ore", "quantity": 120 }
+        ]
       },
       {
         "objectId": "SPC-0003",

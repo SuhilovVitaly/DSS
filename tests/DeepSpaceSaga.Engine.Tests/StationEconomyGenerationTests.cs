@@ -66,7 +66,17 @@ public class StationEconomyGenerationTests
         return engine;
     }
 
-    private static string[] TradeableItemTypeIds = { "item.energy-cells", "item.fuel", "item.ice" };
+    // Story-20260825-084409 Batch 1 (U1): the real catalog grew from 3 to 10 tradeable items
+    // (Docs\FirstRelease\TechnicalTasks\StationEconomyProductionAndSizing.md "Номенклатура") —
+    // the fallback generator (SimulationEngine.ResolveStationInventory, Protect list, untouched
+    // logic) still generates one entry per item type that carries a BasePriceCredits, which is
+    // now all 10.
+    private static string[] TradeableItemTypeIds =
+    {
+        "item.ice", "item.iron-ore", "item.silicon", "item.magnesium-ore",
+        "item.water", "item.steel", "item.energy-cells", "item.fuel",
+        "item.protein-mass", "item.food-rations"
+    };
 
     [Fact]
     public void Generated_station_gets_credits_coefficient_and_inventory_within_documented_ranges()

@@ -159,9 +159,12 @@ public class TradeCommandTests
                     BaseCycleTimeMs: 1000)
             ],
             [
+                // EnergyCells/Fuel default to TradeCategory.Good (record default); Ice is
+                // explicitly Resource — story-20260825-084409 Batch 1, U9's sell-package tests
+                // rely on this split (Resource sells in packages of 100 kg, Good in 10 kg).
                 new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 10, BasePriceCredits: 200),
                 new ItemTypeDefinition(FuelId, "Fuel", UnitMassKg: 0, BasePriceCredits: 200),
-                new ItemTypeDefinition(IceId, "Ice", UnitMassKg: 10, BasePriceCredits: 30)
+                new ItemTypeDefinition(IceId, "Ice", UnitMassKg: 10, BasePriceCredits: 30, Category: TradeCategory.Resource)
             ],
             [
                 new CommandDefinition(TradeCommandTypes.Buy, "Buy", Target: "none", Type: "module.container"),
@@ -184,10 +187,13 @@ public class TradeCommandTests
         Assert.Equal(CommandResultStatus.Executed, result.Status);
         Assert.Null(result.ExecutedQuantity);
 
-        Assert.Equal(5000 - 2000, engine.PlayerCredits); // unitPrice 200 * 10
+        // unitPrice = 200 (BasePriceCredits) * 1.15 (StationSizeFactors Good @ Medium
+        // fallback — story-20260825-084409 Batch 2, U5: this fixture never sets an explicit
+        // stationSize) = 230.
+        Assert.Equal(5000 - 2300, engine.PlayerCredits); // unitPrice 230 * 10
 
         var station = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == StationId);
-        Assert.Equal(1_000_000 + 2000, station.Credits);
+        Assert.Equal(1_000_000 + 2300, station.Credits);
         var registry = CreateRegistry(1000, 500);
         int energyCellsIndex = registry.ItemTypes.GetIndex(EnergyCellsId);
         Assert.Equal(90, station.Inventory.Single(i => i.ItemTypeIndex == energyCellsIndex).StockQuantity);
@@ -310,10 +316,11 @@ public class TradeCommandTests
         Assert.Equal(CommandResultStatus.Executed, result.Status);
         Assert.Null(result.ExecutedQuantity); // fully executed
 
-        Assert.Equal(100_000 + 2000, engine.PlayerCredits);
+        // unitPrice = 200 * 1.15 (Good @ Medium fallback) = 230.
+        Assert.Equal(100_000 + 2300, engine.PlayerCredits);
 
         var station = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == StationId);
-        Assert.Equal(1_000_000 - 2000, station.Credits);
+        Assert.Equal(1_000_000 - 2300, station.Credits);
         var registry = CreateRegistry(1000, 500);
         int energyCellsIndex = registry.ItemTypes.GetIndex(EnergyCellsId);
         Assert.Equal(110, station.Inventory.Single(i => i.ItemTypeIndex == energyCellsIndex).StockQuantity);
@@ -360,7 +367,11 @@ public class TradeCommandTests
     [Fact]
     public void Sell_partially_executes_when_station_cannot_afford_full_request()
     {
-        // unitPrice = 200; station can afford 5000 / 200 = 25 units, less than the 50 requested.
+        // unitPrice = 200 * 1.15 (Good @ Medium fallback — story-20260825-084409 Batch 2,
+        // U5) = 230; station can afford 5000 / 230 = 21 units (integer division), less than
+        // the 50 requested — but EnergyCells is a Good (default TradeCategory), so a partial
+        // fill must also floor down to a whole number of 10 kg sell packages (§59, U9):
+        // 21 -> 20.
         var engine = CreateEngine(shipCargo: [(EnergyCellsId, 50)], stationCredits: 5000);
 
         engine.ReceiveCommand(SellCommand(EnergyCellsId, quantity: 50));
@@ -368,19 +379,82 @@ public class TradeCommandTests
 
         var result = Assert.Single(snapshot.CommandResults);
         Assert.Equal(CommandResultStatus.Executed, result.Status);
-        Assert.Equal(25, result.ExecutedQuantity);
+        Assert.Equal(20, result.ExecutedQuantity);
 
-        Assert.Equal(100_000 + 25 * 200, engine.PlayerCredits);
+        Assert.Equal(100_000 + 20 * 230, engine.PlayerCredits);
 
         var station = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == StationId);
-        Assert.Equal(0, station.Credits);
+        Assert.Equal(5000 - 20 * 230, station.Credits);
         var registry = CreateRegistry(1000, 500);
         int energyCellsIndex = registry.ItemTypes.GetIndex(EnergyCellsId);
-        Assert.Equal(125, station.Inventory.Single(i => i.ItemTypeIndex == energyCellsIndex).StockQuantity); // 100 + 25
+        Assert.Equal(120, station.Inventory.Single(i => i.ItemTypeIndex == energyCellsIndex).StockQuantity); // 100 + 20
 
         var ship = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId);
         var cargoModule = ship.Modules.Single(m => m.ModuleId == CargoModuleId);
-        Assert.Equal(25, Assert.Single(cargoModule.Cargo).Quantity); // 50 - 25
+        Assert.Equal(30, Assert.Single(cargoModule.Cargo).Quantity); // 50 - 20
+    }
+
+    [Fact]
+    public void Sell_partial_fill_floors_to_whole_resource_packages()
+    {
+        // Ice is a Resource (package 100 kg). unitPrice = 30 * 1.10 (general Resource @
+        // Medium fallback — story-20260825-084409 Batch 2, U5: Ice is not an input of any
+        // producing module on this station, so it stays "general", not "consumed") = 33;
+        // station can afford 6_500 / 33 = 196 units (raw, integer division), less than the
+        // 500 requested, and 196 floors down to 100 (the nearest lower multiple of 100) —
+        // §59, U9.
+        var engine = CreateEngine(
+            shipCargo: [(IceId, 500)],
+            stationCredits: 6_500,
+            stationInventory: [(IceId, 1_000)]);
+
+        engine.ReceiveCommand(SellCommand(IceId, quantity: 500));
+        var snapshot = engine.CaptureSnapshotForTests();
+
+        var result = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Executed, result.Status);
+        Assert.Equal(100, result.ExecutedQuantity);
+    }
+
+    [Fact]
+    public void Sell_resource_quantity_not_multiple_of_100_is_rejected()
+    {
+        var engine = CreateEngine(shipCargo: [(IceId, 150)], stationInventory: [(IceId, 100)]);
+
+        engine.ReceiveCommand(SellCommand(IceId, quantity: 150));
+        var snapshot = engine.CaptureSnapshotForTests();
+
+        var result = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Rejected, result.Status);
+        Assert.Equal(CommandReasonCodes.InvalidPackageQuantity, result.ReasonCode);
+        Assert.Equal(100_000, engine.PlayerCredits);
+    }
+
+    [Fact]
+    public void Sell_good_quantity_not_multiple_of_10_is_rejected()
+    {
+        var engine = CreateEngine(shipCargo: [(EnergyCellsId, 15)]);
+
+        engine.ReceiveCommand(SellCommand(EnergyCellsId, quantity: 15));
+        var snapshot = engine.CaptureSnapshotForTests();
+
+        var result = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Rejected, result.Status);
+        Assert.Equal(CommandReasonCodes.InvalidPackageQuantity, result.ReasonCode);
+        Assert.Equal(100_000, engine.PlayerCredits);
+    }
+
+    [Fact]
+    public void Sell_resource_quantity_multiple_of_100_is_accepted()
+    {
+        var engine = CreateEngine(shipCargo: [(IceId, 100)], stationInventory: [(IceId, 100)]);
+
+        engine.ReceiveCommand(SellCommand(IceId, quantity: 100));
+        var snapshot = engine.CaptureSnapshotForTests();
+
+        var result = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Executed, result.Status);
+        Assert.Null(result.ExecutedQuantity); // fully executed
     }
 
     [Fact]
@@ -418,10 +492,12 @@ public class TradeCommandTests
         var result = Assert.Single(snapshot.CommandResults);
         Assert.Equal(CommandResultStatus.Executed, result.Status);
 
-        Assert.Equal(50_000 - 100 * 200, engine.PlayerCredits);
+        // unitPrice = 200 * 1.15 (Fuel is TradeCategory.Good by default here, @ Medium
+        // fallback — story-20260825-084409 Batch 2, U5) = 230.
+        Assert.Equal(50_000 - 100 * 230, engine.PlayerCredits);
 
         var station = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == StationId);
-        Assert.Equal(1_000_000 + 100 * 200, station.Credits);
+        Assert.Equal(1_000_000 + 100 * 230, station.Credits);
         var registry = CreateRegistry(1000, 500);
         int fuelIndex = registry.ItemTypes.GetIndex(FuelId);
         Assert.Equal(100, station.Inventory.Single(i => i.ItemTypeIndex == fuelIndex).StockQuantity); // 200 - 100
@@ -449,7 +525,7 @@ public class TradeCommandTests
     {
         var engine = CreateEngine(playerCredits: 100);
 
-        engine.ReceiveCommand(RefuelCommand(FuelId, quantity: 100)); // cost 20000
+        engine.ReceiveCommand(RefuelCommand(FuelId, quantity: 100)); // cost 23000 (unitPrice 230)
         var snapshot = engine.CaptureSnapshotForTests();
 
         var result = Assert.Single(snapshot.CommandResults);

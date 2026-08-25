@@ -354,7 +354,10 @@ public class PauseSimulationTests
         var result = Assert.Single(snapshot.CommandResults);
         Assert.Equal(CommandResultStatus.Executed, result.Status);
 
-        Assert.Equal(3000, snapshot.PlayerCredits); // 5000 - 10*200
+        // unitPrice = 200 * StationSizeFactors.Resolve(Medium fallback, Good) 1.15 = 230
+        // (story-20260825-084409 Batch 2, U5: no explicit stationSize here, so the station
+        // falls back to StationSize.Medium — see SimulationEngine.ResolveStationSize).
+        Assert.Equal(2700, snapshot.PlayerCredits); // 5000 - 10*230
 
         Assert.NotNull(snapshot.DockedStationTrade);
         var energyCells = Assert.Single(snapshot.DockedStationTrade!.Items);
