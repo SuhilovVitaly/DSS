@@ -166,6 +166,17 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
+    public void Xenon_chrome_assets_are_loaded_without_changing_the_360x832_footprint()
+    {
+        var screen = CreateScreen();
+        Render(screen);
+
+        Assert.True(screen.CommandsPanel.HasLoadedXenonChrome);
+        Assert.Equal(CommandsPanel.PanelWidth, screen.CommandsPanel.CaptionRect.Width);
+        Assert.Equal(832f, screen.CommandsPanel.CaptionRect.Height + screen.CommandsPanel.BodyRect.Height);
+    }
+
+    [Fact]
     public void Panel_state_is_AllPanels_by_default()
     {
         var screen = CreateScreen();

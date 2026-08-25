@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 
@@ -13,6 +14,10 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 /// </summary>
 public sealed class CommandsPanel
 {
+    private const string XenonAssetsPath = "Images/UI/Themes/Xenon/GameSession/CommandPanels";
+    private const float XenonBodySliceInset = 12f;
+    private const float XenonButtonSliceInset = 8f;
+
     public const float PanelWidth = 360f;
     public const float CaptionHeight = 32f;
     public const float PanelCaptionHeight = 36f;
@@ -153,6 +158,13 @@ public sealed class CommandsPanel
     private readonly SKBitmap? _moduleBodyBackgroundImage;
     private readonly SKBitmap? _hideImage;
     private readonly SKBitmap? _showImage;
+    private readonly SKBitmap? _hideHoverImage;
+    private readonly SKBitmap? _hidePressedImage;
+    private readonly SKBitmap? _showHoverImage;
+    private readonly SKBitmap? _showPressedImage;
+    private readonly SKBitmap? _commandButtonNormalImage;
+    private readonly SKBitmap? _commandButtonHoverImage;
+    private readonly SKBitmap? _commandButtonPressedImage;
     private readonly Dictionary<string, CommandIconPair> _commandIcons = new(StringComparer.Ordinal);
 
     private CommandsPanelState _state = CommandsPanelState.AllPanels;
@@ -170,11 +182,11 @@ public sealed class CommandsPanel
         _isCommandEnabled = isCommandEnabled ?? (_ => true);
         _commandClicked = commandClicked ?? (_ => { });
 
-        var typeface = SKTypeface.FromFamilyName("Consolas") ?? SKTypeface.Default;
+        var typeface = XenonStyle.TypefaceRegular;
 
         _panelBgPaint = new SKPaint { Color = new SKColor(0, 0, 0, 200), Style = SKPaintStyle.Fill };
         _panelBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
-        _titlePaint = new SKPaint { Color = new SKColor(210, 210, 210), TextSize = 13f, IsAntialias = true, Typeface = typeface };
+        _titlePaint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 13f, IsAntialias = true, Typeface = typeface };
 
         _btnNormalPaint = new SKPaint { Color = new SKColor(35, 35, 35, 220), Style = SKPaintStyle.Fill };
         _btnHoverPaint = new SKPaint { Color = new SKColor(55, 55, 55, 230), Style = SKPaintStyle.Fill };
@@ -191,14 +203,20 @@ public sealed class CommandsPanel
         _commandBtnBorderPaint = new SKPaint { Color = new SKColor(80, 80, 80), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
         _commandBtnIconPaint = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.High };
 
-        var boldTypeface = SKTypeface.FromFamilyName("Consolas", SKFontStyle.Bold) ?? typeface;
-        _moduleCaptionTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 14f, IsAntialias = true, Typeface = boldTypeface };
+        _moduleCaptionTextPaint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 14f, IsAntialias = true, Typeface = XenonStyle.TypefaceSemibold };
 
-        _captionBackgroundImage = LoadImage("Images/UI/GameSessionScreenUI/command-panel-caption-background.png");
-        _moduleCaptionBackgroundImage = LoadImage("Images/UI/GameSessionScreenUI/module-panel-caption-background.png");
-        _moduleBodyBackgroundImage = LoadImage("Images/UI/GameSessionScreenUI/module-panel-body-background.png");
-        _hideImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-hide.png");
-        _showImage = LoadImage("Images/UI/GameSessionScreenUI/title-bar/title-bar-button-show.png");
+        _captionBackgroundImage = LoadImage($"{XenonAssetsPath}/header-strip.png");
+        _moduleCaptionBackgroundImage = LoadImage($"{XenonAssetsPath}/header-strip.png");
+        _moduleBodyBackgroundImage = LoadImage($"{XenonAssetsPath}/module-body.png");
+        _hideImage = LoadImage($"{XenonAssetsPath}/collapse-normal.png");
+        _hideHoverImage = LoadImage($"{XenonAssetsPath}/collapse-hover.png");
+        _hidePressedImage = LoadImage($"{XenonAssetsPath}/collapse-pressed.png");
+        _showImage = LoadImage($"{XenonAssetsPath}/expand-normal.png");
+        _showHoverImage = LoadImage($"{XenonAssetsPath}/expand-hover.png");
+        _showPressedImage = LoadImage($"{XenonAssetsPath}/expand-pressed.png");
+        _commandButtonNormalImage = LoadImage($"{XenonAssetsPath}/command-normal.png");
+        _commandButtonHoverImage = LoadImage($"{XenonAssetsPath}/command-hover.png");
+        _commandButtonPressedImage = LoadImage($"{XenonAssetsPath}/command-pressed.png");
 
         foreach (var (commandTypeId, fileName) in CommandIconFileNames)
         {
@@ -258,6 +276,17 @@ public sealed class CommandsPanel
     /// <summary>True if the hover-state ("-active") icon file for <paramref name="commandTypeId"/> was found and decoded at construction time.</summary>
     internal bool HasLoadedActiveIconFor(string commandTypeId) =>
         _commandIcons.TryGetValue(commandTypeId, out var pair) && pair.Active is not null;
+
+    /// <summary>True when the complete Xenon command-panel chrome was found.</summary>
+    internal bool HasLoadedXenonChrome =>
+        _captionBackgroundImage is not null &&
+        _moduleCaptionBackgroundImage is not null &&
+        _moduleBodyBackgroundImage is not null &&
+        _hideImage is not null && _hideHoverImage is not null && _hidePressedImage is not null &&
+        _showImage is not null && _showHoverImage is not null && _showPressedImage is not null &&
+        _commandButtonNormalImage is not null &&
+        _commandButtonHoverImage is not null &&
+        _commandButtonPressedImage is not null;
 
     public IReadOnlyList<CommandPanelGeometry> CommandPanelRows => _panelRows;
     public IReadOnlyList<CommandButtonGeometry> AllCommandButtons => _allCommandButtons;
@@ -477,12 +506,12 @@ public sealed class CommandsPanel
     private void DrawCaption(SKCanvas canvas)
     {
         if (_captionBackgroundImage is not null)
-            canvas.DrawBitmap(_captionBackgroundImage, _captionRect);
+            NinePatch.Draw(canvas, _captionBackgroundImage, _captionRect, 6f);
         else
             canvas.DrawRect(_captionRect, _panelBgPaint);
 
         // HideShow toggle: hide icon when open, show icon when closed.
-        var hideShowImage = _state == CommandsPanelState.Closed ? _showImage : _hideImage;
+        var hideShowImage = ResolveHideShowImage();
         DrawButton(canvas, _hideShowButtonRect, 0, hideShowImage);
 
         float textX = _hideShowButtonRect.Right + Padding + 2f;
@@ -492,6 +521,12 @@ public sealed class CommandsPanel
 
     private void DrawButton(SKCanvas canvas, SKRect rect, int buttonIndex, SKBitmap? image)
     {
+        if (image is not null)
+        {
+            canvas.DrawBitmap(image, rect);
+            return;
+        }
+
         SKPaint fill;
         if (buttonIndex == _pressedButtonIndex && buttonIndex == _hoveredButtonIndex)
             fill = _btnPressedPaint;
@@ -504,9 +539,17 @@ public sealed class CommandsPanel
 
         canvas.DrawRect(rect, fill);
         canvas.DrawRect(rect, _btnBorderPaint);
+    }
 
-        if (image is not null)
-            canvas.DrawBitmap(image, rect);
+    private SKBitmap? ResolveHideShowImage()
+    {
+        bool pressed = _pressedButtonIndex == 0 && _hoveredButtonIndex == 0;
+        bool hovered = _hoveredButtonIndex == 0;
+
+        if (_state == CommandsPanelState.Closed)
+            return pressed ? _showPressedImage : hovered ? _showHoverImage : _showImage;
+
+        return pressed ? _hidePressedImage : hovered ? _hideHoverImage : _hideImage;
     }
 
     private bool IsActiveButton(int buttonIndex) => buttonIndex == 0 && _state == CommandsPanelState.Closed;
@@ -514,7 +557,7 @@ public sealed class CommandsPanel
     private void DrawCommandPanel(SKCanvas canvas, CommandPanelGeometry row)
     {
         if (_moduleCaptionBackgroundImage is not null)
-            canvas.DrawBitmap(_moduleCaptionBackgroundImage, row.CaptionRect);
+            NinePatch.Draw(canvas, _moduleCaptionBackgroundImage, row.CaptionRect, 6f);
         else
             canvas.DrawRect(row.CaptionRect, _panelBgPaint);
 
@@ -525,7 +568,7 @@ public sealed class CommandsPanel
         if (row.Opened && row.BodyRect.Height > 0)
         {
             if (_moduleBodyBackgroundImage is not null)
-                canvas.DrawBitmap(_moduleBodyBackgroundImage, row.BodyRect);
+                NinePatch.Draw(canvas, _moduleBodyBackgroundImage, row.BodyRect, XenonBodySliceInset);
             else
                 canvas.DrawRect(row.BodyRect, _panelBgPaint);
 
@@ -542,6 +585,8 @@ public sealed class CommandsPanel
     private void DrawCommandButton(SKCanvas canvas, int index)
     {
         var (label, button) = _commandButtons[index];
+
+        DrawCommandButtonChrome(canvas, index, button);
 
         var iconPair = _commandIcons.GetValueOrDefault(button.CommandTypeId);
         var icon = iconPair.Normal;
@@ -583,13 +628,41 @@ public sealed class CommandsPanel
             fill = _commandBtnDisabledPaint;
         }
 
-        canvas.DrawRect(button.Rect, fill);
-        canvas.DrawRect(button.Rect, _commandBtnBorderPaint);
+        if (_commandButtonNormalImage is null)
+        {
+            canvas.DrawRect(button.Rect, fill);
+            canvas.DrawRect(button.Rect, _commandBtnBorderPaint);
+        }
 
         var textPaint = button.Enabled ? _commandBtnTextPaint : _commandBtnTextDisabledPaint;
         string displayLabel = TruncateLabel(label, textPaint, button.Rect.Width - 8f);
         float textY = button.Rect.MidY + textPaint.TextSize / 3f;
         canvas.DrawText(displayLabel, button.Rect.MidX, textY, textPaint);
+    }
+
+    private void DrawCommandButtonChrome(SKCanvas canvas, int index, CommandButtonGeometry button)
+    {
+        if (_commandButtonNormalImage is null)
+            return;
+
+        SKBitmap image = _commandButtonNormalImage;
+        SKPaint? paint = null;
+
+        if (!button.Enabled)
+        {
+            paint = XenonStyle.DisabledImagePaint;
+        }
+        else if (index == _pressedCommandButtonIndex && index == _hoveredCommandButtonIndex &&
+                 _commandButtonPressedImage is not null)
+        {
+            image = _commandButtonPressedImage;
+        }
+        else if (index == _hoveredCommandButtonIndex && _commandButtonHoverImage is not null)
+        {
+            image = _commandButtonHoverImage;
+        }
+
+        NinePatch.Draw(canvas, image, button.Rect, XenonButtonSliceInset, paint);
     }
 
     private static string TruncateLabel(string label, SKPaint paint, float maxWidth)
