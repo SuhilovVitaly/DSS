@@ -1,3 +1,5 @@
+using SkiaSharp;
+
 namespace DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 
 /// <summary>Which part of the ScenarioSelect screen a click landed on.</summary>
@@ -43,25 +45,16 @@ public static class ScenarioSelectLayout
     public const float PanelWidth = 900f;
     public const float PanelHeight = 620f;
 
-    /// <summary>
-    /// "SELECT SCENARIO" title rect, local to the outer panel (x=96, y=60, 630×45) — the
-    /// title is centered inside this rect, not across the whole panel width.
-    /// </summary>
-    public const float TitleRectX = 96f;
-    public const float TitleRectY = 60f;
-    public const float TitleRectWidth = 630f;
-    public const float TitleRectHeight = 45f;
-
-    /// <summary>Left panel: the nine-sliced scenario list (x=50, y=145, 450 wide, 395 tall).</summary>
-    public const float ContentPanelX = 50f;
-    public const float ContentPanelY = 145f;
+    /// <summary>Left panel: the nine-sliced scenario list (x=40, y=125, 450 wide, 475 tall).</summary>
+    public const float ContentPanelX = 40f;
+    public const float ContentPanelY = 125f;
     public const float ContentPanelWidth = 450f;
-    public const float ContentPanelHeight = 395f;
+    public const float ContentPanelHeight = 475f;
 
-    /// <summary>Right panel: the nine-sliced action panel (x=500, y=145, 350 wide, 395 tall).</summary>
-    public const float ActionPanelX = 500f;
-    public const float ActionPanelY = 145f;
-    public const float ActionPanelWidth = 350f;
+    /// <summary>Right panel: the nine-sliced action panel (x=490, y=125, 370 wide, 475 tall).</summary>
+    public const float ActionPanelX = 490f;
+    public const float ActionPanelY = 125f;
+    public const float ActionPanelWidth = 370f;
     public const float ActionPanelHeight = ContentPanelHeight;
 
     /// <summary>Breathing room between a panel's border artwork and the content it holds.</summary>
@@ -104,7 +97,7 @@ public static class ScenarioSelectLayout
 
     public const float InfoSeparatorStrokeWidth = 2f;
 
-    public const float ActionButtonWidth = 140f;
+    public const float ActionButtonWidth = 160f;
     public const float ActionButtonHeight = 44f;
     public const float ActionButtonGap = 20f;
     public const float ActionButtonBottomMargin = 24f;
@@ -115,6 +108,13 @@ public static class ScenarioSelectLayout
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
+
+    public static SKRect PanelRect(int screenWidth, int screenHeight)
+    {
+        float left = PanelLeft(screenWidth);
+        float top = PanelTop(screenHeight);
+        return new SKRect(left, top, left + PanelWidth, top + PanelHeight);
+    }
 
     public static float ListLeft => ContentPanelX + ContentPadding;
     public static float ListWidth => ContentPanelWidth - 2 * ContentPadding;

@@ -7,12 +7,9 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Load;
 
 /// <summary>
-/// Modal overlay listing save slots. Redesigned after
-/// <see cref="ScenarioSelect.ScenarioSelectScreen"/>: clicking a row only selects it
-/// (highlighted, does not load/delete); a LOAD / two-stage DELETE button pair on the right
-/// action panel then acts on whichever row is currently selected — replacing the previous
-/// per-row LOAD/DELETE icon buttons. CLOSE is a normal bottom-of-window button (mirrors
-/// <see cref="Trade.TradeScreen"/>'s Exit button), not the small top-right icon it used to be.
+/// Generic Type A modal overlay listing save slots. Clicking a row only selects it
+/// (highlighted, does not load/delete); the bottom CLOSE / two-stage DELETE / LOAD button
+/// row then acts on that selection.
 /// Unlike Save (which excludes the reserved <see cref="SaveSlots.Quicksave"/> slot from
 /// its list entirely), Load shows it — a player must be able to load their last
 /// quicksave from here — but it is never deletable: DELETE is disabled while it is the
@@ -63,17 +60,6 @@ public sealed class LoadScreen : IScreen
     /// </summary>
     public string? LastRequestedSlotId { get; private set; }
 
-    /// <summary>
-    /// Panel background at the exact 700×600 panel size. Loaded once and shared by every
-    /// LoadScreen instance; falls back to MenuStyle.DrawPanel's plain fill if the file is
-    /// missing.
-    /// </summary>
-    private static readonly SKBitmap? BackgroundImage =
-        LoadImage("Images/UI/window-background-700x600.png");
-
-    /// <summary>True if the background PNG file was found and decoded at startup.</summary>
-    internal static bool HasLoadedBackground => BackgroundImage is not null;
-
     private static readonly SKPaint _titleTextPaint = new()
     {
         Color = MenuStyle.ColorText,
@@ -119,12 +105,6 @@ public sealed class LoadScreen : IScreen
         StrokeWidth = 2f
     };
 
-    private static SKBitmap? LoadImage(string path)
-    {
-        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
-        catch { return null; }
-    }
-
     /// <param name="listSlots">Enumerates every save slot on disk. Called at construction and after every mutating action.</param>
     /// <param name="deleteSlot">Delete a slot by id (second click of the two-stage DELETE button).</param>
     /// <param name="nowMs">Clock used for the delete-confirm timeout window; defaults to <see cref="Environment.TickCount64"/>. Overridable for tests.</param>
@@ -133,6 +113,9 @@ public sealed class LoadScreen : IScreen
         Action<string> deleteSlot,
         Func<long>? nowMs = null)
     {
+        GenericWindowTypeA.Preload();
+        GenericButtonTypeA.Preload();
+
         _listSlots = listSlots;
         _deleteSlot = deleteSlot;
         _nowMs = nowMs ?? (() => Environment.TickCount64);
@@ -242,24 +225,17 @@ public sealed class LoadScreen : IScreen
 
         float pl = LoadLayout.PanelLeft(width);
         float pt = LoadLayout.PanelTop(height);
-        var panelRect = new SKRect(pl, pt, pl + LoadLayout.PanelWidth, pt + LoadLayout.PanelHeight);
-        if (BackgroundImage is not null)
-            canvas.DrawBitmap(BackgroundImage, panelRect);
-        else
-            MenuStyle.DrawPanel(canvas, panelRect);
-
-        var titleBarRect = new SKRect(pl, pt + LoadLayout.TitleBarY, pl + LoadLayout.PanelWidth, pt + LoadLayout.TitleBarY + LoadLayout.TitleBarHeight);
-        canvas.DrawText("LOAD GAME", titleBarRect.MidX, MenuStyle.VerticalCenterBaseline(titleBarRect, _titleTextPaint), _titleTextPaint);
+        var panelRect = LoadLayout.PanelRect(width, height);
+        GenericWindowTypeA.Draw(canvas, panelRect);
+        GenericWindowTypeA.DrawTitle(canvas, panelRect, "LOAD GAME", _titleTextPaint);
 
         ImagePanel.Draw(canvas, CombinedRect(pl, pt, LoadLayout.ContentPanelRect()));
-        ImagePanel.Draw(canvas, CombinedRect(pl, pt, LoadLayout.ActionPanelRect()));
 
         DrawSlotList(canvas, pl, pt);
         if (_slots.Count > LoadLayout.VisibleRows)
             DrawScrollbar(canvas, pl, pt);
 
-        DrawActionButtons(canvas, pl, pt);
-        DrawCloseButton(canvas, pl, pt);
+        DrawBottomButtons(canvas, pl, pt);
     }
 
     /// <summary>Only rendered when the slot list overflows <see cref="LoadLayout.VisibleRows"/>; scrolling itself works via <see cref="OnMouseWheel"/> regardless.</summary>
@@ -302,7 +278,7 @@ public sealed class LoadScreen : IScreen
         }
     }
 
-    private void DrawActionButtons(SKCanvas canvas, float pl, float pt)
+    private void DrawBottomButtons(SKCanvas canvas, float pl, float pt)
     {
         bool hasSelection = _selectedIndex >= 0 && _selectedIndex < _slots.Count;
         bool isQuicksaveSelected = hasSelection && _slots[_selectedIndex].SlotId == SaveSlots.Quicksave;
@@ -313,21 +289,17 @@ public sealed class LoadScreen : IScreen
         var deleteState = !hasSelection || isQuicksaveSelected
             ? ButtonState.Disabled
             : _hoveredZone == LoadZone.Delete ? ButtonState.Hovered : ButtonState.Normal;
-        ImageButton.Draw(canvas, deleteRect, isConfirming ? "CONFIRM?" : "DELETE", deleteState, MenuStyle.TypefaceHumaroid);
+        GenericButtonTypeA.Draw(canvas, deleteRect, isConfirming ? "CONFIRM?" : "DELETE", deleteState);
 
         var loadRect = CombinedRect(pl, pt, LoadLayout.LoadButtonRect());
         var loadState = !hasSelection
             ? ButtonState.Disabled
             : _hoveredZone == LoadZone.Load ? ButtonState.Hovered : ButtonState.Normal;
-        ImageButton.Draw(canvas, loadRect, "LOAD", loadState, MenuStyle.TypefaceHumaroid);
-    }
+        GenericButtonTypeA.Draw(canvas, loadRect, "LOAD", loadState);
 
-    /// <summary>CLOSE — a normal bottom-of-window button, same nine-patch style as LOAD/DELETE.</summary>
-    private void DrawCloseButton(SKCanvas canvas, float pl, float pt)
-    {
-        var rect = CombinedRect(pl, pt, LoadLayout.CloseButtonRect());
-        var state = _hoveredZone == LoadZone.Close ? ButtonState.Hovered : ButtonState.Normal;
-        ImageButton.Draw(canvas, rect, "CLOSE", state, MenuStyle.TypefaceHumaroid);
+        var closeRect = CombinedRect(pl, pt, LoadLayout.CloseButtonRect());
+        var closeState = _hoveredZone == LoadZone.Close ? ButtonState.Hovered : ButtonState.Normal;
+        GenericButtonTypeA.Draw(canvas, closeRect, "CLOSE", closeState);
     }
 
     private static SKRect CombinedRect(float panelLeft, float panelTop, (float X, float Y, float W, float H) local) =>

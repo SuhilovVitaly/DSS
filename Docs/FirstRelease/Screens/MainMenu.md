@@ -13,6 +13,7 @@
 - `New Game` открывает `ScenarioSelectScreen` — игровая сессия из него не создаётся напрямую, см. `Docs/FirstRelease/Screens/ScenarioSelect.md`.
 - `Load` открывает будущий экран загрузки сохранения; в текущем коде кнопка уже нарисована как `LOAD`, но отключена.
 - `Settings` открывает экран настроек.
+- `Credits` отображается сразу после `Settings`, но пока остаётся отключённым.
 - `Exit` завершает приложение.
 
 ## Связанные механики
@@ -20,6 +21,14 @@
 - `ScenarioSelectScreen` и выбор одного из сценариев `Scenarios/*/scenario.json`.
 - Инициализация `GameSessionScreen` после выбора сценария.
 - Генерация `masterSeed`, если выбранный сценарий его не содержит.
+
+## Оформление
+
+Внешняя оболочка Main Menu построена через `GenericWindowTypeA`: navy-фон,
+cyan-рамка и скошенные углы масштабируются под `MenuLayout.PanelRect`. Заголовок,
+версия и действия остаются собственными UI-элементами `MainMenuScreen`. Кнопки
+оформлены через переиспользуемый `GenericButtonTypeA` — тот же тип используется в
+GameMenu и поддерживает состояния Normal, Hovered, Pressed и Disabled.
 
 ## Примечания
 

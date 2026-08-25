@@ -1,3 +1,5 @@
+using SkiaSharp;
+
 namespace DeepSpaceSaga.Client.UI.Screens.GameMenu;
 
 public enum GameMenuButton
@@ -10,47 +12,62 @@ public enum GameMenuButton
     MainMenu
 }
 
-/// <summary>
-/// Layout and hit-test geometry for the GameMenu overlay panel.
-/// Same panel size as MainMenu (500×550).
-/// </summary>
-public sealed class GameMenuLayout
+/// <summary>All GameMenu geometry and hit testing for the centered 500×550 panel.</summary>
+public static class GameMenuLayout
 {
     public const float PanelWidth = 500f;
     public const float PanelHeight = 550f;
+    public const float InnerPadding = 58f;
 
-    public const float ButtonWidth = 188f;
-    public const float ButtonHeight = 58f;
+    public const float ButtonWidth = 384f;
+    public const float ButtonHeight = 56f;
+    public const float ResumeY = 132f;
+    public const float SaveY = 198f;
+    public const float LoadY = 264f;
+    public const float SettingsY = 330f;
+    public const float MainMenuY = 396f;
 
-    public const float ResumeY = 140f;
-    public const float SaveY = 212f;
-    public const float LoadY = 284f;
-    public const float SettingsY = 356f;
-    public const float MainMenuY = 470f;
+    public const float FooterY = 476f;
+    public const float FooterHeight = 56f;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
 
+    public static SKRect PanelRect(int screenWidth, int screenHeight) =>
+        OffsetRect(0, 0, PanelWidth, PanelHeight, screenWidth, screenHeight);
+
+    public static SKRect FooterRect(int screenWidth, int screenHeight) =>
+        OffsetRect(InnerPadding, FooterY, ButtonWidth, FooterHeight, screenWidth, screenHeight);
+
+    public static SKRect ButtonRect(GameMenuButton id, int screenWidth, int screenHeight)
+    {
+        float y = id switch
+        {
+            GameMenuButton.Resume => ResumeY,
+            GameMenuButton.Save => SaveY,
+            GameMenuButton.Load => LoadY,
+            GameMenuButton.Settings => SettingsY,
+            GameMenuButton.MainMenu => MainMenuY,
+            _ => -ButtonHeight
+        };
+        return OffsetRect(InnerPadding, y, ButtonWidth, ButtonHeight, screenWidth, screenHeight);
+    }
+
     public static GameMenuButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight)
     {
-        float panelLeft = PanelLeft(screenWidth);
-        float panelTop = PanelTop(screenHeight);
-
-        float lx = screenX - panelLeft;
-        float ly = screenY - panelTop;
-
-        if (IsInButton(lx, ly, ResumeY)) return GameMenuButton.Resume;
-        if (IsInButton(lx, ly, SaveY)) return GameMenuButton.Save;
-        if (IsInButton(lx, ly, LoadY)) return GameMenuButton.Load;
-        if (IsInButton(lx, ly, SettingsY)) return GameMenuButton.Settings;
-        if (IsInButton(lx, ly, MainMenuY)) return GameMenuButton.MainMenu;
+        if (ButtonRect(GameMenuButton.Resume, screenWidth, screenHeight).Contains(screenX, screenY)) return GameMenuButton.Resume;
+        if (ButtonRect(GameMenuButton.Save, screenWidth, screenHeight).Contains(screenX, screenY)) return GameMenuButton.Save;
+        if (ButtonRect(GameMenuButton.Load, screenWidth, screenHeight).Contains(screenX, screenY)) return GameMenuButton.Load;
+        if (ButtonRect(GameMenuButton.Settings, screenWidth, screenHeight).Contains(screenX, screenY)) return GameMenuButton.Settings;
+        if (ButtonRect(GameMenuButton.MainMenu, screenWidth, screenHeight).Contains(screenX, screenY)) return GameMenuButton.MainMenu;
         return GameMenuButton.None;
     }
 
-    private static bool IsInButton(float localX, float localY, float buttonY)
+    private static SKRect OffsetRect(float x, float y, float width, float height,
+        int screenWidth, int screenHeight)
     {
-        float bx = (PanelWidth - ButtonWidth) / 2f;
-        return localX >= bx && localX <= bx + ButtonWidth
-            && localY >= buttonY && localY <= buttonY + ButtonHeight;
+        float left = PanelLeft(screenWidth) + x;
+        float top = PanelTop(screenHeight) + y;
+        return new SKRect(left, top, left + width, top + height);
     }
 }

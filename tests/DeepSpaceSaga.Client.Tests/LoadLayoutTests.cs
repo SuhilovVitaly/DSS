@@ -4,9 +4,8 @@ namespace DeepSpaceSaga.Client.Tests;
 
 /// <summary>
 /// Pure hit-test geometry tests for <see cref="LoadLayout"/> — no SKCanvas, no LoadScreen.
-/// Mirrors <see cref="ScenarioSelectLayoutTests"/>: a left content panel (selectable rows)
-/// sits beside a right action panel (LOAD/DELETE, stacked vertically), with CLOSE on its
-/// own at the bottom of the window, below both panels.
+/// A full-width content panel holds selectable rows; CLOSE, DELETE, and LOAD share one
+/// bottom horizontal action row.
 /// </summary>
 public class LoadLayoutTests
 {
@@ -75,16 +74,14 @@ public class LoadLayoutTests
         Assert.Equal((ScreenHeight - LoadLayout.PanelHeight) / 2f, LoadLayout.PanelTop(ScreenHeight));
     }
 
-    // --- Content panel / action panel / row list geometry ---
+    // --- Content panel / row list / bottom action geometry ---
 
     [Fact]
-    public void ActionPanel_sits_immediately_right_of_the_content_panel()
+    public void ContentPanel_spans_the_inner_window_width()
     {
         var content = LoadLayout.ContentPanelRect();
-        var action = LoadLayout.ActionPanelRect();
-        Assert.Equal(content.X + content.W, action.X, precision: 3);
-        Assert.Equal(content.Y, action.Y);
-        Assert.Equal(content.H, action.H);
+        Assert.Equal(LoadLayout.Margin, content.X);
+        Assert.Equal(LoadLayout.PanelWidth - 2 * LoadLayout.Margin, content.W);
     }
 
     [Fact]
@@ -100,34 +97,30 @@ public class LoadLayoutTests
     }
 
     [Fact]
-    public void LoadButton_sits_above_DeleteButton_within_the_action_panel()
+    public void All_three_buttons_share_one_bottom_row_without_overlap()
     {
-        var action = LoadLayout.ActionPanelRect();
+        var close = LoadLayout.CloseButtonRect();
         var load = LoadLayout.LoadButtonRect();
         var delete = LoadLayout.DeleteButtonRect();
 
-        Assert.True(load.Y + load.H <= delete.Y + 0.01f);
-        Assert.True(load.X >= action.X && load.X + load.W <= action.X + action.W + 0.01f);
-        Assert.True(delete.X >= action.X && delete.X + delete.W <= action.X + action.W + 0.01f);
-        Assert.True(load.Y >= action.Y && delete.Y + delete.H <= action.Y + action.H + 0.01f);
+        Assert.Equal(close.Y, delete.Y);
+        Assert.Equal(delete.Y, load.Y);
+        Assert.Equal(close.H, delete.H);
+        Assert.Equal(delete.H, load.H);
+        Assert.True(close.X + close.W <= delete.X);
+        Assert.True(delete.X + delete.W <= load.X);
+        Assert.Equal(LoadLayout.Margin, close.X);
+        Assert.Equal(LoadLayout.PanelWidth - LoadLayout.Margin, load.X + load.W);
     }
 
     [Fact]
-    public void CloseButton_sits_below_both_panels_with_no_overlap()
+    public void Bottom_buttons_sit_below_the_content_panel()
     {
         var content = LoadLayout.ContentPanelRect();
-        var action = LoadLayout.ActionPanelRect();
         var close = LoadLayout.CloseButtonRect();
 
         Assert.True(content.Y + content.H <= close.Y + 0.01f);
-        Assert.True(action.Y + action.H <= close.Y + 0.01f);
-    }
-
-    [Fact]
-    public void CloseButton_is_horizontally_centered_in_the_panel()
-    {
-        var close = LoadLayout.CloseButtonRect();
-        Assert.Equal((LoadLayout.PanelWidth - close.W) / 2f, close.X, precision: 3);
+        Assert.True(close.Y + close.H <= LoadLayout.PanelHeight);
     }
 
     // --- Scrollbar geometry (shown only when slots.Count > VisibleRows) ---
@@ -166,13 +159,13 @@ public class LoadLayoutTests
     }
 
     [Fact]
-    public void ScrollbarTrack_does_not_overlap_the_row_list_or_the_action_panel()
+    public void ScrollbarTrack_does_not_overlap_the_row_list_or_leave_the_content_panel()
     {
         var track = LoadLayout.ScrollbarTrackRect();
         var row = LoadLayout.RowRect(0);
-        var action = LoadLayout.ActionPanelRect();
+        var content = LoadLayout.ContentPanelRect();
 
         Assert.True(track.X >= row.X + row.W);
-        Assert.True(track.X + track.W <= action.X + 0.01f);
+        Assert.True(track.X + track.W <= content.X + content.W + 0.01f);
     }
 }

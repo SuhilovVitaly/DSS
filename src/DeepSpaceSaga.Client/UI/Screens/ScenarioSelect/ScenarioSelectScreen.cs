@@ -56,23 +56,6 @@ public sealed class ScenarioSelectScreen : IScreen
     /// </summary>
     public string? LastSelectedScenarioPath { get; private set; }
 
-    /// <summary>
-    /// Panel background at the exact 900×620 panel size. Loaded once and shared by
-    /// every ScenarioSelectScreen instance; falls back to MenuStyle.DrawPanel's plain
-    /// fill if the file is missing.
-    /// </summary>
-    private static readonly SKBitmap? BackgroundImage =
-        LoadImage("Images/UI/window-background-900x620.png");
-
-    private static SKBitmap? LoadImage(string path)
-    {
-        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
-        catch { return null; }
-    }
-
-    /// <summary>True if the background PNG file was found and decoded at startup.</summary>
-    internal static bool HasLoadedBackground => BackgroundImage is not null;
-
     /// <summary>Same size/color/alignment as <see cref="MenuStyle.TextTitle"/>, but in
     /// Humaroid — a local copy rather than mutating the shared paint, which other screens
     /// (GameMenu, Trade, Station, ...) also draw their own titles with.</summary>
@@ -193,6 +176,8 @@ public sealed class ScenarioSelectScreen : IScreen
     /// <param name="listScenarios">Enumerates every playable scenario found on disk. Called at construction and on every activation.</param>
     public ScenarioSelectScreen(Func<IReadOnlyList<ScenarioInfo>> listScenarios)
     {
+        GenericWindowTypeA.Preload();
+        GenericButtonTypeA.Preload();
         _listScenarios = listScenarios;
         RefreshScenarios();
     }
@@ -273,17 +258,10 @@ public sealed class ScenarioSelectScreen : IScreen
 
         float pl = ScenarioSelectLayout.PanelLeft(width);
         float pt = ScenarioSelectLayout.PanelTop(height);
-        var panelRect = new SKRect(pl, pt, pl + ScenarioSelectLayout.PanelWidth, pt + ScenarioSelectLayout.PanelHeight);
-        if (BackgroundImage is not null)
-            canvas.DrawBitmap(BackgroundImage, panelRect);
-        else
-            MenuStyle.DrawPanel(canvas, panelRect);
+        DrawWindowShell(canvas, ScenarioSelectLayout.PanelRect(width, height));
 
-        var titleRect = new SKRect(
-            pl + ScenarioSelectLayout.TitleRectX, pt + ScenarioSelectLayout.TitleRectY,
-            pl + ScenarioSelectLayout.TitleRectX + ScenarioSelectLayout.TitleRectWidth,
-            pt + ScenarioSelectLayout.TitleRectY + ScenarioSelectLayout.TitleRectHeight);
-        canvas.DrawText(Localization.Get("ScenarioSelect.Title"), titleRect.MidX, MenuStyle.VerticalCenterBaseline(titleRect, _titleTextPaint), _titleTextPaint);
+        GenericWindowTypeA.DrawTitle(canvas, ScenarioSelectLayout.PanelRect(width, height),
+            Localization.Get("ScenarioSelect.Title"), _titleTextPaint);
 
         ImagePanel.Draw(canvas, new SKRect(
             pl + ScenarioSelectLayout.ContentPanelX, pt + ScenarioSelectLayout.ContentPanelY,
@@ -325,17 +303,19 @@ public sealed class ScenarioSelectScreen : IScreen
         }
 
         var backRect = CombinedRect(actionLeft, actionTop, ScenarioSelectLayout.BackButtonRect());
-        ImageButton.Draw(canvas, backRect, Localization.Get("ScenarioSelect.Back"),
-            _hoveredZone == ScenarioSelectZone.Back ? ButtonState.Hovered : ButtonState.Normal,
-            MenuStyle.TypefaceHumaroid);
+        GenericButtonTypeA.Draw(canvas, backRect, Localization.Get("ScenarioSelect.Back"),
+            _hoveredZone == ScenarioSelectZone.Back ? ButtonState.Hovered : ButtonState.Normal);
 
         bool canPlay = _selectedIndex >= 0 && _selectedIndex < _scenarios.Count;
         var playRect = CombinedRect(actionLeft, actionTop, ScenarioSelectLayout.PlayButtonRect());
         var playState = !canPlay
             ? ButtonState.Disabled
             : _hoveredZone == ScenarioSelectZone.Play ? ButtonState.Hovered : ButtonState.Normal;
-        ImageButton.Draw(canvas, playRect, Localization.Get("ScenarioSelect.Play"), playState, MenuStyle.TypefaceHumaroid);
+        GenericButtonTypeA.Draw(canvas, playRect, Localization.Get("ScenarioSelect.Play"), playState);
     }
+
+    internal static void DrawWindowShell(SKCanvas canvas, SKRect bounds) =>
+        GenericWindowTypeA.Draw(canvas, bounds);
 
     /// <summary>
     /// One "LABEL | VALUE" info row: the cyan label pinned to the panel's left edge

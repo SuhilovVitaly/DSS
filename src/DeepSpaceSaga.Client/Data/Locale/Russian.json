@@ -2,7 +2,16 @@
   "MainMenu.NewGame": "НОВАЯ ИГРА",
   "MainMenu.Load": "ЗАГРУЗИТЬ",
   "MainMenu.Settings": "НАСТРОЙКИ",
+  "MainMenu.Credits": "АВТОРЫ",
   "MainMenu.Exit": "ВЫХОД",
+
+  "GameMenu.Status": "МЕНЮ ИГРЫ // СИМУЛЯЦИЯ ПРИОСТАНОВЛЕНА",
+  "GameMenu.Resume": "ПРОДОЛЖИТЬ",
+  "GameMenu.Save": "СОХРАНИТЬ",
+  "GameMenu.Load": "ЗАГРУЗИТЬ",
+  "GameMenu.Settings": "НАСТРОЙКИ",
+  "GameMenu.MainMenu": "ГЛАВНОЕ МЕНЮ",
+  "GameMenu.EscResume": "ESC  ПРОДОЛЖИТЬ",
 
   "Settings.Title": "НАСТРОЙКИ",
   "Settings.Language": "ЯЗЫК",

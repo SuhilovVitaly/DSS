@@ -13,23 +13,6 @@ public sealed class MainMenuScreen : IScreen
     private MenuButton _hoveredButton = MenuButton.None;
     private MenuButton _pressedButton = MenuButton.None;
 
-    /// <summary>
-    /// Panel background at the exact 500×550 panel size. Loaded once and shared by
-    /// every MainMenuScreen instance; falls back to MenuStyle.DrawPanel's plain fill
-    /// if the file is missing.
-    /// </summary>
-    private static readonly SKBitmap? BackgroundImage =
-        LoadImage("Images/UI/window-background-500x550.png");
-
-    private static SKBitmap? LoadImage(string path)
-    {
-        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
-        catch { return null; }
-    }
-
-    /// <summary>True if the background PNG file was found and decoded at startup.</summary>
-    internal static bool HasLoadedBackground => BackgroundImage is not null;
-
     /// <summary>Same size/color/alignment as <see cref="MenuStyle.TextTitle"/>, but in
     /// Humaroid — a local copy rather than mutating the shared paint, which other screens
     /// (GameMenu, Trade, Station, ...) also draw their own titles with.</summary>
@@ -42,15 +25,11 @@ public sealed class MainMenuScreen : IScreen
         Typeface = MenuStyle.TypefaceHumaroid
     };
 
-    /// <summary>Same size/color/alignment as <see cref="MenuStyle.TextVersion"/>, but in Humaroid.</summary>
-    private static readonly SKPaint _versionTextPaint = new()
+    public MainMenuScreen()
     {
-        Color = MenuStyle.ColorText,
-        TextSize = MenuStyle.VersionFontSize,
-        IsAntialias = true,
-        TextAlign = SKTextAlign.Center,
-        Typeface = MenuStyle.TypefaceHumaroid
-    };
+        GenericWindowTypeA.Preload();
+        GenericButtonTypeA.Preload();
+    }
 
     public void OnActivated()
     {
@@ -69,8 +48,10 @@ public sealed class MainMenuScreen : IScreen
 
         var hit = MenuLayout.HitTest(x, y, _screenWidth, _screenHeight);
 
-        if (hit == MenuButton.NewGame || hit == MenuButton.Load || hit == MenuButton.Settings || hit == MenuButton.Exit)
-            _pressedButton = hit;
+        if (!IsEnabled(hit))
+            return ScreenEvent.None;
+
+        _pressedButton = hit;
 
         return hit switch
         {
@@ -88,8 +69,8 @@ public sealed class MainMenuScreen : IScreen
     public bool OnMouseMove(float x, float y)
     {
         var hit = MenuLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        _hoveredButton = hit;
-        return hit == MenuButton.NewGame || hit == MenuButton.Load || hit == MenuButton.Settings || hit == MenuButton.Exit;
+        _hoveredButton = IsEnabled(hit) ? hit : MenuButton.None;
+        return IsEnabled(hit);
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -104,22 +85,24 @@ public sealed class MainMenuScreen : IScreen
 
         float pl = MenuLayout.PanelLeft(width);
         float pt = MenuLayout.PanelTop(height);
-        var panelRect = new SKRect(pl, pt, pl + MenuLayout.PanelWidth, pt + MenuLayout.PanelHeight);
-        if (BackgroundImage is not null)
-            canvas.DrawBitmap(BackgroundImage, panelRect);
-        else
-            MenuStyle.DrawPanel(canvas, panelRect);
+        DrawWindowShell(canvas, MenuLayout.PanelRect(width, height));
 
-        float cx = pl + MenuLayout.PanelWidth / 2f;
-
-        canvas.DrawText(GameInfo.Title, cx, pt + MenuLayout.TitleY, _titleTextPaint);
-        canvas.DrawText(GameInfo.Version, cx, pt + MenuLayout.VersionY, _versionTextPaint);
+        var panelRect = MenuLayout.PanelRect(width, height);
+        GenericWindowTypeA.DrawTitle(canvas, panelRect, GameInfo.Title, _titleTextPaint);
+        GenericWindowTypeA.DrawVersion(canvas, panelRect, GameInfo.Version);
 
         DrawButton(canvas, pl, pt, MenuLayout.NewGameY, Localization.Get("MainMenu.NewGame"), MenuButton.NewGame);
         DrawButton(canvas, pl, pt, MenuLayout.LoadY, Localization.Get("MainMenu.Load"), MenuButton.Load);
         DrawButton(canvas, pl, pt, MenuLayout.SettingsY, Localization.Get("MainMenu.Settings"), MenuButton.Settings);
+        DrawButton(canvas, pl, pt, MenuLayout.CreditsY, Localization.Get("MainMenu.Credits"), MenuButton.Credits);
         DrawButton(canvas, pl, pt, MenuLayout.ExitY, Localization.Get("MainMenu.Exit"), MenuButton.Exit);
     }
+
+    internal static void DrawWindowShell(SKCanvas canvas, SKRect bounds) =>
+        GenericWindowTypeA.Draw(canvas, bounds);
+
+    private static bool IsEnabled(MenuButton button) =>
+        button is MenuButton.NewGame or MenuButton.Load or MenuButton.Settings or MenuButton.Exit;
 
     private ButtonState GetState(MenuButton id, bool active)
     {
@@ -136,6 +119,6 @@ public sealed class MainMenuScreen : IScreen
         float by = panelTop + buttonLocalY;
         var rect = new SKRect(bx, by, bx + MenuLayout.ButtonWidth, by + MenuLayout.ButtonHeight);
 
-        ImageButton.Draw(canvas, rect, text, GetState(id, active: true), MenuStyle.TypefaceHumaroid, MenuStyle.MainMenuButtonFontSize);
+        GenericButtonTypeA.Draw(canvas, rect, text, GetState(id, IsEnabled(id)));
     }
 }

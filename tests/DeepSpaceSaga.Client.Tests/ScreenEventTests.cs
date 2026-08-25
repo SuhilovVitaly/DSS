@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
@@ -84,6 +85,16 @@ public class ScreenEventTests
     }
 
     [Fact]
+    public void MainMenu_Credits_is_disabled_for_hover_and_click()
+    {
+        var screen = new MainMenuScreen();
+        var (x, y) = ButtonCenter(MenuLayout.CreditsY);
+        TriggerRender(screen);
+        Assert.False(screen.OnMouseMove(x, y));
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
     public void GameSessionScreen_click_returns_None()
     {
         var buffer = new DeepSpaceSaga.Client.SnapshotBuffer();
@@ -154,6 +165,45 @@ public class ScreenEventTests
         var (x, y) = GameButtonCenter(GameMenuLayout.LoadY);
         TriggerGameRender(screen);
         Assert.True(screen.OnMouseMove(x, y));
+    }
+
+    [Fact]
+    public void GameMenu_former_close_area_is_not_interactive()
+    {
+        var screen = new GameMenuScreen();
+        TriggerGameRender(screen);
+        var panel = GameMenuLayout.PanelRect(ScreenWidth, ScreenHeight);
+        float x = panel.Right - 34f;
+        float y = panel.Top + 36f;
+        Assert.False(screen.OnMouseMove(x, y));
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void GameMenu_Settings_is_disabled_for_hover_and_click()
+    {
+        var screen = new GameMenuScreen();
+        var (x, y) = GameButtonCenter(GameMenuLayout.SettingsY);
+        TriggerGameRender(screen);
+        Assert.False(screen.OnMouseMove(x, y));
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void GameMenu_right_click_does_not_activate_controls()
+    {
+        var screen = new GameMenuScreen();
+        var (x, y) = GameButtonCenter(GameMenuLayout.ResumeY);
+        TriggerGameRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y, MouseButton.Right));
+    }
+
+    [Fact]
+    public void GameMenu_click_outside_panel_does_nothing()
+    {
+        var screen = new GameMenuScreen();
+        TriggerGameRender(screen);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(0, 0));
     }
 
     [Fact]
@@ -602,7 +652,7 @@ public class ScreenEventTests
     public void Save_ConfirmNewSave_duplicate_name_first_click_arms_overwrite_without_calling_saveSlot()
     {
         // First SAVE click on a duplicate name only arms the overwrite confirm — it
-        // must not overwrite yet (mirrors the per-row DELETE button's first click).
+        // must not overwrite yet (mirrors the DELETE action's first click).
         bool called = false;
         var slots = new[] { Slot("Existing", "Existing", DateTime.UtcNow) };
         var screen = NewSaveScreen(slots: slots, saveSlot: _ => called = true);
@@ -737,7 +787,7 @@ public class ScreenEventTests
         var screen = NewSaveScreen(slots: slots, saveSlot: id => saved = id);
         TriggerSaveRender(screen);
 
-        var (x, y) = SaveCenter(SaveLayout.OverwriteButtonRect(0));
+        var (x, y) = SaveCenter(SaveLayout.OverwriteButtonRect());
         var evt = screen.OnMouseDown(x, y);
 
         Assert.Equal(ScreenEvent.None, evt);
@@ -752,7 +802,7 @@ public class ScreenEventTests
         var screen = NewSaveScreen(slots: slots, deleteSlot: _ => called = true);
         TriggerSaveRender(screen);
 
-        var (x, y) = SaveCenter(SaveLayout.DeleteButtonRect(0));
+        var (x, y) = SaveCenter(SaveLayout.DeleteButtonRect());
         var evt = screen.OnMouseDown(x, y);
 
         Assert.Equal(ScreenEvent.None, evt);
@@ -768,7 +818,7 @@ public class ScreenEventTests
         var screen = NewSaveScreen(slots: slots, deleteSlot: id => deleted = id, nowMs: () => fakeNow);
         TriggerSaveRender(screen);
 
-        var (x, y) = SaveCenter(SaveLayout.DeleteButtonRect(0));
+        var (x, y) = SaveCenter(SaveLayout.DeleteButtonRect());
         screen.OnMouseDown(x, y); // first click → CONFIRM
         fakeNow += 500;
         var evt = screen.OnMouseDown(x, y); // second click within window → deletes
@@ -786,7 +836,7 @@ public class ScreenEventTests
         var screen = NewSaveScreen(slots: slots, deleteSlot: _ => called = true, nowMs: () => fakeNow);
         TriggerSaveRender(screen);
 
-        var (x, y) = SaveCenter(SaveLayout.DeleteButtonRect(0));
+        var (x, y) = SaveCenter(SaveLayout.DeleteButtonRect());
         screen.OnMouseDown(x, y); // first click → CONFIRM
         fakeNow += 5000; // past the confirm window
         screen.OnMouseDown(x, y); // treated as a fresh first click, not a delete
@@ -806,10 +856,10 @@ public class ScreenEventTests
         var screen = NewSaveScreen(slots: slots, deleteSlot: _ => called = true);
         TriggerSaveRender(screen);
 
-        var (dx, dy) = SaveCenter(SaveLayout.DeleteButtonRect(0));
+        var (dx, dy) = SaveCenter(SaveLayout.DeleteButtonRect());
         screen.OnMouseDown(dx, dy); // first click on row 0 → CONFIRM
 
-        var (ox, oy) = SaveCenter(SaveLayout.OverwriteButtonRect(1));
+        var (ox, oy) = SaveCenter(SaveLayout.OverwriteButtonRect());
         screen.OnMouseDown(ox, oy); // click elsewhere clears the confirm state
 
         var evt = screen.OnMouseDown(dx, dy); // this is now a fresh first click again
@@ -822,7 +872,7 @@ public class ScreenEventTests
     public void Save_Delete_click_on_different_row_clears_previous_confirm_and_arms_new_row()
     {
         // Regression for clicking DELETE on a *different* row while another row is
-        // already armed (as opposed to clicking Overwrite on a different row, already
+        // already armed (as opposed to selecting another row, already
         // covered by Save_Delete_click_elsewhere_clears_confirm_state above). The single
         // _deleteConfirmIndex field must be reset to the newly clicked row, not left
         // pointing at the old one and not treated as that old row's confirming click.
@@ -836,29 +886,30 @@ public class ScreenEventTests
         var screen = NewSaveScreen(slots: slots, deleteSlot: id => deleted = id, nowMs: () => fakeNow);
         TriggerSaveRender(screen);
 
-        var (d0x, d0y) = SaveCenter(SaveLayout.DeleteButtonRect(0));
-        var (d1x, d1y) = SaveCenter(SaveLayout.DeleteButtonRect(1));
+        var (deleteX, deleteY) = SaveCenter(SaveLayout.DeleteButtonRect());
+        var (row0X, row0Y) = SaveCenter(SaveLayout.RowRect(0));
+        var (row1X, row1Y) = SaveCenter(SaveLayout.RowRect(1));
 
-        screen.OnMouseDown(d0x, d0y); // first click on row 0 → CONFIRM armed for row 0
+        screen.OnMouseDown(deleteX, deleteY); // first click on selected row 0 → CONFIRM
 
-        // Clicking DELETE on a different row (row 1) must not delete either row: it's a
-        // fresh first click for row 1, and it must clear row 0's armed state.
-        var evt = screen.OnMouseDown(d1x, d1y);
+        screen.OnMouseDown(row1X, row1Y); // selecting another row clears row 0's arm
+        var evt = screen.OnMouseDown(deleteX, deleteY); // fresh first DELETE for row 1
         Assert.Equal(ScreenEvent.None, evt);
         Assert.Null(deleted);
 
-        // Row 0's arm was cleared by the click above: clicking it again now is a fresh
-        // first click too (not a delete), even though it's within the confirm window.
+        // Selecting row 0 clears row 1's arm; its next DELETE is fresh too.
+        screen.OnMouseDown(row0X, row0Y);
         fakeNow += 500;
-        var evtRow0Again = screen.OnMouseDown(d0x, d0y);
+        var evtRow0Again = screen.OnMouseDown(deleteX, deleteY);
         Assert.Equal(ScreenEvent.None, evtRow0Again);
         Assert.Null(deleted);
 
-        // Row 1's own arm/confirm cycle still works correctly from a fresh start.
+        // Row 1's own select/arm/confirm cycle still works correctly.
+        screen.OnMouseDown(row1X, row1Y);
         fakeNow += 100;
-        screen.OnMouseDown(d1x, d1y); // fresh first click on row 1 (clears row 0's re-arm)
+        screen.OnMouseDown(deleteX, deleteY);
         fakeNow += 500;
-        var evtRow1Confirm = screen.OnMouseDown(d1x, d1y); // second click within window → deletes
+        var evtRow1Confirm = screen.OnMouseDown(deleteX, deleteY);
 
         Assert.Equal(ScreenEvent.None, evtRow1Confirm);
         Assert.Equal("slot-b", deleted);
@@ -876,8 +927,9 @@ public class ScreenEventTests
         TriggerSaveRender(screen);
 
         // Before the notify, row index 1 doesn't exist yet — clicking there hits nothing.
-        var (x, y) = SaveCenter(SaveLayout.OverwriteButtonRect(1));
-        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+        var (rowX, rowY) = SaveCenter(SaveLayout.RowRect(1));
+        var (overwriteX, overwriteY) = SaveCenter(SaveLayout.OverwriteButtonRect());
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(rowX, rowY));
         Assert.Null(saved);
 
         currentSlots.Add(Slot("slot-b", "Slot B", DateTime.UtcNow));
@@ -885,8 +937,9 @@ public class ScreenEventTests
         Assert.Null(exception);
         TriggerSaveRender(screen);
 
-        // The newly-appeared row is now clickable, proving RefreshSlots() picked up the update.
-        screen.OnMouseDown(x, y);
+        // The newly-appeared row is now selectable, proving RefreshSlots() picked up the update.
+        screen.OnMouseDown(rowX, rowY);
+        screen.OnMouseDown(overwriteX, overwriteY);
         Assert.Equal("slot-b", saved);
     }
 
@@ -898,12 +951,14 @@ public class ScreenEventTests
             .Select(i => Slot($"slot-{i}", $"Slot {i}", DateTime.UtcNow))
             .ToArray();
 
-        var (ox, oy) = SaveCenter(SaveLayout.OverwriteButtonRect(0));
+        var (ox, oy) = SaveCenter(SaveLayout.OverwriteButtonRect());
+        var (rowX, rowY) = SaveCenter(SaveLayout.RowRect(0));
 
         string? saved = null;
         var screenWithCallback = NewSaveScreen(slots: slots, saveSlot: id => saved = id);
         TriggerSaveRender(screenWithCallback);
 
+        screenWithCallback.OnMouseDown(rowX, rowY);
         screenWithCallback.OnMouseDown(ox, oy);
         Assert.Equal("slot-0", saved);
 
@@ -911,12 +966,14 @@ public class ScreenEventTests
             screenWithCallback.OnMouseWheel(0, 0, -1); // scroll down one row at a time
 
         TriggerSaveRender(screenWithCallback);
+        screenWithCallback.OnMouseDown(rowX, rowY);
         screenWithCallback.OnMouseDown(ox, oy);
         Assert.Equal($"slot-{extra}", saved);
 
         // Further downward scrolling past the last row is clamped, not out of range.
         screenWithCallback.OnMouseWheel(0, 0, -1);
         TriggerSaveRender(screenWithCallback);
+        screenWithCallback.OnMouseDown(rowX, rowY);
         screenWithCallback.OnMouseDown(ox, oy);
         Assert.Equal($"slot-{extra}", saved);
 
@@ -924,6 +981,7 @@ public class ScreenEventTests
         for (int i = 0; i < extra + 1; i++)
             screenWithCallback.OnMouseWheel(0, 0, 1);
         TriggerSaveRender(screenWithCallback);
+        screenWithCallback.OnMouseDown(rowX, rowY);
         screenWithCallback.OnMouseDown(ox, oy);
         Assert.Equal("slot-0", saved);
     }
@@ -953,12 +1011,10 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void Load_background_image_is_loaded()
+    public void Load_Generic_Type_A_assets_are_loaded()
     {
-        // Regression: the window-background-700x600.png asset must resolve at the
-        // client's working directory and be registered in the .csproj with
-        // CopyToOutputDirectory, or the panel silently falls back to a plain fill.
-        Assert.True(LoadScreen.HasLoadedBackground);
+        Assert.True(GenericWindowTypeA.HasAssets);
+        Assert.True(GenericButtonTypeA.HasAssets);
     }
 
     [Fact]

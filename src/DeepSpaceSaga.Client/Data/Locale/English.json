@@ -2,7 +2,16 @@
   "MainMenu.NewGame": "NEW GAME",
   "MainMenu.Load": "LOAD",
   "MainMenu.Settings": "SETTINGS",
+  "MainMenu.Credits": "CREDITS",
   "MainMenu.Exit": "EXIT",
+
+  "GameMenu.Status": "GAME MENU // SIMULATION PAUSED",
+  "GameMenu.Resume": "RESUME",
+  "GameMenu.Save": "SAVE",
+  "GameMenu.Load": "LOAD",
+  "GameMenu.Settings": "SETTINGS",
+  "GameMenu.MainMenu": "MAIN MENU",
+  "GameMenu.EscResume": "ESC  RESUME",
 
   "Settings.Title": "SETTINGS",
   "Settings.Language": "LANGUAGE",

@@ -1,3 +1,5 @@
+using SkiaSharp;
+
 namespace DeepSpaceSaga.Client.UI.Screens.MainMenu;
 
 public enum MenuButton
@@ -6,6 +8,7 @@ public enum MenuButton
     NewGame,
     Load,
     Settings,
+    Credits,
     Exit
 }
 
@@ -18,19 +21,25 @@ public sealed class MenuLayout
     public const float PanelWidth = 500f;
     public const float PanelHeight = 550f;
 
-    public const float ButtonWidth = 188f;
-    public const float ButtonHeight = 58f;
+    public const float ButtonWidth = 384f;
+    public const float ButtonHeight = 56f;
 
-    public const float TitleY = 70f;
-    public const float VersionY = 110f;
-    public const float NewGameY = 150f;
-    public const float LoadY = 224f;
+    public const float NewGameY = 132f;
+    public const float LoadY = 198f;
     public const float StatusY = 296f;
-    public const float SettingsY = 298f;
-    public const float ExitY = 404f;
+    public const float SettingsY = 264f;
+    public const float CreditsY = 330f;
+    public const float ExitY = 396f;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
+
+    public static SKRect PanelRect(int screenWidth, int screenHeight)
+    {
+        float left = PanelLeft(screenWidth);
+        float top = PanelTop(screenHeight);
+        return new SKRect(left, top, left + PanelWidth, top + PanelHeight);
+    }
 
     public static MenuButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight)
     {
@@ -43,6 +52,7 @@ public sealed class MenuLayout
         if (IsInButton(lx, ly, NewGameY)) return MenuButton.NewGame;
         if (IsInButton(lx, ly, LoadY)) return MenuButton.Load;
         if (IsInButton(lx, ly, SettingsY)) return MenuButton.Settings;
+        if (IsInButton(lx, ly, CreditsY)) return MenuButton.Credits;
         if (IsInButton(lx, ly, ExitY)) return MenuButton.Exit;
         return MenuButton.None;
     }

@@ -1,9 +1,20 @@
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
+using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 
 namespace DeepSpaceSaga.Client.Tests;
 
 public class MenuLayoutTests
 {
+    [Fact]
+    public void MainMenu_buttons_share_the_GameMenu_vertical_grid()
+    {
+        Assert.Equal(GameMenuLayout.ResumeY, MenuLayout.NewGameY);
+        Assert.Equal(GameMenuLayout.SaveY, MenuLayout.LoadY);
+        Assert.Equal(GameMenuLayout.LoadY, MenuLayout.SettingsY);
+        Assert.Equal(GameMenuLayout.SettingsY, MenuLayout.CreditsY);
+        Assert.Equal(GameMenuLayout.MainMenuY, MenuLayout.ExitY);
+    }
+
     private const int ScreenWidth = 1920;
     private const int ScreenHeight = 1080;
 
@@ -52,10 +63,17 @@ public class MenuLayoutTests
     }
 
     [Fact]
+    public void HitTest_Credits_center_returns_Credits()
+    {
+        var (x, y) = ButtonCenterInScreen(MenuLayout.CreditsY);
+        Assert.Equal(MenuButton.Credits, MenuLayout.HitTest(x, y, ScreenWidth, ScreenHeight));
+    }
+
+    [Fact]
     public void HitTest_between_buttons_returns_None()
     {
         float cx = ScreenWidth / 2f;
-        float midY = PanelTop + (MenuLayout.SettingsY + MenuLayout.ButtonHeight + MenuLayout.ExitY) / 2f;
+        float midY = PanelTop + (MenuLayout.CreditsY + MenuLayout.ButtonHeight + MenuLayout.ExitY) / 2f;
         Assert.Equal(MenuButton.None, MenuLayout.HitTest(cx, midY, ScreenWidth, ScreenHeight));
     }
 

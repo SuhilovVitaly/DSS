@@ -1,3 +1,6 @@
+using DeepSpaceSaga.Client.UI.Controls;
+using SkiaSharp;
+
 namespace DeepSpaceSaga.Client.UI.Screens.Settings;
 
 public enum SettingsButton
@@ -13,45 +16,48 @@ public enum SettingsButton
 /// Layout and hit-test geometry for the Settings overlay panel.
 /// Same panel size and position as MainMenu (500×550).
 ///
-/// Each setting is a single row: its label sits left-aligned at <see cref="RowLabelX"/>
-/// and its combo box is right-aligned to <see cref="RowRightX"/> — the same right edge
-/// for every row, so the boxes read as one aligned column of values next to their labels.
+/// Each setting uses the native 355px Xenon Star drop-down width. Its label strip sits
+/// directly above the closed field, matching the source Options UI slices.
 /// </summary>
 public sealed class SettingsLayout
 {
     public const float PanelWidth = 500f;
     public const float PanelHeight = 550f;
 
-    public const float ButtonWidth = 188f;
-    public const float ButtonHeight = 58f;
+    public const float ButtonWidth = 384f;
+    public const float ButtonHeight = 56f;
 
-    public const float TitleY = 70f;
-    /// <summary>Same local Y as MainMenu's EXIT button (<see cref="MainMenu.MenuLayout.ExitY"/>) — same panel size/position, so this lines the two buttons up exactly.</summary>
-    public const float ExitY = 404f;
+    /// <summary>Same local Y as MainMenu's EXIT button.</summary>
+    public const float ExitY = 396f;
 
-    /// <summary>Left inset, from the panel's left edge, for every row's label text.</summary>
-    public const float RowLabelX = 40f;
     /// <summary>Right edge, from the panel's left edge, that every row's combo box aligns to.</summary>
-    public const float RowRightX = 460f;
+    public const float RowRightX = (PanelWidth + XenonComboBox.NativeWidth) / 2f;
 
-    public const float MonitorRowY = 140f;
-    public const float MonitorComboWidth = 240f;
-    public const float MonitorComboHeight = 40f;
-    public const float MonitorOptionHeight = 36f;
-    public const float MonitorNoteY = 196f;
+    public const float MonitorRowY = 124f;
+    public const float MonitorComboWidth = XenonComboBox.NativeWidth;
+    public const float MonitorComboHeight = XenonComboBox.FieldHeight;
+    public const float MonitorOptionHeight = XenonComboBox.OptionHeight;
+    public const float MonitorNoteY = 181f;
 
-    public const float UiScaleRowY = 320f;
-    public const float UiScaleComboWidth = 240f;
-    public const float UiScaleComboHeight = 40f;
-    public const float UiScaleOptionHeight = 36f;
+    public const float UiScaleRowY = 312f;
+    public const float UiScaleComboWidth = XenonComboBox.NativeWidth;
+    public const float UiScaleComboHeight = XenonComboBox.FieldHeight;
+    public const float UiScaleOptionHeight = XenonComboBox.OptionHeight;
 
-    public const float LanguageRowY = 230f;
-    public const float LanguageComboWidth = 240f;
-    public const float LanguageComboHeight = 40f;
-    public const float LanguageOptionHeight = 36f;
+    public const float LanguageRowY = 229f;
+    public const float LanguageComboWidth = XenonComboBox.NativeWidth;
+    public const float LanguageComboHeight = XenonComboBox.FieldHeight;
+    public const float LanguageOptionHeight = XenonComboBox.OptionHeight;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
+
+    public static SKRect PanelRect(int screenWidth, int screenHeight)
+    {
+        float left = PanelLeft(screenWidth);
+        float top = PanelTop(screenHeight);
+        return new SKRect(left, top, left + PanelWidth, top + PanelHeight);
+    }
 
     public static SettingsButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight)
     {

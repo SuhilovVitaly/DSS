@@ -4,6 +4,15 @@
 
 Код: `src/DeepSpaceSaga.Client/UI/Screens/Settings/`.
 
+## Визуальный стиль
+
+- Внешняя оболочка окна построена через `GenericWindowTypeA`.
+- Кнопка `EXIT` использует `GenericButtonTypeA` и совпадает с кнопками Main Menu/Game Menu.
+- Комбобоксы используют оригинальные Xenon Star slices из раздела
+  `Single Player Screen and Options/Options UI Elements/Drop-Down`: отдельные изображения
+  для normal/hover, полосы лейбла, раскрытого списка и подсветки пункта.
+- Заголовок рисуется через общую привязку заголовков Generic type A.
+
 ## Назначение
 
 Экран пользовательских настроек.

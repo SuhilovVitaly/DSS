@@ -319,6 +319,46 @@ public class ScenarioEngineTests
         return settingsPath;
     }
 
+    /// <summary>
+    /// Loads from DeepSpaceSaga.Client's own *build output* directory (bin/Debug or
+    /// bin/Release), not the source tree ResolveRealSettingsPath uses. Every other
+    /// "Real_..." test in this file reads Settings.json straight from source, so a
+    /// content file that exists in source but isn't wired into a
+    /// "&lt;None Update="Data\X\**\*.json"&gt;&lt;CopyToOutputDirectory&gt;" rule in
+    /// DeepSpaceSaga.Client.csproj still passes every one of them while the actual
+    /// shipped client throws ContentException on startup (this happened for real: the
+    /// item-catalog's Data/Items split added the files in source but not the csproj
+    /// copy rule). This test is the only one in the suite that would have caught it.
+    /// </summary>
+    private static string ResolveClientBuildOutputSettingsPath()
+    {
+        string repoRoot = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        string clientBinRoot = Path.Combine(repoRoot, "src", "DeepSpaceSaga.Client", "bin");
+
+        foreach (string configuration in new[] { "Debug", "Release" })
+        {
+            string candidate = Path.Combine(clientBinRoot, configuration, "net8.0", "Settings.json");
+            if (File.Exists(candidate))
+                return candidate;
+        }
+
+        throw new FileNotFoundException(
+            "DeepSpaceSaga.Client build output not found under " +
+            $"'{clientBinRoot}' (Debug or Release, net8.0). Build the Client project first.");
+    }
+
+    [Fact]
+    public void Real_default_scenario_loads_from_the_client_build_output_directory()
+    {
+        string settingsPath = ResolveClientBuildOutputSettingsPath();
+
+        var engine = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
+
+        var station = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0002");
+        Assert.NotNull(station);
+    }
+
     [Fact]
     public void Real_default_scenario_active_module_types_have_valid_command_type_ids()
     {

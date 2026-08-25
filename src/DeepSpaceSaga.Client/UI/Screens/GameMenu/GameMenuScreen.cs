@@ -14,6 +14,31 @@ public sealed class GameMenuScreen : IScreen
     private GameMenuButton _hoveredButton = GameMenuButton.None;
     private GameMenuButton _pressedButton = GameMenuButton.None;
 
+    private readonly string _title;
+    private readonly string _version;
+    private readonly string _resume;
+    private readonly string _save;
+    private readonly string _load;
+    private readonly string _settings;
+    private readonly string _mainMenu;
+    private readonly string _escResume;
+
+    public GameMenuScreen()
+    {
+        XenonStyle.Preload();
+        XenonWindowChrome.Preload();
+        GenericButtonTypeA.Preload();
+
+        _title = GameInfo.Title;
+        _version = GameInfo.Version;
+        _resume = Localization.Get("GameMenu.Resume");
+        _save = Localization.Get("GameMenu.Save");
+        _load = Localization.Get("GameMenu.Load");
+        _settings = Localization.Get("GameMenu.Settings");
+        _mainMenu = Localization.Get("GameMenu.MainMenu");
+        _escResume = Localization.Get("GameMenu.EscResume");
+    }
+
     public void OnActivated()
     {
         _hoveredButton = GameMenuButton.None;
@@ -65,27 +90,25 @@ public sealed class GameMenuScreen : IScreen
     {
         _screenWidth = width;
         _screenHeight = height;
+        XenonWindowChrome.Draw(
+            canvas,
+            GameMenuLayout.PanelRect(width, height),
+            GameMenuLayout.FooterRect(width, height),
+            _title,
+            _version,
+            _escResume);
+
+        DrawButton(canvas, width, height, _resume, GameMenuButton.Resume);
+        DrawButton(canvas, width, height, _save, GameMenuButton.Save);
+        DrawButton(canvas, width, height, _load, GameMenuButton.Load);
+        DrawButton(canvas, width, height, _settings, GameMenuButton.Settings);
+        DrawButton(canvas, width, height, _mainMenu, GameMenuButton.MainMenu);
         _pressedButton = GameMenuButton.None;
-
-        float pl = GameMenuLayout.PanelLeft(width);
-        float pt = GameMenuLayout.PanelTop(height);
-        var panelRect = new SKRect(pl, pt, pl + GameMenuLayout.PanelWidth, pt + GameMenuLayout.PanelHeight);
-        MenuStyle.DrawPanel(canvas, panelRect);
-
-        float cx = pl + GameMenuLayout.PanelWidth / 2f;
-
-        canvas.DrawText(GameInfo.Title, cx, pt + MenuLayout.TitleY, MenuStyle.TextTitle);
-        canvas.DrawText(GameInfo.Version, cx, pt + MenuLayout.VersionY, MenuStyle.TextVersion);
-
-        DrawButton(canvas, pl, pt, GameMenuLayout.ResumeY, "RESUME", GameMenuButton.Resume);
-        DrawButton(canvas, pl, pt, GameMenuLayout.SaveY, "SAVE", GameMenuButton.Save);
-        DrawButton(canvas, pl, pt, GameMenuLayout.LoadY, "LOAD", GameMenuButton.Load);
-        DrawButton(canvas, pl, pt, GameMenuLayout.SettingsY, "SETTINGS", GameMenuButton.Settings);
-        DrawButton(canvas, pl, pt, GameMenuLayout.MainMenuY, "MAIN MENU", GameMenuButton.MainMenu);
     }
 
     private static bool IsEnabled(GameMenuButton button) =>
-        button is GameMenuButton.Resume or GameMenuButton.Save or GameMenuButton.Load or GameMenuButton.MainMenu;
+        button is GameMenuButton.Resume or GameMenuButton.Save or GameMenuButton.Load
+            or GameMenuButton.MainMenu;
 
     private ButtonState GetState(GameMenuButton id)
     {
@@ -95,13 +118,8 @@ public sealed class GameMenuScreen : IScreen
         return ButtonState.Normal;
     }
 
-    private void DrawButton(SKCanvas canvas, float panelLeft, float panelTop,
-        float buttonLocalY, string text, GameMenuButton id)
+    private void DrawButton(SKCanvas canvas, int width, int height, string text, GameMenuButton id)
     {
-        float bx = panelLeft + (GameMenuLayout.PanelWidth - GameMenuLayout.ButtonWidth) / 2f;
-        float by = panelTop + buttonLocalY;
-        var rect = new SKRect(bx, by, bx + GameMenuLayout.ButtonWidth, by + GameMenuLayout.ButtonHeight);
-
-        MenuStyle.DrawButton(canvas, rect, text, GetState(id));
+        GenericButtonTypeA.Draw(canvas, GameMenuLayout.ButtonRect(id, width, height), text, GetState(id));
     }
 }
