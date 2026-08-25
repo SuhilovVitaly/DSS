@@ -25,11 +25,11 @@ public sealed class MenuLayout
 
     public const float TitleY = 70f;
     public const float VersionY = 110f;
-    public const float NewGameY = 150f;
-    public const float LoadY = 216f;
+    public const float NewGameY = 132f;
+    public const float LoadY = 198f;
     public const float StatusY = 296f;
-    public const float SettingsY = 282f;
-    public const float ExitY = 348f;
+    public const float SettingsY = 264f;
+    public const float ExitY = 330f;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;

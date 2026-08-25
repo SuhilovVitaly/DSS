@@ -1,9 +1,19 @@
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
+using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 
 namespace DeepSpaceSaga.Client.Tests;
 
 public class MenuLayoutTests
 {
+    [Fact]
+    public void MainMenu_buttons_share_the_GameMenu_vertical_grid()
+    {
+        Assert.Equal(GameMenuLayout.ResumeY, MenuLayout.NewGameY);
+        Assert.Equal(GameMenuLayout.SaveY, MenuLayout.LoadY);
+        Assert.Equal(GameMenuLayout.LoadY, MenuLayout.SettingsY);
+        Assert.Equal(GameMenuLayout.SettingsY, MenuLayout.ExitY);
+    }
+
     private const int ScreenWidth = 1920;
     private const int ScreenHeight = 1080;
 
