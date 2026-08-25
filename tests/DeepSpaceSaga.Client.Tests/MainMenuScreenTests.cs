@@ -17,7 +17,7 @@ public class MainMenuScreenTests
         var strings = Localization.LoadLocaleFile(language);
         Assert.NotNull(strings);
 
-        foreach (var key in new[] { "NewGame", "Load", "Settings", "Exit" })
+        foreach (var key in new[] { "NewGame", "Load", "Settings", "Credits", "Exit" })
         {
             Assert.True(XenonStyle.ButtonText.MeasureText(strings![$"MainMenu.{key}"])
                 <= MenuLayout.ButtonWidth - 112f);

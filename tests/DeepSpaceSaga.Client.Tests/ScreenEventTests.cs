@@ -84,6 +84,16 @@ public class ScreenEventTests
     }
 
     [Fact]
+    public void MainMenu_Credits_is_disabled_for_hover_and_click()
+    {
+        var screen = new MainMenuScreen();
+        var (x, y) = ButtonCenter(MenuLayout.CreditsY);
+        TriggerRender(screen);
+        Assert.False(screen.OnMouseMove(x, y));
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
     public void GameSessionScreen_click_returns_None()
     {
         var buffer = new DeepSpaceSaga.Client.SnapshotBuffer();

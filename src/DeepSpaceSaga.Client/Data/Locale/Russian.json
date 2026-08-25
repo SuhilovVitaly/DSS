@@ -2,6 +2,7 @@
   "MainMenu.NewGame": "НОВАЯ ИГРА",
   "MainMenu.Load": "ЗАГРУЗИТЬ",
   "MainMenu.Settings": "НАСТРОЙКИ",
+  "MainMenu.Credits": "АВТОРЫ",
   "MainMenu.Exit": "ВЫХОД",
 
   "GameMenu.Status": "МЕНЮ ИГРЫ // СИМУЛЯЦИЯ ПРИОСТАНОВЛЕНА",

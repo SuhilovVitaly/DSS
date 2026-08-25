@@ -58,8 +58,10 @@ public sealed class MainMenuScreen : IScreen
 
         var hit = MenuLayout.HitTest(x, y, _screenWidth, _screenHeight);
 
-        if (hit == MenuButton.NewGame || hit == MenuButton.Load || hit == MenuButton.Settings || hit == MenuButton.Exit)
-            _pressedButton = hit;
+        if (!IsEnabled(hit))
+            return ScreenEvent.None;
+
+        _pressedButton = hit;
 
         return hit switch
         {
@@ -77,8 +79,8 @@ public sealed class MainMenuScreen : IScreen
     public bool OnMouseMove(float x, float y)
     {
         var hit = MenuLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        _hoveredButton = hit;
-        return hit == MenuButton.NewGame || hit == MenuButton.Load || hit == MenuButton.Settings || hit == MenuButton.Exit;
+        _hoveredButton = IsEnabled(hit) ? hit : MenuButton.None;
+        return IsEnabled(hit);
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -103,11 +105,15 @@ public sealed class MainMenuScreen : IScreen
         DrawButton(canvas, pl, pt, MenuLayout.NewGameY, Localization.Get("MainMenu.NewGame"), MenuButton.NewGame);
         DrawButton(canvas, pl, pt, MenuLayout.LoadY, Localization.Get("MainMenu.Load"), MenuButton.Load);
         DrawButton(canvas, pl, pt, MenuLayout.SettingsY, Localization.Get("MainMenu.Settings"), MenuButton.Settings);
+        DrawButton(canvas, pl, pt, MenuLayout.CreditsY, Localization.Get("MainMenu.Credits"), MenuButton.Credits);
         DrawButton(canvas, pl, pt, MenuLayout.ExitY, Localization.Get("MainMenu.Exit"), MenuButton.Exit);
     }
 
     internal static void DrawWindowShell(SKCanvas canvas, SKRect bounds) =>
         GenericWindowTypeA.Draw(canvas, bounds);
+
+    private static bool IsEnabled(MenuButton button) =>
+        button is MenuButton.NewGame or MenuButton.Load or MenuButton.Settings or MenuButton.Exit;
 
     private ButtonState GetState(MenuButton id, bool active)
     {
@@ -124,6 +130,6 @@ public sealed class MainMenuScreen : IScreen
         float by = panelTop + buttonLocalY;
         var rect = new SKRect(bx, by, bx + MenuLayout.ButtonWidth, by + MenuLayout.ButtonHeight);
 
-        GenericButtonTypeA.Draw(canvas, rect, text, GetState(id, active: true));
+        GenericButtonTypeA.Draw(canvas, rect, text, GetState(id, IsEnabled(id)));
     }
 }
