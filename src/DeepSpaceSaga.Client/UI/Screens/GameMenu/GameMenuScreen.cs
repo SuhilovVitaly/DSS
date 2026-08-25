@@ -68,7 +68,7 @@ public sealed class GameMenuScreen : IScreen
 
         return hit switch
         {
-            GameMenuButton.Resume or GameMenuButton.Close => ScreenEvent.Resume,
+            GameMenuButton.Resume => ScreenEvent.Resume,
             GameMenuButton.Save => ScreenEvent.OpenSaveWindow,
             GameMenuButton.Load => ScreenEvent.OpenLoadWindow,
             GameMenuButton.MainMenu => ScreenEvent.MainMenu,
@@ -97,12 +97,10 @@ public sealed class GameMenuScreen : IScreen
             GameMenuLayout.PanelRect(width, height),
             GameMenuLayout.HeaderRect(width, height),
             GameMenuLayout.FooterRect(width, height),
-            GameMenuLayout.CloseRect(width, height),
             _title,
             _status,
             _escResume,
-            _version,
-            GetState(GameMenuButton.Close));
+            _version);
 
         DrawButton(canvas, width, height, _resume, GameMenuButton.Resume);
         DrawButton(canvas, width, height, _save, GameMenuButton.Save);
@@ -114,7 +112,7 @@ public sealed class GameMenuScreen : IScreen
 
     private static bool IsEnabled(GameMenuButton button) =>
         button is GameMenuButton.Resume or GameMenuButton.Save or GameMenuButton.Load
-            or GameMenuButton.MainMenu or GameMenuButton.Close;
+            or GameMenuButton.MainMenu;
 
     private ButtonState GetState(GameMenuButton id)
     {

@@ -7,12 +7,7 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 public static class XenonWindowChrome
 {
     internal const string ShellPath = "Images/UI/Themes/Xenon/Window/window-shell.png";
-    internal const string ClosePath = "Images/UI/Themes/Xenon/Icons/close.png";
-    internal const string CloseActivePath = "Images/UI/Themes/Xenon/Icons/close-active.png";
-
     private static readonly SKBitmap? Shell = UiAssetLoader.LoadBitmap(ShellPath);
-    private static readonly SKBitmap? Close = UiAssetLoader.LoadBitmap(ClosePath);
-    private static readonly SKBitmap? CloseActive = UiAssetLoader.LoadBitmap(CloseActivePath);
 
     internal static bool HasChromeAssets => Shell is not null;
 
@@ -20,8 +15,7 @@ public static class XenonWindowChrome
     public static void Preload() { }
 
     public static void Draw(SKCanvas canvas, SKRect bounds, SKRect headerRect,
-        SKRect footerRect, SKRect closeRect,
-        string title, string subtitle, string footerLeft, string footerRight, ButtonState closeState)
+        SKRect footerRect, string title, string subtitle, string footerLeft, string footerRight)
     {
         if (HasChromeAssets)
         {
@@ -34,7 +28,6 @@ public static class XenonWindowChrome
 
         DrawHeaderText(canvas, headerRect, title, subtitle);
         DrawFooter(canvas, footerRect, footerLeft, footerRight);
-        DrawClose(canvas, closeRect, closeState);
     }
 
     private static void DrawFallbackFrame(SKCanvas canvas, SKRect bounds)
@@ -62,24 +55,4 @@ public static class XenonWindowChrome
         canvas.DrawText(right, rect.Right - 8f, baseline, XenonStyle.FooterRightText);
     }
 
-    private static void DrawClose(SKCanvas canvas, SKRect rect, ButtonState state)
-    {
-        var image = state is ButtonState.Hovered or ButtonState.Pressed ? CloseActive : Close;
-        if (image is not null)
-        {
-            var paint = state == ButtonState.Pressed ? XenonStyle.PressedImagePaint : null;
-            canvas.DrawBitmap(image, rect, paint);
-            return;
-        }
-
-        canvas.DrawRect(rect, state is ButtonState.Hovered or ButtonState.Pressed
-            ? XenonStyle.BrightCyanStroke
-            : XenonStyle.ThinCyanStroke);
-        var cross = state is ButtonState.Hovered or ButtonState.Pressed
-            ? XenonStyle.BrightCyanStroke
-            : XenonStyle.ThinCyanStroke;
-        const float inset = 9f;
-        canvas.DrawLine(rect.Left + inset, rect.Top + inset, rect.Right - inset, rect.Bottom - inset, cross);
-        canvas.DrawLine(rect.Right - inset, rect.Top + inset, rect.Left + inset, rect.Bottom - inset, cross);
-    }
 }

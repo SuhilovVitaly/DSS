@@ -157,13 +157,15 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void GameMenu_Close_click_returns_Resume()
+    public void GameMenu_former_close_area_is_not_interactive()
     {
         var screen = new GameMenuScreen();
         TriggerGameRender(screen);
-        var close = GameMenuLayout.CloseRect(ScreenWidth, ScreenHeight);
-        Assert.True(screen.OnMouseMove(close.MidX, close.MidY));
-        Assert.Equal(ScreenEvent.Resume, screen.OnMouseDown(close.MidX, close.MidY));
+        var panel = GameMenuLayout.PanelRect(ScreenWidth, ScreenHeight);
+        float x = panel.Right - 34f;
+        float y = panel.Top + 36f;
+        Assert.False(screen.OnMouseMove(x, y));
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
     }
 
     [Fact]

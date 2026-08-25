@@ -8,8 +8,6 @@ public class UiAssetLoaderTests
     public static TheoryData<string> ProductionAssets => new()
     {
         XenonWindowChrome.ShellPath,
-        XenonWindowChrome.ClosePath,
-        XenonWindowChrome.CloseActivePath,
         XenonMenuButton.NormalPath,
         XenonMenuButton.HoverPath,
         XenonMenuButton.MarkerPath,

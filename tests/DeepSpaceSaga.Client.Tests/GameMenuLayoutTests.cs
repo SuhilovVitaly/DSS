@@ -11,8 +11,7 @@ public class GameMenuLayoutTests
         GameMenuButton.Save,
         GameMenuButton.Load,
         GameMenuButton.Settings,
-        GameMenuButton.MainMenu,
-        GameMenuButton.Close
+        GameMenuButton.MainMenu
     ];
 
     [Theory]
@@ -29,7 +28,7 @@ public class GameMenuLayoutTests
     }
 
     [Fact]
-    public void Buttons_and_close_have_non_overlapping_hit_areas()
+    public void Buttons_have_non_overlapping_hit_areas()
     {
         var rects = InteractiveRects.Select(RectFor).ToArray();
         for (int i = 0; i < rects.Length; i++)
@@ -53,9 +52,8 @@ public class GameMenuLayoutTests
         Assert.Equal(GameMenuButton.None, GameMenuLayout.HitTest(0, 0, 1920, 1080));
     }
 
-    private static SKRect RectFor(GameMenuButton control) => control == GameMenuButton.Close
-        ? GameMenuLayout.CloseRect(1920, 1080)
-        : GameMenuLayout.ButtonRect(control, 1920, 1080);
+    private static SKRect RectFor(GameMenuButton control) =>
+        GameMenuLayout.ButtonRect(control, 1920, 1080);
 
     private static bool Overlaps(SKRect a, SKRect b) =>
         a.Left < b.Right && a.Right > b.Left && a.Top < b.Bottom && a.Bottom > b.Top;

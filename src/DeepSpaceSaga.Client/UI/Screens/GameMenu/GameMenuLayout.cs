@@ -9,8 +9,7 @@ public enum GameMenuButton
     Save,
     Load,
     Settings,
-    MainMenu,
-    Close
+    MainMenu
 }
 
 /// <summary>All GameMenu geometry and hit testing for the centered 500×550 panel.</summary>
@@ -30,9 +29,6 @@ public static class GameMenuLayout
 
     public const float HeaderY = 24f;
     public const float HeaderHeight = 76f;
-    public const float CloseX = 450f;
-    public const float CloseY = 20f;
-    public const float CloseSize = 32f;
     public const float FooterY = 476f;
     public const float FooterHeight = 56f;
 
@@ -44,9 +40,6 @@ public static class GameMenuLayout
 
     public static SKRect HeaderRect(int screenWidth, int screenHeight) =>
         OffsetRect(InnerPadding, HeaderY, ButtonWidth, HeaderHeight, screenWidth, screenHeight);
-
-    public static SKRect CloseRect(int screenWidth, int screenHeight) =>
-        OffsetRect(CloseX, CloseY, CloseSize, CloseSize, screenWidth, screenHeight);
 
     public static SKRect FooterRect(int screenWidth, int screenHeight) =>
         OffsetRect(InnerPadding, FooterY, ButtonWidth, FooterHeight, screenWidth, screenHeight);
@@ -67,7 +60,6 @@ public static class GameMenuLayout
 
     public static GameMenuButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight)
     {
-        if (CloseRect(screenWidth, screenHeight).Contains(screenX, screenY)) return GameMenuButton.Close;
         if (ButtonRect(GameMenuButton.Resume, screenWidth, screenHeight).Contains(screenX, screenY)) return GameMenuButton.Resume;
         if (ButtonRect(GameMenuButton.Save, screenWidth, screenHeight).Contains(screenX, screenY)) return GameMenuButton.Save;
         if (ButtonRect(GameMenuButton.Load, screenWidth, screenHeight).Contains(screenX, screenY)) return GameMenuButton.Load;
