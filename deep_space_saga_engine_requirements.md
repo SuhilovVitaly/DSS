@@ -5055,7 +5055,7 @@ Cargo hold стартует с 1000 `Energy Cells` (без изменений о
 
 ## 58. Стыковка (Docking) и экран станции
 
-Статус: реализован MVP первого релиза. Раздел `30` описывал `navigation.dock` как ещё не обработанную клиентом команду; Story 2026-08-17 завела её в каталог команд Navigation Computer как catalog-only (без authoritative-обработчика в Engine). Этот раздел фиксирует фактическую реализацию: `navigation.dock` теперь настоящая authoritative команда; `Station` открывает четыре реальные кнопки — `Trade`/`Hire`/`Contracts` (новые экраны-заглушки) и `Finance` (уже существовавший `FinanceScreen`, ранее доступный только с панели механик сессии). `Hire` изначально обслуживал и наём экипажа, и пассажирские контракты одним окном; позже разделён — `Hire` остался про наём экипажа, `Contracts` (`58.7`) выделен под пассажирские контракты. Полный станционный функционал (реальные `Trade`/`Finance`/`Hire`/`Contracts`/`Undock`, покупка/установка Drilling Unit) остаётся за рамками MVP — см. `58.3`–`58.7` и Docs/FirstRelease/Mechanics/Docking.md / Docs/FirstRelease/Screens/Station.md / Docs/FirstRelease/Screens/Trade.md / Docs/FirstRelease/Screens/Hire.md / Docs/FirstRelease/Screens/Finance.md / Docs/FirstRelease/Screens/Contracts.md.
+Статус: реализован MVP первого релиза. Раздел `30` описывал `navigation.dock` как ещё не обработанную клиентом команду; Story 2026-08-17 завела её в каталог команд Navigation Computer как catalog-only (без authoritative-обработчика в Engine). Этот раздел фиксирует фактическую реализацию: `navigation.dock` теперь настоящая authoritative команда; `Station` открывает четыре реальные кнопки — `Trade` (реализованный MVP торгового экрана), `Hire`/`Contracts` (экраны-заглушки) и `Finance` (уже существовавший `FinanceScreen`, ранее доступный только с панели механик сессии). `Hire` изначально обслуживал и наём экипажа, и пассажирские контракты одним окном; позже разделён — `Hire` остался про наём экипажа, `Contracts` (`58.7`) выделен под пассажирские контракты. Полный станционный функционал за пределами реализованного MVP торговли (`Finance` как станционная сводка, реальные `Hire`/`Contracts`/`Undock`, покупка/установка Drilling Unit, расширенная экономика станции из `59`) остаётся за рамками текущей реализации — см. `58.3`–`58.7` и Docs/FirstRelease/Mechanics/Docking.md / Docs/FirstRelease/Screens/Station.md / Docs/FirstRelease/Screens/Trade.md / Docs/FirstRelease/Screens/Hire.md / Docs/FirstRelease/Screens/Finance.md / Docs/FirstRelease/Screens/Contracts.md.
 
 ### 58.1. Команда navigation.dock
 
@@ -5097,13 +5097,13 @@ Cargo hold стартует с 1000 `Energy Cells` (без изменений о
 
 Статус: реализована заглушка (открытие/закрытие/пауза, без данных механик) — тот же паттерн, что `Finance`/`Ship`. Панель `1400×900` (стандартный размер игровых окон, ScreenCatalog.md), модальная пауза через существующий `PushModalAsync`/`PopModalAsync` (`31.1`, `52`) — Station не содержит собственной speed/pause-логики. Из шести кнопок исходного UI первого релиза (`Trade`, `Finance`, `Representatives`, `Install Drilling Unit`, `Hire`, `Undock`) три реализованы как настоящие кликабельные элементы — `Trade` (`58.4`), `Hire` (`58.5`) и `Finance` (`58.6`); остальные три остаются placeholder-строками "not available yet" вместо выдуманных данных, по тому же принципу, что `Finance` изначально была (раздел `54.8`-соседних решений, Docs/FirstRelease/Screens/Finance.md). Плюс седьмая кнопка `Contracts` (`58.7`), добавленная позже поверх исходной схемы — выделена из `Hire` (наём экипажа vs. пассажирские контракты). Каждая кнопка/строка занимает свой фиксированный ряд тела панели (`StationLayout`; ряды 0..5 — исходные шесть, ряд 6 — добавленный `Contracts`) независимо от того, сколько соседних строк уже стали кнопками — превращение строки в кнопку не переупаковывает оставшиеся placeholder-строки вверх, а `Contracts` не переиспользует чужой ряд. Кнопки — `24 px` высотой, ниже `28 px` ряда: на соседних рядах (`Trade`=0, `Finance`=1) полная высота ряда дала бы `4 px` перекрытие хит-теста между ними.
 
-### 58.4. Экран Trade (заглушка), открываемая кнопкой Trade
+### 58.4. Экран Trade, открываемый кнопкой Trade
 
-Статус: реализована заглушка. `Station` рисует `Trade` как настоящую кнопку (`StationLayout.TradeButtonLocalRect`, центрирована в первой строке тела панели) вместо placeholder-текста; клик по ней возвращает `ScreenEvent.OpenTrade`.
+Статус: реализован MVP торговли. `Station` рисует `Trade` как настоящую кнопку (`StationLayout.TradeButtonLocalRect`, центрирована в первой строке тела панели) вместо placeholder-текста; клик по ней возвращает `ScreenEvent.OpenTrade`.
 
-`TradeScreen` (`src/DeepSpaceSaga.Client/UI/Screens/Trade/`) — структурный близнец `StationScreen`/`FinanceScreen`: панель `1400×900`, одна placeholder-строка "Trade: not available yet" вместо реальных данных торговли (баланс `Credits`, товары станции/игрока, покупка/продажа, заправка `Fuel` — ничего из этого не реализовано), закрытие `×`/`Escape`/кликом по фону.
+`TradeScreen` (`src/DeepSpaceSaga.Client/UI/Screens/Trade/`) — модальный экран `1400×900` с тремя колонками (`STATION INVENTORY`, `TRANSACTION`, `YOUR CARGO+FUEL`), балансом `Credits` игрока, cargo/fuel state, товарами станции из `DockedStationTrade.Items`, операциями `trade.buy`/`trade.sell`/`trade.refuel` и отображением результата из следующего authoritative snapshot.
 
-Открывается вложенным modal поверх `Station` (`SkiaWindow.OpenTradeAsync` → `PushModalAsync(new TradeScreen())`) — тот же generic modal-depth механизм, что `GameMenu → Save/Load`, без Trade-специфичной логики. Закрытие `TradeScreen` возвращает на `Station`, а не на `GameSessionScreen`.
+Открывается вложенным modal поверх `Station` (`SkiaWindow.OpenTradeAsync` → `PushModalAsync(new TradeScreen(_session.Buffer, _session))`) — тот же generic modal-depth механизм, что `GameMenu → Save/Load`. Закрытие `TradeScreen` возвращает на `Station`, а не на `GameSessionScreen`. Новая модель размера станции, производящих модулей и упаковок продажи описана в `59` и ещё требует доработки реализации.
 
 ### 58.5. Экран Hire (заглушка), открываемая кнопкой Hire
 
@@ -5126,3 +5126,202 @@ Cargo hold стартует с 1000 `Energy Cells` (без изменений о
 `ContractsScreen` (`src/DeepSpaceSaga.Client/UI/Screens/Contracts/`) — структурный близнец `HireScreen`/`TradeScreen`/`StationScreen`: панель `1400×900`, одна placeholder-строка "Contracts: not available yet" вместо реальных данных о пассажирских контрактах (список доступных контрактов, принятие контракта, проверка свободной каюты — ничего из этого не реализовано, как и раньше под именем `Hire`), закрытие `×`/`Escape`/кликом по фону.
 
 Открывается вложенным modal поверх `Station` (`SkiaWindow.OpenContractsAsync` → `PushModalAsync(new ContractsScreen())`) — без Contracts-специфичной логики, тот же generic modal-depth механизм, что `Trade`/`Hire`/`GameMenu → Save/Load`. Закрытие `ContractsScreen` возвращает на `Station`, а не на `GameSessionScreen`.
+
+## 59. Станционная экономика: размер, производящие модули, цены и упаковки продажи
+
+Статус: новая техническая постановка от 2026-08-25, требует реализации. Этот раздел расширяет и частично заменяет предыдущую MVP-модель из `Docs/FirstRelease/Mechanics/StationInventory.md`, где станция имела единый `priceCoefficient 0.5..2.0` и fallback-склад `20..500` для всех торгуемых items. Актуальное ТЗ для реализации также зафиксировано в `Docs/FirstRelease/TechnicalTasks/StationEconomyProductionAndSizing.md`.
+
+### 59.1. Категории торговой номенклатуры
+
+В станционной торговле используются три категории:
+
+```text
+Resource
+Good
+Module
+```
+
+`Resource` — сырье/ресурс, например `Ice`, `Iron Ore`, `Silicon`, `Magnesium Ore`.
+
+`Good` — товар/продукт, например `Food Rations`, `Water`, `Steel`, `Energy Cells`, `Fuel`, `Protein mass`.
+
+`Module` — покупаемый/продаваемый тип модуля. В торговле module учитывается штуками, а не kg, и не является cargo stack без отдельного решения о перевозке/установке.
+
+Покупка:
+
+- `Resource` покупается игроком в любом целом количестве;
+- `Good` покупается игроком в любом целом количестве;
+- `Module` покупается игроком в любом целом количестве, но модульная покупка должна быть отдельной authoritative станционной операцией, а не обычным cargo buy.
+
+Продажа:
+
+- `Resource` продается игроком только упаковками по `100` kg;
+- `Good` продается игроком только упаковками по `10` kg;
+- `Module` продается игроком поштучно.
+
+Client обязан выставлять соответствующий stepper/quantity step, но Engine обязан authoritative валидировать кратность продажи. Если станции не хватает `Credits` на полный выбранный объем, частичная продажа должна исполняться только на допустимом количестве упаковок/штук.
+
+### 59.2. Стартовая станция
+
+Стартовая станция стартового сценария должна иметь размер `Large` / `Большой`.
+
+Явный начальный склад стартовой станции:
+
+| Категория | Номенклатура | Количество |
+| --- | --- | ---: |
+| `Good` | `Food Rations` | `500` |
+| `Good` | `Energy Cells` | `350` |
+| `Good` | `Fuel` | `700` |
+| `Resource` | `Ice` | `320` |
+| `Resource` | `Iron Ore` | `410` |
+| `Resource` | `Silicon` | `70` |
+| `Resource` | `Magnesium Ore` | `120` |
+
+Для стартовой станции explicit inventory имеет приоритет над fallback-генерацией. Старая генерация `20..500` остается допустимой только для станций без явно заданного склада.
+
+### 59.3. Размеры станции и коэффициенты
+
+Размер станции хранится как explicit enum-значение:
+
+```text
+Huge
+Large
+Medium
+Outpost
+```
+
+UI-имена:
+
+| Id | UI-имя |
+| --- | --- |
+| `Huge` | Огромный |
+| `Large` | Большой |
+| `Medium` | Средний |
+| `Outpost` | Форпост |
+
+Коэффициенты общих ресурсов:
+
+| Размер | Коэффициент |
+| --- | ---: |
+| `Huge` | `1.20` |
+| `Large` | `1.15` |
+| `Medium` | `1.10` |
+| `Outpost` | `1.00` |
+
+Коэффициенты потребляемых ресурсов:
+
+| Размер | Коэффициент |
+| --- | ---: |
+| `Huge` | `1.30` |
+| `Large` | `1.25` |
+| `Medium` | `1.15` |
+| `Outpost` | `1.10` |
+
+Коэффициенты товаров:
+
+| Размер | Коэффициент |
+| --- | ---: |
+| `Huge` | `1.00` |
+| `Large` | `1.10` |
+| `Medium` | `1.15` |
+| `Outpost` | `1.20` |
+
+`Resource` считается потребляемым, если он является входом хотя бы одного производящего модуля станции. Иначе применяется коэффициент общего ресурса.
+
+Для `Module` коэффициент размера станции пока считается `1.00`, если отдельное балансное решение по модулям не принято.
+
+### 59.4. Производящие модули станции
+
+Станция располагает производящими модулями. Каждый producing station module должен задаваться data-driven конфигурацией:
+
+- stable id;
+- display name;
+- список производимых `Good`;
+- список входных `Resource`;
+- коэффициент потребности по каждому входному `Resource`;
+- optional cycle time / production rate для будущей симуляции производства;
+- active/inactive state, если модуль может быть выключен сценарием или событием.
+
+Минимальное правило для текущей торговли: входные `Resource` производящих модулей определяют, какие ресурсы получают коэффициент потребляемых ресурсов из `59.3`.
+
+Точная формула, как коэффициент потребности влияет на фактический расход сырья и/или дополнительный ценовой множитель, остается открытым балансным решением. До его принятия коэффициент потребности должен храниться в данных, но не должен выдумываться в коде.
+
+### 59.5. Итоговая цена
+
+Каждая торгуемая номенклатура должна иметь `BasePriceCredits`.
+
+Формула итоговой цены в окне торговли:
+
+```text
+unitPriceCredits = RoundToCredits(BasePriceCredits * Product(applicable StationPriceFactor))
+```
+
+Минимальные факторы:
+
+- коэффициент размера станции по категории номенклатуры;
+- station events / buffs / debuffs;
+- производственные факторы, если они явно введены отдельным решением.
+
+`RoundToCredits` округляет до ближайшего целого `Credits`; при точной половине используется текущее правило Engine `MidpointRounding.AwayFromZero`.
+
+Authoritative money path не должен использовать `float`/`double` для денег и коэффициентов. Коэффициенты должны храниться как fixed-point или рациональные значения. Существующий fixed-point convention `1000 == 1.0` допустим для продолжения текущей реализации.
+
+Базовые цены ресурсов:
+
+| Resource | Id | Base price |
+| --- | --- | ---: |
+| `Ice` | `RES-2001` | `10 Credits` |
+| `Iron Ore` | `RES-2002` | `5 Credits` |
+| `Silicon` | `RES-2003` | `40 Credits` |
+| `Magnesium Ore` | `RES-2004` | `30 Credits` |
+
+Базовые цены товаров:
+
+| Good | Id | Base price |
+| --- | --- | ---: |
+| `Water` | `ITM-3001` | `14 Credits` |
+| `Steel` | `ITM-3002` | `40 Credits` |
+| `Energy Cells` | `ITM-3003` | `50 Credits` |
+| `Fuel` | `ITM-3004` | `10 Credits` |
+| `Protein mass` | `ITM-3005` | `110 Credits` |
+
+Открытое балансное решение: базовые цены для `Food Rations` и продаваемых модулей.
+
+### 59.6. События, бафы и дебафы станции
+
+Станционное событие, влияющее на цену, должно иметь:
+
+- stable id;
+- display name;
+- optional player-facing description;
+- список price factors по категории или конкретной номенклатуре;
+- время действия или флаг постоянного сценарного эффекта;
+- deterministic порядок применения при одинаковом времени начала.
+
+Если событие влияет на текущие цены, оно должно сохраняться/загружаться вместе со станцией.
+
+### 59.7. Изменения схемы данных
+
+Требуемые расширения:
+
+- `ItemTypeDefinition` получает trade category `Resource | Good` и trade/economy id (`RES-*` или `ITM-*`);
+- `ItemTypeDefinition.BasePriceCredits` должен быть задан для всех торгуемых ресурсов и товаров;
+- `ModuleTypeDefinition` или отдельный station-service catalog получает `BasePriceCredits` для модулей, которыми торгует станция;
+- `SpaceObjectData` для station получает `stationSize`;
+- station получает список producing modules или ссылку на station economy profile;
+- station получает список active station events / price modifiers;
+- save/load сохраняет resolved `stationSize`, inventory, producing modules and active price modifiers.
+
+### 59.8. Acceptance criteria
+
+- Стартовая станция `SPC-0002` в `Default` и `Docked` сценариях имеет `stationSize = Large`.
+- Стартовая станция имеет explicit inventory: `Food Rations = 500`, `Energy Cells = 350`, `Fuel = 700`, `Ice = 320`, `Iron Ore = 410`, `Silicon = 70`, `Magnesium Ore = 120`.
+- Explicit inventory не перезаписывается fallback-генерацией.
+- Каталог ресурсов содержит `Ice/RES-2001/10`, `Iron Ore/RES-2002/5`, `Silicon/RES-2003/40`, `Magnesium Ore/RES-2004/30`.
+- Каталог товаров содержит `Water/ITM-3001/14`, `Steel/ITM-3002/40`, `Energy Cells/ITM-3003/50`, `Fuel/ITM-3004/10`, `Protein mass/ITM-3005/110`.
+- `Resource` продается игроком только кратно `100` kg.
+- `Good` продается игроком только кратно `10` kg.
+- `Module` продается игроком поштучно.
+- Для `Large` станции `Good` получает коэффициент `1.10`, общий `Resource` получает `1.15`, потребляемый `Resource` получает `1.25`.
+- UI торговли показывает итоговую цену, рассчитанную Engine, а не локально пересчитанную client-side цену.
+- Save/load сохраняет размер станции и активные ценовые факторы так, чтобы загрузка не меняла цены и склад при тех же данных.
