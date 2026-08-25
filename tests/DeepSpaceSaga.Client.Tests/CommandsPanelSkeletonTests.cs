@@ -159,7 +159,8 @@ public class CommandsPanelSkeletonTests
         Render(screen);
 
         float expectedBottom = CommandsPanel.Panels.Length *
-            (CommandsPanel.PanelCaptionHeight + CommandsPanel.PanelBodyHeight);
+            (CommandsPanel.PanelCaptionHeight + CommandsPanel.PanelBodyHeight) +
+            CommandsPanel.MainCaptionToPanelsGap;
 
         Assert.Equal(new SKRect(8, 8, 368, 40), screen.CommandsPanel.CaptionRect);
         Assert.Equal(new SKRect(8, 40, 368, 40 + expectedBottom), screen.CommandsPanel.BodyRect);
@@ -173,7 +174,7 @@ public class CommandsPanelSkeletonTests
 
         Assert.True(screen.CommandsPanel.HasLoadedXenonChrome);
         Assert.Equal(CommandsPanel.PanelWidth, screen.CommandsPanel.CaptionRect.Width);
-        Assert.Equal(832f, screen.CommandsPanel.CaptionRect.Height + screen.CommandsPanel.BodyRect.Height);
+        Assert.Equal(834f, screen.CommandsPanel.CaptionRect.Height + screen.CommandsPanel.BodyRect.Height);
     }
 
     [Fact]
@@ -489,10 +490,13 @@ public class CommandsPanelSkeletonTests
 
         var rows = screen.CommandsPanel.CommandPanelRows;
         Assert.All(rows, row => Assert.False(row.Opened));
+        Assert.Equal(CommandsPanel.MainCaptionToPanelsGap,
+            rows[0].CaptionRect.Top - screen.CommandsPanel.CaptionRect.Bottom);
         for (int i = 1; i < rows.Count; i++)
             Assert.Equal(CommandsPanel.CollapsedPanelGap, rows[i].CaptionRect.Top - rows[i - 1].CaptionRect.Bottom);
 
-        float expectedHeight = rows.Count * CommandsPanel.PanelCaptionHeight +
+        float expectedHeight = CommandsPanel.MainCaptionToPanelsGap +
+                               rows.Count * CommandsPanel.PanelCaptionHeight +
                                (rows.Count - 1) * CommandsPanel.CollapsedPanelGap;
         Assert.Equal(expectedHeight, screen.CommandsPanel.BodyRect.Height);
     }
@@ -538,9 +542,9 @@ public class CommandsPanelSkeletonTests
         // Engine body top = 476 (after Navigation 164 + Maneuver 164, fixed
         // PanelBodyHeight per panel, + three 36px captions);
         // grid origin = body + (6, 6); button 84x48, gap 4 → columns at x = 14, 102, 190.
-        Assert.Equal(new SKRect(14, 482, 98, 530), engineRow.Buttons[0].Rect);
-        Assert.Equal(new SKRect(102, 482, 186, 530), engineRow.Buttons[1].Rect);
-        Assert.Equal(new SKRect(190, 482, 274, 530), engineRow.Buttons[2].Rect);
+        Assert.Equal(new SKRect(14, 484, 98, 532), engineRow.Buttons[0].Rect);
+        Assert.Equal(new SKRect(102, 484, 186, 532), engineRow.Buttons[1].Rect);
+        Assert.Equal(new SKRect(190, 484, 274, 532), engineRow.Buttons[2].Rect);
 
         Assert.Equal(84f, engineRow.Buttons[0].Rect.Width);
         Assert.Equal(48f, engineRow.Buttons[0].Rect.Height);
@@ -668,9 +672,9 @@ public class CommandsPanelSkeletonTests
         Assert.Equal(5, navigationRow.Buttons.Length);
 
         // Navigation body top = 76; row 0 (y 82..130): 4 buttons; row 1 (y 134..182): 1.
-        Assert.Equal(new SKRect(14, 82, 98, 130), navigationRow.Buttons[0].Rect);
-        Assert.Equal(new SKRect(278, 82, 362, 130), navigationRow.Buttons[3].Rect);
-        Assert.Equal(new SKRect(14, 134, 98, 182), navigationRow.Buttons[4].Rect);
+        Assert.Equal(new SKRect(14, 84, 98, 132), navigationRow.Buttons[0].Rect);
+        Assert.Equal(new SKRect(278, 84, 362, 132), navigationRow.Buttons[3].Rect);
+        Assert.Equal(new SKRect(14, 136, 98, 184), navigationRow.Buttons[4].Rect);
     }
 
     [Fact]

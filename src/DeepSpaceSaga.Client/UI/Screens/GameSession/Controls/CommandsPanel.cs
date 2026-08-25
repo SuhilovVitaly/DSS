@@ -19,6 +19,7 @@ public sealed class CommandsPanel
     private const float XenonButtonSliceInset = 8f;
     private const float ModuleTitleOffsetY = -4f;
     private const float CaptionTitleFontSize = 16f;
+    public const float MainCaptionToPanelsGap = 2f;
     public const float CollapsedPanelGap = 2f;
 
     public const float PanelWidth = 360f;
@@ -441,6 +442,7 @@ public sealed class CommandsPanel
 
         if (_state != CommandsPanelState.Closed)
         {
+            rowY += MainCaptionToPanelsGap;
             var safeModules = modules is ImmutableArray<InstalledModuleSnapshot> { IsDefault: false } arr
                 ? arr
                 : ImmutableArray<InstalledModuleSnapshot>.Empty;
@@ -546,16 +548,7 @@ public sealed class CommandsPanel
 
     private void DrawCaption(SKCanvas canvas)
     {
-        canvas.DrawRect(_captionRect, _mainCaptionBgPaint);
-
-        float left = _captionRect.Left + 0.5f;
-        float top = _captionRect.Top + 0.5f;
-        float right = _captionRect.Right - 0.5f;
-        float bottom = _captionRect.Bottom - 0.5f;
-        canvas.DrawLine(left, top, right, top, _mainCaptionHighlightPaint);
-        canvas.DrawLine(left, top, left, bottom, _mainCaptionHighlightPaint);
-        canvas.DrawLine(right, top, right, bottom, _mainCaptionShadowPaint);
-        canvas.DrawLine(left, bottom, right, bottom, _mainCaptionShadowPaint);
+        DrawBeveledCaption(canvas, _captionRect, _mainCaptionBgPaint);
 
         // HideShow toggle: hide icon when open, show icon when closed.
         var hideShowImage = ResolveHideShowImage();
@@ -603,7 +596,7 @@ public sealed class CommandsPanel
 
     private void DrawCommandPanel(SKCanvas canvas, CommandPanelGeometry row)
     {
-        canvas.DrawRect(row.CaptionRect, _moduleCaptionBgPaint);
+        DrawBeveledCaption(canvas, row.CaptionRect, _moduleCaptionBgPaint);
 
         float textX = row.CaptionRect.Left + 40f;
         float textY = row.CaptionRect.MidY + _moduleCaptionTextPaint.TextSize / 3f + ModuleTitleOffsetY;
@@ -623,6 +616,20 @@ public sealed class CommandsPanel
                 DrawCommandButton(canvas, _commandButtonDrawOrdinal++);
             }
         }
+    }
+
+    private void DrawBeveledCaption(SKCanvas canvas, SKRect rect, SKPaint backgroundPaint)
+    {
+        canvas.DrawRect(rect, backgroundPaint);
+
+        float left = rect.Left + 0.5f;
+        float top = rect.Top + 0.5f;
+        float right = rect.Right - 0.5f;
+        float bottom = rect.Bottom - 0.5f;
+        canvas.DrawLine(left, top, right, top, _mainCaptionHighlightPaint);
+        canvas.DrawLine(left, top, left, bottom, _mainCaptionHighlightPaint);
+        canvas.DrawLine(right, top, right, bottom, _mainCaptionShadowPaint);
+        canvas.DrawLine(left, bottom, right, bottom, _mainCaptionShadowPaint);
     }
 
     private void DrawCommandButton(SKCanvas canvas, int index)
