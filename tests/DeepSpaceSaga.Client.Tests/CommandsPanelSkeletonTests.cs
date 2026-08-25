@@ -475,6 +475,29 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
+    public void Collapsed_panels_have_a_2px_gap_between_adjacent_captions_only()
+    {
+        var screen = CreateScreen();
+        Render(screen);
+
+        foreach (var definition in CommandsPanel.Panels)
+        {
+            var row = screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == definition.Name);
+            screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
+            Render(screen);
+        }
+
+        var rows = screen.CommandsPanel.CommandPanelRows;
+        Assert.All(rows, row => Assert.False(row.Opened));
+        for (int i = 1; i < rows.Count; i++)
+            Assert.Equal(CommandsPanel.CollapsedPanelGap, rows[i].CaptionRect.Top - rows[i - 1].CaptionRect.Bottom);
+
+        float expectedHeight = rows.Count * CommandsPanel.PanelCaptionHeight +
+                               (rows.Count - 1) * CommandsPanel.CollapsedPanelGap;
+        Assert.Equal(expectedHeight, screen.CommandsPanel.BodyRect.Height);
+    }
+
+    [Fact]
     public void Empty_installed_modules_still_shows_all_four_panels_with_disabled_buttons()
     {
         var screen = CreateScreen(ImmutableArray<InstalledModuleSnapshot>.Empty);

@@ -19,6 +19,7 @@ public sealed class CommandsPanel
     private const float XenonButtonSliceInset = 8f;
     private const float ModuleTitleOffsetY = -4f;
     private const float CaptionTitleFontSize = 16f;
+    public const float CollapsedPanelGap = 2f;
 
     public const float PanelWidth = 360f;
     public const float CaptionHeight = 32f;
@@ -135,6 +136,8 @@ public sealed class CommandsPanel
     private readonly SKPaint _panelBgPaint;
     private readonly SKPaint _mainCaptionBgPaint;
     private readonly SKPaint _moduleCaptionBgPaint;
+    private readonly SKPaint _mainCaptionHighlightPaint;
+    private readonly SKPaint _mainCaptionShadowPaint;
     private readonly SKPaint _panelBorderPaint;
     private readonly SKPaint _titlePaint;
 
@@ -194,7 +197,7 @@ public sealed class CommandsPanel
         };
         _mainCaptionBgPaint = new SKPaint
         {
-            Color = new SKColor(2, 14, 22),
+            Color = new SKColor(6, 30, 43),
             Style = SKPaintStyle.Fill,
             BlendMode = SKBlendMode.Src
         };
@@ -203,6 +206,20 @@ public sealed class CommandsPanel
             Color = new SKColor(8, 35, 50),
             Style = SKPaintStyle.Fill,
             BlendMode = SKBlendMode.Src
+        };
+        _mainCaptionHighlightPaint = new SKPaint
+        {
+            Color = new SKColor(24, 76, 96),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1f,
+            IsAntialias = false
+        };
+        _mainCaptionShadowPaint = new SKPaint
+        {
+            Color = new SKColor(0, 6, 11),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1f,
+            IsAntialias = false
         };
         _panelBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
         _titlePaint = new SKPaint
@@ -428,8 +445,9 @@ public sealed class CommandsPanel
                 ? arr
                 : ImmutableArray<InstalledModuleSnapshot>.Empty;
 
-            foreach (var panel in Panels)
+            for (int panelIndex = 0; panelIndex < Panels.Length; panelIndex++)
             {
+                var panel = Panels[panelIndex];
                 bool opened = !_panelOpenedByName.TryGetValue(panel.Name, out bool o) || o;
 
                 if (_state == CommandsPanelState.ActivePanels && !opened)
@@ -453,6 +471,8 @@ public sealed class CommandsPanel
                     panel.Name, opened, captionRect, bodyRect, buttons));
 
                 rowY += opened ? (PanelCaptionHeight + PanelBodyHeight) : PanelCaptionHeight;
+                if (!opened && panelIndex < Panels.Length - 1)
+                    rowY += CollapsedPanelGap;
             }
         }
 
@@ -527,6 +547,15 @@ public sealed class CommandsPanel
     private void DrawCaption(SKCanvas canvas)
     {
         canvas.DrawRect(_captionRect, _mainCaptionBgPaint);
+
+        float left = _captionRect.Left + 0.5f;
+        float top = _captionRect.Top + 0.5f;
+        float right = _captionRect.Right - 0.5f;
+        float bottom = _captionRect.Bottom - 0.5f;
+        canvas.DrawLine(left, top, right, top, _mainCaptionHighlightPaint);
+        canvas.DrawLine(left, top, left, bottom, _mainCaptionHighlightPaint);
+        canvas.DrawLine(right, top, right, bottom, _mainCaptionShadowPaint);
+        canvas.DrawLine(left, bottom, right, bottom, _mainCaptionShadowPaint);
 
         // HideShow toggle: hide icon when open, show icon when closed.
         var hideShowImage = ResolveHideShowImage();
