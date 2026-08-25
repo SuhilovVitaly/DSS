@@ -45,7 +45,7 @@ public static class LoadLayout
     /// window-background-700x600.png) — the title is vertically centered inside this band,
     /// not pinned to a fixed baseline.
     /// </summary>
-    public const float TitleBarY = 16f;
+    public const float TitleBarY = 36f;
     public const float TitleBarHeight = 72f;
 
     /// <summary>Breathing room between a panel's border artwork and the content it holds.</summary>
@@ -68,7 +68,7 @@ public static class LoadLayout
 
     public const float CloseButtonWidth = 140f;
     public const float CloseButtonHeight = 44f;
-    public const float CloseButtonBottomMargin = 24f;
+    public const float CloseButtonBottomMargin = 54f;
 
     /// <summary>Gap kept between the bottom of the content/action panels and the CLOSE button below them.</summary>
     public const float PanelToCloseGap = 20f;
@@ -86,7 +86,7 @@ public static class LoadLayout
     public static readonly int VisibleRows = (int)((ListHeight + RowSpacing) / RowHeight);
 
     public const float ScrollbarWidth = 6f;
-    public const float ScrollbarGap = 10f;
+    public const float ScrollbarGap = 0f;
     public const float ScrollbarThumbMinHeight = 20f;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
