@@ -46,6 +46,13 @@
   "Trade.ItemEnergyCells": "Energy Cells",
   "Trade.ItemFuel": "Fuel",
   "Trade.ItemIce": "Ice",
+  "Trade.ItemIronOre": "Iron Ore",
+  "Trade.ItemSilicon": "Silicon",
+  "Trade.ItemMagnesiumOre": "Magnesium Ore",
+  "Trade.ItemWater": "Water",
+  "Trade.ItemSteel": "Steel",
+  "Trade.ItemProteinMass": "Protein Mass",
+  "Trade.ItemFoodRations": "Food Rations",
   "Trade.StatusBuySuccess": "Purchase completed",
   "Trade.StatusSellSuccess": "Sale completed",
   "Trade.StatusSellPartial": "Sold {0} of {1} — station ran out of Credits",
@@ -57,5 +64,6 @@
   "Trade.ReasonUnknownItemType": "Unknown item type",
   "Trade.ReasonNotDocked": "Not docked to a station",
   "Trade.ReasonInsufficientCargoQuantity": "Not enough of this item in cargo",
-  "Trade.ReasonInvalidQuantity": "Invalid quantity"
+  "Trade.ReasonInvalidQuantity": "Invalid quantity",
+  "Trade.ReasonInvalidPackageQuantity": "Quantity must be a multiple of this item's package size"
 }

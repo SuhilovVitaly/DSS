@@ -152,9 +152,13 @@ public class TradeSnapshotProjectionTests
                     BaseCycleTimeMs: 1000)
             ],
             [
+                // EnergyCells/Fuel default to TradeCategory.Good (record default); Ice is
+                // explicitly Resource — story-20260825-084409 Batch 1 tests below rely on this
+                // split for both the sell-package floor and the "legacy PriceCoefficient no
+                // longer participates" regression.
                 new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 10, BasePriceCredits: 200),
                 new ItemTypeDefinition(FuelId, "Fuel", UnitMassKg: 0, BasePriceCredits: 200),
-                new ItemTypeDefinition(IceId, "Ice", UnitMassKg: 10, BasePriceCredits: 30)
+                new ItemTypeDefinition(IceId, "Ice", UnitMassKg: 10, BasePriceCredits: 30, Category: TradeCategory.Resource)
             ],
             [
                 new CommandDefinition(TradeCommandTypes.Buy, "Buy", Target: "none", Type: "module.container"),
@@ -181,10 +185,12 @@ public class TradeSnapshotProjectionTests
     {
         var engine = CreateEngine(playerCredits: 5000, isDocked: true);
 
-        engine.ReceiveCommand(BuyCommand(EnergyCellsId, quantity: 10)); // cost 2000
+        // unitPrice = 200 * 1.15 (Good @ Medium fallback — story-20260825-084409 Batch 2,
+        // U5: this fixture never sets an explicit stationSize) = 230.
+        engine.ReceiveCommand(BuyCommand(EnergyCellsId, quantity: 10)); // cost 2300
         var snapshot = engine.CaptureSnapshotForTests();
 
-        Assert.Equal(3000, snapshot.PlayerCredits);
+        Assert.Equal(2700, snapshot.PlayerCredits);
     }
 
     // --- 4.2 DockedStationTrade -----------------------------------------------
@@ -202,8 +208,16 @@ public class TradeSnapshotProjectionTests
     [Fact]
     public void DockedStationTrade_projects_station_inventory_with_correct_prices_and_max_sellable()
     {
-        // priceCoefficient 1500 (fixed-point, 1.5x): EnergyCells 200*1.5=300, Fuel 200*1.5=300, Ice 30*1.5=45.
-        // stationCredits 10_000 -> MaxSellableQuantity = 10_000 / unitPrice.
+        // Story-20260825-084409 Batch 1 (U4): legacy station.PriceCoefficient no longer
+        // participates in the price formula (§59) — priceCoefficient 1500 here is deliberately
+        // non-neutral to prove it has NO effect. Batch 2 (U5) now resolves a real per-station
+        // StationSize factor instead: this fixture never sets an explicit stationSize, so it
+        // falls back to StationSize.Medium (SimulationEngine.ResolveStationSize) — Good @
+        // Medium = 1.15, general Resource (Ice is not a producing-module input here) @ Medium
+        // = 1.10. unitPrice = BasePriceCredits * that factor:
+        // EnergyCells/Fuel (Good, base 200) -> 230; Ice (Resource, base 30) -> 33.
+        // MaxSellableQuantity additionally floors to whole sell packages (U9): EnergyCells/Fuel
+        // are Good (package 10), Ice is Resource (package 100).
         var engine = CreateEngine(
             isDocked: true,
             stationCredits: 10_000,
@@ -223,18 +237,18 @@ public class TradeSnapshotProjectionTests
 
         var energyCells = snapshot.DockedStationTrade.Items.Single(i => i.ItemTypeId == EnergyCellsId);
         Assert.Equal(100, energyCells.StockQuantity);
-        Assert.Equal(300, energyCells.UnitPriceCredits);
-        Assert.Equal(10_000 / 300, energyCells.MaxSellableQuantity);
+        Assert.Equal(230, energyCells.UnitPriceCredits);
+        Assert.Equal(10_000 / 230 / 10 * 10, energyCells.MaxSellableQuantity); // raw 43 -> floors to 40
 
         var fuel = snapshot.DockedStationTrade.Items.Single(i => i.ItemTypeId == FuelId);
         Assert.Equal(50, fuel.StockQuantity);
-        Assert.Equal(300, fuel.UnitPriceCredits);
-        Assert.Equal(10_000 / 300, fuel.MaxSellableQuantity);
+        Assert.Equal(230, fuel.UnitPriceCredits);
+        Assert.Equal(10_000 / 230 / 10 * 10, fuel.MaxSellableQuantity); // 40
 
         var ice = snapshot.DockedStationTrade.Items.Single(i => i.ItemTypeId == IceId);
         Assert.Equal(20, ice.StockQuantity);
-        Assert.Equal(45, ice.UnitPriceCredits);
-        Assert.Equal(10_000 / 45, ice.MaxSellableQuantity);
+        Assert.Equal(33, ice.UnitPriceCredits);
+        Assert.Equal(10_000 / 33 / 100 * 100, ice.MaxSellableQuantity); // raw 303 -> floors to 300
     }
 
     [Fact]
@@ -267,13 +281,15 @@ public class TradeSnapshotProjectionTests
             stationInventory: [(EnergyCellsId, 100L)],
             shipCargo: [(EnergyCellsId, 10L)]);
 
-        engine.ReceiveCommand(SellCommand(EnergyCellsId, quantity: 10)); // unitPrice 200
+        // unitPrice = 200 * 1.15 (Good @ Medium fallback — story-20260825-084409 Batch 2,
+        // U5) = 230.
+        engine.ReceiveCommand(SellCommand(EnergyCellsId, quantity: 10)); // unitPrice 230
         var snapshot = engine.CaptureSnapshotForTests();
 
         Assert.NotNull(snapshot.DockedStationTrade);
         var energyCells = snapshot.DockedStationTrade!.Items.Single(i => i.ItemTypeId == EnergyCellsId);
         Assert.Equal(110, energyCells.StockQuantity); // 100 + 10 sold
-        Assert.Equal(2000, snapshot.PlayerCredits); // 10 * 200
+        Assert.Equal(2300, snapshot.PlayerCredits); // 10 * 230
     }
 
     // --- 4.3 InstalledModuleSnapshot.Cargo -------------------------------------

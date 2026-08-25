@@ -28,12 +28,14 @@ public class LocalizationTests
         "Trade.Refuel", "Trade.Cancel", "Trade.Exit", "Trade.AccountSummary", "Trade.CurrentCredits",
         "Trade.TransactionTotal", "Trade.ProjectedBalance", "Trade.SelectItemPrompt",
         "Trade.ItemEnergyCells", "Trade.ItemFuel", "Trade.ItemIce",
+        "Trade.ItemIronOre", "Trade.ItemSilicon", "Trade.ItemMagnesiumOre", "Trade.ItemWater",
+        "Trade.ItemSteel", "Trade.ItemProteinMass", "Trade.ItemFoodRations",
         "Trade.StatusBuySuccess", "Trade.StatusSellSuccess", "Trade.StatusSellPartial",
         "Trade.StatusRefuelSuccess", "Trade.ReasonInsufficientPlayerCredits",
         "Trade.ReasonInsufficientStationStock", "Trade.ReasonCargoCapacityExceeded",
         "Trade.ReasonFuelCapacityExceeded", "Trade.ReasonUnknownItemType",
         "Trade.ReasonNotDocked", "Trade.ReasonInsufficientCargoQuantity",
-        "Trade.ReasonInvalidQuantity",
+        "Trade.ReasonInvalidQuantity", "Trade.ReasonInvalidPackageQuantity",
     };
 
     [Theory]

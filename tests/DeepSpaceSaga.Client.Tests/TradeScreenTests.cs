@@ -146,8 +146,9 @@ public class TradeScreenTests
     }
 
     [Fact]
-    public async Task Quantity_stepper_plus_and_minus_change_quantity()
+    public async Task Quantity_stepper_plus_and_minus_change_quantity_by_the_selected_items_package_step()
     {
+        // item.energy-cells (row 0) is Category=Good — package step 10 (§59).
         await using var fixture = CreateDockedFixture();
         RenderScreen(fixture.Screen);
         SelectFirstItem(fixture);
@@ -157,7 +158,7 @@ public class TradeScreenTests
         float pt = TradeLayout.PanelTop(ScreenHeight);
 
         fixture.Screen.OnMouseDown(pl + stepper.X + stepper.W - 5f, pt + stepper.Y + stepper.H / 2f); // plus
-        Assert.Equal(2, fixture.Screen.Quantity);
+        Assert.Equal(11, fixture.Screen.Quantity);
 
         fixture.Screen.OnMouseDown(pl + stepper.X + 5f, pt + stepper.Y + stepper.H / 2f); // minus
         Assert.Equal(1, fixture.Screen.Quantity);
@@ -165,6 +166,41 @@ public class TradeScreenTests
         // Minus at floor (1) never goes below 1.
         fixture.Screen.OnMouseDown(pl + stepper.X + 5f, pt + stepper.Y + stepper.H / 2f);
         Assert.Equal(1, fixture.Screen.Quantity);
+    }
+
+    [Fact]
+    public async Task Quantity_stepper_steps_by_100_for_a_resource_category_item()
+    {
+        // item.ice (row 2 in BaseSnapshot) is Category=Resource — package step 100 (§59).
+        await using var fixture = CreateDockedFixture();
+        RenderScreen(fixture.Screen);
+        SelectRow(fixture, 2);
+        Assert.Equal("item.ice", fixture.Screen.SelectedItemTypeId);
+
+        var stepper = TradeLayout.QuantityStepperRect();
+        float pl = TradeLayout.PanelLeft(ScreenWidth);
+        float pt = TradeLayout.PanelTop(ScreenHeight);
+
+        fixture.Screen.OnMouseDown(pl + stepper.X + stepper.W - 5f, pt + stepper.Y + stepper.H / 2f); // plus
+        Assert.Equal(101, fixture.Screen.Quantity);
+    }
+
+    [Fact]
+    public async Task Quantity_stepper_steps_by_10_for_a_good_category_item_including_fuel_sold_as_cargo()
+    {
+        // item.fuel (row 1 in BaseSnapshot) is Category=Good — package step 10 (§59, decision 3:
+        // Fuel sells as cargo with the same Good packaging; the Refuel panel's own stepper is unaffected).
+        await using var fixture = CreateDockedFixture();
+        RenderScreen(fixture.Screen);
+        SelectRow(fixture, 1);
+        Assert.Equal("item.fuel", fixture.Screen.SelectedItemTypeId);
+
+        var stepper = TradeLayout.QuantityStepperRect();
+        float pl = TradeLayout.PanelLeft(ScreenWidth);
+        float pt = TradeLayout.PanelTop(ScreenHeight);
+
+        fixture.Screen.OnMouseDown(pl + stepper.X + stepper.W - 5f, pt + stepper.Y + stepper.H / 2f); // plus
+        Assert.Equal(11, fixture.Screen.Quantity);
     }
 
     [Fact]
@@ -261,11 +297,13 @@ public class TradeScreenTests
 
     // ── Test helpers ─────────────────────────────────────────────────────────
 
-    private static void SelectFirstItem(TestFixture fixture)
+    private static void SelectFirstItem(TestFixture fixture) => SelectRow(fixture, 0);
+
+    private static void SelectRow(TestFixture fixture, int rowIndex)
     {
-        var row0 = TradeLayout.InventoryRowRect(0);
-        float cx = TradeLayout.PanelLeft(ScreenWidth) + row0.X + row0.W / 2f;
-        float cy = TradeLayout.PanelTop(ScreenHeight) + row0.Y + row0.H / 2f;
+        var row = TradeLayout.InventoryRowRect(rowIndex);
+        float cx = TradeLayout.PanelLeft(ScreenWidth) + row.X + row.W / 2f;
+        float cy = TradeLayout.PanelTop(ScreenHeight) + row.Y + row.H / 2f;
         fixture.Screen.OnMouseDown(cx, cy);
     }
 
@@ -302,9 +340,9 @@ public class TradeScreenTests
         var trade = new StationTradeSnapshot(
             StationObjectId,
             ImmutableArray.Create(
-                new StationInventoryItemSnapshot("item.energy-cells", StockQuantity: 100, UnitPriceCredits: 200, MaxSellableQuantity: 50),
-                new StationInventoryItemSnapshot("item.fuel", StockQuantity: 500, UnitPriceCredits: 200, MaxSellableQuantity: 20),
-                new StationInventoryItemSnapshot("item.ice", StockQuantity: 300, UnitPriceCredits: 30, MaxSellableQuantity: 300)));
+                new StationInventoryItemSnapshot("item.energy-cells", StockQuantity: 100, UnitPriceCredits: 200, MaxSellableQuantity: 50, Category: TradeItemCategories.Good),
+                new StationInventoryItemSnapshot("item.fuel", StockQuantity: 500, UnitPriceCredits: 200, MaxSellableQuantity: 20, Category: TradeItemCategories.Good),
+                new StationInventoryItemSnapshot("item.ice", StockQuantity: 300, UnitPriceCredits: 30, MaxSellableQuantity: 300, Category: TradeItemCategories.Resource)));
 
         return new AuthoritativeSnapshot(
             SnapshotSequence: sequence,

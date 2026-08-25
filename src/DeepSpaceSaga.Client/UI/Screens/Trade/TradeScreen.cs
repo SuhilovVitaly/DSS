@@ -26,9 +26,9 @@ namespace DeepSpaceSaga.Client.UI.Screens.Trade;
 /// file, Unit 6.3):
 /// <list type="bullet">
 /// <item>Item display names: the client has no item-type display-name catalog yet, so
-/// the three known ids (item.energy-cells/item.fuel/item.ice — src/DeepSpaceSaga.Client/
-/// Data/item-types.json) are mapped via a small switch to Trade.Item* localization keys,
-/// falling back to the raw id for any future/unknown id.</item>
+/// the known ids (src/DeepSpaceSaga.Client/Data/item-types.json — 10 as of
+/// story-20260825-084409 Batch 3) are mapped via a small switch to Trade.Item* localization
+/// keys, falling back to the raw id for any future/unknown id.</item>
 /// <item>FUEL display: FuelCapacityKg is Engine-internal content, never projected to the
 /// client, so there is no denominator for a percentage fill — the FUEL panel shows
 /// <see cref="InstalledModuleSnapshot.FuelAmountKg"/> as a plain "X kg" number, no
@@ -115,7 +115,13 @@ public sealed class TradeScreen : IScreen
 
         var trade = _buffer.Latest?.Snapshot?.DockedStationTrade;
         if (trade is not null && !trade.Items.IsDefaultOrEmpty)
+        {
             _selectedItemTypeId = trade.Items[0].ItemTypeId;
+            // Start at exactly one sell package (§59) — see the "Quantity defaults to a whole
+            // sell package" note on the _quantity field: a hardcoded 1 here is never a valid
+            // Sell quantity for a Resource/Good item once package-size validation applies.
+            _quantity = ResolveQuantityStep(trade, _selectedItemTypeId);
+        }
     }
 
     public void OnDeactivated() { }
@@ -141,7 +147,9 @@ public sealed class TradeScreen : IScreen
             if (rowIndex >= 0)
             {
                 _selectedItemTypeId = trade.Items[rowIndex].ItemTypeId;
-                _quantity = 1;
+                // §59: start at exactly one sell package, not a hardcoded 1 — see the
+                // _quantity field doc comment.
+                _quantity = ResolveQuantityStep(trade, _selectedItemTypeId);
                 return ScreenEvent.None;
             }
         }
@@ -153,7 +161,7 @@ public sealed class TradeScreen : IScreen
             if (cargoRowIndex >= 0)
             {
                 _selectedItemTypeId = containerModule.Cargo[cargoRowIndex].ItemTypeId;
-                _quantity = 1;
+                _quantity = ResolveQuantityStep(trade, _selectedItemTypeId);
                 return ScreenEvent.None;
             }
         }
@@ -161,11 +169,13 @@ public sealed class TradeScreen : IScreen
         switch (hit)
         {
             case TradeButton.QuantityMinus:
-                _quantity = Math.Max(1, _quantity - 1);
+                _quantity = Math.Max(1, _quantity - ResolveQuantityStep(trade, _selectedItemTypeId));
                 return ScreenEvent.None;
 
             case TradeButton.QuantityPlus:
-                _quantity = Math.Min(ResolveQuantityUpperBound(trade, containerModule, _selectedItemTypeId), _quantity + 1);
+                _quantity = Math.Min(
+                    ResolveQuantityUpperBound(trade, containerModule, _selectedItemTypeId),
+                    _quantity + ResolveQuantityStep(trade, _selectedItemTypeId));
                 return ScreenEvent.None;
 
             case TradeButton.RefuelQuantityMinus:
@@ -275,6 +285,31 @@ public sealed class TradeScreen : IScreen
     }
 
     /// <summary>
+    /// Buy/Sell quantity stepper step size for the currently selected station item (§59,
+    /// story-20260825-084409 Batch 3, U10): 100 for <see cref="TradeItemCategories.Resource"/>,
+    /// 10 for <see cref="TradeItemCategories.Good"/> (including Fuel sold as cargo — the Refuel
+    /// panel's own stepper is unaffected, see <see cref="_refuelQuantity"/>). Read from
+    /// <see cref="StationInventoryItemSnapshot.Category"/> as published by the Engine — never
+    /// re-derived from the item id on the client. Falls back to 1 when nothing is selected or
+    /// the selected id isn't (yet) present in the station's trade snapshot.
+    /// </summary>
+    private static long ResolveQuantityStep(StationTradeSnapshot? trade, string? itemTypeId)
+    {
+        if (trade is null || itemTypeId is null || trade.Items.IsDefaultOrEmpty)
+            return 1;
+
+        foreach (var item in trade.Items)
+        {
+            if (item.ItemTypeId != itemTypeId)
+                continue;
+
+            return item.Category == TradeItemCategories.Resource ? 100 : 10;
+        }
+
+        return 1;
+    }
+
+    /// <summary>
     /// Non-authoritative UI ceiling for the quantity stepper — see the type doc comment's
     /// "Quantity stepper upper bound" decision.
     /// </summary>
@@ -360,6 +395,7 @@ public sealed class TradeScreen : IScreen
         CommandReasonCodes.NotDocked => Localization.Get("Trade.ReasonNotDocked"),
         CommandReasonCodes.InsufficientCargoQuantity => Localization.Get("Trade.ReasonInsufficientCargoQuantity"),
         CommandReasonCodes.InvalidQuantity => Localization.Get("Trade.ReasonInvalidQuantity"),
+        CommandReasonCodes.InvalidPackageQuantity => Localization.Get("Trade.ReasonInvalidPackageQuantity"),
         _ => reasonCode ?? string.Empty
     };
 
@@ -368,6 +404,13 @@ public sealed class TradeScreen : IScreen
         "item.energy-cells" => Localization.Get("Trade.ItemEnergyCells"),
         "item.fuel" => Localization.Get("Trade.ItemFuel"),
         "item.ice" => Localization.Get("Trade.ItemIce"),
+        "item.iron-ore" => Localization.Get("Trade.ItemIronOre"),
+        "item.silicon" => Localization.Get("Trade.ItemSilicon"),
+        "item.magnesium-ore" => Localization.Get("Trade.ItemMagnesiumOre"),
+        "item.water" => Localization.Get("Trade.ItemWater"),
+        "item.steel" => Localization.Get("Trade.ItemSteel"),
+        "item.protein-mass" => Localization.Get("Trade.ItemProteinMass"),
+        "item.food-rations" => Localization.Get("Trade.ItemFoodRations"),
         _ => itemTypeId
     };
 

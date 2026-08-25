@@ -138,4 +138,12 @@ public static class CommandReasonCodes
 
     /// <summary>Trade command's Quantity was missing, zero, or negative.</summary>
     public const string InvalidQuantity = "invalid_quantity";
+
+    /// <summary>
+    /// A Sell command's Quantity was not a multiple of the item's sell package size (§59
+    /// StationEconomyProductionAndSizing.md: Resource sells in packages of 100, Good — including
+    /// Fuel — in packages of 10). Distinct from <see cref="InvalidQuantity"/>, which covers
+    /// missing/zero/negative quantities regardless of package size.
+    /// </summary>
+    public const string InvalidPackageQuantity = "invalid_package_quantity";
 }

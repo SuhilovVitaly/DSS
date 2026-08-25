@@ -20,12 +20,14 @@ public class StationTradeSnapshotTests
                     ItemTypeId: "item.ice",
                     StockQuantity: 120,
                     UnitPriceCredits: 15,
-                    MaxSellableQuantity: 40),
+                    MaxSellableQuantity: 40,
+                    Category: TradeItemCategories.Resource),
                 new StationInventoryItemSnapshot(
                     ItemTypeId: "item.fuel",
                     StockQuantity: 300,
                     UnitPriceCredits: 200,
-                    MaxSellableQuantity: 0)));
+                    MaxSellableQuantity: 0,
+                    Category: TradeItemCategories.Good)));
 
         var json = JsonSerializer.Serialize(snapshot);
         var roundTripped = JsonSerializer.Deserialize<StationTradeSnapshot>(json);
@@ -40,10 +42,24 @@ public class StationTradeSnapshotTests
         Assert.Equal(120, first.StockQuantity);
         Assert.Equal(15, first.UnitPriceCredits);
         Assert.Equal(40, first.MaxSellableQuantity);
+        Assert.Equal(TradeItemCategories.Resource, first.Category);
 
         var second = roundTripped.Items[1];
         Assert.Equal("item.fuel", second.ItemTypeId);
         Assert.Equal(0, second.MaxSellableQuantity);
+        Assert.Equal(TradeItemCategories.Good, second.Category);
+    }
+
+    [Fact]
+    public void StationInventoryItemSnapshot_category_defaults_to_good_when_not_specified()
+    {
+        var item = new StationInventoryItemSnapshot(
+            ItemTypeId: "item.legacy",
+            StockQuantity: 1,
+            UnitPriceCredits: 1,
+            MaxSellableQuantity: 1);
+
+        Assert.Equal(TradeItemCategories.Good, item.Category);
     }
 
     [Fact]

@@ -207,7 +207,8 @@ public static class EngineContentLoader
                 baseCycleTimeMs,
                 dto.FuelCapacityKg,
                 baseSuccessChancePercent,
-                dto.CabinesCount);
+                dto.CabinesCount,
+                dto.BasePriceCredits);
         });
     }
 
@@ -228,14 +229,39 @@ public static class EngineContentLoader
             throw new ContentException($"Module type '{dto.TypeId}' requires fuelCapacityKg greater than zero.");
     }
 
-    private static IReadOnlyList<ItemTypeDefinition> LoadItemTypes(string path)
+    internal static IReadOnlyList<ItemTypeDefinition> LoadItemTypes(string path)
     {
         var file = ReadJson<ItemTypesFile>(path, "item types");
         if (file.ItemTypes is null)
             throw new ContentException("item-types file is missing itemTypes.");
 
         return file.ItemTypes.Select(dto =>
-            new ItemTypeDefinition(dto.TypeId, dto.DisplayName, dto.UnitMassKg, dto.BasePriceCredits)).ToArray();
+            new ItemTypeDefinition(
+                dto.TypeId,
+                dto.DisplayName,
+                dto.UnitMassKg,
+                dto.BasePriceCredits,
+                ParseTradeCategory(dto.TypeId, dto.TradeCategory),
+                dto.CatalogCode)).ToArray();
+    }
+
+    /// <summary>
+    /// A missing (null) tradeCategory defaults to <see cref="TradeCategory.Good"/> (§59) — most
+    /// existing content/test fixtures predate this field and never populate it explicitly.
+    /// </summary>
+    private static TradeCategory ParseTradeCategory(string typeId, string? jsonValue)
+    {
+        if (jsonValue is null)
+            return TradeCategory.Good;
+
+        if (!Enum.TryParse<TradeCategory>(jsonValue, ignoreCase: true, out var category))
+        {
+            throw new ContentException(
+                $"Item type '{typeId}' has unknown tradeCategory '{jsonValue}' " +
+                "(expected 'Resource' or 'Good').");
+        }
+
+        return category;
     }
 
     /// <summary>
@@ -319,7 +345,7 @@ public static class EngineContentLoader
         return (int)Math.Round(jsonValue.Value * CommandDefinition.Neutral, MidpointRounding.AwayFromZero);
     }
 
-    private static IReadOnlyList<FactoryTypeDefinition> LoadFactoryTypes(string path)
+    internal static IReadOnlyList<FactoryTypeDefinition> LoadFactoryTypes(string path)
     {
         var file = ReadJson<FactoryTypesFile>(path, "factory types");
         if (file.FactoryTypes is null)
@@ -340,8 +366,8 @@ public static class EngineContentLoader
                 new RecipeDefinition(
                     dto.TypeId,
                     dto.DisplayName,
-                    dto.Recipe.Inputs.Select(m => new RecipeMaterial(m.ItemTypeId, m.Count)).ToImmutableArray(),
-                    dto.Recipe.Outputs.Select(m => new RecipeMaterial(m.ItemTypeId, m.Count)).ToImmutableArray(),
+                    dto.Recipe.Inputs.Select(m => ToRecipeMaterial(dto.TypeId, m)).ToImmutableArray(),
+                    dto.Recipe.Outputs.Select(m => ToRecipeMaterial(dto.TypeId, m)).ToImmutableArray(),
                     dto.Recipe.CycleTimeMs));
         }).ToArray();
     }
@@ -362,10 +388,30 @@ public static class EngineContentLoader
             return new RecipeDefinition(
                 dto.TypeId,
                 dto.DisplayName,
-                dto.Inputs.Select(m => new RecipeMaterial(m.ItemTypeId, m.Count)).ToImmutableArray(),
-                dto.Outputs.Select(m => new RecipeMaterial(m.ItemTypeId, m.Count)).ToImmutableArray(),
+                dto.Inputs.Select(m => ToRecipeMaterial(dto.TypeId, m)).ToImmutableArray(),
+                dto.Outputs.Select(m => ToRecipeMaterial(dto.TypeId, m)).ToImmutableArray(),
                 dto.CycleDurationMs);
         }).ToArray();
+    }
+
+    /// <summary>
+    /// Convert a <see cref="RecipeMaterialDto"/> into a <see cref="RecipeMaterial"/>, parsing
+    /// <c>needCoefficient</c> as a fixed-point factor (1000 == 1.0, missing == neutral 1000 —
+    /// same convention as <see cref="ParseFixedPointFactor"/>) and rejecting a negative value
+    /// (§59 "Производящие модули станции": the coefficient is stored data, but it still must
+    /// be a sane non-negative multiplier).
+    /// </summary>
+    private static RecipeMaterial ToRecipeMaterial(string owningTypeId, RecipeMaterialDto dto)
+    {
+        int needCoefficient = ParseFixedPointFactor(dto.NeedCoefficient);
+        if (needCoefficient < 0)
+        {
+            throw new ContentException(
+                $"Recipe '{owningTypeId}' material '{dto.ItemTypeId}' has negative needCoefficient " +
+                $"'{dto.NeedCoefficient}'.");
+        }
+
+        return new RecipeMaterial(dto.ItemTypeId, dto.Count, needCoefficient);
     }
 
     private static T ReadJson<T>(string path, string description)
@@ -447,7 +493,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("baseCycleTimeMs")] long? BaseCycleTimeMs,
         [property: JsonPropertyName("fuelCapacityKg")] long? FuelCapacityKg,
         [property: JsonPropertyName("baseSuccessChancePercent")] int? BaseSuccessChancePercent,
-        [property: JsonPropertyName("cabines")] int? CabinesCount);
+        [property: JsonPropertyName("cabines")] int? CabinesCount,
+        [property: JsonPropertyName("basePriceCredits")] long? BasePriceCredits = null);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto> ItemTypes);
@@ -456,7 +503,9 @@ public static class EngineContentLoader
         [property: JsonPropertyName("typeId")] string TypeId,
         [property: JsonPropertyName("displayName")] string DisplayName,
         [property: JsonPropertyName("unitMassKg")] long UnitMassKg,
-        [property: JsonPropertyName("basePriceCredits")] long? BasePriceCredits = null);
+        [property: JsonPropertyName("basePriceCredits")] long? BasePriceCredits = null,
+        [property: JsonPropertyName("tradeCategory")] string? TradeCategory = null,
+        [property: JsonPropertyName("catalogCode")] string? CatalogCode = null);
 
     private sealed record CommandDefinitionsFile(
         [property: JsonPropertyName("commandDefinitions")] IReadOnlyList<CommandDefinitionDto> CommandDefinitions);
@@ -497,5 +546,6 @@ public static class EngineContentLoader
 
     private sealed record RecipeMaterialDto(
         [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
-        [property: JsonPropertyName("count")] long Count);
+        [property: JsonPropertyName("count")] long Count,
+        [property: JsonPropertyName("needCoefficient")] decimal? NeedCoefficient = null);
 }

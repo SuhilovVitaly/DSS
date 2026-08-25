@@ -64,6 +64,7 @@ public class CommandResultTests
         Assert.Equal("not_docked", CommandReasonCodes.NotDocked);
         Assert.Equal("insufficient_cargo_quantity", CommandReasonCodes.InsufficientCargoQuantity);
         Assert.Equal("invalid_quantity", CommandReasonCodes.InvalidQuantity);
+        Assert.Equal("invalid_package_quantity", CommandReasonCodes.InvalidPackageQuantity);
     }
 
     [Fact]

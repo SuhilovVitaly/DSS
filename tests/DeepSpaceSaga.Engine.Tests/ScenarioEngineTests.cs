@@ -232,7 +232,10 @@ public class ScenarioEngineTests
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-GENERATOR-01");
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-SCANNER-01");
         var cargo = Assert.Single(cargoModule.Cargo);
-        Assert.Equal(0, cargo.ItemTypeIndex);
+        // item.energy-cells is index 6 in the real 10-entry catalog (story-20260825-084409
+        // Batch 1, U1) — Resource entries (Ice/Iron Ore/Silicon/Magnesium Ore) sort first,
+        // then Good (Water/Steel/Energy Cells/Fuel/Protein mass/Food Rations).
+        Assert.Equal(6, cargo.ItemTypeIndex);
     }
 
     [Fact]

@@ -107,7 +107,91 @@ public sealed record SpaceObjectData(
     /// Station's tradeable stock, one entry per sellable item type. Same "null == not yet
     /// resolved" rule as <see cref="Credits"/>.
     /// </summary>
-    [property: JsonPropertyName("inventory")] IReadOnlyList<StationInventoryItemData>? Inventory = null);
+    [property: JsonPropertyName("inventory")] IReadOnlyList<StationInventoryItemData>? Inventory = null,
+    /// <summary>
+    /// Station's size classification (requirements §59, Docs\FirstRelease\TechnicalTasks\
+    /// StationEconomyProductionAndSizing.md "Размеры станции") — one of "Huge"/"Large"/
+    /// "Medium"/"Outpost" (case-insensitive). Only meaningful for ObjectType == Station. Null
+    /// means "not yet resolved": unlike <see cref="Credits"/>/<see cref="PriceCoefficient"/>/
+    /// <see cref="Inventory"/>, this is never RNG-generated — SimulationEngine.LoadScenario
+    /// resolves a fixed fallback the first time and persists it explicitly from then on (see
+    /// SimulationEngine.ResolveStationSize).
+    /// </summary>
+    [property: JsonPropertyName("stationSize")] string? StationSize = null,
+    /// <summary>
+    /// Station's producing-module instances (requirements §59 "Производящие модули станции").
+    /// Fully explicit — never RNG-generated. Null/empty means the station has no producing
+    /// modules (the common case; every existing scenario/save predates this field).
+    /// </summary>
+    [property: JsonPropertyName("producingModules")] IReadOnlyList<StationProducingModuleData>? ProducingModules = null,
+    /// <summary>
+    /// Station's active events/buffs/debuffs (requirements §59 "События, бафы и дебафы
+    /// станции") — schema + persistence only (story-20260825-084409 CP-3): no triggering
+    /// engine exists yet, so this is always empty for every scenario file the game ships, but
+    /// round-trips through save/load and participates in the price formula when present.
+    /// </summary>
+    [property: JsonPropertyName("events")] IReadOnlyList<StationEventData>? Events = null);
+
+/// <summary>
+/// One producing-module instance installed on a station (requirements §59 "Производящие
+/// модули станции"). <see cref="ProducingModuleTypeId"/> refers to a
+/// <c>FactoryTypeDefinition.TypeId</c> in the content registry.
+/// </summary>
+public sealed record StationProducingModuleData(
+    [property: JsonPropertyName("producingModuleTypeId")] string ProducingModuleTypeId,
+    /// <summary>
+    /// Whether this producing module is currently active/available. Only active producing
+    /// modules make their input Resources "ConsumedResource" for price-factor selection (§59
+    /// "Минимальное правило для торговли"). Defaults to true — an explicitly-listed producing
+    /// module is assumed active unless a scenario/save says otherwise.
+    /// </summary>
+    [property: JsonPropertyName("active")] bool Active = true);
+
+/// <summary>
+/// One station event/buff/debuff (requirements §59 "События, бафы и дебафы станции"),
+/// schema + persistence only — story-20260825-084409 CP-3. No triggering/lifecycle engine
+/// exists; an event present in scenario/save data simply participates in the price formula
+/// for as long as it is present.
+/// </summary>
+/// <param name="EventId">Stable id, unique per station.</param>
+/// <param name="DisplayName">UI display name.</param>
+/// <param name="Description">Optional UI description.</param>
+/// <param name="StartedGameTimeMs">
+/// GameTimeMs the event started — together with <see cref="EventId"/>, defines the
+/// deterministic application order the requirement calls for when two events share the same
+/// start time (ordered by (StartedGameTimeMs, EventId), StringComparer.Ordinal).
+/// </param>
+/// <param name="DurationMs">
+/// Null means a permanent scenario-authored effect (§59 "время действия или флаг
+/// постоянного сценарного эффекта"); a non-null value is the event's duration in ms. Neither
+/// value is interpreted by any engine lifecycle in this iteration — schema-only.
+/// </param>
+/// <param name="PriceFactors">
+/// The multiplicative <c>StationPriceFactor</c>s this event contributes. See
+/// <see cref="StationEventPriceFactorData"/>.
+/// </param>
+public sealed record StationEventData(
+    [property: JsonPropertyName("eventId")] string EventId,
+    [property: JsonPropertyName("displayName")] string DisplayName,
+    [property: JsonPropertyName("description")] string? Description,
+    [property: JsonPropertyName("startedGameTimeMs")] long StartedGameTimeMs,
+    [property: JsonPropertyName("durationMs")] long? DurationMs,
+    [property: JsonPropertyName("priceFactors")] IReadOnlyList<StationEventPriceFactorData> PriceFactors);
+
+/// <summary>
+/// One multiplicative price factor contributed by a <see cref="StationEventData"/>. Addresses
+/// either a whole <see cref="ItemTypeId"/>+null case is the specific-item addressing mode,
+/// <see cref="Category"/>+null <see cref="ItemTypeId"/> is the category-wide mode, and both
+/// null applies the factor to every tradeable item on the station (§59: "список price factors
+/// по категории или конкретному TradeItem").
+/// </summary>
+/// <param name="Category">"Resource" or "Good" (case-insensitive), or null.</param>
+/// <param name="ItemTypeId">A specific <c>ItemTypeDefinition.TypeId</c>, or null.</param>
+/// <param name="Factor">Fixed-point multiplier, 1000 == 1.0x.</param>
+public sealed record StationEventPriceFactorData(
+    [property: JsonPropertyName("category")] string? Category,
+    [property: JsonPropertyName("itemTypeId")] string? ItemTypeId,
+    [property: JsonPropertyName("factor")] int Factor);
 
 /// <summary>A ship module declared in a scenario.</summary>
 public sealed record ShipModuleData(
