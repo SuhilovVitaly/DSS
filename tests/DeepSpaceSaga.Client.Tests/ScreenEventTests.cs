@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
@@ -1002,12 +1003,10 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void Load_background_image_is_loaded()
+    public void Load_Generic_Type_A_assets_are_loaded()
     {
-        // Regression: the window-background-700x600.png asset must resolve at the
-        // client's working directory and be registered in the .csproj with
-        // CopyToOutputDirectory, or the panel silently falls back to a plain fill.
-        Assert.True(LoadScreen.HasLoadedBackground);
+        Assert.True(GenericWindowTypeA.HasAssets);
+        Assert.True(GenericButtonTypeA.HasAssets);
     }
 
     [Fact]
