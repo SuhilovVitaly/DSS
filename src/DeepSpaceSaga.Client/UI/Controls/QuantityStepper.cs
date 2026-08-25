@@ -8,7 +8,7 @@ public enum QuantityStepperButton { None, Minus, Plus }
 /// <summary>
 /// [-] [ value ] [+] quantity control (Trade screen's Buy/Sell quantity picker). Stateless —
 /// the owning screen holds the current value and min/max, this only draws and hit-tests.
-/// Minus/plus buttons reuse ImageButton's nine-sliced look; the value box mirrors
+/// Minus/plus buttons reuse Generic Type A's compact marker-free look; the value box mirrors
 /// SettingsScreen's flat dark combo-box style (see SettingsScreen.DrawComboBox).
 /// </summary>
 public static class QuantityStepper
@@ -64,8 +64,8 @@ public static class QuantityStepper
             ? ButtonState.Disabled
             : hovered == QuantityStepperButton.Plus ? ButtonState.Hovered : ButtonState.Normal;
 
-        ImageButton.Draw(canvas, MinusButtonRect(rect), "-", minusState, MenuStyle.TypefaceHumaroid);
-        ImageButton.Draw(canvas, PlusButtonRect(rect), "+", plusState, MenuStyle.TypefaceHumaroid);
+        GenericButtonTypeA.Draw(canvas, MinusButtonRect(rect), "−", minusState, showMarker: false);
+        GenericButtonTypeA.Draw(canvas, PlusButtonRect(rect), "+", plusState, showMarker: false);
 
         var valueBoxRect = ValueBoxRect(rect);
         canvas.DrawRect(valueBoxRect, _valueBoxFill);

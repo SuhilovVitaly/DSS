@@ -56,6 +56,18 @@ public class TradeLayoutTests
         Assert.True(buy.X + buy.W <= sell.X + 0.01f);
         Assert.True(buy.X >= column.X);
         Assert.True(sell.X + sell.W <= column.X + column.W + 0.01f);
+        Assert.True(buy.Y + buy.H <= column.Y + column.H + 0.01f);
+    }
+
+    [Fact]
+    public void Refuel_button_fits_inside_the_fuel_panel()
+    {
+        var button = TradeLayout.RefuelButtonRect();
+        var panel = TradeLayout.FuelPanelRect();
+
+        Assert.True(button.X >= panel.X);
+        Assert.True(button.X + button.W <= panel.X + panel.W + 0.01f);
+        Assert.True(button.Y + button.H <= panel.Y + panel.H + 0.01f);
     }
 
     [Fact]
@@ -77,6 +89,9 @@ public class TradeLayoutTests
 
         Assert.True(exit.X + exit.W <= cancel.X + 0.01f);
         Assert.Equal(exit.Y, cancel.Y, precision: 3);
+        var summary = TradeLayout.SummaryRect();
+        Assert.True(exit.Y >= summary.Y);
+        Assert.True(cancel.Y + cancel.H <= summary.Y + summary.H + 0.01f);
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using DeepSpaceSaga.Client;
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.Trade;
 using DeepSpaceSaga.Contracts;
@@ -32,12 +33,30 @@ public class TradeScreenTests
     }
 
     [Fact]
-    public void Background_image_is_loaded()
+    public void Generic_Type_A_assets_are_loaded()
     {
-        // Regression: the window-background-1400x900.png asset must resolve at the
-        // client's working directory and be registered in the .csproj with
-        // CopyToOutputDirectory, or the panel silently falls back to a plain fill.
-        Assert.True(TradeScreen.HasLoadedBackground);
+        Assert.True(GenericWindowTypeA.HasAssets);
+        Assert.True(GenericButtonTypeA.HasAssets);
+    }
+
+    [Fact]
+    public async Task Render_draws_the_opaque_Generic_Type_A_shell_and_action_buttons()
+    {
+        await using var fixture = CreateDockedFixture();
+        fixture.Screen.OnActivated();
+        using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+
+        fixture.Screen.Render(canvas, ScreenWidth, ScreenHeight);
+        canvas.Flush();
+
+        var panel = TradeLayout.PanelRect(ScreenWidth, ScreenHeight);
+        var buy = TradeLayout.BuyButtonRect();
+        Assert.Equal(255, bitmap.GetPixel((int)panel.MidX, (int)panel.Top + 70).Alpha);
+        Assert.True(bitmap.GetPixel(
+            (int)(panel.Left + buy.X + buy.W / 2f),
+            (int)(panel.Top + buy.Y + buy.H / 2f)).Alpha > 0);
     }
 
     // ── Open/close (structural twin of the old placeholder tests) ─────────────
