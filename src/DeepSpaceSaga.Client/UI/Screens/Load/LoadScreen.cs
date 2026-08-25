@@ -9,10 +9,10 @@ namespace DeepSpaceSaga.Client.UI.Screens.Load;
 /// <summary>
 /// Modal overlay listing save slots. Redesigned after
 /// <see cref="ScenarioSelect.ScenarioSelectScreen"/>: clicking a row only selects it
-/// (highlighted, does not load/delete); a single LOAD / two-stage DELETE button pair at the
-/// panel's bottom then acts on whichever row is currently selected — replacing the previous
-/// per-row LOAD/DELETE icon buttons. A CLOSE icon still sits in the panel's top-right corner
-/// (unaffected by this redesign — it was never per-row).
+/// (highlighted, does not load/delete); a LOAD / two-stage DELETE button pair on the right
+/// action panel then acts on whichever row is currently selected — replacing the previous
+/// per-row LOAD/DELETE icon buttons. CLOSE is a normal bottom-of-window button (mirrors
+/// <see cref="Trade.TradeScreen"/>'s Exit button), not the small top-right icon it used to be.
 /// Unlike Save (which excludes the reserved <see cref="SaveSlots.Quicksave"/> slot from
 /// its list entirely), Load shows it — a player must be able to load their last
 /// quicksave from here — but it is never deletable: DELETE is disabled while it is the
@@ -101,15 +101,6 @@ public sealed class LoadScreen : IScreen
         Typeface = MenuStyle.TypefaceRegular
     };
 
-    private static readonly SKPaint _buttonTextPaint = new()
-    {
-        Color = MenuStyle.ColorText,
-        TextSize = MenuStyle.ButtonFontSize,
-        IsAntialias = true,
-        TextAlign = SKTextAlign.Left,
-        Typeface = MenuStyle.TypefaceBold
-    };
-
     /// <summary>Selection is shown as a full-height accent line down the row's left edge — same
     /// convention/color as <see cref="ScenarioSelect.ScenarioSelectScreen"/>'s row selection.</summary>
     private static readonly SKPaint _selectedRowIndicator = new()
@@ -127,11 +118,6 @@ public sealed class LoadScreen : IScreen
         Style = SKPaintStyle.Stroke,
         StrokeWidth = 2f
     };
-
-    private const float ButtonIconPadding = 6f;
-
-    private static readonly SKBitmap? _closeIcon = LoadImage("Images/UI/GameLoadScreen/common.close.png");
-    private static readonly SKBitmap? _closeIconActive = LoadImage("Images/UI/GameLoadScreen/common.close.active.png");
 
     private static SKBitmap? LoadImage(string path)
     {
@@ -262,17 +248,18 @@ public sealed class LoadScreen : IScreen
         else
             MenuStyle.DrawPanel(canvas, panelRect);
 
-        float cx = pl + LoadLayout.PanelWidth / 2f;
-        canvas.DrawText("LOAD GAME", cx, pt + LoadLayout.TitleY, _titleTextPaint);
+        var titleBarRect = new SKRect(pl, pt + LoadLayout.TitleBarY, pl + LoadLayout.PanelWidth, pt + LoadLayout.TitleBarY + LoadLayout.TitleBarHeight);
+        canvas.DrawText("LOAD GAME", titleBarRect.MidX, MenuStyle.VerticalCenterBaseline(titleBarRect, _titleTextPaint), _titleTextPaint);
 
         ImagePanel.Draw(canvas, CombinedRect(pl, pt, LoadLayout.ContentPanelRect()));
+        ImagePanel.Draw(canvas, CombinedRect(pl, pt, LoadLayout.ActionPanelRect()));
 
         DrawSlotList(canvas, pl, pt);
         if (_slots.Count > LoadLayout.VisibleRows)
             DrawScrollbar(canvas, pl, pt);
 
         DrawActionButtons(canvas, pl, pt);
-        DrawIconTextButton(canvas, CombinedRect(pl, pt, LoadLayout.CloseButtonRect()), "CLOSE", LoadZone.Close, _closeIcon, _closeIconActive);
+        DrawCloseButton(canvas, pl, pt);
     }
 
     /// <summary>Only rendered when the slot list overflows <see cref="LoadLayout.VisibleRows"/>; scrolling itself works via <see cref="OnMouseWheel"/> regardless.</summary>
@@ -335,35 +322,12 @@ public sealed class LoadScreen : IScreen
         ImageButton.Draw(canvas, loadRect, "LOAD", loadState, MenuStyle.TypefaceHumaroid);
     }
 
-    /// <summary>
-    /// Draws the CLOSE button combining the previous fill/border/label chrome with its
-    /// <c>Images/UI/GameLoadScreen</c> icon to the left of the label: fill+border swap on
-    /// hover, and the icon swaps to its "active" bitmap (baked-in orange border) on that
-    /// same hover. Unaffected by the LOAD/DELETE redesign — CLOSE was never per-row.
-    /// </summary>
-    private void DrawIconTextButton(
-        SKCanvas canvas, SKRect rect, string text, LoadZone zone,
-        SKBitmap? iconNormal, SKBitmap? iconActive)
+    /// <summary>CLOSE — a normal bottom-of-window button, same nine-patch style as LOAD/DELETE.</summary>
+    private void DrawCloseButton(SKCanvas canvas, float pl, float pt)
     {
-        bool isHovered = _hoveredZone == zone;
-
-        canvas.DrawRect(rect, isHovered ? MenuStyle.ButtonFillHover : MenuStyle.ButtonFillNormal);
-        canvas.DrawRect(rect, MenuStyle.ButtonBorder);
-
-        var icon = isHovered ? iconActive : iconNormal;
-        float iconSize = icon is not null ? rect.Height - ButtonIconPadding * 2f : 0f;
-        float gap = icon is not null ? ButtonIconPadding : 0f;
-        float textX = rect.Left + ButtonIconPadding + iconSize + gap;
-
-        if (icon is not null)
-        {
-            var iconRect = new SKRect(rect.Left + ButtonIconPadding, rect.MidY - iconSize / 2f,
-                rect.Left + ButtonIconPadding + iconSize, rect.MidY + iconSize / 2f);
-            canvas.DrawBitmap(icon, iconRect);
-        }
-
-        float textY = rect.MidY + _buttonTextPaint.TextSize / 3f;
-        canvas.DrawText(text, textX, textY, _buttonTextPaint);
+        var rect = CombinedRect(pl, pt, LoadLayout.CloseButtonRect());
+        var state = _hoveredZone == LoadZone.Close ? ButtonState.Hovered : ButtonState.Normal;
+        ImageButton.Draw(canvas, rect, "CLOSE", state, MenuStyle.TypefaceHumaroid);
     }
 
     private static SKRect CombinedRect(float panelLeft, float panelTop, (float X, float Y, float W, float H) local) =>

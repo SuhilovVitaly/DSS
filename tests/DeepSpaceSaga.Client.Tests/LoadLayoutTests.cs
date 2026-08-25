@@ -4,8 +4,9 @@ namespace DeepSpaceSaga.Client.Tests;
 
 /// <summary>
 /// Pure hit-test geometry tests for <see cref="LoadLayout"/> — no SKCanvas, no LoadScreen.
-/// Mirrors <see cref="ScenarioSelectLayoutTests"/> after the redesign that replaced
-/// per-row LOAD/DELETE buttons with selectable rows plus a single LOAD/DELETE pair.
+/// Mirrors <see cref="ScenarioSelectLayoutTests"/>: a left content panel (selectable rows)
+/// sits beside a right action panel (LOAD/DELETE, stacked vertically), with CLOSE on its
+/// own at the bottom of the window, below both panels.
 /// </summary>
 public class LoadLayoutTests
 {
@@ -68,34 +69,65 @@ public class LoadLayoutTests
     }
 
     [Fact]
-    public void LoadButton_sits_right_of_DeleteButton()
-    {
-        var delete = LoadLayout.DeleteButtonRect();
-        var load = LoadLayout.LoadButtonRect();
-        Assert.True(load.X >= delete.X + delete.W);
-    }
-
-    [Fact]
     public void PanelLeftAndTop_center_the_panel()
     {
         Assert.Equal((ScreenWidth - LoadLayout.PanelWidth) / 2f, LoadLayout.PanelLeft(ScreenWidth));
         Assert.Equal((ScreenHeight - LoadLayout.PanelHeight) / 2f, LoadLayout.PanelTop(ScreenHeight));
     }
 
+    // --- Content panel / action panel / row list geometry ---
+
     [Fact]
-    public void ContentPanel_sits_above_the_action_buttons_with_no_overlap()
+    public void ActionPanel_sits_immediately_right_of_the_content_panel()
     {
         var content = LoadLayout.ContentPanelRect();
-        var delete = LoadLayout.DeleteButtonRect();
-        Assert.True(content.Y + content.H <= delete.Y + 0.01f);
+        var action = LoadLayout.ActionPanelRect();
+        Assert.Equal(content.X + content.W, action.X, precision: 3);
+        Assert.Equal(content.Y, action.Y);
+        Assert.Equal(content.H, action.H);
     }
 
     [Fact]
     public void RowList_fits_within_the_content_panel()
     {
         var content = LoadLayout.ContentPanelRect();
+        var firstRow = LoadLayout.RowRect(0);
         var lastRow = LoadLayout.RowRect(LoadLayout.VisibleRows - 1);
+
+        Assert.True(firstRow.X >= content.X);
+        Assert.True(firstRow.Y >= content.Y);
         Assert.True(lastRow.Y + lastRow.H <= content.Y + content.H + 0.01f);
+    }
+
+    [Fact]
+    public void LoadButton_sits_above_DeleteButton_within_the_action_panel()
+    {
+        var action = LoadLayout.ActionPanelRect();
+        var load = LoadLayout.LoadButtonRect();
+        var delete = LoadLayout.DeleteButtonRect();
+
+        Assert.True(load.Y + load.H <= delete.Y + 0.01f);
+        Assert.True(load.X >= action.X && load.X + load.W <= action.X + action.W + 0.01f);
+        Assert.True(delete.X >= action.X && delete.X + delete.W <= action.X + action.W + 0.01f);
+        Assert.True(load.Y >= action.Y && delete.Y + delete.H <= action.Y + action.H + 0.01f);
+    }
+
+    [Fact]
+    public void CloseButton_sits_below_both_panels_with_no_overlap()
+    {
+        var content = LoadLayout.ContentPanelRect();
+        var action = LoadLayout.ActionPanelRect();
+        var close = LoadLayout.CloseButtonRect();
+
+        Assert.True(content.Y + content.H <= close.Y + 0.01f);
+        Assert.True(action.Y + action.H <= close.Y + 0.01f);
+    }
+
+    [Fact]
+    public void CloseButton_is_horizontally_centered_in_the_panel()
+    {
+        var close = LoadLayout.CloseButtonRect();
+        Assert.Equal((LoadLayout.PanelWidth - close.W) / 2f, close.X, precision: 3);
     }
 
     // --- Scrollbar geometry (shown only when slots.Count > VisibleRows) ---
@@ -134,10 +166,13 @@ public class LoadLayoutTests
     }
 
     [Fact]
-    public void ScrollbarTrack_does_not_overlap_the_row_list()
+    public void ScrollbarTrack_does_not_overlap_the_row_list_or_the_action_panel()
     {
         var track = LoadLayout.ScrollbarTrackRect();
         var row = LoadLayout.RowRect(0);
+        var action = LoadLayout.ActionPanelRect();
+
         Assert.True(track.X >= row.X + row.W);
+        Assert.True(track.X + track.W <= action.X + 0.01f);
     }
 }
