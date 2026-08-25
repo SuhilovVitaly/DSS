@@ -1,4 +1,3 @@
-using DeepSpaceSaga.Client.UI.Assets;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Controls;
@@ -6,33 +5,18 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 /// <summary>Reusable Xenon-style window frame. Interactive rectangles stay owned by the screen layout.</summary>
 public static class XenonWindowChrome
 {
-    internal const string ShellPath = "Images/UI/Themes/Xenon/Window/window-shell.png";
-    private static readonly SKBitmap? Shell = UiAssetLoader.LoadBitmap(ShellPath);
-
-    internal static bool HasChromeAssets => Shell is not null;
+    internal static bool HasChromeAssets => GenericWindowTypeA.HasAssets;
 
     /// <summary>Forces bitmap decoding before the render loop.</summary>
-    public static void Preload() { }
+    public static void Preload() => GenericWindowTypeA.Preload();
 
     public static void Draw(SKCanvas canvas, SKRect bounds, SKRect headerRect,
         SKRect footerRect, string title, string subtitle, string footerLeft, string footerRight)
     {
-        if (HasChromeAssets)
-        {
-            NinePatch.Draw(canvas, Shell!, bounds, XenonStyle.WindowSliceInset);
-        }
-        else
-        {
-            DrawFallbackFrame(canvas, bounds);
-        }
+        GenericWindowTypeA.Draw(canvas, bounds);
 
         DrawHeaderText(canvas, headerRect, title, subtitle);
         DrawFooter(canvas, footerRect, footerLeft, footerRight);
-    }
-
-    private static void DrawFallbackFrame(SKCanvas canvas, SKRect bounds)
-    {
-        MenuStyle.DrawPanel(canvas, bounds);
     }
 
     private static void DrawHeaderText(SKCanvas canvas, SKRect rect, string title, string subtitle)
