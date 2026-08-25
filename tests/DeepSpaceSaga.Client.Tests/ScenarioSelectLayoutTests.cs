@@ -83,6 +83,25 @@ public class ScenarioSelectLayoutTests
     }
 
     [Fact]
+    public void Panels_use_the_requested_offsets_and_sizes()
+    {
+        Assert.Equal(40f, ScenarioSelectLayout.ContentPanelX);
+        Assert.Equal(125f, ScenarioSelectLayout.ContentPanelY);
+        Assert.Equal(490f, ScenarioSelectLayout.ActionPanelX);
+        Assert.Equal(125f, ScenarioSelectLayout.ActionPanelY);
+        Assert.Equal(370f, ScenarioSelectLayout.ActionPanelWidth);
+    }
+
+    [Fact]
+    public void Panels_leave_twenty_pixels_below_them()
+    {
+        Assert.Equal(20f, ScenarioSelectLayout.PanelHeight
+            - ScenarioSelectLayout.ContentPanelY - ScenarioSelectLayout.ContentPanelHeight);
+        Assert.Equal(20f, ScenarioSelectLayout.PanelHeight
+            - ScenarioSelectLayout.ActionPanelY - ScenarioSelectLayout.ActionPanelHeight);
+    }
+
+    [Fact]
     public void PlayButton_sits_right_of_BackButton()
     {
         var back = ScenarioSelectLayout.BackButtonRect();

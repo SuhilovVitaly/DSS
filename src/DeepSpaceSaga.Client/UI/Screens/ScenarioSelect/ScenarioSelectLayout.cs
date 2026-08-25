@@ -45,16 +45,16 @@ public static class ScenarioSelectLayout
     public const float PanelWidth = 900f;
     public const float PanelHeight = 620f;
 
-    /// <summary>Left panel: the nine-sliced scenario list (x=50, y=145, 450 wide, 395 tall).</summary>
-    public const float ContentPanelX = 50f;
-    public const float ContentPanelY = 145f;
+    /// <summary>Left panel: the nine-sliced scenario list (x=40, y=125, 450 wide, 475 tall).</summary>
+    public const float ContentPanelX = 40f;
+    public const float ContentPanelY = 125f;
     public const float ContentPanelWidth = 450f;
-    public const float ContentPanelHeight = 395f;
+    public const float ContentPanelHeight = 475f;
 
-    /// <summary>Right panel: the nine-sliced action panel (x=500, y=145, 350 wide, 395 tall).</summary>
-    public const float ActionPanelX = 500f;
-    public const float ActionPanelY = 145f;
-    public const float ActionPanelWidth = 350f;
+    /// <summary>Right panel: the nine-sliced action panel (x=490, y=125, 370 wide, 475 tall).</summary>
+    public const float ActionPanelX = 490f;
+    public const float ActionPanelY = 125f;
+    public const float ActionPanelWidth = 370f;
     public const float ActionPanelHeight = ContentPanelHeight;
 
     /// <summary>Breathing room between a panel's border artwork and the content it holds.</summary>
