@@ -16,6 +16,7 @@ public static class XenonStyle
     public static readonly SKColor Cyan = new(54, 194, 232);
     public static readonly SKColor CyanBright = new(166, 238, 255);
     public static readonly SKColor CyanDim = new(35, 104, 132);
+    public static readonly SKColor OrangeAccent = new(0xFF, 0x84, 0x04);
     public static readonly SKColor DisabledText = new(91, 119, 135);
 
     public static readonly SKTypeface TypefaceRegular =

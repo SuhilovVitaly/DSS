@@ -27,7 +27,9 @@ public static class GenericButtonTypeA
     /// <summary>Forces bitmap decoding before the render loop.</summary>
     public static void Preload() { }
 
-    public static void Draw(SKCanvas canvas, SKRect bounds, string text, ButtonState state)
+    public static void Draw(
+        SKCanvas canvas, SKRect bounds, string text, ButtonState state,
+        SKColor? textColorOverride = null)
     {
         if (HasAssets)
         {
@@ -66,12 +68,14 @@ public static class GenericButtonTypeA
         float maxTextWidth = Math.Max(1f, 2f * (bounds.MidX - markerClearanceX));
         float textWidth = textPaint.MeasureText(text);
 
-        if (textWidth > maxTextWidth)
+        if (textWidth > maxTextWidth || textColorOverride.HasValue)
         {
             using var fittedPaint = new SKPaint
             {
-                Color = textPaint.Color,
-                TextSize = textPaint.TextSize * maxTextWidth / textWidth,
+                Color = textColorOverride ?? textPaint.Color,
+                TextSize = textWidth > maxTextWidth
+                    ? textPaint.TextSize * maxTextWidth / textWidth
+                    : textPaint.TextSize,
                 IsAntialias = textPaint.IsAntialias,
                 TextAlign = textPaint.TextAlign,
                 Typeface = textPaint.Typeface

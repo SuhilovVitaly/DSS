@@ -51,4 +51,50 @@ public class SaveScreenVisualTests
         Assert.Equal(close.X, SaveLayout.PanelWidth - (save.X + save.W));
     }
 
+    [Fact]
+    public void Overwrite_label_uses_the_Xenon_orange_accent_but_NewSave_does_not()
+    {
+        using var bitmap = new SKBitmap(1280, 720);
+        using var canvas = new SKCanvas(bitmap);
+        var slots = new[]
+        {
+            new SaveSlotInfo("slot-1", "Existing Save", DateTime.UtcNow)
+        };
+        var screen = new SaveScreen(() => slots, _ => { }, _ => { });
+        var panel = SaveLayout.PanelRect(bitmap.Width, bitmap.Height);
+        var localButton = SaveLayout.SaveButtonRect();
+        var button = new SKRect(
+            panel.Left + localButton.X, panel.Top + localButton.Y,
+            panel.Left + localButton.X + localButton.W,
+            panel.Top + localButton.Y + localButton.H);
+
+        bitmap.Erase(SKColors.Transparent);
+        screen.Render(canvas, bitmap.Width, bitmap.Height);
+        canvas.Flush();
+        Assert.False(ContainsColor(bitmap, button, XenonStyle.OrangeAccent));
+
+        var row = SaveLayout.RowRect(0);
+        screen.OnMouseDown(
+            panel.Left + row.X + row.W / 2f,
+            panel.Top + row.Y + row.H / 2f);
+        bitmap.Erase(SKColors.Transparent);
+        screen.Render(canvas, bitmap.Width, bitmap.Height);
+        canvas.Flush();
+
+        Assert.Equal("OVERWRITE", screen.SaveActionLabel);
+        Assert.True(ContainsColor(bitmap, button, XenonStyle.OrangeAccent));
+    }
+
+    private static bool ContainsColor(SKBitmap bitmap, SKRect bounds, SKColor color)
+    {
+        for (int y = (int)bounds.Top; y < (int)bounds.Bottom; y++)
+        for (int x = (int)bounds.Left; x < (int)bounds.Right; x++)
+        {
+            if (bitmap.GetPixel(x, y) == color)
+                return true;
+        }
+
+        return false;
+    }
+
 }

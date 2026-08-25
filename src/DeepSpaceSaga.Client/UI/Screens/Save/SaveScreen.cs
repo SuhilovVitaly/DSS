@@ -76,7 +76,7 @@ public sealed class SaveScreen : IScreen
 
     private static readonly SKPaint _selectedRowIndicator = new()
     {
-        Color = new SKColor(0xFF, 0x84, 0x04),
+        Color = XenonStyle.OrangeAccent,
         Style = SKPaintStyle.Stroke,
         StrokeWidth = 2f
     };
@@ -303,6 +303,7 @@ public sealed class SaveScreen : IScreen
         bool hasSelection = _selectedIndex >= 0 && _selectedIndex < _slots.Count;
         bool isConfirming = hasSelection && _deleteConfirmIndex == _selectedIndex
             && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
+        bool isOverwrite = FindMatchingSlot() is not null;
 
         GenericButtonTypeA.Draw(canvas,
             CombinedRect(panelLeft, panelTop, SaveLayout.CloseButtonRect()),
@@ -314,7 +315,8 @@ public sealed class SaveScreen : IScreen
                 : isConfirming ? ButtonState.Hovered : StateFor(SaveZone.Delete));
         GenericButtonTypeA.Draw(canvas,
             CombinedRect(panelLeft, panelTop, SaveLayout.SaveButtonRect()),
-            SaveActionLabel, StateFor(SaveZone.Save));
+            SaveActionLabel, StateFor(SaveZone.Save),
+            isOverwrite ? XenonStyle.OrangeAccent : null);
     }
 
     private ButtonState StateFor(SaveZone zone) =>
