@@ -18,6 +18,7 @@ public sealed class CommandsPanel
     private const float XenonBodySliceInset = 12f;
     private const float XenonButtonSliceInset = 8f;
     private const float ModuleTitleOffsetY = -4f;
+    private const float CaptionTitleFontSize = 16f;
 
     public const float PanelWidth = 360f;
     public const float CaptionHeight = 32f;
@@ -185,9 +186,20 @@ public sealed class CommandsPanel
 
         var typeface = XenonStyle.TypefaceRegular;
 
-        _panelBgPaint = new SKPaint { Color = new SKColor(2, 16, 24), Style = SKPaintStyle.Fill };
+        _panelBgPaint = new SKPaint
+        {
+            Color = new SKColor(2, 16, 24),
+            Style = SKPaintStyle.Fill,
+            BlendMode = SKBlendMode.Src
+        };
         _panelBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
-        _titlePaint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 13f, IsAntialias = true, Typeface = typeface };
+        _titlePaint = new SKPaint
+        {
+            Color = XenonStyle.CyanBright,
+            TextSize = CaptionTitleFontSize,
+            IsAntialias = true,
+            Typeface = XenonStyle.TypefaceSemibold
+        };
 
         _btnNormalPaint = new SKPaint { Color = new SKColor(35, 35, 35, 220), Style = SKPaintStyle.Fill };
         _btnHoverPaint = new SKPaint { Color = new SKColor(55, 55, 55, 230), Style = SKPaintStyle.Fill };
@@ -584,8 +596,6 @@ public sealed class CommandsPanel
     {
         var (label, button) = _commandButtons[index];
 
-        DrawCommandButtonChrome(canvas, index, button);
-
         var iconPair = _commandIcons.GetValueOrDefault(button.CommandTypeId);
         var icon = iconPair.Normal;
         if (icon is not null)
@@ -610,6 +620,11 @@ public sealed class CommandsPanel
             canvas.DrawBitmap(icon, iconRect, _commandBtnIconPaint);
             return;
         }
+
+        // The wide Xenon button frame is only a fallback for commands without a
+        // dedicated square icon. Drawing it beneath icon assets leaves visible
+        // rectangular wings on both sides of the square.
+        DrawCommandButtonChrome(canvas, index, button);
 
         SKPaint fill;
         if (button.Enabled)
