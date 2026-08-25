@@ -9,7 +9,7 @@ public class XenonWindowChromeTests
     public void Production_chrome_assets_are_loaded()
     {
         Assert.True(GenericWindowTypeA.HasAssets);
-        Assert.True(XenonMenuButton.HasButtonAssets);
+        Assert.True(GenericButtonTypeA.HasAssets);
     }
 
     [Fact]

@@ -25,8 +25,9 @@
 
 Внешняя оболочка Main Menu построена через `GenericWindowTypeA`: navy-фон,
 cyan-рамка и скошенные углы масштабируются под `MenuLayout.PanelRect`. Заголовок,
-версия и кнопки остаются собственными UI-элементами `MainMenuScreen` и не входят в
-Generic Type A.
+версия и действия остаются собственными UI-элементами `MainMenuScreen`. Кнопки
+оформлены через переиспользуемый `GenericButtonTypeA` — тот же тип используется в
+GameMenu и поддерживает состояния Normal, Hovered, Pressed и Disabled.
 
 ## Примечания
 

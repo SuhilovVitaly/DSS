@@ -8,11 +8,11 @@ public class UiAssetLoaderTests
     public static TheoryData<string> ProductionAssets => new()
     {
         GenericWindowTypeA.ShellPath,
-        XenonMenuButton.NormalPath,
-        XenonMenuButton.HoverPath,
-        XenonMenuButton.MarkerPath,
-        XenonMenuButton.MarkerActivePath,
-        XenonMenuButton.MarkerDisabledPath
+        GenericButtonTypeA.NormalPath,
+        GenericButtonTypeA.HoverPath,
+        GenericButtonTypeA.MarkerPath,
+        GenericButtonTypeA.MarkerActivePath,
+        GenericButtonTypeA.MarkerDisabledPath
     };
 
     [Theory]
@@ -27,8 +27,8 @@ public class UiAssetLoaderTests
     [Fact]
     public void Forward_and_back_slashes_share_the_cached_bitmap()
     {
-        var forward = UiAssetLoader.LoadBitmap(XenonMenuButton.NormalPath);
-        var backward = UiAssetLoader.LoadBitmap(XenonMenuButton.NormalPath.Replace('/', '\\'));
+        var forward = UiAssetLoader.LoadBitmap(GenericButtonTypeA.NormalPath);
+        var backward = UiAssetLoader.LoadBitmap(GenericButtonTypeA.NormalPath.Replace('/', '\\'));
         Assert.Same(forward, backward);
     }
 

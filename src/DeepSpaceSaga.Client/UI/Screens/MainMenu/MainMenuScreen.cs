@@ -38,6 +38,7 @@ public sealed class MainMenuScreen : IScreen
     public MainMenuScreen()
     {
         GenericWindowTypeA.Preload();
+        GenericButtonTypeA.Preload();
     }
 
     public void OnActivated()
@@ -123,6 +124,6 @@ public sealed class MainMenuScreen : IScreen
         float by = panelTop + buttonLocalY;
         var rect = new SKRect(bx, by, bx + MenuLayout.ButtonWidth, by + MenuLayout.ButtonHeight);
 
-        ImageButton.Draw(canvas, rect, text, GetState(id, active: true), MenuStyle.TypefaceHumaroid, MenuStyle.MainMenuButtonFontSize);
+        GenericButtonTypeA.Draw(canvas, rect, text, GetState(id, active: true));
     }
 }

@@ -48,7 +48,7 @@ public class GameMenuVisualTests
             using var bitmap = new SKBitmap(400, 72);
             bitmap.Erase(SKColors.Transparent);
             using var canvas = new SKCanvas(bitmap);
-            XenonMenuButton.Draw(canvas, new SKRect(8, 8, 392, 64), "ПРОДОЛЖИТЬ", state);
+            GenericButtonTypeA.Draw(canvas, new SKRect(8, 8, 392, 64), "ПРОДОЛЖИТЬ", state);
             canvas.Flush();
 
             uint signature = 2166136261;

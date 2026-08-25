@@ -23,7 +23,7 @@
 `SKRect` и рисует только navy-фон, cyan-рамку и скошенные углы. Заголовки, подписи,
 разделители, кнопки и другие UI-элементы в Generic Type A не входят и определяются
 конкретным экраном. GameMenu добавляет заголовок, статус и footer через
-`XenonWindowChrome`, а кнопки и ромбические маркеры — через `XenonMenuButton`.
+`XenonWindowChrome`, а кнопки и ромбические маркеры — через `GenericButtonTypeA`.
 Текст не встроен в PNG и берётся из `Data/Locale/English.json` или
 `Data/Locale/Russian.json`. Ассеты загружаются один раз относительно
 `AppContext.BaseDirectory`; при их отсутствии применяется безопасный Skia fallback.

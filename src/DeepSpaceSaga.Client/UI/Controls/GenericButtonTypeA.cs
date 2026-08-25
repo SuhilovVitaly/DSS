@@ -3,8 +3,12 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Controls;
 
-/// <summary>Nine-sliced Xenon-style menu action with a state-specific diamond marker.</summary>
-public static class XenonMenuButton
+/// <summary>
+/// Generic Type A action button. Draws a scalable cyan/navy shell, a diamond marker,
+/// centered caller-provided text, and all standard button states. It owns no hit testing
+/// or action semantics; those remain with the consuming screen.
+/// </summary>
+public static class GenericButtonTypeA
 {
     internal const string NormalPath = "Images/UI/Themes/Xenon/Buttons/menu-button.png";
     internal const string HoverPath = "Images/UI/Themes/Xenon/Buttons/menu-button-hover.png";
@@ -18,14 +22,14 @@ public static class XenonMenuButton
     private static readonly SKBitmap? MarkerActive = UiAssetLoader.LoadBitmap(MarkerActivePath);
     private static readonly SKBitmap? MarkerDisabled = UiAssetLoader.LoadBitmap(MarkerDisabledPath);
 
-    internal static bool HasButtonAssets => Normal is not null && Hover is not null;
+    internal static bool HasAssets => Normal is not null && Hover is not null;
 
     /// <summary>Forces bitmap decoding before the render loop.</summary>
     public static void Preload() { }
 
     public static void Draw(SKCanvas canvas, SKRect bounds, string text, ButtonState state)
     {
-        if (HasButtonAssets)
+        if (HasAssets)
         {
             var image = state is ButtonState.Hovered or ButtonState.Pressed ? Hover! : Normal!;
             var imagePaint = state switch
@@ -42,7 +46,7 @@ public static class XenonMenuButton
         }
 
         DrawMarker(canvas, bounds, state);
-        if (!HasButtonAssets)
+        if (!HasAssets)
             return;
 
         var textPaint = state switch
@@ -63,7 +67,15 @@ public static class XenonMenuButton
             ButtonState.Disabled => MarkerDisabled,
             _ => Marker
         };
-        var rect = new SKRect(bounds.Left + 24f, bounds.MidY - 12f, bounds.Left + 48f, bounds.MidY + 12f);
+
+        float markerSize = Math.Min(24f, Math.Max(8f, bounds.Height - 16f));
+        float leftInset = Math.Min(24f, Math.Max(8f, bounds.Width * 0.08f));
+        var rect = new SKRect(
+            bounds.Left + leftInset,
+            bounds.MidY - markerSize / 2f,
+            bounds.Left + leftInset + markerSize,
+            bounds.MidY + markerSize / 2f);
+
         if (marker is not null)
         {
             var paint = state == ButtonState.Pressed ? XenonStyle.PressedImagePaint : null;

@@ -9,6 +9,21 @@ namespace DeepSpaceSaga.Client.Tests;
 /// </summary>
 public class MainMenuScreenTests
 {
+    [Theory]
+    [InlineData("English")]
+    [InlineData("Russian")]
+    public void Localized_labels_fit_the_Type_A_text_area(string language)
+    {
+        var strings = Localization.LoadLocaleFile(language);
+        Assert.NotNull(strings);
+
+        foreach (var key in new[] { "NewGame", "Load", "Settings", "Exit" })
+        {
+            Assert.True(XenonStyle.ButtonText.MeasureText(strings![$"MainMenu.{key}"])
+                <= MenuLayout.ButtonWidth - 112f);
+        }
+    }
+
     [Fact]
     public void Generic_type_A_shell_asset_is_loaded()
     {

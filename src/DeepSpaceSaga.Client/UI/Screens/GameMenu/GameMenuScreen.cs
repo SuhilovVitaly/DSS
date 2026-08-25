@@ -28,7 +28,7 @@ public sealed class GameMenuScreen : IScreen
     {
         XenonStyle.Preload();
         XenonWindowChrome.Preload();
-        XenonMenuButton.Preload();
+        GenericButtonTypeA.Preload();
 
         _title = GameInfo.Title;
         _version = GameInfo.Version;
@@ -124,6 +124,6 @@ public sealed class GameMenuScreen : IScreen
 
     private void DrawButton(SKCanvas canvas, int width, int height, string text, GameMenuButton id)
     {
-        XenonMenuButton.Draw(canvas, GameMenuLayout.ButtonRect(id, width, height), text, GetState(id));
+        GenericButtonTypeA.Draw(canvas, GameMenuLayout.ButtonRect(id, width, height), text, GetState(id));
     }
 }
