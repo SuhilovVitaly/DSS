@@ -29,6 +29,13 @@
 - Экран не создаёт доменные объекты самостоятельно и не читает scenario JSON напрямую: список получает через `Func<IReadOnlyList<ScenarioInfo>>`, переданный конструктором (в проде — `IGameSessionFactory.ListScenarios`), а выбор передаёт наверх через `ScreenEvent.ScenarioSelected` + `LastSelectedScenarioPath`, по аналогии с `LoadScreen`/`LoadSlotRequested`.
 - Загрузка сессии по-прежнему идёт через `IGameSessionFactory`/session boundary; `ScenarioSelectScreen` сам не создаёт `IGameSessionConnection`.
 
+## Оформление
+
+Внешняя оболочка экрана построена через `GenericWindowTypeA`. Кнопки `BACK` и `PLAY`
+используют `GenericButtonTypeA`, включая disabled-состояние `PLAY`, когда сценарий не
+выбран. Список сценариев и правая информационная панель остаются самостоятельными
+внутренними UI-элементами и не входят в Generic Type A.
+
 ## Примечания
 
 `ScenarioSelectScreen` не является игровым экраном и не должен напрямую зависеть от `Engine`.

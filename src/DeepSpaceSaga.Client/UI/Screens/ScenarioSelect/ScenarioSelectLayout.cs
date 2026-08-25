@@ -1,3 +1,5 @@
+using SkiaSharp;
+
 namespace DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 
 /// <summary>Which part of the ScenarioSelect screen a click landed on.</summary>
@@ -104,7 +106,7 @@ public static class ScenarioSelectLayout
 
     public const float InfoSeparatorStrokeWidth = 2f;
 
-    public const float ActionButtonWidth = 140f;
+    public const float ActionButtonWidth = 160f;
     public const float ActionButtonHeight = 44f;
     public const float ActionButtonGap = 20f;
     public const float ActionButtonBottomMargin = 24f;
@@ -115,6 +117,13 @@ public static class ScenarioSelectLayout
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
+
+    public static SKRect PanelRect(int screenWidth, int screenHeight)
+    {
+        float left = PanelLeft(screenWidth);
+        float top = PanelTop(screenHeight);
+        return new SKRect(left, top, left + PanelWidth, top + PanelHeight);
+    }
 
     public static float ListLeft => ContentPanelX + ContentPadding;
     public static float ListWidth => ContentPanelWidth - 2 * ContentPadding;
