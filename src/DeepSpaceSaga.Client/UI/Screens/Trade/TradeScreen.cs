@@ -77,7 +77,16 @@ public sealed class TradeScreen : IScreen
     /// <summary>Currently selected station item for Buy/Sell — null means "nothing selected yet".</summary>
     private string? _selectedItemTypeId;
 
-    /// <summary>Quantity for the currently selected Buy/Sell transaction. Reset to 1 on selection change/Cancel.</summary>
+    /// <summary>
+    /// Quantity for the currently selected Buy/Sell transaction. On selection change (station
+    /// row, cargo row, or <see cref="OnActivated"/>'s preselect) reset to exactly one sell
+    /// package for that item (<see cref="ResolveQuantityStep"/> — 10 for Good, 100 for
+    /// Resource) rather than a hardcoded 1: a bare 1 is never a multiple of the package size,
+    /// so it would always be rejected by the Engine's authoritative Sell package-size check
+    /// (CommandReasonCodes.InvalidPackageQuantity) regardless of how many times the stepper is
+    /// clicked afterwards — Buy has no package restriction, so this floor never breaks Buy,
+    /// it only narrows the reachable minimum. Reset to 1 on Cancel (no selection).
+    /// </summary>
     private long _quantity = 1;
 
     /// <summary>Quantity for Refuel — independent of <see cref="_quantity"/> (see type doc comment).</summary>
@@ -169,7 +178,14 @@ public sealed class TradeScreen : IScreen
         switch (hit)
         {
             case TradeButton.QuantityMinus:
-                _quantity = Math.Max(1, _quantity - ResolveQuantityStep(trade, _selectedItemTypeId));
+                {
+                    // Floor is one sell package (§59), not a bare 1 — Minus must never leave
+                    // _quantity at a value the authoritative Sell package-size check would
+                    // reject (InvalidPackageQuantity). Harmless for Buy, which has no package
+                    // restriction and accepts any package-multiple quantity too.
+                    long step = ResolveQuantityStep(trade, _selectedItemTypeId);
+                    _quantity = Math.Max(step, _quantity - step);
+                }
                 return ScreenEvent.None;
 
             case TradeButton.QuantityPlus:
