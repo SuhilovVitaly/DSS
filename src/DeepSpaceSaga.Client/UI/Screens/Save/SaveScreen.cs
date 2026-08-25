@@ -7,18 +7,16 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Save;
 
 /// <summary>
-/// Modal overlay listing save slots, with New Save / Overwrite / two-stage DELETE icon
-/// actions (Images/UI/GameSaveScreen) and a CLOSE icon in the panel's top-right corner.
-/// The name-entry SAVE/CANCEL row (shown after New Save is clicked) has no icon assets
-/// and stays text-based. Mirrors <see cref="Settings.SettingsScreen"/>'s dim-background
-/// overlay pattern.
+/// Generic Type A modal overlay listing selectable save slots. CLOSE, DELETE, OVERWRITE,
+/// and NEW SAVE share the bottom action row; New Save mode replaces them with
+/// CLOSE/CANCEL/SAVE while the name field is shown inside the content panel.
 /// <see cref="saveSlot"/>/<see cref="deleteSlot"/> are injected by the caller (SkiaWindow),
 /// bound to <c>_session.SaveAsync</c>/<c>_sessionFactory.DeleteSaveSlot</c> — this class
 /// has no knowledge of the session/factory types, keeping it independently testable.
 /// </summary>
 public sealed class SaveScreen : IScreen
 {
-    // Shared by the two-stage per-row DELETE confirm and the New Save duplicate-name
+    // Shared by the two-stage DELETE confirm and the New Save duplicate-name
     // overwrite confirm below — both require a second click within this window.
     private const long ConfirmWindowMs = 3000;
 
@@ -30,6 +28,7 @@ public sealed class SaveScreen : IScreen
 
     private IReadOnlyList<SaveSlotInfo> _slots = Array.Empty<SaveSlotInfo>();
     private int _scrollOffset;
+    private int _selectedIndex = -1;
     private bool _isNewSaveActive;
     private string? _inlineError;
 
@@ -54,6 +53,15 @@ public sealed class SaveScreen : IScreen
         Typeface = MenuStyle.TypefaceRegular
     };
 
+    private static readonly SKPaint _titleTextPaint = new()
+    {
+        Color = MenuStyle.ColorText,
+        TextSize = MenuStyle.TitleFontSize,
+        IsAntialias = true,
+        TextAlign = SKTextAlign.Center,
+        Typeface = MenuStyle.TypefaceHumaroid
+    };
+
     private static readonly SKPaint _rowTextPaint = new()
     {
         Color = MenuStyle.ColorText,
@@ -72,35 +80,23 @@ public sealed class SaveScreen : IScreen
         Typeface = MenuStyle.TypefaceRegular
     };
 
-    private static readonly SKPaint _buttonTextPaint = new()
+    private static readonly SKPaint _selectedRowIndicator = new()
     {
-        Color = MenuStyle.ColorText,
-        TextSize = MenuStyle.ButtonFontSize,
-        IsAntialias = true,
-        TextAlign = SKTextAlign.Left,
-        Typeface = MenuStyle.TypefaceBold
+        Color = new SKColor(0xFF, 0x84, 0x04),
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 2f
     };
 
-    private const float ButtonIconPadding = 6f;
-
-    private static readonly SKBitmap? _closeIcon = LoadImage("Images/UI/GameSaveScreen/common.close.png");
-    private static readonly SKBitmap? _closeIconActive = LoadImage("Images/UI/GameSaveScreen/common.close.active.png");
-    private static readonly SKBitmap? _newSaveIcon = LoadImage("Images/UI/GameSaveScreen/save.new.png");
-    private static readonly SKBitmap? _newSaveIconActive = LoadImage("Images/UI/GameSaveScreen/save.new.active.png");
-    private static readonly SKBitmap? _overwriteIcon = LoadImage("Images/UI/GameSaveScreen/save.overwrite.png");
-    private static readonly SKBitmap? _overwriteIconActive = LoadImage("Images/UI/GameSaveScreen/save.overwrite.active.png");
-    private static readonly SKBitmap? _deleteIcon = LoadImage("Images/UI/GameSaveScreen/save.delete.png");
-    private static readonly SKBitmap? _deleteIconActive = LoadImage("Images/UI/GameSaveScreen/save.delete.active.png");
-
-    private static SKBitmap? LoadImage(string path)
+    private static readonly SKPaint _hoveredRowBorder = new()
     {
-        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
-        catch { return null; }
-    }
+        Color = MenuStyle.ColorTextDim,
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 2f
+    };
 
     /// <param name="listSlots">Enumerates every save slot on disk. Called at construction and after every mutating action.</param>
-    /// <param name="saveSlot">Create/overwrite a slot by id (New Save and per-row Overwrite).</param>
-    /// <param name="deleteSlot">Delete a slot by id (second click of the two-stage per-row Delete button).</param>
+    /// <param name="saveSlot">Create a slot by name or overwrite the selected slot by id.</param>
+    /// <param name="deleteSlot">Delete the selected slot after the second confirmation click.</param>
     /// <param name="nowMs">Clock used for the delete-confirm and duplicate-name-overwrite-confirm timeout windows; defaults to <see cref="Environment.TickCount64"/>. Overridable for tests.</param>
     public SaveScreen(
         Func<IReadOnlyList<SaveSlotInfo>> listSlots,
@@ -108,6 +104,9 @@ public sealed class SaveScreen : IScreen
         Action<string> deleteSlot,
         Func<long>? nowMs = null)
     {
+        GenericWindowTypeA.Preload();
+        GenericButtonTypeA.Preload();
+
         _listSlots = listSlots;
         _saveSlot = saveSlot;
         _deleteSlot = deleteSlot;
@@ -176,9 +175,9 @@ public sealed class SaveScreen : IScreen
 
         var hit = SaveLayout.HitTest(x, y, _screenWidth, _screenHeight, VisibleSlotCount, _isNewSaveActive);
 
-        // Two-stage delete: any click that isn't a second click on the same confirming
-        // row clears the pending confirm state back to plain DELETE.
-        if (!(hit.Zone == SaveZone.Delete && AbsoluteIndex(hit.RowIndex) == _deleteConfirmIndex))
+        // Two-stage delete: any click that isn't a second click for the selected row
+        // clears the pending confirm state back to plain DELETE.
+        if (!(hit.Zone == SaveZone.Delete && _selectedIndex == _deleteConfirmIndex))
             _deleteConfirmIndex = -1;
 
         switch (hit.Zone)
@@ -201,12 +200,19 @@ public sealed class SaveScreen : IScreen
             case SaveZone.Close:
                 return ScreenEvent.CloseSaveWindow;
 
-            case SaveZone.Overwrite:
+            case SaveZone.Row:
             {
                 int index = AbsoluteIndex(hit.RowIndex);
                 if (index >= 0 && index < _slots.Count)
+                    _selectedIndex = index;
+                return ScreenEvent.None;
+            }
+
+            case SaveZone.Overwrite:
+            {
+                if (_selectedIndex >= 0 && _selectedIndex < _slots.Count)
                 {
-                    _saveSlot(_slots[index].SlotId);
+                    _saveSlot(_slots[_selectedIndex].SlotId);
                     RefreshSlots();
                 }
                 return ScreenEvent.None;
@@ -214,22 +220,21 @@ public sealed class SaveScreen : IScreen
 
             case SaveZone.Delete:
             {
-                int index = AbsoluteIndex(hit.RowIndex);
-                if (index < 0 || index >= _slots.Count)
+                if (_selectedIndex < 0 || _selectedIndex >= _slots.Count)
                     return ScreenEvent.None;
 
                 bool isConfirmedSecondClick =
-                    _deleteConfirmIndex == index && _nowMs() - _deleteConfirmStartedAtMs <= ConfirmWindowMs;
+                    _deleteConfirmIndex == _selectedIndex && _nowMs() - _deleteConfirmStartedAtMs <= ConfirmWindowMs;
 
                 if (isConfirmedSecondClick)
                 {
-                    _deleteSlot(_slots[index].SlotId);
+                    _deleteSlot(_slots[_selectedIndex].SlotId);
                     _deleteConfirmIndex = -1;
                     RefreshSlots();
                 }
                 else
                 {
-                    _deleteConfirmIndex = index;
+                    _deleteConfirmIndex = _selectedIndex;
                     _deleteConfirmStartedAtMs = _nowMs();
                 }
                 return ScreenEvent.None;
@@ -265,17 +270,22 @@ public sealed class SaveScreen : IScreen
 
         float pl = SaveLayout.PanelLeft(width);
         float pt = SaveLayout.PanelTop(height);
-        var panelRect = new SKRect(pl, pt, pl + SaveLayout.PanelWidth, pt + SaveLayout.PanelHeight);
-        MenuStyle.DrawPanel(canvas, panelRect);
+        var panelRect = SaveLayout.PanelRect(width, height);
+        GenericWindowTypeA.Draw(canvas, panelRect);
+        GenericWindowTypeA.DrawTitle(canvas, panelRect, "SAVE GAME", _titleTextPaint);
 
-        float cx = pl + SaveLayout.PanelWidth / 2f;
-        canvas.DrawText("SAVE GAME", cx, pt + SaveLayout.TitleY, MenuStyle.TextTitle);
+        ImagePanel.Draw(canvas, CombinedRect(pl, pt, SaveLayout.ContentPanelRect()));
 
-        DrawNewSaveRow(canvas, pl, pt);
-        DrawSlotList(canvas, pl, pt);
-        if (_slots.Count > SaveLayout.VisibleRows)
-            DrawScrollbar(canvas, pl, pt);
-        DrawIconTextButton(canvas, CombinedRect(pl, pt, SaveLayout.CloseButtonRect()), "CLOSE", SaveZone.Close, -1, _closeIcon, _closeIconActive);
+        if (_isNewSaveActive)
+            DrawNewSaveEditor(canvas, pl, pt);
+        else
+        {
+            DrawSlotList(canvas, pl, pt);
+            if (_slots.Count > SaveLayout.VisibleRows)
+                DrawScrollbar(canvas, pl, pt);
+        }
+
+        DrawBottomButtons(canvas, pl, pt);
     }
 
     /// <summary>Only rendered when the slot list overflows <see cref="SaveLayout.VisibleRows"/>; scrolling itself works via <see cref="OnMouseWheel"/> regardless.</summary>
@@ -289,26 +299,15 @@ public sealed class SaveScreen : IScreen
         canvas.DrawRect(thumb, MenuStyle.ButtonFillHover);
     }
 
-    private void DrawNewSaveRow(SKCanvas canvas, float panelLeft, float panelTop)
+    private void DrawNewSaveEditor(SKCanvas canvas, float panelLeft, float panelTop)
     {
-        if (_isNewSaveActive)
-        {
-            var inputLocal = SaveLayout.NameInputRect();
-            var inputRect = CombinedRect(panelLeft, panelTop, inputLocal);
-            _nameInput.Render(canvas, inputRect);
+        var inputRect = CombinedRect(panelLeft, panelTop, SaveLayout.NameInputRect());
+        _nameInput.Render(canvas, inputRect);
 
-            DrawButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.ConfirmButtonRect()), "SAVE", SaveZone.ConfirmNewSave);
-            DrawButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.CancelButtonRect()), "CANCEL", SaveZone.CancelNewSave);
-
-            if (_inlineError is not null)
-            {
-                float errorY = panelTop + SaveLayout.NewSaveRowY + SaveLayout.NewSaveRowHeight + 16f;
-                canvas.DrawText(_inlineError, panelLeft + SaveLayout.Margin, errorY, _errorPaint);
-            }
-        }
-        else
+        if (_inlineError is not null)
         {
-            DrawIconTextButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.NewSaveButtonRect()), "NEW SAVE", SaveZone.NewSave, -1, _newSaveIcon, _newSaveIconActive);
+            float errorY = inputRect.Bottom + 24f;
+            canvas.DrawText(_inlineError, inputRect.Left, errorY, _errorPaint);
         }
     }
 
@@ -316,69 +315,67 @@ public sealed class SaveScreen : IScreen
     {
         for (int i = 0; i < VisibleSlotCount; i++)
         {
-            var slot = _slots[_scrollOffset + i];
+            int absoluteIndex = _scrollOffset + i;
+            var slot = _slots[absoluteIndex];
             var row = SaveLayout.RowRect(i);
             var rowRect = CombinedRect(panelLeft, panelTop, row);
 
-            canvas.DrawRect(rowRect, MenuStyle.ButtonFillNormal);
-            canvas.DrawRect(rowRect, MenuStyle.ButtonBorder);
+            bool isSelected = absoluteIndex == _selectedIndex;
+            bool isHovered = _hoveredZone == SaveZone.Row && AbsoluteIndex(_hoveredRowIndex) == absoluteIndex;
 
+            if (isSelected)
+                canvas.DrawLine(rowRect.Left, rowRect.Top, rowRect.Left, rowRect.Bottom, _selectedRowIndicator);
+            else if (isHovered)
+                canvas.DrawRect(rowRect, _hoveredRowBorder);
+
+            canvas.Save();
+            canvas.ClipRect(rowRect);
             canvas.DrawText(slot.DisplayName, rowRect.Left + 10f, rowRect.MidY - 4f, _rowTextPaint);
             canvas.DrawText(
                 slot.SavedAtUtc.ToLocalTime().ToString("g"),
                 rowRect.Left + 10f, rowRect.MidY + 14f, _rowDatePaint);
-
-            DrawIconTextButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.OverwriteButtonRect(i)), "OVERWRITE", SaveZone.Overwrite, i, _overwriteIcon, _overwriteIconActive);
-
-            int absoluteIndex = _scrollOffset + i;
-            bool isConfirming = _deleteConfirmIndex == absoluteIndex && _nowMs() - _deleteConfirmStartedAtMs <= ConfirmWindowMs;
-            DrawIconTextButton(canvas, CombinedRect(panelLeft, panelTop, SaveLayout.DeleteButtonRect(i)),
-                isConfirming ? "CONFIRM?" : "DELETE", SaveZone.Delete, i, _deleteIcon, _deleteIconActive, forceActive: isConfirming);
+            canvas.Restore();
         }
     }
 
-    /// <summary>
-    /// Draws a button combining the previous fill/border/label chrome with an
-    /// <c>Images/UI/GameSaveScreen</c> icon to the left of the label: fill+border swap on
-    /// hover (as before), and the label's icon swaps to its "active" bitmap (baked-in
-    /// orange border) on that same hover or when <paramref name="forceActive"/> is set
-    /// (the two-stage delete confirm window, which must read as active even without
-    /// hover). The icon is pinned to the button's left edge (fixed-width buttons, so a
-    /// centered icon+label group would drift depending on label length); the label
-    /// follows immediately after it.
-    /// <paramref name="rowIndex"/> is -1 for non-row zones (NewSave, Close), matching the
-    /// -1 default on <see cref="SaveHit.RowIndex"/> for those zones.
-    /// </summary>
-    private void DrawIconTextButton(
-        SKCanvas canvas, SKRect rect, string text, SaveZone zone, int rowIndex,
-        SKBitmap? iconNormal, SKBitmap? iconActive, bool forceActive = false)
+    private void DrawBottomButtons(SKCanvas canvas, float panelLeft, float panelTop)
     {
-        bool isHovered = _hoveredZone == zone && _hoveredRowIndex == rowIndex;
-
-        canvas.DrawRect(rect, isHovered ? MenuStyle.ButtonFillHover : MenuStyle.ButtonFillNormal);
-        canvas.DrawRect(rect, MenuStyle.ButtonBorder);
-
-        var icon = (isHovered || forceActive) ? iconActive : iconNormal;
-        float iconSize = icon is not null ? rect.Height - ButtonIconPadding * 2f : 0f;
-        float gap = icon is not null ? ButtonIconPadding : 0f;
-        float textX = rect.Left + ButtonIconPadding + iconSize + gap;
-
-        if (icon is not null)
+        if (_isNewSaveActive)
         {
-            var iconRect = new SKRect(rect.Left + ButtonIconPadding, rect.MidY - iconSize / 2f,
-                rect.Left + ButtonIconPadding + iconSize, rect.MidY + iconSize / 2f);
-            canvas.DrawBitmap(icon, iconRect);
+            GenericButtonTypeA.Draw(canvas,
+                CombinedRect(panelLeft, panelTop, SaveLayout.CloseButtonRect(isNewSaveActive: true)),
+                "CLOSE", StateFor(SaveZone.Close));
+            GenericButtonTypeA.Draw(canvas,
+                CombinedRect(panelLeft, panelTop, SaveLayout.CancelButtonRect()),
+                "CANCEL", StateFor(SaveZone.CancelNewSave));
+            GenericButtonTypeA.Draw(canvas,
+                CombinedRect(panelLeft, panelTop, SaveLayout.ConfirmButtonRect()),
+                "SAVE", StateFor(SaveZone.ConfirmNewSave));
+            return;
         }
 
-        float textY = rect.MidY + _buttonTextPaint.TextSize / 3f;
-        canvas.DrawText(text, textX, textY, _buttonTextPaint);
+        bool hasSelection = _selectedIndex >= 0 && _selectedIndex < _slots.Count;
+        bool isConfirming = hasSelection && _deleteConfirmIndex == _selectedIndex
+            && _nowMs() - _deleteConfirmStartedAtMs <= ConfirmWindowMs;
+
+        GenericButtonTypeA.Draw(canvas,
+            CombinedRect(panelLeft, panelTop, SaveLayout.CloseButtonRect()),
+            "CLOSE", StateFor(SaveZone.Close));
+        GenericButtonTypeA.Draw(canvas,
+            CombinedRect(panelLeft, panelTop, SaveLayout.DeleteButtonRect()),
+            isConfirming ? "CONFIRM?" : "DELETE",
+            !hasSelection ? ButtonState.Disabled
+                : isConfirming ? ButtonState.Hovered : StateFor(SaveZone.Delete));
+        GenericButtonTypeA.Draw(canvas,
+            CombinedRect(panelLeft, panelTop, SaveLayout.OverwriteButtonRect()),
+            "OVERWRITE", hasSelection ? StateFor(SaveZone.Overwrite) : ButtonState.Disabled);
+        GenericButtonTypeA.Draw(canvas,
+            CombinedRect(panelLeft, panelTop, SaveLayout.NewSaveButtonRect()),
+            "NEW SAVE", StateFor(SaveZone.NewSave));
     }
 
-    private void DrawButton(SKCanvas canvas, SKRect rect, string text, SaveZone zone, int rowIndex = -1)
-    {
-        var state = _hoveredZone == zone && _hoveredRowIndex == rowIndex ? ButtonState.Hovered : ButtonState.Normal;
-        MenuStyle.DrawButton(canvas, rect, text, state);
-    }
+    private ButtonState StateFor(SaveZone zone) =>
+        _hoveredZone == zone ? ButtonState.Hovered : ButtonState.Normal;
 
     private static SKRect CombinedRect(float panelLeft, float panelTop, (float X, float Y, float W, float H) local) =>
         new(panelLeft + local.X, panelTop + local.Y, panelLeft + local.X + local.W, panelTop + local.Y + local.H);
@@ -408,7 +405,7 @@ public sealed class SaveScreen : IScreen
         bool isDuplicate = _slots.Any(s => string.Equals(s.DisplayName, name, StringComparison.OrdinalIgnoreCase));
         if (isDuplicate)
         {
-            // Same two-stage pattern as per-row DELETE: the first SAVE click on a
+            // Same two-stage pattern as DELETE: the first SAVE click on a
             // duplicate name only arms the overwrite (and re-arms if the name changed
             // since the last arm, or the window lapsed) — it takes a second SAVE click
             // on that same name within ConfirmWindowMs to actually overwrite.
@@ -446,6 +443,7 @@ public sealed class SaveScreen : IScreen
         _slots = _listSlots() ?? Array.Empty<SaveSlotInfo>();
         int maxOffset = Math.Max(0, _slots.Count - SaveLayout.VisibleRows);
         _scrollOffset = Math.Clamp(_scrollOffset, 0, maxOffset);
+        _selectedIndex = _slots.Count > 0 ? Math.Clamp(_selectedIndex, 0, _slots.Count - 1) : -1;
     }
 
     private int VisibleSlotCount => Math.Max(0, Math.Min(SaveLayout.VisibleRows, _slots.Count - _scrollOffset));

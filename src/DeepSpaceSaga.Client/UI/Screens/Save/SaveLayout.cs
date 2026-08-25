@@ -1,3 +1,5 @@
+using SkiaSharp;
+
 namespace DeepSpaceSaga.Client.UI.Screens.Save;
 
 /// <summary>Which part of the Save overlay a click landed on.</summary>
@@ -9,14 +11,13 @@ public enum SaveZone
     CancelNewSave,
     Close,
     Overwrite,
-    Delete
+    Delete,
+    Row
 }
 
 /// <summary>
-/// Result of a <see cref="SaveLayout.HitTest"/>. <see cref="RowIndex"/> is only
-/// meaningful for <see cref="SaveZone.Overwrite"/>/<see cref="SaveZone.Delete"/> and is
-/// relative to the currently visible window (the caller adds the scroll offset to get
-/// the absolute slot index).
+/// Result of a <see cref="SaveLayout.HitTest"/>. <see cref="RowIndex"/> is only meaningful
+/// for <see cref="SaveZone.Row"/> and is relative to the currently visible window.
 /// </summary>
 public readonly record struct SaveHit(SaveZone Zone, int RowIndex = -1)
 {
@@ -24,42 +25,38 @@ public readonly record struct SaveHit(SaveZone Zone, int RowIndex = -1)
 }
 
 /// <summary>
-/// Layout and hit-test geometry for the Save overlay panel.
-/// Pure geometry — no SKCanvas dependency — following the same pattern as
-/// <see cref="Settings.SettingsLayout"/>/<see cref="GameMenu.GameMenuLayout"/>.
+/// Layout and hit-test geometry for the Generic Type A Save overlay. A single content
+/// panel owns either the selectable save list or the New Save name field; every action
+/// button is in the bottom row.
 /// </summary>
 public static class SaveLayout
 {
-    public const float PanelWidth = 700f;
+    public const float PanelWidth = 900f;
     public const float PanelHeight = 600f;
 
     public const float Margin = 40f;
 
-    public const float TitleY = 50f;
+    public const float ContentPanelX = Margin;
+    public const float ContentPanelY = 100f;
+    public const float ContentPanelWidth = PanelWidth - 2 * Margin;
+    public const float ContentPanelHeight = 380f;
+    public const float ContentPadding = 20f;
 
-    public const float NewSaveRowY = 90f;
-    public const float NewSaveRowHeight = 44f;
+    public const float NameInputWidth = 600f;
+    public const float NameInputHeight = 44f;
+    public const float NameInputY = 220f;
 
-    public const float NameInputWidth = 300f;
-    public const float NameConfirmButtonWidth = 90f;
-    public const float NameCancelButtonWidth = 90f;
-    public const float NameFieldGap = 10f;
-
-    public const float ListTop = NewSaveRowY + NewSaveRowHeight + 30f;
+    public const float ListTop = ContentPanelY + ContentPadding;
     public const float RowHeight = 50f;
     public const float RowSpacing = 6f;
     public const int VisibleRows = 6;
 
-    // Fixed regardless of label: wide enough for the longest row label ("OVERWRITE",
-    // measured ~96.6px at ButtonFontSize 14 bold) plus icon and padding. Shared by
-    // NewSave/Overwrite/Delete so all three read as one consistent button size.
-    public const float RowButtonWidth = 160f;
-    public const float RowButtonHeight = 40f;
-    public const float RowButtonGap = 10f;
-
-    public const float CloseButtonWidth = 100f;
-    public const float CloseButtonHeight = 32f;
-    public const float CloseButtonMargin = 16f;
+    public const float BottomButtonWidth = 200f;
+    public const float BottomButtonHeight = 56f;
+    public const float BottomButtonGap = 10f;
+    public const float BottomButtonsX = 35f;
+    public const float BottomButtonsY = 510f;
+    public const float NewSaveButtonsX = 140f;
 
     public const float ScrollbarWidth = 6f;
     public const float ScrollbarGap = 10f;
@@ -68,61 +65,54 @@ public static class SaveLayout
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
 
-    public static float ListWidth => PanelWidth - 2 * Margin;
+    public static SKRect PanelRect(int screenWidth, int screenHeight)
+    {
+        float left = PanelLeft(screenWidth);
+        float top = PanelTop(screenHeight);
+        return new SKRect(left, top, left + PanelWidth, top + PanelHeight);
+    }
+
+    public static float ListWidth => ContentPanelWidth - 2 * ContentPadding;
+
+    public static (float X, float Y, float W, float H) ContentPanelRect() =>
+        (ContentPanelX, ContentPanelY, ContentPanelWidth, ContentPanelHeight);
 
     /// <summary>Top-left-relative rect for a visible row (before scroll offset is applied by the caller).</summary>
     public static (float X, float Y, float W, float H) RowRect(int visibleRowIndex)
     {
         float y = ListTop + visibleRowIndex * RowHeight;
-        return (Margin, y, ListWidth, RowHeight - RowSpacing);
-    }
-
-    public static (float X, float Y, float W, float H) OverwriteButtonRect(int visibleRowIndex)
-    {
-        var row = RowRect(visibleRowIndex);
-        float x = row.X + row.W - (RowButtonWidth * 2 + RowButtonGap);
-        float y = row.Y + (row.H - RowButtonHeight) / 2f;
-        return (x, y, RowButtonWidth, RowButtonHeight);
-    }
-
-    public static (float X, float Y, float W, float H) DeleteButtonRect(int visibleRowIndex)
-    {
-        var row = RowRect(visibleRowIndex);
-        float x = row.X + row.W - RowButtonWidth;
-        float y = row.Y + (row.H - RowButtonHeight) / 2f;
-        return (x, y, RowButtonWidth, RowButtonHeight);
+        return (ContentPanelX + ContentPadding, y, ListWidth, RowHeight - RowSpacing);
     }
 
     public static (float X, float Y, float W, float H) NewSaveButtonRect() =>
-        (Margin, NewSaveRowY + (NewSaveRowHeight - RowButtonHeight) / 2f, RowButtonWidth, RowButtonHeight);
+        BottomButtonRect(3);
+
+    public static (float X, float Y, float W, float H) OverwriteButtonRect() =>
+        BottomButtonRect(2);
+
+    public static (float X, float Y, float W, float H) DeleteButtonRect() =>
+        BottomButtonRect(1);
 
     public static (float X, float Y, float W, float H) NameInputRect() =>
-        (Margin, NewSaveRowY, NameInputWidth, NewSaveRowHeight);
+        ((PanelWidth - NameInputWidth) / 2f, NameInputY, NameInputWidth, NameInputHeight);
 
-    public static (float X, float Y, float W, float H) ConfirmButtonRect()
-    {
-        var input = NameInputRect();
-        return (input.X + input.W + NameFieldGap, NewSaveRowY, NameConfirmButtonWidth, NewSaveRowHeight);
-    }
+    public static (float X, float Y, float W, float H) ConfirmButtonRect() =>
+        NewSaveBottomButtonRect(2);
 
-    public static (float X, float Y, float W, float H) CancelButtonRect()
-    {
-        var confirm = ConfirmButtonRect();
-        return (confirm.X + confirm.W + NameFieldGap, NewSaveRowY, NameCancelButtonWidth, NewSaveRowHeight);
-    }
+    public static (float X, float Y, float W, float H) CancelButtonRect() =>
+        NewSaveBottomButtonRect(1);
 
-    /// <summary>Top-right corner of the panel, matching a title-bar close button.</summary>
-    public static (float X, float Y, float W, float H) CloseButtonRect() =>
-        (PanelWidth - CloseButtonMargin - CloseButtonWidth, CloseButtonMargin, CloseButtonWidth, CloseButtonHeight);
+    public static (float X, float Y, float W, float H) CloseButtonRect(bool isNewSaveActive = false) =>
+        isNewSaveActive ? NewSaveBottomButtonRect(0) : BottomButtonRect(0);
 
     /// <summary>
-    /// Vertical track spanning the full visible row list, in the right margin strip just
-    /// past where the row buttons end (<see cref="RowRect"/>'s right edge is
-    /// <c>PanelWidth - Margin</c>, well clear of this). Only meaningful — and only drawn
-    /// by the caller — when there are more slots than <see cref="VisibleRows"/>.
+    /// Vertical track spanning the full visible row list, in the gap between the rows
+    /// and the content panel's right edge. Only meaningful — and only drawn by the
+    /// caller — when there are more slots than <see cref="VisibleRows"/>.
     /// </summary>
     public static (float X, float Y, float W, float H) ScrollbarTrackRect() =>
-        (PanelWidth - Margin + ScrollbarGap, ListTop, ScrollbarWidth, VisibleRows * RowHeight - RowSpacing);
+        (ContentPanelX + ContentPadding + ListWidth + ScrollbarGap,
+            ListTop, ScrollbarWidth, VisibleRows * RowHeight - RowSpacing);
 
     /// <summary>
     /// Thumb position/size within <see cref="ScrollbarTrackRect"/> for the given scroll
@@ -145,8 +135,8 @@ public static class SaveLayout
     /// <summary>
     /// Hit-tests a click at screen coordinates. <paramref name="visibleSlotCount"/> is the
     /// number of slot rows actually rendered (min(total slots, VisibleRows)).
-    /// <paramref name="isNewSaveActive"/> switches the New-Save row between its collapsed
-    /// button and its expanded name-entry state.
+    /// <paramref name="isNewSaveActive"/> switches the content panel from the slot list
+    /// to the name-entry state and replaces the bottom action group.
     /// </summary>
     public static SaveHit HitTest(
         float screenX, float screenY, int screenWidth, int screenHeight,
@@ -160,6 +150,8 @@ public static class SaveLayout
 
         if (isNewSaveActive)
         {
+            if (IsInRect(lx, ly, CloseButtonRect(isNewSaveActive: true)))
+                return new SaveHit(SaveZone.Close);
             if (IsInRect(lx, ly, ConfirmButtonRect()))
                 return new SaveHit(SaveZone.ConfirmNewSave);
             if (IsInRect(lx, ly, CancelButtonRect()))
@@ -167,23 +159,32 @@ public static class SaveLayout
         }
         else
         {
+            if (IsInRect(lx, ly, CloseButtonRect()))
+                return new SaveHit(SaveZone.Close);
+            if (IsInRect(lx, ly, DeleteButtonRect()))
+                return new SaveHit(SaveZone.Delete);
+            if (IsInRect(lx, ly, OverwriteButtonRect()))
+                return new SaveHit(SaveZone.Overwrite);
             if (IsInRect(lx, ly, NewSaveButtonRect()))
                 return new SaveHit(SaveZone.NewSave);
-        }
 
-        if (IsInRect(lx, ly, CloseButtonRect()))
-            return new SaveHit(SaveZone.Close);
-
-        for (int i = 0; i < visibleSlotCount; i++)
-        {
-            if (IsInRect(lx, ly, OverwriteButtonRect(i)))
-                return new SaveHit(SaveZone.Overwrite, i);
-            if (IsInRect(lx, ly, DeleteButtonRect(i)))
-                return new SaveHit(SaveZone.Delete, i);
+            for (int i = 0; i < visibleSlotCount; i++)
+            {
+                if (IsInRect(lx, ly, RowRect(i)))
+                    return new SaveHit(SaveZone.Row, i);
+            }
         }
 
         return SaveHit.None;
     }
+
+    private static (float X, float Y, float W, float H) BottomButtonRect(int index) =>
+        (BottomButtonsX + index * (BottomButtonWidth + BottomButtonGap),
+            BottomButtonsY, BottomButtonWidth, BottomButtonHeight);
+
+    private static (float X, float Y, float W, float H) NewSaveBottomButtonRect(int index) =>
+        (NewSaveButtonsX + index * (BottomButtonWidth + BottomButtonGap),
+            BottomButtonsY, BottomButtonWidth, BottomButtonHeight);
 
     private static bool IsInRect(float localX, float localY, (float X, float Y, float W, float H) rect) =>
         localX >= rect.X && localX <= rect.X + rect.W

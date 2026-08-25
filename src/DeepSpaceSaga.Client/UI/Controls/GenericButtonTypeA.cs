@@ -56,7 +56,33 @@ public static class GenericButtonTypeA
             ButtonState.Disabled => XenonStyle.ButtonTextDisabled,
             _ => XenonStyle.ButtonText
         };
-        canvas.DrawText(text, bounds.MidX, MenuStyle.VerticalCenterBaseline(bounds, textPaint), textPaint);
+
+        // Keep long labels clear of the fixed left marker while preserving the centered
+        // Type A composition. Most labels retain the theme font size; only labels that
+        // would enter the marker's breathing room are scaled down.
+        float markerSize = MarkerSize(bounds);
+        float markerLeftInset = MarkerLeftInset(bounds);
+        float markerClearanceX = bounds.Left + markerLeftInset + markerSize + 8f;
+        float maxTextWidth = Math.Max(1f, 2f * (bounds.MidX - markerClearanceX));
+        float textWidth = textPaint.MeasureText(text);
+
+        if (textWidth > maxTextWidth)
+        {
+            using var fittedPaint = new SKPaint
+            {
+                Color = textPaint.Color,
+                TextSize = textPaint.TextSize * maxTextWidth / textWidth,
+                IsAntialias = textPaint.IsAntialias,
+                TextAlign = textPaint.TextAlign,
+                Typeface = textPaint.Typeface
+            };
+            canvas.DrawText(text, bounds.MidX,
+                MenuStyle.VerticalCenterBaseline(bounds, fittedPaint), fittedPaint);
+            return;
+        }
+
+        canvas.DrawText(text, bounds.MidX,
+            MenuStyle.VerticalCenterBaseline(bounds, textPaint), textPaint);
     }
 
     private static void DrawMarker(SKCanvas canvas, SKRect bounds, ButtonState state)
@@ -68,8 +94,8 @@ public static class GenericButtonTypeA
             _ => Marker
         };
 
-        float markerSize = Math.Min(24f, Math.Max(8f, bounds.Height - 16f));
-        float leftInset = Math.Min(24f, Math.Max(8f, bounds.Width * 0.08f));
+        float markerSize = MarkerSize(bounds);
+        float leftInset = MarkerLeftInset(bounds);
         var rect = new SKRect(
             bounds.Left + leftInset,
             bounds.MidY - markerSize / 2f,
@@ -93,4 +119,10 @@ public static class GenericButtonTypeA
         canvas.DrawLine(rect.MidX, rect.Bottom, rect.Left, rect.MidY, stroke);
         canvas.DrawLine(rect.Left, rect.MidY, rect.MidX, rect.Top, stroke);
     }
+
+    private static float MarkerSize(SKRect bounds) =>
+        Math.Min(24f, Math.Max(8f, bounds.Height - 16f));
+
+    private static float MarkerLeftInset(SKRect bounds) =>
+        Math.Min(24f, Math.Max(8f, bounds.Width * 0.08f));
 }

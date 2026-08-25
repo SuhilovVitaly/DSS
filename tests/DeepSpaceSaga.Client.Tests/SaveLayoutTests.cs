@@ -71,40 +71,38 @@ public class SaveLayoutTests
     }
 
     [Fact]
-    public void HitTest_Overwrite_returns_row_index()
+    public void HitTest_Overwrite_returns_Overwrite()
     {
-        var (x, y) = Center(SaveLayout.OverwriteButtonRect(2));
+        var (x, y) = Center(SaveLayout.OverwriteButtonRect());
         var hit = SaveLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleSlotCount: 3, isNewSaveActive: false);
         Assert.Equal(SaveZone.Overwrite, hit.Zone);
-        Assert.Equal(2, hit.RowIndex);
     }
 
     [Fact]
-    public void HitTest_Delete_returns_row_index()
+    public void HitTest_Delete_returns_Delete()
     {
-        var (x, y) = Center(SaveLayout.DeleteButtonRect(1));
+        var (x, y) = Center(SaveLayout.DeleteButtonRect());
         var hit = SaveLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleSlotCount: 3, isNewSaveActive: false);
         Assert.Equal(SaveZone.Delete, hit.Zone);
-        Assert.Equal(1, hit.RowIndex);
     }
 
     [Fact]
-    public void HitTest_row_buttons_beyond_visibleSlotCount_are_not_hit()
+    public void HitTest_Row_returns_visible_row_index()
     {
-        // Only 1 slot visible — row index 1's Delete rect must not register a hit.
-        var (x, y) = Center(SaveLayout.DeleteButtonRect(1));
-        var hit = SaveLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleSlotCount: 1, isNewSaveActive: false);
-        Assert.Equal(SaveZone.None, hit.Zone);
+        var (x, y) = Center(SaveLayout.RowRect(1));
+        var hit = SaveLayout.HitTest(x, y, ScreenWidth, ScreenHeight, visibleSlotCount: 3, isNewSaveActive: false);
+        Assert.Equal(SaveZone.Row, hit.Zone);
+        Assert.Equal(1, hit.RowIndex);
     }
 
     [Fact]
     public void HitTest_Overwrite_and_Delete_do_not_overlap()
     {
-        var (ox, oy) = Center(SaveLayout.OverwriteButtonRect(0));
+        var (ox, oy) = Center(SaveLayout.OverwriteButtonRect());
         var hitAtOverwriteCenter = SaveLayout.HitTest(ox, oy, ScreenWidth, ScreenHeight, visibleSlotCount: 1, isNewSaveActive: false);
         Assert.Equal(SaveZone.Overwrite, hitAtOverwriteCenter.Zone);
 
-        var (dx, dy) = Center(SaveLayout.DeleteButtonRect(0));
+        var (dx, dy) = Center(SaveLayout.DeleteButtonRect());
         var hitAtDeleteCenter = SaveLayout.HitTest(dx, dy, ScreenWidth, ScreenHeight, visibleSlotCount: 1, isNewSaveActive: false);
         Assert.Equal(SaveZone.Delete, hitAtDeleteCenter.Zone);
     }
@@ -114,6 +112,35 @@ public class SaveLayoutTests
     {
         Assert.Equal((ScreenWidth - SaveLayout.PanelWidth) / 2f, SaveLayout.PanelLeft(ScreenWidth));
         Assert.Equal((ScreenHeight - SaveLayout.PanelHeight) / 2f, SaveLayout.PanelTop(ScreenHeight));
+    }
+
+    [Fact]
+    public void Main_actions_share_one_bottom_row()
+    {
+        var close = SaveLayout.CloseButtonRect();
+        var delete = SaveLayout.DeleteButtonRect();
+        var overwrite = SaveLayout.OverwriteButtonRect();
+        var create = SaveLayout.NewSaveButtonRect();
+
+        Assert.Equal(close.Y, delete.Y);
+        Assert.Equal(delete.Y, overwrite.Y);
+        Assert.Equal(overwrite.Y, create.Y);
+        Assert.True(close.X + close.W <= delete.X);
+        Assert.True(delete.X + delete.W <= overwrite.X);
+        Assert.True(overwrite.X + overwrite.W <= create.X);
+    }
+
+    [Fact]
+    public void NewSave_actions_share_the_bottom_row()
+    {
+        var close = SaveLayout.CloseButtonRect(isNewSaveActive: true);
+        var cancel = SaveLayout.CancelButtonRect();
+        var save = SaveLayout.ConfirmButtonRect();
+
+        Assert.Equal(close.Y, cancel.Y);
+        Assert.Equal(cancel.Y, save.Y);
+        Assert.True(close.X + close.W <= cancel.X);
+        Assert.True(cancel.X + cancel.W <= save.X);
     }
 
     // --- Scrollbar geometry (shown only when slots.Count > VisibleRows) ---
@@ -152,11 +179,12 @@ public class SaveLayoutTests
     }
 
     [Fact]
-    public void ScrollbarTrack_does_not_overlap_row_buttons()
+    public void ScrollbarTrack_stays_inside_the_content_panel()
     {
-        // The track sits in the right margin strip, clear of where DeleteButtonRect ends.
         var track = SaveLayout.ScrollbarTrackRect();
-        var deleteButton = SaveLayout.DeleteButtonRect(0);
-        Assert.True(track.X >= deleteButton.X + deleteButton.W);
+        var row = SaveLayout.RowRect(0);
+        var content = SaveLayout.ContentPanelRect();
+        Assert.True(track.X >= row.X + row.W);
+        Assert.True(track.X + track.W <= content.X + content.W);
     }
 }
