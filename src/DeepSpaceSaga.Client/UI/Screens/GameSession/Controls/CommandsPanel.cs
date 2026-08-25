@@ -17,6 +17,7 @@ public sealed class CommandsPanel
     private const string XenonAssetsPath = "Images/UI/Themes/Xenon/GameSession/CommandPanels";
     private const float XenonBodySliceInset = 12f;
     private const float XenonButtonSliceInset = 8f;
+    private const float ModuleTitleOffsetY = -4f;
 
     public const float PanelWidth = 360f;
     public const float CaptionHeight = 32f;
@@ -184,7 +185,7 @@ public sealed class CommandsPanel
 
         var typeface = XenonStyle.TypefaceRegular;
 
-        _panelBgPaint = new SKPaint { Color = new SKColor(0, 0, 0, 200), Style = SKPaintStyle.Fill };
+        _panelBgPaint = new SKPaint { Color = new SKColor(2, 16, 24), Style = SKPaintStyle.Fill };
         _panelBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
         _titlePaint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 13f, IsAntialias = true, Typeface = typeface };
 
@@ -505,10 +506,9 @@ public sealed class CommandsPanel
 
     private void DrawCaption(SKCanvas canvas)
     {
+        canvas.DrawRect(_captionRect, _panelBgPaint);
         if (_captionBackgroundImage is not null)
             NinePatch.Draw(canvas, _captionBackgroundImage, _captionRect, 6f);
-        else
-            canvas.DrawRect(_captionRect, _panelBgPaint);
 
         // HideShow toggle: hide icon when open, show icon when closed.
         var hideShowImage = ResolveHideShowImage();
@@ -556,21 +556,19 @@ public sealed class CommandsPanel
 
     private void DrawCommandPanel(SKCanvas canvas, CommandPanelGeometry row)
     {
+        canvas.DrawRect(row.CaptionRect, _panelBgPaint);
         if (_moduleCaptionBackgroundImage is not null)
             NinePatch.Draw(canvas, _moduleCaptionBackgroundImage, row.CaptionRect, 6f);
-        else
-            canvas.DrawRect(row.CaptionRect, _panelBgPaint);
 
         float textX = row.CaptionRect.Left + 40f;
-        float textY = row.CaptionRect.MidY + _moduleCaptionTextPaint.TextSize / 3f;
+        float textY = row.CaptionRect.MidY + _moduleCaptionTextPaint.TextSize / 3f + ModuleTitleOffsetY;
         canvas.DrawText(row.Name, textX, textY, _moduleCaptionTextPaint);
 
         if (row.Opened && row.BodyRect.Height > 0)
         {
+            canvas.DrawRect(row.BodyRect, _panelBgPaint);
             if (_moduleBodyBackgroundImage is not null)
                 NinePatch.Draw(canvas, _moduleBodyBackgroundImage, row.BodyRect, XenonBodySliceInset);
-            else
-                canvas.DrawRect(row.BodyRect, _panelBgPaint);
 
             foreach (var button in row.Buttons)
             {

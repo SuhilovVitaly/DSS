@@ -177,6 +177,21 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
+    public void Xenon_panel_caption_and_module_bodies_are_fully_opaque()
+    {
+        var panel = new CommandsPanel();
+        using var bitmap = new SKBitmap(384, 856);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Transparent);
+
+        panel.Render(canvas, ImmutableArray<InstalledModuleSnapshot>.Empty);
+
+        Assert.Equal(255, bitmap.GetPixel(350, 20).Alpha);
+        Assert.Equal(255, bitmap.GetPixel(350, 54).Alpha);
+        Assert.Equal(255, bitmap.GetPixel(350, 120).Alpha);
+    }
+
+    [Fact]
     public void Panel_state_is_AllPanels_by_default()
     {
         var screen = CreateScreen();
