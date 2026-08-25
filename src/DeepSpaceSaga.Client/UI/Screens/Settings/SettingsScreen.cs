@@ -33,43 +33,6 @@ public sealed class SettingsScreen : IScreen
     private SettingsButton _hoveredButton = SettingsButton.None;
     private SettingsButton _pressedButton = SettingsButton.None;
 
-    /// <summary>
-    /// Panel background at the exact 500×550 panel size — same texture and loading
-    /// pattern as <see cref="MainMenu.MainMenuScreen"/> (this panel is the same size and
-    /// position as MainMenu's, see <see cref="SettingsLayout"/>'s doc comment). Loaded
-    /// once and shared by every SettingsScreen instance; falls back to
-    /// MenuStyle.DrawPanel's plain fill if the file is missing.
-    /// </summary>
-    private static readonly SKBitmap? BackgroundImage =
-        LoadImage("Images/UI/window-background-500x550.png");
-
-    private static SKBitmap? LoadImage(string path)
-    {
-        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
-        catch { return null; }
-    }
-
-    /// <summary>True if the background PNG file was found and decoded at startup.</summary>
-    internal static bool HasLoadedBackground => BackgroundImage is not null;
-
-    private static readonly SKPaint _arrowPaint = new()
-    {
-        Color = MenuStyle.ColorText,
-        Style = SKPaintStyle.Fill,
-        IsAntialias = true
-    };
-
-    /// <summary>Left-aligned row label — MenuStyle's text paints are all center-aligned,
-    /// which doesn't fit the label-left/value-right row layout below.</summary>
-    private static readonly SKPaint _labelPaint = new()
-    {
-        Color = MenuStyle.ColorText,
-        TextSize = MenuStyle.StatusFontSize,
-        IsAntialias = true,
-        TextAlign = SKTextAlign.Left,
-        Typeface = MenuStyle.TypefaceHumaroid
-    };
-
     /// <summary>Same size/color/alignment as <see cref="MenuStyle.TextTitle"/>, but in
     /// Humaroid — a local copy rather than mutating the shared paint, which other screens
     /// (GameMenu, Trade, Station, ...) also draw their own titles with.</summary>
@@ -82,71 +45,25 @@ public sealed class SettingsScreen : IScreen
         Typeface = MenuStyle.TypefaceHumaroid
     };
 
-    /// <summary>Same size/color/alignment as <see cref="MenuStyle.TextStatus"/>, but in Humaroid.</summary>
+    /// <summary>Restart note in the subdued cyan Xenon footer style.</summary>
     private static readonly SKPaint _noteTextPaint = new()
     {
-        Color = MenuStyle.ColorText,
-        TextSize = MenuStyle.StatusFontSize,
+        Color = XenonStyle.CyanDim,
+        TextSize = XenonStyle.FooterFontSize,
         IsAntialias = true,
         TextAlign = SKTextAlign.Center,
-        Typeface = MenuStyle.TypefaceHumaroid
+        Typeface = XenonStyle.TypefaceRegular
     };
-
-    /// <summary>
-    /// Open dropdown lists are flat dark-gray panels, deliberately not drawn with
-    /// <see cref="ImageButton"/>'s nine-sliced button texture — a plain fill reads as a
-    /// list, not as a stack of buttons.
-    /// </summary>
-    private static readonly SKPaint _dropdownBackgroundFill = new() { Color = new SKColor(0x2D, 0x2D, 0x2D), Style = SKPaintStyle.Fill };
-    private static readonly SKPaint _dropdownBorder = new() { Color = new SKColor(0x50, 0x50, 0x50), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
-    private static readonly SKPaint _dropdownHoverFill = new() { Color = new SKColor(0x45, 0x45, 0x45), Style = SKPaintStyle.Fill };
-    private static readonly SKPaint _dropdownSelectedFill = new() { Color = new SKColor(0x58, 0x58, 0x58), Style = SKPaintStyle.Fill };
-
-    private static readonly SKPaint _dropdownOptionText = new()
-    {
-        Color = MenuStyle.ColorText,
-        TextSize = MenuStyle.ButtonFontSize,
-        IsAntialias = true,
-        TextAlign = SKTextAlign.Center,
-        Typeface = MenuStyle.TypefaceHumaroid
-    };
-
-    /// <summary>Draws the shared dark-gray background + border spanning every option row of an open dropdown.</summary>
-    private static void DrawDropdownListBackground(SKCanvas canvas, SKRect listRect)
-    {
-        canvas.DrawRect(listRect, _dropdownBackgroundFill);
-        canvas.DrawRect(listRect, _dropdownBorder);
-    }
-
-    /// <summary>Draws one dropdown row's text over the shared list background, with a flat highlight fill (no button texture) when selected or hovered.</summary>
-    private static void DrawDropdownOption(SKCanvas canvas, SKRect rect, string text, bool isSelected, bool isHovered)
-    {
-        if (isSelected)
-            canvas.DrawRect(rect, _dropdownSelectedFill);
-        else if (isHovered)
-            canvas.DrawRect(rect, _dropdownHoverFill);
-
-        canvas.DrawText(text, rect.MidX, MenuStyle.VerticalCenterBaseline(rect, _dropdownOptionText), _dropdownOptionText);
-    }
-
-    /// <summary>
-    /// Draws a combo box's closed toggle in the same flat dark-gray style as the dropdown
-    /// list it opens (see <see cref="DrawDropdownListBackground"/>/<see cref="DrawDropdownOption"/>)
-    /// — deliberately not <see cref="ImageButton"/>'s button texture, so the box and the
-    /// list it expands into read as one control, not a button.
-    /// </summary>
-    private static void DrawComboBox(SKCanvas canvas, SKRect rect, string text, bool isHighlighted)
-    {
-        canvas.DrawRect(rect, isHighlighted ? _dropdownHoverFill : _dropdownBackgroundFill);
-        canvas.DrawRect(rect, _dropdownBorder);
-        canvas.DrawText(text, rect.MidX, MenuStyle.VerticalCenterBaseline(rect, _dropdownOptionText), _dropdownOptionText);
-    }
 
     public SettingsScreen(
         IReadOnlyList<string> monitorNames, int selectedMonitorIndex, Action<int> onMonitorSelected,
         double selectedUiScale, Action<double> onUiScaleSelected,
         string selectedLanguage, Action<string> onLanguageSelected)
     {
+        GenericWindowTypeA.Preload();
+        GenericButtonTypeA.Preload();
+        XenonComboBox.Preload();
+
         _monitorNames = monitorNames.Count > 0 ? monitorNames : new[] { "Monitor 1" };
         _selectedMonitorIndex = Math.Clamp(selectedMonitorIndex, 0, _monitorNames.Count - 1);
         _onMonitorSelected = onMonitorSelected;
@@ -317,15 +234,12 @@ public sealed class SettingsScreen : IScreen
 
         float pl = SettingsLayout.PanelLeft(width);
         float pt = SettingsLayout.PanelTop(height);
-        var panelRect = new SKRect(pl, pt, pl + SettingsLayout.PanelWidth, pt + SettingsLayout.PanelHeight);
-        if (BackgroundImage is not null)
-            canvas.DrawBitmap(BackgroundImage, panelRect);
-        else
-            MenuStyle.DrawPanel(canvas, panelRect);
+        var panelRect = SettingsLayout.PanelRect(width, height);
+        GenericWindowTypeA.Draw(canvas, panelRect);
 
         float cx = pl + SettingsLayout.PanelWidth / 2f;
 
-        canvas.DrawText(Localization.Get("Settings.Title"), cx, pt + SettingsLayout.TitleY, _titleTextPaint);
+        GenericWindowTypeA.DrawTitle(canvas, panelRect, Localization.Get("Settings.Title"), _titleTextPaint);
 
         DrawMonitorRow(canvas, pl, pt, cx);
         DrawLanguageRow(canvas, pl, pt);
@@ -349,12 +263,9 @@ public sealed class SettingsScreen : IScreen
         float by = panelTop + SettingsLayout.LanguageRowY;
         var boxRect = new SKRect(bx, by, bx + SettingsLayout.LanguageComboWidth, by + SettingsLayout.LanguageComboHeight);
 
-        canvas.DrawText(Localization.Get("Settings.Language"), panelLeft + SettingsLayout.RowLabelX,
-            MenuStyle.VerticalCenterBaseline(boxRect, _labelPaint), _labelPaint);
-
         bool boxHighlighted = _isLanguageComboOpen || _hoveredButton == SettingsButton.LanguageCombo;
-        DrawComboBox(canvas, boxRect, LanguageValues[_selectedLanguageIndex], boxHighlighted);
-        DrawDropdownArrow(canvas, boxRect, _isLanguageComboOpen);
+        XenonComboBox.DrawClosed(canvas, boxRect, Localization.Get("Settings.Language"),
+            LanguageValues[_selectedLanguageIndex], boxHighlighted);
     }
 
     private void DrawLanguageOptions(SKCanvas canvas, float panelLeft, float panelTop)
@@ -363,15 +274,16 @@ public sealed class SettingsScreen : IScreen
         float by = panelTop + SettingsLayout.LanguageRowY + SettingsLayout.LanguageComboHeight;
         float listHeight = LanguageValues.Length * SettingsLayout.LanguageOptionHeight;
 
-        DrawDropdownListBackground(canvas, new SKRect(bx, by, bx + SettingsLayout.LanguageComboWidth, by + listHeight));
+        XenonComboBox.DrawListBackground(canvas,
+            new SKRect(bx, by, bx + SettingsLayout.LanguageComboWidth, by + listHeight));
 
         for (int i = 0; i < LanguageValues.Length; i++)
         {
             float oy = by + i * SettingsLayout.LanguageOptionHeight;
             var optionRect = new SKRect(bx, oy, bx + SettingsLayout.LanguageComboWidth, oy + SettingsLayout.LanguageOptionHeight);
 
-            DrawDropdownOption(canvas, optionRect, LanguageValues[i],
-                isSelected: i == _selectedLanguageIndex, isHovered: i == _hoveredLanguageOption);
+            XenonComboBox.DrawOption(canvas, optionRect, LanguageValues[i],
+                highlighted: i == _selectedLanguageIndex || i == _hoveredLanguageOption);
         }
     }
 
@@ -381,12 +293,9 @@ public sealed class SettingsScreen : IScreen
         float by = panelTop + SettingsLayout.UiScaleRowY;
         var boxRect = new SKRect(bx, by, bx + SettingsLayout.UiScaleComboWidth, by + SettingsLayout.UiScaleComboHeight);
 
-        canvas.DrawText(Localization.Get("Settings.InterfaceScale"), panelLeft + SettingsLayout.RowLabelX,
-            MenuStyle.VerticalCenterBaseline(boxRect, _labelPaint), _labelPaint);
-
         bool boxHighlighted = _isUiScaleComboOpen || _hoveredButton == SettingsButton.UiScaleCombo;
-        DrawComboBox(canvas, boxRect, FormatScaleLabel(UiScaleValues[_selectedUiScaleIndex]), boxHighlighted);
-        DrawDropdownArrow(canvas, boxRect, _isUiScaleComboOpen);
+        XenonComboBox.DrawClosed(canvas, boxRect, Localization.Get("Settings.InterfaceScale"),
+            FormatScaleLabel(UiScaleValues[_selectedUiScaleIndex]), boxHighlighted);
     }
 
     private void DrawUiScaleOptions(SKCanvas canvas, float panelLeft, float panelTop)
@@ -395,15 +304,16 @@ public sealed class SettingsScreen : IScreen
         float by = panelTop + SettingsLayout.UiScaleRowY + SettingsLayout.UiScaleComboHeight;
         float listHeight = UiScaleValues.Length * SettingsLayout.UiScaleOptionHeight;
 
-        DrawDropdownListBackground(canvas, new SKRect(bx, by, bx + SettingsLayout.UiScaleComboWidth, by + listHeight));
+        XenonComboBox.DrawListBackground(canvas,
+            new SKRect(bx, by, bx + SettingsLayout.UiScaleComboWidth, by + listHeight));
 
         for (int i = 0; i < UiScaleValues.Length; i++)
         {
             float oy = by + i * SettingsLayout.UiScaleOptionHeight;
             var optionRect = new SKRect(bx, oy, bx + SettingsLayout.UiScaleComboWidth, oy + SettingsLayout.UiScaleOptionHeight);
 
-            DrawDropdownOption(canvas, optionRect, FormatScaleLabel(UiScaleValues[i]),
-                isSelected: i == _selectedUiScaleIndex, isHovered: i == _hoveredUiScaleOption);
+            XenonComboBox.DrawOption(canvas, optionRect, FormatScaleLabel(UiScaleValues[i]),
+                highlighted: i == _selectedUiScaleIndex || i == _hoveredUiScaleOption);
         }
     }
 
@@ -415,12 +325,9 @@ public sealed class SettingsScreen : IScreen
         float by = panelTop + SettingsLayout.MonitorRowY;
         var boxRect = new SKRect(bx, by, bx + SettingsLayout.MonitorComboWidth, by + SettingsLayout.MonitorComboHeight);
 
-        canvas.DrawText(Localization.Get("Settings.Monitor"), panelLeft + SettingsLayout.RowLabelX,
-            MenuStyle.VerticalCenterBaseline(boxRect, _labelPaint), _labelPaint);
-
         bool boxHighlighted = _isMonitorComboOpen || _hoveredButton == SettingsButton.MonitorCombo;
-        DrawComboBox(canvas, boxRect, _monitorNames[_selectedMonitorIndex], boxHighlighted);
-        DrawDropdownArrow(canvas, boxRect, _isMonitorComboOpen);
+        XenonComboBox.DrawClosed(canvas, boxRect, Localization.Get("Settings.Monitor"),
+            _monitorNames[_selectedMonitorIndex], boxHighlighted);
 
         if (!_isMonitorComboOpen)
             canvas.DrawText(Localization.Get("Settings.RestartNote"), centerX, panelTop + SettingsLayout.MonitorNoteY, _noteTextPaint);
@@ -432,46 +339,17 @@ public sealed class SettingsScreen : IScreen
         float by = panelTop + SettingsLayout.MonitorRowY + SettingsLayout.MonitorComboHeight;
         float listHeight = _monitorNames.Count * SettingsLayout.MonitorOptionHeight;
 
-        DrawDropdownListBackground(canvas, new SKRect(bx, by, bx + SettingsLayout.MonitorComboWidth, by + listHeight));
+        XenonComboBox.DrawListBackground(canvas,
+            new SKRect(bx, by, bx + SettingsLayout.MonitorComboWidth, by + listHeight));
 
         for (int i = 0; i < _monitorNames.Count; i++)
         {
             float oy = by + i * SettingsLayout.MonitorOptionHeight;
             var optionRect = new SKRect(bx, oy, bx + SettingsLayout.MonitorComboWidth, oy + SettingsLayout.MonitorOptionHeight);
 
-            DrawDropdownOption(canvas, optionRect, _monitorNames[i],
-                isSelected: i == _selectedMonitorIndex, isHovered: i == _hoveredMonitorOption);
+            XenonComboBox.DrawOption(canvas, optionRect, _monitorNames[i],
+                highlighted: i == _selectedMonitorIndex || i == _hoveredMonitorOption);
         }
-    }
-
-    /// <summary>
-    /// Draws the dropdown chevron as a filled vector triangle rather than a Unicode
-    /// arrow glyph — Verdana (this UI's font) has no glyph for ▼/▲, so text-based
-    /// arrows render as nothing.
-    /// </summary>
-    private static void DrawDropdownArrow(SKCanvas canvas, SKRect boxRect, bool pointingUp)
-    {
-        const float halfWidth = 5f;
-        const float height = 5f;
-        float cx = boxRect.Right - 18f;
-        float cy = boxRect.MidY;
-
-        using var path = new SKPath();
-        if (pointingUp)
-        {
-            path.MoveTo(cx - halfWidth, cy + height / 2f);
-            path.LineTo(cx + halfWidth, cy + height / 2f);
-            path.LineTo(cx, cy - height / 2f);
-        }
-        else
-        {
-            path.MoveTo(cx - halfWidth, cy - height / 2f);
-            path.LineTo(cx + halfWidth, cy - height / 2f);
-            path.LineTo(cx, cy + height / 2f);
-        }
-        path.Close();
-
-        canvas.DrawPath(path, _arrowPaint);
     }
 
     private ButtonState GetState(SettingsButton id)
@@ -488,6 +366,6 @@ public sealed class SettingsScreen : IScreen
         float by = panelTop + buttonLocalY;
         var rect = new SKRect(bx, by, bx + SettingsLayout.ButtonWidth, by + SettingsLayout.ButtonHeight);
 
-        ImageButton.Draw(canvas, rect, text, GetState(id), MenuStyle.TypefaceHumaroid);
+        GenericButtonTypeA.Draw(canvas, rect, text, GetState(id));
     }
 }
