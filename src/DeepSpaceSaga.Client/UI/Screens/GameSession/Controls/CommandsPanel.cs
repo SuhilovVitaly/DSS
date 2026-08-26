@@ -108,6 +108,9 @@ public sealed class CommandsPanel
 
     private const float CommandIconSize = 48f;
 
+    /// <summary>Height of the strip overlaid at the bottom of each panel's own body (not adding to it) that shows the hovered command's name, centered.</summary>
+    public const float StatusBarHeight = 24f;
+
     private readonly record struct CommandIconPair(SKBitmap? Normal, SKBitmap? Active);
 
     private SKRect _hideShowButtonRect;
@@ -159,6 +162,11 @@ public sealed class CommandsPanel
     private readonly SKPaint _commandBtnTextDisabledPaint;
     private readonly SKPaint _commandBtnBorderPaint;
     private readonly SKPaint _commandBtnIconPaint;
+
+    // Status bar paints (hovered command name, bottom of the whole widget)
+    private readonly SKPaint _statusBarBgPaint;
+    private readonly SKPaint _statusBarBorderPaint;
+    private readonly SKPaint _statusBarTextPaint;
 
     // ── Images ──────────────────────────────────────────────────
     private readonly SKBitmap? _moduleBodyBackgroundImage;
@@ -248,6 +256,10 @@ public sealed class CommandsPanel
 
         _moduleCaptionTextPaint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 14f, IsAntialias = true, Typeface = XenonStyle.TypefaceSemibold };
 
+        _statusBarBgPaint = new SKPaint { Color = new SKColor(8, 35, 50), Style = SKPaintStyle.Fill };
+        _statusBarBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
+        _statusBarTextPaint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 12f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
+
         _moduleBodyBackgroundImage = LoadImage($"{XenonAssetsPath}/module-body.png");
         _hideImage = LoadImage($"{XenonAssetsPath}/collapse-normal.png");
         _hideHoverImage = LoadImage($"{XenonAssetsPath}/collapse-hover.png");
@@ -329,6 +341,7 @@ public sealed class CommandsPanel
 
     public IReadOnlyList<CommandPanelGeometry> CommandPanelRows => _panelRows;
     public IReadOnlyList<CommandButtonGeometry> AllCommandButtons => _allCommandButtons;
+
 
     // ── Layout helpers ──────────────────────────────────────────
 
@@ -465,12 +478,33 @@ public sealed class CommandsPanel
                         Margin + PanelWidth, rowY + PanelCaptionHeight + PanelBodyHeight)
                     : SKRect.Empty;
 
+                int rowStartOrdinal = _commandButtons.Count;
                 var buttons = opened
                     ? BuildCommandButtons(panel, safeModules, bodyRect)
                     : ImmutableArray<CommandButtonGeometry>.Empty;
+                int rowEndOrdinalExclusive = _commandButtons.Count;
+
+                // The per-panel status bar overlays the bottom of the panel's own
+                // fixed-height body (it never grows the body) and only shows a
+                // name when the hovered command button belongs to this panel.
+                // Inset by the nine-patch body border (XenonBodySliceInset) on
+                // every side so it sits inside the panel's frame rather than
+                // painting over it.
+                var statusBarRect = opened
+                    ? new SKRect(
+                        bodyRect.Left + XenonBodySliceInset,
+                        bodyRect.Bottom - XenonBodySliceInset - StatusBarHeight,
+                        bodyRect.Right - XenonBodySliceInset,
+                        bodyRect.Bottom - XenonBodySliceInset)
+                    : SKRect.Empty;
+                string? statusBarText = opened &&
+                    _hoveredCommandButtonIndex >= rowStartOrdinal &&
+                    _hoveredCommandButtonIndex < rowEndOrdinalExclusive
+                        ? _commandButtons[_hoveredCommandButtonIndex].Label
+                        : null;
 
                 _panelRows.Add(new CommandPanelGeometry(
-                    panel.Name, opened, captionRect, bodyRect, buttons));
+                    panel.Name, opened, captionRect, bodyRect, buttons, statusBarRect, statusBarText));
 
                 rowY += opened ? (PanelCaptionHeight + PanelBodyHeight) : PanelCaptionHeight;
                 if (!opened && panelIndex < Panels.Length - 1)
@@ -615,7 +649,28 @@ public sealed class CommandsPanel
                 // hover/pressed seams and the label lookup.
                 DrawCommandButton(canvas, _commandButtonDrawOrdinal++);
             }
+
+            DrawPanelStatusBar(canvas, row);
         }
+    }
+
+    /// <summary>
+    /// Draws the hovered command's name centered in a thin strip at the bottom
+    /// of this panel's own body (overlaid, not adding height — see the fixed
+    /// <see cref="StatusBarHeight"/> reserved within <see cref="PanelBodyHeight"/>
+    /// by every current panel's button grid). No-op when nothing in this panel
+    /// is hovered.
+    /// </summary>
+    private void DrawPanelStatusBar(SKCanvas canvas, CommandPanelGeometry row)
+    {
+        if (row.StatusBarText is null)
+            return;
+
+        canvas.DrawRect(row.StatusBarRect, _statusBarBgPaint);
+        canvas.DrawRect(row.StatusBarRect, _statusBarBorderPaint);
+
+        float textY = row.StatusBarRect.MidY + _statusBarTextPaint.TextSize / 3f;
+        canvas.DrawText(row.StatusBarText, row.StatusBarRect.MidX, textY, _statusBarTextPaint);
     }
 
     private void DrawBeveledCaption(SKCanvas canvas, SKRect rect, SKPaint backgroundPaint)
@@ -753,7 +808,9 @@ public readonly record struct CommandPanelGeometry(
     bool Opened,
     SKRect CaptionRect,
     SKRect BodyRect,
-    ImmutableArray<CommandButtonGeometry> Buttons);
+    ImmutableArray<CommandButtonGeometry> Buttons,
+    SKRect StatusBarRect,
+    string? StatusBarText);
 
 public readonly record struct CommandButtonGeometry(
     string CommandTypeId,

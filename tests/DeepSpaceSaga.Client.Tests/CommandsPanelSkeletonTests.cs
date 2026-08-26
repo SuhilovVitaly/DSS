@@ -695,6 +695,78 @@ public class CommandsPanelSkeletonTests
             b.CommandTypeId is "engine.accelerate" or "engine.brake" or "engine.maintainSpeed");
     }
 
+    // ── Per-panel status bar (hovered command name, bottom of that panel's own body, centered) ─
+
+    [Fact]
+    public async Task Hovering_a_command_button_shows_its_name_in_its_own_panels_status_bar_only()
+    {
+        await using var fixture = CreateFixture();
+        Render(fixture.Screen);
+        var panel = fixture.Screen.CommandsPanel;
+
+        var accelerate = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "engine.accelerate");
+        fixture.Screen.OnMouseMove(accelerate.Rect.MidX, accelerate.Rect.MidY);
+        Render(fixture.Screen);
+
+        var engineRow = panel.CommandPanelRows.Single(r => r.Name == "Engine");
+        Assert.Equal("Accelerate", engineRow.StatusBarText);
+
+        // Every other panel stays silent — this is not one shared status bar.
+        foreach (var row in panel.CommandPanelRows.Where(r => r.Name != "Engine"))
+            Assert.Null(row.StatusBarText);
+    }
+
+    [Fact]
+    public void No_command_name_is_shown_anywhere_when_no_command_button_is_hovered()
+    {
+        var screen = CreateScreen();
+        Render(screen);
+        var panel = screen.CommandsPanel;
+
+        screen.OnMouseMove(1000, 500);
+        Render(screen);
+
+        Assert.All(panel.CommandPanelRows, row => Assert.Null(row.StatusBarText));
+    }
+
+    [Fact]
+    public void Each_panels_status_bar_overlays_the_bottom_of_its_own_body_without_growing_it()
+    {
+        var screen = CreateScreen();
+        Render(screen);
+        var panel = screen.CommandsPanel;
+
+        foreach (var row in panel.CommandPanelRows)
+        {
+            // Body height is unchanged by the status bar — it overlays, not adds.
+            Assert.Equal(CommandsPanel.PanelBodyHeight, row.BodyRect.Height);
+
+            // Inset on every side so it sits inside the panel's border, not on top of it.
+            Assert.True(row.StatusBarRect.Left > row.BodyRect.Left);
+            Assert.True(row.StatusBarRect.Right < row.BodyRect.Right);
+            Assert.True(row.StatusBarRect.Bottom < row.BodyRect.Bottom);
+            Assert.True(row.StatusBarRect.Top >= row.BodyRect.Top);
+            Assert.Equal(CommandsPanel.StatusBarHeight, row.StatusBarRect.Height);
+        }
+    }
+
+    [Fact]
+    public void Status_bar_is_absent_for_a_collapsed_panel()
+    {
+        var screen = CreateScreen();
+        Render(screen);
+        var panel = screen.CommandsPanel;
+
+        var engineRow = panel.CommandPanelRows.Single(r => r.Name == "Engine");
+        screen.OnMouseDown(engineRow.CaptionRect.MidX, engineRow.CaptionRect.MidY);
+        Render(screen);
+
+        engineRow = panel.CommandPanelRows.Single(r => r.Name == "Engine");
+        Assert.False(engineRow.Opened);
+        Assert.Equal(SKRect.Empty, engineRow.StatusBarRect);
+        Assert.Null(engineRow.StatusBarText);
+    }
+
     // ── Command button hover / pressed seams ───────────────────
 
     [Fact]
