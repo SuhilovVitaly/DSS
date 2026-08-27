@@ -284,16 +284,20 @@ public class GameSessionObjectInteractionTests
         Assert.Null(fixture.Screen.SelectedObjectId);
     }
 
-    // ── Camera follow-on-select (ТЗ: camera focus follows the selected object) ─────
+    // ── Camera does NOT follow the selected object (UX change, story-20260827-083137.md:
+    // selection previously made the camera follow/re-center on the selected object every
+    // frame; this was removed per user feedback — matches TacticalMapSpecification.md's
+    // written ТЗ §54 spec line 79, "клик поглощается, камера не двигается") ────────────
 
     [Fact]
-    public void Selecting_a_non_player_object_makes_camera_follow_it_continuously()
+    public void Selecting_a_non_player_object_leaves_the_camera_exactly_where_it_was()
     {
         // Uses a fake, fully controllable clock (same pattern as
         // Moving_object_under_stationary_cursor_clears_ActiveObjectId) and a running
         // simulation (Speed1) so a position change between snapshots isn't held by the
         // paused-visual-anchor freeze, and advances real wall-clock time past the 0.3 s
-        // visual-reconciliation smoothing window so the new position is fully applied.
+        // visual-reconciliation smoothing window so the new position would be fully
+        // applied IF the camera were still following — it must not be.
         var clock = new FakeClock();
         var ship = new ObjectMotionSnapshot(PlayerShipId, 10000, 10000, SpeedKmS: 0, Direction: 0);
         var buffer = new SnapshotBuffer(clock.Now);
@@ -306,19 +310,27 @@ public class GameSessionObjectInteractionTests
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), handle: null, timestampProvider: clock.Now);
 
         Render(screen);
-        screen.OnMouseDown(640, 410);
+        double focusXBeforeSelect = screen.CameraFocusX;
+        double focusYBeforeSelect = screen.CameraFocusY;
+
+        screen.OnMouseDown(640, 410); // select OBJ-1
 
         Assert.Equal("OBJ-1", screen.SelectedObjectId);
-        Assert.False(screen.IsFocusAttachedToPlayer);
-        Assert.Equal("OBJ-1", screen.CameraFollowObjectId);
+        // Camera state is completely untouched by selecting a non-player object —
+        // still attached to the player ship exactly as before the click.
+        Assert.True(screen.IsFocusAttachedToPlayer);
+        Assert.Equal(focusXBeforeSelect, screen.CameraFocusX);
+        Assert.Equal(focusYBeforeSelect, screen.CameraFocusY);
 
         clock.AdvanceMs(400);
         Render(screen);
+        // Still attached to the (stationary) player ship — camera stayed at the ship,
+        // not at OBJ-1's position (10000, 10050).
         Assert.Equal(10000, screen.CameraFocusX);
-        Assert.Equal(10050, screen.CameraFocusY);
+        Assert.Equal(10000, screen.CameraFocusY);
 
-        // OBJ-1 moves to a new position in a fresh snapshot — proves per-frame
-        // following, not a one-time jump to where it was at selection time.
+        // OBJ-1 moves to a new position in a fresh snapshot — the camera must NOT
+        // move to follow it (this is the exact behavior being removed).
         buffer.Update(new AuthoritativeSnapshot(
             SnapshotSequence: 2,
             GameTimeMs: 1000,
@@ -326,36 +338,37 @@ public class GameSessionObjectInteractionTests
             Objects: ImmutableArray.Create(ship, ObjAt("OBJ-1", 10000 + 200, worldX: 10000 + 100)),
             PlayerShipObjectId: PlayerShipId));
         clock.AdvanceMs(400);
-        Render(screen); // the frame that observes the new snapshot creates a fresh
-                         // reconciliation correction (eases in over subsequent frames)
-        clock.AdvanceMs(400); // past the 0.3 s reconciliation smoothing window
+        Render(screen);
+        clock.AdvanceMs(400);
         Render(screen);
 
-        Assert.Equal(10100, screen.CameraFocusX);
-        Assert.Equal(10200, screen.CameraFocusY);
+        Assert.Equal(10000, screen.CameraFocusX);
+        Assert.Equal(10000, screen.CameraFocusY);
     }
 
     [Fact]
-    public async Task Selecting_the_player_ship_after_following_another_object_reattaches_player_follow()
+    public async Task Selecting_the_player_ship_still_reattaches_camera_follow()
     {
+        // Selecting the player ship itself is the one exception preserved: it still
+        // reattaches camera focus to the player, same as before.
         await using var fixture = CreateFixtureWithPlayerShipAndObjects([ObjAt("OBJ-1", 10000 + 50)]); // screen (640,410)
         Render(fixture.Screen);
 
-        fixture.Screen.OnMouseDown(640, 410); // select+follow OBJ-1
-        Assert.Equal("OBJ-1", fixture.Screen.CameraFollowObjectId);
+        // Detach from the player first (plain map click), so reattachment is observable.
+        fixture.Screen.OnMouseDown(1000, 500);
         Assert.False(fixture.Screen.IsFocusAttachedToPlayer);
 
-        fixture.Screen.OnMouseDown(640, 360); // select the player ship (camera hasn't moved yet)
+        fixture.Screen.OnMouseDown(640, 360); // select the player ship
 
         Assert.Equal(PlayerShipId, fixture.Screen.SelectedObjectId);
         Assert.True(fixture.Screen.IsFocusAttachedToPlayer);
-        Assert.Null(fixture.Screen.CameraFollowObjectId);
     }
 
     [Fact]
     public async Task CtrlC_from_a_free_map_point_reattaches_player_follow()
     {
-        // Pre-existing behavior — must still hold after generalizing camera-follow.
+        // Pre-existing behavior — must still hold after removing selection-driven
+        // camera follow.
         await using var fixture = CreateFixtureWithPlayerShip();
         Render(fixture.Screen);
 
@@ -369,12 +382,15 @@ public class GameSessionObjectInteractionTests
         fixture.Screen.OnKeyDown(Key.C);
 
         Assert.True(fixture.Screen.IsFocusAttachedToPlayer);
-        Assert.Null(fixture.Screen.CameraFollowObjectId);
     }
 
     [Fact]
-    public void CtrlC_while_following_a_non_player_object_detaches_and_freezes_at_its_position()
+    public void CtrlC_after_selecting_a_non_player_object_still_reattaches_player_follow()
     {
+        // Selecting a non-player object no longer attaches the camera to it, so
+        // Ctrl+C's only remaining behavior — reattach to the player ship — must still
+        // work normally right after such a selection (there is no "detach from a
+        // followed object" case anymore).
         var clock = new FakeClock();
         var ship = new ObjectMotionSnapshot(PlayerShipId, 10000, 10000, SpeedKmS: 0, Direction: 0);
         var buffer = new SnapshotBuffer(clock.Now);
@@ -387,52 +403,35 @@ public class GameSessionObjectInteractionTests
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), handle: null, timestampProvider: clock.Now);
 
         Render(screen);
-        screen.OnMouseDown(640, 410); // select+follow OBJ-1
-        clock.AdvanceMs(400);
-        Render(screen);
-        Assert.Equal(10000, screen.CameraFocusX);
-        Assert.Equal(10050, screen.CameraFocusY);
+        screen.OnMouseDown(640, 410); // select OBJ-1 (camera untouched, still on player)
+        Assert.True(screen.IsFocusAttachedToPlayer);
 
         screen.OnKeyDown(Key.ControlLeft);
         screen.OnKeyDown(Key.C);
 
-        Assert.Null(screen.CameraFollowObjectId);
-        Assert.False(screen.IsFocusAttachedToPlayer);
-        // Frozen exactly where OBJ-1 was — not jumped to the player ship at (10000,10000).
+        Assert.True(screen.IsFocusAttachedToPlayer);
         Assert.Equal(10000, screen.CameraFocusX);
-        Assert.Equal(10050, screen.CameraFocusY);
-
-        // OBJ-1 keeps moving in a fresh snapshot — camera must NOT follow it anymore.
-        buffer.Update(new AuthoritativeSnapshot(
-            SnapshotSequence: 2,
-            GameTimeMs: 1000,
-            CurrentSpeed: SimulationSpeed.Speed1,
-            Objects: ImmutableArray.Create(ship, ObjAt("OBJ-1", 10000 + 500, worldX: 10000 + 500)),
-            PlayerShipObjectId: PlayerShipId));
-        clock.AdvanceMs(400);
-        Render(screen);
-
-        Assert.Equal(10000, screen.CameraFocusX);
-        Assert.Equal(10050, screen.CameraFocusY);
+        Assert.Equal(10000, screen.CameraFocusY);
     }
 
     [Fact]
-    public async Task Starting_a_manual_drag_while_following_a_non_player_object_detaches_follow()
+    public async Task Starting_a_manual_drag_after_selecting_a_non_player_object_pans_normally()
     {
+        // Selecting a non-player object no longer attaches the camera to it, so a
+        // subsequent manual drag-pan must behave exactly like any other plain drag —
+        // starting from wherever the camera already was (still the player ship).
         await using var fixture = CreateFixtureWithPlayerShipAndObjects([ObjAt("OBJ-1", 10000 + 50)]); // screen (640,410)
         Render(fixture.Screen);
 
-        fixture.Screen.OnMouseDown(640, 410); // select+follow OBJ-1
+        fixture.Screen.OnMouseDown(640, 410); // select OBJ-1
         Render(fixture.Screen);
-        Assert.Equal("OBJ-1", fixture.Screen.CameraFollowObjectId);
         double focusXBeforeDrag = fixture.Screen.CameraFocusX;
         double focusYBeforeDrag = fixture.Screen.CameraFocusY;
 
-        // Plain map click far from any object (ship and OBJ-1 both render near screen
-        // center now that OBJ-1 is followed) and off the (now always-visible, 4-group)
+        // Plain map click off any object and off the (now always-visible, 4-group)
         // Commands Panel footprint starts a drag-pan.
         fixture.Screen.OnMouseDown(1000, 500);
-        Assert.Null(fixture.Screen.CameraFollowObjectId);
+        Assert.False(fixture.Screen.IsFocusAttachedToPlayer);
 
         fixture.Screen.OnMouseMove(1050, 540); // drag delta (50, 40)
 
@@ -442,7 +441,7 @@ public class GameSessionObjectInteractionTests
         Assert.Equal(expectedX, fixture.Screen.CameraFocusX);
         Assert.Equal(expectedY, fixture.Screen.CameraFocusY);
 
-        Render(fixture.Screen); // confirm it does NOT snap back to following OBJ-1
+        Render(fixture.Screen); // confirm the camera stays put, does not jump anywhere
         Assert.Equal(expectedX, fixture.Screen.CameraFocusX);
         Assert.Equal(expectedY, fixture.Screen.CameraFocusY);
     }

@@ -307,6 +307,138 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
+    public void Approach_prediction_tracks_moving_target_like_the_authoritative_engine()
+    {
+        // ТЗ (story-20260827-083137.md, U4): client-side LinearMotionPredictor must
+        // steer a navigation.approach cycle identically to the authoritative Engine
+        // over several un-refreshed seconds (no new snapshot arriving in between).
+        // Direction-convergence numbers (90 → 80 → 70 → 60) mirror
+        // DeepSpaceSaga.Engine.Tests.ApproachCommandTests
+        // .Approach_re_aims_every_cycle_toward_live_target_state's ship/target geometry,
+        // but this test deliberately uses its own explicit TurnStepIntervalMs=1000 (not
+        // the real Engine's cadence): it exercises PredictApproach's per-boundary steering
+        // math generically, independent of Approach's actual current cadence. Since
+        // Post-implementation bug fix #2, the real Engine now runs Approach at the same
+        // faster ~250 ms cadence as Orbit (MinTurnIntervalMs) rather than the ~1000 ms this
+        // test's own TurnStepIntervalMs value happens to also use — the two are no longer
+        // the same value by coincidence of "current cadence", just by this test's own
+        // choice of scenario. On the client side elapsedMs is measured from the bake
+        // instant, when TurnStepRemainingMs already carries a FULL interval until the
+        // *next* decision (same "initial wait phase before the first turn boundary"
+        // convention already used by the Orbit branch, PredictNavigation) — so the first
+        // decision fires once elapsedMs passes 1000 ms, not exactly at 1000 ms.
+        //
+        // Baked fields (NavigationTargetX/Y = aim point at bake time, NavigationTargetSpeedKmS/
+        // NavigationTargetDirectionDegrees = target's live state at that same bake) are exactly
+        // what the Engine's BuildSnapshot would have projected at GameTimeMs=0, per Checkpoint 1.
+        var predictor = new LinearMotionPredictor();
+
+        // Target at (10000, 10000), direction 90 (+X), speed 1.0 km/s, trailDistance 150 km
+        // (1500 world units) → aim point at bake time = (10000 - 1500, 10000) = (8500, 10000).
+        var state = new ObjectMotionSnapshot(
+            "ship",
+            X: 8500, Y: 20000,
+            SpeedKmS: 0,
+            Direction: 90,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 10,
+            TurnStepRemainingMs: 1000,
+            TurnStepIntervalMs: 1000,
+            NavigationTargetX: 8500,
+            NavigationTargetY: 10000,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationTargetSpeedKmS: 1.0,
+            NavigationTargetDirectionDegrees: 90);
+
+        var beforeFirstBoundary = predictor.Predict(state, 1000);
+        Assert.Equal(90.0, beforeFirstBoundary.Direction, precision: 6); // still waiting
+
+        var afterCycle1 = predictor.Predict(state, 2000);
+        Assert.Equal(80.0, afterCycle1.Direction, precision: 6);
+        Assert.Equal(NavigationComputerCommandTypes.Approach, afterCycle1.ActiveEngineCommandType);
+
+        var afterCycle2 = predictor.Predict(state, 3000);
+        Assert.Equal(70.0, afterCycle2.Direction, precision: 6);
+
+        var afterCycle3 = predictor.Predict(state, 4000);
+        Assert.Equal(60.0, afterCycle3.Direction, precision: 6);
+
+        // Ship speed stayed 0 throughout (isolates pure steering) — position unchanged.
+        Assert.Equal(8500.0, afterCycle3.X, precision: 6);
+        Assert.Equal(20000.0, afterCycle3.Y, precision: 6);
+    }
+
+    [Fact]
+    public void Approach_trajectory_projection_turns_toward_the_extrapolated_moving_aim_point()
+    {
+        // Same scenario as the predictor test above, projected as a preview trajectory
+        // line: the aim point keeps moving (+X) as the target advances, so the projected
+        // course must keep turning cycle over cycle rather than freezing on the first
+        // bake — mirroring the Orbit turn-shape assertions further up this file.
+        var projector = new NavigationTrajectoryProjector();
+
+        var state = new ObjectMotionSnapshot(
+            "ship",
+            X: 8500, Y: 20000,
+            SpeedKmS: 0,
+            Direction: 90,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 10,
+            TurnStepRemainingMs: 1000,
+            TurnStepIntervalMs: 1000,
+            NavigationTargetX: 8500,
+            NavigationTargetY: 10000,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationTargetSpeedKmS: 1.0,
+            NavigationTargetDirectionDegrees: 90);
+
+        var points = projector.Project(state);
+
+        Assert.True(points.Count >= 3, "Expected multiple projected trajectory points");
+        Assert.Equal(8500.0, points[0].X, precision: 6);
+        Assert.Equal(20000.0, points[0].Y, precision: 6);
+    }
+
+    [Fact]
+    public void Approach_trajectory_projection_runs_past_the_old_200s_cap_to_reach_the_aim_point()
+    {
+        // Regression for Post-implementation bug fix #2 (story-20260827-083137.md): the
+        // user explicitly asked that the predicted trajectory NOT be truncated before
+        // reaching the target ("не ограничивай предсказанную траекторию, пусть она идет
+        // пока не достигнет объекта"). Before the fix, ProjectApproach's loop stopped at
+        // the fixed FutureTrajectoryHorizonMs (200s / 800 points at this 250 ms cadence)
+        // even if the ship had not yet arrived. This scenario deliberately needs well over
+        // 200s of simulated travel (slow ship, moderate distance) so the old cap would
+        // have cut the line off mid-flight; the fix must instead keep projecting all the
+        // way to actual arrival at the (stationary) aim point.
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 700,
+            SpeedKmS: 0.3, // slow cruise — travel alone takes ~233s, already past the old 200s cap
+            Direction: 180, // badly misaligned: aim point is "up" (toward smaller Y), ship faces "down"
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 250,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: 0,
+            NavigationTargetY: 0,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationTargetSpeedKmS: 0, // stationary target/aim point — never moves
+            NavigationTargetDirectionDegrees: 0);
+
+        var projector = new NavigationTrajectoryProjector();
+        var points = projector.Project(ship);
+
+        // Proof the line was NOT cut off at the old 200s / 800-point cap.
+        Assert.True(points.Count > NavigationTrajectoryProjector.FutureTrajectoryHorizonMs / 250,
+            $"Expected the projection to run past the old 200s cap, got only {points.Count} points.");
+
+        // The last point must be the actual aim point, not a horizon-truncated position.
+        Assert.Equal(0.0, points[^1].X, precision: 3);
+        Assert.Equal(0.0, points[^1].Y, precision: 3);
+    }
+
+    [Fact]
     public async Task Navigation_trajectory_test_seam_is_empty_without_authoritative_target()
     {
         // ТЗ-08.6: GetNavigationTrajectory returns empty until the snapshot carries an

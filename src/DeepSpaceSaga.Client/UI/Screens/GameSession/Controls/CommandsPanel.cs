@@ -58,7 +58,8 @@ public sealed class CommandsPanel
             NavigationComputerCommandTypes.StationsList,
             ShipEngineCommandTypes.Orbit,
             ShipEngineCommandTypes.SpeedSynchronization,
-            ShipEngineCommandTypes.DirectionSynchronization)),
+            ShipEngineCommandTypes.DirectionSynchronization,
+            NavigationComputerCommandTypes.Approach)),
         new CommandPanelDefinition("Maneuver", ImmutableArray.Create(
             ShipEngineCommandTypes.MaintainCourse,
             ShipEngineCommandTypes.TurnLeftStep,

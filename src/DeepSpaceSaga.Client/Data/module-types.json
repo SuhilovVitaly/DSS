@@ -25,6 +25,7 @@
         "engine.speedSynchronization",
         "engine.directionSynchronization",
         "engine.orbit",
+        "navigation.approach",
         "trade.refuel"
       ]
     },

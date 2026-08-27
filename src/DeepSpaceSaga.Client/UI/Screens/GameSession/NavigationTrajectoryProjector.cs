@@ -19,6 +19,28 @@ internal sealed class NavigationTrajectoryProjector
     public const int FutureTrajectoryHorizonMs = FutureTrajectoryProjector.FutureTrajectoryHorizonMs;
 
     /// <summary>
+    /// Safety bound for <see cref="ProjectApproach"/>'s loop, which — unlike the generic
+    /// Orbit-oriented branch above (still capped at <see cref="FutureTrajectoryHorizonMs"/>,
+    /// 200s) — deliberately runs until actual arrival rather than truncating at a fixed
+    /// horizon (story-20260827-083137.md, Post-implementation bug fix #2: the user
+    /// explicitly asked for the preview not to be capped short of the target). With the
+    /// companion convergence fixes (Approach's faster cadence + <see cref="ApproachPursuitMath.Step"/>'s
+    /// course locking) the loop should always terminate via IsArrived long before this is
+    /// ever reached — this is a generous order-of-magnitude-plus margin (10x
+    /// FutureTrajectoryHorizonMs) purely as a backstop against a residual edge case, not a
+    /// value expected to be hit in normal play.
+    /// </summary>
+    public const int ApproachTrajectoryMaxHorizonMs = 10 * FutureTrajectoryHorizonMs;
+
+    /// <summary>
+    /// Hard backstop on <see cref="ProjectApproach"/>'s loop iteration count, independent of
+    /// <see cref="ApproachTrajectoryMaxHorizonMs"/> — protects against a pathologically small
+    /// TurnStepIntervalMs (e.g. malformed/legacy snapshot data) driving an unbounded number
+    /// of iterations within the time bound above.
+    /// </summary>
+    private const int ApproachTrajectoryMaxIterations = 20_000;
+
+    /// <summary>
     /// Compute future world-coordinate trajectory points for an active navigation
     /// cycle, starting from the current predicted state. Empty when the snapshot does
     /// not carry an authoritative navigation target (no active navigate cycle).
@@ -26,6 +48,19 @@ internal sealed class NavigationTrajectoryProjector
     public List<FutureTrajectoryPoint> Project(ObjectMotionSnapshot predicted)
     {
         var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
+
+        // navigation.approach: trailing-pursuit preview against a moving aim point —
+        // checked before the generic Orbit-oriented branch below since both populate
+        // NavigationTargetX/Y (different meaning — see the doc-comment on
+        // ObjectMotionSnapshot.NavigationTargetX).
+        if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach &&
+            predicted.NavigationTargetX is { } bakedAimX &&
+            predicted.NavigationTargetY is { } bakedAimY &&
+            predicted.NavigationTargetSpeedKmS is { } targetSpeedKmS &&
+            predicted.NavigationTargetDirectionDegrees is { } targetDirectionDegrees)
+        {
+            return ProjectApproach(predicted, bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS);
+        }
 
         if (predicted.NavigationTargetX is not { } targetX ||
             predicted.NavigationTargetY is not { } targetY)
@@ -115,6 +150,94 @@ internal sealed class NavigationTrajectoryProjector
                 points[^1] = new FutureTrajectoryPoint(segArrival.ClosestX, segArrival.ClosestY);
                 break;
             }
+
+            elapsedMs += intervalMs;
+        }
+
+        return points;
+    }
+
+    /// <summary>
+    /// Preview trajectory for an active <see cref="NavigationComputerCommandTypes.Approach"/>
+    /// cycle. Structurally mirrors the Orbit branch above (initial straight "wait" phase
+    /// until the first cycle boundary, then one steering decision per interval), but unlike
+    /// it (a) never locks a PERMANENT course — at each boundary the baked aim point is
+    /// extrapolated forward via <see cref="ApproachPursuitMath.ExtrapolatePosition"/> using
+    /// the target's baked speed/direction, then re-steered via
+    /// <see cref="ApproachPursuitMath.Step"/> (passing the extrapolated point as the "target
+    /// position" with trailDistanceWorldUnits=0 — see LinearMotionPredictor.PredictApproach
+    /// for the identical fit and its rationale), threading Step's cycle-scoped course lock the
+    /// same way, and (b) runs until actual arrival rather than truncating at the fixed
+    /// <see cref="FutureTrajectoryHorizonMs"/> (Post-implementation bug fix #2 — see
+    /// <see cref="ApproachTrajectoryMaxHorizonMs"/>'s doc-comment for the safety-bound
+    /// rationale).
+    /// </summary>
+    private List<FutureTrajectoryPoint> ProjectApproach(
+        ObjectMotionSnapshot predicted,
+        double bakedAimX,
+        double bakedAimY,
+        double targetDirectionDegrees,
+        double targetSpeedKmS)
+    {
+        var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
+
+        double x = predicted.X;
+        double y = predicted.Y;
+        double direction = predicted.Direction;
+        double speedKmS = predicted.SpeedKmS;
+        double? lockedCourse = predicted.NavigationLockedCourseDegrees;
+
+        int turnStepDegrees = Math.Max(1, Math.Abs(predicted.TurnStepDegrees));
+        long intervalMs = Math.Max(1, predicted.TurnStepIntervalMs);
+        long phaseMs = Math.Max(1, predicted.TurnStepRemainingMs);
+
+        points.Add(new FutureTrajectoryPoint(x, y));
+
+        // Phase until the first cycle boundary: straight flight with the CURRENT course.
+        (x, y) = AdvanceStraight(x, y, direction, speedKmS, phaseMs);
+        points.Add(new FutureTrajectoryPoint(x, y));
+
+        // Runs until actual arrival (IsArrived), bounded by ApproachTrajectoryMaxHorizonMs/
+        // ApproachTrajectoryMaxIterations as a safety backstop only — see their doc-comments.
+        // If the loop ever exhausts a bound WITHOUT arriving, that is not automatically a
+        // bug: a stalled ship (SpeedKmS≈0) or one simply slower than a fleeing target can
+        // never geometrically catch it, and legitimately exhausts the bound every time. A
+        // hard assertion was considered here (the fix's design notes suggested "surface
+        // it, don't silently swallow it") but rejected — a pure client-side projector has
+        // no business running a reachability check to tell that ordinary case apart from
+        // an actual residual convergence bug, so a hard assert would false-fire on the
+        // ordinary case. In that situation the caller simply gets the last few points
+        // computed before the bound — an honest "still converging as of the safety bound"
+        // preview, not a guaranteed-complete trajectory.
+        long elapsedMs = phaseMs;
+        int iterations = 0;
+        while (elapsedMs < ApproachTrajectoryMaxHorizonMs && iterations < ApproachTrajectoryMaxIterations)
+        {
+            iterations++;
+
+            var (aimX, aimY) = ApproachPursuitMath.ExtrapolatePosition(
+                bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, elapsedMs);
+
+            var step = ApproachPursuitMath.Step(
+                x, y, direction, speedKmS,
+                aimX, aimY, targetDirectionDegrees, targetSpeedKmS,
+                trailDistanceWorldUnits: 0,
+                turnStepDegrees: turnStepDegrees,
+                angularInertiaDegPerSec: predicted.NavigationAngularInertiaDegPerSec,
+                stepTimeMs: intervalMs,
+                lockedCourseDegrees: lockedCourse);
+
+            direction = step.NewDirectionDegrees;
+            lockedCourse = step.LockedCourseDegrees;
+
+            if (step.IsArrived)
+            {
+                points.Add(new FutureTrajectoryPoint(aimX, aimY));
+                break;
+            }
+
+            (x, y) = AdvanceStraight(x, y, direction, speedKmS, intervalMs);
+            points.Add(new FutureTrajectoryPoint(x, y));
 
             elapsedMs += intervalMs;
         }

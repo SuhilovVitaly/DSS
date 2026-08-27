@@ -267,22 +267,53 @@ public sealed record ActiveCycleData(
     [property: JsonPropertyName("objectId")] string? ObjectId = null,
     [property: JsonPropertyName("moduleId")] string? ModuleId = null,
     /// <summary>
-    /// World-coordinate target of a navigation cycle (engine.orbit, world units).
-    /// Always set for navigation cycles; null for every other command type. Persisted in
-    /// save and restored on load — a loaded navigation cycle keeps heading for the same
-    /// point (AC9). Null targets are tolerated as a no-op (legacy-save guard).
+    /// World-coordinate target of a navigation cycle, world units. Always set for
+    /// navigation cycles; null for every other command type. Persisted in save and
+    /// restored on load. Dual meaning depending on <see cref="CommandType"/>:
+    /// for <see cref="DeepSpaceSaga.Contracts.ShipEngineCommandTypes.Orbit"/> this is a
+    /// fixed locked point set once and never overwritten while the maneuver runs (AC9 —
+    /// a loaded navigation cycle keeps heading for the same point); for
+    /// <see cref="DeepSpaceSaga.Contracts.NavigationComputerCommandTypes.Approach"/> this
+    /// holds the *last recomputed* aim point instead, overwritten every completed cycle
+    /// as the target moves. Null targets are tolerated as a no-op (legacy-save guard).
     /// </summary>
     [property: JsonPropertyName("targetWorldX")] double? TargetWorldX = null,
     /// <summary>World-coordinate target of a navigation cycle; see <see cref="TargetWorldX"/>.</summary>
     [property: JsonPropertyName("targetWorldY")] double? TargetWorldY = null,
-    /// <summary>Locked course for navigation (pure-pursuit avoidance). Null when not yet locked.</summary>
+    /// <summary>
+    /// Locked course for navigation (pure-pursuit avoidance), degrees. Null when not yet
+    /// locked. Dual meaning depending on <see cref="CommandType"/>, same convention as
+    /// <see cref="TargetWorldX"/>: for <see cref="DeepSpaceSaga.Contracts.ShipEngineCommandTypes.Orbit"/>
+    /// this is a permanent lock, set once and held until arrival. For
+    /// <see cref="DeepSpaceSaga.Contracts.NavigationComputerCommandTypes.Approach"/>
+    /// (story-20260827-083137.md, Post-implementation bug fix #2) this is instead
+    /// cycle-scoped and NOT permanent — <see cref="DeepSpaceSaga.Motion.ApproachPursuitMath.Step"/>
+    /// itself drops and re-derives it whenever the live aim point drifts meaningfully,
+    /// since (unlike Orbit's fixed point) the aim point genuinely keeps moving as the
+    /// target moves. Threaded from cycle to auto-repeat cycle every completed cycle.
+    /// </summary>
     [property: JsonPropertyName("navLockedCourseDegrees")] double? NavigationLockedCourseDegrees = null,
     /// <summary>Current phase of a staged navigation maneuver.</summary>
     [property: JsonPropertyName("navPhase")] string? NavigationPhase = null,
     /// <summary>Escape course for the EscapeTurn phase: bearing from target to ship.</summary>
     [property: JsonPropertyName("navEscapeCourseDegrees")] double? NavigationEscapeCourseDegrees = null,
     /// <summary>Required departure distance before turning back (world units).</summary>
-    [property: JsonPropertyName("navRequiredDepartureDistance")] double? NavigationRequiredDepartureDistance = null);
+    [property: JsonPropertyName("navRequiredDepartureDistance")] double? NavigationRequiredDepartureDistance = null,
+    /// <summary>
+    /// Target's live speed (km/s), baked in on the most recently completed cycle of a
+    /// <see cref="DeepSpaceSaga.Contracts.NavigationComputerCommandTypes.Approach"/> cycle
+    /// only. Unlike <see cref="TargetWorldX"/>/<see cref="TargetWorldY"/> (dual meaning,
+    /// see above), this field is Approach-specific and always null for every other
+    /// command type. Overwritten every completed cycle with the target's freshly re-read
+    /// value. Persisted in save and restored on load.
+    /// </summary>
+    [property: JsonPropertyName("navTargetSpeedKmS")] double? NavigationTargetSpeedKmS = null,
+    /// <summary>
+    /// Target's live heading (degrees), baked in on the most recently completed cycle of a
+    /// <see cref="DeepSpaceSaga.Contracts.NavigationComputerCommandTypes.Approach"/> cycle
+    /// only; see <see cref="NavigationTargetSpeedKmS"/>.
+    /// </summary>
+    [property: JsonPropertyName("navTargetDirectionDegrees")] double? NavigationTargetDirectionDegrees = null);
 
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(

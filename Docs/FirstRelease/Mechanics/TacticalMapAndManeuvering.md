@@ -29,7 +29,7 @@
 
 ## Команды первого релиза
 
-- Navigation: `navigation.dock`, `engine.orbit`, `engine.speedSynchronization`, `engine.directionSynchronization`.
+- Navigation: `navigation.dock`, `engine.orbit`, `engine.speedSynchronization`, `engine.directionSynchronization`, `navigation.approach`.
 - Maneuver: `engine.maintainCourse`, `engine.turnLeftStep`, `engine.turnRightStep`, `engine.turnLeftUntilCancel`, `engine.turnRightUntilCancel`.
 - Engine: `engine.accelerate`, `engine.brake`, `engine.maintainSpeed`.
 - Space Control: `scanner.generalScan`, `scanner.structuralScan`, `scanner.nearbySignatures`, `navigation.stationsList`, `mining.extractIce`, `mining.stopExtraction`.

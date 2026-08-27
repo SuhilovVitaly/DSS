@@ -16,6 +16,7 @@
 | `engine.orbit` | Engine | Выбран celestial object |
 | `engine.speedSynchronization` | Engine | Выбран celestial object |
 | `engine.directionSynchronization` | Engine | Выбран celestial object |
+| `navigation.approach` | Engine | Выбран celestial object; прокладывает курс в точку позади цели по ходу её движения (пересчитывается каждый цикл), завершается точным совпадением скорости и направления с целью |
 
 ## Maneuver
 
@@ -51,7 +52,7 @@
 - `GameSessionScreen` должен показывать команды через четыре панели: Navigation, Maneuver, Engine, Space Control.
 - Панели должны работать поверх существующей module-addressed command model.
 - Команды Navigation Computer: `navigation.dock`, `navigation.stationsList`.
-- Команды Engine: `engine.accelerate`, `engine.brake`, `engine.maintainCourse`, `engine.maintainSpeed`, `engine.turnLeftStep`, `engine.turnRightStep`, `engine.turnLeftUntilCancel`, `engine.turnRightUntilCancel`, `engine.speedSynchronization`, `engine.directionSynchronization`, `engine.orbit`.
+- Команды Engine: `engine.accelerate`, `engine.brake`, `engine.maintainCourse`, `engine.maintainSpeed`, `engine.turnLeftStep`, `engine.turnRightStep`, `engine.turnLeftUntilCancel`, `engine.turnRightUntilCancel`, `engine.speedSynchronization`, `engine.directionSynchronization`, `engine.orbit`, `navigation.approach` (физически команда Engine, отображается в панели Navigation).
 - Команды Scanner: `scanner.generalScan`, `scanner.structuralScan`, `scanner.nearbySignatures`.
 - Команды Drilling Unit: `mining.extractIce`, `mining.stopExtraction`.
 - UI должен показывать недоступность команды через понятную причину: нет цели, цель неверного типа, не выполнена синхронизация, нет топлива, нет `Energy Cells`, нет mining module, нет места в cargo, корабль не в нужном состоянии.

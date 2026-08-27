@@ -19,9 +19,15 @@ public sealed record ObjectMotionSnapshot(
     long TurnStepRemainingMs = 0,
     long TurnStepIntervalMs = 0,
     /// <summary>
-    /// World-coordinate target of the active navigation cycle
-    /// (<see cref="ShipEngineCommandTypes.Orbit"/>), world units.
-    /// Null when no navigation cycle is active.
+    /// World-coordinate target of the active navigation cycle. Dual meaning depending on
+    /// which command is active: for <see cref="ShipEngineCommandTypes.Orbit"/> this is a
+    /// fixed, permanently-locked world point captured once. For
+    /// <see cref="NavigationComputerCommandTypes.Approach"/> this instead holds the
+    /// trailing aim point as freshly recomputed on the most recently completed ~1s
+    /// server cycle (live, re-baked every cycle from the target's current position —
+    /// never a fixed lock); see <see cref="NavigationTargetSpeedKmS"/> for the
+    /// accompanying baked target velocity used to extrapolate this point forward
+    /// client-side between bakes. Null when no navigation cycle is active.
     /// </summary>
     double? NavigationTargetX = null,
     /// <summary>World-coordinate target of the active navigation cycle; see <see cref="NavigationTargetX"/>.</summary>
@@ -33,9 +39,17 @@ public sealed record ObjectMotionSnapshot(
     /// </summary>
     int NavigationAngularInertiaDegPerSec = 0,
     /// <summary>
-    /// Locked straight-line course for the active navigation cycle (degrees).
-    /// When non-null the ship has locked onto a course and should not turn further —
-    /// client-side prediction must use NavigationWaypointMath instead of generic turn steps.
+    /// Locked straight-line course for the active navigation cycle (degrees). Dual
+    /// meaning depending on which command is active, same convention as
+    /// <see cref="NavigationTargetX"/>: for <see cref="ShipEngineCommandTypes.Orbit"/>
+    /// this is a permanent lock — once non-null the ship should not re-derive the
+    /// bearing, client-side prediction must use NavigationWaypointMath instead of
+    /// generic turn steps. For <see cref="NavigationComputerCommandTypes.Approach"/>
+    /// (story-20260827-083137.md, Post-implementation bug fix #2) this is instead
+    /// cycle-scoped and NOT permanent: <see cref="DeepSpaceSaga.Motion.ApproachPursuitMath.Step"/>
+    /// itself drops and re-derives it whenever the live aim point drifts meaningfully,
+    /// since (unlike Orbit's fixed point) the aim point genuinely keeps moving as the
+    /// target moves. Null when no navigation cycle is active, or not yet locked.
     /// </summary>
     double? NavigationLockedCourseDegrees = null,
     string? ObjectType = null,
@@ -60,4 +74,19 @@ public sealed record ObjectMotionSnapshot(
     /// </summary>
     bool IsDocked = false,
     /// <summary>ObjectId of the station this object is docked to. Null unless <see cref="IsDocked"/>.</summary>
-    string? DockedStationObjectId = null);
+    string? DockedStationObjectId = null,
+    /// <summary>
+    /// Target's live speed (km/s), baked in on the most recently completed cycle of the
+    /// active <see cref="NavigationComputerCommandTypes.Approach"/> command. Unlike
+    /// <see cref="NavigationTargetX"/>/<see cref="NavigationTargetY"/> (Orbit-specific, a
+    /// fixed locked point), this field is Approach-specific and is overwritten every cycle
+    /// with the target's freshly re-read value so the client can extrapolate the target's
+    /// motion without a cross-object lookup. Null when no Approach cycle is active.
+    /// </summary>
+    double? NavigationTargetSpeedKmS = null,
+    /// <summary>
+    /// Target's live heading (degrees), baked in on the most recently completed cycle of
+    /// the active <see cref="NavigationComputerCommandTypes.Approach"/> command; see
+    /// <see cref="NavigationTargetSpeedKmS"/>. Null when no Approach cycle is active.
+    /// </summary>
+    double? NavigationTargetDirectionDegrees = null);

@@ -383,7 +383,7 @@ public class ScenarioEngineTests
         Assert.Equal(5, activeTypes.Length); // engine + scanner + bridge-navigation-computer + drilling unit + container
 
         var engineType = Assert.Single(activeTypes, t => t.TypeId == "module.engine.basic");
-        Assert.Equal(12, engineType.CommandTypeIds.Length); // + trade.refuel (story-20260822-193700, Batch 3)
+        Assert.Equal(13, engineType.CommandTypeIds.Length); // + navigation.approach (story-20260827-083137, Batch 3)
         Assert.Equal(100, engineType.BaseSuccessChancePercent);
         foreach (string commandTypeId in engineType.CommandTypeIds)
         {
