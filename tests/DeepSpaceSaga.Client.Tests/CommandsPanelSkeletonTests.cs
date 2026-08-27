@@ -122,6 +122,7 @@ public class CommandsPanelSkeletonTests
                 ShipEngineCommandTypes.Orbit,
                 ShipEngineCommandTypes.SpeedSynchronization,
                 ShipEngineCommandTypes.DirectionSynchronization,
+                NavigationComputerCommandTypes.Approach,
             },
             CommandsPanel.Panels[0].CommandTypeIds);
 
@@ -663,18 +664,31 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Five_command_ids_wrap_into_two_rows_of_4_and_1()
+    public void Six_command_ids_wrap_into_two_rows_of_4_and_2()
     {
         var screen = CreateScreen();
         Render(screen);
         var navigationRow = screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Navigation");
 
-        Assert.Equal(5, navigationRow.Buttons.Length);
+        Assert.Equal(6, navigationRow.Buttons.Length);
 
-        // Navigation body top = 76; row 0 (y 82..130): 4 buttons; row 1 (y 134..182): 1.
+        // Navigation body top = 76; row 0 (y 82..130): 4 buttons; row 1 (y 134..182): 2.
         Assert.Equal(new SKRect(14, 84, 98, 132), navigationRow.Buttons[0].Rect);
         Assert.Equal(new SKRect(278, 84, 362, 132), navigationRow.Buttons[3].Rect);
         Assert.Equal(new SKRect(14, 136, 98, 184), navigationRow.Buttons[4].Rect);
+        Assert.Equal(new SKRect(102, 136, 186, 184), navigationRow.Buttons[5].Rect);
+    }
+
+    [Fact]
+    public void Approach_placeholder_button_is_always_disabled()
+    {
+        var screen = CreateScreen();
+        Render(screen);
+        var panel = screen.CommandsPanel;
+
+        var approach = Assert.Single(
+            panel.AllCommandButtons, b => b.CommandTypeId == NavigationComputerCommandTypes.Approach);
+        Assert.False(approach.Enabled);
     }
 
     [Fact]

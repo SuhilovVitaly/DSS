@@ -12,4 +12,11 @@ public static class NavigationComputerCommandTypes
     public const string Dock = "navigation.dock";
 
     public const string StationsList = "navigation.stationsList";
+
+    /// <remarks>
+    /// Placeholder command — no backend module exposes it yet, so it is always
+    /// disabled. The Commands Panel also renders it as a plain black square with
+    /// an "A" until a real icon and command handler exist.
+    /// </remarks>
+    public const string Approach = "navigation.approach";
 }
