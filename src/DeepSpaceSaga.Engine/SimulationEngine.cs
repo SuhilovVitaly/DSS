@@ -2092,11 +2092,20 @@ public sealed class SimulationEngine : IDisposable
         double? navigationTargetDirectionDegrees = null)
     {
         string cycleId = $"CYC-ENGINE-{++_nextEngineCycleId:D6}";
-        // Approach deliberately falls through to the default ComputeEffectiveCycleTimeMs
-        // (~1000 ms via BaseCycleTimeMs × timeFactor) — it is NOT added to this ternary,
-        // which special-cases only Orbit's much faster MinTurnIntervalMs (~250 ms) turn
-        // cadence. This is what makes Approach naturally recompute "every second".
-        long durationMs = commandType == ShipEngineCommandTypes.Orbit &&
+        // Approach now shares Orbit's faster MinTurnIntervalMs (~250 ms at 4°/s) turn
+        // cadence instead of the default ComputeEffectiveCycleTimeMs (~1000 ms). This
+        // supersedes the original design (which deliberately left Approach out of this
+        // ternary to satisfy "recomputed every second" with zero new constants): with
+        // only ~1000 ms between corrections, Approach's turnStepDegrees content value
+        // (calibrated for a ~250 ms cadence, e.g. 1° per 250 ms = 4°/s matching
+        // AngularInertiaDegPerSec) only delivered 1/4 of its intended turn rate, so each
+        // straight-line segment between corrections was 4x longer than intended —
+        // producing exactly the wide, slow, non-converging arc reported by the user
+        // (story-20260827-083137.md, Post-implementation bug fix #2). Re-reading the
+        // live target state at this faster cadence still satisfies "recomputed every
+        // second" as a floor — strictly exceeded (fresher, not staler), not violated.
+        long durationMs = (commandType == ShipEngineCommandTypes.Orbit ||
+                           commandType == NavigationComputerCommandTypes.Approach) &&
                           moduleType.AngularInertiaDegPerSec is { } inertia
             ? MinTurnIntervalMs(inertia)
             : ComputeEffectiveCycleTimeMs(moduleType, commandType);
@@ -2249,6 +2258,9 @@ public sealed class SimulationEngine : IDisposable
                     cycle.TargetWorldX,
                     cycle.TargetWorldY,
                     moduleType.AngularInertiaDegPerSec ?? 0,
+                    // Reuses the Orbit-origin NavigationLockedCourseDegrees field,
+                    // cycle-scoped for Approach — see ApplyApproachStep's doc-comment.
+                    NavigationLockedCourseDegrees: cycle.NavigationLockedCourseDegrees,
                     NavigationTargetSpeedKmS: cycle.NavigationTargetSpeedKmS,
                     NavigationTargetDirectionDegrees: cycle.NavigationTargetDirectionDegrees);
             }
@@ -2506,7 +2518,8 @@ public sealed class SimulationEngine : IDisposable
             trailDistanceWorldUnits,
             moduleType.TurnStepDegrees ?? 0,
             moduleType.AngularInertiaDegPerSec ?? 0,
-            cycle.DurationMs);
+            cycle.DurationMs,
+            cycle.NavigationLockedCourseDegrees);
 
         if (result.IsArrived)
         {
@@ -2534,7 +2547,12 @@ public sealed class SimulationEngine : IDisposable
                 TargetWorldX = result.AimPointX,
                 TargetWorldY = result.AimPointY,
                 NavigationTargetSpeedKmS = targetMotion.SpeedKmS,
-                NavigationTargetDirectionDegrees = targetMotion.Direction
+                NavigationTargetDirectionDegrees = targetMotion.Direction,
+                // Reuses the Orbit-origin NavigationLockedCourseDegrees field, cycle-scoped
+                // (not permanent) for Approach — see ApproachPursuitMath's class doc-comment
+                // and ActiveCycleData.NavigationLockedCourseDegrees for the dual-meaning
+                // convention (story-20260827-083137.md, Post-implementation bug fix #2).
+                NavigationLockedCourseDegrees = result.LockedCourseDegrees
             };
         }
 

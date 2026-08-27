@@ -165,13 +165,19 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 
     /// <summary>
     /// Client-side prediction for an active <see cref="NavigationComputerCommandTypes.Approach"/>
-    /// cycle. Unlike <see cref="PredictNavigation"/> (Orbit), the aim point is never locked —
-    /// it is re-derived from the target's baked speed/direction every cycle boundary, exactly
-    /// mirroring the Engine's own per-cycle re-aim (Checkpoint 1: both sides extrapolate the
-    /// same baked aim point forward via <see cref="ApproachPursuitMath.ExtrapolatePosition"/>
-    /// and re-steer via <see cref="ApproachPursuitMath.Step"/> — passing the extrapolated point
-    /// as the "target position" with trailDistanceWorldUnits=0, since the aim point moves with
-    /// exactly the target's velocity and no further trailing offset needs to be applied to it).
+    /// cycle. Unlike <see cref="PredictNavigation"/> (Orbit), the aim point itself is never
+    /// permanently locked — it is re-derived from the target's baked speed/direction every
+    /// cycle boundary, exactly mirroring the Engine's own per-cycle re-aim (Checkpoint 1: both
+    /// sides extrapolate the same baked aim point forward via
+    /// <see cref="ApproachPursuitMath.ExtrapolatePosition"/> and re-steer via
+    /// <see cref="ApproachPursuitMath.Step"/> — passing the extrapolated point as the "target
+    /// position" with trailDistanceWorldUnits=0, since the aim point moves with exactly the
+    /// target's velocity and no further trailing offset needs to be applied to it). The
+    /// cycle-scoped course lock (<see cref="ApproachPursuitMath.Step"/>'s
+    /// <c>lockedCourseDegrees</c>, story-20260827-083137.md Post-implementation bug fix #2)
+    /// is threaded the same way <see cref="PredictNavigation"/> threads Orbit's, starting from
+    /// the baked <see cref="ObjectMotionSnapshot.NavigationLockedCourseDegrees"/> and carried
+    /// across turn-boundary Step calls within this same Predict call.
     /// </summary>
     private static ObjectMotionSnapshot PredictApproach(
         ObjectMotionSnapshot state,
@@ -194,6 +200,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         double x = state.X;
         double y = state.Y;
         double direction = state.Direction;
+        double? lockedCourse = state.NavigationLockedCourseDegrees;
 
         while (remainingMs > 0)
         {
@@ -211,9 +218,11 @@ public sealed class LinearMotionPredictor : IMotionPredictor
                     trailDistanceWorldUnits: 0,
                     turnStepDegrees: turnStep,
                     angularInertiaDegPerSec: state.NavigationAngularInertiaDegPerSec,
-                    stepTimeMs: intervalMs);
+                    stepTimeMs: intervalMs,
+                    lockedCourseDegrees: lockedCourse);
 
                 direction = step.NewDirectionDegrees;
+                lockedCourse = step.LockedCourseDegrees;
                 untilNextTurnMs = intervalMs;
 
                 if (step.IsArrived)
@@ -235,6 +244,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             Y = y,
             Direction = direction,
             TurnStepRemainingMs = untilNextTurnMs,
+            NavigationLockedCourseDegrees = lockedCourse,
         };
     }
 

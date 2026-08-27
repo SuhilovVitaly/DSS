@@ -99,9 +99,12 @@ public class ApproachCommandTests
         // Target moves at a constant 1.0 km/s along direction 90 (+X). The ship starts
         // far south of the initial aim point with speed 0 (isolating pure steering from
         // any positional drift of the ship itself) and a direction misaligned by ~90°.
-        // turnStepDegrees = 10 per ~1000 ms cycle, so direction converges by 10° steps —
-        // each cycle must re-read the target's live (moved) position/speed/direction and
-        // re-bake a fresh aim point, never a fixed point captured once (unlike Orbit).
+        // Approach now shares Orbit's MinTurnIntervalMs cadence (~250 ms at 4°/s —
+        // Post-implementation bug fix #2, story-20260827-083137.md; superseded the
+        // original ~1000 ms default cadence), so each 250 ms cycle turns by up to
+        // turnStepDegrees=10 and must re-read the target's live (moved) position/speed/
+        // direction and re-bake a fresh aim point, never a fixed point captured once
+        // (unlike Orbit).
         var engine = CreateEngine(
             shipX: 8500, shipY: 20000, shipSpeedMps: 0, shipDirectionDegrees: 90,
             targetX: 10000, targetY: 10000, targetSpeedMps: 1000, targetDirectionDegrees: 90,
@@ -110,17 +113,17 @@ public class ApproachCommandTests
         engine.ReceiveCommand(ApproachCommand());
         engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1); // cycle #1 starts (StartedGameTimeMs = 0)
 
-        var afterCycle1 = PlayerShipFrom(engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1));
+        var afterCycle1 = PlayerShipFrom(engine.CaptureSnapshotForTests(250, SimulationSpeed.Speed1));
         Assert.Equal(80, afterCycle1.Direction, precision: 3);
         Assert.Equal(1.0, afterCycle1.NavigationTargetSpeedKmS!.Value, precision: 6);
         Assert.Equal(90, afterCycle1.NavigationTargetDirectionDegrees!.Value, precision: 6);
         double aimX1 = afterCycle1.NavigationTargetX!.Value;
 
-        var afterCycle2 = PlayerShipFrom(engine.CaptureSnapshotForTests(2000, SimulationSpeed.Speed1));
+        var afterCycle2 = PlayerShipFrom(engine.CaptureSnapshotForTests(500, SimulationSpeed.Speed1));
         Assert.Equal(70, afterCycle2.Direction, precision: 3);
         double aimX2 = afterCycle2.NavigationTargetX!.Value;
 
-        var afterCycle3 = PlayerShipFrom(engine.CaptureSnapshotForTests(3000, SimulationSpeed.Speed1));
+        var afterCycle3 = PlayerShipFrom(engine.CaptureSnapshotForTests(750, SimulationSpeed.Speed1));
         Assert.Equal(60, afterCycle3.Direction, precision: 3);
         double aimX3 = afterCycle3.NavigationTargetX!.Value;
 
@@ -132,6 +135,49 @@ public class ApproachCommandTests
 
         // Still cycling — not completed.
         Assert.Equal(NavigationComputerCommandTypes.Approach, afterCycle3.ActiveEngineCommandType);
+    }
+
+    [Fact]
+    public void Approach_arrives_despite_a_badly_misaligned_initial_heading()
+    {
+        // Regression for the user-reported "wide ever-widening arc, exits the screen,
+        // never closes back toward it" bug (story-20260827-083137.md, Post-implementation
+        // bug fix #2). Unlike the other tests here (which mostly start well-aligned or
+        // exactly at the aim point), this ship starts with a ~180° initial heading error
+        // AND is moving, at a distance from the aim point (~1000 world units) deliberately
+        // close relative to the ship's own turn radius (speed / angular velocity ≈ 430 wu
+        // at the fixed ~250 ms cadence) — the tight-turn-radius-vs-distance case that most
+        // stresses convergence — the true end-to-end regression for the combined cadence
+        // recalibration + course-locking fix. Realistic module constants
+        // (turnStepDegrees=1, angularInertiaDegPerSec=4, matching module.engine.basic)
+        // give the fixed ~250 ms cadence (MinTurnIntervalMs(4)).
+        var engine = CreateEngine(
+            shipX: 7939, shipY: 11061, shipSpeedMps: 3000, shipDirectionDegrees: 270,
+            targetX: 10000, targetY: 10000, targetSpeedMps: 0, targetDirectionDegrees: 45,
+            turnStepDegrees: 1, angularInertiaDegPerSec: 4, trailDistanceKm: 150);
+
+        engine.ReceiveCommand(ApproachCommand());
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1); // cycle #1 starts
+
+        // Generous but bounded budget: at 3 km/s, a straight-line trip over the ~1000
+        // world unit distance alone would take ~33 simulated seconds; even a wide
+        // pursuit loop around it (which the fix must avoid needing) stays well inside
+        // this 200s budget.
+        var snapshot = engine.CaptureSnapshotForTests(200_000, SimulationSpeed.Speed1);
+        var ship = PlayerShipFrom(snapshot);
+
+        // Cycle completed — the ship actually arrived and stopped auto-repeating,
+        // instead of still circling/diverging after a generous time budget. Every
+        // completed intermediate ~250 ms auto-repeat cycle also emits its own
+        // CommandCompleted (pre-existing auto-repeat pipeline behavior, shared by
+        // Orbit — out of this fix's scope), so only the LAST one — the actual
+        // arrival — is asserted here, not the count.
+        Assert.Null(ship.ActiveEngineCommandType);
+        Assert.Equal(45, ship.Direction, precision: 6); // exact scalar match with the target
+        Assert.Equal(0, ship.SpeedKmS, precision: 6);
+
+        var completed = snapshot.ShipEvents.Last(e => e.EventType == ShipEventTypes.CommandCompleted);
+        Assert.Null(completed.ReasonCode);
     }
 
     [Fact]

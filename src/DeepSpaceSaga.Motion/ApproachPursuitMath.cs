@@ -3,25 +3,36 @@ namespace DeepSpaceSaga.Motion;
 /// <summary>
 /// Result of one `navigation.approach` pursuit step: the freshly recomputed aim point
 /// (trailing behind the target along its current heading), whether the ship has reached
-/// it, and the ship's new direction after this step's clamped turn.
+/// it, the ship's new direction after this step's clamped turn, and the course lock (if
+/// any) to pass back into the next call.
 /// </summary>
 /// <param name="AimPointX">Recomputed aim point X, world units.</param>
 /// <param name="AimPointY">Recomputed aim point Y, world units.</param>
 /// <param name="IsArrived">Ship reached (or swept through) the aim point this step.</param>
 /// <param name="NewDirectionDegrees">Ship direction after this step's clamped turn.</param>
+/// <param name="LockedCourseDegrees">
+/// When non-null the ship has aligned onto a straight-line course toward the aim point
+/// and this course should be held (not re-derived from possibly-noisy geometry) on the
+/// next call — pass it back as <c>lockedCourseDegrees</c>. Unlike
+/// <see cref="NavigationWaypointMath"/>'s Orbit lock, this is NOT permanent: the caller
+/// re-passes the value each call, and <see cref="Step"/> itself drops (re-derives) the
+/// lock as soon as the freshly recomputed bearing to the (possibly-moved) aim point
+/// drifts meaningfully away from it — because for Approach the aim point can genuinely
+/// keep moving as the target moves. Null once arrived or while not yet aligned.
+/// </param>
 public readonly record struct ApproachStepResult(
     double AimPointX,
     double AimPointY,
     bool IsArrived,
-    double NewDirectionDegrees);
+    double NewDirectionDegrees,
+    double? LockedCourseDegrees = null);
 
 /// <summary>
 /// Pure, deterministic trailing-pursuit steering math for `navigation.approach`
 /// (shared by Engine and Client — no state, no Engine/Contracts references, only
 /// numbers). Unlike <see cref="NavigationWaypointMath.StagedStep"/> (Orbit), this
-/// never locks a permanent course: every call re-aims from scratch using the
-/// target's freshly-passed-in current position/direction, because the aim point
-/// itself moves as the target moves.
+/// never locks a PERMANENT course: the aim point itself moves as the target moves,
+/// so the target's freshly-passed-in current position/direction is always re-read.
 ///
 /// Model: aimPoint = targetPosition − trailDistanceWorldUnits × unitVector(targetDirection).
 /// The ship steers toward the aim point using the same turn-clamp convention as
@@ -30,6 +41,18 @@ public readonly record struct ApproachStepResult(
 /// test (mirroring <see cref="NavigationWaypointMath.CheckSegmentArrival"/>) rather
 /// than a single end-of-step point sample, so a fast ship cannot tunnel through a
 /// small tolerance ring within one step.
+///
+/// Anti-circling stabilization (Post-implementation bug fix #2, story-20260827-083137.md):
+/// once the ship's heading is within tolerance of the bearing to the aim point, <see
+/// cref="Step"/> holds that heading (via the caller-threaded, cycle-scoped
+/// <c>lockedCourseDegrees</c> parameter) instead of re-deriving a slightly different
+/// bearing from tiny geometric noise every call — the same stabilization
+/// <see cref="NavigationWaypointMath.HoldLockedCourse"/> already uses for Orbit,
+/// including its dot-product "aim point fallen behind the ship" arrival safeguard.
+/// The crucial difference from Orbit: this lock is NOT permanent — <see cref="Step"/>
+/// itself drops and re-derives it as soon as the live aim point drifts meaningfully
+/// away from the held course, since (unlike Orbit's fixed point) the aim point can
+/// genuinely keep moving as the target moves.
 ///
 /// Direction convention: degrees, 0° = up, 90° = right, clockwise.
 /// Speed convention: km/s (1 km/s = 10 world units/s, since 1 world unit = 100 m).
@@ -118,6 +141,12 @@ public static class ApproachPursuitMath
     /// <param name="turnStepDegrees">Maximum turn per step, degrees (module turn-step limit).</param>
     /// <param name="angularInertiaDegPerSec">Angular inertia, degrees per second (0 = cannot turn).</param>
     /// <param name="stepTimeMs">This step's elapsed time, milliseconds — used to project the travelled segment.</param>
+    /// <param name="lockedCourseDegrees">
+    /// The course locked on a previous call (see <see cref="ApproachStepResult.LockedCourseDegrees"/>),
+    /// or null if not yet aligned/locked. Cycle-scoped, NOT permanent — pass back
+    /// exactly what the previous call returned; this method itself decides whether to
+    /// keep holding it, drop it (aim point moved meaningfully), or newly acquire it.
+    /// </param>
     public static ApproachStepResult Step(
         double shipX,
         double shipY,
@@ -130,7 +159,8 @@ public static class ApproachPursuitMath
         double trailDistanceWorldUnits,
         int turnStepDegrees,
         int angularInertiaDegPerSec,
-        long stepTimeMs)
+        long stepTimeMs,
+        double? lockedCourseDegrees = null)
     {
         var (aimX, aimY) = ComputeAimPoint(targetX, targetY, targetDirectionDegrees, trailDistanceWorldUnits);
 
@@ -139,14 +169,78 @@ public static class ApproachPursuitMath
         double distanceToAim = Math.Sqrt(dx * dx + dy * dy);
 
         double newDirection = shipDirectionDegrees;
+        double? newLockedCourse = lockedCourseDegrees;
+        bool arrivedBehindShip = false;
+
         if (distanceToAim > ArrivalToleranceUnits && angularInertiaDegPerSec > 0 && turnStepDegrees > 0)
         {
-            double bearing = BearingDegrees(dx, dy);
-            double delta = ShortestSignedAngleDegrees(shipDirectionDegrees, bearing);
-            double turnDelta = Math.Abs(delta) <= turnStepDegrees
-                ? delta
-                : Math.Sign(delta) * turnStepDegrees;
-            newDirection = NormalizeDegrees(shipDirectionDegrees + turnDelta);
+            if (newLockedCourse is { } lockedCourse)
+            {
+                // Holding an existing lock: steer toward the locked heading rather than
+                // a freshly recomputed bearing — mirrors
+                // NavigationWaypointMath.HoldLockedCourse and is what prevents the
+                // pure-pursuit circling this fix addresses.
+                double lockDelta = ShortestSignedAngleDegrees(shipDirectionDegrees, lockedCourse);
+                double lockTurnDelta = Math.Abs(lockDelta) <= turnStepDegrees
+                    ? lockDelta
+                    : Math.Sign(lockDelta) * turnStepDegrees;
+                newDirection = NormalizeDegrees(shipDirectionDegrees + lockTurnDelta);
+
+                if (Math.Abs(lockDelta) <= turnStepDegrees / 2.0)
+                {
+                    // Behind-the-ship arrival safeguard FIRST (mirrors
+                    // NavigationWaypointMath's dot ≤ 0 check): once aligned with the
+                    // locked course, if the aim point has fallen behind the ship's new
+                    // heading, treat this as arrived — otherwise the ship endlessly
+                    // re-chases a point it has already flown past. This must be checked
+                    // BEFORE any bearing-drift staleness comparison below, because flying
+                    // past a point naturally swings the raw bearing to it by a huge
+                    // amount (it is now behind, not just "moved slightly") — that swing
+                    // must resolve as arrival, not as a false "target moved, drop lock".
+                    double dirRad = newDirection * Math.PI / 180.0;
+                    double dot = dx * Math.Sin(dirRad) - dy * Math.Cos(dirRad);
+                    if (dot <= 0)
+                    {
+                        arrivedBehindShip = true;
+                    }
+                    else
+                    {
+                        // Still ahead: the lock is only kept while the freshly
+                        // recomputed bearing is still close to it (within one turn
+                        // step) — beyond that, the aim point has moved enough (target
+                        // genuinely moving) that the lock is stale and must be dropped
+                        // so the bearing is re-derived fresh, in this SAME call. This is
+                        // what keeps the lock cycle-scoped rather than permanent.
+                        double bearingNow = BearingDegrees(dx, dy);
+                        if (Math.Abs(ShortestSignedAngleDegrees(lockedCourse, bearingNow)) > turnStepDegrees)
+                        {
+                            newLockedCourse = null;
+                            double delta = ShortestSignedAngleDegrees(shipDirectionDegrees, bearingNow);
+                            double turnDelta = Math.Abs(delta) <= turnStepDegrees
+                                ? delta
+                                : Math.Sign(delta) * turnStepDegrees;
+                            newDirection = NormalizeDegrees(shipDirectionDegrees + turnDelta);
+                            if (Math.Abs(delta) <= turnStepDegrees / 2.0)
+                                newLockedCourse = bearingNow;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                double bearing = BearingDegrees(dx, dy);
+                double delta = ShortestSignedAngleDegrees(shipDirectionDegrees, bearing);
+                double turnDelta = Math.Abs(delta) <= turnStepDegrees
+                    ? delta
+                    : Math.Sign(delta) * turnStepDegrees;
+                newDirection = NormalizeDegrees(shipDirectionDegrees + turnDelta);
+
+                // Newly aligned this step — lock the bearing as the course to hold,
+                // exactly the anti-circling stabilization NavigationWaypointMath
+                // already uses for Orbit (see this class's doc-comment).
+                if (Math.Abs(delta) <= turnStepDegrees / 2.0)
+                    newLockedCourse = bearing;
+            }
         }
 
         double stepDistance = shipSpeedKmS * (stepTimeMs / 1000.0) * UnitsPerKmS;
@@ -154,10 +248,11 @@ public static class ApproachPursuitMath
         double endX = shipX + stepDistance * Math.Sin(angleRad);
         double endY = shipY - stepDistance * Math.Cos(angleRad);
 
-        bool arrived = distanceToAim <= ArrivalToleranceUnits
+        bool arrived = arrivedBehindShip
+            || distanceToAim <= ArrivalToleranceUnits
             || ClosestDistanceOnSegment(shipX, shipY, endX, endY, aimX, aimY) <= ArrivalToleranceUnits;
 
-        return new ApproachStepResult(aimX, aimY, arrived, newDirection);
+        return new ApproachStepResult(aimX, aimY, arrived, newDirection, arrived ? null : newLockedCourse);
     }
 
     /// <summary>

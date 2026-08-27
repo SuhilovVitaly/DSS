@@ -39,9 +39,17 @@ public sealed record ObjectMotionSnapshot(
     /// </summary>
     int NavigationAngularInertiaDegPerSec = 0,
     /// <summary>
-    /// Locked straight-line course for the active navigation cycle (degrees).
-    /// When non-null the ship has locked onto a course and should not turn further —
-    /// client-side prediction must use NavigationWaypointMath instead of generic turn steps.
+    /// Locked straight-line course for the active navigation cycle (degrees). Dual
+    /// meaning depending on which command is active, same convention as
+    /// <see cref="NavigationTargetX"/>: for <see cref="ShipEngineCommandTypes.Orbit"/>
+    /// this is a permanent lock — once non-null the ship should not re-derive the
+    /// bearing, client-side prediction must use NavigationWaypointMath instead of
+    /// generic turn steps. For <see cref="NavigationComputerCommandTypes.Approach"/>
+    /// (story-20260827-083137.md, Post-implementation bug fix #2) this is instead
+    /// cycle-scoped and NOT permanent: <see cref="DeepSpaceSaga.Motion.ApproachPursuitMath.Step"/>
+    /// itself drops and re-derives it whenever the live aim point drifts meaningfully,
+    /// since (unlike Orbit's fixed point) the aim point genuinely keeps moving as the
+    /// target moves. Null when no navigation cycle is active, or not yet locked.
     /// </summary>
     double? NavigationLockedCourseDegrees = null,
     string? ObjectType = null,

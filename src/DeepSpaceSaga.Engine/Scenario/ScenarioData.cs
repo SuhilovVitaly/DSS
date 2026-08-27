@@ -280,7 +280,18 @@ public sealed record ActiveCycleData(
     [property: JsonPropertyName("targetWorldX")] double? TargetWorldX = null,
     /// <summary>World-coordinate target of a navigation cycle; see <see cref="TargetWorldX"/>.</summary>
     [property: JsonPropertyName("targetWorldY")] double? TargetWorldY = null,
-    /// <summary>Locked course for navigation (pure-pursuit avoidance). Null when not yet locked.</summary>
+    /// <summary>
+    /// Locked course for navigation (pure-pursuit avoidance), degrees. Null when not yet
+    /// locked. Dual meaning depending on <see cref="CommandType"/>, same convention as
+    /// <see cref="TargetWorldX"/>: for <see cref="DeepSpaceSaga.Contracts.ShipEngineCommandTypes.Orbit"/>
+    /// this is a permanent lock, set once and held until arrival. For
+    /// <see cref="DeepSpaceSaga.Contracts.NavigationComputerCommandTypes.Approach"/>
+    /// (story-20260827-083137.md, Post-implementation bug fix #2) this is instead
+    /// cycle-scoped and NOT permanent — <see cref="DeepSpaceSaga.Motion.ApproachPursuitMath.Step"/>
+    /// itself drops and re-derives it whenever the live aim point drifts meaningfully,
+    /// since (unlike Orbit's fixed point) the aim point genuinely keeps moving as the
+    /// target moves. Threaded from cycle to auto-repeat cycle every completed cycle.
+    /// </summary>
     [property: JsonPropertyName("navLockedCourseDegrees")] double? NavigationLockedCourseDegrees = null,
     /// <summary>Current phase of a staged navigation maneuver.</summary>
     [property: JsonPropertyName("navPhase")] string? NavigationPhase = null,

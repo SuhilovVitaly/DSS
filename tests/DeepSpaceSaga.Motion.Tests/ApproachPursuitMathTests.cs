@@ -212,4 +212,119 @@ public class ApproachPursuitMathTests
         Assert.Equal(350, result.AimPointX, precision: 6);
         Assert.Equal(-500, result.AimPointY, precision: 6);
     }
+
+    [Fact]
+    public void Step_converges_without_wide_looping_for_a_badly_misaligned_moving_ship()
+    {
+        // Regression for the user-reported "wide ever-widening arc that sweeps past the
+        // target and never closes back toward it" bug (story-20260827-083137.md,
+        // Post-implementation bug fix #2). Drives many successive Step calls exactly the
+        // way the Engine/client loop drives them — each call's LockedCourseDegrees fed
+        // back into the next — using the SAME realistic module constants as production
+        // (module.engine.basic: turnStepDegrees=1, angularInertiaDegPerSec=4) at the
+        // ~250 ms cadence the companion cadence fix gives Approach
+        // (MinTurnIntervalMs(4) = 250 ms).
+        const int turnStepDegreesRealistic = 1;
+        const int angularInertia = 4;
+        const long stepTimeMs = 250;
+        const double trailDistanceWorldUnits = 1500; // 150 km
+
+        // Stationary target (speed 0) at the origin, heading 0 (aim point trails behind
+        // it, at larger Y since 0° = up = -Y).
+        const double targetX = 0, targetY = 0, targetDirectionDegrees = 0, targetSpeedKmS = 0;
+
+        // Ship starts off to the side with a heading badly mismatched (~135° initial
+        // angular error) relative to the bearing toward the aim point, moving at a
+        // realistic cruising speed — mirrors the screenshot scenario (ship issues
+        // Approach against a nearby object with a heading that isn't already aimed at it).
+        double shipX = 3000, shipY = 3000, shipDirection = 180, shipSpeedKmS = 3;
+        double? lockedCourse = null;
+
+        bool arrived = false;
+        int stepsTaken = 0;
+        const int maxSteps = 2000; // generous upper bound (500 simulated seconds)
+
+        for (; stepsTaken < maxSteps; stepsTaken++)
+        {
+            var result = ApproachPursuitMath.Step(
+                shipX, shipY, shipDirection, shipSpeedKmS,
+                targetX, targetY, targetDirectionDegrees, targetSpeedKmS,
+                trailDistanceWorldUnits, turnStepDegreesRealistic, angularInertia,
+                stepTimeMs, lockedCourse);
+
+            if (result.IsArrived)
+            {
+                arrived = true;
+                break;
+            }
+
+            // Advance the ship exactly like a caller (Engine/client) would between calls.
+            double distance = shipSpeedKmS * (stepTimeMs / 1000.0) * 10.0;
+            double angleRad = result.NewDirectionDegrees * Math.PI / 180.0;
+            shipX += distance * Math.Sin(angleRad);
+            shipY -= distance * Math.Cos(angleRad);
+            shipDirection = result.NewDirectionDegrees;
+            lockedCourse = result.LockedCourseDegrees;
+        }
+
+        Assert.True(arrived,
+            $"Ship failed to arrive within {maxSteps} steps ({maxSteps * stepTimeMs / 1000.0}s simulated) " +
+            $"— last direction {shipDirection:F2}, position ({shipX:F1},{shipY:F1}), locked course {lockedCourse}");
+        Assert.True(stepsTaken < maxSteps / 2,
+            $"Convergence took {stepsTaken} steps — expected comfortably under half the generous budget, " +
+            "not a slow non-converging loop");
+    }
+
+    [Fact]
+    public void Locked_course_holds_heading_instead_of_rederiving_a_near_identical_bearing()
+    {
+        // Once aligned (delta within turnStepDegrees/2 of the locked course), Step must
+        // continue steering toward the HELD course rather than a freshly recomputed
+        // bearing — even when the fresh bearing differs by a hair due to the ship having
+        // moved. Ship already flying exactly along the locked course (0°): a naive
+        // re-derivation would compute a near-0 bearing too here (aim point almost
+        // straight ahead), so this mainly documents that the locked branch is taken and
+        // returns the SAME lock back unchanged (LockedCourseDegrees echoed, not cleared).
+        var result = ApproachPursuitMath.Step(
+            shipX: 0, shipY: -100, shipDirectionDegrees: 0, shipSpeedKmS: 1,
+            targetX: 0, targetY: -1650, targetDirectionDegrees: 0, targetSpeedKmS: 0,
+            trailDistanceWorldUnits: 0, // aim point coincides with target: (0, -1650)
+            turnStepDegrees: TurnStepDegrees, angularInertiaDegPerSec: AngularInertiaDegPerSec,
+            stepTimeMs: 250,
+            lockedCourseDegrees: 0);
+
+        Assert.False(result.IsArrived);
+        Assert.Equal(0, result.NewDirectionDegrees, precision: 6);
+        Assert.NotNull(result.LockedCourseDegrees);
+        Assert.Equal(0, result.LockedCourseDegrees!.Value, precision: 6);
+    }
+
+    [Fact]
+    public void Locked_course_detects_aim_point_fallen_behind_the_ship_even_outside_arrival_tolerance()
+    {
+        // Regression for the exact mechanism NavigationWaypointMath's HoldLockedCourse
+        // already uses for Orbit (dot ≤ 0 "target behind ship" check), now added to
+        // Approach (story-20260827-083137.md, Post-implementation bug fix #2). The ship
+        // already locked heading 0° (flying "up", -Y) and has flown past the aim point,
+        // which now sits laterally offset (20 world units — well outside
+        // ArrivalToleranceUnits=5) AND behind the ship along its heading. A
+        // position-only distance/segment check would never trigger for this offset, so
+        // WITHOUT the dot-product safeguard the ship would keep re-deriving a bearing
+        // toward an already-passed point and never terminate (the exact "endlessly
+        // re-chasing a point already flown past" failure mode this fix targets).
+        var result = ApproachPursuitMath.Step(
+            shipX: 0, shipY: -100, shipDirectionDegrees: 0, shipSpeedKmS: 0,
+            targetX: 20, targetY: -50, targetDirectionDegrees: 0, targetSpeedKmS: 0,
+            trailDistanceWorldUnits: 0, // aim point coincides with target: (20, -50)
+            turnStepDegrees: TurnStepDegrees, angularInertiaDegPerSec: AngularInertiaDegPerSec,
+            stepTimeMs: 0,
+            lockedCourseDegrees: 0);
+
+        // Sanity: the aim point really is outside the plain arrival tolerance —
+        // this must be the dot-product safeguard doing the work, not the distance check.
+        double distanceToAim = Math.Sqrt(20 * 20 + 50 * 50);
+        Assert.True(distanceToAim > ApproachPursuitMath.ArrivalToleranceUnits);
+
+        Assert.True(result.IsArrived);
+    }
 }
