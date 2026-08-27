@@ -38,6 +38,7 @@ public class CommandsPanelSkeletonTests
         ["engine.speedSynchronization"] = ("Speed Synchronization", "object"),
         ["engine.directionSynchronization"] = ("Direction Synchronization", "object"),
         ["engine.orbit"] = ("Orbit", "point"),
+        ["navigation.approach"] = ("Approach", "object"),
         ["scanner.generalScan"] = ("General Scan", "object"),
         ["scanner.structuralScan"] = ("Structural Scan", "object"),
         ["navigation.dock"] = ("Dock", "object"),
@@ -59,7 +60,7 @@ public class CommandsPanelSkeletonTests
         "engine.turnLeftUntilCancel", "engine.turnRightUntilCancel",
         "engine.maintainCourse",
         "engine.speedSynchronization", "engine.directionSynchronization",
-        "engine.orbit");
+        "engine.orbit", "navigation.approach");
 
     private static readonly ImmutableArray<string> ScannerCommandTypeIds = ImmutableArray.Create(
         "scanner.generalScan", "scanner.structuralScan");
@@ -680,15 +681,54 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Approach_placeholder_button_is_always_disabled()
+    public async Task Approach_button_requires_selection_like_scanner_commands()
     {
-        var screen = CreateScreen();
-        Render(screen);
-        var panel = screen.CommandsPanel;
+        // story-20260827-083137.md, U5: navigation.approach is a real Engine command now
+        // (target: "object"), enabled/disabled exactly like SpeedSync/DirectionSync —
+        // mirrors Match_command_buttons_require_selection_like_scanner_commands.
+        await using var fixture = CreateFixture(FullEngineModule, extraObjects: [ObjAt("OBJ-1", 10060)]);
+        Render(fixture.Screen);
+        var panel = fixture.Screen.CommandsPanel;
+
+        var approach = Assert.Single(
+            panel.AllCommandButtons, b => b.CommandTypeId == NavigationComputerCommandTypes.Approach);
+
+        Assert.False(approach.Enabled);
+        fixture.Screen.OnMouseDown(approach.Rect.MidX, approach.Rect.MidY);
+        Assert.Empty(fixture.Connection.Commands);
+
+        fixture.Screen.OnMouseDown(640, 420); // select OBJ-1
+        Render(fixture.Screen);
+
+        approach = Assert.Single(
+            panel.AllCommandButtons, b => b.CommandTypeId == NavigationComputerCommandTypes.Approach);
+        Assert.True(approach.Enabled);
+
+        fixture.Screen.OnMouseDown(approach.Rect.MidX, approach.Rect.MidY);
+
+        var command = Assert.Single(fixture.Connection.Commands);
+        Assert.Equal(NavigationComputerCommandTypes.Approach, command.CommandType);
+        Assert.Equal(EngineModuleId, command.ModuleId);
+        Assert.Equal("OBJ-1", command.TargetObjectId);
+    }
+
+    [Fact]
+    public async Task Approach_button_disabled_without_any_installed_module_covering_it()
+    {
+        // OneEngineModule does not expose navigation.approach — disabled regardless
+        // of selection, same pattern as scanner commands with no covering module.
+        await using var fixture = CreateFixture(OneEngineModule, extraObjects: [ObjAt("OBJ-1", 10060)]);
+        Render(fixture.Screen);
+        fixture.Screen.OnMouseDown(640, 420); // select OBJ-1
+        Render(fixture.Screen);
+        var panel = fixture.Screen.CommandsPanel;
 
         var approach = Assert.Single(
             panel.AllCommandButtons, b => b.CommandTypeId == NavigationComputerCommandTypes.Approach);
         Assert.False(approach.Enabled);
+
+        fixture.Screen.OnMouseDown(approach.Rect.MidX, approach.Rect.MidY);
+        Assert.Empty(fixture.Connection.Commands);
     }
 
     [Fact]

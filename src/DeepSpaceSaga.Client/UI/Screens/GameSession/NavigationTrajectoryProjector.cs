@@ -27,6 +27,19 @@ internal sealed class NavigationTrajectoryProjector
     {
         var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
 
+        // navigation.approach: trailing-pursuit preview against a moving aim point —
+        // checked before the generic Orbit-oriented branch below since both populate
+        // NavigationTargetX/Y (different meaning — see the doc-comment on
+        // ObjectMotionSnapshot.NavigationTargetX).
+        if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach &&
+            predicted.NavigationTargetX is { } bakedAimX &&
+            predicted.NavigationTargetY is { } bakedAimY &&
+            predicted.NavigationTargetSpeedKmS is { } targetSpeedKmS &&
+            predicted.NavigationTargetDirectionDegrees is { } targetDirectionDegrees)
+        {
+            return ProjectApproach(predicted, bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS);
+        }
+
         if (predicted.NavigationTargetX is not { } targetX ||
             predicted.NavigationTargetY is not { } targetY)
         {
@@ -115,6 +128,71 @@ internal sealed class NavigationTrajectoryProjector
                 points[^1] = new FutureTrajectoryPoint(segArrival.ClosestX, segArrival.ClosestY);
                 break;
             }
+
+            elapsedMs += intervalMs;
+        }
+
+        return points;
+    }
+
+    /// <summary>
+    /// Preview trajectory for an active <see cref="NavigationComputerCommandTypes.Approach"/>
+    /// cycle. Structurally mirrors the Orbit branch above (initial straight "wait" phase
+    /// until the first cycle boundary, then one steering decision per interval) but never
+    /// locks a course: at each boundary the baked aim point is extrapolated forward via
+    /// <see cref="ApproachPursuitMath.ExtrapolatePosition"/> using the target's baked
+    /// speed/direction, then re-steered via <see cref="ApproachPursuitMath.Step"/> (passing
+    /// the extrapolated point as the "target position" with trailDistanceWorldUnits=0 — see
+    /// LinearMotionPredictor.PredictApproach for the identical fit and its rationale).
+    /// </summary>
+    private List<FutureTrajectoryPoint> ProjectApproach(
+        ObjectMotionSnapshot predicted,
+        double bakedAimX,
+        double bakedAimY,
+        double targetDirectionDegrees,
+        double targetSpeedKmS)
+    {
+        var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
+
+        double x = predicted.X;
+        double y = predicted.Y;
+        double direction = predicted.Direction;
+        double speedKmS = predicted.SpeedKmS;
+
+        int turnStepDegrees = Math.Max(1, Math.Abs(predicted.TurnStepDegrees));
+        long intervalMs = Math.Max(1, predicted.TurnStepIntervalMs);
+        long phaseMs = Math.Max(1, predicted.TurnStepRemainingMs);
+
+        points.Add(new FutureTrajectoryPoint(x, y));
+
+        // Phase until the first cycle boundary: straight flight with the CURRENT course.
+        (x, y) = AdvanceStraight(x, y, direction, speedKmS, phaseMs);
+        points.Add(new FutureTrajectoryPoint(x, y));
+
+        long elapsedMs = phaseMs;
+        while (elapsedMs < FutureTrajectoryHorizonMs)
+        {
+            var (aimX, aimY) = ApproachPursuitMath.ExtrapolatePosition(
+                bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, elapsedMs);
+
+            var step = ApproachPursuitMath.Step(
+                x, y, direction, speedKmS,
+                aimX, aimY, targetDirectionDegrees, targetSpeedKmS,
+                trailDistanceWorldUnits: 0,
+                turnStepDegrees: turnStepDegrees,
+                angularInertiaDegPerSec: predicted.NavigationAngularInertiaDegPerSec,
+                stepTimeMs: intervalMs);
+
+            direction = step.NewDirectionDegrees;
+
+            if (step.IsArrived)
+            {
+                points.Add(new FutureTrajectoryPoint(aimX, aimY));
+                break;
+            }
+
+            (x, y) = AdvanceStraight(x, y, direction, speedKmS, intervalMs);
+            points.Add(new FutureTrajectoryPoint(x, y));
 
             elapsedMs += intervalMs;
         }

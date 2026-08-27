@@ -359,7 +359,8 @@ public static class EngineContentLoader
                 dto.Target ?? "none",
                 activationEnergyCellsCost,
                 dto.Type,
-                dto.RangeKm);
+                dto.RangeKm,
+                dto.TrailDistanceKm);
         });
     }
 
@@ -549,7 +550,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("target")] string? Target,
         [property: JsonPropertyName("activationEnergyCellsCost")] int? ActivationEnergyCellsCost,
         [property: JsonPropertyName("type")] string? Type,
-        [property: JsonPropertyName("rangeKm")] int? RangeKm = null);
+        [property: JsonPropertyName("rangeKm")] int? RangeKm = null,
+        [property: JsonPropertyName("trailDistanceKm")] int? TrailDistanceKm = null);
 
     private sealed record FactoryTypesFile(
         [property: JsonPropertyName("factoryTypes")] IReadOnlyList<FactoryTypeDefinitionDto> FactoryTypes);

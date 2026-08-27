@@ -20,6 +20,20 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 
     public ObjectMotionSnapshot Predict(ObjectMotionSnapshot state, long elapsedMs)
     {
+        // navigation.approach: trailing-pursuit cycle against a moving aim point —
+        // never locks a course, re-aims every cycle. Checked before the Orbit branch
+        // below since both populate NavigationTargetX/Y (different meaning — see the
+        // doc-comment on ObjectMotionSnapshot.NavigationTargetX).
+        if (state.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach &&
+            state.NavigationTargetX is { } bakedAimX &&
+            state.NavigationTargetY is { } bakedAimY &&
+            state.NavigationTargetSpeedKmS is { } targetSpeedKmS &&
+            state.NavigationTargetDirectionDegrees is { } targetDirectionDegrees &&
+            state.NavigationAngularInertiaDegPerSec > 0)
+        {
+            return PredictApproach(state, elapsedMs, bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS);
+        }
+
         // Navigation cycle with locked or lockable course — use shared step math.
         if (state.ActiveEngineCommandType == ShipEngineCommandTypes.Orbit &&
             state.NavigationTargetX is { } targetX &&
@@ -149,6 +163,81 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         };
     }
 
+    /// <summary>
+    /// Client-side prediction for an active <see cref="NavigationComputerCommandTypes.Approach"/>
+    /// cycle. Unlike <see cref="PredictNavigation"/> (Orbit), the aim point is never locked —
+    /// it is re-derived from the target's baked speed/direction every cycle boundary, exactly
+    /// mirroring the Engine's own per-cycle re-aim (Checkpoint 1: both sides extrapolate the
+    /// same baked aim point forward via <see cref="ApproachPursuitMath.ExtrapolatePosition"/>
+    /// and re-steer via <see cref="ApproachPursuitMath.Step"/> — passing the extrapolated point
+    /// as the "target position" with trailDistanceWorldUnits=0, since the aim point moves with
+    /// exactly the target's velocity and no further trailing offset needs to be applied to it).
+    /// </summary>
+    private static ObjectMotionSnapshot PredictApproach(
+        ObjectMotionSnapshot state,
+        long elapsedMs,
+        double bakedAimX,
+        double bakedAimY,
+        double targetDirectionDegrees,
+        double targetSpeedKmS)
+    {
+        if (elapsedMs <= 0)
+            return state;
+
+        int turnStep = Math.Abs(state.TurnStepDegrees);
+        if (turnStep == 0 || state.TurnStepIntervalMs <= 0)
+            return PredictStraight(state, elapsedMs, state.Direction);
+
+        long intervalMs = state.TurnStepIntervalMs;
+        long remainingMs = elapsedMs;
+        long untilNextTurnMs = state.TurnStepRemainingMs;
+        double x = state.X;
+        double y = state.Y;
+        double direction = state.Direction;
+
+        while (remainingMs > 0)
+        {
+            if (untilNextTurnMs == 0)
+            {
+                // Elapsed time since the bake this state was captured at — the same
+                // reference frame the Engine bakes NavigationTargetX/Y/Speed/Direction in.
+                long elapsedSinceBakeMs = elapsedMs - remainingMs;
+                var (aimX, aimY) = ApproachPursuitMath.ExtrapolatePosition(
+                    bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, elapsedSinceBakeMs);
+
+                var step = ApproachPursuitMath.Step(
+                    x, y, direction, state.SpeedKmS,
+                    aimX, aimY, targetDirectionDegrees, targetSpeedKmS,
+                    trailDistanceWorldUnits: 0,
+                    turnStepDegrees: turnStep,
+                    angularInertiaDegPerSec: state.NavigationAngularInertiaDegPerSec,
+                    stepTimeMs: intervalMs);
+
+                direction = step.NewDirectionDegrees;
+                untilNextTurnMs = intervalMs;
+
+                if (step.IsArrived)
+                {
+                    AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, remainingMs);
+                    return ClearNavigation(state, x, y, direction, untilNextTurnMs);
+                }
+            }
+
+            long segmentMs = Math.Min(remainingMs, untilNextTurnMs);
+            AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, segmentMs);
+            remainingMs -= segmentMs;
+            untilNextTurnMs -= segmentMs;
+        }
+
+        return state with
+        {
+            X = x,
+            Y = y,
+            Direction = direction,
+            TurnStepRemainingMs = untilNextTurnMs,
+        };
+    }
+
     private static ObjectMotionSnapshot PredictBackwardTurnSteps(ObjectMotionSnapshot state, long elapsedMs)
     {
         long remainingMs = -elapsedMs;
@@ -196,6 +285,8 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             NavigationPhase = null,
             NavigationEscapeCourseDegrees = null,
             NavigationRequiredDepartureDistance = null,
+            NavigationTargetSpeedKmS = null,
+            NavigationTargetDirectionDegrees = null,
         };
     }
 

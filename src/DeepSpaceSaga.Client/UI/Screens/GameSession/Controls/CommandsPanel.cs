@@ -169,11 +169,6 @@ public sealed class CommandsPanel
     private readonly SKPaint _statusBarBorderPaint;
     private readonly SKPaint _statusBarTextPaint;
 
-    // Temporary placeholder paints for NavigationComputerCommandTypes.Approach
-    // (plain black square with an "A" until it has a real icon and command).
-    private readonly SKPaint _approachPlaceholderBgPaint;
-    private readonly SKPaint _approachPlaceholderTextPaint;
-
     // ── Images ──────────────────────────────────────────────────
     private readonly SKBitmap? _moduleBodyBackgroundImage;
     private readonly SKBitmap? _hideImage;
@@ -265,13 +260,6 @@ public sealed class CommandsPanel
         _statusBarBgPaint = new SKPaint { Color = new SKColor(8, 35, 50), Style = SKPaintStyle.Fill };
         _statusBarBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
         _statusBarTextPaint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 12f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
-
-        _approachPlaceholderBgPaint = new SKPaint { Color = SKColors.Black, Style = SKPaintStyle.Fill };
-        _approachPlaceholderTextPaint = new SKPaint
-        {
-            Color = SKColors.White, TextSize = 16f, IsAntialias = true,
-            Typeface = XenonStyle.TypefaceSemibold, TextAlign = SKTextAlign.Center
-        };
 
         _moduleBodyBackgroundImage = LoadImage($"{XenonAssetsPath}/module-body.png");
         _hideImage = LoadImage($"{XenonAssetsPath}/collapse-normal.png");
@@ -704,12 +692,6 @@ public sealed class CommandsPanel
     {
         var (label, button) = _commandButtons[index];
 
-        if (button.CommandTypeId == NavigationComputerCommandTypes.Approach)
-        {
-            DrawApproachPlaceholderButton(canvas, button);
-            return;
-        }
-
         var iconPair = _commandIcons.GetValueOrDefault(button.CommandTypeId);
         var icon = iconPair.Normal;
         if (icon is not null)
@@ -765,20 +747,6 @@ public sealed class CommandsPanel
         string displayLabel = TruncateLabel(label, textPaint, button.Rect.Width - 8f);
         float textY = button.Rect.MidY + textPaint.TextSize / 3f;
         canvas.DrawText(displayLabel, button.Rect.MidX, textY, textPaint);
-    }
-
-    /// <summary>
-    /// Temporary stand-in for <see cref="NavigationComputerCommandTypes.Approach"/>:
-    /// a plain black square with a bold white "A", ignoring the normal button
-    /// chrome/label/disabled styling — swap for real icon + chrome once the
-    /// command has a backend module.
-    /// </summary>
-    private void DrawApproachPlaceholderButton(SKCanvas canvas, CommandButtonGeometry button)
-    {
-        canvas.DrawRect(button.Rect, _approachPlaceholderBgPaint);
-
-        float textY = button.Rect.MidY + _approachPlaceholderTextPaint.TextSize / 3f;
-        canvas.DrawText("A", button.Rect.MidX, textY, _approachPlaceholderTextPaint);
     }
 
     private void DrawCommandButtonChrome(SKCanvas canvas, int index, CommandButtonGeometry button)

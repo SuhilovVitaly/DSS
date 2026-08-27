@@ -14,9 +14,14 @@ public static class NavigationComputerCommandTypes
     public const string StationsList = "navigation.stationsList";
 
     /// <remarks>
-    /// Placeholder command — no backend module exposes it yet, so it is always
-    /// disabled. The Commands Panel also renders it as a plain black square with
-    /// an "A" until a real icon and command handler exist.
+    /// Physically an Engine command (registered under module.engine's commandTypeIds,
+    /// not the Navigation Computer's), despite the name/namespace — same pattern as
+    /// <see cref="ShipEngineCommandTypes.Orbit"/>. Steers the ship to a point trailing
+    /// behind the selected object along its current heading, re-aiming every ~1s from
+    /// the object's live speed/direction, and completes by snapping the ship's speed
+    /// and direction to the target's exactly (priming it for <see cref="Dock"/>). See
+    /// DeepSpaceSaga.Motion.ApproachPursuitMath for the shared steering math and
+    /// SimulationEngine (DeepSpaceSaga.Engine) for the command lifecycle.
     /// </remarks>
     public const string Approach = "navigation.approach";
 }

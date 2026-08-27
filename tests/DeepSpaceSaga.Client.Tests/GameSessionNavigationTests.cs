@@ -307,6 +307,93 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
+    public void Approach_prediction_tracks_moving_target_like_the_authoritative_engine()
+    {
+        // ТЗ (story-20260827-083137.md, U4): client-side LinearMotionPredictor must
+        // steer a navigation.approach cycle identically to the authoritative Engine
+        // over several un-refreshed seconds (no new snapshot arriving in between).
+        // Hand-computed expectation mirrors DeepSpaceSaga.Engine.Tests.ApproachCommandTests
+        // .Approach_re_aims_every_cycle_toward_live_target_state's ship/target geometry
+        // exactly (turnStepDegrees=10, angularInertia=4, 1000 ms cadence: direction
+        // converges 90 → 80 → 70 → 60 across three completed cycles), but on the client
+        // side elapsedMs is measured from the bake instant, when TurnStepRemainingMs
+        // already carries a FULL interval until the *next* decision (same "initial wait
+        // phase before the first turn boundary" convention already used by the Orbit
+        // branch, PredictNavigation) — so the first decision fires once elapsedMs passes
+        // 1000 ms, not exactly at 1000 ms.
+        //
+        // Baked fields (NavigationTargetX/Y = aim point at bake time, NavigationTargetSpeedKmS/
+        // NavigationTargetDirectionDegrees = target's live state at that same bake) are exactly
+        // what the Engine's BuildSnapshot would have projected at GameTimeMs=0, per Checkpoint 1.
+        var predictor = new LinearMotionPredictor();
+
+        // Target at (10000, 10000), direction 90 (+X), speed 1.0 km/s, trailDistance 150 km
+        // (1500 world units) → aim point at bake time = (10000 - 1500, 10000) = (8500, 10000).
+        var state = new ObjectMotionSnapshot(
+            "ship",
+            X: 8500, Y: 20000,
+            SpeedKmS: 0,
+            Direction: 90,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 10,
+            TurnStepRemainingMs: 1000,
+            TurnStepIntervalMs: 1000,
+            NavigationTargetX: 8500,
+            NavigationTargetY: 10000,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationTargetSpeedKmS: 1.0,
+            NavigationTargetDirectionDegrees: 90);
+
+        var beforeFirstBoundary = predictor.Predict(state, 1000);
+        Assert.Equal(90.0, beforeFirstBoundary.Direction, precision: 6); // still waiting
+
+        var afterCycle1 = predictor.Predict(state, 2000);
+        Assert.Equal(80.0, afterCycle1.Direction, precision: 6);
+        Assert.Equal(NavigationComputerCommandTypes.Approach, afterCycle1.ActiveEngineCommandType);
+
+        var afterCycle2 = predictor.Predict(state, 3000);
+        Assert.Equal(70.0, afterCycle2.Direction, precision: 6);
+
+        var afterCycle3 = predictor.Predict(state, 4000);
+        Assert.Equal(60.0, afterCycle3.Direction, precision: 6);
+
+        // Ship speed stayed 0 throughout (isolates pure steering) — position unchanged.
+        Assert.Equal(8500.0, afterCycle3.X, precision: 6);
+        Assert.Equal(20000.0, afterCycle3.Y, precision: 6);
+    }
+
+    [Fact]
+    public void Approach_trajectory_projection_turns_toward_the_extrapolated_moving_aim_point()
+    {
+        // Same scenario as the predictor test above, projected as a preview trajectory
+        // line: the aim point keeps moving (+X) as the target advances, so the projected
+        // course must keep turning cycle over cycle rather than freezing on the first
+        // bake — mirroring the Orbit turn-shape assertions further up this file.
+        var projector = new NavigationTrajectoryProjector();
+
+        var state = new ObjectMotionSnapshot(
+            "ship",
+            X: 8500, Y: 20000,
+            SpeedKmS: 0,
+            Direction: 90,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 10,
+            TurnStepRemainingMs: 1000,
+            TurnStepIntervalMs: 1000,
+            NavigationTargetX: 8500,
+            NavigationTargetY: 10000,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationTargetSpeedKmS: 1.0,
+            NavigationTargetDirectionDegrees: 90);
+
+        var points = projector.Project(state);
+
+        Assert.True(points.Count >= 3, "Expected multiple projected trajectory points");
+        Assert.Equal(8500.0, points[0].X, precision: 6);
+        Assert.Equal(20000.0, points[0].Y, precision: 6);
+    }
+
+    [Fact]
     public async Task Navigation_trajectory_test_seam_is_empty_without_authoritative_target()
     {
         // ТЗ-08.6: GetNavigationTrajectory returns empty until the snapshot carries an

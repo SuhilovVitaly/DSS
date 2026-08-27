@@ -37,7 +37,14 @@ internal sealed record CommandDefinition(
     /// "Значение 200 km должно быть параметром command definition команды Dock, а не
     /// hardcoded-числом"). Null for every command that isn't range-gated.
     /// </summary>
-    int? RangeKm = null) : ITypeDefinition
+    int? RangeKm = null,
+    /// <summary>
+    /// Distance in kilometers to trail behind a moving target for a target-object command
+    /// whose steering aims at a point offset from the target rather than the target itself
+    /// (currently only <c>navigation.approach</c>). Null for every command that isn't
+    /// trail-offset-gated.
+    /// </summary>
+    int? TrailDistanceKm = null) : ITypeDefinition
 {
     /// <summary>Fixed-point constant for the neutral factor value 1.0.</summary>
     public const int Neutral = 1000;

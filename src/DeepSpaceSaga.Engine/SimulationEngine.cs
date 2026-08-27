@@ -400,6 +400,8 @@ public sealed class SimulationEngine : IDisposable
                     NavigationPhase = cycleMotion.NavigationPhase,
                     NavigationEscapeCourseDegrees = cycleMotion.NavigationEscapeCourseDegrees,
                     NavigationRequiredDepartureDistance = cycleMotion.NavigationRequiredDepartureDistance,
+                    NavigationTargetSpeedKmS = cycleMotion.NavigationTargetSpeedKmS,
+                    NavigationTargetDirectionDegrees = cycleMotion.NavigationTargetDirectionDegrees,
                     ObjectType = known ? obj.ObjectType : null,
                     RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
                     RelationToPlayer = known ? GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType) : null,
@@ -1224,6 +1226,20 @@ public sealed class SimulationEngine : IDisposable
 
     internal ImmutableArray<SpaceObjectRuntime> RuntimeObjects => _objects.ToImmutableArray();
 
+    /// <summary>
+    /// Test seam: remove an object from the world (simulates it disappearing —
+    /// destroyed or otherwise no longer resolvable) without going through any real
+    /// destruction mechanic, which does not exist yet. Used to exercise navigation.approach's
+    /// target-invalid-mid-cycle cancellation path (Checkpoint 3).
+    /// </summary>
+    internal void RemoveObjectForTests(string objectId)
+    {
+        lock (_worldStateLock)
+        {
+            _objects.RemoveAll(o => string.Equals(o.InitialMotion.ObjectId, objectId, StringComparison.Ordinal));
+        }
+    }
+
     private string? GetRelationToPlayer(string objectId, string objectType)
     {
         if (objectId == PlayerShipObjectId)
@@ -1763,6 +1779,24 @@ public sealed class SimulationEngine : IDisposable
                 return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownTarget);
         }
 
+        // Trailing-pursuit navigation (navigation.approach) carries an explicit,
+        // authoritative target object like the match commands above, but — unlike
+        // SpeedSynchronization/DirectionSynchronization — it never captures a scalar
+        // speed/direction at start: the target's live state is re-read fresh on every
+        // completed cycle (see ApplyApproachStep), because the aim point itself moves
+        // as the target moves.
+        int? approachTargetIndex = null;
+        if (command.CommandType == NavigationComputerCommandTypes.Approach)
+        {
+            if (string.IsNullOrWhiteSpace(command.TargetObjectId))
+                return CommandStartOutcome.Rejected(CommandReasonCodes.MissingTarget);
+
+            approachTargetIndex = _objects.FindIndex(o =>
+                string.Equals(o.InitialMotion.ObjectId, command.TargetObjectId, StringComparison.Ordinal));
+            if (approachTargetIndex < 0)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownTarget);
+        }
+
         // Navigate-to-point (engine.orbit) carries an explicit, authoritative
         // world-coordinate target. Like match-parameter validation, this runs right after
         // UnknownCommandType and before CancelAll/state checks: a parameter-level error is
@@ -1875,7 +1909,14 @@ public sealed class SimulationEngine : IDisposable
             // navigate command with a DIFFERENT target is not a no-op — it falls through
             // to the cancel-and-replace branch below (AC8: new Ctrl+Click replaces the
             // old trajectory, old cycle Cancelled + ShipEvent).
-            if (string.Equals(command.CommandType, activeCycle.CommandType, StringComparison.Ordinal))
+            // navigation.approach is a THIRD, distinct case: unlike SpeedSync/
+            // DirectionSync (always idempotent) and Orbit (idempotent only same-target),
+            // a re-sent Approach ALWAYS cancels-and-restarts — regardless of whether the
+            // target is the same — because re-aiming should reset any state accumulated
+            // by the in-flight pursuit. It is excluded from this idempotent check
+            // entirely and always falls through to the cancel-and-replace branch below.
+            if (string.Equals(command.CommandType, activeCycle.CommandType, StringComparison.Ordinal) &&
+                command.CommandType != NavigationComputerCommandTypes.Approach)
             {
                 bool sameNavigateTarget = command.CommandType != ShipEngineCommandTypes.Orbit ||
                                           (command.TargetWorldX == activeCycle.TargetWorldX &&
@@ -1910,6 +1951,8 @@ public sealed class SimulationEngine : IDisposable
         string? targetObjectId = null;
         double? capturedTargetSpeedKmS = null;
         double? capturedTargetCourseDegrees = null;
+        double? initialApproachTargetSpeedKmS = null;
+        double? initialApproachTargetDirectionDegrees = null;
         if (matchTargetIndex is { } targetIndex)
         {
             var target = _objects[targetIndex];
@@ -1920,6 +1963,33 @@ public sealed class SimulationEngine : IDisposable
                 capturedTargetSpeedKmS = targetMotion.SpeedKmS;
             else
                 capturedTargetCourseDegrees = targetMotion.Direction;
+        }
+        else if (approachTargetIndex is not null)
+        {
+            // Store the target reference AND bake an initial aim point + live target
+            // speed/direction right now — not just on first cycle completion. Without
+            // this, the snapshot sent out before the first ~1s cycle completes has
+            // ActiveEngineCommandType == navigation.approach but null navigation fields;
+            // the client's Approach-specific prediction guard (LinearMotionPredictor)
+            // then fails and falls through to the generic turn-step fallback, spinning
+            // the ship continuously in one direction. While paused this never
+            // self-corrects, since game time — and therefore the first cycle — never
+            // advances (this was a real, user-reported bug).
+            var target = _objects[approachTargetIndex.Value];
+            long targetElapsedMs = Math.Max(0, gameTimeMs - target.StartGameTimeMs);
+            var targetMotion = _motion.Predict(target.InitialMotion, targetElapsedMs);
+
+            var approachCommandDef = _registry.CommandDefinitions.GetDefinition(
+                _registry.CommandDefinitions.GetIndex(command.CommandType));
+            double trailDistanceWorldUnits = (approachCommandDef.TrailDistanceKm ?? 0) * WorldUnitsPerKm;
+            (double aimX, double aimY) = DeepSpaceSaga.Motion.ApproachPursuitMath.ComputeAimPoint(
+                targetMotion.X, targetMotion.Y, targetMotion.Direction, trailDistanceWorldUnits);
+
+            targetObjectId = command.TargetObjectId;
+            navigateTargetX = aimX;
+            navigateTargetY = aimY;
+            initialApproachTargetSpeedKmS = targetMotion.SpeedKmS;
+            initialApproachTargetDirectionDegrees = targetMotion.Direction;
         }
 
         _objects[objectIndex] = UpdateModule(
@@ -1942,7 +2012,9 @@ public sealed class SimulationEngine : IDisposable
                     targetWorldY: navigateTargetY,
                     navigationPhase: navPhase,
                     navigationEscapeCourseDegrees: initialEscapeCourse,
-                    navigationRequiredDepartureDistance: initialRequiredDistance)
+                    navigationRequiredDepartureDistance: initialRequiredDistance,
+                    navigationTargetSpeedKmS: initialApproachTargetSpeedKmS,
+                    navigationTargetDirectionDegrees: initialApproachTargetDirectionDegrees)
             });
         return CommandStartOutcome.Started;
     }
@@ -2015,9 +2087,15 @@ public sealed class SimulationEngine : IDisposable
         double? targetWorldY = null,
         string? navigationPhase = null,
         double? navigationEscapeCourseDegrees = null,
-        double? navigationRequiredDepartureDistance = null)
+        double? navigationRequiredDepartureDistance = null,
+        double? navigationTargetSpeedKmS = null,
+        double? navigationTargetDirectionDegrees = null)
     {
         string cycleId = $"CYC-ENGINE-{++_nextEngineCycleId:D6}";
+        // Approach deliberately falls through to the default ComputeEffectiveCycleTimeMs
+        // (~1000 ms via BaseCycleTimeMs × timeFactor) — it is NOT added to this ternary,
+        // which special-cases only Orbit's much faster MinTurnIntervalMs (~250 ms) turn
+        // cadence. This is what makes Approach naturally recompute "every second".
         long durationMs = commandType == ShipEngineCommandTypes.Orbit &&
                           moduleType.AngularInertiaDegPerSec is { } inertia
             ? MinTurnIntervalMs(inertia)
@@ -2038,7 +2116,9 @@ public sealed class SimulationEngine : IDisposable
             targetWorldY,
             NavigationPhase: navigationPhase,
             NavigationEscapeCourseDegrees: navigationEscapeCourseDegrees,
-            NavigationRequiredDepartureDistance: navigationRequiredDepartureDistance);
+            NavigationRequiredDepartureDistance: navigationRequiredDepartureDistance,
+            NavigationTargetSpeedKmS: navigationTargetSpeedKmS,
+            NavigationTargetDirectionDegrees: navigationTargetDirectionDegrees);
     }
 
     /// <summary>
@@ -2081,7 +2161,8 @@ public sealed class SimulationEngine : IDisposable
         return commandType == ShipEngineCommandTypes.Accelerate ||
                commandType == ShipEngineCommandTypes.Brake ||
                IsUntilCancelTurn(commandType) ||
-               commandType == ShipEngineCommandTypes.Orbit;
+               commandType == ShipEngineCommandTypes.Orbit ||
+               commandType == NavigationComputerCommandTypes.Approach;
     }
 
     private static bool IsMatchEngineCommand(string commandType)
@@ -2153,6 +2234,25 @@ public sealed class SimulationEngine : IDisposable
                     NavigationRequiredDepartureDistance: cycle.NavigationRequiredDepartureDistance);
             }
 
+            if (cycle.CommandType == NavigationComputerCommandTypes.Approach)
+            {
+                // Trailing-pursuit cycles report their last-recomputed (baked) aim point
+                // and the target's live speed/direction — the client-side trajectory
+                // projector extrapolates the target's motion using these baked values
+                // instead of a cross-object lookup (Checkpoint 1).
+                long remainingMs = Math.Max(1, cycle.StartedGameTimeMs + cycle.DurationMs - gameTimeMs);
+                return new ActiveEngineCycleMotion(
+                    cycle.CommandType,
+                    Math.Abs(moduleType.TurnStepDegrees ?? 0),
+                    remainingMs,
+                    cycle.DurationMs,
+                    cycle.TargetWorldX,
+                    cycle.TargetWorldY,
+                    moduleType.AngularInertiaDegPerSec ?? 0,
+                    NavigationTargetSpeedKmS: cycle.NavigationTargetSpeedKmS,
+                    NavigationTargetDirectionDegrees: cycle.NavigationTargetDirectionDegrees);
+            }
+
             if (!IsUntilCancelTurn(cycle.CommandType))
                 return new ActiveEngineCycleMotion(cycle.CommandType, 0, 0, 0);
 
@@ -2208,16 +2308,38 @@ public sealed class SimulationEngine : IDisposable
                         break;
                     }
 
+                    // Checkpoint 3: an Approach cycle whose target has disappeared from the
+                    // world (destroyed, or otherwise no longer resolvable) cancels the same
+                    // way the module-unavailable check above does — CommandResult(Cancelled)
+                    // + ShipEvent(CycleInterrupted), reusing CommandReasonCodes.UnknownTarget
+                    // (no new reason code invented for this).
+                    if (cycle.CommandType == NavigationComputerCommandTypes.Approach &&
+                        (cycle.TargetObjectId is null ||
+                         !_objects.Exists(o => string.Equals(
+                             o.InitialMotion.ObjectId, cycle.TargetObjectId, StringComparison.Ordinal))))
+                    {
+                        RecordCommandResultFromCycle(cycle, CommandResultStatus.Cancelled, gameTimeMs,
+                            CommandReasonCodes.UnknownTarget);
+                        _objects[objectIndex] = UpdateModule(obj, moduleIndex, current => current with { ActiveCycle = null });
+                        obj = _objects[objectIndex];
+                        RecordShipEvent(obj.InitialMotion.ObjectId, module.ModuleId,
+                            ShipEventTypes.CycleInterrupted, CommandReasonCodes.UnknownTarget, gameTimeMs);
+                        break;
+                    }
+
                     long completionGameTimeMs = cycle.DurationMs == 0
                         ? gameTimeMs
                         : cycle.StartedGameTimeMs + cycle.DurationMs;
                     ActiveCycleData? nextCycle = cycle.IsAutoRepeat
                         ? CreateEngineCycle(cycle.CommandType, completionGameTimeMs, isAutoRepeat: true, moduleType,
+                            targetObjectId: cycle.TargetObjectId,
                             commandId: cycle.CommandId, objectId: cycle.ObjectId, moduleId: cycle.ModuleId,
                             targetWorldX: cycle.TargetWorldX, targetWorldY: cycle.TargetWorldY,
                             navigationPhase: cycle.NavigationPhase,
                             navigationEscapeCourseDegrees: cycle.NavigationEscapeCourseDegrees,
-                            navigationRequiredDepartureDistance: cycle.NavigationRequiredDepartureDistance)
+                            navigationRequiredDepartureDistance: cycle.NavigationRequiredDepartureDistance,
+                            navigationTargetSpeedKmS: cycle.NavigationTargetSpeedKmS,
+                            navigationTargetDirectionDegrees: cycle.NavigationTargetDirectionDegrees)
                         : null;
                     _objects[objectIndex] = ApplyCompletedEngineCommand(
                         obj,
@@ -2331,8 +2453,97 @@ public sealed class SimulationEngine : IDisposable
 
             ShipEngineCommandTypes.Orbit => obj,
 
+            // Trailing-pursuit navigation (navigation.approach): re-aims fresh from the
+            // target's live state every completed cycle (never locks a permanent course,
+            // unlike Orbit). Target-existence was already verified by
+            // CompleteActiveEngineCycles right before calling this method, so
+            // TargetObjectId is guaranteed resolvable here; the `when` guard is a
+            // legacy-save no-op safeguard only (a cycle loaded from a save written by
+            // older code may have a null TargetObjectId).
+            NavigationComputerCommandTypes.Approach when cycle.TargetObjectId is { } approachTargetId =>
+                ApplyApproachStep(obj, moduleIndex, moduleType, approachTargetId, cycle, gameTimeMs, nextCycle),
+
+            NavigationComputerCommandTypes.Approach => obj,
+
             _ => obj
         };
+    }
+
+    /// <summary>
+    /// Apply one completed navigation.approach pursuit cycle: read the target's live
+    /// position/direction/speed fresh (never captured across cycles, unlike
+    /// SpeedSynchronization/DirectionSynchronization), steer toward the freshly
+    /// recomputed trailing aim point via <see cref="ApproachPursuitMath.Step"/>, and
+    /// either complete (exact speed/direction match with the target, priming
+    /// navigation.dock's strict epsilon check) or bake the new aim point and the
+    /// target's live speed/direction into the next auto-repeat cycle so the client can
+    /// extrapolate without a cross-object lookup (Checkpoint 1).
+    /// </summary>
+    private SpaceObjectRuntime ApplyApproachStep(
+        SpaceObjectRuntime obj,
+        int moduleIndex,
+        ModuleTypeDefinition moduleType,
+        string targetObjectId,
+        ActiveCycleData cycle,
+        long gameTimeMs,
+        ActiveCycleData? nextCycle)
+    {
+        var target = _objects.Single(o =>
+            string.Equals(o.InitialMotion.ObjectId, targetObjectId, StringComparison.Ordinal));
+        long targetElapsedMs = Math.Max(0, gameTimeMs - target.StartGameTimeMs);
+        var targetMotion = _motion.Predict(target.InitialMotion, targetElapsedMs);
+
+        long shipElapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
+        var shipMotion = _motion.Predict(obj.InitialMotion, shipElapsedMs);
+
+        var commandDef = _registry.CommandDefinitions.GetDefinition(
+            _registry.CommandDefinitions.GetIndex(cycle.CommandType));
+        double trailDistanceWorldUnits = (commandDef.TrailDistanceKm ?? 0) * WorldUnitsPerKm;
+
+        var result = ApproachPursuitMath.Step(
+            shipMotion.X, shipMotion.Y, shipMotion.Direction, shipMotion.SpeedKmS,
+            targetMotion.X, targetMotion.Y, targetMotion.Direction, targetMotion.SpeedKmS,
+            trailDistanceWorldUnits,
+            moduleType.TurnStepDegrees ?? 0,
+            moduleType.AngularInertiaDegPerSec ?? 0,
+            cycle.DurationMs);
+
+        if (result.IsArrived)
+        {
+            // Exact scalar assignment, mirroring SpeedSynchronization/
+            // DirectionSynchronization — not asymptotic — so navigation.dock's strict
+            // epsilon check (~1e-6) passes immediately after this cycle completes.
+            return UpdateEngineMotion(
+                obj, moduleIndex, gameTimeMs,
+                module => module with { ActiveCycle = null },
+                motion => motion with
+                {
+                    SpeedKmS = targetMotion.SpeedKmS,
+                    Direction = NormalizeDirection(targetMotion.Direction)
+                });
+        }
+
+        if (nextCycle is not null)
+        {
+            // Bake the freshly recomputed aim point and the target's live speed/
+            // direction into the next auto-repeat cycle — this is what lets the client
+            // extrapolate the target's motion between server cycles without a
+            // cross-object lookup (Checkpoint 1).
+            nextCycle = nextCycle with
+            {
+                TargetWorldX = result.AimPointX,
+                TargetWorldY = result.AimPointY,
+                NavigationTargetSpeedKmS = targetMotion.SpeedKmS,
+                NavigationTargetDirectionDegrees = targetMotion.Direction
+            };
+        }
+
+        return UpdateEngineMotion(
+            obj,
+            moduleIndex,
+            gameTimeMs,
+            module => module with { ActiveCycle = nextCycle },
+            motion => motion with { Direction = NormalizeDirection(result.NewDirectionDegrees) });
     }
 
     private static double ComputeLinearInertiaDeltaKmS(
@@ -2600,7 +2811,9 @@ internal readonly record struct ActiveEngineCycleMotion(
     double? NavigationLockedCourseDegrees = null,
     string? NavigationPhase = null,
     double? NavigationEscapeCourseDegrees = null,
-    double? NavigationRequiredDepartureDistance = null);
+    double? NavigationRequiredDepartureDistance = null,
+    double? NavigationTargetSpeedKmS = null,
+    double? NavigationTargetDirectionDegrees = null);
 
 internal enum CommandStartDisposition
 {
