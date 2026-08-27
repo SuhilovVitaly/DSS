@@ -183,11 +183,11 @@ public class ApproachCommandTests
     [Fact]
     public void Approach_completes_with_exact_speed_and_direction_match_and_stops_repeating()
     {
-        // Ship starts exactly at the (stationary) target's trailing aim point — arrives
-        // on the very first completed cycle.
-        var (aimX, aimY) = AimPointBehindStationary(targetX: 10000, targetY: 10000, targetDirectionDegrees: 45, trailDistanceKm: 150);
+        // Ship starts exactly at the (stationary) target's own position — the aim
+        // point for a genuinely stationary target (Post-implementation bug fix #3,
+        // story-20260827-083137.md) — and arrives on the very first completed cycle.
         var engine = CreateEngine(
-            shipX: aimX, shipY: aimY, shipSpeedMps: 0, shipDirectionDegrees: 0,
+            shipX: 10000, shipY: 10000, shipSpeedMps: 0, shipDirectionDegrees: 0,
             targetX: 10000, targetY: 10000, targetSpeedMps: 0, targetDirectionDegrees: 45,
             trailDistanceKm: 150);
 
@@ -215,14 +215,17 @@ public class ApproachCommandTests
     }
 
     [Fact]
-    public void Stationary_target_still_produces_a_direction_based_aim_point_and_completes()
+    public void Stationary_target_produces_an_aim_point_at_its_own_position_and_completes()
     {
         // Same as the completion test above, but explicitly named/asserted per the
-        // zero-speed-target fallback (Phase 2b decision #6): a Stationary Station (speed
-        // 0) still yields a well-defined aim point using its Direction field alone.
-        var (aimX, aimY) = AimPointBehindStationary(targetX: 5000, targetY: 5000, targetDirectionDegrees: 180, trailDistanceKm: 150);
+        // zero-speed-target fallback (Phase 2b decision #6). Post-implementation bug
+        // fix #3 (story-20260827-083137.md) corrected the original reasoning here: a
+        // Stationary Station (speed 0) no longer yields a Direction-based OFFSET aim
+        // point (its Direction field is an arbitrary placeholder with no physical
+        // meaning for something that isn't moving) — instead the aim point is simply
+        // the station's own position, so the ship starting there still completes.
         var engine = CreateEngine(
-            shipX: aimX, shipY: aimY, shipSpeedMps: 0, shipDirectionDegrees: 0,
+            shipX: 5000, shipY: 5000, shipSpeedMps: 0, shipDirectionDegrees: 0,
             targetX: 5000, targetY: 5000, targetSpeedMps: 0, targetDirectionDegrees: 180,
             targetObjectType: "Station",
             trailDistanceKm: 150);
@@ -235,6 +238,51 @@ public class ApproachCommandTests
         var ship = PlayerShipFrom(snapshot);
         Assert.Equal(180, ship.Direction, precision: 9);
         Assert.Equal(0, ship.SpeedKmS, precision: 9);
+    }
+
+    [Fact]
+    public void Approach_to_a_stationary_station_arrives_at_the_station_not_past_it()
+    {
+        // Regression for the user-reported "long straight line passes well past the
+        // visible station marker without ever arriving/converging there" bug
+        // (Post-implementation bug fix #3, story-20260827-083137.md), reproduced with
+        // real scenario data: the Default scenario's Station SPC-0002 has
+        // directionDegrees: 0 — an arbitrary placeholder with no physical meaning
+        // (the station isn't "facing" anywhere). Under the old (buggy) behavior, the
+        // ship would aim for a point trailDistanceKm (150 km / 1500 world units) away
+        // from the station along that meaningless direction — here, since
+        // directionDegrees is 0 (=up=-Y), that wrong aim point would sit at
+        // (10000, 11500), 1500 world units south of the actual station at
+        // (10000, 10000). This ship starts with a badly misaligned heading relative to
+        // the station, matching the "issues Approach against a nearby object with a
+        // heading that isn't already aimed at it" real-play scenario.
+        var engine = CreateEngine(
+            shipX: 7939, shipY: 11061, shipSpeedMps: 3000, shipDirectionDegrees: 270,
+            targetX: 10000, targetY: 10000, targetSpeedMps: 0, targetDirectionDegrees: 0,
+            targetObjectType: "Station",
+            turnStepDegrees: 1, angularInertiaDegPerSec: 4, trailDistanceKm: 150);
+
+        engine.ReceiveCommand(ApproachCommand());
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1); // cycle #1 starts
+
+        var snapshot = engine.CaptureSnapshotForTests(200_000, SimulationSpeed.Speed1);
+        var ship = PlayerShipFrom(snapshot);
+
+        // Cycle completed — the ship actually arrived, not still flying past.
+        Assert.Null(ship.ActiveEngineCommandType);
+        Assert.Equal(0, ship.Direction, precision: 6); // exact scalar match with the station
+        Assert.Equal(0, ship.SpeedKmS, precision: 6);
+
+        double distanceFromStation = Math.Sqrt(
+            (ship.X - 10000) * (ship.X - 10000) + (ship.Y - 10000) * (ship.Y - 10000));
+        double distanceFromOldWrongAimPoint = Math.Sqrt(
+            (ship.X - 10000) * (ship.X - 10000) + (ship.Y - 11500) * (ship.Y - 11500));
+
+        Assert.True(distanceFromStation <= 10.0,
+            $"Ship ended {distanceFromStation:F1} world units from the station at " +
+            $"({ship.X:F1},{ship.Y:F1}) — expected to arrive at the station itself.");
+        Assert.True(distanceFromOldWrongAimPoint > 1000.0,
+            "Ship ended up near the OLD (buggy) direction-offset aim point, not the station.");
     }
 
     [Fact]
@@ -334,11 +382,14 @@ public class ApproachCommandTests
     public void Approach_completion_against_a_station_lets_dock_succeed_immediately_after()
     {
         // End-to-end: Approach completes speed/direction-matched to a Station within
-        // Dock's <200km range (trail distance 150km, safely under it) — proves Dock's
-        // strict ~1e-6 epsilon check passes right away, no manual sync command needed.
-        var (aimX, aimY) = AimPointBehindStationary(targetX: 10000, targetY: 10000, targetDirectionDegrees: 45, trailDistanceKm: 150);
+        // Dock's <200km range — proves Dock's strict ~1e-6 epsilon check passes right
+        // away, no manual sync command needed. Ship starts at the station's own
+        // position — the aim point for a genuinely stationary target
+        // (Post-implementation bug fix #3, story-20260827-083137.md) — so this also
+        // doubles as a proof that Dock's own <200km range check trivially passes,
+        // since the ship never has to travel a meaningful distance at all.
         var engine = CreateEngine(
-            shipX: aimX, shipY: aimY, shipSpeedMps: 0, shipDirectionDegrees: 0,
+            shipX: 10000, shipY: 10000, shipSpeedMps: 0, shipDirectionDegrees: 0,
             targetX: 10000, targetY: 10000, targetSpeedMps: 0, targetDirectionDegrees: 45,
             targetObjectType: "Station",
             trailDistanceKm: 150,
@@ -364,7 +415,11 @@ public class ApproachCommandTests
     /// <summary>
     /// Same trailing-aim-point geometry as <see cref="DeepSpaceSaga.Motion.ApproachPursuitMath.ComputeAimPoint"/>,
     /// duplicated here (rather than referencing it) so the test's expected value is
-    /// computed independently of the production formula.
+    /// computed independently of the production formula. Only valid for a genuinely
+    /// MOVING target (non-zero speed): since Post-implementation bug fix #3
+    /// (story-20260827-083137.md), a genuinely stationary (speed == 0) target's aim
+    /// point is simply its own position, not this offset formula — do not call this
+    /// helper for a speed == 0 target.
     /// </summary>
     private static (double X, double Y) AimPointBehindStationary(
         double targetX, double targetY, double targetDirectionDegrees, double trailDistanceKm)

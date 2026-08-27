@@ -1983,7 +1983,7 @@ public sealed class SimulationEngine : IDisposable
                 _registry.CommandDefinitions.GetIndex(command.CommandType));
             double trailDistanceWorldUnits = (approachCommandDef.TrailDistanceKm ?? 0) * WorldUnitsPerKm;
             (double aimX, double aimY) = DeepSpaceSaga.Motion.ApproachPursuitMath.ComputeAimPoint(
-                targetMotion.X, targetMotion.Y, targetMotion.Direction, trailDistanceWorldUnits);
+                targetMotion.X, targetMotion.Y, targetMotion.Direction, targetMotion.SpeedKmS, trailDistanceWorldUnits);
 
             targetObjectId = command.TargetObjectId;
             navigateTargetX = aimX;

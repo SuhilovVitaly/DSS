@@ -69,29 +69,55 @@ public static class ApproachPursuitMath
     private const double UnitsPerKmS = 10.0; // 1 km/s → 10 world units/s.
 
     /// <summary>
-    /// Compute the point trailing behind a moving (or stationary) target along its
-    /// current heading. Deliberately takes no speed parameter — the target's
-    /// direction alone defines the trailing offset, so a stationary target
-    /// (speed ≈ 0, e.g. a Station) still yields a well-defined aim point using its
-    /// Direction field.
+    /// Speed (km/s) at or below which a target is treated as genuinely stationary
+    /// rather than "moving however slowly" (Post-implementation bug fix #3,
+    /// story-20260827-083137.md). Deliberately tight — only exact (or
+    /// numerically-indistinguishable-from-exact) zero speed should be treated as
+    /// stationary; a slow-but-genuinely-moving object (e.g. a drifting asteroid) must
+    /// still get the full directional trailing offset.
+    /// </summary>
+    private const double StationaryTargetSpeedEpsilonKmS = 1e-9;
+
+    /// <summary>
+    /// Compute the point trailing behind a target along its current heading.
+    /// <paramref name="targetSpeedKmS"/> is used only to decide WHETHER the trailing
+    /// offset applies, not to compute its magnitude/direction: for a genuinely
+    /// stationary target (speed ≈ 0, e.g. a Station) the object's Direction field is
+    /// an arbitrary placeholder with no physical meaning — "trail behind it along its
+    /// direction of travel" is meaningless for something that isn't moving. Applying
+    /// the offset anyway previously sent the ship's aim point far from the real
+    /// object (the reported "flies past the station, never arrives" bug —
+    /// Post-implementation bug fix #3, story-20260827-083137.md; supersedes the prior
+    /// "no speed parameter needed" design). So for a genuinely stationary target the
+    /// effective trail distance is 0 and this simply returns the target's own
+    /// position; a target moving however slowly (speed above
+    /// <see cref="StationaryTargetSpeedEpsilonKmS"/>) still gets the full offset using
+    /// its Direction field, unchanged from before.
     /// </summary>
     /// <param name="targetX">Target current X, world units.</param>
     /// <param name="targetY">Target current Y, world units.</param>
     /// <param name="targetDirectionDegrees">Target current heading, degrees.</param>
+    /// <param name="targetSpeedKmS">Target current speed, km/s (fresh, live read).</param>
     /// <param name="trailDistanceWorldUnits">Distance to trail behind the target, world units.</param>
     public static (double X, double Y) ComputeAimPoint(
         double targetX,
         double targetY,
         double targetDirectionDegrees,
+        double targetSpeedKmS,
         double trailDistanceWorldUnits)
     {
+        double effectiveTrailDistanceWorldUnits =
+            Math.Abs(targetSpeedKmS) < StationaryTargetSpeedEpsilonKmS
+                ? 0.0
+                : trailDistanceWorldUnits;
+
         double angleRad = targetDirectionDegrees * Math.PI / 180.0;
         double forwardX = Math.Sin(angleRad);
         double forwardY = -Math.Cos(angleRad);
 
         return (
-            targetX - trailDistanceWorldUnits * forwardX,
-            targetY - trailDistanceWorldUnits * forwardY);
+            targetX - effectiveTrailDistanceWorldUnits * forwardX,
+            targetY - effectiveTrailDistanceWorldUnits * forwardY);
     }
 
     /// <summary>
@@ -132,10 +158,12 @@ public static class ApproachPursuitMath
     /// <param name="targetY">Target current Y, world units (fresh, live read).</param>
     /// <param name="targetDirectionDegrees">Target current heading, degrees (fresh, live read).</param>
     /// <param name="targetSpeedKmS">
-    /// Target current speed, km/s (fresh, live read). Not used by the aim-point
-    /// geometry itself (which is direction-only, by design — see
-    /// <see cref="ComputeAimPoint"/>); kept in the signature for parity with the ship's
-    /// kinematic state and for callers that also need it (e.g. baking/extrapolation).
+    /// Target current speed, km/s (fresh, live read). Passed through to
+    /// <see cref="ComputeAimPoint"/>, which uses it only to decide WHETHER the
+    /// trailing offset applies (genuinely stationary targets aim directly at their own
+    /// position — see <see cref="ComputeAimPoint"/>'s doc-comment, Post-implementation
+    /// bug fix #3); also kept for parity with the ship's kinematic state and for
+    /// callers that need it independently (e.g. baking/extrapolation).
     /// </param>
     /// <param name="trailDistanceWorldUnits">Distance to trail behind the target, world units.</param>
     /// <param name="turnStepDegrees">Maximum turn per step, degrees (module turn-step limit).</param>
@@ -162,7 +190,7 @@ public static class ApproachPursuitMath
         long stepTimeMs,
         double? lockedCourseDegrees = null)
     {
-        var (aimX, aimY) = ComputeAimPoint(targetX, targetY, targetDirectionDegrees, trailDistanceWorldUnits);
+        var (aimX, aimY) = ComputeAimPoint(targetX, targetY, targetDirectionDegrees, targetSpeedKmS, trailDistanceWorldUnits);
 
         double dx = aimX - shipX;
         double dy = aimY - shipY;

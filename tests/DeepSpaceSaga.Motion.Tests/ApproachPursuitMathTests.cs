@@ -37,8 +37,12 @@ public class ApproachPursuitMathTests
     public void ComputeAimPoint_trails_behind_target_along_its_heading(
         double targetDirectionDegrees, double expectedX, double expectedY)
     {
+        // targetSpeedKmS is genuinely non-zero here — a real moving target — so the
+        // full directional trailing offset applies (Post-implementation bug fix #3,
+        // story-20260827-083137.md).
         var (x, y) = ApproachPursuitMath.ComputeAimPoint(
             targetX: 100, targetY: 200, targetDirectionDegrees: targetDirectionDegrees,
+            targetSpeedKmS: 5.0,
             trailDistanceWorldUnits: 50);
 
         Assert.Equal(expectedX, x, precision: 6);
@@ -49,8 +53,10 @@ public class ApproachPursuitMathTests
     public void ComputeAimPoint_handles_diagonal_heading()
     {
         // 45°: forward vector (sin45, -cos45) ≈ (0.70710678, -0.70710678).
+        // Genuinely moving target (non-zero speed) — full offset applies.
         var (x, y) = ApproachPursuitMath.ComputeAimPoint(
             targetX: 100, targetY: 200, targetDirectionDegrees: 45,
+            targetSpeedKmS: 5.0,
             trailDistanceWorldUnits: 50);
 
         Assert.Equal(64.644661, x, precision: 5);
@@ -58,17 +64,41 @@ public class ApproachPursuitMathTests
     }
 
     [Fact]
-    public void ComputeAimPoint_uses_target_direction_even_when_target_speed_is_zero()
+    public void ComputeAimPoint_returns_target_position_when_target_is_genuinely_stationary()
     {
-        // ComputeAimPoint never takes speed as input — it is purely a function of
-        // position + heading, so a stationary target (speed ≈ 0, e.g. a Station)
-        // still yields a trailing aim point using its Direction field.
+        // Post-implementation bug fix #3 (story-20260827-083137.md): a genuinely
+        // stationary target (speed == 0, e.g. a Station) has no meaningful "direction
+        // of travel" — DirectionDegrees on such an object is an arbitrary placeholder
+        // (the Default scenario's Station SPC-0002 has directionDegrees: 0 with no
+        // physical meaning). Applying the full trailing offset in that meaningless
+        // direction previously sent the ship's aim point far away from the actual
+        // object (the reported "flies past the station, never arrives" bug). The
+        // corrected behavior: for a genuinely stationary target the effective trail
+        // distance is 0, so the aim point is simply the target's own position.
         var stationary = ApproachPursuitMath.ComputeAimPoint(
             targetX: 500, targetY: -500, targetDirectionDegrees: 90,
+            targetSpeedKmS: 0,
             trailDistanceWorldUnits: 150);
 
-        Assert.Equal(350, stationary.X, precision: 6);
+        Assert.Equal(500, stationary.X, precision: 6);
         Assert.Equal(-500, stationary.Y, precision: 6);
+    }
+
+    [Fact]
+    public void ComputeAimPoint_applies_full_trailing_offset_for_a_slow_but_genuinely_moving_target()
+    {
+        // Contrast with the stationary case above: a target moving however slowly —
+        // e.g. a drifting asteroid — is still "genuinely moving" and must keep the
+        // full directional trailing offset. The epsilon (1e-9 km/s) is tight enough
+        // to only treat EXACT (or numerically indistinguishable from exact) zero as
+        // stationary.
+        var slow = ApproachPursuitMath.ComputeAimPoint(
+            targetX: 500, targetY: -500, targetDirectionDegrees: 90,
+            targetSpeedKmS: 1e-6,
+            trailDistanceWorldUnits: 150);
+
+        Assert.Equal(350, slow.X, precision: 6);
+        Assert.Equal(-500, slow.Y, precision: 6);
     }
 
     [Fact]
@@ -195,10 +225,15 @@ public class ApproachPursuitMathTests
     }
 
     [Fact]
-    public void Step_uses_target_direction_as_heading_reference_when_target_speed_is_near_zero()
+    public void Step_aims_directly_at_a_genuinely_stationary_target_not_a_meaningless_direction_offset()
     {
-        // A stationary Station (speed ≈ 0) must still steer the aim point using its
-        // Direction field rather than being rejected or defaulting to "no heading".
+        // Post-implementation bug fix #3 (story-20260827-083137.md): a genuinely
+        // stationary target (speed == 0, e.g. a Station) has no meaningful heading to
+        // trail behind — its Direction field is an arbitrary placeholder. Step must
+        // therefore aim directly at the target's own position (effective trail
+        // distance 0), not offset 150 world units away in a meaningless direction —
+        // this is the corrected reasoning superseding the old
+        // "uses target direction even when speed is zero" behavior.
         var result = ApproachPursuitMath.Step(
             shipX: 0, shipY: 0, shipDirectionDegrees: 90, shipSpeedKmS: 1,
             targetX: 500, targetY: -500, targetDirectionDegrees: 90, targetSpeedKmS: 0,
@@ -206,9 +241,25 @@ public class ApproachPursuitMathTests
             turnStepDegrees: TurnStepDegrees, angularInertiaDegPerSec: AngularInertiaDegPerSec,
             stepTimeMs: 0);
 
+        Assert.Equal(500, result.AimPointX, precision: 6);
+        Assert.Equal(-500, result.AimPointY, precision: 6);
+    }
+
+    [Fact]
+    public void Step_still_applies_full_trailing_offset_for_a_genuinely_moving_target()
+    {
+        // Contrast with the stationary case above: a genuinely moving target (non-zero
+        // speed) must still get the full directional trailing offset — this fix must
+        // not regress the original moving-target behavior.
+        var result = ApproachPursuitMath.Step(
+            shipX: 0, shipY: 0, shipDirectionDegrees: 90, shipSpeedKmS: 1,
+            targetX: 500, targetY: -500, targetDirectionDegrees: 90, targetSpeedKmS: 3,
+            trailDistanceWorldUnits: 150,
+            turnStepDegrees: TurnStepDegrees, angularInertiaDegPerSec: AngularInertiaDegPerSec,
+            stepTimeMs: 0);
+
         // Expected aim point: (500 - 150, -500) = (350, -500), matching direction 90°'s
-        // trailing offset — same formula ComputeAimPoint_trails_behind_target_along_its_heading
-        // exercises directly, now confirmed reachable through Step with a zero-speed target.
+        // trailing offset.
         Assert.Equal(350, result.AimPointX, precision: 6);
         Assert.Equal(-500, result.AimPointY, precision: 6);
     }
@@ -227,10 +278,15 @@ public class ApproachPursuitMathTests
         const int turnStepDegreesRealistic = 1;
         const int angularInertia = 4;
         const long stepTimeMs = 250;
-        const double trailDistanceWorldUnits = 1500; // 150 km
+        const double trailDistanceWorldUnits = 1500; // 150 km — irrelevant here, see below.
 
-        // Stationary target (speed 0) at the origin, heading 0 (aim point trails behind
-        // it, at larger Y since 0° = up = -Y).
+        // Stationary target (speed 0) at the origin, heading 0. Per Post-implementation
+        // bug fix #3 (story-20260827-083137.md), a genuinely stationary target's
+        // Direction is a meaningless placeholder, so the effective trail distance is 0
+        // and the aim point is simply the target's own position (0, 0) — not offset by
+        // trailDistanceWorldUnits. This test still validates the anti-circling
+        // convergence guarantee itself (Post-implementation bug fix #2), independent of
+        // the aim-point-location fix.
         const double targetX = 0, targetY = 0, targetDirectionDegrees = 0, targetSpeedKmS = 0;
 
         // Ship starts off to the side with a heading badly mismatched (~135° initial

@@ -126,7 +126,6 @@ public sealed class GameSessionScreen : IScreen
 
     // Camera state
     private bool _isFocusAttachedToPlayer = true;
-    private string? _cameraFollowObjectId;
 
     // Navigation (Ctrl+Click) state — ТЗ: Navigation Waypoints
     private bool _isCtrlLeftDown;
@@ -230,7 +229,6 @@ public sealed class GameSessionScreen : IScreen
     /// <summary>Current frame's render list (scale-filtered, client-side).</summary>
     internal IReadOnlyList<ObjectRenderState> RenderStates => _renderStates;
     internal bool IsFocusAttachedToPlayer => _isFocusAttachedToPlayer;
-    internal string? CameraFollowObjectId => _cameraFollowObjectId;
     internal IReadOnlyList<ObjectTrailPoint> GetObjectTrail(string objectId) => _trailStore.GetTrail(objectId);
     internal string? ActiveObjectId => _activeObjectId;
     internal string? SelectedObjectId => _selectedObjectId;
@@ -391,9 +389,15 @@ public sealed class GameSessionScreen : IScreen
         }
 
         // 5.5. Object selection takes priority over both plain pan and Ctrl+Click
-        // navigation (ТЗ §54): a left click within the 30 px hit radius of a visible
-        // object selects it — the camera does not move and no navigation command is
-        // sent, whether or not Ctrl is held.
+        // navigation (ТЗ §54, TacticalMapSpecification.md line 79: "клик поглощается,
+        // камера не двигается, navigation command не отправляется"): a left click
+        // within the 30 px hit radius of a visible object selects it — the camera
+        // does not move and no navigation command is sent, whether or not Ctrl is
+        // held. Selecting the player ship itself is the one exception: it reattaches
+        // camera focus to the player (existing, still-wanted behavior), same as
+        // Ctrl+C. Selecting any OTHER object leaves camera state completely
+        // untouched (UX change, story-20260827-083137.md: selecting an object no
+        // longer makes the camera follow/re-center on it).
         string? hitObjectId = FindNearestObjectId(x, y);
         if (hitObjectId is not null)
         {
@@ -402,12 +406,6 @@ public sealed class GameSessionScreen : IScreen
             if (hitObjectId == _buffer.Latest?.Snapshot.PlayerShipObjectId)
             {
                 _isFocusAttachedToPlayer = true;
-                _cameraFollowObjectId = null;
-            }
-            else
-            {
-                _isFocusAttachedToPlayer = false;
-                _cameraFollowObjectId = hitObjectId;
             }
 
             // While docked, a successful navigation.dock physically snaps the ship onto
@@ -445,7 +443,6 @@ public sealed class GameSessionScreen : IScreen
         // jump fought with dragging, making it feel broken) — only actual mouse
         // movement while held pans the camera, in OnMouseMove below.
         _isFocusAttachedToPlayer = false;
-        _cameraFollowObjectId = null;
         _isPanningMap = true;
         _panLastScreenX = x;
         _panLastScreenY = y;
@@ -524,18 +521,11 @@ public sealed class GameSessionScreen : IScreen
 
         if (key == Key.C && IsCtrlDown)
         {
-            if (_cameraFollowObjectId is not null)
-            {
-                // Was following a non-player object — detach and freeze the focus
-                // exactly where that object currently is (UpdateCameraFocusFromPlayer
-                // already re-centers on it every frame, so the camera is already
-                // sitting there); do NOT jump to the player ship in this case.
-                _cameraFollowObjectId = null;
-            }
-            else
-            {
-                _isFocusAttachedToPlayer = true;
-            }
+            // Reattach camera focus to the player ship. Object selection no longer
+            // makes the camera follow another object (story-20260827-083137.md UX
+            // change), so there is no "detach from a followed non-player object"
+            // case to handle here anymore — Ctrl+C always reattaches to the player.
+            _isFocusAttachedToPlayer = true;
             return ScreenEvent.None;
         }
 
@@ -1340,34 +1330,17 @@ public sealed class GameSessionScreen : IScreen
 
     private void UpdateCameraFocusFromPlayer(IReadOnlyList<ObjectRenderState> renderStates)
     {
-        if (_isFocusAttachedToPlayer)
-        {
-            for (int i = 0; i < renderStates.Count; i++)
-            {
-                var state = renderStates[i];
-                if (!state.IsPlayerShip)
-                    continue;
-
-                _camera.SetFocus(state.Predicted.X, state.Predicted.Y);
-                return;
-            }
+        if (!_isFocusAttachedToPlayer)
             return;
-        }
 
-        if (_cameraFollowObjectId is not null)
+        for (int i = 0; i < renderStates.Count; i++)
         {
-            for (int i = 0; i < renderStates.Count; i++)
-            {
-                var state = renderStates[i];
-                if (state.Predicted.ObjectId != _cameraFollowObjectId)
-                    continue;
+            var state = renderStates[i];
+            if (!state.IsPlayerShip)
+                continue;
 
-                _camera.SetFocus(state.Predicted.X, state.Predicted.Y);
-                return;
-            }
-            // Followed object not present this frame (e.g. removed/out of range) —
-            // leave the camera focus exactly where it last was; do not clear
-            // _cameraFollowObjectId here (it may reappear next frame).
+            _camera.SetFocus(state.Predicted.X, state.Predicted.Y);
+            return;
         }
     }
 
