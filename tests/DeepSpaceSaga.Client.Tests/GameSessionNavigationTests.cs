@@ -439,6 +439,38 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
+    public void Approach_trajectory_projection_stops_at_the_target_when_arrival_happens_in_the_initial_phase()
+    {
+        // Regression: the ship is already close enough, and already aimed straight at the
+        // stationary aim point, that it reaches (and would fly straight through) the target
+        // during ProjectApproach's very first "wait until the next cycle boundary" segment —
+        // before ApproachPursuitMath.Step (which has its own segment-sweep arrival check)
+        // ever runs. Before the fix, that initial segment had no arrival check at all, so the
+        // preview line kept extending past the target instead of stopping there.
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 100,
+            SpeedKmS: 5, // 50 world units/s
+            Direction: 0, // facing straight "up" (toward smaller Y) — straight at the target
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 5000, // phase alone covers 250 world units — well past the 100-unit gap
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: 0,
+            NavigationTargetY: 0,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationTargetSpeedKmS: 0, // stationary target/aim point — never moves
+            NavigationTargetDirectionDegrees: 0);
+
+        var projector = new NavigationTrajectoryProjector();
+        var points = projector.Project(ship);
+
+        Assert.Equal(2, points.Count);
+        Assert.Equal(0.0, points[^1].X, precision: 3);
+        Assert.Equal(0.0, points[^1].Y, precision: 3);
+    }
+
+    [Fact]
     public async Task Navigation_trajectory_test_seam_is_empty_without_authoritative_target()
     {
         // ТЗ-08.6: GetNavigationTrajectory returns empty until the snapshot carries an

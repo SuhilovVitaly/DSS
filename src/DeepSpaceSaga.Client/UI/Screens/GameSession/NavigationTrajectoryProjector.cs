@@ -194,7 +194,24 @@ internal sealed class NavigationTrajectoryProjector
         points.Add(new FutureTrajectoryPoint(x, y));
 
         // Phase until the first cycle boundary: straight flight with the CURRENT course.
+        // Unlike every subsequent interval (each covered by ApproachPursuitMath.Step's own
+        // segment-sweep arrival check), this phase segment runs with no steering decision at
+        // all, so it needs its own arrival check here — otherwise a ship already close to
+        // (or aimed straight at) the target flies straight through it during this very first
+        // segment and the preview keeps extending past the target instead of stopping there.
+        double phaseStartX = x, phaseStartY = y;
         (x, y) = AdvanceStraight(x, y, direction, speedKmS, phaseMs);
+
+        var (phaseAimX, phaseAimY) = ApproachPursuitMath.ExtrapolatePosition(
+            bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, phaseMs);
+        var phaseArrival = ApproachPursuitMath.CheckSegmentArrival(
+            phaseStartX, phaseStartY, x, y, phaseAimX, phaseAimY);
+        if (phaseArrival.IsArrived)
+        {
+            points.Add(new FutureTrajectoryPoint(phaseArrival.ClosestX, phaseArrival.ClosestY));
+            return points;
+        }
+
         points.Add(new FutureTrajectoryPoint(x, y));
 
         // Runs until actual arrival (IsArrived), bounded by ApproachTrajectoryMaxHorizonMs/

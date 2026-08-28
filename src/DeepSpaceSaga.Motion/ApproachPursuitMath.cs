@@ -284,6 +284,47 @@ public static class ApproachPursuitMath
     }
 
     /// <summary>
+    /// Whether a ship travelling in a straight line from (startX, startY) to (endX, endY)
+    /// passed within <see cref="ArrivalToleranceUnits"/> of the aim point at
+    /// (aimX, aimY) — catching a fast ship sweeping through the arrival zone mid-segment
+    /// rather than only sampling the segment's end position. Same closest-point-on-segment
+    /// technique as <see cref="NavigationWaypointMath.CheckSegmentArrival"/>; unlike
+    /// <see cref="Step"/>'s own arrival check (which only covers a single steered interval),
+    /// this is for callers that fly a straight, non-steering segment of their own (e.g. the
+    /// "wait until the next cycle boundary" phase both <see cref="LinearMotionPredictor"/>
+    /// and the client's trajectory preview run before their first <see cref="Step"/> call).
+    /// </summary>
+    public static (bool IsArrived, double ClosestX, double ClosestY) CheckSegmentArrival(
+        double startX, double startY,
+        double endX, double endY,
+        double aimX, double aimY)
+    {
+        double segDx = endX - startX;
+        double segDy = endY - startY;
+        double lenSq = segDx * segDx + segDy * segDy;
+
+        double closestX, closestY;
+        if (lenSq <= 0)
+        {
+            closestX = startX;
+            closestY = startY;
+        }
+        else
+        {
+            double tDx = aimX - startX;
+            double tDy = aimY - startY;
+            double t = Math.Clamp((tDx * segDx + tDy * segDy) / lenSq, 0.0, 1.0);
+            closestX = startX + t * segDx;
+            closestY = startY + t * segDy;
+        }
+
+        double dist = Math.Sqrt(
+            (aimX - closestX) * (aimX - closestX) + (aimY - closestY) * (aimY - closestY));
+
+        return dist <= ArrivalToleranceUnits ? (true, closestX, closestY) : (false, 0, 0);
+    }
+
+    /// <summary>
     /// Closest distance from <paramref name="pointX"/>/<paramref name="pointY"/> to the
     /// line segment from (startX, startY) to (endX, endY). Same closest-point-on-segment
     /// technique as <see cref="NavigationWaypointMath.CheckSegmentArrival"/>, used here to
