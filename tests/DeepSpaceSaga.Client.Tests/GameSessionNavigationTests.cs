@@ -480,6 +480,12 @@ public class GameSessionNavigationTests
             $"Expected the ship to make real progress before the chase stalled, got only {points.Count} points.");
         Assert.True(points.Count < maxHorizonPoints / 2,
             $"Expected the projection to stop well short of the 2000s backstop, got {points.Count} points.");
+
+        // The target moves horizontally, so every extrapolated aim point has Y=3000.
+        // The preview may use its closest simulated approach as the stopping instant,
+        // but its final rendered point must be that instant's exact aim point rather
+        // than the nearby sampled ship position.
+        Assert.Equal(3000.0, points[^1].Y, precision: 6);
     }
 
     [Fact]
@@ -512,6 +518,35 @@ public class GameSessionNavigationTests
         Assert.Equal(2, points.Count);
         Assert.Equal(0.0, points[^1].X, precision: 3);
         Assert.Equal(0.0, points[^1].Y, precision: 3);
+    }
+
+    [Fact]
+    public void Approach_initial_phase_near_pass_ends_on_the_exact_aim_point()
+    {
+        // The ship's initial straight segment runs along X=0 and passes within the
+        // 5-world-unit arrival tolerance of the aim point at (3,0), but never crosses
+        // that exact coordinate. The trajectory must still finish at (3,0), not at
+        // the closest point on the ship segment (0,0).
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 100,
+            SpeedKmS: 5,
+            Direction: 0,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 5000,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: 3,
+            NavigationTargetY: 0,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationTargetSpeedKmS: 0,
+            NavigationTargetDirectionDegrees: 0);
+
+        var points = new NavigationTrajectoryProjector().Project(ship);
+
+        Assert.Equal(2, points.Count);
+        Assert.Equal(3.0, points[^1].X, precision: 6);
+        Assert.Equal(0.0, points[^1].Y, precision: 6);
     }
 
     [Fact]

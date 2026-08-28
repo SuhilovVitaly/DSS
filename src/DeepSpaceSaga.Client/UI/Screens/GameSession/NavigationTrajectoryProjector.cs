@@ -225,7 +225,11 @@ internal sealed class NavigationTrajectoryProjector
             phaseStartX, phaseStartY, x, y, phaseAimX, phaseAimY);
         if (phaseArrival.IsArrived)
         {
-            points.Add(new FutureTrajectoryPoint(phaseArrival.ClosestX, phaseArrival.ClosestY));
+            // Arrival is tolerance-based, but the rendered route is a promise to the
+            // player: it must visually terminate on the navigation aim point itself.
+            // Keeping ClosestX/Y here leaves a visible gap at high zoom whenever the
+            // straight phase passes near (rather than exactly through) the aim point.
+            points.Add(new FutureTrajectoryPoint(phaseAimX, phaseAimY));
             return points;
         }
 
@@ -266,6 +270,14 @@ internal sealed class NavigationTrajectoryProjector
             else if (elapsedMs - bestDistanceElapsedMs >= ApproachStagnationTimeoutMs)
             {
                 points.RemoveRange(bestDistancePointIndex + 1, points.Count - bestDistancePointIndex - 1);
+
+                // Preserve the honest closest-approach portion of the prediction, but
+                // finish it at the aim point corresponding to that same instant.  The
+                // previous behaviour ended at the ship's closest sampled position, so
+                // the line visibly stopped just short of its navigation target.
+                var (bestAimX, bestAimY) = ApproachPursuitMath.ExtrapolatePosition(
+                    bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, bestDistanceElapsedMs);
+                points.Add(new FutureTrajectoryPoint(bestAimX, bestAimY));
                 return points;
             }
 
@@ -292,6 +304,14 @@ internal sealed class NavigationTrajectoryProjector
 
             elapsedMs += intervalMs;
         }
+
+        // A malformed or unreachable scenario can exhaust the defensive simulation
+        // bounds. Even then, do not leave a dangling trajectory: close it at the aim
+        // point for the final simulated instant so every Approach preview has an exact
+        // visual endpoint.
+        var (finalAimX, finalAimY) = ApproachPursuitMath.ExtrapolatePosition(
+            bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, elapsedMs);
+        points.Add(new FutureTrajectoryPoint(finalAimX, finalAimY));
 
         return points;
     }
