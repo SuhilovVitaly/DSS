@@ -576,6 +576,57 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
+    public void Default_scenario_paused_start_asteroid_route_stays_local_and_ends_on_target_track()
+    {
+        // Exact gameTimeMs=0 / Speed0 geometry from Scenarios/Default/scenario.json:
+        // player (10000,10000), 0.7 km/s at 0°; SPC-0003 (10400,10000),
+        // 0.6 km/s at 256°. The effective staging depth is the player's turn radius,
+        // not the command's distant 150 km upper bound.
+        const double targetX = 10400;
+        const double targetY = 10000;
+        const double targetDirection = 256;
+        double directionRad = targetDirection * Math.PI / 180.0;
+        double forwardX = Math.Sin(directionRad);
+        double forwardY = -Math.Cos(directionRad);
+        double trailDistance = 0.7 * 10.0 / (4.0 * Math.PI / 180.0);
+        double trailAimX = targetX - trailDistance * forwardX;
+        double trailAimY = targetY - trailDistance * forwardY;
+
+        var ship = new ObjectMotionSnapshot(
+            "SPC-0001",
+            X: 10000, Y: 10000,
+            SpeedKmS: 0.7,
+            Direction: 0,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 250,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: trailAimX,
+            NavigationTargetY: trailAimY,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationPhase: ApproachPursuitMath.TrailPhase,
+            NavigationTargetSpeedKmS: 0.6,
+            NavigationTargetDirectionDegrees: targetDirection,
+            NavigationApproachTrailDistanceWorldUnits: trailDistance);
+
+        var points = new NavigationTrajectoryProjector().Project(ship);
+
+        double maxDistanceFromStart = points.Max(p => Math.Sqrt(
+            Math.Pow(p.X - 10000, 2) + Math.Pow(p.Y - 10000, 2)));
+        Assert.True(maxDistanceFromStart < 1000,
+            $"Default asteroid route must stay local; projected radius was {maxDistanceFromStart:F1} wu.");
+
+        // The endpoint lies exactly on the asteroid's linear future track.
+        var end = points[^1];
+        double crossTrack = Math.Abs(
+            (end.X - targetX) * forwardY - (end.Y - targetY) * forwardX);
+        Assert.True(crossTrack < 1e-6,
+            $"Endpoint must lie on SPC-0003's target track; cross-track error {crossTrack}.");
+        Assert.True(end.X < trailAimX,
+            "Route must continue past the behind waypoint to the asteroid itself.");
+    }
+
+    [Fact]
     public async Task Navigation_trajectory_test_seam_is_empty_without_authoritative_target()
     {
         // ТЗ-08.6: GetNavigationTrajectory returns empty until the snapshot carries an

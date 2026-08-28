@@ -99,19 +99,19 @@ public class ApproachCommandTests
     [Fact]
     public void Moving_target_uses_trailing_point_as_waypoint_then_finishes_at_target()
     {
-        // Ship and target move right; the ship starts on the 150 km trailing point.
+        // Ship and target move right; the ship starts on the 10 km trailing point.
         // Reaching it must switch Approach to Final rather than completing and
-        // synchronizing 150 km away from the selected object.
+        // synchronizing away from the selected object.
         var engine = CreateEngine(
-            shipX: 8500, shipY: 10000, shipSpeedMps: 2000, shipDirectionDegrees: 90,
+            shipX: 9800, shipY: 10000, shipSpeedMps: 2000, shipDirectionDegrees: 90,
             targetX: 10000, targetY: 10000, targetSpeedMps: 1000, targetDirectionDegrees: 90,
-            turnStepDegrees: 1, angularInertiaDegPerSec: 4, trailDistanceKm: 150);
+            turnStepDegrees: 1, angularInertiaDegPerSec: 4, trailDistanceKm: 10);
 
         engine.ReceiveCommand(ApproachCommand());
         engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
 
         var afterTrailingWaypoint = PlayerShipFrom(
-            engine.CaptureSnapshotForTests(250, SimulationSpeed.Speed1));
+            engine.CaptureSnapshotForTests(15_000, SimulationSpeed.Speed1));
         Assert.Equal(NavigationComputerCommandTypes.Approach, afterTrailingWaypoint.ActiveEngineCommandType);
         Assert.Equal(ApproachPursuitMath.FinalPhase, afterTrailingWaypoint.NavigationPhase);
         Assert.True(afterTrailingWaypoint.NavigationTargetX > 10_000);
@@ -121,6 +121,42 @@ public class ApproachCommandTests
         Assert.Null(completed.ActiveEngineCommandType);
         Assert.Equal(1.0, completed.SpeedKmS, precision: 6);
         Assert.Equal(90, completed.Direction, precision: 6);
+    }
+
+    [Fact]
+    public void Default_scenario_paused_at_start_clamps_asteroid_trailing_waypoint_to_turn_radius()
+    {
+        string scenarioPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory, "..", "..", "..", "..", "..",
+            "src", "DeepSpaceSaga.Client", "Scenarios", "Default", "scenario.json"));
+        string settingsPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory, "..", "..", "..", "..", "..",
+            "src", "DeepSpaceSaga.Client", "Settings.json"));
+
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settingsPath, out _, out _);
+        var engine = new SimulationEngine(registry);
+        engine.LoadScenario(ScenarioLoader.LoadFromFile(scenarioPath));
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-default-asteroid", 1, "SPC-0001", "MOD-PLAYER-ENGINE-01",
+            NavigationComputerCommandTypes.Approach,
+            TargetObjectId: "SPC-0003"));
+
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
+        var ship = snapshot.Objects.Single(o => o.ObjectId == "SPC-0001");
+        var asteroid = snapshot.Objects.Single(o => o.ObjectId == "SPC-0003");
+
+        // Player/asteroid separation is 400 wu (40 km), while content allows up to
+        // 1500 wu. At 0.7 km/s and 4°/s the useful turn radius is ~100.27 wu.
+        double expectedTurnRadius = 0.7 * 10.0 / (4.0 * Math.PI / 180.0);
+        Assert.Equal(expectedTurnRadius,
+            ship.NavigationApproachTrailDistanceWorldUnits!.Value, precision: 6);
+        Assert.True(ship.NavigationApproachTrailDistanceWorldUnits < 400);
+
+        double aimDistanceFromAsteroid = Math.Sqrt(
+            Math.Pow(ship.NavigationTargetX!.Value - asteroid.X, 2) +
+            Math.Pow(ship.NavigationTargetY!.Value - asteroid.Y, 2));
+        Assert.Equal(expectedTurnRadius, aimDistanceFromAsteroid, precision: 6);
+        Assert.Equal(ApproachPursuitMath.TrailPhase, ship.NavigationPhase);
     }
 
     [Fact]

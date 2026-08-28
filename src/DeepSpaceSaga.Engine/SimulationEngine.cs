@@ -1954,6 +1954,7 @@ public sealed class SimulationEngine : IDisposable
         double? capturedTargetCourseDegrees = null;
         double? initialApproachTargetSpeedKmS = null;
         double? initialApproachTargetDirectionDegrees = null;
+        double? initialApproachTrailDistanceWorldUnits = null;
         if (matchTargetIndex is { } targetIndex)
         {
             var target = _objects[targetIndex];
@@ -1982,7 +1983,15 @@ public sealed class SimulationEngine : IDisposable
 
             var approachCommandDef = _registry.CommandDefinitions.GetDefinition(
                 _registry.CommandDefinitions.GetIndex(command.CommandType));
-            double trailDistanceWorldUnits = (approachCommandDef.TrailDistanceKm ?? 0) * WorldUnitsPerKm;
+            double configuredTrailDistanceWorldUnits =
+                (approachCommandDef.TrailDistanceKm ?? 0) * WorldUnitsPerKm;
+            long shipElapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
+            var shipMotion = _motion.Predict(obj.InitialMotion, shipElapsedMs);
+            double trailDistanceWorldUnits = ComputeEffectiveApproachTrailDistance(
+                shipMotion,
+                targetMotion,
+                configuredTrailDistanceWorldUnits,
+                moduleType.AngularInertiaDegPerSec ?? 0);
             (double aimX, double aimY) = DeepSpaceSaga.Motion.ApproachPursuitMath.ComputeAimPoint(
                 targetMotion.X, targetMotion.Y, targetMotion.Direction, targetMotion.SpeedKmS, trailDistanceWorldUnits);
 
@@ -1994,6 +2003,7 @@ public sealed class SimulationEngine : IDisposable
                 : ApproachPursuitMath.TrailPhase;
             initialApproachTargetSpeedKmS = targetMotion.SpeedKmS;
             initialApproachTargetDirectionDegrees = targetMotion.Direction;
+            initialApproachTrailDistanceWorldUnits = trailDistanceWorldUnits;
         }
 
         _objects[objectIndex] = UpdateModule(
@@ -2018,7 +2028,8 @@ public sealed class SimulationEngine : IDisposable
                     navigationEscapeCourseDegrees: initialEscapeCourse,
                     navigationRequiredDepartureDistance: initialRequiredDistance,
                     navigationTargetSpeedKmS: initialApproachTargetSpeedKmS,
-                    navigationTargetDirectionDegrees: initialApproachTargetDirectionDegrees)
+                    navigationTargetDirectionDegrees: initialApproachTargetDirectionDegrees,
+                    navigationApproachTrailDistanceWorldUnits: initialApproachTrailDistanceWorldUnits)
             });
         return CommandStartOutcome.Started;
     }
@@ -2093,7 +2104,8 @@ public sealed class SimulationEngine : IDisposable
         double? navigationEscapeCourseDegrees = null,
         double? navigationRequiredDepartureDistance = null,
         double? navigationTargetSpeedKmS = null,
-        double? navigationTargetDirectionDegrees = null)
+        double? navigationTargetDirectionDegrees = null,
+        double? navigationApproachTrailDistanceWorldUnits = null)
     {
         string cycleId = $"CYC-ENGINE-{++_nextEngineCycleId:D6}";
         // Approach now shares Orbit's faster MinTurnIntervalMs (~250 ms at 4°/s) turn
@@ -2131,7 +2143,8 @@ public sealed class SimulationEngine : IDisposable
             NavigationEscapeCourseDegrees: navigationEscapeCourseDegrees,
             NavigationRequiredDepartureDistance: navigationRequiredDepartureDistance,
             NavigationTargetSpeedKmS: navigationTargetSpeedKmS,
-            NavigationTargetDirectionDegrees: navigationTargetDirectionDegrees);
+            NavigationTargetDirectionDegrees: navigationTargetDirectionDegrees,
+            NavigationApproachTrailDistanceWorldUnits: navigationApproachTrailDistanceWorldUnits);
     }
 
     /// <summary>
@@ -2167,6 +2180,38 @@ public sealed class SimulationEngine : IDisposable
     private static long MinTurnIntervalMs(int inertiaDegPerSec)
     {
         return (1000 + inertiaDegPerSec - 1) / inertiaDegPerSec;
+    }
+
+    private static double ComputeEffectiveApproachTrailDistance(
+        ObjectMotionSnapshot ship,
+        ObjectMotionSnapshot target,
+        double configuredTrailDistanceWorldUnits,
+        int angularInertiaDegPerSec)
+    {
+        if (Math.Abs(target.SpeedKmS) < 1e-9 || configuredTrailDistanceWorldUnits <= 0)
+            return 0;
+
+        double dx = target.X - ship.X;
+        double dy = target.Y - ship.Y;
+        double separation = Math.Sqrt(dx * dx + dy * dy);
+        if (separation <= ApproachPursuitMath.ArrivalToleranceUnits * 2)
+            return 0;
+
+        // trailDistanceKm is an upper bound. For a nearby object, sending the ship
+        // the full configured 150 km behind it produces a huge detour (the Default
+        // scenario asteroid starts only 40 km away). Use the ship's current turn
+        // radius as the useful staging depth, capped to half the current separation.
+        double preferredDistance = configuredTrailDistanceWorldUnits;
+        if (ship.SpeedKmS > 0 && angularInertiaDegPerSec > 0)
+        {
+            double angularVelocityRadPerSec = angularInertiaDegPerSec * Math.PI / 180.0;
+            double turnRadius = ship.SpeedKmS * WorldUnitsPerKm / angularVelocityRadPerSec;
+            preferredDistance = Math.Max(
+                ApproachPursuitMath.ArrivalToleranceUnits * 2,
+                turnRadius);
+        }
+
+        return Math.Min(configuredTrailDistanceWorldUnits, Math.Min(preferredDistance, separation / 2.0));
     }
 
     private static bool IsCyclicEngineCommand(string commandType)
@@ -2269,8 +2314,7 @@ public sealed class SimulationEngine : IDisposable
                     NavigationTargetSpeedKmS: cycle.NavigationTargetSpeedKmS,
                     NavigationTargetDirectionDegrees: cycle.NavigationTargetDirectionDegrees,
                     NavigationApproachTrailDistanceWorldUnits:
-                        (_registry.CommandDefinitions.GetDefinition(
-                            _registry.CommandDefinitions.GetIndex(cycle.CommandType)).TrailDistanceKm ?? 0) * WorldUnitsPerKm);
+                        cycle.NavigationApproachTrailDistanceWorldUnits);
             }
 
             if (!IsUntilCancelTurn(cycle.CommandType))
@@ -2359,7 +2403,9 @@ public sealed class SimulationEngine : IDisposable
                             navigationEscapeCourseDegrees: cycle.NavigationEscapeCourseDegrees,
                             navigationRequiredDepartureDistance: cycle.NavigationRequiredDepartureDistance,
                             navigationTargetSpeedKmS: cycle.NavigationTargetSpeedKmS,
-                            navigationTargetDirectionDegrees: cycle.NavigationTargetDirectionDegrees)
+                            navigationTargetDirectionDegrees: cycle.NavigationTargetDirectionDegrees,
+                            navigationApproachTrailDistanceWorldUnits:
+                                cycle.NavigationApproachTrailDistanceWorldUnits)
                         : null;
                     _objects[objectIndex] = ApplyCompletedEngineCommand(
                         obj,
@@ -2518,7 +2564,8 @@ public sealed class SimulationEngine : IDisposable
 
         var commandDef = _registry.CommandDefinitions.GetDefinition(
             _registry.CommandDefinitions.GetIndex(cycle.CommandType));
-        double trailDistanceWorldUnits = (commandDef.TrailDistanceKm ?? 0) * WorldUnitsPerKm;
+        double trailDistanceWorldUnits = cycle.NavigationApproachTrailDistanceWorldUnits ??
+            (commandDef.TrailDistanceKm ?? 0) * WorldUnitsPerKm;
         bool isFinalApproach = cycle.NavigationPhase == ApproachPursuitMath.FinalPhase ||
                                targetMotion.SpeedKmS == 0 ||
                                trailDistanceWorldUnits <= 0;

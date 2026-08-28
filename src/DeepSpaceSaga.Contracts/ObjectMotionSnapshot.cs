@@ -91,7 +91,7 @@ public sealed record ObjectMotionSnapshot(
     /// </summary>
     double? NavigationTargetDirectionDegrees = null,
     /// <summary>
-    /// Configured distance of the behind-target staging point for an active
+    /// Effective distance of the behind-target staging point for an active
     /// <see cref="NavigationComputerCommandTypes.Approach"/>, in world units.
     /// </summary>
     double? NavigationApproachTrailDistanceWorldUnits = null);
