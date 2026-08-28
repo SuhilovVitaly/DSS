@@ -186,6 +186,12 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         if (elapsedMs <= 0)
             return state;
 
+        if (ApproachPursuitMath.IsFlyThroughPhase(state.NavigationPhase))
+        {
+            return PredictFlyThrough(
+                state, elapsedMs, bakedAimX, bakedAimY, targetDirectionDegrees);
+        }
+
         int turnStep = Math.Abs(state.TurnStepDegrees);
         if (turnStep == 0 || state.TurnStepIntervalMs <= 0)
             return PredictStraight(state, elapsedMs, state.Direction);
@@ -260,6 +266,93 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             NavigationTargetX = aimBaseX,
             NavigationTargetY = aimBaseY,
             NavigationPhase = approachPhase,
+        };
+    }
+
+    private static ObjectMotionSnapshot PredictFlyThrough(
+        ObjectMotionSnapshot state,
+        long elapsedMs,
+        double targetX,
+        double targetY,
+        double targetDirectionDegrees)
+    {
+        long intervalMs = Math.Max(1, state.TurnStepIntervalMs);
+        long remainingMs = elapsedMs;
+        long untilNextTurnMs = Math.Max(1, state.TurnStepRemainingMs);
+        double x = state.X;
+        double y = state.Y;
+        double direction = state.Direction;
+        string phase = state.NavigationPhase!;
+        ApproachFlyThroughPlan? plan = null;
+
+        if (phase.StartsWith(ApproachPursuitMath.FlyThroughPhasePrefix, StringComparison.Ordinal))
+        {
+            plan = new ApproachFlyThroughPlan(
+                phase[ApproachPursuitMath.FlyThroughPhasePrefix.Length..],
+                state.NavigationEscapeCourseDegrees ?? 0,
+                state.NavigationRequiredDepartureDistance ?? 0,
+                state.NavigationLockedCourseDegrees ?? 0);
+        }
+
+        while (remainingMs > 0)
+        {
+            long segmentMs = Math.Min(remainingMs, untilNextTurnMs);
+            AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, segmentMs);
+            remainingMs -= segmentMs;
+            untilNextTurnMs -= segmentMs;
+            if (untilNextTurnMs > 0)
+                continue;
+
+            ApproachFlyThroughPlanStep step;
+            if (plan is null)
+            {
+                plan = ApproachPursuitMath.CreateFlyThroughPlan(
+                    x, y, direction, state.SpeedKmS,
+                    targetX, targetY, targetDirectionDegrees,
+                    state.NavigationAngularInertiaDegPerSec);
+                step = ApproachPursuitMath.AdvanceFlyThroughPlan(
+                    plan.Value, direction, targetDirectionDegrees,
+                    travelledUnits: 0,
+                    turnStepDegrees: Math.Abs(state.TurnStepDegrees));
+            }
+            else
+            {
+                double travelledUnits = state.SpeedKmS * (intervalMs / 1000.0) * 10.0;
+                step = ApproachPursuitMath.AdvanceFlyThroughPlan(
+                    plan.Value, direction, targetDirectionDegrees,
+                    travelledUnits,
+                    Math.Abs(state.TurnStepDegrees));
+            }
+
+            direction = step.NewDirectionDegrees;
+            plan = step.RemainingPlan;
+            untilNextTurnMs = intervalMs;
+
+            if (step.IsArrived)
+            {
+                x = targetX;
+                y = targetY;
+                AdvanceStraight(ref x, ref y, state.SpeedKmS, targetDirectionDegrees, remainingMs);
+                return ClearNavigation(
+                    state, x, y, targetDirectionDegrees, untilNextTurnMs);
+            }
+        }
+
+        var remainingPlan = plan;
+        return state with
+        {
+            X = x,
+            Y = y,
+            Direction = direction,
+            TurnStepRemainingMs = untilNextTurnMs,
+            NavigationPhase = remainingPlan is null
+                ? ApproachPursuitMath.FlyThroughPendingPhase
+                : ApproachPursuitMath.FlyThroughPhasePrefix + remainingPlan.Value.Type,
+            NavigationEscapeCourseDegrees = remainingPlan?.FirstRemainingUnits,
+            NavigationRequiredDepartureDistance = remainingPlan?.SecondRemainingUnits,
+            NavigationLockedCourseDegrees = remainingPlan?.ThirdRemainingUnits,
+            NavigationTargetX = targetX,
+            NavigationTargetY = targetY
         };
     }
 

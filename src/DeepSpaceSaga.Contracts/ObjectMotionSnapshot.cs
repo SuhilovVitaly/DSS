@@ -22,11 +22,9 @@ public sealed record ObjectMotionSnapshot(
     /// World-coordinate target of the active navigation cycle. Dual meaning depending on
     /// which command is active: for <see cref="ShipEngineCommandTypes.Orbit"/> this is a
     /// fixed, permanently-locked world point captured once. For
-    /// <see cref="NavigationComputerCommandTypes.Approach"/> this instead holds the
-    /// trailing aim point as freshly recomputed on the most recently completed ~1s
-    /// server cycle (live, re-baked every cycle from the target's current position).
-    /// The client treats this point as fixed until the next authoritative snapshot;
-    /// it does not extrapolate future target motion. Null when no navigation cycle is active.
+    /// <see cref="NavigationComputerCommandTypes.Approach"/> this holds the target pose
+    /// position captured when the command starts. The client follows the same fixed
+    /// fly-through plan and does not extrapolate future target motion.
     /// </summary>
     double? NavigationTargetX = null,
     /// <summary>World-coordinate target of the active navigation cycle; see <see cref="NavigationTargetX"/>.</summary>
@@ -44,11 +42,9 @@ public sealed record ObjectMotionSnapshot(
     /// this is a permanent lock — once non-null the ship should not re-derive the
     /// bearing, client-side prediction must use NavigationWaypointMath instead of
     /// generic turn steps. For <see cref="NavigationComputerCommandTypes.Approach"/>
-    /// (story-20260827-083137.md, Post-implementation bug fix #2) this is instead
-    /// cycle-scoped and NOT permanent: <see cref="DeepSpaceSaga.Motion.ApproachPursuitMath.Step"/>
-    /// itself drops and re-derives it whenever the live aim point drifts meaningfully,
-    /// since (unlike Orbit's fixed point) the aim point genuinely keeps moving as the
-    /// target moves. Null when no navigation cycle is active, or not yet locked.
+    /// this stores the remaining length of the third fly-through segment while
+    /// <see cref="NavigationPhase"/> starts with <c>FlyThrough:</c>. Legacy Approach
+    /// snapshots may still use the former cycle-scoped course-lock meaning.
     /// </summary>
     double? NavigationLockedCourseDegrees = null,
     string? ObjectType = null,
@@ -57,13 +53,13 @@ public sealed record ObjectMotionSnapshot(
     string? RenderObjectType = null,
     double? MaxSpeedKmS = null,
     /// <summary>
-    /// Current staged navigation phase for <see cref="ShipEngineCommandTypes.Orbit"/>.
-    /// Null means standard approach for saves/snapshots created before staged navigation.
+    /// Current staged navigation phase. Approach uses <c>FlyThroughPending</c> and
+    /// <c>FlyThrough:&lt;path type&gt;</c> for its captured pose path.
     /// </summary>
     string? NavigationPhase = null,
-    /// <summary>Escape course used by the close-target escape phases, degrees.</summary>
+    /// <summary>Orbit escape course, or remaining length of Approach fly-through segment 1.</summary>
     double? NavigationEscapeCourseDegrees = null,
-    /// <summary>Required distance from the target before leaving the escape-depart phase.</summary>
+    /// <summary>Orbit departure distance, or remaining length of Approach fly-through segment 2.</summary>
     double? NavigationRequiredDepartureDistance = null,
     /// <summary>
     /// True when this object (the player ship) is authoritatively docked to a station
@@ -75,18 +71,12 @@ public sealed record ObjectMotionSnapshot(
     /// <summary>ObjectId of the station this object is docked to. Null unless <see cref="IsDocked"/>.</summary>
     string? DockedStationObjectId = null,
     /// <summary>
-    /// Target's live speed (km/s), baked in on the most recently completed cycle of the
-    /// active <see cref="NavigationComputerCommandTypes.Approach"/> command. Unlike
-    /// <see cref="NavigationTargetX"/>/<see cref="NavigationTargetY"/> (Orbit-specific, a
-    /// fixed locked point), this field is Approach-specific and is overwritten every cycle
-    /// with the target's freshly re-read value. It is retained as current-state metadata;
-    /// the client does not use it to extrapolate future target motion. Null when no
-    /// Approach cycle is active.
+    /// Target speed captured when Approach starts. It is metadata only; the target's
+    /// future position is not extrapolated.
     /// </summary>
     double? NavigationTargetSpeedKmS = null,
     /// <summary>
-    /// Target's live heading (degrees), baked in on the most recently completed cycle of
-    /// the active <see cref="NavigationComputerCommandTypes.Approach"/> command; see
+    /// Target heading captured when the active Approach command starts; see
     /// <see cref="NavigationTargetSpeedKmS"/>. Null when no Approach cycle is active.
     /// </summary>
     double? NavigationTargetDirectionDegrees = null,

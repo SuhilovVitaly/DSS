@@ -193,6 +193,12 @@ internal sealed class NavigationTrajectoryProjector
         double targetDirectionDegrees,
         double targetSpeedKmS)
     {
+        if (ApproachPursuitMath.IsFlyThroughPhase(predicted.NavigationPhase))
+        {
+            return ProjectFlyThrough(
+                predicted, bakedAimX, bakedAimY, targetDirectionDegrees);
+        }
+
         var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
 
         double x = predicted.X;
@@ -339,6 +345,82 @@ internal sealed class NavigationTrajectoryProjector
         var (finalAimX, finalAimY) = AimAt(elapsedMs);
         points.Add(new FutureTrajectoryPoint(finalAimX, finalAimY));
 
+        return points;
+    }
+
+    private static List<FutureTrajectoryPoint> ProjectFlyThrough(
+        ObjectMotionSnapshot predicted,
+        double targetX,
+        double targetY,
+        double targetDirectionDegrees)
+    {
+        var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
+        double x = predicted.X;
+        double y = predicted.Y;
+        double direction = predicted.Direction;
+        double speedKmS = predicted.SpeedKmS;
+        long intervalMs = Math.Max(1, predicted.TurnStepIntervalMs);
+        long untilNextTurnMs = Math.Max(1, predicted.TurnStepRemainingMs);
+        string phase = predicted.NavigationPhase!;
+        ApproachFlyThroughPlan? plan = null;
+
+        if (phase.StartsWith(ApproachPursuitMath.FlyThroughPhasePrefix, StringComparison.Ordinal))
+        {
+            plan = new ApproachFlyThroughPlan(
+                phase[ApproachPursuitMath.FlyThroughPhasePrefix.Length..],
+                predicted.NavigationEscapeCourseDegrees ?? 0,
+                predicted.NavigationRequiredDepartureDistance ?? 0,
+                predicted.NavigationLockedCourseDegrees ?? 0);
+        }
+
+        points.Add(new FutureTrajectoryPoint(x, y));
+        (x, y) = AdvanceStraight(x, y, direction, speedKmS, untilNextTurnMs);
+        points.Add(new FutureTrajectoryPoint(x, y));
+
+        int iterations = 0;
+        while (iterations++ < ApproachTrajectoryMaxIterations)
+        {
+            ApproachFlyThroughPlanStep step;
+            if (plan is null)
+            {
+                plan = ApproachPursuitMath.CreateFlyThroughPlan(
+                    x, y, direction, speedKmS,
+                    targetX, targetY, targetDirectionDegrees,
+                    predicted.NavigationAngularInertiaDegPerSec);
+                step = ApproachPursuitMath.AdvanceFlyThroughPlan(
+                    plan.Value, direction, targetDirectionDegrees,
+                    travelledUnits: 0,
+                    turnStepDegrees: Math.Max(1, Math.Abs(predicted.TurnStepDegrees)));
+            }
+            else
+            {
+                double travelledUnits = speedKmS * (intervalMs / 1000.0) * 10.0;
+                step = ApproachPursuitMath.AdvanceFlyThroughPlan(
+                    plan.Value, direction, targetDirectionDegrees,
+                    travelledUnits,
+                    Math.Max(1, Math.Abs(predicted.TurnStepDegrees)));
+            }
+
+            direction = step.NewDirectionDegrees;
+            plan = step.RemainingPlan;
+            if (step.IsArrived)
+            {
+                double terminalAngleRad = targetDirectionDegrees * Math.PI / 180.0;
+                double terminalEntryDistance = Math.Max(
+                    ApproachPursuitMath.ArrivalToleranceUnits * 2,
+                    speedKmS * (intervalMs / 1000.0) * 20.0);
+                points.Add(new FutureTrajectoryPoint(
+                    targetX - terminalEntryDistance * Math.Sin(terminalAngleRad),
+                    targetY + terminalEntryDistance * Math.Cos(terminalAngleRad)));
+                points.Add(new FutureTrajectoryPoint(targetX, targetY));
+                return points;
+            }
+
+            (x, y) = AdvanceStraight(x, y, direction, speedKmS, intervalMs);
+            points.Add(new FutureTrajectoryPoint(x, y));
+        }
+
+        points.Add(new FutureTrajectoryPoint(targetX, targetY));
         return points;
     }
 

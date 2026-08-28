@@ -578,16 +578,11 @@ public class GameSessionNavigationTests
     {
         // Exact gameTimeMs=0 / Speed0 geometry from Scenarios/Default/scenario.json:
         // player (10000,10000), 0.7 km/s at 0°; SPC-0003 (10400,10000),
-        // 0.6 km/s at 256°. The staging depth is the command's local 1 km offset.
+        // 0.6 km/s at 256°. FlyThroughPending means the pose planner must build one
+        // continuous tail-entry path to the current target position and heading.
         const double targetX = 10400;
         const double targetY = 10000;
         const double targetDirection = 256;
-        double directionRad = targetDirection * Math.PI / 180.0;
-        double forwardX = Math.Sin(directionRad);
-        double forwardY = -Math.Cos(directionRad);
-        const double trailDistance = 10;
-        double trailAimX = targetX - trailDistance * forwardX;
-        double trailAimY = targetY - trailDistance * forwardY;
 
         var ship = new ObjectMotionSnapshot(
             "SPC-0001",
@@ -598,13 +593,13 @@ public class GameSessionNavigationTests
             TurnStepDegrees: 1,
             TurnStepRemainingMs: 250,
             TurnStepIntervalMs: 250,
-            NavigationTargetX: trailAimX,
-            NavigationTargetY: trailAimY,
+            NavigationTargetX: targetX,
+            NavigationTargetY: targetY,
             NavigationAngularInertiaDegPerSec: 4,
-            NavigationPhase: ApproachPursuitMath.TrailPhase,
+            NavigationPhase: ApproachPursuitMath.FlyThroughPendingPhase,
             NavigationTargetSpeedKmS: 0.6,
             NavigationTargetDirectionDegrees: targetDirection,
-            NavigationApproachTrailDistanceWorldUnits: trailDistance);
+            NavigationApproachTrailDistanceWorldUnits: 10);
 
         var points = new NavigationTrajectoryProjector().Project(ship);
 
@@ -612,12 +607,24 @@ public class GameSessionNavigationTests
             Math.Pow(p.X - 10000, 2) + Math.Pow(p.Y - 10000, 2)));
         Assert.True(maxDistanceFromStart < 550,
             $"Default asteroid route must stay local; projected radius was {maxDistanceFromStart:F1} wu.");
+        Assert.True(points.Max(p => p.X) > targetX + 50,
+            "Approach must go around to the target's rear side before crossing it.");
+        double routeLength = points.Zip(points.Skip(1), (a, b) => Math.Sqrt(
+            Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2))).Sum();
+        Assert.InRange(routeLength, 700, 850);
 
         // The endpoint is the asteroid's current position; its future linear motion
         // is deliberately not included in this preview.
         var end = points[^1];
         Assert.Equal(targetX, end.X, precision: 6);
         Assert.Equal(targetY, end.Y, precision: 6);
+
+        var beforeEnd = points[^2];
+        double terminalDirection = Math.Atan2(end.X - beforeEnd.X, beforeEnd.Y - end.Y)
+                                   * 180.0 / Math.PI;
+        if (terminalDirection < 0)
+            terminalDirection += 360;
+        Assert.Equal(targetDirection, terminalDirection, precision: 1);
     }
 
     [Fact]

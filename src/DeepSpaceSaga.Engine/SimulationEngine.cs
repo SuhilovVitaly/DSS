@@ -1992,15 +1992,12 @@ public sealed class SimulationEngine : IDisposable
                 targetMotion,
                 configuredTrailDistanceWorldUnits,
                 moduleType.AngularInertiaDegPerSec ?? 0);
-            (double aimX, double aimY) = DeepSpaceSaga.Motion.ApproachPursuitMath.ComputeAimPoint(
-                targetMotion.X, targetMotion.Y, targetMotion.Direction, targetMotion.SpeedKmS, trailDistanceWorldUnits);
-
             targetObjectId = command.TargetObjectId;
-            navigateTargetX = aimX;
-            navigateTargetY = aimY;
+            navigateTargetX = targetMotion.X;
+            navigateTargetY = targetMotion.Y;
             navPhase = targetMotion.SpeedKmS == 0 || trailDistanceWorldUnits <= 0
                 ? ApproachPursuitMath.FinalPhase
-                : ApproachPursuitMath.TrailPhase;
+                : ApproachPursuitMath.FlyThroughPendingPhase;
             initialApproachTargetSpeedKmS = targetMotion.SpeedKmS;
             initialApproachTargetDirectionDegrees = targetMotion.Direction;
             initialApproachTrailDistanceWorldUnits = trailDistanceWorldUnits;
@@ -2294,10 +2291,9 @@ public sealed class SimulationEngine : IDisposable
 
             if (cycle.CommandType == NavigationComputerCommandTypes.Approach)
             {
-                // Trailing-pursuit cycles report their last-recomputed (baked) aim point
-                // and the target's live speed/direction. The client treats the baked
-                // point as fixed until the next snapshot instead of extrapolating an
-                // assumed future path for the target.
+                // Approach cycles report the captured target pose plus any remaining
+                // fly-through segments. The client predicts the same fixed plan without
+                // extrapolating an assumed future target path.
                 long remainingMs = Math.Max(1, cycle.StartedGameTimeMs + cycle.DurationMs - gameTimeMs);
                 return new ActiveEngineCycleMotion(
                     cycle.CommandType,
@@ -2311,6 +2307,8 @@ public sealed class SimulationEngine : IDisposable
                     // cycle-scoped for Approach — see ApplyApproachStep's doc-comment.
                     NavigationLockedCourseDegrees: cycle.NavigationLockedCourseDegrees,
                     NavigationPhase: cycle.NavigationPhase,
+                    NavigationEscapeCourseDegrees: cycle.NavigationEscapeCourseDegrees,
+                    NavigationRequiredDepartureDistance: cycle.NavigationRequiredDepartureDistance,
                     NavigationTargetSpeedKmS: cycle.NavigationTargetSpeedKmS,
                     NavigationTargetDirectionDegrees: cycle.NavigationTargetDirectionDegrees,
                     NavigationApproachTrailDistanceWorldUnits:
@@ -2536,12 +2534,9 @@ public sealed class SimulationEngine : IDisposable
     }
 
     /// <summary>
-    /// Apply one completed navigation.approach pursuit cycle: read the target's live
-    /// position/direction/speed fresh (never captured across cycles, unlike
-    /// SpeedSynchronization/DirectionSynchronization), steer toward the freshly
-    /// recomputed trailing aim point via <see cref="ApproachPursuitMath.Step"/>, and
-    /// either complete (aligning direction while preserving ship speed) or bake the
-    /// new current-state aim point and target metadata into the next auto-repeat cycle.
+    /// Apply one completed navigation.approach cycle. New moving-target commands follow
+    /// a fixed bounded-radius fly-through plan built from the target pose captured when
+    /// the command started; legacy saves retain the older pursuit fallback below.
     /// </summary>
     private SpaceObjectRuntime ApplyApproachStep(
         SpaceObjectRuntime obj,
@@ -2564,6 +2559,81 @@ public sealed class SimulationEngine : IDisposable
             _registry.CommandDefinitions.GetIndex(cycle.CommandType));
         double trailDistanceWorldUnits = cycle.NavigationApproachTrailDistanceWorldUnits ??
             (commandDef.TrailDistanceKm ?? 0) * WorldUnitsPerKm;
+        bool flyThroughPending = cycle.NavigationPhase == ApproachPursuitMath.FlyThroughPendingPhase;
+        bool flyThroughActive = cycle.NavigationPhase?.StartsWith(
+            ApproachPursuitMath.FlyThroughPhasePrefix, StringComparison.Ordinal) == true;
+
+        if ((flyThroughPending || flyThroughActive) && nextCycle is not null)
+        {
+            double fixedTargetX = cycle.TargetWorldX ?? targetMotion.X;
+            double fixedTargetY = cycle.TargetWorldY ?? targetMotion.Y;
+            double fixedTargetDirection = cycle.NavigationTargetDirectionDegrees ?? targetMotion.Direction;
+            int turnStep = moduleType.TurnStepDegrees ?? 0;
+
+            ApproachFlyThroughPlan plan;
+            double travelledUnits;
+            if (flyThroughPending)
+            {
+                plan = ApproachPursuitMath.CreateFlyThroughPlan(
+                    shipMotion.X, shipMotion.Y, shipMotion.Direction, shipMotion.SpeedKmS,
+                    fixedTargetX, fixedTargetY, fixedTargetDirection,
+                    moduleType.AngularInertiaDegPerSec ?? 0);
+                travelledUnits = 0;
+            }
+            else
+            {
+                string type = cycle.NavigationPhase![ApproachPursuitMath.FlyThroughPhasePrefix.Length..];
+                plan = new ApproachFlyThroughPlan(
+                    type,
+                    cycle.NavigationEscapeCourseDegrees ?? 0,
+                    cycle.NavigationRequiredDepartureDistance ?? 0,
+                    cycle.NavigationLockedCourseDegrees ?? 0);
+                travelledUnits = shipMotion.SpeedKmS * (cycle.DurationMs / 1000.0) * WorldUnitsPerKm;
+            }
+
+            var flyThroughStep = ApproachPursuitMath.AdvanceFlyThroughPlan(
+                plan,
+                shipMotion.Direction,
+                fixedTargetDirection,
+                travelledUnits,
+                turnStep);
+
+            if (flyThroughStep.IsArrived)
+            {
+                return UpdateEngineMotion(
+                    obj, moduleIndex, gameTimeMs,
+                    module => module with { ActiveCycle = null },
+                    motion => motion with
+                    {
+                        X = fixedTargetX,
+                        Y = fixedTargetY,
+                        Direction = NormalizeDirection(fixedTargetDirection)
+                    });
+            }
+
+            var remaining = flyThroughStep.RemainingPlan;
+            nextCycle = nextCycle with
+            {
+                TargetWorldX = fixedTargetX,
+                TargetWorldY = fixedTargetY,
+                NavigationPhase = ApproachPursuitMath.FlyThroughPhasePrefix + remaining.Type,
+                NavigationEscapeCourseDegrees = remaining.FirstRemainingUnits,
+                NavigationRequiredDepartureDistance = remaining.SecondRemainingUnits,
+                NavigationLockedCourseDegrees = remaining.ThirdRemainingUnits,
+                NavigationTargetSpeedKmS = cycle.NavigationTargetSpeedKmS,
+                NavigationTargetDirectionDegrees = fixedTargetDirection,
+                NavigationApproachTrailDistanceWorldUnits = trailDistanceWorldUnits
+            };
+
+            return UpdateEngineMotion(
+                obj, moduleIndex, gameTimeMs,
+                module => module with { ActiveCycle = nextCycle },
+                motion => motion with
+                {
+                    Direction = NormalizeDirection(flyThroughStep.NewDirectionDegrees)
+                });
+        }
+
         bool isFinalApproach = cycle.NavigationPhase == ApproachPursuitMath.FinalPhase ||
                                targetMotion.SpeedKmS == 0 ||
                                trailDistanceWorldUnits <= 0;

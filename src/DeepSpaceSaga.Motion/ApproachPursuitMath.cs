@@ -27,6 +27,21 @@ public readonly record struct ApproachStepResult(
     double NewDirectionDegrees,
     double? LockedCourseDegrees = null);
 
+public readonly record struct ApproachFlyThroughPlan(
+    string Type,
+    double FirstRemainingUnits,
+    double SecondRemainingUnits,
+    double ThirdRemainingUnits)
+{
+    public double RemainingUnits =>
+        FirstRemainingUnits + SecondRemainingUnits + ThirdRemainingUnits;
+}
+
+public readonly record struct ApproachFlyThroughPlanStep(
+    bool IsArrived,
+    double NewDirectionDegrees,
+    ApproachFlyThroughPlan RemainingPlan);
+
 /// <summary>
 /// Pure, deterministic trailing-pursuit steering math for `navigation.approach`
 /// (shared by Engine and Client — no state, no Engine/Contracts references, only
@@ -61,6 +76,8 @@ public static class ApproachPursuitMath
 {
     public const string TrailPhase = "Trail";
     public const string FinalPhase = "Final";
+    public const string FlyThroughPendingPhase = "FlyThroughPending";
+    public const string FlyThroughPhasePrefix = "FlyThrough:";
 
     /// <summary>
     /// Default distance (world units) at or below which the ship is considered to have
@@ -70,6 +87,158 @@ public static class ApproachPursuitMath
     public const double ArrivalToleranceUnits = 5.0;
 
     private const double UnitsPerKmS = 10.0; // 1 km/s → 10 world units/s.
+
+    public static bool IsFlyThroughPhase(string? phase) =>
+        phase == FlyThroughPendingPhase ||
+        (phase?.StartsWith(FlyThroughPhasePrefix, StringComparison.Ordinal) ?? false);
+
+    public static ApproachFlyThroughPlan CreateFlyThroughPlan(
+        double shipX,
+        double shipY,
+        double shipDirectionDegrees,
+        double shipSpeedKmS,
+        double targetX,
+        double targetY,
+        double targetDirectionDegrees,
+        int angularInertiaDegPerSec)
+    {
+        double directDistance = Math.Sqrt(
+            (targetX - shipX) * (targetX - shipX) +
+            (targetY - shipY) * (targetY - shipY));
+        if (shipSpeedKmS <= 0 || angularInertiaDegPerSec <= 0)
+            return new ApproachFlyThroughPlan("SSS", 0, directDistance, 0);
+
+        double angularVelocityRadPerSec = angularInertiaDegPerSec * Math.PI / 180.0;
+        double turnRadius = shipSpeedKmS * UnitsPerKmS / angularVelocityRadPerSec;
+
+        // Convert screen coordinates/headings to Cartesian coordinates/yaw.
+        double dx = targetX - shipX;
+        double dy = -(targetY - shipY);
+        double normalizedDistance = directDistance / turnRadius;
+        double theta = Mod2Pi(Math.Atan2(dy, dx));
+        double alpha = Mod2Pi((90.0 - shipDirectionDegrees) * Math.PI / 180.0 - theta);
+        double beta = Mod2Pi((90.0 - targetDirectionDegrees) * Math.PI / 180.0 - theta);
+
+        var candidates = new List<(string Type, double First, double Second, double Third)>(6);
+        AddLsl(candidates, alpha, beta, normalizedDistance);
+        AddRsr(candidates, alpha, beta, normalizedDistance);
+        AddLsr(candidates, alpha, beta, normalizedDistance);
+        AddRsl(candidates, alpha, beta, normalizedDistance);
+        AddRlr(candidates, alpha, beta, normalizedDistance);
+        AddLrl(candidates, alpha, beta, normalizedDistance);
+
+        var shortest = candidates.Count > 0
+            ? candidates.MinBy(candidate => candidate.First + candidate.Second + candidate.Third)
+            : (Type: "SSS", First: 0.0, Second: normalizedDistance, Third: 0.0);
+        return new ApproachFlyThroughPlan(
+            shortest.Type,
+            shortest.First * turnRadius,
+            shortest.Second * turnRadius,
+            shortest.Third * turnRadius);
+    }
+
+    public static ApproachFlyThroughPlanStep AdvanceFlyThroughPlan(
+        ApproachFlyThroughPlan plan,
+        double currentDirectionDegrees,
+        double targetDirectionDegrees,
+        double travelledUnits,
+        int turnStepDegrees)
+    {
+        double first = Math.Max(0, plan.FirstRemainingUnits);
+        double second = Math.Max(0, plan.SecondRemainingUnits);
+        double third = Math.Max(0, plan.ThirdRemainingUnits);
+        double remainingTravel = Math.Max(0, travelledUnits);
+
+        Consume(ref first, ref remainingTravel);
+        Consume(ref second, ref remainingTravel);
+        Consume(ref third, ref remainingTravel);
+
+        var remaining = new ApproachFlyThroughPlan(plan.Type, first, second, third);
+        if (remaining.RemainingUnits <= ArrivalToleranceUnits)
+        {
+            return new ApproachFlyThroughPlanStep(
+                true,
+                NormalizeDegrees(targetDirectionDegrees),
+                remaining);
+        }
+
+        int segmentIndex = first > 0 ? 0 : second > 0 ? 1 : 2;
+        char segmentType = plan.Type.Length > segmentIndex ? plan.Type[segmentIndex] : 'S';
+        double newDirection = currentDirectionDegrees;
+        if (segmentType == 'L')
+            newDirection = NormalizeDegrees(currentDirectionDegrees - Math.Abs(turnStepDegrees));
+        else if (segmentType == 'R')
+            newDirection = NormalizeDegrees(currentDirectionDegrees + Math.Abs(turnStepDegrees));
+
+        return new ApproachFlyThroughPlanStep(false, newDirection, remaining);
+    }
+
+    private static void Consume(ref double segment, ref double travel)
+    {
+        if (travel <= 0 || segment <= 0)
+            return;
+        double consumed = Math.Min(segment, travel);
+        segment -= consumed;
+        travel -= consumed;
+    }
+
+    private static void AddLsl(List<(string Type, double First, double Second, double Third)> paths, double a, double b, double d)
+    {
+        double p2 = 2 + d * d - 2 * Math.Cos(a - b) + 2 * d * (Math.Sin(a) - Math.Sin(b));
+        if (p2 < 0) return;
+        double x = Math.Atan2(Math.Cos(b) - Math.Cos(a), d + Math.Sin(a) - Math.Sin(b));
+        paths.Add(("LSL", Mod2Pi(-a + x), Math.Sqrt(p2), Mod2Pi(b - x)));
+    }
+
+    private static void AddRsr(List<(string Type, double First, double Second, double Third)> paths, double a, double b, double d)
+    {
+        double p2 = 2 + d * d - 2 * Math.Cos(a - b) + 2 * d * (-Math.Sin(a) + Math.Sin(b));
+        if (p2 < 0) return;
+        double x = Math.Atan2(Math.Cos(a) - Math.Cos(b), d - Math.Sin(a) + Math.Sin(b));
+        paths.Add(("RSR", Mod2Pi(a - x), Math.Sqrt(p2), Mod2Pi(-b + x)));
+    }
+
+    private static void AddLsr(List<(string Type, double First, double Second, double Third)> paths, double a, double b, double d)
+    {
+        double p2 = -2 + d * d + 2 * Math.Cos(a - b) + 2 * d * (Math.Sin(a) + Math.Sin(b));
+        if (p2 < 0) return;
+        double p = Math.Sqrt(p2);
+        double x = Math.Atan2(-Math.Cos(a) - Math.Cos(b), d + Math.Sin(a) + Math.Sin(b)) - Math.Atan2(-2, p);
+        paths.Add(("LSR", Mod2Pi(-a + x), p, Mod2Pi(-Mod2Pi(b) + x)));
+    }
+
+    private static void AddRsl(List<(string Type, double First, double Second, double Third)> paths, double a, double b, double d)
+    {
+        double p2 = d * d - 2 + 2 * Math.Cos(a - b) - 2 * d * (Math.Sin(a) + Math.Sin(b));
+        if (p2 < 0) return;
+        double p = Math.Sqrt(p2);
+        double x = Math.Atan2(Math.Cos(a) + Math.Cos(b), d - Math.Sin(a) - Math.Sin(b)) - Math.Atan2(2, p);
+        paths.Add(("RSL", Mod2Pi(a - x), p, Mod2Pi(b - x)));
+    }
+
+    private static void AddRlr(List<(string Type, double First, double Second, double Third)> paths, double a, double b, double d)
+    {
+        double x = (6 - d * d + 2 * Math.Cos(a - b) + 2 * d * (Math.Sin(a) - Math.Sin(b))) / 8;
+        if (Math.Abs(x) > 1) return;
+        double p = Mod2Pi(2 * Math.PI - Math.Acos(x));
+        double t = Mod2Pi(a - Math.Atan2(Math.Cos(a) - Math.Cos(b), d - Math.Sin(a) + Math.Sin(b)) + p / 2);
+        paths.Add(("RLR", t, p, Mod2Pi(a - b - t + p)));
+    }
+
+    private static void AddLrl(List<(string Type, double First, double Second, double Third)> paths, double a, double b, double d)
+    {
+        double x = (6 - d * d + 2 * Math.Cos(a - b) + 2 * d * (-Math.Sin(a) + Math.Sin(b))) / 8;
+        if (Math.Abs(x) > 1) return;
+        double p = Mod2Pi(2 * Math.PI - Math.Acos(x));
+        double t = Mod2Pi(-a - Math.Atan2(Math.Cos(a) - Math.Cos(b), d + Math.Sin(a) - Math.Sin(b)) + p / 2);
+        paths.Add(("LRL", t, p, Mod2Pi(Mod2Pi(b) - a - t + Mod2Pi(p))));
+    }
+
+    private static double Mod2Pi(double value)
+    {
+        double result = value % (2 * Math.PI);
+        return result < 0 ? result + 2 * Math.PI : result;
+    }
 
     /// <summary>
     /// Speed (km/s) at or below which a target is treated as genuinely stationary

@@ -71,8 +71,6 @@ public class ApproachCommandTests
         // reported, and it never self-corrected while paused. This test proves the
         // baked fields are already correct on the very first snapshot, with zero elapsed
         // time — i.e., even a permanently paused game shows the right data immediately.
-        var (expectedAimX, expectedAimY) = AimPointBehindStationary(
-            targetX: 10000, targetY: 10000, targetDirectionDegrees: 90, trailDistanceKm: 150);
         var engine = CreateEngine(
             shipX: 8500, shipY: 20000, shipSpeedMps: 0, shipDirectionDegrees: 0,
             targetX: 10000, targetY: 10000, targetSpeedMps: 1000, targetDirectionDegrees: 90,
@@ -85,19 +83,19 @@ public class ApproachCommandTests
         Assert.Equal(NavigationComputerCommandTypes.Approach, ship.ActiveEngineCommandType);
         Assert.NotNull(ship.NavigationTargetX);
         Assert.NotNull(ship.NavigationTargetY);
-        Assert.Equal(expectedAimX, ship.NavigationTargetX!.Value, precision: 6);
-        Assert.Equal(expectedAimY, ship.NavigationTargetY!.Value, precision: 6);
+        Assert.Equal(10000, ship.NavigationTargetX!.Value, precision: 6);
+        Assert.Equal(10000, ship.NavigationTargetY!.Value, precision: 6);
         Assert.NotNull(ship.NavigationTargetSpeedKmS);
         Assert.Equal(1.0, ship.NavigationTargetSpeedKmS!.Value, precision: 6);
         Assert.NotNull(ship.NavigationTargetDirectionDegrees);
         Assert.Equal(90, ship.NavigationTargetDirectionDegrees!.Value, precision: 6);
-        Assert.Equal(ApproachPursuitMath.TrailPhase, ship.NavigationPhase);
+        Assert.Equal(ApproachPursuitMath.FlyThroughPendingPhase, ship.NavigationPhase);
         Assert.Equal(1500, ship.NavigationApproachTrailDistanceWorldUnits!.Value, precision: 6);
         Assert.True(ship.NavigationAngularInertiaDegPerSec > 0);
     }
 
     [Fact]
-    public void Moving_target_uses_trailing_point_as_waypoint_then_finishes_at_target()
+    public void Moving_target_is_flown_through_on_its_heading_without_changing_speed()
     {
         // Ship and target move right; the ship starts on the 10 km trailing point.
         // Reaching it must switch Approach to Final rather than completing and
@@ -110,21 +108,15 @@ public class ApproachCommandTests
         engine.ReceiveCommand(ApproachCommand());
         engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
 
-        var afterTrailingWaypoint = PlayerShipFrom(
-            engine.CaptureSnapshotForTests(15_000, SimulationSpeed.Speed1));
-        Assert.Equal(NavigationComputerCommandTypes.Approach, afterTrailingWaypoint.ActiveEngineCommandType);
-        Assert.Equal(ApproachPursuitMath.FinalPhase, afterTrailingWaypoint.NavigationPhase);
-        Assert.True(afterTrailingWaypoint.NavigationTargetX > 10_000);
-
         var completed = PlayerShipFrom(
-            engine.CaptureSnapshotForTests(200_000, SimulationSpeed.Speed1));
+            engine.CaptureSnapshotForTests(15_000, SimulationSpeed.Speed1));
         Assert.Null(completed.ActiveEngineCommandType);
         Assert.Equal(2.0, completed.SpeedKmS, precision: 6);
         Assert.Equal(90, completed.Direction, precision: 6);
     }
 
     [Fact]
-    public void Default_scenario_paused_at_start_uses_local_one_kilometer_trailing_waypoint()
+    public void Default_scenario_paused_at_start_bakes_current_asteroid_pose()
     {
         string scenarioPath = Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory, "..", "..", "..", "..", "..",
@@ -145,23 +137,20 @@ public class ApproachCommandTests
         var ship = snapshot.Objects.Single(o => o.ObjectId == "SPC-0001");
         var asteroid = snapshot.Objects.Single(o => o.ObjectId == "SPC-0003");
 
-        // Player/asteroid separation is 400 wu (40 km). The content-defined local
-        // staging offset is 10 wu (1 km), enough to shape a rear approach without
-        // creating a long, slow second chase leg.
+        // The planner receives the exact current target pose. It computes the rear
+        // entry curve from ship turn radius after the first cycle boundary.
         const double expectedTrailDistance = 10;
         Assert.Equal(expectedTrailDistance,
             ship.NavigationApproachTrailDistanceWorldUnits!.Value, precision: 6);
         Assert.True(ship.NavigationApproachTrailDistanceWorldUnits < 400);
 
-        double aimDistanceFromAsteroid = Math.Sqrt(
-            Math.Pow(ship.NavigationTargetX!.Value - asteroid.X, 2) +
-            Math.Pow(ship.NavigationTargetY!.Value - asteroid.Y, 2));
-        Assert.Equal(expectedTrailDistance, aimDistanceFromAsteroid, precision: 6);
-        Assert.Equal(ApproachPursuitMath.TrailPhase, ship.NavigationPhase);
+        Assert.Equal(asteroid.X, ship.NavigationTargetX!.Value, precision: 6);
+        Assert.Equal(asteroid.Y, ship.NavigationTargetY!.Value, precision: 6);
+        Assert.Equal(ApproachPursuitMath.FlyThroughPendingPhase, ship.NavigationPhase);
     }
 
     [Fact]
-    public void Approach_re_aims_every_cycle_toward_live_target_state()
+    public void Approach_holds_the_current_target_pose_instead_of_extrapolating_it()
     {
         // Target moves at a constant 1.0 km/s along direction 90 (+X). The ship starts
         // far south of the initial aim point with speed 0 (isolating pure steering from
@@ -181,24 +170,20 @@ public class ApproachCommandTests
         engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1); // cycle #1 starts (StartedGameTimeMs = 0)
 
         var afterCycle1 = PlayerShipFrom(engine.CaptureSnapshotForTests(250, SimulationSpeed.Speed1));
-        Assert.Equal(80, afterCycle1.Direction, precision: 3);
+        Assert.Equal(90, afterCycle1.Direction, precision: 3);
         Assert.Equal(1.0, afterCycle1.NavigationTargetSpeedKmS!.Value, precision: 6);
         Assert.Equal(90, afterCycle1.NavigationTargetDirectionDegrees!.Value, precision: 6);
         double aimX1 = afterCycle1.NavigationTargetX!.Value;
 
+        Assert.StartsWith(ApproachPursuitMath.FlyThroughPhasePrefix, afterCycle1.NavigationPhase);
         var afterCycle2 = PlayerShipFrom(engine.CaptureSnapshotForTests(500, SimulationSpeed.Speed1));
-        Assert.Equal(70, afterCycle2.Direction, precision: 3);
         double aimX2 = afterCycle2.NavigationTargetX!.Value;
 
         var afterCycle3 = PlayerShipFrom(engine.CaptureSnapshotForTests(750, SimulationSpeed.Speed1));
-        Assert.Equal(60, afterCycle3.Direction, precision: 3);
         double aimX3 = afterCycle3.NavigationTargetX!.Value;
 
-        // The aim point keeps moving forward (+X) each cycle as the target advances —
-        // proof the aim point is re-derived from the target's live position every cycle,
-        // not locked from the first read.
-        Assert.True(aimX2 > aimX1);
-        Assert.True(aimX3 > aimX2);
+        Assert.Equal(aimX1, aimX2, precision: 6);
+        Assert.Equal(aimX1, aimX3, precision: 6);
 
         // Still cycling — not completed.
         Assert.Equal(NavigationComputerCommandTypes.Approach, afterCycle3.ActiveEngineCommandType);
