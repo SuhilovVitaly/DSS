@@ -374,13 +374,17 @@ public class GameSessionNavigationTests
         // Same scenario as the predictor test above, projected as a preview trajectory
         // line: the aim point keeps moving (+X) as the target advances, so the projected
         // course must keep turning cycle over cycle rather than freezing on the first
-        // bake — mirroring the Orbit turn-shape assertions further up this file.
+        // bake — mirroring the Orbit turn-shape assertions further up this file. The ship
+        // needs a small non-zero speed here (unlike the predictor test, which only checks
+        // direction and is fine with SpeedKmS=0) — otherwise it can never close ANY distance
+        // on the receding aim point, and the stagnation cutoff (regression test further
+        // below) correctly truncates the preview to just the first couple of points.
         var projector = new NavigationTrajectoryProjector();
 
         var state = new ObjectMotionSnapshot(
             "ship",
             X: 8500, Y: 20000,
-            SpeedKmS: 0,
+            SpeedKmS: 1.5,
             Direction: 90,
             ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
             TurnStepDegrees: 10,
@@ -436,6 +440,46 @@ public class GameSessionNavigationTests
         // The last point must be the actual aim point, not a horizon-truncated position.
         Assert.Equal(0.0, points[^1].X, precision: 3);
         Assert.Equal(0.0, points[^1].Y, precision: 3);
+    }
+
+    [Fact]
+    public void Approach_trajectory_projection_stops_at_closest_approach_when_the_target_cannot_be_caught()
+    {
+        // Regression: a target that's marginally too fast (or on an angle the ship can only
+        // asymptotically approach) is never actually "arrived at" within
+        // ApproachPursuitMath.ArrivalToleranceUnits, so the old unconditional "run until
+        // IsArrived" loop kept extending the preview all the way to the generous
+        // ApproachTrajectoryMaxHorizonMs backstop (2000s) — drawing a long, visually wrong
+        // line that shoots far past the target after the ship's course happens to pass close
+        // by it early in the chase. The fix must instead stop the line once the distance to
+        // the aim point has stopped improving for a sustained stretch, at the closest point
+        // actually reached.
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 0,
+            SpeedKmS: 3,
+            Direction: 0,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 250,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: 0,
+            NavigationTargetY: 3000,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationTargetSpeedKmS: 3.05, // marginally faster than the ship (3) — unreachable
+            NavigationTargetDirectionDegrees: 90);
+
+        var projector = new NavigationTrajectoryProjector();
+        var points = projector.Project(ship);
+
+        // Proof the line was cut off well short of the old 2000s / 8000-point backstop, but
+        // still far enough in that this is a genuine stagnation cutoff, not an immediate
+        // false-positive truncation during the initial turn-toward-target warm-up.
+        int maxHorizonPoints = NavigationTrajectoryProjector.ApproachTrajectoryMaxHorizonMs / 250;
+        Assert.True(points.Count > 200,
+            $"Expected the ship to make real progress before the chase stalled, got only {points.Count} points.");
+        Assert.True(points.Count < maxHorizonPoints / 2,
+            $"Expected the projection to stop well short of the 2000s backstop, got {points.Count} points.");
     }
 
     [Fact]

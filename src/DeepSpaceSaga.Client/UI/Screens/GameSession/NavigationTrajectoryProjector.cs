@@ -41,6 +41,23 @@ internal sealed class NavigationTrajectoryProjector
     private const int ApproachTrajectoryMaxIterations = 20_000;
 
     /// <summary>
+    /// If <see cref="ProjectApproach"/>'s distance to the (possibly moving) aim point hasn't
+    /// improved on its best-so-far value in this many milliseconds of simulated flight, the
+    /// chase is treated as stalled and the preview is truncated at the closest point actually
+    /// reached — rather than continuing all the way to <see cref="ApproachTrajectoryMaxHorizonMs"/>.
+    /// Without this, a target the ship can only almost (but never quite, within
+    /// <see cref="ApproachPursuitMath.ArrivalToleranceUnits"/>) catch — e.g. marginally faster,
+    /// or on a course the ship can only asymptotically approach — draws a preview line that
+    /// passes right by the target early on and then keeps extending far past it in a long,
+    /// visually wrong "escaping" straight line for the full 2000s backstop. Comfortably above
+    /// the slowest legitimate warm-up (turning up to ~180° to face the target before any
+    /// distance closes at all) for the smallest turn-rate content uses — a full 180° turn at
+    /// module.engine.basic's 1°/250ms takes ~45s — while still cutting the line off within
+    /// roughly a couple of minutes of simulated flight instead of the full 2000s cap.
+    /// </summary>
+    private const long ApproachStagnationTimeoutMs = 180_000;
+
+    /// <summary>
     /// Compute future world-coordinate trajectory points for an active navigation
     /// cycle, starting from the current predicted state. Empty when the snapshot does
     /// not carry an authoritative navigation target (no active navigate cycle).
@@ -214,26 +231,43 @@ internal sealed class NavigationTrajectoryProjector
 
         points.Add(new FutureTrajectoryPoint(x, y));
 
-        // Runs until actual arrival (IsArrived), bounded by ApproachTrajectoryMaxHorizonMs/
-        // ApproachTrajectoryMaxIterations as a safety backstop only — see their doc-comments.
-        // If the loop ever exhausts a bound WITHOUT arriving, that is not automatically a
-        // bug: a stalled ship (SpeedKmS≈0) or one simply slower than a fleeing target can
-        // never geometrically catch it, and legitimately exhausts the bound every time. A
-        // hard assertion was considered here (the fix's design notes suggested "surface
-        // it, don't silently swallow it") but rejected — a pure client-side projector has
-        // no business running a reachability check to tell that ordinary case apart from
-        // an actual residual convergence bug, so a hard assert would false-fire on the
-        // ordinary case. In that situation the caller simply gets the last few points
-        // computed before the bound — an honest "still converging as of the safety bound"
-        // preview, not a guaranteed-complete trajectory.
+        // Runs until actual arrival (IsArrived) or a stagnation timeout (see
+        // ApproachStagnationTimeoutMs), bounded by ApproachTrajectoryMaxHorizonMs/
+        // ApproachTrajectoryMaxIterations as an outer safety backstop only — see their
+        // doc-comments. If the loop ever exhausts a bound WITHOUT arriving, that is not
+        // automatically a bug: a stalled ship (SpeedKmS≈0) or one simply slower than a
+        // fleeing target can never geometrically catch it, and legitimately exhausts the
+        // bound every time. A hard assertion was considered here (the fix's design notes
+        // suggested "surface it, don't silently swallow it") but rejected — a pure
+        // client-side projector has no business running a reachability check to tell that
+        // ordinary case apart from an actual residual convergence bug, so a hard assert
+        // would false-fire on the ordinary case. In that situation the caller simply gets
+        // the points computed up to the closest approach reached — an honest "this is as
+        // close as it gets" preview, not a guaranteed-complete trajectory.
         long elapsedMs = phaseMs;
         int iterations = 0;
+        double bestDistanceToAim = double.MaxValue;
+        long bestDistanceElapsedMs = elapsedMs;
+        int bestDistancePointIndex = points.Count - 1;
         while (elapsedMs < ApproachTrajectoryMaxHorizonMs && iterations < ApproachTrajectoryMaxIterations)
         {
             iterations++;
 
             var (aimX, aimY) = ApproachPursuitMath.ExtrapolatePosition(
                 bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, elapsedMs);
+
+            double distanceToAim = Math.Sqrt((aimX - x) * (aimX - x) + (aimY - y) * (aimY - y));
+            if (distanceToAim < bestDistanceToAim)
+            {
+                bestDistanceToAim = distanceToAim;
+                bestDistanceElapsedMs = elapsedMs;
+                bestDistancePointIndex = points.Count - 1;
+            }
+            else if (elapsedMs - bestDistanceElapsedMs >= ApproachStagnationTimeoutMs)
+            {
+                points.RemoveRange(bestDistancePointIndex + 1, points.Count - bestDistancePointIndex - 1);
+                return points;
+            }
 
             var step = ApproachPursuitMath.Step(
                 x, y, direction, speedKmS,
