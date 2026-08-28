@@ -307,11 +307,11 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
-    public void Approach_prediction_tracks_moving_target_like_the_authoritative_engine()
+    public void Approach_prediction_holds_current_target_point_until_next_snapshot()
     {
         // ТЗ (story-20260827-083137.md, U4): client-side LinearMotionPredictor must
-        // steer a navigation.approach cycle identically to the authoritative Engine
-        // over several un-refreshed seconds (no new snapshot arriving in between).
+        // steer toward the current baked point over several un-refreshed seconds
+        // without inventing future linear movement for the target.
         // Direction-convergence numbers (90 → 80 → 70 → 60) mirror
         // DeepSpaceSaga.Engine.Tests.ApproachCommandTests
         // .Approach_re_aims_every_cycle_toward_live_target_state's ship/target geometry,
@@ -356,7 +356,7 @@ public class GameSessionNavigationTests
         var afterCycle1 = predictor.Predict(state, 2000);
         Assert.Equal(80.0, afterCycle1.Direction, precision: 6);
         Assert.Equal(NavigationComputerCommandTypes.Approach, afterCycle1.ActiveEngineCommandType);
-        Assert.Equal(8520.0, afterCycle1.NavigationTargetX!.Value, precision: 6);
+        Assert.Equal(8500.0, afterCycle1.NavigationTargetX!.Value, precision: 6);
 
         var afterCycle2 = predictor.Predict(state, 3000);
         Assert.Equal(70.0, afterCycle2.Direction, precision: 6);
@@ -370,15 +370,13 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
-    public void Approach_trajectory_projection_turns_toward_the_extrapolated_moving_aim_point()
+    public void Approach_trajectory_projection_turns_toward_the_current_fixed_aim_point()
     {
         // Same scenario as the predictor test above, projected as a preview trajectory
-        // line: the aim point keeps moving (+X) as the target advances, so the projected
-        // course must keep turning cycle over cycle rather than freezing on the first
-        // bake — mirroring the Orbit turn-shape assertions further up this file. The ship
+        // line: the aim point stays fixed at the current snapshot value. The ship
         // needs a small non-zero speed here (unlike the predictor test, which only checks
         // direction and is fine with SpeedKmS=0) — otherwise it can never close ANY distance
-        // on the receding aim point, and the stagnation cutoff (regression test further
+        // on the aim point, and the stagnation cutoff (regression test further
         // below) correctly truncates the preview to just the first couple of points.
         var projector = new NavigationTrajectoryProjector();
 
@@ -548,9 +546,9 @@ public class GameSessionNavigationTests
     [Fact]
     public void Approach_trail_phase_continues_from_behind_waypoint_to_the_target()
     {
-        // Target starts at (300,0), moves right at 0.5 km/s, and its behind waypoint
+        // Target is currently at (300,0), moving right at 0.5 km/s, and its behind waypoint
         // is (200,0). The waypoint shapes the approach but is not the destination:
-        // the preview must pass it and finish on the moving target itself.
+        // the preview must pass it and finish at the target's current position.
         var ship = new ObjectMotionSnapshot(
             "ship",
             X: 0, Y: 0,
@@ -571,24 +569,23 @@ public class GameSessionNavigationTests
         var points = new NavigationTrajectoryProjector().Project(ship);
 
         Assert.Contains(points, p => p.X >= 195 && p.X <= 205);
-        Assert.True(points[^1].X > 300, "Final point must be the advanced target, not its trailing waypoint.");
+        Assert.Equal(300.0, points[^1].X, precision: 6);
         Assert.Equal(0.0, points[^1].Y, precision: 6);
     }
 
     [Fact]
-    public void Default_scenario_paused_start_asteroid_route_stays_local_and_ends_on_target_track()
+    public void Default_scenario_paused_start_asteroid_route_ends_at_current_target_position()
     {
         // Exact gameTimeMs=0 / Speed0 geometry from Scenarios/Default/scenario.json:
         // player (10000,10000), 0.7 km/s at 0°; SPC-0003 (10400,10000),
-        // 0.6 km/s at 256°. The effective staging depth is the player's turn radius,
-        // not the command's distant 150 km upper bound.
+        // 0.6 km/s at 256°. The staging depth is the command's local 1 km offset.
         const double targetX = 10400;
         const double targetY = 10000;
         const double targetDirection = 256;
         double directionRad = targetDirection * Math.PI / 180.0;
         double forwardX = Math.Sin(directionRad);
         double forwardY = -Math.Cos(directionRad);
-        double trailDistance = 0.7 * 10.0 / (4.0 * Math.PI / 180.0);
+        const double trailDistance = 10;
         double trailAimX = targetX - trailDistance * forwardX;
         double trailAimY = targetY - trailDistance * forwardY;
 
@@ -613,17 +610,14 @@ public class GameSessionNavigationTests
 
         double maxDistanceFromStart = points.Max(p => Math.Sqrt(
             Math.Pow(p.X - 10000, 2) + Math.Pow(p.Y - 10000, 2)));
-        Assert.True(maxDistanceFromStart < 1000,
+        Assert.True(maxDistanceFromStart < 550,
             $"Default asteroid route must stay local; projected radius was {maxDistanceFromStart:F1} wu.");
 
-        // The endpoint lies exactly on the asteroid's linear future track.
+        // The endpoint is the asteroid's current position; its future linear motion
+        // is deliberately not included in this preview.
         var end = points[^1];
-        double crossTrack = Math.Abs(
-            (end.X - targetX) * forwardY - (end.Y - targetY) * forwardX);
-        Assert.True(crossTrack < 1e-6,
-            $"Endpoint must lie on SPC-0003's target track; cross-track error {crossTrack}.");
-        Assert.True(end.X < trailAimX,
-            "Route must continue past the behind waypoint to the asteroid itself.");
+        Assert.Equal(targetX, end.X, precision: 6);
+        Assert.Equal(targetY, end.Y, precision: 6);
     }
 
     [Fact]

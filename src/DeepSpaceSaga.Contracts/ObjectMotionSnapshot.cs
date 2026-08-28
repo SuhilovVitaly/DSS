@@ -24,10 +24,9 @@ public sealed record ObjectMotionSnapshot(
     /// fixed, permanently-locked world point captured once. For
     /// <see cref="NavigationComputerCommandTypes.Approach"/> this instead holds the
     /// trailing aim point as freshly recomputed on the most recently completed ~1s
-    /// server cycle (live, re-baked every cycle from the target's current position —
-    /// never a fixed lock); see <see cref="NavigationTargetSpeedKmS"/> for the
-    /// accompanying baked target velocity used to extrapolate this point forward
-    /// client-side between bakes. Null when no navigation cycle is active.
+    /// server cycle (live, re-baked every cycle from the target's current position).
+    /// The client treats this point as fixed until the next authoritative snapshot;
+    /// it does not extrapolate future target motion. Null when no navigation cycle is active.
     /// </summary>
     double? NavigationTargetX = null,
     /// <summary>World-coordinate target of the active navigation cycle; see <see cref="NavigationTargetX"/>.</summary>
@@ -80,8 +79,9 @@ public sealed record ObjectMotionSnapshot(
     /// active <see cref="NavigationComputerCommandTypes.Approach"/> command. Unlike
     /// <see cref="NavigationTargetX"/>/<see cref="NavigationTargetY"/> (Orbit-specific, a
     /// fixed locked point), this field is Approach-specific and is overwritten every cycle
-    /// with the target's freshly re-read value so the client can extrapolate the target's
-    /// motion without a cross-object lookup. Null when no Approach cycle is active.
+    /// with the target's freshly re-read value. It is retained as current-state metadata;
+    /// the client does not use it to extrapolate future target motion. Null when no
+    /// Approach cycle is active.
     /// </summary>
     double? NavigationTargetSpeedKmS = null,
     /// <summary>

@@ -2295,9 +2295,9 @@ public sealed class SimulationEngine : IDisposable
             if (cycle.CommandType == NavigationComputerCommandTypes.Approach)
             {
                 // Trailing-pursuit cycles report their last-recomputed (baked) aim point
-                // and the target's live speed/direction — the client-side trajectory
-                // projector extrapolates the target's motion using these baked values
-                // instead of a cross-object lookup (Checkpoint 1).
+                // and the target's live speed/direction. The client treats the baked
+                // point as fixed until the next snapshot instead of extrapolating an
+                // assumed future path for the target.
                 long remainingMs = Math.Max(1, cycle.StartedGameTimeMs + cycle.DurationMs - gameTimeMs);
                 return new ActiveEngineCycleMotion(
                     cycle.CommandType,
@@ -2540,10 +2540,8 @@ public sealed class SimulationEngine : IDisposable
     /// position/direction/speed fresh (never captured across cycles, unlike
     /// SpeedSynchronization/DirectionSynchronization), steer toward the freshly
     /// recomputed trailing aim point via <see cref="ApproachPursuitMath.Step"/>, and
-    /// either complete (exact speed/direction match with the target, priming
-    /// navigation.dock's strict epsilon check) or bake the new aim point and the
-    /// target's live speed/direction into the next auto-repeat cycle so the client can
-    /// extrapolate without a cross-object lookup (Checkpoint 1).
+    /// either complete (aligning direction while preserving ship speed) or bake the
+    /// new current-state aim point and target metadata into the next auto-repeat cycle.
     /// </summary>
     private SpaceObjectRuntime ApplyApproachStep(
         SpaceObjectRuntime obj,
@@ -2601,15 +2599,13 @@ public sealed class SimulationEngine : IDisposable
                     motion => motion with { Direction = NormalizeDirection(result.NewDirectionDegrees) });
             }
 
-            // Exact scalar assignment, mirroring SpeedSynchronization/
-            // DirectionSynchronization — not asymptotic — so navigation.dock's strict
-            // epsilon check (~1e-6) passes immediately after this cycle completes.
+            // Approach only aligns the course. Speed remains under direct player
+            // control; braking/speed matching is an explicit follow-up action.
             return UpdateEngineMotion(
                 obj, moduleIndex, gameTimeMs,
                 module => module with { ActiveCycle = null },
                 motion => motion with
                 {
-                    SpeedKmS = targetMotion.SpeedKmS,
                     Direction = NormalizeDirection(targetMotion.Direction)
                 });
         }
@@ -2617,9 +2613,8 @@ public sealed class SimulationEngine : IDisposable
         if (nextCycle is not null)
         {
             // Bake the freshly recomputed aim point and the target's live speed/
-            // direction into the next auto-repeat cycle — this is what lets the client
-            // extrapolate the target's motion between server cycles without a
-            // cross-object lookup (Checkpoint 1).
+            // direction into the next auto-repeat cycle. The client treats this as a
+            // fixed current-state target until a newer authoritative snapshot arrives.
             nextCycle = nextCycle with
             {
                 TargetWorldX = result.AimPointX,

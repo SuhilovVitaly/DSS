@@ -119,12 +119,12 @@ public class ApproachCommandTests
         var completed = PlayerShipFrom(
             engine.CaptureSnapshotForTests(200_000, SimulationSpeed.Speed1));
         Assert.Null(completed.ActiveEngineCommandType);
-        Assert.Equal(1.0, completed.SpeedKmS, precision: 6);
+        Assert.Equal(2.0, completed.SpeedKmS, precision: 6);
         Assert.Equal(90, completed.Direction, precision: 6);
     }
 
     [Fact]
-    public void Default_scenario_paused_at_start_clamps_asteroid_trailing_waypoint_to_turn_radius()
+    public void Default_scenario_paused_at_start_uses_local_one_kilometer_trailing_waypoint()
     {
         string scenarioPath = Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory, "..", "..", "..", "..", "..",
@@ -145,17 +145,18 @@ public class ApproachCommandTests
         var ship = snapshot.Objects.Single(o => o.ObjectId == "SPC-0001");
         var asteroid = snapshot.Objects.Single(o => o.ObjectId == "SPC-0003");
 
-        // Player/asteroid separation is 400 wu (40 km), while content allows up to
-        // 1500 wu. At 0.7 km/s and 4°/s the useful turn radius is ~100.27 wu.
-        double expectedTurnRadius = 0.7 * 10.0 / (4.0 * Math.PI / 180.0);
-        Assert.Equal(expectedTurnRadius,
+        // Player/asteroid separation is 400 wu (40 km). The content-defined local
+        // staging offset is 10 wu (1 km), enough to shape a rear approach without
+        // creating a long, slow second chase leg.
+        const double expectedTrailDistance = 10;
+        Assert.Equal(expectedTrailDistance,
             ship.NavigationApproachTrailDistanceWorldUnits!.Value, precision: 6);
         Assert.True(ship.NavigationApproachTrailDistanceWorldUnits < 400);
 
         double aimDistanceFromAsteroid = Math.Sqrt(
             Math.Pow(ship.NavigationTargetX!.Value - asteroid.X, 2) +
             Math.Pow(ship.NavigationTargetY!.Value - asteroid.Y, 2));
-        Assert.Equal(expectedTurnRadius, aimDistanceFromAsteroid, precision: 6);
+        Assert.Equal(expectedTrailDistance, aimDistanceFromAsteroid, precision: 6);
         Assert.Equal(ApproachPursuitMath.TrailPhase, ship.NavigationPhase);
     }
 
@@ -229,8 +230,17 @@ public class ApproachCommandTests
         // world unit distance alone would take ~33 simulated seconds; even a wide
         // pursuit loop around it (which the fix must avoid needing) stays well inside
         // this 200s budget.
-        var snapshot = engine.CaptureSnapshotForTests(200_000, SimulationSpeed.Speed1);
-        var ship = PlayerShipFrom(snapshot);
+        ObjectMotionSnapshot? ship = null;
+        AuthoritativeSnapshot? snapshot = null;
+        for (long gameTimeMs = 250; gameTimeMs <= 200_000; gameTimeMs += 250)
+        {
+            snapshot = engine.CaptureSnapshotForTests(gameTimeMs, SimulationSpeed.Speed1);
+            ship = PlayerShipFrom(snapshot);
+            if (ship.ActiveEngineCommandType is null)
+                break;
+        }
+
+        Assert.NotNull(ship);
 
         // Cycle completed — the ship actually arrived and stopped auto-repeating,
         // instead of still circling/diverging after a generous time budget. Every
@@ -240,14 +250,14 @@ public class ApproachCommandTests
         // arrival — is asserted here, not the count.
         Assert.Null(ship.ActiveEngineCommandType);
         Assert.Equal(45, ship.Direction, precision: 6); // exact scalar match with the target
-        Assert.Equal(0, ship.SpeedKmS, precision: 6);
+        Assert.Equal(3, ship.SpeedKmS, precision: 6);
 
-        var completed = snapshot.ShipEvents.Last(e => e.EventType == ShipEventTypes.CommandCompleted);
+        var completed = snapshot!.ShipEvents.Last(e => e.EventType == ShipEventTypes.CommandCompleted);
         Assert.Null(completed.ReasonCode);
     }
 
     [Fact]
-    public void Approach_completes_with_exact_speed_and_direction_match_and_stops_repeating()
+    public void Approach_completes_with_direction_match_and_stops_repeating_without_changing_speed()
     {
         // Ship starts exactly at the (stationary) target's own position — the aim
         // point for a genuinely stationary target (Post-implementation bug fix #3,
@@ -331,13 +341,20 @@ public class ApproachCommandTests
         engine.ReceiveCommand(ApproachCommand());
         engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1); // cycle #1 starts
 
-        var snapshot = engine.CaptureSnapshotForTests(200_000, SimulationSpeed.Speed1);
-        var ship = PlayerShipFrom(snapshot);
+        ObjectMotionSnapshot? ship = null;
+        for (long gameTimeMs = 250; gameTimeMs <= 200_000; gameTimeMs += 250)
+        {
+            ship = PlayerShipFrom(engine.CaptureSnapshotForTests(gameTimeMs, SimulationSpeed.Speed1));
+            if (ship.ActiveEngineCommandType is null)
+                break;
+        }
+
+        Assert.NotNull(ship);
 
         // Cycle completed — the ship actually arrived, not still flying past.
-        Assert.Null(ship.ActiveEngineCommandType);
-        Assert.Equal(0, ship.Direction, precision: 6); // exact scalar match with the station
-        Assert.Equal(0, ship.SpeedKmS, precision: 6);
+        Assert.Null(ship!.ActiveEngineCommandType);
+        Assert.Equal(0, ship.Direction, precision: 6); // exact course match with the station
+        Assert.Equal(3, ship.SpeedKmS, precision: 6); // Approach never brakes
 
         double distanceFromStation = Math.Sqrt(
             (ship.X - 10000) * (ship.X - 10000) + (ship.Y - 10000) * (ship.Y - 10000));
@@ -447,7 +464,7 @@ public class ApproachCommandTests
     [Fact]
     public void Approach_completion_against_a_station_lets_dock_succeed_immediately_after()
     {
-        // End-to-end: Approach completes speed/direction-matched to a Station within
+        // End-to-end: Approach completes direction-matched to a Station within
         // Dock's <200km range — proves Dock's strict ~1e-6 epsilon check passes right
         // away, no manual sync command needed. Ship starts at the station's own
         // position — the aim point for a genuinely stationary target

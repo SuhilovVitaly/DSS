@@ -166,13 +166,9 @@ public sealed class LinearMotionPredictor : IMotionPredictor
     /// <summary>
     /// Client-side prediction for an active <see cref="NavigationComputerCommandTypes.Approach"/>
     /// cycle. Unlike <see cref="PredictNavigation"/> (Orbit), the aim point itself is never
-    /// permanently locked — it is re-derived from the target's baked speed/direction every
-    /// cycle boundary, exactly mirroring the Engine's own per-cycle re-aim (Checkpoint 1: both
-    /// sides extrapolate the same baked aim point forward via
-    /// <see cref="ApproachPursuitMath.ExtrapolatePosition"/> and re-steer via
-    /// <see cref="ApproachPursuitMath.Step"/> — passing the extrapolated point as the "target
-    /// position" with trailDistanceWorldUnits=0, since the aim point moves with exactly the
-    /// target's velocity and no further trailing offset needs to be applied to it). The
+    /// permanently locked — the authoritative engine re-derives it from the target's live
+    /// state every cycle. Between snapshots the client deliberately keeps the baked aim
+    /// point fixed instead of extrapolating an assumed linear future for the target. The
     /// cycle-scoped course lock (<see cref="ApproachPursuitMath.Step"/>'s
     /// <c>lockedCourseDegrees</c>, story-20260827-083137.md Post-implementation bug fix #2)
     /// is threaded the same way <see cref="PredictNavigation"/> threads Orbit's, starting from
@@ -192,12 +188,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 
         int turnStep = Math.Abs(state.TurnStepDegrees);
         if (turnStep == 0 || state.TurnStepIntervalMs <= 0)
-        {
-            var straight = PredictStraight(state, elapsedMs, state.Direction);
-            var (straightAimX, straightAimY) = ApproachPursuitMath.ExtrapolatePosition(
-                bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, elapsedMs);
-            return straight with { NavigationTargetX = straightAimX, NavigationTargetY = straightAimY };
-        }
+            return PredictStraight(state, elapsedMs, state.Direction);
 
         long intervalMs = state.TurnStepIntervalMs;
         long remainingMs = elapsedMs;
@@ -212,18 +203,16 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             : ApproachPursuitMath.FinalPhase;
         double aimBaseX = bakedAimX;
         double aimBaseY = bakedAimY;
-        long aimBaseElapsedMs = 0;
 
         while (remainingMs > 0)
         {
             if (untilNextTurnMs == 0)
             {
-                // Elapsed time since the bake this state was captured at — the same
-                // reference frame the Engine bakes NavigationTargetX/Y/Speed/Direction in.
-                long elapsedSinceBakeMs = elapsedMs - remainingMs;
-                var (aimX, aimY) = ApproachPursuitMath.ExtrapolatePosition(
-                    aimBaseX, aimBaseY, targetDirectionDegrees, targetSpeedKmS,
-                    elapsedSinceBakeMs - aimBaseElapsedMs);
+                // Use only the current snapshot's target state. The server will re-read
+                // the real target on its next cycle; client-side linear extrapolation
+                // made the preview chase an invented distant future position.
+                double aimX = aimBaseX;
+                double aimY = aimBaseY;
 
                 var step = ApproachPursuitMath.Step(
                     x, y, direction, state.SpeedKmS,
@@ -245,7 +234,6 @@ public sealed class LinearMotionPredictor : IMotionPredictor
                         double angleRad = targetDirectionDegrees * Math.PI / 180.0;
                         aimBaseX = aimX + trailDistance * Math.Sin(angleRad);
                         aimBaseY = aimY - trailDistance * Math.Cos(angleRad);
-                        aimBaseElapsedMs = elapsedSinceBakeMs;
                         approachPhase = ApproachPursuitMath.FinalPhase;
                         lockedCourse = null;
                         continue;
@@ -262,10 +250,6 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             untilNextTurnMs -= segmentMs;
         }
 
-        var (currentAimX, currentAimY) = ApproachPursuitMath.ExtrapolatePosition(
-            aimBaseX, aimBaseY, targetDirectionDegrees, targetSpeedKmS,
-            elapsedMs - aimBaseElapsedMs);
-
         return state with
         {
             X = x,
@@ -273,8 +257,8 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             Direction = direction,
             TurnStepRemainingMs = untilNextTurnMs,
             NavigationLockedCourseDegrees = lockedCourse,
-            NavigationTargetX = currentAimX,
-            NavigationTargetY = currentAimY,
+            NavigationTargetX = aimBaseX,
+            NavigationTargetY = aimBaseY,
             NavigationPhase = approachPhase,
         };
     }

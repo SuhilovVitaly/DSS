@@ -178,12 +178,9 @@ internal sealed class NavigationTrajectoryProjector
     /// Preview trajectory for an active <see cref="NavigationComputerCommandTypes.Approach"/>
     /// cycle. Structurally mirrors the Orbit branch above (initial straight "wait" phase
     /// until the first cycle boundary, then one steering decision per interval), but unlike
-    /// it (a) never locks a PERMANENT course — at each boundary the baked aim point is
-    /// extrapolated forward via <see cref="ApproachPursuitMath.ExtrapolatePosition"/> using
-    /// the target's baked speed/direction, then re-steered via
-    /// <see cref="ApproachPursuitMath.Step"/> (passing the extrapolated point as the "target
-    /// position" with trailDistanceWorldUnits=0 — see LinearMotionPredictor.PredictApproach
-    /// for the identical fit and its rationale), threading Step's cycle-scoped course lock the
+    /// it (a) never locks a PERMANENT course — it re-steers toward the current snapshot's
+    /// fixed aim point via <see cref="ApproachPursuitMath.Step"/> without assuming that the
+    /// target will continue linearly, threading Step's cycle-scoped course lock the
     /// same way, and (b) runs until actual arrival rather than truncating at the fixed
     /// <see cref="FutureTrajectoryHorizonMs"/> (Post-implementation bug fix #2 — see
     /// <see cref="ApproachTrajectoryMaxHorizonMs"/>'s doc-comment for the safety-bound
@@ -213,18 +210,15 @@ internal sealed class NavigationTrajectoryProjector
         // forward by the configured offset so projection continues to the real target.
         double aimBaseX = bakedAimX;
         double aimBaseY = bakedAimY;
-        long aimBaseElapsedMs = 0;
 
         int turnStepDegrees = Math.Max(1, Math.Abs(predicted.TurnStepDegrees));
         long intervalMs = Math.Max(1, predicted.TurnStepIntervalMs);
         long phaseMs = Math.Max(1, predicted.TurnStepRemainingMs);
 
-        (double X, double Y) AimAt(long elapsedMs) => ApproachPursuitMath.ExtrapolatePosition(
-            aimBaseX,
-            aimBaseY,
-            targetDirectionDegrees,
-            targetSpeedKmS,
-            elapsedMs - aimBaseElapsedMs);
+        // Preview deliberately treats the target state from the current snapshot as
+        // fixed. The authoritative engine will re-read the real target next cycle;
+        // guessing a long linear future here produced misleading off-screen routes.
+        (double X, double Y) AimAt(long _) => (aimBaseX, aimBaseY);
 
         bool ContinueFromTrailToTarget(long elapsedMs, double trailAimX, double trailAimY)
         {
@@ -234,7 +228,6 @@ internal sealed class NavigationTrajectoryProjector
             double angleRad = targetDirectionDegrees * Math.PI / 180.0;
             aimBaseX = trailAimX + trailDistance * Math.Sin(angleRad);
             aimBaseY = trailAimY - trailDistance * Math.Cos(angleRad);
-            aimBaseElapsedMs = elapsedMs;
             approachPhase = ApproachPursuitMath.FinalPhase;
             lockedCourse = null;
             return true;
@@ -306,6 +299,8 @@ internal sealed class NavigationTrajectoryProjector
             else if (elapsedMs - bestDistanceElapsedMs >= ApproachStagnationTimeoutMs)
             {
                 points.RemoveRange(bestDistancePointIndex + 1, points.Count - bestDistancePointIndex - 1);
+                var (fixedAimX, fixedAimY) = AimAt(bestDistanceElapsedMs);
+                points.Add(new FutureTrajectoryPoint(fixedAimX, fixedAimY));
                 return points;
             }
 
@@ -340,6 +335,9 @@ internal sealed class NavigationTrajectoryProjector
 
             elapsedMs += intervalMs;
         }
+
+        var (finalAimX, finalAimY) = AimAt(elapsedMs);
+        points.Add(new FutureTrajectoryPoint(finalAimX, finalAimY));
 
         return points;
     }
