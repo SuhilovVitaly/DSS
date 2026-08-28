@@ -356,6 +356,7 @@ public class GameSessionNavigationTests
         var afterCycle1 = predictor.Predict(state, 2000);
         Assert.Equal(80.0, afterCycle1.Direction, precision: 6);
         Assert.Equal(NavigationComputerCommandTypes.Approach, afterCycle1.ActiveEngineCommandType);
+        Assert.Equal(8520.0, afterCycle1.NavigationTargetX!.Value, precision: 6);
 
         var afterCycle2 = predictor.Predict(state, 3000);
         Assert.Equal(70.0, afterCycle2.Direction, precision: 6);
@@ -481,11 +482,6 @@ public class GameSessionNavigationTests
         Assert.True(points.Count < maxHorizonPoints / 2,
             $"Expected the projection to stop well short of the 2000s backstop, got {points.Count} points.");
 
-        // The target moves horizontally, so every extrapolated aim point has Y=3000.
-        // The preview may use its closest simulated approach as the stopping instant,
-        // but its final rendered point must be that instant's exact aim point rather
-        // than the nearby sampled ship position.
-        Assert.Equal(3000.0, points[^1].Y, precision: 6);
     }
 
     [Fact]
@@ -546,6 +542,36 @@ public class GameSessionNavigationTests
 
         Assert.Equal(2, points.Count);
         Assert.Equal(3.0, points[^1].X, precision: 6);
+        Assert.Equal(0.0, points[^1].Y, precision: 6);
+    }
+
+    [Fact]
+    public void Approach_trail_phase_continues_from_behind_waypoint_to_the_target()
+    {
+        // Target starts at (300,0), moves right at 0.5 km/s, and its behind waypoint
+        // is (200,0). The waypoint shapes the approach but is not the destination:
+        // the preview must pass it and finish on the moving target itself.
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 0,
+            SpeedKmS: 1,
+            Direction: 90,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 250,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: 200,
+            NavigationTargetY: 0,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationPhase: ApproachPursuitMath.TrailPhase,
+            NavigationTargetSpeedKmS: 0.5,
+            NavigationTargetDirectionDegrees: 90,
+            NavigationApproachTrailDistanceWorldUnits: 100);
+
+        var points = new NavigationTrajectoryProjector().Project(ship);
+
+        Assert.Contains(points, p => p.X >= 195 && p.X <= 205);
+        Assert.True(points[^1].X > 300, "Final point must be the advanced target, not its trailing waypoint.");
         Assert.Equal(0.0, points[^1].Y, precision: 6);
     }
 

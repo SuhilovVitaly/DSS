@@ -59,6 +59,9 @@ public readonly record struct ApproachStepResult(
 /// </summary>
 public static class ApproachPursuitMath
 {
+    public const string TrailPhase = "Trail";
+    public const string FinalPhase = "Final";
+
     /// <summary>
     /// Default distance (world units) at or below which the ship is considered to have
     /// arrived at the aim point. This is a tuning default (500 m), not a hard

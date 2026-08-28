@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Motion;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
@@ -90,7 +91,36 @@ public class ApproachCommandTests
         Assert.Equal(1.0, ship.NavigationTargetSpeedKmS!.Value, precision: 6);
         Assert.NotNull(ship.NavigationTargetDirectionDegrees);
         Assert.Equal(90, ship.NavigationTargetDirectionDegrees!.Value, precision: 6);
+        Assert.Equal(ApproachPursuitMath.TrailPhase, ship.NavigationPhase);
+        Assert.Equal(1500, ship.NavigationApproachTrailDistanceWorldUnits!.Value, precision: 6);
         Assert.True(ship.NavigationAngularInertiaDegPerSec > 0);
+    }
+
+    [Fact]
+    public void Moving_target_uses_trailing_point_as_waypoint_then_finishes_at_target()
+    {
+        // Ship and target move right; the ship starts on the 150 km trailing point.
+        // Reaching it must switch Approach to Final rather than completing and
+        // synchronizing 150 km away from the selected object.
+        var engine = CreateEngine(
+            shipX: 8500, shipY: 10000, shipSpeedMps: 2000, shipDirectionDegrees: 90,
+            targetX: 10000, targetY: 10000, targetSpeedMps: 1000, targetDirectionDegrees: 90,
+            turnStepDegrees: 1, angularInertiaDegPerSec: 4, trailDistanceKm: 150);
+
+        engine.ReceiveCommand(ApproachCommand());
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        var afterTrailingWaypoint = PlayerShipFrom(
+            engine.CaptureSnapshotForTests(250, SimulationSpeed.Speed1));
+        Assert.Equal(NavigationComputerCommandTypes.Approach, afterTrailingWaypoint.ActiveEngineCommandType);
+        Assert.Equal(ApproachPursuitMath.FinalPhase, afterTrailingWaypoint.NavigationPhase);
+        Assert.True(afterTrailingWaypoint.NavigationTargetX > 10_000);
+
+        var completed = PlayerShipFrom(
+            engine.CaptureSnapshotForTests(200_000, SimulationSpeed.Speed1));
+        Assert.Null(completed.ActiveEngineCommandType);
+        Assert.Equal(1.0, completed.SpeedKmS, precision: 6);
+        Assert.Equal(90, completed.Direction, precision: 6);
     }
 
     [Fact]

@@ -89,4 +89,9 @@ public sealed record ObjectMotionSnapshot(
     /// the active <see cref="NavigationComputerCommandTypes.Approach"/> command; see
     /// <see cref="NavigationTargetSpeedKmS"/>. Null when no Approach cycle is active.
     /// </summary>
-    double? NavigationTargetDirectionDegrees = null);
+    double? NavigationTargetDirectionDegrees = null,
+    /// <summary>
+    /// Configured distance of the behind-target staging point for an active
+    /// <see cref="NavigationComputerCommandTypes.Approach"/>, in world units.
+    /// </summary>
+    double? NavigationApproachTrailDistanceWorldUnits = null);

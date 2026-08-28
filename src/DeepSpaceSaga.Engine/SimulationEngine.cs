@@ -402,6 +402,7 @@ public sealed class SimulationEngine : IDisposable
                     NavigationRequiredDepartureDistance = cycleMotion.NavigationRequiredDepartureDistance,
                     NavigationTargetSpeedKmS = cycleMotion.NavigationTargetSpeedKmS,
                     NavigationTargetDirectionDegrees = cycleMotion.NavigationTargetDirectionDegrees,
+                    NavigationApproachTrailDistanceWorldUnits = cycleMotion.NavigationApproachTrailDistanceWorldUnits,
                     ObjectType = known ? obj.ObjectType : null,
                     RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
                     RelationToPlayer = known ? GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType) : null,
@@ -1988,6 +1989,9 @@ public sealed class SimulationEngine : IDisposable
             targetObjectId = command.TargetObjectId;
             navigateTargetX = aimX;
             navigateTargetY = aimY;
+            navPhase = targetMotion.SpeedKmS == 0 || trailDistanceWorldUnits <= 0
+                ? ApproachPursuitMath.FinalPhase
+                : ApproachPursuitMath.TrailPhase;
             initialApproachTargetSpeedKmS = targetMotion.SpeedKmS;
             initialApproachTargetDirectionDegrees = targetMotion.Direction;
         }
@@ -2261,8 +2265,12 @@ public sealed class SimulationEngine : IDisposable
                     // Reuses the Orbit-origin NavigationLockedCourseDegrees field,
                     // cycle-scoped for Approach — see ApplyApproachStep's doc-comment.
                     NavigationLockedCourseDegrees: cycle.NavigationLockedCourseDegrees,
+                    NavigationPhase: cycle.NavigationPhase,
                     NavigationTargetSpeedKmS: cycle.NavigationTargetSpeedKmS,
-                    NavigationTargetDirectionDegrees: cycle.NavigationTargetDirectionDegrees);
+                    NavigationTargetDirectionDegrees: cycle.NavigationTargetDirectionDegrees,
+                    NavigationApproachTrailDistanceWorldUnits:
+                        (_registry.CommandDefinitions.GetDefinition(
+                            _registry.CommandDefinitions.GetIndex(cycle.CommandType)).TrailDistanceKm ?? 0) * WorldUnitsPerKm);
             }
 
             if (!IsUntilCancelTurn(cycle.CommandType))
@@ -2511,11 +2519,14 @@ public sealed class SimulationEngine : IDisposable
         var commandDef = _registry.CommandDefinitions.GetDefinition(
             _registry.CommandDefinitions.GetIndex(cycle.CommandType));
         double trailDistanceWorldUnits = (commandDef.TrailDistanceKm ?? 0) * WorldUnitsPerKm;
+        bool isFinalApproach = cycle.NavigationPhase == ApproachPursuitMath.FinalPhase ||
+                               targetMotion.SpeedKmS == 0 ||
+                               trailDistanceWorldUnits <= 0;
 
         var result = ApproachPursuitMath.Step(
             shipMotion.X, shipMotion.Y, shipMotion.Direction, shipMotion.SpeedKmS,
             targetMotion.X, targetMotion.Y, targetMotion.Direction, targetMotion.SpeedKmS,
-            trailDistanceWorldUnits,
+            isFinalApproach ? 0 : trailDistanceWorldUnits,
             moduleType.TurnStepDegrees ?? 0,
             moduleType.AngularInertiaDegPerSec ?? 0,
             cycle.DurationMs,
@@ -2523,6 +2534,26 @@ public sealed class SimulationEngine : IDisposable
 
         if (result.IsArrived)
         {
+            if (!isFinalApproach && nextCycle is not null)
+            {
+                // The trailing point is a staging waypoint, not the destination.
+                // Continue from behind the target to its exact live position.
+                nextCycle = nextCycle with
+                {
+                    TargetWorldX = targetMotion.X,
+                    TargetWorldY = targetMotion.Y,
+                    NavigationPhase = ApproachPursuitMath.FinalPhase,
+                    NavigationTargetSpeedKmS = targetMotion.SpeedKmS,
+                    NavigationTargetDirectionDegrees = targetMotion.Direction,
+                    NavigationLockedCourseDegrees = null
+                };
+
+                return UpdateEngineMotion(
+                    obj, moduleIndex, gameTimeMs,
+                    module => module with { ActiveCycle = nextCycle },
+                    motion => motion with { Direction = NormalizeDirection(result.NewDirectionDegrees) });
+            }
+
             // Exact scalar assignment, mirroring SpeedSynchronization/
             // DirectionSynchronization — not asymptotic — so navigation.dock's strict
             // epsilon check (~1e-6) passes immediately after this cycle completes.
@@ -2548,6 +2579,9 @@ public sealed class SimulationEngine : IDisposable
                 TargetWorldY = result.AimPointY,
                 NavigationTargetSpeedKmS = targetMotion.SpeedKmS,
                 NavigationTargetDirectionDegrees = targetMotion.Direction,
+                NavigationPhase = isFinalApproach
+                    ? ApproachPursuitMath.FinalPhase
+                    : ApproachPursuitMath.TrailPhase,
                 // Reuses the Orbit-origin NavigationLockedCourseDegrees field, cycle-scoped
                 // (not permanent) for Approach — see ApproachPursuitMath's class doc-comment
                 // and ActiveCycleData.NavigationLockedCourseDegrees for the dual-meaning
@@ -2831,7 +2865,8 @@ internal readonly record struct ActiveEngineCycleMotion(
     double? NavigationEscapeCourseDegrees = null,
     double? NavigationRequiredDepartureDistance = null,
     double? NavigationTargetSpeedKmS = null,
-    double? NavigationTargetDirectionDegrees = null);
+    double? NavigationTargetDirectionDegrees = null,
+    double? NavigationApproachTrailDistanceWorldUnits = null);
 
 internal enum CommandStartDisposition
 {

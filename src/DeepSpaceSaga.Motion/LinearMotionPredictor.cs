@@ -192,7 +192,12 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 
         int turnStep = Math.Abs(state.TurnStepDegrees);
         if (turnStep == 0 || state.TurnStepIntervalMs <= 0)
-            return PredictStraight(state, elapsedMs, state.Direction);
+        {
+            var straight = PredictStraight(state, elapsedMs, state.Direction);
+            var (straightAimX, straightAimY) = ApproachPursuitMath.ExtrapolatePosition(
+                bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, elapsedMs);
+            return straight with { NavigationTargetX = straightAimX, NavigationTargetY = straightAimY };
+        }
 
         long intervalMs = state.TurnStepIntervalMs;
         long remainingMs = elapsedMs;
@@ -201,6 +206,13 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         double y = state.Y;
         double direction = state.Direction;
         double? lockedCourse = state.NavigationLockedCourseDegrees;
+        double trailDistance = Math.Max(0, state.NavigationApproachTrailDistanceWorldUnits ?? 0);
+        string approachPhase = state.NavigationPhase == ApproachPursuitMath.TrailPhase && trailDistance > 0
+            ? ApproachPursuitMath.TrailPhase
+            : ApproachPursuitMath.FinalPhase;
+        double aimBaseX = bakedAimX;
+        double aimBaseY = bakedAimY;
+        long aimBaseElapsedMs = 0;
 
         while (remainingMs > 0)
         {
@@ -210,7 +222,8 @@ public sealed class LinearMotionPredictor : IMotionPredictor
                 // reference frame the Engine bakes NavigationTargetX/Y/Speed/Direction in.
                 long elapsedSinceBakeMs = elapsedMs - remainingMs;
                 var (aimX, aimY) = ApproachPursuitMath.ExtrapolatePosition(
-                    bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, elapsedSinceBakeMs);
+                    aimBaseX, aimBaseY, targetDirectionDegrees, targetSpeedKmS,
+                    elapsedSinceBakeMs - aimBaseElapsedMs);
 
                 var step = ApproachPursuitMath.Step(
                     x, y, direction, state.SpeedKmS,
@@ -227,6 +240,17 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 
                 if (step.IsArrived)
                 {
+                    if (approachPhase == ApproachPursuitMath.TrailPhase)
+                    {
+                        double angleRad = targetDirectionDegrees * Math.PI / 180.0;
+                        aimBaseX = aimX + trailDistance * Math.Sin(angleRad);
+                        aimBaseY = aimY - trailDistance * Math.Cos(angleRad);
+                        aimBaseElapsedMs = elapsedSinceBakeMs;
+                        approachPhase = ApproachPursuitMath.FinalPhase;
+                        lockedCourse = null;
+                        continue;
+                    }
+
                     AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, remainingMs);
                     return ClearNavigation(state, x, y, direction, untilNextTurnMs);
                 }
@@ -238,6 +262,10 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             untilNextTurnMs -= segmentMs;
         }
 
+        var (currentAimX, currentAimY) = ApproachPursuitMath.ExtrapolatePosition(
+            aimBaseX, aimBaseY, targetDirectionDegrees, targetSpeedKmS,
+            elapsedMs - aimBaseElapsedMs);
+
         return state with
         {
             X = x,
@@ -245,6 +273,9 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             Direction = direction,
             TurnStepRemainingMs = untilNextTurnMs,
             NavigationLockedCourseDegrees = lockedCourse,
+            NavigationTargetX = currentAimX,
+            NavigationTargetY = currentAimY,
+            NavigationPhase = approachPhase,
         };
     }
 
@@ -297,6 +328,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             NavigationRequiredDepartureDistance = null,
             NavigationTargetSpeedKmS = null,
             NavigationTargetDirectionDegrees = null,
+            NavigationApproachTrailDistanceWorldUnits = null,
         };
     }
 

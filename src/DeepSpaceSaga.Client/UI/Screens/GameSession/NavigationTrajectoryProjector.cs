@@ -203,10 +203,42 @@ internal sealed class NavigationTrajectoryProjector
         double direction = predicted.Direction;
         double speedKmS = predicted.SpeedKmS;
         double? lockedCourse = predicted.NavigationLockedCourseDegrees;
+        double trailDistance = Math.Max(0, predicted.NavigationApproachTrailDistanceWorldUnits ?? 0);
+        string approachPhase = predicted.NavigationPhase == ApproachPursuitMath.TrailPhase && trailDistance > 0
+            ? ApproachPursuitMath.TrailPhase
+            : ApproachPursuitMath.FinalPhase;
+
+        // The baked point is phase-relative: the trailing staging point during Trail,
+        // and the target itself during Final. When Trail completes, this base is moved
+        // forward by the configured offset so projection continues to the real target.
+        double aimBaseX = bakedAimX;
+        double aimBaseY = bakedAimY;
+        long aimBaseElapsedMs = 0;
 
         int turnStepDegrees = Math.Max(1, Math.Abs(predicted.TurnStepDegrees));
         long intervalMs = Math.Max(1, predicted.TurnStepIntervalMs);
         long phaseMs = Math.Max(1, predicted.TurnStepRemainingMs);
+
+        (double X, double Y) AimAt(long elapsedMs) => ApproachPursuitMath.ExtrapolatePosition(
+            aimBaseX,
+            aimBaseY,
+            targetDirectionDegrees,
+            targetSpeedKmS,
+            elapsedMs - aimBaseElapsedMs);
+
+        bool ContinueFromTrailToTarget(long elapsedMs, double trailAimX, double trailAimY)
+        {
+            if (approachPhase != ApproachPursuitMath.TrailPhase)
+                return false;
+
+            double angleRad = targetDirectionDegrees * Math.PI / 180.0;
+            aimBaseX = trailAimX + trailDistance * Math.Sin(angleRad);
+            aimBaseY = trailAimY - trailDistance * Math.Cos(angleRad);
+            aimBaseElapsedMs = elapsedMs;
+            approachPhase = ApproachPursuitMath.FinalPhase;
+            lockedCourse = null;
+            return true;
+        }
 
         points.Add(new FutureTrajectoryPoint(x, y));
 
@@ -219,8 +251,7 @@ internal sealed class NavigationTrajectoryProjector
         double phaseStartX = x, phaseStartY = y;
         (x, y) = AdvanceStraight(x, y, direction, speedKmS, phaseMs);
 
-        var (phaseAimX, phaseAimY) = ApproachPursuitMath.ExtrapolatePosition(
-            bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, phaseMs);
+        var (phaseAimX, phaseAimY) = AimAt(phaseMs);
         var phaseArrival = ApproachPursuitMath.CheckSegmentArrival(
             phaseStartX, phaseStartY, x, y, phaseAimX, phaseAimY);
         if (phaseArrival.IsArrived)
@@ -230,10 +261,16 @@ internal sealed class NavigationTrajectoryProjector
             // Keeping ClosestX/Y here leaves a visible gap at high zoom whenever the
             // straight phase passes near (rather than exactly through) the aim point.
             points.Add(new FutureTrajectoryPoint(phaseAimX, phaseAimY));
-            return points;
-        }
+            if (!ContinueFromTrailToTarget(phaseMs, phaseAimX, phaseAimY))
+                return points;
 
-        points.Add(new FutureTrajectoryPoint(x, y));
+            x = phaseAimX;
+            y = phaseAimY;
+        }
+        else
+        {
+            points.Add(new FutureTrajectoryPoint(x, y));
+        }
 
         // Runs until actual arrival (IsArrived) or a stagnation timeout (see
         // ApproachStagnationTimeoutMs), bounded by ApproachTrajectoryMaxHorizonMs/
@@ -257,8 +294,7 @@ internal sealed class NavigationTrajectoryProjector
         {
             iterations++;
 
-            var (aimX, aimY) = ApproachPursuitMath.ExtrapolatePosition(
-                bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, elapsedMs);
+            var (aimX, aimY) = AimAt(elapsedMs);
 
             double distanceToAim = Math.Sqrt((aimX - x) * (aimX - x) + (aimY - y) * (aimY - y));
             if (distanceToAim < bestDistanceToAim)
@@ -270,14 +306,6 @@ internal sealed class NavigationTrajectoryProjector
             else if (elapsedMs - bestDistanceElapsedMs >= ApproachStagnationTimeoutMs)
             {
                 points.RemoveRange(bestDistancePointIndex + 1, points.Count - bestDistancePointIndex - 1);
-
-                // Preserve the honest closest-approach portion of the prediction, but
-                // finish it at the aim point corresponding to that same instant.  The
-                // previous behaviour ended at the ship's closest sampled position, so
-                // the line visibly stopped just short of its navigation target.
-                var (bestAimX, bestAimY) = ApproachPursuitMath.ExtrapolatePosition(
-                    bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, bestDistanceElapsedMs);
-                points.Add(new FutureTrajectoryPoint(bestAimX, bestAimY));
                 return points;
             }
 
@@ -296,7 +324,15 @@ internal sealed class NavigationTrajectoryProjector
             if (step.IsArrived)
             {
                 points.Add(new FutureTrajectoryPoint(aimX, aimY));
-                break;
+                if (!ContinueFromTrailToTarget(elapsedMs, aimX, aimY))
+                    return points;
+
+                x = aimX;
+                y = aimY;
+                bestDistanceToAim = double.MaxValue;
+                bestDistanceElapsedMs = elapsedMs;
+                bestDistancePointIndex = points.Count - 1;
+                continue;
             }
 
             (x, y) = AdvanceStraight(x, y, direction, speedKmS, intervalMs);
@@ -304,14 +340,6 @@ internal sealed class NavigationTrajectoryProjector
 
             elapsedMs += intervalMs;
         }
-
-        // A malformed or unreachable scenario can exhaust the defensive simulation
-        // bounds. Even then, do not leave a dangling trajectory: close it at the aim
-        // point for the final simulated instant so every Approach preview has an exact
-        // visual endpoint.
-        var (finalAimX, finalAimY) = ApproachPursuitMath.ExtrapolatePosition(
-            bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, elapsedMs);
-        points.Add(new FutureTrajectoryPoint(finalAimX, finalAimY));
 
         return points;
     }

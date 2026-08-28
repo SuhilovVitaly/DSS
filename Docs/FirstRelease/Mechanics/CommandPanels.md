@@ -16,7 +16,7 @@
 | `engine.orbit` | Engine | Выбран celestial object |
 | `engine.speedSynchronization` | Engine | Выбран celestial object |
 | `engine.directionSynchronization` | Engine | Выбран celestial object |
-| `navigation.approach` | Engine | Выбран celestial object; прокладывает курс в точку позади цели по ходу её движения (пересчитывается каждый цикл), завершается точным совпадением скорости и направления с целью |
+| `navigation.approach` | Engine | Выбран celestial object; сначала выводит корабль в точку позади цели по ходу её движения, затем продолжает сближение до самой цели; точка пересчитывается каждый цикл, команда завершается у цели точным совпадением скорости и направления |
 
 ## Maneuver
 
