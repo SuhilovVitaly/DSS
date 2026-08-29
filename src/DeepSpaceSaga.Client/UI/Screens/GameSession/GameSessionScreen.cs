@@ -1420,6 +1420,13 @@ public sealed class GameSessionScreen : IScreen
             if (!FutureTrajectoryProjector.ShouldDraw(state.Predicted))
                 continue;
 
+            // navigation.approach already gets its own single-color path from
+            // DrawNavigationTrajectories (same pursuit math, run to actual arrival).
+            // Drawing this generic straight-line projection on top of it produced a
+            // visible two-color trajectory for the same course.
+            if (state.Predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach)
+                continue;
+
             var points = _futureTrajectoryProjector.Project(state.Predicted);
             if (points.Count < 2)
                 continue;
