@@ -2598,7 +2598,23 @@ public sealed class SimulationEngine : IDisposable
                 travelledUnits,
                 turnStep);
 
-            if (flyThroughStep.IsArrived)
+            // AdvanceFlyThroughPlan's own IsArrived is bookkeeping-based (cumulative
+            // travelled distance against the pose CAPTURED when this leg was planned) —
+            // blind to the live target, which may keep moving throughout the curve. For a
+            // target the ship cannot out-run in a straight tail chase, the curve can sweep
+            // right past the target's actual live position — a genuine, reachable
+            // intercept — without the bookkeeping ever recognizing it, then keep flying on
+            // toward the now-stale captured pose until the live target has pulled so far
+            // ahead that no subsequent tail chase can ever recover (a real, reproducible
+            // "flies right by a catchable target and diverges forever" bug). Checking the
+            // cycle's own flown segment against the LIVE target catches that moment
+            // immediately, the same way the Trail/Final loop's own per-step segment-sweep
+            // already does.
+            var liveArrival = ApproachPursuitMath.CheckSegmentArrival(
+                obj.InitialMotion.X, obj.InitialMotion.Y, shipMotion.X, shipMotion.Y,
+                targetMotion.X, targetMotion.Y);
+
+            if (flyThroughStep.IsArrived || liveArrival.IsArrived)
             {
                 if (nextCycle is not null)
                 {
