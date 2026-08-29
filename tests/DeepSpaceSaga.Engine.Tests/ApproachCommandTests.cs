@@ -174,7 +174,7 @@ public class ApproachCommandTests
     }
 
     [Fact]
-    public void Approach_holds_the_current_target_pose_instead_of_extrapolating_it()
+    public void Approach_rebakes_the_client_facing_aim_point_from_the_live_target_every_cycle()
     {
         // Target moves at a constant 1.0 km/s along direction 90 (+X). The ship starts
         // far south of the initial aim point with speed 0 (isolating pure steering from
@@ -182,9 +182,16 @@ public class ApproachCommandTests
         // Approach now shares Orbit's MinTurnIntervalMs cadence (~250 ms at 4°/s —
         // Post-implementation bug fix #2, story-20260827-083137.md; superseded the
         // original ~1000 ms default cadence), so each 250 ms cycle turns by up to
-        // turnStepDegrees=10 and must re-read the target's live (moved) position/speed/
-        // direction and re-bake a fresh aim point, never a fixed point captured once
-        // (unlike Orbit).
+        // turnStepDegrees=10.
+        //
+        // The fly-through STEERING (the Dubins curve itself) still targets the pose
+        // captured once when the leg was planned — replanning a fixed-radius curve
+        // mid-flight risks an illegal turn. But the CLIENT-FACING NavigationTargetX/Y
+        // (what the trajectory preview draws as the destination) must be re-baked from
+        // the target's live position every completed cycle, exactly like Trail/Final
+        // already does — otherwise the preview increasingly diverges from where the
+        // (still-moving) target actually is for as long as the curve is being flown
+        // (a real user-reported bug: the previewed route visibly missed the target).
         var engine = CreateEngine(
             shipX: 8500, shipY: 20000, shipSpeedMps: 0, shipDirectionDegrees: 90,
             targetX: 10000, targetY: 10000, targetSpeedMps: 1000, targetDirectionDegrees: 90,
@@ -198,6 +205,7 @@ public class ApproachCommandTests
         Assert.Equal(1.0, afterCycle1.NavigationTargetSpeedKmS!.Value, precision: 6);
         Assert.Equal(90, afterCycle1.NavigationTargetDirectionDegrees!.Value, precision: 6);
         double aimX1 = afterCycle1.NavigationTargetX!.Value;
+        Assert.Equal(10002.5, aimX1, precision: 6); // target's live X at t=250ms: 10000 + 1*10*0.25
 
         Assert.StartsWith(ApproachPursuitMath.FlyThroughPhasePrefix, afterCycle1.NavigationPhase);
         var afterCycle2 = PlayerShipFrom(engine.CaptureSnapshotForTests(500, SimulationSpeed.Speed1));
@@ -206,8 +214,12 @@ public class ApproachCommandTests
         var afterCycle3 = PlayerShipFrom(engine.CaptureSnapshotForTests(750, SimulationSpeed.Speed1));
         double aimX3 = afterCycle3.NavigationTargetX!.Value;
 
-        Assert.Equal(aimX1, aimX2, precision: 6);
-        Assert.Equal(aimX1, aimX3, precision: 6);
+        // Each cycle's aim point tracks the target's ACTUAL live motion since the
+        // previous cycle (2.5 world units per 250 ms at 1 km/s) — neither frozen at
+        // the original captured pose, nor guessing further ahead than the target has
+        // really travelled.
+        Assert.Equal(aimX1 + 2.5, aimX2, precision: 6);
+        Assert.Equal(aimX1 + 5.0, aimX3, precision: 6);
 
         // Still cycling — not completed.
         Assert.Equal(NavigationComputerCommandTypes.Approach, afterCycle3.ActiveEngineCommandType);

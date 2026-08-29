@@ -2644,14 +2644,24 @@ public sealed class SimulationEngine : IDisposable
             var remaining = flyThroughStep.RemainingPlan;
             nextCycle = nextCycle with
             {
-                TargetWorldX = fixedTargetX,
-                TargetWorldY = fixedTargetY,
+                // Steering itself (CreateFlyThroughPlan/AdvanceFlyThroughPlan above) must
+                // keep using the pose CAPTURED when this leg was planned — the fixed-radius
+                // curve can't be safely re-planned mid-flight. But TargetWorldX/Y and the
+                // NavigationTargetSpeedKmS/DirectionDegrees fields are pure CLIENT-facing
+                // metadata (the arrival snap point, and what the trajectory preview draws
+                // as the destination) — for those, re-baking the target's LIVE state every
+                // cycle (same as the Trail/Final branch below already does) keeps the
+                // client's "trust the current snapshot" preview accurate to within one
+                // cycle, instead of drifting further from the truth every cycle the curve
+                // is still being flown (a genuinely moving target keeps moving throughout).
+                TargetWorldX = targetMotion.X,
+                TargetWorldY = targetMotion.Y,
                 NavigationPhase = ApproachPursuitMath.FlyThroughPhasePrefix + remaining.Type,
                 NavigationEscapeCourseDegrees = remaining.FirstRemainingUnits,
                 NavigationRequiredDepartureDistance = remaining.SecondRemainingUnits,
                 NavigationLockedCourseDegrees = remaining.ThirdRemainingUnits,
-                NavigationTargetSpeedKmS = cycle.NavigationTargetSpeedKmS,
-                NavigationTargetDirectionDegrees = fixedTargetDirection,
+                NavigationTargetSpeedKmS = targetMotion.SpeedKmS,
+                NavigationTargetDirectionDegrees = targetMotion.Direction,
                 NavigationApproachTrailDistanceWorldUnits = trailDistanceWorldUnits
             };
 

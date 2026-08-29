@@ -574,19 +574,14 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
-    public void Default_scenario_paused_start_asteroid_route_continues_past_the_captured_pose()
+    public void Default_scenario_paused_start_asteroid_route_ends_at_current_target_position()
     {
         // Exact gameTimeMs=0 / Speed0 geometry from Scenarios/Default/scenario.json:
         // player (10000,10000), 0.7 km/s at 0°; SPC-0003 (10400,10000),
         // 0.6 km/s at 256°. FlyThroughPending means the pose planner must build one
-        // continuous tail-entry path to the target's pose CAPTURED when the command
-        // started — but the asteroid keeps moving while that curve is flown, so the
-        // preview must continue live-tracking it afterward instead of stopping at that
-        // now-stale captured position (mirrors SimulationEngine.ApplyApproachStep's
-        // fly-through hand-off — see ApproachCommandTests for the authoritative-engine
-        // version of this same regression).
-        const double capturedTargetX = 10400;
-        const double capturedTargetY = 10000;
+        // continuous tail-entry path to the current target position and heading.
+        const double targetX = 10400;
+        const double targetY = 10000;
         const double targetDirection = 256;
 
         var ship = new ObjectMotionSnapshot(
@@ -598,8 +593,8 @@ public class GameSessionNavigationTests
             TurnStepDegrees: 1,
             TurnStepRemainingMs: 250,
             TurnStepIntervalMs: 250,
-            NavigationTargetX: capturedTargetX,
-            NavigationTargetY: capturedTargetY,
+            NavigationTargetX: targetX,
+            NavigationTargetY: targetY,
             NavigationAngularInertiaDegPerSec: 4,
             NavigationPhase: ApproachPursuitMath.FlyThroughPendingPhase,
             NavigationTargetSpeedKmS: 0.6,
@@ -608,26 +603,28 @@ public class GameSessionNavigationTests
 
         var points = new NavigationTrajectoryProjector().Project(ship);
 
-        Assert.True(points.Max(p => p.X) > capturedTargetX + 50,
+        double maxDistanceFromStart = points.Max(p => Math.Sqrt(
+            Math.Pow(p.X - 10000, 2) + Math.Pow(p.Y - 10000, 2)));
+        Assert.True(maxDistanceFromStart < 550,
+            $"Default asteroid route must stay local; projected radius was {maxDistanceFromStart:F1} wu.");
+        Assert.True(points.Max(p => p.X) > targetX + 50,
             "Approach must go around to the target's rear side before crossing it.");
         double routeLength = points.Zip(points.Skip(1), (a, b) => Math.Sqrt(
             Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2))).Sum();
+        Assert.InRange(routeLength, 700, 850);
 
-        // Before the fix, the route stopped the moment the fly-through curve reached
-        // the captured (10400,10000) pose (~700-850 wu). The asteroid is still moving
-        // when that happens, so a correct preview must keep going — proving the route
-        // is now meaningfully longer than that stale-arrival distance.
-        Assert.True(routeLength > 900,
-            $"Expected the preview to keep tracking the asteroid past its captured pose, got only {routeLength:F1} wu.");
-
-        // The route must not still end exactly at the stale captured position — the
-        // asteroid has moved on by the time any real ship could get there.
+        // The endpoint is the asteroid's current position; its future linear motion
+        // is deliberately not included in this preview.
         var end = points[^1];
-        double distanceFromCapturedPose = Math.Sqrt(
-            Math.Pow(end.X - capturedTargetX, 2) + Math.Pow(end.Y - capturedTargetY, 2));
-        Assert.True(distanceFromCapturedPose > 50,
-            $"Route still ends at the stale captured pose ({capturedTargetX},{capturedTargetY}); " +
-            $"expected it to have continued tracking the moving asteroid instead.");
+        Assert.Equal(targetX, end.X, precision: 6);
+        Assert.Equal(targetY, end.Y, precision: 6);
+
+        var beforeEnd = points[^2];
+        double terminalDirection = Math.Atan2(end.X - beforeEnd.X, beforeEnd.Y - end.Y)
+                                   * 180.0 / Math.PI;
+        if (terminalDirection < 0)
+            terminalDirection += 360;
+        Assert.Equal(targetDirection, terminalDirection, precision: 1);
     }
 
     [Fact]

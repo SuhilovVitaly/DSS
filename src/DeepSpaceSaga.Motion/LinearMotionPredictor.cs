@@ -189,7 +189,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         if (ApproachPursuitMath.IsFlyThroughPhase(state.NavigationPhase))
         {
             return PredictFlyThrough(
-                state, elapsedMs, bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS);
+                state, elapsedMs, bakedAimX, bakedAimY, targetDirectionDegrees);
         }
 
         int turnStep = Math.Abs(state.TurnStepDegrees);
@@ -197,40 +197,19 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             return PredictStraight(state, elapsedMs, state.Direction);
 
         long intervalMs = state.TurnStepIntervalMs;
+        long remainingMs = elapsedMs;
+        long untilNextTurnMs = state.TurnStepRemainingMs;
+        double x = state.X;
+        double y = state.Y;
+        double direction = state.Direction;
+        double? lockedCourse = state.NavigationLockedCourseDegrees;
         double trailDistance = Math.Max(0, state.NavigationApproachTrailDistanceWorldUnits ?? 0);
         string approachPhase = state.NavigationPhase == ApproachPursuitMath.TrailPhase && trailDistance > 0
             ? ApproachPursuitMath.TrailPhase
             : ApproachPursuitMath.FinalPhase;
+        double aimBaseX = bakedAimX;
+        double aimBaseY = bakedAimY;
 
-        return RunApproachPursuit(
-            state, elapsedMs, state.TurnStepRemainingMs, intervalMs, turnStep,
-            state.X, state.Y, state.Direction, state.NavigationLockedCourseDegrees,
-            trailDistance, approachPhase, bakedAimX, bakedAimY,
-            targetDirectionDegrees, targetSpeedKmS);
-    }
-
-    /// <summary>
-    /// Runs the per-turn trailing-pursuit loop (Trail then Final phase) shared by
-    /// <see cref="PredictApproach"/>'s direct entry and <see cref="PredictFlyThrough"/>'s
-    /// hand-off once its Dubins re-orientation curve completes.
-    /// </summary>
-    private static ObjectMotionSnapshot RunApproachPursuit(
-        ObjectMotionSnapshot state,
-        long remainingMs,
-        long untilNextTurnMs,
-        long intervalMs,
-        int turnStep,
-        double x,
-        double y,
-        double direction,
-        double? lockedCourse,
-        double trailDistance,
-        string approachPhase,
-        double aimBaseX,
-        double aimBaseY,
-        double targetDirectionDegrees,
-        double targetSpeedKmS)
-    {
         while (remainingMs > 0)
         {
             if (untilNextTurnMs == 0)
@@ -295,8 +274,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         long elapsedMs,
         double targetX,
         double targetY,
-        double targetDirectionDegrees,
-        double targetSpeedKmS)
+        double targetDirectionDegrees)
     {
         long intervalMs = Math.Max(1, state.TurnStepIntervalMs);
         long remainingMs = elapsedMs;
@@ -352,25 +330,11 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 
             if (step.IsArrived)
             {
-                // The Dubins curve only ever aimed at the target's pose CAPTURED WHEN
-                // THIS LEG WAS PLANNED — for a genuinely moving target that pose is
-                // stale by the time the curve is flown, so snapping here (the old
-                // behavior) stranded the ship at a position the target had long since
-                // left. Hand off into the same live-tracking Final-phase pursuit used
-                // by the Trail-phase hand-off above, re-baking the aim point from the
-                // target's state extrapolated forward to THIS instant (mirrors the
-                // engine's live re-read — see SimulationEngine.ApplyApproachStep).
-                long elapsedSoFarMs = elapsedMs - remainingMs;
-                var (liveTargetX, liveTargetY) = ApproachPursuitMath.ExtrapolatePosition(
-                    targetX, targetY, targetDirectionDegrees, targetSpeedKmS, elapsedSoFarMs);
-
-                return RunApproachPursuit(
-                    state, remainingMs, untilNextTurnMs, intervalMs,
-                    Math.Max(1, Math.Abs(state.TurnStepDegrees)),
-                    x, y, direction, lockedCourse: null, trailDistance: 0,
-                    approachPhase: ApproachPursuitMath.FinalPhase,
-                    aimBaseX: liveTargetX, aimBaseY: liveTargetY,
-                    targetDirectionDegrees, targetSpeedKmS);
+                x = targetX;
+                y = targetY;
+                AdvanceStraight(ref x, ref y, state.SpeedKmS, targetDirectionDegrees, remainingMs);
+                return ClearNavigation(
+                    state, x, y, targetDirectionDegrees, untilNextTurnMs);
             }
         }
 
