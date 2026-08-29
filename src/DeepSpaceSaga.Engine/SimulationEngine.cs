@@ -2600,6 +2600,36 @@ public sealed class SimulationEngine : IDisposable
 
             if (flyThroughStep.IsArrived)
             {
+                if (nextCycle is not null)
+                {
+                    // The Dubins curve only ever aimed at the target's pose CAPTURED WHEN
+                    // THIS LEG WAS PLANNED — a fixed-radius curved path can't be safely
+                    // re-planned mid-flight without risking an illegal turn. For a
+                    // genuinely moving target that pose is stale by the time the curve is
+                    // flown (the target has kept moving), so completing the whole command
+                    // here would strand the ship at a position the target has long since
+                    // left, instead of the object it was told to approach. Hand off into
+                    // the same live-tracking Final-phase pursuit the Trail-phase handoff
+                    // below uses, re-baking from the target's CURRENT state rather than
+                    // the stale captured one.
+                    nextCycle = nextCycle with
+                    {
+                        TargetWorldX = targetMotion.X,
+                        TargetWorldY = targetMotion.Y,
+                        NavigationPhase = ApproachPursuitMath.FinalPhase,
+                        NavigationTargetSpeedKmS = targetMotion.SpeedKmS,
+                        NavigationTargetDirectionDegrees = targetMotion.Direction,
+                        NavigationLockedCourseDegrees = null,
+                        NavigationEscapeCourseDegrees = null,
+                        NavigationRequiredDepartureDistance = null
+                    };
+
+                    return UpdateEngineMotion(
+                        obj, moduleIndex, gameTimeMs,
+                        module => module with { ActiveCycle = nextCycle },
+                        motion => motion with { Direction = NormalizeDirection(flyThroughStep.NewDirectionDegrees) });
+                }
+
                 return UpdateEngineMotion(
                     obj, moduleIndex, gameTimeMs,
                     module => module with { ActiveCycle = null },

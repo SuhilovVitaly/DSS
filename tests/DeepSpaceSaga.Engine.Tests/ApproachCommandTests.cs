@@ -99,7 +99,11 @@ public class ApproachCommandTests
     {
         // Ship and target move right; the ship starts on the 10 km trailing point.
         // Reaching it must switch Approach to Final rather than completing and
-        // synchronizing away from the selected object.
+        // synchronizing away from the selected object — the fly-through leg only ever
+        // aims at the target's pose captured when the command started, and the target
+        // (2x slower than the ship, but still moving) has kept moving away from that
+        // captured point by the time the ship gets there, so a second live-tracking
+        // leg is needed to actually reach it.
         var engine = CreateEngine(
             shipX: 9800, shipY: 10000, shipSpeedMps: 2000, shipDirectionDegrees: 90,
             targetX: 10000, targetY: 10000, targetSpeedMps: 1000, targetDirectionDegrees: 90,
@@ -108,11 +112,31 @@ public class ApproachCommandTests
         engine.ReceiveCommand(ApproachCommand());
         engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
 
-        var completed = PlayerShipFrom(
-            engine.CaptureSnapshotForTests(15_000, SimulationSpeed.Speed1));
+        AuthoritativeSnapshot? snapshot = null;
+        ObjectMotionSnapshot? ship = null;
+        for (long gameTimeMs = 250; gameTimeMs <= 60_000; gameTimeMs += 250)
+        {
+            snapshot = engine.CaptureSnapshotForTests(gameTimeMs, SimulationSpeed.Speed1);
+            ship = PlayerShipFrom(snapshot);
+            if (ship.ActiveEngineCommandType is null)
+                break;
+        }
+
+        Assert.NotNull(ship);
+        var completed = ship!;
         Assert.Null(completed.ActiveEngineCommandType);
         Assert.Equal(2.0, completed.SpeedKmS, precision: 6);
         Assert.Equal(90, completed.Direction, precision: 6);
+
+        // The ship must end up next to the target's LIVE (moved-on) position, not the
+        // stale position the target occupied when the command started.
+        var target = snapshot!.Objects.Single(o => o.ObjectId == TargetId);
+        double distanceFromLiveTarget = Math.Sqrt(
+            (completed.X - target.X) * (completed.X - target.X) +
+            (completed.Y - target.Y) * (completed.Y - target.Y));
+        Assert.True(distanceFromLiveTarget <= 10.0,
+            $"Ship ended {distanceFromLiveTarget:F1} world units from the target's live " +
+            $"position ({target.X:F1},{target.Y:F1}); ship at ({completed.X:F1},{completed.Y:F1}).");
     }
 
     [Fact]
