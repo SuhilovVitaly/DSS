@@ -2598,8 +2598,72 @@ public sealed class SimulationEngine : IDisposable
                 travelledUnits,
                 turnStep);
 
-            if (flyThroughStep.IsArrived)
+            // AdvanceFlyThroughPlan's own IsArrived is bookkeeping-based (cumulative
+            // travelled distance against the pose CAPTURED when this leg was planned) —
+            // blind to the live target, which may keep moving throughout the curve. For a
+            // target the ship cannot out-run in a straight tail chase, the curve can sweep
+            // right past the target's actual live position — a genuine, reachable
+            // intercept — without the bookkeeping ever recognizing it, then keep flying on
+            // toward the now-stale captured pose until the live target has pulled so far
+            // ahead that no subsequent tail chase can ever recover (a real, reproducible
+            // "flies right by a catchable target and diverges forever" bug). Checking the
+            // cycle's own flown segment against the LIVE target catches that moment
+            // immediately, the same way the Trail/Final loop's own per-step segment-sweep
+            // already does.
+            var liveArrival = ApproachPursuitMath.CheckSegmentArrival(
+                obj.InitialMotion.X, obj.InitialMotion.Y, shipMotion.X, shipMotion.Y,
+                targetMotion.X, targetMotion.Y);
+
+            if (flyThroughStep.IsArrived || liveArrival.IsArrived)
             {
+                // A ship that cannot out-pace the target (equal or slower) can never
+                // truly close the remaining distance no matter how it steers — chasing
+                // on into a live-tracking Final-phase pursuit (below) would just repeat
+                // forever, since the gap never shrinks. The fly-through curve was built
+                // to arrive with the ship's heading EXACTLY matching the target's own
+                // heading (that is what a Dubins curve to a (position, heading) pose
+                // guarantees) — so stopping right here already delivers the achievable
+                // goal: the ship ends up trailing behind the target, moving in its same
+                // direction, even though it can never draw level with it. Complete the
+                // command at the ship's own physically-tracked position (no teleport).
+                if (shipMotion.SpeedKmS <= targetMotion.SpeedKmS)
+                {
+                    return UpdateEngineMotion(
+                        obj, moduleIndex, gameTimeMs,
+                        module => module with { ActiveCycle = null },
+                        motion => motion with { Direction = NormalizeDirection(flyThroughStep.NewDirectionDegrees) });
+                }
+
+                if (nextCycle is not null)
+                {
+                    // The Dubins curve only ever aimed at the target's pose CAPTURED WHEN
+                    // THIS LEG WAS PLANNED — a fixed-radius curved path can't be safely
+                    // re-planned mid-flight without risking an illegal turn. For a
+                    // genuinely moving target that pose is stale by the time the curve is
+                    // flown (the target has kept moving), so completing the whole command
+                    // here would strand the ship at a position the target has long since
+                    // left, instead of the object it was told to approach. Hand off into
+                    // the same live-tracking Final-phase pursuit the Trail-phase handoff
+                    // below uses, re-baking from the target's CURRENT state rather than
+                    // the stale captured one.
+                    nextCycle = nextCycle with
+                    {
+                        TargetWorldX = targetMotion.X,
+                        TargetWorldY = targetMotion.Y,
+                        NavigationPhase = ApproachPursuitMath.FinalPhase,
+                        NavigationTargetSpeedKmS = targetMotion.SpeedKmS,
+                        NavigationTargetDirectionDegrees = targetMotion.Direction,
+                        NavigationLockedCourseDegrees = null,
+                        NavigationEscapeCourseDegrees = null,
+                        NavigationRequiredDepartureDistance = null
+                    };
+
+                    return UpdateEngineMotion(
+                        obj, moduleIndex, gameTimeMs,
+                        module => module with { ActiveCycle = nextCycle },
+                        motion => motion with { Direction = NormalizeDirection(flyThroughStep.NewDirectionDegrees) });
+                }
+
                 return UpdateEngineMotion(
                     obj, moduleIndex, gameTimeMs,
                     module => module with { ActiveCycle = null },
@@ -2614,14 +2678,24 @@ public sealed class SimulationEngine : IDisposable
             var remaining = flyThroughStep.RemainingPlan;
             nextCycle = nextCycle with
             {
-                TargetWorldX = fixedTargetX,
-                TargetWorldY = fixedTargetY,
+                // Steering itself (CreateFlyThroughPlan/AdvanceFlyThroughPlan above) must
+                // keep using the pose CAPTURED when this leg was planned — the fixed-radius
+                // curve can't be safely re-planned mid-flight. But TargetWorldX/Y and the
+                // NavigationTargetSpeedKmS/DirectionDegrees fields are pure CLIENT-facing
+                // metadata (the arrival snap point, and what the trajectory preview draws
+                // as the destination) — for those, re-baking the target's LIVE state every
+                // cycle (same as the Trail/Final branch below already does) keeps the
+                // client's "trust the current snapshot" preview accurate to within one
+                // cycle, instead of drifting further from the truth every cycle the curve
+                // is still being flown (a genuinely moving target keeps moving throughout).
+                TargetWorldX = targetMotion.X,
+                TargetWorldY = targetMotion.Y,
                 NavigationPhase = ApproachPursuitMath.FlyThroughPhasePrefix + remaining.Type,
                 NavigationEscapeCourseDegrees = remaining.FirstRemainingUnits,
                 NavigationRequiredDepartureDistance = remaining.SecondRemainingUnits,
                 NavigationLockedCourseDegrees = remaining.ThirdRemainingUnits,
-                NavigationTargetSpeedKmS = cycle.NavigationTargetSpeedKmS,
-                NavigationTargetDirectionDegrees = fixedTargetDirection,
+                NavigationTargetSpeedKmS = targetMotion.SpeedKmS,
+                NavigationTargetDirectionDegrees = targetMotion.Direction,
                 NavigationApproachTrailDistanceWorldUnits = trailDistanceWorldUnits
             };
 
@@ -2678,6 +2752,23 @@ public sealed class SimulationEngine : IDisposable
                 {
                     Direction = NormalizeDirection(targetMotion.Direction)
                 });
+        }
+
+        // A ship that cannot out-pace the target (equal or slower speed) can never
+        // close the remaining distance no matter how long it chases — the gap never
+        // shrinks. But once its course has locked onto the bearing to the (receding)
+        // aim point, that bearing sits directly on the target's own line of motion
+        // (the aim point is on that line, whether it's the Trail phase's staging point
+        // or the target itself in Final phase) — so a locked course already means the
+        // ship is genuinely moving in the SAME direction as the target. Settle for
+        // that — trailing behind, matched course, never catching up — instead of
+        // repeating the cycle forever chasing a gap that can never close.
+        if (result.LockedCourseDegrees is not null && shipMotion.SpeedKmS <= targetMotion.SpeedKmS)
+        {
+            return UpdateEngineMotion(
+                obj, moduleIndex, gameTimeMs,
+                module => module with { ActiveCycle = null },
+                motion => motion with { Direction = NormalizeDirection(targetMotion.Direction) });
         }
 
         if (nextCycle is not null)

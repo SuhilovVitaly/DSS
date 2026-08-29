@@ -99,7 +99,11 @@ public class ApproachCommandTests
     {
         // Ship and target move right; the ship starts on the 10 km trailing point.
         // Reaching it must switch Approach to Final rather than completing and
-        // synchronizing away from the selected object.
+        // synchronizing away from the selected object — the fly-through leg only ever
+        // aims at the target's pose captured when the command started, and the target
+        // (2x slower than the ship, but still moving) has kept moving away from that
+        // captured point by the time the ship gets there, so a second live-tracking
+        // leg is needed to actually reach it.
         var engine = CreateEngine(
             shipX: 9800, shipY: 10000, shipSpeedMps: 2000, shipDirectionDegrees: 90,
             targetX: 10000, targetY: 10000, targetSpeedMps: 1000, targetDirectionDegrees: 90,
@@ -108,11 +112,31 @@ public class ApproachCommandTests
         engine.ReceiveCommand(ApproachCommand());
         engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
 
-        var completed = PlayerShipFrom(
-            engine.CaptureSnapshotForTests(15_000, SimulationSpeed.Speed1));
+        AuthoritativeSnapshot? snapshot = null;
+        ObjectMotionSnapshot? ship = null;
+        for (long gameTimeMs = 250; gameTimeMs <= 60_000; gameTimeMs += 250)
+        {
+            snapshot = engine.CaptureSnapshotForTests(gameTimeMs, SimulationSpeed.Speed1);
+            ship = PlayerShipFrom(snapshot);
+            if (ship.ActiveEngineCommandType is null)
+                break;
+        }
+
+        Assert.NotNull(ship);
+        var completed = ship!;
         Assert.Null(completed.ActiveEngineCommandType);
         Assert.Equal(2.0, completed.SpeedKmS, precision: 6);
         Assert.Equal(90, completed.Direction, precision: 6);
+
+        // The ship must end up next to the target's LIVE (moved-on) position, not the
+        // stale position the target occupied when the command started.
+        var target = snapshot!.Objects.Single(o => o.ObjectId == TargetId);
+        double distanceFromLiveTarget = Math.Sqrt(
+            (completed.X - target.X) * (completed.X - target.X) +
+            (completed.Y - target.Y) * (completed.Y - target.Y));
+        Assert.True(distanceFromLiveTarget <= 10.0,
+            $"Ship ended {distanceFromLiveTarget:F1} world units from the target's live " +
+            $"position ({target.X:F1},{target.Y:F1}); ship at ({completed.X:F1},{completed.Y:F1}).");
     }
 
     [Fact]
@@ -150,7 +174,7 @@ public class ApproachCommandTests
     }
 
     [Fact]
-    public void Approach_holds_the_current_target_pose_instead_of_extrapolating_it()
+    public void Approach_rebakes_the_client_facing_aim_point_from_the_live_target_every_cycle()
     {
         // Target moves at a constant 1.0 km/s along direction 90 (+X). The ship starts
         // far south of the initial aim point with speed 0 (isolating pure steering from
@@ -158,9 +182,16 @@ public class ApproachCommandTests
         // Approach now shares Orbit's MinTurnIntervalMs cadence (~250 ms at 4°/s —
         // Post-implementation bug fix #2, story-20260827-083137.md; superseded the
         // original ~1000 ms default cadence), so each 250 ms cycle turns by up to
-        // turnStepDegrees=10 and must re-read the target's live (moved) position/speed/
-        // direction and re-bake a fresh aim point, never a fixed point captured once
-        // (unlike Orbit).
+        // turnStepDegrees=10.
+        //
+        // The fly-through STEERING (the Dubins curve itself) still targets the pose
+        // captured once when the leg was planned — replanning a fixed-radius curve
+        // mid-flight risks an illegal turn. But the CLIENT-FACING NavigationTargetX/Y
+        // (what the trajectory preview draws as the destination) must be re-baked from
+        // the target's live position every completed cycle, exactly like Trail/Final
+        // already does — otherwise the preview increasingly diverges from where the
+        // (still-moving) target actually is for as long as the curve is being flown
+        // (a real user-reported bug: the previewed route visibly missed the target).
         var engine = CreateEngine(
             shipX: 8500, shipY: 20000, shipSpeedMps: 0, shipDirectionDegrees: 90,
             targetX: 10000, targetY: 10000, targetSpeedMps: 1000, targetDirectionDegrees: 90,
@@ -174,6 +205,7 @@ public class ApproachCommandTests
         Assert.Equal(1.0, afterCycle1.NavigationTargetSpeedKmS!.Value, precision: 6);
         Assert.Equal(90, afterCycle1.NavigationTargetDirectionDegrees!.Value, precision: 6);
         double aimX1 = afterCycle1.NavigationTargetX!.Value;
+        Assert.Equal(10002.5, aimX1, precision: 6); // target's live X at t=250ms: 10000 + 1*10*0.25
 
         Assert.StartsWith(ApproachPursuitMath.FlyThroughPhasePrefix, afterCycle1.NavigationPhase);
         var afterCycle2 = PlayerShipFrom(engine.CaptureSnapshotForTests(500, SimulationSpeed.Speed1));
@@ -182,8 +214,12 @@ public class ApproachCommandTests
         var afterCycle3 = PlayerShipFrom(engine.CaptureSnapshotForTests(750, SimulationSpeed.Speed1));
         double aimX3 = afterCycle3.NavigationTargetX!.Value;
 
-        Assert.Equal(aimX1, aimX2, precision: 6);
-        Assert.Equal(aimX1, aimX3, precision: 6);
+        // Each cycle's aim point tracks the target's ACTUAL live motion since the
+        // previous cycle (2.5 world units per 250 ms at 1 km/s) — neither frozen at
+        // the original captured pose, nor guessing further ahead than the target has
+        // really travelled.
+        Assert.Equal(aimX1 + 2.5, aimX2, precision: 6);
+        Assert.Equal(aimX1 + 5.0, aimX3, precision: 6);
 
         // Still cycling — not completed.
         Assert.Equal(NavigationComputerCommandTypes.Approach, afterCycle3.ActiveEngineCommandType);
@@ -478,6 +514,72 @@ public class ApproachCommandTests
         Assert.Equal(CommandResultStatus.Executed, dockResult.Status);
         Assert.True(PlayerShipFrom(afterDock).IsDocked);
         Assert.Equal(TargetId, PlayerShipFrom(afterDock).DockedStationObjectId);
+    }
+
+    [Fact]
+    public void Approach_against_a_faster_target_settles_for_a_matched_trailing_course_via_fly_through()
+    {
+        // Real user-reported case: a target the ship cannot out-run (1.2 km/s vs the
+        // ship's 0.7 km/s) — no tail chase can ever close that gap, geometry aside. The
+        // ship also starts facing ~180° away from the target, forcing the fly-through
+        // re-orientation curve (matches the reported "loop, then long diagonal that
+        // never quite reaches the target" symptom). Before this fix, neither the
+        // curve's own bookkeeping-based arrival nor a subsequent Final-phase pursuit
+        // ever recognizes "this can never be caught" — the command just auto-repeats
+        // forever, the separation growing without bound. The achievable goal instead:
+        // settle for trailing behind the target, moving in its exact same
+        // direction — which a Dubins curve already guarantees at its endpoint (it is
+        // built to arrive facing the specified heading), so completing right there
+        // delivers it.
+        var engine = CreateEngine(
+            shipX: 0, shipY: 0, shipSpeedMps: 700, shipDirectionDegrees: 0,
+            targetX: 0, targetY: 450, targetSpeedMps: 1200, targetDirectionDegrees: 22,
+            turnStepDegrees: 1, angularInertiaDegPerSec: 4, trailDistanceKm: 1);
+
+        engine.ReceiveCommand(ApproachCommand());
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        ObjectMotionSnapshot? ship = null;
+        for (long t = 250; t <= 300_000; t += 250)
+        {
+            ship = PlayerShipFrom(engine.CaptureSnapshotForTests(t, SimulationSpeed.Speed1));
+            if (ship.ActiveEngineCommandType is null)
+                break;
+        }
+
+        Assert.NotNull(ship);
+        Assert.Null(ship!.ActiveEngineCommandType); // completed — not stuck chasing forever
+        Assert.Equal(22, ship.Direction, precision: 6); // exact course match with the faster target
+        Assert.Equal(0.7, ship.SpeedKmS, precision: 6); // Approach never changes speed
+    }
+
+    [Fact]
+    public void Approach_against_a_faster_target_settles_for_a_matched_trailing_course_via_final_phase()
+    {
+        // Same "unreachable by speed" scenario as the fly-through regression above, but
+        // forced straight into the Step()-based Final-phase path (trailDistanceKm: 0
+        // skips fly-through entirely) — covers that path's own separate "give up,
+        // matched course" check.
+        var engine = CreateEngine(
+            shipX: 0, shipY: 20000, shipSpeedMps: 700, shipDirectionDegrees: 90,
+            targetX: 10000, targetY: 10000, targetSpeedMps: 1200, targetDirectionDegrees: 45,
+            turnStepDegrees: 1, angularInertiaDegPerSec: 4, trailDistanceKm: 0);
+
+        engine.ReceiveCommand(ApproachCommand());
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        ObjectMotionSnapshot? ship = null;
+        for (long t = 250; t <= 300_000; t += 250)
+        {
+            ship = PlayerShipFrom(engine.CaptureSnapshotForTests(t, SimulationSpeed.Speed1));
+            if (ship.ActiveEngineCommandType is null)
+                break;
+        }
+
+        Assert.NotNull(ship);
+        Assert.Null(ship!.ActiveEngineCommandType);
+        Assert.Equal(45, ship.Direction, precision: 6);
+        Assert.Equal(0.7, ship.SpeedKmS, precision: 6);
     }
 
     /// <summary>

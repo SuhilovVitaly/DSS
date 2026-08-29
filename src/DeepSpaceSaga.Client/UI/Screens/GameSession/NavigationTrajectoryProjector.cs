@@ -196,7 +196,7 @@ internal sealed class NavigationTrajectoryProjector
         if (ApproachPursuitMath.IsFlyThroughPhase(predicted.NavigationPhase))
         {
             return ProjectFlyThrough(
-                predicted, bakedAimX, bakedAimY, targetDirectionDegrees);
+                predicted, bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS);
         }
 
         var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
@@ -211,19 +211,52 @@ internal sealed class NavigationTrajectoryProjector
             ? ApproachPursuitMath.TrailPhase
             : ApproachPursuitMath.FinalPhase;
 
-        // The baked point is phase-relative: the trailing staging point during Trail,
-        // and the target itself during Final. When Trail completes, this base is moved
-        // forward by the configured offset so projection continues to the real target.
-        double aimBaseX = bakedAimX;
-        double aimBaseY = bakedAimY;
-
         int turnStepDegrees = Math.Max(1, Math.Abs(predicted.TurnStepDegrees));
         long intervalMs = Math.Max(1, predicted.TurnStepIntervalMs);
         long phaseMs = Math.Max(1, predicted.TurnStepRemainingMs);
 
+        return RunApproachPursuitPreview(
+            points, x, y, direction, speedKmS, lockedCourse, approachPhase,
+            bakedAimX, bakedAimY, trailDistance, targetDirectionDegrees, targetSpeedKmS,
+            turnStepDegrees, intervalMs, predicted.NavigationAngularInertiaDegPerSec,
+            phaseMs, includeInitialPhaseSegment: true);
+    }
+
+    /// <summary>
+    /// Runs the per-turn trailing-pursuit preview (Trail then Final phase) shared by
+    /// <see cref="ProjectApproach"/>'s direct entry and <see cref="ProjectFlyThrough"/>'s
+    /// hand-off once its Dubins re-orientation curve completes. Appends sample points to
+    /// <paramref name="points"/> (already seeded with the ship's current position by the
+    /// caller) and returns it.
+    /// </summary>
+    private static List<FutureTrajectoryPoint> RunApproachPursuitPreview(
+        List<FutureTrajectoryPoint> points,
+        double x,
+        double y,
+        double direction,
+        double speedKmS,
+        double? lockedCourse,
+        string approachPhase,
+        double aimBaseX,
+        double aimBaseY,
+        double trailDistance,
+        double targetDirectionDegrees,
+        double targetSpeedKmS,
+        int turnStepDegrees,
+        long intervalMs,
+        int angularInertiaDegPerSec,
+        long phaseMs,
+        bool includeInitialPhaseSegment)
+    {
+        // The baked point is phase-relative: the trailing staging point during Trail,
+        // and the target itself during Final. When Trail completes, this base is moved
+        // forward by the configured offset so projection continues to the real target.
+
         // Preview deliberately treats the target state from the current snapshot as
-        // fixed. The authoritative engine will re-read the real target next cycle;
-        // guessing a long linear future here produced misleading off-screen routes.
+        // fixed. The authoritative engine now re-bakes that snapshot state from the
+        // live target every completed cycle (including mid fly-through), so "current
+        // snapshot" is never more than one cycle stale — the preview does not itself
+        // guess any further into the future than this.
         (double X, double Y) AimAt(long _) => (aimBaseX, aimBaseY);
 
         bool ContinueFromTrailToTarget(long elapsedMs, double trailAimX, double trailAimY)
@@ -239,36 +272,51 @@ internal sealed class NavigationTrajectoryProjector
             return true;
         }
 
-        points.Add(new FutureTrajectoryPoint(x, y));
-
-        // Phase until the first cycle boundary: straight flight with the CURRENT course.
-        // Unlike every subsequent interval (each covered by ApproachPursuitMath.Step's own
-        // segment-sweep arrival check), this phase segment runs with no steering decision at
-        // all, so it needs its own arrival check here — otherwise a ship already close to
-        // (or aimed straight at) the target flies straight through it during this very first
-        // segment and the preview keeps extending past the target instead of stopping there.
-        double phaseStartX = x, phaseStartY = y;
-        (x, y) = AdvanceStraight(x, y, direction, speedKmS, phaseMs);
-
-        var (phaseAimX, phaseAimY) = AimAt(phaseMs);
-        var phaseArrival = ApproachPursuitMath.CheckSegmentArrival(
-            phaseStartX, phaseStartY, x, y, phaseAimX, phaseAimY);
-        if (phaseArrival.IsArrived)
+        long elapsedMs;
+        if (includeInitialPhaseSegment)
         {
-            // Arrival is tolerance-based, but the rendered route is a promise to the
-            // player: it must visually terminate on the navigation aim point itself.
-            // Keeping ClosestX/Y here leaves a visible gap at high zoom whenever the
-            // straight phase passes near (rather than exactly through) the aim point.
-            points.Add(new FutureTrajectoryPoint(phaseAimX, phaseAimY));
-            if (!ContinueFromTrailToTarget(phaseMs, phaseAimX, phaseAimY))
-                return points;
+            points.Add(new FutureTrajectoryPoint(x, y));
 
-            x = phaseAimX;
-            y = phaseAimY;
+            // Phase until the first cycle boundary: straight flight with the CURRENT
+            // course. Unlike every subsequent interval (each covered by
+            // ApproachPursuitMath.Step's own segment-sweep arrival check), this phase
+            // segment runs with no steering decision at all, so it needs its own arrival
+            // check here — otherwise a ship already close to (or aimed straight at) the
+            // target flies straight through it during this very first segment and the
+            // preview keeps extending past the target instead of stopping there.
+            double phaseStartX = x, phaseStartY = y;
+            (x, y) = AdvanceStraight(x, y, direction, speedKmS, phaseMs);
+
+            var (phaseAimX, phaseAimY) = AimAt(phaseMs);
+            var phaseArrival = ApproachPursuitMath.CheckSegmentArrival(
+                phaseStartX, phaseStartY, x, y, phaseAimX, phaseAimY);
+            if (phaseArrival.IsArrived)
+            {
+                // Arrival is tolerance-based, but the rendered route is a promise to the
+                // player: it must visually terminate on the navigation aim point itself.
+                // Keeping ClosestX/Y here leaves a visible gap at high zoom whenever the
+                // straight phase passes near (rather than exactly through) the aim point.
+                points.Add(new FutureTrajectoryPoint(phaseAimX, phaseAimY));
+                if (!ContinueFromTrailToTarget(phaseMs, phaseAimX, phaseAimY))
+                    return points;
+
+                x = phaseAimX;
+                y = phaseAimY;
+            }
+            else
+            {
+                points.Add(new FutureTrajectoryPoint(x, y));
+            }
+
+            elapsedMs = phaseMs;
         }
         else
         {
-            points.Add(new FutureTrajectoryPoint(x, y));
+            // Hand-off from a just-completed Dubins re-orientation curve (see
+            // ProjectFlyThrough): the ship is already exactly at a fresh cycle boundary
+            // and `points` already ends with its current position, so there is no
+            // separate "wait until the first boundary" segment to draw here.
+            elapsedMs = 0;
         }
 
         // Runs until actual arrival (IsArrived) or a stagnation timeout (see
@@ -284,7 +332,6 @@ internal sealed class NavigationTrajectoryProjector
         // would false-fire on the ordinary case. In that situation the caller simply gets
         // the points computed up to the closest approach reached — an honest "this is as
         // close as it gets" preview, not a guaranteed-complete trajectory.
-        long elapsedMs = phaseMs;
         int iterations = 0;
         double bestDistanceToAim = double.MaxValue;
         long bestDistanceElapsedMs = elapsedMs;
@@ -315,7 +362,7 @@ internal sealed class NavigationTrajectoryProjector
                 aimX, aimY, targetDirectionDegrees, targetSpeedKmS,
                 trailDistanceWorldUnits: 0,
                 turnStepDegrees: turnStepDegrees,
-                angularInertiaDegPerSec: predicted.NavigationAngularInertiaDegPerSec,
+                angularInertiaDegPerSec: angularInertiaDegPerSec,
                 stepTimeMs: intervalMs,
                 lockedCourseDegrees: lockedCourse);
 
@@ -339,6 +386,21 @@ internal sealed class NavigationTrajectoryProjector
             (x, y) = AdvanceStraight(x, y, direction, speedKmS, intervalMs);
             points.Add(new FutureTrajectoryPoint(x, y));
 
+            // A ship that cannot out-pace the target (equal or slower speed) can never
+            // close the remaining distance — mirrors SimulationEngine.ApplyApproachStep's
+            // own check. Once locked onto the bearing to the (receding) aim point, that
+            // bearing sits directly on the target's own line of motion, so the preview
+            // already shows the ship moving in the target's own direction here — the
+            // achievable goal when true arrival isn't — so stop rather than keep drawing
+            // an endless chase line toward a gap that can never close. Only meaningful
+            // for a hand-off from fly-through, where the aim point was just extrapolated
+            // to the target's LIVE position — the direct-entry case deliberately treats
+            // its baked aim point as fixed for this whole call (never extrapolated), so
+            // "target speed" doesn't describe anything actually receding here; that case
+            // still falls back to the stagnation-timeout check below instead.
+            if (!includeInitialPhaseSegment && lockedCourse is not null && speedKmS <= targetSpeedKmS)
+                return points;
+
             elapsedMs += intervalMs;
         }
 
@@ -352,7 +414,8 @@ internal sealed class NavigationTrajectoryProjector
         ObjectMotionSnapshot predicted,
         double targetX,
         double targetY,
-        double targetDirectionDegrees)
+        double targetDirectionDegrees,
+        double targetSpeedKmS)
     {
         var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
         double x = predicted.X;
@@ -363,6 +426,7 @@ internal sealed class NavigationTrajectoryProjector
         long untilNextTurnMs = Math.Max(1, predicted.TurnStepRemainingMs);
         string phase = predicted.NavigationPhase!;
         ApproachFlyThroughPlan? plan = null;
+        long elapsedMs = untilNextTurnMs;
 
         if (phase.StartsWith(ApproachPursuitMath.FlyThroughPhasePrefix, StringComparison.Ordinal))
         {
@@ -405,19 +469,47 @@ internal sealed class NavigationTrajectoryProjector
             plan = step.RemainingPlan;
             if (step.IsArrived)
             {
-                double terminalAngleRad = targetDirectionDegrees * Math.PI / 180.0;
-                double terminalEntryDistance = Math.Max(
-                    ApproachPursuitMath.ArrivalToleranceUnits * 2,
-                    speedKmS * (intervalMs / 1000.0) * 20.0);
-                points.Add(new FutureTrajectoryPoint(
-                    targetX - terminalEntryDistance * Math.Sin(terminalAngleRad),
-                    targetY + terminalEntryDistance * Math.Cos(terminalAngleRad)));
-                points.Add(new FutureTrajectoryPoint(targetX, targetY));
-                return points;
+                // A ship that cannot out-pace the target (equal or slower speed) can
+                // never close the remaining distance — mirrors SimulationEngine
+                // .ApplyApproachStep's own check. The fly-through curve was built to
+                // arrive with the ship's heading EXACTLY matching the target's own
+                // heading (that is what a Dubins curve to a given heading guarantees),
+                // so stopping right here already shows the achievable goal — trailing
+                // behind the target, moving in its same direction — instead of drawing
+                // an endless chase line toward a live-tracking Final phase a slower
+                // ship could never actually complete.
+                if (speedKmS <= targetSpeedKmS)
+                    return points; // (x, y) is already the last point added below
+
+                // AdvanceFlyThroughPlan's arrival is bookkeeping-based (cumulative
+                // travelled distance against the planned segment lengths), not a
+                // position/heading match — so the ship's actually-tracked (x, y, direction)
+                // at this point rarely lands exactly on the target's own heading line,
+                // especially after a long re-orientation curve (a real, if small, turn
+                // quantization artifact of the module's discrete turnStepDegrees steering
+                // — the same imprecision the authoritative engine has at this same point).
+                // The engine corrects for exactly this by handing off into a live-tracking
+                // Final-phase pursuit once the curve completes (see SimulationEngine
+                // .ApplyApproachStep) rather than declaring victory at the stale captured
+                // pose — mirror that here instead of snapping straight to (targetX,targetY),
+                // which produced a visible kink/near-miss whenever the tracked point and
+                // the target disagreed.
+                var (liveTargetX, liveTargetY) = ApproachPursuitMath.ExtrapolatePosition(
+                    targetX, targetY, targetDirectionDegrees, targetSpeedKmS, elapsedMs);
+
+                return RunApproachPursuitPreview(
+                    points, x, y, direction, speedKmS, lockedCourse: null,
+                    approachPhase: ApproachPursuitMath.FinalPhase,
+                    aimBaseX: liveTargetX, aimBaseY: liveTargetY,
+                    trailDistance: 0, targetDirectionDegrees, targetSpeedKmS,
+                    turnStepDegrees: Math.Max(1, Math.Abs(predicted.TurnStepDegrees)),
+                    intervalMs, predicted.NavigationAngularInertiaDegPerSec,
+                    phaseMs: 0, includeInitialPhaseSegment: false);
             }
 
             (x, y) = AdvanceStraight(x, y, direction, speedKmS, intervalMs);
             points.Add(new FutureTrajectoryPoint(x, y));
+            elapsedMs += intervalMs;
         }
 
         points.Add(new FutureTrajectoryPoint(targetX, targetY));

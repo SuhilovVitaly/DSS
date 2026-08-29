@@ -22,9 +22,14 @@ public sealed record ObjectMotionSnapshot(
     /// World-coordinate target of the active navigation cycle. Dual meaning depending on
     /// which command is active: for <see cref="ShipEngineCommandTypes.Orbit"/> this is a
     /// fixed, permanently-locked world point captured once. For
-    /// <see cref="NavigationComputerCommandTypes.Approach"/> this holds the target pose
-    /// position captured when the command starts. The client follows the same fixed
-    /// fly-through plan and does not extrapolate future target motion.
+    /// <see cref="NavigationComputerCommandTypes.Approach"/> this is the target's
+    /// position, re-baked from its live state every completed engine cycle (including
+    /// while a fly-through re-orientation curve is in flight) — the STEERING itself still
+    /// follows the curve/course planned from the pose captured when that leg started
+    /// (replanning a fixed-radius curve or an established course lock mid-flight risks an
+    /// illegal turn), but this field always reflects where the target actually is as of
+    /// the most recent cycle, not that original captured pose. The client does not itself
+    /// extrapolate any further than this most-recent value.
     /// </summary>
     double? NavigationTargetX = null,
     /// <summary>World-coordinate target of the active navigation cycle; see <see cref="NavigationTargetX"/>.</summary>
@@ -71,12 +76,14 @@ public sealed record ObjectMotionSnapshot(
     /// <summary>ObjectId of the station this object is docked to. Null unless <see cref="IsDocked"/>.</summary>
     string? DockedStationObjectId = null,
     /// <summary>
-    /// Target speed captured when Approach starts. It is metadata only; the target's
-    /// future position is not extrapolated.
+    /// Target speed as of the most recently completed Approach engine cycle (see
+    /// <see cref="NavigationTargetX"/>) — not a one-time value captured when the command
+    /// started. Metadata only; the client does not itself extrapolate any further ahead
+    /// than this most-recent value.
     /// </summary>
     double? NavigationTargetSpeedKmS = null,
     /// <summary>
-    /// Target heading captured when the active Approach command starts; see
+    /// Target heading as of the most recently completed Approach engine cycle; see
     /// <see cref="NavigationTargetSpeedKmS"/>. Null when no Approach cycle is active.
     /// </summary>
     double? NavigationTargetDirectionDegrees = null,

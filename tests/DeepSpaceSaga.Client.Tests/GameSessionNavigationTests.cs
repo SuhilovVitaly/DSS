@@ -452,7 +452,11 @@ public class GameSessionNavigationTests
         // line that shoots far past the target after the ship's course happens to pass close
         // by it early in the chase. The fix must instead stop the line once the distance to
         // the aim point has stopped improving for a sustained stretch, at the closest point
-        // actually reached.
+        // actually reached. (This scenario is a direct Final-phase entry, not a fly-through
+        // hand-off, so the faster deterministic unreachable-by-speed check does not apply
+        // here — see its own doc-comment: a direct entry's aim point is held fixed for the
+        // whole call, never extrapolated, so "target speed" describes nothing actually
+        // receding within this one call.)
         var ship = new ObjectMotionSnapshot(
             "ship",
             X: 0, Y: 0,
@@ -574,14 +578,19 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
-    public void Default_scenario_paused_start_asteroid_route_ends_at_current_target_position()
+    public void Default_scenario_paused_start_asteroid_route_continues_past_the_captured_pose()
     {
         // Exact gameTimeMs=0 / Speed0 geometry from Scenarios/Default/scenario.json:
         // player (10000,10000), 0.7 km/s at 0°; SPC-0003 (10400,10000),
         // 0.6 km/s at 256°. FlyThroughPending means the pose planner must build one
-        // continuous tail-entry path to the current target position and heading.
-        const double targetX = 10400;
-        const double targetY = 10000;
+        // continuous tail-entry curve to the target's pose CAPTURED when the command
+        // started — but the asteroid keeps moving while that curve is flown, so the
+        // preview must keep tracking it afterward instead of stopping (or kinking into
+        // a near-miss) at that now-stale captured position. Mirrors
+        // SimulationEngine.ApplyApproachStep's fly-through hand-off — see
+        // ApproachCommandTests for the authoritative-engine version of this regression.
+        const double capturedTargetX = 10400;
+        const double capturedTargetY = 10000;
         const double targetDirection = 256;
 
         var ship = new ObjectMotionSnapshot(
@@ -593,8 +602,8 @@ public class GameSessionNavigationTests
             TurnStepDegrees: 1,
             TurnStepRemainingMs: 250,
             TurnStepIntervalMs: 250,
-            NavigationTargetX: targetX,
-            NavigationTargetY: targetY,
+            NavigationTargetX: capturedTargetX,
+            NavigationTargetY: capturedTargetY,
             NavigationAngularInertiaDegPerSec: 4,
             NavigationPhase: ApproachPursuitMath.FlyThroughPendingPhase,
             NavigationTargetSpeedKmS: 0.6,
@@ -603,28 +612,83 @@ public class GameSessionNavigationTests
 
         var points = new NavigationTrajectoryProjector().Project(ship);
 
-        double maxDistanceFromStart = points.Max(p => Math.Sqrt(
-            Math.Pow(p.X - 10000, 2) + Math.Pow(p.Y - 10000, 2)));
-        Assert.True(maxDistanceFromStart < 550,
-            $"Default asteroid route must stay local; projected radius was {maxDistanceFromStart:F1} wu.");
-        Assert.True(points.Max(p => p.X) > targetX + 50,
+        Assert.True(points.Max(p => p.X) > capturedTargetX + 50,
             "Approach must go around to the target's rear side before crossing it.");
+
+        // The route still passes very close to the captured pose en route (the fly-through
+        // curve itself is correct) before continuing on to track the live target further.
+        double closestToCapturedPose = points.Min(p => Math.Sqrt(
+            Math.Pow(p.X - capturedTargetX, 2) + Math.Pow(p.Y - capturedTargetY, 2)));
+        Assert.True(closestToCapturedPose < 10,
+            $"Route never passed near the captured pose ({capturedTargetX},{capturedTargetY}); " +
+            $"closest approach was {closestToCapturedPose:F1} wu.");
+
+        // Before the fix, the route stopped (or kinked into a near-miss) the moment the
+        // fly-through curve reached the captured (10400,10000) pose (~700-850 wu total).
+        // The asteroid is still moving when that happens, so a correct preview must keep
+        // going — proving the route is now meaningfully longer than that stale-arrival
+        // distance.
         double routeLength = points.Zip(points.Skip(1), (a, b) => Math.Sqrt(
             Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2))).Sum();
-        Assert.InRange(routeLength, 700, 850);
+        Assert.True(routeLength > 900,
+            $"Expected the preview to keep tracking the asteroid past its captured pose, got only {routeLength:F1} wu.");
 
-        // The endpoint is the asteroid's current position; its future linear motion
-        // is deliberately not included in this preview.
+        // The final approach segment must show the ship ending up moving in the same
+        // direction as the (still-moving) target, not stopped mid-turn or kinked.
         var end = points[^1];
-        Assert.Equal(targetX, end.X, precision: 6);
-        Assert.Equal(targetY, end.Y, precision: 6);
-
         var beforeEnd = points[^2];
         double terminalDirection = Math.Atan2(end.X - beforeEnd.X, beforeEnd.Y - end.Y)
                                    * 180.0 / Math.PI;
         if (terminalDirection < 0)
             terminalDirection += 360;
-        Assert.Equal(targetDirection, terminalDirection, precision: 1);
+        Assert.Equal(targetDirection, terminalDirection, precision: 0);
+    }
+
+    [Fact]
+    public void Approach_preview_after_a_full_loop_reorientation_ends_without_a_visible_kink()
+    {
+        // Regression for a real user-reported screenshot: the ship starts facing
+        // directly AWAY from the aim point (a bearing 180° behind it), forcing a full
+        // loop-back fly-through leg — exactly the shape in the report. Before the fix,
+        // ProjectFlyThrough discarded the actually-tracked (x, y, direction) at arrival
+        // and either snapped straight to the target coordinate (a large, visible final
+        // jump whenever turn-step quantization left the tracked point off the target's
+        // exact line) or inserted a synthetic "entry" segment aligned to the target's
+        // OWN heading (unrelated to the ship's actual approach angle) — both produced a
+        // visible kink/near-miss right before the line reached the target.
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 0,
+            SpeedKmS: 0.7,
+            Direction: 0, // facing straight up — directly away from the aim point below
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 250,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: 0,
+            NavigationTargetY: 3000,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationPhase: ApproachPursuitMath.FlyThroughPendingPhase,
+            NavigationTargetSpeedKmS: 0.6,
+            NavigationTargetDirectionDegrees: 256,
+            NavigationApproachTrailDistanceWorldUnits: 10);
+
+        var points = new NavigationTrajectoryProjector().Project(ship);
+
+        Assert.True(points.Count > 100, "Expected a long loop-and-approach preview");
+
+        // No segment anywhere near the tail should jump further than a small handful of
+        // ordinary step lengths (0.7 km/s * 250 ms * 10 = 1.75 wu/step) — a genuine kink
+        // would show up as one far-oversized segment right before the line ends.
+        double maxTailJump = 0;
+        for (int i = Math.Max(1, points.Count - 30); i < points.Count; i++)
+        {
+            double d = Math.Sqrt(
+                Math.Pow(points[i].X - points[i - 1].X, 2) + Math.Pow(points[i].Y - points[i - 1].Y, 2));
+            maxTailJump = Math.Max(maxTailJump, d);
+        }
+        Assert.True(maxTailJump < 15.0,
+            $"Expected a smooth approach into the final point; largest tail segment was {maxTailJump:F1} wu.");
     }
 
     [Fact]
