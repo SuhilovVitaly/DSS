@@ -386,6 +386,21 @@ internal sealed class NavigationTrajectoryProjector
             (x, y) = AdvanceStraight(x, y, direction, speedKmS, intervalMs);
             points.Add(new FutureTrajectoryPoint(x, y));
 
+            // A ship that cannot out-pace the target (equal or slower speed) can never
+            // close the remaining distance — mirrors SimulationEngine.ApplyApproachStep's
+            // own check. Once locked onto the bearing to the (receding) aim point, that
+            // bearing sits directly on the target's own line of motion, so the preview
+            // already shows the ship moving in the target's own direction here — the
+            // achievable goal when true arrival isn't — so stop rather than keep drawing
+            // an endless chase line toward a gap that can never close. Only meaningful
+            // for a hand-off from fly-through, where the aim point was just extrapolated
+            // to the target's LIVE position — the direct-entry case deliberately treats
+            // its baked aim point as fixed for this whole call (never extrapolated), so
+            // "target speed" doesn't describe anything actually receding here; that case
+            // still falls back to the stagnation-timeout check below instead.
+            if (!includeInitialPhaseSegment && lockedCourse is not null && speedKmS <= targetSpeedKmS)
+                return points;
+
             elapsedMs += intervalMs;
         }
 
@@ -454,6 +469,18 @@ internal sealed class NavigationTrajectoryProjector
             plan = step.RemainingPlan;
             if (step.IsArrived)
             {
+                // A ship that cannot out-pace the target (equal or slower speed) can
+                // never close the remaining distance — mirrors SimulationEngine
+                // .ApplyApproachStep's own check. The fly-through curve was built to
+                // arrive with the ship's heading EXACTLY matching the target's own
+                // heading (that is what a Dubins curve to a given heading guarantees),
+                // so stopping right here already shows the achievable goal — trailing
+                // behind the target, moving in its same direction — instead of drawing
+                // an endless chase line toward a live-tracking Final phase a slower
+                // ship could never actually complete.
+                if (speedKmS <= targetSpeedKmS)
+                    return points; // (x, y) is already the last point added below
+
                 // AdvanceFlyThroughPlan's arrival is bookkeeping-based (cumulative
                 // travelled distance against the planned segment lengths), not a
                 // position/heading match — so the ship's actually-tracked (x, y, direction)

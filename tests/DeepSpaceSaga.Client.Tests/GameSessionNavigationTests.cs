@@ -452,7 +452,11 @@ public class GameSessionNavigationTests
         // line that shoots far past the target after the ship's course happens to pass close
         // by it early in the chase. The fix must instead stop the line once the distance to
         // the aim point has stopped improving for a sustained stretch, at the closest point
-        // actually reached.
+        // actually reached. (This scenario is a direct Final-phase entry, not a fly-through
+        // hand-off, so the faster deterministic unreachable-by-speed check does not apply
+        // here — see its own doc-comment: a direct entry's aim point is held fixed for the
+        // whole call, never extrapolated, so "target speed" describes nothing actually
+        // receding within this one call.)
         var ship = new ObjectMotionSnapshot(
             "ship",
             X: 0, Y: 0,

@@ -2616,6 +2616,24 @@ public sealed class SimulationEngine : IDisposable
 
             if (flyThroughStep.IsArrived || liveArrival.IsArrived)
             {
+                // A ship that cannot out-pace the target (equal or slower) can never
+                // truly close the remaining distance no matter how it steers — chasing
+                // on into a live-tracking Final-phase pursuit (below) would just repeat
+                // forever, since the gap never shrinks. The fly-through curve was built
+                // to arrive with the ship's heading EXACTLY matching the target's own
+                // heading (that is what a Dubins curve to a (position, heading) pose
+                // guarantees) — so stopping right here already delivers the achievable
+                // goal: the ship ends up trailing behind the target, moving in its same
+                // direction, even though it can never draw level with it. Complete the
+                // command at the ship's own physically-tracked position (no teleport).
+                if (shipMotion.SpeedKmS <= targetMotion.SpeedKmS)
+                {
+                    return UpdateEngineMotion(
+                        obj, moduleIndex, gameTimeMs,
+                        module => module with { ActiveCycle = null },
+                        motion => motion with { Direction = NormalizeDirection(flyThroughStep.NewDirectionDegrees) });
+                }
+
                 if (nextCycle is not null)
                 {
                     // The Dubins curve only ever aimed at the target's pose CAPTURED WHEN
@@ -2734,6 +2752,23 @@ public sealed class SimulationEngine : IDisposable
                 {
                     Direction = NormalizeDirection(targetMotion.Direction)
                 });
+        }
+
+        // A ship that cannot out-pace the target (equal or slower speed) can never
+        // close the remaining distance no matter how long it chases — the gap never
+        // shrinks. But once its course has locked onto the bearing to the (receding)
+        // aim point, that bearing sits directly on the target's own line of motion
+        // (the aim point is on that line, whether it's the Trail phase's staging point
+        // or the target itself in Final phase) — so a locked course already means the
+        // ship is genuinely moving in the SAME direction as the target. Settle for
+        // that — trailing behind, matched course, never catching up — instead of
+        // repeating the cycle forever chasing a gap that can never close.
+        if (result.LockedCourseDegrees is not null && shipMotion.SpeedKmS <= targetMotion.SpeedKmS)
+        {
+            return UpdateEngineMotion(
+                obj, moduleIndex, gameTimeMs,
+                module => module with { ActiveCycle = null },
+                motion => motion with { Direction = NormalizeDirection(targetMotion.Direction) });
         }
 
         if (nextCycle is not null)

@@ -516,6 +516,72 @@ public class ApproachCommandTests
         Assert.Equal(TargetId, PlayerShipFrom(afterDock).DockedStationObjectId);
     }
 
+    [Fact]
+    public void Approach_against_a_faster_target_settles_for_a_matched_trailing_course_via_fly_through()
+    {
+        // Real user-reported case: a target the ship cannot out-run (1.2 km/s vs the
+        // ship's 0.7 km/s) — no tail chase can ever close that gap, geometry aside. The
+        // ship also starts facing ~180° away from the target, forcing the fly-through
+        // re-orientation curve (matches the reported "loop, then long diagonal that
+        // never quite reaches the target" symptom). Before this fix, neither the
+        // curve's own bookkeeping-based arrival nor a subsequent Final-phase pursuit
+        // ever recognizes "this can never be caught" — the command just auto-repeats
+        // forever, the separation growing without bound. The achievable goal instead:
+        // settle for trailing behind the target, moving in its exact same
+        // direction — which a Dubins curve already guarantees at its endpoint (it is
+        // built to arrive facing the specified heading), so completing right there
+        // delivers it.
+        var engine = CreateEngine(
+            shipX: 0, shipY: 0, shipSpeedMps: 700, shipDirectionDegrees: 0,
+            targetX: 0, targetY: 450, targetSpeedMps: 1200, targetDirectionDegrees: 22,
+            turnStepDegrees: 1, angularInertiaDegPerSec: 4, trailDistanceKm: 1);
+
+        engine.ReceiveCommand(ApproachCommand());
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        ObjectMotionSnapshot? ship = null;
+        for (long t = 250; t <= 300_000; t += 250)
+        {
+            ship = PlayerShipFrom(engine.CaptureSnapshotForTests(t, SimulationSpeed.Speed1));
+            if (ship.ActiveEngineCommandType is null)
+                break;
+        }
+
+        Assert.NotNull(ship);
+        Assert.Null(ship!.ActiveEngineCommandType); // completed — not stuck chasing forever
+        Assert.Equal(22, ship.Direction, precision: 6); // exact course match with the faster target
+        Assert.Equal(0.7, ship.SpeedKmS, precision: 6); // Approach never changes speed
+    }
+
+    [Fact]
+    public void Approach_against_a_faster_target_settles_for_a_matched_trailing_course_via_final_phase()
+    {
+        // Same "unreachable by speed" scenario as the fly-through regression above, but
+        // forced straight into the Step()-based Final-phase path (trailDistanceKm: 0
+        // skips fly-through entirely) — covers that path's own separate "give up,
+        // matched course" check.
+        var engine = CreateEngine(
+            shipX: 0, shipY: 20000, shipSpeedMps: 700, shipDirectionDegrees: 90,
+            targetX: 10000, targetY: 10000, targetSpeedMps: 1200, targetDirectionDegrees: 45,
+            turnStepDegrees: 1, angularInertiaDegPerSec: 4, trailDistanceKm: 0);
+
+        engine.ReceiveCommand(ApproachCommand());
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        ObjectMotionSnapshot? ship = null;
+        for (long t = 250; t <= 300_000; t += 250)
+        {
+            ship = PlayerShipFrom(engine.CaptureSnapshotForTests(t, SimulationSpeed.Speed1));
+            if (ship.ActiveEngineCommandType is null)
+                break;
+        }
+
+        Assert.NotNull(ship);
+        Assert.Null(ship!.ActiveEngineCommandType);
+        Assert.Equal(45, ship.Direction, precision: 6);
+        Assert.Equal(0.7, ship.SpeedKmS, precision: 6);
+    }
+
     /// <summary>
     /// Same trailing-aim-point geometry as <see cref="DeepSpaceSaga.Motion.ApproachPursuitMath.ComputeAimPoint"/>,
     /// duplicated here (rather than referencing it) so the test's expected value is

@@ -206,7 +206,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             state, elapsedMs, state.TurnStepRemainingMs, intervalMs, turnStep,
             state.X, state.Y, state.Direction, state.NavigationLockedCourseDegrees,
             trailDistance, approachPhase, bakedAimX, bakedAimY,
-            targetDirectionDegrees, targetSpeedKmS);
+            targetDirectionDegrees, targetSpeedKmS, aimPointIsLiveExtrapolated: false);
     }
 
     /// <summary>
@@ -214,6 +214,15 @@ public sealed class LinearMotionPredictor : IMotionPredictor
     /// <see cref="PredictApproach"/>'s direct entry and <see cref="PredictFlyThrough"/>'s
     /// hand-off once its Dubins re-orientation curve completes.
     /// </summary>
+    /// <param name="aimPointIsLiveExtrapolated">
+    /// True only for the fly-through hand-off, whose aim point was just extrapolated to
+    /// the target's LIVE position at this instant — there, a locked course genuinely
+    /// means the ship is chasing a moving point it may never catch, so the
+    /// unreachable-by-speed check below applies. The direct-entry case deliberately
+    /// treats its baked aim point as fixed for this whole call (never extrapolating a
+    /// future guess), so "target speed" describes nothing actually receding there; that
+    /// case relies on repeated re-baking across snapshots instead.
+    /// </param>
     private static ObjectMotionSnapshot RunApproachPursuit(
         ObjectMotionSnapshot state,
         long remainingMs,
@@ -229,7 +238,8 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         double aimBaseX,
         double aimBaseY,
         double targetDirectionDegrees,
-        double targetSpeedKmS)
+        double targetSpeedKmS,
+        bool aimPointIsLiveExtrapolated)
     {
         while (remainingMs > 0)
         {
@@ -269,6 +279,19 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 
                     AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, remainingMs);
                     return ClearNavigation(state, x, y, direction, untilNextTurnMs);
+                }
+
+                // A ship that cannot out-pace the target (equal or slower speed) can
+                // never close the remaining distance, no matter how long it chases —
+                // mirrors SimulationEngine.ApplyApproachStep's own check. Once locked
+                // onto the bearing to the (receding) aim point, that bearing sits
+                // directly on the target's own line of motion, so a locked course
+                // already means the ship is genuinely moving in the target's own
+                // direction — settle for that instead of predicting an endless chase.
+                if (aimPointIsLiveExtrapolated && lockedCourse is not null && state.SpeedKmS <= targetSpeedKmS)
+                {
+                    AdvanceStraight(ref x, ref y, state.SpeedKmS, targetDirectionDegrees, remainingMs);
+                    return ClearNavigation(state, x, y, targetDirectionDegrees, untilNextTurnMs);
                 }
             }
 
@@ -353,6 +376,18 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 
             if (step.IsArrived)
             {
+                // A ship that cannot out-pace the target (equal or slower speed) can
+                // never close the remaining distance no matter how long it chases —
+                // mirrors SimulationEngine.ApplyApproachStep's own check. The fly-through
+                // curve was built to arrive with the ship's heading EXACTLY matching the
+                // target's own heading (that is what a Dubins curve to a given heading
+                // guarantees), so stopping right here already delivers the achievable
+                // goal — trailing behind the target, moving in its same direction —
+                // instead of predicting an endless chase toward a live-tracking Final
+                // phase that a slower ship could never actually complete.
+                if (state.SpeedKmS <= targetSpeedKmS)
+                    return ClearNavigation(state, x, y, targetDirectionDegrees, untilNextTurnMs);
+
                 // The Dubins curve only ever aimed at the target's pose CAPTURED WHEN
                 // THIS LEG WAS PLANNED, and its arrival is bookkeeping-based (cumulative
                 // travelled distance vs. planned segment lengths) — the tracked (x, y)
@@ -373,7 +408,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
                     x, y, direction, lockedCourse: null, trailDistance: 0,
                     approachPhase: ApproachPursuitMath.FinalPhase,
                     aimBaseX: liveTargetX, aimBaseY: liveTargetY,
-                    targetDirectionDegrees, targetSpeedKmS);
+                    targetDirectionDegrees, targetSpeedKmS, aimPointIsLiveExtrapolated: true);
             }
         }
 
