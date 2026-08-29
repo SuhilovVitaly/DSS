@@ -166,13 +166,9 @@ public sealed class LinearMotionPredictor : IMotionPredictor
     /// <summary>
     /// Client-side prediction for an active <see cref="NavigationComputerCommandTypes.Approach"/>
     /// cycle. Unlike <see cref="PredictNavigation"/> (Orbit), the aim point itself is never
-    /// permanently locked — it is re-derived from the target's baked speed/direction every
-    /// cycle boundary, exactly mirroring the Engine's own per-cycle re-aim (Checkpoint 1: both
-    /// sides extrapolate the same baked aim point forward via
-    /// <see cref="ApproachPursuitMath.ExtrapolatePosition"/> and re-steer via
-    /// <see cref="ApproachPursuitMath.Step"/> — passing the extrapolated point as the "target
-    /// position" with trailDistanceWorldUnits=0, since the aim point moves with exactly the
-    /// target's velocity and no further trailing offset needs to be applied to it). The
+    /// permanently locked — the authoritative engine re-derives it from the target's live
+    /// state every cycle. Between snapshots the client deliberately keeps the baked aim
+    /// point fixed instead of extrapolating an assumed linear future for the target. The
     /// cycle-scoped course lock (<see cref="ApproachPursuitMath.Step"/>'s
     /// <c>lockedCourseDegrees</c>, story-20260827-083137.md Post-implementation bug fix #2)
     /// is threaded the same way <see cref="PredictNavigation"/> threads Orbit's, starting from
@@ -190,6 +186,12 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         if (elapsedMs <= 0)
             return state;
 
+        if (ApproachPursuitMath.IsFlyThroughPhase(state.NavigationPhase))
+        {
+            return PredictFlyThrough(
+                state, elapsedMs, bakedAimX, bakedAimY, targetDirectionDegrees);
+        }
+
         int turnStep = Math.Abs(state.TurnStepDegrees);
         if (turnStep == 0 || state.TurnStepIntervalMs <= 0)
             return PredictStraight(state, elapsedMs, state.Direction);
@@ -201,16 +203,22 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         double y = state.Y;
         double direction = state.Direction;
         double? lockedCourse = state.NavigationLockedCourseDegrees;
+        double trailDistance = Math.Max(0, state.NavigationApproachTrailDistanceWorldUnits ?? 0);
+        string approachPhase = state.NavigationPhase == ApproachPursuitMath.TrailPhase && trailDistance > 0
+            ? ApproachPursuitMath.TrailPhase
+            : ApproachPursuitMath.FinalPhase;
+        double aimBaseX = bakedAimX;
+        double aimBaseY = bakedAimY;
 
         while (remainingMs > 0)
         {
             if (untilNextTurnMs == 0)
             {
-                // Elapsed time since the bake this state was captured at — the same
-                // reference frame the Engine bakes NavigationTargetX/Y/Speed/Direction in.
-                long elapsedSinceBakeMs = elapsedMs - remainingMs;
-                var (aimX, aimY) = ApproachPursuitMath.ExtrapolatePosition(
-                    bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, elapsedSinceBakeMs);
+                // Use only the current snapshot's target state. The server will re-read
+                // the real target on its next cycle; client-side linear extrapolation
+                // made the preview chase an invented distant future position.
+                double aimX = aimBaseX;
+                double aimY = aimBaseY;
 
                 var step = ApproachPursuitMath.Step(
                     x, y, direction, state.SpeedKmS,
@@ -227,6 +235,16 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 
                 if (step.IsArrived)
                 {
+                    if (approachPhase == ApproachPursuitMath.TrailPhase)
+                    {
+                        double angleRad = targetDirectionDegrees * Math.PI / 180.0;
+                        aimBaseX = aimX + trailDistance * Math.Sin(angleRad);
+                        aimBaseY = aimY - trailDistance * Math.Cos(angleRad);
+                        approachPhase = ApproachPursuitMath.FinalPhase;
+                        lockedCourse = null;
+                        continue;
+                    }
+
                     AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, remainingMs);
                     return ClearNavigation(state, x, y, direction, untilNextTurnMs);
                 }
@@ -245,6 +263,96 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             Direction = direction,
             TurnStepRemainingMs = untilNextTurnMs,
             NavigationLockedCourseDegrees = lockedCourse,
+            NavigationTargetX = aimBaseX,
+            NavigationTargetY = aimBaseY,
+            NavigationPhase = approachPhase,
+        };
+    }
+
+    private static ObjectMotionSnapshot PredictFlyThrough(
+        ObjectMotionSnapshot state,
+        long elapsedMs,
+        double targetX,
+        double targetY,
+        double targetDirectionDegrees)
+    {
+        long intervalMs = Math.Max(1, state.TurnStepIntervalMs);
+        long remainingMs = elapsedMs;
+        long untilNextTurnMs = Math.Max(1, state.TurnStepRemainingMs);
+        double x = state.X;
+        double y = state.Y;
+        double direction = state.Direction;
+        string phase = state.NavigationPhase!;
+        ApproachFlyThroughPlan? plan = null;
+
+        if (phase.StartsWith(ApproachPursuitMath.FlyThroughPhasePrefix, StringComparison.Ordinal))
+        {
+            plan = new ApproachFlyThroughPlan(
+                phase[ApproachPursuitMath.FlyThroughPhasePrefix.Length..],
+                state.NavigationEscapeCourseDegrees ?? 0,
+                state.NavigationRequiredDepartureDistance ?? 0,
+                state.NavigationLockedCourseDegrees ?? 0);
+        }
+
+        while (remainingMs > 0)
+        {
+            long segmentMs = Math.Min(remainingMs, untilNextTurnMs);
+            AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, segmentMs);
+            remainingMs -= segmentMs;
+            untilNextTurnMs -= segmentMs;
+            if (untilNextTurnMs > 0)
+                continue;
+
+            ApproachFlyThroughPlanStep step;
+            if (plan is null)
+            {
+                plan = ApproachPursuitMath.CreateFlyThroughPlan(
+                    x, y, direction, state.SpeedKmS,
+                    targetX, targetY, targetDirectionDegrees,
+                    state.NavigationAngularInertiaDegPerSec);
+                step = ApproachPursuitMath.AdvanceFlyThroughPlan(
+                    plan.Value, direction, targetDirectionDegrees,
+                    travelledUnits: 0,
+                    turnStepDegrees: Math.Abs(state.TurnStepDegrees));
+            }
+            else
+            {
+                double travelledUnits = state.SpeedKmS * (intervalMs / 1000.0) * 10.0;
+                step = ApproachPursuitMath.AdvanceFlyThroughPlan(
+                    plan.Value, direction, targetDirectionDegrees,
+                    travelledUnits,
+                    Math.Abs(state.TurnStepDegrees));
+            }
+
+            direction = step.NewDirectionDegrees;
+            plan = step.RemainingPlan;
+            untilNextTurnMs = intervalMs;
+
+            if (step.IsArrived)
+            {
+                x = targetX;
+                y = targetY;
+                AdvanceStraight(ref x, ref y, state.SpeedKmS, targetDirectionDegrees, remainingMs);
+                return ClearNavigation(
+                    state, x, y, targetDirectionDegrees, untilNextTurnMs);
+            }
+        }
+
+        var remainingPlan = plan;
+        return state with
+        {
+            X = x,
+            Y = y,
+            Direction = direction,
+            TurnStepRemainingMs = untilNextTurnMs,
+            NavigationPhase = remainingPlan is null
+                ? ApproachPursuitMath.FlyThroughPendingPhase
+                : ApproachPursuitMath.FlyThroughPhasePrefix + remainingPlan.Value.Type,
+            NavigationEscapeCourseDegrees = remainingPlan?.FirstRemainingUnits,
+            NavigationRequiredDepartureDistance = remainingPlan?.SecondRemainingUnits,
+            NavigationLockedCourseDegrees = remainingPlan?.ThirdRemainingUnits,
+            NavigationTargetX = targetX,
+            NavigationTargetY = targetY
         };
     }
 
@@ -297,6 +405,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             NavigationRequiredDepartureDistance = null,
             NavigationTargetSpeedKmS = null,
             NavigationTargetDirectionDegrees = null,
+            NavigationApproachTrailDistanceWorldUnits = null,
         };
     }
 

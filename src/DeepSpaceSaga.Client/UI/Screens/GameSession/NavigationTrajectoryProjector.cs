@@ -41,6 +41,23 @@ internal sealed class NavigationTrajectoryProjector
     private const int ApproachTrajectoryMaxIterations = 20_000;
 
     /// <summary>
+    /// If <see cref="ProjectApproach"/>'s distance to the (possibly moving) aim point hasn't
+    /// improved on its best-so-far value in this many milliseconds of simulated flight, the
+    /// chase is treated as stalled and the preview is truncated at the closest point actually
+    /// reached — rather than continuing all the way to <see cref="ApproachTrajectoryMaxHorizonMs"/>.
+    /// Without this, a target the ship can only almost (but never quite, within
+    /// <see cref="ApproachPursuitMath.ArrivalToleranceUnits"/>) catch — e.g. marginally faster,
+    /// or on a course the ship can only asymptotically approach — draws a preview line that
+    /// passes right by the target early on and then keeps extending far past it in a long,
+    /// visually wrong "escaping" straight line for the full 2000s backstop. Comfortably above
+    /// the slowest legitimate warm-up (turning up to ~180° to face the target before any
+    /// distance closes at all) for the smallest turn-rate content uses — a full 180° turn at
+    /// module.engine.basic's 1°/250ms takes ~45s — while still cutting the line off within
+    /// roughly a couple of minutes of simulated flight instead of the full 2000s cap.
+    /// </summary>
+    private const long ApproachStagnationTimeoutMs = 180_000;
+
+    /// <summary>
     /// Compute future world-coordinate trajectory points for an active navigation
     /// cycle, starting from the current predicted state. Empty when the snapshot does
     /// not carry an authoritative navigation target (no active navigate cycle).
@@ -161,12 +178,9 @@ internal sealed class NavigationTrajectoryProjector
     /// Preview trajectory for an active <see cref="NavigationComputerCommandTypes.Approach"/>
     /// cycle. Structurally mirrors the Orbit branch above (initial straight "wait" phase
     /// until the first cycle boundary, then one steering decision per interval), but unlike
-    /// it (a) never locks a PERMANENT course — at each boundary the baked aim point is
-    /// extrapolated forward via <see cref="ApproachPursuitMath.ExtrapolatePosition"/> using
-    /// the target's baked speed/direction, then re-steered via
-    /// <see cref="ApproachPursuitMath.Step"/> (passing the extrapolated point as the "target
-    /// position" with trailDistanceWorldUnits=0 — see LinearMotionPredictor.PredictApproach
-    /// for the identical fit and its rationale), threading Step's cycle-scoped course lock the
+    /// it (a) never locks a PERMANENT course — it re-steers toward the current snapshot's
+    /// fixed aim point via <see cref="ApproachPursuitMath.Step"/> without assuming that the
+    /// target will continue linearly, threading Step's cycle-scoped course lock the
     /// same way, and (b) runs until actual arrival rather than truncating at the fixed
     /// <see cref="FutureTrajectoryHorizonMs"/> (Post-implementation bug fix #2 — see
     /// <see cref="ApproachTrajectoryMaxHorizonMs"/>'s doc-comment for the safety-bound
@@ -179,6 +193,12 @@ internal sealed class NavigationTrajectoryProjector
         double targetDirectionDegrees,
         double targetSpeedKmS)
     {
+        if (ApproachPursuitMath.IsFlyThroughPhase(predicted.NavigationPhase))
+        {
+            return ProjectFlyThrough(
+                predicted, bakedAimX, bakedAimY, targetDirectionDegrees);
+        }
+
         var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
 
         double x = predicted.X;
@@ -186,37 +206,109 @@ internal sealed class NavigationTrajectoryProjector
         double direction = predicted.Direction;
         double speedKmS = predicted.SpeedKmS;
         double? lockedCourse = predicted.NavigationLockedCourseDegrees;
+        double trailDistance = Math.Max(0, predicted.NavigationApproachTrailDistanceWorldUnits ?? 0);
+        string approachPhase = predicted.NavigationPhase == ApproachPursuitMath.TrailPhase && trailDistance > 0
+            ? ApproachPursuitMath.TrailPhase
+            : ApproachPursuitMath.FinalPhase;
+
+        // The baked point is phase-relative: the trailing staging point during Trail,
+        // and the target itself during Final. When Trail completes, this base is moved
+        // forward by the configured offset so projection continues to the real target.
+        double aimBaseX = bakedAimX;
+        double aimBaseY = bakedAimY;
 
         int turnStepDegrees = Math.Max(1, Math.Abs(predicted.TurnStepDegrees));
         long intervalMs = Math.Max(1, predicted.TurnStepIntervalMs);
         long phaseMs = Math.Max(1, predicted.TurnStepRemainingMs);
 
+        // Preview deliberately treats the target state from the current snapshot as
+        // fixed. The authoritative engine will re-read the real target next cycle;
+        // guessing a long linear future here produced misleading off-screen routes.
+        (double X, double Y) AimAt(long _) => (aimBaseX, aimBaseY);
+
+        bool ContinueFromTrailToTarget(long elapsedMs, double trailAimX, double trailAimY)
+        {
+            if (approachPhase != ApproachPursuitMath.TrailPhase)
+                return false;
+
+            double angleRad = targetDirectionDegrees * Math.PI / 180.0;
+            aimBaseX = trailAimX + trailDistance * Math.Sin(angleRad);
+            aimBaseY = trailAimY - trailDistance * Math.Cos(angleRad);
+            approachPhase = ApproachPursuitMath.FinalPhase;
+            lockedCourse = null;
+            return true;
+        }
+
         points.Add(new FutureTrajectoryPoint(x, y));
 
         // Phase until the first cycle boundary: straight flight with the CURRENT course.
+        // Unlike every subsequent interval (each covered by ApproachPursuitMath.Step's own
+        // segment-sweep arrival check), this phase segment runs with no steering decision at
+        // all, so it needs its own arrival check here — otherwise a ship already close to
+        // (or aimed straight at) the target flies straight through it during this very first
+        // segment and the preview keeps extending past the target instead of stopping there.
+        double phaseStartX = x, phaseStartY = y;
         (x, y) = AdvanceStraight(x, y, direction, speedKmS, phaseMs);
-        points.Add(new FutureTrajectoryPoint(x, y));
 
-        // Runs until actual arrival (IsArrived), bounded by ApproachTrajectoryMaxHorizonMs/
-        // ApproachTrajectoryMaxIterations as a safety backstop only — see their doc-comments.
-        // If the loop ever exhausts a bound WITHOUT arriving, that is not automatically a
-        // bug: a stalled ship (SpeedKmS≈0) or one simply slower than a fleeing target can
-        // never geometrically catch it, and legitimately exhausts the bound every time. A
-        // hard assertion was considered here (the fix's design notes suggested "surface
-        // it, don't silently swallow it") but rejected — a pure client-side projector has
-        // no business running a reachability check to tell that ordinary case apart from
-        // an actual residual convergence bug, so a hard assert would false-fire on the
-        // ordinary case. In that situation the caller simply gets the last few points
-        // computed before the bound — an honest "still converging as of the safety bound"
-        // preview, not a guaranteed-complete trajectory.
+        var (phaseAimX, phaseAimY) = AimAt(phaseMs);
+        var phaseArrival = ApproachPursuitMath.CheckSegmentArrival(
+            phaseStartX, phaseStartY, x, y, phaseAimX, phaseAimY);
+        if (phaseArrival.IsArrived)
+        {
+            // Arrival is tolerance-based, but the rendered route is a promise to the
+            // player: it must visually terminate on the navigation aim point itself.
+            // Keeping ClosestX/Y here leaves a visible gap at high zoom whenever the
+            // straight phase passes near (rather than exactly through) the aim point.
+            points.Add(new FutureTrajectoryPoint(phaseAimX, phaseAimY));
+            if (!ContinueFromTrailToTarget(phaseMs, phaseAimX, phaseAimY))
+                return points;
+
+            x = phaseAimX;
+            y = phaseAimY;
+        }
+        else
+        {
+            points.Add(new FutureTrajectoryPoint(x, y));
+        }
+
+        // Runs until actual arrival (IsArrived) or a stagnation timeout (see
+        // ApproachStagnationTimeoutMs), bounded by ApproachTrajectoryMaxHorizonMs/
+        // ApproachTrajectoryMaxIterations as an outer safety backstop only — see their
+        // doc-comments. If the loop ever exhausts a bound WITHOUT arriving, that is not
+        // automatically a bug: a stalled ship (SpeedKmS≈0) or one simply slower than a
+        // fleeing target can never geometrically catch it, and legitimately exhausts the
+        // bound every time. A hard assertion was considered here (the fix's design notes
+        // suggested "surface it, don't silently swallow it") but rejected — a pure
+        // client-side projector has no business running a reachability check to tell that
+        // ordinary case apart from an actual residual convergence bug, so a hard assert
+        // would false-fire on the ordinary case. In that situation the caller simply gets
+        // the points computed up to the closest approach reached — an honest "this is as
+        // close as it gets" preview, not a guaranteed-complete trajectory.
         long elapsedMs = phaseMs;
         int iterations = 0;
+        double bestDistanceToAim = double.MaxValue;
+        long bestDistanceElapsedMs = elapsedMs;
+        int bestDistancePointIndex = points.Count - 1;
         while (elapsedMs < ApproachTrajectoryMaxHorizonMs && iterations < ApproachTrajectoryMaxIterations)
         {
             iterations++;
 
-            var (aimX, aimY) = ApproachPursuitMath.ExtrapolatePosition(
-                bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS, elapsedMs);
+            var (aimX, aimY) = AimAt(elapsedMs);
+
+            double distanceToAim = Math.Sqrt((aimX - x) * (aimX - x) + (aimY - y) * (aimY - y));
+            if (distanceToAim < bestDistanceToAim)
+            {
+                bestDistanceToAim = distanceToAim;
+                bestDistanceElapsedMs = elapsedMs;
+                bestDistancePointIndex = points.Count - 1;
+            }
+            else if (elapsedMs - bestDistanceElapsedMs >= ApproachStagnationTimeoutMs)
+            {
+                points.RemoveRange(bestDistancePointIndex + 1, points.Count - bestDistancePointIndex - 1);
+                var (fixedAimX, fixedAimY) = AimAt(bestDistanceElapsedMs);
+                points.Add(new FutureTrajectoryPoint(fixedAimX, fixedAimY));
+                return points;
+            }
 
             var step = ApproachPursuitMath.Step(
                 x, y, direction, speedKmS,
@@ -233,7 +325,15 @@ internal sealed class NavigationTrajectoryProjector
             if (step.IsArrived)
             {
                 points.Add(new FutureTrajectoryPoint(aimX, aimY));
-                break;
+                if (!ContinueFromTrailToTarget(elapsedMs, aimX, aimY))
+                    return points;
+
+                x = aimX;
+                y = aimY;
+                bestDistanceToAim = double.MaxValue;
+                bestDistanceElapsedMs = elapsedMs;
+                bestDistancePointIndex = points.Count - 1;
+                continue;
             }
 
             (x, y) = AdvanceStraight(x, y, direction, speedKmS, intervalMs);
@@ -242,6 +342,85 @@ internal sealed class NavigationTrajectoryProjector
             elapsedMs += intervalMs;
         }
 
+        var (finalAimX, finalAimY) = AimAt(elapsedMs);
+        points.Add(new FutureTrajectoryPoint(finalAimX, finalAimY));
+
+        return points;
+    }
+
+    private static List<FutureTrajectoryPoint> ProjectFlyThrough(
+        ObjectMotionSnapshot predicted,
+        double targetX,
+        double targetY,
+        double targetDirectionDegrees)
+    {
+        var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
+        double x = predicted.X;
+        double y = predicted.Y;
+        double direction = predicted.Direction;
+        double speedKmS = predicted.SpeedKmS;
+        long intervalMs = Math.Max(1, predicted.TurnStepIntervalMs);
+        long untilNextTurnMs = Math.Max(1, predicted.TurnStepRemainingMs);
+        string phase = predicted.NavigationPhase!;
+        ApproachFlyThroughPlan? plan = null;
+
+        if (phase.StartsWith(ApproachPursuitMath.FlyThroughPhasePrefix, StringComparison.Ordinal))
+        {
+            plan = new ApproachFlyThroughPlan(
+                phase[ApproachPursuitMath.FlyThroughPhasePrefix.Length..],
+                predicted.NavigationEscapeCourseDegrees ?? 0,
+                predicted.NavigationRequiredDepartureDistance ?? 0,
+                predicted.NavigationLockedCourseDegrees ?? 0);
+        }
+
+        points.Add(new FutureTrajectoryPoint(x, y));
+        (x, y) = AdvanceStraight(x, y, direction, speedKmS, untilNextTurnMs);
+        points.Add(new FutureTrajectoryPoint(x, y));
+
+        int iterations = 0;
+        while (iterations++ < ApproachTrajectoryMaxIterations)
+        {
+            ApproachFlyThroughPlanStep step;
+            if (plan is null)
+            {
+                plan = ApproachPursuitMath.CreateFlyThroughPlan(
+                    x, y, direction, speedKmS,
+                    targetX, targetY, targetDirectionDegrees,
+                    predicted.NavigationAngularInertiaDegPerSec);
+                step = ApproachPursuitMath.AdvanceFlyThroughPlan(
+                    plan.Value, direction, targetDirectionDegrees,
+                    travelledUnits: 0,
+                    turnStepDegrees: Math.Max(1, Math.Abs(predicted.TurnStepDegrees)));
+            }
+            else
+            {
+                double travelledUnits = speedKmS * (intervalMs / 1000.0) * 10.0;
+                step = ApproachPursuitMath.AdvanceFlyThroughPlan(
+                    plan.Value, direction, targetDirectionDegrees,
+                    travelledUnits,
+                    Math.Max(1, Math.Abs(predicted.TurnStepDegrees)));
+            }
+
+            direction = step.NewDirectionDegrees;
+            plan = step.RemainingPlan;
+            if (step.IsArrived)
+            {
+                double terminalAngleRad = targetDirectionDegrees * Math.PI / 180.0;
+                double terminalEntryDistance = Math.Max(
+                    ApproachPursuitMath.ArrivalToleranceUnits * 2,
+                    speedKmS * (intervalMs / 1000.0) * 20.0);
+                points.Add(new FutureTrajectoryPoint(
+                    targetX - terminalEntryDistance * Math.Sin(terminalAngleRad),
+                    targetY + terminalEntryDistance * Math.Cos(terminalAngleRad)));
+                points.Add(new FutureTrajectoryPoint(targetX, targetY));
+                return points;
+            }
+
+            (x, y) = AdvanceStraight(x, y, direction, speedKmS, intervalMs);
+            points.Add(new FutureTrajectoryPoint(x, y));
+        }
+
+        points.Add(new FutureTrajectoryPoint(targetX, targetY));
         return points;
     }
 

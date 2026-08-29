@@ -107,7 +107,7 @@
             "consumptionFactor": 1.0,
             "target": "object",
             "type": "module.engine",
-            "trailDistanceKm": 150
+            "trailDistanceKm": 1
         },
         {
             "typeId": "trade.refuel",

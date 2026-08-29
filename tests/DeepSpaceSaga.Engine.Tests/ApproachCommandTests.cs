@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Motion;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
@@ -70,8 +71,6 @@ public class ApproachCommandTests
         // reported, and it never self-corrected while paused. This test proves the
         // baked fields are already correct on the very first snapshot, with zero elapsed
         // time — i.e., even a permanently paused game shows the right data immediately.
-        var (expectedAimX, expectedAimY) = AimPointBehindStationary(
-            targetX: 10000, targetY: 10000, targetDirectionDegrees: 90, trailDistanceKm: 150);
         var engine = CreateEngine(
             shipX: 8500, shipY: 20000, shipSpeedMps: 0, shipDirectionDegrees: 0,
             targetX: 10000, targetY: 10000, targetSpeedMps: 1000, targetDirectionDegrees: 90,
@@ -84,17 +83,74 @@ public class ApproachCommandTests
         Assert.Equal(NavigationComputerCommandTypes.Approach, ship.ActiveEngineCommandType);
         Assert.NotNull(ship.NavigationTargetX);
         Assert.NotNull(ship.NavigationTargetY);
-        Assert.Equal(expectedAimX, ship.NavigationTargetX!.Value, precision: 6);
-        Assert.Equal(expectedAimY, ship.NavigationTargetY!.Value, precision: 6);
+        Assert.Equal(10000, ship.NavigationTargetX!.Value, precision: 6);
+        Assert.Equal(10000, ship.NavigationTargetY!.Value, precision: 6);
         Assert.NotNull(ship.NavigationTargetSpeedKmS);
         Assert.Equal(1.0, ship.NavigationTargetSpeedKmS!.Value, precision: 6);
         Assert.NotNull(ship.NavigationTargetDirectionDegrees);
         Assert.Equal(90, ship.NavigationTargetDirectionDegrees!.Value, precision: 6);
+        Assert.Equal(ApproachPursuitMath.FlyThroughPendingPhase, ship.NavigationPhase);
+        Assert.Equal(1500, ship.NavigationApproachTrailDistanceWorldUnits!.Value, precision: 6);
         Assert.True(ship.NavigationAngularInertiaDegPerSec > 0);
     }
 
     [Fact]
-    public void Approach_re_aims_every_cycle_toward_live_target_state()
+    public void Moving_target_is_flown_through_on_its_heading_without_changing_speed()
+    {
+        // Ship and target move right; the ship starts on the 10 km trailing point.
+        // Reaching it must switch Approach to Final rather than completing and
+        // synchronizing away from the selected object.
+        var engine = CreateEngine(
+            shipX: 9800, shipY: 10000, shipSpeedMps: 2000, shipDirectionDegrees: 90,
+            targetX: 10000, targetY: 10000, targetSpeedMps: 1000, targetDirectionDegrees: 90,
+            turnStepDegrees: 1, angularInertiaDegPerSec: 4, trailDistanceKm: 10);
+
+        engine.ReceiveCommand(ApproachCommand());
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        var completed = PlayerShipFrom(
+            engine.CaptureSnapshotForTests(15_000, SimulationSpeed.Speed1));
+        Assert.Null(completed.ActiveEngineCommandType);
+        Assert.Equal(2.0, completed.SpeedKmS, precision: 6);
+        Assert.Equal(90, completed.Direction, precision: 6);
+    }
+
+    [Fact]
+    public void Default_scenario_paused_at_start_bakes_current_asteroid_pose()
+    {
+        string scenarioPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory, "..", "..", "..", "..", "..",
+            "src", "DeepSpaceSaga.Client", "Scenarios", "Default", "scenario.json"));
+        string settingsPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory, "..", "..", "..", "..", "..",
+            "src", "DeepSpaceSaga.Client", "Settings.json"));
+
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settingsPath, out _, out _);
+        var engine = new SimulationEngine(registry);
+        engine.LoadScenario(ScenarioLoader.LoadFromFile(scenarioPath));
+        engine.ReceiveCommand(new PlayerCommand(
+            "cmd-default-asteroid", 1, "SPC-0001", "MOD-PLAYER-ENGINE-01",
+            NavigationComputerCommandTypes.Approach,
+            TargetObjectId: "SPC-0003"));
+
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
+        var ship = snapshot.Objects.Single(o => o.ObjectId == "SPC-0001");
+        var asteroid = snapshot.Objects.Single(o => o.ObjectId == "SPC-0003");
+
+        // The planner receives the exact current target pose. It computes the rear
+        // entry curve from ship turn radius after the first cycle boundary.
+        const double expectedTrailDistance = 10;
+        Assert.Equal(expectedTrailDistance,
+            ship.NavigationApproachTrailDistanceWorldUnits!.Value, precision: 6);
+        Assert.True(ship.NavigationApproachTrailDistanceWorldUnits < 400);
+
+        Assert.Equal(asteroid.X, ship.NavigationTargetX!.Value, precision: 6);
+        Assert.Equal(asteroid.Y, ship.NavigationTargetY!.Value, precision: 6);
+        Assert.Equal(ApproachPursuitMath.FlyThroughPendingPhase, ship.NavigationPhase);
+    }
+
+    [Fact]
+    public void Approach_holds_the_current_target_pose_instead_of_extrapolating_it()
     {
         // Target moves at a constant 1.0 km/s along direction 90 (+X). The ship starts
         // far south of the initial aim point with speed 0 (isolating pure steering from
@@ -114,24 +170,20 @@ public class ApproachCommandTests
         engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1); // cycle #1 starts (StartedGameTimeMs = 0)
 
         var afterCycle1 = PlayerShipFrom(engine.CaptureSnapshotForTests(250, SimulationSpeed.Speed1));
-        Assert.Equal(80, afterCycle1.Direction, precision: 3);
+        Assert.Equal(90, afterCycle1.Direction, precision: 3);
         Assert.Equal(1.0, afterCycle1.NavigationTargetSpeedKmS!.Value, precision: 6);
         Assert.Equal(90, afterCycle1.NavigationTargetDirectionDegrees!.Value, precision: 6);
         double aimX1 = afterCycle1.NavigationTargetX!.Value;
 
+        Assert.StartsWith(ApproachPursuitMath.FlyThroughPhasePrefix, afterCycle1.NavigationPhase);
         var afterCycle2 = PlayerShipFrom(engine.CaptureSnapshotForTests(500, SimulationSpeed.Speed1));
-        Assert.Equal(70, afterCycle2.Direction, precision: 3);
         double aimX2 = afterCycle2.NavigationTargetX!.Value;
 
         var afterCycle3 = PlayerShipFrom(engine.CaptureSnapshotForTests(750, SimulationSpeed.Speed1));
-        Assert.Equal(60, afterCycle3.Direction, precision: 3);
         double aimX3 = afterCycle3.NavigationTargetX!.Value;
 
-        // The aim point keeps moving forward (+X) each cycle as the target advances —
-        // proof the aim point is re-derived from the target's live position every cycle,
-        // not locked from the first read.
-        Assert.True(aimX2 > aimX1);
-        Assert.True(aimX3 > aimX2);
+        Assert.Equal(aimX1, aimX2, precision: 6);
+        Assert.Equal(aimX1, aimX3, precision: 6);
 
         // Still cycling — not completed.
         Assert.Equal(NavigationComputerCommandTypes.Approach, afterCycle3.ActiveEngineCommandType);
@@ -163,8 +215,17 @@ public class ApproachCommandTests
         // world unit distance alone would take ~33 simulated seconds; even a wide
         // pursuit loop around it (which the fix must avoid needing) stays well inside
         // this 200s budget.
-        var snapshot = engine.CaptureSnapshotForTests(200_000, SimulationSpeed.Speed1);
-        var ship = PlayerShipFrom(snapshot);
+        ObjectMotionSnapshot? ship = null;
+        AuthoritativeSnapshot? snapshot = null;
+        for (long gameTimeMs = 250; gameTimeMs <= 200_000; gameTimeMs += 250)
+        {
+            snapshot = engine.CaptureSnapshotForTests(gameTimeMs, SimulationSpeed.Speed1);
+            ship = PlayerShipFrom(snapshot);
+            if (ship.ActiveEngineCommandType is null)
+                break;
+        }
+
+        Assert.NotNull(ship);
 
         // Cycle completed — the ship actually arrived and stopped auto-repeating,
         // instead of still circling/diverging after a generous time budget. Every
@@ -174,14 +235,14 @@ public class ApproachCommandTests
         // arrival — is asserted here, not the count.
         Assert.Null(ship.ActiveEngineCommandType);
         Assert.Equal(45, ship.Direction, precision: 6); // exact scalar match with the target
-        Assert.Equal(0, ship.SpeedKmS, precision: 6);
+        Assert.Equal(3, ship.SpeedKmS, precision: 6);
 
-        var completed = snapshot.ShipEvents.Last(e => e.EventType == ShipEventTypes.CommandCompleted);
+        var completed = snapshot!.ShipEvents.Last(e => e.EventType == ShipEventTypes.CommandCompleted);
         Assert.Null(completed.ReasonCode);
     }
 
     [Fact]
-    public void Approach_completes_with_exact_speed_and_direction_match_and_stops_repeating()
+    public void Approach_completes_with_direction_match_and_stops_repeating_without_changing_speed()
     {
         // Ship starts exactly at the (stationary) target's own position — the aim
         // point for a genuinely stationary target (Post-implementation bug fix #3,
@@ -265,13 +326,20 @@ public class ApproachCommandTests
         engine.ReceiveCommand(ApproachCommand());
         engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1); // cycle #1 starts
 
-        var snapshot = engine.CaptureSnapshotForTests(200_000, SimulationSpeed.Speed1);
-        var ship = PlayerShipFrom(snapshot);
+        ObjectMotionSnapshot? ship = null;
+        for (long gameTimeMs = 250; gameTimeMs <= 200_000; gameTimeMs += 250)
+        {
+            ship = PlayerShipFrom(engine.CaptureSnapshotForTests(gameTimeMs, SimulationSpeed.Speed1));
+            if (ship.ActiveEngineCommandType is null)
+                break;
+        }
+
+        Assert.NotNull(ship);
 
         // Cycle completed — the ship actually arrived, not still flying past.
-        Assert.Null(ship.ActiveEngineCommandType);
-        Assert.Equal(0, ship.Direction, precision: 6); // exact scalar match with the station
-        Assert.Equal(0, ship.SpeedKmS, precision: 6);
+        Assert.Null(ship!.ActiveEngineCommandType);
+        Assert.Equal(0, ship.Direction, precision: 6); // exact course match with the station
+        Assert.Equal(3, ship.SpeedKmS, precision: 6); // Approach never brakes
 
         double distanceFromStation = Math.Sqrt(
             (ship.X - 10000) * (ship.X - 10000) + (ship.Y - 10000) * (ship.Y - 10000));
@@ -381,7 +449,7 @@ public class ApproachCommandTests
     [Fact]
     public void Approach_completion_against_a_station_lets_dock_succeed_immediately_after()
     {
-        // End-to-end: Approach completes speed/direction-matched to a Station within
+        // End-to-end: Approach completes direction-matched to a Station within
         // Dock's <200km range — proves Dock's strict ~1e-6 epsilon check passes right
         // away, no manual sync command needed. Ship starts at the station's own
         // position — the aim point for a genuinely stationary target

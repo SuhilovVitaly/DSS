@@ -383,4 +383,44 @@ public class ApproachPursuitMathTests
 
         Assert.True(result.IsArrived);
     }
+
+    [Fact]
+    public void Default_asteroid_pose_uses_one_right_straight_right_tail_entry()
+    {
+        var plan = ApproachPursuitMath.CreateFlyThroughPlan(
+            shipX: 10000, shipY: 9998.25,
+            shipDirectionDegrees: 0,
+            shipSpeedKmS: 0.7,
+            targetX: 10400, targetY: 10000,
+            targetDirectionDegrees: 256,
+            angularInertiaDegPerSec: 4);
+
+        Assert.Equal("RSR", plan.Type);
+        Assert.InRange(plan.RemainingUnits, 700, 800);
+        Assert.True(plan.FirstRemainingUnits > 0);
+        Assert.True(plan.ThirdRemainingUnits > 0);
+    }
+
+    [Fact]
+    public void Fly_through_plan_finishes_with_exact_target_direction()
+    {
+        var plan = ApproachPursuitMath.CreateFlyThroughPlan(
+            10000, 9998.25, 0, 0.7,
+            10400, 10000, 256, 4);
+        double direction = 0;
+
+        var step = ApproachPursuitMath.AdvanceFlyThroughPlan(
+            plan, direction, 256, travelledUnits: 0, turnStepDegrees: 1);
+        for (int i = 0; i < 1000 && !step.IsArrived; i++)
+        {
+            direction = step.NewDirectionDegrees;
+            step = ApproachPursuitMath.AdvanceFlyThroughPlan(
+                step.RemainingPlan, direction, 256,
+                travelledUnits: 1.75,
+                turnStepDegrees: 1);
+        }
+
+        Assert.True(step.IsArrived);
+        Assert.Equal(256, step.NewDirectionDegrees, precision: 6);
+    }
 }

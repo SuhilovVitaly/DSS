@@ -307,11 +307,11 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
-    public void Approach_prediction_tracks_moving_target_like_the_authoritative_engine()
+    public void Approach_prediction_holds_current_target_point_until_next_snapshot()
     {
         // ТЗ (story-20260827-083137.md, U4): client-side LinearMotionPredictor must
-        // steer a navigation.approach cycle identically to the authoritative Engine
-        // over several un-refreshed seconds (no new snapshot arriving in between).
+        // steer toward the current baked point over several un-refreshed seconds
+        // without inventing future linear movement for the target.
         // Direction-convergence numbers (90 → 80 → 70 → 60) mirror
         // DeepSpaceSaga.Engine.Tests.ApproachCommandTests
         // .Approach_re_aims_every_cycle_toward_live_target_state's ship/target geometry,
@@ -356,6 +356,7 @@ public class GameSessionNavigationTests
         var afterCycle1 = predictor.Predict(state, 2000);
         Assert.Equal(80.0, afterCycle1.Direction, precision: 6);
         Assert.Equal(NavigationComputerCommandTypes.Approach, afterCycle1.ActiveEngineCommandType);
+        Assert.Equal(8500.0, afterCycle1.NavigationTargetX!.Value, precision: 6);
 
         var afterCycle2 = predictor.Predict(state, 3000);
         Assert.Equal(70.0, afterCycle2.Direction, precision: 6);
@@ -369,18 +370,20 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
-    public void Approach_trajectory_projection_turns_toward_the_extrapolated_moving_aim_point()
+    public void Approach_trajectory_projection_turns_toward_the_current_fixed_aim_point()
     {
         // Same scenario as the predictor test above, projected as a preview trajectory
-        // line: the aim point keeps moving (+X) as the target advances, so the projected
-        // course must keep turning cycle over cycle rather than freezing on the first
-        // bake — mirroring the Orbit turn-shape assertions further up this file.
+        // line: the aim point stays fixed at the current snapshot value. The ship
+        // needs a small non-zero speed here (unlike the predictor test, which only checks
+        // direction and is fine with SpeedKmS=0) — otherwise it can never close ANY distance
+        // on the aim point, and the stagnation cutoff (regression test further
+        // below) correctly truncates the preview to just the first couple of points.
         var projector = new NavigationTrajectoryProjector();
 
         var state = new ObjectMotionSnapshot(
             "ship",
             X: 8500, Y: 20000,
-            SpeedKmS: 0,
+            SpeedKmS: 1.5,
             Direction: 90,
             ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
             TurnStepDegrees: 10,
@@ -436,6 +439,192 @@ public class GameSessionNavigationTests
         // The last point must be the actual aim point, not a horizon-truncated position.
         Assert.Equal(0.0, points[^1].X, precision: 3);
         Assert.Equal(0.0, points[^1].Y, precision: 3);
+    }
+
+    [Fact]
+    public void Approach_trajectory_projection_stops_at_closest_approach_when_the_target_cannot_be_caught()
+    {
+        // Regression: a target that's marginally too fast (or on an angle the ship can only
+        // asymptotically approach) is never actually "arrived at" within
+        // ApproachPursuitMath.ArrivalToleranceUnits, so the old unconditional "run until
+        // IsArrived" loop kept extending the preview all the way to the generous
+        // ApproachTrajectoryMaxHorizonMs backstop (2000s) — drawing a long, visually wrong
+        // line that shoots far past the target after the ship's course happens to pass close
+        // by it early in the chase. The fix must instead stop the line once the distance to
+        // the aim point has stopped improving for a sustained stretch, at the closest point
+        // actually reached.
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 0,
+            SpeedKmS: 3,
+            Direction: 0,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 250,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: 0,
+            NavigationTargetY: 3000,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationTargetSpeedKmS: 3.05, // marginally faster than the ship (3) — unreachable
+            NavigationTargetDirectionDegrees: 90);
+
+        var projector = new NavigationTrajectoryProjector();
+        var points = projector.Project(ship);
+
+        // Proof the line was cut off well short of the old 2000s / 8000-point backstop, but
+        // still far enough in that this is a genuine stagnation cutoff, not an immediate
+        // false-positive truncation during the initial turn-toward-target warm-up.
+        int maxHorizonPoints = NavigationTrajectoryProjector.ApproachTrajectoryMaxHorizonMs / 250;
+        Assert.True(points.Count > 200,
+            $"Expected the ship to make real progress before the chase stalled, got only {points.Count} points.");
+        Assert.True(points.Count < maxHorizonPoints / 2,
+            $"Expected the projection to stop well short of the 2000s backstop, got {points.Count} points.");
+
+    }
+
+    [Fact]
+    public void Approach_trajectory_projection_stops_at_the_target_when_arrival_happens_in_the_initial_phase()
+    {
+        // Regression: the ship is already close enough, and already aimed straight at the
+        // stationary aim point, that it reaches (and would fly straight through) the target
+        // during ProjectApproach's very first "wait until the next cycle boundary" segment —
+        // before ApproachPursuitMath.Step (which has its own segment-sweep arrival check)
+        // ever runs. Before the fix, that initial segment had no arrival check at all, so the
+        // preview line kept extending past the target instead of stopping there.
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 100,
+            SpeedKmS: 5, // 50 world units/s
+            Direction: 0, // facing straight "up" (toward smaller Y) — straight at the target
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 5000, // phase alone covers 250 world units — well past the 100-unit gap
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: 0,
+            NavigationTargetY: 0,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationTargetSpeedKmS: 0, // stationary target/aim point — never moves
+            NavigationTargetDirectionDegrees: 0);
+
+        var projector = new NavigationTrajectoryProjector();
+        var points = projector.Project(ship);
+
+        Assert.Equal(2, points.Count);
+        Assert.Equal(0.0, points[^1].X, precision: 3);
+        Assert.Equal(0.0, points[^1].Y, precision: 3);
+    }
+
+    [Fact]
+    public void Approach_initial_phase_near_pass_ends_on_the_exact_aim_point()
+    {
+        // The ship's initial straight segment runs along X=0 and passes within the
+        // 5-world-unit arrival tolerance of the aim point at (3,0), but never crosses
+        // that exact coordinate. The trajectory must still finish at (3,0), not at
+        // the closest point on the ship segment (0,0).
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 100,
+            SpeedKmS: 5,
+            Direction: 0,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 5000,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: 3,
+            NavigationTargetY: 0,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationTargetSpeedKmS: 0,
+            NavigationTargetDirectionDegrees: 0);
+
+        var points = new NavigationTrajectoryProjector().Project(ship);
+
+        Assert.Equal(2, points.Count);
+        Assert.Equal(3.0, points[^1].X, precision: 6);
+        Assert.Equal(0.0, points[^1].Y, precision: 6);
+    }
+
+    [Fact]
+    public void Approach_trail_phase_continues_from_behind_waypoint_to_the_target()
+    {
+        // Target is currently at (300,0), moving right at 0.5 km/s, and its behind waypoint
+        // is (200,0). The waypoint shapes the approach but is not the destination:
+        // the preview must pass it and finish at the target's current position.
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 0,
+            SpeedKmS: 1,
+            Direction: 90,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 250,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: 200,
+            NavigationTargetY: 0,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationPhase: ApproachPursuitMath.TrailPhase,
+            NavigationTargetSpeedKmS: 0.5,
+            NavigationTargetDirectionDegrees: 90,
+            NavigationApproachTrailDistanceWorldUnits: 100);
+
+        var points = new NavigationTrajectoryProjector().Project(ship);
+
+        Assert.Contains(points, p => p.X >= 195 && p.X <= 205);
+        Assert.Equal(300.0, points[^1].X, precision: 6);
+        Assert.Equal(0.0, points[^1].Y, precision: 6);
+    }
+
+    [Fact]
+    public void Default_scenario_paused_start_asteroid_route_ends_at_current_target_position()
+    {
+        // Exact gameTimeMs=0 / Speed0 geometry from Scenarios/Default/scenario.json:
+        // player (10000,10000), 0.7 km/s at 0°; SPC-0003 (10400,10000),
+        // 0.6 km/s at 256°. FlyThroughPending means the pose planner must build one
+        // continuous tail-entry path to the current target position and heading.
+        const double targetX = 10400;
+        const double targetY = 10000;
+        const double targetDirection = 256;
+
+        var ship = new ObjectMotionSnapshot(
+            "SPC-0001",
+            X: 10000, Y: 10000,
+            SpeedKmS: 0.7,
+            Direction: 0,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 250,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: targetX,
+            NavigationTargetY: targetY,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationPhase: ApproachPursuitMath.FlyThroughPendingPhase,
+            NavigationTargetSpeedKmS: 0.6,
+            NavigationTargetDirectionDegrees: targetDirection,
+            NavigationApproachTrailDistanceWorldUnits: 10);
+
+        var points = new NavigationTrajectoryProjector().Project(ship);
+
+        double maxDistanceFromStart = points.Max(p => Math.Sqrt(
+            Math.Pow(p.X - 10000, 2) + Math.Pow(p.Y - 10000, 2)));
+        Assert.True(maxDistanceFromStart < 550,
+            $"Default asteroid route must stay local; projected radius was {maxDistanceFromStart:F1} wu.");
+        Assert.True(points.Max(p => p.X) > targetX + 50,
+            "Approach must go around to the target's rear side before crossing it.");
+        double routeLength = points.Zip(points.Skip(1), (a, b) => Math.Sqrt(
+            Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2))).Sum();
+        Assert.InRange(routeLength, 700, 850);
+
+        // The endpoint is the asteroid's current position; its future linear motion
+        // is deliberately not included in this preview.
+        var end = points[^1];
+        Assert.Equal(targetX, end.X, precision: 6);
+        Assert.Equal(targetY, end.Y, precision: 6);
+
+        var beforeEnd = points[^2];
+        double terminalDirection = Math.Atan2(end.X - beforeEnd.X, beforeEnd.Y - end.Y)
+                                   * 180.0 / Math.PI;
+        if (terminalDirection < 0)
+            terminalDirection += 360;
+        Assert.Equal(targetDirection, terminalDirection, precision: 1);
     }
 
     [Fact]

@@ -313,7 +313,9 @@ public sealed record ActiveCycleData(
     /// <see cref="DeepSpaceSaga.Contracts.NavigationComputerCommandTypes.Approach"/> cycle
     /// only; see <see cref="NavigationTargetSpeedKmS"/>.
     /// </summary>
-    [property: JsonPropertyName("navTargetDirectionDegrees")] double? NavigationTargetDirectionDegrees = null);
+    [property: JsonPropertyName("navTargetDirectionDegrees")] double? NavigationTargetDirectionDegrees = null,
+    /// <summary>Effective behind-target staging distance for Approach, in world units.</summary>
+    [property: JsonPropertyName("navApproachTrailDistanceWorldUnits")] double? NavigationApproachTrailDistanceWorldUnits = null);
 
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(
