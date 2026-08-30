@@ -43,6 +43,35 @@ public readonly record struct ApproachFlyThroughPlanStep(
     ApproachFlyThroughPlan RemainingPlan);
 
 /// <summary>
+/// Result of <see cref="ApproachPursuitMath.SolveInterceptFlyThroughPlan"/>: the earliest
+/// physically achievable rendezvous with a target assumed to hold its current
+/// heading/speed for the whole search horizon (story-20260829-210641.md §4). When
+/// <see cref="HasIntercept"/> is false, none of the 6 Dubins curve types have a valid
+/// root (t* &gt; 0) within the search horizon — the same "no achievable rendezvous"
+/// outcome for which callers must fall back to today's captured-pose behavior
+/// (protects SPC-0003/Default: ship not strictly faster than the target).
+/// </summary>
+/// <param name="HasIntercept">Whether a valid rendezvous was found.</param>
+/// <param name="Type">3-letter Dubins curve type ("LSL", "RSR", "LSR", "RSL", "RLR", "LRL") of the winning curve, or empty when <see cref="HasIntercept"/> is false.</param>
+/// <param name="InterceptTimeSeconds">Time (seconds) at which the ship's curve arrives exactly where the target will be, assuming the target holds its current course/speed.</param>
+/// <param name="TargetXAtIntercept">Target X at <see cref="InterceptTimeSeconds"/>, world units.</param>
+/// <param name="TargetYAtIntercept">Target Y at <see cref="InterceptTimeSeconds"/>, world units.</param>
+/// <param name="TargetDirectionAtIntercept">Target heading at <see cref="InterceptTimeSeconds"/> — equal to the input heading, since the target's course is assumed constant over the search horizon.</param>
+/// <param name="Plan">The fly-through plan (same shape <see cref="ApproachPursuitMath.CreateFlyThroughPlan"/> produces) built directly to the rendezvous pose.</param>
+public readonly record struct ApproachInterceptSolution(
+    bool HasIntercept,
+    string Type,
+    double InterceptTimeSeconds,
+    double TargetXAtIntercept,
+    double TargetYAtIntercept,
+    double TargetDirectionAtIntercept,
+    ApproachFlyThroughPlan Plan)
+{
+    /// <summary>The canonical "no achievable rendezvous" result.</summary>
+    public static readonly ApproachInterceptSolution None = new(false, string.Empty, 0, 0, 0, 0, default);
+}
+
+/// <summary>
 /// Pure, deterministic trailing-pursuit steering math for `navigation.approach`
 /// (shared by Engine and Client — no state, no Engine/Contracts references, only
 /// numbers). Unlike <see cref="NavigationWaypointMath.StagedStep"/> (Orbit), this
@@ -80,6 +109,16 @@ public static class ApproachPursuitMath
     public const string FlyThroughPhasePrefix = "FlyThrough:";
 
     /// <summary>
+    /// Phase prefix used instead of <see cref="FlyThroughPhasePrefix"/> when the
+    /// fly-through plan was built by a CONFIRMED <see cref="SolveInterceptFlyThroughPlan"/>
+    /// rendezvous solve rather than a fallback curve to the target's captured pose
+    /// (story-20260829-210641.md §10, Checkpoint 2). Both Engine and Client branch points
+    /// must read this constant rather than duplicating the string literal, to avoid a
+    /// client/server desync on which phase means what.
+    /// </summary>
+    public const string FlyThroughInterceptPhasePrefix = "FlyThroughIntercept:";
+
+    /// <summary>
     /// Default distance (world units) at or below which the ship is considered to have
     /// arrived at the aim point. This is a tuning default (500 m), not a hard
     /// requirement — callers may pass a different value if content ever needs to.
@@ -90,7 +129,8 @@ public static class ApproachPursuitMath
 
     public static bool IsFlyThroughPhase(string? phase) =>
         phase == FlyThroughPendingPhase ||
-        (phase?.StartsWith(FlyThroughPhasePrefix, StringComparison.Ordinal) ?? false);
+        (phase?.StartsWith(FlyThroughPhasePrefix, StringComparison.Ordinal) ?? false) ||
+        (phase?.StartsWith(FlyThroughInterceptPhasePrefix, StringComparison.Ordinal) ?? false);
 
     public static ApproachFlyThroughPlan CreateFlyThroughPlan(
         double shipX,
@@ -135,6 +175,410 @@ public static class ApproachPursuitMath
             shortest.First * turnRadius,
             shortest.Second * turnRadius,
             shortest.Third * turnRadius);
+    }
+
+    /// <summary>
+    /// All 6 Dubins curve types considered by <see cref="CreateFlyThroughPlan"/> and
+    /// <see cref="SolveInterceptFlyThroughPlan"/>, in the same order both already use.
+    /// </summary>
+    private static readonly string[] AllCurveTypes = { "LSL", "RSR", "LSR", "RSL", "RLR", "LRL" };
+
+    /// <summary>
+    /// Relative extra time (as a multiple of the straight-line lead-pursuit horizon
+    /// <c>t_lead</c>, Checkpoint 1 of story-20260829-210641.md §10) added when building
+    /// the per-type search horizon. A Dubins curve is never shorter than the
+    /// straight-line distance, so the winning type's actual rendezvous time is always
+    /// &gt;= t_lead. Combined additively with <see cref="InterceptCurvatureLoopsMargin"/>
+    /// (see that constant's doc-comment for why BOTH terms are needed):
+    /// <c>horizon = t_lead * (1 + InterceptHorizonMarginFactor) + InterceptCurvatureLoopsMargin * 2*pi / angularVelocityRadPerSec</c>.
+    /// </summary>
+    private const double InterceptHorizonMarginFactor = 1.0;
+
+    /// <summary>
+    /// Curvature-correction budget, expressed as a number of FULL turning loops
+    /// (<c>2*pi / angularVelocityRadPerSec</c> seconds each) added on top of the
+    /// relative <see cref="InterceptHorizonMarginFactor"/> term. This is the ADDITIVE
+    /// part Checkpoint 1 anticipates ("k · turnRadius / closingSpeed") and it matters
+    /// independently of <c>t_lead</c>: when the ship's initial heading is badly
+    /// misaligned with the rendezvous bearing, the shortest Dubins curve of the winning
+    /// type can require the better part of a full extra loop of turning even though the
+    /// straight-line lead time itself is tiny (a purely MULTIPLICATIVE margin on
+    /// <c>t_lead</c> would then badly under-shoot the real horizon). Empirically verified
+    /// against <c>ApproachPursuitMathTests</c>' type-switch regression fixture, whose
+    /// genuine (non-wrap-artifact) winning root sits at roughly 1.1 loops of turning time
+    /// even though <c>t_lead</c> there is only ~6.3s — 3.0 loops leaves a comfortable
+    /// safety margin above that observed worst case.
+    /// </summary>
+    private const double InterceptCurvatureLoopsMargin = 3.0;
+
+    /// <summary>
+    /// Absolute floor (seconds) for the per-type search horizon, guarding the numerically
+    /// degenerate case where the target already sits (almost) exactly at the ship's
+    /// position — the lead-pursuit horizon <c>t_lead</c> collapses to ~0 there, which
+    /// would otherwise leave no search interval at all.
+    /// </summary>
+    private const double InterceptMinHorizonSeconds = 5.0;
+
+    /// <summary>Number of coarse samples used to bracket a sign change per curve type before bisecting.</summary>
+    private const int InterceptHorizonSampleCount = 500;
+
+    /// <summary>Bisection stops once the bracket is narrower than this, in seconds.</summary>
+    private const double InterceptBisectionToleranceSeconds = 1e-6;
+
+    private const int InterceptMaxBisectionIterations = 100;
+
+    /// <summary>
+    /// When a coarse sample lands (numerically) exactly on a root, or the bisection
+    /// bracket is this tight, treat it as the root without further refinement.
+    /// </summary>
+    private const double InterceptResidualToleranceUnits = 1e-6;
+
+    /// <summary>
+    /// Small time nudge used only when a bisection midpoint happens to fall just outside
+    /// a curve type's admissible domain (the domain boundary lies inside the current
+    /// bracket) — nudges toward the still-admissible side rather than crossing into a
+    /// different curve type's formula, per story-20260829-210641.md §4 ("не пересекая
+    /// границу переключения типов").
+    /// </summary>
+    private const double InterceptInvalidNudgeSeconds = 1e-4;
+
+    /// <summary>Two candidate intercept times within this tolerance are treated as tied (then broken by curve length).</summary>
+    private const double InterceptTimeTieToleranceSeconds = 1e-6;
+
+    /// <summary>
+    /// Guard factor (multiplied by <c>turnRadius</c>) used to detect a SPURIOUS length
+    /// jump within a single curve type's own formula, caused not by a genuine geometric
+    /// discontinuity but by the <see cref="Mod2Pi"/> wrap each Add* method applies to
+    /// keep its reported segment angles in [0, 2*pi) (the "shortest representative" for
+    /// that type at that exact pose — the same convention <see cref="CreateFlyThroughPlan"/>
+    /// already relies on, so it is NOT changed here). As the target pose varies
+    /// continuously, one of a type's three segment angles can cross a 2*pi boundary,
+    /// making the type's OWN reported length jump by close to <c>2*pi*turnRadius</c>
+    /// between two arbitrarily close instants — a real, reproducible artifact (see the
+    /// commit's regression test), not a hypothetical. A genuine smooth change in length
+    /// between two closely-spaced samples is always far smaller than
+    /// <c>pi*turnRadius</c> (half of the wrap's jump size) for any reasonable sampling
+    /// resolution, so a jump at or above that threshold is treated exactly like an
+    /// admissibility-domain boundary — story-20260829-210641.md §4's "не пересекая
+    /// границу переключения типов" applies here too: bisection must never straddle it.
+    /// </summary>
+    private const double InterceptWrapJumpGuardFactor = Math.PI;
+
+    /// <summary>
+    /// Solve the exact-intercept fly-through problem: find the earliest time <c>t*</c> and
+    /// Dubins curve type such that flying that curve from the ship's current pose arrives
+    /// exactly where the target will be at <c>t*</c>, assuming the target holds its
+    /// current heading and speed for the whole search (story-20260829-210641.md §2, §4).
+    ///
+    /// Unlike a single bisection over the argmin-selected curve length (the previous,
+    /// reverted attempt — see the story's "why bisection on t failed" section), this
+    /// solves the rendezvous equation <c>L_X(t) - shipSpeed * t = 0</c> SEPARATELY for
+    /// each of the 6 Dubins curve types X, each within its own domain of validity (where
+    /// the type's own formula is defined), and only picks the overall winner (earliest
+    /// t*, tie-broken by shorter length) AFTER solving. This avoids ever bisecting across
+    /// a point where the globally-shortest curve type switches — the argmin-selected
+    /// length is not continuous there even though the underlying geometry is (see
+    /// <c>InterceptFlyThroughSolution_avoids_the_type_switch_discontinuity</c> in
+    /// ApproachPursuitMathTests.cs for a concrete reproduction).
+    ///
+    /// The search horizon per type is derived from the classical straight-line
+    /// lead-pursuit quadratic (Checkpoint 1 of story-20260829-210641.md §10):
+    /// <c>(shipSpeed^2 - |vTarget|^2) * t^2 - 2*(D . vTarget) * t - |D|^2 = 0</c>, where
+    /// <c>D</c> is the vector from the ship to the target's CURRENT position and
+    /// <c>vTarget</c> is the target's (constant) velocity vector. When
+    /// <c>a = shipSpeed^2 - |vTarget|^2 &lt;= 0</c> (ship not strictly faster than the
+    /// target) this quadratic has no meaningful positive horizon, and this method
+    /// returns <see cref="ApproachInterceptSolution.None"/> as a direct consequence —
+    /// not via a separate explicit "shipSpeed &lt;= targetSpeed" check — which is exactly
+    /// the SPC-0003/Default "ship not faster than target -> no achievable rendezvous"
+    /// scenario this method must protect (see
+    /// <c>SolveInterceptFlyThroughPlan_ship_not_faster_than_target_returns_no_intercept</c>).
+    /// </summary>
+    /// <param name="shipX">Ship current X, world units.</param>
+    /// <param name="shipY">Ship current Y, world units.</param>
+    /// <param name="shipDirectionDegrees">Ship current heading, degrees.</param>
+    /// <param name="shipSpeedKmS">Ship current speed, km/s.</param>
+    /// <param name="targetX">Target current X, world units.</param>
+    /// <param name="targetY">Target current Y, world units.</param>
+    /// <param name="targetDirectionDegrees">Target current heading, degrees — assumed constant over the search horizon.</param>
+    /// <param name="targetSpeedKmS">Target current speed, km/s — assumed constant over the search horizon.</param>
+    /// <param name="angularInertiaDegPerSec">Ship angular inertia, degrees per second (0 = cannot turn -> no intercept).</param>
+    public static ApproachInterceptSolution SolveInterceptFlyThroughPlan(
+        double shipX,
+        double shipY,
+        double shipDirectionDegrees,
+        double shipSpeedKmS,
+        double targetX,
+        double targetY,
+        double targetDirectionDegrees,
+        double targetSpeedKmS,
+        int angularInertiaDegPerSec)
+    {
+        if (shipSpeedKmS <= 0 || angularInertiaDegPerSec <= 0)
+            return ApproachInterceptSolution.None;
+
+        double shipSpeedUnits = shipSpeedKmS * UnitsPerKmS;
+        double targetSpeedUnits = targetSpeedKmS * UnitsPerKmS;
+
+        double targetDirectionRad = targetDirectionDegrees * Math.PI / 180.0;
+        double targetVelocityX = targetSpeedUnits * Math.Sin(targetDirectionRad);
+        double targetVelocityY = -targetSpeedUnits * Math.Cos(targetDirectionRad);
+
+        double offsetX = targetX - shipX;
+        double offsetY = targetY - shipY;
+
+        // Classical lead-pursuit quadratic (Checkpoint 1): a*t^2 + b*t + c = 0.
+        double a = shipSpeedUnits * shipSpeedUnits - (targetVelocityX * targetVelocityX + targetVelocityY * targetVelocityY);
+        double b = -2.0 * (offsetX * targetVelocityX + offsetY * targetVelocityY);
+        double c = -(offsetX * offsetX + offsetY * offsetY);
+
+        // a <= 0 means the ship is not strictly faster than the target: no positive lead
+        // horizon exists, so no straight-line (and therefore no curved) intercept is
+        // achievable — this degeneration IS the SPC-0003/Default "no intercept" outcome.
+        if (a <= 0)
+            return ApproachInterceptSolution.None;
+
+        double discriminant = b * b - 4 * a * c;
+        if (discriminant < 0)
+            return ApproachInterceptSolution.None;
+
+        double sqrtDiscriminant = Math.Sqrt(discriminant);
+        double root1 = (-b - sqrtDiscriminant) / (2 * a);
+        double root2 = (-b + sqrtDiscriminant) / (2 * a);
+
+        double? leadTime = null;
+        foreach (double root in new[] { root1, root2 })
+        {
+            if (root > 0 && (leadTime is null || root < leadTime))
+                leadTime = root;
+        }
+        if (leadTime is null)
+            return ApproachInterceptSolution.None;
+
+        double angularVelocityRadPerSec = angularInertiaDegPerSec * Math.PI / 180.0;
+        double turnRadius = shipSpeedUnits / angularVelocityRadPerSec;
+
+        double horizon = Math.Max(
+            leadTime.Value * (1.0 + InterceptHorizonMarginFactor)
+                + InterceptCurvatureLoopsMargin * (2.0 * Math.PI / angularVelocityRadPerSec),
+            InterceptMinHorizonSeconds);
+
+        // Evaluate a single curve type's (length, self-consistency residual) at time t,
+        // reusing the SAME per-type segment-length formulas CreateFlyThroughPlan already
+        // uses (AddLsl/AddRsr/.../AddLrl) — never re-deriving or duplicating them.
+        (bool Valid, double LengthUnits) EvaluateType(string curveType, double t)
+        {
+            double tx = targetX + t * targetVelocityX;
+            double ty = targetY + t * targetVelocityY;
+            double dx = tx - shipX;
+            double dy = -(ty - shipY);
+            double directDistance = Math.Sqrt(dx * dx + dy * dy);
+            double normalizedDistance = directDistance / turnRadius;
+            double theta = Mod2Pi(Math.Atan2(dy, dx));
+            double alpha = Mod2Pi((90.0 - shipDirectionDegrees) * Math.PI / 180.0 - theta);
+            double beta = Mod2Pi((90.0 - targetDirectionDegrees) * Math.PI / 180.0 - theta);
+
+            if (!TryEvaluateCurveType(curveType, alpha, beta, normalizedDistance, out double first, out double second, out double third))
+                return (false, 0);
+
+            return (true, (first + second + third) * turnRadius);
+        }
+
+        double wrapJumpGuardUnits = InterceptWrapJumpGuardFactor * turnRadius;
+
+        double? BisectRoot(
+            string curveType, double lowT, double highT,
+            double lowLength, double highLength, double lowResidual, double highResidual)
+        {
+            for (int iteration = 0; iteration < InterceptMaxBisectionIterations; iteration++)
+            {
+                if (highT - lowT < InterceptBisectionToleranceSeconds)
+                    return 0.5 * (lowT + highT);
+
+                double midT = 0.5 * (lowT + highT);
+                var (valid, length) = EvaluateType(curveType, midT);
+                if (!valid)
+                {
+                    // The type's admissible domain boundary lies inside this bracket —
+                    // nudge toward the side we know is admissible rather than ever
+                    // treating the OTHER side of the boundary as this same type's curve.
+                    double nudgedT = lowResidual >= 0 ? midT - InterceptInvalidNudgeSeconds : midT + InterceptInvalidNudgeSeconds;
+                    if (nudgedT <= lowT || nudgedT >= highT)
+                        return null; // Bracket too narrow to safely resolve — give up on this bracket.
+
+                    (valid, length) = EvaluateType(curveType, nudgedT);
+                    if (!valid)
+                        return null;
+                    midT = nudgedT;
+                }
+
+                // Guard against the Mod2Pi wrap artifact (see InterceptWrapJumpGuardFactor):
+                // if the midpoint's length is not a smooth interpolation between the two
+                // bracket ends, the wrap boundary lies inside this bracket — never bisect
+                // across it as if it were this type's own smooth formula.
+                if (Math.Abs(length - lowLength) > wrapJumpGuardUnits && Math.Abs(length - highLength) > wrapJumpGuardUnits)
+                    return null;
+
+                double midResidual = length - shipSpeedUnits * midT;
+                if (Math.Abs(midResidual) < InterceptResidualToleranceUnits)
+                    return midT;
+
+                if (Math.Sign(midResidual) == Math.Sign(lowResidual))
+                {
+                    lowT = midT;
+                    lowLength = length;
+                    lowResidual = midResidual;
+                }
+                else
+                {
+                    highT = midT;
+                    highLength = length;
+                    highResidual = midResidual;
+                }
+            }
+
+            return 0.5 * (lowT + highT);
+        }
+
+        double? FindEarliestRootForType(string curveType)
+        {
+            double prevT = 0;
+            double prevLength = 0;
+            double prevResidual = 0;
+            bool prevValid = false;
+
+            for (int sample = 1; sample <= InterceptHorizonSampleCount; sample++)
+            {
+                double t = horizon * sample / InterceptHorizonSampleCount;
+                var (valid, length) = EvaluateType(curveType, t);
+                if (!valid)
+                {
+                    prevValid = false;
+                    continue;
+                }
+
+                double residual = length - shipSpeedUnits * t;
+
+                if (prevValid)
+                {
+                    // Skip pairs straddling a Mod2Pi wrap artifact (see
+                    // InterceptWrapJumpGuardFactor) — never treat that as a genuine root
+                    // bracket, even if the residual happens to change sign there.
+                    bool suspiciousWrapJump = Math.Abs(length - prevLength) > wrapJumpGuardUnits;
+
+                    if (!suspiciousWrapJump)
+                    {
+                        if (Math.Abs(residual) < InterceptResidualToleranceUnits)
+                            return t;
+
+                        if (Math.Sign(residual) != Math.Sign(prevResidual))
+                        {
+                            double? root = BisectRoot(curveType, prevT, t, prevLength, length, prevResidual, residual);
+                            if (root is not null)
+                                return root;
+                            // Could not safely resolve this bracket (domain boundary or
+                            // wrap artifact in the way) — keep scanning forward for a
+                            // later, cleaner bracket.
+                        }
+                    }
+                }
+
+                prevT = t;
+                prevLength = length;
+                prevResidual = residual;
+                prevValid = true;
+            }
+
+            return null;
+        }
+
+        (string Type, double TimeSeconds, double LengthUnits)? best = null;
+        foreach (string curveType in AllCurveTypes)
+        {
+            double? rootTime = FindEarliestRootForType(curveType);
+            if (rootTime is null)
+                continue;
+
+            var (valid, length) = EvaluateType(curveType, rootTime.Value);
+            if (!valid)
+                continue; // Defensive: should always be valid at its own found root.
+
+            bool isEarlier = best is null || rootTime.Value < best.Value.TimeSeconds - InterceptTimeTieToleranceSeconds;
+            bool isTiedButShorter =
+                best is not null &&
+                Math.Abs(rootTime.Value - best.Value.TimeSeconds) <= InterceptTimeTieToleranceSeconds &&
+                length < best.Value.LengthUnits;
+
+            if (isEarlier || isTiedButShorter)
+                best = (curveType, rootTime.Value, length);
+        }
+
+        if (best is null)
+            return ApproachInterceptSolution.None;
+
+        double interceptTime = best.Value.TimeSeconds;
+        double targetXAtIntercept = targetX + interceptTime * targetVelocityX;
+        double targetYAtIntercept = targetY + interceptTime * targetVelocityY;
+
+        double finalDx = targetXAtIntercept - shipX;
+        double finalDy = -(targetYAtIntercept - shipY);
+        double finalDirectDistance = Math.Sqrt(finalDx * finalDx + finalDy * finalDy);
+        double finalNormalizedDistance = finalDirectDistance / turnRadius;
+        double finalTheta = Mod2Pi(Math.Atan2(finalDy, finalDx));
+        double finalAlpha = Mod2Pi((90.0 - shipDirectionDegrees) * Math.PI / 180.0 - finalTheta);
+        double finalBeta = Mod2Pi((90.0 - targetDirectionDegrees) * Math.PI / 180.0 - finalTheta);
+
+        if (!TryEvaluateCurveType(best.Value.Type, finalAlpha, finalBeta, finalNormalizedDistance, out double finalFirst, out double finalSecond, out double finalThird))
+            return ApproachInterceptSolution.None; // Should not happen: the type was valid at this exact t by construction.
+
+        var plan = new ApproachFlyThroughPlan(
+            best.Value.Type,
+            finalFirst * turnRadius,
+            finalSecond * turnRadius,
+            finalThird * turnRadius);
+
+        return new ApproachInterceptSolution(
+            true,
+            best.Value.Type,
+            interceptTime,
+            targetXAtIntercept,
+            targetYAtIntercept,
+            NormalizeDegrees(targetDirectionDegrees),
+            plan);
+    }
+
+    /// <summary>
+    /// Evaluate one specific Dubins curve type's 3 segment lengths (normalized by turn
+    /// radius) for the given geometry, reusing the same AddLsl/AddRsr/.../AddLrl formulas
+    /// <see cref="CreateFlyThroughPlan"/> uses — without duplicating them. Returns false
+    /// when this type is not admissible for this geometry (its formula's domain
+    /// condition — p^2 &gt;= 0 for the CSC types, |x| &lt;= 1 for the CCC types — is not
+    /// met), exactly mirroring the per-type Add* methods' own "not added" behavior.
+    /// </summary>
+    private static bool TryEvaluateCurveType(
+        string curveType, double alpha, double beta, double normalizedDistance,
+        out double first, out double second, out double third)
+    {
+        var candidates = new List<(string Type, double First, double Second, double Third)>(1);
+        switch (curveType)
+        {
+            case "LSL": AddLsl(candidates, alpha, beta, normalizedDistance); break;
+            case "RSR": AddRsr(candidates, alpha, beta, normalizedDistance); break;
+            case "LSR": AddLsr(candidates, alpha, beta, normalizedDistance); break;
+            case "RSL": AddRsl(candidates, alpha, beta, normalizedDistance); break;
+            case "RLR": AddRlr(candidates, alpha, beta, normalizedDistance); break;
+            case "LRL": AddLrl(candidates, alpha, beta, normalizedDistance); break;
+            default: throw new ArgumentOutOfRangeException(nameof(curveType), curveType, "Unknown Dubins curve type.");
+        }
+
+        if (candidates.Count == 0)
+        {
+            first = second = third = 0;
+            return false;
+        }
+
+        (first, second, third) = (candidates[0].First, candidates[0].Second, candidates[0].Third);
+        return true;
     }
 
     public static ApproachFlyThroughPlanStep AdvanceFlyThroughPlan(

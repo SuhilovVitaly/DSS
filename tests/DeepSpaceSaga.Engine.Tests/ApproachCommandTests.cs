@@ -140,6 +140,144 @@ public class ApproachCommandTests
     }
 
     [Fact]
+    public void Faster_ship_completes_confirmed_intercept_immediately_without_transiting_final()
+    {
+        // Unit 2 of story-20260829-210641.md (Checkpoint 2): once
+        // ApproachPursuitMath.SolveInterceptFlyThroughPlan confirms a rendezvous is
+        // achievable (ship strictly faster than a moving target), ApplyApproachStep
+        // must fly the single Dubins curve straight to the rendezvous pose and
+        // complete IMMEDIATELY on arrival — never handing off into the live-tracking
+        // Final phase the captured-pose FlyThrough: fallback still needs (that
+        // hand-off exists only because a curve to a CAPTURED pose can go stale while
+        // it's being flown; an intercept curve, by construction, already arrives
+        // exactly where the live target is). The ship starts badly misaligned
+        // relative to the straight-line bearing to the target so the winning curve
+        // genuinely curves (exercises more than the degenerate already-aligned case).
+        var engine = CreateEngine(
+            shipX: 9000, shipY: 10500, shipSpeedMps: 3000, shipDirectionDegrees: 0,
+            targetX: 10000, targetY: 10000, targetSpeedMps: 1000, targetDirectionDegrees: 90,
+            turnStepDegrees: 1, angularInertiaDegPerSec: 4, trailDistanceKm: 10);
+
+        engine.ReceiveCommand(ApproachCommand());
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1); // cycle #1 starts
+
+        var observedPhases = new List<string?>();
+        ObjectMotionSnapshot? ship = null;
+        AuthoritativeSnapshot? snapshot = null;
+        for (long gameTimeMs = 250; gameTimeMs <= 200_000; gameTimeMs += 250)
+        {
+            snapshot = engine.CaptureSnapshotForTests(gameTimeMs, SimulationSpeed.Speed1);
+            ship = PlayerShipFrom(snapshot);
+            observedPhases.Add(ship.NavigationPhase);
+            if (ship.ActiveEngineCommandType is null)
+                break;
+        }
+
+        Assert.True(ship?.ActiveEngineCommandType is null,
+            $"Command never completed within the test budget. Last few phases: " +
+            string.Join(" -> ", observedPhases.TakeLast(10)));
+        Assert.NotNull(ship);
+        var completed = ship!;
+        Assert.Null(completed.ActiveEngineCommandType);
+        Assert.Equal(3.0, completed.SpeedKmS, precision: 6); // Approach never brakes
+        Assert.Equal(90, completed.Direction, precision: 6); // matches the target's live course
+
+        // A confirmed intercept plan was actually used (not the captured-pose
+        // fallback) and the command never transited through the Final phase.
+        Assert.Contains(observedPhases, phase => phase is not null &&
+            phase.StartsWith(ApproachPursuitMath.FlyThroughInterceptPhasePrefix, StringComparison.Ordinal));
+        Assert.DoesNotContain(ApproachPursuitMath.FinalPhase, observedPhases);
+        Assert.DoesNotContain(observedPhases, phase => phase is not null &&
+            phase.StartsWith(ApproachPursuitMath.FlyThroughPhasePrefix, StringComparison.Ordinal) &&
+            !phase.StartsWith(ApproachPursuitMath.FlyThroughInterceptPhasePrefix, StringComparison.Ordinal));
+
+        var target = snapshot!.Objects.Single(o => o.ObjectId == TargetId);
+        double distanceFromLiveTarget = Math.Sqrt(
+            (completed.X - target.X) * (completed.X - target.X) +
+            (completed.Y - target.Y) * (completed.Y - target.Y));
+        Assert.True(distanceFromLiveTarget <= ApproachPursuitMath.ArrivalToleranceUnits,
+            $"Ship ended {distanceFromLiveTarget:F1} world units from the target's live " +
+            $"position ({target.X:F1},{target.Y:F1}); ship at ({completed.X:F1},{completed.Y:F1}).");
+    }
+
+    [Fact]
+    public void Coarse_polling_reaches_the_same_final_state_as_fine_polling_for_NON_intercept_fallback()
+    {
+        // Control scenario: ship NOT strictly faster than target -> SolveInterceptFlyThroughPlan
+        // must return None (a <= 0), so this exercises the OLD captured-pose FlyThrough:
+        // fallback + Final hand-off path, unrelated to Batch 1/2's new intercept branch.
+        //
+        // An earlier version of this test polled each cadence only until it first
+        // observed ActiveEngineCommandType go null, then compared ship position between
+        // cadences. That is not a determinism check: Approach never brakes on
+        // completion (the ship keeps coasting at its own post-arrival speed/heading),
+        // so a coarser cadence simply *notices* completion later and reports a
+        // position that has coasted further past arrival — a polling artifact, not
+        // state divergence. The real invariant is that both cadences reach an
+        // IDENTICAL ship state when sampled at the SAME fixed gameTimeMs, because
+        // CompleteActiveEngineCycles replays fixed-size (~turn-step) cycles from
+        // persisted state regardless of how many times the caller polled in between.
+        const long fixedEndGameTimeMs = 400_000;
+
+        ObjectMotionSnapshot RunWithStep(long stepMs)
+        {
+            var engine = CreateEngine(
+                shipX: 9800, shipY: 10000, shipSpeedMps: 1200, shipDirectionDegrees: 90,
+                targetX: 10000, targetY: 10000, targetSpeedMps: 1000, targetDirectionDegrees: 90,
+                turnStepDegrees: 1, angularInertiaDegPerSec: 4, trailDistanceKm: 10);
+
+            engine.ReceiveCommand(ApproachCommand());
+            var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+            for (long gameTimeMs = stepMs; gameTimeMs <= fixedEndGameTimeMs; gameTimeMs += stepMs)
+                snapshot = engine.CaptureSnapshotForTests(gameTimeMs, SimulationSpeed.Speed1);
+
+            return PlayerShipFrom(snapshot);
+        }
+
+        var fine = RunWithStep(250);
+        var coarse = RunWithStep(5000);
+
+        Assert.Equal(fine.X, coarse.X, precision: 6);
+        Assert.Equal(fine.Y, coarse.Y, precision: 6);
+        Assert.Equal(fine.Direction, coarse.Direction, precision: 6);
+        Assert.Equal(fine.SpeedKmS, coarse.SpeedKmS, precision: 6);
+        Assert.Equal(fine.ActiveEngineCommandType, coarse.ActiveEngineCommandType);
+    }
+
+    [Fact]
+    public void Coarse_polling_reaches_the_same_final_state_as_fine_polling_for_confirmed_intercept()
+    {
+        // See the NON-intercept sibling above for why this compares state at a fixed
+        // shared gameTimeMs rather than "whenever each cadence first notices completion".
+        const long fixedEndGameTimeMs = 400_000;
+
+        ObjectMotionSnapshot RunWithStep(long stepMs)
+        {
+            var engine = CreateEngine(
+                shipX: 9000, shipY: 10500, shipSpeedMps: 3000, shipDirectionDegrees: 0,
+                targetX: 10000, targetY: 10000, targetSpeedMps: 1000, targetDirectionDegrees: 90,
+                turnStepDegrees: 1, angularInertiaDegPerSec: 4, trailDistanceKm: 10);
+
+            engine.ReceiveCommand(ApproachCommand());
+            var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+            for (long gameTimeMs = stepMs; gameTimeMs <= fixedEndGameTimeMs; gameTimeMs += stepMs)
+                snapshot = engine.CaptureSnapshotForTests(gameTimeMs, SimulationSpeed.Speed1);
+
+            return PlayerShipFrom(snapshot);
+        }
+
+        var fine = RunWithStep(250);
+        var coarse = RunWithStep(5000);
+
+        Assert.Null(fine.ActiveEngineCommandType);
+        Assert.Null(coarse.ActiveEngineCommandType);
+        Assert.Equal(fine.X, coarse.X, precision: 6);
+        Assert.Equal(fine.Y, coarse.Y, precision: 6);
+        Assert.Equal(fine.Direction, coarse.Direction, precision: 6);
+        Assert.Equal(fine.SpeedKmS, coarse.SpeedKmS, precision: 6);
+    }
+
+    [Fact]
     public void Default_scenario_paused_at_start_bakes_current_asteroid_pose()
     {
         string scenarioPath = Path.GetFullPath(Path.Combine(

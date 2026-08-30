@@ -131,6 +131,26 @@ internal sealed class TacticalMapDepthRenderer
         IsAntialias = true
     };
 
+    private readonly SKPaint _interceptPointShadowPaint = new()
+    {
+        Color = new SKColor(18, 16, 12, 220),
+        Style = SKPaintStyle.Fill,
+        IsAntialias = true
+    };
+    private readonly SKPaint _interceptPointRingPaint = new()
+    {
+        Color = new SKColor(255, 150, 60, 170),
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 1f,
+        IsAntialias = true
+    };
+    private readonly SKPaint _interceptPointCorePaint = new()
+    {
+        Color = new SKColor(255, 150, 60, 235),
+        Style = SKPaintStyle.Fill,
+        IsAntialias = true
+    };
+
     public void DrawSphericalMarker(
         SKCanvas canvas,
         float centerX,
@@ -431,6 +451,20 @@ internal sealed class TacticalMapDepthRenderer
     {
         canvas.DrawCircle(centerX + 1f, centerY + 1f, 2.25f, _navigationTargetShadowPaint);
         canvas.DrawCircle(centerX, centerY, 1.5f, _navigationTargetPaint);
+    }
+
+    /// <summary>
+    /// Marks the rendezvous point of a confirmed intercept-solve fly-through curve
+    /// (story-20260829-210641.md) — the pose the ship's Dubins curve was built to
+    /// arrive at exactly, distinct from <see cref="DrawNavigationTarget"/>'s live
+    /// (continuously re-baked) aim point, which drifts away from the curve's actual
+    /// destination while a multi-cycle curve is still being flown.
+    /// </summary>
+    public void DrawInterceptPoint(SKCanvas canvas, float centerX, float centerY)
+    {
+        canvas.DrawCircle(centerX + 1f, centerY + 1f, 3.5f, _interceptPointShadowPaint);
+        canvas.DrawCircle(centerX, centerY, 3.5f, _interceptPointRingPaint);
+        canvas.DrawCircle(centerX, centerY, 1.75f, _interceptPointCorePaint);
     }
 
     private void DrawTrajectory(

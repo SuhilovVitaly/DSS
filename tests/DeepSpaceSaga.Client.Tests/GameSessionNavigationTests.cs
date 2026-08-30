@@ -578,20 +578,23 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
-    public void Default_scenario_paused_start_asteroid_route_continues_past_the_captured_pose()
+    public void Default_scenario_paused_start_asteroid_route_ends_at_the_confirmed_intercept()
     {
         // Exact gameTimeMs=0 / Speed0 geometry from Scenarios/Default/scenario.json:
         // player (10000,10000), 0.7 km/s at 0°; SPC-0003 (10400,10000),
-        // 0.6 km/s at 256°. FlyThroughPending means the pose planner must build one
-        // continuous tail-entry curve to the target's pose CAPTURED when the command
-        // started — but the asteroid keeps moving while that curve is flown, so the
-        // preview must keep tracking it afterward instead of stopping (or kinking into
-        // a near-miss) at that now-stale captured position. Mirrors
-        // SimulationEngine.ApplyApproachStep's fly-through hand-off — see
-        // ApproachCommandTests for the authoritative-engine version of this regression.
+        // 0.6 km/s at 256°. The ship is strictly faster than the asteroid, so
+        // story-20260829-210641.md's confirmed-intercept solve (Unit 3) now finds an
+        // achievable rendezvous for this exact scenario and the preview must fly a
+        // single Dubins curve straight to it — no more "curve to the stale captured
+        // pose, then keep chasing the live target afterward" (that was this test's
+        // pre-Unit-3 behavior, superseded now that the preview and the engine both use
+        // ApproachPursuitMath.SolveInterceptFlyThroughPlan). Mirrors
+        // ApproachCommandTests.Faster_ship_completes_confirmed_intercept_immediately_without_transiting_final
+        // — the authoritative-engine version of this same scenario/assertion.
         const double capturedTargetX = 10400;
         const double capturedTargetY = 10000;
         const double targetDirection = 256;
+        const double targetSpeedKmS = 0.6;
 
         var ship = new ObjectMotionSnapshot(
             "SPC-0001",
@@ -606,42 +609,171 @@ public class GameSessionNavigationTests
             NavigationTargetY: capturedTargetY,
             NavigationAngularInertiaDegPerSec: 4,
             NavigationPhase: ApproachPursuitMath.FlyThroughPendingPhase,
-            NavigationTargetSpeedKmS: 0.6,
+            NavigationTargetSpeedKmS: targetSpeedKmS,
             NavigationTargetDirectionDegrees: targetDirection,
             NavigationApproachTrailDistanceWorldUnits: 10);
 
         var points = new NavigationTrajectoryProjector().Project(ship);
 
-        Assert.True(points.Max(p => p.X) > capturedTargetX + 50,
-            "Approach must go around to the target's rear side before crossing it.");
+        // Same live ship/target pose the preview uses at the point it tries the
+        // intercept solve (ship advanced through the initial phase wait, target still
+        // read from the fixed snapshot pose — exactly what ProjectFlyThrough passes in).
+        var solution = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+            shipX: 10000, shipY: 9998.25, shipDirectionDegrees: 0, shipSpeedKmS: 0.7,
+            targetX: capturedTargetX, targetY: capturedTargetY,
+            targetDirectionDegrees: targetDirection, targetSpeedKmS: targetSpeedKmS,
+            angularInertiaDegPerSec: 4);
 
-        // The route still passes very close to the captured pose en route (the fly-through
-        // curve itself is correct) before continuing on to track the live target further.
-        double closestToCapturedPose = points.Min(p => Math.Sqrt(
-            Math.Pow(p.X - capturedTargetX, 2) + Math.Pow(p.Y - capturedTargetY, 2)));
-        Assert.True(closestToCapturedPose < 10,
-            $"Route never passed near the captured pose ({capturedTargetX},{capturedTargetY}); " +
-            $"closest approach was {closestToCapturedPose:F1} wu.");
+        Assert.True(solution.HasIntercept, "Expected this scenario to have a confirmed intercept.");
 
-        // Before the fix, the route stopped (or kinked into a near-miss) the moment the
-        // fly-through curve reached the captured (10400,10000) pose (~700-850 wu total).
-        // The asteroid is still moving when that happens, so a correct preview must keep
-        // going — proving the route is now meaningfully longer than that stale-arrival
-        // distance.
-        double routeLength = points.Zip(points.Skip(1), (a, b) => Math.Sqrt(
-            Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2))).Sum();
-        Assert.True(routeLength > 900,
-            $"Expected the preview to keep tracking the asteroid past its captured pose, got only {routeLength:F1} wu.");
-
-        // The final approach segment must show the ship ending up moving in the same
-        // direction as the (still-moving) target, not stopped mid-turn or kinked.
+        // The preview must end at (very near) the confirmed rendezvous point — not the
+        // stale captured pose, and not still chasing further beyond it.
         var end = points[^1];
-        var beforeEnd = points[^2];
-        double terminalDirection = Math.Atan2(end.X - beforeEnd.X, beforeEnd.Y - end.Y)
-                                   * 180.0 / Math.PI;
-        if (terminalDirection < 0)
-            terminalDirection += 360;
-        Assert.Equal(targetDirection, terminalDirection, precision: 0);
+        double distanceFromIntercept = Math.Sqrt(
+            Math.Pow(end.X - solution.TargetXAtIntercept, 2) +
+            Math.Pow(end.Y - solution.TargetYAtIntercept, 2));
+        Assert.True(distanceFromIntercept < 10.0,
+            $"Expected the preview to end at the confirmed intercept " +
+            $"({solution.TargetXAtIntercept:F1},{solution.TargetYAtIntercept:F1}); " +
+            $"ended at ({end.X:F1},{end.Y:F1}), {distanceFromIntercept:F1} wu away.");
+    }
+
+    [Fact]
+    public void Approach_preview_uses_confirmed_intercept_solve_when_achievable()
+    {
+        // story-20260829-210641.md §10, Unit 3: the preview must use the SAME
+        // rendezvous solve the authoritative engine uses (ApproachPursuitMath
+        // .SolveInterceptFlyThroughPlan), not the stale captured-pose fallback, for a
+        // scenario where the intercept is achievable (ship strictly faster than a
+        // moving target). Deliberately different geometry from the Default-scenario
+        // regression above, so this test's own passing is not an accident of that one
+        // fixture's specific numbers.
+        const double targetX = 2000;
+        const double targetY = -500;
+        const double targetDirection = 90;
+        const double targetSpeedKmS = 0.4;
+
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 0,
+            SpeedKmS: 1.0,
+            Direction: 90,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 1, // negligible initial-phase drift, to keep the math easy to reproduce below
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: targetX,
+            NavigationTargetY: targetY,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationPhase: ApproachPursuitMath.FlyThroughPendingPhase,
+            NavigationTargetSpeedKmS: targetSpeedKmS,
+            NavigationTargetDirectionDegrees: targetDirection,
+            NavigationApproachTrailDistanceWorldUnits: 10);
+
+        var points = new NavigationTrajectoryProjector().Project(ship);
+
+        // Ship pose after the negligible 1 ms initial wait is (~0.01, 0, 90°, 1.0) —
+        // close enough to (0,0,90,1.0) for this comparison's tolerance.
+        var solution = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+            shipX: 0, shipY: 0, shipDirectionDegrees: 90, shipSpeedKmS: 1.0,
+            targetX: targetX, targetY: targetY,
+            targetDirectionDegrees: targetDirection, targetSpeedKmS: targetSpeedKmS,
+            angularInertiaDegPerSec: 4);
+
+        Assert.True(solution.HasIntercept, "Expected this scenario to have a confirmed intercept.");
+
+        var end = points[^1];
+        double distanceFromIntercept = Math.Sqrt(
+            Math.Pow(end.X - solution.TargetXAtIntercept, 2) +
+            Math.Pow(end.Y - solution.TargetYAtIntercept, 2));
+        // Looser than the Default-scenario regression's tolerance: this LSR plan's
+        // short curved end segments (~21 wu each) sit right at AdvanceFlyThroughPlan's
+        // discrete per-step (1°, 2.5 wu/step) quantization granularity, so the same
+        // turn-quantization slack the rest of this file already tolerates elsewhere
+        // (e.g. terminal-direction checks at precision: 0) shows up here as a larger
+        // absolute position error than the Default scenario's mostly-curved RLR plan.
+        Assert.True(distanceFromIntercept < 50.0,
+            $"Expected the preview to end at the confirmed intercept " +
+            $"({solution.TargetXAtIntercept:F1},{solution.TargetYAtIntercept:F1}); " +
+            $"ended at ({end.X:F1},{end.Y:F1}), {distanceFromIntercept:F1} wu away.");
+    }
+
+    [Fact]
+    public void Approach_preview_resumes_a_persisted_confirmed_intercept_plan_and_completes_immediately()
+    {
+        // story-20260829-210641.md §10, Checkpoint 2: a snapshot taken mid-curve (after
+        // the intercept was already confirmed on an earlier cycle) carries
+        // NavigationPhase = "FlyThroughIntercept:<type>" with the remaining segment
+        // lengths already baked into NavigationEscapeCourseDegrees/
+        // NavigationRequiredDepartureDistance/NavigationLockedCourseDegrees — exactly
+        // like the plain "FlyThrough:" fallback already resumes. The preview must
+        // decode and resume that plan (not silently fall through to a fresh
+        // CreateFlyThroughPlan/SolveInterceptFlyThroughPlan solve, which would fly a
+        // wrong, different curve), and must complete IMMEDIATELY on arrival regardless
+        // of the ship/target speed comparison — the confirmed-intercept branch takes
+        // priority over the "speedKmS <= targetSpeedKmS" fallback check (mirrors
+        // SimulationEngine.ApplyApproachStep's own immediate-completion branch for
+        // FlyThroughIntercept:).
+        //
+        // NavigationTargetX/Y/SpeedKmS/DirectionDegrees below are the target's LIVE pose
+        // 5 real ~250 ms engine cycles into the same curve
+        // Approach_preview_uses_confirmed_intercept_solve_when_achievable solves fresh
+        // for (ship (0,0,90°,1.0 km/s) vs. target starting at (2000,-500,90°,0.4 km/s))
+        // — computed the same way SimulationEngine re-bakes them every cycle (target
+        // extrapolated forward at its own constant velocity), NOT the original t=0
+        // pose. That still catches a "silently re-solve instead of resuming" regression
+        // (the live target has moved on from (2000,-500) by now, so a fresh solve from
+        // here would target a different point than the curve already committed to), and
+        // additionally exercises NavigationTrajectoryProjector.ProjectFlyThrough's
+        // isConfirmedIntercept/interceptPoint outputs — which ARE meant to read this
+        // live pose — against realistic (not adversarial) input.
+        const double targetDirection = 90;
+        const double targetSpeedKmS = 0.4;
+        const double liveTargetX = 2005.0; // 2000 + 1.25s * 0.4km/s * 10 wu/(km/s)
+        const double liveTargetY = -500.0; // unchanged: target's course is due +X (90°)
+
+        var ship = new ObjectMotionSnapshot(
+            "ship",
+            X: 0, Y: 0,
+            SpeedKmS: 1.0,
+            Direction: 90,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1,
+            TurnStepRemainingMs: 1,
+            TurnStepIntervalMs: 250,
+            NavigationTargetX: liveTargetX,
+            NavigationTargetY: liveTargetY,
+            NavigationAngularInertiaDegPerSec: 4,
+            NavigationPhase: ApproachPursuitMath.FlyThroughInterceptPhasePrefix + "LSR",
+            // Remaining segment lengths after 5 cycles (1.25s) of an untouched LSR plan
+            // have consumed 1.25s * 1.0 km/s * 10 wu/(km/s) = 12.5 wu of travel, all of
+            // it out of the short first ('L') segment (computed via
+            // ApproachPursuitMath.AdvanceFlyThroughPlan, not by hand, to avoid a stale
+            // fixture if that consumption bookkeeping ever changes).
+            NavigationEscapeCourseDegrees: 8.805259867998338,
+            NavigationRequiredDepartureDistance: 3352.6805937848226,
+            NavigationLockedCourseDegrees: 21.305259867998338,
+            NavigationTargetSpeedKmS: targetSpeedKmS,
+            NavigationTargetDirectionDegrees: targetDirection,
+            NavigationApproachTrailDistanceWorldUnits: 10);
+
+        var points = new NavigationTrajectoryProjector().Project(
+            ship, out bool isConfirmedIntercept, out var interceptPoint);
+
+        const double expectedInterceptX = 3358.1164454954155;
+        const double expectedInterceptY = -500.00000000000006;
+
+        Assert.True(isConfirmedIntercept);
+        Assert.Equal(expectedInterceptX, interceptPoint.X, precision: 6);
+        Assert.Equal(expectedInterceptY, interceptPoint.Y, precision: 6);
+
+        // The drawn line's own last point must reach that exact intercept point too
+        // (smoothly blended in over the tail — see
+        // NavigationTrajectoryProjector.SmoothlyConvergeTailToPoint), not merely the
+        // out-parameter used for the marker.
+        var end = points[^1];
+        Assert.Equal(expectedInterceptX, end.X, precision: 6);
+        Assert.Equal(expectedInterceptY, end.Y, precision: 6);
     }
 
     [Fact]

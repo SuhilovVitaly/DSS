@@ -1414,7 +1414,17 @@ public sealed class GameSessionScreen : IScreen
 
         foreach (var state in _renderStates)
         {
-            if (!state.IsPlayerShip)
+            // The player ship always gets its own ballistic preview (subject to the
+            // Approach exclusion below). A non-player object only gets one when it is
+            // the current SelectedObjectId — e.g. the target of an active
+            // navigation.approach — so the player can visually cross-check where that
+            // object will actually be against the ship's own planned curve, without
+            // drawing a preview for every object in the scene.
+            bool isSelectedTarget = !state.IsPlayerShip &&
+                _selectedObjectId is not null &&
+                state.Predicted.ObjectId == _selectedObjectId;
+
+            if (!state.IsPlayerShip && !isSelectedTarget)
                 continue;
 
             if (!FutureTrajectoryProjector.ShouldDraw(state.Predicted))
@@ -1423,8 +1433,9 @@ public sealed class GameSessionScreen : IScreen
             // navigation.approach already gets its own single-color path from
             // DrawNavigationTrajectories (same pursuit math, run to actual arrival).
             // Drawing this generic straight-line projection on top of it produced a
-            // visible two-color trajectory for the same course.
-            if (state.Predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach)
+            // visible two-color trajectory for the same course. Only applies to the
+            // player ship — a selected target never has its own Approach command.
+            if (state.IsPlayerShip && state.Predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach)
                 continue;
 
             var points = _futureTrajectoryProjector.Project(state.Predicted);
@@ -1458,11 +1469,36 @@ public sealed class GameSessionScreen : IScreen
             var predicted = state.Predicted;
             if (predicted.NavigationTargetX is not null)
             {
-                var points = _navigationTrajectoryProjector.Project(predicted);
+                // isConfirmedIntercept comes from the projector's OWN resolution, not
+                // from re-checking predicted.NavigationPhase here: during the single
+                // transient FlyThroughPendingPhase frame right after the command starts,
+                // the projector already independently resolves (and draws) the confirmed
+                // rendezvous curve one frame before the engine bakes that confirmation
+                // into the authoritative NavigationPhase string — gating on the phase
+                // string here would miss that first frame and read as "no intercept" even
+                // though the curve shown IS already the confirmed one.
+                var points = _navigationTrajectoryProjector.Project(
+                    predicted, out bool isConfirmedIntercept, out var interceptPoint);
                 if (points.Count >= 2)
                     _depthRenderer.DrawNavigationTrajectory(canvas, points, _camera, width, height);
 
                 DrawNavigationTargetMarker(canvas, predicted.NavigationTargetX.Value, predicted.NavigationTargetY!.Value, width, height);
+
+                // A confirmed intercept-solve curve (story-20260829-210641.md) is flown
+                // to a fixed rendezvous pose baked once when the curve was built — unlike
+                // NavigationTargetX/Y above, which is re-baked to the target's LIVE
+                // position every cycle while the curve is still being flown (client-facing
+                // metadata only) and so drifts away from where the curve actually ends.
+                // interceptPoint is computed analytically from the target's live pose and
+                // constant velocity (see NavigationTrajectoryProjector.ProjectFlyThrough),
+                // NOT read off the drawn curve's own discretized tracked endpoint — that
+                // endpoint accumulates enough per-cycle turn quantization over a long curve
+                // to visibly miss the target's own drawn straight-line trajectory.
+                if (isConfirmedIntercept)
+                {
+                    var (ix, iy) = _camera.WorldToScreen(interceptPoint.X, interceptPoint.Y, width, height);
+                    _depthRenderer.DrawInterceptPoint(canvas, ix, iy);
+                }
             }
         }
     }

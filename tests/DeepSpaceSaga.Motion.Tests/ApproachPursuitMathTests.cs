@@ -423,4 +423,252 @@ public class ApproachPursuitMathTests
         Assert.True(step.IsArrived);
         Assert.Equal(256, step.NewDirectionDegrees, precision: 6);
     }
+
+    /// <summary>
+    /// Tests for <see cref="ApproachPursuitMath.SolveInterceptFlyThroughPlan"/>
+    /// (story-20260829-210641.md, §10, Unit 1 — Batch 1).
+    ///
+    /// Fixture construction note (per-type tests below): for a STATIONARY target
+    /// (targetSpeedKmS = 0), the target's pose never changes, so each curve type's own
+    /// length L_X(t) is a CONSTANT (independent of t) — the self-consistency equation
+    /// L_X(t) - shipSpeed*t = 0 is then simply LINEAR, with the closed-form solution
+    /// t* = L_X(0) / shipSpeed. Because the winning type is the one with the globally
+    /// SHORTEST L_X(0) (same ranking <see cref="ApproachPursuitMath.CreateFlyThroughPlan"/>
+    /// already picks via argmin), each fixture below was found by brute-force sampling
+    /// geometries where <c>CreateFlyThroughPlan</c> already returns exactly the desired
+    /// type as its argmin winner (verified independently, outside this repo, against the
+    /// exact same production AddLsl/AddRsr/.../AddLrl formulas via reflection — see the
+    /// commit's PR description for the search method), which guarantees
+    /// <see cref="ApproachPursuitMath.SolveInterceptFlyThroughPlan"/> must find that same
+    /// type with t* = plan.RemainingUnits / (shipSpeedKmS * 10).
+    /// </summary>
+    public class SolveInterceptFlyThroughPlanTests
+    {
+        private const int Inertia = 4;
+        private const int Precision = 2; // decimal places for t*/length assertions.
+
+        private static double ExpectedInterceptTimeSeconds(double lengthUnits, double shipSpeedKmS) =>
+            lengthUnits / (shipSpeedKmS * 10.0);
+
+        [Theory]
+        // type, shipDir, targetX, targetY, targetDir, expectedLength (stationary target; shipX=10000, shipY=9998.25, shipSpeed=0.7 km/s).
+        [InlineData("LSL", 202.0038, 9660.0809, 10994.0972, 195.9278, 1052.2677)]
+        [InlineData("RSR", 316.6852, 9230.0014, 9094.4952, 322.4691, 1187.2998)]
+        [InlineData("LSR", 37.7877, 10620.6896, 9084.4096, 37.1262, 1104.7054)]
+        [InlineData("RSL", 40.6968, 10848.8751, 9109.7925, 40.4525, 1228.8039)]
+        [InlineData("RLR", 124.0015, 10193.5022, 9654.7474, 101.2860, 604.4212)]
+        [InlineData("LRL", 211.7537, 10078.9365, 10351.0098, 270.3860, 551.9562)]
+        public void Solve_finds_the_known_root_for_each_of_the_six_curve_types(
+            string expectedType, double shipDirectionDegrees, double targetX, double targetY,
+            double targetDirectionDegrees, double expectedLengthUnits)
+        {
+            const double shipX = 10000, shipY = 9998.25, shipSpeedKmS = 0.7;
+
+            var solution = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+                shipX, shipY, shipDirectionDegrees, shipSpeedKmS,
+                targetX, targetY, targetDirectionDegrees, targetSpeedKmS: 0,
+                angularInertiaDegPerSec: Inertia);
+
+            Assert.True(solution.HasIntercept);
+            Assert.Equal(expectedType, solution.Type);
+
+            double expectedTimeSeconds = ExpectedInterceptTimeSeconds(expectedLengthUnits, shipSpeedKmS);
+            Assert.Equal(expectedTimeSeconds, solution.InterceptTimeSeconds, precision: Precision);
+            Assert.Equal(expectedLengthUnits, solution.Plan.RemainingUnits, precision: Precision);
+
+            // Stationary target: pose at intercept equals the (unchanging) input pose.
+            Assert.Equal(targetX, solution.TargetXAtIntercept, precision: 6);
+            Assert.Equal(targetY, solution.TargetYAtIntercept, precision: 6);
+
+            // Self-consistency: the ship covers exactly the curve's length in t* seconds.
+            Assert.Equal(
+                solution.Plan.RemainingUnits,
+                shipSpeedKmS * 10.0 * solution.InterceptTimeSeconds,
+                precision: Precision);
+        }
+
+        [Fact]
+        public void Solve_is_deterministic_for_identical_inputs()
+        {
+            var a = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+                10000, 9998.25, 47.8626, 4.9966,
+                9789.6958, 10088.3081, 299.7607, 1.8953,
+                angularInertiaDegPerSec: Inertia);
+            var b = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+                10000, 9998.25, 47.8626, 4.9966,
+                9789.6958, 10088.3081, 299.7607, 1.8953,
+                angularInertiaDegPerSec: Inertia);
+
+            Assert.Equal(a, b);
+        }
+
+        [Fact]
+        public void Solve_returns_no_intercept_when_ship_is_not_faster_than_target()
+        {
+            // Same shipSpeed/targetSpeed relationship as the protected SPC-0003/Default
+            // scenario (Default_asteroid_pose_uses_one_right_straight_right_tail_entry):
+            // shipSpeedKmS (0.7) is far below a plausible target speed — the ship simply
+            // cannot out-run the target on any lead-pursuit course, so `a = shipSpeed^2 -
+            // |vTarget|^2 <= 0` in the lead-pursuit quadratic and this must resolve to "no
+            // intercept" as a DIRECT CONSEQUENCE of that degeneration (story-20260829-
+            // 210641.md Checkpoint 1) — not via a separately bolted-on speed check.
+            var solution = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+                shipX: 10000, shipY: 9998.25, shipDirectionDegrees: 0, shipSpeedKmS: 0.7,
+                targetX: 10400, targetY: 10000, targetDirectionDegrees: 256, targetSpeedKmS: 2.0,
+                angularInertiaDegPerSec: Inertia);
+
+            Assert.False(solution.HasIntercept);
+            Assert.Equal(ApproachInterceptSolution.None, solution);
+        }
+
+        [Fact]
+        public void Solve_returns_no_intercept_for_a_stationary_ship_or_zero_inertia()
+        {
+            var stationaryShip = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+                0, 0, 0, shipSpeedKmS: 0,
+                targetX: 100, targetY: 100, targetDirectionDegrees: 45, targetSpeedKmS: 1,
+                angularInertiaDegPerSec: Inertia);
+            Assert.False(stationaryShip.HasIntercept);
+
+            var noInertia = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+                0, 0, 0, shipSpeedKmS: 5,
+                targetX: 100, targetY: 100, targetDirectionDegrees: 45, targetSpeedKmS: 1,
+                angularInertiaDegPerSec: 0);
+            Assert.False(noInertia.HasIntercept);
+        }
+
+        [Fact]
+        public void Solve_handles_a_target_almost_at_the_ships_position_without_nan_or_exception()
+        {
+            // normalizedDistance ~= 0 degenerate case: target essentially co-located with
+            // the ship. Must not throw and must not produce NaN in any field, regardless
+            // of whether an intercept is actually found.
+            var solution = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+                shipX: 10000, shipY: 10000, shipDirectionDegrees: 30, shipSpeedKmS: 3,
+                targetX: 10000.001, targetY: 10000.001, targetDirectionDegrees: 200, targetSpeedKmS: 0.1,
+                angularInertiaDegPerSec: Inertia);
+
+            Assert.False(double.IsNaN(solution.InterceptTimeSeconds));
+            Assert.False(double.IsNaN(solution.TargetXAtIntercept));
+            Assert.False(double.IsNaN(solution.TargetYAtIntercept));
+            if (solution.HasIntercept)
+            {
+                Assert.False(double.IsNaN(solution.Plan.RemainingUnits));
+                Assert.True(solution.InterceptTimeSeconds >= 0);
+            }
+        }
+
+        [Fact]
+        public void Solve_handles_head_on_courses_without_nan_or_exception()
+        {
+            // Ship and target flying directly at each other (180 degrees apart on a
+            // straight line). Must resolve deterministically, without NaN/exception.
+            var solution = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+                shipX: 0, shipY: 0, shipDirectionDegrees: 0, shipSpeedKmS: 5,
+                targetX: 0, targetY: -5000, targetDirectionDegrees: 180, targetSpeedKmS: 2,
+                angularInertiaDegPerSec: Inertia);
+
+            Assert.False(double.IsNaN(solution.InterceptTimeSeconds));
+            Assert.False(double.IsNaN(solution.TargetXAtIntercept));
+            Assert.False(double.IsNaN(solution.TargetYAtIntercept));
+            if (solution.HasIntercept)
+            {
+                Assert.True(solution.InterceptTimeSeconds > 0);
+                Assert.Equal(
+                    solution.Plan.RemainingUnits,
+                    5 * 10.0 * solution.InterceptTimeSeconds,
+                    precision: 2);
+            }
+        }
+
+        [Fact]
+        public void Solve_avoids_the_type_switch_discontinuity_that_broke_the_reverted_bisection_attempt()
+        {
+            // Regression for story-20260829-210641.md §2 ("why bisection on t failed"):
+            // the previous (reverted) attempt bisected on the ARGMIN-selected curve
+            // length as a single function of t, which is discontinuous at points where
+            // the globally-shortest curve type switches between the 6 Dubins types even
+            // though the underlying geometry (target pose) changes smoothly.
+            //
+            // This fixture reproduces exactly that failure mode (found by brute-force
+            // search over the SAME production CreateFlyThroughPlan, outside this repo —
+            // the original bug's exact numbers were never persisted anywhere in the repo
+            // or git history, per story-20260829-210641.md §10, Unit 1, so this is a
+            // freshly constructed, independently documented equivalent), and additionally
+            // surfaces a SECOND, more subtle discontinuity hazard within a single curve
+            // type's own formula:
+            //
+            //   Sampling CreateFlyThroughPlan(shipPose, target(t)) — i.e. what an
+            //   argmin-only bisection would evaluate — at t=17s and t=18s along this
+            //   target's constant-velocity path gives:
+            //     t=17s: type RSL, argmin-vs-shipSpeed*t residual = +4148.78 (positive)
+            //     t=18s: type RSR, argmin-vs-shipSpeed*t residual =  -375.47 (negative)
+            //   The sign flips ACROSS a type switch (RSL -> RSR) — exactly the spurious
+            //   "root" a naive bisection on the argmin function would chase.
+            //
+            //   Worse: RSR's OWN formula (evaluated with ITS OWN formula alone, never
+            //   mixing with RSL) ALSO appears to cross zero right around t ~= 17.95s —
+            //   but that apparent crossing is itself an artifact: one of RSR's three
+            //   segment angles crosses a 2*pi boundary there (Mod2Pi wraps it from ~2*pi
+            //   back to ~0), making RSR's reported length jump from ~5020 to ~523 units
+            //   within a 0.02s step even though the target barely moved — a
+            //   representation artifact of always reporting the shortest-mod-2*pi
+            //   segment angles (the same convention CreateFlyThroughPlan intentionally
+            //   uses and must keep), not a genuine physical root. A solver that only
+            //   guards against ADMISSIBILITY-domain boundaries (p^2 &lt; 0 / |x| &gt; 1)
+            //   and not this wrap artifact would silently accept t~=17.95s as an "RSR"
+            //   answer, which does not actually match what a ship flying the fly-through
+            //   plan for that pose would need. SolveInterceptFlyThroughPlan must reject
+            //   this spurious bracket for RSR too and keep searching until it finds the
+            //   real earliest self-consistent root — which for this fixture turns out to
+            //   be a DIFFERENT curve type (LRL, t* ~= 104.55s) once both the type-switch
+            //   and the intra-type wrap artifact are correctly excluded.
+            const double shipX = 10000, shipY = 9998.25, shipDirectionDegrees = 259.7105, shipSpeedKmS = 4.9966;
+            const double targetX = 9789.6958, targetY = 10088.3081, targetDirectionDegrees = 299.7607, targetSpeedKmS = 1.8953;
+
+            // Sanity check: confirm the discontinuity actually exists for this fixture
+            // (documents WHY this is a meaningful regression fixture, not just an
+            // arbitrary intercept test).
+            double targetSpeedUnits = targetSpeedKmS * 10.0;
+            double targetDirRad = targetDirectionDegrees * Math.PI / 180.0;
+            double targetVx = targetSpeedUnits * Math.Sin(targetDirRad);
+            double targetVy = -targetSpeedUnits * Math.Cos(targetDirRad);
+            double shipSpeedUnits = shipSpeedKmS * 10.0;
+
+            var planAt17 = ApproachPursuitMath.CreateFlyThroughPlan(
+                shipX, shipY, shipDirectionDegrees, shipSpeedKmS,
+                targetX + 17 * targetVx, targetY + 17 * targetVy, targetDirectionDegrees, Inertia);
+            var planAt18 = ApproachPursuitMath.CreateFlyThroughPlan(
+                shipX, shipY, shipDirectionDegrees, shipSpeedKmS,
+                targetX + 18 * targetVx, targetY + 18 * targetVy, targetDirectionDegrees, Inertia);
+
+            double residualAt17 = planAt17.RemainingUnits - shipSpeedUnits * 17;
+            double residualAt18 = planAt18.RemainingUnits - shipSpeedUnits * 18;
+
+            Assert.NotEqual(planAt17.Type, planAt18.Type); // Type switch really happens here.
+            Assert.True(residualAt17 > 0 && residualAt18 < 0); // Naive argmin sign flip.
+
+            // Now the actual solver: must NOT land on the spurious ~17.95s RSR wrap
+            // artifact, nor on the RSL/RSR type-switch bracket — it must find the real
+            // earliest self-consistent root across all 6 types.
+            var solution = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+                shipX, shipY, shipDirectionDegrees, shipSpeedKmS,
+                targetX, targetY, targetDirectionDegrees, targetSpeedKmS,
+                angularInertiaDegPerSec: Inertia);
+
+            Assert.True(solution.HasIntercept);
+            Assert.NotEqual("RSR", solution.Type); // Not the spurious wrap-artifact "root".
+            Assert.True(solution.InterceptTimeSeconds > 20); // Well clear of the [17,18] artifact zone.
+            Assert.Equal("LRL", solution.Type);
+            Assert.InRange(solution.InterceptTimeSeconds, 104, 105);
+
+            // Self-consistency: the ship covers exactly the curve's length in t* seconds
+            // — computed from the winning type's OWN formula at t*, not the argmin's
+            // (possibly discontinuous) length.
+            Assert.Equal(
+                solution.Plan.RemainingUnits,
+                shipSpeedUnits * solution.InterceptTimeSeconds,
+                precision: 2);
+        }
+    }
 }
