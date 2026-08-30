@@ -96,9 +96,6 @@ public sealed class GameSessionScreen : IScreen
     private SKRect _lastPanelRect;
     private SKRect _lastCloseRect;
 
-    // Player ship info panel state
-    private SKRect _lastPlayerShipPanelRect;
-
     // Speed state
     private SimulationSpeed _lastNonPauseSpeed = SimulationSpeed.Speed1;
     private SKRect _lastSpeedPanelRect;
@@ -118,6 +115,9 @@ public sealed class GameSessionScreen : IScreen
 
     // Commands Panel (top-left) — ТЗ подзадача 1 skeleton + ТЗ-04 data-driven buttons
     private readonly CommandsPanel _commandsPanel;
+
+    // Object Info Panel (top-right) — mirrors Commands Panel chrome; Player Ship + Selected/Active Object rows
+    private readonly ObjectInfoPanel _objectInfoPanel;
 
     // Mechanics panel paints (bottom-center)
     private readonly SKPaint _mechanicsBtnNormalPaint;
@@ -212,7 +212,6 @@ public sealed class GameSessionScreen : IScreen
     internal double CameraPixelsPerWorldUnit => _camera.PixelsPerWorldUnit;
     internal SKRect LastPanelRect => _lastPanelRect;
     internal SKRect LastCloseRect => _lastCloseRect;
-    internal SKRect LastPlayerShipPanelRect => _lastPlayerShipPanelRect;
     internal SimulationSpeed LastNonPauseSpeed => _lastNonPauseSpeed;
     internal SKRect LastSpeedPanelRect => _lastSpeedPanelRect;
     internal IReadOnlyList<SKRect> SpeedButtonRects => _speedButtonRects;
@@ -224,6 +223,7 @@ public sealed class GameSessionScreen : IScreen
     internal IReadOnlyList<string> ScalePanelLabels => ScaleLabels;
     internal float ScaleIndicatorCenterX => ComputeScaleIndicatorPosition();
     internal CommandsPanel CommandsPanel => _commandsPanel;
+    internal ObjectInfoPanel ObjectInfoPanel => _objectInfoPanel;
     internal float UiScale => _uiScale;
 
     /// <summary>Current frame's render list (scale-filtered, client-side).</summary>
@@ -232,6 +232,9 @@ public sealed class GameSessionScreen : IScreen
     internal IReadOnlyList<ObjectTrailPoint> GetObjectTrail(string objectId) => _trailStore.GetTrail(objectId);
     internal string? ActiveObjectId => _activeObjectId;
     internal string? SelectedObjectId => _selectedObjectId;
+    internal ObjectInfoPanelData? PlayerShipInfo => ToObjectInfoPanelData(FindPlayerShip(_renderStates));
+    /// <summary>Object Info panel's "Selected Object" row content — hover (<see cref="ActiveObjectId"/>) takes priority over the last click (<see cref="SelectedObjectId"/>).</summary>
+    internal ObjectInfoPanelData? SelectedOrActiveObjectInfo => ToObjectInfoPanelData(FindRenderStateById(_activeObjectId ?? _selectedObjectId));
 
     // ── Constructor ─────────────────────────────────────────────
 
@@ -285,6 +288,7 @@ public sealed class GameSessionScreen : IScreen
         _mechanicsBtnTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 13f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
         _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel);
+        _objectInfoPanel = new ObjectInfoPanel();
     }
 
     /// <summary>
@@ -382,11 +386,9 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        // 5. Player ship info panel (consume, don't pan)
-        if (_lastPlayerShipPanelRect.Contains(uiX, uiY))
-        {
+        // 5. Object Info panel (top-right) — consume clicks, don't pan
+        if (_objectInfoPanel.OnMouseDown(uiX, uiY))
             return ScreenEvent.None;
-        }
 
         // 5.5. Object selection takes priority over both plain pan and Ctrl+Click
         // navigation (ТЗ §54, TacticalMapSpecification.md line 79: "клик поглощается,
@@ -479,7 +481,8 @@ public sealed class GameSessionScreen : IScreen
         RecomputeActiveObjectId();
         _isFinanceButtonHovered = _lastFinanceButtonRect.Contains(_uiMouseX, _uiMouseY);
         _isShipButtonHovered = _lastShipButtonRect.Contains(_uiMouseX, _uiMouseY);
-        return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY) || _isFinanceButtonHovered || _isShipButtonHovered;
+        bool objectInfoHovered = _objectInfoPanel.OnMouseMove(_uiMouseX, _uiMouseY);
+        return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY) || objectInfoHovered || _isFinanceButtonHovered || _isShipButtonHovered;
     }
 
     public void OnMouseUp(float x, float y)
@@ -490,6 +493,7 @@ public sealed class GameSessionScreen : IScreen
         _uiMouseY = y / _uiScale;
         _isPanningMap = false;
         _commandsPanel.OnMouseUp(_uiMouseX, _uiMouseY);
+        _objectInfoPanel.OnMouseUp(_uiMouseX, _uiMouseY);
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
@@ -915,7 +919,7 @@ public sealed class GameSessionScreen : IScreen
             return true;
         if (_panelVisible && (_lastCloseRect.Contains(uiX, uiY) || _lastPanelRect.Contains(uiX, uiY)))
             return true;
-        if (_lastPlayerShipPanelRect.Contains(uiX, uiY))
+        if (_objectInfoPanel.CaptionRect.Contains(uiX, uiY) || _objectInfoPanel.BodyRect.Contains(uiX, uiY))
             return true;
 
         return false;
@@ -1084,9 +1088,12 @@ public sealed class GameSessionScreen : IScreen
         if (_panelVisible)
             DrawInfoPanel(canvas, buffered);
 
-        // 8. Player ship info panel (bottom-right)
+        // 8. Object Info panel (top-right, below Speed/Scale) — Player Ship + Selected/Active Object rows
         var playerShip = FindPlayerShip(_renderStates);
-        DrawPlayerShipInfoPanel(canvas, playerShip);
+        var selectedOrActive = FindRenderStateById(_activeObjectId ?? _selectedObjectId);
+        float objectInfoPanelTop = ComputeSpeedPanelRect().Bottom + PanelMargin;
+        _objectInfoPanel.Render(canvas, _uiViewportW, objectInfoPanelTop,
+            ToObjectInfoPanelData(playerShip), ToObjectInfoPanelData(selectedOrActive));
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);
@@ -1899,16 +1906,13 @@ public sealed class GameSessionScreen : IScreen
             lines.Add(("Cursor Game", "(—, —)"));
         }
 
-        lines.Add(("Selected Id", _selectedObjectId ?? "—"));
-        lines.Add(("Active Id", _activeObjectId ?? "—"));
-
         int objectCount = buffered?.Snapshot.Objects.Length ?? 0;
         lines.Add(("Celestial objects", objectCount.ToString()));
 
         return lines;
     }
 
-    // ── Player ship info panel ───────────────────────────────────
+    // ── Object Info panel (top-right) ────────────────────────────
 
     private static ObjectRenderState? FindPlayerShip(IReadOnlyList<ObjectRenderState> renderStates)
     {
@@ -1920,76 +1924,32 @@ public sealed class GameSessionScreen : IScreen
         return null;
     }
 
-    private static string? GetActiveEngineCommandDisplayName(string? commandType)
+    /// <summary>
+    /// Resolves <paramref name="objectId"/> (the caller passes
+    /// <c>_activeObjectId ?? _selectedObjectId</c> — hover takes priority over the last
+    /// click) against the current <see cref="_renderStates"/> for the Object Info
+    /// panel's "Selected Object" row.
+    /// </summary>
+    private ObjectRenderState? FindRenderStateById(string? objectId)
     {
-        return commandType switch
+        if (objectId is null)
+            return null;
+
+        for (int i = 0; i < _renderStates.Count; i++)
         {
-            ShipEngineCommandTypes.Accelerate => "Accelerate",
-            ShipEngineCommandTypes.Brake => "Brake",
-            ShipEngineCommandTypes.TurnLeftUntilCancel => "Turn Left Until Cancel",
-            ShipEngineCommandTypes.TurnRightUntilCancel => "Turn Right Until Cancel",
-            _ => null
-        };
+            if (_renderStates[i].Predicted.ObjectId == objectId)
+                return _renderStates[i];
+        }
+        return null;
     }
 
-    internal List<(string Label, string Value)> BuildPlayerShipPanelLines(ObjectRenderState? playerShip)
+    private static ObjectInfoPanelData? ToObjectInfoPanelData(ObjectRenderState? state)
     {
-        var lines = new List<(string Label, string Value)>();
+        if (state is not { } s)
+            return null;
 
-        if (playerShip is not null)
-        {
-            var p = playerShip.Value.Predicted;
-            lines.Add(("Speed", $"{p.SpeedKmS:0.###} km/s"));
-            lines.Add(("Course", $"{p.Direction:F0}°"));
-            lines.Add(("Location", $"({p.X:F0}, {p.Y:F0})"));
-
-            string engineDisplay = GetActiveEngineCommandDisplayName(p.ActiveEngineCommandType) ?? "—";
-            lines.Add(("Engine", engineDisplay));
-        }
-        else
-        {
-            lines.Add(("Speed", "—"));
-            lines.Add(("Course", "—"));
-            lines.Add(("Location", "(—, —)"));
-            lines.Add(("Engine", "—"));
-        }
-
-        return lines;
-    }
-
-    private void DrawPlayerShipInfoPanel(SKCanvas canvas, ObjectRenderState? playerShip)
-    {
-        var lines = BuildPlayerShipPanelLines(playerShip);
-
-        float labelWidth = 0, valueWidth = 0;
-        foreach (var (label, value) in lines)
-        {
-            labelWidth = Math.Max(labelWidth, _panelLabelPaint.MeasureText(label));
-            valueWidth = Math.Max(valueWidth, _panelTextPaint.MeasureText(value));
-        }
-
-        float gap = 8f;
-        float panelW = PanelPaddingX * 2 + labelWidth + gap + valueWidth;
-        float panelH = PanelPaddingY * 2 + lines.Count * PanelLineHeight;
-
-        float panelX = _uiViewportW - panelW - PanelMargin;
-        float panelY = _uiViewportH - panelH - PanelMargin;
-
-        _lastPlayerShipPanelRect = new SKRect(panelX, panelY, panelX + panelW, panelY + panelH);
-
-        canvas.DrawRect(_lastPlayerShipPanelRect, _panelBgPaint);
-        canvas.DrawRect(_lastPlayerShipPanelRect, _panelBorderPaint);
-
-        float textY = panelY + PanelPaddingY + PanelLineHeight - 3f;
-        float labelX = panelX + PanelPaddingX;
-        float valueX = labelX + labelWidth + gap;
-
-        foreach (var (label, value) in lines)
-        {
-            canvas.DrawText(label, labelX, textY, _panelLabelPaint);
-            canvas.DrawText(value, valueX, textY, _panelTextPaint);
-            textY += PanelLineHeight;
-        }
+        var p = s.Predicted;
+        return new ObjectInfoPanelData(p.ObjectId, p.DisplayName, p.SpeedKmS, p.Direction, p.RenderObjectType);
     }
 
     /// <summary>

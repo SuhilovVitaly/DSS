@@ -769,21 +769,35 @@ public class GameSessionObjectInteractionTests
     // ── Info panel wiring ─────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task Info_panel_lines_show_placeholder_then_real_ids()
+    public async Task Object_info_panel_selected_row_shows_placeholder_then_real_object()
     {
         await using var fixture = CreateFixture([ObjAt("OBJ-1", 10000)]);
         Render(fixture.Screen);
 
-        var before = fixture.Screen.BuildPanelLines(null);
-        Assert.Contains(("Active Id", "—"), before);
-        Assert.Contains(("Selected Id", "—"), before);
+        Assert.Null(fixture.Screen.SelectedOrActiveObjectInfo);
 
         fixture.Screen.OnMouseMove(640, 360);
         fixture.Screen.OnMouseDown(640, 360);
 
-        var after = fixture.Screen.BuildPanelLines(null);
-        Assert.Contains(("Active Id", "OBJ-1"), after);
-        Assert.Contains(("Selected Id", "OBJ-1"), after);
+        var info = fixture.Screen.SelectedOrActiveObjectInfo;
+        Assert.NotNull(info);
+        Assert.Equal("OBJ-1", info!.Value.ObjectId);
+    }
+
+    [Fact]
+    public async Task Object_info_panel_selected_row_prefers_the_hovered_object_over_the_clicked_one()
+    {
+        await using var fixture = CreateFixture([ObjAt("OBJ-1", 10000), ObjAt("OBJ-2", 10200)]);
+        Render(fixture.Screen);
+
+        fixture.Screen.OnMouseMove(640, 360);
+        fixture.Screen.OnMouseDown(640, 360); // Selected -> OBJ-1
+
+        fixture.Screen.OnMouseMove(640, 560); // Active -> OBJ-2, Selected stays OBJ-1
+
+        Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
+        Assert.Equal("OBJ-2", fixture.Screen.ActiveObjectId);
+        Assert.Equal("OBJ-2", fixture.Screen.SelectedOrActiveObjectInfo!.Value.ObjectId);
     }
 
     [Fact]
