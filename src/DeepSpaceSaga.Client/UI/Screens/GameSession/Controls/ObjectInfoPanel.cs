@@ -49,6 +49,9 @@ public sealed class ObjectInfoPanel
 
     private ObjectInfoPanelState _state = ObjectInfoPanelState.Open;
 
+    /// <summary>Per-row open/closed state (in-memory, per session) — click a row's own caption to toggle it, exactly like Commands Panel's per-panel groups.</summary>
+    private readonly Dictionary<string, bool> _rowOpenedByName = new(StringComparer.Ordinal);
+
     // ── Paints ──────────────────────────────────────────────────
     private readonly SKPaint _mainCaptionBgPaint;
     private readonly SKPaint _rowCaptionBgPaint;
@@ -134,6 +137,9 @@ public sealed class ObjectInfoPanel
     public int HoveredButtonIndex => _hoveredButtonIndex;
     public int PressedButtonIndex => _pressedButtonIndex;
 
+    /// <summary>True (default) unless the row at <paramref name="index"/> was clicked closed.</summary>
+    public bool IsRowOpen(int index) => !_rowOpenedByName.TryGetValue(RowNames[index], out bool opened) || opened;
+
     /// <summary>Pure formatting for one row's content — used directly by tests and by <see cref="Render"/>.</summary>
     public static List<(string Label, string Value)> BuildLines(ObjectInfoPanelData? data)
     {
@@ -164,6 +170,18 @@ public sealed class ObjectInfoPanel
             _pressedButtonIndex = 0;
             _state = _state == ObjectInfoPanelState.Closed ? ObjectInfoPanelState.Open : ObjectInfoPanelState.Closed;
             return true;
+        }
+
+        // Row captions — toggle per-row Opened/Closed, same as Commands Panel's groups.
+        for (int i = 0; i < RowNames.Length; i++)
+        {
+            if (_rowCaptionRects[i].Contains(x, y))
+            {
+                string name = RowNames[i];
+                bool wasOpened = !_rowOpenedByName.TryGetValue(name, out bool o) || o;
+                _rowOpenedByName[name] = !wasOpened;
+                return true;
+            }
         }
 
         return _captionRect.Contains(x, y) || _bodyRect.Contains(x, y);
@@ -210,8 +228,12 @@ public sealed class ObjectInfoPanel
 
             for (int i = 0; i < RowNames.Length; i++)
             {
+                bool opened = IsRowOpen(i);
+
                 var captionRect = new SKRect(left, rowY, left + PanelWidth, rowY + RowCaptionHeight);
-                var bodyRect = new SKRect(left, captionRect.Bottom, left + PanelWidth, captionRect.Bottom + RowBodyHeight);
+                var bodyRect = opened
+                    ? new SKRect(left, captionRect.Bottom, left + PanelWidth, captionRect.Bottom + RowBodyHeight)
+                    : SKRect.Empty;
 
                 _rowCaptionRects[i] = captionRect;
                 _rowBodyRects[i] = bodyRect;
@@ -219,9 +241,12 @@ public sealed class ObjectInfoPanel
                 DrawBeveledCaption(canvas, captionRect, _rowCaptionBgPaint);
                 canvas.DrawText(RowNames[i], captionRect.Left + Padding, captionRect.MidY + _rowTitlePaint.TextSize / 3f, _rowTitlePaint);
 
-                DrawRowBody(canvas, bodyRect, rowData[i]);
+                if (opened)
+                    DrawRowBody(canvas, bodyRect, rowData[i]);
 
-                rowY = bodyRect.Bottom;
+                rowY += opened ? (RowCaptionHeight + RowBodyHeight) : RowCaptionHeight;
+                if (!opened && i < RowNames.Length - 1)
+                    rowY += CommandsPanel.CollapsedPanelGap;
             }
         }
         else

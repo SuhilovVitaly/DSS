@@ -162,6 +162,31 @@ public class ObjectInfoPanelTests
     }
 
     [Fact]
+    public void Row_caption_click_collapses_and_restores_just_that_row()
+    {
+        var (buffer, screen) = CreateScreen();
+        UpdateBufferWithShip(buffer, PlayerShipId);
+        RenderScreen(screen);
+
+        var panel = screen.ObjectInfoPanel;
+        var playerRowCaption = panel.RowCaptionRects[0];
+
+        screen.OnMouseDown(playerRowCaption.MidX, playerRowCaption.MidY);
+        RenderScreen(screen);
+
+        Assert.False(panel.IsRowOpen(0));
+        Assert.True(panel.IsRowOpen(1));
+        Assert.Equal(0f, panel.RowBodyRects[0].Width);
+        Assert.True(panel.RowBodyRects[1].Width > 0);
+
+        screen.OnMouseDown(playerRowCaption.MidX, playerRowCaption.MidY);
+        RenderScreen(screen);
+
+        Assert.True(panel.IsRowOpen(0));
+        Assert.True(panel.RowBodyRects[0].Width > 0);
+    }
+
+    [Fact]
     public void Click_inside_panel_does_not_pan_camera()
     {
         var (buffer, screen) = CreateScreen();
