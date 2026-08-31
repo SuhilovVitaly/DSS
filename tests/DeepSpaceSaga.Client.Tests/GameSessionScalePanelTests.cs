@@ -73,8 +73,8 @@ public class GameSessionScalePanelTests
         var scaleRect = screen.LastScalePanelRect;
         var speedRect = screen.LastSpeedPanelRect;
 
-        Assert.True(scaleRect.Left > ScreenWidth / 2f, "Scale panel should be in top-right area");
-        Assert.True(scaleRect.Top < ScreenHeight / 2f, "Scale panel should be in top area");
+        Assert.True(scaleRect.Top > ScreenHeight / 2f, "Scale panel should be in the bottom area");
+        Assert.True(scaleRect.MidX < ScreenWidth / 2f, "Scale panel should sit left of the row's horizontal center");
         Assert.True(scaleRect.Right < speedRect.Left,
             $"Scale panel right ({scaleRect.Right}) must be left of speed panel ({speedRect.Left})");
         Assert.Equal(speedRect.Top, scaleRect.Top, precision: 3);

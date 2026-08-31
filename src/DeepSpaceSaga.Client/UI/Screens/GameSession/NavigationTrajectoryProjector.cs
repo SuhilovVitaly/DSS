@@ -62,8 +62,33 @@ internal sealed class NavigationTrajectoryProjector
     /// cycle, starting from the current predicted state. Empty when the snapshot does
     /// not carry an authoritative navigation target (no active navigate cycle).
     /// </summary>
-    public List<FutureTrajectoryPoint> Project(ObjectMotionSnapshot predicted)
+    public List<FutureTrajectoryPoint> Project(ObjectMotionSnapshot predicted) =>
+        Project(predicted, out _, out _);
+
+    /// <summary>Same as <see cref="Project(ObjectMotionSnapshot)"/>, plus <see cref="Project(ObjectMotionSnapshot, out bool, out FutureTrajectoryPoint)"/>'s isConfirmedIntercept.</summary>
+    public List<FutureTrajectoryPoint> Project(ObjectMotionSnapshot predicted, out bool isConfirmedIntercept) =>
+        Project(predicted, out isConfirmedIntercept, out _);
+
+    /// <summary>
+    /// Same as <see cref="Project(ObjectMotionSnapshot)"/>, plus whether the returned
+    /// path is a CONFIRMED intercept-solve rendezvous curve (story-20260829-210641.md
+    /// §10, Checkpoint 2) — true as soon as <see cref="ApproachPursuitMath.SolveInterceptFlyThroughPlan"/>
+    /// finds one, even during the single transient <see cref="ApproachPursuitMath.FlyThroughPendingPhase"/>
+    /// frame before the engine has baked that confirmation into the authoritative
+    /// snapshot's NavigationPhase. Callers that gate a "confirmed intercept" marker on
+    /// NavigationPhase alone miss that first frame — the preview curve already shows the
+    /// resolved rendezvous shape one frame before the phase string catches up. When true,
+    /// <paramref name="interceptPoint"/> is the exact rendezvous pose — computed
+    /// analytically from the target's live pose and constant velocity, NOT read off the
+    /// discretized preview curve's own tracked endpoint, which accumulates enough
+    /// per-cycle turn quantization over a long curve to visibly miss the target's own
+    /// drawn straight-line trajectory (see <see cref="ProjectFlyThrough"/>).
+    /// </summary>
+    public List<FutureTrajectoryPoint> Project(
+        ObjectMotionSnapshot predicted, out bool isConfirmedIntercept, out FutureTrajectoryPoint interceptPoint)
     {
+        isConfirmedIntercept = false;
+        interceptPoint = default;
         var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
 
         // navigation.approach: trailing-pursuit preview against a moving aim point —
@@ -76,7 +101,9 @@ internal sealed class NavigationTrajectoryProjector
             predicted.NavigationTargetSpeedKmS is { } targetSpeedKmS &&
             predicted.NavigationTargetDirectionDegrees is { } targetDirectionDegrees)
         {
-            return ProjectApproach(predicted, bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS);
+            return ProjectApproach(
+                predicted, bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS,
+                out isConfirmedIntercept, out interceptPoint);
         }
 
         if (predicted.NavigationTargetX is not { } targetX ||
@@ -191,13 +218,19 @@ internal sealed class NavigationTrajectoryProjector
         double bakedAimX,
         double bakedAimY,
         double targetDirectionDegrees,
-        double targetSpeedKmS)
+        double targetSpeedKmS,
+        out bool isConfirmedIntercept,
+        out FutureTrajectoryPoint interceptPoint)
     {
         if (ApproachPursuitMath.IsFlyThroughPhase(predicted.NavigationPhase))
         {
             return ProjectFlyThrough(
-                predicted, bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS);
+                predicted, bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS,
+                out isConfirmedIntercept, out interceptPoint);
         }
+
+        isConfirmedIntercept = false;
+        interceptPoint = default;
 
         var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
 
@@ -410,13 +443,19 @@ internal sealed class NavigationTrajectoryProjector
         return points;
     }
 
+    private const double UnitsPerKmS = 10.0; // 1 km/s -> 10 world units/s (matches ApproachPursuitMath).
+
     private static List<FutureTrajectoryPoint> ProjectFlyThrough(
         ObjectMotionSnapshot predicted,
         double targetX,
         double targetY,
         double targetDirectionDegrees,
-        double targetSpeedKmS)
+        double targetSpeedKmS,
+        out bool isConfirmedIntercept,
+        out FutureTrajectoryPoint interceptPoint)
     {
+        isConfirmedIntercept = false;
+        interceptPoint = default;
         var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
         double x = predicted.X;
         double y = predicted.Y;
@@ -428,7 +467,49 @@ internal sealed class NavigationTrajectoryProjector
         ApproachFlyThroughPlan? plan = null;
         long elapsedMs = untilNextTurnMs;
 
-        if (phase.StartsWith(ApproachPursuitMath.FlyThroughPhasePrefix, StringComparison.Ordinal))
+        // A confirmed rendezvous pose is a fixed, mathematically exact point on the
+        // target's straight-line path (target(t) = targetPosition + t * targetVelocity)
+        // — always recoverable from the CURRENT live target pose plus however much curve
+        // is left to fly, independent of how the discrete per-cycle stepping loop below
+        // (AdvanceStraight'ing one interval at a time) happens to trace toward it. Reading
+        // the endpoint off that discretized trace instead (the ship's own tracked (x, y)
+        // at "arrival") accumulates the same small per-cycle quantization the fallback
+        // path already documents below — over a long multi-cycle curve that drift is
+        // enough to visibly miss the target's own drawn trajectory line. Computing it
+        // analytically here keeps the marker exactly on that line by construction.
+        double targetDirectionRad = targetDirectionDegrees * Math.PI / 180.0;
+        double targetVelocityX = targetSpeedKmS * UnitsPerKmS * Math.Sin(targetDirectionRad);
+        double targetVelocityY = -targetSpeedKmS * UnitsPerKmS * Math.Cos(targetDirectionRad);
+
+        // story-20260829-210641.md §10, Checkpoint 2: a confirmed intercept-solve plan
+        // (FlyThroughIntercept:) resumes exactly like a fallback fly-through plan
+        // (FlyThrough:) — same encoded remaining-segment fields — but on arrival it must
+        // complete immediately rather than hand off to a live-tracking Final preview (see
+        // below). Checked before FlyThroughPhasePrefix since "FlyThroughIntercept:" is not
+        // itself prefixed by "FlyThrough:" (they diverge at the 11th character), so either
+        // order would be unambiguous, but checking the more specific prefix first keeps
+        // that non-overlap explicit rather than relied upon.
+        bool isInterceptPlan = false;
+        if (phase.StartsWith(ApproachPursuitMath.FlyThroughInterceptPhasePrefix, StringComparison.Ordinal))
+        {
+            plan = new ApproachFlyThroughPlan(
+                phase[ApproachPursuitMath.FlyThroughInterceptPhasePrefix.Length..],
+                predicted.NavigationEscapeCourseDegrees ?? 0,
+                predicted.NavigationRequiredDepartureDistance ?? 0,
+                predicted.NavigationLockedCourseDegrees ?? 0);
+            isInterceptPlan = true;
+
+            // Resuming an already-confirmed curve: targetX/Y here are the target's LIVE
+            // (re-baked-every-cycle) position, not the original rendezvous pose — recover
+            // that pose from here via the curve's own remaining arc length instead (see
+            // comment above): remaining flight time = remaining units / ship speed.
+            double remainingTimeSeconds = plan.Value.RemainingUnits / (speedKmS * UnitsPerKmS);
+            isConfirmedIntercept = true;
+            interceptPoint = new FutureTrajectoryPoint(
+                targetX + remainingTimeSeconds * targetVelocityX,
+                targetY + remainingTimeSeconds * targetVelocityY);
+        }
+        else if (phase.StartsWith(ApproachPursuitMath.FlyThroughPhasePrefix, StringComparison.Ordinal))
         {
             plan = new ApproachFlyThroughPlan(
                 phase[ApproachPursuitMath.FlyThroughPhasePrefix.Length..],
@@ -447,10 +528,35 @@ internal sealed class NavigationTrajectoryProjector
             ApproachFlyThroughPlanStep step;
             if (plan is null)
             {
-                plan = ApproachPursuitMath.CreateFlyThroughPlan(
+                // Mirror SimulationEngine.ApplyApproachStep's FlyThroughPending handling
+                // (story-20260829-210641.md §10, Checkpoint 2): try an exact-rendezvous
+                // solve FIRST, from the same live ship/target pose about to be passed to
+                // CreateFlyThroughPlan below, before falling back to the captured-pose
+                // curve. The fallback path (HasIntercept == false) is byte-for-byte
+                // unchanged from before this method learned about intercepts.
+                var interceptSolution = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
                     x, y, direction, speedKmS,
-                    targetX, targetY, targetDirectionDegrees,
+                    targetX, targetY, targetDirectionDegrees, targetSpeedKmS,
                     predicted.NavigationAngularInertiaDegPerSec);
+
+                if (interceptSolution.HasIntercept)
+                {
+                    plan = interceptSolution.Plan;
+                    isInterceptPlan = true;
+                    targetX = interceptSolution.TargetXAtIntercept;
+                    targetY = interceptSolution.TargetYAtIntercept;
+                    targetDirectionDegrees = interceptSolution.TargetDirectionAtIntercept;
+                    isConfirmedIntercept = true;
+                    interceptPoint = new FutureTrajectoryPoint(targetX, targetY);
+                }
+                else
+                {
+                    plan = ApproachPursuitMath.CreateFlyThroughPlan(
+                        x, y, direction, speedKmS,
+                        targetX, targetY, targetDirectionDegrees,
+                        predicted.NavigationAngularInertiaDegPerSec);
+                }
+
                 step = ApproachPursuitMath.AdvanceFlyThroughPlan(
                     plan.Value, direction, targetDirectionDegrees,
                     travelledUnits: 0,
@@ -469,6 +575,34 @@ internal sealed class NavigationTrajectoryProjector
             plan = step.RemainingPlan;
             if (step.IsArrived)
             {
+                if (isInterceptPlan)
+                {
+                    // A confirmed intercept-solve curve was built directly to the
+                    // target's own future pose at t* — arrival here IS the rendezvous
+                    // with the live target, so (unlike the fallback below, which aims at
+                    // a pose captured when the leg was planned and can go stale) there is
+                    // no stale captured pose to hand off to a live-tracking Final preview
+                    // for. Mirrors SimulationEngine.ApplyApproachStep's immediate-
+                    // completion branch for FlyThroughIntercept:. isConfirmedIntercept and
+                    // interceptPoint were already set above (as soon as isInterceptPlan
+                    // became true).
+                    //
+                    // The tracked (x, y) added along the way only approximates that pose —
+                    // AdvanceFlyThroughPlan's arrival is bookkeeping-based (cumulative
+                    // travelled distance against the planned segment lengths, discretized
+                    // into per-cycle straight chords at the quantized turn heading), not a
+                    // position match, so it can land a visible distance short of the true
+                    // rendezvous pose on a long curve (the drift compounds over many
+                    // cycles). The drawn LINE must actually reach the marked intercept
+                    // point precisely, not stop short of it — but replacing only the very
+                    // last point would turn that accumulated drift into one single,
+                    // visually obvious final-segment jump instead. Blend the correction in
+                    // smoothly over the tail of the curve instead, so the line eases into
+                    // the exact point rather than snapping to it.
+                    SmoothlyConvergeTailToPoint(points, interceptPoint);
+                    return points;
+                }
+
                 // A ship that cannot out-pace the target (equal or slower speed) can
                 // never close the remaining distance — mirrors SimulationEngine
                 // .ApplyApproachStep's own check. The fly-through curve was built to
@@ -514,6 +648,43 @@ internal sealed class NavigationTrajectoryProjector
 
         points.Add(new FutureTrajectoryPoint(targetX, targetY));
         return points;
+    }
+
+    /// <summary>
+    /// Nudges the tail of a confirmed intercept curve's discretized point list so it
+    /// ends EXACTLY at <paramref name="exactEndpoint"/> (the analytically computed
+    /// rendezvous pose — see the caller) instead of at the drift-accumulated tracked
+    /// position the per-cycle stepping loop actually landed on. The correction is eased
+    /// in over the last several samples (quadratic ramp, negligible at the start of the
+    /// span, full at the last point) rather than applied only to the final point, so the
+    /// line visibly bends smoothly into the marker instead of jumping there in one
+    /// oversized final segment.
+    /// </summary>
+    private static void SmoothlyConvergeTailToPoint(
+        List<FutureTrajectoryPoint> points, FutureTrajectoryPoint exactEndpoint)
+    {
+        if (points.Count == 0)
+            return;
+
+        var last = points[^1];
+        double errorX = exactEndpoint.X - last.X;
+        double errorY = exactEndpoint.Y - last.Y;
+
+        // Spread the correction over up to a third of the curve's own samples (capped,
+        // so a short curve doesn't have its ENTIRE shape visibly bent) — long enough
+        // that even the largest drift seen in practice (tens of world units over a long
+        // multi-cycle curve) still eases in gently rather than as a sharp final kink.
+        const int MaxCorrectionSpan = 40;
+        int correctionSpan = Math.Min(points.Count, Math.Max(1, Math.Min(MaxCorrectionSpan, points.Count / 3)));
+        int startIndex = points.Count - correctionSpan;
+
+        for (int i = startIndex; i < points.Count; i++)
+        {
+            double t = (double)(i - startIndex + 1) / correctionSpan; // (0, 1], 1 at the last point
+            double eased = t * t;
+            var p = points[i];
+            points[i] = new FutureTrajectoryPoint(p.X + errorX * eased, p.Y + errorY * eased);
+        }
     }
 
     private static (double X, double Y) ClosestApproach(

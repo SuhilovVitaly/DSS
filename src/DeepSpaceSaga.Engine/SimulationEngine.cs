@@ -2560,7 +2560,9 @@ public sealed class SimulationEngine : IDisposable
         double trailDistanceWorldUnits = cycle.NavigationApproachTrailDistanceWorldUnits ??
             (commandDef.TrailDistanceKm ?? 0) * WorldUnitsPerKm;
         bool flyThroughPending = cycle.NavigationPhase == ApproachPursuitMath.FlyThroughPendingPhase;
-        bool flyThroughActive = cycle.NavigationPhase?.StartsWith(
+        bool flyThroughInterceptActive = cycle.NavigationPhase?.StartsWith(
+            ApproachPursuitMath.FlyThroughInterceptPhasePrefix, StringComparison.Ordinal) == true;
+        bool flyThroughActive = flyThroughInterceptActive || cycle.NavigationPhase?.StartsWith(
             ApproachPursuitMath.FlyThroughPhasePrefix, StringComparison.Ordinal) == true;
 
         if ((flyThroughPending || flyThroughActive) && nextCycle is not null)
@@ -2572,17 +2574,44 @@ public sealed class SimulationEngine : IDisposable
 
             ApproachFlyThroughPlan plan;
             double travelledUnits;
+            bool isConfirmedInterceptPlan = false;
             if (flyThroughPending)
             {
-                plan = ApproachPursuitMath.CreateFlyThroughPlan(
+                // story-20260829-210641.md §10, Checkpoint 2: try an exact-rendezvous
+                // solve FIRST, from the LIVE ship/target pose read at the top of this
+                // method (used as t=0 for the solver's own internal horizon search) —
+                // the narrow, contract-approved base-pose assumption for this batch,
+                // not the command's originally captured pose. Only when no valid
+                // intercept exists (ship not strictly faster than the target, or no
+                // reachable curve within the search horizon) does this fall back to
+                // today's captured-pose CreateFlyThroughPlan, byte-for-byte unchanged.
+                var interceptSolution = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
                     shipMotion.X, shipMotion.Y, shipMotion.Direction, shipMotion.SpeedKmS,
-                    fixedTargetX, fixedTargetY, fixedTargetDirection,
+                    targetMotion.X, targetMotion.Y, targetMotion.Direction, targetMotion.SpeedKmS,
                     moduleType.AngularInertiaDegPerSec ?? 0);
+
+                if (interceptSolution.HasIntercept)
+                {
+                    isConfirmedInterceptPlan = true;
+                    plan = interceptSolution.Plan;
+                    fixedTargetX = interceptSolution.TargetXAtIntercept;
+                    fixedTargetY = interceptSolution.TargetYAtIntercept;
+                    fixedTargetDirection = interceptSolution.TargetDirectionAtIntercept;
+                }
+                else
+                {
+                    plan = ApproachPursuitMath.CreateFlyThroughPlan(
+                        shipMotion.X, shipMotion.Y, shipMotion.Direction, shipMotion.SpeedKmS,
+                        fixedTargetX, fixedTargetY, fixedTargetDirection,
+                        moduleType.AngularInertiaDegPerSec ?? 0);
+                }
                 travelledUnits = 0;
             }
             else
             {
-                string type = cycle.NavigationPhase![ApproachPursuitMath.FlyThroughPhasePrefix.Length..];
+                string type = flyThroughInterceptActive
+                    ? cycle.NavigationPhase![ApproachPursuitMath.FlyThroughInterceptPhasePrefix.Length..]
+                    : cycle.NavigationPhase![ApproachPursuitMath.FlyThroughPhasePrefix.Length..];
                 plan = new ApproachFlyThroughPlan(
                     type,
                     cycle.NavigationEscapeCourseDegrees ?? 0,
@@ -2590,6 +2619,12 @@ public sealed class SimulationEngine : IDisposable
                     cycle.NavigationLockedCourseDegrees ?? 0);
                 travelledUnits = shipMotion.SpeedKmS * (cycle.DurationMs / 1000.0) * WorldUnitsPerKm;
             }
+
+            // Whether THIS cycle's plan is a confirmed intercept-solve — either just
+            // built above, or inherited from a previous cycle already tagged
+            // FlyThroughIntercept: — drives both the arrival hand-off (below) and
+            // which phase prefix the next cycle continues under.
+            bool isInterceptPlan = isConfirmedInterceptPlan || flyThroughInterceptActive;
 
             var flyThroughStep = ApproachPursuitMath.AdvanceFlyThroughPlan(
                 plan,
@@ -2616,6 +2651,23 @@ public sealed class SimulationEngine : IDisposable
 
             if (flyThroughStep.IsArrived || liveArrival.IsArrived)
             {
+                if (isInterceptPlan)
+                {
+                    // A confirmed intercept-solve curve was built directly to the
+                    // target's own future pose at t* — the moment the ship arrives IS
+                    // the rendezvous with the live target (story-20260829-210641.md
+                    // §10, Checkpoint 2), so there is no stale captured pose left to
+                    // hand off to Final for (unlike the FlyThrough: fallback below,
+                    // which aims at a pose captured when the leg was planned and can
+                    // go stale while the curve is flown). Complete immediately at the
+                    // ship's own physically-tracked position, facing the target's live
+                    // course.
+                    return UpdateEngineMotion(
+                        obj, moduleIndex, gameTimeMs,
+                        module => module with { ActiveCycle = null },
+                        motion => motion with { Direction = NormalizeDirection(targetMotion.Direction) });
+                }
+
                 // A ship that cannot out-pace the target (equal or slower) can never
                 // truly close the remaining distance no matter how it steers — chasing
                 // on into a live-tracking Final-phase pursuit (below) would just repeat
@@ -2690,7 +2742,9 @@ public sealed class SimulationEngine : IDisposable
                 // is still being flown (a genuinely moving target keeps moving throughout).
                 TargetWorldX = targetMotion.X,
                 TargetWorldY = targetMotion.Y,
-                NavigationPhase = ApproachPursuitMath.FlyThroughPhasePrefix + remaining.Type,
+                NavigationPhase = (isInterceptPlan
+                    ? ApproachPursuitMath.FlyThroughInterceptPhasePrefix
+                    : ApproachPursuitMath.FlyThroughPhasePrefix) + remaining.Type,
                 NavigationEscapeCourseDegrees = remaining.FirstRemainingUnits,
                 NavigationRequiredDepartureDistance = remaining.SecondRemainingUnits,
                 NavigationLockedCourseDegrees = remaining.ThirdRemainingUnits,

@@ -38,7 +38,8 @@ public sealed class GameSessionScreen : IScreen
 
     /// <summary>
     /// UI-only scale factor applied to the GameSession overlay panels (top-left
-    /// Commands Panel, top-right scale/speed panels, bottom info panels). Never
+    /// Commands Panel, top-right Object Info panel, bottom-center scale/speed
+    /// panels, bottom info panels). Never
     /// affects the tactical map, camera, or hit-testing against map objects — only
     /// the UI-pass canvas transform and the UI-space mouse coordinates derived
     /// from it.
@@ -96,9 +97,6 @@ public sealed class GameSessionScreen : IScreen
     private SKRect _lastPanelRect;
     private SKRect _lastCloseRect;
 
-    // Player ship info panel state
-    private SKRect _lastPlayerShipPanelRect;
-
     // Speed state
     private SimulationSpeed _lastNonPauseSpeed = SimulationSpeed.Speed1;
     private SKRect _lastSpeedPanelRect;
@@ -118,6 +116,9 @@ public sealed class GameSessionScreen : IScreen
 
     // Commands Panel (top-left) — ТЗ подзадача 1 skeleton + ТЗ-04 data-driven buttons
     private readonly CommandsPanel _commandsPanel;
+
+    // Object Info Panel (top-right) — mirrors Commands Panel chrome; Player Ship + Selected/Active Object rows
+    private readonly ObjectInfoPanel _objectInfoPanel;
 
     // Mechanics panel paints (bottom-center)
     private readonly SKPaint _mechanicsBtnNormalPaint;
@@ -212,7 +213,6 @@ public sealed class GameSessionScreen : IScreen
     internal double CameraPixelsPerWorldUnit => _camera.PixelsPerWorldUnit;
     internal SKRect LastPanelRect => _lastPanelRect;
     internal SKRect LastCloseRect => _lastCloseRect;
-    internal SKRect LastPlayerShipPanelRect => _lastPlayerShipPanelRect;
     internal SimulationSpeed LastNonPauseSpeed => _lastNonPauseSpeed;
     internal SKRect LastSpeedPanelRect => _lastSpeedPanelRect;
     internal IReadOnlyList<SKRect> SpeedButtonRects => _speedButtonRects;
@@ -224,6 +224,7 @@ public sealed class GameSessionScreen : IScreen
     internal IReadOnlyList<string> ScalePanelLabels => ScaleLabels;
     internal float ScaleIndicatorCenterX => ComputeScaleIndicatorPosition();
     internal CommandsPanel CommandsPanel => _commandsPanel;
+    internal ObjectInfoPanel ObjectInfoPanel => _objectInfoPanel;
     internal float UiScale => _uiScale;
 
     /// <summary>Current frame's render list (scale-filtered, client-side).</summary>
@@ -232,6 +233,9 @@ public sealed class GameSessionScreen : IScreen
     internal IReadOnlyList<ObjectTrailPoint> GetObjectTrail(string objectId) => _trailStore.GetTrail(objectId);
     internal string? ActiveObjectId => _activeObjectId;
     internal string? SelectedObjectId => _selectedObjectId;
+    internal ObjectInfoPanelData? PlayerShipInfo => ToObjectInfoPanelData(FindPlayerShip(_renderStates));
+    /// <summary>Object Info panel's "Selected Object" row content — hover (<see cref="ActiveObjectId"/>) takes priority over the last click (<see cref="SelectedObjectId"/>).</summary>
+    internal ObjectInfoPanelData? SelectedOrActiveObjectInfo => ToObjectInfoPanelData(FindRenderStateById(_activeObjectId ?? _selectedObjectId));
 
     // ── Constructor ─────────────────────────────────────────────
 
@@ -285,6 +289,7 @@ public sealed class GameSessionScreen : IScreen
         _mechanicsBtnTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 13f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
         _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel);
+        _objectInfoPanel = new ObjectInfoPanel();
     }
 
     /// <summary>
@@ -382,11 +387,9 @@ public sealed class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        // 5. Player ship info panel (consume, don't pan)
-        if (_lastPlayerShipPanelRect.Contains(uiX, uiY))
-        {
+        // 5. Object Info panel (top-right) — consume clicks, don't pan
+        if (_objectInfoPanel.OnMouseDown(uiX, uiY))
             return ScreenEvent.None;
-        }
 
         // 5.5. Object selection takes priority over both plain pan and Ctrl+Click
         // navigation (ТЗ §54, TacticalMapSpecification.md line 79: "клик поглощается,
@@ -479,7 +482,8 @@ public sealed class GameSessionScreen : IScreen
         RecomputeActiveObjectId();
         _isFinanceButtonHovered = _lastFinanceButtonRect.Contains(_uiMouseX, _uiMouseY);
         _isShipButtonHovered = _lastShipButtonRect.Contains(_uiMouseX, _uiMouseY);
-        return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY) || _isFinanceButtonHovered || _isShipButtonHovered;
+        bool objectInfoHovered = _objectInfoPanel.OnMouseMove(_uiMouseX, _uiMouseY);
+        return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY) || objectInfoHovered || _isFinanceButtonHovered || _isShipButtonHovered;
     }
 
     public void OnMouseUp(float x, float y)
@@ -490,6 +494,7 @@ public sealed class GameSessionScreen : IScreen
         _uiMouseY = y / _uiScale;
         _isPanningMap = false;
         _commandsPanel.OnMouseUp(_uiMouseX, _uiMouseY);
+        _objectInfoPanel.OnMouseUp(_uiMouseX, _uiMouseY);
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
@@ -915,7 +920,7 @@ public sealed class GameSessionScreen : IScreen
             return true;
         if (_panelVisible && (_lastCloseRect.Contains(uiX, uiY) || _lastPanelRect.Contains(uiX, uiY)))
             return true;
-        if (_lastPlayerShipPanelRect.Contains(uiX, uiY))
+        if (_objectInfoPanel.CaptionRect.Contains(uiX, uiY) || _objectInfoPanel.BodyRect.Contains(uiX, uiY))
             return true;
 
         return false;
@@ -1070,10 +1075,10 @@ public sealed class GameSessionScreen : IScreen
         canvas.Save();
         canvas.Scale(_uiScale);
 
-        // 4.75. Scale panel (top-right, left of speed panel)
+        // 4.75. Scale panel (bottom-center, left of speed panel)
         DrawScalePanel(canvas);
 
-        // 5. Speed panel (top-right)
+        // 5. Speed panel (bottom-center, above the Mechanics panel)
         DrawSpeedPanel(canvas);
 
         // 6. Commands Panel (top-left)
@@ -1084,9 +1089,11 @@ public sealed class GameSessionScreen : IScreen
         if (_panelVisible)
             DrawInfoPanel(canvas, buffered);
 
-        // 8. Player ship info panel (bottom-right)
+        // 8. Object Info panel (top-right) — Player Ship + Selected/Active Object rows
         var playerShip = FindPlayerShip(_renderStates);
-        DrawPlayerShipInfoPanel(canvas, playerShip);
+        var selectedOrActive = FindRenderStateById(_activeObjectId ?? _selectedObjectId);
+        _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
+            ToObjectInfoPanelData(playerShip), ToObjectInfoPanelData(selectedOrActive));
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);
@@ -1414,7 +1421,17 @@ public sealed class GameSessionScreen : IScreen
 
         foreach (var state in _renderStates)
         {
-            if (!state.IsPlayerShip)
+            // The player ship always gets its own ballistic preview (subject to the
+            // Approach exclusion below). A non-player object only gets one when it is
+            // the current SelectedObjectId — e.g. the target of an active
+            // navigation.approach — so the player can visually cross-check where that
+            // object will actually be against the ship's own planned curve, without
+            // drawing a preview for every object in the scene.
+            bool isSelectedTarget = !state.IsPlayerShip &&
+                _selectedObjectId is not null &&
+                state.Predicted.ObjectId == _selectedObjectId;
+
+            if (!state.IsPlayerShip && !isSelectedTarget)
                 continue;
 
             if (!FutureTrajectoryProjector.ShouldDraw(state.Predicted))
@@ -1423,8 +1440,9 @@ public sealed class GameSessionScreen : IScreen
             // navigation.approach already gets its own single-color path from
             // DrawNavigationTrajectories (same pursuit math, run to actual arrival).
             // Drawing this generic straight-line projection on top of it produced a
-            // visible two-color trajectory for the same course.
-            if (state.Predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach)
+            // visible two-color trajectory for the same course. Only applies to the
+            // player ship — a selected target never has its own Approach command.
+            if (state.IsPlayerShip && state.Predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach)
                 continue;
 
             var points = _futureTrajectoryProjector.Project(state.Predicted);
@@ -1458,11 +1476,36 @@ public sealed class GameSessionScreen : IScreen
             var predicted = state.Predicted;
             if (predicted.NavigationTargetX is not null)
             {
-                var points = _navigationTrajectoryProjector.Project(predicted);
+                // isConfirmedIntercept comes from the projector's OWN resolution, not
+                // from re-checking predicted.NavigationPhase here: during the single
+                // transient FlyThroughPendingPhase frame right after the command starts,
+                // the projector already independently resolves (and draws) the confirmed
+                // rendezvous curve one frame before the engine bakes that confirmation
+                // into the authoritative NavigationPhase string — gating on the phase
+                // string here would miss that first frame and read as "no intercept" even
+                // though the curve shown IS already the confirmed one.
+                var points = _navigationTrajectoryProjector.Project(
+                    predicted, out bool isConfirmedIntercept, out var interceptPoint);
                 if (points.Count >= 2)
                     _depthRenderer.DrawNavigationTrajectory(canvas, points, _camera, width, height);
 
                 DrawNavigationTargetMarker(canvas, predicted.NavigationTargetX.Value, predicted.NavigationTargetY!.Value, width, height);
+
+                // A confirmed intercept-solve curve (story-20260829-210641.md) is flown
+                // to a fixed rendezvous pose baked once when the curve was built — unlike
+                // NavigationTargetX/Y above, which is re-baked to the target's LIVE
+                // position every cycle while the curve is still being flown (client-facing
+                // metadata only) and so drifts away from where the curve actually ends.
+                // interceptPoint is computed analytically from the target's live pose and
+                // constant velocity (see NavigationTrajectoryProjector.ProjectFlyThrough),
+                // NOT read off the drawn curve's own discretized tracked endpoint — that
+                // endpoint accumulates enough per-cycle turn quantization over a long curve
+                // to visibly miss the target's own drawn straight-line trajectory.
+                if (isConfirmedIntercept)
+                {
+                    var (ix, iy) = _camera.WorldToScreen(interceptPoint.X, interceptPoint.Y, width, height);
+                    _depthRenderer.DrawInterceptPoint(canvas, ix, iy);
+                }
             }
         }
     }
@@ -1514,16 +1557,43 @@ public sealed class GameSessionScreen : IScreen
     }
 
     /// <summary>
-    /// Compute the speed panel rect from current viewport — used both by
-    /// DrawSpeedPanel and DrawScalePanel (scale panel sits left of it).
+    /// Bottom-center row shared by the Scale and Speed panels: Scale sits left of
+    /// Speed (<see cref="ScalePanelGapFromSpeed"/> apart), the pair centered
+    /// horizontally and stacked directly above the Mechanics panel (Finance/Ship).
     /// </summary>
-    private SKRect ComputeSpeedPanelRect()
+    private float ComputeScaleSpeedRowY()
+    {
+        float mechanicsPanelH = MechanicsButtonHeight + MechanicsPanelPadding * 2;
+        float rowH = SpeedPanelPadY * 2 + SpeedBtnH + SpeedIndicatorSize + 2f; // same formula as the Scale panel's height
+        return _uiViewportH - PanelMargin - mechanicsPanelH - PanelMargin - rowH;
+    }
+
+    private float ComputeScalePanelWidth()
+    {
+        int btnCount = ScaleLabels.Length;
+        return ScalePanelPadX * 2 + btnCount * ScaleBtnW + (btnCount - 1) * ScaleBtnGap;
+    }
+
+    private float ComputeSpeedPanelWidth()
     {
         int btnCount = SpeedLabels.Length;
-        float totalW = SpeedPanelPadX * 2 + btnCount * SpeedBtnW + (btnCount - 1) * SpeedBtnGap;
+        return SpeedPanelPadX * 2 + btnCount * SpeedBtnW + (btnCount - 1) * SpeedBtnGap;
+    }
+
+    /// <summary>Left edge of the combined Scale+Speed row, centered in the viewport.</summary>
+    private float ComputeScaleSpeedRowLeft()
+    {
+        float combinedW = ComputeScalePanelWidth() + ScalePanelGapFromSpeed + ComputeSpeedPanelWidth();
+        return (_uiViewportW - combinedW) / 2f;
+    }
+
+    /// <summary>Compute the speed panel rect from current viewport — used both by DrawSpeedPanel and DrawScalePanel.</summary>
+    private SKRect ComputeSpeedPanelRect()
+    {
+        float totalW = ComputeSpeedPanelWidth();
         float panelH = SpeedPanelPadY * 2 + SpeedBtnH + SpeedIndicatorSize + 2f;
-        float panelX = _uiViewportW - totalW - PanelMargin;
-        float panelY = PanelMargin;
+        float panelX = ComputeScaleSpeedRowLeft() + ComputeScalePanelWidth() + ScalePanelGapFromSpeed;
+        float panelY = ComputeScaleSpeedRowY();
         return new SKRect(panelX, panelY, panelX + totalW, panelY + panelH);
     }
 
@@ -1575,11 +1645,11 @@ public sealed class GameSessionScreen : IScreen
     private void DrawScalePanel(SKCanvas canvas)
     {
         int btnCount = ScaleLabels.Length;
-        float totalW = ScalePanelPadX * 2 + btnCount * ScaleBtnW + (btnCount - 1) * ScaleBtnGap;
+        float totalW = ComputeScalePanelWidth();
         float panelH = ScalePanelPadY * 2 + ScaleBtnH + ScaleIndicatorSize + 2f;
 
-        float panelX = ComputeSpeedPanelRect().Left - ScalePanelGapFromSpeed - totalW;
-        float panelY = PanelMargin;
+        float panelX = ComputeScaleSpeedRowLeft();
+        float panelY = ComputeScaleSpeedRowY();
 
         _lastScalePanelRect = new SKRect(panelX, panelY, panelX + totalW, panelY + panelH);
         canvas.DrawRect(_lastScalePanelRect, _panelBgPaint);
@@ -1863,16 +1933,13 @@ public sealed class GameSessionScreen : IScreen
             lines.Add(("Cursor Game", "(—, —)"));
         }
 
-        lines.Add(("Selected Id", _selectedObjectId ?? "—"));
-        lines.Add(("Active Id", _activeObjectId ?? "—"));
-
         int objectCount = buffered?.Snapshot.Objects.Length ?? 0;
         lines.Add(("Celestial objects", objectCount.ToString()));
 
         return lines;
     }
 
-    // ── Player ship info panel ───────────────────────────────────
+    // ── Object Info panel (top-right) ────────────────────────────
 
     private static ObjectRenderState? FindPlayerShip(IReadOnlyList<ObjectRenderState> renderStates)
     {
@@ -1884,76 +1951,32 @@ public sealed class GameSessionScreen : IScreen
         return null;
     }
 
-    private static string? GetActiveEngineCommandDisplayName(string? commandType)
+    /// <summary>
+    /// Resolves <paramref name="objectId"/> (the caller passes
+    /// <c>_activeObjectId ?? _selectedObjectId</c> — hover takes priority over the last
+    /// click) against the current <see cref="_renderStates"/> for the Object Info
+    /// panel's "Selected Object" row.
+    /// </summary>
+    private ObjectRenderState? FindRenderStateById(string? objectId)
     {
-        return commandType switch
+        if (objectId is null)
+            return null;
+
+        for (int i = 0; i < _renderStates.Count; i++)
         {
-            ShipEngineCommandTypes.Accelerate => "Accelerate",
-            ShipEngineCommandTypes.Brake => "Brake",
-            ShipEngineCommandTypes.TurnLeftUntilCancel => "Turn Left Until Cancel",
-            ShipEngineCommandTypes.TurnRightUntilCancel => "Turn Right Until Cancel",
-            _ => null
-        };
+            if (_renderStates[i].Predicted.ObjectId == objectId)
+                return _renderStates[i];
+        }
+        return null;
     }
 
-    internal List<(string Label, string Value)> BuildPlayerShipPanelLines(ObjectRenderState? playerShip)
+    private static ObjectInfoPanelData? ToObjectInfoPanelData(ObjectRenderState? state)
     {
-        var lines = new List<(string Label, string Value)>();
+        if (state is not { } s)
+            return null;
 
-        if (playerShip is not null)
-        {
-            var p = playerShip.Value.Predicted;
-            lines.Add(("Speed", $"{p.SpeedKmS:0.###} km/s"));
-            lines.Add(("Course", $"{p.Direction:F0}°"));
-            lines.Add(("Location", $"({p.X:F0}, {p.Y:F0})"));
-
-            string engineDisplay = GetActiveEngineCommandDisplayName(p.ActiveEngineCommandType) ?? "—";
-            lines.Add(("Engine", engineDisplay));
-        }
-        else
-        {
-            lines.Add(("Speed", "—"));
-            lines.Add(("Course", "—"));
-            lines.Add(("Location", "(—, —)"));
-            lines.Add(("Engine", "—"));
-        }
-
-        return lines;
-    }
-
-    private void DrawPlayerShipInfoPanel(SKCanvas canvas, ObjectRenderState? playerShip)
-    {
-        var lines = BuildPlayerShipPanelLines(playerShip);
-
-        float labelWidth = 0, valueWidth = 0;
-        foreach (var (label, value) in lines)
-        {
-            labelWidth = Math.Max(labelWidth, _panelLabelPaint.MeasureText(label));
-            valueWidth = Math.Max(valueWidth, _panelTextPaint.MeasureText(value));
-        }
-
-        float gap = 8f;
-        float panelW = PanelPaddingX * 2 + labelWidth + gap + valueWidth;
-        float panelH = PanelPaddingY * 2 + lines.Count * PanelLineHeight;
-
-        float panelX = _uiViewportW - panelW - PanelMargin;
-        float panelY = _uiViewportH - panelH - PanelMargin;
-
-        _lastPlayerShipPanelRect = new SKRect(panelX, panelY, panelX + panelW, panelY + panelH);
-
-        canvas.DrawRect(_lastPlayerShipPanelRect, _panelBgPaint);
-        canvas.DrawRect(_lastPlayerShipPanelRect, _panelBorderPaint);
-
-        float textY = panelY + PanelPaddingY + PanelLineHeight - 3f;
-        float labelX = panelX + PanelPaddingX;
-        float valueX = labelX + labelWidth + gap;
-
-        foreach (var (label, value) in lines)
-        {
-            canvas.DrawText(label, labelX, textY, _panelLabelPaint);
-            canvas.DrawText(value, valueX, textY, _panelTextPaint);
-            textY += PanelLineHeight;
-        }
+        var p = s.Predicted;
+        return new ObjectInfoPanelData(p.ObjectId, p.DisplayName, p.SpeedKmS, p.Direction, p.RenderObjectType);
     }
 
     /// <summary>
