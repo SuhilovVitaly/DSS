@@ -243,14 +243,15 @@ public class SpeedPanelTests
     // ── Speed panel layout ──────────────────────────────────────
 
     [Fact]
-    public void Speed_panel_renders_in_top_right()
+    public void Speed_panel_renders_at_bottom_center()
     {
         var (_, screen) = CreateScreen();
         Render(screen);
 
         var rect = screen.LastSpeedPanelRect;
-        Assert.True(rect.Left > ScreenWidth / 2f, "Should be in right half");
-        Assert.True(rect.Top < ScreenHeight / 2f, "Should be in top half");
+        Assert.True(rect.Top > ScreenHeight / 2f, "Should be in bottom half");
+        // The Scale+Speed row is centered as a pair — Speed sits right of center, Scale left of it.
+        Assert.True(rect.MidX > ScreenWidth / 2f, "Speed panel should sit right of the row's horizontal center");
     }
 
     [Fact]

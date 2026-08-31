@@ -38,7 +38,8 @@ public sealed class GameSessionScreen : IScreen
 
     /// <summary>
     /// UI-only scale factor applied to the GameSession overlay panels (top-left
-    /// Commands Panel, top-right scale/speed panels, bottom info panels). Never
+    /// Commands Panel, top-right Object Info panel, bottom-center scale/speed
+    /// panels, bottom info panels). Never
     /// affects the tactical map, camera, or hit-testing against map objects — only
     /// the UI-pass canvas transform and the UI-space mouse coordinates derived
     /// from it.
@@ -1074,10 +1075,10 @@ public sealed class GameSessionScreen : IScreen
         canvas.Save();
         canvas.Scale(_uiScale);
 
-        // 4.75. Scale panel (top-right, left of speed panel)
+        // 4.75. Scale panel (bottom-center, left of speed panel)
         DrawScalePanel(canvas);
 
-        // 5. Speed panel (top-right)
+        // 5. Speed panel (bottom-center, above the Mechanics panel)
         DrawSpeedPanel(canvas);
 
         // 6. Commands Panel (top-left)
@@ -1088,11 +1089,10 @@ public sealed class GameSessionScreen : IScreen
         if (_panelVisible)
             DrawInfoPanel(canvas, buffered);
 
-        // 8. Object Info panel (top-right, below Speed/Scale) — Player Ship + Selected/Active Object rows
+        // 8. Object Info panel (top-right) — Player Ship + Selected/Active Object rows
         var playerShip = FindPlayerShip(_renderStates);
         var selectedOrActive = FindRenderStateById(_activeObjectId ?? _selectedObjectId);
-        float objectInfoPanelTop = ComputeSpeedPanelRect().Bottom + PanelMargin;
-        _objectInfoPanel.Render(canvas, _uiViewportW, objectInfoPanelTop,
+        _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
             ToObjectInfoPanelData(playerShip), ToObjectInfoPanelData(selectedOrActive));
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
@@ -1557,16 +1557,43 @@ public sealed class GameSessionScreen : IScreen
     }
 
     /// <summary>
-    /// Compute the speed panel rect from current viewport — used both by
-    /// DrawSpeedPanel and DrawScalePanel (scale panel sits left of it).
+    /// Bottom-center row shared by the Scale and Speed panels: Scale sits left of
+    /// Speed (<see cref="ScalePanelGapFromSpeed"/> apart), the pair centered
+    /// horizontally and stacked directly above the Mechanics panel (Finance/Ship).
     /// </summary>
-    private SKRect ComputeSpeedPanelRect()
+    private float ComputeScaleSpeedRowY()
+    {
+        float mechanicsPanelH = MechanicsButtonHeight + MechanicsPanelPadding * 2;
+        float rowH = SpeedPanelPadY * 2 + SpeedBtnH + SpeedIndicatorSize + 2f; // same formula as the Scale panel's height
+        return _uiViewportH - PanelMargin - mechanicsPanelH - PanelMargin - rowH;
+    }
+
+    private float ComputeScalePanelWidth()
+    {
+        int btnCount = ScaleLabels.Length;
+        return ScalePanelPadX * 2 + btnCount * ScaleBtnW + (btnCount - 1) * ScaleBtnGap;
+    }
+
+    private float ComputeSpeedPanelWidth()
     {
         int btnCount = SpeedLabels.Length;
-        float totalW = SpeedPanelPadX * 2 + btnCount * SpeedBtnW + (btnCount - 1) * SpeedBtnGap;
+        return SpeedPanelPadX * 2 + btnCount * SpeedBtnW + (btnCount - 1) * SpeedBtnGap;
+    }
+
+    /// <summary>Left edge of the combined Scale+Speed row, centered in the viewport.</summary>
+    private float ComputeScaleSpeedRowLeft()
+    {
+        float combinedW = ComputeScalePanelWidth() + ScalePanelGapFromSpeed + ComputeSpeedPanelWidth();
+        return (_uiViewportW - combinedW) / 2f;
+    }
+
+    /// <summary>Compute the speed panel rect from current viewport — used both by DrawSpeedPanel and DrawScalePanel.</summary>
+    private SKRect ComputeSpeedPanelRect()
+    {
+        float totalW = ComputeSpeedPanelWidth();
         float panelH = SpeedPanelPadY * 2 + SpeedBtnH + SpeedIndicatorSize + 2f;
-        float panelX = _uiViewportW - totalW - PanelMargin;
-        float panelY = PanelMargin;
+        float panelX = ComputeScaleSpeedRowLeft() + ComputeScalePanelWidth() + ScalePanelGapFromSpeed;
+        float panelY = ComputeScaleSpeedRowY();
         return new SKRect(panelX, panelY, panelX + totalW, panelY + panelH);
     }
 
@@ -1618,11 +1645,11 @@ public sealed class GameSessionScreen : IScreen
     private void DrawScalePanel(SKCanvas canvas)
     {
         int btnCount = ScaleLabels.Length;
-        float totalW = ScalePanelPadX * 2 + btnCount * ScaleBtnW + (btnCount - 1) * ScaleBtnGap;
+        float totalW = ComputeScalePanelWidth();
         float panelH = ScalePanelPadY * 2 + ScaleBtnH + ScaleIndicatorSize + 2f;
 
-        float panelX = ComputeSpeedPanelRect().Left - ScalePanelGapFromSpeed - totalW;
-        float panelY = PanelMargin;
+        float panelX = ComputeScaleSpeedRowLeft();
+        float panelY = ComputeScaleSpeedRowY();
 
         _lastScalePanelRect = new SKRect(panelX, panelY, panelX + totalW, panelY + panelH);
         canvas.DrawRect(_lastScalePanelRect, _panelBgPaint);
