@@ -181,10 +181,8 @@ public sealed class StationScreen : IScreen
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: true,
             isExitButtonHovered: _isExitButtonHovered,
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
-            isFoodRationsHovered: IsFoodRationsTooltipVisible,
             crewCount: StationToolbar.ResolveCrewCount(snapshot),
-            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
-            isCrewHovered: IsCrewTooltipVisible);
+            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot));
 
         float cx = pl + StationLayout.PanelWidth / 2f;
 
@@ -198,6 +196,12 @@ public sealed class StationScreen : IScreen
             float textY = pt + StationLayout.BodyStartY + row * StationLayout.BodyLineHeight;
             canvas.DrawText(text, cx, textY, MenuStyle.TextStatus);
         }
+
+        // Drawn last: the tooltip hangs below the toolbar into the body area and must
+        // stay on top of the buttons and lines drawn above.
+        StationToolbar.DrawTooltips(canvas, pl, pt,
+            isFoodRationsHovered: IsFoodRationsTooltipVisible,
+            isCrewHovered: IsCrewTooltipVisible);
     }
 
     private void DrawTradeButton(SKCanvas canvas, float panelLeft, float panelTop)

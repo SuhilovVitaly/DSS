@@ -548,10 +548,8 @@ public sealed class TradeScreen : IScreen
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
             windowName: tradeTitle, isExitButtonHovered: _isExitButtonHovered,
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
-            isFoodRationsHovered: IsFoodRationsTooltipVisible,
             crewCount: StationToolbar.ResolveCrewCount(snapshot),
-            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
-            isCrewHovered: IsCrewTooltipVisible);
+            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot));
 
         DrawHeader(canvas, pl, pt, snapshot);
 
@@ -559,22 +557,28 @@ public sealed class TradeScreen : IScreen
         if (snapshot is null || trade is null)
         {
             DrawNotDockedStatus(canvas, pl, pt);
-            DrawExitButton(canvas, pl, pt);
-            return;
+        }
+        else
+        {
+            string? containerModuleId = ResolveModuleId(snapshot, TradeCommandTypes.Buy);
+            string? engineModuleId = ResolveModuleId(snapshot, TradeCommandTypes.Refuel);
+            var containerModule = FindModule(snapshot, containerModuleId);
+            var engineModule = FindModule(snapshot, engineModuleId);
+
+            DrawStatsRow(canvas, pl, pt, snapshot, containerModule, engineModule);
+            DrawStationInventoryColumn(canvas, pl, pt, trade);
+            DrawTransactionColumn(canvas, pl, pt, trade, containerModule);
+            DrawCargoColumn(canvas, pl, pt, containerModule);
+            DrawFuelPanel(canvas, pl, pt, engineModule);
+            DrawSummaryRow(canvas, pl, pt, snapshot, trade);
         }
 
-        string? containerModuleId = ResolveModuleId(snapshot, TradeCommandTypes.Buy);
-        string? engineModuleId = ResolveModuleId(snapshot, TradeCommandTypes.Refuel);
-        var containerModule = FindModule(snapshot, containerModuleId);
-        var engineModule = FindModule(snapshot, engineModuleId);
-
-        DrawStatsRow(canvas, pl, pt, snapshot, containerModule, engineModule);
-        DrawStationInventoryColumn(canvas, pl, pt, trade);
-        DrawTransactionColumn(canvas, pl, pt, trade, containerModule);
-        DrawCargoColumn(canvas, pl, pt, containerModule);
-        DrawFuelPanel(canvas, pl, pt, engineModule);
-        DrawSummaryRow(canvas, pl, pt, snapshot, trade);
         DrawExitButton(canvas, pl, pt); // drawn last: DrawSummaryRow's ImagePanel would otherwise paint over it
+        // The tooltip pass comes after even the exit button — the box hangs below the
+        // toolbar into the body area and must stay on top of everything the screen drew.
+        StationToolbar.DrawTooltips(canvas, pl, pt,
+            isFoodRationsHovered: IsFoodRationsTooltipVisible,
+            isCrewHovered: IsCrewTooltipVisible);
     }
 
     /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>

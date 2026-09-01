@@ -128,13 +128,17 @@ public sealed class HireScreen : IScreen
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
             windowName: "HIRE", isExitButtonHovered: _isExitButtonHovered,
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
-            isFoodRationsHovered: IsFoodRationsTooltipVisible,
             crewCount: StationToolbar.ResolveCrewCount(snapshot),
-            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
-            isCrewHovered: IsCrewTooltipVisible);
+            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot));
 
         float cx = pl + HireLayout.PanelWidth / 2f;
         canvas.DrawText(PlaceholderLine, cx, pt + HireLayout.BodyStartY, MenuStyle.TextStatus);
+
+        // Drawn last: the tooltip hangs below the toolbar into the body area and must
+        // stay on top of everything the screen drew.
+        StationToolbar.DrawTooltips(canvas, pl, pt,
+            isFoodRationsHovered: IsFoodRationsTooltipVisible,
+            isCrewHovered: IsCrewTooltipVisible);
     }
 
     /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>

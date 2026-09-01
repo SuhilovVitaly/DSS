@@ -30,12 +30,15 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 /// button — starting with a food-rations icon + count (see
 /// <see cref="ResolveFoodRationsCount"/>), in a field reserved wide enough for 4 digits.
 /// Unlike the exit button, this icon is a plain readout: never clickable, never gets a
-/// hover glow — hovering it only shows an explanatory tooltip below the toolbar.
+/// hover glow — hovering it only shows an explanatory tooltip below the toolbar, drawn
+/// by <see cref="DrawTooltips"/> as the consuming screen's last draw call so it stays
+/// on top of the screen's own buttons and panels.
 ///
 /// Immediately to the left of the food-rations readout, a crew/cabins icon + count (see
 /// <see cref="ResolveCrewCount"/>/<see cref="ResolveCabinsCount"/>) in "N / N" form —
 /// crew and passengers aboard the ship, out of total cabin capacity. Same plain-readout
-/// rule as the food-rations icon: never clickable, no hover glow, hover-only tooltip.
+/// rule as the food-rations icon: never clickable, no hover glow, hover-only tooltip
+/// (also drawn by <see cref="DrawTooltips"/>).
 /// </summary>
 public static class StationToolbar
 {
@@ -59,7 +62,7 @@ public static class StationToolbar
     public const float ResourceInfoGapFromExitButton = 70f;
 
     /// <summary>Gap between the crew/cabins block's right edge and the food-rations block's left edge.</summary>
-    public const float CrewInfoGapFromFoodRations = 24f;
+    public const float CrewInfoGapFromFoodRations = 44f;
 
     /// <summary>
     /// The reserved value-field width is measured from this 4-digit sample, so the field
@@ -334,22 +337,21 @@ public static class StationToolbar
     /// <see cref="ResourceInfoGapFromExitButton"/>): the food-rations icon followed by its
     /// count in a field reserved wide enough for 4 digits (9999) so the icon never shifts
     /// as the count's digit width changes. This icon is a plain readout, not a button — it
-    /// never gets a hover glow, unlike the exit-button icon right next to it; hovering it
-    /// (<paramref name="isFoodRationsHovered"/>, see <see cref="FoodRationsLocalRect"/>)
-    /// only shows an explanatory tooltip below the toolbar.
+    /// never gets a hover glow, unlike the exit-button icon right next to it; its hover
+    /// tooltip (see <see cref="FoodRationsLocalRect"/>) is drawn by
+    /// <see cref="DrawTooltips"/>, the screen's last draw call.
     ///
     /// <paramref name="crewCount"/>/<paramref name="cabinsCount"/> feed an identical
     /// readout immediately to the left of the food-rations one (see
     /// <see cref="CrewInfoGapFromFoodRations"/>): the crew icon followed by
     /// "<paramref name="crewCount"/> / <paramref name="cabinsCount"/>". Same plain-readout
-    /// rule — no hover glow; hovering it (<paramref name="isCrewHovered"/>, see
-    /// <see cref="CrewLocalRect"/>) only shows an explanatory tooltip below the toolbar.
+    /// rule — no hover glow; its hover tooltip (see <see cref="CrewLocalRect"/>) is also
+    /// drawn by <see cref="DrawTooltips"/>.
     /// </summary>
     public static void Draw(
         SKCanvas canvas, float panelLeft, float panelTop, string? stationName, bool isStationHub,
         bool isHovered = false, string? windowName = null, bool isExitButtonHovered = false,
-        long foodRationsCount = 0, bool isFoodRationsHovered = false,
-        int crewCount = 0, int cabinsCount = 0, bool isCrewHovered = false)
+        long foodRationsCount = 0, int crewCount = 0, int cabinsCount = 0)
     {
         var rect = new SKRect(panelLeft, panelTop, panelLeft + Width, panelTop + Height);
         canvas.DrawRect(rect, FillPaint);
@@ -401,14 +403,6 @@ public static class StationToolbar
             float textBaselineY = MenuStyle.VerticalCenterBaseline(
                 new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
             canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
-
-            if (isFoodRationsHovered)
-            {
-                var screenBlock = new SKRect(
-                    panelLeft + block.Left, panelTop + block.Top,
-                    panelLeft + block.Right, panelTop + block.Bottom);
-                DrawTooltip(canvas, screenBlock, FoodRationsTooltipLines);
-            }
         }
 
         if (CrewImage is not null)
@@ -431,14 +425,6 @@ public static class StationToolbar
             float textBaselineY = MenuStyle.VerticalCenterBaseline(
                 new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
             canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
-
-            if (isCrewHovered)
-            {
-                var screenBlock = new SKRect(
-                    panelLeft + block.Left, panelTop + block.Top,
-                    panelLeft + block.Right, panelTop + block.Bottom);
-                DrawTooltip(canvas, screenBlock, CrewTooltipLines);
-            }
         }
 
         if (ExitButtonImage is not null)
@@ -453,6 +439,35 @@ public static class StationToolbar
             canvas.DrawBitmap(ExitButtonImage, exitRect);
         }
     }
+
+    /// <summary>
+    /// Draws the readout tooltips anchored below their toolbar icons. Must be the
+    /// consuming screen's LAST draw call — the tooltip box hangs below the toolbar into
+    /// the body area, so drawing it anywhere earlier lets the screen's own buttons and
+    /// panels paint over it (the toolbar itself is drawn first, right after the panel
+    /// background). Same hover-gating as before the split out of <see cref="Draw"/>: a
+    /// tooltip only appears while its readout's hover delay has elapsed (the screen
+    /// passes its visible-flag here) and its icon image is loaded.
+    /// </summary>
+    public static void DrawTooltips(
+        SKCanvas canvas, float panelLeft, float panelTop,
+        bool isFoodRationsHovered, bool isCrewHovered)
+    {
+        if (isFoodRationsHovered && FoodRationsImage is not null)
+        {
+            var block = FoodRationsLocalRect();
+            DrawTooltip(canvas, ToScreenRect(panelLeft, panelTop, block), FoodRationsTooltipLines);
+        }
+
+        if (isCrewHovered && CrewImage is not null)
+        {
+            var block = CrewLocalRect();
+            DrawTooltip(canvas, ToScreenRect(panelLeft, panelTop, block), CrewTooltipLines);
+        }
+    }
+
+    private static SKRect ToScreenRect(float panelLeft, float panelTop, SKRect local) =>
+        new(panelLeft + local.Left, panelTop + local.Top, panelLeft + local.Right, panelTop + local.Bottom);
 
     /// <summary>
     /// Resolves the player ship's docked station name from a snapshot — null while not

@@ -152,10 +152,8 @@ public sealed class FinanceScreen : IScreen
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
             windowName: "FINANCE", isExitButtonHovered: _isExitButtonHovered,
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
-            isFoodRationsHovered: IsFoodRationsTooltipVisible,
             crewCount: StationToolbar.ResolveCrewCount(snapshot),
-            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
-            isCrewHovered: IsCrewTooltipVisible);
+            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot));
 
         float cx = pl + FinanceLayout.PanelWidth / 2f;
 
@@ -165,6 +163,12 @@ public sealed class FinanceScreen : IScreen
             canvas.DrawText(line, cx, textY, MenuStyle.TextStatus);
             textY += FinanceLayout.BodyLineHeight;
         }
+
+        // Drawn last: the tooltip hangs below the toolbar into the body area and must
+        // stay on top of everything the screen drew.
+        StationToolbar.DrawTooltips(canvas, pl, pt,
+            isFoodRationsHovered: IsFoodRationsTooltipVisible,
+            isCrewHovered: IsCrewTooltipVisible);
     }
 
     /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>

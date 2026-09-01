@@ -203,14 +203,18 @@ public class StationToolbarTests
         using var hoveredBitmap = new SKBitmap((int)StationToolbar.Width, 120);
         hoveredBitmap.Erase(SKColors.Transparent);
         using (var canvas = new SKCanvas(hoveredBitmap))
-            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, crewCount: 1, cabinsCount: 2,
-                isCrewHovered: true);
+        {
+            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, crewCount: 1, cabinsCount: 2);
+            StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: false, isCrewHovered: true);
+        }
 
         using var normalBitmap = new SKBitmap((int)StationToolbar.Width, 120);
         normalBitmap.Erase(SKColors.Transparent);
         using (var canvas = new SKCanvas(normalBitmap))
-            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, crewCount: 1, cabinsCount: 2,
-                isCrewHovered: false);
+        {
+            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, crewCount: 1, cabinsCount: 2);
+            StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: false, isCrewHovered: false);
+        }
 
         bool foundBelowWhenHovered = false, foundBelowWhenNormal = false;
         for (int y = (int)StationToolbar.Height + 2; y < hoveredBitmap.Height; y++)
@@ -230,14 +234,18 @@ public class StationToolbarTests
         using var hoveredBitmap = new SKBitmap((int)StationToolbar.Width, 120);
         hoveredBitmap.Erase(SKColors.Transparent);
         using (var canvas = new SKCanvas(hoveredBitmap))
-            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, foodRationsCount: 5,
-                isFoodRationsHovered: true);
+        {
+            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, foodRationsCount: 5);
+            StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: true, isCrewHovered: false);
+        }
 
         using var normalBitmap = new SKBitmap((int)StationToolbar.Width, 120);
         normalBitmap.Erase(SKColors.Transparent);
         using (var canvas = new SKCanvas(normalBitmap))
-            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, foodRationsCount: 5,
-                isFoodRationsHovered: false);
+        {
+            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, foodRationsCount: 5);
+            StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: false, isCrewHovered: false);
+        }
 
         // Below the toolbar strip stays fully transparent when not hovered, but the hovered
         // render paints a tooltip box there. Start a couple px past Height to skip the
@@ -252,6 +260,45 @@ public class StationToolbarTests
 
         Assert.True(foundBelowWhenHovered);
         Assert.False(foundBelowWhenNormal);
+    }
+
+    [Fact]
+    public void DrawTooltips_paints_over_content_the_screen_drew_before_it()
+    {
+        // Screens draw their buttons and panels after the toolbar but before the
+        // DrawTooltips pass — simulate a button covering the whole area below the toolbar
+        // where the crew tooltip lands, and verify the tooltip pass paints over it.
+        var standInPaint = new SKPaint { Color = SKColors.Red, Style = SKPaintStyle.Fill };
+        var belowToolbar = new SKRect(0, StationToolbar.Height + 2, StationToolbar.Width, 120);
+
+        using var hoveredBitmap = RenderCrewTooltipOverStandIn(belowToolbar, standInPaint, isCrewHovered: true);
+        using var normalBitmap = RenderCrewTooltipOverStandIn(belowToolbar, standInPaint, isCrewHovered: false);
+
+        int coveredPixelsWhenHovered = 0, coveredPixelsWhenNormal = 0;
+        for (int y = (int)belowToolbar.Top; y < (int)belowToolbar.Bottom; y++)
+        for (int x = 0; x < hoveredBitmap.Width; x++)
+        {
+            if (hoveredBitmap.GetPixel(x, y) != SKColors.Red) coveredPixelsWhenHovered++;
+            if (normalBitmap.GetPixel(x, y) != SKColors.Red) coveredPixelsWhenNormal++;
+        }
+
+        // The hovered pass must repaint a solid tooltip box over the stand-in button
+        // (way more than a stray antialiased pixel), and only then.
+        Assert.True(coveredPixelsWhenHovered > 100);
+        Assert.Equal(0, coveredPixelsWhenNormal);
+    }
+
+    private static SKBitmap RenderCrewTooltipOverStandIn(SKRect belowToolbar, SKPaint standInPaint, bool isCrewHovered)
+    {
+        var bitmap = new SKBitmap((int)StationToolbar.Width, 120);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+
+        canvas.DrawRect(belowToolbar, standInPaint);
+        StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, crewCount: 1, cabinsCount: 2);
+        StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: false, isCrewHovered: isCrewHovered);
+        canvas.Flush();
+        return bitmap;
     }
 
     [Fact]
