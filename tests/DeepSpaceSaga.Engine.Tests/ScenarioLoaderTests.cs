@@ -507,6 +507,47 @@ public class ScenarioLoaderTests
         Assert.Contains("negative coordinate", ex.Message, StringComparison.Ordinal);
     }
 
+    // story-20260901-112254 (Batch A, U1): the scenario "crew" field is a plain nullable
+    // list, no domain validation at the ScenarioLoader level (see SimulationEngine.
+    // ResolveShipCrew for the engine-level id checks) — this only covers the schema
+    // deserializes and defaults correctly.
+    [Fact]
+    public void LoadFromJson_reads_crew_when_present()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "crew": [ { "crewId": "CHR-0001", "displayName": "Dunkan Su" } ] }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var ship = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == "SHIP");
+
+        var crewMember = Assert.Single(ship.Crew!);
+        Assert.Equal("CHR-0001", crewMember.CrewId);
+        Assert.Equal("Dunkan Su", crewMember.DisplayName);
+    }
+
+    [Fact]
+    public void LoadFromJson_defaults_crew_to_null_when_absent()
+    {
+        var scenario = ScenarioLoader.LoadFromJson(ValidJson);
+        var ship = scenario.GameState.SpaceObjects
+            .Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId);
+
+        Assert.Null(ship.Crew);
+    }
+
     [Fact]
     public void Asteroid_mass_out_of_range_throws()
     {

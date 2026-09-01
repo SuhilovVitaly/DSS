@@ -130,7 +130,23 @@ public sealed record SpaceObjectData(
     /// engine exists yet, so this is always empty for every scenario file the game ships, but
     /// round-trips through save/load and participates in the price formula when present.
     /// </summary>
-    [property: JsonPropertyName("events")] IReadOnlyList<StationEventData>? Events = null);
+    [property: JsonPropertyName("events")] IReadOnlyList<StationEventData>? Events = null,
+    /// <summary>
+    /// Ship's crew members (story-20260901-112254, "Crew and cabin occupancy"). Only
+    /// meaningful for ObjectType == PlayerShip. Null/empty means the ship has no crew (the
+    /// common case; every existing scenario/save predates this field).
+    /// </summary>
+    [property: JsonPropertyName("crew")] IReadOnlyList<ShipCrewMemberData>? Crew = null);
+
+/// <summary>
+/// One crew member aboard a ship (story-20260901-112254). Flat list, no roles/skills/
+/// dialogue — only enough to count crew and pair them with cabins in the station toolbar.
+/// </summary>
+/// <param name="CrewId">Stable id, unique per ship (e.g. "CHR-0001").</param>
+/// <param name="DisplayName">UI display name.</param>
+public sealed record ShipCrewMemberData(
+    [property: JsonPropertyName("crewId")] string CrewId,
+    [property: JsonPropertyName("displayName")] string DisplayName);
 
 /// <summary>
 /// One producing-module instance installed on a station (requirements §59 "Производящие

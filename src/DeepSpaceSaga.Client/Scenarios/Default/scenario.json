@@ -106,6 +106,9 @@
                     "activeCycle": null,
                     "cargo": []
                 }
+            ],
+            "crew": [
+                { "crewId": "CHR-0001", "displayName": "Dunkan Su" }
             ]
         },
       {

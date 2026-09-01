@@ -37,6 +37,24 @@ public class InstalledModuleSnapshotTests
     }
 
     [Fact]
+    public void Serialization_round_trip_preserves_cabines_count()
+    {
+        var snapshot = new InstalledModuleSnapshot(
+            ModuleId: "MOD-LQ-01",
+            ModuleTypeId: "living.quarters.mk1",
+            DisplayName: "Living Quarters",
+            Position: 1,
+            CommandTypeIds: ImmutableArray<string>.Empty,
+            CabinesCount: 2);
+
+        var json = JsonSerializer.Serialize(snapshot);
+        var roundTripped = JsonSerializer.Deserialize<InstalledModuleSnapshot>(json);
+
+        Assert.NotNull(roundTripped);
+        Assert.Equal(2, roundTripped!.CabinesCount);
+    }
+
+    [Fact]
     public void Serialization_round_trip_preserves_available_capacity_kg()
     {
         var snapshot = new InstalledModuleSnapshot(
@@ -74,6 +92,7 @@ public class InstalledModuleSnapshotTests
         Assert.Null(roundTripped.ActiveCommandType);
         Assert.Null(roundTripped.FuelAmountKg);
         Assert.Null(roundTripped.AvailableCapacityKg);
+        Assert.Null(roundTripped.CabinesCount);
     }
 
     [Fact]

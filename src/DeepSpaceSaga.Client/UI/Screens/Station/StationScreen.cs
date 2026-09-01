@@ -48,6 +48,14 @@ public sealed class StationScreen : IScreen
         _foodRationsHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
+    /// <summary>Same real-time hover-delay tracking as <see cref="_foodRationsHoverStartedAtMs"/>, for the crew readout.</summary>
+    private long? _crewHoverStartedAtMs;
+
+    /// <summary>Test seam — true once the crew-readout hover delay has elapsed.</summary>
+    internal bool IsCrewTooltipVisible =>
+        _crewHoverStartedAtMs is { } startedAtMs
+        && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
+
     public StationScreen(SnapshotBuffer? buffer = null)
     {
         _buffer = buffer;
@@ -73,6 +81,7 @@ public sealed class StationScreen : IScreen
         _hoveredButton = StationButton.None;
         _isExitButtonHovered = false;
         _foodRationsHoverStartedAtMs = null;
+        _crewHoverStartedAtMs = null;
     }
 
     public void OnDeactivated() { }
@@ -120,6 +129,11 @@ public sealed class StationScreen : IScreen
         else
             _foodRationsHoverStartedAtMs = null;
 
+        if (IsCrewHit(x, y))
+            _crewHoverStartedAtMs ??= Environment.TickCount64;
+        else
+            _crewHoverStartedAtMs = null;
+
         return _hoveredButton != StationButton.None || _isExitButtonHovered;
     }
 
@@ -141,6 +155,15 @@ public sealed class StationScreen : IScreen
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
+    /// <summary>True when (x, y) lands on the toolbar's crew readout (see StationToolbar).</summary>
+    private bool IsCrewHit(float x, float y)
+    {
+        float pl = StationLayout.PanelLeft(_screenWidth);
+        float pt = StationLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.CrewLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
 
     public void Render(SKCanvas canvas, int width, int height)
@@ -158,7 +181,10 @@ public sealed class StationScreen : IScreen
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: true,
             isExitButtonHovered: _isExitButtonHovered,
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
-            isFoodRationsHovered: IsFoodRationsTooltipVisible);
+            isFoodRationsHovered: IsFoodRationsTooltipVisible,
+            crewCount: StationToolbar.ResolveCrewCount(snapshot),
+            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
+            isCrewHovered: IsCrewTooltipVisible);
 
         float cx = pl + StationLayout.PanelWidth / 2f;
 

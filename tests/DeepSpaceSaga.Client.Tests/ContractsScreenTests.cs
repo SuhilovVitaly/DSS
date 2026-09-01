@@ -63,6 +63,21 @@ public class ContractsScreenTests
     }
 
     [Fact]
+    public void Hovering_crew_does_not_report_interactive()
+    {
+        // The crew readout is not a button — hovering it only shows a tooltip (see
+        // StationToolbar), it must not trigger the same cursor swap as the exit button.
+        var screen = new ContractsScreen();
+        RenderScreen(screen);
+
+        var local = StationToolbar.CrewLocalRect();
+        float cx = ContractsLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = ContractsLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        Assert.False(screen.OnMouseMove(cx, cy));
+    }
+
+    [Fact]
     public void Click_inside_panel_outside_close_button_returns_None()
     {
         var screen = new ContractsScreen();

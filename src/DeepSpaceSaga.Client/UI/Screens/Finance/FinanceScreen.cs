@@ -38,6 +38,14 @@ public sealed class FinanceScreen : IScreen
         _foodRationsHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
+    /// <summary>Same real-time hover-delay tracking as <see cref="_foodRationsHoverStartedAtMs"/>, for the crew readout.</summary>
+    private long? _crewHoverStartedAtMs;
+
+    /// <summary>Test seam — true once the crew-readout hover delay has elapsed.</summary>
+    internal bool IsCrewTooltipVisible =>
+        _crewHoverStartedAtMs is { } startedAtMs
+        && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
+
     public FinanceScreen(SnapshotBuffer? buffer = null)
     {
         _buffer = buffer;
@@ -75,6 +83,7 @@ public sealed class FinanceScreen : IScreen
         _isStationNameHovered = false;
         _isExitButtonHovered = false;
         _foodRationsHoverStartedAtMs = null;
+        _crewHoverStartedAtMs = null;
     }
 
     public void OnDeactivated() { }
@@ -115,6 +124,11 @@ public sealed class FinanceScreen : IScreen
         else
             _foodRationsHoverStartedAtMs = null;
 
+        if (IsCrewHit(x, y))
+            _crewHoverStartedAtMs ??= Environment.TickCount64;
+        else
+            _crewHoverStartedAtMs = null;
+
         return _isStationNameHovered || _isExitButtonHovered;
     }
 
@@ -138,7 +152,10 @@ public sealed class FinanceScreen : IScreen
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
             windowName: "FINANCE", isExitButtonHovered: _isExitButtonHovered,
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
-            isFoodRationsHovered: IsFoodRationsTooltipVisible);
+            isFoodRationsHovered: IsFoodRationsTooltipVisible,
+            crewCount: StationToolbar.ResolveCrewCount(snapshot),
+            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
+            isCrewHovered: IsCrewTooltipVisible);
 
         float cx = pl + FinanceLayout.PanelWidth / 2f;
 
@@ -178,6 +195,15 @@ public sealed class FinanceScreen : IScreen
         float pl = FinanceLayout.PanelLeft(_screenWidth);
         float pt = FinanceLayout.PanelTop(_screenHeight);
         var local = StationToolbar.FoodRationsLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's crew readout (see StationToolbar).</summary>
+    private bool IsCrewHit(float x, float y)
+    {
+        float pl = FinanceLayout.PanelLeft(_screenWidth);
+        float pt = FinanceLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.CrewLocalRect();
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 }

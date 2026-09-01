@@ -42,6 +42,14 @@ public sealed class ContractsScreen : IScreen
         _foodRationsHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
+    /// <summary>Same real-time hover-delay tracking as <see cref="_foodRationsHoverStartedAtMs"/>, for the crew readout.</summary>
+    private long? _crewHoverStartedAtMs;
+
+    /// <summary>Test seam — true once the crew-readout hover delay has elapsed.</summary>
+    internal bool IsCrewTooltipVisible =>
+        _crewHoverStartedAtMs is { } startedAtMs
+        && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
+
     private const string PlaceholderLine = "Contracts: not available yet";
 
     public ContractsScreen(SnapshotBuffer? buffer = null)
@@ -54,6 +62,7 @@ public sealed class ContractsScreen : IScreen
         _isStationNameHovered = false;
         _isExitButtonHovered = false;
         _foodRationsHoverStartedAtMs = null;
+        _crewHoverStartedAtMs = null;
     }
 
     public void OnDeactivated() { }
@@ -94,6 +103,11 @@ public sealed class ContractsScreen : IScreen
         else
             _foodRationsHoverStartedAtMs = null;
 
+        if (IsCrewHit(x, y))
+            _crewHoverStartedAtMs ??= Environment.TickCount64;
+        else
+            _crewHoverStartedAtMs = null;
+
         return _isStationNameHovered || _isExitButtonHovered;
     }
 
@@ -114,7 +128,10 @@ public sealed class ContractsScreen : IScreen
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
             windowName: "CONTRACTS", isExitButtonHovered: _isExitButtonHovered,
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
-            isFoodRationsHovered: IsFoodRationsTooltipVisible);
+            isFoodRationsHovered: IsFoodRationsTooltipVisible,
+            crewCount: StationToolbar.ResolveCrewCount(snapshot),
+            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
+            isCrewHovered: IsCrewTooltipVisible);
 
         float cx = pl + ContractsLayout.PanelWidth / 2f;
         canvas.DrawText(PlaceholderLine, cx, pt + ContractsLayout.BodyStartY, MenuStyle.TextStatus);
@@ -148,6 +165,15 @@ public sealed class ContractsScreen : IScreen
         float pl = ContractsLayout.PanelLeft(_screenWidth);
         float pt = ContractsLayout.PanelTop(_screenHeight);
         var local = StationToolbar.FoodRationsLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's crew readout (see StationToolbar).</summary>
+    private bool IsCrewHit(float x, float y)
+    {
+        float pl = ContractsLayout.PanelLeft(_screenWidth);
+        float pt = ContractsLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.CrewLocalRect();
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 }

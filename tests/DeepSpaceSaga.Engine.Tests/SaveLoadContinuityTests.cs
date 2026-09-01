@@ -225,6 +225,12 @@ public class SaveLoadContinuityTests
         var cargoStack = Assert.Single(cargoModule.Cargo!);
         Assert.Equal("item.energy-cells", cargoStack.ItemTypeId);
         Assert.Equal(750, cargoStack.Quantity);
+
+        // story-20260901-112254 (Batch A, U2): crew round-trips through save/load.
+        var playerShip = reloadedSave.GameState.SpaceObjects.Single(o => o.ObjectId == PlayerShipId);
+        var crewMember = Assert.Single(playerShip.Crew!);
+        Assert.Equal("CHR-0001", crewMember.CrewId);
+        Assert.Equal("Dunkan Su", crewMember.DisplayName);
     }
 
     private static ObjectMotionSnapshot PlayerShipFrom(AuthoritativeSnapshot snapshot)
@@ -284,6 +290,9 @@ public class SaveLoadContinuityTests
                       { "itemTypeId": "item.energy-cells", "quantity": 750 }
                     ]
                   }
+                ],
+                "crew": [
+                  { "crewId": "CHR-0001", "displayName": "Dunkan Su" }
                 ]
               },
               {

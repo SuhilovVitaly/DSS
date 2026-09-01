@@ -31,6 +31,11 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 /// <see cref="ResolveFoodRationsCount"/>), in a field reserved wide enough for 4 digits.
 /// Unlike the exit button, this icon is a plain readout: never clickable, never gets a
 /// hover glow — hovering it only shows an explanatory tooltip below the toolbar.
+///
+/// Immediately to the left of the food-rations readout, a crew/cabins icon + count (see
+/// <see cref="ResolveCrewCount"/>/<see cref="ResolveCabinsCount"/>) in "N / N" form —
+/// crew and passengers aboard the ship, out of total cabin capacity. Same plain-readout
+/// rule as the food-rations icon: never clickable, no hover glow, hover-only tooltip.
 /// </summary>
 public static class StationToolbar
 {
@@ -53,6 +58,9 @@ public static class StationToolbar
     /// <summary>Gap between the resource info panel's right edge and the exit button's left edge.</summary>
     public const float ResourceInfoGapFromExitButton = 70f;
 
+    /// <summary>Gap between the crew/cabins block's right edge and the food-rations block's left edge.</summary>
+    public const float CrewInfoGapFromFoodRations = 24f;
+
     /// <summary>
     /// The reserved value-field width is measured from this 4-digit sample, so the field
     /// never has to grow/shrink (and the icon never has to shift) as the actual count
@@ -60,12 +68,26 @@ public static class StationToolbar
     /// </summary>
     private const string ResourceValueFieldSample = "9999";
 
+    /// <summary>
+    /// The crew/cabins value field is reserved from this sample instead of
+    /// <see cref="ResourceValueFieldSample"/> — realistically both sides of the "N / N"
+    /// count stay single-digit, so a 4-digit reservation would leave an oversized gap;
+    /// "9 / 9" is wide enough for a single digit on each side without clipping.
+    /// </summary>
+    private const string CrewValueFieldSample = "9 / 9";
+
     public const string FoodRationsItemTypeId = "item.food-rations";
 
     private static readonly string[] FoodRationsTooltipLines =
     {
         "Food rations stored aboard the ship.",
         "Each crew member or passenger consumes 2 rations per day."
+    };
+
+    private static readonly string[] CrewTooltipLines =
+    {
+        "Crew and passengers aboard the ship, out of total cabin capacity.",
+        "More crew than cabins can hold will hurt morale."
     };
 
     private const float TooltipPaddingX = 10f;
@@ -113,6 +135,12 @@ public static class StationToolbar
     /// <summary>True if the food-rations PNG was found and decoded at startup.</summary>
     internal static bool HasLoadedFoodRationsImage => FoodRationsImage is not null;
 
+    private static readonly SKBitmap? CrewImage =
+        LoadImage("Images/UI/Panels/station-toolbar/toolbar-crew.png");
+
+    /// <summary>True if the crew PNG was found and decoded at startup.</summary>
+    internal static bool HasLoadedCrewImage => CrewImage is not null;
+
     private static readonly SKPaint ResourceValuePaint = new()
     {
         Color = MenuStyle.ColorText,
@@ -124,6 +152,9 @@ public static class StationToolbar
 
     /// <summary>Reserved width for a resource value field — always fits up to 4 digits (9999).</summary>
     private static readonly float ResourceValueFieldWidth = ResourceValuePaint.MeasureText(ResourceValueFieldSample);
+
+    /// <summary>Reserved width for the crew/cabins value field — see <see cref="CrewValueFieldSample"/>.</summary>
+    private static readonly float CrewValueFieldWidth = ResourceValuePaint.MeasureText(CrewValueFieldSample);
 
     private static readonly SKPaint TooltipBackgroundPaint =
         new() { Color = new SKColor(0x1a, 0x1a, 0x1a, 235), Style = SKPaintStyle.Fill, IsAntialias = true };
@@ -260,6 +291,23 @@ public static class StationToolbar
     }
 
     /// <summary>
+    /// Crew/cabins icon+value hit-test rect, local to the panel — sits immediately to the
+    /// left of <see cref="FoodRationsLocalRect"/> (see
+    /// <see cref="CrewInfoGapFromFoodRations"/>), spanning from the icon's left edge to the
+    /// reserved value field's right edge (see <see cref="CrewValueFieldWidth"/>). Used only
+    /// to show the tooltip on hover — this readout is never clickable and never gets a
+    /// hover glow.
+    /// </summary>
+    public static SKRect CrewLocalRect()
+    {
+        float blockRight = FoodRationsLocalRect().Left - CrewInfoGapFromFoodRations;
+        float valueFieldLeft = blockRight - CrewValueFieldWidth;
+        float iconLeft = valueFieldLeft - ResourceIconTextGap - ResourceIconSize;
+        float top = (Height - ResourceIconSize) / 2f;
+        return new SKRect(iconLeft, top, blockRight, top + ResourceIconSize);
+    }
+
+    /// <summary>
     /// Draws the toolbar at the panel's top-left corner (panelLeft, panelTop): background,
     /// border, the station name if non-empty, and the exit-button icon. <paramref
     /// name="isStationHub"/> selects the "active location" color (Station itself) vs. the
@@ -289,11 +337,19 @@ public static class StationToolbar
     /// never gets a hover glow, unlike the exit-button icon right next to it; hovering it
     /// (<paramref name="isFoodRationsHovered"/>, see <see cref="FoodRationsLocalRect"/>)
     /// only shows an explanatory tooltip below the toolbar.
+    ///
+    /// <paramref name="crewCount"/>/<paramref name="cabinsCount"/> feed an identical
+    /// readout immediately to the left of the food-rations one (see
+    /// <see cref="CrewInfoGapFromFoodRations"/>): the crew icon followed by
+    /// "<paramref name="crewCount"/> / <paramref name="cabinsCount"/>". Same plain-readout
+    /// rule — no hover glow; hovering it (<paramref name="isCrewHovered"/>, see
+    /// <see cref="CrewLocalRect"/>) only shows an explanatory tooltip below the toolbar.
     /// </summary>
     public static void Draw(
         SKCanvas canvas, float panelLeft, float panelTop, string? stationName, bool isStationHub,
         bool isHovered = false, string? windowName = null, bool isExitButtonHovered = false,
-        long foodRationsCount = 0, bool isFoodRationsHovered = false)
+        long foodRationsCount = 0, bool isFoodRationsHovered = false,
+        int crewCount = 0, int cabinsCount = 0, bool isCrewHovered = false)
     {
         var rect = new SKRect(panelLeft, panelTop, panelLeft + Width, panelTop + Height);
         canvas.DrawRect(rect, FillPaint);
@@ -352,6 +408,36 @@ public static class StationToolbar
                     panelLeft + block.Left, panelTop + block.Top,
                     panelLeft + block.Right, panelTop + block.Bottom);
                 DrawTooltip(canvas, screenBlock, FoodRationsTooltipLines);
+            }
+        }
+
+        if (CrewImage is not null)
+        {
+            string valueText = $"{crewCount} / {cabinsCount}";
+            float actualTextWidth = ResourceValuePaint.MeasureText(valueText);
+
+            var block = CrewLocalRect();
+            float valueFieldRight = block.Right;
+            // Right-align the actual digits within the reserved field — the icon's position
+            // (fixed by CrewLocalRect/CrewValueFieldWidth) never moves regardless of how many
+            // digits crewCount/cabinsCount actually have.
+            float textLeft = valueFieldRight - actualTextWidth;
+
+            var iconRect = new SKRect(
+                panelLeft + block.Left, panelTop + block.Top,
+                panelLeft + block.Left + ResourceIconSize, panelTop + block.Bottom);
+            canvas.DrawBitmap(CrewImage, iconRect);
+
+            float textBaselineY = MenuStyle.VerticalCenterBaseline(
+                new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
+            canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
+
+            if (isCrewHovered)
+            {
+                var screenBlock = new SKRect(
+                    panelLeft + block.Left, panelTop + block.Top,
+                    panelLeft + block.Right, panelTop + block.Bottom);
+                DrawTooltip(canvas, screenBlock, CrewTooltipLines);
             }
         }
 
@@ -415,6 +501,29 @@ public static class StationToolbar
     /// <summary>Total <see cref="FoodRationsItemTypeId"/> quantity aboard the player ship.</summary>
     public static long ResolveFoodRationsCount(AuthoritativeSnapshot? snapshot) =>
         ResolveCargoQuantity(snapshot, FoodRationsItemTypeId);
+
+    /// <summary>
+    /// Number of crew members (and passengers) aboard the player ship — 0 for a null
+    /// snapshot or any snapshot/save predating this field (story-20260901-112254).
+    /// </summary>
+    public static int ResolveCrewCount(AuthoritativeSnapshot? snapshot) => snapshot?.PlayerCrewCount ?? 0;
+
+    /// <summary>
+    /// Sums cabin capacity (<see cref="InstalledModuleSnapshot.CabinesCount"/>) across every
+    /// installed module — 0 for a null snapshot, no installed modules, or no module type
+    /// that houses crew. Mirrors <see cref="ResolveCargoQuantity"/>'s null-safe iteration.
+    /// </summary>
+    public static int ResolveCabinsCount(AuthoritativeSnapshot? snapshot)
+    {
+        if (snapshot is null || snapshot.InstalledModules.IsDefaultOrEmpty)
+            return 0;
+
+        int total = 0;
+        foreach (var module in snapshot.InstalledModules)
+            total += module.CabinesCount ?? 0;
+
+        return total;
+    }
 
     /// <summary>
     /// Draws a small dark tooltip box directly below <paramref name="anchorRect"/> (screen

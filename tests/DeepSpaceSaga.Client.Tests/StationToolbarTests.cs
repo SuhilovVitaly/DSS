@@ -31,6 +31,12 @@ public class StationToolbarTests
     }
 
     [Fact]
+    public void Crew_icon_is_loaded()
+    {
+        Assert.True(StationToolbar.HasLoadedCrewImage);
+    }
+
+    [Fact]
     public void ResolveFoodRationsCount_sums_the_item_across_every_installed_modules_cargo()
     {
         var snapshot = new AuthoritativeSnapshot(
@@ -61,6 +67,50 @@ public class StationToolbarTests
             SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed1,
             Objects: ImmutableArray<ObjectMotionSnapshot>.Empty);
         Assert.Equal(0, StationToolbar.ResolveFoodRationsCount(snapshot));
+    }
+
+    [Fact]
+    public void ResolveCrewCount_reads_PlayerCrewCount_off_the_snapshot()
+    {
+        var snapshot = new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray<ObjectMotionSnapshot>.Empty, PlayerCrewCount: 1);
+
+        Assert.Equal(1, StationToolbar.ResolveCrewCount(snapshot));
+    }
+
+    [Fact]
+    public void ResolveCrewCount_is_zero_for_a_null_snapshot()
+    {
+        Assert.Equal(0, StationToolbar.ResolveCrewCount(null));
+    }
+
+    [Fact]
+    public void ResolveCabinsCount_sums_CabinesCount_across_every_installed_module()
+    {
+        var snapshot = new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray<ObjectMotionSnapshot>.Empty,
+            InstalledModules: ImmutableArray.Create(
+                new InstalledModuleSnapshot(
+                    ModuleId: "MOD-1", ModuleTypeId: "living.quarters.mk1", DisplayName: "Living Quarters",
+                    Position: 0, CommandTypeIds: ImmutableArray<string>.Empty, CabinesCount: 2),
+                new InstalledModuleSnapshot(
+                    ModuleId: "MOD-2", ModuleTypeId: "module.container.basic", DisplayName: "Cargo Bay",
+                    Position: 1, CommandTypeIds: ImmutableArray<string>.Empty)));
+
+        Assert.Equal(2, StationToolbar.ResolveCabinsCount(snapshot));
+    }
+
+    [Fact]
+    public void ResolveCabinsCount_is_zero_for_a_null_snapshot_or_no_installed_modules()
+    {
+        Assert.Equal(0, StationToolbar.ResolveCabinsCount(null));
+
+        var snapshot = new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray<ObjectMotionSnapshot>.Empty);
+        Assert.Equal(0, StationToolbar.ResolveCabinsCount(snapshot));
     }
 
     [Fact]
@@ -98,6 +148,80 @@ public class StationToolbarTests
         // A 4-digit value must not bleed past the reserved field's right edge into the
         // exit-button gap.
         Assert.True(rectWithFourDigits.Right <= StationToolbar.ExitButtonLocalRect().Left - StationToolbar.ResourceInfoGapFromExitButton + 0.5f);
+    }
+
+    [Fact]
+    public void Draw_places_the_crew_icon_before_the_food_rations_icon()
+    {
+        using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+
+        StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, crewCount: 1, cabinsCount: 2);
+        canvas.Flush();
+
+        // The crew icon+value sit in the gap just left of the food-rations block — not
+        // overlapping it (StationToolbar.CrewInfoGapFromFoodRations keeps them apart).
+        float foodRationsLeft = StationToolbar.FoodRationsLocalRect().Left;
+        Assert.True(RegionHasNonBackgroundPixel(bitmap, (int)(foodRationsLeft - 100), (int)foodRationsLeft - 2));
+    }
+
+    [Fact]
+    public void CrewLocalRect_stays_fixed_regardless_of_the_actual_digit_count()
+    {
+        // The field is reserved wide enough for "9 / 9" up front — the icon's position
+        // (CrewLocalRect) must not depend on today's actual counts.
+        var rectWithLowCounts = StationToolbar.CrewLocalRect();
+
+        using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+        StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, crewCount: 9, cabinsCount: 9);
+        canvas.Flush();
+
+        var rectWithHighCounts = StationToolbar.CrewLocalRect();
+        Assert.Equal(rectWithLowCounts, rectWithHighCounts);
+
+        // The "9 / 9" reservation must not bleed past into the food-rations block's gap.
+        Assert.True(rectWithHighCounts.Right
+            <= StationToolbar.FoodRationsLocalRect().Left - StationToolbar.CrewInfoGapFromFoodRations + 0.5f);
+    }
+
+    [Fact]
+    public void CrewLocalRect_sits_immediately_left_of_FoodRationsLocalRect()
+    {
+        var crew = StationToolbar.CrewLocalRect();
+        var rations = StationToolbar.FoodRationsLocalRect();
+
+        Assert.True(crew.Right <= rations.Left);
+        Assert.Equal(rations.Left - StationToolbar.CrewInfoGapFromFoodRations, crew.Right, 3);
+    }
+
+    [Fact]
+    public void Hovering_crew_shows_a_tooltip_below_the_toolbar()
+    {
+        using var hoveredBitmap = new SKBitmap((int)StationToolbar.Width, 120);
+        hoveredBitmap.Erase(SKColors.Transparent);
+        using (var canvas = new SKCanvas(hoveredBitmap))
+            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, crewCount: 1, cabinsCount: 2,
+                isCrewHovered: true);
+
+        using var normalBitmap = new SKBitmap((int)StationToolbar.Width, 120);
+        normalBitmap.Erase(SKColors.Transparent);
+        using (var canvas = new SKCanvas(normalBitmap))
+            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, crewCount: 1, cabinsCount: 2,
+                isCrewHovered: false);
+
+        bool foundBelowWhenHovered = false, foundBelowWhenNormal = false;
+        for (int y = (int)StationToolbar.Height + 2; y < hoveredBitmap.Height; y++)
+        for (int x = 0; x < hoveredBitmap.Width; x++)
+        {
+            if (hoveredBitmap.GetPixel(x, y).Alpha > 0) foundBelowWhenHovered = true;
+            if (normalBitmap.GetPixel(x, y).Alpha > 0) foundBelowWhenNormal = true;
+        }
+
+        Assert.True(foundBelowWhenHovered);
+        Assert.False(foundBelowWhenNormal);
     }
 
     [Fact]

@@ -31,4 +31,10 @@ public sealed record AuthoritativeSnapshot(
     /// The docked station's tradeable inventory. Non-null only while the player ship is
     /// actually docked to a station; null otherwise.
     /// </summary>
-    StationTradeSnapshot? DockedStationTrade = null);
+    StationTradeSnapshot? DockedStationTrade = null,
+    /// <summary>
+    /// Number of crew members aboard the player ship (story-20260901-112254, "Crew and
+    /// cabin occupancy"). Always present; 0 when there is no player ship or it carries no
+    /// crew (the common case for every scenario/save predating this field).
+    /// </summary>
+    int PlayerCrewCount = 0);
