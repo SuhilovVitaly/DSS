@@ -27,14 +27,7 @@ public static class StationToolbar
     public const float NameOffsetX = 20f;
     public const float NameOffsetY = 20f;
     public const float NameFontSize = 26f;
-    public const float NameHoverGlowSigma = 4f;
-
-    /// <summary>
-    /// How much more saturated the hover glow is than <see cref="ColorNameActive"/> —
-    /// blurring inherently washes color out (alpha spreads thinner toward the edges), so
-    /// the glow needs extra saturation to still read as vivid rather than pastel.
-    /// </summary>
-    private const float NameGlowSaturationBoost = 1.6f;
+    public const float NameHoverGlowSigma = 10f;
 
     public static readonly SKColor ColorBackground = new(0x5e, 0x5e, 0x5e);
     public static readonly SKColor ColorBorder = new(0x99, 0x99, 0x99);
@@ -53,11 +46,12 @@ public static class StationToolbar
     private static readonly SKPaint NamePaintLink = MakeNamePaint(ColorNameLink);
 
     /// <summary>
-    /// Hover glow color — <see cref="ColorNameActive"/>'s hue and brightness, saturation
-    /// boosted by <see cref="NameGlowSaturationBoost"/> so the blurred halo still reads as
-    /// a vivid, saturated orange rather than washed-out pastel.
+    /// Hover glow color — <see cref="ColorNameActive"/>'s hue and brightness at full (100%)
+    /// saturation, so the blurred halo still reads as a vivid, saturated orange rather
+    /// than washed-out pastel (blurring inherently spreads alpha thinner toward the
+    /// edges, which dilutes color unless it starts fully saturated).
     /// </summary>
-    public static readonly SKColor ColorNameGlow = MoreSaturated(ColorNameActive, NameGlowSaturationBoost);
+    public static readonly SKColor ColorNameGlow = FullySaturated(ColorNameActive);
 
     /// <summary>
     /// Hover-only glow drawn behind the link text (see <see cref="Draw"/>) — a soft
@@ -86,11 +80,11 @@ public static class StationToolbar
         return paint;
     }
 
-    /// <summary>Returns <paramref name="color"/> with its HSV saturation multiplied by <paramref name="factor"/>, clamped to 100%.</summary>
-    private static SKColor MoreSaturated(SKColor color, float factor)
+    /// <summary>Returns <paramref name="color"/> with its HSV saturation set to 100%, same hue/brightness.</summary>
+    private static SKColor FullySaturated(SKColor color)
     {
-        color.ToHsv(out float h, out float s, out float v);
-        return SKColor.FromHsv(h, System.Math.Min(100f, s * factor), v, color.Alpha);
+        color.ToHsv(out float h, out _, out float v);
+        return SKColor.FromHsv(h, 100f, v, color.Alpha);
     }
 
     /// <summary>Toolbar rect, local to the panel (add the panel's left/top to get screen space).</summary>
