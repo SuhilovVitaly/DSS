@@ -48,6 +48,7 @@ public static class StationToolbar
 
     public const float ResourceIconSize = 32f;
     public const float ResourceIconTextGap = 8f;
+    public const float ResourceValueFontSize = 22f;
 
     /// <summary>Gap between the resource info panel's right edge and the exit button's left edge.</summary>
     public const float ResourceInfoGapFromExitButton = 20f;
@@ -115,7 +116,7 @@ public static class StationToolbar
     private static readonly SKPaint ResourceValuePaint = new()
     {
         Color = MenuStyle.ColorText,
-        TextSize = MenuStyle.ButtonFontSize,
+        TextSize = ResourceValueFontSize,
         IsAntialias = true,
         TextAlign = SKTextAlign.Left,
         Typeface = MenuStyle.TypefaceHumaroid
