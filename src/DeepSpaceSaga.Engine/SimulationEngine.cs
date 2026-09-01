@@ -417,6 +417,7 @@ public sealed class SimulationEngine : IDisposable
                     RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
                     RelationToPlayer = known ? GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType) : null,
                     DisplayName = known ? obj.Name : null,
+                    Image = known ? obj.Image : null,
                     MaxSpeedKmS = GetMaxSpeedKmS(obj),
                     IsDocked = obj.IsDocked,
                     DockedStationObjectId = obj.DockedStationObjectId

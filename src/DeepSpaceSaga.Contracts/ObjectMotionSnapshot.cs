@@ -91,4 +91,11 @@ public sealed record ObjectMotionSnapshot(
     /// Effective distance of the behind-target staging point for an active
     /// <see cref="NavigationComputerCommandTypes.Approach"/>, in world units.
     /// </summary>
-    double? NavigationApproachTrailDistanceWorldUnits = null);
+    double? NavigationApproachTrailDistanceWorldUnits = null,
+    /// <summary>
+    /// Path to this object's graphical representation, for client rendering. Null for an
+    /// object the player has not yet identified (same "player may only see factual data
+    /// for known objects" gating as <see cref="DisplayName"/>/<see cref="ObjectType"/>) or
+    /// one no image has been resolved for.
+    /// </summary>
+    string? Image = null);

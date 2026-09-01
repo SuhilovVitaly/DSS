@@ -82,12 +82,20 @@ public sealed class ObjectInfoPanel
     /// <summary>
     /// Lazily-resolved per-type object image, keyed by RenderObjectType (see
     /// <see cref="SpaceObjectType"/>), loaded from
-    /// <c>Images/UI/GameSessionScreenUI/object-info/&lt;type-lowercase&gt;.png</c>.
-    /// No files exist yet — every lookup falls back to <see cref="_imagePlaceholderPaint"/>
-    /// until real icons are added; a missing file is cached as null so the disk is only
-    /// probed once per type.
+    /// <c>Images/UI/GameSessionScreenUI/object-info/&lt;type-lowercase&gt;.png</c>. Used
+    /// only as a fallback when <see cref="ObjectInfoPanelData.Image"/> is null or its file
+    /// is missing — no files exist yet at this path, so this fallback currently always
+    /// misses. A missing file is cached as null so the disk is only probed once per type.
     /// </summary>
-    private readonly Dictionary<string, SKBitmap?> _objectImages = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, SKBitmap?> _objectImagesByType = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Lazily-resolved per-object image, keyed by <see cref="ObjectInfoPanelData.Image"/>
+    /// (the object's own resolved sprite path, e.g. an asteroid/ship sprite under
+    /// <c>Images/CelestialObjects</c>). A missing file is cached as null so the disk is
+    /// only probed once per path.
+    /// </summary>
+    private readonly Dictionary<string, SKBitmap?> _objectImagesByPath = new(StringComparer.Ordinal);
 
     public ObjectInfoPanel()
     {
@@ -267,7 +275,7 @@ public sealed class ObjectInfoPanel
         float imgY = bodyRect.Top + Padding;
         var imageRect = new SKRect(imgX, imgY, imgX + ImageSize, imgY + ImageSize);
 
-        var image = data is { RenderObjectType: { } type } ? ResolveObjectImage(type) : null;
+        var image = data is { } d ? ResolveObjectImage(d) : null;
         if (image is not null)
             canvas.DrawBitmap(image, imageRect, _imagePaint);
         else
@@ -284,14 +292,34 @@ public sealed class ObjectInfoPanel
         }
     }
 
-    private SKBitmap? ResolveObjectImage(string renderObjectType)
+    /// <summary>
+    /// Resolves the bitmap to draw for one row: the object's own resolved sprite
+    /// (<see cref="ObjectInfoPanelData.Image"/>) when present and loadable, otherwise the
+    /// generic per-type icon, otherwise null (caller draws the placeholder rect).
+    /// </summary>
+    private SKBitmap? ResolveObjectImage(ObjectInfoPanelData data)
     {
-        if (_objectImages.TryGetValue(renderObjectType, out var cached))
-            return cached;
+        if (data.Image is { Length: > 0 } imagePath)
+        {
+            if (!_objectImagesByPath.TryGetValue(imagePath, out var byPath))
+            {
+                byPath = LoadImage(imagePath);
+                _objectImagesByPath[imagePath] = byPath;
+            }
 
-        var bitmap = LoadImage($"{ObjectImageAssetsPath}/{renderObjectType.ToLowerInvariant()}.png");
-        _objectImages[renderObjectType] = bitmap;
-        return bitmap;
+            if (byPath is not null)
+                return byPath;
+        }
+
+        if (data.RenderObjectType is not { } renderObjectType)
+            return null;
+
+        if (_objectImagesByType.TryGetValue(renderObjectType, out var byType))
+            return byType;
+
+        var fallback = LoadImage($"{ObjectImageAssetsPath}/{renderObjectType.ToLowerInvariant()}.png");
+        _objectImagesByType[renderObjectType] = fallback;
+        return fallback;
     }
 
     private void DrawButton(SKCanvas canvas, SKRect rect, SKBitmap? image)
@@ -348,4 +376,5 @@ public readonly record struct ObjectInfoPanelData(
     string? DisplayName,
     double SpeedKmS,
     double Direction,
-    string? RenderObjectType);
+    string? RenderObjectType,
+    string? Image = null);

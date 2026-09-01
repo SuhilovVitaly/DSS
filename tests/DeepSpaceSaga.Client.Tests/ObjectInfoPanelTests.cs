@@ -40,10 +40,11 @@ public class ObjectInfoPanelTests
         double direction = 0,
         double x = 10000,
         double y = 10000,
-        string? displayName = null)
+        string? displayName = null,
+        string? image = null)
     {
         var ship = new ObjectMotionSnapshot(
-            playerShipId, x, y, speedKmS, direction, DisplayName: displayName);
+            playerShipId, x, y, speedKmS, direction, DisplayName: displayName, Image: image);
         buffer.Update(new AuthoritativeSnapshot(
             SnapshotSequence: 1,
             GameTimeMs: 0,
@@ -226,5 +227,15 @@ public class ObjectInfoPanelTests
         Assert.Equal("My Ship", info.Value.DisplayName);
         Assert.Equal(15.5, info.Value.SpeedKmS);
         Assert.Equal(45, info.Value.Direction);
+    }
+
+    [Fact]
+    public void PlayerShipInfo_carries_the_resolved_image_from_the_snapshot()
+    {
+        var (buffer, screen) = CreateScreen();
+        UpdateBufferWithShip(buffer, PlayerShipId, image: "Images/CelestialObjects/Spacecraft/ship-tetrarch-class.png");
+        RenderScreen(screen);
+
+        Assert.Equal("Images/CelestialObjects/Spacecraft/ship-tetrarch-class.png", screen.PlayerShipInfo!.Value.Image);
     }
 }
