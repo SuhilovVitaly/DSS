@@ -178,6 +178,53 @@ public static class GridPanel
         return new SKRect(track.Left, track.Bottom - ScrollbarArrowSize, track.Right, track.Bottom);
     }
 
+    /// <summary>The thumb's usable vertical travel, between the two arrow buttons.</summary>
+    private readonly record struct ThumbTravel(float MinTop, float Travel, float Height);
+
+    private static ThumbTravel ComputeThumbTravel(SKRect track)
+    {
+        float middleTop = track.Top + ScrollbarArrowSize;
+        float middleHeight = Math.Max(0f, track.Height - 2 * ScrollbarArrowSize);
+        float thumbHeight = middleHeight * ScrollbarThumbHeightRatio;
+        float travel = Math.Max(0f, middleHeight - thumbHeight - 2 * ScrollbarThumbInset);
+        return new ThumbTravel(middleTop + ScrollbarThumbInset, travel, thumbHeight);
+    }
+
+    /// <summary>Current thumb position/size — the target for both drawing and hit-testing a drag start.</summary>
+    public static SKRect ScrollThumbLocalRect(float originX, float originY, int rowCount, int scrollOffset)
+    {
+        var track = ScrollbarTrackLocalRect(originX, originY, rowCount);
+        var thumbTravel = ComputeThumbTravel(track);
+
+        int maxOffset = MaxScrollOffset(rowCount);
+        float progress = maxOffset > 0 ? (float)Math.Clamp(scrollOffset, 0, maxOffset) / maxOffset : 0f;
+        float thumbTop = thumbTravel.MinTop + thumbTravel.Travel * progress;
+        return new SKRect(track.Left + ScrollbarThumbInset, thumbTop, track.Right - ScrollbarThumbInset, thumbTop + thumbTravel.Height);
+    }
+
+    /// <summary>
+    /// Inverse of <see cref="ScrollThumbLocalRect"/>'s vertical mapping — the scroll offset
+    /// whose thumb top would land at <paramref name="desiredThumbTopY"/> (local Y,
+    /// clamped to the track's travel range). For a drag: the caller keeps the pointer's
+    /// offset from the thumb's top fixed (grabbed-at-a-point-, not "thumb snaps to
+    /// pointer"), so it should pass <c>pointerLocalY - grabOffsetY</c> here every move.
+    /// </summary>
+    public static int ResolveScrollOffsetForThumbTop(float originX, float originY, int rowCount, float desiredThumbTopY)
+    {
+        int maxOffset = MaxScrollOffset(rowCount);
+        if (maxOffset <= 0)
+            return 0;
+
+        var track = ScrollbarTrackLocalRect(originX, originY, rowCount);
+        var thumbTravel = ComputeThumbTravel(track);
+        if (thumbTravel.Travel <= 0f)
+            return 0;
+
+        float clampedTop = Math.Clamp(desiredThumbTopY, thumbTravel.MinTop, thumbTravel.MinTop + thumbTravel.Travel);
+        float progress = (clampedTop - thumbTravel.MinTop) / thumbTravel.Travel;
+        return (int)Math.Round(progress * maxOffset);
+    }
+
     /// <param name="scrollOffset">
     /// Index of the first row currently shown, 0..<see cref="MaxScrollOffset"/> of
     /// <paramref name="rowCount"/> — both which <paramref name="rowLabels"/> window is
@@ -238,17 +285,10 @@ public static class GridPanel
         var downArrowRect = ScrollDownArrowLocalRect(originX, originY, rowCount);
         DrawScrollbarArrow(canvas, downArrowRect, pointingUp: false, isHovered: isActive && isScrollDownHovered, arrowPaint);
 
-        float middleTop = track.Top + ScrollbarArrowSize;
-        float middleHeight = track.Height - 2 * ScrollbarArrowSize;
-        if (middleHeight <= 0f)
+        if (track.Height <= 2 * ScrollbarArrowSize)
             return;
 
-        float thumbHeight = middleHeight * ScrollbarThumbHeightRatio;
-        float travel = Math.Max(0f, middleHeight - thumbHeight - 2 * ScrollbarThumbInset);
-        int maxOffset = MaxScrollOffset(rowCount);
-        float progress = isActive && maxOffset > 0 ? (float)scrollOffset / maxOffset : 0f;
-        float thumbY = middleTop + ScrollbarThumbInset + travel * progress;
-        var thumbRect = new SKRect(track.Left + ScrollbarThumbInset, thumbY, track.Right - ScrollbarThumbInset, thumbY + thumbHeight);
+        var thumbRect = ScrollThumbLocalRect(originX, originY, rowCount, isActive ? scrollOffset : 0);
         canvas.DrawRoundRect(thumbRect, ScrollbarThumbCornerRadius, ScrollbarThumbCornerRadius, thumbPaint);
     }
 

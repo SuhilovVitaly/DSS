@@ -325,6 +325,56 @@ public class TradeScreenTests
         Assert.Equal(1, screen.ScrollOffset);
     }
 
+    [Fact]
+    public void Mouse_wheel_scrolls_the_resources_grid_and_clamps_at_both_bounds()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+        Assert.Equal(0, screen.ScrollOffset);
+
+        screen.OnMouseWheel(0f, 0f, -1f);
+        Assert.Equal(1, screen.ScrollOffset);
+
+        // Clamped at GridPanel.MaxScrollOffset(6) = 1 — a further tick the same direction must not overshoot.
+        screen.OnMouseWheel(0f, 0f, -1f);
+        Assert.Equal(1, screen.ScrollOffset);
+
+        screen.OnMouseWheel(0f, 0f, 1f);
+        Assert.Equal(0, screen.ScrollOffset);
+
+        // Clamped at 0 — a further tick the same direction must not go negative.
+        screen.OnMouseWheel(0f, 0f, 1f);
+        Assert.Equal(0, screen.ScrollOffset);
+    }
+
+    [Fact]
+    public void Dragging_the_scrollbar_thumb_moves_the_scroll_offset()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+
+        var thumbLocal = GridPanel.ScrollThumbLocalRect(15f, 76f, screen.ResourceNames.Length, screen.ScrollOffset);
+        float pl = TradeLayout.PanelLeft(ScreenWidth);
+        float pt = TradeLayout.PanelTop(ScreenHeight);
+        float grabX = pl + thumbLocal.MidX;
+        float grabY = pt + thumbLocal.MidY;
+
+        // Grab the thumb, then drag it well past the track's bottom — must clamp at
+        // GridPanel.MaxScrollOffset(6) = 1, not overshoot or throw.
+        screen.OnMouseDown(grabX, grabY);
+        screen.OnMouseMove(grabX, pt + 1000f);
+        Assert.Equal(1, screen.ScrollOffset);
+
+        // Drag back up past the track's top — must clamp at 0.
+        screen.OnMouseMove(grabX, pt - 1000f);
+        Assert.Equal(0, screen.ScrollOffset);
+
+        // Releasing ends the drag — further movement must not change the offset.
+        screen.OnMouseUp(grabX, pt + 1000f);
+        screen.OnMouseMove(grabX, pt + 1000f);
+        Assert.Equal(0, screen.ScrollOffset);
+    }
+
     /// <summary>Screen-space center of the toolbar's "Test Station" name label (see DockedBuffer).</summary>
     private static (float X, float Y) StationNameCenter()
     {

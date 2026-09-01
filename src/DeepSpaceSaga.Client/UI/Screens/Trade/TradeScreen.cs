@@ -34,14 +34,24 @@ public sealed class TradeScreen : IScreen
 
     /// <summary>
     /// Index of the first resource row currently shown, 0..<see cref="GridPanel.MaxScrollOffset"/>
-    /// of the docked station's resource count — clamped after every arrow click
-    /// (<see cref="OnMouseDown(float, float, Silk.NET.Input.MouseButton)"/>) and again in
-    /// <see cref="Render"/> in case the resource count itself changes between frames.
+    /// of the docked station's resource count — clamped after every arrow click/wheel tick/
+    /// drag move, and again in <see cref="Render"/> in case the resource count itself
+    /// changes between frames.
     /// </summary>
     private int _scrollOffset;
 
     /// <summary>Test seam — current resources-grid scroll offset (see <see cref="_scrollOffset"/>).</summary>
     internal int ScrollOffset => _scrollOffset;
+
+    /// <summary>True while the scrollbar thumb is being dragged (mouse-down on it, not yet released) — see <see cref="OnMouseDown(float, float, Silk.NET.Input.MouseButton)"/>/<see cref="OnMouseUp"/>.</summary>
+    private bool _isDraggingScrollThumb;
+
+    /// <summary>
+    /// Vertical distance (local coordinates) from the drag's initial click point down to
+    /// the thumb's top edge at that moment — kept fixed for the whole drag so the thumb
+    /// stays anchored under the pointer instead of snapping its top to it.
+    /// </summary>
+    private float _scrollThumbDragGrabOffsetY;
 
     /// <summary>
     /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
@@ -145,6 +155,7 @@ public sealed class TradeScreen : IScreen
         _isExitButtonHovered = false;
         _isScrollUpHovered = false;
         _isScrollDownHovered = false;
+        _isDraggingScrollThumb = false;
         _foodRationsHoverStartedAtMs = null;
         _crewHoverStartedAtMs = null;
         _tokensHoverStartedAtMs = null;
@@ -181,6 +192,16 @@ public sealed class TradeScreen : IScreen
                 _scrollOffset = Math.Min(GridPanel.MaxScrollOffset(resourceRowCount), _scrollOffset + 1);
                 return ScreenEvent.None;
             }
+
+            float pt = TradeLayout.PanelTop(_screenHeight);
+            var thumbLocal = GridPanel.ScrollThumbLocalRect(GridPanelOriginX, GridPanelOriginY, resourceRowCount, _scrollOffset);
+            float clickLocalY = y - pt;
+            if (IsScrollThumbHit(x, y))
+            {
+                _isDraggingScrollThumb = true;
+                _scrollThumbDragGrabOffsetY = clickLocalY - thumbLocal.Top;
+                return ScreenEvent.None;
+            }
         }
 
         // Click on the dimmed background outside the panel also closes it.
@@ -193,8 +214,19 @@ public sealed class TradeScreen : IScreen
     /// <summary>Convenience shortcut for a left click — kept for existing call-site/test conventions.</summary>
     public ScreenEvent OnMouseDown(float x, float y) => OnMouseDown(x, y, MouseButton.Left);
 
+    /// <summary>Ends a scrollbar-thumb drag on left-button release, wherever the pointer ends up — see <see cref="_isDraggingScrollThumb"/>.</summary>
+    public void OnMouseUp(float x, float y) => _isDraggingScrollThumb = false;
+
     public bool OnMouseMove(float x, float y)
     {
+        if (_isDraggingScrollThumb)
+        {
+            int resourceRowCount = CurrentResourceRowCount();
+            float pt = TradeLayout.PanelTop(_screenHeight);
+            float desiredThumbTopLocalY = (y - pt) - _scrollThumbDragGrabOffsetY;
+            _scrollOffset = GridPanel.ResolveScrollOffsetForThumbTop(GridPanelOriginX, GridPanelOriginY, resourceRowCount, desiredThumbTopLocalY);
+        }
+
         _isStationNameHovered = IsStationNameHit(x, y);
         _isExitButtonHovered = IsExitButtonHit(x, y);
         bool isScrollbarActive = GridPanel.IsScrollbarActive(CurrentResourceRowCount());
@@ -223,10 +255,16 @@ public sealed class TradeScreen : IScreen
         else
             _fuelHoverStartedAtMs = null;
 
-        return _isStationNameHovered || _isExitButtonHovered || _isScrollUpHovered || _isScrollDownHovered;
+        return _isStationNameHovered || _isExitButtonHovered || _isScrollUpHovered || _isScrollDownHovered || _isDraggingScrollThumb;
     }
 
-    public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
+    /// <summary>Scrolls the resources grid one row per wheel tick — same direction convention as SaveScreen's slot-list wheel scroll.</summary>
+    public ScreenEvent OnMouseWheel(float x, float y, float delta)
+    {
+        int maxOffset = GridPanel.MaxScrollOffset(CurrentResourceRowCount());
+        _scrollOffset = Math.Clamp(_scrollOffset - Math.Sign(delta), 0, maxOffset);
+        return ScreenEvent.None;
+    }
 
     public void Render(SKCanvas canvas, int width, int height)
     {
@@ -288,6 +326,15 @@ public sealed class TradeScreen : IScreen
         float pl = TradeLayout.PanelLeft(_screenWidth);
         float pt = TradeLayout.PanelTop(_screenHeight);
         var local = GridPanel.ScrollDownArrowLocalRect(GridPanelOriginX, GridPanelOriginY, CurrentResourceRowCount());
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the resources grid's scrollbar thumb (see <see cref="GridPanel.ScrollThumbLocalRect"/>) — a drag-start hit-test, checked with the current (pre-drag) <see cref="_scrollOffset"/>.</summary>
+    private bool IsScrollThumbHit(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = GridPanel.ScrollThumbLocalRect(GridPanelOriginX, GridPanelOriginY, CurrentResourceRowCount(), _scrollOffset);
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
