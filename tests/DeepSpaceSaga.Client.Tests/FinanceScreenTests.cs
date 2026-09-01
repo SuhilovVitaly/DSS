@@ -44,23 +44,30 @@ public class FinanceScreenTests
     }
 
     [Fact]
-    public void Close_button_click_returns_CloseFinance()
+    public void Exit_button_click_returns_CloseFinance()
     {
         var screen = new FinanceScreen();
         RenderScreen(screen);
 
-        var hit = FinanceLayout.HitTest(
-            FinanceLayout.PanelLeft(ScreenWidth) + FinanceLayout.CloseButtonLocalRect().Left + 1f,
-            FinanceLayout.PanelTop(ScreenHeight) + FinanceLayout.CloseButtonLocalRect().Top + 1f,
-            ScreenWidth, ScreenHeight);
-        Assert.Equal(FinanceButton.Close, hit);
-
-        var (left, top, right, bottom) = FinanceLayout.CloseButtonLocalRect();
-        float cx = FinanceLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
-        float cy = FinanceLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
+        var local = StationToolbar.ExitButtonLocalRect();
+        float cx = FinanceLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = FinanceLayout.PanelTop(ScreenHeight) + local.MidY;
 
         var result = screen.OnMouseDown(cx, cy);
         Assert.Equal(ScreenEvent.CloseFinance, result);
+    }
+
+    [Fact]
+    public void Hovering_the_exit_button_reports_interactive()
+    {
+        var screen = new FinanceScreen();
+        RenderScreen(screen);
+
+        var local = StationToolbar.ExitButtonLocalRect();
+        float cx = FinanceLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = FinanceLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        Assert.True(screen.OnMouseMove(cx, cy));
     }
 
     [Fact]

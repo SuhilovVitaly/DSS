@@ -227,16 +227,18 @@ public class StationToolbarTests
     }
 
     [Fact]
-    public void Draw_with_window_name_extends_content_further_right_than_without_one()
+    public void Draw_with_window_name_places_the_window_name_after_the_station_name()
     {
-        // Relative comparison instead of an absolute pixel boundary: exactly how far
-        // FakeBoldText's synthetic stroke-widening overhangs past MeasureText's reported
-        // bounds isn't guaranteed, so "further right than the no-windowName render" is the
-        // robust way to prove the separator+windowName segment actually got drawn.
-        using var withoutWindowName = RenderToolbar("Alpha Station", windowName: null);
-        using var withWindowName = RenderToolbar("Alpha Station", windowName: "TRADE");
+        // The window-name segment's own color (ColorNameActive) is unambiguous, so locate
+        // it directly — this also stays correct now that the toolbar's exit-button icon is
+        // always drawn regardless of windowName, which would otherwise dominate a plain
+        // "rightmost non-background pixel" comparison.
+        using var bitmap = RenderToolbar("Alpha Station", windowName: "TRADE");
 
-        Assert.True(MaxInkColumn(withWindowName) > MaxInkColumn(withoutWindowName));
+        int windowNameStart = MinColumnOfColor(bitmap, StationToolbar.ColorNameActive);
+        int stationNameEnd = (int)StationToolbar.NameLocalRect("Alpha Station").Right;
+
+        Assert.True(windowNameStart > stationNameEnd);
     }
 
     [Fact]
@@ -284,22 +286,6 @@ public class StationToolbarTests
                 return true;
 
         return false;
-    }
-
-    /// <summary>
-    /// Rightmost column with non-background ink, excluding a border-width margin on every
-    /// edge — the toolbar's own 1px <see cref="StationToolbar.ColorBorder"/> outline spans
-    /// the full width/height and would otherwise dominate the scan.
-    /// </summary>
-    private static int MaxInkColumn(SKBitmap bitmap)
-    {
-        const int inset = 3;
-        for (int x = bitmap.Width - 1 - inset; x >= inset; x--)
-        for (int y = inset; y < bitmap.Height - inset; y++)
-            if (bitmap.GetPixel(x, y) != StationToolbar.ColorBackground)
-                return x;
-
-        return -1;
     }
 
     private static int MinColumnOfColor(SKBitmap bitmap, SKColor color)

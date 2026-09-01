@@ -36,23 +36,30 @@ public class ContractsScreenTests
     }
 
     [Fact]
-    public void Close_button_click_returns_CloseContracts()
+    public void Exit_button_click_returns_CloseContracts()
     {
         var screen = new ContractsScreen();
         RenderScreen(screen);
 
-        var hit = ContractsLayout.HitTest(
-            ContractsLayout.PanelLeft(ScreenWidth) + ContractsLayout.CloseButtonLocalRect().Left + 1f,
-            ContractsLayout.PanelTop(ScreenHeight) + ContractsLayout.CloseButtonLocalRect().Top + 1f,
-            ScreenWidth, ScreenHeight);
-        Assert.Equal(ContractsButton.Close, hit);
-
-        var (left, top, right, bottom) = ContractsLayout.CloseButtonLocalRect();
-        float cx = ContractsLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
-        float cy = ContractsLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
+        var local = StationToolbar.ExitButtonLocalRect();
+        float cx = ContractsLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = ContractsLayout.PanelTop(ScreenHeight) + local.MidY;
 
         var result = screen.OnMouseDown(cx, cy);
         Assert.Equal(ScreenEvent.CloseContracts, result);
+    }
+
+    [Fact]
+    public void Hovering_the_exit_button_reports_interactive()
+    {
+        var screen = new ContractsScreen();
+        RenderScreen(screen);
+
+        var local = StationToolbar.ExitButtonLocalRect();
+        float cx = ContractsLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = ContractsLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        Assert.True(screen.OnMouseMove(cx, cy));
     }
 
     [Fact]

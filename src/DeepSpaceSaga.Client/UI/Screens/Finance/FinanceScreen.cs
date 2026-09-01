@@ -10,10 +10,10 @@ namespace DeepSpaceSaga.Client.UI.Screens.Finance;
 /// the Money/Trading/StationInventory mechanics it will report on are not yet
 /// implemented in the Engine, so every section shows a "not available yet" line
 /// instead of fabricated numbers. Opened via the bottom-center Finance panel
-/// button or Ctrl+F; closes via the × button, Escape, or a click outside the
-/// panel (on the dimmed background). Pause-on-open/resume-on-close
-/// is handled generically by SkiaWindow's PushModalAsync/PopModalAsync — this
-/// screen has no speed/pause logic of its own.
+/// button or Ctrl+F; closes via the toolbar's exit-button icon (see StationToolbar),
+/// Escape, or a click outside the panel (on the dimmed background).
+/// Pause-on-open/resume-on-close is handled generically by SkiaWindow's
+/// PushModalAsync/PopModalAsync — this screen has no speed/pause logic of its own.
 /// </summary>
 public sealed class FinanceScreen : IScreen
 {
@@ -21,8 +21,8 @@ public sealed class FinanceScreen : IScreen
 
     private int _screenWidth;
     private int _screenHeight;
-    private bool _isCloseHovered;
     private bool _isStationNameHovered;
+    private bool _isExitButtonHovered;
 
     public FinanceScreen(SnapshotBuffer? buffer = null)
     {
@@ -58,8 +58,8 @@ public sealed class FinanceScreen : IScreen
 
     public void OnActivated()
     {
-        _isCloseHovered = false;
         _isStationNameHovered = false;
+        _isExitButtonHovered = false;
     }
 
     public void OnDeactivated() { }
@@ -72,8 +72,7 @@ public sealed class FinanceScreen : IScreen
         if (button != MouseButton.Left)
             return ScreenEvent.None;
 
-        var hit = FinanceLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        if (hit == FinanceButton.Close)
+        if (IsExitButtonHit(x, y))
             return ScreenEvent.CloseFinance;
 
         if (IsStationNameHit(x, y))
@@ -91,10 +90,9 @@ public sealed class FinanceScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
-        var hit = FinanceLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        _isCloseHovered = hit == FinanceButton.Close;
         _isStationNameHovered = IsStationNameHit(x, y);
-        return _isCloseHovered || _isStationNameHovered;
+        _isExitButtonHovered = IsExitButtonHit(x, y);
+        return _isStationNameHovered || _isExitButtonHovered;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -124,16 +122,6 @@ public sealed class FinanceScreen : IScreen
             canvas.DrawText(line, cx, textY, MenuStyle.TextStatus);
             textY += FinanceLayout.BodyLineHeight;
         }
-
-        DrawCloseButton(canvas, pl, pt);
-    }
-
-    private void DrawCloseButton(SKCanvas canvas, float panelLeft, float panelTop)
-    {
-        var (left, top, right, bottom) = FinanceLayout.CloseButtonLocalRect();
-        var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
-
-        MenuStyle.DrawButton(canvas, rect, "×", _isCloseHovered ? ButtonState.Hovered : ButtonState.Normal);
     }
 
     /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>
@@ -146,6 +134,15 @@ public sealed class FinanceScreen : IScreen
         float pl = FinanceLayout.PanelLeft(_screenWidth);
         float pt = FinanceLayout.PanelTop(_screenHeight);
         var local = StationToolbar.NameLocalRect(stationName);
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's exit-button icon (see StationToolbar).</summary>
+    private bool IsExitButtonHit(float x, float y)
+    {
+        float pl = FinanceLayout.PanelLeft(_screenWidth);
+        float pt = FinanceLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.ExitButtonLocalRect();
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 }

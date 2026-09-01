@@ -57,6 +57,7 @@ public sealed class TradeScreen : IScreen
     private int _hoveredInventoryRow = -1;
     private int _hoveredCargoRow = -1;
     private bool _isStationNameHovered;
+    private bool _isExitButtonHovered;
 
     /// <summary>Currently selected station item for Buy/Sell — null means "nothing selected yet".</summary>
     private string? _selectedItemTypeId;
@@ -109,6 +110,7 @@ public sealed class TradeScreen : IScreen
         _hoveredInventoryRow = -1;
         _hoveredCargoRow = -1;
         _isStationNameHovered = false;
+        _isExitButtonHovered = false;
 
         var trade = _buffer.Latest?.Snapshot?.DockedStationTrade;
         if (trade is not null && !trade.Items.IsDefaultOrEmpty)
@@ -133,6 +135,9 @@ public sealed class TradeScreen : IScreen
 
         var hit = TradeLayout.HitTest(x, y, _screenWidth, _screenHeight);
         if (hit == TradeButton.Close)
+            return ScreenEvent.CloseTrade;
+
+        if (IsExitButtonHit(x, y))
             return ScreenEvent.CloseTrade;
 
         var snapshot = _buffer.Latest?.Snapshot;
@@ -238,9 +243,10 @@ public sealed class TradeScreen : IScreen
             : -1;
 
         _isStationNameHovered = IsStationNameHit(x, y, snapshot);
+        _isExitButtonHovered = IsExitButtonHit(x, y);
 
         return _hoveredButton != TradeButton.None || _hoveredInventoryRow >= 0 || _hoveredCargoRow >= 0
-            || _isStationNameHovered;
+            || _isStationNameHovered || _isExitButtonHovered;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -540,6 +546,20 @@ public sealed class TradeScreen : IScreen
         float pl = TradeLayout.PanelLeft(_screenWidth);
         float pt = TradeLayout.PanelTop(_screenHeight);
         var local = StationToolbar.NameLocalRect(stationName);
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>
+    /// True when (x, y) lands on the toolbar's exit-button icon (see StationToolbar) — an
+    /// additional way to close Trade alongside the existing bottom-row EXIT button
+    /// (<see cref="TradeButton.Close"/>/<see cref="TradeLayout.ExitButtonRect"/>), both
+    /// mapped to the same ScreenEvent.CloseTrade.
+    /// </summary>
+    private bool IsExitButtonHit(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.ExitButtonLocalRect();
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 

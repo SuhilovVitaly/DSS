@@ -12,12 +12,12 @@ namespace DeepSpaceSaga.Client.UI.Screens.Contracts;
 /// screen (which now covers crew hiring specifically — Docs/FirstRelease/Screens/Hire.md)
 /// so passenger contracts have their own screen. Opened from
 /// <see cref="Station.StationScreen"/>'s `CONTRACTS` button (ScreenEvent.OpenContracts) as
-/// a nested modal on top of it; closes via the × button, Escape, or a click outside the
-/// panel (on the dimmed background), returning to <see cref="Station.StationScreen"/>.
-/// Pause-on-open/resume-on-close is handled generically by SkiaWindow's
-/// PushModalAsync/PopModalAsync — this screen has no speed/pause logic of its own.
-/// Structural twin of <see cref="Hire.HireScreen"/>/<see cref="Trade.TradeScreen"/>/
-/// <see cref="Station.StationScreen"/>.
+/// a nested modal on top of it; closes via the toolbar's exit-button icon (see
+/// StationToolbar), Escape, or a click outside the panel (on the dimmed background),
+/// returning to <see cref="Station.StationScreen"/>. Pause-on-open/resume-on-close is
+/// handled generically by SkiaWindow's PushModalAsync/PopModalAsync — this screen has no
+/// speed/pause logic of its own. Structural twin of <see cref="Hire.HireScreen"/>/
+/// <see cref="Trade.TradeScreen"/>/<see cref="Station.StationScreen"/>.
 /// </summary>
 public sealed class ContractsScreen : IScreen
 {
@@ -25,8 +25,8 @@ public sealed class ContractsScreen : IScreen
 
     private int _screenWidth;
     private int _screenHeight;
-    private bool _isCloseHovered;
     private bool _isStationNameHovered;
+    private bool _isExitButtonHovered;
 
     private const string PlaceholderLine = "Contracts: not available yet";
 
@@ -37,8 +37,8 @@ public sealed class ContractsScreen : IScreen
 
     public void OnActivated()
     {
-        _isCloseHovered = false;
         _isStationNameHovered = false;
+        _isExitButtonHovered = false;
     }
 
     public void OnDeactivated() { }
@@ -51,8 +51,7 @@ public sealed class ContractsScreen : IScreen
         if (button != MouseButton.Left)
             return ScreenEvent.None;
 
-        var hit = ContractsLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        if (hit == ContractsButton.Close)
+        if (IsExitButtonHit(x, y))
             return ScreenEvent.CloseContracts;
 
         if (IsStationNameHit(x, y))
@@ -70,10 +69,9 @@ public sealed class ContractsScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
-        var hit = ContractsLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        _isCloseHovered = hit == ContractsButton.Close;
         _isStationNameHovered = IsStationNameHit(x, y);
-        return _isCloseHovered || _isStationNameHovered;
+        _isExitButtonHovered = IsExitButtonHit(x, y);
+        return _isStationNameHovered || _isExitButtonHovered;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -94,8 +92,6 @@ public sealed class ContractsScreen : IScreen
 
         float cx = pl + ContractsLayout.PanelWidth / 2f;
         canvas.DrawText(PlaceholderLine, cx, pt + ContractsLayout.BodyStartY, MenuStyle.TextStatus);
-
-        DrawCloseButton(canvas, pl, pt);
     }
 
     /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>
@@ -111,11 +107,12 @@ public sealed class ContractsScreen : IScreen
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
-    private void DrawCloseButton(SKCanvas canvas, float panelLeft, float panelTop)
+    /// <summary>True when (x, y) lands on the toolbar's exit-button icon (see StationToolbar).</summary>
+    private bool IsExitButtonHit(float x, float y)
     {
-        var (left, top, right, bottom) = ContractsLayout.CloseButtonLocalRect();
-        var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
-
-        MenuStyle.DrawButton(canvas, rect, "×", _isCloseHovered ? ButtonState.Hovered : ButtonState.Normal);
+        float pl = ContractsLayout.PanelLeft(_screenWidth);
+        float pt = ContractsLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.ExitButtonLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 }

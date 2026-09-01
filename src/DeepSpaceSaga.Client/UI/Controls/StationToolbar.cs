@@ -19,6 +19,11 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 /// Station, e.g. ScreenEvent.NavigateToStation). Sub-windows additionally pass a
 /// windowName to <see cref="Draw"/>, rendered as a breadcrumb after the station name:
 /// <c>stationName  &gt;&gt;  windowName</c> (see <see cref="Draw"/> for the full rule).
+///
+/// Also draws the shared exit-button icon, right-aligned (see
+/// <see cref="ExitButtonLocalRect"/>) — this replaces the per-panel × close button every
+/// station window used to have; the consuming screen hit-tests it for both the click
+/// (same close event as before) and the hover cursor swap.
 /// </summary>
 public static class StationToolbar
 {
@@ -30,6 +35,9 @@ public static class StationToolbar
     public const float NameOffsetY = 20f;
     public const float NameFontSize = 26f;
     public const float NameHoverGlowSigma = 10f;
+
+    public const float ExitButtonSize = 32f;
+    public const float ExitButtonMarginRight = 15f;
 
     /// <summary>Gap on each side of the ">>" breadcrumb separator (see <see cref="Draw"/>).</summary>
     public const float NameSegmentGap = 16f;
@@ -56,6 +64,18 @@ public static class StationToolbar
     private static readonly SKPaint NamePaintActive = MakeNamePaint(ColorNameActive);
     private static readonly SKPaint NamePaintLink = MakeNamePaint(ColorNameLink);
     private static readonly SKPaint SeparatorPaint = MakeNamePaint(ColorSeparator);
+
+    private static readonly SKBitmap? ExitButtonImage =
+        LoadImage("Images/UI/Panels/station-toolbar/toolbar-exit.png");
+
+    /// <summary>True if the exit-button PNG was found and decoded at startup.</summary>
+    internal static bool HasLoadedExitButtonImage => ExitButtonImage is not null;
+
+    private static SKBitmap? LoadImage(string path)
+    {
+        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
+        catch { return null; }
+    }
 
     /// <summary>
     /// Hover glow color — <see cref="ColorNameActive"/>'s hue and brightness at full (100%)
@@ -121,13 +141,29 @@ public static class StationToolbar
     }
 
     /// <summary>
-    /// Draws the toolbar at the panel's top-left corner (panelLeft, panelTop), plus the
-    /// station name if non-empty. <paramref name="isStationHub"/> selects the "active
-    /// location" color (Station itself) vs. the "link back to hub" color (every other
-    /// station window). <paramref name="isHovered"/> only has an effect on a non-hub
-    /// window — it adds the blurred <see cref="ColorNameGlow"/> halo that marks the name
-    /// as a live link; the hub's own label is never hoverable, so hover state is ignored
-    /// there.
+    /// Exit-button rect, local to the panel (add the panel's left/top for screen space) —
+    /// right-aligned with a <see cref="ExitButtonMarginRight"/> margin from the toolbar's
+    /// (and panel's) right edge, vertically centered in the toolbar's height. The
+    /// consuming screen hit-tests this for both the click (return the same close event the
+    /// removed × button used to) and the hover cursor swap — the icon itself has no
+    /// separate hover art, so hover is cursor-only.
+    /// </summary>
+    public static SKRect ExitButtonLocalRect()
+    {
+        float right = Width - ExitButtonMarginRight;
+        float left = right - ExitButtonSize;
+        float top = (Height - ExitButtonSize) / 2f;
+        return new SKRect(left, top, right, top + ExitButtonSize);
+    }
+
+    /// <summary>
+    /// Draws the toolbar at the panel's top-left corner (panelLeft, panelTop): background,
+    /// border, the station name if non-empty, and the exit-button icon. <paramref
+    /// name="isStationHub"/> selects the "active location" color (Station itself) vs. the
+    /// "link back to hub" color (every other station window). <paramref name="isHovered"/>
+    /// only has an effect on a non-hub window — it adds the blurred <see
+    /// cref="ColorNameGlow"/> halo that marks the name as a live link; the hub's own label
+    /// is never hoverable, so hover state is ignored there.
     ///
     /// <paramref name="windowName"/> is the breadcrumb trailing segment for a station
     /// sub-window (e.g. "TRADE", "HIRE") — rendered after the station name as
@@ -161,17 +197,25 @@ public static class StationToolbar
             x += namePaint.MeasureText(stationName);
         }
 
-        if (string.IsNullOrEmpty(windowName))
-            return;
-
-        if (!string.IsNullOrEmpty(stationName))
+        if (!string.IsNullOrEmpty(windowName))
         {
-            x += NameSegmentGap;
-            canvas.DrawText(SeparatorText, x, baselineY, SeparatorPaint);
-            x += SeparatorPaint.MeasureText(SeparatorText) + NameSegmentGap;
+            if (!string.IsNullOrEmpty(stationName))
+            {
+                x += NameSegmentGap;
+                canvas.DrawText(SeparatorText, x, baselineY, SeparatorPaint);
+                x += SeparatorPaint.MeasureText(SeparatorText) + NameSegmentGap;
+            }
+
+            canvas.DrawText(windowName, x, baselineY, NamePaintActive);
         }
 
-        canvas.DrawText(windowName, x, baselineY, NamePaintActive);
+        if (ExitButtonImage is not null)
+        {
+            var local = ExitButtonLocalRect();
+            var exitRect = new SKRect(
+                panelLeft + local.Left, panelTop + local.Top, panelLeft + local.Right, panelTop + local.Bottom);
+            canvas.DrawBitmap(ExitButtonImage, exitRect);
+        }
     }
 
     /// <summary>

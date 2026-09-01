@@ -17,9 +17,10 @@ namespace DeepSpaceSaga.Client.UI.Screens.Station;
 /// (already reachable from GameSessionScreen's Mechanics panel / Ctrl+F) — all four
 /// as a nested modal on top of this one. Opened from GameSessionScreen by
 /// left-clicking the station the player ship is currently docked to
-/// (ScreenEvent.OpenStation); closes via the × button, Escape, or a click outside
-/// the panel (on the dimmed background), returning to GameSessionScreen while the
-/// docked state itself is untouched — clicking the station again reopens this
+/// (ScreenEvent.OpenStation); closes via the toolbar's exit-button icon (see
+/// StationToolbar), Escape, or a click outside the panel (on the dimmed background),
+/// returning to GameSessionScreen while the docked state itself is untouched — clicking
+/// the station again reopens this
 /// screen. Pause-on-open/resume-on-close is handled generically by SkiaWindow's
 /// PushModalAsync/PopModalAsync — this screen has no speed/pause logic of its own.
 /// Structural twin of <see cref="Finance.FinanceScreen"/>.
@@ -31,6 +32,7 @@ public sealed class StationScreen : IScreen
     private int _screenWidth;
     private int _screenHeight;
     private StationButton _hoveredButton = StationButton.None;
+    private bool _isExitButtonHovered;
 
     public StationScreen(SnapshotBuffer? buffer = null)
     {
@@ -52,7 +54,11 @@ public sealed class StationScreen : IScreen
         (5, "Undock: not available yet"),
     };
 
-    public void OnActivated() => _hoveredButton = StationButton.None;
+    public void OnActivated()
+    {
+        _hoveredButton = StationButton.None;
+        _isExitButtonHovered = false;
+    }
 
     public void OnDeactivated() { }
 
@@ -65,8 +71,6 @@ public sealed class StationScreen : IScreen
             return ScreenEvent.None;
 
         var hit = StationLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        if (hit == StationButton.Close)
-            return ScreenEvent.CloseStation;
         if (hit == StationButton.Trade)
             return ScreenEvent.OpenTrade;
         if (hit == StationButton.Hire)
@@ -75,6 +79,9 @@ public sealed class StationScreen : IScreen
             return ScreenEvent.OpenFinance;
         if (hit == StationButton.Contracts)
             return ScreenEvent.OpenContracts;
+
+        if (IsExitButtonHit(x, y))
+            return ScreenEvent.CloseStation;
 
         // Click on the dimmed background outside the panel also closes it.
         if (!StationLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
@@ -89,7 +96,17 @@ public sealed class StationScreen : IScreen
     public bool OnMouseMove(float x, float y)
     {
         _hoveredButton = StationLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        return _hoveredButton != StationButton.None;
+        _isExitButtonHovered = IsExitButtonHit(x, y);
+        return _hoveredButton != StationButton.None || _isExitButtonHovered;
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's exit-button icon (see StationToolbar).</summary>
+    private bool IsExitButtonHit(float x, float y)
+    {
+        float pl = StationLayout.PanelLeft(_screenWidth);
+        float pt = StationLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.ExitButtonLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -119,8 +136,6 @@ public sealed class StationScreen : IScreen
             float textY = pt + StationLayout.BodyStartY + row * StationLayout.BodyLineHeight;
             canvas.DrawText(text, cx, textY, MenuStyle.TextStatus);
         }
-
-        DrawCloseButton(canvas, pl, pt);
     }
 
     private void DrawTradeButton(SKCanvas canvas, float panelLeft, float panelTop)
@@ -157,14 +172,5 @@ public sealed class StationScreen : IScreen
 
         MenuStyle.DrawButton(canvas, rect, "CONTRACTS",
             _hoveredButton == StationButton.Contracts ? ButtonState.Hovered : ButtonState.Normal);
-    }
-
-    private void DrawCloseButton(SKCanvas canvas, float panelLeft, float panelTop)
-    {
-        var (left, top, right, bottom) = StationLayout.CloseButtonLocalRect();
-        var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
-
-        MenuStyle.DrawButton(canvas, rect, "×",
-            _hoveredButton == StationButton.Close ? ButtonState.Hovered : ButtonState.Normal);
     }
 }

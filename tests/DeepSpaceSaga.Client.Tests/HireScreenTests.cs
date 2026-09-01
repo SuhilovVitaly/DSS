@@ -35,23 +35,30 @@ public class HireScreenTests
     }
 
     [Fact]
-    public void Close_button_click_returns_CloseHire()
+    public void Exit_button_click_returns_CloseHire()
     {
         var screen = new HireScreen();
         RenderScreen(screen);
 
-        var hit = HireLayout.HitTest(
-            HireLayout.PanelLeft(ScreenWidth) + HireLayout.CloseButtonLocalRect().Left + 1f,
-            HireLayout.PanelTop(ScreenHeight) + HireLayout.CloseButtonLocalRect().Top + 1f,
-            ScreenWidth, ScreenHeight);
-        Assert.Equal(HireButton.Close, hit);
-
-        var (left, top, right, bottom) = HireLayout.CloseButtonLocalRect();
-        float cx = HireLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
-        float cy = HireLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
+        var local = StationToolbar.ExitButtonLocalRect();
+        float cx = HireLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = HireLayout.PanelTop(ScreenHeight) + local.MidY;
 
         var result = screen.OnMouseDown(cx, cy);
         Assert.Equal(ScreenEvent.CloseHire, result);
+    }
+
+    [Fact]
+    public void Hovering_the_exit_button_reports_interactive()
+    {
+        var screen = new HireScreen();
+        RenderScreen(screen);
+
+        var local = StationToolbar.ExitButtonLocalRect();
+        float cx = HireLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = HireLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        Assert.True(screen.OnMouseMove(cx, cy));
     }
 
     [Fact]
