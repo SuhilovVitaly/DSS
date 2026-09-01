@@ -125,7 +125,20 @@ public class StationToolbarTests
     }
 
     [Fact]
-    public void Hovering_a_non_hub_name_adds_a_white_glow_bleeding_past_the_glyphs()
+    public void Glow_color_is_more_saturated_than_the_active_location_color()
+    {
+        StationToolbar.ColorNameGlow.ToHsv(out float glowHue, out float glowSaturation, out float glowValue);
+        StationToolbar.ColorNameActive.ToHsv(out float activeHue, out float activeSaturation, out float activeValue);
+
+        Assert.True(glowSaturation > activeSaturation);
+        // Same hue/brightness family — only saturation should change (allow a small
+        // tolerance for HSV<->RGB round-trip rounding).
+        Assert.InRange(glowHue, activeHue - 1f, activeHue + 1f);
+        Assert.InRange(glowValue, activeValue - 1f, activeValue + 1f);
+    }
+
+    [Fact]
+    public void Hovering_a_non_hub_name_adds_a_glow_bleeding_past_the_glyphs()
     {
         // Blur bleeds a few px beyond the tight glyph bounds — a ring just outside
         // NameLocalRect stays pure background when not hovered, but picks up glow color

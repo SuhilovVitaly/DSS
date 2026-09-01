@@ -29,6 +29,13 @@ public static class StationToolbar
     public const float NameFontSize = 26f;
     public const float NameHoverGlowSigma = 4f;
 
+    /// <summary>
+    /// How much more saturated the hover glow is than <see cref="ColorNameActive"/> —
+    /// blurring inherently washes color out (alpha spreads thinner toward the edges), so
+    /// the glow needs extra saturation to still read as vivid rather than pastel.
+    /// </summary>
+    private const float NameGlowSaturationBoost = 1.6f;
+
     public static readonly SKColor ColorBackground = new(0x5e, 0x5e, 0x5e);
     public static readonly SKColor ColorBorder = new(0x99, 0x99, 0x99);
 
@@ -46,7 +53,14 @@ public static class StationToolbar
     private static readonly SKPaint NamePaintLink = MakeNamePaint(ColorNameLink);
 
     /// <summary>
-    /// Hover-only white glow drawn behind the link text (see <see cref="Draw"/>) — a soft
+    /// Hover glow color — <see cref="ColorNameActive"/>'s hue and brightness, saturation
+    /// boosted by <see cref="NameGlowSaturationBoost"/> so the blurred halo still reads as
+    /// a vivid, saturated orange rather than washed-out pastel.
+    /// </summary>
+    public static readonly SKColor ColorNameGlow = MoreSaturated(ColorNameActive, NameGlowSaturationBoost);
+
+    /// <summary>
+    /// Hover-only glow drawn behind the link text (see <see cref="Draw"/>) — a soft
     /// blurred halo around the glyphs reads as "this text is brighter / a live link"
     /// without needing a separate hover typeface or layout shift.
     /// </summary>
@@ -67,9 +81,16 @@ public static class StationToolbar
 
     private static SKPaint MakeGlowPaint()
     {
-        var paint = MakeNamePaint(SKColors.White);
+        var paint = MakeNamePaint(ColorNameGlow);
         paint.MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, NameHoverGlowSigma);
         return paint;
+    }
+
+    /// <summary>Returns <paramref name="color"/> with its HSV saturation multiplied by <paramref name="factor"/>, clamped to 100%.</summary>
+    private static SKColor MoreSaturated(SKColor color, float factor)
+    {
+        color.ToHsv(out float h, out float s, out float v);
+        return SKColor.FromHsv(h, System.Math.Min(100f, s * factor), v, color.Alpha);
     }
 
     /// <summary>Toolbar rect, local to the panel (add the panel's left/top to get screen space).</summary>
@@ -98,8 +119,9 @@ public static class StationToolbar
     /// station name if non-empty. <paramref name="isStationHub"/> selects the "active
     /// location" color (Station itself) vs. the "link back to hub" color (every other
     /// station window). <paramref name="isHovered"/> only has an effect on a non-hub
-    /// window — it adds the white blurred glow that marks the name as a live link;
-    /// the hub's own label is never hoverable, so hover state is ignored there.
+    /// window — it adds the blurred <see cref="ColorNameGlow"/> halo that marks the name
+    /// as a live link; the hub's own label is never hoverable, so hover state is ignored
+    /// there.
     /// </summary>
     public static void Draw(
         SKCanvas canvas, float panelLeft, float panelTop, string? stationName, bool isStationHub,
