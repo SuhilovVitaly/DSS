@@ -36,4 +36,11 @@ public sealed record InstalledModuleSnapshot(
     /// the module is created and updated whenever its Cargo changes, rather than recomputed at
     /// snapshot/projection time. Null for modules without CargoCapacityKg.
     /// </summary>
-    long? AvailableCapacityKg = null);
+    long? AvailableCapacityKg = null,
+    /// <summary>
+    /// Number of crew cabins provided by this module type (story-20260901-112254). A static
+    /// module-type attribute, unlike <see cref="FuelAmountKg"/>/<see cref="AvailableCapacityKg"/>
+    /// which depend on runtime state — direct pass-through of
+    /// <c>ModuleTypeDefinition.CabinesCount</c>. Null for module types that do not house crew.
+    /// </summary>
+    int? CabinesCount = null);

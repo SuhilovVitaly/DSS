@@ -123,6 +123,78 @@ public class InstalledModuleProjectionTests
         return engine;
     }
 
+    // story-20260901-112254 (Batch A, U3): InstalledModuleSnapshot.CabinesCount.
+    [Fact]
+    public void Living_quarters_module_projects_cabines_count_other_module_types_project_null()
+    {
+        var engine = CreateEngineWithLivingQuartersModule();
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        var livingQuarters = Assert.Single(snapshot.InstalledModules, m => m.ModuleId == "MOD-LQ-01");
+        Assert.Equal(2, livingQuarters.CabinesCount);
+
+        var engineMod = Assert.Single(snapshot.InstalledModules, m => m.ModuleId == "MOD-ENG-01");
+        Assert.Null(engineMod.CabinesCount);
+    }
+
+    private static SimulationEngine CreateEngineWithLivingQuartersModule()
+    {
+        var registry = GameDataRegistry.Create(
+            moduleCategories:
+            [
+                new ModuleCategoryDefinition(
+                    "living.quarters.mk1", "Living Quarters", SlotSize: 1,
+                    CommandTypeIds: ImmutableArray<string>.Empty),
+                new ModuleCategoryDefinition(
+                    "module.engine.basic", "Engine", SlotSize: 1,
+                    CommandTypeIds: ImmutableArray<string>.Empty)
+            ],
+            moduleTypes:
+            [
+                new ModuleTypeDefinition(
+                    "living.quarters.mk1", "Living Quarters", SlotSize: 1, MassKg: 1000,
+                    StructurePointsMax: 60, PowerConsumptionW: 0,
+                    CommandTypeIds: ImmutableArray<string>.Empty,
+                    CabinesCount: 2),
+                new ModuleTypeDefinition(
+                    "module.engine.basic", "Engine", SlotSize: 1, MassKg: 5000,
+                    StructurePointsMax: 100, PowerConsumptionW: 0,
+                    CommandTypeIds: ImmutableArray<string>.Empty)
+            ],
+            itemTypes: [],
+            commandDefinitions: []);
+
+        var engine = new SimulationEngine(registry);
+        engine.LoadScenario(Scenario.ScenarioLoader.LoadFromJson($$"""
+        {
+          "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
+          "gameState": {
+            "gameTimeMs": 0,
+            "currentSpeed": "Speed1",
+            "playerShipObjectId": "{{PlayerShipId}}",
+            "spaceObjects": [
+              { "objectId": "{{PlayerShipId}}", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "name": "Player Ship",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "hullLayout": { "width": 2, "height": 1, "cells": [ {"x":0,"y":0},{"x":1,"y":0} ] },
+                "modules": [
+                  { "moduleId": "MOD-LQ-01", "moduleTypeId": "living.quarters.mk1",
+                    "occupiedCells": [ {"x":0,"y":0} ],
+                    "powerState": "On", "operationalState": "Ready", "structurePoints": 60 },
+                  { "moduleId": "MOD-ENG-01", "moduleTypeId": "module.engine.basic",
+                    "occupiedCells": [ {"x":1,"y":0} ],
+                    "powerState": "On", "operationalState": "Ready", "structurePoints": 100 }
+                ]
+              }
+            ]
+          }
+        }
+        """));
+
+        return engine;
+    }
+
     [Fact]
     public void Projection_commands_carry_display_names_and_targets()
     {

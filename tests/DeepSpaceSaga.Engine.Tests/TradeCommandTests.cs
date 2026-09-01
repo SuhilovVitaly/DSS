@@ -73,7 +73,7 @@ public class TradeCommandTests
             "gameTimeMs": 0,
             "currentSpeed": "Speed0",
             "playerShipObjectId": "{{PlayerShipId}}",
-            "playerCredits": {{playerCredits}},
+            "playerTokens": {{playerCredits}},
             "spaceObjects": [
               {
                 "objectId": "{{PlayerShipId}}",

@@ -64,6 +64,21 @@ public class StationScreenTests
     }
 
     [Fact]
+    public void Hovering_crew_does_not_report_interactive()
+    {
+        // The crew readout is not a button — hovering it only shows a tooltip (see
+        // StationToolbar), it must not trigger the same cursor swap as the exit button.
+        var screen = new StationScreen();
+        RenderScreen(screen);
+
+        var local = StationToolbar.CrewLocalRect();
+        float cx = StationLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = StationLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        Assert.False(screen.OnMouseMove(cx, cy));
+    }
+
+    [Fact]
     public void Trade_button_click_returns_OpenTrade()
     {
         var screen = new StationScreen();

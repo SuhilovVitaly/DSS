@@ -8,6 +8,7 @@
     "gameTimeMs": 0,
     "currentSpeed": "Speed0",
     "playerShipObjectId": "SPC-0001",
+    "playerTokens": 2000,
     "focus": {
       "mode": "Attached",
       "objectId": "SPC-0001"
@@ -38,6 +39,16 @@
             },
             "modules": [
                 {
+                    "moduleId": "MOD-PLAYER-LIVING-QUARTERS-01",
+                    "moduleTypeId": "living.quarters.mk1",
+                    "occupiedCells": [ {"x":4,"y":1} ],
+                    "structurePoints": 60,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
+                },
+                {
                     "moduleId": "MOD-PLAYER-CARGO-01",
                     "moduleTypeId": "module.container.basic",
                     "occupiedCells": [ {"x":4,"y":2} ],
@@ -66,6 +77,9 @@
                     "activeCycle": null,
                     "cargo": []
                 }
+            ],
+            "crew": [
+                { "crewId": "CHR-0001", "displayName": "Dunkan Su" }
             ]
         },
       {

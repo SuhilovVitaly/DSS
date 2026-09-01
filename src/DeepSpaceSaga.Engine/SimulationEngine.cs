@@ -218,6 +218,7 @@ public sealed class SimulationEngine : IDisposable
             var modules = BuildRuntimeModules(obj);
 
             bool isStation = obj.ObjectType == SpaceObjectType.Station;
+            bool isPlayerShip = obj.ObjectType == SpaceObjectType.PlayerShip;
             long credits = isStation ? ResolveStationCredits(obj, resolvedMasterSeed) : 0;
             int priceCoefficient = isStation ? ResolveStationPriceCoefficient(obj, resolvedMasterSeed) : 1000;
             var inventory = isStation
@@ -230,6 +231,9 @@ public sealed class SimulationEngine : IDisposable
             var events = isStation
                 ? ResolveStationEvents(obj)
                 : ImmutableArray<StationEventRuntime>.Empty;
+            var crew = isPlayerShip
+                ? ResolveShipCrew(obj)
+                : ImmutableArray<CrewMemberRuntime>.Empty;
 
             runtimeObjects.Add(new SpaceObjectRuntime(
                 new ObjectMotionSnapshot(
@@ -264,7 +268,8 @@ public sealed class SimulationEngine : IDisposable
                 Inventory: inventory,
                 StationSize: stationSize,
                 ProducingModules: producingModules,
-                Events: events));
+                Events: events,
+                Crew: crew));
         }
 
         lock (_worldStateLock)
@@ -288,10 +293,12 @@ public sealed class SimulationEngine : IDisposable
             MasterSeed = resolvedMasterSeed;
             MasterSeedWasMissingOnLoad = resolvedMasterSeedWasMissingOnLoad;
 
-            // Player Credits (Docs\FirstRelease\Mechanics\Money.md): a New Game player
-            // always starts with 0 — plain default, never randomized (unlike station
-            // Credits, which the docs explicitly call out as RNG-generated).
-            PlayerCredits = gs.PlayerCredits ?? 0;
+            // Player Tokens (Docs\FirstRelease\Mechanics\Money.md): the starting balance
+            // comes from the scenario's playerTokens — every shipped scenario sets 2000.
+            // Null (a scenario/save predating the field) means 0 — plain default, never
+            // randomized (unlike station Credits, which the docs explicitly call out as
+            // RNG-generated).
+            PlayerCredits = gs.PlayerTokens ?? 0;
 
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
@@ -446,8 +453,23 @@ public sealed class SimulationEngine : IDisposable
                 ActiveObjectId: ActiveObjectId,
                 SelectedObjectId: SelectedObjectId,
                 PlayerCredits: PlayerCredits,
-                DockedStationTrade: BuildDockedStationTradeProjection());
+                DockedStationTrade: BuildDockedStationTradeProjection(),
+                PlayerCrewCount: ResolvePlayerCrewCount());
         }
+    }
+
+    /// <summary>
+    /// Number of crew members aboard the player ship (story-20260901-112254). 0 when there is
+    /// no player ship or it carries no crew — mirrors <see cref="BuildDockedStationTradeProjection"/>'s
+    /// "no player ship" guard.
+    /// </summary>
+    private int ResolvePlayerCrewCount()
+    {
+        if (string.IsNullOrWhiteSpace(PlayerShipObjectId))
+            return 0;
+
+        var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
+        return ship is null || ship.Crew.IsDefaultOrEmpty ? 0 : ship.Crew.Length;
     }
 
     /// <summary>
@@ -534,7 +556,8 @@ public sealed class SimulationEngine : IDisposable
                 FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null,
                 Commands: BuildModuleCommands(moduleType.CommandTypeIds),
                 Cargo: BuildCargoProjection(module.Cargo),
-                AvailableCapacityKg: module.AvailableCapacityKg));
+                AvailableCapacityKg: module.AvailableCapacityKg,
+                CabinesCount: moduleType.CabinesCount));
         }
 
         return builder.MoveToImmutable();
@@ -657,6 +680,7 @@ public sealed class SimulationEngine : IDisposable
             long elapsed = gameTimeMs - obj.StartGameTimeMs;
             var motion = _motion.Predict(obj.InitialMotion, elapsed);
             bool isStation = obj.ObjectType == SpaceObjectType.Station;
+            bool isPlayerShip = obj.ObjectType == SpaceObjectType.PlayerShip;
 
             spaceObjects.Add(new SpaceObjectData(
                 ObjectId: obj.InitialMotion.ObjectId,
@@ -686,6 +710,9 @@ public sealed class SimulationEngine : IDisposable
                     : null,
                 Events: isStation && !obj.Events.IsDefaultOrEmpty
                     ? obj.Events.Select(BuildSaveEvent).ToList()
+                    : null,
+                Crew: isPlayerShip && !obj.Crew.IsDefaultOrEmpty
+                    ? obj.Crew.Select(BuildSaveCrewMember).ToList()
                     : null));
         }
 
@@ -696,7 +723,7 @@ public sealed class SimulationEngine : IDisposable
             Focus: null, // camera/focus is client-side only — never saved (decision G.20)
             SpaceObjects: spaceObjects,
             MasterSeed: MasterSeed,
-            PlayerCredits: PlayerCredits);
+            PlayerTokens: PlayerCredits);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
@@ -783,6 +810,11 @@ public sealed class SimulationEngine : IDisposable
             Category: factor.Category?.ToString(),
             ItemTypeId: itemTypeId,
             Factor: factor.Factor);
+    }
+
+    private static ShipCrewMemberData BuildSaveCrewMember(CrewMemberRuntime member)
+    {
+        return new ShipCrewMemberData(CrewId: member.Id, DisplayName: member.DisplayName);
     }
 
     private static int ToDirectionDegreesInt(double direction)
@@ -1179,6 +1211,36 @@ public sealed class SimulationEngine : IDisposable
         }
 
         return events.ToImmutable();
+    }
+
+    /// <summary>
+    /// Resolve a ship's crew members (story-20260901-112254, "Crew and cabin occupancy"):
+    /// fully explicit, never RNG-generated. Missing/empty scenario data resolves to an empty
+    /// list (the common case for every object except the player ship, and for every
+    /// scenario/save predating this field).
+    /// </summary>
+    private ImmutableArray<CrewMemberRuntime> ResolveShipCrew(SpaceObjectData obj)
+    {
+        if (obj.Crew is not { Count: > 0 })
+            return ImmutableArray<CrewMemberRuntime>.Empty;
+
+        var seenCrewIds = new HashSet<string>(StringComparer.Ordinal);
+        var crew = ImmutableArray.CreateBuilder<CrewMemberRuntime>(obj.Crew.Count);
+        foreach (var member in obj.Crew)
+        {
+            if (string.IsNullOrWhiteSpace(member.CrewId))
+                throw new ScenarioException($"Ship '{obj.ObjectId}' has a crew member with empty crewId.");
+
+            if (!seenCrewIds.Add(member.CrewId))
+            {
+                throw new ScenarioException(
+                    $"Ship '{obj.ObjectId}' has duplicate crew member id '{member.CrewId}'.");
+            }
+
+            crew.Add(new CrewMemberRuntime(member.CrewId, member.DisplayName));
+        }
+
+        return crew.ToImmutable();
     }
 
     /// <summary>
@@ -3091,7 +3153,15 @@ internal sealed record SpaceObjectRuntime(
     /// persistence only). Only meaningful for ObjectType == Station; empty for every other
     /// object type and for every station no scenario/save ever populates one for.
     /// </summary>
-    ImmutableArray<StationEventRuntime> Events = default);
+    ImmutableArray<StationEventRuntime> Events = default,
+    /// <summary>
+    /// Ship's crew members (story-20260901-112254). Only meaningful for
+    /// ObjectType == PlayerShip; empty for every other object type.
+    /// </summary>
+    ImmutableArray<CrewMemberRuntime> Crew = default);
+
+/// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
+internal sealed record CrewMemberRuntime(string Id, string DisplayName);
 
 /// <summary>
 /// One producing-module instance installed on a station (see <see cref="StationProducingModuleData"/>).

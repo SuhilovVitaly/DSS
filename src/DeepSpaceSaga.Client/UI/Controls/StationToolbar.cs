@@ -30,7 +30,20 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 /// button — starting with a food-rations icon + count (see
 /// <see cref="ResolveFoodRationsCount"/>), in a field reserved wide enough for 4 digits.
 /// Unlike the exit button, this icon is a plain readout: never clickable, never gets a
-/// hover glow — hovering it only shows an explanatory tooltip below the toolbar.
+/// hover glow — hovering it only shows an explanatory tooltip below the toolbar, drawn
+/// by <see cref="DrawTooltips"/> as the consuming screen's last draw call so it stays
+/// on top of the screen's own buttons and panels.
+///
+/// Immediately to the left of the food-rations readout, a crew/cabins icon + count (see
+/// <see cref="ResolveCrewCount"/>/<see cref="ResolveCabinsCount"/>) in "N / N" form —
+/// crew and passengers aboard the ship, out of total cabin capacity. Same plain-readout
+/// rule as the food-rations icon: never clickable, no hover glow, hover-only tooltip
+/// (also drawn by <see cref="DrawTooltips"/>).
+///
+/// Immediately to the left of the crew readout, a tokens icon + credits balance (see
+/// <see cref="ResolveCreditsCount"/>): the player's money, same plain-readout rule as
+/// the other two — never clickable, no hover glow, hover-only tooltip (also drawn by
+/// <see cref="DrawTooltips"/>).
 /// </summary>
 public static class StationToolbar
 {
@@ -54,11 +67,34 @@ public static class StationToolbar
     public const float ResourceInfoGapFromExitButton = 70f;
 
     /// <summary>
+    /// Standard gap between adjacent blocks of the toolbar's right-side info panel
+    /// (tokens / crew / rations readouts). The exit button is not an info block and
+    /// keeps its own wider <see cref="ResourceInfoGapFromExitButton"/>.
+    /// </summary>
+    public const float InfoBlockGap = 44f;
+
+    /// <summary>
     /// The reserved value-field width is measured from this 4-digit sample, so the field
     /// never has to grow/shrink (and the icon never has to shift) as the actual count
     /// crosses a digit-count boundary — up to 9999 always fits without re-layout.
     /// </summary>
     private const string ResourceValueFieldSample = "9999";
+
+    /// <summary>
+    /// The crew/cabins value field is reserved from this sample instead of
+    /// <see cref="ResourceValueFieldSample"/> — realistically both sides of the "N / N"
+    /// count stay single-digit, so a 4-digit reservation would leave an oversized gap;
+    /// "9 / 9" is wide enough for a single digit on each side without clipping.
+    /// </summary>
+    private const string CrewValueFieldSample = "9 / 9";
+
+    /// <summary>
+    /// The tokens/credits value field is reserved from this sample — unlike the other
+    /// readouts a credits balance routinely crosses into five and six digits (a single
+    /// station's trade budget alone is 10k–50k, see Mechanics/Money.md), so "9999" would
+    /// overflow the reserved field after the first profitable trade.
+    /// </summary>
+    private const string CreditsValueFieldSample = "999999";
 
     public const string FoodRationsItemTypeId = "item.food-rations";
 
@@ -66,6 +102,18 @@ public static class StationToolbar
     {
         "Food rations stored aboard the ship.",
         "Each crew member or passenger consumes 2 rations per day."
+    };
+
+    private static readonly string[] CrewTooltipLines =
+    {
+        "Crew and passengers aboard the ship, out of total cabin capacity.",
+        "More crew than cabins can hold will hurt morale."
+    };
+
+    private static readonly string[] TokensTooltipLines =
+    {
+        "Tokens held by the player.",
+        "Earned from selling goods; spent on goods and refueling."
     };
 
     private const float TooltipPaddingX = 10f;
@@ -113,6 +161,18 @@ public static class StationToolbar
     /// <summary>True if the food-rations PNG was found and decoded at startup.</summary>
     internal static bool HasLoadedFoodRationsImage => FoodRationsImage is not null;
 
+    private static readonly SKBitmap? CrewImage =
+        LoadImage("Images/UI/Panels/station-toolbar/toolbar-crew.png");
+
+    /// <summary>True if the crew PNG was found and decoded at startup.</summary>
+    internal static bool HasLoadedCrewImage => CrewImage is not null;
+
+    private static readonly SKBitmap? TokensImage =
+        LoadImage("Images/UI/Panels/station-toolbar/toolbar-tokens.png");
+
+    /// <summary>True if the tokens PNG was found and decoded at startup.</summary>
+    internal static bool HasLoadedTokensImage => TokensImage is not null;
+
     private static readonly SKPaint ResourceValuePaint = new()
     {
         Color = MenuStyle.ColorText,
@@ -124,6 +184,12 @@ public static class StationToolbar
 
     /// <summary>Reserved width for a resource value field — always fits up to 4 digits (9999).</summary>
     private static readonly float ResourceValueFieldWidth = ResourceValuePaint.MeasureText(ResourceValueFieldSample);
+
+    /// <summary>Reserved width for the crew/cabins value field — see <see cref="CrewValueFieldSample"/>.</summary>
+    private static readonly float CrewValueFieldWidth = ResourceValuePaint.MeasureText(CrewValueFieldSample);
+
+    /// <summary>Reserved width for the tokens/credits value field — see <see cref="CreditsValueFieldSample"/>.</summary>
+    private static readonly float CreditsValueFieldWidth = ResourceValuePaint.MeasureText(CreditsValueFieldSample);
 
     private static readonly SKPaint TooltipBackgroundPaint =
         new() { Color = new SKColor(0x1a, 0x1a, 0x1a, 235), Style = SKPaintStyle.Fill, IsAntialias = true };
@@ -260,6 +326,38 @@ public static class StationToolbar
     }
 
     /// <summary>
+    /// Crew/cabins icon+value hit-test rect, local to the panel — sits immediately to the
+    /// left of <see cref="FoodRationsLocalRect"/> (see <see cref="InfoBlockGap"/>),
+    /// spanning from the icon's left edge to the reserved value field's right edge (see
+    /// <see cref="CrewValueFieldWidth"/>). Used only to show the tooltip on hover — this
+    /// readout is never clickable and never gets a hover glow.
+    /// </summary>
+    public static SKRect CrewLocalRect()
+    {
+        float blockRight = FoodRationsLocalRect().Left - InfoBlockGap;
+        float valueFieldLeft = blockRight - CrewValueFieldWidth;
+        float iconLeft = valueFieldLeft - ResourceIconTextGap - ResourceIconSize;
+        float top = (Height - ResourceIconSize) / 2f;
+        return new SKRect(iconLeft, top, blockRight, top + ResourceIconSize);
+    }
+
+    /// <summary>
+    /// Tokens/credits icon+value hit-test rect, local to the panel — sits immediately to
+    /// the left of <see cref="CrewLocalRect"/> (see <see cref="InfoBlockGap"/>), spanning
+    /// from the icon's left edge to the reserved value field's right edge (see
+    /// <see cref="CreditsValueFieldWidth"/>). Used only to show the tooltip on hover —
+    /// this readout is never clickable and never gets a hover glow.
+    /// </summary>
+    public static SKRect TokensLocalRect()
+    {
+        float blockRight = CrewLocalRect().Left - InfoBlockGap;
+        float valueFieldLeft = blockRight - CreditsValueFieldWidth;
+        float iconLeft = valueFieldLeft - ResourceIconTextGap - ResourceIconSize;
+        float top = (Height - ResourceIconSize) / 2f;
+        return new SKRect(iconLeft, top, blockRight, top + ResourceIconSize);
+    }
+
+    /// <summary>
     /// Draws the toolbar at the panel's top-left corner (panelLeft, panelTop): background,
     /// border, the station name if non-empty, and the exit-button icon. <paramref
     /// name="isStationHub"/> selects the "active location" color (Station itself) vs. the
@@ -286,14 +384,27 @@ public static class StationToolbar
     /// <see cref="ResourceInfoGapFromExitButton"/>): the food-rations icon followed by its
     /// count in a field reserved wide enough for 4 digits (9999) so the icon never shifts
     /// as the count's digit width changes. This icon is a plain readout, not a button — it
-    /// never gets a hover glow, unlike the exit-button icon right next to it; hovering it
-    /// (<paramref name="isFoodRationsHovered"/>, see <see cref="FoodRationsLocalRect"/>)
-    /// only shows an explanatory tooltip below the toolbar.
+    /// never gets a hover glow, unlike the exit-button icon right next to it; its hover
+    /// tooltip (see <see cref="FoodRationsLocalRect"/>) is drawn by
+    /// <see cref="DrawTooltips"/>, the screen's last draw call.
+    ///
+    /// <paramref name="crewCount"/>/<paramref name="cabinsCount"/> feed an identical
+    /// readout immediately to the left of the food-rations one (see
+    /// <see cref="InfoBlockGap"/>): the crew icon followed by
+    /// "<paramref name="crewCount"/> / <paramref name="cabinsCount"/>". Same plain-readout
+    /// rule — no hover glow; its hover tooltip (see <see cref="CrewLocalRect"/>) is also
+    /// drawn by <see cref="DrawTooltips"/>.
+    ///
+    /// <paramref name="creditsCount"/> feeds the leftmost readout, immediately left of
+    /// the crew one (see <see cref="InfoBlockGap"/>): the tokens icon followed by the
+    /// player's credits balance in a field reserved wide enough for six digits (999999).
+    /// Same plain-readout rule — no hover glow; its hover tooltip (see
+    /// <see cref="TokensLocalRect"/>) is also drawn by <see cref="DrawTooltips"/>.
     /// </summary>
     public static void Draw(
         SKCanvas canvas, float panelLeft, float panelTop, string? stationName, bool isStationHub,
         bool isHovered = false, string? windowName = null, bool isExitButtonHovered = false,
-        long foodRationsCount = 0, bool isFoodRationsHovered = false)
+        long foodRationsCount = 0, int crewCount = 0, int cabinsCount = 0, long creditsCount = 0)
     {
         var rect = new SKRect(panelLeft, panelTop, panelLeft + Width, panelTop + Height);
         canvas.DrawRect(rect, FillPaint);
@@ -345,14 +456,28 @@ public static class StationToolbar
             float textBaselineY = MenuStyle.VerticalCenterBaseline(
                 new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
             canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
+        }
 
-            if (isFoodRationsHovered)
-            {
-                var screenBlock = new SKRect(
-                    panelLeft + block.Left, panelTop + block.Top,
-                    panelLeft + block.Right, panelTop + block.Bottom);
-                DrawTooltip(canvas, screenBlock, FoodRationsTooltipLines);
-            }
+        if (CrewImage is not null)
+        {
+            string valueText = $"{crewCount} / {cabinsCount}";
+            float actualTextWidth = ResourceValuePaint.MeasureText(valueText);
+
+            var block = CrewLocalRect();
+            float valueFieldRight = block.Right;
+            // Right-align the actual digits within the reserved field — the icon's position
+            // (fixed by CrewLocalRect/CrewValueFieldWidth) never moves regardless of how many
+            // digits crewCount/cabinsCount actually have.
+            float textLeft = valueFieldRight - actualTextWidth;
+
+            var iconRect = new SKRect(
+                panelLeft + block.Left, panelTop + block.Top,
+                panelLeft + block.Left + ResourceIconSize, panelTop + block.Bottom);
+            canvas.DrawBitmap(CrewImage, iconRect);
+
+            float textBaselineY = MenuStyle.VerticalCenterBaseline(
+                new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
+            canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
         }
 
         if (ExitButtonImage is not null)
@@ -366,7 +491,64 @@ public static class StationToolbar
 
             canvas.DrawBitmap(ExitButtonImage, exitRect);
         }
+
+        if (TokensImage is not null)
+        {
+            string valueText = creditsCount.ToString();
+            float actualTextWidth = ResourceValuePaint.MeasureText(valueText);
+
+            var block = TokensLocalRect();
+            float valueFieldRight = block.Right;
+            // Right-align the actual digits within the reserved field — the icon's position
+            // (fixed by TokensLocalRect/CreditsValueFieldWidth) never moves regardless of
+            // how many digits the balance actually has.
+            float textLeft = valueFieldRight - actualTextWidth;
+
+            var iconRect = new SKRect(
+                panelLeft + block.Left, panelTop + block.Top,
+                panelLeft + block.Left + ResourceIconSize, panelTop + block.Bottom);
+            canvas.DrawBitmap(TokensImage, iconRect);
+
+            float textBaselineY = MenuStyle.VerticalCenterBaseline(
+                new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
+            canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
+        }
     }
+
+    /// <summary>
+    /// Draws the readout tooltips anchored below their toolbar icons. Must be the
+    /// consuming screen's LAST draw call — the tooltip box hangs below the toolbar into
+    /// the body area, so drawing it anywhere earlier lets the screen's own buttons and
+    /// panels paint over it (the toolbar itself is drawn first, right after the panel
+    /// background). Same hover-gating as before the split out of <see cref="Draw"/>: a
+    /// tooltip only appears while its readout's hover delay has elapsed (the screen
+    /// passes its visible-flag here) and its icon image is loaded.
+    /// </summary>
+    public static void DrawTooltips(
+        SKCanvas canvas, float panelLeft, float panelTop,
+        bool isFoodRationsHovered, bool isCrewHovered, bool isTokensHovered)
+    {
+        if (isFoodRationsHovered && FoodRationsImage is not null)
+        {
+            var block = FoodRationsLocalRect();
+            DrawTooltip(canvas, ToScreenRect(panelLeft, panelTop, block), FoodRationsTooltipLines);
+        }
+
+        if (isCrewHovered && CrewImage is not null)
+        {
+            var block = CrewLocalRect();
+            DrawTooltip(canvas, ToScreenRect(panelLeft, panelTop, block), CrewTooltipLines);
+        }
+
+        if (isTokensHovered && TokensImage is not null)
+        {
+            var block = TokensLocalRect();
+            DrawTooltip(canvas, ToScreenRect(panelLeft, panelTop, block), TokensTooltipLines);
+        }
+    }
+
+    private static SKRect ToScreenRect(float panelLeft, float panelTop, SKRect local) =>
+        new(panelLeft + local.Left, panelTop + local.Top, panelLeft + local.Right, panelTop + local.Bottom);
 
     /// <summary>
     /// Resolves the player ship's docked station name from a snapshot — null while not
@@ -415,6 +597,32 @@ public static class StationToolbar
     /// <summary>Total <see cref="FoodRationsItemTypeId"/> quantity aboard the player ship.</summary>
     public static long ResolveFoodRationsCount(AuthoritativeSnapshot? snapshot) =>
         ResolveCargoQuantity(snapshot, FoodRationsItemTypeId);
+
+    /// <summary>
+    /// Number of crew members (and passengers) aboard the player ship — 0 for a null
+    /// snapshot or any snapshot/save predating this field (story-20260901-112254).
+    /// </summary>
+    public static int ResolveCrewCount(AuthoritativeSnapshot? snapshot) => snapshot?.PlayerCrewCount ?? 0;
+
+    /// <summary>
+    /// Sums cabin capacity (<see cref="InstalledModuleSnapshot.CabinesCount"/>) across every
+    /// installed module — 0 for a null snapshot, no installed modules, or no module type
+    /// that houses crew. Mirrors <see cref="ResolveCargoQuantity"/>'s null-safe iteration.
+    /// </summary>
+    public static int ResolveCabinsCount(AuthoritativeSnapshot? snapshot)
+    {
+        if (snapshot is null || snapshot.InstalledModules.IsDefaultOrEmpty)
+            return 0;
+
+        int total = 0;
+        foreach (var module in snapshot.InstalledModules)
+            total += module.CabinesCount ?? 0;
+
+        return total;
+    }
+
+    /// <summary>The player's credits balance — 0 for a null snapshot (or a snapshot/save predating the field).</summary>
+    public static long ResolveCreditsCount(AuthoritativeSnapshot? snapshot) => snapshot?.PlayerCredits ?? 0;
 
     /// <summary>
     /// Draws a small dark tooltip box directly below <paramref name="anchorRect"/> (screen

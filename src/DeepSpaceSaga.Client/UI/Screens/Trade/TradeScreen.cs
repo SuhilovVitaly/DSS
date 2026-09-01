@@ -73,6 +73,22 @@ public sealed class TradeScreen : IScreen
         _foodRationsHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
+    /// <summary>Same real-time hover-delay tracking as <see cref="_foodRationsHoverStartedAtMs"/>, for the crew readout.</summary>
+    private long? _crewHoverStartedAtMs;
+
+    /// <summary>Test seam — true once the crew-readout hover delay has elapsed.</summary>
+    internal bool IsCrewTooltipVisible =>
+        _crewHoverStartedAtMs is { } startedAtMs
+        && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
+
+    /// <summary>Same real-time hover-delay tracking as <see cref="_foodRationsHoverStartedAtMs"/>, for the tokens readout.</summary>
+    private long? _tokensHoverStartedAtMs;
+
+    /// <summary>Test seam — true once the tokens-readout hover delay has elapsed.</summary>
+    internal bool IsTokensTooltipVisible =>
+        _tokensHoverStartedAtMs is { } startedAtMs
+        && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
+
     /// <summary>Currently selected station item for Buy/Sell — null means "nothing selected yet".</summary>
     private string? _selectedItemTypeId;
 
@@ -126,6 +142,8 @@ public sealed class TradeScreen : IScreen
         _isStationNameHovered = false;
         _isExitButtonHovered = false;
         _foodRationsHoverStartedAtMs = null;
+        _crewHoverStartedAtMs = null;
+        _tokensHoverStartedAtMs = null;
 
         var trade = _buffer.Latest?.Snapshot?.DockedStationTrade;
         if (trade is not null && !trade.Items.IsDefaultOrEmpty)
@@ -266,6 +284,16 @@ public sealed class TradeScreen : IScreen
             _foodRationsHoverStartedAtMs ??= Environment.TickCount64;
         else
             _foodRationsHoverStartedAtMs = null;
+
+        if (IsCrewHit(x, y))
+            _crewHoverStartedAtMs ??= Environment.TickCount64;
+        else
+            _crewHoverStartedAtMs = null;
+
+        if (IsTokensHit(x, y))
+            _tokensHoverStartedAtMs ??= Environment.TickCount64;
+        else
+            _tokensHoverStartedAtMs = null;
 
         return _hoveredButton != TradeButton.None || _hoveredInventoryRow >= 0 || _hoveredCargoRow >= 0
             || _isStationNameHovered || _isExitButtonHovered;
@@ -534,7 +562,9 @@ public sealed class TradeScreen : IScreen
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
             windowName: tradeTitle, isExitButtonHovered: _isExitButtonHovered,
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
-            isFoodRationsHovered: IsFoodRationsTooltipVisible);
+            crewCount: StationToolbar.ResolveCrewCount(snapshot),
+            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
+            creditsCount: StationToolbar.ResolveCreditsCount(snapshot));
 
         DrawHeader(canvas, pl, pt, snapshot);
 
@@ -542,22 +572,29 @@ public sealed class TradeScreen : IScreen
         if (snapshot is null || trade is null)
         {
             DrawNotDockedStatus(canvas, pl, pt);
-            DrawExitButton(canvas, pl, pt);
-            return;
+        }
+        else
+        {
+            string? containerModuleId = ResolveModuleId(snapshot, TradeCommandTypes.Buy);
+            string? engineModuleId = ResolveModuleId(snapshot, TradeCommandTypes.Refuel);
+            var containerModule = FindModule(snapshot, containerModuleId);
+            var engineModule = FindModule(snapshot, engineModuleId);
+
+            DrawStatsRow(canvas, pl, pt, snapshot, containerModule, engineModule);
+            DrawStationInventoryColumn(canvas, pl, pt, trade);
+            DrawTransactionColumn(canvas, pl, pt, trade, containerModule);
+            DrawCargoColumn(canvas, pl, pt, containerModule);
+            DrawFuelPanel(canvas, pl, pt, engineModule);
+            DrawSummaryRow(canvas, pl, pt, snapshot, trade);
         }
 
-        string? containerModuleId = ResolveModuleId(snapshot, TradeCommandTypes.Buy);
-        string? engineModuleId = ResolveModuleId(snapshot, TradeCommandTypes.Refuel);
-        var containerModule = FindModule(snapshot, containerModuleId);
-        var engineModule = FindModule(snapshot, engineModuleId);
-
-        DrawStatsRow(canvas, pl, pt, snapshot, containerModule, engineModule);
-        DrawStationInventoryColumn(canvas, pl, pt, trade);
-        DrawTransactionColumn(canvas, pl, pt, trade, containerModule);
-        DrawCargoColumn(canvas, pl, pt, containerModule);
-        DrawFuelPanel(canvas, pl, pt, engineModule);
-        DrawSummaryRow(canvas, pl, pt, snapshot, trade);
         DrawExitButton(canvas, pl, pt); // drawn last: DrawSummaryRow's ImagePanel would otherwise paint over it
+        // The tooltip pass comes after even the exit button — the box hangs below the
+        // toolbar into the body area and must stay on top of everything the screen drew.
+        StationToolbar.DrawTooltips(canvas, pl, pt,
+            isFoodRationsHovered: IsFoodRationsTooltipVisible,
+            isCrewHovered: IsCrewTooltipVisible,
+            isTokensHovered: IsTokensTooltipVisible);
     }
 
     /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>
@@ -593,6 +630,24 @@ public sealed class TradeScreen : IScreen
         float pl = TradeLayout.PanelLeft(_screenWidth);
         float pt = TradeLayout.PanelTop(_screenHeight);
         var local = StationToolbar.FoodRationsLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's crew readout (see StationToolbar).</summary>
+    private bool IsCrewHit(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.CrewLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's tokens/credits readout (see StationToolbar).</summary>
+    private bool IsTokensHit(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.TokensLocalRect();
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 

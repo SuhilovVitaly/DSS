@@ -26,14 +26,14 @@ public class StationEconomyGenerationTests
         string creditsField = credits is { } c ? $"\"credits\": {c}," : "";
         string coefficientField = priceCoefficient is { } pc ? $"\"priceCoefficient\": {pc}," : "";
         string inventoryField = inventoryJson is not null ? $"\"inventory\": {inventoryJson}," : "";
-        string playerCreditsField = playerCredits is { } pcr ? $"\"playerCredits\": {pcr}," : "";
+        string playerTokensField = playerCredits is { } pcr ? $"\"playerTokens\": {pcr}," : "";
 
         return $$"""
         {
           "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
           "gameState": {
             {{masterSeedField}}
-            {{playerCreditsField}}
+            {{playerTokensField}}
             "gameTimeMs": 0, "currentSpeed": "Speed0",
             "playerShipObjectId": "{{ShipObjectId}}",
             "spaceObjects": [
@@ -228,7 +228,7 @@ public class StationEconomyGenerationTests
         var engine = CreateEngine(ScenarioJson(masterSeed: 1UL, playerCredits: 7500));
 
         var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
-        Assert.Equal(7500, save.GameState.PlayerCredits);
+        Assert.Equal(7500, save.GameState.PlayerTokens);
 
         var registry = LoadRealRegistry();
         var loadedEngine = new SimulationEngine(registry);

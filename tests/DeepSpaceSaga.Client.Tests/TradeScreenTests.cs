@@ -112,6 +112,22 @@ public class TradeScreenTests
         Assert.True(fixture.Screen.OnMouseMove(x, y));
     }
 
+    [Fact]
+    public async Task Hovering_crew_does_not_report_interactive()
+    {
+        // The crew readout is not a button — hovering it only shows a tooltip (see
+        // StationToolbar), it must not trigger the same cursor swap as the name link /
+        // exit button.
+        await using var fixture = CreateDockedFixture();
+        RenderScreen(fixture.Screen);
+
+        var local = StationToolbar.CrewLocalRect();
+        float cx = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        Assert.False(fixture.Screen.OnMouseMove(cx, cy));
+    }
+
     // ── No snapshot / not docked — transitional state, no crash ────────────────
 
     [Fact]
@@ -543,7 +559,7 @@ public class TradeScreenTests
             "gameTimeMs": 0,
             "currentSpeed": "Speed0",
             "playerShipObjectId": "{{RealPlayerShipId}}",
-            "playerCredits": 100000,
+            "playerTokens": 100000,
             "spaceObjects": [
               {
                 "objectId": "{{RealPlayerShipId}}",

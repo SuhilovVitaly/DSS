@@ -66,7 +66,7 @@ public class TradeSnapshotProjectionTests
             "gameTimeMs": 0,
             "currentSpeed": "Speed0",
             "playerShipObjectId": "{{PlayerShipId}}",
-            "playerCredits": {{playerCredits}},
+            "playerTokens": {{playerCredits}},
             "spaceObjects": [
               {
                 "objectId": "{{PlayerShipId}}",
@@ -191,6 +191,67 @@ public class TradeSnapshotProjectionTests
         var snapshot = engine.CaptureSnapshotForTests();
 
         Assert.Equal(2700, snapshot.PlayerCredits);
+    }
+
+    // --- story-20260901-112254 PlayerCrewCount ---------------------------------
+
+    [Fact]
+    public void Snapshot_PlayerCrewCount_matches_ship_crew_length()
+    {
+        var engine = new SimulationEngine(GameDataRegistry.Empty);
+        engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
+        {
+          "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
+          "gameState": {
+            "gameTimeMs": 0,
+            "currentSpeed": "Speed0",
+            "playerShipObjectId": "{{PlayerShipId}}",
+            "spaceObjects": [
+              {
+                "objectId": "{{PlayerShipId}}",
+                "objectType": "PlayerShip",
+                "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "crew": [ { "crewId": "CHR-0001", "displayName": "Dunkan Su" } ]
+              }
+            ]
+          }
+        }
+        """));
+
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
+
+        Assert.Equal(1, snapshot.PlayerCrewCount);
+    }
+
+    [Fact]
+    public void Snapshot_PlayerCrewCount_defaults_to_zero_when_ship_has_no_crew()
+    {
+        var engine = new SimulationEngine(GameDataRegistry.Empty);
+        engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
+        {
+          "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
+          "gameState": {
+            "gameTimeMs": 0,
+            "currentSpeed": "Speed0",
+            "playerShipObjectId": "{{PlayerShipId}}",
+            "spaceObjects": [
+              {
+                "objectId": "{{PlayerShipId}}",
+                "objectType": "PlayerShip",
+                "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary"
+              }
+            ]
+          }
+        }
+        """));
+
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
+
+        Assert.Equal(0, snapshot.PlayerCrewCount);
     }
 
     // --- 4.2 DockedStationTrade -----------------------------------------------

@@ -201,6 +201,11 @@ public class ScenarioEngineTests
         Assert.Equal(1_000, energyCells.Quantity);
         var foodRations = Assert.Single(cargoModule.Cargo ?? [], c => c.ItemTypeId == "item.food-rations");
         Assert.Equal(200, foodRations.Quantity);
+
+        // story-20260901-112254 (Batch A, U4): a single crew member, "Dunkan Su".
+        var crewMember = Assert.Single(playerShip.Crew!);
+        Assert.Equal("CHR-0001", crewMember.CrewId);
+        Assert.Equal("Dunkan Su", crewMember.DisplayName);
     }
 
     [Fact]
@@ -280,6 +285,69 @@ public class ScenarioEngineTests
         // 4 of the 10 structural cells (the Y1/Y5 side wings) remain unoccupied.
         int freeCells = hullCells.Count - occupiedCells.Distinct().Count();
         Assert.Equal(4, freeCells);
+    }
+
+    // --- story-20260901-112254 (Batch A, U3): AuthoritativeSnapshot.PlayerCrewCount / ---
+    // --- InstalledModuleSnapshot.CabinesCount, exercised against real shipped scenarios ---
+
+    [Fact]
+    public void Real_default_scenario_snapshot_has_player_crew_and_living_quarters_cabin_count()
+    {
+        string settingsPath = ResolveRealSettingsPath();
+        var engine = SimulationEngine.CreateFromSettingsFile(settingsPath);
+
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
+
+        Assert.Equal(1, snapshot.PlayerCrewCount);
+
+        var livingQuarters = Assert.Single(
+            snapshot.InstalledModules, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
+        Assert.Equal(2, livingQuarters.CabinesCount);
+
+        // A module type that does not house crew must project CabinesCount == null.
+        var engineModule = Assert.Single(snapshot.InstalledModules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
+        Assert.Null(engineModule.CabinesCount);
+    }
+
+    [Fact]
+    public void Real_default_500_scenario_snapshot_has_player_crew_and_living_quarters_cabin_count()
+    {
+        // Checkpoint 2: Default_500 had living.quarters.mk1 stripped for the stress test —
+        // restored specifically so the crew added here has a cabin to occupy.
+        string settingsPath = ResolveRealSettingsPath();
+        string default500ScenarioPath = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(settingsPath)!, "Scenarios", "Default_500", "scenario.json"));
+
+        var engine = SimulationEngine.CreateFromScenarioFile(settingsPath, default500ScenarioPath);
+
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
+
+        Assert.Equal(1, snapshot.PlayerCrewCount);
+
+        var livingQuarters = Assert.Single(
+            snapshot.InstalledModules, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
+        Assert.Equal(2, livingQuarters.CabinesCount);
+    }
+
+    [Fact]
+    public void Every_shipped_scenario_starts_the_player_with_2000_tokens()
+    {
+        // Money.md: the player's starting balance comes from the scenario's playerTokens —
+        // every scenario the game ships sets it explicitly to 2000.
+        string settingsPath = ResolveRealSettingsPath();
+
+        var fromSettings = SimulationEngine.CreateFromSettingsFile(settingsPath); // Default
+        Assert.Equal(2000, fromSettings.PlayerCredits);
+
+        string default500ScenarioPath = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(settingsPath)!, "Scenarios", "Default_500", "scenario.json"));
+        var default500 = SimulationEngine.CreateFromScenarioFile(settingsPath, default500ScenarioPath);
+        Assert.Equal(2000, default500.PlayerCredits);
+
+        string dockedScenarioPath = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(settingsPath)!, "Scenarios", "Docked", "scenario.json"));
+        var docked = SimulationEngine.CreateFromScenarioFile(settingsPath, dockedScenarioPath);
+        Assert.Equal(2000, docked.PlayerCredits);
     }
 
     [Fact]
@@ -864,6 +932,134 @@ public class ScenarioEngineTests
 
         Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
         Assert.Contains(engine.RuntimeObjects, o => o.Modules.Length > 0);
+    }
+
+    // --- story-20260901-112254 (Batch A, U2): SimulationEngine.ResolveShipCrew ---
+
+    [Fact]
+    public void LoadScenario_with_crew_entry_resolves_to_one_runtime_crew_member()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "crew": [ { "crewId": "CHR-0001", "displayName": "Dunkan Su" } ] }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var engine = new SimulationEngine();
+        engine.LoadScenario(scenario);
+
+        var ship = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SHIP");
+        var crewMember = Assert.Single(ship.Crew);
+        Assert.Equal("CHR-0001", crewMember.Id);
+        Assert.Equal("Dunkan Su", crewMember.DisplayName);
+    }
+
+    [Fact]
+    public void LoadScenario_without_crew_resolves_to_empty()
+    {
+        var scenario = ScenarioLoader.LoadFromJson(DefaultScenarioJson);
+        var engine = new SimulationEngine();
+        engine.LoadScenario(scenario);
+
+        var ship = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
+        Assert.True(ship.Crew.IsDefaultOrEmpty);
+    }
+
+    [Fact]
+    public void LoadScenario_rejects_crew_member_with_empty_crewId()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "crew": [ { "crewId": "", "displayName": "Nobody" } ] }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var engine = new SimulationEngine();
+
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+    }
+
+    [Fact]
+    public void LoadScenario_rejects_duplicate_crew_ids()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "crew": [
+                  { "crewId": "CHR-0001", "displayName": "Dunkan Su" },
+                  { "crewId": "CHR-0001", "displayName": "Duplicate" }
+                ] }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var engine = new SimulationEngine();
+
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+    }
+
+    [Fact]
+    public void LoadScenario_ignores_crew_declared_on_a_non_player_ship_object()
+    {
+        // ResolveShipCrew is only called for ObjectType == PlayerShip in the LoadScenario
+        // wiring loop — a station/asteroid carrying a "crew" array (malformed authoring)
+        // must not surface it on the runtime object.
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary" },
+              { "objectId": "STN", "objectType": "Station", "persistenceType": "Permanent",
+                "positionX": 100, "positionY": 100, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "crew": [ { "crewId": "CHR-0001", "displayName": "Dunkan Su" } ] }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var engine = new SimulationEngine();
+        engine.LoadScenario(scenario);
+
+        var station = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "STN");
+        Assert.True(station.Crew.IsDefaultOrEmpty);
     }
 
     [Fact]

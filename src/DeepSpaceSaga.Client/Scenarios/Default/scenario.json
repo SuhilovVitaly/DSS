@@ -8,6 +8,7 @@
     "gameTimeMs": 0,
     "currentSpeed": "Speed0",
     "playerShipObjectId": "SPC-0001",
+    "playerTokens": 2000,
     "focus": {
       "mode": "Attached",
       "objectId": "SPC-0001"
@@ -106,6 +107,9 @@
                     "activeCycle": null,
                     "cargo": []
                 }
+            ],
+            "crew": [
+                { "crewId": "CHR-0001", "displayName": "Dunkan Su" }
             ]
         },
       {
