@@ -219,6 +219,8 @@ public sealed class SimulationEngine : IDisposable
 
             bool isStation = obj.ObjectType == SpaceObjectType.Station;
             bool isPlayerShip = obj.ObjectType == SpaceObjectType.PlayerShip;
+            bool isAsteroid = obj.ObjectType == SpaceObjectType.Asteroid;
+            string? image = ResolveObjectImage(obj, isPlayerShip, isAsteroid, resolvedMasterSeed);
             long credits = isStation ? ResolveStationCredits(obj, resolvedMasterSeed) : 0;
             int priceCoefficient = isStation ? ResolveStationPriceCoefficient(obj, resolvedMasterSeed) : 1000;
             var inventory = isStation
@@ -260,7 +262,7 @@ public sealed class SimulationEngine : IDisposable
                 MassKg: obj.MassKg,
                 CompositionType: obj.CompositionType,
                 IsKnown: obj.IsKnown,
-                Image: obj.Image,
+                Image: image,
                 HullLayout: obj.HullLayout,
                 IsDocked: obj.IsDocked,
                 DockedStationObjectId: obj.DockedStationObjectId,
@@ -1022,6 +1024,61 @@ public sealed class SimulationEngine : IDisposable
     private static long? ResolveLastTurnGameTimeMs(ShipModuleData module, ModuleTypeDefinition moduleType)
     {
         return moduleType.AngularInertiaDegPerSec is > 0 ? module.LastTurnGameTimeMs : null;
+    }
+
+    /// <summary>Player ship's graphical representation — always the Tetrarch-class sprite.</summary>
+    private const string PlayerShipImage = "Images/CelestialObjects/Spacecraft/ship-tetrarch-class.png";
+
+    /// <summary>Sprite pool for asteroids whose compositionType is anything other than "Ice".</summary>
+    private static readonly ImmutableArray<string> RegularAsteroidImages = ImmutableArray.Create(
+        "Images/CelestialObjects/Asteroid/asteroid-1.png",
+        "Images/CelestialObjects/Asteroid/asteroid-2.png",
+        "Images/CelestialObjects/Asteroid/asteroid-3.png",
+        "Images/CelestialObjects/Asteroid/asteroid-4.png",
+        "Images/CelestialObjects/Asteroid/asteroid-5.png",
+        "Images/CelestialObjects/Asteroid/asteroid-6.png",
+        "Images/CelestialObjects/Asteroid/asteroid-7.png",
+        "Images/CelestialObjects/Asteroid/asteroid-8.png",
+        "Images/CelestialObjects/Asteroid/asteroid-9.png",
+        "Images/CelestialObjects/Asteroid/asteroid-10.png",
+        "Images/CelestialObjects/Asteroid/asteroid-11.png",
+        "Images/CelestialObjects/Asteroid/asteroid-12.png");
+
+    /// <summary>Sprite pool for asteroids whose compositionType is "Ice".</summary>
+    private static readonly ImmutableArray<string> IceAsteroidImages = ImmutableArray.Create(
+        "Images/CelestialObjects/Asteroid/ice-asteroid-1.png",
+        "Images/CelestialObjects/Asteroid/ice-asteroid-2.png",
+        "Images/CelestialObjects/Asteroid/ice-asteroid-3.png",
+        "Images/CelestialObjects/Asteroid/ice-asteroid-4.png",
+        "Images/CelestialObjects/Asteroid/ice-asteroid-5.png");
+
+    /// <summary>
+    /// Resolve an object's graphical representation: explicit scenario/save value used
+    /// as-is (so a resolved image, once saved, is never reshuffled on a later load),
+    /// otherwise the fixed Tetrarch sprite for the player ship, or — for an asteroid — a
+    /// deterministic pick from the Ice or regular sprite pool (by compositionType) derived
+    /// from masterSeed via the asteroid's own named RNG stream. Every other object type has
+    /// no image assigned yet (null).
+    /// </summary>
+    private static string? ResolveObjectImage(SpaceObjectData obj, bool isPlayerShip, bool isAsteroid, ulong masterSeed)
+    {
+        if (obj.Image is { } explicitImage)
+            return explicitImage;
+
+        if (isPlayerShip)
+            return PlayerShipImage;
+
+        if (isAsteroid)
+        {
+            var pool = string.Equals(obj.CompositionType, "Ice", StringComparison.OrdinalIgnoreCase)
+                ? IceAsteroidImages
+                : RegularAsteroidImages;
+            var random = RngStreamNames.CreateDeterministicRandom(
+                RngStreamSeedDerivation.DeriveStreamSeed(masterSeed, RngStreamNames.AsteroidImage(obj.ObjectId)));
+            return pool[random.Next(pool.Length)];
+        }
+
+        return null;
     }
 
     /// <summary>
