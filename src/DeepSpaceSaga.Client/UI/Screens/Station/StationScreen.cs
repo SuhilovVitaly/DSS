@@ -96,6 +96,7 @@ public sealed class StationScreen : IScreen
         float pt = StationLayout.PanelTop(height);
         var panelRect = new SKRect(pl, pt, pl + StationLayout.PanelWidth, pt + StationLayout.PanelHeight);
         MenuStyle.DrawPanel(canvas, panelRect);
+        StationToolbar.Draw(canvas, pl, pt);
 
         float cx = pl + StationLayout.PanelWidth / 2f;
         canvas.DrawText("STATION", cx, pt + StationLayout.TitleY, MenuStyle.TextTitle);
