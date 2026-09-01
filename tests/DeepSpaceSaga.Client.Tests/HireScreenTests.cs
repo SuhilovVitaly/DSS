@@ -77,6 +77,26 @@ public class HireScreenTests
     }
 
     [Fact]
+    public void Food_rations_tooltip_only_appears_after_the_configured_hover_delay()
+    {
+        var screen = new HireScreen();
+        RenderScreen(screen);
+
+        var local = StationToolbar.FoodRationsLocalRect();
+        float cx = HireLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = HireLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        screen.OnMouseMove(cx, cy);
+        Assert.False(screen.IsFoodRationsTooltipVisible);
+
+        Thread.Sleep((int)(MenuStyle.TooltipHoverDelaySeconds * 1000) + 150);
+
+        // No further OnMouseMove call — the delay must be re-checked purely from elapsed
+        // real time (Render re-evaluates it every frame even while the pointer sits still).
+        Assert.True(screen.IsFoodRationsTooltipVisible);
+    }
+
+    [Fact]
     public void Click_inside_panel_outside_close_button_returns_None()
     {
         var screen = new HireScreen();

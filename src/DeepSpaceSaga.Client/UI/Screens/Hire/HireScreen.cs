@@ -27,7 +27,20 @@ public sealed class HireScreen : IScreen
     private int _screenHeight;
     private bool _isStationNameHovered;
     private bool _isExitButtonHovered;
-    private bool _isFoodRationsHovered;
+
+    /// <summary>
+    /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
+    /// food-rations readout, or null while not hovering it — the tooltip only appears
+    /// once MenuStyle.TooltipHoverDelaySeconds has elapsed since this moment (checked in
+    /// Render every frame, since OnMouseMove alone would never fire again while the
+    /// pointer sits still).
+    /// </summary>
+    private long? _foodRationsHoverStartedAtMs;
+
+    /// <summary>Test seam — true once the food-rations hover delay has elapsed.</summary>
+    internal bool IsFoodRationsTooltipVisible =>
+        _foodRationsHoverStartedAtMs is { } startedAtMs
+        && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
     private const string PlaceholderLine = "Crew hiring: not available yet";
 
@@ -40,7 +53,7 @@ public sealed class HireScreen : IScreen
     {
         _isStationNameHovered = false;
         _isExitButtonHovered = false;
-        _isFoodRationsHovered = false;
+        _foodRationsHoverStartedAtMs = null;
     }
 
     public void OnDeactivated() { }
@@ -73,9 +86,13 @@ public sealed class HireScreen : IScreen
     {
         _isStationNameHovered = IsStationNameHit(x, y);
         _isExitButtonHovered = IsExitButtonHit(x, y);
-        // Not a button — hovering it only shows a tooltip (drawn in Render), so it must not
-        // affect the interactive-cursor swap the way the name link / exit button do.
-        _isFoodRationsHovered = IsFoodRationsHit(x, y);
+
+        // Not a button — hovering it only shows a delayed tooltip (see Render), so it must
+        // not affect the interactive-cursor swap the way the name link / exit button do.
+        if (IsFoodRationsHit(x, y))
+            _foodRationsHoverStartedAtMs ??= Environment.TickCount64;
+        else
+            _foodRationsHoverStartedAtMs = null;
 
         return _isStationNameHovered || _isExitButtonHovered;
     }
@@ -97,7 +114,7 @@ public sealed class HireScreen : IScreen
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
             windowName: "HIRE", isExitButtonHovered: _isExitButtonHovered,
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
-            isFoodRationsHovered: _isFoodRationsHovered);
+            isFoodRationsHovered: IsFoodRationsTooltipVisible);
 
         float cx = pl + HireLayout.PanelWidth / 2f;
         canvas.DrawText(PlaceholderLine, cx, pt + HireLayout.BodyStartY, MenuStyle.TextStatus);

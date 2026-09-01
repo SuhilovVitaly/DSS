@@ -58,7 +58,20 @@ public sealed class TradeScreen : IScreen
     private int _hoveredCargoRow = -1;
     private bool _isStationNameHovered;
     private bool _isExitButtonHovered;
-    private bool _isFoodRationsHovered;
+
+    /// <summary>
+    /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
+    /// food-rations readout, or null while not hovering it — the tooltip only appears
+    /// once MenuStyle.TooltipHoverDelaySeconds has elapsed since this moment (checked in
+    /// Render every frame, since OnMouseMove alone would never fire again while the
+    /// pointer sits still).
+    /// </summary>
+    private long? _foodRationsHoverStartedAtMs;
+
+    /// <summary>Test seam — true once the food-rations hover delay has elapsed.</summary>
+    internal bool IsFoodRationsTooltipVisible =>
+        _foodRationsHoverStartedAtMs is { } startedAtMs
+        && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
     /// <summary>Currently selected station item for Buy/Sell — null means "nothing selected yet".</summary>
     private string? _selectedItemTypeId;
@@ -112,7 +125,7 @@ public sealed class TradeScreen : IScreen
         _hoveredCargoRow = -1;
         _isStationNameHovered = false;
         _isExitButtonHovered = false;
-        _isFoodRationsHovered = false;
+        _foodRationsHoverStartedAtMs = null;
 
         var trade = _buffer.Latest?.Snapshot?.DockedStationTrade;
         if (trade is not null && !trade.Items.IsDefaultOrEmpty)
@@ -246,9 +259,13 @@ public sealed class TradeScreen : IScreen
 
         _isStationNameHovered = IsStationNameHit(x, y, snapshot);
         _isExitButtonHovered = IsExitButtonHit(x, y);
-        // Not a button — hovering it only shows a tooltip (drawn in Render), so it must not
-        // affect the interactive-cursor swap the way the name link / exit button do.
-        _isFoodRationsHovered = IsFoodRationsHit(x, y);
+
+        // Not a button — hovering it only shows a delayed tooltip (see Render), so it must
+        // not affect the interactive-cursor swap the way the name link / exit button do.
+        if (IsFoodRationsHit(x, y))
+            _foodRationsHoverStartedAtMs ??= Environment.TickCount64;
+        else
+            _foodRationsHoverStartedAtMs = null;
 
         return _hoveredButton != TradeButton.None || _hoveredInventoryRow >= 0 || _hoveredCargoRow >= 0
             || _isStationNameHovered || _isExitButtonHovered;
@@ -517,7 +534,7 @@ public sealed class TradeScreen : IScreen
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
             windowName: tradeTitle, isExitButtonHovered: _isExitButtonHovered,
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
-            isFoodRationsHovered: _isFoodRationsHovered);
+            isFoodRationsHovered: IsFoodRationsTooltipVisible);
 
         DrawHeader(canvas, pl, pt, snapshot);
 

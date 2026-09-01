@@ -33,7 +33,20 @@ public sealed class StationScreen : IScreen
     private int _screenHeight;
     private StationButton _hoveredButton = StationButton.None;
     private bool _isExitButtonHovered;
-    private bool _isFoodRationsHovered;
+
+    /// <summary>
+    /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
+    /// food-rations readout, or null while not hovering it — the tooltip only appears
+    /// once MenuStyle.TooltipHoverDelaySeconds has elapsed since this moment (checked in
+    /// Render every frame, since OnMouseMove alone would never fire again while the
+    /// pointer sits still).
+    /// </summary>
+    private long? _foodRationsHoverStartedAtMs;
+
+    /// <summary>Test seam — true once the food-rations hover delay has elapsed.</summary>
+    internal bool IsFoodRationsTooltipVisible =>
+        _foodRationsHoverStartedAtMs is { } startedAtMs
+        && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
     public StationScreen(SnapshotBuffer? buffer = null)
     {
@@ -59,7 +72,7 @@ public sealed class StationScreen : IScreen
     {
         _hoveredButton = StationButton.None;
         _isExitButtonHovered = false;
-        _isFoodRationsHovered = false;
+        _foodRationsHoverStartedAtMs = null;
     }
 
     public void OnDeactivated() { }
@@ -99,9 +112,13 @@ public sealed class StationScreen : IScreen
     {
         _hoveredButton = StationLayout.HitTest(x, y, _screenWidth, _screenHeight);
         _isExitButtonHovered = IsExitButtonHit(x, y);
-        // Not a button — hovering it only shows a tooltip (drawn in Render), so it must not
-        // affect the interactive-cursor swap the way the other buttons do.
-        _isFoodRationsHovered = IsFoodRationsHit(x, y);
+
+        // Not a button — hovering it only shows a delayed tooltip (see Render), so it must
+        // not affect the interactive-cursor swap the way the other buttons do.
+        if (IsFoodRationsHit(x, y))
+            _foodRationsHoverStartedAtMs ??= Environment.TickCount64;
+        else
+            _foodRationsHoverStartedAtMs = null;
 
         return _hoveredButton != StationButton.None || _isExitButtonHovered;
     }
@@ -141,7 +158,7 @@ public sealed class StationScreen : IScreen
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: true,
             isExitButtonHovered: _isExitButtonHovered,
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
-            isFoodRationsHovered: _isFoodRationsHovered);
+            isFoodRationsHovered: IsFoodRationsTooltipVisible);
 
         float cx = pl + StationLayout.PanelWidth / 2f;
 

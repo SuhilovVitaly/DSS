@@ -75,6 +75,14 @@ public static class MenuStyle
     public const float PanelBorderWidth = 2f;
     public const float ButtonBorderWidth = 1f;
 
+    // --- Interaction timing (project-wide UI behavior config) ---
+    /// <summary>
+    /// How long the pointer must stay over a hoverable readout (e.g. StationToolbar's
+    /// food-rations icon) before its tooltip appears. Shared here rather than hardcoded
+    /// per screen so every tooltip in the project uses the same delay.
+    /// </summary>
+    public const float TooltipHoverDelaySeconds = 0.5f;
+
     // --- Pre-built paints (created once, reused across frames) ---
 
     public static SKPaint PanelFill { get; } = new() { Color = ColorPanelBg, Style = SKPaintStyle.Fill };
