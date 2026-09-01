@@ -46,6 +46,81 @@ public class InstalledModuleProjectionTests
         Assert.Equal(50, scannerMod.StructurePoints);
         Assert.Null(scannerMod.ActiveCommandType);
         Assert.Null(scannerMod.FuelAmountKg);
+
+        // Neither fixture module has CargoCapacityKg set, so AvailableCapacityKg must be null
+        // for both — mirrors the FuelAmountKg null convention (see field doc comment).
+        Assert.Null(engineMod.AvailableCapacityKg);
+        Assert.Null(scannerMod.AvailableCapacityKg);
+    }
+
+    [Fact]
+    public void Container_module_projects_available_capacity_kg_as_capacity_minus_cargo_mass()
+    {
+        var engine = CreateEngineWithContainerModule();
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1);
+
+        var containerMod = Assert.Single(snapshot.InstalledModules);
+        Assert.Equal("module.container.basic", containerMod.ModuleTypeId);
+
+        // CargoCapacityKg: 1000, cargo: 12 * item.ice (unitMassKg 20) + 3 * item.energyCells
+        // (unitMassKg 5) = 240 + 15 = 255 kg -> available = 1000 - 255 = 745.
+        Assert.Equal(745, containerMod.AvailableCapacityKg);
+    }
+
+    private static SimulationEngine CreateEngineWithContainerModule()
+    {
+        var registry = GameDataRegistry.Create(
+            moduleCategories:
+            [
+                new ModuleCategoryDefinition(
+                    "module.container.basic", "Cargo Bay", SlotSize: 1,
+                    CommandTypeIds: ImmutableArray<string>.Empty)
+            ],
+            moduleTypes:
+            [
+                new ModuleTypeDefinition(
+                    "module.container.basic", "Cargo Bay", SlotSize: 1, MassKg: 500,
+                    StructurePointsMax: 400, PowerConsumptionW: 0,
+                    CommandTypeIds: ImmutableArray<string>.Empty,
+                    CargoCapacityKg: 1000)
+            ],
+            itemTypes:
+            [
+                new ItemTypeDefinition("item.ice", "Ice", UnitMassKg: 20),
+                new ItemTypeDefinition("item.energyCells", "Energy Cells", UnitMassKg: 5)
+            ],
+            commandDefinitions: []);
+
+        var engine = new SimulationEngine(registry);
+        engine.LoadScenario(Scenario.ScenarioLoader.LoadFromJson($$"""
+        {
+          "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
+          "gameState": {
+            "gameTimeMs": 0,
+            "currentSpeed": "Speed1",
+            "playerShipObjectId": "{{PlayerShipId}}",
+            "spaceObjects": [
+              { "objectId": "{{PlayerShipId}}", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "name": "Player Ship",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "hullLayout": { "width": 1, "height": 1, "cells": [ {"x":0,"y":0} ] },
+                "modules": [
+                  { "moduleId": "MOD-CNT-01", "moduleTypeId": "module.container.basic",
+                    "occupiedCells": [ {"x":0,"y":0} ],
+                    "powerState": "On", "operationalState": "Ready", "structurePoints": 400,
+                    "cargo": [
+                      { "itemTypeId": "item.ice", "quantity": 12 },
+                      { "itemTypeId": "item.energyCells", "quantity": 3 }
+                    ] }
+                ]
+              }
+            ]
+          }
+        }
+        """));
+
+        return engine;
     }
 
     [Fact]

@@ -3,7 +3,6 @@ namespace DeepSpaceSaga.Client.UI.Screens.Station;
 public enum StationButton
 {
     None,
-    Close,
     Trade,
     Hire,
     Finance,
@@ -11,7 +10,7 @@ public enum StationButton
 }
 
 /// <summary>
-/// Layout and hit-test geometry for the Station overlay panel. 1400×900 is the
+/// Layout and hit-test geometry for the Station overlay panel. 1400×800 is the
 /// standard panel size for gameplay-mechanic windows (Docs/FirstRelease/Screens/
 /// ScreenCatalog.md — Station, Trade, Hire, Contracts, Cargo, Loot, Ship, Character
 /// Communication, Dialog, Finance). Structural twin of <see cref="Finance.FinanceLayout"/>.
@@ -19,14 +18,10 @@ public enum StationButton
 public sealed class StationLayout
 {
     public const float PanelWidth = 1400f;
-    public const float PanelHeight = 900f;
+    public const float PanelHeight = 800f;
 
-    public const float TitleY = 50f;
     public const float BodyStartY = 100f;
     public const float BodyLineHeight = 28f;
-
-    public const float CloseButtonSize = 28f;
-    public const float CloseButtonMargin = 14f;
 
     // 24 px tall, not the 28 px BodyLineHeight — real buttons on adjacent rows (Trade
     // row 0 / Finance row 1) must not overlap under the shared "-20" vertical offset
@@ -61,16 +56,6 @@ public sealed class StationLayout
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
-
-    /// <summary>Close button rect, local to the panel (add PanelLeft/PanelTop for screen space).</summary>
-    public static (float Left, float Top, float Right, float Bottom) CloseButtonLocalRect()
-    {
-        float right = PanelWidth - CloseButtonMargin;
-        float left = right - CloseButtonSize;
-        float top = CloseButtonMargin;
-        float bottom = top + CloseButtonSize;
-        return (left, top, right, bottom);
-    }
 
     /// <summary>
     /// TRADE button rect, local to the panel — occupies the first body row (the other
@@ -145,10 +130,6 @@ public sealed class StationLayout
 
         float lx = screenX - panelLeft;
         float ly = screenY - panelTop;
-
-        var (closeLeft, closeTop, closeRight, closeBottom) = CloseButtonLocalRect();
-        if (lx >= closeLeft && lx <= closeRight && ly >= closeTop && ly <= closeBottom)
-            return StationButton.Close;
 
         var (tradeLeft, tradeTop, tradeRight, tradeBottom) = TradeButtonLocalRect();
         if (lx >= tradeLeft && lx <= tradeRight && ly >= tradeTop && ly <= tradeBottom)

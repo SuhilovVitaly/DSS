@@ -1,5 +1,8 @@
+using System.Collections.Immutable;
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.Hire;
+using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
 using SkiaSharp;
 
@@ -32,23 +35,65 @@ public class HireScreenTests
     }
 
     [Fact]
-    public void Close_button_click_returns_CloseHire()
+    public void Exit_button_click_returns_CloseHire()
     {
         var screen = new HireScreen();
         RenderScreen(screen);
 
-        var hit = HireLayout.HitTest(
-            HireLayout.PanelLeft(ScreenWidth) + HireLayout.CloseButtonLocalRect().Left + 1f,
-            HireLayout.PanelTop(ScreenHeight) + HireLayout.CloseButtonLocalRect().Top + 1f,
-            ScreenWidth, ScreenHeight);
-        Assert.Equal(HireButton.Close, hit);
-
-        var (left, top, right, bottom) = HireLayout.CloseButtonLocalRect();
-        float cx = HireLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
-        float cy = HireLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
+        var local = StationToolbar.ExitButtonLocalRect();
+        float cx = HireLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = HireLayout.PanelTop(ScreenHeight) + local.MidY;
 
         var result = screen.OnMouseDown(cx, cy);
         Assert.Equal(ScreenEvent.CloseHire, result);
+    }
+
+    [Fact]
+    public void Hovering_the_exit_button_reports_interactive()
+    {
+        var screen = new HireScreen();
+        RenderScreen(screen);
+
+        var local = StationToolbar.ExitButtonLocalRect();
+        float cx = HireLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = HireLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        Assert.True(screen.OnMouseMove(cx, cy));
+    }
+
+    [Fact]
+    public void Hovering_food_rations_does_not_report_interactive()
+    {
+        // The readout is not a button — hovering it only shows a tooltip, it must not
+        // trigger the same cursor swap as the name link / exit button.
+        var screen = new HireScreen();
+        RenderScreen(screen);
+
+        var local = StationToolbar.FoodRationsLocalRect();
+        float cx = HireLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = HireLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        Assert.False(screen.OnMouseMove(cx, cy));
+    }
+
+    [Fact]
+    public void Food_rations_tooltip_only_appears_after_the_configured_hover_delay()
+    {
+        var screen = new HireScreen();
+        RenderScreen(screen);
+
+        var local = StationToolbar.FoodRationsLocalRect();
+        float cx = HireLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = HireLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        screen.OnMouseMove(cx, cy);
+        Assert.False(screen.IsFoodRationsTooltipVisible);
+
+        Thread.Sleep((int)(MenuStyle.TooltipHoverDelaySeconds * 1000) + 150);
+
+        // No further OnMouseMove call — the delay must be re-checked purely from elapsed
+        // real time (Render re-evaluates it every frame even while the pointer sits still).
+        Assert.True(screen.IsFoodRationsTooltipVisible);
     }
 
     [Fact]
@@ -83,5 +128,46 @@ public class HireScreenTests
 
         var result = screen.OnMouseDown(2f, 2f, MouseButton.Right);
         Assert.Equal(ScreenEvent.None, result);
+    }
+
+    [Fact]
+    public void Station_name_click_returns_NavigateToStation()
+    {
+        var screen = new HireScreen(DockedBuffer());
+        RenderScreen(screen);
+
+        var (x, y) = StationNameCenter();
+        Assert.Equal(ScreenEvent.NavigateToStation, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void Hovering_the_station_name_reports_interactive()
+    {
+        var screen = new HireScreen(DockedBuffer());
+        RenderScreen(screen);
+
+        var (x, y) = StationNameCenter();
+        Assert.True(screen.OnMouseMove(x, y));
+    }
+
+    private static SnapshotBuffer DockedBuffer()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(
+                new ObjectMotionSnapshot("SHIP-01", 0, 0, 0, 0, IsDocked: true, DockedStationObjectId: "STN-01"),
+                new ObjectMotionSnapshot("STN-01", 0, 0, 0, 0, DisplayName: "Test Station")),
+            PlayerShipObjectId: "SHIP-01"));
+        return buffer;
+    }
+
+    /// <summary>Screen-space center of the toolbar's "Test Station" name label (see DockedBuffer).</summary>
+    private static (float X, float Y) StationNameCenter()
+    {
+        var local = StationToolbar.NameLocalRect("Test Station");
+        float x = HireLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float y = HireLayout.PanelTop(ScreenHeight) + local.MidY;
+        return (x, y);
     }
 }

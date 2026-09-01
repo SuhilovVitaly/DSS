@@ -1,5 +1,8 @@
+using System.Collections.Immutable;
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.Contracts;
+using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
 using SkiaSharp;
 
@@ -33,23 +36,30 @@ public class ContractsScreenTests
     }
 
     [Fact]
-    public void Close_button_click_returns_CloseContracts()
+    public void Exit_button_click_returns_CloseContracts()
     {
         var screen = new ContractsScreen();
         RenderScreen(screen);
 
-        var hit = ContractsLayout.HitTest(
-            ContractsLayout.PanelLeft(ScreenWidth) + ContractsLayout.CloseButtonLocalRect().Left + 1f,
-            ContractsLayout.PanelTop(ScreenHeight) + ContractsLayout.CloseButtonLocalRect().Top + 1f,
-            ScreenWidth, ScreenHeight);
-        Assert.Equal(ContractsButton.Close, hit);
-
-        var (left, top, right, bottom) = ContractsLayout.CloseButtonLocalRect();
-        float cx = ContractsLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
-        float cy = ContractsLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
+        var local = StationToolbar.ExitButtonLocalRect();
+        float cx = ContractsLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = ContractsLayout.PanelTop(ScreenHeight) + local.MidY;
 
         var result = screen.OnMouseDown(cx, cy);
         Assert.Equal(ScreenEvent.CloseContracts, result);
+    }
+
+    [Fact]
+    public void Hovering_the_exit_button_reports_interactive()
+    {
+        var screen = new ContractsScreen();
+        RenderScreen(screen);
+
+        var local = StationToolbar.ExitButtonLocalRect();
+        float cx = ContractsLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = ContractsLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        Assert.True(screen.OnMouseMove(cx, cy));
     }
 
     [Fact]
@@ -84,5 +94,46 @@ public class ContractsScreenTests
 
         var result = screen.OnMouseDown(2f, 2f, MouseButton.Right);
         Assert.Equal(ScreenEvent.None, result);
+    }
+
+    [Fact]
+    public void Station_name_click_returns_NavigateToStation()
+    {
+        var screen = new ContractsScreen(DockedBuffer());
+        RenderScreen(screen);
+
+        var (x, y) = StationNameCenter();
+        Assert.Equal(ScreenEvent.NavigateToStation, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void Hovering_the_station_name_reports_interactive()
+    {
+        var screen = new ContractsScreen(DockedBuffer());
+        RenderScreen(screen);
+
+        var (x, y) = StationNameCenter();
+        Assert.True(screen.OnMouseMove(x, y));
+    }
+
+    private static SnapshotBuffer DockedBuffer()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(
+                new ObjectMotionSnapshot("SHIP-01", 0, 0, 0, 0, IsDocked: true, DockedStationObjectId: "STN-01"),
+                new ObjectMotionSnapshot("STN-01", 0, 0, 0, 0, DisplayName: "Test Station")),
+            PlayerShipObjectId: "SHIP-01"));
+        return buffer;
+    }
+
+    /// <summary>Screen-space center of the toolbar's "Test Station" name label (see DockedBuffer).</summary>
+    private static (float X, float Y) StationNameCenter()
+    {
+        var local = StationToolbar.NameLocalRect("Test Station");
+        float x = ContractsLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float y = ContractsLayout.PanelTop(ScreenHeight) + local.MidY;
+        return (x, y);
     }
 }

@@ -20,7 +20,7 @@ public enum TradeButton
 /// Trade.md), styled after the user's three-column reference screenshot but adapted to the
 /// project's real trade model (Energy Cells/Fuel/Ice — see
 /// Docs/FirstRelease/Mechanics/StationInventory.md), not the screenshot's goods/prices.
-/// 1400×900 is the standard panel size for gameplay-mechanic windows.
+/// 1400×800 is the standard panel size for gameplay-mechanic windows.
 ///
 /// Structure (top to bottom): header (title + station/docked subtitle + close), a stats row
 /// (CREDITS/CARGO/FUEL), three side-by-side columns (STATION INVENTORY / TRANSACTION /
@@ -32,7 +32,7 @@ public enum TradeButton
 public static class TradeLayout
 {
     public const float PanelWidth = 1400f;
-    public const float PanelHeight = 900f;
+    public const float PanelHeight = 800f;
 
     // ── Header ──────────────────────────────────────────────────────────────────
     public const float HeaderLeftX = 40f;

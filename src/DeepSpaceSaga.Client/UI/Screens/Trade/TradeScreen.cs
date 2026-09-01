@@ -56,6 +56,22 @@ public sealed class TradeScreen : IScreen
     private TradeButton _hoveredButton = TradeButton.None;
     private int _hoveredInventoryRow = -1;
     private int _hoveredCargoRow = -1;
+    private bool _isStationNameHovered;
+    private bool _isExitButtonHovered;
+
+    /// <summary>
+    /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
+    /// food-rations readout, or null while not hovering it — the tooltip only appears
+    /// once MenuStyle.TooltipHoverDelaySeconds has elapsed since this moment (checked in
+    /// Render every frame, since OnMouseMove alone would never fire again while the
+    /// pointer sits still).
+    /// </summary>
+    private long? _foodRationsHoverStartedAtMs;
+
+    /// <summary>Test seam — true once the food-rations hover delay has elapsed.</summary>
+    internal bool IsFoodRationsTooltipVisible =>
+        _foodRationsHoverStartedAtMs is { } startedAtMs
+        && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
     /// <summary>Currently selected station item for Buy/Sell — null means "nothing selected yet".</summary>
     private string? _selectedItemTypeId;
@@ -107,6 +123,9 @@ public sealed class TradeScreen : IScreen
         _hoveredButton = TradeButton.None;
         _hoveredInventoryRow = -1;
         _hoveredCargoRow = -1;
+        _isStationNameHovered = false;
+        _isExitButtonHovered = false;
+        _foodRationsHoverStartedAtMs = null;
 
         var trade = _buffer.Latest?.Snapshot?.DockedStationTrade;
         if (trade is not null && !trade.Items.IsDefaultOrEmpty)
@@ -133,7 +152,14 @@ public sealed class TradeScreen : IScreen
         if (hit == TradeButton.Close)
             return ScreenEvent.CloseTrade;
 
+        if (IsExitButtonHit(x, y))
+            return ScreenEvent.CloseTrade;
+
         var snapshot = _buffer.Latest?.Snapshot;
+
+        if (IsStationNameHit(x, y, snapshot))
+            return ScreenEvent.NavigateToStation;
+
         var trade = snapshot?.DockedStationTrade;
 
         if (trade is not null && !trade.Items.IsDefaultOrEmpty)
@@ -231,7 +257,18 @@ public sealed class TradeScreen : IScreen
             ? TradeLayout.HitTestCargoRow(x, y, _screenWidth, _screenHeight, containerModule.Cargo.Length)
             : -1;
 
-        return _hoveredButton != TradeButton.None || _hoveredInventoryRow >= 0 || _hoveredCargoRow >= 0;
+        _isStationNameHovered = IsStationNameHit(x, y, snapshot);
+        _isExitButtonHovered = IsExitButtonHit(x, y);
+
+        // Not a button — hovering it only shows a delayed tooltip (see Render), so it must
+        // not affect the interactive-cursor swap the way the name link / exit button do.
+        if (IsFoodRationsHit(x, y))
+            _foodRationsHoverStartedAtMs ??= Environment.TickCount64;
+        else
+            _foodRationsHoverStartedAtMs = null;
+
+        return _hoveredButton != TradeButton.None || _hoveredInventoryRow >= 0 || _hoveredCargoRow >= 0
+            || _isStationNameHovered || _isExitButtonHovered;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -418,12 +455,6 @@ public sealed class TradeScreen : IScreen
 
     // ── Rendering ────────────────────────────────────────────────────────────────
 
-    private static readonly SKPaint _titlePaint = new()
-    {
-        Color = MenuStyle.ColorText, TextSize = MenuStyle.TitleFontSize, IsAntialias = true,
-        TextAlign = SKTextAlign.Center, Typeface = MenuStyle.TypefaceHumaroid
-    };
-
     private static readonly SKPaint _subtitlePaint = new()
     {
         Color = MenuStyle.ColorTextDim, TextSize = MenuStyle.StatusFontSize, IsAntialias = true,
@@ -498,7 +529,12 @@ public sealed class TradeScreen : IScreen
         float pt = TradeLayout.PanelTop(height);
         var panelRect = TradeLayout.PanelRect(width, height);
         GenericWindowTypeA.DrawOpaque(canvas, panelRect);
-        GenericWindowTypeA.DrawTitle(canvas, panelRect, Localization.Get("Trade.Title"), _titlePaint);
+        string tradeTitle = Localization.Get("Trade.Title");
+        string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
+        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
+            windowName: tradeTitle, isExitButtonHovered: _isExitButtonHovered,
+            foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
+            isFoodRationsHovered: IsFoodRationsTooltipVisible);
 
         DrawHeader(canvas, pl, pt, snapshot);
 
@@ -522,6 +558,42 @@ public sealed class TradeScreen : IScreen
         DrawFuelPanel(canvas, pl, pt, engineModule);
         DrawSummaryRow(canvas, pl, pt, snapshot, trade);
         DrawExitButton(canvas, pl, pt); // drawn last: DrawSummaryRow's ImagePanel would otherwise paint over it
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>
+    private bool IsStationNameHit(float x, float y, AuthoritativeSnapshot? snapshot)
+    {
+        string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
+        if (string.IsNullOrEmpty(stationName))
+            return false;
+
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.NameLocalRect(stationName);
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>
+    /// True when (x, y) lands on the toolbar's exit-button icon (see StationToolbar) — an
+    /// additional way to close Trade alongside the existing bottom-row EXIT button
+    /// (<see cref="TradeButton.Close"/>/<see cref="TradeLayout.ExitButtonRect"/>), both
+    /// mapped to the same ScreenEvent.CloseTrade.
+    /// </summary>
+    private bool IsExitButtonHit(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.ExitButtonLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's food-rations readout (see StationToolbar).</summary>
+    private bool IsFoodRationsHit(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.FoodRationsLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
     private void DrawHeader(SKCanvas canvas, float pl, float pt, AuthoritativeSnapshot? snapshot)

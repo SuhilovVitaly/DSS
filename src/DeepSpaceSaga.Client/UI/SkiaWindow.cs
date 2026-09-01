@@ -634,6 +634,9 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.CloseContracts:
                     await CloseOverlayAsync();
                     break;
+                case ScreenEvent.NavigateToStation:
+                    await NavigateToStationAsync();
+                    break;
             }
         }
         catch (Exception ex)
@@ -782,7 +785,7 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is FinanceScreen)
             return;
 
-        await PushModalAsync(new FinanceScreen());
+        await PushModalAsync(new FinanceScreen(_session?.Buffer));
     }
 
     /// <summary>
@@ -813,7 +816,23 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is StationScreen)
             return;
 
-        await PushModalAsync(new StationScreen());
+        await PushModalAsync(new StationScreen(_session?.Buffer));
+    }
+
+    /// <summary>
+    /// Return to the Station hub from one of its nested windows (Trade/Hire/Contracts/
+    /// Finance) — raised by clicking the station-name label in StationToolbar
+    /// (ScreenEvent.NavigateToStation). Trade/Hire/Contracts are always opened as a
+    /// nested modal directly on top of Station, so popping alone reveals it; Finance is
+    /// also reachable straight from GameSessionScreen (Ctrl+F) with no Station beneath
+    /// it, so this pushes a fresh Station screen in that case instead of leaving the
+    /// player on whatever was underneath.
+    /// </summary>
+    private async Task NavigateToStationAsync()
+    {
+        await PopModalAsync();
+        if (_screens.Current is not StationScreen)
+            await OpenStationAsync();
     }
 
     /// <summary>
@@ -849,7 +868,7 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is HireScreen)
             return;
 
-        await PushModalAsync(new HireScreen());
+        await PushModalAsync(new HireScreen(_session?.Buffer));
     }
 
     /// <summary>
@@ -864,7 +883,7 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is ContractsScreen)
             return;
 
-        await PushModalAsync(new ContractsScreen());
+        await PushModalAsync(new ContractsScreen(_session?.Buffer));
     }
 
     private async Task OpenSettingsAsync()

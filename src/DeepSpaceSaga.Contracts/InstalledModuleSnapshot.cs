@@ -28,4 +28,12 @@ public sealed record InstalledModuleSnapshot(
     /// multiple modules is a Client concern, not an Engine one.
     /// </summary>
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CargoStackSnapshot>))]
-    ImmutableArray<CargoStackSnapshot> Cargo = default);
+    ImmutableArray<CargoStackSnapshot> Cargo = default,
+    /// <summary>
+    /// Remaining cargo capacity in kg: <c>cargoCapacityKg - sum(item_in_cargo.quantity *
+    /// item.unitMassKg)</c>, computed over this module's <see cref="Cargo"/>. Authoritative Engine
+    /// runtime state (mirrors the <see cref="FuelAmountKg"/> convention above): computed once when
+    /// the module is created and updated whenever its Cargo changes, rather than recomputed at
+    /// snapshot/projection time. Null for modules without CargoCapacityKg.
+    /// </summary>
+    long? AvailableCapacityKg = null);

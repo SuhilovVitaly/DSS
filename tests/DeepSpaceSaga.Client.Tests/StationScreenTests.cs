@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.Station;
 using Silk.NET.Input;
@@ -36,23 +37,30 @@ public class StationScreenTests
     }
 
     [Fact]
-    public void Close_button_click_returns_CloseStation()
+    public void Exit_button_click_returns_CloseStation()
     {
         var screen = new StationScreen();
         RenderScreen(screen);
 
-        var hit = StationLayout.HitTest(
-            StationLayout.PanelLeft(ScreenWidth) + StationLayout.CloseButtonLocalRect().Left + 1f,
-            StationLayout.PanelTop(ScreenHeight) + StationLayout.CloseButtonLocalRect().Top + 1f,
-            ScreenWidth, ScreenHeight);
-        Assert.Equal(StationButton.Close, hit);
-
-        var (left, top, right, bottom) = StationLayout.CloseButtonLocalRect();
-        float cx = StationLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
-        float cy = StationLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
+        var local = StationToolbar.ExitButtonLocalRect();
+        float cx = StationLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = StationLayout.PanelTop(ScreenHeight) + local.MidY;
 
         var result = screen.OnMouseDown(cx, cy);
         Assert.Equal(ScreenEvent.CloseStation, result);
+    }
+
+    [Fact]
+    public void Hovering_the_exit_button_reports_interactive()
+    {
+        var screen = new StationScreen();
+        RenderScreen(screen);
+
+        var local = StationToolbar.ExitButtonLocalRect();
+        float cx = StationLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = StationLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        Assert.True(screen.OnMouseMove(cx, cy));
     }
 
     [Fact]

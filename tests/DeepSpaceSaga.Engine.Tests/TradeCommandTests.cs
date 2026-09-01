@@ -302,6 +302,24 @@ public class TradeCommandTests
         Assert.Equal(CommandReasonCodes.UnknownItemType, result.ReasonCode);
     }
 
+    [Fact]
+    public void Buy_decreases_stored_available_capacity_kg_by_added_cargo_mass()
+    {
+        // Authoritative runtime state (not recomputed at snapshot time) — asserts the stored
+        // InstalledModuleSnapshot.AvailableCapacityKg is updated in place by the mutation itself.
+        var engine = CreateEngine(shipCargo: [(EnergyCellsId, 5)]);
+
+        var before = engine.CaptureSnapshotForTests();
+        var moduleBefore = before.InstalledModules.Single(m => m.ModuleId == CargoModuleId);
+
+        engine.ReceiveCommand(BuyCommand(EnergyCellsId, quantity: 10)); // adds 10 * 10kg = 100kg
+        var after = engine.CaptureSnapshotForTests();
+        var moduleAfter = after.InstalledModules.Single(m => m.ModuleId == CargoModuleId);
+
+        Assert.Equal(CommandResultStatus.Executed, Assert.Single(after.CommandResults).Status);
+        Assert.Equal(moduleBefore.AvailableCapacityKg!.Value - 100, moduleAfter.AvailableCapacityKg);
+    }
+
     // --- Sell ----------------------------------------------------------------
 
     [Fact]
@@ -477,6 +495,25 @@ public class TradeCommandTests
         var ship = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId);
         var cargoModule = ship.Modules.Single(m => m.ModuleId == CargoModuleId);
         Assert.Equal(10, Assert.Single(cargoModule.Cargo).Quantity);
+    }
+
+    [Fact]
+    public void Sell_increases_stored_available_capacity_kg_by_removed_cargo_mass()
+    {
+        // Authoritative runtime state (not recomputed at snapshot time) — asserts the stored
+        // InstalledModuleSnapshot.AvailableCapacityKg is updated in place by the mutation itself.
+        var engine = CreateEngine(shipCargo: [(EnergyCellsId, 20)], stationCredits: 1_000_000);
+
+        var before = engine.CaptureSnapshotForTests();
+        var moduleBefore = before.InstalledModules.Single(m => m.ModuleId == CargoModuleId);
+
+        engine.ReceiveCommand(SellCommand(EnergyCellsId, quantity: 10)); // removes 10 * 10kg = 100kg
+        var after = engine.CaptureSnapshotForTests();
+        var moduleAfter = after.InstalledModules.Single(m => m.ModuleId == CargoModuleId);
+
+        Assert.Equal(CommandResultStatus.Executed, Assert.Single(after.CommandResults).Status);
+        Assert.Null(after.CommandResults[0].ExecutedQuantity); // fully executed
+        Assert.Equal(moduleBefore.AvailableCapacityKg!.Value + 100, moduleAfter.AvailableCapacityKg);
     }
 
     // --- Refuel ----------------------------------------------------------------

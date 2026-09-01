@@ -10,22 +10,46 @@ namespace DeepSpaceSaga.Client.UI.Screens.Finance;
 /// the Money/Trading/StationInventory mechanics it will report on are not yet
 /// implemented in the Engine, so every section shows a "not available yet" line
 /// instead of fabricated numbers. Opened via the bottom-center Finance panel
-/// button or Ctrl+F; closes via the × button, Escape, or a click outside the
-/// panel (on the dimmed background). Pause-on-open/resume-on-close
-/// is handled generically by SkiaWindow's PushModalAsync/PopModalAsync — this
-/// screen has no speed/pause logic of its own.
+/// button or Ctrl+F; closes via the toolbar's exit-button icon (see StationToolbar),
+/// Escape, or a click outside the panel (on the dimmed background).
+/// Pause-on-open/resume-on-close is handled generically by SkiaWindow's
+/// PushModalAsync/PopModalAsync — this screen has no speed/pause logic of its own.
 /// </summary>
 public sealed class FinanceScreen : IScreen
 {
+    private readonly SnapshotBuffer? _buffer;
+
     private int _screenWidth;
     private int _screenHeight;
-    private bool _isCloseHovered;
+    private bool _isStationNameHovered;
+    private bool _isExitButtonHovered;
 
     /// <summary>
-    /// Panel background with title bar, at the exact 1400×900 panel size (ТЗ
-    /// ScreenCatalog.md standard for gameplay-mechanic windows). Loaded once and
-    /// shared by every FinanceScreen instance; falls back to MenuStyle.DrawPanel's
-    /// plain fill if the file is missing.
+    /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
+    /// food-rations readout, or null while not hovering it — the tooltip only appears
+    /// once MenuStyle.TooltipHoverDelaySeconds has elapsed since this moment (checked in
+    /// Render every frame, since OnMouseMove alone would never fire again while the
+    /// pointer sits still).
+    /// </summary>
+    private long? _foodRationsHoverStartedAtMs;
+
+    /// <summary>Test seam — true once the food-rations hover delay has elapsed.</summary>
+    internal bool IsFoodRationsTooltipVisible =>
+        _foodRationsHoverStartedAtMs is { } startedAtMs
+        && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
+
+    public FinanceScreen(SnapshotBuffer? buffer = null)
+    {
+        _buffer = buffer;
+    }
+
+    /// <summary>
+    /// Panel background with title bar. The PNG asset is a fixed 1400×900 bitmap;
+    /// since the panel standard (ТЗ ScreenCatalog.md) is now 1400×800, it is drawn
+    /// stretched to <see cref="FinanceLayout.PanelWidth"/>x<see cref="FinanceLayout.PanelHeight"/>
+    /// (see DrawBitmap call below) until the asset itself is redrawn at the new size.
+    /// Loaded once and shared by every FinanceScreen instance; falls back to
+    /// MenuStyle.DrawPanel's plain fill if the file is missing.
     /// </summary>
     private static readonly SKBitmap? BackgroundImage =
         LoadImage("Images/UI/mechanics-window-background-titlebar-1400x900.png");
@@ -46,7 +70,12 @@ public sealed class FinanceScreen : IScreen
         "Recent trading results: not available yet",
     };
 
-    public void OnActivated() => _isCloseHovered = false;
+    public void OnActivated()
+    {
+        _isStationNameHovered = false;
+        _isExitButtonHovered = false;
+        _foodRationsHoverStartedAtMs = null;
+    }
 
     public void OnDeactivated() { }
 
@@ -58,9 +87,11 @@ public sealed class FinanceScreen : IScreen
         if (button != MouseButton.Left)
             return ScreenEvent.None;
 
-        var hit = FinanceLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        if (hit == FinanceButton.Close)
+        if (IsExitButtonHit(x, y))
             return ScreenEvent.CloseFinance;
+
+        if (IsStationNameHit(x, y))
+            return ScreenEvent.NavigateToStation;
 
         // Click on the dimmed background outside the panel also closes it.
         if (!FinanceLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
@@ -74,9 +105,17 @@ public sealed class FinanceScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
-        var hit = FinanceLayout.HitTest(x, y, _screenWidth, _screenHeight);
-        _isCloseHovered = hit == FinanceButton.Close;
-        return _isCloseHovered;
+        _isStationNameHovered = IsStationNameHit(x, y);
+        _isExitButtonHovered = IsExitButtonHit(x, y);
+
+        // Not a button — hovering it only shows a delayed tooltip (see Render), so it must
+        // not affect the interactive-cursor swap the way the name link / exit button do.
+        if (IsFoodRationsHit(x, y))
+            _foodRationsHoverStartedAtMs ??= Environment.TickCount64;
+        else
+            _foodRationsHoverStartedAtMs = null;
+
+        return _isStationNameHovered || _isExitButtonHovered;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -94,8 +133,14 @@ public sealed class FinanceScreen : IScreen
         else
             MenuStyle.DrawPanel(canvas, panelRect);
 
+        var snapshot = _buffer?.Latest?.Snapshot;
+        string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
+        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
+            windowName: "FINANCE", isExitButtonHovered: _isExitButtonHovered,
+            foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
+            isFoodRationsHovered: IsFoodRationsTooltipVisible);
+
         float cx = pl + FinanceLayout.PanelWidth / 2f;
-        canvas.DrawText("FINANCE", cx, pt + FinanceLayout.TitleY, MenuStyle.TextTitle);
 
         float textY = pt + FinanceLayout.BodyStartY;
         foreach (var line in PlaceholderLines)
@@ -103,15 +148,36 @@ public sealed class FinanceScreen : IScreen
             canvas.DrawText(line, cx, textY, MenuStyle.TextStatus);
             textY += FinanceLayout.BodyLineHeight;
         }
-
-        DrawCloseButton(canvas, pl, pt);
     }
 
-    private void DrawCloseButton(SKCanvas canvas, float panelLeft, float panelTop)
+    /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>
+    private bool IsStationNameHit(float x, float y)
     {
-        var (left, top, right, bottom) = FinanceLayout.CloseButtonLocalRect();
-        var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
+        string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
+        if (string.IsNullOrEmpty(stationName))
+            return false;
 
-        MenuStyle.DrawButton(canvas, rect, "×", _isCloseHovered ? ButtonState.Hovered : ButtonState.Normal);
+        float pl = FinanceLayout.PanelLeft(_screenWidth);
+        float pt = FinanceLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.NameLocalRect(stationName);
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's exit-button icon (see StationToolbar).</summary>
+    private bool IsExitButtonHit(float x, float y)
+    {
+        float pl = FinanceLayout.PanelLeft(_screenWidth);
+        float pt = FinanceLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.ExitButtonLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's food-rations readout (see StationToolbar).</summary>
+    private bool IsFoodRationsHit(float x, float y)
+    {
+        float pl = FinanceLayout.PanelLeft(_screenWidth);
+        float pt = FinanceLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.FoodRationsLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 }

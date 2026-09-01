@@ -47,5 +47,12 @@ public enum ScreenEvent
     OpenHire,
     CloseHire,
     OpenContracts,
-    CloseContracts
+    CloseContracts,
+    /// <summary>
+    /// Return to the Station hub from one of its nested windows (Trade/Hire/Contracts/
+    /// Finance) — raised by clicking the station-name label in StationToolbar. Closes the
+    /// current window and ensures Station ends up open, whether or not Station was
+    /// already directly beneath it (see SkiaWindow.NavigateToStationAsync).
+    /// </summary>
+    NavigateToStation
 }

@@ -533,7 +533,8 @@ public sealed class SimulationEngine : IDisposable
                 ActiveCommandType: module.ActiveCycle?.CommandType,
                 FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null,
                 Commands: BuildModuleCommands(moduleType.CommandTypeIds),
-                Cargo: BuildCargoProjection(module.Cargo)));
+                Cargo: BuildCargoProjection(module.Cargo),
+                AvailableCapacityKg: module.AvailableCapacityKg));
         }
 
         return builder.MoveToImmutable();
@@ -556,6 +557,32 @@ public sealed class SimulationEngine : IDisposable
 
         return builder.MoveToImmutable();
     }
+
+    /// <summary>
+    /// Sum of a module's cargo mass in kg: <c>sum(stack.quantity * item.unitMassKg)</c> over all
+    /// cargo stacks. Shared by the Buy-command capacity validation and the
+    /// <see cref="InstalledModuleSnapshot.AvailableCapacityKg"/> projection so both use the exact
+    /// same authoritative mass computation.
+    /// </summary>
+    private long ComputeCargoMassKg(ImmutableArray<CargoStackRuntime> cargo)
+    {
+        long cargoMassKg = 0;
+        foreach (var stack in cargo)
+            cargoMassKg += stack.Quantity * _registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).UnitMassKg;
+
+        return cargoMassKg;
+    }
+
+    /// <summary>
+    /// Authoritative <see cref="InstalledModuleRuntime.AvailableCapacityKg"/> value for a module,
+    /// given its type and current cargo: <c>cargoCapacityKg - ComputeCargoMassKg(cargo)</c>, or
+    /// null for modules without CargoCapacityKg. Called once at module creation
+    /// (<see cref="BuildRuntimeModules"/>) and again whenever a module's Cargo is mutated
+    /// (trade.buy / trade.sell in <see cref="TryStartTradeCommand"/>) so the stored value stays
+    /// authoritative runtime state rather than being recomputed at snapshot time.
+    /// </summary>
+    private long? ComputeAvailableCapacityKg(ModuleTypeDefinition moduleType, ImmutableArray<CargoStackRuntime> cargo) =>
+        moduleType.CargoCapacityKg is > 0 ? moduleType.CargoCapacityKg.Value - ComputeCargoMassKg(cargo) : null;
 
     /// <summary>
     /// Per-module command metadata (display name + target requirement) for the
@@ -821,6 +848,13 @@ public sealed class SimulationEngine : IDisposable
             // — valid, and it must not block the first turn.
             long? lastTurnGameTimeMs = ResolveLastTurnGameTimeMs(module, moduleType);
 
+            // Available cargo capacity is authoritative runtime state, computed once here at
+            // module-creation time (this covers both a fresh scenario load and a save-game load —
+            // it is fully deterministic from CargoCapacityKg + persisted Cargo, so recomputing it
+            // from scratch on every BuildRuntimeModules run is correct and never desyncs) and kept
+            // up to date afterward by trade.buy/trade.sell (TryStartTradeCommand).
+            long? availableCapacityKg = ComputeAvailableCapacityKg(moduleType, cargo);
+
             modules.Add(new InstalledModuleRuntime(
                 module.ModuleId,
                 moduleTypeIndex,
@@ -831,7 +865,8 @@ public sealed class SimulationEngine : IDisposable
                 module.ActiveCycle,
                 cargo,
                 fuelAmountKg,
-                lastTurnGameTimeMs));
+                lastTurnGameTimeMs,
+                availableCapacityKg));
         }
 
         return modules.ToImmutable();
@@ -1609,9 +1644,7 @@ public sealed class SimulationEngine : IDisposable
             if (qty > stationInventoryItem.StockQuantity)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientStationStock);
 
-            long currentCargoMassKg = 0;
-            foreach (var stack in module.Cargo)
-                currentCargoMassKg += stack.Quantity * _registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).UnitMassKg;
+            long currentCargoMassKg = ComputeCargoMassKg(module.Cargo);
 
             long addedMassKg = qty * itemType.UnitMassKg;
             if (currentCargoMassKg + addedMassKg > cargoCapacityKg)
@@ -1629,7 +1662,7 @@ public sealed class SimulationEngine : IDisposable
                 var updatedCargo = stackIndex >= 0
                     ? m.Cargo.SetItem(stackIndex, m.Cargo[stackIndex] with { Quantity = m.Cargo[stackIndex].Quantity + qty })
                     : m.Cargo.Add(new CargoStackRuntime(itemTypeIndex, qty));
-                return m with { Cargo = updatedCargo };
+                return m with { Cargo = updatedCargo, AvailableCapacityKg = ComputeAvailableCapacityKg(moduleType, updatedCargo) };
             });
 
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
@@ -1676,7 +1709,7 @@ public sealed class SimulationEngine : IDisposable
                 var updatedCargo = remaining > 0
                     ? m.Cargo.SetItem(idx, m.Cargo[idx] with { Quantity = remaining })
                     : m.Cargo.RemoveAt(idx);
-                return m with { Cargo = updatedCargo };
+                return m with { Cargo = updatedCargo, AvailableCapacityKg = ComputeAvailableCapacityKg(moduleType, updatedCargo) };
             });
 
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs,
@@ -3098,7 +3131,8 @@ internal sealed record InstalledModuleRuntime(
     ActiveCycleData? ActiveCycle,
     ImmutableArray<CargoStackRuntime> Cargo,
     long FuelAmountKg = 0,
-    long? LastTurnGameTimeMs = null);
+    long? LastTurnGameTimeMs = null,
+    long? AvailableCapacityKg = null);
 
 internal sealed record CargoStackRuntime(
     int ItemTypeIndex,

@@ -31,7 +31,7 @@
 
 ## Стандартный размер окна игровых механик
 
-1400×900 px — стандартный размер панели для окон игровых механик: `Station`, `Trade`, `Hire`, `Contracts`, `Cargo`, `Finance`, `Loot`, `Ship`, `Character Communication`, `Dialog`. На этот размер переведены `Finance` (`FinanceLayout.PanelWidth/PanelHeight`) и `Ship` (`ShipLayout.PanelWidth/PanelHeight`).
+1400×800 px — стандартный размер панели для окон игровых механик: `Station`, `Trade`, `Hire`, `Contracts`, `Cargo`, `Finance`, `Loot`, `Ship`, `Character Communication`, `Dialog`. На этот размер переведены `Station`, `Trade`, `Hire`, `Contracts`, `Finance` (`FinanceLayout.PanelWidth/PanelHeight`) и `Ship` (`ShipLayout.PanelWidth/PanelHeight`).
 
 Закрытие окна игровой механики: кнопка `×`, `Escape` или клик по затемнённому фону за пределами панели — единообразно для всех окон этого стандарта (см. `FinanceScreen`/`ShipScreen`).
 

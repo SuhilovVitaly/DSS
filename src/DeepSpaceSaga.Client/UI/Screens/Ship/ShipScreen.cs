@@ -22,10 +22,12 @@ public sealed class ShipScreen : IScreen
     private bool _isCloseHovered;
 
     /// <summary>
-    /// Panel background with title bar, at the exact 1400×900 panel size (ТЗ
-    /// ScreenCatalog.md standard for gameplay-mechanic windows). Loaded once and
-    /// shared by every ShipScreen instance; falls back to MenuStyle.DrawPanel's
-    /// plain fill if the file is missing.
+    /// Panel background with title bar. The PNG asset is a fixed 1400×900 bitmap;
+    /// since the panel standard (ТЗ ScreenCatalog.md) is now 1400×800, it is drawn
+    /// stretched to <see cref="ShipLayout.PanelWidth"/>x<see cref="ShipLayout.PanelHeight"/>
+    /// (see DrawBitmap call below) until the asset itself is redrawn at the new size.
+    /// Loaded once and shared by every ShipScreen instance; falls back to
+    /// MenuStyle.DrawPanel's plain fill if the file is missing.
     /// </summary>
     private static readonly SKBitmap? BackgroundImage =
         LoadImage("Images/UI/mechanics-window-background-titlebar-1400x900.png");
