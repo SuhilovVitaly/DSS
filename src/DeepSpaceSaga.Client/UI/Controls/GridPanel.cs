@@ -39,6 +39,14 @@ public static class GridPanel
     public const float RowHeight = 30f;
     private const float RowLabelPaddingX = 20f;
 
+    // ── Trailing Selling price / Selling count columns, right edge of the row ──
+    private const string PriceColumnHeader = "Selling price";
+    private const string CountColumnHeader = "Selling count";
+    private const float PriceColumnWidth = 140f;
+    private const float CountColumnWidth = 140f;
+    private const float PriceColumnLeftOffset = RowWidth - PriceColumnWidth - CountColumnWidth;
+    private const float CountColumnLeftOffset = RowWidth - CountColumnWidth;
+
     // ── Scrollbar, relative to the header's top-left ───────────────────────────
     private const float ScrollbarOffsetX = 935f;
     public const float ScrollbarWidth = 22f;
@@ -86,6 +94,20 @@ public static class GridPanel
     {
         Color = SKColors.Black, TextSize = 14f, IsAntialias = true,
         TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceRegular
+    };
+
+    /// <summary>Selling price/count value, centered under its column header — same size/typeface as <see cref="_rowLabelPaint"/>, just center-aligned.</summary>
+    private static readonly SKPaint _rowValuePaint = new()
+    {
+        Color = SKColors.Black, TextSize = 14f, IsAntialias = true,
+        TextAlign = SKTextAlign.Center, Typeface = MenuStyle.TypefaceRegular
+    };
+
+    /// <summary>Selling price/count column header, drawn on the gray header bar next to the title.</summary>
+    private static readonly SKPaint _columnHeaderPaint = new()
+    {
+        Color = SKColors.White, TextSize = 13f, IsAntialias = true,
+        TextAlign = SKTextAlign.Center, Typeface = MenuStyle.TypefaceRegular
     };
 
     private static readonly SKPaint _scrollbarTrackPaint = new()
@@ -157,6 +179,14 @@ public static class GridPanel
         float top = originY + RowOffsetY + rowIndex * RowHeight;
         return new SKRect(originX + RowOffsetX, top, originX + RowOffsetX + RowWidth, top + RowHeight);
     }
+
+    /// <summary>Horizontal center of the Selling price column — shared by its header label and every row's value, so they always line up.</summary>
+    private static float PriceColumnCenterX(float originX) =>
+        originX + RowOffsetX + PriceColumnLeftOffset + PriceColumnWidth / 2f;
+
+    /// <summary>Horizontal center of the Selling count column, at the row's trailing edge — see <see cref="PriceColumnCenterX"/>.</summary>
+    private static float CountColumnCenterX(float originX) =>
+        originX + RowOffsetX + CountColumnLeftOffset + CountColumnWidth / 2f;
 
     /// <summary>Track height matches the currently drawn rows — <see cref="DrawnRowCount"/> of <paramref name="rowCount"/>, not the fixed <see cref="MaxVisibleRows"/> capacity.</summary>
     public static SKRect ScrollbarTrackLocalRect(float originX, float originY, int rowCount)
@@ -237,14 +267,21 @@ public static class GridPanel
     /// exactly <paramref name="rowCount"/> entries when provided; omit for a plain colored
     /// grid with no text.
     /// </param>
+    /// <param name="priceValues">Optional per-row "Selling price" column text, same <c>scrollOffset + i</c> indexing as <paramref name="rowLabels"/>.</param>
+    /// <param name="countValues">Optional per-row "Selling count" column text, same <c>scrollOffset + i</c> indexing as <paramref name="rowLabels"/>.</param>
     public static void Draw(
         SKCanvas canvas, float originX, float originY, string title, int rowCount,
         int scrollOffset, bool isScrollUpHovered, bool isScrollDownHovered,
-        IReadOnlyList<string>? rowLabels = null)
+        IReadOnlyList<string>? rowLabels = null,
+        IReadOnlyList<string>? priceValues = null, IReadOnlyList<string>? countValues = null)
     {
         var header = HeaderLocalRect(originX, originY);
         canvas.DrawRoundRect(header, HeaderCornerRadius, HeaderCornerRadius, _headerPaint);
         canvas.DrawText(title, header.Left + TitlePadding, header.Top + TitlePadding + MenuStyle.ButtonFontSize - TitleBaselineShift, _titlePaint);
+
+        float columnHeaderBaselineY = MenuStyle.VerticalCenterBaseline(header, _columnHeaderPaint);
+        canvas.DrawText(PriceColumnHeader, PriceColumnCenterX(originX), columnHeaderBaselineY, _columnHeaderPaint);
+        canvas.DrawText(CountColumnHeader, CountColumnCenterX(originX), columnHeaderBaselineY, _columnHeaderPaint);
 
         bool isEmpty = rowCount == 0;
         bool isActive = IsScrollbarActive(rowCount);
@@ -258,11 +295,16 @@ public static class GridPanel
             canvas.DrawRect(rowRect, _rowBorderPaint);
 
             int labelIndex = effectiveOffset + i;
+            float baselineY = MenuStyle.VerticalCenterBaseline(rowRect, _rowLabelPaint);
+
             if (rowLabels is not null && labelIndex < rowLabels.Count)
-            {
-                float baselineY = MenuStyle.VerticalCenterBaseline(rowRect, _rowLabelPaint);
                 canvas.DrawText(rowLabels[labelIndex], rowRect.Left + RowLabelPaddingX, baselineY, _rowLabelPaint);
-            }
+
+            if (priceValues is not null && labelIndex < priceValues.Count)
+                canvas.DrawText(priceValues[labelIndex], PriceColumnCenterX(originX), baselineY, _rowValuePaint);
+
+            if (countValues is not null && labelIndex < countValues.Count)
+                canvas.DrawText(countValues[labelIndex], CountColumnCenterX(originX), baselineY, _rowValuePaint);
         }
 
         DrawScrollbar(canvas, originX, originY, rowCount, effectiveOffset, isActive, isScrollUpHovered, isScrollDownHovered);

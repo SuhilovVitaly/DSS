@@ -106,24 +106,36 @@ public sealed class TradeScreen : IScreen
     private const float GridPanelOriginY = 76f;
     private const string ResourcesGridTitle = "Resources";
 
-    /// <summary>Test seam — the resources grid's current row labels (see <see cref="ResolveResourceNames"/>).</summary>
-    internal string[] ResourceNames => ResolveResourceNames(_buffer?.Latest?.Snapshot);
+    /// <summary>Test seam — the resources grid's current row labels (see <see cref="ResolveResourceRows"/>).</summary>
+    internal string[] ResourceNames => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.Name).ToArray();
+
+    /// <summary>Test seam — the resources grid's current "Selling price" column values, same row order as <see cref="ResourceNames"/>.</summary>
+    internal string[] ResourcePrices => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.Price).ToArray();
+
+    /// <summary>Test seam — the resources grid's current "Selling count" column values, same row order as <see cref="ResourceNames"/>.</summary>
+    internal string[] ResourceCounts => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.Count).ToArray();
+
+    /// <summary>One resources-grid row: display name plus its "Selling price"/"Selling count" column text.</summary>
+    private readonly record struct ResourceRow(string Name, string Price, string Count);
 
     /// <summary>
-    /// Display names of the docked station's <see cref="TradeItemCategories.Resource"/>
-    /// items, alphabetically sorted — empty (not null) while undocked or before the first
+    /// The docked station's <see cref="TradeItemCategories.Resource"/> items, alphabetically
+    /// sorted by display name — empty (not null) while undocked or before the first
     /// snapshot arrives, which <see cref="GridPanel"/> renders as its dark-gray empty state.
     /// </summary>
-    private static string[] ResolveResourceNames(AuthoritativeSnapshot? snapshot)
+    private static ResourceRow[] ResolveResourceRows(AuthoritativeSnapshot? snapshot)
     {
         var items = snapshot?.DockedStationTrade?.Items ?? default;
         if (items.IsDefaultOrEmpty)
-            return Array.Empty<string>();
+            return Array.Empty<ResourceRow>();
 
         return items
             .Where(item => item.Category == TradeItemCategories.Resource)
-            .Select(item => ItemDisplayName(item.ItemTypeId))
-            .OrderBy(name => name, StringComparer.Ordinal)
+            .Select(item => new ResourceRow(
+                ItemDisplayName(item.ItemTypeId),
+                item.UnitPriceCredits.ToString(),
+                item.StockQuantity.ToString()))
+            .OrderBy(row => row.Name, StringComparer.Ordinal)
             .ToArray();
     }
 
@@ -294,10 +306,13 @@ public sealed class TradeScreen : IScreen
             pl + _contentOutlineRect.Right, pt + _contentOutlineRect.Bottom);
         canvas.DrawRect(contentRect, _contentOutlinePaint);
 
-        var resourceNames = ResolveResourceNames(snapshot);
-        _scrollOffset = Math.Clamp(_scrollOffset, 0, GridPanel.MaxScrollOffset(resourceNames.Length));
-        GridPanel.Draw(canvas, pl + GridPanelOriginX, pt + GridPanelOriginY, ResourcesGridTitle, resourceNames.Length,
-            _scrollOffset, _isScrollUpHovered, _isScrollDownHovered, resourceNames);
+        var resourceRows = ResolveResourceRows(snapshot);
+        _scrollOffset = Math.Clamp(_scrollOffset, 0, GridPanel.MaxScrollOffset(resourceRows.Length));
+        var resourceNames = Array.ConvertAll(resourceRows, row => row.Name);
+        var resourcePrices = Array.ConvertAll(resourceRows, row => row.Price);
+        var resourceCounts = Array.ConvertAll(resourceRows, row => row.Count);
+        GridPanel.Draw(canvas, pl + GridPanelOriginX, pt + GridPanelOriginY, ResourcesGridTitle, resourceRows.Length,
+            _scrollOffset, _isScrollUpHovered, _isScrollDownHovered, resourceNames, resourcePrices, resourceCounts);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.
@@ -308,8 +323,8 @@ public sealed class TradeScreen : IScreen
             isFuelHovered: IsFuelTooltipVisible);
     }
 
-    /// <summary>Current resources-grid row count, from the docked station's live trade snapshot — see <see cref="ResolveResourceNames"/>.</summary>
-    private int CurrentResourceRowCount() => ResolveResourceNames(_buffer?.Latest?.Snapshot).Length;
+    /// <summary>Current resources-grid row count, from the docked station's live trade snapshot — see <see cref="ResolveResourceRows"/>.</summary>
+    private int CurrentResourceRowCount() => ResolveResourceRows(_buffer?.Latest?.Snapshot).Length;
 
     /// <summary>True when (x, y) lands on the resources grid's scrollbar up-arrow button (see <see cref="GridPanel.ScrollUpArrowLocalRect"/>).</summary>
     private bool IsScrollUpArrowHit(float x, float y)

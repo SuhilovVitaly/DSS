@@ -300,6 +300,17 @@ public class TradeScreenTests
             screen.ResourceNames);
     }
 
+    /// <summary>Selling price/count columns read UnitPriceCredits/StockQuantity off the same items, in the same name-sorted row order as ResourceNames — never re-sorted independently.</summary>
+    [Fact]
+    public void ResourcePrices_and_ResourceCounts_match_the_station_snapshot_in_ResourceNames_order()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+
+        // Row order: Carbon Ore, Ice, Iron Ore, Magnesium Ore, Silicon, Uranium Ore.
+        Assert.Equal(new[] { "30", "10", "5", "30", "40", "30" }, screen.ResourcePrices);
+        Assert.Equal(new[] { "90", "320", "410", "120", "70", "20" }, screen.ResourceCounts);
+    }
+
     /// <summary>
     /// Regression for the reported bug: 6 resource items in a 5-row grid must let the
     /// down arrow actually scroll (previously the scrollbar was active and the thumb
