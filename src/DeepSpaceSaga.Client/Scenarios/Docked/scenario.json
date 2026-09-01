@@ -159,6 +159,10 @@
             {
                 "itemTypeId": "item.uranium-ore",
                 "quantity": 20
+            },
+            {
+                "itemTypeId": "item.carbon-ore",
+                "quantity": 510
             }
         ]
       },

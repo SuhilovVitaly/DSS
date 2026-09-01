@@ -268,6 +268,32 @@ public class TradeScreenTests
         return buffer;
     }
 
+    /// <summary>Resource names come from the docked station's real trade snapshot, filtered to TradeItemCategories.Resource and alphabetically sorted — Good items (Fuel here) are excluded.</summary>
+    [Fact]
+    public void ResourceNames_are_resource_category_items_sorted_alphabetically()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(
+                new ObjectMotionSnapshot("SHIP-01", 0, 0, 0, 0, IsDocked: true, DockedStationObjectId: "STN-01"),
+                new ObjectMotionSnapshot("STN-01", 0, 0, 0, 0, DisplayName: "Test Station")),
+            PlayerShipObjectId: "SHIP-01",
+            DockedStationTrade: new StationTradeSnapshot("STN-01", ImmutableArray.Create(
+                new StationInventoryItemSnapshot("item.uranium-ore", 20, 30, 20, TradeItemCategories.Resource),
+                new StationInventoryItemSnapshot("item.silicon", 70, 40, 70, TradeItemCategories.Resource),
+                new StationInventoryItemSnapshot("item.fuel", 700, 5, 700, TradeItemCategories.Good),
+                new StationInventoryItemSnapshot("item.ice", 320, 10, 320, TradeItemCategories.Resource),
+                new StationInventoryItemSnapshot("item.iron-ore", 410, 5, 410, TradeItemCategories.Resource),
+                new StationInventoryItemSnapshot("item.magnesium-ore", 120, 30, 120, TradeItemCategories.Resource)))));
+
+        var screen = new TradeScreen(buffer);
+
+        Assert.Equal(
+            new[] { "Ice", "Iron Ore", "Magnesium Ore", "Silicon", "Uranium Ore" },
+            screen.ResourceNames);
+    }
+
     /// <summary>Screen-space center of the toolbar's "Test Station" name label (see DockedBuffer).</summary>
     private static (float X, float Y) StationNameCenter()
     {

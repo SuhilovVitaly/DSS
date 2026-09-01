@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Controls;
@@ -36,6 +37,7 @@ public static class GridPanel
     private const float RowOffsetY = 44f;
     public const float RowWidth = 900f;
     public const float RowHeight = 30f;
+    private const float RowLabelPaddingX = 20f;
 
     // ── Scrollbar, relative to the header's top-left ───────────────────────────
     private const float ScrollbarOffsetX = 935f;
@@ -78,6 +80,12 @@ public static class GridPanel
     private static readonly SKPaint _emptyRowFillPaint = new()
     {
         Color = InactiveGray, Style = SKPaintStyle.Fill, IsAntialias = true
+    };
+
+    private static readonly SKPaint _rowLabelPaint = new()
+    {
+        Color = SKColors.Black, TextSize = 14f, IsAntialias = true,
+        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceRegular
     };
 
     private static readonly SKPaint _scrollbarTrackPaint = new()
@@ -163,9 +171,16 @@ public static class GridPanel
 
     /// <param name="scrollPosition">0..<paramref name="scrollStepCount"/>, moves the thumb within the track — ignored while the scrollbar is inactive.</param>
     /// <param name="scrollStepCount">Number of discrete thumb positions the caller's arrow clicks step through.</param>
+    /// <param name="rowLabels">
+    /// Optional per-row text (e.g. item names), drawn in black with a <see cref="RowLabelPaddingX"/>
+    /// left inset — index <c>i</c> labels the row at <see cref="RowLocalRect"/>'s index <c>i</c>.
+    /// Must have exactly <paramref name="rowCount"/> entries when provided; omit for a plain
+    /// colored grid with no text.
+    /// </param>
     public static void Draw(
         SKCanvas canvas, float originX, float originY, string title, int rowCount,
-        int scrollPosition, int scrollStepCount, bool isScrollUpHovered, bool isScrollDownHovered)
+        int scrollPosition, int scrollStepCount, bool isScrollUpHovered, bool isScrollDownHovered,
+        IReadOnlyList<string>? rowLabels = null)
     {
         var header = HeaderLocalRect(originX, originY);
         canvas.DrawRoundRect(header, HeaderCornerRadius, HeaderCornerRadius, _headerPaint);
@@ -179,6 +194,12 @@ public static class GridPanel
             var fillPaint = isEmpty ? _emptyRowFillPaint : i % 2 == 0 ? _rowFillLightPaint : _rowFillDarkPaint;
             canvas.DrawRect(rowRect, fillPaint);
             canvas.DrawRect(rowRect, _rowBorderPaint);
+
+            if (rowLabels is not null && i < rowLabels.Count)
+            {
+                float baselineY = MenuStyle.VerticalCenterBaseline(rowRect, _rowLabelPaint);
+                canvas.DrawText(rowLabels[i], rowRect.Left + RowLabelPaddingX, baselineY, _rowLabelPaint);
+            }
         }
 
         DrawScrollbar(canvas, originX, originY, rowCount, scrollPosition, scrollStepCount, isScrollUpHovered, isScrollDownHovered);

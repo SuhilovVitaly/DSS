@@ -39,6 +39,14 @@
             "basePriceCredits": 30,
             "tradeCategory": "Resource",
             "catalogCode": "RES-2005"
+        },
+        {
+            "typeId": "item.carbon-ore",
+            "displayName": "Carbon Ore",
+            "unitMassKg": 1,
+            "basePriceCredits": 30,
+            "tradeCategory": "Resource",
+            "catalogCode": "RES-2006"
         }
     ]
 }

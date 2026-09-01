@@ -1,5 +1,7 @@
+using System.Linq;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
 using SkiaSharp;
 
@@ -86,18 +88,48 @@ public sealed class TradeScreen : IScreen
         Color = SKColors.White, Style = SKPaintStyle.Stroke, StrokeWidth = 1f, IsAntialias = true
     };
 
-    /// <summary>
-    /// Anchor (the header bar's top-left) and row count for the <see cref="GridPanel"/>
-    /// resources list — see that control's doc comment for how header/rows/scrollbar are
-    /// laid out relative to this point. There is no real trade data yet, so the count is
-    /// truthfully 0: <see cref="GridPanel"/> renders that as dark-gray placeholder rows and
-    /// an inactive scrollbar rather than pretending there's a full page of items.
-    /// </summary>
+    /// <summary>Anchor (the header bar's top-left) for the <see cref="GridPanel"/> resources list — see that control's doc comment for how header/rows/scrollbar are laid out relative to this point.</summary>
     private const float GridPanelOriginX = 15f;
     private const float GridPanelOriginY = 76f;
     private const string ResourcesGridTitle = "Resources";
-    private const int ResourcesRowCount = 0;
     private const int ScrollbarMockStepCount = 4;
+
+    /// <summary>Test seam — the resources grid's current row labels (see <see cref="ResolveResourceNames"/>).</summary>
+    internal string[] ResourceNames => ResolveResourceNames(_buffer?.Latest?.Snapshot);
+
+    /// <summary>
+    /// Display names of the docked station's <see cref="TradeItemCategories.Resource"/>
+    /// items, alphabetically sorted — empty (not null) while undocked or before the first
+    /// snapshot arrives, which <see cref="GridPanel"/> renders as its dark-gray empty state.
+    /// </summary>
+    private static string[] ResolveResourceNames(AuthoritativeSnapshot? snapshot)
+    {
+        var items = snapshot?.DockedStationTrade?.Items ?? default;
+        if (items.IsDefaultOrEmpty)
+            return Array.Empty<string>();
+
+        return items
+            .Where(item => item.Category == TradeItemCategories.Resource)
+            .Select(item => ItemDisplayName(item.ItemTypeId))
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Maps a resource item type id to its localized display name — mirrors the pre-
+    /// redesign TradeScreen's item-name switch (story-20260825-084409 Batch 3): the client
+    /// has no item-type display-name catalog yet, so known ids are mapped by hand, falling
+    /// back to the raw id for any future/unknown one.
+    /// </summary>
+    private static string ItemDisplayName(string itemTypeId) => itemTypeId switch
+    {
+        "item.ice" => Localization.Get("Trade.ItemIce"),
+        "item.iron-ore" => Localization.Get("Trade.ItemIronOre"),
+        "item.silicon" => Localization.Get("Trade.ItemSilicon"),
+        "item.magnesium-ore" => Localization.Get("Trade.ItemMagnesiumOre"),
+        "item.uranium-ore" => Localization.Get("Trade.ItemUraniumOre"),
+        _ => itemTypeId
+    };
 
     public TradeScreen(SnapshotBuffer? buffer = null)
     {
@@ -132,7 +164,7 @@ public sealed class TradeScreen : IScreen
         if (IsStationNameHit(x, y))
             return ScreenEvent.NavigateToStation;
 
-        if (GridPanel.IsScrollbarActive(ResourcesRowCount))
+        if (GridPanel.IsScrollbarActive(CurrentResourceRowCount()))
         {
             if (IsScrollUpArrowHit(x, y))
             {
@@ -161,7 +193,7 @@ public sealed class TradeScreen : IScreen
     {
         _isStationNameHovered = IsStationNameHit(x, y);
         _isExitButtonHovered = IsExitButtonHit(x, y);
-        bool isScrollbarActive = GridPanel.IsScrollbarActive(ResourcesRowCount);
+        bool isScrollbarActive = GridPanel.IsScrollbarActive(CurrentResourceRowCount());
         _isScrollUpHovered = isScrollbarActive && IsScrollUpArrowHit(x, y);
         _isScrollDownHovered = isScrollbarActive && IsScrollDownArrowHit(x, y);
 
@@ -220,8 +252,9 @@ public sealed class TradeScreen : IScreen
             pl + _contentOutlineRect.Right, pt + _contentOutlineRect.Bottom);
         canvas.DrawRect(contentRect, _contentOutlinePaint);
 
-        GridPanel.Draw(canvas, pl + GridPanelOriginX, pt + GridPanelOriginY, ResourcesGridTitle, ResourcesRowCount,
-            _scrollPosition, ScrollbarMockStepCount, _isScrollUpHovered, _isScrollDownHovered);
+        var resourceNames = ResolveResourceNames(snapshot);
+        GridPanel.Draw(canvas, pl + GridPanelOriginX, pt + GridPanelOriginY, ResourcesGridTitle, resourceNames.Length,
+            _scrollPosition, ScrollbarMockStepCount, _isScrollUpHovered, _isScrollDownHovered, resourceNames);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.
@@ -232,12 +265,15 @@ public sealed class TradeScreen : IScreen
             isFuelHovered: IsFuelTooltipVisible);
     }
 
+    /// <summary>Current resources-grid row count, from the docked station's live trade snapshot — see <see cref="ResolveResourceNames"/>.</summary>
+    private int CurrentResourceRowCount() => ResolveResourceNames(_buffer?.Latest?.Snapshot).Length;
+
     /// <summary>True when (x, y) lands on the resources grid's scrollbar up-arrow button (see <see cref="GridPanel.ScrollUpArrowLocalRect"/>).</summary>
     private bool IsScrollUpArrowHit(float x, float y)
     {
         float pl = TradeLayout.PanelLeft(_screenWidth);
         float pt = TradeLayout.PanelTop(_screenHeight);
-        var local = GridPanel.ScrollUpArrowLocalRect(GridPanelOriginX, GridPanelOriginY, ResourcesRowCount);
+        var local = GridPanel.ScrollUpArrowLocalRect(GridPanelOriginX, GridPanelOriginY, CurrentResourceRowCount());
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
@@ -246,7 +282,7 @@ public sealed class TradeScreen : IScreen
     {
         float pl = TradeLayout.PanelLeft(_screenWidth);
         float pt = TradeLayout.PanelTop(_screenHeight);
-        var local = GridPanel.ScrollDownArrowLocalRect(GridPanelOriginX, GridPanelOriginY, ResourcesRowCount);
+        var local = GridPanel.ScrollDownArrowLocalRect(GridPanelOriginX, GridPanelOriginY, CurrentResourceRowCount());
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
