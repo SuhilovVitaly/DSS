@@ -55,14 +55,28 @@ public sealed class TradeScreen : IScreen
     private float _scrollThumbDragGrabOffsetY;
 
     /// <summary>
-    /// Absolute index (same indexing as <see cref="GridPanel.HitTestRow"/>) of the
-    /// resource row the player last clicked — null while nothing is selected. Clamped in
-    /// <see cref="Render"/> if the resource count shrinks past it.
+    /// Item type id of the resource row the player last clicked — null while nothing is
+    /// selected. Identity, not a row index: sorting reorders <see cref="ResolveResourceRows"/>'
+    /// result, so the selection is resolved back to whatever index that item currently sits
+    /// at (<see cref="ResolveSelectedRowIndex"/>) every time it's needed, rather than being
+    /// invalidated by a resort. Never cleared by leaving/re-docking; the item just won't be
+    /// visible (index resolves to null) if it drops out of the station's trade snapshot.
     /// </summary>
-    private int? _selectedResourceIndex;
+    private string? _selectedResourceItemTypeId;
 
-    /// <summary>Test seam — current resources-grid row selection (see <see cref="_selectedResourceIndex"/>).</summary>
-    internal int? SelectedResourceIndex => _selectedResourceIndex;
+    /// <summary>Test seam — current resources-grid row selection, resolved to its index in the current sort order (see <see cref="_selectedResourceItemTypeId"/>).</summary>
+    internal int? SelectedResourceIndex =>
+        ResolveSelectedRowIndex(ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending));
+
+    /// <summary>Index of <see cref="_selectedResourceItemTypeId"/> within <paramref name="rows"/> (current sort order), or null if nothing is selected or the selected item isn't in <paramref name="rows"/>.</summary>
+    private int? ResolveSelectedRowIndex(ResourceRow[] rows)
+    {
+        if (_selectedResourceItemTypeId is null)
+            return null;
+
+        int index = Array.FindIndex(rows, row => row.ItemTypeId == _selectedResourceItemTypeId);
+        return index >= 0 ? index : null;
+    }
 
     /// <summary>Column the resources grid is currently sorted by — clicking a column title (<see cref="GridPanel.HitTestColumnTitle"/>) changes this; a second click on the same column flips <see cref="_sortDescending"/> instead.</summary>
     private GridSortColumn _sortColumn = GridSortColumn.Name;
@@ -142,11 +156,16 @@ public sealed class TradeScreen : IScreen
     /// <summary>Test seam — the resources grid's current "Buying count" column values (player's ship cargo quantity), same row order as <see cref="ResourceNames"/>.</summary>
     internal string[] ResourceBuyingCounts => ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending).Select(row => row.BuyingCount).ToArray();
 
-    /// <summary>One resources-grid row: display name plus its Selling/Buying price+count column text.</summary>
-    private readonly record struct ResourceRow(string Name, string SellingPrice, string SellingCount, string BuyingPrice, string BuyingCount);
+    /// <summary>
+    /// One resources-grid row: display name plus its Selling/Buying price+count column
+    /// text. <see cref="ItemTypeId"/> is the stable identity used to carry row selection
+    /// across a resort (<see cref="ResolveSelectedRowIndex"/>) — never shown, since
+    /// GridPanel only ever receives the formatted display strings.
+    /// </summary>
+    private readonly record struct ResourceRow(string ItemTypeId, string Name, string SellingPrice, string SellingCount, string BuyingPrice, string BuyingCount);
 
     /// <summary>Same fields as <see cref="ResourceRow"/> but numeric — sorting must happen on these, not their formatted string form (lexicographic "100" &lt; "20" would otherwise corrupt price/count ordering).</summary>
-    private readonly record struct ResourceRowData(string Name, long SellingPrice, long SellingCount, long BuyingPrice, long BuyingCount);
+    private readonly record struct ResourceRowData(string ItemTypeId, string Name, long SellingPrice, long SellingCount, long BuyingPrice, long BuyingCount);
 
     /// <summary>
     /// The docked station's <see cref="TradeItemCategories.Resource"/> items, sorted by
@@ -173,7 +192,7 @@ public sealed class TradeScreen : IScreen
             {
                 long shipQuantity = playerCargo.TryGetValue(item.ItemTypeId, out long quantity) ? quantity : 0;
                 return new ResourceRowData(
-                    ItemDisplayName(item.ItemTypeId),
+                    item.ItemTypeId, ItemDisplayName(item.ItemTypeId),
                     SellingPrice: item.UnitPriceCredits, SellingCount: item.StockQuantity,
                     BuyingPrice: item.UnitPriceCredits, BuyingCount: shipQuantity);
             });
@@ -195,7 +214,7 @@ public sealed class TradeScreen : IScreen
 
         return sorted
             .Select(row => new ResourceRow(
-                row.Name, row.SellingPrice.ToString(), row.SellingCount.ToString(),
+                row.ItemTypeId, row.Name, row.SellingPrice.ToString(), row.SellingCount.ToString(),
                 row.BuyingPrice.ToString(), row.BuyingCount.ToString()))
             .ToArray();
     }
@@ -251,7 +270,7 @@ public sealed class TradeScreen : IScreen
         _isScrollUpHovered = false;
         _isScrollDownHovered = false;
         _isDraggingScrollThumb = false;
-        _selectedResourceIndex = null;
+        _selectedResourceItemTypeId = null;
         _foodRationsHoverStartedAtMs = null;
         _crewHoverStartedAtMs = null;
         _tokensHoverStartedAtMs = null;
@@ -274,7 +293,8 @@ public sealed class TradeScreen : IScreen
         if (IsStationNameHit(x, y))
             return ScreenEvent.NavigateToStation;
 
-        int resourceRowCount = CurrentResourceRowCount();
+        var resourceRows = ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending);
+        int resourceRowCount = resourceRows.Length;
         if (GridPanel.IsScrollbarActive(resourceRowCount))
         {
             if (IsScrollUpArrowHit(x, y))
@@ -305,16 +325,15 @@ public sealed class TradeScreen : IScreen
         {
             _sortDescending = _sortColumn == clickedColumn && !_sortDescending;
             _sortColumn = clickedColumn;
-            // The row the player had selected is very likely a different item after
-            // re-sorting (index-based selection, no stable item identity to carry over).
-            _selectedResourceIndex = null;
+            // Selection is identity-based (_selectedResourceItemTypeId), not index-based —
+            // it survives the resort and is resolved back to wherever that item now sits.
             return ScreenEvent.None;
         }
 
         int hitRowIndex = HitTestResourceRow(x, y, resourceRowCount);
         if (hitRowIndex >= 0)
         {
-            _selectedResourceIndex = hitRowIndex;
+            _selectedResourceItemTypeId = resourceRows[hitRowIndex].ItemTypeId;
             return ScreenEvent.None;
         }
 
@@ -428,8 +447,6 @@ public sealed class TradeScreen : IScreen
 
         var resourceRows = ResolveResourceRows(snapshot, _sortColumn, _sortDescending);
         _scrollOffset = Math.Clamp(_scrollOffset, 0, GridPanel.MaxScrollOffset(resourceRows.Length));
-        if (_selectedResourceIndex >= resourceRows.Length)
-            _selectedResourceIndex = null;
         var resourceNames = Array.ConvertAll(resourceRows, row => row.Name);
         var resourceSellingPrices = Array.ConvertAll(resourceRows, row => row.SellingPrice);
         var resourceSellingCounts = Array.ConvertAll(resourceRows, row => row.SellingCount);
@@ -438,7 +455,7 @@ public sealed class TradeScreen : IScreen
         GridPanel.Draw(canvas, pl + GridPanelOriginX, pt + GridPanelOriginY, ResourcesGridTitle, resourceRows.Length,
             _scrollOffset, _isScrollUpHovered, _isScrollDownHovered, resourceNames,
             resourceSellingPrices, resourceSellingCounts, resourceBuyingPrices, resourceBuyingCounts,
-            _selectedResourceIndex, _sortColumn, _sortDescending);
+            ResolveSelectedRowIndex(resourceRows), _sortColumn, _sortDescending);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.

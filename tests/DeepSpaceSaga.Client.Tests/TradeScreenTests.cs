@@ -414,19 +414,26 @@ public class TradeScreenTests
 
     /// <summary>Re-sorting invalidates index-based selection — the row under the old index is very likely a different item now.</summary>
     [Fact]
-    public void Clicking_a_column_title_clears_the_current_row_selection()
+    public void Row_selection_survives_a_resort_and_follows_the_selected_item_to_its_new_position()
     {
         var screen = new TradeScreen(DockedBufferWithSixResources());
         RenderScreen(screen);
 
+        // Default sort (Name ascending): Carbon Ore, Ice, Iron Ore, Magnesium Ore, Silicon,
+        // Uranium Ore — row slot 1 is "Ice".
         var (rowX, rowY) = ResourceRowCenter(rowSlot: 1);
         screen.OnMouseDown(rowX, rowY);
-        Assert.NotNull(screen.SelectedResourceIndex);
+        Assert.Equal(1, screen.SelectedResourceIndex);
+        Assert.Equal("Ice", screen.ResourceNames[screen.SelectedResourceIndex!.Value]);
 
+        // Sort by Selling count ascending: Uranium Ore(20), Silicon(70), Carbon Ore(90),
+        // Magnesium Ore(120), Ice(320), Iron Ore(410) — "Ice" is now at index 4, not 1, and
+        // must still be the one highlighted (not cleared, not stuck at the old index).
         var (titleX, titleY) = TrailingColumnHeaderCenter(columnIndex: 1);
         screen.OnMouseDown(titleX, titleY);
 
-        Assert.Null(screen.SelectedResourceIndex);
+        Assert.Equal(4, screen.SelectedResourceIndex);
+        Assert.Equal("Ice", screen.ResourceNames[screen.SelectedResourceIndex!.Value]);
     }
 
     /// <summary>Screen-space center of trailing column header <paramref name="columnIndex"/> (0=Selling price, 1=Selling count, 2=Buying price, 3=Buying count).</summary>
