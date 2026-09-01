@@ -289,7 +289,7 @@ public class PauseSimulationTests
             "gameTimeMs": 0,
             "currentSpeed": "Speed0",
             "playerShipObjectId": "{{PlayerShipId}}",
-            "playerCredits": 5000,
+            "playerTokens": 5000,
             "spaceObjects": [
               {
                 "objectId": "{{PlayerShipId}}",

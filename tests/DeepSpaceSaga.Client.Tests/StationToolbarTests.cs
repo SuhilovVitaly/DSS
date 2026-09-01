@@ -37,6 +37,12 @@ public class StationToolbarTests
     }
 
     [Fact]
+    public void Tokens_icon_is_loaded()
+    {
+        Assert.True(StationToolbar.HasLoadedTokensImage);
+    }
+
+    [Fact]
     public void ResolveFoodRationsCount_sums_the_item_across_every_installed_modules_cargo()
     {
         var snapshot = new AuthoritativeSnapshot(
@@ -83,6 +89,22 @@ public class StationToolbarTests
     public void ResolveCrewCount_is_zero_for_a_null_snapshot()
     {
         Assert.Equal(0, StationToolbar.ResolveCrewCount(null));
+    }
+
+    [Fact]
+    public void ResolveCreditsCount_reads_PlayerCredits_off_the_snapshot()
+    {
+        var snapshot = new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray<ObjectMotionSnapshot>.Empty, PlayerCredits: 12_345);
+
+        Assert.Equal(12_345, StationToolbar.ResolveCreditsCount(snapshot));
+    }
+
+    [Fact]
+    public void ResolveCreditsCount_is_zero_for_a_null_snapshot()
+    {
+        Assert.Equal(0, StationToolbar.ResolveCreditsCount(null));
     }
 
     [Fact]
@@ -161,9 +183,25 @@ public class StationToolbarTests
         canvas.Flush();
 
         // The crew icon+value sit in the gap just left of the food-rations block — not
-        // overlapping it (StationToolbar.CrewInfoGapFromFoodRations keeps them apart).
+        // overlapping it (StationToolbar.InfoBlockGap keeps them apart).
         float foodRationsLeft = StationToolbar.FoodRationsLocalRect().Left;
         Assert.True(RegionHasNonBackgroundPixel(bitmap, (int)(foodRationsLeft - 100), (int)foodRationsLeft - 2));
+    }
+
+    [Fact]
+    public void Draw_places_the_tokens_icon_before_the_crew_icon()
+    {
+        using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+
+        StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, creditsCount: 500);
+        canvas.Flush();
+
+        // The tokens icon+value sit in the gap just left of the crew block — not
+        // overlapping it (StationToolbar.InfoBlockGap keeps them apart).
+        float crewLeft = StationToolbar.CrewLocalRect().Left;
+        Assert.True(RegionHasNonBackgroundPixel(bitmap, (int)(crewLeft - 100), (int)crewLeft - 2));
     }
 
     [Fact]
@@ -184,7 +222,7 @@ public class StationToolbarTests
 
         // The "9 / 9" reservation must not bleed past into the food-rations block's gap.
         Assert.True(rectWithHighCounts.Right
-            <= StationToolbar.FoodRationsLocalRect().Left - StationToolbar.CrewInfoGapFromFoodRations + 0.5f);
+            <= StationToolbar.FoodRationsLocalRect().Left - StationToolbar.InfoBlockGap + 0.5f);
     }
 
     [Fact]
@@ -194,7 +232,38 @@ public class StationToolbarTests
         var rations = StationToolbar.FoodRationsLocalRect();
 
         Assert.True(crew.Right <= rations.Left);
-        Assert.Equal(rations.Left - StationToolbar.CrewInfoGapFromFoodRations, crew.Right, 3);
+        Assert.Equal(rations.Left - StationToolbar.InfoBlockGap, crew.Right, 3);
+    }
+
+    [Fact]
+    public void TokensLocalRect_stays_fixed_regardless_of_the_actual_digit_count()
+    {
+        // The field is reserved wide enough for "999999" up front — the icon's position
+        // (TokensLocalRect) must not depend on today's actual balance.
+        var rectWithFewDigits = StationToolbar.TokensLocalRect();
+
+        using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+        StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, creditsCount: 999999);
+        canvas.Flush();
+
+        var rectWithSixDigits = StationToolbar.TokensLocalRect();
+        Assert.Equal(rectWithFewDigits, rectWithSixDigits);
+
+        // The "999999" reservation must not bleed past into the crew block's gap.
+        Assert.True(rectWithSixDigits.Right
+            <= StationToolbar.CrewLocalRect().Left - StationToolbar.InfoBlockGap + 0.5f);
+    }
+
+    [Fact]
+    public void TokensLocalRect_sits_immediately_left_of_CrewLocalRect()
+    {
+        var tokens = StationToolbar.TokensLocalRect();
+        var crew = StationToolbar.CrewLocalRect();
+
+        Assert.True(tokens.Right <= crew.Left);
+        Assert.Equal(crew.Left - StationToolbar.InfoBlockGap, tokens.Right, 3);
     }
 
     [Fact]
@@ -205,7 +274,7 @@ public class StationToolbarTests
         using (var canvas = new SKCanvas(hoveredBitmap))
         {
             StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, crewCount: 1, cabinsCount: 2);
-            StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: false, isCrewHovered: true);
+            StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: false, isCrewHovered: true, isTokensHovered: false);
         }
 
         using var normalBitmap = new SKBitmap((int)StationToolbar.Width, 120);
@@ -213,7 +282,40 @@ public class StationToolbarTests
         using (var canvas = new SKCanvas(normalBitmap))
         {
             StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, crewCount: 1, cabinsCount: 2);
-            StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: false, isCrewHovered: false);
+            StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: false, isCrewHovered: false, isTokensHovered: false);
+        }
+
+        bool foundBelowWhenHovered = false, foundBelowWhenNormal = false;
+        for (int y = (int)StationToolbar.Height + 2; y < hoveredBitmap.Height; y++)
+        for (int x = 0; x < hoveredBitmap.Width; x++)
+        {
+            if (hoveredBitmap.GetPixel(x, y).Alpha > 0) foundBelowWhenHovered = true;
+            if (normalBitmap.GetPixel(x, y).Alpha > 0) foundBelowWhenNormal = true;
+        }
+
+        Assert.True(foundBelowWhenHovered);
+        Assert.False(foundBelowWhenNormal);
+    }
+
+    [Fact]
+    public void Hovering_tokens_shows_a_tooltip_below_the_toolbar()
+    {
+        using var hoveredBitmap = new SKBitmap((int)StationToolbar.Width, 120);
+        hoveredBitmap.Erase(SKColors.Transparent);
+        using (var canvas = new SKCanvas(hoveredBitmap))
+        {
+            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, creditsCount: 500);
+            StationToolbar.DrawTooltips(canvas, 0, 0,
+                isFoodRationsHovered: false, isCrewHovered: false, isTokensHovered: true);
+        }
+
+        using var normalBitmap = new SKBitmap((int)StationToolbar.Width, 120);
+        normalBitmap.Erase(SKColors.Transparent);
+        using (var canvas = new SKCanvas(normalBitmap))
+        {
+            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, creditsCount: 500);
+            StationToolbar.DrawTooltips(canvas, 0, 0,
+                isFoodRationsHovered: false, isCrewHovered: false, isTokensHovered: false);
         }
 
         bool foundBelowWhenHovered = false, foundBelowWhenNormal = false;
@@ -236,7 +338,7 @@ public class StationToolbarTests
         using (var canvas = new SKCanvas(hoveredBitmap))
         {
             StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, foodRationsCount: 5);
-            StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: true, isCrewHovered: false);
+            StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: true, isCrewHovered: false, isTokensHovered: false);
         }
 
         using var normalBitmap = new SKBitmap((int)StationToolbar.Width, 120);
@@ -244,7 +346,7 @@ public class StationToolbarTests
         using (var canvas = new SKCanvas(normalBitmap))
         {
             StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, foodRationsCount: 5);
-            StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: false, isCrewHovered: false);
+            StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: false, isCrewHovered: false, isTokensHovered: false);
         }
 
         // Below the toolbar strip stays fully transparent when not hovered, but the hovered
@@ -296,7 +398,8 @@ public class StationToolbarTests
 
         canvas.DrawRect(belowToolbar, standInPaint);
         StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, crewCount: 1, cabinsCount: 2);
-        StationToolbar.DrawTooltips(canvas, 0, 0, isFoodRationsHovered: false, isCrewHovered: isCrewHovered);
+        StationToolbar.DrawTooltips(canvas, 0, 0,
+            isFoodRationsHovered: false, isCrewHovered: isCrewHovered, isTokensHovered: false);
         canvas.Flush();
         return bitmap;
     }

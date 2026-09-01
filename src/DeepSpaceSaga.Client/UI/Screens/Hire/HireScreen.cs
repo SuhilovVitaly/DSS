@@ -50,6 +50,14 @@ public sealed class HireScreen : IScreen
         _crewHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
+    /// <summary>Same real-time hover-delay tracking as <see cref="_foodRationsHoverStartedAtMs"/>, for the tokens readout.</summary>
+    private long? _tokensHoverStartedAtMs;
+
+    /// <summary>Test seam — true once the tokens-readout hover delay has elapsed.</summary>
+    internal bool IsTokensTooltipVisible =>
+        _tokensHoverStartedAtMs is { } startedAtMs
+        && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
+
     private const string PlaceholderLine = "Crew hiring: not available yet";
 
     public HireScreen(SnapshotBuffer? buffer = null)
@@ -63,6 +71,7 @@ public sealed class HireScreen : IScreen
         _isExitButtonHovered = false;
         _foodRationsHoverStartedAtMs = null;
         _crewHoverStartedAtMs = null;
+        _tokensHoverStartedAtMs = null;
     }
 
     public void OnDeactivated() { }
@@ -108,6 +117,11 @@ public sealed class HireScreen : IScreen
         else
             _crewHoverStartedAtMs = null;
 
+        if (IsTokensHit(x, y))
+            _tokensHoverStartedAtMs ??= Environment.TickCount64;
+        else
+            _tokensHoverStartedAtMs = null;
+
         return _isStationNameHovered || _isExitButtonHovered;
     }
 
@@ -129,7 +143,8 @@ public sealed class HireScreen : IScreen
             windowName: "HIRE", isExitButtonHovered: _isExitButtonHovered,
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
             crewCount: StationToolbar.ResolveCrewCount(snapshot),
-            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot));
+            cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
+            creditsCount: StationToolbar.ResolveCreditsCount(snapshot));
 
         float cx = pl + HireLayout.PanelWidth / 2f;
         canvas.DrawText(PlaceholderLine, cx, pt + HireLayout.BodyStartY, MenuStyle.TextStatus);
@@ -138,7 +153,8 @@ public sealed class HireScreen : IScreen
         // stay on top of everything the screen drew.
         StationToolbar.DrawTooltips(canvas, pl, pt,
             isFoodRationsHovered: IsFoodRationsTooltipVisible,
-            isCrewHovered: IsCrewTooltipVisible);
+            isCrewHovered: IsCrewTooltipVisible,
+            isTokensHovered: IsTokensTooltipVisible);
     }
 
     /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>
@@ -178,6 +194,15 @@ public sealed class HireScreen : IScreen
         float pl = HireLayout.PanelLeft(_screenWidth);
         float pt = HireLayout.PanelTop(_screenHeight);
         var local = StationToolbar.CrewLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's tokens/credits readout (see StationToolbar).</summary>
+    private bool IsTokensHit(float x, float y)
+    {
+        float pl = HireLayout.PanelLeft(_screenWidth);
+        float pt = HireLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.TokensLocalRect();
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 }

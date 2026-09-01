@@ -293,10 +293,12 @@ public sealed class SimulationEngine : IDisposable
             MasterSeed = resolvedMasterSeed;
             MasterSeedWasMissingOnLoad = resolvedMasterSeedWasMissingOnLoad;
 
-            // Player Credits (Docs\FirstRelease\Mechanics\Money.md): a New Game player
-            // always starts with 0 — plain default, never randomized (unlike station
-            // Credits, which the docs explicitly call out as RNG-generated).
-            PlayerCredits = gs.PlayerCredits ?? 0;
+            // Player Tokens (Docs\FirstRelease\Mechanics\Money.md): the starting balance
+            // comes from the scenario's playerTokens — every shipped scenario sets 2000.
+            // Null (a scenario/save predating the field) means 0 — plain default, never
+            // randomized (unlike station Credits, which the docs explicitly call out as
+            // RNG-generated).
+            PlayerCredits = gs.PlayerTokens ?? 0;
 
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
@@ -721,7 +723,7 @@ public sealed class SimulationEngine : IDisposable
             Focus: null, // camera/focus is client-side only — never saved (decision G.20)
             SpaceObjects: spaceObjects,
             MasterSeed: MasterSeed,
-            PlayerCredits: PlayerCredits);
+            PlayerTokens: PlayerCredits);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),

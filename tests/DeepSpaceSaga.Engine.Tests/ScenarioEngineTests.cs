@@ -330,6 +330,27 @@ public class ScenarioEngineTests
     }
 
     [Fact]
+    public void Every_shipped_scenario_starts_the_player_with_2000_tokens()
+    {
+        // Money.md: the player's starting balance comes from the scenario's playerTokens —
+        // every scenario the game ships sets it explicitly to 2000.
+        string settingsPath = ResolveRealSettingsPath();
+
+        var fromSettings = SimulationEngine.CreateFromSettingsFile(settingsPath); // Default
+        Assert.Equal(2000, fromSettings.PlayerCredits);
+
+        string default500ScenarioPath = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(settingsPath)!, "Scenarios", "Default_500", "scenario.json"));
+        var default500 = SimulationEngine.CreateFromScenarioFile(settingsPath, default500ScenarioPath);
+        Assert.Equal(2000, default500.PlayerCredits);
+
+        string dockedScenarioPath = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(settingsPath)!, "Scenarios", "Docked", "scenario.json"));
+        var docked = SimulationEngine.CreateFromScenarioFile(settingsPath, dockedScenarioPath);
+        Assert.Equal(2000, docked.PlayerCredits);
+    }
+
+    [Fact]
     public void CreateFromScenarioFile_loads_an_explicitly_chosen_scenario_instead_of_the_settings_default()
     {
         // The New Game -> scenario picker path: SimulationEngine.CreateFromScenarioFile

@@ -10,9 +10,11 @@ public static class SaveFormat
     /// Bump when the save schema changes incompatibly (see requirements §3891 migration policy —
     /// not implemented yet, only the version field is laid down in this iteration).
     /// Bumped to 2 when module placement moved from platformIndex+occupiedCells(0..3) to a
-    /// hull-grid coordinate model (requirements §57) — no migration of old saves is provided.
+    /// hull-grid coordinate model (requirements §57); to 3 when the player's starting
+    /// balance field was renamed playerCredits → playerTokens (an old save loads with 0
+    /// Tokens, since no migration of old saves is provided).
     /// </summary>
-    public const int CurrentSaveFormatVersion = 2;
+    public const int CurrentSaveFormatVersion = 3;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -48,11 +50,14 @@ public sealed record GameStateData(
     [property: JsonPropertyName("spaceObjects")] IReadOnlyList<SpaceObjectData> SpaceObjects,
     [property: JsonPropertyName("masterSeed")] ulong? MasterSeed = null,
     /// <summary>
-    /// Player's Credits balance (Docs\FirstRelease\Mechanics\Money.md). Null means "not yet
-    /// resolved" — SimulationEngine.LoadScenario treats a missing value as 0 (a New Game
-    /// player always starts with 0 Credits; this is a plain default, never randomized).
+    /// Player's Tokens balance (Docs\FirstRelease\Mechanics\Money.md). The player-facing
+    /// term for the currency is "tokens"; the engine keeps the value in
+    /// <c>SimulationEngine.PlayerCredits</c>. Null means "not yet resolved" —
+    /// SimulationEngine.LoadScenario treats a missing value as 0 (a scenario/save predating
+    /// the field; every scenario the game ships sets this explicitly — currently 2000).
+    /// A plain default, never randomized.
     /// </summary>
-    [property: JsonPropertyName("playerCredits")] long? PlayerCredits = null);
+    [property: JsonPropertyName("playerTokens")] long? PlayerTokens = null);
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(

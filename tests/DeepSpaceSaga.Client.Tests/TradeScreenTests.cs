@@ -559,7 +559,7 @@ public class TradeScreenTests
             "gameTimeMs": 0,
             "currentSpeed": "Speed0",
             "playerShipObjectId": "{{RealPlayerShipId}}",
-            "playerCredits": 100000,
+            "playerTokens": 100000,
             "spaceObjects": [
               {
                 "objectId": "{{RealPlayerShipId}}",
