@@ -105,7 +105,8 @@
         "directionDegrees": 292,
         "movementType": "Linear",
         "massKg": 739040366,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0002",
@@ -117,7 +118,8 @@
         "directionDegrees": 226,
         "movementType": "Linear",
         "massKg": 909851461,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0003",
@@ -129,7 +131,8 @@
         "directionDegrees": 304,
         "movementType": "Linear",
         "massKg": 566969246,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0004",
@@ -141,7 +144,8 @@
         "directionDegrees": 8,
         "movementType": "Linear",
         "massKg": 779738931,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0005",
@@ -153,7 +157,8 @@
         "directionDegrees": 323,
         "movementType": "Linear",
         "massKg": 521492928,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0006",
@@ -165,7 +170,8 @@
         "directionDegrees": 26,
         "movementType": "Linear",
         "massKg": 592076504,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0007",
@@ -177,7 +183,8 @@
         "directionDegrees": 287,
         "movementType": "Linear",
         "massKg": 931798789,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0008",
@@ -189,7 +196,8 @@
         "directionDegrees": 40,
         "movementType": "Linear",
         "massKg": 185200087,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0009",
@@ -201,7 +209,8 @@
         "directionDegrees": 55,
         "movementType": "Linear",
         "massKg": 11995294,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0010",
@@ -213,7 +222,8 @@
         "directionDegrees": 266,
         "movementType": "Linear",
         "massKg": 57939915,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0011",
@@ -225,7 +235,8 @@
         "directionDegrees": 19,
         "movementType": "Linear",
         "massKg": 35068569,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0012",
@@ -237,7 +248,8 @@
         "directionDegrees": 354,
         "movementType": "Linear",
         "massKg": 929149205,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0013",
@@ -249,7 +261,8 @@
         "directionDegrees": 97,
         "movementType": "Linear",
         "massKg": 531932457,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0014",
@@ -261,7 +274,8 @@
         "directionDegrees": 108,
         "movementType": "Linear",
         "massKg": 736511801,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0015",
@@ -273,7 +287,8 @@
         "directionDegrees": 76,
         "movementType": "Linear",
         "massKg": 249819412,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0016",
@@ -285,7 +300,8 @@
         "directionDegrees": 110,
         "movementType": "Linear",
         "massKg": 434593993,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0017",
@@ -297,7 +313,8 @@
         "directionDegrees": 251,
         "movementType": "Linear",
         "massKg": 377329327,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0018",
@@ -309,7 +326,8 @@
         "directionDegrees": 122,
         "movementType": "Linear",
         "massKg": 307438286,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0019",
@@ -321,7 +339,8 @@
         "directionDegrees": 194,
         "movementType": "Linear",
         "massKg": 496835670,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0020",
@@ -333,7 +352,8 @@
         "directionDegrees": 210,
         "movementType": "Linear",
         "massKg": 614545908,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0021",
@@ -345,7 +365,8 @@
         "directionDegrees": 85,
         "movementType": "Linear",
         "massKg": 20888436,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0022",
@@ -357,7 +378,8 @@
         "directionDegrees": 70,
         "movementType": "Linear",
         "massKg": 12708791,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0023",
@@ -369,7 +391,8 @@
         "directionDegrees": 138,
         "movementType": "Linear",
         "massKg": 786337199,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0024",
@@ -381,7 +404,8 @@
         "directionDegrees": 14,
         "movementType": "Linear",
         "massKg": 675050363,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0025",
@@ -393,7 +417,8 @@
         "directionDegrees": 263,
         "movementType": "Linear",
         "massKg": 658908607,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0026",
@@ -405,7 +430,8 @@
         "directionDegrees": 203,
         "movementType": "Linear",
         "massKg": 484209673,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0027",
@@ -417,7 +443,8 @@
         "directionDegrees": 286,
         "movementType": "Linear",
         "massKg": 127018103,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0028",
@@ -429,7 +456,8 @@
         "directionDegrees": 120,
         "movementType": "Linear",
         "massKg": 113914995,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0029",
@@ -441,7 +469,8 @@
         "directionDegrees": 296,
         "movementType": "Linear",
         "massKg": 92589770,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0030",
@@ -453,7 +482,8 @@
         "directionDegrees": 61,
         "movementType": "Linear",
         "massKg": 35680844,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0031",
@@ -465,7 +495,8 @@
         "directionDegrees": 145,
         "movementType": "Linear",
         "massKg": 762395198,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0032",
@@ -477,7 +508,8 @@
         "directionDegrees": 148,
         "movementType": "Linear",
         "massKg": 187112759,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0033",
@@ -489,7 +521,8 @@
         "directionDegrees": 133,
         "movementType": "Linear",
         "massKg": 15119757,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0034",
@@ -501,7 +534,8 @@
         "directionDegrees": 262,
         "movementType": "Linear",
         "massKg": 581582146,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0035",
@@ -513,7 +547,8 @@
         "directionDegrees": 112,
         "movementType": "Linear",
         "massKg": 107775946,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0036",
@@ -525,7 +560,8 @@
         "directionDegrees": 202,
         "movementType": "Linear",
         "massKg": 722803371,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0037",
@@ -537,7 +573,8 @@
         "directionDegrees": 72,
         "movementType": "Linear",
         "massKg": 68384143,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0038",
@@ -549,7 +586,8 @@
         "directionDegrees": 276,
         "movementType": "Linear",
         "massKg": 423526622,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0039",
@@ -561,7 +599,8 @@
         "directionDegrees": 186,
         "movementType": "Linear",
         "massKg": 13417706,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0040",
@@ -573,7 +612,8 @@
         "directionDegrees": 175,
         "movementType": "Linear",
         "massKg": 308720804,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0041",
@@ -585,7 +625,8 @@
         "directionDegrees": 271,
         "movementType": "Linear",
         "massKg": 411103919,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0042",
@@ -597,7 +638,8 @@
         "directionDegrees": 118,
         "movementType": "Linear",
         "massKg": 488800740,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0043",
@@ -609,7 +651,8 @@
         "directionDegrees": 21,
         "movementType": "Linear",
         "massKg": 839403823,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0044",
@@ -621,7 +664,8 @@
         "directionDegrees": 68,
         "movementType": "Linear",
         "massKg": 773975720,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0045",
@@ -633,7 +677,8 @@
         "directionDegrees": 26,
         "movementType": "Linear",
         "massKg": 277492629,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0046",
@@ -645,7 +690,8 @@
         "directionDegrees": 153,
         "movementType": "Linear",
         "massKg": 448631783,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0047",
@@ -657,7 +703,8 @@
         "directionDegrees": 330,
         "movementType": "Linear",
         "massKg": 501245314,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0048",
@@ -669,7 +716,8 @@
         "directionDegrees": 277,
         "movementType": "Linear",
         "massKg": 765782802,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0049",
@@ -681,7 +729,8 @@
         "directionDegrees": 20,
         "movementType": "Linear",
         "massKg": 165751521,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0050",
@@ -693,7 +742,8 @@
         "directionDegrees": 265,
         "movementType": "Linear",
         "massKg": 608723677,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0051",
@@ -705,7 +755,8 @@
         "directionDegrees": 215,
         "movementType": "Linear",
         "massKg": 582913528,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0052",
@@ -717,7 +768,8 @@
         "directionDegrees": 248,
         "movementType": "Linear",
         "massKg": 566862365,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0053",
@@ -729,7 +781,8 @@
         "directionDegrees": 216,
         "movementType": "Linear",
         "massKg": 770614092,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0054",
@@ -741,7 +794,8 @@
         "directionDegrees": 345,
         "movementType": "Linear",
         "massKg": 707347424,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0055",
@@ -753,7 +807,8 @@
         "directionDegrees": 120,
         "movementType": "Linear",
         "massKg": 462509557,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0056",
@@ -765,7 +820,8 @@
         "directionDegrees": 144,
         "movementType": "Linear",
         "massKg": 778677580,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0057",
@@ -777,7 +833,8 @@
         "directionDegrees": 182,
         "movementType": "Linear",
         "massKg": 692150202,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0058",
@@ -789,7 +846,8 @@
         "directionDegrees": 288,
         "movementType": "Linear",
         "massKg": 543386408,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0059",
@@ -801,7 +859,8 @@
         "directionDegrees": 222,
         "movementType": "Linear",
         "massKg": 321682320,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0060",
@@ -813,7 +872,8 @@
         "directionDegrees": 183,
         "movementType": "Linear",
         "massKg": 725714781,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0061",
@@ -825,7 +885,8 @@
         "directionDegrees": 224,
         "movementType": "Linear",
         "massKg": 761642455,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0062",
@@ -837,7 +898,8 @@
         "directionDegrees": 186,
         "movementType": "Linear",
         "massKg": 578868710,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0063",
@@ -849,7 +911,8 @@
         "directionDegrees": 99,
         "movementType": "Linear",
         "massKg": 410508645,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0064",
@@ -861,7 +924,8 @@
         "directionDegrees": 168,
         "movementType": "Linear",
         "massKg": 183728612,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0065",
@@ -873,7 +937,8 @@
         "directionDegrees": 106,
         "movementType": "Linear",
         "massKg": 195518704,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0066",
@@ -885,7 +950,8 @@
         "directionDegrees": 264,
         "movementType": "Linear",
         "massKg": 644059289,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0067",
@@ -897,7 +963,8 @@
         "directionDegrees": 305,
         "movementType": "Linear",
         "massKg": 625281165,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0068",
@@ -909,7 +976,8 @@
         "directionDegrees": 304,
         "movementType": "Linear",
         "massKg": 679085526,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0069",
@@ -921,7 +989,8 @@
         "directionDegrees": 164,
         "movementType": "Linear",
         "massKg": 116135031,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0070",
@@ -933,7 +1002,8 @@
         "directionDegrees": 275,
         "movementType": "Linear",
         "massKg": 537640094,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0071",
@@ -945,7 +1015,8 @@
         "directionDegrees": 9,
         "movementType": "Linear",
         "massKg": 694074054,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0072",
@@ -957,7 +1028,8 @@
         "directionDegrees": 264,
         "movementType": "Linear",
         "massKg": 699121289,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0073",
@@ -969,7 +1041,8 @@
         "directionDegrees": 257,
         "movementType": "Linear",
         "massKg": 331768749,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0074",
@@ -981,7 +1054,8 @@
         "directionDegrees": 8,
         "movementType": "Linear",
         "massKg": 746202653,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0075",
@@ -993,7 +1067,8 @@
         "directionDegrees": 158,
         "movementType": "Linear",
         "massKg": 987880132,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0076",
@@ -1005,7 +1080,8 @@
         "directionDegrees": 167,
         "movementType": "Linear",
         "massKg": 473131720,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0077",
@@ -1017,7 +1093,8 @@
         "directionDegrees": 259,
         "movementType": "Linear",
         "massKg": 991831659,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0078",
@@ -1029,7 +1106,8 @@
         "directionDegrees": 102,
         "movementType": "Linear",
         "massKg": 346101922,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0079",
@@ -1041,7 +1119,8 @@
         "directionDegrees": 3,
         "movementType": "Linear",
         "massKg": 452157241,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0080",
@@ -1053,7 +1132,8 @@
         "directionDegrees": 234,
         "movementType": "Linear",
         "massKg": 199108894,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0081",
@@ -1065,7 +1145,8 @@
         "directionDegrees": 6,
         "movementType": "Linear",
         "massKg": 348409063,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0082",
@@ -1077,7 +1158,8 @@
         "directionDegrees": 253,
         "movementType": "Linear",
         "massKg": 202444763,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0083",
@@ -1089,7 +1171,8 @@
         "directionDegrees": 56,
         "movementType": "Linear",
         "massKg": 879025359,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0084",
@@ -1101,7 +1184,8 @@
         "directionDegrees": 298,
         "movementType": "Linear",
         "massKg": 231816434,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0085",
@@ -1113,7 +1197,8 @@
         "directionDegrees": 33,
         "movementType": "Linear",
         "massKg": 645516265,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0086",
@@ -1125,7 +1210,8 @@
         "directionDegrees": 221,
         "movementType": "Linear",
         "massKg": 56948534,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0087",
@@ -1137,7 +1223,8 @@
         "directionDegrees": 124,
         "movementType": "Linear",
         "massKg": 189808836,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0088",
@@ -1149,7 +1236,8 @@
         "directionDegrees": 303,
         "movementType": "Linear",
         "massKg": 400826081,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0089",
@@ -1161,7 +1249,8 @@
         "directionDegrees": 73,
         "movementType": "Linear",
         "massKg": 618754430,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0090",
@@ -1173,7 +1262,8 @@
         "directionDegrees": 93,
         "movementType": "Linear",
         "massKg": 834057480,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0091",
@@ -1185,7 +1275,8 @@
         "directionDegrees": 342,
         "movementType": "Linear",
         "massKg": 97520438,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0092",
@@ -1197,7 +1288,8 @@
         "directionDegrees": 241,
         "movementType": "Linear",
         "massKg": 902537744,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0093",
@@ -1209,7 +1301,8 @@
         "directionDegrees": 116,
         "movementType": "Linear",
         "massKg": 334879882,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0094",
@@ -1221,7 +1314,8 @@
         "directionDegrees": 180,
         "movementType": "Linear",
         "massKg": 48145967,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0095",
@@ -1233,7 +1327,8 @@
         "directionDegrees": 92,
         "movementType": "Linear",
         "massKg": 312736513,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0096",
@@ -1245,7 +1340,8 @@
         "directionDegrees": 178,
         "movementType": "Linear",
         "massKg": 825373264,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0097",
@@ -1257,7 +1353,8 @@
         "directionDegrees": 175,
         "movementType": "Linear",
         "massKg": 536239985,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0098",
@@ -1269,7 +1366,8 @@
         "directionDegrees": 259,
         "movementType": "Linear",
         "massKg": 735920739,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0099",
@@ -1281,7 +1379,8 @@
         "directionDegrees": 164,
         "movementType": "Linear",
         "massKg": 130705337,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0100",
@@ -1293,7 +1392,8 @@
         "directionDegrees": 6,
         "movementType": "Linear",
         "massKg": 304052172,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0101",
@@ -1305,7 +1405,8 @@
         "directionDegrees": 113,
         "movementType": "Linear",
         "massKg": 276029865,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0102",
@@ -1317,7 +1418,8 @@
         "directionDegrees": 60,
         "movementType": "Linear",
         "massKg": 622400818,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0103",
@@ -1329,7 +1431,8 @@
         "directionDegrees": 206,
         "movementType": "Linear",
         "massKg": 178884714,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0104",
@@ -1341,7 +1444,8 @@
         "directionDegrees": 112,
         "movementType": "Linear",
         "massKg": 954333585,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0105",
@@ -1353,7 +1457,8 @@
         "directionDegrees": 287,
         "movementType": "Linear",
         "massKg": 501278313,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0106",
@@ -1365,7 +1470,8 @@
         "directionDegrees": 257,
         "movementType": "Linear",
         "massKg": 393011687,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0107",
@@ -1377,7 +1483,8 @@
         "directionDegrees": 307,
         "movementType": "Linear",
         "massKg": 262957414,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0108",
@@ -1389,7 +1496,8 @@
         "directionDegrees": 255,
         "movementType": "Linear",
         "massKg": 144171107,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0109",
@@ -1401,7 +1509,8 @@
         "directionDegrees": 102,
         "movementType": "Linear",
         "massKg": 795623429,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0110",
@@ -1413,7 +1522,8 @@
         "directionDegrees": 126,
         "movementType": "Linear",
         "massKg": 595725834,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0111",
@@ -1425,7 +1535,8 @@
         "directionDegrees": 19,
         "movementType": "Linear",
         "massKg": 940095316,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0112",
@@ -1437,7 +1548,8 @@
         "directionDegrees": 115,
         "movementType": "Linear",
         "massKg": 853655089,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0113",
@@ -1449,7 +1561,8 @@
         "directionDegrees": 325,
         "movementType": "Linear",
         "massKg": 243763814,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0114",
@@ -1461,7 +1574,8 @@
         "directionDegrees": 135,
         "movementType": "Linear",
         "massKg": 110876955,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0115",
@@ -1473,7 +1587,8 @@
         "directionDegrees": 311,
         "movementType": "Linear",
         "massKg": 690106075,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0116",
@@ -1485,7 +1600,8 @@
         "directionDegrees": 274,
         "movementType": "Linear",
         "massKg": 812944376,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0117",
@@ -1497,7 +1613,8 @@
         "directionDegrees": 150,
         "movementType": "Linear",
         "massKg": 160449780,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0118",
@@ -1509,7 +1626,8 @@
         "directionDegrees": 242,
         "movementType": "Linear",
         "massKg": 709331371,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0119",
@@ -1521,7 +1639,8 @@
         "directionDegrees": 99,
         "movementType": "Linear",
         "massKg": 377075238,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0120",
@@ -1533,7 +1652,8 @@
         "directionDegrees": 141,
         "movementType": "Linear",
         "massKg": 90669011,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0121",
@@ -1545,7 +1665,8 @@
         "directionDegrees": 230,
         "movementType": "Linear",
         "massKg": 933163811,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0122",
@@ -1557,7 +1678,8 @@
         "directionDegrees": 22,
         "movementType": "Linear",
         "massKg": 614993255,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0123",
@@ -1569,7 +1691,8 @@
         "directionDegrees": 89,
         "movementType": "Linear",
         "massKg": 138769592,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0124",
@@ -1581,7 +1704,8 @@
         "directionDegrees": 165,
         "movementType": "Linear",
         "massKg": 156530608,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0125",
@@ -1593,7 +1717,8 @@
         "directionDegrees": 298,
         "movementType": "Linear",
         "massKg": 220552575,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0126",
@@ -1605,7 +1730,8 @@
         "directionDegrees": 71,
         "movementType": "Linear",
         "massKg": 368127575,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0127",
@@ -1617,7 +1743,8 @@
         "directionDegrees": 29,
         "movementType": "Linear",
         "massKg": 918855331,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0128",
@@ -1629,7 +1756,8 @@
         "directionDegrees": 112,
         "movementType": "Linear",
         "massKg": 650530471,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0129",
@@ -1641,7 +1769,8 @@
         "directionDegrees": 291,
         "movementType": "Linear",
         "massKg": 879737133,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0130",
@@ -1653,7 +1782,8 @@
         "directionDegrees": 122,
         "movementType": "Linear",
         "massKg": 572838115,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0131",
@@ -1665,7 +1795,8 @@
         "directionDegrees": 146,
         "movementType": "Linear",
         "massKg": 9489701,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0132",
@@ -1677,7 +1808,8 @@
         "directionDegrees": 135,
         "movementType": "Linear",
         "massKg": 613784138,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0133",
@@ -1689,7 +1821,8 @@
         "directionDegrees": 122,
         "movementType": "Linear",
         "massKg": 589831694,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0134",
@@ -1701,7 +1834,8 @@
         "directionDegrees": 61,
         "movementType": "Linear",
         "massKg": 92644548,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0135",
@@ -1713,7 +1847,8 @@
         "directionDegrees": 45,
         "movementType": "Linear",
         "massKg": 439855788,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0136",
@@ -1725,7 +1860,8 @@
         "directionDegrees": 220,
         "movementType": "Linear",
         "massKg": 587658534,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0137",
@@ -1737,7 +1873,8 @@
         "directionDegrees": 284,
         "movementType": "Linear",
         "massKg": 7495645,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0138",
@@ -1749,7 +1886,8 @@
         "directionDegrees": 355,
         "movementType": "Linear",
         "massKg": 504649935,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0139",
@@ -1761,7 +1899,8 @@
         "directionDegrees": 7,
         "movementType": "Linear",
         "massKg": 280116065,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0140",
@@ -1773,7 +1912,8 @@
         "directionDegrees": 239,
         "movementType": "Linear",
         "massKg": 782801921,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0141",
@@ -1785,7 +1925,8 @@
         "directionDegrees": 148,
         "movementType": "Linear",
         "massKg": 432748088,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0142",
@@ -1797,7 +1938,8 @@
         "directionDegrees": 137,
         "movementType": "Linear",
         "massKg": 37196046,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0143",
@@ -1809,7 +1951,8 @@
         "directionDegrees": 85,
         "movementType": "Linear",
         "massKg": 541488987,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0144",
@@ -1821,7 +1964,8 @@
         "directionDegrees": 205,
         "movementType": "Linear",
         "massKg": 705838218,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0145",
@@ -1833,7 +1977,8 @@
         "directionDegrees": 75,
         "movementType": "Linear",
         "massKg": 251199160,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0146",
@@ -1845,7 +1990,8 @@
         "directionDegrees": 315,
         "movementType": "Linear",
         "massKg": 92504276,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0147",
@@ -1857,7 +2003,8 @@
         "directionDegrees": 130,
         "movementType": "Linear",
         "massKg": 475399194,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0148",
@@ -1869,7 +2016,8 @@
         "directionDegrees": 315,
         "movementType": "Linear",
         "massKg": 150555601,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0149",
@@ -1881,7 +2029,8 @@
         "directionDegrees": 36,
         "movementType": "Linear",
         "massKg": 416579892,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0150",
@@ -1893,7 +2042,8 @@
         "directionDegrees": 348,
         "movementType": "Linear",
         "massKg": 636031132,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0151",
@@ -1905,7 +2055,8 @@
         "directionDegrees": 208,
         "movementType": "Linear",
         "massKg": 222025758,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0152",
@@ -1917,7 +2068,8 @@
         "directionDegrees": 331,
         "movementType": "Linear",
         "massKg": 5299407,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0153",
@@ -1929,7 +2081,8 @@
         "directionDegrees": 334,
         "movementType": "Linear",
         "massKg": 965235965,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0154",
@@ -1941,7 +2094,8 @@
         "directionDegrees": 2,
         "movementType": "Linear",
         "massKg": 145272729,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0155",
@@ -1953,7 +2107,8 @@
         "directionDegrees": 193,
         "movementType": "Linear",
         "massKg": 854408911,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0156",
@@ -1965,7 +2120,8 @@
         "directionDegrees": 150,
         "movementType": "Linear",
         "massKg": 61904557,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0157",
@@ -1977,7 +2133,8 @@
         "directionDegrees": 354,
         "movementType": "Linear",
         "massKg": 435000060,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0158",
@@ -1989,7 +2146,8 @@
         "directionDegrees": 165,
         "movementType": "Linear",
         "massKg": 301162480,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0159",
@@ -2001,7 +2159,8 @@
         "directionDegrees": 290,
         "movementType": "Linear",
         "massKg": 333962356,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0160",
@@ -2013,7 +2172,8 @@
         "directionDegrees": 113,
         "movementType": "Linear",
         "massKg": 97482007,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0161",
@@ -2025,7 +2185,8 @@
         "directionDegrees": 77,
         "movementType": "Linear",
         "massKg": 564221642,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0162",
@@ -2037,7 +2198,8 @@
         "directionDegrees": 355,
         "movementType": "Linear",
         "massKg": 555989579,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0163",
@@ -2049,7 +2211,8 @@
         "directionDegrees": 222,
         "movementType": "Linear",
         "massKg": 179390573,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0164",
@@ -2061,7 +2224,8 @@
         "directionDegrees": 249,
         "movementType": "Linear",
         "massKg": 553651050,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0165",
@@ -2073,7 +2237,8 @@
         "directionDegrees": 304,
         "movementType": "Linear",
         "massKg": 682878885,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0166",
@@ -2085,7 +2250,8 @@
         "directionDegrees": 236,
         "movementType": "Linear",
         "massKg": 809638723,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0167",
@@ -2097,7 +2263,8 @@
         "directionDegrees": 137,
         "movementType": "Linear",
         "massKg": 719984221,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0168",
@@ -2109,7 +2276,8 @@
         "directionDegrees": 80,
         "movementType": "Linear",
         "massKg": 962597403,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0169",
@@ -2121,7 +2289,8 @@
         "directionDegrees": 56,
         "movementType": "Linear",
         "massKg": 311327373,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0170",
@@ -2133,7 +2302,8 @@
         "directionDegrees": 136,
         "movementType": "Linear",
         "massKg": 418181585,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0171",
@@ -2145,7 +2315,8 @@
         "directionDegrees": 20,
         "movementType": "Linear",
         "massKg": 971713674,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0172",
@@ -2157,7 +2328,8 @@
         "directionDegrees": 337,
         "movementType": "Linear",
         "massKg": 607525695,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0173",
@@ -2169,7 +2341,8 @@
         "directionDegrees": 302,
         "movementType": "Linear",
         "massKg": 992621527,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0174",
@@ -2181,7 +2354,8 @@
         "directionDegrees": 89,
         "movementType": "Linear",
         "massKg": 577198765,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0175",
@@ -2193,7 +2367,8 @@
         "directionDegrees": 307,
         "movementType": "Linear",
         "massKg": 248809066,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0176",
@@ -2205,7 +2380,8 @@
         "directionDegrees": 204,
         "movementType": "Linear",
         "massKg": 572222558,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0177",
@@ -2217,7 +2393,8 @@
         "directionDegrees": 14,
         "movementType": "Linear",
         "massKg": 212888666,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0178",
@@ -2229,7 +2406,8 @@
         "directionDegrees": 197,
         "movementType": "Linear",
         "massKg": 740824309,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0179",
@@ -2241,7 +2419,8 @@
         "directionDegrees": 285,
         "movementType": "Linear",
         "massKg": 156379529,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0180",
@@ -2253,7 +2432,8 @@
         "directionDegrees": 48,
         "movementType": "Linear",
         "massKg": 403835590,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0181",
@@ -2265,7 +2445,8 @@
         "directionDegrees": 184,
         "movementType": "Linear",
         "massKg": 759336604,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0182",
@@ -2277,7 +2458,8 @@
         "directionDegrees": 171,
         "movementType": "Linear",
         "massKg": 622877696,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0183",
@@ -2289,7 +2471,8 @@
         "directionDegrees": 292,
         "movementType": "Linear",
         "massKg": 406919774,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0184",
@@ -2301,7 +2484,8 @@
         "directionDegrees": 21,
         "movementType": "Linear",
         "massKg": 87336875,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0185",
@@ -2313,7 +2497,8 @@
         "directionDegrees": 127,
         "movementType": "Linear",
         "massKg": 141315419,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0186",
@@ -2325,7 +2510,8 @@
         "directionDegrees": 327,
         "movementType": "Linear",
         "massKg": 289245746,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0187",
@@ -2337,7 +2523,8 @@
         "directionDegrees": 192,
         "movementType": "Linear",
         "massKg": 179006195,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0188",
@@ -2349,7 +2536,8 @@
         "directionDegrees": 50,
         "movementType": "Linear",
         "massKg": 260017139,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0189",
@@ -2361,7 +2549,8 @@
         "directionDegrees": 26,
         "movementType": "Linear",
         "massKg": 81333480,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0190",
@@ -2373,7 +2562,8 @@
         "directionDegrees": 94,
         "movementType": "Linear",
         "massKg": 676027375,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0191",
@@ -2385,7 +2575,8 @@
         "directionDegrees": 14,
         "movementType": "Linear",
         "massKg": 964982054,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0192",
@@ -2397,7 +2588,8 @@
         "directionDegrees": 110,
         "movementType": "Linear",
         "massKg": 981693237,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0193",
@@ -2409,7 +2601,8 @@
         "directionDegrees": 81,
         "movementType": "Linear",
         "massKg": 425578966,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0194",
@@ -2421,7 +2614,8 @@
         "directionDegrees": 182,
         "movementType": "Linear",
         "massKg": 873962278,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0195",
@@ -2433,7 +2627,8 @@
         "directionDegrees": 339,
         "movementType": "Linear",
         "massKg": 916270227,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0196",
@@ -2445,7 +2640,8 @@
         "directionDegrees": 71,
         "movementType": "Linear",
         "massKg": 37405204,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0197",
@@ -2457,7 +2653,8 @@
         "directionDegrees": 145,
         "movementType": "Linear",
         "massKg": 31379129,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0198",
@@ -2469,7 +2666,8 @@
         "directionDegrees": 27,
         "movementType": "Linear",
         "massKg": 405878922,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0199",
@@ -2481,7 +2679,8 @@
         "directionDegrees": 99,
         "movementType": "Linear",
         "massKg": 527759712,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0200",
@@ -2493,7 +2692,8 @@
         "directionDegrees": 65,
         "movementType": "Linear",
         "massKg": 185374387,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0201",
@@ -2505,7 +2705,8 @@
         "directionDegrees": 107,
         "movementType": "Linear",
         "massKg": 321252439,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0202",
@@ -2517,7 +2718,8 @@
         "directionDegrees": 276,
         "movementType": "Linear",
         "massKg": 47071839,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0203",
@@ -2529,7 +2731,8 @@
         "directionDegrees": 175,
         "movementType": "Linear",
         "massKg": 433201568,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0204",
@@ -2541,7 +2744,8 @@
         "directionDegrees": 158,
         "movementType": "Linear",
         "massKg": 575830428,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0205",
@@ -2553,7 +2757,8 @@
         "directionDegrees": 242,
         "movementType": "Linear",
         "massKg": 947216526,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0206",
@@ -2565,7 +2770,8 @@
         "directionDegrees": 288,
         "movementType": "Linear",
         "massKg": 864716135,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0207",
@@ -2577,7 +2783,8 @@
         "directionDegrees": 79,
         "movementType": "Linear",
         "massKg": 651133588,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0208",
@@ -2589,7 +2796,8 @@
         "directionDegrees": 156,
         "movementType": "Linear",
         "massKg": 809558480,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0209",
@@ -2601,7 +2809,8 @@
         "directionDegrees": 158,
         "movementType": "Linear",
         "massKg": 287311957,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0210",
@@ -2613,7 +2822,8 @@
         "directionDegrees": 201,
         "movementType": "Linear",
         "massKg": 966567327,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0211",
@@ -2625,7 +2835,8 @@
         "directionDegrees": 158,
         "movementType": "Linear",
         "massKg": 749427202,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0212",
@@ -2637,7 +2848,8 @@
         "directionDegrees": 289,
         "movementType": "Linear",
         "massKg": 561720335,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0213",
@@ -2649,7 +2861,8 @@
         "directionDegrees": 34,
         "movementType": "Linear",
         "massKg": 363912089,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0214",
@@ -2661,7 +2874,8 @@
         "directionDegrees": 304,
         "movementType": "Linear",
         "massKg": 365152669,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0215",
@@ -2673,7 +2887,8 @@
         "directionDegrees": 1,
         "movementType": "Linear",
         "massKg": 309138875,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0216",
@@ -2685,7 +2900,8 @@
         "directionDegrees": 87,
         "movementType": "Linear",
         "massKg": 853300094,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0217",
@@ -2697,7 +2913,8 @@
         "directionDegrees": 242,
         "movementType": "Linear",
         "massKg": 14532787,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0218",
@@ -2709,7 +2926,8 @@
         "directionDegrees": 324,
         "movementType": "Linear",
         "massKg": 591896397,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0219",
@@ -2721,7 +2939,8 @@
         "directionDegrees": 221,
         "movementType": "Linear",
         "massKg": 130902495,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0220",
@@ -2733,7 +2952,8 @@
         "directionDegrees": 121,
         "movementType": "Linear",
         "massKg": 955360275,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0221",
@@ -2745,7 +2965,8 @@
         "directionDegrees": 251,
         "movementType": "Linear",
         "massKg": 530339086,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0222",
@@ -2757,7 +2978,8 @@
         "directionDegrees": 82,
         "movementType": "Linear",
         "massKg": 681674013,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0223",
@@ -2769,7 +2991,8 @@
         "directionDegrees": 272,
         "movementType": "Linear",
         "massKg": 113479271,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0224",
@@ -2781,7 +3004,8 @@
         "directionDegrees": 36,
         "movementType": "Linear",
         "massKg": 729878150,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0225",
@@ -2793,7 +3017,8 @@
         "directionDegrees": 266,
         "movementType": "Linear",
         "massKg": 533912563,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0226",
@@ -2805,7 +3030,8 @@
         "directionDegrees": 244,
         "movementType": "Linear",
         "massKg": 340438816,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0227",
@@ -2817,7 +3043,8 @@
         "directionDegrees": 3,
         "movementType": "Linear",
         "massKg": 53201321,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0228",
@@ -2829,7 +3056,8 @@
         "directionDegrees": 3,
         "movementType": "Linear",
         "massKg": 493334093,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0229",
@@ -2841,7 +3069,8 @@
         "directionDegrees": 190,
         "movementType": "Linear",
         "massKg": 356230321,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0230",
@@ -2853,7 +3082,8 @@
         "directionDegrees": 159,
         "movementType": "Linear",
         "massKg": 671650228,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0231",
@@ -2865,7 +3095,8 @@
         "directionDegrees": 176,
         "movementType": "Linear",
         "massKg": 716059365,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0232",
@@ -2877,7 +3108,8 @@
         "directionDegrees": 103,
         "movementType": "Linear",
         "massKg": 969316647,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0233",
@@ -2889,7 +3121,8 @@
         "directionDegrees": 0,
         "movementType": "Linear",
         "massKg": 311726117,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0234",
@@ -2901,7 +3134,8 @@
         "directionDegrees": 310,
         "movementType": "Linear",
         "massKg": 554535268,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0235",
@@ -2913,7 +3147,8 @@
         "directionDegrees": 111,
         "movementType": "Linear",
         "massKg": 492095396,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0236",
@@ -2925,7 +3160,8 @@
         "directionDegrees": 37,
         "movementType": "Linear",
         "massKg": 56897027,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0237",
@@ -2937,7 +3173,8 @@
         "directionDegrees": 40,
         "movementType": "Linear",
         "massKg": 967698215,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0238",
@@ -2949,7 +3186,8 @@
         "directionDegrees": 118,
         "movementType": "Linear",
         "massKg": 648550421,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0239",
@@ -2961,7 +3199,8 @@
         "directionDegrees": 1,
         "movementType": "Linear",
         "massKg": 247629680,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0240",
@@ -2973,7 +3212,8 @@
         "directionDegrees": 177,
         "movementType": "Linear",
         "massKg": 569039605,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0241",
@@ -2985,7 +3225,8 @@
         "directionDegrees": 110,
         "movementType": "Linear",
         "massKg": 376545399,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0242",
@@ -2997,7 +3238,8 @@
         "directionDegrees": 211,
         "movementType": "Linear",
         "massKg": 94114697,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0243",
@@ -3009,7 +3251,8 @@
         "directionDegrees": 41,
         "movementType": "Linear",
         "massKg": 902817417,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0244",
@@ -3021,7 +3264,8 @@
         "directionDegrees": 122,
         "movementType": "Linear",
         "massKg": 466590953,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0245",
@@ -3033,7 +3277,8 @@
         "directionDegrees": 254,
         "movementType": "Linear",
         "massKg": 397251367,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0246",
@@ -3045,7 +3290,8 @@
         "directionDegrees": 215,
         "movementType": "Linear",
         "massKg": 230769804,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0247",
@@ -3057,7 +3303,8 @@
         "directionDegrees": 128,
         "movementType": "Linear",
         "massKg": 612474329,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0248",
@@ -3069,7 +3316,8 @@
         "directionDegrees": 327,
         "movementType": "Linear",
         "massKg": 650316271,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0249",
@@ -3081,7 +3329,8 @@
         "directionDegrees": 324,
         "movementType": "Linear",
         "massKg": 892632856,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0250",
@@ -3093,7 +3342,8 @@
         "directionDegrees": 232,
         "movementType": "Linear",
         "massKg": 124605353,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0251",
@@ -3105,7 +3355,8 @@
         "directionDegrees": 342,
         "movementType": "Linear",
         "massKg": 203691230,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0252",
@@ -3117,7 +3368,8 @@
         "directionDegrees": 293,
         "movementType": "Linear",
         "massKg": 21077700,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0253",
@@ -3129,7 +3381,8 @@
         "directionDegrees": 167,
         "movementType": "Linear",
         "massKg": 872311873,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0254",
@@ -3141,7 +3394,8 @@
         "directionDegrees": 336,
         "movementType": "Linear",
         "massKg": 105689501,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0255",
@@ -3153,7 +3407,8 @@
         "directionDegrees": 271,
         "movementType": "Linear",
         "massKg": 205635517,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0256",
@@ -3165,7 +3420,8 @@
         "directionDegrees": 19,
         "movementType": "Linear",
         "massKg": 827160373,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0257",
@@ -3177,7 +3433,8 @@
         "directionDegrees": 149,
         "movementType": "Linear",
         "massKg": 630121063,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0258",
@@ -3189,7 +3446,8 @@
         "directionDegrees": 337,
         "movementType": "Linear",
         "massKg": 767917394,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0259",
@@ -3201,7 +3459,8 @@
         "directionDegrees": 20,
         "movementType": "Linear",
         "massKg": 433523680,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0260",
@@ -3213,7 +3472,8 @@
         "directionDegrees": 206,
         "movementType": "Linear",
         "massKg": 173307191,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0261",
@@ -3225,7 +3485,8 @@
         "directionDegrees": 60,
         "movementType": "Linear",
         "massKg": 850488175,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0262",
@@ -3237,7 +3498,8 @@
         "directionDegrees": 135,
         "movementType": "Linear",
         "massKg": 971553483,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0263",
@@ -3249,7 +3511,8 @@
         "directionDegrees": 130,
         "movementType": "Linear",
         "massKg": 631615885,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0264",
@@ -3261,7 +3524,8 @@
         "directionDegrees": 314,
         "movementType": "Linear",
         "massKg": 758012977,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0265",
@@ -3273,7 +3537,8 @@
         "directionDegrees": 244,
         "movementType": "Linear",
         "massKg": 843639111,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0266",
@@ -3285,7 +3550,8 @@
         "directionDegrees": 120,
         "movementType": "Linear",
         "massKg": 262205158,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0267",
@@ -3297,7 +3563,8 @@
         "directionDegrees": 0,
         "movementType": "Linear",
         "massKg": 216487974,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0268",
@@ -3309,7 +3576,8 @@
         "directionDegrees": 113,
         "movementType": "Linear",
         "massKg": 897971783,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0269",
@@ -3321,7 +3589,8 @@
         "directionDegrees": 211,
         "movementType": "Linear",
         "massKg": 342378689,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0270",
@@ -3333,7 +3602,8 @@
         "directionDegrees": 98,
         "movementType": "Linear",
         "massKg": 151668201,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0271",
@@ -3345,7 +3615,8 @@
         "directionDegrees": 65,
         "movementType": "Linear",
         "massKg": 679889771,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0272",
@@ -3357,7 +3628,8 @@
         "directionDegrees": 194,
         "movementType": "Linear",
         "massKg": 15357351,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0273",
@@ -3369,7 +3641,8 @@
         "directionDegrees": 10,
         "movementType": "Linear",
         "massKg": 643361087,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0274",
@@ -3381,7 +3654,8 @@
         "directionDegrees": 137,
         "movementType": "Linear",
         "massKg": 473850546,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0275",
@@ -3393,7 +3667,8 @@
         "directionDegrees": 4,
         "movementType": "Linear",
         "massKg": 332834545,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0276",
@@ -3405,7 +3680,8 @@
         "directionDegrees": 358,
         "movementType": "Linear",
         "massKg": 446994733,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0277",
@@ -3417,7 +3693,8 @@
         "directionDegrees": 325,
         "movementType": "Linear",
         "massKg": 302371098,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0278",
@@ -3429,7 +3706,8 @@
         "directionDegrees": 168,
         "movementType": "Linear",
         "massKg": 206918923,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0279",
@@ -3441,7 +3719,8 @@
         "directionDegrees": 226,
         "movementType": "Linear",
         "massKg": 958179885,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0280",
@@ -3453,7 +3732,8 @@
         "directionDegrees": 86,
         "movementType": "Linear",
         "massKg": 911887854,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0281",
@@ -3465,7 +3745,8 @@
         "directionDegrees": 199,
         "movementType": "Linear",
         "massKg": 207152619,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0282",
@@ -3477,7 +3758,8 @@
         "directionDegrees": 162,
         "movementType": "Linear",
         "massKg": 575132860,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0283",
@@ -3489,7 +3771,8 @@
         "directionDegrees": 337,
         "movementType": "Linear",
         "massKg": 285206742,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0284",
@@ -3501,7 +3784,8 @@
         "directionDegrees": 168,
         "movementType": "Linear",
         "massKg": 306567039,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0285",
@@ -3513,7 +3797,8 @@
         "directionDegrees": 193,
         "movementType": "Linear",
         "massKg": 66764599,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0286",
@@ -3525,7 +3810,8 @@
         "directionDegrees": 133,
         "movementType": "Linear",
         "massKg": 429006228,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0287",
@@ -3537,7 +3823,8 @@
         "directionDegrees": 321,
         "movementType": "Linear",
         "massKg": 957393436,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0288",
@@ -3549,7 +3836,8 @@
         "directionDegrees": 14,
         "movementType": "Linear",
         "massKg": 431483389,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0289",
@@ -3561,7 +3849,8 @@
         "directionDegrees": 273,
         "movementType": "Linear",
         "massKg": 82662997,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0290",
@@ -3573,7 +3862,8 @@
         "directionDegrees": 48,
         "movementType": "Linear",
         "massKg": 208536377,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0291",
@@ -3585,7 +3875,8 @@
         "directionDegrees": 184,
         "movementType": "Linear",
         "massKg": 848510837,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0292",
@@ -3597,7 +3888,8 @@
         "directionDegrees": 36,
         "movementType": "Linear",
         "massKg": 359581871,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0293",
@@ -3609,7 +3901,8 @@
         "directionDegrees": 30,
         "movementType": "Linear",
         "massKg": 143244138,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0294",
@@ -3621,7 +3914,8 @@
         "directionDegrees": 204,
         "movementType": "Linear",
         "massKg": 493197293,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0295",
@@ -3633,7 +3927,8 @@
         "directionDegrees": 10,
         "movementType": "Linear",
         "massKg": 707020479,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0296",
@@ -3645,7 +3940,8 @@
         "directionDegrees": 344,
         "movementType": "Linear",
         "massKg": 67445780,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0297",
@@ -3657,7 +3953,8 @@
         "directionDegrees": 13,
         "movementType": "Linear",
         "massKg": 584139136,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0298",
@@ -3669,7 +3966,8 @@
         "directionDegrees": 52,
         "movementType": "Linear",
         "massKg": 410943053,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0299",
@@ -3681,7 +3979,8 @@
         "directionDegrees": 231,
         "movementType": "Linear",
         "massKg": 175357343,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0300",
@@ -3693,7 +3992,8 @@
         "directionDegrees": 88,
         "movementType": "Linear",
         "massKg": 127002264,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0301",
@@ -3705,7 +4005,8 @@
         "directionDegrees": 203,
         "movementType": "Linear",
         "massKg": 493907118,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0302",
@@ -3717,7 +4018,8 @@
         "directionDegrees": 310,
         "movementType": "Linear",
         "massKg": 582855830,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0303",
@@ -3729,7 +4031,8 @@
         "directionDegrees": 241,
         "movementType": "Linear",
         "massKg": 3599718,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0304",
@@ -3741,7 +4044,8 @@
         "directionDegrees": 113,
         "movementType": "Linear",
         "massKg": 769217200,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0305",
@@ -3753,7 +4057,8 @@
         "directionDegrees": 155,
         "movementType": "Linear",
         "massKg": 728508831,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0306",
@@ -3765,7 +4070,8 @@
         "directionDegrees": 144,
         "movementType": "Linear",
         "massKg": 804375877,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0307",
@@ -3777,7 +4083,8 @@
         "directionDegrees": 258,
         "movementType": "Linear",
         "massKg": 740447841,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0308",
@@ -3789,7 +4096,8 @@
         "directionDegrees": 193,
         "movementType": "Linear",
         "massKg": 996579772,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0309",
@@ -3801,7 +4109,8 @@
         "directionDegrees": 335,
         "movementType": "Linear",
         "massKg": 802554444,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0310",
@@ -3813,7 +4122,8 @@
         "directionDegrees": 358,
         "movementType": "Linear",
         "massKg": 14590756,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0311",
@@ -3825,7 +4135,8 @@
         "directionDegrees": 141,
         "movementType": "Linear",
         "massKg": 355191022,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0312",
@@ -3837,7 +4148,8 @@
         "directionDegrees": 203,
         "movementType": "Linear",
         "massKg": 190891229,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0313",
@@ -3849,7 +4161,8 @@
         "directionDegrees": 149,
         "movementType": "Linear",
         "massKg": 699022688,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0314",
@@ -3861,7 +4174,8 @@
         "directionDegrees": 7,
         "movementType": "Linear",
         "massKg": 252607079,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0315",
@@ -3873,7 +4187,8 @@
         "directionDegrees": 287,
         "movementType": "Linear",
         "massKg": 828291158,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0316",
@@ -3885,7 +4200,8 @@
         "directionDegrees": 332,
         "movementType": "Linear",
         "massKg": 76737691,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0317",
@@ -3897,7 +4213,8 @@
         "directionDegrees": 241,
         "movementType": "Linear",
         "massKg": 894725515,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0318",
@@ -3909,7 +4226,8 @@
         "directionDegrees": 91,
         "movementType": "Linear",
         "massKg": 835159544,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0319",
@@ -3921,7 +4239,8 @@
         "directionDegrees": 104,
         "movementType": "Linear",
         "massKg": 866501306,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0320",
@@ -3933,7 +4252,8 @@
         "directionDegrees": 178,
         "movementType": "Linear",
         "massKg": 842226362,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0321",
@@ -3945,7 +4265,8 @@
         "directionDegrees": 83,
         "movementType": "Linear",
         "massKg": 71122808,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0322",
@@ -3957,7 +4278,8 @@
         "directionDegrees": 263,
         "movementType": "Linear",
         "massKg": 66234821,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0323",
@@ -3969,7 +4291,8 @@
         "directionDegrees": 78,
         "movementType": "Linear",
         "massKg": 888307920,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0324",
@@ -3981,7 +4304,8 @@
         "directionDegrees": 135,
         "movementType": "Linear",
         "massKg": 411569069,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0325",
@@ -3993,7 +4317,8 @@
         "directionDegrees": 354,
         "movementType": "Linear",
         "massKg": 362142932,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0326",
@@ -4005,7 +4330,8 @@
         "directionDegrees": 95,
         "movementType": "Linear",
         "massKg": 800601061,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0327",
@@ -4017,7 +4343,8 @@
         "directionDegrees": 238,
         "movementType": "Linear",
         "massKg": 240812421,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0328",
@@ -4029,7 +4356,8 @@
         "directionDegrees": 267,
         "movementType": "Linear",
         "massKg": 963995301,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0329",
@@ -4041,7 +4369,8 @@
         "directionDegrees": 30,
         "movementType": "Linear",
         "massKg": 690986933,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0330",
@@ -4053,7 +4382,8 @@
         "directionDegrees": 268,
         "movementType": "Linear",
         "massKg": 564678536,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0331",
@@ -4065,7 +4395,8 @@
         "directionDegrees": 70,
         "movementType": "Linear",
         "massKg": 687943299,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0332",
@@ -4077,7 +4408,8 @@
         "directionDegrees": 24,
         "movementType": "Linear",
         "massKg": 883198491,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0333",
@@ -4089,7 +4421,8 @@
         "directionDegrees": 28,
         "movementType": "Linear",
         "massKg": 945211348,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0334",
@@ -4101,7 +4434,8 @@
         "directionDegrees": 75,
         "movementType": "Linear",
         "massKg": 103895780,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0335",
@@ -4113,7 +4447,8 @@
         "directionDegrees": 300,
         "movementType": "Linear",
         "massKg": 227927087,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0336",
@@ -4125,7 +4460,8 @@
         "directionDegrees": 245,
         "movementType": "Linear",
         "massKg": 578558071,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0337",
@@ -4137,7 +4473,8 @@
         "directionDegrees": 317,
         "movementType": "Linear",
         "massKg": 650292639,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0338",
@@ -4149,7 +4486,8 @@
         "directionDegrees": 268,
         "movementType": "Linear",
         "massKg": 991909726,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0339",
@@ -4161,7 +4499,8 @@
         "directionDegrees": 244,
         "movementType": "Linear",
         "massKg": 165138268,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0340",
@@ -4173,7 +4512,8 @@
         "directionDegrees": 286,
         "movementType": "Linear",
         "massKg": 477673152,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0341",
@@ -4185,7 +4525,8 @@
         "directionDegrees": 126,
         "movementType": "Linear",
         "massKg": 450341539,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0342",
@@ -4197,7 +4538,8 @@
         "directionDegrees": 303,
         "movementType": "Linear",
         "massKg": 230700016,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0343",
@@ -4209,7 +4551,8 @@
         "directionDegrees": 121,
         "movementType": "Linear",
         "massKg": 457225045,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0344",
@@ -4221,7 +4564,8 @@
         "directionDegrees": 221,
         "movementType": "Linear",
         "massKg": 344551039,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0345",
@@ -4233,7 +4577,8 @@
         "directionDegrees": 250,
         "movementType": "Linear",
         "massKg": 60852095,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0346",
@@ -4245,7 +4590,8 @@
         "directionDegrees": 86,
         "movementType": "Linear",
         "massKg": 838934145,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0347",
@@ -4257,7 +4603,8 @@
         "directionDegrees": 59,
         "movementType": "Linear",
         "massKg": 92410197,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0348",
@@ -4269,7 +4616,8 @@
         "directionDegrees": 302,
         "movementType": "Linear",
         "massKg": 891672779,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0349",
@@ -4281,7 +4629,8 @@
         "directionDegrees": 229,
         "movementType": "Linear",
         "massKg": 239669523,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0350",
@@ -4293,7 +4642,8 @@
         "directionDegrees": 203,
         "movementType": "Linear",
         "massKg": 598349568,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0351",
@@ -4305,7 +4655,8 @@
         "directionDegrees": 309,
         "movementType": "Linear",
         "massKg": 559027291,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0352",
@@ -4317,7 +4668,8 @@
         "directionDegrees": 318,
         "movementType": "Linear",
         "massKg": 268075082,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0353",
@@ -4329,7 +4681,8 @@
         "directionDegrees": 139,
         "movementType": "Linear",
         "massKg": 629551206,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0354",
@@ -4341,7 +4694,8 @@
         "directionDegrees": 345,
         "movementType": "Linear",
         "massKg": 331414919,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0355",
@@ -4353,7 +4707,8 @@
         "directionDegrees": 91,
         "movementType": "Linear",
         "massKg": 481877926,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0356",
@@ -4365,7 +4720,8 @@
         "directionDegrees": 308,
         "movementType": "Linear",
         "massKg": 296338970,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0357",
@@ -4377,7 +4733,8 @@
         "directionDegrees": 199,
         "movementType": "Linear",
         "massKg": 889483265,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0358",
@@ -4389,7 +4746,8 @@
         "directionDegrees": 130,
         "movementType": "Linear",
         "massKg": 717377161,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0359",
@@ -4401,7 +4759,8 @@
         "directionDegrees": 78,
         "movementType": "Linear",
         "massKg": 27017277,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0360",
@@ -4413,7 +4772,8 @@
         "directionDegrees": 206,
         "movementType": "Linear",
         "massKg": 574939481,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0361",
@@ -4425,7 +4785,8 @@
         "directionDegrees": 161,
         "movementType": "Linear",
         "massKg": 407316566,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0362",
@@ -4437,7 +4798,8 @@
         "directionDegrees": 269,
         "movementType": "Linear",
         "massKg": 160837183,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0363",
@@ -4449,7 +4811,8 @@
         "directionDegrees": 252,
         "movementType": "Linear",
         "massKg": 354725931,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0364",
@@ -4461,7 +4824,8 @@
         "directionDegrees": 347,
         "movementType": "Linear",
         "massKg": 629727286,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0365",
@@ -4473,7 +4837,8 @@
         "directionDegrees": 42,
         "movementType": "Linear",
         "massKg": 393783329,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0366",
@@ -4485,7 +4850,8 @@
         "directionDegrees": 63,
         "movementType": "Linear",
         "massKg": 194403552,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0367",
@@ -4497,7 +4863,8 @@
         "directionDegrees": 91,
         "movementType": "Linear",
         "massKg": 111929742,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0368",
@@ -4509,7 +4876,8 @@
         "directionDegrees": 106,
         "movementType": "Linear",
         "massKg": 609524269,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0369",
@@ -4521,7 +4889,8 @@
         "directionDegrees": 280,
         "movementType": "Linear",
         "massKg": 812034727,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0370",
@@ -4533,7 +4902,8 @@
         "directionDegrees": 343,
         "movementType": "Linear",
         "massKg": 835282143,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0371",
@@ -4545,7 +4915,8 @@
         "directionDegrees": 255,
         "movementType": "Linear",
         "massKg": 244265883,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0372",
@@ -4557,7 +4928,8 @@
         "directionDegrees": 299,
         "movementType": "Linear",
         "massKg": 421145956,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0373",
@@ -4569,7 +4941,8 @@
         "directionDegrees": 100,
         "movementType": "Linear",
         "massKg": 211492872,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0374",
@@ -4581,7 +4954,8 @@
         "directionDegrees": 158,
         "movementType": "Linear",
         "massKg": 457595074,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0375",
@@ -4593,7 +4967,8 @@
         "directionDegrees": 324,
         "movementType": "Linear",
         "massKg": 196216834,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0376",
@@ -4605,7 +4980,8 @@
         "directionDegrees": 333,
         "movementType": "Linear",
         "massKg": 973733103,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0377",
@@ -4617,7 +4993,8 @@
         "directionDegrees": 253,
         "movementType": "Linear",
         "massKg": 347536996,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0378",
@@ -4629,7 +5006,8 @@
         "directionDegrees": 129,
         "movementType": "Linear",
         "massKg": 4476541,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0379",
@@ -4641,7 +5019,8 @@
         "directionDegrees": 113,
         "movementType": "Linear",
         "massKg": 56674331,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0380",
@@ -4653,7 +5032,8 @@
         "directionDegrees": 14,
         "movementType": "Linear",
         "massKg": 884542435,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0381",
@@ -4665,7 +5045,8 @@
         "directionDegrees": 357,
         "movementType": "Linear",
         "massKg": 710222120,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0382",
@@ -4677,7 +5058,8 @@
         "directionDegrees": 300,
         "movementType": "Linear",
         "massKg": 300647293,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0383",
@@ -4689,7 +5071,8 @@
         "directionDegrees": 170,
         "movementType": "Linear",
         "massKg": 190733792,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0384",
@@ -4701,7 +5084,8 @@
         "directionDegrees": 193,
         "movementType": "Linear",
         "massKg": 60141911,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0385",
@@ -4713,7 +5097,8 @@
         "directionDegrees": 289,
         "movementType": "Linear",
         "massKg": 429478510,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0386",
@@ -4725,7 +5110,8 @@
         "directionDegrees": 41,
         "movementType": "Linear",
         "massKg": 41602772,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0387",
@@ -4737,7 +5123,8 @@
         "directionDegrees": 88,
         "movementType": "Linear",
         "massKg": 483115040,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0388",
@@ -4749,7 +5136,8 @@
         "directionDegrees": 6,
         "movementType": "Linear",
         "massKg": 195112083,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0389",
@@ -4761,7 +5149,8 @@
         "directionDegrees": 17,
         "movementType": "Linear",
         "massKg": 747019687,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0390",
@@ -4773,7 +5162,8 @@
         "directionDegrees": 267,
         "movementType": "Linear",
         "massKg": 376089578,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0391",
@@ -4785,7 +5175,8 @@
         "directionDegrees": 144,
         "movementType": "Linear",
         "massKg": 532679772,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0392",
@@ -4797,7 +5188,8 @@
         "directionDegrees": 242,
         "movementType": "Linear",
         "massKg": 531764950,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0393",
@@ -4809,7 +5201,8 @@
         "directionDegrees": 204,
         "movementType": "Linear",
         "massKg": 769886844,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0394",
@@ -4821,7 +5214,8 @@
         "directionDegrees": 147,
         "movementType": "Linear",
         "massKg": 257283126,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0395",
@@ -4833,7 +5227,8 @@
         "directionDegrees": 267,
         "movementType": "Linear",
         "massKg": 320822369,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0396",
@@ -4845,7 +5240,8 @@
         "directionDegrees": 77,
         "movementType": "Linear",
         "massKg": 424895399,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0397",
@@ -4857,7 +5253,8 @@
         "directionDegrees": 15,
         "movementType": "Linear",
         "massKg": 13940321,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0398",
@@ -4869,7 +5266,8 @@
         "directionDegrees": 258,
         "movementType": "Linear",
         "massKg": 539884166,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0399",
@@ -4881,7 +5279,8 @@
         "directionDegrees": 337,
         "movementType": "Linear",
         "massKg": 654221727,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0400",
@@ -4893,7 +5292,8 @@
         "directionDegrees": 5,
         "movementType": "Linear",
         "massKg": 920408929,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0401",
@@ -4905,7 +5305,8 @@
         "directionDegrees": 85,
         "movementType": "Linear",
         "massKg": 364663427,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0402",
@@ -4917,7 +5318,8 @@
         "directionDegrees": 206,
         "movementType": "Linear",
         "massKg": 831774598,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0403",
@@ -4929,7 +5331,8 @@
         "directionDegrees": 152,
         "movementType": "Linear",
         "massKg": 700264291,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0404",
@@ -4941,7 +5344,8 @@
         "directionDegrees": 177,
         "movementType": "Linear",
         "massKg": 308063573,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0405",
@@ -4953,7 +5357,8 @@
         "directionDegrees": 37,
         "movementType": "Linear",
         "massKg": 926258868,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0406",
@@ -4965,7 +5370,8 @@
         "directionDegrees": 70,
         "movementType": "Linear",
         "massKg": 873176712,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0407",
@@ -4977,7 +5383,8 @@
         "directionDegrees": 57,
         "movementType": "Linear",
         "massKg": 669159126,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0408",
@@ -4989,7 +5396,8 @@
         "directionDegrees": 343,
         "movementType": "Linear",
         "massKg": 362715900,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0409",
@@ -5001,7 +5409,8 @@
         "directionDegrees": 156,
         "movementType": "Linear",
         "massKg": 107420231,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0410",
@@ -5013,7 +5422,8 @@
         "directionDegrees": 213,
         "movementType": "Linear",
         "massKg": 680347132,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0411",
@@ -5025,7 +5435,8 @@
         "directionDegrees": 219,
         "movementType": "Linear",
         "massKg": 983214118,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0412",
@@ -5037,7 +5448,8 @@
         "directionDegrees": 300,
         "movementType": "Linear",
         "massKg": 922305277,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0413",
@@ -5049,7 +5461,8 @@
         "directionDegrees": 168,
         "movementType": "Linear",
         "massKg": 414881790,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0414",
@@ -5061,7 +5474,8 @@
         "directionDegrees": 337,
         "movementType": "Linear",
         "massKg": 914324692,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0415",
@@ -5073,7 +5487,8 @@
         "directionDegrees": 104,
         "movementType": "Linear",
         "massKg": 630866388,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0416",
@@ -5085,7 +5500,8 @@
         "directionDegrees": 185,
         "movementType": "Linear",
         "massKg": 370713816,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0417",
@@ -5097,7 +5513,8 @@
         "directionDegrees": 102,
         "movementType": "Linear",
         "massKg": 997059602,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0418",
@@ -5109,7 +5526,8 @@
         "directionDegrees": 174,
         "movementType": "Linear",
         "massKg": 563322971,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0419",
@@ -5121,7 +5539,8 @@
         "directionDegrees": 182,
         "movementType": "Linear",
         "massKg": 896397340,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0420",
@@ -5133,7 +5552,8 @@
         "directionDegrees": 110,
         "movementType": "Linear",
         "massKg": 312864709,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0421",
@@ -5145,7 +5565,8 @@
         "directionDegrees": 352,
         "movementType": "Linear",
         "massKg": 40668123,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0422",
@@ -5157,7 +5578,8 @@
         "directionDegrees": 133,
         "movementType": "Linear",
         "massKg": 586876065,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0423",
@@ -5169,7 +5591,8 @@
         "directionDegrees": 9,
         "movementType": "Linear",
         "massKg": 507112173,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0424",
@@ -5181,7 +5604,8 @@
         "directionDegrees": 92,
         "movementType": "Linear",
         "massKg": 226175392,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0425",
@@ -5193,7 +5617,8 @@
         "directionDegrees": 257,
         "movementType": "Linear",
         "massKg": 532004752,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0426",
@@ -5205,7 +5630,8 @@
         "directionDegrees": 18,
         "movementType": "Linear",
         "massKg": 786018790,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0427",
@@ -5217,7 +5643,8 @@
         "directionDegrees": 334,
         "movementType": "Linear",
         "massKg": 46764427,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0428",
@@ -5229,7 +5656,8 @@
         "directionDegrees": 113,
         "movementType": "Linear",
         "massKg": 938117884,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0429",
@@ -5241,7 +5669,8 @@
         "directionDegrees": 169,
         "movementType": "Linear",
         "massKg": 189278839,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0430",
@@ -5253,7 +5682,8 @@
         "directionDegrees": 78,
         "movementType": "Linear",
         "massKg": 45614767,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0431",
@@ -5265,7 +5695,8 @@
         "directionDegrees": 310,
         "movementType": "Linear",
         "massKg": 676256002,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0432",
@@ -5277,7 +5708,8 @@
         "directionDegrees": 100,
         "movementType": "Linear",
         "massKg": 793238232,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0433",
@@ -5289,7 +5721,8 @@
         "directionDegrees": 139,
         "movementType": "Linear",
         "massKg": 278165112,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0434",
@@ -5301,7 +5734,8 @@
         "directionDegrees": 190,
         "movementType": "Linear",
         "massKg": 248915622,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0435",
@@ -5313,7 +5747,8 @@
         "directionDegrees": 236,
         "movementType": "Linear",
         "massKg": 817452622,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0436",
@@ -5325,7 +5760,8 @@
         "directionDegrees": 203,
         "movementType": "Linear",
         "massKg": 929952044,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0437",
@@ -5337,7 +5773,8 @@
         "directionDegrees": 180,
         "movementType": "Linear",
         "massKg": 522989978,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0438",
@@ -5349,7 +5786,8 @@
         "directionDegrees": 105,
         "movementType": "Linear",
         "massKg": 230938054,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0439",
@@ -5361,7 +5799,8 @@
         "directionDegrees": 327,
         "movementType": "Linear",
         "massKg": 199545768,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0440",
@@ -5373,7 +5812,8 @@
         "directionDegrees": 90,
         "movementType": "Linear",
         "massKg": 690164890,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0441",
@@ -5385,7 +5825,8 @@
         "directionDegrees": 30,
         "movementType": "Linear",
         "massKg": 391301512,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0442",
@@ -5397,7 +5838,8 @@
         "directionDegrees": 160,
         "movementType": "Linear",
         "massKg": 3592714,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0443",
@@ -5409,7 +5851,8 @@
         "directionDegrees": 335,
         "movementType": "Linear",
         "massKg": 673126919,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0444",
@@ -5421,7 +5864,8 @@
         "directionDegrees": 138,
         "movementType": "Linear",
         "massKg": 929062119,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0445",
@@ -5433,7 +5877,8 @@
         "directionDegrees": 353,
         "movementType": "Linear",
         "massKg": 162000707,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0446",
@@ -5445,7 +5890,8 @@
         "directionDegrees": 202,
         "movementType": "Linear",
         "massKg": 874684532,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0447",
@@ -5457,7 +5903,8 @@
         "directionDegrees": 139,
         "movementType": "Linear",
         "massKg": 645845541,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0448",
@@ -5469,7 +5916,8 @@
         "directionDegrees": 289,
         "movementType": "Linear",
         "massKg": 397248384,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0449",
@@ -5481,7 +5929,8 @@
         "directionDegrees": 149,
         "movementType": "Linear",
         "massKg": 845069184,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0450",
@@ -5493,7 +5942,8 @@
         "directionDegrees": 263,
         "movementType": "Linear",
         "massKg": 505602493,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0451",
@@ -5505,7 +5955,8 @@
         "directionDegrees": 287,
         "movementType": "Linear",
         "massKg": 596666509,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0452",
@@ -5517,7 +5968,8 @@
         "directionDegrees": 255,
         "movementType": "Linear",
         "massKg": 215456437,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0453",
@@ -5529,7 +5981,8 @@
         "directionDegrees": 158,
         "movementType": "Linear",
         "massKg": 641048931,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0454",
@@ -5541,7 +5994,8 @@
         "directionDegrees": 49,
         "movementType": "Linear",
         "massKg": 652803695,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0455",
@@ -5553,7 +6007,8 @@
         "directionDegrees": 222,
         "movementType": "Linear",
         "massKg": 101825380,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0456",
@@ -5565,7 +6020,8 @@
         "directionDegrees": 138,
         "movementType": "Linear",
         "massKg": 427717900,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0457",
@@ -5577,7 +6033,8 @@
         "directionDegrees": 350,
         "movementType": "Linear",
         "massKg": 72222724,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0458",
@@ -5589,7 +6046,8 @@
         "directionDegrees": 323,
         "movementType": "Linear",
         "massKg": 156129547,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0459",
@@ -5601,7 +6059,8 @@
         "directionDegrees": 201,
         "movementType": "Linear",
         "massKg": 606484221,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0460",
@@ -5613,7 +6072,8 @@
         "directionDegrees": 297,
         "movementType": "Linear",
         "massKg": 138550171,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0461",
@@ -5625,7 +6085,8 @@
         "directionDegrees": 3,
         "movementType": "Linear",
         "massKg": 528296936,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0462",
@@ -5637,7 +6098,8 @@
         "directionDegrees": 91,
         "movementType": "Linear",
         "massKg": 404441799,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0463",
@@ -5649,7 +6111,8 @@
         "directionDegrees": 48,
         "movementType": "Linear",
         "massKg": 100822418,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0464",
@@ -5661,7 +6124,8 @@
         "directionDegrees": 165,
         "movementType": "Linear",
         "massKg": 42320113,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0465",
@@ -5673,7 +6137,8 @@
         "directionDegrees": 193,
         "movementType": "Linear",
         "massKg": 552132661,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0466",
@@ -5685,7 +6150,8 @@
         "directionDegrees": 188,
         "movementType": "Linear",
         "massKg": 391326578,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0467",
@@ -5697,7 +6163,8 @@
         "directionDegrees": 9,
         "movementType": "Linear",
         "massKg": 267038010,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0468",
@@ -5709,7 +6176,8 @@
         "directionDegrees": 325,
         "movementType": "Linear",
         "massKg": 600959593,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0469",
@@ -5721,7 +6189,8 @@
         "directionDegrees": 352,
         "movementType": "Linear",
         "massKg": 396304232,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0470",
@@ -5733,7 +6202,8 @@
         "directionDegrees": 277,
         "movementType": "Linear",
         "massKg": 977917617,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0471",
@@ -5745,7 +6215,8 @@
         "directionDegrees": 355,
         "movementType": "Linear",
         "massKg": 284550988,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0472",
@@ -5757,7 +6228,8 @@
         "directionDegrees": 269,
         "movementType": "Linear",
         "massKg": 537222311,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0473",
@@ -5769,7 +6241,8 @@
         "directionDegrees": 359,
         "movementType": "Linear",
         "massKg": 225626740,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0474",
@@ -5781,7 +6254,8 @@
         "directionDegrees": 332,
         "movementType": "Linear",
         "massKg": 508611012,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0475",
@@ -5793,7 +6267,8 @@
         "directionDegrees": 155,
         "movementType": "Linear",
         "massKg": 640758635,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0476",
@@ -5805,7 +6280,8 @@
         "directionDegrees": 66,
         "movementType": "Linear",
         "massKg": 175372561,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0477",
@@ -5817,7 +6293,8 @@
         "directionDegrees": 152,
         "movementType": "Linear",
         "massKg": 19374831,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0478",
@@ -5829,7 +6306,8 @@
         "directionDegrees": 234,
         "movementType": "Linear",
         "massKg": 41759642,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0479",
@@ -5841,7 +6319,8 @@
         "directionDegrees": 128,
         "movementType": "Linear",
         "massKg": 314384960,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0480",
@@ -5853,7 +6332,8 @@
         "directionDegrees": 169,
         "movementType": "Linear",
         "massKg": 112290591,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0481",
@@ -5865,7 +6345,8 @@
         "directionDegrees": 177,
         "movementType": "Linear",
         "massKg": 867196011,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0482",
@@ -5877,7 +6358,8 @@
         "directionDegrees": 117,
         "movementType": "Linear",
         "massKg": 42631106,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0483",
@@ -5889,7 +6371,8 @@
         "directionDegrees": 307,
         "movementType": "Linear",
         "massKg": 231910496,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0484",
@@ -5901,7 +6384,8 @@
         "directionDegrees": 295,
         "movementType": "Linear",
         "massKg": 553823926,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0485",
@@ -5913,7 +6397,8 @@
         "directionDegrees": 70,
         "movementType": "Linear",
         "massKg": 300463882,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "AST-0486",
@@ -5925,7 +6410,8 @@
         "directionDegrees": 267,
         "movementType": "Linear",
         "massKg": 40728261,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0487",
@@ -5937,7 +6423,8 @@
         "directionDegrees": 162,
         "movementType": "Linear",
         "massKg": 624835847,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0488",
@@ -5949,7 +6436,8 @@
         "directionDegrees": 331,
         "movementType": "Linear",
         "massKg": 676380716,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0489",
@@ -5961,7 +6449,8 @@
         "directionDegrees": 129,
         "movementType": "Linear",
         "massKg": 781690274,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0490",
@@ -5973,7 +6462,8 @@
         "directionDegrees": 14,
         "movementType": "Linear",
         "massKg": 123951179,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0491",
@@ -5985,7 +6475,8 @@
         "directionDegrees": 354,
         "movementType": "Linear",
         "massKg": 741705959,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0492",
@@ -5997,7 +6488,8 @@
         "directionDegrees": 196,
         "movementType": "Linear",
         "massKg": 485398775,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": false
       },
       {
         "objectId": "AST-0493",
@@ -6009,7 +6501,8 @@
         "directionDegrees": 237,
         "movementType": "Linear",
         "massKg": 62250505,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": true
       },
       {
         "objectId": "AST-0494",
@@ -6021,7 +6514,8 @@
         "directionDegrees": 83,
         "movementType": "Linear",
         "massKg": 455833429,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       },
       {
         "objectId": "AST-0495",
@@ -6033,7 +6527,8 @@
         "directionDegrees": 90,
         "movementType": "Linear",
         "massKg": 398917202,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": true
       },
       {
         "objectId": "AST-0496",
@@ -6045,7 +6540,8 @@
         "directionDegrees": 25,
         "movementType": "Linear",
         "massKg": 252486914,
-        "compositionType": "Carbonaceous"
+        "compositionType": "Carbonaceous",
+        "isKnown": false
       },
       {
         "objectId": "AST-0497",
@@ -6057,7 +6553,8 @@
         "directionDegrees": 103,
         "movementType": "Linear",
         "massKg": 78374821,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0498",
@@ -6069,7 +6566,8 @@
         "directionDegrees": 239,
         "movementType": "Linear",
         "massKg": 547609408,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       },
       {
         "objectId": "AST-0499",
@@ -6081,7 +6579,8 @@
         "directionDegrees": 324,
         "movementType": "Linear",
         "massKg": 129504555,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": true
       },
       {
         "objectId": "AST-0500",
@@ -6093,7 +6592,8 @@
         "directionDegrees": 66,
         "movementType": "Linear",
         "massKg": 435701121,
-        "compositionType": "Iron"
+        "compositionType": "Iron",
+        "isKnown": false
       }
     ]
   }

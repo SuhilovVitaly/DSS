@@ -260,6 +260,7 @@ public sealed class SimulationEngine : IDisposable
                 MassKg: obj.MassKg,
                 CompositionType: obj.CompositionType,
                 IsKnown: obj.IsKnown,
+                Image: obj.Image,
                 HullLayout: obj.HullLayout,
                 IsDocked: obj.IsDocked,
                 DockedStationObjectId: obj.DockedStationObjectId,
@@ -697,6 +698,7 @@ public sealed class SimulationEngine : IDisposable
                 CompositionType: obj.CompositionType,
                 Modules: BuildSaveModules(obj),
                 IsKnown: obj.IsKnown,
+                Image: obj.Image,
                 HullLayout: obj.HullLayout,
                 IsDocked: obj.IsDocked,
                 DockedStationObjectId: obj.DockedStationObjectId,
@@ -3107,6 +3109,12 @@ internal sealed record SpaceObjectRuntime(
     long? MassKg = null,
     string? CompositionType = null,
     bool IsKnown = false,
+    /// <summary>
+    /// Path to this object's graphical representation, carried forward from the
+    /// scenario/save (see <see cref="DeepSpaceSaga.Engine.Scenario.SpaceObjectData.Image"/>).
+    /// Null means no image is assigned yet.
+    /// </summary>
+    string? Image = null,
     /// <summary>
     /// Hull grid geometry carried forward from the scenario/save (requirements §57).
     /// Required (non-null) whenever Modules is non-empty — see ValidateModulePlacement.

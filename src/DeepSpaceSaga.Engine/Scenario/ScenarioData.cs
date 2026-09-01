@@ -80,6 +80,11 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("modules")] IReadOnlyList<ShipModuleData>? Modules,
     [property: JsonPropertyName("isKnown")] bool IsKnown = false,
     /// <summary>
+    /// Path to this object's graphical representation (e.g. a sprite/texture file), for
+    /// client rendering. Null means no image is assigned yet.
+    /// </summary>
+    [property: JsonPropertyName("image")] string? Image = null,
+    /// <summary>
     /// Hull grid geometry (width/height + structural cells) for any ship-like object that
     /// carries modules (requirements §57 — replaces the platformIndex/occupiedCells(0..3)
     /// model). Nullable at the DTO level; the domain requires it whenever Modules is
