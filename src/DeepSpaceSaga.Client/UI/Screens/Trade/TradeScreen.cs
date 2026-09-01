@@ -27,6 +27,16 @@ public sealed class TradeScreen : IScreen
     private int _screenHeight;
     private bool _isStationNameHovered;
     private bool _isExitButtonHovered;
+    private bool _isScrollUpHovered;
+    private bool _isScrollDownHovered;
+
+    /// <summary>
+    /// Mockup scroll position (0..<see cref="ScrollbarMockStepCount"/>) driving the
+    /// <see cref="GridPanel"/> thumb's position within the track — the resources grid
+    /// itself is static (no real list to scroll yet), this only demonstrates the arrow
+    /// buttons' click behavior ahead of the real redesign.
+    /// </summary>
+    private int _scrollPosition;
 
     /// <summary>
     /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
@@ -68,6 +78,27 @@ public sealed class TradeScreen : IScreen
 
     private const string PlaceholderLine = "Trade: awaiting redesign";
 
+    /// <summary>Outline marking the future content area, ahead of the real redesign layout.</summary>
+    private static readonly SKRect _contentOutlineRect = new(10f, 90f, 10f + 980f, 90f + 200f);
+
+    private static readonly SKPaint _contentOutlinePaint = new()
+    {
+        Color = SKColors.White, Style = SKPaintStyle.Stroke, StrokeWidth = 1f, IsAntialias = true
+    };
+
+    /// <summary>
+    /// Anchor (the header bar's top-left) and row count for the <see cref="GridPanel"/>
+    /// resources list — see that control's doc comment for how header/rows/scrollbar are
+    /// laid out relative to this point. There is no real trade data yet, so the count is
+    /// truthfully 0: <see cref="GridPanel"/> renders that as dark-gray placeholder rows and
+    /// an inactive scrollbar rather than pretending there's a full page of items.
+    /// </summary>
+    private const float GridPanelOriginX = 15f;
+    private const float GridPanelOriginY = 76f;
+    private const string ResourcesGridTitle = "Resources";
+    private const int ResourcesRowCount = 0;
+    private const int ScrollbarMockStepCount = 4;
+
     public TradeScreen(SnapshotBuffer? buffer = null)
     {
         _buffer = buffer;
@@ -77,6 +108,8 @@ public sealed class TradeScreen : IScreen
     {
         _isStationNameHovered = false;
         _isExitButtonHovered = false;
+        _isScrollUpHovered = false;
+        _isScrollDownHovered = false;
         _foodRationsHoverStartedAtMs = null;
         _crewHoverStartedAtMs = null;
         _tokensHoverStartedAtMs = null;
@@ -99,6 +132,21 @@ public sealed class TradeScreen : IScreen
         if (IsStationNameHit(x, y))
             return ScreenEvent.NavigateToStation;
 
+        if (GridPanel.IsScrollbarActive(ResourcesRowCount))
+        {
+            if (IsScrollUpArrowHit(x, y))
+            {
+                _scrollPosition = Math.Max(0, _scrollPosition - 1);
+                return ScreenEvent.None;
+            }
+
+            if (IsScrollDownArrowHit(x, y))
+            {
+                _scrollPosition = Math.Min(ScrollbarMockStepCount, _scrollPosition + 1);
+                return ScreenEvent.None;
+            }
+        }
+
         // Click on the dimmed background outside the panel also closes it.
         if (!TradeLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
             return ScreenEvent.CloseTrade;
@@ -113,6 +161,9 @@ public sealed class TradeScreen : IScreen
     {
         _isStationNameHovered = IsStationNameHit(x, y);
         _isExitButtonHovered = IsExitButtonHit(x, y);
+        bool isScrollbarActive = GridPanel.IsScrollbarActive(ResourcesRowCount);
+        _isScrollUpHovered = isScrollbarActive && IsScrollUpArrowHit(x, y);
+        _isScrollDownHovered = isScrollbarActive && IsScrollDownArrowHit(x, y);
 
         // Not a button — hovering it only shows a delayed tooltip (see Render), so it must
         // not affect the interactive-cursor swap the way the name link / exit button do.
@@ -136,7 +187,7 @@ public sealed class TradeScreen : IScreen
         else
             _fuelHoverStartedAtMs = null;
 
-        return _isStationNameHovered || _isExitButtonHovered;
+        return _isStationNameHovered || _isExitButtonHovered || _isScrollUpHovered || _isScrollDownHovered;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -165,6 +216,13 @@ public sealed class TradeScreen : IScreen
         float cx = pl + TradeLayout.PanelWidth / 2f;
         canvas.DrawText(PlaceholderLine, cx, pt + TradeLayout.BodyStartY, MenuStyle.TextStatus);
 
+        var contentRect = new SKRect(pl + _contentOutlineRect.Left, pt + _contentOutlineRect.Top,
+            pl + _contentOutlineRect.Right, pt + _contentOutlineRect.Bottom);
+        canvas.DrawRect(contentRect, _contentOutlinePaint);
+
+        GridPanel.Draw(canvas, pl + GridPanelOriginX, pt + GridPanelOriginY, ResourcesGridTitle, ResourcesRowCount,
+            _scrollPosition, ScrollbarMockStepCount, _isScrollUpHovered, _isScrollDownHovered);
+
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.
         StationToolbar.DrawTooltips(canvas, pl, pt,
@@ -172,6 +230,24 @@ public sealed class TradeScreen : IScreen
             isCrewHovered: IsCrewTooltipVisible,
             isTokensHovered: IsTokensTooltipVisible,
             isFuelHovered: IsFuelTooltipVisible);
+    }
+
+    /// <summary>True when (x, y) lands on the resources grid's scrollbar up-arrow button (see <see cref="GridPanel.ScrollUpArrowLocalRect"/>).</summary>
+    private bool IsScrollUpArrowHit(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = GridPanel.ScrollUpArrowLocalRect(GridPanelOriginX, GridPanelOriginY, ResourcesRowCount);
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the resources grid's scrollbar down-arrow button (see <see cref="GridPanel.ScrollDownArrowLocalRect"/>).</summary>
+    private bool IsScrollDownArrowHit(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = GridPanel.ScrollDownArrowLocalRect(GridPanelOriginX, GridPanelOriginY, ResourcesRowCount);
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
     /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>
