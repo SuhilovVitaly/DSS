@@ -71,6 +71,7 @@ public sealed class ContractsScreen : IScreen
         float pt = ContractsLayout.PanelTop(height);
         var panelRect = new SKRect(pl, pt, pl + ContractsLayout.PanelWidth, pt + ContractsLayout.PanelHeight);
         MenuStyle.DrawPanel(canvas, panelRect);
+        StationToolbar.Draw(canvas, pl, pt);
 
         float cx = pl + ContractsLayout.PanelWidth / 2f;
         canvas.DrawText("CONTRACTS", cx, pt + ContractsLayout.TitleY, MenuStyle.TextTitle);

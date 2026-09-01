@@ -70,6 +70,7 @@ public sealed class HireScreen : IScreen
         float pt = HireLayout.PanelTop(height);
         var panelRect = new SKRect(pl, pt, pl + HireLayout.PanelWidth, pt + HireLayout.PanelHeight);
         MenuStyle.DrawPanel(canvas, panelRect);
+        StationToolbar.Draw(canvas, pl, pt);
 
         float cx = pl + HireLayout.PanelWidth / 2f;
         canvas.DrawText("HIRE", cx, pt + HireLayout.TitleY, MenuStyle.TextTitle);

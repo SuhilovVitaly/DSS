@@ -95,6 +95,7 @@ public sealed class FinanceScreen : IScreen
             canvas.DrawBitmap(BackgroundImage, panelRect);
         else
             MenuStyle.DrawPanel(canvas, panelRect);
+        StationToolbar.Draw(canvas, pl, pt);
 
         float cx = pl + FinanceLayout.PanelWidth / 2f;
         canvas.DrawText("FINANCE", cx, pt + FinanceLayout.TitleY, MenuStyle.TextTitle);
