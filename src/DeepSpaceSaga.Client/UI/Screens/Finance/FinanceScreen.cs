@@ -88,7 +88,7 @@ public sealed class FinanceScreen : IScreen
     {
         var hit = FinanceLayout.HitTest(x, y, _screenWidth, _screenHeight);
         _isCloseHovered = hit == FinanceButton.Close;
-        return _isCloseHovered;
+        return _isCloseHovered || IsStationNameHit(x, y);
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;

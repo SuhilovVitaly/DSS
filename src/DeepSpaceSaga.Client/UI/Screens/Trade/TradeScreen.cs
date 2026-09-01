@@ -235,7 +235,8 @@ public sealed class TradeScreen : IScreen
             ? TradeLayout.HitTestCargoRow(x, y, _screenWidth, _screenHeight, containerModule.Cargo.Length)
             : -1;
 
-        return _hoveredButton != TradeButton.None || _hoveredInventoryRow >= 0 || _hoveredCargoRow >= 0;
+        return _hoveredButton != TradeButton.None || _hoveredInventoryRow >= 0 || _hoveredCargoRow >= 0
+            || IsStationNameHit(x, y, snapshot);
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;

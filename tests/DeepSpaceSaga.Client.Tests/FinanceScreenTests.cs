@@ -1,5 +1,8 @@
+using System.Collections.Immutable;
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.Finance;
+using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
 using SkiaSharp;
 
@@ -92,5 +95,59 @@ public class FinanceScreenTests
 
         var result = screen.OnMouseDown(2f, 2f, MouseButton.Right);
         Assert.Equal(ScreenEvent.None, result);
+    }
+
+    [Fact]
+    public void Station_name_click_returns_NavigateToStation()
+    {
+        var screen = new FinanceScreen(DockedBuffer());
+        RenderScreen(screen);
+
+        var (x, y) = StationNameCenter();
+        Assert.Equal(ScreenEvent.NavigateToStation, screen.OnMouseDown(x, y));
+    }
+
+    [Fact]
+    public void Hovering_the_station_name_reports_interactive()
+    {
+        var screen = new FinanceScreen(DockedBuffer());
+        RenderScreen(screen);
+
+        var (x, y) = StationNameCenter();
+        Assert.True(screen.OnMouseMove(x, y));
+    }
+
+    [Fact]
+    public void Station_name_is_absent_and_not_interactive_when_not_docked()
+    {
+        // Finance is also reachable straight from GameSessionScreen (Ctrl+F) without a
+        // docked station — the toolbar shows no name, so nothing there is clickable.
+        var screen = new FinanceScreen();
+        RenderScreen(screen);
+
+        float px = FinanceLayout.PanelLeft(ScreenWidth) + StationToolbar.NameOffsetX;
+        float py = FinanceLayout.PanelTop(ScreenHeight) + StationToolbar.NameOffsetY;
+        Assert.False(screen.OnMouseMove(px, py));
+    }
+
+    private static SnapshotBuffer DockedBuffer()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(
+                new ObjectMotionSnapshot("SHIP-01", 0, 0, 0, 0, IsDocked: true, DockedStationObjectId: "STN-01"),
+                new ObjectMotionSnapshot("STN-01", 0, 0, 0, 0, DisplayName: "Test Station")),
+            PlayerShipObjectId: "SHIP-01"));
+        return buffer;
+    }
+
+    /// <summary>Screen-space center of the toolbar's "Test Station" name label (see DockedBuffer).</summary>
+    private static (float X, float Y) StationNameCenter()
+    {
+        var local = StationToolbar.NameLocalRect("Test Station");
+        float x = FinanceLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float y = FinanceLayout.PanelTop(ScreenHeight) + local.MidY;
+        return (x, y);
     }
 }

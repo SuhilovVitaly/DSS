@@ -67,7 +67,7 @@ public sealed class ContractsScreen : IScreen
     {
         var hit = ContractsLayout.HitTest(x, y, _screenWidth, _screenHeight);
         _isCloseHovered = hit == ContractsButton.Close;
-        return _isCloseHovered;
+        return _isCloseHovered || IsStationNameHit(x, y);
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;

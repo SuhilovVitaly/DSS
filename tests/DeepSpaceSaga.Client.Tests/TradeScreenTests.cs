@@ -91,6 +91,27 @@ public class TradeScreenTests
         Assert.Equal(ScreenEvent.CloseTrade, result);
     }
 
+    [Fact]
+    public async Task Station_name_click_returns_NavigateToStation()
+    {
+        await using var fixture = CreateDockedFixture();
+        RenderScreen(fixture.Screen);
+
+        var (x, y) = StationNameCenter();
+        var result = fixture.Screen.OnMouseDown(x, y);
+        Assert.Equal(ScreenEvent.NavigateToStation, result);
+    }
+
+    [Fact]
+    public async Task Hovering_the_station_name_reports_interactive()
+    {
+        await using var fixture = CreateDockedFixture();
+        RenderScreen(fixture.Screen);
+
+        var (x, y) = StationNameCenter();
+        Assert.True(fixture.Screen.OnMouseMove(x, y));
+    }
+
     // ── No snapshot / not docked — transitional state, no crash ────────────────
 
     [Fact]
@@ -622,6 +643,15 @@ public class TradeScreenTests
         return screen.OnMouseDown(cx, cy);
     }
 
+    /// <summary>Screen-space center of the toolbar's "Test Station" name label (see BaseSnapshot).</summary>
+    private static (float X, float Y) StationNameCenter()
+    {
+        var local = StationToolbar.NameLocalRect("Test Station");
+        float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
+        return (x, y);
+    }
+
     private static AuthoritativeSnapshot BaseSnapshot(ulong sequence)
     {
         var containerModule = new InstalledModuleSnapshot(
@@ -641,6 +671,8 @@ public class TradeScreenTests
             FuelAmountKg: 4000);
 
         var stationObject = new ObjectMotionSnapshot(StationObjectId, 0, 0, SpeedKmS: 0, Direction: 0, DisplayName: "Test Station");
+        var shipObject = new ObjectMotionSnapshot(PlayerShipId, 0, 0, SpeedKmS: 0, Direction: 0,
+            IsDocked: true, DockedStationObjectId: StationObjectId);
 
         var trade = new StationTradeSnapshot(
             StationObjectId,
@@ -653,7 +685,7 @@ public class TradeScreenTests
             SnapshotSequence: sequence,
             GameTimeMs: 0,
             CurrentSpeed: SimulationSpeed.Speed0,
-            Objects: ImmutableArray.Create(stationObject),
+            Objects: ImmutableArray.Create(stationObject, shipObject),
             PlayerShipObjectId: PlayerShipId,
             InstalledModules: ImmutableArray.Create(containerModule, engineModule),
             PlayerCredits: 1000,

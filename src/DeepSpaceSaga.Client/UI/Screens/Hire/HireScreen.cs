@@ -66,7 +66,7 @@ public sealed class HireScreen : IScreen
     {
         var hit = HireLayout.HitTest(x, y, _screenWidth, _screenHeight);
         _isCloseHovered = hit == HireButton.Close;
-        return _isCloseHovered;
+        return _isCloseHovered || IsStationNameHit(x, y);
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
