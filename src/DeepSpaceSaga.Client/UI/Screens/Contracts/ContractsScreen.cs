@@ -21,11 +21,18 @@ namespace DeepSpaceSaga.Client.UI.Screens.Contracts;
 /// </summary>
 public sealed class ContractsScreen : IScreen
 {
+    private readonly SnapshotBuffer? _buffer;
+
     private int _screenWidth;
     private int _screenHeight;
     private bool _isCloseHovered;
 
     private const string PlaceholderLine = "Contracts: not available yet";
+
+    public ContractsScreen(SnapshotBuffer? buffer = null)
+    {
+        _buffer = buffer;
+    }
 
     public void OnActivated() => _isCloseHovered = false;
 
@@ -42,6 +49,9 @@ public sealed class ContractsScreen : IScreen
         var hit = ContractsLayout.HitTest(x, y, _screenWidth, _screenHeight);
         if (hit == ContractsButton.Close)
             return ScreenEvent.CloseContracts;
+
+        if (IsStationNameHit(x, y))
+            return ScreenEvent.NavigateToStation;
 
         // Click on the dimmed background outside the panel also closes it.
         if (!ContractsLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
@@ -71,13 +81,28 @@ public sealed class ContractsScreen : IScreen
         float pt = ContractsLayout.PanelTop(height);
         var panelRect = new SKRect(pl, pt, pl + ContractsLayout.PanelWidth, pt + ContractsLayout.PanelHeight);
         MenuStyle.DrawPanel(canvas, panelRect);
-        StationToolbar.Draw(canvas, pl, pt);
+
+        string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
+        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false);
 
         float cx = pl + ContractsLayout.PanelWidth / 2f;
         canvas.DrawText("CONTRACTS", cx, pt + ContractsLayout.TitleY, MenuStyle.TextTitle);
         canvas.DrawText(PlaceholderLine, cx, pt + ContractsLayout.BodyStartY, MenuStyle.TextStatus);
 
         DrawCloseButton(canvas, pl, pt);
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>
+    private bool IsStationNameHit(float x, float y)
+    {
+        string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
+        if (string.IsNullOrEmpty(stationName))
+            return false;
+
+        float pl = ContractsLayout.PanelLeft(_screenWidth);
+        float pt = ContractsLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.NameLocalRect(stationName);
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
     private void DrawCloseButton(SKCanvas canvas, float panelLeft, float panelTop)

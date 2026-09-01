@@ -17,9 +17,16 @@ namespace DeepSpaceSaga.Client.UI.Screens.Finance;
 /// </summary>
 public sealed class FinanceScreen : IScreen
 {
+    private readonly SnapshotBuffer? _buffer;
+
     private int _screenWidth;
     private int _screenHeight;
     private bool _isCloseHovered;
+
+    public FinanceScreen(SnapshotBuffer? buffer = null)
+    {
+        _buffer = buffer;
+    }
 
     /// <summary>
     /// Panel background with title bar. The PNG asset is a fixed 1400×900 bitmap;
@@ -64,6 +71,9 @@ public sealed class FinanceScreen : IScreen
         if (hit == FinanceButton.Close)
             return ScreenEvent.CloseFinance;
 
+        if (IsStationNameHit(x, y))
+            return ScreenEvent.NavigateToStation;
+
         // Click on the dimmed background outside the panel also closes it.
         if (!FinanceLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
             return ScreenEvent.CloseFinance;
@@ -95,7 +105,9 @@ public sealed class FinanceScreen : IScreen
             canvas.DrawBitmap(BackgroundImage, panelRect);
         else
             MenuStyle.DrawPanel(canvas, panelRect);
-        StationToolbar.Draw(canvas, pl, pt);
+
+        string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
+        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false);
 
         float cx = pl + FinanceLayout.PanelWidth / 2f;
         canvas.DrawText("FINANCE", cx, pt + FinanceLayout.TitleY, MenuStyle.TextTitle);
@@ -116,5 +128,18 @@ public sealed class FinanceScreen : IScreen
         var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
 
         MenuStyle.DrawButton(canvas, rect, "×", _isCloseHovered ? ButtonState.Hovered : ButtonState.Normal);
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>
+    private bool IsStationNameHit(float x, float y)
+    {
+        string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
+        if (string.IsNullOrEmpty(stationName))
+            return false;
+
+        float pl = FinanceLayout.PanelLeft(_screenWidth);
+        float pt = FinanceLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.NameLocalRect(stationName);
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 }

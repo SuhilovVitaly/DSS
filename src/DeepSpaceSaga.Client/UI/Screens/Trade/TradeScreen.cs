@@ -134,6 +134,10 @@ public sealed class TradeScreen : IScreen
             return ScreenEvent.CloseTrade;
 
         var snapshot = _buffer.Latest?.Snapshot;
+
+        if (IsStationNameHit(x, y, snapshot))
+            return ScreenEvent.NavigateToStation;
+
         var trade = snapshot?.DockedStationTrade;
 
         if (trade is not null && !trade.Items.IsDefaultOrEmpty)
@@ -498,7 +502,8 @@ public sealed class TradeScreen : IScreen
         float pt = TradeLayout.PanelTop(height);
         var panelRect = TradeLayout.PanelRect(width, height);
         GenericWindowTypeA.DrawOpaque(canvas, panelRect);
-        StationToolbar.Draw(canvas, pl, pt);
+        string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
+        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false);
         GenericWindowTypeA.DrawTitle(canvas, panelRect, Localization.Get("Trade.Title"), _titlePaint);
 
         DrawHeader(canvas, pl, pt, snapshot);
@@ -523,6 +528,19 @@ public sealed class TradeScreen : IScreen
         DrawFuelPanel(canvas, pl, pt, engineModule);
         DrawSummaryRow(canvas, pl, pt, snapshot, trade);
         DrawExitButton(canvas, pl, pt); // drawn last: DrawSummaryRow's ImagePanel would otherwise paint over it
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>
+    private bool IsStationNameHit(float x, float y, AuthoritativeSnapshot? snapshot)
+    {
+        string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
+        if (string.IsNullOrEmpty(stationName))
+            return false;
+
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.NameLocalRect(stationName);
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
     private void DrawHeader(SKCanvas canvas, float pl, float pt, AuthoritativeSnapshot? snapshot)

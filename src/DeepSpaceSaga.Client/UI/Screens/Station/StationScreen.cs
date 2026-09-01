@@ -26,9 +26,16 @@ namespace DeepSpaceSaga.Client.UI.Screens.Station;
 /// </summary>
 public sealed class StationScreen : IScreen
 {
+    private readonly SnapshotBuffer? _buffer;
+
     private int _screenWidth;
     private int _screenHeight;
     private StationButton _hoveredButton = StationButton.None;
+
+    public StationScreen(SnapshotBuffer? buffer = null)
+    {
+        _buffer = buffer;
+    }
 
     /// <summary>
     /// Remaining not-yet-implemented lines, tagged with the body row they occupy
@@ -96,7 +103,9 @@ public sealed class StationScreen : IScreen
         float pt = StationLayout.PanelTop(height);
         var panelRect = new SKRect(pl, pt, pl + StationLayout.PanelWidth, pt + StationLayout.PanelHeight);
         MenuStyle.DrawPanel(canvas, panelRect);
-        StationToolbar.Draw(canvas, pl, pt);
+
+        string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
+        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: true);
 
         float cx = pl + StationLayout.PanelWidth / 2f;
         canvas.DrawText("STATION", cx, pt + StationLayout.TitleY, MenuStyle.TextTitle);
