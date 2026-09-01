@@ -3,6 +3,16 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Controls;
 
+/// <summary>Which column title a click/hover landed on, or the grid is currently sorted by — see <see cref="GridPanel.HitTestColumnTitle"/>.</summary>
+public enum GridSortColumn
+{
+    Name,
+    SellingPrice,
+    SellingCount,
+    BuyingPrice,
+    BuyingCount
+}
+
 /// <summary>
 /// Header bar + zebra-striped row grid + scrollbar control (reference mockup screenshot),
 /// extracted out of <c>Screens.Trade.TradeScreen</c> ahead of the real Trade redesign
@@ -48,6 +58,10 @@ public static class GridPanel
     private const float TrailingColumnWidth = 140f;
     private const int TrailingColumnCount = 4;
 
+    // ── Sort indicator (glow on the active title + direction arrow beside it) ──
+    private const float SortArrowSize = 8f;
+    private const float SortArrowGap = 6f;
+
     // ── Scrollbar, relative to the header's top-left ───────────────────────────
     private const float ScrollbarOffsetX = 935f;
     public const float ScrollbarWidth = 22f;
@@ -68,6 +82,33 @@ public static class GridPanel
     {
         Color = SKColors.White, TextSize = 18f, IsAntialias = true,
         TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceHumaroid
+    };
+
+    /// <summary>
+    /// Sort-indicator glow drawn behind a column title — same technique as
+    /// <see cref="StationToolbar"/>'s hovered station-name link (blurred duplicate of the
+    /// text behind the sharp one, using its own hover-glow color/blur radius) so a sorted
+    /// column reads as "active" the same way that name link does.
+    /// </summary>
+    private static readonly SKPaint _titleGlowPaint = new()
+    {
+        Color = StationToolbar.ColorNameGlow, TextSize = 18f, IsAntialias = true, FakeBoldText = true,
+        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceHumaroid,
+        MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, StationToolbar.NameHoverGlowSigma)
+    };
+
+    /// <summary>Same glow technique as <see cref="_titleGlowPaint"/>, sized/aligned for the centered trailing column headers instead of the left-aligned title.</summary>
+    private static readonly SKPaint _columnHeaderGlowPaint = new()
+    {
+        Color = StationToolbar.ColorNameGlow, TextSize = 13f, IsAntialias = true, FakeBoldText = true,
+        TextAlign = SKTextAlign.Center, Typeface = MenuStyle.TypefaceRegular,
+        MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, StationToolbar.NameHoverGlowSigma)
+    };
+
+    /// <summary>Sort-direction triangle drawn beside the active sort column's title.</summary>
+    private static readonly SKPaint _sortArrowPaint = new()
+    {
+        Color = SKColors.White, Style = SKPaintStyle.Fill, IsAntialias = true
     };
 
     private static readonly SKPaint _rowFillLightPaint = new()
@@ -228,6 +269,65 @@ public static class GridPanel
         return originX + RowOffsetX + leftOffset + TrailingColumnWidth / 2f;
     }
 
+    private static GridSortColumn TrailingSortColumn(int columnIndex) => columnIndex switch
+    {
+        0 => GridSortColumn.SellingPrice,
+        1 => GridSortColumn.SellingCount,
+        2 => GridSortColumn.BuyingPrice,
+        _ => GridSortColumn.BuyingCount
+    };
+
+    private static int TrailingColumnIndex(GridSortColumn column) => column switch
+    {
+        GridSortColumn.SellingPrice => 0,
+        GridSortColumn.SellingCount => 1,
+        GridSortColumn.BuyingPrice => 2,
+        GridSortColumn.BuyingCount => 3,
+        _ => -1
+    };
+
+    /// <summary>Clickable/hoverable rect for the main <paramref name="title"/>, tight around its rendered glyphs (same technique as <see cref="StationToolbar.NameLocalRect"/>).</summary>
+    public static SKRect TitleLocalRect(float originX, float originY, string title)
+    {
+        var header = HeaderLocalRect(originX, originY);
+        var bounds = new SKRect();
+        _titlePaint.MeasureText(title, ref bounds);
+        float baselineY = header.Top + TitlePadding + MenuStyle.ButtonFontSize - TitleBaselineShift;
+        float x = header.Left + TitlePadding;
+        return new SKRect(x + bounds.Left, baselineY + bounds.Top, x + bounds.Right, baselineY + bounds.Bottom);
+    }
+
+    /// <summary>Clickable/hoverable rect for trailing column header <paramref name="columnIndex"/> — the full column width, header bar's full height (a generous target, not text-tight).</summary>
+    public static SKRect TrailingColumnHeaderLocalRect(float originX, float originY, int columnIndex)
+    {
+        var header = HeaderLocalRect(originX, originY);
+        float centerX = TrailingColumnCenterX(originX, columnIndex);
+        return new SKRect(centerX - TrailingColumnWidth / 2f, header.Top, centerX + TrailingColumnWidth / 2f, header.Bottom);
+    }
+
+    /// <summary>
+    /// Which sortable column title (see <see cref="GridSortColumn"/>) a click/hover at
+    /// (<paramref name="localX"/>, <paramref name="localY"/>) landed on, or null. Drives
+    /// both the click-to-sort behavior and the hover cursor swap — callers should treat a
+    /// non-null result as "interactive" the same way they do the toolbar's exit-button/
+    /// name-link hits.
+    /// </summary>
+    public static GridSortColumn? HitTestColumnTitle(float originX, float originY, string title, float localX, float localY)
+    {
+        var titleRect = TitleLocalRect(originX, originY, title);
+        if (localX >= titleRect.Left && localX <= titleRect.Right && localY >= titleRect.Top && localY <= titleRect.Bottom)
+            return GridSortColumn.Name;
+
+        for (int c = 0; c < TrailingColumnCount; c++)
+        {
+            var rect = TrailingColumnHeaderLocalRect(originX, originY, c);
+            if (localX >= rect.Left && localX <= rect.Right && localY >= rect.Top && localY <= rect.Bottom)
+                return TrailingSortColumn(c);
+        }
+
+        return null;
+    }
+
     /// <summary>Track height matches the currently drawn rows — <see cref="DrawnRowCount"/> of <paramref name="rowCount"/>, not the fixed <see cref="MaxVisibleRows"/> capacity.</summary>
     public static SKRect ScrollbarTrackLocalRect(float originX, float originY, int rowCount)
     {
@@ -316,21 +416,51 @@ public static class GridPanel
     /// color replacing the zebra stripe plus a left-edge accent bar, same convention as the
     /// pre-redesign TradeScreen's row selection. Null (default) selects nothing.
     /// </param>
+    /// <param name="sortColumn">
+    /// Column the grid is currently sorted by (see <see cref="HitTestColumnTitle"/>) — its
+    /// title gets the hover-glow treatment plus a direction arrow. Null draws every title
+    /// plain, with no arrow.
+    /// </param>
+    /// <param name="sortDescending">Arrow direction for <paramref name="sortColumn"/> — ignored when it's null.</param>
     public static void Draw(
         SKCanvas canvas, float originX, float originY, string title, int rowCount,
         int scrollOffset, bool isScrollUpHovered, bool isScrollDownHovered,
         IReadOnlyList<string>? rowLabels = null,
         IReadOnlyList<string>? sellingPriceValues = null, IReadOnlyList<string>? sellingCountValues = null,
         IReadOnlyList<string>? buyingPriceValues = null, IReadOnlyList<string>? buyingCountValues = null,
-        int? selectedRowIndex = null)
+        int? selectedRowIndex = null, GridSortColumn? sortColumn = null, bool sortDescending = false)
     {
         var header = HeaderLocalRect(originX, originY);
         canvas.DrawRoundRect(header, HeaderCornerRadius, HeaderCornerRadius, _headerPaint);
-        canvas.DrawText(title, header.Left + TitlePadding, header.Top + TitlePadding + MenuStyle.ButtonFontSize - TitleBaselineShift, _titlePaint);
+
+        float titleX = header.Left + TitlePadding;
+        float titleBaselineY = header.Top + TitlePadding + MenuStyle.ButtonFontSize - TitleBaselineShift;
+        if (sortColumn == GridSortColumn.Name)
+            canvas.DrawText(title, titleX, titleBaselineY, _titleGlowPaint);
+        canvas.DrawText(title, titleX, titleBaselineY, _titlePaint);
+        if (sortColumn == GridSortColumn.Name)
+        {
+            float arrowX = titleX + _titlePaint.MeasureText(title) + SortArrowGap;
+            DrawSortArrow(canvas, arrowX, header.MidY, sortDescending);
+        }
 
         float columnHeaderBaselineY = MenuStyle.VerticalCenterBaseline(header, _columnHeaderPaint);
         for (int c = 0; c < TrailingColumnCount; c++)
-            canvas.DrawText(_trailingColumnHeaders[c], TrailingColumnCenterX(originX, c), columnHeaderBaselineY, _columnHeaderPaint);
+        {
+            string headerText = _trailingColumnHeaders[c];
+            float centerX = TrailingColumnCenterX(originX, c);
+            bool isSortedColumn = sortColumn == TrailingSortColumn(c);
+
+            if (isSortedColumn)
+                canvas.DrawText(headerText, centerX, columnHeaderBaselineY, _columnHeaderGlowPaint);
+            canvas.DrawText(headerText, centerX, columnHeaderBaselineY, _columnHeaderPaint);
+
+            if (isSortedColumn)
+            {
+                float arrowX = centerX + _columnHeaderPaint.MeasureText(headerText) / 2f + SortArrowGap;
+                DrawSortArrow(canvas, arrowX, header.MidY, sortDescending);
+            }
+        }
 
         var trailingColumnValues = new[] { sellingPriceValues, sellingCountValues, buyingPriceValues, buyingCountValues };
 
@@ -367,6 +497,30 @@ public static class GridPanel
         }
 
         DrawScrollbar(canvas, originX, originY, rowCount, effectiveOffset, isActive, isScrollUpHovered, isScrollDownHovered);
+    }
+
+    /// <summary>Small filled triangle marking sort direction — apex up for ascending, down for descending — left edge at <paramref name="leftX"/>, vertically centered on <paramref name="centerY"/>.</summary>
+    private static void DrawSortArrow(SKCanvas canvas, float leftX, float centerY, bool descending)
+    {
+        float halfWidth = SortArrowSize / 2f;
+        float top = centerY - halfWidth;
+        float bottom = centerY + halfWidth;
+
+        using var path = new SKPath();
+        if (descending)
+        {
+            path.MoveTo(leftX, top);
+            path.LineTo(leftX + SortArrowSize, top);
+            path.LineTo(leftX + halfWidth, bottom);
+        }
+        else
+        {
+            path.MoveTo(leftX, bottom);
+            path.LineTo(leftX + SortArrowSize, bottom);
+            path.LineTo(leftX + halfWidth, top);
+        }
+        path.Close();
+        canvas.DrawPath(path, _sortArrowPaint);
     }
 
     private static void DrawScrollbar(

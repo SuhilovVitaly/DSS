@@ -346,6 +346,98 @@ public class TradeScreenTests
         Assert.Equal(new[] { "50", "0", "5" }, screen.ResourceBuyingCounts);
     }
 
+    /// <summary>Clicking a column title sorts by it — starting ascending, numerically (not the lexicographic order the raw strings would give: "120" &lt; "20" as text, but 20 &lt; 120 as a count).</summary>
+    [Fact]
+    public void Clicking_a_column_title_sorts_by_it_ascending()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+        Assert.Equal(GridSortColumn.Name, screen.SortColumn);
+        Assert.False(screen.SortDescending);
+
+        var (x, y) = TrailingColumnHeaderCenter(columnIndex: 1); // Selling count
+        screen.OnMouseDown(x, y);
+
+        Assert.Equal(GridSortColumn.SellingCount, screen.SortColumn);
+        Assert.False(screen.SortDescending);
+        Assert.Equal(
+            new[] { "Uranium Ore", "Silicon", "Carbon Ore", "Magnesium Ore", "Ice", "Iron Ore" },
+            screen.ResourceNames);
+        Assert.Equal(new[] { "20", "70", "90", "120", "320", "410" }, screen.ResourceSellingCounts);
+    }
+
+    /// <summary>A second click on the same title flips direction instead of doing nothing.</summary>
+    [Fact]
+    public void Clicking_the_same_column_title_again_flips_the_sort_direction()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+
+        var (x, y) = TrailingColumnHeaderCenter(columnIndex: 1); // Selling count
+        screen.OnMouseDown(x, y);
+        screen.OnMouseDown(x, y);
+
+        Assert.Equal(GridSortColumn.SellingCount, screen.SortColumn);
+        Assert.True(screen.SortDescending);
+        Assert.Equal(new[] { "410", "320", "120", "90", "70", "20" }, screen.ResourceSellingCounts);
+    }
+
+    /// <summary>Clicking a different title switches column and resets to ascending, rather than carrying over the previous direction.</summary>
+    [Fact]
+    public void Clicking_a_different_column_title_switches_column_and_resets_to_ascending()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+
+        var (countX, countY) = TrailingColumnHeaderCenter(columnIndex: 1); // Selling count
+        screen.OnMouseDown(countX, countY);
+        screen.OnMouseDown(countX, countY); // now descending
+
+        var titleRect = GridPanel.TitleLocalRect(15f, 76f, "Resources");
+        float titleX = TradeLayout.PanelLeft(ScreenWidth) + titleRect.MidX;
+        float titleY = TradeLayout.PanelTop(ScreenHeight) + titleRect.MidY;
+        screen.OnMouseDown(titleX, titleY);
+
+        Assert.Equal(GridSortColumn.Name, screen.SortColumn);
+        Assert.False(screen.SortDescending);
+    }
+
+    [Fact]
+    public void Hovering_a_column_title_reports_interactive()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+
+        var (x, y) = TrailingColumnHeaderCenter(columnIndex: 0); // Selling price
+        Assert.True(screen.OnMouseMove(x, y));
+    }
+
+    /// <summary>Re-sorting invalidates index-based selection — the row under the old index is very likely a different item now.</summary>
+    [Fact]
+    public void Clicking_a_column_title_clears_the_current_row_selection()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 1);
+        screen.OnMouseDown(rowX, rowY);
+        Assert.NotNull(screen.SelectedResourceIndex);
+
+        var (titleX, titleY) = TrailingColumnHeaderCenter(columnIndex: 1);
+        screen.OnMouseDown(titleX, titleY);
+
+        Assert.Null(screen.SelectedResourceIndex);
+    }
+
+    /// <summary>Screen-space center of trailing column header <paramref name="columnIndex"/> (0=Selling price, 1=Selling count, 2=Buying price, 3=Buying count).</summary>
+    private static (float X, float Y) TrailingColumnHeaderCenter(int columnIndex)
+    {
+        var local = GridPanel.TrailingColumnHeaderLocalRect(15f, 76f, columnIndex);
+        float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
+        return (x, y);
+    }
+
     /// <summary>
     /// Regression for the reported bug: 6 resource items in a 5-row grid must let the
     /// down arrow actually scroll (previously the scrollbar was active and the thumb

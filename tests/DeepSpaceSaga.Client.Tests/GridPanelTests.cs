@@ -88,13 +88,18 @@ public class GridPanelTests
         var buyingPrices = new[] { "11", "21", "31", "41", "51" };
         var buyingCounts = new[] { "6", "7", "8", "9", "10" };
 
+        var sortColumns = new GridSortColumn?[] { null, GridSortColumn.Name, GridSortColumn.SellingPrice, GridSortColumn.BuyingCount };
+
         foreach (int rowCount in rowCounts)
         foreach (bool isUpHovered in boolOptions)
         foreach (bool isDownHovered in boolOptions)
+        foreach (var sortColumn in sortColumns)
+        foreach (bool sortDescending in boolOptions)
             GridPanel.Draw(canvas, 10f, 10f, "Resources", rowCount, scrollOffset: 1,
                 isScrollUpHovered: isUpHovered, isScrollDownHovered: isDownHovered,
                 rowLabels: labels, sellingPriceValues: sellingPrices, sellingCountValues: sellingCounts,
-                buyingPriceValues: buyingPrices, buyingCountValues: buyingCounts);
+                buyingPriceValues: buyingPrices, buyingCountValues: buyingCounts,
+                sortColumn: sortColumn, sortDescending: sortDescending);
     }
 
     /// <summary>
@@ -135,5 +140,32 @@ public class GridPanelTests
     {
         Assert.Equal(-1, GridPanel.HitTestRow(0f, 0f, rowCount: 5, scrollOffset: 0, localX: -100f, localY: -100f));
         Assert.Equal(-1, GridPanel.HitTestRow(0f, 0f, rowCount: 0, scrollOffset: 0, localX: 100f, localY: 100f));
+    }
+
+    [Fact]
+    public void HitTestColumnTitle_returns_Name_for_a_click_on_the_main_title()
+    {
+        var titleRect = GridPanel.TitleLocalRect(0f, 0f, "Resources");
+        var hit = GridPanel.HitTestColumnTitle(0f, 0f, "Resources", titleRect.MidX, titleRect.MidY);
+        Assert.Equal(GridSortColumn.Name, hit);
+    }
+
+    [Theory]
+    [InlineData(0, GridSortColumn.SellingPrice)]
+    [InlineData(1, GridSortColumn.SellingCount)]
+    [InlineData(2, GridSortColumn.BuyingPrice)]
+    [InlineData(3, GridSortColumn.BuyingCount)]
+    public void HitTestColumnTitle_returns_the_matching_trailing_column(int columnIndex, GridSortColumn expected)
+    {
+        var headerRect = GridPanel.TrailingColumnHeaderLocalRect(0f, 0f, columnIndex);
+        var hit = GridPanel.HitTestColumnTitle(0f, 0f, "Resources", headerRect.MidX, headerRect.MidY);
+        Assert.Equal(expected, hit);
+    }
+
+    [Fact]
+    public void HitTestColumnTitle_returns_null_for_a_click_below_the_header_bar()
+    {
+        var hit = GridPanel.HitTestColumnTitle(0f, 0f, "Resources", localX: 30f, localY: 200f);
+        Assert.Null(hit);
     }
 }

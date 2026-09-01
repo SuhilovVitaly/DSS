@@ -64,6 +64,16 @@ public sealed class TradeScreen : IScreen
     /// <summary>Test seam — current resources-grid row selection (see <see cref="_selectedResourceIndex"/>).</summary>
     internal int? SelectedResourceIndex => _selectedResourceIndex;
 
+    /// <summary>Column the resources grid is currently sorted by — clicking a column title (<see cref="GridPanel.HitTestColumnTitle"/>) changes this; a second click on the same column flips <see cref="_sortDescending"/> instead.</summary>
+    private GridSortColumn _sortColumn = GridSortColumn.Name;
+    private bool _sortDescending;
+
+    /// <summary>Test seam — current resources-grid sort column (see <see cref="_sortColumn"/>).</summary>
+    internal GridSortColumn SortColumn => _sortColumn;
+
+    /// <summary>Test seam — current resources-grid sort direction (see <see cref="_sortDescending"/>).</summary>
+    internal bool SortDescending => _sortDescending;
+
     /// <summary>
     /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
     /// food-rations readout, or null while not hovering it — the tooltip only appears
@@ -118,33 +128,38 @@ public sealed class TradeScreen : IScreen
     private const string ResourcesGridTitle = "Resources";
 
     /// <summary>Test seam — the resources grid's current row labels (see <see cref="ResolveResourceRows"/>).</summary>
-    internal string[] ResourceNames => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.Name).ToArray();
+    internal string[] ResourceNames => ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending).Select(row => row.Name).ToArray();
 
     /// <summary>Test seam — the resources grid's current "Selling price" column values (station's UnitPriceCredits), same row order as <see cref="ResourceNames"/>.</summary>
-    internal string[] ResourceSellingPrices => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.SellingPrice).ToArray();
+    internal string[] ResourceSellingPrices => ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending).Select(row => row.SellingPrice).ToArray();
 
     /// <summary>Test seam — the resources grid's current "Selling count" column values (station's StockQuantity), same row order as <see cref="ResourceNames"/>.</summary>
-    internal string[] ResourceSellingCounts => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.SellingCount).ToArray();
+    internal string[] ResourceSellingCounts => ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending).Select(row => row.SellingCount).ToArray();
 
     /// <summary>Test seam — the resources grid's current "Buying price" column values, same row order as <see cref="ResourceNames"/>.</summary>
-    internal string[] ResourceBuyingPrices => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.BuyingPrice).ToArray();
+    internal string[] ResourceBuyingPrices => ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending).Select(row => row.BuyingPrice).ToArray();
 
     /// <summary>Test seam — the resources grid's current "Buying count" column values (player's ship cargo quantity), same row order as <see cref="ResourceNames"/>.</summary>
-    internal string[] ResourceBuyingCounts => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.BuyingCount).ToArray();
+    internal string[] ResourceBuyingCounts => ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending).Select(row => row.BuyingCount).ToArray();
 
     /// <summary>One resources-grid row: display name plus its Selling/Buying price+count column text.</summary>
     private readonly record struct ResourceRow(string Name, string SellingPrice, string SellingCount, string BuyingPrice, string BuyingCount);
 
+    /// <summary>Same fields as <see cref="ResourceRow"/> but numeric — sorting must happen on these, not their formatted string form (lexicographic "100" &lt; "20" would otherwise corrupt price/count ordering).</summary>
+    private readonly record struct ResourceRowData(string Name, long SellingPrice, long SellingCount, long BuyingPrice, long BuyingCount);
+
     /// <summary>
-    /// The docked station's <see cref="TradeItemCategories.Resource"/> items, alphabetically
-    /// sorted by display name — empty (not null) while undocked or before the first
-    /// snapshot arrives, which <see cref="GridPanel"/> renders as its dark-gray empty state.
-    /// Selling price/count are the station's own <c>UnitPriceCredits</c>/<c>StockQuantity</c>;
-    /// this MVP model has only one price per item (no separate buy/sell price), so Buying
-    /// price reuses it too — only Buying count differs, sourced from the player's own ship
-    /// cargo (<see cref="ResolvePlayerCargo"/>) rather than the station.
+    /// The docked station's <see cref="TradeItemCategories.Resource"/> items, sorted by
+    /// <paramref name="sortColumn"/>/<paramref name="sortDescending"/> (set by clicking a
+    /// column title — see <see cref="GridPanel.HitTestColumnTitle"/>) — empty (not null)
+    /// while undocked or before the first snapshot arrives, which <see cref="GridPanel"/>
+    /// renders as its dark-gray empty state. Selling price/count are the station's own
+    /// <c>UnitPriceCredits</c>/<c>StockQuantity</c>; this MVP model has only one price per
+    /// item (no separate buy/sell price), so Buying price reuses it too — only Buying count
+    /// differs, sourced from the player's own ship cargo (<see cref="ResolvePlayerCargo"/>)
+    /// rather than the station.
     /// </summary>
-    private static ResourceRow[] ResolveResourceRows(AuthoritativeSnapshot? snapshot)
+    private static ResourceRow[] ResolveResourceRows(AuthoritativeSnapshot? snapshot, GridSortColumn sortColumn, bool sortDescending)
     {
         var items = snapshot?.DockedStationTrade?.Items ?? default;
         if (items.IsDefaultOrEmpty)
@@ -152,19 +167,36 @@ public sealed class TradeScreen : IScreen
 
         var playerCargo = ResolvePlayerCargo(snapshot);
 
-        return items
+        var rows = items
             .Where(item => item.Category == TradeItemCategories.Resource)
             .Select(item =>
             {
                 long shipQuantity = playerCargo.TryGetValue(item.ItemTypeId, out long quantity) ? quantity : 0;
-                return new ResourceRow(
+                return new ResourceRowData(
                     ItemDisplayName(item.ItemTypeId),
-                    SellingPrice: item.UnitPriceCredits.ToString(),
-                    SellingCount: item.StockQuantity.ToString(),
-                    BuyingPrice: item.UnitPriceCredits.ToString(),
-                    BuyingCount: shipQuantity.ToString());
-            })
-            .OrderBy(row => row.Name, StringComparer.Ordinal)
+                    SellingPrice: item.UnitPriceCredits, SellingCount: item.StockQuantity,
+                    BuyingPrice: item.UnitPriceCredits, BuyingCount: shipQuantity);
+            });
+
+        IEnumerable<ResourceRowData> sorted = (sortColumn, sortDescending) switch
+        {
+            (GridSortColumn.Name, false) => rows.OrderBy(row => row.Name, StringComparer.Ordinal),
+            (GridSortColumn.Name, true) => rows.OrderByDescending(row => row.Name, StringComparer.Ordinal),
+            (GridSortColumn.SellingPrice, false) => rows.OrderBy(row => row.SellingPrice),
+            (GridSortColumn.SellingPrice, true) => rows.OrderByDescending(row => row.SellingPrice),
+            (GridSortColumn.SellingCount, false) => rows.OrderBy(row => row.SellingCount),
+            (GridSortColumn.SellingCount, true) => rows.OrderByDescending(row => row.SellingCount),
+            (GridSortColumn.BuyingPrice, false) => rows.OrderBy(row => row.BuyingPrice),
+            (GridSortColumn.BuyingPrice, true) => rows.OrderByDescending(row => row.BuyingPrice),
+            (GridSortColumn.BuyingCount, false) => rows.OrderBy(row => row.BuyingCount),
+            (GridSortColumn.BuyingCount, true) => rows.OrderByDescending(row => row.BuyingCount),
+            _ => rows.OrderBy(row => row.Name, StringComparer.Ordinal)
+        };
+
+        return sorted
+            .Select(row => new ResourceRow(
+                row.Name, row.SellingPrice.ToString(), row.SellingCount.ToString(),
+                row.BuyingPrice.ToString(), row.BuyingCount.ToString()))
             .ToArray();
     }
 
@@ -268,6 +300,17 @@ public sealed class TradeScreen : IScreen
             }
         }
 
+        var hitColumnTitle = HitTestColumnTitle(x, y);
+        if (hitColumnTitle is { } clickedColumn)
+        {
+            _sortDescending = _sortColumn == clickedColumn && !_sortDescending;
+            _sortColumn = clickedColumn;
+            // The row the player had selected is very likely a different item after
+            // re-sorting (index-based selection, no stable item identity to carry over).
+            _selectedResourceIndex = null;
+            return ScreenEvent.None;
+        }
+
         int hitRowIndex = HitTestResourceRow(x, y, resourceRowCount);
         if (hitRowIndex >= 0)
         {
@@ -288,6 +331,14 @@ public sealed class TradeScreen : IScreen
         float pl = TradeLayout.PanelLeft(_screenWidth);
         float pt = TradeLayout.PanelTop(_screenHeight);
         return GridPanel.HitTestRow(GridPanelOriginX, GridPanelOriginY, resourceRowCount, _scrollOffset, x - pl, y - pt);
+    }
+
+    /// <summary>Sortable column title (see <see cref="GridPanel.HitTestColumnTitle"/>) at screen coordinates (x, y), or null — drives both click-to-sort and the hover cursor swap.</summary>
+    private GridSortColumn? HitTestColumnTitle(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        return GridPanel.HitTestColumnTitle(GridPanelOriginX, GridPanelOriginY, ResourcesGridTitle, x - pl, y - pt);
     }
 
     /// <summary>Convenience shortcut for a left click — kept for existing call-site/test conventions.</summary>
@@ -311,6 +362,7 @@ public sealed class TradeScreen : IScreen
         bool isScrollbarActive = GridPanel.IsScrollbarActive(CurrentResourceRowCount());
         _isScrollUpHovered = isScrollbarActive && IsScrollUpArrowHit(x, y);
         _isScrollDownHovered = isScrollbarActive && IsScrollDownArrowHit(x, y);
+        bool isColumnTitleHovered = HitTestColumnTitle(x, y) is not null;
 
         // Not a button — hovering it only shows a delayed tooltip (see Render), so it must
         // not affect the interactive-cursor swap the way the name link / exit button do.
@@ -334,7 +386,8 @@ public sealed class TradeScreen : IScreen
         else
             _fuelHoverStartedAtMs = null;
 
-        return _isStationNameHovered || _isExitButtonHovered || _isScrollUpHovered || _isScrollDownHovered || _isDraggingScrollThumb;
+        return _isStationNameHovered || _isExitButtonHovered || _isScrollUpHovered || _isScrollDownHovered
+            || _isDraggingScrollThumb || isColumnTitleHovered;
     }
 
     /// <summary>Scrolls the resources grid one row per wheel tick — same direction convention as SaveScreen's slot-list wheel scroll.</summary>
@@ -373,7 +426,7 @@ public sealed class TradeScreen : IScreen
             pl + _contentOutlineRect.Right, pt + _contentOutlineRect.Bottom);
         canvas.DrawRect(contentRect, _contentOutlinePaint);
 
-        var resourceRows = ResolveResourceRows(snapshot);
+        var resourceRows = ResolveResourceRows(snapshot, _sortColumn, _sortDescending);
         _scrollOffset = Math.Clamp(_scrollOffset, 0, GridPanel.MaxScrollOffset(resourceRows.Length));
         if (_selectedResourceIndex >= resourceRows.Length)
             _selectedResourceIndex = null;
@@ -385,7 +438,7 @@ public sealed class TradeScreen : IScreen
         GridPanel.Draw(canvas, pl + GridPanelOriginX, pt + GridPanelOriginY, ResourcesGridTitle, resourceRows.Length,
             _scrollOffset, _isScrollUpHovered, _isScrollDownHovered, resourceNames,
             resourceSellingPrices, resourceSellingCounts, resourceBuyingPrices, resourceBuyingCounts,
-            _selectedResourceIndex);
+            _selectedResourceIndex, _sortColumn, _sortDescending);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.
@@ -397,7 +450,7 @@ public sealed class TradeScreen : IScreen
     }
 
     /// <summary>Current resources-grid row count, from the docked station's live trade snapshot — see <see cref="ResolveResourceRows"/>.</summary>
-    private int CurrentResourceRowCount() => ResolveResourceRows(_buffer?.Latest?.Snapshot).Length;
+    private int CurrentResourceRowCount() => ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending).Length;
 
     /// <summary>True when (x, y) lands on the resources grid's scrollbar up-arrow button (see <see cref="GridPanel.ScrollUpArrowLocalRect"/>).</summary>
     private bool IsScrollUpArrowHit(float x, float y)
