@@ -25,6 +25,7 @@ public sealed class HireScreen : IScreen
     private int _screenWidth;
     private int _screenHeight;
     private bool _isCloseHovered;
+    private bool _isStationNameHovered;
 
     private const string PlaceholderLine = "Crew hiring: not available yet";
 
@@ -33,7 +34,11 @@ public sealed class HireScreen : IScreen
         _buffer = buffer;
     }
 
-    public void OnActivated() => _isCloseHovered = false;
+    public void OnActivated()
+    {
+        _isCloseHovered = false;
+        _isStationNameHovered = false;
+    }
 
     public void OnDeactivated() { }
 
@@ -66,7 +71,8 @@ public sealed class HireScreen : IScreen
     {
         var hit = HireLayout.HitTest(x, y, _screenWidth, _screenHeight);
         _isCloseHovered = hit == HireButton.Close;
-        return _isCloseHovered || IsStationNameHit(x, y);
+        _isStationNameHovered = IsStationNameHit(x, y);
+        return _isCloseHovered || _isStationNameHovered;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -82,7 +88,7 @@ public sealed class HireScreen : IScreen
         MenuStyle.DrawPanel(canvas, panelRect);
 
         string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
-        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false);
+        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered);
 
         float cx = pl + HireLayout.PanelWidth / 2f;
         canvas.DrawText("HIRE", cx, pt + HireLayout.TitleY, MenuStyle.TextTitle);

@@ -22,6 +22,7 @@ public sealed class FinanceScreen : IScreen
     private int _screenWidth;
     private int _screenHeight;
     private bool _isCloseHovered;
+    private bool _isStationNameHovered;
 
     public FinanceScreen(SnapshotBuffer? buffer = null)
     {
@@ -55,7 +56,11 @@ public sealed class FinanceScreen : IScreen
         "Recent trading results: not available yet",
     };
 
-    public void OnActivated() => _isCloseHovered = false;
+    public void OnActivated()
+    {
+        _isCloseHovered = false;
+        _isStationNameHovered = false;
+    }
 
     public void OnDeactivated() { }
 
@@ -88,7 +93,8 @@ public sealed class FinanceScreen : IScreen
     {
         var hit = FinanceLayout.HitTest(x, y, _screenWidth, _screenHeight);
         _isCloseHovered = hit == FinanceButton.Close;
-        return _isCloseHovered || IsStationNameHit(x, y);
+        _isStationNameHovered = IsStationNameHit(x, y);
+        return _isCloseHovered || _isStationNameHovered;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -107,7 +113,7 @@ public sealed class FinanceScreen : IScreen
             MenuStyle.DrawPanel(canvas, panelRect);
 
         string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
-        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false);
+        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered);
 
         float cx = pl + FinanceLayout.PanelWidth / 2f;
         canvas.DrawText("FINANCE", cx, pt + FinanceLayout.TitleY, MenuStyle.TextTitle);

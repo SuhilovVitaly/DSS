@@ -27,6 +27,7 @@ public static class StationToolbar
     public const float NameOffsetX = 20f;
     public const float NameOffsetY = 20f;
     public const float NameFontSize = 26f;
+    public const float NameHoverGlowSigma = 4f;
 
     public static readonly SKColor ColorBackground = new(0x5e, 0x5e, 0x5e);
     public static readonly SKColor ColorBorder = new(0x99, 0x99, 0x99);
@@ -44,6 +45,13 @@ public static class StationToolbar
     private static readonly SKPaint NamePaintActive = MakeNamePaint(ColorNameActive);
     private static readonly SKPaint NamePaintLink = MakeNamePaint(ColorNameLink);
 
+    /// <summary>
+    /// Hover-only white glow drawn behind the link text (see <see cref="Draw"/>) — a soft
+    /// blurred halo around the glyphs reads as "this text is brighter / a live link"
+    /// without needing a separate hover typeface or layout shift.
+    /// </summary>
+    private static readonly SKPaint NameGlowPaint = MakeGlowPaint();
+
     // MenuStyle.TypefaceHumaroid loads humaroid.regular.otf — there is no separate bold
     // weight file for this font, so FakeBoldText synthetically embolds it (SkiaSharp's
     // standard approach for a family with no true bold face).
@@ -56,6 +64,13 @@ public static class StationToolbar
         TextAlign = SKTextAlign.Left,
         Typeface = MenuStyle.TypefaceHumaroid
     };
+
+    private static SKPaint MakeGlowPaint()
+    {
+        var paint = MakeNamePaint(SKColors.White);
+        paint.MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, NameHoverGlowSigma);
+        return paint;
+    }
 
     /// <summary>Toolbar rect, local to the panel (add the panel's left/top to get screen space).</summary>
     public static SKRect LocalRect() => new(0, 0, Width, Height);
@@ -82,9 +97,13 @@ public static class StationToolbar
     /// Draws the toolbar at the panel's top-left corner (panelLeft, panelTop), plus the
     /// station name if non-empty. <paramref name="isStationHub"/> selects the "active
     /// location" color (Station itself) vs. the "link back to hub" color (every other
-    /// station window).
+    /// station window). <paramref name="isHovered"/> only has an effect on a non-hub
+    /// window — it adds the white blurred glow that marks the name as a live link;
+    /// the hub's own label is never hoverable, so hover state is ignored there.
     /// </summary>
-    public static void Draw(SKCanvas canvas, float panelLeft, float panelTop, string? stationName, bool isStationHub)
+    public static void Draw(
+        SKCanvas canvas, float panelLeft, float panelTop, string? stationName, bool isStationHub,
+        bool isHovered = false)
     {
         var rect = new SKRect(panelLeft, panelTop, panelLeft + Width, panelTop + Height);
         canvas.DrawRect(rect, FillPaint);
@@ -95,7 +114,12 @@ public static class StationToolbar
 
         var paint = isStationHub ? NamePaintActive : NamePaintLink;
         float baselineY = panelTop + NameOffsetY - paint.FontMetrics.Ascent;
-        canvas.DrawText(stationName, panelLeft + NameOffsetX, baselineY, paint);
+        float x = panelLeft + NameOffsetX;
+
+        if (isHovered && !isStationHub)
+            canvas.DrawText(stationName, x, baselineY, NameGlowPaint);
+
+        canvas.DrawText(stationName, x, baselineY, paint);
     }
 
     /// <summary>

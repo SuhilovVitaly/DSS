@@ -56,6 +56,7 @@ public sealed class TradeScreen : IScreen
     private TradeButton _hoveredButton = TradeButton.None;
     private int _hoveredInventoryRow = -1;
     private int _hoveredCargoRow = -1;
+    private bool _isStationNameHovered;
 
     /// <summary>Currently selected station item for Buy/Sell — null means "nothing selected yet".</summary>
     private string? _selectedItemTypeId;
@@ -107,6 +108,7 @@ public sealed class TradeScreen : IScreen
         _hoveredButton = TradeButton.None;
         _hoveredInventoryRow = -1;
         _hoveredCargoRow = -1;
+        _isStationNameHovered = false;
 
         var trade = _buffer.Latest?.Snapshot?.DockedStationTrade;
         if (trade is not null && !trade.Items.IsDefaultOrEmpty)
@@ -235,8 +237,10 @@ public sealed class TradeScreen : IScreen
             ? TradeLayout.HitTestCargoRow(x, y, _screenWidth, _screenHeight, containerModule.Cargo.Length)
             : -1;
 
+        _isStationNameHovered = IsStationNameHit(x, y, snapshot);
+
         return _hoveredButton != TradeButton.None || _hoveredInventoryRow >= 0 || _hoveredCargoRow >= 0
-            || IsStationNameHit(x, y, snapshot);
+            || _isStationNameHovered;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -504,7 +508,7 @@ public sealed class TradeScreen : IScreen
         var panelRect = TradeLayout.PanelRect(width, height);
         GenericWindowTypeA.DrawOpaque(canvas, panelRect);
         string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
-        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false);
+        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered);
         GenericWindowTypeA.DrawTitle(canvas, panelRect, Localization.Get("Trade.Title"), _titlePaint);
 
         DrawHeader(canvas, pl, pt, snapshot);

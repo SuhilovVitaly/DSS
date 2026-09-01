@@ -124,6 +124,56 @@ public class StationToolbarTests
             new SKColor(0xff, 0xff, 0xff)));
     }
 
+    [Fact]
+    public void Hovering_a_non_hub_name_adds_a_white_glow_bleeding_past_the_glyphs()
+    {
+        // Blur bleeds a few px beyond the tight glyph bounds — a ring just outside
+        // NameLocalRect stays pure background when not hovered, but picks up glow color
+        // when hovered, proving the hover state actually changes what's drawn (not just
+        // the crisp text, which NameLocalRect already covers).
+        using var hoveredBitmap = new SKBitmap(1420, 80);
+        hoveredBitmap.Erase(SKColors.Transparent);
+        using (var canvas = new SKCanvas(hoveredBitmap))
+            StationToolbar.Draw(canvas, 10, 10, "Alpha Station", isStationHub: false, isHovered: true);
+
+        using var normalBitmap = new SKBitmap(1420, 80);
+        normalBitmap.Erase(SKColors.Transparent);
+        using (var canvas = new SKCanvas(normalBitmap))
+            StationToolbar.Draw(canvas, 10, 10, "Alpha Station", isStationHub: false, isHovered: false);
+
+        var tight = StationToolbar.NameLocalRect("Alpha Station");
+        var padded = SKRect.Inflate(tight, 6f, 6f);
+
+        Assert.False(RingHasNonBackgroundPixel(normalBitmap, tight, padded, 10, 10));
+        Assert.True(RingHasNonBackgroundPixel(hoveredBitmap, tight, padded, 10, 10));
+    }
+
+    private static bool RingHasNonBackgroundPixel(SKBitmap bitmap, SKRect tight, SKRect padded, float offsetX, float offsetY)
+    {
+        int left = Math.Max(0, (int)(offsetX + padded.Left));
+        int top = Math.Max(0, (int)(offsetY + padded.Top));
+        int right = Math.Min(bitmap.Width, (int)Math.Ceiling(offsetX + padded.Right));
+        int bottom = Math.Min(bitmap.Height, (int)Math.Ceiling(offsetY + padded.Bottom));
+
+        int tightLeft = (int)(offsetX + tight.Left);
+        int tightTop = (int)(offsetY + tight.Top);
+        int tightRight = (int)Math.Ceiling(offsetX + tight.Right);
+        int tightBottom = (int)Math.Ceiling(offsetY + tight.Bottom);
+
+        for (int y = top; y < bottom; y++)
+        for (int x = left; x < right; x++)
+        {
+            bool insideTight = x >= tightLeft && x < tightRight && y >= tightTop && y < tightBottom;
+            if (insideTight)
+                continue;
+
+            if (bitmap.GetPixel(x, y) != StationToolbar.ColorBackground)
+                return true;
+        }
+
+        return false;
+    }
+
     /// <summary>
     /// Anti-aliased glyph rendering means no single fixed pixel is guaranteed to be pure
     /// foreground color, so these tests scan every pixel in the label's hit-test rect for
