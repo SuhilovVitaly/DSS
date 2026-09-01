@@ -55,6 +55,16 @@ public sealed class TradeScreen : IScreen
     private float _scrollThumbDragGrabOffsetY;
 
     /// <summary>
+    /// Absolute index (same indexing as <see cref="GridPanel.HitTestRow"/>) of the
+    /// resource row the player last clicked — null while nothing is selected. Clamped in
+    /// <see cref="Render"/> if the resource count shrinks past it.
+    /// </summary>
+    private int? _selectedResourceIndex;
+
+    /// <summary>Test seam — current resources-grid row selection (see <see cref="_selectedResourceIndex"/>).</summary>
+    internal int? SelectedResourceIndex => _selectedResourceIndex;
+
+    /// <summary>
     /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
     /// food-rations readout, or null while not hovering it — the tooltip only appears
     /// once MenuStyle.TooltipHoverDelaySeconds has elapsed since this moment (checked in
@@ -209,6 +219,7 @@ public sealed class TradeScreen : IScreen
         _isScrollUpHovered = false;
         _isScrollDownHovered = false;
         _isDraggingScrollThumb = false;
+        _selectedResourceIndex = null;
         _foodRationsHoverStartedAtMs = null;
         _crewHoverStartedAtMs = null;
         _tokensHoverStartedAtMs = null;
@@ -257,11 +268,26 @@ public sealed class TradeScreen : IScreen
             }
         }
 
+        int hitRowIndex = HitTestResourceRow(x, y, resourceRowCount);
+        if (hitRowIndex >= 0)
+        {
+            _selectedResourceIndex = hitRowIndex;
+            return ScreenEvent.None;
+        }
+
         // Click on the dimmed background outside the panel also closes it.
         if (!TradeLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
             return ScreenEvent.CloseTrade;
 
         return ScreenEvent.None;
+    }
+
+    /// <summary>Absolute resources-grid row index hit by a click at screen coordinates (x, y), or -1 — see <see cref="GridPanel.HitTestRow"/>.</summary>
+    private int HitTestResourceRow(float x, float y, int resourceRowCount)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        return GridPanel.HitTestRow(GridPanelOriginX, GridPanelOriginY, resourceRowCount, _scrollOffset, x - pl, y - pt);
     }
 
     /// <summary>Convenience shortcut for a left click — kept for existing call-site/test conventions.</summary>
@@ -349,6 +375,8 @@ public sealed class TradeScreen : IScreen
 
         var resourceRows = ResolveResourceRows(snapshot);
         _scrollOffset = Math.Clamp(_scrollOffset, 0, GridPanel.MaxScrollOffset(resourceRows.Length));
+        if (_selectedResourceIndex >= resourceRows.Length)
+            _selectedResourceIndex = null;
         var resourceNames = Array.ConvertAll(resourceRows, row => row.Name);
         var resourceSellingPrices = Array.ConvertAll(resourceRows, row => row.SellingPrice);
         var resourceSellingCounts = Array.ConvertAll(resourceRows, row => row.SellingCount);
@@ -356,7 +384,8 @@ public sealed class TradeScreen : IScreen
         var resourceBuyingCounts = Array.ConvertAll(resourceRows, row => row.BuyingCount);
         GridPanel.Draw(canvas, pl + GridPanelOriginX, pt + GridPanelOriginY, ResourcesGridTitle, resourceRows.Length,
             _scrollOffset, _isScrollUpHovered, _isScrollDownHovered, resourceNames,
-            resourceSellingPrices, resourceSellingCounts, resourceBuyingPrices, resourceBuyingCounts);
+            resourceSellingPrices, resourceSellingCounts, resourceBuyingPrices, resourceBuyingCounts,
+            _selectedResourceIndex);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.

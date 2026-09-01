@@ -91,6 +91,18 @@ public static class GridPanel
         Color = InactiveGray, Style = SKPaintStyle.Fill, IsAntialias = true
     };
 
+    /// <summary>Fill for the selected row — replaces the zebra fill entirely (not blended over it).</summary>
+    private static readonly SKPaint _rowFillSelectedPaint = new()
+    {
+        Color = new SKColor(0xFF, 0xC8, 0x80), Style = SKPaintStyle.Fill, IsAntialias = true
+    };
+
+    /// <summary>Left-edge indicator on the selected row — same accent as the old MVP TradeScreen's row selection (XenonStyle.OrangeAccent).</summary>
+    private static readonly SKPaint _selectedRowIndicatorPaint = new()
+    {
+        Color = XenonStyle.OrangeAccent, Style = SKPaintStyle.Stroke, StrokeWidth = 3f, IsAntialias = true
+    };
+
     private static readonly SKPaint _rowLabelPaint = new()
     {
         Color = SKColors.Black, TextSize = 14f, IsAntialias = true,
@@ -179,6 +191,29 @@ public static class GridPanel
     {
         float top = originY + RowOffsetY + rowIndex * RowHeight;
         return new SKRect(originX + RowOffsetX, top, originX + RowOffsetX + RowWidth, top + RowHeight);
+    }
+
+    /// <summary>
+    /// Absolute row index (accounting for <paramref name="scrollOffset"/>, same indexing
+    /// as <c>rowLabels</c>) hit by a click at (<paramref name="localX"/>, <paramref name="localY"/>),
+    /// or -1 if the click missed every drawn row or the grid is empty
+    /// (<paramref name="rowCount"/> == 0 — its placeholder rows aren't selectable).
+    /// </summary>
+    public static int HitTestRow(float originX, float originY, int rowCount, int scrollOffset, float localX, float localY)
+    {
+        if (rowCount == 0)
+            return -1;
+
+        int effectiveOffset = IsScrollbarActive(rowCount) ? Math.Clamp(scrollOffset, 0, MaxScrollOffset(rowCount)) : 0;
+        int drawnRows = DrawnRowCount(rowCount);
+        for (int i = 0; i < drawnRows; i++)
+        {
+            var rowRect = RowLocalRect(originX, originY, i);
+            if (localX >= rowRect.Left && localX <= rowRect.Right && localY >= rowRect.Top && localY <= rowRect.Bottom)
+                return effectiveOffset + i;
+        }
+
+        return -1;
     }
 
     /// <summary>
@@ -276,12 +311,18 @@ public static class GridPanel
     /// <param name="sellingCountValues">Optional per-row "Selling count" column text (station stock), same indexing.</param>
     /// <param name="buyingPriceValues">Optional per-row "Buying price" column text, same indexing.</param>
     /// <param name="buyingCountValues">Optional per-row "Buying count" column text (player's own quantity), same indexing.</param>
+    /// <param name="selectedRowIndex">
+    /// Absolute row index (see <see cref="HitTestRow"/>) to highlight — a distinct fill
+    /// color replacing the zebra stripe plus a left-edge accent bar, same convention as the
+    /// pre-redesign TradeScreen's row selection. Null (default) selects nothing.
+    /// </param>
     public static void Draw(
         SKCanvas canvas, float originX, float originY, string title, int rowCount,
         int scrollOffset, bool isScrollUpHovered, bool isScrollDownHovered,
         IReadOnlyList<string>? rowLabels = null,
         IReadOnlyList<string>? sellingPriceValues = null, IReadOnlyList<string>? sellingCountValues = null,
-        IReadOnlyList<string>? buyingPriceValues = null, IReadOnlyList<string>? buyingCountValues = null)
+        IReadOnlyList<string>? buyingPriceValues = null, IReadOnlyList<string>? buyingCountValues = null,
+        int? selectedRowIndex = null)
     {
         var header = HeaderLocalRect(originX, originY);
         canvas.DrawRoundRect(header, HeaderCornerRadius, HeaderCornerRadius, _headerPaint);
@@ -300,11 +341,18 @@ public static class GridPanel
         for (int i = 0; i < drawnRows; i++)
         {
             var rowRect = RowLocalRect(originX, originY, i);
-            var fillPaint = isEmpty ? _emptyRowFillPaint : i % 2 == 0 ? _rowFillLightPaint : _rowFillDarkPaint;
+            int labelIndex = effectiveOffset + i;
+            bool isSelected = !isEmpty && selectedRowIndex == labelIndex;
+
+            var fillPaint = isSelected ? _rowFillSelectedPaint
+                : isEmpty ? _emptyRowFillPaint
+                : i % 2 == 0 ? _rowFillLightPaint : _rowFillDarkPaint;
             canvas.DrawRect(rowRect, fillPaint);
             canvas.DrawRect(rowRect, _rowBorderPaint);
 
-            int labelIndex = effectiveOffset + i;
+            if (isSelected)
+                canvas.DrawLine(rowRect.Left, rowRect.Top, rowRect.Left, rowRect.Bottom, _selectedRowIndicatorPaint);
+
             float baselineY = MenuStyle.VerticalCenterBaseline(rowRect, _rowLabelPaint);
 
             if (rowLabels is not null && labelIndex < rowLabels.Count)

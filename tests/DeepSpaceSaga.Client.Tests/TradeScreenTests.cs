@@ -421,6 +421,62 @@ public class TradeScreenTests
         Assert.Equal(0, screen.ScrollOffset);
     }
 
+    [Fact]
+    public void Clicking_a_resource_row_selects_it()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+        Assert.Null(screen.SelectedResourceIndex);
+
+        var (x, y) = ResourceRowCenter(rowSlot: 2);
+        screen.OnMouseDown(x, y);
+
+        Assert.Equal(2, screen.SelectedResourceIndex);
+    }
+
+    /// <summary>Clicking a different row moves the selection rather than toggling/adding to it.</summary>
+    [Fact]
+    public void Clicking_a_different_resource_row_changes_the_selection()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+
+        var (firstX, firstY) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(firstX, firstY);
+        Assert.Equal(0, screen.SelectedResourceIndex);
+
+        var (secondX, secondY) = ResourceRowCenter(rowSlot: 3);
+        screen.OnMouseDown(secondX, secondY);
+        Assert.Equal(3, screen.SelectedResourceIndex);
+    }
+
+    [Fact]
+    public void Clicking_outside_the_grid_rows_leaves_the_selection_unchanged()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+
+        var (x, y) = ResourceRowCenter(rowSlot: 1);
+        screen.OnMouseDown(x, y);
+        Assert.Equal(1, screen.SelectedResourceIndex);
+
+        // Inside the panel, well below the grid rows and scrollbar — must not clear or move the selection.
+        float px = TradeLayout.PanelLeft(ScreenWidth) + TradeLayout.PanelWidth / 2f;
+        float py = TradeLayout.PanelTop(ScreenHeight) + TradeLayout.PanelHeight - 10f;
+        screen.OnMouseDown(px, py);
+
+        Assert.Equal(1, screen.SelectedResourceIndex);
+    }
+
+    /// <summary>Screen-space center of the resources grid's visible row slot (0 = topmost drawn row) — see GridPanel's origin (15, 76).</summary>
+    private static (float X, float Y) ResourceRowCenter(int rowSlot)
+    {
+        var local = GridPanel.RowLocalRect(15f, 76f, rowSlot);
+        float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
+        return (x, y);
+    }
+
     /// <summary>Screen-space center of the toolbar's "Test Station" name label (see DockedBuffer).</summary>
     private static (float X, float Y) StationNameCenter()
     {

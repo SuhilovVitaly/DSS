@@ -112,4 +112,28 @@ public class GridPanelTests
     {
         Assert.Equal(expected, GridPanel.MaxScrollOffset(rowCount));
     }
+
+    [Fact]
+    public void HitTestRow_returns_the_absolute_row_index_under_the_click()
+    {
+        var row2 = GridPanel.RowLocalRect(0f, 0f, 2);
+        int hit = GridPanel.HitTestRow(0f, 0f, rowCount: 5, scrollOffset: 0, row2.MidX, row2.MidY);
+        Assert.Equal(2, hit);
+    }
+
+    /// <summary>Absolute index accounts for scrollOffset — visible slot 0 is scrollOffset + 0, not row index 0.</summary>
+    [Fact]
+    public void HitTestRow_accounts_for_scroll_offset()
+    {
+        var slot0 = GridPanel.RowLocalRect(0f, 0f, 0);
+        int hit = GridPanel.HitTestRow(0f, 0f, rowCount: 6, scrollOffset: 1, slot0.MidX, slot0.MidY);
+        Assert.Equal(1, hit);
+    }
+
+    [Fact]
+    public void HitTestRow_returns_minus_one_outside_any_row_or_when_the_grid_is_empty()
+    {
+        Assert.Equal(-1, GridPanel.HitTestRow(0f, 0f, rowCount: 5, scrollOffset: 0, localX: -100f, localY: -100f));
+        Assert.Equal(-1, GridPanel.HitTestRow(0f, 0f, rowCount: 0, scrollOffset: 0, localX: 100f, localY: 100f));
+    }
 }
