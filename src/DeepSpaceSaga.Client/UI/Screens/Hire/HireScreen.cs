@@ -88,7 +88,7 @@ public sealed class HireScreen : IScreen
 
         string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
-            windowName: "HIRE");
+            windowName: "HIRE", isExitButtonHovered: _isExitButtonHovered);
 
         float cx = pl + HireLayout.PanelWidth / 2f;
         canvas.DrawText(PlaceholderLine, cx, pt + HireLayout.BodyStartY, MenuStyle.TextStatus);

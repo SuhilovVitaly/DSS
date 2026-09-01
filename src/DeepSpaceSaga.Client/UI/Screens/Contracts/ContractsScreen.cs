@@ -88,7 +88,7 @@ public sealed class ContractsScreen : IScreen
 
         string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
-            windowName: "CONTRACTS");
+            windowName: "CONTRACTS", isExitButtonHovered: _isExitButtonHovered);
 
         float cx = pl + ContractsLayout.PanelWidth / 2f;
         canvas.DrawText(PlaceholderLine, cx, pt + ContractsLayout.BodyStartY, MenuStyle.TextStatus);

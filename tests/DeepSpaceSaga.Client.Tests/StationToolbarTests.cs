@@ -161,6 +161,28 @@ public class StationToolbarTests
         Assert.True(RingHasNonBackgroundPixel(hoveredBitmap, tight, padded, 10, 10));
     }
 
+    [Fact]
+    public void Hovering_the_exit_button_adds_a_glow_bleeding_past_the_icon()
+    {
+        Assert.True(StationToolbar.HasLoadedExitButtonImage);
+
+        using var hoveredBitmap = new SKBitmap(1420, 80);
+        hoveredBitmap.Erase(SKColors.Transparent);
+        using (var canvas = new SKCanvas(hoveredBitmap))
+            StationToolbar.Draw(canvas, 10, 10, stationName: null, isStationHub: false, isExitButtonHovered: true);
+
+        using var normalBitmap = new SKBitmap(1420, 80);
+        normalBitmap.Erase(SKColors.Transparent);
+        using (var canvas = new SKCanvas(normalBitmap))
+            StationToolbar.Draw(canvas, 10, 10, stationName: null, isStationHub: false, isExitButtonHovered: false);
+
+        var tight = StationToolbar.ExitButtonLocalRect();
+        var padded = SKRect.Inflate(tight, 6f, 6f);
+
+        Assert.False(RingHasNonBackgroundPixel(normalBitmap, tight, padded, 10, 10));
+        Assert.True(RingHasNonBackgroundPixel(hoveredBitmap, tight, padded, 10, 10));
+    }
+
     private static bool RingHasNonBackgroundPixel(SKBitmap bitmap, SKRect tight, SKRect padded, float offsetX, float offsetY)
     {
         int left = Math.Max(0, (int)(offsetX + padded.Left));

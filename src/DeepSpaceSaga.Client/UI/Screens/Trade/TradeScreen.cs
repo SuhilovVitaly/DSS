@@ -510,7 +510,7 @@ public sealed class TradeScreen : IScreen
         string tradeTitle = Localization.Get("Trade.Title");
         string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
-            windowName: tradeTitle);
+            windowName: tradeTitle, isExitButtonHovered: _isExitButtonHovered);
 
         DrawHeader(canvas, pl, pt, snapshot);
 

@@ -112,7 +112,7 @@ public sealed class FinanceScreen : IScreen
 
         string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
-            windowName: "FINANCE");
+            windowName: "FINANCE", isExitButtonHovered: _isExitButtonHovered);
 
         float cx = pl + FinanceLayout.PanelWidth / 2f;
 

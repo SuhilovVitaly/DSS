@@ -22,8 +22,9 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 ///
 /// Also draws the shared exit-button icon, right-aligned (see
 /// <see cref="ExitButtonLocalRect"/>) — this replaces the per-panel × close button every
-/// station window used to have; the consuming screen hit-tests it for both the click
-/// (same close event as before) and the hover cursor swap.
+/// station window used to have; the consuming screen hit-tests it for the click (same
+/// close event as before), the hover cursor swap, and the same blurred hover glow the
+/// station-name link gets (see <see cref="Draw"/>'s isExitButtonHovered parameter).
 /// </summary>
 public static class StationToolbar
 {
@@ -112,6 +113,22 @@ public static class StationToolbar
         return paint;
     }
 
+    /// <summary>
+    /// Hover-only glow for the exit-button icon — same blur radius and glow color as the
+    /// station-name link's hover glow (<see cref="NameGlowPaint"/>), so both hoverable
+    /// elements on the toolbar read as the same kind of "live" affordance. Drawn as a
+    /// filled, blurred oval behind the icon's rect (a mask-filter blur on the icon bitmap
+    /// itself is not reliably supported by every Skia raster backend for image draws),
+    /// then the sharp icon is drawn on top in <see cref="Draw"/>.
+    /// </summary>
+    private static readonly SKPaint ExitButtonGlowPaint = new()
+    {
+        Color = ColorNameGlow,
+        Style = SKPaintStyle.Fill,
+        IsAntialias = true,
+        MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, NameHoverGlowSigma)
+    };
+
     /// <summary>Returns <paramref name="color"/> with its HSV saturation set to 100%, same hue/brightness.</summary>
     private static SKColor FullySaturated(SKColor color)
     {
@@ -174,10 +191,13 @@ public static class StationToolbar
     /// docked) but <paramref name="windowName"/> is given, the breadcrumb and separator
     /// are skipped and only the window name is drawn — there is no station to link from.
     /// Neither the separator nor the window-name segment is clickable or hoverable.
+    ///
+    /// <paramref name="isExitButtonHovered"/> adds the same blurred glow behind the
+    /// exit-button icon as <paramref name="isHovered"/> adds behind the station-name link.
     /// </summary>
     public static void Draw(
         SKCanvas canvas, float panelLeft, float panelTop, string? stationName, bool isStationHub,
-        bool isHovered = false, string? windowName = null)
+        bool isHovered = false, string? windowName = null, bool isExitButtonHovered = false)
     {
         var rect = new SKRect(panelLeft, panelTop, panelLeft + Width, panelTop + Height);
         canvas.DrawRect(rect, FillPaint);
@@ -214,6 +234,10 @@ public static class StationToolbar
             var local = ExitButtonLocalRect();
             var exitRect = new SKRect(
                 panelLeft + local.Left, panelTop + local.Top, panelLeft + local.Right, panelTop + local.Bottom);
+
+            if (isExitButtonHovered)
+                canvas.DrawOval(exitRect, ExitButtonGlowPaint);
+
             canvas.DrawBitmap(ExitButtonImage, exitRect);
         }
     }

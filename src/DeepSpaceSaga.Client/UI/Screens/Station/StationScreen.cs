@@ -122,7 +122,8 @@ public sealed class StationScreen : IScreen
         MenuStyle.DrawPanel(canvas, panelRect);
 
         string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
-        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: true);
+        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: true,
+            isExitButtonHovered: _isExitButtonHovered);
 
         float cx = pl + StationLayout.PanelWidth / 2f;
 
