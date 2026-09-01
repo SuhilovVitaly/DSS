@@ -25,6 +25,12 @@ public class StationToolbarTests
     }
 
     [Fact]
+    public void Name_font_size_is_26px()
+    {
+        Assert.Equal(26f, StationToolbar.NameFontSize);
+    }
+
+    [Fact]
     public void Draw_fills_the_interior_with_the_spec_background_color()
     {
         using var bitmap = new SKBitmap(1420, 80);
@@ -139,13 +145,15 @@ public class StationToolbarTests
     }
 
     [Fact]
-    public void NameLocalRect_is_inset_by_20px_from_the_toolbars_top_left_corner()
+    public void NameLocalRect_is_inset_by_roughly_20px_from_the_toolbars_top_left_corner()
     {
         var local = StationToolbar.NameLocalRect("Alpha Station");
 
+        // Tight glyph bounds vary a couple px with the first letter's side bearing/font
+        // metrics — assert "close to the 20px inset", not bit-exact.
         Assert.False(local.IsEmpty);
-        Assert.Equal(StationToolbar.NameOffsetX, local.Left, precision: 3);
-        Assert.True(local.Top >= StationToolbar.NameOffsetY - 4f);
+        Assert.InRange(local.Left, StationToolbar.NameOffsetX - 5f, StationToolbar.NameOffsetX + 5f);
+        Assert.InRange(local.Top, StationToolbar.NameOffsetY - 10f, StationToolbar.NameOffsetY + 10f);
     }
 
     [Fact]

@@ -26,7 +26,7 @@ public static class StationToolbar
 
     public const float NameOffsetX = 20f;
     public const float NameOffsetY = 20f;
-    public const float NameFontSize = 18f;
+    public const float NameFontSize = 26f;
 
     public static readonly SKColor ColorBackground = new(0x5e, 0x5e, 0x5e);
     public static readonly SKColor ColorBorder = new(0x99, 0x99, 0x99);
@@ -44,11 +44,15 @@ public static class StationToolbar
     private static readonly SKPaint NamePaintActive = MakeNamePaint(ColorNameActive);
     private static readonly SKPaint NamePaintLink = MakeNamePaint(ColorNameLink);
 
+    // MenuStyle.TypefaceHumaroid loads humaroid.regular.otf — there is no separate bold
+    // weight file for this font, so FakeBoldText synthetically embolds it (SkiaSharp's
+    // standard approach for a family with no true bold face).
     private static SKPaint MakeNamePaint(SKColor color) => new()
     {
         Color = color,
         TextSize = NameFontSize,
         IsAntialias = true,
+        FakeBoldText = true,
         TextAlign = SKTextAlign.Left,
         Typeface = MenuStyle.TypefaceHumaroid
     };
