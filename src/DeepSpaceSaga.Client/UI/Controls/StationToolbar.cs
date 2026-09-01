@@ -51,7 +51,7 @@ public static class StationToolbar
     public const float ResourceValueFontSize = 22f;
 
     /// <summary>Gap between the resource info panel's right edge and the exit button's left edge.</summary>
-    public const float ResourceInfoGapFromExitButton = 20f;
+    public const float ResourceInfoGapFromExitButton = 70f;
 
     /// <summary>
     /// The reserved value-field width is measured from this 4-digit sample, so the field
