@@ -107,7 +107,8 @@
                     "powerState": "On",
                     "operationalState": "Ready",
                     "activeCycle": null,
-                    "cargo": []
+                    "cargo": [],
+                    "fuelAmountKg": 750
                 }
             ],
             "crew": [

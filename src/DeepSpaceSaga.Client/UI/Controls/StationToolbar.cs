@@ -44,6 +44,12 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 /// <see cref="ResolveCreditsCount"/>): the player's money, same plain-readout rule as
 /// the other two — never clickable, no hover glow, hover-only tooltip (also drawn by
 /// <see cref="DrawTooltips"/>).
+///
+/// Immediately to the left of the tokens readout, a fuel icon + "current / capacity"
+/// count (see <see cref="ResolveFuelAmountKg"/>/<see cref="ResolveFuelCapacityKg"/>):
+/// the fuel stored in the ship's engine tanks, out of total tank capacity. Same
+/// plain-readout rule — never clickable, no hover glow, hover-only tooltip (also drawn
+/// by <see cref="DrawTooltips"/>).
 /// </summary>
 public static class StationToolbar
 {
@@ -96,6 +102,15 @@ public static class StationToolbar
     /// </summary>
     private const string CreditsValueFieldSample = "999999";
 
+    /// <summary>
+    /// The fuel value field is reserved from this sample — like
+    /// <see cref="CrewValueFieldSample"/> it is a "N / N" pair (current fuel / tank
+    /// capacity), but each side reserves four digits ("9999") like
+    /// <see cref="ResourceValueFieldSample"/> rather than one, since the tank capacity
+    /// alone is four digits (1000 kg).
+    /// </summary>
+    private const string FuelValueFieldSample = "9999 / 9999";
+
     public const string FoodRationsItemTypeId = "item.food-rations";
 
     private static readonly string[] FoodRationsTooltipLines =
@@ -114,6 +129,12 @@ public static class StationToolbar
     {
         "Tokens held by the player.",
         "Earned from selling goods; spent on goods and refueling."
+    };
+
+    private static readonly string[] FuelTooltipLines =
+    {
+        "Fuel stored in the ship's engine tanks, out of total tank capacity.",
+        "Refuel at a station - engine commands don't consume fuel yet."
     };
 
     private const float TooltipPaddingX = 10f;
@@ -173,6 +194,12 @@ public static class StationToolbar
     /// <summary>True if the tokens PNG was found and decoded at startup.</summary>
     internal static bool HasLoadedTokensImage => TokensImage is not null;
 
+    private static readonly SKBitmap? FuelImage =
+        LoadImage("Images/UI/Panels/station-toolbar/toolbar-oil.png");
+
+    /// <summary>True if the fuel PNG was found and decoded at startup.</summary>
+    internal static bool HasLoadedFuelImage => FuelImage is not null;
+
     private static readonly SKPaint ResourceValuePaint = new()
     {
         Color = MenuStyle.ColorText,
@@ -190,6 +217,9 @@ public static class StationToolbar
 
     /// <summary>Reserved width for the tokens/credits value field — see <see cref="CreditsValueFieldSample"/>.</summary>
     private static readonly float CreditsValueFieldWidth = ResourceValuePaint.MeasureText(CreditsValueFieldSample);
+
+    /// <summary>Reserved width for the fuel value field — see <see cref="FuelValueFieldSample"/>.</summary>
+    private static readonly float FuelValueFieldWidth = ResourceValuePaint.MeasureText(FuelValueFieldSample);
 
     private static readonly SKPaint TooltipBackgroundPaint =
         new() { Color = new SKColor(0x1a, 0x1a, 0x1a, 235), Style = SKPaintStyle.Fill, IsAntialias = true };
@@ -358,6 +388,22 @@ public static class StationToolbar
     }
 
     /// <summary>
+    /// Fuel icon+value hit-test rect, local to the panel — sits immediately to the left
+    /// of <see cref="TokensLocalRect"/> (see <see cref="InfoBlockGap"/>), spanning from
+    /// the icon's left edge to the reserved value field's right edge (see
+    /// <see cref="FuelValueFieldWidth"/>). Used only to show the tooltip on hover — this
+    /// readout is never clickable and never gets a hover glow.
+    /// </summary>
+    public static SKRect FuelLocalRect()
+    {
+        float blockRight = TokensLocalRect().Left - InfoBlockGap;
+        float valueFieldLeft = blockRight - FuelValueFieldWidth;
+        float iconLeft = valueFieldLeft - ResourceIconTextGap - ResourceIconSize;
+        float top = (Height - ResourceIconSize) / 2f;
+        return new SKRect(iconLeft, top, blockRight, top + ResourceIconSize);
+    }
+
+    /// <summary>
     /// Draws the toolbar at the panel's top-left corner (panelLeft, panelTop): background,
     /// border, the station name if non-empty, and the exit-button icon. <paramref
     /// name="isStationHub"/> selects the "active location" color (Station itself) vs. the
@@ -395,16 +441,25 @@ public static class StationToolbar
     /// rule — no hover glow; its hover tooltip (see <see cref="CrewLocalRect"/>) is also
     /// drawn by <see cref="DrawTooltips"/>.
     ///
-    /// <paramref name="creditsCount"/> feeds the leftmost readout, immediately left of
-    /// the crew one (see <see cref="InfoBlockGap"/>): the tokens icon followed by the
+    /// <paramref name="creditsCount"/> feeds the tokens readout, immediately left of the
+    /// crew one (see <see cref="InfoBlockGap"/>): the tokens icon followed by the
     /// player's credits balance in a field reserved wide enough for six digits (999999).
     /// Same plain-readout rule — no hover glow; its hover tooltip (see
     /// <see cref="TokensLocalRect"/>) is also drawn by <see cref="DrawTooltips"/>.
+    ///
+    /// <paramref name="fuelAmountKg"/>/<paramref name="fuelCapacityKg"/> feed the
+    /// leftmost readout, immediately left of the tokens one (see
+    /// <see cref="InfoBlockGap"/>): the fuel icon followed by
+    /// "<paramref name="fuelAmountKg"/> / <paramref name="fuelCapacityKg"/>" — current
+    /// fuel out of total tank capacity, in a field reserved for four digits per side.
+    /// Same plain-readout rule — no hover glow; its hover tooltip (see
+    /// <see cref="FuelLocalRect"/>) is also drawn by <see cref="DrawTooltips"/>.
     /// </summary>
     public static void Draw(
         SKCanvas canvas, float panelLeft, float panelTop, string? stationName, bool isStationHub,
         bool isHovered = false, string? windowName = null, bool isExitButtonHovered = false,
-        long foodRationsCount = 0, int crewCount = 0, int cabinsCount = 0, long creditsCount = 0)
+        long foodRationsCount = 0, int crewCount = 0, int cabinsCount = 0, long creditsCount = 0,
+        long fuelAmountKg = 0, long fuelCapacityKg = 0)
     {
         var rect = new SKRect(panelLeft, panelTop, panelLeft + Width, panelTop + Height);
         canvas.DrawRect(rect, FillPaint);
@@ -513,6 +568,28 @@ public static class StationToolbar
                 new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
             canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
         }
+
+        if (FuelImage is not null)
+        {
+            string valueText = $"{fuelAmountKg} / {fuelCapacityKg}";
+            float actualTextWidth = ResourceValuePaint.MeasureText(valueText);
+
+            var block = FuelLocalRect();
+            float valueFieldRight = block.Right;
+            // Right-align the actual digits within the reserved field — the icon's position
+            // (fixed by FuelLocalRect/FuelValueFieldWidth) never moves regardless of how
+            // many digits the amount/capacity actually have.
+            float textLeft = valueFieldRight - actualTextWidth;
+
+            var iconRect = new SKRect(
+                panelLeft + block.Left, panelTop + block.Top,
+                panelLeft + block.Left + ResourceIconSize, panelTop + block.Bottom);
+            canvas.DrawBitmap(FuelImage, iconRect);
+
+            float textBaselineY = MenuStyle.VerticalCenterBaseline(
+                new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
+            canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
+        }
     }
 
     /// <summary>
@@ -526,7 +603,7 @@ public static class StationToolbar
     /// </summary>
     public static void DrawTooltips(
         SKCanvas canvas, float panelLeft, float panelTop,
-        bool isFoodRationsHovered, bool isCrewHovered, bool isTokensHovered)
+        bool isFoodRationsHovered, bool isCrewHovered, bool isTokensHovered, bool isFuelHovered)
     {
         if (isFoodRationsHovered && FoodRationsImage is not null)
         {
@@ -544,6 +621,12 @@ public static class StationToolbar
         {
             var block = TokensLocalRect();
             DrawTooltip(canvas, ToScreenRect(panelLeft, panelTop, block), TokensTooltipLines);
+        }
+
+        if (isFuelHovered && FuelImage is not null)
+        {
+            var block = FuelLocalRect();
+            DrawTooltip(canvas, ToScreenRect(panelLeft, panelTop, block), FuelTooltipLines);
         }
     }
 
@@ -623,6 +706,40 @@ public static class StationToolbar
 
     /// <summary>The player's credits balance — 0 for a null snapshot (or a snapshot/save predating the field).</summary>
     public static long ResolveCreditsCount(AuthoritativeSnapshot? snapshot) => snapshot?.PlayerCredits ?? 0;
+
+    /// <summary>
+    /// Total fuel (kg) aboard the player ship, summed across every installed module that
+    /// carries fuel (engine modules project FuelAmountKg) — 0 for a null snapshot, no
+    /// installed modules, or no fuel-carrying module. Mirrors
+    /// <see cref="ResolveCabinsCount"/>'s null-safe iteration.
+    /// </summary>
+    public static long ResolveFuelAmountKg(AuthoritativeSnapshot? snapshot)
+    {
+        if (snapshot is null || snapshot.InstalledModules.IsDefaultOrEmpty)
+            return 0;
+
+        long total = 0;
+        foreach (var module in snapshot.InstalledModules)
+            total += module.FuelAmountKg ?? 0;
+
+        return total;
+    }
+
+    /// <summary>
+    /// Total fuel tank capacity (kg) aboard the player ship — the sum of every installed
+    /// module's FuelCapacityKg, mirroring <see cref="ResolveFuelAmountKg"/>.
+    /// </summary>
+    public static long ResolveFuelCapacityKg(AuthoritativeSnapshot? snapshot)
+    {
+        if (snapshot is null || snapshot.InstalledModules.IsDefaultOrEmpty)
+            return 0;
+
+        long total = 0;
+        foreach (var module in snapshot.InstalledModules)
+            total += module.FuelCapacityKg ?? 0;
+
+        return total;
+    }
 
     /// <summary>
     /// Draws a small dark tooltip box directly below <paramref name="anchorRect"/> (screen

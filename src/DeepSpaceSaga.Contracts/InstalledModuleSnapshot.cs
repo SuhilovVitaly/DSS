@@ -20,6 +20,13 @@ public sealed record InstalledModuleSnapshot(
     int StructurePoints = 0,
     string? ActiveCommandType = null,
     long? FuelAmountKg = null,
+    /// <summary>
+    /// Fuel tank capacity in kg. A static module-type attribute (direct pass-through of
+    /// <c>ModuleTypeDefinition.FuelCapacityKg</c>, like <see cref="CabinesCount"/>), unlike
+    /// <see cref="FuelAmountKg"/> which is runtime state. Null for module types without
+    /// fuel capacity.
+    /// </summary>
+    long? FuelCapacityKg = null,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ModuleCommandSnapshot>))]
     ImmutableArray<ModuleCommandSnapshot> Commands = default,
     /// <summary>

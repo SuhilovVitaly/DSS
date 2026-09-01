@@ -1443,11 +1443,11 @@ public class EngineCommandTests
     }
 
     [Fact]
-    public void Default_scenario_engine_starts_with_full_tank()
+    public void Default_scenario_engine_starts_with_an_explicit_75_percent_tank()
     {
-        // requirements §57 / story-20260816-204408 Batch B: the Tetrarch default scenario
-        // no longer specifies fuelAmountKg explicitly for MOD-PLAYER-ENGINE-01, so the
-        // ResolveFuelAmountKg default rule (§56.10) applies — a full tank.
+        // requirements §57 / Fuel.md: the Tetrarch default scenario specifies
+        // fuelAmountKg = 750 explicitly for MOD-PLAYER-ENGINE-01 — 75% of the
+        // module.engine.basic tank (fuelCapacityKg = 1000).
         string scenarioPath = Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
             "..", "..", "..", "..", "..",
@@ -1473,7 +1473,7 @@ public class EngineCommandTests
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settingsPath, out _, out _);
         var engineModuleType = registry.ModuleTypes.GetDefinition(
             registry.ModuleTypes.GetIndex("module.engine.basic"));
-        Assert.True(engineModuleType.FuelCapacityKg is > 0);
+        Assert.Equal(1000, engineModuleType.FuelCapacityKg!.Value);
 
         var scenario = ScenarioLoader.LoadFromFile(scenarioPath);
         var engine = new SimulationEngine(registry);
@@ -1481,7 +1481,61 @@ public class EngineCommandTests
 
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
         var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
-        Assert.Equal(engineModuleType.FuelCapacityKg!.Value, engineModule.FuelAmountKg);
+        Assert.Equal(750, engineModule.FuelAmountKg);
+    }
+
+    [Fact]
+    public void Engine_without_explicit_fuelAmountKg_starts_with_a_full_tank()
+    {
+        // The general ResolveFuelAmountKg default rule (§56.10): a scenario that omits
+        // fuelAmountKg gets a full tank. Exercised separately now that every shipped
+        // scenario specifies its fuel explicitly.
+        var registry = GameDataRegistry.Create(
+            moduleCategories:
+            [
+                new ModuleCategoryDefinition(
+                    "module.engine.basic", "Engine", SlotSize: 1,
+                    CommandTypeIds: ImmutableArray<string>.Empty)
+            ],
+            moduleTypes:
+            [
+                new ModuleTypeDefinition(
+                    "module.engine.basic", "Engine", SlotSize: 1, MassKg: 5000,
+                    StructurePointsMax: 100, PowerConsumptionW: 0,
+                    CommandTypeIds: ImmutableArray<string>.Empty,
+                    MaxSpeedMps: 4000, TurnStepDegrees: 1,
+                    LinearInertiaMps2: 40000, AngularInertiaDegPerSec: 4,
+                    FuelCapacityKg: 1000)
+            ],
+            itemTypes: [],
+            commandDefinitions: []);
+
+        var engine = new SimulationEngine(registry);
+        engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
+        {
+          "scenarioMetadata": { "scenarioId": "test", "name": "Test" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed0",
+            "playerShipObjectId": "{{PlayerShipId}}",
+            "spaceObjects": [
+              { "objectId": "{{PlayerShipId}}", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "hullLayout": { "width": 1, "height": 1, "cells": [ {"x":0,"y":0} ] },
+                "modules": [
+                  { "moduleId": "{{EngineModuleId}}", "moduleTypeId": "module.engine.basic",
+                    "occupiedCells": [ {"x":0,"y":0} ], "structurePoints": 100, "powerState": "On", "operationalState": "Ready",
+                    "activeCycle": null, "cargo": [] }
+                ]
+              }
+            ]
+          }
+        }
+        """));
+
+        var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId);
+        var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == EngineModuleId);
+        Assert.Equal(1000, engineModule.FuelAmountKg);
     }
 
     [Fact]
