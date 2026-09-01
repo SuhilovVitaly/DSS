@@ -46,8 +46,8 @@ public static class StationToolbar
     /// <summary>Station-name color everywhere else — a clickable link back to the hub.</summary>
     public static readonly SKColor ColorNameLink = new(0xff, 0xff, 0xff);
 
-    /// <summary>Breadcrumb ">>" separator color — dark against the toolbar's mid-gray background.</summary>
-    public static readonly SKColor ColorSeparator = new(0x33, 0x33, 0x33);
+    /// <summary>Breadcrumb ">>" separator color — same white as the inactive/link station name.</summary>
+    public static readonly SKColor ColorSeparator = ColorNameLink;
 
     private static readonly SKPaint FillPaint = new() { Color = ColorBackground, Style = SKPaintStyle.Fill };
     private static readonly SKPaint BorderPaint =

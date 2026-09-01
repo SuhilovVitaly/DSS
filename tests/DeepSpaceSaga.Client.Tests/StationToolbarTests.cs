@@ -208,8 +208,11 @@ public class StationToolbarTests
     }
 
     [Fact]
-    public void Draw_with_window_name_renders_the_separator_and_window_name_color()
+    public void Draw_with_window_name_renders_a_separator_gap_and_the_window_name_color()
     {
+        // ColorSeparator is now the same white as the link station name, so its presence
+        // can't be told apart by color alone — check geometry instead: something (the
+        // ">>" glyph) is drawn in the gap right after the station name ends.
         using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
         bitmap.Erase(SKColors.Transparent);
         using var canvas = new SKCanvas(bitmap);
@@ -217,35 +220,47 @@ public class StationToolbarTests
         StationToolbar.Draw(canvas, 0, 0, "Alpha Station", isStationHub: false, windowName: "TRADE");
         canvas.Flush();
 
-        Assert.True(BitmapContainsColor(bitmap, StationToolbar.ColorSeparator));
         Assert.True(BitmapContainsColor(bitmap, StationToolbar.ColorNameActive));
+
+        int nameEnd = (int)StationToolbar.NameLocalRect("Alpha Station").Right;
+        Assert.True(RegionHasNonBackgroundPixel(bitmap, nameEnd + 2, nameEnd + (int)StationToolbar.NameSegmentGap));
     }
 
     [Fact]
-    public void Draw_without_window_name_has_no_separator()
+    public void Draw_with_window_name_extends_content_further_right_than_without_one()
     {
-        using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
-        bitmap.Erase(SKColors.Transparent);
-        using var canvas = new SKCanvas(bitmap);
+        // Relative comparison instead of an absolute pixel boundary: exactly how far
+        // FakeBoldText's synthetic stroke-widening overhangs past MeasureText's reported
+        // bounds isn't guaranteed, so "further right than the no-windowName render" is the
+        // robust way to prove the separator+windowName segment actually got drawn.
+        using var withoutWindowName = RenderToolbar("Alpha Station", windowName: null);
+        using var withWindowName = RenderToolbar("Alpha Station", windowName: "TRADE");
 
-        StationToolbar.Draw(canvas, 0, 0, "Alpha Station", isStationHub: false);
-        canvas.Flush();
-
-        Assert.False(BitmapContainsColor(bitmap, StationToolbar.ColorSeparator));
+        Assert.True(MaxInkColumn(withWindowName) > MaxInkColumn(withoutWindowName));
     }
 
     [Fact]
-    public void Draw_with_window_name_but_no_station_name_skips_the_separator()
+    public void Draw_with_window_name_but_no_station_name_starts_earlier_than_with_one()
     {
-        using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
+        using var withoutStationName = RenderToolbar(stationName: null, windowName: "FINANCE");
+        using var withStationName = RenderToolbar("Alpha Station", windowName: "FINANCE");
+
+        // The window-name segment's own color (ColorNameActive) is unambiguous, so locate
+        // it directly rather than reasoning about exact separator/gap pixel widths.
+        int startWithoutStation = MinColumnOfColor(withoutStationName, StationToolbar.ColorNameActive);
+        int startWithStation = MinColumnOfColor(withStationName, StationToolbar.ColorNameActive);
+
+        Assert.True(startWithoutStation < startWithStation);
+    }
+
+    private static SKBitmap RenderToolbar(string? stationName, string? windowName)
+    {
+        var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
         bitmap.Erase(SKColors.Transparent);
         using var canvas = new SKCanvas(bitmap);
-
-        StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, windowName: "FINANCE");
+        StationToolbar.Draw(canvas, 0, 0, stationName, isStationHub: false, windowName: windowName);
         canvas.Flush();
-
-        Assert.False(BitmapContainsColor(bitmap, StationToolbar.ColorSeparator));
-        Assert.True(BitmapContainsColor(bitmap, StationToolbar.ColorNameActive));
+        return bitmap;
     }
 
     private static bool BitmapContainsColor(SKBitmap bitmap, SKColor color)
@@ -256,6 +271,45 @@ public class StationToolbarTests
                 return true;
 
         return false;
+    }
+
+    private static bool RegionHasNonBackgroundPixel(SKBitmap bitmap, int xStart, int xEnd)
+    {
+        xStart = Math.Max(0, xStart);
+        xEnd = Math.Min(bitmap.Width, xEnd);
+
+        for (int y = 0; y < bitmap.Height; y++)
+        for (int x = xStart; x < xEnd; x++)
+            if (bitmap.GetPixel(x, y) != StationToolbar.ColorBackground)
+                return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Rightmost column with non-background ink, excluding a border-width margin on every
+    /// edge — the toolbar's own 1px <see cref="StationToolbar.ColorBorder"/> outline spans
+    /// the full width/height and would otherwise dominate the scan.
+    /// </summary>
+    private static int MaxInkColumn(SKBitmap bitmap)
+    {
+        const int inset = 3;
+        for (int x = bitmap.Width - 1 - inset; x >= inset; x--)
+        for (int y = inset; y < bitmap.Height - inset; y++)
+            if (bitmap.GetPixel(x, y) != StationToolbar.ColorBackground)
+                return x;
+
+        return -1;
+    }
+
+    private static int MinColumnOfColor(SKBitmap bitmap, SKColor color)
+    {
+        for (int x = 0; x < bitmap.Width; x++)
+        for (int y = 0; y < bitmap.Height; y++)
+            if (bitmap.GetPixel(x, y) == color)
+                return x;
+
+        return int.MaxValue;
     }
 
     [Fact]
