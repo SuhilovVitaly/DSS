@@ -25,6 +25,11 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 /// station window used to have; the consuming screen hit-tests it for the click (same
 /// close event as before), the hover cursor swap, and the same blurred hover glow the
 /// station-name link gets (see <see cref="Draw"/>'s isExitButtonHovered parameter).
+///
+/// Also draws a resource info panel pinned to the right, immediately before the exit
+/// button — starting with a food-rations icon + count (see
+/// <see cref="ResolveFoodRationsCount"/>). Unlike the exit button, this icon is a plain
+/// readout: never clickable, never gets a hover glow.
 /// </summary>
 public static class StationToolbar
 {
@@ -39,6 +44,14 @@ public static class StationToolbar
 
     public const float ExitButtonSize = 32f;
     public const float ExitButtonMarginRight = 15f;
+
+    public const float ResourceIconSize = 32f;
+    public const float ResourceIconTextGap = 8f;
+
+    /// <summary>Gap between the resource info panel's right edge and the exit button's left edge.</summary>
+    public const float ResourceInfoGapFromExitButton = 20f;
+
+    public const string FoodRationsItemTypeId = "item.food-rations";
 
     /// <summary>Gap on each side of the ">>" breadcrumb separator (see <see cref="Draw"/>).</summary>
     public const float NameSegmentGap = 16f;
@@ -71,6 +84,21 @@ public static class StationToolbar
 
     /// <summary>True if the exit-button PNG was found and decoded at startup.</summary>
     internal static bool HasLoadedExitButtonImage => ExitButtonImage is not null;
+
+    private static readonly SKBitmap? FoodRationsImage =
+        LoadImage("Images/UI/Panels/station-toolbar/toolbar-rations.png");
+
+    /// <summary>True if the food-rations PNG was found and decoded at startup.</summary>
+    internal static bool HasLoadedFoodRationsImage => FoodRationsImage is not null;
+
+    private static readonly SKPaint ResourceValuePaint = new()
+    {
+        Color = MenuStyle.ColorText,
+        TextSize = MenuStyle.ButtonFontSize,
+        IsAntialias = true,
+        TextAlign = SKTextAlign.Left,
+        Typeface = MenuStyle.TypefaceHumaroid
+    };
 
     private static SKBitmap? LoadImage(string path)
     {
@@ -194,10 +222,17 @@ public static class StationToolbar
     ///
     /// <paramref name="isExitButtonHovered"/> adds the same blurred glow behind the
     /// exit-button icon as <paramref name="isHovered"/> adds behind the station-name link.
+    ///
+    /// <paramref name="foodRationsCount"/> feeds the resource info panel — pinned to the
+    /// toolbar's right side, immediately before the exit button (see
+    /// <see cref="ResourceInfoGapFromExitButton"/>): the food-rations icon followed by its
+    /// count. This icon is a plain readout, not a button — it never hit-tests and never
+    /// gets a hover glow, unlike the exit-button icon right next to it.
     /// </summary>
     public static void Draw(
         SKCanvas canvas, float panelLeft, float panelTop, string? stationName, bool isStationHub,
-        bool isHovered = false, string? windowName = null, bool isExitButtonHovered = false)
+        bool isHovered = false, string? windowName = null, bool isExitButtonHovered = false,
+        long foodRationsCount = 0)
     {
         var rect = new SKRect(panelLeft, panelTop, panelLeft + Width, panelTop + Height);
         canvas.DrawRect(rect, FillPaint);
@@ -227,6 +262,26 @@ public static class StationToolbar
             }
 
             canvas.DrawText(windowName, x, baselineY, NamePaintActive);
+        }
+
+        if (FoodRationsImage is not null)
+        {
+            string valueText = foodRationsCount.ToString();
+            float textWidth = ResourceValuePaint.MeasureText(valueText);
+
+            float blockRight = ExitButtonLocalRect().Left - ResourceInfoGapFromExitButton;
+            float textLeft = blockRight - textWidth;
+            float iconLeft = textLeft - ResourceIconTextGap - ResourceIconSize;
+            float iconTop = (Height - ResourceIconSize) / 2f;
+
+            var iconRect = new SKRect(
+                panelLeft + iconLeft, panelTop + iconTop,
+                panelLeft + iconLeft + ResourceIconSize, panelTop + iconTop + ResourceIconSize);
+            canvas.DrawBitmap(FoodRationsImage, iconRect);
+
+            float textBaselineY = MenuStyle.VerticalCenterBaseline(
+                new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
+            canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
         }
 
         if (ExitButtonImage is not null)
@@ -260,4 +315,33 @@ public static class StationToolbar
         var station = snapshot.Objects.FirstOrDefault(o => o.ObjectId == ship.DockedStationObjectId);
         return station?.DisplayName;
     }
+
+    /// <summary>
+    /// Sums the player ship's total quantity of one cargo item type across every
+    /// installed module's Cargo (e.g. a container module) — 0 for a null snapshot, no
+    /// installed modules, or no matching stacks. The single source of truth for the
+    /// toolbar's resource readouts (see <see cref="ResolveFoodRationsCount"/>).
+    /// </summary>
+    public static long ResolveCargoQuantity(AuthoritativeSnapshot? snapshot, string itemTypeId)
+    {
+        if (snapshot is null || snapshot.InstalledModules.IsDefaultOrEmpty)
+            return 0;
+
+        long total = 0;
+        foreach (var module in snapshot.InstalledModules)
+        {
+            if (module.Cargo.IsDefaultOrEmpty)
+                continue;
+
+            foreach (var stack in module.Cargo)
+                if (stack.ItemTypeId == itemTypeId)
+                    total += stack.Quantity;
+        }
+
+        return total;
+    }
+
+    /// <summary>Total <see cref="FoodRationsItemTypeId"/> quantity aboard the player ship.</summary>
+    public static long ResolveFoodRationsCount(AuthoritativeSnapshot? snapshot) =>
+        ResolveCargoQuantity(snapshot, FoodRationsItemTypeId);
 }

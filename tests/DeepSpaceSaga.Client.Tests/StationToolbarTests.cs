@@ -25,6 +25,61 @@ public class StationToolbarTests
     }
 
     [Fact]
+    public void Food_rations_icon_is_loaded()
+    {
+        Assert.True(StationToolbar.HasLoadedFoodRationsImage);
+    }
+
+    [Fact]
+    public void ResolveFoodRationsCount_sums_the_item_across_every_installed_modules_cargo()
+    {
+        var snapshot = new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray<ObjectMotionSnapshot>.Empty,
+            InstalledModules: ImmutableArray.Create(
+                new InstalledModuleSnapshot(
+                    ModuleId: "MOD-1", ModuleTypeId: "module.container.basic", DisplayName: "Cargo Bay 1",
+                    Position: 0, CommandTypeIds: ImmutableArray<string>.Empty,
+                    Cargo: ImmutableArray.Create(
+                        new CargoStackSnapshot(StationToolbar.FoodRationsItemTypeId, 12),
+                        new CargoStackSnapshot("item.ice", 999))),
+                new InstalledModuleSnapshot(
+                    ModuleId: "MOD-2", ModuleTypeId: "module.container.basic", DisplayName: "Cargo Bay 2",
+                    Position: 1, CommandTypeIds: ImmutableArray<string>.Empty,
+                    Cargo: ImmutableArray.Create(
+                        new CargoStackSnapshot(StationToolbar.FoodRationsItemTypeId, 8)))));
+
+        Assert.Equal(20, StationToolbar.ResolveFoodRationsCount(snapshot));
+    }
+
+    [Fact]
+    public void ResolveFoodRationsCount_is_zero_for_a_null_snapshot_or_no_installed_modules()
+    {
+        Assert.Equal(0, StationToolbar.ResolveFoodRationsCount(null));
+
+        var snapshot = new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed1,
+            Objects: ImmutableArray<ObjectMotionSnapshot>.Empty);
+        Assert.Equal(0, StationToolbar.ResolveFoodRationsCount(snapshot));
+    }
+
+    [Fact]
+    public void Draw_places_the_food_rations_icon_before_the_exit_button()
+    {
+        using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+
+        StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, foodRationsCount: 42);
+        canvas.Flush();
+
+        // The rations icon+value sit in the gap just left of the exit button — not
+        // overlapping it (StationToolbar.ResourceInfoGapFromExitButton keeps them apart).
+        float exitLeft = StationToolbar.ExitButtonLocalRect().Left;
+        Assert.True(RegionHasNonBackgroundPixel(bitmap, (int)(exitLeft - 100), (int)exitLeft - 2));
+    }
+
+    [Fact]
     public void Name_font_size_is_26px()
     {
         Assert.Equal(26f, StationToolbar.NameFontSize);

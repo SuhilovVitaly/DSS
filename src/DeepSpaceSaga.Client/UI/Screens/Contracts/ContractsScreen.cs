@@ -86,9 +86,11 @@ public sealed class ContractsScreen : IScreen
         var panelRect = new SKRect(pl, pt, pl + ContractsLayout.PanelWidth, pt + ContractsLayout.PanelHeight);
         MenuStyle.DrawPanel(canvas, panelRect);
 
-        string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
+        var snapshot = _buffer?.Latest?.Snapshot;
+        string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
-            windowName: "CONTRACTS", isExitButtonHovered: _isExitButtonHovered);
+            windowName: "CONTRACTS", isExitButtonHovered: _isExitButtonHovered,
+            foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot));
 
         float cx = pl + ContractsLayout.PanelWidth / 2f;
         canvas.DrawText(PlaceholderLine, cx, pt + ContractsLayout.BodyStartY, MenuStyle.TextStatus);

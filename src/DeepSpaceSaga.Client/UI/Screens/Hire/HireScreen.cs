@@ -86,9 +86,11 @@ public sealed class HireScreen : IScreen
         var panelRect = new SKRect(pl, pt, pl + HireLayout.PanelWidth, pt + HireLayout.PanelHeight);
         MenuStyle.DrawPanel(canvas, panelRect);
 
-        string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
+        var snapshot = _buffer?.Latest?.Snapshot;
+        string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
-            windowName: "HIRE", isExitButtonHovered: _isExitButtonHovered);
+            windowName: "HIRE", isExitButtonHovered: _isExitButtonHovered,
+            foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot));
 
         float cx = pl + HireLayout.PanelWidth / 2f;
         canvas.DrawText(PlaceholderLine, cx, pt + HireLayout.BodyStartY, MenuStyle.TextStatus);

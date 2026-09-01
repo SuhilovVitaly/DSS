@@ -121,9 +121,11 @@ public sealed class StationScreen : IScreen
         var panelRect = new SKRect(pl, pt, pl + StationLayout.PanelWidth, pt + StationLayout.PanelHeight);
         MenuStyle.DrawPanel(canvas, panelRect);
 
-        string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
+        var snapshot = _buffer?.Latest?.Snapshot;
+        string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: true,
-            isExitButtonHovered: _isExitButtonHovered);
+            isExitButtonHovered: _isExitButtonHovered,
+            foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot));
 
         float cx = pl + StationLayout.PanelWidth / 2f;
 

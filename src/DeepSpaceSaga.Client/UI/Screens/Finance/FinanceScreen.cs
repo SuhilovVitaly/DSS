@@ -110,9 +110,11 @@ public sealed class FinanceScreen : IScreen
         else
             MenuStyle.DrawPanel(canvas, panelRect);
 
-        string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
+        var snapshot = _buffer?.Latest?.Snapshot;
+        string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
-            windowName: "FINANCE", isExitButtonHovered: _isExitButtonHovered);
+            windowName: "FINANCE", isExitButtonHovered: _isExitButtonHovered,
+            foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot));
 
         float cx = pl + FinanceLayout.PanelWidth / 2f;
 
