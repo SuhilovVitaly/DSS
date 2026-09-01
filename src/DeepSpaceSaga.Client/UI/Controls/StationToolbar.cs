@@ -493,46 +493,41 @@ public static class StationToolbar
 
         if (FoodRationsImage is not null)
         {
-            string valueText = foodRationsCount.ToString();
-            float actualTextWidth = ResourceValuePaint.MeasureText(valueText);
-
             var block = FoodRationsLocalRect();
-            float valueFieldRight = block.Right;
-            // Right-align the actual digits within the reserved 4-digit-wide field — the
-            // icon's position (fixed by FoodRationsLocalRect/ResourceValueFieldWidth) never
-            // moves regardless of how many digits the current count actually has.
-            float textLeft = valueFieldRight - actualTextWidth;
 
             var iconRect = new SKRect(
                 panelLeft + block.Left, panelTop + block.Top,
                 panelLeft + block.Left + ResourceIconSize, panelTop + block.Bottom);
             canvas.DrawBitmap(FoodRationsImage, iconRect);
 
+            // The value starts at a fixed ResourceIconTextGap right of the icon's visible
+            // art (see IconTextLeft) — the icon-to-text gap is identical for every
+            // readout regardless of the digit count. The reserved field
+            // (FoodRationsLocalRect/ResourceValueFieldWidth) only keeps the icon from
+            // shifting and the value inside the field.
+            float textLeft = IconTextLeft(panelLeft, block, FoodRationsImage);
+
             float textBaselineY = MenuStyle.VerticalCenterBaseline(
                 new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
-            canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
+            canvas.DrawText(foodRationsCount.ToString(), textLeft, textBaselineY, ResourceValuePaint);
         }
 
         if (CrewImage is not null)
         {
-            string valueText = $"{crewCount} / {cabinsCount}";
-            float actualTextWidth = ResourceValuePaint.MeasureText(valueText);
-
             var block = CrewLocalRect();
-            float valueFieldRight = block.Right;
-            // Right-align the actual digits within the reserved field — the icon's position
-            // (fixed by CrewLocalRect/CrewValueFieldWidth) never moves regardless of how many
-            // digits crewCount/cabinsCount actually have.
-            float textLeft = valueFieldRight - actualTextWidth;
 
             var iconRect = new SKRect(
                 panelLeft + block.Left, panelTop + block.Top,
                 panelLeft + block.Left + ResourceIconSize, panelTop + block.Bottom);
             canvas.DrawBitmap(CrewImage, iconRect);
 
+            // Same fixed icon-to-text gap as the food-rations readout — the reserved
+            // field (CrewLocalRect/CrewValueFieldWidth) only keeps the icon from shifting.
+            float textLeft = IconTextLeft(panelLeft, block, CrewImage);
+
             float textBaselineY = MenuStyle.VerticalCenterBaseline(
                 new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
-            canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
+            canvas.DrawText($"{crewCount} / {cabinsCount}", textLeft, textBaselineY, ResourceValuePaint);
         }
 
         if (ExitButtonImage is not null)
@@ -549,46 +544,38 @@ public static class StationToolbar
 
         if (TokensImage is not null)
         {
-            string valueText = creditsCount.ToString();
-            float actualTextWidth = ResourceValuePaint.MeasureText(valueText);
-
             var block = TokensLocalRect();
-            float valueFieldRight = block.Right;
-            // Right-align the actual digits within the reserved field — the icon's position
-            // (fixed by TokensLocalRect/CreditsValueFieldWidth) never moves regardless of
-            // how many digits the balance actually has.
-            float textLeft = valueFieldRight - actualTextWidth;
 
             var iconRect = new SKRect(
                 panelLeft + block.Left, panelTop + block.Top,
                 panelLeft + block.Left + ResourceIconSize, panelTop + block.Bottom);
             canvas.DrawBitmap(TokensImage, iconRect);
 
+            // Same fixed icon-to-text gap as the other readouts — the reserved field
+            // (TokensLocalRect/CreditsValueFieldWidth) only keeps the icon from shifting.
+            float textLeft = IconTextLeft(panelLeft, block, TokensImage);
+
             float textBaselineY = MenuStyle.VerticalCenterBaseline(
                 new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
-            canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
+            canvas.DrawText(creditsCount.ToString(), textLeft, textBaselineY, ResourceValuePaint);
         }
 
         if (FuelImage is not null)
         {
-            string valueText = $"{fuelAmountKg} / {fuelCapacityKg}";
-            float actualTextWidth = ResourceValuePaint.MeasureText(valueText);
-
             var block = FuelLocalRect();
-            float valueFieldRight = block.Right;
-            // Right-align the actual digits within the reserved field — the icon's position
-            // (fixed by FuelLocalRect/FuelValueFieldWidth) never moves regardless of how
-            // many digits the amount/capacity actually have.
-            float textLeft = valueFieldRight - actualTextWidth;
 
             var iconRect = new SKRect(
                 panelLeft + block.Left, panelTop + block.Top,
                 panelLeft + block.Left + ResourceIconSize, panelTop + block.Bottom);
             canvas.DrawBitmap(FuelImage, iconRect);
 
+            // Same fixed icon-to-text gap as the other readouts — the reserved field
+            // (FuelLocalRect/FuelValueFieldWidth) only keeps the icon from shifting.
+            float textLeft = IconTextLeft(panelLeft, block, FuelImage);
+
             float textBaselineY = MenuStyle.VerticalCenterBaseline(
                 new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
-            canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
+            canvas.DrawText($"{fuelAmountKg} / {fuelCapacityKg}", textLeft, textBaselineY, ResourceValuePaint);
         }
     }
 
@@ -632,6 +619,34 @@ public static class StationToolbar
 
     private static SKRect ToScreenRect(float panelLeft, float panelTop, SKRect local) =>
         new(panelLeft + local.Left, panelTop + local.Top, panelLeft + local.Right, panelTop + local.Bottom);
+
+    /// <summary>
+    /// Screen-space X where a readout's value text starts: a fixed
+    /// <see cref="ResourceIconTextGap"/> right of the icon's *visible art* — not of the
+    /// icon box — because the source PNGs have differing transparent composition margins
+    /// on their right edge (crew/tokens touch the canvas edge, rations/oil do not). Without
+    /// this compensation the visible icon-to-text gap would differ per readout.
+    /// </summary>
+    private static float IconTextLeft(float panelLeft, SKRect block, SKBitmap icon) =>
+        panelLeft + block.Left + ResourceIconSize + ResourceIconTextGap
+        - IconRightPaddingPx(icon) * (ResourceIconSize / icon.Width);
+
+    /// <summary>
+    /// Transparent padding on the right edge of an icon's source PNG, in source pixels —
+    /// the number of fully-transparent pixel columns from the canvas edge to the first
+    /// column with any visible art (alpha &gt; 16; the threshold skips antialiased fringes).
+    /// </summary>
+    private static float IconRightPaddingPx(SKBitmap icon)
+    {
+        for (int x = icon.Width - 1; x >= 0; x--)
+        {
+            for (int y = 0; y < icon.Height; y++)
+                if (icon.GetPixel(x, y).Alpha > 16)
+                    return icon.Width - 1 - x;
+        }
+
+        return icon.Width; // fully transparent icon — never happens for shipped art
+    }
 
     /// <summary>
     /// Resolves the player ship's docked station name from a snapshot — null while not

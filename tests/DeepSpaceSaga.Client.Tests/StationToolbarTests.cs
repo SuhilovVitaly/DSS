@@ -394,6 +394,64 @@ public class StationToolbarTests
     }
 
     [Fact]
+    public void Value_text_starts_at_the_same_gap_from_every_readout_icon()
+    {
+        using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+        StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false,
+            foodRationsCount: 42, crewCount: 1, cabinsCount: 2, creditsCount: 500,
+            fuelAmountKg: 750, fuelCapacityKg: 1000);
+        canvas.Flush();
+
+        // The value text must start at the same fixed ResourceIconTextGap right of each
+        // icon box. A couple of extra px are allowed for the first glyph's left bearing.
+        float fuelGap = FirstTextPixelOffset(bitmap, StationToolbar.FuelLocalRect());
+        float tokensGap = FirstTextPixelOffset(bitmap, StationToolbar.TokensLocalRect());
+        float crewGap = FirstTextPixelOffset(bitmap, StationToolbar.CrewLocalRect());
+        float rationsGap = FirstTextPixelOffset(bitmap, StationToolbar.FoodRationsLocalRect());
+
+        float expectedGap = StationToolbar.ResourceIconTextGap;
+        Assert.InRange(fuelGap, expectedGap - 1f, expectedGap + 4f);
+        Assert.InRange(tokensGap, expectedGap - 1f, expectedGap + 4f);
+        Assert.InRange(crewGap, expectedGap - 1f, expectedGap + 4f);
+        Assert.InRange(rationsGap, expectedGap - 1f, expectedGap + 4f);
+    }
+
+    /// <summary>
+    /// Visual gap between a readout's icon art and its value text: the distance from the
+    /// rightmost visible-art pixel inside the icon box to the leftmost text pixel inside
+    /// the block (both scanned across every row — icons and glyphs are irregular shapes,
+    /// a single-row scan would hit a slanted stroke mid-glyph). Returns -1 when the block
+    /// draws no text at all.
+    /// </summary>
+    private static float FirstTextPixelOffset(SKBitmap bitmap, SKRect block)
+    {
+        int boxLeft = (int)block.Left;
+        int iconRight = (int)(block.Left + StationToolbar.ResourceIconSize);
+
+        int artRight = -1;
+        for (int row = (int)block.Top; row < (int)block.Bottom; row++)
+        for (int x = boxLeft; x < iconRight; x++)
+            if (bitmap.GetPixel(x, row) != StationToolbar.ColorBackground)
+                artRight = Math.Max(artRight, x);
+
+        if (artRight < 0)
+            return -1;
+
+        // Start 2px past the art's right edge: the antialiased fringe of the icon bleeds
+        // one scaled pixel further than the alpha-16 threshold of the source scan and
+        // would otherwise be misread as the first text pixel.
+        int textFirst = int.MaxValue;
+        for (int row = (int)block.Top; row < (int)block.Bottom; row++)
+        for (int x = artRight + 3; x < (int)block.Right; x++)
+            if (bitmap.GetPixel(x, row) != StationToolbar.ColorBackground)
+                textFirst = Math.Min(textFirst, x);
+
+        return textFirst == int.MaxValue ? -1 : textFirst - artRight;
+    }
+
+    [Fact]
     public void Draw_places_the_fuel_icon_before_the_tokens_icon()
     {
         using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
