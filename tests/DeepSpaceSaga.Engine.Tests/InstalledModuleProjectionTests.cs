@@ -34,6 +34,7 @@ public class InstalledModuleProjectionTests
         Assert.Equal(100, engineMod.StructurePoints);
         Assert.Null(engineMod.ActiveCommandType);
         Assert.Equal(1000, engineMod.FuelAmountKg);
+        Assert.Equal(2000, engineMod.FuelCapacityKg);
 
         var scannerMod = snapshot.InstalledModules[1];
         Assert.Equal("MOD-SCN-01", scannerMod.ModuleId);
@@ -46,6 +47,7 @@ public class InstalledModuleProjectionTests
         Assert.Equal(50, scannerMod.StructurePoints);
         Assert.Null(scannerMod.ActiveCommandType);
         Assert.Null(scannerMod.FuelAmountKg);
+        Assert.Null(scannerMod.FuelCapacityKg);
 
         // Neither fixture module has CargoCapacityKg set, so AvailableCapacityKg must be null
         // for both — mirrors the FuelAmountKg null convention (see field doc comment).

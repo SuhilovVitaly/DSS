@@ -54,6 +54,14 @@ public sealed class FinanceScreen : IScreen
         _tokensHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
+    /// <summary>Same real-time hover-delay tracking as <see cref="_foodRationsHoverStartedAtMs"/>, for the fuel readout.</summary>
+    private long? _fuelHoverStartedAtMs;
+
+    /// <summary>Test seam — true once the fuel-readout hover delay has elapsed.</summary>
+    internal bool IsFuelTooltipVisible =>
+        _fuelHoverStartedAtMs is { } startedAtMs
+        && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
+
     public FinanceScreen(SnapshotBuffer? buffer = null)
     {
         _buffer = buffer;
@@ -93,6 +101,7 @@ public sealed class FinanceScreen : IScreen
         _foodRationsHoverStartedAtMs = null;
         _crewHoverStartedAtMs = null;
         _tokensHoverStartedAtMs = null;
+        _fuelHoverStartedAtMs = null;
     }
 
     public void OnDeactivated() { }
@@ -143,6 +152,11 @@ public sealed class FinanceScreen : IScreen
         else
             _tokensHoverStartedAtMs = null;
 
+        if (IsFuelHit(x, y))
+            _fuelHoverStartedAtMs ??= Environment.TickCount64;
+        else
+            _fuelHoverStartedAtMs = null;
+
         return _isStationNameHovered || _isExitButtonHovered;
     }
 
@@ -168,7 +182,9 @@ public sealed class FinanceScreen : IScreen
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
             crewCount: StationToolbar.ResolveCrewCount(snapshot),
             cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
-            creditsCount: StationToolbar.ResolveCreditsCount(snapshot));
+            creditsCount: StationToolbar.ResolveCreditsCount(snapshot),
+            fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
+            fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot));
 
         float cx = pl + FinanceLayout.PanelWidth / 2f;
 
@@ -184,7 +200,8 @@ public sealed class FinanceScreen : IScreen
         StationToolbar.DrawTooltips(canvas, pl, pt,
             isFoodRationsHovered: IsFoodRationsTooltipVisible,
             isCrewHovered: IsCrewTooltipVisible,
-            isTokensHovered: IsTokensTooltipVisible);
+            isTokensHovered: IsTokensTooltipVisible,
+            isFuelHovered: IsFuelTooltipVisible);
     }
 
     /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>
@@ -233,6 +250,15 @@ public sealed class FinanceScreen : IScreen
         float pl = FinanceLayout.PanelLeft(_screenWidth);
         float pt = FinanceLayout.PanelTop(_screenHeight);
         var local = StationToolbar.TokensLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's fuel readout (see StationToolbar).</summary>
+    private bool IsFuelHit(float x, float y)
+    {
+        float pl = FinanceLayout.PanelLeft(_screenWidth);
+        float pt = FinanceLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.FuelLocalRect();
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 }

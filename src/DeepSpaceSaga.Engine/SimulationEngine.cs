@@ -554,6 +554,7 @@ public sealed class SimulationEngine : IDisposable
                 StructurePoints: module.StructurePoints,
                 ActiveCommandType: module.ActiveCycle?.CommandType,
                 FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null,
+                FuelCapacityKg: moduleType.FuelCapacityKg is > 0 ? moduleType.FuelCapacityKg : null,
                 Commands: BuildModuleCommands(moduleType.CommandTypeIds),
                 Cargo: BuildCargoProjection(module.Cargo),
                 AvailableCapacityKg: module.AvailableCapacityKg,

@@ -351,6 +351,34 @@ public class ScenarioEngineTests
     }
 
     [Fact]
+    public void Every_shipped_scenario_starts_the_engine_with_750_of_1000_fuel()
+    {
+        // Fuel.md / requirements §56: module.engine.basic has fuelCapacityKg = 1000 and
+        // every shipped scenario sets fuelAmountKg = 750 (75% of the tank) explicitly.
+        string settingsPath = ResolveRealSettingsPath();
+
+        var fromSettings = SimulationEngine.CreateFromSettingsFile(settingsPath); // Default
+        AssertEngineFuel(fromSettings, 750, 1000);
+
+        string default500ScenarioPath = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(settingsPath)!, "Scenarios", "Default_500", "scenario.json"));
+        AssertEngineFuel(SimulationEngine.CreateFromScenarioFile(settingsPath, default500ScenarioPath), 750, 1000);
+
+        string dockedScenarioPath = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(settingsPath)!, "Scenarios", "Docked", "scenario.json"));
+        AssertEngineFuel(SimulationEngine.CreateFromScenarioFile(settingsPath, dockedScenarioPath), 750, 1000);
+    }
+
+    private static void AssertEngineFuel(SimulationEngine engine, long expectedAmountKg, long expectedCapacityKg)
+    {
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
+        var engineModule = Assert.Single(
+            snapshot.InstalledModules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
+        Assert.Equal(expectedAmountKg, engineModule.FuelAmountKg);
+        Assert.Equal(expectedCapacityKg, engineModule.FuelCapacityKg);
+    }
+
+    [Fact]
     public void CreateFromScenarioFile_loads_an_explicitly_chosen_scenario_instead_of_the_settings_default()
     {
         // The New Game -> scenario picker path: SimulationEngine.CreateFromScenarioFile

@@ -23,7 +23,8 @@ public class InstalledModuleSnapshotTests
             OperationalState: "Busy",
             StructurePoints: 87,
             ActiveCommandType: "engine.accelerate",
-            FuelAmountKg: 950);
+            FuelAmountKg: 950,
+            FuelCapacityKg: 1000);
 
         var json = JsonSerializer.Serialize(snapshot);
         var roundTripped = JsonSerializer.Deserialize<InstalledModuleSnapshot>(json);
@@ -34,6 +35,7 @@ public class InstalledModuleSnapshotTests
         Assert.Equal(87, roundTripped.StructurePoints);
         Assert.Equal("engine.accelerate", roundTripped.ActiveCommandType);
         Assert.Equal(950, roundTripped.FuelAmountKg);
+        Assert.Equal(1000, roundTripped.FuelCapacityKg);
     }
 
     [Fact]
@@ -91,6 +93,7 @@ public class InstalledModuleSnapshotTests
         Assert.Equal(0, roundTripped.StructurePoints);
         Assert.Null(roundTripped.ActiveCommandType);
         Assert.Null(roundTripped.FuelAmountKg);
+        Assert.Null(roundTripped.FuelCapacityKg);
         Assert.Null(roundTripped.AvailableCapacityKg);
         Assert.Null(roundTripped.CabinesCount);
     }

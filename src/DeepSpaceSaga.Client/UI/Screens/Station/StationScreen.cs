@@ -64,6 +64,14 @@ public sealed class StationScreen : IScreen
         _tokensHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
+    /// <summary>Same real-time hover-delay tracking as <see cref="_foodRationsHoverStartedAtMs"/>, for the fuel readout.</summary>
+    private long? _fuelHoverStartedAtMs;
+
+    /// <summary>Test seam — true once the fuel-readout hover delay has elapsed.</summary>
+    internal bool IsFuelTooltipVisible =>
+        _fuelHoverStartedAtMs is { } startedAtMs
+        && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
+
     public StationScreen(SnapshotBuffer? buffer = null)
     {
         _buffer = buffer;
@@ -91,6 +99,7 @@ public sealed class StationScreen : IScreen
         _foodRationsHoverStartedAtMs = null;
         _crewHoverStartedAtMs = null;
         _tokensHoverStartedAtMs = null;
+        _fuelHoverStartedAtMs = null;
     }
 
     public void OnDeactivated() { }
@@ -148,6 +157,11 @@ public sealed class StationScreen : IScreen
         else
             _tokensHoverStartedAtMs = null;
 
+        if (IsFuelHit(x, y))
+            _fuelHoverStartedAtMs ??= Environment.TickCount64;
+        else
+            _fuelHoverStartedAtMs = null;
+
         return _hoveredButton != StationButton.None || _isExitButtonHovered;
     }
 
@@ -187,6 +201,15 @@ public sealed class StationScreen : IScreen
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
+    /// <summary>True when (x, y) lands on the toolbar's fuel readout (see StationToolbar).</summary>
+    private bool IsFuelHit(float x, float y)
+    {
+        float pl = StationLayout.PanelLeft(_screenWidth);
+        float pt = StationLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.FuelLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
 
     public void Render(SKCanvas canvas, int width, int height)
@@ -206,7 +229,9 @@ public sealed class StationScreen : IScreen
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
             crewCount: StationToolbar.ResolveCrewCount(snapshot),
             cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
-            creditsCount: StationToolbar.ResolveCreditsCount(snapshot));
+            creditsCount: StationToolbar.ResolveCreditsCount(snapshot),
+            fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
+            fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot));
 
         float cx = pl + StationLayout.PanelWidth / 2f;
 
@@ -226,7 +251,8 @@ public sealed class StationScreen : IScreen
         StationToolbar.DrawTooltips(canvas, pl, pt,
             isFoodRationsHovered: IsFoodRationsTooltipVisible,
             isCrewHovered: IsCrewTooltipVisible,
-            isTokensHovered: IsTokensTooltipVisible);
+            isTokensHovered: IsTokensTooltipVisible,
+            isFuelHovered: IsFuelTooltipVisible);
     }
 
     private void DrawTradeButton(SKCanvas canvas, float panelLeft, float panelTop)

@@ -12,7 +12,7 @@
       "linearInertiaMps2": 400,
       "angularInertiaDegPerSec": 4,
       "baseCycleTimeMs": 1000,
-      "fuelCapacityKg": 10000,
+      "fuelCapacityKg": 1000,
       "baseSuccessChancePercent": 100
     }
   ]

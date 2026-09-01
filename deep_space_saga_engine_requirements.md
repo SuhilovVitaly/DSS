@@ -4947,13 +4947,7 @@ FuelAmountKg
 
 Топливо учитывается в килограммах.
 
-Стартовый Engine в `DefaultScenario` начинает с половиной бака:
-
-```text
-InitialFuelAmountKg = Floor(FuelCapacityKg / 2)
-```
-
-Если `FuelCapacityKg` нечётный, половина округляется вниз.
+Стартовый Engine в `DefaultScenario` (и во всех остальных сценариях первого релиза) задаёт бак явно: `fuelCapacityKg = 1000` у `module.engine.basic`, `fuelAmountKg = 750` (75% бака) в сценарии.
 
 Fuel не попадает в обычный cargo stack и не использует `ItemType.UnitMassKg`.
 
@@ -5038,7 +5032,7 @@ Y8: .........
 | (4,4) | Reactor (Generator) | `module.generator.basic` |
 | (4,5) | Engine | `module.engine.basic` |
 
-Cargo hold стартует с 1000 `Energy Cells` (без изменений относительно предыдущей комплектации). Engine не получает явно заданный `fuelAmountKg` в `DefaultScenario` — применяется общее правило: если `fuelAmountKg` не указан, используется полный `fuelCapacityKg`.
+Cargo hold стартует с 1000 `Energy Cells` (без изменений относительно предыдущей комплектации). Engine получает явно заданный `fuelAmountKg = 750` в `DefaultScenario` (75% бака; общее правило для данных без явного значения сохраняется: если `fuelAmountKg` не указан, используется полный `fuelCapacityKg`).
 
 Из стартового loadout исключены: Battery, Drilling Unit, Combat Laser, старый Habitation Module. Соответствующие module type (`module.battery.basic`, `module.drilling.unit.basic`, `module.combat.laser.basic`, `module.habitation.basic`) остаются определены в каталоге для будущего использования — из каталога они не удалены.
 
