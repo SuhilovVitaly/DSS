@@ -28,8 +28,9 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 ///
 /// Also draws a resource info panel pinned to the right, immediately before the exit
 /// button — starting with a food-rations icon + count (see
-/// <see cref="ResolveFoodRationsCount"/>). Unlike the exit button, this icon is a plain
-/// readout: never clickable, never gets a hover glow.
+/// <see cref="ResolveFoodRationsCount"/>), in a field reserved wide enough for 4 digits.
+/// Unlike the exit button, this icon is a plain readout: never clickable, never gets a
+/// hover glow — hovering it only shows an explanatory tooltip below the toolbar.
 /// </summary>
 public static class StationToolbar
 {
@@ -51,7 +52,27 @@ public static class StationToolbar
     /// <summary>Gap between the resource info panel's right edge and the exit button's left edge.</summary>
     public const float ResourceInfoGapFromExitButton = 20f;
 
+    /// <summary>
+    /// The reserved value-field width is measured from this 4-digit sample, so the field
+    /// never has to grow/shrink (and the icon never has to shift) as the actual count
+    /// crosses a digit-count boundary — up to 9999 always fits without re-layout.
+    /// </summary>
+    private const string ResourceValueFieldSample = "9999";
+
     public const string FoodRationsItemTypeId = "item.food-rations";
+
+    private static readonly string[] FoodRationsTooltipLines =
+    {
+        "Food rations stored aboard the ship.",
+        "Each crew member or passenger consumes 2 rations per day."
+    };
+
+    private const float TooltipPaddingX = 10f;
+    private const float TooltipPaddingY = 8f;
+    private const float TooltipFontSize = 13f;
+    private const float TooltipLineHeight = 16f;
+    private const float TooltipGapBelowToolbar = 6f;
+    private const float TooltipCornerRadius = 4f;
 
     /// <summary>Gap on each side of the ">>" breadcrumb separator (see <see cref="Draw"/>).</summary>
     public const float NameSegmentGap = 16f;
@@ -98,6 +119,26 @@ public static class StationToolbar
         IsAntialias = true,
         TextAlign = SKTextAlign.Left,
         Typeface = MenuStyle.TypefaceHumaroid
+    };
+
+    /// <summary>Reserved width for a resource value field — always fits up to 4 digits (9999).</summary>
+    private static readonly float ResourceValueFieldWidth = ResourceValuePaint.MeasureText(ResourceValueFieldSample);
+
+    private static readonly SKPaint TooltipBackgroundPaint =
+        new() { Color = new SKColor(0x1a, 0x1a, 0x1a, 235), Style = SKPaintStyle.Fill, IsAntialias = true };
+
+    private static readonly SKPaint TooltipBorderPaint = new()
+    {
+        Color = ColorBorder, Style = SKPaintStyle.Stroke, StrokeWidth = 1f, IsAntialias = true
+    };
+
+    private static readonly SKPaint TooltipTextPaint = new()
+    {
+        Color = SKColors.White,
+        TextSize = TooltipFontSize,
+        IsAntialias = true,
+        TextAlign = SKTextAlign.Left,
+        Typeface = MenuStyle.TypefaceRegular
     };
 
     private static SKBitmap? LoadImage(string path)
@@ -202,6 +243,22 @@ public static class StationToolbar
     }
 
     /// <summary>
+    /// Food-rations icon+value hit-test rect, local to the panel — spans from the icon's
+    /// left edge to the reserved value field's right edge (see
+    /// <see cref="ResourceValueFieldWidth"/>), so it covers both regardless of the actual
+    /// count's digit width. Used only to show the tooltip on hover — this readout is never
+    /// clickable and never gets a hover glow.
+    /// </summary>
+    public static SKRect FoodRationsLocalRect()
+    {
+        float blockRight = ExitButtonLocalRect().Left - ResourceInfoGapFromExitButton;
+        float valueFieldLeft = blockRight - ResourceValueFieldWidth;
+        float iconLeft = valueFieldLeft - ResourceIconTextGap - ResourceIconSize;
+        float top = (Height - ResourceIconSize) / 2f;
+        return new SKRect(iconLeft, top, blockRight, top + ResourceIconSize);
+    }
+
+    /// <summary>
     /// Draws the toolbar at the panel's top-left corner (panelLeft, panelTop): background,
     /// border, the station name if non-empty, and the exit-button icon. <paramref
     /// name="isStationHub"/> selects the "active location" color (Station itself) vs. the
@@ -226,13 +283,16 @@ public static class StationToolbar
     /// <paramref name="foodRationsCount"/> feeds the resource info panel — pinned to the
     /// toolbar's right side, immediately before the exit button (see
     /// <see cref="ResourceInfoGapFromExitButton"/>): the food-rations icon followed by its
-    /// count. This icon is a plain readout, not a button — it never hit-tests and never
-    /// gets a hover glow, unlike the exit-button icon right next to it.
+    /// count in a field reserved wide enough for 4 digits (9999) so the icon never shifts
+    /// as the count's digit width changes. This icon is a plain readout, not a button — it
+    /// never gets a hover glow, unlike the exit-button icon right next to it; hovering it
+    /// (<paramref name="isFoodRationsHovered"/>, see <see cref="FoodRationsLocalRect"/>)
+    /// only shows an explanatory tooltip below the toolbar.
     /// </summary>
     public static void Draw(
         SKCanvas canvas, float panelLeft, float panelTop, string? stationName, bool isStationHub,
         bool isHovered = false, string? windowName = null, bool isExitButtonHovered = false,
-        long foodRationsCount = 0)
+        long foodRationsCount = 0, bool isFoodRationsHovered = false)
     {
         var rect = new SKRect(panelLeft, panelTop, panelLeft + Width, panelTop + Height);
         canvas.DrawRect(rect, FillPaint);
@@ -267,21 +327,31 @@ public static class StationToolbar
         if (FoodRationsImage is not null)
         {
             string valueText = foodRationsCount.ToString();
-            float textWidth = ResourceValuePaint.MeasureText(valueText);
+            float actualTextWidth = ResourceValuePaint.MeasureText(valueText);
 
-            float blockRight = ExitButtonLocalRect().Left - ResourceInfoGapFromExitButton;
-            float textLeft = blockRight - textWidth;
-            float iconLeft = textLeft - ResourceIconTextGap - ResourceIconSize;
-            float iconTop = (Height - ResourceIconSize) / 2f;
+            var block = FoodRationsLocalRect();
+            float valueFieldRight = block.Right;
+            // Right-align the actual digits within the reserved 4-digit-wide field — the
+            // icon's position (fixed by FoodRationsLocalRect/ResourceValueFieldWidth) never
+            // moves regardless of how many digits the current count actually has.
+            float textLeft = valueFieldRight - actualTextWidth;
 
             var iconRect = new SKRect(
-                panelLeft + iconLeft, panelTop + iconTop,
-                panelLeft + iconLeft + ResourceIconSize, panelTop + iconTop + ResourceIconSize);
+                panelLeft + block.Left, panelTop + block.Top,
+                panelLeft + block.Left + ResourceIconSize, panelTop + block.Bottom);
             canvas.DrawBitmap(FoodRationsImage, iconRect);
 
             float textBaselineY = MenuStyle.VerticalCenterBaseline(
                 new SKRect(0, panelTop, 0, panelTop + Height), ResourceValuePaint);
             canvas.DrawText(valueText, panelLeft + textLeft, textBaselineY, ResourceValuePaint);
+
+            if (isFoodRationsHovered)
+            {
+                var screenBlock = new SKRect(
+                    panelLeft + block.Left, panelTop + block.Top,
+                    panelLeft + block.Right, panelTop + block.Bottom);
+                DrawTooltip(canvas, screenBlock, FoodRationsTooltipLines);
+            }
         }
 
         if (ExitButtonImage is not null)
@@ -344,4 +414,34 @@ public static class StationToolbar
     /// <summary>Total <see cref="FoodRationsItemTypeId"/> quantity aboard the player ship.</summary>
     public static long ResolveFoodRationsCount(AuthoritativeSnapshot? snapshot) =>
         ResolveCargoQuantity(snapshot, FoodRationsItemTypeId);
+
+    /// <summary>
+    /// Draws a small dark tooltip box directly below <paramref name="anchorRect"/> (screen
+    /// space), one line per string in <paramref name="lines"/>, sized to the widest line.
+    /// </summary>
+    private static void DrawTooltip(SKCanvas canvas, SKRect anchorRect, string[] lines)
+    {
+        float maxLineWidth = 0f;
+        foreach (var line in lines)
+            maxLineWidth = System.Math.Max(maxLineWidth, TooltipTextPaint.MeasureText(line));
+
+        float boxWidth = maxLineWidth + TooltipPaddingX * 2f;
+        float boxHeight = lines.Length * TooltipLineHeight + TooltipPaddingY * 2f;
+
+        // Right edge of the box lines up with the anchor's right edge so it stays fully
+        // on-screen even when the anchor sits near the panel's own right edge.
+        float boxRight = anchorRect.Right;
+        float boxTop = anchorRect.Bottom + TooltipGapBelowToolbar;
+        var box = new SKRect(boxRight - boxWidth, boxTop, boxRight, boxTop + boxHeight);
+
+        canvas.DrawRoundRect(box, TooltipCornerRadius, TooltipCornerRadius, TooltipBackgroundPaint);
+        canvas.DrawRoundRect(box, TooltipCornerRadius, TooltipCornerRadius, TooltipBorderPaint);
+
+        float lineY = box.Top + TooltipPaddingY - TooltipTextPaint.FontMetrics.Ascent;
+        foreach (var line in lines)
+        {
+            canvas.DrawText(line, box.Left + TooltipPaddingX, lineY, TooltipTextPaint);
+            lineY += TooltipLineHeight;
+        }
+    }
 }

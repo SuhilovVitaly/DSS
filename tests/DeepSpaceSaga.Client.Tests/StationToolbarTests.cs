@@ -80,6 +80,57 @@ public class StationToolbarTests
     }
 
     [Fact]
+    public void FoodRationsLocalRect_stays_fixed_regardless_of_the_actual_digit_count()
+    {
+        // The field is reserved wide enough for "9999" up front — the icon's position
+        // (FoodRationsLocalRect) must not depend on today's actual count.
+        var rectWithOneDigit = StationToolbar.FoodRationsLocalRect();
+
+        using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+        StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, foodRationsCount: 9999);
+        canvas.Flush();
+
+        var rectWithFourDigits = StationToolbar.FoodRationsLocalRect();
+        Assert.Equal(rectWithOneDigit, rectWithFourDigits);
+
+        // A 4-digit value must not bleed past the reserved field's right edge into the
+        // exit-button gap.
+        Assert.True(rectWithFourDigits.Right <= StationToolbar.ExitButtonLocalRect().Left - StationToolbar.ResourceInfoGapFromExitButton + 0.5f);
+    }
+
+    [Fact]
+    public void Hovering_food_rations_shows_a_tooltip_below_the_toolbar()
+    {
+        using var hoveredBitmap = new SKBitmap((int)StationToolbar.Width, 120);
+        hoveredBitmap.Erase(SKColors.Transparent);
+        using (var canvas = new SKCanvas(hoveredBitmap))
+            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, foodRationsCount: 5,
+                isFoodRationsHovered: true);
+
+        using var normalBitmap = new SKBitmap((int)StationToolbar.Width, 120);
+        normalBitmap.Erase(SKColors.Transparent);
+        using (var canvas = new SKCanvas(normalBitmap))
+            StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, foodRationsCount: 5,
+                isFoodRationsHovered: false);
+
+        // Below the toolbar strip stays fully transparent when not hovered, but the hovered
+        // render paints a tooltip box there. Start a couple px past Height to skip the
+        // toolbar's own 1px border stroke, whose antialiased edge bleeds slightly past it.
+        bool foundBelowWhenHovered = false, foundBelowWhenNormal = false;
+        for (int y = (int)StationToolbar.Height + 2; y < hoveredBitmap.Height; y++)
+        for (int x = 0; x < hoveredBitmap.Width; x++)
+        {
+            if (hoveredBitmap.GetPixel(x, y).Alpha > 0) foundBelowWhenHovered = true;
+            if (normalBitmap.GetPixel(x, y).Alpha > 0) foundBelowWhenNormal = true;
+        }
+
+        Assert.True(foundBelowWhenHovered);
+        Assert.False(foundBelowWhenNormal);
+    }
+
+    [Fact]
     public void Name_font_size_is_26px()
     {
         Assert.Equal(26f, StationToolbar.NameFontSize);

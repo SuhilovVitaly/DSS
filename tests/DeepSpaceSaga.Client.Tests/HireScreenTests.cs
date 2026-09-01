@@ -62,6 +62,21 @@ public class HireScreenTests
     }
 
     [Fact]
+    public void Hovering_food_rations_does_not_report_interactive()
+    {
+        // The readout is not a button — hovering it only shows a tooltip, it must not
+        // trigger the same cursor swap as the name link / exit button.
+        var screen = new HireScreen();
+        RenderScreen(screen);
+
+        var local = StationToolbar.FoodRationsLocalRect();
+        float cx = HireLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float cy = HireLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        Assert.False(screen.OnMouseMove(cx, cy));
+    }
+
+    [Fact]
     public void Click_inside_panel_outside_close_button_returns_None()
     {
         var screen = new HireScreen();

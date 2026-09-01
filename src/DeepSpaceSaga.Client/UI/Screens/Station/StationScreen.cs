@@ -33,6 +33,7 @@ public sealed class StationScreen : IScreen
     private int _screenHeight;
     private StationButton _hoveredButton = StationButton.None;
     private bool _isExitButtonHovered;
+    private bool _isFoodRationsHovered;
 
     public StationScreen(SnapshotBuffer? buffer = null)
     {
@@ -58,6 +59,7 @@ public sealed class StationScreen : IScreen
     {
         _hoveredButton = StationButton.None;
         _isExitButtonHovered = false;
+        _isFoodRationsHovered = false;
     }
 
     public void OnDeactivated() { }
@@ -97,6 +99,10 @@ public sealed class StationScreen : IScreen
     {
         _hoveredButton = StationLayout.HitTest(x, y, _screenWidth, _screenHeight);
         _isExitButtonHovered = IsExitButtonHit(x, y);
+        // Not a button — hovering it only shows a tooltip (drawn in Render), so it must not
+        // affect the interactive-cursor swap the way the other buttons do.
+        _isFoodRationsHovered = IsFoodRationsHit(x, y);
+
         return _hoveredButton != StationButton.None || _isExitButtonHovered;
     }
 
@@ -106,6 +112,15 @@ public sealed class StationScreen : IScreen
         float pl = StationLayout.PanelLeft(_screenWidth);
         float pt = StationLayout.PanelTop(_screenHeight);
         var local = StationToolbar.ExitButtonLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's food-rations readout (see StationToolbar).</summary>
+    private bool IsFoodRationsHit(float x, float y)
+    {
+        float pl = StationLayout.PanelLeft(_screenWidth);
+        float pt = StationLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.FoodRationsLocalRect();
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
@@ -125,7 +140,8 @@ public sealed class StationScreen : IScreen
         string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: true,
             isExitButtonHovered: _isExitButtonHovered,
-            foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot));
+            foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
+            isFoodRationsHovered: _isFoodRationsHovered);
 
         float cx = pl + StationLayout.PanelWidth / 2f;
 

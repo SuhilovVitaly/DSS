@@ -71,6 +71,10 @@
                         {
                             "itemTypeId": "item.energy-cells",
                             "quantity": 1000
+                        },
+                        {
+                            "itemTypeId": "item.food-rations",
+                            "quantity": 200
                         }
                     ]
                 },

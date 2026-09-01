@@ -196,9 +196,11 @@ public class ScenarioEngineTests
         Assert.DoesNotContain(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-HABITATION-01");
         Assert.DoesNotContain(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-COMBAT-LASER-01");
 
-        var energyCells = Assert.Single(cargoModule.Cargo ?? []);
-        Assert.Equal("item.energy-cells", energyCells.ItemTypeId);
+        Assert.Equal(2, cargoModule.Cargo?.Count);
+        var energyCells = Assert.Single(cargoModule.Cargo ?? [], c => c.ItemTypeId == "item.energy-cells");
         Assert.Equal(1_000, energyCells.Quantity);
+        var foodRations = Assert.Single(cargoModule.Cargo ?? [], c => c.ItemTypeId == "item.food-rations");
+        Assert.Equal(200, foodRations.Quantity);
     }
 
     [Fact]
@@ -231,13 +233,17 @@ public class ScenarioEngineTests
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-GENERATOR-01");
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-SCANNER-01");
-        var cargo = Assert.Single(cargoModule.Cargo);
-        // item.energy-cells is index 2 in the real 10-entry catalog. Item-catalog registry order
-        // follows the deterministic (ordinal) sort of Data/Items/<Category>/*.json file paths
-        // (Good < Resource alphabetically), not the historical flat item-types.json order — so
-        // Good entries (Water/Steel/Energy Cells/Fuel/Protein mass/Food Rations) sort first,
-        // then Resource (Ice/Iron Ore/Silicon/Magnesium Ore).
-        Assert.Equal(2, cargo.ItemTypeIndex);
+        // item.energy-cells is index 2, item.food-rations is index 5, in the real 10-entry
+        // catalog. Item-catalog registry order follows the deterministic (ordinal) sort of
+        // Data/Items/<Category>/*.json file paths (Good < Resource alphabetically), not the
+        // historical flat item-types.json order — so Good entries (Water/Steel/Energy
+        // Cells/Fuel/Protein mass/Food Rations, in that array order) sort first at indices
+        // 0-5, then Resource (Ice/Iron Ore/Silicon/Magnesium Ore) at indices 6-9.
+        Assert.Equal(2, cargoModule.Cargo.Length);
+        var energyCells = Assert.Single(cargoModule.Cargo, c => c.ItemTypeIndex == 2);
+        Assert.Equal(1_000, energyCells.Quantity);
+        var foodRations = Assert.Single(cargoModule.Cargo, c => c.ItemTypeIndex == 5);
+        Assert.Equal(200, foodRations.Quantity);
     }
 
     [Fact]

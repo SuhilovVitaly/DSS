@@ -27,6 +27,7 @@ public sealed class HireScreen : IScreen
     private int _screenHeight;
     private bool _isStationNameHovered;
     private bool _isExitButtonHovered;
+    private bool _isFoodRationsHovered;
 
     private const string PlaceholderLine = "Crew hiring: not available yet";
 
@@ -39,6 +40,7 @@ public sealed class HireScreen : IScreen
     {
         _isStationNameHovered = false;
         _isExitButtonHovered = false;
+        _isFoodRationsHovered = false;
     }
 
     public void OnDeactivated() { }
@@ -71,6 +73,10 @@ public sealed class HireScreen : IScreen
     {
         _isStationNameHovered = IsStationNameHit(x, y);
         _isExitButtonHovered = IsExitButtonHit(x, y);
+        // Not a button — hovering it only shows a tooltip (drawn in Render), so it must not
+        // affect the interactive-cursor swap the way the name link / exit button do.
+        _isFoodRationsHovered = IsFoodRationsHit(x, y);
+
         return _isStationNameHovered || _isExitButtonHovered;
     }
 
@@ -90,7 +96,8 @@ public sealed class HireScreen : IScreen
         string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
             windowName: "HIRE", isExitButtonHovered: _isExitButtonHovered,
-            foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot));
+            foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
+            isFoodRationsHovered: _isFoodRationsHovered);
 
         float cx = pl + HireLayout.PanelWidth / 2f;
         canvas.DrawText(PlaceholderLine, cx, pt + HireLayout.BodyStartY, MenuStyle.TextStatus);
@@ -115,6 +122,15 @@ public sealed class HireScreen : IScreen
         float pl = HireLayout.PanelLeft(_screenWidth);
         float pt = HireLayout.PanelTop(_screenHeight);
         var local = StationToolbar.ExitButtonLocalRect();
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>True when (x, y) lands on the toolbar's food-rations readout (see StationToolbar).</summary>
+    private bool IsFoodRationsHit(float x, float y)
+    {
+        float pl = HireLayout.PanelLeft(_screenWidth);
+        float pt = HireLayout.PanelTop(_screenHeight);
+        var local = StationToolbar.FoodRationsLocalRect();
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 }
