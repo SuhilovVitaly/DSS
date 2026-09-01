@@ -26,6 +26,7 @@ public static class StationToolbar
 
     public const float NameOffsetX = 20f;
     public const float NameOffsetY = 20f;
+    public const float NameFontSize = 18f;
 
     public static readonly SKColor ColorBackground = new(0x5e, 0x5e, 0x5e);
     public static readonly SKColor ColorBorder = new(0x99, 0x99, 0x99);
@@ -46,10 +47,10 @@ public static class StationToolbar
     private static SKPaint MakeNamePaint(SKColor color) => new()
     {
         Color = color,
-        TextSize = MenuStyle.ButtonFontSize,
+        TextSize = NameFontSize,
         IsAntialias = true,
         TextAlign = SKTextAlign.Left,
-        Typeface = MenuStyle.TypefaceBold
+        Typeface = MenuStyle.TypefaceHumaroid
     };
 
     /// <summary>Toolbar rect, local to the panel (add the panel's left/top to get screen space).</summary>
