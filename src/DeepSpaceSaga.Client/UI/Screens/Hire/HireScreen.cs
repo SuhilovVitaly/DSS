@@ -92,7 +92,6 @@ public sealed class HireScreen : IScreen
             windowName: "HIRE");
 
         float cx = pl + HireLayout.PanelWidth / 2f;
-        canvas.DrawText("HIRE", cx, pt + HireLayout.TitleY, MenuStyle.TextTitle);
         canvas.DrawText(PlaceholderLine, cx, pt + HireLayout.BodyStartY, MenuStyle.TextStatus);
 
         DrawCloseButton(canvas, pl, pt);

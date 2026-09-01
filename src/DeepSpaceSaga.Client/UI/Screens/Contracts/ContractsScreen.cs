@@ -93,7 +93,6 @@ public sealed class ContractsScreen : IScreen
             windowName: "CONTRACTS");
 
         float cx = pl + ContractsLayout.PanelWidth / 2f;
-        canvas.DrawText("CONTRACTS", cx, pt + ContractsLayout.TitleY, MenuStyle.TextTitle);
         canvas.DrawText(PlaceholderLine, cx, pt + ContractsLayout.BodyStartY, MenuStyle.TextStatus);
 
         DrawCloseButton(canvas, pl, pt);

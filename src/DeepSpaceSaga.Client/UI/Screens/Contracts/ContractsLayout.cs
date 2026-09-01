@@ -17,7 +17,6 @@ public sealed class ContractsLayout
     public const float PanelWidth = 1400f;
     public const float PanelHeight = 800f;
 
-    public const float TitleY = 50f;
     public const float BodyStartY = 100f;
     public const float BodyLineHeight = 28f;
 

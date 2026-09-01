@@ -427,12 +427,6 @@ public sealed class TradeScreen : IScreen
 
     // ── Rendering ────────────────────────────────────────────────────────────────
 
-    private static readonly SKPaint _titlePaint = new()
-    {
-        Color = MenuStyle.ColorText, TextSize = MenuStyle.TitleFontSize, IsAntialias = true,
-        TextAlign = SKTextAlign.Center, Typeface = MenuStyle.TypefaceHumaroid
-    };
-
     private static readonly SKPaint _subtitlePaint = new()
     {
         Color = MenuStyle.ColorTextDim, TextSize = MenuStyle.StatusFontSize, IsAntialias = true,
@@ -511,7 +505,6 @@ public sealed class TradeScreen : IScreen
         string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
             windowName: tradeTitle);
-        GenericWindowTypeA.DrawTitle(canvas, panelRect, tradeTitle, _titlePaint);
 
         DrawHeader(canvas, pl, pt, snapshot);
 

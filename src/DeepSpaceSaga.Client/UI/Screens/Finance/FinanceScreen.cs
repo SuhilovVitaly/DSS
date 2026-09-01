@@ -117,7 +117,6 @@ public sealed class FinanceScreen : IScreen
             windowName: "FINANCE");
 
         float cx = pl + FinanceLayout.PanelWidth / 2f;
-        canvas.DrawText("FINANCE", cx, pt + FinanceLayout.TitleY, MenuStyle.TextTitle);
 
         float textY = pt + FinanceLayout.BodyStartY;
         foreach (var line in PlaceholderLines)

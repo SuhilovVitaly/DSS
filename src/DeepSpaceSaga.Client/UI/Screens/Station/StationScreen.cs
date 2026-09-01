@@ -108,7 +108,6 @@ public sealed class StationScreen : IScreen
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: true);
 
         float cx = pl + StationLayout.PanelWidth / 2f;
-        canvas.DrawText("STATION", cx, pt + StationLayout.TitleY, MenuStyle.TextTitle);
 
         DrawTradeButton(canvas, pl, pt);
         DrawHireButton(canvas, pl, pt);
