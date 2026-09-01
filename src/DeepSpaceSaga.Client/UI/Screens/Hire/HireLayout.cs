@@ -7,14 +7,14 @@ public enum HireButton
 }
 
 /// <summary>
-/// Layout and hit-test geometry for the Hire overlay panel. 1400×900 is the standard
+/// Layout and hit-test geometry for the Hire overlay panel. 1400×800 is the standard
 /// panel size for gameplay-mechanic windows (Docs/FirstRelease/Screens/ScreenCatalog.md).
 /// Structural twin of <see cref="Trade.TradeLayout"/>/<see cref="Station.StationLayout"/>.
 /// </summary>
 public sealed class HireLayout
 {
     public const float PanelWidth = 1400f;
-    public const float PanelHeight = 900f;
+    public const float PanelHeight = 800f;
 
     public const float TitleY = 50f;
     public const float BodyStartY = 100f;

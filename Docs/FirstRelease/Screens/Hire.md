@@ -20,7 +20,7 @@
 
 ## Статус реализации (MVP)
 
-Реализовано: открытие кнопкой `HIRE` на `StationScreen` (нажатие возвращает `ScreenEvent.OpenHire`, `SkiaWindow` пушит `HireScreen` поверх `StationScreen` — вложенный modal, как `GameMenu → Save/Load`), закрытие `×`/`Escape`/кликом по фону вне панели (возврат на `Station`), панель `1400×900`, modal pause через существующий `PushModalAsync`/`PopModalAsync`.
+Реализовано: открытие кнопкой `HIRE` на `StationScreen` (нажатие возвращает `ScreenEvent.OpenHire`, `SkiaWindow` пушит `HireScreen` поверх `StationScreen` — вложенный modal, как `GameMenu → Save/Load`), закрытие `×`/`Escape`/кликом по фону вне панели (возврат на `Station`), панель `1400×800`, modal pause через существующий `PushModalAsync`/`PopModalAsync`.
 
 Не реализовано: сам наём экипажа — экран показывает одну placeholder-строку "not available yet" и полностью остаётся за рамками первого релиза (см. «Решения первого релиза» в `Docs/FirstReleaseRequirements.md`).
 

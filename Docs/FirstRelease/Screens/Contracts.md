@@ -23,6 +23,6 @@
 
 ## Статус реализации (MVP)
 
-Реализовано: открытие кнопкой `CONTRACTS` на `StationScreen` (нажатие возвращает `ScreenEvent.OpenContracts`, `SkiaWindow` пушит `ContractsScreen` поверх `StationScreen` — вложенный modal, как `GameMenu → Save/Load`), закрытие `×`/`Escape`/кликом по фону вне панели (возврат на `Station`), панель `1400×900`, modal pause через существующий `PushModalAsync`/`PopModalAsync`.
+Реализовано: открытие кнопкой `CONTRACTS` на `StationScreen` (нажатие возвращает `ScreenEvent.OpenContracts`, `SkiaWindow` пушит `ContractsScreen` поверх `StationScreen` — вложенный modal, как `GameMenu → Save/Load`), закрытие `×`/`Escape`/кликом по фону вне панели (возврат на `Station`), панель `1400×800`, modal pause через существующий `PushModalAsync`/`PopModalAsync`.
 
 Не реализовано — экран показывает одну placeholder-строку "not available yet" вместо этого: список пассажирских контрактов, принятие контракта, проверка свободной каюты. Ничего из раздела «Функциональность первого релиза» выше фактически не работает.

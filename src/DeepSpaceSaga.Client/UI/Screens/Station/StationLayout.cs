@@ -11,7 +11,7 @@ public enum StationButton
 }
 
 /// <summary>
-/// Layout and hit-test geometry for the Station overlay panel. 1400×900 is the
+/// Layout and hit-test geometry for the Station overlay panel. 1400×800 is the
 /// standard panel size for gameplay-mechanic windows (Docs/FirstRelease/Screens/
 /// ScreenCatalog.md — Station, Trade, Hire, Contracts, Cargo, Loot, Ship, Character
 /// Communication, Dialog, Finance). Structural twin of <see cref="Finance.FinanceLayout"/>.
@@ -19,7 +19,7 @@ public enum StationButton
 public sealed class StationLayout
 {
     public const float PanelWidth = 1400f;
-    public const float PanelHeight = 900f;
+    public const float PanelHeight = 800f;
 
     public const float TitleY = 50f;
     public const float BodyStartY = 100f;

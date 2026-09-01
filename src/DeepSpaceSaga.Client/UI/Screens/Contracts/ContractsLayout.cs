@@ -7,7 +7,7 @@ public enum ContractsButton
 }
 
 /// <summary>
-/// Layout and hit-test geometry for the Contracts overlay panel. 1400×900 is the
+/// Layout and hit-test geometry for the Contracts overlay panel. 1400×800 is the
 /// standard panel size for gameplay-mechanic windows (Docs/FirstRelease/Screens/
 /// ScreenCatalog.md). Structural twin of <see cref="Hire.HireLayout"/>/
 /// <see cref="Trade.TradeLayout"/>/<see cref="Station.StationLayout"/>.
@@ -15,7 +15,7 @@ public enum ContractsButton
 public sealed class ContractsLayout
 {
     public const float PanelWidth = 1400f;
-    public const float PanelHeight = 900f;
+    public const float PanelHeight = 800f;
 
     public const float TitleY = 50f;
     public const float BodyStartY = 100f;

@@ -46,7 +46,7 @@
 
 Реализовано полностью:
 
-- Открытие кнопкой `TRADE` на `StationScreen` (`ScreenEvent.OpenTrade`, `SkiaWindow.OpenTradeAsync` пушит `TradeScreen` поверх `StationScreen` с доступом к сессии — `new TradeScreen(_session.Buffer, _session)`), закрытие `Exit`/`Escape`/кликом по фону вне панели (возврат на `Station`), панель `1400×900`, modal pause через существующий `PushModalAsync`/`PopModalAsync`.
+- Открытие кнопкой `TRADE` на `StationScreen` (`ScreenEvent.OpenTrade`, `SkiaWindow.OpenTradeAsync` пушит `TradeScreen` поверх `StationScreen` с доступом к сессии — `new TradeScreen(_session.Buffer, _session)`), закрытие `Exit`/`Escape`/кликом по фону вне панели (возврат на `Station`), панель `1400×800`, modal pause через существующий `PushModalAsync`/`PopModalAsync`.
 - Три колонки (STATION INVENTORY / TRANSACTION / YOUR CARGO+FUEL) + строка статов CREDITS/CARGO/FUEL + нижняя сводка счёта игрока (`ACCOUNT`) с CANCEL — геометрия и hit-test в `TradeLayout.cs`.
 - Показывает баланс `Credits` игрока (`AuthoritativeSnapshot.PlayerCredits`), товары станции (`DockedStationTrade.Items` — название/цена/остаток), товары игрока (контейнерный модуль `Cargo`), заправочное действие `Fuel` отдельно от cargo (свой `_refuelQuantity`/степпер/кнопка REFUEL в FUEL-панели, целится на модуль двигателя, а не контейнер).
 - Buy/Sell/Refuel отправляют `trade.buy`/`trade.sell`/`trade.refuel` через `GameSessionHandle.SendTradeCommand` (синхронно возвращает `CommandId`, отправка сети остаётся fire-and-forget), результат (успех/частичная продажа/отказ с причиной) читается из `CommandResults` следующего снапшота и показывается в TRANSACTION-панели.
