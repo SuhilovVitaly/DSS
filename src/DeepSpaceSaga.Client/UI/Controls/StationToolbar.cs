@@ -16,7 +16,9 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 /// the player is already there); on every other station window it is a white link back
 /// to the hub (see <see cref="NameLocalRect"/> for its click hit-test rect — the
 /// consuming screen's OnMouseDown should return an event that closes it and opens
-/// Station, e.g. ScreenEvent.NavigateToStation).
+/// Station, e.g. ScreenEvent.NavigateToStation). Sub-windows additionally pass a
+/// windowName to <see cref="Draw"/>, rendered as a breadcrumb after the station name:
+/// <c>stationName  &gt;&gt;  windowName</c> (see <see cref="Draw"/> for the full rule).
 /// </summary>
 public static class StationToolbar
 {
@@ -29,14 +31,23 @@ public static class StationToolbar
     public const float NameFontSize = 26f;
     public const float NameHoverGlowSigma = 10f;
 
+    /// <summary>Gap on each side of the ">>" breadcrumb separator (see <see cref="Draw"/>).</summary>
+    public const float NameSegmentGap = 16f;
+
+    private const string SeparatorText = ">>";
+
     public static readonly SKColor ColorBackground = new(0x5e, 0x5e, 0x5e);
     public static readonly SKColor ColorBorder = new(0x99, 0x99, 0x99);
 
-    /// <summary>Station-name color on the Station hub itself — the current, active location.</summary>
+    /// <summary>Station-name color on the Station hub itself — the current, active location.
+    /// Also the color of the breadcrumb window-name segment on every other station window.</summary>
     public static readonly SKColor ColorNameActive = new(0xe9, 0x9e, 0x58);
 
     /// <summary>Station-name color everywhere else — a clickable link back to the hub.</summary>
     public static readonly SKColor ColorNameLink = new(0xff, 0xff, 0xff);
+
+    /// <summary>Breadcrumb ">>" separator color — dark against the toolbar's mid-gray background.</summary>
+    public static readonly SKColor ColorSeparator = new(0x33, 0x33, 0x33);
 
     private static readonly SKPaint FillPaint = new() { Color = ColorBackground, Style = SKPaintStyle.Fill };
     private static readonly SKPaint BorderPaint =
@@ -44,6 +55,7 @@ public static class StationToolbar
 
     private static readonly SKPaint NamePaintActive = MakeNamePaint(ColorNameActive);
     private static readonly SKPaint NamePaintLink = MakeNamePaint(ColorNameLink);
+    private static readonly SKPaint SeparatorPaint = MakeNamePaint(ColorSeparator);
 
     /// <summary>
     /// Hover glow color — <see cref="ColorNameActive"/>'s hue and brightness at full (100%)
@@ -116,26 +128,50 @@ public static class StationToolbar
     /// window — it adds the blurred <see cref="ColorNameGlow"/> halo that marks the name
     /// as a live link; the hub's own label is never hoverable, so hover state is ignored
     /// there.
+    ///
+    /// <paramref name="windowName"/> is the breadcrumb trailing segment for a station
+    /// sub-window (e.g. "TRADE", "HIRE") — rendered after the station name as
+    /// <c>stationName  &gt;&gt;  windowName</c>, same font/size as the station name, in
+    /// <see cref="ColorNameActive"/> (marking it as the current location, same as the
+    /// hub's own label color). The Station hub itself passes null here: it has no
+    /// separate sub-window to name. If <paramref name="stationName"/> is empty (not
+    /// docked) but <paramref name="windowName"/> is given, the breadcrumb and separator
+    /// are skipped and only the window name is drawn — there is no station to link from.
+    /// Neither the separator nor the window-name segment is clickable or hoverable.
     /// </summary>
     public static void Draw(
         SKCanvas canvas, float panelLeft, float panelTop, string? stationName, bool isStationHub,
-        bool isHovered = false)
+        bool isHovered = false, string? windowName = null)
     {
         var rect = new SKRect(panelLeft, panelTop, panelLeft + Width, panelTop + Height);
         canvas.DrawRect(rect, FillPaint);
         canvas.DrawRect(rect, BorderPaint);
 
-        if (string.IsNullOrEmpty(stationName))
-            return;
-
-        var paint = isStationHub ? NamePaintActive : NamePaintLink;
-        float baselineY = panelTop + NameOffsetY - paint.FontMetrics.Ascent;
+        float baselineY = panelTop + NameOffsetY - NamePaintLink.FontMetrics.Ascent;
         float x = panelLeft + NameOffsetX;
 
-        if (isHovered && !isStationHub)
-            canvas.DrawText(stationName, x, baselineY, NameGlowPaint);
+        if (!string.IsNullOrEmpty(stationName))
+        {
+            var namePaint = isStationHub ? NamePaintActive : NamePaintLink;
 
-        canvas.DrawText(stationName, x, baselineY, paint);
+            if (isHovered && !isStationHub)
+                canvas.DrawText(stationName, x, baselineY, NameGlowPaint);
+
+            canvas.DrawText(stationName, x, baselineY, namePaint);
+            x += namePaint.MeasureText(stationName);
+        }
+
+        if (string.IsNullOrEmpty(windowName))
+            return;
+
+        if (!string.IsNullOrEmpty(stationName))
+        {
+            x += NameSegmentGap;
+            canvas.DrawText(SeparatorText, x, baselineY, SeparatorPaint);
+            x += SeparatorPaint.MeasureText(SeparatorText) + NameSegmentGap;
+        }
+
+        canvas.DrawText(windowName, x, baselineY, NamePaintActive);
     }
 
     /// <summary>

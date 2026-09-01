@@ -208,6 +208,57 @@ public class StationToolbarTests
     }
 
     [Fact]
+    public void Draw_with_window_name_renders_the_separator_and_window_name_color()
+    {
+        using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+
+        StationToolbar.Draw(canvas, 0, 0, "Alpha Station", isStationHub: false, windowName: "TRADE");
+        canvas.Flush();
+
+        Assert.True(BitmapContainsColor(bitmap, StationToolbar.ColorSeparator));
+        Assert.True(BitmapContainsColor(bitmap, StationToolbar.ColorNameActive));
+    }
+
+    [Fact]
+    public void Draw_without_window_name_has_no_separator()
+    {
+        using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+
+        StationToolbar.Draw(canvas, 0, 0, "Alpha Station", isStationHub: false);
+        canvas.Flush();
+
+        Assert.False(BitmapContainsColor(bitmap, StationToolbar.ColorSeparator));
+    }
+
+    [Fact]
+    public void Draw_with_window_name_but_no_station_name_skips_the_separator()
+    {
+        using var bitmap = new SKBitmap((int)StationToolbar.Width, (int)StationToolbar.Height);
+        bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+
+        StationToolbar.Draw(canvas, 0, 0, stationName: null, isStationHub: false, windowName: "FINANCE");
+        canvas.Flush();
+
+        Assert.False(BitmapContainsColor(bitmap, StationToolbar.ColorSeparator));
+        Assert.True(BitmapContainsColor(bitmap, StationToolbar.ColorNameActive));
+    }
+
+    private static bool BitmapContainsColor(SKBitmap bitmap, SKColor color)
+    {
+        for (int y = 0; y < bitmap.Height; y++)
+        for (int x = 0; x < bitmap.Width; x++)
+            if (bitmap.GetPixel(x, y) == color)
+                return true;
+
+        return false;
+    }
+
+    [Fact]
     public void NameLocalRect_is_inset_by_roughly_20px_from_the_toolbars_top_left_corner()
     {
         var local = StationToolbar.NameLocalRect("Alpha Station");

@@ -89,7 +89,8 @@ public sealed class ContractsScreen : IScreen
         MenuStyle.DrawPanel(canvas, panelRect);
 
         string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
-        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered);
+        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
+            windowName: "CONTRACTS");
 
         float cx = pl + ContractsLayout.PanelWidth / 2f;
         canvas.DrawText("CONTRACTS", cx, pt + ContractsLayout.TitleY, MenuStyle.TextTitle);

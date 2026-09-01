@@ -507,9 +507,11 @@ public sealed class TradeScreen : IScreen
         float pt = TradeLayout.PanelTop(height);
         var panelRect = TradeLayout.PanelRect(width, height);
         GenericWindowTypeA.DrawOpaque(canvas, panelRect);
+        string tradeTitle = Localization.Get("Trade.Title");
         string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
-        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered);
-        GenericWindowTypeA.DrawTitle(canvas, panelRect, Localization.Get("Trade.Title"), _titlePaint);
+        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
+            windowName: tradeTitle);
+        GenericWindowTypeA.DrawTitle(canvas, panelRect, tradeTitle, _titlePaint);
 
         DrawHeader(canvas, pl, pt, snapshot);
 

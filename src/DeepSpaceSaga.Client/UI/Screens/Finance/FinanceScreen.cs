@@ -113,7 +113,8 @@ public sealed class FinanceScreen : IScreen
             MenuStyle.DrawPanel(canvas, panelRect);
 
         string? stationName = StationToolbar.ResolveDockedStationName(_buffer?.Latest?.Snapshot);
-        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered);
+        StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
+            windowName: "FINANCE");
 
         float cx = pl + FinanceLayout.PanelWidth / 2f;
         canvas.DrawText("FINANCE", cx, pt + FinanceLayout.TitleY, MenuStyle.TextTitle);
