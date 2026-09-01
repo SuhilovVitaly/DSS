@@ -533,7 +533,10 @@ public sealed class SimulationEngine : IDisposable
                 ActiveCommandType: module.ActiveCycle?.CommandType,
                 FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null,
                 Commands: BuildModuleCommands(moduleType.CommandTypeIds),
-                Cargo: BuildCargoProjection(module.Cargo)));
+                Cargo: BuildCargoProjection(module.Cargo),
+                AvailableCapacityKg: moduleType.CargoCapacityKg is > 0
+                    ? moduleType.CargoCapacityKg.Value - ComputeCargoMassKg(module.Cargo)
+                    : null));
         }
 
         return builder.MoveToImmutable();
@@ -555,6 +558,21 @@ public sealed class SimulationEngine : IDisposable
             builder.Add(new CargoStackSnapshot(_registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).TypeId, stack.Quantity));
 
         return builder.MoveToImmutable();
+    }
+
+    /// <summary>
+    /// Sum of a module's cargo mass in kg: <c>sum(stack.quantity * item.unitMassKg)</c> over all
+    /// cargo stacks. Shared by the Buy-command capacity validation and the
+    /// <see cref="InstalledModuleSnapshot.AvailableCapacityKg"/> projection so both use the exact
+    /// same authoritative mass computation.
+    /// </summary>
+    private long ComputeCargoMassKg(ImmutableArray<CargoStackRuntime> cargo)
+    {
+        long cargoMassKg = 0;
+        foreach (var stack in cargo)
+            cargoMassKg += stack.Quantity * _registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).UnitMassKg;
+
+        return cargoMassKg;
     }
 
     /// <summary>
@@ -1609,9 +1627,7 @@ public sealed class SimulationEngine : IDisposable
             if (qty > stationInventoryItem.StockQuantity)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientStationStock);
 
-            long currentCargoMassKg = 0;
-            foreach (var stack in module.Cargo)
-                currentCargoMassKg += stack.Quantity * _registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).UnitMassKg;
+            long currentCargoMassKg = ComputeCargoMassKg(module.Cargo);
 
             long addedMassKg = qty * itemType.UnitMassKg;
             if (currentCargoMassKg + addedMassKg > cargoCapacityKg)
