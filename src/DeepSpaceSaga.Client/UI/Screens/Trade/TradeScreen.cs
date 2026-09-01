@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
@@ -109,19 +110,29 @@ public sealed class TradeScreen : IScreen
     /// <summary>Test seam — the resources grid's current row labels (see <see cref="ResolveResourceRows"/>).</summary>
     internal string[] ResourceNames => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.Name).ToArray();
 
-    /// <summary>Test seam — the resources grid's current "Selling price" column values, same row order as <see cref="ResourceNames"/>.</summary>
-    internal string[] ResourcePrices => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.Price).ToArray();
+    /// <summary>Test seam — the resources grid's current "Selling price" column values (station's UnitPriceCredits), same row order as <see cref="ResourceNames"/>.</summary>
+    internal string[] ResourceSellingPrices => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.SellingPrice).ToArray();
 
-    /// <summary>Test seam — the resources grid's current "Selling count" column values, same row order as <see cref="ResourceNames"/>.</summary>
-    internal string[] ResourceCounts => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.Count).ToArray();
+    /// <summary>Test seam — the resources grid's current "Selling count" column values (station's StockQuantity), same row order as <see cref="ResourceNames"/>.</summary>
+    internal string[] ResourceSellingCounts => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.SellingCount).ToArray();
 
-    /// <summary>One resources-grid row: display name plus its "Selling price"/"Selling count" column text.</summary>
-    private readonly record struct ResourceRow(string Name, string Price, string Count);
+    /// <summary>Test seam — the resources grid's current "Buying price" column values, same row order as <see cref="ResourceNames"/>.</summary>
+    internal string[] ResourceBuyingPrices => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.BuyingPrice).ToArray();
+
+    /// <summary>Test seam — the resources grid's current "Buying count" column values (player's ship cargo quantity), same row order as <see cref="ResourceNames"/>.</summary>
+    internal string[] ResourceBuyingCounts => ResolveResourceRows(_buffer?.Latest?.Snapshot).Select(row => row.BuyingCount).ToArray();
+
+    /// <summary>One resources-grid row: display name plus its Selling/Buying price+count column text.</summary>
+    private readonly record struct ResourceRow(string Name, string SellingPrice, string SellingCount, string BuyingPrice, string BuyingCount);
 
     /// <summary>
     /// The docked station's <see cref="TradeItemCategories.Resource"/> items, alphabetically
     /// sorted by display name — empty (not null) while undocked or before the first
     /// snapshot arrives, which <see cref="GridPanel"/> renders as its dark-gray empty state.
+    /// Selling price/count are the station's own <c>UnitPriceCredits</c>/<c>StockQuantity</c>;
+    /// this MVP model has only one price per item (no separate buy/sell price), so Buying
+    /// price reuses it too — only Buying count differs, sourced from the player's own ship
+    /// cargo (<see cref="ResolvePlayerCargo"/>) rather than the station.
     /// </summary>
     private static ResourceRow[] ResolveResourceRows(AuthoritativeSnapshot? snapshot)
     {
@@ -129,14 +140,44 @@ public sealed class TradeScreen : IScreen
         if (items.IsDefaultOrEmpty)
             return Array.Empty<ResourceRow>();
 
+        var playerCargo = ResolvePlayerCargo(snapshot);
+
         return items
             .Where(item => item.Category == TradeItemCategories.Resource)
-            .Select(item => new ResourceRow(
-                ItemDisplayName(item.ItemTypeId),
-                item.UnitPriceCredits.ToString(),
-                item.StockQuantity.ToString()))
+            .Select(item =>
+            {
+                long shipQuantity = playerCargo.TryGetValue(item.ItemTypeId, out long quantity) ? quantity : 0;
+                return new ResourceRow(
+                    ItemDisplayName(item.ItemTypeId),
+                    SellingPrice: item.UnitPriceCredits.ToString(),
+                    SellingCount: item.StockQuantity.ToString(),
+                    BuyingPrice: item.UnitPriceCredits.ToString(),
+                    BuyingCount: shipQuantity.ToString());
+            })
             .OrderBy(row => row.Name, StringComparer.Ordinal)
             .ToArray();
+    }
+
+    /// <summary>
+    /// Player's ship cargo, keyed by item type id — from the first installed module (by
+    /// Position) whose CommandTypeIds handles Buy, the same "container module" resolution
+    /// the pre-redesign TradeScreen used (story file's ResolveModuleId/FindModule).
+    /// </summary>
+    private static Dictionary<string, long> ResolvePlayerCargo(AuthoritativeSnapshot? snapshot)
+    {
+        var modules = snapshot?.InstalledModules;
+        if (modules is null || modules.Value.IsDefaultOrEmpty)
+            return new Dictionary<string, long>();
+
+        var containerModule = modules.Value
+            .Where(m => m.CommandTypeIds.Contains(TradeCommandTypes.Buy))
+            .OrderBy(m => m.Position)
+            .FirstOrDefault();
+
+        if (containerModule is null || containerModule.Cargo.IsDefaultOrEmpty)
+            return new Dictionary<string, long>();
+
+        return containerModule.Cargo.ToDictionary(stack => stack.ItemTypeId, stack => stack.Quantity);
     }
 
     /// <summary>
@@ -309,10 +350,13 @@ public sealed class TradeScreen : IScreen
         var resourceRows = ResolveResourceRows(snapshot);
         _scrollOffset = Math.Clamp(_scrollOffset, 0, GridPanel.MaxScrollOffset(resourceRows.Length));
         var resourceNames = Array.ConvertAll(resourceRows, row => row.Name);
-        var resourcePrices = Array.ConvertAll(resourceRows, row => row.Price);
-        var resourceCounts = Array.ConvertAll(resourceRows, row => row.Count);
+        var resourceSellingPrices = Array.ConvertAll(resourceRows, row => row.SellingPrice);
+        var resourceSellingCounts = Array.ConvertAll(resourceRows, row => row.SellingCount);
+        var resourceBuyingPrices = Array.ConvertAll(resourceRows, row => row.BuyingPrice);
+        var resourceBuyingCounts = Array.ConvertAll(resourceRows, row => row.BuyingCount);
         GridPanel.Draw(canvas, pl + GridPanelOriginX, pt + GridPanelOriginY, ResourcesGridTitle, resourceRows.Length,
-            _scrollOffset, _isScrollUpHovered, _isScrollDownHovered, resourceNames, resourcePrices, resourceCounts);
+            _scrollOffset, _isScrollUpHovered, _isScrollDownHovered, resourceNames,
+            resourceSellingPrices, resourceSellingCounts, resourceBuyingPrices, resourceBuyingCounts);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.

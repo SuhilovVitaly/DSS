@@ -302,13 +302,48 @@ public class TradeScreenTests
 
     /// <summary>Selling price/count columns read UnitPriceCredits/StockQuantity off the same items, in the same name-sorted row order as ResourceNames — never re-sorted independently.</summary>
     [Fact]
-    public void ResourcePrices_and_ResourceCounts_match_the_station_snapshot_in_ResourceNames_order()
+    public void ResourceSellingPrices_and_ResourceSellingCounts_match_the_station_snapshot_in_ResourceNames_order()
     {
         var screen = new TradeScreen(DockedBufferWithSixResources());
 
         // Row order: Carbon Ore, Ice, Iron Ore, Magnesium Ore, Silicon, Uranium Ore.
-        Assert.Equal(new[] { "30", "10", "5", "30", "40", "30" }, screen.ResourcePrices);
-        Assert.Equal(new[] { "90", "320", "410", "120", "70", "20" }, screen.ResourceCounts);
+        Assert.Equal(new[] { "30", "10", "5", "30", "40", "30" }, screen.ResourceSellingPrices);
+        Assert.Equal(new[] { "90", "320", "410", "120", "70", "20" }, screen.ResourceSellingCounts);
+    }
+
+    /// <summary>
+    /// Buying price reuses the station's single UnitPriceCredits (same MVP price both
+    /// directions — no separate buy/sell price field exists), but Buying count comes from
+    /// the player's own ship cargo, not the station: present items report their cargo
+    /// quantity, everything else (Iron Ore/Magnesium Ore/Silicon/Uranium Ore here) is 0.
+    /// </summary>
+    [Fact]
+    public void ResourceBuyingPrices_match_selling_prices_and_ResourceBuyingCounts_come_from_ship_cargo()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(
+                new ObjectMotionSnapshot("SHIP-01", 0, 0, 0, 0, IsDocked: true, DockedStationObjectId: "STN-01"),
+                new ObjectMotionSnapshot("STN-01", 0, 0, 0, 0, DisplayName: "Test Station")),
+            PlayerShipObjectId: "SHIP-01",
+            DockedStationTrade: new StationTradeSnapshot("STN-01", ImmutableArray.Create(
+                new StationInventoryItemSnapshot("item.silicon", 70, 40, 70, TradeItemCategories.Resource),
+                new StationInventoryItemSnapshot("item.ice", 320, 10, 320, TradeItemCategories.Resource),
+                new StationInventoryItemSnapshot("item.iron-ore", 410, 5, 410, TradeItemCategories.Resource))),
+            InstalledModules: ImmutableArray.Create(
+                new InstalledModuleSnapshot(
+                    ModuleId: "MOD-CONTAINER", ModuleTypeId: "module.container", DisplayName: "Container",
+                    Position: 0, CommandTypeIds: ImmutableArray.Create(TradeCommandTypes.Buy, TradeCommandTypes.Sell),
+                    Cargo: ImmutableArray.Create(
+                        new CargoStackSnapshot("item.ice", 50),
+                        new CargoStackSnapshot("item.silicon", 5))))));
+
+        var screen = new TradeScreen(buffer);
+
+        // Row order: Ice, Iron Ore, Silicon.
+        Assert.Equal(screen.ResourceSellingPrices, screen.ResourceBuyingPrices);
+        Assert.Equal(new[] { "50", "0", "5" }, screen.ResourceBuyingCounts);
     }
 
     /// <summary>

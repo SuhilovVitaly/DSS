@@ -39,13 +39,14 @@ public static class GridPanel
     public const float RowHeight = 30f;
     private const float RowLabelPaddingX = 20f;
 
-    // ── Trailing Selling price / Selling count columns, right edge of the row ──
-    private const string PriceColumnHeader = "Selling price";
-    private const string CountColumnHeader = "Selling count";
-    private const float PriceColumnWidth = 140f;
-    private const float CountColumnWidth = 140f;
-    private const float PriceColumnLeftOffset = RowWidth - PriceColumnWidth - CountColumnWidth;
-    private const float CountColumnLeftOffset = RowWidth - CountColumnWidth;
+    // ── Trailing Selling/Buying price+count columns, right edge of the row ─────
+    // Left-to-right visual order; right-aligned to the row's trailing edge, each the
+    // same width ("того же типа" — same size/style as the Selling columns).
+    private static readonly string[] _trailingColumnHeaders =
+        { "Selling price", "Selling count", "Buying price", "Buying count" };
+
+    private const float TrailingColumnWidth = 140f;
+    private const int TrailingColumnCount = 4;
 
     // ── Scrollbar, relative to the header's top-left ───────────────────────────
     private const float ScrollbarOffsetX = 935f;
@@ -180,13 +181,17 @@ public static class GridPanel
         return new SKRect(originX + RowOffsetX, top, originX + RowOffsetX + RowWidth, top + RowHeight);
     }
 
-    /// <summary>Horizontal center of the Selling price column — shared by its header label and every row's value, so they always line up.</summary>
-    private static float PriceColumnCenterX(float originX) =>
-        originX + RowOffsetX + PriceColumnLeftOffset + PriceColumnWidth / 2f;
-
-    /// <summary>Horizontal center of the Selling count column, at the row's trailing edge — see <see cref="PriceColumnCenterX"/>.</summary>
-    private static float CountColumnCenterX(float originX) =>
-        originX + RowOffsetX + CountColumnLeftOffset + CountColumnWidth / 2f;
+    /// <summary>
+    /// Horizontal center of trailing column <paramref name="columnIndex"/> (0 = leftmost
+    /// of the four, i.e. Selling price; <see cref="TrailingColumnCount"/> - 1 = rightmost,
+    /// Buying count, flush with the row's trailing edge) — shared by the header label and
+    /// every row's value, so they always line up.
+    /// </summary>
+    private static float TrailingColumnCenterX(float originX, int columnIndex)
+    {
+        float leftOffset = RowWidth - (TrailingColumnCount - columnIndex) * TrailingColumnWidth;
+        return originX + RowOffsetX + leftOffset + TrailingColumnWidth / 2f;
+    }
 
     /// <summary>Track height matches the currently drawn rows — <see cref="DrawnRowCount"/> of <paramref name="rowCount"/>, not the fixed <see cref="MaxVisibleRows"/> capacity.</summary>
     public static SKRect ScrollbarTrackLocalRect(float originX, float originY, int rowCount)
@@ -267,21 +272,26 @@ public static class GridPanel
     /// exactly <paramref name="rowCount"/> entries when provided; omit for a plain colored
     /// grid with no text.
     /// </param>
-    /// <param name="priceValues">Optional per-row "Selling price" column text, same <c>scrollOffset + i</c> indexing as <paramref name="rowLabels"/>.</param>
-    /// <param name="countValues">Optional per-row "Selling count" column text, same <c>scrollOffset + i</c> indexing as <paramref name="rowLabels"/>.</param>
+    /// <param name="sellingPriceValues">Optional per-row "Selling price" column text, same <c>scrollOffset + i</c> indexing as <paramref name="rowLabels"/>.</param>
+    /// <param name="sellingCountValues">Optional per-row "Selling count" column text (station stock), same indexing.</param>
+    /// <param name="buyingPriceValues">Optional per-row "Buying price" column text, same indexing.</param>
+    /// <param name="buyingCountValues">Optional per-row "Buying count" column text (player's own quantity), same indexing.</param>
     public static void Draw(
         SKCanvas canvas, float originX, float originY, string title, int rowCount,
         int scrollOffset, bool isScrollUpHovered, bool isScrollDownHovered,
         IReadOnlyList<string>? rowLabels = null,
-        IReadOnlyList<string>? priceValues = null, IReadOnlyList<string>? countValues = null)
+        IReadOnlyList<string>? sellingPriceValues = null, IReadOnlyList<string>? sellingCountValues = null,
+        IReadOnlyList<string>? buyingPriceValues = null, IReadOnlyList<string>? buyingCountValues = null)
     {
         var header = HeaderLocalRect(originX, originY);
         canvas.DrawRoundRect(header, HeaderCornerRadius, HeaderCornerRadius, _headerPaint);
         canvas.DrawText(title, header.Left + TitlePadding, header.Top + TitlePadding + MenuStyle.ButtonFontSize - TitleBaselineShift, _titlePaint);
 
         float columnHeaderBaselineY = MenuStyle.VerticalCenterBaseline(header, _columnHeaderPaint);
-        canvas.DrawText(PriceColumnHeader, PriceColumnCenterX(originX), columnHeaderBaselineY, _columnHeaderPaint);
-        canvas.DrawText(CountColumnHeader, CountColumnCenterX(originX), columnHeaderBaselineY, _columnHeaderPaint);
+        for (int c = 0; c < TrailingColumnCount; c++)
+            canvas.DrawText(_trailingColumnHeaders[c], TrailingColumnCenterX(originX, c), columnHeaderBaselineY, _columnHeaderPaint);
+
+        var trailingColumnValues = new[] { sellingPriceValues, sellingCountValues, buyingPriceValues, buyingCountValues };
 
         bool isEmpty = rowCount == 0;
         bool isActive = IsScrollbarActive(rowCount);
@@ -300,11 +310,12 @@ public static class GridPanel
             if (rowLabels is not null && labelIndex < rowLabels.Count)
                 canvas.DrawText(rowLabels[labelIndex], rowRect.Left + RowLabelPaddingX, baselineY, _rowLabelPaint);
 
-            if (priceValues is not null && labelIndex < priceValues.Count)
-                canvas.DrawText(priceValues[labelIndex], PriceColumnCenterX(originX), baselineY, _rowValuePaint);
-
-            if (countValues is not null && labelIndex < countValues.Count)
-                canvas.DrawText(countValues[labelIndex], CountColumnCenterX(originX), baselineY, _rowValuePaint);
+            for (int c = 0; c < TrailingColumnCount; c++)
+            {
+                var values = trailingColumnValues[c];
+                if (values is not null && labelIndex < values.Count)
+                    canvas.DrawText(values[labelIndex], TrailingColumnCenterX(originX, c), baselineY, _rowValuePaint);
+            }
         }
 
         DrawScrollbar(canvas, originX, originY, rowCount, effectiveOffset, isActive, isScrollUpHovered, isScrollDownHovered);

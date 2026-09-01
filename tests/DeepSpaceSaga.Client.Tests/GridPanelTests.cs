@@ -81,17 +81,20 @@ public class GridPanelTests
         var rowCounts = new[] { 0, 1, 4, 5, 6, 8 };
         var boolOptions = new[] { true, false };
         // Deliberately shorter than the largest rowCount above, to exercise the "fewer
-        // values than rows" bound-check path for all three optional column lists.
+        // values than rows" bound-check path for all five optional column lists.
         var labels = new[] { "A", "B", "C", "D", "E" };
-        var prices = new[] { "10", "20", "30", "40", "50" };
-        var counts = new[] { "1", "2", "3", "4", "5" };
+        var sellingPrices = new[] { "10", "20", "30", "40", "50" };
+        var sellingCounts = new[] { "1", "2", "3", "4", "5" };
+        var buyingPrices = new[] { "11", "21", "31", "41", "51" };
+        var buyingCounts = new[] { "6", "7", "8", "9", "10" };
 
         foreach (int rowCount in rowCounts)
         foreach (bool isUpHovered in boolOptions)
         foreach (bool isDownHovered in boolOptions)
             GridPanel.Draw(canvas, 10f, 10f, "Resources", rowCount, scrollOffset: 1,
                 isScrollUpHovered: isUpHovered, isScrollDownHovered: isDownHovered,
-                rowLabels: labels, priceValues: prices, countValues: counts);
+                rowLabels: labels, sellingPriceValues: sellingPrices, sellingCountValues: sellingCounts,
+                buyingPriceValues: buyingPrices, buyingCountValues: buyingCounts);
     }
 
     /// <summary>
