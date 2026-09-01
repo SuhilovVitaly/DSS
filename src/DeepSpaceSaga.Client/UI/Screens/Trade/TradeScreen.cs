@@ -33,12 +33,15 @@ public sealed class TradeScreen : IScreen
     private bool _isScrollDownHovered;
 
     /// <summary>
-    /// Mockup scroll position (0..<see cref="ScrollbarMockStepCount"/>) driving the
-    /// <see cref="GridPanel"/> thumb's position within the track — the resources grid
-    /// itself is static (no real list to scroll yet), this only demonstrates the arrow
-    /// buttons' click behavior ahead of the real redesign.
+    /// Index of the first resource row currently shown, 0..<see cref="GridPanel.MaxScrollOffset"/>
+    /// of the docked station's resource count — clamped after every arrow click
+    /// (<see cref="OnMouseDown(float, float, Silk.NET.Input.MouseButton)"/>) and again in
+    /// <see cref="Render"/> in case the resource count itself changes between frames.
     /// </summary>
-    private int _scrollPosition;
+    private int _scrollOffset;
+
+    /// <summary>Test seam — current resources-grid scroll offset (see <see cref="_scrollOffset"/>).</summary>
+    internal int ScrollOffset => _scrollOffset;
 
     /// <summary>
     /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
@@ -92,7 +95,6 @@ public sealed class TradeScreen : IScreen
     private const float GridPanelOriginX = 15f;
     private const float GridPanelOriginY = 76f;
     private const string ResourcesGridTitle = "Resources";
-    private const int ScrollbarMockStepCount = 4;
 
     /// <summary>Test seam — the resources grid's current row labels (see <see cref="ResolveResourceNames"/>).</summary>
     internal string[] ResourceNames => ResolveResourceNames(_buffer?.Latest?.Snapshot);
@@ -128,6 +130,7 @@ public sealed class TradeScreen : IScreen
         "item.silicon" => Localization.Get("Trade.ItemSilicon"),
         "item.magnesium-ore" => Localization.Get("Trade.ItemMagnesiumOre"),
         "item.uranium-ore" => Localization.Get("Trade.ItemUraniumOre"),
+        "item.carbon-ore" => Localization.Get("Trade.ItemCarbonOre"),
         _ => itemTypeId
     };
 
@@ -164,17 +167,18 @@ public sealed class TradeScreen : IScreen
         if (IsStationNameHit(x, y))
             return ScreenEvent.NavigateToStation;
 
-        if (GridPanel.IsScrollbarActive(CurrentResourceRowCount()))
+        int resourceRowCount = CurrentResourceRowCount();
+        if (GridPanel.IsScrollbarActive(resourceRowCount))
         {
             if (IsScrollUpArrowHit(x, y))
             {
-                _scrollPosition = Math.Max(0, _scrollPosition - 1);
+                _scrollOffset = Math.Max(0, _scrollOffset - 1);
                 return ScreenEvent.None;
             }
 
             if (IsScrollDownArrowHit(x, y))
             {
-                _scrollPosition = Math.Min(ScrollbarMockStepCount, _scrollPosition + 1);
+                _scrollOffset = Math.Min(GridPanel.MaxScrollOffset(resourceRowCount), _scrollOffset + 1);
                 return ScreenEvent.None;
             }
         }
@@ -253,8 +257,9 @@ public sealed class TradeScreen : IScreen
         canvas.DrawRect(contentRect, _contentOutlinePaint);
 
         var resourceNames = ResolveResourceNames(snapshot);
+        _scrollOffset = Math.Clamp(_scrollOffset, 0, GridPanel.MaxScrollOffset(resourceNames.Length));
         GridPanel.Draw(canvas, pl + GridPanelOriginX, pt + GridPanelOriginY, ResourcesGridTitle, resourceNames.Length,
-            _scrollPosition, ScrollbarMockStepCount, _isScrollUpHovered, _isScrollDownHovered, resourceNames);
+            _scrollOffset, _isScrollUpHovered, _isScrollDownHovered, resourceNames);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.

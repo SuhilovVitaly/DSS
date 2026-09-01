@@ -78,13 +78,29 @@ public class GridPanelTests
         using var bitmap = new SKBitmap(1200, 400);
         using var canvas = new SKCanvas(bitmap);
 
-        var rowCounts = new[] { 0, 1, 4, 5, 8 };
+        var rowCounts = new[] { 0, 1, 4, 5, 6, 8 };
         var boolOptions = new[] { true, false };
 
         foreach (int rowCount in rowCounts)
         foreach (bool isUpHovered in boolOptions)
         foreach (bool isDownHovered in boolOptions)
-            GridPanel.Draw(canvas, 10f, 10f, "Resources", rowCount, scrollPosition: 2, scrollStepCount: 4,
+            GridPanel.Draw(canvas, 10f, 10f, "Resources", rowCount, scrollOffset: 1,
                 isScrollUpHovered: isUpHovered, isScrollDownHovered: isDownHovered);
+    }
+
+    /// <summary>
+    /// Directly guards the reported bug — 6 real rows in a 5-row visible window must let
+    /// the scrollbar reach an offset that reveals the 6th row (previously the thumb moved
+    /// but the drawn window never did, since <c>rowCount &gt; MaxVisibleRows</c> made the
+    /// scrollbar active while nothing actually consumed the offset).
+    /// </summary>
+    [Theory]
+    [InlineData(4, 0)]
+    [InlineData(5, 0)]
+    [InlineData(6, 1)]
+    [InlineData(8, 3)]
+    public void MaxScrollOffset_is_rows_hidden_past_the_visible_window(int rowCount, int expected)
+    {
+        Assert.Equal(expected, GridPanel.MaxScrollOffset(rowCount));
     }
 }

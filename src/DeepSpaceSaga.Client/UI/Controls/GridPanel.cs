@@ -133,6 +133,15 @@ public static class GridPanel
     public static bool IsScrollbarActive(int rowCount) => rowCount > ScrollbarInactiveMaxRowCount;
 
     /// <summary>
+    /// Highest valid <c>scrollOffset</c> for <paramref name="rowCount"/> — 0 while
+    /// everything fits in <see cref="MaxVisibleRows"/>, otherwise the number of rows
+    /// hidden past the visible window (<paramref name="rowCount"/> - <see cref="MaxVisibleRows"/>).
+    /// Callers should clamp their scroll-offset state to this after every arrow click and
+    /// whenever <paramref name="rowCount"/> itself can change (e.g. live data).
+    /// </summary>
+    public static int MaxScrollOffset(int rowCount) => Math.Max(0, rowCount - MaxVisibleRows);
+
+    /// <summary>
     /// Rows actually drawn: <paramref name="rowCount"/> capped at <see cref="MaxVisibleRows"/>,
     /// except an empty grid (<c>rowCount == 0</c>) which still draws a full
     /// <see cref="MaxVisibleRows"/> worth of dark-gray placeholder slots — see the type doc
@@ -169,17 +178,21 @@ public static class GridPanel
         return new SKRect(track.Left, track.Bottom - ScrollbarArrowSize, track.Right, track.Bottom);
     }
 
-    /// <param name="scrollPosition">0..<paramref name="scrollStepCount"/>, moves the thumb within the track — ignored while the scrollbar is inactive.</param>
-    /// <param name="scrollStepCount">Number of discrete thumb positions the caller's arrow clicks step through.</param>
+    /// <param name="scrollOffset">
+    /// Index of the first row currently shown, 0..<see cref="MaxScrollOffset"/> of
+    /// <paramref name="rowCount"/> — both which <paramref name="rowLabels"/> window is
+    /// drawn and the thumb's travel come from this, so the two never disagree. Ignored
+    /// (treated as 0) while the scrollbar is inactive.
+    /// </param>
     /// <param name="rowLabels">
     /// Optional per-row text (e.g. item names), drawn in black with a <see cref="RowLabelPaddingX"/>
-    /// left inset — index <c>i</c> labels the row at <see cref="RowLocalRect"/>'s index <c>i</c>.
-    /// Must have exactly <paramref name="rowCount"/> entries when provided; omit for a plain
-    /// colored grid with no text.
+    /// left inset — row slot <c>i</c> shows <c>rowLabels[scrollOffset + i]</c>. Must have
+    /// exactly <paramref name="rowCount"/> entries when provided; omit for a plain colored
+    /// grid with no text.
     /// </param>
     public static void Draw(
         SKCanvas canvas, float originX, float originY, string title, int rowCount,
-        int scrollPosition, int scrollStepCount, bool isScrollUpHovered, bool isScrollDownHovered,
+        int scrollOffset, bool isScrollUpHovered, bool isScrollDownHovered,
         IReadOnlyList<string>? rowLabels = null)
     {
         var header = HeaderLocalRect(originX, originY);
@@ -187,6 +200,8 @@ public static class GridPanel
         canvas.DrawText(title, header.Left + TitlePadding, header.Top + TitlePadding + MenuStyle.ButtonFontSize - TitleBaselineShift, _titlePaint);
 
         bool isEmpty = rowCount == 0;
+        bool isActive = IsScrollbarActive(rowCount);
+        int effectiveOffset = isActive ? Math.Clamp(scrollOffset, 0, MaxScrollOffset(rowCount)) : 0;
         int drawnRows = DrawnRowCount(rowCount);
         for (int i = 0; i < drawnRows; i++)
         {
@@ -195,22 +210,21 @@ public static class GridPanel
             canvas.DrawRect(rowRect, fillPaint);
             canvas.DrawRect(rowRect, _rowBorderPaint);
 
-            if (rowLabels is not null && i < rowLabels.Count)
+            int labelIndex = effectiveOffset + i;
+            if (rowLabels is not null && labelIndex < rowLabels.Count)
             {
                 float baselineY = MenuStyle.VerticalCenterBaseline(rowRect, _rowLabelPaint);
-                canvas.DrawText(rowLabels[i], rowRect.Left + RowLabelPaddingX, baselineY, _rowLabelPaint);
+                canvas.DrawText(rowLabels[labelIndex], rowRect.Left + RowLabelPaddingX, baselineY, _rowLabelPaint);
             }
         }
 
-        DrawScrollbar(canvas, originX, originY, rowCount, scrollPosition, scrollStepCount, isScrollUpHovered, isScrollDownHovered);
+        DrawScrollbar(canvas, originX, originY, rowCount, effectiveOffset, isActive, isScrollUpHovered, isScrollDownHovered);
     }
 
     private static void DrawScrollbar(
         SKCanvas canvas, float originX, float originY, int rowCount,
-        int scrollPosition, int scrollStepCount, bool isScrollUpHovered, bool isScrollDownHovered)
+        int scrollOffset, bool isActive, bool isScrollUpHovered, bool isScrollDownHovered)
     {
-        bool isActive = IsScrollbarActive(rowCount);
-
         var track = ScrollbarTrackLocalRect(originX, originY, rowCount);
         canvas.DrawRect(track, _scrollbarTrackPaint);
         canvas.DrawRect(track, _scrollbarBorderPaint);
@@ -231,7 +245,8 @@ public static class GridPanel
 
         float thumbHeight = middleHeight * ScrollbarThumbHeightRatio;
         float travel = Math.Max(0f, middleHeight - thumbHeight - 2 * ScrollbarThumbInset);
-        float progress = isActive && scrollStepCount > 0 ? (float)scrollPosition / scrollStepCount : 0f;
+        int maxOffset = MaxScrollOffset(rowCount);
+        float progress = isActive && maxOffset > 0 ? (float)scrollOffset / maxOffset : 0f;
         float thumbY = middleTop + ScrollbarThumbInset + travel * progress;
         var thumbRect = new SKRect(track.Left + ScrollbarThumbInset, thumbY, track.Right - ScrollbarThumbInset, thumbY + thumbHeight);
         canvas.DrawRoundRect(thumbRect, ScrollbarThumbCornerRadius, ScrollbarThumbCornerRadius, thumbPaint);

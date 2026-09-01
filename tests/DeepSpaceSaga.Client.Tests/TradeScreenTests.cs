@@ -268,9 +268,8 @@ public class TradeScreenTests
         return buffer;
     }
 
-    /// <summary>Resource names come from the docked station's real trade snapshot, filtered to TradeItemCategories.Resource and alphabetically sorted — Good items (Fuel here) are excluded.</summary>
-    [Fact]
-    public void ResourceNames_are_resource_category_items_sorted_alphabetically()
+    /// <summary>Six resource items on the docked station (item catalog as of this story) — one more than GridPanel.MaxVisibleRows, exercising the scrollbar's active/scrolling path below.</summary>
+    private static SnapshotBuffer DockedBufferWithSixResources()
     {
         var buffer = new SnapshotBuffer();
         buffer.Update(new AuthoritativeSnapshot(
@@ -285,13 +284,45 @@ public class TradeScreenTests
                 new StationInventoryItemSnapshot("item.fuel", 700, 5, 700, TradeItemCategories.Good),
                 new StationInventoryItemSnapshot("item.ice", 320, 10, 320, TradeItemCategories.Resource),
                 new StationInventoryItemSnapshot("item.iron-ore", 410, 5, 410, TradeItemCategories.Resource),
+                new StationInventoryItemSnapshot("item.carbon-ore", 90, 30, 90, TradeItemCategories.Resource),
                 new StationInventoryItemSnapshot("item.magnesium-ore", 120, 30, 120, TradeItemCategories.Resource)))));
+        return buffer;
+    }
 
-        var screen = new TradeScreen(buffer);
+    /// <summary>Resource names come from the docked station's real trade snapshot, filtered to TradeItemCategories.Resource and alphabetically sorted — Good items (Fuel here) are excluded.</summary>
+    [Fact]
+    public void ResourceNames_are_resource_category_items_sorted_alphabetically()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
 
         Assert.Equal(
-            new[] { "Ice", "Iron Ore", "Magnesium Ore", "Silicon", "Uranium Ore" },
+            new[] { "Carbon Ore", "Ice", "Iron Ore", "Magnesium Ore", "Silicon", "Uranium Ore" },
             screen.ResourceNames);
+    }
+
+    /// <summary>
+    /// Regression for the reported bug: 6 resource items in a 5-row grid must let the
+    /// down arrow actually scroll (previously the scrollbar was active and the thumb
+    /// moved, but the drawn window never changed — nothing consumed the offset).
+    /// </summary>
+    [Fact]
+    public void Scrollbar_down_arrow_advances_the_scroll_offset_when_rows_exceed_the_visible_window()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+        Assert.Equal(6, screen.ResourceNames.Length);
+        Assert.Equal(0, screen.ScrollOffset);
+
+        var local = GridPanel.ScrollDownArrowLocalRect(15f, 76f, screen.ResourceNames.Length);
+        float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        screen.OnMouseDown(x, y);
+        Assert.Equal(1, screen.ScrollOffset);
+
+        // Clamped at GridPanel.MaxScrollOffset(6) = 1 — a further click must not overshoot.
+        screen.OnMouseDown(x, y);
+        Assert.Equal(1, screen.ScrollOffset);
     }
 
     /// <summary>Screen-space center of the toolbar's "Test Station" name label (see DockedBuffer).</summary>
