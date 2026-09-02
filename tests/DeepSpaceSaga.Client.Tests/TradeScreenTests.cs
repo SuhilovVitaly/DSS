@@ -957,43 +957,44 @@ public class TradeScreenTests
 
         var (upper, lower) = screen.RightPanels;
 
-        // Left/right edges mirror the grids' 15px margins from the Trade panel's own edges.
-        Assert.Equal(977f, upper.Left);
-        Assert.Equal(977f, lower.Left);
+        // Right edges mirror the grids' 15px margin from the Trade panel's own right edge.
         Assert.Equal(1385f, upper.Right);
         Assert.Equal(1385f, lower.Right);
+
+        // Lower panel's left edge mirrors the grids' 15px margin from the Trade panel's own
+        // left edge; the upper panel is additionally nudged 25px further right (and 25px
+        // narrower for it), per RightPanelUpperExtraLeftInset.
+        Assert.Equal(977f, lower.Left);
+        Assert.Equal(1002f, upper.Left);
     }
 
-    /// <summary>The upper right-hand panel spans the same vertical range as the Resources and Goods grids combined (top of Resources to bottom of Goods).</summary>
+    /// <summary>The upper right-hand panel's white outline snaps exactly to the Resources+Goods white outline frames combined (top of the Resources frame to bottom of the Goods frame) — same per-segment height (200) as each of theirs, not an independently computed height.</summary>
     [Fact]
-    public void Upper_right_panel_height_matches_the_resources_and_goods_grids_combined()
+    public void Upper_right_panel_outline_matches_the_resources_and_goods_white_frames_combined()
     {
         var screen = new TradeScreen();
         RenderScreen(screen);
 
         var (upper, _) = screen.RightPanels;
 
-        // Height still matches the Resources+Goods grids combined (443), but the panel is
-        // vertically centered on the Resources/Goods white outline frames — (90 + 539) / 2 =
-        // 314.5 — not on the grids' own (differently-offset) top/bottom.
-        Assert.Equal(443f, upper.Height);
-        Assert.Equal(93f, upper.Top);
-        Assert.Equal(536f, upper.Bottom);
+        Assert.Equal(90f, upper.Top); // Resources white frame's own top
+        Assert.Equal(539f, upper.Bottom); // Goods white frame's own bottom
+        Assert.Equal(449f, upper.Height);
+        Assert.Equal(383f, upper.Width); // 408 (977..1385) minus the 25px extra left inset
     }
 
-    /// <summary>The lower right-hand panel matches the Modules grid's height and is centered on the Modules white outline frame.</summary>
+    /// <summary>The lower right-hand panel's white outline snaps exactly to the Modules white outline frame — same height (200) as the Resources/Goods ones.</summary>
     [Fact]
-    public void Lower_right_panel_height_and_position_match_the_modules_grid()
+    public void Lower_right_panel_outline_matches_the_modules_white_frame()
     {
         var screen = new TradeScreen();
         RenderScreen(screen);
 
         var (_, lower) = screen.RightPanels;
 
-        // Centered on the Modules white outline frame (588 + 788) / 2 = 688, not on the
-        // Modules grid's own top/bottom.
-        Assert.Equal(194f, lower.Height);
-        Assert.Equal(591f, lower.Top);
-        Assert.Equal(785f, lower.Bottom);
+        Assert.Equal(588f, lower.Top);
+        Assert.Equal(788f, lower.Bottom);
+        Assert.Equal(200f, lower.Height);
+        Assert.Equal(408f, lower.Width);
     }
 }
