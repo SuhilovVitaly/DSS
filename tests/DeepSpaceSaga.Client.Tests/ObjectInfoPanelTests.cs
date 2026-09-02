@@ -127,6 +127,18 @@ public class ObjectInfoPanelTests
     }
 
     [Fact]
+    public void Row_body_is_tall_enough_for_a_200x150_image()
+    {
+        var (buffer, screen) = CreateScreen();
+        UpdateBufferWithShip(buffer, PlayerShipId);
+        RenderScreen(screen);
+
+        // 150px image + 6px padding above and below.
+        Assert.Equal(162f, ObjectInfoPanel.RowBodyHeight);
+        Assert.All(screen.ObjectInfoPanel.RowBodyRects, r => Assert.Equal(162f, r.Height));
+    }
+
+    [Fact]
     public void Panel_is_positioned_at_top_right()
     {
         var (buffer, screen) = CreateScreen();

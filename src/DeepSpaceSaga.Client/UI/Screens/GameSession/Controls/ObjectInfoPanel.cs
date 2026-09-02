@@ -18,16 +18,25 @@ public sealed class ObjectInfoPanel
     private const string XenonAssetsPath = "Images/UI/Themes/Xenon/GameSession/CommandPanels";
     private const string ObjectImageAssetsPath = "Images/UI/GameSessionScreenUI/object-info";
 
-    public const float PanelWidth = CommandsPanel.PanelWidth;
+    /// <summary>Sprite frame for a row's image — landscape 4:3, not the old 64×64 square.</summary>
+    private const float ImageWidth = 200f;
+    private const float ImageHeight = 150f;
+
+    /// <summary>
+    /// Wider than <see cref="CommandsPanel.PanelWidth"/> by exactly how much
+    /// <see cref="ImageWidth"/> grew over the previous 64px square image, so the text
+    /// column and margins keep their prior absolute size while the panel grows just
+    /// enough to fit the larger image.
+    /// </summary>
+    public const float PanelWidth = CommandsPanel.PanelWidth + (ImageWidth - 64f);
     public const float CaptionHeight = CommandsPanel.CaptionHeight;
     public const float RowCaptionHeight = CommandsPanel.PanelCaptionHeight;
 
-    /// <summary>Fixed body height for every info row: padding + 64px image + border.</summary>
-    public const float RowBodyHeight = 76f;
+    /// <summary>Fixed body height for every info row: padding + image + border.</summary>
+    public const float RowBodyHeight = ImageHeight + 2 * Padding;
 
     private const float Margin = 8f;
     private const float Padding = 6f;
-    private const float ImageSize = 64f;
     private const float LineHeight = 16f;
     private const float FontSize = 12f;
     private const float CaptionTitleFontSize = 16f;
@@ -273,7 +282,7 @@ public sealed class ObjectInfoPanel
 
         float imgX = bodyRect.Left + Padding;
         float imgY = bodyRect.Top + Padding;
-        var imageRect = new SKRect(imgX, imgY, imgX + ImageSize, imgY + ImageSize);
+        var imageRect = new SKRect(imgX, imgY, imgX + ImageWidth, imgY + ImageHeight);
 
         var image = data is { } d ? ResolveObjectImage(d) : null;
         if (image is not null)
