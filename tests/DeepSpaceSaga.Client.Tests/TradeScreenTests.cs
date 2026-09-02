@@ -961,11 +961,11 @@ public class TradeScreenTests
         Assert.Equal(1385f, upper.Right);
         Assert.Equal(1385f, lower.Right);
 
-        // Lower panel's left edge mirrors the grids' 15px margin from the Trade panel's own
-        // left edge; the upper panel is additionally nudged 25px further right (and 25px
-        // narrower for it), per RightPanelUpperExtraLeftInset.
-        Assert.Equal(977f, lower.Left);
+        // Both panels' left edge is the grids' 15px margin from the Trade panel's own left
+        // edge, plus a shared 25px extra nudge right (RightPanelExtraLeftInset) — narrowing
+        // both panels by 25px since their right edge stays put.
         Assert.Equal(1002f, upper.Left);
+        Assert.Equal(1002f, lower.Left);
     }
 
     /// <summary>The upper right-hand panel's white outline snaps exactly to the Resources+Goods white outline frames combined (top of the Resources frame to bottom of the Goods frame) — same per-segment height (200) as each of theirs, not an independently computed height.</summary>
@@ -995,6 +995,20 @@ public class TradeScreenTests
         Assert.Equal(588f, lower.Top);
         Assert.Equal(788f, lower.Bottom);
         Assert.Equal(200f, lower.Height);
-        Assert.Equal(408f, lower.Width);
+        Assert.Equal(383f, lower.Width); // 408 (977..1385) minus the shared 25px extra left inset
+    }
+
+    /// <summary>Both right-hand panels get a gray rounded-corner titlebar at their top, same style/height as GridPanel's own header bar.</summary>
+    [Fact]
+    public void Right_panels_have_a_titlebar_matching_gridpanels_header_height()
+    {
+        var screen = new TradeScreen();
+        RenderScreen(screen); // must not throw while drawing the titlebars
+
+        var (upper, lower) = screen.RightPanels;
+
+        // Sanity: both panels are tall enough to actually contain a 30px titlebar.
+        Assert.True(upper.Height >= GridPanel.HeaderHeight);
+        Assert.True(lower.Height >= GridPanel.HeaderHeight);
     }
 }

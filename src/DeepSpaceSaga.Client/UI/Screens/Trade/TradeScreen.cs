@@ -278,17 +278,26 @@ public sealed class TradeScreen : IScreen
     /// <summary>Right edge (panel-local x) of the three grids — their left margin plus header+scrollbar width.</summary>
     private const float GridRightEdge = GridPanelOriginX + GridPanel.HeaderWidth + GridPanel.ScrollbarWidth;
 
-    /// <summary>Left edge of the two right-hand info panels (no grid) — kept as far from the grids' right edge as the grids themselves are from the Trade panel's own left edge (<see cref="GridPanelOriginX"/>).</summary>
-    private const float RightPanelLeft = GridRightEdge + GridPanelOriginX;
+    /// <summary>Extra rightward nudge applied to both right-hand panels' left edge — their width shrinks by the same amount, their right edge staying put.</summary>
+    private const float RightPanelExtraLeftInset = 25f;
+
+    /// <summary>Left edge of the two right-hand info panels (no grid) — as far from the grids' right edge as the grids themselves are from the Trade panel's own left edge (<see cref="GridPanelOriginX"/>), plus <see cref="RightPanelExtraLeftInset"/>.</summary>
+    private const float RightPanelLeft = GridRightEdge + GridPanelOriginX + RightPanelExtraLeftInset;
 
     /// <summary>Right edge of the two right-hand info panels — mirrors <see cref="GridPanelOriginX"/> as the gap kept from the Trade panel's own right edge.</summary>
     private const float RightPanelRight = TradeLayout.PanelWidth - GridPanelOriginX;
 
-    /// <summary>Extra rightward nudge for the upper right-hand panel only — its left edge moves in by this much (and its width shrinks by the same amount, its right edge staying put).</summary>
-    private const float RightPanelUpperExtraLeftInset = 25f;
+    /// <summary>Height of the gray rounded-corner titlebar drawn at the top of each right-hand panel — same style as <see cref="GridPanel"/>'s own header bar.</summary>
+    private const float RightPanelTitleBarHeight = GridPanel.HeaderHeight;
 
-    /// <summary>Left edge of the upper right-hand panel — <see cref="RightPanelLeft"/> nudged right by <see cref="RightPanelUpperExtraLeftInset"/>.</summary>
-    private const float RightPanelUpperLeft = RightPanelLeft + RightPanelUpperExtraLeftInset;
+    /// <summary>Corner radius for the right-hand panels' titlebar — mirrors GridPanel's own (private) header corner radius.</summary>
+    private const float RightPanelTitleBarCornerRadius = 12f;
+
+    /// <summary>Same fill color as <see cref="GridPanel"/>'s own header bar, for the right-hand panels' titlebar.</summary>
+    private static readonly SKPaint _rightPanelTitleBarPaint = new()
+    {
+        Color = new SKColor(0x5E, 0x5E, 0x5E), Style = SKPaintStyle.Fill, IsAntialias = true
+    };
 
     /// <summary>
     /// Upper right-hand panel (no grid) — top/bottom snapped exactly to the Resources and
@@ -297,7 +306,7 @@ public sealed class TradeScreen : IScreen
     /// each of theirs, not an independently computed height/center.
     /// </summary>
     private static readonly SKRect _rightPanelUpper = new(
-        RightPanelUpperLeft, _contentOutlineRect.Top, RightPanelRight, _contentOutlineRectGoods.Bottom);
+        RightPanelLeft, _contentOutlineRect.Top, RightPanelRight, _contentOutlineRectGoods.Bottom);
 
     /// <summary>Lower right-hand panel (no grid) — top/bottom snapped exactly to the Modules grid's white outline frame, so its outline has the same height (200) as the Resources/Goods ones.</summary>
     private static readonly SKRect _rightPanelLower = new(
@@ -921,10 +930,16 @@ public sealed class TradeScreen : IScreen
         var rightPanelUpper = new SKRect(pl + _rightPanelUpper.Left, pt + _rightPanelUpper.Top,
             pl + _rightPanelUpper.Right, pt + _rightPanelUpper.Bottom);
         canvas.DrawRect(rightPanelUpper, _contentOutlinePaint);
+        var rightPanelUpperTitleBar = new SKRect(rightPanelUpper.Left, rightPanelUpper.Top,
+            rightPanelUpper.Right, rightPanelUpper.Top + RightPanelTitleBarHeight);
+        canvas.DrawRoundRect(rightPanelUpperTitleBar, RightPanelTitleBarCornerRadius, RightPanelTitleBarCornerRadius, _rightPanelTitleBarPaint);
 
         var rightPanelLower = new SKRect(pl + _rightPanelLower.Left, pt + _rightPanelLower.Top,
             pl + _rightPanelLower.Right, pt + _rightPanelLower.Bottom);
         canvas.DrawRect(rightPanelLower, _contentOutlinePaint);
+        var rightPanelLowerTitleBar = new SKRect(rightPanelLower.Left, rightPanelLower.Top,
+            rightPanelLower.Right, rightPanelLower.Top + RightPanelTitleBarHeight);
+        canvas.DrawRoundRect(rightPanelLowerTitleBar, RightPanelTitleBarCornerRadius, RightPanelTitleBarCornerRadius, _rightPanelTitleBarPaint);
 
         var resourceRows = ResolveResourceRows(snapshot, _sortColumn, _sortDescending);
         _scrollOffset = Math.Clamp(_scrollOffset, 0, GridPanel.MaxScrollOffset(resourceRows.Length));
