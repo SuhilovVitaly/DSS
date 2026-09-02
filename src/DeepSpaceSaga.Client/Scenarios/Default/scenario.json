@@ -145,7 +145,8 @@
         "directionDegrees": 256,
         "movementType": "Linear",
         "massKg": 1000000,
-        "compositionType": "Silicate"
+        "compositionType": "Silicate",
+        "isKnown": true
       },
       {
         "objectId": "SPC-0004",
@@ -157,7 +158,8 @@
         "directionDegrees": 22,
         "movementType": "Linear",
         "massKg": 1000000,
-        "compositionType": "Ice"
+        "compositionType": "Ice",
+        "isKnown": false
       }
     ]
   }

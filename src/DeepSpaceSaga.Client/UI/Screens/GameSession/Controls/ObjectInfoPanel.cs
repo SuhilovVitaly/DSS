@@ -18,16 +18,25 @@ public sealed class ObjectInfoPanel
     private const string XenonAssetsPath = "Images/UI/Themes/Xenon/GameSession/CommandPanels";
     private const string ObjectImageAssetsPath = "Images/UI/GameSessionScreenUI/object-info";
 
-    public const float PanelWidth = CommandsPanel.PanelWidth;
+    /// <summary>Sprite frame for a row's image — landscape 4:3, not the old 64×64 square.</summary>
+    private const float ImageWidth = 200f;
+    private const float ImageHeight = 150f;
+
+    /// <summary>
+    /// Wider than <see cref="CommandsPanel.PanelWidth"/> by exactly how much
+    /// <see cref="ImageWidth"/> grew over the previous 64px square image, so the text
+    /// column and margins keep their prior absolute size while the panel grows just
+    /// enough to fit the larger image.
+    /// </summary>
+    public const float PanelWidth = CommandsPanel.PanelWidth + (ImageWidth - 64f);
     public const float CaptionHeight = CommandsPanel.CaptionHeight;
     public const float RowCaptionHeight = CommandsPanel.PanelCaptionHeight;
 
-    /// <summary>Fixed body height for every info row: padding + 64px image + border.</summary>
-    public const float RowBodyHeight = 76f;
+    /// <summary>Fixed body height for every info row: padding + image + border.</summary>
+    public const float RowBodyHeight = ImageHeight + 2 * Padding;
 
     private const float Margin = 8f;
     private const float Padding = 6f;
-    private const float ImageSize = 64f;
     private const float LineHeight = 16f;
     private const float FontSize = 12f;
     private const float CaptionTitleFontSize = 16f;
@@ -82,12 +91,20 @@ public sealed class ObjectInfoPanel
     /// <summary>
     /// Lazily-resolved per-type object image, keyed by RenderObjectType (see
     /// <see cref="SpaceObjectType"/>), loaded from
-    /// <c>Images/UI/GameSessionScreenUI/object-info/&lt;type-lowercase&gt;.png</c>.
-    /// No files exist yet — every lookup falls back to <see cref="_imagePlaceholderPaint"/>
-    /// until real icons are added; a missing file is cached as null so the disk is only
-    /// probed once per type.
+    /// <c>Images/UI/GameSessionScreenUI/object-info/&lt;type-lowercase&gt;.png</c>. Used
+    /// only as a fallback when <see cref="ObjectInfoPanelData.Image"/> is null or its file
+    /// is missing — no files exist yet at this path, so this fallback currently always
+    /// misses. A missing file is cached as null so the disk is only probed once per type.
     /// </summary>
-    private readonly Dictionary<string, SKBitmap?> _objectImages = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, SKBitmap?> _objectImagesByType = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Lazily-resolved per-object image, keyed by <see cref="ObjectInfoPanelData.Image"/>
+    /// (the object's own resolved sprite path, e.g. an asteroid/ship sprite under
+    /// <c>Images/CelestialObjects</c>). A missing file is cached as null so the disk is
+    /// only probed once per path.
+    /// </summary>
+    private readonly Dictionary<string, SKBitmap?> _objectImagesByPath = new(StringComparer.Ordinal);
 
     public ObjectInfoPanel()
     {
@@ -265,9 +282,9 @@ public sealed class ObjectInfoPanel
 
         float imgX = bodyRect.Left + Padding;
         float imgY = bodyRect.Top + Padding;
-        var imageRect = new SKRect(imgX, imgY, imgX + ImageSize, imgY + ImageSize);
+        var imageRect = new SKRect(imgX, imgY, imgX + ImageWidth, imgY + ImageHeight);
 
-        var image = data is { RenderObjectType: { } type } ? ResolveObjectImage(type) : null;
+        var image = data is { } d ? ResolveObjectImage(d) : null;
         if (image is not null)
             canvas.DrawBitmap(image, imageRect, _imagePaint);
         else
@@ -284,14 +301,34 @@ public sealed class ObjectInfoPanel
         }
     }
 
-    private SKBitmap? ResolveObjectImage(string renderObjectType)
+    /// <summary>
+    /// Resolves the bitmap to draw for one row: the object's own resolved sprite
+    /// (<see cref="ObjectInfoPanelData.Image"/>) when present and loadable, otherwise the
+    /// generic per-type icon, otherwise null (caller draws the placeholder rect).
+    /// </summary>
+    private SKBitmap? ResolveObjectImage(ObjectInfoPanelData data)
     {
-        if (_objectImages.TryGetValue(renderObjectType, out var cached))
-            return cached;
+        if (data.Image is { Length: > 0 } imagePath)
+        {
+            if (!_objectImagesByPath.TryGetValue(imagePath, out var byPath))
+            {
+                byPath = LoadImage(imagePath);
+                _objectImagesByPath[imagePath] = byPath;
+            }
 
-        var bitmap = LoadImage($"{ObjectImageAssetsPath}/{renderObjectType.ToLowerInvariant()}.png");
-        _objectImages[renderObjectType] = bitmap;
-        return bitmap;
+            if (byPath is not null)
+                return byPath;
+        }
+
+        if (data.RenderObjectType is not { } renderObjectType)
+            return null;
+
+        if (_objectImagesByType.TryGetValue(renderObjectType, out var byType))
+            return byType;
+
+        var fallback = LoadImage($"{ObjectImageAssetsPath}/{renderObjectType.ToLowerInvariant()}.png");
+        _objectImagesByType[renderObjectType] = fallback;
+        return fallback;
     }
 
     private void DrawButton(SKCanvas canvas, SKRect rect, SKBitmap? image)
@@ -348,4 +385,5 @@ public readonly record struct ObjectInfoPanelData(
     string? DisplayName,
     double SpeedKmS,
     double Direction,
-    string? RenderObjectType);
+    string? RenderObjectType,
+    string? Image = null);

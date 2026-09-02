@@ -1976,7 +1976,7 @@ public sealed class GameSessionScreen : IScreen
             return null;
 
         var p = s.Predicted;
-        return new ObjectInfoPanelData(p.ObjectId, p.DisplayName, p.SpeedKmS, p.Direction, p.RenderObjectType);
+        return new ObjectInfoPanelData(p.ObjectId, p.DisplayName, p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image);
     }
 
     /// <summary>

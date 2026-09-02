@@ -14,6 +14,8 @@ internal static class RngStreamNames
 
     public static string StationInventory(string stationObjectId, string itemTypeId) => $"StationInventory:{stationObjectId}:{itemTypeId}";
 
+    public static string AsteroidImage(string asteroidObjectId) => $"AsteroidImage:{asteroidObjectId}";
+
     /// <summary>
     /// Folds a full 64-bit stream seed into the 32-bit seed System.Random accepts, XORing
     /// both halves together rather than truncating — so all 64 bits of entropy from

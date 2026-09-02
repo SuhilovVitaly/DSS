@@ -40,10 +40,11 @@ public class ObjectInfoPanelTests
         double direction = 0,
         double x = 10000,
         double y = 10000,
-        string? displayName = null)
+        string? displayName = null,
+        string? image = null)
     {
         var ship = new ObjectMotionSnapshot(
-            playerShipId, x, y, speedKmS, direction, DisplayName: displayName);
+            playerShipId, x, y, speedKmS, direction, DisplayName: displayName, Image: image);
         buffer.Update(new AuthoritativeSnapshot(
             SnapshotSequence: 1,
             GameTimeMs: 0,
@@ -123,6 +124,18 @@ public class ObjectInfoPanelTests
         Assert.Equal(2, panel.RowCaptionRects.Count);
         Assert.Equal(2, panel.RowBodyRects.Count);
         Assert.All(panel.RowBodyRects, r => Assert.True(r.Width > 0 && r.Height > 0));
+    }
+
+    [Fact]
+    public void Row_body_is_tall_enough_for_a_200x150_image()
+    {
+        var (buffer, screen) = CreateScreen();
+        UpdateBufferWithShip(buffer, PlayerShipId);
+        RenderScreen(screen);
+
+        // 150px image + 6px padding above and below.
+        Assert.Equal(162f, ObjectInfoPanel.RowBodyHeight);
+        Assert.All(screen.ObjectInfoPanel.RowBodyRects, r => Assert.Equal(162f, r.Height));
     }
 
     [Fact]
@@ -226,5 +239,15 @@ public class ObjectInfoPanelTests
         Assert.Equal("My Ship", info.Value.DisplayName);
         Assert.Equal(15.5, info.Value.SpeedKmS);
         Assert.Equal(45, info.Value.Direction);
+    }
+
+    [Fact]
+    public void PlayerShipInfo_carries_the_resolved_image_from_the_snapshot()
+    {
+        var (buffer, screen) = CreateScreen();
+        UpdateBufferWithShip(buffer, PlayerShipId, image: "Images/CelestialObjects/Spacecraft/ship-tetrarch-class.png");
+        RenderScreen(screen);
+
+        Assert.Equal("Images/CelestialObjects/Spacecraft/ship-tetrarch-class.png", screen.PlayerShipInfo!.Value.Image);
     }
 }

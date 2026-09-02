@@ -56,7 +56,18 @@ public class SnapshotRenderMetadataTests
         Assert.Null(asteroid.ObjectType);
         Assert.Null(asteroid.DisplayName);
         Assert.Null(asteroid.RelationToPlayer);
+        Assert.Null(asteroid.Image);
         Assert.Equal(SpaceObjectType.UnknownSpaceObject, asteroid.RenderObjectType);
+    }
+
+    [Fact]
+    public void Known_asteroid_projects_its_resolved_image()
+    {
+        var snapshot = CaptureSnapshot();
+        var asteroid = snapshot.Objects.Single(o => o.ObjectId == "SPC-0004");
+
+        Assert.NotNull(asteroid.Image);
+        Assert.StartsWith("Images/CelestialObjects/Asteroid/", asteroid.Image);
     }
 
     [Fact]
@@ -80,6 +91,7 @@ public class SnapshotRenderMetadataTests
         Assert.Equal(SpaceObjectType.PlayerShip, ship.RenderObjectType);
         Assert.Equal("Player Ship", ship.DisplayName);
         Assert.Equal(PlayerRelation.Self, ship.RelationToPlayer);
+        Assert.Equal("Images/CelestialObjects/Spacecraft/ship-tetrarch-class.png", ship.Image);
     }
 
     [Fact]
