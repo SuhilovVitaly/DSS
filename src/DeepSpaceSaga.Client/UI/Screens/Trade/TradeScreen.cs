@@ -245,20 +245,31 @@ public sealed class TradeScreen : IScreen
     private const float GridPanelOriginY = 76f;
     private const string ResourcesGridTitle = "Resources";
 
+    /// <summary>Grid height (header-to-last-row-bottom, 44 + <see cref="GridPanel.MaxVisibleRows"/>×30) plus the 30px gap left between two stacked panels.</summary>
+    private const float GridPanelPitch = 194f + 30f;
+
+    /// <summary>Extra manual downward nudge for the Goods grid, on top of its base position directly below the Resources grid.</summary>
+    private const float GoodsGridExtraOffsetY = 25f;
+
     /// <summary>
     /// Anchor for the Goods grid, same <see cref="GridPanelOriginX"/> column directly below
-    /// the Resources grid: <see cref="GridPanelOriginY"/> (76) + header-to-last-row-bottom
-    /// (44 + <see cref="GridPanel.MaxVisibleRows"/>×30 = 194) + a 30px gap between the two panels.
+    /// the Resources grid: <see cref="GridPanelOriginY"/> (76) + <see cref="GridPanelPitch"/>
+    /// (224) + <see cref="GoodsGridExtraOffsetY"/> (25).
     /// </summary>
-    private const float GridPanelOriginYGoods = GridPanelOriginY + 194f + 30f;
+    private const float GridPanelOriginYGoods = GridPanelOriginY + GridPanelPitch + GoodsGridExtraOffsetY;
     private const string GoodsGridTitle = "Goods";
+
+    /// <summary>Extra manual downward nudge for the Modules grid, on top of its base position directly below the Goods grid — independent of <see cref="GoodsGridExtraOffsetY"/>.</summary>
+    private const float ModulesGridExtraOffsetY = 50f;
 
     /// <summary>
     /// Anchor for the Modules grid, same <see cref="GridPanelOriginX"/> column directly below
-    /// the Goods grid — same 194+30 offset as <see cref="GridPanelOriginYGoods"/> is below
-    /// <see cref="GridPanelOriginY"/>.
+    /// the Goods grid's base position (<see cref="GridPanelOriginY"/> + 2×<see cref="GridPanelPitch"/>),
+    /// plus its own <see cref="ModulesGridExtraOffsetY"/> (50) — deliberately not stacked on
+    /// top of <see cref="GoodsGridExtraOffsetY"/>, since the two nudges were requested as
+    /// independent adjustments to each panel's original position.
     /// </summary>
-    private const float GridPanelOriginYModules = GridPanelOriginYGoods + 194f + 30f;
+    private const float GridPanelOriginYModules = GridPanelOriginY + 2 * GridPanelPitch + ModulesGridExtraOffsetY;
     private const string ModulesGridTitle = "Modules";
 
     /// <summary>Test seam — the resources grid's current row labels (see <see cref="ResolveResourceRows"/>).</summary>

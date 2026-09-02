@@ -607,7 +607,7 @@ public class TradeScreenTests
     }
 
     // ── Goods grid — same size/columns/scroll/sort as the Resources grid above, at its own
-    // origin (15, 300) directly below it. Mirrors the Resources grid test coverage.
+    // origin (15, 325) directly below it. Mirrors the Resources grid test coverage.
 
     /// <summary>Good names come from the docked station's real trade snapshot, filtered to TradeItemCategories.Good and alphabetically sorted — the Resource item (Ice here) is excluded.</summary>
     [Fact]
@@ -742,7 +742,7 @@ public class TradeScreenTests
         Assert.Equal(6, screen.GoodNames.Length);
         Assert.Equal(0, screen.ScrollOffsetGoods);
 
-        var local = GridPanel.ScrollDownArrowLocalRect(15f, 300f, screen.GoodNames.Length);
+        var local = GridPanel.ScrollDownArrowLocalRect(15f, 325f, screen.GoodNames.Length);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
 
@@ -782,7 +782,7 @@ public class TradeScreenTests
         var screen = new TradeScreen(DockedBufferWithSixGoods());
         RenderScreen(screen);
 
-        var thumbLocal = GridPanel.ScrollThumbLocalRect(15f, 300f, screen.GoodNames.Length, screen.ScrollOffsetGoods);
+        var thumbLocal = GridPanel.ScrollThumbLocalRect(15f, 325f, screen.GoodNames.Length, screen.ScrollOffsetGoods);
         float pl = TradeLayout.PanelLeft(ScreenWidth);
         float pt = TradeLayout.PanelTop(ScreenHeight);
         float grabX = pl + thumbLocal.MidX;
@@ -842,10 +842,10 @@ public class TradeScreenTests
         Assert.Null(screen.SelectedGoodIndex);
     }
 
-    /// <summary>Screen-space center of the goods grid's visible row slot (0 = topmost drawn row) — see GridPanel's origin (15, 300), directly below the Resources grid's (15, 76).</summary>
+    /// <summary>Screen-space center of the goods grid's visible row slot (0 = topmost drawn row) — see GridPanel's origin (15, 325), directly below the Resources grid's (15, 76).</summary>
     private static (float X, float Y) GoodRowCenter(int rowSlot)
     {
-        var local = GridPanel.RowLocalRect(15f, 300f, rowSlot);
+        var local = GridPanel.RowLocalRect(15f, 325f, rowSlot);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);
@@ -854,14 +854,14 @@ public class TradeScreenTests
     /// <summary>Screen-space center of the goods grid's trailing column header <paramref name="columnIndex"/> (0=Selling price, 1=Selling count, 2=Buying price, 3=Buying count).</summary>
     private static (float X, float Y) GoodTrailingColumnHeaderCenter(int columnIndex)
     {
-        var local = GridPanel.TrailingColumnHeaderLocalRect(15f, 300f, columnIndex);
+        var local = GridPanel.TrailingColumnHeaderLocalRect(15f, 325f, columnIndex);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);
     }
 
     // ── Modules grid — same size/columns/scroll/sort scaffolding as the other two grids,
-    // at origin (15, 524) directly below the Goods grid, but a placeholder with no rows
+    // at origin (15, 574) directly below the Goods grid, but a placeholder with no rows
     // until a real station-module-for-sale data model exists (see ResolveModuleRows).
 
     [Fact]
@@ -926,10 +926,10 @@ public class TradeScreenTests
         Assert.Equal(0, screen.ScrollOffsetGoods);
     }
 
-    /// <summary>Screen-space center of the modules grid's visible row slot (0 = topmost drawn row) — see GridPanel's origin (15, 524), directly below the Goods grid's (15, 300).</summary>
+    /// <summary>Screen-space center of the modules grid's visible row slot (0 = topmost drawn row) — see GridPanel's origin (15, 574), directly below the Goods grid's (15, 325).</summary>
     private static (float X, float Y) ModuleRowCenter(int rowSlot)
     {
-        var local = GridPanel.RowLocalRect(15f, 524f, rowSlot);
+        var local = GridPanel.RowLocalRect(15f, 574f, rowSlot);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);
@@ -938,7 +938,7 @@ public class TradeScreenTests
     /// <summary>Screen-space center of the modules grid's trailing column header <paramref name="columnIndex"/> (0=Selling price, 1=Selling count, 2=Buying price, 3=Buying count).</summary>
     private static (float X, float Y) ModuleTrailingColumnHeaderCenter(int columnIndex)
     {
-        var local = GridPanel.TrailingColumnHeaderLocalRect(15f, 524f, columnIndex);
+        var local = GridPanel.TrailingColumnHeaderLocalRect(15f, 574f, columnIndex);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);
