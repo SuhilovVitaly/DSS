@@ -284,13 +284,27 @@ public sealed class TradeScreen : IScreen
     /// <summary>Right edge of the two right-hand info panels — mirrors <see cref="GridPanelOriginX"/> as the gap kept from the Trade panel's own right edge.</summary>
     private const float RightPanelRight = TradeLayout.PanelWidth - GridPanelOriginX;
 
-    /// <summary>Upper right-hand panel (no grid) — spans the same vertical range as the Resources and Goods grids combined.</summary>
-    private static readonly SKRect _rightPanelUpper = new(
-        RightPanelLeft, GridPanelOriginY, RightPanelRight, GridPanelOriginYGoods + GridRowsAreaHeight);
+    /// <summary>Height of the upper right-hand panel — the Resources and Goods grids' combined vertical span.</summary>
+    private const float RightPanelUpperHeight = GridPanelOriginYGoods + GridRowsAreaHeight - GridPanelOriginY;
 
-    /// <summary>Lower right-hand panel (no grid) — same height as the Modules grid, aligned with its vertical position.</summary>
+    /// <summary>Height of the lower right-hand panel — same as a single grid's row area.</summary>
+    private const float RightPanelLowerHeight = GridRowsAreaHeight;
+
+    /// <summary>Vertical center of the Resources and Goods grids' white outline frames combined — the upper right-hand panel is centered on this, not on the grids' own (differently-offset) geometry.</summary>
+    private static readonly float _rightPanelUpperCenterY = (_contentOutlineRect.Top + _contentOutlineRectGoods.Bottom) / 2f;
+
+    /// <summary>Vertical center of the Modules grid's white outline frame — the lower right-hand panel is centered on this.</summary>
+    private static readonly float _rightPanelLowerCenterY = (_contentOutlineRectModules.Top + _contentOutlineRectModules.Bottom) / 2f;
+
+    /// <summary>Upper right-hand panel (no grid) — <see cref="RightPanelUpperHeight"/> tall, vertically centered on the Resources+Goods white frames (<see cref="_rightPanelUpperCenterY"/>).</summary>
+    private static readonly SKRect _rightPanelUpper = new(
+        RightPanelLeft, _rightPanelUpperCenterY - RightPanelUpperHeight / 2f,
+        RightPanelRight, _rightPanelUpperCenterY + RightPanelUpperHeight / 2f);
+
+    /// <summary>Lower right-hand panel (no grid) — <see cref="RightPanelLowerHeight"/> tall, vertically centered on the Modules white frame (<see cref="_rightPanelLowerCenterY"/>).</summary>
     private static readonly SKRect _rightPanelLower = new(
-        RightPanelLeft, GridPanelOriginYModules, RightPanelRight, GridPanelOriginYModules + GridRowsAreaHeight);
+        RightPanelLeft, _rightPanelLowerCenterY - RightPanelLowerHeight / 2f,
+        RightPanelRight, _rightPanelLowerCenterY + RightPanelLowerHeight / 2f);
 
     /// <summary>Test seam — the two right-hand info panels' geometry, in the same panel-local coordinate space as <see cref="_contentOutlineRect"/>.</summary>
     internal (SKRect Upper, SKRect Lower) RightPanels => (_rightPanelUpper, _rightPanelLower);

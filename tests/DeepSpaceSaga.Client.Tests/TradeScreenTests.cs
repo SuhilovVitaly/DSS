@@ -973,12 +973,15 @@ public class TradeScreenTests
 
         var (upper, _) = screen.RightPanels;
 
-        Assert.Equal(76f, upper.Top);
-        Assert.Equal(519f, upper.Bottom); // Goods grid origin (325) + 194
+        // Height still matches the Resources+Goods grids combined (443), but the panel is
+        // vertically centered on the Resources/Goods white outline frames — (90 + 539) / 2 =
+        // 314.5 — not on the grids' own (differently-offset) top/bottom.
         Assert.Equal(443f, upper.Height);
+        Assert.Equal(93f, upper.Top);
+        Assert.Equal(536f, upper.Bottom);
     }
 
-    /// <summary>The lower right-hand panel matches the Modules grid's height and vertical position.</summary>
+    /// <summary>The lower right-hand panel matches the Modules grid's height and is centered on the Modules white outline frame.</summary>
     [Fact]
     public void Lower_right_panel_height_and_position_match_the_modules_grid()
     {
@@ -987,8 +990,10 @@ public class TradeScreenTests
 
         var (_, lower) = screen.RightPanels;
 
-        Assert.Equal(574f, lower.Top); // Modules grid origin
-        Assert.Equal(768f, lower.Bottom);
+        // Centered on the Modules white outline frame (588 + 788) / 2 = 688, not on the
+        // Modules grid's own top/bottom.
         Assert.Equal(194f, lower.Height);
+        Assert.Equal(591f, lower.Top);
+        Assert.Equal(785f, lower.Bottom);
     }
 }
