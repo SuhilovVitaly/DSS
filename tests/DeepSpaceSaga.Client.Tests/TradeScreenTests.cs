@@ -289,6 +289,27 @@ public class TradeScreenTests
         return buffer;
     }
 
+    /// <summary>Six good items on the docked station — one more than GridPanel.MaxVisibleRows, exercising the Goods grid's scrollbar's active/scrolling path below (mirrors DockedBufferWithSixResources).</summary>
+    private static SnapshotBuffer DockedBufferWithSixGoods()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(
+                new ObjectMotionSnapshot("SHIP-01", 0, 0, 0, 0, IsDocked: true, DockedStationObjectId: "STN-01"),
+                new ObjectMotionSnapshot("STN-01", 0, 0, 0, 0, DisplayName: "Test Station")),
+            PlayerShipObjectId: "SHIP-01",
+            DockedStationTrade: new StationTradeSnapshot("STN-01", ImmutableArray.Create(
+                new StationInventoryItemSnapshot("item.fuel", 700, 5, 700, TradeItemCategories.Good),
+                new StationInventoryItemSnapshot("item.steel", 40, 15, 40, TradeItemCategories.Good),
+                new StationInventoryItemSnapshot("item.ice", 320, 10, 320, TradeItemCategories.Resource),
+                new StationInventoryItemSnapshot("item.water", 14, 20, 14, TradeItemCategories.Good),
+                new StationInventoryItemSnapshot("item.energy-cells", 50, 25, 50, TradeItemCategories.Good),
+                new StationInventoryItemSnapshot("item.protein-mass", 110, 30, 110, TradeItemCategories.Good),
+                new StationInventoryItemSnapshot("item.food-rations", 90, 8, 90, TradeItemCategories.Good)))));
+        return buffer;
+    }
+
     /// <summary>Resource names come from the docked station's real trade snapshot, filtered to TradeItemCategories.Resource and alphabetically sorted — Good items (Fuel here) are excluded.</summary>
     [Fact]
     public void ResourceNames_are_resource_category_items_sorted_alphabetically()
@@ -580,6 +601,253 @@ public class TradeScreenTests
     private static (float X, float Y) StationNameCenter()
     {
         var local = StationToolbar.NameLocalRect("Test Station");
+        float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
+        return (x, y);
+    }
+
+    // ── Goods grid — same size/columns/scroll/sort as the Resources grid above, at its own
+    // origin (15, 300) directly below it. Mirrors the Resources grid test coverage.
+
+    /// <summary>Good names come from the docked station's real trade snapshot, filtered to TradeItemCategories.Good and alphabetically sorted — the Resource item (Ice here) is excluded.</summary>
+    [Fact]
+    public void GoodNames_are_good_category_items_sorted_alphabetically()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+
+        Assert.Equal(
+            new[] { "Energy Cells", "Food Rations", "Fuel", "Protein Mass", "Steel", "Water" },
+            screen.GoodNames);
+    }
+
+    /// <summary>Selling price/count columns read UnitPriceCredits/StockQuantity off the same items, in the same name-sorted row order as GoodNames.</summary>
+    [Fact]
+    public void GoodSellingPrices_and_GoodSellingCounts_match_the_station_snapshot_in_GoodNames_order()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+
+        // Row order: Energy Cells, Food Rations, Fuel, Protein Mass, Steel, Water.
+        Assert.Equal(new[] { "25", "8", "5", "30", "15", "20" }, screen.GoodSellingPrices);
+        Assert.Equal(new[] { "50", "90", "700", "110", "40", "14" }, screen.GoodSellingCounts);
+    }
+
+    /// <summary>Buying price reuses the station's UnitPriceCredits, and Buying count comes from the player's own ship cargo — same MVP rule as the Resources grid.</summary>
+    [Fact]
+    public void GoodBuyingPrices_match_selling_prices_and_GoodBuyingCounts_come_from_ship_cargo()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(
+                new ObjectMotionSnapshot("SHIP-01", 0, 0, 0, 0, IsDocked: true, DockedStationObjectId: "STN-01"),
+                new ObjectMotionSnapshot("STN-01", 0, 0, 0, 0, DisplayName: "Test Station")),
+            PlayerShipObjectId: "SHIP-01",
+            DockedStationTrade: new StationTradeSnapshot("STN-01", ImmutableArray.Create(
+                new StationInventoryItemSnapshot("item.fuel", 700, 5, 700, TradeItemCategories.Good),
+                new StationInventoryItemSnapshot("item.water", 14, 20, 14, TradeItemCategories.Good),
+                new StationInventoryItemSnapshot("item.steel", 40, 15, 40, TradeItemCategories.Good))),
+            InstalledModules: ImmutableArray.Create(
+                new InstalledModuleSnapshot(
+                    ModuleId: "MOD-CONTAINER", ModuleTypeId: "module.container", DisplayName: "Container",
+                    Position: 0, CommandTypeIds: ImmutableArray.Create(TradeCommandTypes.Buy, TradeCommandTypes.Sell),
+                    Cargo: ImmutableArray.Create(
+                        new CargoStackSnapshot("item.fuel", 200),
+                        new CargoStackSnapshot("item.water", 3))))));
+
+        var screen = new TradeScreen(buffer);
+
+        // Row order: Fuel, Steel, Water.
+        Assert.Equal(screen.GoodSellingPrices, screen.GoodBuyingPrices);
+        Assert.Equal(new[] { "200", "0", "3" }, screen.GoodBuyingCounts);
+    }
+
+    [Fact]
+    public void Clicking_a_good_column_title_sorts_by_it_ascending()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+        Assert.Equal(GridSortColumn.Name, screen.SortColumnGoods);
+        Assert.False(screen.SortDescendingGoods);
+
+        var (x, y) = GoodTrailingColumnHeaderCenter(columnIndex: 1); // Selling count
+        screen.OnMouseDown(x, y);
+
+        Assert.Equal(GridSortColumn.SellingCount, screen.SortColumnGoods);
+        Assert.False(screen.SortDescendingGoods);
+        Assert.Equal(
+            new[] { "Water", "Steel", "Energy Cells", "Food Rations", "Protein Mass", "Fuel" },
+            screen.GoodNames);
+        Assert.Equal(new[] { "14", "40", "50", "90", "110", "700" }, screen.GoodSellingCounts);
+    }
+
+    [Fact]
+    public void Clicking_the_same_good_column_title_again_flips_the_sort_direction()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+
+        var (x, y) = GoodTrailingColumnHeaderCenter(columnIndex: 1); // Selling count
+        screen.OnMouseDown(x, y);
+        screen.OnMouseDown(x, y);
+
+        Assert.Equal(GridSortColumn.SellingCount, screen.SortColumnGoods);
+        Assert.True(screen.SortDescendingGoods);
+        Assert.Equal(new[] { "700", "110", "90", "50", "40", "14" }, screen.GoodSellingCounts);
+    }
+
+    /// <summary>Sorting the Goods grid must not disturb the independent Resources grid's own sort state.</summary>
+    [Fact]
+    public void Sorting_the_goods_grid_does_not_affect_the_resources_grid_sort_state()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+
+        var (x, y) = GoodTrailingColumnHeaderCenter(columnIndex: 1); // Selling count
+        screen.OnMouseDown(x, y);
+
+        Assert.Equal(GridSortColumn.SellingCount, screen.SortColumnGoods);
+        Assert.Equal(GridSortColumn.Name, screen.SortColumn);
+        Assert.False(screen.SortDescending);
+    }
+
+    /// <summary>Re-sorting invalidates index-based selection — the row under the old index is very likely a different item now.</summary>
+    [Fact]
+    public void Good_row_selection_survives_a_resort_and_follows_the_selected_item_to_its_new_position()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+
+        // Default sort (Name ascending): Energy Cells, Food Rations, Fuel, Protein Mass,
+        // Steel, Water — row slot 1 is "Food Rations".
+        var (rowX, rowY) = GoodRowCenter(rowSlot: 1);
+        screen.OnMouseDown(rowX, rowY);
+        Assert.Equal(1, screen.SelectedGoodIndex);
+        Assert.Equal("Food Rations", screen.GoodNames[screen.SelectedGoodIndex!.Value]);
+
+        // Sort by Selling count ascending: Water(14), Steel(40), Energy Cells(50),
+        // Food Rations(90), Protein Mass(110), Fuel(700) — "Food Rations" is now at index 3.
+        var (titleX, titleY) = GoodTrailingColumnHeaderCenter(columnIndex: 1);
+        screen.OnMouseDown(titleX, titleY);
+
+        Assert.Equal(3, screen.SelectedGoodIndex);
+        Assert.Equal("Food Rations", screen.GoodNames[screen.SelectedGoodIndex!.Value]);
+    }
+
+    /// <summary>Regression coverage mirroring the Resources grid's scrollbar fix, for the Goods grid.</summary>
+    [Fact]
+    public void Goods_scrollbar_down_arrow_advances_the_scroll_offset_when_rows_exceed_the_visible_window()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+        Assert.Equal(6, screen.GoodNames.Length);
+        Assert.Equal(0, screen.ScrollOffsetGoods);
+
+        var local = GridPanel.ScrollDownArrowLocalRect(15f, 300f, screen.GoodNames.Length);
+        float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
+
+        screen.OnMouseDown(x, y);
+        Assert.Equal(1, screen.ScrollOffsetGoods);
+
+        // Clamped at GridPanel.MaxScrollOffset(6) = 1 — a further click must not overshoot.
+        screen.OnMouseDown(x, y);
+        Assert.Equal(1, screen.ScrollOffsetGoods);
+    }
+
+    /// <summary>The mouse wheel scrolls whichever grid the pointer is over — hovering the Goods grid's rows must scroll it, not the Resources grid.</summary>
+    [Fact]
+    public void Mouse_wheel_over_the_goods_grid_scrolls_it_and_clamps_at_both_bounds()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+        Assert.Equal(0, screen.ScrollOffsetGoods);
+
+        var (x, y) = GoodRowCenter(rowSlot: 0);
+
+        screen.OnMouseWheel(x, y, -1f);
+        Assert.Equal(1, screen.ScrollOffsetGoods);
+        Assert.Equal(0, screen.ScrollOffset); // Resources grid untouched.
+
+        // Clamped at GridPanel.MaxScrollOffset(6) = 1 — a further tick the same direction must not overshoot.
+        screen.OnMouseWheel(x, y, -1f);
+        Assert.Equal(1, screen.ScrollOffsetGoods);
+
+        screen.OnMouseWheel(x, y, 1f);
+        Assert.Equal(0, screen.ScrollOffsetGoods);
+    }
+
+    [Fact]
+    public void Dragging_the_goods_scrollbar_thumb_moves_the_scroll_offset()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+
+        var thumbLocal = GridPanel.ScrollThumbLocalRect(15f, 300f, screen.GoodNames.Length, screen.ScrollOffsetGoods);
+        float pl = TradeLayout.PanelLeft(ScreenWidth);
+        float pt = TradeLayout.PanelTop(ScreenHeight);
+        float grabX = pl + thumbLocal.MidX;
+        float grabY = pt + thumbLocal.MidY;
+
+        // Grab the thumb, then drag it well past the track's bottom — must clamp at
+        // GridPanel.MaxScrollOffset(6) = 1, not overshoot or throw.
+        screen.OnMouseDown(grabX, grabY);
+        screen.OnMouseMove(grabX, pt + 1000f);
+        Assert.Equal(1, screen.ScrollOffsetGoods);
+
+        // Drag back up past the track's top — must clamp at 0.
+        screen.OnMouseMove(grabX, pt - 1000f);
+        Assert.Equal(0, screen.ScrollOffsetGoods);
+
+        // Releasing ends the drag — further movement must not change the offset.
+        screen.OnMouseUp(grabX, pt + 1000f);
+        screen.OnMouseMove(grabX, pt + 1000f);
+        Assert.Equal(0, screen.ScrollOffsetGoods);
+    }
+
+    [Fact]
+    public void Clicking_a_good_row_selects_it()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+        Assert.Null(screen.SelectedGoodIndex);
+
+        var (x, y) = GoodRowCenter(rowSlot: 2);
+        screen.OnMouseDown(x, y);
+
+        Assert.Equal(2, screen.SelectedGoodIndex);
+    }
+
+    /// <summary>Selecting a row in one grid must not select or clear anything in the other grid.</summary>
+    [Fact]
+    public void Selecting_a_good_row_does_not_affect_the_resources_grid_selection()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+
+        var (resourceX, resourceY) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(resourceX, resourceY);
+        Assert.Equal(0, screen.SelectedResourceIndex);
+
+        var (goodX, goodY) = GoodRowCenter(rowSlot: 2);
+        screen.OnMouseDown(goodX, goodY);
+
+        Assert.Equal(2, screen.SelectedGoodIndex);
+        Assert.Equal(0, screen.SelectedResourceIndex);
+    }
+
+    /// <summary>Screen-space center of the goods grid's visible row slot (0 = topmost drawn row) — see GridPanel's origin (15, 300), directly below the Resources grid's (15, 76).</summary>
+    private static (float X, float Y) GoodRowCenter(int rowSlot)
+    {
+        var local = GridPanel.RowLocalRect(15f, 300f, rowSlot);
+        float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
+        return (x, y);
+    }
+
+    /// <summary>Screen-space center of the goods grid's trailing column header <paramref name="columnIndex"/> (0=Selling price, 1=Selling count, 2=Buying price, 3=Buying count).</summary>
+    private static (float X, float Y) GoodTrailingColumnHeaderCenter(int columnIndex)
+    {
+        var local = GridPanel.TrailingColumnHeaderLocalRect(15f, 300f, columnIndex);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);

@@ -33,6 +33,10 @@ public sealed class TradeScreen : IScreen
     private bool _isScrollUpHovered;
     private bool _isScrollDownHovered;
 
+    /// <summary>Same role as <see cref="_isScrollUpHovered"/>/<see cref="_isScrollDownHovered"/>, for the Goods grid's own scrollbar arrows (see <see cref="GridPanelOriginYGoods"/>).</summary>
+    private bool _isScrollUpHoveredGoods;
+    private bool _isScrollDownHoveredGoods;
+
     /// <summary>
     /// Index of the first resource row currently shown, 0..<see cref="GridPanel.MaxScrollOffset"/>
     /// of the docked station's resource count — clamped after every arrow click/wheel tick/
@@ -89,6 +93,49 @@ public sealed class TradeScreen : IScreen
     internal bool SortDescending => _sortDescending;
 
     /// <summary>
+    /// Index of the first good row currently shown — same role as <see cref="_scrollOffset"/>
+    /// but for the Goods grid drawn below the Resources grid (see
+    /// <see cref="GridPanelOriginYGoods"/>).
+    /// </summary>
+    private int _scrollOffsetGoods;
+
+    /// <summary>Test seam — current goods-grid scroll offset (see <see cref="_scrollOffsetGoods"/>).</summary>
+    internal int ScrollOffsetGoods => _scrollOffsetGoods;
+
+    /// <summary>True while the Goods grid's scrollbar thumb is being dragged — Goods-grid equivalent of <see cref="_isDraggingScrollThumb"/>.</summary>
+    private bool _isDraggingScrollThumbGoods;
+
+    /// <summary>Goods-grid equivalent of <see cref="_scrollThumbDragGrabOffsetY"/>.</summary>
+    private float _scrollThumbDragGrabOffsetYGoods;
+
+    /// <summary>Identity-based selection for the Goods grid — same scheme as <see cref="_selectedResourceItemTypeId"/>.</summary>
+    private string? _selectedGoodItemTypeId;
+
+    /// <summary>Test seam — current goods-grid row selection, resolved to its index in the current sort order (see <see cref="_selectedGoodItemTypeId"/>).</summary>
+    internal int? SelectedGoodIndex =>
+        ResolveSelectedGoodRowIndex(ResolveGoodRows(_buffer?.Latest?.Snapshot, _sortColumnGoods, _sortDescendingGoods));
+
+    /// <summary>Index of <see cref="_selectedGoodItemTypeId"/> within <paramref name="rows"/> (current sort order), or null — Goods-grid equivalent of <see cref="ResolveSelectedRowIndex"/>.</summary>
+    private int? ResolveSelectedGoodRowIndex(ResourceRow[] rows)
+    {
+        if (_selectedGoodItemTypeId is null)
+            return null;
+
+        int index = Array.FindIndex(rows, row => row.ItemTypeId == _selectedGoodItemTypeId);
+        return index >= 0 ? index : null;
+    }
+
+    /// <summary>Column the Goods grid is currently sorted by — independent of the Resources grid's <see cref="_sortColumn"/>.</summary>
+    private GridSortColumn _sortColumnGoods = GridSortColumn.Name;
+    private bool _sortDescendingGoods;
+
+    /// <summary>Test seam — current goods-grid sort column (see <see cref="_sortColumnGoods"/>).</summary>
+    internal GridSortColumn SortColumnGoods => _sortColumnGoods;
+
+    /// <summary>Test seam — current goods-grid sort direction (see <see cref="_sortDescendingGoods"/>).</summary>
+    internal bool SortDescendingGoods => _sortDescendingGoods;
+
+    /// <summary>
     /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
     /// food-rations readout, or null while not hovering it — the tooltip only appears
     /// once MenuStyle.TooltipHoverDelaySeconds has elapsed since this moment (checked in
@@ -141,6 +188,14 @@ public sealed class TradeScreen : IScreen
     private const float GridPanelOriginY = 76f;
     private const string ResourcesGridTitle = "Resources";
 
+    /// <summary>
+    /// Anchor for the Goods grid, same <see cref="GridPanelOriginX"/> column directly below
+    /// the Resources grid: <see cref="GridPanelOriginY"/> (76) + header-to-last-row-bottom
+    /// (44 + <see cref="GridPanel.MaxVisibleRows"/>×30 = 194) + a 30px gap between the two panels.
+    /// </summary>
+    private const float GridPanelOriginYGoods = GridPanelOriginY + 194f + 30f;
+    private const string GoodsGridTitle = "Goods";
+
     /// <summary>Test seam — the resources grid's current row labels (see <see cref="ResolveResourceRows"/>).</summary>
     internal string[] ResourceNames => ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending).Select(row => row.Name).ToArray();
 
@@ -155,6 +210,21 @@ public sealed class TradeScreen : IScreen
 
     /// <summary>Test seam — the resources grid's current "Buying count" column values (player's ship cargo quantity), same row order as <see cref="ResourceNames"/>.</summary>
     internal string[] ResourceBuyingCounts => ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending).Select(row => row.BuyingCount).ToArray();
+
+    /// <summary>Test seam — the goods grid's current row labels (see <see cref="ResolveGoodRows"/>).</summary>
+    internal string[] GoodNames => ResolveGoodRows(_buffer?.Latest?.Snapshot, _sortColumnGoods, _sortDescendingGoods).Select(row => row.Name).ToArray();
+
+    /// <summary>Test seam — the goods grid's current "Selling price" column values, same row order as <see cref="GoodNames"/>.</summary>
+    internal string[] GoodSellingPrices => ResolveGoodRows(_buffer?.Latest?.Snapshot, _sortColumnGoods, _sortDescendingGoods).Select(row => row.SellingPrice).ToArray();
+
+    /// <summary>Test seam — the goods grid's current "Selling count" column values, same row order as <see cref="GoodNames"/>.</summary>
+    internal string[] GoodSellingCounts => ResolveGoodRows(_buffer?.Latest?.Snapshot, _sortColumnGoods, _sortDescendingGoods).Select(row => row.SellingCount).ToArray();
+
+    /// <summary>Test seam — the goods grid's current "Buying price" column values, same row order as <see cref="GoodNames"/>.</summary>
+    internal string[] GoodBuyingPrices => ResolveGoodRows(_buffer?.Latest?.Snapshot, _sortColumnGoods, _sortDescendingGoods).Select(row => row.BuyingPrice).ToArray();
+
+    /// <summary>Test seam — the goods grid's current "Buying count" column values, same row order as <see cref="GoodNames"/>.</summary>
+    internal string[] GoodBuyingCounts => ResolveGoodRows(_buffer?.Latest?.Snapshot, _sortColumnGoods, _sortDescendingGoods).Select(row => row.BuyingCount).ToArray();
 
     /// <summary>
     /// One resources-grid row: display name plus its Selling/Buying price+count column
@@ -188,6 +258,52 @@ public sealed class TradeScreen : IScreen
 
         var rows = items
             .Where(item => item.Category == TradeItemCategories.Resource)
+            .Select(item =>
+            {
+                long shipQuantity = playerCargo.TryGetValue(item.ItemTypeId, out long quantity) ? quantity : 0;
+                return new ResourceRowData(
+                    item.ItemTypeId, ItemDisplayName(item.ItemTypeId),
+                    SellingPrice: item.UnitPriceCredits, SellingCount: item.StockQuantity,
+                    BuyingPrice: item.UnitPriceCredits, BuyingCount: shipQuantity);
+            });
+
+        IEnumerable<ResourceRowData> sorted = (sortColumn, sortDescending) switch
+        {
+            (GridSortColumn.Name, false) => rows.OrderBy(row => row.Name, StringComparer.Ordinal),
+            (GridSortColumn.Name, true) => rows.OrderByDescending(row => row.Name, StringComparer.Ordinal),
+            (GridSortColumn.SellingPrice, false) => rows.OrderBy(row => row.SellingPrice),
+            (GridSortColumn.SellingPrice, true) => rows.OrderByDescending(row => row.SellingPrice),
+            (GridSortColumn.SellingCount, false) => rows.OrderBy(row => row.SellingCount),
+            (GridSortColumn.SellingCount, true) => rows.OrderByDescending(row => row.SellingCount),
+            (GridSortColumn.BuyingPrice, false) => rows.OrderBy(row => row.BuyingPrice),
+            (GridSortColumn.BuyingPrice, true) => rows.OrderByDescending(row => row.BuyingPrice),
+            (GridSortColumn.BuyingCount, false) => rows.OrderBy(row => row.BuyingCount),
+            (GridSortColumn.BuyingCount, true) => rows.OrderByDescending(row => row.BuyingCount),
+            _ => rows.OrderBy(row => row.Name, StringComparer.Ordinal)
+        };
+
+        return sorted
+            .Select(row => new ResourceRow(
+                row.ItemTypeId, row.Name, row.SellingPrice.ToString(), row.SellingCount.ToString(),
+                row.BuyingPrice.ToString(), row.BuyingCount.ToString()))
+            .ToArray();
+    }
+
+    /// <summary>
+    /// The docked station's <see cref="TradeItemCategories.Good"/> items — same shape,
+    /// sourcing and sort logic as <see cref="ResolveResourceRows"/>, just filtered to the
+    /// other trade category (e.g. Fuel, Energy Cells, Food Rations) for the Goods grid.
+    /// </summary>
+    private static ResourceRow[] ResolveGoodRows(AuthoritativeSnapshot? snapshot, GridSortColumn sortColumn, bool sortDescending)
+    {
+        var items = snapshot?.DockedStationTrade?.Items ?? default;
+        if (items.IsDefaultOrEmpty)
+            return Array.Empty<ResourceRow>();
+
+        var playerCargo = ResolvePlayerCargo(snapshot);
+
+        var rows = items
+            .Where(item => item.Category == TradeItemCategories.Good)
             .Select(item =>
             {
                 long shipQuantity = playerCargo.TryGetValue(item.ItemTypeId, out long quantity) ? quantity : 0;
@@ -255,6 +371,12 @@ public sealed class TradeScreen : IScreen
         "item.magnesium-ore" => Localization.Get("Trade.ItemMagnesiumOre"),
         "item.uranium-ore" => Localization.Get("Trade.ItemUraniumOre"),
         "item.carbon-ore" => Localization.Get("Trade.ItemCarbonOre"),
+        "item.water" => Localization.Get("Trade.ItemWater"),
+        "item.steel" => Localization.Get("Trade.ItemSteel"),
+        "item.energy-cells" => Localization.Get("Trade.ItemEnergyCells"),
+        "item.fuel" => Localization.Get("Trade.ItemFuel"),
+        "item.protein-mass" => Localization.Get("Trade.ItemProteinMass"),
+        "item.food-rations" => Localization.Get("Trade.ItemFoodRations"),
         _ => itemTypeId
     };
 
@@ -271,6 +393,10 @@ public sealed class TradeScreen : IScreen
         _isScrollDownHovered = false;
         _isDraggingScrollThumb = false;
         _selectedResourceItemTypeId = null;
+        _isScrollUpHoveredGoods = false;
+        _isScrollDownHoveredGoods = false;
+        _isDraggingScrollThumbGoods = false;
+        _selectedGoodItemTypeId = null;
         _foodRationsHoverStartedAtMs = null;
         _crewHoverStartedAtMs = null;
         _tokensHoverStartedAtMs = null;
@@ -337,6 +463,50 @@ public sealed class TradeScreen : IScreen
             return ScreenEvent.None;
         }
 
+        var goodRows = ResolveGoodRows(_buffer?.Latest?.Snapshot, _sortColumnGoods, _sortDescendingGoods);
+        int goodRowCount = goodRows.Length;
+        if (GridPanel.IsScrollbarActive(goodRowCount))
+        {
+            if (IsScrollUpArrowHitGoods(x, y))
+            {
+                _scrollOffsetGoods = Math.Max(0, _scrollOffsetGoods - 1);
+                return ScreenEvent.None;
+            }
+
+            if (IsScrollDownArrowHitGoods(x, y))
+            {
+                _scrollOffsetGoods = Math.Min(GridPanel.MaxScrollOffset(goodRowCount), _scrollOffsetGoods + 1);
+                return ScreenEvent.None;
+            }
+
+            float pt = TradeLayout.PanelTop(_screenHeight);
+            var thumbLocalGoods = GridPanel.ScrollThumbLocalRect(GridPanelOriginX, GridPanelOriginYGoods, goodRowCount, _scrollOffsetGoods);
+            float clickLocalYGoods = y - pt;
+            if (IsScrollThumbHitGoods(x, y))
+            {
+                _isDraggingScrollThumbGoods = true;
+                _scrollThumbDragGrabOffsetYGoods = clickLocalYGoods - thumbLocalGoods.Top;
+                return ScreenEvent.None;
+            }
+        }
+
+        var hitGoodColumnTitle = HitTestGoodColumnTitle(x, y);
+        if (hitGoodColumnTitle is { } clickedGoodColumn)
+        {
+            _sortDescendingGoods = _sortColumnGoods == clickedGoodColumn && !_sortDescendingGoods;
+            _sortColumnGoods = clickedGoodColumn;
+            // Selection is identity-based (_selectedGoodItemTypeId), not index-based — it
+            // survives the resort and is resolved back to wherever that item now sits.
+            return ScreenEvent.None;
+        }
+
+        int hitGoodRowIndex = HitTestGoodRow(x, y, goodRowCount);
+        if (hitGoodRowIndex >= 0)
+        {
+            _selectedGoodItemTypeId = goodRows[hitGoodRowIndex].ItemTypeId;
+            return ScreenEvent.None;
+        }
+
         // Click on the dimmed background outside the panel also closes it.
         if (!TradeLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
             return ScreenEvent.CloseTrade;
@@ -352,6 +522,14 @@ public sealed class TradeScreen : IScreen
         return GridPanel.HitTestRow(GridPanelOriginX, GridPanelOriginY, resourceRowCount, _scrollOffset, x - pl, y - pt);
     }
 
+    /// <summary>Absolute goods-grid row index hit by a click at screen coordinates (x, y), or -1 — see <see cref="GridPanel.HitTestRow"/>.</summary>
+    private int HitTestGoodRow(float x, float y, int goodRowCount)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        return GridPanel.HitTestRow(GridPanelOriginX, GridPanelOriginYGoods, goodRowCount, _scrollOffsetGoods, x - pl, y - pt);
+    }
+
     /// <summary>Sortable column title (see <see cref="GridPanel.HitTestColumnTitle"/>) at screen coordinates (x, y), or null — drives both click-to-sort and the hover cursor swap.</summary>
     private GridSortColumn? HitTestColumnTitle(float x, float y)
     {
@@ -360,11 +538,23 @@ public sealed class TradeScreen : IScreen
         return GridPanel.HitTestColumnTitle(GridPanelOriginX, GridPanelOriginY, ResourcesGridTitle, x - pl, y - pt);
     }
 
+    /// <summary>Same as <see cref="HitTestColumnTitle"/> but for the Goods grid.</summary>
+    private GridSortColumn? HitTestGoodColumnTitle(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        return GridPanel.HitTestColumnTitle(GridPanelOriginX, GridPanelOriginYGoods, GoodsGridTitle, x - pl, y - pt);
+    }
+
     /// <summary>Convenience shortcut for a left click — kept for existing call-site/test conventions.</summary>
     public ScreenEvent OnMouseDown(float x, float y) => OnMouseDown(x, y, MouseButton.Left);
 
-    /// <summary>Ends a scrollbar-thumb drag on left-button release, wherever the pointer ends up — see <see cref="_isDraggingScrollThumb"/>.</summary>
-    public void OnMouseUp(float x, float y) => _isDraggingScrollThumb = false;
+    /// <summary>Ends a scrollbar-thumb drag on left-button release, wherever the pointer ends up — see <see cref="_isDraggingScrollThumb"/>/<see cref="_isDraggingScrollThumbGoods"/>.</summary>
+    public void OnMouseUp(float x, float y)
+    {
+        _isDraggingScrollThumb = false;
+        _isDraggingScrollThumbGoods = false;
+    }
 
     public bool OnMouseMove(float x, float y)
     {
@@ -376,12 +566,25 @@ public sealed class TradeScreen : IScreen
             _scrollOffset = GridPanel.ResolveScrollOffsetForThumbTop(GridPanelOriginX, GridPanelOriginY, resourceRowCount, desiredThumbTopLocalY);
         }
 
+        if (_isDraggingScrollThumbGoods)
+        {
+            int goodRowCount = CurrentGoodRowCount();
+            float pt = TradeLayout.PanelTop(_screenHeight);
+            float desiredThumbTopLocalYGoods = (y - pt) - _scrollThumbDragGrabOffsetYGoods;
+            _scrollOffsetGoods = GridPanel.ResolveScrollOffsetForThumbTop(GridPanelOriginX, GridPanelOriginYGoods, goodRowCount, desiredThumbTopLocalYGoods);
+        }
+
         _isStationNameHovered = IsStationNameHit(x, y);
         _isExitButtonHovered = IsExitButtonHit(x, y);
         bool isScrollbarActive = GridPanel.IsScrollbarActive(CurrentResourceRowCount());
         _isScrollUpHovered = isScrollbarActive && IsScrollUpArrowHit(x, y);
         _isScrollDownHovered = isScrollbarActive && IsScrollDownArrowHit(x, y);
         bool isColumnTitleHovered = HitTestColumnTitle(x, y) is not null;
+
+        bool isGoodsScrollbarActive = GridPanel.IsScrollbarActive(CurrentGoodRowCount());
+        _isScrollUpHoveredGoods = isGoodsScrollbarActive && IsScrollUpArrowHitGoods(x, y);
+        _isScrollDownHoveredGoods = isGoodsScrollbarActive && IsScrollDownArrowHitGoods(x, y);
+        bool isGoodColumnTitleHovered = HitTestGoodColumnTitle(x, y) is not null;
 
         // Not a button — hovering it only shows a delayed tooltip (see Render), so it must
         // not affect the interactive-cursor swap the way the name link / exit button do.
@@ -406,15 +609,37 @@ public sealed class TradeScreen : IScreen
             _fuelHoverStartedAtMs = null;
 
         return _isStationNameHovered || _isExitButtonHovered || _isScrollUpHovered || _isScrollDownHovered
-            || _isDraggingScrollThumb || isColumnTitleHovered;
+            || _isDraggingScrollThumb || isColumnTitleHovered
+            || _isScrollUpHoveredGoods || _isScrollDownHoveredGoods || _isDraggingScrollThumbGoods || isGoodColumnTitleHovered;
     }
 
-    /// <summary>Scrolls the resources grid one row per wheel tick — same direction convention as SaveScreen's slot-list wheel scroll.</summary>
+    /// <summary>
+    /// Scrolls whichever grid the pointer is currently over one row per wheel tick — same
+    /// direction convention as SaveScreen's slot-list wheel scroll. Defaults to the
+    /// Resources grid when the pointer is over neither grid's row area, matching this
+    /// method's original (position-agnostic) behavior from before the Goods grid existed.
+    /// </summary>
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
+        if (IsWithinGoodGridRows(y))
+        {
+            int maxOffsetGoods = GridPanel.MaxScrollOffset(CurrentGoodRowCount());
+            _scrollOffsetGoods = Math.Clamp(_scrollOffsetGoods - Math.Sign(delta), 0, maxOffsetGoods);
+            return ScreenEvent.None;
+        }
+
         int maxOffset = GridPanel.MaxScrollOffset(CurrentResourceRowCount());
         _scrollOffset = Math.Clamp(_scrollOffset - Math.Sign(delta), 0, maxOffset);
         return ScreenEvent.None;
+    }
+
+    /// <summary>True when screen-space <paramref name="y"/> falls within the Goods grid's header+rows band (see <see cref="GridPanelOriginYGoods"/>) — used to route wheel scrolling to the grid under the pointer.</summary>
+    private bool IsWithinGoodGridRows(float y)
+    {
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var header = GridPanel.HeaderLocalRect(GridPanelOriginX, GridPanelOriginYGoods);
+        var lastRow = GridPanel.RowLocalRect(GridPanelOriginX, GridPanelOriginYGoods, GridPanel.MaxVisibleRows - 1);
+        return y >= pt + header.Top && y <= pt + lastRow.Bottom;
     }
 
     public void Render(SKCanvas canvas, int width, int height)
@@ -457,6 +682,18 @@ public sealed class TradeScreen : IScreen
             resourceSellingPrices, resourceSellingCounts, resourceBuyingPrices, resourceBuyingCounts,
             ResolveSelectedRowIndex(resourceRows), _sortColumn, _sortDescending);
 
+        var goodRows = ResolveGoodRows(snapshot, _sortColumnGoods, _sortDescendingGoods);
+        _scrollOffsetGoods = Math.Clamp(_scrollOffsetGoods, 0, GridPanel.MaxScrollOffset(goodRows.Length));
+        var goodNames = Array.ConvertAll(goodRows, row => row.Name);
+        var goodSellingPrices = Array.ConvertAll(goodRows, row => row.SellingPrice);
+        var goodSellingCounts = Array.ConvertAll(goodRows, row => row.SellingCount);
+        var goodBuyingPrices = Array.ConvertAll(goodRows, row => row.BuyingPrice);
+        var goodBuyingCounts = Array.ConvertAll(goodRows, row => row.BuyingCount);
+        GridPanel.Draw(canvas, pl + GridPanelOriginX, pt + GridPanelOriginYGoods, GoodsGridTitle, goodRows.Length,
+            _scrollOffsetGoods, _isScrollUpHoveredGoods, _isScrollDownHoveredGoods, goodNames,
+            goodSellingPrices, goodSellingCounts, goodBuyingPrices, goodBuyingCounts,
+            ResolveSelectedGoodRowIndex(goodRows), _sortColumnGoods, _sortDescendingGoods);
+
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.
         StationToolbar.DrawTooltips(canvas, pl, pt,
@@ -468,6 +705,9 @@ public sealed class TradeScreen : IScreen
 
     /// <summary>Current resources-grid row count, from the docked station's live trade snapshot — see <see cref="ResolveResourceRows"/>.</summary>
     private int CurrentResourceRowCount() => ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending).Length;
+
+    /// <summary>Current goods-grid row count, from the docked station's live trade snapshot — see <see cref="ResolveGoodRows"/>.</summary>
+    private int CurrentGoodRowCount() => ResolveGoodRows(_buffer?.Latest?.Snapshot, _sortColumnGoods, _sortDescendingGoods).Length;
 
     /// <summary>True when (x, y) lands on the resources grid's scrollbar up-arrow button (see <see cref="GridPanel.ScrollUpArrowLocalRect"/>).</summary>
     private bool IsScrollUpArrowHit(float x, float y)
@@ -493,6 +733,33 @@ public sealed class TradeScreen : IScreen
         float pl = TradeLayout.PanelLeft(_screenWidth);
         float pt = TradeLayout.PanelTop(_screenHeight);
         var local = GridPanel.ScrollThumbLocalRect(GridPanelOriginX, GridPanelOriginY, CurrentResourceRowCount(), _scrollOffset);
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>Same as <see cref="IsScrollUpArrowHit"/> but for the Goods grid's scrollbar.</summary>
+    private bool IsScrollUpArrowHitGoods(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = GridPanel.ScrollUpArrowLocalRect(GridPanelOriginX, GridPanelOriginYGoods, CurrentGoodRowCount());
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>Same as <see cref="IsScrollDownArrowHit"/> but for the Goods grid's scrollbar.</summary>
+    private bool IsScrollDownArrowHitGoods(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = GridPanel.ScrollDownArrowLocalRect(GridPanelOriginX, GridPanelOriginYGoods, CurrentGoodRowCount());
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>Same as <see cref="IsScrollThumbHit"/> but for the Goods grid's scrollbar thumb (checked against <see cref="_scrollOffsetGoods"/>).</summary>
+    private bool IsScrollThumbHitGoods(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = GridPanel.ScrollThumbLocalRect(GridPanelOriginX, GridPanelOriginYGoods, CurrentGoodRowCount(), _scrollOffsetGoods);
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
