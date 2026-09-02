@@ -817,9 +817,9 @@ public class TradeScreenTests
         Assert.Equal(2, screen.SelectedGoodIndex);
     }
 
-    /// <summary>Selecting a row in one grid must not select or clear anything in the other grid.</summary>
+    /// <summary>The two grids share a single selection — picking a row in one grid clears whatever was selected in the other.</summary>
     [Fact]
-    public void Selecting_a_good_row_does_not_affect_the_resources_grid_selection()
+    public void Selecting_a_good_row_clears_the_resources_grid_selection_and_vice_versa()
     {
         var screen = new TradeScreen(DockedBufferWithSixGoods());
         RenderScreen(screen);
@@ -832,7 +832,14 @@ public class TradeScreenTests
         screen.OnMouseDown(goodX, goodY);
 
         Assert.Equal(2, screen.SelectedGoodIndex);
+        Assert.Null(screen.SelectedResourceIndex);
+
+        // DockedBufferWithSixGoods has a single Resource item (Ice), so row slot 0 is the
+        // only clickable Resources row — re-selecting it must clear the Goods selection.
+        screen.OnMouseDown(resourceX, resourceY);
+
         Assert.Equal(0, screen.SelectedResourceIndex);
+        Assert.Null(screen.SelectedGoodIndex);
     }
 
     /// <summary>Screen-space center of the goods grid's visible row slot (0 = topmost drawn row) — see GridPanel's origin (15, 300), directly below the Resources grid's (15, 76).</summary>

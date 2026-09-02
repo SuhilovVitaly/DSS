@@ -460,6 +460,8 @@ public sealed class TradeScreen : IScreen
         if (hitRowIndex >= 0)
         {
             _selectedResourceItemTypeId = resourceRows[hitRowIndex].ItemTypeId;
+            // The two grids share a single selection — picking a row in one clears the other.
+            _selectedGoodItemTypeId = null;
             return ScreenEvent.None;
         }
 
@@ -504,6 +506,8 @@ public sealed class TradeScreen : IScreen
         if (hitGoodRowIndex >= 0)
         {
             _selectedGoodItemTypeId = goodRows[hitGoodRowIndex].ItemTypeId;
+            // The two grids share a single selection — picking a row in one clears the other.
+            _selectedResourceItemTypeId = null;
             return ScreenEvent.None;
         }
 
