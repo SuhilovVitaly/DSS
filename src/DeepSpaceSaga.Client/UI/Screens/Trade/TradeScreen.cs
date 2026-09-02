@@ -175,8 +175,13 @@ public sealed class TradeScreen : IScreen
 
     private const string PlaceholderLine = "Trade: awaiting redesign";
 
-    /// <summary>Outline marking the future content area, ahead of the real redesign layout.</summary>
+    /// <summary>Outline marking the future content area around the Resources grid, ahead of the real redesign layout.</summary>
     private static readonly SKRect _contentOutlineRect = new(10f, 90f, 10f + 980f, 90f + 200f);
+
+    /// <summary>Same outline as <see cref="_contentOutlineRect"/>, shifted down by the same offset as <see cref="GridPanelOriginYGoods"/> is from <see cref="GridPanelOriginY"/>, to frame the Goods grid below it.</summary>
+    private static readonly SKRect _contentOutlineRectGoods = new(
+        _contentOutlineRect.Left, _contentOutlineRect.Top + (GridPanelOriginYGoods - GridPanelOriginY),
+        _contentOutlineRect.Right, _contentOutlineRect.Bottom + (GridPanelOriginYGoods - GridPanelOriginY));
 
     private static readonly SKPaint _contentOutlinePaint = new()
     {
@@ -673,6 +678,10 @@ public sealed class TradeScreen : IScreen
         var contentRect = new SKRect(pl + _contentOutlineRect.Left, pt + _contentOutlineRect.Top,
             pl + _contentOutlineRect.Right, pt + _contentOutlineRect.Bottom);
         canvas.DrawRect(contentRect, _contentOutlinePaint);
+
+        var contentRectGoods = new SKRect(pl + _contentOutlineRectGoods.Left, pt + _contentOutlineRectGoods.Top,
+            pl + _contentOutlineRectGoods.Right, pt + _contentOutlineRectGoods.Bottom);
+        canvas.DrawRect(contentRectGoods, _contentOutlinePaint);
 
         var resourceRows = ResolveResourceRows(snapshot, _sortColumn, _sortDescending);
         _scrollOffset = Math.Clamp(_scrollOffset, 0, GridPanel.MaxScrollOffset(resourceRows.Length));
