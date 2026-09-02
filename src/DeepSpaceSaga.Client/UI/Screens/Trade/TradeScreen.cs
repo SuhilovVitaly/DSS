@@ -37,6 +37,10 @@ public sealed class TradeScreen : IScreen
     private bool _isScrollUpHoveredGoods;
     private bool _isScrollDownHoveredGoods;
 
+    /// <summary>Same role as <see cref="_isScrollUpHovered"/>/<see cref="_isScrollDownHovered"/>, for the Modules grid's own scrollbar arrows (see <see cref="GridPanelOriginYModules"/>).</summary>
+    private bool _isScrollUpHoveredModules;
+    private bool _isScrollDownHoveredModules;
+
     /// <summary>
     /// Index of the first resource row currently shown, 0..<see cref="GridPanel.MaxScrollOffset"/>
     /// of the docked station's resource count — clamped after every arrow click/wheel tick/
@@ -136,6 +140,49 @@ public sealed class TradeScreen : IScreen
     internal bool SortDescendingGoods => _sortDescendingGoods;
 
     /// <summary>
+    /// Index of the first module row currently shown — same role as <see cref="_scrollOffset"/>
+    /// but for the Modules grid drawn below the Goods grid (see
+    /// <see cref="GridPanelOriginYModules"/>).
+    /// </summary>
+    private int _scrollOffsetModules;
+
+    /// <summary>Test seam — current modules-grid scroll offset (see <see cref="_scrollOffsetModules"/>).</summary>
+    internal int ScrollOffsetModules => _scrollOffsetModules;
+
+    /// <summary>True while the Modules grid's scrollbar thumb is being dragged — Modules-grid equivalent of <see cref="_isDraggingScrollThumb"/>.</summary>
+    private bool _isDraggingScrollThumbModules;
+
+    /// <summary>Modules-grid equivalent of <see cref="_scrollThumbDragGrabOffsetY"/>.</summary>
+    private float _scrollThumbDragGrabOffsetYModules;
+
+    /// <summary>Identity-based selection for the Modules grid — same scheme as <see cref="_selectedResourceItemTypeId"/>.</summary>
+    private string? _selectedModuleItemTypeId;
+
+    /// <summary>Test seam — current modules-grid row selection, resolved to its index in the current sort order (see <see cref="_selectedModuleItemTypeId"/>).</summary>
+    internal int? SelectedModuleIndex =>
+        ResolveSelectedModuleRowIndex(ResolveModuleRows(_buffer?.Latest?.Snapshot, _sortColumnModules, _sortDescendingModules));
+
+    /// <summary>Index of <see cref="_selectedModuleItemTypeId"/> within <paramref name="rows"/> (current sort order), or null — Modules-grid equivalent of <see cref="ResolveSelectedRowIndex"/>.</summary>
+    private int? ResolveSelectedModuleRowIndex(ResourceRow[] rows)
+    {
+        if (_selectedModuleItemTypeId is null)
+            return null;
+
+        int index = Array.FindIndex(rows, row => row.ItemTypeId == _selectedModuleItemTypeId);
+        return index >= 0 ? index : null;
+    }
+
+    /// <summary>Column the Modules grid is currently sorted by — independent of the other two grids' sort state.</summary>
+    private GridSortColumn _sortColumnModules = GridSortColumn.Name;
+    private bool _sortDescendingModules;
+
+    /// <summary>Test seam — current modules-grid sort column (see <see cref="_sortColumnModules"/>).</summary>
+    internal GridSortColumn SortColumnModules => _sortColumnModules;
+
+    /// <summary>Test seam — current modules-grid sort direction (see <see cref="_sortDescendingModules"/>).</summary>
+    internal bool SortDescendingModules => _sortDescendingModules;
+
+    /// <summary>
     /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
     /// food-rations readout, or null while not hovering it — the tooltip only appears
     /// once MenuStyle.TooltipHoverDelaySeconds has elapsed since this moment (checked in
@@ -183,6 +230,11 @@ public sealed class TradeScreen : IScreen
         _contentOutlineRect.Left, _contentOutlineRect.Top + (GridPanelOriginYGoods - GridPanelOriginY),
         _contentOutlineRect.Right, _contentOutlineRect.Bottom + (GridPanelOriginYGoods - GridPanelOriginY));
 
+    /// <summary>Same outline as <see cref="_contentOutlineRect"/>, shifted down by the same offset as <see cref="GridPanelOriginYModules"/> is from <see cref="GridPanelOriginY"/>, to frame the Modules grid below the Goods grid.</summary>
+    private static readonly SKRect _contentOutlineRectModules = new(
+        _contentOutlineRect.Left, _contentOutlineRect.Top + (GridPanelOriginYModules - GridPanelOriginY),
+        _contentOutlineRect.Right, _contentOutlineRect.Bottom + (GridPanelOriginYModules - GridPanelOriginY));
+
     private static readonly SKPaint _contentOutlinePaint = new()
     {
         Color = SKColors.White, Style = SKPaintStyle.Stroke, StrokeWidth = 1f, IsAntialias = true
@@ -200,6 +252,14 @@ public sealed class TradeScreen : IScreen
     /// </summary>
     private const float GridPanelOriginYGoods = GridPanelOriginY + 194f + 30f;
     private const string GoodsGridTitle = "Goods";
+
+    /// <summary>
+    /// Anchor for the Modules grid, same <see cref="GridPanelOriginX"/> column directly below
+    /// the Goods grid — same 194+30 offset as <see cref="GridPanelOriginYGoods"/> is below
+    /// <see cref="GridPanelOriginY"/>.
+    /// </summary>
+    private const float GridPanelOriginYModules = GridPanelOriginYGoods + 194f + 30f;
+    private const string ModulesGridTitle = "Modules";
 
     /// <summary>Test seam — the resources grid's current row labels (see <see cref="ResolveResourceRows"/>).</summary>
     internal string[] ResourceNames => ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending).Select(row => row.Name).ToArray();
@@ -230,6 +290,21 @@ public sealed class TradeScreen : IScreen
 
     /// <summary>Test seam — the goods grid's current "Buying count" column values, same row order as <see cref="GoodNames"/>.</summary>
     internal string[] GoodBuyingCounts => ResolveGoodRows(_buffer?.Latest?.Snapshot, _sortColumnGoods, _sortDescendingGoods).Select(row => row.BuyingCount).ToArray();
+
+    /// <summary>Test seam — the modules grid's current row labels (see <see cref="ResolveModuleRows"/>) — always empty until real module-trade data exists.</summary>
+    internal string[] ModuleNames => ResolveModuleRows(_buffer?.Latest?.Snapshot, _sortColumnModules, _sortDescendingModules).Select(row => row.Name).ToArray();
+
+    /// <summary>Test seam — the modules grid's current "Selling price" column values, same row order as <see cref="ModuleNames"/>.</summary>
+    internal string[] ModuleSellingPrices => ResolveModuleRows(_buffer?.Latest?.Snapshot, _sortColumnModules, _sortDescendingModules).Select(row => row.SellingPrice).ToArray();
+
+    /// <summary>Test seam — the modules grid's current "Selling count" column values, same row order as <see cref="ModuleNames"/>.</summary>
+    internal string[] ModuleSellingCounts => ResolveModuleRows(_buffer?.Latest?.Snapshot, _sortColumnModules, _sortDescendingModules).Select(row => row.SellingCount).ToArray();
+
+    /// <summary>Test seam — the modules grid's current "Buying price" column values, same row order as <see cref="ModuleNames"/>.</summary>
+    internal string[] ModuleBuyingPrices => ResolveModuleRows(_buffer?.Latest?.Snapshot, _sortColumnModules, _sortDescendingModules).Select(row => row.BuyingPrice).ToArray();
+
+    /// <summary>Test seam — the modules grid's current "Buying count" column values, same row order as <see cref="ModuleNames"/>.</summary>
+    internal string[] ModuleBuyingCounts => ResolveModuleRows(_buffer?.Latest?.Snapshot, _sortColumnModules, _sortDescendingModules).Select(row => row.BuyingCount).ToArray();
 
     /// <summary>
     /// One resources-grid row: display name plus its Selling/Buying price+count column
@@ -341,6 +416,17 @@ public sealed class TradeScreen : IScreen
     }
 
     /// <summary>
+    /// The Modules grid's rows — placeholder always returning no rows, same shape/scroll/
+    /// sort mechanics as <see cref="ResolveResourceRows"/>/<see cref="ResolveGoodRows"/> so
+    /// the grid renders and behaves identically. No station-module-for-sale data model
+    /// exists yet (<see cref="TradeItemCategories"/> only has Resource/Good — see
+    /// <see cref="StationTradeSnapshot"/>); wire this up to real data once one does, the
+    /// same way the other two grids were.
+    /// </summary>
+    private static ResourceRow[] ResolveModuleRows(AuthoritativeSnapshot? snapshot, GridSortColumn sortColumn, bool sortDescending) =>
+        Array.Empty<ResourceRow>();
+
+    /// <summary>
     /// Player's ship cargo, keyed by item type id — from the first installed module (by
     /// Position) whose CommandTypeIds handles Buy, the same "container module" resolution
     /// the pre-redesign TradeScreen used (story file's ResolveModuleId/FindModule).
@@ -402,6 +488,10 @@ public sealed class TradeScreen : IScreen
         _isScrollDownHoveredGoods = false;
         _isDraggingScrollThumbGoods = false;
         _selectedGoodItemTypeId = null;
+        _isScrollUpHoveredModules = false;
+        _isScrollDownHoveredModules = false;
+        _isDraggingScrollThumbModules = false;
+        _selectedModuleItemTypeId = null;
         _foodRationsHoverStartedAtMs = null;
         _crewHoverStartedAtMs = null;
         _tokensHoverStartedAtMs = null;
@@ -465,8 +555,9 @@ public sealed class TradeScreen : IScreen
         if (hitRowIndex >= 0)
         {
             _selectedResourceItemTypeId = resourceRows[hitRowIndex].ItemTypeId;
-            // The two grids share a single selection — picking a row in one clears the other.
+            // The three grids share a single selection — picking a row in one clears the others.
             _selectedGoodItemTypeId = null;
+            _selectedModuleItemTypeId = null;
             return ScreenEvent.None;
         }
 
@@ -511,8 +602,56 @@ public sealed class TradeScreen : IScreen
         if (hitGoodRowIndex >= 0)
         {
             _selectedGoodItemTypeId = goodRows[hitGoodRowIndex].ItemTypeId;
-            // The two grids share a single selection — picking a row in one clears the other.
+            // The three grids share a single selection — picking a row in one clears the others.
             _selectedResourceItemTypeId = null;
+            _selectedModuleItemTypeId = null;
+            return ScreenEvent.None;
+        }
+
+        var moduleRows = ResolveModuleRows(_buffer?.Latest?.Snapshot, _sortColumnModules, _sortDescendingModules);
+        int moduleRowCount = moduleRows.Length;
+        if (GridPanel.IsScrollbarActive(moduleRowCount))
+        {
+            if (IsScrollUpArrowHitModules(x, y))
+            {
+                _scrollOffsetModules = Math.Max(0, _scrollOffsetModules - 1);
+                return ScreenEvent.None;
+            }
+
+            if (IsScrollDownArrowHitModules(x, y))
+            {
+                _scrollOffsetModules = Math.Min(GridPanel.MaxScrollOffset(moduleRowCount), _scrollOffsetModules + 1);
+                return ScreenEvent.None;
+            }
+
+            float pt = TradeLayout.PanelTop(_screenHeight);
+            var thumbLocalModules = GridPanel.ScrollThumbLocalRect(GridPanelOriginX, GridPanelOriginYModules, moduleRowCount, _scrollOffsetModules);
+            float clickLocalYModules = y - pt;
+            if (IsScrollThumbHitModules(x, y))
+            {
+                _isDraggingScrollThumbModules = true;
+                _scrollThumbDragGrabOffsetYModules = clickLocalYModules - thumbLocalModules.Top;
+                return ScreenEvent.None;
+            }
+        }
+
+        var hitModuleColumnTitle = HitTestModuleColumnTitle(x, y);
+        if (hitModuleColumnTitle is { } clickedModuleColumn)
+        {
+            _sortDescendingModules = _sortColumnModules == clickedModuleColumn && !_sortDescendingModules;
+            _sortColumnModules = clickedModuleColumn;
+            // Selection is identity-based (_selectedModuleItemTypeId), not index-based — it
+            // survives the resort and is resolved back to wherever that item now sits.
+            return ScreenEvent.None;
+        }
+
+        int hitModuleRowIndex = HitTestModuleRow(x, y, moduleRowCount);
+        if (hitModuleRowIndex >= 0)
+        {
+            _selectedModuleItemTypeId = moduleRows[hitModuleRowIndex].ItemTypeId;
+            // The three grids share a single selection — picking a row in one clears the others.
+            _selectedResourceItemTypeId = null;
+            _selectedGoodItemTypeId = null;
             return ScreenEvent.None;
         }
 
@@ -555,14 +694,31 @@ public sealed class TradeScreen : IScreen
         return GridPanel.HitTestColumnTitle(GridPanelOriginX, GridPanelOriginYGoods, GoodsGridTitle, x - pl, y - pt);
     }
 
+    /// <summary>Absolute modules-grid row index hit by a click at screen coordinates (x, y), or -1 — see <see cref="GridPanel.HitTestRow"/>. Always -1 today since the placeholder grid has no rows (see <see cref="ResolveModuleRows"/>).</summary>
+    private int HitTestModuleRow(float x, float y, int moduleRowCount)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        return GridPanel.HitTestRow(GridPanelOriginX, GridPanelOriginYModules, moduleRowCount, _scrollOffsetModules, x - pl, y - pt);
+    }
+
+    /// <summary>Same as <see cref="HitTestColumnTitle"/> but for the Modules grid.</summary>
+    private GridSortColumn? HitTestModuleColumnTitle(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        return GridPanel.HitTestColumnTitle(GridPanelOriginX, GridPanelOriginYModules, ModulesGridTitle, x - pl, y - pt);
+    }
+
     /// <summary>Convenience shortcut for a left click — kept for existing call-site/test conventions.</summary>
     public ScreenEvent OnMouseDown(float x, float y) => OnMouseDown(x, y, MouseButton.Left);
 
-    /// <summary>Ends a scrollbar-thumb drag on left-button release, wherever the pointer ends up — see <see cref="_isDraggingScrollThumb"/>/<see cref="_isDraggingScrollThumbGoods"/>.</summary>
+    /// <summary>Ends a scrollbar-thumb drag on left-button release, wherever the pointer ends up — see <see cref="_isDraggingScrollThumb"/>/<see cref="_isDraggingScrollThumbGoods"/>/<see cref="_isDraggingScrollThumbModules"/>.</summary>
     public void OnMouseUp(float x, float y)
     {
         _isDraggingScrollThumb = false;
         _isDraggingScrollThumbGoods = false;
+        _isDraggingScrollThumbModules = false;
     }
 
     public bool OnMouseMove(float x, float y)
@@ -583,6 +739,14 @@ public sealed class TradeScreen : IScreen
             _scrollOffsetGoods = GridPanel.ResolveScrollOffsetForThumbTop(GridPanelOriginX, GridPanelOriginYGoods, goodRowCount, desiredThumbTopLocalYGoods);
         }
 
+        if (_isDraggingScrollThumbModules)
+        {
+            int moduleRowCount = CurrentModuleRowCount();
+            float pt = TradeLayout.PanelTop(_screenHeight);
+            float desiredThumbTopLocalYModules = (y - pt) - _scrollThumbDragGrabOffsetYModules;
+            _scrollOffsetModules = GridPanel.ResolveScrollOffsetForThumbTop(GridPanelOriginX, GridPanelOriginYModules, moduleRowCount, desiredThumbTopLocalYModules);
+        }
+
         _isStationNameHovered = IsStationNameHit(x, y);
         _isExitButtonHovered = IsExitButtonHit(x, y);
         bool isScrollbarActive = GridPanel.IsScrollbarActive(CurrentResourceRowCount());
@@ -594,6 +758,11 @@ public sealed class TradeScreen : IScreen
         _isScrollUpHoveredGoods = isGoodsScrollbarActive && IsScrollUpArrowHitGoods(x, y);
         _isScrollDownHoveredGoods = isGoodsScrollbarActive && IsScrollDownArrowHitGoods(x, y);
         bool isGoodColumnTitleHovered = HitTestGoodColumnTitle(x, y) is not null;
+
+        bool isModulesScrollbarActive = GridPanel.IsScrollbarActive(CurrentModuleRowCount());
+        _isScrollUpHoveredModules = isModulesScrollbarActive && IsScrollUpArrowHitModules(x, y);
+        _isScrollDownHoveredModules = isModulesScrollbarActive && IsScrollDownArrowHitModules(x, y);
+        bool isModuleColumnTitleHovered = HitTestModuleColumnTitle(x, y) is not null;
 
         // Not a button — hovering it only shows a delayed tooltip (see Render), so it must
         // not affect the interactive-cursor swap the way the name link / exit button do.
@@ -619,7 +788,8 @@ public sealed class TradeScreen : IScreen
 
         return _isStationNameHovered || _isExitButtonHovered || _isScrollUpHovered || _isScrollDownHovered
             || _isDraggingScrollThumb || isColumnTitleHovered
-            || _isScrollUpHoveredGoods || _isScrollDownHoveredGoods || _isDraggingScrollThumbGoods || isGoodColumnTitleHovered;
+            || _isScrollUpHoveredGoods || _isScrollDownHoveredGoods || _isDraggingScrollThumbGoods || isGoodColumnTitleHovered
+            || _isScrollUpHoveredModules || _isScrollDownHoveredModules || _isDraggingScrollThumbModules || isModuleColumnTitleHovered;
     }
 
     /// <summary>
@@ -637,6 +807,13 @@ public sealed class TradeScreen : IScreen
             return ScreenEvent.None;
         }
 
+        if (IsWithinModuleGridRows(y))
+        {
+            int maxOffsetModules = GridPanel.MaxScrollOffset(CurrentModuleRowCount());
+            _scrollOffsetModules = Math.Clamp(_scrollOffsetModules - Math.Sign(delta), 0, maxOffsetModules);
+            return ScreenEvent.None;
+        }
+
         int maxOffset = GridPanel.MaxScrollOffset(CurrentResourceRowCount());
         _scrollOffset = Math.Clamp(_scrollOffset - Math.Sign(delta), 0, maxOffset);
         return ScreenEvent.None;
@@ -648,6 +825,15 @@ public sealed class TradeScreen : IScreen
         float pt = TradeLayout.PanelTop(_screenHeight);
         var header = GridPanel.HeaderLocalRect(GridPanelOriginX, GridPanelOriginYGoods);
         var lastRow = GridPanel.RowLocalRect(GridPanelOriginX, GridPanelOriginYGoods, GridPanel.MaxVisibleRows - 1);
+        return y >= pt + header.Top && y <= pt + lastRow.Bottom;
+    }
+
+    /// <summary>Same as <see cref="IsWithinGoodGridRows"/> but for the Modules grid's header+rows band (see <see cref="GridPanelOriginYModules"/>).</summary>
+    private bool IsWithinModuleGridRows(float y)
+    {
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var header = GridPanel.HeaderLocalRect(GridPanelOriginX, GridPanelOriginYModules);
+        var lastRow = GridPanel.RowLocalRect(GridPanelOriginX, GridPanelOriginYModules, GridPanel.MaxVisibleRows - 1);
         return y >= pt + header.Top && y <= pt + lastRow.Bottom;
     }
 
@@ -683,6 +869,10 @@ public sealed class TradeScreen : IScreen
             pl + _contentOutlineRectGoods.Right, pt + _contentOutlineRectGoods.Bottom);
         canvas.DrawRect(contentRectGoods, _contentOutlinePaint);
 
+        var contentRectModules = new SKRect(pl + _contentOutlineRectModules.Left, pt + _contentOutlineRectModules.Top,
+            pl + _contentOutlineRectModules.Right, pt + _contentOutlineRectModules.Bottom);
+        canvas.DrawRect(contentRectModules, _contentOutlinePaint);
+
         var resourceRows = ResolveResourceRows(snapshot, _sortColumn, _sortDescending);
         _scrollOffset = Math.Clamp(_scrollOffset, 0, GridPanel.MaxScrollOffset(resourceRows.Length));
         var resourceNames = Array.ConvertAll(resourceRows, row => row.Name);
@@ -707,6 +897,18 @@ public sealed class TradeScreen : IScreen
             goodSellingPrices, goodSellingCounts, goodBuyingPrices, goodBuyingCounts,
             ResolveSelectedGoodRowIndex(goodRows), _sortColumnGoods, _sortDescendingGoods);
 
+        var moduleRows = ResolveModuleRows(snapshot, _sortColumnModules, _sortDescendingModules);
+        _scrollOffsetModules = Math.Clamp(_scrollOffsetModules, 0, GridPanel.MaxScrollOffset(moduleRows.Length));
+        var moduleNames = Array.ConvertAll(moduleRows, row => row.Name);
+        var moduleSellingPrices = Array.ConvertAll(moduleRows, row => row.SellingPrice);
+        var moduleSellingCounts = Array.ConvertAll(moduleRows, row => row.SellingCount);
+        var moduleBuyingPrices = Array.ConvertAll(moduleRows, row => row.BuyingPrice);
+        var moduleBuyingCounts = Array.ConvertAll(moduleRows, row => row.BuyingCount);
+        GridPanel.Draw(canvas, pl + GridPanelOriginX, pt + GridPanelOriginYModules, ModulesGridTitle, moduleRows.Length,
+            _scrollOffsetModules, _isScrollUpHoveredModules, _isScrollDownHoveredModules, moduleNames,
+            moduleSellingPrices, moduleSellingCounts, moduleBuyingPrices, moduleBuyingCounts,
+            ResolveSelectedModuleRowIndex(moduleRows), _sortColumnModules, _sortDescendingModules);
+
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.
         StationToolbar.DrawTooltips(canvas, pl, pt,
@@ -721,6 +923,9 @@ public sealed class TradeScreen : IScreen
 
     /// <summary>Current goods-grid row count, from the docked station's live trade snapshot — see <see cref="ResolveGoodRows"/>.</summary>
     private int CurrentGoodRowCount() => ResolveGoodRows(_buffer?.Latest?.Snapshot, _sortColumnGoods, _sortDescendingGoods).Length;
+
+    /// <summary>Current modules-grid row count — always 0 until real module-trade data exists, see <see cref="ResolveModuleRows"/>.</summary>
+    private int CurrentModuleRowCount() => ResolveModuleRows(_buffer?.Latest?.Snapshot, _sortColumnModules, _sortDescendingModules).Length;
 
     /// <summary>True when (x, y) lands on the resources grid's scrollbar up-arrow button (see <see cref="GridPanel.ScrollUpArrowLocalRect"/>).</summary>
     private bool IsScrollUpArrowHit(float x, float y)
@@ -773,6 +978,33 @@ public sealed class TradeScreen : IScreen
         float pl = TradeLayout.PanelLeft(_screenWidth);
         float pt = TradeLayout.PanelTop(_screenHeight);
         var local = GridPanel.ScrollThumbLocalRect(GridPanelOriginX, GridPanelOriginYGoods, CurrentGoodRowCount(), _scrollOffsetGoods);
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>Same as <see cref="IsScrollUpArrowHit"/> but for the Modules grid's scrollbar.</summary>
+    private bool IsScrollUpArrowHitModules(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = GridPanel.ScrollUpArrowLocalRect(GridPanelOriginX, GridPanelOriginYModules, CurrentModuleRowCount());
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>Same as <see cref="IsScrollDownArrowHit"/> but for the Modules grid's scrollbar.</summary>
+    private bool IsScrollDownArrowHitModules(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = GridPanel.ScrollDownArrowLocalRect(GridPanelOriginX, GridPanelOriginYModules, CurrentModuleRowCount());
+        return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
+    }
+
+    /// <summary>Same as <see cref="IsScrollThumbHit"/> but for the Modules grid's scrollbar thumb (checked against <see cref="_scrollOffsetModules"/>).</summary>
+    private bool IsScrollThumbHitModules(float x, float y)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        var local = GridPanel.ScrollThumbLocalRect(GridPanelOriginX, GridPanelOriginYModules, CurrentModuleRowCount(), _scrollOffsetModules);
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 

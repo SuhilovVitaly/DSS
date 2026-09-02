@@ -817,7 +817,7 @@ public class TradeScreenTests
         Assert.Equal(2, screen.SelectedGoodIndex);
     }
 
-    /// <summary>The two grids share a single selection — picking a row in one grid clears whatever was selected in the other.</summary>
+    /// <summary>The three grids share a single selection — picking a row in one grid clears whatever was selected in the other two.</summary>
     [Fact]
     public void Selecting_a_good_row_clears_the_resources_grid_selection_and_vice_versa()
     {
@@ -855,6 +855,90 @@ public class TradeScreenTests
     private static (float X, float Y) GoodTrailingColumnHeaderCenter(int columnIndex)
     {
         var local = GridPanel.TrailingColumnHeaderLocalRect(15f, 300f, columnIndex);
+        float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
+        return (x, y);
+    }
+
+    // ── Modules grid — same size/columns/scroll/sort scaffolding as the other two grids,
+    // at origin (15, 524) directly below the Goods grid, but a placeholder with no rows
+    // until a real station-module-for-sale data model exists (see ResolveModuleRows).
+
+    [Fact]
+    public void Modules_grid_starts_as_an_empty_placeholder_with_no_selection_or_scroll()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+
+        Assert.Empty(screen.ModuleNames);
+        Assert.Equal(0, screen.ScrollOffsetModules);
+        Assert.Null(screen.SelectedModuleIndex);
+        Assert.Equal(GridSortColumn.Name, screen.SortColumnModules);
+        Assert.False(screen.SortDescendingModules);
+    }
+
+    /// <summary>Clicking where a module row would be must not throw, select anything, or disturb the other grids' selections — the grid has no rows to hit yet.</summary>
+    [Fact]
+    public void Clicking_inside_the_modules_grid_area_does_not_select_a_row()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+
+        var (resourceX, resourceY) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(resourceX, resourceY);
+        Assert.Equal(0, screen.SelectedResourceIndex);
+
+        var (moduleX, moduleY) = ModuleRowCenter(rowSlot: 0);
+        screen.OnMouseDown(moduleX, moduleY);
+
+        Assert.Null(screen.SelectedModuleIndex);
+        Assert.Equal(0, screen.SelectedResourceIndex);
+    }
+
+    /// <summary>The column titles are still clickable/sortable ahead of real data — toggling them must not throw or affect the other grids' sort state.</summary>
+    [Fact]
+    public void Clicking_a_modules_column_title_toggles_its_sort_state_without_affecting_the_other_grids()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+
+        var (x, y) = ModuleTrailingColumnHeaderCenter(columnIndex: 1); // Selling count
+        screen.OnMouseDown(x, y);
+
+        Assert.Equal(GridSortColumn.SellingCount, screen.SortColumnModules);
+        Assert.False(screen.SortDescendingModules);
+        Assert.Equal(GridSortColumn.Name, screen.SortColumn);
+        Assert.Equal(GridSortColumn.Name, screen.SortColumnGoods);
+    }
+
+    /// <summary>The mouse wheel over the Modules grid's rows must not throw and must not scroll the other two grids.</summary>
+    [Fact]
+    public void Mouse_wheel_over_the_modules_grid_area_does_not_scroll_the_other_grids()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+
+        var (x, y) = ModuleRowCenter(rowSlot: 0);
+        screen.OnMouseWheel(x, y, -1f);
+
+        Assert.Equal(0, screen.ScrollOffsetModules);
+        Assert.Equal(0, screen.ScrollOffset);
+        Assert.Equal(0, screen.ScrollOffsetGoods);
+    }
+
+    /// <summary>Screen-space center of the modules grid's visible row slot (0 = topmost drawn row) — see GridPanel's origin (15, 524), directly below the Goods grid's (15, 300).</summary>
+    private static (float X, float Y) ModuleRowCenter(int rowSlot)
+    {
+        var local = GridPanel.RowLocalRect(15f, 524f, rowSlot);
+        float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
+        float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
+        return (x, y);
+    }
+
+    /// <summary>Screen-space center of the modules grid's trailing column header <paramref name="columnIndex"/> (0=Selling price, 1=Selling count, 2=Buying price, 3=Buying count).</summary>
+    private static (float X, float Y) ModuleTrailingColumnHeaderCenter(int columnIndex)
+    {
+        var local = GridPanel.TrailingColumnHeaderLocalRect(15f, 524f, columnIndex);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);
