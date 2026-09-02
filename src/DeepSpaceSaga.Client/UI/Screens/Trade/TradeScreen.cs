@@ -245,8 +245,11 @@ public sealed class TradeScreen : IScreen
     private const float GridPanelOriginY = 76f;
     private const string ResourcesGridTitle = "Resources";
 
-    /// <summary>Grid height (header-to-last-row-bottom, 44 + <see cref="GridPanel.MaxVisibleRows"/>×30) plus the 30px gap left between two stacked panels.</summary>
-    private const float GridPanelPitch = 194f + 30f;
+    /// <summary>Grid height: header-to-last-row-bottom, 44 + <see cref="GridPanel.MaxVisibleRows"/>×30.</summary>
+    private const float GridRowsAreaHeight = 194f;
+
+    /// <summary><see cref="GridRowsAreaHeight"/> plus the 30px gap left between two stacked grid panels.</summary>
+    private const float GridPanelPitch = GridRowsAreaHeight + 30f;
 
     /// <summary>Extra manual downward nudge for the Goods grid, on top of its base position directly below the Resources grid.</summary>
     private const float GoodsGridExtraOffsetY = 25f;
@@ -271,6 +274,26 @@ public sealed class TradeScreen : IScreen
     /// </summary>
     private const float GridPanelOriginYModules = GridPanelOriginY + 2 * GridPanelPitch + ModulesGridExtraOffsetY;
     private const string ModulesGridTitle = "Modules";
+
+    /// <summary>Right edge (panel-local x) of the three grids — their left margin plus header+scrollbar width.</summary>
+    private const float GridRightEdge = GridPanelOriginX + GridPanel.HeaderWidth + GridPanel.ScrollbarWidth;
+
+    /// <summary>Left edge of the two right-hand info panels (no grid) — kept as far from the grids' right edge as the grids themselves are from the Trade panel's own left edge (<see cref="GridPanelOriginX"/>).</summary>
+    private const float RightPanelLeft = GridRightEdge + GridPanelOriginX;
+
+    /// <summary>Right edge of the two right-hand info panels — mirrors <see cref="GridPanelOriginX"/> as the gap kept from the Trade panel's own right edge.</summary>
+    private const float RightPanelRight = TradeLayout.PanelWidth - GridPanelOriginX;
+
+    /// <summary>Upper right-hand panel (no grid) — spans the same vertical range as the Resources and Goods grids combined.</summary>
+    private static readonly SKRect _rightPanelUpper = new(
+        RightPanelLeft, GridPanelOriginY, RightPanelRight, GridPanelOriginYGoods + GridRowsAreaHeight);
+
+    /// <summary>Lower right-hand panel (no grid) — same height as the Modules grid, aligned with its vertical position.</summary>
+    private static readonly SKRect _rightPanelLower = new(
+        RightPanelLeft, GridPanelOriginYModules, RightPanelRight, GridPanelOriginYModules + GridRowsAreaHeight);
+
+    /// <summary>Test seam — the two right-hand info panels' geometry, in the same panel-local coordinate space as <see cref="_contentOutlineRect"/>.</summary>
+    internal (SKRect Upper, SKRect Lower) RightPanels => (_rightPanelUpper, _rightPanelLower);
 
     /// <summary>Test seam — the resources grid's current row labels (see <see cref="ResolveResourceRows"/>).</summary>
     internal string[] ResourceNames => ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending).Select(row => row.Name).ToArray();
@@ -883,6 +906,14 @@ public sealed class TradeScreen : IScreen
         var contentRectModules = new SKRect(pl + _contentOutlineRectModules.Left, pt + _contentOutlineRectModules.Top,
             pl + _contentOutlineRectModules.Right, pt + _contentOutlineRectModules.Bottom);
         canvas.DrawRect(contentRectModules, _contentOutlinePaint);
+
+        var rightPanelUpper = new SKRect(pl + _rightPanelUpper.Left, pt + _rightPanelUpper.Top,
+            pl + _rightPanelUpper.Right, pt + _rightPanelUpper.Bottom);
+        canvas.DrawRect(rightPanelUpper, _contentOutlinePaint);
+
+        var rightPanelLower = new SKRect(pl + _rightPanelLower.Left, pt + _rightPanelLower.Top,
+            pl + _rightPanelLower.Right, pt + _rightPanelLower.Bottom);
+        canvas.DrawRect(rightPanelLower, _contentOutlinePaint);
 
         var resourceRows = ResolveResourceRows(snapshot, _sortColumn, _sortDescending);
         _scrollOffset = Math.Clamp(_scrollOffset, 0, GridPanel.MaxScrollOffset(resourceRows.Length));

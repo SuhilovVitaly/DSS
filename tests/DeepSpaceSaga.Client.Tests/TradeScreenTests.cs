@@ -943,4 +943,52 @@ public class TradeScreenTests
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);
     }
+
+    // ── Right-hand info panels — no grid, just outlines to the right of the three grids.
+    // Left edge sits as far from the grids' right edge (962) as the grids sit from the
+    // Trade panel's own left edge (15) — i.e. 977. Right edge mirrors that same 15px gap
+    // from the Trade panel's own right edge (1400): 1385.
+
+    [Fact]
+    public void Right_panels_render_without_a_grid_and_do_not_crash()
+    {
+        var screen = new TradeScreen();
+        RenderScreen(screen);
+
+        var (upper, lower) = screen.RightPanels;
+
+        // Left/right edges mirror the grids' 15px margins from the Trade panel's own edges.
+        Assert.Equal(977f, upper.Left);
+        Assert.Equal(977f, lower.Left);
+        Assert.Equal(1385f, upper.Right);
+        Assert.Equal(1385f, lower.Right);
+    }
+
+    /// <summary>The upper right-hand panel spans the same vertical range as the Resources and Goods grids combined (top of Resources to bottom of Goods).</summary>
+    [Fact]
+    public void Upper_right_panel_height_matches_the_resources_and_goods_grids_combined()
+    {
+        var screen = new TradeScreen();
+        RenderScreen(screen);
+
+        var (upper, _) = screen.RightPanels;
+
+        Assert.Equal(76f, upper.Top);
+        Assert.Equal(519f, upper.Bottom); // Goods grid origin (325) + 194
+        Assert.Equal(443f, upper.Height);
+    }
+
+    /// <summary>The lower right-hand panel matches the Modules grid's height and vertical position.</summary>
+    [Fact]
+    public void Lower_right_panel_height_and_position_match_the_modules_grid()
+    {
+        var screen = new TradeScreen();
+        RenderScreen(screen);
+
+        var (_, lower) = screen.RightPanels;
+
+        Assert.Equal(574f, lower.Top); // Modules grid origin
+        Assert.Equal(768f, lower.Bottom);
+        Assert.Equal(194f, lower.Height);
+    }
 }
