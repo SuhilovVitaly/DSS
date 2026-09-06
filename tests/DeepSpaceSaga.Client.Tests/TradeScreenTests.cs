@@ -962,10 +962,10 @@ public class TradeScreenTests
         Assert.Equal(1385f, lower.Right);
 
         // Both panels' left edge is the grids' 15px margin from the Trade panel's own left
-        // edge, plus a shared 25px extra nudge right (RightPanelExtraLeftInset) — narrowing
-        // both panels by 25px since their right edge stays put.
-        Assert.Equal(1002f, upper.Left);
-        Assert.Equal(1002f, lower.Left);
+        // edge, plus a shared 25px extra nudge right (RightPanelExtraLeftInset), minus a 5px
+        // extra width (RightPanelExtraWidth) — net left edge 977+25-5=997.
+        Assert.Equal(997f, upper.Left);
+        Assert.Equal(997f, lower.Left);
     }
 
     /// <summary>The upper right-hand panel's white outline snaps exactly to the Resources+Goods white outline frames combined (top of the Resources frame to bottom of the Goods frame) — same per-segment height (200) as each of theirs, not an independently computed height.</summary>
@@ -980,7 +980,7 @@ public class TradeScreenTests
         Assert.Equal(90f, upper.Top); // Resources white frame's own top
         Assert.Equal(539f, upper.Bottom); // Goods white frame's own bottom
         Assert.Equal(449f, upper.Height);
-        Assert.Equal(383f, upper.Width); // 408 (977..1385) minus the 25px extra left inset
+        Assert.Equal(388f, upper.Width); // 408 (977..1385) minus 25 (extra left inset) plus 5 (extra width)
     }
 
     /// <summary>The lower right-hand panel's white outline snaps exactly to the Modules white outline frame — same height (200) as the Resources/Goods ones.</summary>
@@ -995,7 +995,7 @@ public class TradeScreenTests
         Assert.Equal(588f, lower.Top);
         Assert.Equal(788f, lower.Bottom);
         Assert.Equal(200f, lower.Height);
-        Assert.Equal(383f, lower.Width); // 408 (977..1385) minus the shared 25px extra left inset
+        Assert.Equal(388f, lower.Width); // 408 (977..1385) minus 25 (extra left inset) plus 5 (extra width)
     }
 
     /// <summary>Both right-hand panels get a gray rounded-corner titlebar at their top, same style/height as GridPanel's own header bar.</summary>
@@ -1006,9 +1006,54 @@ public class TradeScreenTests
         RenderScreen(screen); // must not throw while drawing the titlebars
 
         var (upper, lower) = screen.RightPanels;
+        var (upperTitleBar, lowerTitleBar) = screen.RightPanelTitleBars;
+
+        Assert.Equal(GridPanel.HeaderHeight, upperTitleBar.Height);
+        Assert.Equal(GridPanel.HeaderHeight, lowerTitleBar.Height);
 
         // Sanity: both panels are tall enough to actually contain a 30px titlebar.
         Assert.True(upper.Height >= GridPanel.HeaderHeight);
         Assert.True(lower.Height >= GridPanel.HeaderHeight);
+    }
+
+    /// <summary>
+    /// The titlebar's left edge is inset from its own panel's white outline by the same
+    /// margin the Resources grid's header keeps from its white outline (header left 15 vs.
+    /// outline left 10 = 5px) — and the right edge keeps that same 5px margin too (these
+    /// panels have no scrollbar to justify the grid header's wider, asymmetric right gap).
+    /// </summary>
+    [Fact]
+    public void Right_panel_titlebars_keep_equal_left_and_right_margins_from_the_white_outline()
+    {
+        var screen = new TradeScreen();
+        RenderScreen(screen);
+
+        var (upper, lower) = screen.RightPanels;
+        var (upperTitleBar, lowerTitleBar) = screen.RightPanelTitleBars;
+
+        Assert.Equal(5f, upperTitleBar.Left - upper.Left);
+        Assert.Equal(5f, lowerTitleBar.Left - lower.Left);
+        Assert.Equal(5f, upper.Right - upperTitleBar.Right);
+        Assert.Equal(5f, lower.Right - lowerTitleBar.Right);
+    }
+
+    /// <summary>
+    /// The titlebar must sit as far above its own panel's white outline top edge as the
+    /// Resources/Modules grids' own header bars sit above that same white outline on the
+    /// left (origin Y 76/574 vs. white-frame top 90/588 — a 14px offset), not flush with it.
+    /// </summary>
+    [Fact]
+    public void Right_panel_titlebars_are_offset_above_the_white_outline_the_same_way_as_the_grid_headers()
+    {
+        var screen = new TradeScreen();
+        RenderScreen(screen);
+
+        var (upper, lower) = screen.RightPanels;
+        var (upperTitleBar, lowerTitleBar) = screen.RightPanelTitleBars;
+
+        Assert.Equal(76f, upperTitleBar.Top); // matches the Resources grid's own header top
+        Assert.Equal(574f, lowerTitleBar.Top); // matches the Modules grid's own header top
+        Assert.Equal(14f, upper.Top - upperTitleBar.Top);
+        Assert.Equal(14f, lower.Top - lowerTitleBar.Top);
     }
 }
