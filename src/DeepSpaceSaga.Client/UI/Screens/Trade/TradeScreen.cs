@@ -417,6 +417,9 @@ public sealed class TradeScreen : IScreen
     /// <summary>Quantity the in-flight command in <see cref="_lastSentTradeCommandId"/> was sent with — same "captured at send time" rationale as <see cref="_lastSentTradeCommandType"/>, used to detect/describe a partial Sell fill.</summary>
     private long _lastSentTradeQuantity;
 
+    /// <summary>Station unit price at the moment the in-flight command was sent — same "captured at send time" rationale as <see cref="_lastSentTradeCommandType"/>/<see cref="_lastSentTradeQuantity"/>, used to show what the trade actually cost/paid in the result message.</summary>
+    private long _lastSentTradeUnitPriceCredits;
+
     /// <summary>
     /// Localization key for the last observed trade-command rejection reason, or null — shown
     /// near the confirm button until a new command supersedes it or the selection/mode changes
@@ -633,19 +636,33 @@ public sealed class TradeScreen : IScreen
     /// Success-case counterpart to <see cref="ResolveRejectionReasonKey"/> — the transaction
     /// confirmation shown above the confirm button when a command actually executed (Docs/
     /// FirstRelease/Screens/Trade.md's UI-решение: панель действия), reusing the leftover
-    /// Trade.Status* keys from the pre-redesign MVP. Sell reports the partial-fill wording
-    /// when the station's hidden Credits balance capped how much it actually bought.
+    /// Trade.Status* keys from the pre-redesign MVP, extended with the unit price paid/received
+    /// and the resulting total. Sell reports the partial-fill wording — and its total is priced
+    /// off the actually-executed quantity, not the originally requested one — when the
+    /// station's hidden Credits balance capped how much it actually bought.
     /// </summary>
-    private static string ResolveTradeResultMessage(string commandType, long? executedQuantity, long requestedQuantity) =>
-        commandType switch
+    private static string ResolveTradeResultMessage(
+        string commandType, long? executedQuantity, long requestedQuantity, long unitPriceCredits)
+    {
+        if (commandType == TradeCommandTypes.Sell && executedQuantity is { } executed && executed < requestedQuantity)
         {
-            TradeCommandTypes.Refuel => Localization.Get("Trade.StatusRefuelSuccess"),
-            TradeCommandTypes.Buy => Localization.Get("Trade.StatusBuySuccess"),
-            TradeCommandTypes.Sell => executedQuantity is { } executed && executed < requestedQuantity
-                ? string.Format(Localization.Get("Trade.StatusSellPartial"), executed, requestedQuantity)
-                : Localization.Get("Trade.StatusSellSuccess"),
-            _ => Localization.Get("Trade.StatusBuySuccess")
+            return string.Format(
+                Localization.Get("Trade.StatusSellPartial"), executed, requestedQuantity, unitPriceCredits, executed * unitPriceCredits);
+        }
+
+        long quantity = commandType == TradeCommandTypes.Sell && executedQuantity is { } executedInFull
+            ? executedInFull
+            : requestedQuantity;
+        long total = quantity * unitPriceCredits;
+
+        string key = commandType switch
+        {
+            TradeCommandTypes.Refuel => "Trade.StatusRefuelSuccess",
+            TradeCommandTypes.Sell => "Trade.StatusSellSuccess",
+            _ => "Trade.StatusBuySuccess"
         };
+        return string.Format(Localization.Get(key), quantity, unitPriceCredits, total);
+    }
 
     /// <summary>
     /// Correlates <see cref="_lastSentTradeCommandId"/> against the latest snapshot's
@@ -674,7 +691,8 @@ public sealed class TradeScreen : IScreen
             if (result.Status == CommandResultStatus.Rejected)
                 _tradeRejectionReasonKey = ResolveRejectionReasonKey(result.ReasonCode ?? string.Empty);
             else if (result.Status == CommandResultStatus.Executed && _lastSentTradeCommandType is not null)
-                _tradeResultMessage = ResolveTradeResultMessage(_lastSentTradeCommandType, result.ExecutedQuantity, _lastSentTradeQuantity);
+                _tradeResultMessage = ResolveTradeResultMessage(
+                    _lastSentTradeCommandType, result.ExecutedQuantity, _lastSentTradeQuantity, _lastSentTradeUnitPriceCredits);
 
             _lastSentTradeCommandId = null;
             return;
@@ -910,6 +928,7 @@ public sealed class TradeScreen : IScreen
             playerShipObjectId, moduleId, commandType, info.ItemTypeId, _tradeQuantity);
         _lastSentTradeCommandType = commandType;
         _lastSentTradeQuantity = _tradeQuantity;
+        _lastSentTradeUnitPriceCredits = info.StationPriceCredits;
         _tradeRejectionReasonKey = null;
         _tradeResultMessage = null;
     }

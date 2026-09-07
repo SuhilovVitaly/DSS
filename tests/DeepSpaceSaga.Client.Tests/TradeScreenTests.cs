@@ -1583,11 +1583,12 @@ public class TradeScreenTests
 
         RenderScreen(fixture.Screen);
 
-        Assert.Equal(Localization.Get("Trade.StatusBuySuccess"), fixture.Screen.TradeResultMessage);
+        // Price 40/unit, quantity 1 (the per-unit default) -> total 40.
+        Assert.Equal(string.Format(Localization.Get("Trade.StatusBuySuccess"), 1, 40, 40), fixture.Screen.TradeResultMessage);
         Assert.Null(fixture.Screen.TradeDisabledReasonKey); // nothing wrong — the message line shows the success text instead
     }
 
-    /// <summary>A Sell that only partially executes (station's hidden Credits balance ran out) reports the partial-fill wording, with the actually-executed and originally-requested quantities.</summary>
+    /// <summary>A Sell that only partially executes (station's hidden Credits balance ran out) reports the partial-fill wording, with the actually-executed and originally-requested quantities and a total priced off what was actually sold.</summary>
     [Fact]
     public async Task A_partially_executed_sell_shows_the_partial_fill_message()
     {
@@ -1604,22 +1605,33 @@ public class TradeScreenTests
         fixture.Screen.OnMouseDown(sellX, sellY);
         RenderScreen(fixture.Screen);
 
+        // Bump the requested quantity up to 10 (default is 1) so a partial fill of 6 is
+        // actually less than requested, not indistinguishable from a full fill.
+        var (plusX, plusY) = ScreenCenter(fixture.Screen.TradeStepperRects.Plus);
+        for (int i = 0; i < 9; i++)
+            fixture.Screen.OnMouseDown(plusX, plusY);
+        RenderScreen(fixture.Screen);
+        Assert.Equal(10, fixture.Screen.TradeQuantity);
+
         var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
         fixture.Screen.OnMouseDown(confirmX, confirmY);
         var sentCommand = Assert.Single(fixture.Connection.Commands);
+        Assert.Equal(10, sentCommand.Quantity);
 
         fixture.Handle.Buffer.Update(snapshot with
         {
             SnapshotSequence = 2,
             CommandResults = ImmutableArray.Create(new CommandResult(
                 sentCommand.CommandId, ShipId, ContainerModuleId, TradeCommandTypes.Sell,
-                CommandResultStatus.Executed, EffectiveGameTimeMs: 100, ExecutedQuantity: null))
+                CommandResultStatus.Executed, EffectiveGameTimeMs: 100, ExecutedQuantity: 6))
         });
         RenderScreen(fixture.Screen);
 
-        // ExecutedQuantity null (as above) means "executed in full" per CommandResult's own
-        // contract — the partial-fill message only appears when it's less than requested.
-        Assert.Equal(Localization.Get("Trade.StatusSellSuccess"), fixture.Screen.TradeResultMessage);
+        // Executed 6 of the 10 requested, priced at 40/unit -> total is 6 * 40 = 240, not
+        // 10 * 40 — the total must reflect what was actually sold, not what was requested.
+        Assert.Equal(
+            string.Format(Localization.Get("Trade.StatusSellPartial"), 6, 10, 40, 240),
+            fixture.Screen.TradeResultMessage);
     }
 
     /// <summary>The confirm button gets hover feedback (cursor swap) only while it's actually clickable — a disabled button gives no false affordance.</summary>
