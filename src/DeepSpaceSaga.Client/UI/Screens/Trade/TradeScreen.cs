@@ -670,13 +670,16 @@ public sealed class TradeScreen : IScreen
 
     /// <summary>
     /// Quantity slider row (Docs/FirstRelease/Screens/Trade.md, "UI-решение: панель действия",
-    /// step 5) — directly below the `-`/`+`/`Max` stepper row, full frame width. Dragging or
-    /// clicking anywhere on the track sets <see cref="_tradeQuantity"/> to the position clicked,
-    /// same underlying field as the stepper/Max — see <see cref="ResolveSliderQuantity"/>.
+    /// step 5) — directly below the `-`/`+`/`Max` stepper row, spanning only the `-`/field/`+`
+    /// group's width (<see cref="_tradeMinusButtonRect"/>.Left to <see cref="_tradePlusButtonRect"/>.Right),
+    /// not the `Max` button — narrower than the full frame width so its track visually lines up
+    /// with the quantity controls it drives, not the wider row above it. Dragging or clicking
+    /// anywhere on the track sets <see cref="_tradeQuantity"/> to the position clicked, same
+    /// underlying field as the stepper/Max — see <see cref="ResolveSliderQuantity"/>.
     /// </summary>
     private const float TradeSliderRowHeight = 16f;
     private static readonly SKRect _tradeSliderRowRect = new(
-        TradeActionContentLeft, _tradeMinusButtonRect.Bottom + 6f, TradeActionContentRight, _tradeMinusButtonRect.Bottom + 6f + TradeSliderRowHeight);
+        _tradeMinusButtonRect.Left, _tradeMinusButtonRect.Bottom + 6f, _tradePlusButtonRect.Right, _tradeMinusButtonRect.Bottom + 6f + TradeSliderRowHeight);
 
     /// <summary>Test seam — the quantity slider's track geometry, panel-local.</summary>
     internal SKRect TradeSliderRect => _tradeSliderRowRect;
