@@ -839,8 +839,10 @@ public sealed class SkiaWindow : IDisposable
     /// Push the Trade overlay (Docs/FirstRelease/Screens/Trade.md) on top of Station
     /// (StationScreen's `TRADE` button → ScreenEvent.OpenTrade). A nested modal exactly
     /// like Trade/Hire/Contracts — PushModalAsync/PopModalAsync's generic modal-depth
-    /// tracking needs no Trade-specific handling. Placeholder shell pending redesign, same
-    /// pattern as Hire/Contracts — no live session handle needed until the redesign lands.
+    /// tracking needs no Trade-specific handling. Unlike Hire/Contracts, TradeScreen also
+    /// gets the live session handle (`_session`): its lower right-hand action panel sends
+    /// Buy/Sell/Refuel commands directly (GameSessionHandle.SendTradeCommand), the same
+    /// fire-and-forget pattern GameSessionScreen already uses.
     /// </summary>
     private async Task OpenTradeAsync()
     {
@@ -848,7 +850,7 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is TradeScreen)
             return;
 
-        await PushModalAsync(new TradeScreen(_session?.Buffer));
+        await PushModalAsync(new TradeScreen(_session?.Buffer, _session));
     }
 
     /// <summary>
