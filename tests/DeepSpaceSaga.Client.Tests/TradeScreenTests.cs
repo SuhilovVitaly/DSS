@@ -968,9 +968,9 @@ public class TradeScreenTests
         Assert.Equal(997f, lower.Left);
     }
 
-    /// <summary>The upper right-hand panel's white outline snaps exactly to the Resources+Goods white outline frames combined (top of the Resources frame to bottom of the Goods frame) — same per-segment height (200) as each of theirs, not an independently computed height.</summary>
+    /// <summary>The upper right-hand panel is 1/3 of the combined column height (Resources white frame's top down to Modules white frame's bottom), the lower is 2/3 — a product decision, no longer tied to the left grids' own Resources+Goods-vs-Modules stacking.</summary>
     [Fact]
-    public void Upper_right_panel_outline_matches_the_resources_and_goods_white_frames_combined()
+    public void Upper_right_panel_outline_is_one_third_of_the_column_height()
     {
         var screen = new TradeScreen();
         RenderScreen(screen);
@@ -978,23 +978,23 @@ public class TradeScreenTests
         var (upper, _) = screen.RightPanels;
 
         Assert.Equal(90f, upper.Top); // Resources white frame's own top
-        Assert.Equal(539f, upper.Bottom); // Goods white frame's own bottom
-        Assert.Equal(449f, upper.Height);
+        Assert.Equal(313f, upper.Bottom); // 90 + round((788-90-30)/3) = 90 + 223
+        Assert.Equal(223f, upper.Height);
         Assert.Equal(388f, upper.Width); // 408 (977..1385) minus 25 (extra left inset) plus 5 (extra width)
     }
 
-    /// <summary>The lower right-hand panel's white outline snaps exactly to the Modules white outline frame — same height (200) as the Resources/Goods ones.</summary>
+    /// <summary>The lower right-hand panel is 2/3 of the combined column height — see <see cref="Upper_right_panel_outline_is_one_third_of_the_column_height"/>.</summary>
     [Fact]
-    public void Lower_right_panel_outline_matches_the_modules_white_frame()
+    public void Lower_right_panel_outline_is_two_thirds_of_the_column_height()
     {
         var screen = new TradeScreen();
         RenderScreen(screen);
 
         var (_, lower) = screen.RightPanels;
 
-        Assert.Equal(588f, lower.Top);
-        Assert.Equal(788f, lower.Bottom);
-        Assert.Equal(200f, lower.Height);
+        Assert.Equal(343f, lower.Top); // upper.Bottom (313) + the 30px gap between the panels
+        Assert.Equal(788f, lower.Bottom); // Modules white frame's own bottom — unchanged column footprint
+        Assert.Equal(445f, lower.Height);
         Assert.Equal(388f, lower.Width); // 408 (977..1385) minus 25 (extra left inset) plus 5 (extra width)
     }
 
@@ -1039,8 +1039,9 @@ public class TradeScreenTests
 
     /// <summary>
     /// The titlebar must sit as far above its own panel's white outline top edge as the
-    /// Resources/Modules grids' own header bars sit above that same white outline on the
-    /// left (origin Y 76/574 vs. white-frame top 90/588 — a 14px offset), not flush with it.
+    /// Resources grid's own header bar sits above that same white outline on the left
+    /// (origin Y 76 vs. white-frame top 90 — a 14px offset), not flush with it. Both right
+    /// panels use that same 14px overlap above their own (now independently sized) top.
     /// </summary>
     [Fact]
     public void Right_panel_titlebars_are_offset_above_the_white_outline_the_same_way_as_the_grid_headers()
@@ -1051,8 +1052,8 @@ public class TradeScreenTests
         var (upper, lower) = screen.RightPanels;
         var (upperTitleBar, lowerTitleBar) = screen.RightPanelTitleBars;
 
-        Assert.Equal(76f, upperTitleBar.Top); // matches the Resources grid's own header top
-        Assert.Equal(574f, lowerTitleBar.Top); // matches the Modules grid's own header top
+        Assert.Equal(76f, upperTitleBar.Top); // upper.Top (90) - 14, matches the Resources grid's own header top
+        Assert.Equal(329f, lowerTitleBar.Top); // lower.Top (343) - 14
         Assert.Equal(14f, upper.Top - upperTitleBar.Top);
         Assert.Equal(14f, lower.Top - lowerTitleBar.Top);
     }

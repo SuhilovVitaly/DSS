@@ -314,35 +314,56 @@ public sealed class TradeScreen : IScreen
         Color = new SKColor(0x5E, 0x5E, 0x5E), Style = SKPaintStyle.Fill, IsAntialias = true
     };
 
+    /// <summary>Vertical gap kept between the two stacked right-hand panels — same 30px rhythm as the gap between stacked grids on the left (the "+30f" in <see cref="GridPanelPitch"/>).</summary>
+    private const float RightPanelGap = 30f;
+
     /// <summary>
-    /// Upper right-hand panel (no grid) — top/bottom snapped exactly to the Resources and
-    /// Goods grids' white outline frames combined (top of the Resources frame to bottom of
-    /// the Goods frame), so its own white outline has the same per-panel height (200) as
-    /// each of theirs, not an independently computed height/center.
+    /// Combined vertical span the two right-hand panels occupy together — top of the
+    /// Resources grid's own white outline down to the bottom of the Modules grid's own white
+    /// outline, same overall footprint as before this panel-ratio change (only how that span
+    /// is split between the two panels changed, not where the pair as a whole starts/ends).
     /// </summary>
-    private static readonly SKRect _rightPanelUpper = new(
-        RightPanelLeft, _contentOutlineRect.Top, RightPanelRight, _contentOutlineRectGoods.Bottom);
-
-    /// <summary>Lower right-hand panel (no grid) — top/bottom snapped exactly to the Modules grid's white outline frame, so its outline has the same height (200) as the Resources/Goods ones.</summary>
-    private static readonly SKRect _rightPanelLower = new(
-        RightPanelLeft, _contentOutlineRectModules.Top, RightPanelRight, _contentOutlineRectModules.Bottom);
+    private static readonly float RightPanelColumnTop = _contentOutlineRect.Top;
+    private static readonly float RightPanelColumnBottom = _contentOutlineRectModules.Bottom;
 
     /// <summary>
-    /// Upper right-hand panel's titlebar — top pinned to <see cref="GridPanelOriginY"/> (the
-    /// same offset above its own white outline's top that the Resources grid's own header
-    /// bar has above that same white outline on the left), and left/right edges inset from
-    /// the panel's own white outline by <see cref="RightPanelTitleBarLeftInset"/>/
-    /// <see cref="RightPanelTitleBarRightInset"/> — the same horizontal margins the
-    /// Resources grid's header keeps from its white outline.
+    /// Upper panel is 1/3, lower is 2/3 of the column height remaining after
+    /// <see cref="RightPanelGap"/> (product decision — no longer tied to the left grids' own
+    /// Resources+Goods-vs-Modules stacking the way the panels used to be sized). Rounded so
+    /// the split lands on a whole pixel; <see cref="_rightPanelLowerHeight"/> takes the
+    /// rounding remainder so the pair's total still reaches <see cref="RightPanelColumnBottom"/>
+    /// exactly.
+    /// </summary>
+    private static readonly float _rightPanelUpperHeight =
+        MathF.Round((RightPanelColumnBottom - RightPanelColumnTop - RightPanelGap) / 3f);
+    private static readonly float _rightPanelLowerHeight =
+        RightPanelColumnBottom - RightPanelColumnTop - RightPanelGap - _rightPanelUpperHeight;
+
+    /// <summary>Upper right-hand panel (no grid) — 1/3 of the column height, see <see cref="_rightPanelUpperHeight"/>.</summary>
+    private static readonly SKRect _rightPanelUpper = new(
+        RightPanelLeft, RightPanelColumnTop, RightPanelRight, RightPanelColumnTop + _rightPanelUpperHeight);
+
+    /// <summary>Lower right-hand panel (no grid) — 2/3 of the column height, see <see cref="_rightPanelLowerHeight"/>; also hosts the Trade action panel (<see cref="TradeActionContentTop"/> onward).</summary>
+    private static readonly SKRect _rightPanelLower = new(
+        RightPanelLeft, _rightPanelUpper.Bottom + RightPanelGap, RightPanelRight, RightPanelColumnBottom);
+
+    /// <summary>How far each right-hand panel's titlebar sits above its own white outline's top — same overlap the Resources grid's own header bar keeps above its white outline on the left (<see cref="GridPanelOriginY"/> vs. <see cref="_contentOutlineRect"/>'s top: 90-76=14).</summary>
+    private static readonly float RightPanelTitleBarOverlap = _contentOutlineRect.Top - GridPanelOriginY;
+
+    /// <summary>
+    /// Upper right-hand panel's titlebar — sits <see cref="RightPanelTitleBarOverlap"/> above
+    /// its own panel's top, left/right edges inset from the panel's own white outline by
+    /// <see cref="RightPanelTitleBarLeftInset"/>/<see cref="RightPanelTitleBarRightInset"/> —
+    /// the same horizontal margins the Resources grid's header keeps from its white outline.
     /// </summary>
     private static readonly SKRect _rightPanelUpperTitleBar = new(
-        RightPanelLeft + RightPanelTitleBarLeftInset, GridPanelOriginY,
-        RightPanelRight - RightPanelTitleBarRightInset, GridPanelOriginY + RightPanelTitleBarHeight);
+        RightPanelLeft + RightPanelTitleBarLeftInset, _rightPanelUpper.Top - RightPanelTitleBarOverlap,
+        RightPanelRight - RightPanelTitleBarRightInset, _rightPanelUpper.Top - RightPanelTitleBarOverlap + RightPanelTitleBarHeight);
 
-    /// <summary>Same idea as <see cref="_rightPanelUpperTitleBar"/>, pinned to <see cref="GridPanelOriginYModules"/> to match the Modules grid header's offset above its white outline.</summary>
+    /// <summary>Same idea as <see cref="_rightPanelUpperTitleBar"/>, for the lower panel's own top.</summary>
     private static readonly SKRect _rightPanelLowerTitleBar = new(
-        RightPanelLeft + RightPanelTitleBarLeftInset, GridPanelOriginYModules,
-        RightPanelRight - RightPanelTitleBarRightInset, GridPanelOriginYModules + RightPanelTitleBarHeight);
+        RightPanelLeft + RightPanelTitleBarLeftInset, _rightPanelLower.Top - RightPanelTitleBarOverlap,
+        RightPanelRight - RightPanelTitleBarRightInset, _rightPanelLower.Top - RightPanelTitleBarOverlap + RightPanelTitleBarHeight);
 
     /// <summary>Test seam — the two right-hand info panels' geometry, in the same panel-local coordinate space as <see cref="_contentOutlineRect"/>.</summary>
     internal (SKRect Upper, SKRect Lower) RightPanels => (_rightPanelUpper, _rightPanelLower);
@@ -625,7 +646,7 @@ public sealed class TradeScreen : IScreen
     // not compile-time constants, so these derived positions must be `static readonly` too.
     private static readonly float TradeActionContentLeft = RightPanelLeft + RightPanelTitleBarLeftInset;
     private static readonly float TradeActionContentRight = RightPanelRight - RightPanelTitleBarRightInset;
-    private const float TradeActionContentTop = GridPanelOriginYModules + RightPanelTitleBarHeight + 8f;
+    private static readonly float TradeActionContentTop = _rightPanelLowerTitleBar.Bottom + 8f;
 
     private const float TradeMarketLineHeight = 14f;
     private const float TradeToggleHeight = 22f;
