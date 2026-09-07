@@ -399,6 +399,9 @@ public sealed class TradeScreen : IScreen
     /// <summary>True while the quantity slider's track is being dragged (mouse-down on it, not yet released) — same drag-state shape as <see cref="_isDraggingScrollThumb"/>, updated in <see cref="OnMouseMove(float, float)"/>, cleared in <see cref="OnMouseUp"/>.</summary>
     private bool _isDraggingTradeSlider;
 
+    /// <summary>True while the pointer is over the confirm button AND it's currently clickable (a disabled button gets no hover feedback — same "not a button unless it does something" rule the toolbar's plain readouts already follow) — drives both the cursor swap (<see cref="OnMouseMove(float, float)"/>'s return) and the button's <see cref="ButtonState.Hovered"/> visual.</summary>
+    private bool _isTradeConfirmHovered;
+
     /// <summary>
     /// CommandId of the last trade command sent via <see cref="OnConfirmTradeClicked"/>, kept
     /// until its disposition is observed in a later snapshot's CommandResults (see
@@ -407,6 +410,12 @@ public sealed class TradeScreen : IScreen
     /// panel learns a Buy/Sell/Refuel was rejected.
     /// </summary>
     private string? _lastSentTradeCommandId;
+
+    /// <summary>CommandType of the command <see cref="_lastSentTradeCommandId"/> refers to — captured at send time (not re-derived from current UI state) so <see cref="UpdateTradeCommandResult"/> reports the right outcome message even if the player has since changed the Buy/Sell toggle or selection while the result was still in flight.</summary>
+    private string? _lastSentTradeCommandType;
+
+    /// <summary>Quantity the in-flight command in <see cref="_lastSentTradeCommandId"/> was sent with — same "captured at send time" rationale as <see cref="_lastSentTradeCommandType"/>, used to detect/describe a partial Sell fill.</summary>
+    private long _lastSentTradeQuantity;
 
     /// <summary>
     /// Localization key for the last observed trade-command rejection reason, or null — shown
@@ -417,6 +426,18 @@ public sealed class TradeScreen : IScreen
 
     /// <summary>Test seam — current trade-command rejection reason key (see <see cref="_tradeRejectionReasonKey"/>), null once resolved/cleared.</summary>
     internal string? TradeRejectionReasonKey => _tradeRejectionReasonKey;
+
+    /// <summary>
+    /// Fully-resolved (already localized/formatted) message for the last trade command that
+    /// executed successfully, or null — shown in the same spot as <see cref="_tradeRejectionReasonKey"/>
+    /// (directly above the confirm button) when there's no disabled/rejection reason to show
+    /// instead, so a successful Buy/Sell/Refuel is visibly acknowledged rather than only
+    /// showing up a second later as updated numbers in the grid (see <see cref="UpdateTradeCommandResult"/>).
+    /// </summary>
+    private string? _tradeResultMessage;
+
+    /// <summary>Test seam — current trade-result message (see <see cref="_tradeResultMessage"/>), null once cleared.</summary>
+    internal string? TradeResultMessage => _tradeResultMessage;
 
     /// <summary>Test seam — the item type id currently selected across the three grids (Resources/Goods/Modules), or null.</summary>
     internal string? SelectedTradeItemTypeId =>
@@ -436,6 +457,7 @@ public sealed class TradeScreen : IScreen
         _tradeQuantity = itemTypeId is null ? 0 : 1;
         _lastSentTradeCommandId = null;
         _tradeRejectionReasonKey = null;
+        _tradeResultMessage = null;
     }
 
     /// <summary>
@@ -608,11 +630,30 @@ public sealed class TradeScreen : IScreen
     };
 
     /// <summary>
+    /// Success-case counterpart to <see cref="ResolveRejectionReasonKey"/> — the transaction
+    /// confirmation shown above the confirm button when a command actually executed (Docs/
+    /// FirstRelease/Screens/Trade.md's UI-решение: панель действия), reusing the leftover
+    /// Trade.Status* keys from the pre-redesign MVP. Sell reports the partial-fill wording
+    /// when the station's hidden Credits balance capped how much it actually bought.
+    /// </summary>
+    private static string ResolveTradeResultMessage(string commandType, long? executedQuantity, long requestedQuantity) =>
+        commandType switch
+        {
+            TradeCommandTypes.Refuel => Localization.Get("Trade.StatusRefuelSuccess"),
+            TradeCommandTypes.Buy => Localization.Get("Trade.StatusBuySuccess"),
+            TradeCommandTypes.Sell => executedQuantity is { } executed && executed < requestedQuantity
+                ? string.Format(Localization.Get("Trade.StatusSellPartial"), executed, requestedQuantity)
+                : Localization.Get("Trade.StatusSellSuccess"),
+            _ => Localization.Get("Trade.StatusBuySuccess")
+        };
+
+    /// <summary>
     /// Correlates <see cref="_lastSentTradeCommandId"/> against the latest snapshot's
     /// CommandResults (see GameSessionHandle.SendTradeCommand's doc comment) — sets
-    /// <see cref="_tradeRejectionReasonKey"/> on a Rejected disposition, or clears the pending
-    /// id on any other disposition (the command resolved with an observable state change, so
-    /// there's nothing more to show). Called once per Render.
+    /// <see cref="_tradeRejectionReasonKey"/> on a Rejected disposition, <see cref="_tradeResultMessage"/>
+    /// on an Executed one, or clears the pending id on any other disposition (the command
+    /// resolved with an observable state change, so there's nothing more to show). Called once
+    /// per Render.
     /// </summary>
     private void UpdateTradeCommandResult(AuthoritativeSnapshot? snapshot)
     {
@@ -632,6 +673,8 @@ public sealed class TradeScreen : IScreen
 
             if (result.Status == CommandResultStatus.Rejected)
                 _tradeRejectionReasonKey = ResolveRejectionReasonKey(result.ReasonCode ?? string.Empty);
+            else if (result.Status == CommandResultStatus.Executed && _lastSentTradeCommandType is not null)
+                _tradeResultMessage = ResolveTradeResultMessage(_lastSentTradeCommandType, result.ExecutedQuantity, _lastSentTradeQuantity);
 
             _lastSentTradeCommandId = null;
             return;
@@ -709,13 +752,26 @@ public sealed class TradeScreen : IScreen
         TradeActionContentLeft, _tradeSliderRowRect.Bottom + 6f, TradeActionContentRight, _tradeSliderRowRect.Bottom + 6f + TradeSummaryLineHeight);
     private static readonly SKRect _tradeSummaryLine2Rect = new(
         TradeActionContentLeft, _tradeSummaryLine1Rect.Bottom, TradeActionContentRight, _tradeSummaryLine1Rect.Bottom + TradeSummaryLineHeight);
-    private static readonly SKRect _tradeReasonLineRect = new(
-        TradeActionContentLeft, _tradeSummaryLine2Rect.Bottom + 6f, TradeActionContentRight, _tradeSummaryLine2Rect.Bottom + 6f + TradeReasonLineHeight);
+
+    /// <summary>
+    /// Gap kept between the confirm button and its own panel's bottom edge — now that the
+    /// lower right-hand panel is 2/3 of the column height (far taller than the action panel's
+    /// content needs), the confirm button is deliberately pinned near the panel's bottom
+    /// instead of cascading directly below the summary lines, so it reads as a distinct,
+    /// harder-to-miss final step rather than blending into the block of text above it.
+    /// </summary>
+    private const float TradeConfirmBottomMargin = 16f;
     private static readonly SKRect _tradeConfirmButtonRect = new(
-        TradeActionContentLeft, _tradeReasonLineRect.Bottom, TradeActionContentRight, _tradeReasonLineRect.Bottom + TradeConfirmHeight);
+        TradeActionContentLeft, _rightPanelLower.Bottom - TradeConfirmBottomMargin - TradeConfirmHeight,
+        TradeActionContentRight, _rightPanelLower.Bottom - TradeConfirmBottomMargin);
 
     /// <summary>Test seam — the confirm button's geometry, panel-local.</summary>
     internal SKRect TradeConfirmButtonRect => _tradeConfirmButtonRect;
+
+    /// <summary>Reason/result message line — sits directly above the (now bottom-anchored) confirm button, whatever that ends up being (see <see cref="TradeConfirmBottomMargin"/>), not cascaded from the summary lines above.</summary>
+    private static readonly SKRect _tradeReasonLineRect = new(
+        TradeActionContentLeft, _tradeConfirmButtonRect.Top - 6f - TradeReasonLineHeight,
+        TradeActionContentRight, _tradeConfirmButtonRect.Top - 6f);
 
     /// <summary>Screen-space rect for a panel-local rect, using the current frame's panel position — mirrors every other `pl + local.Left, pt + local.Top` pattern in this file.</summary>
     private SKRect ToScreenRect(SKRect local)
@@ -852,7 +908,10 @@ public sealed class TradeScreen : IScreen
 
         _lastSentTradeCommandId = _handle.SendTradeCommand(
             playerShipObjectId, moduleId, commandType, info.ItemTypeId, _tradeQuantity);
+        _lastSentTradeCommandType = commandType;
+        _lastSentTradeQuantity = _tradeQuantity;
         _tradeRejectionReasonKey = null;
+        _tradeResultMessage = null;
     }
 
     /// <summary>Currently resolved <see cref="TradeActionInfo"/> for the selected item, or null while nothing is selected/resolvable — shared by the test seams below and <see cref="DrawTradeActionPanel"/>.</summary>
@@ -899,6 +958,18 @@ public sealed class TradeScreen : IScreen
     {
         Color = MenuStyle.ColorTextDim, TextSize = 12f, IsAntialias = true,
         TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceRegular
+    };
+
+    /// <summary>
+    /// Result message text (<see cref="_tradeResultMessage"/>) — a distinct green, unlike the
+    /// dim <see cref="_tradeReasonTextPaint"/> used for disabled/rejection reasons, so a
+    /// successful Buy/Sell/Refuel actually reads as a positive confirmation rather than
+    /// blending in with the same muted styling used for "something's wrong" text.
+    /// </summary>
+    private static readonly SKPaint _tradeResultMessagePaint = new()
+    {
+        Color = new SKColor(0x5A, 0xD6, 0x6D), TextSize = 12f, IsAntialias = true,
+        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceBold
     };
 
     /// <summary>Vertical baseline for a single line of text centered within <paramref name="rect"/>, matching <see cref="MenuStyle.VerticalCenterBaseline"/>'s convention.</summary>
@@ -998,12 +1069,20 @@ public sealed class TradeScreen : IScreen
         canvas.DrawText($"{Localization.Get("Trade.Credits")}: {(creditsChange >= 0 ? "+" : string.Empty)}{creditsChange}   {changeLabel}: {(cargoChange >= 0 ? "+" : string.Empty)}{cargoChange}",
             summaryLine2.Left, LineBaselineY(summaryLine2, _tradeBodyTextPaint), _tradeBodyTextPaint);
 
-        // Reason text — proactive disable reason takes priority over a stale reactive one.
+        // Message line above the confirm button — proactive disable reason takes priority over
+        // a stale reactive rejection, which in turn takes priority over a past success message
+        // (Docs/FirstRelease/Screens/Trade.md: makes a Buy/Sell/Refuel visibly acknowledged
+        // instead of only showing up a second later as updated grid numbers).
         string? reasonKey = ResolveConfirmDisabledReasonKey(tradeInfo, _isTradeBuyMode, _tradeQuantity) ?? _tradeRejectionReasonKey;
         if (reasonKey is not null)
         {
             var reasonRect = ToScreenRect(_tradeReasonLineRect);
             canvas.DrawText(Localization.Get(reasonKey), reasonRect.Left, LineBaselineY(reasonRect, _tradeReasonTextPaint), _tradeReasonTextPaint);
+        }
+        else if (_tradeResultMessage is not null)
+        {
+            var resultRect = ToScreenRect(_tradeReasonLineRect);
+            canvas.DrawText(_tradeResultMessage, resultRect.Left, LineBaselineY(resultRect, _tradeResultMessagePaint), _tradeResultMessagePaint);
         }
 
         // Confirm button.
@@ -1012,7 +1091,8 @@ public sealed class TradeScreen : IScreen
             ? Localization.Get("Trade.Refuel")
             : (_isTradeBuyMode ? Localization.Get("Trade.Buy") : Localization.Get("Trade.Sell"));
         var confirmRect = ToScreenRect(_tradeConfirmButtonRect);
-        MenuStyle.DrawButton(canvas, confirmRect, confirmLabel, canConfirm ? ButtonState.Normal : ButtonState.Disabled);
+        var confirmState = !canConfirm ? ButtonState.Disabled : (_isTradeConfirmHovered ? ButtonState.Hovered : ButtonState.Normal);
+        MenuStyle.DrawButton(canvas, confirmRect, confirmLabel, confirmState);
     }
 
     /// <summary>Test seam — the resources grid's current row labels (see <see cref="ResolveResourceRows"/>).</summary>
@@ -1244,6 +1324,7 @@ public sealed class TradeScreen : IScreen
         _tokensHoverStartedAtMs = null;
         _fuelHoverStartedAtMs = null;
         _isDraggingTradeSlider = false;
+        _isTradeConfirmHovered = false;
         ResetTradeActionPanelState(_buffer?.Latest?.Snapshot);
     }
 
@@ -1513,6 +1594,11 @@ public sealed class TradeScreen : IScreen
             _scrollOffsetModules = GridPanel.ResolveScrollOffsetForThumbTop(GridPanelOriginX, GridPanelOriginYModules, moduleRowCount, desiredThumbTopLocalYModules);
         }
 
+        var hoveredTradeInfo = ResolveCurrentTradeActionInfo();
+        _isTradeConfirmHovered = hoveredTradeInfo is { } hti
+            && Contains(ToScreenRect(_tradeConfirmButtonRect), x, y)
+            && ResolveConfirmDisabledReasonKey(hti, _isTradeBuyMode, _tradeQuantity) is null;
+
         _isStationNameHovered = IsStationNameHit(x, y);
         _isExitButtonHovered = IsExitButtonHit(x, y);
         bool isScrollbarActive = GridPanel.IsScrollbarActive(CurrentResourceRowCount());
@@ -1556,7 +1642,7 @@ public sealed class TradeScreen : IScreen
             || _isDraggingScrollThumb || isColumnTitleHovered
             || _isScrollUpHoveredGoods || _isScrollDownHoveredGoods || _isDraggingScrollThumbGoods || isGoodColumnTitleHovered
             || _isScrollUpHoveredModules || _isScrollDownHoveredModules || _isDraggingScrollThumbModules || isModuleColumnTitleHovered
-            || _isDraggingTradeSlider;
+            || _isDraggingTradeSlider || _isTradeConfirmHovered;
     }
 
     /// <summary>

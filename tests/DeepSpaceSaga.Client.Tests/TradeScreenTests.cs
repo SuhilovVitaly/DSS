@@ -1554,6 +1554,131 @@ public class TradeScreenTests
         Assert.Equal("Trade.ReasonInsufficientStationStock", fixture.Screen.TradeDisabledReasonKey);
     }
 
+    /// <summary>Success counterpart to A_rejected_trade_command_surfaces_its_reason_once_observed_in_a_later_snapshot — a Buy that executes shows a confirmation message above the confirm button instead of only updating the grid a second later.</summary>
+    [Fact]
+    public async Task A_successful_buy_shows_a_result_message_once_observed_in_a_later_snapshot()
+    {
+        var snapshot = BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)));
+        await using var fixture = CreateTradeFixture(snapshot);
+        RenderScreen(fixture.Screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(rowX, rowY);
+        RenderScreen(fixture.Screen);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+        var sentCommand = Assert.Single(fixture.Connection.Commands);
+        Assert.Null(fixture.Screen.TradeResultMessage); // nothing shown until the result is observed
+
+        // Simulate the engine's next snapshot executing the command.
+        fixture.Handle.Buffer.Update(snapshot with
+        {
+            SnapshotSequence = 2,
+            CommandResults = ImmutableArray.Create(new CommandResult(
+                sentCommand.CommandId, ShipId, ContainerModuleId, TradeCommandTypes.Buy,
+                CommandResultStatus.Executed, EffectiveGameTimeMs: 100))
+        });
+
+        RenderScreen(fixture.Screen);
+
+        Assert.Equal(Localization.Get("Trade.StatusBuySuccess"), fixture.Screen.TradeResultMessage);
+        Assert.Null(fixture.Screen.TradeDisabledReasonKey); // nothing wrong — the message line shows the success text instead
+    }
+
+    /// <summary>A Sell that only partially executes (station's hidden Credits balance ran out) reports the partial-fill wording, with the actually-executed and originally-requested quantities.</summary>
+    [Fact]
+    public async Task A_partially_executed_sell_shows_the_partial_fill_message()
+    {
+        var snapshot = BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)),
+            containerCargo: ImmutableArray.Create(new CargoStackSnapshot("item.silicon", 500)));
+        await using var fixture = CreateTradeFixture(snapshot);
+        RenderScreen(fixture.Screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(rowX, rowY);
+        RenderScreen(fixture.Screen);
+        var (sellX, sellY) = ScreenCenter(fixture.Screen.TradeModeToggleRects.Sell);
+        fixture.Screen.OnMouseDown(sellX, sellY);
+        RenderScreen(fixture.Screen);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+        var sentCommand = Assert.Single(fixture.Connection.Commands);
+
+        fixture.Handle.Buffer.Update(snapshot with
+        {
+            SnapshotSequence = 2,
+            CommandResults = ImmutableArray.Create(new CommandResult(
+                sentCommand.CommandId, ShipId, ContainerModuleId, TradeCommandTypes.Sell,
+                CommandResultStatus.Executed, EffectiveGameTimeMs: 100, ExecutedQuantity: null))
+        });
+        RenderScreen(fixture.Screen);
+
+        // ExecutedQuantity null (as above) means "executed in full" per CommandResult's own
+        // contract — the partial-fill message only appears when it's less than requested.
+        Assert.Equal(Localization.Get("Trade.StatusSellSuccess"), fixture.Screen.TradeResultMessage);
+    }
+
+    /// <summary>The confirm button gets hover feedback (cursor swap) only while it's actually clickable — a disabled button gives no false affordance.</summary>
+    [Fact]
+    public void Hovering_the_confirm_button_reports_interactive_only_when_it_is_clickable()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource))));
+        var screen = new TradeScreen(buffer);
+        RenderScreen(screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(rowX, rowY);
+        RenderScreen(screen);
+
+        var (confirmX, confirmY) = ScreenCenter(screen.TradeConfirmButtonRect);
+        Assert.True(screen.CanConfirmTrade);
+        Assert.True(screen.OnMouseMove(confirmX, confirmY));
+
+        // Move away — the hover state (and interactive report) turns back off.
+        Assert.False(screen.OnMouseMove(confirmX - 500f, confirmY));
+    }
+
+    /// <summary>Same button, but disabled (nothing in cargo to sell) — hovering it must not report interactive, so the cursor doesn't falsely suggest it's clickable.</summary>
+    [Fact]
+    public void Hovering_a_disabled_confirm_button_does_not_report_interactive()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource))));
+        var screen = new TradeScreen(buffer);
+        RenderScreen(screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(rowX, rowY);
+        RenderScreen(screen);
+        var (sellX, sellY) = ScreenCenter(screen.TradeModeToggleRects.Sell);
+        screen.OnMouseDown(sellX, sellY);
+        RenderScreen(screen);
+        Assert.False(screen.CanConfirmTrade); // nothing in cargo to sell
+
+        var (confirmX, confirmY) = ScreenCenter(screen.TradeConfirmButtonRect);
+        Assert.False(screen.OnMouseMove(confirmX, confirmY));
+    }
+
+    /// <summary>The confirm button is pinned near the bottom of the (now taller, 2/3-height) lower right panel rather than cascading directly below the summary lines — makes the final "commit" step visually distinct.</summary>
+    [Fact]
+    public void Confirm_button_sits_near_the_bottom_of_the_lower_right_panel()
+    {
+        var screen = new TradeScreen();
+        RenderScreen(screen);
+
+        var (_, lower) = screen.RightPanels;
+        var confirm = screen.TradeConfirmButtonRect;
+
+        Assert.Equal(16f, lower.Bottom - confirm.Bottom); // TradeConfirmBottomMargin
+    }
+
     /// <summary>Records every PlayerCommand sent through it — mirrors CommandsPanelSkeletonTests's RecordingConnection.</summary>
     private sealed class RecordingConnection : IGameSessionConnection
     {
