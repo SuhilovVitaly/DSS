@@ -26,6 +26,14 @@ public sealed class TradeScreen : IScreen
 {
     private readonly SnapshotBuffer? _buffer;
 
+    /// <summary>
+    /// Session handle used to send Buy/Sell/Refuel trade commands (Docs/FirstRelease/Screens/Trade.md,
+    /// "UI-решение: панель действия") — same fire-and-forget pattern as
+    /// <see cref="Station.StationScreen"/>/<see cref="GameSession.GameSessionScreen"/>, null in
+    /// tests that construct this screen directly against a SnapshotBuffer without a live session.
+    /// </summary>
+    private readonly GameSessionHandle? _handle;
+
     private int _screenWidth;
     private int _screenHeight;
     private bool _isStationNameHovered;
@@ -220,8 +228,6 @@ public sealed class TradeScreen : IScreen
         _fuelHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
-    private const string PlaceholderLine = "Trade: awaiting redesign";
-
     /// <summary>Outline marking the future content area around the Resources grid, ahead of the real redesign layout.</summary>
     private static readonly SKRect _contentOutlineRect = new(10f, 90f, 10f + 980f, 90f + 200f);
 
@@ -278,36 +284,650 @@ public sealed class TradeScreen : IScreen
     /// <summary>Right edge (panel-local x) of the three grids — their left margin plus header+scrollbar width.</summary>
     private const float GridRightEdge = GridPanelOriginX + GridPanel.HeaderWidth + GridPanel.ScrollbarWidth;
 
-    /// <summary>Left edge of the two right-hand info panels (no grid) — kept as far from the grids' right edge as the grids themselves are from the Trade panel's own left edge (<see cref="GridPanelOriginX"/>).</summary>
-    private const float RightPanelLeft = GridRightEdge + GridPanelOriginX;
+    /// <summary>Extra rightward nudge applied to both right-hand panels' left edge — their width shrinks by the same amount, their right edge staying put.</summary>
+    private const float RightPanelExtraLeftInset = 25f;
+
+    /// <summary>Extra width added to both right-hand panels — their left edge moves this much further left, their right edge staying put.</summary>
+    private const float RightPanelExtraWidth = 5f;
+
+    /// <summary>Left edge of the two right-hand info panels (no grid) — as far from the grids' right edge as the grids themselves are from the Trade panel's own left edge (<see cref="GridPanelOriginX"/>), plus <see cref="RightPanelExtraLeftInset"/>, minus <see cref="RightPanelExtraWidth"/>.</summary>
+    private const float RightPanelLeft = GridRightEdge + GridPanelOriginX + RightPanelExtraLeftInset - RightPanelExtraWidth;
 
     /// <summary>Right edge of the two right-hand info panels — mirrors <see cref="GridPanelOriginX"/> as the gap kept from the Trade panel's own right edge.</summary>
     private const float RightPanelRight = TradeLayout.PanelWidth - GridPanelOriginX;
 
-    /// <summary>Height of the upper right-hand panel — the Resources and Goods grids' combined vertical span.</summary>
-    private const float RightPanelUpperHeight = GridPanelOriginYGoods + GridRowsAreaHeight - GridPanelOriginY;
+    /// <summary>Gap kept between the titlebar's left edge and its panel's own white outline left edge — same gap <see cref="GridPanelOriginX"/> (15) keeps from the Resources white outline's left edge (<see cref="_contentOutlineRect"/>, 10): 15-10=5.</summary>
+    private static readonly float RightPanelTitleBarLeftInset = GridPanelOriginX - _contentOutlineRect.Left;
 
-    /// <summary>Height of the lower right-hand panel — same as a single grid's row area.</summary>
-    private const float RightPanelLowerHeight = GridRowsAreaHeight;
+    /// <summary>Gap kept between the titlebar's right edge and its panel's own white outline right edge — mirrors <see cref="RightPanelTitleBarLeftInset"/> (these panels have no scrollbar to justify a wider right margin the way the Resources grid header's does).</summary>
+    private static readonly float RightPanelTitleBarRightInset = RightPanelTitleBarLeftInset;
 
-    /// <summary>Vertical center of the Resources and Goods grids' white outline frames combined — the upper right-hand panel is centered on this, not on the grids' own (differently-offset) geometry.</summary>
-    private static readonly float _rightPanelUpperCenterY = (_contentOutlineRect.Top + _contentOutlineRectGoods.Bottom) / 2f;
+    /// <summary>Height of the gray rounded-corner titlebar drawn at the top of each right-hand panel — same style as <see cref="GridPanel"/>'s own header bar.</summary>
+    private const float RightPanelTitleBarHeight = GridPanel.HeaderHeight;
 
-    /// <summary>Vertical center of the Modules grid's white outline frame — the lower right-hand panel is centered on this.</summary>
-    private static readonly float _rightPanelLowerCenterY = (_contentOutlineRectModules.Top + _contentOutlineRectModules.Bottom) / 2f;
+    /// <summary>Corner radius for the right-hand panels' titlebar — mirrors GridPanel's own (private) header corner radius.</summary>
+    private const float RightPanelTitleBarCornerRadius = 12f;
 
-    /// <summary>Upper right-hand panel (no grid) — <see cref="RightPanelUpperHeight"/> tall, vertically centered on the Resources+Goods white frames (<see cref="_rightPanelUpperCenterY"/>).</summary>
+    /// <summary>Same fill color as <see cref="GridPanel"/>'s own header bar, for the right-hand panels' titlebar.</summary>
+    private static readonly SKPaint _rightPanelTitleBarPaint = new()
+    {
+        Color = new SKColor(0x5E, 0x5E, 0x5E), Style = SKPaintStyle.Fill, IsAntialias = true
+    };
+
+    /// <summary>
+    /// Upper right-hand panel (no grid) — top/bottom snapped exactly to the Resources and
+    /// Goods grids' white outline frames combined (top of the Resources frame to bottom of
+    /// the Goods frame), so its own white outline has the same per-panel height (200) as
+    /// each of theirs, not an independently computed height/center.
+    /// </summary>
     private static readonly SKRect _rightPanelUpper = new(
-        RightPanelLeft, _rightPanelUpperCenterY - RightPanelUpperHeight / 2f,
-        RightPanelRight, _rightPanelUpperCenterY + RightPanelUpperHeight / 2f);
+        RightPanelLeft, _contentOutlineRect.Top, RightPanelRight, _contentOutlineRectGoods.Bottom);
 
-    /// <summary>Lower right-hand panel (no grid) — <see cref="RightPanelLowerHeight"/> tall, vertically centered on the Modules white frame (<see cref="_rightPanelLowerCenterY"/>).</summary>
+    /// <summary>Lower right-hand panel (no grid) — top/bottom snapped exactly to the Modules grid's white outline frame, so its outline has the same height (200) as the Resources/Goods ones.</summary>
     private static readonly SKRect _rightPanelLower = new(
-        RightPanelLeft, _rightPanelLowerCenterY - RightPanelLowerHeight / 2f,
-        RightPanelRight, _rightPanelLowerCenterY + RightPanelLowerHeight / 2f);
+        RightPanelLeft, _contentOutlineRectModules.Top, RightPanelRight, _contentOutlineRectModules.Bottom);
+
+    /// <summary>
+    /// Upper right-hand panel's titlebar — top pinned to <see cref="GridPanelOriginY"/> (the
+    /// same offset above its own white outline's top that the Resources grid's own header
+    /// bar has above that same white outline on the left), and left/right edges inset from
+    /// the panel's own white outline by <see cref="RightPanelTitleBarLeftInset"/>/
+    /// <see cref="RightPanelTitleBarRightInset"/> — the same horizontal margins the
+    /// Resources grid's header keeps from its white outline.
+    /// </summary>
+    private static readonly SKRect _rightPanelUpperTitleBar = new(
+        RightPanelLeft + RightPanelTitleBarLeftInset, GridPanelOriginY,
+        RightPanelRight - RightPanelTitleBarRightInset, GridPanelOriginY + RightPanelTitleBarHeight);
+
+    /// <summary>Same idea as <see cref="_rightPanelUpperTitleBar"/>, pinned to <see cref="GridPanelOriginYModules"/> to match the Modules grid header's offset above its white outline.</summary>
+    private static readonly SKRect _rightPanelLowerTitleBar = new(
+        RightPanelLeft + RightPanelTitleBarLeftInset, GridPanelOriginYModules,
+        RightPanelRight - RightPanelTitleBarRightInset, GridPanelOriginYModules + RightPanelTitleBarHeight);
 
     /// <summary>Test seam — the two right-hand info panels' geometry, in the same panel-local coordinate space as <see cref="_contentOutlineRect"/>.</summary>
     internal (SKRect Upper, SKRect Lower) RightPanels => (_rightPanelUpper, _rightPanelLower);
+
+    /// <summary>Test seam — the two right-hand panels' titlebar geometry, same coordinate space as <see cref="RightPanels"/>.</summary>
+    internal (SKRect Upper, SKRect Lower) RightPanelTitleBars => (_rightPanelUpperTitleBar, _rightPanelLowerTitleBar);
+
+    // ── Trade action panel (lower right-hand frame) — Docs/FirstRelease/Screens/Trade.md
+    // "UI-решение: панель действия". Shows Buy/Sell/Refuel controls for whichever item is
+    // currently selected across the three grids above (identity-based selection, already
+    // mutually exclusive — see _selectedResourceItemTypeId/_selectedGoodItemTypeId/
+    // _selectedModuleItemTypeId).
+
+    private const string FuelItemTypeId = "item.fuel";
+
+    /// <summary>True while the action panel is in Buy mode, false for Sell — always true (and locked) while <see cref="FuelItemTypeId"/> is selected, since refueling has no Sell counterpart.</summary>
+    private bool _isTradeBuyMode = true;
+
+    /// <summary>Test seam — current Buy/Sell toggle state (see <see cref="_isTradeBuyMode"/>).</summary>
+    internal bool IsTradeBuyMode => _isTradeBuyMode;
+
+    /// <summary>
+    /// Current quantity chosen by the stepper (`-`/`+`/`Max`) — reset to the selected item's
+    /// package step size (<see cref="ResolveQuantityStep"/>) whenever the selection or the
+    /// Buy/Sell mode changes (<see cref="ResetTradeActionPanelState"/>).
+    /// </summary>
+    private long _tradeQuantity;
+
+    /// <summary>Test seam — current stepper quantity (see <see cref="_tradeQuantity"/>).</summary>
+    internal long TradeQuantity => _tradeQuantity;
+
+    /// <summary>
+    /// CommandId of the last trade command sent via <see cref="OnConfirmTradeClicked"/>, kept
+    /// until its disposition is observed in a later snapshot's CommandResults (see
+    /// <see cref="UpdateTradeCommandResult"/>) — a rejection produces no other observable state
+    /// change (GameSessionHandle.SendTradeCommand's doc comment), so this is the only way the
+    /// panel learns a Buy/Sell/Refuel was rejected.
+    /// </summary>
+    private string? _lastSentTradeCommandId;
+
+    /// <summary>
+    /// Localization key for the last observed trade-command rejection reason, or null — shown
+    /// near the confirm button until a new command supersedes it or the selection/mode changes
+    /// (<see cref="ResetTradeActionPanelState"/>).
+    /// </summary>
+    private string? _tradeRejectionReasonKey;
+
+    /// <summary>Test seam — current trade-command rejection reason key (see <see cref="_tradeRejectionReasonKey"/>), null once resolved/cleared.</summary>
+    internal string? TradeRejectionReasonKey => _tradeRejectionReasonKey;
+
+    /// <summary>Test seam — the item type id currently selected across the three grids (Resources/Goods/Modules), or null.</summary>
+    internal string? SelectedTradeItemTypeId =>
+        _selectedResourceItemTypeId ?? _selectedGoodItemTypeId ?? _selectedModuleItemTypeId;
+
+    /// <summary>Resource category's package step size (§59 StationEconomyProductionAndSizing.md) — 100 for Resource, 10 for Good (including Fuel).</summary>
+    private static long ResolveQuantityStep(string category) =>
+        category == TradeItemCategories.Resource ? 100 : 10;
+
+    /// <summary>The selected item's trade category, looked up from the docked station's live inventory — defaults to Good (step 10) if the item can't be found (e.g. it just fell out of the station's snapshot).</summary>
+    private static string ResolveItemCategory(AuthoritativeSnapshot? snapshot, string itemTypeId) =>
+        snapshot?.DockedStationTrade?.Items.FirstOrDefault(item => item.ItemTypeId == itemTypeId)?.Category
+        ?? TradeItemCategories.Good;
+
+    /// <summary>
+    /// Called whenever the selected trade item or the Buy/Sell mode changes: forces Buy mode
+    /// back on for Fuel (Sell is unreachable for it), resets the quantity to the new step size,
+    /// and clears any stale command-rejection state from a previous item/mode.
+    /// </summary>
+    private void ResetTradeActionPanelState(AuthoritativeSnapshot? snapshot)
+    {
+        string? itemTypeId = SelectedTradeItemTypeId;
+        if (itemTypeId == FuelItemTypeId)
+            _isTradeBuyMode = true;
+
+        _tradeQuantity = itemTypeId is null ? 0 : ResolveQuantityStep(ResolveItemCategory(snapshot, itemTypeId));
+        _lastSentTradeCommandId = null;
+        _tradeRejectionReasonKey = null;
+    }
+
+    /// <summary>
+    /// The first installed module (by <see cref="InstalledModuleSnapshot.Position"/>) whose
+    /// CommandTypeIds handles <see cref="TradeCommandTypes.Buy"/> — the cargo container
+    /// Buy/Sell of non-Fuel items is addressed to (see <see cref="ResolvePlayerCargo"/>, which
+    /// reuses this same resolution for the player-cargo dictionary it returns).
+    /// </summary>
+    private static InstalledModuleSnapshot? ResolveContainerModule(AuthoritativeSnapshot? snapshot)
+    {
+        var modules = snapshot?.InstalledModules;
+        if (modules is null || modules.Value.IsDefaultOrEmpty)
+            return null;
+
+        return modules.Value
+            .Where(m => m.CommandTypeIds.Contains(TradeCommandTypes.Buy))
+            .OrderBy(m => m.Position)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
+    /// The first installed module (by Position) whose CommandTypeIds handles
+    /// <see cref="TradeCommandTypes.Refuel"/> — buying Fuel is always routed here, never to the
+    /// container module (Docs/FirstRelease/Screens/Trade.md's command-routing rule).
+    /// </summary>
+    private static InstalledModuleSnapshot? ResolveEngineModule(AuthoritativeSnapshot? snapshot)
+    {
+        var modules = snapshot?.InstalledModules;
+        if (modules is null || modules.Value.IsDefaultOrEmpty)
+            return null;
+
+        return modules.Value
+            .Where(m => m.CommandTypeIds.Contains(TradeCommandTypes.Refuel))
+            .OrderBy(m => m.Position)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Resolved market/eligibility data for the action panel's currently selected item — null
+    /// while nothing is selected or the selected item can't be found in the docked station's
+    /// current inventory (e.g. it dropped out between snapshots).
+    /// </summary>
+    private readonly record struct TradeActionInfo(
+        string ItemTypeId, string DisplayName, string Category, bool IsFuel,
+        long StationPriceCredits, long StationStockQuantity, long MaxSellableQuantity,
+        long PlayerCargoQuantity, long QuantityStep, long PlayerCredits,
+        string? ContainerModuleId, long? ContainerAvailableCapacityKg,
+        string? EngineModuleId, long FuelAmountKg, long FuelCapacityKg);
+
+    private static TradeActionInfo? ResolveTradeActionInfo(AuthoritativeSnapshot? snapshot, string? itemTypeId)
+    {
+        if (itemTypeId is null)
+            return null;
+
+        var item = snapshot?.DockedStationTrade?.Items.FirstOrDefault(i => i.ItemTypeId == itemTypeId);
+        if (item is null)
+            return null;
+
+        var containerModule = ResolveContainerModule(snapshot);
+        var engineModule = ResolveEngineModule(snapshot);
+        var playerCargo = ResolvePlayerCargo(snapshot);
+        long cargoQuantity = playerCargo.TryGetValue(itemTypeId, out long qty) ? qty : 0;
+
+        return new TradeActionInfo(
+            ItemTypeId: itemTypeId,
+            DisplayName: ItemDisplayName(itemTypeId),
+            Category: item.Category,
+            IsFuel: itemTypeId == FuelItemTypeId,
+            StationPriceCredits: item.UnitPriceCredits,
+            StationStockQuantity: item.StockQuantity,
+            MaxSellableQuantity: item.MaxSellableQuantity,
+            PlayerCargoQuantity: cargoQuantity,
+            QuantityStep: ResolveQuantityStep(item.Category),
+            PlayerCredits: snapshot?.PlayerCredits ?? 0,
+            ContainerModuleId: containerModule?.ModuleId,
+            ContainerAvailableCapacityKg: containerModule?.AvailableCapacityKg,
+            EngineModuleId: engineModule?.ModuleId,
+            FuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
+            FuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot));
+    }
+
+    /// <summary>
+    /// Max quantity the stepper's `Max` button resolves to (Docs/FirstRelease/Screens/Trade.md
+    /// batch spec): Buy non-Fuel is bounded by affordability/station stock, and additionally
+    /// resolves to 0 (button becomes a no-op) when the container has no cargo space left at
+    /// all; Buy Fuel (Refuel) is additionally bounded by remaining tank capacity; Sell is
+    /// bounded by cargo-on-hand/station's MaxSellableQuantity, then rounded down to the
+    /// nearest whole sell package (the Engine authoritatively rejects a non-multiple Sell
+    /// quantity as InvalidPackageQuantity).
+    /// </summary>
+    private static long ResolveMaxQuantity(TradeActionInfo info, bool isBuyMode)
+    {
+        if (isBuyMode)
+        {
+            long affordable = info.StationPriceCredits > 0 ? info.PlayerCredits / info.StationPriceCredits : 0;
+
+            if (info.IsFuel)
+            {
+                long remainingFuelCapacity = Math.Max(0, info.FuelCapacityKg - info.FuelAmountKg);
+                return Math.Max(0, Math.Min(affordable, Math.Min(info.StationStockQuantity, remainingFuelCapacity)));
+            }
+
+            if (info.ContainerAvailableCapacityKg is <= 0)
+                return 0;
+
+            return Math.Max(0, Math.Min(affordable, info.StationStockQuantity));
+        }
+
+        long sellable = Math.Min(info.PlayerCargoQuantity, info.MaxSellableQuantity);
+        long step = info.QuantityStep;
+        long rounded = step > 0 ? (sellable / step) * step : sellable;
+        return Math.Max(0, rounded);
+    }
+
+    /// <summary>
+    /// Proactive confirm-button eligibility (Docs/FirstRelease/Screens/Trade.md's two documented
+    /// disabled states — the panel does not try to predict every possible Engine rejection, e.g.
+    /// cargo mass overflow on Buy, which is a documented client-side limitation surfaced
+    /// reactively instead via <see cref="UpdateTradeCommandResult"/>).
+    /// </summary>
+    private static string? ResolveConfirmDisabledReasonKey(TradeActionInfo info, bool isBuyMode, long quantity)
+    {
+        if (isBuyMode)
+        {
+            if (!info.IsFuel && info.ContainerAvailableCapacityKg is <= 0)
+                return "Trade.NoCargoSpace";
+
+            long totalPrice = info.StationPriceCredits * quantity;
+            if (totalPrice > info.PlayerCredits)
+                return "Trade.ReasonInsufficientPlayerCredits";
+
+            return null;
+        }
+
+        if (info.PlayerCargoQuantity <= 0)
+            return "Trade.NoneInCargo";
+
+        return null;
+    }
+
+    /// <summary>Maps an Engine <see cref="CommandReasonCodes"/> value to its localization key (Docs/FirstRelease/Screens/Trade.md's CommandResult-correlation rule) — falls back to the raw code for any reason not expected on a trade command.</summary>
+    private static string ResolveRejectionReasonKey(string reasonCode) => reasonCode switch
+    {
+        CommandReasonCodes.InsufficientPlayerCredits => "Trade.ReasonInsufficientPlayerCredits",
+        CommandReasonCodes.InsufficientStationStock => "Trade.ReasonInsufficientStationStock",
+        CommandReasonCodes.CargoCapacityExceeded => "Trade.ReasonCargoCapacityExceeded",
+        CommandReasonCodes.FuelCapacityExceeded => "Trade.ReasonFuelCapacityExceeded",
+        CommandReasonCodes.InsufficientCargoQuantity => "Trade.ReasonInsufficientCargoQuantity",
+        CommandReasonCodes.InvalidQuantity => "Trade.ReasonInvalidQuantity",
+        CommandReasonCodes.InvalidPackageQuantity => "Trade.ReasonInvalidPackageQuantity",
+        CommandReasonCodes.NotDocked => "Trade.ReasonNotDocked",
+        CommandReasonCodes.UnknownItemType => "Trade.ReasonUnknownItemType",
+        _ => reasonCode
+    };
+
+    /// <summary>
+    /// Correlates <see cref="_lastSentTradeCommandId"/> against the latest snapshot's
+    /// CommandResults (see GameSessionHandle.SendTradeCommand's doc comment) — sets
+    /// <see cref="_tradeRejectionReasonKey"/> on a Rejected disposition, or clears the pending
+    /// id on any other disposition (the command resolved with an observable state change, so
+    /// there's nothing more to show). Called once per Render.
+    /// </summary>
+    private void UpdateTradeCommandResult(AuthoritativeSnapshot? snapshot)
+    {
+        if (_lastSentTradeCommandId is null || snapshot is null || snapshot.CommandResults.IsDefaultOrEmpty)
+            return;
+
+        foreach (var result in snapshot.CommandResults)
+        {
+            if (result.CommandId != _lastSentTradeCommandId)
+                continue;
+
+            // Deferred (module busy) is not a final disposition — trade commands are not
+            // expected to defer, but if one does, keep tracking it across future snapshots
+            // rather than treating "no result yet" as resolved.
+            if (result.Status == CommandResultStatus.Deferred)
+                return;
+
+            if (result.Status == CommandResultStatus.Rejected)
+                _tradeRejectionReasonKey = ResolveRejectionReasonKey(result.ReasonCode ?? string.Empty);
+
+            _lastSentTradeCommandId = null;
+            return;
+        }
+    }
+
+    // ── Trade action panel layout (panel-local coordinates, same space as _rightPanelLower —
+    // screen coordinates are obtained by adding TradeLayout.PanelLeft/PanelTop, exactly like
+    // every other rect in this file).
+
+    // RightPanelTitleBarLeftInset/RightInset are `static readonly` (computed from _contentOutlineRect),
+    // not compile-time constants, so these derived positions must be `static readonly` too.
+    private static readonly float TradeActionContentLeft = RightPanelLeft + RightPanelTitleBarLeftInset;
+    private static readonly float TradeActionContentRight = RightPanelRight - RightPanelTitleBarRightInset;
+    private const float TradeActionContentTop = GridPanelOriginYModules + RightPanelTitleBarHeight + 8f;
+
+    private const float TradeMarketLineHeight = 14f;
+    private const float TradeToggleHeight = 22f;
+    private const float TradeStepperHeight = 22f;
+    private const float TradeSummaryLineHeight = 14f;
+    private const float TradeReasonLineHeight = 14f;
+    private const float TradeConfirmHeight = 28f;
+
+    private static readonly SKRect _tradeMarketLine1Rect = new(
+        TradeActionContentLeft, TradeActionContentTop, TradeActionContentRight, TradeActionContentTop + TradeMarketLineHeight);
+    private static readonly SKRect _tradeMarketLine2Rect = new(
+        TradeActionContentLeft, _tradeMarketLine1Rect.Bottom + 4f, TradeActionContentRight, _tradeMarketLine1Rect.Bottom + 4f + TradeMarketLineHeight);
+
+    private const float TradeToggleGap = 8f;
+    private static readonly float _tradeToggleRowTop = _tradeMarketLine2Rect.Bottom + 6f;
+    private static readonly float _tradeToggleButtonWidth = (TradeActionContentRight - TradeActionContentLeft - TradeToggleGap) / 2f;
+    private static readonly SKRect _tradeBuyButtonRect = new(
+        TradeActionContentLeft, _tradeToggleRowTop, TradeActionContentLeft + _tradeToggleButtonWidth, _tradeToggleRowTop + TradeToggleHeight);
+    private static readonly SKRect _tradeSellButtonRect = new(
+        _tradeBuyButtonRect.Right + TradeToggleGap, _tradeToggleRowTop, TradeActionContentRight, _tradeToggleRowTop + TradeToggleHeight);
+
+    /// <summary>Test seam — the Buy/Sell toggle buttons' geometry, panel-local (see <see cref="RightPanels"/>'s coordinate space).</summary>
+    internal (SKRect Buy, SKRect Sell) TradeModeToggleRects => (_tradeBuyButtonRect, _tradeSellButtonRect);
+
+    private const float TradeStepperGap = 8f;
+    private const float TradeStepperButtonWidth = 36f;
+    private const float TradeMaxButtonWidth = 70f;
+    private static readonly float _tradeStepperRowTop = _tradeBuyButtonRect.Bottom + 6f;
+    private static readonly SKRect _tradeMinusButtonRect = new(
+        TradeActionContentLeft, _tradeStepperRowTop, TradeActionContentLeft + TradeStepperButtonWidth, _tradeStepperRowTop + TradeStepperHeight);
+    private static readonly SKRect _tradeMaxButtonRect = new(
+        TradeActionContentRight - TradeMaxButtonWidth, _tradeStepperRowTop, TradeActionContentRight, _tradeStepperRowTop + TradeStepperHeight);
+    private static readonly SKRect _tradePlusButtonRect = new(
+        _tradeMaxButtonRect.Left - TradeStepperGap - TradeStepperButtonWidth, _tradeStepperRowTop,
+        _tradeMaxButtonRect.Left - TradeStepperGap, _tradeStepperRowTop + TradeStepperHeight);
+    private static readonly SKRect _tradeQuantityFieldRect = new(
+        _tradeMinusButtonRect.Right + TradeStepperGap, _tradeStepperRowTop,
+        _tradePlusButtonRect.Left - TradeStepperGap, _tradeStepperRowTop + TradeStepperHeight);
+
+    /// <summary>Test seam — the quantity stepper's `-`/`+`/`Max` button geometry, panel-local.</summary>
+    internal (SKRect Minus, SKRect Plus, SKRect Max) TradeStepperRects => (_tradeMinusButtonRect, _tradePlusButtonRect, _tradeMaxButtonRect);
+
+    private static readonly SKRect _tradeSummaryLine1Rect = new(
+        TradeActionContentLeft, _tradeMinusButtonRect.Bottom + 6f, TradeActionContentRight, _tradeMinusButtonRect.Bottom + 6f + TradeSummaryLineHeight);
+    private static readonly SKRect _tradeSummaryLine2Rect = new(
+        TradeActionContentLeft, _tradeSummaryLine1Rect.Bottom, TradeActionContentRight, _tradeSummaryLine1Rect.Bottom + TradeSummaryLineHeight);
+    private static readonly SKRect _tradeReasonLineRect = new(
+        TradeActionContentLeft, _tradeSummaryLine2Rect.Bottom + 6f, TradeActionContentRight, _tradeSummaryLine2Rect.Bottom + 6f + TradeReasonLineHeight);
+    private static readonly SKRect _tradeConfirmButtonRect = new(
+        TradeActionContentLeft, _tradeReasonLineRect.Bottom, TradeActionContentRight, _tradeReasonLineRect.Bottom + TradeConfirmHeight);
+
+    /// <summary>Test seam — the confirm button's geometry, panel-local.</summary>
+    internal SKRect TradeConfirmButtonRect => _tradeConfirmButtonRect;
+
+    /// <summary>Screen-space rect for a panel-local rect, using the current frame's panel position — mirrors every other `pl + local.Left, pt + local.Top` pattern in this file.</summary>
+    private SKRect ToScreenRect(SKRect local)
+    {
+        float pl = TradeLayout.PanelLeft(_screenWidth);
+        float pt = TradeLayout.PanelTop(_screenHeight);
+        return new SKRect(pl + local.Left, pt + local.Top, pl + local.Right, pt + local.Bottom);
+    }
+
+    private static bool Contains(SKRect rect, float x, float y) =>
+        x >= rect.Left && x <= rect.Right && y >= rect.Top && y <= rect.Bottom;
+
+    /// <summary>
+    /// Handles a left click against the trade action panel's own controls (Buy/Sell toggle,
+    /// `-`/`+`/`Max` stepper, confirm) — returns true (and has already acted) if the click hit
+    /// one of them, so the caller (OnMouseDown) skips the grid hit-testing below it. Requires
+    /// an item to be selected; the panel has no clickable controls in its empty "Select item" state.
+    /// </summary>
+    private bool HandleTradeActionPanelMouseDown(float x, float y)
+    {
+        var snapshot = _buffer?.Latest?.Snapshot;
+        string? itemTypeId = SelectedTradeItemTypeId;
+        if (itemTypeId is null)
+            return false;
+
+        var info = ResolveTradeActionInfo(snapshot, itemTypeId);
+        if (info is null)
+            return false;
+
+        if (Contains(ToScreenRect(_tradeBuyButtonRect), x, y))
+        {
+            if (!_isTradeBuyMode)
+            {
+                _isTradeBuyMode = true;
+                ResetTradeActionPanelState(snapshot);
+            }
+            return true;
+        }
+
+        if (Contains(ToScreenRect(_tradeSellButtonRect), x, y))
+        {
+            // Fuel has no Sell counterpart (no trade.refuel-reverse command exists) — the
+            // Sell side of the toggle is unreachable while it's selected.
+            if (_isTradeBuyMode && !info.Value.IsFuel)
+            {
+                _isTradeBuyMode = false;
+                ResetTradeActionPanelState(snapshot);
+            }
+            return true;
+        }
+
+        long step = info.Value.QuantityStep;
+        long max = ResolveMaxQuantity(info.Value, _isTradeBuyMode);
+
+        if (Contains(ToScreenRect(_tradeMinusButtonRect), x, y))
+        {
+            _tradeQuantity = Math.Clamp(_tradeQuantity - step, step, Math.Max(step, max));
+            return true;
+        }
+
+        if (Contains(ToScreenRect(_tradePlusButtonRect), x, y))
+        {
+            _tradeQuantity = Math.Clamp(_tradeQuantity + step, step, Math.Max(step, max));
+            return true;
+        }
+
+        if (Contains(ToScreenRect(_tradeMaxButtonRect), x, y))
+        {
+            // No-op when Max resolves to 0 (e.g. container completely full on a non-Fuel Buy) —
+            // there is nothing meaningful to set the quantity to.
+            if (max > 0)
+                _tradeQuantity = max;
+            return true;
+        }
+
+        if (Contains(ToScreenRect(_tradeConfirmButtonRect), x, y))
+        {
+            OnConfirmTradeClicked(snapshot, info.Value);
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Sends the Buy/Sell/Refuel command for the current selection/mode/quantity (Docs/
+    /// FirstRelease/Screens/Trade.md's command-routing rule: Fuel always goes to the engine
+    /// module as trade.refuel, everything else goes to the container module as trade.buy/
+    /// trade.sell). No-ops if the confirm button is currently disabled, or if there's no live
+    /// session/target module to address (tests constructing this screen without a
+    /// GameSessionHandle).
+    /// </summary>
+    private void OnConfirmTradeClicked(AuthoritativeSnapshot? snapshot, TradeActionInfo info)
+    {
+        if (ResolveConfirmDisabledReasonKey(info, _isTradeBuyMode, _tradeQuantity) is not null)
+            return;
+
+        string? playerShipObjectId = snapshot?.PlayerShipObjectId;
+        if (_handle is null || string.IsNullOrWhiteSpace(playerShipObjectId))
+            return;
+
+        string commandType;
+        string? moduleId;
+        if (info.IsFuel)
+        {
+            commandType = TradeCommandTypes.Refuel;
+            moduleId = info.EngineModuleId;
+        }
+        else if (_isTradeBuyMode)
+        {
+            commandType = TradeCommandTypes.Buy;
+            moduleId = info.ContainerModuleId;
+        }
+        else
+        {
+            commandType = TradeCommandTypes.Sell;
+            moduleId = info.ContainerModuleId;
+        }
+
+        if (moduleId is null)
+            return;
+
+        _lastSentTradeCommandId = _handle.SendTradeCommand(
+            playerShipObjectId, moduleId, commandType, info.ItemTypeId, _tradeQuantity);
+        _tradeRejectionReasonKey = null;
+    }
+
+    /// <summary>Currently resolved <see cref="TradeActionInfo"/> for the selected item, or null while nothing is selected/resolvable — shared by the test seams below and <see cref="DrawTradeActionPanel"/>.</summary>
+    private TradeActionInfo? ResolveCurrentTradeActionInfo() =>
+        ResolveTradeActionInfo(_buffer?.Latest?.Snapshot, SelectedTradeItemTypeId);
+
+    /// <summary>Test seam — whether the confirm button is currently enabled (proactive checks only — see <see cref="ResolveConfirmDisabledReasonKey"/>), false while nothing is selected.</summary>
+    internal bool CanConfirmTrade =>
+        ResolveCurrentTradeActionInfo() is { } info
+        && ResolveConfirmDisabledReasonKey(info, _isTradeBuyMode, _tradeQuantity) is null;
+
+    /// <summary>Test seam — the localization key for why the confirm button is currently disabled (proactive reason takes priority over a stale reactive rejection reason — see <see cref="ResolveConfirmDisabledReasonKey"/>/<see cref="_tradeRejectionReasonKey"/>), or null when it's enabled.</summary>
+    internal string? TradeDisabledReasonKey =>
+        ResolveCurrentTradeActionInfo() is { } info
+            ? ResolveConfirmDisabledReasonKey(info, _isTradeBuyMode, _tradeQuantity) ?? _tradeRejectionReasonKey
+            : null;
+
+    /// <summary>Test seam — the resolved Max quantity the stepper's `Max` button would set (see <see cref="ResolveMaxQuantity"/>), or 0 while nothing is selected.</summary>
+    internal long TradeMaxQuantity =>
+        ResolveCurrentTradeActionInfo() is { } info ? ResolveMaxQuantity(info, _isTradeBuyMode) : 0;
+
+    // ── Trade action panel drawing.
+
+    private static readonly SKPaint _tradeTitleBarTextPaint = new()
+    {
+        Color = SKColors.White, TextSize = 16f, IsAntialias = true,
+        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceHumaroid
+    };
+
+    private static readonly SKPaint _tradeBodyTextPaint = new()
+    {
+        Color = SKColors.White, TextSize = 13f, IsAntialias = true,
+        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceRegular
+    };
+
+    private static readonly SKPaint _tradeBodyTextPaintCentered = new()
+    {
+        Color = SKColors.White, TextSize = 13f, IsAntialias = true,
+        TextAlign = SKTextAlign.Center, Typeface = MenuStyle.TypefaceRegular
+    };
+
+    /// <summary>Reason text (proactive disable or reactive rejection) — dim, distinct from the normal body text.</summary>
+    private static readonly SKPaint _tradeReasonTextPaint = new()
+    {
+        Color = MenuStyle.ColorTextDim, TextSize = 12f, IsAntialias = true,
+        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceRegular
+    };
+
+    /// <summary>Vertical baseline for a single line of text centered within <paramref name="rect"/>, matching <see cref="MenuStyle.VerticalCenterBaseline"/>'s convention.</summary>
+    private static float LineBaselineY(SKRect rect, SKPaint paint) => MenuStyle.VerticalCenterBaseline(rect, paint);
+
+    /// <summary>
+    /// Draws the lower right-hand panel's title (item name/category, or the empty-state
+    /// title) and, once an item is selected, its full Buy/Sell transaction content — the
+    /// panel's white outline and gray titlebar background are already drawn by the caller.
+    /// </summary>
+    private void DrawTradeActionPanel(SKCanvas canvas, float pl, float pt, AuthoritativeSnapshot? snapshot)
+    {
+        string? itemTypeId = SelectedTradeItemTypeId;
+        var info = ResolveTradeActionInfo(snapshot, itemTypeId);
+
+        var titleBarScreen = ToScreenRect(_rightPanelLowerTitleBar);
+        string titleText = info is { } selected
+            ? $"{selected.DisplayName} ({selected.Category})"
+            : Localization.Get("Trade.SelectItemTitle");
+        canvas.DrawText(titleText, titleBarScreen.Left + 10f, LineBaselineY(titleBarScreen, _tradeTitleBarTextPaint), _tradeTitleBarTextPaint);
+
+        if (info is not { } tradeInfo)
+        {
+            var emptyRect = ToScreenRect(new SKRect(
+                TradeActionContentLeft, TradeActionContentTop, TradeActionContentRight, _rightPanelLower.Bottom - 10f));
+            canvas.DrawText(Localization.Get("Trade.SelectItemPrompt"),
+                emptyRect.MidX, emptyRect.MidY, _tradeBodyTextPaintCentered);
+            return;
+        }
+
+        // Market info — two lines (Docs/FirstRelease/Screens/Trade.md: station price, then
+        // station stock / player's own holding of the item).
+        var marketLine1 = ToScreenRect(_tradeMarketLine1Rect);
+        canvas.DrawText($"{Localization.Get("Trade.UnitPrice")}: {tradeInfo.StationPriceCredits}",
+            marketLine1.Left, LineBaselineY(marketLine1, _tradeBodyTextPaint), _tradeBodyTextPaint);
+
+        var marketLine2 = ToScreenRect(_tradeMarketLine2Rect);
+        string marketLine2Text = tradeInfo.IsFuel
+            ? $"{Localization.Get("Trade.StationInventory")}: {tradeInfo.StationStockQuantity}   {Localization.Get("Trade.Fuel")}: {tradeInfo.FuelAmountKg}/{tradeInfo.FuelCapacityKg}"
+            : $"{Localization.Get("Trade.StationInventory")}: {tradeInfo.StationStockQuantity}   {Localization.Get("Trade.Cargo")}: {tradeInfo.PlayerCargoQuantity}";
+        canvas.DrawText(marketLine2Text, marketLine2.Left, LineBaselineY(marketLine2, _tradeBodyTextPaint), _tradeBodyTextPaint);
+
+        // Buy/Sell toggle.
+        var buyRect = ToScreenRect(_tradeBuyButtonRect);
+        MenuStyle.DrawButton(canvas, buyRect, Localization.Get("Trade.Buy"),
+            _isTradeBuyMode ? ButtonState.Pressed : ButtonState.Normal);
+        var sellRect = ToScreenRect(_tradeSellButtonRect);
+        MenuStyle.DrawButton(canvas, sellRect, Localization.Get("Trade.Sell"),
+            tradeInfo.IsFuel ? ButtonState.Disabled : (!_isTradeBuyMode ? ButtonState.Pressed : ButtonState.Normal));
+
+        // Quantity stepper.
+        var minusRect = ToScreenRect(_tradeMinusButtonRect);
+        MenuStyle.DrawButton(canvas, minusRect, "-", ButtonState.Normal);
+        var plusRect = ToScreenRect(_tradePlusButtonRect);
+        MenuStyle.DrawButton(canvas, plusRect, "+", ButtonState.Normal);
+        var maxRect = ToScreenRect(_tradeMaxButtonRect);
+        MenuStyle.DrawButton(canvas, maxRect, Localization.Get("Trade.Max"), ButtonState.Normal);
+        var quantityRect = ToScreenRect(_tradeQuantityFieldRect);
+        canvas.DrawRect(quantityRect, MenuStyle.ButtonBorder);
+        canvas.DrawText(_tradeQuantity.ToString(), quantityRect.MidX, LineBaselineY(quantityRect, _tradeBodyTextPaintCentered), _tradeBodyTextPaintCentered);
+
+        // Transaction summary.
+        long totalPrice = tradeInfo.StationPriceCredits * _tradeQuantity;
+        long creditsChange = _isTradeBuyMode ? -totalPrice : totalPrice;
+        long cargoChange = _isTradeBuyMode ? _tradeQuantity : -_tradeQuantity;
+        var summaryLine1 = ToScreenRect(_tradeSummaryLine1Rect);
+        canvas.DrawText($"{Localization.Get("Trade.TotalPrice")}: {totalPrice}",
+            summaryLine1.Left, LineBaselineY(summaryLine1, _tradeBodyTextPaint), _tradeBodyTextPaint);
+        var summaryLine2 = ToScreenRect(_tradeSummaryLine2Rect);
+        string changeLabel = tradeInfo.IsFuel ? Localization.Get("Trade.Fuel") : Localization.Get("Trade.Cargo");
+        canvas.DrawText($"{Localization.Get("Trade.Credits")}: {(creditsChange >= 0 ? "+" : string.Empty)}{creditsChange}   {changeLabel}: {(cargoChange >= 0 ? "+" : string.Empty)}{cargoChange}",
+            summaryLine2.Left, LineBaselineY(summaryLine2, _tradeBodyTextPaint), _tradeBodyTextPaint);
+
+        // Reason text — proactive disable reason takes priority over a stale reactive one.
+        string? reasonKey = ResolveConfirmDisabledReasonKey(tradeInfo, _isTradeBuyMode, _tradeQuantity) ?? _tradeRejectionReasonKey;
+        if (reasonKey is not null)
+        {
+            var reasonRect = ToScreenRect(_tradeReasonLineRect);
+            canvas.DrawText(Localization.Get(reasonKey), reasonRect.Left, LineBaselineY(reasonRect, _tradeReasonTextPaint), _tradeReasonTextPaint);
+        }
+
+        // Confirm button.
+        bool canConfirm = ResolveConfirmDisabledReasonKey(tradeInfo, _isTradeBuyMode, _tradeQuantity) is null;
+        string confirmLabel = tradeInfo.IsFuel
+            ? Localization.Get("Trade.Refuel")
+            : (_isTradeBuyMode ? Localization.Get("Trade.Buy") : Localization.Get("Trade.Sell"));
+        var confirmRect = ToScreenRect(_tradeConfirmButtonRect);
+        MenuStyle.DrawButton(canvas, confirmRect, confirmLabel, canConfirm ? ButtonState.Normal : ButtonState.Disabled);
+    }
 
     /// <summary>Test seam — the resources grid's current row labels (see <see cref="ResolveResourceRows"/>).</summary>
     internal string[] ResourceNames => ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending).Select(row => row.Name).ToArray();
@@ -481,15 +1101,7 @@ public sealed class TradeScreen : IScreen
     /// </summary>
     private static Dictionary<string, long> ResolvePlayerCargo(AuthoritativeSnapshot? snapshot)
     {
-        var modules = snapshot?.InstalledModules;
-        if (modules is null || modules.Value.IsDefaultOrEmpty)
-            return new Dictionary<string, long>();
-
-        var containerModule = modules.Value
-            .Where(m => m.CommandTypeIds.Contains(TradeCommandTypes.Buy))
-            .OrderBy(m => m.Position)
-            .FirstOrDefault();
-
+        var containerModule = ResolveContainerModule(snapshot);
         if (containerModule is null || containerModule.Cargo.IsDefaultOrEmpty)
             return new Dictionary<string, long>();
 
@@ -519,9 +1131,10 @@ public sealed class TradeScreen : IScreen
         _ => itemTypeId
     };
 
-    public TradeScreen(SnapshotBuffer? buffer = null)
+    public TradeScreen(SnapshotBuffer? buffer = null, GameSessionHandle? handle = null)
     {
         _buffer = buffer;
+        _handle = handle;
     }
 
     public void OnActivated()
@@ -544,6 +1157,7 @@ public sealed class TradeScreen : IScreen
         _crewHoverStartedAtMs = null;
         _tokensHoverStartedAtMs = null;
         _fuelHoverStartedAtMs = null;
+        ResetTradeActionPanelState(_buffer?.Latest?.Snapshot);
     }
 
     public void OnDeactivated() { }
@@ -561,6 +1175,9 @@ public sealed class TradeScreen : IScreen
 
         if (IsStationNameHit(x, y))
             return ScreenEvent.NavigateToStation;
+
+        if (HandleTradeActionPanelMouseDown(x, y))
+            return ScreenEvent.None;
 
         var resourceRows = ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending);
         int resourceRowCount = resourceRows.Length;
@@ -606,6 +1223,7 @@ public sealed class TradeScreen : IScreen
             // The three grids share a single selection — picking a row in one clears the others.
             _selectedGoodItemTypeId = null;
             _selectedModuleItemTypeId = null;
+            ResetTradeActionPanelState(_buffer?.Latest?.Snapshot);
             return ScreenEvent.None;
         }
 
@@ -653,6 +1271,7 @@ public sealed class TradeScreen : IScreen
             // The three grids share a single selection — picking a row in one clears the others.
             _selectedResourceItemTypeId = null;
             _selectedModuleItemTypeId = null;
+            ResetTradeActionPanelState(_buffer?.Latest?.Snapshot);
             return ScreenEvent.None;
         }
 
@@ -700,6 +1319,7 @@ public sealed class TradeScreen : IScreen
             // The three grids share a single selection — picking a row in one clears the others.
             _selectedResourceItemTypeId = null;
             _selectedGoodItemTypeId = null;
+            ResetTradeActionPanelState(_buffer?.Latest?.Snapshot);
             return ScreenEvent.None;
         }
 
@@ -896,6 +1516,7 @@ public sealed class TradeScreen : IScreen
         MenuStyle.DrawPanel(canvas, panelRect);
 
         var snapshot = _buffer?.Latest?.Snapshot;
+        UpdateTradeCommandResult(snapshot);
         string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: false, isHovered: _isStationNameHovered,
             windowName: "TRADE", isExitButtonHovered: _isExitButtonHovered,
@@ -905,9 +1526,6 @@ public sealed class TradeScreen : IScreen
             creditsCount: StationToolbar.ResolveCreditsCount(snapshot),
             fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
             fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot));
-
-        float cx = pl + TradeLayout.PanelWidth / 2f;
-        canvas.DrawText(PlaceholderLine, cx, pt + TradeLayout.BodyStartY, MenuStyle.TextStatus);
 
         var contentRect = new SKRect(pl + _contentOutlineRect.Left, pt + _contentOutlineRect.Top,
             pl + _contentOutlineRect.Right, pt + _contentOutlineRect.Bottom);
@@ -924,10 +1542,18 @@ public sealed class TradeScreen : IScreen
         var rightPanelUpper = new SKRect(pl + _rightPanelUpper.Left, pt + _rightPanelUpper.Top,
             pl + _rightPanelUpper.Right, pt + _rightPanelUpper.Bottom);
         canvas.DrawRect(rightPanelUpper, _contentOutlinePaint);
+        var rightPanelUpperTitleBar = new SKRect(pl + _rightPanelUpperTitleBar.Left, pt + _rightPanelUpperTitleBar.Top,
+            pl + _rightPanelUpperTitleBar.Right, pt + _rightPanelUpperTitleBar.Bottom);
+        canvas.DrawRoundRect(rightPanelUpperTitleBar, RightPanelTitleBarCornerRadius, RightPanelTitleBarCornerRadius, _rightPanelTitleBarPaint);
 
         var rightPanelLower = new SKRect(pl + _rightPanelLower.Left, pt + _rightPanelLower.Top,
             pl + _rightPanelLower.Right, pt + _rightPanelLower.Bottom);
         canvas.DrawRect(rightPanelLower, _contentOutlinePaint);
+        var rightPanelLowerTitleBar = new SKRect(pl + _rightPanelLowerTitleBar.Left, pt + _rightPanelLowerTitleBar.Top,
+            pl + _rightPanelLowerTitleBar.Right, pt + _rightPanelLowerTitleBar.Bottom);
+        canvas.DrawRoundRect(rightPanelLowerTitleBar, RightPanelTitleBarCornerRadius, RightPanelTitleBarCornerRadius, _rightPanelTitleBarPaint);
+
+        DrawTradeActionPanel(canvas, pl, pt, snapshot);
 
         var resourceRows = ResolveResourceRows(snapshot, _sortColumn, _sortDescending);
         _scrollOffset = Math.Clamp(_scrollOffset, 0, GridPanel.MaxScrollOffset(resourceRows.Length));

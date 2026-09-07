@@ -957,43 +957,551 @@ public class TradeScreenTests
 
         var (upper, lower) = screen.RightPanels;
 
-        // Left/right edges mirror the grids' 15px margins from the Trade panel's own edges.
-        Assert.Equal(977f, upper.Left);
-        Assert.Equal(977f, lower.Left);
+        // Right edges mirror the grids' 15px margin from the Trade panel's own right edge.
         Assert.Equal(1385f, upper.Right);
         Assert.Equal(1385f, lower.Right);
+
+        // Both panels' left edge is the grids' 15px margin from the Trade panel's own left
+        // edge, plus a shared 25px extra nudge right (RightPanelExtraLeftInset), minus a 5px
+        // extra width (RightPanelExtraWidth) — net left edge 977+25-5=997.
+        Assert.Equal(997f, upper.Left);
+        Assert.Equal(997f, lower.Left);
     }
 
-    /// <summary>The upper right-hand panel spans the same vertical range as the Resources and Goods grids combined (top of Resources to bottom of Goods).</summary>
+    /// <summary>The upper right-hand panel's white outline snaps exactly to the Resources+Goods white outline frames combined (top of the Resources frame to bottom of the Goods frame) — same per-segment height (200) as each of theirs, not an independently computed height.</summary>
     [Fact]
-    public void Upper_right_panel_height_matches_the_resources_and_goods_grids_combined()
+    public void Upper_right_panel_outline_matches_the_resources_and_goods_white_frames_combined()
     {
         var screen = new TradeScreen();
         RenderScreen(screen);
 
         var (upper, _) = screen.RightPanels;
 
-        // Height still matches the Resources+Goods grids combined (443), but the panel is
-        // vertically centered on the Resources/Goods white outline frames — (90 + 539) / 2 =
-        // 314.5 — not on the grids' own (differently-offset) top/bottom.
-        Assert.Equal(443f, upper.Height);
-        Assert.Equal(93f, upper.Top);
-        Assert.Equal(536f, upper.Bottom);
+        Assert.Equal(90f, upper.Top); // Resources white frame's own top
+        Assert.Equal(539f, upper.Bottom); // Goods white frame's own bottom
+        Assert.Equal(449f, upper.Height);
+        Assert.Equal(388f, upper.Width); // 408 (977..1385) minus 25 (extra left inset) plus 5 (extra width)
     }
 
-    /// <summary>The lower right-hand panel matches the Modules grid's height and is centered on the Modules white outline frame.</summary>
+    /// <summary>The lower right-hand panel's white outline snaps exactly to the Modules white outline frame — same height (200) as the Resources/Goods ones.</summary>
     [Fact]
-    public void Lower_right_panel_height_and_position_match_the_modules_grid()
+    public void Lower_right_panel_outline_matches_the_modules_white_frame()
     {
         var screen = new TradeScreen();
         RenderScreen(screen);
 
         var (_, lower) = screen.RightPanels;
 
-        // Centered on the Modules white outline frame (588 + 788) / 2 = 688, not on the
-        // Modules grid's own top/bottom.
-        Assert.Equal(194f, lower.Height);
-        Assert.Equal(591f, lower.Top);
-        Assert.Equal(785f, lower.Bottom);
+        Assert.Equal(588f, lower.Top);
+        Assert.Equal(788f, lower.Bottom);
+        Assert.Equal(200f, lower.Height);
+        Assert.Equal(388f, lower.Width); // 408 (977..1385) minus 25 (extra left inset) plus 5 (extra width)
+    }
+
+    /// <summary>Both right-hand panels get a gray rounded-corner titlebar at their top, same style/height as GridPanel's own header bar.</summary>
+    [Fact]
+    public void Right_panels_have_a_titlebar_matching_gridpanels_header_height()
+    {
+        var screen = new TradeScreen();
+        RenderScreen(screen); // must not throw while drawing the titlebars
+
+        var (upper, lower) = screen.RightPanels;
+        var (upperTitleBar, lowerTitleBar) = screen.RightPanelTitleBars;
+
+        Assert.Equal(GridPanel.HeaderHeight, upperTitleBar.Height);
+        Assert.Equal(GridPanel.HeaderHeight, lowerTitleBar.Height);
+
+        // Sanity: both panels are tall enough to actually contain a 30px titlebar.
+        Assert.True(upper.Height >= GridPanel.HeaderHeight);
+        Assert.True(lower.Height >= GridPanel.HeaderHeight);
+    }
+
+    /// <summary>
+    /// The titlebar's left edge is inset from its own panel's white outline by the same
+    /// margin the Resources grid's header keeps from its white outline (header left 15 vs.
+    /// outline left 10 = 5px) — and the right edge keeps that same 5px margin too (these
+    /// panels have no scrollbar to justify the grid header's wider, asymmetric right gap).
+    /// </summary>
+    [Fact]
+    public void Right_panel_titlebars_keep_equal_left_and_right_margins_from_the_white_outline()
+    {
+        var screen = new TradeScreen();
+        RenderScreen(screen);
+
+        var (upper, lower) = screen.RightPanels;
+        var (upperTitleBar, lowerTitleBar) = screen.RightPanelTitleBars;
+
+        Assert.Equal(5f, upperTitleBar.Left - upper.Left);
+        Assert.Equal(5f, lowerTitleBar.Left - lower.Left);
+        Assert.Equal(5f, upper.Right - upperTitleBar.Right);
+        Assert.Equal(5f, lower.Right - lowerTitleBar.Right);
+    }
+
+    /// <summary>
+    /// The titlebar must sit as far above its own panel's white outline top edge as the
+    /// Resources/Modules grids' own header bars sit above that same white outline on the
+    /// left (origin Y 76/574 vs. white-frame top 90/588 — a 14px offset), not flush with it.
+    /// </summary>
+    [Fact]
+    public void Right_panel_titlebars_are_offset_above_the_white_outline_the_same_way_as_the_grid_headers()
+    {
+        var screen = new TradeScreen();
+        RenderScreen(screen);
+
+        var (upper, lower) = screen.RightPanels;
+        var (upperTitleBar, lowerTitleBar) = screen.RightPanelTitleBars;
+
+        Assert.Equal(76f, upperTitleBar.Top); // matches the Resources grid's own header top
+        Assert.Equal(574f, lowerTitleBar.Top); // matches the Modules grid's own header top
+        Assert.Equal(14f, upper.Top - upperTitleBar.Top);
+        Assert.Equal(14f, lower.Top - lowerTitleBar.Top);
+    }
+
+    // ── Trade action panel (lower right-hand frame) — Docs/FirstRelease/Screens/Trade.md
+    // "UI-решение: панель действия". Buy/Sell/Refuel for whichever item is selected across
+    // the three grids above. RecordingConnection/GameSessionHandle wiring mirrors
+    // CommandsPanelSkeletonTests's pattern for asserting sent PlayerCommands.
+
+    private const string ShipId = "SHIP-01";
+    private const string StationId = "STN-01";
+    private const string ContainerModuleId = "MOD-CONTAINER";
+    private const string EngineModuleId = "MOD-ENGINE";
+
+    /// <summary>
+    /// Docked snapshot with a container module (Buy/Sell) and an engine module (Refuel)
+    /// installed, and the given station inventory — the shared fixture shape for the trade
+    /// action panel tests below.
+    /// </summary>
+    private static AuthoritativeSnapshot BuildTradeSnapshot(
+        ImmutableArray<StationInventoryItemSnapshot> items,
+        long playerCredits = 10_000,
+        long containerAvailableCapacityKg = 5_000,
+        ImmutableArray<CargoStackSnapshot> containerCargo = default,
+        long fuelAmountKg = 100,
+        long fuelCapacityKg = 500)
+    {
+        return new AuthoritativeSnapshot(
+            SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(
+                new ObjectMotionSnapshot(ShipId, 0, 0, 0, 0, IsDocked: true, DockedStationObjectId: StationId),
+                new ObjectMotionSnapshot(StationId, 0, 0, 0, 0, DisplayName: "Test Station")),
+            PlayerShipObjectId: ShipId,
+            PlayerCredits: playerCredits,
+            DockedStationTrade: new StationTradeSnapshot(StationId, items),
+            InstalledModules: ImmutableArray.Create(
+                new InstalledModuleSnapshot(
+                    ModuleId: ContainerModuleId, ModuleTypeId: "module.container", DisplayName: "Container",
+                    Position: 0, CommandTypeIds: ImmutableArray.Create(TradeCommandTypes.Buy, TradeCommandTypes.Sell),
+                    Cargo: containerCargo, AvailableCapacityKg: containerAvailableCapacityKg),
+                new InstalledModuleSnapshot(
+                    ModuleId: EngineModuleId, ModuleTypeId: "module.engine.basic", DisplayName: "Engine",
+                    Position: 1, CommandTypeIds: ImmutableArray.Create(TradeCommandTypes.Refuel),
+                    FuelAmountKg: fuelAmountKg, FuelCapacityKg: fuelCapacityKg)));
+    }
+
+    private sealed record TradeFixture(RecordingConnection Connection, GameSessionHandle Handle, TradeScreen Screen) : IAsyncDisposable
+    {
+        public ValueTask DisposeAsync() => Handle.DisposeAsync();
+    }
+
+    private static TradeFixture CreateTradeFixture(AuthoritativeSnapshot snapshot)
+    {
+        var connection = new RecordingConnection();
+        var handle = new GameSessionHandle(connection);
+        handle.Buffer.Update(snapshot);
+        var screen = new TradeScreen(handle.Buffer, handle);
+        return new TradeFixture(connection, handle, screen);
+    }
+
+    private static (float X, float Y) ScreenCenter(SKRect local) =>
+        (TradeLayout.PanelLeft(ScreenWidth) + local.MidX, TradeLayout.PanelTop(ScreenHeight) + local.MidY);
+
+    [Fact]
+    public void Selecting_a_resource_row_populates_the_trade_action_panel()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(BuildTradeSnapshot(ImmutableArray.Create(
+            new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource))));
+        var screen = new TradeScreen(buffer);
+        RenderScreen(screen);
+        Assert.Null(screen.SelectedTradeItemTypeId);
+
+        var (x, y) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(x, y);
+        RenderScreen(screen);
+
+        Assert.Equal("item.silicon", screen.SelectedTradeItemTypeId);
+        Assert.True(screen.IsTradeBuyMode);
+        Assert.Equal(100, screen.TradeQuantity); // Resource package step size.
+    }
+
+    [Fact]
+    public void Buy_sell_toggle_switches_mode_and_resets_quantity_to_the_step_size()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)),
+            containerCargo: ImmutableArray.Create(new CargoStackSnapshot("item.silicon", 500))));
+        var screen = new TradeScreen(buffer);
+        RenderScreen(screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(rowX, rowY);
+        RenderScreen(screen);
+        Assert.True(screen.IsTradeBuyMode);
+
+        var (sellX, sellY) = ScreenCenter(screen.TradeModeToggleRects.Sell);
+        screen.OnMouseDown(sellX, sellY);
+
+        Assert.False(screen.IsTradeBuyMode);
+        Assert.Equal(100, screen.TradeQuantity);
+
+        var (buyX, buyY) = ScreenCenter(screen.TradeModeToggleRects.Buy);
+        screen.OnMouseDown(buyX, buyY);
+
+        Assert.True(screen.IsTradeBuyMode);
+    }
+
+    /// <summary>Fuel has no Sell counterpart (Docs/FirstRelease/Screens/Trade.md's routing rule) — the toggle stays locked on Buy for it.</summary>
+    [Fact]
+    public void Selecting_fuel_locks_the_toggle_on_buy_mode()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(BuildTradeSnapshot(ImmutableArray.Create(
+            new StationInventoryItemSnapshot("item.fuel", 1000, 5, 1000, TradeItemCategories.Good))));
+        var screen = new TradeScreen(buffer);
+        RenderScreen(screen);
+
+        var (goodX, goodY) = GoodRowCenter(rowSlot: 0);
+        screen.OnMouseDown(goodX, goodY);
+        RenderScreen(screen);
+        Assert.Equal("item.fuel", screen.SelectedTradeItemTypeId);
+        Assert.True(screen.IsTradeBuyMode);
+
+        var (sellX, sellY) = ScreenCenter(screen.TradeModeToggleRects.Sell);
+        screen.OnMouseDown(sellX, sellY);
+
+        // Clicking Sell for Fuel must be a no-op — the toggle stays on Buy.
+        Assert.True(screen.IsTradeBuyMode);
+    }
+
+    [Fact]
+    public void Plus_and_minus_move_the_quantity_by_the_step_size_and_clamp_at_both_bounds()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)),
+            playerCredits: 10_000)); // Max = min(10000/40, 1000) = 250.
+        var screen = new TradeScreen(buffer);
+        RenderScreen(screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(rowX, rowY);
+        RenderScreen(screen);
+        Assert.Equal(100, screen.TradeQuantity);
+        Assert.Equal(250, screen.TradeMaxQuantity);
+
+        var (plusX, plusY) = ScreenCenter(screen.TradeStepperRects.Plus);
+        screen.OnMouseDown(plusX, plusY);
+        Assert.Equal(200, screen.TradeQuantity);
+
+        screen.OnMouseDown(plusX, plusY); // 300 would exceed Max(250) — clamp.
+        Assert.Equal(250, screen.TradeQuantity);
+
+        var (minusX, minusY) = ScreenCenter(screen.TradeStepperRects.Minus);
+        screen.OnMouseDown(minusX, minusY);
+        Assert.Equal(150, screen.TradeQuantity);
+
+        screen.OnMouseDown(minusX, minusY);
+        screen.OnMouseDown(minusX, minusY); // would go to -50 — clamp at the step size.
+        Assert.Equal(100, screen.TradeQuantity);
+    }
+
+    [Fact]
+    public void Max_sets_the_buy_quantity_to_the_affordable_station_stock_bound()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)),
+            playerCredits: 10_000)); // floor(10000/40)=250, stock=1000 -> Max=250.
+        var screen = new TradeScreen(buffer);
+        RenderScreen(screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(rowX, rowY);
+        RenderScreen(screen);
+
+        var (maxX, maxY) = ScreenCenter(screen.TradeStepperRects.Max);
+        screen.OnMouseDown(maxX, maxY);
+
+        Assert.Equal(250, screen.TradeQuantity);
+    }
+
+    /// <summary>Max for Buying Fuel is additionally bounded by the remaining tank capacity, and routes through the engine module's Refuel numbers, not the container's.</summary>
+    [Fact]
+    public void Max_for_fuel_is_also_bounded_by_remaining_tank_capacity()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.fuel", 1000, 5, 1000, TradeItemCategories.Good)),
+            playerCredits: 100_000, fuelAmountKg: 470, fuelCapacityKg: 500)); // remaining capacity = 30.
+        var screen = new TradeScreen(buffer);
+        RenderScreen(screen);
+
+        var (goodX, goodY) = GoodRowCenter(rowSlot: 0);
+        screen.OnMouseDown(goodX, goodY);
+        RenderScreen(screen);
+
+        var (maxX, maxY) = ScreenCenter(screen.TradeStepperRects.Max);
+        screen.OnMouseDown(maxX, maxY);
+
+        Assert.Equal(30, screen.TradeQuantity);
+    }
+
+    /// <summary>Sell's Max is bounded by cargo-on-hand/MaxSellableQuantity, then rounded down to the nearest whole sell package (the Engine rejects a non-multiple Sell quantity).</summary>
+    [Fact]
+    public void Max_for_sell_rounds_down_to_the_nearest_package_size()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.steel", 1000, 15, 1000, TradeItemCategories.Good)),
+            containerCargo: ImmutableArray.Create(new CargoStackSnapshot("item.steel", 137)))); // Good step = 10 -> 130.
+        var screen = new TradeScreen(buffer);
+        RenderScreen(screen);
+
+        var (goodX, goodY) = GoodRowCenter(rowSlot: 0);
+        screen.OnMouseDown(goodX, goodY);
+        RenderScreen(screen);
+
+        var (sellX, sellY) = ScreenCenter(screen.TradeModeToggleRects.Sell);
+        screen.OnMouseDown(sellX, sellY);
+
+        var (maxX, maxY) = ScreenCenter(screen.TradeStepperRects.Max);
+        screen.OnMouseDown(maxX, maxY);
+
+        Assert.Equal(130, screen.TradeQuantity);
+    }
+
+    /// <summary>Max is a no-op (button does nothing) when the container has no cargo space left at all for a non-Fuel Buy.</summary>
+    [Fact]
+    public void Max_is_a_no_op_when_the_container_has_no_cargo_space_for_a_non_fuel_buy()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)),
+            containerAvailableCapacityKg: 0));
+        var screen = new TradeScreen(buffer);
+        RenderScreen(screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(rowX, rowY);
+        RenderScreen(screen);
+        Assert.Equal(100, screen.TradeQuantity);
+
+        var (maxX, maxY) = ScreenCenter(screen.TradeStepperRects.Max);
+        screen.OnMouseDown(maxX, maxY);
+
+        Assert.Equal(100, screen.TradeQuantity); // unchanged
+        Assert.Equal(0, screen.TradeMaxQuantity);
+    }
+
+    [Fact]
+    public async Task Confirm_sends_a_buy_command_to_the_container_module_for_a_non_fuel_item()
+    {
+        await using var fixture = CreateTradeFixture(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource))));
+        RenderScreen(fixture.Screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(rowX, rowY);
+        RenderScreen(fixture.Screen);
+        Assert.True(fixture.Screen.CanConfirmTrade);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+
+        var command = Assert.Single(fixture.Connection.Commands);
+        Assert.Equal(TradeCommandTypes.Buy, command.CommandType);
+        Assert.Equal(ShipId, command.ObjectId);
+        Assert.Equal(ContainerModuleId, command.ModuleId);
+        Assert.Equal("item.silicon", command.ItemTypeId);
+        Assert.Equal(100, command.Quantity);
+    }
+
+    [Fact]
+    public async Task Confirm_sends_a_sell_command_to_the_container_module()
+    {
+        await using var fixture = CreateTradeFixture(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)),
+            containerCargo: ImmutableArray.Create(new CargoStackSnapshot("item.silicon", 500))));
+        RenderScreen(fixture.Screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(rowX, rowY);
+        RenderScreen(fixture.Screen);
+
+        var (sellX, sellY) = ScreenCenter(fixture.Screen.TradeModeToggleRects.Sell);
+        fixture.Screen.OnMouseDown(sellX, sellY);
+        RenderScreen(fixture.Screen);
+        Assert.True(fixture.Screen.CanConfirmTrade);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+
+        var command = Assert.Single(fixture.Connection.Commands);
+        Assert.Equal(TradeCommandTypes.Sell, command.CommandType);
+        Assert.Equal(ContainerModuleId, command.ModuleId);
+        Assert.Equal("item.silicon", command.ItemTypeId);
+        Assert.Equal(100, command.Quantity);
+    }
+
+    [Fact]
+    public async Task Confirm_sends_a_refuel_command_to_the_engine_module_for_fuel()
+    {
+        await using var fixture = CreateTradeFixture(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.fuel", 1000, 5, 1000, TradeItemCategories.Good))));
+        RenderScreen(fixture.Screen);
+
+        var (goodX, goodY) = GoodRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(goodX, goodY);
+        RenderScreen(fixture.Screen);
+        Assert.True(fixture.Screen.CanConfirmTrade);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+
+        var command = Assert.Single(fixture.Connection.Commands);
+        Assert.Equal(TradeCommandTypes.Refuel, command.CommandType);
+        Assert.Equal(EngineModuleId, command.ModuleId);
+        Assert.Equal("item.fuel", command.ItemTypeId);
+        Assert.Equal(10, command.Quantity); // Good package step size.
+    }
+
+    [Fact]
+    public async Task Confirm_is_disabled_and_sends_nothing_when_the_player_cannot_afford_it()
+    {
+        await using var fixture = CreateTradeFixture(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 1_000_000, 1000, TradeItemCategories.Resource)),
+            playerCredits: 100));
+        RenderScreen(fixture.Screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(rowX, rowY);
+        RenderScreen(fixture.Screen);
+
+        Assert.False(fixture.Screen.CanConfirmTrade);
+        Assert.Equal("Trade.ReasonInsufficientPlayerCredits", fixture.Screen.TradeDisabledReasonKey);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+
+        Assert.Empty(fixture.Connection.Commands);
+    }
+
+    [Fact]
+    public async Task Confirm_is_disabled_and_sends_nothing_when_the_container_has_no_cargo_space()
+    {
+        await using var fixture = CreateTradeFixture(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)),
+            containerAvailableCapacityKg: 0));
+        RenderScreen(fixture.Screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(rowX, rowY);
+        RenderScreen(fixture.Screen);
+
+        Assert.False(fixture.Screen.CanConfirmTrade);
+        Assert.Equal("Trade.NoCargoSpace", fixture.Screen.TradeDisabledReasonKey);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+
+        Assert.Empty(fixture.Connection.Commands);
+    }
+
+    [Fact]
+    public async Task Confirm_is_disabled_and_sends_nothing_when_selling_an_item_not_in_cargo()
+    {
+        await using var fixture = CreateTradeFixture(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource))));
+        RenderScreen(fixture.Screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(rowX, rowY);
+        RenderScreen(fixture.Screen);
+
+        var (sellX, sellY) = ScreenCenter(fixture.Screen.TradeModeToggleRects.Sell);
+        fixture.Screen.OnMouseDown(sellX, sellY);
+        RenderScreen(fixture.Screen);
+
+        Assert.False(fixture.Screen.CanConfirmTrade);
+        Assert.Equal("Trade.NoneInCargo", fixture.Screen.TradeDisabledReasonKey);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+
+        Assert.Empty(fixture.Connection.Commands);
+    }
+
+    /// <summary>A trade command rejection is correlated back via CommandResults (GameSessionHandle.SendTradeCommand's doc comment) and surfaced as the disabled-reason text.</summary>
+    [Fact]
+    public async Task A_rejected_trade_command_surfaces_its_reason_once_observed_in_a_later_snapshot()
+    {
+        var snapshot = BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)));
+        await using var fixture = CreateTradeFixture(snapshot);
+        RenderScreen(fixture.Screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(rowX, rowY);
+        RenderScreen(fixture.Screen);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+        var sentCommand = Assert.Single(fixture.Connection.Commands);
+
+        // Simulate the engine's next snapshot rejecting the command.
+        fixture.Handle.Buffer.Update(snapshot with
+        {
+            SnapshotSequence = 2,
+            CommandResults = ImmutableArray.Create(new CommandResult(
+                sentCommand.CommandId, ShipId, ContainerModuleId, TradeCommandTypes.Buy,
+                CommandResultStatus.Rejected, EffectiveGameTimeMs: 100,
+                ReasonCode: CommandReasonCodes.InsufficientStationStock))
+        });
+
+        RenderScreen(fixture.Screen);
+
+        Assert.Equal("Trade.ReasonInsufficientStationStock", fixture.Screen.TradeDisabledReasonKey);
+    }
+
+    /// <summary>Records every PlayerCommand sent through it — mirrors CommandsPanelSkeletonTests's RecordingConnection.</summary>
+    private sealed class RecordingConnection : IGameSessionConnection
+    {
+        public List<PlayerCommand> Commands { get; } = [];
+
+        public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default)
+        {
+            Commands.Add(command);
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask SetSimulationSpeedAsync(SimulationSpeed speed, CancellationToken cancellationToken = default) =>
+            ValueTask.CompletedTask;
+
+        public ValueTask SetObjectInteractionStateAsync(
+            string? activeObjectId, string? selectedObjectId, CancellationToken cancellationToken = default) =>
+            ValueTask.CompletedTask;
+
+        public async IAsyncEnumerable<AuthoritativeSnapshot> ReadSnapshotsAsync(
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.CompletedTask;
+            yield break;
+        }
+
+        public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }
