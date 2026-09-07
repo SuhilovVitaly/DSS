@@ -365,14 +365,18 @@ public sealed class TradeScreen : IScreen
     internal bool IsTradeBuyMode => _isTradeBuyMode;
 
     /// <summary>
-    /// Current quantity chosen by the stepper (`-`/`+`/`Max`) — reset to the selected item's
-    /// package step size (<see cref="ResolveQuantityStep"/>) whenever the selection or the
-    /// Buy/Sell mode changes (<see cref="ResetTradeActionPanelState"/>).
+    /// Current quantity chosen by the stepper (`-`/`+`/`Max`) or the quantity slider — reset
+    /// to 1 (trading is fully per-unit — Docs/FirstRelease/Screens/Trade.md, "UI-решение:
+    /// панель действия") whenever the selection or the Buy/Sell mode changes (see
+    /// <see cref="ResetTradeActionPanelState"/>).
     /// </summary>
     private long _tradeQuantity;
 
     /// <summary>Test seam — current stepper quantity (see <see cref="_tradeQuantity"/>).</summary>
     internal long TradeQuantity => _tradeQuantity;
+
+    /// <summary>True while the quantity slider's track is being dragged (mouse-down on it, not yet released) — same drag-state shape as <see cref="_isDraggingScrollThumb"/>, updated in <see cref="OnMouseMove(float, float)"/>, cleared in <see cref="OnMouseUp"/>.</summary>
+    private bool _isDraggingTradeSlider;
 
     /// <summary>
     /// CommandId of the last trade command sent via <see cref="OnConfirmTradeClicked"/>, kept
@@ -397,19 +401,10 @@ public sealed class TradeScreen : IScreen
     internal string? SelectedTradeItemTypeId =>
         _selectedResourceItemTypeId ?? _selectedGoodItemTypeId ?? _selectedModuleItemTypeId;
 
-    /// <summary>Resource category's package step size (§59 StationEconomyProductionAndSizing.md) — 100 for Resource, 10 for Good (including Fuel).</summary>
-    private static long ResolveQuantityStep(string category) =>
-        category == TradeItemCategories.Resource ? 100 : 10;
-
-    /// <summary>The selected item's trade category, looked up from the docked station's live inventory — defaults to Good (step 10) if the item can't be found (e.g. it just fell out of the station's snapshot).</summary>
-    private static string ResolveItemCategory(AuthoritativeSnapshot? snapshot, string itemTypeId) =>
-        snapshot?.DockedStationTrade?.Items.FirstOrDefault(item => item.ItemTypeId == itemTypeId)?.Category
-        ?? TradeItemCategories.Good;
-
     /// <summary>
     /// Called whenever the selected trade item or the Buy/Sell mode changes: forces Buy mode
-    /// back on for Fuel (Sell is unreachable for it), resets the quantity to the new step size,
-    /// and clears any stale command-rejection state from a previous item/mode.
+    /// back on for Fuel (Sell is unreachable for it), resets the quantity to 1 (trading is
+    /// fully per-unit), and clears any stale command-rejection state from a previous item/mode.
     /// </summary>
     private void ResetTradeActionPanelState(AuthoritativeSnapshot? snapshot)
     {
@@ -417,7 +412,7 @@ public sealed class TradeScreen : IScreen
         if (itemTypeId == FuelItemTypeId)
             _isTradeBuyMode = true;
 
-        _tradeQuantity = itemTypeId is null ? 0 : ResolveQuantityStep(ResolveItemCategory(snapshot, itemTypeId));
+        _tradeQuantity = itemTypeId is null ? 0 : 1;
         _lastSentTradeCommandId = null;
         _tradeRejectionReasonKey = null;
     }
@@ -465,7 +460,7 @@ public sealed class TradeScreen : IScreen
     private readonly record struct TradeActionInfo(
         string ItemTypeId, string DisplayName, string Category, bool IsFuel,
         long StationPriceCredits, long StationStockQuantity, long MaxSellableQuantity,
-        long PlayerCargoQuantity, long QuantityStep, long PlayerCredits,
+        long PlayerCargoQuantity, long PlayerCredits,
         string? ContainerModuleId, long? ContainerAvailableCapacityKg,
         string? EngineModuleId, long FuelAmountKg, long FuelCapacityKg);
 
@@ -492,7 +487,6 @@ public sealed class TradeScreen : IScreen
             StationStockQuantity: item.StockQuantity,
             MaxSellableQuantity: item.MaxSellableQuantity,
             PlayerCargoQuantity: cargoQuantity,
-            QuantityStep: ResolveQuantityStep(item.Category),
             PlayerCredits: snapshot?.PlayerCredits ?? 0,
             ContainerModuleId: containerModule?.ModuleId,
             ContainerAvailableCapacityKg: containerModule?.AvailableCapacityKg,
@@ -502,13 +496,12 @@ public sealed class TradeScreen : IScreen
     }
 
     /// <summary>
-    /// Max quantity the stepper's `Max` button resolves to (Docs/FirstRelease/Screens/Trade.md
-    /// batch spec): Buy non-Fuel is bounded by affordability/station stock, and additionally
-    /// resolves to 0 (button becomes a no-op) when the container has no cargo space left at
-    /// all; Buy Fuel (Refuel) is additionally bounded by remaining tank capacity; Sell is
-    /// bounded by cargo-on-hand/station's MaxSellableQuantity, then rounded down to the
-    /// nearest whole sell package (the Engine authoritatively rejects a non-multiple Sell
-    /// quantity as InvalidPackageQuantity).
+    /// Max quantity the stepper's `Max` button (and the quantity slider's upper bound) resolves
+    /// to (Docs/FirstRelease/Screens/Trade.md batch spec): Buy non-Fuel is bounded by
+    /// affordability/station stock, and additionally resolves to 0 (button becomes a no-op)
+    /// when the container has no cargo space left at all; Buy Fuel (Refuel) is additionally
+    /// bounded by remaining tank capacity; Sell is bounded by cargo-on-hand/station's
+    /// MaxSellableQuantity — fully per-unit, no package rounding.
     /// </summary>
     private static long ResolveMaxQuantity(TradeActionInfo info, bool isBuyMode)
     {
@@ -528,10 +521,29 @@ public sealed class TradeScreen : IScreen
             return Math.Max(0, Math.Min(affordable, info.StationStockQuantity));
         }
 
-        long sellable = Math.Min(info.PlayerCargoQuantity, info.MaxSellableQuantity);
-        long step = info.QuantityStep;
-        long rounded = step > 0 ? (sellable / step) * step : sellable;
-        return Math.Max(0, rounded);
+        return Math.Max(0, Math.Min(info.PlayerCargoQuantity, info.MaxSellableQuantity));
+    }
+
+    /// <summary>
+    /// Maps a screen-space x position within the quantity slider's track to a quantity in
+    /// `[minQuantity, maxQuantity]`, linearly interpolated and rounded to the nearest integer —
+    /// used both for the initial click-to-set jump and every subsequent drag move (Docs/
+    /// FirstRelease/Screens/Trade.md, "UI-решение: панель действия", step 5).
+    /// `minQuantity` is 1 when something is tradeable (<paramref name="maxQuantity"/> &gt; 0),
+    /// 0 otherwise — matching the stepper's own floor.
+    /// </summary>
+    private static long ResolveSliderQuantity(float x, SKRect trackRectScreen, long maxQuantity)
+    {
+        if (maxQuantity <= 0)
+            return 0;
+
+        long minQuantity = 1;
+        if (trackRectScreen.Width <= 0)
+            return minQuantity;
+
+        float fraction = Math.Clamp((x - trackRectScreen.Left) / trackRectScreen.Width, 0f, 1f);
+        long value = minQuantity + (long)Math.Round(fraction * (maxQuantity - minQuantity), MidpointRounding.AwayFromZero);
+        return Math.Clamp(value, minQuantity, maxQuantity);
     }
 
     /// <summary>
@@ -569,7 +581,6 @@ public sealed class TradeScreen : IScreen
         CommandReasonCodes.FuelCapacityExceeded => "Trade.ReasonFuelCapacityExceeded",
         CommandReasonCodes.InsufficientCargoQuantity => "Trade.ReasonInsufficientCargoQuantity",
         CommandReasonCodes.InvalidQuantity => "Trade.ReasonInvalidQuantity",
-        CommandReasonCodes.InvalidPackageQuantity => "Trade.ReasonInvalidPackageQuantity",
         CommandReasonCodes.NotDocked => "Trade.ReasonNotDocked",
         CommandReasonCodes.UnknownItemType => "Trade.ReasonUnknownItemType",
         _ => reasonCode
@@ -657,8 +668,21 @@ public sealed class TradeScreen : IScreen
     /// <summary>Test seam — the quantity stepper's `-`/`+`/`Max` button geometry, panel-local.</summary>
     internal (SKRect Minus, SKRect Plus, SKRect Max) TradeStepperRects => (_tradeMinusButtonRect, _tradePlusButtonRect, _tradeMaxButtonRect);
 
+    /// <summary>
+    /// Quantity slider row (Docs/FirstRelease/Screens/Trade.md, "UI-решение: панель действия",
+    /// step 5) — directly below the `-`/`+`/`Max` stepper row, full frame width. Dragging or
+    /// clicking anywhere on the track sets <see cref="_tradeQuantity"/> to the position clicked,
+    /// same underlying field as the stepper/Max — see <see cref="ResolveSliderQuantity"/>.
+    /// </summary>
+    private const float TradeSliderRowHeight = 16f;
+    private static readonly SKRect _tradeSliderRowRect = new(
+        TradeActionContentLeft, _tradeMinusButtonRect.Bottom + 6f, TradeActionContentRight, _tradeMinusButtonRect.Bottom + 6f + TradeSliderRowHeight);
+
+    /// <summary>Test seam — the quantity slider's track geometry, panel-local.</summary>
+    internal SKRect TradeSliderRect => _tradeSliderRowRect;
+
     private static readonly SKRect _tradeSummaryLine1Rect = new(
-        TradeActionContentLeft, _tradeMinusButtonRect.Bottom + 6f, TradeActionContentRight, _tradeMinusButtonRect.Bottom + 6f + TradeSummaryLineHeight);
+        TradeActionContentLeft, _tradeSliderRowRect.Bottom + 6f, TradeActionContentRight, _tradeSliderRowRect.Bottom + 6f + TradeSummaryLineHeight);
     private static readonly SKRect _tradeSummaryLine2Rect = new(
         TradeActionContentLeft, _tradeSummaryLine1Rect.Bottom, TradeActionContentRight, _tradeSummaryLine1Rect.Bottom + TradeSummaryLineHeight);
     private static readonly SKRect _tradeReasonLineRect = new(
@@ -719,7 +743,9 @@ public sealed class TradeScreen : IScreen
             return true;
         }
 
-        long step = info.Value.QuantityStep;
+        // Trading is fully per-unit (Docs/FirstRelease/Screens/Trade.md, "UI-решение: панель
+        // действия") — the `-`/`+` stepper always moves by 1, for every category.
+        const long step = 1;
         long max = ResolveMaxQuantity(info.Value, _isTradeBuyMode);
 
         if (Contains(ToScreenRect(_tradeMinusButtonRect), x, y))
@@ -740,6 +766,16 @@ public sealed class TradeScreen : IScreen
             // there is nothing meaningful to set the quantity to.
             if (max > 0)
                 _tradeQuantity = max;
+            return true;
+        }
+
+        if (Contains(ToScreenRect(_tradeSliderRowRect), x, y))
+        {
+            // Click-to-set: jump the quantity straight to the position clicked, then continue
+            // tracking the drag in OnMouseMove (mirrors the grid scrollbar-thumb-drag pattern —
+            // _isDraggingScrollThumb/OnMouseMove/OnMouseUp).
+            _isDraggingTradeSlider = true;
+            _tradeQuantity = ResolveSliderQuantity(x, ToScreenRect(_tradeSliderRowRect), max);
             return true;
         }
 
@@ -844,6 +880,18 @@ public sealed class TradeScreen : IScreen
     /// <summary>Vertical baseline for a single line of text centered within <paramref name="rect"/>, matching <see cref="MenuStyle.VerticalCenterBaseline"/>'s convention.</summary>
     private static float LineBaselineY(SKRect rect, SKPaint paint) => MenuStyle.VerticalCenterBaseline(rect, paint);
 
+    /// <summary>Quantity slider track — a thin filled bar, same border color as the other action-panel controls.</summary>
+    private static readonly SKPaint _tradeSliderTrackPaint = new()
+    {
+        Color = MenuStyle.ButtonBorder.Color, Style = SKPaintStyle.Stroke, StrokeWidth = 1f, IsAntialias = true
+    };
+
+    /// <summary>Quantity slider thumb — a small filled circle positioned by the current quantity's fraction of `[min, Max]`.</summary>
+    private static readonly SKPaint _tradeSliderThumbPaint = new()
+    {
+        Color = SKColors.White, Style = SKPaintStyle.Fill, IsAntialias = true
+    };
+
     /// <summary>
     /// Draws the lower right-hand panel's title (item name/category, or the empty-state
     /// title) and, once an item is selected, its full Buy/Sell transaction content — the
@@ -899,6 +947,20 @@ public sealed class TradeScreen : IScreen
         var quantityRect = ToScreenRect(_tradeQuantityFieldRect);
         canvas.DrawRect(quantityRect, MenuStyle.ButtonBorder);
         canvas.DrawText(_tradeQuantity.ToString(), quantityRect.MidX, LineBaselineY(quantityRect, _tradeBodyTextPaintCentered), _tradeBodyTextPaintCentered);
+
+        // Quantity slider (Docs/FirstRelease/Screens/Trade.md, "UI-решение: панель действия",
+        // step 5) — full-width track, thumb positioned by the current quantity's fraction of
+        // [min, Max].
+        var sliderRect = ToScreenRect(_tradeSliderRowRect);
+        long sliderMax = ResolveMaxQuantity(tradeInfo, _isTradeBuyMode);
+        long sliderMin = sliderMax > 0 ? 1 : 0;
+        float sliderTrackY = sliderRect.MidY;
+        canvas.DrawLine(sliderRect.Left, sliderTrackY, sliderRect.Right, sliderTrackY, _tradeSliderTrackPaint);
+        float sliderFraction = sliderMax > sliderMin
+            ? (float)(Math.Clamp(_tradeQuantity, sliderMin, sliderMax) - sliderMin) / (sliderMax - sliderMin)
+            : 0f;
+        float sliderThumbX = sliderRect.Left + sliderFraction * sliderRect.Width;
+        canvas.DrawCircle(sliderThumbX, sliderTrackY, TradeSliderRowHeight / 2f - 2f, _tradeSliderThumbPaint);
 
         // Transaction summary.
         long totalPrice = tradeInfo.StationPriceCredits * _tradeQuantity;
@@ -1157,6 +1219,7 @@ public sealed class TradeScreen : IScreen
         _crewHoverStartedAtMs = null;
         _tokensHoverStartedAtMs = null;
         _fuelHoverStartedAtMs = null;
+        _isDraggingTradeSlider = false;
         ResetTradeActionPanelState(_buffer?.Latest?.Snapshot);
     }
 
@@ -1381,16 +1444,27 @@ public sealed class TradeScreen : IScreen
     /// <summary>Convenience shortcut for a left click — kept for existing call-site/test conventions.</summary>
     public ScreenEvent OnMouseDown(float x, float y) => OnMouseDown(x, y, MouseButton.Left);
 
-    /// <summary>Ends a scrollbar-thumb drag on left-button release, wherever the pointer ends up — see <see cref="_isDraggingScrollThumb"/>/<see cref="_isDraggingScrollThumbGoods"/>/<see cref="_isDraggingScrollThumbModules"/>.</summary>
+    /// <summary>Ends a scrollbar-thumb drag or quantity-slider drag on left-button release, wherever the pointer ends up — see <see cref="_isDraggingScrollThumb"/>/<see cref="_isDraggingScrollThumbGoods"/>/<see cref="_isDraggingScrollThumbModules"/>/<see cref="_isDraggingTradeSlider"/>.</summary>
     public void OnMouseUp(float x, float y)
     {
         _isDraggingScrollThumb = false;
         _isDraggingScrollThumbGoods = false;
         _isDraggingScrollThumbModules = false;
+        _isDraggingTradeSlider = false;
     }
 
     public bool OnMouseMove(float x, float y)
     {
+        if (_isDraggingTradeSlider)
+        {
+            var draggedInfo = ResolveCurrentTradeActionInfo();
+            if (draggedInfo is { } info)
+            {
+                long max = ResolveMaxQuantity(info, _isTradeBuyMode);
+                _tradeQuantity = ResolveSliderQuantity(x, ToScreenRect(_tradeSliderRowRect), max);
+            }
+        }
+
         if (_isDraggingScrollThumb)
         {
             int resourceRowCount = CurrentResourceRowCount();
@@ -1457,7 +1531,8 @@ public sealed class TradeScreen : IScreen
         return _isStationNameHovered || _isExitButtonHovered || _isScrollUpHovered || _isScrollDownHovered
             || _isDraggingScrollThumb || isColumnTitleHovered
             || _isScrollUpHoveredGoods || _isScrollDownHoveredGoods || _isDraggingScrollThumbGoods || isGoodColumnTitleHovered
-            || _isScrollUpHoveredModules || _isScrollDownHoveredModules || _isDraggingScrollThumbModules || isModuleColumnTitleHovered;
+            || _isScrollUpHoveredModules || _isScrollDownHoveredModules || _isDraggingScrollThumbModules || isModuleColumnTitleHovered
+            || _isDraggingTradeSlider;
     }
 
     /// <summary>

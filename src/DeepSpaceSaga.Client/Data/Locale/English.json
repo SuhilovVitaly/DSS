@@ -79,6 +79,5 @@
   "Trade.ReasonUnknownItemType": "Unknown item type",
   "Trade.ReasonNotDocked": "Not docked to a station",
   "Trade.ReasonInsufficientCargoQuantity": "Not enough of this item in cargo",
-  "Trade.ReasonInvalidQuantity": "Invalid quantity",
-  "Trade.ReasonInvalidPackageQuantity": "Quantity must be a multiple of this item's package size"
+  "Trade.ReasonInvalidQuantity": "Invalid quantity"
 }

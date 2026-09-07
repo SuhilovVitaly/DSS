@@ -35,7 +35,7 @@ public class LocalizationTests
         "Trade.ReasonInsufficientStationStock", "Trade.ReasonCargoCapacityExceeded",
         "Trade.ReasonFuelCapacityExceeded", "Trade.ReasonUnknownItemType",
         "Trade.ReasonNotDocked", "Trade.ReasonInsufficientCargoQuantity",
-        "Trade.ReasonInvalidQuantity", "Trade.ReasonInvalidPackageQuantity",
+        "Trade.ReasonInvalidQuantity",
     };
 
     [Theory]

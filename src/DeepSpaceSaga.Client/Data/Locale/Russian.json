@@ -79,6 +79,5 @@
   "Trade.ReasonUnknownItemType": "Неизвестный тип товара",
   "Trade.ReasonNotDocked": "Корабль не пристыкован к станции",
   "Trade.ReasonInsufficientCargoQuantity": "Недостаточно этого товара в грузе",
-  "Trade.ReasonInvalidQuantity": "Некорректное количество",
-  "Trade.ReasonInvalidPackageQuantity": "Количество должно быть кратно размеру упаковки этого товара"
+  "Trade.ReasonInvalidQuantity": "Некорректное количество"
 }

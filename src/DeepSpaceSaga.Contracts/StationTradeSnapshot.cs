@@ -27,11 +27,11 @@ public sealed record StationInventoryItemSnapshot(
     long MaxSellableQuantity,
     /// <summary>
     /// One of <see cref="TradeItemCategories"/> (Resource/Good) — mirrors the item type's
-    /// Engine-internal trade category (DeepSpaceSaga.Engine.Content.TradeCategory, §59
-    /// StationEconomyProductionAndSizing.md) without exposing that internal enum across the
-    /// assembly boundary. Drives the client's Buy/Sell quantity stepper package-size step
-    /// (Resource=100, Good — including Fuel — =10; see TradeScreen.ResolveQuantityStep) — the
-    /// client must read this field rather than re-deriving category from the item id itself.
+    /// Engine-internal trade category (DeepSpaceSaga.Engine.Content.TradeCategory) without
+    /// exposing that internal enum across the assembly boundary. Buy/Sell quantity is fully
+    /// per-unit for every category (Docs/FirstRelease/Screens/Trade.md, "UI-решение: панель
+    /// действия" — this field no longer drives a package-size step); it is still used to label
+    /// the action panel's title (e.g. "Steel (Good)") and elsewhere the category itself matters.
     /// Defaults to <see cref="TradeItemCategories.Good"/> for callers/fixtures that predate
     /// this field (story-20260825-084409 Batch 3, U10).
     /// </summary>

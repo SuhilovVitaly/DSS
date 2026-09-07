@@ -1132,11 +1132,11 @@ public class TradeScreenTests
 
         Assert.Equal("item.silicon", screen.SelectedTradeItemTypeId);
         Assert.True(screen.IsTradeBuyMode);
-        Assert.Equal(100, screen.TradeQuantity); // Resource package step size.
+        Assert.Equal(1, screen.TradeQuantity); // Trading is fully per-unit.
     }
 
     [Fact]
-    public void Buy_sell_toggle_switches_mode_and_resets_quantity_to_the_step_size()
+    public void Buy_sell_toggle_switches_mode_and_resets_quantity_to_one()
     {
         var buffer = new SnapshotBuffer();
         buffer.Update(BuildTradeSnapshot(
@@ -1154,7 +1154,7 @@ public class TradeScreenTests
         screen.OnMouseDown(sellX, sellY);
 
         Assert.False(screen.IsTradeBuyMode);
-        Assert.Equal(100, screen.TradeQuantity);
+        Assert.Equal(1, screen.TradeQuantity);
 
         var (buyX, buyY) = ScreenCenter(screen.TradeModeToggleRects.Buy);
         screen.OnMouseDown(buyX, buyY);
@@ -1186,35 +1186,38 @@ public class TradeScreenTests
     }
 
     [Fact]
-    public void Plus_and_minus_move_the_quantity_by_the_step_size_and_clamp_at_both_bounds()
+    public void Plus_and_minus_move_the_quantity_by_one_and_clamp_at_both_bounds()
     {
         var buffer = new SnapshotBuffer();
         buffer.Update(BuildTradeSnapshot(
             ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)),
-            playerCredits: 10_000)); // Max = min(10000/40, 1000) = 250.
+            playerCredits: 120)); // Max = min(120/40, 1000) = 3.
         var screen = new TradeScreen(buffer);
         RenderScreen(screen);
 
         var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
         screen.OnMouseDown(rowX, rowY);
         RenderScreen(screen);
-        Assert.Equal(100, screen.TradeQuantity);
-        Assert.Equal(250, screen.TradeMaxQuantity);
+        Assert.Equal(1, screen.TradeQuantity);
+        Assert.Equal(3, screen.TradeMaxQuantity);
 
         var (plusX, plusY) = ScreenCenter(screen.TradeStepperRects.Plus);
         screen.OnMouseDown(plusX, plusY);
-        Assert.Equal(200, screen.TradeQuantity);
+        Assert.Equal(2, screen.TradeQuantity);
 
-        screen.OnMouseDown(plusX, plusY); // 300 would exceed Max(250) — clamp.
-        Assert.Equal(250, screen.TradeQuantity);
+        screen.OnMouseDown(plusX, plusY);
+        Assert.Equal(3, screen.TradeQuantity);
+
+        screen.OnMouseDown(plusX, plusY); // 4 would exceed Max(3) — clamp.
+        Assert.Equal(3, screen.TradeQuantity);
 
         var (minusX, minusY) = ScreenCenter(screen.TradeStepperRects.Minus);
         screen.OnMouseDown(minusX, minusY);
-        Assert.Equal(150, screen.TradeQuantity);
+        Assert.Equal(2, screen.TradeQuantity);
 
         screen.OnMouseDown(minusX, minusY);
-        screen.OnMouseDown(minusX, minusY); // would go to -50 — clamp at the step size.
-        Assert.Equal(100, screen.TradeQuantity);
+        screen.OnMouseDown(minusX, minusY); // would go to 0 — clamp at 1 (the minimum quantity).
+        Assert.Equal(1, screen.TradeQuantity);
     }
 
     [Fact]
@@ -1258,14 +1261,14 @@ public class TradeScreenTests
         Assert.Equal(30, screen.TradeQuantity);
     }
 
-    /// <summary>Sell's Max is bounded by cargo-on-hand/MaxSellableQuantity, then rounded down to the nearest whole sell package (the Engine rejects a non-multiple Sell quantity).</summary>
+    /// <summary>Sell's Max is bounded by cargo-on-hand/MaxSellableQuantity, with no package rounding (selling is fully per-unit).</summary>
     [Fact]
-    public void Max_for_sell_rounds_down_to_the_nearest_package_size()
+    public void Max_for_sell_equals_cargo_on_hand_without_package_rounding()
     {
         var buffer = new SnapshotBuffer();
         buffer.Update(BuildTradeSnapshot(
             ImmutableArray.Create(new StationInventoryItemSnapshot("item.steel", 1000, 15, 1000, TradeItemCategories.Good)),
-            containerCargo: ImmutableArray.Create(new CargoStackSnapshot("item.steel", 137)))); // Good step = 10 -> 130.
+            containerCargo: ImmutableArray.Create(new CargoStackSnapshot("item.steel", 137))));
         var screen = new TradeScreen(buffer);
         RenderScreen(screen);
 
@@ -1279,7 +1282,7 @@ public class TradeScreenTests
         var (maxX, maxY) = ScreenCenter(screen.TradeStepperRects.Max);
         screen.OnMouseDown(maxX, maxY);
 
-        Assert.Equal(130, screen.TradeQuantity);
+        Assert.Equal(137, screen.TradeQuantity);
     }
 
     /// <summary>Max is a no-op (button does nothing) when the container has no cargo space left at all for a non-Fuel Buy.</summary>
@@ -1296,13 +1299,88 @@ public class TradeScreenTests
         var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
         screen.OnMouseDown(rowX, rowY);
         RenderScreen(screen);
-        Assert.Equal(100, screen.TradeQuantity);
+        Assert.Equal(1, screen.TradeQuantity);
 
         var (maxX, maxY) = ScreenCenter(screen.TradeStepperRects.Max);
         screen.OnMouseDown(maxX, maxY);
 
-        Assert.Equal(100, screen.TradeQuantity); // unchanged
+        Assert.Equal(1, screen.TradeQuantity); // unchanged
         Assert.Equal(0, screen.TradeMaxQuantity);
+    }
+
+    /// <summary>Clicking anywhere on the slider's track jumps the quantity directly to the position clicked, linearly interpolated between [1, Max] (Docs/FirstRelease/Screens/Trade.md, "UI-решение: панель действия", step 5).</summary>
+    [Fact]
+    public void Clicking_the_slider_track_jumps_the_quantity_to_the_clicked_position()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)),
+            playerCredits: 10_000)); // Max = min(10000/40, 1000) = 250.
+        var screen = new TradeScreen(buffer);
+        RenderScreen(screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(rowX, rowY);
+        RenderScreen(screen);
+        Assert.Equal(1, screen.TradeQuantity);
+
+        var sliderRect = screen.TradeSliderRect;
+        float pl = TradeLayout.PanelLeft(ScreenWidth);
+        float pt = TradeLayout.PanelTop(ScreenHeight);
+        float midY = pt + sliderRect.MidY;
+
+        // Click at the very left edge of the track — jumps to the minimum quantity (1).
+        screen.OnMouseDown(pl + sliderRect.Left, midY);
+        Assert.Equal(1, screen.TradeQuantity);
+
+        // Click at the very right edge of the track — jumps to Max (250).
+        screen.OnMouseDown(pl + sliderRect.Right, midY);
+        Assert.Equal(250, screen.TradeQuantity);
+
+        // Click at the exact midpoint — 1 + round(0.5 * (250 - 1)) = 1 + 125 = 126.
+        var (midX, _) = ScreenCenter(sliderRect);
+        screen.OnMouseDown(midX, midY);
+        Assert.Equal(126, screen.TradeQuantity);
+    }
+
+    /// <summary>After the initial click, dragging (mouse held down) continues to update the quantity as the pointer moves — same drag-state shape as the grid scrollbar-thumb drag (Dragging_the_scrollbar_thumb_moves_the_scroll_offset).</summary>
+    [Fact]
+    public void Dragging_the_slider_continues_to_update_the_quantity_after_the_initial_click()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)),
+            playerCredits: 10_000)); // Max = min(10000/40, 1000) = 250.
+        var screen = new TradeScreen(buffer);
+        RenderScreen(screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(rowX, rowY);
+        RenderScreen(screen);
+
+        var sliderRect = screen.TradeSliderRect;
+        float pl = TradeLayout.PanelLeft(ScreenWidth);
+        float pt = TradeLayout.PanelTop(ScreenHeight);
+        float leftX = pl + sliderRect.Left;
+        float rightX = pl + sliderRect.Right;
+        float midY = pt + sliderRect.MidY;
+
+        screen.OnMouseDown(leftX, midY);
+        Assert.Equal(1, screen.TradeQuantity);
+
+        // Drag continues to update the quantity — must clamp at Max(250) when dragged well
+        // past the track's right edge, not overshoot or throw.
+        screen.OnMouseMove(rightX + 1000f, midY);
+        Assert.Equal(250, screen.TradeQuantity);
+
+        // Drag back past the track's left edge — must clamp at 1, not go to 0 or negative.
+        screen.OnMouseMove(leftX - 1000f, midY);
+        Assert.Equal(1, screen.TradeQuantity);
+
+        // Releasing ends the drag — further movement must not change the quantity.
+        screen.OnMouseUp(rightX, midY);
+        screen.OnMouseMove(rightX, midY);
+        Assert.Equal(1, screen.TradeQuantity);
     }
 
     [Fact]
@@ -1325,7 +1403,7 @@ public class TradeScreenTests
         Assert.Equal(ShipId, command.ObjectId);
         Assert.Equal(ContainerModuleId, command.ModuleId);
         Assert.Equal("item.silicon", command.ItemTypeId);
-        Assert.Equal(100, command.Quantity);
+        Assert.Equal(1, command.Quantity);
     }
 
     [Fact]
@@ -1352,7 +1430,7 @@ public class TradeScreenTests
         Assert.Equal(TradeCommandTypes.Sell, command.CommandType);
         Assert.Equal(ContainerModuleId, command.ModuleId);
         Assert.Equal("item.silicon", command.ItemTypeId);
-        Assert.Equal(100, command.Quantity);
+        Assert.Equal(1, command.Quantity);
     }
 
     [Fact]
@@ -1374,7 +1452,7 @@ public class TradeScreenTests
         Assert.Equal(TradeCommandTypes.Refuel, command.CommandType);
         Assert.Equal(EngineModuleId, command.ModuleId);
         Assert.Equal("item.fuel", command.ItemTypeId);
-        Assert.Equal(10, command.Quantity); // Good package step size.
+        Assert.Equal(1, command.Quantity); // Trading is fully per-unit.
     }
 
     [Fact]

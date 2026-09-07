@@ -28,20 +28,23 @@
 2. Две строки рыночной информации (цена станции, остаток на складе/в трюме).
 3. Переключатель `Buy` / `Sell`.
 4. Выбор количества: `-`, поле числа, `+`, `Max`.
-5. Итог сделки: цена, изменение кредитов, изменение груза.
-6. Внизу — крупная кнопка подтверждения.
+5. Под кнопками `-`/`+`/`Max` — горизонтальный ползунок (slider) на всю ширину фрейма: перетаскивание или клик по треку сразу выставляет количество в диапазоне `[минимум, Max]`, синхронно с полем числа и кнопками.
+6. Итог сделки: цена, изменение кредитов, изменение груза.
+7. Внизу — крупная кнопка подтверждения.
 
 Состояния:
 
 - Товар не выбран: титлбар — `Select item` (`Trade.SelectItemTitle`), тело фрейма — `Select an item from STATION INVENTORY` (`Trade.SelectItemPrompt`).
 - Нельзя купить: кнопка подтверждения `disabled`, причина рядом мелким текстом — `Not enough credits` (`Trade.ReasonInsufficientPlayerCredits`) / `No cargo space` (`Trade.NoCargoSpace`, только для не-`Fuel`: контейнерный модуль полностью заполнен, `AvailableCapacityKg <= 0`).
 - Нельзя продать: `You have none in cargo` (`Trade.NoneInCargo`, когда в трюме 0 единиц товара).
-- Прочие отклонения Engine (`CargoCapacityExceeded`, `FuelCapacityExceeded`, `InsufficientStationStock`, `InsufficientCargoQuantity`, `InvalidQuantity`, `InvalidPackageQuantity` и т.д.) клиент не предсказывает проактивно — они всплывают реактивно: `TradeScreen` запоминает `CommandId` последней отправленной команды и сверяет его с `CommandResults` следующего снапшота (см. `GameSessionHandle.SendTradeCommand`), показывая причину тем же способом, пока не будет отправлена новая команда или не сменится выбор/режим.
+- Прочие отклонения Engine (`CargoCapacityExceeded`, `FuelCapacityExceeded`, `InsufficientStationStock`, `InsufficientCargoQuantity`, `InvalidQuantity` и т.д.) клиент не предсказывает проактивно — они всплывают реактивно: `TradeScreen` запоминает `CommandId` последней отправленной команды и сверяет его с `CommandResults` следующего снапшота (см. `GameSessionHandle.SendTradeCommand`), показывая причину тем же способом, пока не будет отправлена новая команда или не сменится выбор/режим.
 - Выбранная строка слева (в `Resources`/`Goods`/`Modules`) подсвечивается, чтобы было понятно, к чему относится правый фрейм — уже реализовано через `_selectedResourceItemTypeId`/`_selectedGoodItemTypeId`/`_selectedModuleItemTypeId`.
 
 Маршрутизация команд (из существующего Engine/Contracts слоя, `TradeCommandTypes`): `Buy`/`Sell` товара из `Resources`/`Goods` уходят на модуль `module.container` (`trade.buy`/`trade.sell`); покупка `item.fuel` — это всегда `trade.refuel` на модуль `module.engine`, а не `trade.buy` (заправка не занимает место в трюме) — обратной продажи топлива не существует, поэтому для `Fuel` переключатель `Sell` недоступен (заблокирован в UI).
 
-Шаг количества (`-`/`+`) и размер пакета продажи — по категории товара (`StationInventoryItemSnapshot.Category`): `Resource` = 100, `Good` (включая `Fuel`) = 10. `Max`: Buy не-`Fuel` = `min(floor(Кредиты/ЦенаЗаЕдиницу), ОстатокНаСтанции)`, кнопка не действует, если контейнер полностью заполнен; Buy `Fuel` дополнительно ограничен свободной ёмкостью бака; Sell = `min(КоличествоВТрюме, MaxSellableQuantity)`, округлено вниз до кратного размеру пакета.
+Ограничения продажи пачками (кратно 100 для `Resource`, кратно 10 для `Good`) убраны полностью — покупка и продажа разрешены поштучно, для любой категории товара, без остатка. Это отменяет исходное решение §59/U9 (`Docs/FirstRelease/TechnicalTasks/StationEconomyProductionAndSizing.md`, «Acceptance criteria»), которое требовало кратности; Engine больше не валидирует и не округляет количество к размеру пакета — ни на продажу (валидировал раньше через `CommandReasonCodes.InvalidPackageQuantity`, теперь нет такого кода), ни при частичном исполнении продажи, когда скрытого баланса станции не хватает на весь запрошенный объём.
+
+Шаг `-`/`+` и минимум для ползунка — 1 единица для любой категории товара. `Max`: Buy не-`Fuel` = `min(floor(Кредиты/ЦенаЗаЕдиницу), ОстатокНаСтанции)`, кнопка не действует, если контейнер полностью заполнен; Buy `Fuel` дополнительно ограничен свободной ёмкостью бака; Sell = `min(КоличествоВТрюме, MaxSellableQuantity)`, без округления.
 
 ## Статус реализации (MVP)
 
