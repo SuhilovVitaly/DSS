@@ -314,38 +314,22 @@ public sealed class TradeScreen : IScreen
         Color = new SKColor(0x5E, 0x5E, 0x5E), Style = SKPaintStyle.Fill, IsAntialias = true
     };
 
-    /// <summary>Vertical gap kept between the two stacked right-hand panels — same 30px rhythm as the gap between stacked grids on the left (the "+30f" in <see cref="GridPanelPitch"/>).</summary>
-    private const float RightPanelGap = 30f;
-
     /// <summary>
-    /// Combined vertical span the two right-hand panels occupy together — top of the
-    /// Resources grid's own white outline down to the bottom of the Modules grid's own white
-    /// outline, same overall footprint as before this panel-ratio change (only how that span
-    /// is split between the two panels changed, not where the pair as a whole starts/ends).
+    /// Upper right-hand panel (no grid) — same top and bottom as the Resources grid's own
+    /// white outline (<see cref="_contentOutlineRect"/>), so the two frames line up on screen
+    /// instead of the panel's height being an independent fraction of the right column.
     /// </summary>
-    private static readonly float RightPanelColumnTop = _contentOutlineRect.Top;
-    private static readonly float RightPanelColumnBottom = _contentOutlineRectModules.Bottom;
-
-    /// <summary>
-    /// Upper panel is 1/3, lower is 2/3 of the column height remaining after
-    /// <see cref="RightPanelGap"/> (product decision — no longer tied to the left grids' own
-    /// Resources+Goods-vs-Modules stacking the way the panels used to be sized). Rounded so
-    /// the split lands on a whole pixel; <see cref="_rightPanelLowerHeight"/> takes the
-    /// rounding remainder so the pair's total still reaches <see cref="RightPanelColumnBottom"/>
-    /// exactly.
-    /// </summary>
-    private static readonly float _rightPanelUpperHeight =
-        MathF.Round((RightPanelColumnBottom - RightPanelColumnTop - RightPanelGap) / 3f);
-    private static readonly float _rightPanelLowerHeight =
-        RightPanelColumnBottom - RightPanelColumnTop - RightPanelGap - _rightPanelUpperHeight;
-
-    /// <summary>Upper right-hand panel (no grid) — 1/3 of the column height, see <see cref="_rightPanelUpperHeight"/>.</summary>
     private static readonly SKRect _rightPanelUpper = new(
-        RightPanelLeft, RightPanelColumnTop, RightPanelRight, RightPanelColumnTop + _rightPanelUpperHeight);
+        RightPanelLeft, _contentOutlineRect.Top, RightPanelRight, _contentOutlineRect.Bottom);
 
-    /// <summary>Lower right-hand panel (no grid) — 2/3 of the column height, see <see cref="_rightPanelLowerHeight"/>; also hosts the Trade action panel (<see cref="TradeActionContentTop"/> onward).</summary>
+    /// <summary>
+    /// Lower right-hand panel (no grid) — top edge matches the Goods grid's own white outline
+    /// (<see cref="_contentOutlineRectGoods"/>), the same way <see cref="_rightPanelUpper"/>'s
+    /// matches the Resources grid, and bottom edge matches the Modules grid's own white outline
+    /// (<see cref="_contentOutlineRectModules"/>); also hosts the Trade action panel (<see cref="TradeActionContentTop"/> onward).
+    /// </summary>
     private static readonly SKRect _rightPanelLower = new(
-        RightPanelLeft, _rightPanelUpper.Bottom + RightPanelGap, RightPanelRight, RightPanelColumnBottom);
+        RightPanelLeft, _contentOutlineRectGoods.Top, RightPanelRight, _contentOutlineRectModules.Bottom);
 
     /// <summary>How far each right-hand panel's titlebar sits above its own white outline's top — same overlap the Resources grid's own header bar keeps above its white outline on the left (<see cref="GridPanelOriginY"/> vs. <see cref="_contentOutlineRect"/>'s top: 90-76=14).</summary>
     private static readonly float RightPanelTitleBarOverlap = _contentOutlineRect.Top - GridPanelOriginY;
@@ -404,6 +388,15 @@ public sealed class TradeScreen : IScreen
 
     /// <summary>True while the pointer is over the trade-result panel's "Return to item" button (see <see cref="HandleTradeResultReturnButtonMouseDown"/>) — same role as <see cref="_isTradeConfirmHovered"/>, for the button shown in the same bottom-anchored slot once nothing is selected.</summary>
     private bool _isReturnToItemHovered;
+
+    /// <summary>True while the pointer is over the quantity stepper's `-` button — same hover-feedback role as <see cref="_isTradeConfirmHovered"/>, only meaningful while an item is selected (the stepper isn't drawn otherwise).</summary>
+    private bool _isTradeMinusHovered;
+
+    /// <summary>`+` counterpart to <see cref="_isTradeMinusHovered"/>.</summary>
+    private bool _isTradePlusHovered;
+
+    /// <summary>`Max` counterpart to <see cref="_isTradeMinusHovered"/>.</summary>
+    private bool _isTradeMaxHovered;
 
     /// <summary>
     /// CommandId of the last trade command sent via <see cref="OnConfirmTradeClicked"/>, kept
@@ -853,11 +846,12 @@ public sealed class TradeScreen : IScreen
         TradeActionContentLeft, _tradeSummaryLine1Rect.Bottom, TradeActionContentRight, _tradeSummaryLine1Rect.Bottom + TradeSummaryLineHeight);
 
     /// <summary>
-    /// Gap kept between the confirm button and its own panel's bottom edge — now that the
-    /// lower right-hand panel is 2/3 of the column height (far taller than the action panel's
-    /// content needs), the confirm button is deliberately pinned near the panel's bottom
-    /// instead of cascading directly below the summary lines, so it reads as a distinct,
-    /// harder-to-miss final step rather than blending into the block of text above it.
+    /// Gap kept between the confirm button and its own panel's bottom edge — the lower
+    /// right-hand panel (spanning the Goods+Modules grids' combined height, see
+    /// <see cref="_rightPanelLower"/>) is far taller than the action panel's content needs, so
+    /// the confirm button is deliberately pinned near the panel's bottom instead of cascading
+    /// directly below the summary lines, so it reads as a distinct, harder-to-miss final step
+    /// rather than blending into the block of text above it.
     /// </summary>
     private const float TradeConfirmBottomMargin = 16f;
     private static readonly SKRect _tradeConfirmButtonRect = new(
@@ -1263,11 +1257,11 @@ public sealed class TradeScreen : IScreen
 
         // Quantity stepper.
         var minusRect = ToScreenRect(_tradeMinusButtonRect);
-        MenuStyle.DrawButton(canvas, minusRect, "-", ButtonState.Normal);
+        MenuStyle.DrawButton(canvas, minusRect, "-", _isTradeMinusHovered ? ButtonState.Hovered : ButtonState.Normal);
         var plusRect = ToScreenRect(_tradePlusButtonRect);
-        MenuStyle.DrawButton(canvas, plusRect, "+", ButtonState.Normal);
+        MenuStyle.DrawButton(canvas, plusRect, "+", _isTradePlusHovered ? ButtonState.Hovered : ButtonState.Normal);
         var maxRect = ToScreenRect(_tradeMaxButtonRect);
-        MenuStyle.DrawButton(canvas, maxRect, Localization.Get("Trade.Max"), ButtonState.Normal);
+        MenuStyle.DrawButton(canvas, maxRect, Localization.Get("Trade.Max"), _isTradeMaxHovered ? ButtonState.Hovered : ButtonState.Normal);
         var quantityRect = ToScreenRect(_tradeQuantityFieldRect);
         canvas.DrawRect(quantityRect, MenuStyle.ButtonBorder);
         canvas.DrawText(_tradeQuantity.ToString(), quantityRect.MidX, LineBaselineY(quantityRect, _tradeBodyTextPaintCentered), _tradeBodyTextPaintCentered);
@@ -1555,6 +1549,9 @@ public sealed class TradeScreen : IScreen
         _isDraggingTradeSlider = false;
         _isTradeConfirmHovered = false;
         _isReturnToItemHovered = false;
+        _isTradeMinusHovered = false;
+        _isTradePlusHovered = false;
+        _isTradeMaxHovered = false;
         ResetTradeActionPanelState(_buffer?.Latest?.Snapshot);
     }
 
@@ -1844,6 +1841,10 @@ public sealed class TradeScreen : IScreen
         _isReturnToItemHovered = hoveredTradeInfo is null && _tradeResultItemTypeId is not null
             && Contains(ToScreenRect(_tradeConfirmButtonRect), x, y);
 
+        _isTradeMinusHovered = hoveredTradeInfo is not null && Contains(ToScreenRect(_tradeMinusButtonRect), x, y);
+        _isTradePlusHovered = hoveredTradeInfo is not null && Contains(ToScreenRect(_tradePlusButtonRect), x, y);
+        _isTradeMaxHovered = hoveredTradeInfo is not null && Contains(ToScreenRect(_tradeMaxButtonRect), x, y);
+
         _isStationNameHovered = IsStationNameHit(x, y);
         _isExitButtonHovered = IsExitButtonHit(x, y);
         bool isScrollbarActive = GridPanel.IsScrollbarActive(CurrentResourceRowCount());
@@ -1887,7 +1888,8 @@ public sealed class TradeScreen : IScreen
             || _isDraggingScrollThumb || isColumnTitleHovered
             || _isScrollUpHoveredGoods || _isScrollDownHoveredGoods || _isDraggingScrollThumbGoods || isGoodColumnTitleHovered
             || _isScrollUpHoveredModules || _isScrollDownHoveredModules || _isDraggingScrollThumbModules || isModuleColumnTitleHovered
-            || _isDraggingTradeSlider || _isTradeConfirmHovered || _isReturnToItemHovered;
+            || _isDraggingTradeSlider || _isTradeConfirmHovered || _isReturnToItemHovered
+            || _isTradeMinusHovered || _isTradePlusHovered || _isTradeMaxHovered;
     }
 
     /// <summary>

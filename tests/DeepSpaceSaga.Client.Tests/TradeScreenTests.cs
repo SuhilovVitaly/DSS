@@ -998,9 +998,9 @@ public class TradeScreenTests
         Assert.Equal(997f, lower.Left);
     }
 
-    /// <summary>The upper right-hand panel is 1/3 of the combined column height (Resources white frame's top down to Modules white frame's bottom), the lower is 2/3 — a product decision, no longer tied to the left grids' own Resources+Goods-vs-Modules stacking.</summary>
+    /// <summary>The upper right-hand panel's top and bottom match the Resources grid's own white frame exactly, so the two frames line up on screen.</summary>
     [Fact]
-    public void Upper_right_panel_outline_is_one_third_of_the_column_height()
+    public void Upper_right_panel_outline_matches_the_resources_grid_frame()
     {
         var screen = new TradeScreen();
         RenderScreen(screen);
@@ -1008,23 +1008,23 @@ public class TradeScreenTests
         var (upper, _) = screen.RightPanels;
 
         Assert.Equal(90f, upper.Top); // Resources white frame's own top
-        Assert.Equal(313f, upper.Bottom); // 90 + round((788-90-30)/3) = 90 + 223
-        Assert.Equal(223f, upper.Height);
+        Assert.Equal(290f, upper.Bottom); // Resources white frame's own bottom (90 + 200)
+        Assert.Equal(200f, upper.Height);
         Assert.Equal(388f, upper.Width); // 408 (977..1385) minus 25 (extra left inset) plus 5 (extra width)
     }
 
-    /// <summary>The lower right-hand panel is 2/3 of the combined column height — see <see cref="Upper_right_panel_outline_is_one_third_of_the_column_height"/>.</summary>
+    /// <summary>The lower right-hand panel's top matches the Goods grid's own white frame top, and its bottom matches the Modules grid's own white frame bottom — see <see cref="Upper_right_panel_outline_matches_the_resources_grid_frame"/> for the upper panel's equivalent alignment.</summary>
     [Fact]
-    public void Lower_right_panel_outline_is_two_thirds_of_the_column_height()
+    public void Lower_right_panel_outline_matches_the_goods_and_modules_grid_frames()
     {
         var screen = new TradeScreen();
         RenderScreen(screen);
 
         var (_, lower) = screen.RightPanels;
 
-        Assert.Equal(343f, lower.Top); // upper.Bottom (313) + the 30px gap between the panels
-        Assert.Equal(788f, lower.Bottom); // Modules white frame's own bottom — unchanged column footprint
-        Assert.Equal(445f, lower.Height);
+        Assert.Equal(339f, lower.Top); // Goods white frame's own top (90 + 249)
+        Assert.Equal(788f, lower.Bottom); // Modules white frame's own bottom
+        Assert.Equal(449f, lower.Height);
         Assert.Equal(388f, lower.Width); // 408 (977..1385) minus 25 (extra left inset) plus 5 (extra width)
     }
 
@@ -1071,7 +1071,7 @@ public class TradeScreenTests
     /// The titlebar must sit as far above its own panel's white outline top edge as the
     /// Resources grid's own header bar sits above that same white outline on the left
     /// (origin Y 76 vs. white-frame top 90 — a 14px offset), not flush with it. Both right
-    /// panels use that same 14px overlap above their own (now independently sized) top.
+    /// panels use that same 14px overlap above their own top.
     /// </summary>
     [Fact]
     public void Right_panel_titlebars_are_offset_above_the_white_outline_the_same_way_as_the_grid_headers()
@@ -1083,7 +1083,7 @@ public class TradeScreenTests
         var (upperTitleBar, lowerTitleBar) = screen.RightPanelTitleBars;
 
         Assert.Equal(76f, upperTitleBar.Top); // upper.Top (90) - 14, matches the Resources grid's own header top
-        Assert.Equal(329f, lowerTitleBar.Top); // lower.Top (343) - 14
+        Assert.Equal(325f, lowerTitleBar.Top); // lower.Top (339) - 14, matches the Goods grid's own header top
         Assert.Equal(14f, upper.Top - upperTitleBar.Top);
         Assert.Equal(14f, lower.Top - lowerTitleBar.Top);
     }
@@ -1873,7 +1873,34 @@ public class TradeScreenTests
         Assert.False(screen.OnMouseMove(confirmX, confirmY));
     }
 
-    /// <summary>The confirm button is pinned near the bottom of the (now taller, 2/3-height) lower right panel rather than cascading directly below the summary lines — makes the final "commit" step visually distinct.</summary>
+    /// <summary>The `-`/`+`/`Max` stepper buttons must behave like every other button in the panel: hovering them reports interactive (cursor swap), and stops once the pointer moves away.</summary>
+    [Fact]
+    public void Hovering_the_stepper_buttons_reports_interactive()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource))));
+        var screen = new TradeScreen(buffer);
+        RenderScreen(screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(rowX, rowY);
+        RenderScreen(screen);
+
+        var (minusX, minusY) = ScreenCenter(screen.TradeStepperRects.Minus);
+        Assert.True(screen.OnMouseMove(minusX, minusY));
+        Assert.False(screen.OnMouseMove(minusX - 500f, minusY));
+
+        var (plusX, plusY) = ScreenCenter(screen.TradeStepperRects.Plus);
+        Assert.True(screen.OnMouseMove(plusX, plusY));
+        Assert.False(screen.OnMouseMove(plusX - 500f, plusY));
+
+        var (maxX, maxY) = ScreenCenter(screen.TradeStepperRects.Max);
+        Assert.True(screen.OnMouseMove(maxX, maxY));
+        Assert.False(screen.OnMouseMove(maxX - 500f, maxY));
+    }
+
+    /// <summary>The confirm button is pinned near the bottom of the lower right panel (spanning the Goods+Modules grids' combined height) rather than cascading directly below the summary lines — makes the final "commit" step visually distinct.</summary>
     [Fact]
     public void Confirm_button_sits_near_the_bottom_of_the_lower_right_panel()
     {
