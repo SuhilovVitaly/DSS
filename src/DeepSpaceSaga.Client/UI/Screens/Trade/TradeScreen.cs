@@ -264,7 +264,7 @@ public sealed class TradeScreen : IScreen
     /// rather than throwing or drawing a placeholder).
     /// </summary>
     private static readonly SKBitmap? _compartmentImage =
-        UiAssetLoader.LoadBitmap("Images/UI/TradeScreen/trade-androids.png");
+        UiAssetLoader.LoadBitmap("Images/UI/TradeScreen/station-trading-zone.png");
 
     /// <summary>Test seam — true if the compartment illustration PNG was found and decoded at startup.</summary>
     internal static bool HasLoadedCompartmentImage => _compartmentImage is not null;
@@ -498,12 +498,11 @@ public sealed class TradeScreen : IScreen
 
     /// <summary>
     /// Draws the upper right-hand panel's content once an item is selected: its icon
-    /// (<see cref="ItemImagePath"/>, loaded/cached via <see cref="UiAssetLoader"/>) inside a
-    /// bordered <see cref="ItemPreviewIconSize"/>×<see cref="ItemPreviewIconSize"/> frame —
-    /// falling back to the bare frame for any item type with no art yet — and its localized
-    /// trade description word-wrapped to the right of it (<see cref="ItemDescription"/>).
-    /// Left blank (as before) while nothing is selected — this panel has no empty-state
-    /// prompt of its own.
+    /// (<see cref="ItemImagePath"/>, loaded/cached via <see cref="UiAssetLoader"/>), unframed,
+    /// filling a <see cref="ItemPreviewIconSize"/>×<see cref="ItemPreviewIconSize"/> area —
+    /// left blank for any item type with no art yet — and its localized trade description
+    /// word-wrapped to the right of it (<see cref="ItemDescription"/>). Left blank (as before)
+    /// while nothing is selected — this panel has no empty-state prompt of its own.
     /// </summary>
     private void DrawItemPreviewPanel(SKCanvas canvas, float pl, float pt, string? itemTypeId)
     {
@@ -514,7 +513,6 @@ public sealed class TradeScreen : IScreen
         var icon = ItemImagePath(itemTypeId) is { } imagePath ? UiAssetLoader.LoadBitmap(imagePath) : null;
         if (icon is not null)
             canvas.DrawBitmap(icon, iconRect);
-        canvas.DrawRect(iconRect, _contentOutlinePaint);
 
         var descriptionRect = ToScreenRect(_itemPreviewDescriptionRect);
         var lines = WrapText(ItemDescription(itemTypeId), _itemPreviewDescriptionPaint, descriptionRect.Width);
