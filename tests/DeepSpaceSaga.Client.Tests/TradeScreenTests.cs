@@ -1681,6 +1681,74 @@ public class TradeScreenTests
         Assert.Equal(960, fixture.Screen.TradeResultCreditsAfter);
     }
 
+    /// <summary>The trade-result panel's "Return to item" button (same screen slot as the confirm button, shown once nothing is selected) re-selects the traded Resource-category item in its grid and clears the result block.</summary>
+    [Fact]
+    public async Task Clicking_return_to_item_re_selects_the_traded_resource_row()
+    {
+        var snapshot = BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)));
+        await using var fixture = CreateTradeFixture(snapshot);
+        RenderScreen(fixture.Screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(rowX, rowY);
+        RenderScreen(fixture.Screen);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+        var sentCommand = Assert.Single(fixture.Connection.Commands);
+
+        fixture.Handle.Buffer.Update(snapshot with
+        {
+            SnapshotSequence = 2,
+            CommandResults = ImmutableArray.Create(new CommandResult(
+                sentCommand.CommandId, ShipId, ContainerModuleId, TradeCommandTypes.Buy,
+                CommandResultStatus.Executed, EffectiveGameTimeMs: 100))
+        });
+        RenderScreen(fixture.Screen);
+        Assert.Null(fixture.Screen.SelectedResourceIndex);
+        Assert.NotNull(fixture.Screen.TradeResultMessage);
+
+        // Same rect as the confirm button — it's now the "Return to item" button.
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+
+        Assert.Equal(0, fixture.Screen.SelectedResourceIndex);
+        Assert.Equal("item.silicon", fixture.Screen.SelectedTradeItemTypeId);
+        Assert.Null(fixture.Screen.TradeResultMessage); // returning to the item clears the stale result block
+    }
+
+    /// <summary>Same as Clicking_return_to_item_re_selects_the_traded_resource_row, but for a Good-category item (Fuel) — it must land in the Goods grid's selection, not the Resources one.</summary>
+    [Fact]
+    public async Task Clicking_return_to_item_re_selects_the_traded_good_row()
+    {
+        var snapshot = BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.fuel", 1000, 5, 1000, TradeItemCategories.Good)));
+        await using var fixture = CreateTradeFixture(snapshot);
+        RenderScreen(fixture.Screen);
+
+        var (goodX, goodY) = GoodRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(goodX, goodY);
+        RenderScreen(fixture.Screen);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+        var sentCommand = Assert.Single(fixture.Connection.Commands);
+
+        fixture.Handle.Buffer.Update(snapshot with
+        {
+            SnapshotSequence = 2,
+            CommandResults = ImmutableArray.Create(new CommandResult(
+                sentCommand.CommandId, ShipId, EngineModuleId, TradeCommandTypes.Refuel,
+                CommandResultStatus.Executed, EffectiveGameTimeMs: 100))
+        });
+        RenderScreen(fixture.Screen);
+
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+
+        Assert.Equal(0, fixture.Screen.SelectedGoodIndex);
+        Assert.Equal("item.fuel", fixture.Screen.SelectedTradeItemTypeId);
+    }
+
     /// <summary>Refuel's before/after amount reads from the player's Fuel tank, not the Container module's free cargo capacity — the trade-result block must not conflate the two.</summary>
     [Fact]
     public async Task A_successful_refuel_shows_fuel_amount_before_and_after_instead_of_free_cargo()

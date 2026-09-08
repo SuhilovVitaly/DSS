@@ -56,6 +56,7 @@
   "Trade.ResultTitle": "Trade result",
   "Trade.FreeCargo": "FREE CARGO",
   "Trade.ResultLinePrefix": "{0}: {1} - ",
+  "Trade.ReturnToItem": "Return to item",
   "Trade.Max": "Max",
   "Trade.NoCargoSpace": "No cargo space",
   "Trade.NoneInCargo": "You have none in cargo",

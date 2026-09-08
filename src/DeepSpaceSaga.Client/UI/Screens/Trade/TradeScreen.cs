@@ -402,6 +402,9 @@ public sealed class TradeScreen : IScreen
     /// <summary>True while the pointer is over the confirm button AND it's currently clickable (a disabled button gets no hover feedback — same "not a button unless it does something" rule the toolbar's plain readouts already follow) — drives both the cursor swap (<see cref="OnMouseMove(float, float)"/>'s return) and the button's <see cref="ButtonState.Hovered"/> visual.</summary>
     private bool _isTradeConfirmHovered;
 
+    /// <summary>True while the pointer is over the trade-result panel's "Return to item" button (see <see cref="HandleTradeResultReturnButtonMouseDown"/>) — same role as <see cref="_isTradeConfirmHovered"/>, for the button shown in the same bottom-anchored slot once nothing is selected.</summary>
+    private bool _isReturnToItemHovered;
+
     /// <summary>
     /// CommandId of the last trade command sent via <see cref="OnConfirmTradeClicked"/>, kept
     /// until its disposition is observed in a later snapshot's CommandResults (see
@@ -463,6 +466,12 @@ public sealed class TradeScreen : IScreen
     /// <summary>Test seam — see <see cref="_tradeResultItemDisplayName"/>.</summary>
     internal string? TradeResultItemDisplayName => _tradeResultItemDisplayName;
 
+    /// <summary>Item type id of the last successfully-executed trade — set alongside <see cref="_tradeResultItemDisplayName"/>, used by the "Return to item" button (<see cref="HandleTradeResultReturnButtonMouseDown"/>) to re-select it once the grid selection has been cleared.</summary>
+    private string? _tradeResultItemTypeId;
+
+    /// <summary>Test seam — see <see cref="_tradeResultItemTypeId"/>.</summary>
+    internal string? TradeResultItemTypeId => _tradeResultItemTypeId;
+
     /// <summary>True when the last successfully-executed trade was a Refuel — see <see cref="_lastSentTradeWasFuel"/>.</summary>
     private bool _tradeResultWasFuel;
 
@@ -510,6 +519,7 @@ public sealed class TradeScreen : IScreen
         _tradeRejectionReasonKey = null;
         _tradeResultMessage = null;
         _tradeResultItemDisplayName = null;
+        _tradeResultItemTypeId = null;
         _tradeResultAmountBefore = null;
         _tradeResultAmountAfter = null;
         _tradeResultCreditsBefore = null;
@@ -749,6 +759,7 @@ public sealed class TradeScreen : IScreen
                     _lastSentTradeCommandType, result.ExecutedQuantity, _lastSentTradeQuantity, _lastSentTradeUnitPriceCredits);
 
                 _tradeResultItemDisplayName = _lastSentTradeItemDisplayName;
+                _tradeResultItemTypeId = _lastSentTradeItemTypeId;
                 _tradeResultWasFuel = _lastSentTradeWasFuel;
                 _tradeResultAmountBefore = _lastSentAmountBeforeTrade;
                 _tradeResultAmountAfter = _lastSentTradeWasFuel
@@ -957,6 +968,38 @@ public sealed class TradeScreen : IScreen
     }
 
     /// <summary>
+    /// Handles a left click on the trade-result panel's "Return to item" button — only relevant
+    /// once a trade has executed and the grid selection was cleared (see
+    /// <see cref="OnConfirmTradeClicked"/>/<see cref="DrawTradeResultDetails"/>). Re-selects the
+    /// traded item in whichever grid (Resources/Goods) it belongs to, which puts both the grid
+    /// row and the action panel back on that item exactly like a fresh row click would. No-ops
+    /// (but still consumes the click) if the item has since dropped out of the docked station's
+    /// inventory — there's nothing left to select it as.
+    /// </summary>
+    private bool HandleTradeResultReturnButtonMouseDown(float x, float y)
+    {
+        if (_tradeResultItemTypeId is null || SelectedTradeItemTypeId is not null)
+            return false;
+
+        if (!Contains(ToScreenRect(_tradeConfirmButtonRect), x, y))
+            return false;
+
+        var snapshot = _buffer?.Latest?.Snapshot;
+        var item = snapshot?.DockedStationTrade?.Items.FirstOrDefault(i => i.ItemTypeId == _tradeResultItemTypeId);
+        if (item is not null)
+        {
+            if (item.Category == TradeItemCategories.Resource)
+                _selectedResourceItemTypeId = _tradeResultItemTypeId;
+            else
+                _selectedGoodItemTypeId = _tradeResultItemTypeId;
+
+            ResetTradeActionPanelState(snapshot);
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Sends the Buy/Sell/Refuel command for the current selection/mode/quantity (Docs/
     /// FirstRelease/Screens/Trade.md's command-routing rule: Fuel always goes to the engine
     /// module as trade.refuel, everything else goes to the container module as trade.buy/
@@ -1117,7 +1160,8 @@ public sealed class TradeScreen : IScreen
     /// the traded item's name and the existing success/partial-fill summary (unit price ×
     /// quantity = total) in white, then the free-cargo-or-Fuel amount and the Credits balance
     /// each as a "before - after" line (<see cref="DrawBeforeAfterLine"/>) whose after-value is
-    /// colored by the sign of the change.
+    /// colored by the sign of the change, and finally a "Return to item" button
+    /// (<see cref="HandleTradeResultReturnButtonMouseDown"/>) that re-selects the traded item.
     /// </summary>
     private void DrawTradeResultDetails(SKCanvas canvas)
     {
@@ -1132,6 +1176,12 @@ public sealed class TradeScreen : IScreen
 
         string creditsLabel = Localization.Get("Trade.Credits");
         DrawBeforeAfterLine(canvas, ToScreenRect(_tradeResultLine4Rect), creditsLabel, _tradeResultCreditsBefore ?? 0, _tradeResultCreditsAfter ?? 0);
+
+        // Same bottom-anchored slot the confirm button occupies while an item is selected
+        // (the two states are mutually exclusive, so there's no layout conflict reusing it).
+        var returnButtonRect = ToScreenRect(_tradeConfirmButtonRect);
+        MenuStyle.DrawButton(canvas, returnButtonRect, Localization.Get("Trade.ReturnToItem"),
+            _isReturnToItemHovered ? ButtonState.Hovered : ButtonState.Normal);
     }
 
     /// <summary>
@@ -1504,6 +1554,7 @@ public sealed class TradeScreen : IScreen
         _fuelHoverStartedAtMs = null;
         _isDraggingTradeSlider = false;
         _isTradeConfirmHovered = false;
+        _isReturnToItemHovered = false;
         ResetTradeActionPanelState(_buffer?.Latest?.Snapshot);
     }
 
@@ -1524,6 +1575,9 @@ public sealed class TradeScreen : IScreen
             return ScreenEvent.NavigateToStation;
 
         if (HandleTradeActionPanelMouseDown(x, y))
+            return ScreenEvent.None;
+
+        if (HandleTradeResultReturnButtonMouseDown(x, y))
             return ScreenEvent.None;
 
         var resourceRows = ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending);
@@ -1787,6 +1841,9 @@ public sealed class TradeScreen : IScreen
             && Contains(ToScreenRect(_tradeConfirmButtonRect), x, y)
             && ResolveConfirmDisabledReasonKey(hti, _isTradeBuyMode, _tradeQuantity) is null;
 
+        _isReturnToItemHovered = hoveredTradeInfo is null && _tradeResultItemTypeId is not null
+            && Contains(ToScreenRect(_tradeConfirmButtonRect), x, y);
+
         _isStationNameHovered = IsStationNameHit(x, y);
         _isExitButtonHovered = IsExitButtonHit(x, y);
         bool isScrollbarActive = GridPanel.IsScrollbarActive(CurrentResourceRowCount());
@@ -1830,7 +1887,7 @@ public sealed class TradeScreen : IScreen
             || _isDraggingScrollThumb || isColumnTitleHovered
             || _isScrollUpHoveredGoods || _isScrollDownHoveredGoods || _isDraggingScrollThumbGoods || isGoodColumnTitleHovered
             || _isScrollUpHoveredModules || _isScrollDownHoveredModules || _isDraggingScrollThumbModules || isModuleColumnTitleHovered
-            || _isDraggingTradeSlider || _isTradeConfirmHovered;
+            || _isDraggingTradeSlider || _isTradeConfirmHovered || _isReturnToItemHovered;
     }
 
     /// <summary>
