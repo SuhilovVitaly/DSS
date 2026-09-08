@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using DeepSpaceSaga.Client.UI.Assets;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Contracts;
@@ -228,8 +229,15 @@ public sealed class TradeScreen : IScreen
         _fuelHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
-    /// <summary>Outline marking the future content area around the Resources grid, ahead of the real redesign layout.</summary>
-    private static readonly SKRect _contentOutlineRect = new(10f, 90f, 10f + 980f, 90f + 200f);
+    /// <summary>
+    /// Outline marking the future content area around the Resources grid, ahead of the real
+    /// redesign layout. Left edge sits 5px left of <see cref="GridPanelOriginX"/> (415) — the
+    /// grid column (see <see cref="GridPanel.HeaderWidth"/>) is compressed by 200px versus its
+    /// original size so this outline's right edge (1190) — and everything already anchored to
+    /// it (<see cref="GridRightEdge"/>, the right-hand info panels) — stays exactly where it
+    /// was before the compartment illustration's reserved strip grew to 400px.
+    /// </summary>
+    private static readonly SKRect _contentOutlineRect = new(410f, 90f, 1190f, 90f + 200f);
 
     /// <summary>Same outline as <see cref="_contentOutlineRect"/>, shifted down by the same offset as <see cref="GridPanelOriginYGoods"/> is from <see cref="GridPanelOriginY"/>, to frame the Goods grid below it.</summary>
     private static readonly SKRect _contentOutlineRectGoods = new(
@@ -246,8 +254,67 @@ public sealed class TradeScreen : IScreen
         Color = SKColors.White, Style = SKPaintStyle.Stroke, StrokeWidth = 1f, IsAntialias = true
     };
 
-    /// <summary>Anchor (the header bar's top-left) for the <see cref="GridPanel"/> resources list — see that control's doc comment for how header/rows/scrollbar are laid out relative to this point.</summary>
-    private const float GridPanelOriginX = 15f;
+    /// <summary>
+    /// Ship-compartment illustration shown to the left of the three stacked grids, in the
+    /// 400px strip reserved between the panel's left margin and the (compressed) grid column
+    /// — 200px from widening <see cref="TradeLayout.PanelWidth"/>, another 200px from
+    /// compressing <see cref="GridPanel.HeaderWidth"/> — loaded once via the shared, cached
+    /// <see cref="UiAssetLoader"/> (returns null, cached, if the file is missing/corrupt, in
+    /// which case <see cref="DrawCompartmentImage"/> simply no-ops and leaves the strip blank
+    /// rather than throwing or drawing a placeholder).
+    /// </summary>
+    private static readonly SKBitmap? _compartmentImage =
+        UiAssetLoader.LoadBitmap("Images/UI/TradeScreen/station-trading-zone.png");
+
+    /// <summary>Test seam — true if the compartment illustration PNG was found and decoded at startup.</summary>
+    internal static bool HasLoadedCompartmentImage => _compartmentImage is not null;
+
+    /// <summary>
+    /// Local rect (panel-relative) the compartment illustration is drawn into — edge-to-edge
+    /// with no margin on the left (0), top (flush with the bottom of the <see cref="StationToolbar"/>
+    /// titlebar) or bottom (the panel's own bottom edge, <see cref="TradeLayout.PanelHeight"/>),
+    /// and a 5px gap on the right before the grid column starts (<see cref="GridPanelOriginX"/>).
+    /// </summary>
+    private static readonly SKRect _compartmentImageRect = new(
+        0f, StationToolbar.Height, GridPanelOriginX - 5f, TradeLayout.PanelHeight);
+
+    /// <summary>
+    /// Draws <see cref="_compartmentImage"/> filling <see cref="_compartmentImageRect"/> with a
+    /// "cover" crop — scaled up to whichever of width/height needs the larger factor to fill
+    /// the rect, then center-cropped on the other axis — so the illustration fills the
+    /// reserved strip edge-to-edge with no letterboxing and no stretch distortion, regardless
+    /// of the source PNG's own aspect ratio. No-ops if the asset failed to load.
+    /// </summary>
+    private static void DrawCompartmentImage(SKCanvas canvas, float pl, float pt)
+    {
+        if (_compartmentImage is not { } image)
+            return;
+
+        var destRect = new SKRect(
+            pl + _compartmentImageRect.Left, pt + _compartmentImageRect.Top,
+            pl + _compartmentImageRect.Right, pt + _compartmentImageRect.Bottom);
+
+        float scale = Math.Max(destRect.Width / image.Width, destRect.Height / image.Height);
+        float srcCropWidth = destRect.Width / scale;
+        float srcCropHeight = destRect.Height / scale;
+        float srcLeft = (image.Width - srcCropWidth) / 2f;
+        float srcTop = (image.Height - srcCropHeight) / 2f;
+        var srcRect = new SKRect(srcLeft, srcTop, srcLeft + srcCropWidth, srcTop + srcCropHeight);
+
+        canvas.DrawBitmap(image, srcRect, destRect);
+    }
+
+    /// <summary>
+    /// Anchor (the header bar's top-left) for the <see cref="GridPanel"/> resources list — see
+    /// that control's doc comment for how header/rows/scrollbar are laid out relative to this
+    /// point. Shifted right from the original 15 by 400px total — 200px from
+    /// <see cref="TradeLayout.PanelWidth"/> being widened, another 200px reclaimed by
+    /// compressing <see cref="GridPanel.HeaderWidth"/> — reserving a 15..415 strip at the
+    /// panel's left edge for the ship-compartment illustration (<see cref="_compartmentImage"/>).
+    /// The right-panel column past the grid (<see cref="GridRightEdge"/> onward) is unaffected:
+    /// the compression exactly offsets the extra shift, so nothing to its right moves.
+    /// </summary>
+    private const float GridPanelOriginX = 415f;
     private const float GridPanelOriginY = 76f;
     private const string ResourcesGridTitle = "Resources";
 
@@ -284,17 +351,26 @@ public sealed class TradeScreen : IScreen
     /// <summary>Right edge (panel-local x) of the three grids — their left margin plus header+scrollbar width.</summary>
     private const float GridRightEdge = GridPanelOriginX + GridPanel.HeaderWidth + GridPanel.ScrollbarWidth;
 
+    /// <summary>
+    /// Generic gap kept from the Trade panel's own edges — what <see cref="GridPanelOriginX"/>
+    /// used to double as before the grid column was shifted right to free up room for a
+    /// ship-compartment illustration. Kept as its own constant so the right-hand panels'
+    /// positioning below stays anchored to the panel's actual 15px edge margin rather than
+    /// following the grid's own (now larger) left offset.
+    /// </summary>
+    private const float PanelContentMargin = 15f;
+
     /// <summary>Extra rightward nudge applied to both right-hand panels' left edge — their width shrinks by the same amount, their right edge staying put.</summary>
     private const float RightPanelExtraLeftInset = 25f;
 
     /// <summary>Extra width added to both right-hand panels — their left edge moves this much further left, their right edge staying put.</summary>
     private const float RightPanelExtraWidth = 5f;
 
-    /// <summary>Left edge of the two right-hand info panels (no grid) — as far from the grids' right edge as the grids themselves are from the Trade panel's own left edge (<see cref="GridPanelOriginX"/>), plus <see cref="RightPanelExtraLeftInset"/>, minus <see cref="RightPanelExtraWidth"/>.</summary>
-    private const float RightPanelLeft = GridRightEdge + GridPanelOriginX + RightPanelExtraLeftInset - RightPanelExtraWidth;
+    /// <summary>Left edge of the two right-hand info panels (no grid) — as far from the grids' right edge as the Trade panel's own left edge margin (<see cref="PanelContentMargin"/>), plus <see cref="RightPanelExtraLeftInset"/>, minus <see cref="RightPanelExtraWidth"/>.</summary>
+    private const float RightPanelLeft = GridRightEdge + PanelContentMargin + RightPanelExtraLeftInset - RightPanelExtraWidth;
 
-    /// <summary>Right edge of the two right-hand info panels — mirrors <see cref="GridPanelOriginX"/> as the gap kept from the Trade panel's own right edge.</summary>
-    private const float RightPanelRight = TradeLayout.PanelWidth - GridPanelOriginX;
+    /// <summary>Right edge of the two right-hand info panels — mirrors <see cref="PanelContentMargin"/> as the gap kept from the Trade panel's own right edge.</summary>
+    private const float RightPanelRight = TradeLayout.PanelWidth - PanelContentMargin;
 
     /// <summary>Gap kept between the titlebar's left edge and its panel's own white outline left edge — same gap <see cref="GridPanelOriginX"/> (15) keeps from the Resources white outline's left edge (<see cref="_contentOutlineRect"/>, 10): 15-10=5.</summary>
     private static readonly float RightPanelTitleBarLeftInset = GridPanelOriginX - _contentOutlineRect.Left;
@@ -315,40 +391,143 @@ public sealed class TradeScreen : IScreen
     };
 
     /// <summary>
-    /// Upper right-hand panel (no grid) — top/bottom snapped exactly to the Resources and
-    /// Goods grids' white outline frames combined (top of the Resources frame to bottom of
-    /// the Goods frame), so its own white outline has the same per-panel height (200) as
-    /// each of theirs, not an independently computed height/center.
+    /// Upper right-hand panel (no grid) — same top and bottom as the Resources grid's own
+    /// white outline (<see cref="_contentOutlineRect"/>), so the two frames line up on screen
+    /// instead of the panel's height being an independent fraction of the right column.
     /// </summary>
     private static readonly SKRect _rightPanelUpper = new(
-        RightPanelLeft, _contentOutlineRect.Top, RightPanelRight, _contentOutlineRectGoods.Bottom);
-
-    /// <summary>Lower right-hand panel (no grid) — top/bottom snapped exactly to the Modules grid's white outline frame, so its outline has the same height (200) as the Resources/Goods ones.</summary>
-    private static readonly SKRect _rightPanelLower = new(
-        RightPanelLeft, _contentOutlineRectModules.Top, RightPanelRight, _contentOutlineRectModules.Bottom);
+        RightPanelLeft, _contentOutlineRect.Top, RightPanelRight, _contentOutlineRect.Bottom);
 
     /// <summary>
-    /// Upper right-hand panel's titlebar — top pinned to <see cref="GridPanelOriginY"/> (the
-    /// same offset above its own white outline's top that the Resources grid's own header
-    /// bar has above that same white outline on the left), and left/right edges inset from
-    /// the panel's own white outline by <see cref="RightPanelTitleBarLeftInset"/>/
-    /// <see cref="RightPanelTitleBarRightInset"/> — the same horizontal margins the
-    /// Resources grid's header keeps from its white outline.
+    /// Lower right-hand panel (no grid) — top edge matches the Goods grid's own white outline
+    /// (<see cref="_contentOutlineRectGoods"/>), the same way <see cref="_rightPanelUpper"/>'s
+    /// matches the Resources grid, and bottom edge matches the Modules grid's own white outline
+    /// (<see cref="_contentOutlineRectModules"/>); also hosts the Trade action panel (<see cref="TradeActionContentTop"/> onward).
+    /// </summary>
+    private static readonly SKRect _rightPanelLower = new(
+        RightPanelLeft, _contentOutlineRectGoods.Top, RightPanelRight, _contentOutlineRectModules.Bottom);
+
+    /// <summary>How far each right-hand panel's titlebar sits above its own white outline's top — same overlap the Resources grid's own header bar keeps above its white outline on the left (<see cref="GridPanelOriginY"/> vs. <see cref="_contentOutlineRect"/>'s top: 90-76=14).</summary>
+    private static readonly float RightPanelTitleBarOverlap = _contentOutlineRect.Top - GridPanelOriginY;
+
+    /// <summary>
+    /// Upper right-hand panel's titlebar — sits <see cref="RightPanelTitleBarOverlap"/> above
+    /// its own panel's top, left/right edges inset from the panel's own white outline by
+    /// <see cref="RightPanelTitleBarLeftInset"/>/<see cref="RightPanelTitleBarRightInset"/> —
+    /// the same horizontal margins the Resources grid's header keeps from its white outline.
     /// </summary>
     private static readonly SKRect _rightPanelUpperTitleBar = new(
-        RightPanelLeft + RightPanelTitleBarLeftInset, GridPanelOriginY,
-        RightPanelRight - RightPanelTitleBarRightInset, GridPanelOriginY + RightPanelTitleBarHeight);
+        RightPanelLeft + RightPanelTitleBarLeftInset, _rightPanelUpper.Top - RightPanelTitleBarOverlap,
+        RightPanelRight - RightPanelTitleBarRightInset, _rightPanelUpper.Top - RightPanelTitleBarOverlap + RightPanelTitleBarHeight);
 
-    /// <summary>Same idea as <see cref="_rightPanelUpperTitleBar"/>, pinned to <see cref="GridPanelOriginYModules"/> to match the Modules grid header's offset above its white outline.</summary>
+    /// <summary>Same idea as <see cref="_rightPanelUpperTitleBar"/>, for the lower panel's own top.</summary>
     private static readonly SKRect _rightPanelLowerTitleBar = new(
-        RightPanelLeft + RightPanelTitleBarLeftInset, GridPanelOriginYModules,
-        RightPanelRight - RightPanelTitleBarRightInset, GridPanelOriginYModules + RightPanelTitleBarHeight);
+        RightPanelLeft + RightPanelTitleBarLeftInset, _rightPanelLower.Top - RightPanelTitleBarOverlap,
+        RightPanelRight - RightPanelTitleBarRightInset, _rightPanelLower.Top - RightPanelTitleBarOverlap + RightPanelTitleBarHeight);
 
     /// <summary>Test seam — the two right-hand info panels' geometry, in the same panel-local coordinate space as <see cref="_contentOutlineRect"/>.</summary>
     internal (SKRect Upper, SKRect Lower) RightPanels => (_rightPanelUpper, _rightPanelLower);
 
     /// <summary>Test seam — the two right-hand panels' titlebar geometry, same coordinate space as <see cref="RightPanels"/>.</summary>
     internal (SKRect Upper, SKRect Lower) RightPanelTitleBars => (_rightPanelUpperTitleBar, _rightPanelLowerTitleBar);
+
+    // ── Item preview panel (upper right-hand frame) — a bordered placeholder for the
+    // selected item's future icon plus its flavor/trade description text beside it. Shown
+    // only while an item is selected across the three grids (see DrawItemPreviewPanel);
+    // the upper panel stays blank otherwise, same as before this was added.
+
+    private const float ItemPreviewIconLeft = 1215f;
+    private const float ItemPreviewIconTop = 120f;
+    private const float ItemPreviewIconSize = 128f;
+
+    private static readonly SKRect _itemPreviewIconRect = new(
+        ItemPreviewIconLeft, ItemPreviewIconTop, ItemPreviewIconLeft + ItemPreviewIconSize, ItemPreviewIconTop + ItemPreviewIconSize);
+
+    /// <summary>Test seam — the item preview icon frame's geometry, panel-local (same coordinate space as <see cref="RightPanels"/>).</summary>
+    internal SKRect ItemPreviewIconRect => _itemPreviewIconRect;
+
+    private const float ItemPreviewDescriptionGap = 15f;
+
+    /// <summary>
+    /// Description text area — starts <see cref="ItemPreviewDescriptionGap"/> right of the
+    /// icon frame, top-aligned with it, and spans to the upper panel's own right margin
+    /// (same <see cref="RightPanelTitleBarRightInset"/> the titlebar keeps) down to its
+    /// bottom margin.
+    /// </summary>
+    private static readonly SKRect _itemPreviewDescriptionRect = new(
+        _itemPreviewIconRect.Right + ItemPreviewDescriptionGap, ItemPreviewIconTop,
+        RightPanelRight - RightPanelTitleBarRightInset, _rightPanelUpper.Bottom - 10f);
+
+    private static readonly SKPaint _itemPreviewDescriptionPaint = new()
+    {
+        Color = SKColors.White, TextSize = 13f, IsAntialias = true,
+        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceRegular
+    };
+
+    /// <summary>Greedy word-wrap: adds words to the current line while it still fits maxWidth — same technique as ScenarioSelectScreen's own WrapText.</summary>
+    private static List<string> WrapText(string text, SKPaint paint, float maxWidth)
+    {
+        var lines = new List<string>();
+        if (string.IsNullOrEmpty(text))
+            return lines;
+
+        var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var current = new System.Text.StringBuilder();
+
+        foreach (var word in words)
+        {
+            string candidate = current.Length == 0 ? word : current + " " + word;
+            if (current.Length == 0 || paint.MeasureText(candidate) <= maxWidth)
+            {
+                current.Clear();
+                current.Append(candidate);
+            }
+            else
+            {
+                lines.Add(current.ToString());
+                current.Clear();
+                current.Append(word);
+            }
+        }
+
+        if (current.Length > 0)
+            lines.Add(current.ToString());
+
+        return lines;
+    }
+
+    /// <summary>
+    /// Draws the upper right-hand panel's content once an item is selected: its icon
+    /// (<see cref="ItemImagePath"/>, loaded/cached via <see cref="UiAssetLoader"/>), unframed,
+    /// filling a <see cref="ItemPreviewIconSize"/>×<see cref="ItemPreviewIconSize"/> area —
+    /// left blank for any item type with no art yet — and its localized trade description
+    /// word-wrapped to the right of it (<see cref="ItemDescription"/>). Left blank (as before)
+    /// while nothing is selected — this panel has no empty-state prompt of its own.
+    /// </summary>
+    private void DrawItemPreviewPanel(SKCanvas canvas, float pl, float pt, string? itemTypeId)
+    {
+        if (itemTypeId is null)
+            return;
+
+        var iconRect = ToScreenRect(_itemPreviewIconRect);
+        var icon = ItemImagePath(itemTypeId) is { } imagePath ? UiAssetLoader.LoadBitmap(imagePath) : null;
+        if (icon is not null)
+            canvas.DrawBitmap(icon, iconRect);
+
+        var descriptionRect = ToScreenRect(_itemPreviewDescriptionRect);
+        var lines = WrapText(ItemDescription(itemTypeId), _itemPreviewDescriptionPaint, descriptionRect.Width);
+        float lineY = LineBaselineY(new SKRect(descriptionRect.Left, descriptionRect.Top, descriptionRect.Right, descriptionRect.Top + ItemPreviewDescriptionLineHeight), _itemPreviewDescriptionPaint);
+        foreach (var line in lines)
+        {
+            if (lineY > descriptionRect.Bottom)
+                break;
+
+            canvas.DrawText(line, descriptionRect.Left, lineY, _itemPreviewDescriptionPaint);
+            lineY += ItemPreviewDescriptionLineHeight;
+        }
+    }
+
+    private const float ItemPreviewDescriptionLineHeight = 18f;
 
     // ── Trade action panel (lower right-hand frame) — Docs/FirstRelease/Screens/Trade.md
     // "UI-решение: панель действия". Shows Buy/Sell/Refuel controls for whichever item is
@@ -365,14 +544,33 @@ public sealed class TradeScreen : IScreen
     internal bool IsTradeBuyMode => _isTradeBuyMode;
 
     /// <summary>
-    /// Current quantity chosen by the stepper (`-`/`+`/`Max`) — reset to the selected item's
-    /// package step size (<see cref="ResolveQuantityStep"/>) whenever the selection or the
-    /// Buy/Sell mode changes (<see cref="ResetTradeActionPanelState"/>).
+    /// Current quantity chosen by the stepper (`-`/`+`/`Max`) or the quantity slider — reset
+    /// to 1 (trading is fully per-unit — Docs/FirstRelease/Screens/Trade.md, "UI-решение:
+    /// панель действия") whenever the selection or the Buy/Sell mode changes (see
+    /// <see cref="ResetTradeActionPanelState"/>).
     /// </summary>
     private long _tradeQuantity;
 
     /// <summary>Test seam — current stepper quantity (see <see cref="_tradeQuantity"/>).</summary>
     internal long TradeQuantity => _tradeQuantity;
+
+    /// <summary>True while the quantity slider's track is being dragged (mouse-down on it, not yet released) — same drag-state shape as <see cref="_isDraggingScrollThumb"/>, updated in <see cref="OnMouseMove(float, float)"/>, cleared in <see cref="OnMouseUp"/>.</summary>
+    private bool _isDraggingTradeSlider;
+
+    /// <summary>True while the pointer is over the confirm button AND it's currently clickable (a disabled button gets no hover feedback — same "not a button unless it does something" rule the toolbar's plain readouts already follow) — drives both the cursor swap (<see cref="OnMouseMove(float, float)"/>'s return) and the button's <see cref="ButtonState.Hovered"/> visual.</summary>
+    private bool _isTradeConfirmHovered;
+
+    /// <summary>True while the pointer is over the trade-result panel's "Return to item" button (see <see cref="HandleTradeResultReturnButtonMouseDown"/>) — same role as <see cref="_isTradeConfirmHovered"/>, for the button shown in the same bottom-anchored slot once nothing is selected.</summary>
+    private bool _isReturnToItemHovered;
+
+    /// <summary>True while the pointer is over the quantity stepper's `-` button — same hover-feedback role as <see cref="_isTradeConfirmHovered"/>, only meaningful while an item is selected (the stepper isn't drawn otherwise).</summary>
+    private bool _isTradeMinusHovered;
+
+    /// <summary>`+` counterpart to <see cref="_isTradeMinusHovered"/>.</summary>
+    private bool _isTradePlusHovered;
+
+    /// <summary>`Max` counterpart to <see cref="_isTradeMinusHovered"/>.</summary>
+    private bool _isTradeMaxHovered;
 
     /// <summary>
     /// CommandId of the last trade command sent via <see cref="OnConfirmTradeClicked"/>, kept
@@ -382,6 +580,30 @@ public sealed class TradeScreen : IScreen
     /// panel learns a Buy/Sell/Refuel was rejected.
     /// </summary>
     private string? _lastSentTradeCommandId;
+
+    /// <summary>CommandType of the command <see cref="_lastSentTradeCommandId"/> refers to — captured at send time (not re-derived from current UI state) so <see cref="UpdateTradeCommandResult"/> reports the right outcome message even if the player has since changed the Buy/Sell toggle or selection while the result was still in flight.</summary>
+    private string? _lastSentTradeCommandType;
+
+    /// <summary>Quantity the in-flight command in <see cref="_lastSentTradeCommandId"/> was sent with — same "captured at send time" rationale as <see cref="_lastSentTradeCommandType"/>, used to detect/describe a partial Sell fill.</summary>
+    private long _lastSentTradeQuantity;
+
+    /// <summary>Station unit price at the moment the in-flight command was sent — same "captured at send time" rationale as <see cref="_lastSentTradeCommandType"/>/<see cref="_lastSentTradeQuantity"/>, used to show what the trade actually cost/paid in the result message.</summary>
+    private long _lastSentTradeUnitPriceCredits;
+
+    /// <summary>Item type id of the in-flight command in <see cref="_lastSentTradeCommandId"/> — captured at send time since the grid selection is cleared right away (<see cref="OnConfirmTradeClicked"/>), so <see cref="UpdateTradeCommandResult"/> has it available to resolve the post-trade Container module.</summary>
+    private string? _lastSentTradeItemTypeId;
+
+    /// <summary>Display name of the item being traded — captured at send time for the same reason as <see cref="_lastSentTradeItemTypeId"/>, shown as the first line of the trade-result detail block.</summary>
+    private string? _lastSentTradeItemDisplayName;
+
+    /// <summary>True when the in-flight command is a Refuel — determines whether the trade-result before/after line reads from the player's Fuel tank or the Container module's free cargo capacity.</summary>
+    private bool _lastSentTradeWasFuel;
+
+    /// <summary>Container module's available cargo capacity in kg ("free cargo"), or the player's Fuel amount in kg for a Refuel, immediately before the command was sent — paired with the post-trade amount resolved in <see cref="UpdateTradeCommandResult"/> to show the before/after change.</summary>
+    private long _lastSentAmountBeforeTrade;
+
+    /// <summary>Player's Credits balance immediately before the command was sent — same before/after pairing as <see cref="_lastSentAmountBeforeTrade"/>, for Credits instead of cargo/Fuel.</summary>
+    private long _lastSentCreditsBeforeTrade;
 
     /// <summary>
     /// Localization key for the last observed trade-command rejection reason, or null — shown
@@ -393,23 +615,69 @@ public sealed class TradeScreen : IScreen
     /// <summary>Test seam — current trade-command rejection reason key (see <see cref="_tradeRejectionReasonKey"/>), null once resolved/cleared.</summary>
     internal string? TradeRejectionReasonKey => _tradeRejectionReasonKey;
 
+    /// <summary>
+    /// Fully-resolved (already localized/formatted) message for the last trade command that
+    /// executed successfully, or null — shown in the same spot as <see cref="_tradeRejectionReasonKey"/>
+    /// (directly above the confirm button) when there's no disabled/rejection reason to show
+    /// instead, so a successful Buy/Sell/Refuel is visibly acknowledged rather than only
+    /// showing up a second later as updated numbers in the grid (see <see cref="UpdateTradeCommandResult"/>).
+    /// </summary>
+    private string? _tradeResultMessage;
+
+    /// <summary>Test seam — current trade-result message (see <see cref="_tradeResultMessage"/>), null once cleared.</summary>
+    internal string? TradeResultMessage => _tradeResultMessage;
+
+    /// <summary>Display name of the item the last successfully-executed trade was for — set alongside <see cref="_tradeResultMessage"/> in <see cref="UpdateTradeCommandResult"/>, null once cleared.</summary>
+    private string? _tradeResultItemDisplayName;
+
+    /// <summary>Test seam — see <see cref="_tradeResultItemDisplayName"/>.</summary>
+    internal string? TradeResultItemDisplayName => _tradeResultItemDisplayName;
+
+    /// <summary>Item type id of the last successfully-executed trade — set alongside <see cref="_tradeResultItemDisplayName"/>, used by the "Return to item" button (<see cref="HandleTradeResultReturnButtonMouseDown"/>) to re-select it once the grid selection has been cleared.</summary>
+    private string? _tradeResultItemTypeId;
+
+    /// <summary>Test seam — see <see cref="_tradeResultItemTypeId"/>.</summary>
+    internal string? TradeResultItemTypeId => _tradeResultItemTypeId;
+
+    /// <summary>True when the last successfully-executed trade was a Refuel — see <see cref="_lastSentTradeWasFuel"/>.</summary>
+    private bool _tradeResultWasFuel;
+
+    /// <summary>Player's cargo quantity (or Fuel amount in kg for a Refuel) of the traded item just before the last successfully-executed trade — set alongside <see cref="_tradeResultMessage"/>.</summary>
+    private long? _tradeResultAmountBefore;
+
+    /// <summary>Test seam — see <see cref="_tradeResultAmountBefore"/>.</summary>
+    internal long? TradeResultAmountBefore => _tradeResultAmountBefore;
+
+    /// <summary>Same amount as <see cref="_tradeResultAmountBefore"/>, resolved from the snapshot that reported the trade as Executed — the after side of the before/after pair.</summary>
+    private long? _tradeResultAmountAfter;
+
+    /// <summary>Test seam — see <see cref="_tradeResultAmountAfter"/>.</summary>
+    internal long? TradeResultAmountAfter => _tradeResultAmountAfter;
+
+    /// <summary>Player's Credits balance just before the last successfully-executed trade — Credits counterpart to <see cref="_tradeResultAmountBefore"/>.</summary>
+    private long? _tradeResultCreditsBefore;
+
+    /// <summary>Test seam — see <see cref="_tradeResultCreditsBefore"/>.</summary>
+    internal long? TradeResultCreditsBefore => _tradeResultCreditsBefore;
+
+    /// <summary>Player's Credits balance from the snapshot that reported the trade as Executed — Credits counterpart to <see cref="_tradeResultAmountAfter"/>.</summary>
+    private long? _tradeResultCreditsAfter;
+
+    /// <summary>Test seam — see <see cref="_tradeResultCreditsAfter"/>.</summary>
+    internal long? TradeResultCreditsAfter => _tradeResultCreditsAfter;
+
     /// <summary>Test seam — the item type id currently selected across the three grids (Resources/Goods/Modules), or null.</summary>
     internal string? SelectedTradeItemTypeId =>
         _selectedResourceItemTypeId ?? _selectedGoodItemTypeId ?? _selectedModuleItemTypeId;
 
-    /// <summary>Resource category's package step size (§59 StationEconomyProductionAndSizing.md) — 100 for Resource, 10 for Good (including Fuel).</summary>
-    private static long ResolveQuantityStep(string category) =>
-        category == TradeItemCategories.Resource ? 100 : 10;
-
-    /// <summary>The selected item's trade category, looked up from the docked station's live inventory — defaults to Good (step 10) if the item can't be found (e.g. it just fell out of the station's snapshot).</summary>
-    private static string ResolveItemCategory(AuthoritativeSnapshot? snapshot, string itemTypeId) =>
-        snapshot?.DockedStationTrade?.Items.FirstOrDefault(item => item.ItemTypeId == itemTypeId)?.Category
-        ?? TradeItemCategories.Good;
+    /// <summary>Test seam — the localized description shown in the item preview panel (<see cref="DrawItemPreviewPanel"/>) for the currently selected item, or null while nothing is selected.</summary>
+    internal string? SelectedItemDescription =>
+        SelectedTradeItemTypeId is { } itemTypeId ? ItemDescription(itemTypeId) : null;
 
     /// <summary>
     /// Called whenever the selected trade item or the Buy/Sell mode changes: forces Buy mode
-    /// back on for Fuel (Sell is unreachable for it), resets the quantity to the new step size,
-    /// and clears any stale command-rejection state from a previous item/mode.
+    /// back on for Fuel (Sell is unreachable for it), resets the quantity to 1 (trading is
+    /// fully per-unit), and clears any stale command-rejection state from a previous item/mode.
     /// </summary>
     private void ResetTradeActionPanelState(AuthoritativeSnapshot? snapshot)
     {
@@ -417,9 +685,16 @@ public sealed class TradeScreen : IScreen
         if (itemTypeId == FuelItemTypeId)
             _isTradeBuyMode = true;
 
-        _tradeQuantity = itemTypeId is null ? 0 : ResolveQuantityStep(ResolveItemCategory(snapshot, itemTypeId));
+        _tradeQuantity = itemTypeId is null ? 0 : 1;
         _lastSentTradeCommandId = null;
         _tradeRejectionReasonKey = null;
+        _tradeResultMessage = null;
+        _tradeResultItemDisplayName = null;
+        _tradeResultItemTypeId = null;
+        _tradeResultAmountBefore = null;
+        _tradeResultAmountAfter = null;
+        _tradeResultCreditsBefore = null;
+        _tradeResultCreditsAfter = null;
     }
 
     /// <summary>
@@ -465,7 +740,7 @@ public sealed class TradeScreen : IScreen
     private readonly record struct TradeActionInfo(
         string ItemTypeId, string DisplayName, string Category, bool IsFuel,
         long StationPriceCredits, long StationStockQuantity, long MaxSellableQuantity,
-        long PlayerCargoQuantity, long QuantityStep, long PlayerCredits,
+        long PlayerCargoQuantity, long PlayerCredits,
         string? ContainerModuleId, long? ContainerAvailableCapacityKg,
         string? EngineModuleId, long FuelAmountKg, long FuelCapacityKg);
 
@@ -492,7 +767,6 @@ public sealed class TradeScreen : IScreen
             StationStockQuantity: item.StockQuantity,
             MaxSellableQuantity: item.MaxSellableQuantity,
             PlayerCargoQuantity: cargoQuantity,
-            QuantityStep: ResolveQuantityStep(item.Category),
             PlayerCredits: snapshot?.PlayerCredits ?? 0,
             ContainerModuleId: containerModule?.ModuleId,
             ContainerAvailableCapacityKg: containerModule?.AvailableCapacityKg,
@@ -502,13 +776,12 @@ public sealed class TradeScreen : IScreen
     }
 
     /// <summary>
-    /// Max quantity the stepper's `Max` button resolves to (Docs/FirstRelease/Screens/Trade.md
-    /// batch spec): Buy non-Fuel is bounded by affordability/station stock, and additionally
-    /// resolves to 0 (button becomes a no-op) when the container has no cargo space left at
-    /// all; Buy Fuel (Refuel) is additionally bounded by remaining tank capacity; Sell is
-    /// bounded by cargo-on-hand/station's MaxSellableQuantity, then rounded down to the
-    /// nearest whole sell package (the Engine authoritatively rejects a non-multiple Sell
-    /// quantity as InvalidPackageQuantity).
+    /// Max quantity the stepper's `Max` button (and the quantity slider's upper bound) resolves
+    /// to (Docs/FirstRelease/Screens/Trade.md batch spec): Buy non-Fuel is bounded by
+    /// affordability/station stock, and additionally resolves to 0 (button becomes a no-op)
+    /// when the container has no cargo space left at all; Buy Fuel (Refuel) is additionally
+    /// bounded by remaining tank capacity; Sell is bounded by cargo-on-hand/station's
+    /// MaxSellableQuantity — fully per-unit, no package rounding.
     /// </summary>
     private static long ResolveMaxQuantity(TradeActionInfo info, bool isBuyMode)
     {
@@ -528,10 +801,29 @@ public sealed class TradeScreen : IScreen
             return Math.Max(0, Math.Min(affordable, info.StationStockQuantity));
         }
 
-        long sellable = Math.Min(info.PlayerCargoQuantity, info.MaxSellableQuantity);
-        long step = info.QuantityStep;
-        long rounded = step > 0 ? (sellable / step) * step : sellable;
-        return Math.Max(0, rounded);
+        return Math.Max(0, Math.Min(info.PlayerCargoQuantity, info.MaxSellableQuantity));
+    }
+
+    /// <summary>
+    /// Maps a screen-space x position within the quantity slider's track to a quantity in
+    /// `[minQuantity, maxQuantity]`, linearly interpolated and rounded to the nearest integer —
+    /// used both for the initial click-to-set jump and every subsequent drag move (Docs/
+    /// FirstRelease/Screens/Trade.md, "UI-решение: панель действия", step 5).
+    /// `minQuantity` is 1 when something is tradeable (<paramref name="maxQuantity"/> &gt; 0),
+    /// 0 otherwise — matching the stepper's own floor.
+    /// </summary>
+    private static long ResolveSliderQuantity(float x, SKRect trackRectScreen, long maxQuantity)
+    {
+        if (maxQuantity <= 0)
+            return 0;
+
+        long minQuantity = 1;
+        if (trackRectScreen.Width <= 0)
+            return minQuantity;
+
+        float fraction = Math.Clamp((x - trackRectScreen.Left) / trackRectScreen.Width, 0f, 1f);
+        long value = minQuantity + (long)Math.Round(fraction * (maxQuantity - minQuantity), MidpointRounding.AwayFromZero);
+        return Math.Clamp(value, minQuantity, maxQuantity);
     }
 
     /// <summary>
@@ -569,18 +861,50 @@ public sealed class TradeScreen : IScreen
         CommandReasonCodes.FuelCapacityExceeded => "Trade.ReasonFuelCapacityExceeded",
         CommandReasonCodes.InsufficientCargoQuantity => "Trade.ReasonInsufficientCargoQuantity",
         CommandReasonCodes.InvalidQuantity => "Trade.ReasonInvalidQuantity",
-        CommandReasonCodes.InvalidPackageQuantity => "Trade.ReasonInvalidPackageQuantity",
         CommandReasonCodes.NotDocked => "Trade.ReasonNotDocked",
         CommandReasonCodes.UnknownItemType => "Trade.ReasonUnknownItemType",
         _ => reasonCode
     };
 
     /// <summary>
+    /// Success-case counterpart to <see cref="ResolveRejectionReasonKey"/> — the transaction
+    /// confirmation shown above the confirm button when a command actually executed (Docs/
+    /// FirstRelease/Screens/Trade.md's UI-решение: панель действия), reusing the leftover
+    /// Trade.Status* keys from the pre-redesign MVP, extended with the unit price paid/received
+    /// and the resulting total. Sell reports the partial-fill wording — and its total is priced
+    /// off the actually-executed quantity, not the originally requested one — when the
+    /// station's hidden Credits balance capped how much it actually bought.
+    /// </summary>
+    private static string ResolveTradeResultMessage(
+        string commandType, long? executedQuantity, long requestedQuantity, long unitPriceCredits)
+    {
+        if (commandType == TradeCommandTypes.Sell && executedQuantity is { } executed && executed < requestedQuantity)
+        {
+            return string.Format(
+                Localization.Get("Trade.StatusSellPartial"), executed, requestedQuantity, unitPriceCredits, executed * unitPriceCredits);
+        }
+
+        long quantity = commandType == TradeCommandTypes.Sell && executedQuantity is { } executedInFull
+            ? executedInFull
+            : requestedQuantity;
+        long total = quantity * unitPriceCredits;
+
+        string key = commandType switch
+        {
+            TradeCommandTypes.Refuel => "Trade.StatusRefuelSuccess",
+            TradeCommandTypes.Sell => "Trade.StatusSellSuccess",
+            _ => "Trade.StatusBuySuccess"
+        };
+        return string.Format(Localization.Get(key), quantity, unitPriceCredits, total);
+    }
+
+    /// <summary>
     /// Correlates <see cref="_lastSentTradeCommandId"/> against the latest snapshot's
     /// CommandResults (see GameSessionHandle.SendTradeCommand's doc comment) — sets
-    /// <see cref="_tradeRejectionReasonKey"/> on a Rejected disposition, or clears the pending
-    /// id on any other disposition (the command resolved with an observable state change, so
-    /// there's nothing more to show). Called once per Render.
+    /// <see cref="_tradeRejectionReasonKey"/> on a Rejected disposition, <see cref="_tradeResultMessage"/>
+    /// on an Executed one, or clears the pending id on any other disposition (the command
+    /// resolved with an observable state change, so there's nothing more to show). Called once
+    /// per Render.
     /// </summary>
     private void UpdateTradeCommandResult(AuthoritativeSnapshot? snapshot)
     {
@@ -600,6 +924,21 @@ public sealed class TradeScreen : IScreen
 
             if (result.Status == CommandResultStatus.Rejected)
                 _tradeRejectionReasonKey = ResolveRejectionReasonKey(result.ReasonCode ?? string.Empty);
+            else if (result.Status == CommandResultStatus.Executed && _lastSentTradeCommandType is not null)
+            {
+                _tradeResultMessage = ResolveTradeResultMessage(
+                    _lastSentTradeCommandType, result.ExecutedQuantity, _lastSentTradeQuantity, _lastSentTradeUnitPriceCredits);
+
+                _tradeResultItemDisplayName = _lastSentTradeItemDisplayName;
+                _tradeResultItemTypeId = _lastSentTradeItemTypeId;
+                _tradeResultWasFuel = _lastSentTradeWasFuel;
+                _tradeResultAmountBefore = _lastSentAmountBeforeTrade;
+                _tradeResultAmountAfter = _lastSentTradeWasFuel
+                    ? StationToolbar.ResolveFuelAmountKg(snapshot)
+                    : ResolveContainerModule(snapshot)?.AvailableCapacityKg ?? 0;
+                _tradeResultCreditsBefore = _lastSentCreditsBeforeTrade;
+                _tradeResultCreditsAfter = snapshot.PlayerCredits;
+            }
 
             _lastSentTradeCommandId = null;
             return;
@@ -614,7 +953,7 @@ public sealed class TradeScreen : IScreen
     // not compile-time constants, so these derived positions must be `static readonly` too.
     private static readonly float TradeActionContentLeft = RightPanelLeft + RightPanelTitleBarLeftInset;
     private static readonly float TradeActionContentRight = RightPanelRight - RightPanelTitleBarRightInset;
-    private const float TradeActionContentTop = GridPanelOriginYModules + RightPanelTitleBarHeight + 8f;
+    private static readonly float TradeActionContentTop = _rightPanelLowerTitleBar.Bottom + 8f;
 
     private const float TradeMarketLineHeight = 14f;
     private const float TradeToggleHeight = 22f;
@@ -627,6 +966,12 @@ public sealed class TradeScreen : IScreen
         TradeActionContentLeft, TradeActionContentTop, TradeActionContentRight, TradeActionContentTop + TradeMarketLineHeight);
     private static readonly SKRect _tradeMarketLine2Rect = new(
         TradeActionContentLeft, _tradeMarketLine1Rect.Bottom + 4f, TradeActionContentRight, _tradeMarketLine1Rect.Bottom + 4f + TradeMarketLineHeight);
+
+    /// <summary>Third/fourth line of the trade-result detail block drawn in the action panel's empty state after a confirm (see <see cref="DrawTradeResultDetails"/>) — same left-aligned rhythm as <see cref="_tradeMarketLine1Rect"/>/<see cref="_tradeMarketLine2Rect"/>, which hold that block's first two lines (item name, then the existing success/partial-fill message).</summary>
+    private static readonly SKRect _tradeResultLine3Rect = new(
+        TradeActionContentLeft, _tradeMarketLine2Rect.Bottom + 4f, TradeActionContentRight, _tradeMarketLine2Rect.Bottom + 4f + TradeMarketLineHeight);
+    private static readonly SKRect _tradeResultLine4Rect = new(
+        TradeActionContentLeft, _tradeResultLine3Rect.Bottom + 4f, TradeActionContentRight, _tradeResultLine3Rect.Bottom + 4f + TradeMarketLineHeight);
 
     private const float TradeToggleGap = 8f;
     private static readonly float _tradeToggleRowTop = _tradeMarketLine2Rect.Bottom + 6f;
@@ -657,17 +1002,47 @@ public sealed class TradeScreen : IScreen
     /// <summary>Test seam — the quantity stepper's `-`/`+`/`Max` button geometry, panel-local.</summary>
     internal (SKRect Minus, SKRect Plus, SKRect Max) TradeStepperRects => (_tradeMinusButtonRect, _tradePlusButtonRect, _tradeMaxButtonRect);
 
+    /// <summary>
+    /// Quantity slider row (Docs/FirstRelease/Screens/Trade.md, "UI-решение: панель действия",
+    /// step 5) — directly below the `-`/`+`/`Max` stepper row, spanning only the `-`/field/`+`
+    /// group's width (<see cref="_tradeMinusButtonRect"/>.Left to <see cref="_tradePlusButtonRect"/>.Right),
+    /// not the `Max` button — narrower than the full frame width so its track visually lines up
+    /// with the quantity controls it drives, not the wider row above it. Dragging or clicking
+    /// anywhere on the track sets <see cref="_tradeQuantity"/> to the position clicked, same
+    /// underlying field as the stepper/Max — see <see cref="ResolveSliderQuantity"/>.
+    /// </summary>
+    private const float TradeSliderRowHeight = 16f;
+    private static readonly SKRect _tradeSliderRowRect = new(
+        _tradeMinusButtonRect.Left, _tradeMinusButtonRect.Bottom + 6f, _tradePlusButtonRect.Right, _tradeMinusButtonRect.Bottom + 6f + TradeSliderRowHeight);
+
+    /// <summary>Test seam — the quantity slider's track geometry, panel-local.</summary>
+    internal SKRect TradeSliderRect => _tradeSliderRowRect;
+
     private static readonly SKRect _tradeSummaryLine1Rect = new(
-        TradeActionContentLeft, _tradeMinusButtonRect.Bottom + 6f, TradeActionContentRight, _tradeMinusButtonRect.Bottom + 6f + TradeSummaryLineHeight);
+        TradeActionContentLeft, _tradeSliderRowRect.Bottom + 6f, TradeActionContentRight, _tradeSliderRowRect.Bottom + 6f + TradeSummaryLineHeight);
     private static readonly SKRect _tradeSummaryLine2Rect = new(
         TradeActionContentLeft, _tradeSummaryLine1Rect.Bottom, TradeActionContentRight, _tradeSummaryLine1Rect.Bottom + TradeSummaryLineHeight);
-    private static readonly SKRect _tradeReasonLineRect = new(
-        TradeActionContentLeft, _tradeSummaryLine2Rect.Bottom + 6f, TradeActionContentRight, _tradeSummaryLine2Rect.Bottom + 6f + TradeReasonLineHeight);
+
+    /// <summary>
+    /// Gap kept between the confirm button and its own panel's bottom edge — the lower
+    /// right-hand panel (spanning the Goods+Modules grids' combined height, see
+    /// <see cref="_rightPanelLower"/>) is far taller than the action panel's content needs, so
+    /// the confirm button is deliberately pinned near the panel's bottom instead of cascading
+    /// directly below the summary lines, so it reads as a distinct, harder-to-miss final step
+    /// rather than blending into the block of text above it.
+    /// </summary>
+    private const float TradeConfirmBottomMargin = 16f;
     private static readonly SKRect _tradeConfirmButtonRect = new(
-        TradeActionContentLeft, _tradeReasonLineRect.Bottom, TradeActionContentRight, _tradeReasonLineRect.Bottom + TradeConfirmHeight);
+        TradeActionContentLeft, _rightPanelLower.Bottom - TradeConfirmBottomMargin - TradeConfirmHeight,
+        TradeActionContentRight, _rightPanelLower.Bottom - TradeConfirmBottomMargin);
 
     /// <summary>Test seam — the confirm button's geometry, panel-local.</summary>
     internal SKRect TradeConfirmButtonRect => _tradeConfirmButtonRect;
+
+    /// <summary>Reason/result message line — sits directly above the (now bottom-anchored) confirm button, whatever that ends up being (see <see cref="TradeConfirmBottomMargin"/>), not cascaded from the summary lines above.</summary>
+    private static readonly SKRect _tradeReasonLineRect = new(
+        TradeActionContentLeft, _tradeConfirmButtonRect.Top - 6f - TradeReasonLineHeight,
+        TradeActionContentRight, _tradeConfirmButtonRect.Top - 6f);
 
     /// <summary>Screen-space rect for a panel-local rect, using the current frame's panel position — mirrors every other `pl + local.Left, pt + local.Top` pattern in this file.</summary>
     private SKRect ToScreenRect(SKRect local)
@@ -719,7 +1094,9 @@ public sealed class TradeScreen : IScreen
             return true;
         }
 
-        long step = info.Value.QuantityStep;
+        // Trading is fully per-unit (Docs/FirstRelease/Screens/Trade.md, "UI-решение: панель
+        // действия") — the `-`/`+` stepper always moves by 1, for every category.
+        const long step = 1;
         long max = ResolveMaxQuantity(info.Value, _isTradeBuyMode);
 
         if (Contains(ToScreenRect(_tradeMinusButtonRect), x, y))
@@ -743,6 +1120,16 @@ public sealed class TradeScreen : IScreen
             return true;
         }
 
+        if (Contains(ToScreenRect(_tradeSliderRowRect), x, y))
+        {
+            // Click-to-set: jump the quantity straight to the position clicked, then continue
+            // tracking the drag in OnMouseMove (mirrors the grid scrollbar-thumb-drag pattern —
+            // _isDraggingScrollThumb/OnMouseMove/OnMouseUp).
+            _isDraggingTradeSlider = true;
+            _tradeQuantity = ResolveSliderQuantity(x, ToScreenRect(_tradeSliderRowRect), max);
+            return true;
+        }
+
         if (Contains(ToScreenRect(_tradeConfirmButtonRect), x, y))
         {
             OnConfirmTradeClicked(snapshot, info.Value);
@@ -750,6 +1137,38 @@ public sealed class TradeScreen : IScreen
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Handles a left click on the trade-result panel's "Return to item" button — only relevant
+    /// once a trade has executed and the grid selection was cleared (see
+    /// <see cref="OnConfirmTradeClicked"/>/<see cref="DrawTradeResultDetails"/>). Re-selects the
+    /// traded item in whichever grid (Resources/Goods) it belongs to, which puts both the grid
+    /// row and the action panel back on that item exactly like a fresh row click would. No-ops
+    /// (but still consumes the click) if the item has since dropped out of the docked station's
+    /// inventory — there's nothing left to select it as.
+    /// </summary>
+    private bool HandleTradeResultReturnButtonMouseDown(float x, float y)
+    {
+        if (_tradeResultItemTypeId is null || SelectedTradeItemTypeId is not null)
+            return false;
+
+        if (!Contains(ToScreenRect(_tradeConfirmButtonRect), x, y))
+            return false;
+
+        var snapshot = _buffer?.Latest?.Snapshot;
+        var item = snapshot?.DockedStationTrade?.Items.FirstOrDefault(i => i.ItemTypeId == _tradeResultItemTypeId);
+        if (item is not null)
+        {
+            if (item.Category == TradeItemCategories.Resource)
+                _selectedResourceItemTypeId = _tradeResultItemTypeId;
+            else
+                _selectedGoodItemTypeId = _tradeResultItemTypeId;
+
+            ResetTradeActionPanelState(snapshot);
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -792,7 +1211,26 @@ public sealed class TradeScreen : IScreen
 
         _lastSentTradeCommandId = _handle.SendTradeCommand(
             playerShipObjectId, moduleId, commandType, info.ItemTypeId, _tradeQuantity);
+        _lastSentTradeCommandType = commandType;
+        _lastSentTradeQuantity = _tradeQuantity;
+        _lastSentTradeUnitPriceCredits = info.StationPriceCredits;
+        _lastSentTradeItemTypeId = info.ItemTypeId;
+        _lastSentTradeItemDisplayName = info.DisplayName;
+        _lastSentTradeWasFuel = info.IsFuel;
+        _lastSentAmountBeforeTrade = info.IsFuel ? info.FuelAmountKg : info.ContainerAvailableCapacityKg ?? 0;
+        _lastSentCreditsBeforeTrade = info.PlayerCredits;
         _tradeRejectionReasonKey = null;
+        _tradeResultMessage = null;
+
+        // Clear the grid selection right away so the action panel drops back to its empty
+        // state (Docs/FirstRelease/Screens/Trade.md's action panel), which now doubles as the
+        // trade-result view (see DrawTradeActionPanel) once UpdateTradeCommandResult populates
+        // _tradeResultMessage/_tradeRejectionReasonKey from a later snapshot — deliberately not
+        // routed through ResetTradeActionPanelState, which would wipe those two fields along
+        // with _lastSentTradeCommandId before the result has a chance to arrive.
+        _selectedResourceItemTypeId = null;
+        _selectedGoodItemTypeId = null;
+        _selectedModuleItemTypeId = null;
     }
 
     /// <summary>Currently resolved <see cref="TradeActionInfo"/> for the selected item, or null while nothing is selected/resolvable — shared by the test seams below and <see cref="DrawTradeActionPanel"/>.</summary>
@@ -841,8 +1279,100 @@ public sealed class TradeScreen : IScreen
         TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceRegular
     };
 
+    /// <summary>
+    /// Result message text (<see cref="_tradeResultMessage"/>) — a distinct green, unlike the
+    /// dim <see cref="_tradeReasonTextPaint"/> used for disabled/rejection reasons, so a
+    /// successful Buy/Sell/Refuel actually reads as a positive confirmation rather than
+    /// blending in with the same muted styling used for "something's wrong" text.
+    /// </summary>
+    private static readonly SKPaint _tradeResultMessagePaint = new()
+    {
+        Color = new SKColor(0x5A, 0xD6, 0x6D), TextSize = 12f, IsAntialias = true,
+        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceBold
+    };
+
+    /// <summary>
+    /// Colors the after-value in a trade-result before/after line (<see cref="DrawBeforeAfterLine"/>)
+    /// when it improved on the before-value (free cargo or Credits went up) — green, same
+    /// intent as <see cref="_tradeResultMessagePaint"/> but a separate paint so this coloring
+    /// (which follows the sign of the change) stays decoupled from that unconditional
+    /// success-message styling.
+    /// </summary>
+    private static readonly SKPaint _tradeResultPositivePaint = new()
+    {
+        Color = new SKColor(0x5A, 0xD6, 0x6D), TextSize = 13f, IsAntialias = true,
+        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceBold
+    };
+
+    /// <summary>Counterpart to <see cref="_tradeResultPositivePaint"/> — orange, used when the after-value dropped from the before-value.</summary>
+    private static readonly SKPaint _tradeResultNegativePaint = new()
+    {
+        Color = new SKColor(0xF2, 0x9A, 0x3C), TextSize = 13f, IsAntialias = true,
+        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceBold
+    };
+
     /// <summary>Vertical baseline for a single line of text centered within <paramref name="rect"/>, matching <see cref="MenuStyle.VerticalCenterBaseline"/>'s convention.</summary>
     private static float LineBaselineY(SKRect rect, SKPaint paint) => MenuStyle.VerticalCenterBaseline(rect, paint);
+
+    /// <summary>Quantity slider track — a thin filled bar, same border color as the other action-panel controls.</summary>
+    private static readonly SKPaint _tradeSliderTrackPaint = new()
+    {
+        Color = MenuStyle.ButtonBorder.Color, Style = SKPaintStyle.Stroke, StrokeWidth = 1f, IsAntialias = true
+    };
+
+    /// <summary>Quantity slider thumb — a small filled circle positioned by the current quantity's fraction of `[min, Max]`.</summary>
+    private static readonly SKPaint _tradeSliderThumbPaint = new()
+    {
+        Color = SKColors.White, Style = SKPaintStyle.Fill, IsAntialias = true
+    };
+
+    /// <summary>
+    /// Full trade-result detail block shown in the action panel's empty state once a trade has
+    /// executed (see <see cref="OnConfirmTradeClicked"/>/<see cref="UpdateTradeCommandResult"/>):
+    /// the traded item's name and the existing success/partial-fill summary (unit price ×
+    /// quantity = total) in white, then the free-cargo-or-Fuel amount and the Credits balance
+    /// each as a "before - after" line (<see cref="DrawBeforeAfterLine"/>) whose after-value is
+    /// colored by the sign of the change, and finally a "Return to item" button
+    /// (<see cref="HandleTradeResultReturnButtonMouseDown"/>) that re-selects the traded item.
+    /// </summary>
+    private void DrawTradeResultDetails(SKCanvas canvas)
+    {
+        var line1 = ToScreenRect(_tradeMarketLine1Rect);
+        canvas.DrawText(_tradeResultItemDisplayName!, line1.Left, LineBaselineY(line1, _tradeBodyTextPaint), _tradeBodyTextPaint);
+
+        var line2 = ToScreenRect(_tradeMarketLine2Rect);
+        canvas.DrawText(_tradeResultMessage!, line2.Left, LineBaselineY(line2, _tradeBodyTextPaint), _tradeBodyTextPaint);
+
+        string amountLabel = Localization.Get(_tradeResultWasFuel ? "Trade.Fuel" : "Trade.FreeCargo");
+        DrawBeforeAfterLine(canvas, ToScreenRect(_tradeResultLine3Rect), amountLabel, _tradeResultAmountBefore ?? 0, _tradeResultAmountAfter ?? 0);
+
+        string creditsLabel = Localization.Get("Trade.Credits");
+        DrawBeforeAfterLine(canvas, ToScreenRect(_tradeResultLine4Rect), creditsLabel, _tradeResultCreditsBefore ?? 0, _tradeResultCreditsAfter ?? 0);
+
+        // Same bottom-anchored slot the confirm button occupies while an item is selected
+        // (the two states are mutually exclusive, so there's no layout conflict reusing it).
+        var returnButtonRect = ToScreenRect(_tradeConfirmButtonRect);
+        MenuStyle.DrawButton(canvas, returnButtonRect, Localization.Get("Trade.ReturnToItem"),
+            _isReturnToItemHovered ? ButtonState.Hovered : ButtonState.Normal);
+    }
+
+    /// <summary>
+    /// Draws one "{label}: {before} - {after}" trade-result line: label and before-value in the
+    /// panel's normal white body text, plain "-" as the before/after separator (not an arrow
+    /// glyph — the panel's font has no glyph for it and renders a tofu box instead), and the
+    /// after-value colored green when it's higher than the before-value, orange when it's
+    /// lower, left white when unchanged.
+    /// </summary>
+    private void DrawBeforeAfterLine(SKCanvas canvas, SKRect lineRectScreen, string label, long before, long after)
+    {
+        string prefix = string.Format(Localization.Get("Trade.ResultLinePrefix"), label, before);
+        float baselineY = LineBaselineY(lineRectScreen, _tradeBodyTextPaint);
+        canvas.DrawText(prefix, lineRectScreen.Left, baselineY, _tradeBodyTextPaint);
+
+        SKPaint afterPaint = after > before ? _tradeResultPositivePaint : after < before ? _tradeResultNegativePaint : _tradeBodyTextPaint;
+        float prefixWidth = _tradeBodyTextPaint.MeasureText(prefix);
+        canvas.DrawText(after.ToString(), lineRectScreen.Left + prefixWidth, baselineY, afterPaint);
+    }
 
     /// <summary>
     /// Draws the lower right-hand panel's title (item name/category, or the empty-state
@@ -854,18 +1384,32 @@ public sealed class TradeScreen : IScreen
         string? itemTypeId = SelectedTradeItemTypeId;
         var info = ResolveTradeActionInfo(snapshot, itemTypeId);
 
+        // Once a trade has been sent (selection is cleared right on confirm — see
+        // OnConfirmTradeClicked), the empty state below doubles as the trade-result view until
+        // the player picks a new item: its title and body switch from the plain "select an
+        // item" prompt to the outcome of that trade.
+        bool hasTradeOutcome = _tradeResultMessage is not null || _tradeRejectionReasonKey is not null;
+
         var titleBarScreen = ToScreenRect(_rightPanelLowerTitleBar);
         string titleText = info is { } selected
             ? $"{selected.DisplayName} ({selected.Category})"
-            : Localization.Get("Trade.SelectItemTitle");
+            : Localization.Get(hasTradeOutcome ? "Trade.ResultTitle" : "Trade.SelectItemTitle");
         canvas.DrawText(titleText, titleBarScreen.Left + 10f, LineBaselineY(titleBarScreen, _tradeTitleBarTextPaint), _tradeTitleBarTextPaint);
 
         if (info is not { } tradeInfo)
         {
+            if (_tradeResultMessage is not null && _tradeResultItemDisplayName is not null)
+            {
+                DrawTradeResultDetails(canvas);
+                return;
+            }
+
             var emptyRect = ToScreenRect(new SKRect(
                 TradeActionContentLeft, TradeActionContentTop, TradeActionContentRight, _rightPanelLower.Bottom - 10f));
-            canvas.DrawText(Localization.Get("Trade.SelectItemPrompt"),
-                emptyRect.MidX, emptyRect.MidY, _tradeBodyTextPaintCentered);
+            string emptyText = hasTradeOutcome
+                ? Localization.Get(_tradeRejectionReasonKey!)
+                : Localization.Get("Trade.SelectItemPrompt");
+            canvas.DrawText(emptyText, emptyRect.MidX, emptyRect.MidY, _tradeBodyTextPaintCentered);
             return;
         }
 
@@ -891,14 +1435,28 @@ public sealed class TradeScreen : IScreen
 
         // Quantity stepper.
         var minusRect = ToScreenRect(_tradeMinusButtonRect);
-        MenuStyle.DrawButton(canvas, minusRect, "-", ButtonState.Normal);
+        MenuStyle.DrawButton(canvas, minusRect, "-", _isTradeMinusHovered ? ButtonState.Hovered : ButtonState.Normal);
         var plusRect = ToScreenRect(_tradePlusButtonRect);
-        MenuStyle.DrawButton(canvas, plusRect, "+", ButtonState.Normal);
+        MenuStyle.DrawButton(canvas, plusRect, "+", _isTradePlusHovered ? ButtonState.Hovered : ButtonState.Normal);
         var maxRect = ToScreenRect(_tradeMaxButtonRect);
-        MenuStyle.DrawButton(canvas, maxRect, Localization.Get("Trade.Max"), ButtonState.Normal);
+        MenuStyle.DrawButton(canvas, maxRect, Localization.Get("Trade.Max"), _isTradeMaxHovered ? ButtonState.Hovered : ButtonState.Normal);
         var quantityRect = ToScreenRect(_tradeQuantityFieldRect);
         canvas.DrawRect(quantityRect, MenuStyle.ButtonBorder);
         canvas.DrawText(_tradeQuantity.ToString(), quantityRect.MidX, LineBaselineY(quantityRect, _tradeBodyTextPaintCentered), _tradeBodyTextPaintCentered);
+
+        // Quantity slider (Docs/FirstRelease/Screens/Trade.md, "UI-решение: панель действия",
+        // step 5) — full-width track, thumb positioned by the current quantity's fraction of
+        // [min, Max].
+        var sliderRect = ToScreenRect(_tradeSliderRowRect);
+        long sliderMax = ResolveMaxQuantity(tradeInfo, _isTradeBuyMode);
+        long sliderMin = sliderMax > 0 ? 1 : 0;
+        float sliderTrackY = sliderRect.MidY;
+        canvas.DrawLine(sliderRect.Left, sliderTrackY, sliderRect.Right, sliderTrackY, _tradeSliderTrackPaint);
+        float sliderFraction = sliderMax > sliderMin
+            ? (float)(Math.Clamp(_tradeQuantity, sliderMin, sliderMax) - sliderMin) / (sliderMax - sliderMin)
+            : 0f;
+        float sliderThumbX = sliderRect.Left + sliderFraction * sliderRect.Width;
+        canvas.DrawCircle(sliderThumbX, sliderTrackY, TradeSliderRowHeight / 2f - 2f, _tradeSliderThumbPaint);
 
         // Transaction summary.
         long totalPrice = tradeInfo.StationPriceCredits * _tradeQuantity;
@@ -912,12 +1470,20 @@ public sealed class TradeScreen : IScreen
         canvas.DrawText($"{Localization.Get("Trade.Credits")}: {(creditsChange >= 0 ? "+" : string.Empty)}{creditsChange}   {changeLabel}: {(cargoChange >= 0 ? "+" : string.Empty)}{cargoChange}",
             summaryLine2.Left, LineBaselineY(summaryLine2, _tradeBodyTextPaint), _tradeBodyTextPaint);
 
-        // Reason text — proactive disable reason takes priority over a stale reactive one.
+        // Message line above the confirm button — proactive disable reason takes priority over
+        // a stale reactive rejection, which in turn takes priority over a past success message
+        // (Docs/FirstRelease/Screens/Trade.md: makes a Buy/Sell/Refuel visibly acknowledged
+        // instead of only showing up a second later as updated grid numbers).
         string? reasonKey = ResolveConfirmDisabledReasonKey(tradeInfo, _isTradeBuyMode, _tradeQuantity) ?? _tradeRejectionReasonKey;
         if (reasonKey is not null)
         {
             var reasonRect = ToScreenRect(_tradeReasonLineRect);
             canvas.DrawText(Localization.Get(reasonKey), reasonRect.Left, LineBaselineY(reasonRect, _tradeReasonTextPaint), _tradeReasonTextPaint);
+        }
+        else if (_tradeResultMessage is not null)
+        {
+            var resultRect = ToScreenRect(_tradeReasonLineRect);
+            canvas.DrawText(_tradeResultMessage, resultRect.Left, LineBaselineY(resultRect, _tradeResultMessagePaint), _tradeResultMessagePaint);
         }
 
         // Confirm button.
@@ -926,7 +1492,8 @@ public sealed class TradeScreen : IScreen
             ? Localization.Get("Trade.Refuel")
             : (_isTradeBuyMode ? Localization.Get("Trade.Buy") : Localization.Get("Trade.Sell"));
         var confirmRect = ToScreenRect(_tradeConfirmButtonRect);
-        MenuStyle.DrawButton(canvas, confirmRect, confirmLabel, canConfirm ? ButtonState.Normal : ButtonState.Disabled);
+        var confirmState = !canConfirm ? ButtonState.Disabled : (_isTradeConfirmHovered ? ButtonState.Hovered : ButtonState.Normal);
+        MenuStyle.DrawButton(canvas, confirmRect, confirmLabel, confirmState);
     }
 
     /// <summary>Test seam — the resources grid's current row labels (see <see cref="ResolveResourceRows"/>).</summary>
@@ -1131,6 +1698,42 @@ public sealed class TradeScreen : IScreen
         _ => itemTypeId
     };
 
+    /// <summary>Flavor/trade description for the item preview panel (<see cref="DrawItemPreviewPanel"/>) — same id-to-key mapping convention as <see cref="ItemDisplayName"/>, falls back to empty for any future/unknown item type.</summary>
+    private static string ItemDescription(string itemTypeId) => itemTypeId switch
+    {
+        "item.ice" => Localization.Get("Trade.DescriptionIce"),
+        "item.iron-ore" => Localization.Get("Trade.DescriptionIronOre"),
+        "item.silicon" => Localization.Get("Trade.DescriptionSilicon"),
+        "item.magnesium-ore" => Localization.Get("Trade.DescriptionMagnesiumOre"),
+        "item.uranium-ore" => Localization.Get("Trade.DescriptionUraniumOre"),
+        "item.carbon-ore" => Localization.Get("Trade.DescriptionCarbonOre"),
+        "item.water" => Localization.Get("Trade.DescriptionWater"),
+        "item.steel" => Localization.Get("Trade.DescriptionSteel"),
+        "item.energy-cells" => Localization.Get("Trade.DescriptionEnergyCells"),
+        "item.fuel" => Localization.Get("Trade.DescriptionFuel"),
+        "item.protein-mass" => Localization.Get("Trade.DescriptionProteinMass"),
+        "item.food-rations" => Localization.Get("Trade.DescriptionFoodRations"),
+        _ => string.Empty
+    };
+
+    /// <summary>Icon asset path for the item preview panel (<see cref="DrawItemPreviewPanel"/>) — same id-to-value mapping convention as <see cref="ItemDisplayName"/>/<see cref="ItemDescription"/>, one subfolder per <see cref="TradeItemCategories"/> value; null for any future/unknown item type (the panel then falls back to the bare frame).</summary>
+    private static string? ItemImagePath(string itemTypeId) => itemTypeId switch
+    {
+        "item.ice" => "Images/Items/Resource/ice.png",
+        "item.iron-ore" => "Images/Items/Resource/iron-ore.png",
+        "item.silicon" => "Images/Items/Resource/silicon.png",
+        "item.magnesium-ore" => "Images/Items/Resource/magnesium-ore.png",
+        "item.uranium-ore" => "Images/Items/Resource/uranium-ore.png",
+        "item.carbon-ore" => "Images/Items/Resource/carbon-ore.png",
+        "item.water" => "Images/Items/Good/water.png",
+        "item.steel" => "Images/Items/Good/steel.png",
+        "item.energy-cells" => "Images/Items/Good/energy-cells.png",
+        "item.fuel" => "Images/Items/Good/fuel.png",
+        "item.protein-mass" => "Images/Items/Good/protein-mass.png",
+        "item.food-rations" => "Images/Items/Good/food-rations.png",
+        _ => null
+    };
+
     public TradeScreen(SnapshotBuffer? buffer = null, GameSessionHandle? handle = null)
     {
         _buffer = buffer;
@@ -1157,6 +1760,12 @@ public sealed class TradeScreen : IScreen
         _crewHoverStartedAtMs = null;
         _tokensHoverStartedAtMs = null;
         _fuelHoverStartedAtMs = null;
+        _isDraggingTradeSlider = false;
+        _isTradeConfirmHovered = false;
+        _isReturnToItemHovered = false;
+        _isTradeMinusHovered = false;
+        _isTradePlusHovered = false;
+        _isTradeMaxHovered = false;
         ResetTradeActionPanelState(_buffer?.Latest?.Snapshot);
     }
 
@@ -1177,6 +1786,9 @@ public sealed class TradeScreen : IScreen
             return ScreenEvent.NavigateToStation;
 
         if (HandleTradeActionPanelMouseDown(x, y))
+            return ScreenEvent.None;
+
+        if (HandleTradeResultReturnButtonMouseDown(x, y))
             return ScreenEvent.None;
 
         var resourceRows = ResolveResourceRows(_buffer?.Latest?.Snapshot, _sortColumn, _sortDescending);
@@ -1219,7 +1831,10 @@ public sealed class TradeScreen : IScreen
         int hitRowIndex = HitTestResourceRow(x, y, resourceRowCount);
         if (hitRowIndex >= 0)
         {
-            _selectedResourceItemTypeId = resourceRows[hitRowIndex].ItemTypeId;
+            string clickedResourceItemTypeId = resourceRows[hitRowIndex].ItemTypeId;
+            // Clicking the already-selected row toggles the selection off instead of re-selecting it.
+            _selectedResourceItemTypeId = _selectedResourceItemTypeId == clickedResourceItemTypeId
+                ? null : clickedResourceItemTypeId;
             // The three grids share a single selection — picking a row in one clears the others.
             _selectedGoodItemTypeId = null;
             _selectedModuleItemTypeId = null;
@@ -1267,7 +1882,10 @@ public sealed class TradeScreen : IScreen
         int hitGoodRowIndex = HitTestGoodRow(x, y, goodRowCount);
         if (hitGoodRowIndex >= 0)
         {
-            _selectedGoodItemTypeId = goodRows[hitGoodRowIndex].ItemTypeId;
+            string clickedGoodItemTypeId = goodRows[hitGoodRowIndex].ItemTypeId;
+            // Clicking the already-selected row toggles the selection off instead of re-selecting it.
+            _selectedGoodItemTypeId = _selectedGoodItemTypeId == clickedGoodItemTypeId
+                ? null : clickedGoodItemTypeId;
             // The three grids share a single selection — picking a row in one clears the others.
             _selectedResourceItemTypeId = null;
             _selectedModuleItemTypeId = null;
@@ -1315,7 +1933,10 @@ public sealed class TradeScreen : IScreen
         int hitModuleRowIndex = HitTestModuleRow(x, y, moduleRowCount);
         if (hitModuleRowIndex >= 0)
         {
-            _selectedModuleItemTypeId = moduleRows[hitModuleRowIndex].ItemTypeId;
+            string clickedModuleItemTypeId = moduleRows[hitModuleRowIndex].ItemTypeId;
+            // Clicking the already-selected row toggles the selection off instead of re-selecting it.
+            _selectedModuleItemTypeId = _selectedModuleItemTypeId == clickedModuleItemTypeId
+                ? null : clickedModuleItemTypeId;
             // The three grids share a single selection — picking a row in one clears the others.
             _selectedResourceItemTypeId = null;
             _selectedGoodItemTypeId = null;
@@ -1381,16 +2002,27 @@ public sealed class TradeScreen : IScreen
     /// <summary>Convenience shortcut for a left click — kept for existing call-site/test conventions.</summary>
     public ScreenEvent OnMouseDown(float x, float y) => OnMouseDown(x, y, MouseButton.Left);
 
-    /// <summary>Ends a scrollbar-thumb drag on left-button release, wherever the pointer ends up — see <see cref="_isDraggingScrollThumb"/>/<see cref="_isDraggingScrollThumbGoods"/>/<see cref="_isDraggingScrollThumbModules"/>.</summary>
+    /// <summary>Ends a scrollbar-thumb drag or quantity-slider drag on left-button release, wherever the pointer ends up — see <see cref="_isDraggingScrollThumb"/>/<see cref="_isDraggingScrollThumbGoods"/>/<see cref="_isDraggingScrollThumbModules"/>/<see cref="_isDraggingTradeSlider"/>.</summary>
     public void OnMouseUp(float x, float y)
     {
         _isDraggingScrollThumb = false;
         _isDraggingScrollThumbGoods = false;
         _isDraggingScrollThumbModules = false;
+        _isDraggingTradeSlider = false;
     }
 
     public bool OnMouseMove(float x, float y)
     {
+        if (_isDraggingTradeSlider)
+        {
+            var draggedInfo = ResolveCurrentTradeActionInfo();
+            if (draggedInfo is { } info)
+            {
+                long max = ResolveMaxQuantity(info, _isTradeBuyMode);
+                _tradeQuantity = ResolveSliderQuantity(x, ToScreenRect(_tradeSliderRowRect), max);
+            }
+        }
+
         if (_isDraggingScrollThumb)
         {
             int resourceRowCount = CurrentResourceRowCount();
@@ -1414,6 +2046,18 @@ public sealed class TradeScreen : IScreen
             float desiredThumbTopLocalYModules = (y - pt) - _scrollThumbDragGrabOffsetYModules;
             _scrollOffsetModules = GridPanel.ResolveScrollOffsetForThumbTop(GridPanelOriginX, GridPanelOriginYModules, moduleRowCount, desiredThumbTopLocalYModules);
         }
+
+        var hoveredTradeInfo = ResolveCurrentTradeActionInfo();
+        _isTradeConfirmHovered = hoveredTradeInfo is { } hti
+            && Contains(ToScreenRect(_tradeConfirmButtonRect), x, y)
+            && ResolveConfirmDisabledReasonKey(hti, _isTradeBuyMode, _tradeQuantity) is null;
+
+        _isReturnToItemHovered = hoveredTradeInfo is null && _tradeResultItemTypeId is not null
+            && Contains(ToScreenRect(_tradeConfirmButtonRect), x, y);
+
+        _isTradeMinusHovered = hoveredTradeInfo is not null && Contains(ToScreenRect(_tradeMinusButtonRect), x, y);
+        _isTradePlusHovered = hoveredTradeInfo is not null && Contains(ToScreenRect(_tradePlusButtonRect), x, y);
+        _isTradeMaxHovered = hoveredTradeInfo is not null && Contains(ToScreenRect(_tradeMaxButtonRect), x, y);
 
         _isStationNameHovered = IsStationNameHit(x, y);
         _isExitButtonHovered = IsExitButtonHit(x, y);
@@ -1457,7 +2101,9 @@ public sealed class TradeScreen : IScreen
         return _isStationNameHovered || _isExitButtonHovered || _isScrollUpHovered || _isScrollDownHovered
             || _isDraggingScrollThumb || isColumnTitleHovered
             || _isScrollUpHoveredGoods || _isScrollDownHoveredGoods || _isDraggingScrollThumbGoods || isGoodColumnTitleHovered
-            || _isScrollUpHoveredModules || _isScrollDownHoveredModules || _isDraggingScrollThumbModules || isModuleColumnTitleHovered;
+            || _isScrollUpHoveredModules || _isScrollDownHoveredModules || _isDraggingScrollThumbModules || isModuleColumnTitleHovered
+            || _isDraggingTradeSlider || _isTradeConfirmHovered || _isReturnToItemHovered
+            || _isTradeMinusHovered || _isTradePlusHovered || _isTradeMaxHovered;
     }
 
     /// <summary>
@@ -1527,6 +2173,14 @@ public sealed class TradeScreen : IScreen
             fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
             fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot));
 
+        DrawCompartmentImage(canvas, pl, pt);
+
+        // The illustration is drawn flush against the panel's left and bottom edges (no
+        // margin — see _compartmentImageRect), which would otherwise paint over the inner
+        // half of the panel's own border stroke there; redraw just the border (not the
+        // fill, which would blot out the illustration) on top so it stays crisp.
+        canvas.DrawRect(panelRect, MenuStyle.PanelBorder);
+
         var contentRect = new SKRect(pl + _contentOutlineRect.Left, pt + _contentOutlineRect.Top,
             pl + _contentOutlineRect.Right, pt + _contentOutlineRect.Bottom);
         canvas.DrawRect(contentRect, _contentOutlinePaint);
@@ -1545,6 +2199,7 @@ public sealed class TradeScreen : IScreen
         var rightPanelUpperTitleBar = new SKRect(pl + _rightPanelUpperTitleBar.Left, pt + _rightPanelUpperTitleBar.Top,
             pl + _rightPanelUpperTitleBar.Right, pt + _rightPanelUpperTitleBar.Bottom);
         canvas.DrawRoundRect(rightPanelUpperTitleBar, RightPanelTitleBarCornerRadius, RightPanelTitleBarCornerRadius, _rightPanelTitleBarPaint);
+        DrawItemPreviewPanel(canvas, pl, pt, SelectedTradeItemTypeId);
 
         var rightPanelLower = new SKRect(pl + _rightPanelLower.Left, pt + _rightPanelLower.Top,
             pl + _rightPanelLower.Right, pt + _rightPanelLower.Bottom);

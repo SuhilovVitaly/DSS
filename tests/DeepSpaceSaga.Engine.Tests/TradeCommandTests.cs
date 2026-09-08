@@ -387,9 +387,9 @@ public class TradeCommandTests
     {
         // unitPrice = 200 * 1.15 (Good @ Medium fallback — story-20260825-084409 Batch 2,
         // U5) = 230; station can afford 5000 / 230 = 21 units (integer division), less than
-        // the 50 requested — but EnergyCells is a Good (default TradeCategory), so a partial
-        // fill must also floor down to a whole number of 10 kg sell packages (§59, U9):
-        // 21 -> 20.
+        // the 50 requested. Selling is fully per-unit (Docs/FirstRelease/Screens/Trade.md,
+        // "UI-решение: панель действия" — supersedes the former §59/U9 sell-package rule), so
+        // the partial fill lands exactly on 21, with no flooring to a package multiple.
         var engine = CreateEngine(shipCargo: [(EnergyCellsId, 50)], stationCredits: 5000);
 
         engine.ReceiveCommand(SellCommand(EnergyCellsId, quantity: 50));
@@ -397,30 +397,31 @@ public class TradeCommandTests
 
         var result = Assert.Single(snapshot.CommandResults);
         Assert.Equal(CommandResultStatus.Executed, result.Status);
-        Assert.Equal(20, result.ExecutedQuantity);
+        Assert.Equal(21, result.ExecutedQuantity);
 
-        Assert.Equal(100_000 + 20 * 230, engine.PlayerCredits);
+        Assert.Equal(100_000 + 21 * 230, engine.PlayerCredits);
 
         var station = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == StationId);
-        Assert.Equal(5000 - 20 * 230, station.Credits);
+        Assert.Equal(5000 - 21 * 230, station.Credits);
         var registry = CreateRegistry(1000, 500);
         int energyCellsIndex = registry.ItemTypes.GetIndex(EnergyCellsId);
-        Assert.Equal(120, station.Inventory.Single(i => i.ItemTypeIndex == energyCellsIndex).StockQuantity); // 100 + 20
+        Assert.Equal(121, station.Inventory.Single(i => i.ItemTypeIndex == energyCellsIndex).StockQuantity); // 100 + 21
 
         var ship = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == PlayerShipId);
         var cargoModule = ship.Modules.Single(m => m.ModuleId == CargoModuleId);
-        Assert.Equal(30, Assert.Single(cargoModule.Cargo).Quantity); // 50 - 20
+        Assert.Equal(29, Assert.Single(cargoModule.Cargo).Quantity); // 50 - 21
     }
 
     [Fact]
-    public void Sell_partial_fill_floors_to_whole_resource_packages()
+    public void Sell_partially_executes_without_package_flooring()
     {
-        // Ice is a Resource (package 100 kg). unitPrice = 30 * 1.10 (general Resource @
-        // Medium fallback — story-20260825-084409 Batch 2, U5: Ice is not an input of any
-        // producing module on this station, so it stays "general", not "consumed") = 33;
-        // station can afford 6_500 / 33 = 196 units (raw, integer division), less than the
-        // 500 requested, and 196 floors down to 100 (the nearest lower multiple of 100) —
-        // §59, U9.
+        // Ice is a Resource. unitPrice = 30 * 1.10 (general Resource @ Medium fallback —
+        // story-20260825-084409 Batch 2, U5: Ice is not an input of any producing module on
+        // this station, so it stays "general", not "consumed") = 33; station can afford
+        // 6_500 / 33 = 196 units (raw, integer division), less than the 500 requested.
+        // Selling is fully per-unit (Docs/FirstRelease/Screens/Trade.md, "UI-решение: панель
+        // действия" — supersedes the former §59/U9 sell-package rule), so the partial fill
+        // lands exactly on 196, with no flooring to the nearest multiple of 100.
         var engine = CreateEngine(
             shipCargo: [(IceId, 500)],
             stationCredits: 6_500,
@@ -431,35 +432,7 @@ public class TradeCommandTests
 
         var result = Assert.Single(snapshot.CommandResults);
         Assert.Equal(CommandResultStatus.Executed, result.Status);
-        Assert.Equal(100, result.ExecutedQuantity);
-    }
-
-    [Fact]
-    public void Sell_resource_quantity_not_multiple_of_100_is_rejected()
-    {
-        var engine = CreateEngine(shipCargo: [(IceId, 150)], stationInventory: [(IceId, 100)]);
-
-        engine.ReceiveCommand(SellCommand(IceId, quantity: 150));
-        var snapshot = engine.CaptureSnapshotForTests();
-
-        var result = Assert.Single(snapshot.CommandResults);
-        Assert.Equal(CommandResultStatus.Rejected, result.Status);
-        Assert.Equal(CommandReasonCodes.InvalidPackageQuantity, result.ReasonCode);
-        Assert.Equal(100_000, engine.PlayerCredits);
-    }
-
-    [Fact]
-    public void Sell_good_quantity_not_multiple_of_10_is_rejected()
-    {
-        var engine = CreateEngine(shipCargo: [(EnergyCellsId, 15)]);
-
-        engine.ReceiveCommand(SellCommand(EnergyCellsId, quantity: 15));
-        var snapshot = engine.CaptureSnapshotForTests();
-
-        var result = Assert.Single(snapshot.CommandResults);
-        Assert.Equal(CommandResultStatus.Rejected, result.Status);
-        Assert.Equal(CommandReasonCodes.InvalidPackageQuantity, result.ReasonCode);
-        Assert.Equal(100_000, engine.PlayerCredits);
+        Assert.Equal(196, result.ExecutedQuantity);
     }
 
     [Fact]

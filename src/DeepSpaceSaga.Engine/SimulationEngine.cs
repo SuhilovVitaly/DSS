@@ -508,10 +508,10 @@ public sealed class SimulationEngine : IDisposable
             var factors = ResolveStationPriceFactors(station, item.ItemTypeIndex, itemType);
             long unitPrice = StationPricing.ComputeUnitPriceCredits(itemType.BasePriceCredits ?? 0, factors);
             long rawMaxSellable = unitPrice > 0 ? station.Credits / unitPrice : 0;
-            // MaxSellableQuantity must floor to whole sell packages (§59) so the UI hint never
-            // promises a quantity the authoritative Sell package-validation (U9) would reject.
-            long packageSizeKg = SellPackageSizeKg(itemType.Category);
-            long maxSellable = rawMaxSellable / packageSizeKg * packageSizeKg;
+            // Selling is fully per-unit (Docs/FirstRelease/Screens/Trade.md, "UI-решение:
+            // панель действия" — this supersedes the former §59/U9 sell-package-size rule) —
+            // MaxSellableQuantity is the raw affordable quantity, no package flooring.
+            long maxSellable = rawMaxSellable;
 
             items.Add(new StationInventoryItemSnapshot(
                 ItemTypeId: itemType.TypeId,
@@ -1794,27 +1794,18 @@ public sealed class SimulationEngine : IDisposable
 
         if (command.CommandType == TradeCommandTypes.Sell)
         {
-            // Authoritative package-size validation (§59 "Продажа" / acceptance criteria):
-            // Resource sells only in multiples of 100 kg, Good (incl. Fuel — story-20260825-084409
-            // decision 3) only in multiples of 10 kg. Checked — and rejected — before any state
-            // mutation or cargo-quantity check.
-            long sellPackageSizeKg = SellPackageSizeKg(itemType.Category);
-            if (qty % sellPackageSizeKg != 0)
-                return CommandStartOutcome.Rejected(CommandReasonCodes.InvalidPackageQuantity);
-
             int stackIndex = FindCargoStackIndex(module.Cargo, itemTypeIndex);
             long playerQty = stackIndex >= 0 ? module.Cargo[stackIndex].Quantity : 0;
             if (qty > playerQty)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientCargoQuantity);
 
             // Partial fill: the only direction where the station's hidden Credits balance can
-            // limit the operation (CP-1/Money.md) — Buy/Refuel only ever add to it. A partial
-            // fill must still land on a whole number of sell packages (§59) — qty itself is
-            // already package-aligned (rejected above otherwise), but maxStationCanAfford
-            // generally is not, so floor down after the Min.
+            // limit the operation (CP-1/Money.md) — Buy/Refuel only ever add to it. Selling is
+            // fully per-unit (Docs/FirstRelease/Screens/Trade.md, "UI-решение: панель действия"
+            // — this supersedes the former §59/U9 sell-package-size rule), so no flooring is
+            // applied to the partial-fill quantity.
             long maxStationCanAfford = unitPriceCredits > 0 ? station.Credits / unitPriceCredits : long.MaxValue;
             long executedQty = Math.Min(qty, maxStationCanAfford);
-            executedQty = executedQty / sellPackageSizeKg * sellPackageSizeKg;
             if (executedQty <= 0)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientStationStock);
 
@@ -1869,20 +1860,6 @@ public sealed class SimulationEngine : IDisposable
             return CommandStartOutcome.Started;
         }
     }
-
-    /// <summary>
-    /// Sell package size in kg by trade category (§59 "Продажа"): Resource sells only in
-    /// multiples of 100 kg, Good (including Fuel — story-20260825-084409 decision 3) only in
-    /// multiples of 10 kg. Module is out of scope entirely — no <see cref="ItemTypeDefinition"/>
-    /// ever carries <see cref="TradeCategory"/> for a Module, so this switch never needs a
-    /// Module case.
-    /// </summary>
-    private static long SellPackageSizeKg(TradeCategory category) => category switch
-    {
-        TradeCategory.Resource => 100,
-        TradeCategory.Good => 10,
-        _ => throw new ArgumentOutOfRangeException(nameof(category), category, "Unknown TradeCategory.")
-    };
 
     /// <summary>
     /// Maps the Engine-internal <see cref="TradeCategory"/> to the Contracts-side string mirror

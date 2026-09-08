@@ -154,8 +154,8 @@ public class TradeSnapshotProjectionTests
             [
                 // EnergyCells/Fuel default to TradeCategory.Good (record default); Ice is
                 // explicitly Resource — story-20260825-084409 Batch 1 tests below rely on this
-                // split for both the sell-package floor and the "legacy PriceCoefficient no
-                // longer participates" regression.
+                // split for the price-factor-by-category assertions and the "legacy
+                // PriceCoefficient no longer participates" regression.
                 new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 10, BasePriceCredits: 200),
                 new ItemTypeDefinition(FuelId, "Fuel", UnitMassKg: 0, BasePriceCredits: 200),
                 new ItemTypeDefinition(IceId, "Ice", UnitMassKg: 10, BasePriceCredits: 30, Category: TradeCategory.Resource)
@@ -277,8 +277,9 @@ public class TradeSnapshotProjectionTests
         // Medium = 1.15, general Resource (Ice is not a producing-module input here) @ Medium
         // = 1.10. unitPrice = BasePriceCredits * that factor:
         // EnergyCells/Fuel (Good, base 200) -> 230; Ice (Resource, base 30) -> 33.
-        // MaxSellableQuantity additionally floors to whole sell packages (U9): EnergyCells/Fuel
-        // are Good (package 10), Ice is Resource (package 100).
+        // MaxSellableQuantity is fully per-unit (Docs/FirstRelease/Screens/Trade.md,
+        // "UI-решение: панель действия" — supersedes the former §59/U9 sell-package rule): the
+        // raw affordable quantity, no package flooring.
         var engine = CreateEngine(
             isDocked: true,
             stationCredits: 10_000,
@@ -299,17 +300,17 @@ public class TradeSnapshotProjectionTests
         var energyCells = snapshot.DockedStationTrade.Items.Single(i => i.ItemTypeId == EnergyCellsId);
         Assert.Equal(100, energyCells.StockQuantity);
         Assert.Equal(230, energyCells.UnitPriceCredits);
-        Assert.Equal(10_000 / 230 / 10 * 10, energyCells.MaxSellableQuantity); // raw 43 -> floors to 40
+        Assert.Equal(10_000 / 230, energyCells.MaxSellableQuantity); // 43, no package flooring
 
         var fuel = snapshot.DockedStationTrade.Items.Single(i => i.ItemTypeId == FuelId);
         Assert.Equal(50, fuel.StockQuantity);
         Assert.Equal(230, fuel.UnitPriceCredits);
-        Assert.Equal(10_000 / 230 / 10 * 10, fuel.MaxSellableQuantity); // 40
+        Assert.Equal(10_000 / 230, fuel.MaxSellableQuantity); // 43
 
         var ice = snapshot.DockedStationTrade.Items.Single(i => i.ItemTypeId == IceId);
         Assert.Equal(20, ice.StockQuantity);
         Assert.Equal(33, ice.UnitPriceCredits);
-        Assert.Equal(10_000 / 33 / 100 * 100, ice.MaxSellableQuantity); // raw 303 -> floors to 300
+        Assert.Equal(10_000 / 33, ice.MaxSellableQuantity); // 303, no package flooring
     }
 
     [Fact]
