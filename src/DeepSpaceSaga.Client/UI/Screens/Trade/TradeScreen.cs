@@ -2037,6 +2037,12 @@ public sealed class TradeScreen : IScreen
 
         DrawCompartmentImage(canvas, pl, pt);
 
+        // The illustration is drawn flush against the panel's left and bottom edges (no
+        // margin — see _compartmentImageRect), which would otherwise paint over the inner
+        // half of the panel's own border stroke there; redraw just the border (not the
+        // fill, which would blot out the illustration) on top so it stays crisp.
+        canvas.DrawRect(panelRect, MenuStyle.PanelBorder);
+
         var contentRect = new SKRect(pl + _contentOutlineRect.Left, pt + _contentOutlineRect.Top,
             pl + _contentOutlineRect.Right, pt + _contentOutlineRect.Bottom);
         canvas.DrawRect(contentRect, _contentOutlinePaint);
