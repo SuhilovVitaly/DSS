@@ -231,12 +231,13 @@ public sealed class TradeScreen : IScreen
 
     /// <summary>
     /// Outline marking the future content area around the Resources grid, ahead of the real
-    /// redesign layout. Left edge sits 5px left of <see cref="GridPanelOriginX"/> (215) — the
-    /// same 980-wide, 200-tall outline as the pre-widening layout, just shifted right by the
-    /// same 200px the whole grid column moved to make room for the ship-compartment
-    /// illustration in the newly added panel width (<see cref="TradeLayout.PanelWidth"/>).
+    /// redesign layout. Left edge sits 5px left of <see cref="GridPanelOriginX"/> (415) — the
+    /// grid column (see <see cref="GridPanel.HeaderWidth"/>) is compressed by 200px versus its
+    /// original size so this outline's right edge (1190) — and everything already anchored to
+    /// it (<see cref="GridRightEdge"/>, the right-hand info panels) — stays exactly where it
+    /// was before the compartment illustration's reserved strip grew to 400px.
     /// </summary>
-    private static readonly SKRect _contentOutlineRect = new(210f, 90f, 210f + 980f, 90f + 200f);
+    private static readonly SKRect _contentOutlineRect = new(410f, 90f, 1190f, 90f + 200f);
 
     /// <summary>Same outline as <see cref="_contentOutlineRect"/>, shifted down by the same offset as <see cref="GridPanelOriginYGoods"/> is from <see cref="GridPanelOriginY"/>, to frame the Goods grid below it.</summary>
     private static readonly SKRect _contentOutlineRectGoods = new(
@@ -255,10 +256,12 @@ public sealed class TradeScreen : IScreen
 
     /// <summary>
     /// Ship-compartment illustration shown to the left of the three stacked grids, in the
-    /// 200px strip reserved by widening <see cref="TradeLayout.PanelWidth"/> — loaded once via
-    /// the shared, cached <see cref="UiAssetLoader"/> (returns null, cached, if the file is
-    /// missing/corrupt, in which case <see cref="DrawCompartmentImage"/> simply no-ops and
-    /// leaves the strip blank rather than throwing or drawing a placeholder).
+    /// 400px strip reserved between the panel's left margin and the (compressed) grid column
+    /// — 200px from widening <see cref="TradeLayout.PanelWidth"/>, another 200px from
+    /// compressing <see cref="GridPanel.HeaderWidth"/> — loaded once via the shared, cached
+    /// <see cref="UiAssetLoader"/> (returns null, cached, if the file is missing/corrupt, in
+    /// which case <see cref="DrawCompartmentImage"/> simply no-ops and leaves the strip blank
+    /// rather than throwing or drawing a placeholder).
     /// </summary>
     private static readonly SKBitmap? _compartmentImage =
         UiAssetLoader.LoadBitmap("Images/UI/TradeScreen/trade-androids.png");
@@ -305,12 +308,14 @@ public sealed class TradeScreen : IScreen
     /// <summary>
     /// Anchor (the header bar's top-left) for the <see cref="GridPanel"/> resources list — see
     /// that control's doc comment for how header/rows/scrollbar are laid out relative to this
-    /// point. Shifted right from the original 15 by the 200px <see cref="TradeLayout.PanelWidth"/>
-    /// was widened by, reserving a 15..215 strip at the panel's left edge for the
-    /// ship-compartment illustration (<see cref="_compartmentImage"/>) — everything else in
-    /// the grid/right-panel column keeps its original size, just moved over by that same 200px.
+    /// point. Shifted right from the original 15 by 400px total — 200px from
+    /// <see cref="TradeLayout.PanelWidth"/> being widened, another 200px reclaimed by
+    /// compressing <see cref="GridPanel.HeaderWidth"/> — reserving a 15..415 strip at the
+    /// panel's left edge for the ship-compartment illustration (<see cref="_compartmentImage"/>).
+    /// The right-panel column past the grid (<see cref="GridRightEdge"/> onward) is unaffected:
+    /// the compression exactly offsets the extra shift, so nothing to its right moves.
     /// </summary>
-    private const float GridPanelOriginX = 215f;
+    private const float GridPanelOriginX = 415f;
     private const float GridPanelOriginY = 76f;
     private const string ResourcesGridTitle = "Resources";
 
