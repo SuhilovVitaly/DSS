@@ -53,6 +53,7 @@
   "Trade.ProjectedBalance": "ПРОГНОЗНЫЙ БАЛАНС",
   "Trade.SelectItemPrompt": "Выберите товар в СКЛАД СТАНЦИИ",
   "Trade.SelectItemTitle": "Выберите товар",
+  "Trade.ResultTitle": "Результат сделки",
   "Trade.Max": "Макс",
   "Trade.NoCargoSpace": "Нет места в трюме",
   "Trade.NoneInCargo": "В трюме нет этого товара",

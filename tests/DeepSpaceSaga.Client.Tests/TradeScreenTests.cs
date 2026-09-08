@@ -570,6 +570,21 @@ public class TradeScreenTests
         Assert.Equal(3, screen.SelectedResourceIndex);
     }
 
+    /// <summary>Clicking the already-selected row a second time deselects it rather than leaving it selected.</summary>
+    [Fact]
+    public void Clicking_the_selected_resource_row_again_deselects_it()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+
+        var (x, y) = ResourceRowCenter(rowSlot: 2);
+        screen.OnMouseDown(x, y);
+        Assert.Equal(2, screen.SelectedResourceIndex);
+
+        screen.OnMouseDown(x, y);
+        Assert.Null(screen.SelectedResourceIndex);
+    }
+
     [Fact]
     public void Clicking_outside_the_grid_rows_leaves_the_selection_unchanged()
     {
@@ -815,6 +830,21 @@ public class TradeScreenTests
         screen.OnMouseDown(x, y);
 
         Assert.Equal(2, screen.SelectedGoodIndex);
+    }
+
+    /// <summary>Clicking the already-selected row a second time deselects it rather than leaving it selected — Goods-grid equivalent of Clicking_the_selected_resource_row_again_deselects_it.</summary>
+    [Fact]
+    public void Clicking_the_selected_good_row_again_deselects_it()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixGoods());
+        RenderScreen(screen);
+
+        var (x, y) = GoodRowCenter(rowSlot: 2);
+        screen.OnMouseDown(x, y);
+        Assert.Equal(2, screen.SelectedGoodIndex);
+
+        screen.OnMouseDown(x, y);
+        Assert.Null(screen.SelectedGoodIndex);
     }
 
     /// <summary>The three grids share a single selection — picking a row in one grid clears whatever was selected in the other two.</summary>
@@ -1407,6 +1437,25 @@ public class TradeScreenTests
         Assert.Equal(1, command.Quantity);
     }
 
+    /// <summary>Confirming a trade immediately clears the grid selection — the action panel drops back to its empty state, which then shows the trade's result once it's observed (see A_successful_buy_shows_a_result_message_once_observed_in_a_later_snapshot).</summary>
+    [Fact]
+    public async Task Confirming_a_buy_deselects_the_traded_item()
+    {
+        await using var fixture = CreateTradeFixture(BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource))));
+        RenderScreen(fixture.Screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(rowX, rowY);
+        RenderScreen(fixture.Screen);
+        Assert.Equal(0, fixture.Screen.SelectedResourceIndex);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+
+        Assert.Null(fixture.Screen.SelectedResourceIndex);
+    }
+
     [Fact]
     public async Task Confirm_sends_a_sell_command_to_the_container_module()
     {
@@ -1551,7 +1600,11 @@ public class TradeScreenTests
 
         RenderScreen(fixture.Screen);
 
-        Assert.Equal("Trade.ReasonInsufficientStationStock", fixture.Screen.TradeDisabledReasonKey);
+        // Confirming already deselected the item (see Confirming_a_buy_deselects_the_traded_item),
+        // so the rejection surfaces via TradeRejectionReasonKey/the empty-state panel rather than
+        // TradeDisabledReasonKey, which only speaks to a currently-selected item's confirm button.
+        Assert.Null(fixture.Screen.SelectedResourceIndex);
+        Assert.Equal("Trade.ReasonInsufficientStationStock", fixture.Screen.TradeRejectionReasonKey);
     }
 
     /// <summary>Success counterpart to A_rejected_trade_command_surfaces_its_reason_once_observed_in_a_later_snapshot — a Buy that executes shows a confirmation message above the confirm button instead of only updating the grid a second later.</summary>

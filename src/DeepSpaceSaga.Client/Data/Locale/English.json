@@ -53,6 +53,7 @@
   "Trade.ProjectedBalance": "PROJECTED BALANCE",
   "Trade.SelectItemPrompt": "Select an item from STATION INVENTORY",
   "Trade.SelectItemTitle": "Select item",
+  "Trade.ResultTitle": "Trade result",
   "Trade.Max": "Max",
   "Trade.NoCargoSpace": "No cargo space",
   "Trade.NoneInCargo": "You have none in cargo",

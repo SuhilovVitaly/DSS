@@ -931,6 +931,16 @@ public sealed class TradeScreen : IScreen
         _lastSentTradeUnitPriceCredits = info.StationPriceCredits;
         _tradeRejectionReasonKey = null;
         _tradeResultMessage = null;
+
+        // Clear the grid selection right away so the action panel drops back to its empty
+        // state (Docs/FirstRelease/Screens/Trade.md's action panel), which now doubles as the
+        // trade-result view (see DrawTradeActionPanel) once UpdateTradeCommandResult populates
+        // _tradeResultMessage/_tradeRejectionReasonKey from a later snapshot — deliberately not
+        // routed through ResetTradeActionPanelState, which would wipe those two fields along
+        // with _lastSentTradeCommandId before the result has a chance to arrive.
+        _selectedResourceItemTypeId = null;
+        _selectedGoodItemTypeId = null;
+        _selectedModuleItemTypeId = null;
     }
 
     /// <summary>Currently resolved <see cref="TradeActionInfo"/> for the selected item, or null while nothing is selected/resolvable — shared by the test seams below and <see cref="DrawTradeActionPanel"/>.</summary>
@@ -991,6 +1001,13 @@ public sealed class TradeScreen : IScreen
         TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceBold
     };
 
+    /// <summary>Centered variant of <see cref="_tradeResultMessagePaint"/> — used for the trade-result text shown centered in the action panel's empty state (see <see cref="DrawTradeActionPanel"/>) once the selection is cleared after a confirm.</summary>
+    private static readonly SKPaint _tradeResultMessagePaintCentered = new()
+    {
+        Color = new SKColor(0x5A, 0xD6, 0x6D), TextSize = 12f, IsAntialias = true,
+        TextAlign = SKTextAlign.Center, Typeface = MenuStyle.TypefaceBold
+    };
+
     /// <summary>Vertical baseline for a single line of text centered within <paramref name="rect"/>, matching <see cref="MenuStyle.VerticalCenterBaseline"/>'s convention.</summary>
     private static float LineBaselineY(SKRect rect, SKPaint paint) => MenuStyle.VerticalCenterBaseline(rect, paint);
 
@@ -1016,18 +1033,27 @@ public sealed class TradeScreen : IScreen
         string? itemTypeId = SelectedTradeItemTypeId;
         var info = ResolveTradeActionInfo(snapshot, itemTypeId);
 
+        // Once a trade has been sent (selection is cleared right on confirm — see
+        // OnConfirmTradeClicked), the empty state below doubles as the trade-result view until
+        // the player picks a new item: its title and body switch from the plain "select an
+        // item" prompt to the outcome of that trade.
+        bool hasTradeOutcome = _tradeResultMessage is not null || _tradeRejectionReasonKey is not null;
+
         var titleBarScreen = ToScreenRect(_rightPanelLowerTitleBar);
         string titleText = info is { } selected
             ? $"{selected.DisplayName} ({selected.Category})"
-            : Localization.Get("Trade.SelectItemTitle");
+            : Localization.Get(hasTradeOutcome ? "Trade.ResultTitle" : "Trade.SelectItemTitle");
         canvas.DrawText(titleText, titleBarScreen.Left + 10f, LineBaselineY(titleBarScreen, _tradeTitleBarTextPaint), _tradeTitleBarTextPaint);
 
         if (info is not { } tradeInfo)
         {
             var emptyRect = ToScreenRect(new SKRect(
                 TradeActionContentLeft, TradeActionContentTop, TradeActionContentRight, _rightPanelLower.Bottom - 10f));
-            canvas.DrawText(Localization.Get("Trade.SelectItemPrompt"),
-                emptyRect.MidX, emptyRect.MidY, _tradeBodyTextPaintCentered);
+            string emptyText = hasTradeOutcome
+                ? _tradeResultMessage ?? Localization.Get(_tradeRejectionReasonKey!)
+                : Localization.Get("Trade.SelectItemPrompt");
+            var emptyPaint = _tradeResultMessage is not null ? _tradeResultMessagePaintCentered : _tradeBodyTextPaintCentered;
+            canvas.DrawText(emptyText, emptyRect.MidX, emptyRect.MidY, emptyPaint);
             return;
         }
 
@@ -1406,7 +1432,10 @@ public sealed class TradeScreen : IScreen
         int hitRowIndex = HitTestResourceRow(x, y, resourceRowCount);
         if (hitRowIndex >= 0)
         {
-            _selectedResourceItemTypeId = resourceRows[hitRowIndex].ItemTypeId;
+            string clickedResourceItemTypeId = resourceRows[hitRowIndex].ItemTypeId;
+            // Clicking the already-selected row toggles the selection off instead of re-selecting it.
+            _selectedResourceItemTypeId = _selectedResourceItemTypeId == clickedResourceItemTypeId
+                ? null : clickedResourceItemTypeId;
             // The three grids share a single selection — picking a row in one clears the others.
             _selectedGoodItemTypeId = null;
             _selectedModuleItemTypeId = null;
@@ -1454,7 +1483,10 @@ public sealed class TradeScreen : IScreen
         int hitGoodRowIndex = HitTestGoodRow(x, y, goodRowCount);
         if (hitGoodRowIndex >= 0)
         {
-            _selectedGoodItemTypeId = goodRows[hitGoodRowIndex].ItemTypeId;
+            string clickedGoodItemTypeId = goodRows[hitGoodRowIndex].ItemTypeId;
+            // Clicking the already-selected row toggles the selection off instead of re-selecting it.
+            _selectedGoodItemTypeId = _selectedGoodItemTypeId == clickedGoodItemTypeId
+                ? null : clickedGoodItemTypeId;
             // The three grids share a single selection — picking a row in one clears the others.
             _selectedResourceItemTypeId = null;
             _selectedModuleItemTypeId = null;
@@ -1502,7 +1534,10 @@ public sealed class TradeScreen : IScreen
         int hitModuleRowIndex = HitTestModuleRow(x, y, moduleRowCount);
         if (hitModuleRowIndex >= 0)
         {
-            _selectedModuleItemTypeId = moduleRows[hitModuleRowIndex].ItemTypeId;
+            string clickedModuleItemTypeId = moduleRows[hitModuleRowIndex].ItemTypeId;
+            // Clicking the already-selected row toggles the selection off instead of re-selecting it.
+            _selectedModuleItemTypeId = _selectedModuleItemTypeId == clickedModuleItemTypeId
+                ? null : clickedModuleItemTypeId;
             // The three grids share a single selection — picking a row in one clears the others.
             _selectedResourceItemTypeId = null;
             _selectedGoodItemTypeId = null;
