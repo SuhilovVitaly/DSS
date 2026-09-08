@@ -1641,6 +1641,80 @@ public class TradeScreenTests
         Assert.Null(fixture.Screen.TradeDisabledReasonKey); // nothing wrong — the message line shows the success text instead
     }
 
+    /// <summary>The trade-result detail block captures the item name plus cargo and Credits before/after the trade, not just the summary message — before-values from the moment Confirm was clicked, after-values from the snapshot that reported the command as Executed.</summary>
+    [Fact]
+    public async Task A_successful_buy_shows_the_item_name_and_cargo_and_credits_before_and_after()
+    {
+        var beforeSnapshot = BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)),
+            playerCredits: 1000);
+        await using var fixture = CreateTradeFixture(beforeSnapshot);
+        RenderScreen(fixture.Screen);
+
+        var (rowX, rowY) = ResourceRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(rowX, rowY);
+        RenderScreen(fixture.Screen);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+        var sentCommand = Assert.Single(fixture.Connection.Commands);
+
+        // Simulate the engine's next snapshot: 1 unit of Silicon bought at 40 cr, so cargo
+        // goes 0 -> 1 and Credits go 1000 -> 960.
+        var afterSnapshot = BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 999, TradeItemCategories.Resource)),
+            playerCredits: 960,
+            containerCargo: ImmutableArray.Create(new CargoStackSnapshot("item.silicon", 1))) with
+        {
+            SnapshotSequence = 2,
+            CommandResults = ImmutableArray.Create(new CommandResult(
+                sentCommand.CommandId, ShipId, ContainerModuleId, TradeCommandTypes.Buy,
+                CommandResultStatus.Executed, EffectiveGameTimeMs: 100))
+        };
+        fixture.Handle.Buffer.Update(afterSnapshot);
+        RenderScreen(fixture.Screen);
+
+        Assert.Equal(Localization.Get("Trade.ItemSilicon"), fixture.Screen.TradeResultItemDisplayName);
+        Assert.Equal(0, fixture.Screen.TradeResultAmountBefore);
+        Assert.Equal(1, fixture.Screen.TradeResultAmountAfter);
+        Assert.Equal(1000, fixture.Screen.TradeResultCreditsBefore);
+        Assert.Equal(960, fixture.Screen.TradeResultCreditsAfter);
+    }
+
+    /// <summary>Refuel's before/after amount reads from the player's Fuel tank, not the cargo hold — the trade-result block must not conflate the two.</summary>
+    [Fact]
+    public async Task A_successful_refuel_shows_fuel_amount_before_and_after_instead_of_cargo()
+    {
+        var beforeSnapshot = BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.fuel", 1000, 5, 1000, TradeItemCategories.Good)),
+            fuelAmountKg: 100, fuelCapacityKg: 500);
+        await using var fixture = CreateTradeFixture(beforeSnapshot);
+        RenderScreen(fixture.Screen);
+
+        var (goodX, goodY) = GoodRowCenter(rowSlot: 0);
+        fixture.Screen.OnMouseDown(goodX, goodY);
+        RenderScreen(fixture.Screen);
+
+        var (confirmX, confirmY) = ScreenCenter(fixture.Screen.TradeConfirmButtonRect);
+        fixture.Screen.OnMouseDown(confirmX, confirmY);
+        var sentCommand = Assert.Single(fixture.Connection.Commands);
+
+        var afterSnapshot = BuildTradeSnapshot(
+            ImmutableArray.Create(new StationInventoryItemSnapshot("item.fuel", 1000, 5, 999, TradeItemCategories.Good)),
+            fuelAmountKg: 101, fuelCapacityKg: 500) with
+        {
+            SnapshotSequence = 2,
+            CommandResults = ImmutableArray.Create(new CommandResult(
+                sentCommand.CommandId, ShipId, EngineModuleId, TradeCommandTypes.Refuel,
+                CommandResultStatus.Executed, EffectiveGameTimeMs: 100))
+        };
+        fixture.Handle.Buffer.Update(afterSnapshot);
+        RenderScreen(fixture.Screen);
+
+        Assert.Equal(100, fixture.Screen.TradeResultAmountBefore);
+        Assert.Equal(101, fixture.Screen.TradeResultAmountAfter);
+    }
+
     /// <summary>A Sell that only partially executes (station's hidden Credits balance ran out) reports the partial-fill wording, with the actually-executed and originally-requested quantities and a total priced off what was actually sold.</summary>
     [Fact]
     public async Task A_partially_executed_sell_shows_the_partial_fill_message()

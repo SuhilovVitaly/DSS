@@ -420,6 +420,21 @@ public sealed class TradeScreen : IScreen
     /// <summary>Station unit price at the moment the in-flight command was sent — same "captured at send time" rationale as <see cref="_lastSentTradeCommandType"/>/<see cref="_lastSentTradeQuantity"/>, used to show what the trade actually cost/paid in the result message.</summary>
     private long _lastSentTradeUnitPriceCredits;
 
+    /// <summary>Item type id of the in-flight command in <see cref="_lastSentTradeCommandId"/> — captured at send time since the grid selection is cleared right away (<see cref="OnConfirmTradeClicked"/>), so <see cref="UpdateTradeCommandResult"/> needs its own copy to look up the player's post-trade cargo for that item.</summary>
+    private string? _lastSentTradeItemTypeId;
+
+    /// <summary>Display name of the item being traded — captured at send time for the same reason as <see cref="_lastSentTradeItemTypeId"/>, shown as the first line of the trade-result detail block.</summary>
+    private string? _lastSentTradeItemDisplayName;
+
+    /// <summary>True when the in-flight command is a Refuel — determines whether the trade-result "amount held" line reads from the player's Fuel tank or their cargo hold.</summary>
+    private bool _lastSentTradeWasFuel;
+
+    /// <summary>Player's cargo quantity (or Fuel amount in kg for a Refuel) of the traded item immediately before the command was sent — paired with the post-trade amount resolved in <see cref="UpdateTradeCommandResult"/> to show the before/after change.</summary>
+    private long _lastSentAmountBeforeTrade;
+
+    /// <summary>Player's Credits balance immediately before the command was sent — same before/after pairing as <see cref="_lastSentAmountBeforeTrade"/>, for Credits instead of cargo/Fuel.</summary>
+    private long _lastSentCreditsBeforeTrade;
+
     /// <summary>
     /// Localization key for the last observed trade-command rejection reason, or null — shown
     /// near the confirm button until a new command supersedes it or the selection/mode changes
@@ -442,6 +457,39 @@ public sealed class TradeScreen : IScreen
     /// <summary>Test seam — current trade-result message (see <see cref="_tradeResultMessage"/>), null once cleared.</summary>
     internal string? TradeResultMessage => _tradeResultMessage;
 
+    /// <summary>Display name of the item the last successfully-executed trade was for — set alongside <see cref="_tradeResultMessage"/> in <see cref="UpdateTradeCommandResult"/>, null once cleared.</summary>
+    private string? _tradeResultItemDisplayName;
+
+    /// <summary>Test seam — see <see cref="_tradeResultItemDisplayName"/>.</summary>
+    internal string? TradeResultItemDisplayName => _tradeResultItemDisplayName;
+
+    /// <summary>True when the last successfully-executed trade was a Refuel — see <see cref="_lastSentTradeWasFuel"/>.</summary>
+    private bool _tradeResultWasFuel;
+
+    /// <summary>Player's cargo quantity (or Fuel amount in kg for a Refuel) of the traded item just before the last successfully-executed trade — set alongside <see cref="_tradeResultMessage"/>.</summary>
+    private long? _tradeResultAmountBefore;
+
+    /// <summary>Test seam — see <see cref="_tradeResultAmountBefore"/>.</summary>
+    internal long? TradeResultAmountBefore => _tradeResultAmountBefore;
+
+    /// <summary>Same amount as <see cref="_tradeResultAmountBefore"/>, resolved from the snapshot that reported the trade as Executed — the after side of the before/after pair.</summary>
+    private long? _tradeResultAmountAfter;
+
+    /// <summary>Test seam — see <see cref="_tradeResultAmountAfter"/>.</summary>
+    internal long? TradeResultAmountAfter => _tradeResultAmountAfter;
+
+    /// <summary>Player's Credits balance just before the last successfully-executed trade — Credits counterpart to <see cref="_tradeResultAmountBefore"/>.</summary>
+    private long? _tradeResultCreditsBefore;
+
+    /// <summary>Test seam — see <see cref="_tradeResultCreditsBefore"/>.</summary>
+    internal long? TradeResultCreditsBefore => _tradeResultCreditsBefore;
+
+    /// <summary>Player's Credits balance from the snapshot that reported the trade as Executed — Credits counterpart to <see cref="_tradeResultAmountAfter"/>.</summary>
+    private long? _tradeResultCreditsAfter;
+
+    /// <summary>Test seam — see <see cref="_tradeResultCreditsAfter"/>.</summary>
+    internal long? TradeResultCreditsAfter => _tradeResultCreditsAfter;
+
     /// <summary>Test seam — the item type id currently selected across the three grids (Resources/Goods/Modules), or null.</summary>
     internal string? SelectedTradeItemTypeId =>
         _selectedResourceItemTypeId ?? _selectedGoodItemTypeId ?? _selectedModuleItemTypeId;
@@ -461,6 +509,11 @@ public sealed class TradeScreen : IScreen
         _lastSentTradeCommandId = null;
         _tradeRejectionReasonKey = null;
         _tradeResultMessage = null;
+        _tradeResultItemDisplayName = null;
+        _tradeResultAmountBefore = null;
+        _tradeResultAmountAfter = null;
+        _tradeResultCreditsBefore = null;
+        _tradeResultCreditsAfter = null;
     }
 
     /// <summary>
@@ -691,8 +744,19 @@ public sealed class TradeScreen : IScreen
             if (result.Status == CommandResultStatus.Rejected)
                 _tradeRejectionReasonKey = ResolveRejectionReasonKey(result.ReasonCode ?? string.Empty);
             else if (result.Status == CommandResultStatus.Executed && _lastSentTradeCommandType is not null)
+            {
                 _tradeResultMessage = ResolveTradeResultMessage(
                     _lastSentTradeCommandType, result.ExecutedQuantity, _lastSentTradeQuantity, _lastSentTradeUnitPriceCredits);
+
+                _tradeResultItemDisplayName = _lastSentTradeItemDisplayName;
+                _tradeResultWasFuel = _lastSentTradeWasFuel;
+                _tradeResultAmountBefore = _lastSentAmountBeforeTrade;
+                _tradeResultAmountAfter = _lastSentTradeWasFuel
+                    ? StationToolbar.ResolveFuelAmountKg(snapshot)
+                    : ResolvePlayerCargo(snapshot).GetValueOrDefault(_lastSentTradeItemTypeId ?? string.Empty);
+                _tradeResultCreditsBefore = _lastSentCreditsBeforeTrade;
+                _tradeResultCreditsAfter = snapshot.PlayerCredits;
+            }
 
             _lastSentTradeCommandId = null;
             return;
@@ -720,6 +784,12 @@ public sealed class TradeScreen : IScreen
         TradeActionContentLeft, TradeActionContentTop, TradeActionContentRight, TradeActionContentTop + TradeMarketLineHeight);
     private static readonly SKRect _tradeMarketLine2Rect = new(
         TradeActionContentLeft, _tradeMarketLine1Rect.Bottom + 4f, TradeActionContentRight, _tradeMarketLine1Rect.Bottom + 4f + TradeMarketLineHeight);
+
+    /// <summary>Third/fourth line of the trade-result detail block drawn in the action panel's empty state after a confirm (see <see cref="DrawTradeResultDetails"/>) — same left-aligned rhythm as <see cref="_tradeMarketLine1Rect"/>/<see cref="_tradeMarketLine2Rect"/>, which hold that block's first two lines (item name, then the existing success/partial-fill message).</summary>
+    private static readonly SKRect _tradeResultLine3Rect = new(
+        TradeActionContentLeft, _tradeMarketLine2Rect.Bottom + 4f, TradeActionContentRight, _tradeMarketLine2Rect.Bottom + 4f + TradeMarketLineHeight);
+    private static readonly SKRect _tradeResultLine4Rect = new(
+        TradeActionContentLeft, _tradeResultLine3Rect.Bottom + 4f, TradeActionContentRight, _tradeResultLine3Rect.Bottom + 4f + TradeMarketLineHeight);
 
     private const float TradeToggleGap = 8f;
     private static readonly float _tradeToggleRowTop = _tradeMarketLine2Rect.Bottom + 6f;
@@ -929,6 +999,11 @@ public sealed class TradeScreen : IScreen
         _lastSentTradeCommandType = commandType;
         _lastSentTradeQuantity = _tradeQuantity;
         _lastSentTradeUnitPriceCredits = info.StationPriceCredits;
+        _lastSentTradeItemTypeId = info.ItemTypeId;
+        _lastSentTradeItemDisplayName = info.DisplayName;
+        _lastSentTradeWasFuel = info.IsFuel;
+        _lastSentAmountBeforeTrade = info.IsFuel ? info.FuelAmountKg : info.PlayerCargoQuantity;
+        _lastSentCreditsBeforeTrade = info.PlayerCredits;
         _tradeRejectionReasonKey = null;
         _tradeResultMessage = null;
 
@@ -1001,11 +1076,11 @@ public sealed class TradeScreen : IScreen
         TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceBold
     };
 
-    /// <summary>Centered variant of <see cref="_tradeResultMessagePaint"/> — used for the trade-result text shown centered in the action panel's empty state (see <see cref="DrawTradeActionPanel"/>) once the selection is cleared after a confirm.</summary>
-    private static readonly SKPaint _tradeResultMessagePaintCentered = new()
+    /// <summary>Credits before/after line in the trade-result detail block (<see cref="DrawTradeResultDetails"/>) — a distinct orange so the three detail lines (item/price in dim gray via <see cref="_tradeReasonTextPaint"/>, cargo/Fuel in green via <see cref="_tradeResultMessagePaint"/>, Credits here) read as separate at-a-glance facts rather than one gray block.</summary>
+    private static readonly SKPaint _tradeResultCreditsPaint = new()
     {
-        Color = new SKColor(0x5A, 0xD6, 0x6D), TextSize = 12f, IsAntialias = true,
-        TextAlign = SKTextAlign.Center, Typeface = MenuStyle.TypefaceBold
+        Color = new SKColor(0xF2, 0x9A, 0x3C), TextSize = 12f, IsAntialias = true,
+        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceBold
     };
 
     /// <summary>Vertical baseline for a single line of text centered within <paramref name="rect"/>, matching <see cref="MenuStyle.VerticalCenterBaseline"/>'s convention.</summary>
@@ -1022,6 +1097,35 @@ public sealed class TradeScreen : IScreen
     {
         Color = SKColors.White, Style = SKPaintStyle.Fill, IsAntialias = true
     };
+
+    /// <summary>
+    /// Full trade-result detail block shown in the action panel's empty state once a trade has
+    /// executed (see <see cref="OnConfirmTradeClicked"/>/<see cref="UpdateTradeCommandResult"/>):
+    /// the traded item's name and the existing success/partial-fill summary (unit price ×
+    /// quantity = total) in dim gray, the cargo-or-Fuel amount held before/after in green, and
+    /// the player's Credits balance before/after in orange — three colors so the reader can
+    /// separate "what was traded" from "how much I'm holding now" from "what it cost" at a
+    /// glance, rather than parsing one undifferentiated block of text.
+    /// </summary>
+    private void DrawTradeResultDetails(SKCanvas canvas)
+    {
+        var line1 = ToScreenRect(_tradeMarketLine1Rect);
+        canvas.DrawText(_tradeResultItemDisplayName!, line1.Left, LineBaselineY(line1, _tradeReasonTextPaint), _tradeReasonTextPaint);
+
+        var line2 = ToScreenRect(_tradeMarketLine2Rect);
+        canvas.DrawText(_tradeResultMessage!, line2.Left, LineBaselineY(line2, _tradeReasonTextPaint), _tradeReasonTextPaint);
+
+        string amountLabel = Localization.Get(_tradeResultWasFuel ? "Trade.Fuel" : "Trade.Cargo");
+        string amountLine = string.Format(
+            Localization.Get("Trade.ResultBeforeAfter"), amountLabel, _tradeResultAmountBefore, _tradeResultAmountAfter);
+        var line3 = ToScreenRect(_tradeResultLine3Rect);
+        canvas.DrawText(amountLine, line3.Left, LineBaselineY(line3, _tradeResultMessagePaint), _tradeResultMessagePaint);
+
+        string creditsLine = string.Format(
+            Localization.Get("Trade.ResultBeforeAfter"), Localization.Get("Trade.Credits"), _tradeResultCreditsBefore, _tradeResultCreditsAfter);
+        var line4 = ToScreenRect(_tradeResultLine4Rect);
+        canvas.DrawText(creditsLine, line4.Left, LineBaselineY(line4, _tradeResultCreditsPaint), _tradeResultCreditsPaint);
+    }
 
     /// <summary>
     /// Draws the lower right-hand panel's title (item name/category, or the empty-state
@@ -1047,13 +1151,18 @@ public sealed class TradeScreen : IScreen
 
         if (info is not { } tradeInfo)
         {
+            if (_tradeResultMessage is not null && _tradeResultItemDisplayName is not null)
+            {
+                DrawTradeResultDetails(canvas);
+                return;
+            }
+
             var emptyRect = ToScreenRect(new SKRect(
                 TradeActionContentLeft, TradeActionContentTop, TradeActionContentRight, _rightPanelLower.Bottom - 10f));
             string emptyText = hasTradeOutcome
-                ? _tradeResultMessage ?? Localization.Get(_tradeRejectionReasonKey!)
+                ? Localization.Get(_tradeRejectionReasonKey!)
                 : Localization.Get("Trade.SelectItemPrompt");
-            var emptyPaint = _tradeResultMessage is not null ? _tradeResultMessagePaintCentered : _tradeBodyTextPaintCentered;
-            canvas.DrawText(emptyText, emptyRect.MidX, emptyRect.MidY, emptyPaint);
+            canvas.DrawText(emptyText, emptyRect.MidX, emptyRect.MidY, _tradeBodyTextPaintCentered);
             return;
         }
 
