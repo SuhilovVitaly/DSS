@@ -18,9 +18,11 @@ public class StationToolbarTests
             PlayerShipObjectId: "SHIP-01");
 
     [Fact]
-    public void Size_matches_the_1400x60_toolbar_spec()
+    public void Size_matches_the_1600x60_toolbar_spec()
     {
-        Assert.Equal(1400f, StationToolbar.Width);
+        // Width matches the station-hub windows' own panel width — 1600, widened by 200px
+        // from the previous 1400 standard to reserve room for a left-side illustration.
+        Assert.Equal(1600f, StationToolbar.Width);
         Assert.Equal(60f, StationToolbar.Height);
     }
 
@@ -619,7 +621,7 @@ public class StationToolbarTests
     [Fact]
     public void Draw_fills_the_interior_with_the_spec_background_color()
     {
-        using var bitmap = new SKBitmap(1420, 80);
+        using var bitmap = new SKBitmap(1620, 80);
         bitmap.Erase(SKColors.Transparent);
         using var canvas = new SKCanvas(bitmap);
 
@@ -633,7 +635,7 @@ public class StationToolbarTests
     [Fact]
     public void Draw_strokes_the_top_edge_with_the_spec_border_color()
     {
-        using var bitmap = new SKBitmap(1420, 80);
+        using var bitmap = new SKBitmap(1620, 80);
         bitmap.Erase(SKColors.Transparent);
         using var canvas = new SKCanvas(bitmap);
 
@@ -647,7 +649,7 @@ public class StationToolbarTests
     [Fact]
     public void Draw_does_not_paint_outside_the_toolbar_bounds()
     {
-        using var bitmap = new SKBitmap(1420, 80);
+        using var bitmap = new SKBitmap(1620, 80);
         bitmap.Erase(SKColors.Transparent);
         using var canvas = new SKCanvas(bitmap);
 
@@ -685,7 +687,7 @@ public class StationToolbarTests
     [Fact]
     public void Draw_on_the_station_hub_paints_the_name_in_the_active_location_color()
     {
-        using var bitmap = new SKBitmap(1420, 80);
+        using var bitmap = new SKBitmap(1620, 80);
         bitmap.Erase(SKColors.Transparent);
         using var canvas = new SKCanvas(bitmap);
 
@@ -699,7 +701,7 @@ public class StationToolbarTests
     [Fact]
     public void Draw_on_a_non_hub_screen_paints_the_name_in_white()
     {
-        using var bitmap = new SKBitmap(1420, 80);
+        using var bitmap = new SKBitmap(1620, 80);
         bitmap.Erase(SKColors.Transparent);
         using var canvas = new SKCanvas(bitmap);
 
@@ -730,12 +732,12 @@ public class StationToolbarTests
         // NameLocalRect stays pure background when not hovered, but picks up glow color
         // when hovered, proving the hover state actually changes what's drawn (not just
         // the crisp text, which NameLocalRect already covers).
-        using var hoveredBitmap = new SKBitmap(1420, 80);
+        using var hoveredBitmap = new SKBitmap(1620, 80);
         hoveredBitmap.Erase(SKColors.Transparent);
         using (var canvas = new SKCanvas(hoveredBitmap))
             StationToolbar.Draw(canvas, 10, 10, "Alpha Station", isStationHub: false, isHovered: true);
 
-        using var normalBitmap = new SKBitmap(1420, 80);
+        using var normalBitmap = new SKBitmap(1620, 80);
         normalBitmap.Erase(SKColors.Transparent);
         using (var canvas = new SKCanvas(normalBitmap))
             StationToolbar.Draw(canvas, 10, 10, "Alpha Station", isStationHub: false, isHovered: false);
@@ -752,12 +754,12 @@ public class StationToolbarTests
     {
         Assert.True(StationToolbar.HasLoadedExitButtonImage);
 
-        using var hoveredBitmap = new SKBitmap(1420, 80);
+        using var hoveredBitmap = new SKBitmap(1620, 80);
         hoveredBitmap.Erase(SKColors.Transparent);
         using (var canvas = new SKCanvas(hoveredBitmap))
             StationToolbar.Draw(canvas, 10, 10, stationName: null, isStationHub: false, isExitButtonHovered: true);
 
-        using var normalBitmap = new SKBitmap(1420, 80);
+        using var normalBitmap = new SKBitmap(1620, 80);
         normalBitmap.Erase(SKColors.Transparent);
         using (var canvas = new SKCanvas(normalBitmap))
             StationToolbar.Draw(canvas, 10, 10, stationName: null, isStationHub: false, isExitButtonHovered: false);

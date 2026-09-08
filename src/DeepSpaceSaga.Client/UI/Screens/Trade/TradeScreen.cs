@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using DeepSpaceSaga.Client.UI.Assets;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Contracts;
@@ -230,14 +231,12 @@ public sealed class TradeScreen : IScreen
 
     /// <summary>
     /// Outline marking the future content area around the Resources grid, ahead of the real
-    /// redesign layout. Left edge sits 5px left of <see cref="GridPanelOriginX"/> (215), same
-    /// margin as before the grid column was shifted right to free a 200px strip at the panel's
-    /// left edge for a ship-compartment illustration; right edge (990) is unchanged from
-    /// before that shift, since the grid itself was compressed by the same 200px it moved
-    /// (see <see cref="GridPanel.HeaderWidth"/>), so its right edge — and everything already
-    /// anchored to it (<see cref="GridRightEdge"/>, the right-hand info panels) — never moved.
+    /// redesign layout. Left edge sits 5px left of <see cref="GridPanelOriginX"/> (215) — the
+    /// same 980-wide, 200-tall outline as the pre-widening layout, just shifted right by the
+    /// same 200px the whole grid column moved to make room for the ship-compartment
+    /// illustration in the newly added panel width (<see cref="TradeLayout.PanelWidth"/>).
     /// </summary>
-    private static readonly SKRect _contentOutlineRect = new(210f, 90f, 990f, 90f + 200f);
+    private static readonly SKRect _contentOutlineRect = new(210f, 90f, 210f + 980f, 90f + 200f);
 
     /// <summary>Same outline as <see cref="_contentOutlineRect"/>, shifted down by the same offset as <see cref="GridPanelOriginYGoods"/> is from <see cref="GridPanelOriginY"/>, to frame the Goods grid below it.</summary>
     private static readonly SKRect _contentOutlineRectGoods = new(
@@ -255,11 +254,61 @@ public sealed class TradeScreen : IScreen
     };
 
     /// <summary>
+    /// Ship-compartment illustration shown to the left of the three stacked grids, in the
+    /// 200px strip reserved by widening <see cref="TradeLayout.PanelWidth"/> — loaded once via
+    /// the shared, cached <see cref="UiAssetLoader"/> (returns null, cached, if the file is
+    /// missing/corrupt, in which case <see cref="DrawCompartmentImage"/> simply no-ops and
+    /// leaves the strip blank rather than throwing or drawing a placeholder).
+    /// </summary>
+    private static readonly SKBitmap? _compartmentImage =
+        UiAssetLoader.LoadBitmap("Images/UI/TradeScreen/trade-androids.png");
+
+    /// <summary>Test seam — true if the compartment illustration PNG was found and decoded at startup.</summary>
+    internal static bool HasLoadedCompartmentImage => _compartmentImage is not null;
+
+    /// <summary>
+    /// Local rect (panel-relative) the compartment illustration is drawn into — spans the
+    /// same vertical extent as the three stacked grids' combined white-outline block
+    /// (<see cref="_contentOutlineRect"/>'s top down to <see cref="_contentOutlineRectModules"/>'s
+    /// bottom) and the full width reserved for it, from the panel's own left margin
+    /// (<see cref="PanelContentMargin"/>) to where the grid column starts (<see cref="GridPanelOriginX"/>).
+    /// </summary>
+    private static readonly SKRect _compartmentImageRect = new(
+        PanelContentMargin, _contentOutlineRect.Top, GridPanelOriginX, _contentOutlineRectModules.Bottom);
+
+    /// <summary>
+    /// Draws <see cref="_compartmentImage"/> filling <see cref="_compartmentImageRect"/> with a
+    /// "cover" crop — scaled up to whichever of width/height needs the larger factor to fill
+    /// the rect, then center-cropped on the other axis — so the illustration fills the
+    /// reserved strip edge-to-edge with no letterboxing and no stretch distortion, regardless
+    /// of the source PNG's own aspect ratio. No-ops if the asset failed to load.
+    /// </summary>
+    private static void DrawCompartmentImage(SKCanvas canvas, float pl, float pt)
+    {
+        if (_compartmentImage is not { } image)
+            return;
+
+        var destRect = new SKRect(
+            pl + _compartmentImageRect.Left, pt + _compartmentImageRect.Top,
+            pl + _compartmentImageRect.Right, pt + _compartmentImageRect.Bottom);
+
+        float scale = Math.Max(destRect.Width / image.Width, destRect.Height / image.Height);
+        float srcCropWidth = destRect.Width / scale;
+        float srcCropHeight = destRect.Height / scale;
+        float srcLeft = (image.Width - srcCropWidth) / 2f;
+        float srcTop = (image.Height - srcCropHeight) / 2f;
+        var srcRect = new SKRect(srcLeft, srcTop, srcLeft + srcCropWidth, srcTop + srcCropHeight);
+
+        canvas.DrawBitmap(image, srcRect, destRect);
+    }
+
+    /// <summary>
     /// Anchor (the header bar's top-left) for the <see cref="GridPanel"/> resources list — see
     /// that control's doc comment for how header/rows/scrollbar are laid out relative to this
-    /// point. Shifted right from the original 15 by the same 200px the grid itself was
-    /// compressed (see <see cref="GridPanel.HeaderWidth"/>), reserving a 15..215 strip at the
-    /// panel's left edge for a ship-compartment illustration.
+    /// point. Shifted right from the original 15 by the 200px <see cref="TradeLayout.PanelWidth"/>
+    /// was widened by, reserving a 15..215 strip at the panel's left edge for the
+    /// ship-compartment illustration (<see cref="_compartmentImage"/>) — everything else in
+    /// the grid/right-panel column keeps its original size, just moved over by that same 200px.
     /// </summary>
     private const float GridPanelOriginX = 215f;
     private const float GridPanelOriginY = 76f;
@@ -1981,6 +2030,8 @@ public sealed class TradeScreen : IScreen
             creditsCount: StationToolbar.ResolveCreditsCount(snapshot),
             fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
             fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot));
+
+        DrawCompartmentImage(canvas, pl, pt);
 
         var contentRect = new SKRect(pl + _contentOutlineRect.Left, pt + _contentOutlineRect.Top,
             pl + _contentOutlineRect.Right, pt + _contentOutlineRect.Bottom);

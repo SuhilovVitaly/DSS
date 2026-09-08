@@ -53,7 +53,14 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 /// </summary>
 public static class StationToolbar
 {
-    public const float Width = 1400f;
+    /// <summary>
+    /// Matches the station-hub windows' own panel width (1600, widened by 200px from the
+    /// previous 1400 standard to reserve room for a left-side illustration — see
+    /// Trade.TradeScreen's compartment image) — every consumer of this shared toolbar
+    /// (Station/Trade/Hire/Contracts/Finance) uses that same panel width, so a single
+    /// shared constant here stays consistent across all of them.
+    /// </summary>
+    public const float Width = 1600f;
     public const float Height = 60f;
     public const float BorderWidth = 1f;
 

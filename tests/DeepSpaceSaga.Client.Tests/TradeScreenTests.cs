@@ -27,6 +27,13 @@ public class TradeScreenTests
         screen.Render(canvas, ScreenWidth, ScreenHeight);
     }
 
+    /// <summary>The ship-compartment illustration PNG must actually be found and decoded at startup — same convention as StationToolbarTests' per-icon HasLoaded* assertions, catching a broken/renamed asset path.</summary>
+    [Fact]
+    public void Compartment_illustration_is_loaded()
+    {
+        Assert.True(TradeScreen.HasLoadedCompartmentImage);
+    }
+
     [Fact]
     public void Escape_returns_CloseTrade()
     {
@@ -975,9 +982,12 @@ public class TradeScreenTests
     }
 
     // ── Right-hand info panels — no grid, just outlines to the right of the three grids.
-    // Left edge sits as far from the grids' right edge (962) as the grids sit from the
-    // Trade panel's own left edge (15) — i.e. 977. Right edge mirrors that same 15px gap
-    // from the Trade panel's own right edge (1400): 1385.
+    // Grid right edge is 215 (GridPanelOriginX) + 925 (GridPanel.HeaderWidth) + 22
+    // (GridPanel.ScrollbarWidth) = 1162. Left edge of the right panels sits as far from
+    // that (1162) as the Trade panel's own 15px left/right edge margin (PanelContentMargin)
+    // — i.e. 1177 — plus a shared 25px extra nudge right (RightPanelExtraLeftInset), minus a
+    // 5px extra width (RightPanelExtraWidth): 1177+25-5=1197. Right edge mirrors that same
+    // 15px margin from the Trade panel's own (now 1600, widened by 200px) right edge: 1585.
 
     [Fact]
     public void Right_panels_render_without_a_grid_and_do_not_crash()
@@ -987,15 +997,11 @@ public class TradeScreenTests
 
         var (upper, lower) = screen.RightPanels;
 
-        // Right edges mirror the grids' 15px margin from the Trade panel's own right edge.
-        Assert.Equal(1385f, upper.Right);
-        Assert.Equal(1385f, lower.Right);
+        Assert.Equal(1585f, upper.Right);
+        Assert.Equal(1585f, lower.Right);
 
-        // Both panels' left edge is the grids' 15px margin from the Trade panel's own left
-        // edge, plus a shared 25px extra nudge right (RightPanelExtraLeftInset), minus a 5px
-        // extra width (RightPanelExtraWidth) — net left edge 977+25-5=997.
-        Assert.Equal(997f, upper.Left);
-        Assert.Equal(997f, lower.Left);
+        Assert.Equal(1197f, upper.Left);
+        Assert.Equal(1197f, lower.Left);
     }
 
     /// <summary>The upper right-hand panel's top and bottom match the Resources grid's own white frame exactly, so the two frames line up on screen.</summary>
@@ -1911,6 +1917,21 @@ public class TradeScreenTests
         var confirm = screen.TradeConfirmButtonRect;
 
         Assert.Equal(16f, lower.Bottom - confirm.Bottom); // TradeConfirmBottomMargin
+    }
+
+    [Fact]
+    public void TEMP_render_to_png()
+    {
+        const int screenWidth = 1920, screenHeight = 1080;
+        using var bitmap = new SKBitmap(screenWidth, screenHeight);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(new SKColor(0x20, 0x20, 0x20));
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        screen.Render(canvas, screenWidth, screenHeight);
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        using var stream = File.OpenWrite(@"C:\Users\sushi\AppData\Local\Temp\claude\trade_preview.png");
+        data.SaveTo(stream);
     }
 
     /// <summary>Records every PlayerCommand sent through it — mirrors CommandsPanelSkeletonTests's RecordingConnection.</summary>
