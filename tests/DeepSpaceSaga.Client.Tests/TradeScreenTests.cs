@@ -414,7 +414,7 @@ public class TradeScreenTests
         screen.OnMouseDown(countX, countY);
         screen.OnMouseDown(countX, countY); // now descending
 
-        var titleRect = GridPanel.TitleLocalRect(15f, 76f, "Resources");
+        var titleRect = GridPanel.TitleLocalRect(215f, 76f, "Resources");
         float titleX = TradeLayout.PanelLeft(ScreenWidth) + titleRect.MidX;
         float titleY = TradeLayout.PanelTop(ScreenHeight) + titleRect.MidY;
         screen.OnMouseDown(titleX, titleY);
@@ -460,7 +460,7 @@ public class TradeScreenTests
     /// <summary>Screen-space center of trailing column header <paramref name="columnIndex"/> (0=Selling price, 1=Selling count, 2=Buying price, 3=Buying count).</summary>
     private static (float X, float Y) TrailingColumnHeaderCenter(int columnIndex)
     {
-        var local = GridPanel.TrailingColumnHeaderLocalRect(15f, 76f, columnIndex);
+        var local = GridPanel.TrailingColumnHeaderLocalRect(215f, 76f, columnIndex);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);
@@ -479,7 +479,7 @@ public class TradeScreenTests
         Assert.Equal(6, screen.ResourceNames.Length);
         Assert.Equal(0, screen.ScrollOffset);
 
-        var local = GridPanel.ScrollDownArrowLocalRect(15f, 76f, screen.ResourceNames.Length);
+        var local = GridPanel.ScrollDownArrowLocalRect(215f, 76f, screen.ResourceNames.Length);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
 
@@ -519,7 +519,7 @@ public class TradeScreenTests
         var screen = new TradeScreen(DockedBufferWithSixResources());
         RenderScreen(screen);
 
-        var thumbLocal = GridPanel.ScrollThumbLocalRect(15f, 76f, screen.ResourceNames.Length, screen.ScrollOffset);
+        var thumbLocal = GridPanel.ScrollThumbLocalRect(215f, 76f, screen.ResourceNames.Length, screen.ScrollOffset);
         float pl = TradeLayout.PanelLeft(ScreenWidth);
         float pt = TradeLayout.PanelTop(ScreenHeight);
         float grabX = pl + thumbLocal.MidX;
@@ -606,7 +606,7 @@ public class TradeScreenTests
     /// <summary>Screen-space center of the resources grid's visible row slot (0 = topmost drawn row) — see GridPanel's origin (15, 76).</summary>
     private static (float X, float Y) ResourceRowCenter(int rowSlot)
     {
-        var local = GridPanel.RowLocalRect(15f, 76f, rowSlot);
+        var local = GridPanel.RowLocalRect(215f, 76f, rowSlot);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);
@@ -757,7 +757,7 @@ public class TradeScreenTests
         Assert.Equal(6, screen.GoodNames.Length);
         Assert.Equal(0, screen.ScrollOffsetGoods);
 
-        var local = GridPanel.ScrollDownArrowLocalRect(15f, 325f, screen.GoodNames.Length);
+        var local = GridPanel.ScrollDownArrowLocalRect(215f, 325f, screen.GoodNames.Length);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
 
@@ -797,7 +797,7 @@ public class TradeScreenTests
         var screen = new TradeScreen(DockedBufferWithSixGoods());
         RenderScreen(screen);
 
-        var thumbLocal = GridPanel.ScrollThumbLocalRect(15f, 325f, screen.GoodNames.Length, screen.ScrollOffsetGoods);
+        var thumbLocal = GridPanel.ScrollThumbLocalRect(215f, 325f, screen.GoodNames.Length, screen.ScrollOffsetGoods);
         float pl = TradeLayout.PanelLeft(ScreenWidth);
         float pt = TradeLayout.PanelTop(ScreenHeight);
         float grabX = pl + thumbLocal.MidX;
@@ -875,7 +875,7 @@ public class TradeScreenTests
     /// <summary>Screen-space center of the goods grid's visible row slot (0 = topmost drawn row) — see GridPanel's origin (15, 325), directly below the Resources grid's (15, 76).</summary>
     private static (float X, float Y) GoodRowCenter(int rowSlot)
     {
-        var local = GridPanel.RowLocalRect(15f, 325f, rowSlot);
+        var local = GridPanel.RowLocalRect(215f, 325f, rowSlot);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);
@@ -884,7 +884,7 @@ public class TradeScreenTests
     /// <summary>Screen-space center of the goods grid's trailing column header <paramref name="columnIndex"/> (0=Selling price, 1=Selling count, 2=Buying price, 3=Buying count).</summary>
     private static (float X, float Y) GoodTrailingColumnHeaderCenter(int columnIndex)
     {
-        var local = GridPanel.TrailingColumnHeaderLocalRect(15f, 325f, columnIndex);
+        var local = GridPanel.TrailingColumnHeaderLocalRect(215f, 325f, columnIndex);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);
@@ -959,7 +959,7 @@ public class TradeScreenTests
     /// <summary>Screen-space center of the modules grid's visible row slot (0 = topmost drawn row) — see GridPanel's origin (15, 574), directly below the Goods grid's (15, 325).</summary>
     private static (float X, float Y) ModuleRowCenter(int rowSlot)
     {
-        var local = GridPanel.RowLocalRect(15f, 574f, rowSlot);
+        var local = GridPanel.RowLocalRect(215f, 574f, rowSlot);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);
@@ -968,7 +968,7 @@ public class TradeScreenTests
     /// <summary>Screen-space center of the modules grid's trailing column header <paramref name="columnIndex"/> (0=Selling price, 1=Selling count, 2=Buying price, 3=Buying count).</summary>
     private static (float X, float Y) ModuleTrailingColumnHeaderCenter(int columnIndex)
     {
-        var local = GridPanel.TrailingColumnHeaderLocalRect(15f, 574f, columnIndex);
+        var local = GridPanel.TrailingColumnHeaderLocalRect(215f, 574f, columnIndex);
         float x = TradeLayout.PanelLeft(ScreenWidth) + local.MidX;
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);

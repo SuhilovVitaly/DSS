@@ -36,7 +36,11 @@ public static class GridPanel
     private const int ScrollbarInactiveMaxRowCount = 4;
 
     // ── Header ──────────────────────────────────────────────────────────────────
-    public const float HeaderWidth = 925f;
+    // Compressed from the original 925/900 (a flat 200px trim, mostly reclaimed from the
+    // four trailing columns' oversized 140px width — see TrailingColumnWidth below) so the
+    // Trade screen's grid column can be shifted right by that same 200px, freeing a strip on
+    // the panel's left edge for a ship-compartment illustration (TradeScreen.GridPanelOriginX).
+    public const float HeaderWidth = 725f;
     public const float HeaderHeight = 30f;
     private const float HeaderCornerRadius = 12f;
     private const float TitlePadding = 10f;
@@ -45,7 +49,7 @@ public static class GridPanel
     // ── Rows, relative to the header's top-left ────────────────────────────────
     private const float RowOffsetX = 25f;
     private const float RowOffsetY = 44f;
-    public const float RowWidth = 900f;
+    public const float RowWidth = 700f;
     public const float RowHeight = 30f;
     private const float RowLabelPaddingX = 20f;
 
@@ -55,7 +59,14 @@ public static class GridPanel
     private static readonly string[] _trailingColumnHeaders =
         { "Selling price", "Selling count", "Buying price", "Buying count" };
 
-    private const float TrailingColumnWidth = 140f;
+    /// <summary>
+    /// 140 was far more than the actual content (a right-aligned quantity/price, or the
+    /// longest header label "Buying count" at ~86px) ever needed, leaving a lot of visibly
+    /// empty space around short numbers — 100px still keeps a comfortable margin around that
+    /// label while reclaiming 160 of the 200px total trim (the rest comes from the name
+    /// column's own excess width, see <see cref="RowWidth"/>).
+    /// </summary>
+    private const float TrailingColumnWidth = 100f;
     private const int TrailingColumnCount = 4;
 
     // ── Sort indicator (glow on the active title + direction arrow beside it) ──
@@ -63,7 +74,7 @@ public static class GridPanel
     private const float SortArrowGap = 6f;
 
     // ── Scrollbar, relative to the header's top-left ───────────────────────────
-    private const float ScrollbarOffsetX = 935f;
+    private const float ScrollbarOffsetX = 735f;
     public const float ScrollbarWidth = 22f;
     private const float ScrollbarArrowSize = 22f;
     private const float ScrollbarThumbInset = 3f;

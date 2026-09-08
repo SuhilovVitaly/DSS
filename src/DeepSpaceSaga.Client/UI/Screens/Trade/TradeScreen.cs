@@ -228,8 +228,16 @@ public sealed class TradeScreen : IScreen
         _fuelHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
-    /// <summary>Outline marking the future content area around the Resources grid, ahead of the real redesign layout.</summary>
-    private static readonly SKRect _contentOutlineRect = new(10f, 90f, 10f + 980f, 90f + 200f);
+    /// <summary>
+    /// Outline marking the future content area around the Resources grid, ahead of the real
+    /// redesign layout. Left edge sits 5px left of <see cref="GridPanelOriginX"/> (215), same
+    /// margin as before the grid column was shifted right to free a 200px strip at the panel's
+    /// left edge for a ship-compartment illustration; right edge (990) is unchanged from
+    /// before that shift, since the grid itself was compressed by the same 200px it moved
+    /// (see <see cref="GridPanel.HeaderWidth"/>), so its right edge — and everything already
+    /// anchored to it (<see cref="GridRightEdge"/>, the right-hand info panels) — never moved.
+    /// </summary>
+    private static readonly SKRect _contentOutlineRect = new(210f, 90f, 990f, 90f + 200f);
 
     /// <summary>Same outline as <see cref="_contentOutlineRect"/>, shifted down by the same offset as <see cref="GridPanelOriginYGoods"/> is from <see cref="GridPanelOriginY"/>, to frame the Goods grid below it.</summary>
     private static readonly SKRect _contentOutlineRectGoods = new(
@@ -246,8 +254,14 @@ public sealed class TradeScreen : IScreen
         Color = SKColors.White, Style = SKPaintStyle.Stroke, StrokeWidth = 1f, IsAntialias = true
     };
 
-    /// <summary>Anchor (the header bar's top-left) for the <see cref="GridPanel"/> resources list — see that control's doc comment for how header/rows/scrollbar are laid out relative to this point.</summary>
-    private const float GridPanelOriginX = 15f;
+    /// <summary>
+    /// Anchor (the header bar's top-left) for the <see cref="GridPanel"/> resources list — see
+    /// that control's doc comment for how header/rows/scrollbar are laid out relative to this
+    /// point. Shifted right from the original 15 by the same 200px the grid itself was
+    /// compressed (see <see cref="GridPanel.HeaderWidth"/>), reserving a 15..215 strip at the
+    /// panel's left edge for a ship-compartment illustration.
+    /// </summary>
+    private const float GridPanelOriginX = 215f;
     private const float GridPanelOriginY = 76f;
     private const string ResourcesGridTitle = "Resources";
 
@@ -284,17 +298,26 @@ public sealed class TradeScreen : IScreen
     /// <summary>Right edge (panel-local x) of the three grids — their left margin plus header+scrollbar width.</summary>
     private const float GridRightEdge = GridPanelOriginX + GridPanel.HeaderWidth + GridPanel.ScrollbarWidth;
 
+    /// <summary>
+    /// Generic gap kept from the Trade panel's own edges — what <see cref="GridPanelOriginX"/>
+    /// used to double as before the grid column was shifted right to free up room for a
+    /// ship-compartment illustration. Kept as its own constant so the right-hand panels'
+    /// positioning below stays anchored to the panel's actual 15px edge margin rather than
+    /// following the grid's own (now larger) left offset.
+    /// </summary>
+    private const float PanelContentMargin = 15f;
+
     /// <summary>Extra rightward nudge applied to both right-hand panels' left edge — their width shrinks by the same amount, their right edge staying put.</summary>
     private const float RightPanelExtraLeftInset = 25f;
 
     /// <summary>Extra width added to both right-hand panels — their left edge moves this much further left, their right edge staying put.</summary>
     private const float RightPanelExtraWidth = 5f;
 
-    /// <summary>Left edge of the two right-hand info panels (no grid) — as far from the grids' right edge as the grids themselves are from the Trade panel's own left edge (<see cref="GridPanelOriginX"/>), plus <see cref="RightPanelExtraLeftInset"/>, minus <see cref="RightPanelExtraWidth"/>.</summary>
-    private const float RightPanelLeft = GridRightEdge + GridPanelOriginX + RightPanelExtraLeftInset - RightPanelExtraWidth;
+    /// <summary>Left edge of the two right-hand info panels (no grid) — as far from the grids' right edge as the Trade panel's own left edge margin (<see cref="PanelContentMargin"/>), plus <see cref="RightPanelExtraLeftInset"/>, minus <see cref="RightPanelExtraWidth"/>.</summary>
+    private const float RightPanelLeft = GridRightEdge + PanelContentMargin + RightPanelExtraLeftInset - RightPanelExtraWidth;
 
-    /// <summary>Right edge of the two right-hand info panels — mirrors <see cref="GridPanelOriginX"/> as the gap kept from the Trade panel's own right edge.</summary>
-    private const float RightPanelRight = TradeLayout.PanelWidth - GridPanelOriginX;
+    /// <summary>Right edge of the two right-hand info panels — mirrors <see cref="PanelContentMargin"/> as the gap kept from the Trade panel's own right edge.</summary>
+    private const float RightPanelRight = TradeLayout.PanelWidth - PanelContentMargin;
 
     /// <summary>Gap kept between the titlebar's left edge and its panel's own white outline left edge — same gap <see cref="GridPanelOriginX"/> (15) keeps from the Resources white outline's left edge (<see cref="_contentOutlineRect"/>, 10): 15-10=5.</summary>
     private static readonly float RightPanelTitleBarLeftInset = GridPanelOriginX - _contentOutlineRect.Left;
