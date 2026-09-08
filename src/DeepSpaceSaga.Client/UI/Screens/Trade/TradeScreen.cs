@@ -270,14 +270,13 @@ public sealed class TradeScreen : IScreen
     internal static bool HasLoadedCompartmentImage => _compartmentImage is not null;
 
     /// <summary>
-    /// Local rect (panel-relative) the compartment illustration is drawn into — spans the
-    /// same vertical extent as the three stacked grids' combined white-outline block
-    /// (<see cref="_contentOutlineRect"/>'s top down to <see cref="_contentOutlineRectModules"/>'s
-    /// bottom) and the full width reserved for it, from the panel's own left margin
-    /// (<see cref="PanelContentMargin"/>) to where the grid column starts (<see cref="GridPanelOriginX"/>).
+    /// Local rect (panel-relative) the compartment illustration is drawn into — edge-to-edge
+    /// with no margin on the left (0), top (flush with the bottom of the <see cref="StationToolbar"/>
+    /// titlebar) or bottom (the panel's own bottom edge, <see cref="TradeLayout.PanelHeight"/>),
+    /// and a 5px gap on the right before the grid column starts (<see cref="GridPanelOriginX"/>).
     /// </summary>
     private static readonly SKRect _compartmentImageRect = new(
-        PanelContentMargin, _contentOutlineRect.Top, GridPanelOriginX, _contentOutlineRectModules.Bottom);
+        0f, StationToolbar.Height, GridPanelOriginX - 5f, TradeLayout.PanelHeight);
 
     /// <summary>
     /// Draws <see cref="_compartmentImage"/> filling <see cref="_compartmentImageRect"/> with a
