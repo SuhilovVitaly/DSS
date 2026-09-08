@@ -562,9 +562,9 @@ public class TradeScreenTests
         Assert.Equal(2, screen.SelectedResourceIndex);
     }
 
-    /// <summary>The item preview panel's icon frame (Docs request: a bordered 64×64 placeholder for the item's future picture) sits at the documented fixed position, regardless of selection.</summary>
+    /// <summary>The item preview panel's icon frame sits at the documented fixed position and matches the 128×128 item icon assets (Images/Items/Resource|Good/*.png).</summary>
     [Fact]
-    public void Item_preview_icon_frame_is_a_64x64_rect_at_the_documented_position()
+    public void Item_preview_icon_frame_is_a_128x128_rect_at_the_documented_position()
     {
         var screen = new TradeScreen();
         RenderScreen(screen);
@@ -573,8 +573,8 @@ public class TradeScreenTests
 
         Assert.Equal(1215f, rect.Left);
         Assert.Equal(120f, rect.Top);
-        Assert.Equal(64f, rect.Width);
-        Assert.Equal(64f, rect.Height);
+        Assert.Equal(128f, rect.Width);
+        Assert.Equal(128f, rect.Height);
     }
 
     /// <summary>Nothing selected means no item preview description — the upper right panel stays blank, same as before this feature.</summary>

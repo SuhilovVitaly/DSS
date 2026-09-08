@@ -438,7 +438,7 @@ public sealed class TradeScreen : IScreen
 
     private const float ItemPreviewIconLeft = 1215f;
     private const float ItemPreviewIconTop = 120f;
-    private const float ItemPreviewIconSize = 64f;
+    private const float ItemPreviewIconSize = 128f;
 
     private static readonly SKRect _itemPreviewIconRect = new(
         ItemPreviewIconLeft, ItemPreviewIconTop, ItemPreviewIconLeft + ItemPreviewIconSize, ItemPreviewIconTop + ItemPreviewIconSize);
