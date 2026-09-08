@@ -561,6 +561,45 @@ public class TradeScreenTests
         Assert.Equal(2, screen.SelectedResourceIndex);
     }
 
+    /// <summary>The item preview panel's icon frame (Docs request: a bordered 64×64 placeholder for the item's future picture) sits at the documented fixed position, regardless of selection.</summary>
+    [Fact]
+    public void Item_preview_icon_frame_is_a_64x64_rect_at_the_documented_position()
+    {
+        var screen = new TradeScreen();
+        RenderScreen(screen);
+
+        var rect = screen.ItemPreviewIconRect;
+
+        Assert.Equal(1215f, rect.Left);
+        Assert.Equal(110f, rect.Top);
+        Assert.Equal(64f, rect.Width);
+        Assert.Equal(64f, rect.Height);
+    }
+
+    /// <summary>Nothing selected means no item preview description — the upper right panel stays blank, same as before this feature.</summary>
+    [Fact]
+    public void No_selection_means_no_item_preview_description()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+
+        Assert.Null(screen.SelectedItemDescription);
+    }
+
+    /// <summary>Selecting a resource row shows that item's localized trade description in the preview panel, in whichever language is currently loaded.</summary>
+    [Fact]
+    public void Selecting_a_resource_row_shows_its_localized_description()
+    {
+        var screen = new TradeScreen(DockedBufferWithSixResources());
+        RenderScreen(screen);
+
+        // Default sort (Name ascending): Carbon Ore, Ice, Iron Ore, Magnesium Ore, Silicon, Uranium Ore.
+        var (x, y) = ResourceRowCenter(rowSlot: 0);
+        screen.OnMouseDown(x, y);
+
+        Assert.Equal(Localization.Get("Trade.DescriptionCarbonOre"), screen.SelectedItemDescription);
+    }
+
     /// <summary>Clicking a different row moves the selection rather than toggling/adding to it.</summary>
     [Fact]
     public void Clicking_a_different_resource_row_changes_the_selection()

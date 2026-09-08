@@ -431,6 +431,101 @@ public sealed class TradeScreen : IScreen
     /// <summary>Test seam — the two right-hand panels' titlebar geometry, same coordinate space as <see cref="RightPanels"/>.</summary>
     internal (SKRect Upper, SKRect Lower) RightPanelTitleBars => (_rightPanelUpperTitleBar, _rightPanelLowerTitleBar);
 
+    // ── Item preview panel (upper right-hand frame) — a bordered placeholder for the
+    // selected item's future icon plus its flavor/trade description text beside it. Shown
+    // only while an item is selected across the three grids (see DrawItemPreviewPanel);
+    // the upper panel stays blank otherwise, same as before this was added.
+
+    private const float ItemPreviewIconLeft = 1215f;
+    private const float ItemPreviewIconTop = 110f;
+    private const float ItemPreviewIconSize = 64f;
+
+    private static readonly SKRect _itemPreviewIconRect = new(
+        ItemPreviewIconLeft, ItemPreviewIconTop, ItemPreviewIconLeft + ItemPreviewIconSize, ItemPreviewIconTop + ItemPreviewIconSize);
+
+    /// <summary>Test seam — the item preview icon frame's geometry, panel-local (same coordinate space as <see cref="RightPanels"/>).</summary>
+    internal SKRect ItemPreviewIconRect => _itemPreviewIconRect;
+
+    private const float ItemPreviewDescriptionGap = 15f;
+
+    /// <summary>
+    /// Description text area — starts <see cref="ItemPreviewDescriptionGap"/> right of the
+    /// icon frame, top-aligned with it, and spans to the upper panel's own right margin
+    /// (same <see cref="RightPanelTitleBarRightInset"/> the titlebar keeps) down to its
+    /// bottom margin.
+    /// </summary>
+    private static readonly SKRect _itemPreviewDescriptionRect = new(
+        _itemPreviewIconRect.Right + ItemPreviewDescriptionGap, ItemPreviewIconTop,
+        RightPanelRight - RightPanelTitleBarRightInset, _rightPanelUpper.Bottom - 10f);
+
+    private static readonly SKPaint _itemPreviewDescriptionPaint = new()
+    {
+        Color = SKColors.White, TextSize = 13f, IsAntialias = true,
+        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceRegular
+    };
+
+    /// <summary>Greedy word-wrap: adds words to the current line while it still fits maxWidth — same technique as ScenarioSelectScreen's own WrapText.</summary>
+    private static List<string> WrapText(string text, SKPaint paint, float maxWidth)
+    {
+        var lines = new List<string>();
+        if (string.IsNullOrEmpty(text))
+            return lines;
+
+        var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var current = new System.Text.StringBuilder();
+
+        foreach (var word in words)
+        {
+            string candidate = current.Length == 0 ? word : current + " " + word;
+            if (current.Length == 0 || paint.MeasureText(candidate) <= maxWidth)
+            {
+                current.Clear();
+                current.Append(candidate);
+            }
+            else
+            {
+                lines.Add(current.ToString());
+                current.Clear();
+                current.Append(word);
+            }
+        }
+
+        if (current.Length > 0)
+            lines.Add(current.ToString());
+
+        return lines;
+    }
+
+    /// <summary>
+    /// Draws the upper right-hand panel's content once an item is selected: a bordered
+    /// <see cref="ItemPreviewIconSize"/>×<see cref="ItemPreviewIconSize"/> frame reserved for
+    /// that item's future icon, and its localized trade description word-wrapped to the
+    /// right of it (<see cref="ItemDescription"/>). Left blank (as before) while nothing is
+    /// selected — this panel has no empty-state prompt of its own.
+    /// </summary>
+    private void DrawItemPreviewPanel(SKCanvas canvas, float pl, float pt, string? itemTypeId)
+    {
+        if (itemTypeId is null)
+            return;
+
+        var iconRect = ToScreenRect(_itemPreviewIconRect);
+        canvas.DrawRect(iconRect, _contentOutlinePaint);
+
+        var descriptionRect = ToScreenRect(_itemPreviewDescriptionRect);
+        var lines = WrapText(ItemDescription(itemTypeId), _itemPreviewDescriptionPaint, descriptionRect.Width);
+        float lineY = LineBaselineY(new SKRect(descriptionRect.Left, descriptionRect.Top, descriptionRect.Right, descriptionRect.Top + ItemPreviewDescriptionLineHeight), _itemPreviewDescriptionPaint);
+        foreach (var line in lines)
+        {
+            if (lineY > descriptionRect.Bottom)
+                break;
+
+            canvas.DrawText(line, descriptionRect.Left, lineY, _itemPreviewDescriptionPaint);
+            lineY += ItemPreviewDescriptionLineHeight;
+        }
+    }
+
+    private const float ItemPreviewDescriptionLineHeight = 18f;
+
     // ── Trade action panel (lower right-hand frame) — Docs/FirstRelease/Screens/Trade.md
     // "UI-решение: панель действия". Shows Buy/Sell/Refuel controls for whichever item is
     // currently selected across the three grids above (identity-based selection, already
@@ -571,6 +666,10 @@ public sealed class TradeScreen : IScreen
     /// <summary>Test seam — the item type id currently selected across the three grids (Resources/Goods/Modules), or null.</summary>
     internal string? SelectedTradeItemTypeId =>
         _selectedResourceItemTypeId ?? _selectedGoodItemTypeId ?? _selectedModuleItemTypeId;
+
+    /// <summary>Test seam — the localized description shown in the item preview panel (<see cref="DrawItemPreviewPanel"/>) for the currently selected item, or null while nothing is selected.</summary>
+    internal string? SelectedItemDescription =>
+        SelectedTradeItemTypeId is { } itemTypeId ? ItemDescription(itemTypeId) : null;
 
     /// <summary>
     /// Called whenever the selected trade item or the Buy/Sell mode changes: forces Buy mode
@@ -1596,6 +1695,24 @@ public sealed class TradeScreen : IScreen
         _ => itemTypeId
     };
 
+    /// <summary>Flavor/trade description for the item preview panel (<see cref="DrawItemPreviewPanel"/>) — same id-to-key mapping convention as <see cref="ItemDisplayName"/>, falls back to empty for any future/unknown item type.</summary>
+    private static string ItemDescription(string itemTypeId) => itemTypeId switch
+    {
+        "item.ice" => Localization.Get("Trade.DescriptionIce"),
+        "item.iron-ore" => Localization.Get("Trade.DescriptionIronOre"),
+        "item.silicon" => Localization.Get("Trade.DescriptionSilicon"),
+        "item.magnesium-ore" => Localization.Get("Trade.DescriptionMagnesiumOre"),
+        "item.uranium-ore" => Localization.Get("Trade.DescriptionUraniumOre"),
+        "item.carbon-ore" => Localization.Get("Trade.DescriptionCarbonOre"),
+        "item.water" => Localization.Get("Trade.DescriptionWater"),
+        "item.steel" => Localization.Get("Trade.DescriptionSteel"),
+        "item.energy-cells" => Localization.Get("Trade.DescriptionEnergyCells"),
+        "item.fuel" => Localization.Get("Trade.DescriptionFuel"),
+        "item.protein-mass" => Localization.Get("Trade.DescriptionProteinMass"),
+        "item.food-rations" => Localization.Get("Trade.DescriptionFoodRations"),
+        _ => string.Empty
+    };
+
     public TradeScreen(SnapshotBuffer? buffer = null, GameSessionHandle? handle = null)
     {
         _buffer = buffer;
@@ -2061,6 +2178,7 @@ public sealed class TradeScreen : IScreen
         var rightPanelUpperTitleBar = new SKRect(pl + _rightPanelUpperTitleBar.Left, pt + _rightPanelUpperTitleBar.Top,
             pl + _rightPanelUpperTitleBar.Right, pt + _rightPanelUpperTitleBar.Bottom);
         canvas.DrawRoundRect(rightPanelUpperTitleBar, RightPanelTitleBarCornerRadius, RightPanelTitleBarCornerRadius, _rightPanelTitleBarPaint);
+        DrawItemPreviewPanel(canvas, pl, pt, SelectedTradeItemTypeId);
 
         var rightPanelLower = new SKRect(pl + _rightPanelLower.Left, pt + _rightPanelLower.Top,
             pl + _rightPanelLower.Right, pt + _rightPanelLower.Bottom);

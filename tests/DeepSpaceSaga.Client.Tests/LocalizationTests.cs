@@ -36,6 +36,11 @@ public class LocalizationTests
         "Trade.ReasonFuelCapacityExceeded", "Trade.ReasonUnknownItemType",
         "Trade.ReasonNotDocked", "Trade.ReasonInsufficientCargoQuantity",
         "Trade.ReasonInvalidQuantity",
+
+        "Trade.DescriptionIce", "Trade.DescriptionIronOre", "Trade.DescriptionSilicon",
+        "Trade.DescriptionMagnesiumOre", "Trade.DescriptionUraniumOre", "Trade.DescriptionCarbonOre",
+        "Trade.DescriptionWater", "Trade.DescriptionSteel", "Trade.DescriptionEnergyCells",
+        "Trade.DescriptionFuel", "Trade.DescriptionProteinMass", "Trade.DescriptionFoodRations",
     };
 
     [Theory]
