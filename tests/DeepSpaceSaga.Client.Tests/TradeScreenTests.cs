@@ -1643,11 +1643,11 @@ public class TradeScreenTests
 
     /// <summary>The trade-result detail block captures the item name plus cargo and Credits before/after the trade, not just the summary message — before-values from the moment Confirm was clicked, after-values from the snapshot that reported the command as Executed.</summary>
     [Fact]
-    public async Task A_successful_buy_shows_the_item_name_and_cargo_and_credits_before_and_after()
+    public async Task A_successful_buy_shows_the_item_name_and_free_cargo_and_credits_before_and_after()
     {
         var beforeSnapshot = BuildTradeSnapshot(
             ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 1000, TradeItemCategories.Resource)),
-            playerCredits: 1000);
+            playerCredits: 1000, containerAvailableCapacityKg: 5000);
         await using var fixture = CreateTradeFixture(beforeSnapshot);
         RenderScreen(fixture.Screen);
 
@@ -1659,11 +1659,11 @@ public class TradeScreenTests
         fixture.Screen.OnMouseDown(confirmX, confirmY);
         var sentCommand = Assert.Single(fixture.Connection.Commands);
 
-        // Simulate the engine's next snapshot: 1 unit of Silicon bought at 40 cr, so cargo
-        // goes 0 -> 1 and Credits go 1000 -> 960.
+        // Simulate the engine's next snapshot: 1 unit of Silicon bought at 40 cr, so free cargo
+        // space goes 5000 -> 4990 kg and Credits go 1000 -> 960.
         var afterSnapshot = BuildTradeSnapshot(
             ImmutableArray.Create(new StationInventoryItemSnapshot("item.silicon", 1000, 40, 999, TradeItemCategories.Resource)),
-            playerCredits: 960,
+            playerCredits: 960, containerAvailableCapacityKg: 4990,
             containerCargo: ImmutableArray.Create(new CargoStackSnapshot("item.silicon", 1))) with
         {
             SnapshotSequence = 2,
@@ -1675,15 +1675,15 @@ public class TradeScreenTests
         RenderScreen(fixture.Screen);
 
         Assert.Equal(Localization.Get("Trade.ItemSilicon"), fixture.Screen.TradeResultItemDisplayName);
-        Assert.Equal(0, fixture.Screen.TradeResultAmountBefore);
-        Assert.Equal(1, fixture.Screen.TradeResultAmountAfter);
+        Assert.Equal(5000, fixture.Screen.TradeResultAmountBefore);
+        Assert.Equal(4990, fixture.Screen.TradeResultAmountAfter);
         Assert.Equal(1000, fixture.Screen.TradeResultCreditsBefore);
         Assert.Equal(960, fixture.Screen.TradeResultCreditsAfter);
     }
 
-    /// <summary>Refuel's before/after amount reads from the player's Fuel tank, not the cargo hold — the trade-result block must not conflate the two.</summary>
+    /// <summary>Refuel's before/after amount reads from the player's Fuel tank, not the Container module's free cargo capacity — the trade-result block must not conflate the two.</summary>
     [Fact]
-    public async Task A_successful_refuel_shows_fuel_amount_before_and_after_instead_of_cargo()
+    public async Task A_successful_refuel_shows_fuel_amount_before_and_after_instead_of_free_cargo()
     {
         var beforeSnapshot = BuildTradeSnapshot(
             ImmutableArray.Create(new StationInventoryItemSnapshot("item.fuel", 1000, 5, 1000, TradeItemCategories.Good)),

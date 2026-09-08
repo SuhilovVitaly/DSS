@@ -420,16 +420,16 @@ public sealed class TradeScreen : IScreen
     /// <summary>Station unit price at the moment the in-flight command was sent — same "captured at send time" rationale as <see cref="_lastSentTradeCommandType"/>/<see cref="_lastSentTradeQuantity"/>, used to show what the trade actually cost/paid in the result message.</summary>
     private long _lastSentTradeUnitPriceCredits;
 
-    /// <summary>Item type id of the in-flight command in <see cref="_lastSentTradeCommandId"/> — captured at send time since the grid selection is cleared right away (<see cref="OnConfirmTradeClicked"/>), so <see cref="UpdateTradeCommandResult"/> needs its own copy to look up the player's post-trade cargo for that item.</summary>
+    /// <summary>Item type id of the in-flight command in <see cref="_lastSentTradeCommandId"/> — captured at send time since the grid selection is cleared right away (<see cref="OnConfirmTradeClicked"/>), so <see cref="UpdateTradeCommandResult"/> has it available to resolve the post-trade Container module.</summary>
     private string? _lastSentTradeItemTypeId;
 
     /// <summary>Display name of the item being traded — captured at send time for the same reason as <see cref="_lastSentTradeItemTypeId"/>, shown as the first line of the trade-result detail block.</summary>
     private string? _lastSentTradeItemDisplayName;
 
-    /// <summary>True when the in-flight command is a Refuel — determines whether the trade-result "amount held" line reads from the player's Fuel tank or their cargo hold.</summary>
+    /// <summary>True when the in-flight command is a Refuel — determines whether the trade-result before/after line reads from the player's Fuel tank or the Container module's free cargo capacity.</summary>
     private bool _lastSentTradeWasFuel;
 
-    /// <summary>Player's cargo quantity (or Fuel amount in kg for a Refuel) of the traded item immediately before the command was sent — paired with the post-trade amount resolved in <see cref="UpdateTradeCommandResult"/> to show the before/after change.</summary>
+    /// <summary>Container module's available cargo capacity in kg ("free cargo"), or the player's Fuel amount in kg for a Refuel, immediately before the command was sent — paired with the post-trade amount resolved in <see cref="UpdateTradeCommandResult"/> to show the before/after change.</summary>
     private long _lastSentAmountBeforeTrade;
 
     /// <summary>Player's Credits balance immediately before the command was sent — same before/after pairing as <see cref="_lastSentAmountBeforeTrade"/>, for Credits instead of cargo/Fuel.</summary>
@@ -753,7 +753,7 @@ public sealed class TradeScreen : IScreen
                 _tradeResultAmountBefore = _lastSentAmountBeforeTrade;
                 _tradeResultAmountAfter = _lastSentTradeWasFuel
                     ? StationToolbar.ResolveFuelAmountKg(snapshot)
-                    : ResolvePlayerCargo(snapshot).GetValueOrDefault(_lastSentTradeItemTypeId ?? string.Empty);
+                    : ResolveContainerModule(snapshot)?.AvailableCapacityKg ?? 0;
                 _tradeResultCreditsBefore = _lastSentCreditsBeforeTrade;
                 _tradeResultCreditsAfter = snapshot.PlayerCredits;
             }
@@ -1002,7 +1002,7 @@ public sealed class TradeScreen : IScreen
         _lastSentTradeItemTypeId = info.ItemTypeId;
         _lastSentTradeItemDisplayName = info.DisplayName;
         _lastSentTradeWasFuel = info.IsFuel;
-        _lastSentAmountBeforeTrade = info.IsFuel ? info.FuelAmountKg : info.PlayerCargoQuantity;
+        _lastSentAmountBeforeTrade = info.IsFuel ? info.FuelAmountKg : info.ContainerAvailableCapacityKg ?? 0;
         _lastSentCreditsBeforeTrade = info.PlayerCredits;
         _tradeRejectionReasonKey = null;
         _tradeResultMessage = null;
@@ -1076,10 +1076,23 @@ public sealed class TradeScreen : IScreen
         TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceBold
     };
 
-    /// <summary>Credits before/after line in the trade-result detail block (<see cref="DrawTradeResultDetails"/>) — a distinct orange so the three detail lines (item/price in dim gray via <see cref="_tradeReasonTextPaint"/>, cargo/Fuel in green via <see cref="_tradeResultMessagePaint"/>, Credits here) read as separate at-a-glance facts rather than one gray block.</summary>
-    private static readonly SKPaint _tradeResultCreditsPaint = new()
+    /// <summary>
+    /// Colors the after-value in a trade-result before/after line (<see cref="DrawBeforeAfterLine"/>)
+    /// when it improved on the before-value (free cargo or Credits went up) — green, same
+    /// intent as <see cref="_tradeResultMessagePaint"/> but a separate paint so this coloring
+    /// (which follows the sign of the change) stays decoupled from that unconditional
+    /// success-message styling.
+    /// </summary>
+    private static readonly SKPaint _tradeResultPositivePaint = new()
     {
-        Color = new SKColor(0xF2, 0x9A, 0x3C), TextSize = 12f, IsAntialias = true,
+        Color = new SKColor(0x5A, 0xD6, 0x6D), TextSize = 13f, IsAntialias = true,
+        TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceBold
+    };
+
+    /// <summary>Counterpart to <see cref="_tradeResultPositivePaint"/> — orange, used when the after-value dropped from the before-value.</summary>
+    private static readonly SKPaint _tradeResultNegativePaint = new()
+    {
+        Color = new SKColor(0xF2, 0x9A, 0x3C), TextSize = 13f, IsAntialias = true,
         TextAlign = SKTextAlign.Left, Typeface = MenuStyle.TypefaceBold
     };
 
@@ -1102,29 +1115,41 @@ public sealed class TradeScreen : IScreen
     /// Full trade-result detail block shown in the action panel's empty state once a trade has
     /// executed (see <see cref="OnConfirmTradeClicked"/>/<see cref="UpdateTradeCommandResult"/>):
     /// the traded item's name and the existing success/partial-fill summary (unit price ×
-    /// quantity = total) in dim gray, the cargo-or-Fuel amount held before/after in green, and
-    /// the player's Credits balance before/after in orange — three colors so the reader can
-    /// separate "what was traded" from "how much I'm holding now" from "what it cost" at a
-    /// glance, rather than parsing one undifferentiated block of text.
+    /// quantity = total) in white, then the free-cargo-or-Fuel amount and the Credits balance
+    /// each as a "before - after" line (<see cref="DrawBeforeAfterLine"/>) whose after-value is
+    /// colored by the sign of the change.
     /// </summary>
     private void DrawTradeResultDetails(SKCanvas canvas)
     {
         var line1 = ToScreenRect(_tradeMarketLine1Rect);
-        canvas.DrawText(_tradeResultItemDisplayName!, line1.Left, LineBaselineY(line1, _tradeReasonTextPaint), _tradeReasonTextPaint);
+        canvas.DrawText(_tradeResultItemDisplayName!, line1.Left, LineBaselineY(line1, _tradeBodyTextPaint), _tradeBodyTextPaint);
 
         var line2 = ToScreenRect(_tradeMarketLine2Rect);
-        canvas.DrawText(_tradeResultMessage!, line2.Left, LineBaselineY(line2, _tradeReasonTextPaint), _tradeReasonTextPaint);
+        canvas.DrawText(_tradeResultMessage!, line2.Left, LineBaselineY(line2, _tradeBodyTextPaint), _tradeBodyTextPaint);
 
-        string amountLabel = Localization.Get(_tradeResultWasFuel ? "Trade.Fuel" : "Trade.Cargo");
-        string amountLine = string.Format(
-            Localization.Get("Trade.ResultBeforeAfter"), amountLabel, _tradeResultAmountBefore, _tradeResultAmountAfter);
-        var line3 = ToScreenRect(_tradeResultLine3Rect);
-        canvas.DrawText(amountLine, line3.Left, LineBaselineY(line3, _tradeResultMessagePaint), _tradeResultMessagePaint);
+        string amountLabel = Localization.Get(_tradeResultWasFuel ? "Trade.Fuel" : "Trade.FreeCargo");
+        DrawBeforeAfterLine(canvas, ToScreenRect(_tradeResultLine3Rect), amountLabel, _tradeResultAmountBefore ?? 0, _tradeResultAmountAfter ?? 0);
 
-        string creditsLine = string.Format(
-            Localization.Get("Trade.ResultBeforeAfter"), Localization.Get("Trade.Credits"), _tradeResultCreditsBefore, _tradeResultCreditsAfter);
-        var line4 = ToScreenRect(_tradeResultLine4Rect);
-        canvas.DrawText(creditsLine, line4.Left, LineBaselineY(line4, _tradeResultCreditsPaint), _tradeResultCreditsPaint);
+        string creditsLabel = Localization.Get("Trade.Credits");
+        DrawBeforeAfterLine(canvas, ToScreenRect(_tradeResultLine4Rect), creditsLabel, _tradeResultCreditsBefore ?? 0, _tradeResultCreditsAfter ?? 0);
+    }
+
+    /// <summary>
+    /// Draws one "{label}: {before} - {after}" trade-result line: label and before-value in the
+    /// panel's normal white body text, plain "-" as the before/after separator (not an arrow
+    /// glyph — the panel's font has no glyph for it and renders a tofu box instead), and the
+    /// after-value colored green when it's higher than the before-value, orange when it's
+    /// lower, left white when unchanged.
+    /// </summary>
+    private void DrawBeforeAfterLine(SKCanvas canvas, SKRect lineRectScreen, string label, long before, long after)
+    {
+        string prefix = string.Format(Localization.Get("Trade.ResultLinePrefix"), label, before);
+        float baselineY = LineBaselineY(lineRectScreen, _tradeBodyTextPaint);
+        canvas.DrawText(prefix, lineRectScreen.Left, baselineY, _tradeBodyTextPaint);
+
+        SKPaint afterPaint = after > before ? _tradeResultPositivePaint : after < before ? _tradeResultNegativePaint : _tradeBodyTextPaint;
+        float prefixWidth = _tradeBodyTextPaint.MeasureText(prefix);
+        canvas.DrawText(after.ToString(), lineRectScreen.Left + prefixWidth, baselineY, afterPaint);
     }
 
     /// <summary>
