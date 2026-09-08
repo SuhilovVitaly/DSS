@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using DeepSpaceSaga.Client.UI.Assets;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.Trade;
@@ -571,7 +572,7 @@ public class TradeScreenTests
         var rect = screen.ItemPreviewIconRect;
 
         Assert.Equal(1215f, rect.Left);
-        Assert.Equal(110f, rect.Top);
+        Assert.Equal(120f, rect.Top);
         Assert.Equal(64f, rect.Width);
         Assert.Equal(64f, rect.Height);
     }
@@ -598,6 +599,25 @@ public class TradeScreenTests
         screen.OnMouseDown(x, y);
 
         Assert.Equal(Localization.Get("Trade.DescriptionCarbonOre"), screen.SelectedItemDescription);
+    }
+
+    /// <summary>Every tradeable item type's icon PNG (Images/Items/Resource|Good/*.png) must actually be found and decoded — catches a broken/renamed asset path the same way StationToolbarTests' per-icon HasLoaded* assertions do.</summary>
+    [Theory]
+    [InlineData("Images/Items/Resource/ice.png")]
+    [InlineData("Images/Items/Resource/iron-ore.png")]
+    [InlineData("Images/Items/Resource/silicon.png")]
+    [InlineData("Images/Items/Resource/magnesium-ore.png")]
+    [InlineData("Images/Items/Resource/uranium-ore.png")]
+    [InlineData("Images/Items/Resource/carbon-ore.png")]
+    [InlineData("Images/Items/Good/water.png")]
+    [InlineData("Images/Items/Good/steel.png")]
+    [InlineData("Images/Items/Good/energy-cells.png")]
+    [InlineData("Images/Items/Good/fuel.png")]
+    [InlineData("Images/Items/Good/protein-mass.png")]
+    [InlineData("Images/Items/Good/food-rations.png")]
+    public void Every_item_icon_is_loaded(string imagePath)
+    {
+        Assert.NotNull(UiAssetLoader.LoadBitmap(imagePath));
     }
 
     /// <summary>Clicking a different row moves the selection rather than toggling/adding to it.</summary>

@@ -437,7 +437,7 @@ public sealed class TradeScreen : IScreen
     // the upper panel stays blank otherwise, same as before this was added.
 
     private const float ItemPreviewIconLeft = 1215f;
-    private const float ItemPreviewIconTop = 110f;
+    private const float ItemPreviewIconTop = 120f;
     private const float ItemPreviewIconSize = 64f;
 
     private static readonly SKRect _itemPreviewIconRect = new(
@@ -497,11 +497,13 @@ public sealed class TradeScreen : IScreen
     }
 
     /// <summary>
-    /// Draws the upper right-hand panel's content once an item is selected: a bordered
-    /// <see cref="ItemPreviewIconSize"/>×<see cref="ItemPreviewIconSize"/> frame reserved for
-    /// that item's future icon, and its localized trade description word-wrapped to the
-    /// right of it (<see cref="ItemDescription"/>). Left blank (as before) while nothing is
-    /// selected — this panel has no empty-state prompt of its own.
+    /// Draws the upper right-hand panel's content once an item is selected: its icon
+    /// (<see cref="ItemImagePath"/>, loaded/cached via <see cref="UiAssetLoader"/>) inside a
+    /// bordered <see cref="ItemPreviewIconSize"/>×<see cref="ItemPreviewIconSize"/> frame —
+    /// falling back to the bare frame for any item type with no art yet — and its localized
+    /// trade description word-wrapped to the right of it (<see cref="ItemDescription"/>).
+    /// Left blank (as before) while nothing is selected — this panel has no empty-state
+    /// prompt of its own.
     /// </summary>
     private void DrawItemPreviewPanel(SKCanvas canvas, float pl, float pt, string? itemTypeId)
     {
@@ -509,6 +511,9 @@ public sealed class TradeScreen : IScreen
             return;
 
         var iconRect = ToScreenRect(_itemPreviewIconRect);
+        var icon = ItemImagePath(itemTypeId) is { } imagePath ? UiAssetLoader.LoadBitmap(imagePath) : null;
+        if (icon is not null)
+            canvas.DrawBitmap(icon, iconRect);
         canvas.DrawRect(iconRect, _contentOutlinePaint);
 
         var descriptionRect = ToScreenRect(_itemPreviewDescriptionRect);
@@ -1711,6 +1716,24 @@ public sealed class TradeScreen : IScreen
         "item.protein-mass" => Localization.Get("Trade.DescriptionProteinMass"),
         "item.food-rations" => Localization.Get("Trade.DescriptionFoodRations"),
         _ => string.Empty
+    };
+
+    /// <summary>Icon asset path for the item preview panel (<see cref="DrawItemPreviewPanel"/>) — same id-to-value mapping convention as <see cref="ItemDisplayName"/>/<see cref="ItemDescription"/>, one subfolder per <see cref="TradeItemCategories"/> value; null for any future/unknown item type (the panel then falls back to the bare frame).</summary>
+    private static string? ItemImagePath(string itemTypeId) => itemTypeId switch
+    {
+        "item.ice" => "Images/Items/Resource/ice.png",
+        "item.iron-ore" => "Images/Items/Resource/iron-ore.png",
+        "item.silicon" => "Images/Items/Resource/silicon.png",
+        "item.magnesium-ore" => "Images/Items/Resource/magnesium-ore.png",
+        "item.uranium-ore" => "Images/Items/Resource/uranium-ore.png",
+        "item.carbon-ore" => "Images/Items/Resource/carbon-ore.png",
+        "item.water" => "Images/Items/Good/water.png",
+        "item.steel" => "Images/Items/Good/steel.png",
+        "item.energy-cells" => "Images/Items/Good/energy-cells.png",
+        "item.fuel" => "Images/Items/Good/fuel.png",
+        "item.protein-mass" => "Images/Items/Good/protein-mass.png",
+        "item.food-rations" => "Images/Items/Good/food-rations.png",
+        _ => null
     };
 
     public TradeScreen(SnapshotBuffer? buffer = null, GameSessionHandle? handle = null)
