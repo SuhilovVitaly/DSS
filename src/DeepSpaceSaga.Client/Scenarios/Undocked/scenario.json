@@ -1,0 +1,200 @@
+{
+  "scenarioMetadata": {
+    "scenarioId": "undocked",
+    "name": "Undocked at Station",
+    "description": "Start near the station but not docked — ship stationary 5 pixels away from the station at the largest zoom scale, matching the station's speed and direction, ready to approach and dock."
+  },
+  "gameState": {
+    "gameTimeMs": 0,
+    "currentSpeed": "Speed0",
+    "playerShipObjectId": "SPC-0001",
+    "playerTokens": 2000,
+    "focus": {
+      "mode": "Attached",
+      "objectId": "SPC-0001"
+    },
+    "spaceObjects": [
+        {
+            "objectId": "SPC-0001",
+            "objectType": "PlayerShip",
+            "persistenceType": "Permanent",
+            "name": "Player Ship",
+            "positionX": 11002.5,
+            "positionY": 11000.0,
+            "speedMps": 0,
+            "directionDegrees": 0,
+            "movementType": "Stationary",
+            "isKnown": true,
+            "isDocked": false,
+            "hullLayout": {
+                "width": 9,
+                "height": 9,
+                "cells": [
+                    {"x":4,"y":0},
+                    {"x":3,"y":1},{"x":4,"y":1},{"x":5,"y":1},
+                    {"x":4,"y":2},
+                    {"x":4,"y":3},
+                    {"x":4,"y":4},
+                    {"x":3,"y":5},{"x":4,"y":5},{"x":5,"y":5}
+                ]
+            },
+            "modules": [
+                {
+                    "moduleId": "MOD-PLAYER-BRIDGE-01",
+                    "moduleTypeId": "module.bridge.navigation.computer.basic",
+                    "occupiedCells": [ {"x":4,"y":0} ],
+                    "structurePoints": 80,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
+                },
+                {
+                    "moduleId": "MOD-PLAYER-LIVING-QUARTERS-01",
+                    "moduleTypeId": "living.quarters.mk1",
+                    "occupiedCells": [ {"x":4,"y":1} ],
+                    "structurePoints": 60,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
+                },
+                {
+                    "moduleId": "MOD-PLAYER-CARGO-01",
+                    "moduleTypeId": "module.container.basic",
+                    "occupiedCells": [ {"x":4,"y":2} ],
+                    "structurePoints": 400,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": [
+                        {
+                            "itemTypeId": "item.energy-cells",
+                            "quantity": 1000
+                        },
+                        {
+                            "itemTypeId": "item.food-rations",
+                            "quantity": 200
+                        }
+                    ]
+                },
+                {
+                    "moduleId": "MOD-PLAYER-SCANNER-01",
+                    "moduleTypeId": "module.scanner.mk1",
+                    "occupiedCells": [ {"x":4,"y":3} ],
+                    "structurePoints": 60,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
+                },
+                {
+                    "moduleId": "MOD-PLAYER-GENERATOR-01",
+                    "moduleTypeId": "module.generator.basic",
+                    "occupiedCells": [ {"x":4,"y":4} ],
+                    "structurePoints": 180,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
+                },
+                {
+                    "moduleId": "MOD-PLAYER-ENGINE-01",
+                    "moduleTypeId": "module.engine.basic",
+                    "occupiedCells": [ {"x":4,"y":5} ],
+                    "structurePoints": 100,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": [],
+                    "fuelAmountKg": 750
+                }
+            ],
+            "crew": [
+                { "crewId": "CHR-0001", "displayName": "Dunkan Su" }
+            ]
+        },
+      {
+        "objectId": "SPC-0002",
+        "objectType": "Station",
+        "persistenceType": "Permanent",
+        "name": "Free Port Aurora IV",
+        "positionX": 11000.0,
+        "positionY": 11000.0,
+        "speedMps": 0,
+        "directionDegrees": 0,
+        "movementType": "Stationary",
+        "isKnown": true,
+        "stationSize": "Large",
+        "inventory": [
+            {
+                "itemTypeId": "item.food-rations",
+                "quantity": 500
+            },
+            {
+                "itemTypeId": "item.energy-cells",
+                "quantity": 350
+            },
+            {
+                "itemTypeId": "item.fuel",
+                "quantity": 700
+            },
+            {
+                "itemTypeId": "item.ice",
+                "quantity": 320
+            },
+            {
+                "itemTypeId": "item.iron-ore",
+                "quantity": 410
+            },
+            {
+                "itemTypeId": "item.silicon",
+                "quantity": 70
+            },
+            {
+                "itemTypeId": "item.magnesium-ore",
+                "quantity": 120
+            },
+            {
+                "itemTypeId": "item.uranium-ore",
+                "quantity": 20
+            },
+            {
+                "itemTypeId": "item.carbon-ore",
+                "quantity": 510
+            }
+        ],
+        "stationCrew": [
+            { "crewId": "CHR-0002", "role": "Station Director", "displayName": "Mari Lefeber", "portraitImage": "Images/Persons/W/CHR-20260906-123220-BS1XUR.png" },
+            { "crewId": "CHR-0003", "role": "Dock Operator" }
+        ]
+      },
+      {
+        "objectId": "SPC-0003",
+        "objectType": "Asteroid",
+        "persistenceType": "Temporary",
+        "positionX": 10400.0,
+        "positionY": 10000.0,
+        "speedMps": 600,
+        "directionDegrees": 256,
+        "movementType": "Linear",
+        "massKg": 1000000,
+        "compositionType": "Silicate",
+        "isKnown": true
+      },
+      {
+        "objectId": "SPC-0004",
+        "objectType": "Asteroid",
+        "persistenceType": "Temporary",
+        "positionX": 10000.0,
+        "positionY": 10450.0,
+        "speedMps": 1200,
+        "directionDegrees": 22,
+        "movementType": "Linear",
+        "massKg": 1000000,
+        "compositionType": "Ice",
+        "isKnown": false
+      }
+    ]
+  }
+}
