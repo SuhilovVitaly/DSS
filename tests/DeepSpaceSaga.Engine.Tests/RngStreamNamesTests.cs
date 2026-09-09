@@ -41,6 +41,22 @@ public class RngStreamNamesTests
     }
 
     [Fact]
+    public void StationCrewMember_stream_names_differ_by_crewId()
+    {
+        Assert.NotEqual(
+            RngStreamNames.StationCrewMemberName("STATION-1", "CHR-0002"),
+            RngStreamNames.StationCrewMemberName("STATION-1", "CHR-0003"));
+    }
+
+    [Fact]
+    public void StationCrewMember_name_and_portrait_stream_names_differ_by_fact()
+    {
+        Assert.NotEqual(
+            RngStreamNames.StationCrewMemberName("STATION-1", "CHR-0002"),
+            RngStreamNames.StationCrewMemberPortrait("STATION-1", "CHR-0002"));
+    }
+
+    [Fact]
     public void CreateDeterministicRandom_with_same_streamSeed_produces_the_same_sequence_twice()
     {
         var random1 = RngStreamNames.CreateDeterministicRandom(123456789UL);

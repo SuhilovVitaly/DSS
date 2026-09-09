@@ -164,6 +164,10 @@
                 "itemTypeId": "item.carbon-ore",
                 "quantity": 510
             }
+        ],
+        "stationCrew": [
+            { "crewId": "CHR-0002", "role": "Station Director", "displayName": "Mari Lefeber", "portraitImage": "Images/Persons/W/CHR-20260906-123220-BS1XUR.png" },
+            { "crewId": "CHR-0003", "role": "Dock Operator" }
         ]
       },
       {

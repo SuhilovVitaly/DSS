@@ -146,7 +146,15 @@ public sealed record SpaceObjectData(
     /// meaningful for ObjectType == PlayerShip. Null/empty means the ship has no crew (the
     /// common case; every existing scenario/save predates this field).
     /// </summary>
-    [property: JsonPropertyName("crew")] IReadOnlyList<ShipCrewMemberData>? Crew = null);
+    [property: JsonPropertyName("crew")] IReadOnlyList<ShipCrewMemberData>? Crew = null,
+    /// <summary>
+    /// Station's named crew members (director/dock operator etc.) — cosmetic/narrative
+    /// only, a separate DTO from <see cref="Crew"/>/<see cref="ShipCrewMemberData"/> (which
+    /// is PlayerShip-specific and drives cabin-occupancy accounting). Only meaningful for
+    /// ObjectType == Station. Null/empty means the station has no named crew (the common
+    /// case; every existing scenario/save predates this field).
+    /// </summary>
+    [property: JsonPropertyName("stationCrew")] IReadOnlyList<StationCrewMemberData>? StationCrew = null);
 
 /// <summary>
 /// One crew member aboard a ship (story-20260901-112254). Flat list, no roles/skills/
@@ -157,6 +165,19 @@ public sealed record SpaceObjectData(
 public sealed record ShipCrewMemberData(
     [property: JsonPropertyName("crewId")] string CrewId,
     [property: JsonPropertyName("displayName")] string DisplayName);
+
+/// <summary>
+/// One crew member displayed on a station (director/dock operator etc.), cosmetic/narrative
+/// only — unrelated to ShipCrewMemberData's cabin-occupancy accounting. Only meaningful for
+/// ObjectType == Station. DisplayName/PortraitImage: explicit scenario/save value used as-is,
+/// otherwise deterministically generated once from masterSeed and persisted on save (same
+/// explicit-else-generate convention as ResolveStationCredits/ResolveObjectImage).
+/// </summary>
+public sealed record StationCrewMemberData(
+    [property: JsonPropertyName("crewId")] string CrewId,
+    [property: JsonPropertyName("role")] string Role,
+    [property: JsonPropertyName("displayName")] string? DisplayName = null,
+    [property: JsonPropertyName("portraitImage")] string? PortraitImage = null);
 
 /// <summary>
 /// One producing-module instance installed on a station (requirements §59 "Производящие
