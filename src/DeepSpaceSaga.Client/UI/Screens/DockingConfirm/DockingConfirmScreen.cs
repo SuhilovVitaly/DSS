@@ -191,13 +191,16 @@ internal sealed class DockingConfirmScreen : IScreen
         if (objects is null)
             return;
 
+        // Background-less pipeline: PortraitComposer.ComposeBodyAndHeadPortrait (body + head,
+        // no background layer yet, aligned on the docking point, cropped to 330x330) instead
+        // of the production Compose() crop pipeline — see PortraitComposer.DockingPointX/Y doc comment.
         var captain = objects.Value.FirstOrDefault(o => o.ObjectId == _request.PlayerShipObjectId);
         if (captain is { CaptainPortraitImage: { } captainPortraitPath })
-            _captainPortrait = PortraitComposer.Compose(captainPortraitPath, PersonSex.Male, _request.PlayerShipObjectId);
+            _captainPortrait = PortraitComposer.ComposeBodyAndHeadPortrait(captainPortraitPath, PersonSex.Male, _request.PlayerShipObjectId);
 
         var dockOperator = objects.Value.FirstOrDefault(o => o.ObjectId == _request.TargetObjectId);
         if (dockOperator is { DockOperatorPortraitImage: { } operatorPortraitPath })
-            _dockOperatorPortrait = PortraitComposer.Compose(operatorPortraitPath, PersonSex.Female, _request.TargetObjectId);
+            _dockOperatorPortrait = PortraitComposer.ComposeBodyAndHeadPortrait(operatorPortraitPath, PersonSex.Female, _request.TargetObjectId);
     }
 
     /// <summary>Names are read live every frame (cheap, unlike the portrait composition) — see the class doc comment.</summary>

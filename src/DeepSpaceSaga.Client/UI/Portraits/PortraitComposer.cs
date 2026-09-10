@@ -32,19 +32,30 @@ public static class PortraitComposer
     private const string FemaleBackgroundImage = "Images/Persons/Background/station-flight-docking-control-cente.png";
     private const string MaleBackgroundImage = "Images/Persons/Background/background-command-deck.png";
 
-    /// <summary>Headless female body-in-spacesuit variants; one is picked deterministically per personKey.</summary>
+    /// <summary>Headless female body-in-spacesuit variants; see <see cref="SelectBodyImage"/>.</summary>
     private static readonly ImmutableArray<string> FemaleBodyImages = ImmutableArray.Create(
         "Images/Persons/Body/W/SPC-JSYQRS/SPC-JSYQRS-0.png",
         "Images/Persons/Body/W/SPC-JSYQRS/SPC-JSYQRS-1.png",
         "Images/Persons/Body/W/SPC-JSYQRS/SPC-JSYQRS-2.png",
         "Images/Persons/Body/W/SPC-JSYQRS/SPC-JSYQRS-3.png");
 
-    /// <summary>Headless male body-in-spacesuit variants; one is picked deterministically per personKey.</summary>
+    /// <summary>Headless male body-in-spacesuit variants; see <see cref="SelectBodyImage"/>.</summary>
     private static readonly ImmutableArray<string> MaleBodyImages = ImmutableArray.Create(
         "Images/Persons/Body/M/SPC-UYSLLR/SPC-UYSLLR-0.png",
         "Images/Persons/Body/M/SPC-UYSLLR/SPC-UYSLLR-1.png",
         "Images/Persons/Body/M/SPC-UYSLLR/SPC-UYSLLR-2.png",
         "Images/Persons/Body/M/SPC-UYSLLR/SPC-UYSLLR-3.png");
+
+    /// <summary>
+    /// Fixed body-variant pick: always the "-2" spacesuit image (index 2) for either sex,
+    /// unless a caller asks for a specific variant explicitly. Replaces the earlier
+    /// personKey-hash pick — the docking screen currently has no product need to vary body
+    /// art per crew member.
+    /// </summary>
+    private const int DefaultBodyVariantIndex = 2;
+
+    private static string SelectBodyImage(ImmutableArray<string> bodyPool) =>
+        bodyPool[DefaultBodyVariantIndex];
 
     private const float FemalePortraitScale = 0.867f;
     private const float FemalePortraitDestX = 430f;
@@ -57,6 +68,26 @@ public static class PortraitComposer
     private static readonly SKRectI MaleCropRect = SKRectI.Create(389, 252, CropSize, CropSize);
 
     private static readonly SKRect DestRect = new(0, 0, CropSize, CropSize);
+
+    /// <summary>
+    /// Docking point: the pixel on the 1024×1536 body-canvas surface (same coordinate space
+    /// as the body sprite, which is drawn 1:1 into that canvas — see <see cref="Compose"/>)
+    /// where the head portrait's top-left corner should land. Currently shared by both sexes
+    /// pending separate calibration; used only by <see cref="ComposeBodyAndHeadPortrait"/>,
+    /// not yet by the production <see cref="Compose"/> crop pipeline.
+    /// </summary>
+    private const float DockingPointX = 410f;
+    private const float DockingPointY = 300f;
+
+    /// <summary>
+    /// Final-portrait crop, applied to the body+head canvas produced by
+    /// <see cref="ComposeBodyAndHeadPortrait"/> — same 1024×1536 coordinate space as
+    /// <see cref="DockingPointX"/>/<see cref="DockingPointY"/>. Verified visually against the
+    /// "-2" body variant only; not yet re-checked against the other three variants.
+    /// </summary>
+    private const int PortraitCropSize = 330;
+    private static readonly SKRectI PortraitCropRect = SKRectI.Create(360, 290, PortraitCropSize, PortraitCropSize);
+    private static readonly SKRect PortraitCropDestRect = new(0, 0, PortraitCropSize, PortraitCropSize);
 
     /// <summary>
     /// Builds the composed 250×250 portrait, or null if <paramref name="portraitImagePath"/>
@@ -90,7 +121,7 @@ public static class PortraitComposer
 
             if (!bodyPool.IsEmpty)
             {
-                string bodyPath = bodyPool[System.Math.Abs(personKey.GetHashCode()) % bodyPool.Length];
+                string bodyPath = SelectBodyImage(bodyPool);
                 using var body = LoadImage(bodyPath);
                 if (body is not null)
                     canvas.DrawBitmap(body, new SKRect(0, 0, CanvasWidth, CanvasHeight));
@@ -114,6 +145,52 @@ public static class PortraitComposer
         {
             resultCanvas.Clear(SKColors.Transparent);
             resultCanvas.DrawBitmap(fullCanvasBitmap, cropRect, DestRect);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Docking-confirmation portrait, background-less pipeline: draws ONLY the headless
+    /// body-in-spacesuit sprite (no background layer, always the <see cref="DefaultBodyVariantIndex"/>
+    /// variant) and then the head portrait at its natural size on top, with the portrait's
+    /// top-left corner placed exactly on the docking point. Crops the result to
+    /// <see cref="PortraitCropRect"/> (330×330) — the region around the docking point that
+    /// frames head+shoulders — and returns that crop. Null on a missing portrait/body file.
+    /// Not wired into the production <see cref="Compose"/> (background+crop) pipeline yet.
+    /// </summary>
+    public static SKBitmap? ComposeBodyAndHeadPortrait(string portraitImagePath, PersonSex sex, string personKey)
+    {
+        using var portrait = LoadImage(portraitImagePath);
+        if (portrait is null)
+            return null;
+
+        var bodyPool = sex == PersonSex.Female ? FemaleBodyImages : MaleBodyImages;
+        if (bodyPool.IsEmpty)
+            return null;
+
+        string bodyPath = SelectBodyImage(bodyPool);
+        using var body = LoadImage(bodyPath);
+        if (body is null)
+            return null;
+
+        using var fullCanvasBitmap = new SKBitmap(CanvasWidth, CanvasHeight);
+        using (var canvas = new SKCanvas(fullCanvasBitmap))
+        {
+            canvas.Clear(SKColors.Transparent);
+            canvas.DrawBitmap(body, new SKRect(0, 0, CanvasWidth, CanvasHeight));
+
+            var destRect = new SKRect(
+                DockingPointX, DockingPointY,
+                DockingPointX + portrait.Width, DockingPointY + portrait.Height);
+            canvas.DrawBitmap(portrait, destRect);
+        }
+
+        var result = new SKBitmap(PortraitCropSize, PortraitCropSize);
+        using (var resultCanvas = new SKCanvas(result))
+        {
+            resultCanvas.Clear(SKColors.Transparent);
+            resultCanvas.DrawBitmap(fullCanvasBitmap, PortraitCropRect, PortraitCropDestRect);
         }
 
         return result;

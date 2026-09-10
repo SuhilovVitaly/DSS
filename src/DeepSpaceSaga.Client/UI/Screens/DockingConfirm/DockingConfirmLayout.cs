@@ -19,9 +19,16 @@ public static class DockingConfirmLayout
 
     public const float TitleY = 60f;
 
-    public const float PortraitSize = 250f;
+    /// <summary>
+    /// Portrait size for <see cref="Portraits.PortraitComposer.ComposeBodyAndHeadPortrait"/>'s
+    /// 330×330 docking-point crop (background-less pipeline). Temporary — replaces the
+    /// 250×250 cropped-portrait size used by the production Compose() path until that path
+    /// adopts the docking point too.
+    /// </summary>
+    public const float PortraitPreviewWidth = 330f;
+    public const float PortraitPreviewHeight = 330f;
     public const float PortraitTop = 160f;
-    public const float PortraitSideMargin = 220f;
+    public const float PortraitSideMargin = 180f;
     public const float PortraitNameGap = 20f;
 
     public const float ConfirmButtonWidth = 320f;
@@ -33,12 +40,13 @@ public static class DockingConfirmLayout
 
     /// <summary>Dock operator portrait rect, local to the panel (left side).</summary>
     public static SKRect DockOperatorPortraitLocalRect() =>
-        new(PortraitSideMargin, PortraitTop, PortraitSideMargin + PortraitSize, PortraitTop + PortraitSize);
+        new(PortraitSideMargin, PortraitTop,
+            PortraitSideMargin + PortraitPreviewWidth, PortraitTop + PortraitPreviewHeight);
 
     /// <summary>Captain portrait rect, local to the panel (right side).</summary>
     public static SKRect CaptainPortraitLocalRect() =>
-        new(PanelWidth - PortraitSideMargin - PortraitSize, PortraitTop,
-            PanelWidth - PortraitSideMargin, PortraitTop + PortraitSize);
+        new(PanelWidth - PortraitSideMargin - PortraitPreviewWidth, PortraitTop,
+            PanelWidth - PortraitSideMargin, PortraitTop + PortraitPreviewHeight);
 
     /// <summary>"Стыковка" confirm button rect, local to the panel (bottom, centered).</summary>
     public static SKRect ConfirmButtonLocalRect()
