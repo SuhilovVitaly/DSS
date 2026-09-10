@@ -146,7 +146,34 @@ public sealed record SpaceObjectData(
     /// meaningful for ObjectType == PlayerShip. Null/empty means the ship has no crew (the
     /// common case; every existing scenario/save predates this field).
     /// </summary>
-    [property: JsonPropertyName("crew")] IReadOnlyList<ShipCrewMemberData>? Crew = null);
+    [property: JsonPropertyName("crew")] IReadOnlyList<ShipCrewMemberData>? Crew = null,
+    /// <summary>
+    /// Station's named crew members (director/dock operator etc.) — cosmetic/narrative
+    /// only, a separate DTO from <see cref="Crew"/>/<see cref="ShipCrewMemberData"/> (which
+    /// is PlayerShip-specific and drives cabin-occupancy accounting). Only meaningful for
+    /// ObjectType == Station. Null/empty means the station has no named crew (the common
+    /// case; every existing scenario/save predates this field).
+    /// </summary>
+    [property: JsonPropertyName("stationCrew")] IReadOnlyList<StationCrewMemberData>? StationCrew = null,
+    /// <summary>
+    /// Player ship's captain display name — an independent named fact, not derived from
+    /// <see cref="Crew"/>[0] (story batch adding captain + dock operator client fields). Only
+    /// meaningful for ObjectType == PlayerShip. Explicit scenario/save value used as-is,
+    /// otherwise deterministically generated once from masterSeed and persisted on save (same
+    /// explicit-else-generate convention as <see cref="StationCrewMemberData.DisplayName"/>).
+    /// Null/absent for every other object type and for every scenario/save predating this
+    /// field.
+    /// </summary>
+    [property: JsonPropertyName("captainDisplayName")] string? CaptainDisplayName = null,
+    /// <summary>Player ship's captain portrait image path; see <see cref="CaptainDisplayName"/>.</summary>
+    [property: JsonPropertyName("captainPortraitImage")] string? CaptainPortraitImage = null);
+
+/// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
+public static class StationCrewRoles
+{
+    /// <summary>The station crew member whose name/portrait are exposed to the docked player as the dock operator.</summary>
+    public const string DockOperator = "Dock Operator";
+}
 
 /// <summary>
 /// One crew member aboard a ship (story-20260901-112254). Flat list, no roles/skills/
@@ -157,6 +184,19 @@ public sealed record SpaceObjectData(
 public sealed record ShipCrewMemberData(
     [property: JsonPropertyName("crewId")] string CrewId,
     [property: JsonPropertyName("displayName")] string DisplayName);
+
+/// <summary>
+/// One crew member displayed on a station (director/dock operator etc.), cosmetic/narrative
+/// only — unrelated to ShipCrewMemberData's cabin-occupancy accounting. Only meaningful for
+/// ObjectType == Station. DisplayName/PortraitImage: explicit scenario/save value used as-is,
+/// otherwise deterministically generated once from masterSeed and persisted on save (same
+/// explicit-else-generate convention as ResolveStationCredits/ResolveObjectImage).
+/// </summary>
+public sealed record StationCrewMemberData(
+    [property: JsonPropertyName("crewId")] string CrewId,
+    [property: JsonPropertyName("role")] string Role,
+    [property: JsonPropertyName("displayName")] string? DisplayName = null,
+    [property: JsonPropertyName("portraitImage")] string? PortraitImage = null);
 
 /// <summary>
 /// One producing-module instance installed on a station (requirements §59 "Производящие

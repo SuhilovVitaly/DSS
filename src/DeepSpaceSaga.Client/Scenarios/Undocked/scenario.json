@@ -1,8 +1,8 @@
 {
   "scenarioMetadata": {
-    "scenarioId": "docked",
-    "name": "Docked at Station",
-    "description": "Start already docked at the station — ship stationary at the station's position, ready to trade or resupply before undocking."
+    "scenarioId": "undocked",
+    "name": "Undocked at Station",
+    "description": "Start near the station but not docked — ship stationary 5 pixels away from the station at the largest zoom scale, matching the station's speed and direction, ready to approach and dock."
   },
   "gameState": {
     "gameTimeMs": 0,
@@ -19,14 +19,13 @@
             "objectType": "PlayerShip",
             "persistenceType": "Permanent",
             "name": "Player Ship",
-            "positionX": 11001.0,
-            "positionY": 11001.0,
+            "positionX": 11002.5,
+            "positionY": 11000.0,
             "speedMps": 0,
             "directionDegrees": 0,
             "movementType": "Stationary",
             "isKnown": true,
-            "isDocked": true,
-            "dockedStationObjectId": "SPC-0002",
+            "isDocked": false,
             "hullLayout": {
                 "width": 9,
                 "height": 9,

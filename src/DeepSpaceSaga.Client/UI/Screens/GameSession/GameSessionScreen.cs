@@ -10,6 +10,13 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
+/// <summary>
+/// A navigation.dock command whose <c>GameSessionHandle.SendCommandAsync</c> call has been
+/// deferred behind the docking-confirmation modal (ScreenEvent.OpenDockingConfirm) — carries
+/// exactly the arguments GameSessionScreen would otherwise have passed straight to it.
+/// </summary>
+internal sealed record DockingConfirmRequest(string PlayerShipObjectId, string ModuleId, string TargetObjectId);
+
 public sealed class GameSessionScreen : IScreen
 {
     private readonly SnapshotBuffer _buffer;
@@ -148,6 +155,14 @@ public sealed class GameSessionScreen : IScreen
     /// panel/Engine correctly show no ActiveObjectId until a fresh move arrives.
     /// </summary>
     private bool _hasMousePosition;
+
+    /// <summary>
+    /// Set by <see cref="SendCommandFromPanel"/> when the clicked command is
+    /// navigation.dock, instead of sending it straight to the engine — consumed once by
+    /// <see cref="ConsumePendingDockingConfirmRequest"/> when SkiaWindow handles the
+    /// resulting ScreenEvent.OpenDockingConfirm.
+    /// </summary>
+    private DockingConfirmRequest? _pendingDockingConfirmRequest;
 
 
     // Layout constants
@@ -370,9 +385,13 @@ public sealed class GameSessionScreen : IScreen
         if (_lastShipButtonRect.Contains(uiX, uiY))
             return ScreenEvent.OpenShip;
 
-        // 2. Commands Panel (top-left) — consume clicks, don't pan (ТЗ подзадача 1)
+        // 2. Commands Panel (top-left) — consume clicks, don't pan (ТЗ подзадача 1).
+        // A navigation.dock click sets _pendingDockingConfirmRequest synchronously inside
+        // SendCommandFromPanel (invoked by _commandsPanel.OnMouseDown's callback below) —
+        // checked immediately after so the same click opens the confirmation modal instead
+        // of silently doing nothing.
         if (_commandsPanel.OnMouseDown(uiX, uiY))
-            return ScreenEvent.None;
+            return _pendingDockingConfirmRequest is not null ? ScreenEvent.OpenDockingConfirm : ScreenEvent.None;
 
         // 3. Info panel close button
         if (_panelVisible && _lastCloseRect.Contains(uiX, uiY))
@@ -684,6 +703,10 @@ public sealed class GameSessionScreen : IScreen
     /// panel — the authoritative engine validates the command and its target. The
     /// panel groups commands by gameplay meaning, so the addressed installed module
     /// is resolved here by matching CommandTypeIds (first module by Position).
+    /// navigation.dock is the one exception: it must be confirmed in a modal dialog
+    /// first (docking-confirmation story), so this defers it into
+    /// <see cref="_pendingDockingConfirmRequest"/> instead of sending it immediately —
+    /// every other commandType is unaffected.
     /// </summary>
     private void SendCommandFromPanel(string commandType)
     {
@@ -696,6 +719,18 @@ public sealed class GameSessionScreen : IScreen
             return;
 
         string? targetObjectId = FindCommandTarget(commandType) == "object" ? _selectedObjectId : null;
+
+        if (commandType == NavigationComputerCommandTypes.Dock)
+        {
+            // Defensive — IsModuleCommandEnabled already requires a selection for an
+            // "object"-target command, so targetObjectId should never be null/blank here.
+            if (string.IsNullOrWhiteSpace(targetObjectId))
+                return;
+
+            _pendingDockingConfirmRequest = new DockingConfirmRequest(playerShipObjectId, moduleId, targetObjectId);
+            return;
+        }
+
         _ = _handle.SendCommandAsync(playerShipObjectId, moduleId, commandType, targetObjectId);
     }
 
@@ -1810,6 +1845,19 @@ public sealed class GameSessionScreen : IScreen
             r.CommandType == NavigationComputerCommandTypes.Dock && r.Status == CommandResultStatus.Executed);
 
         return justDocked ? ScreenEvent.OpenStation : ScreenEvent.None;
+    }
+
+    /// <summary>
+    /// Consumes (returns and clears) the docking-confirmation request set by
+    /// <see cref="SendCommandFromPanel"/>. Unlike <see cref="ConsumePendingAutoTransition"/>
+    /// this is not polled per-frame — SkiaWindow calls it exactly once, synchronously,
+    /// right after handling the ScreenEvent.OpenDockingConfirm that this same click produced.
+    /// </summary>
+    internal DockingConfirmRequest? ConsumePendingDockingConfirmRequest()
+    {
+        var request = _pendingDockingConfirmRequest;
+        _pendingDockingConfirmRequest = null;
+        return request;
     }
 
     private bool CanSendEngineCommand(string commandType, AuthoritativeSnapshot? snapshot)

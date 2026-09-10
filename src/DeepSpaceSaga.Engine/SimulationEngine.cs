@@ -236,6 +236,15 @@ public sealed class SimulationEngine : IDisposable
             var crew = isPlayerShip
                 ? ResolveShipCrew(obj)
                 : ImmutableArray<CrewMemberRuntime>.Empty;
+            var stationCrew = isStation
+                ? ResolveStationCrew(obj, resolvedMasterSeed)
+                : ImmutableArray<StationCrewMemberRuntime>.Empty;
+            string? captainDisplayName = isPlayerShip
+                ? obj.CaptainDisplayName ?? ResolveCaptainDisplayName(obj.ObjectId, resolvedMasterSeed)
+                : null;
+            string? captainPortraitImage = isPlayerShip
+                ? obj.CaptainPortraitImage ?? ResolveCaptainPortrait(obj.ObjectId, resolvedMasterSeed)
+                : null;
 
             runtimeObjects.Add(new SpaceObjectRuntime(
                 new ObjectMotionSnapshot(
@@ -272,7 +281,10 @@ public sealed class SimulationEngine : IDisposable
                 StationSize: stationSize,
                 ProducingModules: producingModules,
                 Events: events,
-                Crew: crew));
+                Crew: crew,
+                StationCrew: stationCrew,
+                CaptainDisplayName: captainDisplayName,
+                CaptainPortraitImage: captainPortraitImage));
         }
 
         lock (_worldStateLock)
@@ -397,6 +409,11 @@ public sealed class SimulationEngine : IDisposable
                 // without isKnown. Unknown objects get the sentinel render type
                 // and null factual fields.
                 bool known = obj.IsKnown || obj.InitialMotion.ObjectId == PlayerShipObjectId;
+                bool isPlayerShipRow = obj.InitialMotion.ObjectId == PlayerShipObjectId;
+                bool isKnownStation = known && obj.ObjectType == SpaceObjectType.Station;
+                var dockOperator = isKnownStation && !obj.StationCrew.IsDefaultOrEmpty
+                    ? obj.StationCrew.FirstOrDefault(c => c.Role == StationCrewRoles.DockOperator)
+                    : null;
                 objects.Add(motion with
                 {
                     ActiveEngineCommandType = cycleMotion.CommandType,
@@ -420,7 +437,11 @@ public sealed class SimulationEngine : IDisposable
                     Image = known ? obj.Image : null,
                     MaxSpeedKmS = GetMaxSpeedKmS(obj),
                     IsDocked = obj.IsDocked,
-                    DockedStationObjectId = obj.DockedStationObjectId
+                    DockedStationObjectId = obj.DockedStationObjectId,
+                    CaptainDisplayName = isPlayerShipRow ? obj.CaptainDisplayName : null,
+                    CaptainPortraitImage = isPlayerShipRow ? obj.CaptainPortraitImage : null,
+                    DockOperatorDisplayName = dockOperator?.DisplayName,
+                    DockOperatorPortraitImage = dockOperator?.PortraitImage
                 });
             }
 
@@ -719,7 +740,12 @@ public sealed class SimulationEngine : IDisposable
                     : null,
                 Crew: isPlayerShip && !obj.Crew.IsDefaultOrEmpty
                     ? obj.Crew.Select(BuildSaveCrewMember).ToList()
-                    : null));
+                    : null,
+                StationCrew: isStation && !obj.StationCrew.IsDefaultOrEmpty
+                    ? obj.StationCrew.Select(BuildSaveStationCrewMember).ToList()
+                    : null,
+                CaptainDisplayName: isPlayerShip ? obj.CaptainDisplayName : null,
+                CaptainPortraitImage: isPlayerShip ? obj.CaptainPortraitImage : null));
         }
 
         var gameState = new GameStateData(
@@ -822,6 +848,9 @@ public sealed class SimulationEngine : IDisposable
     {
         return new ShipCrewMemberData(CrewId: member.Id, DisplayName: member.DisplayName);
     }
+
+    private static StationCrewMemberData BuildSaveStationCrewMember(StationCrewMemberRuntime member) =>
+        new(member.Id, member.Role, member.DisplayName, member.PortraitImage);
 
     private static int ToDirectionDegreesInt(double direction)
     {
@@ -1052,6 +1081,90 @@ public sealed class SimulationEngine : IDisposable
         "Images/CelestialObjects/Asteroid/ice-asteroid-3.png",
         "Images/CelestialObjects/Asteroid/ice-asteroid-4.png",
         "Images/CelestialObjects/Asteroid/ice-asteroid-5.png");
+
+    /// <summary>Name pool for a randomly generated female station crew member.</summary>
+    private static readonly ImmutableArray<string> FemaleCrewNames = ImmutableArray.Create(
+        "Elena Vasquez", "Priya Nandakumar", "Yuki Tanaka", "Ingrid Solberg", "Fatima Al-Rashid",
+        "Chen Wei", "Sofia Moretti", "Amara Okafor", "Lena Kowalski", "Mei Lin",
+        "Nadia Petrova", "Grace Okonkwo", "Aiko Sato", "Isabel Duarte", "Zara Malik",
+        "Freya Andersen", "Rosa Delgado", "Kavya Reddy", "Hana Kobayashi", "Marta Nowak");
+
+    /// <summary>
+    /// Portrait pool for a randomly generated female station crew member — every file in
+    /// Images/Persons/W except the ones already used explicitly by named crew in this scenario
+    /// (currently only the station director's portrait, CHR-20260906-123220-BS1XUR.png).
+    /// </summary>
+    private static readonly ImmutableArray<string> FemaleCrewPortraits = ImmutableArray.Create(
+        "Images/Persons/W/CHR-20260901-170239-JJD2U7.png",
+        "Images/Persons/W/CHR-20260901-190335-NJIY63.png",
+        "Images/Persons/W/CHR-20260901-191158-41JLXV.png",
+        "Images/Persons/W/CHR-20260901-191506-73R83G.png",
+        "Images/Persons/W/CHR-20260901-202525-Q7IH5Q.png",
+        "Images/Persons/W/CHR-20260901-232751-JUKCIQ.png",
+        "Images/Persons/W/CHR-20260902-002916-9JMCG1.png",
+        "Images/Persons/W/CHR-20260902-012856-9PJ64Q.png",
+        "Images/Persons/W/CHR-20260902-023114-UCNGRR.png",
+        "Images/Persons/W/CHR-20260902-033723-DRXET1.png",
+        "Images/Persons/W/CHR-20260902-043359-I4GTD0.png",
+        "Images/Persons/W/CHR-20260902-053427-INRM6Q.png",
+        "Images/Persons/W/CHR-20260902-063306-M4O95W.png",
+        "Images/Persons/W/CHR-20260902-070912-17E3B5.png",
+        "Images/Persons/W/CHR-20260902-073339-ON5DJE.png",
+        "Images/Persons/W/CHR-20260902-083415-ULL1BP.png",
+        "Images/Persons/W/CHR-20260902-093511-K26DLO.png",
+        "Images/Persons/W/CHR-20260902-103625-8SCU3U.png",
+        "Images/Persons/W/CHR-20260902-113736-OR0B4X.png",
+        "Images/Persons/W/CHR-20260902-123802-LGKGDX.png",
+        "Images/Persons/W/CHR-20260902-133840-JU1DDT.png",
+        "Images/Persons/W/CHR-20260902-143925-SKWDC7.png",
+        "Images/Persons/W/CHR-20260902-154101-9QGOVT.png",
+        "Images/Persons/W/CHR-20260902-164153-RA93WD.png",
+        "Images/Persons/W/CHR-20260902-174230-TXNAFQ.png",
+        "Images/Persons/W/CHR-20260902-184235-AE1DF5.png",
+        "Images/Persons/W/CHR-20260902-194238-BZP48S.png",
+        "Images/Persons/W/CHR-20260902-204402-HWDDCA.png",
+        "Images/Persons/W/CHR-20260902-214449-C5KXVA.png",
+        "Images/Persons/W/CHR-20260902-224329-ZR0R6L.png",
+        "Images/Persons/W/CHR-20260902-234400-89TAW0.png",
+        "Images/Persons/W/CHR-20260903-004531-X4D3B4.png",
+        "Images/Persons/W/CHR-20260903-014632-IJY1L0.png",
+        "Images/Persons/W/CHR-20260903-024633-HESL76.png",
+        "Images/Persons/W/CHR-20260903-034734-YE4B2L.png",
+        "Images/Persons/W/CHR-20260903-044905-DGIEQQ.png",
+        "Images/Persons/W/CHR-20260903-055036-B7R6WD.png",
+        "Images/Persons/W/CHR-20260903-064734-BM1C4U.png",
+        "Images/Persons/W/CHR-20260906-133221-HXWME1.png",
+        "Images/Persons/W/CHR-20260906-141402-2Q3S9G.png",
+        "Images/Persons/W/CHR-20260906-142509-M920Q2.png",
+        "Images/Persons/W/CHR-20260906-143109-PBI84Y.png",
+        "Images/Persons/W/CHR-20260906-143500-7P8HS1.png",
+        "Images/Persons/W/CHR-20260906-144518-APYRIC.png",
+        "Images/Persons/W/CHR-20260906-144648-3V8KX9.png",
+        "Images/Persons/W/CHR-20260906-144816-O6PPHW.png",
+        "Images/Persons/W/CHR-20260906-153458-KBK7CH.png",
+        "Images/Persons/W/CHR-20260906-163650-ULZGNS.png",
+        "Images/Persons/W/CHR-20260906-173659-QOML9F.png",
+        "Images/Persons/W/CHR-20260906-183802-08LFQF.png",
+        "Images/Persons/W/CHR-20260906-193754-W60GN2.png",
+        "Images/Persons/W/CHR-20260906-194552-WP6FJH.png",
+        "Images/Persons/W/CHR-20260906-194851-S6Z8E8.png",
+        "Images/Persons/W/CHR-20260906-195228-TC9HDL.png");
+
+    /// <summary>Name pool for a randomly generated male ship captain.</summary>
+    private static readonly ImmutableArray<string> MaleCrewNames = ImmutableArray.Create(
+        "Marcus Webb", "Diego Alvarez", "Kenji Watanabe", "Lars Eriksson", "Omar Haddad",
+        "Viktor Nowicki", "Rafael Costa", "Amit Chandra", "Bram de Vries", "Sami Virtanen",
+        "Nikolai Volkov", "Ethan Brooks", "Tariq Amari", "Julian Hoffmann", "Kwame Mensah",
+        "Felix Baumgartner", "Ravi Sharma", "Dmitri Sokolov", "Mateo Fernandez", "Owen Fitzgerald");
+
+    /// <summary>
+    /// Portrait pool for a randomly generated male ship captain — every file in
+    /// Images/Persons/M.
+    /// </summary>
+    private static readonly ImmutableArray<string> MaleCrewPortraits = ImmutableArray.Create(
+        "Images/Persons/M/CHR-20260906-150900-IYUL3A.png",
+        "Images/Persons/M/CHR-20260906-151036-GAGFUS.png",
+        "Images/Persons/M/CHR-20260906-151219-R8SD6K.png");
 
     /// <summary>
     /// Resolve an object's graphical representation: explicit scenario/save value used
@@ -1302,6 +1415,74 @@ public sealed class SimulationEngine : IDisposable
         }
 
         return crew.ToImmutable();
+    }
+
+    /// <summary>
+    /// Resolve a station's named crew members (director/dock operator etc.) — independent
+    /// twin path to <see cref="ResolveShipCrew"/>, not RNG-generated for Role/CrewId (always
+    /// explicit), but DisplayName/PortraitImage follow the same "explicit scenario/save value
+    /// used as-is, otherwise deterministic once from masterSeed and persisted on save"
+    /// convention as <see cref="ResolveStationCredits"/>/<see cref="ResolveObjectImage"/>.
+    /// Missing/empty scenario data resolves to an empty list (the common case for every
+    /// station without named crew, and for every scenario/save predating this field).
+    /// </summary>
+    private static ImmutableArray<StationCrewMemberRuntime> ResolveStationCrew(SpaceObjectData obj, ulong masterSeed)
+    {
+        if (obj.StationCrew is not { Count: > 0 } stationCrew)
+            return ImmutableArray<StationCrewMemberRuntime>.Empty;
+
+        var seenIds = new HashSet<string>(StringComparer.Ordinal);
+        var result = ImmutableArray.CreateBuilder<StationCrewMemberRuntime>(stationCrew.Count);
+        foreach (var member in stationCrew)
+        {
+            if (string.IsNullOrWhiteSpace(member.CrewId))
+                throw new ScenarioException($"Station '{obj.ObjectId}' has a stationCrew entry with an empty crewId.");
+            if (!seenIds.Add(member.CrewId))
+                throw new ScenarioException($"Station '{obj.ObjectId}' has duplicate stationCrew crewId '{member.CrewId}'.");
+
+            var displayName = member.DisplayName ?? ResolveStationCrewMemberName(obj.ObjectId, member.CrewId, masterSeed);
+            var portraitImage = member.PortraitImage ?? ResolveStationCrewMemberPortrait(obj.ObjectId, member.CrewId, masterSeed);
+            result.Add(new StationCrewMemberRuntime(member.CrewId, member.Role, displayName, portraitImage));
+        }
+
+        return result.ToImmutable();
+    }
+
+    private static string ResolveStationCrewMemberName(string stationObjectId, string crewId, ulong masterSeed)
+    {
+        var random = RngStreamNames.CreateDeterministicRandom(
+            RngStreamSeedDerivation.DeriveStreamSeed(masterSeed, RngStreamNames.StationCrewMemberName(stationObjectId, crewId)));
+        return FemaleCrewNames[random.Next(FemaleCrewNames.Length)];
+    }
+
+    private static string ResolveStationCrewMemberPortrait(string stationObjectId, string crewId, ulong masterSeed)
+    {
+        var random = RngStreamNames.CreateDeterministicRandom(
+            RngStreamSeedDerivation.DeriveStreamSeed(masterSeed, RngStreamNames.StationCrewMemberPortrait(stationObjectId, crewId)));
+        return FemaleCrewPortraits[random.Next(FemaleCrewPortraits.Length)];
+    }
+
+    /// <summary>
+    /// Resolve the player ship's captain display name — an independent named fact, NOT
+    /// derived from Crew[0]/<see cref="ResolveShipCrew"/>. Same "explicit
+    /// scenario/save value used as-is, otherwise deterministic once from masterSeed and
+    /// persisted on save" convention as <see cref="ResolveStationCrewMemberName"/>, except
+    /// there is no crewId component in the RNG stream name (the captain isn't a
+    /// <see cref="ShipCrewMemberData"/> element).
+    /// </summary>
+    private static string ResolveCaptainDisplayName(string shipObjectId, ulong masterSeed)
+    {
+        var random = RngStreamNames.CreateDeterministicRandom(
+            RngStreamSeedDerivation.DeriveStreamSeed(masterSeed, RngStreamNames.ShipCaptainName(shipObjectId)));
+        return MaleCrewNames[random.Next(MaleCrewNames.Length)];
+    }
+
+    /// <summary>Resolve the player ship's captain portrait image; see <see cref="ResolveCaptainDisplayName"/>.</summary>
+    private static string ResolveCaptainPortrait(string shipObjectId, ulong masterSeed)
+    {
+        var random = RngStreamNames.CreateDeterministicRandom(
+            RngStreamSeedDerivation.DeriveStreamSeed(masterSeed, RngStreamNames.ShipCaptainPortrait(shipObjectId)));
+        return MaleCrewPortraits[random.Next(MaleCrewPortraits.Length)];
     }
 
     /// <summary>
@@ -3202,10 +3383,28 @@ internal sealed record SpaceObjectRuntime(
     /// Ship's crew members (story-20260901-112254). Only meaningful for
     /// ObjectType == PlayerShip; empty for every other object type.
     /// </summary>
-    ImmutableArray<CrewMemberRuntime> Crew = default);
+    ImmutableArray<CrewMemberRuntime> Crew = default,
+    /// <summary>
+    /// Station's named crew members (director/dock operator etc.) — independent of
+    /// <see cref="Crew"/>/<see cref="CrewMemberRuntime"/> (cosmetic/narrative only, not
+    /// PlayerShip cabin-occupancy accounting). Only meaningful for ObjectType == Station;
+    /// empty for every other object type.
+    /// </summary>
+    ImmutableArray<StationCrewMemberRuntime> StationCrew = default,
+    /// <summary>
+    /// Player ship captain's display name — an independent named fact, not derived from
+    /// <see cref="Crew"/>[0]/<see cref="CrewMemberRuntime"/>. Only meaningful for
+    /// ObjectType == PlayerShip; null for every other object type.
+    /// </summary>
+    string? CaptainDisplayName = null,
+    /// <summary>Player ship captain's portrait image path; see <see cref="CaptainDisplayName"/>.</summary>
+    string? CaptainPortraitImage = null);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName);
+
+/// <summary>One named crew member displayed on a station (see <see cref="StationCrewMemberData"/>).</summary>
+internal sealed record StationCrewMemberRuntime(string Id, string Role, string DisplayName, string PortraitImage);
 
 /// <summary>
 /// One producing-module instance installed on a station (see <see cref="StationProducingModuleData"/>).

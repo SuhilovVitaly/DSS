@@ -548,6 +548,59 @@ public class ScenarioLoaderTests
         Assert.Null(ship.Crew);
     }
 
+    // Station crew (independent of ship Crew/ShipCrewMemberData above — cosmetic/narrative
+    // only, twin path per its own dedicated DTO). This only covers the schema deserializes
+    // and defaults correctly (see SimulationEngine.ResolveStationCrew for the engine-level
+    // id checks and name/portrait generation).
+    [Fact]
+    public void LoadFromJson_reads_stationCrew_when_present()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary" },
+              { "objectId": "STN", "objectType": "Station", "persistenceType": "Permanent",
+                "positionX": 100, "positionY": 100, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "stationCrew": [
+                  { "crewId": "CHR-0002", "role": "Station Director", "displayName": "Mari Lefeber", "portraitImage": "Images/Persons/W/CHR-20260906-123220-BS1XUR.png" },
+                  { "crewId": "CHR-0003", "role": "Dock Operator" }
+                ] }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var station = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == "STN");
+
+        Assert.Equal(2, station.StationCrew!.Count);
+        var director = station.StationCrew!.Single(m => m.CrewId == "CHR-0002");
+        Assert.Equal("Station Director", director.Role);
+        Assert.Equal("Mari Lefeber", director.DisplayName);
+        Assert.Equal("Images/Persons/W/CHR-20260906-123220-BS1XUR.png", director.PortraitImage);
+
+        var dockOperator = station.StationCrew!.Single(m => m.CrewId == "CHR-0003");
+        Assert.Equal("Dock Operator", dockOperator.Role);
+        Assert.Null(dockOperator.DisplayName);
+        Assert.Null(dockOperator.PortraitImage);
+    }
+
+    [Fact]
+    public void LoadFromJson_defaults_stationCrew_to_null_when_absent()
+    {
+        var scenario = ScenarioLoader.LoadFromJson(ValidJson);
+        var station = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == "SPC-0002");
+
+        Assert.Null(station.StationCrew);
+    }
+
     [Fact]
     public void Asteroid_mass_out_of_range_throws()
     {

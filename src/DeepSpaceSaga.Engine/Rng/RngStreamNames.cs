@@ -16,6 +16,19 @@ internal static class RngStreamNames
 
     public static string AsteroidImage(string asteroidObjectId) => $"AsteroidImage:{asteroidObjectId}";
 
+    public static string StationCrewMemberName(string stationObjectId, string crewId) => $"StationCrewMemberName:{stationObjectId}:{crewId}";
+
+    public static string StationCrewMemberPortrait(string stationObjectId, string crewId) => $"StationCrewMemberPortrait:{stationObjectId}:{crewId}";
+
+    /// <summary>
+    /// The player ship's captain — an independent named fact, not tied to a <c>Crew</c>
+    /// element, hence no crewId component (unlike the station crew streams above).
+    /// </summary>
+    public static string ShipCaptainName(string shipObjectId) => $"ShipCaptainName:{shipObjectId}";
+
+    /// <summary>See <see cref="ShipCaptainName"/>.</summary>
+    public static string ShipCaptainPortrait(string shipObjectId) => $"ShipCaptainPortrait:{shipObjectId}";
+
     /// <summary>
     /// Folds a full 64-bit stream seed into the 32-bit seed System.Random accepts, XORing
     /// both halves together rather than truncating — so all 64 bits of entropy from

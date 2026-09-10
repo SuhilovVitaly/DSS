@@ -224,13 +224,10 @@
     <None Update="Data\**\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Scenarios\Default\scenario.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Scenarios\Default_500\scenario.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Scenarios\Docked\scenario.json">
+    <!-- Recursive rule (same reasoning as Data\**\*.json above): a new scenario folder must
+         never silently disappear from the shipped output merely because it postdates a
+         hand-enumerated list of per-scenario entries. -->
+    <None Update="Scenarios\**\scenario.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Images\UI\GameLoadScreen\*.png">
