@@ -85,8 +85,8 @@ public static class PortraitComposer
     /// <see cref="DockingPointX"/>/<see cref="DockingPointY"/>. Verified visually against the
     /// "-2" body variant only; not yet re-checked against the other three variants.
     /// </summary>
-    private const int PortraitCropSize = 330;
-    private static readonly SKRectI PortraitCropRect = SKRectI.Create(360, 290, PortraitCropSize, PortraitCropSize);
+    private const int PortraitCropSize = 300;
+    private static readonly SKRectI PortraitCropRect = SKRectI.Create(375, 305, PortraitCropSize, PortraitCropSize);
     private static readonly SKRect PortraitCropDestRect = new(0, 0, PortraitCropSize, PortraitCropSize);
 
     /// <summary>

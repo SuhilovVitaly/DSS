@@ -21,12 +21,12 @@ public static class DockingConfirmLayout
 
     /// <summary>
     /// Portrait size for <see cref="Portraits.PortraitComposer.ComposeBodyAndHeadPortrait"/>'s
-    /// 330×330 docking-point crop (background-less pipeline). Temporary — replaces the
+    /// 300×300 docking-point crop (background-less pipeline). Temporary — replaces the
     /// 250×250 cropped-portrait size used by the production Compose() path until that path
     /// adopts the docking point too.
     /// </summary>
-    public const float PortraitPreviewWidth = 330f;
-    public const float PortraitPreviewHeight = 330f;
+    public const float PortraitPreviewWidth = 300f;
+    public const float PortraitPreviewHeight = 300f;
     public const float PortraitTop = 160f;
     public const float PortraitSideMargin = 180f;
     public const float PortraitNameGap = 20f;
