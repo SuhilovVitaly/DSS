@@ -13,6 +13,7 @@ using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Client.UI.Screens.Ship;
 using DeepSpaceSaga.Client.UI.Screens.Contracts;
+using DeepSpaceSaga.Client.UI.Screens.DockingConfirm;
 using DeepSpaceSaga.Client.UI.Screens.Hire;
 using DeepSpaceSaga.Client.UI.Screens.Station;
 using DeepSpaceSaga.Client.UI.Screens.Trade;
@@ -616,6 +617,12 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.CloseStation:
                     await CloseOverlayAsync();
                     break;
+                case ScreenEvent.OpenDockingConfirm:
+                    await OpenDockingConfirmAsync();
+                    break;
+                case ScreenEvent.CloseDockingConfirm:
+                    await PopModalAsync();
+                    break;
                 case ScreenEvent.OpenTrade:
                     await OpenTradeAsync();
                     break;
@@ -817,6 +824,30 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         await PushModalAsync(new StationScreen(_session?.Buffer));
+    }
+
+    /// <summary>
+    /// Push the docking-confirmation modal (ScreenEvent.OpenDockingConfirm, produced by a
+    /// Commands Panel click on the Dock button — see GameSessionScreen.SendCommandFromPanel).
+    /// The pending request is consumed synchronously from the GameSessionScreen still on top
+    /// of the stack (it produced the event in the same OnMouseDown call) — a null request is
+    /// a defensive no-op for the edge case where it was somehow already consumed. Uses the
+    /// same generic PushModalAsync pause-on-open behavior as every other modal.
+    /// </summary>
+    private async Task OpenDockingConfirmAsync()
+    {
+        // Guard: don't push overlay on top of another overlay
+        if (_screens.Current is DockingConfirmScreen)
+            return;
+
+        if (_screens.Current is not GameSessionScreen gameSessionScreen)
+            return;
+
+        var request = gameSessionScreen.ConsumePendingDockingConfirmRequest();
+        if (request is null)
+            return;
+
+        await PushModalAsync(new DockingConfirmScreen(_session?.Buffer, _session, request));
     }
 
     /// <summary>

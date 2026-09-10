@@ -98,4 +98,21 @@ public sealed record ObjectMotionSnapshot(
     /// for known objects" gating as <see cref="DisplayName"/>/<see cref="ObjectType"/>) or
     /// one no image has been resolved for.
     /// </summary>
-    string? Image = null);
+    string? Image = null,
+    /// <summary>
+    /// Player ship captain's display name — only meaningful/non-null on the player ship's own
+    /// row. Source of truth is <c>SpaceObjectRuntime.CaptainDisplayName</c>, projected onto
+    /// the outgoing snapshot row the same way <see cref="DisplayName"/>/<see cref="Image"/> are.
+    /// </summary>
+    string? CaptainDisplayName = null,
+    /// <summary>Player ship captain's portrait image path; see <see cref="CaptainDisplayName"/>.</summary>
+    string? CaptainPortraitImage = null,
+    /// <summary>
+    /// Display name of the station's dock operator (the stationCrew entry whose role is
+    /// "Dock Operator"), only meaningful/non-null on a known station's own row that has such
+    /// a crew entry. Null when the object is not a known station, or is a station with no
+    /// dock operator entry.
+    /// </summary>
+    string? DockOperatorDisplayName = null,
+    /// <summary>Dock operator's portrait image path; see <see cref="DockOperatorDisplayName"/>.</summary>
+    string? DockOperatorPortraitImage = null);

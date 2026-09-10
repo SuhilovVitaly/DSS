@@ -42,6 +42,8 @@ public enum ScreenEvent
     CloseShip,
     OpenStation,
     CloseStation,
+    OpenDockingConfirm,
+    CloseDockingConfirm,
     OpenTrade,
     CloseTrade,
     OpenHire,

@@ -113,7 +113,9 @@
             ],
             "crew": [
                 { "crewId": "CHR-0001", "displayName": "Dunkan Su" }
-            ]
+            ],
+            "captainDisplayName": "Dunkan Su",
+            "captainPortraitImage": "Images/Persons/M/CHR-20260906-150900-IYUL3A.png"
         },
       {
         "objectId": "SPC-0002",

@@ -1343,6 +1343,277 @@ public class ScenarioEngineTests
         Assert.Equal(resolved.PortraitImage, savedMember.PortraitImage);
     }
 
+    // --- Player ship captain (independent named fact, NOT derived from Crew[0] — story batch
+    // adding captain + dock operator client fields). Twin path to station named crew above. ---
+
+    [Fact]
+    public void LoadScenario_with_explicit_captain_fields_keeps_them_as_is()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "masterSeed": 1,
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "captainDisplayName": "Dunkan Su",
+                "captainPortraitImage": "Images/Persons/M/CHR-20260906-150900-IYUL3A.png" }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var engine = new SimulationEngine();
+        engine.LoadScenario(scenario);
+
+        var ship = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SHIP");
+        Assert.Equal("Dunkan Su", ship.CaptainDisplayName);
+        Assert.Equal("Images/Persons/M/CHR-20260906-150900-IYUL3A.png", ship.CaptainPortraitImage);
+    }
+
+    [Fact]
+    public void LoadScenario_generates_captain_name_and_portrait_when_absent()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "masterSeed": 1,
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary" }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var engine = new SimulationEngine();
+        engine.LoadScenario(scenario);
+
+        var ship = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SHIP");
+        Assert.False(string.IsNullOrWhiteSpace(ship.CaptainDisplayName));
+        Assert.False(string.IsNullOrWhiteSpace(ship.CaptainPortraitImage));
+        Assert.StartsWith("Images/Persons/M/", ship.CaptainPortraitImage);
+    }
+
+    [Fact]
+    public void LoadScenario_generated_captain_name_and_portrait_are_deterministic_for_the_same_masterSeed()
+    {
+        string Json() => """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "masterSeed": 42,
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary" }
+            ]
+          }
+        }
+        """;
+
+        var engine1 = new SimulationEngine();
+        engine1.LoadScenario(ScenarioLoader.LoadFromJson(Json()));
+        var ship1 = engine1.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SHIP");
+
+        var engine2 = new SimulationEngine();
+        engine2.LoadScenario(ScenarioLoader.LoadFromJson(Json()));
+        var ship2 = engine2.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SHIP");
+
+        Assert.Equal(ship1.CaptainDisplayName, ship2.CaptainDisplayName);
+        Assert.Equal(ship1.CaptainPortraitImage, ship2.CaptainPortraitImage);
+    }
+
+    [Fact]
+    public void LoadScenario_resolves_captain_only_for_the_player_ship()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "masterSeed": 1,
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary" },
+              { "objectId": "STN", "objectType": "Station", "persistenceType": "Permanent",
+                "positionX": 100, "positionY": 100, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary" },
+              { "objectId": "AST", "objectType": "Asteroid", "persistenceType": "Temporary",
+                "positionX": 200, "positionY": 200, "speedMps": 100, "directionDegrees": 0,
+                "movementType": "Linear", "massKg": 1000000, "compositionType": "Silicate" }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var engine = new SimulationEngine();
+        engine.LoadScenario(scenario);
+
+        var station = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "STN");
+        var asteroid = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "AST");
+        Assert.Null(station.CaptainDisplayName);
+        Assert.Null(station.CaptainPortraitImage);
+        Assert.Null(asteroid.CaptainDisplayName);
+        Assert.Null(asteroid.CaptainPortraitImage);
+    }
+
+    [Fact]
+    public void Resolved_captain_round_trips_through_save_and_is_not_regenerated_on_reload()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "masterSeed": 7,
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary" }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var engine = new SimulationEngine();
+        engine.LoadScenario(scenario);
+
+        var resolved = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SHIP");
+
+        var saved = engine.CaptureSaveState();
+        var savedShip = saved.GameState.SpaceObjects.Single(o => o.ObjectId == "SHIP");
+
+        Assert.Equal(resolved.CaptainDisplayName, savedShip.CaptainDisplayName);
+        Assert.Equal(resolved.CaptainPortraitImage, savedShip.CaptainPortraitImage);
+
+        // Reloading the save must not regenerate the value — it's already explicit.
+        var engine2 = new SimulationEngine();
+        engine2.LoadScenario(saved);
+        var reloaded = engine2.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SHIP");
+        Assert.Equal(resolved.CaptainDisplayName, reloaded.CaptainDisplayName);
+        Assert.Equal(resolved.CaptainPortraitImage, reloaded.CaptainPortraitImage);
+    }
+
+    // --- ObjectMotionSnapshot projection: CaptainDisplayName/CaptainPortraitImage (player ship
+    // row only) and DockOperatorDisplayName/DockOperatorPortraitImage (known station row with a
+    // "Dock Operator" stationCrew entry only). ---
+
+    [Fact]
+    public void BuildSnapshot_projects_captain_fields_only_on_the_player_ship_row()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "masterSeed": 1,
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "captainDisplayName": "Dunkan Su",
+                "captainPortraitImage": "Images/Persons/M/CHR-20260906-150900-IYUL3A.png" },
+              { "objectId": "STN", "objectType": "Station", "persistenceType": "Permanent",
+                "positionX": 100, "positionY": 100, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary", "isKnown": true }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var engine = new SimulationEngine();
+        engine.LoadScenario(scenario);
+
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
+
+        var shipRow = snapshot.Objects.Single(o => o.ObjectId == "SHIP");
+        Assert.Equal("Dunkan Su", shipRow.CaptainDisplayName);
+        Assert.Equal("Images/Persons/M/CHR-20260906-150900-IYUL3A.png", shipRow.CaptainPortraitImage);
+
+        var stationRow = snapshot.Objects.Single(o => o.ObjectId == "STN");
+        Assert.Null(stationRow.CaptainDisplayName);
+        Assert.Null(stationRow.CaptainPortraitImage);
+    }
+
+    [Fact]
+    public void BuildSnapshot_projects_dockOperator_fields_only_for_a_known_station_with_a_dockOperator_entry()
+    {
+        var json = """
+        {
+          "scenarioMetadata": { "scenarioId": "x", "name": "x" },
+          "gameState": {
+            "masterSeed": 1,
+            "gameTimeMs": 0, "currentSpeed": "Speed1",
+            "playerShipObjectId": "SHIP",
+            "spaceObjects": [
+              { "objectId": "SHIP", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary" },
+              { "objectId": "STN-WITH-OPERATOR", "objectType": "Station", "persistenceType": "Permanent",
+                "positionX": 100, "positionY": 100, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary", "isKnown": true,
+                "stationCrew": [
+                  { "crewId": "CHR-0002", "role": "Station Director", "displayName": "Mari Lefeber", "portraitImage": "Images/Persons/W/CHR-20260906-123220-BS1XUR.png" },
+                  { "crewId": "CHR-0003", "role": "Dock Operator", "displayName": "Nadia Petrova", "portraitImage": "Images/Persons/W/CHR-20260901-170239-JJD2U7.png" }
+                ] },
+              { "objectId": "STN-NO-OPERATOR", "objectType": "Station", "persistenceType": "Permanent",
+                "positionX": 200, "positionY": 200, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary", "isKnown": true,
+                "stationCrew": [
+                  { "crewId": "CHR-0004", "role": "Station Director", "displayName": "Someone Else" }
+                ] },
+              { "objectId": "STN-UNKNOWN", "objectType": "Station", "persistenceType": "Permanent",
+                "positionX": 300, "positionY": 300, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary", "isKnown": false,
+                "stationCrew": [
+                  { "crewId": "CHR-0005", "role": "Dock Operator", "displayName": "Unknown Operator" }
+                ] }
+            ]
+          }
+        }
+        """;
+
+        var scenario = ScenarioLoader.LoadFromJson(json);
+        var engine = new SimulationEngine();
+        engine.LoadScenario(scenario);
+
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
+
+        var withOperator = snapshot.Objects.Single(o => o.ObjectId == "STN-WITH-OPERATOR");
+        Assert.Equal("Nadia Petrova", withOperator.DockOperatorDisplayName);
+        Assert.Equal("Images/Persons/W/CHR-20260901-170239-JJD2U7.png", withOperator.DockOperatorPortraitImage);
+
+        var noOperator = snapshot.Objects.Single(o => o.ObjectId == "STN-NO-OPERATOR");
+        Assert.Null(noOperator.DockOperatorDisplayName);
+        Assert.Null(noOperator.DockOperatorPortraitImage);
+
+        // Unknown station: no exception, and the fields stay null even though a matching
+        // stationCrew entry exists — the player has no factual data about the object at all.
+        var unknown = snapshot.Objects.Single(o => o.ObjectId == "STN-UNKNOWN");
+        Assert.Null(unknown.DockOperatorDisplayName);
+        Assert.Null(unknown.DockOperatorPortraitImage);
+    }
+
     [Fact]
     public void LoadScenario_sets_speed_from_scenario()
     {
