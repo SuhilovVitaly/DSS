@@ -32,12 +32,14 @@ public static class PortraitComposer
     private const string FemaleBackgroundImage = "Images/Persons/Background/station-flight-docking-control-cente.png";
     private const string MaleBackgroundImage = "Images/Persons/Background/background-command-deck.png";
 
-    /// <summary>Headless female body-in-spacesuit variants; see <see cref="SelectBodyImage"/>.</summary>
+    /// <summary>
+    /// Headless female body-in-spacesuit variants; see <see cref="SelectBodyImage"/>. The
+    /// only current Female-sex consumer is the dock operator (a station employee), so this
+    /// pool is the station's corporate suit rather than the generic SPC-JSYQRS set — every
+    /// employee of the docked station wears it.
+    /// </summary>
     private static readonly ImmutableArray<string> FemaleBodyImages = ImmutableArray.Create(
-        "Images/Persons/Body/W/SPC-JSYQRS/SPC-JSYQRS-0.png",
-        "Images/Persons/Body/W/SPC-JSYQRS/SPC-JSYQRS-1.png",
-        "Images/Persons/Body/W/SPC-JSYQRS/SPC-JSYQRS-2.png",
-        "Images/Persons/Body/W/SPC-JSYQRS/SPC-JSYQRS-3.png");
+        "Images/Persons/Body/W/Corporations/SPC-C6R9VX-3.png");
 
     /// <summary>Headless male body-in-spacesuit variants; see <see cref="SelectBodyImage"/>.</summary>
     private static readonly ImmutableArray<string> MaleBodyImages = ImmutableArray.Create(
@@ -47,15 +49,15 @@ public static class PortraitComposer
         "Images/Persons/Body/M/SPC-UYSLLR/SPC-UYSLLR-3.png");
 
     /// <summary>
-    /// Fixed body-variant pick: always the "-2" spacesuit image (index 2) for either sex,
-    /// unless a caller asks for a specific variant explicitly. Replaces the earlier
-    /// personKey-hash pick — the docking screen currently has no product need to vary body
-    /// art per crew member.
+    /// Fixed body-variant pick: the "-2" spacesuit image (index 2) when the pool has that many
+    /// variants, otherwise the pool's last (currently: Female's single-suit pool). Replaces
+    /// the earlier personKey-hash pick — the docking screen currently has no product need to
+    /// vary body art per crew member.
     /// </summary>
     private const int DefaultBodyVariantIndex = 2;
 
     private static string SelectBodyImage(ImmutableArray<string> bodyPool) =>
-        bodyPool[DefaultBodyVariantIndex];
+        bodyPool[System.Math.Min(DefaultBodyVariantIndex, bodyPool.Length - 1)];
 
     private const float FemalePortraitScale = 0.867f;
     private const float FemalePortraitDestX = 430f;
