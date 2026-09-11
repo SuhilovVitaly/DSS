@@ -78,8 +78,8 @@ public static class PortraitComposer
     /// pending separate calibration; used only by <see cref="ComposeBodyAndHeadPortrait"/>,
     /// not yet by the production <see cref="Compose"/> crop pipeline.
     /// </summary>
-    private const float DockingPointX = 410f;
-    private const float DockingPointY = 300f;
+    private const float DockingPointX = 395f;
+    private const float DockingPointY = 290f;
 
     /// <summary>
     /// Final-portrait crop, applied to the body+head canvas produced by
