@@ -45,6 +45,21 @@ internal sealed class DockingConfirmScreen : IScreen
     private static readonly SKBitmap? BackgroundImage =
         LoadImage("Images/UI/mechanics-window-background-titlebar-1400x900.png");
 
+    /// <summary>
+    /// Test-only: every female face portrait file, for <see cref="RerollDockOperatorFace"/>'s
+    /// click-to-randomize. Not a gameplay data source — just a dev tool to preview the
+    /// corporate suit against many faces without restarting the game.
+    /// </summary>
+    private static readonly string[] FemaleFacePool = LoadFemaleFacePool();
+
+    private static readonly Random RerollRandom = new();
+
+    private static string[] LoadFemaleFacePool()
+    {
+        try { return Directory.Exists("Images/Persons/W") ? Directory.GetFiles("Images/Persons/W", "*.png") : []; }
+        catch { return []; }
+    }
+
     private static SKBitmap? LoadImage(string path)
     {
         try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
@@ -82,11 +97,48 @@ internal sealed class DockingConfirmScreen : IScreen
             return ScreenEvent.CloseDockingConfirm;
         }
 
+        // Test-only: clicking the dock operator's portrait reshuffles her face — see
+        // RerollDockOperatorFace. Checked before the "outside panel closes" fallback since
+        // the portrait sits inside the panel.
+        if (DockOperatorPortraitScreenRect().Contains(x, y))
+        {
+            RerollDockOperatorFace();
+            return ScreenEvent.None;
+        }
+
         // Click on the dimmed background outside the panel also closes it — no command sent.
         if (!DockingConfirmLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
             return ScreenEvent.CloseDockingConfirm;
 
         return ScreenEvent.None;
+    }
+
+    private SKRect DockOperatorPortraitScreenRect()
+    {
+        var local = DockingConfirmLayout.DockOperatorPortraitLocalRect();
+        float pl = DockingConfirmLayout.PanelLeft(_screenWidth);
+        float pt = DockingConfirmLayout.PanelTop(_screenHeight);
+        return new SKRect(pl + local.Left, pt + local.Top, pl + local.Right, pt + local.Bottom);
+    }
+
+    /// <summary>
+    /// Test-only: recomposes the dock operator's portrait with a random face from
+    /// <see cref="FemaleFacePool"/> on the same corporate suit — lets a dev eyeball the
+    /// suit/docking-point calibration against many faces without restarting the game. Not
+    /// wired to any snapshot data; the reroll is purely local render state.
+    /// </summary>
+    private void RerollDockOperatorFace()
+    {
+        if (FemaleFacePool.Length == 0)
+            return;
+
+        string facePath = FemaleFacePool[RerollRandom.Next(FemaleFacePool.Length)];
+        var recomposed = PortraitComposer.ComposeBodyAndHeadPortrait(facePath, PersonSex.Female, _request.TargetObjectId);
+        if (recomposed is null)
+            return;
+
+        _dockOperatorPortrait?.Dispose();
+        _dockOperatorPortrait = recomposed;
     }
 
     /// <summary>Convenience shortcut for a left click — kept for existing call sites/tests.</summary>

@@ -39,7 +39,7 @@ public static class PortraitComposer
     /// employee of the docked station wears it.
     /// </summary>
     private static readonly ImmutableArray<string> FemaleBodyImages = ImmutableArray.Create(
-        "Images/Persons/Body/W/Corporations/SPC-C6R9VX-3.png");
+        "Images/Persons/Body/W/Corporations/SPC-XXXXXX-2.png");
 
     /// <summary>Headless male body-in-spacesuit variants; see <see cref="SelectBodyImage"/>.</summary>
     private static readonly ImmutableArray<string> MaleBodyImages = ImmutableArray.Create(
@@ -78,8 +78,8 @@ public static class PortraitComposer
     /// pending separate calibration; used only by <see cref="ComposeBodyAndHeadPortrait"/>,
     /// not yet by the production <see cref="Compose"/> crop pipeline.
     /// </summary>
-    private const float DockingPointX = 410f;
-    private const float DockingPointY = 300f;
+    private const float DockingPointX = 395f;
+    private const float DockingPointY = 290f;
 
     /// <summary>
     /// Final-portrait crop, applied to the body+head canvas produced by
@@ -153,13 +153,15 @@ public static class PortraitComposer
     }
 
     /// <summary>
-    /// Docking-confirmation portrait, background-less pipeline: draws ONLY the headless
-    /// body-in-spacesuit sprite (no background layer, always the <see cref="DefaultBodyVariantIndex"/>
-    /// variant) and then the head portrait at its natural size on top, with the portrait's
-    /// top-left corner placed exactly on the docking point. Crops the result to
-    /// <see cref="PortraitCropRect"/> (330×330) — the region around the docking point that
-    /// frames head+shoulders — and returns that crop. Null on a missing portrait/body file.
-    /// Not wired into the production <see cref="Compose"/> (background+crop) pipeline yet.
+    /// Docking-confirmation portrait, background-less pipeline: draws ONLY the head portrait
+    /// at its natural size (top-left corner placed exactly on the docking point), THEN the
+    /// headless body-in-spacesuit sprite (no scene-background layer, always the
+    /// <see cref="DefaultBodyVariantIndex"/> variant) on top of it — the suit's collar/neck
+    /// ring overlaps and covers the base of the head, instead of the head covering the suit.
+    /// Crops the result to <see cref="PortraitCropRect"/> (300×300) — the region around the
+    /// docking point that frames head+shoulders — and returns that crop. Null on a missing
+    /// portrait/body file. Not wired into the production <see cref="Compose"/>
+    /// (background+crop) pipeline yet.
     /// </summary>
     public static SKBitmap? ComposeBodyAndHeadPortrait(string portraitImagePath, PersonSex sex, string personKey)
     {
@@ -180,12 +182,13 @@ public static class PortraitComposer
         using (var canvas = new SKCanvas(fullCanvasBitmap))
         {
             canvas.Clear(SKColors.Transparent);
-            canvas.DrawBitmap(body, new SKRect(0, 0, CanvasWidth, CanvasHeight));
 
             var destRect = new SKRect(
                 DockingPointX, DockingPointY,
                 DockingPointX + portrait.Width, DockingPointY + portrait.Height);
             canvas.DrawBitmap(portrait, destRect);
+
+            canvas.DrawBitmap(body, new SKRect(0, 0, CanvasWidth, CanvasHeight));
         }
 
         var result = new SKBitmap(PortraitCropSize, PortraitCropSize);
