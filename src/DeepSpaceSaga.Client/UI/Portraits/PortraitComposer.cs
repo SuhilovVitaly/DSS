@@ -101,7 +101,7 @@ public static class PortraitComposer
     /// </summary>
     public static SKBitmap? Compose(string portraitImagePath, PersonSex sex, string personKey)
     {
-        using var portrait = LoadImage(portraitImagePath);
+        using var portrait = LoadPortraitImage(portraitImagePath);
         if (portrait is null)
             return null;
 
@@ -165,7 +165,7 @@ public static class PortraitComposer
     /// </summary>
     public static SKBitmap? ComposeBodyAndHeadPortrait(string portraitImagePath, PersonSex sex, string personKey)
     {
-        using var portrait = LoadImage(portraitImagePath);
+        using var portrait = LoadPortraitImage(portraitImagePath);
         if (portrait is null)
             return null;
 
@@ -211,5 +211,63 @@ public static class PortraitComposer
     {
         try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
         catch { return null; }
+    }
+
+    /// <summary>
+    /// Below this much "green excess" (<c>Green − max(Red, Blue)</c>) a pixel is left
+    /// completely untouched — protects skin/hair/eye tones, which never have Green
+    /// dominating Red and Blue by more than a small margin, from any keying at all.
+    /// </summary>
+    private const int GreenScreenKeyMargin = 15;
+
+    /// <summary>
+    /// Excess-green range (beyond <see cref="GreenScreenKeyMargin"/>) over which a pixel
+    /// fades from fully opaque to fully transparent, instead of a hard in/out cutoff. A solid
+    /// 00FF00 background (excess 255) always ends up fully transparent either way; this range
+    /// is what keys out the anti-aliased green/hair-color blend pixels at strand tips — a hard
+    /// exact-color match misses those because they're a blend, not pure green.
+    /// </summary>
+    private const int GreenScreenKeySpread = 70;
+
+    /// <summary>
+    /// Loads a head-portrait image and chroma-keys out its 00FF00-ish green-screen
+    /// background (see <see cref="GreenScreenKeyMargin"/>/<see cref="GreenScreenKeySpread"/>)
+    /// — some exports ship with a solid green background instead of real alpha. Also
+    /// despills partially-keyed edge pixels (hair-strand tips etc.) so they don't keep a
+    /// green tint. Unlike <see cref="LoadImage"/> (used for backgrounds/bodies, which are
+    /// never green-screened), the caller owns the returned bitmap regardless of whether
+    /// keying changed anything.
+    /// </summary>
+    private static SKBitmap? LoadPortraitImage(string path)
+    {
+        using var raw = LoadImage(path);
+        return raw is null ? null : ChromaKeyGreenScreen(raw);
+    }
+
+    private static SKBitmap ChromaKeyGreenScreen(SKBitmap source)
+    {
+        var pixels = source.Pixels;
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            var p = pixels[i];
+            int maxRedBlue = System.Math.Max(p.Red, p.Blue);
+            int excessGreen = p.Green - maxRedBlue;
+            if (excessGreen <= GreenScreenKeyMargin)
+                continue;
+
+            float keyStrength = System.Math.Min(1f, (excessGreen - GreenScreenKeyMargin) / (float)GreenScreenKeySpread);
+            byte newAlpha = (byte)(p.Alpha * (1f - keyStrength));
+            // Despill: clamp the green channel to max(Red, Blue) unconditionally — NOT scaled
+            // by keyStrength. A partially-opaque edge pixel (majority hair color, minor green
+            // contamination) still has G only a little above max(R,B); a keyStrength-scaled
+            // despill leaves that excess mostly intact and the pixel reads as a muddy olive
+            // tint along the whole strand, not just at the fully-transparent tip.
+            byte newGreen = (byte)maxRedBlue;
+            pixels[i] = new SKColor(p.Red, newGreen, p.Blue, newAlpha);
+        }
+
+        var result = new SKBitmap(source.Info);
+        result.Pixels = pixels;
+        return result;
     }
 }
