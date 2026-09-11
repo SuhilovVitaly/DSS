@@ -14,7 +14,7 @@ namespace DeepSpaceSaga.Engine;
 /// Uses DeepSpaceSaga.Motion for deterministic position calculation —
 /// the same library the client uses for prediction.
 /// </summary>
-public sealed class SimulationEngine : IDisposable
+public sealed partial class SimulationEngine : IDisposable
 {
     public const int SnapshotIntervalMs = 1000;
 
@@ -137,7 +137,11 @@ public sealed class SimulationEngine : IDisposable
     /// <summary>Set the authoritative simulation speed (e.g. Speed0 for pause).</summary>
     public void SetSpeed(SimulationSpeed speed)
     {
-        _clock.SetSpeed(speed);
+        lock (_worldStateLock)
+        {
+            if (_dialogue.Active is not null) { _dialogue.ResumeSpeed = speed; return; }
+            _clock.SetSpeed(speed);
+        }
     }
 
     /// <summary>
@@ -284,7 +288,11 @@ public sealed class SimulationEngine : IDisposable
                 Crew: crew,
                 StationCrew: stationCrew,
                 CaptainDisplayName: captainDisplayName,
-                CaptainPortraitImage: captainPortraitImage));
+                CaptainPortraitImage: captainPortraitImage,
+                PortFeeCreditsPerDay: obj.PortFeeCreditsPerDay,
+                SecurityZoneRadiusKm: obj.SecurityZoneRadiusKm,
+                PiracyWarningGracePeriodMs: obj.PiracyWarningGracePeriodMs,
+                IsDestroyed: obj.IsDestroyed));
         }
 
         lock (_worldStateLock)
@@ -317,6 +325,7 @@ public sealed class SimulationEngine : IDisposable
 
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
+            LoadDialogueState(gs.DialogueState, gs.GameTimeMs);
         }
     }
 
@@ -374,6 +383,7 @@ public sealed class SimulationEngine : IDisposable
         lock (_worldStateLock)
         {
             long gameTimeMs = clockState.GameTimeMs;
+            bool dialogueWasActive = _dialogue.Active is not null;
 
             // Gating this on the CURRENT speed (rather than always calling it) is wrong: the
             // snapshot loop yields once per real second regardless of speed, so the first
@@ -387,8 +397,11 @@ public sealed class SimulationEngine : IDisposable
             // snap. Completion is itself correctly gated on gameTimeMs progression already (its
             // loop condition no-ops when no time has passed), so no external speed check is
             // needed here.
+            UpdateStationSecurity(gameTimeMs);
             CompleteActiveEngineCycles(gameTimeMs);
             ApplyPendingCommands(gameTimeMs);
+            ApplyPendingDialogueCommands(gameTimeMs);
+            UpdateStationSecurity(gameTimeMs);
 
             // Re-validate on every snapshot (not only when the client reports new
             // interaction state): if the selected/active object disappeared from the
@@ -441,7 +454,8 @@ public sealed class SimulationEngine : IDisposable
                     CaptainDisplayName = isPlayerShipRow ? obj.CaptainDisplayName : null,
                     CaptainPortraitImage = isPlayerShipRow ? obj.CaptainPortraitImage : null,
                     DockOperatorDisplayName = dockOperator?.DisplayName,
-                    DockOperatorPortraitImage = dockOperator?.PortraitImage
+                    DockOperatorPortraitImage = dockOperator?.PortraitImage,
+                    IsDestroyed = obj.IsDestroyed
                 });
             }
 
@@ -469,7 +483,7 @@ public sealed class SimulationEngine : IDisposable
             return new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
                 GameTimeMs: gameTimeMs,
-                CurrentSpeed: clockState.Speed,
+                CurrentSpeed: _dialogue.Active is not null ? SimulationSpeed.Speed0 : dialogueWasActive ? _clock.Speed : clockState.Speed,
                 Objects: objects.MoveToImmutable(),
                 PlayerShipObjectId: PlayerShipObjectId,
                 CommandResults: commandResults,
@@ -479,7 +493,11 @@ public sealed class SimulationEngine : IDisposable
                 SelectedObjectId: SelectedObjectId,
                 PlayerCredits: PlayerCredits,
                 DockedStationTrade: BuildDockedStationTradeProjection(),
-                PlayerCrewCount: ResolvePlayerCrewCount());
+                PlayerCrewCount: ResolvePlayerCrewCount(),
+                ActiveDialogue: BuildDialogueSnapshot(gameTimeMs),
+                DialogueEvents: _dialogue.Events.ToImmutableArray(),
+                PlayerCharacter: _dialogue.Progress.PlayerCharacter,
+                Quests: _dialogue.Progress.Quests.Values.OrderBy(q => q.QuestId, StringComparer.Ordinal).ToImmutableArray());
         }
     }
 
@@ -684,12 +702,14 @@ public sealed class SimulationEngine : IDisposable
     private ScenarioFile CaptureSaveStateCore(SimulationClockState clockState)
     {
         long gameTimeMs = clockState.GameTimeMs;
+        bool dialogueWasActive = _dialogue.Active is not null;
 
         // Bring ActiveCycle/position/direction fully up to date for gameTimeMs before
         // capturing — otherwise a cycle that has already logically completed (but whose
         // completion hasn't been applied yet because the 1 Hz BuildSnapshot loop hasn't
         // ticked since) would be captured stale. Idempotent: a cycle already caught up to
         // gameTimeMs is a no-op here (same guard BuildSnapshot relies on).
+        UpdateStationSecurity(gameTimeMs);
         CompleteActiveEngineCycles(gameTimeMs);
 
         // Mirror BuildSnapshot's other half: a command the player sent in the narrow
@@ -699,6 +719,8 @@ public sealed class SimulationEngine : IDisposable
         // Applying it here, in the same order BuildSnapshot uses (cycles, then commands),
         // makes "continue after F9" match "continue without saving" for this case too.
         ApplyPendingCommands(gameTimeMs);
+        ApplyPendingDialogueCommands(gameTimeMs);
+        UpdateStationSecurity(gameTimeMs);
 
         var spaceObjects = new List<SpaceObjectData>(_objects.Count);
         foreach (var obj in _objects)
@@ -745,17 +767,22 @@ public sealed class SimulationEngine : IDisposable
                     ? obj.StationCrew.Select(BuildSaveStationCrewMember).ToList()
                     : null,
                 CaptainDisplayName: isPlayerShip ? obj.CaptainDisplayName : null,
-                CaptainPortraitImage: isPlayerShip ? obj.CaptainPortraitImage : null));
+                CaptainPortraitImage: isPlayerShip ? obj.CaptainPortraitImage : null,
+                PortFeeCreditsPerDay: obj.PortFeeCreditsPerDay,
+                SecurityZoneRadiusKm: obj.SecurityZoneRadiusKm,
+                PiracyWarningGracePeriodMs: obj.PiracyWarningGracePeriodMs,
+                IsDestroyed: obj.IsDestroyed));
         }
 
         var gameState = new GameStateData(
             GameTimeMs: gameTimeMs,
-            CurrentSpeed: clockState.Speed.ToString(),
+            CurrentSpeed: (_dialogue.Active is not null ? SimulationSpeed.Speed0 : dialogueWasActive ? _clock.Speed : clockState.Speed).ToString(),
             PlayerShipObjectId: PlayerShipObjectId ?? string.Empty,
             Focus: null, // camera/focus is client-side only — never saved (decision G.20)
             SpaceObjects: spaceObjects,
             MasterSeed: MasterSeed,
-            PlayerTokens: PlayerCredits);
+            PlayerTokens: PlayerCredits,
+            DialogueState: _dialogue.Save());
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
@@ -1735,6 +1762,11 @@ public sealed class SimulationEngine : IDisposable
     /// </summary>
     private CommandStartOutcome TryStartCommand(PlayerCommand command, long gameTimeMs)
     {
+        if (_objects.Any(o => o.InitialMotion.ObjectId == command.ObjectId && o.IsDestroyed))
+            return CommandStartOutcome.Rejected("player_destroyed");
+        if (_dialogue.Active is not null)
+            return CommandStartOutcome.Rejected("dialogue_active");
+
         if (command.CommandType == NavigationComputerCommandTypes.Dock)
             return TryStartNavigationCommand(command, gameTimeMs);
 
@@ -1754,18 +1786,8 @@ public sealed class SimulationEngine : IDisposable
     /// </summary>
     private const double DefaultDockRangeKm = 200.0;
 
-    /// <summary>
-    /// Handles navigation.dock — the only implemented NavigationComputer command
-    /// (requirements Docking.md, Station.md). Unlike Engine module commands, this is an
-    /// immediate one-shot authoritative action (no ActiveCycle/duration): it validates the
-    /// target station, range, and speed/direction synchronization, then physically snaps
-    /// the ship onto the station (position/speed/direction, local offset (1, 1) world units
-    /// per the documented old synchronization model) and marks it docked. A proper timed
-    /// docking maneuver through the shared ActiveCycle pipeline is deferred — see the
-    /// dispatcher's doc comment on why this is a separate method rather than an extension
-    /// of TryStartEngineCommand.
-    /// </summary>
-    private CommandStartOutcome TryStartNavigationCommand(PlayerCommand command, long gameTimeMs)
+    /// <summary>Validate navigation.dock and start negotiations; only a dialogue effect commits physical docking.</summary>
+    private CommandStartOutcome TryStartNavigationCommand(PlayerCommand command, long gameTimeMs, bool validateOnly = false)
     {
         if (!string.Equals(command.ObjectId, PlayerShipObjectId, StringComparison.Ordinal))
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
@@ -1777,6 +1799,11 @@ public sealed class SimulationEngine : IDisposable
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
 
         var obj = _objects[objectIndex];
+        if (obj.IsDestroyed) return CommandStartOutcome.Rejected("player_destroyed");
+        if (obj.IsDocked) return CommandStartOutcome.Rejected("already_docked");
+        if (_dialogue.Progress.StationAccessStates.TryGetValue(command.TargetObjectId ?? "", out var access) && access.AccessDenied)
+            return CommandStartOutcome.Rejected("station_access_denied");
+
         int moduleIndex = FindModuleIndex(obj.Modules, command.ModuleId);
         if (moduleIndex < 0)
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
@@ -1829,25 +1856,17 @@ public sealed class SimulationEngine : IDisposable
             return CommandStartOutcome.Rejected(CommandReasonCodes.DockNotSynchronized);
         }
 
-        // Physically synchronize with the station: local offset (1, 1) world units per the
-        // documented old synchronization model (Docking.md). Re-baseline StartGameTimeMs to
-        // the dock moment so future BuildSnapshot/CaptureSaveState predictions compute
-        // elapsed time from here, not from session start.
-        var dockedMotion = obj.InitialMotion with
+        if (validateOnly) return CommandStartOutcome.Started;
+        if (_dialogue.ProcessedCommandIds.Contains(command.CommandId))
         {
-            X = targetMotion.X + 1.0,
-            Y = targetMotion.Y + 1.0,
-            SpeedKmS = targetMotion.SpeedKmS,
-            Direction = targetMotion.Direction
-        };
-
-        _objects[objectIndex] = obj with
-        {
-            InitialMotion = dockedMotion,
-            StartGameTimeMs = gameTimeMs,
-            IsDocked = true,
-            DockedStationObjectId = target.InitialMotion.ObjectId
-        };
+            RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
+            return CommandStartOutcome.Started;
+        }
+        var error = StartDialogue("dialogue.station-docking", target.InitialMotion.ObjectId,
+            target.StationCrew.FirstOrDefault(c => c.Role == StationCrewRoles.DockOperator)?.Id ?? target.InitialMotion.ObjectId,
+            command.CommandId, gameTimeMs);
+        if (error is not null) return CommandStartOutcome.Rejected(error);
+        _dialogue.ProcessedCommandIds = _dialogue.ProcessedCommandIds.Add(command.CommandId);
 
         RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
         return CommandStartOutcome.Started;
@@ -3398,7 +3417,11 @@ internal sealed record SpaceObjectRuntime(
     /// </summary>
     string? CaptainDisplayName = null,
     /// <summary>Player ship captain's portrait image path; see <see cref="CaptainDisplayName"/>.</summary>
-    string? CaptainPortraitImage = null);
+    string? CaptainPortraitImage = null,
+    long? PortFeeCreditsPerDay = null,
+    int? SecurityZoneRadiusKm = null,
+    long? PiracyWarningGracePeriodMs = null,
+    bool IsDestroyed = false);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName);

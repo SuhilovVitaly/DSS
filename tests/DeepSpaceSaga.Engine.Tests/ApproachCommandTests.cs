@@ -650,6 +650,11 @@ public class ApproachCommandTests
 
         var dockResult = afterDock.CommandResults.Single(r => r.CommandId == "cmd-dock");
         Assert.Equal(CommandResultStatus.Executed, dockResult.Status);
+        Assert.False(PlayerShipFrom(afterDock).IsDocked);
+        Assert.NotNull(afterDock.ActiveDialogue);
+        DialogueTests.Choose(engine, "truthful_id", time: 1000);
+        DialogueTests.Choose(engine, "accept_fee", time: 1000);
+        afterDock = DialogueTests.Choose(engine, "continue", time: 1000);
         Assert.True(PlayerShipFrom(afterDock).IsDocked);
         Assert.Equal(TargetId, PlayerShipFrom(afterDock).DockedStationObjectId);
     }
@@ -782,7 +787,7 @@ public class ApproachCommandTests
           "gameState": {
             "gameTimeMs": 0,
             "currentSpeed": "Speed0",
-            "playerShipObjectId": "{{PlayerShipId}}",
+            "playerShipObjectId": "{{PlayerShipId}}", "playerTokens": 1000,
             "spaceObjects": [
               {
                 "objectId": "{{PlayerShipId}}",
@@ -811,7 +816,7 @@ public class ApproachCommandTests
               },
               {
                 "objectId": "{{TargetId}}",
-                "objectType": "{{targetObjectType}}",
+                "objectType": "{{targetObjectType}}", "portFeeCreditsPerDay": 100, "securityZoneRadiusKm": 200, "piracyWarningGracePeriodMs": 60000,
                 "persistenceType": "Permanent",
                 "positionX": {{targetX}},
                 "positionY": {{targetY}},
@@ -889,6 +894,6 @@ public class ApproachCommandTests
                     NavigationComputerCommandTypes.Dock, "Dock",
                     TimeFactor: 2000, Target: "object", Type: "module.bridge.navigation.computer",
                     RangeKm: 200)
-            ]);
+            ], dialogues: DialogueContentLoader.Load(DialogueTests.ContentPath));
     }
 }

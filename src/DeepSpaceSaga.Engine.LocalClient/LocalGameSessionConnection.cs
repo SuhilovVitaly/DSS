@@ -106,6 +106,14 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         return ValueTask.CompletedTask;
     }
 
+    public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        _engine.ReceiveDialogueCommand(command);
+        return ValueTask.CompletedTask;
+    }
+
     public ValueTask SetSimulationSpeedAsync(
         SimulationSpeed speed,
         CancellationToken cancellationToken = default)

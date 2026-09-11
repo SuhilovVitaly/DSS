@@ -8,17 +8,7 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests;
 
-/// <summary>
-/// A Commands Panel click on Dock no longer calls GameSessionHandle.SendCommandAsync
-/// directly — it must be confirmed first in the docking-confirmation modal (see
-/// DockingConfirmScreenTests.cs). This covers GameSessionScreen's half of that
-/// deferral: SendCommandFromPanel stashes the request instead of sending it, the same
-/// click's OnMouseDown returns ScreenEvent.OpenDockingConfirm, and
-/// ConsumePendingDockingConfirmRequest hands it off exactly once (mirroring
-/// ConsumePendingAutoTransition's edge-triggered "consume" idiom, but called
-/// synchronously once rather than polled per frame).
-/// </summary>
-public class GameSessionDockingConfirmTests
+public class GameSessionDockingRequestTests
 {
     private const int ScreenWidth = 1280;
     private const int ScreenHeight = 720;
@@ -82,39 +72,23 @@ public class GameSessionDockingConfirmTests
     }
 
     [Fact]
-    public async Task Clicking_Dock_does_not_send_a_command_directly()
+    public async Task Clicking_Dock_sends_the_navigation_request_directly()
     {
         await using var fixture = CreateFixture();
 
         SelectStationAndClickDock(fixture.Screen);
 
-        Assert.Empty(fixture.Connection.Commands);
+        Assert.Equal(NavigationComputerCommandTypes.Dock, Assert.Single(fixture.Connection.Commands).CommandType);
     }
 
     [Fact]
-    public async Task Clicking_Dock_returns_OpenDockingConfirm()
+    public async Task Clicking_Dock_waits_for_authoritative_dialogue()
     {
         await using var fixture = CreateFixture();
 
         var result = SelectStationAndClickDock(fixture.Screen);
 
-        Assert.Equal(ScreenEvent.OpenDockingConfirm, result);
-    }
-
-    [Fact]
-    public async Task ConsumePendingDockingConfirmRequest_returns_the_saved_request_once_then_null()
-    {
-        await using var fixture = CreateFixture();
-        SelectStationAndClickDock(fixture.Screen);
-
-        var request = fixture.Screen.ConsumePendingDockingConfirmRequest();
-
-        Assert.NotNull(request);
-        Assert.Equal(PlayerShipId, request!.PlayerShipObjectId);
-        Assert.Equal(NavigationComputerModuleId, request.ModuleId);
-        Assert.Equal(StationId, request.TargetObjectId);
-
-        Assert.Null(fixture.Screen.ConsumePendingDockingConfirmRequest());
+        Assert.Equal(ScreenEvent.None, result);
     }
 
     [Fact]
@@ -135,7 +109,7 @@ public class GameSessionDockingConfirmTests
         fixture.Screen.OnMouseDown(stationsList.Rect.MidX, stationsList.Rect.MidY);
 
         Assert.Empty(fixture.Connection.Commands);
-        Assert.Null(fixture.Screen.ConsumePendingDockingConfirmRequest());
+
     }
 
     private sealed record TestFixture(
@@ -149,6 +123,8 @@ public class GameSessionDockingConfirmTests
     private sealed class RecordingConnection : IGameSessionConnection
     {
         public List<PlayerCommand> Commands { get; } = [];
+
+        public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
         public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default)
         {

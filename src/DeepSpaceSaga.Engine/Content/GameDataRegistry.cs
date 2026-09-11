@@ -8,7 +8,9 @@ internal sealed class GameDataRegistry
         TypeRegistry<ItemTypeDefinition> itemTypes,
         TypeRegistry<CommandDefinition> commandDefinitions,
         TypeRegistry<FactoryTypeDefinition> factoryTypes,
-        TypeRegistry<RecipeDefinition> recipes)
+        TypeRegistry<RecipeDefinition> recipes,
+        TypeRegistry<DialogueDefinition>? dialogues = null,
+        TypeRegistry<QuestDefinition>? quests = null)
     {
         ModuleCategories = moduleCategories;
         ModuleTypes = moduleTypes;
@@ -16,6 +18,8 @@ internal sealed class GameDataRegistry
         CommandDefinitions = commandDefinitions;
         FactoryTypes = factoryTypes;
         Recipes = recipes;
+        Dialogues = dialogues ?? TypeRegistry<DialogueDefinition>.Empty;
+        Quests = quests ?? TypeRegistry<QuestDefinition>.Empty;
     }
 
     public TypeRegistry<ModuleCategoryDefinition> ModuleCategories { get; }
@@ -24,6 +28,8 @@ internal sealed class GameDataRegistry
     public TypeRegistry<CommandDefinition> CommandDefinitions { get; }
     public TypeRegistry<FactoryTypeDefinition> FactoryTypes { get; }
     public TypeRegistry<RecipeDefinition> Recipes { get; }
+    public TypeRegistry<DialogueDefinition> Dialogues { get; }
+    public TypeRegistry<QuestDefinition> Quests { get; }
 
     public static GameDataRegistry Empty { get; } = new(
         TypeRegistry<ModuleCategoryDefinition>.Empty,
@@ -39,7 +45,9 @@ internal sealed class GameDataRegistry
         IEnumerable<ItemTypeDefinition> itemTypes,
         IEnumerable<CommandDefinition> commandDefinitions,
         IEnumerable<FactoryTypeDefinition>? factoryTypes = null,
-        IEnumerable<RecipeDefinition>? recipes = null)
+        IEnumerable<RecipeDefinition>? recipes = null,
+        IEnumerable<DialogueDefinition>? dialogues = null,
+        IEnumerable<QuestDefinition>? quests = null)
     {
         var commandRegistry = TypeRegistry<CommandDefinition>.Create(commandDefinitions, "command definitions");
         var categoryRegistry = TypeRegistry<ModuleCategoryDefinition>.Create(moduleCategories, "module types");
@@ -70,6 +78,25 @@ internal sealed class GameDataRegistry
             }
         }
 
-        return new GameDataRegistry(categoryRegistry, moduleRegistry, itemRegistry, commandRegistry, factoryRegistry, recipeRegistry);
+        var dialogueRegistry = TypeRegistry<DialogueDefinition>.Create(dialogues ?? [], "dialogues");
+        var questRegistry = TypeRegistry<QuestDefinition>.Create(quests ?? [], "quests");
+        for (int i = 0; i < dialogueRegistry.Count; i++)
+        {
+            var dialogue = dialogueRegistry.GetDefinition(i);
+            DialogueContentLoader.Validate(dialogue);
+            foreach (var effect in dialogue.Nodes.SelectMany(n => n.Choices).SelectMany(c => c.Effects.IsDefault ? [] : c.Effects))
+            {
+                if (effect.ItemTypeId is not null && !itemRegistry.Contains(effect.ItemTypeId))
+                    throw new ContentException($"Unknown dialogue item: {effect.ItemTypeId}");
+                if (effect.QuestId is not null)
+                {
+                    if (!questRegistry.Contains(effect.QuestId)) throw new ContentException($"Unknown dialogue quest: {effect.QuestId}");
+                    if (effect.ObjectiveId is not null && !questRegistry.GetDefinition(questRegistry.GetIndex(effect.QuestId)).Objectives.Contains(effect.ObjectiveId))
+                        throw new ContentException($"Unknown dialogue objective: {effect.ObjectiveId}");
+                }
+            }
+        }
+        return new GameDataRegistry(categoryRegistry, moduleRegistry, itemRegistry, commandRegistry, factoryRegistry, recipeRegistry,
+            dialogueRegistry, questRegistry);
     }
 }

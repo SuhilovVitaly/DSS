@@ -37,4 +37,10 @@ public sealed record AuthoritativeSnapshot(
     /// cabin occupancy"). Always present; 0 when there is no player ship or it carries no
     /// crew (the common case for every scenario/save predating this field).
     /// </summary>
-    int PlayerCrewCount = 0);
+    int PlayerCrewCount = 0,
+    DialogueState? ActiveDialogue = null,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<DialogueEvent>))]
+    ImmutableArray<DialogueEvent> DialogueEvents = default,
+    PlayerCharacterState? PlayerCharacter = null,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<QuestState>))]
+    ImmutableArray<QuestState> Quests = default);

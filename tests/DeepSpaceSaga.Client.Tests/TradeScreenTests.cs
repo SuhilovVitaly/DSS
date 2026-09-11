@@ -1983,6 +1983,8 @@ public class TradeScreenTests
     {
         public List<PlayerCommand> Commands { get; } = [];
 
+        public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+
         public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default)
         {
             Commands.Add(command);

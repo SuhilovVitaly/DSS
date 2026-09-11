@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Engine.Dialogue;
 using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Engine.Scenario;
@@ -57,7 +58,8 @@ public sealed record GameStateData(
     /// the field; every scenario the game ships sets this explicitly — currently 2000).
     /// A plain default, never randomized.
     /// </summary>
-    [property: JsonPropertyName("playerTokens")] long? PlayerTokens = null);
+    [property: JsonPropertyName("playerTokens")] long? PlayerTokens = null,
+    [property: JsonPropertyName("dialogueState")] DialogueSaveState? DialogueState = null);
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(
@@ -166,7 +168,11 @@ public sealed record SpaceObjectData(
     /// </summary>
     [property: JsonPropertyName("captainDisplayName")] string? CaptainDisplayName = null,
     /// <summary>Player ship's captain portrait image path; see <see cref="CaptainDisplayName"/>.</summary>
-    [property: JsonPropertyName("captainPortraitImage")] string? CaptainPortraitImage = null);
+    [property: JsonPropertyName("captainPortraitImage")] string? CaptainPortraitImage = null,
+    [property: JsonPropertyName("portFeeCreditsPerDay")] long? PortFeeCreditsPerDay = null,
+    [property: JsonPropertyName("securityZoneRadiusKm")] int? SecurityZoneRadiusKm = null,
+    [property: JsonPropertyName("piracyWarningGracePeriodMs")] long? PiracyWarningGracePeriodMs = null,
+    [property: JsonPropertyName("isDestroyed")] bool IsDestroyed = false);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles

@@ -33,6 +33,8 @@ public class ModalTransitionTests
             gate?.TrySetResult();
         }
 
+        public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+
         public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken ct = default)
             => ValueTask.CompletedTask;
 

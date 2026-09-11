@@ -31,7 +31,7 @@ public class DockCommandTests
     /// <param name="stationSpeedMps">Station speed (m/s) — 0 for the usual Stationary station.</param>
     /// <param name="stationObjectType">Object type of the "STATION-01" object — Station by default; a test can override to a non-Station type.</param>
     /// <param name="rangeKm">navigation.dock's configured range, world-units-converted for the check.</param>
-    private static SimulationEngine CreateEngine(
+    internal static SimulationEngine CreateEngine(
         double shipX = 10000,
         double shipY = 10000,
         int shipSpeedMps = 0,
@@ -41,7 +41,7 @@ public class DockCommandTests
         int rangeKm = 200,
         string powerState = "On",
         string operationalState = "Ready",
-        int structurePoints = 80)
+        int structurePoints = 80, long playerCredits = 1000, long stationCredits = 10000)
     {
         var engine = new SimulationEngine(CreateRegistry(rangeKm));
         engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
@@ -51,6 +51,7 @@ public class DockCommandTests
             "gameTimeMs": 0,
             "currentSpeed": "Speed0",
             "playerShipObjectId": "{{PlayerShipId}}",
+            "playerTokens": {{playerCredits}},
             "spaceObjects": [
               {
                 "objectId": "{{PlayerShipId}}",
@@ -78,6 +79,9 @@ public class DockCommandTests
               {
                 "objectId": "{{StationId}}",
                 "objectType": "{{stationObjectType}}",
+                "credits": {{stationCredits}}, "portFeeCreditsPerDay": 100,
+                "securityZoneRadiusKm": 200, "piracyWarningGracePeriodMs": 60000,
+                "stationCrew": [{ "crewId": "operator", "role": "Dock Operator", "displayName": "Test Operator", "portraitImage": "operator.png" }],
                 "persistenceType": "Permanent",
                 "positionX": {{stationX}},
                 "positionY": 10000,
@@ -93,7 +97,7 @@ public class DockCommandTests
         return engine;
     }
 
-    private static GameDataRegistry CreateRegistry(int rangeKm)
+    internal static GameDataRegistry CreateRegistry(int rangeKm)
     {
         string[] commandIds = [NavigationComputerCommandTypes.Dock, NavigationComputerCommandTypes.StationsList];
 
@@ -125,7 +129,7 @@ public class DockCommandTests
                 new CommandDefinition(
                     NavigationComputerCommandTypes.StationsList, "Stations List",
                     Target: "none", Type: "module.bridge.navigation.computer")
-            ]);
+            ], dialogues: DialogueContentLoader.Load(DialogueTests.ContentPath));
     }
 
     [Fact]
@@ -139,6 +143,8 @@ public class DockCommandTests
         var result = Assert.Single(snapshot.CommandResults);
         Assert.Equal(CommandResultStatus.Executed, result.Status);
 
+        Assert.NotNull(snapshot.ActiveDialogue);
+        snapshot = DialogueTests.PayAndFinish(engine);
         var ship = PlayerShipFrom(snapshot);
         Assert.True(ship.IsDocked);
         Assert.Equal(StationId, ship.DockedStationObjectId);
@@ -213,7 +219,9 @@ public class DockCommandTests
         var snapshot = engine.CaptureSnapshotForTests();
 
         Assert.Equal(CommandResultStatus.Executed, Assert.Single(snapshot.CommandResults).Status);
-        Assert.True(PlayerShipFrom(snapshot).IsDocked);
+        Assert.False(PlayerShipFrom(snapshot).IsDocked);
+        Assert.NotNull(snapshot.ActiveDialogue);
+        Assert.True(PlayerShipFrom(DialogueTests.PayAndFinish(engine)).IsDocked);
     }
 
     [Fact]
@@ -248,13 +256,16 @@ public class DockCommandTests
     {
         var engine = CreateEngine();
         engine.ReceiveCommand(DockCommand());
-        engine.CaptureSnapshotForTests(); // drain the command so it's applied before capture below
+        engine.CaptureSnapshotForTests();
+        DialogueTests.PayAndFinish(engine);
 
         var saveState = engine.CaptureSaveStateForTests(gameTimeMs: 0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0);
 
         var reloaded = new SimulationEngine(CreateRegistry(200));
         reloaded.LoadScenario(saveState);
         var snapshot = reloaded.CaptureSnapshotForTests();
+
+        Assert.Null(snapshot.ActiveDialogue);
 
         var ship = PlayerShipFrom(snapshot);
         Assert.True(ship.IsDocked);

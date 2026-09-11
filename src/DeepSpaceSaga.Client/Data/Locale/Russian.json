@@ -95,5 +95,24 @@
   "Trade.ReasonUnknownItemType": "Неизвестный тип товара",
   "Trade.ReasonNotDocked": "Корабль не пристыкован к станции",
   "Trade.ReasonInsufficientCargoQuantity": "Недостаточно этого товара в грузе",
-  "Trade.ReasonInvalidQuantity": "Некорректное количество"
+  "Trade.ReasonInvalidQuantity": "Некорректное количество",
+
+  "Dialogue.Error.dialogue_condition_not_met": "Условия не выполнены",
+  "Dialogue.Error.dialogue_revision_mismatch": "Разговор изменился. Выберите ответ ещё раз.",
+  "Dialogue.Docking.OfferPortFee": "Корабль опознан. Портовый сбор за одни стандартные сутки составляет {portFeeCreditsPerDay} токенов. Оплатить сбор?",
+  "Dialogue.Error.send_failed": "Не удалось отправить ответ. Повторите попытку.",
+  "Dialogue.Docking.RefuseFee": "Отказаться",
+  "Dialogue.Cancel": "Завершить разговор",
+  "Dialogue.Docking.PirateWarning": "Ваши идентификационные данные не соответствуют кораблю. Вы объявлены пиратом. Доступ к станции запрещён. Немедленно покиньте зону безопасности станции, иначе корабль будет уничтожен.",
+  "Dialogue.Docking.FeeRefused": "Когда у вас появятся деньги, станция будет рада принять вас.",
+  "Dialogue.Docking.AnswerFalseId": "Сообщить ложный ID",
+  "Dialogue.Docking.Welcome": "Оплата получена. Стыковка завершена. Добро пожаловать на станцию.",
+  "Dialogue.Docking.AcceptFee": "Оплатить портовый сбор",
+  "Dialogue.Error.insufficient_player_credits": "Недостаточно токенов",
+  "Dialogue.Docking.RequestShipId": "Назовите идентификационный номер вашего корабля.",
+  "Dialogue.Docking.AnswerTruthfulId": "Сообщить настоящий ID корабля",
+  "Dialogue.Error.generic": "Этот ответ недоступен.",
+  "Dialogue.Title": "СВЯЗЬ",
+  "Dialogue.Continue": "Продолжить",
+  "Dialogue.Error.cargo_capacity_exceeded": "Недостаточно места в трюме"
 }

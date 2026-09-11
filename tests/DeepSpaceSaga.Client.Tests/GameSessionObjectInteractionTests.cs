@@ -1010,6 +1010,8 @@ public class GameSessionObjectInteractionTests
             }
         }
 
+        public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+
         public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default)
         {
             Commands.Add(command);

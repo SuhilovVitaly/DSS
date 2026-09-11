@@ -115,7 +115,11 @@
         },
       {
         "objectId": "SPC-0002",
+        "stationCrew": [{ "crewId": "CHR-0003", "role": "Dock Operator", "displayName": "Mari Lefeber", "portraitImage": "Images/Persons/W/CHR-20260901-232751-JUKCIQ.png" }],
         "objectType": "Station",
+        "portFeeCreditsPerDay": 100,
+        "securityZoneRadiusKm": 200,
+        "piracyWarningGracePeriodMs": 60000,
         "persistenceType": "Permanent",
         "name": "Start Station",
         "positionX": 11000.0,

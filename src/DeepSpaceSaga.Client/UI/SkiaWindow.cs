@@ -13,7 +13,7 @@ using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Client.UI.Screens.Ship;
 using DeepSpaceSaga.Client.UI.Screens.Contracts;
-using DeepSpaceSaga.Client.UI.Screens.DockingConfirm;
+using DeepSpaceSaga.Client.UI.Screens.Dialogue;
 using DeepSpaceSaga.Client.UI.Screens.Hire;
 using DeepSpaceSaga.Client.UI.Screens.Station;
 using DeepSpaceSaga.Client.UI.Screens.Trade;
@@ -315,6 +315,12 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private void PollGameSessionAutoTransition()
     {
+        if (_screens.Current is DialogueScreen dialogue)
+        {
+            var transition = dialogue.Poll();
+            if (transition != ScreenEvent.None) _ = HandleScreenEvent(transition);
+            return;
+        }
         if (_screens.Current is not GameSessionScreen gameSessionScreen)
             return;
 
@@ -617,11 +623,21 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.CloseStation:
                     await CloseOverlayAsync();
                     break;
-                case ScreenEvent.OpenDockingConfirm:
-                    await OpenDockingConfirmAsync();
+                case ScreenEvent.OpenDialogue:
+                    if (_screens.Current is GameSessionScreen && _session?.Buffer.Latest?.Snapshot.ActiveDialogue is { } active)
+                    {
+                        // The engine owns this modal pause, including loaded dialogues.
+                        _screens.Push(new DialogueScreen(_session.Buffer, _session, active));
+                        _modalDepth++;
+                    }
                     break;
-                case ScreenEvent.CloseDockingConfirm:
-                    await PopModalAsync();
+                case ScreenEvent.CloseDialogue:
+                    if (_screens.Current is DialogueScreen)
+                    {
+                        _screens.Pop();
+                        _modalDepth--;
+                        // Completion/abort restored authoritative speed in the engine.
+                    }
                     break;
                 case ScreenEvent.OpenTrade:
                     await OpenTradeAsync();
@@ -826,39 +842,7 @@ public sealed class SkiaWindow : IDisposable
         await PushModalAsync(new StationScreen(_session?.Buffer));
     }
 
-    /// <summary>
-    /// Push the docking-confirmation modal (ScreenEvent.OpenDockingConfirm, produced by a
-    /// Commands Panel click on the Dock button — see GameSessionScreen.SendCommandFromPanel).
-    /// The pending request is consumed synchronously from the GameSessionScreen still on top
-    /// of the stack (it produced the event in the same OnMouseDown call) — a null request is
-    /// a defensive no-op for the edge case where it was somehow already consumed. Uses the
-    /// same generic PushModalAsync pause-on-open behavior as every other modal.
-    /// </summary>
-    private async Task OpenDockingConfirmAsync()
-    {
-        // Guard: don't push overlay on top of another overlay
-        if (_screens.Current is DockingConfirmScreen)
-            return;
-
-        if (_screens.Current is not GameSessionScreen gameSessionScreen)
-            return;
-
-        var request = gameSessionScreen.ConsumePendingDockingConfirmRequest();
-        if (request is null)
-            return;
-
-        await PushModalAsync(new DockingConfirmScreen(_session?.Buffer, _session, request));
-    }
-
-    /// <summary>
-    /// Return to the Station hub from one of its nested windows (Trade/Hire/Contracts/
-    /// Finance) — raised by clicking the station-name label in StationToolbar
-    /// (ScreenEvent.NavigateToStation). Trade/Hire/Contracts are always opened as a
-    /// nested modal directly on top of Station, so popping alone reveals it; Finance is
-    /// also reachable straight from GameSessionScreen (Ctrl+F) with no Station beneath
-    /// it, so this pushes a fresh Station screen in that case instead of leaving the
-    /// player on whatever was underneath.
-    /// </summary>
+    /// <summary>Return from a nested station window to its hub.</summary>
     private async Task NavigateToStationAsync()
     {
         await PopModalAsync();

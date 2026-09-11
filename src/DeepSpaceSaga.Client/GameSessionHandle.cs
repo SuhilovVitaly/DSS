@@ -41,6 +41,9 @@ public sealed class GameSessionHandle : IAsyncDisposable
         _interactionStateSenderTask = Task.Run(() => InteractionStateSenderLoopAsync(_cts.Token));
     }
 
+    public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) =>
+        _connection.SendDialogueCommandAsync(command, cancellationToken);
+
     public IGameSessionConnection Connection => _connection;
     public SnapshotBuffer Buffer { get; }
 

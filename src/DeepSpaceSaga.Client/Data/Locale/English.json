@@ -95,5 +95,24 @@
   "Trade.ReasonUnknownItemType": "Unknown item type",
   "Trade.ReasonNotDocked": "Not docked to a station",
   "Trade.ReasonInsufficientCargoQuantity": "Not enough of this item in cargo",
-  "Trade.ReasonInvalidQuantity": "Invalid quantity"
+  "Trade.ReasonInvalidQuantity": "Invalid quantity",
+
+  "Dialogue.Error.dialogue_condition_not_met": "Requirements not met",
+  "Dialogue.Error.dialogue_revision_mismatch": "The conversation has changed. Choose again.",
+  "Dialogue.Docking.OfferPortFee": "Ship identified. The port fee for one standard day is {portFeeCreditsPerDay} tokens. Pay the fee?",
+  "Dialogue.Error.send_failed": "Could not send the response. Try again.",
+  "Dialogue.Docking.RefuseFee": "Decline",
+  "Dialogue.Cancel": "End conversation",
+  "Dialogue.Docking.PirateWarning": "Your identification does not match your ship. You have been declared a pirate. Station access is denied. Leave the security zone immediately or your ship will be destroyed.",
+  "Dialogue.Docking.FeeRefused": "The station will be happy to welcome you when you have the funds.",
+  "Dialogue.Docking.AnswerFalseId": "Transmit a false ID",
+  "Dialogue.Docking.Welcome": "Payment received. Docking complete. Welcome aboard the station.",
+  "Dialogue.Docking.AcceptFee": "Pay the port fee",
+  "Dialogue.Error.insufficient_player_credits": "Not enough tokens",
+  "Dialogue.Docking.RequestShipId": "State the identification number of your ship.",
+  "Dialogue.Docking.AnswerTruthfulId": "Transmit the real ship ID",
+  "Dialogue.Error.generic": "This response is unavailable.",
+  "Dialogue.Title": "COMMUNICATION",
+  "Dialogue.Continue": "Continue",
+  "Dialogue.Error.cargo_capacity_exceeded": "Not enough cargo space"
 }

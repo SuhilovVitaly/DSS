@@ -115,4 +115,5 @@ public sealed record ObjectMotionSnapshot(
     /// </summary>
     string? DockOperatorDisplayName = null,
     /// <summary>Dock operator's portrait image path; see <see cref="DockOperatorDisplayName"/>.</summary>
-    string? DockOperatorPortraitImage = null);
+    string? DockOperatorPortraitImage = null,
+    bool IsDestroyed = false);

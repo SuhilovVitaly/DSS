@@ -1,0 +1,36 @@
+{
+  "dialogues": [
+    {
+      "dialogueId": "dialogue.station-docking",
+      "displayName": "Station docking negotiation",
+      "entryNodeId": "request_ship_id",
+      "canAbort": true,
+      "nodes": [
+        {
+          "nodeId": "request_ship_id", "speakerRole": "Dock Operator", "textKey": "Dialogue.Docking.RequestShipId",
+          "choices": [
+            { "choiceId": "truthful_id", "textKey": "Dialogue.Docking.AnswerTruthfulId", "nextNodeId": "offer_port_fee",
+              "effects": [{ "type": "SetFlag", "flag": "station_id_was_provided" }] },
+            { "choiceId": "false_id", "textKey": "Dialogue.Docking.AnswerFalseId", "nextNodeId": "pirate_warning",
+              "effects": [{ "type": "DenyStationAccess", "stationScope": "current" }, { "type": "ArmSecurityIncident", "incidentType": "piracy" }] }
+          ]
+        },
+        {
+          "nodeId": "offer_port_fee", "speakerRole": "Dock Operator", "textKey": "Dialogue.Docking.OfferPortFee",
+          "choices": [
+            { "choiceId": "accept_fee", "textKey": "Dialogue.Docking.AcceptFee", "nextNodeId": "welcome",
+              "effects": [{ "type": "RemoveCredits", "amountSource": "station.portFeeCreditsPerDay" },
+                { "type": "AddStationCredits", "amountSource": "station.portFeeCreditsPerDay" }, { "type": "DockPlayerToStation" }] },
+            { "choiceId": "refuse_fee", "textKey": "Dialogue.Docking.RefuseFee", "nextNodeId": "fee_refused" }
+          ]
+        },
+        { "nodeId": "welcome", "speakerRole": "Dock Operator", "textKey": "Dialogue.Docking.Welcome",
+          "choices": [] },
+        { "nodeId": "fee_refused", "speakerRole": "Dock Operator", "textKey": "Dialogue.Docking.FeeRefused",
+          "choices": [] },
+        { "nodeId": "pirate_warning", "speakerRole": "Dock Operator", "textKey": "Dialogue.Docking.PirateWarning",
+          "choices": [] }
+      ]
+    }
+  ]
+}

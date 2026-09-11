@@ -5,7 +5,9 @@
     "itemTypes": "Data/Items",
     "commandDefinitions": "Data/Commands",
     "factoryTypes": "Data/factory-types.json",
-    "recipes": "Data/recipes.json"
+    "recipes": "Data/recipes.json",
+    "dialogues": "Data/Dialogues",
+    "quests": "Data/Quests"
   },
   "defaultScenario": "Scenarios/Default/scenario.json",
   "gameSettings": {
