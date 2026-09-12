@@ -18,21 +18,28 @@ public sealed partial class SimulationEngine
         lock (_worldStateLock) _pendingDialogueCommands.Enqueue(command);
     }
 
-    private void LoadDialogueState(DialogueSaveState? save, long time)
+    private void ValidateDialogueState(DialogueSaveState? save, IReadOnlyList<SpaceObjectRuntime> objects)
     {
-        _pendingDialogueCommands.Clear();
-        _dialogue.Load(save);
-        foreach (var station in _objects)
+        foreach (var station in objects)
             if (station.PortFeeCreditsPerDay < 0 || station.SecurityZoneRadiusKm <= 0 || station.PiracyWarningGracePeriodMs < 0)
                 throw new ScenarioException("Invalid station docking/security configuration.");
-        if (_dialogue.Active is { } active)
+        if (save?.ActiveDialogue is { } active)
         {
             if (!_registry.Dialogues.Contains(active.DialogueDefinitionId))
                 throw new ScenarioException("Unknown saved dialogue definition.");
             var definition = _registry.Dialogues.GetDefinition(_registry.Dialogues.GetIndex(active.DialogueDefinitionId));
             if (!definition.Nodes.Any(n => n.NodeId == active.CurrentNodeId) || active.Revision < 0 ||
-                active.StationObjectId is not null && !_objects.Any(o => o.InitialMotion.ObjectId == active.StationObjectId))
+                active.StationObjectId is not null && !objects.Any(o => o.InitialMotion.ObjectId == active.StationObjectId))
                 throw new ScenarioException("Invalid saved dialogue context.");
+        }
+    }
+
+    private void LoadDialogueState(DialogueSaveState? save, long time)
+    {
+        _pendingDialogueCommands.Clear();
+        _dialogue.Load(save);
+        if (_dialogue.Active is not null)
+        {
             _dialogue.ResumeSpeed ??= _clock.Speed;
             _clock.Reset(time, SimulationSpeed.Speed0);
         }

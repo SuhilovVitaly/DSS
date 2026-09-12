@@ -32,6 +32,8 @@ public sealed class SkiaWindow : IDisposable
     private readonly IWindow _window;
     private readonly IGameSessionFactory _sessionFactory;
     private readonly ScreenStack _screens = new();
+    private readonly WindowThreadContext _uiContext = new();
+    private readonly SessionConnectionLoader _connectionLoader = new();
 
     private GL? _gl;
     private GRContext? _grContext;
@@ -97,6 +99,7 @@ public sealed class SkiaWindow : IDisposable
         _window = Window.Create(options);
         _window.Load += OnLoad;
         _window.Render += OnRender;
+        _window.Update += _ => _uiContext.Drain();
         _window.FramebufferResize += OnFramebufferResize;
         _window.FocusChanged += OnFocusChanged;
         _window.Closing += OnClosing;
@@ -106,7 +109,19 @@ public sealed class SkiaWindow : IDisposable
             InterfaceLog.Write($"STARTUP DIAG: after Window.Create — {_startupStopwatch.ElapsedMilliseconds} ms since Main() start");
     }
 
-    public void Run() => _window.Run();
+    public void Run()
+    {
+        var previous = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(_uiContext);
+        try { _window.Run(); }
+        finally
+        {
+            _closing = true;
+            _ = _connectionLoader.DisposeAsync();
+            _uiContext.Drain();
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+    }
 
     private void OnLoad()
     {
@@ -183,6 +198,7 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         _closing = true;
+        _ = _connectionLoader.DisposeAsync();
 
         if (_mouse is not null)
         {
@@ -282,6 +298,9 @@ public sealed class SkiaWindow : IDisposable
             screen.Render(canvas, windowSize.X, windowSize.Y);
             index++;
         }
+        if (_session?.Failure is not null)
+            canvas.DrawText(Localization.Get("Session.ConnectionLost"), windowSize.X / 2f,
+                windowSize.Y - 20, MenuStyle.TextStatus);
 
         if (isFirstFrame)
             InterfaceLog.Write($"STARTUP DIAG: first-frame screen.Render (recording) done — {diagSw!.ElapsedMilliseconds} ms into OnRender");
@@ -556,6 +575,7 @@ public sealed class SkiaWindow : IDisposable
         await _transitionLock.WaitAsync();
         try
         {
+            if (_closing) return;
             switch (evt)
             {
                 case ScreenEvent.NewGame:
@@ -705,18 +725,28 @@ public sealed class SkiaWindow : IDisposable
         if (_session is not null)
             return;
 
-        var connection = await Task.Run(() => _sessionFactory.CreateSessionFromScenario(scenarioPath));
+        var connection = await _connectionLoader.CreateAsync(() => _sessionFactory.CreateSessionFromScenario(scenarioPath));
+        if (!_connectionLoader.TryAdopt(connection)) return;
 
-        _session = new GameSessionHandle(connection);
-        var predictor = new LinearMotionPredictor();
-        var gameScreen = new GameSessionScreen(_session.Buffer, predictor, _session,
-            showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-            uiScale: (float)GetUiScale());
+        var session = new GameSessionHandle(connection);
+        try
+        {
+            var predictor = new LinearMotionPredictor();
+            var gameScreen = new GameSessionScreen(session.Buffer, predictor, session,
+                showTrajectoryPrediction: GetShowTrajectoryPrediction(),
+                uiScale: (float)GetUiScale());
 
-        _gameSessionScreen = gameScreen;
-        _modalDepth = 0;
-        _savedSpeed = SimulationSpeed.Speed1;
-        _screens.Replace(gameScreen);
+            _session = session;
+            _gameSessionScreen = gameScreen;
+            _modalDepth = 0;
+            _savedSpeed = SimulationSpeed.Speed1;
+            _screens.Replace(gameScreen);
+        }
+        catch
+        {
+            await session.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     private static bool GetShowTrajectoryPrediction()
@@ -1316,36 +1346,37 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task<bool> LoadSlotCoreAsync(string slotId, string logPrefix)
     {
-        GameSessionHandle newSession;
+        GameSessionHandle? newSession = null;
         GameSessionScreen newScreen;
         try
         {
             // Offloaded for the same reason as StartGameSessionAsync: a synchronous
             // CreateSessionFromSave call here would block Silk.NET's message pump if disk I/O
             // stalls, freezing the whole window for both the Load screen and QuickLoad (F9).
-            var connection = await Task.Run(() => _sessionFactory.CreateSessionFromSave(slotId));
+            var connection = await _connectionLoader.CreateAsync(() => _sessionFactory.CreateSessionFromSave(slotId));
+            if (!_connectionLoader.TryAdopt(connection)) return false;
             newSession = new GameSessionHandle(connection);
             var predictor = new LinearMotionPredictor();
             newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
                 uiScale: (float)GetUiScale());
+            await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
         }
         catch (Exception ex)
         {
             InterfaceLog.Write($"{logPrefix} failed: {ex.Message}");
+            if (newSession is not null) await newSession.DisposeAsync();
             return false;
         }
 
         var oldSession = _session;
-        if (oldSession is not null)
-            await oldSession.DisposeAsync();
-
+        if (_closing) { await newSession.DisposeAsync().ConfigureAwait(false); return false; }
         _session = newSession;
         _gameSessionScreen = newScreen;
-        await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed0;
         _screens.ReplaceAll(newScreen);
+        if (oldSession is not null) await oldSession.DisposeAsync();
 
         return true;
     }
@@ -1370,6 +1401,7 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         _disposed = true;
+        _ = _connectionLoader.DisposeAsync();
 
         // OnClosing might not have fired (e.g. unhandled shutdown).
         // If input still alive, dispose it before window.

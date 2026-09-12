@@ -14,8 +14,10 @@ public static class SaveFormat
     /// hull-grid coordinate model (requirements §57); to 3 when the player's starting
     /// balance field was renamed playerCredits → playerTokens (an old save loads with 0
     /// Tokens, since no migration of old saves is provided).
+    /// Version 4 preserves fractional motion values and the recent command journal.
+    /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 3;
+    public const int CurrentSaveFormatVersion = 4;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -59,7 +61,9 @@ public sealed record GameStateData(
     /// A plain default, never randomized.
     /// </summary>
     [property: JsonPropertyName("playerTokens")] long? PlayerTokens = null,
-    [property: JsonPropertyName("dialogueState")] DialogueSaveState? DialogueState = null);
+    [property: JsonPropertyName("dialogueState")] DialogueSaveState? DialogueState = null,
+    [property: JsonPropertyName("commandReceipts")] IReadOnlyList<DeepSpaceSaga.Contracts.CommandResult>? CommandReceipts = null,
+    [property: JsonPropertyName("pendingCommands")] IReadOnlyList<DeepSpaceSaga.Contracts.PlayerCommand>? PendingCommands = null);
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(
@@ -74,8 +78,8 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("name")] string? Name,
     [property: JsonPropertyName("positionX")] double PositionX,
     [property: JsonPropertyName("positionY")] double PositionY,
-    [property: JsonPropertyName("speedMps")] int SpeedMps,
-    [property: JsonPropertyName("directionDegrees")] int DirectionDegrees,
+    [property: JsonPropertyName("speedMps")] double SpeedMps,
+    [property: JsonPropertyName("directionDegrees")] double DirectionDegrees,
     [property: JsonPropertyName("movementType")] string MovementType,
     [property: JsonPropertyName("massKg")] long? MassKg,
     [property: JsonPropertyName("compositionType")] string? CompositionType,

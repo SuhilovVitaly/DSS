@@ -27,6 +27,14 @@ public sealed class GameSessionHandle : IAsyncDisposable
     private string? _lastSentSelectedObjectId;
     private long _nextClientSequence;
     private bool _disposed;
+    private Exception? _failure;
+    public Exception? Failure => Volatile.Read(ref _failure);
+
+    private void Fail(Exception error)
+    {
+        Buffer.CurrentSpeed = SimulationSpeed.Speed0;
+        Interlocked.CompareExchange(ref _failure, error, null);
+    }
 
     public GameSessionHandle(IGameSessionConnection connection)
     {
@@ -131,9 +139,15 @@ public sealed class GameSessionHandle : IAsyncDisposable
             ItemTypeId: itemTypeId,
             Quantity: quantity);
 
-        _ = _connection.SendCommandAsync(command, cancellationToken).AsTask();
+        _ = SendTradeAsync(command, cancellationToken);
 
         return commandId;
+    }
+
+    private async Task SendTradeAsync(PlayerCommand command, CancellationToken token)
+    {
+        try { await _connection.SendCommandAsync(command, token); }
+        catch (Exception error) { Fail(error); }
     }
 
     /// <summary>
@@ -145,7 +159,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
     public async ValueTask SetSpeedAsync(SimulationSpeed speed)
     {
         await _connection.SetSimulationSpeedAsync(speed);
-        Buffer.CurrentSpeed = speed;
+        Buffer.CurrentSpeed = Failure is null ? speed : SimulationSpeed.Speed0;
     }
 
     /// <summary>Capture and persist the current authoritative world state into the given save slot.</summary>
@@ -175,9 +189,12 @@ public sealed class GameSessionHandle : IAsyncDisposable
             await foreach (var snapshot in _connection.ReadSnapshotsAsync(ct))
             {
                 Buffer.Update(snapshot);
+                if (Failure is not null) Buffer.CurrentSpeed = SimulationSpeed.Speed0;
             }
+            if (!ct.IsCancellationRequested) Fail(new IOException("The simulation connection closed unexpectedly."));
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
+        catch (Exception error) { Fail(error); }
     }
 
     private async Task InteractionStateSenderLoopAsync(CancellationToken ct)
@@ -252,12 +269,12 @@ public sealed class GameSessionHandle : IAsyncDisposable
         _cts.Cancel();
         _interactionStateChannel.Writer.TryComplete();
 
-        try { await _receiveTask; } catch { }
-        try { await _interactionStateSenderTask; } catch { }
+        try { await _receiveTask.ConfigureAwait(false); } catch { }
+        try { await _interactionStateSenderTask.ConfigureAwait(false); } catch { }
 
         _cts.Dispose();
 
         if (_connection is IAsyncDisposable asyncDisposable)
-            await asyncDisposable.DisposeAsync();
+            await asyncDisposable.DisposeAsync().ConfigureAwait(false);
     }
 }

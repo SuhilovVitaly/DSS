@@ -1,4 +1,5 @@
 {
+  "Session.ConnectionLost": "Связь с симуляцией потеряна. Вернитесь в главное меню и загрузите сохранение.",
   "MainMenu.NewGame": "НОВАЯ ИГРА",
   "MainMenu.Load": "ЗАГРУЗИТЬ",
   "MainMenu.Settings": "НАСТРОЙКИ",

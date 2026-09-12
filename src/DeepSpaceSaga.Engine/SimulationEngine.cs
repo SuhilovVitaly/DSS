@@ -127,8 +127,15 @@ public sealed partial class SimulationEngine : IDisposable
 
     public void ReceiveCommand(PlayerCommand command)
     {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentException.ThrowIfNullOrWhiteSpace(command.CommandId);
         lock (_commandGate)
         {
+            if (!_knownCommands.Add(command.CommandId))
+            {
+                if (_commandReceipts.TryGetValue(command.CommandId, out var result)) _replayedResults[command.CommandId] = result;
+                return;
+            }
             _pendingCommands.Add(command);
             _receivedCommandCount++;
         }
@@ -186,6 +193,7 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     public void LoadScenario(ScenarioFile scenario)
     {
+        scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true);
         var gs = scenario.GameState;
         var speed = ScenarioLoader.ParseSpeed(gs.CurrentSpeed);
         var runtimeObjects = new List<SpaceObjectRuntime>(gs.SpaceObjects.Count);
@@ -217,7 +225,7 @@ public sealed partial class SimulationEngine : IDisposable
         foreach (var obj in gs.SpaceObjects)
         {
             // Convert m/s to km/s for the existing motion system
-            double speedKmS = (double)obj.SpeedMps / 1000.0;
+            double speedKmS = obj.SpeedMps / 1000.0;
 
             var modules = BuildRuntimeModules(obj);
 
@@ -297,6 +305,7 @@ public sealed partial class SimulationEngine : IDisposable
 
         lock (_worldStateLock)
         {
+            ValidateDialogueState(gs.DialogueState, runtimeObjects);
             PlayerShipObjectId = gs.PlayerShipObjectId;
             // Session-interaction state (§54) — never carried over from the previous
             // world, and never read from scenario/save data. Every New Game and Quick
@@ -326,6 +335,7 @@ public sealed partial class SimulationEngine : IDisposable
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
             LoadDialogueState(gs.DialogueState, gs.GameTimeMs);
+            RestoreCommandJournal(gs);
         }
     }
 
@@ -397,8 +407,7 @@ public sealed partial class SimulationEngine : IDisposable
             // snap. Completion is itself correctly gated on gameTimeMs progression already (its
             // loop condition no-ops when no time has passed), so no external speed check is
             // needed here.
-            UpdateStationSecurity(gameTimeMs);
-            CompleteActiveEngineCycles(gameTimeMs);
+            AdvanceWorldTo(gameTimeMs);
             ApplyPendingCommands(gameTimeMs);
             ApplyPendingDialogueCommands(gameTimeMs);
             UpdateStationSecurity(gameTimeMs);
@@ -643,7 +652,7 @@ public sealed partial class SimulationEngine : IDisposable
     {
         long cargoMassKg = 0;
         foreach (var stack in cargo)
-            cargoMassKg += stack.Quantity * _registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).UnitMassKg;
+            cargoMassKg = checked(cargoMassKg + checked(stack.Quantity * _registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).UnitMassKg));
 
         return cargoMassKg;
     }
@@ -717,8 +726,7 @@ public sealed partial class SimulationEngine : IDisposable
         // completion hasn't been applied yet because the 1 Hz BuildSnapshot loop hasn't
         // ticked since) would be captured stale. Idempotent: a cycle already caught up to
         // gameTimeMs is a no-op here (same guard BuildSnapshot relies on).
-        UpdateStationSecurity(gameTimeMs);
-        CompleteActiveEngineCycles(gameTimeMs);
+        AdvanceWorldTo(gameTimeMs);
 
         // Mirror BuildSnapshot's other half: a command the player sent in the narrow
         // window between the last 1 Hz tick and this save (e.g. F5 pressed right after
@@ -745,8 +753,8 @@ public sealed partial class SimulationEngine : IDisposable
                 Name: obj.Name,
                 PositionX: motion.X,
                 PositionY: motion.Y,
-                SpeedMps: (int)Math.Round(motion.SpeedKmS * 1000.0, MidpointRounding.AwayFromZero),
-                DirectionDegrees: ToDirectionDegreesInt(motion.Direction),
+                SpeedMps: motion.SpeedKmS * 1000.0,
+                DirectionDegrees: motion.Direction,
                 MovementType: motion.SpeedKmS > 0 ? "Linear" : "Stationary",
                 MassKg: obj.MassKg,
                 CompositionType: obj.CompositionType,
@@ -790,7 +798,9 @@ public sealed partial class SimulationEngine : IDisposable
             SpaceObjects: spaceObjects,
             MasterSeed: MasterSeed,
             PlayerTokens: PlayerCredits,
-            DialogueState: _dialogue.Save());
+            DialogueState: _dialogue.Save(),
+            CommandReceipts: CaptureCommandReceipts(),
+            PendingCommands: CapturePendingCommands());
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
@@ -886,17 +896,6 @@ public sealed partial class SimulationEngine : IDisposable
 
     private static StationCrewMemberData BuildSaveStationCrewMember(StationCrewMemberRuntime member) =>
         new(member.Id, member.Role, member.DisplayName, member.PortraitImage);
-
-    private static int ToDirectionDegreesInt(double direction)
-    {
-        double normalized = NormalizeDirection(direction);
-        int rounded = (int)Math.Round(normalized, MidpointRounding.AwayFromZero);
-        if (rounded >= 360)
-            rounded -= 360;
-        if (rounded < 0)
-            rounded += 360;
-        return rounded;
-    }
 
     public void Dispose()
     {
@@ -1633,6 +1632,11 @@ public sealed partial class SimulationEngine : IDisposable
 
     private void ApplyPendingCommands(long gameTimeMs)
     {
+        lock (_commandGate)
+        {
+            _commandResults.AddRange(_replayedResults.Values);
+            _replayedResults.Clear();
+        }
         var commands = DrainPendingCommands();
         List<PlayerCommand>? deferred = null;
 
@@ -1702,7 +1706,7 @@ public sealed partial class SimulationEngine : IDisposable
         PlayerCommand command, CommandResultStatus status, long gameTimeMs, string? reasonCode = null,
         long? executedQuantity = null)
     {
-        _commandResults.Add(new CommandResult(
+        var result = new CommandResult(
             command.CommandId,
             command.ObjectId,
             command.ModuleId,
@@ -1710,7 +1714,9 @@ public sealed partial class SimulationEngine : IDisposable
             status,
             gameTimeMs,
             reasonCode,
-            executedQuantity));
+            executedQuantity);
+        _commandResults.Add(result);
+        RememberResult(result);
     }
 
     private void RecordCommandResultFromCycle(
@@ -1719,14 +1725,16 @@ public sealed partial class SimulationEngine : IDisposable
         if (cycle.CommandId is null)
             return; // legacy save: cycle has no command tracing — nothing to report
 
-        _commandResults.Add(new CommandResult(
+        var result = new CommandResult(
             cycle.CommandId,
             cycle.ObjectId ?? "",
             cycle.ModuleId ?? "",
             cycle.CommandType,
             status,
             gameTimeMs,
-            reasonCode));
+            reasonCode);
+        _commandResults.Add(result);
+        RememberResult(result);
     }
 
     private void RecordShipEvent(string objectId, string moduleId, string eventType, string? reasonCode, long gameTimeMs)
@@ -1911,6 +1919,12 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     private CommandStartOutcome TryStartTradeCommand(PlayerCommand command, long gameTimeMs)
     {
+        try { return PrepareAndCommitTrade(command, gameTimeMs); }
+        catch (OverflowException) { return CommandStartOutcome.Rejected("value_overflow"); }
+    }
+
+    private CommandStartOutcome PrepareAndCommitTrade(PlayerCommand command, long gameTimeMs)
+    {
         if (!string.Equals(command.ObjectId, PlayerShipObjectId, StringComparison.Ordinal))
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
 
@@ -1968,7 +1982,7 @@ public sealed partial class SimulationEngine : IDisposable
         if (command.CommandType == TradeCommandTypes.Buy)
         {
             long cargoCapacityKg = moduleType.CargoCapacityKg ?? 0;
-            long cost = unitPriceCredits * qty;
+            long cost = checked(unitPriceCredits * qty);
             if (cost > PlayerCredits)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientPlayerCredits);
 
@@ -1977,24 +1991,28 @@ public sealed partial class SimulationEngine : IDisposable
 
             long currentCargoMassKg = ComputeCargoMassKg(module.Cargo);
 
-            long addedMassKg = qty * itemType.UnitMassKg;
-            if (currentCargoMassKg + addedMassKg > cargoCapacityKg)
+            long addedMassKg = checked(qty * itemType.UnitMassKg);
+            if (checked(currentCargoMassKg + addedMassKg) > cargoCapacityKg)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.CargoCapacityExceeded);
 
-            PlayerCredits -= cost;
+            long updatedCredits = checked(PlayerCredits - cost);
 
             var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
                 stationInventoryItem with { StockQuantity = stationInventoryItem.StockQuantity - qty });
-            _objects[stationIndex] = station with { Credits = station.Credits + cost, Inventory = updatedInventory };
+            var updatedStation = station with { Credits = checked(station.Credits + cost), Inventory = updatedInventory };
 
-            _objects[objectIndex] = UpdateModule(obj, moduleIndex, m =>
+            var updatedShip = UpdateModule(obj, moduleIndex, m =>
             {
                 int stackIndex = FindCargoStackIndex(m.Cargo, itemTypeIndex);
                 var updatedCargo = stackIndex >= 0
-                    ? m.Cargo.SetItem(stackIndex, m.Cargo[stackIndex] with { Quantity = m.Cargo[stackIndex].Quantity + qty })
+                    ? m.Cargo.SetItem(stackIndex, m.Cargo[stackIndex] with { Quantity = checked(m.Cargo[stackIndex].Quantity + qty) })
                     : m.Cargo.Add(new CargoStackRuntime(itemTypeIndex, qty));
                 return m with { Cargo = updatedCargo, AvailableCapacityKg = ComputeAvailableCapacityKg(moduleType, updatedCargo) };
             });
+
+            PlayerCredits = updatedCredits;
+            _objects[stationIndex] = updatedStation;
+            _objects[objectIndex] = updatedShip;
 
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
             return CommandStartOutcome.Started;
@@ -2017,14 +2035,14 @@ public sealed partial class SimulationEngine : IDisposable
             if (executedQty <= 0)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientStationStock);
 
-            long proceeds = unitPriceCredits * executedQty;
-            PlayerCredits += proceeds;
+            long proceeds = checked(unitPriceCredits * executedQty);
+            long updatedCredits = checked(PlayerCredits + proceeds);
 
             var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
-                stationInventoryItem with { StockQuantity = stationInventoryItem.StockQuantity + executedQty });
-            _objects[stationIndex] = station with { Credits = station.Credits - proceeds, Inventory = updatedInventory };
+                stationInventoryItem with { StockQuantity = checked(stationInventoryItem.StockQuantity + executedQty) });
+            var updatedStation = station with { Credits = checked(station.Credits - proceeds), Inventory = updatedInventory };
 
-            _objects[objectIndex] = UpdateModule(obj, moduleIndex, m =>
+            var updatedShip = UpdateModule(obj, moduleIndex, m =>
             {
                 int idx = FindCargoStackIndex(m.Cargo, itemTypeIndex);
                 long remaining = m.Cargo[idx].Quantity - executedQty;
@@ -2033,6 +2051,10 @@ public sealed partial class SimulationEngine : IDisposable
                     : m.Cargo.RemoveAt(idx);
                 return m with { Cargo = updatedCargo, AvailableCapacityKg = ComputeAvailableCapacityKg(moduleType, updatedCargo) };
             });
+
+            PlayerCredits = updatedCredits;
+            _objects[stationIndex] = updatedStation;
+            _objects[objectIndex] = updatedShip;
 
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs,
                 executedQuantity: executedQty < qty ? executedQty : null);
@@ -2046,23 +2068,26 @@ public sealed partial class SimulationEngine : IDisposable
         // mass is measured on this branch).
         {
             long fuelCapacityKg = moduleType.FuelCapacityKg ?? 0;
-            long cost = unitPriceCredits * qty;
+            long cost = checked(unitPriceCredits * qty);
             if (cost > PlayerCredits)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientPlayerCredits);
 
             if (qty > stationInventoryItem.StockQuantity)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientStationStock);
 
-            if (module.FuelAmountKg + qty > fuelCapacityKg)
+            if (checked(module.FuelAmountKg + qty) > fuelCapacityKg)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.FuelCapacityExceeded);
 
-            PlayerCredits -= cost;
+            long updatedCredits = checked(PlayerCredits - cost);
 
             var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
                 stationInventoryItem with { StockQuantity = stationInventoryItem.StockQuantity - qty });
-            _objects[stationIndex] = station with { Credits = station.Credits + cost, Inventory = updatedInventory };
+            var updatedStation = station with { Credits = checked(station.Credits + cost), Inventory = updatedInventory };
 
-            _objects[objectIndex] = UpdateModule(obj, moduleIndex, m => m with { FuelAmountKg = m.FuelAmountKg + qty });
+            var updatedShip = UpdateModule(obj, moduleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + qty) });
+            PlayerCredits = updatedCredits;
+            _objects[stationIndex] = updatedStation;
+            _objects[objectIndex] = updatedShip;
 
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
             return CommandStartOutcome.Started;
@@ -2663,6 +2688,37 @@ public sealed partial class SimulationEngine : IDisposable
         return default;
     }
 
+    private void AdvanceWorldTo(long gameTimeMs)
+    {
+        if (!_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        {
+            CompleteActiveEngineCycles(gameTimeMs);
+            return;
+        }
+        // Visit steering boundaries and security deadlines in time order. Predicting
+        // straight across an unapplied turn gives the wrong position at a deadline.
+        while (true)
+        {
+            long next = gameTimeMs;
+            foreach (var obj in _objects)
+            {
+                if (obj.InitialMotion.ObjectId != PlayerShipObjectId) continue;
+                foreach (var module in obj.Modules)
+                    if (module.ActiveCycle is { DurationMs: > 0 } cycle && cycle.StartedGameTimeMs < gameTimeMs)
+                        next = Math.Min(next, cycle.StartedGameTimeMs + cycle.DurationMs);
+            }
+            foreach (var incident in _dialogue.Progress.SecurityIncidents)
+                if (!incident.Completed && incident.DeadlineGameTimeMs <= gameTimeMs &&
+                    _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed) &&
+                    _objects.Any(o => o.InitialMotion.ObjectId == incident.StationObjectId && o.SecurityZoneRadiusKm is not null))
+                    next = Math.Min(next, incident.DeadlineGameTimeMs);
+            UpdateStationSecurity(next);
+            CompleteActiveEngineCycles(next);
+            UpdateStationSecurity(next);
+            if (next >= gameTimeMs) break;
+        }
+    }
+
     private void CompleteActiveEngineCycles(long gameTimeMs)
     {
         for (int objectIndex = 0; objectIndex < _objects.Count; objectIndex++)
@@ -2915,21 +2971,7 @@ public sealed partial class SimulationEngine : IDisposable
 
     private ObjectMotionSnapshot PredictMotion(SpaceObjectRuntime obj, long elapsedMs)
     {
-        ActiveCycleData? cycle = null;
-        foreach (var module in obj.Modules)
-            if (module.ActiveCycle?.CommandType == NavigationComputerCommandTypes.Approach)
-            {
-                cycle = module.ActiveCycle;
-                break;
-            }
-        if (cycle?.ApproachRoute is { } route)
-        {
-            var predicted = ApproachLineCaptureMath.Predict(obj.InitialMotion with { ApproachRoute = route },
-                Math.Max(0, obj.StartGameTimeMs + elapsedMs - cycle.StartedGameTimeMs));
-            // Runtime motion keeps its metadata separate in ActiveCycleData.
-            return predicted with { ApproachRoute = null, ActiveEngineCommandType = null, NavigationPhase = null };
-        }
-        return _motion.Predict(obj.InitialMotion, elapsedMs);
+        return RuntimeMotion.At(obj, obj.StartGameTimeMs + elapsedMs);
     }
     private static double ComputeLinearInertiaDeltaKmS(
         SpaceObjectRuntime obj, ModuleTypeDefinition moduleType, long gameTimeMs)

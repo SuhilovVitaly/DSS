@@ -230,7 +230,7 @@ public class ApproachCommandTests
         Assert.Equal(ApproachLineCaptureMath.Phase, ship.NavigationPhase);
         Assert.Equal(2, ship.SpeedKmS);
     }
-    private static SimulationEngine CreateEngine(
+    internal static SimulationEngine CreateEngine(
         double shipX = 0,
         double shipY = 0,
         int shipSpeedMps = 0,

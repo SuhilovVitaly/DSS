@@ -12,7 +12,6 @@ internal static class StationSecuritySystem
         int playerIndex = objects.FindIndex(o => o.InitialMotion.ObjectId == playerId);
         if (playerIndex < 0) return progress;
         var incidents = progress.SecurityIncidents.ToBuilder();
-        var predictor = new LinearMotionPredictor();
         for (int i = 0; i < incidents.Count; i++)
         {
             var incident = incidents[i];
@@ -21,8 +20,8 @@ internal static class StationSecuritySystem
             var station = objects.FirstOrDefault(o => o.InitialMotion.ObjectId == incident.StationObjectId);
             if (station?.SecurityZoneRadiusKm is not { } radius) continue;
             long checkTime = Math.Min(time, incident.DeadlineGameTimeMs);
-            var playerMotion = predictor.Predict(ship.InitialMotion, Math.Max(0, checkTime - ship.StartGameTimeMs));
-            var stationMotion = predictor.Predict(station.InitialMotion, Math.Max(0, checkTime - station.StartGameTimeMs));
+            var playerMotion = RuntimeMotion.At(ship, checkTime);
+            var stationMotion = RuntimeMotion.At(station, checkTime);
             double dx = playerMotion.X - stationMotion.X, dy = playerMotion.Y - stationMotion.Y;
             if (dx * dx + dy * dy > (radius * 10.0) * (radius * 10.0))
                 incidents[i] = incident with { Completed = true };

@@ -12,7 +12,7 @@ namespace DeepSpaceSaga.Client.Tests;
 /// </summary>
 public class PortraitComposerTests
 {
-    private const string FemalePortraitPath = "Images/Persons/W/CHR-20260901-170239-JJD2U7.png";
+    private const string FemalePortraitPath = "Images/Persons/W/CHR-20260902-103625-8SCU3U.png";
     private const string MalePortraitPath = "Images/Persons/M/CHR-20260906-150900-IYUL3A.png";
 
     [Fact]

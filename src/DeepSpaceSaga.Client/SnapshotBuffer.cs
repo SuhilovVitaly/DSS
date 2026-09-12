@@ -20,6 +20,17 @@ public sealed record SnapshotPrediction(
 public sealed class SnapshotBuffer
 {
     private readonly object _sync = new();
+    private readonly SessionEventHistory _events = new();
+
+    public CommandResult? FindCommandResult(string commandId)
+    {
+        lock (_sync) return _events.Find(commandId);
+    }
+
+    public ShipEvent[] ReadRecentShipEvents()
+    {
+        lock (_sync) return _events.ReadEvents();
+    }
     private readonly Func<long> _timestampProvider;
     private BufferedSnapshot? _latest;
     private SimulationSpeed _currentSpeed = SimulationSpeed.Speed1;
@@ -74,6 +85,7 @@ public sealed class SnapshotBuffer
             }
 
             _latest = value;
+            _events.Receive(snapshot);
 
             // A newer authoritative baseline must not make visual game time run backward.
             long rawDeltaMs = previousPredictedGameTimeMs - snapshot.GameTimeMs;

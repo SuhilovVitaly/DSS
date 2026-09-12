@@ -1,4 +1,5 @@
 {
+  "Session.ConnectionLost": "Connection to the simulation lost. Return to the main menu and load a save.",
   "MainMenu.NewGame": "NEW GAME",
   "MainMenu.Load": "LOAD",
   "MainMenu.Settings": "SETTINGS",

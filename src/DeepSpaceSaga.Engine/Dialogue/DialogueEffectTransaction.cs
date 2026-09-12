@@ -73,7 +73,7 @@ internal static class DialogueEffectTransaction
                             var dockError = validateDock();
                             if (dockError is not null) return dockError;
                             var target = candidate[stationIndex];
-                            var motion = new LinearMotionPredictor().Predict(target.InitialMotion, Math.Max(0, time - target.StartGameTimeMs));
+                            var motion = RuntimeMotion.At(target, time);
                             var ship = candidate[shipIndex];
                             candidate[shipIndex] = ship with
                             {

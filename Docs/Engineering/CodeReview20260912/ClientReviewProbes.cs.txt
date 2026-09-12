@@ -1,0 +1,26 @@
+using DeepSpaceSaga.Engine;
+using DeepSpaceSaga.Engine.LocalClient;
+
+namespace DeepSpaceSaga.Client.Tests;
+
+public class ReviewProbeTests
+{
+    [Fact]
+    public async Task Simulation_fault_must_reach_snapshot_reader()
+    {
+        using var engine = new SimulationEngine();
+        engine.ReceiveCommand(null!); // Fault injection: simulate an unexpected simulation exception.
+        var connection = new LocalGameSessionConnection(engine);
+        try
+        {
+            await Assert.ThrowsAnyAsync<Exception>(async () =>
+            {
+                await foreach (var snapshot in connection.ReadSnapshotsAsync()) { }
+            });
+        }
+        finally
+        {
+            try { await connection.DisposeAsync(); } catch (NullReferenceException) { }
+        }
+    }
+}

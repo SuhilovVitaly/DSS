@@ -190,10 +190,10 @@ public class ItemCatalogTests
     }
 
     [Fact]
-    public void Real_catalog_has_exactly_ten_tradeable_items()
+    public void Real_catalog_has_twelve_tradeable_items()
     {
         var registry = LoadRealRegistry();
-        Assert.Equal(10, registry.ItemTypes.Count);
+        Assert.Equal(12, registry.ItemTypes.Count);
     }
 
     // isResource (bool) rather than TradeCategory (internal enum) — xUnit requires [Theory]

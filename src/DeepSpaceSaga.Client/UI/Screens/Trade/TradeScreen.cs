@@ -908,13 +908,11 @@ public sealed class TradeScreen : IScreen
     /// </summary>
     private void UpdateTradeCommandResult(AuthoritativeSnapshot? snapshot)
     {
-        if (_lastSentTradeCommandId is null || snapshot is null || snapshot.CommandResults.IsDefaultOrEmpty)
+        if (_lastSentTradeCommandId is null || snapshot is null)
             return;
 
-        foreach (var result in snapshot.CommandResults)
+        if (_buffer?.FindCommandResult(_lastSentTradeCommandId) is { } result)
         {
-            if (result.CommandId != _lastSentTradeCommandId)
-                continue;
 
             // Deferred (module busy) is not a final disposition — trade commands are not
             // expected to defer, but if one does, keep tracking it across future snapshots

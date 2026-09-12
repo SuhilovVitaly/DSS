@@ -70,8 +70,33 @@ public static class ScenarioLoader
             throw new ScenarioException($"Invalid scenario JSON: {ex.Message}", ex);
         }
 
+        return ValidateAndNormalize(scenario, allowNonZeroGameTime);
+    }
+
+    internal static ScenarioFile ValidateAndNormalize(ScenarioFile scenario, bool allowNonZeroGameTime)
+    {
         Validate(scenario, allowNonZeroGameTime);
-        return scenario;
+        var gs = scenario.GameState;
+        var ids = gs.SpaceObjects.ToDictionary(o => o.ObjectId, o => o.ObjectId, StringComparer.OrdinalIgnoreCase);
+        if ((gs.CommandReceipts?.Any(r => r is null || string.IsNullOrWhiteSpace(r.CommandId)) ?? false) ||
+            (gs.PendingCommands?.Any(c => c is null || string.IsNullOrWhiteSpace(c.CommandId)) ?? false))
+            throw new ScenarioException("Invalid saved command journal.");
+        string? Resolve(string? id) => id is not null && ids.TryGetValue(id, out var canonical) ? canonical : id;
+        var objects = gs.SpaceObjects.Select(o => o with
+        {
+            ObjectType = KnownObjectTypes.Single(t => t.Equals(o.ObjectType, StringComparison.OrdinalIgnoreCase)),
+            PersistenceType = KnownPersistenceTypes.Single(t => t.Equals(o.PersistenceType, StringComparison.OrdinalIgnoreCase)),
+            DockedStationObjectId = Resolve(o.DockedStationObjectId),
+            Modules = o.Modules?.Select(m => m with
+            {
+                PowerState = KnownPowerStates.Single(t => t.Equals(m.PowerState, StringComparison.OrdinalIgnoreCase)),
+                OperationalState = KnownOperationalStates.Single(t => t.Equals(m.OperationalState, StringComparison.OrdinalIgnoreCase)),
+                ActiveCycle = m.ActiveCycle is not { } c ? null : c with
+                { ObjectId = Resolve(c.ObjectId), TargetObjectId = Resolve(c.TargetObjectId) }
+            }).ToArray()
+        }).ToArray();
+        return scenario with { GameState = gs with { PlayerShipObjectId = ids[gs.PlayerShipObjectId],
+            CurrentSpeed = KnownSpeeds.Single(s => s.Equals(gs.CurrentSpeed, StringComparison.OrdinalIgnoreCase)), SpaceObjects = objects } };
     }
 
     /// <summary>
@@ -103,9 +128,13 @@ public static class ScenarioLoader
 
     private static void Validate(ScenarioFile scenario, bool allowNonZeroGameTime = false)
     {
+        if (scenario.SaveFormatVersion < 0 || scenario.SaveFormatVersion > SaveFormat.CurrentSaveFormatVersion)
+            throw new ScenarioException($"Unsupported saveFormatVersion: {scenario.SaveFormatVersion}.");
         var gs = scenario.GameState;
         if (gs is null)
             throw new ScenarioException("Missing gameState.");
+        if (gs.GameTimeMs < 0 || gs.PlayerTokens < 0)
+            throw new ScenarioException("Game time and player balance must be nonnegative.");
 
         if (string.IsNullOrWhiteSpace(gs.PlayerShipObjectId))
             throw new ScenarioException("Missing playerShipObjectId.");
@@ -157,6 +186,8 @@ public static class ScenarioLoader
 
     private static void ValidateObject(SpaceObjectData obj)
     {
+        if (!double.IsFinite(obj.SpeedMps) || obj.SpeedMps < 0 || !double.IsFinite(obj.DirectionDegrees))
+            throw new ScenarioException($"Invalid precise motion for '{obj.ObjectId}'.");
         if (string.IsNullOrWhiteSpace(obj.ObjectId))
             throw new ScenarioException("Space object has empty objectId.");
 
@@ -170,7 +201,7 @@ public static class ScenarioLoader
         if (!KnownPersistenceTypes.Contains(obj.PersistenceType))
             throw new ScenarioException($"Unknown persistenceType '{obj.PersistenceType}' for '{obj.ObjectId}'.");
 
-        if (obj.DirectionDegrees < 0 || obj.DirectionDegrees > 359)
+        if (obj.DirectionDegrees < 0 || obj.DirectionDegrees >= 360)
             throw new ScenarioException(
                 $"directionDegrees {obj.DirectionDegrees} for '{obj.ObjectId}' is not in 0..359.");
 

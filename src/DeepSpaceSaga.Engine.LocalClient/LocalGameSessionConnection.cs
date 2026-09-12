@@ -13,12 +13,12 @@ namespace DeepSpaceSaga.Engine.LocalClient;
 public sealed class LocalGameSessionConnection : IGameSessionConnection
 {
     private readonly SimulationEngine _engine;
-    private readonly Channel<AuthoritativeSnapshot> _snapshotChannel;
+    private readonly SnapshotMailbox _snapshots = new();
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _engineLoopTask;
     private readonly string? _saveDirectory;
     private readonly SemaphoreSlim _saveGate = new(1, 1);
-    private bool _disposed;
+    private volatile bool _disposed;
 
     /// <param name="saveDirectory">
     /// Directory SaveAsync writes slot files into — each slot becomes
@@ -31,9 +31,6 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     {
         _engine = engine;
         _saveDirectory = saveDirectory;
-        _snapshotChannel = Channel.CreateUnbounded<AuthoritativeSnapshot>(
-            new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
-
         _engineLoopTask = Task.Run(() => RunEngineLoopAsync(_cts.Token));
     }
 
@@ -88,13 +85,17 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         {
             await foreach (var snapshot in _engine.RunAsync(ct))
             {
-                await _snapshotChannel.Writer.WriteAsync(snapshot, ct);
+                _snapshots.Publish(snapshot);
             }
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
+        catch (Exception error)
+        {
+            _snapshots.Complete(error);
+        }
         finally
         {
-            _snapshotChannel.Writer.TryComplete();
+            _snapshots.Complete();
         }
     }
 
@@ -102,6 +103,8 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         PlayerCommand command,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        ObjectDisposedException.ThrowIf(_disposed, this);
         _engine.ReceiveCommand(command);
         return ValueTask.CompletedTask;
     }
@@ -118,6 +121,8 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         SimulationSpeed speed,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        ObjectDisposedException.ThrowIf(_disposed, this);
         _engine.SetSpeed(speed);
         return ValueTask.CompletedTask;
     }
@@ -127,6 +132,8 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         string? selectedObjectId,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        ObjectDisposedException.ThrowIf(_disposed, this);
         _engine.SetObjectInteractionState(activeObjectId, selectedObjectId);
         return ValueTask.CompletedTask;
     }
@@ -134,7 +141,7 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     public async IAsyncEnumerable<AuthoritativeSnapshot> ReadSnapshotsAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await foreach (var snapshot in _snapshotChannel.Reader.ReadAllAsync(cancellationToken))
+        await foreach (var snapshot in _snapshots.ReadAllAsync(cancellationToken))
         {
             yield return snapshot;
         }
@@ -145,13 +152,9 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     /// see SimulationEngine._worldStateLock) and write it atomically to the given slot:
     /// serialize to a unique temp file, then rename over the slot's target path
     /// (saveDirectory/&lt;sanitized-slot-id&gt;.json, see SaveSlotNaming). A crash mid-write
-    /// never corrupts the previous save for that slot. The write itself (temp-file +
-    /// rename) is additionally serialized via _saveGate — concurrent SaveAsync calls
-    /// (whether to the same slot or different slots) each capture their own independent
-    /// snapshot, but their file writes queue up one at a time rather than racing each
-    /// other's rename (which Windows can reject outright, and which would otherwise make
-    /// "which save actually landed" nondeterministic anyway). Different slots write to
-    /// different destination paths, so they never collide on disk regardless.
+    /// never corrupts the previous save for that slot. The gate covers capture, serialization,
+    /// writing and rename: a queued save captures the world only after its predecessor commits.
+    /// Failed or cancelled writes remove their own temporary file.
     /// </summary>
     public async ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default)
     {
@@ -159,23 +162,24 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
             throw new InvalidOperationException(
                 "This LocalGameSessionConnection has no save directory configured.");
 
-        var saveState = _engine.CaptureSaveState();
-        string json = ScenarioLoader.Serialize(saveState);
-
-        Directory.CreateDirectory(_saveDirectory);
-
-        string targetPath = Path.Combine(_saveDirectory, SaveSlotNaming.ToFileName(slotId));
-        string tempPath = $"{targetPath}.{Guid.NewGuid():N}.tmp";
-        await File.WriteAllTextAsync(tempPath, json, cancellationToken);
-
-        await _saveGate.WaitAsync(cancellationToken);
+        await _saveGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        string? tempPath = null;
         try
         {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            var saveState = _engine.CaptureSaveState();
+            string json = ScenarioLoader.Serialize(saveState);
+            Directory.CreateDirectory(_saveDirectory);
+            string targetPath = Path.Combine(_saveDirectory, SaveSlotNaming.ToFileName(slotId));
+            tempPath = $"{targetPath}.{Guid.NewGuid():N}.tmp";
+            await File.WriteAllTextAsync(tempPath, json, cancellationToken).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
             File.Move(tempPath, targetPath, overwrite: true);
         }
         finally
         {
-            _saveGate.Release();
+            try { if (tempPath is not null && File.Exists(tempPath)) File.Delete(tempPath); }
+            finally { _saveGate.Release(); }
         }
     }
 
@@ -188,10 +192,13 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
 
         _cts.Cancel();
 
-        try { await _engineLoopTask; } catch (OperationCanceledException) { }
-
-        _cts.Dispose();
-        _saveGate.Dispose();
-        (_engine as IDisposable)?.Dispose();
+        try { await _engineLoopTask.ConfigureAwait(false); }
+        finally
+        {
+            await _saveGate.WaitAsync().ConfigureAwait(false);
+            try { _engine.Dispose(); _cts.Dispose(); }
+            finally { _saveGate.Release(); }
+            // Already queued saves must acquire the gate, observe disposal, and exit.
+        }
     }
 }
