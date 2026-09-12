@@ -22,6 +22,7 @@ public sealed class GameSessionScreen : IScreen
     private readonly ObjectLabelRenderer _labelRenderer;
     private readonly TacticalMapDepthRenderer _depthRenderer;
     private readonly List<ObjectRenderState> _renderStates = new();
+    private readonly List<FutureTrajectoryPoint> _futureTrajectoryPoints = new(FutureTrajectoryProjector.MaxSamplePoints);
     private readonly Dictionary<string, ObjectMotionSnapshot> _pausedVisualAnchors = new(StringComparer.Ordinal);
     private readonly Dictionary<string, VisualCorrection> _visualCorrections = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ObjectMotionSnapshot> _lastSnapshotBaselineObjects = new(StringComparer.Ordinal);
@@ -49,6 +50,7 @@ public sealed class GameSessionScreen : IScreen
 
     // Object paints
     private readonly SKPaint _trailPaint;
+    private readonly ObjectTrailGeometry _trailGeometry = new();
     private readonly SKPath _playerShipGlyphPath = new();
 
     // Shared UI paints
@@ -229,6 +231,21 @@ public sealed class GameSessionScreen : IScreen
 
     /// <summary>Current frame's render list (scale-filtered, client-side).</summary>
     internal IReadOnlyList<ObjectRenderState> RenderStates => _renderStates;
+    /// <summary>Optional CPU profiling hook; null in normal play. UI-thread only.</summary>
+    internal Action<string>? RenderStageCompleted { get; set; }
+    internal (int Trails, int Points, int Capacity) TrailStatistics
+    {
+        get
+        {
+            int points = 0, capacity = 0;
+            foreach (var trail in _trailStore.Trails.Values)
+            {
+                points += trail.Count;
+                capacity += trail.Capacity;
+            }
+            return (_trailStore.Trails.Count, points, capacity);
+        }
+    }
     internal bool IsFocusAttachedToPlayer => _isFocusAttachedToPlayer;
     internal IReadOnlyList<ObjectTrailPoint> GetObjectTrail(string objectId) => _trailStore.GetTrail(objectId);
     internal string? ActiveObjectId => _activeObjectId;
@@ -935,6 +952,7 @@ public sealed class GameSessionScreen : IScreen
 
     public void Render(SKCanvas canvas, int width, int height)
     {
+        RenderStageCompleted?.Invoke("begin");
         _viewportW = width;
         _viewportH = height;
 
@@ -972,6 +990,7 @@ public sealed class GameSessionScreen : IScreen
         // stationary cursor (ТЗ §54). OnMouseMove already recomputes eagerly on input;
         // this catches every other trigger that isn't a mouse-move event.
         RecomputeActiveObjectId();
+        RenderStageCompleted?.Invoke("coordinates_and_hit_test");
 
         if (_diagInterestingFrame && PauseResumeDiagnostics.Enabled)
         {
@@ -987,6 +1006,7 @@ public sealed class GameSessionScreen : IScreen
         float cx = width / 2f;
         float cy = height / 2f;
         _depthRenderer.DrawFocusIndicator(canvas, cx, cy);
+        RenderStageCompleted?.Invoke("grid");
 
         // 3. Object trails
         if (prediction is not null)
@@ -1009,6 +1029,7 @@ public sealed class GameSessionScreen : IScreen
             }
 
             DrawObjectTrails(canvas, width, height);
+            RenderStageCompleted?.Invoke("trails");
 
             // 3.5. Future trajectory (before objects, after historical trails)
             DrawFutureTrajectories(canvas, width, height);
@@ -1016,6 +1037,7 @@ public sealed class GameSessionScreen : IScreen
             // 3.55. Navigation trajectory (Ctrl+Click) — after future trajectory,
             // visually distinct (golden dash vs dark dash)
             DrawNavigationTrajectories(canvas, width, height);
+            RenderStageCompleted?.Invoke("forecasts");
 
             // Compute smoothed label geometries once per frame so both
             // DrawLeaders and DrawPlaques see the same positions.
@@ -1034,6 +1056,10 @@ public sealed class GameSessionScreen : IScreen
                 // the payload — legacy payloads without RenderObjectType still draw as a ship.
                 float r = TacticalMapMarkerPolicy.GetMarkerRadiusPx(
                     state.IsPlayerShip ? SpaceObjectType.PlayerShip : state.Predicted.RenderObjectType);
+                // Include halo, reticle and engine flame extents, not just the core.
+                float margin = r * 5 + 4;
+                if (sx < -margin || sy < -margin || sx > width + margin || sy > height + margin)
+                    continue;
 
                 // Selection takes visual priority when the same object is also active;
                 // orange is reserved for hovered objects that are not selected.
@@ -1067,6 +1093,7 @@ public sealed class GameSessionScreen : IScreen
 
             // 4.5. Object label plaques (on top of objects, before UI panels)
             _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera);
+            RenderStageCompleted?.Invoke("markers_and_labels");
         }
 
         // UI overlay pass — everything from here on is a GameSession UI panel, never
@@ -1089,6 +1116,7 @@ public sealed class GameSessionScreen : IScreen
         // 6. Commands Panel (top-left)
         _commandsPanel.Render(canvas,
             buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty);
+        RenderStageCompleted?.Invoke("command_panel");
 
         // 7. Info panel (bottom-left)
         if (_panelVisible)
@@ -1102,6 +1130,7 @@ public sealed class GameSessionScreen : IScreen
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);
+        RenderStageCompleted?.Invoke("info_panels");
 
         canvas.Restore();
     }
@@ -1265,6 +1294,8 @@ public sealed class GameSessionScreen : IScreen
         ObjectMotionSnapshot target,
         ObjectMotionSnapshot visualPose)
     {
+        if (target.X == visualPose.X && target.Y == visualPose.Y && target.Direction == visualPose.Direction)
+            return target;
         return target with
         {
             X = visualPose.X,
@@ -1374,11 +1405,11 @@ public sealed class GameSessionScreen : IScreen
 
     private void DrawObjectTrails(SKCanvas canvas, int width, int height)
     {
-        var shipIds = new HashSet<string>(StringComparer.Ordinal);
+        string? playerShipId = null;
         foreach (var state in _renderStates)
         {
             if (state.IsPlayerShip)
-                shipIds.Add(state.Predicted.ObjectId);
+                playerShipId = state.Predicted.ObjectId;
         }
 
         foreach (var kvp in _trailStore.Trails)
@@ -1387,18 +1418,30 @@ public sealed class GameSessionScreen : IScreen
             if (points.Count < 2)
                 continue;
 
-            bool isShip = shipIds.Contains(kvp.Key);
-
-            for (int i = 1; i < points.Count; i++)
+            var bounds = points.Bounds;
+            var (left, top) = _camera.WorldToScreen(bounds.MinX, bounds.MinY, width, height);
+            var (right, bottom) = _camera.WorldToScreen(bounds.MaxX, bounds.MaxY, width, height);
+            // Test the entire trail, not the current marker: offscreen objects may
+            // still have visible historical paths, including curved ones.
+            if (right < -2 || bottom < -2 || left > width + 2 || top > height + 2)
+                continue;
+            bool isShip = kvp.Key == playerShipId;
+            _trailGeometry.Build(points, _camera, width, height, isShip);
+            foreach (var segment in _trailGeometry.Segments)
             {
-                var from = points[i - 1];
-                var to = points[i];
-                var (fromX, fromY) = _camera.WorldToScreen(from.X, from.Y, width, height);
-                var (toX, toY) = _camera.WorldToScreen(to.X, to.Y, width, height);
+                var from = _trailGeometry.Points[segment.Start];
+                var to = _trailGeometry.Points[segment.End];
+                float fromX = from.X, fromY = from.Y, toX = to.X, toY = to.Y;
 
-                float t = (float)i / (points.Count - 1);
-                _trailPaint.Color = GetTrailSegmentColor(t, isShip);
-                canvas.DrawLine(fromX, fromY, toX, toY, _trailPaint);
+                // A long trail can cross the viewport while most of its segments
+                // are outside. Reject only segments wholly beyond one clip edge.
+                if (!((fromX < -2 && toX < -2) || (fromX > width + 2 && toX > width + 2) ||
+                      (fromY < -2 && toY < -2) || (fromY > height + 2 && toY > height + 2)))
+                {
+                    float t = (float)segment.End / (points.Count - 1);
+                    _trailPaint.Color = GetTrailSegmentColor(t, isShip);
+                    canvas.DrawLine(fromX, fromY, toX, toY, _trailPaint);
+                }
             }
         }
     }
@@ -1450,7 +1493,8 @@ public sealed class GameSessionScreen : IScreen
             if (state.IsPlayerShip && state.Predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach)
                 continue;
 
-            var points = _futureTrajectoryProjector.Project(state.Predicted);
+            _futureTrajectoryProjector.ProjectInto(state.Predicted, _futureTrajectoryPoints);
+            var points = _futureTrajectoryPoints;
             if (points.Count < 2)
                 continue;
 
@@ -1489,8 +1533,8 @@ public sealed class GameSessionScreen : IScreen
                 // into the authoritative NavigationPhase string — gating on the phase
                 // string here would miss that first frame and read as "no intercept" even
                 // though the curve shown IS already the confirmed one.
-                var points = _navigationTrajectoryProjector.Project(
-                    predicted, out bool isConfirmedIntercept, out var interceptPoint);
+                var points = _navigationTrajectoryProjector.ProjectInto(
+                    predicted, _futureTrajectoryPoints, out bool isConfirmedIntercept, out var interceptPoint);
                 if (points.Count >= 2)
                     _depthRenderer.DrawNavigationTrajectory(canvas, points, _camera, width, height);
 

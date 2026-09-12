@@ -25,12 +25,32 @@ internal sealed class FutureTrajectoryProjector
 
     /// <summary>
     /// Compute future world-coordinate trajectory points from the predicted state.
-    /// Always uses the discrete-step predictor to exactly match the authoritative
-    /// simulation — the TurnStepRemainingMs fix ensures accuracy without jitter.
+    /// Uses the shared straight-line formula or discrete-step predictor as appropriate
+    /// to match the authoritative simulation and preserve turn-cycle phase.
     /// </summary>
     public List<FutureTrajectoryPoint> Project(ObjectMotionSnapshot predictedState)
     {
-        return ProjectDiscrete(predictedState);
+        var points = new List<FutureTrajectoryPoint>(MaxSamplePoints);
+        ProjectInto(predictedState, points);
+        return points;
+    }
+
+    /// <summary>Fill caller-owned frame scratch space; immutable snapshots are never mutated.</summary>
+    public void ProjectInto(ObjectMotionSnapshot state, List<FutureTrajectoryPoint> points)
+    {
+        points.Clear();
+        if (_predictor is LinearMotionPredictor && LinearMotionPredictor.IsLinear(state))
+        {
+            double angle = state.Direction * Math.PI / 180;
+            double sin = Math.Sin(angle), cos = Math.Cos(angle);
+            for (long t = 0; t <= FutureTrajectoryHorizonMs; t += FutureTrajectorySampleIntervalMs)
+            {
+                double distance = state.SpeedKmS * (t / 1000.0) * 10;
+                points.Add(new(state.X + distance * sin, state.Y - distance * cos));
+            }
+            return;
+        }
+        ProjectDiscrete(state, points);
     }
 
     /// <summary>
@@ -47,17 +67,14 @@ internal sealed class FutureTrajectoryProjector
         return false;
     }
 
-    private List<FutureTrajectoryPoint> ProjectDiscrete(ObjectMotionSnapshot predictedState)
+    private void ProjectDiscrete(ObjectMotionSnapshot predictedState, List<FutureTrajectoryPoint> points)
     {
-        var points = new List<FutureTrajectoryPoint>(MaxSamplePoints);
-
         for (long t = 0; t <= FutureTrajectoryHorizonMs; t += FutureTrajectorySampleIntervalMs)
         {
             var projected = _predictor.Predict(predictedState, t);
             points.Add(new FutureTrajectoryPoint(projected.X, projected.Y));
         }
 
-        return points;
     }
 
 }

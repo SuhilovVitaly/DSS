@@ -414,8 +414,13 @@ public sealed partial class SimulationEngine : IDisposable
             foreach (var obj in _objects)
             {
                 long elapsed = gameTimeMs - obj.StartGameTimeMs;
-                var motion = PredictMotion(obj, elapsed);
                 var cycleMotion = GetActiveEngineCycleMotion(obj, gameTimeMs);
+                // Project ordinary objects straight into the outgoing DTO: avoid
+                // allocating a full intermediate motion snapshot for every asteroid.
+                double x = 0, y = 0;
+                bool linear = cycleMotion.ApproachRoute is null && _motion is LinearMotionPredictor &&
+                    LinearMotionPredictor.TryPredictLinearPosition(obj.InitialMotion, elapsed, out x, out y);
+                var motion = linear ? obj.InitialMotion : PredictMotion(obj, elapsed);
                 // Render projection: the client may only see factual data
                 // (type, relation, name) for objects the player knows about.
                 // The player ship is always known — protects legacy saves
@@ -429,6 +434,8 @@ public sealed partial class SimulationEngine : IDisposable
                     : null;
                 objects.Add(motion with
                 {
+                    X = linear ? x : motion.X,
+                    Y = linear ? y : motion.Y,
                     ActiveEngineCommandType = cycleMotion.CommandType,
                     TurnStepDegrees = cycleMotion.TurnStepDegrees,
                     TurnStepRemainingMs = cycleMotion.TurnStepRemainingMs,
@@ -2908,7 +2915,13 @@ public sealed partial class SimulationEngine : IDisposable
 
     private ObjectMotionSnapshot PredictMotion(SpaceObjectRuntime obj, long elapsedMs)
     {
-        var cycle = obj.Modules.FirstOrDefault(m => m.ActiveCycle?.CommandType == NavigationComputerCommandTypes.Approach)?.ActiveCycle;
+        ActiveCycleData? cycle = null;
+        foreach (var module in obj.Modules)
+            if (module.ActiveCycle?.CommandType == NavigationComputerCommandTypes.Approach)
+            {
+                cycle = module.ActiveCycle;
+                break;
+            }
         if (cycle?.ApproachRoute is { } route)
         {
             var predicted = ApproachLineCaptureMath.Predict(obj.InitialMotion with { ApproachRoute = route },

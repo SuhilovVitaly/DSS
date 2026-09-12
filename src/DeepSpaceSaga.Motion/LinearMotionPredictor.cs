@@ -18,6 +18,20 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 {
     private const double UnitsPerKmS = 10.0; // 1 km/s → 10 world units/s
 
+    /// <summary>Allocation-free coordinates for the common constant-velocity case.</summary>
+    public static bool TryPredictLinearPosition(ObjectMotionSnapshot state, long elapsedMs, out double x, out double y)
+    {
+        x = state.X;
+        y = state.Y;
+        if (!IsLinear(state)) return false;
+        AdvanceStraight(ref x, ref y, state.SpeedKmS, state.Direction, elapsedMs);
+        return true;
+    }
+
+    public static bool IsLinear(ObjectMotionSnapshot state) =>
+        state.ActiveEngineCommandType is not (NavigationComputerCommandTypes.Approach or ShipEngineCommandTypes.Orbit) &&
+        (state.TurnStepDegrees == 0 || state.TurnStepIntervalMs <= 0);
+
     public ObjectMotionSnapshot Predict(ObjectMotionSnapshot state, long elapsedMs)
     {
         if (state.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach &&
@@ -489,6 +503,8 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 
     private static ObjectMotionSnapshot PredictStraight(ObjectMotionSnapshot state, long elapsedMs, double direction)
     {
+        if (elapsedMs == 0 || state.SpeedKmS == 0)
+            return state;
         double x = state.X;
         double y = state.Y;
         AdvanceStraight(ref x, ref y, state.SpeedKmS, direction, elapsedMs);

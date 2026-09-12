@@ -86,17 +86,22 @@ internal sealed class NavigationTrajectoryProjector
     /// </summary>
     public List<FutureTrajectoryPoint> Project(
         ObjectMotionSnapshot predicted, out bool isConfirmedIntercept, out FutureTrajectoryPoint interceptPoint)
+        => ProjectInto(predicted, new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints),
+            out isConfirmedIntercept, out interceptPoint);
+
+    internal List<FutureTrajectoryPoint> ProjectInto(ObjectMotionSnapshot predicted, List<FutureTrajectoryPoint> points,
+        out bool isConfirmedIntercept, out FutureTrajectoryPoint interceptPoint)
     {
         isConfirmedIntercept = false;
         interceptPoint = default;
-        var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
+        points.Clear();
 
         if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach &&
             predicted.ApproachRoute is { } route)
         {
             points.Add(new(predicted.X, predicted.Y));
             double boundaryMs = 0;
-            double[] lengths = { route.First, route.Second, route.Third };
+            ReadOnlySpan<double> lengths = stackalloc double[] { route.First, route.Second, route.Third };
             for (int segment = 0; segment < 3; segment++)
             {
                 double startMs = Math.Max(boundaryMs, route.ElapsedMs);
@@ -107,8 +112,8 @@ internal sealed class NavigationTrajectoryProjector
                     Math.Max(1, (int)Math.Ceiling((boundaryMs - startMs) / 1000 * route.TurnRate / 2));
                 for (int i = 1; i <= count; i++)
                 {
-                    var point = ApproachLineCaptureMath.Predict(predicted,
-                        startMs + (boundaryMs - startMs) * i / count - route.ElapsedMs);
+                    var point = ApproachLineCaptureMath.PredictPose(route,
+                        startMs + (boundaryMs - startMs) * i / count);
                     points.Add(new(point.X, point.Y));
                 }
             }

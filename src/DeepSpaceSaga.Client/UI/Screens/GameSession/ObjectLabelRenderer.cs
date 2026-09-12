@@ -31,6 +31,9 @@ internal sealed class ObjectLabelRenderer
 
     /// <summary>Active object IDs from the current frame.</summary>
     private readonly HashSet<string> _activeIds = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, LabelMetrics> _labels = new(StringComparer.Ordinal);
+    private readonly List<string> _staleLabels = new();
+    private readonly record struct LabelMetrics(string? RenderType, string? Name, string Text, float Width);
 
     public ObjectLabelRenderer()
     {
@@ -125,9 +128,16 @@ internal sealed class ObjectLabelRenderer
             _activeIds.Add(objectId);
             var objectScreen = new SKPoint(objSx, objSy);
 
-            string label = ObjectLabelText.Build(predicted.RenderObjectType, predicted.DisplayName, predicted.ObjectId);
             bool isUnknown = predicted.RenderObjectType == SpaceObjectType.UnknownSpaceObject;
-            float textWidth = (isUnknown ? _unknownTextPaint : _textPaint).MeasureText(label);
+            if (!_labels.TryGetValue(objectId, out var label) ||
+                label.RenderType != predicted.RenderObjectType || label.Name != predicted.DisplayName)
+            {
+                string text = ObjectLabelText.Build(predicted.RenderObjectType, predicted.DisplayName, objectId);
+                label = new(predicted.RenderObjectType, predicted.DisplayName, text,
+                    (isUnknown ? _unknownTextPaint : _textPaint).MeasureText(text));
+                _labels[objectId] = label;
+            }
+            float textWidth = label.Width;
 
             // Target geometry from orbit layout (no smoothing).
             var targetGeom = ObjectLabelLayout.Create(objectScreen, predicted.Direction, textWidth,
@@ -162,6 +172,10 @@ internal sealed class ObjectLabelRenderer
         }
 
         _smoother.RemoveStaleExcept(_activeIds);
+        _staleLabels.Clear();
+        foreach (string id in _labels.Keys)
+            if (!_activeIds.Contains(id)) _staleLabels.Add(id);
+        foreach (string id in _staleLabels) _labels.Remove(id);
     }
 
     /// <summary>
@@ -240,7 +254,7 @@ internal sealed class ObjectLabelRenderer
             }
 
             // Text
-            string label = ObjectLabelText.Build(predicted.RenderObjectType, predicted.DisplayName, predicted.ObjectId);
+            string label = _labels[objectId].Text;
             bool isUnknown = predicted.RenderObjectType == SpaceObjectType.UnknownSpaceObject;
             var textPaint = isUnknown ? _unknownTextPaint : _textPaint;
             if (!isUnknown)

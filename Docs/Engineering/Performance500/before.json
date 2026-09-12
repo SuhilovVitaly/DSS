@@ -1,0 +1,116 @@
+{
+  "Scenario": "default_500",
+  "Objects": 502,
+  "Seed": 500,
+  "Width": 1280,
+  "Height": 720,
+  "Frames": 600,
+  "Runtime": ".NET 8.0.26",
+  "OS": "Microsoft Windows 10.0.26200",
+  "ProcessorCount": 8,
+  "Backend": "Skia raster, full GameSessionScreen.Render",
+  "Measurements": [
+    {
+      "Name": "engine_snapshot_502",
+      "Samples": 1000,
+      "MeanMs": 0.1999339999999999,
+      "MedianMs": 0.1888,
+      "P95Ms": 0.3224,
+      "MaxMs": 1.4594,
+      "AllocatedBytesPerOperation": 344696,
+      "RetainedManagedDeltaBytes": 9224,
+      "PrivateBytesBefore": 20086784,
+      "PrivateBytesAfter": 22863872,
+      "Collections": [
+        54,
+        0,
+        0
+      ]
+    },
+    {
+      "Name": "approach_command_and_snapshot",
+      "Samples": 100,
+      "MeanMs": 0.7758259999999999,
+      "MedianMs": 0.7103,
+      "P95Ms": 1.0875,
+      "MaxMs": 1.6606,
+      "AllocatedBytesPerOperation": 610131.2,
+      "RetainedManagedDeltaBytes": 1912,
+      "PrivateBytesBefore": 23289856,
+      "PrivateBytesAfter": 23080960,
+      "Collections": [
+        9,
+        0,
+        0
+      ]
+    },
+    {
+      "Name": "predict_502_positions",
+      "Samples": 2000,
+      "MeanMs": 0.03540479999999997,
+      "MedianMs": 0.0318,
+      "P95Ms": 0.0518,
+      "MaxMs": 0.542,
+      "AllocatedBytesPerOperation": 168672,
+      "RetainedManagedDeltaBytes": 17112,
+      "PrivateBytesBefore": 23543808,
+      "PrivateBytesAfter": 25513984,
+      "Collections": [
+        53,
+        0,
+        0
+      ]
+    },
+    {
+      "Name": "render_paused",
+      "Samples": 600,
+      "MeanMs": 18.242168166666676,
+      "MedianMs": 17.9374,
+      "P95Ms": 20.2781,
+      "MaxMs": 38.8404,
+      "AllocatedBytesPerOperation": 513019.6533333333,
+      "RetainedManagedDeltaBytes": 5912,
+      "PrivateBytesBefore": 38940672,
+      "PrivateBytesAfter": 32837632,
+      "Collections": [
+        49,
+        2,
+        0
+      ]
+    },
+    {
+      "Name": "render_running",
+      "Samples": 600,
+      "MeanMs": 17.39022916666668,
+      "MedianMs": 16.8956,
+      "P95Ms": 19.8513,
+      "MaxMs": 62.0242,
+      "AllocatedBytesPerOperation": 498569.6,
+      "RetainedManagedDeltaBytes": 174584,
+      "PrivateBytesBefore": 34902016,
+      "PrivateBytesAfter": 30388224,
+      "Collections": [
+        48,
+        1,
+        0
+      ]
+    },
+    {
+      "Name": "render_approach",
+      "Samples": 600,
+      "MeanMs": 18.91909416666667,
+      "MedianMs": 18.3124,
+      "P95Ms": 22.8992,
+      "MaxMs": 54.4519,
+      "AllocatedBytesPerOperation": 298997.26666666666,
+      "RetainedManagedDeltaBytes": 174848,
+      "PrivateBytesBefore": 37007360,
+      "PrivateBytesAfter": 32653312,
+      "Collections": [
+        29,
+        1,
+        0
+      ]
+    }
+  ]
+}

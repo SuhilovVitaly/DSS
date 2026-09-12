@@ -159,17 +159,19 @@ public static class ApproachPursuitMath
         double alpha = Mod2Pi((90.0 - shipDirectionDegrees) * Math.PI / 180.0 - theta);
         double beta = Mod2Pi((90.0 - targetDirectionDegrees) * Math.PI / 180.0 - theta);
 
-        var candidates = new List<(string Type, double First, double Second, double Third)>(6);
-        AddLsl(candidates, alpha, beta, normalizedDistance);
-        AddRsr(candidates, alpha, beta, normalizedDistance);
-        AddLsr(candidates, alpha, beta, normalizedDistance);
-        AddRsl(candidates, alpha, beta, normalizedDistance);
-        AddRlr(candidates, alpha, beta, normalizedDistance);
-        AddLrl(candidates, alpha, beta, normalizedDistance);
-
-        var shortest = candidates.Count > 0
-            ? candidates.MinBy(candidate => candidate.First + candidate.Second + candidate.Third)
-            : (Type: "SSS", First: 0.0, Second: normalizedDistance, Third: 0.0);
+        var shortest = (Type: "SSS", First: 0.0, Second: normalizedDistance, Third: 0.0);
+        double bestLength = double.PositiveInfinity;
+        foreach (string type in AllCurveTypes)
+        {
+            if (!TryEvaluateCurveType(type, alpha, beta, normalizedDistance, out double first, out double second, out double third))
+                continue;
+            double length = first + second + third;
+            if (length < bestLength)
+            {
+                bestLength = length;
+                shortest = (type, first, second, third);
+            }
+        }
         return new ApproachFlyThroughPlan(
             shortest.Type,
             shortest.First * turnRadius,
@@ -369,7 +371,7 @@ public static class ApproachPursuitMath
 
         // Evaluate a single curve type's (length, self-consistency residual) at time t,
         // reusing the SAME per-type segment-length formulas CreateFlyThroughPlan already
-        // uses (AddLsl/AddRsr/.../AddLrl) — never re-deriving or duplicating them.
+        // uses (EvaluateLsl/EvaluateRsr/.../EvaluateLrl) — never re-deriving or duplicating them.
         (bool Valid, double LengthUnits) EvaluateType(string curveType, double t)
         {
             double tx = targetX + t * targetVelocityX;
@@ -553,7 +555,7 @@ public static class ApproachPursuitMath
 
     /// <summary>
     /// Evaluate one specific Dubins curve type's 3 segment lengths (normalized by turn
-    /// radius) for the given geometry, reusing the same AddLsl/AddRsr/.../AddLrl formulas
+    /// radius) for the given geometry, reusing the same EvaluateLsl/EvaluateRsr/.../EvaluateLrl formulas
     /// <see cref="CreateFlyThroughPlan"/> uses — without duplicating them. Returns false
     /// when this type is not admissible for this geometry (its formula's domain
     /// condition — p^2 &gt;= 0 for the CSC types, |x| &lt;= 1 for the CCC types — is not
@@ -563,25 +565,23 @@ public static class ApproachPursuitMath
         string curveType, double alpha, double beta, double normalizedDistance,
         out double first, out double second, out double third)
     {
-        var candidates = new List<(string Type, double First, double Second, double Third)>(1);
-        switch (curveType)
+        var candidate = curveType switch
         {
-            case "LSL": AddLsl(candidates, alpha, beta, normalizedDistance); break;
-            case "RSR": AddRsr(candidates, alpha, beta, normalizedDistance); break;
-            case "LSR": AddLsr(candidates, alpha, beta, normalizedDistance); break;
-            case "RSL": AddRsl(candidates, alpha, beta, normalizedDistance); break;
-            case "RLR": AddRlr(candidates, alpha, beta, normalizedDistance); break;
-            case "LRL": AddLrl(candidates, alpha, beta, normalizedDistance); break;
-            default: throw new ArgumentOutOfRangeException(nameof(curveType), curveType, "Unknown Dubins curve type.");
-        }
-
-        if (candidates.Count == 0)
+            "LSL" => EvaluateLsl(alpha, beta, normalizedDistance),
+            "RSR" => EvaluateRsr(alpha, beta, normalizedDistance),
+            "LSR" => EvaluateLsr(alpha, beta, normalizedDistance),
+            "RSL" => EvaluateRsl(alpha, beta, normalizedDistance),
+            "RLR" => EvaluateRlr(alpha, beta, normalizedDistance),
+            "LRL" => EvaluateLrl(alpha, beta, normalizedDistance),
+            _ => throw new ArgumentOutOfRangeException(nameof(curveType), curveType, "Unknown Dubins curve type.")
+        };
+        if (candidate is null)
         {
             first = second = third = 0;
             return false;
         }
 
-        (first, second, third) = (candidates[0].First, candidates[0].Second, candidates[0].Third);
+        (first, second, third) = candidate.Value;
         return true;
     }
 
@@ -630,56 +630,56 @@ public static class ApproachPursuitMath
         travel -= consumed;
     }
 
-    private static void AddLsl(List<(string Type, double First, double Second, double Third)> paths, double a, double b, double d)
+    private static (double First, double Second, double Third)? EvaluateLsl(double a, double b, double d)
     {
         double p2 = 2 + d * d - 2 * Math.Cos(a - b) + 2 * d * (Math.Sin(a) - Math.Sin(b));
-        if (p2 < 0) return;
+        if (p2 < 0) return null;
         double x = Math.Atan2(Math.Cos(b) - Math.Cos(a), d + Math.Sin(a) - Math.Sin(b));
-        paths.Add(("LSL", Mod2Pi(-a + x), Math.Sqrt(p2), Mod2Pi(b - x)));
+        return (Mod2Pi(-a + x), Math.Sqrt(p2), Mod2Pi(b - x));
     }
 
-    private static void AddRsr(List<(string Type, double First, double Second, double Third)> paths, double a, double b, double d)
+    private static (double First, double Second, double Third)? EvaluateRsr(double a, double b, double d)
     {
         double p2 = 2 + d * d - 2 * Math.Cos(a - b) + 2 * d * (-Math.Sin(a) + Math.Sin(b));
-        if (p2 < 0) return;
+        if (p2 < 0) return null;
         double x = Math.Atan2(Math.Cos(a) - Math.Cos(b), d - Math.Sin(a) + Math.Sin(b));
-        paths.Add(("RSR", Mod2Pi(a - x), Math.Sqrt(p2), Mod2Pi(-b + x)));
+        return (Mod2Pi(a - x), Math.Sqrt(p2), Mod2Pi(-b + x));
     }
 
-    private static void AddLsr(List<(string Type, double First, double Second, double Third)> paths, double a, double b, double d)
+    private static (double First, double Second, double Third)? EvaluateLsr(double a, double b, double d)
     {
         double p2 = -2 + d * d + 2 * Math.Cos(a - b) + 2 * d * (Math.Sin(a) + Math.Sin(b));
-        if (p2 < 0) return;
+        if (p2 < 0) return null;
         double p = Math.Sqrt(p2);
         double x = Math.Atan2(-Math.Cos(a) - Math.Cos(b), d + Math.Sin(a) + Math.Sin(b)) - Math.Atan2(-2, p);
-        paths.Add(("LSR", Mod2Pi(-a + x), p, Mod2Pi(-Mod2Pi(b) + x)));
+        return (Mod2Pi(-a + x), p, Mod2Pi(-Mod2Pi(b) + x));
     }
 
-    private static void AddRsl(List<(string Type, double First, double Second, double Third)> paths, double a, double b, double d)
+    private static (double First, double Second, double Third)? EvaluateRsl(double a, double b, double d)
     {
         double p2 = d * d - 2 + 2 * Math.Cos(a - b) - 2 * d * (Math.Sin(a) + Math.Sin(b));
-        if (p2 < 0) return;
+        if (p2 < 0) return null;
         double p = Math.Sqrt(p2);
         double x = Math.Atan2(Math.Cos(a) + Math.Cos(b), d - Math.Sin(a) - Math.Sin(b)) - Math.Atan2(2, p);
-        paths.Add(("RSL", Mod2Pi(a - x), p, Mod2Pi(b - x)));
+        return (Mod2Pi(a - x), p, Mod2Pi(b - x));
     }
 
-    private static void AddRlr(List<(string Type, double First, double Second, double Third)> paths, double a, double b, double d)
+    private static (double First, double Second, double Third)? EvaluateRlr(double a, double b, double d)
     {
         double x = (6 - d * d + 2 * Math.Cos(a - b) + 2 * d * (Math.Sin(a) - Math.Sin(b))) / 8;
-        if (Math.Abs(x) > 1) return;
+        if (Math.Abs(x) > 1) return null;
         double p = Mod2Pi(2 * Math.PI - Math.Acos(x));
         double t = Mod2Pi(a - Math.Atan2(Math.Cos(a) - Math.Cos(b), d - Math.Sin(a) + Math.Sin(b)) + p / 2);
-        paths.Add(("RLR", t, p, Mod2Pi(a - b - t + p)));
+        return (t, p, Mod2Pi(a - b - t + p));
     }
 
-    private static void AddLrl(List<(string Type, double First, double Second, double Third)> paths, double a, double b, double d)
+    private static (double First, double Second, double Third)? EvaluateLrl(double a, double b, double d)
     {
         double x = (6 - d * d + 2 * Math.Cos(a - b) + 2 * d * (-Math.Sin(a) + Math.Sin(b))) / 8;
-        if (Math.Abs(x) > 1) return;
+        if (Math.Abs(x) > 1) return null;
         double p = Mod2Pi(2 * Math.PI - Math.Acos(x));
         double t = Mod2Pi(-a - Math.Atan2(Math.Cos(a) - Math.Cos(b), d + Math.Sin(a) - Math.Sin(b)) + p / 2);
-        paths.Add(("LRL", t, p, Mod2Pi(Mod2Pi(b) - a - t + Mod2Pi(p))));
+        return (t, p, Mod2Pi(Mod2Pi(b) - a - t + Mod2Pi(p)));
     }
 
     private static double Mod2Pi(double value)

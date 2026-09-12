@@ -1,0 +1,116 @@
+{
+  "Objects": 502,
+  "Frames": 9600,
+  "SimulatedSeconds": 120,
+  "Backend": "Skia raster, full GameSessionScreen.Render",
+  "Samples": [
+    {
+      "SimulatedSeconds": 10,
+      "ManagedBytes": 7052272,
+      "PrivateBytes": 31039488,
+      "WorkingSetBytes": 66023424,
+      "Trails": 501,
+      "Points": 100200,
+      "Capacity": 128256
+    },
+    {
+      "SimulatedSeconds": 20,
+      "ManagedBytes": 7047024,
+      "PrivateBytes": 35164160,
+      "WorkingSetBytes": 69963776,
+      "Trails": 501,
+      "Points": 100200,
+      "Capacity": 128256
+    },
+    {
+      "SimulatedSeconds": 30,
+      "ManagedBytes": 7047080,
+      "PrivateBytes": 32489472,
+      "WorkingSetBytes": 67891200,
+      "Trails": 501,
+      "Points": 100200,
+      "Capacity": 128256
+    },
+    {
+      "SimulatedSeconds": 40,
+      "ManagedBytes": 7047136,
+      "PrivateBytes": 33542144,
+      "WorkingSetBytes": 69574656,
+      "Trails": 501,
+      "Points": 100200,
+      "Capacity": 128256
+    },
+    {
+      "SimulatedSeconds": 50,
+      "ManagedBytes": 7047192,
+      "PrivateBytes": 33468416,
+      "WorkingSetBytes": 69582848,
+      "Trails": 501,
+      "Points": 100200,
+      "Capacity": 128256
+    },
+    {
+      "SimulatedSeconds": 60,
+      "ManagedBytes": 7047280,
+      "PrivateBytes": 36941824,
+      "WorkingSetBytes": 72933376,
+      "Trails": 501,
+      "Points": 100200,
+      "Capacity": 128256
+    },
+    {
+      "SimulatedSeconds": 70,
+      "ManagedBytes": 7047336,
+      "PrivateBytes": 37801984,
+      "WorkingSetBytes": 73232384,
+      "Trails": 501,
+      "Points": 100200,
+      "Capacity": 128256
+    },
+    {
+      "SimulatedSeconds": 80,
+      "ManagedBytes": 5982176,
+      "PrivateBytes": 33124352,
+      "WorkingSetBytes": 69263360,
+      "Trails": 501,
+      "Points": 100200,
+      "Capacity": 128256
+    },
+    {
+      "SimulatedSeconds": 90,
+      "ManagedBytes": 5982232,
+      "PrivateBytes": 34926592,
+      "WorkingSetBytes": 71053312,
+      "Trails": 501,
+      "Points": 100200,
+      "Capacity": 128256
+    },
+    {
+      "SimulatedSeconds": 100,
+      "ManagedBytes": 5982416,
+      "PrivateBytes": 35872768,
+      "WorkingSetBytes": 73080832,
+      "Trails": 501,
+      "Points": 100200,
+      "Capacity": 128256
+    },
+    {
+      "SimulatedSeconds": 110,
+      "ManagedBytes": 5990760,
+      "PrivateBytes": 35577856,
+      "WorkingSetBytes": 72777728,
+      "Trails": 501,
+      "Points": 100200,
+      "Capacity": 128256
+    },
+    {
+      "SimulatedSeconds": 120,
+      "ManagedBytes": 5990816,
+      "PrivateBytes": 35799040,
+      "WorkingSetBytes": 72863744,
+      "Trails": 501,
+      "Points": 100200,
+      "Capacity": 128256
+    }
+  ]
+}

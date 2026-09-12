@@ -55,20 +55,30 @@ public static class ApproachLineCaptureMath
         // target. Its length bounds the endpoint of EVERY shorter candidate.
         double lower = along - bestLength;
         double upper = Math.Min(along + bestLength, -trail + ratio * bestLength);
-        var samples = new SortedSet<double> { lower, upper, -trail };
+        // At most 3 + 257 + 2*129 samples. Scratch buffers are local and bounded,
+        // so command planning creates neither tree nodes nor temporary arrays.
+        Span<double> samples = stackalloc double[520];
+        int count = 0;
+        samples[count++] = lower; samples[count++] = upper; samples[count++] = -trail;
         for (int i = 0; i <= 256; i++)
-            samples.Add(lower + (upper - lower) * i / 256);
+            samples[count++] = lower + (upper - lower) * i / 256;
         // Resolve short turn-radius features even when the target is very far away.
-        foreach (double center in new[] { along, -trail })
+        for (int centerIndex = 0; centerIndex < 2; centerIndex++)
             for (int i = -64; i <= 64; i++)
             {
+                double center = centerIndex == 0 ? along : -trail;
                 double x = center + radius * i / 8;
                 if (x >= lower && x <= upper)
-                    samples.Add(x);
+                    samples[count++] = x;
             }
-        double[] xs = samples.ToArray();
-        double[] costs = new double[xs.Length];
-        bool[] feasible = new bool[xs.Length];
+        samples = samples[..count];
+        samples.Sort();
+        int unique = 0;
+        for (int i = 0; i < samples.Length; i++)
+            if (unique == 0 || samples[i] != samples[unique - 1]) samples[unique++] = samples[i];
+        var xs = samples[..unique];
+        Span<double> costs = stackalloc double[520];
+        Span<bool> feasible = stackalloc bool[520];
         for (int i = 0; i < xs.Length; i++)
             costs[i] = Evaluate(xs[i], out feasible[i]);
         for (int i = 1; i < xs.Length; i++)
@@ -120,10 +130,34 @@ public static class ApproachLineCaptureMath
         if (state.ApproachRoute is not { } route || elapsedMs < 0)
             return state;
         double elapsed = route.ElapsedMs + elapsedMs;
+        var pose = PredictPose(route, elapsed);
+        bool complete = elapsed >= route.DurationMs - 1e-7;
+        var target = ApproachPursuitMath.ExtrapolatePosition(route.TargetX, route.TargetY,
+            route.TargetDirection, route.TargetSpeedKmS, (long)elapsed);
+        return state with
+        {
+            X = pose.X, Y = pose.Y, Direction = pose.Direction,
+            SpeedKmS = route.SpeedKmS,
+            ApproachRoute = complete ? null : route with { ElapsedMs = elapsed },
+            ActiveEngineCommandType = complete ? null : NavigationComputerCommandTypes.Approach,
+            NavigationPhase = complete ? null : Phase,
+            TurnStepRemainingMs = complete ? 0 : Math.Max(0, state.TurnStepRemainingMs - (long)elapsedMs),
+            TurnStepIntervalMs = complete ? 0 : state.TurnStepIntervalMs,
+            TurnStepDegrees = complete ? 0 : state.TurnStepDegrees,
+            NavigationTargetX = complete ? null : target.X,
+            NavigationTargetY = complete ? null : target.Y,
+            NavigationTargetDirectionDegrees = complete ? null : route.TargetDirection,
+            NavigationTargetSpeedKmS = complete ? null : route.TargetSpeedKmS
+        };
+    }
+
+    /// <summary>Allocation-free pose at absolute route time, shared by simulation and map previews.</summary>
+    public static (double X, double Y, double Direction) PredictPose(ApproachRoute route, double elapsed)
+    {
         double travel = elapsed / 1000 * route.SpeedKmS * 10;
         double x = route.X, y = route.Y, heading = route.Direction * Math.PI / 180;
         double radius = route.SpeedKmS * 10 / (route.TurnRate * Math.PI / 180);
-        double[] lengths = { route.First, route.Second, route.Third };
+        ReadOnlySpan<double> lengths = stackalloc double[] { route.First, route.Second, route.Third };
         for (int i = 0; i < 3; i++)
         {
             double distance = Math.Min(travel, lengths[i]);
@@ -145,23 +179,7 @@ public static class ApproachLineCaptureMath
         x += travel * Math.Sin(heading);
         y -= travel * Math.Cos(heading);
         bool complete = elapsed >= route.DurationMs - 1e-7;
-        var target = ApproachPursuitMath.ExtrapolatePosition(route.TargetX, route.TargetY,
-            route.TargetDirection, route.TargetSpeedKmS, (long)elapsed);
-        return state with
-        {
-            X = x, Y = y, Direction = complete ? route.TargetDirection : (heading * 180 / Math.PI % 360 + 360) % 360,
-            SpeedKmS = route.SpeedKmS,
-            ApproachRoute = complete ? null : route with { ElapsedMs = elapsed },
-            ActiveEngineCommandType = complete ? null : NavigationComputerCommandTypes.Approach,
-            NavigationPhase = complete ? null : Phase,
-            TurnStepRemainingMs = complete ? 0 : Math.Max(0, state.TurnStepRemainingMs - (long)elapsedMs),
-            TurnStepIntervalMs = complete ? 0 : state.TurnStepIntervalMs,
-            TurnStepDegrees = complete ? 0 : state.TurnStepDegrees,
-            NavigationTargetX = complete ? null : target.X,
-            NavigationTargetY = complete ? null : target.Y,
-            NavigationTargetDirectionDegrees = complete ? null : route.TargetDirection,
-            NavigationTargetSpeedKmS = complete ? null : route.TargetSpeedKmS
-        };
+        return (x, y, complete ? route.TargetDirection : (heading * 180 / Math.PI % 360 + 360) % 360);
     }
 
     public static bool TargetChanged(ApproachRoute route, ObjectMotionSnapshot target, double elapsedMs)

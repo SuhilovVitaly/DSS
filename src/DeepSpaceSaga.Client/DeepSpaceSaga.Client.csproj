@@ -50,6 +50,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="DeepSpaceSaga.Client.Tests" />
+    <InternalsVisibleTo Include="DeepSpaceSaga.Performance" />
   </ItemGroup>
 
   <ItemGroup>
