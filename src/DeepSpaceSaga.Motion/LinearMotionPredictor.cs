@@ -20,6 +20,10 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 
     public ObjectMotionSnapshot Predict(ObjectMotionSnapshot state, long elapsedMs)
     {
+        if (state.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach &&
+            state.ApproachRoute is not null)
+            return ApproachLineCaptureMath.Predict(state, elapsedMs);
+
         // navigation.approach: trailing-pursuit cycle against a moving aim point —
         // never locks a course, re-aims every cycle. Checked before the Orbit branch
         // below since both populate NavigationTargetX/Y (different meaning — see the

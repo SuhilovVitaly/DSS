@@ -247,6 +247,16 @@ public static class ScenarioLoader
                 throw new ScenarioException($"Module '{module.ModuleId}' has activeCycle with negative startedGameTimeMs.");
             if (activeCycle.DurationMs < 0)
                 throw new ScenarioException($"Module '{module.ModuleId}' has activeCycle with negative durationMs.");
+            if (activeCycle.ApproachRoute is { } route &&
+                (activeCycle.CommandType != NavigationComputerCommandTypes.Approach ||
+                 route.Type is null || route.Type.Length != 3 || route.Type.Any(c => c is not ('L' or 'R' or 'S')) ||
+                 route.SpeedKmS <= 0 || route.TurnRate <= 0 || route.TargetSpeedKmS < 0 ||
+                 route.First < 0 || route.Second < 0 || route.Third < 0 || route.TrailDistance < 0 ||
+                 route.ElapsedMs < 0 || route.ElapsedMs > route.DurationMs ||
+                 new[] { route.X, route.Y, route.Direction, route.SpeedKmS, route.First, route.Second,
+                     route.Third, route.TargetX, route.TargetY, route.TargetDirection, route.TargetSpeedKmS,
+                     route.TrailDistance, route.ElapsedMs, route.DurationMs }.Any(v => !double.IsFinite(v))))
+                throw new ScenarioException($"Module '{module.ModuleId}' has an invalid Approach route.");
         }
 
         if (module.Cargo is { Count: > 0 })

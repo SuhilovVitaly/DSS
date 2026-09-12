@@ -105,6 +105,7 @@ public static class CommandReasonCodes
 
     /// <summary>Navigate-to-point target is too close — inside the turn radius and not on the current straight-line path.</summary>
     public const string NavigationTargetTooClose = "navigation_target_too_close";
+    public const string NavigationRequiresMotion = "navigation_requires_motion";
 
     /// <summary>Dock command's targetObjectId does not resolve to a Station object.</summary>
     public const string DockTargetNotStation = "dock_target_not_station";

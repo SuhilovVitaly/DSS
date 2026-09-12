@@ -387,7 +387,8 @@ public sealed record ActiveCycleData(
     /// </summary>
     [property: JsonPropertyName("navTargetDirectionDegrees")] double? NavigationTargetDirectionDegrees = null,
     /// <summary>Effective behind-target staging distance for Approach, in world units.</summary>
-    [property: JsonPropertyName("navApproachTrailDistanceWorldUnits")] double? NavigationApproachTrailDistanceWorldUnits = null);
+    [property: JsonPropertyName("navApproachTrailDistanceWorldUnits")] double? NavigationApproachTrailDistanceWorldUnits = null,
+    [property: JsonPropertyName("approachRoute")] DeepSpaceSaga.Contracts.ApproachRoute? ApproachRoute = null);
 
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(

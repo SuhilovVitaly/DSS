@@ -352,6 +352,10 @@ public static class ApproachPursuitMath
             if (root > 0 && (leadTime is null || root < leadTime))
                 leadTime = root;
         }
+        // Coincident positions still need a positive-duration heading maneuver.
+        // Zero is a valid lower bound even though it is not a rendezvous solution.
+        if (leadTime is null && c == 0)
+            leadTime = 0;
         if (leadTime is null)
             return ApproachInterceptSolution.None;
 

@@ -91,6 +91,31 @@ internal sealed class NavigationTrajectoryProjector
         interceptPoint = default;
         var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
 
+        if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach &&
+            predicted.ApproachRoute is { } route)
+        {
+            points.Add(new(predicted.X, predicted.Y));
+            double boundaryMs = 0;
+            double[] lengths = { route.First, route.Second, route.Third };
+            for (int segment = 0; segment < 3; segment++)
+            {
+                double startMs = Math.Max(boundaryMs, route.ElapsedMs);
+                boundaryMs += lengths[segment] / (route.SpeedKmS * 10) * 1000;
+                if (boundaryMs <= startMs) continue;
+                // Sampling by curvature preserves short turns even in a long chase.
+                int count = route.Type[segment] == 'S' ? 1 :
+                    Math.Max(1, (int)Math.Ceiling((boundaryMs - startMs) / 1000 * route.TurnRate / 2));
+                for (int i = 1; i <= count; i++)
+                {
+                    var point = ApproachLineCaptureMath.Predict(predicted,
+                        startMs + (boundaryMs - startMs) * i / count - route.ElapsedMs);
+                    points.Add(new(point.X, point.Y));
+                }
+            }
+            isConfirmedIntercept = true;
+            interceptPoint = points[^1];
+            return points;
+        }
         // navigation.approach: trailing-pursuit preview against a moving aim point —
         // checked before the generic Orbit-oriented branch below since both populate
         // NavigationTargetX/Y (different meaning — see the doc-comment on

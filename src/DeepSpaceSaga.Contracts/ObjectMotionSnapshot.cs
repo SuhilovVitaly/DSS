@@ -23,13 +23,9 @@ public sealed record ObjectMotionSnapshot(
     /// which command is active: for <see cref="ShipEngineCommandTypes.Orbit"/> this is a
     /// fixed, permanently-locked world point captured once. For
     /// <see cref="NavigationComputerCommandTypes.Approach"/> this is the target's
-    /// position, re-baked from its live state every completed engine cycle (including
-    /// while a fly-through re-orientation curve is in flight) — the STEERING itself still
-    /// follows the curve/course planned from the pose captured when that leg started
-    /// (replanning a fixed-radius curve or an established course lock mid-flight risks an
-    /// illegal turn), but this field always reflects where the target actually is as of
-    /// the most recent cycle, not that original captured pose. The client does not itself
-    /// extrapolate any further than this most-recent value.
+    /// position at this snapshot's timestamp. When ApproachRoute is present, steering
+    /// and future target motion come from that immutable route and its elapsed time.
+    /// Older snapshots without a route retain their legacy pursuit interpretation.
     /// </summary>
     double? NavigationTargetX = null,
     /// <summary>World-coordinate target of the active navigation cycle; see <see cref="NavigationTargetX"/>.</summary>
@@ -58,8 +54,8 @@ public sealed record ObjectMotionSnapshot(
     string? RenderObjectType = null,
     double? MaxSpeedKmS = null,
     /// <summary>
-    /// Current staged navigation phase. Approach uses <c>FlyThroughPending</c> and
-    /// <c>FlyThrough:&lt;path type&gt;</c> for its captured pose path.
+    /// Current staged navigation phase. New Approach cycles use <c>LineCapture</c>
+    /// with ApproachRoute; old snapshots may contain FlyThrough or pursuit phases.
     /// </summary>
     string? NavigationPhase = null,
     /// <summary>Orbit escape course, or remaining length of Approach fly-through segment 1.</summary>
@@ -76,10 +72,8 @@ public sealed record ObjectMotionSnapshot(
     /// <summary>ObjectId of the station this object is docked to. Null unless <see cref="IsDocked"/>.</summary>
     string? DockedStationObjectId = null,
     /// <summary>
-    /// Target speed as of the most recently completed Approach engine cycle (see
-    /// <see cref="NavigationTargetX"/>) — not a one-time value captured when the command
-    /// started. Metadata only; the client does not itself extrapolate any further ahead
-    /// than this most-recent value.
+    /// Target speed at this snapshot's timestamp; ApproachRoute separately records
+    /// the motion assumption used to plan the current route.
     /// </summary>
     double? NavigationTargetSpeedKmS = null,
     /// <summary>
@@ -116,4 +110,5 @@ public sealed record ObjectMotionSnapshot(
     string? DockOperatorDisplayName = null,
     /// <summary>Dock operator's portrait image path; see <see cref="DockOperatorDisplayName"/>.</summary>
     string? DockOperatorPortraitImage = null,
-    bool IsDestroyed = false);
+    bool IsDestroyed = false,
+    ApproachRoute? ApproachRoute = null);
