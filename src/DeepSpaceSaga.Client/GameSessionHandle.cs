@@ -54,6 +54,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
 
     public IGameSessionConnection Connection => _connection;
     public SnapshotBuffer Buffer { get; }
+    internal UI.Screens.Trade.TradeJournal Trades { get; } = new();
 
     /// <summary>
     /// Send a module-addressed command (Commands Panel). The target object id is

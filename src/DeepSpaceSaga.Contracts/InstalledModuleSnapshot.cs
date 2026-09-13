@@ -50,4 +50,6 @@ public sealed record InstalledModuleSnapshot(
     /// which depend on runtime state — direct pass-through of
     /// <c>ModuleTypeDefinition.CabinesCount</c>. Null for module types that do not house crew.
     /// </summary>
-    int? CabinesCount = null);
+    int? CabinesCount = null,
+    /// <summary>Total cargo capacity of this container; fuel tanks have their own capacity.</summary>
+    long? CargoCapacityKg = null);

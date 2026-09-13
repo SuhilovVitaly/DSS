@@ -18,6 +18,15 @@ namespace DeepSpaceSaga.Engine.Tests;
 /// </summary>
 public class TradeSnapshotProjectionTests
 {
+    [Fact]
+    public void Snapshot_exposes_unit_mass_and_container_capacity_for_trade_preview()
+    {
+        using var engine = CreateEngine(containerCargoCapacityKg: 850);
+        var snapshot = engine.CaptureSnapshotForTests();
+        Assert.Equal(850, snapshot.InstalledModules.Single(m => m.ModuleId == CargoModuleId).CargoCapacityKg);
+        Assert.Equal(10, snapshot.DockedStationTrade!.Items.Single(i => i.ItemTypeId == EnergyCellsId).UnitMassKg);
+        Assert.Equal(0, snapshot.DockedStationTrade.Items.Single(i => i.ItemTypeId == FuelId).UnitMassKg);
+    }
     private const string PlayerShipId = "SPC-0001";
     private const string CargoModuleId = "MOD-CARGO-01";
     private const string EngineModuleId = "MOD-ENG-01";

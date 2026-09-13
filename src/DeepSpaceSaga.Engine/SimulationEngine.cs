@@ -574,7 +574,8 @@ public sealed partial class SimulationEngine : IDisposable
                 StockQuantity: item.StockQuantity,
                 UnitPriceCredits: unitPrice,
                 MaxSellableQuantity: maxSellable,
-                Category: ToTradeItemCategory(itemType.Category)));
+                Category: ToTradeItemCategory(itemType.Category),
+                UnitMassKg: itemType.UnitMassKg));
         }
 
         return new StationTradeSnapshot(station.InitialMotion.ObjectId, items.MoveToImmutable());
@@ -618,7 +619,8 @@ public sealed partial class SimulationEngine : IDisposable
                 Commands: BuildModuleCommands(moduleType.CommandTypeIds),
                 Cargo: BuildCargoProjection(module.Cargo),
                 AvailableCapacityKg: module.AvailableCapacityKg,
-                CabinesCount: moduleType.CabinesCount));
+                CabinesCount: moduleType.CabinesCount,
+                CargoCapacityKg: moduleType.CargoCapacityKg));
         }
 
         return builder.MoveToImmutable();

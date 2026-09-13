@@ -35,7 +35,9 @@ public sealed record StationInventoryItemSnapshot(
     /// Defaults to <see cref="TradeItemCategories.Good"/> for callers/fixtures that predate
     /// this field (story-20260825-084409 Batch 3, U10).
     /// </summary>
-    string Category = TradeItemCategories.Good);
+    string Category = TradeItemCategories.Good,
+    /// <summary>Mass per cargo unit, used to quote capacity before submitting a trade.</summary>
+    long UnitMassKg = 1);
 
 /// <summary>
 /// String values for <see cref="StationInventoryItemSnapshot.Category"/> — a string mirror of
