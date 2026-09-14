@@ -319,6 +319,25 @@ public class KeyboardEdgeTrackerTests
         Assert.Equal([Key.Backspace], Poll(tracker, pressed));
     }
 
+    [Theory]
+    [InlineData(Key.Equal)] [InlineData(Key.Minus)] [InlineData(Key.KeypadAdd)]
+    [InlineData(Key.KeypadSubtract)] [InlineData(Key.Home)] [InlineData(Key.End)]
+    public void Map_keys_emit_one_edge_and_resync_suppresses_held_key(Key key)
+    {
+        var tracker = new KeyboardEdgeTracker();
+        var keys = new HashSet<Key> { key };
+        PollBoth(tracker, keys, out var first, out _);
+        Assert.Equal(new[] { key }, first);
+        PollBoth(tracker, keys, out var held, out _);
+        Assert.Empty(held);
+        tracker.ResyncToCurrentState(keys.Contains);
+        PollBoth(tracker, keys, out var resumed, out _);
+        Assert.Empty(resumed);
+        keys.Clear(); PollBoth(tracker, keys, out _, out _);
+        keys.Add(key); PollBoth(tracker, keys, out var next, out _);
+        Assert.Equal(new[] { key }, next);
+    }
+
     private static Key[] Poll(KeyboardEdgeTracker tracker, HashSet<Key> pressed)
     {
         Span<Key> buffer = stackalloc Key[21];

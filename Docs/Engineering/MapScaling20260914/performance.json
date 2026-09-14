@@ -1,0 +1,219 @@
+{
+  "Scenario": "default_500",
+  "Objects": 502,
+  "Seed": 500,
+  "Width": 1280,
+  "Height": 720,
+  "Frames": 600,
+  "Runtime": ".NET 8.0.26",
+  "OS": "Microsoft Windows 10.0.26200",
+  "ProcessorCount": 8,
+  "Backend": "Skia raster, full GameSessionScreen.Render",
+  "Measurements": [
+    {
+      "Name": "engine_snapshot_502",
+      "Samples": 1000,
+      "MeanMs": 0.11761000000000003,
+      "MedianMs": 0.1071,
+      "P95Ms": 0.189,
+      "MaxMs": 0.6381,
+      "AllocatedBytesPerOperation": 179776,
+      "RetainedManagedDeltaBytes": 17448,
+      "PrivateBytesBefore": 20176896,
+      "PrivateBytesAfter": 22310912,
+      "Collections": [
+        28,
+        0,
+        0
+      ]
+    },
+    {
+      "Name": "approach_command_and_snapshot",
+      "Samples": 100,
+      "MeanMs": 0.58831,
+      "MedianMs": 0.5543,
+      "P95Ms": 0.7778,
+      "MaxMs": 1.0363,
+      "AllocatedBytesPerOperation": 192433.12,
+      "RetainedManagedDeltaBytes": 27992,
+      "PrivateBytesBefore": 19881984,
+      "PrivateBytesAfter": 23543808,
+      "Collections": [
+        3,
+        0,
+        0
+      ]
+    },
+    {
+      "Name": "predict_502_positions",
+      "Samples": 2000,
+      "MeanMs": 0.03483564999999991,
+      "MedianMs": 0.0307,
+      "P95Ms": 0.05,
+      "MaxMs": 0.4929,
+      "AllocatedBytesPerOperation": 172344,
+      "RetainedManagedDeltaBytes": 17112,
+      "PrivateBytesBefore": 24403968,
+      "PrivateBytesAfter": 19525632,
+      "Collections": [
+        54,
+        0,
+        0
+      ]
+    },
+    {
+      "Name": "render_paused",
+      "Samples": 600,
+      "MeanMs": 6.353938833333336,
+      "MedianMs": 6.194,
+      "P95Ms": 7.7844,
+      "MaxMs": 12.861,
+      "AllocatedBytesPerOperation": 61839.933333333334,
+      "RetainedManagedDeltaBytes": 5912,
+      "PrivateBytesBefore": 37072896,
+      "PrivateBytesAfter": 41566208,
+      "Collections": [
+        6,
+        0,
+        0
+      ]
+    },
+    {
+      "Name": "render_running",
+      "Samples": 600,
+      "MeanMs": 4.6282096666666686,
+      "MedianMs": 4.5419,
+      "P95Ms": 5.7362,
+      "MaxMs": 7.1415,
+      "AllocatedBytesPerOperation": 218052.90666666668,
+      "RetainedManagedDeltaBytes": 177624,
+      "PrivateBytesBefore": 49451008,
+      "PrivateBytesAfter": 32870400,
+      "Collections": [
+        21,
+        1,
+        0
+      ]
+    },
+    {
+      "Name": "render_approach",
+      "Samples": 600,
+      "MeanMs": 5.210387833333333,
+      "MedianMs": 5.1062,
+      "P95Ms": 6.4282,
+      "MaxMs": 24.9932,
+      "AllocatedBytesPerOperation": 218757.82666666666,
+      "RetainedManagedDeltaBytes": 181856,
+      "PrivateBytesBefore": 45514752,
+      "PrivateBytesAfter": 33792000,
+      "Collections": [
+        21,
+        2,
+        0
+      ]
+    },
+    {
+      "Name": "scale_0",
+      "Samples": 600,
+      "MeanMs": 4.915174833333333,
+      "MedianMs": 4.7529,
+      "P95Ms": 6.3639,
+      "MaxMs": 19.0942,
+      "AllocatedBytesPerOperation": 218052.90666666668,
+      "RetainedManagedDeltaBytes": 177312,
+      "PrivateBytesBefore": 44740608,
+      "PrivateBytesAfter": 32149504,
+      "Collections": [
+        21,
+        1,
+        0
+      ]
+    },
+    {
+      "Name": "scale_1",
+      "Samples": 600,
+      "MeanMs": 2.0424743333333337,
+      "MedianMs": 1.8485,
+      "P95Ms": 3.1703,
+      "MaxMs": 4.3356,
+      "AllocatedBytesPerOperation": 218729.73333333334,
+      "RetainedManagedDeltaBytes": 177464,
+      "PrivateBytesBefore": 41406464,
+      "PrivateBytesAfter": 39038976,
+      "Collections": [
+        21,
+        2,
+        0
+      ]
+    },
+    {
+      "Name": "scale_2",
+      "Samples": 600,
+      "MeanMs": 1.4403376666666676,
+      "MedianMs": 1.2642,
+      "P95Ms": 2.462,
+      "MaxMs": 3.9633,
+      "AllocatedBytesPerOperation": 234456.70666666667,
+      "RetainedManagedDeltaBytes": 177464,
+      "PrivateBytesBefore": 40501248,
+      "PrivateBytesAfter": 37543936,
+      "Collections": [
+        22,
+        3,
+        0
+      ]
+    },
+    {
+      "Name": "scale_3",
+      "Samples": 600,
+      "MeanMs": 1.3299803333333347,
+      "MedianMs": 1.2025,
+      "P95Ms": 2.1169,
+      "MaxMs": 3.1758,
+      "AllocatedBytesPerOperation": 234480.70666666667,
+      "RetainedManagedDeltaBytes": 177200,
+      "PrivateBytesBefore": 39350272,
+      "PrivateBytesAfter": 39612416,
+      "Collections": [
+        22,
+        3,
+        0
+      ]
+    },
+    {
+      "Name": "scale_4",
+      "Samples": 600,
+      "MeanMs": 1.5558378333333351,
+      "MedianMs": 1.3288,
+      "P95Ms": 2.6866,
+      "MaxMs": 4.1768,
+      "AllocatedBytesPerOperation": 234488.70666666667,
+      "RetainedManagedDeltaBytes": 177464,
+      "PrivateBytesBefore": 39342080,
+      "PrivateBytesAfter": 39591936,
+      "Collections": [
+        22,
+        3,
+        0
+      ]
+    },
+    {
+      "Name": "system_view",
+      "Samples": 600,
+      "MeanMs": 5.149812666666667,
+      "MedianMs": 4.9816,
+      "P95Ms": 6.8101,
+      "MaxMs": 10.8841,
+      "AllocatedBytesPerOperation": 219553.4,
+      "RetainedManagedDeltaBytes": 177464,
+      "PrivateBytesBefore": 38612992,
+      "PrivateBytesAfter": 36200448,
+      "Collections": [
+        21,
+        4,
+        0
+      ]
+    }
+  ],
+  "Stages": {}
+}

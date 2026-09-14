@@ -1,4 +1,10 @@
 {
+  "Map.Follow": "Follow ship",
+  "Map.Route": "Full route",
+  "Map.Selected": "Selected",
+  "Map.ShipTarget": "Ship + target",
+  "Map.System": "Known system",
+  "Map.Target": "Target",
   "TradeUX.CargoLoad": "Cargo load",
   "TradeUX.KgLoadChange": "{0} → {1} / {2} kg",
   "TradeUX.HoldNumber": "Hold {0}",

@@ -13,6 +13,33 @@
   "gameSettings": {
     "showTrajectoryPrediction": true,
     "selectedMonitorIndex": 0,
-    "uiScale": 1.0
+    "uiScale": 1.0,
+    "tacticalMap": {
+      "metersPerPixel": [
+        100,
+        1000,
+        100000,
+        1000000,
+        10000000
+      ],
+      "minimumPpu": 1E-12,
+      "wheelFactor": 1.25,
+      "wheelUnitsPerStep": 1,
+      "zoomAnimationMs": 120,
+      "labelDetailPpu": 0.1,
+      "compactMarkerPpu": 0.1,
+      "trailDetailPpu": 0.5,
+      "maximumLabels": 48,
+      "clusterPpu": 0.001,
+      "clusterCellPixels": 40,
+      "gridMinimumPixels": 24,
+      "gridFadePixels": 24,
+      "gridMantissas": [
+        1,
+        2,
+        5
+      ],
+      "fitPaddingPixels": 32
+    }
   }
 }

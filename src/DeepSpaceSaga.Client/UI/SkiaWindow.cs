@@ -55,7 +55,7 @@ public sealed class SkiaWindow : IDisposable
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _quickSaveLoadInFlight;
     private readonly KeyboardEdgeTracker _keyboardEdges = new();
-    private readonly Key[] _keyboardPressedKeys = new Key[21]; // must cover every key KeyboardEdgeTracker.PollBoth can report in one call
+    private readonly Key[] _keyboardPressedKeys = new Key[32]; // must cover every key KeyboardEdgeTracker.PollBoth can report in one call
     private readonly Key[] _keyboardReleasedKeys = new Key[2]; // Ctrl release edges only (left/right)
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
@@ -734,7 +734,7 @@ public sealed class SkiaWindow : IDisposable
             var predictor = new LinearMotionPredictor();
             var gameScreen = new GameSessionScreen(session.Buffer, predictor, session,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                uiScale: (float)GetUiScale());
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")));
 
             _session = session;
             _gameSessionScreen = gameScreen;
@@ -1359,7 +1359,7 @@ public sealed class SkiaWindow : IDisposable
             var predictor = new LinearMotionPredictor();
             newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                uiScale: (float)GetUiScale());
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")));
             await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
         }
         catch (Exception ex)

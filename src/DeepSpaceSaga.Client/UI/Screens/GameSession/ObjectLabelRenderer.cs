@@ -31,8 +31,10 @@ internal sealed class ObjectLabelRenderer
 
     /// <summary>Active object IDs from the current frame.</summary>
     private readonly HashSet<string> _activeIds = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, byte> _opacity = new(StringComparer.Ordinal);
     private readonly Dictionary<string, LabelMetrics> _labels = new(StringComparer.Ordinal);
     private readonly List<string> _staleLabels = new();
+    private readonly List<SKRect> _occupiedPlaques = new();
     private readonly record struct LabelMetrics(string? RenderType, string? Name, string Text, float Width);
 
     public ObjectLabelRenderer()
@@ -98,21 +100,36 @@ internal sealed class ObjectLabelRenderer
         int viewportW,
         int viewportH,
         CameraState camera,
-        bool resetSmoothing = false)
+        bool resetSmoothing = false,
+        TacticalMapSettings? mapSettings = null,
+        Func<string, bool>? isImportant = null,
+        IReadOnlySet<string>? clusteredIds = null,
+        SKRect? availableMap = null)
     {
         _geometries.Clear();
         _activeIds.Clear();
+        _opacity.Clear();
+        _occupiedPlaques.Clear();
 
         if (resetSmoothing)
             _smoother.ResetAll();
 
         var viewport = new SKSize(viewportW, viewportH);
 
+        // Reserve space for the player and explicit targets before secondary labels.
+        for (int pass = 0; pass < 2; pass++)
         for (int i = 0; i < renderStates.Count; i++)
         {
             var state = renderStates[i];
             var predicted = state.Predicted;
             string objectId = predicted.ObjectId;
+            if (clusteredIds?.Contains(objectId) == true) continue;
+            bool important = state.IsPlayerShip || isImportant?.Invoke(objectId) == true;
+            if (important != (pass == 0)) continue;
+            if (mapSettings is not null && !important && _occupiedPlaques.Count >= mapSettings.MaximumLabels) continue;
+            if (mapSettings is not null && !important && camera.PixelsPerWorldUnit < mapSettings.LabelDetailPpu * .5) continue;
+            _opacity[objectId] = mapSettings is null || important ? (byte)255 :
+                (byte)(255 * Math.Clamp((camera.PixelsPerWorldUnit / mapSettings.LabelDetailPpu - .5) * 2, 0, 1));
 
             var (objSx, objSy) = camera.WorldToScreen(predicted.X, predicted.Y, viewportW, viewportH);
 
@@ -153,6 +170,17 @@ internal sealed class ObjectLabelRenderer
                 viewportH,
                 reset: resetSmoothing);
 
+            if (important && availableMap is { } free)
+            {
+                // Explicit targets must remain readable when fitted beside a panel.
+                float x = Math.Clamp(visiblePlaque.Left, free.Left + 4, Math.Max(free.Left + 4, free.Right - visiblePlaque.Width - 4));
+                float y = Math.Clamp(visiblePlaque.Top, free.Top + 4, Math.Max(free.Top + 4, free.Bottom - visiblePlaque.Height - 4));
+                visiblePlaque = new SKRect(x, y, x + visiblePlaque.Width, y + visiblePlaque.Height);
+            }
+
+            if (mapSettings is not null && !important && OverlapsExistingPlaque(visiblePlaque)) continue;
+            _occupiedPlaques.Add(visiblePlaque);
+
             // Leader endpoint — always bottom-left corner of the visible plaque.
             var leaderEndPoint = new SKPoint(visiblePlaque.Left, visiblePlaque.Bottom);
 
@@ -178,6 +206,12 @@ internal sealed class ObjectLabelRenderer
         foreach (string id in _staleLabels) _labels.Remove(id);
     }
 
+    private bool OverlapsExistingPlaque(SKRect plaque)
+    {
+        foreach (var r in _occupiedPlaques) if (r.IntersectsWith(plaque)) return true;
+        return false;
+    }
+
     /// <summary>
     /// Draw leader lines only — called BEFORE object glyphs so lines go behind ships.
     /// </summary>
@@ -197,6 +231,7 @@ internal sealed class ObjectLabelRenderer
             var predicted = renderStates[i].Predicted;
             var (objSx, objSy) = camera.WorldToScreen(predicted.X, predicted.Y, viewportW, viewportH);
 
+            _leaderLinePaint.Color = _leaderLinePaint.Color.WithAlpha(_opacity[objectId]);
             canvas.DrawLine(objSx, objSy,
                 geometry.LeaderEndPoint.X, geometry.LeaderEndPoint.Y,
                 _leaderLinePaint);
@@ -225,6 +260,10 @@ internal sealed class ObjectLabelRenderer
 
             var predicted = state.Predicted;
 
+            byte opacity = _opacity[objectId];
+            _plaqueBgPaint.Color = _plaqueBgPaint.Color.WithAlpha(opacity);
+            _plaqueBorderPaint.Color = _plaqueBorderPaint.Color.WithAlpha(opacity);
+
             SKColor objectColor = state.IsPlayerShip
                 ? SpaceMapColorResolver.PlayerShipColor
                 : SpaceMapColorResolver.GetColor(predicted.RenderObjectType, predicted.RelationToPlayer);
@@ -243,13 +282,13 @@ internal sealed class ObjectLabelRenderer
             byte sr = (byte)((objectColor.Red + 52) / 3);
             byte sg = (byte)((objectColor.Green + 52) / 3);
             byte sb = (byte)((objectColor.Blue + 52) / 3);
-            _stripePaint.Color = new SKColor(sr, sg, sb);
+            _stripePaint.Color = new SKColor(sr, sg, sb, opacity);
             canvas.DrawRect(stripeRect, _stripePaint);
 
             // Status square — blink driven by real/UI time, not game time
             if (StatusSquareAnimator.IsStatusSquareVisible(uiTimeMs, speed))
             {
-                _statusSquarePaint.Color = objectColor;
+                _statusSquarePaint.Color = objectColor.WithAlpha(opacity);
                 canvas.DrawRect(geometry.StatusRect, _statusSquarePaint);
             }
 
@@ -265,6 +304,7 @@ internal sealed class ObjectLabelRenderer
                     (byte)Math.Min(255, objectColor.Blue + 60));
             }
             float textY = geometry.TextOrigin.Y + textPaint.TextSize;
+            textPaint.Color = textPaint.Color.WithAlpha(opacity);
             canvas.DrawText(label, geometry.TextOrigin.X, textY, textPaint);
         }
     }

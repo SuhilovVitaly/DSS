@@ -10,7 +10,7 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
-public sealed class GameSessionScreen : IScreen
+public sealed partial class GameSessionScreen : IScreen
 {
     private readonly SnapshotBuffer _buffer;
     private readonly IMotionPredictor _predictor;
@@ -153,7 +153,6 @@ public sealed class GameSessionScreen : IScreen
     private bool _hasMousePosition;
 
     // Layout constants
-    private const double ZoomStepFactor = 1.25;
     private const float PanelPaddingX = 10f;
     private const float PanelPaddingY = 8f;
     private const float PanelLineHeight = 16f;
@@ -203,9 +202,7 @@ public sealed class GameSessionScreen : IScreen
     private static readonly SimulationSpeed[] SpeedValues =
         { SimulationSpeed.Speed0, SimulationSpeed.Speed1, SimulationSpeed.Speed2, SimulationSpeed.Speed3, SimulationSpeed.Speed4 };
     private static readonly string[] ScaleLabels = { "M0.5", "M1", "M10", "M100", "M1000" };
-    private static readonly double[] ScaleTargets = { 2.0, 1.0, 0.1, 0.01, 0.001 };
-    private static readonly double WheelMinPpu = ScaleTargets.Min();
-    private static readonly double WheelMaxPpu = ScaleTargets.Max();
+    private readonly double[] ScaleTargets;
 
     // ── Test seams ──────────────────────────────────────────────
 
@@ -229,7 +226,7 @@ public sealed class GameSessionScreen : IScreen
     internal ObjectInfoPanel ObjectInfoPanel => _objectInfoPanel;
     internal float UiScale => _uiScale;
 
-    /// <summary>Current frame's render list (scale-filtered, client-side).</summary>
+    /// <summary>Current frame's client-visible contacts before presentation detail/clustering.</summary>
     internal IReadOnlyList<ObjectRenderState> RenderStates => _renderStates;
     /// <summary>Optional CPU profiling hook; null in normal play. UI-thread only.</summary>
     internal Action<string>? RenderStageCompleted { get; set; }
@@ -262,7 +259,8 @@ public sealed class GameSessionScreen : IScreen
         GameSessionHandle? handle = null,
         Func<long>? timestampProvider = null,
         bool showTrajectoryPrediction = true,
-        float uiScale = 1.0f)
+        float uiScale = 1.0f,
+        TacticalMapSettings? mapSettings = null)
     {
         _buffer = buffer;
         _predictor = predictor;
@@ -272,8 +270,10 @@ public sealed class GameSessionScreen : IScreen
         _uiScale = ValidateUiScale(uiScale);
         _uiTimeStartTimestamp = _timestampProvider();
 
-        _camera = new CameraState(focusX: 10000, focusY: 10000, pixelsPerWorldUnit: 1.0);
-        _grid = new GridRenderer();
+        _mapSettings = (mapSettings ?? new()).Validate();
+        ScaleTargets = _mapSettings.ScaleTargets;
+        _camera = new CameraState(focusX: 10000, focusY: 10000, pixelsPerWorldUnit: ScaleTargets[0]);
+        _grid = new GridRenderer(_mapSettings);
         _trailStore = new ObjectTrailStore(_predictor, _timestampProvider);
         _futureTrajectoryProjector = new FutureTrajectoryProjector(_predictor);
         _navigationTrajectoryProjector = new NavigationTrajectoryProjector();
@@ -335,6 +335,8 @@ public sealed class GameSessionScreen : IScreen
 
     public void OnDeactivated()
     {
+        _zoomTransition.Cancel();
+        _isPanningMap = false;
         _isCtrlLeftDown = false;
         _isCtrlRightDown = false;
         _hasMousePosition = false;
@@ -364,6 +366,8 @@ public sealed class GameSessionScreen : IScreen
 
         if (button != MouseButton.Left)
             return ScreenEvent.None;
+
+        if (HandleMapToolbarClick(uiX, uiY)) return ScreenEvent.None;
 
         // 0. Scale panel buttons (left of speed panel — check first)
         int scaleIdx = HitTestScalePanel(uiX, uiY);
@@ -407,6 +411,8 @@ public sealed class GameSessionScreen : IScreen
         // 5. Object Info panel (top-right) — consume clicks, don't pan
         if (_objectInfoPanel.OnMouseDown(uiX, uiY))
             return ScreenEvent.None;
+        if (IsClickOnUiPanel(uiX, uiY)) return ScreenEvent.None;
+        if (TryExpandMapCluster(x, y)) return ScreenEvent.None;
 
         // 5.5. Object selection takes priority over both plain pan and Ctrl+Click
         // navigation (ТЗ §54, TacticalMapSpecification.md line 79: "клик поглощается,
@@ -425,7 +431,7 @@ public sealed class GameSessionScreen : IScreen
 
             if (hitObjectId == _buffer.Latest?.Snapshot.PlayerShipObjectId)
             {
-                _isFocusAttachedToPlayer = true;
+                SetFollowPlayer();
             }
 
             // While docked, a successful navigation.dock physically snaps the ship onto
@@ -462,6 +468,7 @@ public sealed class GameSessionScreen : IScreen
         // re-centers on a plain click by itself (disabled per user feedback: the
         // jump fought with dragging, making it feel broken) — only actual mouse
         // movement while held pans the camera, in OnMouseMove below.
+        _zoomTransition.Cancel();
         _isFocusAttachedToPlayer = false;
         _isPanningMap = true;
         _panLastScreenX = x;
@@ -500,7 +507,8 @@ public sealed class GameSessionScreen : IScreen
         _isFinanceButtonHovered = _lastFinanceButtonRect.Contains(_uiMouseX, _uiMouseY);
         _isShipButtonHovered = _lastShipButtonRect.Contains(_uiMouseX, _uiMouseY);
         bool objectInfoHovered = _objectInfoPanel.OnMouseMove(_uiMouseX, _uiMouseY);
-        return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY) || objectInfoHovered || _isFinanceButtonHovered || _isShipButtonHovered;
+        return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY) || objectInfoHovered || _isFinanceButtonHovered || _isShipButtonHovered ||
+            _mapViewButtons.Where((_, i) => IsMapViewAvailable(i)).Any(r => r.Contains(_uiMouseX, _uiMouseY));
     }
 
     public void OnMouseUp(float x, float y)
@@ -516,19 +524,22 @@ public sealed class GameSessionScreen : IScreen
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
-        if (delta == 0 || _viewportW <= 0 || _viewportH <= 0)
+        if (!float.IsFinite(delta) || delta == 0 || _viewportW <= 0 || _viewportH <= 0 ||
+            IsClickOnUiPanel(x / _uiScale, y / _uiScale))
             return ScreenEvent.None;
-
-        double factor = delta > 0 ? ZoomStepFactor : 1.0 / ZoomStepFactor;
-        double oldPpu = _camera.PixelsPerWorldUnit;
-        _camera.ZoomAt(factor, x, y, _viewportW, _viewportH, minPpu: WheelMinPpu, maxPpu: WheelMaxPpu);
-        if (_camera.PixelsPerWorldUnit != oldPpu)
-            InterfaceLog.Write($"Scale → PPU={_camera.PixelsPerWorldUnit:F4}");
+        ZoomBy(delta / _mapSettings.WheelUnitsPerStep, x, y);
         return ScreenEvent.None;
     }
 
     public ScreenEvent OnKeyDown(Key key)
     {
+        if (key is Key.Equal or Key.KeypadAdd or Key.Minus or Key.KeypadSubtract)
+        {
+            ZoomBy(key is Key.Equal or Key.KeypadAdd ? 1 : -1, _viewportW / 2f, _viewportH / 2f);
+            return ScreenEvent.None;
+        }
+        if (key == Key.Home) { SetFollowPlayer(); return ScreenEvent.None; }
+        if (key == Key.End) { FitMapView(MapFitMode.System); return ScreenEvent.None; }
         if (key == Key.ControlLeft)
         {
             _isCtrlLeftDown = true;
@@ -547,7 +558,7 @@ public sealed class GameSessionScreen : IScreen
             // makes the camera follow another object (story-20260827-083137.md UX
             // change), so there is no "detach from a followed non-player object"
             // case to handle here anymore — Ctrl+C always reattaches to the player.
-            _isFocusAttachedToPlayer = true;
+            SetFollowPlayer();
             return ScreenEvent.None;
         }
 
@@ -842,6 +853,7 @@ public sealed class GameSessionScreen : IScreen
         for (int i = 0; i < _renderStates.Count; i++)
         {
             var state = _renderStates[i];
+            if (_clusteredObjectIds.Contains(state.Predicted.ObjectId)) continue;
             var (sx, sy) = _camera.WorldToScreen(state.Predicted.X, state.Predicted.Y, _viewportW, _viewportH);
             double dx = x - sx;
             double dy = y - sy;
@@ -930,6 +942,8 @@ public sealed class GameSessionScreen : IScreen
     /// </summary>
     private bool IsClickOnUiPanel(float uiX, float uiY)
     {
+        if (_mapToolbarRect.Contains(uiX, uiY) || _lastScalePanelRect.Contains(uiX, uiY) ||
+            _lastSpeedPanelRect.Contains(uiX, uiY) || _lastMechanicsPanelRect.Contains(uiX, uiY)) return true;
         if (HitTestScalePanel(uiX, uiY) >= 0)
             return true;
         if (HitTestSpeedPanel(uiX, uiY) >= 0)
@@ -979,11 +993,15 @@ public sealed class GameSessionScreen : IScreen
         _lastViewportW = width;
         _lastViewportH = height;
 
+        if (viewportResized) _zoomTransition.Cancel();
+        _zoomTransition.Advance(_camera, deltaSeconds, _isFocusAttachedToPlayer, _mapSettings, width, height);
+
         var prediction = _buffer.LatestPrediction;
         var buffered = prediction?.BufferedSnapshot;
         UpdateObjectRenderStates(prediction, deltaSeconds);
 
         UpdateCameraFocusFromPlayer(_renderStates);
+        UpdateMapClusters();
 
         // Recompute after render states + camera focus are current for this frame —
         // covers pan/zoom, camera-focus changes, and an object moving under a
@@ -1042,14 +1060,18 @@ public sealed class GameSessionScreen : IScreen
             // Compute smoothed label geometries once per frame so both
             // DrawLeaders and DrawPlaques see the same positions.
             bool resetSmoothing = viewportResized;
-            _labelRenderer.ComputeGeometries(_renderStates, deltaSeconds, width, height, _camera, resetSmoothing);
+            _labelRenderer.ComputeGeometries(_renderStates, deltaSeconds, width, height, _camera, resetSmoothing,
+                _mapSettings, IsImportantMapObject, _clusteredObjectIds, AvailableMapRect());
 
             // 3.75. Label leader lines (behind objects)
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
 
-            // 4. Engine objects
+            // Important markers stay above background celestial markers and contacts.
+            for (int markerPass = 0; markerPass < 2; markerPass++)
             foreach (var state in _renderStates)
             {
+                if (IsImportantMapObject(state.Predicted.ObjectId) != (markerPass == 1)) continue;
+                if (_clusteredObjectIds.Contains(state.Predicted.ObjectId)) continue;
                 var (sx, sy) = _camera.WorldToScreen(state.Predicted.X, state.Predicted.Y, width, height);
                 // Marker radius from the shared policy (screen-space, zoom-independent).
                 // The player ship's render type comes from identity (IsPlayerShip), not
@@ -1080,6 +1102,13 @@ public sealed class GameSessionScreen : IScreen
                 {
                     var markerColor = SpaceMapColorResolver.GetColor(
                         state.Predicted.RenderObjectType, state.Predicted.RelationToPlayer);
+                    if (_camera.PixelsPerWorldUnit <= _mapSettings.CompactMarkerPpu && !IsImportantMapObject(state.Predicted.ObjectId) &&
+                        state.Predicted.RenderObjectType is not (SpaceObjectType.Planet or SpaceObjectType.Sun))
+                    {
+                        _mapMarkerPaint.Color = markerColor;
+                        canvas.DrawCircle(sx, sy, 2.5f, _mapMarkerPaint);
+                        continue;
+                    }
                     if (TacticalMapMarkerPolicy.UsesGlintMarker(state.Predicted.RenderObjectType))
                     {
                         _depthRenderer.DrawGlintMarker(canvas, sx, sy, r, markerColor);
@@ -1093,6 +1122,8 @@ public sealed class GameSessionScreen : IScreen
 
             // 4.5. Object label plaques (on top of objects, before UI panels)
             _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera);
+            DrawMapClusters(canvas);
+            DrawOffscreenTargets(canvas);
             RenderStageCompleted?.Invoke("markers_and_labels");
         }
 
@@ -1130,6 +1161,7 @@ public sealed class GameSessionScreen : IScreen
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);
+        DrawMapToolbar(canvas);
         RenderStageCompleted?.Invoke("info_panels");
 
         canvas.Restore();
@@ -1255,15 +1287,8 @@ public sealed class GameSessionScreen : IScreen
 
             _lastSnapshotBaselineObjects[obj.ObjectId] = obj;
 
-            // ТЗ-10 scale visibility filter — client-side only: hidden objects
-            // remain in the snapshot/buffer, only the render list is filtered.
-            // The player ship resolves via identity so legacy payloads without
-            // RenderObjectType stay visible at every scale.
-            string renderType = obj.ObjectId == playerShipObjectId
-                ? SpaceObjectType.PlayerShip
-                : (obj.RenderObjectType ?? SpaceObjectType.UnknownSpaceObject);
-            if (!TacticalMapMarkerPolicy.ShouldRenderAtScale(renderType, _camera.PixelsPerWorldUnit))
-                continue;
+            // Every client-visible contact stays available. Labels, compact markers and
+            // clusters reduce detail without removing selected/navigation targets.
 
             _renderStates.Add(new ObjectRenderState(obj, predicted, obj.ObjectId == playerShipObjectId));
         }
@@ -1414,6 +1439,7 @@ public sealed class GameSessionScreen : IScreen
 
         foreach (var kvp in _trailStore.Trails)
         {
+            if (_camera.PixelsPerWorldUnit < _mapSettings.TrailDetailPpu && !IsImportantMapObject(kvp.Key)) continue;
             var points = kvp.Value;
             if (points.Count < 2)
                 continue;
@@ -1476,8 +1502,7 @@ public sealed class GameSessionScreen : IScreen
             // object will actually be against the ship's own planned curve, without
             // drawing a preview for every object in the scene.
             bool isSelectedTarget = !state.IsPlayerShip &&
-                _selectedObjectId is not null &&
-                state.Predicted.ObjectId == _selectedObjectId;
+                (state.Predicted.ObjectId == _selectedObjectId || state.Predicted.ObjectId == _navigationTargetId);
 
             if (!state.IsPlayerShip && !isSelectedTarget)
                 continue;
@@ -1745,9 +1770,8 @@ public sealed class GameSessionScreen : IScreen
     }
 
     /// <summary>
-    /// Continuous scale position in button space: 0 = M0.5 (PPU 2.0),
-    /// 1 = M1 (PPU 1.0), 2 = M10 (PPU 0.1), 3 = M100 (PPU 0.01),
-    /// 4 = M1000 (PPU 0.001). Piecewise-log interpolation between
+    /// Continuous scale position in button space from the configured physical presets.
+    /// Piecewise-log interpolation between
     /// neighboring buttons (ScaleTargets sorted by descending PPU),
     /// clamped to [0, ScaleTargets.Length - 1]. Exact button values
     /// yield integer positions, so the indicator sits exactly under
@@ -1792,7 +1816,7 @@ public sealed class GameSessionScreen : IScreen
 
     private void ApplyScale(double targetPpu)
     {
-        _camera.SetZoom(targetPpu);
+        _zoomTransition.Start(_camera, targetPpu, _viewportW / 2f, _viewportH / 2f, _mapSettings, _viewportW, _viewportH);
         InterfaceLog.Write($"Scale → PPU={targetPpu:F4}");
     }
 
@@ -1971,7 +1995,7 @@ public sealed class GameSessionScreen : IScreen
         }
 
         lines.Add(("Cursor Window", $"({_mouseX:F0}, {_mouseY:F0})"));
-        lines.Add(("Scale", $"{_camera.PixelsPerWorldUnit:0.####} px/unit"));
+        lines.Add(("Scale", $"{_camera.PixelsPerWorldUnit:G6} px/unit"));
 
         if (_viewportW > 0 && _viewportH > 0)
         {

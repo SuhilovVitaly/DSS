@@ -3,10 +3,8 @@ using DeepSpaceSaga.Contracts;
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 /// <summary>
-/// Single source of truth for tactical-map marker sizes, scale
-/// visibility (ТЗ-10, §39/§39.1), and marker style selection (spherical
-/// vs. glint). Marker sizes are screen-space pixels, zoom-independent —
-/// no zoom parameter exists by design.
+/// Full-detail tactical marker sizes and styles. The map view applies
+/// compact markers and clustering separately; contacts never disappear by type.
 /// Pure client-side policy, no Skia dependencies.
 /// </summary>
 internal static class TacticalMapMarkerPolicy
@@ -20,8 +18,6 @@ internal static class TacticalMapMarkerPolicy
     /// <summary>Marker size for the sun (screen px).</summary>
     public const float SunMarkerSizePx = 50f;
 
-    /// <summary>Scale threshold: at PPU ≥ 1.0 (M0.5/M1) every type is rendered.</summary>
-    public const double FullVisibilityPpuThreshold = 1.0;
 
     /// <summary>
     /// Marker size in screen px for a given client-visible render type.
@@ -44,25 +40,6 @@ internal static class TacticalMapMarkerPolicy
     public static float GetMarkerRadiusPx(string? renderObjectType)
     {
         return GetMarkerSizePx(renderObjectType) / 2f;
-    }
-
-    /// <summary>
-    /// Whether an object with the given client-visible render type should
-    /// appear in the render list at the given zoom (pixels per world unit).
-    /// At PPU ≥ 1.0 (Small/Combat scale) all 7 types are visible; at lower
-    /// PPU (Medium/Large/System) only Sun/Planet/Station/PlayerShip remain.
-    /// null resolves like UnknownSpaceObject (hidden at PPU &lt; 1.0).
-    /// Client-side filter only — hidden objects keep existing in the engine.
-    /// </summary>
-    public static bool ShouldRenderAtScale(string? renderObjectType, double pixelsPerWorldUnit)
-    {
-        if (pixelsPerWorldUnit >= FullVisibilityPpuThreshold)
-            return true;
-
-        return renderObjectType is SpaceObjectType.Sun
-            or SpaceObjectType.Planet
-            or SpaceObjectType.Station
-            or SpaceObjectType.PlayerShip;
     }
 
     /// <summary>

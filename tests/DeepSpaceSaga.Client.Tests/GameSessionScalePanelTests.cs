@@ -103,19 +103,19 @@ public class GameSessionScalePanelTests
     // ── Clicks set target PPU ────────────────────────────────────
 
     [Fact]
-    public void Click_M0_5_sets_ppu_to_2()
+    public void Click_M0_5_sets_100_meters_per_pixel()
     {
         var (_, screen) = CreateScreen();
         Render(screen);
 
-        // Default PPU is 1.0 — click M0.5 to zoom in to the new maximum (PPU = 2.0).
+        // Default PPU is 1.0 — click M0.5 to zoom in to the new maximum (PPU = 1.0).
         screen.OnMouseDown(screen.ScaleButtonRects[0].MidX, screen.ScaleButtonRects[0].MidY);
 
-        Assert.Equal(2.0, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(1.0, screen.CameraPixelsPerWorldUnit);
     }
 
     [Fact]
-    public void Click_M1_sets_ppu_to_1()
+    public void Click_M1_sets_1_kilometer_per_pixel()
     {
         var (_, screen) = CreateScreen();
         Render(screen);
@@ -126,67 +126,68 @@ public class GameSessionScalePanelTests
 
         screen.OnMouseDown(screen.ScaleButtonRects[1].MidX, screen.ScaleButtonRects[1].MidY);
 
-        Assert.Equal(1.0, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(0.1, screen.CameraPixelsPerWorldUnit);
     }
 
     [Fact]
-    public void Click_M10_sets_ppu_to_0_1()
+    public void Click_M10_sets_100_kilometers_per_pixel()
     {
         var (_, screen) = CreateScreen();
         Render(screen);
 
         screen.OnMouseDown(screen.ScaleButtonRects[2].MidX, screen.ScaleButtonRects[2].MidY);
 
-        Assert.Equal(0.1, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(0.001, screen.CameraPixelsPerWorldUnit);
     }
 
     [Fact]
-    public void Click_M100_sets_ppu_to_0_01()
+    public void Click_M100_sets_1000_kilometers_per_pixel()
     {
         var (_, screen) = CreateScreen();
         Render(screen);
 
         screen.OnMouseDown(screen.ScaleButtonRects[3].MidX, screen.ScaleButtonRects[3].MidY);
 
-        Assert.Equal(0.01, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(0.0001, screen.CameraPixelsPerWorldUnit);
     }
 
     [Fact]
-    public void Click_M1000_sets_ppu_to_0_001()
+    public void Click_M1000_sets_10000_kilometers_per_pixel()
     {
         var (_, screen) = CreateScreen();
         Render(screen);
 
         screen.OnMouseDown(screen.ScaleButtonRects[4].MidX, screen.ScaleButtonRects[4].MidY);
 
-        Assert.Equal(0.001, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(0.00001, screen.CameraPixelsPerWorldUnit);
     }
 
     // ── Indicator position ───────────────────────────────────────
 
     [Fact]
-    public void Indicator_under_M0_5_when_ppu_is_exactly_2()
+    public void Indicator_under_M0_5_at_100_meters_per_pixel()
     {
         var (_, screen) = CreateScreen();
         Render(screen);
 
         screen.OnMouseDown(screen.ScaleButtonRects[0].MidX, screen.ScaleButtonRects[0].MidY);
-        Assert.Equal(2.0, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(1.0, screen.CameraPixelsPerWorldUnit);
 
         Assert.Equal(screen.ScaleButtonRects[0].MidX, screen.ScaleIndicatorCenterX);
     }
 
     [Fact]
-    public void Indicator_under_M1_when_ppu_is_exactly_1()
+    public void Indicator_under_M1_at_1_kilometer_per_pixel()
     {
         var (_, screen) = CreateScreen();
-        Render(screen); // default PPU = 1.0
+        Render(screen);
+        screen.OnMouseDown(screen.ScaleButtonRects[1].MidX, screen.ScaleButtonRects[1].MidY);
 
         Assert.Equal(screen.ScaleButtonRects[1].MidX, screen.ScaleIndicatorCenterX);
     }
 
     [Fact]
-    public void Indicator_under_M10_when_ppu_is_exactly_0_1()
+    public void Indicator_under_M10_at_100_kilometers_per_pixel()
     {
         var (_, screen) = CreateScreen();
         Render(screen);
@@ -202,11 +203,11 @@ public class GameSessionScalePanelTests
         var (_, screen) = CreateScreen();
         Render(screen);
 
-        // M10 → PPU = 0.1, then one wheel step out → PPU = 0.08
+        // M10 → PPU = 0.001, then one wheel step out → PPU = 0.0008
         screen.OnMouseDown(screen.ScaleButtonRects[2].MidX, screen.ScaleButtonRects[2].MidY);
         screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, -1.0f);
         double ppu = screen.CameraPixelsPerWorldUnit;
-        Assert.Equal(0.08, ppu, precision: 12);
+        Assert.Equal(0.0008, ppu, precision: 12);
 
         float indX = screen.ScaleIndicatorCenterX;
         float lowerX = screen.ScaleButtonRects[2].MidX;
@@ -217,7 +218,7 @@ public class GameSessionScalePanelTests
             $"Indicator X={indX} should sit between {lowerX} and {upperX}");
 
         // frac inside the [M10, M100] decade (×10 step → log span of 1).
-        double frac = (Math.Log10(0.1) - Math.Log10(ppu)) / (Math.Log10(0.1) - Math.Log10(0.01));
+        double frac = (Math.Log10(0.001) - Math.Log10(ppu)) / (Math.Log10(0.001) - Math.Log10(0.0001));
         float expected = lowerX + (upperX - lowerX) * (float)frac;
         Assert.Equal(expected, indX, precision: 1);
     }
@@ -230,7 +231,7 @@ public class GameSessionScalePanelTests
         var (_, screen) = CreateScreen();
         Render(screen);
 
-        // Zoom out first so PPU is not at the upper boundary (M0.5 = 2.0),
+        // Zoom out first so PPU is not at the upper boundary (M0.5 = 1.0),
         // otherwise zoom-in won't change PPU and won't log.
         screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, -1.0f);
 
@@ -262,7 +263,7 @@ public class GameSessionScalePanelTests
         screen.OnMouseDown(screen.ScaleButtonRects[2].MidX, screen.ScaleButtonRects[2].MidY);
 
         Assert.Equal(SimulationSpeed.Speed2, buffer.CurrentSpeed);
-        Assert.Equal(0.1, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(0.001, screen.CameraPixelsPerWorldUnit);
     }
 
     [Fact]
@@ -278,6 +279,6 @@ public class GameSessionScalePanelTests
 
         Assert.Equal(fxBefore, screen.CameraFocusX);
         Assert.Equal(fyBefore, screen.CameraFocusY);
-        Assert.Equal(0.01, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(0.0001, screen.CameraPixelsPerWorldUnit);
     }
 }

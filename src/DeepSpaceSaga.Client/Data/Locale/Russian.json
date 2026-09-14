@@ -1,4 +1,10 @@
 {
+  "Map.Follow": "За кораблём",
+  "Map.Route": "Весь маршрут",
+  "Map.Selected": "Выбрано",
+  "Map.ShipTarget": "Корабль и цель",
+  "Map.System": "Вся система",
+  "Map.Target": "Цель",
   "TradeUX.CargoLoad": "Загрузка трюма",
   "TradeUX.KgLoadChange": "{0} → {1} / {2} кг",
   "TradeUX.HoldNumber": "Трюм {0}",

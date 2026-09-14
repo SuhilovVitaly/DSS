@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using DeepSpaceSaga.Client;
+using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
@@ -38,6 +39,11 @@ if (args.Contains("--soak"))
     RunSoak();
     return;
 }
+if (args.Contains("--map-review"))
+{
+    RenderMapReview();
+    return;
+}
 using (var engine = Engine())
 {
     long time = 0;
@@ -70,6 +76,11 @@ using (var engine = Engine())
 RunScreen("render_paused", SimulationSpeed.Speed0, false);
 RunScreen("render_running", SimulationSpeed.Speed1, false);
 RunScreen("render_approach", SimulationSpeed.Speed1, true);
+if (args.Contains("--scales"))
+{
+    for (int i = 0; i < 5; i++) RunScreen($"scale_{i}", SimulationSpeed.Speed1, false, i);
+    RunScreen("system_view", SimulationSpeed.Speed1, false, 5);
+}
 Directory.CreateDirectory(Path.GetDirectoryName(output)!);
 File.WriteAllText(output, JsonSerializer.Serialize(new
 {
@@ -84,7 +95,7 @@ File.WriteAllText(output, JsonSerializer.Serialize(new
 }, new JsonSerializerOptions { WriteIndented = true }));
 Console.WriteLine(output);
 
-void RunScreen(string name, SimulationSpeed speed, bool approach)
+void RunScreen(string name, SimulationSpeed speed, bool approach, int? scaleIndex = null)
 {
     using var engine = Engine();
     long clock = 0;
@@ -93,8 +104,19 @@ void RunScreen(string name, SimulationSpeed speed, bool approach)
         engine.ReceiveCommand(new PlayerCommand("perf-approach", 1, "SPC-0001", "MOD-PLAYER-ENGINE-01",
             NavigationComputerCommandTypes.Approach, TargetObjectId: "AST-0001"));
     buffer.Update(engine.CaptureSnapshotForTests(0, speed));
-    var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => clock);
+    var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => clock,
+        mapSettings: TacticalMapSettings.Load(Path.Combine(root, "src/DeepSpaceSaga.Client/Settings.json")));
     using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
+    screen.Render(surface.Canvas, 1280, 720);
+    if (scaleIndex is { } index)
+    {
+        if (index == 5) screen.FitMapView(MapFitMode.System);
+        else
+        {
+            var rect = screen.ScaleButtonRects[index];
+            screen.OnMouseDown(rect.MidX, rect.MidY);
+        }
+    }
     int frame = 0;
     if (args.Contains("--stages"))
     {
@@ -164,6 +186,41 @@ void Measure(string name, int count, Action action, Action? prepare = null)
         times[^1], allocated / (double)count, retainedDelta, privateBefore, privateAfter, collections);
     results.Add(result);
     Console.WriteLine(JsonSerializer.Serialize(result));
+}
+
+void RenderMapReview()
+{
+    // Synthetic known system for visual QA; never loaded into a player's save.
+    using var engine = Engine();
+    var baseline = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
+    var player = baseline.Objects.Single(o => o.ObjectId == baseline.PlayerShipObjectId) with
+    {
+        X = 1.4e9, Y = 0, SpeedKmS = 0, NavigationTargetX = 1.4e9 + 10000,
+        NavigationTargetY = 10000, NavigationTargetObjectId = "QA-TARGET"
+    };
+    var objects = System.Collections.Immutable.ImmutableArray.Create(player,
+        new ObjectMotionSnapshot("QA-TARGET", 1.4e9 + 10000, 10000, 0, 0, RenderObjectType: SpaceObjectType.UnknownSpaceObject),
+        new ObjectMotionSnapshot("QA-SUN", 0, 0, 0, 0, RenderObjectType: SpaceObjectType.Sun, DisplayName: "Sun"),
+        new ObjectMotionSnapshot("QA-PLANET", 1.4e9, 0, 0, 0, RenderObjectType: SpaceObjectType.Planet, DisplayName: "Planet"));
+    var buffer = new SnapshotBuffer();
+    buffer.Update(baseline with { Objects = objects });
+    foreach (var (name, width, height, uiScale, mode) in new[] {
+        ("system", 1920, 1080, 1f, (MapFitMode?)MapFitMode.System),
+        ("target", 1920, 1080, 1.5f, (MapFitMode?)MapFitMode.Target),
+        ("offscreen", 1280, 720, 1f, (MapFitMode?)null) })
+    {
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), uiScale: uiScale);
+        using var surface = SKSurface.Create(new SKImageInfo(width, height));
+        screen.Render(surface.Canvas, width, height);
+        if (mode is { } view) screen.FitMapView(view);
+        for (int i = 0; i < 3; i++) screen.Render(surface.Canvas, width, height);
+        using var picture = surface.Snapshot();
+        using var png = picture.Encode(SKEncodedImageFormat.Png, 100);
+        string directory = Path.Combine(Directory.GetParent(root)!.FullName, "DSS-Images", "temp", "map-performance");
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "map-review-" + name + ".png");
+        using var file = File.Create(path); png.SaveTo(file); Console.WriteLine(path);
+    }
 }
 
 void RunSoak()

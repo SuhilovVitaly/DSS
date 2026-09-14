@@ -111,4 +111,6 @@ public sealed record ObjectMotionSnapshot(
     /// <summary>Dock operator's portrait image path; see <see cref="DockOperatorDisplayName"/>.</summary>
     string? DockOperatorPortraitImage = null,
     bool IsDestroyed = false,
-    ApproachRoute? ApproachRoute = null);
+    ApproachRoute? ApproachRoute = null,
+    /// <summary>Player's confirmed navigation target identity, without revealing its unknown properties.</summary>
+    string? NavigationTargetObjectId = null);

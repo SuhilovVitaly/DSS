@@ -24,6 +24,12 @@ internal sealed class KeyboardEdgeTracker
     private bool _prevCPressed;
     private bool _prevCtrlLeftPressed;
     private bool _prevCtrlRightPressed;
+    private bool _prevEqualPressed;
+    private bool _prevMinusPressed;
+    private bool _prevKeypadAddPressed;
+    private bool _prevKeypadSubtractPressed;
+    private bool _prevHomePressed;
+    private bool _prevEndPressed;
     private bool _prevBackspacePressed;
 
     /// <summary>
@@ -68,6 +74,12 @@ internal sealed class KeyboardEdgeTracker
         AddBoth(Key.F10, keyboard.IsKeyPressed(Key.F10), ref _prevF10Pressed, pressed, ref p, released, ref r);
         AddBoth(Key.C, keyboard.IsKeyPressed(Key.C), ref _prevCPressed, pressed, ref p, released, ref r);
         AddBoth(Key.Backspace, keyboard.IsKeyPressed(Key.Backspace), ref _prevBackspacePressed, pressed, ref p, released, ref r);
+        AddBoth(Key.Equal, keyboard.IsKeyPressed(Key.Equal), ref _prevEqualPressed, pressed, ref p, released, ref r);
+        AddBoth(Key.Minus, keyboard.IsKeyPressed(Key.Minus), ref _prevMinusPressed, pressed, ref p, released, ref r);
+        AddBoth(Key.KeypadAdd, keyboard.IsKeyPressed(Key.KeypadAdd), ref _prevKeypadAddPressed, pressed, ref p, released, ref r);
+        AddBoth(Key.KeypadSubtract, keyboard.IsKeyPressed(Key.KeypadSubtract), ref _prevKeypadSubtractPressed, pressed, ref p, released, ref r);
+        AddBoth(Key.Home, keyboard.IsKeyPressed(Key.Home), ref _prevHomePressed, pressed, ref p, released, ref r);
+        AddBoth(Key.End, keyboard.IsKeyPressed(Key.End), ref _prevEndPressed, pressed, ref p, released, ref r);
 
         return (p, r);
     }
@@ -109,6 +121,12 @@ internal sealed class KeyboardEdgeTracker
         AddBoth(Key.F10, isKeyPressed(Key.F10), ref _prevF10Pressed, pressed, ref p, released, ref r);
         AddBoth(Key.C, isKeyPressed(Key.C), ref _prevCPressed, pressed, ref p, released, ref r);
         AddBoth(Key.Backspace, isKeyPressed(Key.Backspace), ref _prevBackspacePressed, pressed, ref p, released, ref r);
+        AddBoth(Key.Equal, isKeyPressed(Key.Equal), ref _prevEqualPressed, pressed, ref p, released, ref r);
+        AddBoth(Key.Minus, isKeyPressed(Key.Minus), ref _prevMinusPressed, pressed, ref p, released, ref r);
+        AddBoth(Key.KeypadAdd, isKeyPressed(Key.KeypadAdd), ref _prevKeypadAddPressed, pressed, ref p, released, ref r);
+        AddBoth(Key.KeypadSubtract, isKeyPressed(Key.KeypadSubtract), ref _prevKeypadSubtractPressed, pressed, ref p, released, ref r);
+        AddBoth(Key.Home, isKeyPressed(Key.Home), ref _prevHomePressed, pressed, ref p, released, ref r);
+        AddBoth(Key.End, isKeyPressed(Key.End), ref _prevEndPressed, pressed, ref p, released, ref r);
 
         return (p, r);
     }
@@ -143,6 +161,12 @@ internal sealed class KeyboardEdgeTracker
         AddEdge(Key.F10, keyboard.IsKeyPressed(Key.F10), ref _prevF10Pressed, pressed, ref count);
         AddEdge(Key.C, keyboard.IsKeyPressed(Key.C), ref _prevCPressed, pressed, ref count);
         AddEdge(Key.Backspace, keyboard.IsKeyPressed(Key.Backspace), ref _prevBackspacePressed, pressed, ref count);
+        AddEdge(Key.Equal, keyboard.IsKeyPressed(Key.Equal), ref _prevEqualPressed, pressed, ref count);
+        AddEdge(Key.Minus, keyboard.IsKeyPressed(Key.Minus), ref _prevMinusPressed, pressed, ref count);
+        AddEdge(Key.KeypadAdd, keyboard.IsKeyPressed(Key.KeypadAdd), ref _prevKeypadAddPressed, pressed, ref count);
+        AddEdge(Key.KeypadSubtract, keyboard.IsKeyPressed(Key.KeypadSubtract), ref _prevKeypadSubtractPressed, pressed, ref count);
+        AddEdge(Key.Home, keyboard.IsKeyPressed(Key.Home), ref _prevHomePressed, pressed, ref count);
+        AddEdge(Key.End, keyboard.IsKeyPressed(Key.End), ref _prevEndPressed, pressed, ref count);
         return count;
     }
 
@@ -174,6 +198,12 @@ internal sealed class KeyboardEdgeTracker
         AddEdge(Key.F10, isKeyPressed(Key.F10), ref _prevF10Pressed, pressed, ref count);
         AddEdge(Key.C, isKeyPressed(Key.C), ref _prevCPressed, pressed, ref count);
         AddEdge(Key.Backspace, isKeyPressed(Key.Backspace), ref _prevBackspacePressed, pressed, ref count);
+        AddEdge(Key.Equal, isKeyPressed(Key.Equal), ref _prevEqualPressed, pressed, ref count);
+        AddEdge(Key.Minus, isKeyPressed(Key.Minus), ref _prevMinusPressed, pressed, ref count);
+        AddEdge(Key.KeypadAdd, isKeyPressed(Key.KeypadAdd), ref _prevKeypadAddPressed, pressed, ref count);
+        AddEdge(Key.KeypadSubtract, isKeyPressed(Key.KeypadSubtract), ref _prevKeypadSubtractPressed, pressed, ref count);
+        AddEdge(Key.Home, isKeyPressed(Key.Home), ref _prevHomePressed, pressed, ref count);
+        AddEdge(Key.End, isKeyPressed(Key.End), ref _prevEndPressed, pressed, ref count);
         return count;
     }
 
@@ -258,6 +288,12 @@ internal sealed class KeyboardEdgeTracker
         _prevF10Pressed = isKeyPressed(Key.F10);
         _prevCPressed = isKeyPressed(Key.C);
         _prevBackspacePressed = isKeyPressed(Key.Backspace);
+        _prevEqualPressed = isKeyPressed(Key.Equal);
+        _prevMinusPressed = isKeyPressed(Key.Minus);
+        _prevKeypadAddPressed = isKeyPressed(Key.KeypadAdd);
+        _prevKeypadSubtractPressed = isKeyPressed(Key.KeypadSubtract);
+        _prevHomePressed = isKeyPressed(Key.Home);
+        _prevEndPressed = isKeyPressed(Key.End);
     }
 
     private static void AddUpEdge(

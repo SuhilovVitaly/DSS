@@ -460,6 +460,8 @@ public sealed partial class SimulationEngine : IDisposable
                     NavigationTargetDirectionDegrees = cycleMotion.NavigationTargetDirectionDegrees,
                     NavigationApproachTrailDistanceWorldUnits = cycleMotion.NavigationApproachTrailDistanceWorldUnits,
                     ApproachRoute = cycleMotion.ApproachRoute,
+                    NavigationTargetObjectId = isPlayerShipRow ? obj.Modules
+                        .FirstOrDefault(m => m.ActiveCycle?.CommandType == NavigationComputerCommandTypes.Approach)?.ActiveCycle?.TargetObjectId : null,
                     ObjectType = known ? obj.ObjectType : null,
                     RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
                     RelationToPlayer = known ? GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType) : null,

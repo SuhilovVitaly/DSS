@@ -53,6 +53,7 @@ public class ApproachCommandTests
         engine.ReceiveCommand(ApproachCommand());
         var first = PlayerShipFrom(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0));
         var route = Assert.IsType<ApproachRoute>(first.ApproachRoute);
+        Assert.Equal(TargetId, first.NavigationTargetObjectId);
         Assert.Equal(ApproachLineCaptureMath.Phase, first.NavigationPhase);
         // Planning is ready in the first paused snapshot. No per-cycle replanning.
         var predictor = new LinearMotionPredictor();
@@ -74,6 +75,7 @@ public class ApproachCommandTests
         var ship = PlayerShipFrom(snapshot);
         var target = snapshot.Objects.Single(o => o.ObjectId == TargetId);
         Assert.Null(ship.ActiveEngineCommandType);
+        Assert.Null(ship.NavigationTargetObjectId);
         Assert.Equal(3, ship.SpeedKmS);
         Assert.InRange(Math.Abs(ApproachLineCaptureMath.Delta(ship.Direction, 90)), 0, 1e-7);
         Assert.InRange(Math.Abs(ship.Y - target.Y), 0, .0001);
