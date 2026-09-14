@@ -237,6 +237,7 @@ internal sealed class NavigationTrajectoryProjector
     /// completion marker remain intact; forward flight follows the terminal course.
     /// An Approach target can be faster than the player: its future position is a
     /// point on this course, not a promise that the ship intercepts it at that time.
+    /// Stationary Approach targets end the displayed path at the target itself.
     /// </summary>
     internal List<FutureTrajectoryPoint> ProjectPlayerInto(ObjectMotionSnapshot predicted,
         List<FutureTrajectoryPoint> points, CameraState camera, int width, int height,
@@ -255,6 +256,11 @@ internal sealed class NavigationTrajectoryProjector
             double distance = route.TargetSpeedKmS * 10 * route.DurationMs / 1000;
             var target = new FutureTrajectoryPoint(route.TargetX + distance * dx, route.TargetY + distance * dy);
             var last = points[^1];
+            if (route.TargetSpeedKmS == 0)
+            {
+                if (last != target) points.Add(target);
+                return points;
+            }
             if ((target.X - last.X) * dx + (target.Y - last.Y) * dy > 1e-7)
                 points.Add(target);
             TrajectoryViewportGeometry.ExtendToEdge(points, route.TargetDirection, camera, width, height);
@@ -263,7 +269,7 @@ internal sealed class NavigationTrajectoryProjector
 
         if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach)
         {
-            if (predicted.NavigationTargetDirectionDegrees is { } heading)
+            if (predicted.NavigationTargetSpeedKmS != 0 && predicted.NavigationTargetDirectionDegrees is { } heading)
                 TrajectoryViewportGeometry.ExtendToEdge(points, heading, camera, width, height);
             return points;
         }

@@ -100,6 +100,45 @@ public class TrajectoryViewportTests
         Assert.InRange(shown.Count, original.Count, original.Count + 2);
     }
 
+    [Theory]
+    [InlineData(1, 0)] [InlineData(.1, 90)] [InlineData(.001, 180)]
+    [InlineData(.00001, 270)] [InlineData(1e-12, 45)]
+    public void Stationary_approach_ends_at_target_at_every_scale(double ppu, double targetHeading)
+    {
+        var ship = new ObjectMotionSnapshot("ship", -1000, 500, 3, 270,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach);
+        var route = ApproachLineCaptureMath.Plan(ship, 100, -200, targetHeading, 0, 10, 4)!;
+        ship = ship with { ApproachRoute = route };
+        var projector = new NavigationTrajectoryProjector();
+        var physical = projector.Project(ship, out _, out var completion);
+        var shown = projector.ProjectPlayerInto(ship, new(), new(0, 0, ppu), Width, Height,
+            out var confirmed, out var marker);
+        Assert.True(confirmed);
+        Assert.Equal(completion, marker);
+        Assert.Equal(physical, shown.Take(physical.Count));
+        Assert.Equal(new FutureTrajectoryPoint(100, -200), shown[^1]);
+        Assert.InRange(shown.Count, physical.Count, physical.Count + 1);
+
+        var partial = ApproachLineCaptureMath.Predict(ship, route.DurationMs / 2);
+        var later = projector.ProjectPlayerInto(partial, new(), new(0, 0, ppu), Width, Height, out _, out _);
+        Assert.Equal(shown[^1], later[^1]);
+    }
+
+    [Fact]
+    public void Legacy_stationary_approach_keeps_finite_prediction_at_target()
+    {
+        var ship = new ObjectMotionSnapshot("ship", -100, 0, 1, 90,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            NavigationTargetX: 0, NavigationTargetY: 0, NavigationTargetSpeedKmS: 0,
+            NavigationTargetDirectionDegrees: 90, TurnStepDegrees: 1,
+            TurnStepIntervalMs: 250, TurnStepRemainingMs: 250);
+        var projector = new NavigationTrajectoryProjector();
+        var physical = projector.Project(ship);
+        var shown = projector.ProjectPlayerInto(ship, new(), new(0, 0, .001), Width, Height, out _, out _);
+        Assert.Equal(physical, shown);
+        Assert.InRange(Math.Abs(shown[^1].X), 0, ApproachPursuitMath.ArrivalToleranceUnits);
+    }
+
     [Fact]
     public void After_partial_approach_continuation_uses_absolute_route_time()
     {
