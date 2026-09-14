@@ -8,8 +8,8 @@ using Xunit;
 namespace DeepSpaceSaga.Client.Tests;
 
 /// <summary>
-/// ТЗ-10: the scale visibility filter lives in the client render list only —
-/// hidden objects must still exist in the snapshot/buffer. Tests use the
+/// Presentation detail does not remove client-visible contacts or mutate snapshots.
+/// Tests use the
 /// RenderStates test seam, never pixel checks (ТЗ-09 AC 4).
 /// </summary>
 [Collection("InterfaceLog")] // ApplyScale logs through InterfaceLog
@@ -69,8 +69,8 @@ public class GameSessionScaleFilterTests
     }
 
     [Theory]
-    [InlineData(0)] // M0.5 (PPU 2.0)
-    [InlineData(1)] // M1 (PPU 1.0)
+    [InlineData(0)] // M0.5 (PPU 1.0)
+    [InlineData(1)] // M1 (PPU 0.1)
     public void At_full_scale_all_7_types_are_in_render_list(int scaleIndex)
     {
         var (_, screen) = CreateScreenWithAllTypes();
@@ -88,18 +88,18 @@ public class GameSessionScaleFilterTests
     }
 
     [Theory]
-    [InlineData(2)] // M10 (PPU 0.1)
-    [InlineData(3)] // M100 (PPU 0.01)
-    [InlineData(4)] // M1000 (PPU 0.001)
-    public void At_small_scale_asteroid_unknown_and_npc_are_filtered_out(int scaleIndex)
+    [InlineData(2)] // M10 (PPU 0.001)
+    [InlineData(3)] // M100 (PPU 0.0001)
+    [InlineData(4)] // M1000 (PPU 0.00001)
+    public void At_small_scale_contacts_remain_available_for_detail_and_clustering(int scaleIndex)
     {
         var (_, screen) = CreateScreenWithAllTypes();
         ClickScale(screen, scaleIndex);
 
         var ids = RenderIds(screen);
-        Assert.DoesNotContain("AST-1", ids);
-        Assert.DoesNotContain("UNK-1", ids);
-        Assert.DoesNotContain("NPC-1", ids);
+        Assert.Contains("AST-1", ids);
+        Assert.Contains("UNK-1", ids);
+        Assert.Contains("NPC-1", ids);
     }
 
     [Theory]
@@ -141,7 +141,7 @@ public class GameSessionScaleFilterTests
     public void Filter_does_not_touch_snapshot_or_buffer()
     {
         var (buffer, screen) = CreateScreenWithAllTypes();
-        ClickScale(screen, 4); // M1000 — most objects filtered from render list
+        ClickScale(screen, 4); // M1000 — compact/grouped presentation
 
         Assert.NotNull(buffer.Latest);
         Assert.Equal(7, buffer.Latest!.Snapshot.Objects.Length);

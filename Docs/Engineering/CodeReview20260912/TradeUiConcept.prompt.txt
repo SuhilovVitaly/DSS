@@ -1,0 +1,40 @@
+Use case: ui-mockup.
+Create a high-fidelity UI/UX concept screenshot of a redesigned desktop space trading window for the existing game Deep Space Saga. This is a NEW proposed window, not an implemented game screenshot. Landscape 1600x1000 or similar 16:10 aspect ratio, front-facing perfectly flat digital screenshot, entire window visible, sharp typography. No exterior monitor, no hands, no perspective.
+Style: sophisticated restrained hard sci-fi workstation, deep blue-black background #09121b, charcoal panels, subtle thin slate borders, off-white readable sans-serif text with tabular numerals, cyan active-selection accents and one amber purchase button. Minimal glow, excellent contrast, generous consistent spacing, professional polished functional UI. Avoid fantasy HUD clutter, bevels, decorative numbers, oversized illustrations and repeating action buttons.
+All visible interface text is Russian. Carefully render exact text and arithmetically correct values below. Font sizes comfortably readable, clear hierarchy, no microscopic explanatory text.
+Layout:
+Top header 85px tall: left subtle back arrow and “К станции”, large title “ТОРГОВЛЯ”, subtitle “Станция «Орион»”. Right a subdued pill “ПРИСТЫКОВАН • ПАУЗА” and large close X.
+Under header three horizontal compact status cards:
+1 “БАЛАНС” and “12 480 токенов”.
+2 “ГРУЗ НА КОРАБЛЕ” and “280 / 1 000 кг”, a 28% cyan progress bar, secondary “Свободно 720 кг”.
+3 “ТОПЛИВО” and “320 / 500 кг”, a 64% cyan progress bar, small outlined link/button “Заправить →”.
+Main body below status cards occupies almost all remaining height, TWO COLUMNS: about 64% width market catalogue on LEFT and 36% width transaction panel on RIGHT.
+LEFT catalogue top line tabs “Рынок” active, “Заправка” inactive. Under it one search field with magnifying glass and placeholder “Найти товар…” and filter chips “Все”, “Ресурсы”, “Товары”, with “Все” active. A small unchecked option “Только в трюме”.
+One unified market table with clear columns: “Товар”, “Цена / ед.”, “На станции”, “В трюме”. Right-align numeric columns. No per-row buttons. Small tasteful realistic industrial commodity thumbnails in first column. Selected first row WATER has cyan tint, thin cyan left indicator:
+“Вода” | “14” | “240” | “60”
+“Сталь” | “40” | “120” | “40”
+“Энергоячейки” | “50” | “180” | “80”
+“Пищевые рационы” | “20” | “320” | “100”
+“Белковая масса” | “110” | “90” | “0”
+“Лёд” | “10” | “400” | “0”
+“Железная руда” | “5” | “350” | “0”
+“Кремний” | “40” | “150” | “0”
+Tiny subtle scrollbar at right edge of table. Under table a muted note “Цена указана в токенах за единицу”.
+RIGHT transaction card:
+Header with small detailed utilitarian water canister thumbnail, large “Вода”, subheading “Товар • 1 ед. = 1 кг”, brief line “Запас воды для систем жизнеобеспечения.”
+Wide segmented switch “Купить” active cyan / “Продать” inactive.
+Label “Куда загрузить”, dropdown “Трюм 01 · свободно 720 кг” with down chevron.
+Label “Количество”, prominent numeric input with minus on left and plus on right, field value “40”, suffix “ед.”; beneath small preset buttons “10”, “50”, “100”, “Макс.”, beneath thin quantity slider.
+Subtle line “Доступно к покупке: 240 ед.”.
+Divider.
+Summary label “ПОСЛЕ ПОКУПКИ”
+Three aligned rows:
+“Вода в трюме” value “60 → 100 ед.”
+“Загрузка трюма” value “280 → 320 / 1 000 кг”
+“Баланс” value “12 480 → 11 920”
+A small progress bar with cyan existing 28% and lighter cyan extra 4%.
+Then near bottom large total row “Итого” and “560 токенов”, small formula “40 × 14”.
+Large full-width amber primary button “Купить 40 ед. за 560”.
+Below it unobtrusive text “Сделка исполнится после подтверждения станции”.
+Bottom full-window slim utility strip, left “История сделок” with small clock icon, right keyboard hints “↑ ↓ Выбор    Enter Купить    Esc Назад”.
+Use correct coherent arithmetic. Exactly one primary purchase button. No shopping cart, order basket, fees, invented bid/ask price spreads, station balance, modules market, percentages of profit, or confirmation modal. All numerical data are illustrative. The design must feel like a practical polished desktop game trading terminal rather than a marketing poster.

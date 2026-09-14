@@ -1,0 +1,202 @@
+{
+  "Scenario": "default_500",
+  "Objects": 502,
+  "Seed": 500,
+  "Width": 1280,
+  "Height": 720,
+  "Frames": 600,
+  "Runtime": ".NET 8.0.26",
+  "OS": "Microsoft Windows 10.0.26200",
+  "ProcessorCount": 8,
+  "Backend": "Skia raster, full GameSessionScreen.Render",
+  "Measurements": [
+    {
+      "Name": "engine_snapshot_502",
+      "Samples": 1000,
+      "MeanMs": 0.11982819999999993,
+      "MedianMs": 0.108,
+      "P95Ms": 0.1991,
+      "MaxMs": 0.5817,
+      "AllocatedBytesPerOperation": 176024,
+      "RetainedManagedDeltaBytes": 9224,
+      "PrivateBytesBefore": 20000768,
+      "PrivateBytesAfter": 22130688,
+      "Collections": [
+        28,
+        0,
+        0
+      ]
+    },
+    {
+      "Name": "approach_command_and_snapshot",
+      "Samples": 100,
+      "MeanMs": 0.569281,
+      "MedianMs": 0.5292,
+      "P95Ms": 0.8241,
+      "MaxMs": 1.0638,
+      "AllocatedBytesPerOperation": 188264,
+      "RetainedManagedDeltaBytes": 1912,
+      "PrivateBytesBefore": 23293952,
+      "PrivateBytesAfter": 19582976,
+      "Collections": [
+        3,
+        0,
+        0
+      ]
+    },
+    {
+      "Name": "predict_502_positions",
+      "Samples": 2000,
+      "MeanMs": 0.03471319999999992,
+      "MedianMs": 0.0316,
+      "P95Ms": 0.0489,
+      "MaxMs": 0.4681,
+      "AllocatedBytesPerOperation": 168336,
+      "RetainedManagedDeltaBytes": 17112,
+      "PrivateBytesBefore": 24023040,
+      "PrivateBytesAfter": 19288064,
+      "Collections": [
+        53,
+        0,
+        0
+      ]
+    },
+    {
+      "Name": "render_paused",
+      "Samples": 600,
+      "MeanMs": 15.881003166666675,
+      "MedianMs": 15.5325,
+      "P95Ms": 18.3891,
+      "MaxMs": 32.1943,
+      "AllocatedBytesPerOperation": 62505.306666666664,
+      "RetainedManagedDeltaBytes": 6816,
+      "PrivateBytesBefore": 38359040,
+      "PrivateBytesAfter": 29769728,
+      "Collections": [
+        6,
+        0,
+        0
+      ]
+    },
+    {
+      "Name": "render_running",
+      "Samples": 600,
+      "MeanMs": 14.358423833333338,
+      "MedianMs": 14.315,
+      "P95Ms": 15.6113,
+      "MaxMs": 17.5294,
+      "AllocatedBytesPerOperation": 216426.04,
+      "RetainedManagedDeltaBytes": 175352,
+      "PrivateBytesBefore": 32296960,
+      "PrivateBytesAfter": 29945856,
+      "Collections": [
+        20,
+        6,
+        0
+      ]
+    },
+    {
+      "Name": "render_approach",
+      "Samples": 600,
+      "MeanMs": 14.975339,
+      "MedianMs": 14.8313,
+      "P95Ms": 16.7741,
+      "MaxMs": 46.3339,
+      "AllocatedBytesPerOperation": 292447.76,
+      "RetainedManagedDeltaBytes": -889272,
+      "PrivateBytesBefore": 34304000,
+      "PrivateBytesAfter": 35905536,
+      "Collections": [
+        28,
+        2,
+        0
+      ]
+    }
+  ],
+  "Stages": {
+    "render_paused/coordinates_and_hit_test": {
+      "MeanMs": 1.110102166666667,
+      "AllocatedBytesPerFrame": 7978.08
+    },
+    "render_paused/grid": {
+      "MeanMs": 1.6839910000000002,
+      "AllocatedBytesPerFrame": 7024.346666666666
+    },
+    "render_paused/trails": {
+      "MeanMs": 11.144908,
+      "AllocatedBytesPerFrame": 56
+    },
+    "render_paused/forecasts": {
+      "MeanMs": 0.2978481666666667,
+      "AllocatedBytesPerFrame": 0
+    },
+    "render_paused/markers_and_labels": {
+      "MeanMs": 1.108492833333333,
+      "AllocatedBytesPerFrame": 12312
+    },
+    "render_paused/command_panel": {
+      "MeanMs": 0.2538293333333335,
+      "AllocatedBytesPerFrame": 27192
+    },
+    "render_paused/info_panels": {
+      "MeanMs": 0.14768416666666662,
+      "AllocatedBytesPerFrame": 7397.973333333333
+    },
+    "render_running/coordinates_and_hit_test": {
+      "MeanMs": 0.08628350000000003,
+      "AllocatedBytesPerFrame": 168476.58666666667
+    },
+    "render_running/grid": {
+      "MeanMs": 1.1623181666666675,
+      "AllocatedBytesPerFrame": 81.85333333333334
+    },
+    "render_running/trails": {
+      "MeanMs": 11.165089166666684,
+      "AllocatedBytesPerFrame": 56
+    },
+    "render_running/forecasts": {
+      "MeanMs": 0.2885243333333332,
+      "AllocatedBytesPerFrame": 0
+    },
+    "render_running/markers_and_labels": {
+      "MeanMs": 1.1244603333333336,
+      "AllocatedBytesPerFrame": 12656.346666666666
+    },
+    "render_running/command_panel": {
+      "MeanMs": 0.25421466666666653,
+      "AllocatedBytesPerFrame": 27192
+    },
+    "render_running/info_panels": {
+      "MeanMs": 0.14699533333333314,
+      "AllocatedBytesPerFrame": 7409.92
+    },
+    "render_approach/coordinates_and_hit_test": {
+      "MeanMs": 0.0872043333333333,
+      "AllocatedBytesPerFrame": 168612.77333333335
+    },
+    "render_approach/grid": {
+      "MeanMs": 1.4953351666666679,
+      "AllocatedBytesPerFrame": 81.85333333333334
+    },
+    "render_approach/trails": {
+      "MeanMs": 11.309856499999984,
+      "AllocatedBytesPerFrame": 56
+    },
+    "render_approach/forecasts": {
+      "MeanMs": 0.39350050000000014,
+      "AllocatedBytesPerFrame": 75784.2
+    },
+    "render_approach/markers_and_labels": {
+      "MeanMs": 1.1464396666666665,
+      "AllocatedBytesPerFrame": 12733.386666666667
+    },
+    "render_approach/command_panel": {
+      "MeanMs": 0.2571639999999999,
+      "AllocatedBytesPerFrame": 27192
+    },
+    "render_approach/info_panels": {
+      "MeanMs": 0.14943449999999997,
+      "AllocatedBytesPerFrame": 7416.746666666667
+    }
+  }
+}

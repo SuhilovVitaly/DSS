@@ -116,10 +116,10 @@ public class CameraStateZoomTests
         var camera = new CameraState(0, 0, 1.0);
 
         camera.SetZoom(0);
-        Assert.Equal(0.0001, camera.PixelsPerWorldUnit);
+        Assert.Equal(CameraState.DefaultMinPpu, camera.PixelsPerWorldUnit);
 
         camera.SetZoom(-5);
-        Assert.Equal(0.0001, camera.PixelsPerWorldUnit);
+        Assert.Equal(CameraState.DefaultMinPpu, camera.PixelsPerWorldUnit);
 
         camera.SetZoom(999);
         Assert.Equal(10.0, camera.PixelsPerWorldUnit);
@@ -130,20 +130,20 @@ public class CameraStateZoomTests
     {
         var camera = new CameraState(0, 0, 1.0);
         camera.SetZoom(double.NaN);
-        Assert.Equal(0.0001, camera.PixelsPerWorldUnit);
+        Assert.Equal(CameraState.DefaultMinPpu, camera.PixelsPerWorldUnit);
     }
 
     [Fact]
     public void Constructor_clamps_invalid_initial_zoom()
     {
         var cam1 = new CameraState(0, 0, double.NaN);
-        Assert.Equal(0.0001, cam1.PixelsPerWorldUnit);
+        Assert.Equal(CameraState.DefaultMinPpu, cam1.PixelsPerWorldUnit);
 
         var cam2 = new CameraState(0, 0, 0);
-        Assert.Equal(0.0001, cam2.PixelsPerWorldUnit);
+        Assert.Equal(CameraState.DefaultMinPpu, cam2.PixelsPerWorldUnit);
 
         var cam3 = new CameraState(0, 0, -5);
-        Assert.Equal(0.0001, cam3.PixelsPerWorldUnit);
+        Assert.Equal(CameraState.DefaultMinPpu, cam3.PixelsPerWorldUnit);
 
         var cam4 = new CameraState(0, 0, 999);
         Assert.Equal(10.0, cam4.PixelsPerWorldUnit);
@@ -152,7 +152,7 @@ public class CameraStateZoomTests
         Assert.Equal(10.0, cam5.PixelsPerWorldUnit);
 
         var cam6 = new CameraState(0, 0, double.NegativeInfinity);
-        Assert.Equal(0.0001, cam6.PixelsPerWorldUnit);
+        Assert.Equal(CameraState.DefaultMinPpu, cam6.PixelsPerWorldUnit);
     }
 
     [Fact]
@@ -161,6 +161,6 @@ public class CameraStateZoomTests
         var camera = new CameraState(0, 0, 1.0);
         camera.ZoomAt(double.NaN, 0, 0, ViewportW, ViewportH);
         // NaN * 1.0 = NaN → clamped to minPpu, focus unchanged at center
-        Assert.Equal(0.0001, camera.PixelsPerWorldUnit);
+        Assert.Equal(CameraState.DefaultMinPpu, camera.PixelsPerWorldUnit);
     }
 }

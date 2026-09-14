@@ -17,11 +17,11 @@ public static class NavigationComputerCommandTypes
     /// Physically an Engine command (registered under module.engine's commandTypeIds,
     /// not the Navigation Computer's), despite the name/namespace — same pattern as
     /// <see cref="ShipEngineCommandTypes.Orbit"/>. Steers the ship to a point trailing
-    /// behind the selected object along its current heading, re-aiming every cycle from
-    /// the object's live current state. Client prediction does not extrapolate future
-    /// target motion. Completion aligns direction only; ship speed remains unchanged.
-    /// See
-    /// DeepSpaceSaga.Motion.ApproachPursuitMath for the shared steering math and
+    /// behind the selected object along its heading. A faster ship intercepts the
+    /// moving trailing slot; an equal/slower ship captures the target's aft ray.
+    /// A committed constant-speed route is shared by execution and prediction and
+    /// only replanned when target motion changes. Speed remains unchanged throughout.
+    /// See DeepSpaceSaga.Motion.ApproachLineCaptureMath for shared route math and
     /// SimulationEngine (DeepSpaceSaga.Engine) for the command lifecycle.
     /// </remarks>
     public const string Approach = "navigation.approach";

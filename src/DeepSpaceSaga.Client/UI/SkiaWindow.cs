@@ -13,7 +13,7 @@ using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Client.UI.Screens.Ship;
 using DeepSpaceSaga.Client.UI.Screens.Contracts;
-using DeepSpaceSaga.Client.UI.Screens.DockingConfirm;
+using DeepSpaceSaga.Client.UI.Screens.Dialogue;
 using DeepSpaceSaga.Client.UI.Screens.Hire;
 using DeepSpaceSaga.Client.UI.Screens.Station;
 using DeepSpaceSaga.Client.UI.Screens.Trade;
@@ -32,6 +32,8 @@ public sealed class SkiaWindow : IDisposable
     private readonly IWindow _window;
     private readonly IGameSessionFactory _sessionFactory;
     private readonly ScreenStack _screens = new();
+    private readonly WindowThreadContext _uiContext = new();
+    private readonly SessionConnectionLoader _connectionLoader = new();
 
     private GL? _gl;
     private GRContext? _grContext;
@@ -53,7 +55,7 @@ public sealed class SkiaWindow : IDisposable
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _quickSaveLoadInFlight;
     private readonly KeyboardEdgeTracker _keyboardEdges = new();
-    private readonly Key[] _keyboardPressedKeys = new Key[21]; // must cover every key KeyboardEdgeTracker.PollBoth can report in one call
+    private readonly Key[] _keyboardPressedKeys = new Key[32]; // must cover every key KeyboardEdgeTracker.PollBoth can report in one call
     private readonly Key[] _keyboardReleasedKeys = new Key[2]; // Ctrl release edges only (left/right)
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
@@ -97,6 +99,7 @@ public sealed class SkiaWindow : IDisposable
         _window = Window.Create(options);
         _window.Load += OnLoad;
         _window.Render += OnRender;
+        _window.Update += _ => _uiContext.Drain();
         _window.FramebufferResize += OnFramebufferResize;
         _window.FocusChanged += OnFocusChanged;
         _window.Closing += OnClosing;
@@ -106,7 +109,19 @@ public sealed class SkiaWindow : IDisposable
             InterfaceLog.Write($"STARTUP DIAG: after Window.Create — {_startupStopwatch.ElapsedMilliseconds} ms since Main() start");
     }
 
-    public void Run() => _window.Run();
+    public void Run()
+    {
+        var previous = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(_uiContext);
+        try { _window.Run(); }
+        finally
+        {
+            _closing = true;
+            _ = _connectionLoader.DisposeAsync();
+            _uiContext.Drain();
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+    }
 
     private void OnLoad()
     {
@@ -183,6 +198,7 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         _closing = true;
+        _ = _connectionLoader.DisposeAsync();
 
         if (_mouse is not null)
         {
@@ -282,6 +298,9 @@ public sealed class SkiaWindow : IDisposable
             screen.Render(canvas, windowSize.X, windowSize.Y);
             index++;
         }
+        if (_session?.Failure is not null)
+            canvas.DrawText(Localization.Get("Session.ConnectionLost"), windowSize.X / 2f,
+                windowSize.Y - 20, MenuStyle.TextStatus);
 
         if (isFirstFrame)
             InterfaceLog.Write($"STARTUP DIAG: first-frame screen.Render (recording) done — {diagSw!.ElapsedMilliseconds} ms into OnRender");
@@ -315,6 +334,12 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private void PollGameSessionAutoTransition()
     {
+        if (_screens.Current is DialogueScreen dialogue)
+        {
+            var transition = dialogue.Poll();
+            if (transition != ScreenEvent.None) _ = HandleScreenEvent(transition);
+            return;
+        }
         if (_screens.Current is not GameSessionScreen gameSessionScreen)
             return;
 
@@ -550,6 +575,7 @@ public sealed class SkiaWindow : IDisposable
         await _transitionLock.WaitAsync();
         try
         {
+            if (_closing) return;
             switch (evt)
             {
                 case ScreenEvent.NewGame:
@@ -617,11 +643,29 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.CloseStation:
                     await CloseOverlayAsync();
                     break;
-                case ScreenEvent.OpenDockingConfirm:
-                    await OpenDockingConfirmAsync();
+                case ScreenEvent.OpenDialogue:
+                    if (_screens.Current is GameSessionScreen && _session?.Buffer.Latest?.Snapshot.ActiveDialogue is { } active)
+                    {
+                        // The engine owns this modal pause, including loaded dialogues.
+                        _screens.Push(new DialogueScreen(_session.Buffer, _session, active));
+                        _modalDepth++;
+                    }
                     break;
-                case ScreenEvent.CloseDockingConfirm:
-                    await PopModalAsync();
+                case ScreenEvent.OpenTempCharacterImage:
+                    if (_screens.Current is GameSessionScreen)
+                        await PushModalAsync(new Screens.TempCharacterImage.TempCharacterImageScreen());
+                    break;
+                case ScreenEvent.CloseTempCharacterImage:
+                    if (_screens.Current is Screens.TempCharacterImage.TempCharacterImageScreen)
+                        await CloseOverlayAsync();
+                    break;
+                case ScreenEvent.CloseDialogue:
+                    if (_screens.Current is DialogueScreen)
+                    {
+                        _screens.Pop();
+                        _modalDepth--;
+                        // Completion/abort restored authoritative speed in the engine.
+                    }
                     break;
                 case ScreenEvent.OpenTrade:
                     await OpenTradeAsync();
@@ -689,18 +733,28 @@ public sealed class SkiaWindow : IDisposable
         if (_session is not null)
             return;
 
-        var connection = await Task.Run(() => _sessionFactory.CreateSessionFromScenario(scenarioPath));
+        var connection = await _connectionLoader.CreateAsync(() => _sessionFactory.CreateSessionFromScenario(scenarioPath));
+        if (!_connectionLoader.TryAdopt(connection)) return;
 
-        _session = new GameSessionHandle(connection);
-        var predictor = new LinearMotionPredictor();
-        var gameScreen = new GameSessionScreen(_session.Buffer, predictor, _session,
-            showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-            uiScale: (float)GetUiScale());
+        var session = new GameSessionHandle(connection);
+        try
+        {
+            var predictor = new LinearMotionPredictor();
+            var gameScreen = new GameSessionScreen(session.Buffer, predictor, session,
+                showTrajectoryPrediction: GetShowTrajectoryPrediction(),
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")));
 
-        _gameSessionScreen = gameScreen;
-        _modalDepth = 0;
-        _savedSpeed = SimulationSpeed.Speed1;
-        _screens.Replace(gameScreen);
+            _session = session;
+            _gameSessionScreen = gameScreen;
+            _modalDepth = 0;
+            _savedSpeed = SimulationSpeed.Speed1;
+            _screens.Replace(gameScreen);
+        }
+        catch
+        {
+            await session.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     private static bool GetShowTrajectoryPrediction()
@@ -826,39 +880,7 @@ public sealed class SkiaWindow : IDisposable
         await PushModalAsync(new StationScreen(_session?.Buffer));
     }
 
-    /// <summary>
-    /// Push the docking-confirmation modal (ScreenEvent.OpenDockingConfirm, produced by a
-    /// Commands Panel click on the Dock button — see GameSessionScreen.SendCommandFromPanel).
-    /// The pending request is consumed synchronously from the GameSessionScreen still on top
-    /// of the stack (it produced the event in the same OnMouseDown call) — a null request is
-    /// a defensive no-op for the edge case where it was somehow already consumed. Uses the
-    /// same generic PushModalAsync pause-on-open behavior as every other modal.
-    /// </summary>
-    private async Task OpenDockingConfirmAsync()
-    {
-        // Guard: don't push overlay on top of another overlay
-        if (_screens.Current is DockingConfirmScreen)
-            return;
-
-        if (_screens.Current is not GameSessionScreen gameSessionScreen)
-            return;
-
-        var request = gameSessionScreen.ConsumePendingDockingConfirmRequest();
-        if (request is null)
-            return;
-
-        await PushModalAsync(new DockingConfirmScreen(_session?.Buffer, _session, request));
-    }
-
-    /// <summary>
-    /// Return to the Station hub from one of its nested windows (Trade/Hire/Contracts/
-    /// Finance) — raised by clicking the station-name label in StationToolbar
-    /// (ScreenEvent.NavigateToStation). Trade/Hire/Contracts are always opened as a
-    /// nested modal directly on top of Station, so popping alone reveals it; Finance is
-    /// also reachable straight from GameSessionScreen (Ctrl+F) with no Station beneath
-    /// it, so this pushes a fresh Station screen in that case instead of leaving the
-    /// player on whatever was underneath.
-    /// </summary>
+    /// <summary>Return from a nested station window to its hub.</summary>
     private async Task NavigateToStationAsync()
     {
         await PopModalAsync();
@@ -1332,36 +1354,37 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task<bool> LoadSlotCoreAsync(string slotId, string logPrefix)
     {
-        GameSessionHandle newSession;
+        GameSessionHandle? newSession = null;
         GameSessionScreen newScreen;
         try
         {
             // Offloaded for the same reason as StartGameSessionAsync: a synchronous
             // CreateSessionFromSave call here would block Silk.NET's message pump if disk I/O
             // stalls, freezing the whole window for both the Load screen and QuickLoad (F9).
-            var connection = await Task.Run(() => _sessionFactory.CreateSessionFromSave(slotId));
+            var connection = await _connectionLoader.CreateAsync(() => _sessionFactory.CreateSessionFromSave(slotId));
+            if (!_connectionLoader.TryAdopt(connection)) return false;
             newSession = new GameSessionHandle(connection);
             var predictor = new LinearMotionPredictor();
             newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                uiScale: (float)GetUiScale());
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")));
+            await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
         }
         catch (Exception ex)
         {
             InterfaceLog.Write($"{logPrefix} failed: {ex.Message}");
+            if (newSession is not null) await newSession.DisposeAsync();
             return false;
         }
 
         var oldSession = _session;
-        if (oldSession is not null)
-            await oldSession.DisposeAsync();
-
+        if (_closing) { await newSession.DisposeAsync().ConfigureAwait(false); return false; }
         _session = newSession;
         _gameSessionScreen = newScreen;
-        await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed0;
         _screens.ReplaceAll(newScreen);
+        if (oldSession is not null) await oldSession.DisposeAsync();
 
         return true;
     }
@@ -1386,6 +1409,7 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         _disposed = true;
+        _ = _connectionLoader.DisposeAsync();
 
         // OnClosing might not have fired (e.g. unhandled shutdown).
         // If input still alive, dispose it before window.

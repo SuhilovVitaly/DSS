@@ -1946,7 +1946,7 @@ public class EngineCommandTests
         double? targetWorldY = null)
     {
         return new PlayerCommand(
-            "cmd-1", 1, PlayerShipId, EngineModuleId, commandType,
+            Guid.NewGuid().ToString("N"), 1, PlayerShipId, EngineModuleId, commandType,
             TargetWorldX: targetWorldX, TargetWorldY: targetWorldY);
     }
 

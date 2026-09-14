@@ -564,6 +564,7 @@ public class CommandsPanelSkeletonTests
     [InlineData("engine.turnLeftUntilCancel")]
     [InlineData("engine.turnRightStep")]
     [InlineData("engine.turnRightUntilCancel")]
+    [InlineData("navigation.approach")]
     [InlineData("navigation.dock")]
     [InlineData("navigation.stationsList")]
     [InlineData("scanner.generalScan")]
@@ -577,27 +578,11 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Exactly_the_fifteen_commands_with_asset_files_have_a_declared_icon()
+    public void Every_command_in_the_panel_has_a_declared_icon()
     {
         Assert.Equal(
-            new[]
-            {
-                "engine.accelerate",
-                "engine.brake",
-                "engine.directionSynchronization",
-                "engine.maintainCourse",
-                "engine.maintainSpeed",
-                "engine.orbit",
-                "engine.speedSynchronization",
-                "engine.turnLeftStep",
-                "engine.turnLeftUntilCancel",
-                "engine.turnRightStep",
-                "engine.turnRightUntilCancel",
-                "navigation.dock",
-                "navigation.stationsList",
-                "scanner.generalScan",
-                "scanner.structuralScan",
-            },
+            CommandsPanel.Panels.SelectMany(panel => panel.CommandTypeIds)
+                .OrderBy(k => k, StringComparer.Ordinal),
             CommandsPanel.CommandIconFileNames.Keys.OrderBy(k => k, StringComparer.Ordinal));
     }
 
@@ -622,6 +607,7 @@ public class CommandsPanelSkeletonTests
     [InlineData("engine.turnLeftUntilCancel")]
     [InlineData("engine.turnRightStep")]
     [InlineData("engine.turnRightUntilCancel")]
+    [InlineData("navigation.approach")]
     [InlineData("navigation.dock")]
     [InlineData("navigation.stationsList")]
     [InlineData("scanner.generalScan")]
@@ -647,13 +633,16 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Icon_commands_render_bare_without_button_chrome_but_keep_the_clickable_rect()
+    public async Task Icon_commands_render_bare_without_button_chrome_but_keep_the_clickable_rect()
     {
-        var screen = CreateScreen(FullEngineModule);
+        await using var fixture = CreateFixture(FullEngineModule);
+        var screen = fixture.Screen;
         Render(screen);
 
         var engineRow = screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Engine");
         var accelerateButton = engineRow.Buttons.Single(b => b.CommandTypeId == "engine.accelerate");
+
+        Assert.True(accelerateButton.Enabled);
 
         // Same 84×32 clickable/hover/cursor area as a regular button — only the
         // drawn chrome (fill/border) is skipped for icon commands.
@@ -662,6 +651,18 @@ public class CommandsPanelSkeletonTests
 
         bool overInteractive = screen.OnMouseMove(accelerateButton.Rect.MidX, accelerateButton.Rect.MidY);
         Assert.True(overInteractive);
+
+        if (Environment.GetEnvironmentVariable("DSS_TACTICAL_RENDER_DIR") is { Length: > 0 } directory)
+        {
+            Directory.CreateDirectory(directory);
+            using var bitmap = new SKBitmap(1280, 960);
+            using var canvas = new SKCanvas(bitmap);
+            screen.Render(canvas, bitmap.Width, bitmap.Height);
+            using var image = SKImage.FromBitmap(bitmap);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            using var stream = File.Create(Path.Combine(directory, "tactical-map-buttons.png"));
+            data.SaveTo(stream);
+        }
     }
 
     [Fact]
@@ -1155,6 +1156,8 @@ public class CommandsPanelSkeletonTests
     private sealed class RecordingConnection : IGameSessionConnection
     {
         public List<PlayerCommand> Commands { get; } = [];
+
+        public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
         public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default)
         {

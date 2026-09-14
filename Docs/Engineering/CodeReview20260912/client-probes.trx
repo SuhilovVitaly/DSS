@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="311838d4-2203-4291-8db9-8b0e5dde19f8" name="sushi@VITA-CASTLE 2026-09-12 20:24:58" runUser="VITA-CASTLE\CodexSandboxOffline" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-12T20:24:58.9118990+03:00" queuing="2026-09-12T20:24:58.9118994+03:00" start="2026-09-12T20:24:56.5642663+03:00" finish="2026-09-12T20:24:58.9163937+03:00" />
+  <TestSettings name="default" id="70486c66-2dd3-4b4e-8bae-0845937aca6a">
+    <Deployment runDeploymentRoot="sushi_VITA-CASTLE_2026-09-12_20_24_58" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="fa4d7b7d-bf17-4831-b041-99549b992bc3" testId="9050a345-51f9-8bbb-5304-fcc71a9740dc" testName="DeepSpaceSaga.Client.Tests.ReviewProbeTests.Simulation_fault_must_reach_snapshot_reader" computerName="VITA-CASTLE" duration="00:00:00.1490593" startTime="2026-09-12T20:24:58.8541716+03:00" endTime="2026-09-12T20:24:58.8541835+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fa4d7b7d-bf17-4831-b041-99549b992bc3">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.ThrowsAny() Failure: No exception was thrown&#xD;
+Expected: typeof(System.Exception)</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.Tests.ReviewProbeTests.Simulation_fault_must_reach_snapshot_reader() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\ReviewProbeTests.cs:line 16&#xD;
+   at DeepSpaceSaga.Client.Tests.ReviewProbeTests.Simulation_fault_must_reach_snapshot_reader() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\ReviewProbeTests.cs:line 24&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.ReviewProbeTests.Simulation_fault_must_reach_snapshot_reader" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="9050a345-51f9-8bbb-5304-fcc71a9740dc">
+      <Execution id="fa4d7b7d-bf17-4831-b041-99549b992bc3" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.ReviewProbeTests" name="Simulation_fault_must_reach_snapshot_reader" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="9050a345-51f9-8bbb-5304-fcc71a9740dc" executionId="fa4d7b7d-bf17-4831-b041-99549b992bc3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="1" executed="1" passed="0" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 8.0.26)&#xD;
+[xUnit.net 00:00:01.65]   Discovering: DeepSpaceSaga.Client.Tests&#xD;
+[xUnit.net 00:00:01.74]   Discovered:  DeepSpaceSaga.Client.Tests&#xD;
+[xUnit.net 00:00:01.74]   Starting:    DeepSpaceSaga.Client.Tests&#xD;
+[xUnit.net 00:00:01.93]       Assert.ThrowsAny() Failure: No exception was thrown&#xD;
+[xUnit.net 00:00:01.93]       Expected: typeof(System.Exception)&#xD;
+[xUnit.net 00:00:01.93]       Stack Trace:&#xD;
+[xUnit.net 00:00:01.93]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\ReviewProbeTests.cs(16,0): at DeepSpaceSaga.Client.Tests.ReviewProbeTests.Simulation_fault_must_reach_snapshot_reader()&#xD;
+[xUnit.net 00:00:01.93]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\ReviewProbeTests.cs(24,0): at DeepSpaceSaga.Client.Tests.ReviewProbeTests.Simulation_fault_must_reach_snapshot_reader()&#xD;
+[xUnit.net 00:00:01.93]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:01.94]   Finished:    DeepSpaceSaga.Client.Tests&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-09-12T20:24:58.8529379+03:00">
+        <Text>[xUnit.net 00:00:01.93]     DeepSpaceSaga.Client.Tests.ReviewProbeTests.Simulation_fault_must_reach_snapshot_reader [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

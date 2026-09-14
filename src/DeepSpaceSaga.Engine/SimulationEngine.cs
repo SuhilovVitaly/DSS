@@ -14,7 +14,7 @@ namespace DeepSpaceSaga.Engine;
 /// Uses DeepSpaceSaga.Motion for deterministic position calculation —
 /// the same library the client uses for prediction.
 /// </summary>
-public sealed class SimulationEngine : IDisposable
+public sealed partial class SimulationEngine : IDisposable
 {
     public const int SnapshotIntervalMs = 1000;
 
@@ -127,8 +127,15 @@ public sealed class SimulationEngine : IDisposable
 
     public void ReceiveCommand(PlayerCommand command)
     {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentException.ThrowIfNullOrWhiteSpace(command.CommandId);
         lock (_commandGate)
         {
+            if (!_knownCommands.Add(command.CommandId))
+            {
+                if (_commandReceipts.TryGetValue(command.CommandId, out var result)) _replayedResults[command.CommandId] = result;
+                return;
+            }
             _pendingCommands.Add(command);
             _receivedCommandCount++;
         }
@@ -137,7 +144,11 @@ public sealed class SimulationEngine : IDisposable
     /// <summary>Set the authoritative simulation speed (e.g. Speed0 for pause).</summary>
     public void SetSpeed(SimulationSpeed speed)
     {
-        _clock.SetSpeed(speed);
+        lock (_worldStateLock)
+        {
+            if (_dialogue.Active is not null) { _dialogue.ResumeSpeed = speed; return; }
+            _clock.SetSpeed(speed);
+        }
     }
 
     /// <summary>
@@ -182,6 +193,7 @@ public sealed class SimulationEngine : IDisposable
     /// </summary>
     public void LoadScenario(ScenarioFile scenario)
     {
+        scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true);
         var gs = scenario.GameState;
         var speed = ScenarioLoader.ParseSpeed(gs.CurrentSpeed);
         var runtimeObjects = new List<SpaceObjectRuntime>(gs.SpaceObjects.Count);
@@ -213,7 +225,7 @@ public sealed class SimulationEngine : IDisposable
         foreach (var obj in gs.SpaceObjects)
         {
             // Convert m/s to km/s for the existing motion system
-            double speedKmS = (double)obj.SpeedMps / 1000.0;
+            double speedKmS = obj.SpeedMps / 1000.0;
 
             var modules = BuildRuntimeModules(obj);
 
@@ -284,11 +296,16 @@ public sealed class SimulationEngine : IDisposable
                 Crew: crew,
                 StationCrew: stationCrew,
                 CaptainDisplayName: captainDisplayName,
-                CaptainPortraitImage: captainPortraitImage));
+                CaptainPortraitImage: captainPortraitImage,
+                PortFeeCreditsPerDay: obj.PortFeeCreditsPerDay,
+                SecurityZoneRadiusKm: obj.SecurityZoneRadiusKm,
+                PiracyWarningGracePeriodMs: obj.PiracyWarningGracePeriodMs,
+                IsDestroyed: obj.IsDestroyed));
         }
 
         lock (_worldStateLock)
         {
+            ValidateDialogueState(gs.DialogueState, runtimeObjects);
             PlayerShipObjectId = gs.PlayerShipObjectId;
             // Session-interaction state (§54) — never carried over from the previous
             // world, and never read from scenario/save data. Every New Game and Quick
@@ -317,6 +334,8 @@ public sealed class SimulationEngine : IDisposable
 
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
+            LoadDialogueState(gs.DialogueState, gs.GameTimeMs);
+            RestoreCommandJournal(gs);
         }
     }
 
@@ -374,6 +393,7 @@ public sealed class SimulationEngine : IDisposable
         lock (_worldStateLock)
         {
             long gameTimeMs = clockState.GameTimeMs;
+            bool dialogueWasActive = _dialogue.Active is not null;
 
             // Gating this on the CURRENT speed (rather than always calling it) is wrong: the
             // snapshot loop yields once per real second regardless of speed, so the first
@@ -387,8 +407,10 @@ public sealed class SimulationEngine : IDisposable
             // snap. Completion is itself correctly gated on gameTimeMs progression already (its
             // loop condition no-ops when no time has passed), so no external speed check is
             // needed here.
-            CompleteActiveEngineCycles(gameTimeMs);
+            AdvanceWorldTo(gameTimeMs);
             ApplyPendingCommands(gameTimeMs);
+            ApplyPendingDialogueCommands(gameTimeMs);
+            UpdateStationSecurity(gameTimeMs);
 
             // Re-validate on every snapshot (not only when the client reports new
             // interaction state): if the selected/active object disappeared from the
@@ -401,8 +423,13 @@ public sealed class SimulationEngine : IDisposable
             foreach (var obj in _objects)
             {
                 long elapsed = gameTimeMs - obj.StartGameTimeMs;
-                var motion = _motion.Predict(obj.InitialMotion, elapsed);
                 var cycleMotion = GetActiveEngineCycleMotion(obj, gameTimeMs);
+                // Project ordinary objects straight into the outgoing DTO: avoid
+                // allocating a full intermediate motion snapshot for every asteroid.
+                double x = 0, y = 0;
+                bool linear = cycleMotion.ApproachRoute is null && _motion is LinearMotionPredictor &&
+                    LinearMotionPredictor.TryPredictLinearPosition(obj.InitialMotion, elapsed, out x, out y);
+                var motion = linear ? obj.InitialMotion : PredictMotion(obj, elapsed);
                 // Render projection: the client may only see factual data
                 // (type, relation, name) for objects the player knows about.
                 // The player ship is always known — protects legacy saves
@@ -416,6 +443,8 @@ public sealed class SimulationEngine : IDisposable
                     : null;
                 objects.Add(motion with
                 {
+                    X = linear ? x : motion.X,
+                    Y = linear ? y : motion.Y,
                     ActiveEngineCommandType = cycleMotion.CommandType,
                     TurnStepDegrees = cycleMotion.TurnStepDegrees,
                     TurnStepRemainingMs = cycleMotion.TurnStepRemainingMs,
@@ -430,6 +459,9 @@ public sealed class SimulationEngine : IDisposable
                     NavigationTargetSpeedKmS = cycleMotion.NavigationTargetSpeedKmS,
                     NavigationTargetDirectionDegrees = cycleMotion.NavigationTargetDirectionDegrees,
                     NavigationApproachTrailDistanceWorldUnits = cycleMotion.NavigationApproachTrailDistanceWorldUnits,
+                    ApproachRoute = cycleMotion.ApproachRoute,
+                    NavigationTargetObjectId = isPlayerShipRow ? obj.Modules
+                        .FirstOrDefault(m => m.ActiveCycle?.CommandType == NavigationComputerCommandTypes.Approach)?.ActiveCycle?.TargetObjectId : null,
                     ObjectType = known ? obj.ObjectType : null,
                     RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
                     RelationToPlayer = known ? GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType) : null,
@@ -441,7 +473,8 @@ public sealed class SimulationEngine : IDisposable
                     CaptainDisplayName = isPlayerShipRow ? obj.CaptainDisplayName : null,
                     CaptainPortraitImage = isPlayerShipRow ? obj.CaptainPortraitImage : null,
                     DockOperatorDisplayName = dockOperator?.DisplayName,
-                    DockOperatorPortraitImage = dockOperator?.PortraitImage
+                    DockOperatorPortraitImage = dockOperator?.PortraitImage,
+                    IsDestroyed = obj.IsDestroyed
                 });
             }
 
@@ -469,7 +502,7 @@ public sealed class SimulationEngine : IDisposable
             return new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
                 GameTimeMs: gameTimeMs,
-                CurrentSpeed: clockState.Speed,
+                CurrentSpeed: _dialogue.Active is not null ? SimulationSpeed.Speed0 : dialogueWasActive ? _clock.Speed : clockState.Speed,
                 Objects: objects.MoveToImmutable(),
                 PlayerShipObjectId: PlayerShipObjectId,
                 CommandResults: commandResults,
@@ -479,7 +512,11 @@ public sealed class SimulationEngine : IDisposable
                 SelectedObjectId: SelectedObjectId,
                 PlayerCredits: PlayerCredits,
                 DockedStationTrade: BuildDockedStationTradeProjection(),
-                PlayerCrewCount: ResolvePlayerCrewCount());
+                PlayerCrewCount: ResolvePlayerCrewCount(),
+                ActiveDialogue: BuildDialogueSnapshot(gameTimeMs),
+                DialogueEvents: _dialogue.Events.ToImmutableArray(),
+                PlayerCharacter: _dialogue.Progress.PlayerCharacter,
+                Quests: _dialogue.Progress.Quests.Values.OrderBy(q => q.QuestId, StringComparer.Ordinal).ToImmutableArray());
         }
     }
 
@@ -539,7 +576,8 @@ public sealed class SimulationEngine : IDisposable
                 StockQuantity: item.StockQuantity,
                 UnitPriceCredits: unitPrice,
                 MaxSellableQuantity: maxSellable,
-                Category: ToTradeItemCategory(itemType.Category)));
+                Category: ToTradeItemCategory(itemType.Category),
+                UnitMassKg: itemType.UnitMassKg));
         }
 
         return new StationTradeSnapshot(station.InitialMotion.ObjectId, items.MoveToImmutable());
@@ -583,7 +621,8 @@ public sealed class SimulationEngine : IDisposable
                 Commands: BuildModuleCommands(moduleType.CommandTypeIds),
                 Cargo: BuildCargoProjection(module.Cargo),
                 AvailableCapacityKg: module.AvailableCapacityKg,
-                CabinesCount: moduleType.CabinesCount));
+                CabinesCount: moduleType.CabinesCount,
+                CargoCapacityKg: moduleType.CargoCapacityKg));
         }
 
         return builder.MoveToImmutable();
@@ -617,7 +656,7 @@ public sealed class SimulationEngine : IDisposable
     {
         long cargoMassKg = 0;
         foreach (var stack in cargo)
-            cargoMassKg += stack.Quantity * _registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).UnitMassKg;
+            cargoMassKg = checked(cargoMassKg + checked(stack.Quantity * _registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).UnitMassKg));
 
         return cargoMassKg;
     }
@@ -684,13 +723,14 @@ public sealed class SimulationEngine : IDisposable
     private ScenarioFile CaptureSaveStateCore(SimulationClockState clockState)
     {
         long gameTimeMs = clockState.GameTimeMs;
+        bool dialogueWasActive = _dialogue.Active is not null;
 
         // Bring ActiveCycle/position/direction fully up to date for gameTimeMs before
         // capturing — otherwise a cycle that has already logically completed (but whose
         // completion hasn't been applied yet because the 1 Hz BuildSnapshot loop hasn't
         // ticked since) would be captured stale. Idempotent: a cycle already caught up to
         // gameTimeMs is a no-op here (same guard BuildSnapshot relies on).
-        CompleteActiveEngineCycles(gameTimeMs);
+        AdvanceWorldTo(gameTimeMs);
 
         // Mirror BuildSnapshot's other half: a command the player sent in the narrow
         // window between the last 1 Hz tick and this save (e.g. F5 pressed right after
@@ -699,12 +739,14 @@ public sealed class SimulationEngine : IDisposable
         // Applying it here, in the same order BuildSnapshot uses (cycles, then commands),
         // makes "continue after F9" match "continue without saving" for this case too.
         ApplyPendingCommands(gameTimeMs);
+        ApplyPendingDialogueCommands(gameTimeMs);
+        UpdateStationSecurity(gameTimeMs);
 
         var spaceObjects = new List<SpaceObjectData>(_objects.Count);
         foreach (var obj in _objects)
         {
             long elapsed = gameTimeMs - obj.StartGameTimeMs;
-            var motion = _motion.Predict(obj.InitialMotion, elapsed);
+            var motion = PredictMotion(obj, elapsed);
             bool isStation = obj.ObjectType == SpaceObjectType.Station;
             bool isPlayerShip = obj.ObjectType == SpaceObjectType.PlayerShip;
 
@@ -715,8 +757,8 @@ public sealed class SimulationEngine : IDisposable
                 Name: obj.Name,
                 PositionX: motion.X,
                 PositionY: motion.Y,
-                SpeedMps: (int)Math.Round(motion.SpeedKmS * 1000.0, MidpointRounding.AwayFromZero),
-                DirectionDegrees: ToDirectionDegreesInt(motion.Direction),
+                SpeedMps: motion.SpeedKmS * 1000.0,
+                DirectionDegrees: motion.Direction,
                 MovementType: motion.SpeedKmS > 0 ? "Linear" : "Stationary",
                 MassKg: obj.MassKg,
                 CompositionType: obj.CompositionType,
@@ -745,17 +787,24 @@ public sealed class SimulationEngine : IDisposable
                     ? obj.StationCrew.Select(BuildSaveStationCrewMember).ToList()
                     : null,
                 CaptainDisplayName: isPlayerShip ? obj.CaptainDisplayName : null,
-                CaptainPortraitImage: isPlayerShip ? obj.CaptainPortraitImage : null));
+                CaptainPortraitImage: isPlayerShip ? obj.CaptainPortraitImage : null,
+                PortFeeCreditsPerDay: obj.PortFeeCreditsPerDay,
+                SecurityZoneRadiusKm: obj.SecurityZoneRadiusKm,
+                PiracyWarningGracePeriodMs: obj.PiracyWarningGracePeriodMs,
+                IsDestroyed: obj.IsDestroyed));
         }
 
         var gameState = new GameStateData(
             GameTimeMs: gameTimeMs,
-            CurrentSpeed: clockState.Speed.ToString(),
+            CurrentSpeed: (_dialogue.Active is not null ? SimulationSpeed.Speed0 : dialogueWasActive ? _clock.Speed : clockState.Speed).ToString(),
             PlayerShipObjectId: PlayerShipObjectId ?? string.Empty,
             Focus: null, // camera/focus is client-side only — never saved (decision G.20)
             SpaceObjects: spaceObjects,
             MasterSeed: MasterSeed,
-            PlayerTokens: PlayerCredits);
+            PlayerTokens: PlayerCredits,
+            DialogueState: _dialogue.Save(),
+            CommandReceipts: CaptureCommandReceipts(),
+            PendingCommands: CapturePendingCommands());
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
@@ -851,17 +900,6 @@ public sealed class SimulationEngine : IDisposable
 
     private static StationCrewMemberData BuildSaveStationCrewMember(StationCrewMemberRuntime member) =>
         new(member.Id, member.Role, member.DisplayName, member.PortraitImage);
-
-    private static int ToDirectionDegreesInt(double direction)
-    {
-        double normalized = NormalizeDirection(direction);
-        int rounded = (int)Math.Round(normalized, MidpointRounding.AwayFromZero);
-        if (rounded >= 360)
-            rounded -= 360;
-        if (rounded < 0)
-            rounded += 360;
-        return rounded;
-    }
 
     public void Dispose()
     {
@@ -1598,6 +1636,11 @@ public sealed class SimulationEngine : IDisposable
 
     private void ApplyPendingCommands(long gameTimeMs)
     {
+        lock (_commandGate)
+        {
+            _commandResults.AddRange(_replayedResults.Values);
+            _replayedResults.Clear();
+        }
         var commands = DrainPendingCommands();
         List<PlayerCommand>? deferred = null;
 
@@ -1667,7 +1710,7 @@ public sealed class SimulationEngine : IDisposable
         PlayerCommand command, CommandResultStatus status, long gameTimeMs, string? reasonCode = null,
         long? executedQuantity = null)
     {
-        _commandResults.Add(new CommandResult(
+        var result = new CommandResult(
             command.CommandId,
             command.ObjectId,
             command.ModuleId,
@@ -1675,7 +1718,9 @@ public sealed class SimulationEngine : IDisposable
             status,
             gameTimeMs,
             reasonCode,
-            executedQuantity));
+            executedQuantity);
+        _commandResults.Add(result);
+        RememberResult(result);
     }
 
     private void RecordCommandResultFromCycle(
@@ -1684,14 +1729,16 @@ public sealed class SimulationEngine : IDisposable
         if (cycle.CommandId is null)
             return; // legacy save: cycle has no command tracing — nothing to report
 
-        _commandResults.Add(new CommandResult(
+        var result = new CommandResult(
             cycle.CommandId,
             cycle.ObjectId ?? "",
             cycle.ModuleId ?? "",
             cycle.CommandType,
             status,
             gameTimeMs,
-            reasonCode));
+            reasonCode);
+        _commandResults.Add(result);
+        RememberResult(result);
     }
 
     private void RecordShipEvent(string objectId, string moduleId, string eventType, string? reasonCode, long gameTimeMs)
@@ -1735,6 +1782,11 @@ public sealed class SimulationEngine : IDisposable
     /// </summary>
     private CommandStartOutcome TryStartCommand(PlayerCommand command, long gameTimeMs)
     {
+        if (_objects.Any(o => o.InitialMotion.ObjectId == command.ObjectId && o.IsDestroyed))
+            return CommandStartOutcome.Rejected("player_destroyed");
+        if (_dialogue.Active is not null)
+            return CommandStartOutcome.Rejected("dialogue_active");
+
         if (command.CommandType == NavigationComputerCommandTypes.Dock)
             return TryStartNavigationCommand(command, gameTimeMs);
 
@@ -1754,18 +1806,8 @@ public sealed class SimulationEngine : IDisposable
     /// </summary>
     private const double DefaultDockRangeKm = 200.0;
 
-    /// <summary>
-    /// Handles navigation.dock — the only implemented NavigationComputer command
-    /// (requirements Docking.md, Station.md). Unlike Engine module commands, this is an
-    /// immediate one-shot authoritative action (no ActiveCycle/duration): it validates the
-    /// target station, range, and speed/direction synchronization, then physically snaps
-    /// the ship onto the station (position/speed/direction, local offset (1, 1) world units
-    /// per the documented old synchronization model) and marks it docked. A proper timed
-    /// docking maneuver through the shared ActiveCycle pipeline is deferred — see the
-    /// dispatcher's doc comment on why this is a separate method rather than an extension
-    /// of TryStartEngineCommand.
-    /// </summary>
-    private CommandStartOutcome TryStartNavigationCommand(PlayerCommand command, long gameTimeMs)
+    /// <summary>Validate navigation.dock and start negotiations; only a dialogue effect commits physical docking.</summary>
+    private CommandStartOutcome TryStartNavigationCommand(PlayerCommand command, long gameTimeMs, bool validateOnly = false)
     {
         if (!string.Equals(command.ObjectId, PlayerShipObjectId, StringComparison.Ordinal))
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
@@ -1777,6 +1819,11 @@ public sealed class SimulationEngine : IDisposable
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
 
         var obj = _objects[objectIndex];
+        if (obj.IsDestroyed) return CommandStartOutcome.Rejected("player_destroyed");
+        if (obj.IsDocked) return CommandStartOutcome.Rejected("already_docked");
+        if (_dialogue.Progress.StationAccessStates.TryGetValue(command.TargetObjectId ?? "", out var access) && access.AccessDenied)
+            return CommandStartOutcome.Rejected("station_access_denied");
+
         int moduleIndex = FindModuleIndex(obj.Modules, command.ModuleId);
         if (moduleIndex < 0)
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
@@ -1802,9 +1849,9 @@ public sealed class SimulationEngine : IDisposable
             return CommandStartOutcome.Rejected(CommandReasonCodes.DockTargetNotStation);
 
         long shipElapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
-        var shipMotion = _motion.Predict(obj.InitialMotion, shipElapsedMs);
+        var shipMotion = PredictMotion(obj, shipElapsedMs);
         long targetElapsedMs = Math.Max(0, gameTimeMs - target.StartGameTimeMs);
-        var targetMotion = _motion.Predict(target.InitialMotion, targetElapsedMs);
+        var targetMotion = PredictMotion(target, targetElapsedMs);
 
         double dx = targetMotion.X - shipMotion.X;
         double dy = targetMotion.Y - shipMotion.Y;
@@ -1829,25 +1876,17 @@ public sealed class SimulationEngine : IDisposable
             return CommandStartOutcome.Rejected(CommandReasonCodes.DockNotSynchronized);
         }
 
-        // Physically synchronize with the station: local offset (1, 1) world units per the
-        // documented old synchronization model (Docking.md). Re-baseline StartGameTimeMs to
-        // the dock moment so future BuildSnapshot/CaptureSaveState predictions compute
-        // elapsed time from here, not from session start.
-        var dockedMotion = obj.InitialMotion with
+        if (validateOnly) return CommandStartOutcome.Started;
+        if (_dialogue.ProcessedCommandIds.Contains(command.CommandId))
         {
-            X = targetMotion.X + 1.0,
-            Y = targetMotion.Y + 1.0,
-            SpeedKmS = targetMotion.SpeedKmS,
-            Direction = targetMotion.Direction
-        };
-
-        _objects[objectIndex] = obj with
-        {
-            InitialMotion = dockedMotion,
-            StartGameTimeMs = gameTimeMs,
-            IsDocked = true,
-            DockedStationObjectId = target.InitialMotion.ObjectId
-        };
+            RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
+            return CommandStartOutcome.Started;
+        }
+        var error = StartDialogue("dialogue.station-docking", target.InitialMotion.ObjectId,
+            target.StationCrew.FirstOrDefault(c => c.Role == StationCrewRoles.DockOperator)?.Id ?? target.InitialMotion.ObjectId,
+            command.CommandId, gameTimeMs);
+        if (error is not null) return CommandStartOutcome.Rejected(error);
+        _dialogue.ProcessedCommandIds = _dialogue.ProcessedCommandIds.Add(command.CommandId);
 
         RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
         return CommandStartOutcome.Started;
@@ -1883,6 +1922,12 @@ public sealed class SimulationEngine : IDisposable
     /// <see cref="CommandResult.ExecutedQuantity"/>.
     /// </summary>
     private CommandStartOutcome TryStartTradeCommand(PlayerCommand command, long gameTimeMs)
+    {
+        try { return PrepareAndCommitTrade(command, gameTimeMs); }
+        catch (OverflowException) { return CommandStartOutcome.Rejected("value_overflow"); }
+    }
+
+    private CommandStartOutcome PrepareAndCommitTrade(PlayerCommand command, long gameTimeMs)
     {
         if (!string.Equals(command.ObjectId, PlayerShipObjectId, StringComparison.Ordinal))
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
@@ -1941,7 +1986,7 @@ public sealed class SimulationEngine : IDisposable
         if (command.CommandType == TradeCommandTypes.Buy)
         {
             long cargoCapacityKg = moduleType.CargoCapacityKg ?? 0;
-            long cost = unitPriceCredits * qty;
+            long cost = checked(unitPriceCredits * qty);
             if (cost > PlayerCredits)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientPlayerCredits);
 
@@ -1950,24 +1995,28 @@ public sealed class SimulationEngine : IDisposable
 
             long currentCargoMassKg = ComputeCargoMassKg(module.Cargo);
 
-            long addedMassKg = qty * itemType.UnitMassKg;
-            if (currentCargoMassKg + addedMassKg > cargoCapacityKg)
+            long addedMassKg = checked(qty * itemType.UnitMassKg);
+            if (checked(currentCargoMassKg + addedMassKg) > cargoCapacityKg)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.CargoCapacityExceeded);
 
-            PlayerCredits -= cost;
+            long updatedCredits = checked(PlayerCredits - cost);
 
             var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
                 stationInventoryItem with { StockQuantity = stationInventoryItem.StockQuantity - qty });
-            _objects[stationIndex] = station with { Credits = station.Credits + cost, Inventory = updatedInventory };
+            var updatedStation = station with { Credits = checked(station.Credits + cost), Inventory = updatedInventory };
 
-            _objects[objectIndex] = UpdateModule(obj, moduleIndex, m =>
+            var updatedShip = UpdateModule(obj, moduleIndex, m =>
             {
                 int stackIndex = FindCargoStackIndex(m.Cargo, itemTypeIndex);
                 var updatedCargo = stackIndex >= 0
-                    ? m.Cargo.SetItem(stackIndex, m.Cargo[stackIndex] with { Quantity = m.Cargo[stackIndex].Quantity + qty })
+                    ? m.Cargo.SetItem(stackIndex, m.Cargo[stackIndex] with { Quantity = checked(m.Cargo[stackIndex].Quantity + qty) })
                     : m.Cargo.Add(new CargoStackRuntime(itemTypeIndex, qty));
                 return m with { Cargo = updatedCargo, AvailableCapacityKg = ComputeAvailableCapacityKg(moduleType, updatedCargo) };
             });
+
+            PlayerCredits = updatedCredits;
+            _objects[stationIndex] = updatedStation;
+            _objects[objectIndex] = updatedShip;
 
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
             return CommandStartOutcome.Started;
@@ -1990,14 +2039,14 @@ public sealed class SimulationEngine : IDisposable
             if (executedQty <= 0)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientStationStock);
 
-            long proceeds = unitPriceCredits * executedQty;
-            PlayerCredits += proceeds;
+            long proceeds = checked(unitPriceCredits * executedQty);
+            long updatedCredits = checked(PlayerCredits + proceeds);
 
             var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
-                stationInventoryItem with { StockQuantity = stationInventoryItem.StockQuantity + executedQty });
-            _objects[stationIndex] = station with { Credits = station.Credits - proceeds, Inventory = updatedInventory };
+                stationInventoryItem with { StockQuantity = checked(stationInventoryItem.StockQuantity + executedQty) });
+            var updatedStation = station with { Credits = checked(station.Credits - proceeds), Inventory = updatedInventory };
 
-            _objects[objectIndex] = UpdateModule(obj, moduleIndex, m =>
+            var updatedShip = UpdateModule(obj, moduleIndex, m =>
             {
                 int idx = FindCargoStackIndex(m.Cargo, itemTypeIndex);
                 long remaining = m.Cargo[idx].Quantity - executedQty;
@@ -2006,6 +2055,10 @@ public sealed class SimulationEngine : IDisposable
                     : m.Cargo.RemoveAt(idx);
                 return m with { Cargo = updatedCargo, AvailableCapacityKg = ComputeAvailableCapacityKg(moduleType, updatedCargo) };
             });
+
+            PlayerCredits = updatedCredits;
+            _objects[stationIndex] = updatedStation;
+            _objects[objectIndex] = updatedShip;
 
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs,
                 executedQuantity: executedQty < qty ? executedQty : null);
@@ -2019,23 +2072,26 @@ public sealed class SimulationEngine : IDisposable
         // mass is measured on this branch).
         {
             long fuelCapacityKg = moduleType.FuelCapacityKg ?? 0;
-            long cost = unitPriceCredits * qty;
+            long cost = checked(unitPriceCredits * qty);
             if (cost > PlayerCredits)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientPlayerCredits);
 
             if (qty > stationInventoryItem.StockQuantity)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientStationStock);
 
-            if (module.FuelAmountKg + qty > fuelCapacityKg)
+            if (checked(module.FuelAmountKg + qty) > fuelCapacityKg)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.FuelCapacityExceeded);
 
-            PlayerCredits -= cost;
+            long updatedCredits = checked(PlayerCredits - cost);
 
             var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
                 stationInventoryItem with { StockQuantity = stationInventoryItem.StockQuantity - qty });
-            _objects[stationIndex] = station with { Credits = station.Credits + cost, Inventory = updatedInventory };
+            var updatedStation = station with { Credits = checked(station.Credits + cost), Inventory = updatedInventory };
 
-            _objects[objectIndex] = UpdateModule(obj, moduleIndex, m => m with { FuelAmountKg = m.FuelAmountKg + qty });
+            var updatedShip = UpdateModule(obj, moduleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + qty) });
+            PlayerCredits = updatedCredits;
+            _objects[stationIndex] = updatedStation;
+            _objects[objectIndex] = updatedShip;
 
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
             return CommandStartOutcome.Started;
@@ -2138,7 +2194,7 @@ public sealed class SimulationEngine : IDisposable
 
             // Staged maneuver: determine initial phase based on target proximity.
             long elapsed = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
-            var motion = _motion.Predict(obj.InitialMotion, elapsed);
+            var motion = PredictMotion(obj, elapsed);
             int navInertia = moduleType.AngularInertiaDegPerSec ?? 0;
             if (!DeepSpaceSaga.Motion.NavigationWaypointMath.IsTargetSafe(
                     motion.X, motion.Y, motion.Direction, motion.SpeedKmS,
@@ -2187,7 +2243,8 @@ public sealed class SimulationEngine : IDisposable
                     ShipEventTypes.CycleCancelled, ShipEventReasonCodes.CancelledByCommand, gameTimeMs);
             }
 
-            _objects[objectIndex] = UpdateModule(obj, moduleIndex, module => module with { ActiveCycle = null });
+            _objects[objectIndex] = UpdateEngineMotion(obj, moduleIndex, gameTimeMs,
+                module => module with { ActiveCycle = null }, motion => motion);
             // CancelAll itself succeeded — write its own CommandResult.
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
             return CommandStartOutcome.Started;
@@ -2195,6 +2252,11 @@ public sealed class SimulationEngine : IDisposable
 
         if (!CanExecuteEngineCommand(module, moduleType))
             return CommandStartOutcome.Rejected(CommandReasonCodes.ModuleUnavailable);
+
+        if (command.CommandType == NavigationComputerCommandTypes.Approach &&
+            (PredictMotion(obj, Math.Max(0, gameTimeMs - obj.StartGameTimeMs)).SpeedKmS <= 0 ||
+             moduleType.AngularInertiaDegPerSec is not > 0))
+            return CommandStartOutcome.Rejected(CommandReasonCodes.NavigationRequiresMotion);
 
         // Angular inertia anti-spam: a step-turn command arriving sooner than
         // 1 / AngularInertiaDegPerSec seconds after the previous turn is Rejected
@@ -2254,6 +2316,7 @@ public sealed class SimulationEngine : IDisposable
                 ShipEventReasonCodes.CancelledByCommand);
             RecordShipEvent(command.ObjectId, command.ModuleId,
                 ShipEventTypes.CycleCancelled, ShipEventReasonCodes.CancelledByCommand, gameTimeMs);
+            obj = UpdateEngineMotion(obj, moduleIndex, gameTimeMs, current => current, motion => motion);
         }
 
         bool isAutoRepeat = IsCyclicEngineCommand(command.CommandType);
@@ -2269,11 +2332,12 @@ public sealed class SimulationEngine : IDisposable
         double? initialApproachTargetSpeedKmS = null;
         double? initialApproachTargetDirectionDegrees = null;
         double? initialApproachTrailDistanceWorldUnits = null;
+        ApproachRoute? initialApproachRoute = null;
         if (matchTargetIndex is { } targetIndex)
         {
             var target = _objects[targetIndex];
             long targetElapsedMs = Math.Max(0, gameTimeMs - target.StartGameTimeMs);
-            var targetMotion = _motion.Predict(target.InitialMotion, targetElapsedMs);
+            var targetMotion = PredictMotion(target, targetElapsedMs);
             targetObjectId = command.TargetObjectId;
             if (command.CommandType == ShipEngineCommandTypes.SpeedSynchronization)
                 capturedTargetSpeedKmS = targetMotion.SpeedKmS;
@@ -2293,25 +2357,31 @@ public sealed class SimulationEngine : IDisposable
             // advances (this was a real, user-reported bug).
             var target = _objects[approachTargetIndex.Value];
             long targetElapsedMs = Math.Max(0, gameTimeMs - target.StartGameTimeMs);
-            var targetMotion = _motion.Predict(target.InitialMotion, targetElapsedMs);
+            var targetMotion = PredictMotion(target, targetElapsedMs);
 
             var approachCommandDef = _registry.CommandDefinitions.GetDefinition(
                 _registry.CommandDefinitions.GetIndex(command.CommandType));
             double configuredTrailDistanceWorldUnits =
                 (approachCommandDef.TrailDistanceKm ?? 0) * WorldUnitsPerKm;
             long shipElapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
-            var shipMotion = _motion.Predict(obj.InitialMotion, shipElapsedMs);
-            double trailDistanceWorldUnits = ComputeEffectiveApproachTrailDistance(
-                shipMotion,
-                targetMotion,
-                configuredTrailDistanceWorldUnits,
+            var shipMotion = PredictMotion(obj, shipElapsedMs);
+            double trailDistanceWorldUnits = Math.Max(1, configuredTrailDistanceWorldUnits);
+            initialApproachRoute = ApproachLineCaptureMath.Plan(shipMotion, targetMotion.X, targetMotion.Y,
+                targetMotion.Direction, targetMotion.SpeedKmS, trailDistanceWorldUnits,
                 moduleType.AngularInertiaDegPerSec ?? 0);
+            if (initialApproachRoute is null)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.NavigationRequiresMotion);
+            if (initialApproachRoute.Length < 1e-8)
+            {
+                _objects[objectIndex] = UpdateEngineMotion(obj, moduleIndex, gameTimeMs,
+                    current => current with { ActiveCycle = null }, motion => motion);
+                RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
+                return CommandStartOutcome.Started;
+            }
             targetObjectId = command.TargetObjectId;
             navigateTargetX = targetMotion.X;
             navigateTargetY = targetMotion.Y;
-            navPhase = targetMotion.SpeedKmS == 0 || trailDistanceWorldUnits <= 0
-                ? ApproachPursuitMath.FinalPhase
-                : ApproachPursuitMath.FlyThroughPendingPhase;
+            navPhase = ApproachLineCaptureMath.Phase;
             initialApproachTargetSpeedKmS = targetMotion.SpeedKmS;
             initialApproachTargetDirectionDegrees = targetMotion.Direction;
             initialApproachTrailDistanceWorldUnits = trailDistanceWorldUnits;
@@ -2340,7 +2410,8 @@ public sealed class SimulationEngine : IDisposable
                     navigationRequiredDepartureDistance: initialRequiredDistance,
                     navigationTargetSpeedKmS: initialApproachTargetSpeedKmS,
                     navigationTargetDirectionDegrees: initialApproachTargetDirectionDegrees,
-                    navigationApproachTrailDistanceWorldUnits: initialApproachTrailDistanceWorldUnits)
+                    navigationApproachTrailDistanceWorldUnits: initialApproachTrailDistanceWorldUnits,
+                    approachRoute: initialApproachRoute)
             });
         return CommandStartOutcome.Started;
     }
@@ -2416,7 +2487,8 @@ public sealed class SimulationEngine : IDisposable
         double? navigationRequiredDepartureDistance = null,
         double? navigationTargetSpeedKmS = null,
         double? navigationTargetDirectionDegrees = null,
-        double? navigationApproachTrailDistanceWorldUnits = null)
+        double? navigationApproachTrailDistanceWorldUnits = null,
+        ApproachRoute? approachRoute = null)
     {
         string cycleId = $"CYC-ENGINE-{++_nextEngineCycleId:D6}";
         // Approach now shares Orbit's faster MinTurnIntervalMs (~250 ms at 4°/s) turn
@@ -2436,6 +2508,8 @@ public sealed class SimulationEngine : IDisposable
                           moduleType.AngularInertiaDegPerSec is { } inertia
             ? MinTurnIntervalMs(inertia)
             : ComputeEffectiveCycleTimeMs(moduleType, commandType);
+        if (approachRoute is not null)
+            durationMs = Math.Min(durationMs, Math.Max(1, (long)Math.Ceiling(approachRoute.DurationMs - approachRoute.ElapsedMs)));
         return new ActiveCycleData(
             cycleId,
             gameTimeMs,
@@ -2455,7 +2529,8 @@ public sealed class SimulationEngine : IDisposable
             NavigationRequiredDepartureDistance: navigationRequiredDepartureDistance,
             NavigationTargetSpeedKmS: navigationTargetSpeedKmS,
             NavigationTargetDirectionDegrees: navigationTargetDirectionDegrees,
-            NavigationApproachTrailDistanceWorldUnits: navigationApproachTrailDistanceWorldUnits);
+            NavigationApproachTrailDistanceWorldUnits: navigationApproachTrailDistanceWorldUnits,
+            ApproachRoute: approachRoute);
     }
 
     /// <summary>
@@ -2491,38 +2566,6 @@ public sealed class SimulationEngine : IDisposable
     private static long MinTurnIntervalMs(int inertiaDegPerSec)
     {
         return (1000 + inertiaDegPerSec - 1) / inertiaDegPerSec;
-    }
-
-    private static double ComputeEffectiveApproachTrailDistance(
-        ObjectMotionSnapshot ship,
-        ObjectMotionSnapshot target,
-        double configuredTrailDistanceWorldUnits,
-        int angularInertiaDegPerSec)
-    {
-        if (Math.Abs(target.SpeedKmS) < 1e-9 || configuredTrailDistanceWorldUnits <= 0)
-            return 0;
-
-        double dx = target.X - ship.X;
-        double dy = target.Y - ship.Y;
-        double separation = Math.Sqrt(dx * dx + dy * dy);
-        if (separation <= ApproachPursuitMath.ArrivalToleranceUnits * 2)
-            return 0;
-
-        // trailDistanceKm is an upper bound. For a nearby object, sending the ship
-        // the full configured 150 km behind it produces a huge detour (the Default
-        // scenario asteroid starts only 40 km away). Use the ship's current turn
-        // radius as the useful staging depth, capped to half the current separation.
-        double preferredDistance = configuredTrailDistanceWorldUnits;
-        if (ship.SpeedKmS > 0 && angularInertiaDegPerSec > 0)
-        {
-            double angularVelocityRadPerSec = angularInertiaDegPerSec * Math.PI / 180.0;
-            double turnRadius = ship.SpeedKmS * WorldUnitsPerKm / angularVelocityRadPerSec;
-            preferredDistance = Math.Max(
-                ApproachPursuitMath.ArrivalToleranceUnits * 2,
-                turnRadius);
-        }
-
-        return Math.Min(configuredTrailDistanceWorldUnits, Math.Min(preferredDistance, separation / 2.0));
     }
 
     private static bool IsCyclicEngineCommand(string commandType)
@@ -2605,17 +2648,19 @@ public sealed class SimulationEngine : IDisposable
 
             if (cycle.CommandType == NavigationComputerCommandTypes.Approach)
             {
-                // Approach cycles report the captured target pose plus any remaining
-                // fly-through segments. The client predicts the same fixed plan without
-                // extrapolating an assumed future target path.
+                // Coordinates must have the snapshot's timestamp, not the preceding
+                // cycle boundary, so prediction extrapolates the target exactly once.
+                var liveTarget = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == cycle.TargetObjectId);
+                var targetMotion = liveTarget is null ? null : PredictMotion(liveTarget,
+                    Math.Max(0, gameTimeMs - liveTarget.StartGameTimeMs));
                 long remainingMs = Math.Max(1, cycle.StartedGameTimeMs + cycle.DurationMs - gameTimeMs);
                 return new ActiveEngineCycleMotion(
                     cycle.CommandType,
                     Math.Abs(moduleType.TurnStepDegrees ?? 0),
                     remainingMs,
                     cycle.DurationMs,
-                    cycle.TargetWorldX,
-                    cycle.TargetWorldY,
+                    targetMotion?.X ?? cycle.TargetWorldX,
+                    targetMotion?.Y ?? cycle.TargetWorldY,
                     moduleType.AngularInertiaDegPerSec ?? 0,
                     // Reuses the Orbit-origin NavigationLockedCourseDegrees field,
                     // cycle-scoped for Approach — see ApplyApproachStep's doc-comment.
@@ -2623,10 +2668,13 @@ public sealed class SimulationEngine : IDisposable
                     NavigationPhase: cycle.NavigationPhase,
                     NavigationEscapeCourseDegrees: cycle.NavigationEscapeCourseDegrees,
                     NavigationRequiredDepartureDistance: cycle.NavigationRequiredDepartureDistance,
-                    NavigationTargetSpeedKmS: cycle.NavigationTargetSpeedKmS,
-                    NavigationTargetDirectionDegrees: cycle.NavigationTargetDirectionDegrees,
+                    NavigationTargetSpeedKmS: targetMotion?.SpeedKmS ?? cycle.NavigationTargetSpeedKmS,
+                    NavigationTargetDirectionDegrees: targetMotion?.Direction ?? cycle.NavigationTargetDirectionDegrees,
                     NavigationApproachTrailDistanceWorldUnits:
-                        cycle.NavigationApproachTrailDistanceWorldUnits);
+                        cycle.NavigationApproachTrailDistanceWorldUnits,
+                    ApproachRoute: cycle.ApproachRoute is { } route
+                        ? route with { ElapsedMs = route.ElapsedMs + gameTimeMs - cycle.StartedGameTimeMs }
+                        : null);
             }
 
             if (!IsUntilCancelTurn(cycle.CommandType))
@@ -2642,6 +2690,37 @@ public sealed class SimulationEngine : IDisposable
         }
 
         return default;
+    }
+
+    private void AdvanceWorldTo(long gameTimeMs)
+    {
+        if (!_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        {
+            CompleteActiveEngineCycles(gameTimeMs);
+            return;
+        }
+        // Visit steering boundaries and security deadlines in time order. Predicting
+        // straight across an unapplied turn gives the wrong position at a deadline.
+        while (true)
+        {
+            long next = gameTimeMs;
+            foreach (var obj in _objects)
+            {
+                if (obj.InitialMotion.ObjectId != PlayerShipObjectId) continue;
+                foreach (var module in obj.Modules)
+                    if (module.ActiveCycle is { DurationMs: > 0 } cycle && cycle.StartedGameTimeMs < gameTimeMs)
+                        next = Math.Min(next, cycle.StartedGameTimeMs + cycle.DurationMs);
+            }
+            foreach (var incident in _dialogue.Progress.SecurityIncidents)
+                if (!incident.Completed && incident.DeadlineGameTimeMs <= gameTimeMs &&
+                    _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed) &&
+                    _objects.Any(o => o.InitialMotion.ObjectId == incident.StationObjectId && o.SecurityZoneRadiusKm is not null))
+                    next = Math.Min(next, incident.DeadlineGameTimeMs);
+            UpdateStationSecurity(next);
+            CompleteActiveEngineCycles(next);
+            UpdateStationSecurity(next);
+            if (next >= gameTimeMs) break;
+        }
     }
 
     private void CompleteActiveEngineCycles(long gameTimeMs)
@@ -2677,7 +2756,8 @@ public sealed class SimulationEngine : IDisposable
 
                         // §56.5: write CommandResult(Cancelled) → write ShipEvent.
                         RecordCommandResultFromCycle(cycle, CommandResultStatus.Cancelled, gameTimeMs, interruptReason);
-                        _objects[objectIndex] = UpdateModule(obj, moduleIndex, current => current with { ActiveCycle = null });
+                        _objects[objectIndex] = UpdateEngineMotion(obj, moduleIndex, gameTimeMs,
+                            current => current with { ActiveCycle = null }, motion => motion);
                         obj = _objects[objectIndex];
                         RecordShipEvent(obj.InitialMotion.ObjectId, module.ModuleId,
                             ShipEventTypes.CycleInterrupted, interruptReason, gameTimeMs);
@@ -2691,12 +2771,13 @@ public sealed class SimulationEngine : IDisposable
                     // (no new reason code invented for this).
                     if (cycle.CommandType == NavigationComputerCommandTypes.Approach &&
                         (cycle.TargetObjectId is null ||
-                         !_objects.Exists(o => string.Equals(
+                         !_objects.Exists(o => !o.IsDestroyed && string.Equals(
                              o.InitialMotion.ObjectId, cycle.TargetObjectId, StringComparison.Ordinal))))
                     {
                         RecordCommandResultFromCycle(cycle, CommandResultStatus.Cancelled, gameTimeMs,
                             CommandReasonCodes.UnknownTarget);
-                        _objects[objectIndex] = UpdateModule(obj, moduleIndex, current => current with { ActiveCycle = null });
+                        _objects[objectIndex] = UpdateEngineMotion(obj, moduleIndex, gameTimeMs,
+                            current => current with { ActiveCycle = null }, motion => motion);
                         obj = _objects[objectIndex];
                         RecordShipEvent(obj.InitialMotion.ObjectId, module.ModuleId,
                             ShipEventTypes.CycleInterrupted, CommandReasonCodes.UnknownTarget, gameTimeMs);
@@ -2717,7 +2798,8 @@ public sealed class SimulationEngine : IDisposable
                             navigationTargetSpeedKmS: cycle.NavigationTargetSpeedKmS,
                             navigationTargetDirectionDegrees: cycle.NavigationTargetDirectionDegrees,
                             navigationApproachTrailDistanceWorldUnits:
-                                cycle.NavigationApproachTrailDistanceWorldUnits)
+                                cycle.NavigationApproachTrailDistanceWorldUnits,
+                            approachRoute: cycle.ApproachRoute)
                         : null;
                     _objects[objectIndex] = ApplyCompletedEngineCommand(
                         obj,
@@ -2848,327 +2930,53 @@ public sealed class SimulationEngine : IDisposable
     }
 
     /// <summary>
-    /// Apply one completed navigation.approach cycle. New moving-target commands follow
-    /// a fixed bounded-radius fly-through plan built from the target pose captured when
-    /// the command started; legacy saves retain the older pursuit fallback below.
+    /// Advance the committed route without changing speed. Replan only for a changed
+    /// target trajectory; old saved cycles migrate to a route at their next boundary.
     /// </summary>
     private SpaceObjectRuntime ApplyApproachStep(
-        SpaceObjectRuntime obj,
-        int moduleIndex,
-        ModuleTypeDefinition moduleType,
-        string targetObjectId,
-        ActiveCycleData cycle,
-        long gameTimeMs,
-        ActiveCycleData? nextCycle)
+        SpaceObjectRuntime obj, int moduleIndex, ModuleTypeDefinition moduleType,
+        string targetObjectId, ActiveCycleData cycle, long gameTimeMs, ActiveCycleData? nextCycle)
     {
-        var target = _objects.Single(o =>
-            string.Equals(o.InitialMotion.ObjectId, targetObjectId, StringComparison.Ordinal));
-        long targetElapsedMs = Math.Max(0, gameTimeMs - target.StartGameTimeMs);
-        var targetMotion = _motion.Predict(target.InitialMotion, targetElapsedMs);
-
-        long shipElapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
-        var shipMotion = _motion.Predict(obj.InitialMotion, shipElapsedMs);
-
-        var commandDef = _registry.CommandDefinitions.GetDefinition(
-            _registry.CommandDefinitions.GetIndex(cycle.CommandType));
-        double trailDistanceWorldUnits = cycle.NavigationApproachTrailDistanceWorldUnits ??
-            (commandDef.TrailDistanceKm ?? 0) * WorldUnitsPerKm;
-        bool flyThroughPending = cycle.NavigationPhase == ApproachPursuitMath.FlyThroughPendingPhase;
-        bool flyThroughInterceptActive = cycle.NavigationPhase?.StartsWith(
-            ApproachPursuitMath.FlyThroughInterceptPhasePrefix, StringComparison.Ordinal) == true;
-        bool flyThroughActive = flyThroughInterceptActive || cycle.NavigationPhase?.StartsWith(
-            ApproachPursuitMath.FlyThroughPhasePrefix, StringComparison.Ordinal) == true;
-
-        if ((flyThroughPending || flyThroughActive) && nextCycle is not null)
+        var target = _objects.Single(o => o.InitialMotion.ObjectId == targetObjectId);
+        var targetMotion = PredictMotion(target, Math.Max(0, gameTimeMs - target.StartGameTimeMs));
+        var shipMotion = PredictMotion(obj, Math.Max(0, gameTimeMs - obj.StartGameTimeMs));
+        var route = cycle.ApproachRoute;
+        bool replan = route is null || ApproachLineCaptureMath.TargetChanged(route, targetMotion, cycle.DurationMs);
+        bool complete = !replan && route!.ElapsedMs + cycle.DurationMs >= route.DurationMs - 1e-7;
+        if (complete && !ApproachLineCaptureMath.IsAlignedBehind(shipMotion, targetMotion))
         {
-            double fixedTargetX = cycle.TargetWorldX ?? targetMotion.X;
-            double fixedTargetY = cycle.TargetWorldY ?? targetMotion.Y;
-            double fixedTargetDirection = cycle.NavigationTargetDirectionDegrees ?? targetMotion.Direction;
-            int turnStep = moduleType.TurnStepDegrees ?? 0;
-
-            ApproachFlyThroughPlan plan;
-            double travelledUnits;
-            bool isConfirmedInterceptPlan = false;
-            if (flyThroughPending)
-            {
-                // story-20260829-210641.md §10, Checkpoint 2: try an exact-rendezvous
-                // solve FIRST, from the LIVE ship/target pose read at the top of this
-                // method (used as t=0 for the solver's own internal horizon search) —
-                // the narrow, contract-approved base-pose assumption for this batch,
-                // not the command's originally captured pose. Only when no valid
-                // intercept exists (ship not strictly faster than the target, or no
-                // reachable curve within the search horizon) does this fall back to
-                // today's captured-pose CreateFlyThroughPlan, byte-for-byte unchanged.
-                var interceptSolution = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
-                    shipMotion.X, shipMotion.Y, shipMotion.Direction, shipMotion.SpeedKmS,
-                    targetMotion.X, targetMotion.Y, targetMotion.Direction, targetMotion.SpeedKmS,
-                    moduleType.AngularInertiaDegPerSec ?? 0);
-
-                if (interceptSolution.HasIntercept)
-                {
-                    isConfirmedInterceptPlan = true;
-                    plan = interceptSolution.Plan;
-                    fixedTargetX = interceptSolution.TargetXAtIntercept;
-                    fixedTargetY = interceptSolution.TargetYAtIntercept;
-                    fixedTargetDirection = interceptSolution.TargetDirectionAtIntercept;
-                }
-                else
-                {
-                    plan = ApproachPursuitMath.CreateFlyThroughPlan(
-                        shipMotion.X, shipMotion.Y, shipMotion.Direction, shipMotion.SpeedKmS,
-                        fixedTargetX, fixedTargetY, fixedTargetDirection,
-                        moduleType.AngularInertiaDegPerSec ?? 0);
-                }
-                travelledUnits = 0;
-            }
-            else
-            {
-                string type = flyThroughInterceptActive
-                    ? cycle.NavigationPhase![ApproachPursuitMath.FlyThroughInterceptPhasePrefix.Length..]
-                    : cycle.NavigationPhase![ApproachPursuitMath.FlyThroughPhasePrefix.Length..];
-                plan = new ApproachFlyThroughPlan(
-                    type,
-                    cycle.NavigationEscapeCourseDegrees ?? 0,
-                    cycle.NavigationRequiredDepartureDistance ?? 0,
-                    cycle.NavigationLockedCourseDegrees ?? 0);
-                travelledUnits = shipMotion.SpeedKmS * (cycle.DurationMs / 1000.0) * WorldUnitsPerKm;
-            }
-
-            // Whether THIS cycle's plan is a confirmed intercept-solve — either just
-            // built above, or inherited from a previous cycle already tagged
-            // FlyThroughIntercept: — drives both the arrival hand-off (below) and
-            // which phase prefix the next cycle continues under.
-            bool isInterceptPlan = isConfirmedInterceptPlan || flyThroughInterceptActive;
-
-            var flyThroughStep = ApproachPursuitMath.AdvanceFlyThroughPlan(
-                plan,
-                shipMotion.Direction,
-                fixedTargetDirection,
-                travelledUnits,
-                turnStep);
-
-            // AdvanceFlyThroughPlan's own IsArrived is bookkeeping-based (cumulative
-            // travelled distance against the pose CAPTURED when this leg was planned) —
-            // blind to the live target, which may keep moving throughout the curve. For a
-            // target the ship cannot out-run in a straight tail chase, the curve can sweep
-            // right past the target's actual live position — a genuine, reachable
-            // intercept — without the bookkeeping ever recognizing it, then keep flying on
-            // toward the now-stale captured pose until the live target has pulled so far
-            // ahead that no subsequent tail chase can ever recover (a real, reproducible
-            // "flies right by a catchable target and diverges forever" bug). Checking the
-            // cycle's own flown segment against the LIVE target catches that moment
-            // immediately, the same way the Trail/Final loop's own per-step segment-sweep
-            // already does.
-            var liveArrival = ApproachPursuitMath.CheckSegmentArrival(
-                obj.InitialMotion.X, obj.InitialMotion.Y, shipMotion.X, shipMotion.Y,
-                targetMotion.X, targetMotion.Y);
-
-            if (flyThroughStep.IsArrived || liveArrival.IsArrived)
-            {
-                if (isInterceptPlan)
-                {
-                    // A confirmed intercept-solve curve was built directly to the
-                    // target's own future pose at t* — the moment the ship arrives IS
-                    // the rendezvous with the live target (story-20260829-210641.md
-                    // §10, Checkpoint 2), so there is no stale captured pose left to
-                    // hand off to Final for (unlike the FlyThrough: fallback below,
-                    // which aims at a pose captured when the leg was planned and can
-                    // go stale while the curve is flown). Complete immediately at the
-                    // ship's own physically-tracked position, facing the target's live
-                    // course.
-                    return UpdateEngineMotion(
-                        obj, moduleIndex, gameTimeMs,
-                        module => module with { ActiveCycle = null },
-                        motion => motion with { Direction = NormalizeDirection(targetMotion.Direction) });
-                }
-
-                // A ship that cannot out-pace the target (equal or slower) can never
-                // truly close the remaining distance no matter how it steers — chasing
-                // on into a live-tracking Final-phase pursuit (below) would just repeat
-                // forever, since the gap never shrinks. The fly-through curve was built
-                // to arrive with the ship's heading EXACTLY matching the target's own
-                // heading (that is what a Dubins curve to a (position, heading) pose
-                // guarantees) — so stopping right here already delivers the achievable
-                // goal: the ship ends up trailing behind the target, moving in its same
-                // direction, even though it can never draw level with it. Complete the
-                // command at the ship's own physically-tracked position (no teleport).
-                if (shipMotion.SpeedKmS <= targetMotion.SpeedKmS)
-                {
-                    return UpdateEngineMotion(
-                        obj, moduleIndex, gameTimeMs,
-                        module => module with { ActiveCycle = null },
-                        motion => motion with { Direction = NormalizeDirection(flyThroughStep.NewDirectionDegrees) });
-                }
-
-                if (nextCycle is not null)
-                {
-                    // The Dubins curve only ever aimed at the target's pose CAPTURED WHEN
-                    // THIS LEG WAS PLANNED — a fixed-radius curved path can't be safely
-                    // re-planned mid-flight without risking an illegal turn. For a
-                    // genuinely moving target that pose is stale by the time the curve is
-                    // flown (the target has kept moving), so completing the whole command
-                    // here would strand the ship at a position the target has long since
-                    // left, instead of the object it was told to approach. Hand off into
-                    // the same live-tracking Final-phase pursuit the Trail-phase handoff
-                    // below uses, re-baking from the target's CURRENT state rather than
-                    // the stale captured one.
-                    nextCycle = nextCycle with
-                    {
-                        TargetWorldX = targetMotion.X,
-                        TargetWorldY = targetMotion.Y,
-                        NavigationPhase = ApproachPursuitMath.FinalPhase,
-                        NavigationTargetSpeedKmS = targetMotion.SpeedKmS,
-                        NavigationTargetDirectionDegrees = targetMotion.Direction,
-                        NavigationLockedCourseDegrees = null,
-                        NavigationEscapeCourseDegrees = null,
-                        NavigationRequiredDepartureDistance = null
-                    };
-
-                    return UpdateEngineMotion(
-                        obj, moduleIndex, gameTimeMs,
-                        module => module with { ActiveCycle = nextCycle },
-                        motion => motion with { Direction = NormalizeDirection(flyThroughStep.NewDirectionDegrees) });
-                }
-
-                return UpdateEngineMotion(
-                    obj, moduleIndex, gameTimeMs,
-                    module => module with { ActiveCycle = null },
-                    motion => motion with
-                    {
-                        X = fixedTargetX,
-                        Y = fixedTargetY,
-                        Direction = NormalizeDirection(fixedTargetDirection)
-                    });
-            }
-
-            var remaining = flyThroughStep.RemainingPlan;
-            nextCycle = nextCycle with
-            {
-                // Steering itself (CreateFlyThroughPlan/AdvanceFlyThroughPlan above) must
-                // keep using the pose CAPTURED when this leg was planned — the fixed-radius
-                // curve can't be safely re-planned mid-flight. But TargetWorldX/Y and the
-                // NavigationTargetSpeedKmS/DirectionDegrees fields are pure CLIENT-facing
-                // metadata (the arrival snap point, and what the trajectory preview draws
-                // as the destination) — for those, re-baking the target's LIVE state every
-                // cycle (same as the Trail/Final branch below already does) keeps the
-                // client's "trust the current snapshot" preview accurate to within one
-                // cycle, instead of drifting further from the truth every cycle the curve
-                // is still being flown (a genuinely moving target keeps moving throughout).
-                TargetWorldX = targetMotion.X,
-                TargetWorldY = targetMotion.Y,
-                NavigationPhase = (isInterceptPlan
-                    ? ApproachPursuitMath.FlyThroughInterceptPhasePrefix
-                    : ApproachPursuitMath.FlyThroughPhasePrefix) + remaining.Type,
-                NavigationEscapeCourseDegrees = remaining.FirstRemainingUnits,
-                NavigationRequiredDepartureDistance = remaining.SecondRemainingUnits,
-                NavigationLockedCourseDegrees = remaining.ThirdRemainingUnits,
-                NavigationTargetSpeedKmS = targetMotion.SpeedKmS,
-                NavigationTargetDirectionDegrees = targetMotion.Direction,
-                NavigationApproachTrailDistanceWorldUnits = trailDistanceWorldUnits
-            };
-
-            return UpdateEngineMotion(
-                obj, moduleIndex, gameTimeMs,
-                module => module with { ActiveCycle = nextCycle },
-                motion => motion with
-                {
-                    Direction = NormalizeDirection(flyThroughStep.NewDirectionDegrees)
-                });
+            replan = true;
+            complete = false;
         }
-
-        bool isFinalApproach = cycle.NavigationPhase == ApproachPursuitMath.FinalPhase ||
-                               targetMotion.SpeedKmS == 0 ||
-                               trailDistanceWorldUnits <= 0;
-
-        var result = ApproachPursuitMath.Step(
-            shipMotion.X, shipMotion.Y, shipMotion.Direction, shipMotion.SpeedKmS,
-            targetMotion.X, targetMotion.Y, targetMotion.Direction, targetMotion.SpeedKmS,
-            isFinalApproach ? 0 : trailDistanceWorldUnits,
-            moduleType.TurnStepDegrees ?? 0,
-            moduleType.AngularInertiaDegPerSec ?? 0,
-            cycle.DurationMs,
-            cycle.NavigationLockedCourseDegrees);
-
-        if (result.IsArrived)
+        if (replan)
         {
-            if (!isFinalApproach && nextCycle is not null)
-            {
-                // The trailing point is a staging waypoint, not the destination.
-                // Continue from behind the target to its exact live position.
-                nextCycle = nextCycle with
-                {
-                    TargetWorldX = targetMotion.X,
-                    TargetWorldY = targetMotion.Y,
-                    NavigationPhase = ApproachPursuitMath.FinalPhase,
-                    NavigationTargetSpeedKmS = targetMotion.SpeedKmS,
-                    NavigationTargetDirectionDegrees = targetMotion.Direction,
-                    NavigationLockedCourseDegrees = null
-                };
-
-                return UpdateEngineMotion(
-                    obj, moduleIndex, gameTimeMs,
-                    module => module with { ActiveCycle = nextCycle },
-                    motion => motion with { Direction = NormalizeDirection(result.NewDirectionDegrees) });
-            }
-
-            // Approach only aligns the course. Speed remains under direct player
-            // control; braking/speed matching is an explicit follow-up action.
-            return UpdateEngineMotion(
-                obj, moduleIndex, gameTimeMs,
-                module => module with { ActiveCycle = null },
-                motion => motion with
-                {
-                    Direction = NormalizeDirection(targetMotion.Direction)
-                });
+            route = ApproachLineCaptureMath.Plan(shipMotion, targetMotion.X, targetMotion.Y,
+                targetMotion.Direction, targetMotion.SpeedKmS,
+                cycle.NavigationApproachTrailDistanceWorldUnits ?? 10, moduleType.AngularInertiaDegPerSec ?? 0);
+            complete = route is null || route.Length < 1e-8;
         }
-
-        // A ship that cannot out-pace the target (equal or slower speed) can never
-        // close the remaining distance no matter how long it chases — the gap never
-        // shrinks. But once its course has locked onto the bearing to the (receding)
-        // aim point, that bearing sits directly on the target's own line of motion
-        // (the aim point is on that line, whether it's the Trail phase's staging point
-        // or the target itself in Final phase) — so a locked course already means the
-        // ship is genuinely moving in the SAME direction as the target. Settle for
-        // that — trailing behind, matched course, never catching up — instead of
-        // repeating the cycle forever chasing a gap that can never close.
-        if (result.LockedCourseDegrees is not null && shipMotion.SpeedKmS <= targetMotion.SpeedKmS)
-        {
-            return UpdateEngineMotion(
-                obj, moduleIndex, gameTimeMs,
-                module => module with { ActiveCycle = null },
-                motion => motion with { Direction = NormalizeDirection(targetMotion.Direction) });
-        }
-
+        else if (route is not null)
+            route = route with { ElapsedMs = route.ElapsedMs + cycle.DurationMs };
         if (nextCycle is not null)
-        {
-            // Bake the freshly recomputed aim point and the target's live speed/
-            // direction into the next auto-repeat cycle. The client treats this as a
-            // fixed current-state target until a newer authoritative snapshot arrives.
             nextCycle = nextCycle with
             {
-                TargetWorldX = result.AimPointX,
-                TargetWorldY = result.AimPointY,
+                NavigationPhase = ApproachLineCaptureMath.Phase, ApproachRoute = route,
+                DurationMs = route is null ? nextCycle.DurationMs : Math.Min(nextCycle.DurationMs,
+                    Math.Max(1, (long)Math.Ceiling(route.DurationMs - route.ElapsedMs))),
+                TargetWorldX = targetMotion.X, TargetWorldY = targetMotion.Y,
                 NavigationTargetSpeedKmS = targetMotion.SpeedKmS,
                 NavigationTargetDirectionDegrees = targetMotion.Direction,
-                NavigationPhase = isFinalApproach
-                    ? ApproachPursuitMath.FinalPhase
-                    : ApproachPursuitMath.TrailPhase,
-                // Reuses the Orbit-origin NavigationLockedCourseDegrees field, cycle-scoped
-                // (not permanent) for Approach — see ApproachPursuitMath's class doc-comment
-                // and ActiveCycleData.NavigationLockedCourseDegrees for the dual-meaning
-                // convention (story-20260827-083137.md, Post-implementation bug fix #2).
-                NavigationLockedCourseDegrees = result.LockedCourseDegrees
+                NavigationLockedCourseDegrees = null, NavigationEscapeCourseDegrees = null,
+                NavigationRequiredDepartureDistance = null
             };
-        }
-
-        return UpdateEngineMotion(
-            obj,
-            moduleIndex,
-            gameTimeMs,
-            module => module with { ActiveCycle = nextCycle },
-            motion => motion with { Direction = NormalizeDirection(result.NewDirectionDegrees) });
+        return UpdateEngineMotion(obj, moduleIndex, gameTimeMs,
+            module => module with { ActiveCycle = complete ? null : nextCycle }, motion => motion);
     }
 
+    private ObjectMotionSnapshot PredictMotion(SpaceObjectRuntime obj, long elapsedMs)
+    {
+        return RuntimeMotion.At(obj, obj.StartGameTimeMs + elapsedMs);
+    }
     private static double ComputeLinearInertiaDeltaKmS(
         SpaceObjectRuntime obj, ModuleTypeDefinition moduleType, long gameTimeMs)
     {
@@ -3216,13 +3024,13 @@ public sealed class SimulationEngine : IDisposable
         var cycle = obj.Modules[moduleIndex].ActiveCycle;
         long elapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
         var durationMs = nextCycle?.DurationMs ?? 250;
-        var currentMotion = _motion.Predict(obj.InitialMotion, elapsedMs);
+        var currentMotion = PredictMotion(obj, elapsedMs);
 
         // Check segment arrival (pass-through detection).
         long prevElapsedMs = Math.Max(0, elapsedMs - durationMs);
         var prevMotion = prevElapsedMs == elapsedMs
             ? obj.InitialMotion
-            : _motion.Predict(obj.InitialMotion, prevElapsedMs);
+            : PredictMotion(obj, prevElapsedMs);
         var segmentArrival = DeepSpaceSaga.Motion.NavigationWaypointMath.CheckSegmentArrival(
             prevMotion.X, prevMotion.Y,
             currentMotion.X, currentMotion.Y,
@@ -3289,7 +3097,7 @@ public sealed class SimulationEngine : IDisposable
         Func<ObjectMotionSnapshot, ObjectMotionSnapshot> updateMotion)
     {
         long elapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
-        var currentMotion = _motion.Predict(obj.InitialMotion, elapsedMs);
+        var currentMotion = PredictMotion(obj, elapsedMs);
         var modules = obj.Modules.SetItem(moduleIndex, updateModule(obj.Modules[moduleIndex]));
 
         return obj with
@@ -3398,7 +3206,11 @@ internal sealed record SpaceObjectRuntime(
     /// </summary>
     string? CaptainDisplayName = null,
     /// <summary>Player ship captain's portrait image path; see <see cref="CaptainDisplayName"/>.</summary>
-    string? CaptainPortraitImage = null);
+    string? CaptainPortraitImage = null,
+    long? PortFeeCreditsPerDay = null,
+    int? SecurityZoneRadiusKm = null,
+    long? PiracyWarningGracePeriodMs = null,
+    bool IsDestroyed = false);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName);
@@ -3470,7 +3282,8 @@ internal readonly record struct ActiveEngineCycleMotion(
     double? NavigationRequiredDepartureDistance = null,
     double? NavigationTargetSpeedKmS = null,
     double? NavigationTargetDirectionDegrees = null,
-    double? NavigationApproachTrailDistanceWorldUnits = null);
+    double? NavigationApproachTrailDistanceWorldUnits = null,
+    ApproachRoute? ApproachRoute = null);
 
 internal enum CommandStartDisposition
 {

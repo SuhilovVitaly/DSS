@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Engine.Dialogue;
 using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Engine.Scenario;
@@ -13,8 +14,10 @@ public static class SaveFormat
     /// hull-grid coordinate model (requirements §57); to 3 when the player's starting
     /// balance field was renamed playerCredits → playerTokens (an old save loads with 0
     /// Tokens, since no migration of old saves is provided).
+    /// Version 4 preserves fractional motion values and the recent command journal.
+    /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 3;
+    public const int CurrentSaveFormatVersion = 4;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -57,7 +60,10 @@ public sealed record GameStateData(
     /// the field; every scenario the game ships sets this explicitly — currently 2000).
     /// A plain default, never randomized.
     /// </summary>
-    [property: JsonPropertyName("playerTokens")] long? PlayerTokens = null);
+    [property: JsonPropertyName("playerTokens")] long? PlayerTokens = null,
+    [property: JsonPropertyName("dialogueState")] DialogueSaveState? DialogueState = null,
+    [property: JsonPropertyName("commandReceipts")] IReadOnlyList<DeepSpaceSaga.Contracts.CommandResult>? CommandReceipts = null,
+    [property: JsonPropertyName("pendingCommands")] IReadOnlyList<DeepSpaceSaga.Contracts.PlayerCommand>? PendingCommands = null);
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(
@@ -72,8 +78,8 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("name")] string? Name,
     [property: JsonPropertyName("positionX")] double PositionX,
     [property: JsonPropertyName("positionY")] double PositionY,
-    [property: JsonPropertyName("speedMps")] int SpeedMps,
-    [property: JsonPropertyName("directionDegrees")] int DirectionDegrees,
+    [property: JsonPropertyName("speedMps")] double SpeedMps,
+    [property: JsonPropertyName("directionDegrees")] double DirectionDegrees,
     [property: JsonPropertyName("movementType")] string MovementType,
     [property: JsonPropertyName("massKg")] long? MassKg,
     [property: JsonPropertyName("compositionType")] string? CompositionType,
@@ -166,7 +172,11 @@ public sealed record SpaceObjectData(
     /// </summary>
     [property: JsonPropertyName("captainDisplayName")] string? CaptainDisplayName = null,
     /// <summary>Player ship's captain portrait image path; see <see cref="CaptainDisplayName"/>.</summary>
-    [property: JsonPropertyName("captainPortraitImage")] string? CaptainPortraitImage = null);
+    [property: JsonPropertyName("captainPortraitImage")] string? CaptainPortraitImage = null,
+    [property: JsonPropertyName("portFeeCreditsPerDay")] long? PortFeeCreditsPerDay = null,
+    [property: JsonPropertyName("securityZoneRadiusKm")] int? SecurityZoneRadiusKm = null,
+    [property: JsonPropertyName("piracyWarningGracePeriodMs")] long? PiracyWarningGracePeriodMs = null,
+    [property: JsonPropertyName("isDestroyed")] bool IsDestroyed = false);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles
@@ -381,7 +391,8 @@ public sealed record ActiveCycleData(
     /// </summary>
     [property: JsonPropertyName("navTargetDirectionDegrees")] double? NavigationTargetDirectionDegrees = null,
     /// <summary>Effective behind-target staging distance for Approach, in world units.</summary>
-    [property: JsonPropertyName("navApproachTrailDistanceWorldUnits")] double? NavigationApproachTrailDistanceWorldUnits = null);
+    [property: JsonPropertyName("navApproachTrailDistanceWorldUnits")] double? NavigationApproachTrailDistanceWorldUnits = null,
+    [property: JsonPropertyName("approachRoute")] DeepSpaceSaga.Contracts.ApproachRoute? ApproachRoute = null);
 
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(

@@ -78,7 +78,8 @@ internal sealed class ObjectLabelSmoother
     /// </summary>
     public void RemoveStaleExcept(HashSet<string> activeObjectIds)
     {
-        var toRemove = new List<string>();
+        var toRemove = _staleIds;
+        toRemove.Clear();
         foreach (string id in _states.Keys)
         {
             if (!activeObjectIds.Contains(id))
@@ -98,4 +99,5 @@ internal sealed class ObjectLabelSmoother
     }
 
     private readonly record struct SmoothState(float VisibleCx, float VisibleCy);
+    private readonly List<string> _staleIds = new();
 }

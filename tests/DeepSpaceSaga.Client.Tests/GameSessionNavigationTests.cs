@@ -860,14 +860,14 @@ public class GameSessionNavigationTests
         double fxBefore = fixture.Screen.CameraFocusX;
         double fyBefore = fixture.Screen.CameraFocusY;
 
-        fixture.Screen.OnMouseDown(900, 600);
+        fixture.Screen.OnMouseDown(900, 500);
 
         Assert.Single(fixture.Connection.Commands); // still only one
         Assert.Equal(fxBefore, fixture.Screen.CameraFocusX); // no jump on click alone
         Assert.Equal(fyBefore, fixture.Screen.CameraFocusY);
 
         // 4. Dragging afterward (still held) pans by the exact screen-space delta.
-        fixture.Screen.OnMouseMove(920, 580); // dx=+20, dy=-20, PPU=1.0
+        fixture.Screen.OnMouseMove(920, 480); // dx=+20, dy=-20, PPU=1.0
 
         Assert.Single(fixture.Connection.Commands); // dragging still sends nothing
         Assert.Equal(fxBefore - 20.0, fixture.Screen.CameraFocusX, precision: 6);
@@ -889,7 +889,7 @@ public class GameSessionNavigationTests
         fixture.Screen.OnKeyUp(Key.ControlRight);
 
         double fxBefore = fixture.Screen.CameraFocusX;
-        fixture.Screen.OnMouseDown(900, 600);
+        fixture.Screen.OnMouseDown(900, 500);
 
         Assert.Single(fixture.Connection.Commands);
         Assert.Equal(fxBefore, fixture.Screen.CameraFocusX);
@@ -1008,6 +1008,8 @@ public class GameSessionNavigationTests
     private sealed class RecordingConnection : IGameSessionConnection
     {
         public List<PlayerCommand> Commands { get; } = [];
+
+        public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
         public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default)
         {

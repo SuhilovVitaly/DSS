@@ -34,7 +34,7 @@ public class TradeCommandTests
     private static PlayerCommand RefuelCommand(string itemTypeId = FuelId, long? quantity = 100) =>
         new("cmd-refuel", 1, PlayerShipId, EngineModuleId, TradeCommandTypes.Refuel, ItemTypeId: itemTypeId, Quantity: quantity);
 
-    private static SimulationEngine CreateEngine(
+    internal static SimulationEngine CreateEngine(
         long playerCredits = 100_000,
         bool isDocked = true,
         long stationCredits = 1_000_000,

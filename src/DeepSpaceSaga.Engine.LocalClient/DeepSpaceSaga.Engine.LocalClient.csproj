@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <InternalsVisibleTo Include="DeepSpaceSaga.Client.Tests" />
     <ProjectReference Include="..\DeepSpaceSaga.Contracts\DeepSpaceSaga.Contracts.csproj" />
     <ProjectReference Include="..\DeepSpaceSaga.Engine\DeepSpaceSaga.Engine.csproj" />
     <ProjectReference Include="..\DeepSpaceSaga.Motion\DeepSpaceSaga.Motion.csproj" />

@@ -15,6 +15,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// </summary>
 internal sealed class NavigationTrajectoryProjector
 {
+    private readonly LinearMotionPredictor _displayPredictor = new();
     /// <summary>Same horizon as the future trajectory — never longer than the engine can fly.</summary>
     public const int FutureTrajectoryHorizonMs = FutureTrajectoryProjector.FutureTrajectoryHorizonMs;
 
@@ -86,11 +87,41 @@ internal sealed class NavigationTrajectoryProjector
     /// </summary>
     public List<FutureTrajectoryPoint> Project(
         ObjectMotionSnapshot predicted, out bool isConfirmedIntercept, out FutureTrajectoryPoint interceptPoint)
+        => ProjectInto(predicted, new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints),
+            out isConfirmedIntercept, out interceptPoint);
+
+    internal List<FutureTrajectoryPoint> ProjectInto(ObjectMotionSnapshot predicted, List<FutureTrajectoryPoint> points,
+        out bool isConfirmedIntercept, out FutureTrajectoryPoint interceptPoint)
     {
         isConfirmedIntercept = false;
         interceptPoint = default;
-        var points = new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints);
+        points.Clear();
 
+        if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach &&
+            predicted.ApproachRoute is { } route)
+        {
+            points.Add(new(predicted.X, predicted.Y));
+            double boundaryMs = 0;
+            ReadOnlySpan<double> lengths = stackalloc double[] { route.First, route.Second, route.Third };
+            for (int segment = 0; segment < 3; segment++)
+            {
+                double startMs = Math.Max(boundaryMs, route.ElapsedMs);
+                boundaryMs += lengths[segment] / (route.SpeedKmS * 10) * 1000;
+                if (boundaryMs <= startMs) continue;
+                // Sampling by curvature preserves short turns even in a long chase.
+                int count = route.Type[segment] == 'S' ? 1 :
+                    Math.Max(1, (int)Math.Ceiling((boundaryMs - startMs) / 1000 * route.TurnRate / 2));
+                for (int i = 1; i <= count; i++)
+                {
+                    var point = ApproachLineCaptureMath.PredictPose(route,
+                        startMs + (boundaryMs - startMs) * i / count);
+                    points.Add(new(point.X, point.Y));
+                }
+            }
+            isConfirmedIntercept = true;
+            interceptPoint = points[^1];
+            return points;
+        }
         // navigation.approach: trailing-pursuit preview against a moving aim point —
         // checked before the generic Orbit-oriented branch below since both populate
         // NavigationTargetX/Y (different meaning — see the doc-comment on
@@ -198,6 +229,54 @@ internal sealed class NavigationTrajectoryProjector
             elapsedMs += intervalMs;
         }
 
+        return points;
+    }
+
+    /// <summary>
+    /// Display continuation after the finite manoeuvre. The physical route and its
+    /// completion marker remain intact; forward flight follows the terminal course.
+    /// An Approach target can be faster than the player: its future position is a
+    /// point on this course, not a promise that the ship intercepts it at that time.
+    /// Stationary Approach targets end the displayed path at the target itself.
+    /// </summary>
+    internal List<FutureTrajectoryPoint> ProjectPlayerInto(ObjectMotionSnapshot predicted,
+        List<FutureTrajectoryPoint> points, CameraState camera, int width, int height,
+        out bool isConfirmedIntercept, out FutureTrajectoryPoint interceptPoint)
+    {
+        // Legacy Approach may return its own list. Always use the returned list.
+        points = ProjectInto(predicted, points, out isConfirmedIntercept, out interceptPoint);
+        if (points.Count == 0 || predicted.SpeedKmS <= 0) return points;
+
+        if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach && predicted.ApproachRoute is { } route)
+        {
+            // The route captures the target's aft line. Continue along that line to
+            // the target at route completion, even when the target is pulling away.
+            double angle = route.TargetDirection * Math.PI / 180;
+            double dx = Math.Sin(angle), dy = -Math.Cos(angle);
+            double distance = route.TargetSpeedKmS * 10 * route.DurationMs / 1000;
+            var target = new FutureTrajectoryPoint(route.TargetX + distance * dx, route.TargetY + distance * dy);
+            var last = points[^1];
+            if (route.TargetSpeedKmS == 0)
+            {
+                if (last != target) points.Add(target);
+                return points;
+            }
+            if ((target.X - last.X) * dx + (target.Y - last.Y) * dy > 1e-7)
+                points.Add(target);
+            TrajectoryViewportGeometry.ExtendToEdge(points, route.TargetDirection, camera, width, height);
+            return points;
+        }
+
+        if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach)
+        {
+            if (predicted.NavigationTargetSpeedKmS != 0 && predicted.NavigationTargetDirectionDegrees is { } heading)
+                TrajectoryViewportGeometry.ExtendToEdge(points, heading, camera, width, height);
+            return points;
+        }
+
+        var terminal = _displayPredictor.Predict(predicted, FutureTrajectoryHorizonMs);
+        if (LinearMotionPredictor.IsLinear(terminal) || terminal.NavigationLockedCourseDegrees is not null)
+            TrajectoryViewportGeometry.ExtendToEdge(points, terminal.NavigationLockedCourseDegrees ?? terminal.Direction, camera, width, height);
         return points;
     }
 

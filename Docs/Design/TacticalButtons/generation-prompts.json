@@ -1,0 +1,113 @@
+{
+  "base": "Generate exactly ONE square production UI button PNG. Reference image is the MASTER BUTTON: match its square silhouette, padding, corner radius, thin frame, glyph line thickness, centering and visual weight. Keep a single square button filling 92% of canvas, corner radius 9% of canvas, frame width 2% of canvas. Entire canvas opaque: corners and outer margins flat #09121B. Interior perfectly flat uniform solid navy; NO texture, gradients, lighting, bevel, glow, shadows or decor. Minimal hard-sci-fi technical line pictogram occupying centered 52% width and height. Crisp simple geometry readable at final 48px. No text, numbers, letters, words, legends or badges. NO transparency, NO checkerboard. ",
+  "normalTemplate": "{base} Asset: {id}. NORMAL state. Interior #0D1C28; thin border #2B4456; pictogram off-white #E6EFF5. Replace the master arrow with ONLY this pictogram: {glyph}.",
+  "icons": [
+    [
+      "engine.accelerate",
+      "Разгон",
+      "Upward straight arrow with two horizontal thrust bars below"
+    ],
+    [
+      "engine.brake",
+      "Торможение",
+      "Downward straight arrow ending above a horizontal stopping bar"
+    ],
+    [
+      "engine.maintainCourse",
+      "Сохранять курс",
+      "Upward arrow centered between two short parallel vertical course guide lines"
+    ],
+    [
+      "engine.maintainSpeed",
+      "Сохранять скорость",
+      "Minimal semicircular speedometer dial, one diagonal needle and two horizontal equals lines below"
+    ],
+    [
+      "engine.orbit",
+      "Орбита",
+      "Small central filled circle and one clean circular orbit arrow circling it, one arrowhead counterclockwise at upper left"
+    ],
+    [
+      "engine.turnLeftStep",
+      "Поворот влево",
+      "One simple 90-degree bent arrow, rising from bottom then turning left, pointing left"
+    ],
+    [
+      "engine.turnRightStep",
+      "Поворот вправо",
+      "One simple 90-degree bent arrow, rising from bottom then turning right, pointing right"
+    ],
+    [
+      "engine.turnLeftUntilCancel",
+      "Непрерывно влево",
+      "One counterclockwise three-quarter circular arrow, single arrowhead on left pointing down, small central dot"
+    ],
+    [
+      "engine.turnRightUntilCancel",
+      "Непрерывно вправо",
+      "One clockwise three-quarter circular arrow, single arrowhead on right pointing down, small central dot"
+    ],
+    [
+      "engine.speedSynchronization",
+      "Синхронизация скорости",
+      "Two small speedometer semicircle dials side by side, matching diagonal needles, equals sign centered below"
+    ],
+    [
+      "engine.directionSynchronization",
+      "Синхронизация направления",
+      "Two identical circular compass heading indicators side by side, four cardinal ticks and matching northeast triangular needles, equals sign centered below; match the speed synchronization composition"
+    ],
+    [
+      "navigation.dock",
+      "Стыковка",
+      "One wide squared U-shaped docking bay open below, small upward arrow entering its center from below"
+    ],
+    [
+      "navigation.stationsList",
+      "Список станций",
+      "Three aligned rows, each with a small hollow square at left and one horizontal line at right"
+    ],
+    [
+      "scanner.generalScan",
+      "Общий скан",
+      "Simple circular radar scope with center dot, one diagonal sweep radius towards upper right and two target dots"
+    ],
+    [
+      "scanner.structuralScan",
+      "Скан структуры",
+      "Four separated right-angle scan corner brackets around a simple wireframe cube"
+    ],
+    [
+      "navigation.approach",
+      "Сближение",
+      "Two small spacecraft chevrons pointing upward, one leading at top center, the trailing one below left with a bent path merging onto leader's vertical course behind it"
+    ]
+  ],
+  "extra": [
+    [
+      "cancel",
+      "Отменить всё",
+      "One simple large X, two diagonal strokes, no enclosing circle"
+    ],
+    [
+      "hide",
+      "Свернуть",
+      "One bold simple upward chevron, no other marks"
+    ],
+    [
+      "show",
+      "Развернуть",
+      "One bold simple downward chevron, no other marks"
+    ],
+    [
+      "show-all",
+      "Все панели",
+      "Two stacked downward chevrons, no other marks"
+    ],
+    [
+      "show-active",
+      "Активные панели",
+      "One simple filter funnel outline with a short vertical stem, no other marks"
+    ]
+  ]
+}

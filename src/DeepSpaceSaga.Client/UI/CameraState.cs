@@ -13,7 +13,7 @@ public sealed class CameraState
     /// <summary>World Y coordinate at the center of the viewport.</summary>
     public double FocusY { get; private set; }
 
-    internal const double DefaultMinPpu = 0.0001;
+    internal const double DefaultMinPpu = 1e-15;
     internal const double DefaultMaxPpu = 10.0;
 
     /// <summary>Screen pixels per world unit at the current zoom level.</summary>

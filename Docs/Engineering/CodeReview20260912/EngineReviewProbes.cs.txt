@@ -1,0 +1,91 @@
+using System.Reflection;
+using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Dialogue;
+using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Motion;
+
+namespace DeepSpaceSaga.Engine.Tests;
+
+// Temporary audit probes: assertions express the desired invariant and should fail on the reviewed version.
+public class ReviewProbeTests
+{
+    private static SimulationEngine Fixture(Type type, params (string Name, object Value)[] overrides)
+    {
+        var method = type.GetMethod("CreateEngine", BindingFlags.Static | BindingFlags.NonPublic)!;
+        var parameters = method.GetParameters();
+        var values = parameters.Select(p => p.DefaultValue).ToArray();
+        foreach (var (name, value) in overrides) values[Array.FindIndex(parameters, p => p.Name == name)] = value;
+        return (SimulationEngine)method.Invoke(null, values)!;
+    }
+
+    [Fact]
+    public void Duplicate_trade_command_must_not_charge_twice()
+    {
+        using var engine = Fixture(typeof(TradeCommandTests));
+        var command = new PlayerCommand("same-id", 1, "SPC-0001", "MOD-CARGO-01", TradeCommandTypes.Buy,
+            ItemTypeId: "item.energy-cells", Quantity: 1);
+        engine.ReceiveCommand(command);
+        var first = engine.CaptureSnapshotForTests();
+        engine.ReceiveCommand(command);
+        var second = engine.CaptureSnapshotForTests();
+        Assert.Equal(first.PlayerCredits, second.PlayerCredits);
+    }
+
+    [Fact]
+    public void Buy_must_not_wrap_station_balance_negative()
+    {
+        using var engine = Fixture(typeof(TradeCommandTests), ("stationCredits", long.MaxValue));
+        engine.ReceiveCommand(new("buy", 1, "SPC-0001", "MOD-CARGO-01", TradeCommandTypes.Buy,
+            ItemTypeId: "item.energy-cells", Quantity: 1));
+        engine.CaptureSnapshotForTests();
+        Assert.InRange(engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "STATION-01").Credits, 0, long.MaxValue);
+    }
+
+    [Fact]
+    public void Saving_after_cancelling_Approach_must_preserve_heading()
+    {
+        using var engine = Fixture(typeof(ApproachCommandTests), ("shipSpeedMps", 3000),
+            ("shipX", 9000d), ("shipY", 10500d), ("shipDirectionDegrees", 270),
+            ("targetSpeedMps", 1000), ("targetDirectionDegrees", 90), ("trailDistanceKm", 1));
+        engine.ReceiveCommand(new("approach", 1, "SHIP", "ENGINE-1", NavigationComputerCommandTypes.Approach, TargetObjectId: "TARGET"));
+        engine.CaptureSnapshotForTests();
+        engine.ReceiveCommand(new("cancel", 2, "SHIP", "ENGINE-1", ShipEngineCommandTypes.CancelAll));
+        var before = engine.CaptureSnapshotForTests(137).Objects.Single(o => o.ObjectId == "SHIP");
+        var save = engine.CaptureSaveStateForTests(137, SimulationSpeed.Speed0);
+        engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), allowNonZeroGameTime: true));
+        var after = engine.CaptureSnapshotForTests(137).Objects.Single(o => o.ObjectId == "SHIP");
+        Assert.Equal(before.Direction, after.Direction, 8);
+    }
+
+    [Fact]
+    public void Accepted_player_id_case_must_resolve_to_an_actual_object()
+    {
+        using var engine = Fixture(typeof(TradeCommandTests));
+        var original = engine.CaptureSaveState();
+        var save = original with { GameState = original.GameState with { PlayerShipObjectId = "spc-0001" } };
+        engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save)));
+        var snapshot = engine.CaptureSnapshotForTests();
+        Assert.Contains(snapshot.Objects, o => o.ObjectId == snapshot.PlayerShipObjectId);
+    }
+
+    [Fact]
+    public void Security_must_use_the_active_route_when_checking_the_deadline()
+    {
+        using var engine = Fixture(typeof(ApproachCommandTests), ("shipSpeedMps", 2000));
+        var route = new ApproachRoute(0, 0, 0, 2, 90, "RSL", 20, 40, 0, 100, 0, 90, 1, 10);
+        var ship = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SHIP");
+        ship = ship with { Modules = ship.Modules.SetItem(0, ship.Modules[0] with {
+            ActiveCycle = new ActiveCycleData("test", 0, 1000, NavigationComputerCommandTypes.Approach, true, ApproachRoute: route) }) };
+        // At 1.1s the true curved route is 19.49 units from the station, inside its 20-unit zone.
+        // Straight extrapolation incorrectly places the ship 22 units away, outside it.
+        var actual = ApproachLineCaptureMath.PredictPose(route, 1100);
+        Assert.True(actual.X * actual.X + actual.Y * actual.Y < 400);
+        var objects = new List<SpaceObjectRuntime> { ship,
+            new(new ObjectMotionSnapshot("station", 0, 0, 0, 0), SpaceObjectType.Station, 0, [], SecurityZoneRadiusKm: 2) };
+        var progress = DialogueProgressState.Empty with {
+            SecurityIncidents = [new("test", "station", "piracy", 0, 1100)] };
+        StationSecuritySystem.Update(objects, "SHIP", progress, 1100);
+        Assert.True(objects[0].IsDestroyed);
+    }
+
+}

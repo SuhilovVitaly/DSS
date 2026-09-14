@@ -102,6 +102,7 @@ public sealed class CommandsPanel
             [ShipEngineCommandTypes.SpeedSynchronization] = "engine.speedSynchronization.png",
             [ShipEngineCommandTypes.DirectionSynchronization] = "engine.directionSynchronization.png",
             [NavigationComputerCommandTypes.Dock] = "navigation.dock.png",
+            [NavigationComputerCommandTypes.Approach] = "navigation.approach.png",
             [NavigationComputerCommandTypes.StationsList] = "navigation.stationsList.png",
             [ScannerCommandTypes.GeneralScan] = "scanner.generalScan.png",
             [ScannerCommandTypes.StructuralScan] = "scanner.structuralScan.png",

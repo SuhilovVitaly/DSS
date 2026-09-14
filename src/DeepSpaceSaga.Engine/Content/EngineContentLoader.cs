@@ -87,7 +87,9 @@ public static class EngineContentLoader
             ? null
             : LoadRecipes(Resolve(basePath, settings.TypeData.Recipes));
 
-        return GameDataRegistry.Create(moduleCategories, moduleImplementations, items, commands, factoryTypes, recipes);
+        return GameDataRegistry.Create(moduleCategories, moduleImplementations, items, commands, factoryTypes, recipes,
+            settings.TypeData.Dialogues is null ? null : DialogueContentLoader.Load(Resolve(basePath, settings.TypeData.Dialogues)),
+            settings.TypeData.Quests is null ? null : DialogueContentLoader.LoadQuests(Resolve(basePath, settings.TypeData.Quests)));
     }
 
     /// <summary>
@@ -495,7 +497,9 @@ public static class EngineContentLoader
         [property: JsonPropertyName("itemTypes")] string ItemTypes,
         [property: JsonPropertyName("commandDefinitions")] string CommandDefinitions,
         [property: JsonPropertyName("factoryTypes")] string? FactoryTypes,
-        [property: JsonPropertyName("recipes")] string? Recipes);
+        [property: JsonPropertyName("recipes")] string? Recipes,
+        [property: JsonPropertyName("dialogues")] string? Dialogues = null,
+        [property: JsonPropertyName("quests")] string? Quests = null);
 
     private sealed record ModuleTypesFile(
         [property: JsonPropertyName("moduleTypes")] IReadOnlyList<ModuleCategoryDefinitionDto> ModuleTypes);

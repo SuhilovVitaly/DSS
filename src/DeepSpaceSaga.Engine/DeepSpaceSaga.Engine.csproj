@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="DeepSpaceSaga.Engine.Tests" />
+    <InternalsVisibleTo Include="DeepSpaceSaga.Performance" />
     <InternalsVisibleTo Include="DeepSpaceSaga.Client.Tests" />
   </ItemGroup>
 

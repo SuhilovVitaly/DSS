@@ -1,0 +1,303 @@
+[
+  {
+    "file": "commands-panel/engine.accelerate.png",
+    "master": "masters/engine.accelerate.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Разгон"
+  },
+  {
+    "file": "commands-panel/engine.accelerate.active.png",
+    "master": "masters/engine.accelerate.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Разгон · Наведение"
+  },
+  {
+    "file": "commands-panel/engine.brake.png",
+    "master": "masters/engine.brake.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Торможение"
+  },
+  {
+    "file": "commands-panel/engine.brake.active.png",
+    "master": "masters/engine.brake.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Торможение · Наведение"
+  },
+  {
+    "file": "commands-panel/engine.maintainCourse.png",
+    "master": "masters/engine.maintainCourse.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Сохранять курс"
+  },
+  {
+    "file": "commands-panel/engine.maintainCourse.active.png",
+    "master": "masters/engine.maintainCourse.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Сохранять курс · Наведение"
+  },
+  {
+    "file": "commands-panel/engine.maintainSpeed.png",
+    "master": "masters/engine.maintainSpeed.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Сохранять скорость"
+  },
+  {
+    "file": "commands-panel/engine.maintainSpeed.active.png",
+    "master": "masters/engine.maintainSpeed.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Сохранять скорость · Наведение"
+  },
+  {
+    "file": "commands-panel/engine.orbit.png",
+    "master": "masters/engine.orbit.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Орбита"
+  },
+  {
+    "file": "commands-panel/engine.orbit.active.png",
+    "master": "masters/engine.orbit.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Орбита · Наведение"
+  },
+  {
+    "file": "commands-panel/engine.turnLeftStep.png",
+    "master": "masters/engine.turnLeftStep.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Поворот влево"
+  },
+  {
+    "file": "commands-panel/engine.turnLeftStep.active.png",
+    "master": "masters/engine.turnLeftStep.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Поворот влево · Наведение"
+  },
+  {
+    "file": "commands-panel/engine.turnRightStep.png",
+    "master": "masters/engine.turnRightStep.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Поворот вправо"
+  },
+  {
+    "file": "commands-panel/engine.turnRightStep.active.png",
+    "master": "masters/engine.turnRightStep.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Поворот вправо · Наведение"
+  },
+  {
+    "file": "commands-panel/engine.turnLeftUntilCancel.png",
+    "master": "masters/engine.turnLeftUntilCancel.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Непрерывно влево"
+  },
+  {
+    "file": "commands-panel/engine.turnLeftUntilCancel.active.png",
+    "master": "masters/engine.turnLeftUntilCancel.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Непрерывно влево · Наведение"
+  },
+  {
+    "file": "commands-panel/engine.turnRightUntilCancel.png",
+    "master": "masters/engine.turnRightUntilCancel.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Непрерывно вправо"
+  },
+  {
+    "file": "commands-panel/engine.turnRightUntilCancel.active.png",
+    "master": "masters/engine.turnRightUntilCancel.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Непрерывно вправо · Наведение"
+  },
+  {
+    "file": "commands-panel/engine.speedSynchronization.png",
+    "master": "masters/engine.speedSynchronization.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Синхронизация скорости"
+  },
+  {
+    "file": "commands-panel/engine.speedSynchronization.active.png",
+    "master": "masters/engine.speedSynchronization.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Синхронизация скорости · Наведение"
+  },
+  {
+    "file": "commands-panel/engine.directionSynchronization.png",
+    "master": "masters/engine.directionSynchronization.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Синхронизация направления"
+  },
+  {
+    "file": "commands-panel/engine.directionSynchronization.active.png",
+    "master": "masters/engine.directionSynchronization.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Синхронизация направления · Наведение"
+  },
+  {
+    "file": "commands-panel/navigation.dock.png",
+    "master": "masters/navigation.dock.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Стыковка"
+  },
+  {
+    "file": "commands-panel/navigation.dock.active.png",
+    "master": "masters/navigation.dock.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Стыковка · Наведение"
+  },
+  {
+    "file": "commands-panel/navigation.stationsList.png",
+    "master": "masters/navigation.stationsList.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Список станций"
+  },
+  {
+    "file": "commands-panel/navigation.stationsList.active.png",
+    "master": "masters/navigation.stationsList.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Список станций · Наведение"
+  },
+  {
+    "file": "commands-panel/scanner.generalScan.png",
+    "master": "masters/scanner.generalScan.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Общий скан"
+  },
+  {
+    "file": "commands-panel/scanner.generalScan.active.png",
+    "master": "masters/scanner.generalScan.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Общий скан · Наведение"
+  },
+  {
+    "file": "commands-panel/scanner.structuralScan.png",
+    "master": "masters/scanner.structuralScan.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Скан структуры"
+  },
+  {
+    "file": "commands-panel/scanner.structuralScan.active.png",
+    "master": "masters/scanner.structuralScan.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Скан структуры · Наведение"
+  },
+  {
+    "file": "commands-panel/navigation.approach.png",
+    "master": "masters/navigation.approach.normal.png",
+    "width": 64,
+    "height": 64,
+    "label": "Сближение"
+  },
+  {
+    "file": "commands-panel/navigation.approach.active.png",
+    "master": "masters/navigation.approach.active.png",
+    "width": 64,
+    "height": 64,
+    "label": "Сближение · Наведение"
+  },
+  {
+    "file": "navigation-panel/button_accelerate.png",
+    "master": "masters/engine.accelerate.normal.png",
+    "width": 128,
+    "height": 130,
+    "label": "Разгон"
+  },
+  {
+    "file": "navigation-panel/button_brake.png",
+    "master": "masters/engine.brake.normal.png",
+    "width": 128,
+    "height": 130,
+    "label": "Торможение"
+  },
+  {
+    "file": "navigation-panel/button_cancel_all.png",
+    "master": "masters/cancel.normal.png",
+    "width": 128,
+    "height": 130,
+    "label": "Отменить всё"
+  },
+  {
+    "file": "navigation-panel/button_turn_left_step.png",
+    "master": "masters/engine.turnLeftStep.normal.png",
+    "width": 128,
+    "height": 130,
+    "label": "Поворот влево"
+  },
+  {
+    "file": "navigation-panel/button_turn_left_until_cancel.png",
+    "master": "masters/engine.turnLeftUntilCancel.normal.png",
+    "width": 128,
+    "height": 130,
+    "label": "Непрерывно влево"
+  },
+  {
+    "file": "navigation-panel/button_turn_right_step.png",
+    "master": "masters/engine.turnRightStep.normal.png",
+    "width": 128,
+    "height": 130,
+    "label": "Поворот вправо"
+  },
+  {
+    "file": "navigation-panel/button_turn_right_until_cancel.png",
+    "master": "masters/engine.turnRightUntilCancel.normal.png",
+    "width": 128,
+    "height": 130,
+    "label": "Непрерывно вправо"
+  },
+  {
+    "file": "title-bar/title-bar-button-hide.png",
+    "master": "masters/hide.normal.png",
+    "width": 26,
+    "height": 26,
+    "label": "Свернуть"
+  },
+  {
+    "file": "title-bar/title-bar-button-show.png",
+    "master": "masters/show.normal.png",
+    "width": 26,
+    "height": 26,
+    "label": "Развернуть"
+  },
+  {
+    "file": "title-bar/title-bar-button-show-all.png",
+    "master": "masters/show-all.normal.png",
+    "width": 26,
+    "height": 26,
+    "label": "Все панели"
+  },
+  {
+    "file": "title-bar/title-bar-button-show-active.png",
+    "master": "masters/show-active.normal.png",
+    "width": 26,
+    "height": 26,
+    "label": "Активные панели"
+  }
+]

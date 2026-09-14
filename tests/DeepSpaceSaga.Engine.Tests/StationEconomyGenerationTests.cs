@@ -75,7 +75,7 @@ public class StationEconomyGenerationTests
     {
         "item.ice", "item.iron-ore", "item.silicon", "item.magnesium-ore",
         "item.water", "item.steel", "item.energy-cells", "item.fuel",
-        "item.protein-mass", "item.food-rations"
+        "item.protein-mass", "item.food-rations", "item.carbon-ore", "item.uranium-ore"
     };
 
     [Fact]

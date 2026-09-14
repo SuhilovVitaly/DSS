@@ -20,7 +20,7 @@ internal sealed class ObjectTrailStore
     private const long SampleIntervalGameTimeMs = TrailSampleIntervalMs;
     private static readonly long SampleIntervalTicks = MillisecondsToTicks(TrailSampleIntervalMs);
 
-    private readonly Dictionary<string, List<ObjectTrailPoint>> _trails = new();
+    private readonly Dictionary<string, ObjectTrailBuffer> _trails = new();
     private readonly Dictionary<string, long> _lastSampleTimestamps = new();
     private readonly HashSet<string> _currentObjectIds = new(StringComparer.Ordinal);
     private readonly List<string> _objectIdsToRemove = new();
@@ -45,9 +45,7 @@ internal sealed class ObjectTrailStore
         _timestampProvider = timestampProvider;
     }
 
-    internal IEnumerable<KeyValuePair<string, IReadOnlyList<ObjectTrailPoint>>> Trails =>
-        _trails.Select(kvp =>
-            new KeyValuePair<string, IReadOnlyList<ObjectTrailPoint>>(kvp.Key, kvp.Value));
+    internal Dictionary<string, ObjectTrailBuffer> Trails => _trails;
 
     internal void Update(
         IReadOnlyList<ObjectRenderState> renderStates,
@@ -77,7 +75,7 @@ internal sealed class ObjectTrailStore
 
             if (!_trails.TryGetValue(obj.ObjectId, out var points))
             {
-                points = new List<ObjectTrailPoint>();
+                points = new ObjectTrailBuffer();
                 _trails[obj.ObjectId] = points;
                 bool shouldBootstrapObject = bootstrapMissingTrails &&
                                              (bootstrapObjectIds is null || bootstrapObjectIds.Contains(obj.ObjectId));
@@ -177,7 +175,7 @@ internal sealed class ObjectTrailStore
         _lastSampleTimestamps.Remove(objectId);
     }
 
-    private static void PruneOldPoints(List<ObjectTrailPoint> points, long currentGameTimeMs)
+    private static void PruneOldPoints(ObjectTrailBuffer points, long currentGameTimeMs)
     {
         long cutoff = currentGameTimeMs - HistoryGameTimeMs;
         int removeCount = 0;
@@ -186,7 +184,7 @@ internal sealed class ObjectTrailStore
             removeCount++;
 
         if (removeCount > 0)
-            points.RemoveRange(0, removeCount);
+            points.RemoveFirst(removeCount);
     }
 
     /// <summary>
@@ -199,7 +197,7 @@ internal sealed class ObjectTrailStore
     /// any object with an active turn cycle.
     /// </summary>
     private static void TranslateTrail(
-        List<ObjectTrailPoint> points,
+        ObjectTrailBuffer points,
         ObjectMotionSnapshot obj,
         long currentGameTimeMs)
     {
@@ -227,7 +225,7 @@ internal sealed class ObjectTrailStore
     }
 
     private void BootstrapTrail(
-        List<ObjectTrailPoint> points,
+        ObjectTrailBuffer points,
         ObjectMotionSnapshot obj,
         long currentGameTimeMs,
         long rawNow)
@@ -250,7 +248,7 @@ internal sealed class ObjectTrailStore
     }
 
     private void AddCurrentPoint(
-        List<ObjectTrailPoint> points,
+        ObjectTrailBuffer points,
         ObjectMotionSnapshot obj,
         long currentGameTimeMs,
         long rawNow)
@@ -259,7 +257,7 @@ internal sealed class ObjectTrailStore
         _lastSampleTimestamps[obj.ObjectId] = rawNow;
     }
 
-    private static long GetMonotonicGameTimeMs(List<ObjectTrailPoint> points, long currentGameTimeMs)
+    private static long GetMonotonicGameTimeMs(ObjectTrailBuffer points, long currentGameTimeMs)
     {
         return points.Count == 0
             ? currentGameTimeMs
@@ -268,7 +266,7 @@ internal sealed class ObjectTrailStore
 
     private bool ShouldAddPoint(
         string objectId,
-        List<ObjectTrailPoint> points,
+        ObjectTrailBuffer points,
         double x,
         double y,
         long currentGameTimeMs,

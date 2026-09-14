@@ -9,6 +9,10 @@ namespace DeepSpaceSaga.Contracts;
 /// </summary>
 public interface IGameSessionConnection : IAsyncDisposable
 {
+    ValueTask SendDialogueCommandAsync(
+        DialogueCommand command,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Send a player command to the authoritative session.</summary>
     ValueTask SendCommandAsync(
         PlayerCommand command,

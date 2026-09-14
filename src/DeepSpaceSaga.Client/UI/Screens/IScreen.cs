@@ -42,8 +42,8 @@ public enum ScreenEvent
     CloseShip,
     OpenStation,
     CloseStation,
-    OpenDockingConfirm,
-    CloseDockingConfirm,
+    OpenDialogue,
+    CloseDialogue,
     OpenTrade,
     CloseTrade,
     OpenHire,
@@ -56,5 +56,7 @@ public enum ScreenEvent
     /// current window and ensures Station ends up open, whether or not Station was
     /// already directly beneath it (see SkiaWindow.NavigateToStationAsync).
     /// </summary>
-    NavigateToStation
+    NavigateToStation,
+    OpenTempCharacterImage,
+    CloseTempCharacterImage
 }

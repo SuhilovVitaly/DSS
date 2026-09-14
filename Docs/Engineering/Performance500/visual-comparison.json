@@ -1,0 +1,20 @@
+[
+  {
+    "Name": "render_paused",
+    "MeanAbsoluteChannelError": 0.026888744212962962,
+    "ChangedPixelPercent": 0.4845920138888889,
+    "MaxChannelDifference": 26
+  },
+  {
+    "Name": "render_running",
+    "MeanAbsoluteChannelError": 0.03229419849537037,
+    "ChangedPixelPercent": 0.5857204861111112,
+    "MaxChannelDifference": 22
+  },
+  {
+    "Name": "render_approach",
+    "MeanAbsoluteChannelError": 0.03137984664351852,
+    "ChangedPixelPercent": 0.5724826388888888,
+    "MaxChannelDifference": 26
+  }
+]

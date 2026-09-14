@@ -61,53 +61,6 @@ public class TacticalMapMarkerPolicyTests
         Assert.Equal(5f, TacticalMapMarkerPolicy.GetMarkerRadiusPx(null));
     }
 
-    // ── Scale visibility matrix: type × PPU {2.0, 1.0, 0.1, 0.01, 0.001} ──
-
-    private const double FullPpu1 = 2.0;
-    private const double FullPpu2 = 1.0;
-    private const double SmallPpu1 = 0.1;
-    private const double SmallPpu2 = 0.01;
-    private const double SmallPpu3 = 0.001;
-
-    private static readonly string[] SmallScaleHiddenTypes =
-        { SpaceObjectType.Asteroid, SpaceObjectType.UnknownSpaceObject, SpaceObjectType.NpcShip };
-
-    private static readonly string[] SmallScaleVisibleTypes =
-        { SpaceObjectType.PlayerShip, SpaceObjectType.Station, SpaceObjectType.Planet, SpaceObjectType.Sun };
-
-    [Theory]
-    [InlineData(FullPpu1)]
-    [InlineData(FullPpu2)]
-    public void At_full_scale_all_7_types_are_visible(double ppu)
-    {
-        foreach (var type in SmallScaleHiddenTypes)
-            Assert.True(TacticalMapMarkerPolicy.ShouldRenderAtScale(type, ppu), $"{type} visible at PPU={ppu}");
-        foreach (var type in SmallScaleVisibleTypes)
-            Assert.True(TacticalMapMarkerPolicy.ShouldRenderAtScale(type, ppu), $"{type} visible at PPU={ppu}");
-        Assert.True(TacticalMapMarkerPolicy.ShouldRenderAtScale(null, ppu), "null visible at PPU=" + ppu);
-    }
-
-    [Theory]
-    [InlineData(SmallPpu1)]
-    [InlineData(SmallPpu2)]
-    [InlineData(SmallPpu3)]
-    public void At_small_scale_asteroid_unknown_and_npc_are_hidden(double ppu)
-    {
-        foreach (var type in SmallScaleHiddenTypes)
-            Assert.False(TacticalMapMarkerPolicy.ShouldRenderAtScale(type, ppu), $"{type} hidden at PPU={ppu}");
-        Assert.False(TacticalMapMarkerPolicy.ShouldRenderAtScale(null, ppu), "null hidden at PPU=" + ppu);
-    }
-
-    [Theory]
-    [InlineData(SmallPpu1)]
-    [InlineData(SmallPpu2)]
-    [InlineData(SmallPpu3)]
-    public void At_small_scale_player_station_planet_sun_stay_visible(double ppu)
-    {
-        foreach (var type in SmallScaleVisibleTypes)
-            Assert.True(TacticalMapMarkerPolicy.ShouldRenderAtScale(type, ppu), $"{type} visible at PPU={ppu}");
-    }
-
     // ── Marker style selection (glint vs spherical) ──────────────
 
     [Theory]

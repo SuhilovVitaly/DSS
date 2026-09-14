@@ -173,19 +173,17 @@ public class GameSessionObjectInteractionTests
     [Fact]
     public async Task Zoom_change_recomputes_ActiveObjectId_without_a_new_mouse_move()
     {
-        // 20 px away at PPU 1.0 (inside the 30 px radius). Zooming IN grows screen
-        // distance (distance = world distance × PPU); the wheel handler caps PPU at
-        // 2.0, so distance saturates at 20×2.0 = 40 px — outside the radius.
-        await using var fixture = CreateFixture([ObjAt("OBJ-1", 10000 + 20)]);
+        // Start outside the hit radius; zoom out moves the contact inside it.
+        await using var fixture = CreateFixture([ObjAt("OBJ-1", 10000 + 40)]);
         Render(fixture.Screen);
         fixture.Screen.OnMouseMove(640, 360);
-        Assert.Equal("OBJ-1", fixture.Screen.ActiveObjectId);
+        Assert.Null(fixture.Screen.ActiveObjectId);
 
         for (int i = 0; i < 5; i++)
-            fixture.Screen.OnMouseWheel(640, 360, 1f); // zoom in, saturates at PPU 2.0
+            fixture.Screen.OnMouseWheel(640, 360, -1f); // zoom out without another mouse move
         Render(fixture.Screen);
 
-        Assert.Null(fixture.Screen.ActiveObjectId);
+        Assert.Equal("OBJ-1", fixture.Screen.ActiveObjectId);
     }
 
     [Fact]
@@ -204,7 +202,7 @@ public class GameSessionObjectInteractionTests
     // ── Hit-testing respects the scale visibility filter ────────────────────────
 
     [Fact]
-    public async Task Object_hidden_by_scale_filter_cannot_become_ActiveObjectId()
+    public async Task Zoomed_out_contact_remains_interactive()
     {
         var asteroid = new ObjectMotionSnapshot(
             "AST-1", X: 10000, Y: 10000, SpeedKmS: 0, Direction: 0,
@@ -215,12 +213,12 @@ public class GameSessionObjectInteractionTests
         fixture.Screen.OnMouseMove(640, 360);
         Assert.Equal("AST-1", fixture.Screen.ActiveObjectId);
 
-        // Zoom out below the full-visibility threshold — Asteroid hides from _renderStates.
+        // Zoom out: the contact stays available for hover and selection.
         for (int i = 0; i < 6; i++)
             fixture.Screen.OnMouseWheel(640, 360, -1f);
         Render(fixture.Screen);
 
-        Assert.Null(fixture.Screen.ActiveObjectId);
+        Assert.Equal("AST-1", fixture.Screen.ActiveObjectId);
     }
 
     // ── Left click: selection ────────────────────────────────────────────────────
@@ -709,7 +707,7 @@ public class GameSessionObjectInteractionTests
     }
 
     [Fact]
-    public async Task Scale_filter_hides_active_but_selected_survives_while_object_still_exists()
+    public async Task Zoomed_out_selected_contact_remains_active_and_selected()
     {
         var asteroid = new ObjectMotionSnapshot(
             "AST-1", X: 10000, Y: 10000, SpeedKmS: 0, Direction: 0,
@@ -725,7 +723,7 @@ public class GameSessionObjectInteractionTests
             fixture.Screen.OnMouseWheel(640, 360, -1f);
         Render(fixture.Screen);
 
-        Assert.Null(fixture.Screen.ActiveObjectId);
+        Assert.Equal("AST-1", fixture.Screen.ActiveObjectId);
         Assert.Equal("AST-1", fixture.Screen.SelectedObjectId); // still exists in the world
     }
 
@@ -1009,6 +1007,8 @@ public class GameSessionObjectInteractionTests
                 _interactionStateFailuresRemaining = count;
             }
         }
+
+        public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
         public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default)
         {

@@ -110,7 +110,7 @@ public class GameSessionZoomTests
         Assert.Equal(fyBefore, screen.CameraFocusY);
     }
 
-    // ── Wheel zoom boundary tests (M0.5=2.0 max, M1000=0.001 min) ──
+    // ── Wheel zoom boundary tests (M0.5=1.0 max, M1000=0.00001 min) ──
 
     [Fact]
     public void Wheel_zoom_in_at_M0_5_boundary_does_not_exceed_max()
@@ -120,26 +120,26 @@ public class GameSessionZoomTests
 
         // Click M0.5 to set PPU to the upper boundary.
         screen.OnMouseDown(screen.ScaleButtonRects[0].MidX, screen.ScaleButtonRects[0].MidY);
-        Assert.Equal(2.0, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(1.0, screen.CameraPixelsPerWorldUnit);
 
         screen.OnMouseWheel(960, 540, 1.0f);
 
-        Assert.Equal(2.0, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(1.0, screen.CameraPixelsPerWorldUnit);
     }
 
     [Fact]
-    public void Wheel_zoom_out_at_M1000_boundary_does_not_go_below_min()
+    public void Wheel_zoom_out_continues_beyond_last_preset_for_system_view()
     {
         var (_, screen) = CreateScreen();
         Render(screen);
 
         // Click M1000 to set PPU to the lower boundary.
         screen.OnMouseDown(screen.ScaleButtonRects[4].MidX, screen.ScaleButtonRects[4].MidY);
-        Assert.Equal(0.001, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(0.00001, screen.CameraPixelsPerWorldUnit);
 
         screen.OnMouseWheel(960, 540, -1.0f);
 
-        Assert.Equal(0.001, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(0.000008, screen.CameraPixelsPerWorldUnit, precision: 12);
     }
 
     [Fact]
@@ -148,9 +148,9 @@ public class GameSessionZoomTests
         var (_, screen) = CreateScreen();
         Render(screen);
 
-        // Click M0.5 — PPU is now at the upper boundary (2.0).
+        // Click M0.5 — PPU is now at the upper boundary (1.0).
         screen.OnMouseDown(screen.ScaleButtonRects[0].MidX, screen.ScaleButtonRects[0].MidY);
-        Assert.Equal(2.0, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(1.0, screen.CameraPixelsPerWorldUnit);
 
         // Read only the tail appended after the action to isolate from parallel test writers.
         string logPath = Path.Combine(Environment.CurrentDirectory, InterfaceLog.FileName);
@@ -170,34 +170,35 @@ public class GameSessionZoomTests
         var (_, screen) = CreateScreen();
         Render(screen);
 
-        // Click M0.5 — PPU is at the upper boundary (2.0).
+        // Click M0.5 — PPU is at the upper boundary (1.0).
         screen.OnMouseDown(screen.ScaleButtonRects[0].MidX, screen.ScaleButtonRects[0].MidY);
-        Assert.Equal(2.0, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(1.0, screen.CameraPixelsPerWorldUnit);
 
         for (int i = 0; i < 10; i++)
             screen.OnMouseWheel(960, 540, 1.0f);
 
-        Assert.Equal(2.0, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(1.0, screen.CameraPixelsPerWorldUnit);
     }
 
     [Fact]
-    public void Wheel_zoom_in_from_M1_reaches_half_step()
+    public void Wheel_zoom_in_from_M1_uses_fractional_step()
     {
         var (_, screen) = CreateScreen();
         Render(screen);
+        screen.OnMouseDown(screen.ScaleButtonRects[1].MidX, screen.ScaleButtonRects[1].MidY);
 
         // Default PPU is 1.0 (M1) — one wheel step in reaches 1.25,
-        // proving the wheel allows zooming up to M0.5 (2.0).
-        Assert.Equal(1.0, screen.CameraPixelsPerWorldUnit);
+        // proving the wheel allows zooming up to M0.5 (1.0).
+        Assert.Equal(0.1, screen.CameraPixelsPerWorldUnit);
 
         screen.OnMouseWheel(960, 540, 1.0f);
-        Assert.Equal(1.25, screen.CameraPixelsPerWorldUnit, precision: 12);
+        Assert.Equal(0.125, screen.CameraPixelsPerWorldUnit, precision: 12);
 
         // And it never exceeds the new upper boundary.
         for (int i = 0; i < 10; i++)
             screen.OnMouseWheel(960, 540, 1.0f);
 
-        Assert.True(screen.CameraPixelsPerWorldUnit <= 2.0,
-            $"PPU={screen.CameraPixelsPerWorldUnit} must not exceed 2.0");
+        Assert.True(screen.CameraPixelsPerWorldUnit <= 1.0,
+            $"PPU={screen.CameraPixelsPerWorldUnit} must not exceed 1.0");
     }
 }

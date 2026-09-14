@@ -33,6 +33,8 @@ public class ModalTransitionTests
             gate?.TrySetResult();
         }
 
+        public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+
         public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken ct = default)
             => ValueTask.CompletedTask;
 
@@ -64,6 +66,7 @@ public class ModalTransitionTests
         {
             yield return new AuthoritativeSnapshot(0, 0, SimulationSpeed.Speed1,
                 ImmutableArray<ObjectMotionSnapshot>.Empty);
+            await Task.Delay(Timeout.Infinite, ct);
         }
 
         public ValueTask SaveAsync(string slotId, CancellationToken ct = default) => ValueTask.CompletedTask;
@@ -75,7 +78,7 @@ public class ModalTransitionTests
     public async Task Buffer_speed_not_updated_until_SetSpeedAsync_completes()
     {
         var conn = new ControllableConnection();
-        var handle = new GameSessionHandle(conn);
+        await using var handle = new GameSessionHandle(conn);
 
         // Wait for initial snapshot
         while (handle.Buffer.Latest is null)
@@ -113,7 +116,7 @@ public class ModalTransitionTests
     public async Task Save_window_opened_from_GameMenu_resumes_original_speed_through_delayed_connection()
     {
         var conn = new ControllableConnection();
-        var handle = new GameSessionHandle(conn);
+        await using var handle = new GameSessionHandle(conn);
 
         while (handle.Buffer.Latest is null)
             await Task.Delay(10);
@@ -170,7 +173,7 @@ public class ModalTransitionTests
     public async Task Load_window_opened_from_GameMenu_resumes_original_speed_through_delayed_connection()
     {
         var conn = new ControllableConnection();
-        var handle = new GameSessionHandle(conn);
+        await using var handle = new GameSessionHandle(conn);
 
         while (handle.Buffer.Latest is null)
             await Task.Delay(10);
@@ -217,7 +220,7 @@ public class ModalTransitionTests
     public async Task Nested_modal_preserves_saved_speed_through_delayed_connection()
     {
         var conn = new ControllableConnection();
-        var handle = new GameSessionHandle(conn);
+        await using var handle = new GameSessionHandle(conn);
 
         while (handle.Buffer.Latest is null)
             await Task.Delay(10);
