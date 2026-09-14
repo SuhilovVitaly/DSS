@@ -209,16 +209,16 @@ public class TacticalMapViewTests
         var levels = GridRenderer.GetEligibleLevels(ppu, settings);
         Assert.InRange(levels.Count, 2, 6);
         Assert.Contains(levels, step => GridRenderer.LevelOpacity(step, ppu, settings) > .5);
-        Assert.All(levels, step => Assert.InRange(step * ppu, 24, 480));
+        Assert.All(levels, step => Assert.InRange(step * ppu, 20 - 1e-9, 48000));
     }
 
     [Fact]
     public void Grid_fades_in_continuously_at_threshold()
     {
         var settings = new TacticalMapSettings();
-        Assert.Equal(0, GridRenderer.LevelOpacity(100, .24, settings));
-        Assert.InRange(GridRenderer.LevelOpacity(100, .240001, settings), 0, .0001);
-        Assert.Equal(1, GridRenderer.LevelOpacity(100, .48, settings));
+        Assert.Equal(0, GridRenderer.LevelOpacity(200, .1, settings));
+        Assert.InRange(GridRenderer.LevelOpacity(200, .100001, settings), 0, .0001);
+        Assert.Equal(1, GridRenderer.LevelOpacity(200, .2, settings));
     }
 
     [Fact]
@@ -226,7 +226,7 @@ public class TacticalMapViewTests
     {
         Assert.Throws<ArgumentException>(() => (new TacticalMapSettings { MetersPerPixel = [100, 50, 1000, 10000, 100000] }).Validate());
         Assert.Throws<ArgumentException>(() => (new TacticalMapSettings { WheelFactor = double.NaN }).Validate());
-        Assert.Throws<ArgumentException>(() => (new TacticalMapSettings { GridMantissas = [0] }).Validate());
+        Assert.Throws<ArgumentException>(() => (new TacticalMapSettings { GridBaseCellPixels = 0 }).Validate());
     }
 
     [Fact]

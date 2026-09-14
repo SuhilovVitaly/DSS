@@ -20,9 +20,9 @@ public sealed record TacticalMapSettings
     public int MaximumLabels { get; init; } = 48;
     public double ClusterPpu { get; init; } = .001;
     public double ClusterCellPixels { get; init; } = 40;
-    public double GridMinimumPixels { get; init; } = 24;
-    public double GridFadePixels { get; init; } = 24;
-    public double[] GridMantissas { get; init; } = [1, 2, 5];
+    public double GridBaseCellPixels { get; init; } = 200;
+    public double GridMinimumPixels { get; init; } = 20;
+    public double GridFadePixels { get; init; } = 20;
     public double FitPaddingPixels { get; init; } = 32;
     public double MaximumPpu => MetersPerWorldUnit / MetersPerPixel[0];
     public double[] ScaleTargets => MetersPerPixel.Select(m => MetersPerWorldUnit / m).ToArray();
@@ -39,10 +39,9 @@ public sealed record TacticalMapSettings
             !InRange(TrailDetailPpu, MinimumPpu, MaximumPpu) || MaximumLabels is < 4 or > 200 ||
             !InRange(ClusterCellPixels, 16, 128) || !InRange(GridMinimumPixels, 10, 100) ||
             !InRange(GridFadePixels, 1, 100) || !InRange(FitPaddingPixels, 8, 100) ||
-            GridMantissas is not { Length: >= 1 and <= 5 } || GridMantissas.Any(m => !InRange(m, 1, 9)) ||
-            GridMantissas.Distinct().Count() != GridMantissas.Length)
+            !InRange(GridBaseCellPixels, GridMinimumPixels + GridFadePixels, 1000))
             throw new ArgumentException("Invalid tactical map settings.");
-        return this with { MetersPerPixel = (double[])MetersPerPixel.Clone(), GridMantissas = GridMantissas.Order().ToArray() };
+        return this with { MetersPerPixel = (double[])MetersPerPixel.Clone() };
     }
 
     public static TacticalMapSettings Load(string path)

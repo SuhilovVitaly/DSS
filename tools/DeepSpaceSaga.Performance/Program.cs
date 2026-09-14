@@ -49,6 +49,11 @@ if (args.Contains("--trajectory-review"))
     RenderTrajectoryReview();
     return;
 }
+if (args.Contains("--grid-review"))
+{
+    RenderGridReview();
+    return;
+}
 using (var engine = Engine())
 {
     long time = 0;
@@ -191,6 +196,26 @@ void Measure(string name, int count, Action action, Action? prepare = null)
         times[^1], allocated / (double)count, retainedDelta, privateBefore, privateAfter, collections);
     results.Add(result);
     Console.WriteLine(JsonSerializer.Serialize(result));
+}
+
+void RenderGridReview()
+{
+    var settings = TacticalMapSettings.Load(Path.Combine(root, "src/DeepSpaceSaga.Client/Settings.json"));
+    var grid = new GridRenderer(settings);
+    string directory = Path.Combine(Directory.GetParent(root)!.FullName, "DSS-Images", "temp", "map-performance");
+    Directory.CreateDirectory(directory);
+    foreach (var (name, relativeZoom) in new[] { ("max", 1.0), ("fade", .15), ("parent", .1),
+        ("grandparent", .02), ("far", 1e-12) })
+    {
+        const int size = 1200;
+        double ppu = settings.MaximumPpu * relativeZoom;
+        using var surface = SKSurface.Create(new SKImageInfo(size, size));
+        var camera = new CameraState(550 / ppu, 550 / ppu, ppu);
+        grid.Draw(surface.Canvas, camera, size, size);
+        using var picture = surface.Snapshot(); using var png = picture.Encode(SKEncodedImageFormat.Png, 100);
+        string path = Path.Combine(directory, "grid-review-" + name + ".png");
+        using var file = File.Create(path); png.SaveTo(file); Console.WriteLine(path);
+    }
 }
 
 void RenderTrajectoryReview()

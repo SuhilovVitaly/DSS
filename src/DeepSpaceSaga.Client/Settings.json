@@ -32,13 +32,9 @@
       "maximumLabels": 48,
       "clusterPpu": 0.001,
       "clusterCellPixels": 40,
-      "gridMinimumPixels": 24,
-      "gridFadePixels": 24,
-      "gridMantissas": [
-        1,
-        2,
-        5
-      ],
+      "gridBaseCellPixels": 200,
+      "gridMinimumPixels": 20,
+      "gridFadePixels": 20,
       "fitPaddingPixels": 32
     }
   }
