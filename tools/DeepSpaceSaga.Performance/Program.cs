@@ -44,6 +44,11 @@ if (args.Contains("--map-review"))
     RenderMapReview();
     return;
 }
+if (args.Contains("--trajectory-review"))
+{
+    RenderTrajectoryReview();
+    return;
+}
 using (var engine = Engine())
 {
     long time = 0;
@@ -186,6 +191,38 @@ void Measure(string name, int count, Action action, Action? prepare = null)
         times[^1], allocated / (double)count, retainedDelta, privateBefore, privateAfter, collections);
     results.Add(result);
     Console.WriteLine(JsonSerializer.Serialize(result));
+}
+
+void RenderTrajectoryReview()
+{
+    using var engine = Engine();
+    var baseline = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
+    var ship = baseline.Objects.Single(o => o.ObjectId == baseline.PlayerShipObjectId) with
+    {
+        X = -1000, Y = 500, SpeedKmS = 3, Direction = 270,
+        ActiveEngineCommandType = NavigationComputerCommandTypes.Approach,
+        NavigationTargetX = 0, NavigationTargetY = 0, NavigationTargetSpeedKmS = 5,
+        NavigationTargetDirectionDegrees = 90, NavigationTargetObjectId = "QA-TARGET"
+    };
+    ship = ship with { ApproachRoute = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 5, 10, 4) };
+    foreach (var (name, preset, approach) in new[] { ("approach", 1, true), ("approach-far", 4, true), ("straight-far", 4, false) })
+    {
+        var player = approach ? ship : ship with { ApproachRoute = null, ActiveEngineCommandType = null,
+            NavigationTargetX = null, NavigationTargetY = null, Direction = 90 };
+        var buffer = new SnapshotBuffer();
+        buffer.Update(baseline with { Objects = [player, new("QA-TARGET", 0, 0, 5, 90,
+            RenderObjectType: SpaceObjectType.Asteroid, DisplayName: "Faster target")] });
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
+        using var surface = SKSurface.Create(new SKImageInfo(1920, 1080));
+        screen.Render(surface.Canvas, 1920, 1080);
+        var button = screen.ScaleButtonRects[preset]; screen.OnMouseDown(button.MidX, button.MidY);
+        screen.Render(surface.Canvas, 1920, 1080);
+        using var picture = surface.Snapshot(); using var png = picture.Encode(SKEncodedImageFormat.Png, 100);
+        string directory = Path.Combine(Directory.GetParent(root)!.FullName, "DSS-Images", "temp", "map-performance");
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "trajectory-review-" + name + ".png");
+        using var file = File.Create(path); png.SaveTo(file); Console.WriteLine(path);
+    }
 }
 
 void RenderMapReview()

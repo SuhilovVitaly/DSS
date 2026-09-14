@@ -15,6 +15,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// </summary>
 internal sealed class NavigationTrajectoryProjector
 {
+    private readonly LinearMotionPredictor _displayPredictor = new();
     /// <summary>Same horizon as the future trajectory — never longer than the engine can fly.</summary>
     public const int FutureTrajectoryHorizonMs = FutureTrajectoryProjector.FutureTrajectoryHorizonMs;
 
@@ -228,6 +229,48 @@ internal sealed class NavigationTrajectoryProjector
             elapsedMs += intervalMs;
         }
 
+        return points;
+    }
+
+    /// <summary>
+    /// Display continuation after the finite manoeuvre. The physical route and its
+    /// completion marker remain intact; forward flight follows the terminal course.
+    /// An Approach target can be faster than the player: its future position is a
+    /// point on this course, not a promise that the ship intercepts it at that time.
+    /// </summary>
+    internal List<FutureTrajectoryPoint> ProjectPlayerInto(ObjectMotionSnapshot predicted,
+        List<FutureTrajectoryPoint> points, CameraState camera, int width, int height,
+        out bool isConfirmedIntercept, out FutureTrajectoryPoint interceptPoint)
+    {
+        // Legacy Approach may return its own list. Always use the returned list.
+        points = ProjectInto(predicted, points, out isConfirmedIntercept, out interceptPoint);
+        if (points.Count == 0 || predicted.SpeedKmS <= 0) return points;
+
+        if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach && predicted.ApproachRoute is { } route)
+        {
+            // The route captures the target's aft line. Continue along that line to
+            // the target at route completion, even when the target is pulling away.
+            double angle = route.TargetDirection * Math.PI / 180;
+            double dx = Math.Sin(angle), dy = -Math.Cos(angle);
+            double distance = route.TargetSpeedKmS * 10 * route.DurationMs / 1000;
+            var target = new FutureTrajectoryPoint(route.TargetX + distance * dx, route.TargetY + distance * dy);
+            var last = points[^1];
+            if ((target.X - last.X) * dx + (target.Y - last.Y) * dy > 1e-7)
+                points.Add(target);
+            TrajectoryViewportGeometry.ExtendToEdge(points, route.TargetDirection, camera, width, height);
+            return points;
+        }
+
+        if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach)
+        {
+            if (predicted.NavigationTargetDirectionDegrees is { } heading)
+                TrajectoryViewportGeometry.ExtendToEdge(points, heading, camera, width, height);
+            return points;
+        }
+
+        var terminal = _displayPredictor.Predict(predicted, FutureTrajectoryHorizonMs);
+        if (LinearMotionPredictor.IsLinear(terminal) || terminal.NavigationLockedCourseDegrees is not null)
+            TrajectoryViewportGeometry.ExtendToEdge(points, terminal.NavigationLockedCourseDegrees ?? terminal.Direction, camera, width, height);
         return points;
     }
 

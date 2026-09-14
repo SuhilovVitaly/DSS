@@ -54,6 +54,27 @@ internal sealed class FutureTrajectoryProjector
     }
 
     /// <summary>
+    /// Player display extends straight flight to the viewport edge instead of stopping
+    /// after 200 seconds. Curved/closed motion retains the predictor's actual geometry.
+    /// Other objects and time-based callers keep ProjectInto's bounded horizon.
+    /// </summary>
+    internal void ProjectPlayerInto(ObjectMotionSnapshot state, List<FutureTrajectoryPoint> points,
+        CameraState camera, int width, int height)
+    {
+        if (_predictor is LinearMotionPredictor && LinearMotionPredictor.IsLinear(state))
+        {
+            points.Clear();
+            points.Add(new(state.X, state.Y));
+            if (state.SpeedKmS > 0) TrajectoryViewportGeometry.ExtendToEdge(points, state.Direction, camera, width, height);
+            return;
+        }
+        ProjectInto(state, points);
+        var lastState = _predictor.Predict(state, FutureTrajectoryHorizonMs);
+        if (lastState.SpeedKmS > 0 && LinearMotionPredictor.IsLinear(lastState))
+            TrajectoryViewportGeometry.ExtendToEdge(points, lastState.Direction, camera, width, height);
+    }
+
+    /// <summary>
     /// Determine whether a future trajectory should be drawn for the given object.
     /// </summary>
     public static bool ShouldDraw(ObjectMotionSnapshot state)

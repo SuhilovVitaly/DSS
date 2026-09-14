@@ -210,6 +210,7 @@ public sealed partial class GameSessionScreen : IScreen
     internal double CameraFocusX => _camera.FocusX;
     internal double CameraFocusY => _camera.FocusY;
     internal double CameraPixelsPerWorldUnit => _camera.PixelsPerWorldUnit;
+    internal FutureTrajectoryPoint? DisplayedPlayerTrajectoryEnd { get; private set; }
     internal SKRect LastPanelRect => _lastPanelRect;
     internal SKRect LastCloseRect => _lastCloseRect;
     internal SimulationSpeed LastNonPauseSpeed => _lastNonPauseSpeed;
@@ -966,6 +967,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void Render(SKCanvas canvas, int width, int height)
     {
+        DisplayedPlayerTrajectoryEnd = null;
         RenderStageCompleted?.Invoke("begin");
         _viewportW = width;
         _viewportH = height;
@@ -1510,19 +1512,20 @@ public sealed partial class GameSessionScreen : IScreen
             if (!FutureTrajectoryProjector.ShouldDraw(state.Predicted))
                 continue;
 
-            // navigation.approach already gets its own single-color path from
-            // DrawNavigationTrajectories (same pursuit math, run to actual arrival).
-            // Drawing this generic straight-line projection on top of it produced a
-            // visible two-color trajectory for the same course. Only applies to the
-            // player ship — a selected target never has its own Approach command.
-            if (state.IsPlayerShip && state.Predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach)
+            // Active navigation has its own complete, single-color player path.
+            // Do not overlay a second, finite-horizon forecast on that same course.
+            if (state.IsPlayerShip && state.Predicted.NavigationTargetX is not null)
                 continue;
 
-            _futureTrajectoryProjector.ProjectInto(state.Predicted, _futureTrajectoryPoints);
+            if (state.IsPlayerShip)
+                _futureTrajectoryProjector.ProjectPlayerInto(state.Predicted, _futureTrajectoryPoints, _camera, width, height);
+            else
+                _futureTrajectoryProjector.ProjectInto(state.Predicted, _futureTrajectoryPoints);
             var points = _futureTrajectoryPoints;
             if (points.Count < 2)
                 continue;
 
+            if (state.IsPlayerShip) DisplayedPlayerTrajectoryEnd = points[^1];
             _depthRenderer.DrawFutureTrajectory(canvas, points, _camera, width, height);
         }
     }
@@ -1558,10 +1561,13 @@ public sealed partial class GameSessionScreen : IScreen
                 // into the authoritative NavigationPhase string — gating on the phase
                 // string here would miss that first frame and read as "no intercept" even
                 // though the curve shown IS already the confirmed one.
-                var points = _navigationTrajectoryProjector.ProjectInto(
-                    predicted, _futureTrajectoryPoints, out bool isConfirmedIntercept, out var interceptPoint);
+                var points = _navigationTrajectoryProjector.ProjectPlayerInto(
+                    predicted, _futureTrajectoryPoints, _camera, width, height, out bool isConfirmedIntercept, out var interceptPoint);
                 if (points.Count >= 2)
+                {
+                    DisplayedPlayerTrajectoryEnd = points[^1];
                     _depthRenderer.DrawNavigationTrajectory(canvas, points, _camera, width, height);
+                }
 
                 DrawNavigationTargetMarker(canvas, predicted.NavigationTargetX.Value, predicted.NavigationTargetY!.Value, width, height);
 
