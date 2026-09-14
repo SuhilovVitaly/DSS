@@ -651,6 +651,14 @@ public sealed class SkiaWindow : IDisposable
                         _modalDepth++;
                     }
                     break;
+                case ScreenEvent.OpenTempCharacterImage:
+                    if (_screens.Current is GameSessionScreen)
+                        await PushModalAsync(new Screens.TempCharacterImage.TempCharacterImageScreen());
+                    break;
+                case ScreenEvent.CloseTempCharacterImage:
+                    if (_screens.Current is Screens.TempCharacterImage.TempCharacterImageScreen)
+                        await CloseOverlayAsync();
+                    break;
                 case ScreenEvent.CloseDialogue:
                     if (_screens.Current is DialogueScreen)
                     {

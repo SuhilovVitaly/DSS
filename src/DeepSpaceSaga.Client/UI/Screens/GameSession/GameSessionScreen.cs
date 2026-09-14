@@ -113,6 +113,14 @@ public sealed partial class GameSessionScreen : IScreen
     private SKRect _lastMechanicsPanelRect;
     private SKRect _lastFinanceButtonRect;
     private SKRect _lastShipButtonRect;
+    private SKRect _lastTempCharacterImageButtonRect;
+    private bool _isTempCharacterImageButtonHovered;
+    private static readonly SKPaint PortraitButtonTextPaint = new()
+    {
+        IsAntialias = true, TextSize = 14, TextAlign = SKTextAlign.Center,
+        Color = new SKColor(220, 220, 220), Typeface = DeepSpaceSaga.Client.UI.Controls.MenuStyle.TypefaceRegular
+    };
+    internal SKRect LastTempCharacterImageButtonRect => _lastTempCharacterImageButtonRect;
     private bool _isFinanceButtonHovered;
     private bool _isShipButtonHovered;
 
@@ -391,6 +399,8 @@ public sealed partial class GameSessionScreen : IScreen
             return ScreenEvent.OpenFinance;
         if (_lastShipButtonRect.Contains(uiX, uiY))
             return ScreenEvent.OpenShip;
+        if (_lastTempCharacterImageButtonRect.Contains(uiX, uiY))
+            return ScreenEvent.OpenTempCharacterImage;
 
         // 2. Commands Panel (top-left) — consume clicks, don't pan (ТЗ подзадача 1).
         if (_commandsPanel.OnMouseDown(uiX, uiY))
@@ -507,8 +517,9 @@ public sealed partial class GameSessionScreen : IScreen
         RecomputeActiveObjectId();
         _isFinanceButtonHovered = _lastFinanceButtonRect.Contains(_uiMouseX, _uiMouseY);
         _isShipButtonHovered = _lastShipButtonRect.Contains(_uiMouseX, _uiMouseY);
+        _isTempCharacterImageButtonHovered = _lastTempCharacterImageButtonRect.Contains(_uiMouseX, _uiMouseY);
         bool objectInfoHovered = _objectInfoPanel.OnMouseMove(_uiMouseX, _uiMouseY);
-        return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY) || objectInfoHovered || _isFinanceButtonHovered || _isShipButtonHovered ||
+        return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY) || objectInfoHovered || _isFinanceButtonHovered || _isShipButtonHovered || _isTempCharacterImageButtonHovered ||
             _mapViewButtons.Where((_, i) => IsMapViewAvailable(i)).Any(r => r.Contains(_uiMouseX, _uiMouseY));
     }
 
@@ -2070,7 +2081,8 @@ public sealed partial class GameSessionScreen : IScreen
     private void DrawMechanicsPanel(SKCanvas canvas)
     {
         const int buttonCount = 2;
-        float panelW = MechanicsButtonWidth * buttonCount + MechanicsButtonGap * (buttonCount - 1) + MechanicsPanelPadding * 2;
+        const float portraitButtonWidth = 188f;
+        float panelW = MechanicsButtonWidth * buttonCount + MechanicsButtonGap * buttonCount + MechanicsPanelPadding * 2 + portraitButtonWidth;
         float panelH = MechanicsButtonHeight + MechanicsPanelPadding * 2;
         float panelX = (_uiViewportW - panelW) / 2f;
         float panelY = _uiViewportH - panelH - PanelMargin;
@@ -2088,6 +2100,11 @@ public sealed partial class GameSessionScreen : IScreen
         btnX += MechanicsButtonWidth + MechanicsButtonGap;
         _lastShipButtonRect = new SKRect(btnX, btnY, btnX + MechanicsButtonWidth, btnY + MechanicsButtonHeight);
         DrawMechanicsButton(canvas, _lastShipButtonRect, "S", _isShipButtonHovered);
+        btnX += MechanicsButtonWidth + MechanicsButtonGap;
+        _lastTempCharacterImageButtonRect = new SKRect(btnX, btnY, btnX + portraitButtonWidth, btnY + MechanicsButtonHeight);
+        canvas.DrawRect(_lastTempCharacterImageButtonRect, _isTempCharacterImageButtonHovered ? _mechanicsBtnHoverPaint : _mechanicsBtnNormalPaint);
+        canvas.DrawRect(_lastTempCharacterImageButtonRect, _panelBorderPaint);
+        canvas.DrawText("TempCharacterImage", _lastTempCharacterImageButtonRect.MidX, _lastTempCharacterImageButtonRect.MidY + 5, PortraitButtonTextPaint);
     }
 
     private void DrawMechanicsButton(SKCanvas canvas, SKRect rect, string label, bool hovered)
