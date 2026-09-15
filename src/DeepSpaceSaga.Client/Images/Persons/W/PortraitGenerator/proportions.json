@@ -1,0 +1,83 @@
+{
+  "coordinateSystem": "Normalized from newly authored 1254px master; x right, y down. Approximate manual measurements.",
+  "landmarks": {
+    "Crown": {
+      "x": 0.49202552,
+      "y": 0.03907496
+    },
+    "EyeLeft": {
+      "x": 0.38277513,
+      "y": 0.4122807
+    },
+    "EyeRight": {
+      "x": 0.6060606,
+      "y": 0.4122807
+    },
+    "Brow": {
+      "x": 0.49282297,
+      "y": 0.34688994
+    },
+    "NoseBase": {
+      "x": 0.49282297,
+      "y": 0.5869219
+    },
+    "Mouth": {
+      "x": 0.49202552,
+      "y": 0.6586922
+    },
+    "Chin": {
+      "x": 0.49441788,
+      "y": 0.8165869
+    },
+    "CheekLeft": {
+      "x": 0.25199363,
+      "y": 0.50239235
+    },
+    "CheekRight": {
+      "x": 0.73285484,
+      "y": 0.50239235
+    },
+    "InnerEyeLeft": {
+      "x": 0.44657096,
+      "y": 0.41626793
+    },
+    "InnerEyeRight": {
+      "x": 0.54545456,
+      "y": 0.41626793
+    },
+    "OuterEyeLeft": {
+      "x": 0.31738436,
+      "y": 0.4122807
+    },
+    "OuterEyeRight": {
+      "x": 0.67464113,
+      "y": 0.4122807
+    },
+    "NoseWingLeft": {
+      "x": 0.4385965,
+      "y": 0.56379586
+    },
+    "NoseWingRight": {
+      "x": 0.5518341,
+      "y": 0.56379586
+    },
+    "MouthLeft": {
+      "x": 0.40111643,
+      "y": 0.6586922
+    },
+    "MouthRight": {
+      "x": 0.58213717,
+      "y": 0.6586922
+    }
+  },
+  "measured": {
+    "eyeHeadFraction": 0.48,
+    "middleThird": 301,
+    "lowerThird": 288,
+    "mouthLowerThirdFraction": 0.3125,
+    "eyeSpacingToMeanFissure": 0.7654320987654321,
+    "mouthToNoseWidth": 1.5985915492957747,
+    "mouthToCheekWidth": 0.37645107794361526
+  },
+  "limitation": "Hairline is absent on a bald head and is not measured. Canons are guides, not constraints used to deform the image."
+}

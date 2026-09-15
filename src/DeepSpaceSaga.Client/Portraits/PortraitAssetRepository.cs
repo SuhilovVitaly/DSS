@@ -36,7 +36,19 @@ public sealed class PortraitAssetRepository
             ValidateTexture(part.Texture, validateTextures);
             if (part.ColorMask is not null) ValidateTexture(part.ColorMask, validateTextures);
             foreach (var texture in part.Expressions.Values) ValidateTexture(texture, validateTextures);
+            foreach (var entry in part.TextureVersions.Concat(part.ColorMaskVersions).Concat(part.SkinMaskVersions))
+            {
+                if (!Style.SupportedLibraryVersions.Contains(entry.Key)) throw new InvalidDataException($"Unknown texture version in {part.Id}.");
+                ValidateTexture(entry.Value, validateTextures);
+            }
         }
+        foreach (var part in Parts)
+            foreach (var entry in part.FaceTextures)
+            {
+                if (!_byId.TryGetValue(entry.Key, out var face) || face.Category != "Face")
+                    throw new InvalidDataException($"Unknown face texture dependency in {part.Id}.");
+                ValidateTexture(entry.Value, validateTextures);
+            }
         foreach (var part in Parts)
             if (part.RequiresComponents.Concat(part.ExcludesComponents).Any(id => !_byId.ContainsKey(id)))
                 throw new InvalidDataException($"Unknown compatibility dependency in {part.Id}.");
@@ -80,7 +92,7 @@ public sealed class PortraitAssetRepository
                 !p.Tags.Contains(appearance.Gender) || !p.Tags.Contains(appearance.Race) || !p.Tags.Contains(appearance.Age)) return false;
             selected.Add(p);
         }
-        if (Style.Layers.Any(l => l.Required && !appearance.Parts.ContainsKey(l.Category))) return false;
+        if (Style.Layers.Any(l => l.Required && l.IntroducedInVersion <= appearance.LibraryVersion && !appearance.Parts.ContainsKey(l.Category))) return false;
         var tags = selected.SelectMany(p => p.Tags).ToHashSet(StringComparer.Ordinal);
         var ids = selected.Select(p => p.Id).ToHashSet(StringComparer.Ordinal);
         return selected.All(p => p.RequiresTags.All(tags.Contains) && !p.ExcludesTags.Any(tags.Contains) &&

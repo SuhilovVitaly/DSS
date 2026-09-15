@@ -5,7 +5,9 @@ namespace DeepSpaceSaga.Client.Portraits;
 /// <summary>UI-independent raster compositor. Returned images are borrowed until eviction/disposal.</summary>
 public sealed class PortraitRenderer(PortraitAssetRepository assets) : IDisposable
 {
-    private readonly Dictionary<string, SKBitmap> _textures = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, LinkedListNode<(string Path, SKBitmap Bitmap)>> _textures = new(StringComparer.Ordinal);
+    private readonly LinkedList<(string Path, SKBitmap Bitmap)> _textureLru = new();
+    internal int CachedTextureCount => _textures.Count;
     private readonly Dictionary<string, LinkedListNode<(string Key, SKImage Image)>> _cache = new(StringComparer.Ordinal);
     private readonly LinkedList<(string Key, SKImage Image)> _lru = new();
     public int CachedCount => _cache.Count;
@@ -30,30 +32,60 @@ public sealed class PortraitRenderer(PortraitAssetRepository assets) : IDisposab
         {
             if (!appearance.Parts.TryGetValue(layer.Category, out var id)) continue;
             var part = assets.Get(id);
-            var texture = Texture(part.Expressions.GetValueOrDefault(state.Expression, part.Texture));
-            if (part.ColorChannel is null) { canvas.DrawBitmap(texture, destination, paint); continue; }
-            var color = SKColor.Parse(appearance.Colors[part.ColorChannel]);
-            var original = SKColor.Parse(part.BaseColor);
-            using var filter = SKColorFilter.CreateColorMatrix([
-                color.Red / (float)Math.Max(1, (int)original.Red), 0, 0, 0, 0,
-                0, color.Green / (float)Math.Max(1, (int)original.Green), 0, 0, 0,
-                0, 0, color.Blue / (float)Math.Max(1, (int)original.Blue), 0, 0,
-                0, 0, 0, 1, 0]);
-            if (part.ColorMask is null)
-            {
-                paint.ColorFilter = filter; canvas.DrawBitmap(texture, destination, paint); paint.ColorFilter = null;
-            }
+            var texture = Texture(part.Expressions.GetValueOrDefault(state.Expression, part.TextureFor(appearance.LibraryVersion, appearance.Parts.GetValueOrDefault("Face"))));
+            string? skinMask = part.SkinMaskFor(appearance.LibraryVersion);
+            if (skinMask is not null) canvas.SaveLayer();
+            if (part.ColorChannel is null) canvas.DrawBitmap(texture, destination, paint);
             else
             {
-                // Color only the authored region (iris), retaining the white, lashes and highlights.
-                canvas.DrawBitmap(texture, destination, paint);
-                canvas.SaveLayer();
-                paint.ColorFilter = filter; canvas.DrawBitmap(texture, destination, paint); paint.ColorFilter = null;
-                paint.BlendMode = SKBlendMode.DstIn; canvas.DrawBitmap(Texture(part.ColorMask), destination, paint);
+                var color = SKColor.Parse(appearance.Colors[part.ColorChannel]);
+                var original = SKColor.Parse(part.BaseColor);
+                using var filter = SKColorFilter.CreateColorMatrix([
+                    color.Red / (float)Math.Max(1, (int)original.Red), 0, 0, 0, 0,
+                    0, color.Green / (float)Math.Max(1, (int)original.Green), 0, 0, 0,
+                    0, 0, color.Blue / (float)Math.Max(1, (int)original.Blue), 0, 0,
+                    0, 0, 0, 1, 0]);
+                string? colorMask = part.ColorMaskFor(appearance.LibraryVersion);
+                if (colorMask is null)
+                {
+                    paint.ColorFilter = filter; canvas.DrawBitmap(texture, destination, paint); paint.ColorFilter = null;
+                }
+                else
+                {
+                    // Color only the authored region (iris), retaining the white, lashes and highlights.
+                    canvas.DrawBitmap(texture, destination, paint);
+                    canvas.SaveLayer();
+                    paint.ColorFilter = filter; canvas.DrawBitmap(texture, destination, paint); paint.ColorFilter = null;
+                    paint.BlendMode = SKBlendMode.DstIn; canvas.DrawBitmap(Texture(colorMask), destination, paint);
+                    paint.BlendMode = SKBlendMode.SrcOver; canvas.Restore();
+                }
+            }
+            if (skinMask is not null)
+            {
+                var skin = SKColor.Parse(appearance.Colors["Skin"]);
+                using var skinFilter = SKColorFilter.CreateColorMatrix([
+                    skin.Red / 233f, 0, 0, 0, 0,
+                    0, skin.Green / 198f, 0, 0, 0,
+                    0, 0, skin.Blue / 173f, 0, 0,
+                    0, 0, 0, 0, 255]);
+                // Replace masked RGB inside this component while retaining its original alpha.
+                // SrcOver would apply soft edge alpha twice and produce visible pale seams.
+                using var replace = new SKPaint { BlendMode = SKBlendMode.SrcATop };
+                canvas.SaveLayer(replace); paint.ColorFilter = skinFilter; canvas.DrawBitmap(texture, destination, paint);
+                paint.ColorFilter = null; paint.BlendMode = SKBlendMode.DstIn;
+                canvas.DrawBitmap(Texture(skinMask), destination, paint);
                 paint.BlendMode = SKBlendMode.SrcOver; canvas.Restore();
+                canvas.Restore();
             }
         }
         var image = surface.Snapshot();
+        // A growing face library must not retain every decoded 1024px layer.
+        // Evict after composition, when no layer still holds a borrowed bitmap.
+        while (_textures.Count > 64)
+        {
+            var last = _textureLru.Last!;
+            _textures.Remove(last.Value.Path); last.Value.Bitmap.Dispose(); _textureLru.RemoveLast();
+        }
         var node = _lru.AddFirst((key, image)); _cache.Add(key, node); CompositionCount++;
         while (_cache.Count > assets.Style.MaxCachedPortraits)
         {
@@ -64,15 +96,19 @@ public sealed class PortraitRenderer(PortraitAssetRepository assets) : IDisposab
 
     private SKBitmap Texture(string path)
     {
-        if (!_textures.TryGetValue(path, out var image))
-            _textures[path] = image = SKBitmap.Decode(assets.TexturePath(path)) ?? throw new InvalidDataException($"Cannot decode {path}.");
+        if (_textures.TryGetValue(path, out var node))
+        {
+            _textureLru.Remove(node); _textureLru.AddFirst(node); return node.Value.Bitmap;
+        }
+        var image = SKBitmap.Decode(assets.TexturePath(path)) ?? throw new InvalidDataException($"Cannot decode {path}.");
+        _textures.Add(path, _textureLru.AddFirst((path, image)));
         return image;
     }
 
     public void Dispose()
     {
         foreach (var item in _lru) item.Image.Dispose();
-        foreach (var item in _textures.Values) item.Dispose();
-        _lru.Clear(); _cache.Clear(); _textures.Clear();
+        foreach (var item in _textureLru) item.Bitmap.Dispose();
+        _lru.Clear(); _cache.Clear(); _textures.Clear(); _textureLru.Clear();
     }
 }

@@ -4,6 +4,7 @@
 
 - Save all generated or edited project images under `DSS-Images\temp`.
 - Do not use other `DSS-Images` subfolders for new image outputs unless the user explicitly asks for a different destination.
+- Exception requested by the user: the modular female portrait pack is stored and maintained in `src/DeepSpaceSaga.Client/Images/Persons/W/PortraitGenerator`. Its `Sources`, `Generated`, and `Golden` folders are authoring/test data and must not ship with the game.
 
 ## Requirements Engineering
 

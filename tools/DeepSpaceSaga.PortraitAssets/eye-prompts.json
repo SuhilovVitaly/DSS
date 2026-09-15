@@ -1,0 +1,52 @@
+{
+  "mode": "built-in image_gen",
+  "editTarget": "Sources/master.png",
+  "baseline": "Existing original eyes are variant 01.",
+  "variants": [
+    {
+      "number": 2,
+      "label": "Удлинённые голубые",
+      "prompt": "Use case: identity-preserve precise local edit. Edit THIS exact realistic frontal bald adult female portrait. Change ONLY both eyes and their eyelids: elongated almond-shaped eyes with narrower vertical opening and clear steel blue irises; graceful subtly raised outer corners. Keep the same pupil centers near (480,517) and (760,517) on the 1254px square canvas, same gaze directly at camera, same eyeball size and natural human anatomy. Eye forms should be visibly different from the source while fitting this adult woman's existing orbital sockets. Preserve original eyebrows EXACTLY, skin tone, nose, lips, face outline, bald head, ears, neck, lighting and canvas registration. Confine changes to eye regions x350..605 and x645..905, y465..625. No hair, no anime, no oversized irises, no doll eyes, no dramatic eyeliner, no text, no collage. Single complete registered portrait; surrounding skin must match original for seamless modular eye extraction."
+    },
+    {
+      "number": 3,
+      "label": "Округлые карие",
+      "prompt": "Use case: identity-preserve precise local edit. Edit THIS exact realistic frontal bald adult female portrait. Change ONLY both eyes and their eyelids: rounder open eyes with a clearly curved lower eyelid and warm medium brown irises; natural adult size, not startled. Keep the same pupil centers near (480,517) and (760,517) on the 1254px square canvas, same gaze directly at camera, same eyeball size and natural human anatomy. Eye forms should be visibly different from the source while fitting this adult woman's existing orbital sockets. Preserve original eyebrows EXACTLY, skin tone, nose, lips, face outline, bald head, ears, neck, lighting and canvas registration. Confine changes to eye regions x350..605 and x645..905, y465..625. No hair, no anime, no oversized irises, no doll eyes, no dramatic eyeliner, no text, no collage. Single complete registered portrait; surrounding skin must match original for seamless modular eye extraction."
+    },
+    {
+      "number": 4,
+      "label": "Прикрытые серые",
+      "prompt": "Use case: identity-preserve precise local edit. Edit THIS exact realistic frontal bald adult female portrait. Change ONLY both eyes and their eyelids: hooded eyes with a low partly concealed upper eyelid crease, relaxed narrow opening and slate grey irises. Keep the same pupil centers near (480,517) and (760,517) on the 1254px square canvas, same gaze directly at camera, same eyeball size and natural human anatomy. Eye forms should be visibly different from the source while fitting this adult woman's existing orbital sockets. Preserve original eyebrows EXACTLY, skin tone, nose, lips, face outline, bald head, ears, neck, lighting and canvas registration. Confine changes to eye regions x350..605 and x645..905, y465..625. No hair, no anime, no oversized irises, no doll eyes, no dramatic eyeliner, no text, no collage. Single complete registered portrait; surrounding skin must match original for seamless modular eye extraction."
+    },
+    {
+      "number": 5,
+      "label": "Миндальные зелёные",
+      "prompt": "Use case: identity-preserve precise local edit. Edit THIS exact realistic frontal bald adult female portrait. Change ONLY both eyes and their eyelids: noticeably upturned almond eyes, outer canthi about 8 pixels higher than the inner canthi, emerald olive green irises. Keep the same pupil centers near (480,517) and (760,517) on the 1254px square canvas, same gaze directly at camera, same eyeball size and natural human anatomy. Eye forms should be visibly different from the source while fitting this adult woman's existing orbital sockets. Preserve original eyebrows EXACTLY, skin tone, nose, lips, face outline, bald head, ears, neck, lighting and canvas registration. Confine changes to eye regions x350..605 and x645..905, y465..625. No hair, no anime, no oversized irises, no doll eyes, no dramatic eyeliner, no text, no collage. Single complete registered portrait; surrounding skin must match original for seamless modular eye extraction."
+    },
+    {
+      "number": 6,
+      "label": "Мягкие тёмно-карие",
+      "prompt": "Use case: identity-preserve precise local edit. Edit THIS exact realistic frontal bald adult female portrait. Change ONLY both eyes and their eyelids: soft slightly downturned eyes, outer canthi about 7 pixels below inner canthi, dark chocolate brown irises and gently curved upper lids. Keep the same pupil centers near (480,517) and (760,517) on the 1254px square canvas, same gaze directly at camera, same eyeball size and natural human anatomy. Eye forms should be visibly different from the source while fitting this adult woman's existing orbital sockets. Preserve original eyebrows EXACTLY, skin tone, nose, lips, face outline, bald head, ears, neck, lighting and canvas registration. Confine changes to eye regions x350..605 and x645..905, y465..625. No hair, no anime, no oversized irises, no doll eyes, no dramatic eyeliner, no text, no collage. Single complete registered portrait; surrounding skin must match original for seamless modular eye extraction."
+    },
+    {
+      "number": 7,
+      "label": "Глубокие ореховые",
+      "prompt": "Use case: identity-preserve precise local edit. Edit THIS exact realistic frontal bald adult female portrait. Change ONLY both eyes and their eyelids: deep-set hazel eyes, defined orbital crease with natural soft upper socket shading, moderately narrow eye opening and brown-green radial iris texture. Keep the same pupil centers near (480,517) and (760,517) on the 1254px square canvas, same gaze directly at camera, same eyeball size and natural human anatomy. Eye forms should be visibly different from the source while fitting this adult woman's existing orbital sockets. Preserve original eyebrows EXACTLY, skin tone, nose, lips, face outline, bald head, ears, neck, lighting and canvas registration. Confine changes to eye regions x350..605 and x645..905, y465..625. No hair, no anime, no oversized irises, no doll eyes, no dramatic eyeliner, no text, no collage. Single complete registered portrait; surrounding skin must match original for seamless modular eye extraction."
+    },
+    {
+      "number": 8,
+      "label": "Складка у ресниц",
+      "prompt": "Use case: identity-preserve precise local edit. Edit THIS exact realistic frontal bald adult female portrait. Change ONLY both eyes and their eyelids: smooth upper eyelids with a very low subtle crease close to the lash line, elongated gently tapered eye openings, dark brown irises; fully natural adult female anatomy. Keep the same pupil centers near (480,517) and (760,517) on the 1254px square canvas, same gaze directly at camera, same eyeball size and natural human anatomy. Eye forms should be visibly different from the source while fitting this adult woman's existing orbital sockets. Preserve original eyebrows EXACTLY, skin tone, nose, lips, face outline, bald head, ears, neck, lighting and canvas registration. Confine changes to eye regions x350..605 and x645..905, y465..625. No hair, no anime, no oversized irises, no doll eyes, no dramatic eyeliner, no text, no collage. Single complete registered portrait; surrounding skin must match original for seamless modular eye extraction."
+    },
+    {
+      "number": 9,
+      "label": "Открытые серо-голубые",
+      "prompt": "Use case: identity-preserve precise local edit. Edit THIS exact realistic frontal bald adult female portrait. Change ONLY both eyes and their eyelids: open oval eyes with a distinct high upper eyelid crease, slightly more visible mobile eyelid, pale grey-blue irises; natural adult proportions. Keep the same pupil centers near (480,517) and (760,517) on the 1254px square canvas, same gaze directly at camera, same eyeball size and natural human anatomy. Eye forms should be visibly different from the source while fitting this adult woman's existing orbital sockets. Preserve original eyebrows EXACTLY, skin tone, nose, lips, face outline, bald head, ears, neck, lighting and canvas registration. Confine changes to eye regions x350..605 and x645..905, y465..625. No hair, no anime, no oversized irises, no doll eyes, no dramatic eyeliner, no text, no collage. Single complete registered portrait; surrounding skin must match original for seamless modular eye extraction."
+    },
+    {
+      "number": 10,
+      "label": "Узкие янтарные",
+      "prompt": "Use case: identity-preserve precise local edit. Edit THIS exact realistic frontal bald adult female portrait. Change ONLY both eyes and their eyelids: slender horizontally elongated eyes, relaxed upper lids and fine natural eyelashes, warm amber golden-brown irises; soft confident neutral gaze. Keep the same pupil centers near (480,517) and (760,517) on the 1254px square canvas, same gaze directly at camera, same eyeball size and natural human anatomy. Eye forms should be visibly different from the source while fitting this adult woman's existing orbital sockets. Preserve original eyebrows EXACTLY, skin tone, nose, lips, face outline, bald head, ears, neck, lighting and canvas registration. Confine changes to eye regions x350..605 and x645..905, y465..625. No hair, no anime, no oversized irises, no doll eyes, no dramatic eyeliner, no text, no collage. Single complete registered portrait; surrounding skin must match original for seamless modular eye extraction."
+    }
+  ]
+}

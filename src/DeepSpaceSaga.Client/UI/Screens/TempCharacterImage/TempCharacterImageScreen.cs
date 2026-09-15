@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using DeepSpaceSaga.Client.Portraits;
 using DeepSpaceSaga.Client.UI.Controls;
 using Silk.NET.Input;
@@ -6,280 +5,214 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TempCharacterImage;
 
-/// <summary>Temporary female portrait workshop. All coordinates share the same scaled input/render space.</summary>
+/// <summary>Frontal portrait workshop with independently selectable compatible parts.</summary>
 public sealed class TempCharacterImageScreen : IScreen
 {
     private const float Width = 1120, Height = 748;
-    private static readonly SKRect Preview = new(264, 108, 776, 620);
-    private static readonly SKRect SeedBox = new(804, 118, 994, 150);
-    private static readonly Dictionary<string, string> CategoryNames = new(StringComparer.Ordinal)
-    {
-        ["HairBack"] = "Волосы сзади", ["Face"] = "Форма лица", ["Clothes"] = "Одежда",
-        ["Eyes"] = "Глаза", ["Eyebrows"] = "Брови", ["Nose"] = "Нос", ["Mouth"] = "Губы",
-        ["HairFront"] = "Чёлка", ["Accessory"] = "Аксессуар"
-    };
-    private readonly string _assetRoot;
-    private readonly string _presetPath;
-    private readonly TextInputBox _seed = new(11);
+    private static readonly SKRect Preview = new(280, 108, 792, 620);
+    private readonly string _assetRoot, _presetPath;
     private readonly List<(SKRect Rect, Action Action)> _buttons = [];
-    private readonly HashSet<string> _locks = new(StringComparer.Ordinal);
-    private readonly List<CharacterAppearance> _undo = [], _redo = [];
     private PortraitAssetRepository? _assets;
-    private PortraitGenerator? _generator;
     private PortraitRenderer? _renderer;
     private CharacterAppearance? _appearance;
     private SKImage? _portrait;
-    private SKBitmap? _reference;
+    private SKBitmap? _layer, _reference;
     private string[] _references = [];
     private int _referenceIndex;
+    private int _seed = 1;
+    private string? _selectedLayer;
+    private bool _guides;
+    private bool _hasRendered;
     private float _scale = 1, _left, _top, _mouseX = -1, _mouseY = -1;
-    private bool _seedFocused, _compare;
-    private string _status = "Нажмите на портрет, чтобы создать нового персонажа";
+    private string _status = "Стрелки меняют деталь. Нажмите на портрет, чтобы получить новое сочетание.";
     internal CharacterAppearance? Appearance => _appearance;
     internal SKRect PortraitRect => Preview;
+    internal string? SelectedLayer => _selectedLayer;
+    private long CombinationCount => _assets is null ? 0 : _assets.Style.Layers
+        .Where(l => l.IntroducedInVersion <= _assets.Style.LibraryVersion)
+        .Aggregate(1L, (total, layer) => total * _assets.Parts.Count(p => p.Category == layer.Category && p.IntroducedInVersion <= _assets.Style.LibraryVersion));
 
     public TempCharacterImageScreen(string? assetRoot = null, string? presetPath = null)
     {
-        _assetRoot = assetRoot ?? Path.Combine(AppContext.BaseDirectory, "Images", "PortraitGenerator");
-        _presetPath = presetPath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DeepSpaceSaga", "PortraitPresets", "temp-character.json");
+        _assetRoot = assetRoot ?? Path.Combine(AppContext.BaseDirectory, "Images", "Persons", "W", "PortraitGenerator");
+        _presetPath = presetPath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "DeepSpaceSaga", "PortraitPresets", "temp-character.json");
     }
 
     public void OnActivated()
     {
+        _hasRendered = false;
+        var watch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-            _assets ??= new PortraitAssetRepository(_assetRoot);
-            _generator ??= new PortraitGenerator(_assets);
+            // Validate metadata and file paths here. Full PNG decoding belongs to
+            // asset validation/tests; the renderer loads only the selected layers.
+            _assets = new PortraitAssetRepository(_assetRoot, validateTextures: false);
             _renderer = new PortraitRenderer(_assets);
-            SetAppearance(_appearance ?? _generator.Generate(RandomNumberGenerator.GetInt32(int.MaxValue)), false);
-            var referenceDirectory = Path.Combine(AppContext.BaseDirectory, "Images", "Persons", "W");
-            _references = Directory.Exists(referenceDirectory) ? Directory.GetFiles(referenceDirectory, "*.png").Order(StringComparer.Ordinal).ToArray() : [];
+            _appearance = new PortraitGenerator(_assets).Generate(1);
+            _portrait = _renderer.Render(_appearance);
+            string folder = Path.Combine(_assetRoot, "Reference");
+            _references = Directory.Exists(folder) ? Directory.GetFiles(folder, "CHR-*.png").Order(StringComparer.Ordinal).ToArray() : [];
             LoadReference();
+            InterfaceLog.Write($"Portrait workshop ready in {watch.ElapsedMilliseconds} ms; pack={_assetRoot}");
         }
-        catch (Exception ex) when (ex is IOException or ArgumentException or System.Text.Json.JsonException)
-        {
-            _status = "Не удалось загрузить библиотеку портретов. " + ex.Message;
-            InterfaceLog.Write(_status);
-        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or ArgumentException or System.Text.Json.JsonException or UnauthorizedAccessException)
+        { _status = "Не удалось загрузить портрет: " + ex.Message; InterfaceLog.Write(_status); }
     }
-
     public void OnDeactivated()
     {
+        _hasRendered = false;
         _portrait = null; _renderer?.Dispose(); _renderer = null;
+        _layer?.Dispose(); _layer = null; _selectedLayer = null;
         _reference?.Dispose(); _reference = null;
     }
-
-    private void SetAppearance(CharacterAppearance appearance, bool remember = true)
+    private void SelectLayer(string? category)
     {
-        if (_assets is null || _renderer is null) return;
-        _assets.ValidateAppearance(appearance);
-        var portrait = _renderer.Render(appearance);
-        if (remember && _appearance is not null)
-        {
-            _undo.Add(_appearance); if (_undo.Count > 30) _undo.RemoveAt(0); _redo.Clear();
-        }
-        _appearance = appearance; _portrait = portrait;
-        _seed.Clear(); foreach (char c in appearance.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture)) _seed.TryAppendChar(c);
+        _layer?.Dispose(); _layer = null; _selectedLayer = category;
+        if (category is not null && _assets is not null && _appearance is not null && _appearance.Parts.TryGetValue(category, out string? id))
+            _layer = SKBitmap.Decode(_assets.TexturePath(_assets.Get(id).TextureFor(_appearance.LibraryVersion, _appearance.Parts.GetValueOrDefault("Face"))));
     }
-
-    private void Randomize(string group = "All")
+    private void Rebuild()
     {
-        if (_appearance is null || _generator is null || _assets is null) return;
-        for (int attempt = 0; attempt < 128; attempt++)
+        if (_assets is null || _renderer is null || _appearance is null) return;
+        var generator = new PortraitGenerator(_assets);
+        var next = _appearance;
+        for (int attempt = 0; attempt < 32; attempt++)
         {
-            var next = _generator.Generate(RandomNumberGenerator.GetInt32(int.MaxValue));
-            var parts = _appearance.Parts.ToBuilder(); var colors = _appearance.Colors.ToBuilder();
-            foreach (var layer in _assets.Style.Layers)
+            next = generator.Generate(unchecked(++_seed));
+            if (!next.Parts.SequenceEqual(_appearance.Parts)) break;
+        }
+        _appearance = next;
+        _portrait = _renderer.Render(_appearance); SelectLayer(null);
+        _status = $"Новый портрет. Доступно сочетаний: {CombinationCount}. Каждую деталь можно изменить стрелками.";
+    }
+    private void Cycle(string category, int direction)
+    {
+        if (_assets is null || _renderer is null || _appearance is null) return;
+        if (_appearance.LibraryVersion != _assets.Style.LibraryVersion)
+        {
+            var upgraded = _appearance with { LibraryVersion = _assets.Style.LibraryVersion };
+            if (!_assets.IsCompatible(upgraded))
             {
-                bool selected = group == "All" || (group == "Hair" && layer.Category.StartsWith("Hair", StringComparison.Ordinal)) ||
-                    (group == "Face" && layer.Category is "Face" or "Eyes" or "Eyebrows" or "Nose" or "Mouth") ||
-                    (group == "Accessory" && layer.Category == "Accessory");
-                if (!selected || _locks.Contains(layer.Category)) continue;
-                parts.Remove(layer.Category);
-                if (next.Parts.TryGetValue(layer.Category, out var id)) parts[layer.Category] = id;
+                var generated = new PortraitGenerator(_assets).Generate(unchecked(++_seed));
+                upgraded = generated with { Parts = generated.Parts.SetItems(_appearance.Parts) };
             }
-            if (group is "All" or "Colors")
-                foreach (var entry in next.Colors) if (!_locks.Contains(entry.Key + "Color")) colors[entry.Key] = entry.Value;
-            next = next with { Parts = parts.ToImmutable(), Colors = colors.ToImmutable() };
-            if (!_assets.IsCompatible(next)) continue;
-            SetAppearance(next); _status = "Новый персонаж · внешность можно сохранить в JSON"; return;
+            _appearance = upgraded;
         }
-        _status = "Снимите блокировку: выбранные детали ограничивают комбинации.";
+        var choices = _assets.Parts.Where(p => p.Category == category && p.IntroducedInVersion <= _appearance.LibraryVersion).OrderBy(p => p.Id, StringComparer.Ordinal).ToArray();
+        int index = Array.FindIndex(choices, p => p.Id == _appearance.Parts.GetValueOrDefault(category));
+        var selected = choices[(index + direction + choices.Length) % choices.Length];
+        _appearance = _appearance with { Parts = _appearance.Parts.SetItem(category, selected.Id) };
+        _portrait = _renderer.Render(_appearance); SelectLayer(null);
+        _status = selected.DisplayName + ". Остальные детали сохранены.";
     }
-
-    private void Cycle(string category)
-    {
-        if (_assets is null || _appearance is null) return;
-        var ids = _assets.Parts.Where(p => p.Category == category).Select(p => p.Id).Order(StringComparer.Ordinal).ToList();
-        if (!_assets.Style.Layers.Single(l => l.Category == category).Required) ids.Insert(0, "");
-        int current = ids.IndexOf(_appearance.Parts.GetValueOrDefault(category, ""));
-        for (int offset = 1; offset <= ids.Count; offset++)
-        {
-            var id = ids[(current + offset) % ids.Count];
-            var parts = id.Length == 0 ? _appearance.Parts.Remove(category) : _appearance.Parts.SetItem(category, id);
-            var next = _appearance with { Parts = parts, LibraryVersion = _assets.Style.LibraryVersion };
-            if (_assets.IsCompatible(next)) { SetAppearance(next); return; }
-        }
-    }
-
-    private void ApplySeed()
-    {
-        if (_generator is null) return;
-        if (int.TryParse(_seed.Text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int seed))
-        {
-            SetAppearance(_generator.Generate(seed)); _status = "Восстановлена исходная внешность по seed (блокировки не применяются).";
-        }
-        else _status = "Seed должен быть целым числом от −2147483648 до 2147483647.";
-    }
-
-    private void SavePreset()
-    {
-        if (_appearance is null) return;
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(_presetPath)!);
-            File.WriteAllText(_presetPath, AppearanceSerializer.Serialize(_appearance));
-            _status = "Сохранено: LocalAppData / DeepSpaceSaga / PortraitPresets / temp-character.json";
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { _status = "Ошибка сохранения: " + ex.Message; }
-    }
-
-    private void LoadPreset()
-    {
-        try { SetAppearance(AppearanceSerializer.Deserialize(File.ReadAllText(_presetPath))); _status = "Внешность восстановлена из JSON."; }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or ArgumentException)
-        { _status = "Не удалось загрузить preset: " + ex.Message; }
-    }
-
-    private void Undo(bool redo)
-    {
-        var from = redo ? _redo : _undo; var to = redo ? _undo : _redo;
-        if (from.Count == 0 || _appearance is null) return;
-        to.Add(_appearance); var next = from[^1]; from.RemoveAt(from.Count - 1); SetAppearance(next, false);
-    }
-
     private void LoadReference()
     {
         _reference?.Dispose(); _reference = null;
         if (_references.Length > 0) _reference = SKBitmap.Decode(_references[_referenceIndex % _references.Length]);
     }
+    private void SavePreset()
+    {
+        if (_appearance is null) return;
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(_presetPath))!);
+            File.WriteAllText(_presetPath, AppearanceSerializer.Serialize(_appearance)); _status = "Описание портрета сохранено.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { _status = "Ошибка сохранения: " + ex.Message; }
+    }
+    private void LoadPreset()
+    {
+        if (_assets is null || _renderer is null) return;
+        try
+        {
+            var appearance = AppearanceSerializer.Deserialize(File.ReadAllText(_presetPath));
+            _assets.ValidateAppearance(appearance);
+            _portrait = _renderer.Render(appearance); _appearance = appearance; SelectLayer(null);
+            _status = "Портрет восстановлен.";
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or System.Text.Json.JsonException or ArgumentException)
+        { _status = "Не удалось загрузить: " + ex.Message; }
+    }
 
     public void Render(SKCanvas canvas, int width, int height)
     {
-        _scale = Math.Min(1, Math.Min(width / Width, height / Height));
-        _left = (width - Width * _scale) / 2; _top = (height - Height * _scale) / 2;
+        _scale = Math.Min(1, Math.Min(width / Width, height / Height)); _left = (width - Width * _scale) / 2; _top = (height - Height * _scale) / 2;
         canvas.DrawRect(SKRect.Create(width, height), MenuStyle.DimOverlayFill);
         canvas.Save(); canvas.Translate(_left, _top); canvas.Scale(_scale); _buttons.Clear();
         using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(17, 24, 34) };
         canvas.DrawRoundRect(SKRect.Create(Width, Height), 12, 12, paint);
-        Text("КОНСТРУКТОР ПОРТРЕТОВ", 26, 40, 22, new SKColor(229, 236, 242));
-        Text($"ЖЕНЩИНЫ  /  HUMAN · ADULT  /  БИБЛИОТЕКА {_assets?.Style.LibraryVersion ?? 2:D2}", 26, 66, 11, new SKColor(129, 159, 177));
+        Text("ПОРТРЕТ В АНФАС", 26, 40, 22);
+        Text($"АНФАС · СОЧЕТАНИЙ: {CombinationCount}", 26, 67, 12);
         Button(new(1025, 22, 1094, 58), "Закрыть", () => { });
-        if (_assets is not null && _appearance is not null)
+        Text("ПОСМОТРЕТЬ ДЕТАЛЬ", 26, 112, 12);
+        Button(new(26, 130, 250, 170), "Портрет целиком", () => SelectLayer(null));
+        if (_assets is not null)
         {
-            Text("ДЕТАЛИ", 26, 103, 12);
-            for (int i = 0; i < _assets.Style.Layers.Length; i++)
-            {
-                var category = _assets.Style.Layers[i].Category; float y = 120 + i * 47;
-                string id = _appearance.Parts.GetValueOrDefault(category, "—");
-                string variant = id == "—" ? id : id.Split('.')[^1];
-                string label = category == "Face" && id != "—" && _assets.Get(id).DisplayName is { } name
-                    ? $"{name} ›" : $"{CategoryNames.GetValueOrDefault(category, category)}  {variant} ›";
-                Button(new(26, y, 205, y + 36), label, () => Cycle(category));
-                Lock(new(211, y, 245, y + 36), category);
-            }
-            Text("Замок сохраняет деталь при генерации", 26, 562, 10);
-            Button(new(26, 580, 130, 616), "‹ Отменить", () => Undo(false));
-            Button(new(137, 580, 245, 616), "Повторить ›", () => Undo(true));
-            Text("SEED", 804, 106, 11); _seed.Render(canvas, SeedBox);
-            Button(new(1001, 118, 1094, 150), "Создать", ApplySeed);
             int row = 0;
-            foreach (var palette in _assets.Style.Palettes)
+            foreach (var entry in new[] { ("Face", "Овал"), ("Eyebrows", "Брови"), ("Eyes", "Глаза"), ("Nose", "Нос"), ("Mouth", "Губы"), ("Chin", "Подбородок"), ("Clothes", "Костюм"), ("Hair", "Причёска") })
             {
-                float y = 185 + row++ * 60; string key = palette.Key;
-                Text(key switch { "Skin" => "КОЖА", "Hair" => "ВОЛОСЫ", _ => "РАДУЖКА" }, 804, y, 11);
-                Lock(new(1066, y - 14, 1094, y + 12), key + "Color");
-                for (int i = 0; i < palette.Value.Length; i++)
+                string category = entry.Item1;
+                if (_appearance is null || !_appearance.Parts.TryGetValue(category, out string? id)) continue;
+                var choices = _assets.Parts.Where(p => p.Category == category && p.IntroducedInVersion <= _appearance.LibraryVersion).OrderBy(p => p.Id, StringComparer.Ordinal).ToArray();
+                float y = 190 + row++ * 43;
+                int number = Array.FindIndex(choices, p => p.Id == id) + 1;
+                Button(new(26, y, choices.Length > 1 ? 178 : 250, y + 36), (_selectedLayer == category ? "• " : "") + entry.Item2 + (choices.Length > 1 ? $" {number}/{choices.Length}" : ""), () => SelectLayer(category));
+                if (choices.Length > 1)
                 {
-                    string color = palette.Value[i]; var rect = new SKRect(804 + i * 35, y + 10, 832 + i * 35, y + 36);
-                    paint.Color = SKColor.Parse(color); canvas.DrawRoundRect(rect, 4, 4, paint);
-                    if (_appearance.Colors[key] == color)
-                    {
-                        paint.Color = SKColors.White; paint.Style = SKPaintStyle.Stroke; paint.StrokeWidth = 2;
-                        canvas.DrawRoundRect(rect, 4, 4, paint); paint.Style = SKPaintStyle.Fill;
-                    }
-                    _buttons.Add((rect, () => SetAppearance(_appearance with { Colors = _appearance.Colors.SetItem(key, color) })));
+                    Button(new(182, y, 214, y + 36), "‹", () => Cycle(category, -1));
+                    Button(new(218, y, 250, y + 36), "›", () => Cycle(category, 1));
                 }
             }
         }
+        Text("Детали меняются независимо.", 26, 549, 12);
+        Text("Общая посадка воротника.", 26, 570, 12);
+        Button(new(26, 586, 250, 627), _guides ? "Скрыть пропорции" : "Показать пропорции", () => { _guides = !_guides; SelectLayer(null); });
         paint.Color = new SKColor(28, 40, 54); canvas.DrawRoundRect(Preview, 8, 8, paint);
-        if (_portrait is not null) canvas.DrawImage(_portrait, Preview);
-        if (_compare && _reference is not null)
+        if (_layer is not null) canvas.DrawBitmap(_layer, Preview);
+        else if (_portrait is not null) canvas.DrawImage(_portrait, Preview);
+        if (_guides && _selectedLayer is null && _assets is not null)
         {
-            canvas.Save(); canvas.ClipRect(new(Preview.MidX, Preview.Top, Preview.Right, Preview.Bottom));
-            canvas.DrawBitmap(_reference, Preview); canvas.Restore();
-            paint.Color = SKColors.White; canvas.DrawLine(Preview.MidX, Preview.Top, Preview.MidX, Preview.Bottom, paint);
+            foreach (var entry in new[] { ("Crown", "Макушка"), ("Brow", "Брови"), ("EyeLeft", "Глаза"), ("NoseBase", "Основание носа"), ("Mouth", "Рот"), ("Chin", "Подбородок") })
+            {
+                float anchor = _assets.Style.Anchors[entry.Item1].Y;
+                if (_appearance?.LibraryVersion == 4) anchor = (anchor * 1024 - 12) / 672;
+                float y = Preview.Top + anchor * Preview.Height;
+                paint.Color = new SKColor(117, 219, 224, 165); paint.StrokeWidth = 1;
+                canvas.DrawLine(Preview.Left, y, Preview.Right, y, paint); Text(entry.Item2, Preview.Left + 8, y - 4, 10);
+            }
         }
-        Text("КЛИК ПО ПОРТРЕТУ — НОВЫЙ ПЕРСОНАЖ", 300, 643, 12, new SKColor(132, 190, 204));
-        Text("ЭТАЛОН ИЗ PERSONS / W", 804, 373, 11);
-        if (_reference is not null) canvas.DrawBitmap(_reference, new SKRect(822, 385, 1057, 620));
-        Button(new(804, 628, 942, 656), "Другой эталон", () => { _referenceIndex++; LoadReference(); });
-        Button(new(950, 628, 1094, 656), _compare ? "Скрыть 50 / 50" : "Сравнить 50 / 50", () => _compare = !_compare);
-        Button(new(26, 674, 195, 710), "Новый персонаж", () => Randomize());
-        Button(new(203, 674, 319, 710), "Лицо", () => Randomize("Face"));
-        Button(new(327, 674, 443, 710), "Причёска", () => Randomize("Hair"));
-        Button(new(451, 674, 567, 710), "Цвета", () => Randomize("Colors"));
-        Button(new(575, 674, 703, 710), "Аксессуары", () => Randomize("Accessory"));
-        Button(new(795, 674, 940, 710), "Сохранить JSON", SavePreset);
-        Button(new(948, 674, 1094, 710), "Загрузить JSON", LoadPreset);
-        canvas.Save(); canvas.ClipRect(new(26, 714, 1094, 744)); Text(_status, 26, 732, 10); canvas.Restore();
+        Text(_selectedLayer is null ? "СОБРАННЫЙ ПОРТРЕТ" : "ОТДЕЛЬНЫЙ СЛОЙ", 295, 645, 12);
+        Text("РЕФЕРЕНС", 826, 112, 12);
+        if (_reference is not null) canvas.DrawBitmap(_reference, new SKRect(826, 145, 1090, 409));
+        Text("DSS-Images / Persons", 826, 438, 12);
+        Button(new(826, 464, 1090, 505), "Другой референс", () => { _referenceIndex++; LoadReference(); });
+        Button(new(280, 675, 540, 714), "Случайный портрет", Rebuild);
+        Button(new(795, 675, 940, 714), "Сохранить JSON", SavePreset);
+        Button(new(948, 675, 1094, 714), "Загрузить JSON", LoadPreset);
+        canvas.Save(); canvas.ClipRect(new(26, 716, 1094, 745)); Text(_status, 26, 735, 11); canvas.Restore();
         canvas.Restore();
-
-        void Text(string text, float x, float y, float size, SKColor? color = null)
-        {
-            paint.Color = color ?? new SKColor(168, 187, 200); paint.TextSize = size;
-            paint.Typeface = MenuStyle.TypefaceRegular; canvas.DrawText(text, x, y, paint);
-        }
+        _hasRendered = true;
+        void Text(string value, float x, float y, float size)
+        { paint.Color = new SKColor(205, 219, 229); paint.Typeface = MenuStyle.TypefaceRegular; paint.TextSize = size; canvas.DrawText(value, x, y, paint); }
         void Button(SKRect rect, string text, Action action)
-        {
-            MenuStyle.DrawButton(canvas, rect, text, rect.Contains(_mouseX, _mouseY) ? ButtonState.Hovered : ButtonState.Normal);
-            _buttons.Add((rect, action));
-        }
-        void Lock(SKRect rect, string key)
-        {
-            Button(rect, "", () => ToggleLock(key));
-            bool locked = _locks.Contains(key);
-            paint.Color = locked ? new SKColor(126, 214, 224) : new SKColor(107, 126, 140);
-            paint.Style = SKPaintStyle.Stroke; paint.StrokeWidth = 1.5f;
-            canvas.DrawRoundRect(new SKRect(rect.MidX - 5, rect.MidY - 1, rect.MidX + 5, rect.MidY + 7), 1, 1, paint);
-            canvas.DrawArc(new SKRect(rect.MidX - 4, rect.MidY - 8, rect.MidX + 4, rect.MidY + 4), locked ? 180 : 205, locked ? 180 : 145, false, paint);
-            paint.Style = SKPaintStyle.Fill;
-        }
+        { MenuStyle.DrawButton(canvas, rect, text, rect.Contains(_mouseX, _mouseY) ? ButtonState.Hovered : ButtonState.Normal); _buttons.Add((rect, action)); }
     }
-
-    private void ToggleLock(string key) { if (!_locks.Add(key)) _locks.Remove(key); }
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
-        if (button != MouseButton.Left) return ScreenEvent.None;
+        if (button != MouseButton.Left || !_hasRendered) return ScreenEvent.None;
         x = (x - _left) / _scale; y = (y - _top) / _scale;
-        if (x < 0 || x > Width || y < 0 || y > Height || new SKRect(1025, 22, 1094, 58).Contains(x, y)) return ScreenEvent.CloseTempCharacterImage;
-        _seedFocused = SeedBox.Contains(x, y);
-        if (Preview.Contains(x, y)) { Randomize(); return ScreenEvent.None; }
+        // A second click on the underlying game button may arrive after opening.
+        // Dismiss only via the explicit close button or Escape.
+        if (x < 0 || x > Width || y < 0 || y > Height) return ScreenEvent.None;
+        if (new SKRect(1025, 22, 1094, 58).Contains(x, y)) return ScreenEvent.CloseTempCharacterImage;
+        if (Preview.Contains(x, y)) { Rebuild(); return ScreenEvent.None; }
         foreach (var item in _buttons) if (item.Rect.Contains(x, y)) { item.Action(); break; }
         return ScreenEvent.None;
     }
     public bool OnMouseMove(float x, float y)
-    {
-        _mouseX = (x - _left) / _scale; _mouseY = (y - _top) / _scale;
-        return Preview.Contains(_mouseX, _mouseY) || SeedBox.Contains(_mouseX, _mouseY) || _buttons.Any(b => b.Rect.Contains(_mouseX, _mouseY));
-    }
+    { _mouseX = (x - _left) / _scale; _mouseY = (y - _top) / _scale; return Preview.Contains(_mouseX, _mouseY) || _buttons.Any(b => b.Rect.Contains(_mouseX, _mouseY)); }
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
     public ScreenEvent OnKeyDown(Key key)
-    {
-        if (key == Key.Escape) return ScreenEvent.CloseTempCharacterImage;
-        if (_seedFocused) { if (key == Key.Enter) ApplySeed(); else _seed.OnKeyDown(key); }
-        else if (key == Key.Space) Randomize();
-        return ScreenEvent.None;
-    }
-    public void OnTextInput(char c) { if (_seedFocused && (char.IsAsciiDigit(c) || c == '-')) _seed.TryAppendChar(c); }
+    { if (key == Key.Escape) return ScreenEvent.CloseTempCharacterImage; if (key == Key.Space) Rebuild(); return ScreenEvent.None; }
 }

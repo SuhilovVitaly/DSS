@@ -1,0 +1,100 @@
+{
+  "mode": "built-in image_gen; one source face per selected Persons reference",
+  "registrationTemplate": "D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W/PortraitGenerator/Sources/master.png",
+  "faces": [
+    {
+      "id": "female.frontal.face.007",
+      "reference": "D:/DeepSpaceSaga/DSS-Images/Persons/CHR-20260907-125017-ZC451B.png",
+      "source": "Sources/faces/face-07-01.png",
+      "prompt": "Create a new modular female face asset. IMAGE 1 is the FACE SHAPE AND CHARACTER reference: reproduce her recognizable cheek volumes, facial proportions, jaw contour, chin, brow character and age in a STRICTLY FRONTAL view. IMAGE 2 is ONLY a canvas/registration and lighting template; do NOT copy the second woman's identity. The result must look like the first woman's face, bald, no hair, no uniform or collar. Same warm light skin complexion as image 2 for compatibility with interchangeable parts, but retain the first woman's facial structure. Realistic beautifully painted photographic game portrait with natural skin texture. Frame exactly like image2: full bald scalp and ears and neck on a solid dark blue-gray background, square1254x1254. Crown(617,49); pupils(480,517),(760,517); nosebase(618,736); mouthcenter(617,826); chin lowest aroundy1024. Keep scalp above y420 and ears registration similar to image2 so hairstyle overlays fit; preserve its lower neck belowy1070 exactly. NO three-quarter turn, tilt, smile, excessive makeup, text or collage. Natural adult female anatomy. Specific face structure from image1: compact softly squared lower face, wide upper cheeks, relatively short softly rounded chin, gentle youthful adult cheek volume, straighter brows."
+    },
+    {
+      "id": "female.frontal.face.008",
+      "reference": "D:/DeepSpaceSaga/DSS-Images/Persons/CHR-20260907-145122-NBILHR.png",
+      "source": "Sources/faces/face-08-01.png",
+      "prompt": "Create a new modular female face asset. IMAGE 1 is the FACE SHAPE AND CHARACTER reference: reproduce her recognizable cheek volumes, facial proportions, jaw contour, chin, brow character and age in a STRICTLY FRONTAL view. IMAGE 2 is ONLY a canvas/registration and lighting template; do NOT copy the second woman's identity. The result must look like the first woman's face, bald, no hair, no uniform or collar. Same warm light skin complexion as image 2 for compatibility with interchangeable parts, but retain the first woman's facial structure. Realistic beautifully painted photographic game portrait with natural skin texture. Frame exactly like image2: full bald scalp and ears and neck on a solid dark blue-gray background, square1254x1254. Crown(617,49); pupils(480,517),(760,517); nosebase(618,736); mouthcenter(617,826); chin lowest aroundy1024. Keep scalp above y420 and ears registration similar to image2 so hairstyle overlays fit; preserve its lower neck belowy1070 exactly. NO three-quarter turn, tilt, smile, excessive makeup, text or collage. Natural adult female anatomy. Specific face structure from image1: broad athletic facial bones, strong lateral jaw angles and wide flat chin with rounded corners, angular cheekbones, confident mature adult facial character."
+    },
+    {
+      "id": "female.frontal.face.009",
+      "reference": "D:/DeepSpaceSaga/DSS-Images/Persons/CHR-20260907-235712-QTKSAY.png",
+      "source": "Sources/faces/face-09-01.png",
+      "prompt": "Create a new modular female face asset. IMAGE 1 is the FACE SHAPE AND CHARACTER reference: reproduce her recognizable cheek volumes, facial proportions, jaw contour, chin, brow character and age in a STRICTLY FRONTAL view. IMAGE 2 is ONLY a canvas/registration and lighting template; do NOT copy the second woman's identity. The result must look like the first woman's face, bald, no hair, no uniform or collar. Same warm light skin complexion as image 2 for compatibility with interchangeable parts, but retain the first woman's facial structure. Realistic beautifully painted photographic game portrait with natural skin texture. Frame exactly like image2: full bald scalp and ears and neck on a solid dark blue-gray background, square1254x1254. Crown(617,49); pupils(480,517),(760,517); nosebase(618,736); mouthcenter(617,826); chin lowest aroundy1024. Keep scalp above y420 and ears registration similar to image2 so hairstyle overlays fit; preserve its lower neck belowy1070 exactly. NO three-quarter turn, tilt, smile, excessive makeup, text or collage. Natural adult female anatomy. Specific face structure from image1: elongated soft oval with generous upper cheek volume, smooth jaw taper, broad rounded chin, natural full cheeks and deep eye sockets."
+    },
+    {
+      "id": "female.frontal.face.010",
+      "reference": "D:/DeepSpaceSaga/DSS-Images/Persons/CHR-20260908-070244-ZXEK7V.png",
+      "source": "Sources/faces/face-10-01.png",
+      "prompt": "Create a new modular female face asset. IMAGE 1 is the FACE SHAPE AND CHARACTER reference: reproduce her recognizable cheek volumes, facial proportions, jaw contour, chin, brow character and age in a STRICTLY FRONTAL view. IMAGE 2 is ONLY a canvas/registration and lighting template; do NOT copy the second woman's identity. The result must look like the first woman's face, bald, no hair, no uniform or collar. Same warm light skin complexion as image 2 for compatibility with interchangeable parts, but retain the first woman's facial structure. Realistic beautifully painted photographic game portrait with natural skin texture. Frame exactly like image2: full bald scalp and ears and neck on a solid dark blue-gray background, square1254x1254. Crown(617,49); pupils(480,517),(760,517); nosebase(618,736); mouthcenter(617,826); chin lowest aroundy1024. Keep scalp above y420 and ears registration similar to image2 so hairstyle overlays fit; preserve its lower neck belowy1070 exactly. NO three-quarter turn, tilt, smile, excessive makeup, text or collage. Natural adult female anatomy. Specific face structure from image1: full mature face with broad lower cheeks, short wide rounded chin, subtle jowls and age lines, firm straight jaw contour, down-to-earth distinctive adult character."
+    },
+    {
+      "id": "female.frontal.face.011",
+      "reference": "D:/DeepSpaceSaga/DSS-Images/Persons/CHR-20260908-120641-IGHQKS.png",
+      "source": "Sources/faces/face-11-01.png",
+      "prompt": "Create a new modular female face asset. IMAGE 1 is the FACE SHAPE AND CHARACTER reference: reproduce her recognizable cheek volumes, facial proportions, jaw contour, chin, brow character and age in a STRICTLY FRONTAL view. IMAGE 2 is ONLY a canvas/registration and lighting template; do NOT copy the second woman's identity. The result must look like the first woman's face, bald, no hair, no uniform or collar. Same warm light skin complexion as image 2 for compatibility with interchangeable parts, but retain the first woman's facial structure. Realistic beautifully painted photographic game portrait with natural skin texture. Frame exactly like image2: full bald scalp and ears and neck on a solid dark blue-gray background, square1254x1254. Crown(617,49); pupils(480,517),(760,517); nosebase(618,736); mouthcenter(617,826); chin lowest aroundy1024. Keep scalp above y420 and ears registration similar to image2 so hairstyle overlays fit; preserve its lower neck belowy1070 exactly. NO three-quarter turn, tilt, smile, excessive makeup, text or collage. Natural adult female anatomy. Specific face structure from image1: delicate adult face with narrow lower jaw, soft long oval and small rounded chin, very gentle low cheekbones, modest cheek fullness; adult around25, not child."
+    },
+    {
+      "id": "female.frontal.face.012",
+      "reference": "D:/DeepSpaceSaga/DSS-Images/Persons/CHR-20260908-161233-3GZDD9.png",
+      "source": "Sources/faces/face-12-01.png",
+      "prompt": "Create a new modular female face asset. IMAGE 1 is the FACE SHAPE AND CHARACTER reference: reproduce her recognizable cheek volumes, facial proportions, jaw contour, chin, brow character and age in a STRICTLY FRONTAL view. IMAGE 2 is ONLY a canvas/registration and lighting template; do NOT copy the second woman's identity. The result must look like the first woman's face, bald, no hair, no uniform or collar. Same warm light skin complexion as image 2 for compatibility with interchangeable parts, but retain the first woman's facial structure. Realistic beautifully painted photographic game portrait with natural skin texture. Frame exactly like image2: full bald scalp and ears and neck on a solid dark blue-gray background, square1254x1254. Crown(617,49); pupils(480,517),(760,517); nosebase(618,736); mouthcenter(617,826); chin lowest aroundy1024. Keep scalp above y420 and ears registration similar to image2 so hairstyle overlays fit; preserve its lower neck belowy1070 exactly. NO three-quarter turn, tilt, smile, excessive makeup, text or collage. Natural adult female anatomy. Specific face structure from image1: short softly rectangular face, broad central cheeks and compact squared chin, straight jaw sides, flatter cheek planes, straight dark brows."
+    },
+    {
+      "id": "female.frontal.face.013",
+      "reference": "D:/DeepSpaceSaga/DSS-Images/Persons/CHR-20260908-211309-IWPDH1.png",
+      "source": "Sources/faces/face-13-01.png",
+      "prompt": "Create a new modular female face asset. IMAGE 1 is the FACE SHAPE AND CHARACTER reference: reproduce her recognizable cheek volumes, facial proportions, jaw contour, chin, brow character and age in a STRICTLY FRONTAL view. IMAGE 2 is ONLY a canvas/registration and lighting template; do NOT copy the second woman's identity. The result must look like the first woman's face, bald, no hair, no uniform or collar. Same warm light skin complexion as image 2 for compatibility with interchangeable parts, but retain the first woman's facial structure. Realistic beautifully painted photographic game portrait with natural skin texture. Frame exactly like image2: full bald scalp and ears and neck on a solid dark blue-gray background, square1254x1254. Crown(617,49); pupils(480,517),(760,517); nosebase(618,736); mouthcenter(617,826); chin lowest aroundy1024. Keep scalp above y420 and ears registration similar to image2 so hairstyle overlays fit; preserve its lower neck belowy1070 exactly. NO three-quarter turn, tilt, smile, excessive makeup, text or collage. Natural adult female anatomy. Specific face structure from image1: long lean rectangular oval with pronounced bony cheekbones, narrow hollow lower cheeks and long squared chin, strong brow ridge, serious adult facial character."
+    },
+    {
+      "id": "female.frontal.face.014",
+      "reference": "D:/DeepSpaceSaga/DSS-Images/Persons/CHR-20260908-221430-U0VZ9Z.png",
+      "source": "Sources/faces/face-14-01.png",
+      "prompt": "Create a new modular female face asset. IMAGE 1 is the FACE SHAPE AND CHARACTER reference: reproduce her recognizable cheek volumes, facial proportions, jaw contour, chin, brow character and age in a STRICTLY FRONTAL view. IMAGE 2 is ONLY a canvas/registration and lighting template; do NOT copy the second woman's identity. The result must look like the first woman's face, bald, no hair, no uniform or collar. Same warm light skin complexion as image 2 for compatibility with interchangeable parts, but retain the first woman's facial structure. Realistic beautifully painted photographic game portrait with natural skin texture. Frame exactly like image2: full bald scalp and ears and neck on a solid dark blue-gray background, square1254x1254. Crown(617,49); pupils(480,517),(760,517); nosebase(618,736); mouthcenter(617,826); chin lowest aroundy1024. Keep scalp above y420 and ears registration similar to image2 so hairstyle overlays fit; preserve its lower neck belowy1070 exactly. NO three-quarter turn, tilt, smile, excessive makeup, text or collage. Natural adult female anatomy. Specific face structure from image1: generously rounded broad face, wide apple cheeks, soft heavy lower cheeks and wide U-shaped chin, mature adult around40."
+    },
+    {
+      "id": "female.frontal.face.015",
+      "reference": "D:/DeepSpaceSaga/DSS-Images/Persons/CHR-20260909-161543-AHZKSV.png",
+      "source": "Sources/faces/face-15-01.png",
+      "prompt": "Create a new modular female face asset. IMAGE 1 is the FACE SHAPE AND CHARACTER reference: reproduce her recognizable cheek volumes, facial proportions, jaw contour, chin, brow character and age in a STRICTLY FRONTAL view. IMAGE 2 is ONLY a canvas/registration and lighting template; do NOT copy the second woman's identity. The result must look like the first woman's face, bald, no hair, no uniform or collar. Same warm light skin complexion as image 2 for compatibility with interchangeable parts, but retain the first woman's facial structure. Realistic beautifully painted photographic game portrait with natural skin texture. Frame exactly like image2: full bald scalp and ears and neck on a solid dark blue-gray background, square1254x1254. Crown(617,49); pupils(480,517),(760,517); nosebase(618,736); mouthcenter(617,826); chin lowest aroundy1024. Keep scalp above y420 and ears registration similar to image2 so hairstyle overlays fit; preserve its lower neck belowy1070 exactly. NO three-quarter turn, tilt, smile, excessive makeup, text or collage. Natural adult female anatomy. Specific face structure from image1: narrow elongated diamond face, high wide cheekbones sharply narrowing into slim lower cheeks and a small rounded chin, pronounced elegant bone structure."
+    },
+    {
+      "id": "female.frontal.face.016",
+      "reference": "D:/DeepSpaceSaga/DSS-Images/Persons/CHR-20260910-042312-4KKBJJ.png",
+      "source": "Sources/faces/face-16-01.png",
+      "prompt": "Create a new modular female face asset. IMAGE 1 is the FACE SHAPE AND CHARACTER reference: reproduce her recognizable cheek volumes, facial proportions, jaw contour, chin, brow character and age in a STRICTLY FRONTAL view. IMAGE 2 is ONLY a canvas/registration and lighting template; do NOT copy the second woman's identity. The result must look like the first woman's face, bald, no hair, no uniform or collar. Same warm light skin complexion as image 2 for compatibility with interchangeable parts, but retain the first woman's facial structure. Realistic beautifully painted photographic game portrait with natural skin texture. Frame exactly like image2: full bald scalp and ears and neck on a solid dark blue-gray background, square1254x1254. Crown(617,49); pupils(480,517),(760,517); nosebase(618,736); mouthcenter(617,826); chin lowest aroundy1024. Keep scalp above y420 and ears registration similar to image2 so hairstyle overlays fit; preserve its lower neck belowy1070 exactly. NO three-quarter turn, tilt, smile, excessive makeup, text or collage. Natural adult female anatomy. Specific face structure from image1: very broad softly trapezoid face, wide jaw and robust rounded chin, full lateral cheeks, low wide cheekbones, distinctive mature adult face."
+    }
+  ],
+  "featureVariants": [
+    {
+      "variant": 2,
+      "prompt": "Edit target: this exact portrait. Preserve THIS woman's distinct face identity, cheek volume, jaw width, age, skin, ears, eyes, brows, scalp, lighting, square framing and background. Only create interchangeable minor feature variations: thinner natural lips at same mouth center; narrower nose with small gently lifted tip, same nasal base; gently narrower rounded chin below the mouth, lowest point 15 pixels lower. Do not change the side jaw/cheeks above y910, eye positions or mouth center. Absolutely preserve neck below y1070. Bald frontal adult female, believable anatomy, closed relaxed lips, no clothes/text. Registered full portrait output for extracting nose, lips and chin textures.",
+      "appliedToFaces": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ]
+    },
+    {
+      "variant": 3,
+      "prompt": "Edit target: this exact portrait. Preserve THIS woman's distinct face identity, cheek volume, jaw width, age, skin, ears, eyes, brows, scalp, lighting, square framing and background. Only create interchangeable minor feature variations: noticeably fuller soft natural lips, closed at same mouth center; slightly broader naturally rounded nose tip/alar wings at same base level; gently broader softly squared chin below mouth, lowest point 12 pixels higher. Do not change side jaw/cheeks above y910, eye positions or mouth center. Absolutely preserve neck below y1070. Bald frontal adult female, believable anatomy, no clothes/text. Registered full portrait output for extracting nose, lips and chin textures.",
+      "appliedToFaces": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ]
+    }
+  ]
+}
