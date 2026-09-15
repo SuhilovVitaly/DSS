@@ -1,0 +1,102 @@
+{
+  "libraryVersion": 14,
+  "supportedLibraryVersions": [
+    14
+  ],
+  "width": 1024,
+  "height": 1024,
+  "maxCachedPortraits": 32,
+  "resolutions": {
+    "Thumbnail": 128,
+    "Dialogue": 256,
+    "CharacterScreen": 512,
+    "HighResolution": 1024
+  },
+  "anchors": {
+    "Crown": {
+      "x": 0.5,
+      "y": 0.034179688
+    },
+    "EyeLeft": {
+      "x": 0.4296875,
+      "y": 0.2685547
+    },
+    "EyeRight": {
+      "x": 0.5703125,
+      "y": 0.2685547
+    },
+    "Brow": {
+      "x": 0.5,
+      "y": 0.22460938
+    },
+    "NoseBase": {
+      "x": 0.5,
+      "y": 0.36621094
+    },
+    "Mouth": {
+      "x": 0.5,
+      "y": 0.42285156
+    },
+    "Chin": {
+      "x": 0.5,
+      "y": 0.52246094
+    },
+    "CheekLeft": {
+      "x": 0.33724582,
+      "y": 0.34141374
+    },
+    "CheekRight": {
+      "x": 0.652811,
+      "y": 0.34141374
+    },
+    "InnerEyeLeft": {
+      "x": 0.46493718,
+      "y": 0.2848946
+    },
+    "InnerEyeRight": {
+      "x": 0.52982956,
+      "y": 0.2848946
+    },
+    "OuterEyeLeft": {
+      "x": 0.38015848,
+      "y": 0.28227797
+    },
+    "OuterEyeRight": {
+      "x": 0.6146082,
+      "y": 0.28227797
+    },
+    "NoseWingLeft": {
+      "x": 0.45970395,
+      "y": 0.38170978
+    },
+    "NoseWingRight": {
+      "x": 0.53401613,
+      "y": 0.38170978
+    },
+    "MouthLeft": {
+      "x": 0.43510765,
+      "y": 0.4439855
+    },
+    "MouthRight": {
+      "x": 0.5539025,
+      "y": 0.4439855
+    }
+  },
+  "layers": [
+    {
+      "category": "Portrait",
+      "required": true,
+      "introducedInVersion": 14
+    },
+    {
+      "category": "Clothes",
+      "required": true,
+      "introducedInVersion": 14
+    }
+  ],
+  "palettes": {},
+  "renderStyle": {
+    "mode": "unified-portrait-w4",
+    "description": "Three complete painted heads including their own neck and hairstyle. Only the costume is shared. Nine combinations."
+  }
+}

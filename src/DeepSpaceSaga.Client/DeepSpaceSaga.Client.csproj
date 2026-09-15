@@ -7,6 +7,24 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Images/Persons/W1/**" />
+    <None Remove="Images/Persons/W2/**" />
+    <None Remove="Images/Persons/W4/**" />
+    <Content Include="Images/Persons/W4/**/*.png;Images/Persons/W4/**/*.json" Exclude="Images/Persons/W4/Sources/**;Images/Persons/W4/Generated/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="Images/Persons/W2/**/*.png;Images/Persons/W2/**/*.json" Exclude="Images/Persons/W2/Sources/**;Images/Persons/W2/Generated/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="Images/Persons/W1/**/*.png;Images/Persons/W1/**/*.json" Exclude="Images/Persons/W1/Sources/**;Images/Persons/W1/Generated/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- The user moved the complete portrait pack into the client project.
          Authoring sources, previews and the test golden image do not ship. -->
     <None Remove="Images/Persons/W/PortraitGenerator/**" />
@@ -17,7 +35,8 @@
   </ItemGroup>
 
   <Target Name="CheckPortraitPackPresent" BeforeTargets="PrepareForBuild" Condition="'$(SkipPortraitPackCheck)' != 'true'">
-    <Error Condition="!Exists('Images/Persons/W/PortraitGenerator/parts.json') Or !Exists('Images/Persons/W/PortraitGenerator/portrait-style.json')" Text="Portrait asset pack missing in Images/Persons/W/PortraitGenerator (see Docs/PortraitGenerator.md)." />
+    <!-- Match the W4 pack used by TempCharacterImageScreen by default. -->
+    <Error Condition="!Exists('Images/Persons/W4/parts.json') Or !Exists('Images/Persons/W4/portrait-style.json')" Text="Portrait asset pack missing in Images/Persons/W4 (see Docs/PortraitGeneratorW4.md)." />
   </Target>
 
   <ItemGroup>

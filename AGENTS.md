@@ -5,6 +5,10 @@
 - Save all generated or edited project images under `DSS-Images\temp`.
 - Do not use other `DSS-Images` subfolders for new image outputs unless the user explicitly asks for a different destination.
 - Exception requested by the user: the modular female portrait pack is stored and maintained in `src/DeepSpaceSaga.Client/Images/Persons/W/PortraitGenerator`. Its `Sources`, `Generated`, and `Golden` folders are authoring/test data and must not ship with the game.
+- The new complete-face concept is stored in `src/DeepSpaceSaga.Client/Images/Persons/W1` with `Ovals`, `Faces`, and `Hair` assets. Maintain it there, preserve the old W pack, and exclude W1 `Sources` and `Generated` from shipping.
+- W2 uses `src/DeepSpaceSaga.Client/Images/Persons/W2`: whole `Heads`, one `Neck`, `Clothes`, and new `Hair`. Preserve W and W1. Exclude W2 `Sources` and `Generated` from shipping.
+- W4 uses `src/DeepSpaceSaga.Client/Images/Persons/W4`: three complete `Portraits` (head, neck and hair in one image) and shared `Clothes`. Preserve earlier packs; exclude `Sources` and `Generated` from shipping.
+- The Character Generator skill is maintained in `W4/Portraits/character-generator`. Its runs save only the accepted final PNG in `W4/Portraits`; do not create `W4/Sources` or `W4/Generated`. Use temporary previews outside the project and remove them after validation.
 
 ## Requirements Engineering
 

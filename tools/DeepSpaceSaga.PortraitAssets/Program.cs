@@ -4,10 +4,13 @@ using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens.TempCharacterImage;
 using SkiaSharp;
 
-if (args.Length != 2 || args[0] is not ("build" or "validate" or "bake" or "preview" or "guide" or "variants" or "eyes" or "hair" or "faces" or "fit-eyes" or "features"))
-    throw new ArgumentException("Usage: PortraitAssets <build|validate|bake|preview|guide|variants|eyes|hair|faces|fit-eyes|features> <pack-directory>");
+if (args.Length != 2 || args[0] is not ("build" or "validate" or "bake" or "preview" or "guide" or "variants" or "eyes" or "hair" or "faces" or "fit-eyes" or "features" or "w1" or "w2" or "w4"))
+    throw new ArgumentException("Usage: PortraitAssets <build|validate|bake|preview|guide|variants|eyes|hair|faces|fit-eyes|features|w1|w2|w4> <pack-directory>");
 string root = Path.GetFullPath(args[1]);
 const int size = 1024;
+if (args[0] == "w4") { UnifiedPortraitAssets.Build(root); UnifiedPortraitAssets.Bake(root); return; }
+if (args[0] == "w2") { WholeHeadAssets.Build(root); WholeHeadAssets.Bake(root); return; }
+if (args[0] == "w1") { WholeFaceAssets.Build(root); WholeFaceAssets.Bake(root); return; }
 if (args[0] == "fit-eyes") { FaceEyeAssets.Preview(root); return; }
 void RebuildFaces()
 {

@@ -12,6 +12,7 @@ public sealed class TempCharacterImageScreen : IScreen
     private static readonly SKRect Preview = new(280, 108, 792, 620);
     private readonly string _assetRoot, _presetPath;
     private readonly List<(SKRect Rect, Action Action)> _buttons = [];
+    private readonly List<(string Label, SKBitmap Image)> _constructionPreviews = [];
     private PortraitAssetRepository? _assets;
     private PortraitRenderer? _renderer;
     private CharacterAppearance? _appearance;
@@ -28,15 +29,19 @@ public sealed class TempCharacterImageScreen : IScreen
     internal CharacterAppearance? Appearance => _appearance;
     internal SKRect PortraitRect => Preview;
     internal string? SelectedLayer => _selectedLayer;
+    private bool IsCompleteFacePack => _assets?.Style.Layers.Any(l => l.Category == "Oval") == true;
+    private bool IsWholeHeadPack => _assets?.Style.Layers.Any(l => l.Category == "Neck") == true;
+    private bool IsUnifiedPortraitPack => _assets?.Style.Layers.Any(l => l.Category == "Portrait") == true;
     private long CombinationCount => _assets is null ? 0 : _assets.Style.Layers
         .Where(l => l.IntroducedInVersion <= _assets.Style.LibraryVersion)
         .Aggregate(1L, (total, layer) => total * _assets.Parts.Count(p => p.Category == layer.Category && p.IntroducedInVersion <= _assets.Style.LibraryVersion));
 
     public TempCharacterImageScreen(string? assetRoot = null, string? presetPath = null)
     {
-        _assetRoot = assetRoot ?? Path.Combine(AppContext.BaseDirectory, "Images", "Persons", "W", "PortraitGenerator");
+        _assetRoot = assetRoot ?? Path.Combine(AppContext.BaseDirectory, "Images", "Persons", "W4");
         _presetPath = presetPath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "DeepSpaceSaga", "PortraitPresets", "temp-character.json");
+            "DeepSpaceSaga", "PortraitPresets", Path.GetFileName(Path.TrimEndingDirectorySeparator(_assetRoot)) switch
+            { "W4" => "temp-character-w4.json", "W2" => "temp-character-w2.json", "W1" => "temp-character-w1.json", _ => "temp-character.json" });
     }
 
     public void OnActivated()
@@ -49,11 +54,13 @@ public sealed class TempCharacterImageScreen : IScreen
             // asset validation/tests; the renderer loads only the selected layers.
             _assets = new PortraitAssetRepository(_assetRoot, validateTextures: false);
             _renderer = new PortraitRenderer(_assets);
-            _appearance = new PortraitGenerator(_assets).Generate(1);
+            _seed = IsCompleteFacePack || IsWholeHeadPack || IsUnifiedPortraitPack ? Random.Shared.Next() : 1;
+            _appearance = new PortraitGenerator(_assets).Generate(_seed);
             _portrait = _renderer.Render(_appearance);
             string folder = Path.Combine(_assetRoot, "Reference");
             _references = Directory.Exists(folder) ? Directory.GetFiles(folder, "CHR-*.png").Order(StringComparer.Ordinal).ToArray() : [];
             LoadReference();
+            RefreshConstructionPreviews();
             InterfaceLog.Write($"Portrait workshop ready in {watch.ElapsedMilliseconds} ms; pack={_assetRoot}");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or ArgumentException or System.Text.Json.JsonException or UnauthorizedAccessException)
@@ -65,6 +72,8 @@ public sealed class TempCharacterImageScreen : IScreen
         _portrait = null; _renderer?.Dispose(); _renderer = null;
         _layer?.Dispose(); _layer = null; _selectedLayer = null;
         _reference?.Dispose(); _reference = null;
+        foreach (var preview in _constructionPreviews) preview.Image.Dispose();
+        _constructionPreviews.Clear();
     }
     private void SelectLayer(string? category)
     {
@@ -84,6 +93,7 @@ public sealed class TempCharacterImageScreen : IScreen
         }
         _appearance = next;
         _portrait = _renderer.Render(_appearance); SelectLayer(null);
+        RefreshConstructionPreviews();
         _status = $"Новый портрет. Доступно сочетаний: {CombinationCount}. Каждую деталь можно изменить стрелками.";
     }
     private void Cycle(string category, int direction)
@@ -104,12 +114,33 @@ public sealed class TempCharacterImageScreen : IScreen
         var selected = choices[(index + direction + choices.Length) % choices.Length];
         _appearance = _appearance with { Parts = _appearance.Parts.SetItem(category, selected.Id) };
         _portrait = _renderer.Render(_appearance); SelectLayer(null);
+        RefreshConstructionPreviews();
         _status = selected.DisplayName + ". Остальные детали сохранены.";
     }
     private void LoadReference()
     {
         _reference?.Dispose(); _reference = null;
         if (_references.Length > 0) _reference = SKBitmap.Decode(_references[_referenceIndex % _references.Length]);
+    }
+    private void RefreshConstructionPreviews()
+    {
+        if (IsUnifiedPortraitPack && _constructionPreviews.Count == 3) return;
+        foreach (var preview in _constructionPreviews) preview.Image.Dispose();
+        _constructionPreviews.Clear();
+        if (IsUnifiedPortraitPack && _assets is not null)
+        {
+            foreach (var part in _assets.Parts.Where(p => p.Category == "Portrait").OrderBy(p => p.Id, StringComparer.Ordinal))
+                _constructionPreviews.Add((part.DisplayName ?? "Портрет", SKBitmap.Decode(_assets.TexturePath(part.Texture))));
+            return;
+        }
+        if ((!IsCompleteFacePack && !IsWholeHeadPack) || _assets is null || _appearance is null) return;
+        foreach (var (category, label) in IsWholeHeadPack
+            ? new[] { ("Head", "Голова целиком"), ("Neck", "Общая шея"), ("Clothes", "Костюм"), ("Hair", "Новая причёска") }
+            : new[] { ("Oval", "Овал и шея"), ("Face", "Цельное лицо"), ("Hair", "Причёска") })
+        {
+            var part = _assets.Get(_appearance.Parts[category]);
+            _constructionPreviews.Add((label, SKBitmap.Decode(_assets.TexturePath(part.Texture))));
+        }
     }
     private void SavePreset()
     {
@@ -129,6 +160,7 @@ public sealed class TempCharacterImageScreen : IScreen
             var appearance = AppearanceSerializer.Deserialize(File.ReadAllText(_presetPath));
             _assets.ValidateAppearance(appearance);
             _portrait = _renderer.Render(appearance); _appearance = appearance; SelectLayer(null);
+            RefreshConstructionPreviews();
             _status = "Портрет восстановлен.";
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or System.Text.Json.JsonException or ArgumentException)
@@ -142,7 +174,7 @@ public sealed class TempCharacterImageScreen : IScreen
         canvas.Save(); canvas.Translate(_left, _top); canvas.Scale(_scale); _buttons.Clear();
         using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(17, 24, 34) };
         canvas.DrawRoundRect(SKRect.Create(Width, Height), 12, 12, paint);
-        Text("ПОРТРЕТ В АНФАС", 26, 40, 22);
+        Text(IsUnifiedPortraitPack ? "ПОРТРЕТ · W4" : IsWholeHeadPack ? "ПОРТРЕТ · W2" : IsCompleteFacePack ? "ПОРТРЕТ · W1" : "ПОРТРЕТ В АНФАС", 26, 40, 22);
         Text($"АНФАС · СОЧЕТАНИЙ: {CombinationCount}", 26, 67, 12);
         Button(new(1025, 22, 1094, 58), "Закрыть", () => { });
         Text("ПОСМОТРЕТЬ ДЕТАЛЬ", 26, 112, 12);
@@ -150,7 +182,13 @@ public sealed class TempCharacterImageScreen : IScreen
         if (_assets is not null)
         {
             int row = 0;
-            foreach (var entry in new[] { ("Face", "Овал"), ("Eyebrows", "Брови"), ("Eyes", "Глаза"), ("Nose", "Нос"), ("Mouth", "Губы"), ("Chin", "Подбородок"), ("Clothes", "Костюм"), ("Hair", "Причёска") })
+            foreach (var entry in IsUnifiedPortraitPack
+                ? new[] { ("Portrait", "Персонаж"), ("Clothes", "Костюм") }
+                : IsWholeHeadPack
+                ? new[] { ("Head", "Голова"), ("Hair", "Причёска"), ("Clothes", "Костюм"), ("Neck", "Общая шея") }
+                : IsCompleteFacePack
+                ? new[] { ("Oval", "Овал + шея"), ("Face", "Лицо"), ("Clothes", "Костюм"), ("Hair", "Причёска") }
+                : new[] { ("Face", "Овал"), ("Eyebrows", "Брови"), ("Eyes", "Глаза"), ("Nose", "Нос"), ("Mouth", "Губы"), ("Chin", "Подбородок"), ("Clothes", "Костюм"), ("Hair", "Причёска") })
             {
                 string category = entry.Item1;
                 if (_appearance is null || !_appearance.Parts.TryGetValue(category, out string? id)) continue;
@@ -165,9 +203,9 @@ public sealed class TempCharacterImageScreen : IScreen
                 }
             }
         }
-        Text("Детали меняются независимо.", 26, 549, 12);
+        Text(IsUnifiedPortraitPack ? "Голова, волосы и шея — вместе." : IsWholeHeadPack ? "Голова меняется целиком." : IsCompleteFacePack ? "Лицо меняется целиком." : "Детали меняются независимо.", 26, 549, 12);
         Text("Общая посадка воротника.", 26, 570, 12);
-        Button(new(26, 586, 250, 627), _guides ? "Скрыть пропорции" : "Показать пропорции", () => { _guides = !_guides; SelectLayer(null); });
+        if (!IsUnifiedPortraitPack) Button(new(26, 586, 250, 627), _guides ? "Скрыть пропорции" : "Показать пропорции", () => { _guides = !_guides; SelectLayer(null); });
         paint.Color = new SKColor(28, 40, 54); canvas.DrawRoundRect(Preview, 8, 8, paint);
         if (_layer is not null) canvas.DrawBitmap(_layer, Preview);
         else if (_portrait is not null) canvas.DrawImage(_portrait, Preview);
@@ -183,10 +221,51 @@ public sealed class TempCharacterImageScreen : IScreen
             }
         }
         Text(_selectedLayer is null ? "СОБРАННЫЙ ПОРТРЕТ" : "ОТДЕЛЬНЫЙ СЛОЙ", 295, 645, 12);
-        Text("РЕФЕРЕНС", 826, 112, 12);
-        if (_reference is not null) canvas.DrawBitmap(_reference, new SKRect(826, 145, 1090, 409));
-        Text("DSS-Images / Persons", 826, 438, 12);
-        Button(new(826, 464, 1090, 505), "Другой референс", () => { _referenceIndex++; LoadReference(); });
+        if (IsUnifiedPortraitPack && _assets is not null && _appearance is not null)
+        {
+            Text("ВЫБЕРИТЕ ПЕРСОНАЖА", 826, 112, 12);
+            var choices = _assets.Parts.Where(p => p.Category == "Portrait").OrderBy(p => p.Id, StringComparer.Ordinal).ToArray();
+            for (int i = 0; i < _constructionPreviews.Count; i++)
+            {
+                float y = 132 + i * 147;
+                bool selected = _appearance.Parts["Portrait"] == choices[i].Id;
+                paint.Color = selected ? new SKColor(39, 65, 78) : new SKColor(23, 33, 44);
+                var rect = new SKRect(814, y, 1094, y + 135);
+                canvas.DrawRoundRect(rect, 8, 8, paint);
+                canvas.DrawBitmap(_constructionPreviews[i].Image, new SKRect(240, 0, 790, 675), new SKRect(821, y + 4, 927, y + 134));
+                Text(_constructionPreviews[i].Label, 940, y + 57, 13);
+                Text(selected ? "Выбран" : "Нажмите для выбора", 940, y + 80, 10);
+                string id = choices[i].Id;
+                _buttons.Add((rect, () =>
+                {
+                    _appearance = _appearance with { Parts = _appearance.Parts.SetItem("Portrait", id) };
+                    _portrait = _renderer!.Render(_appearance); SelectLayer(null);
+                    _status = "Персонаж выбран. Костюм сохранён.";
+                }));
+            }
+            Text("Цельный портрет + костюм.", 826, 607, 13);
+        }
+        else if (IsCompleteFacePack || IsWholeHeadPack)
+        {
+            Text(IsWholeHeadPack ? "СОСТАВ ПОРТРЕТА" : "ТРИ ЧАСТИ ПОРТРЕТА", 826, 112, 12);
+            for (int i = 0; i < _constructionPreviews.Count; i++)
+            {
+                float y = 132 + i * (IsWholeHeadPack ? 91 : 123);
+                float size = IsWholeHeadPack ? 92 : 124;
+                canvas.DrawBitmap(_constructionPreviews[i].Image, new SKRect(826, y, 826 + size, y + size));
+                Text(_constructionPreviews[i].Label, IsWholeHeadPack ? 930 : 946, y + 48, 12);
+            }
+            Text(IsWholeHeadPack ? "Лицо, овал, подбородок и уши" : "Глаза, брови, нос и рот", 826, 538, 13);
+            Text(IsWholeHeadPack ? "сохраняются вместе — одной головой." : "меняются вместе — одним лицом.", 826, 560, 13);
+            Text(IsWholeHeadPack ? "Одна шея для всех трёх голов." : "Единый оттенок кожи.", 826, 590, 13);
+        }
+        else
+        {
+            Text("РЕФЕРЕНС", 826, 112, 12);
+            if (_reference is not null) canvas.DrawBitmap(_reference, new SKRect(826, 145, 1090, 409));
+            Text("DSS-Images / Persons", 826, 438, 12);
+            Button(new(826, 464, 1090, 505), "Другой референс", () => { _referenceIndex++; LoadReference(); });
+        }
         Button(new(280, 675, 540, 714), "Случайный портрет", Rebuild);
         Button(new(795, 675, 940, 714), "Сохранить JSON", SavePreset);
         Button(new(948, 675, 1094, 714), "Загрузить JSON", LoadPreset);

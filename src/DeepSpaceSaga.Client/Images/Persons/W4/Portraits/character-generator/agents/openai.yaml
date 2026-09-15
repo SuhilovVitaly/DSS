@@ -1,0 +1,6 @@
+interface:
+  display_name: "Character Generator"
+  short_description: "Цельный портрет под костюмы Deep Space Saga W4"
+  default_prompt: "Используй $character-generator, чтобы создать один цельный портрет для костюмов W4 по моему описанию или референсу, а без них — случайного персонажа."
+policy:
+  allow_implicit_invocation: true
