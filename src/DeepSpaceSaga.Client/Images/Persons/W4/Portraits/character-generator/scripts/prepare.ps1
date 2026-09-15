@@ -3,10 +3,14 @@ param(
     [Parameter(Mandatory)][double]$HeadWidth,
     [Parameter(Mandatory)][double]$HeadHeight,
     [Parameter(Mandatory)][double]$ChinY,
-    [string]$ProjectRoot = 'D:/DeepSpaceSaga/DSS'
+    [string]$ProjectRoot = 'D:/DeepSpaceSaga/DSS',
+    [ValidateSet('female','male')][string]$Gender = 'female'
 )
 $ErrorActionPreference = 'Stop'
-if ($HeadWidth -lt 355 -or $HeadWidth -gt 390) { throw 'Anatomical head width must be 355..390px, excluding hair and ears.' }
+$pack = if ($Gender -eq 'male') { 'M4' } else { 'W4' }
+$minWidth = if ($Gender -eq 'male') { 350 } else { 355 }
+$maxWidth = if ($Gender -eq 'male') { 410 } else { 390 }
+if ($HeadWidth -lt $minWidth -or $HeadWidth -gt $maxWidth) { throw "Anatomical head width must be $minWidth..$maxWidth px, excluding hair and ears." }
 if ($HeadHeight -lt 470 -or $HeadHeight -gt 520) { throw 'Skull-to-chin height must be 470..520px.' }
 if ($ChinY -lt 540 -or $ChinY -gt 570) { throw 'Lowest chin must be at y540..570.' }
 Add-Type -AssemblyName System.Drawing
@@ -37,7 +41,7 @@ try {
     for ($n=1; $n -le 3; $n++) {
         $costume = $null; $composite = $null; $cg = $null
         try {
-            $costume = [System.Drawing.Bitmap]::new((Join-Path $ProjectRoot ('src/DeepSpaceSaga.Client/Images/Persons/W4/Clothes/clothes-{0:00}.png' -f $n)))
+            $costume = [System.Drawing.Bitmap]::new((Join-Path $ProjectRoot ('src/DeepSpaceSaga.Client/Images/Persons/{0}/Clothes/clothes-{1:00}.png' -f $pack,$n)))
             $composite = [System.Drawing.Bitmap]::new(1024,1024,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
             $cg = [System.Drawing.Graphics]::FromImage($composite)
             $cg.Clear([System.Drawing.Color]::Transparent)
@@ -52,7 +56,7 @@ try {
             if ($cg) { $cg.Dispose() }; if ($composite) { $composite.Dispose() }; if ($costume) { $costume.Dispose() }
         }
     }
-    $folder = Join-Path $ProjectRoot 'src/DeepSpaceSaga.Client/Images/Persons/W4/Portraits'
+    $folder = Join-Path $ProjectRoot ('src/DeepSpaceSaga.Client/Images/Persons/{0}/Portraits' -f $pack)
     if (-not (Test-Path -LiteralPath $folder -PathType Container)) { throw "Portrait destination missing: $folder" }
     do {
         $suffix = ([Guid]::NewGuid().ToString('N').Substring(0,6)).ToUpperInvariant()
@@ -62,7 +66,7 @@ try {
     $portrait.Save($savedPath,[System.Drawing.Imaging.ImageFormat]::Png)
     $gallery.Save($previewPath,[System.Drawing.Imaging.ImageFormat]::Png)
     $success = $true
-    [PSCustomObject]@{ Portrait=$savedPath; Preview=$previewPath; HeadWidth=$HeadWidth; HeadHeight=$HeadHeight; ChinY=$ChinY; CostumesChecked=3; Note='Inspect preview visually; delete this exact temporary preview in finally.' } | ConvertTo-Json
+    [PSCustomObject]@{ Portrait=$savedPath; Preview=$previewPath; Gender=$Gender; Pack=$pack; HeadWidth=$HeadWidth; HeadHeight=$HeadHeight; ChinY=$ChinY; CostumesChecked=3; Note='Inspect preview visually; delete this exact temporary preview in finally.' } | ConvertTo-Json
 } finally {
     if ($graphics) { $graphics.Dispose() }; if ($gallery) { $gallery.Dispose() }
     if ($portrait) { $portrait.Dispose() }; if ($source) { $source.Dispose() }

@@ -9,8 +9,11 @@ namespace DeepSpaceSaga.Client.UI.Screens.TempCharacterImage;
 public sealed class TempCharacterImageScreen : IScreen
 {
     private const float Width = 1120, Height = 748;
+    private const int PortraitsPerPage = 3;
     private static readonly SKRect Preview = new(280, 108, 792, 620);
-    private readonly string _assetRoot, _presetPath;
+    private string _assetRoot, _presetPath;
+    private readonly string _initialRoot;
+    private readonly string? _customPresetPath;
     private readonly List<(SKRect Rect, Action Action)> _buttons = [];
     private readonly List<(string Label, SKBitmap Image)> _constructionPreviews = [];
     private PortraitAssetRepository? _assets;
@@ -20,6 +23,7 @@ public sealed class TempCharacterImageScreen : IScreen
     private SKBitmap? _layer, _reference;
     private string[] _references = [];
     private int _referenceIndex;
+    private int _portraitPage;
     private int _seed = 1;
     private string? _selectedLayer;
     private bool _guides;
@@ -39,14 +43,38 @@ public sealed class TempCharacterImageScreen : IScreen
     public TempCharacterImageScreen(string? assetRoot = null, string? presetPath = null)
     {
         _assetRoot = assetRoot ?? Path.Combine(AppContext.BaseDirectory, "Images", "Persons", "W4");
-        _presetPath = presetPath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        _assetRoot = Path.GetFullPath(Path.TrimEndingDirectorySeparator(_assetRoot));
+        _initialRoot = _assetRoot;
+        _customPresetPath = presetPath;
+        _presetPath = ResolvePresetPath();
+    }
+
+    private string ResolvePresetPath()
+    {
+        string pack = Path.GetFileName(_assetRoot);
+        if (_customPresetPath is not null)
+            return _assetRoot == _initialRoot ? _customPresetPath : Path.Combine(Path.GetDirectoryName(Path.GetFullPath(_customPresetPath))!,
+                Path.GetFileNameWithoutExtension(_customPresetPath) + "." + pack.ToLowerInvariant() + ".json");
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "DeepSpaceSaga", "PortraitPresets", Path.GetFileName(Path.TrimEndingDirectorySeparator(_assetRoot)) switch
-            { "W4" => "temp-character-w4.json", "W2" => "temp-character-w2.json", "W1" => "temp-character-w1.json", _ => "temp-character.json" });
+            { "M4" => "temp-character-m4.json", "W4" => "temp-character-w4.json", "W2" => "temp-character-w2.json", "W1" => "temp-character-w1.json", _ => "temp-character.json" });
+    }
+
+    private void SwitchPack(string pack)
+    {
+        string root = Path.Combine(Path.GetDirectoryName(_assetRoot)!, pack);
+        if (root.Equals(_assetRoot, StringComparison.OrdinalIgnoreCase)) return;
+        OnDeactivated();
+        _assetRoot = root;
+        _presetPath = ResolvePresetPath();
+        _guides = false;
+        OnActivated();
     }
 
     public void OnActivated()
     {
-        _hasRendered = false;
+        OnDeactivated();
+        _portraitPage = 0;
         var watch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
@@ -61,6 +89,7 @@ public sealed class TempCharacterImageScreen : IScreen
             _references = Directory.Exists(folder) ? Directory.GetFiles(folder, "CHR-*.png").Order(StringComparer.Ordinal).ToArray() : [];
             LoadReference();
             RefreshConstructionPreviews();
+            _status = "Нажмите на портрет для нового сочетания. Стрелки меняют персонажа и костюм.";
             InterfaceLog.Write($"Portrait workshop ready in {watch.ElapsedMilliseconds} ms; pack={_assetRoot}");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or ArgumentException or System.Text.Json.JsonException or UnauthorizedAccessException)
@@ -69,6 +98,7 @@ public sealed class TempCharacterImageScreen : IScreen
     public void OnDeactivated()
     {
         _hasRendered = false;
+        _assets = null; _appearance = null;
         _portrait = null; _renderer?.Dispose(); _renderer = null;
         _layer?.Dispose(); _layer = null; _selectedLayer = null;
         _reference?.Dispose(); _reference = null;
@@ -124,7 +154,7 @@ public sealed class TempCharacterImageScreen : IScreen
     }
     private void RefreshConstructionPreviews()
     {
-        if (IsUnifiedPortraitPack && _constructionPreviews.Count == 3) return;
+        if (IsUnifiedPortraitPack && _constructionPreviews.Count > 0) return;
         foreach (var preview in _constructionPreviews) preview.Image.Dispose();
         _constructionPreviews.Clear();
         if (IsUnifiedPortraitPack && _assets is not null)
@@ -174,8 +204,13 @@ public sealed class TempCharacterImageScreen : IScreen
         canvas.Save(); canvas.Translate(_left, _top); canvas.Scale(_scale); _buttons.Clear();
         using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(17, 24, 34) };
         canvas.DrawRoundRect(SKRect.Create(Width, Height), 12, 12, paint);
-        Text(IsUnifiedPortraitPack ? "ПОРТРЕТ · W4" : IsWholeHeadPack ? "ПОРТРЕТ · W2" : IsCompleteFacePack ? "ПОРТРЕТ · W1" : "ПОРТРЕТ В АНФАС", 26, 40, 22);
+        Text(IsUnifiedPortraitPack ? "ПОРТРЕТ · " + Path.GetFileName(_assetRoot) : IsWholeHeadPack ? "ПОРТРЕТ · W2" : IsCompleteFacePack ? "ПОРТРЕТ · W1" : "ПОРТРЕТ В АНФАС", 26, 40, 22);
         Text($"АНФАС · СОЧЕТАНИЙ: {CombinationCount}", 26, 67, 12);
+        if (Path.GetFileName(_assetRoot) is "W4" or "M4")
+        {
+            Button(new(520, 22, 648, 58), (_assets?.Style.Gender == "female" ? "• " : "") + "Женщины", () => SwitchPack("W4"));
+            Button(new(660, 22, 788, 58), (_assets?.Style.Gender == "male" ? "• " : "") + "Мужчины", () => SwitchPack("M4"));
+        }
         Button(new(1025, 22, 1094, 58), "Закрыть", () => { });
         Text("ПОСМОТРЕТЬ ДЕТАЛЬ", 26, 112, 12);
         Button(new(26, 130, 250, 170), "Портрет целиком", () => SelectLayer(null));
@@ -225,25 +260,38 @@ public sealed class TempCharacterImageScreen : IScreen
         {
             Text("ВЫБЕРИТЕ ПЕРСОНАЖА", 826, 112, 12);
             var choices = _assets.Parts.Where(p => p.Category == "Portrait").OrderBy(p => p.Id, StringComparer.Ordinal).ToArray();
-            for (int i = 0; i < _constructionPreviews.Count; i++)
+            int pageCount = Math.Max(1, (choices.Length + PortraitsPerPage - 1) / PortraitsPerPage);
+            _portraitPage = Math.Clamp(_portraitPage, 0, pageCount - 1);
+            int start = _portraitPage * PortraitsPerPage;
+            for (int i = start; i < Math.Min(start + PortraitsPerPage, _constructionPreviews.Count); i++)
             {
-                float y = 132 + i * 147;
+                float y = 132 + (i - start) * 147;
                 bool selected = _appearance.Parts["Portrait"] == choices[i].Id;
                 paint.Color = selected ? new SKColor(39, 65, 78) : new SKColor(23, 33, 44);
                 var rect = new SKRect(814, y, 1094, y + 135);
                 canvas.DrawRoundRect(rect, 8, 8, paint);
                 canvas.DrawBitmap(_constructionPreviews[i].Image, new SKRect(240, 0, 790, 675), new SKRect(821, y + 4, 927, y + 134));
-                Text(_constructionPreviews[i].Label, 940, y + 57, 13);
+                string label = _constructionPreviews[i].Label;
+                paint.TextSize = 13; paint.Typeface = MenuStyle.TypefaceRegular;
+                string shortLabel = label;
+                while (shortLabel.Length > 1 && paint.MeasureText(shortLabel + "…") > 146) shortLabel = shortLabel[..^1];
+                Text(shortLabel.Length < label.Length ? shortLabel + "…" : label, 940, y + 57, 13);
                 Text(selected ? "Выбран" : "Нажмите для выбора", 940, y + 80, 10);
                 string id = choices[i].Id;
                 _buttons.Add((rect, () =>
                 {
                     _appearance = _appearance with { Parts = _appearance.Parts.SetItem("Portrait", id) };
                     _portrait = _renderer!.Render(_appearance); SelectLayer(null);
-                    _status = "Персонаж выбран. Костюм сохранён.";
+                    _status = $"Выбран: {label}. Костюм сохранён.";
                 }));
             }
-            Text("Цельный портрет + костюм.", 826, 607, 13);
+            if (pageCount > 1)
+            {
+                Button(new(814, 580, 860, 618), "‹", () => _portraitPage = (_portraitPage + pageCount - 1) % pageCount);
+                Text($"{_portraitPage + 1} / {pageCount}", 926, 605, 13);
+                Button(new(1048, 580, 1094, 618), "›", () => _portraitPage = (_portraitPage + 1) % pageCount);
+            }
+            Text($"Персонажей: {choices.Length}", 826, 645, 13);
         }
         else if (IsCompleteFacePack || IsWholeHeadPack)
         {

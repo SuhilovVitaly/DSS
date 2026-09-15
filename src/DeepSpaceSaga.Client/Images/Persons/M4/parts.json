@@ -1,0 +1,77 @@
+[
+  {
+    "id": "male.m4.clothes.001",
+    "category": "Clothes",
+    "texture": "Clothes/clothes-01.png",
+    "displayName": "Офицерский",
+    "introducedInVersion": 14,
+    "colorChannel": null,
+    "colorMask": null,
+    "textureVersions": {},
+    "colorMaskVersions": {},
+    "skinMaskVersions": {},
+    "faceTextures": {},
+    "baseColor": "#808080",
+    "weight": 1,
+    "tags": [
+      "male",
+      "human",
+      "adult"
+    ],
+    "requiresTags": [],
+    "excludesTags": [],
+    "requiresComponents": [],
+    "excludesComponents": [],
+    "expressions": {}
+  },
+  {
+    "id": "male.m4.clothes.002",
+    "category": "Clothes",
+    "texture": "Clothes/clothes-02.png",
+    "displayName": "Медицинский",
+    "introducedInVersion": 14,
+    "colorChannel": null,
+    "colorMask": null,
+    "textureVersions": {},
+    "colorMaskVersions": {},
+    "skinMaskVersions": {},
+    "faceTextures": {},
+    "baseColor": "#808080",
+    "weight": 1,
+    "tags": [
+      "male",
+      "human",
+      "adult"
+    ],
+    "requiresTags": [],
+    "excludesTags": [],
+    "requiresComponents": [],
+    "excludesComponents": [],
+    "expressions": {}
+  },
+  {
+    "id": "male.m4.clothes.003",
+    "category": "Clothes",
+    "texture": "Clothes/clothes-03.png",
+    "displayName": "Инженерный",
+    "introducedInVersion": 14,
+    "colorChannel": null,
+    "colorMask": null,
+    "textureVersions": {},
+    "colorMaskVersions": {},
+    "skinMaskVersions": {},
+    "faceTextures": {},
+    "baseColor": "#808080",
+    "weight": 1,
+    "tags": [
+      "male",
+      "human",
+      "adult"
+    ],
+    "requiresTags": [],
+    "excludesTags": [],
+    "requiresComponents": [],
+    "excludesComponents": [],
+    "expressions": {}
+  }
+]

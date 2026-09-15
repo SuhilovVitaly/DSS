@@ -98,6 +98,7 @@ public sealed partial class SimulationEngine
         var speaker = station?.StationCrew.FirstOrDefault(c => c.Role == node.SpeakerRole);
         var captain = node.SpeakerRole == "Captain" ? _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId) : null;
         return active with {
+            SpeakerRole = node.SpeakerRole,
             SpeakerDisplayName = captain?.CaptainDisplayName ?? speaker?.DisplayName ?? active.SpeakerDisplayName,
             SpeakerPortraitImage = captain?.CaptainPortraitImage ?? speaker?.PortraitImage ?? active.SpeakerPortraitImage,
             Choices = node.Choices.IsEmpty

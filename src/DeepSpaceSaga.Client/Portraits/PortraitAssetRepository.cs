@@ -16,9 +16,11 @@ public sealed class PortraitAssetRepository
         Root = Path.GetFullPath(root);
         Style = JsonSerializer.Deserialize<PortraitStyleProfile>(File.ReadAllText(Path.Combine(Root, "portrait-style.json")), AppearanceSerializer.Options)
             ?? throw new InvalidDataException("Missing style profile.");
-        Parts = JsonSerializer.Deserialize<PortraitPart[]>(File.ReadAllText(Path.Combine(Root, "parts.json")), AppearanceSerializer.Options)
+        var catalog = JsonSerializer.Deserialize<PortraitPart[]>(File.ReadAllText(Path.Combine(Root, "parts.json")), AppearanceSerializer.Options)
             ?? throw new InvalidDataException("Missing parts catalog.");
-        if (Style.Width <= 0 || Style.Height <= 0 || Style.MaxCachedPortraits is < 1 or > 256 ||
+        Parts = Style.Layers.Any(l => l.Category == "Portrait") ? DiscoverPortraits(catalog) : catalog;
+        if (Style.Gender is not ("female" or "male") || string.IsNullOrWhiteSpace(Style.PortraitIdPrefix) ||
+            Style.Width <= 0 || Style.Height <= 0 || Style.MaxCachedPortraits is < 1 or > 256 ||
             Style.Layers.Length == 0 || Style.Layers.Select(l => l.Category).Distinct().Count() != Style.Layers.Length ||
             Style.Anchors.Values.Any(a => !float.IsFinite(a.X) || !float.IsFinite(a.Y) || a.X is < 0 or > 1 || a.Y is < 0 or > 1) ||
             Style.Palettes.Values.Any(p => p.Length == 0 || p.Any(c => !IsColor(c))))
@@ -61,6 +63,31 @@ public sealed class PortraitAssetRepository
     }
 
     public PortraitPart Get(string id) => _byId.TryGetValue(id, out var part) ? part : throw new InvalidDataException($"Unknown portrait ID: {id}");
+    private IReadOnlyList<PortraitPart> DiscoverPortraits(PortraitPart[] catalog)
+    {
+        // Keep existing IDs so saved appearances still resolve. The folder is the
+        // source of available portraits; deleted portraits must not block the pack.
+        var parts = catalog.Where(p => p.Category != "Portrait" || File.Exists(TexturePath(p.Texture))).ToList();
+        var knownPaths = parts.Select(p => TexturePath(p.Texture)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        string folder = Path.Combine(Root, "Portraits");
+        if (!Directory.Exists(folder)) return parts;
+        foreach (string file in Directory.EnumerateFiles(folder).Where(f => Path.GetExtension(f).Equals(".png", StringComparison.OrdinalIgnoreCase)).Order(StringComparer.Ordinal))
+        {
+            if (!knownPaths.Add(file)) continue;
+            string filename = Path.GetFileNameWithoutExtension(file);
+            parts.Add(new PortraitPart
+            {
+                Id = Style.PortraitIdPrefix + filename.ToLowerInvariant(),
+                Category = "Portrait",
+                Texture = Path.GetRelativePath(Root, file).Replace('\\', '/'),
+                DisplayName = filename,
+                IntroducedInVersion = Style.LibraryVersion,
+                Tags = [Style.Gender, "human", "adult"]
+            });
+        }
+        return parts;
+    }
+
     public string TexturePath(string path)
     {
         var full = Path.GetFullPath(Path.Combine(Root, path));
@@ -84,7 +111,7 @@ public sealed class PortraitAssetRepository
     public bool IsCompatible(CharacterAppearance appearance)
     {
         if (appearance.Version != 1 || !Style.SupportedLibraryVersions.Contains(appearance.LibraryVersion) ||
-            appearance.Gender != "female" || appearance.Age != "adult" || appearance.Race != "human" || appearance.Parts is null) return false;
+            appearance.Gender != Style.Gender || appearance.Age != "adult" || appearance.Race != "human" || appearance.Parts is null) return false;
         var selected = new List<PortraitPart>();
         foreach (var entry in appearance.Parts)
         {

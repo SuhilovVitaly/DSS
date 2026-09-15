@@ -16,21 +16,26 @@ public sealed class UnifiedPortraitTests
     {
         Assert.Equal(14, Pack.Value.Style.LibraryVersion);
         Assert.Equal(new[] { "Portrait", "Clothes" }, Pack.Value.Style.Layers.Select(l => l.Category));
-        Assert.Equal(3, Pack.Value.Parts.Count(p => p.Category == "Portrait"));
+        int portraitCount = Directory.EnumerateFiles(Path.Combine(Root, "Portraits"))
+            .Count(f => Path.GetExtension(f).Equals(".png", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(portraitCount, Pack.Value.Parts.Count(p => p.Category == "Portrait"));
         Assert.Equal(3, Pack.Value.Parts.Count(p => p.Category == "Clothes"));
-        Assert.Equal(6, Pack.Value.Parts.Count);
-        var previous = new PortraitAssetRepository(Path.GetFullPath(Path.Combine(Root, "../W2")), false);
+        Assert.Equal(portraitCount + 3, Pack.Value.Parts.Count);
+        string[] costumeHashes = [
+            "32BD456D9C3D5F36D1E012482C9309C1D44EA15D443EBF4D698D2BCC29C3989E",
+            "9013A61E41B8315A6B026DDD01927BB34551A8BBF6B9B447B822F5B96C9364BC",
+            "FFA1BFE4CF48B1C4A2FBA6BEDF23786FB06596D36672ECDCBADE8B5EE3F16D4B"];
         foreach (var p in Pack.Value.Parts.Where(p => p.Category == "Clothes"))
         {
-            var original = previous.Parts.Single(c => c.Category == "Clothes" && c.Id.Split('.').Last() == p.Id.Split('.').Last());
-            Assert.Equal(File.ReadAllBytes(previous.TexturePath(original.Texture)), File.ReadAllBytes(Pack.Value.TexturePath(p.Texture)));
+            int index = int.Parse(p.Id.Split('.').Last()) - 1;
+            Assert.Equal(costumeHashes[index], Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Pack.Value.TexturePath(p.Texture)))));
         }
         Assert.False(Directory.Exists(Path.Combine(Root, "Sources")));
         Assert.False(Directory.Exists(Path.Combine(Root, "Generated")));
     }
 
     [Fact]
-    public void Nine_combinations_preserve_complete_head_pixels_and_cover_the_collar_socket()
+    public void All_combinations_preserve_complete_head_pixels_and_cover_the_collar_socket()
     {
         using var renderer = new PortraitRenderer(Pack.Value);
         var baseline = new PortraitGenerator(Pack.Value).Generate(4);
@@ -51,7 +56,7 @@ public sealed class UnifiedPortraitTests
                 Assert.True(hashes.Add(Convert.ToHexString(SHA256.HashData(bitmap.Bytes))));
             }
         }
-        Assert.Equal(9, hashes.Count);
+        Assert.Equal(Pack.Value.Parts.Count(p => p.Category == "Portrait") * 3, hashes.Count);
     }
 
     [Fact]
@@ -80,5 +85,102 @@ public sealed class UnifiedPortraitTests
             Assert.True(Pack.Value.IsCompatible(screen.Appearance!));
         }
         finally { screen.OnDeactivated(); }
+    }
+
+    [Fact]
+    public void Folder_discovery_preserves_ids_avoids_duplicates_and_updates_after_files_change()
+    {
+        using var fixture = new TemporaryPack();
+        fixture.Add("Zeta.PNG");
+        Directory.CreateDirectory(Path.Combine(fixture.Root, "Portraits", "helpers"));
+        File.Copy(Path.Combine(fixture.Root, "Portraits", "Zeta.PNG"), Path.Combine(fixture.Root, "Portraits", "helpers", "preview.png"));
+        var first = new PortraitAssetRepository(fixture.Root);
+        var portraits = first.Parts.Where(p => p.Category == "Portrait").ToArray();
+        Assert.Equal(2, portraits.Length);
+        Assert.Contains(portraits, p => p.Id == "female.w4.portrait.001");
+        var added = Assert.Single(portraits, p => p.Texture.EndsWith("Zeta.PNG", StringComparison.Ordinal));
+        var generator = new PortraitGenerator(first);
+        var appearance = Enumerable.Range(0, 100).Select(i => generator.Generate(i))
+            .First(a => a.Parts["Portrait"] == added.Id);
+        string saved = AppearanceSerializer.Serialize(appearance);
+
+        fixture.Add("Alpha.png");
+        var second = new PortraitAssetRepository(fixture.Root);
+        Assert.Equal(added.Id, second.Parts.Single(p => p.Texture == added.Texture).Id);
+        second.ValidateAppearance(AppearanceSerializer.Deserialize(saved));
+        File.Delete(Path.Combine(fixture.Root, "Portraits", "portrait-01.png"));
+        var third = new PortraitAssetRepository(fixture.Root);
+        Assert.DoesNotContain(third.Parts, p => p.Id == "female.w4.portrait.001");
+        Assert.Equal(2, third.Parts.Count(p => p.Category == "Portrait"));
+    }
+
+    [Fact]
+    public void Paged_cards_select_every_portrait_and_save_restore_discovered_characters()
+    {
+        using var fixture = new TemporaryPack();
+        for (int i = 0; i < 6; i++) fixture.Add($"extra-{i}.png");
+        var pack = new PortraitAssetRepository(fixture.Root);
+        var choices = pack.Parts.Where(p => p.Category == "Portrait").OrderBy(p => p.Id, StringComparer.Ordinal).ToArray();
+        var screen = new TempCharacterImageScreen(fixture.Root, Path.Combine(fixture.Root, "preset.json"));
+        using var bitmap = new SKBitmap(1120, 748);
+        using var canvas = new SKCanvas(bitmap);
+        screen.OnActivated();
+        try
+        {
+            Assert.NotNull(screen.Appearance);
+            string costume = screen.Appearance.Parts["Clothes"];
+            for (int i = 0; i < choices.Length; i++)
+            {
+                screen.Render(canvas, 1120, 748);
+                if (i > 0 && i % 3 == 0)
+                {
+                    screen.OnMouseDown(1070, 599, MouseButton.Left);
+                    screen.Render(canvas, 1120, 748);
+                }
+                screen.OnMouseDown(980, 170 + i % 3 * 147, MouseButton.Left);
+                Assert.Equal(choices[i].Id, screen.Appearance!.Parts["Portrait"]);
+                Assert.Equal(costume, screen.Appearance.Parts["Clothes"]);
+            }
+            screen.OnMouseDown(980, 317, MouseButton.Left); // Empty slot on the final page.
+            Assert.Equal(choices[^1].Id, screen.Appearance!.Parts["Portrait"]);
+            screen.OnMouseDown(860, 695, MouseButton.Left); // Save.
+            screen.OnMouseDown(234, 208, MouseButton.Left); // Cycle portrait.
+            Assert.NotEqual(choices[^1].Id, screen.Appearance.Parts["Portrait"]);
+            screen.OnMouseDown(1010, 695, MouseButton.Left); // Restore.
+            Assert.Equal(choices[^1].Id, screen.Appearance.Parts["Portrait"]);
+            screen.OnMouseDown(1070, 599, MouseButton.Left); // Wrap to first page.
+            screen.Render(canvas, 1120, 748);
+            screen.OnMouseDown(980, 170, MouseButton.Left);
+            Assert.Equal(choices[0].Id, screen.Appearance.Parts["Portrait"]);
+            screen.OnDeactivated();
+            fixture.Add("zz-new.png");
+            screen.OnActivated();
+            screen.Render(canvas, 1120, 748);
+            screen.OnMouseDown(835, 599, MouseButton.Left); // Last page after reopening.
+            screen.Render(canvas, 1120, 748);
+            screen.OnMouseDown(980, 317, MouseButton.Left);
+            Assert.Equal("female.w4.portrait.file.zz-new", screen.Appearance!.Parts["Portrait"]);
+        }
+        finally { screen.OnDeactivated(); }
+    }
+
+    private sealed class TemporaryPack : IDisposable
+    {
+        public string Root { get; } = Path.Combine(Path.GetTempPath(), "dss-portrait-discovery-" + Guid.NewGuid().ToString("N"));
+        public TemporaryPack()
+        {
+            Directory.CreateDirectory(Root);
+            File.Copy(Path.Combine(UnifiedPortraitTests.Root, "portrait-style.json"), Path.Combine(Root, "portrait-style.json"));
+            var catalog = Pack.Value.Parts.Where(p => p.Category == "Clothes" || p.Id == "female.w4.portrait.001").ToArray();
+            File.WriteAllText(Path.Combine(Root, "parts.json"), System.Text.Json.JsonSerializer.Serialize(catalog, AppearanceSerializer.Options));
+            foreach (var part in catalog)
+            {
+                string destination = Path.Combine(Root, part.Texture);
+                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+                File.Copy(Pack.Value.TexturePath(part.Texture), destination);
+            }
+        }
+        public void Add(string filename) => File.Copy(Path.Combine(UnifiedPortraitTests.Root, "Portraits", "portrait-01.png"), Path.Combine(Root, "Portraits", filename));
+        public void Dispose() => Directory.Delete(Root, recursive: true);
     }
 }

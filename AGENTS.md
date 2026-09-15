@@ -8,7 +8,8 @@
 - The new complete-face concept is stored in `src/DeepSpaceSaga.Client/Images/Persons/W1` with `Ovals`, `Faces`, and `Hair` assets. Maintain it there, preserve the old W pack, and exclude W1 `Sources` and `Generated` from shipping.
 - W2 uses `src/DeepSpaceSaga.Client/Images/Persons/W2`: whole `Heads`, one `Neck`, `Clothes`, and new `Hair`. Preserve W and W1. Exclude W2 `Sources` and `Generated` from shipping.
 - W4 uses `src/DeepSpaceSaga.Client/Images/Persons/W4`: three complete `Portraits` (head, neck and hair in one image) and shared `Clothes`. Preserve earlier packs; exclude `Sources` and `Generated` from shipping.
-- The Character Generator skill is maintained in `W4/Portraits/character-generator`. Its runs save only the accepted final PNG in `W4/Portraits`; do not create `W4/Sources` or `W4/Generated`. Use temporary previews outside the project and remove them after validation.
+- M4 is the analogous male pack in `src/DeepSpaceSaga.Client/Images/Persons/M4`, with complete `Portraits` and compatible shared `Clothes`. Save accepted male PNGs directly in M4/Portraits; do not create M4 Sources or Generated. The shared Character Generator skill supports both W4 and M4.
+- The Character Generator skill is maintained in `W4/Portraits/character-generator`. Its runs save only accepted final PNGs in W4/Portraits for women or M4/Portraits for men; do not create Sources or Generated in either pack. Use temporary previews outside the project and remove them after validation.
 
 ## Requirements Engineering
 

@@ -1402,7 +1402,7 @@ public class ScenarioEngineTests
         var ship = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SHIP");
         Assert.False(string.IsNullOrWhiteSpace(ship.CaptainDisplayName));
         Assert.False(string.IsNullOrWhiteSpace(ship.CaptainPortraitImage));
-        Assert.StartsWith("Images/Persons/M/", ship.CaptainPortraitImage);
+        Assert.Equal(CharacterPortraits.DefaultMale, ship.CaptainPortraitImage);
     }
 
     [Fact]

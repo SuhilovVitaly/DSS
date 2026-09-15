@@ -15,7 +15,7 @@ public static class EngineContentLoader
     public static SimulationEngine CreateEngineFromSettingsFile(string settingsPath)
     {
         var loaded = LoadFromSettingsFile(settingsPath);
-        var engine = new SimulationEngine(loaded.Registry);
+        var engine = new SimulationEngine(loaded.Registry, LoadCrewPortraits(settingsPath));
         engine.LoadScenario(loaded.DefaultScenario);
         return engine;
     }
@@ -30,7 +30,7 @@ public static class EngineContentLoader
     {
         var registry = LoadRegistryFromSettingsFile(settingsPath, out _, out _);
         var saveScenario = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true);
-        var engine = new SimulationEngine(registry);
+        var engine = new SimulationEngine(registry, LoadCrewPortraits(settingsPath));
         engine.LoadScenario(saveScenario);
         return engine;
     }
@@ -45,9 +45,21 @@ public static class EngineContentLoader
     {
         var registry = LoadRegistryFromSettingsFile(settingsPath, out _, out _);
         var scenario = ScenarioLoader.LoadFromFile(scenarioPath);
-        var engine = new SimulationEngine(registry);
+        var engine = new SimulationEngine(registry, LoadCrewPortraits(settingsPath));
         engine.LoadScenario(scenario);
         return engine;
+    }
+
+    /// <summary>Discover portable portrait references once at bootstrap; resolved choices are saved on crew members.</summary>
+    internal static ImmutableArray<string> LoadCrewPortraits(string settingsPath)
+    {
+        string root = Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
+        string folder = Path.Combine(root, DeepSpaceSaga.Contracts.CharacterPortraits.FemaleFolder);
+        if (!Directory.Exists(folder)) return [];
+        return Directory.EnumerateFiles(folder)
+            .Where(p => Path.GetExtension(p).Equals(".png", StringComparison.OrdinalIgnoreCase))
+            .Select(p => Path.GetRelativePath(root, p).Replace('\\', '/'))
+            .Order(StringComparer.Ordinal).ToImmutableArray();
     }
 
     internal static LoadedEngineContent LoadFromSettingsFile(string settingsPath)

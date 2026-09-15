@@ -10,6 +10,11 @@
     <None Remove="Images/Persons/W1/**" />
     <None Remove="Images/Persons/W2/**" />
     <None Remove="Images/Persons/W4/**" />
+    <None Remove="Images/Persons/M4/**" />
+    <Content Include="Images/Persons/M4/**/*.png;Images/Persons/M4/**/*.json" Exclude="Images/Persons/M4/Sources/**;Images/Persons/M4/Generated/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
     <Content Include="Images/Persons/W4/**/*.png;Images/Persons/W4/**/*.json" Exclude="Images/Persons/W4/Sources/**;Images/Persons/W4/Generated/**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
@@ -35,8 +40,9 @@
   </ItemGroup>
 
   <Target Name="CheckPortraitPackPresent" BeforeTargets="PrepareForBuild" Condition="'$(SkipPortraitPackCheck)' != 'true'">
-    <!-- Match the W4 pack used by TempCharacterImageScreen by default. -->
+    <!-- Both selectable portrait packs must be available in the workshop. -->
     <Error Condition="!Exists('Images/Persons/W4/parts.json') Or !Exists('Images/Persons/W4/portrait-style.json')" Text="Portrait asset pack missing in Images/Persons/W4 (see Docs/PortraitGeneratorW4.md)." />
+    <Error Condition="!Exists('Images/Persons/M4/parts.json') Or !Exists('Images/Persons/M4/portrait-style.json')" Text="Portrait asset pack missing in Images/Persons/M4 (see Docs/PortraitGeneratorM4.md)." />
   </Target>
 
   <ItemGroup>

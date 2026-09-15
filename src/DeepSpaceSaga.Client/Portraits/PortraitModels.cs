@@ -51,6 +51,8 @@ public sealed record PortraitPart
 
 public sealed record PortraitStyleProfile
 {
+    public string Gender { get; init; } = "female";
+    public string PortraitIdPrefix { get; init; } = "female.w4.portrait.file.";
     public int LibraryVersion { get; init; } = 1;
     public int[] SupportedLibraryVersions { get; init; } = [1];
     public int Width { get; init; } = 512;
@@ -121,7 +123,7 @@ public sealed class PortraitGenerator(PortraitAssetRepository assets)
             foreach (var layer in assets.Style.Layers.Where(l => l.IntroducedInVersion <= version))
             {
                 var choices = assets.Parts.Where(p => p.Category == layer.Category && p.IntroducedInVersion <= version &&
-                    p.Tags.Contains("female") && p.Tags.Contains("human") && p.Tags.Contains("adult"))
+                    p.Tags.Contains(assets.Style.Gender) && p.Tags.Contains("human") && p.Tags.Contains("adult"))
                     .OrderBy(p => p.Id, StringComparer.Ordinal).ToArray();
                 double total = choices.Sum(p => p.Weight) + (layer.Required ? 0 : 8);
                 double pick = random.Next() * total;
@@ -131,13 +133,13 @@ public sealed class PortraitGenerator(PortraitAssetRepository assets)
                     if (pick < 0) { parts[layer.Category] = part.Id; break; }
                 }
             }
-            var appearance = new CharacterAppearance { Seed = seed, LibraryVersion = version, Parts = parts.ToImmutable() };
+            var appearance = new CharacterAppearance { Seed = seed, Gender = assets.Style.Gender, LibraryVersion = version, Parts = parts.ToImmutable() };
             if (!assets.IsCompatible(appearance)) continue;
             var colors = ImmutableSortedDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
             foreach (var palette in assets.Style.Palettes.OrderBy(p => p.Key, StringComparer.Ordinal))
                 colors[palette.Key] = palette.Value[(int)(random.Next() * palette.Value.Length)];
             return appearance with { Colors = colors.ToImmutable() };
         }
-        throw new InvalidDataException("No compatible female adult human portrait found in the library.");
+        throw new InvalidDataException($"No compatible {assets.Style.Gender} adult human portrait found in the library.");
     }
 }

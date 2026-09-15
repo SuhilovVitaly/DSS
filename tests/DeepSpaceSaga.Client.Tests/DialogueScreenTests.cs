@@ -88,17 +88,25 @@ public class DialogueScreenTests
     public void Renders_operator_and_captain_with_the_fee_offer()
     {
         var state = State() with { SpeakerDisplayName = "Mari Lefeber",
-            SpeakerPortraitImage = "Images/Persons/W/CHR-20260901-232751-JUKCIQ.png",
+            SpeakerPortraitImage = CharacterPortraits.DefaultFemale,
             TextKey = "Dialogue.Docking.OfferPortFee", CurrentNodeId = "offer_port_fee",
             Parameters = ImmutableDictionary<string, string>.Empty.Add("portFeeCreditsPerDay", "100"),
             Choices = [new("accept_fee", "Dialogue.Docking.AcceptFee", true), new("refuse_fee", "Dialogue.Docking.RefuseFee", true)] };
         var buffer = new SnapshotBuffer();
         buffer.Update(Snapshot(state) with { Objects = [new("player", 0, 0, 0, 0,
-            CaptainDisplayName: "Captain", CaptainPortraitImage: "Images/Persons/M/CHR-20260906-150900-IYUL3A.png")] });
+            CaptainDisplayName: "Captain", CaptainPortraitImage: CharacterPortraits.DefaultMale)] });
         var screen = new DialogueScreen(buffer, null, state);
         using var bitmap = new SKBitmap(1600, 900); using var canvas = new SKCanvas(bitmap);
         canvas.Clear(SKColors.Black); screen.Render(canvas, 1600, 900);
         Assert.Equal(2, screen.State.Choices.Length);
+        using var operatorImage = DeepSpaceSaga.Client.UI.Portraits.DialoguePortraitComposer.Compose(state.SpeakerPortraitImage,
+            DeepSpaceSaga.Client.UI.Portraits.PersonSex.Female, "station/operator/Dock Operator");
+        using var captainImage = DeepSpaceSaga.Client.UI.Portraits.DialoguePortraitComposer.Compose(CharacterPortraits.DefaultMale,
+            DeepSpaceSaga.Client.UI.Portraits.PersonSex.Male, "player");
+        Assert.NotNull(operatorImage); Assert.NotNull(captainImage);
+        var left = DialogueLayout.Operator(1600, 900); var right = DialogueLayout.Captain(1600, 900);
+        Assert.Equal(operatorImage.GetPixel(150, 150), bitmap.GetPixel((int)left.Left + 150, (int)left.Top + 150));
+        Assert.Equal(captainImage.GetPixel(150, 150), bitmap.GetPixel((int)right.Left + 150, (int)right.Top + 150));
         if (Environment.GetEnvironmentVariable("DSS_DIALOGUE_PREVIEW") is { } path)
         {
             using var image = SKImage.FromBitmap(bitmap); using var data = image.Encode(SKEncodedImageFormat.Png, 100);
@@ -106,6 +114,34 @@ public class DialogueScreenTests
         }
         screen.OnDeactivated();
     }
+    [Fact]
+    public void Portraits_refresh_when_speaker_changes_and_when_window_reopens()
+    {
+        var buffer = new SnapshotBuffer();
+        var initial = State() with { SpeakerPortraitImage = CharacterPortraits.DefaultFemale };
+        var snapshot = Snapshot(initial) with { Objects = [new("player", 0, 0, 0, 0,
+            CaptainDisplayName: "Captain", CaptainPortraitImage: CharacterPortraits.DefaultMale)] };
+        buffer.Update(snapshot);
+        var screen = new DialogueScreen(buffer, null, initial);
+        using var bitmap = new SKBitmap(1600, 900); using var canvas = new SKCanvas(bitmap);
+        var left = DialogueLayout.Operator(1600, 900); var right = DialogueLayout.Captain(1600, 900);
+        bitmap.Erase(SKColors.Black);
+        screen.Render(canvas, 1600, 900);
+        var before = bitmap.GetPixel((int)left.Left + 150, (int)left.Top + 150);
+        var speakingCaptain = initial with { Revision = 1, SpeakerRole = "Captain", SpeakerPortraitImage = CharacterPortraits.DefaultMale };
+        buffer.Update(snapshot with { SnapshotSequence = 2, ActiveDialogue = speakingCaptain });
+        screen.Render(canvas, 1600, 900);
+        Assert.NotEqual(before, bitmap.GetPixel((int)left.Left + 150, (int)left.Top + 150));
+        for (int y = 0; y < 300; y++)
+        for (int x = 0; x < 300; x++)
+            Assert.Equal(bitmap.GetPixel((int)left.Left + x, (int)left.Top + y), bitmap.GetPixel((int)right.Left + x, (int)right.Top + y));
+        var rendered = bitmap.Bytes;
+        screen.OnDeactivated(); screen.OnActivated();
+        bitmap.Erase(SKColors.Black); screen.Render(canvas, 1600, 900);
+        Assert.Equal(rendered, bitmap.Bytes);
+        screen.OnDeactivated();
+    }
+
     private sealed class RecordingConnection : IGameSessionConnection
     {
         public List<DialogueCommand> Commands { get; } = [];
