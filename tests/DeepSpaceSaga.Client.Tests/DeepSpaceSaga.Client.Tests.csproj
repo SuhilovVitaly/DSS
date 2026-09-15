@@ -25,8 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="../../../DSS-Images/temp/PortraitGenerator/Golden/*.png" Link="GoldenPortraits/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="../../../DSS-Images/temp/PortraitGenerator/Golden/v1/*.json" Link="GoldenPortraits/v1/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../src/DeepSpaceSaga.Client/Images/Persons/W/PortraitGenerator/Golden/*.png" Link="GoldenPortraits/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -8,11 +8,11 @@ namespace DeepSpaceSaga.Engine.Tests;
 public class DialogueEffectTests
 {
     private static (SimulationEngine Engine, GameDataRegistry Registry) Create(ImmutableArray<DialogueEffect> effects,
-        bool canAbort = true, ImmutableArray<DialogueCondition> conditions = default)
+        bool canAbort = true, ImmutableArray<DialogueCondition> conditions = default, ImmutableArray<DialogueNode> nodes = default)
     {
         var baseRegistry = DockCommandTests.CreateRegistry(200);
         var definition = new DialogueDefinition("test", "Test", "entry", canAbort,
-            [new("entry", "Captain", "test.entry", [new("choose", "test.choose", Effects: effects, Conditions: conditions)])], AllowManualStart: true);
+            nodes.IsDefault ? [new("entry", "Captain", "test.entry", [new("choose", "test.choose", Effects: effects, Conditions: conditions)])] : nodes, AllowManualStart: true);
         var registry = GameDataRegistry.Create(
             Enumerable.Range(0, baseRegistry.ModuleCategories.Count).Select(baseRegistry.ModuleCategories.GetDefinition),
             [baseRegistry.ModuleTypes.GetDefinition(0) with { CargoCapacityKg = 20 }],
@@ -27,6 +27,24 @@ public class DialogueEffectTests
         Assert.NotNull(engine.CaptureSnapshotForTests().ActiveDialogue);
         return (engine, registry);
     }
+    [Fact]
+    public void Changing_speaker_updates_role_name_and_portrait_together()
+    {
+        var (engine, _) = Create([], nodes: [
+            new("entry", "Dock Operator", "operator.line", [new("choose", "continue", NextNodeId: "captain")]),
+            new("captain", "Captain", "captain.line", [])]);
+        using (engine)
+        {
+            var first = engine.CaptureSnapshotForTests().ActiveDialogue!;
+            Assert.Equal("Dock Operator", first.SpeakerRole);
+            var next = DialogueTests.Choose(engine, "choose");
+            var captain = next.Objects.Single(o => o.ObjectId == next.PlayerShipObjectId);
+            Assert.Equal("Captain", next.ActiveDialogue!.SpeakerRole);
+            Assert.Equal(captain.CaptainPortraitImage, next.ActiveDialogue.SpeakerPortraitImage);
+            Assert.Equal(captain.CaptainDisplayName, next.ActiveDialogue.SpeakerDisplayName);
+        }
+    }
+
     [Fact]
     public void Universal_effects_update_character_cargo_flags_and_quests_and_round_trip()
     {

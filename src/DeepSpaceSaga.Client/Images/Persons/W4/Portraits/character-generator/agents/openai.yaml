@@ -1,0 +1,6 @@
+interface:
+  display_name: "Character Generator"
+  short_description: "Портреты-компоненты с точной посадкой под костюмы DSS"
+  default_prompt: "Используй $character-generator, чтобы создать мужскую или женскую голову с шеей как компонент персонажа W4/M4 по описанию, референсу или случайно; соблюдай точки стыковки и проверь сборку со всеми тремя костюмами."
+policy:
+  allow_implicit_invocation: true

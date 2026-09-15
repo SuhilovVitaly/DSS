@@ -19,7 +19,7 @@ public sealed record CharacterAppearance
 
 public sealed record CharacterVisualState(string Expression = "neutral");
 public sealed record PortraitAnchor(float X, float Y);
-public sealed record PortraitLayer(string Category, bool Required = true);
+public sealed record PortraitLayer(string Category, bool Required = true, int IntroducedInVersion = 1);
 public sealed record PortraitPart
 {
     public required string Id { get; init; }
@@ -29,6 +29,16 @@ public sealed record PortraitPart
     public int IntroducedInVersion { get; init; } = 1;
     public string? ColorChannel { get; init; }
     public string? ColorMask { get; init; }
+    public Dictionary<int, string> TextureVersions { get; init; } = [];
+    public Dictionary<int, string> ColorMaskVersions { get; init; } = [];
+    public Dictionary<int, string> SkinMaskVersions { get; init; } = [];
+    public Dictionary<string, string> FaceTextures { get; init; } = [];
+    public string TextureFor(int version, string? faceId = null) =>
+        faceId is not null && FaceTextures.TryGetValue(faceId, out var texture) ? texture : VersionPath(TextureVersions, version) ?? Texture;
+    public string? ColorMaskFor(int version) => VersionPath(ColorMaskVersions, version) ?? ColorMask;
+    public string? SkinMaskFor(int version) => VersionPath(SkinMaskVersions, version);
+    private static string? VersionPath(Dictionary<int, string> paths, int version) =>
+        paths.Where(p => p.Key <= version).OrderByDescending(p => p.Key).Select(p => p.Value).FirstOrDefault();
     public string BaseColor { get; init; } = "#808080";
     public double Weight { get; init; } = 1;
     public string[] Tags { get; init; } = ["female", "human", "adult"];
@@ -41,6 +51,8 @@ public sealed record PortraitPart
 
 public sealed record PortraitStyleProfile
 {
+    public string Gender { get; init; } = "female";
+    public string PortraitIdPrefix { get; init; } = "female.w4.portrait.file.";
     public int LibraryVersion { get; init; } = 1;
     public int[] SupportedLibraryVersions { get; init; } = [1];
     public int Width { get; init; } = 512;
@@ -108,10 +120,10 @@ public sealed class PortraitGenerator(PortraitAssetRepository assets)
         for (int attempt = 0; attempt < 512; attempt++)
         {
             var parts = ImmutableSortedDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-            foreach (var layer in assets.Style.Layers)
+            foreach (var layer in assets.Style.Layers.Where(l => l.IntroducedInVersion <= version))
             {
                 var choices = assets.Parts.Where(p => p.Category == layer.Category && p.IntroducedInVersion <= version &&
-                    p.Tags.Contains("female") && p.Tags.Contains("human") && p.Tags.Contains("adult"))
+                    p.Tags.Contains(assets.Style.Gender) && p.Tags.Contains("human") && p.Tags.Contains("adult"))
                     .OrderBy(p => p.Id, StringComparer.Ordinal).ToArray();
                 double total = choices.Sum(p => p.Weight) + (layer.Required ? 0 : 8);
                 double pick = random.Next() * total;
@@ -121,13 +133,13 @@ public sealed class PortraitGenerator(PortraitAssetRepository assets)
                     if (pick < 0) { parts[layer.Category] = part.Id; break; }
                 }
             }
-            var appearance = new CharacterAppearance { Seed = seed, LibraryVersion = version, Parts = parts.ToImmutable() };
+            var appearance = new CharacterAppearance { Seed = seed, Gender = assets.Style.Gender, LibraryVersion = version, Parts = parts.ToImmutable() };
             if (!assets.IsCompatible(appearance)) continue;
             var colors = ImmutableSortedDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
             foreach (var palette in assets.Style.Palettes.OrderBy(p => p.Key, StringComparer.Ordinal))
                 colors[palette.Key] = palette.Value[(int)(random.Next() * palette.Value.Length)];
             return appearance with { Colors = colors.ToImmutable() };
         }
-        throw new InvalidDataException("No compatible female adult human portrait found in the library.");
+        throw new InvalidDataException($"No compatible {assets.Style.Gender} adult human portrait found in the library.");
     }
 }

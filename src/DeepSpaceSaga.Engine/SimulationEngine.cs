@@ -20,6 +20,7 @@ public sealed partial class SimulationEngine : IDisposable
 
     private readonly SimulationClock _clock;
     private readonly GameDataRegistry _registry;
+    private readonly ImmutableArray<string> _femaleCrewPortraits;
     private readonly LinearMotionPredictor _motion = new();
     private readonly List<SpaceObjectRuntime> _objects = new();
     private readonly object _commandGate = new();
@@ -119,9 +120,10 @@ public sealed partial class SimulationEngine : IDisposable
         return EngineContentLoader.CreateEngineFromScenarioFile(settingsPath, scenarioPath);
     }
 
-    internal SimulationEngine(GameDataRegistry registry)
+    internal SimulationEngine(GameDataRegistry registry, ImmutableArray<string> femaleCrewPortraits = default)
     {
         _registry = registry;
+        _femaleCrewPortraits = femaleCrewPortraits.IsDefaultOrEmpty ? [CharacterPortraits.DefaultFemale] : femaleCrewPortraits;
         _clock = new SimulationClock(SimulationSpeed.Speed1);
     }
 
@@ -1127,82 +1129,12 @@ public sealed partial class SimulationEngine : IDisposable
         "Nadia Petrova", "Grace Okonkwo", "Aiko Sato", "Isabel Duarte", "Zara Malik",
         "Freya Andersen", "Rosa Delgado", "Kavya Reddy", "Hana Kobayashi", "Marta Nowak");
 
-    /// <summary>
-    /// Portrait pool for a randomly generated female station crew member — every file in
-    /// Images/Persons/W except the ones already used explicitly by named crew in this scenario
-    /// (currently only the station director's portrait, CHR-20260906-123220-BS1XUR.png).
-    /// </summary>
-    private static readonly ImmutableArray<string> FemaleCrewPortraits = ImmutableArray.Create(
-        "Images/Persons/W/CHR-20260901-170239-JJD2U7.png",
-        "Images/Persons/W/CHR-20260901-190335-NJIY63.png",
-        "Images/Persons/W/CHR-20260901-191158-41JLXV.png",
-        "Images/Persons/W/CHR-20260901-191506-73R83G.png",
-        "Images/Persons/W/CHR-20260901-202525-Q7IH5Q.png",
-        "Images/Persons/W/CHR-20260901-232751-JUKCIQ.png",
-        "Images/Persons/W/CHR-20260902-002916-9JMCG1.png",
-        "Images/Persons/W/CHR-20260902-012856-9PJ64Q.png",
-        "Images/Persons/W/CHR-20260902-023114-UCNGRR.png",
-        "Images/Persons/W/CHR-20260902-033723-DRXET1.png",
-        "Images/Persons/W/CHR-20260902-043359-I4GTD0.png",
-        "Images/Persons/W/CHR-20260902-053427-INRM6Q.png",
-        "Images/Persons/W/CHR-20260902-063306-M4O95W.png",
-        "Images/Persons/W/CHR-20260902-070912-17E3B5.png",
-        "Images/Persons/W/CHR-20260902-073339-ON5DJE.png",
-        "Images/Persons/W/CHR-20260902-083415-ULL1BP.png",
-        "Images/Persons/W/CHR-20260902-093511-K26DLO.png",
-        "Images/Persons/W/CHR-20260902-103625-8SCU3U.png",
-        "Images/Persons/W/CHR-20260902-113736-OR0B4X.png",
-        "Images/Persons/W/CHR-20260902-123802-LGKGDX.png",
-        "Images/Persons/W/CHR-20260902-133840-JU1DDT.png",
-        "Images/Persons/W/CHR-20260902-143925-SKWDC7.png",
-        "Images/Persons/W/CHR-20260902-154101-9QGOVT.png",
-        "Images/Persons/W/CHR-20260902-164153-RA93WD.png",
-        "Images/Persons/W/CHR-20260902-174230-TXNAFQ.png",
-        "Images/Persons/W/CHR-20260902-184235-AE1DF5.png",
-        "Images/Persons/W/CHR-20260902-194238-BZP48S.png",
-        "Images/Persons/W/CHR-20260902-204402-HWDDCA.png",
-        "Images/Persons/W/CHR-20260902-214449-C5KXVA.png",
-        "Images/Persons/W/CHR-20260902-224329-ZR0R6L.png",
-        "Images/Persons/W/CHR-20260902-234400-89TAW0.png",
-        "Images/Persons/W/CHR-20260903-004531-X4D3B4.png",
-        "Images/Persons/W/CHR-20260903-014632-IJY1L0.png",
-        "Images/Persons/W/CHR-20260903-024633-HESL76.png",
-        "Images/Persons/W/CHR-20260903-034734-YE4B2L.png",
-        "Images/Persons/W/CHR-20260903-044905-DGIEQQ.png",
-        "Images/Persons/W/CHR-20260903-055036-B7R6WD.png",
-        "Images/Persons/W/CHR-20260903-064734-BM1C4U.png",
-        "Images/Persons/W/CHR-20260906-133221-HXWME1.png",
-        "Images/Persons/W/CHR-20260906-141402-2Q3S9G.png",
-        "Images/Persons/W/CHR-20260906-142509-M920Q2.png",
-        "Images/Persons/W/CHR-20260906-143109-PBI84Y.png",
-        "Images/Persons/W/CHR-20260906-143500-7P8HS1.png",
-        "Images/Persons/W/CHR-20260906-144518-APYRIC.png",
-        "Images/Persons/W/CHR-20260906-144648-3V8KX9.png",
-        "Images/Persons/W/CHR-20260906-144816-O6PPHW.png",
-        "Images/Persons/W/CHR-20260906-153458-KBK7CH.png",
-        "Images/Persons/W/CHR-20260906-163650-ULZGNS.png",
-        "Images/Persons/W/CHR-20260906-173659-QOML9F.png",
-        "Images/Persons/W/CHR-20260906-183802-08LFQF.png",
-        "Images/Persons/W/CHR-20260906-193754-W60GN2.png",
-        "Images/Persons/W/CHR-20260906-194552-WP6FJH.png",
-        "Images/Persons/W/CHR-20260906-194851-S6Z8E8.png",
-        "Images/Persons/W/CHR-20260906-195228-TC9HDL.png");
-
     /// <summary>Name pool for a randomly generated male ship captain.</summary>
     private static readonly ImmutableArray<string> MaleCrewNames = ImmutableArray.Create(
         "Marcus Webb", "Diego Alvarez", "Kenji Watanabe", "Lars Eriksson", "Omar Haddad",
         "Viktor Nowicki", "Rafael Costa", "Amit Chandra", "Bram de Vries", "Sami Virtanen",
         "Nikolai Volkov", "Ethan Brooks", "Tariq Amari", "Julian Hoffmann", "Kwame Mensah",
         "Felix Baumgartner", "Ravi Sharma", "Dmitri Sokolov", "Mateo Fernandez", "Owen Fitzgerald");
-
-    /// <summary>
-    /// Portrait pool for a randomly generated male ship captain — every file in
-    /// Images/Persons/M.
-    /// </summary>
-    private static readonly ImmutableArray<string> MaleCrewPortraits = ImmutableArray.Create(
-        "Images/Persons/M/CHR-20260906-150900-IYUL3A.png",
-        "Images/Persons/M/CHR-20260906-151036-GAGFUS.png",
-        "Images/Persons/M/CHR-20260906-151219-R8SD6K.png");
 
     /// <summary>
     /// Resolve an object's graphical representation: explicit scenario/save value used
@@ -1464,7 +1396,7 @@ public sealed partial class SimulationEngine : IDisposable
     /// Missing/empty scenario data resolves to an empty list (the common case for every
     /// station without named crew, and for every scenario/save predating this field).
     /// </summary>
-    private static ImmutableArray<StationCrewMemberRuntime> ResolveStationCrew(SpaceObjectData obj, ulong masterSeed)
+    private ImmutableArray<StationCrewMemberRuntime> ResolveStationCrew(SpaceObjectData obj, ulong masterSeed)
     {
         if (obj.StationCrew is not { Count: > 0 } stationCrew)
             return ImmutableArray<StationCrewMemberRuntime>.Empty;
@@ -1493,11 +1425,11 @@ public sealed partial class SimulationEngine : IDisposable
         return FemaleCrewNames[random.Next(FemaleCrewNames.Length)];
     }
 
-    private static string ResolveStationCrewMemberPortrait(string stationObjectId, string crewId, ulong masterSeed)
+    private string ResolveStationCrewMemberPortrait(string stationObjectId, string crewId, ulong masterSeed)
     {
         var random = RngStreamNames.CreateDeterministicRandom(
             RngStreamSeedDerivation.DeriveStreamSeed(masterSeed, RngStreamNames.StationCrewMemberPortrait(stationObjectId, crewId)));
-        return FemaleCrewPortraits[random.Next(FemaleCrewPortraits.Length)];
+        return _femaleCrewPortraits[random.Next(_femaleCrewPortraits.Length)];
     }
 
     /// <summary>
@@ -1518,9 +1450,7 @@ public sealed partial class SimulationEngine : IDisposable
     /// <summary>Resolve the player ship's captain portrait image; see <see cref="ResolveCaptainDisplayName"/>.</summary>
     private static string ResolveCaptainPortrait(string shipObjectId, ulong masterSeed)
     {
-        var random = RngStreamNames.CreateDeterministicRandom(
-            RngStreamSeedDerivation.DeriveStreamSeed(masterSeed, RngStreamNames.ShipCaptainPortrait(shipObjectId)));
-        return MaleCrewPortraits[random.Next(MaleCrewPortraits.Length)];
+        return CharacterPortraits.DefaultMale;
     }
 
     /// <summary>

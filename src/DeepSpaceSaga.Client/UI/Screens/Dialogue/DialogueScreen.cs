@@ -18,8 +18,7 @@ internal sealed class DialogueScreen : IScreen
     private string? _error;
     private int _width, _height, _hover = -1, _scroll;
     private SKBitmap? _speakerPortrait, _captainPortrait;
-    private string? _portraitPath;
-    private bool _captainLoaded;
+    private (string? Path, string Person)? _speakerKey, _captainKey;
     private static readonly SKBitmap? Background = LoadBackground();
     private static SKBitmap? LoadBackground()
     {
@@ -33,7 +32,10 @@ internal sealed class DialogueScreen : IScreen
     { _buffer = buffer; _handle = handle; _state = state; _instanceId = state.InstanceId; }
     public void OnActivated() { }
     public void OnDeactivated()
-    { _speakerPortrait?.Dispose(); _captainPortrait?.Dispose(); _speakerPortrait = null; _captainPortrait = null; }
+    {
+        _speakerPortrait?.Dispose(); _captainPortrait?.Dispose();
+        _speakerPortrait = null; _captainPortrait = null; _speakerKey = null; _captainKey = null;
+    }
 
     internal ScreenEvent Poll()
     {
@@ -114,18 +116,22 @@ internal sealed class DialogueScreen : IScreen
         var panel = DialogueLayout.Panel(width, height);
         if (Background is not null) canvas.DrawBitmap(Background, panel); else MenuStyle.DrawPanel(canvas, panel);
         canvas.DrawText(Localization.Get("Dialogue.Title"), panel.MidX, panel.Top + 60, MenuStyle.TextTitle);
-        if (_portraitPath != _state.SpeakerPortraitImage)
-        {
-            _speakerPortrait?.Dispose(); _portraitPath = _state.SpeakerPortraitImage;
-            _speakerPortrait = _portraitPath is null ? null : PortraitComposer.ComposeBodyAndHeadPortrait(_portraitPath,
-                _portraitPath.Replace('\\', '/').Contains("/M/", StringComparison.Ordinal) ? PersonSex.Male : PersonSex.Female, _state.ParticipantId);
-        }
         var captain = _buffer.Latest?.Snapshot.Objects.FirstOrDefault(o => o.ObjectId == _buffer.Latest.Snapshot.PlayerShipObjectId);
-        if (!_captainLoaded && captain is not null)
+        string speakerPerson = _state.SpeakerRole == "Captain" && captain is not null ? captain.ObjectId :
+            $"{_state.StationObjectId}/{_state.ParticipantId}/{_state.SpeakerRole}";
+        var speakerKey = (_state.SpeakerPortraitImage, speakerPerson);
+        if (_speakerKey != speakerKey)
         {
-            _captainLoaded = true;
-            if (captain.CaptainPortraitImage is { } path)
-                _captainPortrait = PortraitComposer.ComposeBodyAndHeadPortrait(path, PersonSex.Male, captain.ObjectId);
+            _speakerPortrait?.Dispose(); _speakerKey = speakerKey;
+            _speakerPortrait = DialoguePortraitComposer.Compose(_state.SpeakerPortraitImage,
+                DialoguePortraitComposer.SexFor(_state.SpeakerPortraitImage, _state.SpeakerRole == "Captain" ? PersonSex.Male : PersonSex.Female), speakerPerson);
+        }
+        (string? Path, string Person)? captainKey = captain is null ? null : (captain.CaptainPortraitImage, captain.ObjectId);
+        if (_captainKey != captainKey)
+        {
+            _captainPortrait?.Dispose(); _captainPortrait = null; _captainKey = captainKey;
+            if (captain is not null)
+                _captainPortrait = DialoguePortraitComposer.Compose(captain.CaptainPortraitImage, PersonSex.Male, captain.ObjectId);
         }
         DrawPortrait(canvas, DialogueLayout.Operator(width, height), _speakerPortrait, _state.SpeakerDisplayName);
         DrawPortrait(canvas, DialogueLayout.Captain(width, height), _captainPortrait, captain?.CaptainDisplayName);

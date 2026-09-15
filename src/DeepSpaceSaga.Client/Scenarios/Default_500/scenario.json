@@ -85,7 +85,7 @@
         },
       {
         "objectId": "SPC-0002",
-        "stationCrew": [{ "crewId": "CHR-0003", "role": "Dock Operator", "displayName": "Mari Lefeber", "portraitImage": "Images/Persons/W/CHR-20260901-232751-JUKCIQ.png" }],
+        "stationCrew": [{ "crewId": "CHR-0003", "role": "Dock Operator", "displayName": "Mari Lefeber" }],
         "objectType": "Station",
         "portFeeCreditsPerDay": 100,
         "securityZoneRadiusKm": 200,

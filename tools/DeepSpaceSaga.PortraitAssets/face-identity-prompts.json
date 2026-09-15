@@ -1,0 +1,50 @@
+{
+  "mode": "built-in image_gen; registered face anatomy edits",
+  "reference": "Sources/master.png",
+  "identities": [
+    {
+      "face": 2,
+      "prompt": "Edit this registered realistic portrait into a DIFFERENT beautiful adult female identity. Bald, strictly front facing, relaxed closed mouth, natural photographic skin, same warm light complexion and exact soft lighting/background. Retain square canvas and head registration: crown at (617,49), eye centers (480,517) and (760,517), mouth center (617,826), nose base (618,736), chin lowest point around y1024. Preserve scalp/temples above y420 and ears position so existing modular hairstyles fit. Preserve ALL lower neck pixels below y1070. Face diversity must be clearly anatomical, with natural human curves, no caricature or polygonal jaw. Change cheek volumes, cheekbone structure, jaw silhouette, brow character, nose/lips details to create a different woman; feature centers stay registered. Keep eye dimensions realistic. No hair, clothes, accessories, text, collage or panels. Output one full-size complete portrait. Specific new identity: ROUND FULL FACE, adult 28. Noticeably plumper with generous soft apple cheeks, wider rounded lower cheeks and broad soft U-shaped jaw; soft small rounded chin, low gently curved brows, smooth gentle cheekbone transition. A believable attractive fuller-faced woman, clearly different from the slender reference."
+    },
+    {
+      "face": 3,
+      "prompt": "Edit this registered realistic portrait into a DIFFERENT beautiful adult female identity. Bald, strictly front facing, relaxed closed mouth, natural photographic skin, same warm light complexion and exact soft lighting/background. Retain square canvas and head registration: crown at (617,49), eye centers (480,517) and (760,517), mouth center (617,826), nose base (618,736), chin lowest point around y1024. Preserve scalp/temples above y420 and ears position so existing modular hairstyles fit. Preserve ALL lower neck pixels below y1070. Face diversity must be clearly anatomical, with natural human curves, no caricature or polygonal jaw. Change cheek volumes, cheekbone structure, jaw silhouette, brow character, nose/lips details to create a different woman; feature centers stay registered. Keep eye dimensions realistic. No hair, clothes, accessories, text, collage or panels. Output one full-size complete portrait. Specific new identity: LONG SLENDER FACE, adult 32. Noticeably lean cheeks, elegant long narrow oval, clearly defined high cheekbones, subtle natural hollows below cheekbones, slim softly tapered jaw, gracefully narrow rounded chin, straighter refined brows. Healthy slender woman, not emaciated, no gauntness or sharp triangular chin."
+    },
+    {
+      "face": 4,
+      "prompt": "Edit this registered realistic portrait into a DIFFERENT beautiful adult female identity. Bald, strictly front facing, relaxed closed mouth, natural photographic skin, same warm light complexion and exact soft lighting/background. Retain square canvas and head registration: crown at (617,49), eye centers (480,517) and (760,517), mouth center (617,826), nose base (618,736), chin lowest point around y1024. Preserve scalp/temples above y420 and ears position so existing modular hairstyles fit. Preserve ALL lower neck pixels below y1070. Face diversity must be clearly anatomical, with natural human curves, no caricature or polygonal jaw. Change cheek volumes, cheekbone structure, jaw silhouette, brow character, nose/lips details to create a different woman; feature centers stay registered. Keep eye dimensions realistic. No hair, clothes, accessories, text, collage or panels. Output one full-size complete portrait. Specific new identity: BROAD ANGULAR FACE, adult 34. Strong broad softly squared feminine jaw, visibly wide lower face and flat chin contour with rounded corners, prominent lateral cheekbones, athletic facial structure, slightly heavy straight expressive brows, beautifully confident distinctive woman. Not masculine, no polygon edges."
+    },
+    {
+      "face": 5,
+      "prompt": "Edit this registered realistic portrait into a DIFFERENT beautiful adult female identity. Bald, strictly front facing, relaxed closed mouth, natural photographic skin, same warm light complexion and exact soft lighting/background. Retain square canvas and head registration: crown at (617,49), eye centers (480,517) and (760,517), mouth center (617,826), nose base (618,736), chin lowest point around y1024. Preserve scalp/temples above y420 and ears position so existing modular hairstyles fit. Preserve ALL lower neck pixels below y1070. Face diversity must be clearly anatomical, with natural human curves, no caricature or polygonal jaw. Change cheek volumes, cheekbone structure, jaw silhouette, brow character, nose/lips details to create a different woman; feature centers stay registered. Keep eye dimensions realistic. No hair, clothes, accessories, text, collage or panels. Output one full-size complete portrait. Specific new identity: HEART-SHAPED FACE, adult 25. Broad upper cheeks, high rounded cheekbones and a clearly narrowing graceful lower jaw toward a small softly rounded chin, soft gently arched brows, heart-shaped facial silhouette with real anatomy. Attractive distinct woman; never a sharp pointed V chin."
+    },
+    {
+      "face": 6,
+      "prompt": "Edit this registered realistic portrait into a DIFFERENT beautiful adult female identity. Bald, strictly front facing, relaxed closed mouth, natural photographic skin, same warm light complexion and exact soft lighting/background. Retain square canvas and head registration: crown at (617,49), eye centers (480,517) and (760,517), mouth center (617,826), nose base (618,736), chin lowest point around y1024. Preserve scalp/temples above y420 and ears position so existing modular hairstyles fit. Preserve ALL lower neck pixels below y1070. Face diversity must be clearly anatomical, with natural human curves, no caricature or polygonal jaw. Change cheek volumes, cheekbone structure, jaw silhouette, brow character, nose/lips details to create a different woman; feature centers stay registered. Keep eye dimensions realistic. No hair, clothes, accessories, text, collage or panels. Output one full-size complete portrait. Specific new identity: SCULPTED MATURE OVAL, adult 42. Distinctive broad high cheekbones, softly hollow lower cheeks, wide elegant oval jaw and pronounced rounded chin, subtle smile creases, realistic fine texture and faint natural age lines, deep-set gaze and flatter medium brows. A beautiful adult woman with character, recognizably older and structurally different, no exaggerated wrinkles."
+    }
+  ],
+  "featureVariants": [
+    {
+      "variant": 2,
+      "prompt": "Edit target: this exact portrait. Preserve THIS woman's distinct face identity, cheek volume, jaw width, age, skin, ears, eyes, brows, scalp, lighting, square framing and background. Only create interchangeable minor feature variations: thinner natural lips at same mouth center; narrower nose with small gently lifted tip, same nasal base; gently narrower rounded chin below the mouth, lowest point 15 pixels lower. Do not change the side jaw/cheeks above y910, eye positions or mouth center. Absolutely preserve neck below y1070. Bald frontal adult female, believable anatomy, closed relaxed lips, no clothes/text. Registered full portrait output for extracting nose, lips and chin textures.",
+      "appliedToFaces": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "variant": 3,
+      "prompt": "Edit target: this exact portrait. Preserve THIS woman's distinct face identity, cheek volume, jaw width, age, skin, ears, eyes, brows, scalp, lighting, square framing and background. Only create interchangeable minor feature variations: noticeably fuller soft natural lips, closed at same mouth center; slightly broader naturally rounded nose tip/alar wings at same base level; gently broader softly squared chin below mouth, lowest point 12 pixels higher. Do not change side jaw/cheeks above y910, eye positions or mouth center. Absolutely preserve neck below y1070. Bald frontal adult female, believable anatomy, no clothes/text. Registered full portrait output for extracting nose, lips and chin textures.",
+      "appliedToFaces": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    }
+  ]
+}

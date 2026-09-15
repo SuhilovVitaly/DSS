@@ -114,7 +114,7 @@
                 { "crewId": "CHR-0001", "displayName": "Dunkan Su" }
             ],
             "captainDisplayName": "Dunkan Su",
-            "captainPortraitImage": "Images/Persons/M/CHR-20260906-150900-IYUL3A.png"
+            "captainPortraitImage": "Images/Persons/M4/Portraits/CHR-20260915-105947-6DC202.png"
         },
       {
         "objectId": "SPC-0002",
@@ -170,8 +170,8 @@
             }
         ],
         "stationCrew": [
-            { "crewId": "CHR-0002", "role": "Station Director", "displayName": "Mari Lefeber", "portraitImage": "Images/Persons/W/CHR-20260906-123220-BS1XUR.png" },
-            { "crewId": "CHR-0003", "role": "Dock Operator", "displayName": "Mari Lefeber", "portraitImage": "Images/Persons/W/CHR-20260901-232751-JUKCIQ.png" }
+            { "crewId": "CHR-0002", "role": "Station Director", "displayName": "Mari Lefeber" },
+            { "crewId": "CHR-0003", "role": "Dock Operator", "displayName": "Mari Lefeber" }
         ]
       },
       {

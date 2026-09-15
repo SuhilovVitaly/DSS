@@ -34,6 +34,8 @@ public class DialogueIntegrationTests
         Assert.Equal(SimulationSpeed.Speed0, request.CurrentSpeed);
         Assert.Equal(2, request.ActiveDialogue!.Choices.Length);
         Assert.NotNull(request.ActiveDialogue.SpeakerPortraitImage);
+        Assert.StartsWith(CharacterPortraits.FemaleFolder + "/", request.ActiveDialogue.SpeakerPortraitImage);
+        Assert.Equal(CharacterPortraits.DefaultMale, request.Objects.Single(o => o.ObjectId == player.ObjectId).CaptainPortraitImage);
         var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);
         Assert.Equal(ScreenEvent.OpenDialogue, screen.ConsumePendingAutoTransition());
         var paused = await WaitFor(handle, s => s.SnapshotSequence > request.SnapshotSequence);

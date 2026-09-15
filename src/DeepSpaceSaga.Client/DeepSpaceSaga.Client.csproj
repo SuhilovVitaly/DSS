@@ -7,17 +7,42 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Authored image outputs live in DSS-Images/temp per AGENTS.md. Ship a self-contained pack. -->
-    <Content Include="../../../DSS-Images/temp/PortraitGenerator/**/*.png;../../../DSS-Images/temp/PortraitGenerator/**/*.json" Exclude="../../../DSS-Images/temp/PortraitGenerator/Sources/**;../../../DSS-Images/temp/PortraitGenerator/Generated/**;../../../DSS-Images/temp/PortraitGenerator/Golden/**">
-      <Link>Images/PortraitGenerator/%(RecursiveDir)%(Filename)%(Extension)</Link>
+    <None Remove="Images/Persons/W1/**" />
+    <None Remove="Images/Persons/W2/**" />
+    <None Remove="Images/Persons/W4/**" />
+    <None Remove="Images/Persons/M4/**" />
+    <Content Include="Images/Persons/M4/**/*.png;Images/Persons/M4/**/*.json" Exclude="Images/Persons/M4/Sources/**;Images/Persons/M4/Generated/**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <TargetPath>Images/PortraitGenerator/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </Content>
+    <Content Include="Images/Persons/W4/**/*.png;Images/Persons/W4/**/*.json" Exclude="Images/Persons/W4/Sources/**;Images/Persons/W4/Generated/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="Images/Persons/W2/**/*.png;Images/Persons/W2/**/*.json" Exclude="Images/Persons/W2/Sources/**;Images/Persons/W2/Generated/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="Images/Persons/W1/**/*.png;Images/Persons/W1/**/*.json" Exclude="Images/Persons/W1/Sources/**;Images/Persons/W1/Generated/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The user moved the complete portrait pack into the client project.
+         Authoring sources, previews and the test golden image do not ship. -->
+    <None Remove="Images/Persons/W/PortraitGenerator/**" />
+    <Content Include="Images/Persons/W/PortraitGenerator/**/*.png;Images/Persons/W/PortraitGenerator/**/*.json" Exclude="Images/Persons/W/PortraitGenerator/Sources/**;Images/Persons/W/PortraitGenerator/Generated/**;Images/Persons/W/PortraitGenerator/Golden/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
 
   <Target Name="CheckPortraitPackPresent" BeforeTargets="PrepareForBuild" Condition="'$(SkipPortraitPackCheck)' != 'true'">
-    <Error Condition="!Exists('../../../DSS-Images/temp/PortraitGenerator/parts.json') Or !Exists('../../../DSS-Images/temp/PortraitGenerator/portrait-style.json')" Text="Portrait asset pack missing. Restore DSS-Images/temp/PortraitGenerator alongside DSS (see Docs/PortraitGenerator.md)." />
+    <!-- Both selectable portrait packs must be available in the workshop. -->
+    <Error Condition="!Exists('Images/Persons/W4/parts.json') Or !Exists('Images/Persons/W4/portrait-style.json')" Text="Portrait asset pack missing in Images/Persons/W4 (see Docs/PortraitGeneratorW4.md)." />
+    <Error Condition="!Exists('Images/Persons/M4/parts.json') Or !Exists('Images/Persons/M4/portrait-style.json')" Text="Portrait asset pack missing in Images/Persons/M4 (see Docs/PortraitGeneratorM4.md)." />
   </Target>
 
   <ItemGroup>
