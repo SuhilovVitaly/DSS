@@ -1,12 +1,11 @@
 using DeepSpaceSaga.Contracts;
+using System.Text.Json;
 
 namespace DeepSpaceSaga.Engine.LocalClient;
 
 /// <summary>
-/// Enumerates and deletes save-slot files on disk. Purely filesystem-level — it
-/// never touches the engine or the save JSON schema. Slot metadata (DisplayName,
-/// SavedAtUtc) is derived only from the file name and filesystem last-write time,
-/// per the story's Protect note that no new fields are added to the save schema.
+/// Lists and deletes save slots. Reads only gameTimeMs for display, without loading
+/// or migrating the world. Corrupt metadata gets a safe placeholder.
 /// </summary>
 public static class SaveSlotRepository
 {
@@ -24,12 +23,27 @@ public static class SaveSlotRepository
             .Select(path => new SaveSlotInfo(
                 SlotId: Path.GetFileNameWithoutExtension(path),
                 DisplayName: Path.GetFileNameWithoutExtension(path),
-                SavedAtUtc: File.GetLastWriteTimeUtc(path)))
+                SavedAtUtc: File.GetLastWriteTimeUtc(path), GameTimeMs: ReadGameTime(path)))
             .OrderByDescending(slot => slot.SavedAtUtc)
             .ToArray();
     }
 
     /// <summary>Delete a save slot's file, if present. No-op if the slot doesn't exist.</summary>
+    private static long? ReadGameTime(string path)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                && document.RootElement.TryGetProperty("gameState", out var state)
+                && state.ValueKind == JsonValueKind.Object
+                && state.TryGetProperty("gameTimeMs", out var time)
+                && time.ValueKind == JsonValueKind.Number && time.TryGetInt64(out long ms) && ms >= 0 ? ms : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
+        { return null; }
+    }
+
     public static void DeleteSlot(string saveDirectory, string slotId)
     {
         string path = Path.Combine(saveDirectory, SaveSlotNaming.ToFileName(slotId));

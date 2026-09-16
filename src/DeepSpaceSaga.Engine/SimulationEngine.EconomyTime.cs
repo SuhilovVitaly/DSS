@@ -14,12 +14,16 @@ public sealed partial class SimulationEngine
         // cannot repeat a meal, including midnight. Loading establishes the cursor.
         while (_processedWorldTimeMs < gameTimeMs)
         {
+            StartAvailableProduction(_processedWorldTimeMs);
             long nextMeal = _processedWorldTimeMs - _processedWorldTimeMs % MealIntervalMs;
             nextMeal = nextMeal > long.MaxValue - MealIntervalMs ? long.MaxValue : nextMeal + MealIntervalMs;
-            long next = Math.Min(Math.Min(gameTimeMs, nextMeal), NextPortFeeTime());
+            long next = Math.Min(Math.Min(Math.Min(gameTimeMs, nextMeal), NextPortFeeTime()), NextContractDeadline());
+            next = Math.Min(next, NextProductionTime());
             AdvanceMotionTo(next);
+            CompleteProduction(next);
             if (next == nextMeal && next % MealIntervalMs == 0) ConsumeScheduledRations(next);
             RenewPortFees(next);
+            ApplyContractDeadlines(next);
             _processedWorldTimeMs = next;
         }
         AdvanceMotionTo(gameTimeMs);
@@ -27,6 +31,7 @@ public sealed partial class SimulationEngine
 
     private void ConsumeScheduledRations(long time)
     {
+        _economyTime = _economyTime with { MissingRations = 0 };
         for (int i = 0; i < _objects.Count; i++)
         {
             var ship = _objects[i];
@@ -58,6 +63,7 @@ public sealed partial class SimulationEngine
                 }
             }
             _objects[i] = ship with { Modules = modules.ToImmutable() };
+            _economyTime = _economyTime with { MissingRations = _economyTime.MissingRations + needed };
             if (needed > 0)
                 RecordShipEvent(ship.InitialMotion.ObjectId, "", ShipEventTypes.RationsShortage,
                     "insufficient_rations", time);

@@ -177,10 +177,56 @@ public static class ScenarioLoader
             throw new ScenarioException(
                 $"Player ship '{playerShip.ObjectId}' has objectType '{playerShip.ObjectType}', expected 'PlayerShip'.");
 
+        ValidateEconomyTime(scenario);
+
         // Validate each object (nulls already caught in the duplicate-check loop)
         foreach (var obj in objects)
         {
             ValidateObject(obj);
+        }
+    }
+
+    private static void ValidateEconomyTime(ScenarioFile scenario)
+    {
+        var state = scenario.GameState;
+        if (scenario.SaveFormatVersion >= 5 && state.EconomyTime is null)
+            throw new ScenarioException("Missing versioned economy time state.");
+        if (state.EconomyTime is { } economy)
+        {
+            if (economy.RulesVersion != EconomyTimeData.CurrentRulesVersion)
+                throw new ScenarioException($"Unsupported economic rules version: {economy.RulesVersion}. Save was not modified.");
+            if (!Enum.IsDefined(economy.StationDistrict) || economy.RouteArrivalGameTimeMs < 0 || economy.MissingRations < 0)
+                throw new ScenarioException("Invalid saved station district or route arrival time.");
+            if (economy.TravelReceipts is { } receipts &&
+                (receipts.Any(string.IsNullOrWhiteSpace) || receipts.Distinct(StringComparer.Ordinal).Count() != receipts.Count))
+                throw new ScenarioException("Invalid station travel receipts.");
+            var contractIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var contract in economy.ActiveContracts ?? [])
+                if (contract is null || string.IsNullOrWhiteSpace(contract.ContractId) || !contractIds.Add(contract.ContractId) ||
+                    contract.DeadlineGameTimeMs < 0 || contract.ExpectedPayout < 0 || contract.PassengerIds.IsDefault ||
+                    contract.PassengerIds.Any(string.IsNullOrWhiteSpace) ||
+                    !state.SpaceObjects.Any(o => o.ObjectId == contract.DestinationStationObjectId && o.ObjectType.Equals("Station", StringComparison.OrdinalIgnoreCase)))
+                    throw new ScenarioException("Invalid saved contract timing or payout.");
+        }
+        foreach (var obj in state.SpaceObjects)
+        {
+            if (scenario.SaveFormatVersion > 0 && state.EconomyTime is null && obj.IsDocked && obj.FirstPortFeeGameTimeMs is null)
+                throw new ScenarioException("Legacy docked save has incompatible economic rules: first port payment time is missing. Save was not modified.");
+            if (obj.PortFeeDebt < 0 || obj.FirstPortFeeGameTimeMs < 0 || obj.FirstPortFeeGameTimeMs > state.GameTimeMs)
+                throw new ScenarioException("Invalid first port payment or debt.");
+            if (obj.IsDocked && !state.SpaceObjects.Any(o => string.Equals(o.ObjectId, obj.DockedStationObjectId, StringComparison.OrdinalIgnoreCase)
+                && o.ObjectType.Equals("Station", StringComparison.OrdinalIgnoreCase)))
+                throw new ScenarioException("Docked ship references an unknown station.");
+            if (obj.NextPortFeeDueGameTimeMs is { } next &&
+                (obj.FirstPortFeeGameTimeMs is not { } first || next <= state.GameTimeMs || next <= first ||
+                 (next - first) % GameCalendar.DayMs != 0))
+                throw new ScenarioException("Invalid next port payment time.");
+            if (obj.ProducingModules?.Any(m => m.NextProductionDueGameTimeMs is { } due && due <= state.GameTimeMs) == true)
+                throw new ScenarioException("Invalid saved production deadline.");
+            if (obj.Passengers is { } passengers &&
+                (passengers.Any(p => p is null || string.IsNullOrWhiteSpace(p.PassengerId)) ||
+                 passengers.Select(p => p.PassengerId).Distinct(StringComparer.Ordinal).Count() != passengers.Count))
+                throw new ScenarioException("Invalid onboard passenger manifest.");
         }
     }
 

@@ -65,6 +65,7 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly SKPaint _speedBtnNormalPaint;
     private readonly SKPaint _speedBtnActivePaint;
     private readonly SKPaint _speedBtnTextPaint;
+    private readonly SKPaint _gameTimeTextPaint;
     private readonly SKPaint _speedIndicatorPaint;
 
     // Scale panel paints
@@ -303,6 +304,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         _speedBtnNormalPaint = new SKPaint { Color = new SKColor(30, 30, 30), Style = SKPaintStyle.Fill };
         _speedBtnActivePaint = new SKPaint { Color = new SKColor(50, 60, 50), Style = SKPaintStyle.Fill };
+        _gameTimeTextPaint = new SKPaint { Color = new SKColor(220, 235, 240), TextSize = 14f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
         _speedBtnTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 11f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
         _speedIndicatorPaint = new SKPaint { Color = new SKColor(80, 200, 80), Style = SKPaintStyle.Fill, IsAntialias = true };
 
@@ -1157,7 +1159,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         // 5. Speed panel (bottom-center, above the Mechanics panel)
         DrawSpeedPanel(canvas);
-        DrawGameTime(canvas);
+
 
         // 6. Commands Panel (top-left)
         _commandsPanel.Render(canvas,
@@ -1177,6 +1179,7 @@ public sealed partial class GameSessionScreen : IScreen
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);
         DrawMapToolbar(canvas);
+        DrawGameTime(canvas);
         RenderStageCompleted?.Invoke("info_panels");
 
         canvas.Restore();
@@ -1692,15 +1695,15 @@ public sealed partial class GameSessionScreen : IScreen
 
     private void DrawGameTime(SKCanvas canvas)
     {
-        var speedRect = ComputeSpeedPanelRect();
         string text = GameTimeDisplay.Minutes(_buffer.Latest?.Snapshot.GameTimeMs)
             + " · " + GameTimeDisplay.Status(_buffer.CurrentSpeed);
-        float width = _speedBtnTextPaint.MeasureText(text) + 24;
-        var rect = new SKRect(speedRect.MidX - width / 2, speedRect.Top - 34,
-            speedRect.MidX + width / 2, speedRect.Top - 5);
+        if (_buffer.Latest?.Snapshot.MissingRations > 0) text += " · Не хватает рационов";
+        float width = _gameTimeTextPaint.MeasureText(text) + 24;
+        var rect = new SKRect(_uiViewportW / 2 - width / 2, ComputeScaleSpeedRowY() - 128,
+            _uiViewportW / 2 + width / 2, ComputeScaleSpeedRowY() - 98);
         canvas.DrawRect(rect, _panelBgPaint);
         canvas.DrawRect(rect, _panelBorderPaint);
-        canvas.DrawText(text, rect.MidX, rect.Top + 20, _speedBtnTextPaint);
+        canvas.DrawText(text, rect.MidX, rect.Top + 20, _gameTimeTextPaint);
     }
 
     private void DrawSpeedPanel(SKCanvas canvas)

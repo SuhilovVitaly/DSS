@@ -304,7 +304,7 @@ public sealed partial class SimulationEngine : IDisposable
                 PiracyWarningGracePeriodMs: obj.PiracyWarningGracePeriodMs,
                 IsDestroyed: obj.IsDestroyed, Passengers: (obj.Passengers ?? []).ToImmutableArray(),
                 FirstPortFeeGameTimeMs: obj.FirstPortFeeGameTimeMs ?? (obj.IsDocked ? gs.GameTimeMs : null),
-                NextPortFeeDueGameTimeMs: obj.NextPortFeeDueGameTimeMs ?? (obj.IsDocked ? checked(gs.GameTimeMs + GameCalendar.DayMs) : null),
+                NextPortFeeDueGameTimeMs: ResolveNextPortFee(obj, gs.GameTimeMs),
                 PortFeeDebt: obj.PortFeeDebt));
         }
 
@@ -341,8 +341,11 @@ public sealed partial class SimulationEngine : IDisposable
             _objects.AddRange(runtimeObjects);
             LoadDialogueState(gs.DialogueState, gs.GameTimeMs);
             _processedWorldTimeMs = gs.GameTimeMs;
-            _stationDistrict = StationDistrict.Dock;
+            _economyTime = (gs.EconomyTime ?? new EconomyTimeData()) with {
+                ActiveContracts = (gs.EconomyTime?.ActiveContracts ?? []).ToImmutableArray() };
+            _stationDistrict = _economyTime.StationDistrict;
             _stationTravelReceipts.Clear();
+            _stationTravelReceipts.UnionWith(_economyTime.TravelReceipts ?? []);
             RestoreCommandJournal(gs);
         }
     }
@@ -363,27 +366,9 @@ public sealed partial class SimulationEngine : IDisposable
     public async IAsyncEnumerable<AuthoritativeSnapshot> RunAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // Stamp objects with the current game time at engine start. Same value LoadScenario
-        // already stamped (gs.GameTimeMs) in the common case — this re-stamp only matters
-        // when a session-control call (e.g. SetSimulationSpeedAsync) lands in the window
-        // between LoadScenario and RunAsync's first iteration and nudges the clock forward
-        // by whatever tiny real time elapsed at the pre-RunAsync speed. Locked because
-        // CaptureSaveState()/BuildSnapshot are publicly reachable in that same window (e.g.
-        // SaveAsync called immediately after construction, before this loop runs) and every
-        // other _objects read/mutation goes through _worldStateLock — an unlocked mutation
-        // here raced a concurrent foreach over _objects and threw
-        // InvalidOperationException("Collection was modified").
-        lock (_worldStateLock)
-        {
-            _clock.ResetRealBaseline();
-            long engineStartGameTime = _clock.GameTimeMs;
-
-            for (int i = 0; i < _objects.Count; i++)
-            {
-                _objects[i] = _objects[i] with { StartGameTimeMs = engineStartGameTime };
-            }
-        }
-
+        // Discard time while the application/loop was stopped. Object baselines
+        // already come from LoadScenario and must survive pre-loop time commands.
+        lock (_worldStateLock) _clock.ResetRealBaseline();
         // Yield the initial snapshot immediately (before any delay).
         // Capture atomically — no time has passed, so we read without advancing.
         yield return CaptureSnapshot(advanceClock: false);
@@ -534,7 +519,9 @@ public sealed partial class SimulationEngine : IDisposable
                 PlayerCharacter: _dialogue.Progress.PlayerCharacter,
                 Quests: _dialogue.Progress.Quests.Values.OrderBy(q => q.QuestId, StringComparer.Ordinal).ToImmutableArray(),
                 CurrentStationDistrict: _stationDistrict,
-                PortFees: BuildPortFeeSnapshot());
+                PortFees: BuildPortFeeSnapshot(), MissingRations: _economyTime.MissingRations,
+                ActiveContracts: (_economyTime.ActiveContracts ?? []).ToImmutableArray(),
+                RouteArrivalGameTimeMs: _economyTime.RouteArrivalGameTimeMs);
         }
     }
 
@@ -825,7 +812,8 @@ public sealed partial class SimulationEngine : IDisposable
             PlayerTokens: PlayerCredits,
             DialogueState: _dialogue.Save(),
             CommandReceipts: CaptureCommandReceipts(),
-            PendingCommands: CapturePendingCommands());
+            PendingCommands: CapturePendingCommands(),
+            EconomyTime: CaptureEconomyTime());
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
@@ -888,7 +876,7 @@ public sealed partial class SimulationEngine : IDisposable
         var factoryType = _registry.FactoryTypes.GetDefinition(module.FactoryTypeIndex);
         return new StationProducingModuleData(
             ProducingModuleTypeId: factoryType.TypeId,
-            Active: module.Active);
+            Active: module.Active, NextProductionDueGameTimeMs: module.NextProductionDueGameTimeMs);
     }
 
     private StationEventData BuildSaveEvent(StationEventRuntime evt)
@@ -1315,7 +1303,11 @@ public sealed partial class SimulationEngine : IDisposable
             // Unknown factory type id surfaces as ContentException — same convention as
             // BuildRuntimeModules' module.ModuleTypeId -> _registry.ModuleTypes.GetIndex.
             int factoryTypeIndex = _registry.FactoryTypes.GetIndex(module.ProducingModuleTypeId);
-            modules.Add(new StationProducingModuleRuntime(factoryTypeIndex, module.Active));
+            var recipe = _registry.FactoryTypes.GetDefinition(factoryTypeIndex).Recipe;
+            if (recipe.CycleDurationMs <= 0 || recipe.Inputs.Concat(recipe.Outputs).Any(m => m.Count <= 0 || !_registry.ItemTypes.Contains(m.ItemTypeId)) ||
+                recipe.Inputs.Select(m => m.ItemTypeId).Distinct(StringComparer.Ordinal).Count() != recipe.Inputs.Length)
+                throw new ScenarioException("Invalid timed production recipe.");
+            modules.Add(new StationProducingModuleRuntime(factoryTypeIndex, module.Active, module.NextProductionDueGameTimeMs));
         }
 
         return modules.ToImmutable();
@@ -1521,6 +1513,8 @@ public sealed partial class SimulationEngine : IDisposable
         if (!station.Events.IsDefaultOrEmpty)
         {
             var applicableEventFactors = station.Events
+                .Where(e => e.StartedGameTimeMs <= _processedWorldTimeMs &&
+                    (e.DurationMs is null || _processedWorldTimeMs - e.StartedGameTimeMs < e.DurationMs))
                 .OrderBy(e => e.StartedGameTimeMs)
                 .ThenBy(e => e.EventId, StringComparer.Ordinal)
                 .SelectMany(e => e.PriceFactors)
@@ -3175,7 +3169,7 @@ internal sealed record StationCrewMemberRuntime(string Id, string Role, string D
 /// One producing-module instance installed on a station (see <see cref="StationProducingModuleData"/>).
 /// <see cref="FactoryTypeIndex"/> indexes <see cref="GameDataRegistry.FactoryTypes"/>.
 /// </summary>
-internal sealed record StationProducingModuleRuntime(int FactoryTypeIndex, bool Active);
+internal sealed record StationProducingModuleRuntime(int FactoryTypeIndex, bool Active, long? NextProductionDueGameTimeMs = null);
 
 /// <summary>
 /// One station event/buff/debuff (see <see cref="StationEventData"/>) — schema + persistence

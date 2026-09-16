@@ -1,11 +1,21 @@
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
+    private static long? ResolveNextPortFee(SpaceObjectData ship, long time)
+    {
+        if (!ship.IsDocked) return null;
+        if (ship.NextPortFeeDueGameTimeMs is { } next) return next;
+        long first = ship.FirstPortFeeGameTimeMs ?? time;
+        return checked(first + ((time - first) / GameCalendar.DayMs + 1) * GameCalendar.DayMs);
+    }
+
     private long NextPortFeeTime() => _objects
-        .Where(o => o.IsDocked && !o.IsDestroyed && o.NextPortFeeDueGameTimeMs is not null)
+        .Where(o => o.IsDocked && !o.IsDestroyed && o.NextPortFeeDueGameTimeMs is not null
+            && _objects.Any(station => station.InitialMotion.ObjectId == o.DockedStationObjectId))
         .Select(o => o.NextPortFeeDueGameTimeMs!.Value).DefaultIfEmpty(long.MaxValue).Min();
 
     private PortFeeSnapshot? BuildPortFeeSnapshot()

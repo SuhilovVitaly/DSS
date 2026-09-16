@@ -15,9 +15,10 @@ public static class SaveFormat
     /// balance field was renamed playerCredits → playerTokens (an old save loads with 0
     /// Tokens, since no migration of old saves is provided).
     /// Version 4 preserves fractional motion values and the recent command journal.
+    /// Version 5 adds versioned economic time state and durable travel receipts.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 4;
+    public const int CurrentSaveFormatVersion = 5;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -63,7 +64,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("playerTokens")] long? PlayerTokens = null,
     [property: JsonPropertyName("dialogueState")] DialogueSaveState? DialogueState = null,
     [property: JsonPropertyName("commandReceipts")] IReadOnlyList<DeepSpaceSaga.Contracts.CommandResult>? CommandReceipts = null,
-    [property: JsonPropertyName("pendingCommands")] IReadOnlyList<DeepSpaceSaga.Contracts.PlayerCommand>? PendingCommands = null);
+    [property: JsonPropertyName("pendingCommands")] IReadOnlyList<DeepSpaceSaga.Contracts.PlayerCommand>? PendingCommands = null,
+    [property: JsonPropertyName("economyTime")] EconomyTimeData? EconomyTime = null);
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(
@@ -225,7 +227,8 @@ public sealed record StationProducingModuleData(
     /// "Минимальное правило для торговли"). Defaults to true — an explicitly-listed producing
     /// module is assumed active unless a scenario/save says otherwise.
     /// </summary>
-    [property: JsonPropertyName("active")] bool Active = true);
+    [property: JsonPropertyName("active")] bool Active = true,
+    [property: JsonPropertyName("nextProductionDueGameTimeMs")] long? NextProductionDueGameTimeMs = null);
 
 /// <summary>
 /// One station event/buff/debuff (requirements §59 "События, бафы и дебафы станции"),

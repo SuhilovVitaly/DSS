@@ -174,7 +174,8 @@ public sealed class StationScreen : IScreen
         else
             _fuelHoverStartedAtMs = null;
 
-        return _hoveredButton != StationButton.None || _isExitButtonHovered;
+        return _hoveredButton != StationButton.None || _isExitButtonHovered ||
+            Enumerable.Range(0, 4).Any(i => DistrictRect(i).Contains(x, y));
     }
 
     /// <summary>True when (x, y) lands on the toolbar's exit-button icon (see StationToolbar).</summary>
@@ -243,7 +244,7 @@ public sealed class StationScreen : IScreen
             cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
             creditsCount: StationToolbar.ResolveCreditsCount(snapshot),
             fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
-            fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot), gameTimeMs: snapshot?.GameTimeMs);
+            fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot), gameTimeMs: snapshot?.GameTimeMs, missingRations: snapshot?.MissingRations ?? 0);
 
         float cx = pl + StationLayout.PanelWidth / 2f;
 

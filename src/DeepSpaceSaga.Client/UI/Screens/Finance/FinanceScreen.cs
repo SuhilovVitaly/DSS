@@ -184,7 +184,7 @@ public sealed class FinanceScreen : IScreen
             cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
             creditsCount: StationToolbar.ResolveCreditsCount(snapshot),
             fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
-            fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot), gameTimeMs: snapshot?.GameTimeMs);
+            fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot), gameTimeMs: snapshot?.GameTimeMs, missingRations: snapshot?.MissingRations ?? 0);
 
         float cx = pl + FinanceLayout.PanelWidth / 2f;
 

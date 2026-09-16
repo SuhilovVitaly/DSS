@@ -76,6 +76,13 @@ public sealed class SnapshotBuffer
 
         lock (_sync)
         {
+            // A command reply may arrive before an older snapshot already in transport.
+            // Retain its events, but never rewind authoritative time or district state.
+            if (_latest is not null && snapshot.SnapshotSequence < _latest.Snapshot.SnapshotSequence)
+            {
+                _events.Receive(snapshot);
+                return;
+            }
             long previousPredictedGameTimeMs = snapshot.GameTimeMs;
             if (_latest is not null)
             {
