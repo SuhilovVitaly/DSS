@@ -33,7 +33,16 @@ public sealed class GameSessionHandle : IAsyncDisposable
     private void Fail(Exception error)
     {
         Buffer.CurrentSpeed = SimulationSpeed.Speed0;
-        Interlocked.CompareExchange(ref _failure, error, null);
+        if (Interlocked.CompareExchange(ref _failure, error, null) is null)
+            WriteDiagnostic($"SESSION FAILED: {error}");
+    }
+
+    // Diagnostics must never become another reason to lose the session.
+    private static void WriteDiagnostic(string message)
+    {
+        try { InterfaceLog.Write(message); }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 
     public GameSessionHandle(IGameSessionConnection connection)
@@ -97,6 +106,9 @@ public sealed class GameSessionHandle : IAsyncDisposable
             ModuleId: moduleId,
             CommandType: commandType,
             TargetObjectId: targetObjectId);
+
+        if (commandType == NavigationComputerCommandTypes.Approach)
+            WriteDiagnostic($"APPROACH {command.CommandId}: send, ship={objectId}, target={targetObjectId}, speed={Buffer.CurrentSpeed}");
 
         return _connection.SendCommandAsync(command, cancellationToken);
     }
@@ -211,6 +223,11 @@ public sealed class GameSessionHandle : IAsyncDisposable
             await foreach (var snapshot in _connection.ReadSnapshotsAsync(ct))
             {
                 Buffer.Update(snapshot);
+                if (!snapshot.CommandResults.IsDefaultOrEmpty)
+                    foreach (var result in snapshot.CommandResults)
+                        if (result.CommandType == NavigationComputerCommandTypes.Approach &&
+                            result.Status is CommandResultStatus.Rejected or CommandResultStatus.Failed)
+                            WriteDiagnostic($"APPROACH {result.CommandId}: {result.Status}, reason={result.ReasonCode}, motionTimeMs={snapshot.MotionTimeMs}");
                 if (Failure is not null) Buffer.CurrentSpeed = SimulationSpeed.Speed0;
             }
             if (!ct.IsCancellationRequested) Fail(new IOException("The simulation connection closed unexpectedly."));

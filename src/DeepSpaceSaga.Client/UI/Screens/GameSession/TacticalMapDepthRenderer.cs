@@ -118,11 +118,6 @@ internal sealed class TacticalMapDepthRenderer
         bodyColor: new SKColor(100, 92, 72, 230),
         highlightColor: new SKColor(198, 184, 142, 220));
 
-    private readonly SKPaint _navigationContinuationPaint = new()
-    {
-        Color = new SKColor(198, 184, 142, 110), Style = SKPaintStyle.Stroke,
-        StrokeWidth = 1f, IsAntialias = true, PathEffect = SKPathEffect.CreateDash([6f, 6f], 0)
-    };
     private readonly SKPaint _courseAlignmentPaint = new()
     {
         Color = new SKColor(126, 201, 215, 220), Style = SKPaintStyle.Stroke,
@@ -460,22 +455,6 @@ internal sealed class TacticalMapDepthRenderer
             viewportWidth,
             viewportHeight,
             _navigationTrajectoryPaints, maneuverPointCount);
-    }
-
-    public void DrawNavigationContinuation(SKCanvas canvas, IReadOnlyList<FutureTrajectoryPoint> points,
-        int maneuverPointCount, CameraState camera, int width, int height)
-    {
-        if (maneuverPointCount < 1 || maneuverPointCount >= points.Count) return;
-        _trajectoryPath.Reset();
-        var first = points[maneuverPointCount - 1];
-        var (x, y) = camera.WorldToScreen(first.X, first.Y, width, height);
-        _trajectoryPath.MoveTo(x, y);
-        for (int i = maneuverPointCount; i < points.Count; i++)
-        {
-            (x, y) = camera.WorldToScreen(points[i].X, points[i].Y, width, height);
-            _trajectoryPath.LineTo(x, y);
-        }
-        canvas.DrawPath(_trajectoryPath, _navigationContinuationPaint);
     }
 
     public void DrawCourseAlignmentPoint(SKCanvas canvas, float x, float y, bool targetFaster)

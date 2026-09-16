@@ -2746,10 +2746,18 @@ public sealed partial class SimulationEngine : IDisposable
                         nextCycle);
                     obj = _objects[objectIndex];
 
-                    // §56.5: write CommandResult(Executed) → write ShipEvent(CommandCompleted).
-                    RecordCommandResultFromCycle(cycle, CommandResultStatus.Executed, completionGameTimeMs);
-                    RecordShipEvent(obj.InitialMotion.ObjectId, module.ModuleId,
-                        ShipEventTypes.CommandCompleted, reasonCode: null, completionGameTimeMs);
+                    // Approach's steering checkpoints belong to one finite maneuver.
+                    // Publishing completion at every checkpoint floods the transport at
+                    // x100 (400 events/real second) and falsely reports unfinished work
+                    // as complete. Cancellation/interruption still report above.
+                    bool approachStillRunning = cycle.CommandType == NavigationComputerCommandTypes.Approach &&
+                        obj.Modules[moduleIndex].ActiveCycle?.CommandType == NavigationComputerCommandTypes.Approach;
+                    if (!approachStillRunning)
+                    {
+                        RecordCommandResultFromCycle(cycle, CommandResultStatus.Executed, completionGameTimeMs);
+                        RecordShipEvent(obj.InitialMotion.ObjectId, module.ModuleId,
+                            ShipEventTypes.CommandCompleted, reasonCode: null, completionGameTimeMs);
+                    }
 
                     if (!cycle.IsAutoRepeat)
                         break;

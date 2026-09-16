@@ -1569,14 +1569,13 @@ public sealed partial class GameSessionScreen : IScreen
             var predicted = state.Predicted;
             if (predicted.NavigationTargetX is not null)
             {
-                // Keep the commanded maneuver distinct from subsequent coasting.
+                // Draw the maneuver and its continuation as one continuous path.
                 var points = _navigationTrajectoryProjector.ProjectPlayerInto(
-                    predicted, _futureTrajectoryPoints, _camera, width, height, out bool isConfirmedIntercept, out var interceptPoint, out int maneuverPointCount);
+                    predicted, _futureTrajectoryPoints, _camera, width, height, out bool isConfirmedIntercept, out var interceptPoint);
                 if (points.Count >= 2)
                 {
                     DisplayedPlayerTrajectoryEnd = points[^1];
-                    _depthRenderer.DrawNavigationTrajectory(canvas, points, _camera, width, height, maneuverPointCount);
-                    _depthRenderer.DrawNavigationContinuation(canvas, points, maneuverPointCount, _camera, width, height);
+                    _depthRenderer.DrawNavigationTrajectory(canvas, points, _camera, width, height);
                 }
 
                 DrawNavigationTargetMarker(canvas, predicted.NavigationTargetX.Value, predicted.NavigationTargetY!.Value, width, height);
