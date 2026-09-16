@@ -380,14 +380,22 @@ public sealed partial class SimulationEngine : IDisposable
 
         // Yield the initial snapshot immediately (before any delay).
         // Capture atomically — no time has passed, so we read without advancing.
-        yield return BuildSnapshot(_clock.Capture());
+        yield return CaptureSnapshot(advanceClock: false);
 
         while (!cancellationToken.IsCancellationRequested && !_disposed)
         {
             await Task.Delay(SnapshotIntervalMs, cancellationToken);
 
-            yield return BuildSnapshot(_clock.UpdateAndCapture());
+            yield return CaptureSnapshot(advanceClock: true);
         }
+    }
+
+    public AuthoritativeSnapshot CaptureSnapshot(bool advanceClock = false)
+    {
+        // Clock capture and world advancement share the same session lock. A pause
+        // or explicit time command cannot overtake a previously captured clock value.
+        lock (_worldStateLock)
+            return BuildSnapshot(advanceClock ? _clock.UpdateAndCapture() : _clock.Capture());
     }
 
     private AuthoritativeSnapshot BuildSnapshot(SimulationClockState clockState)
