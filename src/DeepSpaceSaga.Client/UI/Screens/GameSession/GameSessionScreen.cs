@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Client.UI.Controls;
 using System.Collections.Immutable;
 using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Client.UI.Screens;
@@ -1156,6 +1157,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         // 5. Speed panel (bottom-center, above the Mechanics panel)
         DrawSpeedPanel(canvas);
+        DrawGameTime(canvas);
 
         // 6. Commands Panel (top-left)
         _commandsPanel.Render(canvas,
@@ -1686,6 +1688,19 @@ public sealed partial class GameSessionScreen : IScreen
         float panelX = ComputeScaleSpeedRowLeft() + ComputeScalePanelWidth() + ScalePanelGapFromSpeed;
         float panelY = ComputeScaleSpeedRowY();
         return new SKRect(panelX, panelY, panelX + totalW, panelY + panelH);
+    }
+
+    private void DrawGameTime(SKCanvas canvas)
+    {
+        var speedRect = ComputeSpeedPanelRect();
+        string text = GameTimeDisplay.Minutes(_buffer.Latest?.Snapshot.GameTimeMs)
+            + " · " + GameTimeDisplay.Status(_buffer.CurrentSpeed);
+        float width = _speedBtnTextPaint.MeasureText(text) + 24;
+        var rect = new SKRect(speedRect.MidX - width / 2, speedRect.Top - 34,
+            speedRect.MidX + width / 2, speedRect.Top - 5);
+        canvas.DrawRect(rect, _panelBgPaint);
+        canvas.DrawRect(rect, _panelBorderPaint);
+        canvas.DrawText(text, rect.MidX, rect.Top + 20, _speedBtnTextPaint);
     }
 
     private void DrawSpeedPanel(SKCanvas canvas)
