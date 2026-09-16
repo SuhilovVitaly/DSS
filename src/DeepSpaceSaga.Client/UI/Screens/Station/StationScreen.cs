@@ -2,6 +2,7 @@ using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using Silk.NET.Input;
 using SkiaSharp;
+using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Client.UI.Screens.Station;
 
@@ -28,6 +29,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.Station;
 public sealed class StationScreen : IScreen
 {
     private readonly SnapshotBuffer? _buffer;
+    private readonly GameSessionHandle? _session;
 
     private int _screenWidth;
     private int _screenHeight;
@@ -72,9 +74,10 @@ public sealed class StationScreen : IScreen
         _fuelHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
-    public StationScreen(SnapshotBuffer? buffer = null)
+    public StationScreen(SnapshotBuffer? buffer = null, GameSessionHandle? session = null)
     {
         _buffer = buffer;
+        _session = session;
     }
 
     /// <summary>
@@ -111,6 +114,15 @@ public sealed class StationScreen : IScreen
     {
         if (button != MouseButton.Left)
             return ScreenEvent.None;
+
+        if (_session?.StationTravelPending == true) return ScreenEvent.None;
+        for (int i = 0; i < 4; i++)
+        {
+            var rect = DistrictRect(i);
+            if (rect.Contains(x, y))
+                return _buffer?.Latest?.Snapshot.CurrentStationDistrict == (StationDistrict)i
+                    ? ScreenEvent.None : (ScreenEvent)((int)ScreenEvent.TravelDock + i);
+        }
 
         var hit = StationLayout.HitTest(x, y, _screenWidth, _screenHeight);
         if (hit == StationButton.Trade)
@@ -240,6 +252,14 @@ public sealed class StationScreen : IScreen
         DrawFinanceButton(canvas, pl, pt);
         DrawContractsButton(canvas, pl, pt);
 
+        string[] districts = ["Док", "Рынок", "Жилой район", "Администрация"];
+        for (int i = 0; i < districts.Length; i++)
+            MenuStyle.DrawButton(canvas, DistrictRect(i), districts[i],
+                _session?.StationTravelPending == true || snapshot?.CurrentStationDistrict == (StationDistrict)i
+                    ? ButtonState.Disabled : ButtonState.Normal);
+        canvas.DrawText("Переход в другой район: 1 час. Возврат также занимает 1 час.",
+            cx, pt + 390, MenuStyle.TextStatus);
+
         foreach (var (row, text) in PlaceholderLines)
         {
             float textY = pt + StationLayout.BodyStartY + row * StationLayout.BodyLineHeight;
@@ -253,6 +273,13 @@ public sealed class StationScreen : IScreen
             isCrewHovered: IsCrewTooltipVisible,
             isTokensHovered: IsTokensTooltipVisible,
             isFuelHovered: IsFuelTooltipVisible);
+    }
+
+    private SKRect DistrictRect(int index)
+    {
+        float left = StationLayout.PanelLeft(_screenWidth) + 420 + index * 195;
+        float top = StationLayout.PanelTop(_screenHeight) + 320;
+        return new SKRect(left, top, left + 185, top + 36);
     }
 
     private void DrawTradeButton(SKCanvas canvas, float panelLeft, float panelTop)

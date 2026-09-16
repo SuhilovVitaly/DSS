@@ -337,6 +337,8 @@ public sealed partial class SimulationEngine : IDisposable
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
             LoadDialogueState(gs.DialogueState, gs.GameTimeMs);
+            _stationDistrict = StationDistrict.Dock;
+            _stationTravelReceipts.Clear();
             RestoreCommandJournal(gs);
         }
     }
@@ -526,7 +528,8 @@ public sealed partial class SimulationEngine : IDisposable
                 ActiveDialogue: BuildDialogueSnapshot(gameTimeMs),
                 DialogueEvents: _dialogue.Events.ToImmutableArray(),
                 PlayerCharacter: _dialogue.Progress.PlayerCharacter,
-                Quests: _dialogue.Progress.Quests.Values.OrderBy(q => q.QuestId, StringComparer.Ordinal).ToImmutableArray());
+                Quests: _dialogue.Progress.Quests.Values.OrderBy(q => q.QuestId, StringComparer.Ordinal).ToImmutableArray(),
+                CurrentStationDistrict: _stationDistrict);
         }
     }
 

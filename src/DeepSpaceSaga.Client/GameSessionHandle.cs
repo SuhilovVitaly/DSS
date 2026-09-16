@@ -54,6 +54,27 @@ public sealed class GameSessionHandle : IAsyncDisposable
 
     public IGameSessionConnection Connection => _connection;
     public SnapshotBuffer Buffer { get; }
+    private int _stationTravelPending;
+    public bool StationTravelPending => Volatile.Read(ref _stationTravelPending) != 0;
+    public bool KeepPausedAfterStationTravel { get; private set; }
+
+    public async ValueTask TravelStationAsync(StationDistrict destination)
+    {
+        if (Interlocked.CompareExchange(ref _stationTravelPending, 1, 0) != 0) return;
+        try
+        {
+            var result = await _connection.TravelStationAsync(new(Guid.NewGuid().ToString("N"), destination));
+            Buffer.Update(result.Snapshot);
+            if (result.Accepted)
+            {
+                Buffer.CurrentSpeed = SimulationSpeed.Speed0;
+                KeepPausedAfterStationTravel = true;
+            }
+        }
+        finally { Volatile.Write(ref _stationTravelPending, 0); }
+    }
+
+    public void ClearStationTravelPause() => KeepPausedAfterStationTravel = false;
     internal UI.Screens.Trade.TradeJournal Trades { get; } = new();
 
     /// <summary>

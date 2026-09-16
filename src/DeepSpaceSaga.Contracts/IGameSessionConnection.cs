@@ -9,6 +9,10 @@ namespace DeepSpaceSaga.Contracts;
 /// </summary>
 public interface IGameSessionConnection : IAsyncDisposable
 {
+    ValueTask<StationTravelResult> TravelStationAsync(StationTravelCommand command,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.FromException<StationTravelResult>(new NotSupportedException("Station travel is unavailable."));
+
     ValueTask SendDialogueCommandAsync(
         DialogueCommand command,
         CancellationToken cancellationToken = default);

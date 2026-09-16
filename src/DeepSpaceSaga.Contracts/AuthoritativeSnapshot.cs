@@ -43,4 +43,5 @@ public sealed record AuthoritativeSnapshot(
     ImmutableArray<DialogueEvent> DialogueEvents = default,
     PlayerCharacterState? PlayerCharacter = null,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<QuestState>))]
-    ImmutableArray<QuestState> Quests = default);
+    ImmutableArray<QuestState> Quests = default,
+    StationDistrict CurrentStationDistrict = StationDistrict.Dock);
