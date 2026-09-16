@@ -195,6 +195,13 @@ public sealed class FinanceScreen : IScreen
             textY += FinanceLayout.BodyLineHeight;
         }
 
+        if (snapshot?.PortFees is { } fees)
+        {
+            canvas.DrawText("Следующий портовый сбор: " + GameTimeDisplay.Minutes(fees.NextPortFeeDueGameTimeMs),
+                cx, pt + 300, MenuStyle.TextStatus);
+            canvas.DrawText($"Портовая задолженность: {fees.Debt}", cx, pt + 330, MenuStyle.TextStatus);
+        }
+
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.
         StationToolbar.DrawTooltips(canvas, pl, pt,

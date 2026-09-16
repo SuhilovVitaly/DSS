@@ -302,7 +302,10 @@ public sealed partial class SimulationEngine : IDisposable
                 PortFeeCreditsPerDay: obj.PortFeeCreditsPerDay,
                 SecurityZoneRadiusKm: obj.SecurityZoneRadiusKm,
                 PiracyWarningGracePeriodMs: obj.PiracyWarningGracePeriodMs,
-                IsDestroyed: obj.IsDestroyed, Passengers: (obj.Passengers ?? []).ToImmutableArray()));
+                IsDestroyed: obj.IsDestroyed, Passengers: (obj.Passengers ?? []).ToImmutableArray(),
+                FirstPortFeeGameTimeMs: obj.FirstPortFeeGameTimeMs ?? (obj.IsDocked ? gs.GameTimeMs : null),
+                NextPortFeeDueGameTimeMs: obj.NextPortFeeDueGameTimeMs ?? (obj.IsDocked ? checked(gs.GameTimeMs + GameCalendar.DayMs) : null),
+                PortFeeDebt: obj.PortFeeDebt));
         }
 
         lock (_worldStateLock)
@@ -530,7 +533,8 @@ public sealed partial class SimulationEngine : IDisposable
                 DialogueEvents: _dialogue.Events.ToImmutableArray(),
                 PlayerCharacter: _dialogue.Progress.PlayerCharacter,
                 Quests: _dialogue.Progress.Quests.Values.OrderBy(q => q.QuestId, StringComparer.Ordinal).ToImmutableArray(),
-                CurrentStationDistrict: _stationDistrict);
+                CurrentStationDistrict: _stationDistrict,
+                PortFees: BuildPortFeeSnapshot());
         }
     }
 
@@ -805,7 +809,10 @@ public sealed partial class SimulationEngine : IDisposable
                 PortFeeCreditsPerDay: obj.PortFeeCreditsPerDay,
                 SecurityZoneRadiusKm: obj.SecurityZoneRadiusKm,
                 PiracyWarningGracePeriodMs: obj.PiracyWarningGracePeriodMs,
-                IsDestroyed: obj.IsDestroyed, Passengers: obj.Passengers.IsDefault ? [] : obj.Passengers));
+                IsDestroyed: obj.IsDestroyed, Passengers: obj.Passengers.IsDefault ? [] : obj.Passengers,
+                FirstPortFeeGameTimeMs: obj.FirstPortFeeGameTimeMs,
+                NextPortFeeDueGameTimeMs: obj.NextPortFeeDueGameTimeMs,
+                PortFeeDebt: obj.PortFeeDebt));
         }
 
         var gameState = new GameStateData(
@@ -3153,7 +3160,10 @@ internal sealed record SpaceObjectRuntime(
     int? SecurityZoneRadiusKm = null,
     long? PiracyWarningGracePeriodMs = null,
     bool IsDestroyed = false,
-    ImmutableArray<ShipPassengerData> Passengers = default);
+    ImmutableArray<ShipPassengerData> Passengers = default,
+    long? FirstPortFeeGameTimeMs = null,
+    long? NextPortFeeDueGameTimeMs = null,
+    long PortFeeDebt = 0);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName);

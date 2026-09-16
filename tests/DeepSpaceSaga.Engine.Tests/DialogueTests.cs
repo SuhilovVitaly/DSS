@@ -73,7 +73,7 @@ public class DialogueTests
     }
     [Theory]
     [InlineData("refuse_fee", 1000)]
-    [InlineData("accept_fee", 99)]
+
     public void Refusal_or_insufficient_funds_cannot_charge_or_dock(string choice, long credits)
     {
         using var engine = DockCommandTests.CreateEngine(playerCredits: credits);

@@ -16,9 +16,10 @@ public sealed partial class SimulationEngine
         {
             long nextMeal = _processedWorldTimeMs - _processedWorldTimeMs % MealIntervalMs;
             nextMeal = nextMeal > long.MaxValue - MealIntervalMs ? long.MaxValue : nextMeal + MealIntervalMs;
-            long next = Math.Min(gameTimeMs, nextMeal);
+            long next = Math.Min(Math.Min(gameTimeMs, nextMeal), NextPortFeeTime());
             AdvanceMotionTo(next);
             if (next == nextMeal && next % MealIntervalMs == 0) ConsumeScheduledRations(next);
+            RenewPortFees(next);
             _processedWorldTimeMs = next;
         }
         AdvanceMotionTo(gameTimeMs);

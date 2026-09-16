@@ -177,7 +177,10 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("securityZoneRadiusKm")] int? SecurityZoneRadiusKm = null,
     [property: JsonPropertyName("piracyWarningGracePeriodMs")] long? PiracyWarningGracePeriodMs = null,
     [property: JsonPropertyName("isDestroyed")] bool IsDestroyed = false,
-    [property: JsonPropertyName("passengers")] IReadOnlyList<ShipPassengerData>? Passengers = null);
+    [property: JsonPropertyName("passengers")] IReadOnlyList<ShipPassengerData>? Passengers = null,
+    [property: JsonPropertyName("firstPortFeeGameTimeMs")] long? FirstPortFeeGameTimeMs = null,
+    [property: JsonPropertyName("nextPortFeeDueGameTimeMs")] long? NextPortFeeDueGameTimeMs = null,
+    [property: JsonPropertyName("portFeeDebt")] long PortFeeDebt = 0);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles

@@ -21,6 +21,7 @@ internal static class DialogueEffectTransaction
         int stationIndex = Array.FindIndex(objects.ToArray(), o => o.InitialMotion.ObjectId == dialogue.StationObjectId && o.ObjectType == SpaceObjectType.Station);
         if (shipIndex < 0 || objects[shipIndex].IsDestroyed) return "player_destroyed";
         bool end = false;
+        long? paidPortFee = null;
         try
         {
             checked
@@ -39,10 +40,17 @@ internal static class DialogueEffectTransaction
                     {
                         case "AddCredits": credits += amount; break;
                         case "RemoveCredits":
+                            if (effect.AmountSource == "station.portFeeCreditsPerDay")
+                            {
+                                paidPortFee = Math.Min(credits, amount);
+                                candidate[shipIndex] = candidate[shipIndex] with {
+                                    PortFeeDebt = candidate[shipIndex].PortFeeDebt + amount - paidPortFee.Value };
+                                amount = paidPortFee.Value;
+                            }
                             if (credits < amount) return CommandReasonCodes.InsufficientPlayerCredits;
                             credits -= amount; break;
                         case "AddStationCredits":
-                            candidate[stationIndex] = candidate[stationIndex] with { Credits = candidate[stationIndex].Credits + amount }; break;
+                            candidate[stationIndex] = candidate[stationIndex] with { Credits = candidate[stationIndex].Credits + (effect.AmountSource == "station.portFeeCreditsPerDay" ? paidPortFee ?? amount : amount) }; break;
                         case "ModifyCharacterAttribute":
                             var attrs = progress.PlayerCharacter.Attributes;
                             progress = progress with { PlayerCharacter = new(attrs.SetItem(effect.Attribute!, (int)(attrs.GetValueOrDefault(effect.Attribute!) + amount))) }; break;
@@ -79,6 +87,7 @@ internal static class DialogueEffectTransaction
                             {
                                 InitialMotion = ship.InitialMotion with { X = motion.X + 1, Y = motion.Y + 1, SpeedKmS = motion.SpeedKmS, Direction = motion.Direction },
                                 StartGameTimeMs = time, IsDocked = true, DockedStationObjectId = dialogue.StationObjectId,
+                                FirstPortFeeGameTimeMs = time, NextPortFeeDueGameTimeMs = time + GameCalendar.DayMs,
                                 Modules = ship.Modules.Select(m => m with { ActiveCycle = null }).ToImmutableArray()
                             };
                             progress = progress with { StationAccessStates = progress.StationAccessStates.SetItem(dialogue.StationObjectId!, new(dialogue.StationObjectId!, false)) };
