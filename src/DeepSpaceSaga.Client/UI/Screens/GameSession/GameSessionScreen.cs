@@ -1230,7 +1230,7 @@ public sealed partial class GameSessionScreen : IScreen
         // correction, otherwise it snaps instantly on whichever frame receives it — not
         // necessarily the pause/resume transition frame at all.
         bool newSnapshotArrived = _hasSnapshotBaseline && snapshot.SnapshotSequence != _lastSnapshotBaselineSequence;
-        long targetGameTimeMs = snapshot.GameTimeMs + ed;
+        long targetGameTimeMs = snapshot.MotionTimeMs + ed;
 
         foreach (var obj in snapshot.Objects)
         {
@@ -1296,7 +1296,7 @@ public sealed partial class GameSessionScreen : IScreen
                 PauseResumeDiagnostics.Write(
                     $"OBJECT id={obj.ObjectId} isPaused={isPaused} enteringPause={enteringPause} resuming={resuming} " +
                     $"newSnapshotArrived={newSnapshotArrived} " +
-                    $"snapSeq={snapshot.SnapshotSequence} snapGameTimeMs={snapshot.GameTimeMs} ed={ed} " +
+                    $"snapSeq={snapshot.SnapshotSequence} snapGameTimeMs={snapshot.MotionTimeMs} ed={ed} " +
                     $"authX={obj.X:F3} authY={obj.Y:F3} authDir={obj.Direction:F3} " +
                     $"visualX={predicted.X:F3} visualY={predicted.Y:F3} visualDir={predicted.Direction:F3} " +
                     $"turnStepDeg={obj.TurnStepDegrees} turnStepRemainingMs={obj.TurnStepRemainingMs} " +
@@ -1318,7 +1318,7 @@ public sealed partial class GameSessionScreen : IScreen
         if (resuming)
             _pausedVisualAnchors.Clear();
 
-        _lastSnapshotBaselineGameTimeMs = snapshot.GameTimeMs;
+        _lastSnapshotBaselineGameTimeMs = snapshot.MotionTimeMs;
         _lastSnapshotBaselineSequence = snapshot.SnapshotSequence;
         _hasSnapshotBaseline = true;
 
@@ -1432,7 +1432,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     private static long GetPredictedGameTimeMs(SnapshotPrediction prediction)
     {
-        return prediction.BufferedSnapshot.Snapshot.GameTimeMs + prediction.EffectivePredictionDeltaMs;
+        return prediction.BufferedSnapshot.Snapshot.MotionTimeMs + prediction.EffectivePredictionDeltaMs;
     }
 
     private void CaptureInitialTrailBootstrapObjects()

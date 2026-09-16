@@ -45,8 +45,10 @@ public sealed partial class SimulationEngine
                 return new(false, "already_in_district", CaptureSnapshot());
 
             long targetTime = checked(_clock.GameTimeMs + GameCalendar.HourMs);
-            AdvanceWorldTo(targetTime);
-            _clock.Reset(targetTime, SimulationSpeed.Speed0);
+            long targetSimulationTime = checked(_clock.SimulationTimeMs +
+                GameCalendar.HourMs / SimulationSpeedExtensions.BaseGameSecondsPerRealSecond);
+            AdvanceWorldTo(targetTime, targetSimulationTime);
+            _clock.Reset(targetTime, SimulationSpeed.Speed0, targetSimulationTime);
             _stationDistrict = command.Destination;
             _stationTravelReceipts.Add(command.CommandId);
             return new(true, null, CaptureSnapshot());

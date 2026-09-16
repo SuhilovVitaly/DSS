@@ -5,6 +5,40 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class PortFeeScheduleTests
 {
+    [Fact]
+    public void Docking_dialogue_and_daily_fee_use_calendar_time_while_motion_keeps_its_pace()
+    {
+        long realMs = 0;
+        using var engine = DockCommandTests.CreateEngine(clock:
+            new SimulationClock(SimulationSpeed.Speed1, () => realMs));
+        engine.SetSpeed(SimulationSpeed.Speed1);
+        realMs = 1000;
+        engine.ReceiveCommand(new("dock", 1, "SPC-0001", "MOD-NAV-01", NavigationComputerCommandTypes.Dock,
+            TargetObjectId: "STATION-01"));
+        var snapshot = engine.CaptureSnapshot(advanceClock: true);
+        Assert.NotNull(snapshot.ActiveDialogue);
+        Assert.Equal(300_000, snapshot.GameTimeMs);
+        Assert.Equal(1000, snapshot.SimulationTimeMs);
+        realMs = 31_000;
+        snapshot = engine.CaptureSnapshot(advanceClock: true);
+        Assert.Equal(300_000, snapshot.GameTimeMs);
+        foreach (string choice in new[] { "truthful_id", "accept_fee", "continue" })
+        {
+            var active = snapshot.ActiveDialogue!;
+            engine.ReceiveDialogueCommand(new(choice, DialogueAction.Choose, active.InstanceId, active.Revision, choice));
+            snapshot = engine.CaptureSnapshot();
+        }
+        Assert.Equal(300_000, snapshot.PortFees!.FirstPortFeeGameTimeMs);
+        Assert.Equal(300_000 + GameCalendar.DayMs, snapshot.PortFees.NextPortFeeDueGameTimeMs);
+        Assert.Equal(900, snapshot.PlayerCredits);
+        Assert.Equal(SimulationSpeed.Speed1, snapshot.CurrentSpeed);
+        realMs += 288_000; // 24 calendar hours at five minutes per real second.
+        snapshot = engine.CaptureSnapshot(advanceClock: true);
+        Assert.Equal(300_000 + GameCalendar.DayMs, snapshot.GameTimeMs);
+        Assert.Equal(289_000, snapshot.SimulationTimeMs);
+        Assert.Equal(800, snapshot.PlayerCredits);
+        Assert.Equal(800, engine.CaptureSnapshot().PlayerCredits);
+    }
     internal static SimulationEngine DockAt(long time, long credits = 1000)
     {
         var engine = DockCommandTests.CreateEngine(playerCredits: credits);

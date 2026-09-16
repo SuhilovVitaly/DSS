@@ -19,6 +19,7 @@ public class SimulationClockTests
         clock.SetSpeed(SimulationSpeed.Speed2);
         realMs = 1120;
         Assert.Equal(60_000, clock.UpdateAndCapture().GameTimeMs);
+        Assert.Equal(200, clock.SimulationTimeMs);
     }
     [Theory]
     [InlineData(SimulationSpeed.Speed0, 0)]
@@ -31,7 +32,9 @@ public class SimulationClockTests
         long realMs = 0;
         var clock = new SimulationClock(speed, () => realMs);
         realMs = 1000;
-        Assert.Equal(expected, clock.UpdateAndCapture().GameTimeMs);
+        var state = clock.UpdateAndCapture();
+        Assert.Equal(expected, state.GameTimeMs);
+        Assert.Equal(1000 * (int)speed, state.SimulationTimeMs);
     }
 
     [Fact]

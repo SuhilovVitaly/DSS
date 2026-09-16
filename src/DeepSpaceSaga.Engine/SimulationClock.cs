@@ -5,12 +5,16 @@ namespace DeepSpaceSaga.Engine;
 /// <summary>
 /// Immutable snapshot of clock state, captured atomically under lock.
 /// </summary>
-public readonly record struct SimulationClockState(long GameTimeMs, SimulationSpeed Speed);
+public readonly record struct SimulationClockState(long GameTimeMs, SimulationSpeed Speed,
+    long? SimulationTimeMs = null)
+{
+    public long MotionTimeMs => SimulationTimeMs ?? GameTimeMs;
+}
 
 /// <summary>
-/// Authoritative simulation clock that accumulates game time based on speed.
+/// One authoritative clock advances calendar and motion time from the same elapsed interval.
 /// Thread-safe: all public methods are atomic via internal lock.
-/// At Speed0, GameTimeMs does not advance regardless of real time passage.
+/// At Speed0, neither timestamp advances. Calendar time runs 300 times faster than motion.
 /// </summary>
 public sealed class SimulationClock
 {
@@ -28,8 +32,11 @@ public sealed class SimulationClock
         _lastRealTick = _realTimeMs();
     }
 
-    /// <summary>Accumulated game time in milliseconds.</summary>
+    /// <summary>Accumulated calendar time in milliseconds (five minutes per real second at Speed1).</summary>
     public long GameTimeMs { get; private set; }
+
+    /// <summary>Time for motion and ship cycles, at one second per real second at Speed1.</summary>
+    public long SimulationTimeMs { get; private set; }
 
     /// <summary>Current simulation speed.</summary>
     public SimulationSpeed Speed { get; private set; }
@@ -47,6 +54,7 @@ public sealed class SimulationClock
             _lastRealTick = now;
 
             GameTimeMs += deltaReal * Speed.GameTimeMultiplier();
+            SimulationTimeMs += deltaReal * (int)Speed;
         }
     }
 
@@ -63,7 +71,8 @@ public sealed class SimulationClock
             _lastRealTick = now;
 
             GameTimeMs += deltaReal * Speed.GameTimeMultiplier();
-            return new SimulationClockState(GameTimeMs, Speed);
+            SimulationTimeMs += deltaReal * (int)Speed;
+            return new SimulationClockState(GameTimeMs, Speed, SimulationTimeMs);
         }
     }
 
@@ -75,7 +84,7 @@ public sealed class SimulationClock
     {
         lock (_lock)
         {
-            return new SimulationClockState(GameTimeMs, Speed);
+            return new SimulationClockState(GameTimeMs, Speed, SimulationTimeMs);
         }
     }
 
@@ -84,11 +93,13 @@ public sealed class SimulationClock
     /// Sets GameTimeMs and Speed directly, without accumulating any real time.
     /// Resets the real-time baseline so subsequent Update() calls measure from now.
     /// </summary>
-    public void Reset(long gameTimeMs, SimulationSpeed speed)
+    public void Reset(long gameTimeMs, SimulationSpeed speed, long? simulationTimeMs = null)
     {
         lock (_lock)
         {
             GameTimeMs = gameTimeMs;
+            // Legacy saves used one timestamp for both domains. Preserve their baselines.
+            SimulationTimeMs = simulationTimeMs ?? gameTimeMs;
             Speed = speed;
             _lastRealTick = _realTimeMs();
         }
@@ -109,6 +120,7 @@ public sealed class SimulationClock
 
             // Accumulate time at the current speed before switching
             GameTimeMs += deltaReal * Speed.GameTimeMultiplier();
+            SimulationTimeMs += deltaReal * (int)Speed;
 
             // Switch to new speed and reset baseline
             _lastRealTick = now;

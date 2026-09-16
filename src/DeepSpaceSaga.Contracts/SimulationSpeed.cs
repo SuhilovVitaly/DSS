@@ -26,7 +26,7 @@ public static class SimulationSpeedExtensions
 {
     public const int BaseGameSecondsPerRealSecond = 300;
 
-    /// <summary>Shared conversion for authoritative clocks and client motion prediction.</summary>
+    /// <summary>Calendar conversion only. Motion and ship cycles use the enum's relative multiplier.</summary>
     public static int GameTimeMultiplier(this SimulationSpeed speed) =>
         checked((int)speed * BaseGameSecondsPerRealSecond);
 }

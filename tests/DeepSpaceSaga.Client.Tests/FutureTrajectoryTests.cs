@@ -335,7 +335,7 @@ public class FutureTrajectoryTests
             Objects: ImmutableArray.Create(ship),
             PlayerShipObjectId: "ship"));
 
-        // Advance real time by 500 ms → 150,000 game ms at Speed1
+        // Advance real time by 500 ms → 500 ms of prediction at Speed1
         clock.AdvanceMs(500);
 
         var screen = new GameSessionScreen(
@@ -348,9 +348,9 @@ public class FutureTrajectoryTests
         var trajectory = screen.GetFutureTrajectory("ship");
         Assert.NotEmpty(trajectory);
 
-        // Prediction delta = 150,000 ms. Predicted X = 10000 + 5*150*10 = 17500
+        // Prediction delta = 500 ms. Predicted X = 10000 + 5*0.5*10 = 10025
         // So first trajectory point should be at predicted X, not authoritative X
-        Assert.Equal(17500.0, trajectory[0].X, precision: 6);
+        Assert.Equal(10025.0, trajectory[0].X, precision: 6);
     }
 
     [Fact]

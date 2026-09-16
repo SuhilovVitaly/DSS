@@ -26,7 +26,7 @@ public class PauseResumeVisualContinuityTests
     private const int ScreenWidth = 1920;
     private const int ScreenHeight = 1080;
     private const long FrameMs = 13; // ~80 fps
-    private const double SteadyStateDeltaPerFrame = FrameMs * 10.0; // A 10/300 km/s test ship at Speed4 travels 10 units/real-ms
+    private const double SteadyStateDeltaPerFrame = FrameMs * 10.0; // 10 km/s @ Speed4 = 10 units/real-ms
 
     private sealed class FakeTimestamp
     {
@@ -44,7 +44,7 @@ public class PauseResumeVisualContinuityTests
         var buffer = new SnapshotBuffer(() => clock.Timestamp);
         var predictor = new LinearMotionPredictor();
 
-        var playerShip = new ObjectMotionSnapshot("player", 10000, 10000, SpeedKmS: 10.0 / 300, Direction: 90);
+        var playerShip = new ObjectMotionSnapshot("player", 10000, 10000, SpeedKmS: 10, Direction: 90);
         buffer.Update(new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed4,
             ImmutableArray.Create(playerShip), PlayerShipObjectId: "player"));
 
@@ -64,7 +64,7 @@ public class PauseResumeVisualContinuityTests
 
         // A routine, non-pathological clock disagreement: the next authoritative snapshot
         // reports slightly MORE elapsed game time than the client already predicted.
-        long engineGameTimeMs = clientPredictedGameTimeMs + clockSkewMs * 30_000; // ms * Speed4 multiplier
+        long engineGameTimeMs = clientPredictedGameTimeMs + clockSkewMs * 100; // ms * Speed4 multiplier
         var movedShip = predictor.Predict(playerShip, engineGameTimeMs);
         buffer.Update(new AuthoritativeSnapshot(2, engineGameTimeMs, SimulationSpeed.Speed4,
             ImmutableArray.Create(movedShip), PlayerShipObjectId: "player"));
@@ -103,7 +103,7 @@ public class PauseResumeVisualContinuityTests
         var buffer = new SnapshotBuffer(() => clock.Timestamp);
         var predictor = new LinearMotionPredictor();
 
-        var playerShip = new ObjectMotionSnapshot("player", 10000, 10000, SpeedKmS: 10.0 / 300, Direction: 90);
+        var playerShip = new ObjectMotionSnapshot("player", 10000, 10000, SpeedKmS: 10, Direction: 90);
         buffer.Update(new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed4,
             ImmutableArray.Create(playerShip), PlayerShipObjectId: "player"));
 
@@ -120,7 +120,7 @@ public class PauseResumeVisualContinuityTests
         // A wildly different position/heading than continuing the old trajectory would
         // give — the new snapshot's own baseline, not an extrapolation of it.
         var turnedShip = playerShip with { X = 9993.299, Y = 8286.690, Direction = 210 };
-        buffer.Update(new AuthoritativeSnapshot(2, 26_500 * 300, SimulationSpeed.Speed4,
+        buffer.Update(new AuthoritativeSnapshot(2, 26_500, SimulationSpeed.Speed4,
             ImmutableArray.Create(turnedShip), PlayerShipObjectId: "player"));
 
         clock.AdvanceMs(FrameMs);
@@ -164,7 +164,7 @@ public class PauseResumeVisualContinuityTests
         var buffer = new SnapshotBuffer(() => clock.Timestamp);
         var predictor = new LinearMotionPredictor();
 
-        var playerShip = new ObjectMotionSnapshot("player", 10000, 10000, SpeedKmS: 10.0 / 300, Direction: 90);
+        var playerShip = new ObjectMotionSnapshot("player", 10000, 10000, SpeedKmS: 10, Direction: 90);
         buffer.Update(new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed4,
             ImmutableArray.Create(playerShip), PlayerShipObjectId: "player"));
 

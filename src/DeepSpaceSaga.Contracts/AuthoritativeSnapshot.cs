@@ -49,6 +49,12 @@ public sealed record AuthoritativeSnapshot(
     long MissingRations = 0,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<TimedContractState>))]
     ImmutableArray<TimedContractState> ActiveContracts = default,
-    long? RouteArrivalGameTimeMs = null);
+    long? RouteArrivalGameTimeMs = null,
+    long? SimulationTimeMs = null)
+{
+    /// <summary>Motion/cycle timestamp; legacy snapshots use GameTimeMs for both domains.</summary>
+    [JsonIgnore]
+    public long MotionTimeMs => SimulationTimeMs ?? GameTimeMs;
+}
 
 public sealed record PortFeeSnapshot(long FirstPortFeeGameTimeMs, long NextPortFeeDueGameTimeMs, long Debt);

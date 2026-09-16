@@ -7,9 +7,17 @@ public sealed partial class SimulationEngine
 {
     private const long MealIntervalMs = 12 * GameCalendar.HourMs;
     private long _processedWorldTimeMs;
+    private long _processedSimulationTimeMs;
 
-    private void AdvanceWorldTo(long gameTimeMs)
+    private void AdvanceWorldTo(long gameTimeMs, long simulationTimeMs)
     {
+        long fromCalendar = _processedWorldTimeMs;
+        long fromSimulation = _processedSimulationTimeMs;
+        // Both timestamps come from the same clock. Map each calendar boundary onto
+        // the motion interval so economic events cannot accelerate ship cycles.
+        long MotionAt(long calendarTime) => gameTimeMs == fromCalendar ? simulationTimeMs :
+            fromSimulation + (long)((decimal)(calendarTime - fromCalendar) *
+                (simulationTimeMs - fromSimulation) / (gameTimeMs - fromCalendar));
         // Process (previous, target] in order; repeated snapshots at the same time
         // cannot repeat a meal, including midnight. Loading establishes the cursor.
         while (_processedWorldTimeMs < gameTimeMs)
@@ -19,14 +27,15 @@ public sealed partial class SimulationEngine
             nextMeal = nextMeal > long.MaxValue - MealIntervalMs ? long.MaxValue : nextMeal + MealIntervalMs;
             long next = Math.Min(Math.Min(Math.Min(gameTimeMs, nextMeal), NextPortFeeTime()), NextContractDeadline());
             next = Math.Min(next, NextProductionTime());
-            AdvanceMotionTo(next);
+            AdvanceMotionTo(MotionAt(next));
             CompleteProduction(next);
             if (next == nextMeal && next % MealIntervalMs == 0) ConsumeScheduledRations(next);
             RenewPortFees(next);
             ApplyContractDeadlines(next);
             _processedWorldTimeMs = next;
         }
-        AdvanceMotionTo(gameTimeMs);
+        AdvanceMotionTo(simulationTimeMs);
+        _processedSimulationTimeMs = simulationTimeMs;
     }
 
     private void ConsumeScheduledRations(long time)

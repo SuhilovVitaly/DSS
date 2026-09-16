@@ -120,11 +120,11 @@ public sealed partial class SimulationEngine : IDisposable
         return EngineContentLoader.CreateEngineFromScenarioFile(settingsPath, scenarioPath);
     }
 
-    internal SimulationEngine(GameDataRegistry registry, ImmutableArray<string> femaleCrewPortraits = default)
+    internal SimulationEngine(GameDataRegistry registry, ImmutableArray<string> femaleCrewPortraits = default, SimulationClock? clock = null)
     {
         _registry = registry;
         _femaleCrewPortraits = femaleCrewPortraits.IsDefaultOrEmpty ? [CharacterPortraits.DefaultFemale] : femaleCrewPortraits;
-        _clock = new SimulationClock(SimulationSpeed.Speed1);
+        _clock = clock ?? new SimulationClock(SimulationSpeed.Speed1);
     }
 
     public void ReceiveCommand(PlayerCommand command)
@@ -268,17 +268,9 @@ public sealed partial class SimulationEngine : IDisposable
                 SpeedKmS: speedKmS,
                 Direction: obj.DirectionDegrees),
                 ObjectType: obj.ObjectType,
-                // Must equal gs.GameTimeMs, not 0: PositionX/Y/SpeedMps/DirectionDegrees are
-                // defined as "state AT gs.GameTimeMs", so elapsed-time math (BuildSnapshot,
-                // CaptureSaveState) must start counting from there. RunAsync's prologue
-                // re-stamps this from the clock too (engineStartGameTime = _clock.GameTimeMs,
-                // which SimulationClock.Reset just set to this same gs.GameTimeMs above) —
-                // that makes RunAsync's stamp an idempotent no-op, not a second source of
-                // truth. Without this, CaptureSaveState/BuildSnapshot called in the window
-                // between construction and RunAsync's first iteration (e.g. F5 right after
-                // F9, or CaptureSaveState() called directly on a freshly bootstrapped engine)
-                // would double-count gs.GameTimeMs as elapsed motion from position zero.
-                StartGameTimeMs: gs.GameTimeMs,
+                // Saved positions and active ship cycles share the motion timestamp.
+                // Keep that baseline on load; calendar time has a different pace.
+                StartGameTimeMs: gs.MotionTimeMs,
                 Modules: modules,
                 Name: obj.Name,
                 PersistenceType: obj.PersistenceType,
@@ -318,7 +310,7 @@ public sealed partial class SimulationEngine : IDisposable
             // null for both.
             ActiveObjectId = null;
             SelectedObjectId = null;
-            _clock.Reset(gs.GameTimeMs, speed);
+            _clock.Reset(gs.GameTimeMs, speed, gs.MotionTimeMs);
             _nextEngineCycleId = 0;
             _nextShipEventId = 0;
             _shipEvents.Clear();
@@ -339,8 +331,9 @@ public sealed partial class SimulationEngine : IDisposable
 
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
-            LoadDialogueState(gs.DialogueState, gs.GameTimeMs);
             _processedWorldTimeMs = gs.GameTimeMs;
+            _processedSimulationTimeMs = gs.MotionTimeMs;
+            LoadDialogueState(gs.DialogueState, gs.MotionTimeMs);
             _economyTime = (gs.EconomyTime ?? new EconomyTimeData()) with {
                 ActiveContracts = (gs.EconomyTime?.ActiveContracts ?? []).ToImmutableArray() };
             _stationDistrict = _economyTime.StationDistrict;
@@ -393,7 +386,7 @@ public sealed partial class SimulationEngine : IDisposable
     {
         lock (_worldStateLock)
         {
-            long gameTimeMs = clockState.GameTimeMs;
+            long gameTimeMs = clockState.MotionTimeMs;
             bool dialogueWasActive = _dialogue.Active is not null;
 
             // Gating this on the CURRENT speed (rather than always calling it) is wrong: the
@@ -408,7 +401,7 @@ public sealed partial class SimulationEngine : IDisposable
             // snap. Completion is itself correctly gated on gameTimeMs progression already (its
             // loop condition no-ops when no time has passed), so no external speed check is
             // needed here.
-            AdvanceWorldTo(gameTimeMs);
+            AdvanceWorldTo(clockState.GameTimeMs, gameTimeMs);
             ApplyPendingCommands(gameTimeMs);
             ApplyPendingDialogueCommands(gameTimeMs);
             UpdateStationSecurity(gameTimeMs);
@@ -502,7 +495,7 @@ public sealed partial class SimulationEngine : IDisposable
 
             return new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
-                GameTimeMs: gameTimeMs,
+                GameTimeMs: clockState.GameTimeMs,
                 CurrentSpeed: _dialogue.Active is not null ? SimulationSpeed.Speed0 : dialogueWasActive ? _clock.Speed : clockState.Speed,
                 Objects: objects.MoveToImmutable(),
                 PlayerShipObjectId: PlayerShipObjectId,
@@ -521,7 +514,7 @@ public sealed partial class SimulationEngine : IDisposable
                 CurrentStationDistrict: _stationDistrict,
                 PortFees: BuildPortFeeSnapshot(), MissingRations: _economyTime.MissingRations,
                 ActiveContracts: (_economyTime.ActiveContracts ?? []).ToImmutableArray(),
-                RouteArrivalGameTimeMs: _economyTime.RouteArrivalGameTimeMs);
+                RouteArrivalGameTimeMs: _economyTime.RouteArrivalGameTimeMs, SimulationTimeMs: gameTimeMs);
         }
     }
 
@@ -727,7 +720,7 @@ public sealed partial class SimulationEngine : IDisposable
 
     private ScenarioFile CaptureSaveStateCore(SimulationClockState clockState)
     {
-        long gameTimeMs = clockState.GameTimeMs;
+        long gameTimeMs = clockState.MotionTimeMs;
         bool dialogueWasActive = _dialogue.Active is not null;
 
         // Bring ActiveCycle/position/direction fully up to date for gameTimeMs before
@@ -735,7 +728,7 @@ public sealed partial class SimulationEngine : IDisposable
         // completion hasn't been applied yet because the 1 Hz BuildSnapshot loop hasn't
         // ticked since) would be captured stale. Idempotent: a cycle already caught up to
         // gameTimeMs is a no-op here (same guard BuildSnapshot relies on).
-        AdvanceWorldTo(gameTimeMs);
+        AdvanceWorldTo(clockState.GameTimeMs, gameTimeMs);
 
         // Mirror BuildSnapshot's other half: a command the player sent in the narrow
         // window between the last 1 Hz tick and this save (e.g. F5 pressed right after
@@ -803,7 +796,7 @@ public sealed partial class SimulationEngine : IDisposable
         }
 
         var gameState = new GameStateData(
-            GameTimeMs: gameTimeMs,
+            GameTimeMs: clockState.GameTimeMs,
             CurrentSpeed: (_dialogue.Active is not null ? SimulationSpeed.Speed0 : dialogueWasActive ? _clock.Speed : clockState.Speed).ToString(),
             PlayerShipObjectId: PlayerShipObjectId ?? string.Empty,
             Focus: null, // camera/focus is client-side only — never saved (decision G.20)
@@ -813,7 +806,7 @@ public sealed partial class SimulationEngine : IDisposable
             DialogueState: _dialogue.Save(),
             CommandReceipts: CaptureCommandReceipts(),
             PendingCommands: CapturePendingCommands(),
-            EconomyTime: CaptureEconomyTime());
+            EconomyTime: CaptureEconomyTime(), SimulationTimeMs: gameTimeMs);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),

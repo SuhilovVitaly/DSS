@@ -19,15 +19,6 @@ public class ModalPauseTests
     }
 
     [Fact]
-    public void One_real_second_predicts_five_game_minutes_at_speed1()
-    {
-        var clock = new FakeTimestamp();
-        var buffer = new SnapshotBuffer(() => clock.Timestamp);
-        buffer.Update(new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed1, []));
-        clock.AdvanceMs(1000);
-        Assert.Equal(300_000, buffer.EffectivePredictionDeltaMs);
-    }
-    [Fact]
     public void Prediction_stops_during_pause()
     {
         var buffer = new SnapshotBuffer();
@@ -174,13 +165,13 @@ public class ModalPauseTests
 
         var obj = new ObjectMotionSnapshot("mover", X: 0, Y: 0, SpeedKmS: 5, Direction: 90);
 
-        // Speed2 = 5x the base pace, or 1500 game seconds per real second.
+        // Speed2 = 5x
         buffer.Update(new AuthoritativeSnapshot(1, 1000, SimulationSpeed.Speed2,
             ImmutableArray.Create(obj)));
 
         clock.AdvanceMs(200);
 
-        Assert.Equal(300_000, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(1000, buffer.EffectivePredictionDeltaMs);
     }
 
     [Fact]
@@ -196,12 +187,12 @@ public class ModalPauseTests
         buffer.CurrentSpeed = SimulationSpeed.Speed4;
 
         // The 500 ms that already passed must stay at Speed1.
-        Assert.Equal(150_000, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
 
         clock.AdvanceMs(100);
 
-        // Only the new 100 ms segment runs at Speed4 / 30,000 game ms per real ms.
-        Assert.Equal(3_150_000, buffer.EffectivePredictionDeltaMs);
+        // Then only the new 100 ms segment runs at Speed4 / 100x.
+        Assert.Equal(10500, buffer.EffectivePredictionDeltaMs);
     }
 
     [Fact]
@@ -215,10 +206,10 @@ public class ModalPauseTests
 
         clock.AdvanceMs(500);
         buffer.CurrentSpeed = SimulationSpeed.Speed0;
-        Assert.Equal(150_000, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
 
         clock.AdvanceMs(1000);
-        Assert.Equal(150_000, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
     }
 
     [Fact]
@@ -231,20 +222,20 @@ public class ModalPauseTests
             ImmutableArray<ObjectMotionSnapshot>.Empty));
 
         clock.AdvanceMs(900);
-        Assert.Equal(27_000_000, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(90_000, buffer.EffectivePredictionDeltaMs);
 
         buffer.CurrentSpeed = SimulationSpeed.Speed0;
         buffer.Update(new AuthoritativeSnapshot(2, 50_000, SimulationSpeed.Speed0,
             ImmutableArray<ObjectMotionSnapshot>.Empty));
 
         var prediction = Assert.IsType<SnapshotPrediction>(buffer.LatestPrediction);
-        Assert.Equal(26_950_000, prediction.EffectivePredictionDeltaMs);
+        Assert.Equal(40_000, prediction.EffectivePredictionDeltaMs);
         Assert.Equal(
-            27_000_000,
+            90_000,
             prediction.BufferedSnapshot.Snapshot.GameTimeMs + prediction.EffectivePredictionDeltaMs);
 
         clock.AdvanceMs(1_000);
-        Assert.Equal(26_950_000, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(40_000, buffer.EffectivePredictionDeltaMs);
     }
 
     [Fact]

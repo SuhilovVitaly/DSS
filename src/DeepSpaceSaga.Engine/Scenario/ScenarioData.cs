@@ -16,9 +16,10 @@ public static class SaveFormat
     /// Tokens, since no migration of old saves is provided).
     /// Version 4 preserves fractional motion values and the recent command journal.
     /// Version 5 adds versioned economic time state and durable travel receipts.
+    /// Version 6 separates calendar time from motion/cycle time; older saves retain their baselines.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 5;
+    public const int CurrentSaveFormatVersion = 6;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -65,7 +66,13 @@ public sealed record GameStateData(
     [property: JsonPropertyName("dialogueState")] DialogueSaveState? DialogueState = null,
     [property: JsonPropertyName("commandReceipts")] IReadOnlyList<DeepSpaceSaga.Contracts.CommandResult>? CommandReceipts = null,
     [property: JsonPropertyName("pendingCommands")] IReadOnlyList<DeepSpaceSaga.Contracts.PlayerCommand>? PendingCommands = null,
-    [property: JsonPropertyName("economyTime")] EconomyTimeData? EconomyTime = null);
+    [property: JsonPropertyName("economyTime")] EconomyTimeData? EconomyTime = null,
+    [property: JsonPropertyName("simulationTimeMs")] long? SimulationTimeMs = null)
+{
+    /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
+    [JsonIgnore]
+    public long MotionTimeMs => SimulationTimeMs ?? GameTimeMs;
+}
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(

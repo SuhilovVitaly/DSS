@@ -8,6 +8,95 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class EngineCommandTests
 {
+    [Fact]
+    public void Real_second_advances_calendar_five_minutes_but_motion_one_second()
+    {
+        long realMs = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed1, () => realMs);
+        using var engine = CreateEngine(speedMps: 1000, directionDegrees: 90, clock: clock);
+        engine.SetSpeed(SimulationSpeed.Speed1);
+        var before = PlayerShipFrom(engine.CaptureSnapshot());
+        realMs = 1000;
+        var after = engine.CaptureSnapshot(advanceClock: true);
+        Assert.Equal(300_000, after.GameTimeMs);
+        Assert.Equal(1000, after.SimulationTimeMs);
+        Assert.Equal(before.X + 10, PlayerShipFrom(after).X, precision: 6);
+        Assert.Equal(before.Y, PlayerShipFrom(after).Y, precision: 6);
+    }
+
+    [Fact]
+    public void Calendar_pace_does_not_accelerate_engine_inertia()
+    {
+        long realMs = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed1, () => realMs);
+        using var engine = CreateEngine(linearInertiaMps2: 2000, clock: clock);
+        engine.SetSpeed(SimulationSpeed.Speed1);
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.Accelerate));
+        engine.CaptureSnapshot();
+        realMs = 1000;
+        var after = engine.CaptureSnapshot(advanceClock: true);
+        Assert.Equal(300_000, after.GameTimeMs);
+        Assert.Equal(2.0, PlayerShipFrom(after).SpeedKmS);
+    }
+
+    [Fact]
+    public void Calendar_and_active_turn_survive_pause_and_serialized_save_without_jumps()
+    {
+        long realMs = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed1, () => realMs);
+        using var engine = CreateEngine(speedMps: 1000, clock: clock);
+        engine.SetSpeed(SimulationSpeed.Speed1);
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightUntilCancel));
+        engine.CaptureSnapshot();
+        realMs = 1500;
+        var before = engine.CaptureSnapshot(advanceClock: true);
+        Assert.Equal(1, PlayerShipFrom(before).Direction);
+        engine.SetSpeed(SimulationSpeed.Speed0);
+        realMs = 20_000;
+        var paused = engine.CaptureSnapshot(advanceClock: true);
+        Assert.Equal(before.GameTimeMs, paused.GameTimeMs);
+        Assert.Equal(before.SimulationTimeMs, paused.SimulationTimeMs);
+        var save = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(engine.CaptureSaveState()), true);
+        long loadedRealMs = 0;
+        using var loaded = new SimulationEngine(CreateRegistry(), clock:
+            new SimulationClock(SimulationSpeed.Speed0, () => loadedRealMs));
+        loaded.LoadScenario(save);
+        var restored = loaded.CaptureSnapshot();
+        Assert.Equal(PlayerShipFrom(paused), PlayerShipFrom(restored));
+        Assert.Equal(450_000, restored.GameTimeMs);
+        Assert.Equal(1500, restored.SimulationTimeMs);
+        engine.SetSpeed(SimulationSpeed.Speed1);
+        loaded.SetSpeed(SimulationSpeed.Speed1);
+        realMs += 1000;
+        loadedRealMs += 1000;
+        var uninterrupted = engine.CaptureSnapshot(advanceClock: true);
+        var continued = loaded.CaptureSnapshot(advanceClock: true);
+        Assert.Equal(750_000, continued.GameTimeMs);
+        Assert.Equal(2500, continued.SimulationTimeMs);
+        Assert.Equal(PlayerShipFrom(uninterrupted), PlayerShipFrom(continued));
+        Assert.Equal(2, PlayerShipFrom(continued).Direction);
+    }
+    [Fact]
+    public void Legacy_save_keeps_saved_positions_and_uses_new_calendar_pace_only_for_future_time()
+    {
+        using var original = CreateEngine(speedMps: 1000, directionDegrees: 90);
+        var save = original.CaptureSaveStateForTests(12_345, SimulationSpeed.Speed1);
+        save = save with { SaveFormatVersion = 5, GameState = save.GameState with { SimulationTimeMs = null } };
+        save = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true);
+        long realMs = 0;
+        using var loaded = new SimulationEngine(CreateRegistry(), clock:
+            new SimulationClock(SimulationSpeed.Speed1, () => realMs));
+        loaded.LoadScenario(save);
+        var before = loaded.CaptureSnapshot();
+        var storedShip = save.GameState.SpaceObjects.Single(o => o.ObjectId == PlayerShipId);
+        Assert.Equal(storedShip.PositionX, PlayerShipFrom(before).X, precision: 6);
+        Assert.Equal(12_345, before.SimulationTimeMs);
+        realMs = 1000;
+        var after = loaded.CaptureSnapshot(advanceClock: true);
+        Assert.Equal(312_345, after.GameTimeMs);
+        Assert.Equal(13_345, after.SimulationTimeMs);
+        Assert.Equal(storedShip.PositionX + 10, PlayerShipFrom(after).X, precision: 6);
+    }
     private const string PlayerShipId = "SHIP";
     private const string EngineModuleId = "ENGINE-1";
 
@@ -1965,9 +2054,9 @@ public class EngineCommandTests
         int linearInertiaMps2 = 40000,
         int angularInertiaDegPerSec = 4,
         int targetSpeedMps = 0,
-        int targetDirectionDegrees = 0)
+        int targetDirectionDegrees = 0, SimulationClock? clock = null)
     {
-        var engine = new SimulationEngine(CreateRegistry(linearInertiaMps2, angularInertiaDegPerSec));
+        var engine = new SimulationEngine(CreateRegistry(linearInertiaMps2, angularInertiaDegPerSec), clock: clock);
         engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
         {
           "scenarioMetadata": { "scenarioId": "test", "name": "Test" },

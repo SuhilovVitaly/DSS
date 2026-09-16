@@ -228,10 +228,10 @@ public class ObjectTrailStoreTests
     {
         var speed1Trail = RenderTrailAfterGameTime(
             SimulationSpeed.Speed1,
-            realElapsedMs: 10);
+            realElapsedMs: 10_000);
         var speed2Trail = RenderTrailAfterGameTime(
             SimulationSpeed.Speed2,
-            realElapsedMs: 2);
+            realElapsedMs: 2_000);
 
         Assert.Equal(TrailWorldLength(speed1Trail), TrailWorldLength(speed2Trail), precision: 6);
     }
@@ -274,7 +274,7 @@ public class ObjectTrailStoreTests
         var initialTrail = screen.GetObjectTrail("ship");
         Assert.True(initialTrail.Count > 2);
 
-        clock.AdvanceMs(1);
+        clock.AdvanceMs(100);
         Render(screen);
 
         var trail = screen.GetObjectTrail("ship");
@@ -329,18 +329,18 @@ public class ObjectTrailStoreTests
         Render(screen);
         Assert.True(screen.GetObjectTrail("ship").Count > 2);
 
-        clock.AdvanceMs(1);
+        clock.AdvanceMs(100);
         buffer.Update(new AuthoritativeSnapshot(
             SnapshotSequence: 2,
-            GameTimeMs: 300,
+            GameTimeMs: 100,
             CurrentSpeed: SimulationSpeed.Speed1,
-            Objects: ImmutableArray.Create(ship with { X = 10003 }, probe)));
+            Objects: ImmutableArray.Create(ship with { X = 10001 }, probe)));
 
         Render(screen);
 
         var probeTrail = screen.GetObjectTrail("probe");
         Assert.Single(probeTrail);
-        Assert.Equal(300, probeTrail[0].Timestamp);
+        Assert.Equal(100, probeTrail[0].Timestamp);
     }
 
     [Fact]
@@ -362,20 +362,20 @@ public class ObjectTrailStoreTests
             timestampProvider: () => clock.Timestamp);
 
         Render(screen);
-        clock.AdvanceMs(4);
+        clock.AdvanceMs(1_000);
         Render(screen);
 
         buffer.Update(new AuthoritativeSnapshot(
             SnapshotSequence: 2,
-            GameTimeMs: 1_100,
+            GameTimeMs: 900,
             CurrentSpeed: SimulationSpeed.Speed1,
-            Objects: ImmutableArray.Create(ship with { X = 10011 })));
+            Objects: ImmutableArray.Create(ship with { X = 10009 })));
 
         Render(screen);
 
         var trail = screen.GetObjectTrail("ship");
         Assert.True(TimestampsAreMonotonic(trail));
-        Assert.Equal(1_200, trail[^1].Timestamp);
+        Assert.Equal(1_000, trail[^1].Timestamp);
     }
 
     private static ObjectMotionSnapshot MovingObject(string objectId, double x)
@@ -656,7 +656,7 @@ public class ObjectTrailStoreTests
             timestampProvider: () => clock.Timestamp);
 
         Render(screen);
-        clock.AdvanceMs(3);
+        clock.AdvanceMs(900);
         Render(screen);
 
         buffer.CurrentSpeed = SimulationSpeed.Speed0;
@@ -695,10 +695,10 @@ public class ObjectTrailStoreTests
         Assert.Equal(SimulationSpeed.Speed1, buffer.CurrentSpeed);
         Assert.Equal(900, screen.CameraFocusX);
 
-        clock.AdvanceMs(4);
+        clock.AdvanceMs(400);
         Render(screen);
-        Assert.Equal(912, screen.CameraFocusX, precision: 6);
-        Assert.Equal(912, screen.GetObjectTrail("ship")[^1].X, precision: 6);
+        Assert.Equal(904, screen.CameraFocusX, precision: 6);
+        Assert.Equal(904, screen.GetObjectTrail("ship")[^1].X, precision: 6);
 
         buffer.Update(new AuthoritativeSnapshot(
             SnapshotSequence: 4,
@@ -708,8 +708,8 @@ public class ObjectTrailStoreTests
             PlayerShipObjectId: "ship"));
 
         Render(screen);
-        Assert.Equal(912, screen.CameraFocusX, precision: 6);
-        Assert.Equal(912, screen.GetObjectTrail("ship")[^1].X, precision: 6);
+        Assert.Equal(904, screen.CameraFocusX, precision: 6);
+        Assert.Equal(904, screen.GetObjectTrail("ship")[^1].X, precision: 6);
     }
 
     private static ObjectRenderState[] StatesWithPredicted(

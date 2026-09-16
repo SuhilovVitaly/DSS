@@ -83,7 +83,7 @@ public class GameSessionPlayerShipTests
         using var canvas = new SKCanvas(bitmap);
         screen.Render(canvas, ScreenWidth, ScreenHeight);
 
-        Assert.Equal(25000, screen.CameraFocusX, precision: 6);
+        Assert.Equal(10050, screen.CameraFocusX, precision: 6);
         Assert.Equal(10000, screen.CameraFocusY, precision: 6);
         Assert.True(screen.IsFocusAttachedToPlayer);
     }

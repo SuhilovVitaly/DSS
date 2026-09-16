@@ -13,7 +13,7 @@ internal static class DialogueEffectTransaction
 {
     public static string? Prepare(GameDataRegistry registry, ImmutableArray<SpaceObjectRuntime> objects,
         string playerId, DialogueState dialogue, DialogueProgressState progress, long credits, long time,
-        ImmutableArray<DialogueEffect> effects, Func<string?> validateDock, out DialogueEffectResult? result)
+        ImmutableArray<DialogueEffect> effects, Func<string?> validateDock, out DialogueEffectResult? result, long? calendarTimeMs = null)
     {
         result = null;
         var candidate = objects.ToBuilder();
@@ -87,7 +87,7 @@ internal static class DialogueEffectTransaction
                             {
                                 InitialMotion = ship.InitialMotion with { X = motion.X + 1, Y = motion.Y + 1, SpeedKmS = motion.SpeedKmS, Direction = motion.Direction },
                                 StartGameTimeMs = time, IsDocked = true, DockedStationObjectId = dialogue.StationObjectId,
-                                FirstPortFeeGameTimeMs = time, NextPortFeeDueGameTimeMs = time + GameCalendar.DayMs,
+                                FirstPortFeeGameTimeMs = calendarTimeMs ?? time, NextPortFeeDueGameTimeMs = (calendarTimeMs ?? time) + GameCalendar.DayMs,
                                 Modules = ship.Modules.Select(m => m with { ActiveCycle = null }).ToImmutableArray()
                             };
                             progress = progress with { StationAccessStates = progress.StationAccessStates.SetItem(dialogue.StationObjectId!, new(dialogue.StationObjectId!, false)) };

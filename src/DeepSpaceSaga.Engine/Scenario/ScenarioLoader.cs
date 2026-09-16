@@ -133,7 +133,9 @@ public static class ScenarioLoader
         var gs = scenario.GameState;
         if (gs is null)
             throw new ScenarioException("Missing gameState.");
-        if (gs.GameTimeMs < 0 || gs.PlayerTokens < 0)
+        if (scenario.SaveFormatVersion >= 6 && gs.SimulationTimeMs is null)
+            throw new ScenarioException("Missing simulationTimeMs in save format 6.");
+        if (gs.GameTimeMs < 0 || gs.SimulationTimeMs < 0 || gs.PlayerTokens < 0)
             throw new ScenarioException("Game time and player balance must be nonnegative.");
 
         if (string.IsNullOrWhiteSpace(gs.PlayerShipObjectId))
@@ -147,7 +149,7 @@ public static class ScenarioLoader
 
         // New Game scenarios must start at gameTimeMs = 0. Save files (allowNonZeroGameTime: true)
         // are the sole exception — they represent a paused, already-in-progress game.
-        if (!allowNonZeroGameTime && gs.GameTimeMs != 0)
+        if (!allowNonZeroGameTime && (gs.GameTimeMs != 0 || gs.MotionTimeMs != 0))
             throw new ScenarioException(
                 $"gameTimeMs must be 0 for New Game, got {gs.GameTimeMs}.");
 
