@@ -607,10 +607,10 @@ public sealed partial class GameSessionScreen : IScreen
         if (key == Key.F9)
             return ScreenEvent.QuickLoad;
 
-        // Number keys 1..5 → Speed0..Speed4 (index in SpeedValues)
-        if (key >= Key.Number1 && key <= Key.Number5)
+        // Number keys 1..4 select running speeds; Space toggles pause.
+        if (key >= Key.Number1 && key <= Key.Number4)
         {
-            ApplySpeed(SpeedValues[(int)(key - Key.Number1)]);
+            ApplySpeed(SpeedValues[1 + (int)(key - Key.Number1)]);
             return ScreenEvent.None;
         }
 
