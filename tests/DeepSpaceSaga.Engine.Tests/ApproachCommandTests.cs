@@ -232,6 +232,90 @@ public class ApproachCommandTests
         Assert.Equal(ApproachLineCaptureMath.Phase, ship.NavigationPhase);
         Assert.Equal(2, ship.SpeedKmS);
     }
+    [Theory]
+    [InlineData(1069, 57)]
+    [InlineData(1911, 110)]
+    public void Speed100_large_ticks_match_speed1_fine_ticks_prediction_and_save_load(int targetSpeed, int targetHeading)
+    {
+        long normalRealMs = 0, fastRealMs = 0, loadedRealMs = 0;
+        SimulationEngine Create(SimulationClock clock) => CreateEngine(shipX: 10000, shipY: 5500,
+            shipSpeedMps: 700, shipDirectionDegrees: 0, targetX: 16000, targetY: 9000,
+            targetSpeedMps: targetSpeed, targetDirectionDegrees: targetHeading,
+            turnStepDegrees: 1, trailDistanceKm: 1, clock: clock);
+        using var normal = Create(new SimulationClock(SimulationSpeed.Speed0, () => normalRealMs));
+        using var fast = Create(new SimulationClock(SimulationSpeed.Speed0, () => fastRealMs));
+        using var loaded = Create(new SimulationClock(SimulationSpeed.Speed0, () => loadedRealMs));
+        normal.SetSpeed(SimulationSpeed.Speed1);
+        fast.SetSpeed(SimulationSpeed.Speed4);
+        normal.ReceiveCommand(ApproachCommand());
+        fast.ReceiveCommand(ApproachCommand());
+        var origin = PlayerShipFrom(normal.CaptureSnapshot());
+        Assert.Equal(origin.ApproachRoute, PlayerShipFrom(fast.CaptureSnapshot()).ApproachRoute);
+        long frames = (long)Math.Ceiling(origin.ApproachRoute!.DurationMs / 100_000) + 1;
+        var predictor = new LinearMotionPredictor();
+        for (int frame = 1; frame <= frames; frame++)
+        {
+            AuthoritativeSnapshot slowSnapshot = normal.CaptureSnapshot();
+            for (int tick = 0; tick < 100; tick++)
+            {
+                normalRealMs += 1000;
+                slowSnapshot = normal.CaptureSnapshot(advanceClock: true);
+            }
+            fastRealMs += 1000;
+            var fastSnapshot = fast.CaptureSnapshot(advanceClock: true);
+            var actual = PlayerShipFrom(fastSnapshot);
+            Assert.Equal(slowSnapshot.GameTimeMs, fastSnapshot.GameTimeMs);
+            Assert.Equal(slowSnapshot.SimulationTimeMs, fastSnapshot.SimulationTimeMs);
+            Compare(PlayerShipFrom(slowSnapshot), actual);
+            Compare(predictor.Predict(origin, frame * 100_000L), actual);
+            if (frame == 1)
+            {
+                loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(fast.CaptureSaveState()), true));
+                Compare(actual, PlayerShipFrom(loaded.CaptureSnapshot()));
+            }
+            else
+            {
+                loadedRealMs += 1000;
+                Compare(actual, PlayerShipFrom(loaded.CaptureSnapshot(advanceClock: true)));
+            }
+        }
+        Assert.Null(PlayerShipFrom(fast.CaptureSnapshot()).ActiveEngineCommandType);
+
+        static void Compare(ObjectMotionSnapshot expected, ObjectMotionSnapshot actual)
+        {
+            Assert.Equal(expected.X, actual.X, 6);
+            Assert.Equal(expected.Y, actual.Y, 6);
+            Assert.Equal(expected.Direction, actual.Direction, 6);
+            Assert.Equal(expected.SpeedKmS, actual.SpeedKmS);
+            Assert.Equal(expected.ActiveEngineCommandType, actual.ActiveEngineCommandType);
+        }
+    }
+    [Fact]
+    public void Saved_old_line_capture_plan_is_replanned_at_boundary_without_a_position_jump()
+    {
+        using var engine = CreateEngine(shipSpeedMps: 700, targetSpeedMps: 1069, targetDirectionDegrees: 57);
+        engine.ReceiveCommand(ApproachCommand());
+        engine.CaptureSnapshotForTests();
+        var save = engine.CaptureSaveStateForTests(137, SimulationSpeed.Speed1);
+        save = save with { GameState = save.GameState with {
+            SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId != PlayerShipId ? o : o with {
+                Modules = o.Modules!.Select(m => m.ActiveCycle?.ApproachRoute is not { } route ? m : m with {
+                    ActiveCycle = m.ActiveCycle with { ApproachRoute = route with { PlannerVersion = 0 } }
+                }).ToArray()
+            }).ToArray()
+        }};
+        using var restored = CreateEngine();
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
+        var initial = PlayerShipFrom(restored.CaptureSnapshot());
+        long remaining = initial.TurnStepRemainingMs;
+        var predicted = new LinearMotionPredictor().Predict(initial, remaining);
+        var actual = PlayerShipFrom(restored.CaptureSnapshotForTests(137 + remaining, SimulationSpeed.Speed1));
+        Assert.Equal(predicted.X, actual.X, 7);
+        Assert.Equal(predicted.Y, actual.Y, 7);
+        Assert.Equal(predicted.Direction, actual.Direction, 7);
+        Assert.Equal(ApproachLineCaptureMath.PlannerVersion, actual.ApproachRoute!.PlannerVersion);
+        Assert.Equal(0, actual.ApproachRoute.ElapsedMs);
+    }
     internal static SimulationEngine CreateEngine(
         double shipX = 0,
         double shipY = 0,
@@ -246,9 +330,9 @@ public class ApproachCommandTests
         int angularInertiaDegPerSec = 4,
         int trailDistanceKm = 150,
         long fuelAmountKg = 0,
-        bool includeNavigationComputer = false)
+        bool includeNavigationComputer = false, SimulationClock? clock = null)
     {
-        var engine = new SimulationEngine(CreateRegistry(turnStepDegrees, angularInertiaDegPerSec, trailDistanceKm));
+        var engine = new SimulationEngine(CreateRegistry(turnStepDegrees, angularInertiaDegPerSec, trailDistanceKm), clock: clock);
 
         string navModuleJson = includeNavigationComputer
             ? $$"""

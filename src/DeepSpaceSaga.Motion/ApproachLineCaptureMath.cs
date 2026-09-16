@@ -4,13 +4,18 @@ namespace DeepSpaceSaga.Motion;
 
 /// <summary>
 /// Constant-speed, bounded-curvature rendezvous behind a catchable target, or
-/// capture of an uncatchable target's aft ray with a free along-track endpoint.
+/// closest practical approach onto a faster target's aft ray.
 /// Fly the selected route once using exact arc integration. No speed changes.
 /// </summary>
 public static class ApproachLineCaptureMath
 {
     public const string Phase = "LineCapture";
+    public const int PlannerVersion = 1;
     public const double PositionTolerance = 0.01;
+
+    // One extra unit of flight must save at least 0.01 units of separation.
+    // This keeps equal/near-equal speeds finite instead of chasing an asymptote.
+    private const double FlightDistancePenalty = 0.01;
 
     public static ApproachRoute? Plan(ObjectMotionSnapshot ship, double targetX, double targetY,
         double targetDirection, double targetSpeed, double trailDistance, int turnRate)
@@ -24,7 +29,7 @@ public static class ApproachLineCaptureMath
         double trail = Math.Max(1 + ship.SpeedKmS * .01, trailDistance);
         ApproachRoute Route(ApproachFlyThroughPlan p) => new(ship.X, ship.Y, ship.Direction,
             ship.SpeedKmS, turnRate, p.Type, p.FirstRemainingUnits, p.SecondRemainingUnits,
-            p.ThirdRemainingUnits, targetX, targetY, targetDirection, targetSpeed, trail);
+            p.ThirdRemainingUnits, targetX, targetY, targetDirection, targetSpeed, trail, PlannerVersion: PlannerVersion);
         bool canCatch = ship.SpeedKmS > targetSpeed;
         if (Math.Abs(cross) <= PositionTolerance &&
             (canCatch ? Math.Abs(along + trail) <= PositionTolerance : along <= -trail) &&
@@ -43,30 +48,35 @@ public static class ApproachLineCaptureMath
                 targetX - trail * fx, targetY - trail * fy, targetDirection, targetSpeed, turnRate);
             if (intercept.HasIntercept)
                 return Route(intercept.Plan);
-            // A degenerate numerical solve still has a finite feasible aft-ray
-            // route. It must never restart an endless point-pursuit cycle.
+            // Preserve a finite, safe fallback if a rendezvous solve degenerates.
+            return Route(Curve(-trail));
         }
 
         var best = Curve(-trail);
-        double bestLength = best.RemainingUnits;
         double radius = ship.SpeedKmS * 10 / (turnRate * Math.PI / 180);
         double ratio = targetSpeed / ship.SpeedKmS;
-        // A route to the current aft point is always feasible for a forward-moving
-        // target. Its length bounds the endpoint of EVERY shorter candidate.
-        double lower = along - bestLength;
-        double upper = Math.Min(along + bestLength, -trail + ratio * bestLength);
-        // At most 3 + 257 + 2*129 samples. Scratch buffers are local and bounded,
-        // so command planning creates neither tree nodes nor temporary arrays.
-        Span<double> samples = stackalloc double[520];
+        double weightedRatio = ratio + FlightDistancePenalty;
+        // At endpoint x, the target has moved ratio * L while the ship flies L.
+        // Minimize their separation on arrival, not time to an arbitrary aft point.
+        double bestCost = weightedRatio * best.RemainingUnits + trail;
+        // L >= |x - along| gives finite bounds for EVERY route that can beat bestCost.
+        // weightedRatio > 1, even when the two speeds are equal.
+        double lower = (weightedRatio * along - bestCost) / (weightedRatio + 1);
+        double upper = (bestCost + weightedRatio * along) / (weightedRatio - 1);
+        double straightOptimum = along + Math.Abs(cross) / Math.Sqrt(weightedRatio * weightedRatio - 1);
+        // A global grid plus turn-radius neighborhoods of the ship, trailing slot,
+        // and analytic straight-flight optimum. All scratch storage is bounded.
+        Span<double> samples = stackalloc double[700];
         int count = 0;
         samples[count++] = lower; samples[count++] = upper; samples[count++] = -trail;
+        samples[count++] = Math.Clamp(straightOptimum, lower, upper);
         for (int i = 0; i <= 256; i++)
             samples[count++] = lower + (upper - lower) * i / 256;
         // Resolve short turn-radius features even when the target is very far away.
-        for (int centerIndex = 0; centerIndex < 2; centerIndex++)
+        for (int centerIndex = 0; centerIndex < 3; centerIndex++)
             for (int i = -64; i <= 64; i++)
             {
-                double center = centerIndex == 0 ? along : -trail;
+                double center = centerIndex == 0 ? along : centerIndex == 1 ? -trail : straightOptimum;
                 double x = center + radius * i / 8;
                 if (x >= lower && x <= upper)
                     samples[count++] = x;
@@ -77,8 +87,8 @@ public static class ApproachLineCaptureMath
         for (int i = 0; i < samples.Length; i++)
             if (unique == 0 || samples[i] != samples[unique - 1]) samples[unique++] = samples[i];
         var xs = samples[..unique];
-        Span<double> costs = stackalloc double[520];
-        Span<bool> feasible = stackalloc bool[520];
+        Span<double> costs = stackalloc double[700];
+        Span<bool> feasible = stackalloc bool[700];
         for (int i = 0; i < xs.Length; i++)
             costs[i] = Evaluate(xs[i], out feasible[i]);
         for (int i = 1; i < xs.Length; i++)
@@ -115,12 +125,14 @@ public static class ApproachLineCaptureMath
             var p = Curve(x);
             double length = p.RemainingUnits;
             valid = x - ratio * length <= -trail + 1e-8;
-            if (valid && length < bestLength)
+            double cost = weightedRatio * length - x;
+            if (valid && (cost < bestCost - 1e-8 ||
+                Math.Abs(cost - bestCost) <= 1e-8 && length < best.RemainingUnits))
             {
                 best = p;
-                bestLength = length;
+                bestCost = cost;
             }
-            return valid ? length : double.PositiveInfinity;
+            return valid ? cost : double.PositiveInfinity;
         }
     }
 
@@ -180,6 +192,18 @@ public static class ApproachLineCaptureMath
         y -= travel * Math.Cos(heading);
         bool complete = elapsed >= route.DurationMs - 1e-7;
         return (x, y, complete ? route.TargetDirection : (heading * 180 / Math.PI % 360 + 360) % 360);
+    }
+
+    /// <summary>True only if this route actually reaches the moving trailing slot.</summary>
+    public static bool IsRendezvous(ApproachRoute route)
+    {
+        var end = PredictPose(route, route.DurationMs);
+        double angle = route.TargetDirection * Math.PI / 180;
+        double fx = Math.Sin(angle), fy = -Math.Cos(angle);
+        double dx = end.X - route.TargetX, dy = end.Y - route.TargetY;
+        double gap = route.TargetSpeedKmS * 10 * route.DurationMs / 1000 - (dx * fx + dy * fy);
+        return Math.Abs(dx * -fy + dy * fx) <= PositionTolerance &&
+            Math.Abs(gap - route.TrailDistance) <= .1;
     }
 
     public static bool TargetChanged(ApproachRoute route, ObjectMotionSnapshot target, double elapsedMs)

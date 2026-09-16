@@ -2877,7 +2877,8 @@ public sealed partial class SimulationEngine : IDisposable
         var targetMotion = PredictMotion(target, Math.Max(0, gameTimeMs - target.StartGameTimeMs));
         var shipMotion = PredictMotion(obj, Math.Max(0, gameTimeMs - obj.StartGameTimeMs));
         var route = cycle.ApproachRoute;
-        bool replan = route is null || ApproachLineCaptureMath.TargetChanged(route, targetMotion, cycle.DurationMs);
+        bool replan = route is null || route.PlannerVersion != ApproachLineCaptureMath.PlannerVersion ||
+            ApproachLineCaptureMath.TargetChanged(route, targetMotion, cycle.DurationMs);
         bool complete = !replan && route!.ElapsedMs + cycle.DurationMs >= route.DurationMs - 1e-7;
         if (complete && !ApproachLineCaptureMath.IsAlignedBehind(shipMotion, targetMotion))
         {

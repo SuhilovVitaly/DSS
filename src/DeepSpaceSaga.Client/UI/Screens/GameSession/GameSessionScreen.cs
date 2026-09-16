@@ -1569,38 +1569,27 @@ public sealed partial class GameSessionScreen : IScreen
             var predicted = state.Predicted;
             if (predicted.NavigationTargetX is not null)
             {
-                // isConfirmedIntercept comes from the projector's OWN resolution, not
-                // from re-checking predicted.NavigationPhase here: during the single
-                // transient FlyThroughPendingPhase frame right after the command starts,
-                // the projector already independently resolves (and draws) the confirmed
-                // rendezvous curve one frame before the engine bakes that confirmation
-                // into the authoritative NavigationPhase string — gating on the phase
-                // string here would miss that first frame and read as "no intercept" even
-                // though the curve shown IS already the confirmed one.
+                // Keep the commanded maneuver distinct from subsequent coasting.
                 var points = _navigationTrajectoryProjector.ProjectPlayerInto(
-                    predicted, _futureTrajectoryPoints, _camera, width, height, out bool isConfirmedIntercept, out var interceptPoint);
+                    predicted, _futureTrajectoryPoints, _camera, width, height, out bool isConfirmedIntercept, out var interceptPoint, out int maneuverPointCount);
                 if (points.Count >= 2)
                 {
                     DisplayedPlayerTrajectoryEnd = points[^1];
-                    _depthRenderer.DrawNavigationTrajectory(canvas, points, _camera, width, height);
+                    _depthRenderer.DrawNavigationTrajectory(canvas, points, _camera, width, height, maneuverPointCount);
+                    _depthRenderer.DrawNavigationContinuation(canvas, points, maneuverPointCount, _camera, width, height);
                 }
 
                 DrawNavigationTargetMarker(canvas, predicted.NavigationTargetX.Value, predicted.NavigationTargetY!.Value, width, height);
 
-                // A confirmed intercept-solve curve (story-20260829-210641.md) is flown
-                // to a fixed rendezvous pose baked once when the curve was built — unlike
-                // NavigationTargetX/Y above, which is re-baked to the target's LIVE
-                // position every cycle while the curve is still being flown (client-facing
-                // metadata only) and so drifts away from where the curve actually ends.
-                // interceptPoint is computed analytically from the target's live pose and
-                // constant velocity (see NavigationTrajectoryProjector.ProjectFlyThrough),
-                // NOT read off the drawn curve's own discretized tracked endpoint — that
-                // endpoint accumulates enough per-cycle turn quantization over a long curve
-                // to visibly miss the target's own drawn straight-line trajectory.
                 if (isConfirmedIntercept)
                 {
                     var (ix, iy) = _camera.WorldToScreen(interceptPoint.X, interceptPoint.Y, width, height);
                     _depthRenderer.DrawInterceptPoint(canvas, ix, iy);
+                }
+                else if (predicted.ApproachRoute is { } route)
+                {
+                    var (ix, iy) = _camera.WorldToScreen(interceptPoint.X, interceptPoint.Y, width, height);
+                    _depthRenderer.DrawCourseAlignmentPoint(canvas, ix, iy, route.TargetSpeedKmS > route.SpeedKmS);
                 }
             }
         }

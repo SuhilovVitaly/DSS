@@ -72,8 +72,9 @@ public class TrajectoryViewportTests
         var camera = new CameraState(0, 0, .01);
         var projector = new NavigationTrajectoryProjector();
         var physical = projector.Project(ship, out _, out var completion);
-        var points = projector.ProjectPlayerInto(ship, new(), camera, Width, Height, out bool confirmed, out var marker);
-        Assert.True(confirmed); Assert.Equal(completion, marker);
+        var points = projector.ProjectPlayerInto(ship, new(), camera, Width, Height, out bool confirmed, out var marker, out int maneuverPointCount);
+        Assert.Equal(targetSpeed < ship.SpeedKmS, confirmed); Assert.Equal(completion, marker);
+        Assert.Equal(physical.Count, maneuverPointCount);
         Assert.Equal(physical, points.Take(physical.Count));
         double targetXAtCompletion = route.TargetX + route.TargetSpeedKmS * 10 * route.DurationMs / 1000;
         Assert.Contains(points, p => Math.Abs(p.X - targetXAtCompletion) < .00001 && Math.Abs(p.Y) < .00001);

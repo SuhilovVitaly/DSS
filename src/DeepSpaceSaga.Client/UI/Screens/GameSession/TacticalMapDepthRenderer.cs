@@ -118,6 +118,21 @@ internal sealed class TacticalMapDepthRenderer
         bodyColor: new SKColor(100, 92, 72, 230),
         highlightColor: new SKColor(198, 184, 142, 220));
 
+    private readonly SKPaint _navigationContinuationPaint = new()
+    {
+        Color = new SKColor(198, 184, 142, 110), Style = SKPaintStyle.Stroke,
+        StrokeWidth = 1f, IsAntialias = true, PathEffect = SKPathEffect.CreateDash([6f, 6f], 0)
+    };
+    private readonly SKPaint _courseAlignmentPaint = new()
+    {
+        Color = new SKColor(126, 201, 215, 220), Style = SKPaintStyle.Stroke,
+        StrokeWidth = 1f, IsAntialias = true
+    };
+    private readonly SKPaint _courseAlignmentTextPaint = new()
+    {
+        Color = new SKColor(126, 201, 215, 230), TextSize = 11f, IsAntialias = true
+    };
+
     private readonly SKPaint _navigationTargetShadowPaint = new()
     {
         Color = new SKColor(30, 26, 18, 220),
@@ -436,7 +451,7 @@ internal sealed class TacticalMapDepthRenderer
         IReadOnlyList<FutureTrajectoryPoint> points,
         CameraState camera,
         int viewportWidth,
-        int viewportHeight)
+        int viewportHeight, int maneuverPointCount = int.MaxValue)
     {
         DrawTrajectory(
             canvas,
@@ -444,7 +459,30 @@ internal sealed class TacticalMapDepthRenderer
             camera,
             viewportWidth,
             viewportHeight,
-            _navigationTrajectoryPaints);
+            _navigationTrajectoryPaints, maneuverPointCount);
+    }
+
+    public void DrawNavigationContinuation(SKCanvas canvas, IReadOnlyList<FutureTrajectoryPoint> points,
+        int maneuverPointCount, CameraState camera, int width, int height)
+    {
+        if (maneuverPointCount < 1 || maneuverPointCount >= points.Count) return;
+        _trajectoryPath.Reset();
+        var first = points[maneuverPointCount - 1];
+        var (x, y) = camera.WorldToScreen(first.X, first.Y, width, height);
+        _trajectoryPath.MoveTo(x, y);
+        for (int i = maneuverPointCount; i < points.Count; i++)
+        {
+            (x, y) = camera.WorldToScreen(points[i].X, points[i].Y, width, height);
+            _trajectoryPath.LineTo(x, y);
+        }
+        canvas.DrawPath(_trajectoryPath, _navigationContinuationPaint);
+    }
+
+    public void DrawCourseAlignmentPoint(SKCanvas canvas, float x, float y, bool targetFaster)
+    {
+        canvas.DrawRect(x - 3, y - 3, 6, 6, _courseAlignmentPaint);
+        canvas.DrawText(targetFaster ? "Course alignment - target faster" : "Course alignment",
+            x + 8, y - 8, _courseAlignmentTextPaint);
     }
 
     public void DrawNavigationTarget(SKCanvas canvas, float centerX, float centerY)
@@ -473,9 +511,10 @@ internal sealed class TacticalMapDepthRenderer
         CameraState camera,
         int viewportWidth,
         int viewportHeight,
-        TrajectoryPaintSet paints)
+        TrajectoryPaintSet paints, int pointCount = int.MaxValue)
     {
-        if (points.Count < 2)
+        pointCount = Math.Min(pointCount, points.Count);
+        if (pointCount < 2)
             return;
 
         _trajectoryPath.Reset();
@@ -483,7 +522,7 @@ internal sealed class TacticalMapDepthRenderer
         var (firstX, firstY) = camera.WorldToScreen(first.X, first.Y, viewportWidth, viewportHeight);
         _trajectoryPath.MoveTo(firstX, firstY);
 
-        for (int i = 1; i < points.Count; i++)
+        for (int i = 1; i < pointCount; i++)
         {
             var point = points[i];
             var (screenX, screenY) = camera.WorldToScreen(point.X, point.Y, viewportWidth, viewportHeight);
