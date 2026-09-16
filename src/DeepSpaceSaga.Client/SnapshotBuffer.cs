@@ -269,6 +269,6 @@ public sealed class SnapshotBuffer
             return 0;
 
         long realMs = (long)(elapsedTicks * 1000.0 / Stopwatch.Frequency);
-        return realMs * (int)speed;
+        return realMs * speed.GameTimeMultiplier();
     }
 }

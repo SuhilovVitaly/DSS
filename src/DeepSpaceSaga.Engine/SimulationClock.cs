@@ -16,11 +16,16 @@ public sealed class SimulationClock
 {
     private readonly object _lock = new();
     private long _lastRealTick;
+    private readonly Func<long> _realTimeMs;
 
     public SimulationClock(SimulationSpeed initialSpeed = SimulationSpeed.Speed1)
+        : this(initialSpeed, () => Environment.TickCount64) { }
+
+    internal SimulationClock(SimulationSpeed initialSpeed, Func<long> realTimeMs)
     {
+        _realTimeMs = realTimeMs;
         Speed = initialSpeed;
-        _lastRealTick = Environment.TickCount64;
+        _lastRealTick = _realTimeMs();
     }
 
     /// <summary>Accumulated game time in milliseconds.</summary>
@@ -37,11 +42,11 @@ public sealed class SimulationClock
     {
         lock (_lock)
         {
-            long now = Environment.TickCount64;
+            long now = _realTimeMs();
             long deltaReal = now - _lastRealTick;
             _lastRealTick = now;
 
-            GameTimeMs += deltaReal * (int)Speed;
+            GameTimeMs += deltaReal * Speed.GameTimeMultiplier();
         }
     }
 
@@ -53,11 +58,11 @@ public sealed class SimulationClock
     {
         lock (_lock)
         {
-            long now = Environment.TickCount64;
+            long now = _realTimeMs();
             long deltaReal = now - _lastRealTick;
             _lastRealTick = now;
 
-            GameTimeMs += deltaReal * (int)Speed;
+            GameTimeMs += deltaReal * Speed.GameTimeMultiplier();
             return new SimulationClockState(GameTimeMs, Speed);
         }
     }
@@ -85,7 +90,7 @@ public sealed class SimulationClock
         {
             GameTimeMs = gameTimeMs;
             Speed = speed;
-            _lastRealTick = Environment.TickCount64;
+            _lastRealTick = _realTimeMs();
         }
     }
 
@@ -99,11 +104,11 @@ public sealed class SimulationClock
     {
         lock (_lock)
         {
-            long now = Environment.TickCount64;
+            long now = _realTimeMs();
             long deltaReal = now - _lastRealTick;
 
             // Accumulate time at the current speed before switching
-            GameTimeMs += deltaReal * (int)Speed;
+            GameTimeMs += deltaReal * Speed.GameTimeMultiplier();
 
             // Switch to new speed and reset baseline
             _lastRealTick = now;
@@ -119,7 +124,7 @@ public sealed class SimulationClock
     {
         lock (_lock)
         {
-            _lastRealTick = Environment.TickCount64;
+            _lastRealTick = _realTimeMs();
         }
     }
 }
