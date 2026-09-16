@@ -1,0 +1,65 @@
+using System.Collections.Immutable;
+using DeepSpaceSaga.Contracts;
+
+namespace DeepSpaceSaga.Engine;
+
+public sealed partial class SimulationEngine
+{
+    private const long MealIntervalMs = 12 * GameCalendar.HourMs;
+    private long _processedWorldTimeMs;
+
+    private void AdvanceWorldTo(long gameTimeMs)
+    {
+        // Process (previous, target] in order; repeated snapshots at the same time
+        // cannot repeat a meal, including midnight. Loading establishes the cursor.
+        while (_processedWorldTimeMs < gameTimeMs)
+        {
+            long nextMeal = _processedWorldTimeMs - _processedWorldTimeMs % MealIntervalMs;
+            nextMeal = nextMeal > long.MaxValue - MealIntervalMs ? long.MaxValue : nextMeal + MealIntervalMs;
+            long next = Math.Min(gameTimeMs, nextMeal);
+            AdvanceMotionTo(next);
+            if (next == nextMeal && next % MealIntervalMs == 0) ConsumeScheduledRations(next);
+            _processedWorldTimeMs = next;
+        }
+        AdvanceMotionTo(gameTimeMs);
+    }
+
+    private void ConsumeScheduledRations(long time)
+    {
+        for (int i = 0; i < _objects.Count; i++)
+        {
+            var ship = _objects[i];
+            if (ship.IsDestroyed || ship.ObjectType != SpaceObjectType.PlayerShip) continue;
+            long needed = (ship.Crew.IsDefault ? 0 : ship.Crew.Length)
+                + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length);
+            if (needed == 0) continue;
+            var modules = ship.Modules.ToBuilder();
+            if (_registry.ItemTypes.Contains("item.food-rations"))
+            {
+                int ration = _registry.ItemTypes.GetIndex("item.food-rations");
+                for (int m = 0; m < modules.Count && needed > 0; m++)
+                {
+                    var module = modules[m];
+                    var cargo = module.Cargo.ToBuilder();
+                    for (int c = cargo.Count - 1; c >= 0 && needed > 0; c--)
+                    {
+                        if (cargo[c].ItemTypeIndex != ration) continue;
+                        long consumed = Math.Min(cargo[c].Quantity, needed);
+                        needed -= consumed;
+                        long left = cargo[c].Quantity - consumed;
+                        if (left == 0) cargo.RemoveAt(c);
+                        else cargo[c] = cargo[c] with { Quantity = left };
+                    }
+                    var remainingCargo = cargo.ToImmutable();
+                    modules[m] = module with { Cargo = remainingCargo,
+                        AvailableCapacityKg = ComputeAvailableCapacityKg(
+                            _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex), remainingCargo) };
+                }
+            }
+            _objects[i] = ship with { Modules = modules.ToImmutable() };
+            if (needed > 0)
+                RecordShipEvent(ship.InitialMotion.ObjectId, "", ShipEventTypes.RationsShortage,
+                    "insufficient_rations", time);
+        }
+    }
+}

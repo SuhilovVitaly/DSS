@@ -302,7 +302,7 @@ public sealed partial class SimulationEngine : IDisposable
                 PortFeeCreditsPerDay: obj.PortFeeCreditsPerDay,
                 SecurityZoneRadiusKm: obj.SecurityZoneRadiusKm,
                 PiracyWarningGracePeriodMs: obj.PiracyWarningGracePeriodMs,
-                IsDestroyed: obj.IsDestroyed));
+                IsDestroyed: obj.IsDestroyed, Passengers: (obj.Passengers ?? []).ToImmutableArray()));
         }
 
         lock (_worldStateLock)
@@ -337,6 +337,7 @@ public sealed partial class SimulationEngine : IDisposable
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
             LoadDialogueState(gs.DialogueState, gs.GameTimeMs);
+            _processedWorldTimeMs = gs.GameTimeMs;
             _stationDistrict = StationDistrict.Dock;
             _stationTravelReceipts.Clear();
             RestoreCommandJournal(gs);
@@ -804,7 +805,7 @@ public sealed partial class SimulationEngine : IDisposable
                 PortFeeCreditsPerDay: obj.PortFeeCreditsPerDay,
                 SecurityZoneRadiusKm: obj.SecurityZoneRadiusKm,
                 PiracyWarningGracePeriodMs: obj.PiracyWarningGracePeriodMs,
-                IsDestroyed: obj.IsDestroyed));
+                IsDestroyed: obj.IsDestroyed, Passengers: obj.Passengers.IsDefault ? [] : obj.Passengers));
         }
 
         var gameState = new GameStateData(
@@ -2633,7 +2634,7 @@ public sealed partial class SimulationEngine : IDisposable
         return default;
     }
 
-    private void AdvanceWorldTo(long gameTimeMs)
+    private void AdvanceMotionTo(long gameTimeMs)
     {
         if (!_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
@@ -3151,7 +3152,8 @@ internal sealed record SpaceObjectRuntime(
     long? PortFeeCreditsPerDay = null,
     int? SecurityZoneRadiusKm = null,
     long? PiracyWarningGracePeriodMs = null,
-    bool IsDestroyed = false);
+    bool IsDestroyed = false,
+    ImmutableArray<ShipPassengerData> Passengers = default);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName);

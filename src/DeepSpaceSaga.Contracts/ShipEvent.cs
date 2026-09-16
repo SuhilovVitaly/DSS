@@ -32,6 +32,7 @@ public sealed record ShipEvent(
 /// </summary>
 public static class ShipEventTypes
 {
+    public const string RationsShortage = "rations_shortage";
     /// <summary>An engine command cycle completed successfully.</summary>
     public const string CommandCompleted = "command_completed";
 

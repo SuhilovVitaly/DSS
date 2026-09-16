@@ -176,7 +176,8 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("portFeeCreditsPerDay")] long? PortFeeCreditsPerDay = null,
     [property: JsonPropertyName("securityZoneRadiusKm")] int? SecurityZoneRadiusKm = null,
     [property: JsonPropertyName("piracyWarningGracePeriodMs")] long? PiracyWarningGracePeriodMs = null,
-    [property: JsonPropertyName("isDestroyed")] bool IsDestroyed = false);
+    [property: JsonPropertyName("isDestroyed")] bool IsDestroyed = false,
+    [property: JsonPropertyName("passengers")] IReadOnlyList<ShipPassengerData>? Passengers = null);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles
@@ -403,3 +404,8 @@ public sealed record CargoStackData(
 public sealed record StationInventoryItemData(
     [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
     [property: JsonPropertyName("quantity")] long Quantity);
+
+/// <summary>People currently aboard; boarding/disembarkation changes this list at authoritative time.</summary>
+public sealed record ShipPassengerData(
+    [property: JsonPropertyName("passengerId")] string PassengerId,
+    [property: JsonPropertyName("displayName")] string DisplayName);
