@@ -118,6 +118,16 @@ internal sealed class TacticalMapDepthRenderer
         bodyColor: new SKColor(100, 92, 72, 230),
         highlightColor: new SKColor(198, 184, 142, 220));
 
+    private readonly SKPaint _targetTrajectoryPaint = new()
+    {
+        Color = new SKColor(198, 184, 142, 170),
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 1f,
+        StrokeCap = SKStrokeCap.Round,
+        IsAntialias = true,
+        PathEffect = SKPathEffect.CreateDash([2f, 4f], 0),
+        MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 0.55f)
+    };
     private readonly SKPaint _courseAlignmentPaint = new()
     {
         Color = new SKColor(126, 201, 215, 220), Style = SKPaintStyle.Stroke,
@@ -441,6 +451,20 @@ internal sealed class TacticalMapDepthRenderer
             _futureTrajectoryPaints);
     }
 
+    public void DrawTargetTrajectory(SKCanvas canvas, IReadOnlyList<FutureTrajectoryPoint> points,
+        CameraState camera, int width, int height)
+    {
+        if (points.Count < 2) return;
+        _trajectoryPath.Reset();
+        var (x, y) = camera.WorldToScreen(points[0].X, points[0].Y, width, height);
+        _trajectoryPath.MoveTo(x, y);
+        for (int i = 1; i < points.Count; i++)
+        {
+            (x, y) = camera.WorldToScreen(points[i].X, points[i].Y, width, height);
+            _trajectoryPath.LineTo(x, y);
+        }
+        canvas.DrawPath(_trajectoryPath, _targetTrajectoryPaint);
+    }
     public void DrawNavigationTrajectory(
         SKCanvas canvas,
         IReadOnlyList<FutureTrajectoryPoint> points,

@@ -1069,7 +1069,7 @@ public sealed partial class GameSessionScreen : IScreen
             DrawFutureTrajectories(canvas, width, height);
 
             // 3.55. Navigation trajectory (Ctrl+Click) — after future trajectory,
-            // visually distinct (golden dash vs dark dash)
+            // painted last so the solid Approach covers the target forecast at overlaps.
             DrawNavigationTrajectories(canvas, width, height);
             RenderStageCompleted?.Invoke("forecasts");
 
@@ -1533,16 +1533,20 @@ public sealed partial class GameSessionScreen : IScreen
             if (state.IsPlayerShip && state.Predicted.NavigationTargetX is not null)
                 continue;
 
-            if (state.IsPlayerShip)
-                _futureTrajectoryProjector.ProjectPlayerInto(state.Predicted, _futureTrajectoryPoints, _camera, width, height);
-            else
-                _futureTrajectoryProjector.ProjectInto(state.Predicted, _futureTrajectoryPoints);
+            _futureTrajectoryProjector.ProjectViewportInto(state.Predicted, _futureTrajectoryPoints, _camera, width, height);
             var points = _futureTrajectoryPoints;
             if (points.Count < 2)
                 continue;
 
-            if (state.IsPlayerShip) DisplayedPlayerTrajectoryEnd = points[^1];
-            _depthRenderer.DrawFutureTrajectory(canvas, points, _camera, width, height);
+            if (state.IsPlayerShip)
+            {
+                DisplayedPlayerTrajectoryEnd = points[^1];
+                _depthRenderer.DrawFutureTrajectory(canvas, points, _camera, width, height);
+            }
+            else
+            {
+                _depthRenderer.DrawTargetTrajectory(canvas, points, _camera, width, height);
+            }
         }
     }
 
