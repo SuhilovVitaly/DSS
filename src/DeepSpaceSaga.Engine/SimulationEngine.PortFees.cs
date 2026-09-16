@@ -14,7 +14,8 @@ public sealed partial class SimulationEngine
     }
 
     private long NextPortFeeTime() => _objects
-        .Where(o => o.IsDocked && !o.IsDestroyed && o.NextPortFeeDueGameTimeMs is not null
+        .Where(o => o.InitialMotion.ObjectId == PlayerShipObjectId
+            && o.IsDocked && !o.IsDestroyed && o.NextPortFeeDueGameTimeMs is not null
             && _objects.Any(station => station.InitialMotion.ObjectId == o.DockedStationObjectId))
         .Select(o => o.NextPortFeeDueGameTimeMs!.Value).DefaultIfEmpty(long.MaxValue).Min();
 
@@ -30,7 +31,8 @@ public sealed partial class SimulationEngine
         for (int i = 0; i < _objects.Count; i++)
         {
             var ship = _objects[i];
-            if (!ship.IsDocked || ship.IsDestroyed || ship.NextPortFeeDueGameTimeMs is not { } due || due > time) continue;
+            if (ship.InitialMotion.ObjectId != PlayerShipObjectId || !ship.IsDocked || ship.IsDestroyed ||
+                ship.NextPortFeeDueGameTimeMs is not { } due || due > time) continue;
             int stationIndex = _objects.FindIndex(o => o.InitialMotion.ObjectId == ship.DockedStationObjectId);
             if (stationIndex < 0) continue;
             var station = _objects[stationIndex];

@@ -11,7 +11,8 @@ public class StationTravelTests
         engine.LoadScenario(save with { GameState = save.GameState with {
             GameTimeMs = time,
             SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId == "SPC-0001"
-                ? o with { IsDocked = true, DockedStationObjectId = "STATION-01" } : o).ToArray()
+                ? o with { IsDocked = true, DockedStationObjectId = "STATION-01",
+                    FirstPortFeeGameTimeMs = time, NextPortFeeDueGameTimeMs = time + GameCalendar.DayMs } : o).ToArray()
         }});
         return engine;
     }

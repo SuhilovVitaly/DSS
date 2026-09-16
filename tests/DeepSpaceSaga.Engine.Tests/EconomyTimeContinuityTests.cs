@@ -93,6 +93,64 @@ public class EconomyTimeContinuityTests
     }
 
     [Fact]
+    public void Current_save_without_payment_anchor_is_rejected_without_rebasing_or_mutating_world()
+    {
+        using var engine = PortFeeScheduleTests.DockAt(0);
+        var save = engine.CaptureSaveStateForTests(8 * GameCalendar.HourMs, SimulationSpeed.Speed0);
+        engine.LoadScenario(save);
+        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        var incomplete = save with { GameState = save.GameState with {
+            SpaceObjects = save.GameState.SpaceObjects.Select(o => o.IsDocked ? o with {
+                FirstPortFeeGameTimeMs = null, NextPortFeeDueGameTimeMs = null } : o).ToArray() } };
+
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(incomplete));
+        Assert.Contains("first port payment time is missing", error.Message);
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(incomplete), true));
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(3)]
+    public void Loaded_payment_schedule_continues_from_anchor_after_processed_renewals(int paidDays)
+    {
+        long first = 8 * GameCalendar.HourMs + 30 * 60_000;
+        using var engine = PortFeeScheduleTests.DockAt(first);
+        var save = engine.CaptureSaveStateForTests(first + paidDays * GameCalendar.DayMs,
+            SimulationSpeed.Speed0);
+        engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
+        Assert.Equal(900 - paidDays * 100, engine.CaptureSnapshot().PlayerCredits);
+        Assert.Equal(first + (paidDays + 1) * GameCalendar.DayMs,
+            engine.CaptureSnapshot().PortFees!.NextPortFeeDueGameTimeMs);
+
+        engine.LoadScenario(save with { GameState = save.GameState with {
+            SpaceObjects = save.GameState.SpaceObjects.Select(o => o with {
+                NextPortFeeDueGameTimeMs = null }).ToArray() } });
+        var after = engine.CaptureSnapshotForTests(first + (paidDays + 1) * GameCalendar.DayMs);
+        Assert.Equal(800 - paidDays * 100, after.PlayerCredits);
+        Assert.Equal(first, after.PortFees!.FirstPortFeeGameTimeMs);
+    }
+
+    [Theory]
+    [InlineData(0, 2)]
+    [InlineData(8, 3)]
+    [InlineData(24, 3)]
+    public void Saved_payment_schedule_cannot_skip_the_nearest_renewal(int elapsedHours, int nextDay)
+    {
+        long first = 8 * GameCalendar.HourMs + 30 * 60_000;
+        using var engine = PortFeeScheduleTests.DockAt(first);
+        var save = engine.CaptureSaveStateForTests(first + elapsedHours * GameCalendar.HourMs,
+            SimulationSpeed.Speed0);
+        save = save with { GameState = save.GameState with {
+            SpaceObjects = save.GameState.SpaceObjects.Select(o => o.IsDocked ? o with {
+                NextPortFeeDueGameTimeMs = first + nextDay * GameCalendar.DayMs } : o).ToArray() } };
+
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(save));
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
+    }
+
+    [Fact]
     public void Missing_next_payment_is_derived_from_saved_first_payment()
     {
         using var engine = PortFeeScheduleTests.DockAt(8 * GameCalendar.HourMs + 30 * 60_000);

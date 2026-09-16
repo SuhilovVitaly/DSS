@@ -65,6 +65,34 @@ public class PortFeeScheduleTests
     }
 
     [Fact]
+    public void Renewal_only_bills_the_controlled_ship_and_ignores_other_ship_deadlines()
+    {
+        long start = 8 * GameCalendar.HourMs;
+        using var engine = DockAt(start);
+        var save = engine.CaptureSaveState();
+        var player = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId);
+        var other = player with { ObjectId = "OTHER-SHIP", Modules = [], HullLayout = null,
+            Crew = [], Passengers = [], FirstPortFeeGameTimeMs = 0,
+            NextPortFeeDueGameTimeMs = GameCalendar.DayMs, PortFeeDebt = 75 };
+        engine.LoadScenario(save with { GameState = save.GameState with {
+            SpaceObjects = save.GameState.SpaceObjects.Append(other).ToArray() } });
+
+        // The other ship's deadline is earlier: it must neither bill the player nor
+        // hold the event loop at an unprocessed deadline after it is ignored.
+        var end = engine.CaptureSaveStateForTests(start + 2 * GameCalendar.DayMs, SimulationSpeed.Speed0);
+        Assert.Equal(700, end.GameState.PlayerTokens);
+        Assert.Equal(10300, end.GameState.SpaceObjects.Single(o => o.ObjectId == "STATION-01").Credits);
+        var otherAfter = end.GameState.SpaceObjects.Single(o => o.ObjectId == other.ObjectId);
+        Assert.Equal(other.PortFeeDebt, otherAfter.PortFeeDebt);
+        Assert.Equal(other.NextPortFeeDueGameTimeMs, otherAfter.NextPortFeeDueGameTimeMs);
+
+        // Ignoring another ship's timer must not make our own saves unloadable.
+        engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(end), true));
+        Assert.Equal(700, engine.CaptureSnapshot().PlayerCredits);
+        Assert.Equal(start + 3 * GameCalendar.DayMs, engine.CaptureSnapshot().PortFees!.NextPortFeeDueGameTimeMs);
+    }
+
+    [Fact]
     public void Save_retains_first_payment_and_due_time()
     {
         using var engine = DockAt(8 * GameCalendar.HourMs + 30 * 60_000);

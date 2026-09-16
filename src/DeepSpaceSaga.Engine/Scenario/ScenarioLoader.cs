@@ -210,17 +210,23 @@ public static class ScenarioLoader
         }
         foreach (var obj in state.SpaceObjects)
         {
-            if (scenario.SaveFormatVersion > 0 && state.EconomyTime is null && obj.IsDocked && obj.FirstPortFeeGameTimeMs is null)
-                throw new ScenarioException("Legacy docked save has incompatible economic rules: first port payment time is missing. Save was not modified.");
+            if (scenario.SaveFormatVersion > 0 && obj.IsDocked && obj.FirstPortFeeGameTimeMs is null)
+                throw new ScenarioException("Docked save has incompatible economic rules: first port payment time is missing. Save was not modified.");
             if (obj.PortFeeDebt < 0 || obj.FirstPortFeeGameTimeMs < 0 || obj.FirstPortFeeGameTimeMs > state.GameTimeMs)
                 throw new ScenarioException("Invalid first port payment or debt.");
             if (obj.IsDocked && !state.SpaceObjects.Any(o => string.Equals(o.ObjectId, obj.DockedStationObjectId, StringComparison.OrdinalIgnoreCase)
                 && o.ObjectType.Equals("Station", StringComparison.OrdinalIgnoreCase)))
                 throw new ScenarioException("Docked ship references an unknown station.");
             if (obj.NextPortFeeDueGameTimeMs is { } next &&
-                (obj.FirstPortFeeGameTimeMs is not { } first || next <= state.GameTimeMs || next <= first ||
+                (obj.FirstPortFeeGameTimeMs is not { } first || next <= first ||
                  (next - first) % GameCalendar.DayMs != 0))
                 throw new ScenarioException("Invalid next port payment time.");
+            // Only the controlled ship's billing schedule advances in this session.
+            // Other ships retain their own payment metadata without charging PlayerCredits.
+            if (string.Equals(obj.ObjectId, state.PlayerShipObjectId, StringComparison.OrdinalIgnoreCase) &&
+                obj.NextPortFeeDueGameTimeMs is { } playerNext &&
+                (playerNext <= state.GameTimeMs || playerNext - state.GameTimeMs > GameCalendar.DayMs))
+                throw new ScenarioException("Next port payment must be the first scheduled payment after saved game time.");
             if (obj.ProducingModules?.Any(m => m.NextProductionDueGameTimeMs is { } due && due <= state.GameTimeMs) == true)
                 throw new ScenarioException("Invalid saved production deadline.");
             if (obj.Passengers is { } passengers &&
