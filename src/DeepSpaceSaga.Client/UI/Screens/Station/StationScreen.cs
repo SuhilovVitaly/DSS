@@ -243,7 +243,7 @@ public sealed class StationScreen : IScreen
             cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
             creditsCount: StationToolbar.ResolveCreditsCount(snapshot),
             fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
-            fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot));
+            fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot), gameTimeMs: snapshot?.GameTimeMs);
 
         float cx = pl + StationLayout.PanelWidth / 2f;
 

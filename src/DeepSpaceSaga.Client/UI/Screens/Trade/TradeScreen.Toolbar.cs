@@ -29,7 +29,7 @@ public sealed partial class TradeScreen
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot),
             crewCount: StationToolbar.ResolveCrewCount(snapshot), cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
             creditsCount: StationToolbar.ResolveCreditsCount(snapshot),
-            fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot), fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot));
+            fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot), fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot), gameTimeMs: snapshot?.GameTimeMs);
     }
     private void DrawToolbarTooltips(SKCanvas canvas, float pl, float pt) => StationToolbar.DrawTooltips(canvas, pl, pt,
         IsFoodRationsTooltipVisible, IsCrewTooltipVisible, IsTokensTooltipVisible, IsFuelTooltipVisible);

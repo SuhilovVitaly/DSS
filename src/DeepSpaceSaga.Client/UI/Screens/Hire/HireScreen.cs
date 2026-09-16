@@ -160,7 +160,7 @@ public sealed class HireScreen : IScreen
             cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
             creditsCount: StationToolbar.ResolveCreditsCount(snapshot),
             fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
-            fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot));
+            fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot), gameTimeMs: snapshot?.GameTimeMs);
 
         float cx = pl + HireLayout.PanelWidth / 2f;
         canvas.DrawText(PlaceholderLine, cx, pt + HireLayout.BodyStartY, MenuStyle.TextStatus);
