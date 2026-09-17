@@ -41,9 +41,9 @@ public class DockCommandTests
         int rangeKm = 200,
         string powerState = "On",
         string operationalState = "Ready",
-        int structurePoints = 80, long playerCredits = 1000, long stationCredits = 10000)
+        int structurePoints = 80, long playerCredits = 1000, long stationCredits = 10000, SimulationClock? clock = null)
     {
-        var engine = new SimulationEngine(CreateRegistry(rangeKm));
+        var engine = new SimulationEngine(CreateRegistry(rangeKm), clock: clock);
         engine.LoadScenario(ScenarioLoader.LoadFromJson($$"""
         {
           "scenarioMetadata": { "scenarioId": "test", "name": "Test" },

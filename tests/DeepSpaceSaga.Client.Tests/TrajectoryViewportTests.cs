@@ -20,7 +20,7 @@ public class TrajectoryViewportTests
         var player = new ObjectMotionSnapshot("player", 10000, 10000, .001, 90);
         var camera = new CameraState(player.X, player.Y, ppu);
         List<FutureTrajectoryPoint> points = new();
-        new FutureTrajectoryProjector(new LinearMotionPredictor()).ProjectPlayerInto(player, points, camera, Width, Height);
+        new FutureTrajectoryProjector(new LinearMotionPredictor()).ProjectViewportInto(player, points, camera, Width, Height);
         Assert.Equal(2, points.Count);
         var end = camera.WorldToScreen(points[^1].X, points[^1].Y, Width, Height);
         Assert.Equal(Width, end.X, 3); Assert.Equal(Height / 2f, end.Y, 3);
@@ -35,7 +35,7 @@ public class TrajectoryViewportTests
         var camera = new CameraState(-8000, 3000, .01);
         var player = new ObjectMotionSnapshot("player", 500, -600, 2, heading);
         List<FutureTrajectoryPoint> points = new();
-        new FutureTrajectoryProjector(new LinearMotionPredictor()).ProjectPlayerInto(player, points, camera, Width, Height);
+        new FutureTrajectoryProjector(new LinearMotionPredictor()).ProjectViewportInto(player, points, camera, Width, Height);
         AssertEdge(points[^1], camera);
         var a = points[0]; var b = points[^1]; double angle = heading * Math.PI / 180;
         Assert.True((b.X - a.X) * Math.Sin(angle) - (b.Y - a.Y) * Math.Cos(angle) > 0);
@@ -72,8 +72,9 @@ public class TrajectoryViewportTests
         var camera = new CameraState(0, 0, .01);
         var projector = new NavigationTrajectoryProjector();
         var physical = projector.Project(ship, out _, out var completion);
-        var points = projector.ProjectPlayerInto(ship, new(), camera, Width, Height, out bool confirmed, out var marker);
-        Assert.True(confirmed); Assert.Equal(completion, marker);
+        var points = projector.ProjectPlayerInto(ship, new(), camera, Width, Height, out bool confirmed, out var marker, out int maneuverPointCount);
+        Assert.Equal(targetSpeed < ship.SpeedKmS, confirmed); Assert.Equal(completion, marker);
+        Assert.Equal(physical.Count, maneuverPointCount);
         Assert.Equal(physical, points.Take(physical.Count));
         double targetXAtCompletion = route.TargetX + route.TargetSpeedKmS * 10 * route.DurationMs / 1000;
         Assert.Contains(points, p => Math.Abs(p.X - targetXAtCompletion) < .00001 && Math.Abs(p.Y) < .00001);
@@ -175,7 +176,7 @@ public class TrajectoryViewportTests
     public void Zero_speed_does_not_draw_an_infinite_future_path()
     {
         List<FutureTrajectoryPoint> points = new();
-        new FutureTrajectoryProjector(new LinearMotionPredictor()).ProjectPlayerInto(
+        new FutureTrajectoryProjector(new LinearMotionPredictor()).ProjectViewportInto(
             new("ship", 0, 0, 0, 90), points, new(0, 0, 1), Width, Height);
         Assert.Single(points);
     }
@@ -212,7 +213,7 @@ public class TrajectoryViewportTests
             TurnStepDegrees: 90, TurnStepRemainingMs: 1000, TurnStepIntervalMs: 1000);
         var projector = new FutureTrajectoryProjector(new LinearMotionPredictor());
         List<FutureTrajectoryPoint> shown = new();
-        projector.ProjectPlayerInto(ship, shown, new(0, 0, .001), Width, Height);
+        projector.ProjectViewportInto(ship, shown, new(0, 0, .001), Width, Height);
         Assert.Equal(projector.Project(ship), shown);
     }
 

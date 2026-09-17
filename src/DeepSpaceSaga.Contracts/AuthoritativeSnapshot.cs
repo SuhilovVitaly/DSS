@@ -43,4 +43,18 @@ public sealed record AuthoritativeSnapshot(
     ImmutableArray<DialogueEvent> DialogueEvents = default,
     PlayerCharacterState? PlayerCharacter = null,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<QuestState>))]
-    ImmutableArray<QuestState> Quests = default);
+    ImmutableArray<QuestState> Quests = default,
+    StationDistrict CurrentStationDistrict = StationDistrict.Dock,
+    PortFeeSnapshot? PortFees = null,
+    long MissingRations = 0,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<TimedContractState>))]
+    ImmutableArray<TimedContractState> ActiveContracts = default,
+    long? RouteArrivalGameTimeMs = null,
+    long? SimulationTimeMs = null)
+{
+    /// <summary>Motion/cycle timestamp; legacy snapshots use GameTimeMs for both domains.</summary>
+    [JsonIgnore]
+    public long MotionTimeMs => SimulationTimeMs ?? GameTimeMs;
+}
+
+public sealed record PortFeeSnapshot(long FirstPortFeeGameTimeMs, long NextPortFeeDueGameTimeMs, long Debt);

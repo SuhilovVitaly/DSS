@@ -15,6 +15,7 @@ public sealed partial class GameSessionScreen
     private readonly HashSet<string> _clusteredObjectIds = new(StringComparer.Ordinal);
     private readonly List<MapCluster> _mapClusters = new();
     private readonly Dictionary<(double X, double Y), List<ObjectRenderState>> _clusterCells = new();
+    private readonly Stack<List<ObjectRenderState>> _clusterCellPool = new();
     private readonly List<SKRect> _mapObstacles = new();
     private int _freeViewportHash;
     private SKRect _freeViewport;
@@ -23,7 +24,7 @@ public sealed partial class GameSessionScreen
     internal SKRect MapToolbarRect => _mapToolbarRect;
     internal int MapClusterCount => _mapClusters.Count;
     internal bool IsZoomAnimating => _zoomTransition.Active;
-    private sealed record MapCluster(double X, double Y, int Count, MapWorldBounds Bounds);
+    private readonly record struct MapCluster(double X, double Y, int Count, MapWorldBounds Bounds);
 
     private bool IsImportantMapObject(string id) => id == _selectedObjectId || id == _navigationTargetId ||
         id == _buffer.Latest?.Snapshot.PlayerShipObjectId;
@@ -49,18 +50,24 @@ public sealed partial class GameSessionScreen
 
     private void UpdateMapClusters()
     {
-        _navigationTargetId = FindPlayerShip(_renderStates)?.Predicted.NavigationTargetObjectId;
+        _navigationTargetId = FindPlayerShip(_renderStates)?.Pose.NavigationTargetObjectId;
+        foreach (var cell in _clusterCells.Values)
+        {
+            cell.Clear();
+            _clusterCellPool.Push(cell);
+        }
         _mapClusters.Clear(); _clusteredObjectIds.Clear(); _clusterCells.Clear();
         if (_camera.PixelsPerWorldUnit > _mapSettings.ClusterPpu) return;
         double cellSize = _mapSettings.ClusterCellPixels / _camera.PixelsPerWorldUnit;
         foreach (var state in _renderStates)
         {
-            var p = state.Predicted;
+            var p = state.Pose;
             if (IsImportantMapObject(p.ObjectId) || p.RenderObjectType is SpaceObjectType.Sun or SpaceObjectType.Planet) continue;
             var (sx, sy) = _camera.WorldToScreen(p.X, p.Y, _viewportW, _viewportH);
             if (sx < -40 || sy < -40 || sx > _viewportW + 40 || sy > _viewportH + 40) continue;
             var key = (Math.Floor(p.X / cellSize), Math.Floor(p.Y / cellSize));
-            if (!_clusterCells.TryGetValue(key, out var cell)) _clusterCells[key] = cell = new();
+            if (!_clusterCells.TryGetValue(key, out var cell))
+                _clusterCells[key] = cell = _clusterCellPool.TryPop(out var reused) ? reused : new();
             cell.Add(state);
         }
         foreach (var cell in _clusterCells.Values)
@@ -69,8 +76,8 @@ public sealed partial class GameSessionScreen
             MapWorldBounds bounds = new();
             foreach (var state in cell)
             {
-                bounds.Include(state.Predicted.X, state.Predicted.Y);
-                _clusteredObjectIds.Add(state.Predicted.ObjectId);
+                bounds.Include(state.Pose.X, state.Pose.Y);
+                _clusteredObjectIds.Add(state.Pose.ObjectId);
             }
             _mapClusters.Add(new(bounds.MinX + (bounds.MaxX - bounds.MinX) / 2,
                 bounds.MinY + (bounds.MaxY - bounds.MinY) / 2, cell.Count, bounds));
@@ -92,7 +99,7 @@ public sealed partial class GameSessionScreen
     private bool TryExpandMapCluster(float x, float y)
     {
         // Explicit targets win over a nearby aggregate.
-        if (_renderStates.Any(s => IsImportantMapObject(s.Predicted.ObjectId) && Near(s.Predicted.X, s.Predicted.Y))) return false;
+        if (_renderStates.Any(s => IsImportantMapObject(s.Pose.ObjectId) && Near(s.Pose.X, s.Pose.Y))) return false;
         foreach (var cluster in _mapClusters)
         {
             if (!Near(cluster.X, cluster.Y)) continue;
@@ -146,11 +153,11 @@ public sealed partial class GameSessionScreen
         if (mode == MapFitMode.System)
         {
             // Fit only known celestial/installation metadata; unknown types never become known through map framing.
-            var sun = _renderStates.FirstOrDefault(s => s.Predicted.RenderObjectType == SpaceObjectType.Sun).Predicted;
+            var sun = _renderStates.FirstOrDefault(s => s.Pose.RenderObjectType == SpaceObjectType.Sun).Predicted;
             double radius = 0;
             foreach (var s in _renderStates)
             {
-                var p = s.Predicted;
+                var p = s.Pose;
                 if (p.RenderObjectType is not (SpaceObjectType.Sun or SpaceObjectType.Planet or SpaceObjectType.Station)) continue;
                 bounds.Include(p.X, p.Y);
                 if (sun is not null && p.RenderObjectType == SpaceObjectType.Planet)
@@ -170,7 +177,7 @@ public sealed partial class GameSessionScreen
         }
         else
         {
-            var target = _renderStates.FirstOrDefault(s => s.Predicted.ObjectId == _selectedObjectId).Predicted;
+            var target = _renderStates.FirstOrDefault(s => s.Pose.ObjectId == _selectedObjectId).Predicted;
             if (target is not null && target.ObjectId != ship.ObjectId) bounds.Include(target.X, target.Y);
             else if (ship.NavigationTargetX is { } x && ship.NavigationTargetY is { } y) bounds.Include(x, y);
             else return false;
@@ -185,10 +192,10 @@ public sealed partial class GameSessionScreen
         if (rect.Width <= 0 || rect.Height <= 0) return;
         var ship = FindPlayerShip(_renderStates)?.Predicted;
         foreach (var state in _renderStates)
-            if (!state.IsPlayerShip && IsImportantMapObject(state.Predicted.ObjectId))
-                Draw(state.Predicted.X, state.Predicted.Y, state.Predicted.ObjectId == _selectedObjectId ? "Map.Selected" : "Map.Target");
+            if (!state.IsPlayerShip && IsImportantMapObject(state.Pose.ObjectId))
+                Draw(state.Pose.X, state.Pose.Y, state.Pose.ObjectId == _selectedObjectId ? "Map.Selected" : "Map.Target");
         if (ship?.NavigationTargetX is { } tx && ship.NavigationTargetY is { } ty &&
-            (_navigationTargetId is null || !_renderStates.Any(s => s.Predicted.ObjectId == _navigationTargetId)))
+            (_navigationTargetId is null || !_renderStates.Any(s => s.Pose.ObjectId == _navigationTargetId)))
             Draw(tx, ty, "Map.Target");
 
         void Draw(double worldX, double worldY, string labelKey)

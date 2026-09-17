@@ -80,12 +80,8 @@ public class PauseResumeVisualContinuityTests
             prevX = x;
         }
 
-        // With unchanged velocity, extrapolating from the old vs. new baseline to the same
-        // target time is mathematically identical, so no correction is created at all —
-        // the only effect is the target game time itself catching up more than one frame's
-        // worth in a single render call (a brief speed blip on a smooth, single-direction
-        // trajectory), which is a much milder artifact than an unsmoothed teleport. The
-        // margin here just guards against a full, un-smoothed snap of the whole skew.
+        // Clock disagreement is spread over the reconciliation window rather than
+        // added to one frame's movement, even when velocity itself is unchanged.
         Assert.True(
             maxFrameDelta < SteadyStateDeltaPerFrame * 3.0,
             $"single-frame delta {maxFrameDelta:F2} (steady-state is {SteadyStateDeltaPerFrame:F2}) looks like an unsmoothed snap");

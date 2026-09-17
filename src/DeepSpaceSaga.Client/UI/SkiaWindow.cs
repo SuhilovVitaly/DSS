@@ -91,8 +91,11 @@ public sealed class SkiaWindow : IDisposable
             // OnFocusChanged) so it doesn't stay pinned over the Snipping Tool
             // (Print Screen) or whatever the user alt-tabs to.
             TopMost = true,
-            FramesPerSecond = 80,
-            VSync = false,
+            // Present at the monitor's cadence. An independent 80 Hz limiter
+            // produces uneven frame delivery on 60/120/144 Hz displays.
+            // The simulation clock and snapshot cadence remain independent.
+            FramesPerSecond = 0,
+            VSync = true,
             API = new GraphicsAPI(ContextAPI.OpenGL, ContextProfile.Core, ContextFlags.Default, new APIVersion(3, 3))
         };
 
@@ -640,6 +643,13 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.OpenStation:
                     await OpenStationAsync();
                     break;
+                case ScreenEvent.TravelDock:
+                case ScreenEvent.TravelMarket:
+                case ScreenEvent.TravelHabitation:
+                case ScreenEvent.TravelAdministration:
+                    if (_session is not null && _screens.Current is StationScreen)
+                        await _session.TravelStationAsync((StationDistrict)(evt - ScreenEvent.TravelDock));
+                    break;
                 case ScreenEvent.CloseStation:
                     await CloseOverlayAsync();
                     break;
@@ -789,6 +799,7 @@ public sealed class SkiaWindow : IDisposable
         if (_modalDepth == 0 && _session is not null)
         {
             _savedSpeed = _session.Buffer.CurrentSpeed;
+            _session.ClearStationTravelPause();
             await _session.SetSpeedAsync(SimulationSpeed.Speed0);
             // Speed0 is now confirmed — safe to show the overlay
         }
@@ -809,7 +820,7 @@ public sealed class SkiaWindow : IDisposable
         // Last modal closed: restore previous simulation speed
         if (_modalDepth == 0 && _session is not null)
         {
-            await _session.SetSpeedAsync(_savedSpeed);
+            await _session.SetSpeedAsync(_session.KeepPausedAfterStationTravel ? SimulationSpeed.Speed0 : _savedSpeed);
         }
     }
 
@@ -877,7 +888,7 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is StationScreen)
             return;
 
-        await PushModalAsync(new StationScreen(_session?.Buffer));
+        await PushModalAsync(new StationScreen(_session?.Buffer, _session));
     }
 
     /// <summary>Return from a nested station window to its hub.</summary>

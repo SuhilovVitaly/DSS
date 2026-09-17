@@ -192,24 +192,14 @@ public static class ApproachPursuitMath
     /// straight-line distance, so the winning type's actual rendezvous time is always
     /// &gt;= t_lead. Combined additively with <see cref="InterceptCurvatureLoopsMargin"/>
     /// (see that constant's doc-comment for why BOTH terms are needed):
-    /// <c>horizon = t_lead * (1 + InterceptHorizonMarginFactor) + InterceptCurvatureLoopsMargin * 2*pi / angularVelocityRadPerSec</c>.
+    /// <c>horizon = t_lead * (1 + InterceptHorizonMarginFactor) + InterceptCurvatureLoopsMargin * 2*pi*turnRadius / closingSpeed</c>.
     /// </summary>
     private const double InterceptHorizonMarginFactor = 1.0;
 
     /// <summary>
-    /// Curvature-correction budget, expressed as a number of FULL turning loops
-    /// (<c>2*pi / angularVelocityRadPerSec</c> seconds each) added on top of the
-    /// relative <see cref="InterceptHorizonMarginFactor"/> term. This is the ADDITIVE
-    /// part Checkpoint 1 anticipates ("k · turnRadius / closingSpeed") and it matters
-    /// independently of <c>t_lead</c>: when the ship's initial heading is badly
-    /// misaligned with the rendezvous bearing, the shortest Dubins curve of the winning
-    /// type can require the better part of a full extra loop of turning even though the
-    /// straight-line lead time itself is tiny (a purely MULTIPLICATIVE margin on
-    /// <c>t_lead</c> would then badly under-shoot the real horizon). Empirically verified
-    /// against <c>ApproachPursuitMathTests</c>' type-switch regression fixture, whose
-    /// genuine (non-wrap-artifact) winning root sits at roughly 1.1 loops of turning time
-    /// even though <c>t_lead</c> there is only ~6.3s — 3.0 loops leaves a comfortable
-    /// safety margin above that observed worst case.
+    /// Curvature-correction budget: three turning circumferences divided by closing
+    /// speed. A turn costs distance while the target continues to move; using only
+    /// the duration of three turns underestimates the horizon near equal speeds.
     /// </summary>
     private const double InterceptCurvatureLoopsMargin = 3.0;
 
@@ -366,7 +356,7 @@ public static class ApproachPursuitMath
 
         double horizon = Math.Max(
             leadTime.Value * (1.0 + InterceptHorizonMarginFactor)
-                + InterceptCurvatureLoopsMargin * (2.0 * Math.PI / angularVelocityRadPerSec),
+                + InterceptCurvatureLoopsMargin * 2.0 * Math.PI * turnRadius / (shipSpeedUnits - targetSpeedUnits),
             InterceptMinHorizonSeconds);
 
         // Evaluate a single curve type's (length, self-consistency residual) at time t,
@@ -391,6 +381,9 @@ public static class ApproachPursuitMath
         }
 
         double wrapJumpGuardUnits = InterceptWrapJumpGuardFactor * turnRadius;
+        // A long closing-time horizon must not skip short, early encounters.
+        double sampleScale = Math.Max(1, Math.Min(leadTime.Value, 2 * Math.PI / angularVelocityRadPerSec));
+        double sampleLogRange = Math.Log(1 + horizon / sampleScale);
 
         double? BisectRoot(
             string curveType, double lowT, double highT,
@@ -399,7 +392,14 @@ public static class ApproachPursuitMath
             for (int iteration = 0; iteration < InterceptMaxBisectionIterations; iteration++)
             {
                 if (highT - lowT < InterceptBisectionToleranceSeconds)
-                    return 0.5 * (lowT + highT);
+                {
+                    double candidate = .5 * (lowT + highT);
+                    var evaluated = EvaluateType(curveType, candidate);
+                    // A narrow bracket around a wrapped curve is not a rendezvous.
+                    return evaluated.Valid && Math.Abs(evaluated.LengthUnits - shipSpeedUnits * candidate) <=
+                        Math.Max(InterceptResidualToleranceUnits, shipSpeedUnits * InterceptBisectionToleranceSeconds)
+                        ? candidate : null;
+                }
 
                 double midT = 0.5 * (lowT + highT);
                 var (valid, length) = EvaluateType(curveType, midT);
@@ -422,7 +422,8 @@ public static class ApproachPursuitMath
                 // if the midpoint's length is not a smooth interpolation between the two
                 // bracket ends, the wrap boundary lies inside this bracket — never bisect
                 // across it as if it were this type's own smooth formula.
-                if (Math.Abs(length - lowLength) > wrapJumpGuardUnits && Math.Abs(length - highLength) > wrapJumpGuardUnits)
+                if (Math.Abs(length - lowLength) > wrapJumpGuardUnits + targetSpeedUnits * (midT - lowT) &&
+                    Math.Abs(length - highLength) > wrapJumpGuardUnits + targetSpeedUnits * (highT - midT))
                     return null;
 
                 double midResidual = length - shipSpeedUnits * midT;
@@ -455,7 +456,7 @@ public static class ApproachPursuitMath
 
             for (int sample = 1; sample <= InterceptHorizonSampleCount; sample++)
             {
-                double t = horizon * sample / InterceptHorizonSampleCount;
+                double t = sampleScale * (Math.Exp(sampleLogRange * sample / InterceptHorizonSampleCount) - 1);
                 var (valid, length) = EvaluateType(curveType, t);
                 if (!valid)
                 {
@@ -467,10 +468,11 @@ public static class ApproachPursuitMath
 
                 if (prevValid)
                 {
-                    // Skip pairs straddling a Mod2Pi wrap artifact (see
+                    // Allow the target's natural motion before detecting a Mod2Pi wrap (see
                     // InterceptWrapJumpGuardFactor) — never treat that as a genuine root
                     // bracket, even if the residual happens to change sign there.
-                    bool suspiciousWrapJump = Math.Abs(length - prevLength) > wrapJumpGuardUnits;
+                    bool suspiciousWrapJump = Math.Abs(length - prevLength) >
+                        wrapJumpGuardUnits + targetSpeedUnits * (t - prevT);
 
                     if (!suspiciousWrapJump)
                     {

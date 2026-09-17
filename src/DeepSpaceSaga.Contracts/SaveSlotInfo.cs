@@ -11,4 +11,5 @@ namespace DeepSpaceSaga.Contracts;
 public sealed record SaveSlotInfo(
     string SlotId,
     string DisplayName,
-    DateTime SavedAtUtc);
+    DateTime SavedAtUtc,
+    long? GameTimeMs = null);

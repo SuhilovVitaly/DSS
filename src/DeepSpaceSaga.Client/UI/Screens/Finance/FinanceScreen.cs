@@ -184,7 +184,7 @@ public sealed class FinanceScreen : IScreen
             cabinsCount: StationToolbar.ResolveCabinsCount(snapshot),
             creditsCount: StationToolbar.ResolveCreditsCount(snapshot),
             fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
-            fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot));
+            fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot), gameTimeMs: snapshot?.GameTimeMs, missingRations: snapshot?.MissingRations ?? 0);
 
         float cx = pl + FinanceLayout.PanelWidth / 2f;
 
@@ -193,6 +193,13 @@ public sealed class FinanceScreen : IScreen
         {
             canvas.DrawText(line, cx, textY, MenuStyle.TextStatus);
             textY += FinanceLayout.BodyLineHeight;
+        }
+
+        if (snapshot?.PortFees is { } fees)
+        {
+            canvas.DrawText("Следующий портовый сбор: " + GameTimeDisplay.Minutes(fees.NextPortFeeDueGameTimeMs),
+                cx, pt + 300, MenuStyle.TextStatus);
+            canvas.DrawText($"Портовая задолженность: {fees.Debt}", cx, pt + 330, MenuStyle.TextStatus);
         }
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must

@@ -17,6 +17,34 @@ namespace DeepSpaceSaga.Engine.Tests;
 /// </summary>
 public class StationEconomyBatch2Tests
 {
+    [Fact]
+    public void Production_in_progress_survives_save_and_hourly_travel_matches_continuous_time()
+    {
+        string scenario = ScenarioJson(producingModulesJson: "[{\"producingModuleTypeId\":\"factory.smelter\"}]");
+        using var continuous = CreateEngine(scenario);
+        using var original = CreateEngine(scenario);
+        var halfway = original.CaptureSaveStateForTests(2500, SimulationSpeed.Speed0);
+        var factory = halfway.GameState.SpaceObjects.Single(o => o.ObjectType == "Station").ProducingModules![0];
+        Assert.Equal(5000, factory.NextProductionDueGameTimeMs);
+        using var restored = new SimulationEngine(CreateRegistry());
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(halfway), true));
+        var result = restored.TravelStation(new("hour", StationDistrict.Market));
+        var expected = continuous.CaptureSnapshotForTests(2500 + GameCalendar.HourMs);
+        Assert.Equal(expected.DockedStationTrade!.Items.Select(i => i.StockQuantity),
+            result.Snapshot.DockedStationTrade!.Items.Select(i => i.StockQuantity));
+        Assert.Equal(110, result.Snapshot.DockedStationTrade.Items.Single(i => i.ItemTypeId == EnergyCellsId).StockQuantity);
+    }
+
+    [Fact]
+    public void Market_event_applies_only_inside_its_absolute_time_window()
+    {
+        string events = "[{\"eventId\":\"timed\",\"displayName\":\"Timed\",\"startedGameTimeMs\":500,\"durationMs\":500,\"priceFactors\":[{\"factor\":2000}]}]";
+        using var engine = CreateEngine(ScenarioJson(stationSizeJson: "\"Medium\"", eventsJson: events));
+        Assert.Equal(115, UnitPriceOf(engine, EnergyCellsId, 499));
+        Assert.Equal(230, UnitPriceOf(engine, EnergyCellsId, 500));
+        Assert.Equal(115, UnitPriceOf(engine, EnergyCellsId, 1000));
+    }
+
     private const string PlayerShipId = "SPC-0001";
     private const string CargoModuleId = "MOD-CARGO-01";
     private const string StationId = "STATION-01";
@@ -137,9 +165,9 @@ public class StationEconomyBatch2Tests
         return engine;
     }
 
-    private static long UnitPriceOf(SimulationEngine engine, string itemTypeId)
+    private static long UnitPriceOf(SimulationEngine engine, string itemTypeId, long time = 0)
     {
-        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
+        var snapshot = engine.CaptureSnapshotForTests(time, SimulationSpeed.Speed0);
         return snapshot.DockedStationTrade!.Items.Single(i => i.ItemTypeId == itemTypeId).UnitPriceCredits;
     }
 
@@ -450,7 +478,7 @@ public class StationEconomyBatch2Tests
 
         // 100 * 1.10 (size) * 1.10 (evt-b) * 1.20 (evt-a) = 145.2 -> 145 (AwayFromZero on the
         // single combined product, order-independent per StationPricingTests).
-        Assert.Equal(145, UnitPriceOf(engine, EnergyCellsId));
+        Assert.Equal(145, UnitPriceOf(engine, EnergyCellsId, time: 500));
     }
 
     [Fact]

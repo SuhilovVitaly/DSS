@@ -87,6 +87,23 @@ public class SnapshotBufferTests
         Assert.Equal(0, buffer.LatestPrediction!.ReconciliationForwardJumpMs);
     }
 
+    [Fact]
+    public void Calendar_minutes_do_not_become_motion_prediction_or_reconciliation_jumps()
+    {
+        var clock = new FakeClock();
+        var buffer = new SnapshotBuffer(() => clock.Timestamp);
+        buffer.Update(new AuthoritativeSnapshot(1, 300_000, SimulationSpeed.Speed1, [], SimulationTimeMs: 1000));
+        clock.AdvanceMs(1000);
+        Assert.Equal(1000, buffer.EffectivePredictionDeltaMs);
+        buffer.Update(new AuthoritativeSnapshot(2, 600_000, SimulationSpeed.Speed1, [], SimulationTimeMs: 2000));
+        Assert.Equal(0, buffer.LatestPrediction!.ReconciliationForwardJumpMs);
+        Assert.Equal(0, buffer.EffectivePredictionDeltaMs);
+        clock.AdvanceMs(500);
+        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
+        buffer.CurrentSpeed = SimulationSpeed.Speed0;
+        clock.AdvanceMs(10_000);
+        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
+    }
     private sealed class FakeClock
     {
         public long Timestamp { get; private set; }

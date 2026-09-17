@@ -54,11 +54,11 @@ internal sealed class FutureTrajectoryProjector
     }
 
     /// <summary>
-    /// Player display extends straight flight to the viewport edge instead of stopping
+    /// Player and target displays extend straight flight to the viewport edge instead of stopping
     /// after 200 seconds. Curved/closed motion retains the predictor's actual geometry.
-    /// Other objects and time-based callers keep ProjectInto's bounded horizon.
+    /// Time-based callers keep ProjectInto's bounded horizon.
     /// </summary>
-    internal void ProjectPlayerInto(ObjectMotionSnapshot state, List<FutureTrajectoryPoint> points,
+    internal void ProjectViewportInto(ObjectMotionSnapshot state, List<FutureTrajectoryPoint> points,
         CameraState camera, int width, int height)
     {
         if (_predictor is LinearMotionPredictor && LinearMotionPredictor.IsLinear(state))

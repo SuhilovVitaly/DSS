@@ -20,7 +20,7 @@ public class ApproachRouteProjectionTests
         var projector = new NavigationTrajectoryProjector();
         var points = projector.Project(ship, out bool confirmed, out var endpoint);
         var expected = ApproachLineCaptureMath.Predict(ship, route.DurationMs);
-        Assert.True(confirmed);
+        Assert.Equal(targetSpeed < ship.SpeedKmS, confirmed);
         Assert.Equal(ship.X, points[0].X);
         Assert.Equal(ship.Y, points[0].Y);
         Assert.Equal(expected.X, endpoint.X, 7);

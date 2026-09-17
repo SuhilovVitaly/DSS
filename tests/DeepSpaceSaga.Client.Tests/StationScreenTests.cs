@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.Station;
 using Silk.NET.Input;
@@ -18,6 +19,29 @@ namespace DeepSpaceSaga.Client.Tests;
 /// </summary>
 public class StationScreenTests
 {
+    [Fact]
+    public void District_buttons_emit_travel_only_for_a_different_district()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(new(1, 203_400_000, SimulationSpeed.Speed0, [], CurrentStationDistrict: StationDistrict.Dock));
+        var screen = new StationScreen(buffer);
+        using var bitmap = new SKBitmap(1920, 1080);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, 1920, 1080);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(600, 475));
+        Assert.Equal(ScreenEvent.TravelMarket, screen.OnMouseDown(800, 475));
+        Assert.Equal(203_400_000, buffer.Latest!.Snapshot.GameTimeMs);
+        Assert.Equal(ScreenEvent.CloseStation, screen.OnKeyDown(Key.Escape));
+        if (Environment.GetEnvironmentVariable("DSS_TACTICAL_RENDER_DIR") is { Length: > 0 } directory)
+        {
+            Directory.CreateDirectory(directory);
+            using var image = SKImage.FromBitmap(bitmap);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            using var file = File.Create(Path.Combine(directory, "station-time.png"));
+            data.SaveTo(file);
+        }
+    }
+
     private const int ScreenWidth = 1920;
     private const int ScreenHeight = 1080;
 

@@ -466,7 +466,7 @@ public static class StationToolbar
         SKCanvas canvas, float panelLeft, float panelTop, string? stationName, bool isStationHub,
         bool isHovered = false, string? windowName = null, bool isExitButtonHovered = false,
         long foodRationsCount = 0, int crewCount = 0, int cabinsCount = 0, long creditsCount = 0,
-        long fuelAmountKg = 0, long fuelCapacityKg = 0)
+        long fuelAmountKg = 0, long fuelCapacityKg = 0, long? gameTimeMs = null, long missingRations = 0)
     {
         var rect = new SKRect(panelLeft, panelTop, panelLeft + Width, panelTop + Height);
         canvas.DrawRect(rect, FillPaint);
@@ -474,6 +474,10 @@ public static class StationToolbar
 
         float baselineY = panelTop + NameOffsetY - NamePaintLink.FontMetrics.Ascent;
         float x = panelLeft + NameOffsetX;
+        float timeRight = panelLeft + FuelLocalRect().Left - InfoBlockGap;
+        float timeLeft = timeRight - 230;
+        canvas.Save();
+        canvas.ClipRect(new SKRect(panelLeft, panelTop, timeLeft - NameSegmentGap, panelTop + Height));
 
         if (!string.IsNullOrEmpty(stationName))
         {
@@ -496,6 +500,15 @@ public static class StationToolbar
             }
 
             canvas.DrawText(windowName, x, baselineY, NamePaintActive);
+        }
+
+        canvas.Restore();
+        canvas.DrawText(GameTimeDisplay.Hours(gameTimeMs), timeLeft, baselineY, NamePaintActive);
+        if (missingRations > 0)
+        {
+            using var warning = new SKPaint { Color = SKColors.OrangeRed, TextSize = 13, IsAntialias = true,
+                Typeface = NamePaintActive.Typeface };
+            canvas.DrawText($"Не хватает рационов: {missingRations}", timeLeft, panelTop + Height - 3, warning);
         }
 
         if (FoodRationsImage is not null)

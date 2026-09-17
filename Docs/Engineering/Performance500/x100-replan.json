@@ -1,0 +1,79 @@
+{
+  "Scenario": "default_500",
+  "Objects": 502,
+  "Seed": 500,
+  "Width": 3440,
+  "Height": 1440,
+  "Frames": 600,
+  "SeparateCalendar": true,
+  "Runtime": ".NET 8.0.26",
+  "OS": "Microsoft Windows 10.0.26200",
+  "ProcessorCount": 8,
+  "Backend": "Skia raster, full GameSessionScreen.Render",
+  "Measurements": [
+    {
+      "Name": "render_x100_replan",
+      "Samples": 600,
+      "MeanMs": 4.703732666666669,
+      "MedianMs": 4.6189,
+      "P95Ms": 6.2325,
+      "MaxMs": 10.6975,
+      "AllocatedBytesPerOperation": 39112.45333333333,
+      "RetainedManagedDeltaBytes": 2592,
+      "PrivateBytesBefore": 54497280,
+      "PrivateBytesAfter": 55496704,
+      "Collections": [
+        5,
+        0,
+        0
+      ]
+    },
+    {
+      "Name": "engine_x100_replan_calendar",
+      "Samples": 200,
+      "MeanMs": 0.16743399999999997,
+      "MedianMs": 0.1457,
+      "P95Ms": 0.3879,
+      "MaxMs": 0.6285,
+      "AllocatedBytesPerOperation": 278925.56,
+      "RetainedManagedDeltaBytes": 42408,
+      "PrivateBytesBefore": 34619392,
+      "PrivateBytesAfter": 34881536,
+      "Collections": [
+        8,
+        0,
+        0
+      ]
+    }
+  ],
+  "Stages": {
+    "render_x100_replan/coordinates_and_hit_test": {
+      "MeanMs": 0.04186466666666669,
+      "AllocatedBytesPerFrame": 526.7066666666667
+    },
+    "render_x100_replan/grid": {
+      "MeanMs": 1.723905000000002,
+      "AllocatedBytesPerFrame": 104
+    },
+    "render_x100_replan/trails": {
+      "MeanMs": 0.1351415,
+      "AllocatedBytesPerFrame": 80
+    },
+    "render_x100_replan/forecasts": {
+      "MeanMs": 0.7119733333333341,
+      "AllocatedBytesPerFrame": 483.9866666666667
+    },
+    "render_x100_replan/markers_and_labels": {
+      "MeanMs": 0.691879333333333,
+      "AllocatedBytesPerFrame": 10663.733333333334
+    },
+    "render_x100_replan/command_panel": {
+      "MeanMs": 0.23251783333333345,
+      "AllocatedBytesPerFrame": 16984
+    },
+    "render_x100_replan/info_panels": {
+      "MeanMs": 0.20897466666666653,
+      "AllocatedBytesPerFrame": 9661.12
+    }
+  }
+}

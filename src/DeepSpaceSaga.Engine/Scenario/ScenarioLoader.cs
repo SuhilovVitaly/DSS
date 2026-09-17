@@ -133,7 +133,9 @@ public static class ScenarioLoader
         var gs = scenario.GameState;
         if (gs is null)
             throw new ScenarioException("Missing gameState.");
-        if (gs.GameTimeMs < 0 || gs.PlayerTokens < 0)
+        if (scenario.SaveFormatVersion >= 6 && gs.SimulationTimeMs is null)
+            throw new ScenarioException("Missing simulationTimeMs in save format 6.");
+        if (gs.GameTimeMs < 0 || gs.SimulationTimeMs < 0 || gs.PlayerTokens < 0)
             throw new ScenarioException("Game time and player balance must be nonnegative.");
 
         if (string.IsNullOrWhiteSpace(gs.PlayerShipObjectId))
@@ -147,7 +149,7 @@ public static class ScenarioLoader
 
         // New Game scenarios must start at gameTimeMs = 0. Save files (allowNonZeroGameTime: true)
         // are the sole exception — they represent a paused, already-in-progress game.
-        if (!allowNonZeroGameTime && gs.GameTimeMs != 0)
+        if (!allowNonZeroGameTime && (gs.GameTimeMs != 0 || gs.MotionTimeMs != 0))
             throw new ScenarioException(
                 $"gameTimeMs must be 0 for New Game, got {gs.GameTimeMs}.");
 
@@ -177,10 +179,62 @@ public static class ScenarioLoader
             throw new ScenarioException(
                 $"Player ship '{playerShip.ObjectId}' has objectType '{playerShip.ObjectType}', expected 'PlayerShip'.");
 
+        ValidateEconomyTime(scenario);
+
         // Validate each object (nulls already caught in the duplicate-check loop)
         foreach (var obj in objects)
         {
             ValidateObject(obj);
+        }
+    }
+
+    private static void ValidateEconomyTime(ScenarioFile scenario)
+    {
+        var state = scenario.GameState;
+        if (scenario.SaveFormatVersion >= 5 && state.EconomyTime is null)
+            throw new ScenarioException("Missing versioned economy time state.");
+        if (state.EconomyTime is { } economy)
+        {
+            if (economy.RulesVersion != EconomyTimeData.CurrentRulesVersion)
+                throw new ScenarioException($"Unsupported economic rules version: {economy.RulesVersion}. Save was not modified.");
+            if (!Enum.IsDefined(economy.StationDistrict) || economy.RouteArrivalGameTimeMs < 0 || economy.MissingRations < 0)
+                throw new ScenarioException("Invalid saved station district or route arrival time.");
+            if (economy.TravelReceipts is { } receipts &&
+                (receipts.Any(string.IsNullOrWhiteSpace) || receipts.Distinct(StringComparer.Ordinal).Count() != receipts.Count))
+                throw new ScenarioException("Invalid station travel receipts.");
+            var contractIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var contract in economy.ActiveContracts ?? [])
+                if (contract is null || string.IsNullOrWhiteSpace(contract.ContractId) || !contractIds.Add(contract.ContractId) ||
+                    contract.DeadlineGameTimeMs < 0 || contract.ExpectedPayout < 0 || contract.PassengerIds.IsDefault ||
+                    contract.PassengerIds.Any(string.IsNullOrWhiteSpace) ||
+                    !state.SpaceObjects.Any(o => o.ObjectId == contract.DestinationStationObjectId && o.ObjectType.Equals("Station", StringComparison.OrdinalIgnoreCase)))
+                    throw new ScenarioException("Invalid saved contract timing or payout.");
+        }
+        foreach (var obj in state.SpaceObjects)
+        {
+            if (scenario.SaveFormatVersion > 0 && obj.IsDocked && obj.FirstPortFeeGameTimeMs is null)
+                throw new ScenarioException("Docked save has incompatible economic rules: first port payment time is missing. Save was not modified.");
+            if (obj.PortFeeDebt < 0 || obj.FirstPortFeeGameTimeMs < 0 || obj.FirstPortFeeGameTimeMs > state.GameTimeMs)
+                throw new ScenarioException("Invalid first port payment or debt.");
+            if (obj.IsDocked && !state.SpaceObjects.Any(o => string.Equals(o.ObjectId, obj.DockedStationObjectId, StringComparison.OrdinalIgnoreCase)
+                && o.ObjectType.Equals("Station", StringComparison.OrdinalIgnoreCase)))
+                throw new ScenarioException("Docked ship references an unknown station.");
+            if (obj.NextPortFeeDueGameTimeMs is { } next &&
+                (obj.FirstPortFeeGameTimeMs is not { } first || next <= first ||
+                 (next - first) % GameCalendar.DayMs != 0))
+                throw new ScenarioException("Invalid next port payment time.");
+            // Only the controlled ship's billing schedule advances in this session.
+            // Other ships retain their own payment metadata without charging PlayerCredits.
+            if (string.Equals(obj.ObjectId, state.PlayerShipObjectId, StringComparison.OrdinalIgnoreCase) &&
+                obj.NextPortFeeDueGameTimeMs is { } playerNext &&
+                (playerNext <= state.GameTimeMs || playerNext - state.GameTimeMs > GameCalendar.DayMs))
+                throw new ScenarioException("Next port payment must be the first scheduled payment after saved game time.");
+            if (obj.ProducingModules?.Any(m => m.NextProductionDueGameTimeMs is { } due && due <= state.GameTimeMs) == true)
+                throw new ScenarioException("Invalid saved production deadline.");
+            if (obj.Passengers is { } passengers &&
+                (passengers.Any(p => p is null || string.IsNullOrWhiteSpace(p.PassengerId)) ||
+                 passengers.Select(p => p.PassengerId).Distinct(StringComparer.Ordinal).Count() != passengers.Count))
+                throw new ScenarioException("Invalid onboard passenger manifest.");
         }
     }
 

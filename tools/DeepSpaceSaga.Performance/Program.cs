@@ -14,7 +14,7 @@ using SkiaSharp;
 // Raster Skia executes the real screen's drawing pipeline; these are CPU/raster
 // timings, not GPU presentation FPS. Measurements exclude scenario loading/JIT warmup.
 if (args.Length < 2)
-    throw new ArgumentException("Usage: DeepSpaceSaga.Performance <DSS root> <output.json> [--stages | --soak]");
+    throw new ArgumentException("Usage: DeepSpaceSaga.Performance <DSS root> <output.json> [--stages | --soak] [--x100] [--large] [--calendar]");
 string root = Path.GetFullPath(args[0]);
 string output = Path.GetFullPath(args[1]);
 if (Array.IndexOf(args, "--compare") is var compareIndex && compareIndex >= 0)
@@ -28,6 +28,12 @@ scenario = scenario with { GameState = scenario.GameState with { MasterSeed = 50
 var results = new List<Measurement>();
 var stages = new Dictionary<string, (double Ms, long Bytes, int Count)>();
 const int frames = 600;
+int renderWidth = args.Contains("--large") ? 3440 : 1280;
+int renderHeight = args.Contains("--large") ? 1440 : 720;
+bool separateCalendar = args.Contains("--calendar");
+AuthoritativeSnapshot Capture(SimulationEngine engine, long motionTime, SimulationSpeed speed) =>
+    engine.CaptureSnapshotForTests(separateCalendar ? motionTime * SimulationSpeedExtensions.BaseGameSecondsPerRealSecond : motionTime,
+        speed, separateCalendar ? motionTime : null);
 SimulationEngine Engine()
 {
     var engine = new SimulationEngine(registry);
@@ -52,6 +58,21 @@ if (args.Contains("--trajectory-review"))
 if (args.Contains("--grid-review"))
 {
     RenderGridReview();
+    return;
+}
+if (args.Contains("--stress-only"))
+{
+    RunScreen("render_x100_replan", SimulationSpeed.Speed4, true, 1, replan: true);
+    using var engine = Engine();
+    long time = 0;
+    int command = 0;
+    Measure("engine_x100_replan_calendar", 200, () =>
+    {
+        engine.ReceiveCommand(new PlayerCommand($"stress-{++command}", (ulong)command, "SPC-0001", "MOD-PLAYER-ENGINE-01",
+            NavigationComputerCommandTypes.Approach, TargetObjectId: "AST-0001"));
+        Capture(engine, time += 100000, SimulationSpeed.Speed4);
+    });
+    WriteReport();
     return;
 }
 using (var engine = Engine())
@@ -86,26 +107,34 @@ using (var engine = Engine())
 RunScreen("render_paused", SimulationSpeed.Speed0, false);
 RunScreen("render_running", SimulationSpeed.Speed1, false);
 RunScreen("render_approach", SimulationSpeed.Speed1, true);
+RunScreen("render_x100", SimulationSpeed.Speed4, false, 1);
+RunScreen("render_x100_approach", SimulationSpeed.Speed4, true, 1);
+RunScreen("render_x100_clustered", SimulationSpeed.Speed4, false, 2);
 if (args.Contains("--scales"))
 {
     for (int i = 0; i < 5; i++) RunScreen($"scale_{i}", SimulationSpeed.Speed1, false, i);
     RunScreen("system_view", SimulationSpeed.Speed1, false, 5);
 }
-Directory.CreateDirectory(Path.GetDirectoryName(output)!);
-File.WriteAllText(output, JsonSerializer.Serialize(new
-{
-    Scenario = scenario.Metadata.ScenarioId, Objects = scenario.GameState.SpaceObjects.Count,
-    Seed = 500, Width = 1280, Height = 720, Frames = frames,
-    Runtime = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
-    OS = System.Runtime.InteropServices.RuntimeInformation.OSDescription,
-    ProcessorCount = Environment.ProcessorCount, Backend = "Skia raster, full GameSessionScreen.Render",
-    Measurements = results,
-    Stages = stages.ToDictionary(p => p.Key, p => new { MeanMs = p.Value.Ms / p.Value.Count,
-        AllocatedBytesPerFrame = p.Value.Bytes / (double)p.Value.Count })
-}, new JsonSerializerOptions { WriteIndented = true }));
-Console.WriteLine(output);
+WriteReport();
 
-void RunScreen(string name, SimulationSpeed speed, bool approach, int? scaleIndex = null)
+void WriteReport()
+{
+    Directory.CreateDirectory(Path.GetDirectoryName(output)!);
+    File.WriteAllText(output, JsonSerializer.Serialize(new
+    {
+        Scenario = scenario.Metadata.ScenarioId, Objects = scenario.GameState.SpaceObjects.Count,
+        Seed = 500, Width = renderWidth, Height = renderHeight, Frames = frames, SeparateCalendar = separateCalendar,
+        Runtime = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
+        OS = System.Runtime.InteropServices.RuntimeInformation.OSDescription,
+        ProcessorCount = Environment.ProcessorCount, Backend = "Skia raster, full GameSessionScreen.Render",
+        Measurements = results,
+        Stages = stages.ToDictionary(p => p.Key, p => new { MeanMs = p.Value.Ms / p.Value.Count,
+            AllocatedBytesPerFrame = p.Value.Bytes / (double)p.Value.Count })
+    }, new JsonSerializerOptions { WriteIndented = true }));
+    Console.WriteLine(output);
+}
+
+void RunScreen(string name, SimulationSpeed speed, bool approach, int? scaleIndex = null, bool replan = false)
 {
     using var engine = Engine();
     long clock = 0;
@@ -113,11 +142,11 @@ void RunScreen(string name, SimulationSpeed speed, bool approach, int? scaleInde
     if (approach)
         engine.ReceiveCommand(new PlayerCommand("perf-approach", 1, "SPC-0001", "MOD-PLAYER-ENGINE-01",
             NavigationComputerCommandTypes.Approach, TargetObjectId: "AST-0001"));
-    buffer.Update(engine.CaptureSnapshotForTests(0, speed));
+    buffer.Update(Capture(engine, 0, speed));
     var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => clock,
         mapSettings: TacticalMapSettings.Load(Path.Combine(root, "src/DeepSpaceSaga.Client/Settings.json")));
-    using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
-    screen.Render(surface.Canvas, 1280, 720);
+    using var surface = SKSurface.Create(new SKImageInfo(renderWidth, renderHeight));
+    screen.Render(surface.Canvas, renderWidth, renderHeight);
     if (scaleIndex is { } index)
     {
         if (index == 5) screen.FitMapView(MapFitMode.System);
@@ -127,6 +156,8 @@ void RunScreen(string name, SimulationSpeed speed, bool approach, int? scaleInde
             screen.OnMouseDown(rect.MidX, rect.MidY);
         }
     }
+    var targets = buffer.Latest!.Snapshot.Objects.Where(o => o.RenderObjectType == SpaceObjectType.Asteroid)
+        .Select(o => o.ObjectId).ToArray();
     int frame = 0;
     if (args.Contains("--stages"))
     {
@@ -149,17 +180,22 @@ void RunScreen(string name, SimulationSpeed speed, bool approach, int? scaleInde
     {
         clock = ++frame * Stopwatch.Frequency / 80;
         if (frame % 80 == 0)
-            buffer.Update(engine.CaptureSnapshotForTests(speed == SimulationSpeed.Speed0 ? 0 : frame * 1000 / 80, speed));
+        {
+            if (replan)
+                engine.ReceiveCommand(new PlayerCommand($"replan-{frame}", (ulong)frame, "SPC-0001", "MOD-PLAYER-ENGINE-01",
+                    NavigationComputerCommandTypes.Approach, TargetObjectId: targets[(frame / 80) % targets.Length]));
+            buffer.Update(Capture(engine, speed == SimulationSpeed.Speed0 ? 0 : frame * 1000L * (int)speed / 80, speed));
+        }
     };
     Measure(name, frames, () =>
     {
         surface.Canvas.Clear(SKColors.Black);
-        screen.Render(surface.Canvas, 1280, 720);
+        screen.Render(surface.Canvas, renderWidth, renderHeight);
         surface.Canvas.Flush();
     }, prepare);
     using var picture = surface.Snapshot();
     using var png = picture.Encode(SKEncodedImageFormat.Png, 100);
-    string imageDirectory = Path.Combine(Directory.GetParent(root)!.FullName, "DSS-Images", "temp", "map-performance");
+    string imageDirectory = Path.Combine(root, "DSS-Images", "temp", "map-performance");
     Directory.CreateDirectory(imageDirectory);
     using var file = File.Create(Path.Combine(imageDirectory, Path.GetFileNameWithoutExtension(output) + "." + name + ".png"));
     png.SaveTo(file);
@@ -202,7 +238,7 @@ void RenderGridReview()
 {
     var settings = TacticalMapSettings.Load(Path.Combine(root, "src/DeepSpaceSaga.Client/Settings.json"));
     var grid = new GridRenderer(settings);
-    string directory = Path.Combine(Directory.GetParent(root)!.FullName, "DSS-Images", "temp", "map-performance");
+    string directory = Path.Combine(root, "DSS-Images", "temp", "map-performance");
     Directory.CreateDirectory(directory);
     foreach (var (name, relativeZoom) in new[] { ("max", 1.0), ("fade", .15), ("parent", .1),
         ("grandparent", .02), ("far", 1e-12) })
@@ -243,7 +279,7 @@ void RenderTrajectoryReview()
         var button = screen.ScaleButtonRects[preset]; screen.OnMouseDown(button.MidX, button.MidY);
         screen.Render(surface.Canvas, 1920, 1080);
         using var picture = surface.Snapshot(); using var png = picture.Encode(SKEncodedImageFormat.Png, 100);
-        string directory = Path.Combine(Directory.GetParent(root)!.FullName, "DSS-Images", "temp", "map-performance");
+        string directory = Path.Combine(root, "DSS-Images", "temp", "map-performance");
         Directory.CreateDirectory(directory);
         string path = Path.Combine(directory, "trajectory-review-" + name + ".png");
         using var file = File.Create(path); png.SaveTo(file); Console.WriteLine(path);
@@ -278,7 +314,7 @@ void RenderMapReview()
         for (int i = 0; i < 3; i++) screen.Render(surface.Canvas, width, height);
         using var picture = surface.Snapshot();
         using var png = picture.Encode(SKEncodedImageFormat.Png, 100);
-        string directory = Path.Combine(Directory.GetParent(root)!.FullName, "DSS-Images", "temp", "map-performance");
+        string directory = Path.Combine(root, "DSS-Images", "temp", "map-performance");
         Directory.CreateDirectory(directory);
         string path = Path.Combine(directory, "map-review-" + name + ".png");
         using var file = File.Create(path); png.SaveTo(file); Console.WriteLine(path);
@@ -288,26 +324,27 @@ void RenderMapReview()
 void RunSoak()
 {
     using var engine = Engine();
+    var speed = args.Contains("--x100") ? SimulationSpeed.Speed4 : SimulationSpeed.Speed1;
     long clock = 0;
     var buffer = new SnapshotBuffer(() => clock);
-    buffer.Update(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1));
+    buffer.Update(Capture(engine, 0, speed));
     var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => clock);
-    using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
+    using var surface = SKSurface.Create(new SKImageInfo(renderWidth, renderHeight));
     using var process = Process.GetCurrentProcess();
     var samples = new List<object>();
     for (int frame = 1; frame <= 9600; frame++)
     {
         clock = frame * Stopwatch.Frequency / 80;
         if (frame % 80 == 0)
-            buffer.Update(engine.CaptureSnapshotForTests(frame * 1000 / 80, SimulationSpeed.Speed1));
+            buffer.Update(Capture(engine, frame * 1000L * (int)speed / 80, speed));
         surface.Canvas.Clear(SKColors.Black);
-        screen.Render(surface.Canvas, 1280, 720);
+        screen.Render(surface.Canvas, renderWidth, renderHeight);
         surface.Canvas.Flush();
         if (frame % 800 != 0) continue;
         GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
         process.Refresh();
         var trails = screen.TrailStatistics;
-        var sample = new { SimulatedSeconds = frame / 80, ManagedBytes = GC.GetTotalMemory(false),
+        var sample = new { RealSeconds = frame / 80, SimulationSeconds = frame * (int)speed / 80, ManagedBytes = GC.GetTotalMemory(false),
             PrivateBytes = process.PrivateMemorySize64, WorkingSetBytes = process.WorkingSet64,
             trails.Trails, trails.Points, trails.Capacity };
         samples.Add(sample);
@@ -315,14 +352,16 @@ void RunSoak()
     }
     Directory.CreateDirectory(Path.GetDirectoryName(output)!);
     File.WriteAllText(output, JsonSerializer.Serialize(new { Objects = 502, Frames = 9600,
-        SimulatedSeconds = 120, Backend = "Skia raster, full GameSessionScreen.Render", Samples = samples },
+        RealSeconds = 120, SimulationSeconds = 120 * (int)speed, Speed = (int)speed,
+        Width = renderWidth, Height = renderHeight, SeparateCalendar = separateCalendar,
+        Backend = "Skia raster, full GameSessionScreen.Render", Samples = samples },
         new JsonSerializerOptions { WriteIndented = true }));
     GC.KeepAlive(screen);
 }
 
 void CompareFrames(string before, string after)
 {
-    string folder = Path.Combine(Directory.GetParent(root)!.FullName, "DSS-Images", "temp", "map-performance");
+    string folder = Path.Combine(root, "DSS-Images", "temp", "map-performance");
     var comparisons = new List<object>();
     foreach (string name in new[] { "render_paused", "render_running", "render_approach" })
     {

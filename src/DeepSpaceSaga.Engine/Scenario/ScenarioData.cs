@@ -15,9 +15,11 @@ public static class SaveFormat
     /// balance field was renamed playerCredits → playerTokens (an old save loads with 0
     /// Tokens, since no migration of old saves is provided).
     /// Version 4 preserves fractional motion values and the recent command journal.
+    /// Version 5 adds versioned economic time state and durable travel receipts.
+    /// Version 6 separates calendar time from motion/cycle time; older saves retain their baselines.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 4;
+    public const int CurrentSaveFormatVersion = 6;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -63,7 +65,14 @@ public sealed record GameStateData(
     [property: JsonPropertyName("playerTokens")] long? PlayerTokens = null,
     [property: JsonPropertyName("dialogueState")] DialogueSaveState? DialogueState = null,
     [property: JsonPropertyName("commandReceipts")] IReadOnlyList<DeepSpaceSaga.Contracts.CommandResult>? CommandReceipts = null,
-    [property: JsonPropertyName("pendingCommands")] IReadOnlyList<DeepSpaceSaga.Contracts.PlayerCommand>? PendingCommands = null);
+    [property: JsonPropertyName("pendingCommands")] IReadOnlyList<DeepSpaceSaga.Contracts.PlayerCommand>? PendingCommands = null,
+    [property: JsonPropertyName("economyTime")] EconomyTimeData? EconomyTime = null,
+    [property: JsonPropertyName("simulationTimeMs")] long? SimulationTimeMs = null)
+{
+    /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
+    [JsonIgnore]
+    public long MotionTimeMs => SimulationTimeMs ?? GameTimeMs;
+}
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(
@@ -176,7 +185,11 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("portFeeCreditsPerDay")] long? PortFeeCreditsPerDay = null,
     [property: JsonPropertyName("securityZoneRadiusKm")] int? SecurityZoneRadiusKm = null,
     [property: JsonPropertyName("piracyWarningGracePeriodMs")] long? PiracyWarningGracePeriodMs = null,
-    [property: JsonPropertyName("isDestroyed")] bool IsDestroyed = false);
+    [property: JsonPropertyName("isDestroyed")] bool IsDestroyed = false,
+    [property: JsonPropertyName("passengers")] IReadOnlyList<ShipPassengerData>? Passengers = null,
+    [property: JsonPropertyName("firstPortFeeGameTimeMs")] long? FirstPortFeeGameTimeMs = null,
+    [property: JsonPropertyName("nextPortFeeDueGameTimeMs")] long? NextPortFeeDueGameTimeMs = null,
+    [property: JsonPropertyName("portFeeDebt")] long PortFeeDebt = 0);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles
@@ -221,7 +234,8 @@ public sealed record StationProducingModuleData(
     /// "Минимальное правило для торговли"). Defaults to true — an explicitly-listed producing
     /// module is assumed active unless a scenario/save says otherwise.
     /// </summary>
-    [property: JsonPropertyName("active")] bool Active = true);
+    [property: JsonPropertyName("active")] bool Active = true,
+    [property: JsonPropertyName("nextProductionDueGameTimeMs")] long? NextProductionDueGameTimeMs = null);
 
 /// <summary>
 /// One station event/buff/debuff (requirements §59 "События, бафы и дебафы станции"),
@@ -403,3 +417,8 @@ public sealed record CargoStackData(
 public sealed record StationInventoryItemData(
     [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
     [property: JsonPropertyName("quantity")] long Quantity);
+
+/// <summary>People currently aboard; boarding/disembarkation changes this list at authoritative time.</summary>
+public sealed record ShipPassengerData(
+    [property: JsonPropertyName("passengerId")] string PassengerId,
+    [property: JsonPropertyName("displayName")] string DisplayName);

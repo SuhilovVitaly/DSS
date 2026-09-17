@@ -6,6 +6,38 @@ namespace DeepSpaceSaga.Engine.Tests;
 public class SimulationClockTests
 {
     [Fact]
+    public void Speed_change_accounts_for_elapsed_time_and_excludes_paused_time_at_new_base_pace()
+    {
+        long realMs = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed1, () => realMs);
+        realMs = 100;
+        clock.SetSpeed(SimulationSpeed.Speed0);
+        Assert.Equal(30_000, clock.GameTimeMs);
+        realMs = 1100;
+        clock.Update();
+        Assert.Equal(30_000, clock.GameTimeMs);
+        clock.SetSpeed(SimulationSpeed.Speed2);
+        realMs = 1120;
+        Assert.Equal(60_000, clock.UpdateAndCapture().GameTimeMs);
+        Assert.Equal(200, clock.SimulationTimeMs);
+    }
+    [Theory]
+    [InlineData(SimulationSpeed.Speed0, 0)]
+    [InlineData(SimulationSpeed.Speed1, 300_000)]
+    [InlineData(SimulationSpeed.Speed2, 1_500_000)]
+    [InlineData(SimulationSpeed.Speed3, 6_000_000)]
+    [InlineData(SimulationSpeed.Speed4, 30_000_000)]
+    public void One_real_second_uses_the_configured_base_pace(SimulationSpeed speed, long expected)
+    {
+        long realMs = 0;
+        var clock = new SimulationClock(speed, () => realMs);
+        realMs = 1000;
+        var state = clock.UpdateAndCapture();
+        Assert.Equal(expected, state.GameTimeMs);
+        Assert.Equal(1000 * (int)speed, state.SimulationTimeMs);
+    }
+
+    [Fact]
     public void GameTime_starts_at_zero()
     {
         var clock = new SimulationClock(SimulationSpeed.Speed1);

@@ -8,7 +8,8 @@ public sealed record SnapshotPrediction(
     BufferedSnapshot BufferedSnapshot,
     long EffectivePredictionDeltaMs,
     SimulationSpeed CurrentSpeed,
-    long ReconciliationForwardJumpMs);
+    long ReconciliationForwardJumpMs,
+    long TotalReconciliationForwardJumpMs = 0);
 
 /// <summary>
 /// Thread-safe holder for the latest authoritative snapshot.
@@ -38,6 +39,7 @@ public sealed class SnapshotBuffer
     private long _predictionSegmentStartedAtTimestamp;
     private long _accumulatedPredictionGameTimeMs;
     private long _lastReconciliationForwardJumpMs;
+    private long _totalReconciliationForwardJumpMs;
     private bool _awaitingFirstSnapshotAfterResume;
 
     public SnapshotBuffer()
@@ -76,19 +78,26 @@ public sealed class SnapshotBuffer
 
         lock (_sync)
         {
-            long previousPredictedGameTimeMs = snapshot.GameTimeMs;
+            // A command reply may arrive before an older snapshot already in transport.
+            // Retain its events, but never rewind authoritative time or district state.
+            if (_latest is not null && snapshot.SnapshotSequence < _latest.Snapshot.SnapshotSequence)
+            {
+                _events.Receive(snapshot);
+                return;
+            }
+            long previousPredictedGameTimeMs = snapshot.MotionTimeMs;
             if (_latest is not null)
             {
                 long previousPredictionDeltaMs = _accumulatedPredictionGameTimeMs
                     + RealTicksToGameMs(now - _predictionSegmentStartedAtTimestamp, _currentSpeed);
-                previousPredictedGameTimeMs = _latest.Snapshot.GameTimeMs + previousPredictionDeltaMs;
+                previousPredictedGameTimeMs = _latest.Snapshot.MotionTimeMs + previousPredictionDeltaMs;
             }
 
             _latest = value;
             _events.Receive(snapshot);
 
             // A newer authoritative baseline must not make visual game time run backward.
-            long rawDeltaMs = previousPredictedGameTimeMs - snapshot.GameTimeMs;
+            long rawDeltaMs = previousPredictedGameTimeMs - snapshot.MotionTimeMs;
             _accumulatedPredictionGameTimeMs = Math.Max(0, rawDeltaMs);
 
             // The opposite case: the new snapshot's GameTimeMs lands AHEAD of what the
@@ -98,6 +107,7 @@ public sealed class SnapshotBuffer
             // away here, so the renderer must know about it to smooth it visually instead
             // of snapping straight to it.
             _lastReconciliationForwardJumpMs = Math.Max(0, -rawDeltaMs);
+            _totalReconciliationForwardJumpMs += _lastReconciliationForwardJumpMs;
             _predictionSegmentStartedAtTimestamp = now;
 
             if (_pendingConfirmedSpeed is { } pendingSpeed)
@@ -118,7 +128,7 @@ public sealed class SnapshotBuffer
             if (PauseResumeDiagnostics.Enabled)
             {
                 PauseResumeDiagnostics.Write(
-                    $"SNAPSHOT seq={snapshot.SnapshotSequence} gameTimeMs={snapshot.GameTimeMs} " +
+                    $"SNAPSHOT seq={snapshot.SnapshotSequence} gameTimeMs={snapshot.MotionTimeMs} " +
                     $"snapshotSpeed={snapshot.CurrentSpeed} rawDeltaMs={rawDeltaMs} " +
                     $"accumMs={_accumulatedPredictionGameTimeMs} fwdJumpMs={_lastReconciliationForwardJumpMs} " +
                     $"pendingConfirmedSpeed={_pendingConfirmedSpeed} -> currentSpeed={_currentSpeed}");
@@ -167,7 +177,7 @@ public sealed class SnapshotBuffer
                 long effectiveDelta = _accumulatedPredictionGameTimeMs
                     + RealTicksToGameMs(now - _predictionSegmentStartedAtTimestamp, _currentSpeed);
 
-                return new SnapshotPrediction(_latest, effectiveDelta, _currentSpeed, _lastReconciliationForwardJumpMs);
+                return new SnapshotPrediction(_latest, effectiveDelta, _currentSpeed, _lastReconciliationForwardJumpMs, _totalReconciliationForwardJumpMs);
             }
         }
     }
@@ -208,7 +218,7 @@ public sealed class SnapshotBuffer
                     _currentSpeed);
                 PauseResumeDiagnostics.Write(
                     $"SETSPEED {_currentSpeed} -> {speed}  frozenAccumMs={frozenAccumMs} " +
-                    $"baselineGameTimeMs={_latest?.Snapshot.GameTimeMs}");
+                    $"baselineGameTimeMs={_latest?.Snapshot.MotionTimeMs}");
 
                 if (speed == SimulationSpeed.Speed0 && _latest is not null)
                 {
@@ -236,10 +246,10 @@ public sealed class SnapshotBuffer
 
     private static string FormatSnapshotState(AuthoritativeSnapshot snapshot, long effectiveDeltaMs, long receiptTimestamp)
     {
-        long predictedGameTimeMs = snapshot.GameTimeMs + effectiveDeltaMs;
+        long predictedGameTimeMs = snapshot.MotionTimeMs + effectiveDeltaMs;
         var lines = new List<string>
         {
-            $"  seq={snapshot.SnapshotSequence} gameTimeMs={snapshot.GameTimeMs} speed={snapshot.CurrentSpeed} " +
+            $"  seq={snapshot.SnapshotSequence} gameTimeMs={snapshot.MotionTimeMs} speed={snapshot.CurrentSpeed} " +
             $"effectiveDeltaMs={effectiveDeltaMs} predictedGameTimeMs={predictedGameTimeMs} " +
             $"playerShipObjectId={snapshot.PlayerShipObjectId}"
         };
@@ -261,7 +271,8 @@ public sealed class SnapshotBuffer
         if (elapsedTicks <= 0 || speed == SimulationSpeed.Speed0)
             return 0;
 
-        long realMs = (long)(elapsedTicks * 1000.0 / Stopwatch.Frequency);
-        return realMs * (int)speed;
+        // Scale high-resolution time first: truncating real milliseconds at x100
+        // quantizes motion into 100 ms jumps even on an evenly paced display.
+        return (long)(elapsedTicks * (1000.0 * (int)speed / Stopwatch.Frequency));
     }
 }

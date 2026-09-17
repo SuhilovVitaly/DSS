@@ -9,7 +9,7 @@ public sealed record ApproachRoute(
     double X, double Y, double Direction, double SpeedKmS, int TurnRate,
     string Type, double First, double Second, double Third,
     double TargetX, double TargetY, double TargetDirection, double TargetSpeedKmS,
-    double TrailDistance, double ElapsedMs = 0)
+    double TrailDistance, double ElapsedMs = 0, int PlannerVersion = 0)
 {
     public double Length => First + Second + Third;
     public double DurationMs => SpeedKmS > 0 ? Length / (SpeedKmS * 10) * 1000 : 0;

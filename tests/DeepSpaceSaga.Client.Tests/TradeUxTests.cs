@@ -195,7 +195,7 @@ public class TradeUxTests
         StationToolbar.Draw(canvas, 160, 140, "Orion", isStationHub: false, isHovered: false, windowName: "TRADE", isExitButtonHovered: false,
             foodRationsCount: StationToolbar.ResolveFoodRationsCount(snapshot), crewCount: StationToolbar.ResolveCrewCount(snapshot),
             cabinsCount: StationToolbar.ResolveCabinsCount(snapshot), creditsCount: StationToolbar.ResolveCreditsCount(snapshot),
-            fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot), fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot));
+            fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot), fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot), gameTimeMs: snapshot.GameTimeMs);
         for (int y = 140; y < 200; y++) for (int x = 160; x < 1760; x++) Assert.Equal(expected.GetPixel(x, y), actual.GetPixel(x, y));
     }
     [Fact]

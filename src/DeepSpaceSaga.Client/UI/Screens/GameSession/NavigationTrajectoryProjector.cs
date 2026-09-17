@@ -118,7 +118,7 @@ internal sealed class NavigationTrajectoryProjector
                     points.Add(new(point.X, point.Y));
                 }
             }
-            isConfirmedIntercept = true;
+            isConfirmedIntercept = ApproachLineCaptureMath.IsRendezvous(route);
             interceptPoint = points[^1];
             return points;
         }
@@ -241,10 +241,16 @@ internal sealed class NavigationTrajectoryProjector
     /// </summary>
     internal List<FutureTrajectoryPoint> ProjectPlayerInto(ObjectMotionSnapshot predicted,
         List<FutureTrajectoryPoint> points, CameraState camera, int width, int height,
-        out bool isConfirmedIntercept, out FutureTrajectoryPoint interceptPoint)
+        out bool isConfirmedIntercept, out FutureTrajectoryPoint interceptPoint) =>
+        ProjectPlayerInto(predicted, points, camera, width, height, out isConfirmedIntercept, out interceptPoint, out _);
+
+    internal List<FutureTrajectoryPoint> ProjectPlayerInto(ObjectMotionSnapshot predicted,
+        List<FutureTrajectoryPoint> points, CameraState camera, int width, int height,
+        out bool isConfirmedIntercept, out FutureTrajectoryPoint interceptPoint, out int maneuverPointCount)
     {
         // Legacy Approach may return its own list. Always use the returned list.
         points = ProjectInto(predicted, points, out isConfirmedIntercept, out interceptPoint);
+        maneuverPointCount = points.Count;
         if (points.Count == 0 || predicted.SpeedKmS <= 0) return points;
 
         if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach && predicted.ApproachRoute is { } route)

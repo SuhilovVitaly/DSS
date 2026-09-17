@@ -6,9 +6,8 @@ namespace DeepSpaceSaga.Client.UI;
 /// <summary>
 /// Millisecond-precision trace of the pause/resume event sequence (input,
 /// incoming snapshots, per-frame render state) to a dedicated log file under
-/// Logs/. Temporary diagnostic instrumentation — gated to rare pause/resume-
-/// adjacent events, not per-frame, so it stays on unconditionally while this
-/// bug is being tracked down. Set DSS_TRACE_PAUSE_RESUME=0 to force it off.
+/// Logs/. Opt in with DSS_TRACE_PAUSE_RESUME=1 when investigating timing issues.
+/// Normal rendering performs no diagnostic file I/O.
 /// The log file is truncated at the start of every run.
 /// </summary>
 public static class PauseResumeDiagnostics
@@ -17,7 +16,7 @@ public static class PauseResumeDiagnostics
     private const string FileName = "PauseResume.log";
 
     public static readonly bool Enabled =
-        Environment.GetEnvironmentVariable("DSS_TRACE_PAUSE_RESUME") != "0";
+        Environment.GetEnvironmentVariable("DSS_TRACE_PAUSE_RESUME") == "1";
 
     public static readonly string FilePath = Path.Combine(LogDirectory, FileName);
 

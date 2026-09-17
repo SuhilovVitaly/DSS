@@ -41,7 +41,7 @@ public sealed partial class SimulationEngine
         if (_dialogue.Active is not null)
         {
             _dialogue.ResumeSpeed ??= _clock.Speed;
-            _clock.Reset(time, SimulationSpeed.Speed0);
+            _clock.Reset(_processedWorldTimeMs, SimulationSpeed.Speed0, time);
         }
     }
 
@@ -64,7 +64,7 @@ public sealed partial class SimulationEngine
             crew?.PortraitImage, parameters);
         _dialogue.ResumeSpeed = _clock.Speed;
         // Freeze exactly at the command's authoritative time, including on save-before-snapshot.
-        _clock.Reset(time, SimulationSpeed.Speed0);
+        _clock.Reset(_processedWorldTimeMs, SimulationSpeed.Speed0, time);
         _dialogue.Emit(instance, "dialogue_started", time, commandId);
         return null;
     }
@@ -86,7 +86,7 @@ public sealed partial class SimulationEngine
         var error = DialogueChoiceValidator.Validate(choice.Conditions, _dialogue.Progress);
         return error ?? DialogueEffectTransaction.Prepare(_registry, _objects.ToImmutableArray(), PlayerShipObjectId!,
             active, _dialogue.Progress, PlayerCredits, time, choice.Effects,
-            () => ValidateDialogueDock(active, time), out result);
+            () => ValidateDialogueDock(active, time), out result, _processedWorldTimeMs);
     }
 
     private DialogueState? BuildDialogueSnapshot(long time)
@@ -189,7 +189,7 @@ public sealed partial class SimulationEngine
         _dialogue.Active = null;
         var speed = _dialogue.ResumeSpeed ?? SimulationSpeed.Speed0;
         _dialogue.ResumeSpeed = null;
-        _clock.Reset(time, speed);
+        _clock.Reset(_processedWorldTimeMs, speed, time);
     }
 
     private void UpdateStationSecurity(long time)

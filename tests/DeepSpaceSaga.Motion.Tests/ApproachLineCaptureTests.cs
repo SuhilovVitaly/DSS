@@ -28,13 +28,94 @@ public class ApproachLineCaptureTests
             if (targetSpeed >= ship.SpeedKmS)
             {
                 var fallback = ApproachPursuitMath.CreateFlyThroughPlan(ship.X, ship.Y, ship.Direction, ship.SpeedKmS, -10, 0, 90, 4);
-                Assert.True(route.Length <= fallback.RemainingUnits + 1e-7);
+                double routeGap = targetSpeed / ship.SpeedKmS * route.Length - result.X;
+                double fallbackGap = targetSpeed / ship.SpeedKmS * fallback.RemainingUnits + 10;
+                // Small finite-flight tradeoff is allowed; a long detour away from the target is not.
+                Assert.True(routeGap <= fallbackGap + .01 * fallback.RemainingUnits + .05);
             }
             else
                 Assert.InRange(result.X - targetX, -10.05, -9.95);
         }
     }
 
+    [Theory]
+    [InlineData(1.069, 57)]
+    [InlineData(1.911, 110)]
+    [InlineData(1.65, 91)]
+    public void Faster_target_is_approached_obliquely_instead_of_rushing_perpendicularly_to_its_line(
+        double targetSpeed, double heading)
+    {
+        double angle = heading * Math.PI / 180;
+        double fx = Math.Sin(angle), fy = -Math.Cos(angle);
+        // Screenshot geometry in the target frame: ship well behind and to one side.
+        var ship = new ObjectMotionSnapshot("ship", -5000 * fx + 4000 * fy,
+            -5000 * fy - 4000 * fx, .7, 0);
+        var route = ApproachLineCaptureMath.Plan(ship, 0, 0, heading, targetSpeed, 10, 4)!;
+        var end = ApproachLineCaptureMath.PredictPose(route, route.DurationMs);
+        double alongEnd = end.X * fx + end.Y * fy;
+        Assert.True(alongEnd > -4000, $"Insufficient progress towards target: {alongEnd}");
+        double gap = targetSpeed / .7 * route.Length - alongEnd;
+        var perpendicular = ApproachPursuitMath.CreateFlyThroughPlan(ship.X, ship.Y, ship.Direction,
+            .7, -5000 * fx, -5000 * fy, heading, 4);
+        double oldGap = targetSpeed / .7 * perpendicular.RemainingUnits + 5000;
+        Assert.True(gap < oldGap * .96, $"New gap {gap} vs perpendicular gap {oldGap}");
+        Assert.False(ApproachLineCaptureMath.IsRendezvous(route));
+        Assert.Equal(heading, end.Direction);
+        // The end-heading must be reached by the arc, never by snapping at completion.
+        var before = ApproachLineCaptureMath.PredictPose(route, route.DurationMs - 1);
+        Assert.InRange(Math.Abs(ApproachLineCaptureMath.Delta(before.Direction, end.Direction)), 0, .004001);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(1.000001)]
+    [InlineData(1.001)]
+    public void Equal_and_near_equal_speeds_have_a_finite_useful_merge(double targetSpeed)
+    {
+        var ship = new ObjectMotionSnapshot("ship", -1000, 500, 1, 90);
+        var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, targetSpeed, 10, 4)!;
+        Assert.InRange(route.DurationMs, 1, 1_000_000);
+        var end = ApproachLineCaptureMath.PredictPose(route, route.DurationMs);
+        Assert.InRange(Math.Abs(end.Y), 0, .001);
+        double gap = targetSpeed * route.Length - end.X;
+        Assert.InRange(gap, 1000, 1150);
+    }
+    [Theory]
+    [InlineData(2.9)]
+    [InlineData(2.999)]
+    [InlineData(2.9999)]
+    public void Slight_speed_advantage_still_finds_a_real_trailing_rendezvous(double targetSpeed)
+    {
+        var ship = new ObjectMotionSnapshot("ship", -1000, 500, 3, 270);
+        var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, targetSpeed, 10, 4)!;
+        var end = ApproachLineCaptureMath.PredictPose(route, route.DurationMs);
+        Assert.True(ApproachLineCaptureMath.IsRendezvous(route));
+        Assert.InRange(targetSpeed * 10 * route.DurationMs / 1000 - end.X, 9.999, 10.001);
+        Assert.InRange(Math.Abs(end.Y), 0, .001);
+    }
+    [Fact]
+    public void Faster_incoming_target_can_still_reach_a_trailing_rendezvous()
+    {
+        var ship = new ObjectMotionSnapshot("ship", 1000, 200, .7, 90);
+        var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 1.069, 10, 4)!;
+        Assert.True(ApproachLineCaptureMath.IsRendezvous(route));
+        var end = ApproachLineCaptureMath.PredictPose(route, route.DurationMs);
+        Assert.InRange(1.069 * 10 * route.DurationMs / 1000 - end.X, 9.99, 10.01);
+        Assert.InRange(Math.Abs(end.Y), 0, .001);
+    }
+    [Fact]
+    public void Long_closing_horizon_does_not_skip_an_early_rendezvous_with_target_behind()
+    {
+        var ship = new ObjectMotionSnapshot("ship", 0, 0, 3, 90);
+        // Construct a known feasible rendezvous; the moving slot reaches this
+        // endpoint at exactly the time required to fly the reference curve.
+        var reference = ApproachPursuitMath.CreateFlyThroughPlan(0, 0, 90, 3, 1000, -500, 90, 4);
+        double feasibleMs = reference.RemainingUnits / 30 * 1000;
+        double targetX = 1010 - 2.9999 * 10 * feasibleMs / 1000;
+        var route = ApproachLineCaptureMath.Plan(ship, targetX, -500, 90, 2.9999, 10, 4)!;
+        Assert.True(ApproachLineCaptureMath.IsRendezvous(route));
+        Assert.InRange(route.DurationMs, 1, feasibleMs + .1);
+    }
     [Fact]
     public void Already_trailing_ship_does_not_start_a_loop()
     {

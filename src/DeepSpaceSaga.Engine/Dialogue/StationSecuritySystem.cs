@@ -31,6 +31,7 @@ internal static class StationSecuritySystem
                 {
                     InitialMotion = playerMotion with { SpeedKmS = 0 }, StartGameTimeMs = checkTime,
                     IsDestroyed = true, IsDocked = false, DockedStationObjectId = null,
+                    FirstPortFeeGameTimeMs = null, NextPortFeeDueGameTimeMs = null,
                     Modules = ship.Modules.Select(m => m with { ActiveCycle = null }).ToImmutableArray()
                 };
                 incidents[i] = incident with { Completed = true };
