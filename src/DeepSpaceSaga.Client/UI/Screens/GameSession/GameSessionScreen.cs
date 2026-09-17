@@ -24,11 +24,12 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly TacticalMapDepthRenderer _depthRenderer;
     private readonly List<ObjectRenderState> _renderStates = new();
     private readonly List<FutureTrajectoryPoint> _futureTrajectoryPoints = new(FutureTrajectoryProjector.MaxSamplePoints);
-    private readonly Dictionary<string, ObjectMotionSnapshot> _pausedVisualAnchors = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, RenderMotion> _pausedVisualAnchors = new(StringComparer.Ordinal);
     private readonly Dictionary<string, VisualCorrection> _visualCorrections = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ObjectMotionSnapshot> _lastSnapshotBaselineObjects = new(StringComparer.Ordinal);
     private ulong _lastSnapshotBaselineSequence;
     private long _lastSnapshotBaselineGameTimeMs;
+    private long _lastObservedForwardJumpMs;
     private bool _hasSnapshotBaseline;
     private bool _diagInterestingFrame;
     private readonly HashSet<string> _currentVisualObjectIds = new(StringComparer.Ordinal);
@@ -203,7 +204,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     /// <summary>
     /// Fixed screen-space hit-test radius for ActiveObjectId/SelectedObjectId (ТЗ §54):
-    /// exactly 30 px from the drawn marker center (ObjectRenderState.Predicted),
+    /// exactly 30 px from the drawn marker center (ObjectRenderState.Pose),
     /// independent of zoom, marker size, and uiScale. Border-inclusive (&lt;=).
     /// </summary>
     private const float ObjectHitTestRadiusPx = 30f;
@@ -757,11 +758,17 @@ public sealed partial class GameSessionScreen : IScreen
         if (modules is null || modules.Value.IsDefaultOrEmpty)
             return null; // no snapshot yet, or InstalledModules left at its default (uninitialized) value
 
-        return modules.Value
-            .Where(m => m.CommandTypeIds.Contains(commandType))
-            .OrderBy(m => m.Position)
-            .Select(m => m.ModuleId)
-            .FirstOrDefault();
+        string? moduleId = null;
+        int firstPosition = int.MaxValue;
+        foreach (var module in modules.Value)
+        {
+            if ((moduleId is null || module.Position < firstPosition) && module.CommandTypeIds.Contains(commandType))
+            {
+                moduleId = module.ModuleId;
+                firstPosition = module.Position;
+            }
+        }
+        return moduleId;
     }
 
     /// <summary>Target requirement ("none"/"point"/"object") for a command type, from the buffered snapshot's Commands metadata.</summary>
@@ -840,11 +847,11 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private static int GetClickPriority(ObjectRenderState state)
     {
-        if (state.Predicted.RenderObjectType == SpaceObjectType.Station)
+        if (state.Pose.RenderObjectType == SpaceObjectType.Station)
             return 0;
         if (state.IsPlayerShip)
             return 1;
-        if (state.Predicted.RenderObjectType == SpaceObjectType.NpcShip)
+        if (state.Pose.RenderObjectType == SpaceObjectType.NpcShip)
             return 2;
         return 3;
     }
@@ -868,8 +875,8 @@ public sealed partial class GameSessionScreen : IScreen
         for (int i = 0; i < _renderStates.Count; i++)
         {
             var state = _renderStates[i];
-            if (_clusteredObjectIds.Contains(state.Predicted.ObjectId)) continue;
-            var (sx, sy) = _camera.WorldToScreen(state.Predicted.X, state.Predicted.Y, _viewportW, _viewportH);
+            if (_clusteredObjectIds.Contains(state.Pose.ObjectId)) continue;
+            var (sx, sy) = _camera.WorldToScreen(state.Pose.X, state.Pose.Y, _viewportW, _viewportH);
             double dx = x - sx;
             double dy = y - sy;
             double distanceSq = dx * dx + dy * dy;
@@ -883,9 +890,9 @@ public sealed partial class GameSessionScreen : IScreen
                 (priority == bestPriority &&
                  (distanceSq < bestDistanceSq ||
                   (distanceSq == bestDistanceSq &&
-                   string.CompareOrdinal(state.Predicted.ObjectId, bestId) < 0))))
+                   string.CompareOrdinal(state.Pose.ObjectId, bestId) < 0))))
             {
-                bestId = state.Predicted.ObjectId;
+                bestId = state.Pose.ObjectId;
                 bestPriority = priority;
                 bestDistanceSq = distanceSq;
             }
@@ -1086,14 +1093,14 @@ public sealed partial class GameSessionScreen : IScreen
             for (int markerPass = 0; markerPass < 2; markerPass++)
             foreach (var state in _renderStates)
             {
-                if (IsImportantMapObject(state.Predicted.ObjectId) != (markerPass == 1)) continue;
-                if (_clusteredObjectIds.Contains(state.Predicted.ObjectId)) continue;
-                var (sx, sy) = _camera.WorldToScreen(state.Predicted.X, state.Predicted.Y, width, height);
+                if (IsImportantMapObject(state.Pose.ObjectId) != (markerPass == 1)) continue;
+                if (_clusteredObjectIds.Contains(state.Pose.ObjectId)) continue;
+                var (sx, sy) = _camera.WorldToScreen(state.Pose.X, state.Pose.Y, width, height);
                 // Marker radius from the shared policy (screen-space, zoom-independent).
                 // The player ship's render type comes from identity (IsPlayerShip), not
                 // the payload — legacy payloads without RenderObjectType still draw as a ship.
                 float r = TacticalMapMarkerPolicy.GetMarkerRadiusPx(
-                    state.IsPlayerShip ? SpaceObjectType.PlayerShip : state.Predicted.RenderObjectType);
+                    state.IsPlayerShip ? SpaceObjectType.PlayerShip : state.Pose.RenderObjectType);
                 // Include halo, reticle and engine flame extents, not just the core.
                 float margin = r * 5 + 4;
                 if (sx < -margin || sy < -margin || sx > width + margin || sy > height + margin)
@@ -1101,31 +1108,31 @@ public sealed partial class GameSessionScreen : IScreen
 
                 // Selection takes visual priority when the same object is also active;
                 // orange is reserved for hovered objects that are not selected.
-                if (state.Predicted.ObjectId == _selectedObjectId)
+                if (state.Pose.ObjectId == _selectedObjectId)
                     _depthRenderer.DrawSelectionReticle(canvas, sx, sy, r, uiTimeMs);
-                else if (state.Predicted.ObjectId == _activeObjectId)
+                else if (state.Pose.ObjectId == _activeObjectId)
                     _depthRenderer.DrawActiveObjectReticle(canvas, sx, sy, r, uiTimeMs);
 
                 if (state.IsPlayerShip)
                 {
-                    if (state.Predicted.ActiveEngineCommandType == ShipEngineCommandTypes.Accelerate)
+                    if (state.Pose.ActiveEngineCommandType == ShipEngineCommandTypes.Accelerate)
                     {
-                        _depthRenderer.DrawEngineFlame(canvas, sx, sy, state.Predicted.Direction, r, uiTimeMs);
+                        _depthRenderer.DrawEngineFlame(canvas, sx, sy, state.Pose.Direction, r, uiTimeMs);
                     }
-                    DrawPlayerShipGlyph(canvas, sx, sy, state.Predicted.Direction, r);
+                    DrawPlayerShipGlyph(canvas, sx, sy, state.Pose.Direction, r);
                 }
                 else
                 {
                     var markerColor = SpaceMapColorResolver.GetColor(
-                        state.Predicted.RenderObjectType, state.Predicted.RelationToPlayer);
-                    if (_camera.PixelsPerWorldUnit <= _mapSettings.CompactMarkerPpu && !IsImportantMapObject(state.Predicted.ObjectId) &&
-                        state.Predicted.RenderObjectType is not (SpaceObjectType.Planet or SpaceObjectType.Sun))
+                        state.Pose.RenderObjectType, state.Pose.RelationToPlayer);
+                    if (_camera.PixelsPerWorldUnit <= _mapSettings.CompactMarkerPpu && !IsImportantMapObject(state.Pose.ObjectId) &&
+                        state.Pose.RenderObjectType is not (SpaceObjectType.Planet or SpaceObjectType.Sun))
                     {
                         _mapMarkerPaint.Color = markerColor;
                         canvas.DrawCircle(sx, sy, 2.5f, _mapMarkerPaint);
                         continue;
                     }
-                    if (TacticalMapMarkerPolicy.UsesGlintMarker(state.Predicted.RenderObjectType))
+                    if (TacticalMapMarkerPolicy.UsesGlintMarker(state.Pose.RenderObjectType))
                     {
                         _depthRenderer.DrawGlintMarker(canvas, sx, sy, r, markerColor);
                     }
@@ -1205,7 +1212,7 @@ public sealed partial class GameSessionScreen : IScreen
             for (int i = 0; i < _renderStates.Count; i++)
             {
                 var state = _renderStates[i];
-                _pausedVisualAnchors[state.Predicted.ObjectId] = state.Predicted;
+                _pausedVisualAnchors[state.Pose.ObjectId] = state.Pose;
             }
 
             _visualCorrections.Clear();
@@ -1234,7 +1241,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         foreach (var obj in snapshot.Objects)
         {
-            var predicted = ed > 0 ? _predictor.Predict(obj, ed) : obj;
+            var predicted = PredictRenderMotion(obj, ed);
             _currentVisualObjectIds.Add(obj.ObjectId);
 
             if (isPaused)
@@ -1262,16 +1269,28 @@ public sealed partial class GameSessionScreen : IScreen
                 else if (newSnapshotArrived &&
                          _lastSnapshotBaselineObjects.TryGetValue(obj.ObjectId, out var prevBaseline))
                 {
-                    long elapsedFromPrevBaseline = targetGameTimeMs - _lastSnapshotBaselineGameTimeMs;
+                    long unseenForwardJump = prediction.TotalReconciliationForwardJumpMs - _lastObservedForwardJumpMs;
+                    long elapsedFromPrevBaseline = targetGameTimeMs - unseenForwardJump - _lastSnapshotBaselineGameTimeMs;
                     var continuityExpected = elapsedFromPrevBaseline > 0
-                        ? _predictor.Predict(prevBaseline, elapsedFromPrevBaseline)
-                        : prevBaseline;
+                        ? PredictRenderMotion(prevBaseline, elapsedFromPrevBaseline)
+                        : new RenderMotion(prevBaseline);
 
+                    // Carry any unfinished correction into this rebase; otherwise a
+                    // second snapshot during smoothing would snap back to raw motion.
+                    if (_visualCorrections.TryGetValue(obj.ObjectId, out var previousCorrection))
+                        continuityExpected = ApplyVisualCorrection(continuityExpected,
+                            previousCorrection with { ElapsedSeconds = previousCorrection.ElapsedSeconds + deltaSeconds });
                     var newCorrection = CreateVisualCorrection(continuityExpected, predicted);
                     if (IsMeaningfulCorrection(newCorrection))
                     {
                         _visualCorrections[obj.ObjectId] = newCorrection;
                         correctionCreated = true;
+                    }
+                    else
+                    {
+                        // The new baseline may already include the old correction.
+                        // Keeping it here would apply that offset for a second time.
+                        _visualCorrections.Remove(obj.ObjectId);
                     }
                 }
 
@@ -1318,6 +1337,7 @@ public sealed partial class GameSessionScreen : IScreen
         if (resuming)
             _pausedVisualAnchors.Clear();
 
+        _lastObservedForwardJumpMs = prediction.TotalReconciliationForwardJumpMs;
         _lastSnapshotBaselineGameTimeMs = snapshot.MotionTimeMs;
         _lastSnapshotBaselineSequence = snapshot.SnapshotSequence;
         _hasSnapshotBaseline = true;
@@ -1333,9 +1353,17 @@ public sealed partial class GameSessionScreen : IScreen
         _previousRenderSpeed = prediction.CurrentSpeed;
     }
 
-    private static ObjectMotionSnapshot ApplyVisualPose(
-        ObjectMotionSnapshot target,
-        ObjectMotionSnapshot visualPose)
+    private RenderMotion PredictRenderMotion(ObjectMotionSnapshot state, long elapsedMs)
+    {
+        if (elapsedMs == 0) return new(state);
+        if (_predictor is LinearMotionPredictor &&
+            LinearMotionPredictor.TryPredictLinearPosition(state, elapsedMs, out double x, out double y))
+            return new(state, x, y, state.Direction);
+        return new(_predictor.Predict(state, elapsedMs));
+    }
+    private static RenderMotion ApplyVisualPose(
+        RenderMotion target,
+        RenderMotion visualPose)
     {
         if (target.X == visualPose.X && target.Y == visualPose.Y && target.Direction == visualPose.Direction)
             return target;
@@ -1348,8 +1376,8 @@ public sealed partial class GameSessionScreen : IScreen
     }
 
     private static VisualCorrection CreateVisualCorrection(
-        ObjectMotionSnapshot visualPose,
-        ObjectMotionSnapshot target)
+        RenderMotion visualPose,
+        RenderMotion target)
     {
         return new VisualCorrection(
             visualPose.X - target.X,
@@ -1358,8 +1386,8 @@ public sealed partial class GameSessionScreen : IScreen
             ElapsedSeconds: 0);
     }
 
-    private static ObjectMotionSnapshot ApplyVisualCorrection(
-        ObjectMotionSnapshot target,
+    private static RenderMotion ApplyVisualCorrection(
+        RenderMotion target,
         VisualCorrection correction)
     {
         double progress = Math.Clamp(
@@ -1425,7 +1453,7 @@ public sealed partial class GameSessionScreen : IScreen
             if (!state.IsPlayerShip)
                 continue;
 
-            _camera.SetFocus(state.Predicted.X, state.Predicted.Y);
+            _camera.SetFocus(state.Pose.X, state.Pose.Y);
             return;
         }
     }
@@ -1441,7 +1469,7 @@ public sealed partial class GameSessionScreen : IScreen
             return;
 
         for (int i = 0; i < _renderStates.Count; i++)
-            _initialTrailBootstrapObjectIds.Add(_renderStates[i].Predicted.ObjectId);
+            _initialTrailBootstrapObjectIds.Add(_renderStates[i].Pose.ObjectId);
 
         _capturedInitialTrailBootstrapObjects = true;
     }
@@ -1452,7 +1480,7 @@ public sealed partial class GameSessionScreen : IScreen
         foreach (var state in _renderStates)
         {
             if (state.IsPlayerShip)
-                playerShipId = state.Predicted.ObjectId;
+                playerShipId = state.Pose.ObjectId;
         }
 
         foreach (var kvp in _trailStore.Trails)
@@ -1520,20 +1548,20 @@ public sealed partial class GameSessionScreen : IScreen
             // object will actually be against the ship's own planned curve, without
             // drawing a preview for every object in the scene.
             bool isSelectedTarget = !state.IsPlayerShip &&
-                (state.Predicted.ObjectId == _selectedObjectId || state.Predicted.ObjectId == _navigationTargetId);
+                (state.Pose.ObjectId == _selectedObjectId || state.Pose.ObjectId == _navigationTargetId);
 
             if (!state.IsPlayerShip && !isSelectedTarget)
                 continue;
 
-            if (!FutureTrajectoryProjector.ShouldDraw(state.Predicted))
+            if (!(state.Pose.SpeedKmS > 0 || state.Pose.ActiveEngineCommandType is not null))
                 continue;
 
             // Active navigation has its own complete, single-color player path.
             // Do not overlay a second, finite-horizon forecast on that same course.
-            if (state.IsPlayerShip && state.Predicted.NavigationTargetX is not null)
+            if (state.IsPlayerShip && state.Pose.NavigationTargetX is not null)
                 continue;
 
-            _futureTrajectoryProjector.ProjectViewportInto(state.Predicted, _futureTrajectoryPoints, _camera, width, height);
+            _futureTrajectoryProjector.ProjectViewportInto(state.Pose.ToSnapshot(), _futureTrajectoryPoints, _camera, width, height);
             var points = _futureTrajectoryPoints;
             if (points.Count < 2)
                 continue;
@@ -1570,7 +1598,7 @@ public sealed partial class GameSessionScreen : IScreen
             if (!state.IsPlayerShip)
                 continue;
 
-            var predicted = state.Predicted;
+            var predicted = state.Pose.ToSnapshot();
             if (predicted.NavigationTargetX is not null)
             {
                 // Draw the maneuver and its continuation as one continuous path.
@@ -1614,12 +1642,12 @@ public sealed partial class GameSessionScreen : IScreen
     {
         foreach (var state in _renderStates)
         {
-            if (state.Predicted.ObjectId == objectId)
+            if (state.Pose.ObjectId == objectId)
             {
-                if (!state.IsPlayerShip || state.Predicted.NavigationTargetX is null)
+                if (!state.IsPlayerShip || state.Pose.NavigationTargetX is null)
                     return Array.Empty<FutureTrajectoryPoint>();
 
-                return _navigationTrajectoryProjector.Project(state.Predicted);
+                return _navigationTrajectoryProjector.Project(state.Pose.ToSnapshot());
             }
         }
 
@@ -1630,13 +1658,13 @@ public sealed partial class GameSessionScreen : IScreen
     {
         foreach (var state in _renderStates)
         {
-            if (state.Predicted.ObjectId == objectId)
+            if (state.Pose.ObjectId == objectId)
             {
                 if (!state.IsPlayerShip)
                     return Array.Empty<FutureTrajectoryPoint>();
 
-                return FutureTrajectoryProjector.ShouldDraw(state.Predicted)
-                    ? _futureTrajectoryProjector.Project(state.Predicted)
+                return (state.Pose.SpeedKmS > 0 || state.Pose.ActiveEngineCommandType is not null)
+                    ? _futureTrajectoryProjector.Project(state.Pose.ToSnapshot())
                     : Array.Empty<FutureTrajectoryPoint>();
             }
         }
@@ -2065,7 +2093,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         for (int i = 0; i < _renderStates.Count; i++)
         {
-            if (_renderStates[i].Predicted.ObjectId == objectId)
+            if (_renderStates[i].Pose.ObjectId == objectId)
                 return _renderStates[i];
         }
         return null;
@@ -2076,7 +2104,7 @@ public sealed partial class GameSessionScreen : IScreen
         if (state is not { } s)
             return null;
 
-        var p = s.Predicted;
+        var p = s.Pose;
         return new ObjectInfoPanelData(p.ObjectId, p.DisplayName, p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image);
     }
 
@@ -2136,8 +2164,3 @@ public sealed partial class GameSessionScreen : IScreen
     }
 
 }
-
-internal readonly record struct ObjectRenderState(
-    ObjectMotionSnapshot Source,
-    ObjectMotionSnapshot Predicted,
-    bool IsPlayerShip);

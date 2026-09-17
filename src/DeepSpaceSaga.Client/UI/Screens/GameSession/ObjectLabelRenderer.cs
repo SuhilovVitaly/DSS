@@ -121,7 +121,7 @@ internal sealed class ObjectLabelRenderer
         for (int i = 0; i < renderStates.Count; i++)
         {
             var state = renderStates[i];
-            var predicted = state.Predicted;
+            var predicted = state.Pose;
             string objectId = predicted.ObjectId;
             if (clusteredIds?.Contains(objectId) == true) continue;
             bool important = state.IsPlayerShip || isImportant?.Invoke(objectId) == true;
@@ -224,11 +224,11 @@ internal sealed class ObjectLabelRenderer
     {
         for (int i = 0; i < renderStates.Count; i++)
         {
-            string objectId = renderStates[i].Predicted.ObjectId;
+            string objectId = renderStates[i].Pose.ObjectId;
             if (!_geometries.TryGetValue(objectId, out var geometry))
                 continue;
 
-            var predicted = renderStates[i].Predicted;
+            var predicted = renderStates[i].Pose;
             var (objSx, objSy) = camera.WorldToScreen(predicted.X, predicted.Y, viewportW, viewportH);
 
             _leaderLinePaint.Color = _leaderLinePaint.Color.WithAlpha(_opacity[objectId]);
@@ -254,11 +254,11 @@ internal sealed class ObjectLabelRenderer
         for (int i = 0; i < renderStates.Count; i++)
         {
             var state = renderStates[i];
-            string objectId = state.Predicted.ObjectId;
+            string objectId = state.Pose.ObjectId;
             if (!_geometries.TryGetValue(objectId, out var geometry))
                 continue;
 
-            var predicted = state.Predicted;
+            var predicted = state.Pose;
 
             byte opacity = _opacity[objectId];
             _plaqueBgPaint.Color = _plaqueBgPaint.Color.WithAlpha(opacity);

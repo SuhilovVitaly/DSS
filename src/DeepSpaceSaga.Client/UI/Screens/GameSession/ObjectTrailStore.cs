@@ -66,7 +66,7 @@ internal sealed class ObjectTrailStore
         long rawNow = _timestampProvider();
         foreach (var state in renderStates)
         {
-            var obj = state.Predicted;
+            var obj = state.Pose;
             if (obj.SpeedKmS <= 0)
             {
                 RemoveObjectTrail(obj.ObjectId);
@@ -156,7 +156,7 @@ internal sealed class ObjectTrailStore
     {
         _currentObjectIds.Clear();
         for (int i = 0; i < renderStates.Count; i++)
-            _currentObjectIds.Add(renderStates[i].Predicted.ObjectId);
+            _currentObjectIds.Add(renderStates[i].Pose.ObjectId);
 
         _objectIdsToRemove.Clear();
         foreach (string objectId in _trails.Keys)
@@ -198,7 +198,7 @@ internal sealed class ObjectTrailStore
     /// </summary>
     private static void TranslateTrail(
         ObjectTrailBuffer points,
-        ObjectMotionSnapshot obj,
+        RenderMotion obj,
         long currentGameTimeMs)
     {
         var last = points[^1];
@@ -216,7 +216,7 @@ internal sealed class ObjectTrailStore
 
     private static bool EndpointMatches(
         ObjectTrailPoint endpoint,
-        ObjectMotionSnapshot obj,
+        RenderMotion obj,
         long currentGameTimeMs)
     {
         return endpoint.Timestamp == currentGameTimeMs &&
@@ -226,19 +226,26 @@ internal sealed class ObjectTrailStore
 
     private void BootstrapTrail(
         ObjectTrailBuffer points,
-        ObjectMotionSnapshot obj,
+        RenderMotion obj,
         long currentGameTimeMs,
         long rawNow)
     {
         long oldestGameTimeMs = currentGameTimeMs - HistoryGameTimeMs;
+        var motion = obj.ToSnapshot();
 
         for (long sampleGameTimeMs = oldestGameTimeMs;
              sampleGameTimeMs <= currentGameTimeMs;
              sampleGameTimeMs += SampleIntervalGameTimeMs)
         {
             long ageMs = currentGameTimeMs - sampleGameTimeMs;
-            var projected = _predictor.Predict(obj, -ageMs);
-            points.Add(new ObjectTrailPoint(projected.X, projected.Y, sampleGameTimeMs));
+            if (_predictor is LinearMotionPredictor &&
+                LinearMotionPredictor.TryPredictLinearPosition(motion, -ageMs, out double x, out double y))
+                points.Add(new ObjectTrailPoint(x, y, sampleGameTimeMs));
+            else
+            {
+                var projected = _predictor.Predict(motion, -ageMs);
+                points.Add(new ObjectTrailPoint(projected.X, projected.Y, sampleGameTimeMs));
+            }
         }
 
         if (points[^1].Timestamp != currentGameTimeMs)
@@ -249,7 +256,7 @@ internal sealed class ObjectTrailStore
 
     private void AddCurrentPoint(
         ObjectTrailBuffer points,
-        ObjectMotionSnapshot obj,
+        RenderMotion obj,
         long currentGameTimeMs,
         long rawNow)
     {

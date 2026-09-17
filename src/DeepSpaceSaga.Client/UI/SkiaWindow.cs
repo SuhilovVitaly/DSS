@@ -91,8 +91,11 @@ public sealed class SkiaWindow : IDisposable
             // OnFocusChanged) so it doesn't stay pinned over the Snipping Tool
             // (Print Screen) or whatever the user alt-tabs to.
             TopMost = true,
-            FramesPerSecond = 80,
-            VSync = false,
+            // Present at the monitor's cadence. An independent 80 Hz limiter
+            // produces uneven frame delivery on 60/120/144 Hz displays.
+            // The simulation clock and snapshot cadence remain independent.
+            FramesPerSecond = 0,
+            VSync = true,
             API = new GraphicsAPI(ContextAPI.OpenGL, ContextProfile.Core, ContextFlags.Default, new APIVersion(3, 3))
         };
 

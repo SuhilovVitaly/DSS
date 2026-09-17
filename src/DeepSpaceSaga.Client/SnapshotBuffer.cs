@@ -8,7 +8,8 @@ public sealed record SnapshotPrediction(
     BufferedSnapshot BufferedSnapshot,
     long EffectivePredictionDeltaMs,
     SimulationSpeed CurrentSpeed,
-    long ReconciliationForwardJumpMs);
+    long ReconciliationForwardJumpMs,
+    long TotalReconciliationForwardJumpMs = 0);
 
 /// <summary>
 /// Thread-safe holder for the latest authoritative snapshot.
@@ -38,6 +39,7 @@ public sealed class SnapshotBuffer
     private long _predictionSegmentStartedAtTimestamp;
     private long _accumulatedPredictionGameTimeMs;
     private long _lastReconciliationForwardJumpMs;
+    private long _totalReconciliationForwardJumpMs;
     private bool _awaitingFirstSnapshotAfterResume;
 
     public SnapshotBuffer()
@@ -105,6 +107,7 @@ public sealed class SnapshotBuffer
             // away here, so the renderer must know about it to smooth it visually instead
             // of snapping straight to it.
             _lastReconciliationForwardJumpMs = Math.Max(0, -rawDeltaMs);
+            _totalReconciliationForwardJumpMs += _lastReconciliationForwardJumpMs;
             _predictionSegmentStartedAtTimestamp = now;
 
             if (_pendingConfirmedSpeed is { } pendingSpeed)
@@ -174,7 +177,7 @@ public sealed class SnapshotBuffer
                 long effectiveDelta = _accumulatedPredictionGameTimeMs
                     + RealTicksToGameMs(now - _predictionSegmentStartedAtTimestamp, _currentSpeed);
 
-                return new SnapshotPrediction(_latest, effectiveDelta, _currentSpeed, _lastReconciliationForwardJumpMs);
+                return new SnapshotPrediction(_latest, effectiveDelta, _currentSpeed, _lastReconciliationForwardJumpMs, _totalReconciliationForwardJumpMs);
             }
         }
     }
@@ -268,7 +271,8 @@ public sealed class SnapshotBuffer
         if (elapsedTicks <= 0 || speed == SimulationSpeed.Speed0)
             return 0;
 
-        long realMs = (long)(elapsedTicks * 1000.0 / Stopwatch.Frequency);
-        return realMs * (int)speed;
+        // Scale high-resolution time first: truncating real milliseconds at x100
+        // quantizes motion into 100 ms jumps even on an evenly paced display.
+        return (long)(elapsedTicks * (1000.0 * (int)speed / Stopwatch.Frequency));
     }
 }

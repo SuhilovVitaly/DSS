@@ -567,19 +567,24 @@ public sealed class CommandsPanel
     private static ModuleCommandSnapshot? FindCommandMetadataAcrossModules(
         IReadOnlyList<InstalledModuleSnapshot> modules, string commandTypeId)
     {
-        foreach (var module in modules.OrderBy(m => m.Position))
+        ModuleCommandSnapshot? result = null;
+        int firstPosition = int.MaxValue;
+        for (int i = 0; i < modules.Count; i++)
         {
-            if (module.Commands.IsDefaultOrEmpty)
+            var module = modules[i];
+            if (module.Commands.IsDefaultOrEmpty || (result is not null && module.Position >= firstPosition))
                 continue;
 
             foreach (var command in module.Commands)
             {
-                if (command.CommandTypeId == commandTypeId)
-                    return command;
+                if (command.CommandTypeId != commandTypeId) continue;
+                result = command;
+                firstPosition = module.Position;
+                break;
             }
         }
 
-        return null;
+        return result;
     }
 
     private void DrawCaption(SKCanvas canvas)

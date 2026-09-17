@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Engine;
@@ -23,7 +24,9 @@ public sealed class SimulationClock
     private readonly Func<long> _realTimeMs;
 
     public SimulationClock(SimulationSpeed initialSpeed = SimulationSpeed.Speed1)
-        : this(initialSpeed, () => Environment.TickCount64) { }
+        // Match the client's high-resolution monotonic source; coarse platform ticks
+        // otherwise become large reconciliation errors at x100.
+        : this(initialSpeed, () => (long)(Stopwatch.GetTimestamp() * (1000.0 / Stopwatch.Frequency))) { }
 
     internal SimulationClock(SimulationSpeed initialSpeed, Func<long> realTimeMs)
     {

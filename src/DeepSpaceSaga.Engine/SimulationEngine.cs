@@ -1565,9 +1565,10 @@ public sealed partial class SimulationEngine : IDisposable
 
     internal AuthoritativeSnapshot CaptureSnapshotForTests(
         long gameTimeMs = 0,
-        SimulationSpeed? speed = null)
+        SimulationSpeed? speed = null,
+        long? simulationTimeMs = null)
     {
-        return BuildSnapshot(new SimulationClockState(gameTimeMs, speed ?? _clock.Speed));
+        return BuildSnapshot(new SimulationClockState(gameTimeMs, speed ?? _clock.Speed, simulationTimeMs));
     }
 
     private void ApplyPendingCommands(long gameTimeMs)
