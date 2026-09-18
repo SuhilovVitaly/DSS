@@ -276,7 +276,7 @@ public class PauseSimulationTests
                     BaseCycleTimeMs: 1000)
             ],
             [
-                new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 10, BasePriceCredits: 200)
+                new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 10, BasePriceCredits: 200, TradeUnit: TradeUnit.EnergyCell)
             ],
             [
                 new CommandDefinition(TradeCommandTypes.Buy, "Buy", Target: "none", Type: "module.container"),

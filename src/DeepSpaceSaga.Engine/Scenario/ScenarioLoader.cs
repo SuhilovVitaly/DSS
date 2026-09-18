@@ -133,6 +133,8 @@ public static class ScenarioLoader
         var gs = scenario.GameState;
         if (gs is null)
             throw new ScenarioException("Missing gameState.");
+        if (scenario.SaveFormatVersion >= 7 && gs.CatalogCompatibility is null)
+            throw new ScenarioException("Missing catalogCompatibility in save format 7.");
         if (scenario.SaveFormatVersion >= 6 && gs.SimulationTimeMs is null)
             throw new ScenarioException("Missing simulationTimeMs in save format 6.");
         if (gs.GameTimeMs < 0 || gs.SimulationTimeMs < 0 || gs.PlayerTokens < 0)

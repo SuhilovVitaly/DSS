@@ -383,7 +383,7 @@ public class SaveLoadContinuityTests
                     LinearInertiaMps2: null)
             ],
             [
-                new ItemTypeDefinition("item.energy-cells", "Energy Cells", UnitMassKg: 10)
+                new ItemTypeDefinition("item.energy-cells", "Energy Cells", UnitMassKg: 10, TradeUnit: TradeUnit.EnergyCell)
             ],
             engineCommandIds.Select(id => new CommandDefinition(
                 id,

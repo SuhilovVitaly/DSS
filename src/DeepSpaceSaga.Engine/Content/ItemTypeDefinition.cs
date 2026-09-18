@@ -3,9 +3,7 @@ namespace DeepSpaceSaga.Engine.Content;
 /// <summary>
 /// Trade category of a tradeable <see cref="ItemTypeDefinition"/> (requirements §59,
 /// Docs\FirstRelease\TechnicalTasks\StationEconomyProductionAndSizing.md "Номенклатура"):
-/// drives the Sell package size enforced authoritatively by
-/// <c>SimulationEngine.TryStartTradeCommand</c> (Resource sells in packages of 100 kg, Good in
-/// packages of 10 kg) and which <see cref="StationSizeFactors"/> table applies when resolving a
+/// selects which <see cref="StationSizeFactors"/> table applies when resolving a
 /// station's <see cref="StationPricing"/> factors. Module is intentionally not a value here —
 /// Module trading has no <see cref="ItemTypeDefinition"/> representation at all (out of scope,
 /// story-20260825-084409 Batch 1 Protect list).
@@ -15,6 +13,10 @@ internal enum TradeCategory
     Resource,
     Good
 }
+
+internal enum TradeUnit { Kilogram, Piece, Ration, EnergyCell }
+
+internal enum ItemStorageKind { Cargo, FuelTank }
 
 internal sealed record ItemTypeDefinition(
     string TypeId,
@@ -39,4 +41,8 @@ internal sealed record ItemTypeDefinition(
     /// e.g. "item.ice") remains the one stable internal id. Null for item types the design
     /// document never assigned a spec id to (e.g. Food Rations — story-20260825-084409 decision).
     /// </summary>
-    string? CatalogCode = null) : ITypeDefinition;
+    string? CatalogCode = null,
+    TradeUnit TradeUnit = TradeUnit.Piece,
+    ItemStorageKind StorageKind = ItemStorageKind.Cargo,
+    long BuyQuantityStep = 1,
+    long SellQuantityStep = 1) : ITypeDefinition;

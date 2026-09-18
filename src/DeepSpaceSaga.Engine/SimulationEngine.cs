@@ -193,10 +193,15 @@ public sealed partial class SimulationEngine : IDisposable
     /// Load initial state from a scenario file. Replaces any previously added objects.
     /// Sets the clock speed and game time from scenario data.
     /// </summary>
-    public void LoadScenario(ScenarioFile scenario)
+    public void LoadScenario(ScenarioFile scenario, bool isSave = false)
     {
         scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true);
         var gs = scenario.GameState;
+        if (gs.CatalogCompatibility is { } catalog && catalog != _registry.CatalogCompatibility)
+            throw new ScenarioException("Incompatible catalogVersion, rulesVersion or catalog fingerprint. Save was not modified.");
+        if ((isSave || scenario.SaveFormatVersion > 0) && gs.CatalogCompatibility is null && _registry.ItemTypes.Count > 0 &&
+            !string.Equals(_registry.LegacyCatalogFingerprint, _registry.CatalogCompatibility.Fingerprint, StringComparison.Ordinal))
+            throw new ScenarioException("Legacy save has no catalog identity; an exact approved legacyCatalogFingerprint is required. Save was not modified.");
         var speed = ScenarioLoader.ParseSpeed(gs.CurrentSpeed);
         var runtimeObjects = new List<SpaceObjectRuntime>(gs.SpaceObjects.Count);
 
@@ -806,7 +811,8 @@ public sealed partial class SimulationEngine : IDisposable
             DialogueState: _dialogue.Save(),
             CommandReceipts: CaptureCommandReceipts(),
             PendingCommands: CapturePendingCommands(),
-            EconomyTime: CaptureEconomyTime(), SimulationTimeMs: gameTimeMs);
+            EconomyTime: CaptureEconomyTime(), SimulationTimeMs: gameTimeMs,
+            CatalogCompatibility: _registry.CatalogCompatibility);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
@@ -1213,6 +1219,14 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     private ImmutableArray<StationInventoryItemRuntime> ResolveStationInventory(SpaceObjectData obj, ulong masterSeed)
     {
+        foreach (var entry in obj.Inventory ?? [])
+        {
+            if (!_registry.ItemTypes.Contains(entry.ItemTypeId))
+                throw new ScenarioException($"Station '{obj.ObjectId}', inventory.itemTypeId: unknown item '{entry.ItemTypeId}'.");
+            var item = _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(entry.ItemTypeId));
+            if (item.BasePriceCredits is null)
+                throw new ScenarioException($"Station '{obj.ObjectId}', item '{entry.ItemTypeId}': basePriceCredits is required for a tradeable inventory entry.");
+        }
         if (_registry.ItemTypes.Count == 0)
             return ImmutableArray<StationInventoryItemRuntime>.Empty;
 

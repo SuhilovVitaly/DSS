@@ -31,7 +31,7 @@ public static class EngineContentLoader
         var registry = LoadRegistryFromSettingsFile(settingsPath, out _, out _);
         var saveScenario = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true);
         var engine = new SimulationEngine(registry, LoadCrewPortraits(settingsPath));
-        engine.LoadScenario(saveScenario);
+        engine.LoadScenario(saveScenario, isSave: true);
         return engine;
     }
 
@@ -88,7 +88,10 @@ public static class EngineContentLoader
         var moduleCategories = LoadModuleCategories(Resolve(basePath, settings.TypeData.ModuleTypes));
         var moduleImplementations = LoadModuleImplementations(
             Resolve(basePath, settings.TypeData.ModuleImplementations), moduleCategories);
-        var items = LoadItemTypes(Resolve(basePath, settings.TypeData.ItemTypes));
+        var catalog = LoadItemCatalog(Resolve(basePath, settings.TypeData.ItemTypes));
+        if (settings.Economy is { } economy &&
+            (economy.CatalogVersion != catalog.Version || economy.RulesVersion != EconomyTimeData.CurrentRulesVersion))
+            throw new ContentException($"{settingsPath}: economy catalogVersion/rulesVersion does not match loaded content.");
 
         // Factory/recipe files are loaded by declaration: a key present in Settings.json makes
         // the file mandatory (missing file → ContentException); an absent key skips loading.
@@ -99,9 +102,10 @@ public static class EngineContentLoader
             ? null
             : LoadRecipes(Resolve(basePath, settings.TypeData.Recipes));
 
-        return GameDataRegistry.Create(moduleCategories, moduleImplementations, items, commands, factoryTypes, recipes,
+        return GameDataRegistry.Create(moduleCategories, moduleImplementations, catalog.Items, commands, factoryTypes, recipes,
             settings.TypeData.Dialogues is null ? null : DialogueContentLoader.Load(Resolve(basePath, settings.TypeData.Dialogues)),
-            settings.TypeData.Quests is null ? null : DialogueContentLoader.LoadQuests(Resolve(basePath, settings.TypeData.Quests)));
+            settings.TypeData.Quests is null ? null : DialogueContentLoader.LoadQuests(Resolve(basePath, settings.TypeData.Quests)),
+            catalogVersion: catalog.Version, legacyCatalogFingerprint: settings.Economy?.LegacyCatalogFingerprint);
     }
 
     /// <summary>
@@ -250,10 +254,14 @@ public static class EngineContentLoader
     /// mirroring <see cref="LoadModuleImplementations"/>'s dual-mode support.
     /// </summary>
     internal static IReadOnlyList<ItemTypeDefinition> LoadItemTypes(string path)
+        => LoadItemCatalog(path).Items;
+
+    private static (int Version, IReadOnlyList<ItemTypeDefinition> Items) LoadItemCatalog(string path)
     {
+        string[] files;
         if (Directory.Exists(path))
         {
-            var files = Directory.EnumerateFiles(path, "*.json", SearchOption.AllDirectories)
+            files = Directory.EnumerateFiles(path, "*.json", SearchOption.AllDirectories)
                 .OrderBy(f => f, StringComparer.Ordinal)
                 .ToArray();
 
@@ -263,49 +271,69 @@ public static class EngineContentLoader
                     $"item-types directory contains no *.json files: {path}");
             }
 
-            return files.SelectMany(ReadItemTypesFile).ToArray();
         }
+        else if (File.Exists(path)) files = [path];
+        else throw new ContentException($"item-types path not found (neither file nor directory): {path}");
 
-        if (File.Exists(path))
-            return ReadItemTypesFile(path).ToArray();
-
-        throw new ContentException(
-            $"item-types path not found (neither file nor directory): {path}");
-    }
-
-    private static IEnumerable<ItemTypeDefinition> ReadItemTypesFile(string filePath)
-    {
-        var file = ReadJson<ItemTypesFile>(filePath, "item types");
-        if (file.ItemTypes is null)
-            throw new ContentException("item-types file is missing itemTypes.");
-
-        return file.ItemTypes.Select(dto =>
-            new ItemTypeDefinition(
-                dto.TypeId,
-                dto.DisplayName,
-                dto.UnitMassKg,
-                dto.BasePriceCredits,
-                ParseTradeCategory(dto.TypeId, dto.TradeCategory),
-                dto.CatalogCode));
+        var result = ImmutableArray.CreateBuilder<ItemTypeDefinition>();
+        var ids = new Dictionary<string, string>(StringComparer.Ordinal);
+        var codes = new Dictionary<string, string>(StringComparer.Ordinal);
+        int? version = null;
+        foreach (string filePath in files)
+        {
+            var file = ReadJson<ItemTypesFile>(filePath, "item types");
+            if (file.SchemaVersion is not (1 or 2))
+                throw new ContentException($"{filePath}: unsupported item schemaVersion '{file.SchemaVersion}'.");
+            if (file.SchemaVersion == 2 && file.CatalogVersion is null)
+                throw new ContentException($"{filePath}: schemaVersion 2 requires catalogVersion.");
+            int fileCatalogVersion = file.CatalogVersion ?? 1;
+            if (fileCatalogVersion != 1)
+                throw new ContentException($"{filePath}: unsupported catalogVersion '{file.CatalogVersion}'.");
+            if (version is not null && version != fileCatalogVersion)
+                throw new ContentException($"{filePath}: mixed catalogVersion values.");
+            version = fileCatalogVersion;
+            if (file.ItemTypes is null) throw new ContentException($"{filePath}: missing itemTypes.");
+            foreach (var dto in file.ItemTypes)
+            {
+                if (dto is null) throw new ContentException($"{filePath}: itemTypes contains a null item.");
+                string source = $"{filePath}: item '{dto.TypeId}'";
+                if (file.SchemaVersion == 2 && (dto.TradeCategory is null || dto.TradeUnit is null ||
+                    dto.StorageKind is null || dto.BuyQuantityStep is null || dto.SellQuantityStep is null))
+                    throw new ContentException($"{source}: schemaVersion 2 requires tradeCategory, tradeUnit, storageKind, buyQuantityStep and sellQuantityStep.");
+                // Explicit, versioned migration of the legacy catalog's known unit conventions.
+                TradeUnit legacyUnit = dto.TypeId switch
+                {
+                    "item.fuel" => TradeUnit.Kilogram,
+                    "item.food-rations" => TradeUnit.Ration,
+                    "item.energy-cells" => TradeUnit.EnergyCell,
+                    _ => dto.UnitMassKg == 1 ? TradeUnit.Kilogram : TradeUnit.Piece
+                };
+                var item = new ItemTypeDefinition(dto.TypeId, dto.DisplayName, dto.UnitMassKg,
+                    dto.BasePriceCredits, ParseItemEnum(dto.TradeCategory, TradeCategory.Good, source, "tradeCategory"),
+                    dto.CatalogCode, ParseItemEnum(dto.TradeUnit, legacyUnit, source, "tradeUnit"),
+                    ParseItemEnum(dto.StorageKind, dto.TypeId == "item.fuel" ? ItemStorageKind.FuelTank : ItemStorageKind.Cargo,
+                        source, "storageKind"), dto.BuyQuantityStep ?? 1, dto.SellQuantityStep ?? 1);
+                ItemCatalogValidation.Validate(item, filePath);
+                if (!ids.TryAdd(item.TypeId, filePath))
+                    throw new ContentException($"{source}: duplicate typeId; first declared in {ids[item.TypeId]}.");
+                if (item.CatalogCode is { } code && !codes.TryAdd(code, filePath))
+                    throw new ContentException($"{source}: duplicate catalogCode '{code}'; first declared in {codes[code]}.");
+                result.Add(item);
+            }
+        }
+        return (version ?? 1, result.ToImmutable());
     }
 
     /// <summary>
-    /// A missing (null) tradeCategory defaults to <see cref="TradeCategory.Good"/> (§59) — most
-    /// existing content/test fixtures predate this field and never populate it explicitly.
+    /// Only named enum values are accepted; numeric strings must not bypass schema validation.
     /// </summary>
-    private static TradeCategory ParseTradeCategory(string typeId, string? jsonValue)
+    private static T ParseItemEnum<T>(string? jsonValue, T legacyDefault, string source, string field) where T : struct, Enum
     {
-        if (jsonValue is null)
-            return TradeCategory.Good;
-
-        if (!Enum.TryParse<TradeCategory>(jsonValue, ignoreCase: true, out var category))
-        {
-            throw new ContentException(
-                $"Item type '{typeId}' has unknown tradeCategory '{jsonValue}' " +
-                "(expected 'Resource' or 'Good').");
-        }
-
-        return category;
+        if (jsonValue is null) return legacyDefault;
+        if (!Enum.GetNames<T>().Contains(jsonValue, StringComparer.OrdinalIgnoreCase) ||
+            !Enum.TryParse<T>(jsonValue, ignoreCase: true, out var value))
+            throw new ContentException($"{source}: unknown {field} '{jsonValue}'.");
+        return value;
     }
 
     /// <summary>
@@ -471,7 +499,7 @@ public static class EngineContentLoader
         }
         catch (JsonException ex)
         {
-            throw new ContentException($"Invalid {description} JSON: {ex.Message}", ex);
+            throw new ContentException($"Invalid {description} JSON in {path}: {ex.Message}", ex);
         }
         catch (IOException ex)
         {
@@ -501,7 +529,13 @@ public static class EngineContentLoader
         // consumes (typeData/defaultScenario); the client (SkiaWindow.cs GetLanguage/
         // SaveLanguage, GetUiScale, etc.) can add, rename, or remove gameSettings fields
         // freely without ever touching engine code again.
-        [property: JsonPropertyName("gameSettings")] JsonElement GameSettings = default);
+        [property: JsonPropertyName("gameSettings")] JsonElement GameSettings = default,
+        [property: JsonPropertyName("economy")] EconomyContentVersions? Economy = null);
+
+    internal sealed record EconomyContentVersions(
+        [property: JsonPropertyName("catalogVersion")] int CatalogVersion,
+        [property: JsonPropertyName("rulesVersion")] int RulesVersion,
+        [property: JsonPropertyName("legacyCatalogFingerprint")] string? LegacyCatalogFingerprint = null);
 
     internal sealed record TypeDataPaths(
         [property: JsonPropertyName("moduleTypes")] string ModuleTypes,
@@ -544,7 +578,9 @@ public static class EngineContentLoader
         [property: JsonPropertyName("basePriceCredits")] long? BasePriceCredits = null);
 
     private sealed record ItemTypesFile(
-        [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto> ItemTypes);
+        [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto?>? ItemTypes,
+        [property: JsonPropertyName("schemaVersion")] int SchemaVersion = 1,
+        [property: JsonPropertyName("catalogVersion")] int? CatalogVersion = null);
 
     private sealed record ItemTypeDefinitionDto(
         [property: JsonPropertyName("typeId")] string TypeId,
@@ -552,7 +588,11 @@ public static class EngineContentLoader
         [property: JsonPropertyName("unitMassKg")] long UnitMassKg,
         [property: JsonPropertyName("basePriceCredits")] long? BasePriceCredits = null,
         [property: JsonPropertyName("tradeCategory")] string? TradeCategory = null,
-        [property: JsonPropertyName("catalogCode")] string? CatalogCode = null);
+        [property: JsonPropertyName("catalogCode")] string? CatalogCode = null,
+        [property: JsonPropertyName("tradeUnit")] string? TradeUnit = null,
+        [property: JsonPropertyName("storageKind")] string? StorageKind = null,
+        [property: JsonPropertyName("buyQuantityStep")] long? BuyQuantityStep = null,
+        [property: JsonPropertyName("sellQuantityStep")] long? SellQuantityStep = null);
 
     private sealed record CommandDefinitionsFile(
         [property: JsonPropertyName("commandDefinitions")] IReadOnlyList<CommandDefinitionDto> CommandDefinitions);

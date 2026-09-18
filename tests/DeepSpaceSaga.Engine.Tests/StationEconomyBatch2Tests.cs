@@ -78,7 +78,7 @@ public class StationEconomyBatch2Tests
                 // rounding rule itself (already covered by StationPricingTests).
                 new ItemTypeDefinition(IceId, "Ice", UnitMassKg: 1, BasePriceCredits: 100, Category: TradeCategory.Resource),
                 new ItemTypeDefinition(IronOreId, "Iron Ore", UnitMassKg: 1, BasePriceCredits: 100, Category: TradeCategory.Resource),
-                new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 1, BasePriceCredits: 100, Category: TradeCategory.Good)
+                new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 1, BasePriceCredits: 100, Category: TradeCategory.Good, TradeUnit: TradeUnit.EnergyCell)
             ],
             [
                 new CommandDefinition(TradeCommandTypes.Buy, "Buy", Target: "none", Type: "module.container"),

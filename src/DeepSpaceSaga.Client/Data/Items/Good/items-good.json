@@ -6,7 +6,11 @@
       "unitMassKg": 1,
       "basePriceCredits": 14,
       "tradeCategory": "Good",
-      "catalogCode": "ITM-3001"
+      "catalogCode": "ITM-3001",
+      "tradeUnit": "Kilogram",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
     },
     {
       "typeId": "item.steel",
@@ -14,7 +18,11 @@
       "unitMassKg": 1,
       "basePriceCredits": 40,
       "tradeCategory": "Good",
-      "catalogCode": "ITM-3002"
+      "catalogCode": "ITM-3002",
+      "tradeUnit": "Kilogram",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
     },
     {
       "typeId": "item.energy-cells",
@@ -22,7 +30,11 @@
       "unitMassKg": 1,
       "basePriceCredits": 50,
       "tradeCategory": "Good",
-      "catalogCode": "ITM-3003"
+      "catalogCode": "ITM-3003",
+      "tradeUnit": "EnergyCell",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
     },
     {
       "typeId": "item.fuel",
@@ -30,7 +42,11 @@
       "unitMassKg": 1,
       "basePriceCredits": 10,
       "tradeCategory": "Good",
-      "catalogCode": "ITM-3004"
+      "catalogCode": "ITM-3004",
+      "tradeUnit": "Kilogram",
+      "storageKind": "FuelTank",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
     },
     {
       "typeId": "item.protein-mass",
@@ -38,14 +54,24 @@
       "unitMassKg": 1,
       "basePriceCredits": 110,
       "tradeCategory": "Good",
-      "catalogCode": "ITM-3005"
+      "catalogCode": "ITM-3005",
+      "tradeUnit": "Kilogram",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
     },
     {
       "typeId": "item.food-rations",
       "displayName": "Food Rations",
       "unitMassKg": 1,
       "basePriceCredits": 20,
-      "tradeCategory": "Good"
+      "tradeCategory": "Good",
+      "tradeUnit": "Ration",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
     }
-  ]
+  ],
+  "schemaVersion": 2,
+  "catalogVersion": 1
 }

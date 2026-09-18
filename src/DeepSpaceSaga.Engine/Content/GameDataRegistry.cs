@@ -1,3 +1,7 @@
+using System.Security.Cryptography;
+using System.Text.Json;
+using DeepSpaceSaga.Engine.Scenario;
+
 namespace DeepSpaceSaga.Engine.Content;
 
 internal sealed class GameDataRegistry
@@ -10,7 +14,9 @@ internal sealed class GameDataRegistry
         TypeRegistry<FactoryTypeDefinition> factoryTypes,
         TypeRegistry<RecipeDefinition> recipes,
         TypeRegistry<DialogueDefinition>? dialogues = null,
-        TypeRegistry<QuestDefinition>? quests = null)
+        TypeRegistry<QuestDefinition>? quests = null,
+        int catalogVersion = 1,
+        string? legacyCatalogFingerprint = null)
     {
         ModuleCategories = moduleCategories;
         ModuleTypes = moduleTypes;
@@ -20,6 +26,14 @@ internal sealed class GameDataRegistry
         Recipes = recipes;
         Dialogues = dialogues ?? TypeRegistry<DialogueDefinition>.Empty;
         Quests = quests ?? TypeRegistry<QuestDefinition>.Empty;
+        CatalogVersion = catalogVersion;
+        LegacyCatalogFingerprint = legacyCatalogFingerprint;
+        var economicItems = Enumerable.Range(0, itemTypes.Count).Select(itemTypes.GetDefinition)
+            .OrderBy(item => item.TypeId, StringComparer.Ordinal)
+            .Select(item => new { item.TypeId, item.UnitMassKg, item.BasePriceCredits, item.Category,
+                item.TradeUnit, item.StorageKind, item.BuyQuantityStep, item.SellQuantityStep });
+        CatalogCompatibility = new(catalogVersion, EconomyTimeData.CurrentRulesVersion,
+            Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(economicItems))));
     }
 
     public TypeRegistry<ModuleCategoryDefinition> ModuleCategories { get; }
@@ -30,6 +44,9 @@ internal sealed class GameDataRegistry
     public TypeRegistry<RecipeDefinition> Recipes { get; }
     public TypeRegistry<DialogueDefinition> Dialogues { get; }
     public TypeRegistry<QuestDefinition> Quests { get; }
+    public int CatalogVersion { get; }
+    public CatalogCompatibilityData CatalogCompatibility { get; }
+    public string? LegacyCatalogFingerprint { get; }
 
     public static GameDataRegistry Empty { get; } = new(
         TypeRegistry<ModuleCategoryDefinition>.Empty,
@@ -47,14 +64,33 @@ internal sealed class GameDataRegistry
         IEnumerable<FactoryTypeDefinition>? factoryTypes = null,
         IEnumerable<RecipeDefinition>? recipes = null,
         IEnumerable<DialogueDefinition>? dialogues = null,
-        IEnumerable<QuestDefinition>? quests = null)
+        IEnumerable<QuestDefinition>? quests = null,
+        int catalogVersion = 1,
+        string? legacyCatalogFingerprint = null)
     {
+        if (catalogVersion != 1) throw new ContentException($"Unsupported catalogVersion: {catalogVersion}.");
         var commandRegistry = TypeRegistry<CommandDefinition>.Create(commandDefinitions, "command definitions");
         var categoryRegistry = TypeRegistry<ModuleCategoryDefinition>.Create(moduleCategories, "module types");
         var moduleRegistry = TypeRegistry<ModuleTypeDefinition>.Create(moduleTypes, "module implementations");
         var itemRegistry = TypeRegistry<ItemTypeDefinition>.Create(itemTypes, "item types");
+        var catalogCodes = new HashSet<string>(StringComparer.Ordinal);
+        for (int i = 0; i < itemRegistry.Count; i++)
+        {
+            var item = itemRegistry.GetDefinition(i);
+            ItemCatalogValidation.Validate(item, "item registry");
+            if (item.CatalogCode is { } code && !catalogCodes.Add(code))
+                throw new ContentException($"Item '{item.TypeId}': duplicate catalogCode '{code}'.");
+        }
         var factoryRegistry = TypeRegistry<FactoryTypeDefinition>.Create(factoryTypes ?? [], "factory types");
         var recipeRegistry = TypeRegistry<RecipeDefinition>.Create(recipes ?? [], "recipes");
+        var allRecipes = Enumerable.Range(0, recipeRegistry.Count).Select(recipeRegistry.GetDefinition)
+            .Concat(Enumerable.Range(0, factoryRegistry.Count).Select(i => factoryRegistry.GetDefinition(i).Recipe));
+        foreach (var recipe in allRecipes)
+        {
+            foreach (var material in recipe.Inputs.Concat(recipe.Outputs))
+                if (!itemRegistry.Contains(material.ItemTypeId))
+                    throw new ContentException($"Recipe '{recipe.TypeId}' references unknown itemTypeId '{material.ItemTypeId}'.");
+        }
 
         for (int i = 0; i < categoryRegistry.Count; i++)
         {
@@ -97,6 +133,6 @@ internal sealed class GameDataRegistry
             }
         }
         return new GameDataRegistry(categoryRegistry, moduleRegistry, itemRegistry, commandRegistry, factoryRegistry, recipeRegistry,
-            dialogueRegistry, questRegistry);
+            dialogueRegistry, questRegistry, catalogVersion, legacyCatalogFingerprint);
     }
 }

@@ -162,8 +162,8 @@ public class TradeCommandTests
                 // EnergyCells/Fuel default to TradeCategory.Good (record default); Ice is
                 // explicitly Resource — story-20260825-084409 Batch 1, U9's sell-package tests
                 // rely on this split (Resource sells in packages of 100 kg, Good in 10 kg).
-                new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 10, BasePriceCredits: 200),
-                new ItemTypeDefinition(FuelId, "Fuel", UnitMassKg: 0, BasePriceCredits: 200),
+                new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 10, BasePriceCredits: 200, TradeUnit: TradeUnit.EnergyCell),
+                new ItemTypeDefinition(FuelId, "Fuel", UnitMassKg: 0, BasePriceCredits: 200, TradeUnit: TradeUnit.Kilogram, StorageKind: ItemStorageKind.FuelTank),
                 new ItemTypeDefinition(IceId, "Ice", UnitMassKg: 10, BasePriceCredits: 30, Category: TradeCategory.Resource)
             ],
             [
