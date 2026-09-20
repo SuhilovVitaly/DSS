@@ -21,7 +21,9 @@ public class DialogueEffectTests
             dialogues: [definition], quests: [new("quest.test", ["first", "second"])]);
         using var original = DockCommandTests.CreateEngine();
         var engine = new SimulationEngine(registry);
-        engine.LoadScenario(original.CaptureSaveState());
+        // This fixture deliberately defines a different catalog from the docking fixture.
+        var initial = original.CaptureSaveState();
+        engine.LoadScenario(initial with { GameState = initial.GameState with { CatalogCompatibility = registry.CatalogCompatibility } });
         engine.ReceiveDialogueCommand(new("start", DialogueAction.Start, "", 0,
             DialogueDefinitionId: "test", ParticipantId: "operator", StationObjectId: "STATION-01"));
         Assert.NotNull(engine.CaptureSnapshotForTests().ActiveDialogue);

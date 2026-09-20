@@ -25,7 +25,7 @@ internal sealed record ModuleTypeDefinition(
     int? CabinesCount = null,
     /// <summary>
     /// Base Credits price of this module type at a station-side Module trade/service catalog
-    /// (requirements §59, Docs\FirstRelease\TechnicalTasks\StationEconomyProductionAndSizing.md
+    /// (requirements §59, Documentation\02-FirstRelease\TechnicalTasks\StationEconomyProductionAndSizing.md
     /// "Схема данных"). Null for every module type today — Module buy/sell is explicitly out of
     /// scope for story-20260825-084409 Batch 1 (no authoritative command, no UI); this field only
     /// lays down the data shape a later batch will populate and wire up. See

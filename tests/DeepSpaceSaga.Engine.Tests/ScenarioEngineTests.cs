@@ -1727,6 +1727,12 @@ public class ScenarioEngineTests
         {
             WriteSettings(directory, factoryTypesPath: "factory-types.json", recipesPath: "recipes.json");
             WriteMinimalContent(directory);
+            File.WriteAllText(Path.Combine(directory, "item-types.json"), """
+                { "itemTypes": [
+                  { "typeId": "item.energy-cells", "displayName": "Cells", "unitMassKg": 1 },
+                  { "typeId": "item.water", "displayName": "Water", "unitMassKg": 1 }
+                ] }
+                """);
             File.WriteAllText(Path.Combine(directory, "factory-types.json"), """
             {
               "factoryTypes": [
@@ -1812,7 +1818,7 @@ public class ScenarioEngineTests
                 new ItemTypeDefinition(
                     "item.energy-cells",
                     "Energy Cells",
-                    UnitMassKg: 10)
+                    UnitMassKg: 10, TradeUnit: TradeUnit.EnergyCell)
             ],
             []);
 

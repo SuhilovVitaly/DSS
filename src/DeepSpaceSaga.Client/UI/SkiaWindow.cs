@@ -846,7 +846,7 @@ public sealed class SkiaWindow : IDisposable
     }
 
     /// <summary>
-    /// Push the Finance overlay (Docs/FirstRelease/Screens/Finance.md). Opened via the
+    /// Push the Finance overlay (Documentation/02-FirstRelease/Screens/Finance.md). Opened via the
     /// bottom-center Finance panel button or Ctrl+F. Uses the same generic
     /// PushModalAsync pause-on-open behavior as every other modal — no Finance-specific
     /// speed logic needed.
@@ -861,7 +861,7 @@ public sealed class SkiaWindow : IDisposable
     }
 
     /// <summary>
-    /// Push the Ship overlay (Docs/FirstRelease/Screens/Ship.md). Opened via the
+    /// Push the Ship overlay (Documentation/02-FirstRelease/Screens/Ship.md). Opened via the
     /// bottom-center Ship panel button or Ctrl+S. Uses the same generic
     /// PushModalAsync pause-on-open behavior as every other modal — no Ship-specific
     /// speed logic needed.
@@ -876,7 +876,7 @@ public sealed class SkiaWindow : IDisposable
     }
 
     /// <summary>
-    /// Push the Station overlay (Docs/FirstRelease/Screens/Station.md). Opened by
+    /// Push the Station overlay (Documentation/02-FirstRelease/Screens/Station.md). Opened by
     /// left-clicking, on the tactical map, the station the player ship is currently
     /// docked to (GameSessionScreen.OnMouseDown → ScreenEvent.OpenStation). Uses the
     /// same generic PushModalAsync pause-on-open behavior as every other modal — no
@@ -900,7 +900,7 @@ public sealed class SkiaWindow : IDisposable
     }
 
     /// <summary>
-    /// Push the Trade overlay (Docs/FirstRelease/Screens/Trade.md) on top of Station
+    /// Push the Trade overlay (Documentation/02-FirstRelease/Screens/Trade.md) on top of Station
     /// (StationScreen's `TRADE` button → ScreenEvent.OpenTrade). A nested modal exactly
     /// like Trade/Hire/Contracts — PushModalAsync/PopModalAsync's generic modal-depth
     /// tracking needs no Trade-specific handling. Unlike Hire/Contracts, TradeScreen also
@@ -918,7 +918,7 @@ public sealed class SkiaWindow : IDisposable
     }
 
     /// <summary>
-    /// Push the Hire overlay (Docs/FirstRelease/Screens/Hire.md) on top of Station
+    /// Push the Hire overlay (Documentation/02-FirstRelease/Screens/Hire.md) on top of Station
     /// (StationScreen's `HIRE` button → ScreenEvent.OpenHire). A nested modal exactly
     /// like Trade — PushModalAsync/PopModalAsync's generic modal-depth tracking needs no
     /// Hire-specific handling.
@@ -933,7 +933,7 @@ public sealed class SkiaWindow : IDisposable
     }
 
     /// <summary>
-    /// Push the Contracts overlay (Docs/FirstRelease/Screens/Contracts.md) on top of
+    /// Push the Contracts overlay (Documentation/02-FirstRelease/Screens/Contracts.md) on top of
     /// Station (StationScreen's `CONTRACTS` button → ScreenEvent.OpenContracts). Split
     /// out of Hire (passenger contracts vs. crew hiring) — a nested modal exactly like
     /// Trade/Hire, no Contracts-specific handling needed.

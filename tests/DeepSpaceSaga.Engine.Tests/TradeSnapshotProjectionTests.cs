@@ -165,8 +165,8 @@ public class TradeSnapshotProjectionTests
                 // explicitly Resource — story-20260825-084409 Batch 1 tests below rely on this
                 // split for the price-factor-by-category assertions and the "legacy
                 // PriceCoefficient no longer participates" regression.
-                new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 10, BasePriceCredits: 200),
-                new ItemTypeDefinition(FuelId, "Fuel", UnitMassKg: 0, BasePriceCredits: 200),
+                new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 10, BasePriceCredits: 200, TradeUnit: TradeUnit.EnergyCell),
+                new ItemTypeDefinition(FuelId, "Fuel", UnitMassKg: 0, BasePriceCredits: 200, TradeUnit: TradeUnit.Kilogram, StorageKind: ItemStorageKind.FuelTank),
                 new ItemTypeDefinition(IceId, "Ice", UnitMassKg: 10, BasePriceCredits: 30, Category: TradeCategory.Resource)
             ],
             [
@@ -286,7 +286,7 @@ public class TradeSnapshotProjectionTests
         // Medium = 1.15, general Resource (Ice is not a producing-module input here) @ Medium
         // = 1.10. unitPrice = BasePriceCredits * that factor:
         // EnergyCells/Fuel (Good, base 200) -> 230; Ice (Resource, base 30) -> 33.
-        // MaxSellableQuantity is fully per-unit (Docs/FirstRelease/Screens/Trade.md,
+        // MaxSellableQuantity is fully per-unit (Documentation/02-FirstRelease/Screens/Trade.md,
         // "UI-решение: панель действия" — supersedes the former §59/U9 sell-package rule): the
         // raw affordable quantity, no package flooring.
         var engine = CreateEngine(

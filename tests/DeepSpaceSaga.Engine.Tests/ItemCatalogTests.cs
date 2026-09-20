@@ -6,7 +6,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 /// <summary>
 /// Covers U1 (item-catalog TradeCategory/CatalogCode content + loader parsing) and U2 (Module
 /// BasePriceCredits data shape) of story-20260825-084409 Batch 1 — requirements §59,
-/// Docs\FirstRelease\TechnicalTasks\StationEconomyProductionAndSizing.md "Номенклатура" /
+/// Documentation\02-FirstRelease\TechnicalTasks\StationEconomyProductionAndSizing.md "Номенклатура" /
 /// "Формула цены" / "Схема данных".
 /// </summary>
 public class ItemCatalogTests

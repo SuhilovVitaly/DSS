@@ -4,18 +4,14 @@ namespace DeepSpaceSaga.Motion;
 
 /// <summary>
 /// Constant-speed, bounded-curvature rendezvous behind a catchable target, or
-/// closest practical approach onto a faster target's aft ray.
+/// shortest route to the captured trailing point when rendezvous is impossible.
 /// Fly the selected route once using exact arc integration. No speed changes.
 /// </summary>
 public static class ApproachLineCaptureMath
 {
     public const string Phase = "LineCapture";
-    public const int PlannerVersion = 1;
+    public const int PlannerVersion = 3;
     public const double PositionTolerance = 0.01;
-
-    // One extra unit of flight must save at least 0.01 units of separation.
-    // This keeps equal/near-equal speeds finite instead of chasing an asymptote.
-    private const double FlightDistancePenalty = 0.01;
 
     public static ApproachRoute? Plan(ObjectMotionSnapshot ship, double targetX, double targetY,
         double targetDirection, double targetSpeed, double trailDistance, int turnRate)
@@ -30,110 +26,26 @@ public static class ApproachLineCaptureMath
         ApproachRoute Route(ApproachFlyThroughPlan p) => new(ship.X, ship.Y, ship.Direction,
             ship.SpeedKmS, turnRate, p.Type, p.FirstRemainingUnits, p.SecondRemainingUnits,
             p.ThirdRemainingUnits, targetX, targetY, targetDirection, targetSpeed, trail, PlannerVersion: PlannerVersion);
-        bool canCatch = ship.SpeedKmS > targetSpeed;
         if (Math.Abs(cross) <= PositionTolerance &&
-            (canCatch ? Math.Abs(along + trail) <= PositionTolerance : along <= -trail) &&
+            Math.Abs(along + trail) <= PositionTolerance &&
             Math.Abs(Delta(ship.Direction, targetDirection)) <= 1e-7)
             return Route(new("SSS", 0, 0, 0));
 
-        if (canCatch)
-        {
-            if (targetSpeed == 0)
-                return Route(Curve(-trail));
-            // Rendezvous with the moving trailing slot, never the object's center.
-            // Keep the existing tested per-family root solver; replace its former
-            // quantized execution and pursuit handoff with one exact route.
-            var intercept = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
-                ship.X, ship.Y, ship.Direction, ship.SpeedKmS,
-                targetX - trail * fx, targetY - trail * fy, targetDirection, targetSpeed, turnRate);
-            if (intercept.HasIntercept)
-                return Route(intercept.Plan);
-            // Preserve a finite, safe fallback if a rendezvous solve degenerates.
-            return Route(Curve(-trail));
-        }
-
-        var best = Curve(-trail);
-        double radius = ship.SpeedKmS * 10 / (turnRate * Math.PI / 180);
-        double ratio = targetSpeed / ship.SpeedKmS;
-        double weightedRatio = ratio + FlightDistancePenalty;
-        // At endpoint x, the target has moved ratio * L while the ship flies L.
-        // Minimize their separation on arrival, not time to an arbitrary aft point.
-        double bestCost = weightedRatio * best.RemainingUnits + trail;
-        // L >= |x - along| gives finite bounds for EVERY route that can beat bestCost.
-        // weightedRatio > 1, even when the two speeds are equal.
-        double lower = (weightedRatio * along - bestCost) / (weightedRatio + 1);
-        double upper = (bestCost + weightedRatio * along) / (weightedRatio - 1);
-        double straightOptimum = along + Math.Abs(cross) / Math.Sqrt(weightedRatio * weightedRatio - 1);
-        // A global grid plus turn-radius neighborhoods of the ship, trailing slot,
-        // and analytic straight-flight optimum. All scratch storage is bounded.
-        Span<double> samples = stackalloc double[700];
-        int count = 0;
-        samples[count++] = lower; samples[count++] = upper; samples[count++] = -trail;
-        samples[count++] = Math.Clamp(straightOptimum, lower, upper);
-        for (int i = 0; i <= 256; i++)
-            samples[count++] = lower + (upper - lower) * i / 256;
-        // Resolve short turn-radius features even when the target is very far away.
-        for (int centerIndex = 0; centerIndex < 3; centerIndex++)
-            for (int i = -64; i <= 64; i++)
-            {
-                double center = centerIndex == 0 ? along : centerIndex == 1 ? -trail : straightOptimum;
-                double x = center + radius * i / 8;
-                if (x >= lower && x <= upper)
-                    samples[count++] = x;
-            }
-        samples = samples[..count];
-        samples.Sort();
-        int unique = 0;
-        for (int i = 0; i < samples.Length; i++)
-            if (unique == 0 || samples[i] != samples[unique - 1]) samples[unique++] = samples[i];
-        var xs = samples[..unique];
-        Span<double> costs = stackalloc double[700];
-        Span<bool> feasible = stackalloc bool[700];
-        for (int i = 0; i < xs.Length; i++)
-            costs[i] = Evaluate(xs[i], out feasible[i]);
-        for (int i = 1; i < xs.Length; i++)
-        {
-            if (feasible[i - 1] != feasible[i])
-            {
-                double lo = xs[i - 1], hi = xs[i];
-                for (int j = 0; j < 45; j++)
-                {
-                    double mid = (lo + hi) / 2;
-                    Evaluate(mid, out bool valid);
-                    if (valid == feasible[i - 1]) lo = mid; else hi = mid;
-                }
-            }
-            // Refine sampled local minima without assuming that the different
-            // Dubins families form one globally smooth/convex cost function.
-            if (i + 1 < xs.Length && costs[i] <= costs[i - 1] && costs[i] <= costs[i + 1] && feasible[i])
-            {
-                double lo = xs[i - 1], hi = xs[i + 1];
-                for (int j = 0; j < 35; j++)
-                {
-                    double a = lo + (hi - lo) / 3, b = hi - (hi - lo) / 3;
-                    if (Evaluate(a, out _) < Evaluate(b, out _)) hi = b; else lo = a;
-                }
-            }
-        }
-        return Route(best);
-
-        ApproachFlyThroughPlan Curve(double x) => ApproachPursuitMath.CreateFlyThroughPlan(
+        // Shortest length and earliest arrival are the same objective at fixed speed.
+        // A faster target can still meet us if it is coming from behind.
+        var intercept = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
             ship.X, ship.Y, ship.Direction, ship.SpeedKmS,
-            targetX + x * fx, targetY + x * fy, targetDirection, turnRate);
-        double Evaluate(double x, out bool valid)
-        {
-            var p = Curve(x);
-            double length = p.RemainingUnits;
-            valid = x - ratio * length <= -trail + 1e-8;
-            double cost = weightedRatio * length - x;
-            if (valid && (cost < bestCost - 1e-8 ||
-                Math.Abs(cost - bestCost) <= 1e-8 && length < best.RemainingUnits))
-            {
-                best = p;
-                bestCost = cost;
-            }
-            return valid ? cost : double.PositiveInfinity;
-        }
+            targetX - trail * fx, targetY - trail * fy, targetDirection, targetSpeed, turnRate);
+        if (intercept.HasIntercept)
+            return Route(intercept.Plan);
+
+        // An unreachable moving target has no minimum-time rendezvous. Fly once to
+        // its captured trailing pose instead of optimizing where to merge onto its
+        // aft ray. Do not continually move this fallback waypoint as the target runs
+        // away; TargetChanged only invalidates an actual change of motion.
+        return Route(ApproachPursuitMath.CreateFlyThroughPlan(
+            ship.X, ship.Y, ship.Direction, ship.SpeedKmS,
+            targetX - trail * fx, targetY - trail * fy, targetDirection, turnRate));
     }
 
     /// <summary>Evaluate from the immutable origin, including partial arcs and crossings of segment boundaries.</summary>
@@ -148,7 +60,9 @@ public static class ApproachLineCaptureMath
             route.TargetDirection, route.TargetSpeedKmS, (long)elapsed);
         return state with
         {
-            X = pose.X, Y = pose.Y, Direction = pose.Direction,
+            X = pose.X,
+            Y = pose.Y,
+            Direction = pose.Direction,
             SpeedKmS = route.SpeedKmS,
             ApproachRoute = complete ? null : route with { ElapsedMs = elapsed },
             ActiveEngineCommandType = complete ? null : NavigationComputerCommandTypes.Approach,

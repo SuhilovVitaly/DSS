@@ -16,7 +16,7 @@ public enum GridSortColumn
 /// <summary>
 /// Header bar + zebra-striped row grid + scrollbar control (reference mockup screenshot),
 /// extracted out of <c>Screens.Trade.TradeScreen</c> ahead of the real Trade redesign
-/// layout (Docs/FirstRelease/Screens/Trade.md). Pure geometry/drawing, no state of its
+/// layout (Documentation/02-FirstRelease/Screens/Trade.md). Pure geometry/drawing, no state of its
 /// own — the owning screen tracks arrow-hover and scroll-position state and passes it in,
 /// the same pattern <see cref="StationToolbar"/> uses for its own hover flags.
 ///

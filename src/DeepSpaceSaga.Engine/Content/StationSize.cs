@@ -1,7 +1,7 @@
 namespace DeepSpaceSaga.Engine.Content;
 
 /// <summary>
-/// Station size classification (requirements §59, Docs\FirstRelease\TechnicalTasks\
+/// Station size classification (requirements §59, Documentation\02-FirstRelease\TechnicalTasks\
 /// StationEconomyProductionAndSizing.md "Размеры станции"). Drives the per-trade-category
 /// <c>StationPriceFactor</c> multiplier resolved by <see cref="StationSizeFactors"/> and
 /// consumed by <see cref="StationPricing.ComputeUnitPriceCredits"/>.

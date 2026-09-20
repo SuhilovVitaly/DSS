@@ -4,6 +4,126 @@ namespace DeepSpaceSaga.Motion.Tests;
 
 public class ApproachLineCaptureTests
 {
+
+    [Theory]
+    [InlineData(2.999999)]
+    [InlineData(2.9999999)]
+    [InlineData(2.99999999)]
+    public void Near_equal_speed_roundoff_does_not_replace_a_rendezvous_with_the_fallback(double targetSpeed)
+    {
+        var ship = new ObjectMotionSnapshot("ship", -1000, 500, 3, 60);
+        var route = ApproachLineCaptureMath.Plan(ship, 10, 0, 90, targetSpeed, 10, 4)!;
+        Assert.True(ApproachLineCaptureMath.IsRendezvous(route), $"Expected rendezvous, got {route}");
+        var end = ApproachLineCaptureMath.PredictPose(route, route.DurationMs);
+        double targetX = 10 + targetSpeed * 10 * route.DurationMs / 1000;
+        Assert.InRange(targetX - end.X, 9.999, 10.001);
+        Assert.InRange(Math.Abs(end.Y), 0, .001);
+        Assert.Equal(90, end.Direction);
+    }
+
+    [Fact]
+    public void Planner_version_is_incremented_for_new_routes()
+    {
+        var ship = new ObjectMotionSnapshot("ship", -1000, 500, 3, 270);
+        var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 1, 10, 4)!;
+        Assert.Equal(3, ApproachLineCaptureMath.PlannerVersion);
+        Assert.Equal(3, route.PlannerVersion);
+        // Published old routes remain executable; version-based replanning is an Engine decision.
+        foreach (int version in new[] { 0, 1, 2 })
+        {
+            var saved = route with { PlannerVersion = version };
+            Assert.Equal(ApproachLineCaptureMath.PredictPose(route, route.DurationMs / 2),
+                ApproachLineCaptureMath.PredictPose(saved, saved.DurationMs / 2));
+        }
+    }
+
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(0.5)]
+    [InlineData(2.9)]
+    [InlineData(2.9999)]
+    public void Plan_selects_the_shortest_catchable_trailing_rendezvous(double targetSpeed)
+    {
+        var ship = new ObjectMotionSnapshot("ship", -650, 330, 3, 247);
+        var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, targetSpeed, 35, 4)!;
+        var roots = ApproachReference.Intercepts(ship, -35, 0, 90, targetSpeed, 4);
+        Assert.NotEmpty(roots);
+        double reference = roots.Min(p => p.Plan.RemainingUnits);
+        Assert.True(route.Length <= reference + ApproachReference.Tolerance,
+            $"Selected {route.Length:R}; reference {reference:R}");
+        Assert.True(ApproachLineCaptureMath.IsRendezvous(route));
+        Assert.Equal(route, ApproachLineCaptureMath.Plan(ship, 0, 0, 90, targetSpeed, 35, 4));
+        Assert.Equal(-650, ship.X);
+        Assert.Null(ship.ApproachRoute);
+    }
+
+    [Fact]
+    public void Plan_is_not_longer_than_the_exhaustive_reference_corpus()
+    {
+        // Reference uses 30,000 logarithmic time samples per family plus independent
+        // bisection, never the production breakpoints or candidate-selection logic.
+        var random = new Random(20260920);
+        for (int i = 0; i < 48; i++)
+        {
+            double speed = 0.5 + random.NextDouble() * 4;
+            double targetSpeed = speed * (i % 3 == 0 ? .9999 : .05 + .9 * random.NextDouble());
+            double heading = random.NextDouble() * 360;
+            var ship = new ObjectMotionSnapshot("ship",
+                random.NextDouble() * 4000 - 2000, random.NextDouble() * 4000 - 2000,
+                speed, random.NextDouble() * 360);
+            const double trail = 20;
+            double rad = heading * Math.PI / 180;
+            var roots = ApproachReference.Intercepts(
+                ship, -trail * Math.Sin(rad), trail * Math.Cos(rad), heading, targetSpeed, 4);
+            Assert.NotEmpty(roots);
+            var route = ApproachLineCaptureMath.Plan(ship, 0, 0, heading, targetSpeed, trail, 4)!;
+            double reference = roots.Min(p => p.Plan.RemainingUnits);
+            Assert.True(route.Length <= reference + ApproachReference.Tolerance,
+                $"Case {i}: {route.Type} length {route.Length:R} > reference {reference:R}");
+            Assert.True(ApproachLineCaptureMath.IsRendezvous(route), $"Case {i}: not a rendezvous");
+            var end = ApproachLineCaptureMath.PredictPose(route, route.DurationMs);
+            Assert.InRange(Math.Abs(end.X * Math.Cos(rad) + end.Y * Math.Sin(rad)), 0, .001);
+        }
+    }
+
+    [Fact]
+    public void Unreachable_target_uses_the_shortest_curve_to_the_captured_trailing_point()
+    {
+        // Targets start ahead and cannot be intercepted. Enumerate all six families
+        // independently at the fixed destination, not along an arbitrary aft ray.
+        var random = new Random(902026);
+        for (int i = 0; i < 60; i++)
+        {
+            var ship = new ObjectMotionSnapshot("ship",
+                -20 - random.NextDouble() * 4000, random.NextDouble() * 2000 - 1000,
+                1, random.NextDouble() * 360);
+            double targetSpeed = i % 3 == 0 ? 1 : i % 3 == 1 ? 1.000001 : 1 + random.NextDouble() * 2;
+            var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, targetSpeed, 10, 4)!;
+            var end = ApproachLineCaptureMath.PredictPose(route, route.DurationMs);
+            double reference = ApproachReference.Families.Select(type =>
+                ApproachReference.Curve(ship, -10, 0, 90, 4, type, out var plan)
+                    ? plan.RemainingUnits : double.PositiveInfinity).Min();
+            Assert.InRange(Math.Abs(route.Length - reference), 0, ApproachReference.Tolerance);
+            Assert.InRange(Math.Abs(end.X + 10), 0, .001);
+            Assert.InRange(Math.Abs(end.Y), 0, .001);
+            Assert.False(ApproachLineCaptureMath.IsRendezvous(route));
+            Assert.Equal(route.Length / 10 * 1000, route.DurationMs, 6);
+            Assert.Equal(route, ApproachLineCaptureMath.Plan(ship, 0, 0, 90, targetSpeed, 10, 4));
+        }
+    }
+
+    [Fact]
+    public void Symmetric_incoming_intercept_ties_use_the_canonical_family_order()
+    {
+        var ship = new ObjectMotionSnapshot("ship", 1000, 0, 1, 90);
+        var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 2, 10, 4)!;
+        var mirrored = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 2, 10, 4)!;
+        Assert.Equal(route, mirrored);
+        ApproachReference.Curve(ship, 2010, 0, 90, 4, "LSL", out var straight);
+        Assert.True(route.Type == "LSL", $"Route: {route}; straight LSL: {straight}");
+        Assert.InRange(Math.Abs(route.Length - 1010), 0, 1e-5);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
@@ -12,30 +132,32 @@ public class ApproachLineCaptureTests
     public void Every_route_finishes_on_the_live_aft_ray_at_unchanged_speed(double targetSpeed)
     {
         foreach (double distance in new[] { 5.0, 100, 2000 })
-        for (int bearing = 0; bearing < 360; bearing += 45)
-        for (int heading = 0; heading < 360; heading += 45)
-        {
-            double rad = bearing * Math.PI / 180;
-            var ship = new ObjectMotionSnapshot("ship", distance * Math.Sin(rad), distance * Math.Cos(rad), 3, heading);
-            var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, targetSpeed, 10, 4)!;
-            var result = ApproachLineCaptureMath.Predict(ship with { ApproachRoute = route }, (long)Math.Ceiling(route.DurationMs));
-            double targetX = targetSpeed * 10 * Math.Ceiling(route.DurationMs) / 1000;
-            Assert.True(Math.Abs(result.Y) < 0.0001, $"Lateral miss {result.Y}: bearing={bearing}, heading={heading}, d={distance}");
-            Assert.True(result.X - targetX <= -9.96, $"Not behind: {result.X - targetX}");
-            Assert.InRange(Math.Abs(ApproachLineCaptureMath.Delta(result.Direction, 90)), 0, 1e-7);
-            Assert.Equal(ship.SpeedKmS, result.SpeedKmS);
-            Assert.Null(result.ApproachRoute);
-            if (targetSpeed >= ship.SpeedKmS)
-            {
-                var fallback = ApproachPursuitMath.CreateFlyThroughPlan(ship.X, ship.Y, ship.Direction, ship.SpeedKmS, -10, 0, 90, 4);
-                double routeGap = targetSpeed / ship.SpeedKmS * route.Length - result.X;
-                double fallbackGap = targetSpeed / ship.SpeedKmS * fallback.RemainingUnits + 10;
-                // Small finite-flight tradeoff is allowed; a long detour away from the target is not.
-                Assert.True(routeGap <= fallbackGap + .01 * fallback.RemainingUnits + .05);
-            }
-            else
-                Assert.InRange(result.X - targetX, -10.05, -9.95);
-        }
+            for (int bearing = 0; bearing < 360; bearing += 45)
+                for (int heading = 0; heading < 360; heading += 45)
+                {
+                    double rad = bearing * Math.PI / 180;
+                    var ship = new ObjectMotionSnapshot("ship", distance * Math.Sin(rad), distance * Math.Cos(rad), 3, heading);
+                    var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, targetSpeed, 10, 4)!;
+                    var result = ApproachLineCaptureMath.Predict(ship with { ApproachRoute = route }, (long)Math.Ceiling(route.DurationMs));
+                    double targetX = targetSpeed * 10 * Math.Ceiling(route.DurationMs) / 1000;
+                    Assert.True(Math.Abs(result.Y) < 0.0001, $"Lateral miss {result.Y}: bearing={bearing}, heading={heading}, d={distance}");
+                    Assert.True(result.X - targetX <= -9.96, $"Not behind: {result.X - targetX}");
+                    Assert.InRange(Math.Abs(ApproachLineCaptureMath.Delta(result.Direction, 90)), 0, 1e-7);
+                    Assert.Equal(ship.SpeedKmS, result.SpeedKmS);
+                    Assert.Null(result.ApproachRoute);
+                    if (targetSpeed >= ship.SpeedKmS)
+                    {
+                        var fallback = ApproachPursuitMath.CreateFlyThroughPlan(ship.X, ship.Y, ship.Direction, ship.SpeedKmS, -10, 0, 90, 4);
+                        if (!ApproachLineCaptureMath.IsRendezvous(route))
+                        {
+                            Assert.InRange(Math.Abs(route.Length - fallback.RemainingUnits), 0, .001);
+                            Assert.InRange(Math.Abs(result.X + 10), 0, .05);
+                        }
+                    }
+                    else
+                        Assert.True(Math.Abs(result.X - targetX + 10) <= .05,
+                            $"Gap {result.X - targetX:R}: bearing={bearing}, heading={heading}, d={distance}; {route}");
+                }
     }
 
     [Theory]
@@ -53,12 +175,18 @@ public class ApproachLineCaptureTests
         var route = ApproachLineCaptureMath.Plan(ship, 0, 0, heading, targetSpeed, 10, 4)!;
         var end = ApproachLineCaptureMath.PredictPose(route, route.DurationMs);
         double alongEnd = end.X * fx + end.Y * fy;
-        Assert.True(alongEnd > -4000, $"Insufficient progress towards target: {alongEnd}");
-        double gap = targetSpeed / .7 * route.Length - alongEnd;
-        var perpendicular = ApproachPursuitMath.CreateFlyThroughPlan(ship.X, ship.Y, ship.Direction,
-            .7, -5000 * fx, -5000 * fy, heading, 4);
-        double oldGap = targetSpeed / .7 * perpendicular.RemainingUnits + 5000;
-        Assert.True(gap < oldGap * .96, $"New gap {gap} vs perpendicular gap {oldGap}");
+        Assert.InRange(Math.Abs(alongEnd + 10), 0, .001);
+        Assert.InRange(Math.Abs(end.X + 10 * fx), 0, .001);
+        Assert.InRange(Math.Abs(end.Y + 10 * fy), 0, .001);
+        // The long middle leg points diagonally at the destination, as drawn in red,
+        // rather than following the old ~178.6-degree lag-minimizing course.
+        Assert.Equal('S', route.Type[1]);
+        var straight = ApproachLineCaptureMath.PredictPose(route,
+            (route.First + route.Second / 2) / (.7 * 10) * 1000);
+        double bearing = Math.Atan2(end.X - straight.X, straight.Y - end.Y) * 180 / Math.PI;
+        Assert.InRange(Math.Abs(ApproachLineCaptureMath.Delta(straight.Direction, bearing)), 0, 3);
+        if (heading == 110)
+            Assert.InRange(straight.Direction, 140, 155);
         Assert.False(ApproachLineCaptureMath.IsRendezvous(route));
         Assert.Equal(heading, end.Direction);
         // The end-heading must be reached by the arc, never by snapping at completion.
@@ -70,15 +198,15 @@ public class ApproachLineCaptureTests
     [InlineData(1)]
     [InlineData(1.000001)]
     [InlineData(1.001)]
-    public void Equal_and_near_equal_speeds_have_a_finite_useful_merge(double targetSpeed)
+    public void Equal_and_near_equal_speeds_use_a_finite_captured_destination(double targetSpeed)
     {
         var ship = new ObjectMotionSnapshot("ship", -1000, 500, 1, 90);
         var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, targetSpeed, 10, 4)!;
         Assert.InRange(route.DurationMs, 1, 1_000_000);
         var end = ApproachLineCaptureMath.PredictPose(route, route.DurationMs);
         Assert.InRange(Math.Abs(end.Y), 0, .001);
-        double gap = targetSpeed * route.Length - end.X;
-        Assert.InRange(gap, 1000, 1150);
+        Assert.InRange(Math.Abs(end.X + 10), 0, .001);
+        Assert.False(ApproachLineCaptureMath.IsRendezvous(route));
     }
     [Theory]
     [InlineData(2.9)]
@@ -117,10 +245,14 @@ public class ApproachLineCaptureTests
         Assert.InRange(route.DurationMs, 1, feasibleMs + .1);
     }
     [Fact]
-    public void Already_trailing_ship_does_not_start_a_loop()
+    public void Already_trailing_ship_flies_straight_to_the_destination_instead_of_finishing_early()
     {
         var ship = new ObjectMotionSnapshot("ship", -500, 0, 1, 90);
-        Assert.Equal(0, ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 2, 10, 4)!.Length);
+        var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 2, 10, 4)!;
+        Assert.Equal(490, route.Length, 6);
+        Assert.Equal(0, route.First, 6);
+        Assert.Equal(0, route.Third, 6);
+        Assert.False(ApproachLineCaptureMath.IsRendezvous(route));
     }
 
     [Fact]
@@ -135,11 +267,14 @@ public class ApproachLineCaptureTests
     }
 
     [Fact]
-    public void Faster_target_capture_uses_a_nearby_line_entry_instead_of_its_distant_position()
+    public void Faster_target_capture_reaches_its_captured_position_not_a_nearby_line_entry()
     {
         var ship = new ObjectMotionSnapshot("ship", -100000, 300, 1, 90);
         var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 2, 10, 4)!;
-        Assert.InRange(route.DurationMs, 30000, 90000);
+        Assert.InRange(route.DurationMs, 9_999_000, 10_001_000);
+        var end = ApproachLineCaptureMath.PredictPose(route, route.DurationMs);
+        Assert.InRange(Math.Abs(end.X + 10), 0, .001);
+        Assert.InRange(Math.Abs(end.Y), 0, .001);
     }
 
     [Fact]

@@ -2,7 +2,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.Finance;
 
 /// <summary>
 /// Layout and hit-test geometry for the Finance overlay panel. 1600×800 — widened by
-/// 200px from the 1400×800 standard for gameplay-mechanic windows (Docs/FirstRelease/
+/// 200px from the 1400×800 standard for gameplay-mechanic windows (Documentation/02-FirstRelease/
 /// Screens/ScreenCatalog.md — Station, Trade, Hire, Cargo, Loot, Ship, Character
 /// Communication, Dialog, Finance) to match every other station-hub window
 /// (<see cref="Station.StationLayout"/>, <see cref="Trade.TradeLayout"/>,

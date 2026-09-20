@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 /// = round(basePrice x Product(applicable StationPriceFactor)), each factor fixed-point
 /// (1000 = 1.0), decimal arithmetic only (no float/double on the authoritative path), single
 /// final rounding step so factor order never changes the result (requirements §59,
-/// Docs\FirstRelease\TechnicalTasks\StationEconomyProductionAndSizing.md "Формула цены").
+/// Documentation\02-FirstRelease\TechnicalTasks\StationEconomyProductionAndSizing.md "Формула цены").
 /// Story-20260825-084409, Batch 1, Unit 4 — generalizes the story-20260822-193700 Batch 3
 /// single-coefficient version to an arbitrary list of factors.
 /// </summary>

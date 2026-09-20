@@ -8,7 +8,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 /// <summary>
 /// Tests for trade.buy / trade.sell / trade.refuel — station trading (requirements
-/// Docs\FirstRelease\Mechanics\{Money,StationInventory,Trading}.md), story-20260822-193700
+/// Documentation\02-FirstRelease\Mechanics\{Money,StationInventory,Trading}.md), story-20260822-193700
 /// Batch 3: immediate one-shot authoritative actions dispatched by
 /// <c>SimulationEngine.TryStartTradeCommand</c>, distinct from the timed ActiveCycle Engine
 /// commands (<see cref="EngineCommandTests"/>) and the immediate Dock action
@@ -162,8 +162,8 @@ public class TradeCommandTests
                 // EnergyCells/Fuel default to TradeCategory.Good (record default); Ice is
                 // explicitly Resource — story-20260825-084409 Batch 1, U9's sell-package tests
                 // rely on this split (Resource sells in packages of 100 kg, Good in 10 kg).
-                new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 10, BasePriceCredits: 200),
-                new ItemTypeDefinition(FuelId, "Fuel", UnitMassKg: 0, BasePriceCredits: 200),
+                new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 10, BasePriceCredits: 200, TradeUnit: TradeUnit.EnergyCell),
+                new ItemTypeDefinition(FuelId, "Fuel", UnitMassKg: 0, BasePriceCredits: 200, TradeUnit: TradeUnit.Kilogram, StorageKind: ItemStorageKind.FuelTank),
                 new ItemTypeDefinition(IceId, "Ice", UnitMassKg: 10, BasePriceCredits: 30, Category: TradeCategory.Resource)
             ],
             [
@@ -387,7 +387,7 @@ public class TradeCommandTests
     {
         // unitPrice = 200 * 1.15 (Good @ Medium fallback — story-20260825-084409 Batch 2,
         // U5) = 230; station can afford 5000 / 230 = 21 units (integer division), less than
-        // the 50 requested. Selling is fully per-unit (Docs/FirstRelease/Screens/Trade.md,
+        // the 50 requested. Selling is fully per-unit (Documentation/02-FirstRelease/Screens/Trade.md,
         // "UI-решение: панель действия" — supersedes the former §59/U9 sell-package rule), so
         // the partial fill lands exactly on 21, with no flooring to a package multiple.
         var engine = CreateEngine(shipCargo: [(EnergyCellsId, 50)], stationCredits: 5000);
@@ -419,7 +419,7 @@ public class TradeCommandTests
         // story-20260825-084409 Batch 2, U5: Ice is not an input of any producing module on
         // this station, so it stays "general", not "consumed") = 33; station can afford
         // 6_500 / 33 = 196 units (raw, integer division), less than the 500 requested.
-        // Selling is fully per-unit (Docs/FirstRelease/Screens/Trade.md, "UI-решение: панель
+        // Selling is fully per-unit (Documentation/02-FirstRelease/Screens/Trade.md, "UI-решение: панель
         // действия" — supersedes the former §59/U9 sell-package rule), so the partial fill
         // lands exactly on 196, with no flooring to the nearest multiple of 100.
         var engine = CreateEngine(

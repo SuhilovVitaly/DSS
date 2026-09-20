@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Client.UI.Controls;
 /// <summary>
 /// Shared toolbar strip for the station hub and every window opened from it (Station,
 /// Trade, Hire, Contracts, Finance — all built on the 1400×800 gameplay-mechanic panel
-/// standard, Docs/FirstRelease/Screens/ScreenCatalog.md). Flush against the panel's
+/// standard, Documentation/02-FirstRelease/Screens/ScreenCatalog.md). Flush against the panel's
 /// top-left corner, spanning the full standard panel width, so every consuming screen
 /// draws it with a single <see cref="Draw"/> call right after its panel background.
 ///

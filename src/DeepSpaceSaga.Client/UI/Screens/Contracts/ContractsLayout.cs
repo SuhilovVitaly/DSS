@@ -2,7 +2,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.Contracts;
 
 /// <summary>
 /// Layout and hit-test geometry for the Contracts overlay panel. 1600×800 — widened by
-/// 200px from the 1400×800 standard for gameplay-mechanic windows (Docs/FirstRelease/
+/// 200px from the 1400×800 standard for gameplay-mechanic windows (Documentation/02-FirstRelease/
 /// Screens/ScreenCatalog.md) to match every other station-hub window (<see cref="Hire.HireLayout"/>,
 /// <see cref="Trade.TradeLayout"/>, <see cref="Station.StationLayout"/>,
 /// <see cref="Finance.FinanceLayout"/>), reserving room for a left-side illustration

@@ -7,7 +7,7 @@ using DeepSpaceSaga.Engine.Scenario;
 namespace DeepSpaceSaga.Engine.Tests;
 
 /// <summary>
-/// Story-20260825-084409 Batch 2 — requirements §59, Docs\FirstRelease\TechnicalTasks\
+/// Story-20260825-084409 Batch 2 — requirements §59, Documentation\02-FirstRelease\TechnicalTasks\
 /// StationEconomyProductionAndSizing.md:
 /// U5 (StationSize persistence + fallback, explicit-wins starting inventory),
 /// U6 (ProducingStationModule type catalog: RecipeMaterial.NeedCoefficient),
@@ -78,7 +78,7 @@ public class StationEconomyBatch2Tests
                 // rounding rule itself (already covered by StationPricingTests).
                 new ItemTypeDefinition(IceId, "Ice", UnitMassKg: 1, BasePriceCredits: 100, Category: TradeCategory.Resource),
                 new ItemTypeDefinition(IronOreId, "Iron Ore", UnitMassKg: 1, BasePriceCredits: 100, Category: TradeCategory.Resource),
-                new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 1, BasePriceCredits: 100, Category: TradeCategory.Good)
+                new ItemTypeDefinition(EnergyCellsId, "Energy Cells", UnitMassKg: 1, BasePriceCredits: 100, Category: TradeCategory.Good, TradeUnit: TradeUnit.EnergyCell)
             ],
             [
                 new CommandDefinition(TradeCommandTypes.Buy, "Buy", Target: "none", Type: "module.container"),

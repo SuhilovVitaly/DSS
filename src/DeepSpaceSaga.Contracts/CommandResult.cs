@@ -65,7 +65,7 @@ public sealed record CommandResult(
     /// Actually executed quantity for a trade command. Null for all non-trade commands
     /// and for trade commands that executed fully. For <see cref="TradeCommandTypes.Sell"/>
     /// executed partially because the station's hidden Credits balance ran out
-    /// (Docs\FirstRelease\Mechanics\Money.md), carries the quantity actually sold
+    /// (Documentation\02-FirstRelease\Mechanics\Money.md), carries the quantity actually sold
     /// (less than the requested <see cref="PlayerCommand.Quantity"/>).
     /// </summary>
     long? ExecutedQuantity = null);

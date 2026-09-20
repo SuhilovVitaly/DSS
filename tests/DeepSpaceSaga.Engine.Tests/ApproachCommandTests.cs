@@ -84,16 +84,26 @@ public class ApproachCommandTests
     }
 
     [Fact]
-    public void Already_trailing_ship_completes_immediately_without_a_loop()
+    public void Already_trailing_ship_reaches_captured_destination_without_a_loop()
     {
         var engine = CreateEngine(shipX: 9800, shipY: 10000, shipSpeedMps: 2000, shipDirectionDegrees: 90,
             targetX: 10000, targetY: 10000, targetSpeedMps: 3000, targetDirectionDegrees: 90, trailDistanceKm: 1);
         engine.ReceiveCommand(ApproachCommand());
         var snapshot = engine.CaptureSnapshotForTests();
-        Assert.Null(PlayerShipFrom(snapshot).ActiveEngineCommandType);
-        Assert.Equal(CommandResultStatus.Executed, Assert.Single(snapshot.CommandResults).Status);
+        var route = Assert.IsType<ApproachRoute>(PlayerShipFrom(snapshot).ApproachRoute);
+        Assert.Equal(NavigationComputerCommandTypes.Approach, PlayerShipFrom(snapshot).ActiveEngineCommandType);
+        Assert.Equal(190, route.Length, 6);
+        Assert.Equal(0, route.First, 6);
+        Assert.Equal(0, route.Third, 6);
+        Assert.Empty(snapshot.CommandResults);
         Assert.Equal(9800, PlayerShipFrom(snapshot).X);
         Assert.Equal(2, PlayerShipFrom(snapshot).SpeedKmS);
+        var final = engine.CaptureSnapshotForTests((long)route.DurationMs, SimulationSpeed.Speed1);
+        Assert.Equal(CommandResultStatus.Executed, Assert.Single(final.CommandResults).Status);
+        var completed = PlayerShipFrom(final);
+        Assert.Null(completed.ActiveEngineCommandType);
+        Assert.Equal(9990, completed.X, 6);
+        Assert.Equal(10000, completed.Y, 6);
     }
 
     [Fact]
@@ -185,11 +195,14 @@ public class ApproachCommandTests
         var first = PlayerShipFrom(engine.CaptureSnapshotForTests());
         var expected = new LinearMotionPredictor().Predict(first, 250);
         var save = engine.CaptureSaveStateForTests(137, SimulationSpeed.Speed1);
-        var changed = save with { GameState = save.GameState with
+        var changed = save with
         {
-            SpaceObjects = save.GameState.SpaceObjects.Select(o =>
-                o.ObjectId == TargetId ? o with { DirectionDegrees = 180 } : o).ToArray()
-        } };
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(o =>
+                    o.ObjectId == TargetId ? o with { DirectionDegrees = 180 } : o).ToArray()
+            }
+        };
         var restored = CreateEngine(shipSpeedMps: 2000);
         restored.LoadScenario(changed);
         var replanned = PlayerShipFrom(restored.CaptureSnapshotForTests(250, SimulationSpeed.Speed1));
@@ -215,16 +228,19 @@ public class ApproachCommandTests
         engine.ReceiveCommand(ApproachCommand());
         engine.CaptureSnapshotForTests();
         var save = engine.CaptureSaveStateForTests(137, SimulationSpeed.Speed1);
-        var legacy = save with { GameState = save.GameState with
+        var legacy = save with
         {
-            SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId != PlayerShipId ? o : o with
+            GameState = save.GameState with
             {
-                Modules = o.Modules!.Select(m => m.ActiveCycle is null ? m : m with
+                SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId != PlayerShipId ? o : o with
                 {
-                    ActiveCycle = m.ActiveCycle with { ApproachRoute = null, NavigationPhase = ApproachPursuitMath.FinalPhase }
+                    Modules = o.Modules!.Select(m => m.ActiveCycle is null ? m : m with
+                    {
+                        ActiveCycle = m.ActiveCycle with { ApproachRoute = null, NavigationPhase = ApproachPursuitMath.FinalPhase }
+                    }).ToArray()
                 }).ToArray()
-            }).ToArray()
-        } };
+            }
+        };
         var restored = CreateEngine(shipSpeedMps: 2000);
         restored.LoadScenario(legacy);
         var ship = PlayerShipFrom(restored.CaptureSnapshotForTests(250, SimulationSpeed.Speed1));
@@ -290,20 +306,29 @@ public class ApproachCommandTests
             Assert.Equal(expected.ActiveEngineCommandType, actual.ActiveEngineCommandType);
         }
     }
-    [Fact]
-    public void Saved_old_line_capture_plan_is_replanned_at_boundary_without_a_position_jump()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void Saved_old_line_capture_plan_is_replanned_at_boundary_without_a_position_jump(int version)
     {
         using var engine = CreateEngine(shipSpeedMps: 700, targetSpeedMps: 1069, targetDirectionDegrees: 57);
         engine.ReceiveCommand(ApproachCommand());
         engine.CaptureSnapshotForTests();
         var save = engine.CaptureSaveStateForTests(137, SimulationSpeed.Speed1);
-        save = save with { GameState = save.GameState with {
-            SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId != PlayerShipId ? o : o with {
-                Modules = o.Modules!.Select(m => m.ActiveCycle?.ApproachRoute is not { } route ? m : m with {
-                    ActiveCycle = m.ActiveCycle with { ApproachRoute = route with { PlannerVersion = 0 } }
+        save = save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId != PlayerShipId ? o : o with
+                {
+                    Modules = o.Modules!.Select(m => m.ActiveCycle?.ApproachRoute is not { } route ? m : m with
+                    {
+                        ActiveCycle = m.ActiveCycle with { ApproachRoute = route with { PlannerVersion = version } }
+                    }).ToArray()
                 }).ToArray()
-            }).ToArray()
-        }};
+            }
+        };
         using var restored = CreateEngine();
         restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
         var initial = PlayerShipFrom(restored.CaptureSnapshot());

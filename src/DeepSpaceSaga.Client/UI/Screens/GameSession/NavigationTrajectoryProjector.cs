@@ -72,6 +72,12 @@ internal sealed class NavigationTrajectoryProjector
 
     /// <summary>
     /// Same as <see cref="Project(ObjectMotionSnapshot)"/>, plus whether the returned
+    /// committed Approach route is a rendezvous. For a committed route,
+    /// <paramref name="interceptPoint"/> is its exact endpoint in both rendezvous and
+    /// captured-point modes. Snapshots without a route retain the legacy behavior below.
+    /// </summary>
+    /// <remarks>
+    /// For legacy snapshots, indicates whether the returned
     /// path is a CONFIRMED intercept-solve rendezvous curve (story-20260829-210641.md
     /// §10, Checkpoint 2) — true as soon as <see cref="ApproachPursuitMath.SolveInterceptFlyThroughPlan"/>
     /// finds one, even during the single transient <see cref="ApproachPursuitMath.FlyThroughPendingPhase"/>
@@ -84,7 +90,7 @@ internal sealed class NavigationTrajectoryProjector
     /// discretized preview curve's own tracked endpoint, which accumulates enough
     /// per-cycle turn quantization over a long curve to visibly miss the target's own
     /// drawn straight-line trajectory (see <see cref="ProjectFlyThrough"/>).
-    /// </summary>
+    /// </remarks>
     public List<FutureTrajectoryPoint> Project(
         ObjectMotionSnapshot predicted, out bool isConfirmedIntercept, out FutureTrajectoryPoint interceptPoint)
         => ProjectInto(predicted, new List<FutureTrajectoryPoint>(FutureTrajectoryProjector.MaxSamplePoints),
@@ -100,13 +106,15 @@ internal sealed class NavigationTrajectoryProjector
         if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach &&
             predicted.ApproachRoute is { } route)
         {
-            points.Add(new(predicted.X, predicted.Y));
+            double routeElapsedMs = Math.Clamp(route.ElapsedMs, 0, route.DurationMs);
+            var start = ApproachLineCaptureMath.PredictPose(route, routeElapsedMs);
+            points.Add(new(start.X, start.Y));
             double boundaryMs = 0;
             ReadOnlySpan<double> lengths = stackalloc double[] { route.First, route.Second, route.Third };
             for (int segment = 0; segment < 3; segment++)
             {
-                double startMs = Math.Max(boundaryMs, route.ElapsedMs);
-                boundaryMs += lengths[segment] / (route.SpeedKmS * 10) * 1000;
+                double startMs = Math.Max(boundaryMs, routeElapsedMs);
+                boundaryMs = Math.Min(route.DurationMs, boundaryMs + lengths[segment] / (route.SpeedKmS * 10) * 1000);
                 if (boundaryMs <= startMs) continue;
                 // Sampling by curvature preserves short turns even in a long chase.
                 int count = route.Type[segment] == 'S' ? 1 :
@@ -114,12 +122,16 @@ internal sealed class NavigationTrajectoryProjector
                 for (int i = 1; i <= count; i++)
                 {
                     var point = ApproachLineCaptureMath.PredictPose(route,
-                        startMs + (boundaryMs - startMs) * i / count);
+                        Math.Min(route.DurationMs, startMs + (boundaryMs - startMs) * i / count));
                     points.Add(new(point.X, point.Y));
                 }
             }
+            // Use the analytical endpoint even at/after completion, independently of
+            // segment-time rounding or the snapshot's other navigation fields.
+            var endpoint = ApproachLineCaptureMath.PredictPose(route, route.DurationMs);
+            interceptPoint = new(endpoint.X, endpoint.Y);
+            points[^1] = interceptPoint;
             isConfirmedIntercept = ApproachLineCaptureMath.IsRendezvous(route);
-            interceptPoint = points[^1];
             return points;
         }
         // navigation.approach: trailing-pursuit preview against a moving aim point —
@@ -136,6 +148,10 @@ internal sealed class NavigationTrajectoryProjector
                 predicted, bakedAimX, bakedAimY, targetDirectionDegrees, targetSpeedKmS,
                 out isConfirmedIntercept, out interceptPoint);
         }
+
+        // An incomplete legacy Approach snapshot cannot use Orbit's target semantics.
+        if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach)
+            return points;
 
         if (predicted.NavigationTargetX is not { } targetX ||
             predicted.NavigationTargetY is not { } targetY)
@@ -251,27 +267,24 @@ internal sealed class NavigationTrajectoryProjector
         // Legacy Approach may return its own list. Always use the returned list.
         points = ProjectInto(predicted, points, out isConfirmedIntercept, out interceptPoint);
         maneuverPointCount = points.Count;
-        if (points.Count == 0 || predicted.SpeedKmS <= 0) return points;
+        if (points.Count == 0) return points;
 
         if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach && predicted.ApproachRoute is { } route)
         {
-            // The route captures the target's aft line. Continue along that line to
-            // the target at route completion, even when the target is pulling away.
+            // Display-only continuation uses the target pose captured at planning.
+            // Full route duration keeps this point fixed as route.ElapsedMs advances;
+            // reaching it is not part of the maneuver or a further intercept.
             double angle = route.TargetDirection * Math.PI / 180;
             double dx = Math.Sin(angle), dy = -Math.Cos(angle);
             double distance = route.TargetSpeedKmS * 10 * route.DurationMs / 1000;
             var target = new FutureTrajectoryPoint(route.TargetX + distance * dx, route.TargetY + distance * dy);
-            var last = points[^1];
-            if (route.TargetSpeedKmS == 0)
-            {
-                if (last != target) points.Add(target);
-                return points;
-            }
-            if ((target.X - last.X) * dx + (target.Y - last.Y) * dy > 1e-7)
-                points.Add(target);
+            if (points[^1] != target) points.Add(target);
+            if (route.TargetSpeedKmS == 0) return points;
             TrajectoryViewportGeometry.ExtendToEdge(points, route.TargetDirection, camera, width, height);
             return points;
         }
+
+        if (predicted.SpeedKmS <= 0) return points;
 
         if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach)
         {

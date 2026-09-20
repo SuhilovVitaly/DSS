@@ -6,7 +6,7 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 
 /// <summary>
-/// Ship overlay (ТЗ Docs/FirstRelease/Screens/Ship.md). Placeholder shell: the
+/// Ship overlay (ТЗ Documentation/02-FirstRelease/Screens/Ship.md). Placeholder shell: the
 /// TetrarchClass/CrewAndHabitation/CrewDialogues/IceMining mechanics it will report
 /// on are not yet implemented in the Engine, so every section shows a "not
 /// available yet" line instead of fabricated data. Opened via the bottom-center

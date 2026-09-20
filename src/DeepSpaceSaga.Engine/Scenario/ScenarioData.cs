@@ -17,9 +17,10 @@ public static class SaveFormat
     /// Version 4 preserves fractional motion values and the recent command journal.
     /// Version 5 adds versioned economic time state and durable travel receipts.
     /// Version 6 separates calendar time from motion/cycle time; older saves retain their baselines.
+    /// Version 7 binds saves to catalog/rules versions and an economic catalog fingerprint.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 6;
+    public const int CurrentSaveFormatVersion = 7;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -55,7 +56,7 @@ public sealed record GameStateData(
     [property: JsonPropertyName("spaceObjects")] IReadOnlyList<SpaceObjectData> SpaceObjects,
     [property: JsonPropertyName("masterSeed")] ulong? MasterSeed = null,
     /// <summary>
-    /// Player's Tokens balance (Docs\FirstRelease\Mechanics\Money.md). The player-facing
+    /// Player's Tokens balance (Documentation\02-FirstRelease\Mechanics\Money.md). The player-facing
     /// term for the currency is "tokens"; the engine keeps the value in
     /// <c>SimulationEngine.PlayerCredits</c>. Null means "not yet resolved" —
     /// SimulationEngine.LoadScenario treats a missing value as 0 (a scenario/save predating
@@ -67,7 +68,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("commandReceipts")] IReadOnlyList<DeepSpaceSaga.Contracts.CommandResult>? CommandReceipts = null,
     [property: JsonPropertyName("pendingCommands")] IReadOnlyList<DeepSpaceSaga.Contracts.PlayerCommand>? PendingCommands = null,
     [property: JsonPropertyName("economyTime")] EconomyTimeData? EconomyTime = null,
-    [property: JsonPropertyName("simulationTimeMs")] long? SimulationTimeMs = null)
+    [property: JsonPropertyName("simulationTimeMs")] long? SimulationTimeMs = null,
+    [property: JsonPropertyName("catalogCompatibility")] CatalogCompatibilityData? CatalogCompatibility = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
@@ -115,14 +117,14 @@ public sealed record SpaceObjectData(
     /// <summary>ObjectId of the station this object is docked to. Null unless <see cref="IsDocked"/>.</summary>
     [property: JsonPropertyName("dockedStationObjectId")] string? DockedStationObjectId = null,
     /// <summary>
-    /// Station's Credits balance (Docs\FirstRelease\Mechanics\Money.md). Only meaningful for
+    /// Station's Credits balance (Documentation\02-FirstRelease\Mechanics\Money.md). Only meaningful for
     /// ObjectType == Station. Null means "not yet resolved" — SimulationEngine.LoadScenario
     /// generates a deterministic value from masterSeed the first time; a subsequent save
     /// always carries the resolved value explicitly, so it is never regenerated again.
     /// </summary>
     [property: JsonPropertyName("credits")] long? Credits = null,
     /// <summary>
-    /// Station's price coefficient, fixed-point where 1000 == 1.0x (Docs\FirstRelease\
+    /// Station's price coefficient, fixed-point where 1000 == 1.0x (Documentation\02-FirstRelease\
     /// Mechanics\StationInventory.md's 0.5..2.0 range == 500..2000 here — the project
     /// forbids float/double for authoritative values). Same "null == not yet resolved,
     /// resolved once and then always explicit" rule as <see cref="Credits"/>.
@@ -134,7 +136,7 @@ public sealed record SpaceObjectData(
     /// </summary>
     [property: JsonPropertyName("inventory")] IReadOnlyList<StationInventoryItemData>? Inventory = null,
     /// <summary>
-    /// Station's size classification (requirements §59, Docs\FirstRelease\TechnicalTasks\
+    /// Station's size classification (requirements §59, Documentation\02-FirstRelease\TechnicalTasks\
     /// StationEconomyProductionAndSizing.md "Размеры станции") — one of "Huge"/"Large"/
     /// "Medium"/"Outpost" (case-insensitive). Only meaningful for ObjectType == Station. Null
     /// means "not yet resolved": unlike <see cref="Credits"/>/<see cref="PriceCoefficient"/>/

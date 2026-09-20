@@ -6,7 +6,7 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Finance;
 
 /// <summary>
-/// Finance overlay (ТЗ Docs/FirstRelease/Screens/Finance.md). Placeholder shell:
+/// Finance overlay (ТЗ Documentation/02-FirstRelease/Screens/Finance.md). Placeholder shell:
 /// the Money/Trading/StationInventory mechanics it will report on are not yet
 /// implemented in the Engine, so every section shows a "not available yet" line
 /// instead of fabricated numbers. Opened via the bottom-center Finance panel

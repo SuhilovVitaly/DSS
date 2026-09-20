@@ -6,6 +6,155 @@ namespace DeepSpaceSaga.Motion.Tests;
 /// </summary>
 public class ApproachPursuitMathTests
 {
+    [Fact]
+    public void Equal_speed_intercept_beyond_all_finite_breakpoints_is_still_found()
+    {
+        var ship = new DeepSpaceSaga.Contracts.ObjectMotionSnapshot("ship", 0, 0, 1, 90);
+        var result = ApproachPursuitMath.SolveInterceptFlyThroughPlan(0, 0, 90, 1, -1, 500, 90, 1, 4);
+        Assert.True(result.HasIntercept);
+        Assert.InRange(result.InterceptTimeSeconds, 10_000, 20_000);
+        var roots = ApproachReference.Intercepts(ship, -1, 500, 90, 1, 4, 20_000);
+        Assert.NotEmpty(roots);
+        Assert.True(result.Plan.RemainingUnits <= roots.Min(r => r.Plan.RemainingUnits) + .001);
+        Assert.InRange(Math.Abs(result.Plan.RemainingUnits - 10 * result.InterceptTimeSeconds), 0, .001);
+    }
+
+    [Fact]
+    public void Equal_speed_target_with_an_unrecoverable_turn_cost_has_no_rendezvous()
+    {
+        // Just one unit of longitudinal lead cannot pay for the initial half-turn;
+        // the large lateral separation also excludes bounded three-arc families.
+        Assert.False(ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+            0, 0, 270, 1, -1, 5000, 90, 1, 4).HasIntercept);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(1.000001)]
+    [InlineData(1.1)]
+    [InlineData(2)]
+    public void Incoming_equal_or_faster_targets_use_the_earliest_feasible_rendezvous(double targetSpeed)
+    {
+        var random = new Random(38251);
+        for (int i = 0; i < 24; i++)
+        {
+            var ship = new DeepSpaceSaga.Contracts.ObjectMotionSnapshot("ship", 0, 0, 1, random.Next(360));
+            double endX = 200 + random.NextDouble() * 1800, endY = 50 + random.NextDouble() * 500;
+            var feasible = ApproachPursuitMath.CreateFlyThroughPlan(0, 0, ship.Direction, 1, endX, endY, 90, 4);
+            double targetX = endX - targetSpeed * feasible.RemainingUnits;
+            var result = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+                0, 0, ship.Direction, 1, targetX, endY, 90, targetSpeed, 4);
+            Assert.True(result.HasIntercept, $"Case {i}, targetSpeed={targetSpeed}, ship={ship}, target=({targetX}, {endY})");
+            Assert.True(result.Plan.RemainingUnits <= feasible.RemainingUnits + ApproachReference.Tolerance);
+            // The constructed route bounds the earliest root independently of the
+            // production horizon, including the otherwise unbounded equal-speed case.
+            var roots = ApproachReference.Intercepts(ship, targetX, endY, 90, targetSpeed, 4,
+                feasible.RemainingUnits / 10 + 1);
+            Assert.NotEmpty(roots);
+            Assert.True(result.Plan.RemainingUnits <= roots.Min(r => r.Plan.RemainingUnits) + ApproachReference.Tolerance);
+            var route = new DeepSpaceSaga.Contracts.ApproachRoute(0, 0, ship.Direction, 1, 4,
+                result.Type, result.Plan.FirstRemainingUnits, result.Plan.SecondRemainingUnits,
+                result.Plan.ThirdRemainingUnits, targetX + 10, endY, 90, targetSpeed, 10);
+            Assert.True(ApproachLineCaptureMath.IsRendezvous(route));
+            Assert.InRange(Math.Abs(result.Plan.RemainingUnits - 10 * result.InterceptTimeSeconds), 0, .001);
+        }
+    }
+
+    [Theory]
+    [InlineData(1, -500, 0)]
+    [InlineData(2, -500, 0)]
+    [InlineData(2, 100, 500)]
+    public void Straight_line_unreachable_targets_are_not_reported_as_intercepts(double targetSpeed, double shipX, double shipY)
+    {
+        Assert.False(ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+            shipX, shipY, 90, 1, 0, 0, 90, targetSpeed, 4).HasIntercept);
+    }
+
+    [Theory]
+    [InlineData(2.999999)]
+    [InlineData(2.9999999)]
+    [InlineData(2.99999999)]
+    public void Near_equal_speed_root_is_not_lost_in_final_validation(double targetSpeed)
+    {
+        // The target here is the trailing slot of the (10,0), trail=10 scenario.
+        // L and speed*t are about 3e10 units for speed 2.9999999: one double ULP
+        // already exceeds the old absolute 1e-6 acceptance tolerance.
+        var solution = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+            -1000, 500, 60, 3, 0, 0, 90, targetSpeed, 4);
+        Assert.True(solution.HasIntercept);
+        Assert.True(double.IsFinite(solution.InterceptTimeSeconds));
+        Assert.True(solution.InterceptTimeSeconds > 0);
+        Assert.InRange(Math.Abs(solution.Plan.RemainingUnits - 30 * solution.InterceptTimeSeconds), 0, .001);
+        Assert.Equal(solution, ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+            -1000, 500, 60, 3, 0, 0, 90, targetSpeed, 4));
+    }
+
+    [Theory]
+    [InlineData(0.001)]
+    [InlineData(1.0)]
+    [InlineData(1000.0)]
+    public void SolveInterceptFlyThroughPlan_checks_all_families_and_ties_deterministically(double distance)
+    {
+        // All four CSC families collapse to the same straight line. In particular,
+        // the 0.001-unit case arrives before the former solver's first grid sample.
+        var result = ApproachPursuitMath.SolveInterceptFlyThroughPlan(0, 0, 90, 3, distance, 0, 90, 1, 4);
+        Assert.True(result.HasIntercept);
+        Assert.Equal("LSL", result.Type);
+        Assert.InRange(Math.Abs(result.InterceptTimeSeconds - distance / 20), 0, 1e-7);
+        Assert.InRange(Math.Abs(result.Plan.RemainingUnits - distance * 1.5), 0, 1e-5);
+        Assert.Equal(result,
+            ApproachPursuitMath.SolveInterceptFlyThroughPlan(0, 0, 90, 3, distance, 0, 90, 1, 4));
+    }
+
+    [Fact]
+    public void Multiple_valid_roots_are_ranked_by_length_within_the_admissible_horizon()
+    {
+        var ship = new DeepSpaceSaga.Contracts.ObjectMotionSnapshot("ship", 10000, 9998.25, 4.9966, 259.7105);
+        var roots = ApproachReference.Intercepts(ship, 9789.6958, 10088.3081, 299.7607, 1.8953, 4);
+        Assert.True(roots.Count > 1);
+        var result = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+            ship.X, ship.Y, ship.Direction, ship.SpeedKmS, 9789.6958, 10088.3081, 299.7607, 1.8953, 4);
+        Assert.True(result.HasIntercept);
+        Assert.True(result.Plan.RemainingUnits <= roots.Min(r => r.Plan.RemainingUnits) + ApproachReference.Tolerance);
+        Assert.InRange(Math.Abs(result.Plan.RemainingUnits - ship.SpeedKmS * 10 * result.InterceptTimeSeconds), 0, 1e-5);
+        Assert.InRange(result.InterceptTimeSeconds, 0, ApproachReference.Horizon(ship, 9789.6958, 10088.3081, 299.7607, 1.8953, 4));
+    }
+
+    [Fact]
+    public void Tangent_rendezvous_is_considered_without_a_residual_sign_change()
+    {
+        // RLR, radius R, target heading east. The start/end circle vertical
+        // separation is -R. At u/R=-sqrt(5+2*sqrt(10)), L'(x)=2.
+        // Moving the target's origin back by L/2 places a double root here.
+        const double speed = 1;
+        double radius = speed * 10 / (4 * Math.PI / 180);
+        var ship = new DeepSpaceSaga.Contracts.ObjectMotionSnapshot("ship", 0, radius, speed, 270);
+        double endX = -radius * Math.Sqrt(5 + 2 * Math.Sqrt(10));
+        Assert.True(ApproachReference.Curve(ship, endX, 0, 90, 4, "RLR", out var tangent));
+        double targetX = endX - .5 * tangent.RemainingUnits;
+        var result = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
+            ship.X, ship.Y, ship.Direction, speed, targetX, 0, 90, .5, 4);
+        Assert.True(result.HasIntercept);
+        Assert.True(result.Plan.RemainingUnits <= tangent.RemainingUnits + ApproachReference.Tolerance);
+        Assert.InRange(Math.Abs(result.Plan.RemainingUnits - 10 * result.InterceptTimeSeconds), 0, 1e-5);
+    }
+
+    [Fact]
+    public void Two_roots_of_one_family_are_not_lost_between_coarse_samples()
+    {
+        double radius = 10 / (4 * Math.PI / 180);
+        var ship = new DeepSpaceSaga.Contracts.ObjectMotionSnapshot("ship", 0, radius, 1, 270);
+        double endX = -radius * Math.Sqrt(5 + 2 * Math.Sqrt(10));
+        Assert.True(ApproachReference.Curve(ship, endX, 0, 90, 4, "RLR", out var tangent));
+        // Raise the tangent residual slightly to split its double root into a pair.
+        double targetX = endX - .5 * tangent.RemainingUnits + .01;
+        var roots = ApproachReference.Intercepts(ship, targetX, 0, 90, .5, 4);
+        Assert.True(roots.Count(r => r.Plan.Type == "RLR") >= 2);
+        var result = ApproachPursuitMath.SolveInterceptFlyThroughPlan(0, radius, 270, 1, targetX, 0, 90, .5, 4);
+        Assert.True(result.HasIntercept);
+        Assert.True(result.Plan.RemainingUnits <= roots.Min(r => r.Plan.RemainingUnits) + ApproachReference.Tolerance);
+    }
+
     // Engine module defaults (module.engine.basic), matching NavigationWaypointMathTests.
     private const int TurnStepDegrees = 1;
     private const int AngularInertiaDegPerSec = 4;
@@ -503,15 +652,12 @@ public class ApproachPursuitMathTests
         }
 
         [Fact]
-        public void Solve_returns_no_intercept_when_ship_is_not_faster_than_target()
+        public void Fast_crossing_target_without_a_turn_feasible_rendezvous_returns_no_intercept()
         {
-            // Same shipSpeed/targetSpeed relationship as the protected SPC-0003/Default
-            // scenario (Default_asteroid_pose_uses_one_right_straight_right_tail_entry):
-            // shipSpeedKmS (0.7) is far below a plausible target speed — the ship simply
-            // cannot out-run the target on any lead-pursuit course, so `a = shipSpeed^2 -
-            // |vTarget|^2 <= 0` in the lead-pursuit quadratic and this must resolve to "no
-            // intercept" as a DIRECT CONSEQUENCE of that degeneration (story-20260829-
-            // 210641.md Checkpoint 1) — not via a separately bolted-on speed check.
+            // Protected SPC-0003/Default geometry: the target crosses nearby, but
+            // none of the six bounded-curvature families can arrive with its heading
+            // before the straight-line reachability window closes. Speed alone is
+            // not the rejection criterion; other faster incoming targets do meet us.
             var solution = ApproachPursuitMath.SolveInterceptFlyThroughPlan(
                 shipX: 10000, shipY: 9998.25, shipDirectionDegrees: 0, shipSpeedKmS: 0.7,
                 targetX: 10400, targetY: 10000, targetDirectionDegrees: 256, targetSpeedKmS: 2.0,
@@ -671,4 +817,111 @@ public class ApproachPursuitMathTests
                 precision: 2);
         }
     }
+}
+
+
+// This reference shares only the six geometry formulas, accessed as a typed
+// delegate so production public API need not grow for tests. Search and ranking
+// are deliberately independent: dense sampling, bracket refinement and local
+// minimization, with no calls to the production planner or its breakpoint helper.
+internal static class ApproachReference
+{
+    internal const double Tolerance = .001; // world units (0.1 metre)
+    internal static readonly string[] Families = { "LSL", "RSR", "LSR", "RSL", "RLR", "LRL" };
+    private delegate bool FamilyFormula(string type, double a, double b, double d,
+        out double first, out double second, out double third);
+    private static readonly FamilyFormula Formula = typeof(ApproachPursuitMath)
+        .GetMethod("TryEvaluateCurveType", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+        .CreateDelegate<FamilyFormula>();
+
+    internal static bool Curve(DeepSpaceSaga.Contracts.ObjectMotionSnapshot ship,
+        double tx, double ty, double heading, int turnRate, string type, out ApproachFlyThroughPlan plan)
+    {
+        double radius = ship.SpeedKmS * 10 / (turnRate * Math.PI / 180);
+        double dx = tx - ship.X, dy = ship.Y - ty;
+        double theta = Math.Atan2(dy, dx);
+        double a = Wrap((90 - ship.Direction) * Math.PI / 180 - theta);
+        double b = Wrap((90 - heading) * Math.PI / 180 - theta);
+        bool valid = Formula(type, a, b, Math.Sqrt(dx * dx + dy * dy) / radius,
+            out double first, out double second, out double third);
+        plan = new(type, first * radius, second * radius, third * radius);
+        return valid;
+    }
+
+    private static double Wrap(double angle) => (angle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+
+    internal static double Horizon(DeepSpaceSaga.Contracts.ObjectMotionSnapshot ship,
+        double tx, double ty, double heading, double targetSpeed, int turnRate)
+    {
+        double angle = heading * Math.PI / 180;
+        double vx = targetSpeed * 10 * Math.Sin(angle), vy = -targetSpeed * 10 * Math.Cos(angle);
+        double dx = tx - ship.X, dy = ty - ship.Y, speed = ship.SpeedKmS * 10;
+        double a = (ship.SpeedKmS - targetSpeed) * (ship.SpeedKmS + targetSpeed) * 100;
+        double dot = dx * vx + dy * vy, distanceSquared = dx * dx + dy * dy;
+        double sqrt = Math.Sqrt(dot * dot + a * distanceSquared);
+        double lead = dot < 0 ? distanceSquared / (sqrt - dot) : (dot + sqrt) / a;
+        double radius = speed / (turnRate * Math.PI / 180);
+        return Math.Max(5, 2 * lead + 6 * Math.PI * radius / ((ship.SpeedKmS - targetSpeed) * 10));
+    }
+
+    internal static List<(double Time, ApproachFlyThroughPlan Plan)> Intercepts(
+        DeepSpaceSaga.Contracts.ObjectMotionSnapshot ship, double tx, double ty,
+        double heading, double targetSpeed, int turnRate, double? searchHorizon = null)
+    {
+        var roots = new List<(double, ApproachFlyThroughPlan)>();
+        double horizon = searchHorizon ?? Horizon(ship, tx, ty, heading, targetSpeed, turnRate);
+        double angle = heading * Math.PI / 180;
+        double vx = targetSpeed * 10 * Math.Sin(angle), vy = -targetSpeed * 10 * Math.Cos(angle);
+        double speed = ship.SpeedKmS * 10;
+        foreach (string type in Families)
+        {
+            if (targetSpeed == 0)
+            {
+                if (Curve(ship, tx, ty, heading, turnRate, type, out var stationary))
+                    roots.Add((stationary.RemainingUnits / speed, stationary));
+                continue;
+            }
+            double prevT = 0;
+            bool prevValid = At(0, out var prevPlan);
+            double prevResidual = prevPlan.RemainingUnits;
+            for (int i = 1; i <= 30000; i++)
+            {
+                double time = Math.Exp(Math.Log(1 + horizon) * i / 30000) - 1;
+                bool valid = At(time, out var plan);
+                double residual = plan.RemainingUnits - speed * time;
+                if (valid && prevValid && Math.Sign(residual) != Math.Sign(prevResidual))
+                {
+                    double lo = prevT, hi = time, lowResidual = prevResidual;
+                    for (int iteration = 0; iteration < 70; iteration++)
+                    {
+                        double mid = (lo + hi) / 2;
+                        if (!At(mid, out var candidate))
+                            break;
+                        double r = candidate.RemainingUnits - speed * mid;
+                        if (r == 0 || hi - lo < 1e-9)
+                        {
+                            if (Math.Abs(r) < 1e-6)
+                                roots.Add((mid, candidate));
+                            break;
+                        }
+                        if (Math.Sign(r) == Math.Sign(lowResidual))
+                        {
+                            lo = mid;
+                            lowResidual = r;
+                        }
+                        else
+                            hi = mid;
+                    }
+                }
+                prevT = time;
+                prevValid = valid;
+                prevResidual = residual;
+            }
+
+            bool At(double time, out ApproachFlyThroughPlan plan) =>
+                Curve(ship, tx + vx * time, ty + vy * time, heading, turnRate, type, out plan);
+        }
+        return roots;
+    }
+
 }

@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Client.Tests;
 
 /// <summary>
 /// UI scale (100% / 120% / 150%) must only resize the GameSession overlay panels —
-/// never the tactical map, camera, or map hit-testing. See CLAUDE.md and the "UI
+/// never the tactical map, camera, or map hit-testing. See Documentation/00-Process/CLAUDE.md and the "UI
 /// scale only in the main game session window" requirements.
 /// </summary>
 [Collection("InterfaceLog")]
