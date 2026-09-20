@@ -823,6 +823,112 @@ public class GameSessionNavigationTests
             $"Expected a smooth approach into the final point; largest tail segment was {maxTailJump:F1} wu.");
     }
 
+    [Theory]
+    [InlineData(ApproachLineCaptureMath.Phase)]
+    [InlineData(ApproachPursuitMath.FlyThroughPendingPhase)]
+    [InlineData(ApproachPursuitMath.TrailPhase)]
+    [InlineData(ApproachPursuitMath.FlyThroughInterceptPhasePrefix + "LSR")]
+    public async Task Preview_route_takes_precedence_over_stale_navigation_target_fields(string phase)
+    {
+        await using var fixture = CreateFixture();
+        var ship = new ObjectMotionSnapshot(PlayerShipId, 10000, 10000, 3, 270,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach);
+        var route = ApproachLineCaptureMath.Plan(ship, 12000, 10000, 90, 5, 10, 4)!;
+        route = route with { ElapsedMs = route.DurationMs / 2 };
+        var pose = ApproachLineCaptureMath.PredictPose(route, route.ElapsedMs);
+        ship = ship with
+        {
+            X = pose.X,
+            Y = pose.Y,
+            Direction = pose.Direction,
+            ApproachRoute = route,
+            NavigationPhase = phase,
+            NavigationTargetX = -50000,
+            NavigationTargetY = -50000,
+            NavigationTargetDirectionDegrees = 270,
+            NavigationTargetSpeedKmS = 0,
+            NavigationEscapeCourseDegrees = 1,
+            NavigationRequiredDepartureDistance = 1,
+            NavigationLockedCourseDegrees = 1
+        };
+        fixture.Handle.Buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 2, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(ship), PlayerShipObjectId: PlayerShipId));
+        Render(fixture.Screen);
+
+        var actual = fixture.Screen.GetNavigationTrajectory(PlayerShipId).ToArray();
+        var expected = new NavigationTrajectoryProjector().Project(ship, out bool confirmed, out var endpoint);
+        Assert.False(confirmed);
+        Assert.Equal(expected, actual.Take(expected.Count));
+        Assert.Equal(endpoint, actual[expected.Count - 1]);
+
+        // A later snapshot can change legacy fields without changing the committed preview.
+        fixture.Handle.Buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 3, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(ship with
+            {
+                NavigationTargetX = 50000,
+                NavigationTargetY = 50000,
+                NavigationTargetSpeedKmS = 20,
+                NavigationTargetDirectionDegrees = 0
+            }), PlayerShipObjectId: PlayerShipId));
+        Render(fixture.Screen);
+
+        Assert.Equal(actual, fixture.Screen.GetNavigationTrajectory(PlayerShipId));
+        Assert.Empty(fixture.Connection.Commands);
+    }
+
+    [Fact]
+    public async Task Legacy_approach_snapshot_without_route_uses_the_compatibility_fallback()
+    {
+        await using var fixture = CreateFixture();
+        var ship = new ObjectMotionSnapshot(PlayerShipId, 10000, 10100, 5, 0,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            TurnStepDegrees: 1, TurnStepRemainingMs: 5000, TurnStepIntervalMs: 250,
+            NavigationTargetX: 10000, NavigationTargetY: 10000,
+            NavigationTargetSpeedKmS: 0, NavigationTargetDirectionDegrees: 0,
+            NavigationAngularInertiaDegPerSec: 4);
+        Assert.Null(ship.ApproachRoute);
+        fixture.Handle.Buffer.Update(new AuthoritativeSnapshot(
+            SnapshotSequence: 2, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed0,
+            Objects: ImmutableArray.Create(ship), PlayerShipObjectId: PlayerShipId));
+        Render(fixture.Screen);
+
+        var actual = fixture.Screen.GetNavigationTrajectory(PlayerShipId);
+
+        Assert.Equal(new[] { new FutureTrajectoryPoint(10000, 10100), new FutureTrajectoryPoint(10000, 10000) }, actual);
+        Assert.Empty(fixture.Connection.Commands);
+    }
+
+    [Theory]
+    [InlineData(null, null, null, null)]
+    [InlineData(null, 100.0, 1.0, 90.0)]
+    [InlineData(100.0, null, 1.0, 90.0)]
+    [InlineData(100.0, 100.0, null, 90.0)]
+    [InlineData(100.0, 100.0, 1.0, null)]
+    public void Incomplete_legacy_approach_snapshot_has_no_preview(double? x, double? y, double? speed, double? direction)
+    {
+        var ship = new ObjectMotionSnapshot("ship", 0, 0, 1, 0,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            NavigationTargetX: x, NavigationTargetY: y,
+            NavigationTargetSpeedKmS: speed, NavigationTargetDirectionDegrees: direction);
+        var points = new List<FutureTrajectoryPoint> { new(1, 2) };
+
+        var actual = new NavigationTrajectoryProjector().ProjectInto(ship, points, out bool confirmed, out var endpoint);
+
+        Assert.Same(points, actual);
+        Assert.Empty(actual);
+        Assert.False(confirmed);
+        Assert.Equal(default, endpoint);
+    }
+
+    [Fact]
+    public void Future_trajectory_projector_does_not_reference_engine()
+    {
+        var references = typeof(NavigationTrajectoryProjector).Assembly.GetReferencedAssemblies();
+        Assert.DoesNotContain(references, reference => reference.Name == "DeepSpaceSaga.Engine");
+    }
+
     [Fact]
     public async Task Navigation_trajectory_test_seam_is_empty_without_authoritative_target()
     {
