@@ -7,7 +7,7 @@ public static class NavigationComputerCommandTypes
     /// Preconditions, enforced authoritatively by SimulationEngine.TryStartNavigationCommand:
     /// target must be a Station; distance &lt; the command definition's rangeKm (200 by
     /// default); ship speed and direction must already match the station's. Undock is not
-    /// implemented yet — see Docs/FirstRelease/Mechanics/Docking.md.
+    /// implemented yet — see Documentation/02-FirstRelease/Mechanics/Docking.md.
     /// </remarks>
     public const string Dock = "navigation.dock";
 

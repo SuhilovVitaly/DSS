@@ -7,7 +7,7 @@ using DeepSpaceSaga.Engine.Scenario;
 namespace DeepSpaceSaga.Engine.Tests;
 
 /// <summary>
-/// Story-20260825-084409 Batch 2 — requirements §59, Docs\FirstRelease\TechnicalTasks\
+/// Story-20260825-084409 Batch 2 — requirements §59, Documentation\02-FirstRelease\TechnicalTasks\
 /// StationEconomyProductionAndSizing.md:
 /// U5 (StationSize persistence + fallback, explicit-wins starting inventory),
 /// U6 (ProducingStationModule type catalog: RecipeMaterial.NeedCoefficient),

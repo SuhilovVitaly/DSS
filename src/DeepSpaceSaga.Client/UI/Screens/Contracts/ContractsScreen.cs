@@ -6,10 +6,10 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Contracts;
 
 /// <summary>
-/// Contracts overlay (Docs/FirstRelease/Screens/Contracts.md). Placeholder shell only —
+/// Contracts overlay (Documentation/02-FirstRelease/Screens/Contracts.md). Placeholder shell only —
 /// passenger contracts are not implemented yet, so the panel just shows a single "not
 /// available yet" line instead of live contract data. Split out of the original `Hire`
-/// screen (which now covers crew hiring specifically — Docs/FirstRelease/Screens/Hire.md)
+/// screen (which now covers crew hiring specifically — Documentation/02-FirstRelease/Screens/Hire.md)
 /// so passenger contracts have their own screen. Opened from
 /// <see cref="Station.StationScreen"/>'s `CONTRACTS` button (ScreenEvent.OpenContracts) as
 /// a nested modal on top of it; closes via the toolbar's exit-button icon (see

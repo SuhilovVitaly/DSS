@@ -112,7 +112,7 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly SKRect[] _scaleButtonRects = new SKRect[ScaleLabels.Length];
 
     // Mechanics panel (bottom-center) state — holds the Finance/Ship/... buttons
-    // (Docs/FirstRelease/Screens/Finance.md, Docs/FirstRelease/Screens/Ship.md)
+    // (Documentation/02-FirstRelease/Screens/Finance.md, Documentation/02-FirstRelease/Screens/Ship.md)
     private SKRect _lastMechanicsPanelRect;
     private SKRect _lastFinanceButtonRect;
     private SKRect _lastShipButtonRect;
@@ -2110,8 +2110,8 @@ public sealed partial class GameSessionScreen : IScreen
 
     /// <summary>
     /// Bottom-center panel holding one button per gameplay-mechanic window — "F"
-    /// opens Finance (Docs/FirstRelease/Screens/Finance.md), "S" opens Ship
-    /// (Docs/FirstRelease/Screens/Ship.md). Ctrl+F / Ctrl+S open the same overlays
+    /// opens Finance (Documentation/02-FirstRelease/Screens/Finance.md), "S" opens Ship
+    /// (Documentation/02-FirstRelease/Screens/Ship.md). Ctrl+F / Ctrl+S open the same overlays
     /// without needing the buttons (see OnKeyDown). Clicking pushes
     /// ScreenEvent.OpenFinance / OpenShip, handled by SkiaWindow's generic
     /// PushModalAsync — pause-on-open/resume-on-close needs no logic here.

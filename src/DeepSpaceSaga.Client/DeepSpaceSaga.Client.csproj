@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\DeepSpaceSaga.Contracts\DeepSpaceSaga.Contracts.csproj" />
@@ -41,8 +41,8 @@
 
   <Target Name="CheckPortraitPackPresent" BeforeTargets="PrepareForBuild" Condition="'$(SkipPortraitPackCheck)' != 'true'">
     <!-- Both selectable portrait packs must be available in the workshop. -->
-    <Error Condition="!Exists('Images/Persons/W4/parts.json') Or !Exists('Images/Persons/W4/portrait-style.json')" Text="Portrait asset pack missing in Images/Persons/W4 (see Docs/PortraitGeneratorW4.md)." />
-    <Error Condition="!Exists('Images/Persons/M4/parts.json') Or !Exists('Images/Persons/M4/portrait-style.json')" Text="Portrait asset pack missing in Images/Persons/M4 (see Docs/PortraitGeneratorM4.md)." />
+    <Error Condition="!Exists('Images/Persons/W4/parts.json') Or !Exists('Images/Persons/W4/portrait-style.json')" Text="Portrait asset pack missing in Images/Persons/W4 (see Documentation/03-Design/PortraitGeneratorW4.md)." />
+    <Error Condition="!Exists('Images/Persons/M4/parts.json') Or !Exists('Images/Persons/M4/portrait-style.json')" Text="Portrait asset pack missing in Images/Persons/M4 (see Documentation/03-Design/PortraitGeneratorM4.md)." />
   </Target>
 
   <ItemGroup>

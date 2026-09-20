@@ -6,7 +6,7 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Hire;
 
 /// <summary>
-/// Hire overlay (Docs/FirstRelease/Screens/Hire.md) — crew hiring specifically; passenger
+/// Hire overlay (Documentation/02-FirstRelease/Screens/Hire.md) — crew hiring specifically; passenger
 /// contracts split out into <see cref="Contracts.ContractsScreen"/>. Placeholder shell
 /// only — crew hiring as a full system is out of scope for the first release, so the
 /// panel just shows a single "not available yet" line. Opened from

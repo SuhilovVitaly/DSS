@@ -4,7 +4,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 /// <summary>
 /// Covers <see cref="StationSizeFactors"/> — the data-driven 4 (size) x 3 (nomenclature
-/// category) fixed-point StationPriceFactor table (requirements §59, Docs\FirstRelease\
+/// category) fixed-point StationPriceFactor table (requirements §59, Documentation\02-FirstRelease\
 /// TechnicalTasks\StationEconomyProductionAndSizing.md "Размеры станции"). Story-20260825-
 /// 084409, Batch 1, Unit 3.
 /// </summary>

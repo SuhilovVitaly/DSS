@@ -1,7 +1,7 @@
 namespace DeepSpaceSaga.Engine.Content;
 
 /// <summary>
-/// Final unit price at a station (requirements §59, Docs\FirstRelease\TechnicalTasks\
+/// Final unit price at a station (requirements §59, Documentation\02-FirstRelease\TechnicalTasks\
 /// StationEconomyProductionAndSizing.md "Формула цены"):
 /// <c>unitPriceCredits = RoundToCredits(BasePriceCredits * Product(applicable
 /// StationPriceFactor))</c>. Each factor is fixed-point (1000 = 1.0) — no float/double on the

@@ -251,7 +251,7 @@ public class PauseSimulationTests
     // CompleteActiveEngineCycles/ApplyPendingCommands calls at the top of BuildSnapshot, which
     // are not gated on speed). This test pins that existing behavior specifically for the new
     // Trade projection: a player who opens the Trade modal (which pauses the world, per
-    // Docs\FirstRelease\Mechanics\Trading.md) must still see command confirmations and an
+    // Documentation\02-FirstRelease\Mechanics\Trading.md) must still see command confirmations and an
     // up-to-date DockedStationTrade in the next ~1 Hz snapshot even though gameplay is frozen.
 
     private const string PlayerShipId = "SPC-0001";

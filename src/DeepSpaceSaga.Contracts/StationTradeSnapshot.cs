@@ -14,7 +14,7 @@ public sealed record StationTradeSnapshot(
 
 /// <summary>
 /// One tradeable item on a docked station. The station's own Credits balance is never
-/// serialized here (Docs\FirstRelease\Mechanics\Money.md — hidden from the player);
+/// serialized here (Documentation\02-FirstRelease\Mechanics\Money.md — hidden from the player);
 /// <see cref="MaxSellableQuantity"/> is the only way it influences the client, and it
 /// bounds SELLING to the station (the direction the station's hidden balance actually
 /// limits), not buying — buying from the station is bounded by the player's own
@@ -29,7 +29,7 @@ public sealed record StationInventoryItemSnapshot(
     /// One of <see cref="TradeItemCategories"/> (Resource/Good) — mirrors the item type's
     /// Engine-internal trade category (DeepSpaceSaga.Engine.Content.TradeCategory) without
     /// exposing that internal enum across the assembly boundary. Buy/Sell quantity is fully
-    /// per-unit for every category (Docs/FirstRelease/Screens/Trade.md, "UI-решение: панель
+    /// per-unit for every category (Documentation/02-FirstRelease/Screens/Trade.md, "UI-решение: панель
     /// действия" — this field no longer drives a package-size step); it is still used to label
     /// the action panel's title (e.g. "Steel (Good)") and elsewhere the category itself matters.
     /// Defaults to <see cref="TradeItemCategories.Good"/> for callers/fixtures that predate

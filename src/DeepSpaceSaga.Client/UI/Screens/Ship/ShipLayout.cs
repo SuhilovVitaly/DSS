@@ -8,7 +8,7 @@ public enum ShipButton
 
 /// <summary>
 /// Layout and hit-test geometry for the Ship overlay panel. 1400×800 — the
-/// standard panel size for gameplay-mechanic windows (Docs/FirstRelease/Screens/
+/// standard panel size for gameplay-mechanic windows (Documentation/02-FirstRelease/Screens/
 /// ScreenCatalog.md), same as Finance.
 /// </summary>
 public sealed class ShipLayout

@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 /// <summary>
 /// Batch 2 (Trade economy generation, story-20260822-193700.md): deterministic generation
-/// of station Credits/PriceCoefficient/Inventory (Docs\FirstRelease\Mechanics\
+/// of station Credits/PriceCoefficient/Inventory (Documentation\02-FirstRelease\Mechanics\
 /// {Money,StationInventory}.md) and PlayerCredits, wired through LoadScenario/CaptureSaveState.
 /// </summary>
 public class StationEconomyGenerationTests
@@ -67,7 +67,7 @@ public class StationEconomyGenerationTests
     }
 
     // Story-20260825-084409 Batch 1 (U1): the real catalog grew from 3 to 10 tradeable items
-    // (Docs\FirstRelease\TechnicalTasks\StationEconomyProductionAndSizing.md "Номенклатура") —
+    // (Documentation\02-FirstRelease\TechnicalTasks\StationEconomyProductionAndSizing.md "Номенклатура") —
     // the fallback generator (SimulationEngine.ResolveStationInventory, Protect list, untouched
     // logic) still generates one entry per item type that carries a BasePriceCredits, which is
     // now all 10.

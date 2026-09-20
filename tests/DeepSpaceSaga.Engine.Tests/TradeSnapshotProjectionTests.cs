@@ -286,7 +286,7 @@ public class TradeSnapshotProjectionTests
         // Medium = 1.15, general Resource (Ice is not a producing-module input here) @ Medium
         // = 1.10. unitPrice = BasePriceCredits * that factor:
         // EnergyCells/Fuel (Good, base 200) -> 230; Ice (Resource, base 30) -> 33.
-        // MaxSellableQuantity is fully per-unit (Docs/FirstRelease/Screens/Trade.md,
+        // MaxSellableQuantity is fully per-unit (Documentation/02-FirstRelease/Screens/Trade.md,
         // "UI-решение: панель действия" — supersedes the former §59/U9 sell-package rule): the
         // raw affordable quantity, no package flooring.
         var engine = CreateEngine(
