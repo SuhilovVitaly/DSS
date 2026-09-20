@@ -16,6 +16,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 internal sealed class NavigationTrajectoryProjector
 {
     private readonly LinearMotionPredictor _displayPredictor = new();
+    private ApproachRouteGeometryCache? _approachRouteCache;
     /// <summary>Same horizon as the future trajectory — never longer than the engine can fly.</summary>
     public const int FutureTrajectoryHorizonMs = FutureTrajectoryProjector.FutureTrajectoryHorizonMs;
 
@@ -106,30 +107,16 @@ internal sealed class NavigationTrajectoryProjector
         if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach &&
             predicted.ApproachRoute is { } route)
         {
+            ApproachRouteGeometryCache cache = GetApproachRouteCache(route);
             double routeElapsedMs = Math.Clamp(route.ElapsedMs, 0, route.DurationMs);
             var start = ApproachLineCaptureMath.PredictPose(route, routeElapsedMs);
             points.Add(new(start.X, start.Y));
-            double boundaryMs = 0;
-            ReadOnlySpan<double> lengths = stackalloc double[] { route.First, route.Second, route.Third };
-            for (int segment = 0; segment < 3; segment++)
+            for (int i = 0; i < cache.SampleCount; i++)
             {
-                double startMs = Math.Max(boundaryMs, routeElapsedMs);
-                boundaryMs = Math.Min(route.DurationMs, boundaryMs + lengths[segment] / (route.SpeedKmS * 10) * 1000);
-                if (boundaryMs <= startMs) continue;
-                // Sampling by curvature preserves short turns even in a long chase.
-                int count = route.Type[segment] == 'S' ? 1 :
-                    Math.Max(1, (int)Math.Ceiling((boundaryMs - startMs) / 1000 * route.TurnRate / 2));
-                for (int i = 1; i <= count; i++)
-                {
-                    var point = ApproachLineCaptureMath.PredictPose(route,
-                        Math.Min(route.DurationMs, startMs + (boundaryMs - startMs) * i / count));
-                    points.Add(new(point.X, point.Y));
-                }
+                if (cache.Samples[i].TimeMs > routeElapsedMs)
+                    points.Add(cache.Samples[i].Point);
             }
-            // Use the analytical endpoint even at/after completion, independently of
-            // segment-time rounding or the snapshot's other navigation fields.
-            var endpoint = ApproachLineCaptureMath.PredictPose(route, route.DurationMs);
-            interceptPoint = new(endpoint.X, endpoint.Y);
+            interceptPoint = cache.Endpoint;
             points[^1] = interceptPoint;
             isConfirmedIntercept = ApproachLineCaptureMath.IsRendezvous(route);
             return points;
@@ -248,6 +235,72 @@ internal sealed class NavigationTrajectoryProjector
         return points;
     }
 
+    private ApproachRouteGeometryCache GetApproachRouteCache(ApproachRoute route)
+    {
+        var signature = new ApproachRouteSignature(
+            route.X, route.Y, route.Direction, route.SpeedKmS, route.TurnRate, route.Type,
+            route.First, route.Second, route.Third,
+            route.TargetX, route.TargetY, route.TargetDirection, route.TargetSpeedKmS,
+            route.TrailDistance, route.PlannerVersion);
+
+        if (_approachRouteCache is null || _approachRouteCache.Signature != signature)
+            _approachRouteCache = BuildApproachRouteCache(route, signature);
+
+        return _approachRouteCache;
+    }
+
+    private static ApproachRouteGeometryCache BuildApproachRouteCache(
+        ApproachRoute route, ApproachRouteSignature signature)
+    {
+        var samples = new ApproachRouteSample[FutureTrajectoryProjector.MaxSamplePoints];
+        int sampleCount = 0;
+        double boundaryMs = 0;
+        ReadOnlySpan<double> lengths = stackalloc double[] { route.First, route.Second, route.Third };
+
+        for (int segment = 0; segment < 3 && sampleCount < samples.Length; segment++)
+        {
+            double segmentDurationMs = route.SpeedKmS > 0
+                ? lengths[segment] / (route.SpeedKmS * 10) * 1000
+                : 0;
+            double endMs = Math.Min(route.DurationMs, boundaryMs + segmentDurationMs);
+            if (endMs <= boundaryMs)
+            {
+                boundaryMs = endMs;
+                continue;
+            }
+
+            // Sampling by curvature preserves short turns even in a long chase.
+            int count = route.Type[segment] == 'S'
+                ? 1
+                : Math.Max(1, (int)Math.Ceiling((endMs - boundaryMs) / 1000 * route.TurnRate / 2));
+            count = Math.Min(count, samples.Length - sampleCount);
+            for (int i = 1; i <= count; i++)
+            {
+                double timeMs = boundaryMs + (endMs - boundaryMs) * i / count;
+                var pose = ApproachLineCaptureMath.PredictPose(route, Math.Min(route.DurationMs, timeMs));
+                samples[sampleCount++] = new(timeMs, new(pose.X, pose.Y));
+            }
+
+            boundaryMs = endMs;
+        }
+
+        // Always retain the analytical endpoint, even if malformed route data filled the
+        // bounded sample storage before the final segment was visited.
+        var endpointPose = ApproachLineCaptureMath.PredictPose(route, route.DurationMs);
+        var endpoint = new FutureTrajectoryPoint(endpointPose.X, endpointPose.Y);
+        if (sampleCount == 0)
+        {
+            samples[0] = new(route.DurationMs, endpoint);
+            sampleCount = 1;
+        }
+        else
+        {
+            samples[sampleCount - 1] = new(route.DurationMs, endpoint);
+        }
+
+        return new(signature, samples, sampleCount, endpoint);
+    }
+
     /// <summary>
     /// Display continuation after the finite manoeuvre. The physical route and its
     /// completion marker remain intact; forward flight follows the terminal course.
@@ -271,6 +324,7 @@ internal sealed class NavigationTrajectoryProjector
 
         if (predicted.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach && predicted.ApproachRoute is { } route)
         {
+            ApproachRouteGeometryCache cache = GetApproachRouteCache(route);
             // Display-only continuation uses the target pose captured at planning.
             // Full route duration keeps this point fixed as route.ElapsedMs advances;
             // reaching it is not part of the maneuver or a further intercept.
@@ -278,9 +332,10 @@ internal sealed class NavigationTrajectoryProjector
             double dx = Math.Sin(angle), dy = -Math.Cos(angle);
             double distance = route.TargetSpeedKmS * 10 * route.DurationMs / 1000;
             var target = new FutureTrajectoryPoint(route.TargetX + distance * dx, route.TargetY + distance * dy);
-            if (points[^1] != target) points.Add(target);
-            if (route.TargetSpeedKmS == 0) return points;
-            TrajectoryViewportGeometry.ExtendToEdge(points, route.TargetDirection, camera, width, height);
+            if (!cache.ContinuationMatches(camera, width, height))
+                cache.RebuildContinuation(target, route.TargetSpeedKmS, route.TargetDirection, camera, width, height);
+            for (int i = 0; i < cache.ContinuationPointCount; i++)
+                points.Add(cache.ContinuationPoints[i]);
             return points;
         }
 
@@ -814,5 +869,86 @@ internal sealed class NavigationTrajectoryProjector
     {
         double normalized = degrees % 360;
         return normalized < 0 ? normalized + 360 : normalized;
+    }
+
+    private readonly record struct ApproachRouteSignature(
+        double X,
+        double Y,
+        double Direction,
+        double SpeedKmS,
+        double TurnRate,
+        string Type,
+        double First,
+        double Second,
+        double Third,
+        double TargetX,
+        double TargetY,
+        double TargetDirection,
+        double TargetSpeedKmS,
+        double TrailDistance,
+        int PlannerVersion);
+
+    private readonly record struct ApproachRouteSample(double TimeMs, FutureTrajectoryPoint Point);
+
+    private sealed class ApproachRouteGeometryCache
+    {
+        public ApproachRouteGeometryCache(
+            ApproachRouteSignature signature,
+            ApproachRouteSample[] samples,
+            int sampleCount,
+            FutureTrajectoryPoint endpoint)
+        {
+            Signature = signature;
+            Samples = samples;
+            SampleCount = sampleCount;
+            Endpoint = endpoint;
+        }
+
+        public ApproachRouteSignature Signature { get; }
+        public ApproachRouteSample[] Samples { get; }
+        public int SampleCount { get; }
+        public FutureTrajectoryPoint Endpoint { get; }
+        public FutureTrajectoryPoint[] ContinuationPoints { get; private set; } = Array.Empty<FutureTrajectoryPoint>();
+        public int ContinuationPointCount { get; private set; }
+
+        private CameraState? _continuationCamera;
+        private int _continuationWidth;
+        private int _continuationHeight;
+        private bool _hasContinuation;
+
+        public bool ContinuationMatches(CameraState camera, int width, int height) =>
+            _hasContinuation &&
+            _continuationWidth == width &&
+            _continuationHeight == height &&
+            _continuationCamera is not null &&
+            _continuationCamera.Equals(camera);
+
+        public void RebuildContinuation(
+            FutureTrajectoryPoint target,
+            double targetSpeedKmS,
+            double targetDirection,
+            CameraState camera,
+            int width,
+            int height)
+        {
+            var continuation = new List<FutureTrajectoryPoint>(2);
+            if (Endpoint != target)
+                continuation.Add(target);
+
+            if (targetSpeedKmS != 0)
+            {
+                var extension = new List<FutureTrajectoryPoint>(2) { target };
+                TrajectoryViewportGeometry.ExtendToEdge(extension, targetDirection, camera, width, height);
+                if (extension.Count > 1)
+                    continuation.Add(extension[^1]);
+            }
+
+            ContinuationPoints = continuation.ToArray();
+            ContinuationPointCount = ContinuationPoints.Length;
+            _continuationCamera = camera;
+            _continuationWidth = width;
+            _continuationHeight = height;
+            _hasContinuation = true;
+        }
     }
 }

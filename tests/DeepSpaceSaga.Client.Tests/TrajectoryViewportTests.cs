@@ -101,6 +101,56 @@ public class TrajectoryViewportTests
         Assert.InRange(shown.Count, original.Count, original.Count + 2);
     }
 
+    [Fact]
+    public void Camera_change_does_not_invalidate_maneuver_geometry()
+    {
+        var ship = new ObjectMotionSnapshot("ship", -1000, 500, 3, 270,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach);
+        var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 5, 10, 4)!;
+        var current = ship with { ApproachRoute = route with { ElapsedMs = route.DurationMs / 3 } };
+        var projector = new NavigationTrajectoryProjector();
+        var first = projector.ProjectPlayerInto(current, new(), new CameraState(0, 0, .01), Width, Height,
+            out _, out var firstEndpoint, out int firstManeuverCount);
+        var second = projector.ProjectPlayerInto(current, new(), new CameraState(500, -300, .02), Width, Height,
+            out _, out var secondEndpoint, out int secondManeuverCount);
+
+        Assert.Equal(firstManeuverCount, secondManeuverCount);
+        Assert.Equal(first.Take(firstManeuverCount), second.Take(secondManeuverCount));
+        Assert.Equal(firstEndpoint, secondEndpoint);
+        Assert.Equal(first[firstManeuverCount], second[secondManeuverCount]);
+        Assert.NotEqual(first[^1], second[^1]);
+    }
+
+    [Fact]
+    public void Viewport_extension_keeps_cached_maneuver_endpoint()
+    {
+        var ship = new ObjectMotionSnapshot("ship", -1000, 500, 3, 270,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach);
+        var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 5, 10, 4)!;
+        var current = ship with { ApproachRoute = route };
+        var projector = new NavigationTrajectoryProjector();
+
+        var first = projector.ProjectPlayerInto(current, new(), new CameraState(0, 0, .01), Width, Height,
+            out _, out var endpoint, out int maneuverPointCount);
+        var second = projector.ProjectPlayerInto(current, new(), new CameraState(500, -300, .02), Width, Height,
+            out _, out var sameEndpoint, out int sameManeuverPointCount);
+
+        Assert.Equal(endpoint, sameEndpoint);
+        Assert.Equal(maneuverPointCount, sameManeuverPointCount);
+        Assert.Equal(endpoint, first[maneuverPointCount - 1]);
+        Assert.Equal(endpoint, second[sameManeuverPointCount - 1]);
+    }
+
+    [Fact]
+    public void Future_trajectory_projector_does_not_reference_engine()
+    {
+        var references = typeof(NavigationTrajectoryProjector).Assembly
+            .GetReferencedAssemblies()
+            .Select(reference => reference.Name);
+
+        Assert.DoesNotContain("DeepSpaceSaga.Engine", references);
+    }
+
     [Theory]
     [InlineData(1, 0)] [InlineData(.1, 90)] [InlineData(.001, 180)]
     [InlineData(.00001, 270)] [InlineData(1e-12, 45)]

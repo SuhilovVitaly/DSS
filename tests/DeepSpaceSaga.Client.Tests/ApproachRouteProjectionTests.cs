@@ -158,6 +158,67 @@ public class ApproachRouteProjectionTests
         }
     }
 
+    [Fact]
+    public void Repeated_route_projection_reuses_geometry_without_steady_state_allocations()
+    {
+        var ship = new ObjectMotionSnapshot("ship", -1000, 500, 3, 270,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach);
+        var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 5, 10, 4)! with
+        {
+            ElapsedMs = 0
+        };
+        var current = SnapshotAt(route with { ElapsedMs = route.DurationMs / 3 });
+        var projector = new NavigationTrajectoryProjector();
+        var points = new List<FutureTrajectoryPoint>(1024);
+
+        projector.ProjectInto(current, points, out _, out _);
+        projector.ProjectInto(current, points, out _, out _);
+        projector.ProjectInto(current, points, out _, out _);
+
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 100; i++)
+            projector.ProjectInto(current, points, out _, out _);
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        Assert.Equal(0, allocated);
+    }
+
+    [Fact]
+    public void Route_signature_change_rebuilds_cached_geometry()
+    {
+        var ship = new ObjectMotionSnapshot("ship", -1000, 500, 3, 270,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach);
+        var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 1, 10, 4)!;
+        var changed = route with { Direction = route.Direction + 15, PlannerVersion = route.PlannerVersion + 1 };
+        var projector = new NavigationTrajectoryProjector();
+
+        var before = projector.Project(SnapshotAt(route), out _, out _);
+        var after = projector.Project(SnapshotAt(changed), out _, out _);
+
+        Assert.NotEqual(before[1], after[1]);
+    }
+
+    [Theory]
+    [InlineData(1, 0.25)]
+    [InlineData(5, 0.5)]
+    public void Cached_projection_matches_the_exact_uncached_route(double targetSpeed, double elapsedFraction)
+    {
+        var ship = new ObjectMotionSnapshot("ship", -1000, 500, 3, 270,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach);
+        var route = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, targetSpeed, 10, 4)!;
+        var current = SnapshotAt(route with { ElapsedMs = route.DurationMs * elapsedFraction });
+
+        var expectedProjector = new NavigationTrajectoryProjector();
+        var expected = expectedProjector.Project(current, out bool expectedConfirmed, out var expectedEndpoint);
+        var projector = new NavigationTrajectoryProjector();
+        projector.Project(SnapshotAt(route), out _, out _); // warm the route cache at another elapsed time
+        var actual = projector.Project(current, out bool actualConfirmed, out var actualEndpoint);
+
+        Assert.Equal(expected, actual);
+        Assert.Equal(expectedConfirmed, actualConfirmed);
+        Assert.Equal(expectedEndpoint, actualEndpoint);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(0.5)]
