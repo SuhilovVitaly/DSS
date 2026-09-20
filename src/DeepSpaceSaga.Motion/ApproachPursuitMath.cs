@@ -48,8 +48,7 @@ public readonly record struct ApproachFlyThroughPlanStep(
 /// heading/speed for the whole search horizon (story-20260829-210641.md §4). When
 /// <see cref="HasIntercept"/> is false, none of the 6 Dubins curve types have a valid
 /// root (t* &gt; 0) within the search horizon — the same "no achievable rendezvous"
-/// outcome for which callers must fall back to today's captured-pose behavior
-/// (protects SPC-0003/Default: ship not strictly faster than the target).
+/// outcome for which callers fall back to a shortest route to the captured pose.
 /// </summary>
 /// <param name="HasIntercept">Whether a valid rendezvous was found.</param>
 /// <param name="Type">3-letter Dubins curve type ("LSL", "RSR", "LSR", "RSL", "RLR", "LRL") of the winning curve, or empty when <see cref="HasIntercept"/> is false.</param>
@@ -166,7 +165,8 @@ public static class ApproachPursuitMath
             if (!TryEvaluateCurveType(type, alpha, beta, normalizedDistance, out double first, out double second, out double third))
                 continue;
             double length = first + second + third;
-            if (length < bestLength)
+            // Keep canonical family order for numerical ties, in world units.
+            if (length < bestLength - 1e-6 / turnRadius)
             {
                 bestLength = length;
                 shortest = (type, first, second, third);
@@ -185,374 +185,325 @@ public static class ApproachPursuitMath
     /// </summary>
     private static readonly string[] AllCurveTypes = { "LSL", "RSR", "LSR", "RSL", "RLR", "LRL" };
 
-    /// <summary>
-    /// Relative extra time (as a multiple of the straight-line lead-pursuit horizon
-    /// <c>t_lead</c>, Checkpoint 1 of story-20260829-210641.md §10) added when building
-    /// the per-type search horizon. A Dubins curve is never shorter than the
-    /// straight-line distance, so the winning type's actual rendezvous time is always
-    /// &gt;= t_lead. Combined additively with <see cref="InterceptCurvatureLoopsMargin"/>
-    /// (see that constant's doc-comment for why BOTH terms are needed):
-    /// <c>horizon = t_lead * (1 + InterceptHorizonMarginFactor) + InterceptCurvatureLoopsMargin * 2*pi*turnRadius / closingSpeed</c>.
-    /// </summary>
-    private const double InterceptHorizonMarginFactor = 1.0;
+    internal static ReadOnlySpan<string> CurveTypes => AllCurveTypes;
 
     /// <summary>
-    /// Curvature-correction budget: three turning circumferences divided by closing
-    /// speed. A turn costs distance while the target continues to move; using only
-    /// the duration of three turns underestimates the horizon near equal speeds.
+    /// Builds one named Dubins family without applying the arg-min selection used by
+    /// <see cref="CreateFlyThroughPlan"/>. LineCapture uses this to compare every family
+    /// against the same finite aft-line objective.
     /// </summary>
-    private const double InterceptCurvatureLoopsMargin = 3.0;
-
-    /// <summary>
-    /// Absolute floor (seconds) for the per-type search horizon, guarding the numerically
-    /// degenerate case where the target already sits (almost) exactly at the ship's
-    /// position — the lead-pursuit horizon <c>t_lead</c> collapses to ~0 there, which
-    /// would otherwise leave no search interval at all.
-    /// </summary>
-    private const double InterceptMinHorizonSeconds = 5.0;
-
-    /// <summary>Number of coarse samples used to bracket a sign change per curve type before bisecting.</summary>
-    private const int InterceptHorizonSampleCount = 500;
-
-    /// <summary>Bisection stops once the bracket is narrower than this, in seconds.</summary>
-    private const double InterceptBisectionToleranceSeconds = 1e-6;
-
-    private const int InterceptMaxBisectionIterations = 100;
-
-    /// <summary>
-    /// When a coarse sample lands (numerically) exactly on a root, or the bisection
-    /// bracket is this tight, treat it as the root without further refinement.
-    /// </summary>
-    private const double InterceptResidualToleranceUnits = 1e-6;
-
-    /// <summary>
-    /// Small time nudge used only when a bisection midpoint happens to fall just outside
-    /// a curve type's admissible domain (the domain boundary lies inside the current
-    /// bracket) — nudges toward the still-admissible side rather than crossing into a
-    /// different curve type's formula, per story-20260829-210641.md §4 ("не пересекая
-    /// границу переключения типов").
-    /// </summary>
-    private const double InterceptInvalidNudgeSeconds = 1e-4;
-
-    /// <summary>Two candidate intercept times within this tolerance are treated as tied (then broken by curve length).</summary>
-    private const double InterceptTimeTieToleranceSeconds = 1e-6;
-
-    /// <summary>
-    /// Guard factor (multiplied by <c>turnRadius</c>) used to detect a SPURIOUS length
-    /// jump within a single curve type's own formula, caused not by a genuine geometric
-    /// discontinuity but by the <see cref="Mod2Pi"/> wrap each Add* method applies to
-    /// keep its reported segment angles in [0, 2*pi) (the "shortest representative" for
-    /// that type at that exact pose — the same convention <see cref="CreateFlyThroughPlan"/>
-    /// already relies on, so it is NOT changed here). As the target pose varies
-    /// continuously, one of a type's three segment angles can cross a 2*pi boundary,
-    /// making the type's OWN reported length jump by close to <c>2*pi*turnRadius</c>
-    /// between two arbitrarily close instants — a real, reproducible artifact (see the
-    /// commit's regression test), not a hypothetical. A genuine smooth change in length
-    /// between two closely-spaced samples is always far smaller than
-    /// <c>pi*turnRadius</c> (half of the wrap's jump size) for any reasonable sampling
-    /// resolution, so a jump at or above that threshold is treated exactly like an
-    /// admissibility-domain boundary — story-20260829-210641.md §4's "не пересекая
-    /// границу переключения типов" applies here too: bisection must never straddle it.
-    /// </summary>
-    private const double InterceptWrapJumpGuardFactor = Math.PI;
-
-    /// <summary>
-    /// Solve the exact-intercept fly-through problem: find the earliest time <c>t*</c> and
-    /// Dubins curve type such that flying that curve from the ship's current pose arrives
-    /// exactly where the target will be at <c>t*</c>, assuming the target holds its
-    /// current heading and speed for the whole search (story-20260829-210641.md §2, §4).
-    ///
-    /// Unlike a single bisection over the argmin-selected curve length (the previous,
-    /// reverted attempt — see the story's "why bisection on t failed" section), this
-    /// solves the rendezvous equation <c>L_X(t) - shipSpeed * t = 0</c> SEPARATELY for
-    /// each of the 6 Dubins curve types X, each within its own domain of validity (where
-    /// the type's own formula is defined), and only picks the overall winner (earliest
-    /// t*, tie-broken by shorter length) AFTER solving. This avoids ever bisecting across
-    /// a point where the globally-shortest curve type switches — the argmin-selected
-    /// length is not continuous there even though the underlying geometry is (see
-    /// <c>InterceptFlyThroughSolution_avoids_the_type_switch_discontinuity</c> in
-    /// ApproachPursuitMathTests.cs for a concrete reproduction).
-    ///
-    /// The search horizon per type is derived from the classical straight-line
-    /// lead-pursuit quadratic (Checkpoint 1 of story-20260829-210641.md §10):
-    /// <c>(shipSpeed^2 - |vTarget|^2) * t^2 - 2*(D . vTarget) * t - |D|^2 = 0</c>, where
-    /// <c>D</c> is the vector from the ship to the target's CURRENT position and
-    /// <c>vTarget</c> is the target's (constant) velocity vector. When
-    /// <c>a = shipSpeed^2 - |vTarget|^2 &lt;= 0</c> (ship not strictly faster than the
-    /// target) this quadratic has no meaningful positive horizon, and this method
-    /// returns <see cref="ApproachInterceptSolution.None"/> as a direct consequence —
-    /// not via a separate explicit "shipSpeed &lt;= targetSpeed" check — which is exactly
-    /// the SPC-0003/Default "ship not faster than target -> no achievable rendezvous"
-    /// scenario this method must protect (see
-    /// <c>SolveInterceptFlyThroughPlan_ship_not_faster_than_target_returns_no_intercept</c>).
-    /// </summary>
-    /// <param name="shipX">Ship current X, world units.</param>
-    /// <param name="shipY">Ship current Y, world units.</param>
-    /// <param name="shipDirectionDegrees">Ship current heading, degrees.</param>
-    /// <param name="shipSpeedKmS">Ship current speed, km/s.</param>
-    /// <param name="targetX">Target current X, world units.</param>
-    /// <param name="targetY">Target current Y, world units.</param>
-    /// <param name="targetDirectionDegrees">Target current heading, degrees — assumed constant over the search horizon.</param>
-    /// <param name="targetSpeedKmS">Target current speed, km/s — assumed constant over the search horizon.</param>
-    /// <param name="angularInertiaDegPerSec">Ship angular inertia, degrees per second (0 = cannot turn -> no intercept).</param>
-    public static ApproachInterceptSolution SolveInterceptFlyThroughPlan(
-        double shipX,
-        double shipY,
-        double shipDirectionDegrees,
-        double shipSpeedKmS,
-        double targetX,
-        double targetY,
-        double targetDirectionDegrees,
-        double targetSpeedKmS,
-        int angularInertiaDegPerSec)
+    internal static bool TryCreateLineCurvePlan(
+        double along,
+        double cross,
+        double headingRadians,
+        double turnRadius,
+        double endpoint,
+        string curveType,
+        out ApproachFlyThroughPlan plan)
     {
-        if (shipSpeedKmS <= 0 || angularInertiaDegPerSec <= 0)
-            return ApproachInterceptSolution.None;
+        plan = default;
+        // Stay in the target frame during the search. Roundoff from repeatedly
+        // rotating almost-coincident world positions can otherwise create a loop.
+        double dx = (endpoint - along) / turnRadius, dy = cross / turnRadius;
+        if (Math.Abs(dy) < 1e-12)
+            dy = 0;
+        double normalizedDistance = Math.Sqrt(dx * dx + dy * dy);
+        double theta = Mod2Pi(Math.Atan2(dy, dx));
+        double alpha = Mod2Pi(headingRadians - theta);
+        double beta = Mod2Pi(-theta);
+        if (!TryEvaluateCurveType(curveType, alpha, beta, normalizedDistance,
+                out double first, out double second, out double third))
+            return false;
 
-        double shipSpeedUnits = shipSpeedKmS * UnitsPerKmS;
-        double targetSpeedUnits = targetSpeedKmS * UnitsPerKmS;
+        plan = new ApproachFlyThroughPlan(
+            curveType,
+            first * turnRadius,
+            second * turnRadius,
+            third * turnRadius);
+        return true;
+    }
 
-        double targetDirectionRad = targetDirectionDegrees * Math.PI / 180.0;
-        double targetVelocityX = targetSpeedUnits * Math.Sin(targetDirectionRad);
-        double targetVelocityY = -targetSpeedUnits * Math.Cos(targetDirectionRad);
+    // Geometry is normalized by the turning radius. In the target frame +X is
+    // forward, +Y is Cartesian left; cross is the screen-coordinate right offset.
+    // A fixed family can change branch only when a tangent/arc vanishes, the two
+    // turning circles coincide, or a tangent/three-arc construction becomes invalid.
+    // Between these points the length formulas are smooth.
+    internal static int GetCurveBreakpoints(
+        double along, double cross, double headingRadians, double radius,
+        string type, double lower, double upper, double weight, Span<double> points)
+    {
+        int count = 0;
+        AddPoint(points, ref count, lower, lower, upper);
+        AddPoint(points, ref count, upper, lower, upper);
+        double a = along / radius, y = -cross / radius;
+        double s = type[0] == 'L' ? 1 : -1;
+        double e = type[2] == 'L' ? 1 : -1;
+        double cx = a - s * Math.Sin(headingRadians);
+        double cy = y + s * Math.Cos(headingRadians);
+        double v = e - cy;
+        AddPoint(points, ref count, cx * radius, lower, upper);
 
-        double offsetX = targetX - shipX;
-        double offsetY = targetY - shipY;
-
-        // Classical lead-pursuit quadratic (Checkpoint 1): a*t^2 + b*t + c = 0.
-        double a = shipSpeedUnits * shipSpeedUnits - (targetVelocityX * targetVelocityX + targetVelocityY * targetVelocityY);
-        double b = -2.0 * (offsetX * targetVelocityX + offsetY * targetVelocityY);
-        double c = -(offsetX * offsetX + offsetY * offsetY);
-
-        // a <= 0 means the ship is not strictly faster than the target: no positive lead
-        // horizon exists, so no straight-line (and therefore no curved) intercept is
-        // achievable — this degeneration IS the SPC-0003/Default "no intercept" outcome.
-        if (a <= 0)
-            return ApproachInterceptSolution.None;
-
-        double discriminant = b * b - 4 * a * c;
-        if (discriminant < 0)
-            return ApproachInterceptSolution.None;
-
-        double sqrtDiscriminant = Math.Sqrt(discriminant);
-        double root1 = (-b - sqrtDiscriminant) / (2 * a);
-        double root2 = (-b + sqrtDiscriminant) / (2 * a);
-
-        double? leadTime = null;
-        foreach (double root in new[] { root1, root2 })
+        if (type[1] == 'S')
         {
-            if (root > 0 && (leadTime is null || root < leadTime))
-                leadTime = root;
-        }
-        // Coincident positions still need a positive-duration heading maneuver.
-        // Zero is a valid lower bound even though it is not a rendezvous solution.
-        if (leadTime is null && c == 0)
-            leadTime = 0;
-        if (leadTime is null)
-            return ApproachInterceptSolution.None;
-
-        double angularVelocityRadPerSec = angularInertiaDegPerSec * Math.PI / 180.0;
-        double turnRadius = shipSpeedUnits / angularVelocityRadPerSec;
-
-        double horizon = Math.Max(
-            leadTime.Value * (1.0 + InterceptHorizonMarginFactor)
-                + InterceptCurvatureLoopsMargin * 2.0 * Math.PI * turnRadius / (shipSpeedUnits - targetSpeedUnits),
-            InterceptMinHorizonSeconds);
-
-        // Evaluate a single curve type's (length, self-consistency residual) at time t,
-        // reusing the SAME per-type segment-length formulas CreateFlyThroughPlan already
-        // uses (EvaluateLsl/EvaluateRsr/.../EvaluateLrl) — never re-deriving or duplicating them.
-        (bool Valid, double LengthUnits) EvaluateType(string curveType, double t)
-        {
-            double tx = targetX + t * targetVelocityX;
-            double ty = targetY + t * targetVelocityY;
-            double dx = tx - shipX;
-            double dy = -(ty - shipY);
-            double directDistance = Math.Sqrt(dx * dx + dy * dy);
-            double normalizedDistance = directDistance / turnRadius;
-            double theta = Mod2Pi(Math.Atan2(dy, dx));
-            double alpha = Mod2Pi((90.0 - shipDirectionDegrees) * Math.PI / 180.0 - theta);
-            double beta = Mod2Pi((90.0 - targetDirectionDegrees) * Math.PI / 180.0 - theta);
-
-            if (!TryEvaluateCurveType(curveType, alpha, beta, normalizedDistance, out double first, out double second, out double third))
-                return (false, 0);
-
-            return (true, (first + second + third) * turnRadius);
-        }
-
-        double wrapJumpGuardUnits = InterceptWrapJumpGuardFactor * turnRadius;
-        // A long closing-time horizon must not skip short, early encounters.
-        double sampleScale = Math.Max(1, Math.Min(leadTime.Value, 2 * Math.PI / angularVelocityRadPerSec));
-        double sampleLogRange = Math.Log(1 + horizon / sampleScale);
-
-        double? BisectRoot(
-            string curveType, double lowT, double highT,
-            double lowLength, double highLength, double lowResidual, double highResidual)
-        {
-            for (int iteration = 0; iteration < InterceptMaxBisectionIterations; iteration++)
+            double shift = e - s;
+            AddCircleCrossings(points, ref count, cx, v, Math.Abs(shift), radius, lower, upper);
+            // First/last turn wraps when the tangent heading equals the start/end heading.
+            AddTangent(points, ref count, headingRadians, cx, v, shift, radius, lower, upper);
+            AddTangent(points, ref count, 0, cx, v, shift, radius, lower, upper);
+            // L'(x) = cos(tangent heading). Stationary points of weight*L(x)-x.
+            if (weight > 1)
             {
-                if (highT - lowT < InterceptBisectionToleranceSeconds)
-                {
-                    double candidate = .5 * (lowT + highT);
-                    var evaluated = EvaluateType(curveType, candidate);
-                    // A narrow bracket around a wrapped curve is not a rendezvous.
-                    return evaluated.Valid && Math.Abs(evaluated.LengthUnits - shipSpeedUnits * candidate) <=
-                        Math.Max(InterceptResidualToleranceUnits, shipSpeedUnits * InterceptBisectionToleranceSeconds)
-                        ? candidate : null;
-                }
-
-                double midT = 0.5 * (lowT + highT);
-                var (valid, length) = EvaluateType(curveType, midT);
-                if (!valid)
-                {
-                    // The type's admissible domain boundary lies inside this bracket —
-                    // nudge toward the side we know is admissible rather than ever
-                    // treating the OTHER side of the boundary as this same type's curve.
-                    double nudgedT = lowResidual >= 0 ? midT - InterceptInvalidNudgeSeconds : midT + InterceptInvalidNudgeSeconds;
-                    if (nudgedT <= lowT || nudgedT >= highT)
-                        return null; // Bracket too narrow to safely resolve — give up on this bracket.
-
-                    (valid, length) = EvaluateType(curveType, nudgedT);
-                    if (!valid)
-                        return null;
-                    midT = nudgedT;
-                }
-
-                // Guard against the Mod2Pi wrap artifact (see InterceptWrapJumpGuardFactor):
-                // if the midpoint's length is not a smooth interpolation between the two
-                // bracket ends, the wrap boundary lies inside this bracket — never bisect
-                // across it as if it were this type's own smooth formula.
-                if (Math.Abs(length - lowLength) > wrapJumpGuardUnits + targetSpeedUnits * (midT - lowT) &&
-                    Math.Abs(length - highLength) > wrapJumpGuardUnits + targetSpeedUnits * (highT - midT))
-                    return null;
-
-                double midResidual = length - shipSpeedUnits * midT;
-                if (Math.Abs(midResidual) < InterceptResidualToleranceUnits)
-                    return midT;
-
-                if (Math.Sign(midResidual) == Math.Sign(lowResidual))
-                {
-                    lowT = midT;
-                    lowLength = length;
-                    lowResidual = midResidual;
-                }
-                else
-                {
-                    highT = midT;
-                    highLength = length;
-                    highResidual = midResidual;
-                }
+                double phi = Math.Acos(1 / weight);
+                AddTangent(points, ref count, phi, cx, v, shift, radius, lower, upper);
+                AddTangent(points, ref count, -phi, cx, v, shift, radius, lower, upper);
             }
-
-            return 0.5 * (lowT + highT);
         }
-
-        double? FindEarliestRootForType(string curveType)
+        else
         {
-            double prevT = 0;
-            double prevLength = 0;
-            double prevResidual = 0;
-            bool prevValid = false;
+            AddCircleCrossings(points, ref count, cx, v, 4, radius, lower, upper);
+            // A zero first turn places the middle circle opposite the start circle.
+            double mx = a + s * Math.Sin(headingRadians);
+            double my = y - s * Math.Cos(headingRadians);
+            AddCircleCrossings(points, ref count, mx, e - my, 2, radius, lower, upper);
+            // A zero last turn places it opposite the end circle.
+            AddCircleCrossings(points, ref count, cx, -e - cy, 2, radius, lower, upper);
 
-            for (int sample = 1; sample <= InterceptHorizonSampleCount; sample++)
+            // With u=x-cx, d²=u²+v², L'=-4u/(d*sqrt(16-d²)).
+            // weight*L'=1 reduces to a quadratic in z=u², with u<0.
+            double v2 = v * v;
+            if (v2 <= 16)
             {
-                double t = sampleScale * (Math.Exp(sampleLogRange * sample / InterceptHorizonSampleCount) - 1);
-                var (valid, length) = EvaluateType(curveType, t);
-                if (!valid)
-                {
-                    prevValid = false;
-                    continue;
-                }
-
-                double residual = length - shipSpeedUnits * t;
-
-                if (prevValid)
-                {
-                    // Allow the target's natural motion before detecting a Mod2Pi wrap (see
-                    // InterceptWrapJumpGuardFactor) — never treat that as a genuine root
-                    // bracket, even if the residual happens to change sign there.
-                    bool suspiciousWrapJump = Math.Abs(length - prevLength) >
-                        wrapJumpGuardUnits + targetSpeedUnits * (t - prevT);
-
-                    if (!suspiciousWrapJump)
-                    {
-                        if (Math.Abs(residual) < InterceptResidualToleranceUnits)
-                            return t;
-
-                        if (Math.Sign(residual) != Math.Sign(prevResidual))
-                        {
-                            double? root = BisectRoot(curveType, prevT, t, prevLength, length, prevResidual, residual);
-                            if (root is not null)
-                                return root;
-                            // Could not safely resolve this bracket (domain boundary or
-                            // wrap artifact in the way) — keep scanning forward for a
-                            // later, cleaner bracket.
-                        }
-                    }
-                }
-
-                prevT = t;
-                prevLength = length;
-                prevResidual = residual;
-                prevValid = true;
+                double b = 2 * v2 + 16 * (weight * weight - 1);
+                double c = v2 * (v2 - 16);
+                double discriminant = b * b - 4 * c;
+                double sqrt = Math.Sqrt(Math.Max(0, discriminant));
+                double z = b >= 0 && b + sqrt > 0 ? -2 * c / (b + sqrt) : (-b + sqrt) / 2;
+                if (z >= 0)
+                    AddPoint(points, ref count, (cx - Math.Sqrt(z)) * radius, lower, upper);
             }
-
-            return null;
         }
 
-        (string Type, double TimeSeconds, double LengthUnits)? best = null;
-        foreach (string curveType in AllCurveTypes)
+        points[..count].Sort();
+        int unique = 0;
+        for (int i = 0; i < count; i++)
+            if (unique == 0 || points[i] != points[unique - 1])
+                points[unique++] = points[i];
+        return unique;
+    }
+
+    private static void AddPoint(Span<double> points, ref int count, double x, double lower, double upper)
+    {
+        if (double.IsFinite(x) && x >= lower && x <= upper)
+            points[count++] = x;
+    }
+
+    private static void AddCircleCrossings(Span<double> points, ref int count,
+        double center, double vertical, double distance, double radius, double lower, double upper)
+    {
+        double squared = distance * distance - vertical * vertical;
+        if (squared < 0)
+            return;
+        double offset = Math.Sqrt(squared);
+        AddPoint(points, ref count, (center - offset) * radius, lower, upper);
+        AddPoint(points, ref count, (center + offset) * radius, lower, upper);
+    }
+
+    private static void AddTangent(Span<double> points, ref int count,
+        double phi, double cx, double v, double shift, double radius, double lower, double upper)
+    {
+        double sin = Math.Sin(phi), cos = Math.Cos(phi);
+        if (Math.Abs(sin) <= 1e-14)
+            return; // Collinear tangents have constant heading; cx already splits their domain.
+        double straight = (v - shift * cos) / sin;
+        if (straight >= 0)
+            AddPoint(points, ref count, (cx + straight * cos - shift * sin) * radius, lower, upper);
+    }
+
+    // One-sided probes exclude angle wraps from root brackets. Their displacement
+    // accounts for both turning radius and floating-point spacing at the boundary.
+    internal static double InsideBoundary(double boundary, double toward, double radius)
+    {
+        double step = Math.Min(Math.Abs(toward - boundary) / 4,
+            Math.Max(radius * 1e-10, Math.Abs(boundary) * 2e-15));
+        double candidate = boundary + Math.CopySign(step, toward - boundary);
+        if (candidate == boundary)
+            candidate = toward > boundary ? Math.BitIncrement(boundary) : Math.BitDecrement(boundary);
+        return candidate;
+    }
+
+    /// <summary>
+    /// Select the shortest positive rendezvous among all six Dubins families.
+    /// Constant ship speed makes this the earliest intercept as well. Numerical
+    /// length ties use time, then LSL/RSR/LSR/RSL/RLR/LRL order.
+    /// Each family is split at its domain boundaries, angle wraps and stationary
+    /// residuals before solving, so close roots and tangent roots need no sample grid.
+    /// Faster incoming targets are searched too; speed alone does not decide feasibility.
+    /// </summary>
+    public static ApproachInterceptSolution SolveInterceptFlyThroughPlan(
+        double shipX, double shipY, double shipDirectionDegrees, double shipSpeedKmS,
+        double targetX, double targetY, double targetDirectionDegrees,
+        double targetSpeedKmS, int angularInertiaDegPerSec)
+    {
+        if (shipSpeedKmS <= 0 || angularInertiaDegPerSec <= 0 || targetSpeedKmS < 0)
+            return ApproachInterceptSolution.None;
+
+        double speed = shipSpeedKmS * UnitsPerKmS;
+        double targetSpeed = targetSpeedKmS * UnitsPerKmS;
+        double radius = speed / (angularInertiaDegPerSec * Math.PI / 180);
+        double angle = targetDirectionDegrees * Math.PI / 180;
+        double fx = Math.Sin(angle), fy = -Math.Cos(angle);
+        double along = (shipX - targetX) * fx + (shipY - targetY) * fy;
+        double cross = (shipX - targetX) * -fy + (shipY - targetY) * fx;
+        double heading = (targetDirectionDegrees - shipDirectionDegrees) * Math.PI / 180;
+        double ratio = targetSpeed / speed;
+        // Straight-line reachability bounds every bounded-curvature rendezvous.
+        double a = (speed - targetSpeed) * (speed + targetSpeed);
+        double dot = -along * targetSpeed;
+        double distanceSquared = along * along + cross * cross;
+        double horizon;
+        if (a > 0)
         {
-            double? rootTime = FindEarliestRootForType(curveType);
-            if (rootTime is null)
+            double radical = Math.Sqrt(dot * dot + a * distanceSquared);
+            double lead = dot < 0 ? distanceSquared / (radical - dot) : (dot + radical) / a;
+            horizon = Math.Max(5, 2 * lead + 6 * Math.PI * radius / (speed - targetSpeed));
+        }
+        else
+        {
+            if (along <= 0)
+                return ApproachInterceptSolution.None;
+            // Avoid subtracting two large along² terms near equal speeds.
+            double discriminant = speed * speed * along * along + a * cross * cross;
+            if (discriminant < 0)
+                return ApproachInterceptSolution.None;
+            horizon = a < 0 ? (-dot + Math.Sqrt(discriminant)) / -a : double.PositiveInfinity;
+        }
+        double upper = targetSpeed * horizon;
+        var best = ApproachInterceptSolution.None;
+        const double tolerance = 1e-6;
+        Span<double> points = stackalloc double[32];
+
+        foreach (string type in AllCurveTypes)
+        {
+            if (targetSpeed == 0)
+            {
+                if (Curve(type, 0, out var stationary))
+                    Consider(type, 0, stationary, stationary.RemainingUnits / speed);
                 continue;
+            }
+            if (a == 0)
+                upper = EqualSpeedUpper(type);
+            int count = GetCurveBreakpoints(along, cross, heading, radius, type, 0, upper, ratio, points);
+            for (int i = 0; i < count; i++)
+            {
+                Check(type, points[i]);
+                if (i == 0)
+                    continue;
+                double lo = InsideBoundary(points[i - 1], points[i], radius);
+                double hi = InsideBoundary(points[i], points[i - 1], radius);
+                Check(type, lo);
+                Check(type, hi);
+                if (!Curve(type, lo, out var low) || !Curve(type, hi, out var high))
+                    continue;
+                double lowResidual = Residual(low, lo);
+                double highResidual = Residual(high, hi);
+                if (Math.Sign(lowResidual) == Math.Sign(highResidual))
+                    continue;
+                for (int iteration = 0; iteration < 100; iteration++)
+                {
+                    double mid = lo + (hi - lo) / 2;
+                    if (mid == lo || mid == hi || !Curve(type, mid, out var candidate))
+                        break;
+                    double residual = Residual(candidate, mid);
+                    // Near equal speeds amplify a small residual into a large
+                    // time/length error. Refine the bracket to machine precision;
+                    // the residual tolerance is only an acceptance check.
+                    if (residual == 0)
+                    {
+                        Check(type, mid);
+                        break;
+                    }
+                    if (Math.Sign(residual) == Math.Sign(lowResidual))
+                    {
+                        lo = mid;
+                        lowResidual = residual;
+                    }
+                    else
+                        hi = mid;
+                }
+                Check(type, lo + (hi - lo) / 2);
+            }
+        }
+        return best;
 
-            var (valid, length) = EvaluateType(curveType, rootTime.Value);
-            if (!valid)
-                continue; // Defensive: should always be valid at its own found root.
+        bool Curve(string type, double x, out ApproachFlyThroughPlan plan) =>
+            TryCreateLineCurvePlan(along, cross, heading, radius, x, type, out plan);
 
-            bool isEarlier = best is null || rootTime.Value < best.Value.TimeSeconds - InterceptTimeTieToleranceSeconds;
-            bool isTiedButShorter =
-                best is not null &&
-                Math.Abs(rootTime.Value - best.Value.TimeSeconds) <= InterceptTimeTieToleranceSeconds &&
-                length < best.Value.LengthUnits;
-
-            if (isEarlier || isTiedButShorter)
-                best = (curveType, rootTime.Value, length);
+        double EqualSpeedUpper(string type)
+        {
+            // All finite domain/wrap boundaries are analytic. Beyond the last one,
+            // a CSC residual L(x)-x decreases monotonically to its asymptote; CCC
+            // curves have a bounded domain. No arbitrary flight-duration cap.
+            Span<double> boundaries = stackalloc double[32];
+            int count = GetCurveBreakpoints(along, cross, heading, radius, type,
+                0, double.MaxValue, 1, boundaries);
+            double end = Math.Max(Math.Abs(along) + Math.Abs(cross) + 16 * radius,
+                boundaries[count - 2] + radius);
+            if (type[1] != 'S')
+                return end;
+            double s = type[0] == 'L' ? 1 : -1;
+            double e = type[2] == 'L' ? 1 : -1;
+            double cx = along - s * radius * Math.Sin(heading);
+            double tangentSign = Math.Sign(cross / radius + s * (1 - Math.Cos(heading)));
+            double first = Mod2Pi(-s * heading);
+            if (first == 0 && s * tangentSign < 0)
+                first = 2 * Math.PI;
+            double last = e * tangentSign > 0 ? 2 * Math.PI : 0;
+            double limit = radius * (first + last) - cx;
+            if (limit >= 0)
+                return end;
+            while (Curve(type, end, out var plan) && Residual(plan, end) > 0)
+            {
+                double next = end * 2;
+                if (!double.IsFinite(next))
+                    break;
+                end = next;
+            }
+            return end;
         }
 
-        if (best is null)
-            return ApproachInterceptSolution.None;
+        // Bracketing, stopping and acceptance must use the same floating-point
+        // expression. ratio*L-x can round to zero while L-speed*(x/targetSpeed)
+        // differs by several ULPs on long, near-equal-speed rendezvous routes.
+        double Residual(ApproachFlyThroughPlan plan, double x) =>
+            plan.RemainingUnits - speed * (x / targetSpeed);
 
-        double interceptTime = best.Value.TimeSeconds;
-        double targetXAtIntercept = targetX + interceptTime * targetVelocityX;
-        double targetYAtIntercept = targetY + interceptTime * targetVelocityY;
+        void Check(string type, double x)
+        {
+            if (!Curve(type, x, out var plan))
+                return;
+            double time = x / targetSpeed;
+            double travelled = speed * time;
+            double length = plan.RemainingUnits;
+            // At ~3e10 units a single double ULP exceeds 1e-6. Allow only the
+            // rounding floor of these distances, not a broad relative tolerance.
+            double roundingTolerance = 2 * Math.Max(
+                Math.BitIncrement(length) - length, Math.BitIncrement(travelled) - travelled);
+            if (Math.Abs(Residual(plan, x)) <= Math.Max(tolerance, roundingTolerance))
+                Consider(type, x, plan, time);
+        }
 
-        double finalDx = targetXAtIntercept - shipX;
-        double finalDy = -(targetYAtIntercept - shipY);
-        double finalDirectDistance = Math.Sqrt(finalDx * finalDx + finalDy * finalDy);
-        double finalNormalizedDistance = finalDirectDistance / turnRadius;
-        double finalTheta = Mod2Pi(Math.Atan2(finalDy, finalDx));
-        double finalAlpha = Mod2Pi((90.0 - shipDirectionDegrees) * Math.PI / 180.0 - finalTheta);
-        double finalBeta = Mod2Pi((90.0 - targetDirectionDegrees) * Math.PI / 180.0 - finalTheta);
-
-        if (!TryEvaluateCurveType(best.Value.Type, finalAlpha, finalBeta, finalNormalizedDistance, out double finalFirst, out double finalSecond, out double finalThird))
-            return ApproachInterceptSolution.None; // Should not happen: the type was valid at this exact t by construction.
-
-        var plan = new ApproachFlyThroughPlan(
-            best.Value.Type,
-            finalFirst * turnRadius,
-            finalSecond * turnRadius,
-            finalThird * turnRadius);
-
-        return new ApproachInterceptSolution(
-            true,
-            best.Value.Type,
-            interceptTime,
-            targetXAtIntercept,
-            targetYAtIntercept,
-            NormalizeDegrees(targetDirectionDegrees),
-            plan);
+        void Consider(string type, double x, ApproachFlyThroughPlan plan, double time)
+        {
+            if (time <= 0 || time > horizon || !double.IsFinite(plan.RemainingUnits))
+                return;
+            if (best.HasIntercept &&
+                !(plan.RemainingUnits < best.Plan.RemainingUnits - tolerance ||
+                  Math.Abs(plan.RemainingUnits - best.Plan.RemainingUnits) <= tolerance &&
+                  time < best.InterceptTimeSeconds - 1e-8))
+                return;
+            best = new(true, type, time, targetX + x * fx, targetY + x * fy,
+                NormalizeDegrees(targetDirectionDegrees), plan);
+        }
     }
 
     /// <summary>
@@ -634,17 +585,19 @@ public static class ApproachPursuitMath
 
     private static (double First, double Second, double Third)? EvaluateLsl(double a, double b, double d)
     {
-        double p2 = 2 + d * d - 2 * Math.Cos(a - b) + 2 * d * (Math.Sin(a) - Math.Sin(b));
-        if (p2 < 0) return null;
-        double x = Math.Atan2(Math.Cos(b) - Math.Cos(a), d + Math.Sin(a) - Math.Sin(b));
+        // Squared circle-center distance avoids cancellation to a negative number
+        // when the centers nearly coincide; same-turn tangents always exist.
+        double dx = d + Math.Sin(a) - Math.Sin(b), dy = Math.Cos(b) - Math.Cos(a);
+        double p2 = dx * dx + dy * dy;
+        double x = Math.Atan2(dy, dx);
         return (Mod2Pi(-a + x), Math.Sqrt(p2), Mod2Pi(b - x));
     }
 
     private static (double First, double Second, double Third)? EvaluateRsr(double a, double b, double d)
     {
-        double p2 = 2 + d * d - 2 * Math.Cos(a - b) + 2 * d * (-Math.Sin(a) + Math.Sin(b));
-        if (p2 < 0) return null;
-        double x = Math.Atan2(Math.Cos(a) - Math.Cos(b), d - Math.Sin(a) + Math.Sin(b));
+        double dx = d - Math.Sin(a) + Math.Sin(b), dy = Math.Cos(a) - Math.Cos(b);
+        double p2 = dx * dx + dy * dy;
+        double x = Math.Atan2(dy, dx);
         return (Mod2Pi(a - x), Math.Sqrt(p2), Mod2Pi(-b + x));
     }
 
@@ -668,18 +621,22 @@ public static class ApproachPursuitMath
 
     private static (double First, double Second, double Third)? EvaluateRlr(double a, double b, double d)
     {
-        double x = (6 - d * d + 2 * Math.Cos(a - b) + 2 * d * (Math.Sin(a) - Math.Sin(b))) / 8;
-        if (Math.Abs(x) > 1) return null;
-        double p = Mod2Pi(2 * Math.PI - Math.Acos(x));
+        double dx = d - Math.Sin(a) + Math.Sin(b), dy = Math.Cos(a) - Math.Cos(b);
+        double distance = Math.Sqrt(dx * dx + dy * dy);
+        if (distance > 4 + 1e-12) return null;
+        // acos(1-distance²/8) loses the small angle near coincident circles.
+        // The equivalent 2*asin(distance/4) retains it for one-sided boundaries.
+        double p = Mod2Pi(2 * Math.PI - 2 * Math.Asin(Math.Min(1, distance / 4)));
         double t = Mod2Pi(a - Math.Atan2(Math.Cos(a) - Math.Cos(b), d - Math.Sin(a) + Math.Sin(b)) + p / 2);
         return (t, p, Mod2Pi(a - b - t + p));
     }
 
     private static (double First, double Second, double Third)? EvaluateLrl(double a, double b, double d)
     {
-        double x = (6 - d * d + 2 * Math.Cos(a - b) + 2 * d * (-Math.Sin(a) + Math.Sin(b))) / 8;
-        if (Math.Abs(x) > 1) return null;
-        double p = Mod2Pi(2 * Math.PI - Math.Acos(x));
+        double dx = d + Math.Sin(a) - Math.Sin(b), dy = Math.Cos(b) - Math.Cos(a);
+        double distance = Math.Sqrt(dx * dx + dy * dy);
+        if (distance > 4 + 1e-12) return null;
+        double p = Mod2Pi(2 * Math.PI - 2 * Math.Asin(Math.Min(1, distance / 4)));
         double t = Mod2Pi(-a - Math.Atan2(Math.Cos(a) - Math.Cos(b), d + Math.Sin(a) - Math.Sin(b)) + p / 2);
         return (t, p, Mod2Pi(Mod2Pi(b) - a - t + Mod2Pi(p)));
     }
@@ -687,7 +644,11 @@ public static class ApproachPursuitMath
     private static double Mod2Pi(double value)
     {
         double result = value % (2 * Math.PI);
-        return result < 0 ? result + 2 * Math.PI : result;
+        if (result < 0)
+            result += 2 * Math.PI;
+        // At a zero-turn boundary, trig roundoff must not manufacture a full loop
+        // and defeat the canonical family tie-break (e.g. an exactly straight LSL).
+        return result < 1e-12 || 2 * Math.PI - result < 1e-12 ? 0 : result;
     }
 
     /// <summary>

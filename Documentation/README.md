@@ -9,6 +9,8 @@ This folder is the single home for DSS project documentation.
 - [Documentation system](00-Process/DocumentationSystem.md) - where to put new docs and how to update existing ones.
 - [Engine requirements](01-Requirements/EngineRequirements.md) - main requirements checkpoint for the DSS engine.
 - [First release requirements](01-Requirements/FirstReleaseRequirements.md) - release scope and links to first-release details.
+- [Approach requirements](01-Requirements/EngineRequirements.md#approach-shortest-route) - shortest rendezvous, captured trailing-point fallback, and planner version 3 (2026-09-20).
+- [Approach implementation](04-Engineering/ApproachRoutes.md) - solver, numerical tolerances, prediction, and save compatibility.
 
 ## Sections
 
