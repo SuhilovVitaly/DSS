@@ -6,6 +6,200 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class EconomyTimeContinuityTests
 {
+    private static readonly GameDataRegistry IntervalRegistry = CreateIntervalRegistry();
+
+    [Fact]
+    public void Regular_snapshots_and_long_explicit_interval_have_identical_economy_and_event_identities()
+    {
+        long realMs = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed0, () => realMs);
+        using var regular = CreateIntervalEngine(clock, rations: 4);
+        using var explicitInterval = CreateIntervalEngine(rations: 4);
+        Assert.Equal(4, RationScheduleTests.Food(regular.CaptureSnapshot()));
+        clock.SetSpeed(SimulationSpeed.Speed1);
+        var regularEvents = new List<ShipEvent>();
+        AuthoritativeSnapshot actual = regular.CaptureSnapshot();
+        // Include snapshots between boundaries as well as coincident meal/fee/deadline times.
+        for (int hour = 1; hour <= 48; hour++)
+        {
+            realMs = hour * GameCalendar.HourMs / 300;
+            actual = regular.CaptureSnapshot(advanceClock: true);
+            regularEvents.AddRange(actual.ShipEvents);
+            if (hour == 12) Assert.Equal(1, RationScheduleTests.Food(actual));
+        }
+
+        var expected = explicitInterval.CaptureSnapshotForTests(2 * GameCalendar.DayMs,
+            simulationTimeMs: 777);
+        AssertEconomyEqual(expected, actual);
+        Assert.Equal(expected.ShipEvents.ToArray(), regularEvents.ToArray());
+        Assert.Equal(2 * GameCalendar.DayMs / 300, actual.SimulationTimeMs);
+        Assert.Equal(777, expected.SimulationTimeMs);
+        Assert.Equal(1800, expected.PlayerCredits);
+        Assert.Equal(3, expected.MissingRations);
+        Assert.Equal(0, RationScheduleTests.Food(expected));
+        Assert.True(Assert.Single(expected.ActiveContracts).DeadlineMissed);
+        Assert.Equal(8, ProducedFood(explicitInterval));
+        Assert.Equal(ProducedFood(explicitInterval), ProducedFood(regular));
+        Assert.Equal(ProductionDue(explicitInterval), ProductionDue(regular));
+    }
+
+    [Fact]
+    public void Coincident_boundary_orders_meal_fee_and_deadline_once_and_completes_production()
+    {
+        using var engine = CreateIntervalEngine();
+        var atBoundary = engine.CaptureSnapshotForTests(GameCalendar.DayMs, simulationTimeMs: 123);
+        var atMidnight = atBoundary.ShipEvents.Where(e => e.GameTimeMs == GameCalendar.DayMs).ToArray();
+        Assert.Equal(new[] { "rations_shortage", "port_fee_renewed", "contract_deadline_missed" },
+            atMidnight.Select(e => e.EventType).ToArray());
+        Assert.Equal("insufficient_rations", atMidnight[0].ReasonCode);
+        Assert.Equal(4, ProducedFood(engine));
+        Assert.Equal(123, atBoundary.SimulationTimeMs);
+
+        var repeated = engine.CaptureSnapshotForTests(GameCalendar.DayMs, simulationTimeMs: 123);
+        AssertEconomyEqual(atBoundary, repeated);
+        Assert.Empty(repeated.ShipEvents);
+        Assert.Equal(4, ProducedFood(engine));
+        var justAfter = engine.CaptureSnapshotForTests(GameCalendar.DayMs + 1, simulationTimeMs: 124);
+        AssertEconomyEqual(atBoundary with { GameTimeMs = GameCalendar.DayMs + 1 }, justAfter);
+        Assert.Empty(justAfter.ShipEvents);
+        Assert.Equal(4, ProducedFood(engine));
+        Assert.Equal(GameCalendar.DayMs + 12 * GameCalendar.HourMs, ProductionDue(engine));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Save_load_at_boundary_does_not_replay_effects_and_preserves_explicit_or_legacy_motion(bool legacyMotion)
+    {
+        var clock = new SimulationClock(SimulationSpeed.Speed0, () => 0);
+        using var original = CreateIntervalEngine(clock);
+        var boundary = original.CaptureSnapshotForTests(GameCalendar.DayMs, simulationTimeMs: 321);
+        clock.Reset(GameCalendar.DayMs, SimulationSpeed.Speed0, 321);
+        var save = original.CaptureSaveState();
+        if (legacyMotion) save = save with { SaveFormatVersion = 5, GameState = save.GameState with { SimulationTimeMs = null } };
+        using var loaded = CreateIntervalEngine();
+        loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
+        var restored = loaded.CaptureSnapshot();
+        AssertEconomyEqual(boundary, restored);
+        Assert.Equal(legacyMotion ? GameCalendar.DayMs : 321, restored.MotionTimeMs);
+        Assert.Empty(restored.ShipEvents);
+        Assert.Equal(4, ProducedFood(loaded));
+        Assert.Empty(loaded.CaptureSnapshotForTests(GameCalendar.DayMs,
+            simulationTimeMs: restored.MotionTimeMs).ShipEvents);
+
+        var expected = original.CaptureSnapshotForTests(2 * GameCalendar.DayMs, simulationTimeMs: 1000);
+        var continued = loaded.CaptureSnapshotForTests(2 * GameCalendar.DayMs,
+            simulationTimeMs: restored.MotionTimeMs + 679);
+        AssertEconomyEqual(expected, continued);
+        // Event counters restart on load; compare semantic identities across this boundary.
+        Assert.Equal(expected.ShipEvents.Select(e => (e.ObjectId, e.ModuleId, e.EventType, e.ReasonCode, e.GameTimeMs)),
+            continued.ShipEvents.Select(e => (e.ObjectId, e.ModuleId, e.EventType, e.ReasonCode, e.GameTimeMs)));
+        Assert.Equal(8, ProducedFood(loaded));
+        Assert.Equal(ProductionDue(original), ProductionDue(loaded));
+    }
+
+    [Fact]
+    public void Production_reserves_inputs_at_interval_start_and_completes_only_at_its_calendar_boundary()
+    {
+        using var engine = CreateIntervalEngine();
+        engine.CaptureSnapshotForTests(1, simulationTimeMs: 100);
+        Assert.Equal(9, StationQuantity(engine, "item.test-input"));
+        Assert.Equal(0, ProducedFood(engine));
+        Assert.Equal(12 * GameCalendar.HourMs, ProductionDue(engine));
+
+        engine.CaptureSnapshotForTests(12 * GameCalendar.HourMs - 1, simulationTimeMs: 200);
+        Assert.Equal(9, StationQuantity(engine, "item.test-input"));
+        Assert.Equal(0, ProducedFood(engine));
+        engine.CaptureSnapshotForTests(12 * GameCalendar.HourMs, simulationTimeMs: 201);
+        Assert.Equal(2, ProducedFood(engine));
+        Assert.Equal(9, StationQuantity(engine, "item.test-input"));
+        Assert.Null(ProductionDue(engine));
+    }
+
+    [Fact]
+    public void Calendar_boundary_is_independent_of_explicit_motion_target()
+    {
+        using var engine = CreateIntervalEngine();
+        var before = engine.CaptureSnapshotForTests(12 * GameCalendar.HourMs - 1,
+            simulationTimeMs: 10 * GameCalendar.DayMs);
+        Assert.Equal(0, before.MissingRations);
+        Assert.Empty(before.ShipEvents);
+        Assert.Equal(0, ProducedFood(engine));
+        var meal = engine.CaptureSnapshotForTests(12 * GameCalendar.HourMs,
+            simulationTimeMs: 10 * GameCalendar.DayMs);
+        Assert.Equal(3, meal.MissingRations);
+        Assert.Equal(12 * GameCalendar.HourMs, Assert.Single(meal.ShipEvents).GameTimeMs);
+        Assert.Equal(10 * GameCalendar.DayMs, meal.SimulationTimeMs);
+        Assert.Equal(2, ProducedFood(engine));
+    }
+
+    private static GameDataRegistry CreateIntervalRegistry()
+    {
+        var recipe = new RecipeDefinition("recipe.test-food", "Food", [new("item.test-input", 1)],
+            [new("item.food-rations", 2)], 12 * GameCalendar.HourMs);
+        return GameDataRegistry.Create([],
+            [new("module.test-cargo", "Cargo", 1, 1, 100, 0, [], CargoCapacityKg: 100)],
+            [new("item.test-input", "Input", 1, 10), new("item.food-rations", "Food", 1, 10, TradeUnit: TradeUnit.Ration)],
+            commandDefinitions: [], factoryTypes: [new("factory.test-food", "Food", recipe)]);
+    }
+
+    private static SimulationEngine CreateIntervalEngine(SimulationClock? clock = null, long rations = 0)
+    {
+        using var template = RationScheduleTests.CreateEngine(0, passengers: 2, rations: 0);
+        var save = template.CaptureSaveState();
+        save = save with
+        {
+            GameState = save.GameState with
+            {
+                SimulationTimeMs = 0,
+                MasterSeed = 17,
+                CatalogCompatibility = IntervalRegistry.CatalogCompatibility,
+                DialogueState = null,
+                SpaceObjects = save.GameState.SpaceObjects.Where(o => o.ObjectType is "PlayerShip" or "Station").Select(o => o with
+                {
+                    Modules = o.ObjectType == "PlayerShip"
+                        ? [new("cargo", "module.test-cargo", [new(4, 2)], 100, "On", "Ready", null,
+                        rations > 0 ? [new("item.food-rations", rations)] : [])] : [],
+                    Credits = o.ObjectType == "Station" ? 10_000 : null,
+                    PriceCoefficient = o.ObjectType == "Station" ? 1000 : null,
+                    StationCrew = [],
+                    Inventory = o.ObjectType == "Station" ? [new("item.test-input", 10), new("item.food-rations", 0)] : null,
+                    ProducingModules = o.ObjectType == "Station" ? [new("factory.test-food")] : null
+                }).ToArray(),
+                EconomyTime = save.GameState.EconomyTime! with
+                {
+                    ActiveContracts = [new("contract.test", GameCalendar.DayMs, 750, "SPC-0002", ["P0"])]
+                }
+            }
+        };
+        var engine = new SimulationEngine(IntervalRegistry, [], clock ?? new SimulationClock(SimulationSpeed.Speed0, () => 0));
+        engine.LoadScenario(save);
+        return engine;
+    }
+
+    private static long ProducedFood(SimulationEngine engine) => StationQuantity(engine, "item.food-rations");
+
+    private static long StationQuantity(SimulationEngine engine, string itemTypeId) => engine.RuntimeObjects
+        .Where(o => o.ObjectType == "Station").SelectMany(o => o.Inventory)
+        .Where(i => i.ItemTypeIndex == IntervalRegistry.ItemTypes.GetIndex(itemTypeId)).Sum(i => i.StockQuantity);
+
+    private static long? ProductionDue(SimulationEngine engine) => engine.RuntimeObjects
+        .Where(o => o.ObjectType == "Station").SelectMany(o => o.ProducingModules)
+        .Single().NextProductionDueGameTimeMs;
+
+    private static void AssertEconomyEqual(AuthoritativeSnapshot expected, AuthoritativeSnapshot actual)
+    {
+        Assert.Equal(expected.GameTimeMs, actual.GameTimeMs);
+        Assert.Equal(expected.PlayerCredits, actual.PlayerCredits);
+        Assert.Equal(expected.PortFees, actual.PortFees);
+        Assert.Equal(expected.MissingRations, actual.MissingRations);
+        Assert.Equal(RationScheduleTests.Food(expected), RationScheduleTests.Food(actual));
+        Assert.Equal(expected.ActiveContracts.Select(c => (c.ContractId, c.DeadlineGameTimeMs, c.ExpectedPayout,
+            c.DestinationStationObjectId, c.DeadlineMissed)), actual.ActiveContracts.Select(c => (c.ContractId,
+            c.DeadlineGameTimeMs, c.ExpectedPayout, c.DestinationStationObjectId, c.DeadlineMissed)));
+        Assert.Equal(expected.ActiveContracts.SelectMany(c => c.PassengerIds), actual.ActiveContracts.SelectMany(c => c.PassengerIds));
+    }
+
     [Fact]
     public void Save_after_travel_restores_time_passengers_meals_and_receipts_without_replaying()
     {
@@ -33,9 +227,10 @@ public class EconomyTimeContinuityTests
         using var engine = StationTravelTests.DockedEngine(10 * GameCalendar.HourMs);
         var save = engine.CaptureSaveState();
         var state = save.GameState;
-        var economy = state.EconomyTime! with {
+        var economy = state.EconomyTime! with
+        {
             RouteArrivalGameTimeMs = 20 * GameCalendar.HourMs,
-            ActiveContracts = [new("contract", 11 * GameCalendar.HourMs, 750, "STATION-01", ["passenger"]) ]
+            ActiveContracts = [new("contract", 11 * GameCalendar.HourMs, 750, "STATION-01", ["passenger"])]
         };
         save = save with { GameState = state with { EconomyTime = economy } };
         engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
@@ -84,11 +279,19 @@ public class EconomyTimeContinuityTests
     {
         using var engine = StationTravelTests.DockedEngine();
         var save = engine.CaptureSaveState();
-        save = save with { SaveFormatVersion = 4, GameState = save.GameState with {
-            EconomyTime = null,
-            SpaceObjects = save.GameState.SpaceObjects.Select(o => o with {
-                FirstPortFeeGameTimeMs = null, NextPortFeeDueGameTimeMs = null }).ToArray()
-        }};
+        save = save with
+        {
+            SaveFormatVersion = 4,
+            GameState = save.GameState with
+            {
+                EconomyTime = null,
+                SpaceObjects = save.GameState.SpaceObjects.Select(o => o with
+                {
+                    FirstPortFeeGameTimeMs = null,
+                    NextPortFeeDueGameTimeMs = null
+                }).ToArray()
+            }
+        };
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(save));
     }
 
@@ -99,9 +302,17 @@ public class EconomyTimeContinuityTests
         var save = engine.CaptureSaveStateForTests(8 * GameCalendar.HourMs, SimulationSpeed.Speed0);
         engine.LoadScenario(save);
         string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
-        var incomplete = save with { GameState = save.GameState with {
-            SpaceObjects = save.GameState.SpaceObjects.Select(o => o.IsDocked ? o with {
-                FirstPortFeeGameTimeMs = null, NextPortFeeDueGameTimeMs = null } : o).ToArray() } };
+        var incomplete = save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(o => o.IsDocked ? o with
+                {
+                    FirstPortFeeGameTimeMs = null,
+                    NextPortFeeDueGameTimeMs = null
+                } : o).ToArray()
+            }
+        };
 
         var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(incomplete));
         Assert.Contains("first port payment time is missing", error.Message);
@@ -124,9 +335,16 @@ public class EconomyTimeContinuityTests
         Assert.Equal(first + (paidDays + 1) * GameCalendar.DayMs,
             engine.CaptureSnapshot().PortFees!.NextPortFeeDueGameTimeMs);
 
-        engine.LoadScenario(save with { GameState = save.GameState with {
-            SpaceObjects = save.GameState.SpaceObjects.Select(o => o with {
-                NextPortFeeDueGameTimeMs = null }).ToArray() } });
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(o => o with
+                {
+                    NextPortFeeDueGameTimeMs = null
+                }).ToArray()
+            }
+        });
         var after = engine.CaptureSnapshotForTests(first + (paidDays + 1) * GameCalendar.DayMs);
         Assert.Equal(800 - paidDays * 100, after.PlayerCredits);
         Assert.Equal(first, after.PortFees!.FirstPortFeeGameTimeMs);
@@ -142,9 +360,16 @@ public class EconomyTimeContinuityTests
         using var engine = PortFeeScheduleTests.DockAt(first);
         var save = engine.CaptureSaveStateForTests(first + elapsedHours * GameCalendar.HourMs,
             SimulationSpeed.Speed0);
-        save = save with { GameState = save.GameState with {
-            SpaceObjects = save.GameState.SpaceObjects.Select(o => o.IsDocked ? o with {
-                NextPortFeeDueGameTimeMs = first + nextDay * GameCalendar.DayMs } : o).ToArray() } };
+        save = save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(o => o.IsDocked ? o with
+                {
+                    NextPortFeeDueGameTimeMs = first + nextDay * GameCalendar.DayMs
+                } : o).ToArray()
+            }
+        };
 
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(save));
         Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
@@ -156,8 +381,14 @@ public class EconomyTimeContinuityTests
         using var engine = PortFeeScheduleTests.DockAt(8 * GameCalendar.HourMs + 30 * 60_000);
         var save = engine.CaptureSaveStateForTests(16 * GameCalendar.HourMs, SimulationSpeed.Speed0);
         long next = save.GameState.SpaceObjects.Single(o => o.IsDocked).NextPortFeeDueGameTimeMs!.Value;
-        engine.LoadScenario(save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects
-            .Select(o => o with { NextPortFeeDueGameTimeMs = null }).ToArray() } });
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects
+            .Select(o => o with { NextPortFeeDueGameTimeMs = null }).ToArray()
+            }
+        });
         Assert.Equal(next, engine.CaptureSnapshot().PortFees!.NextPortFeeDueGameTimeMs);
     }
 
@@ -169,8 +400,14 @@ public class EconomyTimeContinuityTests
     {
         using var engine = StationTravelTests.DockedEngine();
         var save = engine.CaptureSaveState();
-        save = save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects
-            .Select(o => o.IsDocked ? o with { NextPortFeeDueGameTimeMs = next } : o).ToArray() } };
+        save = save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects
+            .Select(o => o.IsDocked ? o with { NextPortFeeDueGameTimeMs = next } : o).ToArray()
+            }
+        };
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(save));
     }
 }

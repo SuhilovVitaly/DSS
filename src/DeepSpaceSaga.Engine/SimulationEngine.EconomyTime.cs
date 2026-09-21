@@ -25,8 +25,21 @@ public sealed partial class SimulationEngine
             StartAvailableProduction(_processedWorldTimeMs);
             long nextMeal = _processedWorldTimeMs - _processedWorldTimeMs % MealIntervalMs;
             nextMeal = nextMeal > long.MaxValue - MealIntervalMs ? long.MaxValue : nextMeal + MealIntervalMs;
-            long next = Math.Min(Math.Min(Math.Min(gameTimeMs, nextMeal), NextPortFeeTime()), NextContractDeadline());
-            next = Math.Min(next, NextProductionTime());
+            long next = gameTimeMs;
+            IncludeBoundary(nextMeal);
+            IncludeBoundary(NextPortFeeTime());
+            IncludeBoundary(NextContractDeadline());
+            IncludeBoundary(NextProductionTime());
+
+            // Only boundaries in (processed, target] may move the cursor. A stale
+            // schedule must not rewind motion or replay an already processed time.
+            void IncludeBoundary(long boundary)
+            {
+                if (boundary > _processedWorldTimeMs && boundary < next) next = boundary;
+            }
+
+            // Keep equal-time effects ordered: start above, motion, completion,
+            // meal, fee, deadline, then commit the calendar cursor.
             AdvanceMotionTo(MotionAt(next));
             CompleteProduction(next);
             if (next == nextMeal && next % MealIntervalMs == 0) ConsumeScheduledRations(next);
@@ -66,9 +79,12 @@ public sealed partial class SimulationEngine
                         else cargo[c] = cargo[c] with { Quantity = left };
                     }
                     var remainingCargo = cargo.ToImmutable();
-                    modules[m] = module with { Cargo = remainingCargo,
+                    modules[m] = module with
+                    {
+                        Cargo = remainingCargo,
                         AvailableCapacityKg = ComputeAvailableCapacityKg(
-                            _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex), remainingCargo) };
+                            _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex), remainingCargo)
+                    };
                 }
             }
             _objects[i] = ship with { Modules = modules.ToImmutable() };
