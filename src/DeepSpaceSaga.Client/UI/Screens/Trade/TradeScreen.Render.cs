@@ -1,3 +1,4 @@
+using System.Globalization;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
@@ -70,8 +71,8 @@ public sealed partial class TradeScreen
             p.Icon(item.ItemTypeId, R(47, rect.Top + 6, 38, 38));
             p.Text(TradeItemPresentation.ItemDisplayName(item.ItemTypeId), R(99, rect.Top, 365, 50), 18, bold: selected);
             p.Text(N(item.UnitPriceCredits), R(478, rect.Top, 157, 50), 18, align: SKTextAlign.Right);
-            p.Text(N(item.StockQuantity), R(635, rect.Top, 167, 50), 18, align: SKTextAlign.Right);
-            p.Text(N(Model.Cargo(item.ItemTypeId)), R(802, rect.Top, 168, 50), 18, align: SKTextAlign.Right);
+            p.Text(TradeItemPresentation.FormatQuantity(item.ItemTypeId, item.StockQuantity), R(635, rect.Top, 167, 50), 18, align: SKTextAlign.Right);
+            p.Text(TradeItemPresentation.FormatQuantity(item.ItemTypeId, Model.Cargo(item.ItemTypeId)), R(802, rect.Top, 168, 50), 18, align: SKTextAlign.Right);
             p.Line(36, rect.Bottom, 970);
         }
         if (Model.Rows.Length == 0) p.Paragraph(L(_buffer?.Latest?.Snapshot.DockedStationTrade is null ? "NotDocked" : "NoMatches"), R(65, 335, 800, 100), 19);
@@ -108,7 +109,7 @@ public sealed partial class TradeScreen
         }
         p.Icon(item.ItemTypeId, R(1040, 99, 66, 66));
         p.Text(TradeItemPresentation.ItemDisplayName(item.ItemTypeId), R(1123, 95, 430, 36), 25, bold: true);
-        p.Text(Model.FuelMode ? L("FuelService") : F("UnitMass", N(item.UnitMassKg)), R(1123, 135, 430, 26), 15, TradePainter.Muted);
+        p.Text(Model.FuelMode ? L("FuelService") : TradeItemPresentation.FormatUnitMass(item.ItemTypeId, item.UnitMassKg), R(1123, 135, 430, 26), 15, TradePainter.Muted);
         p.Text(TradeItemPresentation.ItemDescription(item.ItemTypeId), R(1040, 164, 520, 20), 12, TradePainter.Muted);
         if (Model.FuelMode) p.Text(L("FillTank"), R(1040, 192, 520, 36), 19, TradePainter.Cyan);
         else { Button(p, TradeLayout.Buy, L("Buy"), Model.Mode == TradeMode.Buy); Button(p, TradeLayout.Sell, L("Sell"), Model.Mode == TradeMode.Sell); }
@@ -118,7 +119,9 @@ public sealed partial class TradeScreen
             : L(Model.FuelMode ? "NoTank" : "NoContainer");
         Button(p, TradeLayout.Module, moduleText, enabled: Model.Modules.Length > 0, size: 15);
         if (Model.Modules.Length > 1) p.Chevron(1544, TradeLayout.Module.MidY);
-        p.Text(L(Model.FuelMode ? "AddFuel" : "Quantity"), R(1040, 307, 520), 14, TradePainter.Muted);
+        string quantityLabel = Model.FuelMode ? L("AddFuel") : string.Format(CultureInfo.CurrentCulture,
+            Localization.Get("Trade.QuantityWithUnit"), TradeItemPresentation.ItemUnitLabel(item.ItemTypeId));
+        p.Text(quantityLabel, R(1040, 307, 520), 14, TradePainter.Muted);
         Button(p, TradeLayout.Minus, "−"); Button(p, TradeLayout.Plus, "+"); Button(p, TradeLayout.Max, L("Max"), size: 12);
         p.Box(TradeLayout.Quantity, border: _focus == InputFocus.Quantity ? TradePainter.Cyan : TradePainter.Border);
         string quantityText = _focus == InputFocus.Quantity ? _quantityText + " |" : N(Model.Quantity);
@@ -136,7 +139,8 @@ public sealed partial class TradeScreen
         Summary(p, 540, L("Balance"), quote.DisabledReason is null ? $"{N(credits)} → {N(quote.BalanceAfter)}" : N(credits));
         string amountLabel = L(Model.FuelMode ? "Tank" : "CargoAmount");
         long cargoAfter = Model.Mode == TradeMode.Sell ? quote.CargoQuantity - Model.Quantity : quote.CargoQuantity + Math.Min(Model.Quantity, long.MaxValue - quote.CargoQuantity);
-        string amount = Model.FuelMode ? F("KgLoadChange", N(quote.AmountBefore), N(quote.AmountAfter), N(Model.Module?.FuelCapacityKg ?? 0)) : $"{N(quote.CargoQuantity)} → {N(cargoAfter)}";
+        string amount = Model.FuelMode ? F("KgLoadChange", N(quote.AmountBefore), N(quote.AmountAfter), N(Model.Module?.FuelCapacityKg ?? 0))
+            : $"{TradeItemPresentation.FormatQuantity(item.ItemTypeId, quote.CargoQuantity)} → {TradeItemPresentation.FormatQuantity(item.ItemTypeId, cargoAfter)}";
         Summary(p, 567, amountLabel, quote.DisabledReason is null ? amount : "—");
         if (!Model.FuelMode && Model.Module?.CargoCapacityKg is > 0 and var cargoCapacity)
             Summary(p, 594, L("CargoLoad"), quote.DisabledReason is null
@@ -156,7 +160,11 @@ public sealed partial class TradeScreen
         }
         p.Text(L("Total"), R(1040, 633, 160, 26), 19, bold: true);
         p.Text(quote.DisabledReason == "ValueOverflow" ? "—" : F("Tokens", N(quote.Total)), R(1205, 633, 350, 26), 21, bold: true, align: SKTextAlign.Right);
-        string confirm = IsPending ? L("Pending") : F(Model.Mode switch { TradeMode.Sell => "ConfirmSell", TradeMode.Refuel => "ConfirmFuel", _ => "ConfirmBuy" }, N(Model.Quantity), N(quote.Total));
+        string confirm = IsPending ? L("Pending") : Model.Mode == TradeMode.Refuel
+            ? F("ConfirmFuel", N(Model.Quantity), N(quote.Total))
+            : string.Format(CultureInfo.CurrentCulture,
+                Localization.Get(Model.Mode == TradeMode.Sell ? "Trade.ConfirmSellWithUnit" : "Trade.ConfirmBuyWithUnit"),
+                Model.Quantity, TradeItemPresentation.ItemUnitLabel(item.ItemTypeId), quote.Total);
         Button(p, TradeLayout.Confirm, confirm, enabled: CanConfirm, primary: true, size: 16);
         DrawStatus(p);
     }
@@ -170,7 +178,8 @@ public sealed partial class TradeScreen
         long quantity = entry.Result.ExecutedQuantity ?? entry.RequestedQuantity;
         string key = quantity < entry.RequestedQuantity ? "PartialResult" : "SuccessResult";
         decimal total = (decimal)quantity * entry.UnitPrice;
-        return F(key, item, N(quantity), total.ToString("N0").Replace(',', ' '), N(entry.RequestedQuantity));
+        return F(key, item, TradeItemPresentation.FormatQuantity(entry.ItemId, quantity),
+            total.ToString("N0", CultureInfo.CurrentCulture), TradeItemPresentation.FormatQuantity(entry.ItemId, entry.RequestedQuantity));
     }
     private void DrawStatus(TradePainter p)
     {
