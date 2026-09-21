@@ -7,18 +7,29 @@ namespace DeepSpaceSaga.Client.Tests;
 /// Pixel-level checks for <see cref="PortraitComposer"/>: the docking-confirmation
 /// portrait compositor (background + headless suited body + head portrait, cropped to
 /// 250×250). Covers both sexes, the deterministic (non-<see cref="System.Random"/>)
-/// body-variant pick keyed by personKey, and the missing-portrait-file failure path.
+/// repeatability, and the missing-portrait-file failure path. Input portraits are
+/// temporary test images, independent of retired game artwork.
 /// The dialog window that will consume this class is a separate batch, out of scope here.
 /// </summary>
-public class PortraitComposerTests
+public class PortraitComposerTests : IDisposable
 {
-    private const string FemalePortraitPath = "Images/Persons/W/CHR-20260902-103625-8SCU3U.png";
-    private const string MalePortraitPath = "Images/Persons/M/CHR-20260906-150900-IYUL3A.png";
+    private readonly string _portraitPath = Path.Combine(Path.GetTempPath(), $"dss-composer-{Guid.NewGuid():N}.png");
+
+    public PortraitComposerTests()
+    {
+        using var bitmap = new SKBitmap(235, 235);
+        bitmap.Erase(new SKColor(180, 120, 100));
+        using var png = bitmap.Encode(SKEncodedImageFormat.Png, 100);
+        using var file = File.Create(_portraitPath);
+        png.SaveTo(file);
+    }
+
+    public void Dispose() => File.Delete(_portraitPath);
 
     [Fact]
     public void Compose_female_returns_a_250x250_non_null_bitmap()
     {
-        using var result = PortraitComposer.Compose(FemalePortraitPath, PersonSex.Female, "crew-1");
+        using var result = PortraitComposer.Compose(_portraitPath, PersonSex.Female, "crew-1");
 
         Assert.NotNull(result);
         Assert.Equal(250, result!.Width);
@@ -28,7 +39,7 @@ public class PortraitComposerTests
     [Fact]
     public void Compose_male_returns_a_250x250_non_null_bitmap()
     {
-        using var result = PortraitComposer.Compose(MalePortraitPath, PersonSex.Male, "crew-2");
+        using var result = PortraitComposer.Compose(_portraitPath, PersonSex.Male, "crew-2");
 
         Assert.NotNull(result);
         Assert.Equal(250, result!.Width);
@@ -38,7 +49,7 @@ public class PortraitComposerTests
     [Fact]
     public void Compose_female_result_is_not_fully_transparent()
     {
-        using var result = PortraitComposer.Compose(FemalePortraitPath, PersonSex.Female, "crew-1");
+        using var result = PortraitComposer.Compose(_portraitPath, PersonSex.Female, "crew-1");
 
         Assert.NotNull(result);
         AssertHasVisibleCenterPixels(result!);
@@ -47,17 +58,17 @@ public class PortraitComposerTests
     [Fact]
     public void Compose_male_result_is_not_fully_transparent()
     {
-        using var result = PortraitComposer.Compose(MalePortraitPath, PersonSex.Male, "crew-2");
+        using var result = PortraitComposer.Compose(_portraitPath, PersonSex.Male, "crew-2");
 
         Assert.NotNull(result);
         AssertHasVisibleCenterPixels(result!);
     }
 
     [Fact]
-    public void Compose_same_personKey_picks_the_same_body_variant_deterministically()
+    public void Compose_same_input_and_personKey_produce_identical_pixels()
     {
-        using var first = PortraitComposer.Compose(FemalePortraitPath, PersonSex.Female, "same-key");
-        using var second = PortraitComposer.Compose(FemalePortraitPath, PersonSex.Female, "same-key");
+        using var first = PortraitComposer.Compose(_portraitPath, PersonSex.Female, "same-key");
+        using var second = PortraitComposer.Compose(_portraitPath, PersonSex.Female, "same-key");
 
         Assert.NotNull(first);
         Assert.NotNull(second);
@@ -67,7 +78,7 @@ public class PortraitComposerTests
     [Fact]
     public void Compose_missing_portrait_file_returns_null_without_throwing()
     {
-        var result = PortraitComposer.Compose("Images/Persons/W/does-not-exist.png", PersonSex.Female, "crew-1");
+        using var result = PortraitComposer.Compose(_portraitPath + ".missing", PersonSex.Female, "crew-1");
 
         Assert.Null(result);
     }
