@@ -113,6 +113,22 @@ public sealed class GameSessionHandle : IAsyncDisposable
         return _connection.SendCommandAsync(command, cancellationToken);
     }
 
+    /// <summary>Release the player ship from its current station through the authoritative navigation computer.</summary>
+    public void SendUndockCommand()
+    {
+        var snapshot = Buffer.Latest?.Snapshot;
+        if (snapshot is null || string.IsNullOrWhiteSpace(snapshot.PlayerShipObjectId))
+            return;
+
+        var navigationModule = snapshot.InstalledModules.FirstOrDefault(module =>
+            module.CommandTypeIds.Contains(NavigationComputerCommandTypes.Undock, StringComparer.Ordinal));
+        if (navigationModule is null)
+            return;
+
+        _ = SendCommandAsync(snapshot.PlayerShipObjectId, navigationModule.ModuleId,
+            NavigationComputerCommandTypes.Undock);
+    }
+
     public ValueTask SendEngineCommandAsync(
         string objectId,
         string moduleId,

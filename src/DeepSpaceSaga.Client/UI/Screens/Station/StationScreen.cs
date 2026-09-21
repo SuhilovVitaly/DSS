@@ -8,7 +8,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.Station;
 
 /// <summary>
 /// Station overlay (Documentation/02-FirstRelease/Screens/Station.md). Placeholder shell:
-/// Representatives/Install Drilling Unit/Undock are not yet implemented, so the
+/// Representatives/Install Drilling Unit are not yet implemented, so the
 /// panel shows a "not available yet" line for each of them. `Trade`, `Hire`,
 /// `Finance` and `Contracts` are real buttons — `Trade`/`Hire`/`Contracts` open
 /// <see cref="Trade.TradeScreen"/>/<see cref="Hire.HireScreen"/>/
@@ -92,7 +92,6 @@ public sealed class StationScreen : IScreen
     {
         (2, "Representatives: not available yet"),
         (3, "Install Drilling Unit: not available yet"),
-        (5, "Undock: not available yet"),
     };
 
     public void OnActivated()
@@ -133,6 +132,8 @@ public sealed class StationScreen : IScreen
             return ScreenEvent.OpenFinance;
         if (hit == StationButton.Contracts)
             return ScreenEvent.OpenContracts;
+        if (hit == StationButton.Undock)
+            return ScreenEvent.Undock;
 
         if (IsExitButtonHit(x, y))
             return ScreenEvent.CloseStation;
@@ -252,6 +253,7 @@ public sealed class StationScreen : IScreen
         DrawHireButton(canvas, pl, pt);
         DrawFinanceButton(canvas, pl, pt);
         DrawContractsButton(canvas, pl, pt);
+        DrawUndockButton(canvas, pl, pt);
 
         string[] districts = ["Док", "Рынок", "Жилой район", "Администрация"];
         for (int i = 0; i < districts.Length; i++)
@@ -317,5 +319,14 @@ public sealed class StationScreen : IScreen
 
         MenuStyle.DrawButton(canvas, rect, "CONTRACTS",
             _hoveredButton == StationButton.Contracts ? ButtonState.Hovered : ButtonState.Normal);
+    }
+
+    private void DrawUndockButton(SKCanvas canvas, float panelLeft, float panelTop)
+    {
+        var (left, top, right, bottom) = StationLayout.UndockButtonLocalRect();
+        var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
+
+        MenuStyle.DrawButton(canvas, rect, "UNDOCK",
+            _hoveredButton == StationButton.Undock ? ButtonState.Hovered : ButtonState.Normal);
     }
 }

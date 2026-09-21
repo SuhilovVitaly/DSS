@@ -27,7 +27,7 @@
 - Позволяет открыть окно `Hire` для найма экипажа.
 - Позволяет открыть окно `Contracts` для пассажирских контрактов.
 - Позволяет вернуться на `GameSessionScreen`, если состояние стыковки сохраняется.
-- Позволяет выполнить отстыковку как станционное действие без отдельной module command.
+- Позволяет выполнить отстыковку как станционное действие через `navigation.undock`.
 
 ## UI первого релиза
 
@@ -58,8 +58,8 @@
 Не реализовано — экран показывает placeholder-строки "not available yet" вместо этого:
 
 - Название станции и список доступных станционных действий (данные не читаются из snapshot).
-- Кнопки `Representatives`, `Install Drilling Unit`, `Undock` — сейчас это статичные текстовые строки, не интерактивные элементы (в отличие от `Trade`/`Hire`/`Finance`/`Contracts`, см. выше).
-- Собственно отстыковка (Undock) — нигде не реализована, ни как кнопка здесь, ни как authoritative-действие в Engine.
+- Кнопки `Representatives` и `Install Drilling Unit` — сейчас это статичные текстовые строки, не интерактивные элементы (в отличие от `Trade`/`Hire`/`Finance`/`Contracts`/`Undock`, см. выше).
+- `Undock` — реальная кнопка: отправляет authoritative `navigation.undock` и закрывает station overlay, возвращая игрока к карте.
 
 ## Архитектурные требования
 
@@ -67,7 +67,7 @@
 - Все действия, меняющие authoritative state, должны идти через `IGameSessionConnection`.
 - Покупка/установка Drilling Unit является станционным authoritative-действием.
 - Принятие пассажирского контракта является станционным authoritative-действием.
-- Отстыковка меняет authoritative state, но не является module command первого релиза.
+- Отстыковка меняет authoritative state через module command `navigation.undock`.
 - Экран должен получать только serializable/session state, пригодный для будущей network boundary.
 - Открытие экрана станции должно приостанавливать authoritative simulation через существующий modal pause mechanism.
 

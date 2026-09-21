@@ -6,7 +6,8 @@ public enum StationButton
     Trade,
     Hire,
     Finance,
-    Contracts
+    Contracts,
+    Undock
 }
 
 /// <summary>
@@ -43,6 +44,9 @@ public sealed class StationLayout
     public const float ContractsButtonWidth = 160f;
     public const float ContractsButtonHeight = 24f;
 
+    public const float UndockButtonWidth = 160f;
+    public const float UndockButtonHeight = 24f;
+
     /// <summary>Body row index of each real button, matching Station.md's "Минимальные
     /// кнопки" order (`Trade`, `Finance`, `Representatives`, `Install Drilling Unit`,
     /// `Hire`, `Undock`) — the remaining placeholder lines keep their row regardless of
@@ -57,6 +61,7 @@ public sealed class StationLayout
     /// 5) and every reference to it, Contracts gets its own new row appended at the end.
     /// </summary>
     private const int ContractsRowIndex = 6;
+    private const int UndockRowIndex = 5;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
@@ -117,6 +122,14 @@ public sealed class StationLayout
         return (left, top, left + ContractsButtonWidth, top + ContractsButtonHeight);
     }
 
+    /// <summary>UNDOCK button rect, replacing the old non-interactive placeholder row.</summary>
+    public static (float Left, float Top, float Right, float Bottom) UndockButtonLocalRect()
+    {
+        float left = PanelWidth / 2f - UndockButtonWidth / 2f;
+        float top = BodyStartY + UndockRowIndex * BodyLineHeight - 20f;
+        return (left, top, left + UndockButtonWidth, top + UndockButtonHeight);
+    }
+
     /// <summary>True when (screenX, screenY) lands inside the panel rect (screen space).</summary>
     public static bool IsInsidePanel(float screenX, float screenY, int screenWidth, int screenHeight)
     {
@@ -150,6 +163,10 @@ public sealed class StationLayout
         var (contractsLeft, contractsTop, contractsRight, contractsBottom) = ContractsButtonLocalRect();
         if (lx >= contractsLeft && lx <= contractsRight && ly >= contractsTop && ly <= contractsBottom)
             return StationButton.Contracts;
+
+        var (undockLeft, undockTop, undockRight, undockBottom) = UndockButtonLocalRect();
+        if (lx >= undockLeft && lx <= undockRight && ly >= undockTop && ly <= undockBottom)
+            return StationButton.Undock;
 
         return StationButton.None;
     }

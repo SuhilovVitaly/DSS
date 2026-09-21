@@ -1,6 +1,6 @@
 # Стыковка
 
-Статус: MVP реализован. `navigation.dock` — настоящая authoritative команда, а не catalog-only заглушка; полный станционный функционал (Trade/Finance/Hire/Undock/установка Drilling Unit) остаётся за рамками MVP — см. «Статус реализации (MVP)» ниже.
+Статус: MVP реализован. `navigation.dock` и `navigation.undock` — настоящие authoritative-команды; полный станционный функционал (Trade/Finance/Hire/установка Drilling Unit) остаётся за рамками MVP — см. «Статус реализации (MVP)» ниже.
 
 Связанные документы: `CommandPanels.md`, `TacticalMapAndManeuvering.md`, `Station.md`.
 
@@ -13,7 +13,7 @@
 - Стыковка не происходит автоматически при достижении станции.
 - `Dock` является командой Navigation Computer: `navigation.dock`.
 - Команда `Dock` проходит через module-addressed command model.
-- Отстыковка в первом релизе является станционным действием, а не отдельной module command.
+- Отстыковка в первом релизе является станционным действием через `navigation.undock`.
 - Стыковка возможна только со станциями.
 - Доступная дистанция `Dock`: `< 200 km`.
 - Значение `200 km` должно быть параметром command definition команды `Dock` навигационного компьютера, а не hardcoded-числом в logic/UI.
@@ -42,6 +42,7 @@
 - `navigation.dock` валидирует target/дистанцию/синхронизацию в порядке из раздела «Требования первого релиза» и отклоняет команду с machine-readable reason code (`dock_target_not_station`, `dock_out_of_range`, `dock_not_synchronized`, плюс общие `missing_target`/`unknown_target`).
 - Дистанция `< 200 km` читается из `rangeKm` command definition (`Data/Commands/NavigationComputer/commands.json`), не hardcoded.
 - При успехе корабль физически синхронизируется со станцией (`local offset (1, 1)` world unit, скорость/направление станции) и получает authoritative `IsDocked`/`DockedStationObjectId`.
+- `navigation.undock` доступна на пристыкованном корабле без цели, сохраняет текущие координаты/скорость/курс и очищает `IsDocked`/`DockedStationObjectId` вместе с расписанием будущих port fees.
 - Docking state сохраняется и загружается (`isDocked`/`dockedStationObjectId` в scenario/save JSON, оба поля необязательные).
 - После успешного `Dock` экран станции открывается автоматически (`GameSessionScreen.ConsumePendingAutoTransition`) — см. `Documentation/02-FirstRelease/Screens/Station.md`.
 
@@ -49,7 +50,6 @@
 
 Не реализовано:
 
-- Отстыковка (Undock) как станционное действие — из «Решений первого релиза» выше.
 - Блокировка обычных engine-команд корабля, пока он пристыкован: технически можно отправить engine-команду и физически уплыть от станции, оставаясь помеченным `IsDocked = true`.
 - `navigation.stationsList`.
 - Полный функционал экрана станции (Trade/Finance/Representatives/Install Drilling Unit/Hire) — см. `Documentation/02-FirstRelease/Screens/Station.md`.

@@ -12,6 +12,15 @@
             "rangeKm": 200
         },
         {
+            "typeId": "navigation.undock",
+            "displayName": "Undock",
+            "timeFactor": 0.1,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.bridge.navigation.computer"
+        },
+        {
             "typeId": "navigation.stationsList",
             "displayName": "Stations List",
             "timeFactor": 0.1,

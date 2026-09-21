@@ -19,9 +19,11 @@ public static class SaveFormat
     /// Version 6 separates calendar time from motion/cycle time; older saves retain their baselines.
     /// Version 7 binds saves to catalog/rules versions and an economic catalog fingerprint.
     /// Version 8 persists a station market profile id and its economic fingerprint.
+    /// Version 9 adds a station's bounded trading budget and producing modules' pending output
+    /// remainder (US-0002 TK-0002); both are optional and absent for every earlier save.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 8;
+    public const int CurrentSaveFormatVersion = 9;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -194,7 +196,15 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("nextPortFeeDueGameTimeMs")] long? NextPortFeeDueGameTimeMs = null,
     [property: JsonPropertyName("portFeeDebt")] long PortFeeDebt = 0,
     [property: JsonPropertyName("marketProfileId")] string? MarketProfileId = null,
-    [property: JsonPropertyName("marketProfileFingerprint")] string? MarketProfileFingerprint = null);
+    [property: JsonPropertyName("marketProfileFingerprint")] string? MarketProfileFingerprint = null,
+    /// <summary>
+    /// Station's bounded trading budget — the portion of <see cref="Credits"/> currently
+    /// available for the Engine to spend on the player's behalf (US-0002 AC-05). Null means
+    /// "no bounded economy configured for this station's profile / not yet resolved"; runtime
+    /// interpretation, the maxBudget cap and the daily regeneration schedule belong to TK-0003.
+    /// Only meaningful for ObjectType == Station.
+    /// </summary>
+    [property: JsonPropertyName("marketBudgetCredits")] long? MarketBudgetCredits = null);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles
@@ -240,7 +250,15 @@ public sealed record StationProducingModuleData(
     /// module is assumed active unless a scenario/save says otherwise.
     /// </summary>
     [property: JsonPropertyName("active")] bool Active = true,
-    [property: JsonPropertyName("nextProductionDueGameTimeMs")] long? NextProductionDueGameTimeMs = null);
+    [property: JsonPropertyName("nextProductionDueGameTimeMs")] long? NextProductionDueGameTimeMs = null,
+    /// <summary>
+    /// Completed recipe output that did not fit in station cargo when the production cycle
+    /// finished (requirements §3844–3868, US-0002 TK-0002). Persisted so it survives save/load
+    /// and is unloaded exactly once — never re-issued or dropped — as soon as free capacity
+    /// appears; runtime handling belongs to TK-0003. Null/empty means there is no pending
+    /// remainder for this module.
+    /// </summary>
+    [property: JsonPropertyName("pendingOutput")] IReadOnlyList<StationInventoryItemData>? PendingOutput = null);
 
 /// <summary>
 /// One station event/buff/debuff (requirements §59 "События, бафы и дебафы станции"),

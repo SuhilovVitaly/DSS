@@ -506,8 +506,9 @@ public class ScenarioEngineTests
         }
 
         var navigationComputerType = Assert.Single(activeTypes, t => t.TypeId == "module.bridge.navigation.computer.basic");
-        Assert.Equal(2, navigationComputerType.CommandTypeIds.Length);
+        Assert.Equal(3, navigationComputerType.CommandTypeIds.Length);
         Assert.Contains("navigation.dock", navigationComputerType.CommandTypeIds);
+        Assert.Contains("navigation.undock", navigationComputerType.CommandTypeIds);
         Assert.Contains("navigation.stationsList", navigationComputerType.CommandTypeIds);
         foreach (string commandTypeId in navigationComputerType.CommandTypeIds)
         {
