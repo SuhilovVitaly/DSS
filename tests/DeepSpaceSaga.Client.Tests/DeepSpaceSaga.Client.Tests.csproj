@@ -24,8 +24,4 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="../../src/DeepSpaceSaga.Client/Images/Persons/W/PortraitGenerator/Golden/*.png" Link="GoldenPortraits/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
 </Project>

@@ -134,7 +134,7 @@ public static class ScenarioLoader
         if (gs is null)
             throw new ScenarioException("Missing gameState.");
         if (scenario.SaveFormatVersion >= 7 && gs.CatalogCompatibility is null)
-            throw new ScenarioException("Missing catalogCompatibility in save format 7.");
+            throw new ScenarioException("Missing catalogCompatibility in save format 7 or later.");
         if (scenario.SaveFormatVersion >= 6 && gs.SimulationTimeMs is null)
             throw new ScenarioException("Missing simulationTimeMs in save format 6.");
         if (gs.GameTimeMs < 0 || gs.SimulationTimeMs < 0 || gs.PlayerTokens < 0)
@@ -187,6 +187,34 @@ public static class ScenarioLoader
         foreach (var obj in objects)
         {
             ValidateObject(obj);
+            ValidateMarketProfileMetadata(scenario.SaveFormatVersion, obj);
+        }
+    }
+
+    private static void ValidateMarketProfileMetadata(int saveFormatVersion, SpaceObjectData obj)
+    {
+        if (obj.MarketProfileId is not null && string.IsNullOrWhiteSpace(obj.MarketProfileId))
+            throw new ScenarioException($"Object '{obj.ObjectId}', marketProfileId must not be blank.");
+        if (obj.MarketProfileFingerprint is not null && string.IsNullOrWhiteSpace(obj.MarketProfileFingerprint))
+            throw new ScenarioException($"Object '{obj.ObjectId}', marketProfileFingerprint must not be blank.");
+        if (obj.MarketProfileFingerprint is not null && obj.MarketProfileId is null)
+            throw new ScenarioException($"Object '{obj.ObjectId}', marketProfileFingerprint requires marketProfileId.");
+
+        bool hasProfileMetadata = obj.MarketProfileId is not null || obj.MarketProfileFingerprint is not null;
+        if (hasProfileMetadata && !obj.ObjectType.Equals("Station", StringComparison.OrdinalIgnoreCase))
+            throw new ScenarioException($"Object '{obj.ObjectId}', market profile metadata is allowed only on Station objects.");
+        if (hasProfileMetadata && saveFormatVersion is > 0 and < 8)
+            throw new ScenarioException($"Station '{obj.ObjectId}', marketProfileId is not supported before save format 8.");
+        if (saveFormatVersion >= 8 && obj.MarketProfileId is not null)
+        {
+            if (obj.MarketProfileFingerprint is null)
+                throw new ScenarioException($"Station '{obj.ObjectId}', marketProfileFingerprint is required in save format 8.");
+            if (obj.Credits is null)
+                throw new ScenarioException($"Station '{obj.ObjectId}', credits are required for a profiled save.");
+            if (obj.StationSize is null)
+                throw new ScenarioException($"Station '{obj.ObjectId}', stationSize is required for a profiled save.");
+            if (obj.Inventory is null)
+                throw new ScenarioException($"Station '{obj.ObjectId}', inventory is required for a profiled save.");
         }
     }
 
@@ -263,6 +291,24 @@ public static class ScenarioLoader
 
         if (!double.IsFinite(obj.PositionX) || !double.IsFinite(obj.PositionY))
             throw new ScenarioException($"Non-finite coordinates for '{obj.ObjectId}'.");
+
+        if (obj.Credits < 0)
+            throw new ScenarioException($"Object '{obj.ObjectId}' has negative credits.");
+        if (obj.Inventory is { } inventory)
+        {
+            var itemIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var entry in inventory)
+            {
+                if (entry is null)
+                    throw new ScenarioException($"Object '{obj.ObjectId}' inventory contains a null element.");
+                if (string.IsNullOrWhiteSpace(entry.ItemTypeId))
+                    throw new ScenarioException($"Object '{obj.ObjectId}' inventory contains a blank itemTypeId.");
+                if (!itemIds.Add(entry.ItemTypeId))
+                    throw new ScenarioException($"Object '{obj.ObjectId}' inventory contains duplicate item '{entry.ItemTypeId}'.");
+                if (entry.Quantity < 0)
+                    throw new ScenarioException($"Object '{obj.ObjectId}' inventory item '{entry.ItemTypeId}' has negative quantity.");
+            }
+        }
 
         // Temporary objects must be asteroids
         if (string.Equals(obj.PersistenceType, "Temporary", StringComparison.OrdinalIgnoreCase))

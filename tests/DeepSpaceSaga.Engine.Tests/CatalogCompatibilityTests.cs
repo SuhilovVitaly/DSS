@@ -19,7 +19,9 @@ public sealed class CatalogCompatibilityTests
             Enumerable.Range(0, source.CommandDefinitions.Count).Select(source.CommandDefinitions.GetDefinition),
             Enumerable.Range(0, source.FactoryTypes.Count).Select(source.FactoryTypes.GetDefinition),
             Enumerable.Range(0, source.Recipes.Count).Select(source.Recipes.GetDefinition),
-            legacyCatalogFingerprint: source.LegacyCatalogFingerprint);
+            legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
+            stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
+                .Select(source.StationMarketProfiles.GetDefinition));
 
     [Theory]
     [InlineData("Default")]
@@ -31,10 +33,10 @@ public sealed class CatalogCompatibilityTests
         string path = Path.Combine(Path.GetDirectoryName(SettingsPath)!, "Scenarios", scenarioName, "scenario.json");
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, path);
         var save = engine.CaptureSaveState();
-        Assert.Equal(7, save.SaveFormatVersion);
+        Assert.Equal(8, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         var registry = RealRegistry();
         Assert.Equal(registry.CatalogCompatibility, save.GameState.CatalogCompatibility);
-        Assert.Equal(registry.CatalogCompatibility.Fingerprint, registry.LegacyCatalogFingerprint);
         using var loaded = new SimulationEngine(registry);
         loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), allowNonZeroGameTime: true));
         Assert.Equal(engine.PlayerCredits, loaded.PlayerCredits);
@@ -60,17 +62,63 @@ public sealed class CatalogCompatibilityTests
     [Fact]
     public void Legacy_save_requires_exact_approved_baseline()
     {
-        var registry = RealRegistry();
-        using var engine = EngineContentLoader.CreateEngineFromSettingsFile(SettingsPath);
-        var captured = engine.CaptureSaveState();
-        var legacy = captured with { SaveFormatVersion = 6,
-            GameState = captured.GameState with { CatalogCompatibility = null } };
+        var baselineItems = new[] { new ItemTypeDefinition("item.legacy", "Legacy", 1, 10) };
+        var initial = SyntheticRegistry(baselineItems);
+        var registry = SyntheticRegistry(baselineItems, initial.CatalogCompatibility.Fingerprint);
+        var legacy = AnonymousLegacySave();
         using var compatible = new SimulationEngine(registry);
         compatible.LoadScenario(legacy);
-        using var changed = new SimulationEngine(ChangeCatalog(registry, item => item with { BasePriceCredits = item.BasePriceCredits + 1 }));
+        using var changed = new SimulationEngine(SyntheticRegistry(
+            [baselineItems[0] with { BasePriceCredits = 11 }], registry.LegacyCatalogFingerprint));
         Assert.Contains("legacyCatalogFingerprint", Assert.Throws<ScenarioException>(() => changed.LoadScenario(legacy)).Message);
         Assert.Throws<ScenarioException>(() => changed.LoadScenario(legacy with { SaveFormatVersion = 0 }, isSave: true));
     }
+
+    [Fact]
+    public void Added_electronics_rejects_old_catalog_identity_without_rewriting_legacy_baseline()
+    {
+        var baselineItems = new[] { new ItemTypeDefinition("item.legacy", "Legacy", 1, 10) };
+        var initial = SyntheticRegistry(baselineItems);
+        string approvedBaseline = initial.CatalogCompatibility.Fingerprint;
+        var baseline = SyntheticRegistry(baselineItems, approvedBaseline);
+        using var compatible = new SimulationEngine(baseline);
+        compatible.LoadScenario(AnonymousLegacySave(), isSave: true);
+
+        var expanded = SyntheticRegistry(
+            [.. baselineItems, new ItemTypeDefinition("item.electronics", "Electronics", 1, 150,
+                CatalogCode: "ITM-3006", TradeUnit: TradeUnit.Piece)],
+            approvedBaseline);
+        Assert.Equal(approvedBaseline, expanded.LegacyCatalogFingerprint);
+        Assert.NotEqual(approvedBaseline, expanded.CatalogCompatibility.Fingerprint);
+        using var incompatible = new SimulationEngine(expanded);
+        Assert.Contains("legacyCatalogFingerprint",
+            Assert.Throws<ScenarioException>(() => incompatible.LoadScenario(AnonymousLegacySave(), isSave: true)).Message);
+    }
+
+    private static GameDataRegistry SyntheticRegistry(
+        IEnumerable<ItemTypeDefinition> items,
+        string? legacyCatalogFingerprint = null) =>
+        GameDataRegistry.Create([], [], items, [], legacyCatalogFingerprint: legacyCatalogFingerprint);
+
+    private static ScenarioFile AnonymousLegacySave() => new(
+        new ScenarioMetadata("legacy", "Legacy"),
+        new GameStateData(
+            GameTimeMs: 0,
+            CurrentSpeed: "Speed0",
+            PlayerShipObjectId: "SHIP",
+            Focus: null,
+            SpaceObjects:
+            [
+                new SpaceObjectData("SHIP", "PlayerShip", "Permanent", null, 0, 0, 0, 0, "Stationary", null, null, null),
+                new SpaceObjectData("STATION", "Station", "Permanent", null, 1, 0, 0, 0, "Stationary", null, null, null,
+                    Credits: 100, Inventory: [new StationInventoryItemData("item.legacy", 10)]),
+            ],
+            MasterSeed: 1,
+            PlayerTokens: 0,
+            EconomyTime: new EconomyTimeData(),
+            SimulationTimeMs: 0,
+            CatalogCompatibility: null),
+        SaveFormatVersion: 6);
 
     [Fact]
     public void Missing_or_mismatched_identity_does_not_replace_running_world()
@@ -92,7 +140,7 @@ public sealed class CatalogCompatibilityTests
 
     [Theory]
     [InlineData("item.unknown", false)]
-    [InlineData("item.ice", true)]
+    [InlineData("item.uranium-ore", true)]
     public void Station_inventory_rejects_unknown_or_nontradeable_content(string itemId, bool removePrice)
     {
         var registry = RealRegistry();

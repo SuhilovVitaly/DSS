@@ -5,22 +5,6 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class SimulationClockTests
 {
-    [Fact]
-    public void Speed_change_accounts_for_elapsed_time_and_excludes_paused_time_at_new_base_pace()
-    {
-        long realMs = 0;
-        var clock = new SimulationClock(SimulationSpeed.Speed1, () => realMs);
-        realMs = 100;
-        clock.SetSpeed(SimulationSpeed.Speed0);
-        Assert.Equal(30_000, clock.GameTimeMs);
-        realMs = 1100;
-        clock.Update();
-        Assert.Equal(30_000, clock.GameTimeMs);
-        clock.SetSpeed(SimulationSpeed.Speed2);
-        realMs = 1120;
-        Assert.Equal(60_000, clock.UpdateAndCapture().GameTimeMs);
-        Assert.Equal(200, clock.SimulationTimeMs);
-    }
     [Theory]
     [InlineData(SimulationSpeed.Speed0, 0)]
     [InlineData(SimulationSpeed.Speed1, 300_000)]
@@ -32,161 +16,99 @@ public class SimulationClockTests
         long realMs = 0;
         var clock = new SimulationClock(speed, () => realMs);
         realMs = 1000;
-        var state = clock.UpdateAndCapture();
-        Assert.Equal(expected, state.GameTimeMs);
-        Assert.Equal(1000 * (int)speed, state.SimulationTimeMs);
+        Assert.Equal(new SimulationClockState(expected, speed, 1000 * (int)speed), clock.UpdateAndCapture());
     }
 
     [Fact]
-    public void GameTime_starts_at_zero()
+    public void Capture_returns_both_timestamps_without_consuming_elapsed_time()
     {
-        var clock = new SimulationClock(SimulationSpeed.Speed1);
-        Assert.Equal(0, clock.GameTimeMs);
+        long realMs = 10;
+        var clock = new SimulationClock(SimulationSpeed.Speed2, () => realMs);
+        Assert.Equal(new SimulationClockState(0, SimulationSpeed.Speed2, 0), clock.Capture());
+        realMs = 30;
+        Assert.Equal(new SimulationClockState(0, SimulationSpeed.Speed2, 0), clock.Capture());
+        Assert.Equal(new SimulationClockState(30_000, SimulationSpeed.Speed2, 100), clock.UpdateAndCapture());
+        Assert.Equal(clock.Capture(), clock.UpdateAndCapture());
     }
 
     [Fact]
-    public void Initial_speed_is_set()
+    public void Multiple_updates_accumulate_both_domains_exactly()
     {
-        var clock = new SimulationClock(SimulationSpeed.Speed2);
-        Assert.Equal(SimulationSpeed.Speed2, clock.Speed);
+        long realMs = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed1, () => realMs);
+        realMs = 17;
+        clock.Update();
+        Assert.Equal(new SimulationClockState(5100, SimulationSpeed.Speed1, 17), clock.Capture());
+        realMs = 43;
+        Assert.Equal(new SimulationClockState(12_900, SimulationSpeed.Speed1, 43), clock.UpdateAndCapture());
     }
 
     [Fact]
-    public void Update_advances_game_time_at_speed1()
+    public void SetSpeed_accounts_for_partial_interval_at_old_speed_before_switching()
     {
-        var clock = new SimulationClock(SimulationSpeed.Speed1);
-
-        // Wait a small amount of real time
-        Thread.Sleep(50);
-        clock.Update();
-
-        Assert.True(clock.GameTimeMs > 0, "GameTime should advance at Speed1");
-    }
-
-    [Fact]
-    public void Update_at_speed0_does_not_advance_time()
-    {
-        var clock = new SimulationClock(SimulationSpeed.Speed0);
-
-        Thread.Sleep(50);
-        clock.Update();
-
-        Assert.Equal(0, clock.GameTimeMs);
-    }
-
-    [Fact]
-    public void Update_at_speed2_advances_faster_than_speed1()
-    {
-        var clock1 = new SimulationClock(SimulationSpeed.Speed1);
-        var clock2 = new SimulationClock(SimulationSpeed.Speed2);
-
-        Thread.Sleep(100);
-        clock1.Update();
-        clock2.Update();
-
-        // Speed2 (5x) should accumulate roughly 5x more time than Speed1
-        Assert.True(clock2.GameTimeMs > clock1.GameTimeMs * 3,
-            $"Speed2={clock2.GameTimeMs} should be > 3× Speed1={clock1.GameTimeMs}");
-    }
-
-    [Fact]
-    public void SetSpeed_resets_real_baseline()
-    {
-        var clock = new SimulationClock(SimulationSpeed.Speed1);
-
-        // Let some real time pass at Speed1
-        Thread.Sleep(50);
-        clock.Update();
-        long timeBeforePause = clock.GameTimeMs;
-        Assert.True(timeBeforePause > 0);
-
-        // Pause
-        clock.SetSpeed(SimulationSpeed.Speed0);
-
-        // Wait real time while paused
-        Thread.Sleep(50);
-        clock.Update();
-        Assert.Equal(timeBeforePause, clock.GameTimeMs); // No advance
-
-        // Resume
-        clock.SetSpeed(SimulationSpeed.Speed1);
-        Thread.Sleep(50);
-        clock.Update();
-        Assert.True(clock.GameTimeMs > timeBeforePause, "Should advance after resume");
-    }
-
-    [Fact]
-    public void Multiple_updates_accumulate_correctly()
-    {
-        var clock = new SimulationClock(SimulationSpeed.Speed1);
-
-        clock.Update();
-        long t1 = clock.GameTimeMs;
-
-        Thread.Sleep(50);
-        clock.Update();
-        long t2 = clock.GameTimeMs;
-
-        Assert.True(t2 > t1, "GameTime should increase with each Update");
-    }
-
-    [Fact]
-    public void Speed_change_preserves_accumulated_time()
-    {
-        var clock = new SimulationClock(SimulationSpeed.Speed1);
-        Thread.Sleep(20);
-        clock.Update();
-        long accumulated = clock.GameTimeMs;
-        Assert.True(accumulated > 0);
-
-        // Change speed — accumulated time must not decrease
+        long realMs = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed1, () => realMs);
+        realMs = 20;
+        clock.UpdateAndCapture();
+        realMs = 37;
         clock.SetSpeed(SimulationSpeed.Speed2);
-        Assert.True(clock.GameTimeMs >= accumulated,
-            $"GameTimeMs ({clock.GameTimeMs}) should be >= accumulated ({accumulated})");
-        Assert.Equal(SimulationSpeed.Speed2, clock.Speed);
+        Assert.Equal(new SimulationClockState(11_100, SimulationSpeed.Speed2, 37), clock.Capture());
+        realMs = 60;
+        Assert.Equal(new SimulationClockState(45_600, SimulationSpeed.Speed2, 152), clock.UpdateAndCapture());
     }
 
     [Fact]
-    public void Reset_sets_game_time_and_speed_directly()
+    public void Speed0_freezes_both_domains_and_resume_excludes_paused_interval()
     {
-        var clock = new SimulationClock(SimulationSpeed.Speed1);
-        Thread.Sleep(20);
-        clock.Update(); // accumulate some time
-        Assert.True(clock.GameTimeMs > 0);
-
-        clock.Reset(0, SimulationSpeed.Speed0);
-        Assert.Equal(0, clock.GameTimeMs);
-        Assert.Equal(SimulationSpeed.Speed0, clock.Speed);
-
-        // After reset, Update should NOT add backlog from before the reset
-        Thread.Sleep(20);
-        clock.Update();
-        Assert.True(clock.GameTimeMs >= 0);
-    }
-
-    [Fact]
-    public void SetSpeed_accumulates_partial_interval_before_switching()
-    {
-        // This test verifies the critical fix: when SetSpeed is called
-        // between snapshots, the elapsed time at the old speed is NOT lost.
-        var clock = new SimulationClock(SimulationSpeed.Speed1);
-
-        // Simulate a snapshot at t ≈ 20ms
-        Thread.Sleep(20);
-        clock.Update();
-        long timeAtSnapshot = clock.GameTimeMs;
-        Assert.True(timeAtSnapshot > 0);
-
-        // Wait additional time (simulating player opening menu between snapshots)
-        Thread.Sleep(100);
-
-        // SetSpeed must accumulate the 100ms at Speed1 before switching
+        long realMs = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed1, () => realMs);
+        realMs = 100;
         clock.SetSpeed(SimulationSpeed.Speed0);
+        var paused = new SimulationClockState(30_000, SimulationSpeed.Speed0, 100);
+        Assert.Equal(paused, clock.Capture());
+        realMs = 1100;
+        clock.Update();
+        Assert.Equal(paused, clock.UpdateAndCapture());
+        realMs = 2100;
+        clock.SetSpeed(SimulationSpeed.Speed2);
+        realMs = 2120;
+        Assert.Equal(new SimulationClockState(60_000, SimulationSpeed.Speed2, 200), clock.UpdateAndCapture());
+    }
 
-        // GameTime should have advanced past the snapshot time
-        Assert.True(clock.GameTimeMs > timeAtSnapshot,
-            $"GameTimeMs ({clock.GameTimeMs}) should be > snapshot time ({timeAtSnapshot}). " +
-            "Partial interval time was lost!");
-        Assert.Equal(SimulationSpeed.Speed0, clock.Speed);
+    [Theory]
+    [InlineData(null, 900_000)]
+    [InlineData(1234L, 1234)]
+    public void Reset_preserves_explicit_or_legacy_motion_baseline_and_discards_backlog(long? motion, long expected)
+    {
+        long realMs = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed4, () => realMs);
+        realMs = 100;
+        clock.Update();
+        realMs = 1000;
+        clock.Reset(900_000, SimulationSpeed.Speed1, motion);
+        Assert.Equal(new SimulationClockState(900_000, SimulationSpeed.Speed1, expected), clock.Capture());
+        realMs = 1007;
+        Assert.Equal(new SimulationClockState(902_100, SimulationSpeed.Speed1, expected + 7), clock.UpdateAndCapture());
+    }
+
+    [Fact]
+    public void ResetRealBaseline_discards_backlog_without_changing_either_domain()
+    {
+        long realMs = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed1, () => realMs);
+        realMs = 10;
+        var before = clock.UpdateAndCapture();
+        realMs = 1000;
+        clock.ResetRealBaseline();
+        Assert.Equal(before, clock.Capture());
+        realMs = 1005;
+        Assert.Equal(new SimulationClockState(4500, SimulationSpeed.Speed1, 15), clock.UpdateAndCapture());
+    }
+
+    [Fact]
+    public void Legacy_clock_state_uses_calendar_time_when_motion_is_absent()
+    {
+        Assert.Equal(1234, new SimulationClockState(1234, SimulationSpeed.Speed0).MotionTimeMs);
+        Assert.Equal(17, new SimulationClockState(1234, SimulationSpeed.Speed0, 17).MotionTimeMs);
     }
 }

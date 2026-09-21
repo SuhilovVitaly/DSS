@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 
@@ -17,6 +18,10 @@ public class EngineContentLoaderSaveFileTests
 
         // Hand-written save: gameTimeMs > 0 (rejected for New Game, allowed here), and
         // the engine module's turn cycle is already 500 ms into its 1000 ms window.
+        // It carries the current catalog identity so this test exercises save loading,
+        // rather than the intentional rejection of an unidentified incompatible legacy save.
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settingsPath, out _, out _);
+        string catalogCompatibility = JsonSerializer.Serialize(registry.CatalogCompatibility);
         string saveJson = """
         {
           "scenarioMetadata": { "scenarioId": "quicksave", "name": "Quicksave" },
@@ -55,6 +60,9 @@ public class EngineContentLoaderSaveFileTests
           }
         }
         """;
+        saveJson = saveJson
+            .Replace("\"saveFormatVersion\": 1,", "\"saveFormatVersion\": 7,", StringComparison.Ordinal)
+            .Replace("\"gameTimeMs\": 5000,", $"\"gameTimeMs\": 5000,\n            \"simulationTimeMs\": 5000,\n            \"economyTime\": {{ \"rulesVersion\": 1, \"stationDistrict\": 0, \"missingRations\": 0 }},\n            \"catalogCompatibility\": {catalogCompatibility},", StringComparison.Ordinal);
 
         string savePath = Path.Combine(Path.GetTempPath(), $"dss-save-{Guid.NewGuid():N}.json");
         File.WriteAllText(savePath, saveJson);

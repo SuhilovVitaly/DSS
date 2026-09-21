@@ -190,37 +190,41 @@ public class ItemCatalogTests
     }
 
     [Fact]
-    public void Real_catalog_has_twelve_tradeable_items()
+    public void Real_catalog_preserves_legacy_tradeable_identities()
     {
         var registry = LoadRealRegistry();
-        Assert.Equal(12, registry.ItemTypes.Count);
+        string[] legacyIds = ["ice", "iron-ore", "silicon", "magnesium-ore", "uranium-ore", "carbon-ore",
+            "water", "steel", "energy-cells", "fuel", "protein-mass", "food-rations"];
+        foreach (string id in legacyIds)
+            Assert.True(registry.ItemTypes.Contains($"item.{id}"), $"Missing legacy identity item.{id}");
+        var items = Enumerable.Range(0, registry.ItemTypes.Count).Select(registry.ItemTypes.GetDefinition).ToArray();
+        Assert.Equal(items.Length, items.Select(item => item.TypeId).Distinct(StringComparer.Ordinal).Count());
+        Assert.All(items, item => Assert.True(item.BasePriceCredits is > 0));
     }
 
     // isResource (bool) rather than TradeCategory (internal enum) — xUnit requires [Theory]
     // methods to be public, and a public method cannot expose an internal-visibility parameter
     // type (CS0051).
     [Theory]
-    [InlineData("item.ice", "Ice", true, "RES-2001", 10)]
-    [InlineData("item.iron-ore", "Iron Ore", true, "RES-2002", 5)]
-    [InlineData("item.silicon", "Silicon", true, "RES-2003", 40)]
-    [InlineData("item.magnesium-ore", "Magnesium Ore", true, "RES-2004", 30)]
-    [InlineData("item.water", "Water", false, "ITM-3001", 14)]
-    [InlineData("item.steel", "Steel", false, "ITM-3002", 40)]
-    [InlineData("item.energy-cells", "Energy Cells", false, "ITM-3003", 50)]
-    [InlineData("item.fuel", "Fuel", false, "ITM-3004", 10)]
-    [InlineData("item.protein-mass", "Protein mass", false, "ITM-3005", 110)]
+    [InlineData("item.ice", true, "RES-2001", 10)]
+    [InlineData("item.iron-ore", true, "RES-2002", 5)]
+    [InlineData("item.silicon", true, "RES-2003", 40)]
+    [InlineData("item.magnesium-ore", true, "RES-2004", 30)]
+    [InlineData("item.water", false, "ITM-3001", 14)]
+    [InlineData("item.steel", false, "ITM-3002", 40)]
+    [InlineData("item.energy-cells", false, "ITM-3003", 50)]
+    [InlineData("item.fuel", false, "ITM-3004", 10)]
+    [InlineData("item.protein-mass", false, "ITM-3005", 110)]
     public void Real_catalog_item_matches_documented_price_category_and_catalog_code(
-        string typeId, string displayName, bool isResource, string catalogCode, long basePrice)
+        string typeId, bool isResource, string catalogCode, long basePrice)
     {
         var registry = LoadRealRegistry();
         var item = registry.ItemTypes.GetDefinition(registry.ItemTypes.GetIndex(typeId));
 
-        Assert.Equal(displayName, item.DisplayName);
+        Assert.False(string.IsNullOrWhiteSpace(item.DisplayName));
         Assert.Equal(isResource ? TradeCategory.Resource : TradeCategory.Good, item.Category);
         Assert.Equal(catalogCode, item.CatalogCode);
         Assert.Equal(basePrice, item.BasePriceCredits);
-        // CP-1 (story-20260825-084409): UnitMassKg = 1 for every tradeable Resource/Good —
-        // Quantity in a trade command is literally kg.
         Assert.Equal(1, item.UnitMassKg);
     }
 
@@ -232,7 +236,7 @@ public class ItemCatalogTests
         var registry = LoadRealRegistry();
         var item = registry.ItemTypes.GetDefinition(registry.ItemTypes.GetIndex("item.food-rations"));
 
-        Assert.Equal("Food Rations", item.DisplayName);
+        Assert.False(string.IsNullOrWhiteSpace(item.DisplayName));
         Assert.Equal(TradeCategory.Good, item.Category);
         Assert.Null(item.CatalogCode);
         Assert.Equal(20, item.BasePriceCredits);

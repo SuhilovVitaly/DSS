@@ -102,10 +102,92 @@ public static class EngineContentLoader
             ? null
             : LoadRecipes(Resolve(basePath, settings.TypeData.Recipes));
 
+        string? profilePath = null;
+        if (settings.TypeData.StationMarketProfiles is { } declaredProfilePath)
+        {
+            if (string.IsNullOrWhiteSpace(declaredProfilePath))
+                throw new ContentException($"{settingsPath}: typeData.stationMarketProfiles contains an empty content path.");
+            profilePath = Resolve(basePath, declaredProfilePath);
+        }
+        var profiles = profilePath is null ? null : LoadStationMarketProfiles(profilePath);
+        var dialogues = settings.TypeData.Dialogues is null ? null : DialogueContentLoader.Load(Resolve(basePath, settings.TypeData.Dialogues));
+        var quests = settings.TypeData.Quests is null ? null : DialogueContentLoader.LoadQuests(Resolve(basePath, settings.TypeData.Quests));
+        if (profiles is not null)
+        {
+            var profileItems = TypeRegistry<ItemTypeDefinition>.Create(catalog.Items, "item types");
+            try
+            {
+                GameDataRegistry.ValidateStationMarketProfiles(profiles, profileItems);
+            }
+            catch (ContentException ex)
+            {
+                throw new ContentException($"{profilePath}: {ex.Message}", ex);
+            }
+        }
         return GameDataRegistry.Create(moduleCategories, moduleImplementations, catalog.Items, commands, factoryTypes, recipes,
-            settings.TypeData.Dialogues is null ? null : DialogueContentLoader.Load(Resolve(basePath, settings.TypeData.Dialogues)),
-            settings.TypeData.Quests is null ? null : DialogueContentLoader.LoadQuests(Resolve(basePath, settings.TypeData.Quests)),
-            catalogVersion: catalog.Version, legacyCatalogFingerprint: settings.Economy?.LegacyCatalogFingerprint);
+            dialogues, quests, catalogVersion: catalog.Version,
+            legacyCatalogFingerprint: settings.Economy?.LegacyCatalogFingerprint, stationMarketProfiles: profiles);
+    }
+
+    internal static IReadOnlyList<StationMarketProfileDefinition> LoadStationMarketProfiles(string path)
+    {
+        try
+        {
+            var file = ReadJson<StationMarketProfilesFile>(path, "station market profiles");
+            if (file.SchemaVersion != 1) throw new ContentException("schemaVersion must equal 1.");
+            if (file.SizeFactors.ValueKind != JsonValueKind.Object)
+                throw new ContentException("sizeFactors must be an object.");
+            var factors = ImmutableDictionary.CreateBuilder<StationSize, int>();
+            foreach (var property in file.SizeFactors.EnumerateObject())
+            {
+                if (!Enum.TryParse<StationSize>(property.Name, out var size) || !Enum.IsDefined(size) || size.ToString() != property.Name)
+                    throw new ContentException($"sizeFactors contains unknown size '{property.Name}'.");
+                if (property.Value.ValueKind != JsonValueKind.Number || !property.Value.TryGetInt32(out int factor))
+                    throw new ContentException($"sizeFactors.{property.Name} must be an int.");
+                if (!factors.TryAdd(size, factor))
+                    throw new ContentException($"sizeFactors contains duplicate size '{property.Name}'.");
+            }
+            if (file.Profiles is null || file.Profiles.Count == 0)
+                throw new ContentException("profiles must be a nonempty array.");
+
+            var profiles = ImmutableArray.CreateBuilder<StationMarketProfileDefinition>();
+            foreach (var element in file.Profiles)
+            {
+                string profileId = element.ValueKind == JsonValueKind.Object && element.TryGetProperty("typeId", out var id)
+                    ? id.ToString() : "<missing>";
+                try
+                {
+                    var dto = element.Deserialize<StationMarketProfileDto>(JsonOptions)
+                        ?? throw new ContentException("profiles entry must not be null.");
+                    if (dto.SupplyItemTypeIds is null) throw new ContentException("supplyItemTypeIds array is required.");
+                    if (dto.DemandItemTypeIds is null) throw new ContentException("demandItemTypeIds array is required.");
+                    if (dto.InitialInventory is null) throw new ContentException("initialInventory array is required.");
+                    if (dto.InitialCredits is null) throw new ContentException("initialCredits is required.");
+                    if (dto.RefuelStockKg is null) throw new ContentException("refuelStockKg is required.");
+                    var inventory = dto.InitialInventory.Select(stock =>
+                    {
+                        if (stock is null) throw new ContentException("initialInventory entry must not be null.");
+                        if (stock.Quantity is null)
+                            throw new ContentException($"initialInventory item '{stock.ItemTypeId}': quantity is required.");
+                        return new StationMarketStockDefinition(stock.ItemTypeId!, stock.Quantity.Value);
+                    }).ToImmutableArray();
+                    profiles.Add(new StationMarketProfileDefinition(dto.TypeId!, dto.DisplayName!,
+                        dto.SupplyItemTypeIds.ToImmutableArray(), dto.DemandItemTypeIds.ToImmutableArray(), inventory,
+                        dto.InitialCredits.Value, dto.RefuelStockKg.Value, factors.ToImmutable()));
+                }
+                catch (Exception ex) when (ex is JsonException or ContentException)
+                {
+                    throw new ContentException($"Market profile '{profileId}': {ex.Message}", ex);
+                }
+            }
+            var result = profiles.ToImmutable();
+            GameDataRegistry.ValidateStationMarketProfiles(result);
+            return result;
+        }
+        catch (ContentException ex)
+        {
+            throw new ContentException($"{path}: {ex.Message}", ex);
+        }
     }
 
     /// <summary>
@@ -545,7 +627,39 @@ public static class EngineContentLoader
         [property: JsonPropertyName("factoryTypes")] string? FactoryTypes,
         [property: JsonPropertyName("recipes")] string? Recipes,
         [property: JsonPropertyName("dialogues")] string? Dialogues = null,
-        [property: JsonPropertyName("quests")] string? Quests = null);
+        [property: JsonPropertyName("quests")] string? Quests = null,
+        [property: JsonPropertyName("stationMarketProfiles"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketProfiles = null);
+
+    // An omitted optional path is different from an explicitly declared JSON null.
+    private sealed class DeclaredProfilePathConverter : JsonConverter<string>
+    {
+        public override bool HandleNull => true;
+
+        public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+            reader.TokenType == JsonTokenType.String ? reader.GetString()!
+                : throw new JsonException("stationMarketProfiles must be a non-null string path.");
+
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options) =>
+            writer.WriteStringValue(value);
+    }
+
+    private sealed record StationMarketProfilesFile(
+        [property: JsonPropertyName("schemaVersion")] int? SchemaVersion,
+        [property: JsonPropertyName("sizeFactors")] JsonElement SizeFactors,
+        [property: JsonPropertyName("profiles")] IReadOnlyList<JsonElement>? Profiles);
+
+    private sealed record StationMarketProfileDto(
+        [property: JsonPropertyName("typeId")] string? TypeId,
+        [property: JsonPropertyName("displayName")] string? DisplayName,
+        [property: JsonPropertyName("supplyItemTypeIds")] IReadOnlyList<string>? SupplyItemTypeIds,
+        [property: JsonPropertyName("demandItemTypeIds")] IReadOnlyList<string>? DemandItemTypeIds,
+        [property: JsonPropertyName("initialInventory")] IReadOnlyList<StationMarketStockDto?>? InitialInventory,
+        [property: JsonPropertyName("initialCredits")] long? InitialCredits,
+        [property: JsonPropertyName("refuelStockKg")] long? RefuelStockKg);
+
+    private sealed record StationMarketStockDto(
+        [property: JsonPropertyName("itemTypeId")] string? ItemTypeId,
+        [property: JsonPropertyName("quantity")] long? Quantity);
 
     private sealed record ModuleTypesFile(
         [property: JsonPropertyName("moduleTypes")] IReadOnlyList<ModuleCategoryDefinitionDto> ModuleTypes);

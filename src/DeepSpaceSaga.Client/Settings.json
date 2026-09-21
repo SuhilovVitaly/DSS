@@ -7,7 +7,8 @@
     "factoryTypes": "Data/factory-types.json",
     "recipes": "Data/recipes.json",
     "dialogues": "Data/Dialogues",
-    "quests": "Data/Quests"
+    "quests": "Data/Quests",
+    "stationMarketProfiles": "Data/Markets/station-market-profiles.json"
   },
   "economy": { "catalogVersion": 1, "rulesVersion": 1, "legacyCatalogFingerprint": "0E0C8DCBDBB06051AC1D7DBA5321DA8DFD0A2CA29C7980AAA4F56486FA300555" },
   "defaultScenario": "Scenarios/Default/scenario.json",

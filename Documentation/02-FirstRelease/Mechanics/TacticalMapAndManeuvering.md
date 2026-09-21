@@ -1,5 +1,7 @@
 # Тактическая карта и маневрирование
 
+Экономическая сеть станции является одним из источников наполнения карты. Правила назначения ролей станций, расстояний, торговых циклов, астероидных полей и рисков описаны в [TradingSystemMvpStories.md](TradingSystemMvpStories.md). Карта должна генерироваться детерминированно из `masterSeed`, но не обязана показывать игроку точные удалённые цены до сканирования или посещения.
+
 Статус: частично реализовано.
 
 Основные источники: `Documentation/01-Requirements/EngineRequirements.md`, `Documentation/03-Design/TacticalMapSpecification.md`, `GameSessionScreen`, `CommandPanels.md`.

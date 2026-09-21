@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "sizeFactors": {
+    "Outpost": 500,
+    "Medium": 1000,
+    "Large": 1500,
+    "Huge": 2000
+  },
+  "profiles": [
+    {
+      "typeId": "market.mining",
+      "displayName": "Mining",
+      "supplyItemTypeIds": [
+        "item.ice",
+        "item.iron-ore",
+        "item.magnesium-ore",
+        "item.carbon-ore"
+      ],
+      "demandItemTypeIds": [
+        "item.water",
+        "item.food-rations",
+        "item.energy-cells",
+        "item.steel"
+      ],
+      "initialInventory": [
+        { "itemTypeId": "item.ice", "quantity": 162 },
+        { "itemTypeId": "item.iron-ore", "quantity": 162 },
+        { "itemTypeId": "item.magnesium-ore", "quantity": 162 },
+        { "itemTypeId": "item.carbon-ore", "quantity": 162 },
+        { "itemTypeId": "item.water", "quantity": 36 },
+        { "itemTypeId": "item.food-rations", "quantity": 36 },
+        { "itemTypeId": "item.energy-cells", "quantity": 36 },
+        { "itemTypeId": "item.steel", "quantity": 36 }
+      ],
+      "initialCredits": 9600,
+      "refuelStockKg": 200
+    },
+    {
+      "typeId": "market.industrial",
+      "displayName": "Industrial",
+      "supplyItemTypeIds": [
+        "item.steel",
+        "item.energy-cells",
+        "item.electronics"
+      ],
+      "demandItemTypeIds": [
+        "item.iron-ore",
+        "item.magnesium-ore",
+        "item.carbon-ore",
+        "item.silicon",
+        "item.water",
+        "item.food-rations"
+      ],
+      "initialInventory": [
+        { "itemTypeId": "item.steel", "quantity": 132 },
+        { "itemTypeId": "item.energy-cells", "quantity": 132 },
+        { "itemTypeId": "item.electronics", "quantity": 132 },
+        { "itemTypeId": "item.iron-ore", "quantity": 66 },
+        { "itemTypeId": "item.magnesium-ore", "quantity": 66 },
+        { "itemTypeId": "item.carbon-ore", "quantity": 66 },
+        { "itemTypeId": "item.silicon", "quantity": 66 },
+        { "itemTypeId": "item.water", "quantity": 44 },
+        { "itemTypeId": "item.food-rations", "quantity": 44 }
+      ],
+      "initialCredits": 14400,
+      "refuelStockKg": 200
+    },
+    {
+      "typeId": "market.hydroponic",
+      "displayName": "Hydroponic",
+      "supplyItemTypeIds": [
+        "item.water",
+        "item.protein-mass",
+        "item.food-rations"
+      ],
+      "demandItemTypeIds": [
+        "item.ice",
+        "item.energy-cells",
+        "item.steel",
+        "item.electronics"
+      ],
+      "initialInventory": [
+        { "itemTypeId": "item.water", "quantity": 120 },
+        { "itemTypeId": "item.protein-mass", "quantity": 120 },
+        { "itemTypeId": "item.food-rations", "quantity": 120 },
+        { "itemTypeId": "item.ice", "quantity": 60 },
+        { "itemTypeId": "item.energy-cells", "quantity": 40 },
+        { "itemTypeId": "item.steel", "quantity": 40 },
+        { "itemTypeId": "item.electronics", "quantity": 40 }
+      ],
+      "initialCredits": 12000,
+      "refuelStockKg": 200
+    },
+    {
+      "typeId": "market.transit",
+      "displayName": "Transit",
+      "supplyItemTypeIds": [],
+      "demandItemTypeIds": [
+        "item.water",
+        "item.food-rations",
+        "item.energy-cells",
+        "item.steel",
+        "item.electronics"
+      ],
+      "initialInventory": [
+        { "itemTypeId": "item.water", "quantity": 96 },
+        { "itemTypeId": "item.food-rations", "quantity": 96 },
+        { "itemTypeId": "item.energy-cells", "quantity": 96 },
+        { "itemTypeId": "item.steel", "quantity": 96 },
+        { "itemTypeId": "item.electronics", "quantity": 96 }
+      ],
+      "initialCredits": 19200,
+      "refuelStockKg": 400
+    },
+    {
+      "typeId": "market.scientific-military",
+      "displayName": "Scientific/Military",
+      "supplyItemTypeIds": [
+        "item.electronics"
+      ],
+      "demandItemTypeIds": [
+        "item.silicon",
+        "item.energy-cells",
+        "item.steel",
+        "item.water",
+        "item.food-rations"
+      ],
+      "initialInventory": [
+        { "itemTypeId": "item.electronics", "quantity": 96 },
+        { "itemTypeId": "item.silicon", "quantity": 48 },
+        { "itemTypeId": "item.energy-cells", "quantity": 32 },
+        { "itemTypeId": "item.steel", "quantity": 32 },
+        { "itemTypeId": "item.water", "quantity": 32 },
+        { "itemTypeId": "item.food-rations", "quantity": 32 }
+      ],
+      "initialCredits": 16800,
+      "refuelStockKg": 200
+    }
+  ]
+}
