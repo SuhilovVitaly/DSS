@@ -18,9 +18,10 @@ public static class SaveFormat
     /// Version 5 adds versioned economic time state and durable travel receipts.
     /// Version 6 separates calendar time from motion/cycle time; older saves retain their baselines.
     /// Version 7 binds saves to catalog/rules versions and an economic catalog fingerprint.
+    /// Version 8 persists a station market profile id and its economic fingerprint.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 7;
+    public const int CurrentSaveFormatVersion = 8;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -191,7 +192,9 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("passengers")] IReadOnlyList<ShipPassengerData>? Passengers = null,
     [property: JsonPropertyName("firstPortFeeGameTimeMs")] long? FirstPortFeeGameTimeMs = null,
     [property: JsonPropertyName("nextPortFeeDueGameTimeMs")] long? NextPortFeeDueGameTimeMs = null,
-    [property: JsonPropertyName("portFeeDebt")] long PortFeeDebt = 0);
+    [property: JsonPropertyName("portFeeDebt")] long PortFeeDebt = 0,
+    [property: JsonPropertyName("marketProfileId")] string? MarketProfileId = null,
+    [property: JsonPropertyName("marketProfileFingerprint")] string? MarketProfileFingerprint = null);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles

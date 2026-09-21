@@ -202,6 +202,8 @@ public sealed partial class SimulationEngine : IDisposable
         if ((isSave || scenario.SaveFormatVersion > 0) && gs.CatalogCompatibility is null && _registry.ItemTypes.Count > 0 &&
             !string.Equals(_registry.LegacyCatalogFingerprint, _registry.CatalogCompatibility.Fingerprint, StringComparison.Ordinal))
             throw new ScenarioException("Legacy save has no catalog identity; an exact approved legacyCatalogFingerprint is required. Save was not modified.");
+        bool loadingSave = isSave || scenario.SaveFormatVersion > 0;
+        var marketProfiles = ResolveMarketProfiles(gs.SpaceObjects, loadingSave, scenario.SaveFormatVersion);
         var speed = ScenarioLoader.ParseSpeed(gs.CurrentSpeed);
         var runtimeObjects = new List<SpaceObjectRuntime>(gs.SpaceObjects.Count);
 
@@ -239,13 +241,20 @@ public sealed partial class SimulationEngine : IDisposable
             bool isStation = obj.ObjectType == SpaceObjectType.Station;
             bool isPlayerShip = obj.ObjectType == SpaceObjectType.PlayerShip;
             bool isAsteroid = obj.ObjectType == SpaceObjectType.Asteroid;
+            marketProfiles.TryGetValue(obj.ObjectId, out var marketProfile);
             string? image = ResolveObjectImage(obj, isPlayerShip, isAsteroid, resolvedMasterSeed);
-            long credits = isStation ? ResolveStationCredits(obj, resolvedMasterSeed) : 0;
+            var stationSize = isStation ? ResolveStationSize(obj) : StationSize.Medium;
+            long credits = isStation
+                ? marketProfile is null
+                    ? ResolveStationCredits(obj, resolvedMasterSeed)
+                    : ResolveProfileStationCredits(obj, marketProfile, stationSize)
+                : 0;
             int priceCoefficient = isStation ? ResolveStationPriceCoefficient(obj, resolvedMasterSeed) : 1000;
             var inventory = isStation
-                ? ResolveStationInventory(obj, resolvedMasterSeed)
+                ? marketProfile is null
+                    ? ResolveStationInventory(obj, resolvedMasterSeed)
+                    : ResolveProfileStationInventory(obj, marketProfile, stationSize)
                 : ImmutableArray<StationInventoryItemRuntime>.Empty;
-            var stationSize = isStation ? ResolveStationSize(obj) : StationSize.Medium;
             var producingModules = isStation
                 ? ResolveStationProducingModules(obj)
                 : ImmutableArray<StationProducingModuleRuntime>.Empty;
@@ -302,7 +311,9 @@ public sealed partial class SimulationEngine : IDisposable
                 IsDestroyed: obj.IsDestroyed, Passengers: (obj.Passengers ?? []).ToImmutableArray(),
                 FirstPortFeeGameTimeMs: obj.FirstPortFeeGameTimeMs ?? (obj.IsDocked ? gs.GameTimeMs : null),
                 NextPortFeeDueGameTimeMs: ResolveNextPortFee(obj, gs.GameTimeMs),
-                PortFeeDebt: obj.PortFeeDebt));
+                PortFeeDebt: obj.PortFeeDebt,
+                MarketProfileId: marketProfile?.TypeId,
+                MarketProfileFingerprint: marketProfile?.Fingerprint));
         }
 
         lock (_worldStateLock)
@@ -797,7 +808,9 @@ public sealed partial class SimulationEngine : IDisposable
                 IsDestroyed: obj.IsDestroyed, Passengers: obj.Passengers.IsDefault ? [] : obj.Passengers,
                 FirstPortFeeGameTimeMs: obj.FirstPortFeeGameTimeMs,
                 NextPortFeeDueGameTimeMs: obj.NextPortFeeDueGameTimeMs,
-                PortFeeDebt: obj.PortFeeDebt));
+                PortFeeDebt: obj.PortFeeDebt,
+                MarketProfileId: isStation ? obj.MarketProfileId : null,
+                MarketProfileFingerprint: isStation ? obj.MarketProfileFingerprint : null));
         }
 
         var gameState = new GameStateData(
@@ -1170,6 +1183,89 @@ public sealed partial class SimulationEngine : IDisposable
 
         return null;
     }
+
+    private Dictionary<string, StationMarketProfileDefinition> ResolveMarketProfiles(
+        IReadOnlyList<SpaceObjectData> objects,
+        bool loadingSave,
+        int saveFormatVersion)
+    {
+        var result = new Dictionary<string, StationMarketProfileDefinition>(StringComparer.OrdinalIgnoreCase);
+        foreach (var obj in objects)
+        {
+            if (obj.MarketProfileId is not { } profileId)
+                continue;
+
+            if (loadingSave && saveFormatVersion < 8)
+                throw new ScenarioException($"Station '{obj.ObjectId}', marketProfileId '{profileId}' is not supported before save format 8. Save was not modified.");
+
+            if (!_registry.StationMarketProfiles.Contains(profileId))
+                throw new ScenarioException($"Station '{obj.ObjectId}', marketProfileId '{profileId}': unknown profile. Save was not modified.");
+
+            var profile = _registry.StationMarketProfiles.GetDefinition(
+                _registry.StationMarketProfiles.GetIndex(profileId));
+            if (obj.MarketProfileFingerprint is { } fingerprint &&
+                !string.Equals(fingerprint, profile.Fingerprint, StringComparison.Ordinal))
+                throw new ScenarioException($"Station '{obj.ObjectId}', market profile '{profileId}', marketProfileFingerprint does not match. Save was not modified.");
+
+            if (loadingSave)
+            {
+                if (obj.MarketProfileFingerprint is null)
+                    throw new ScenarioException($"Station '{obj.ObjectId}', market profile '{profileId}', marketProfileFingerprint is required for a save. Save was not modified.");
+                if (obj.Credits is null)
+                    throw new ScenarioException($"Station '{obj.ObjectId}', market profile '{profileId}', credits are required for a save. Save was not modified.");
+                if (obj.StationSize is null)
+                    throw new ScenarioException($"Station '{obj.ObjectId}', market profile '{profileId}', stationSize is required for a save. Save was not modified.");
+                if (obj.Inventory is null)
+                    throw new ScenarioException($"Station '{obj.ObjectId}', market profile '{profileId}', inventory is required for a save. Save was not modified.");
+
+                var savedItemIds = obj.Inventory.Select(entry => entry.ItemTypeId).ToHashSet(StringComparer.Ordinal);
+                foreach (string expectedItemId in profile.InitialInventory.Select(stock => stock.ItemTypeId).Append("item.fuel"))
+                    if (!savedItemIds.Contains(expectedItemId))
+                        throw new ScenarioException($"Station '{obj.ObjectId}', market profile '{profileId}', inventory is missing '{expectedItemId}'. Save was not modified.");
+            }
+
+            result.Add(obj.ObjectId, profile);
+        }
+
+        return result;
+    }
+
+    private static long ResolveProfileStationCredits(
+        SpaceObjectData obj,
+        StationMarketProfileDefinition profile,
+        StationSize stationSize) =>
+        obj.Credits ?? ScaleProfileValue(profile.InitialCredits, profile.SizeFactors[stationSize]);
+
+    private ImmutableArray<StationInventoryItemRuntime> ResolveProfileStationInventory(
+        SpaceObjectData obj,
+        StationMarketProfileDefinition profile,
+        StationSize stationSize)
+    {
+        int sizeFactor = profile.SizeFactors[stationSize];
+        var quantities = profile.InitialInventory.ToDictionary(
+            stock => stock.ItemTypeId,
+            stock => ScaleProfileValue(stock.Quantity, sizeFactor),
+            StringComparer.Ordinal);
+        quantities.Add("item.fuel", ScaleProfileValue(profile.RefuelStockKg, sizeFactor));
+
+        foreach (var entry in obj.Inventory ?? [])
+        {
+            if (!_registry.ItemTypes.Contains(entry.ItemTypeId))
+                throw new ScenarioException($"Station '{obj.ObjectId}', market profile '{profile.TypeId}', inventory.itemTypeId: unknown item '{entry.ItemTypeId}'.");
+            var item = _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(entry.ItemTypeId));
+            if (item.BasePriceCredits is null)
+                throw new ScenarioException($"Station '{obj.ObjectId}', market profile '{profile.TypeId}', item '{entry.ItemTypeId}': basePriceCredits is required.");
+            quantities[entry.ItemTypeId] = entry.Quantity;
+        }
+
+        var inventory = ImmutableArray.CreateBuilder<StationInventoryItemRuntime>(quantities.Count);
+        foreach (var pair in quantities.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+            inventory.Add(new StationInventoryItemRuntime(_registry.ItemTypes.GetIndex(pair.Key), pair.Value));
+        return inventory.MoveToImmutable();
+    }
+
+    private static long ScaleProfileValue(long value, int sizeFactor) => checked((long)decimal.Round(
+        checked((decimal)value * sizeFactor / 1000m), 0, MidpointRounding.AwayFromZero));
 
     /// <summary>
     /// Resolve a station's Credits balance (Documentation\02-FirstRelease\Mechanics\Money.md): explicit
@@ -3174,7 +3270,9 @@ internal sealed record SpaceObjectRuntime(
     ImmutableArray<ShipPassengerData> Passengers = default,
     long? FirstPortFeeGameTimeMs = null,
     long? NextPortFeeDueGameTimeMs = null,
-    long PortFeeDebt = 0);
+    long PortFeeDebt = 0,
+    string? MarketProfileId = null,
+    string? MarketProfileFingerprint = null);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName);
