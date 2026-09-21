@@ -248,6 +248,147 @@ internal sealed class GameDataRegistry
             ValidateAmount(profile.InitialCredits, "initialCredits");
             ValidateAmount(profile.RefuelStockKg, "refuelStockKg");
             ValidateItem("item.fuel", "refuelStockKg", fuel: true);
+
+            if (profile.Economy is { } economy)
+                ValidateEconomy(economy, profile, supply, demand, inventory, ValidateItem, Reject);
+        }
+    }
+
+    // supply/demand are the pre-existing US-0001 sets: after the caller's union pass, `supply`
+    // already contains supply ∪ demand (see the `if (!supply.Add(itemId))` overlap check above),
+    // while `demand` still holds only the profile's own demandItemTypeIds. `inventory` is the
+    // profile's InitialInventory item set — always equal to supply ∪ demand once the caller's own
+    // "missing item from union" check has passed.
+    private static void ValidateEconomy(
+        StationMarketEconomyDefinition economy,
+        StationMarketProfileDefinition profile,
+        HashSet<string> supplyUnion,
+        HashSet<string> demand,
+        HashSet<string> inventory,
+        Action<string, string, bool> validateItem,
+        Action<string, string> reject)
+    {
+        void RejectEconomy(string field, string reason) => reject($"economy.{field}", reason);
+
+        if (!Enum.IsDefined(economy.ProductionSource))
+            RejectEconomy("productionSource", "must be Profile or Modules");
+        if (economy.HourlyInputs.IsDefault) RejectEconomy("hourlyInputs", "array is required");
+        if (economy.HourlyOutputs.IsDefault) RejectEconomy("hourlyOutputs", "array is required");
+        if (economy.HourlyConsumption.IsDefault) RejectEconomy("hourlyConsumption", "array is required");
+        if (economy.StockTargets.IsDefault) RejectEconomy("stockTargets", "array is required");
+
+        HashSet<string> ValidateRateList(ImmutableArray<StationMarketStockDefinition> list, string field)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var entry in list)
+            {
+                if (entry is null) { RejectEconomy(field, "entry must not be null"); continue; }
+                validateItem(entry.ItemTypeId, $"economy.{field}", false);
+                if (!seen.Add(entry.ItemTypeId)) RejectEconomy(field, $"duplicate item '{entry.ItemTypeId}'");
+                if (entry.Quantity <= 0) RejectEconomy(field, $"item '{entry.ItemTypeId}' quantity must be positive");
+            }
+            return seen;
+        }
+
+        var outputs = ValidateRateList(economy.HourlyOutputs, "hourlyOutputs");
+        var inputs = ValidateRateList(economy.HourlyInputs, "hourlyInputs");
+        var consumption = ValidateRateList(economy.HourlyConsumption, "hourlyConsumption");
+
+        foreach (string itemId in inputs)
+            if (consumption.Contains(itemId)) RejectEconomy("hourlyConsumption", $"item '{itemId}' also appears in hourlyInputs");
+
+        if (economy.ProductionSource == StationMarketProductionSource.Profile)
+        {
+            if (!outputs.SetEquals(supplyUnion.Except(demand)))
+                RejectEconomy("hourlyOutputs", "must exactly match supplyItemTypeIds");
+            var demandCoverage = new HashSet<string>(inputs, StringComparer.Ordinal);
+            demandCoverage.UnionWith(consumption);
+            if (!demandCoverage.SetEquals(demand))
+                RejectEconomy("hourlyInputs", "hourlyInputs and hourlyConsumption together must exactly cover demandItemTypeIds");
+            if (outputs.Count == 0 && inputs.Count != 0)
+                RejectEconomy("hourlyInputs", "must be empty when hourlyOutputs is empty (all demand goes to hourlyConsumption)");
+            if (outputs.Count != 0 && inputs.Count == 0)
+                RejectEconomy("hourlyInputs", "must not be empty when hourlyOutputs is not empty (one shared hourly batch)");
+        }
+        else
+        {
+            if (outputs.Count != 0) RejectEconomy("hourlyOutputs", "must be empty for Modules production source");
+            if (inputs.Count != 0) RejectEconomy("hourlyInputs", "must be empty for Modules production source");
+            foreach (string itemId in consumption)
+                if (!demand.Contains(itemId)) RejectEconomy("hourlyConsumption", $"item '{itemId}' is outside demandItemTypeIds");
+        }
+
+        var targetIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var target in economy.StockTargets)
+        {
+            if (target is null) { RejectEconomy("stockTargets", "entry must not be null"); continue; }
+            validateItem(target.ItemTypeId, "economy.stockTargets", false);
+            if (!targetIds.Add(target.ItemTypeId)) RejectEconomy("stockTargets", $"duplicate item '{target.ItemTypeId}'");
+            if (target.TargetStock <= 0) RejectEconomy("stockTargets", $"item '{target.ItemTypeId}' targetStock must be positive");
+        }
+        if (!targetIds.SetEquals(inventory))
+            RejectEconomy("stockTargets", "must exactly cover initialInventory items");
+
+        var rates = economy.HourlyOutputs.Concat(economy.HourlyInputs).Concat(economy.HourlyConsumption).ToArray();
+        foreach (var rate in rates)
+            if (!targetIds.Contains(rate.ItemTypeId))
+                RejectEconomy("stockTargets", $"item '{rate.ItemTypeId}' has an hourly rate but no matching target");
+
+        if (economy.ShortageThresholdPermille <= 0 || economy.ShortageThresholdPermille >= 1000)
+            RejectEconomy("shortageThresholdPermille", "must be strictly between 0 and 1000");
+        if (economy.SurplusThresholdPermille <= 1000 || economy.SurplusThresholdPermille >= 2000)
+            RejectEconomy("surplusThresholdPermille", "must be strictly between 1000 and 2000");
+        if (economy.BudgetRegenerationDivisorPerDay < 24)
+            RejectEconomy("budgetRegenerationDivisorPerDay", "must be at least 24");
+        if (profile.InitialCredits <= 0)
+            reject("initialCredits", "must be positive when economy is configured");
+
+        long ScaleForSize(long amount, int factor, StationSize size, string field)
+        {
+            try
+            {
+                return checked((long)decimal.Round(checked((decimal)amount * factor) / 1000m,
+                    0, MidpointRounding.AwayFromZero));
+            }
+            catch (OverflowException)
+            {
+                reject(field, $"scaled amount overflows Int64 for {size}");
+                return 0; // unreachable: reject always throws
+            }
+        }
+
+        long DoubleChecked(long amount, StationSize size, string field)
+        {
+            try { return checked(2 * amount); }
+            catch (OverflowException)
+            {
+                reject(field, $"doubled amount overflows Int64 for {size}");
+                return 0; // unreachable: reject always throws
+            }
+        }
+
+        foreach (var (size, factor) in profile.SizeFactors)
+        {
+            long scaledCredits = ScaleForSize(profile.InitialCredits, factor, size, "initialCredits");
+            if (scaledCredits <= 0) reject("initialCredits", $"scaled amount is not positive for {size}");
+            DoubleChecked(scaledCredits, size, "initialCredits"); // maxBudget = 2×scaledCredits overflow check
+
+            foreach (var target in economy.StockTargets)
+            {
+                long scaledTarget = ScaleForSize(target.TargetStock, factor, size, "economy.stockTargets");
+                if (scaledTarget <= 0)
+                    RejectEconomy("stockTargets", $"item '{target.ItemTypeId}' scaled target is not positive for {size}");
+                long maxStock = DoubleChecked(scaledTarget, size, "economy.stockTargets");
+
+                var initial = profile.InitialInventory.First(stock => stock.ItemTypeId == target.ItemTypeId);
+                long scaledInitial = ScaleForSize(initial.Quantity, factor, size, "initialInventory");
+                if (scaledInitial > maxStock)
+                    reject("initialInventory", $"item '{target.ItemTypeId}' scaled stock exceeds capacity for {size}");
+
+                foreach (var rate in rates)
+                    if (rate.ItemTypeId == target.ItemTypeId && rate.Quantity > maxStock)
+                        RejectEconomy("stockTargets", $"item '{target.ItemTypeId}' hourly rate exceeds capacity for {size}");
+            }
         }
     }
 }

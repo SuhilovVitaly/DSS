@@ -171,9 +171,10 @@ public static class EngineContentLoader
                             throw new ContentException($"initialInventory item '{stock.ItemTypeId}': quantity is required.");
                         return new StationMarketStockDefinition(stock.ItemTypeId!, stock.Quantity.Value);
                     }).ToImmutableArray();
+                    var economy = ParseStationMarketEconomy(dto.Economy);
                     profiles.Add(new StationMarketProfileDefinition(dto.TypeId!, dto.DisplayName!,
                         dto.SupplyItemTypeIds.ToImmutableArray(), dto.DemandItemTypeIds.ToImmutableArray(), inventory,
-                        dto.InitialCredits.Value, dto.RefuelStockKg.Value, factors.ToImmutable()));
+                        dto.InitialCredits.Value, dto.RefuelStockKg.Value, factors.ToImmutable(), economy));
                 }
                 catch (Exception ex) when (ex is JsonException or ContentException)
                 {
@@ -188,6 +189,59 @@ public static class EngineContentLoader
         {
             throw new ContentException($"{path}: {ex.Message}", ex);
         }
+    }
+
+    /// <summary>
+    /// Parses the optional "economy" fragment of a market profile (US-0002 TK-0002). Null/absent
+    /// stays null — the profile keeps US-0001 bootstrap-only behavior. Once present, every one of
+    /// its own fields is required (missing/null is rejected explicitly here so it never falls
+    /// through as an implied zero/empty default) — only its four Hourly*/stockTargets arrays may
+    /// themselves be legitimately empty. Semantic cross-checks against the owning profile's
+    /// supply/demand/inventory (GameDataRegistry.ValidateStationMarketProfiles) happen after this
+    /// method returns.
+    /// </summary>
+    private static StationMarketEconomyDefinition? ParseStationMarketEconomy(StationMarketEconomyDto? dto)
+    {
+        if (dto is null) return null;
+        if (dto.ProductionSource is null) throw new ContentException("economy.productionSource is required.");
+        if (!Enum.TryParse<StationMarketProductionSource>(dto.ProductionSource, out var source) ||
+            !Enum.IsDefined(source) || source.ToString() != dto.ProductionSource)
+            throw new ContentException($"economy.productionSource has unknown value '{dto.ProductionSource}'.");
+        if (dto.HourlyInputs is null) throw new ContentException("economy.hourlyInputs array is required.");
+        if (dto.HourlyOutputs is null) throw new ContentException("economy.hourlyOutputs array is required.");
+        if (dto.HourlyConsumption is null) throw new ContentException("economy.hourlyConsumption array is required.");
+        if (dto.StockTargets is null) throw new ContentException("economy.stockTargets array is required.");
+        if (dto.ShortageThresholdPermille is null) throw new ContentException("economy.shortageThresholdPermille is required.");
+        if (dto.SurplusThresholdPermille is null) throw new ContentException("economy.surplusThresholdPermille is required.");
+        if (dto.BudgetRegenerationDivisorPerDay is null) throw new ContentException("economy.budgetRegenerationDivisorPerDay is required.");
+
+        static ImmutableArray<StationMarketStockDefinition> ParseStockList(IReadOnlyList<StationMarketStockDto?> list, string field) =>
+            list.Select(stock =>
+            {
+                if (stock is null) throw new ContentException($"{field} entry must not be null.");
+                if (stock.ItemTypeId is null) throw new ContentException($"{field} entry: itemTypeId is required.");
+                if (stock.Quantity is null) throw new ContentException($"{field} item '{stock.ItemTypeId}': quantity is required.");
+                return new StationMarketStockDefinition(stock.ItemTypeId, stock.Quantity.Value);
+            }).ToImmutableArray();
+
+        var targets = dto.StockTargets.Select(target =>
+        {
+            if (target is null) throw new ContentException("economy.stockTargets entry must not be null.");
+            if (target.ItemTypeId is null) throw new ContentException("economy.stockTargets entry: itemTypeId is required.");
+            if (target.TargetStock is null)
+                throw new ContentException($"economy.stockTargets item '{target.ItemTypeId}': targetStock is required.");
+            return new StationMarketTargetDefinition(target.ItemTypeId, target.TargetStock.Value);
+        }).ToImmutableArray();
+
+        return new StationMarketEconomyDefinition(
+            source,
+            ParseStockList(dto.HourlyInputs, "economy.hourlyInputs"),
+            ParseStockList(dto.HourlyOutputs, "economy.hourlyOutputs"),
+            ParseStockList(dto.HourlyConsumption, "economy.hourlyConsumption"),
+            targets,
+            dto.ShortageThresholdPermille.Value,
+            dto.SurplusThresholdPermille.Value,
+            dto.BudgetRegenerationDivisorPerDay.Value);
     }
 
     /// <summary>
@@ -655,11 +709,27 @@ public static class EngineContentLoader
         [property: JsonPropertyName("demandItemTypeIds")] IReadOnlyList<string>? DemandItemTypeIds,
         [property: JsonPropertyName("initialInventory")] IReadOnlyList<StationMarketStockDto?>? InitialInventory,
         [property: JsonPropertyName("initialCredits")] long? InitialCredits,
-        [property: JsonPropertyName("refuelStockKg")] long? RefuelStockKg);
+        [property: JsonPropertyName("refuelStockKg")] long? RefuelStockKg,
+        /// <summary>Optional bounded-economy fragment (US-0002 AC-01). Absent/null keeps the profile US-0001 bootstrap-only.</summary>
+        [property: JsonPropertyName("economy")] StationMarketEconomyDto? Economy = null);
 
     private sealed record StationMarketStockDto(
         [property: JsonPropertyName("itemTypeId")] string? ItemTypeId,
         [property: JsonPropertyName("quantity")] long? Quantity);
+
+    private sealed record StationMarketEconomyDto(
+        [property: JsonPropertyName("productionSource")] string? ProductionSource,
+        [property: JsonPropertyName("hourlyInputs")] IReadOnlyList<StationMarketStockDto?>? HourlyInputs,
+        [property: JsonPropertyName("hourlyOutputs")] IReadOnlyList<StationMarketStockDto?>? HourlyOutputs,
+        [property: JsonPropertyName("hourlyConsumption")] IReadOnlyList<StationMarketStockDto?>? HourlyConsumption,
+        [property: JsonPropertyName("stockTargets")] IReadOnlyList<StationMarketTargetDto?>? StockTargets,
+        [property: JsonPropertyName("shortageThresholdPermille")] int? ShortageThresholdPermille,
+        [property: JsonPropertyName("surplusThresholdPermille")] int? SurplusThresholdPermille,
+        [property: JsonPropertyName("budgetRegenerationDivisorPerDay")] int? BudgetRegenerationDivisorPerDay);
+
+    private sealed record StationMarketTargetDto(
+        [property: JsonPropertyName("itemTypeId")] string? ItemTypeId,
+        [property: JsonPropertyName("targetStock")] long? TargetStock);
 
     private sealed record ModuleTypesFile(
         [property: JsonPropertyName("moduleTypes")] IReadOnlyList<ModuleCategoryDefinitionDto> ModuleTypes);

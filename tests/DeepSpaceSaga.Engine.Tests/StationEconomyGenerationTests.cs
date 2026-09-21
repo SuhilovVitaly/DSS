@@ -540,7 +540,7 @@ public class StationEconomyGenerationTests
         var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
         var savedStation = save.GameState.SpaceObjects.Single(obj => obj.ObjectId == StationObjectId);
 
-        Assert.Equal(8, save.SaveFormatVersion);
+        Assert.Equal(9, save.SaveFormatVersion);
         Assert.NotNull(savedStation.MarketProfileId);
         Assert.NotNull(savedStation.MarketProfileFingerprint);
         Assert.Contains(savedStation.Inventory!, item => item.ItemTypeId == ProfileExtraItemId && item.Quantity == 0);
