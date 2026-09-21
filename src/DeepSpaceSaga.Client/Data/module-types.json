@@ -6,6 +6,7 @@
       "slotSize": 1,
       "commandTypeIds": [
         "navigation.dock",
+        "navigation.undock",
         "navigation.stationsList"
       ]
     },

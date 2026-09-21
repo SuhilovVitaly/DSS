@@ -21,6 +21,9 @@ public class DockCommandTests
         new("cmd-dock", 1, PlayerShipId, NavModuleId, NavigationComputerCommandTypes.Dock,
             TargetObjectId: targetObjectId);
 
+    private static PlayerCommand UndockCommand() =>
+        new("cmd-undock", 2, PlayerShipId, NavModuleId, NavigationComputerCommandTypes.Undock);
+
     private static ObjectMotionSnapshot PlayerShipFrom(AuthoritativeSnapshot snapshot) =>
         snapshot.Objects.Single(o => o.ObjectId == PlayerShipId);
 
@@ -99,7 +102,7 @@ public class DockCommandTests
 
     internal static GameDataRegistry CreateRegistry(int rangeKm)
     {
-        string[] commandIds = [NavigationComputerCommandTypes.Dock, NavigationComputerCommandTypes.StationsList];
+        string[] commandIds = [NavigationComputerCommandTypes.Dock, NavigationComputerCommandTypes.Undock, NavigationComputerCommandTypes.StationsList];
 
         return GameDataRegistry.Create(
             [
@@ -126,6 +129,9 @@ public class DockCommandTests
                     NavigationComputerCommandTypes.Dock, "Dock",
                     TimeFactor: 2000, Target: "object", Type: "module.bridge.navigation.computer",
                     RangeKm: rangeKm),
+                new CommandDefinition(
+                    NavigationComputerCommandTypes.Undock, "Undock",
+                    TimeFactor: 100, Target: "none", Type: "module.bridge.navigation.computer"),
                 new CommandDefinition(
                     NavigationComputerCommandTypes.StationsList, "Stations List",
                     Target: "none", Type: "module.bridge.navigation.computer")
@@ -270,5 +276,37 @@ public class DockCommandTests
         var ship = PlayerShipFrom(snapshot);
         Assert.True(ship.IsDocked);
         Assert.Equal(StationId, ship.DockedStationObjectId);
+    }
+
+    [Fact]
+    public void Undock_clears_docking_state_and_preserves_current_motion()
+    {
+        var engine = CreateEngine();
+        engine.ReceiveCommand(DockCommand());
+        DialogueTests.PayAndFinish(engine);
+
+        engine.ReceiveCommand(UndockCommand());
+        var snapshot = engine.CaptureSnapshotForTests();
+
+        var result = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Executed, result.Status);
+        var ship = PlayerShipFrom(snapshot);
+        Assert.False(ship.IsDocked);
+        Assert.Null(ship.DockedStationObjectId);
+        Assert.Equal(10002, ship.X, precision: 6);
+        Assert.Equal(10001, ship.Y, precision: 6);
+    }
+
+    [Fact]
+    public void Undock_when_not_docked_is_rejected()
+    {
+        var engine = CreateEngine();
+
+        engine.ReceiveCommand(UndockCommand());
+        var snapshot = engine.CaptureSnapshotForTests();
+
+        var result = Assert.Single(snapshot.CommandResults);
+        Assert.Equal(CommandResultStatus.Rejected, result.Status);
+        Assert.Equal(CommandReasonCodes.NotDocked, result.ReasonCode);
     }
 }

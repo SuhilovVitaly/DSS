@@ -653,6 +653,13 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.CloseStation:
                     await CloseOverlayAsync();
                     break;
+                case ScreenEvent.Undock:
+                    if (_session is not null && _screens.Current is StationScreen)
+                    {
+                        _session.SendUndockCommand();
+                        await CloseOverlayAsync();
+                    }
+                    break;
                 case ScreenEvent.OpenDialogue:
                     if (_screens.Current is GameSessionScreen && _session?.Buffer.Latest?.Snapshot.ActiveDialogue is { } active)
                     {

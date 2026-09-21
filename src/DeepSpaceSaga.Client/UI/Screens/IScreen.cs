@@ -46,6 +46,7 @@ public enum ScreenEvent
     TravelHabitation,
     TravelAdministration,
     CloseStation,
+    Undock,
     OpenDialogue,
     CloseDialogue,
     OpenTrade,

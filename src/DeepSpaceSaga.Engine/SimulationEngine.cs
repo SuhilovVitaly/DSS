@@ -1818,8 +1818,8 @@ public sealed partial class SimulationEngine : IDisposable
     /// <summary>
     /// Routes a pending command to the handler owned by its module type. Engine module
     /// commands (module.engine.basic) go through the existing, heavily-tested
-    /// <see cref="TryStartEngineCommand"/> unchanged; navigation.dock is the only
-    /// currently-implemented NavigationComputer command and goes through
+    /// <see cref="TryStartEngineCommand"/> unchanged; navigation.dock/navigation.undock
+    /// are NavigationComputer commands and go through
     /// <see cref="TryStartNavigationCommand"/> instead; trade.buy/trade.sell/trade.refuel
     /// (station trading, Documentation\02-FirstRelease\Mechanics\{Money,StationInventory,Trading}.md) go
     /// through <see cref="TryStartTradeCommand"/>. Everything else (including
@@ -1834,7 +1834,7 @@ public sealed partial class SimulationEngine : IDisposable
         if (_dialogue.Active is not null)
             return CommandStartOutcome.Rejected("dialogue_active");
 
-        if (command.CommandType == NavigationComputerCommandTypes.Dock)
+        if (command.CommandType is NavigationComputerCommandTypes.Dock or NavigationComputerCommandTypes.Undock)
             return TryStartNavigationCommand(command, gameTimeMs);
 
         if (command.CommandType is TradeCommandTypes.Buy or TradeCommandTypes.Sell or TradeCommandTypes.Refuel)
@@ -1853,7 +1853,7 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     private const double DefaultDockRangeKm = 200.0;
 
-    /// <summary>Validate navigation.dock and start negotiations; only a dialogue effect commits physical docking.</summary>
+    /// <summary>Validate navigation.dock or navigation.undock and apply the authoritative docking transition.</summary>
     private CommandStartOutcome TryStartNavigationCommand(PlayerCommand command, long gameTimeMs, bool validateOnly = false)
     {
         if (!string.Equals(command.ObjectId, PlayerShipObjectId, StringComparison.Ordinal))
@@ -1867,9 +1867,6 @@ public sealed partial class SimulationEngine : IDisposable
 
         var obj = _objects[objectIndex];
         if (obj.IsDestroyed) return CommandStartOutcome.Rejected("player_destroyed");
-        if (obj.IsDocked) return CommandStartOutcome.Rejected("already_docked");
-        if (_dialogue.Progress.StationAccessStates.TryGetValue(command.TargetObjectId ?? "", out var access) && access.AccessDenied)
-            return CommandStartOutcome.Rejected("station_access_denied");
 
         int moduleIndex = FindModuleIndex(obj.Modules, command.ModuleId);
         if (moduleIndex < 0)
@@ -1882,6 +1879,33 @@ public sealed partial class SimulationEngine : IDisposable
 
         if (!CanExecuteModuleCommand(module))
             return CommandStartOutcome.Rejected(CommandReasonCodes.ModuleUnavailable);
+
+        if (command.CommandType == NavigationComputerCommandTypes.Undock)
+        {
+            if (!obj.IsDocked)
+                return CommandStartOutcome.Rejected(CommandReasonCodes.NotDocked);
+            if (validateOnly)
+                return CommandStartOutcome.Started;
+
+            long elapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
+            var currentMotion = PredictMotion(obj, elapsedMs);
+            _objects[objectIndex] = obj with
+            {
+                InitialMotion = currentMotion,
+                StartGameTimeMs = gameTimeMs,
+                IsDocked = false,
+                DockedStationObjectId = null,
+                FirstPortFeeGameTimeMs = null,
+                NextPortFeeDueGameTimeMs = null,
+                Modules = obj.Modules.Select(m => m with { ActiveCycle = null }).ToImmutableArray()
+            };
+            RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
+            return CommandStartOutcome.Started;
+        }
+
+        if (obj.IsDocked) return CommandStartOutcome.Rejected("already_docked");
+        if (_dialogue.Progress.StationAccessStates.TryGetValue(command.TargetObjectId ?? "", out var access) && access.AccessDenied)
+            return CommandStartOutcome.Rejected("station_access_denied");
 
         if (string.IsNullOrWhiteSpace(command.TargetObjectId))
             return CommandStartOutcome.Rejected(CommandReasonCodes.MissingTarget);
