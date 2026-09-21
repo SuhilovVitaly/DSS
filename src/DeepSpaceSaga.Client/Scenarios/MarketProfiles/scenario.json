@@ -1,0 +1,160 @@
+{
+  "scenarioMetadata": {
+    "scenarioId": "market-profiles",
+    "name": "Five Station Markets",
+    "description": "Choose a station and dock to compare its market. Start this scenario again to inspect another station; continuous voyages are outside this demo."
+  },
+  "gameState": {
+    "gameTimeMs": 0,
+    "currentSpeed": "Speed0",
+    "masterSeed": 20260921,
+    "playerShipObjectId": "SPC-MARKET-PLAYER",
+    "playerTokens": 100000,
+    "focus": {
+      "mode": "Attached",
+      "objectId": "SPC-MARKET-PLAYER"
+    },
+    "spaceObjects": [
+      {
+        "objectId": "SPC-MARKET-PLAYER",
+        "objectType": "PlayerShip",
+        "persistenceType": "Permanent",
+        "name": "Market Surveyor",
+        "positionX": 10000,
+        "positionY": 10000,
+        "speedMps": 0,
+        "directionDegrees": 0,
+        "movementType": "Stationary",
+        "isKnown": true,
+        "isDocked": false,
+        "hullLayout": {
+          "width": 9,
+          "height": 9,
+          "cells": [
+            { "x": 4, "y": 0 },
+            { "x": 4, "y": 1 },
+            { "x": 4, "y": 2 }
+          ]
+        },
+        "modules": [
+          {
+            "moduleId": "MOD-MARKET-NAV",
+            "moduleTypeId": "module.bridge.navigation.computer.basic",
+            "occupiedCells": [{ "x": 4, "y": 0 }],
+            "structurePoints": 80,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": []
+          },
+          {
+            "moduleId": "MOD-MARKET-CARGO",
+            "moduleTypeId": "module.container.basic",
+            "occupiedCells": [{ "x": 4, "y": 1 }],
+            "structurePoints": 400,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [
+              { "itemTypeId": "item.water", "quantity": 10 },
+              { "itemTypeId": "item.food-rations", "quantity": 10 },
+              { "itemTypeId": "item.energy-cells", "quantity": 10 },
+              { "itemTypeId": "item.electronics", "quantity": 10 }
+            ]
+          },
+          {
+            "moduleId": "MOD-MARKET-ENGINE",
+            "moduleTypeId": "module.engine.basic",
+            "occupiedCells": [{ "x": 4, "y": 2 }],
+            "structurePoints": 100,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "fuelAmountKg": 100
+          }
+        ]
+      },
+      {
+        "objectId": "SPC-MARKET-MINING",
+        "objectType": "Station",
+        "persistenceType": "Permanent",
+        "name": "Mining — Local Market",
+        "positionX": 9900,
+        "positionY": 10000,
+        "speedMps": 0,
+        "directionDegrees": 0,
+        "movementType": "Stationary",
+        "isKnown": true,
+        "portFeeCreditsPerDay": 100,
+        "stationSize": "Medium",
+        "marketProfileId": "market.mining",
+        "modules": []
+      },
+      {
+        "objectId": "SPC-MARKET-INDUSTRIAL",
+        "objectType": "Station",
+        "persistenceType": "Permanent",
+        "name": "Industrial — Local Market",
+        "positionX": 10100,
+        "positionY": 10000,
+        "speedMps": 0,
+        "directionDegrees": 0,
+        "movementType": "Stationary",
+        "isKnown": true,
+        "portFeeCreditsPerDay": 100,
+        "stationSize": "Medium",
+        "marketProfileId": "market.industrial",
+        "modules": []
+      },
+      {
+        "objectId": "SPC-MARKET-HYDROPONIC",
+        "objectType": "Station",
+        "persistenceType": "Permanent",
+        "name": "Hydroponic — Local Market",
+        "positionX": 10000,
+        "positionY": 9900,
+        "speedMps": 0,
+        "directionDegrees": 0,
+        "movementType": "Stationary",
+        "isKnown": true,
+        "portFeeCreditsPerDay": 100,
+        "stationSize": "Medium",
+        "marketProfileId": "market.hydroponic",
+        "modules": []
+      },
+      {
+        "objectId": "SPC-MARKET-TRANSIT",
+        "objectType": "Station",
+        "persistenceType": "Permanent",
+        "name": "Transit — Local Market",
+        "positionX": 10000,
+        "positionY": 10100,
+        "speedMps": 0,
+        "directionDegrees": 0,
+        "movementType": "Stationary",
+        "isKnown": true,
+        "portFeeCreditsPerDay": 100,
+        "stationSize": "Large",
+        "marketProfileId": "market.transit",
+        "modules": []
+      },
+      {
+        "objectId": "SPC-MARKET-SCIENTIFIC",
+        "objectType": "Station",
+        "persistenceType": "Permanent",
+        "name": "Scientific/Military — Local Market",
+        "positionX": 10100,
+        "positionY": 10100,
+        "speedMps": 0,
+        "directionDegrees": 0,
+        "movementType": "Stationary",
+        "isKnown": true,
+        "portFeeCreditsPerDay": 100,
+        "stationSize": "Medium",
+        "marketProfileId": "market.scientific-military",
+        "modules": []
+      }
+    ]
+  }
+}
