@@ -164,7 +164,7 @@ public sealed partial class TradeScreen
             ? F("ConfirmFuel", N(Model.Quantity), N(quote.Total))
             : string.Format(CultureInfo.CurrentCulture,
                 Localization.Get(Model.Mode == TradeMode.Sell ? "Trade.ConfirmSellWithUnit" : "Trade.ConfirmBuyWithUnit"),
-                Model.Quantity, TradeItemPresentation.ItemUnitLabel(item.ItemTypeId), quote.Total);
+                Model.Quantity, TradeItemPresentation.ItemUnitLabel(item.ItemTypeId, singular: Model.Quantity == 1), quote.Total);
         Button(p, TradeLayout.Confirm, confirm, enabled: CanConfirm, primary: true, size: 16);
         DrawStatus(p);
     }

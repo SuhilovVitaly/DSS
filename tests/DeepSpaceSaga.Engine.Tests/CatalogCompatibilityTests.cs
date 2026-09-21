@@ -140,7 +140,7 @@ public sealed class CatalogCompatibilityTests
 
     [Theory]
     [InlineData("item.unknown", false)]
-    [InlineData("item.ice", true)]
+    [InlineData("item.uranium-ore", true)]
     public void Station_inventory_rejects_unknown_or_nontradeable_content(string itemId, bool removePrice)
     {
         var registry = RealRegistry();

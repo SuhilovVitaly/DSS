@@ -2,6 +2,7 @@ using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
+using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.LocalClient;
 using DeepSpaceSaga.Engine.Scenario;
 using SkiaSharp;
@@ -245,28 +246,12 @@ public class LocalSessionIntegrationTests
         // Closes the plumbing ТЗ-02A relies on: Program.cs's LocalGameSessionFactory checks
         // this connection-level property (not the engine directly) to decide whether to
         // write an InterfaceLog warning after CreateFromSaveFile.
-        const string legacySaveJson = """
-        {
-          "scenarioMetadata": { "scenarioId": "quicksave", "name": "Quicksave" },
-          "saveFormatVersion": 1,
-          "gameState": {
-            "gameTimeMs": 1000, "currentSpeed": "Speed0",
-            "playerShipObjectId": "test",
-            "spaceObjects": [
-              { "objectId": "test", "objectType": "PlayerShip", "persistenceType": "Permanent",
-                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
-                "movementType": "Stationary" }
-            ]
-          }
-        }
-        """;
-
         string dir = Path.Combine(Path.GetTempPath(), $"dss-save-legacy-{Guid.NewGuid():N}");
         string savePath = Path.Combine(dir, "quicksave.json");
         Directory.CreateDirectory(dir);
-        File.WriteAllText(savePath, legacySaveJson);
 
         string settingsPath = ResolveRealSettingsPath();
+        File.WriteAllText(savePath, CreateCurrentCatalogSave(settingsPath, includeMasterSeed: false));
 
         try
         {
@@ -284,29 +269,12 @@ public class LocalSessionIntegrationTests
     [Fact]
     public async Task MasterSeedWasMissingOnLoad_is_false_when_the_save_already_carries_one()
     {
-        const string saveJson = """
-        {
-          "scenarioMetadata": { "scenarioId": "quicksave", "name": "Quicksave" },
-          "saveFormatVersion": 1,
-          "gameState": {
-            "gameTimeMs": 1000, "currentSpeed": "Speed0",
-            "playerShipObjectId": "test",
-            "masterSeed": 42,
-            "spaceObjects": [
-              { "objectId": "test", "objectType": "PlayerShip", "persistenceType": "Permanent",
-                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
-                "movementType": "Stationary" }
-            ]
-          }
-        }
-        """;
-
         string dir = Path.Combine(Path.GetTempPath(), $"dss-save-withseed-{Guid.NewGuid():N}");
         string savePath = Path.Combine(dir, "quicksave.json");
         Directory.CreateDirectory(dir);
-        File.WriteAllText(savePath, saveJson);
 
         string settingsPath = ResolveRealSettingsPath();
+        File.WriteAllText(savePath, CreateCurrentCatalogSave(settingsPath, includeMasterSeed: true));
 
         try
         {
@@ -573,5 +541,18 @@ public class LocalSessionIntegrationTests
         }
 
         return settingsPath;
+    }
+
+    private static string CreateCurrentCatalogSave(string settingsPath, bool includeMasterSeed)
+    {
+        using var source = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
+        var save = source.CaptureSaveState();
+        var state = save.GameState with
+        {
+            GameTimeMs = 1000,
+            SimulationTimeMs = 1000,
+            MasterSeed = includeMasterSeed ? 42UL : null
+        };
+        return ScenarioLoader.Serialize(save with { SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion, GameState = state });
     }
 }

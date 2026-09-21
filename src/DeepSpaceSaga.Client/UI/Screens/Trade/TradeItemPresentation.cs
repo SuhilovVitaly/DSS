@@ -73,7 +73,7 @@ internal static class TradeItemPresentation
         CultureInfo.CurrentCulture,
         Localization.Get("Trade.AmountWithUnit"),
         quantity,
-        ItemUnitLabel(itemTypeId));
+        ItemUnitLabel(itemTypeId, singular: quantity == 1));
 
     internal static string FormatUnitMass(string itemTypeId, long unitMassKg) => string.Format(
         CultureInfo.CurrentCulture,

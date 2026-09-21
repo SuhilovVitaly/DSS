@@ -119,6 +119,8 @@ public class TradeUxTests
         Assert.Equal(singular, TradeItemPresentation.ItemUnitLabel(itemId, singular: true));
         Assert.Equal(string.Format(CultureInfo.CurrentCulture, Localization.Get("Trade.AmountWithUnit"),
             7, plural), TradeItemPresentation.FormatQuantity(itemId, 7));
+        Assert.Equal(string.Format(CultureInfo.CurrentCulture, Localization.Get("Trade.AmountWithUnit"),
+            1, singular), TradeItemPresentation.FormatQuantity(itemId, 1));
         Assert.Equal(string.Format(CultureInfo.CurrentCulture, Localization.Get("Trade.QuantityMass"),
             singular, 3), TradeItemPresentation.FormatUnitMass(itemId, 3));
         Assert.StartsWith(7.ToString(CultureInfo.CurrentCulture), TradeItemPresentation.FormatQuantity(itemId, 7));
