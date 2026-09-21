@@ -2,7 +2,7 @@
   "itemTypes": [
     {
       "typeId": "item.ice",
-      "displayName": "Ice",
+      "displayName": "Cryo-Ice",
       "unitMassKg": 1,
       "basePriceCredits": 10,
       "tradeCategory": "Resource",
@@ -14,7 +14,7 @@
     },
     {
       "typeId": "item.iron-ore",
-      "displayName": "Iron Ore",
+      "displayName": "Asteroid Iron Ore",
       "unitMassKg": 1,
       "basePriceCredits": 5,
       "tradeCategory": "Resource",
@@ -26,7 +26,7 @@
     },
     {
       "typeId": "item.silicon",
-      "displayName": "Silicon",
+      "displayName": "Electronic Silicon",
       "unitMassKg": 1,
       "basePriceCredits": 40,
       "tradeCategory": "Resource",
@@ -38,7 +38,7 @@
     },
     {
       "typeId": "item.magnesium-ore",
-      "displayName": "Magnesium Ore",
+      "displayName": "Magnesium Concentrate",
       "unitMassKg": 1,
       "basePriceCredits": 30,
       "tradeCategory": "Resource",
@@ -62,7 +62,7 @@
     },
     {
       "typeId": "item.carbon-ore",
-      "displayName": "Carbon Ore",
+      "displayName": "Carbon Regolith",
       "unitMassKg": 1,
       "basePriceCredits": 30,
       "tradeCategory": "Resource",

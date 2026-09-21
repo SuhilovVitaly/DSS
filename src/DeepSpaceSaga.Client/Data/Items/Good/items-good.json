@@ -2,7 +2,7 @@
   "itemTypes": [
     {
       "typeId": "item.water",
-      "displayName": "Water",
+      "displayName": "Purified Water",
       "unitMassKg": 1,
       "basePriceCredits": 14,
       "tradeCategory": "Good",
@@ -14,7 +14,7 @@
     },
     {
       "typeId": "item.steel",
-      "displayName": "Steel",
+      "displayName": "Hull Alloy",
       "unitMassKg": 1,
       "basePriceCredits": 40,
       "tradeCategory": "Good",
@@ -38,7 +38,7 @@
     },
     {
       "typeId": "item.fuel",
-      "displayName": "Fuel",
+      "displayName": "Cryogenic Fuel",
       "unitMassKg": 1,
       "basePriceCredits": 10,
       "tradeCategory": "Good",
@@ -50,7 +50,7 @@
     },
     {
       "typeId": "item.protein-mass",
-      "displayName": "Protein mass",
+      "displayName": "Synthetic Protein Mass",
       "unitMassKg": 1,
       "basePriceCredits": 110,
       "tradeCategory": "Good",
@@ -62,11 +62,23 @@
     },
     {
       "typeId": "item.food-rations",
-      "displayName": "Food Rations",
+      "displayName": "Sealed Rations",
       "unitMassKg": 1,
       "basePriceCredits": 20,
       "tradeCategory": "Good",
       "tradeUnit": "Ration",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
+    },
+    {
+      "typeId": "item.electronics",
+      "displayName": "Control Electronics",
+      "unitMassKg": 1,
+      "basePriceCredits": 150,
+      "tradeCategory": "Good",
+      "catalogCode": "ITM-3006",
+      "tradeUnit": "Piece",
       "storageKind": "Cargo",
       "buyQuantityStep": 1,
       "sellQuantityStep": 1
