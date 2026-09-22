@@ -23,7 +23,7 @@ public sealed partial class TradeScreen : IScreen
     internal bool IsPending => _journal.IsPending;
     internal IReadOnlyList<TradeJournal.Entry> History => _journal.Entries;
     internal bool CanConfirm => Model.AuthoritativeQuote is { DisabledReason: null } && Model.Quote.DisabledReason is null &&
-        !IsPending && _handle is not null && _handle.Failure is null;
+        !_closed && !IsPending && _handle is not null && _handle.Failure is null;
     internal int ScrollOffset => _scroll;
 
     // ── Authoritative quote lifecycle (EP-0001-US-0003-TK-0004) ──
@@ -90,7 +90,9 @@ public sealed partial class TradeScreen : IScreen
     private bool Answers(TradeQuoteSnapshot quote, QuoteKey key) =>
         quote.RequestId == _quoteRequestId && quote.ObjectId == key.ShipId && quote.ModuleId == key.ModuleId &&
         quote.CommandType == key.CommandType && quote.ItemTypeId == key.ItemId && quote.RequestedQuantity == key.Quantity &&
-        (string.IsNullOrEmpty(quote.StationObjectId) || quote.StationObjectId == key.StationId);
+        (quote.StationObjectId == key.StationId || quote.DisabledReason is not null && string.IsNullOrEmpty(quote.StationObjectId)) &&
+        // The engine may already be ahead of the latest snapshot, but must never be behind it.
+        (quote.DisabledReason is not null || key.MarketRevision is null || quote.MarketRevision >= key.MarketRevision);
     private void StartQuoteRequest(QuoteKey key)
     {
         _quoteGeneration++;
@@ -116,11 +118,17 @@ public sealed partial class TradeScreen : IScreen
     internal static string L(string key) => Localization.Get("TradeUX." + key);
     internal static string N(long value) => value.ToString("N0", CultureInfo.InvariantCulture).Replace(',', ' ');
     internal static string F(string key, params object[] args) => string.Format(CultureInfo.CurrentCulture, L(key), args);
-    private void SetQuantity(long quantity) { Model.Quantity = Math.Max(0, quantity); _quantityText = Model.Quantity.ToString(CultureInfo.InvariantCulture); _focus = InputFocus.None; }
+    private void RetryFailedQuote()
+    {
+        if (_quoteTask is null && Model.Quote.DisabledReason is "QuoteUnavailable" or "InvalidQuote" or "QuoteStale")
+            _requoteOnce = true;
+    }
+    private void SetQuantity(long quantity) { RetryFailedQuote(); Model.Quantity = Math.Max(0, quantity); _quantityText = Model.Quantity.ToString(CultureInfo.InvariantCulture); _focus = InputFocus.None; }
     private void SetMode(TradeMode mode) { Model.SetMode(mode); SetQuantity(Model.Quantity); _scroll = 0; _history = false; _moduleOpen = false; }
     private void SelectRow(int index)
     {
         if (index < 0 || index >= ListCount) return;
+        RetryFailedQuote();
         if (Model.FuelMode) Model.SelectModule(Model.Modules[index].ModuleId);
         else Model.Select(Model.Rows[index].ItemTypeId);
         SetQuantity(Model.Quantity);
@@ -151,7 +159,7 @@ public sealed partial class TradeScreen : IScreen
     {
         _focus = InputFocus.None; _dragSlider = _dragScroll = false; _controlDown = _enterHeld = false;
         // Cancel only the quote request; a sent trade keeps completing through the handle and the session journal.
-        _closed = true; CancelQuoteRequest(); _quoteKey = null;
+        _closed = true; CancelQuoteRequest(); _quoteKey = null; Model.InvalidateQuote("QuoteRequired");
     }
     public ScreenEvent OnMouseDown(float x, float y) => OnMouseDown(x, y, MouseButton.Left);
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
@@ -222,7 +230,8 @@ public sealed partial class TradeScreen : IScreen
         string id = _handle!.SendTradeCommand(shipId, module.ModuleId, key.CommandType, item.ItemTypeId, Model.Quantity,
             quote.QuoteId, quote.MarketRevision);
         _journal.Track(new(id, item.ItemTypeId, module.ModuleId, Model.Mode, Model.Quantity, item.UnitPriceCredits, ModuleLabel: ModuleLabel(module),
-            QuoteId: quote.QuoteId, MarketRevision: quote.MarketRevision, QuotedTotalCredits: quote.TotalCredits));
+            QuoteId: quote.QuoteId, MarketRevision: quote.MarketRevision, QuotedTotalCredits: quote.TotalCredits,
+            QuotedExecutableQuantity: quote.ExecutableQuantity));
     }
     private void RevealSelection()
     {
@@ -275,7 +284,11 @@ public sealed partial class TradeScreen : IScreen
             ParseQuantity();
         }
     }
-    private void ParseQuantity() => Model.Quantity = long.TryParse(_quantityText, NumberStyles.None, CultureInfo.InvariantCulture, out long value) ? value : 0;
+    private void ParseQuantity()
+    {
+        RetryFailedQuote();
+        Model.Quantity = long.TryParse(_quantityText, NumberStyles.None, CultureInfo.InvariantCulture, out long value) ? value : 0;
+    }
     public ScreenEvent OnKeyDown(Key key)
     {
         Refresh();

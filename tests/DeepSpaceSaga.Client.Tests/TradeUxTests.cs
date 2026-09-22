@@ -529,28 +529,30 @@ public class TradeUxTests
     }
 
     [Fact]
-    public async Task Partial_sell_result_shows_executed_and_remaining_units()
+    public async Task Partial_sell_result_shows_receipt_actual_requested_and_limit()
     {
         await using var f = new Fixture();
+        f.Connection.Quoter = request => ServerQuote(request, executable: Math.Min(3, request.Quantity),
+            limits: CommandReasonCodes.StationBudgetExceeded);
         f.Screen.Model.SetMode(TradeMode.Sell); f.Screen.Model.Quantity = 5;
         Click(f.Screen, TradeLayout.Confirm);
         var sent = Assert.Single(f.Connection.Commands); Assert.Equal(5, sent.Quantity);
         // The station stock in the result snapshot is deliberately unchanged: remaining must come from the receipt.
         var partial = new CommandResult(sent.CommandId, "ship", sent.ModuleId, sent.CommandType,
-            CommandResultStatus.Executed, 0, ExecutedQuantity: 3);
+            CommandResultStatus.Executed, 0, ExecutedQuantity: 99,
+            TradeReceipt: new("station", sent.ItemTypeId, sent.QuoteId, sent.MarketRevision, sent.MarketRevision + 1,
+                5, 3, 33, [CommandReasonCodes.StationBudgetExceeded]));
         f.Buffer.Update(Snapshot() with { SnapshotSequence = 2, CommandResults = [partial] });
         using var rendered = Render(f.Screen);
 
         var entry = Assert.Single(f.Screen.History);
-        Assert.Equal(TradeScreen.F("PartialWithRemaining", TradeItemPresentation.ItemDisplayName("item.water"),
-            TradeItemPresentation.FormatQuantity("item.water", 3), 42m.ToString("N0", CultureInfo.CurrentCulture),
-            TradeItemPresentation.FormatQuantity("item.water", 5), TradeItemPresentation.FormatQuantity("item.water", 2)),
+        Assert.Equal(TradeScreen.F("PartialResult", TradeItemPresentation.ItemDisplayName("item.water"),
+            TradeItemPresentation.FormatQuantity("item.water", 3), 33L.ToString("N0", CultureInfo.CurrentCulture),
+            TradeItemPresentation.FormatQuantity("item.water", 5)) + " · " + TradeScreen.L("StationBudgetLimit"),
             f.Screen.EntryMessage(entry));
 
-        var full = entry with { Result = entry.Result! with { ExecutedQuantity = null } };
-        Assert.Equal(TradeScreen.F("SuccessResult", TradeItemPresentation.ItemDisplayName("item.water"),
-            TradeItemPresentation.FormatQuantity("item.water", 5), 70m.ToString("N0", CultureInfo.CurrentCulture),
-            TradeItemPresentation.FormatQuantity("item.water", 5)), f.Screen.EntryMessage(full));
+        var legacy = entry with { Result = entry.Result! with { TradeReceipt = null } };
+        Assert.Equal(TradeScreen.L("ReceiptUnavailable"), f.Screen.EntryMessage(legacy));
     }
 
     [Fact]
@@ -751,6 +753,7 @@ public class TradeUxTests
         Click(f.Screen, TradeLayout.Sell);
         AssertInvalidatedAndRequested(4, r => r.CommandType == TradeCommandTypes.Sell && r.Quantity == 1);
         f.Buffer.Update(Snapshot() with { SnapshotSequence = 3, DockedStationTrade = Snapshot().DockedStationTrade! with { MarketRevision = 8 } });
+        f.Connection.Quoter = request => ServerQuote(request, revision: 8);
         AssertInvalidatedAndRequested(5, r => r.CommandType == TradeCommandTypes.Sell);
         f.Buffer.Update(Snapshot() with { SnapshotSequence = 4, DockedStationTrade = Snapshot().DockedStationTrade! with { StationObjectId = "station-2" } });
         using (Render(f.Screen))
@@ -998,6 +1001,91 @@ public class TradeUxTests
         Assert.NotEqual("TradeUX." + key, TradeScreen.L(key)); // the key exists in the locale
         Assert.Equal(key, TradeQuote.Calculate(Water(), Hold(), TradeMode.Buy, 1, 12480,
             DisabledServerQuote(Request(TradeCommandTypes.Buy, 1), code)).DisabledReason);
+    }
+
+    [Theory]
+    [InlineData(6, false)]
+    [InlineData(7, true)]
+    [InlineData(8, true)]
+    public async Task Quote_must_not_be_older_than_current_market_snapshot(long revision, bool canConfirm)
+    {
+        await using var f = new Fixture(manualQuotes: true);
+        f.Buffer.Update(Snapshot() with
+        {
+            SnapshotSequence = 2,
+            DockedStationTrade = Snapshot().DockedStationTrade! with { MarketRevision = FixtureRevision }
+        });
+        using (Render(f.Screen)) { }
+        var request = f.Connection.QuoteRequests[^1];
+        f.Connection.PendingQuotes[^1].SetResult(ServerQuote(request, revision: revision));
+        using var rendered = Render(f.Screen);
+        Assert.Equal(canConfirm, f.Screen.CanConfirm);
+        Click(f.Screen, TradeLayout.Confirm);
+        Assert.Equal(canConfirm ? 1 : 0, f.Connection.Commands.Count);
+    }
+
+    [Fact]
+    public async Task Failed_quote_retries_on_same_item_selection_without_per_frame_retry()
+    {
+        await using var f = new Fixture(manualQuotes: true);
+        f.Connection.PendingQuotes[0].SetException(new IOException("unavailable"));
+        for (int i = 0; i < 3; i++) using (Render(f.Screen)) { }
+        Assert.Single(f.Connection.QuoteRequests);
+        int row = Array.FindIndex(f.Screen.Model.Rows, item => item.ItemTypeId == "item.water");
+        Click(f.Screen, TradeLayout.Row(row - f.Screen.ScrollOffset));
+        Assert.Equal(2, f.Connection.QuoteRequests.Count);
+        f.Connection.Answer(1);
+        using var rendered = Render(f.Screen);
+        Assert.True(f.Screen.CanConfirm);
+        Assert.Empty(f.Connection.Commands);
+    }
+
+    [Theory]
+    [InlineData("station")]
+    [InlineData("empty-station")]
+    [InlineData("ship")]
+    [InlineData("module")]
+    [InlineData("item")]
+    [InlineData("mode")]
+    [InlineData("quantity")]
+    public async Task Mismatched_quote_binding_cannot_confirm(string fault)
+    {
+        await using var f = new Fixture(manualQuotes: true);
+        var quote = ServerQuote(f.Connection.QuoteRequests[0]);
+        quote = fault switch
+        {
+            "station" => quote with { StationObjectId = "foreign" },
+            "empty-station" => quote with { StationObjectId = "" },
+            "ship" => quote with { ObjectId = "foreign" },
+            "module" => quote with { ModuleId = "foreign" },
+            "item" => quote with { ItemTypeId = "item.ice" },
+            "mode" => quote with { CommandType = TradeCommandTypes.Sell },
+            _ => quote with { RequestedQuantity = 2 }
+        };
+        f.Connection.PendingQuotes[0].SetResult(quote);
+        using var rendered = Render(f.Screen);
+        Assert.False(f.Screen.CanConfirm);
+        Click(f.Screen, TradeLayout.Confirm);
+        Assert.Empty(f.Connection.Commands);
+    }
+
+    [Theory]
+    [InlineData("money")]
+    [InlineData("cargo")]
+    [InlineData("tank")]
+    [InlineData("overflow")]
+    public void Inconsistent_quote_amounts_disable_preview_without_clamping(string fault)
+    {
+        var mode = fault == "cargo" ? TradeMode.Sell : fault == "tank" ? TradeMode.Refuel : TradeMode.Buy;
+        var module = fault == "tank" ? Tank() : Hold();
+        long quantity = fault == "cargo" ? 999 : 1;
+        var item = Water(fault == "overflow" ? long.MaxValue : 1);
+        var quote = ServerQuote(Request(TradeQuote.CommandType(mode), quantity, module.ModuleId), maximum: 1000);
+        if (fault == "tank") module = module with { FuelAmountKg = module.FuelCapacityKg };
+        if (fault == "overflow") module = module with { Cargo = [new("item.water", long.MaxValue)], AvailableCapacityKg = long.MaxValue };
+        var projected = TradeQuote.Calculate(item, module, mode, quantity, fault == "money" ? 0 : 100000, quote);
+        Assert.Equal(fault == "overflow" ? "ValueOverflow" : "InvalidData", projected.DisabledReason);
+        Assert.Equal(0, projected.ExecutableQuantity);
     }
 
     private static void Export(TradeScreen screen, string state)

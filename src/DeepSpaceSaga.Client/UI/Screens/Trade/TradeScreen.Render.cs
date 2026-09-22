@@ -145,8 +145,8 @@ public sealed partial class TradeScreen
         string amountLabel = L(Model.FuelMode ? "Tank" : "CargoAmount");
         // Cargo after the trade follows the server's executable quantity, never the typed request.
         long executable = quote.ExecutableQuantity;
-        long cargoAfter = Model.Mode == TradeMode.Sell ? quote.CargoQuantity - Math.Min(executable, quote.CargoQuantity)
-            : quote.CargoQuantity + Math.Min(executable, long.MaxValue - quote.CargoQuantity);
+        long cargoAfter = quote.DisabledReason is not null || Model.FuelMode ? quote.CargoQuantity :
+            Model.Mode == TradeMode.Sell ? quote.CargoQuantity - executable : quote.CargoQuantity + executable;
         string amount = Model.FuelMode ? F("KgLoadChange", N(quote.AmountBefore), N(quote.AmountAfter), N(Model.Module?.FuelCapacityKg ?? 0))
             : $"{TradeItemPresentation.FormatQuantity(item.ItemTypeId, quote.CargoQuantity)} → {TradeItemPresentation.FormatQuantity(item.ItemTypeId, cargoAfter)}";
         Summary(p, 567, amountLabel, quote.DisabledReason is null ? amount : "—");
@@ -219,24 +219,23 @@ public sealed partial class TradeScreen
     {
         string item = TradeItemPresentation.ItemDisplayName(entry.ItemId);
         if (entry.Result is null) return F("SendingItem", item);
+        if (!entry.ResultMatchesBinding) return L("ReceiptUnavailable");
         if (entry.Result.Status != CommandResultStatus.Executed) return F("Rejected", item, Reason(entry.Result.ReasonCode));
-        long quantity = entry.Result.ExecutedQuantity ?? entry.RequestedQuantity;
-        decimal total = (decimal)quantity * entry.UnitPrice;
+        if (entry.ConfirmedReceipt is not { } receipt) return L("ReceiptUnavailable");
+        long quantity = receipt.ExecutedQuantity;
         string executed = TradeItemPresentation.FormatQuantity(entry.ItemId, quantity);
-        string totalText = total.ToString("N0", CultureInfo.CurrentCulture);
-        string requested = TradeItemPresentation.FormatQuantity(entry.ItemId, entry.RequestedQuantity);
-        if (quantity >= entry.RequestedQuantity) return F("SuccessResult", item, executed, totalText, requested);
-        // Remaining comes from the receipt (requested − executed), never from a stock difference.
-        long remaining = Math.Max(0, entry.RequestedQuantity - quantity);
-        return F("PartialWithRemaining", item, executed, totalText, requested,
-            TradeItemPresentation.FormatQuantity(entry.ItemId, remaining));
+        string totalText = receipt.TotalCredits.ToString("N0", CultureInfo.CurrentCulture);
+        string requested = TradeItemPresentation.FormatQuantity(entry.ItemId, receipt.RequestedQuantity!.Value);
+        if (quantity == receipt.RequestedQuantity) return F("SuccessResult", item, executed, totalText);
+        return F("PartialResult", item, executed, totalText, requested) + " · " +
+            string.Join(" · ", receipt.LimitReasons.Select(Reason).Distinct());
     }
     private void DrawStatus(TradePainter p)
     {
         string message; SKColor color;
         if (_handle?.Failure is not null) { message = L("ConnectionLost"); color = TradePainter.Red; }
         else if (IsPending) { message = L("AwaitingStation"); color = TradePainter.Muted; }
-        else if (_journal.Latest is { } entry) { message = EntryMessage(entry); color = entry.Result?.Status == CommandResultStatus.Executed ? TradePainter.Green : TradePainter.Red; }
+        else if (_journal.Latest is { } entry) { message = EntryMessage(entry); color = entry.ConfirmedReceipt is not null ? TradePainter.Green : TradePainter.Red; }
         else { message = Model.Item is not null && Model.Quote.DisabledReason is { } reason ? L(reason) : L("Ready"); color = TradePainter.Muted; }
         p.Text(message, R(1040, 716, 520, 23), 12, color);
     }
@@ -254,7 +253,7 @@ public sealed partial class TradeScreen
             string mode = L(entry.Mode switch { TradeMode.Sell => "Sell", TradeMode.Refuel => "Fuel", _ => "Buy" });
             p.Text(mode + " · " + entry.ModuleLabel, R(101, rect.Top, 250, 50), 14, TradePainter.Muted);
             p.Text(EntryMessage(entry), R(363, rect.Top, 595, 50), 15,
-                entry.Result is null ? TradePainter.Muted : entry.Result.Status == CommandResultStatus.Executed ? TradePainter.Green : TradePainter.Red);
+                entry.Result is null ? TradePainter.Muted : entry.ConfirmedReceipt is not null ? TradePainter.Green : TradePainter.Red);
             p.Line(36, rect.Bottom, 970);
         }
         if (_journal.Entries.Count == 0) p.Text(L("HistoryEmpty"), R(48, 333, 900, 40), 18, TradePainter.Muted);

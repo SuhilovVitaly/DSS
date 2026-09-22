@@ -71,10 +71,11 @@ internal readonly record struct TradeQuote(long Maximum, long Total, long CargoQ
         // A malformed authoritative capacity must never be traded against.
         if (mode == TradeMode.Sell && item.FreeStockCapacity is < 0) return Disabled("InvalidData");
         long cargo = module.Cargo.IsDefaultOrEmpty ? 0 : module.Cargo.FirstOrDefault(c => c.ItemTypeId == item.ItemTypeId)?.Quantity ?? 0;
-        long available = Math.Max(0, module.AvailableCapacityKg ?? 0);
+        long available = module.AvailableCapacityKg ?? 0;
         long before = mode == TradeMode.Refuel ? module.FuelAmountKg ?? 0 : available;
         TradeQuote Blocked(long maximum, string reason, string limit) => new(Math.Max(0, maximum), 0, cargo, before, before, credits, reason, limit);
 
+        if (cargo < 0 || available < 0 || before < 0) return Blocked(0, "InvalidData", "");
         if (quantity <= 0) return Blocked(knownMaximum, "EnterQuantity", "");
         if (quote is null || !IsBoundTo(quote, item, module, mode, quantity, stationId))
             return Blocked(knownMaximum, pendingReason ?? "QuoteLoading", "");
@@ -99,9 +100,14 @@ internal readonly record struct TradeQuote(long Maximum, long Total, long CargoQ
             long delta = checked(executable * (mode == TradeMode.Refuel ? 1 : item.UnitMassKg));
             long after = mode == TradeMode.Buy ? checked(before - delta) : checked(before + delta);
             long balance = mode == TradeMode.Sell ? checked(credits + total) : checked(credits - total);
+            long cargoAfter = mode == TradeMode.Sell ? checked(cargo - executable) : checked(cargo + executable);
+            if (balance < 0 || after < 0 || (mode != TradeMode.Refuel && cargoAfter < 0) ||
+                (mode == TradeMode.Refuel && after > (module.FuelCapacityKg ?? 0)) ||
+                (mode != TradeMode.Refuel && module.CargoCapacityKg is { } capacity && after > capacity))
+                return Blocked(quote.MaximumQuantity, "InvalidData", limitKey);
             return new(quote.MaximumQuantity, total, cargo, before, after, balance, null, limitKey, executable);
         }
-        catch (OverflowException) { return Blocked(quote.MaximumQuantity, "BalanceLimit", limitKey); }
+        catch (OverflowException) { return Blocked(quote.MaximumQuantity, "ValueOverflow", limitKey); }
     }
 
     private static bool IsBoundTo(TradeQuoteSnapshot quote, StationInventoryItemSnapshot item, InstalledModuleSnapshot module,
@@ -134,13 +140,33 @@ internal sealed class TradeJournal
     /// </summary>
     internal sealed record Entry(string CommandId, string ItemId, string ModuleId, TradeMode Mode,
         long RequestedQuantity, long UnitPrice, CommandResult? Result = null, string ModuleLabel = "",
-        string? QuoteId = null, long? MarketRevision = null, long? QuotedTotalCredits = null);
+        string? QuoteId = null, long? MarketRevision = null, long? QuotedTotalCredits = null,
+        long? QuotedExecutableQuantity = null)
+    {
+        internal bool ResultMatchesBinding => Result is { } result && result.CommandId == CommandId &&
+            result.ModuleId == ModuleId && result.CommandType == TradeQuote.CommandType(Mode) &&
+            (result.TradeReceipt is not { } receipt ||
+                receipt.ItemTypeId == ItemId && receipt.QuoteId == QuoteId &&
+                receipt.QuotedMarketRevision == MarketRevision && receipt.RequestedQuantity == RequestedQuantity);
+
+        // Historical validation uses the submitted binding, never the current station or snapshot.
+        internal TradeExecutionReceipt? ConfirmedReceipt => ResultMatchesBinding &&
+            Result is { Status: CommandResultStatus.Executed, ReasonCode: null, TradeReceipt: { } receipt } &&
+            !string.IsNullOrWhiteSpace(receipt.StationObjectId) && !string.IsNullOrWhiteSpace(QuoteId) &&
+            MarketRevision is > 0 && receipt.ResultMarketRevision > MarketRevision && RequestedQuantity > 0 &&
+            receipt.ExecutedQuantity > 0 && receipt.ExecutedQuantity <= RequestedQuantity && receipt.TotalCredits >= 0 &&
+            (Mode == TradeMode.Sell || receipt.ExecutedQuantity == RequestedQuantity) &&
+            (receipt.ExecutedQuantity == RequestedQuantity || !receipt.LimitReasons.IsDefaultOrEmpty) &&
+            QuotedTotalCredits == receipt.TotalCredits && QuotedExecutableQuantity == receipt.ExecutedQuantity
+                ? receipt : null;
+    }
     private readonly List<Entry> _entries = new();
     internal IReadOnlyList<Entry> Entries => _entries;
     internal Entry? Latest => _entries.LastOrDefault();
     internal bool IsPending => _entries.Any(e => e.Result is null);
     internal void Track(Entry entry)
     {
+        if (_entries.Any(existing => existing.CommandId == entry.CommandId)) return;
         _entries.Add(entry);
         if (_entries.Count > 50) _entries.RemoveAt(0);
     }
@@ -156,7 +182,7 @@ internal sealed class TradeJournal
             if (buffer.FindCommandResult(entry.CommandId) is { Status: not CommandResultStatus.Deferred } result)
             {
                 _entries[i] = entry with { Result = result };
-                stale |= result.ReasonCode == CommandReasonCodes.StaleQuote;
+                stale |= _entries[i].ResultMatchesBinding && result.ReasonCode == CommandReasonCodes.StaleQuote;
             }
         }
         return stale;
