@@ -18,6 +18,8 @@ internal readonly record struct TradeQuote(long Maximum, long Total, long CargoQ
         if (module.PowerState != "On" || module.OperationalState != "Ready" || module.StructurePoints <= 0)
             return Disabled("ModuleUnavailable");
         if (item.UnitPriceCredits <= 0 || item.UnitMassKg < 0 || credits < 0) return Disabled("InvalidData");
+        // A malformed authoritative capacity must never widen the Engine's MaxSellableQuantity.
+        if (mode == TradeMode.Sell && item.FreeStockCapacity is < 0) return Disabled("InvalidData");
         long cargo = module.Cargo.IsDefaultOrEmpty ? 0 : module.Cargo.FirstOrDefault(c => c.ItemTypeId == item.ItemTypeId)?.Quantity ?? 0;
         long available = Math.Max(0, module.AvailableCapacityKg ?? 0);
         long before = mode == TradeMode.Refuel ? module.FuelAmountKg ?? 0 : available;
@@ -26,7 +28,11 @@ internal readonly record struct TradeQuote(long Maximum, long Total, long CargoQ
         if (mode == TradeMode.Sell)
         {
             maximum = Math.Min(cargo, item.MaxSellableQuantity);
-            limit = cargo <= item.MaxSellableQuantity ? "CargoLimit" : "StationBudgetLimit";
+            // MaxSellableQuantity already carries both station bounds; FreeStockCapacity only names the
+            // cause. On a budget/storage tie the storage reason wins (presentation tie-break only).
+            limit = cargo <= item.MaxSellableQuantity ? "CargoLimit"
+                : item.FreeStockCapacity is { } free && free <= item.MaxSellableQuantity ? "StationStorageLimit"
+                : "StationBudgetLimit";
             long balanceLimit = (long.MaxValue - credits) / item.UnitPriceCredits;
             if (maximum > balanceLimit) { maximum = balanceLimit; limit = "BalanceLimit"; }
         }

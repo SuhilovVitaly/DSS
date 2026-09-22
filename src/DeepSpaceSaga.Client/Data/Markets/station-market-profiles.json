@@ -33,7 +33,36 @@
         { "itemTypeId": "item.steel", "quantity": 36 }
       ],
       "initialCredits": 9600,
-      "refuelStockKg": 200
+      "refuelStockKg": 200,
+      "economy": {
+        "productionSource": "Profile",
+        "hourlyInputs": [
+          { "itemTypeId": "item.water", "quantity": 4 },
+          { "itemTypeId": "item.food-rations", "quantity": 6 },
+          { "itemTypeId": "item.energy-cells", "quantity": 8 },
+          { "itemTypeId": "item.steel", "quantity": 2 }
+        ],
+        "hourlyOutputs": [
+          { "itemTypeId": "item.ice", "quantity": 18 },
+          { "itemTypeId": "item.iron-ore", "quantity": 24 },
+          { "itemTypeId": "item.magnesium-ore", "quantity": 10 },
+          { "itemTypeId": "item.carbon-ore", "quantity": 8 }
+        ],
+        "hourlyConsumption": [],
+        "stockTargets": [
+          { "itemTypeId": "item.ice", "targetStock": 108 },
+          { "itemTypeId": "item.iron-ore", "targetStock": 108 },
+          { "itemTypeId": "item.magnesium-ore", "targetStock": 108 },
+          { "itemTypeId": "item.carbon-ore", "targetStock": 108 },
+          { "itemTypeId": "item.water", "targetStock": 72 },
+          { "itemTypeId": "item.food-rations", "targetStock": 72 },
+          { "itemTypeId": "item.energy-cells", "targetStock": 72 },
+          { "itemTypeId": "item.steel", "targetStock": 72 }
+        ],
+        "shortageThresholdPermille": 500,
+        "surplusThresholdPermille": 1500,
+        "budgetRegenerationDivisorPerDay": 24
+      }
     },
     {
       "typeId": "market.industrial",
@@ -63,7 +92,38 @@
         { "itemTypeId": "item.food-rations", "quantity": 44 }
       ],
       "initialCredits": 14400,
-      "refuelStockKg": 200
+      "refuelStockKg": 200,
+      "economy": {
+        "productionSource": "Profile",
+        "hourlyInputs": [
+          { "itemTypeId": "item.iron-ore", "quantity": 20 },
+          { "itemTypeId": "item.magnesium-ore", "quantity": 8 },
+          { "itemTypeId": "item.carbon-ore", "quantity": 6 },
+          { "itemTypeId": "item.silicon", "quantity": 8 },
+          { "itemTypeId": "item.water", "quantity": 2 },
+          { "itemTypeId": "item.food-rations", "quantity": 3 }
+        ],
+        "hourlyOutputs": [
+          { "itemTypeId": "item.steel", "quantity": 16 },
+          { "itemTypeId": "item.energy-cells", "quantity": 12 },
+          { "itemTypeId": "item.electronics", "quantity": 4 }
+        ],
+        "hourlyConsumption": [],
+        "stockTargets": [
+          { "itemTypeId": "item.iron-ore", "targetStock": 132 },
+          { "itemTypeId": "item.magnesium-ore", "targetStock": 132 },
+          { "itemTypeId": "item.carbon-ore", "targetStock": 132 },
+          { "itemTypeId": "item.silicon", "targetStock": 132 },
+          { "itemTypeId": "item.steel", "targetStock": 88 },
+          { "itemTypeId": "item.energy-cells", "targetStock": 88 },
+          { "itemTypeId": "item.electronics", "targetStock": 88 },
+          { "itemTypeId": "item.water", "targetStock": 88 },
+          { "itemTypeId": "item.food-rations", "targetStock": 88 }
+        ],
+        "shortageThresholdPermille": 500,
+        "surplusThresholdPermille": 1500,
+        "budgetRegenerationDivisorPerDay": 24
+      }
     },
     {
       "typeId": "market.hydroponic",
@@ -89,7 +149,34 @@
         { "itemTypeId": "item.electronics", "quantity": 40 }
       ],
       "initialCredits": 12000,
-      "refuelStockKg": 200
+      "refuelStockKg": 200,
+      "economy": {
+        "productionSource": "Profile",
+        "hourlyInputs": [
+          { "itemTypeId": "item.ice", "quantity": 20 },
+          { "itemTypeId": "item.energy-cells", "quantity": 8 },
+          { "itemTypeId": "item.steel", "quantity": 2 },
+          { "itemTypeId": "item.electronics", "quantity": 1 }
+        ],
+        "hourlyOutputs": [
+          { "itemTypeId": "item.water", "quantity": 24 },
+          { "itemTypeId": "item.protein-mass", "quantity": 10 },
+          { "itemTypeId": "item.food-rations", "quantity": 8 }
+        ],
+        "hourlyConsumption": [],
+        "stockTargets": [
+          { "itemTypeId": "item.ice", "targetStock": 120 },
+          { "itemTypeId": "item.water", "targetStock": 80 },
+          { "itemTypeId": "item.protein-mass", "targetStock": 80 },
+          { "itemTypeId": "item.food-rations", "targetStock": 80 },
+          { "itemTypeId": "item.energy-cells", "targetStock": 80 },
+          { "itemTypeId": "item.steel", "targetStock": 80 },
+          { "itemTypeId": "item.electronics", "targetStock": 80 }
+        ],
+        "shortageThresholdPermille": 500,
+        "surplusThresholdPermille": 1500,
+        "budgetRegenerationDivisorPerDay": 24
+      }
     },
     {
       "typeId": "market.transit",
@@ -110,7 +197,29 @@
         { "itemTypeId": "item.electronics", "quantity": 96 }
       ],
       "initialCredits": 19200,
-      "refuelStockKg": 400
+      "refuelStockKg": 400,
+      "economy": {
+        "productionSource": "Profile",
+        "hourlyInputs": [],
+        "hourlyOutputs": [],
+        "hourlyConsumption": [
+          { "itemTypeId": "item.water", "quantity": 8 },
+          { "itemTypeId": "item.food-rations", "quantity": 12 },
+          { "itemTypeId": "item.energy-cells", "quantity": 6 },
+          { "itemTypeId": "item.steel", "quantity": 2 },
+          { "itemTypeId": "item.electronics", "quantity": 2 }
+        ],
+        "stockTargets": [
+          { "itemTypeId": "item.water", "targetStock": 96 },
+          { "itemTypeId": "item.food-rations", "targetStock": 96 },
+          { "itemTypeId": "item.energy-cells", "targetStock": 96 },
+          { "itemTypeId": "item.steel", "targetStock": 96 },
+          { "itemTypeId": "item.electronics", "targetStock": 96 }
+        ],
+        "shortageThresholdPermille": 500,
+        "surplusThresholdPermille": 1500,
+        "budgetRegenerationDivisorPerDay": 24
+      }
     },
     {
       "typeId": "market.scientific-military",
@@ -134,7 +243,32 @@
         { "itemTypeId": "item.food-rations", "quantity": 32 }
       ],
       "initialCredits": 16800,
-      "refuelStockKg": 200
+      "refuelStockKg": 200,
+      "economy": {
+        "productionSource": "Profile",
+        "hourlyInputs": [
+          { "itemTypeId": "item.silicon", "quantity": 7 },
+          { "itemTypeId": "item.energy-cells", "quantity": 6 },
+          { "itemTypeId": "item.steel", "quantity": 3 },
+          { "itemTypeId": "item.water", "quantity": 2 },
+          { "itemTypeId": "item.food-rations", "quantity": 4 }
+        ],
+        "hourlyOutputs": [
+          { "itemTypeId": "item.electronics", "quantity": 5 }
+        ],
+        "hourlyConsumption": [],
+        "stockTargets": [
+          { "itemTypeId": "item.silicon", "targetStock": 96 },
+          { "itemTypeId": "item.electronics", "targetStock": 64 },
+          { "itemTypeId": "item.energy-cells", "targetStock": 64 },
+          { "itemTypeId": "item.steel", "targetStock": 64 },
+          { "itemTypeId": "item.water", "targetStock": 64 },
+          { "itemTypeId": "item.food-rations", "targetStock": 64 }
+        ],
+        "shortageThresholdPermille": 500,
+        "surplusThresholdPermille": 1500,
+        "budgetRegenerationDivisorPerDay": 24
+      }
     }
   ]
 }

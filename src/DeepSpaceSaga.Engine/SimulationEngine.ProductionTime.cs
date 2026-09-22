@@ -22,6 +22,9 @@ public sealed partial class SimulationEngine
             {
                 var module = modules[m];
                 if (!module.Active || module.NextProductionDueGameTimeMs is not null) continue;
+                // A completed batch that never fully fit blocks the next cycle until it is gone,
+                // so output can never be produced faster than the station can actually store it.
+                if (!module.PendingOutput.IsDefaultOrEmpty) continue;
                 var recipe = _registry.FactoryTypes.GetDefinition(module.FactoryTypeIndex).Recipe;
                 if (!recipe.Inputs.All(input => inventory.Any(s => s.ItemTypeIndex == _registry.ItemTypes.GetIndex(input.ItemTypeId)
                     && s.StockQuantity >= input.Count))) continue;
@@ -39,15 +42,40 @@ public sealed partial class SimulationEngine
         {
             var station = _objects[i];
             if (station.ProducingModules.IsDefaultOrEmpty) continue;
+            // Only an opted-in bounded market caps recipe output; a station without a configured
+            // economy keeps the pre-US-0002 unbounded behaviour exactly.
+            bool bounded = TryGetMarket(station, out var profile, out var economy);
             var modules = station.ProducingModules.ToBuilder();
             var inventory = station.Inventory.ToBuilder();
             for (int m = 0; m < modules.Count; m++)
             {
                 var module = modules[m];
                 if (!module.Active || module.NextProductionDueGameTimeMs is not { } due || due > time) continue;
-                foreach (var output in _registry.FactoryTypes.GetDefinition(module.FactoryTypeIndex).Recipe.Outputs)
-                    ChangeStationStock(inventory, output, 1);
-                modules[m] = module with { NextProductionDueGameTimeMs = null };
+                var recipe = _registry.FactoryTypes.GetDefinition(module.FactoryTypeIndex).Recipe;
+                if (!bounded)
+                {
+                    foreach (var output in recipe.Outputs) ChangeStationStock(inventory, output, 1);
+                    modules[m] = module with { NextProductionDueGameTimeMs = null };
+                    continue;
+                }
+
+                // Hand over as much of the finished batch as fits and keep the rest: a completed
+                // cycle is never destroyed by a full warehouse (requirements 3844-3868).
+                var pending = ImmutableArray.CreateBuilder<StationInventoryItemRuntime>();
+                foreach (var produced in AggregateRecipeOutputs(recipe)
+                    .OrderBy(entry => _registry.ItemTypes.GetDefinition(entry.Key).TypeId, StringComparer.Ordinal))
+                {
+                    long capacity = TryMarketLimits(profile, economy, station, produced.Key, out var limits)
+                        ? limits.MaxStock
+                        : long.MaxValue;
+                    int slot = FindStockSlot(inventory, produced.Key);
+                    long have = slot < 0 ? 0 : inventory[slot].StockQuantity;
+                    long stored = Math.Min(capacity - have, produced.Value);
+                    if (stored > 0) AddStock(inventory, produced.Key, stored);
+                    long remainder = produced.Value - Math.Max(stored, 0);
+                    if (remainder > 0) pending.Add(new StationInventoryItemRuntime(produced.Key, remainder));
+                }
+                modules[m] = module with { NextProductionDueGameTimeMs = null, PendingOutput = pending.ToImmutable() };
             }
             _objects[i] = station with { Inventory = inventory.ToImmutable(), ProducingModules = modules.ToImmutable() };
         }

@@ -587,15 +587,16 @@ public sealed class CatalogCompatibilityTests
         Assert.NotEqual(Us0001FrozenFingerprint,
             (frozen with { Economy = BuildEconomy(frozen, StationMarketProductionSource.Profile) }).Fingerprint);
 
-        // Every shipped profile is still economy-free at this ticket's stage (content is TK-0004) and
-        // none of them moved off the US-0001 payload shape either. These cannot use a literal: TK-0004
-        // will legitimately rewrite the shipped numbers.
+        // Since US-0002 TK-0004 every shipped profile configures an economy, so its fingerprint must
+        // move off the US-0001 payload shape; stripping the economy restores exactly that shape.
+        // These cannot use a literal: shipped numbers are content and may be retuned.
         var registry = RealRegistry();
         for (int i = 0; i < registry.StationMarketProfiles.Count; i++)
         {
             var shipped = registry.StationMarketProfiles.GetDefinition(i);
-            Assert.Null(shipped.Economy);
-            Assert.Equal(LegacyUs0001Fingerprint(shipped), shipped.Fingerprint);
+            Assert.NotNull(shipped.Economy);
+            Assert.NotEqual(LegacyUs0001Fingerprint(shipped), shipped.Fingerprint);
+            Assert.Equal(LegacyUs0001Fingerprint(shipped), (shipped with { Economy = null }).Fingerprint);
         }
     }
 

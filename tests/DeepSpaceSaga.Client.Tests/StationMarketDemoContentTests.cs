@@ -315,6 +315,9 @@ public sealed class StationMarketDemoContentTests
             var profiles = JsonNode.Parse(File.ReadAllText(ProfilesPath))!.AsObject();
             profiles["profiles"]![0]!["supplyItemTypeIds"]![0] = "item.missing";
             profiles["profiles"]![0]!["initialInventory"]![0]!["itemTypeId"] = "item.missing";
+            // The economy block mirrors supply/inventory, so the same item is renamed there too.
+            profiles["profiles"]![0]!["economy"]!["hourlyOutputs"]![0]!["itemTypeId"] = "item.missing";
+            profiles["profiles"]![0]!["economy"]!["stockTargets"]![0]!["itemTypeId"] = "item.missing";
             File.WriteAllText(invalidProfilesPath, profiles.ToJsonString(new JsonSerializerOptions
             {
                 WriteIndented = true,

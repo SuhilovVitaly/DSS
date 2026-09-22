@@ -186,9 +186,10 @@ public class TradeUxTests
     private sealed class RecordingConnection : IGameSessionConnection
     {
         internal List<PlayerCommand> Commands { get; } = [];
+        internal List<SimulationSpeed> SpeedChanges { get; } = [];
         public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default) { Commands.Add(command); return ValueTask.CompletedTask; }
         public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public ValueTask SetSimulationSpeedAsync(SimulationSpeed speed, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask SetSimulationSpeedAsync(SimulationSpeed speed, CancellationToken cancellationToken = default) { SpeedChanges.Add(speed); return ValueTask.CompletedTask; }
         public ValueTask SetObjectInteractionStateAsync(string? activeObjectId, string? selectedObjectId, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
@@ -324,6 +325,201 @@ public class TradeUxTests
         Click(f.Screen, TradeLayout.History); Export(f.Screen, "history");
         Click(f.Screen, TradeLayout.FuelTab); f.Screen.Model.FillTank(100); Export(f.Screen, "fuel");
     }
+    // ── US-0002 TK-0005: authoritative market state in Trade ──────────────────────────────
+
+    /// <summary>A bounded-economy row: every market field is taken verbatim from the fixture, as from the Engine.</summary>
+    private static StationInventoryItemSnapshot Bounded(string itemId, long stock, long target, StationMarketStockState state,
+        long maxSellable = 500, long? free = null) =>
+        new(itemId, stock, 14, maxSellable, TradeItemCategories.Good, 1, target, 2 * target, free ?? 2 * target - stock, state);
+
+    /// <summary>The shared snapshot with the water row replaced by a bounded market row.</summary>
+    private static AuthoritativeSnapshot MarketSnapshot(ulong sequence, StationInventoryItemSnapshot water, long gameTimeMs = 0)
+    {
+        var baseline = Snapshot();
+        var items = baseline.DockedStationTrade!.Items.Select(i => i.ItemTypeId == "item.water" ? water : i).ToImmutableArray();
+        return baseline with { SnapshotSequence = sequence, GameTimeMs = gameTimeMs, DockedStationTrade = new("station", items) };
+    }
+
+    [Fact]
+    public async Task Market_badges_display_authoritative_states_instead_of_recalculating_ratio()
+    {
+        // Each fixture's local ratio points to a different band than the state it carries.
+        (long Stock, StationMarketStockState State)[] cases =
+        [
+            (300, StationMarketStockState.Shortage), // 300/100 would be Surplus
+            (5, StationMarketStockState.Normal),     // 5/100 would be Shortage
+            (10, StationMarketStockState.Surplus),   // 10/100 would be Shortage
+        ];
+        foreach (var (stock, state) in cases)
+        {
+            var row = Bounded("item.water", stock, 100, state);
+            string summary = Assert.IsType<string>(TradeScreen.MarketStockSummary(row));
+            Assert.StartsWith(TradeScreen.StockStateLabel(state), summary, StringComparison.Ordinal);
+            Assert.Equal(TradeScreen.F("MarketStockSummary", TradeScreen.StockStateLabel(state),
+                TradeItemPresentation.FormatQuantity("item.water", 100), TradeItemPresentation.FormatQuantity("item.water", 200)), summary);
+        }
+        Assert.Equal(3, Enum.GetValues<StationMarketStockState>().Select(TradeScreen.StockStateLabel).Distinct().Count());
+        Assert.All(Enum.GetValues<StationMarketStockState>(), state => Assert.DoesNotContain("TradeUX.", TradeScreen.StockStateLabel(state)));
+
+        // Null state → no badge at all, never an implied "Normal".
+        Assert.Null(TradeScreen.MarketStockSummary(Water()));
+        Assert.Null(TradeScreen.MarketStockSummary(Bounded("item.water", 50, 100, StationMarketStockState.Normal) with { StockState = null }));
+
+        await using var f = new Fixture();
+        f.Buffer.Update(MarketSnapshot(2, Bounded("item.water", 10, 100, StationMarketStockState.Surplus)));
+        using var rendered = Render(f.Screen);
+        Assert.Equal(StationMarketStockState.Surplus, f.Screen.Model.Item!.StockState);
+        Export(f.Screen, "market-state");
+    }
+
+    [Theory]
+    [InlineData("item.food-rations", "Trade.UnitRation")]
+    [InlineData("item.energy-cells", "Trade.UnitCell")]
+    [InlineData("item.electronics", "Trade.UnitBlock")]
+    public void Bounded_market_targets_use_item_units_and_legacy_rows_stay_plain(string itemId, string unitKey)
+    {
+        string summary = TradeScreen.MarketStockSummary(Bounded(itemId, 30, 72, StationMarketStockState.Shortage))!;
+        Assert.Contains(TradeItemPresentation.FormatQuantity(itemId, 72), summary, StringComparison.Ordinal);
+        Assert.Contains(TradeItemPresentation.FormatQuantity(itemId, 144), summary, StringComparison.Ordinal);
+        Assert.Contains(Localization.Get(unitKey), summary, StringComparison.Ordinal);
+        Assert.DoesNotContain(" " + Localization.Get("Trade.UnitKg"), summary, StringComparison.Ordinal);
+
+        Assert.Null(TradeScreen.MarketStockSummary(new(itemId, 30, 20, 500)));
+        Assert.Null(TradeScreen.MarketStockSummary(new("item.fuel", 500, 10, 500)));
+    }
+
+    [Theory]
+    [InlineData(10, 3, 3, "StationStorageLimit")]
+    [InlineData(10, 2, 3, "StationBudgetLimit")]
+    [InlineData(1, 3, 3, "CargoLimit")]
+    [InlineData(10, 0, 0, "StationStorageLimit")]
+    public void Sell_limit_distinguishes_storage_from_budget(long cargo, long maxSellable, long free, string reason)
+    {
+        var item = Bounded("item.water", 300, 160, StationMarketStockState.Normal, maxSellable, free);
+        var quote = TradeQuote.Calculate(item, Hold(water: cargo), TradeMode.Sell, 11, 100);
+        Assert.Equal(Math.Min(cargo, maxSellable), quote.Maximum);
+        Assert.Equal(reason, quote.LimitReason);
+        Assert.Equal(reason, quote.DisabledReason);
+        Assert.DoesNotContain("TradeUX.", TradeScreen.L(reason));
+
+        Assert.Equal("InvalidData", TradeQuote.Calculate(item with { FreeStockCapacity = -1 }, Hold(water: cargo), TradeMode.Sell, 1, 100).DisabledReason);
+    }
+
+    [Fact]
+    public async Task Partial_sell_result_shows_executed_and_remaining_units()
+    {
+        await using var f = new Fixture();
+        f.Screen.Model.SetMode(TradeMode.Sell); f.Screen.Model.Quantity = 5;
+        Click(f.Screen, TradeLayout.Confirm);
+        var sent = Assert.Single(f.Connection.Commands); Assert.Equal(5, sent.Quantity);
+        // The station stock in the result snapshot is deliberately unchanged: remaining must come from the receipt.
+        var partial = new CommandResult(sent.CommandId, "ship", sent.ModuleId, sent.CommandType,
+            CommandResultStatus.Executed, 0, ExecutedQuantity: 3);
+        f.Buffer.Update(Snapshot() with { SnapshotSequence = 2, CommandResults = [partial] });
+        using var rendered = Render(f.Screen);
+
+        var entry = Assert.Single(f.Screen.History);
+        Assert.Equal(TradeScreen.F("PartialWithRemaining", TradeItemPresentation.ItemDisplayName("item.water"),
+            TradeItemPresentation.FormatQuantity("item.water", 3), 42m.ToString("N0", CultureInfo.CurrentCulture),
+            TradeItemPresentation.FormatQuantity("item.water", 5), TradeItemPresentation.FormatQuantity("item.water", 2)),
+            f.Screen.EntryMessage(entry));
+
+        var full = entry with { Result = entry.Result! with { ExecutedQuantity = null } };
+        Assert.Equal(TradeScreen.F("SuccessResult", TradeItemPresentation.ItemDisplayName("item.water"),
+            TradeItemPresentation.FormatQuantity("item.water", 5), 70m.ToString("N0", CultureInfo.CurrentCulture),
+            TradeItemPresentation.FormatQuantity("item.water", 5)), f.Screen.EntryMessage(full));
+    }
+
+    [Fact]
+    public async Task Replenished_snapshot_reenables_buy_without_changing_selection()
+    {
+        await using var f = new Fixture();
+        f.Screen.Model.SelectModule("hold-2"); f.Screen.Model.Quantity = 5;
+        f.Buffer.Update(MarketSnapshot(2, Bounded("item.water", 0, 160, StationMarketStockState.Shortage)));
+        using (Render(f.Screen))
+        {
+            Assert.False(f.Screen.CanConfirm);
+            Assert.Equal("StockLimit", f.Screen.Model.Quote.DisabledReason);
+        }
+
+        f.Buffer.Update(MarketSnapshot(3, Bounded("item.water", 30, 160, StationMarketStockState.Shortage), GameCalendar.HourMs));
+        using (Render(f.Screen))
+        {
+            Assert.Equal("item.water", f.Screen.Model.SelectedItemId);
+            Assert.Equal("hold-2", f.Screen.Model.SelectedModuleId);
+            Assert.Equal(5, f.Screen.Model.Quantity);
+            Assert.Equal(30, f.Screen.Model.Item!.StockQuantity);
+            Assert.True(f.Screen.CanConfirm);
+        }
+
+        Click(f.Screen, TradeLayout.Confirm);
+        var command = Assert.Single(f.Connection.Commands);
+        Assert.Equal((TradeCommandTypes.Buy, "item.water", "hold-2", 5L),
+            (command.CommandType, command.ItemTypeId, command.ModuleId, command.Quantity!.Value));
+    }
+
+    [Fact]
+    public async Task Trade_render_does_not_advance_paused_market()
+    {
+        // UI-side guard only: the Engine's own paused clock is covered by TK-0003. Here nothing but
+        // Render/Refresh runs, so any change to the market would have to originate in the client.
+        await using var f = new Fixture();
+        var paused = MarketSnapshot(2, Bounded("item.water", 36, 72, StationMarketStockState.Shortage));
+        Assert.Equal(SimulationSpeed.Speed0, paused.CurrentSpeed);
+        f.Buffer.Update(paused);
+        for (int frame = 0; frame < 20; frame++)
+        {
+            if (frame % 5 == 0) { f.Screen.OnDeactivated(); f.Screen.OnActivated(); }
+            using var rendered = Render(f.Screen);
+            Assert.Same(paused, f.Buffer.Latest!.Snapshot);
+            Assert.Equal(36, f.Screen.Model.Item!.StockQuantity);
+            Assert.Equal(StationMarketStockState.Shortage, f.Screen.Model.Item.StockState);
+            Assert.Equal(0, f.Buffer.Latest.Snapshot.GameTimeMs);
+        }
+        Assert.Empty(f.Connection.Commands);
+        Assert.Empty(f.Connection.SpeedChanges);
+    }
+
+    [Fact]
+    public async Task Market_reopen_uses_latest_snapshot_after_one_hour()
+    {
+        await using var f = new Fixture();
+        f.Buffer.Update(MarketSnapshot(2, Bounded("item.water", 36, 72, StationMarketStockState.Shortage)));
+        using (Render(f.Screen)) Assert.Equal(36, f.Screen.Model.Item!.StockQuantity);
+        f.Screen.OnDeactivated();
+
+        // Authoritative state after one explicit game hour; the client replays nothing locally.
+        var hourLater = Bounded("item.water", 32, 72, StationMarketStockState.Shortage) with { StockState = StationMarketStockState.Normal };
+        f.Buffer.Update(MarketSnapshot(3, hourLater, GameCalendar.HourMs));
+        f.Screen.OnActivated();
+        using var rendered = Render(f.Screen);
+
+        var item = f.Screen.Model.Item!;
+        Assert.Equal(32, item.StockQuantity);
+        Assert.Equal(StationMarketStockState.Normal, item.StockState);
+        Assert.Equal(TradeScreen.MarketStockSummary(hourLater), TradeScreen.MarketStockSummary(item));
+        Assert.Equal("item.water", f.Screen.Model.SelectedItemId);
+        Assert.Empty(f.Connection.Commands);
+    }
+
+    [Fact]
+    public async Task Market_stock_full_rejection_is_localized()
+    {
+        await using var f = new Fixture();
+        f.Screen.Model.SetMode(TradeMode.Sell);
+        Click(f.Screen, TradeLayout.Confirm);
+        var sent = Assert.Single(f.Connection.Commands);
+        var rejected = new CommandResult(sent.CommandId, "ship", sent.ModuleId, sent.CommandType,
+            CommandResultStatus.Rejected, 0, "station_stock_full");
+        f.Buffer.Update(Snapshot() with { SnapshotSequence = 2, CommandResults = [rejected] });
+        using var rendered = Render(f.Screen);
+
+        string message = f.Screen.EntryMessage(Assert.Single(f.Screen.History));
+        Assert.Equal(TradeScreen.F("Rejected", TradeItemPresentation.ItemDisplayName("item.water"), TradeScreen.L("StationStorageLimit")), message);
+        Assert.DoesNotContain(TradeScreen.L("TradeRejected"), message, StringComparison.Ordinal);
+        Assert.DoesNotContain("TradeUX.", message, StringComparison.Ordinal);
+    }
+
     private static void Export(TradeScreen screen, string state)
     {
         using var bitmap = Render(screen);
