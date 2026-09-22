@@ -81,6 +81,8 @@ public static class ScenarioLoader
         if ((gs.CommandReceipts?.Any(r => r is null || string.IsNullOrWhiteSpace(r.CommandId)) ?? false) ||
             (gs.PendingCommands?.Any(c => c is null || string.IsNullOrWhiteSpace(c.CommandId)) ?? false))
             throw new ScenarioException("Invalid saved command journal.");
+        if (gs.CommandReceipts?.Any(r => r.TradeReceipt is not null && !IsValidTradeReceipt(r)) ?? false)
+            throw new ScenarioException("Invalid saved trade receipt.");
         string? Resolve(string? id) => id is not null && ids.TryGetValue(id, out var canonical) ? canonical : id;
         var objects = gs.SpaceObjects.Select(o => o with
         {
@@ -95,8 +97,47 @@ public static class ScenarioLoader
                 { ObjectId = Resolve(c.ObjectId), TargetObjectId = Resolve(c.TargetObjectId) }
             }).ToArray()
         }).ToArray();
-        return scenario with { GameState = gs with { PlayerShipObjectId = ids[gs.PlayerShipObjectId],
-            CurrentSpeed = KnownSpeeds.Single(s => s.Equals(gs.CurrentSpeed, StringComparison.OrdinalIgnoreCase)), SpaceObjects = objects } };
+        return scenario with
+        {
+            GameState = gs with
+            {
+                PlayerShipObjectId = ids[gs.PlayerShipObjectId],
+                CurrentSpeed = KnownSpeeds.Single(s => s.Equals(gs.CurrentSpeed, StringComparison.OrdinalIgnoreCase)),
+                SpaceObjects = objects
+            }
+        };
+    }
+
+    /// <summary>
+    /// Structural shape of a saved trade receipt (EP-0001-US-0003-TK-0002). Deliberately not checked
+    /// against the current world or catalog: the historical station may be gone and prices may have
+    /// changed. A rejection echoes the raw request, so its item/quote/quantity fields are not checked.
+    /// </summary>
+    private static bool IsValidTradeReceipt(CommandResult result)
+    {
+        var receipt = result.TradeReceipt!;
+        if (result.CommandType is not (TradeCommandTypes.Buy or TradeCommandTypes.Sell or TradeCommandTypes.Refuel) ||
+            receipt.ExecutedQuantity < 0 || receipt.TotalCredits < 0 ||
+            (!receipt.LimitReasons.IsDefault && receipt.LimitReasons.Any(string.IsNullOrWhiteSpace)))
+            return false;
+
+        if (result.Status != CommandResultStatus.Executed)
+        {
+            return receipt.ExecutedQuantity == 0 && receipt.TotalCredits == 0 &&
+                (receipt.StationObjectId is null
+                    ? receipt.ResultMarketRevision is null
+                    : receipt.ResultMarketRevision is >= 1);
+        }
+
+        return result.ReasonCode is null &&
+            !string.IsNullOrWhiteSpace(receipt.StationObjectId) &&
+            !string.IsNullOrWhiteSpace(receipt.ItemTypeId) &&
+            !string.IsNullOrWhiteSpace(receipt.QuoteId) &&
+            receipt.QuotedMarketRevision is >= 1 and < long.MaxValue &&
+            receipt.ResultMarketRevision == receipt.QuotedMarketRevision + 1 &&
+            receipt.RequestedQuantity is > 0 and var requested &&
+            receipt.ExecutedQuantity > 0 && receipt.ExecutedQuantity <= requested &&
+            (result.CommandType == TradeCommandTypes.Sell || receipt.ExecutedQuantity == requested);
     }
 
     /// <summary>
