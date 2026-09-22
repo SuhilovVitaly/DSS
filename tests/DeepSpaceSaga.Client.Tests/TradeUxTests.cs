@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.Trade;
 using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
@@ -29,45 +30,136 @@ public class TradeUxTests
     {
         var model = new TradeModel(); model.Refresh(Snapshot()); model.Select("item.water"); return model;
     }
+
+    // ── Server quote fixtures (EP-0001-US-0003-TK-0004) ──────────────────────────────────
+    // The fake curve deliberately differs from the snapshot list price (water lists at 14):
+    // Buy/Refuel = first 10 units at 17, the rest at 19; Sell = first 10 at 11, the rest at 9.
+    // A total can therefore never be reproduced as "first price × quantity".
+    private const long FixtureRevision = 7;
+
+    private static ImmutableArray<TradePriceStep> Curve(string commandType, long quantity)
+    {
+        (long first, long rest) = commandType == TradeCommandTypes.Sell ? (11L, 9L) : (17L, 19L);
+        var steps = ImmutableArray.CreateBuilder<TradePriceStep>();
+        if (quantity > 0) steps.Add(new(Math.Min(10, quantity), first));
+        if (quantity > 10) steps.Add(new(quantity - 10, rest));
+        return steps.ToImmutable();
+    }
+
+    private static long CurveTotal(string commandType, long quantity) =>
+        Curve(commandType, quantity).Sum(step => step.Quantity * step.UnitPriceCredits);
+
+    private static TradeQuoteRequest Request(string commandType, long quantity, string moduleId = "hold-1",
+        string itemId = "item.water", string requestId = "R-1") =>
+        new(requestId, "ship", moduleId, commandType, itemId, quantity);
+
+    private static int s_quoteCounter;
+
+    /// <summary>An executable server quote for <paramref name="request"/>; <paramref name="executable"/> below the request is a partial Sell.</summary>
+    private static TradeQuoteSnapshot ServerQuote(TradeQuoteRequest request, long maximum = 200, long? executable = null,
+        string station = "station", long revision = FixtureRevision, params string[] limits)
+    {
+        long filled = executable ?? request.Quantity;
+        return new(request.RequestId, $"QTE-{Interlocked.Increment(ref s_quoteCounter)}", revision, station, request.ObjectId,
+            request.ModuleId, request.CommandType, request.ItemTypeId, request.Quantity, filled, maximum,
+            CurveTotal(request.CommandType, filled), Curve(request.CommandType, filled), null, [.. limits]);
+    }
+
+    /// <summary>A disabled server quote: empty QuoteId, nothing executable, the Engine's reason code.</summary>
+    private static TradeQuoteSnapshot DisabledServerQuote(TradeQuoteRequest request, string reason, long maximum = 0,
+        string station = "station") =>
+        new(request.RequestId, "", FixtureRevision, station, request.ObjectId, request.ModuleId, request.CommandType,
+            request.ItemTypeId, request.Quantity, 0, maximum, 0, ImmutableArray<TradePriceStep>.Empty, reason, ImmutableArray<string>.Empty);
+
+    /// <summary>Default fake issuer: hold-2 allows 20 units, everything else 200; a request above that is disabled.</summary>
+    private static TradeQuoteSnapshot DefaultQuoter(TradeQuoteRequest request)
+    {
+        long maximum = request.ModuleId == "hold-2" ? 20 : 200;
+        return request.Quantity > maximum
+            ? DisabledServerQuote(request, CommandReasonCodes.InsufficientPlayerCredits, maximum)
+            : ServerQuote(request, maximum);
+    }
+
     [Fact]
     public void Buy_quote_previews_exact_balance_cargo_and_mass()
     {
-        var q = TradeQuote.Calculate(Water(), Hold(), TradeMode.Buy, 40, 12480);
-        Assert.Null(q.DisabledReason); Assert.Equal(560, q.Total); Assert.Equal(11920, q.BalanceAfter);
+        var server = ServerQuote(Request(TradeCommandTypes.Buy, 40), maximum: 240);
+        var q = TradeQuote.Calculate(Water(), Hold(), TradeMode.Buy, 40, 12480, server);
+        long total = 10 * 17 + 30 * 19;
+        Assert.NotEqual(40 * Water().UnitPriceCredits, total);
+        Assert.Null(q.DisabledReason); Assert.Equal(total, q.Total); Assert.Equal(12480 - total, q.BalanceAfter);
         Assert.Equal(60, q.CargoQuantity); Assert.Equal(720, q.AmountBefore); Assert.Equal(680, q.AmountAfter); Assert.Equal(240, q.Maximum);
+        Assert.Equal(40, q.ExecutableQuantity);
     }
     [Theory]
-    [InlineData(1, 20)] [InlineData(3, 6)] [InlineData(21, 0)] [InlineData(0, 240)]
+    [InlineData(1, 20)]
+    [InlineData(3, 6)]
+    [InlineData(21, 0)]
+    [InlineData(0, 240)]
     public void Buy_maximum_accounts_for_unit_mass(long mass, long expected)
-    { Assert.Equal(expected, TradeQuote.Calculate(Water(mass), Hold(free: 20), TradeMode.Buy, 1, 12480).Maximum); }
+    {
+        // The maximum is the server's; the client only applies the unit mass to the cargo preview.
+        var request = Request(TradeCommandTypes.Buy, 1);
+        var server = expected == 0 ? DisabledServerQuote(request, CommandReasonCodes.CargoCapacityExceeded) : ServerQuote(request, expected);
+        var quote = TradeQuote.Calculate(Water(mass), Hold(free: 20), TradeMode.Buy, 1, 12480, server);
+        Assert.Equal(expected, quote.Maximum);
+        if (expected == 0) Assert.Equal("CapacityLimit", quote.DisabledReason);
+        else Assert.Equal(20 - mass, quote.AmountAfter);
+    }
     [Fact]
     public void Buy_is_limited_by_money_and_sell_by_station_budget()
     {
-        Assert.Equal(2, TradeQuote.Calculate(Water(), Hold(), TradeMode.Buy, 1, 28).Maximum);
-        var quote = TradeQuote.Calculate(Water() with { MaxSellableQuantity = 5 }, Hold(), TradeMode.Sell, 6, 100);
+        var money = TradeQuote.Calculate(Water(), Hold(), TradeMode.Buy, 3, 28,
+            DisabledServerQuote(Request(TradeCommandTypes.Buy, 3), CommandReasonCodes.InsufficientPlayerCredits, 2));
+        Assert.Equal(2, money.Maximum); Assert.Equal("MoneyLimit", money.DisabledReason);
+        var quote = TradeQuote.Calculate(Water(), Hold(), TradeMode.Sell, 6, 100,
+            DisabledServerQuote(Request(TradeCommandTypes.Sell, 6), CommandReasonCodes.StationBudgetExceeded, 5));
         Assert.Equal(5, quote.Maximum); Assert.Equal("StationBudgetLimit", quote.DisabledReason);
     }
     [Theory]
-    [InlineData(0)] [InlineData(-1)] [InlineData(long.MaxValue)]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(long.MaxValue)]
     public void Invalid_or_overflowing_quantity_never_gets_a_valid_quote(long quantity)
-    { Assert.NotNull(TradeQuote.Calculate(Water(), Hold(), TradeMode.Buy, quantity, 1000).DisabledReason); }
+    {
+        // Even an (inconsistent) server quote that claims long.MaxValue credits cannot overflow the preview.
+        var request = Request(TradeCommandTypes.Sell, quantity);
+        var server = new TradeQuoteSnapshot(request.RequestId, "QTE-X", FixtureRevision, "station", "ship", "hold-1", TradeCommandTypes.Sell,
+            "item.water", quantity, Math.Max(0, quantity), long.MaxValue, long.MaxValue, [new(Math.Max(1, quantity), 1)], null, []);
+        Assert.NotNull(TradeQuote.Calculate(Water(), Hold(water: long.MaxValue), TradeMode.Sell, quantity, 1000, server).DisabledReason);
+        Assert.NotNull(TradeQuote.Calculate(Water(), Hold(), TradeMode.Buy, quantity, 1000, null).DisabledReason);
+    }
     [Fact]
     public void Unavailable_container_cannot_trade()
-    { Assert.Equal("ModuleUnavailable", TradeQuote.Calculate(Water(), Hold() with { PowerState = "Off" }, TradeMode.Buy, 1, 1000).DisabledReason); }
+    {
+        var server = ServerQuote(Request(TradeCommandTypes.Buy, 1));
+        Assert.Equal("ModuleUnavailable", TradeQuote.Calculate(Water(), Hold() with { PowerState = "Off" }, TradeMode.Buy, 1, 1000, server).DisabledReason);
+    }
     [Fact]
     public void Selected_container_controls_cargo_and_capacity()
     {
         var model = Model(); model.SelectModule("hold-2");
+        model.ApplyQuote(ServerQuote(Request(TradeCommandTypes.Buy, 1, "hold-2"), maximum: 20));
         Assert.Equal(3, model.Cargo("item.water")); Assert.Equal(20, model.Quote.Maximum);
-        model.SetMode(TradeMode.Sell); Assert.Equal(3, model.Quote.Maximum); Assert.Equal("hold-2", model.SelectedModuleId);
+        model.SetMode(TradeMode.Sell);
+        Assert.Equal(0, model.Quote.Maximum); // a Buy maximum never leaks into Sell
+        model.ApplyQuote(ServerQuote(Request(TradeCommandTypes.Sell, 1, "hold-2"), maximum: 3));
+        Assert.Equal(3, model.Quote.Maximum); Assert.Equal("hold-2", model.SelectedModuleId);
     }
     [Fact]
     public void Fuel_has_separate_catalog_and_target_level_presets()
     {
         var model = Model(); Assert.DoesNotContain(model.Rows, r => r.ItemTypeId == TradeModel.FuelId);
         model.SetMode(TradeMode.Refuel); Assert.Equal(TradeModel.FuelId, Assert.Single(model.Rows).ItemTypeId);
-        model.FillTank(75); Assert.Equal(55, model.Quantity); Assert.Equal(375, model.Quote.AmountAfter);
-        model.SelectModule("tank-2"); model.FillTank(100); Assert.Equal(400, model.Quantity); Assert.Equal(500, model.Quote.AmountAfter);
+        model.ApplyQuote(ServerQuote(Request(TradeCommandTypes.Refuel, 1, "tank-1", TradeModel.FuelId), maximum: 180));
+        model.FillTank(75); Assert.Equal(55, model.Quantity);
+        model.ApplyQuote(ServerQuote(Request(TradeCommandTypes.Refuel, 55, "tank-1", TradeModel.FuelId), maximum: 180));
+        Assert.Equal(375, model.Quote.AmountAfter);
+        model.SelectModule("tank-2");
+        model.ApplyQuote(ServerQuote(Request(TradeCommandTypes.Refuel, 55, "tank-2", TradeModel.FuelId), maximum: 400));
+        model.FillTank(100); Assert.Equal(400, model.Quantity);
+        model.ApplyQuote(ServerQuote(Request(TradeCommandTypes.Refuel, 400, "tank-2", TradeModel.FuelId), maximum: 400));
+        Assert.Equal(500, model.Quote.AmountAfter);
     }
     [Fact]
     public void Fuel_target_below_current_amount_adds_nothing()
@@ -159,11 +251,16 @@ public class TradeUxTests
         Assert.DoesNotContain(model.Rows, item => item.ItemTypeId == TradeModel.FuelId);
         model.SetMode(TradeMode.Refuel);
         Assert.Equal(TradeModel.FuelId, Assert.Single(model.Rows).ItemTypeId);
+        model.ApplyQuote(ServerQuote(Request(TradeCommandTypes.Refuel, 1, "tank-1", TradeModel.FuelId), maximum: 180, station: "station-industrial"));
         model.FillTank(75);
         Assert.Equal(55, model.Quantity);
         model.Refresh(Snapshot() with { SnapshotSequence = 2, DockedStationTrade = new("station-transit", [new("item.water", 144, 14, 500), new("item.fuel", 600, 10, 500)]) });
         Assert.Equal(TradeModel.FuelId, Assert.Single(model.Rows).ItemTypeId);
         Assert.Equal(55, model.Quantity);
+        // Another station's quote never previews this one.
+        model.ApplyQuote(ServerQuote(Request(TradeCommandTypes.Refuel, 55, "tank-1", TradeModel.FuelId), maximum: 180, station: "station-industrial"));
+        Assert.Equal("QuoteLoading", model.Quote.DisabledReason);
+        model.ApplyQuote(ServerQuote(Request(TradeCommandTypes.Refuel, 55, "tank-1", TradeModel.FuelId), maximum: 180, station: "station-transit"));
         Assert.Equal(375, model.Quote.AmountAfter);
     }
 
@@ -173,8 +270,9 @@ public class TradeUxTests
         internal GameSessionHandle Handle { get; }
         internal SnapshotBuffer Buffer => Handle.Buffer;
         internal TradeScreen Screen { get; }
-        internal Fixture(string itemId = "item.water")
+        internal Fixture(string itemId = "item.water", bool manualQuotes = false)
         {
+            Connection.ManualQuotes = manualQuotes;
             Handle = new(Connection); Buffer.Update(Snapshot()); Screen = new(Buffer, Handle); Screen.OnActivated();
             using var bitmap = Render(Screen);
             int row = Array.FindIndex(Screen.Model.Rows, r => r.ItemTypeId == itemId);
@@ -187,6 +285,25 @@ public class TradeUxTests
     {
         internal List<PlayerCommand> Commands { get; } = [];
         internal List<SimulationSpeed> SpeedChanges { get; } = [];
+        internal List<TradeQuoteRequest> QuoteRequests { get; } = [];
+        internal List<CancellationToken> QuoteTokens { get; } = [];
+        /// <summary>Controlled responses in manual mode: one TaskCompletionSource per request, completed by the test.</summary>
+        internal List<TaskCompletionSource<TradeQuoteSnapshot>> PendingQuotes { get; } = [];
+        internal bool ManualQuotes { get; set; }
+        internal Func<TradeQuoteRequest, TradeQuoteSnapshot> Quoter { get; set; } = DefaultQuoter;
+        public ValueTask<TradeQuoteSnapshot> GetTradeQuoteAsync(TradeQuoteRequest request, CancellationToken cancellationToken = default)
+        {
+            QuoteRequests.Add(request); QuoteTokens.Add(cancellationToken);
+            if (!ManualQuotes) return ValueTask.FromResult(Quoter(request));
+            var pending = new TaskCompletionSource<TradeQuoteSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+            PendingQuotes.Add(pending);
+            return new(pending.Task);
+        }
+        /// <summary>Answer the <paramref name="index"/>-th request with the current quoter.</summary>
+        internal TradeQuoteSnapshot Answer(int index)
+        {
+            var quote = Quoter(QuoteRequests[index]); PendingQuotes[index].SetResult(quote); return quote;
+        }
         public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default) { Commands.Add(command); return ValueTask.CompletedTask; }
         public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public ValueTask SetSimulationSpeedAsync(SimulationSpeed speed, CancellationToken cancellationToken = default) { SpeedChanges.Add(speed); return ValueTask.CompletedTask; }
@@ -266,10 +383,13 @@ public class TradeUxTests
     public async Task Dropdown_selects_another_hold()
     {
         await using var f = new Fixture(); Click(f.Screen, TradeLayout.Module); Click(f.Screen, TradeLayout.ModuleOption(1));
-        Assert.Equal("hold-2", f.Screen.Model.SelectedModuleId); Assert.Equal(20, f.Screen.Model.Quote.Maximum);
+        Assert.Equal("hold-2", f.Screen.Model.SelectedModuleId);
+        using var frame = Render(f.Screen); // the server maximum for hold-2 arrives with the next quote
+        Assert.Equal(20, f.Screen.Model.Quote.Maximum);
     }
     [Theory]
-    [InlineData(CommandResultStatus.Executed)] [InlineData(CommandResultStatus.Rejected)]
+    [InlineData(CommandResultStatus.Executed)]
+    [InlineData(CommandResultStatus.Rejected)]
     public async Task Result_survives_skipped_frame_and_reopening_trade(CommandResultStatus status)
     {
         await using var f = new Fixture(); f.Screen.Model.Quantity = 10; Click(f.Screen, TradeLayout.Confirm);
@@ -389,20 +509,23 @@ public class TradeUxTests
     }
 
     [Theory]
-    [InlineData(10, 3, 3, "StationStorageLimit")]
-    [InlineData(10, 2, 3, "StationBudgetLimit")]
-    [InlineData(1, 3, 3, "CargoLimit")]
-    [InlineData(10, 0, 0, "StationStorageLimit")]
-    public void Sell_limit_distinguishes_storage_from_budget(long cargo, long maxSellable, long free, string reason)
+    [InlineData(CommandReasonCodes.StationCapacityExceeded, 3, "StationCapacityLimit")]
+    [InlineData(CommandReasonCodes.StationBudgetExceeded, 2, "StationBudgetLimit")]
+    [InlineData(CommandReasonCodes.InsufficientCargoQuantity, 1, "CargoLimit")]
+    [InlineData(CommandReasonCodes.StationCapacityExceeded, 0, "StationCapacityLimit")]
+    public void Sell_limit_distinguishes_storage_from_budget(string code, long maximum, string reason)
     {
-        var item = Bounded("item.water", 300, 160, StationMarketStockState.Normal, maxSellable, free);
-        var quote = TradeQuote.Calculate(item, Hold(water: cargo), TradeMode.Sell, 11, 100);
-        Assert.Equal(Math.Min(cargo, maxSellable), quote.Maximum);
+        // The limiter is the server's reason code; the client never derives it from MaxSellableQuantity.
+        var item = Bounded("item.water", 300, 160, StationMarketStockState.Normal, 500, 500);
+        var quote = TradeQuote.Calculate(item, Hold(water: 10), TradeMode.Sell, 11, 100,
+            DisabledServerQuote(Request(TradeCommandTypes.Sell, 11), code, maximum));
+        Assert.Equal(maximum, quote.Maximum);
         Assert.Equal(reason, quote.LimitReason);
         Assert.Equal(reason, quote.DisabledReason);
         Assert.DoesNotContain("TradeUX.", TradeScreen.L(reason));
 
-        Assert.Equal("InvalidData", TradeQuote.Calculate(item with { FreeStockCapacity = -1 }, Hold(water: cargo), TradeMode.Sell, 1, 100).DisabledReason);
+        Assert.Equal("InvalidData", TradeQuote.Calculate(item with { FreeStockCapacity = -1 }, Hold(water: 10), TradeMode.Sell, 1, 100,
+            ServerQuote(Request(TradeCommandTypes.Sell, 1))).DisabledReason);
     }
 
     [Fact]
@@ -435,6 +558,8 @@ public class TradeUxTests
     {
         await using var f = new Fixture();
         f.Screen.Model.SelectModule("hold-2"); f.Screen.Model.Quantity = 5;
+        // The server answers an empty station with the stock limiter; after replenishment it quotes normally.
+        f.Connection.Quoter = request => DisabledServerQuote(request, CommandReasonCodes.InsufficientStationStock);
         f.Buffer.Update(MarketSnapshot(2, Bounded("item.water", 0, 160, StationMarketStockState.Shortage)));
         using (Render(f.Screen))
         {
@@ -442,6 +567,7 @@ public class TradeUxTests
             Assert.Equal("StockLimit", f.Screen.Model.Quote.DisabledReason);
         }
 
+        f.Connection.Quoter = DefaultQuoter;
         f.Buffer.Update(MarketSnapshot(3, Bounded("item.water", 30, 160, StationMarketStockState.Shortage), GameCalendar.HourMs));
         using (Render(f.Screen))
         {
@@ -518,6 +644,360 @@ public class TradeUxTests
         Assert.Equal(TradeScreen.F("Rejected", TradeItemPresentation.ItemDisplayName("item.water"), TradeScreen.L("StationStorageLimit")), message);
         Assert.DoesNotContain(TradeScreen.L("TradeRejected"), message, StringComparison.Ordinal);
         Assert.DoesNotContain("TradeUX.", message, StringComparison.Ordinal);
+    }
+
+    // ── EP-0001-US-0003-TK-0004: authoritative quote lifecycle ───────────────────────────
+
+    /// <summary>Type a quantity into the field and leave it with Enter (the first Enter only applies the value).</summary>
+    private static void TypeQuantity(TradeScreen screen, string digits)
+    {
+        Click(screen, TradeLayout.Quantity);
+        foreach (char c in digits) screen.OnTextInput(c);
+        screen.OnKeyDown(Key.Enter); screen.OnKeyUp(Key.Enter);
+    }
+
+    [Fact]
+    public async Task Preview_and_max_use_server_quote_without_local_price_multiplication()
+    {
+        await using var f = new Fixture();
+        TypeQuantity(f.Screen, "25");
+        using var rendered = Render(f.Screen);
+
+        var request = f.Connection.QuoteRequests[^1];
+        Assert.Equal(("ship", "hold-1", TradeCommandTypes.Buy, "item.water", 25L),
+            (request.ObjectId, request.ModuleId, request.CommandType, request.ItemTypeId, request.Quantity));
+        var shown = Assert.IsType<TradeQuoteSnapshot>(f.Screen.Model.AuthoritativeQuote);
+        Assert.Equal(request.RequestId, shown.RequestId);
+
+        long total = 10 * 17 + 15 * 19;
+        var quote = f.Screen.Model.Quote;
+        Assert.Equal(total, quote.Total);
+        Assert.NotEqual(25 * f.Screen.Model.Item!.UnitPriceCredits, quote.Total);
+        Assert.Equal(200, quote.Maximum); // local money/stock/space math would give 240
+        Assert.Equal(12480 - total, quote.BalanceAfter);
+        Assert.Equal(25, quote.ExecutableQuantity);
+        Assert.Equal(TradeScreen.F("Maximum", TradeScreen.N(200), "—"), f.Screen.QuoteMessage);
+        Assert.True(f.Screen.CanConfirm);
+
+        Click(f.Screen, TradeLayout.Max);
+        Assert.Equal(200, f.Screen.Model.Quantity);
+        Assert.Empty(f.Connection.Commands);
+    }
+
+    [Fact]
+    public async Task Partial_sell_preview_uses_actual_quantity_and_total_but_sends_requested()
+    {
+        await using var f = new Fixture();
+        f.Connection.Quoter = request => request.CommandType == TradeCommandTypes.Sell
+            ? ServerQuote(request, maximum: 3, executable: Math.Min(3, request.Quantity), limits: CommandReasonCodes.StationBudgetExceeded)
+            : DefaultQuoter(request);
+        Click(f.Screen, TradeLayout.Sell);
+        TypeQuantity(f.Screen, "5");
+        using var rendered = Render(f.Screen);
+
+        var shown = f.Screen.Model.AuthoritativeQuote!;
+        var quote = f.Screen.Model.Quote;
+        Assert.Null(quote.DisabledReason);
+        Assert.Equal(3, quote.ExecutableQuantity);
+        Assert.Equal(33, quote.Total);
+        Assert.Equal(12480 + 33, quote.BalanceAfter);
+        Assert.Equal(60, quote.CargoQuantity);
+        Assert.Equal(5, f.Screen.Model.Quantity); // requested input is not silently reduced
+        Assert.Equal(TradeScreen.F("PartialPreview", TradeScreen.N(3), TradeScreen.N(5), TradeScreen.N(33)), f.Screen.QuoteMessage);
+        Assert.True(f.Screen.CanConfirm);
+
+        Click(f.Screen, TradeLayout.Confirm);
+        var sent = Assert.Single(f.Connection.Commands);
+        Assert.Equal((TradeCommandTypes.Sell, 5L, shown.QuoteId, FixtureRevision),
+            (sent.CommandType, sent.Quantity!.Value, sent.QuoteId, sent.MarketRevision!.Value));
+        var entry = Assert.Single(f.Screen.History);
+        Assert.Equal((5L, shown.QuoteId, (long?)FixtureRevision, (long?)33), (entry.RequestedQuantity, entry.QuoteId, entry.MarketRevision, entry.QuotedTotalCredits));
+
+        // Buy with a partial fill is never executable.
+        var buyRequest = Request(TradeCommandTypes.Buy, 5);
+        Assert.NotNull(TradeQuote.Calculate(Water(), Hold(), TradeMode.Buy, 5, 12480, ServerQuote(buyRequest, 5, executable: 3)).DisabledReason);
+    }
+
+    [Fact]
+    public async Task Changing_quantity_module_mode_or_station_invalidates_quote()
+    {
+        await using var f = new Fixture(manualQuotes: true);
+        Assert.Single(f.Connection.QuoteRequests);
+        f.Connection.Answer(0);
+        using (Render(f.Screen)) Assert.True(f.Screen.CanConfirm);
+
+        // Identical snapshots and repeated frames never request again.
+        f.Buffer.Update(Snapshot() with { SnapshotSequence = 2 });
+        for (int frame = 0; frame < 5; frame++) using (Render(f.Screen)) { }
+        Assert.Single(f.Connection.QuoteRequests);
+
+        void AssertInvalidatedAndRequested(int count, Func<TradeQuoteRequest, bool> expected)
+        {
+            using var frame = Render(f.Screen);
+            Assert.Null(f.Screen.Model.AuthoritativeQuote);
+            Assert.False(f.Screen.CanConfirm);
+            Assert.Equal("QuoteLoading", f.Screen.Model.Quote.DisabledReason);
+            Assert.Equal(count, f.Connection.QuoteRequests.Count);
+            Assert.True(expected(f.Connection.QuoteRequests[^1]));
+            f.Connection.Answer(count - 1);
+            using var answered = Render(f.Screen);
+            Assert.True(f.Screen.CanConfirm);
+        }
+
+        Click(f.Screen, TradeLayout.Plus);
+        AssertInvalidatedAndRequested(2, r => r.Quantity == 2);
+        Click(f.Screen, TradeLayout.Module); Click(f.Screen, TradeLayout.ModuleOption(1));
+        AssertInvalidatedAndRequested(3, r => r.ModuleId == "hold-2" && r.Quantity == 2);
+        Click(f.Screen, TradeLayout.Sell);
+        AssertInvalidatedAndRequested(4, r => r.CommandType == TradeCommandTypes.Sell && r.Quantity == 1);
+        f.Buffer.Update(Snapshot() with { SnapshotSequence = 3, DockedStationTrade = Snapshot().DockedStationTrade! with { MarketRevision = 8 } });
+        AssertInvalidatedAndRequested(5, r => r.CommandType == TradeCommandTypes.Sell);
+        f.Buffer.Update(Snapshot() with { SnapshotSequence = 4, DockedStationTrade = Snapshot().DockedStationTrade! with { StationObjectId = "station-2" } });
+        using (Render(f.Screen))
+        {
+            Assert.Null(f.Screen.Model.AuthoritativeQuote);
+            Assert.Equal(6, f.Connection.QuoteRequests.Count);
+            Assert.False(f.Screen.CanConfirm);
+        }
+        Assert.Empty(f.Connection.Commands);
+    }
+
+    [Fact]
+    public async Task Out_of_order_quote_response_is_ignored()
+    {
+        await using var f = new Fixture(manualQuotes: true);
+        TypeQuantity(f.Screen, "2");
+        using (Render(f.Screen)) Assert.Equal(2, f.Connection.QuoteRequests.Count);
+        Assert.True(f.Connection.QuoteTokens[0].IsCancellationRequested);
+        Assert.False(f.Connection.QuoteTokens[1].IsCancellationRequested);
+
+        var current = f.Connection.Answer(1);
+        using (Render(f.Screen)) Assert.Same(current, f.Screen.Model.AuthoritativeQuote);
+
+        // The superseded request completes late: it must not replace the current quote.
+        f.Connection.Answer(0);
+        using (Render(f.Screen))
+        {
+            Assert.Same(current, f.Screen.Model.AuthoritativeQuote);
+            Assert.Equal(2, f.Screen.Model.Quantity);
+            Assert.True(f.Screen.CanConfirm);
+        }
+
+        // A response that answers another RequestId for the current key is never shown either.
+        Click(f.Screen, TradeLayout.Plus);
+        using (Render(f.Screen)) { }
+        f.Connection.PendingQuotes[2].SetResult(ServerQuote(f.Connection.QuoteRequests[2] with { RequestId = "foreign" }));
+        using (Render(f.Screen))
+        {
+            Assert.Null(f.Screen.Model.AuthoritativeQuote);
+            Assert.False(f.Screen.CanConfirm);
+        }
+        Click(f.Screen, TradeLayout.Confirm);
+        Assert.Empty(f.Connection.Commands);
+    }
+
+    [Fact]
+    public async Task Max_slider_presets_and_typed_quantity_require_matching_quote_before_submit()
+    {
+        await using var f = new Fixture(manualQuotes: true);
+        f.Connection.Answer(0);
+        using (Render(f.Screen)) Assert.Equal(200, f.Screen.Model.Quote.Maximum);
+
+        Click(f.Screen, TradeLayout.Max);
+        Assert.Equal(200, f.Screen.Model.Quantity);
+        Click(f.Screen, TradeLayout.Confirm);
+        Assert.Empty(f.Connection.Commands);
+
+        Click(f.Screen, TradeLayout.Presets[0]);
+        Assert.Equal(10, f.Screen.Model.Quantity); // the last valid maximum still bounds presets while loading
+        var slider = TradeLayout.Slider;
+        f.Screen.OnMouseDown(160 + slider.Right - 1, 140 + slider.MidY); f.Screen.OnMouseUp(0, 0);
+        Assert.Equal(200, f.Screen.Model.Quantity);
+        TypeQuantity(f.Screen, "33");
+        Click(f.Screen, TradeLayout.Confirm);
+        f.Screen.OnKeyDown(Key.Enter); f.Screen.OnKeyUp(Key.Enter);
+        Assert.Empty(f.Connection.Commands);
+
+        int last = f.Connection.QuoteRequests.Count - 1;
+        Assert.Equal(33, f.Connection.QuoteRequests[last].Quantity);
+        Assert.All(f.Connection.QuoteRequests.Take(last), request => Assert.NotEqual(33, request.Quantity));
+        var shown = f.Connection.Answer(last);
+        Click(f.Screen, TradeLayout.Confirm);
+        var sent = Assert.Single(f.Connection.Commands);
+        Assert.Equal((33L, shown.QuoteId, shown.MarketRevision), (sent.Quantity!.Value, sent.QuoteId, sent.MarketRevision!.Value));
+    }
+
+    [Fact]
+    public async Task Loading_failed_cancelled_and_stale_quotes_cannot_confirm()
+    {
+        await using var f = new Fixture(manualQuotes: true);
+        using (Render(f.Screen))
+        {
+            Assert.Equal("QuoteLoading", f.Screen.Model.Quote.DisabledReason);
+            Assert.False(f.Screen.CanConfirm);
+        }
+
+        f.Connection.PendingQuotes[0].SetException(new IOException("transport down"));
+        for (int frame = 0; frame < 5; frame++)
+            using (Render(f.Screen))
+            {
+                Assert.Equal("QuoteUnavailable", f.Screen.Model.Quote.DisabledReason);
+                Assert.False(f.Screen.CanConfirm);
+            }
+        Assert.Single(f.Connection.QuoteRequests); // no per-frame retry
+        Assert.Null(f.Handle.Failure);           // a quote failure is not a session failure
+
+        TypeQuantity(f.Screen, "2");
+        using (Render(f.Screen)) { }
+        f.Connection.PendingQuotes[1].SetCanceled();
+        using (Render(f.Screen))
+        {
+            Assert.Equal("QuoteUnavailable", f.Screen.Model.Quote.DisabledReason);
+            Assert.False(f.Screen.CanConfirm);
+        }
+
+        TypeQuantity(f.Screen, "3");
+        using (Render(f.Screen)) { }
+        f.Connection.PendingQuotes[2].SetResult(DisabledServerQuote(f.Connection.QuoteRequests[2], CommandReasonCodes.StaleQuote));
+        using (Render(f.Screen))
+        {
+            Assert.Equal("QuoteStale", f.Screen.Model.Quote.DisabledReason);
+            Assert.False(f.Screen.CanConfirm);
+        }
+
+        // A shown quote goes stale as soon as the authoritative snapshot moves on.
+        TypeQuantity(f.Screen, "4");
+        using (Render(f.Screen)) { }
+        f.Connection.Answer(3);
+        using (Render(f.Screen)) Assert.True(f.Screen.CanConfirm);
+        f.Buffer.Update(Snapshot() with { SnapshotSequence = 2, PlayerCredits = 12000 });
+        using (Render(f.Screen))
+        {
+            Assert.Null(f.Screen.Model.AuthoritativeQuote);
+            Assert.False(f.Screen.CanConfirm);
+        }
+        Click(f.Screen, TradeLayout.Confirm);
+        Assert.Empty(f.Connection.Commands);
+    }
+
+    [Fact]
+    public async Task Stale_result_refreshes_once_without_automatic_resubmit()
+    {
+        await using var f = new Fixture();
+        Click(f.Screen, TradeLayout.Confirm);
+        var sent = Assert.Single(f.Connection.Commands);
+        int requests = f.Connection.QuoteRequests.Count;
+
+        var stale = new CommandResult(sent.CommandId, "ship", sent.ModuleId, sent.CommandType, CommandResultStatus.Rejected, 0,
+            CommandReasonCodes.StaleQuote);
+        f.Buffer.Update(Snapshot() with { SnapshotSequence = 2, CommandResults = [stale] });
+        for (int frame = 0; frame < 5; frame++) using (Render(f.Screen)) { }
+
+        Assert.False(f.Screen.IsPending);
+        Assert.Equal(requests + 1, f.Connection.QuoteRequests.Count); // exactly one fresh quote
+        Assert.Single(f.Connection.Commands);                          // and no automatic resubmit
+        Assert.Equal(TradeScreen.F("Rejected", TradeItemPresentation.ItemDisplayName("item.water"), TradeScreen.L("QuoteStale")),
+            f.Screen.EntryMessage(Assert.Single(f.Screen.History)));
+
+        var fresh = f.Screen.Model.AuthoritativeQuote!;
+        Assert.NotEqual(sent.QuoteId, fresh.QuoteId);
+        Click(f.Screen, TradeLayout.Confirm);
+        Assert.Equal(2, f.Connection.Commands.Count);
+        Assert.Equal(fresh.QuoteId, f.Connection.Commands[1].QuoteId);
+    }
+
+    [Fact]
+    public async Task Enter_repeat_and_double_click_send_one_command_with_shown_binding()
+    {
+        await using var f = new Fixture();
+        TypeQuantity(f.Screen, "12");
+        using (Render(f.Screen)) { }
+        var shown = f.Screen.Model.AuthoritativeQuote!;
+
+        f.Screen.OnKeyDown(Key.Enter); f.Screen.OnKeyDown(Key.Enter); // held key repeats
+        f.Screen.OnKeyUp(Key.Enter); f.Screen.OnKeyDown(Key.Enter);    // pending blocks a new press
+        Click(f.Screen, TradeLayout.Confirm); Click(f.Screen, TradeLayout.Confirm);
+
+        var sent = Assert.Single(f.Connection.Commands);
+        Assert.Equal(("ship", "hold-1", TradeCommandTypes.Buy, "item.water", 12L, shown.QuoteId, shown.MarketRevision),
+            (sent.ObjectId, sent.ModuleId, sent.CommandType, sent.ItemTypeId, sent.Quantity!.Value, sent.QuoteId, sent.MarketRevision!.Value));
+        var entry = Assert.Single(f.Screen.History);
+        Assert.Equal((sent.CommandId, shown.QuoteId, (long?)shown.MarketRevision, (long?)shown.TotalCredits),
+            (entry.CommandId, entry.QuoteId, entry.MarketRevision, entry.QuotedTotalCredits));
+        Assert.True(f.Screen.IsPending);
+    }
+
+    [Fact]
+    public async Task Fuel_tab_only_sends_refuel_and_uses_tank_quantity()
+    {
+        await using var f = new Fixture();
+        Assert.DoesNotContain(f.Connection.QuoteRequests, r => r.ItemTypeId == TradeModel.FuelId);
+        Click(f.Screen, TradeLayout.FuelTab);
+        Assert.Equal(TradeModel.FuelId, Assert.Single(f.Screen.Model.Rows).ItemTypeId);
+        Click(f.Screen, TradeLayout.Presets[1]); // 75 % of 500 kg with 320 kg aboard
+        Assert.Equal(55, f.Screen.Model.Quantity);
+        using (Render(f.Screen)) Assert.Equal(375, f.Screen.Model.Quote.AmountAfter);
+
+        Click(f.Screen, TradeLayout.Confirm);
+        var sent = Assert.Single(f.Connection.Commands);
+        Assert.Equal((TradeCommandTypes.Refuel, TradeModel.FuelId, "tank-1", 55L),
+            (sent.CommandType, sent.ItemTypeId, sent.ModuleId, sent.Quantity!.Value));
+        Assert.All(f.Connection.QuoteRequests.Where(r => r.ItemTypeId == TradeModel.FuelId),
+            r => Assert.Equal(TradeCommandTypes.Refuel, r.CommandType));
+        Assert.All(f.Connection.QuoteRequests.Where(r => r.CommandType == TradeCommandTypes.Refuel),
+            r => Assert.Equal(TradeModel.FuelId, r.ItemTypeId));
+    }
+
+    [Fact]
+    public async Task Closing_screen_cancels_quote_without_erasing_pending_trade()
+    {
+        await using var f = new Fixture(manualQuotes: true);
+        f.Connection.Answer(0);
+        Click(f.Screen, TradeLayout.Confirm);
+        var sent = Assert.Single(f.Connection.Commands);
+        Click(f.Screen, TradeLayout.Plus);
+        using (Render(f.Screen)) Assert.Equal(2, f.Connection.QuoteRequests.Count);
+
+        Assert.Equal(ScreenEvent.CloseTrade, f.Screen.OnKeyDown(Key.Escape));
+        f.Screen.OnDeactivated();
+        Assert.True(f.Connection.QuoteTokens[1].IsCancellationRequested);
+
+        var reopened = new TradeScreen(f.Buffer, f.Handle); reopened.OnActivated();
+        Assert.True(reopened.IsPending);
+        Assert.Equal(sent.CommandId, Assert.Single(reopened.History).CommandId);
+
+        // The cancelled request finishing late is ignored after the original screen is reactivated.
+        f.Connection.Answer(1);
+        f.Screen.OnActivated();
+        using (Render(f.Screen))
+        {
+            Assert.Null(f.Screen.Model.AuthoritativeQuote);
+            Assert.Equal(sent.CommandId, Assert.Single(f.Screen.History).CommandId);
+        }
+        Assert.Single(f.Connection.Commands);
+    }
+
+    [Theory]
+    [InlineData(CommandReasonCodes.StationBudgetExceeded, "StationBudgetLimit")]
+    [InlineData(CommandReasonCodes.StationCapacityExceeded, "StationCapacityLimit")]
+    [InlineData(CommandReasonCodes.InsufficientPlayerCredits, "MoneyLimit")]
+    [InlineData(CommandReasonCodes.InsufficientStationStock, "StockLimit")]
+    [InlineData(CommandReasonCodes.CargoCapacityExceeded, "CapacityLimit")]
+    [InlineData(CommandReasonCodes.FuelCapacityExceeded, "TankLimit")]
+    [InlineData(CommandReasonCodes.InsufficientCargoQuantity, "CargoLimit")]
+    [InlineData("value_overflow", "ValueOverflow")]
+    [InlineData(CommandReasonCodes.StaleQuote, "QuoteStale")]
+    [InlineData(CommandReasonCodes.InvalidQuote, "InvalidQuote")]
+    [InlineData(CommandReasonCodes.QuoteRequired, "QuoteRequired")]
+    [InlineData(CommandReasonCodes.FuelTradeForbidden, "FuelServiceOnly")]
+    [InlineData("request_id_conflict", "QuoteUnavailable")]
+    [InlineData("something_new", "QuoteUnavailable")]
+    public void Reason_codes_map_to_existing_trade_ux_keys(string code, string key)
+    {
+        Assert.Equal(key, TradeQuote.QuoteReasonKey(code));
+        Assert.NotEqual("TradeUX." + key, TradeScreen.L(key)); // the key exists in the locale
+        Assert.Equal(key, TradeQuote.Calculate(Water(), Hold(), TradeMode.Buy, 1, 12480,
+            DisabledServerQuote(Request(TradeCommandTypes.Buy, 1), code)).DisabledReason);
     }
 
     private static void Export(TradeScreen screen, string state)
