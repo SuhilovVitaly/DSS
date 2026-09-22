@@ -69,7 +69,13 @@ public sealed partial class TradeScreen
             if (selected || rect.Contains(_pointer)) p.Box(rect, selected ? TradePainter.Selected : TradePainter.Surface, radius: 0);
             if (selected) p.Box(R(rect.Left, rect.Top + 3, 3, rect.Height - 6), TradePainter.Cyan, radius: 1);
             p.Icon(item.ItemTypeId, R(47, rect.Top + 6, 38, 38));
-            p.Text(TradeItemPresentation.ItemDisplayName(item.ItemTypeId), R(99, rect.Top, 365, 50), 18, bold: selected);
+            if (MarketStockSummary(item) is { } summary)
+            {
+                // Bounded market row: the name moves up and the Engine's state/target/max takes a second line.
+                p.Text(TradeItemPresentation.ItemDisplayName(item.ItemTypeId), R(99, rect.Top + 3, 365, 26), 18, bold: selected);
+                p.Text(summary, R(99, rect.Top + 28, 365, 18), 12, StockStateColor(item.StockState!.Value));
+            }
+            else p.Text(TradeItemPresentation.ItemDisplayName(item.ItemTypeId), R(99, rect.Top, 365, 50), 18, bold: selected);
             p.Text(N(item.UnitPriceCredits), R(478, rect.Top, 157, 50), 18, align: SKTextAlign.Right);
             p.Text(TradeItemPresentation.FormatQuantity(item.ItemTypeId, item.StockQuantity), R(635, rect.Top, 167, 50), 18, align: SKTextAlign.Right);
             p.Text(TradeItemPresentation.FormatQuantity(item.ItemTypeId, Model.Cargo(item.ItemTypeId)), R(802, rect.Top, 168, 50), 18, align: SKTextAlign.Right);
@@ -170,16 +176,40 @@ public sealed partial class TradeScreen
     }
     private static void Summary(TradePainter p, float y, string name, string value)
     { p.Text(name, R(1040, y, 240), 15, TradePainter.Muted); p.Text(value, R(1290, y, 270), 16, align: SKTextAlign.Right); }
-    private string EntryMessage(TradeJournal.Entry entry)
+    /// <summary>Localized band label; the band itself always comes from the snapshot, never from a stock ratio.</summary>
+    internal static string StockStateLabel(StationMarketStockState state) => L(state switch
+    {
+        StationMarketStockState.Shortage => "StockShortage",
+        StationMarketStockState.Surplus => "StockSurplus",
+        _ => "StockNormal"
+    });
+    private static SKColor StockStateColor(StationMarketStockState state) => state switch
+    {
+        StationMarketStockState.Shortage => TradePainter.Amber,
+        StationMarketStockState.Surplus => TradePainter.Cyan,
+        _ => TradePainter.Muted
+    };
+    /// <summary>"state · target · max" in trade units, or null for legacy/Fuel rows without a bounded economy.</summary>
+    internal static string? MarketStockSummary(StationInventoryItemSnapshot item) =>
+        item is { StockState: { } state, TargetStock: { } target, MaxStock: { } max }
+            ? F("MarketStockSummary", StockStateLabel(state), TradeItemPresentation.FormatQuantity(item.ItemTypeId, target),
+                TradeItemPresentation.FormatQuantity(item.ItemTypeId, max))
+            : null;
+    internal string EntryMessage(TradeJournal.Entry entry)
     {
         string item = TradeItemPresentation.ItemDisplayName(entry.ItemId);
         if (entry.Result is null) return F("SendingItem", item);
         if (entry.Result.Status != CommandResultStatus.Executed) return F("Rejected", item, Reason(entry.Result.ReasonCode));
         long quantity = entry.Result.ExecutedQuantity ?? entry.RequestedQuantity;
-        string key = quantity < entry.RequestedQuantity ? "PartialResult" : "SuccessResult";
         decimal total = (decimal)quantity * entry.UnitPrice;
-        return F(key, item, TradeItemPresentation.FormatQuantity(entry.ItemId, quantity),
-            total.ToString("N0", CultureInfo.CurrentCulture), TradeItemPresentation.FormatQuantity(entry.ItemId, entry.RequestedQuantity));
+        string executed = TradeItemPresentation.FormatQuantity(entry.ItemId, quantity);
+        string totalText = total.ToString("N0", CultureInfo.CurrentCulture);
+        string requested = TradeItemPresentation.FormatQuantity(entry.ItemId, entry.RequestedQuantity);
+        if (quantity >= entry.RequestedQuantity) return F("SuccessResult", item, executed, totalText, requested);
+        // Remaining comes from the receipt (requested − executed), never from a stock difference.
+        long remaining = Math.Max(0, entry.RequestedQuantity - quantity);
+        return F("PartialWithRemaining", item, executed, totalText, requested,
+            TradeItemPresentation.FormatQuantity(entry.ItemId, remaining));
     }
     private void DrawStatus(TradePainter p)
     {
@@ -196,7 +226,7 @@ public sealed partial class TradeScreen
         CommandReasonCodes.InsufficientPlayerCredits => L("MoneyLimit"), CommandReasonCodes.InsufficientStationStock => L("StockLimit"),
         CommandReasonCodes.InsufficientCargoQuantity => L("CargoLimit"), CommandReasonCodes.ModuleUnavailable => L("ModuleUnavailable"),
         CommandReasonCodes.NotDocked => L("NotDocked"), CommandReasonCodes.InvalidQuantity => L("EnterQuantity"),
-        "value_overflow" => L("ValueOverflow"), _ => L("TradeRejected")
+        "value_overflow" => L("ValueOverflow"), "station_stock_full" => L("StationStorageLimit"), _ => L("TradeRejected")
     };
     private void DrawHistory(TradePainter p)
     {
