@@ -125,6 +125,7 @@ public sealed partial class SimulationEngine : IDisposable
         _registry = registry;
         _femaleCrewPortraits = femaleCrewPortraits.IsDefaultOrEmpty ? [CharacterPortraits.DefaultFemale] : femaleCrewPortraits;
         _clock = clock ?? new SimulationClock(SimulationSpeed.Speed1);
+        ResetQuoteSession();
     }
 
     public void ReceiveCommand(PlayerCommand command)
@@ -323,6 +324,23 @@ public sealed partial class SimulationEngine : IDisposable
         // replaced, so an invalid save leaves the running world untouched (AC-07).
         ValidateMarketWorld(runtimeObjects);
 
+        // Market revisions are runtime-only: each station resumes after the newest trade receipt the
+        // journal still holds for it, or at 1 (EP-0001-US-0003-TK-0002).
+        var receiptRevisions = new Dictionary<string, long>(StringComparer.Ordinal);
+        foreach (var receipt in (gs.CommandReceipts ?? []).Select(r => r.TradeReceipt))
+        {
+            if (receipt is { StationObjectId: { } receiptStationId, ResultMarketRevision: { } receiptRevision })
+                receiptRevisions[receiptStationId] = Math.Max(receiptRevision, receiptRevisions.GetValueOrDefault(receiptStationId));
+        }
+        for (int i = 0; i < runtimeObjects.Count; i++)
+        {
+            if (runtimeObjects[i].ObjectType != SpaceObjectType.Station) continue;
+            runtimeObjects[i] = runtimeObjects[i] with
+            {
+                MarketRevision = Math.Max(1, receiptRevisions.GetValueOrDefault(runtimeObjects[i].InitialMotion.ObjectId)),
+            };
+        }
+
         lock (_worldStateLock)
         {
             ValidateDialogueState(gs.DialogueState, runtimeObjects);
@@ -357,12 +375,16 @@ public sealed partial class SimulationEngine : IDisposable
             _processedWorldTimeMs = gs.GameTimeMs;
             _processedSimulationTimeMs = gs.MotionTimeMs;
             LoadDialogueState(gs.DialogueState, gs.MotionTimeMs);
-            _economyTime = (gs.EconomyTime ?? new EconomyTimeData()) with {
-                ActiveContracts = (gs.EconomyTime?.ActiveContracts ?? []).ToImmutableArray() };
+            _economyTime = (gs.EconomyTime ?? new EconomyTimeData()) with
+            {
+                ActiveContracts = (gs.EconomyTime?.ActiveContracts ?? []).ToImmutableArray()
+            };
             _stationDistrict = _economyTime.StationDistrict;
             _stationTravelReceipts.Clear();
             _stationTravelReceipts.UnionWith(_economyTime.TravelReceipts ?? []);
             RestoreCommandJournal(gs);
+            // Quotes issued against the previous world are never valid in this one.
+            ResetQuoteSession();
         }
     }
 
@@ -1126,7 +1148,7 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     private static long ResolveFuelAmountKg(ShipModuleData module, ModuleTypeDefinition moduleType, string objectId)
     {
-        if (moduleType.FuelCapacityKg is not ( > 0))
+        if (moduleType.FuelCapacityKg is not (> 0))
             return 0;
 
         long fuelAmountKg = module.FuelAmountKg ?? moduleType.FuelCapacityKg.Value;
@@ -1757,7 +1779,8 @@ public sealed partial class SimulationEngine : IDisposable
             else if (outcome.Disposition == CommandStartDisposition.Rejected)
             {
                 // Rejected immediately — no cycle was created.
-                RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, outcome.ReasonCode);
+                RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, outcome.ReasonCode,
+                    tradeReceipt: outcome.TradeReceipt);
             }
             // Started: the cycle was created. The final CommandResult is written later
             // by CompleteActiveEngineCycles on completion/interruption (§56.5).
@@ -1781,7 +1804,8 @@ public sealed partial class SimulationEngine : IDisposable
                 }
                 else if (outcome.Disposition == CommandStartDisposition.Rejected)
                 {
-                    RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, outcome.ReasonCode);
+                    RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, outcome.ReasonCode,
+                        tradeReceipt: outcome.TradeReceipt);
                 }
                 // Started: cycle created, result on completion.
             }
@@ -1808,7 +1832,7 @@ public sealed partial class SimulationEngine : IDisposable
 
     private void RecordCommandResult(
         PlayerCommand command, CommandResultStatus status, long gameTimeMs, string? reasonCode = null,
-        long? executedQuantity = null)
+        long? executedQuantity = null, TradeExecutionReceipt? tradeReceipt = null)
     {
         var result = new CommandResult(
             command.CommandId,
@@ -1818,7 +1842,8 @@ public sealed partial class SimulationEngine : IDisposable
             status,
             gameTimeMs,
             reasonCode,
-            executedQuantity);
+            executedQuantity,
+            tradeReceipt);
         _commandResults.Add(result);
         RememberResult(result);
     }
@@ -1882,10 +1907,13 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     private CommandStartOutcome TryStartCommand(PlayerCommand command, long gameTimeMs)
     {
+        // A quoted trade gets its zero-effect receipt even when refused before trade dispatch.
+        bool quotedTrade = command.CommandType is TradeCommandTypes.Buy or TradeCommandTypes.Sell or TradeCommandTypes.Refuel &&
+            (command.QuoteId is not null || command.MarketRevision is not null);
         if (_objects.Any(o => o.InitialMotion.ObjectId == command.ObjectId && o.IsDestroyed))
-            return CommandStartOutcome.Rejected("player_destroyed");
+            return quotedTrade ? RejectQuotedTrade(command, "player_destroyed") : CommandStartOutcome.Rejected("player_destroyed");
         if (_dialogue.Active is not null)
-            return CommandStartOutcome.Rejected("dialogue_active");
+            return quotedTrade ? RejectQuotedTrade(command, "dialogue_active") : CommandStartOutcome.Rejected("dialogue_active");
 
         if (command.CommandType is NavigationComputerCommandTypes.Dock or NavigationComputerCommandTypes.Undock)
             return TryStartNavigationCommand(command, gameTimeMs);
@@ -2044,62 +2072,38 @@ public sealed partial class SimulationEngine : IDisposable
     /// Deferred. Buy and Refuel are all-or-nothing (CP-2); only Sell may execute partially, when
     /// the station's hidden Credits balance cannot afford the full request (Money.md) — see
     /// <see cref="CommandResult.ExecutedQuantity"/>.
+    /// A command carrying any quote binding field (QuoteId or MarketRevision) goes through the quoted
+    /// path (SimulationEngine.TradeExecution.cs) and never falls back to this legacy one
+    /// (EP-0001-US-0003-TK-0002).
     /// </summary>
     private CommandStartOutcome TryStartTradeCommand(PlayerCommand command, long gameTimeMs)
     {
+        if (command.QuoteId is not null || command.MarketRevision is not null)
+            return TryStartQuotedTrade(command, gameTimeMs);
+
         try { return PrepareAndCommitTrade(command, gameTimeMs); }
         catch (OverflowException) { return CommandStartOutcome.Rejected("value_overflow"); }
     }
 
     private CommandStartOutcome PrepareAndCommitTrade(PlayerCommand command, long gameTimeMs)
     {
-        if (!string.Equals(command.ObjectId, PlayerShipObjectId, StringComparison.Ordinal))
-            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
+        // Addressing, module/docking/quantity/item checks and the fuel routing guard are shared
+        // with the quoted path, in the same rejection order as before.
+        if (!TryResolveTradeTarget(command.ObjectId, command.ModuleId, command.CommandType, command.ItemTypeId,
+                command.Quantity, out var target, out string reasonCode))
+            return CommandStartOutcome.Rejected(reasonCode);
 
-        int objectIndex = _objects.FindIndex(o =>
-            string.Equals(o.InitialMotion.ObjectId, command.ObjectId, StringComparison.Ordinal) &&
-            string.Equals(o.ObjectType, "PlayerShip", StringComparison.OrdinalIgnoreCase));
-        if (objectIndex < 0)
-            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
-
-        var obj = _objects[objectIndex];
-        int moduleIndex = FindModuleIndex(obj.Modules, command.ModuleId);
-        if (moduleIndex < 0)
-            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
-
-        var module = obj.Modules[moduleIndex];
-        var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-        // Whether the addressed module supports this trade command type at all — this is also
-        // the "right kind of module" check: Buy/Sell land on module.container.basic, Refuel on
-        // module.engine.basic, purely through content wiring (Data\Commands\Container,
-        // module-types.json), no separate hardcoded module-type check needed.
-        if (!moduleType.CommandTypeIds.Contains(command.CommandType, StringComparer.Ordinal))
-            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
-
-        if (!CanExecuteModuleCommand(module))
-            return CommandStartOutcome.Rejected(CommandReasonCodes.ModuleUnavailable);
-
-        if (!obj.IsDocked)
-            return CommandStartOutcome.Rejected(CommandReasonCodes.NotDocked);
-
-        int stationIndex = _objects.FindIndex(o =>
-            string.Equals(o.InitialMotion.ObjectId, obj.DockedStationObjectId, StringComparison.Ordinal));
-        if (stationIndex < 0)
-            return CommandStartOutcome.Rejected(CommandReasonCodes.NotDocked);
-
-        if (command.Quantity is not { } qty || qty <= 0)
-            return CommandStartOutcome.Rejected(CommandReasonCodes.InvalidQuantity);
-
-        if (string.IsNullOrWhiteSpace(command.ItemTypeId) || !_registry.ItemTypes.Contains(command.ItemTypeId))
-            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownItemType);
-
-        int itemTypeIndex = _registry.ItemTypes.GetIndex(command.ItemTypeId);
-        var itemType = _registry.ItemTypes.GetDefinition(itemTypeIndex);
-
-        var station = _objects[stationIndex];
-        int stationInventoryIndex = FindInventoryIndex(station.Inventory, itemTypeIndex);
-        if (stationInventoryIndex < 0)
-            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownItemType);
+        int objectIndex = target.ObjectIndex;
+        var obj = target.Ship;
+        int moduleIndex = target.ModuleIndex;
+        var module = target.Module;
+        var moduleType = target.ModuleType;
+        int stationIndex = target.StationIndex;
+        var station = target.Station;
+        int stationInventoryIndex = target.StationInventoryIndex;
+        int itemTypeIndex = target.ItemTypeIndex;
+        var itemType = target.ItemType;
+        long qty = target.Quantity;
 
         var stationInventoryItem = station.Inventory[stationInventoryIndex];
         // Story-20260825-084409 Batch 2 (U5/U7/U8) — see BuildDockedStationTradeProjection's
@@ -2132,6 +2136,8 @@ public sealed partial class SimulationEngine : IDisposable
                 Credits = checked(station.Credits + cost),
                 MarketBudgetCredits = ReplenishBudgetFromIncome(station, cost),
                 Inventory = updatedInventory,
+                // A legacy commit changes the market too, so it outdates every quote issued before it.
+                MarketRevision = NextMarketRevision(station),
             };
 
             var updatedShip = UpdateModule(obj, moduleIndex, m =>
@@ -2192,6 +2198,7 @@ public sealed partial class SimulationEngine : IDisposable
                 // Spending draws down the budget and the balance by the same proceeds.
                 MarketBudgetCredits = boundedMarket ? checked(stationPurse - proceeds) : station.MarketBudgetCredits,
                 Inventory = updatedInventory,
+                MarketRevision = NextMarketRevision(station),
             };
 
             var updatedShip = UpdateModule(obj, moduleIndex, m =>
@@ -2239,6 +2246,7 @@ public sealed partial class SimulationEngine : IDisposable
                 Credits = checked(station.Credits + cost),
                 MarketBudgetCredits = ReplenishBudgetFromIncome(station, cost),
                 Inventory = updatedInventory,
+                MarketRevision = NextMarketRevision(station),
             };
 
             var updatedShip = UpdateModule(obj, moduleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + qty) });
@@ -3122,13 +3130,16 @@ public sealed partial class SimulationEngine : IDisposable
         if (nextCycle is not null)
             nextCycle = nextCycle with
             {
-                NavigationPhase = ApproachLineCaptureMath.Phase, ApproachRoute = route,
+                NavigationPhase = ApproachLineCaptureMath.Phase,
+                ApproachRoute = route,
                 DurationMs = route is null ? nextCycle.DurationMs : Math.Min(nextCycle.DurationMs,
                     Math.Max(1, (long)Math.Ceiling(route.DurationMs - route.ElapsedMs))),
-                TargetWorldX = targetMotion.X, TargetWorldY = targetMotion.Y,
+                TargetWorldX = targetMotion.X,
+                TargetWorldY = targetMotion.Y,
                 NavigationTargetSpeedKmS = targetMotion.SpeedKmS,
                 NavigationTargetDirectionDegrees = targetMotion.Direction,
-                NavigationLockedCourseDegrees = null, NavigationEscapeCourseDegrees = null,
+                NavigationLockedCourseDegrees = null,
+                NavigationEscapeCourseDegrees = null,
                 NavigationRequiredDepartureDistance = null
             };
         return UpdateEngineMotion(obj, moduleIndex, gameTimeMs,
@@ -3379,7 +3390,13 @@ internal sealed record SpaceObjectRuntime(
     long PortFeeDebt = 0,
     string? MarketProfileId = null,
     string? MarketProfileFingerprint = null,
-    long? MarketBudgetCredits = null);
+    long? MarketBudgetCredits = null,
+    /// <summary>
+    /// Station market revision (EP-0001-US-0003-TK-0002): advanced by every committed trade at this station and
+    /// bound into every quote. Runtime-only — never saved; LoadScenario restores it from the saved trade receipts
+    /// (at least 1 for every station). 0 for every other object type.
+    /// </summary>
+    long MarketRevision = 0);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName);
@@ -3476,11 +3493,16 @@ internal enum CommandStartDisposition
 /// </summary>
 internal readonly record struct CommandStartOutcome(
     CommandStartDisposition Disposition,
-    string? ReasonCode)
+    string? ReasonCode,
+    /// <summary>Zero-effect receipt of a rejected quoted trade; recorded once by the rejecting caller.</summary>
+    TradeExecutionReceipt? TradeReceipt = null)
 {
     public static CommandStartOutcome Started => new(CommandStartDisposition.Started, null);
 
     public static CommandStartOutcome Deferred(string reasonCode) => new(CommandStartDisposition.Deferred, reasonCode);
 
     public static CommandStartOutcome Rejected(string reasonCode) => new(CommandStartDisposition.Rejected, reasonCode);
+
+    public static CommandStartOutcome Rejected(string reasonCode, TradeExecutionReceipt? receipt) =>
+        new(CommandStartDisposition.Rejected, reasonCode, receipt);
 }

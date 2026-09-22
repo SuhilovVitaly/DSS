@@ -555,4 +555,38 @@ public class TradeCommandTests
         Assert.Equal(CommandResultStatus.Rejected, result.Status);
         Assert.Equal(CommandReasonCodes.InsufficientStationStock, result.ReasonCode);
     }
+
+    // --- Quote binding (EP-0001-US-0003-TK-0002) ----------------------------------------
+
+    [Theory]
+    [InlineData("QTE-unknown-1", 1L, CommandReasonCodes.StaleQuote)]
+    [InlineData("QTE-unknown-1", null, CommandReasonCodes.InvalidQuote)]
+    [InlineData(null, 1L, CommandReasonCodes.InvalidQuote)]
+    [InlineData("", 1L, CommandReasonCodes.InvalidQuote)]
+    [InlineData("QTE-unknown-1", -1L, CommandReasonCodes.InvalidQuote)]
+    public void Quote_metadata_never_falls_back_to_legacy(string? quoteId, long? marketRevision, string expectedReason)
+    {
+        // A command that would succeed unquoted must not quietly take the legacy path once it
+        // carries any quote binding field — even at a station without a market profile.
+        var engine = CreateEngine(playerCredits: 5000);
+        var before = engine.CaptureSaveState();
+
+        engine.ReceiveCommand(BuyCommand(EnergyCellsId, quantity: 10) with { QuoteId = quoteId, MarketRevision = marketRevision });
+        var result = Assert.Single(engine.CaptureSnapshotForTests().CommandResults);
+
+        Assert.Equal(CommandResultStatus.Rejected, result.Status);
+        Assert.Equal(expectedReason, result.ReasonCode);
+        var receipt = Assert.IsType<TradeExecutionReceipt>(result.TradeReceipt);
+        Assert.Equal(StationId, receipt.StationObjectId);
+        Assert.Equal(quoteId, receipt.QuoteId);
+        Assert.Equal(marketRevision, receipt.QuotedMarketRevision);
+        Assert.Equal(0, receipt.ExecutedQuantity);
+        Assert.Equal(0, receipt.TotalCredits);
+
+        Assert.Equal(5000, engine.PlayerCredits);
+        var after = engine.CaptureSaveState();
+        Assert.Equal(
+            ScenarioLoader.Serialize(before with { GameState = before.GameState with { CommandReceipts = null } }),
+            ScenarioLoader.Serialize(after with { GameState = after.GameState with { CommandReceipts = null } }));
+    }
 }

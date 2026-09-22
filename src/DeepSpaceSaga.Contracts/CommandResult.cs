@@ -1,3 +1,6 @@
+using System.Collections.Immutable;
+using System.Text.Json.Serialization;
+
 namespace DeepSpaceSaga.Contracts;
 
 /// <summary>
@@ -67,8 +70,49 @@ public sealed record CommandResult(
     /// executed partially because the station's hidden Credits balance ran out
     /// (Documentation\02-FirstRelease\Mechanics\Money.md), carries the quantity actually sold
     /// (less than the requested <see cref="PlayerCommand.Quantity"/>).
+    /// Kept partial-only for existing consumers; <see cref="TradeReceipt"/> always carries the actual quantity.
     /// </summary>
-    long? ExecutedQuantity = null);
+    long? ExecutedQuantity = null,
+    /// <summary>
+    /// Exact execution receipt of a quoted trade command, both on success and on rejection.
+    /// Null for non-trade commands and for legacy results (including saves written before receipts existed).
+    /// </summary>
+    TradeExecutionReceipt? TradeReceipt = null);
+
+/// <summary>
+/// Authoritative record of what a quoted trade actually transferred. <see cref="TotalCredits"/> is the exact
+/// executed sum from the quote curve and cannot be reconstructed by multiplying a single unit price.
+/// The DTO computes and validates nothing; the engine enforces the semantics below.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Success (<see cref="CommandResult.ReasonCode"/> is null): all ids and revisions and
+/// <see cref="RequestedQuantity"/> are present, <c>RequestedQuantity &gt; 0</c>,
+/// <c>0 &lt; ExecutedQuantity &lt;= RequestedQuantity</c>, <c>TotalCredits &gt;= 0</c> and
+/// <c>ResultMarketRevision &gt; QuotedMarketRevision</c>. A smaller fill lists its causes in
+/// <see cref="LimitReasons"/>, never in <see cref="CommandResult.ReasonCode"/>.
+/// </para>
+/// <para>
+/// Rejection: <c>ExecutedQuantity = TotalCredits = 0</c> and the known market revision is unchanged.
+/// Item, quote and requested quantity echo the raw command (may be null or invalid, which is why they
+/// are nullable); station and revisions are the known authoritative context, never invented ids.
+/// </para>
+/// <para>
+/// <see cref="TotalCredits"/> is an absolute amount; its direction (paid or received) is given by
+/// <see cref="CommandResult.CommandType"/>.
+/// </para>
+/// </remarks>
+public sealed record TradeExecutionReceipt(
+    string? StationObjectId,
+    string? ItemTypeId,
+    string? QuoteId,
+    long? QuotedMarketRevision,
+    long? ResultMarketRevision,
+    long? RequestedQuantity,
+    long ExecutedQuantity,
+    long TotalCredits,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
+    ImmutableArray<string> LimitReasons = default);
 
 /// <summary>
 /// Machine-readable reason codes for non-executed command results (snake_case,
@@ -139,4 +183,22 @@ public static class CommandReasonCodes
 
     /// <summary>Trade command's Quantity was missing, zero, or negative.</summary>
     public const string InvalidQuantity = "invalid_quantity";
+
+    /// <summary>Trade at a profile market arrived without a quote binding (QuoteId + MarketRevision).</summary>
+    public const string QuoteRequired = "quote_required";
+
+    /// <summary>Quote is expired, evicted, consumed, or its market revision/context is no longer current.</summary>
+    public const string StaleQuote = "stale_quote";
+
+    /// <summary>Quote binding is partial, malformed, or bound to a different station/object/module/item/type/quantity.</summary>
+    public const string InvalidQuote = "invalid_quote";
+
+    /// <summary>Station trading budget cannot pay for even one unit of the sell.</summary>
+    public const string StationBudgetExceeded = "station_budget_exceeded";
+
+    /// <summary>Station storage cannot accept even one unit of the sell.</summary>
+    public const string StationCapacityExceeded = "station_capacity_exceeded";
+
+    /// <summary>Fuel may only be traded via Refuel, and Refuel only accepts fuel.</summary>
+    public const string FuelTradeForbidden = "fuel_trade_forbidden";
 }
