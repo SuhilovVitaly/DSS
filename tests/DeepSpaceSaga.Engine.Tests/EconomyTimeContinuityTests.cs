@@ -736,6 +736,45 @@ public class EconomyTimeContinuityTests
         new RecipeDefinition("recipe.market-test", "Market test",
             [new("item.water", 4)], [new("item.ice", outputCount)], GameCalendar.HourMs));
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(GameCalendar.HourMs - 1)]
+    [InlineData(GameCalendar.HourMs)]
+    [InlineData(GameCalendar.HourMs + 1)]
+    public void Production_market_revision_is_independent_of_snapshot_and_save_boundaries(long splitAt)
+    {
+        const long horizon = 3 * GameCalendar.HourMs;
+        var (direct, registry) = CreateMarketEngine(
+            BoundedProfile(StationMarketProductionSource.Modules),
+            extraFactory: IceFactory(),
+            producingModules: [new StationProducingModuleData("factory.market-test")]);
+        using var _ = direct;
+        using var split = new SimulationEngine(registry, [], new SimulationClock(SimulationSpeed.Speed0, () => 0));
+        split.LoadScenario(direct.CaptureSaveState(), isSave: true);
+
+        var quote = split.GetTradeQuote(new TradeQuoteRequest("before-production", ShipId(split),
+            ContainerModuleId(split, registry), TradeCommandTypes.Buy, "item.ice", 1));
+        Assert.Null(quote.DisabledReason);
+        split.CaptureSnapshotForTests(splitAt);
+        Assert.False(split.IsQuoteIssuedForTests(quote.QuoteId));
+        var save = ScenarioLoader.LoadFromJson(
+            ScenarioLoader.Serialize(split.CaptureSaveStateForTests(splitAt, SimulationSpeed.Speed0)), true);
+        using var restored = new SimulationEngine(registry, [], new SimulationClock(SimulationSpeed.Speed0, () => 0));
+        restored.LoadScenario(save, isSave: true);
+
+        var expected = direct.CaptureSnapshotForTests(horizon);
+        Assert.Equal(7, expected.DockedStationTrade!.MarketRevision); // Three starts and three hourly completions.
+        foreach (var engine in new[] { split, restored })
+        {
+            var actual = engine.CaptureSnapshotForTests(horizon);
+            Assert.Equal(MarketFingerprint(direct, registry), MarketFingerprint(engine, registry));
+            Assert.Equal(expected.DockedStationTrade.MarketRevision, actual.DockedStationTrade!.MarketRevision);
+            Assert.Equal(expected.DockedStationTrade.MarketRevision,
+                engine.CaptureSaveStateForTests(horizon, SimulationSpeed.Speed0).GameState.SpaceObjects
+                    .Single(o => o.ObjectType == "Station").MarketRevision);
+        }
+    }
+
     [Fact]
     public void Modules_source_completes_once_without_profile_double_count()
     {

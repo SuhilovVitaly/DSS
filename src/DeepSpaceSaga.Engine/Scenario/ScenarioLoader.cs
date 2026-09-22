@@ -241,6 +241,12 @@ public static class ScenarioLoader
         if (obj.MarketProfileFingerprint is not null && obj.MarketProfileId is null)
             throw new ScenarioException($"Object '{obj.ObjectId}', marketProfileFingerprint requires marketProfileId.");
 
+        // Market revision (EP-0001-US-0015-TK-0003): saved for profile markets only, and never below 1.
+        if (obj.MarketProfileId is null && obj.MarketRevision is not null)
+            throw new ScenarioException($"Object '{obj.ObjectId}', marketRevision requires a market profile.");
+        if (obj.MarketProfileId is not null && obj.MarketRevision is < 1)
+            throw new ScenarioException($"Station '{obj.ObjectId}', marketRevision must be at least 1.");
+
         bool hasProfileMetadata = obj.MarketProfileId is not null || obj.MarketProfileFingerprint is not null;
         if (hasProfileMetadata && !obj.ObjectType.Equals("Station", StringComparison.OrdinalIgnoreCase))
             throw new ScenarioException($"Object '{obj.ObjectId}', market profile metadata is allowed only on Station objects.");

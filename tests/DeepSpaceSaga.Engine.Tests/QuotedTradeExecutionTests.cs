@@ -12,19 +12,19 @@ namespace DeepSpaceSaga.Engine.Tests;
 /// </summary>
 public class QuotedTradeExecutionTests
 {
-    private const string ShipId = "SPC-0001";
-    private const string StationId = "SPC-0002";
-    private const string OtherStationId = "SPC-0999";
-    private const string CargoModuleId = "MOD-PLAYER-CARGO-01";
-    private const string SecondCargoModuleId = "MOD-PLAYER-CARGO-02";
-    private const string EngineModuleId = "MOD-PLAYER-ENGINE-01";
-    private const string BridgeModuleId = "MOD-PLAYER-BRIDGE-01";
+    internal const string ShipId = "SPC-0001";
+    internal const string StationId = "SPC-0002";
+    internal const string OtherStationId = "SPC-0999";
+    internal const string CargoModuleId = "MOD-PLAYER-CARGO-01";
+    internal const string SecondCargoModuleId = "MOD-PLAYER-CARGO-02";
+    internal const string EngineModuleId = "MOD-PLAYER-ENGINE-01";
+    internal const string BridgeModuleId = "MOD-PLAYER-BRIDGE-01";
 
-    private const string Ice = "item.ice";
-    private const string Water = "item.water";
-    private const string Steel = "item.steel";
-    private const string Fuel = "item.fuel";
-    private const string EnergyCells = "item.energy-cells";
+    internal const string Ice = "item.ice";
+    internal const string Water = "item.water";
+    internal const string Steel = "item.steel";
+    internal const string Fuel = "item.fuel";
+    internal const string EnergyCells = "item.energy-cells";
 
     // ---------------------------------------------------------------------------------------
     // Bounded-market fixture: a copy of EconomyTimeContinuityTests' private BoundedProfile /
@@ -32,15 +32,15 @@ public class QuotedTradeExecutionTests
     // spliced in as well so the ship can undock and dock at a second station within one session.
     // ---------------------------------------------------------------------------------------
 
-    private const string MarketProfileId = "market.quoted";
-    private const long IceTarget = 108;
-    private const long WaterTarget = 72;
-    private const long SteelTarget = 72;
-    private const long MarketInitialCredits = 9600;
+    internal const string MarketProfileId = "market.quoted";
+    internal const long IceTarget = 108;
+    internal const long WaterTarget = 72;
+    internal const long SteelTarget = 72;
+    internal const long MarketInitialCredits = 9600;
 
-    private static readonly GameDataRegistry Registry = MarketRegistry(BoundedProfile());
+    internal static readonly GameDataRegistry Registry = MarketRegistry(BoundedProfile());
 
-    private static ImmutableDictionary<StationSize, int> MarketSizeFactors =>
+    internal static ImmutableDictionary<StationSize, int> MarketSizeFactors =>
         new Dictionary<StationSize, int>
         {
             [StationSize.Outpost] = 500,
@@ -49,7 +49,7 @@ public class QuotedTradeExecutionTests
             [StationSize.Huge] = 2000,
         }.ToImmutableDictionary();
 
-    private static StationMarketProfileDefinition BoundedProfile() =>
+    internal static StationMarketProfileDefinition BoundedProfile() =>
         new(
             TypeId: MarketProfileId,
             DisplayName: MarketProfileId,
@@ -69,14 +69,14 @@ public class QuotedTradeExecutionTests
                 SurplusThresholdPermille: 1500,
                 BudgetRegenerationDivisorPerDay: 24));
 
-    private static GameDataRegistry RealRegistry()
+    internal static GameDataRegistry RealRegistry()
     {
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
             "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
         return EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
     }
 
-    private static GameDataRegistry MarketRegistry(StationMarketProfileDefinition profile)
+    internal static GameDataRegistry MarketRegistry(StationMarketProfileDefinition profile)
     {
         var source = RealRegistry();
         return GameDataRegistry.Create(
@@ -92,7 +92,7 @@ public class QuotedTradeExecutionTests
                 .Select(source.StationMarketProfiles.GetDefinition).Append(profile));
     }
 
-    private static ScenarioFile MarketTemplate(IReadOnlyList<StationInventoryItemData>? stock = null)
+    internal static ScenarioFile MarketTemplate(IReadOnlyList<StationInventoryItemData>? stock = null)
     {
         using var template = RationScheduleTests.CreateEngine(0, passengers: 0, rations: 200);
         var save = template.CaptureSaveState();
@@ -119,7 +119,7 @@ public class QuotedTradeExecutionTests
         };
     }
 
-    private static SimulationEngine CreateMarketEngine(
+    internal static SimulationEngine CreateMarketEngine(
         IReadOnlyList<StationInventoryItemData>? stock = null,
         Func<ScenarioFile, ScenarioFile>? adjust = null)
     {
@@ -130,13 +130,13 @@ public class QuotedTradeExecutionTests
         return engine;
     }
 
-    private static IReadOnlyList<StationInventoryItemData> IceStock(long ice) =>
+    internal static IReadOnlyList<StationInventoryItemData> IceStock(long ice) =>
         [new(Ice, ice), new(Water, WaterTarget), new(Steel, SteelTarget)];
 
-    private static ScenarioFile WithPlayerCredits(ScenarioFile save, long credits) =>
+    internal static ScenarioFile WithPlayerCredits(ScenarioFile save, long credits) =>
         save with { GameState = save.GameState with { PlayerTokens = credits } };
 
-    private static ScenarioFile WithStationCredits(ScenarioFile save, long credits) => save with
+    internal static ScenarioFile WithStationCredits(ScenarioFile save, long credits) => save with
     {
         GameState = save.GameState with
         {
@@ -145,7 +145,7 @@ public class QuotedTradeExecutionTests
         },
     };
 
-    private static ScenarioFile WithShipModules(ScenarioFile save, Func<ShipModuleData, ShipModuleData> update) => save with
+    internal static ScenarioFile WithShipModules(ScenarioFile save, Func<ShipModuleData, ShipModuleData> update) => save with
     {
         GameState = save.GameState with
         {
@@ -154,7 +154,7 @@ public class QuotedTradeExecutionTests
         },
     };
 
-    private static ScenarioFile WithCargo(ScenarioFile save, string itemTypeId, long quantity) =>
+    internal static ScenarioFile WithCargo(ScenarioFile save, string itemTypeId, long quantity) =>
         WithShipModules(save, m => m.ModuleId != CargoModuleId ? m : m with
         {
             Cargo = (m.Cargo ?? []).Any(c => c.ItemTypeId == itemTypeId)
@@ -162,11 +162,11 @@ public class QuotedTradeExecutionTests
                 : (m.Cargo ?? []).Append(new CargoStackData(itemTypeId, quantity)).ToArray(),
         });
 
-    private static ScenarioFile WithFuel(ScenarioFile save, long fuelKg) =>
+    internal static ScenarioFile WithFuel(ScenarioFile save, long fuelKg) =>
         WithShipModules(save, m => m.ModuleId != EngineModuleId ? m : m with { FuelAmountKg = fuelKg });
 
     /// <summary>A second container module on a free hull cell, so a quote can be replayed against another module.</summary>
-    private static ScenarioFile WithSecondContainer(ScenarioFile save) => save with
+    internal static ScenarioFile WithSecondContainer(ScenarioFile save) => save with
     {
         GameState = save.GameState with
         {
@@ -183,7 +183,7 @@ public class QuotedTradeExecutionTests
     };
 
     /// <summary>A plain (profile-less) station at the market station's position, reachable by undock + dock.</summary>
-    private static ScenarioFile WithOtherStation(ScenarioFile save) => save with
+    internal static ScenarioFile WithOtherStation(ScenarioFile save) => save with
     {
         GameState = save.GameState with
         {
@@ -202,65 +202,87 @@ public class QuotedTradeExecutionTests
 
     // --- Queries ------------------------------------------------------------------------
 
-    private static SpaceObjectRuntime Station(SimulationEngine engine, string stationId = StationId) =>
+    internal static SpaceObjectRuntime Station(SimulationEngine engine, string stationId = StationId) =>
         engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == stationId);
 
-    private static long Stock(SimulationEngine engine, string itemTypeId, string stationId = StationId)
+    internal static long Stock(SimulationEngine engine, string itemTypeId, string stationId = StationId)
     {
         int index = Registry.ItemTypes.GetIndex(itemTypeId);
         return Station(engine, stationId).Inventory.FirstOrDefault(i => i.ItemTypeIndex == index)?.StockQuantity ?? 0;
     }
 
-    private static InstalledModuleRuntime Module(SimulationEngine engine, string moduleId) =>
+    internal static InstalledModuleRuntime Module(SimulationEngine engine, string moduleId) =>
         engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == ShipId).Modules.Single(m => m.ModuleId == moduleId);
 
-    private static long CargoQuantity(SimulationEngine engine, string itemTypeId, string moduleId = CargoModuleId)
+    internal static long CargoQuantity(SimulationEngine engine, string itemTypeId, string moduleId = CargoModuleId)
     {
         int index = Registry.ItemTypes.GetIndex(itemTypeId);
         return Module(engine, moduleId).Cargo.FirstOrDefault(c => c.ItemTypeIndex == index)?.Quantity ?? 0;
     }
 
-    private static long Revision(SimulationEngine engine, string stationId = StationId) =>
+    internal static long Revision(SimulationEngine engine, string stationId = StationId) =>
         Station(engine, stationId).MarketRevision;
 
     /// <summary>
-    /// Save projection of money, stock, cargo, tank and budget, plus the runtime-only market revision.
+    /// Save projection of money, stock, cargo, tank and budget, plus every runtime market revision (a
+    /// profile-less station's revision is never saved).
     /// The command journal is excluded: a rejection legitimately adds its own receipt there.
     /// </summary>
-    private static string WorldProjection(SimulationEngine engine)
+    internal static string WorldProjection(SimulationEngine engine)
     {
         var save = engine.CaptureSaveState();
         string world = ScenarioLoader.Serialize(save with { GameState = save.GameState with { CommandReceipts = null } });
         return world + "|revisions=" + string.Join(",", engine.RuntimeObjects.Select(o => o.MarketRevision));
     }
 
-    private static TradeQuoteSnapshot Quote(
+    internal static TradeQuoteSnapshot Quote(
         SimulationEngine engine, string commandType, string itemTypeId, long quantity, string? moduleId = null) =>
         engine.GetTradeQuote(new TradeQuoteRequest(
             "req-" + Guid.NewGuid().ToString("N"), ShipId,
             moduleId ?? (commandType == TradeCommandTypes.Refuel ? EngineModuleId : CargoModuleId),
             commandType, itemTypeId, quantity));
 
-    private static PlayerCommand Bind(string commandId, TradeQuoteSnapshot quote) =>
+    internal static PlayerCommand Bind(string commandId, TradeQuoteSnapshot quote) =>
         new(commandId, 1, quote.ObjectId, quote.ModuleId, quote.CommandType,
             ItemTypeId: quote.ItemTypeId, Quantity: quote.RequestedQuantity,
             QuoteId: quote.QuoteId, MarketRevision: quote.MarketRevision);
 
-    private static CommandResult Apply(SimulationEngine engine, PlayerCommand command)
+    internal static CommandResult Apply(SimulationEngine engine, PlayerCommand command)
     {
         engine.ReceiveCommand(command);
         return Assert.Single(engine.CaptureSnapshot().CommandResults);
     }
 
-    private static CommandResult ApplyAt(SimulationEngine engine, PlayerCommand command, long gameTimeMs)
+    internal static CommandResult ApplyAt(SimulationEngine engine, PlayerCommand command, long gameTimeMs)
     {
         engine.ReceiveCommand(command);
         return Assert.Single(engine.CaptureSnapshotForTests(gameTimeMs).CommandResults);
     }
 
-    private static long UnitPrice(TradeQuoteSnapshot quote) => Assert.Single(quote.Curve).UnitPriceCredits;
+    /// <summary>Price of the first unit of a quote curve (EP-0001-US-0015-TK-0004: a curve may have several steps).</summary>
+    internal static long UnitPrice(TradeQuoteSnapshot quote) => quote.Curve[0].UnitPriceCredits;
 
-    private static void AssertEnabled(TradeQuoteSnapshot quote, long executable)
+    /// <summary>Checked total of the first <paramref name="units"/> units of a quote curve.</summary>
+    internal static long PrefixTotal(TradeQuoteSnapshot quote, long units)
+    {
+        long total = 0;
+        foreach (var step in quote.Curve)
+        {
+            long take = Math.Min(step.Quantity, units);
+            total = checked(total + checked(take * step.UnitPriceCredits));
+            units -= take;
+            if (units == 0) break;
+        }
+
+        Assert.Equal(0, units);
+        return total;
+    }
+
+    /// <summary>Static list price of one item in the docked station's snapshot row (the legacy charge).</summary>
+    internal static long ListPrice(SimulationEngine engine, string itemTypeId) =>
+        engine.CaptureSnapshot().DockedStationTrade!.Items.Single(i => i.ItemTypeId == itemTypeId).UnitPriceCredits;
+
+    internal static void AssertEnabled(TradeQuoteSnapshot quote, long executable)
     {
         Assert.Null(quote.DisabledReason);
         Assert.StartsWith("QTE-", quote.QuoteId);
@@ -269,7 +291,7 @@ public class QuotedTradeExecutionTests
         Assert.Equal(quote.Curve.Sum(s => s.Quantity * s.UnitPriceCredits), quote.TotalCredits);
     }
 
-    private static void AssertDisabled(TradeQuoteSnapshot quote, string reason)
+    internal static void AssertDisabled(TradeQuoteSnapshot quote, string reason)
     {
         Assert.Equal(reason, quote.DisabledReason);
         Assert.Equal("", quote.QuoteId);
@@ -279,7 +301,7 @@ public class QuotedTradeExecutionTests
     }
 
     /// <summary>Zero-effect rejection receipt: raw request fields echoed, known station and unchanged revision.</summary>
-    private static void AssertRejected(
+    internal static void AssertRejected(
         CommandResult result, string reason, PlayerCommand command, string? stationId, long? currentRevision)
     {
         Assert.Equal(CommandResultStatus.Rejected, result.Status);
@@ -298,7 +320,7 @@ public class QuotedTradeExecutionTests
     }
 
     /// <summary>Executed receipt that matches the quote it consumed exactly.</summary>
-    private static TradeExecutionReceipt AssertExecuted(CommandResult result, TradeQuoteSnapshot quote)
+    internal static TradeExecutionReceipt AssertExecuted(CommandResult result, TradeQuoteSnapshot quote)
     {
         Assert.Equal(CommandResultStatus.Executed, result.Status);
         Assert.Null(result.ReasonCode);
@@ -319,7 +341,7 @@ public class QuotedTradeExecutionTests
     }
 
     /// <summary>Field-wise equality: ImmutableArray does not survive a JSON round trip by reference.</summary>
-    private static void AssertSameResult(CommandResult expected, CommandResult actual)
+    internal static void AssertSameResult(CommandResult expected, CommandResult actual)
     {
         Assert.Equal(expected with { TradeReceipt = null }, actual with { TradeReceipt = null });
         var e = Assert.IsType<TradeExecutionReceipt>(expected.TradeReceipt);
@@ -328,7 +350,7 @@ public class QuotedTradeExecutionTests
         Assert.True(e.LimitReasons.SequenceEqual(a.LimitReasons));
     }
 
-    private static void Reload(SimulationEngine engine)
+    internal static void Reload(SimulationEngine engine)
     {
         var save = engine.CaptureSaveState();
         engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
@@ -383,7 +405,10 @@ public class QuotedTradeExecutionTests
         Assert.True(quote.MaximumQuantity >= quantity);
         Assert.Empty(quote.LimitReasons);
         long total = quote.TotalCredits;
-        Assert.Equal(quantity * UnitPrice(quote), total);
+        // The total is the sequential curve, not quantity × first price (EP-0001-US-0015-TK-0004).
+        Assert.Equal(PrefixTotal(quote, quantity), total);
+        if (refuel)
+            Assert.Equal(quantity * UnitPrice(quote), total);
 
         var result = Apply(engine, Bind("cmd-ok", quote));
         var receipt = AssertExecuted(result, quote);
@@ -411,23 +436,35 @@ public class QuotedTradeExecutionTests
     [InlineData("capacity-zero")]
     public void Sell_fills_largest_budget_and_capacity_prefix_and_receipts_actual_total(string limit)
     {
-        long price;
-        using (var probe = CreateMarketEngine(adjust: save => WithCargo(save, Ice, 50)))
-            price = UnitPrice(Quote(probe, TradeCommandTypes.Sell, Ice, 1));
-        Assert.True(price > 1);
-
-        long? stationCredits = limit switch
-        {
-            "budget" => 5 * price + 3,
-            "both" => 4 * price + 1,
-            "budget-zero" => price - 1,
-            _ => null,
-        };
         long iceStock = limit switch
         {
             "capacity" or "both" => 2 * IceTarget - 4,
             "capacity-zero" => 2 * IceTarget,
             _ => IceTarget,
+        };
+
+        // Budgets are sums of the sequential sell curve at the same starting stock (EP-0001-US-0015-TK-0004).
+        long probeQuantity = limit switch
+        {
+            "capacity" or "both" => 4,
+            "capacity-zero" => 0,
+            _ => 10,
+        };
+        TradeQuoteSnapshot? probeQuote = null;
+        if (probeQuantity > 0)
+        {
+            using var probe = CreateMarketEngine(IceStock(iceStock), save => WithCargo(save, Ice, 50));
+            probeQuote = Quote(probe, TradeCommandTypes.Sell, Ice, probeQuantity);
+            AssertEnabled(probeQuote, probeQuantity);
+            Assert.True(UnitPrice(probeQuote) > 1);
+        }
+
+        long? stationCredits = limit switch
+        {
+            "budget" => PrefixTotal(probeQuote!, 5) + 3,
+            "both" => PrefixTotal(probeQuote!, 4) + 1,
+            "budget-zero" => UnitPrice(probeQuote!) - 1,
+            _ => null,
         };
         using var engine = CreateMarketEngine(IceStock(iceStock), save =>
         {
@@ -463,7 +500,7 @@ public class QuotedTradeExecutionTests
         };
         AssertEnabled(quote, expected);
         Assert.Equal(reasons, quote.LimitReasons.ToArray());
-        Assert.Equal(expected * price, quote.TotalCredits);
+        Assert.Equal(PrefixTotal(probeQuote!, expected), quote.TotalCredits);
 
         var result = Apply(engine, Bind("sell", quote));
         var receipt = AssertExecuted(result, quote);
@@ -471,7 +508,7 @@ public class QuotedTradeExecutionTests
         Assert.Equal(expected < requested ? expected : null, result.ExecutedQuantity);
         Assert.Equal(reasons, receipt.LimitReasons.ToArray());
 
-        long total = expected * price;
+        long total = quote.TotalCredits;
         Assert.Equal(total, receipt.TotalCredits);
         Assert.Equal(playerBefore + total, engine.PlayerCredits);
         Assert.Equal(stationCreditsBefore - total, Station(engine).Credits);
@@ -495,30 +532,32 @@ public class QuotedTradeExecutionTests
             Assert.Equal(before, WorldProjection(engine));
         }
 
-        // Sell proceeds that would overflow the player's balance.
+        // Sell proceeds that would overflow the player's balance: since EP-0001-US-0015-TK-0004 the issuer
+        // caps Sell by the player's remaining headroom and refuses the whole quote with value_overflow, so
+        // nothing executable is ever issued; whatever the client sends for it is a zero-effect rejection.
         using (var engine = CreateMarketEngine(adjust: save => WithCargo(WithPlayerCredits(save, long.MaxValue - 5), Ice, 10)))
         {
             var quote = Quote(engine, TradeCommandTypes.Sell, Ice, 10);
-            AssertEnabled(quote, 10);
+            AssertDisabled(quote, "value_overflow");
             string before = WorldProjection(engine);
             var command = Bind("sell-overflow", quote);
-            AssertRejected(Apply(engine, command), "value_overflow", command, StationId, 1);
+            AssertRejected(Apply(engine, command), CommandReasonCodes.InvalidQuote, command, StationId, 1);
             Assert.Equal(before, WorldProjection(engine));
 
-            // A rejected quote is not consumed: the same quote fails the same way again.
+            // Nothing was consumed: the same binding fails the same way again.
             var retry = Bind("sell-overflow-retry", quote);
-            AssertRejected(Apply(engine, retry), "value_overflow", retry, StationId, 1);
+            AssertRejected(Apply(engine, retry), CommandReasonCodes.InvalidQuote, retry, StationId, 1);
             Assert.Equal(before, WorldProjection(engine));
         }
 
-        // Buy income that would overflow the station's hidden Credits.
+        // Buy income that would overflow the station's hidden Credits is refused at quote issuance too.
         using (var engine = CreateMarketEngine(adjust: save => WithStationCredits(save, long.MaxValue - 5)))
         {
             var quote = Quote(engine, TradeCommandTypes.Buy, Ice, 5);
-            AssertEnabled(quote, 5);
+            AssertDisabled(quote, "value_overflow");
             string before = WorldProjection(engine);
             var command = Bind("buy-overflow", quote);
-            AssertRejected(Apply(engine, command), "value_overflow", command, StationId, 1);
+            AssertRejected(Apply(engine, command), CommandReasonCodes.InvalidQuote, command, StationId, 1);
             Assert.Equal(before, WorldProjection(engine));
         }
     }
@@ -679,7 +718,8 @@ public class QuotedTradeExecutionTests
                     long stockBefore = Stock(engine, Ice);
                     Assert.True(engine.TravelStation(new("travel", StationDistrict.Market)).Accepted);
                     Assert.NotEqual(stockBefore, Stock(engine, Ice));
-                    Assert.Equal(quote.MarketRevision, Revision(engine));
+                    // The hourly market pass commits exactly one revision (EP-0001-US-0015-TK-0003).
+                    Assert.Equal(quote.MarketRevision + 1, Revision(engine));
                     break;
                 }
             case "player-credits":
@@ -790,10 +830,11 @@ public class QuotedTradeExecutionTests
     [Fact]
     public void Partial_receipt_survives_save_and_malformed_receipt_is_rejected()
     {
-        long price;
+        // The budget covers exactly the first three units of the sequential sell curve.
+        long budget;
         using (var probe = CreateMarketEngine(adjust: save => WithCargo(save, Ice, 50)))
-            price = UnitPrice(Quote(probe, TradeCommandTypes.Sell, Ice, 1));
-        using var engine = CreateMarketEngine(adjust: save => WithStationCredits(WithCargo(save, Ice, 50), 3 * price));
+            budget = PrefixTotal(Quote(probe, TradeCommandTypes.Sell, Ice, 10), 3);
+        using var engine = CreateMarketEngine(adjust: save => WithStationCredits(WithCargo(save, Ice, 50), budget));
         var quote = Quote(engine, TradeCommandTypes.Sell, Ice, 10);
         AssertEnabled(quote, 3);
         var command = Bind("partial", quote);
@@ -805,7 +846,10 @@ public class QuotedTradeExecutionTests
         var saved = Assert.Single(save.GameState.CommandReceipts!, r => r.CommandId == "partial");
         Assert.Equal(new[] { CommandReasonCodes.StationBudgetExceeded }, saved.TradeReceipt!.LimitReasons.ToArray());
 
-        // A fresh engine restores the receipt and the revision from the journal alone.
+        // A fresh engine restores the receipt; the profile market's revision comes from the save
+        // (EP-0001-US-0015-TK-0003), a profile-less one's from the journal.
+        Assert.Equal(original.TradeReceipt!.ResultMarketRevision,
+            save.GameState.SpaceObjects.Single(o => o.ObjectId == StationId).MarketRevision);
         using var restored = new SimulationEngine(Registry, [], new SimulationClock(SimulationSpeed.Speed0, () => 0));
         restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
         Assert.Equal(original.TradeReceipt!.ResultMarketRevision, Revision(restored));
@@ -813,7 +857,8 @@ public class QuotedTradeExecutionTests
         AssertSameResult(original, Apply(restored, command));
         Assert.Equal(world, WorldProjection(restored));
 
-        // Legacy results without a receipt stay loadable.
+        // Legacy results without a receipt stay loadable: the saved profile revision alone is kept, and a
+        // save predating marketRevision (and without receipts) starts the profile market at 1.
         var legacyOnly = save with
         {
             GameState = save.GameState with
@@ -824,6 +869,17 @@ public class QuotedTradeExecutionTests
         using (var legacyEngine = new SimulationEngine(Registry, [], new SimulationClock(SimulationSpeed.Speed0, () => 0)))
         {
             legacyEngine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(legacyOnly), true));
+            Assert.Equal(original.TradeReceipt!.ResultMarketRevision, Revision(legacyEngine));
+
+            var withoutRevision = legacyOnly with
+            {
+                GameState = legacyOnly.GameState with
+                {
+                    SpaceObjects = legacyOnly.GameState.SpaceObjects
+                        .Select(o => o with { MarketRevision = null }).ToArray(),
+                },
+            };
+            legacyEngine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(withoutRevision), true));
             Assert.Equal(1, Revision(legacyEngine));
         }
 
@@ -976,9 +1032,11 @@ public class QuotedTradeExecutionTests
     public void Unquoted_profile_trade_keeps_legacy_path_until_quote_ui()
     {
         using var engine = CreateMarketEngine();
+        // The unquoted legacy path charges the static list price of the snapshot row, not the quote curve
+        // (story CP-0 (c), R4): the two may differ.
+        long price = ListPrice(engine, Ice);
         var pending = Quote(engine, TradeCommandTypes.Buy, Ice, 5);
         long playerBefore = engine.PlayerCredits;
-        long price = UnitPrice(pending);
 
         var result = Apply(engine, new PlayerCommand("unquoted", 1, ShipId, CargoModuleId, TradeCommandTypes.Buy,
             ItemTypeId: Ice, Quantity: 5));

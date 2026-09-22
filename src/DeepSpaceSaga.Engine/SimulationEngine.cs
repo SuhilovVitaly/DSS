@@ -324,20 +324,27 @@ public sealed partial class SimulationEngine : IDisposable
         // replaced, so an invalid save leaves the running world untouched (AC-07).
         ValidateMarketWorld(runtimeObjects);
 
-        // Market revisions are runtime-only: each station resumes after the newest trade receipt the
-        // journal still holds for it, or at 1 (EP-0001-US-0003-TK-0002).
+        // Market revisions (EP-0001-US-0015-TK-0003): a profile market resumes at its saved revision, a
+        // profile-less one (never saved, D-U2) or a save predating the field at 1 — and neither ever falls
+        // behind the newest trade receipt the journal still holds for that station. ScenarioLoader has
+        // already rejected a saved value below 1 or on an object without a profile.
         var receiptRevisions = new Dictionary<string, long>(StringComparer.Ordinal);
         foreach (var receipt in (gs.CommandReceipts ?? []).Select(r => r.TradeReceipt))
         {
             if (receipt is { StationObjectId: { } receiptStationId, ResultMarketRevision: { } receiptRevision })
                 receiptRevisions[receiptStationId] = Math.Max(receiptRevision, receiptRevisions.GetValueOrDefault(receiptStationId));
         }
+        var savedRevisions = gs.SpaceObjects
+            .Where(o => o.MarketRevision is not null)
+            .ToDictionary(o => o.ObjectId, o => o.MarketRevision!.Value, StringComparer.Ordinal);
         for (int i = 0; i < runtimeObjects.Count; i++)
         {
             if (runtimeObjects[i].ObjectType != SpaceObjectType.Station) continue;
+            string stationId = runtimeObjects[i].InitialMotion.ObjectId;
+            long saved = runtimeObjects[i].MarketProfileId is not null ? savedRevisions.GetValueOrDefault(stationId, 1) : 1;
             runtimeObjects[i] = runtimeObjects[i] with
             {
-                MarketRevision = Math.Max(1, receiptRevisions.GetValueOrDefault(runtimeObjects[i].InitialMotion.ObjectId)),
+                MarketRevision = Math.Max(Math.Max(1, saved), receiptRevisions.GetValueOrDefault(stationId)),
             };
         }
 
@@ -645,7 +652,9 @@ public sealed partial class SimulationEngine : IDisposable
                 StockState: stockState));
         }
 
-        return new StationTradeSnapshot(station.InitialMotion.ObjectId, items.MoveToImmutable());
+        // Only a profile market publishes its revision; a profile-less one keeps it internal (D-U2).
+        return new StationTradeSnapshot(station.InitialMotion.ObjectId, items.MoveToImmutable(),
+            station.MarketProfileId is null ? null : station.MarketRevision);
     }
 
     /// <summary>
@@ -862,7 +871,8 @@ public sealed partial class SimulationEngine : IDisposable
                 PortFeeDebt: obj.PortFeeDebt,
                 MarketProfileId: isStation ? obj.MarketProfileId : null,
                 MarketProfileFingerprint: isStation ? obj.MarketProfileFingerprint : null,
-                MarketBudgetCredits: isStation ? obj.MarketBudgetCredits : null));
+                MarketBudgetCredits: isStation ? obj.MarketBudgetCredits : null,
+                MarketRevision: isStation && obj.MarketProfileId is not null ? obj.MarketRevision : null));
         }
 
         var gameState = new GameStateData(
@@ -1682,24 +1692,48 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     private ImmutableArray<int> ResolveStationPriceFactors(SpaceObjectRuntime station, int itemTypeIndex, ItemTypeDefinition itemType)
     {
+        var sources = ResolveStationPriceFactorSources(station, itemTypeIndex, itemType);
+        var factors = ImmutableArray.CreateBuilder<int>(sources.Length);
+        foreach (var source in sources)
+            factors.Add(source.FactorPermille);
+        return factors.MoveToImmutable();
+    }
+
+    /// <summary>One resolved <c>StationPriceFactor</c> with the metadata a quote explains it by (EP-0001-US-0015-TK-0004).</summary>
+    private readonly record struct StationPriceFactorSource(int FactorPermille, string Code, string? SourceId);
+
+    /// <summary>
+    /// The factors of <see cref="ResolveStationPriceFactors"/> in the same order, each with a stable price-reason
+    /// code: <c>station_profile</c> (the station-size factor, sourced by the market profile id, null without a
+    /// profile) and one <c>event</c> per applicable event factor, sourced by its EventId.
+    /// </summary>
+    private ImmutableArray<StationPriceFactorSource> ResolveStationPriceFactorSources(
+        SpaceObjectRuntime station, int itemTypeIndex, ItemTypeDefinition itemType)
+    {
         bool isConsumedResource = itemType.Category == TradeCategory.Resource
             && IsConsumedResource(station, itemType.TypeId);
 
-        var factors = ImmutableArray.CreateBuilder<int>();
-        factors.Add(StationSizeFactors.Resolve(station.StationSize, itemType.Category, isConsumedResource));
+        var factors = ImmutableArray.CreateBuilder<StationPriceFactorSource>();
+        factors.Add(new StationPriceFactorSource(
+            StationSizeFactors.Resolve(station.StationSize, itemType.Category, isConsumedResource),
+            TradeQuoteCalculator.StationProfileReason, station.MarketProfileId));
 
         if (!station.Events.IsDefaultOrEmpty)
         {
-            var applicableEventFactors = station.Events
+            var applicableEvents = station.Events
                 .Where(e => e.StartedGameTimeMs <= _processedWorldTimeMs &&
                     (e.DurationMs is null || _processedWorldTimeMs - e.StartedGameTimeMs < e.DurationMs))
                 .OrderBy(e => e.StartedGameTimeMs)
-                .ThenBy(e => e.EventId, StringComparer.Ordinal)
-                .SelectMany(e => e.PriceFactors)
-                .Where(f => StationEventPriceFactorApplies(f, itemTypeIndex, itemType.Category));
+                .ThenBy(e => e.EventId, StringComparer.Ordinal);
 
-            foreach (var factor in applicableEventFactors)
-                factors.Add(factor.Factor);
+            foreach (var stationEvent in applicableEvents)
+            {
+                foreach (var factor in stationEvent.PriceFactors)
+                {
+                    if (StationEventPriceFactorApplies(factor, itemTypeIndex, itemType.Category))
+                        factors.Add(new StationPriceFactorSource(factor.Factor, TradeQuoteCalculator.EventReason, stationEvent.EventId));
+                }
+            }
         }
 
         return factors.ToImmutable();
@@ -1721,6 +1755,78 @@ public sealed partial class SimulationEngine : IDisposable
             return expectedCategory == category;
 
         return true;
+    }
+
+    // --- Market revision (EP-0001-US-0015-TK-0003) ------------------------------------------------------
+    // One effective market transaction = one increment: the caller prepares the next value with
+    // NextMarketRevision before staging anything (all fallible work — lookup, overflow — happens there),
+    // then CommitMarketRevision after its own world assignments only assigns that value and invalidates the
+    // station's quotes. The prepared slot remembers the resolved index, so the commit needs no lookup.
+
+    private int _preparedRevisionIndex = -1;
+    private string? _preparedRevisionStationId;
+
+    /// <summary>Invalidation hook: forget every issued quote of the station whose market just changed.</summary>
+    partial void OnMarketRevisionCommitted(string stationObjectId);
+
+    /// <summary>
+    /// Resolve the station and compute its next revision (<c>checked</c>). Mutates no world state; an
+    /// unknown station or a revision at <see cref="long.MaxValue"/> throws before the caller stages anything.
+    /// </summary>
+    private long NextMarketRevision(string stationObjectId)
+    {
+        for (int i = 0; i < _objects.Count; i++)
+        {
+            if (_objects[i].ObjectType == SpaceObjectType.Station &&
+                string.Equals(_objects[i].InitialMotion.ObjectId, stationObjectId, StringComparison.Ordinal))
+                return PrepareMarketRevision(i);
+        }
+
+        throw new InvalidOperationException($"Unknown market station '{stationObjectId}'.");
+    }
+
+    private long PrepareMarketRevision(int stationIndex)
+    {
+        long next = checked(_objects[stationIndex].MarketRevision + 1);
+        _preparedRevisionIndex = stationIndex;
+        _preparedRevisionStationId = _objects[stationIndex].InitialMotion.ObjectId;
+        return next;
+    }
+
+    /// <summary>
+    /// Assign the revision prepared by <see cref="NextMarketRevision"/> and invalidate the station's quotes.
+    /// Runs after the caller's world assignments, so it does no lookup, no arithmetic and never throws.
+    /// </summary>
+    private void CommitMarketRevision(string stationObjectId, long nextRevision)
+    {
+        int index = _preparedRevisionIndex;
+        System.Diagnostics.Debug.Assert(index >= 0 &&
+            string.Equals(_preparedRevisionStationId, stationObjectId, StringComparison.Ordinal),
+            "CommitMarketRevision without a matching NextMarketRevision.");
+        _objects[index] = _objects[index] with { MarketRevision = nextRevision };
+        _preparedRevisionIndex = -1;
+        _preparedRevisionStationId = null;
+        OnMarketRevisionCommitted(stationObjectId);
+    }
+
+    /// <summary>
+    /// Seam for the future station-event lifecycle (US-0007): an event start/end/effect change is one market
+    /// transaction. Throws <see cref="OverflowException"/> with no effect at the maximum revision.
+    /// </summary>
+    internal void CommitEventMarketChangeForTests(string stationObjectId)
+    {
+        lock (_worldStateLock)
+        {
+            long next = NextMarketRevision(stationObjectId);
+            CommitMarketRevision(stationObjectId, next);
+        }
+    }
+
+    /// <summary>Test seam: whether a quote id is still held by the session quote cache.</summary>
+    internal bool IsQuoteIssuedForTests(string quoteId)
+    {
+        lock (_worldStateLock)
+            return _issuedQuotes.ContainsKey(quoteId);
     }
 
     internal ImmutableArray<SpaceObjectRuntime> RuntimeObjects => _objects.ToImmutableArray();
@@ -2129,6 +2235,8 @@ public sealed partial class SimulationEngine : IDisposable
 
             long updatedCredits = checked(PlayerCredits - cost);
 
+            // A legacy commit changes the market too, so it outdates every quote issued before it.
+            long nextRevision = NextMarketRevision(station.InitialMotion.ObjectId);
             var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
                 stationInventoryItem with { StockQuantity = stationInventoryItem.StockQuantity - qty });
             var updatedStation = station with
@@ -2136,8 +2244,6 @@ public sealed partial class SimulationEngine : IDisposable
                 Credits = checked(station.Credits + cost),
                 MarketBudgetCredits = ReplenishBudgetFromIncome(station, cost),
                 Inventory = updatedInventory,
-                // A legacy commit changes the market too, so it outdates every quote issued before it.
-                MarketRevision = NextMarketRevision(station),
             };
 
             var updatedShip = UpdateModule(obj, moduleIndex, m =>
@@ -2152,6 +2258,7 @@ public sealed partial class SimulationEngine : IDisposable
             PlayerCredits = updatedCredits;
             _objects[stationIndex] = updatedStation;
             _objects[objectIndex] = updatedShip;
+            CommitMarketRevision(station.InitialMotion.ObjectId, nextRevision);
 
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
             return CommandStartOutcome.Started;
@@ -2190,6 +2297,7 @@ public sealed partial class SimulationEngine : IDisposable
             long proceeds = checked(unitPriceCredits * executedQty);
             long updatedCredits = checked(PlayerCredits + proceeds);
 
+            long nextRevision = NextMarketRevision(station.InitialMotion.ObjectId);
             var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
                 stationInventoryItem with { StockQuantity = checked(stationInventoryItem.StockQuantity + executedQty) });
             var updatedStation = station with
@@ -2198,7 +2306,6 @@ public sealed partial class SimulationEngine : IDisposable
                 // Spending draws down the budget and the balance by the same proceeds.
                 MarketBudgetCredits = boundedMarket ? checked(stationPurse - proceeds) : station.MarketBudgetCredits,
                 Inventory = updatedInventory,
-                MarketRevision = NextMarketRevision(station),
             };
 
             var updatedShip = UpdateModule(obj, moduleIndex, m =>
@@ -2214,6 +2321,7 @@ public sealed partial class SimulationEngine : IDisposable
             PlayerCredits = updatedCredits;
             _objects[stationIndex] = updatedStation;
             _objects[objectIndex] = updatedShip;
+            CommitMarketRevision(station.InitialMotion.ObjectId, nextRevision);
 
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs,
                 executedQuantity: executedQty < qty ? executedQty : null);
@@ -2239,6 +2347,7 @@ public sealed partial class SimulationEngine : IDisposable
 
             long updatedCredits = checked(PlayerCredits - cost);
 
+            long nextRevision = NextMarketRevision(station.InitialMotion.ObjectId);
             var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
                 stationInventoryItem with { StockQuantity = stationInventoryItem.StockQuantity - qty });
             var updatedStation = station with
@@ -2246,13 +2355,13 @@ public sealed partial class SimulationEngine : IDisposable
                 Credits = checked(station.Credits + cost),
                 MarketBudgetCredits = ReplenishBudgetFromIncome(station, cost),
                 Inventory = updatedInventory,
-                MarketRevision = NextMarketRevision(station),
             };
 
             var updatedShip = UpdateModule(obj, moduleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + qty) });
             PlayerCredits = updatedCredits;
             _objects[stationIndex] = updatedStation;
             _objects[objectIndex] = updatedShip;
+            CommitMarketRevision(station.InitialMotion.ObjectId, nextRevision);
 
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
             return CommandStartOutcome.Started;
@@ -3392,9 +3501,10 @@ internal sealed record SpaceObjectRuntime(
     string? MarketProfileFingerprint = null,
     long? MarketBudgetCredits = null,
     /// <summary>
-    /// Station market revision (EP-0001-US-0003-TK-0002): advanced by every committed trade at this station and
-    /// bound into every quote. Runtime-only — never saved; LoadScenario restores it from the saved trade receipts
-    /// (at least 1 for every station). 0 for every other object type.
+    /// Station market revision (EP-0001-US-0015-TK-0003): advanced once by every effective market transaction
+    /// (a trade, one hourly pass, an event change) through NextMarketRevision/CommitMarketRevision and bound
+    /// into every quote. At least 1 for every station; saved and published only for a station with a market
+    /// profile (D-U2). 0 for every other object type.
     /// </summary>
     long MarketRevision = 0);
 

@@ -1,86 +1,17 @@
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 
 namespace DeepSpaceSaga.Engine;
 
-/// <summary>What a caller wants priced: one trade command for one item at the ship's docked station.</summary>
-internal sealed record TradeQuoteRequest(
-    string RequestId,
-    string ObjectId,
-    string ModuleId,
-    string CommandType,
-    string ItemTypeId,
-    long Quantity);
-
-/// <summary>One segment of a quote curve: <see cref="Quantity"/> units at <see cref="UnitPriceCredits"/> each.</summary>
-internal sealed record TradePriceStep(long Quantity, long UnitPriceCredits);
-
 /// <summary>
-/// Authoritative, immutable quote issued by <see cref="SimulationEngine.GetTradeQuote"/>. A usable quote has a
-/// non-empty <see cref="QuoteId"/> and a null <see cref="DisabledReason"/>; its <see cref="Curve"/> covers exactly
-/// the <see cref="ExecutableQuantity"/> prefix and sums to <see cref="TotalCredits"/>. A disabled quote carries an
-/// empty id, zero executable/total and an empty curve, and is never cached, so it cannot be executed.
-/// Hidden station Credits/budget never appear here — only the quantities they allow.
-/// </summary>
-internal sealed record TradeQuoteSnapshot(
-    string RequestId,
-    string QuoteId,
-    long MarketRevision,
-    string StationObjectId,
-    string ObjectId,
-    string ModuleId,
-    string CommandType,
-    string ItemTypeId,
-    long RequestedQuantity,
-    long ExecutableQuantity,
-    long MaximumQuantity,
-    long TotalCredits,
-    ImmutableArray<TradePriceStep> Curve,
-    string? DisabledReason,
-    ImmutableArray<string> LimitReasons);
-
-/// <summary>
-/// Quoted trade execution (EP-0001-US-0003-TK-0002): the engine issues a quote bound to one station, ship, module,
-/// item, command type, quantity and market revision, and later executes exactly that quote as one transaction or
-/// rejects it with no effect. The quote cache and nonce are session state only — never simulated, never saved —
-/// so every load starts a fresh quote session and every earlier quote becomes stale.
+/// Quoted trade execution (EP-0001-US-0003-TK-0002): executes exactly one quote issued by the engine
+/// (SimulationEngine.TradeQuotes.cs, EP-0001-US-0015-TK-0004) as one transaction, or rejects it with no effect.
+/// Addressing and fuel routing here are shared with the legacy unquoted path and with the issuer.
 /// </summary>
 public sealed partial class SimulationEngine
 {
-    private const int QuoteCacheLimit = 1024;
     private const string ValueOverflow = "value_overflow";
-
-    private readonly Dictionary<string, IssuedQuote> _issuedQuotes = new(StringComparer.Ordinal);
-    private readonly Queue<string> _issuedQuoteOrder = new();
-    private string _quoteNonce = "";
-    private long _quoteCounter;
-
-    private sealed record IssuedQuote(TradeQuoteSnapshot Quote, QuoteContext Context);
-
-    /// <summary>
-    /// Everything a quote's numbers depend on. A quote is only executable while the current context equals the
-    /// one captured at issue time, which also catches market changes that do not bump the revision (hourly
-    /// production, budget refill, port fees, events).
-    /// </summary>
-    private readonly record struct QuoteContext(
-        string StationObjectId,
-        long MarketRevision,
-        long PlayerCredits,
-        long StationCredits,
-        long? StationBudgetCredits,
-        long StockQuantity,
-        long UnitPriceCredits,
-        long? MaxStock,
-        bool IsDocked,
-        string? DockedStationObjectId,
-        bool ModuleCanExecute,
-        long CargoQuantity,
-        long FreeCargoKg,
-        long FuelAmountKg,
-        long FuelCapacityKg);
 
     /// <summary>Resolved addressing of one trade command; indexes are into <see cref="_objects"/> and its lists.</summary>
     private readonly record struct TradeTarget(
@@ -95,230 +26,6 @@ public sealed partial class SimulationEngine
         int ItemTypeIndex,
         ItemTypeDefinition ItemType,
         long Quantity);
-
-    /// <summary>Quote numbers for the current state; <see cref="DisabledReason"/> is set when nothing can execute.</summary>
-    private readonly record struct QuoteTerms(
-        long UnitPriceCredits,
-        long? MaxStock,
-        long MaximumQuantity,
-        long ExecutableQuantity,
-        long TotalCredits,
-        string? DisabledReason,
-        ImmutableArray<string> LimitReasons);
-
-    /// <summary>
-    /// Price one trade at the ship's docked station without changing the world. Invalid input yields a disabled
-    /// quote whose reason is the same code the command itself would be rejected with.
-    /// </summary>
-    internal TradeQuoteSnapshot GetTradeQuote(TradeQuoteRequest request)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-        lock (_worldStateLock)
-        {
-            if (!TryResolveTradeTarget(request.ObjectId, request.ModuleId, request.CommandType, request.ItemTypeId,
-                    request.Quantity, out var target, out string reasonCode))
-                return DisabledQuote(request, reasonCode, 0);
-
-            QuoteTerms terms;
-            QuoteContext context;
-            try
-            {
-                terms = ComputeQuoteTerms(target, request.CommandType);
-                if (terms.DisabledReason is { } disabled)
-                    return DisabledQuote(request, disabled, terms.MaximumQuantity);
-                context = CaptureQuoteContext(target, terms.UnitPriceCredits, terms.MaxStock);
-            }
-            catch (OverflowException)
-            {
-                return DisabledQuote(request, ValueOverflow, 0);
-            }
-
-            var quote = new TradeQuoteSnapshot(
-                request.RequestId,
-                $"QTE-{_quoteNonce}-{++_quoteCounter}",
-                target.Station.MarketRevision,
-                target.Station.InitialMotion.ObjectId,
-                request.ObjectId,
-                request.ModuleId,
-                request.CommandType,
-                request.ItemTypeId,
-                request.Quantity,
-                terms.ExecutableQuantity,
-                terms.MaximumQuantity,
-                terms.TotalCredits,
-                [new TradePriceStep(terms.ExecutableQuantity, terms.UnitPriceCredits)],
-                null,
-                terms.LimitReasons);
-            RememberQuote(quote, context);
-            return quote;
-        }
-    }
-
-    private TradeQuoteSnapshot DisabledQuote(TradeQuoteRequest request, string reasonCode, long maximumQuantity)
-    {
-        var (stationObjectId, marketRevision) = KnownDockedMarket(request.ObjectId);
-        return new TradeQuoteSnapshot(
-            request.RequestId, "", marketRevision ?? 0, stationObjectId ?? "", request.ObjectId, request.ModuleId,
-            request.CommandType, request.ItemTypeId, request.Quantity, 0, maximumQuantity, 0,
-            ImmutableArray<TradePriceStep>.Empty, reasonCode, ImmutableArray<string>.Empty);
-    }
-
-    /// <summary>
-    /// Buy/Refuel are all-or-nothing, so the first limiter below the requested quantity disables the quote. Sell
-    /// fills the largest prefix the budget and the free storage allow and names what limited it.
-    /// </summary>
-    private QuoteTerms ComputeQuoteTerms(in TradeTarget target, string commandType)
-    {
-        long unitPrice = ResolveUnitPriceCredits(target);
-        long? maxStock = ResolveMaxStock(target.Station, target.ItemType);
-        if (unitPrice < 1)
-            return new QuoteTerms(unitPrice, maxStock, 0, 0, 0, CommandReasonCodes.UnknownItemType, ImmutableArray<string>.Empty);
-
-        long qty = target.Quantity;
-        long stock = target.Station.Inventory[target.StationInventoryIndex].StockQuantity;
-        long maximum;
-        long executable;
-        string? disabled = null;
-        var limits = ImmutableArray<string>.Empty;
-
-        if (commandType == TradeCommandTypes.Sell)
-        {
-            long cargoQty = CargoQuantityOf(target.Module, target.ItemTypeIndex);
-            long budgetCap = Math.Max(0, SellPurse(target.Station)) / unitPrice;
-            long roomCap = maxStock is { } cap ? Math.Max(0, cap - stock) : long.MaxValue;
-            maximum = Math.Min(cargoQty, Math.Min(budgetCap, roomCap));
-            if (qty > cargoQty)
-                return new QuoteTerms(unitPrice, maxStock, maximum, 0, 0, CommandReasonCodes.InsufficientCargoQuantity, limits);
-
-            executable = Math.Min(qty, Math.Min(budgetCap, roomCap));
-            var builder = ImmutableArray.CreateBuilder<string>();
-            if (budgetCap < qty && budgetCap == executable) builder.Add(CommandReasonCodes.StationBudgetExceeded);
-            if (roomCap < qty && roomCap == executable) builder.Add(CommandReasonCodes.StationCapacityExceeded);
-            limits = builder.ToImmutable();
-            if (executable <= 0) disabled = limits[0];
-        }
-        else
-        {
-            long byCredits = PlayerCredits / unitPrice;
-            long byRoom;
-            string roomReason;
-            if (commandType == TradeCommandTypes.Refuel)
-            {
-                byRoom = Math.Max(0, (target.ModuleType.FuelCapacityKg ?? 0) - target.Module.FuelAmountKg);
-                roomReason = CommandReasonCodes.FuelCapacityExceeded;
-            }
-            else
-            {
-                long freeKg = FreeCargoKg(target);
-                byRoom = target.ItemType.UnitMassKg > 0 ? freeKg / target.ItemType.UnitMassKg : long.MaxValue;
-                roomReason = CommandReasonCodes.CargoCapacityExceeded;
-            }
-
-            maximum = Math.Min(stock, Math.Min(byCredits, byRoom));
-            executable = qty;
-            if (qty > byCredits) disabled = CommandReasonCodes.InsufficientPlayerCredits;
-            else if (qty > stock) disabled = CommandReasonCodes.InsufficientStationStock;
-            else if (qty > byRoom) disabled = roomReason;
-        }
-
-        if (disabled is not null)
-            return new QuoteTerms(unitPrice, maxStock, maximum, 0, 0, disabled, ImmutableArray<string>.Empty);
-
-        long total;
-        try { total = checked(executable * unitPrice); }
-        catch (OverflowException) { return new QuoteTerms(unitPrice, maxStock, maximum, 0, 0, ValueOverflow, ImmutableArray<string>.Empty); }
-        return new QuoteTerms(unitPrice, maxStock, maximum, executable, total, null, limits);
-    }
-
-    private QuoteContext CaptureQuoteContext(in TradeTarget target, long unitPriceCredits, long? maxStock) => new(
-        target.Station.InitialMotion.ObjectId,
-        target.Station.MarketRevision,
-        PlayerCredits,
-        target.Station.Credits,
-        target.Station.MarketBudgetCredits,
-        target.Station.Inventory[target.StationInventoryIndex].StockQuantity,
-        unitPriceCredits,
-        maxStock,
-        target.Ship.IsDocked,
-        target.Ship.DockedStationObjectId,
-        CanExecuteModuleCommand(target.Module),
-        CargoQuantityOf(target.Module, target.ItemTypeIndex),
-        FreeCargoKg(target),
-        target.Module.FuelAmountKg,
-        target.ModuleType.FuelCapacityKg ?? 0);
-
-    private void RememberQuote(TradeQuoteSnapshot quote, QuoteContext context)
-    {
-        _issuedQuotes[quote.QuoteId] = new IssuedQuote(quote, context);
-        _issuedQuoteOrder.Enqueue(quote.QuoteId);
-        // FIFO by issue order: only the most recent issues stay executable. Ids already consumed are simply
-        // absent from the dictionary, so dequeuing them is a no-op.
-        while (_issuedQuoteOrder.Count > QuoteCacheLimit)
-            _issuedQuotes.Remove(_issuedQuoteOrder.Dequeue());
-    }
-
-    /// <summary>Forget every issued quote and start a new id space. Called by the constructor and every load.</summary>
-    private void ResetQuoteSession()
-    {
-        _issuedQuotes.Clear();
-        _issuedQuoteOrder.Clear();
-        Span<byte> nonce = stackalloc byte[8];
-        RandomNumberGenerator.Fill(nonce);
-        _quoteNonce = Convert.ToHexString(nonce);
-        _quoteCounter = 0;
-    }
-
-    /// <summary>
-    /// Check an incoming quote binding against the issued quote and the current world, without mutating anything.
-    /// A malformed or foreign binding is <c>invalid_quote</c>; an unknown, consumed, evicted or outdated one is
-    /// <c>stale_quote</c>.
-    /// </summary>
-    private bool TryValidateTradeQuote(
-        PlayerCommand command, [NotNullWhen(true)] out TradeQuoteSnapshot? quote, out string reasonCode)
-    {
-        quote = null;
-        if (string.IsNullOrWhiteSpace(command.QuoteId) || command.MarketRevision is not { } revision || revision < 1)
-        {
-            reasonCode = CommandReasonCodes.InvalidQuote;
-            return false;
-        }
-
-        if (!_issuedQuotes.TryGetValue(command.QuoteId, out var issued))
-        {
-            reasonCode = CommandReasonCodes.StaleQuote;
-            return false;
-        }
-
-        if (!TryResolveTradeTarget(command.ObjectId, command.ModuleId, command.CommandType, command.ItemTypeId,
-                command.Quantity, out var target, out reasonCode))
-            return false;
-
-        var bound = issued.Quote;
-        if (!string.Equals(bound.StationObjectId, target.Station.InitialMotion.ObjectId, StringComparison.Ordinal) ||
-            !string.Equals(bound.ObjectId, command.ObjectId, StringComparison.Ordinal) ||
-            !string.Equals(bound.ModuleId, command.ModuleId, StringComparison.Ordinal) ||
-            !string.Equals(bound.CommandType, command.CommandType, StringComparison.Ordinal) ||
-            !string.Equals(bound.ItemTypeId, command.ItemTypeId, StringComparison.Ordinal) ||
-            bound.RequestedQuantity != target.Quantity ||
-            bound.MarketRevision != revision)
-        {
-            reasonCode = CommandReasonCodes.InvalidQuote;
-            return false;
-        }
-
-        var current = CaptureQuoteContext(target, ResolveUnitPriceCredits(target), ResolveMaxStock(target.Station, target.ItemType));
-        if (current != issued.Context)
-        {
-            reasonCode = CommandReasonCodes.StaleQuote;
-            return false;
-        }
-
-        quote = bound;
-        reasonCode = "";
-        return true;
-    }
-
-    private long NextMarketRevision(SpaceObjectRuntime station) => checked(station.MarketRevision + 1);
 
     private CommandStartOutcome TryStartQuotedTrade(PlayerCommand command, long gameTimeMs)
     {
@@ -349,7 +56,7 @@ public sealed partial class SimulationEngine
         // 5-6. Stage the whole new state and the receipt.
         var station = target.Station;
         var stockItem = station.Inventory[target.StationInventoryIndex];
-        long nextRevision = NextMarketRevision(station);
+        long nextRevision = NextMarketRevision(station.InitialMotion.ObjectId);
         long updatedPlayerCredits;
         SpaceObjectRuntime updatedStation;
         SpaceObjectRuntime updatedShip;
@@ -363,7 +70,6 @@ public sealed partial class SimulationEngine
                 MarketBudgetCredits = bounded ? checked((station.MarketBudgetCredits ?? 0) - total) : station.MarketBudgetCredits,
                 Inventory = station.Inventory.SetItem(target.StationInventoryIndex,
                     stockItem with { StockQuantity = checked(stockItem.StockQuantity + executed) }),
-                MarketRevision = nextRevision,
             };
             updatedShip = UpdateModule(target.Ship, target.ModuleIndex,
                 m => WithCargoDelta(m, target.ModuleType, target.ItemTypeIndex, -executed));
@@ -377,7 +83,6 @@ public sealed partial class SimulationEngine
                 MarketBudgetCredits = ReplenishBudgetFromIncome(station, total),
                 Inventory = station.Inventory.SetItem(target.StationInventoryIndex,
                     stockItem with { StockQuantity = checked(stockItem.StockQuantity - executed) }),
-                MarketRevision = nextRevision,
             };
             updatedShip = quote.CommandType == TradeCommandTypes.Refuel
                 ? UpdateModule(target.Ship, target.ModuleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + executed) })
@@ -393,9 +98,10 @@ public sealed partial class SimulationEngine
         _objects[target.ObjectIndex] = updatedShip;
         _objects[target.StationIndex] = updatedStation;
         PlayerCredits = updatedPlayerCredits;
+        CommitMarketRevision(station.InitialMotion.ObjectId, nextRevision);
         RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs,
             executedQuantity: executed < quote.RequestedQuantity ? executed : null, tradeReceipt: receipt);
-        _issuedQuotes.Remove(quote.QuoteId);
+        ForgetQuote(quote.QuoteId, string.IsNullOrEmpty(quote.RequestId) ? null : quote.RequestId);
         return CommandStartOutcome.Started;
     }
 
@@ -570,9 +276,6 @@ public sealed partial class SimulationEngine
             return fuel ? null : CommandReasonCodes.FuelTradeForbidden;
         return null;
     }
-
-    private long ResolveUnitPriceCredits(in TradeTarget target) => StationPricing.ComputeUnitPriceCredits(
-        target.ItemType.BasePriceCredits ?? 0, ResolveStationPriceFactors(target.Station, target.ItemTypeIndex, target.ItemType));
 
     /// <summary>Stock cap of a bounded market's cargo item; null where the station has no such cap.</summary>
     private long? ResolveMaxStock(SpaceObjectRuntime station, ItemTypeDefinition itemType) =>

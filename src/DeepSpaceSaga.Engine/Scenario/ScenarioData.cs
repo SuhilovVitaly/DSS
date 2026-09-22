@@ -204,7 +204,15 @@ public sealed record SpaceObjectData(
     /// interpretation, the maxBudget cap and the daily regeneration schedule belong to TK-0003.
     /// Only meaningful for ObjectType == Station.
     /// </summary>
-    [property: JsonPropertyName("marketBudgetCredits")] long? MarketBudgetCredits = null);
+    [property: JsonPropertyName("marketBudgetCredits")] long? MarketBudgetCredits = null,
+    /// <summary>
+    /// Market revision of a station with a market profile (EP-0001-US-0015-TK-0003): advanced once by every
+    /// effective market transaction and bound into every trade quote. Written for profile stations only and
+    /// null everywhere else — a profile-less station keeps its revision in memory only. Load resumes at
+    /// max(saved value, newest trade receipt), or max(1, newest receipt) when the field is missing;
+    /// an explicit value below 1, or any value on an object without a market profile, is rejected.
+    /// </summary>
+    [property: JsonPropertyName("marketRevision")] long? MarketRevision = null);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles
