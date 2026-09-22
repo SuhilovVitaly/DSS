@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
@@ -409,5 +410,822 @@ public class EconomyTimeContinuityTests
             }
         };
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(save));
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // US-0002 TK-0003 — bounded station market: hourly flow, stock caps, pending output, budget.
+    // Every fixture below opts one station into an economy profile; a station without one keeps
+    // the pre-US-0002 behaviour, which Existing_legacy_production_and_motion_are_unchanged pins.
+    // ---------------------------------------------------------------------------------------
+
+    private const string MarketProfileId = "market.bounded";
+    private const long IceTarget = 108;
+    private const long WaterTarget = 72;
+    private const long SteelTarget = 72;
+    private const long MarketInitialCredits = 9600;
+    private const long MarketMaxBudget = 2 * MarketInitialCredits;
+
+    private static ImmutableDictionary<StationSize, int> MarketSizeFactors =>
+        new Dictionary<StationSize, int>
+        {
+            [StationSize.Outpost] = 500,
+            [StationSize.Medium] = 1000,
+            [StationSize.Large] = 1500,
+            [StationSize.Huge] = 2000,
+        }.ToImmutableDictionary();
+
+    /// <summary>
+    /// Profile-driven market: one hourly batch (4 water -&gt; 18 ice) plus 2 steel of demand that
+    /// exists regardless of production. Targets equal the starting stock, so MaxStock is exactly
+    /// twice it and the Medium size factor keeps every number identical to its base value.
+    /// </summary>
+    private static StationMarketProfileDefinition BoundedProfile(
+        StationMarketProductionSource source = StationMarketProductionSource.Profile,
+        int divisorPerDay = 24,
+        long initialCredits = MarketInitialCredits,
+        ImmutableArray<StationMarketStockDefinition>? hourlyInputs = null,
+        ImmutableArray<StationMarketStockDefinition>? hourlyOutputs = null,
+        ImmutableArray<StationMarketStockDefinition>? hourlyConsumption = null,
+        ImmutableArray<string>? supply = null,
+        string typeId = MarketProfileId) =>
+        new(
+            TypeId: typeId,
+            DisplayName: typeId,
+            SupplyItemTypeIds: supply ?? ["item.ice"],
+            DemandItemTypeIds: ["item.water", "item.steel"],
+            InitialInventory:
+            [
+                new("item.ice", IceTarget), new("item.water", WaterTarget), new("item.steel", SteelTarget),
+            ],
+            InitialCredits: initialCredits,
+            RefuelStockKg: 200,
+            SizeFactors: MarketSizeFactors,
+            Economy: new StationMarketEconomyDefinition(
+                ProductionSource: source,
+                HourlyInputs: hourlyInputs ?? (source == StationMarketProductionSource.Profile
+                    ? [new("item.water", 4)] : []),
+                HourlyOutputs: hourlyOutputs ?? (source == StationMarketProductionSource.Profile
+                    ? [new("item.ice", 18)] : []),
+                HourlyConsumption: hourlyConsumption ?? [new("item.steel", 2)],
+                StockTargets:
+                [
+                    new("item.ice", IceTarget), new("item.water", WaterTarget), new("item.steel", SteelTarget),
+                ],
+                ShortageThresholdPermille: 500,
+                SurplusThresholdPermille: 1500,
+                BudgetRegenerationDivisorPerDay: divisorPerDay));
+
+    /// <summary>Pure-consumption Transit shape: nothing is produced, so both hourly batch lists stay empty.</summary>
+    private static StationMarketProfileDefinition TransitProfile() => new(
+        TypeId: "market.transit-bounded",
+        DisplayName: "market.transit-bounded",
+        SupplyItemTypeIds: [],
+        DemandItemTypeIds: ["item.water", "item.steel"],
+        InitialInventory: [new("item.water", WaterTarget), new("item.steel", SteelTarget)],
+        InitialCredits: MarketInitialCredits,
+        RefuelStockKg: 200,
+        SizeFactors: MarketSizeFactors,
+        Economy: new StationMarketEconomyDefinition(
+            ProductionSource: StationMarketProductionSource.Profile,
+            HourlyInputs: [],
+            HourlyOutputs: [],
+            HourlyConsumption: [new("item.water", 4), new("item.steel", 2)],
+            StockTargets: [new("item.water", WaterTarget), new("item.steel", SteelTarget)],
+            ShortageThresholdPermille: 500,
+            SurplusThresholdPermille: 1500,
+            BudgetRegenerationDivisorPerDay: 24));
+
+    private static GameDataRegistry RealRegistry()
+    {
+        string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
+            "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        return EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
+    }
+
+    /// <summary>
+    /// The shipped registry with one extra economy profile (and optionally one extra factory type)
+    /// spliced in — real items, module types and trade commands, so Buy/Sell behave exactly as
+    /// they do in the game while the market under test is fully controlled by the fixture.
+    /// </summary>
+    private static GameDataRegistry MarketRegistry(
+        StationMarketProfileDefinition profile,
+        FactoryTypeDefinition? extraFactory = null)
+    {
+        var source = RealRegistry();
+        var factories = Enumerable.Range(0, source.FactoryTypes.Count).Select(source.FactoryTypes.GetDefinition);
+        return GameDataRegistry.Create(
+            Enumerable.Range(0, source.ModuleCategories.Count).Select(source.ModuleCategories.GetDefinition),
+            Enumerable.Range(0, source.ModuleTypes.Count).Select(source.ModuleTypes.GetDefinition),
+            Enumerable.Range(0, source.ItemTypes.Count).Select(source.ItemTypes.GetDefinition),
+            Enumerable.Range(0, source.CommandDefinitions.Count).Select(source.CommandDefinitions.GetDefinition),
+            extraFactory is null ? factories : factories.Append(extraFactory),
+            Enumerable.Range(0, source.Recipes.Count).Select(source.Recipes.GetDefinition),
+            legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
+            stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
+                .Select(source.StationMarketProfiles.GetDefinition).Append(profile));
+    }
+
+    /// <summary>
+    /// A docked New Game world whose single station runs <paramref name="profile"/>. The save
+    /// format stays 0 on purpose: that is the New Game path, where the budget is derived rather
+    /// than restored. Port fees are switched off so the only thing moving station Credits is the
+    /// market itself.
+    /// </summary>
+    private static (SimulationEngine Engine, GameDataRegistry Registry) CreateMarketEngine(
+        StationMarketProfileDefinition? profile = null,
+        FactoryTypeDefinition? extraFactory = null,
+        IReadOnlyList<StationInventoryItemData>? stock = null,
+        IReadOnlyList<StationProducingModuleData>? producingModules = null,
+        SimulationClock? clock = null,
+        Func<ScenarioFile, ScenarioFile>? adjust = null)
+    {
+        profile ??= BoundedProfile();
+        var registry = MarketRegistry(profile, extraFactory);
+        var save = MarketTemplate(profile, stock, producingModules);
+        if (adjust is not null) save = adjust(save);
+        var engine = new SimulationEngine(registry, [], clock ?? new SimulationClock(SimulationSpeed.Speed0, () => 0));
+        engine.LoadScenario(save);
+        return (engine, registry);
+    }
+
+    private static ScenarioFile MarketTemplate(
+        StationMarketProfileDefinition profile,
+        IReadOnlyList<StationInventoryItemData>? stock = null,
+        IReadOnlyList<StationProducingModuleData>? producingModules = null)
+    {
+        using var template = RationScheduleTests.CreateEngine(0, passengers: 0, rations: 200);
+        var save = template.CaptureSaveState();
+        var gs = save.GameState;
+        string stationId = gs.SpaceObjects.Single(o => o.ObjectId == gs.PlayerShipObjectId).DockedStationObjectId!;
+        return save with
+        {
+            SaveFormatVersion = 0,
+            GameState = gs with
+            {
+                SpaceObjects = gs.SpaceObjects
+                    .Where(o => o.ObjectId == gs.PlayerShipObjectId || o.ObjectId == stationId)
+                    .Select(o => o.ObjectId != stationId ? o : o with
+                    {
+                        MarketProfileId = profile.TypeId,
+                        MarketProfileFingerprint = null,
+                        StationSize = nameof(StationSize.Medium),
+                        Credits = null,
+                        // Null lets the profile define the stock; an explicit list overrides it.
+                        Inventory = stock,
+                        ProducingModules = producingModules,
+                        Events = null,
+                        PortFeeCreditsPerDay = null,
+                    }).ToArray(),
+            },
+        };
+    }
+
+    private static SpaceObjectRuntime MarketStation(SimulationEngine engine) =>
+        engine.RuntimeObjects.Single(o => o.ObjectType == "Station" && o.MarketProfileId is not null);
+
+    private static long MarketStock(SimulationEngine engine, GameDataRegistry registry, string itemTypeId)
+    {
+        int index = registry.ItemTypes.GetIndex(itemTypeId);
+        var entry = MarketStation(engine).Inventory.FirstOrDefault(i => i.ItemTypeIndex == index);
+        return entry?.StockQuantity ?? 0;
+    }
+
+    private static long MarketBudget(SimulationEngine engine) => MarketStation(engine).MarketBudgetCredits ?? -1;
+
+    private static (long Ice, long Water, long Steel, long Budget) MarketState(
+        SimulationEngine engine, GameDataRegistry registry) =>
+        (MarketStock(engine, registry, "item.ice"), MarketStock(engine, registry, "item.water"),
+            MarketStock(engine, registry, "item.steel"), MarketBudget(engine));
+
+    private static string MarketPending(SimulationEngine engine, GameDataRegistry registry) =>
+        string.Join(" | ", MarketStation(engine).ProducingModules.Select(module =>
+            string.Join(",", (module.PendingOutput.IsDefault
+                    ? ImmutableArray<StationInventoryItemRuntime>.Empty
+                    : module.PendingOutput)
+                .OrderBy(item => item.ItemTypeIndex)
+                .Select(item => $"{registry.ItemTypes.GetDefinition(item.ItemTypeIndex).TypeId}={item.StockQuantity}"))));
+
+    /// <summary>
+    /// Everything AC-04 requires to be identical for the same elapsed game time: stock, budget and
+    /// the pending remainder, plus the production schedule that drives the remainder.
+    /// </summary>
+    private static (long Ice, long Water, long Steel, long Budget, string Pending, string Due) MarketFingerprint(
+        SimulationEngine engine, GameDataRegistry registry)
+    {
+        var (ice, water, steel, budget) = MarketState(engine, registry);
+        string due = string.Join(",", MarketStation(engine).ProducingModules
+            .Select(module => module.NextProductionDueGameTimeMs?.ToString() ?? "-"));
+        return (ice, water, steel, budget, MarketPending(engine, registry), due);
+    }
+
+    /// <summary>
+    /// Modules-driven market whose ice is both produced by a recipe and consumed hourly: output
+    /// overflows into PendingOutput and then drains again as demand frees room, so the remainder
+    /// actually changes from hour to hour instead of sitting still.
+    /// </summary>
+    private static StationMarketProfileDefinition PendingProfile() => new(
+        TypeId: "market.pending-bounded",
+        DisplayName: "market.pending-bounded",
+        SupplyItemTypeIds: [],
+        DemandItemTypeIds: ["item.ice", "item.water", "item.steel"],
+        InitialInventory:
+        [
+            new("item.ice", IceTarget), new("item.water", WaterTarget), new("item.steel", SteelTarget),
+        ],
+        InitialCredits: MarketInitialCredits,
+        RefuelStockKg: 200,
+        SizeFactors: MarketSizeFactors,
+        Economy: new StationMarketEconomyDefinition(
+            ProductionSource: StationMarketProductionSource.Modules,
+            HourlyInputs: [],
+            HourlyOutputs: [],
+            // Ice is a recipe OUTPUT, so consuming it hourly never double-spends a recipe input.
+            HourlyConsumption: [new("item.ice", 5), new("item.steel", 2)],
+            StockTargets:
+            [
+                new("item.ice", IceTarget), new("item.water", WaterTarget), new("item.steel", SteelTarget),
+            ],
+            ShortageThresholdPermille: 500,
+            SurplusThresholdPermille: 1500,
+            BudgetRegenerationDivisorPerDay: 24));
+
+    /// <summary>A market that starts with ice at its cap, so the first finished batch has nowhere to go.</summary>
+    private static (SimulationEngine Engine, GameDataRegistry Registry) CreatePendingEngine(SimulationClock? clock = null) =>
+        CreateMarketEngine(
+            PendingProfile(),
+            extraFactory: IceFactory(),
+            stock: [new("item.ice", 2 * IceTarget), new("item.water", WaterTarget), new("item.steel", SteelTarget)],
+            producingModules: [new StationProducingModuleData("factory.market-test")],
+            clock: clock);
+
+    private static string ShipId(SimulationEngine engine) => engine.PlayerShipObjectId!;
+
+    private static string ContainerModuleId(SimulationEngine engine, GameDataRegistry registry) =>
+        engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == ShipId(engine)).Modules
+            .First(m => registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).CargoCapacityKg is > 0).ModuleId;
+
+    [Fact]
+    public void Hour_boundary_applies_profile_batch_and_consumption_once()
+    {
+        var (engine, registry) = CreateMarketEngine();
+        using var _ = engine;
+
+        engine.CaptureSnapshotForTests(GameCalendar.HourMs - 1, simulationTimeMs: 1);
+        Assert.Equal((IceTarget, WaterTarget, SteelTarget, MarketInitialCredits), MarketState(engine, registry));
+
+        // One whole hour: independent demand takes 2 steel, then the batch spends 4 water for 18 ice.
+        engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 2);
+        long firstHourBudget = MarketInitialCredits + MarketMaxBudget / 24 / 24;
+        Assert.Equal((126, 68, 70, firstHourBudget), MarketState(engine, registry));
+
+        // Re-capturing the very same game time must not repeat the hour.
+        engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 2);
+        Assert.Equal((126, 68, 70, firstHourBudget), MarketState(engine, registry));
+
+        // Still inside the same hour — nothing new.
+        engine.CaptureSnapshotForTests(GameCalendar.HourMs + 1, simulationTimeMs: 3);
+        Assert.Equal((126, 68, 70, firstHourBudget), MarketState(engine, registry));
+
+        engine.CaptureSnapshotForTests(2 * GameCalendar.HourMs, simulationTimeMs: 4);
+        Assert.Equal(144, MarketStock(engine, registry, "item.ice"));
+        Assert.Equal(64, MarketStock(engine, registry, "item.water"));
+        Assert.Equal(68, MarketStock(engine, registry, "item.steel"));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Missing_input_or_output_capacity_skips_entire_profile_batch(bool missingInput)
+    {
+        // Either too little water to spend, or no room left for the ice that would come out.
+        var stock = missingInput
+            ? new StationInventoryItemData[] { new("item.ice", IceTarget), new("item.water", 3), new("item.steel", SteelTarget) }
+            : [new("item.ice", 2 * IceTarget), new("item.water", WaterTarget), new("item.steel", SteelTarget)];
+        var (engine, registry) = CreateMarketEngine(stock: stock);
+        using var _ = engine;
+
+        engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 1);
+
+        // Nothing of the batch happened — no input was spent and no output appeared. Independent
+        // consumption is not part of the batch and still applies.
+        Assert.Equal(missingInput ? 3 : WaterTarget, MarketStock(engine, registry, "item.water"));
+        Assert.Equal(missingInput ? IceTarget : 2 * IceTarget, MarketStock(engine, registry, "item.ice"));
+        Assert.Equal(SteelTarget - 2, MarketStock(engine, registry, "item.steel"));
+    }
+
+    [Fact]
+    public void Transit_consumes_only_available_stock()
+    {
+        var (engine, registry) = CreateMarketEngine(
+            TransitProfile(),
+            stock: [new("item.water", 3), new("item.steel", SteelTarget)]);
+        using var _ = engine;
+
+        engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 1);
+
+        // The 4/hour demand cannot take more than the 3 that exist, and never goes negative.
+        Assert.Equal(0, MarketStock(engine, registry, "item.water"));
+        Assert.Equal(SteelTarget - 2, MarketStock(engine, registry, "item.steel"));
+
+        engine.CaptureSnapshotForTests(2 * GameCalendar.HourMs, simulationTimeMs: 2);
+        Assert.Equal(0, MarketStock(engine, registry, "item.water"));
+    }
+
+    private static FactoryTypeDefinition IceFactory(long outputCount = 18) => new(
+        "factory.market-test", "Market test",
+        new RecipeDefinition("recipe.market-test", "Market test",
+            [new("item.water", 4)], [new("item.ice", outputCount)], GameCalendar.HourMs));
+
+    [Fact]
+    public void Modules_source_completes_once_without_profile_double_count()
+    {
+        var modulesProfile = BoundedProfile(StationMarketProductionSource.Modules);
+        var (engine, registry) = CreateMarketEngine(
+            modulesProfile,
+            extraFactory: IceFactory(),
+            producingModules: [new StationProducingModuleData("factory.market-test")]);
+        using var _ = engine;
+
+        // The recipe is the only producer: one cycle spends 4 water and yields 18 ice, while the
+        // profile batch stays silent for a Modules-source market.
+        engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 1);
+        Assert.Equal(IceTarget + 18, MarketStock(engine, registry, "item.ice"));
+        Assert.Equal(WaterTarget - 4, MarketStock(engine, registry, "item.water"));
+        Assert.Equal(SteelTarget - 2, MarketStock(engine, registry, "item.steel"));
+
+        // Declaring a profile batch AND a live producing module is a configuration error, caught
+        // before the candidate world can replace the running one.
+        var conflict = Assert.Throws<ScenarioException>(() => CreateMarketEngine(
+            BoundedProfile(),
+            extraFactory: IceFactory(),
+            producingModules: [new StationProducingModuleData("factory.market-test")]));
+        Assert.Contains("productionSource Profile conflicts", conflict.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Full_recipe_output_becomes_pending_and_blocks_next_cycle()
+    {
+        var modulesProfile = BoundedProfile(StationMarketProductionSource.Modules);
+        var (engine, registry) = CreateMarketEngine(
+            modulesProfile,
+            extraFactory: IceFactory(),
+            // Ice already at its cap, so a finished batch has nowhere to go.
+            stock: [new("item.ice", 2 * IceTarget), new("item.water", WaterTarget), new("item.steel", SteelTarget)],
+            producingModules: [new StationProducingModuleData("factory.market-test")]);
+        using var _ = engine;
+
+        engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 1);
+        Assert.Equal(2 * IceTarget, MarketStock(engine, registry, "item.ice"));
+        var module = MarketStation(engine).ProducingModules.Single();
+        Assert.Equal(18, Assert.Single(module.PendingOutput).StockQuantity);
+        // A blocked remainder also blocks the next cycle, so inputs are not spent again.
+        Assert.Null(module.NextProductionDueGameTimeMs);
+        Assert.Equal(WaterTarget - 4, MarketStock(engine, registry, "item.water"));
+
+        // Repeating the same snapshot must not duplicate the output.
+        engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 1);
+        Assert.Equal(18, Assert.Single(MarketStation(engine).ProducingModules.Single().PendingOutput).StockQuantity);
+
+        // The player buys 5 ice, which is the only room that appears.
+        engine.ReceiveCommand(new PlayerCommand("buy-ice", 1, ShipId(engine), ContainerModuleId(engine, registry),
+            TradeCommandTypes.Buy, ItemTypeId: "item.ice", Quantity: 5));
+        engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 1);
+        Assert.Equal(2 * IceTarget - 5, MarketStock(engine, registry, "item.ice"));
+
+        // The next calendar step unloads exactly what fits and keeps the rest pending.
+        engine.CaptureSnapshotForTests(2 * GameCalendar.HourMs, simulationTimeMs: 2);
+        Assert.Equal(2 * IceTarget, MarketStock(engine, registry, "item.ice"));
+        Assert.Equal(13, Assert.Single(MarketStation(engine).ProducingModules.Single().PendingOutput).StockQuantity);
+    }
+
+    [Fact]
+    public void Pending_output_and_budget_survive_save_load_at_hour_boundary()
+    {
+        const long horizon = 5 * GameCalendar.HourMs;
+
+        // Saving just before, exactly on, and just after an hour boundary must all restore the
+        // same world the uninterrupted run reaches — a cursor that replayed or skipped the tick
+        // would only show up on one of these three. The last point is taken after the remainder
+        // has already partially unloaded.
+        foreach (long saveAt in new[]
+        {
+            GameCalendar.HourMs - 1, GameCalendar.HourMs, GameCalendar.HourMs + 1, 2 * GameCalendar.HourMs + 1,
+        })
+        {
+            var (reference, registry) = CreatePendingEngine();
+            using var __ = reference;
+            reference.CaptureSnapshotForTests(saveAt, simulationTimeMs: saveAt / 300);
+            var expectedAtSave = MarketFingerprint(reference, registry);
+
+            var clock = new SimulationClock(SimulationSpeed.Speed0, () => 0);
+            var (original, _2) = CreatePendingEngine(clock);
+            using var ___ = original;
+            original.CaptureSnapshotForTests(saveAt, simulationTimeMs: saveAt / 300);
+
+            // CaptureSnapshotForTests advances the world but not the clock; the save must carry
+            // the time the world actually reached, otherwise the reload would replay the hour.
+            clock.Reset(saveAt, SimulationSpeed.Speed0, saveAt / 300);
+            var save = original.CaptureSaveState();
+            Assert.Equal(9, save.SaveFormatVersion);
+
+            using var loaded = new SimulationEngine(MarketRegistry(PendingProfile(), IceFactory()));
+            loaded.LoadScenario(
+                ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), allowNonZeroGameTime: true), isSave: true);
+            Assert.Equal(expectedAtSave, MarketFingerprint(loaded, registry));
+
+            // Continuing from the restored world lands exactly where the uninterrupted run does.
+            reference.CaptureSnapshotForTests(horizon, simulationTimeMs: horizon / 300);
+            loaded.CaptureSnapshotForTests(horizon, simulationTimeMs: horizon / 300);
+            Assert.Equal(MarketFingerprint(reference, registry), MarketFingerprint(loaded, registry));
+        }
+
+        // The pending remainder genuinely moves across this window, so the comparisons above are
+        // not quietly comparing an always-empty value.
+        var (probe, probeRegistry) = CreatePendingEngine();
+        using var _ = probe;
+        probe.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 1);
+        string afterFirstHour = MarketPending(probe, probeRegistry);
+        probe.CaptureSnapshotForTests(2 * GameCalendar.HourMs, simulationTimeMs: 2);
+        Assert.NotEqual(afterFirstHour, MarketPending(probe, probeRegistry));
+        Assert.Contains("item.ice=", afterFirstHour, StringComparison.Ordinal);
+    }
+
+    private static (long Ice, long Water, long Steel, long Budget) MarketStateAfter(
+        SimulationEngine engine, GameDataRegistry registry, long gameTimeMs)
+    {
+        engine.CaptureSnapshotForTests(gameTimeMs, simulationTimeMs: gameTimeMs / 300);
+        return MarketState(engine, registry);
+    }
+
+    [Fact]
+    public void Normal_accelerated_chunked_and_manual_time_produce_identical_markets()
+    {
+        // Run the whole equivalence matrix twice: once on a profile-batch market, and once on the
+        // Modules market whose PendingOutput actually grows and drains — so the pending part of
+        // AC-04 is compared, not just stock and budget.
+        AssertTimeAdvanceEquivalence(clock => CreateMarketEngine(clock: clock));
+        AssertTimeAdvanceEquivalence(CreatePendingEngine);
+    }
+
+    private static void AssertTimeAdvanceEquivalence(
+        Func<SimulationClock?, (SimulationEngine Engine, GameDataRegistry Registry)> create)
+    {
+        const long horizon = 6 * GameCalendar.HourMs;
+
+        // One long explicit interval.
+        var (chunkedOnce, registry) = create(null);
+        using var _ = chunkedOnce;
+        chunkedOnce.CaptureSnapshotForTests(horizon, simulationTimeMs: horizon / 300);
+        var single = MarketFingerprint(chunkedOnce, registry);
+        // The fixtures must actually exercise pending, otherwise this proves nothing about it.
+        Assert.NotNull(single.Pending);
+
+        // Many small explicit intervals over the same horizon.
+        var (chunked, _2) = create(null);
+        using var __ = chunked;
+        for (long t = GameCalendar.HourMs / 4; t <= horizon; t += GameCalendar.HourMs / 4)
+            chunked.CaptureSnapshotForTests(t, simulationTimeMs: t / 300);
+        Assert.Equal(single, MarketFingerprint(chunked, registry));
+
+        // Normal and accelerated real-time playback of the same game interval.
+        foreach (var speed in new[] { SimulationSpeed.Speed1, SimulationSpeed.Speed4 })
+        {
+            long realMs = 0;
+            var clock = new SimulationClock(SimulationSpeed.Speed0, () => realMs);
+            var (played, _3) = create(clock);
+            using var ___ = played;
+            clock.SetSpeed(speed);
+            long realHorizon = horizon / speed.GameTimeMultiplier();
+            for (long step = 1; step <= 24; step++)
+            {
+                realMs = step * realHorizon / 24;
+                played.CaptureSnapshot(advanceClock: true);
+            }
+            Assert.Equal(single, MarketFingerprint(played, registry));
+        }
+
+        // The explicitly allowed manual advance: six docked TravelStation hops of one game hour
+        // each. Districts alternate because travelling to the district you are already in is
+        // refused and would not move time at all.
+        var (manual, _4) = create(null);
+        using var ____ = manual;
+        for (int hop = 0; hop < 6; hop++)
+        {
+            var destination = hop % 2 == 0 ? StationDistrict.Market : StationDistrict.Dock;
+            Assert.True(manual.TravelStation(new StationTravelCommand($"hop-{hop}", destination)).Accepted);
+        }
+        Assert.Equal(horizon, manual.CaptureSnapshot().GameTimeMs);
+        Assert.Equal(single, MarketFingerprint(manual, registry));
+    }
+
+    [Fact]
+    public void Paused_real_time_does_not_advance_market()
+    {
+        long realMs = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed0, () => realMs);
+        var (engine, registry) = CreateMarketEngine(clock: clock);
+        using var _ = engine;
+
+        var initial = MarketState(engine, registry);
+        for (int i = 1; i <= 10; i++)
+        {
+            realMs = i * GameCalendar.DayMs;
+            engine.CaptureSnapshot(advanceClock: true);
+            Assert.Equal(initial, MarketState(engine, registry));
+        }
+
+        // The one explicitly allowed exception moves the market by exactly one hour.
+        engine.TravelStation(new StationTravelCommand("manual", StationDistrict.Market));
+        Assert.Equal(GameCalendar.HourMs, engine.CaptureSnapshot().GameTimeMs);
+        Assert.Equal(126, MarketStock(engine, registry, "item.ice"));
+    }
+
+    [Fact]
+    public void Daily_budget_grant_is_not_multiplied_twenty_four_times()
+    {
+        var (engine, registry) = CreateMarketEngine();
+        using var _ = engine;
+        Assert.Equal(MarketInitialCredits, MarketBudget(engine));
+
+        // maxBudget 19200 over divisor 24 is 800 per day — not 800 per hour.
+        long dailyGrant = MarketMaxBudget / 24;
+        Assert.Equal(800, dailyGrant);
+        engine.CaptureSnapshotForTests(GameCalendar.DayMs, simulationTimeMs: 1);
+        Assert.Equal(MarketInitialCredits + dailyGrant, MarketBudget(engine));
+
+        // A daily grant that does not divide evenly by 24 is still distributed as whole credits
+        // and still sums to exactly one day's worth.
+        var (uneven, _2) = CreateMarketEngine(BoundedProfile(divisorPerDay: 192));
+        using var __ = uneven;
+        long unevenDaily = MarketMaxBudget / 192;
+        Assert.Equal(100, unevenDaily);
+        long previous = MarketBudget(uneven);
+        for (int hour = 1; hour <= 24; hour++)
+        {
+            uneven.CaptureSnapshotForTests(hour * GameCalendar.HourMs, simulationTimeMs: hour);
+            long granted = MarketBudget(uneven) - previous;
+            Assert.InRange(granted, 4, 5);
+            previous = MarketBudget(uneven);
+        }
+        Assert.Equal(MarketInitialCredits + unevenDaily, MarketBudget(uneven));
+
+        // Grants that would cross the cap are discarded, never carried over.
+        var (capped, _3) = CreateMarketEngine(BoundedProfile(initialCredits: MarketInitialCredits),
+            adjust: save => WithStationCredits(save, MarketMaxBudget));
+        using var ___ = capped;
+        Assert.Equal(MarketMaxBudget, MarketBudget(capped));
+        capped.CaptureSnapshotForTests(2 * GameCalendar.DayMs, simulationTimeMs: 1);
+        Assert.Equal(MarketMaxBudget, MarketBudget(capped));
+    }
+
+    private static ScenarioFile WithStationCredits(ScenarioFile save, long credits) => save with
+    {
+        GameState = save.GameState with
+        {
+            SpaceObjects = save.GameState.SpaceObjects
+                .Select(o => o.MarketProfileId is null ? o : o with { Credits = credits }).ToArray(),
+        },
+    };
+
+    [Fact]
+    public void Trade_budget_preserves_revenue_and_fee_reserve()
+    {
+        var (engine, registry) = CreateMarketEngine(
+            adjust: save => WithStationCredits(save, MarketMaxBudget - 100));
+        using var _ = engine;
+        var station = MarketStation(engine);
+        Assert.Equal(MarketMaxBudget - 100, station.Credits);
+        Assert.Equal(MarketMaxBudget - 100, station.MarketBudgetCredits);
+
+        // The player buys: the station keeps every credit of the price, while the budget may only
+        // climb to its cap — the surplus stays as Credits instead of being destroyed.
+        long priceEach = engine.CaptureSnapshot().DockedStationTrade!.Items
+            .Single(i => i.ItemTypeId == "item.ice").UnitPriceCredits;
+        engine.ReceiveCommand(new PlayerCommand("buy", 1, ShipId(engine), ContainerModuleId(engine, registry),
+            TradeCommandTypes.Buy, ItemTypeId: "item.ice", Quantity: 5));
+        engine.CaptureSnapshot();
+        long income = priceEach * 5;
+        station = MarketStation(engine);
+        Assert.Equal(MarketMaxBudget - 100 + income, station.Credits);
+        Assert.Equal(Math.Min(MarketMaxBudget, MarketMaxBudget - 100 + income), station.MarketBudgetCredits);
+        Assert.True(station.Credits >= station.MarketBudgetCredits);
+
+        // An hourly refill first makes the cash the station already holds available again, rather
+        // than minting more: with Credits well above the budget, only the budget moves.
+        var save = engine.CaptureSaveState();
+        var lowered = save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects
+                    .Select(o => o.MarketProfileId is null ? o : o with { MarketBudgetCredits = 1000 }).ToArray(),
+            },
+        };
+        using var reserved = new SimulationEngine(MarketRegistry(BoundedProfile()));
+        reserved.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(lowered), allowNonZeroGameTime: true), isSave: true);
+        long creditsBefore = MarketStation(reserved).Credits;
+        Assert.Equal(1000, MarketBudget(reserved));
+
+        reserved.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 1);
+        Assert.Equal(creditsBefore, MarketStation(reserved).Credits);
+        Assert.Equal(1000 + MarketMaxBudget / 24 / 24, MarketBudget(reserved));
+    }
+
+    /// <summary>Seeds the ship's container module with cargo the player did not buy from this station.</summary>
+    private static ScenarioFile WithShipCargo(ScenarioFile save, string itemTypeId, long quantity) => save with
+    {
+        GameState = save.GameState with
+        {
+            SpaceObjects = save.GameState.SpaceObjects
+                .Select(o => o.ObjectId != save.GameState.PlayerShipObjectId ? o : o with
+                {
+                    Modules = o.Modules!.Select(m => m.Cargo is not { Count: > 0 } cargo ? m : m with
+                    {
+                        Cargo = cargo.Any(c => c.ItemTypeId == itemTypeId)
+                            ? cargo.Select(c => c.ItemTypeId == itemTypeId ? c with { Quantity = quantity } : c).ToArray()
+                            : cargo.Append(new CargoStackData(itemTypeId, quantity)).ToArray(),
+                    }).ToArray(),
+                }).ToArray(),
+        },
+    };
+
+    [Fact]
+    public void Sell_respects_stock_headroom_and_reports_partial_quantity()
+    {
+        // Three units of room for ice, and the player already carries five — bought elsewhere, so
+        // the station's own stock was never reduced to make space for them.
+        var (engine, registry) = CreateMarketEngine(
+            stock: [new("item.ice", 2 * IceTarget - 3), new("item.water", WaterTarget), new("item.steel", SteelTarget)],
+            adjust: save => WithShipCargo(save, "item.ice", 5));
+        using var _ = engine;
+        string moduleId = ContainerModuleId(engine, registry);
+
+        long stockBefore = MarketStock(engine, registry, "item.ice");
+        long budgetBefore = MarketBudget(engine);
+        long playerBefore = engine.PlayerCredits;
+        long priceEach = engine.CaptureSnapshot().DockedStationTrade!.Items
+            .Single(i => i.ItemTypeId == "item.ice").UnitPriceCredits;
+
+        engine.ReceiveCommand(new PlayerCommand("sell", 2, ShipId(engine), moduleId,
+            TradeCommandTypes.Sell, ItemTypeId: "item.ice", Quantity: 5));
+        var result = Assert.Single(engine.CaptureSnapshot().CommandResults);
+
+        Assert.Equal(CommandResultStatus.Executed, result.Status);
+        Assert.Equal(3, result.ExecutedQuantity);
+        Assert.Equal(stockBefore + 3, MarketStock(engine, registry, "item.ice"));
+        Assert.Equal(2 * IceTarget, MarketStock(engine, registry, "item.ice"));
+        Assert.Equal(playerBefore + 3 * priceEach, engine.PlayerCredits);
+        Assert.Equal(budgetBefore - 3 * priceEach, MarketBudget(engine));
+
+        // A completely full market refuses outright and changes nothing.
+        long fullStock = MarketStock(engine, registry, "item.ice");
+        long fullBudget = MarketBudget(engine);
+        engine.ReceiveCommand(new PlayerCommand("sell-full", 3, ShipId(engine), moduleId,
+            TradeCommandTypes.Sell, ItemTypeId: "item.ice", Quantity: 1));
+        var rejected = Assert.Single(engine.CaptureSnapshot().CommandResults);
+        Assert.Equal(CommandResultStatus.Rejected, rejected.Status);
+        Assert.Equal("station_stock_full", rejected.ReasonCode);
+        Assert.Equal(fullStock, MarketStock(engine, registry, "item.ice"));
+        Assert.Equal(fullBudget, MarketBudget(engine));
+    }
+
+    [Theory]
+    [InlineData(49, "Shortage")]
+    [InlineData(50, "Normal")]
+    [InlineData(150, "Normal")]
+    [InlineData(151, "Surplus")]
+    [InlineData(200, "Surplus")]
+    public void Snapshot_stock_bands_and_limits_match_authoritative_state(long stock, string expectedState)
+    {
+        // A target of exactly 100 makes the permille thresholds land on whole units.
+        var profile = BoundedProfile() with
+        {
+            InitialInventory = [new("item.ice", 100), new("item.water", WaterTarget), new("item.steel", SteelTarget)],
+        };
+        profile = profile with
+        {
+            Economy = profile.Economy! with
+            {
+                StockTargets = [new("item.ice", 100), new("item.water", WaterTarget), new("item.steel", SteelTarget)],
+            },
+        };
+        var (engine, _registry) = CreateMarketEngine(profile,
+            stock: [new("item.ice", stock), new("item.water", WaterTarget), new("item.steel", SteelTarget)]);
+        using var _ = engine;
+
+        var trade = engine.CaptureSnapshot().DockedStationTrade!;
+        var ice = trade.Items.Single(i => i.ItemTypeId == "item.ice");
+        Assert.Equal(100, ice.TargetStock);
+        Assert.Equal(200, ice.MaxStock);
+        Assert.Equal(200 - stock, ice.FreeStockCapacity);
+        Assert.Equal(stock, ice.StockQuantity);
+        Assert.Equal(expectedState, ice.StockState!.Value.ToString());
+        Assert.True(ice.MaxSellableQuantity <= ice.FreeStockCapacity);
+
+        // Fuel never takes part in cargo flow, so it keeps the legacy null shape.
+        var fuel = trade.Items.Single(i => i.ItemTypeId == "item.fuel");
+        Assert.Null(fuel.TargetStock);
+        Assert.Null(fuel.MaxStock);
+        Assert.Null(fuel.FreeStockCapacity);
+        Assert.Null(fuel.StockState);
+    }
+
+    [Fact]
+    public void Invalid_economy_save_does_not_replace_loaded_world()
+    {
+        var modulesProfile = BoundedProfile(StationMarketProductionSource.Modules);
+        var factory = IceFactory();
+        var (engine, registry) = CreateMarketEngine(
+            modulesProfile, extraFactory: factory,
+            producingModules: [new StationProducingModuleData("factory.market-test")]);
+        using var _ = engine;
+        engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 1);
+        var save = engine.CaptureSaveState();
+        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+
+        ScenarioFile Corrupt(Func<SpaceObjectData, SpaceObjectData> change) => save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects
+                    .Select(o => o.MarketProfileId is null ? o : change(o)).ToArray(),
+            },
+        };
+
+        // Each case asserts the message it is meant to trigger, so none of them can pass for an
+        // unrelated reason — the over-cap case in particular keeps the rest of the inventory
+        // intact, otherwise the loader would reject it for the missing items instead.
+        (string Name, ScenarioFile Save, string Expected)[] corrupted =
+        [
+            ("profile stamp", Corrupt(o => o with { MarketProfileFingerprint = "not-the-profile" }),
+                "marketProfileFingerprint does not match"),
+            ("missing budget", Corrupt(o => o with { MarketBudgetCredits = null }),
+                "marketBudgetCredits is required"),
+            ("budget above cap", Corrupt(o => o with { MarketBudgetCredits = MarketMaxBudget + 1 }),
+                "marketBudgetCredits must be within"),
+            ("negative budget", Corrupt(o => o with { MarketBudgetCredits = -1 }),
+                "marketBudgetCredits must be within"),
+            ("stock above cap", Corrupt(o => o with
+            {
+                Inventory = o.Inventory!
+                    .Select(i => i.ItemTypeId == "item.ice" ? i with { Quantity = 2 * IceTarget + 1 } : i).ToArray(),
+            }), "is outside [0,"),
+            ("non-positive pending", Corrupt(o => o with
+            {
+                ProducingModules = [new StationProducingModuleData("factory.market-test",
+                    PendingOutput: [new StationInventoryItemData("item.ice", 0)])],
+            }), "quantity must be positive"),
+            ("pending outside the recipe", Corrupt(o => o with
+            {
+                ProducingModules = [new StationProducingModuleData("factory.market-test",
+                    PendingOutput: [new StationInventoryItemData("item.steel", 1)])],
+            }), "is not a recipe output"),
+            ("pending above one batch", Corrupt(o => o with
+            {
+                ProducingModules = [new StationProducingModuleData("factory.market-test",
+                    PendingOutput: [new StationInventoryItemData("item.ice", 19)])],
+            }), "exceeds one recipe batch"),
+            ("pending together with a due cycle", Corrupt(o => o with
+            {
+                ProducingModules = [new StationProducingModuleData("factory.market-test",
+                    NextProductionDueGameTimeMs: 9 * GameCalendar.HourMs,
+                    PendingOutput: [new StationInventoryItemData("item.ice", 1)])],
+            }), "both pendingOutput and nextProductionDueGameTimeMs"),
+        ];
+
+        foreach (var (name, candidate, expected) in corrupted)
+        {
+            var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(candidate, isSave: true));
+            Assert.True(error.Message.Contains(expected, StringComparison.Ordinal), $"{name}: {error.Message}");
+            Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+        }
+    }
+
+    [Fact]
+    public void Existing_legacy_production_and_motion_are_unchanged()
+    {
+        // The no-economy path must stay byte-identical: the same recipe timing, the same
+        // unbounded output and the same calendar-to-motion mapping as before US-0002.
+        using var engine = CreateIntervalEngine();
+        var boundary = engine.CaptureSnapshotForTests(GameCalendar.DayMs, simulationTimeMs: 123);
+        Assert.Equal(4, ProducedFood(engine));
+        Assert.Equal(123, boundary.SimulationTimeMs);
+        // The next cycle is scheduled on the following pass, exactly as before US-0002.
+        engine.CaptureSnapshotForTests(GameCalendar.DayMs + 1, simulationTimeMs: 124);
+        Assert.Equal(GameCalendar.DayMs + 12 * GameCalendar.HourMs, ProductionDue(engine));
+
+        var station = engine.RuntimeObjects.Single(o => o.ObjectType == "Station");
+        Assert.Null(station.MarketBudgetCredits);
+        Assert.True(station.ProducingModules.Single().PendingOutput.IsDefaultOrEmpty);
+
+        // And the docked station of a real New Game scenario stays unbounded too.
+        using var real = RationScheduleTests.CreateEngine();
+        var trade = real.CaptureSnapshot().DockedStationTrade!;
+        Assert.All(trade.Items, item =>
+        {
+            Assert.Null(item.TargetStock);
+            Assert.Null(item.MaxStock);
+            Assert.Null(item.StockState);
+        });
     }
 }

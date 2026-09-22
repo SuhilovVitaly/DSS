@@ -313,8 +313,15 @@ public sealed partial class SimulationEngine : IDisposable
                 NextPortFeeDueGameTimeMs: ResolveNextPortFee(obj, gs.GameTimeMs),
                 PortFeeDebt: obj.PortFeeDebt,
                 MarketProfileId: marketProfile?.TypeId,
-                MarketProfileFingerprint: marketProfile?.Fingerprint));
+                MarketProfileFingerprint: marketProfile?.Fingerprint,
+                MarketBudgetCredits: ResolveMarketBudget(
+                    obj, isStation ? marketProfile : null, stationSize, credits, loadingSave, scenario.SaveFormatVersion)));
         }
+
+        // Bounded-market preflight on the candidate world: stock/target coverage, one production
+        // source per station and a well-formed pending remainder must all hold before anything is
+        // replaced, so an invalid save leaves the running world untouched (AC-07).
+        ValidateMarketWorld(runtimeObjects);
 
         lock (_worldStateLock)
         {
@@ -570,6 +577,7 @@ public sealed partial class SimulationEngine : IDisposable
         if (station is null || station.Inventory.IsDefaultOrEmpty)
             return null;
 
+        bool bounded = TryGetMarket(station, out var marketProfile, out var marketEconomy);
         var items = ImmutableArray.CreateBuilder<StationInventoryItemSnapshot>(station.Inventory.Length);
         foreach (var item in station.Inventory)
         {
@@ -579,11 +587,28 @@ public sealed partial class SimulationEngine : IDisposable
             // station.PriceCoefficient still never participates in this formula (§59).
             var factors = ResolveStationPriceFactors(station, item.ItemTypeIndex, itemType);
             long unitPrice = StationPricing.ComputeUnitPriceCredits(itemType.BasePriceCredits ?? 0, factors);
-            long rawMaxSellable = unitPrice > 0 ? station.Credits / unitPrice : 0;
+            // A bounded market buys out of its trading budget and only up to its free storage;
+            // an unconfigured one keeps spending the whole hidden Credits balance as before.
+            long purse = bounded ? station.MarketBudgetCredits ?? 0 : station.Credits;
+            long rawMaxSellable = unitPrice > 0 ? purse / unitPrice : 0;
             // Selling is fully per-unit (Documentation/02-FirstRelease/Screens/Trade.md, "UI-решение:
             // панель действия" — this supersedes the former §59/U9 sell-package-size rule) —
             // MaxSellableQuantity is the raw affordable quantity, no package flooring.
             long maxSellable = rawMaxSellable;
+
+            long? targetStock = null;
+            long? maxStock = null;
+            long? freeCapacity = null;
+            StationMarketStockState? stockState = null;
+            if (bounded && itemType.StorageKind == ItemStorageKind.Cargo &&
+                TryMarketLimits(marketProfile, marketEconomy, station.StationSize, itemType.TypeId, out var limits))
+            {
+                targetStock = limits.Target;
+                maxStock = limits.MaxStock;
+                freeCapacity = Math.Max(0, limits.MaxStock - item.StockQuantity);
+                stockState = MarketBand(item.StockQuantity, limits.Target, marketEconomy);
+                maxSellable = Math.Min(maxSellable, freeCapacity.Value);
+            }
 
             items.Add(new StationInventoryItemSnapshot(
                 ItemTypeId: itemType.TypeId,
@@ -591,7 +616,11 @@ public sealed partial class SimulationEngine : IDisposable
                 UnitPriceCredits: unitPrice,
                 MaxSellableQuantity: maxSellable,
                 Category: ToTradeItemCategory(itemType.Category),
-                UnitMassKg: itemType.UnitMassKg));
+                UnitMassKg: itemType.UnitMassKg,
+                TargetStock: targetStock,
+                MaxStock: maxStock,
+                FreeStockCapacity: freeCapacity,
+                StockState: stockState));
         }
 
         return new StationTradeSnapshot(station.InitialMotion.ObjectId, items.MoveToImmutable());
@@ -810,7 +839,8 @@ public sealed partial class SimulationEngine : IDisposable
                 NextPortFeeDueGameTimeMs: obj.NextPortFeeDueGameTimeMs,
                 PortFeeDebt: obj.PortFeeDebt,
                 MarketProfileId: isStation ? obj.MarketProfileId : null,
-                MarketProfileFingerprint: isStation ? obj.MarketProfileFingerprint : null));
+                MarketProfileFingerprint: isStation ? obj.MarketProfileFingerprint : null,
+                MarketBudgetCredits: isStation ? obj.MarketBudgetCredits : null));
         }
 
         var gameState = new GameStateData(
@@ -886,9 +916,16 @@ public sealed partial class SimulationEngine : IDisposable
     private StationProducingModuleData BuildSaveProducingModule(StationProducingModuleRuntime module)
     {
         var factoryType = _registry.FactoryTypes.GetDefinition(module.FactoryTypeIndex);
+        // Pending output is written by stable item id, never by registry index, and omitted
+        // entirely when the module has nothing waiting — so a save taken after a partial unload
+        // reloads as exactly the remainder and never re-issues the output.
+        var pendingOutput = module.PendingOutput.IsDefaultOrEmpty
+            ? null
+            : module.PendingOutput.Select(BuildSaveInventoryItem).ToList();
         return new StationProducingModuleData(
             ProducingModuleTypeId: factoryType.TypeId,
-            Active: module.Active, NextProductionDueGameTimeMs: module.NextProductionDueGameTimeMs);
+            Active: module.Active, NextProductionDueGameTimeMs: module.NextProductionDueGameTimeMs,
+            PendingOutput: pendingOutput);
     }
 
     private StationEventData BuildSaveEvent(StationEventRuntime evt)
@@ -1410,7 +1447,23 @@ public sealed partial class SimulationEngine : IDisposable
             if (recipe.CycleDurationMs <= 0 || recipe.Inputs.Concat(recipe.Outputs).Any(m => m.Count <= 0 || !_registry.ItemTypes.Contains(m.ItemTypeId)) ||
                 recipe.Inputs.Select(m => m.ItemTypeId).Distinct(StringComparer.Ordinal).Count() != recipe.Inputs.Length)
                 throw new ScenarioException("Invalid timed production recipe.");
-            modules.Add(new StationProducingModuleRuntime(factoryTypeIndex, module.Active, module.NextProductionDueGameTimeMs));
+            // Pending remainders are addressed by stable item id in the save and resolved to
+            // registry indices here; their semantic checks run in the market preflight.
+            var pendingOutput = ImmutableArray<StationInventoryItemRuntime>.Empty;
+            if (module.PendingOutput is { Count: > 0 } saved)
+            {
+                var pending = ImmutableArray.CreateBuilder<StationInventoryItemRuntime>(saved.Count);
+                foreach (var remainder in saved)
+                {
+                    if (remainder is null || !_registry.ItemTypes.Contains(remainder.ItemTypeId))
+                        throw new ScenarioException($"Object '{obj.ObjectId}', producing module '{module.ProducingModuleTypeId}', pendingOutput references unknown item '{remainder?.ItemTypeId}'. Save was not modified.");
+                    pending.Add(new StationInventoryItemRuntime(
+                        _registry.ItemTypes.GetIndex(remainder.ItemTypeId), remainder.Quantity));
+                }
+                pendingOutput = pending.MoveToImmutable();
+            }
+            modules.Add(new StationProducingModuleRuntime(
+                factoryTypeIndex, module.Active, module.NextProductionDueGameTimeMs, pendingOutput));
         }
 
         return modules.ToImmutable();
@@ -2074,7 +2127,12 @@ public sealed partial class SimulationEngine : IDisposable
 
             var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
                 stationInventoryItem with { StockQuantity = stationInventoryItem.StockQuantity - qty });
-            var updatedStation = station with { Credits = checked(station.Credits + cost), Inventory = updatedInventory };
+            var updatedStation = station with
+            {
+                Credits = checked(station.Credits + cost),
+                MarketBudgetCredits = ReplenishBudgetFromIncome(station, cost),
+                Inventory = updatedInventory,
+            };
 
             var updatedShip = UpdateModule(obj, moduleIndex, m =>
             {
@@ -2105,8 +2163,21 @@ public sealed partial class SimulationEngine : IDisposable
             // fully per-unit (Documentation/02-FirstRelease/Screens/Trade.md, "UI-решение: панель действия"
             // — this supersedes the former §59/U9 sell-package-size rule), so no flooring is
             // applied to the partial-fill quantity.
-            long maxStationCanAfford = unitPriceCredits > 0 ? station.Credits / unitPriceCredits : long.MaxValue;
+            bool boundedMarket = TryGetMarket(station, out var sellProfile, out var sellEconomy);
+            // A bounded market pays out of its trading budget, not the full hidden balance.
+            long stationPurse = boundedMarket ? station.MarketBudgetCredits ?? 0 : station.Credits;
+            long maxStationCanAfford = unitPriceCredits > 0 ? stationPurse / unitPriceCredits : long.MaxValue;
             long executedQty = Math.Min(qty, maxStationCanAfford);
+            if (boundedMarket && itemType.StorageKind == ItemStorageKind.Cargo &&
+                TryMarketLimits(sellProfile, sellEconomy, station.StationSize, itemType.TypeId, out var sellLimits))
+            {
+                long freeCapacity = Math.Max(0, sellLimits.MaxStock - stationInventoryItem.StockQuantity);
+                // A full warehouse is a distinct refusal from an empty purse: nothing changes and
+                // the client can say which limit was hit.
+                if (freeCapacity <= 0)
+                    return CommandStartOutcome.Rejected("station_stock_full");
+                executedQty = Math.Min(executedQty, freeCapacity);
+            }
             if (executedQty <= 0)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientStationStock);
 
@@ -2115,7 +2186,13 @@ public sealed partial class SimulationEngine : IDisposable
 
             var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
                 stationInventoryItem with { StockQuantity = checked(stationInventoryItem.StockQuantity + executedQty) });
-            var updatedStation = station with { Credits = checked(station.Credits - proceeds), Inventory = updatedInventory };
+            var updatedStation = station with
+            {
+                Credits = checked(station.Credits - proceeds),
+                // Spending draws down the budget and the balance by the same proceeds.
+                MarketBudgetCredits = boundedMarket ? checked(stationPurse - proceeds) : station.MarketBudgetCredits,
+                Inventory = updatedInventory,
+            };
 
             var updatedShip = UpdateModule(obj, moduleIndex, m =>
             {
@@ -2157,7 +2234,12 @@ public sealed partial class SimulationEngine : IDisposable
 
             var updatedInventory = station.Inventory.SetItem(stationInventoryIndex,
                 stationInventoryItem with { StockQuantity = stationInventoryItem.StockQuantity - qty });
-            var updatedStation = station with { Credits = checked(station.Credits + cost), Inventory = updatedInventory };
+            var updatedStation = station with
+            {
+                Credits = checked(station.Credits + cost),
+                MarketBudgetCredits = ReplenishBudgetFromIncome(station, cost),
+                Inventory = updatedInventory,
+            };
 
             var updatedShip = UpdateModule(obj, moduleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + qty) });
             PlayerCredits = updatedCredits;
@@ -3296,7 +3378,8 @@ internal sealed record SpaceObjectRuntime(
     long? NextPortFeeDueGameTimeMs = null,
     long PortFeeDebt = 0,
     string? MarketProfileId = null,
-    string? MarketProfileFingerprint = null);
+    string? MarketProfileFingerprint = null,
+    long? MarketBudgetCredits = null);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName);
@@ -3308,7 +3391,16 @@ internal sealed record StationCrewMemberRuntime(string Id, string Role, string D
 /// One producing-module instance installed on a station (see <see cref="StationProducingModuleData"/>).
 /// <see cref="FactoryTypeIndex"/> indexes <see cref="GameDataRegistry.FactoryTypes"/>.
 /// </summary>
-internal sealed record StationProducingModuleRuntime(int FactoryTypeIndex, bool Active, long? NextProductionDueGameTimeMs = null);
+/// <param name="PendingOutput">
+/// Finished recipe output that did not fit in station cargo and is waiting for room (US-0002
+/// AC-03). Empty for every station without a bounded economy, since only such a station caps
+/// recipe output at all. A module never starts a new cycle while this is non-empty.
+/// </param>
+internal sealed record StationProducingModuleRuntime(
+    int FactoryTypeIndex,
+    bool Active,
+    long? NextProductionDueGameTimeMs = null,
+    ImmutableArray<StationInventoryItemRuntime> PendingOutput = default);
 
 /// <summary>
 /// One station event/buff/debuff (see <see cref="StationEventData"/>) — schema + persistence

@@ -22,6 +22,9 @@ public sealed partial class SimulationEngine
         // cannot repeat a meal, including midnight. Loading establishes the cursor.
         while (_processedWorldTimeMs < gameTimeMs)
         {
+            // A blocked remainder must be handed over before a module may take on a new cycle,
+            // so a freed slot is reused on the same pass rather than a later one.
+            FlushPendingOutputs();
             StartAvailableProduction(_processedWorldTimeMs);
             long nextMeal = _processedWorldTimeMs - _processedWorldTimeMs % MealIntervalMs;
             nextMeal = nextMeal > long.MaxValue - MealIntervalMs ? long.MaxValue : nextMeal + MealIntervalMs;
@@ -30,6 +33,7 @@ public sealed partial class SimulationEngine
             IncludeBoundary(NextPortFeeTime());
             IncludeBoundary(NextContractDeadline());
             IncludeBoundary(NextProductionTime());
+            IncludeBoundary(NextMarketHourTime());
 
             // Only boundaries in (processed, target] may move the cursor. A stale
             // schedule must not rewind motion or replay an already processed time.
@@ -38,10 +42,12 @@ public sealed partial class SimulationEngine
                 if (boundary > _processedWorldTimeMs && boundary < next) next = boundary;
             }
 
-            // Keep equal-time effects ordered: start above, motion, completion,
-            // meal, fee, deadline, then commit the calendar cursor.
+            // Keep equal-time effects ordered: start above, motion, completion, market hour,
+            // pending unload, meal, fee, deadline, then commit the calendar cursor.
             AdvanceMotionTo(MotionAt(next));
             CompleteProduction(next);
+            if (next != long.MaxValue && next % GameCalendar.HourMs == 0) ApplyMarketHour(next);
+            FlushPendingOutputs();
             if (next == nextMeal && next % MealIntervalMs == 0) ConsumeScheduledRations(next);
             RenewPortFees(next);
             ApplyContractDeadlines(next);
