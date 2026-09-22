@@ -97,15 +97,14 @@ public static class ScenarioLoader
                 { ObjectId = Resolve(c.ObjectId), TargetObjectId = Resolve(c.TargetObjectId) }
             }).ToArray()
         }).ToArray();
-        return scenario with
+        var normalizedState = gs with
         {
-            GameState = gs with
-            {
-                PlayerShipObjectId = ids[gs.PlayerShipObjectId],
-                CurrentSpeed = KnownSpeeds.Single(s => s.Equals(gs.CurrentSpeed, StringComparison.OrdinalIgnoreCase)),
-                SpaceObjects = objects
-            }
+            PlayerShipObjectId = ids[gs.PlayerShipObjectId],
+            CurrentSpeed = KnownSpeeds.Single(s => s.Equals(gs.CurrentSpeed, StringComparison.OrdinalIgnoreCase)),
+            SpaceObjects = objects
         };
+        normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
+        return scenario with { GameState = normalizedState };
     }
 
     /// <summary>

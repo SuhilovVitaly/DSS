@@ -72,7 +72,9 @@ public sealed record GameStateData(
     [property: JsonPropertyName("pendingCommands")] IReadOnlyList<DeepSpaceSaga.Contracts.PlayerCommand>? PendingCommands = null,
     [property: JsonPropertyName("economyTime")] EconomyTimeData? EconomyTime = null,
     [property: JsonPropertyName("simulationTimeMs")] long? SimulationTimeMs = null,
-    [property: JsonPropertyName("catalogCompatibility")] CatalogCompatibilityData? CatalogCompatibility = null)
+    [property: JsonPropertyName("catalogCompatibility")] CatalogCompatibilityData? CatalogCompatibility = null,
+    [property: JsonPropertyName("tradingMapGeneration")] TradingMapGenerationData? TradingMapGeneration = null,
+    [property: JsonPropertyName("tradingMap")] TradingMapStateData? TradingMap = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
