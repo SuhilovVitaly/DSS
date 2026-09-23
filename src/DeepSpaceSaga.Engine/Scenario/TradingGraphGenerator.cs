@@ -376,15 +376,19 @@ internal static class TradingGraphGenerator
         IReadOnlyList<TradingMapCargoFlowData> flows,
         IReadOnlyDictionary<string, StationMarketProfileDefinition> profiles)
     {
+        var transitId = rules.StartStationObjectId;
         foreach (var pair in profiles)
         {
+            if (string.Equals(pair.Key, transitId, StringComparison.OrdinalIgnoreCase) &&
+                pair.Value.SupplyItemTypeIds.Length != 0)
+                throw new ScenarioException($"transit station '{pair.Key}' must not have supply items.");
+
             if (pair.Value.SupplyItemTypeIds.Length == 0 ||
                 flows.Any(flow => flow.FromStationObjectId == pair.Key))
                 continue;
             throw new ScenarioException($"station '{pair.Key}' has supply items but no outgoing cargo flow.");
         }
 
-        var transitId = rules.StartStationObjectId;
         var hasReturnPair = flows.Any(flow => flows.Any(reverse =>
             reverse.FromStationObjectId == flow.ToStationObjectId &&
             reverse.ToStationObjectId == flow.FromStationObjectId));

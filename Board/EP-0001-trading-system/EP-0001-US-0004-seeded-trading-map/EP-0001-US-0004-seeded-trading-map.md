@@ -6,8 +6,8 @@ stage: approved
 dependencies: [EP-0001-US-0001-station-market-profiles]
 created: 2026-09-21T09:16:09Z
 source_request: "сделай следующую стори"
-current_review: story
-revision: 1
+current_review: complete
+revision: 2
 ---
 
 # Воспроизводимая карта с выбором торгового направления
@@ -90,3 +90,8 @@ Production-код не выполняется StoryBuilder. При реализ�
 - Plan-review: карта пяти тикетов принята автоматическим workflow. Не требуется ответ пользователя.
 - Создан TK-0001: schema и structural checks; 4 разрешённых файла. Следующий TK-0002.
 - Создан TK-0002: граф, cargo flows, независимый RNG; 2 разрешённых файла. Следующий TK-0003.
+- 2026-09-22T19:26:16Z — точное сообщение пользователя: «создай недостающие»; workflow возобновлён по существующим artifacts.
+- Создан TK-0003: geometry и edge metadata; 2 разрешённых файла. Следующий TK-0004.
+- Создан TK-0004: New Game/bootstrap и Save/Load; 2 разрешённых файла. Следующий TK-0005.
+- Создан TK-0005: Default/Docked/Undocked content и Client integration coverage; 4 разрешённых файла.
+- Все пять тикетов созданы в dependency order; блокирующих вопросов нет; current_review переведён в complete.

@@ -109,6 +109,18 @@ public sealed class TradingGraphGeneratorTests
     [Fact]
     public void Missing_consumer_and_missing_return_cargo_are_rejected()
     {
+        var transitProducerRegistry = Registry(Profiles().Select(profile => profile with
+        {
+            SupplyItemTypeIds = profile.TypeId == "market.transit"
+                ? ["item.steel"]
+                : profile.SupplyItemTypeIds,
+            InitialInventory = profile.TypeId == "market.transit"
+                ? profile.InitialInventory.Append(new StationMarketStockDefinition("item.steel", 1)).ToImmutableArray()
+                : profile.InitialInventory,
+        }).ToArray());
+        Assert.Throws<ScenarioException>(() => TradingGraphGenerator.Generate(
+            Rules(), 1, transitProducerRegistry));
+
         var noFlowsRegistry = Registry(Profiles().Select(profile => profile with
         {
             SupplyItemTypeIds = [],
