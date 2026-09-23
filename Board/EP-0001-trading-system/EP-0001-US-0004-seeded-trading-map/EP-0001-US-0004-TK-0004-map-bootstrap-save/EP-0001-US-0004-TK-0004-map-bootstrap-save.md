@@ -6,10 +6,10 @@ title: New Game и восстановление сети
 stage: approved
 layer: engine
 depends_on: [EP-0001-US-0004-TK-0003-map-geometry, EP-0001-US-0001-TK-0002-profile-market-bootstrap]
-files_touched: 2
+files_touched: 3
 serves: [AC-01, AC-04, AC-05, AC-06]
 created: 2026-09-22T19:26:16Z
-revision: 1
+revision: 2
 ---
 
 # New Game и восстановление сети
@@ -24,6 +24,10 @@ stations, edges и RNG без повторной генерации, дубле�
 
 2026-09-22T19:26:16Z — пользователь попросил создать недостающие тикеты; продолжается
 утверждённый план US-0004. Новых продуктовых решений пользователь не добавлял.
+
+2026-09-23 — пользователь разрешил расширить scope TK-0004 на
+симметричную проверку направленного cargo flow против неориентированного edge в
+`TradingMapData.cs`, необходимую для Save/Load materialized map.
 
 ## Assumptions
 
@@ -42,6 +46,7 @@ stations, edges и RNG без повторной генерации, дубле�
 |---|---|---|
 | src/DeepSpaceSaga.Engine/SimulationEngine.cs | `LoadScenario` validates and resolves seed at `:197–231`, builds runtime objects at `:233–245`, saves materialized objects through `CaptureSaveState` at `:780–825` | Stage New Game map generation and saved-map restoration before world commit; include map state in snapshot/save capture without regenerating |
 | tests/DeepSpaceSaga.Engine.Tests/TradingMapBootstrapTests.cs | Новый файл; existing load/save seams are `ScenarioEngineTests.cs:136–170` and `SimulationEngine.CaptureSaveStateForTests` | New Game, three initial states, save/load equality, invalid-map atomicity and legacy regressions |
+| src/DeepSpaceSaga.Engine/Scenario/TradingMapData.cs | `TradingMapDataValidation` validates cargo-flow endpoint pairs at `:177` | Accept either direction of a directed cargo flow for an undirected materialized edge; preserve flow direction and all other validation |
 
 ## Public API after the change
 
@@ -81,7 +86,7 @@ private GameStateData MaterializeOrRestoreTradingMap(
 
 ## Out of scope
 
-Изменение `ScenarioData.cs`, `TradingMapData.cs`, graph/geometry algorithms,
+Изменение `ScenarioData.cs`, graph/geometry algorithms,
 scenario JSON content, Client UI, Approach/Motion, fuel/risk settlement,
 dynamic prices, market events and global save-version migration.
 
@@ -115,7 +120,7 @@ dotnet format D:\DeepSpaceSaga\DSS\DeepSpaceSaga.sln --verify-no-changes --no-re
 
 ## Definition of Done
 
-- Изменены только два файла из `Code context`.
+- Изменены только три файла из `Code context`.
 - AC-01, AC-04, AC-05 и AC-06 покрыты named tests на New Game, Save/Load,
   atomic rejection и legacy path.
 - Tests, Engine build и format проходят либо исходное падение явно записано.
@@ -127,4 +132,5 @@ dotnet format D:\DeepSpaceSaga\DSS\DeepSpaceSaga.sln --verify-no-changes --no-re
 
 Режимы bootstrap, порядок staging/commit, seed/RNG правила, save projection,
 error boundary и точные тесты полностью определены; implementer не должен
-искать дополнительный lifecycle/API или менять dependency files.
+искать дополнительный lifecycle/API или менять dependency files, кроме явно
+перечисленной validation correction в `TradingMapData.cs`.

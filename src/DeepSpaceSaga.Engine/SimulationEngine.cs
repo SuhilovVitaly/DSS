@@ -32,6 +32,7 @@ public sealed partial class SimulationEngine : IDisposable
     private ulong _nextSequence;
     private ulong _nextEngineCycleId;
     private ulong _nextShipEventId;
+    private TradingMapStateData? _tradingMap;
     private bool _disposed;
 
     /// <summary>Number of commands received (test seam).</summary>
@@ -203,10 +204,6 @@ public sealed partial class SimulationEngine : IDisposable
         if ((isSave || scenario.SaveFormatVersion > 0) && gs.CatalogCompatibility is null && _registry.ItemTypes.Count > 0 &&
             !string.Equals(_registry.LegacyCatalogFingerprint, _registry.CatalogCompatibility.Fingerprint, StringComparison.Ordinal))
             throw new ScenarioException("Legacy save has no catalog identity; an exact approved legacyCatalogFingerprint is required. Save was not modified.");
-        bool loadingSave = isSave || scenario.SaveFormatVersion > 0;
-        var marketProfiles = ResolveMarketProfiles(gs.SpaceObjects, loadingSave, scenario.SaveFormatVersion);
-        var speed = ScenarioLoader.ParseSpeed(gs.CurrentSpeed);
-        var runtimeObjects = new List<SpaceObjectRuntime>(gs.SpaceObjects.Count);
 
         // masterSeed: reuse whatever the scenario/save already carries (continuing a
         // session must not reshuffle it). A missing value covers two distinct cases the
@@ -229,6 +226,12 @@ public sealed partial class SimulationEngine : IDisposable
             resolvedMasterSeed = GenerateRandomMasterSeed();
             resolvedMasterSeedWasMissingOnLoad = true;
         }
+
+        gs = MaterializeOrRestoreTradingMap(scenario, gs, isSave, resolvedMasterSeed);
+        bool loadingSave = isSave || scenario.SaveFormatVersion > 0;
+        var marketProfiles = ResolveMarketProfiles(gs.SpaceObjects, loadingSave, scenario.SaveFormatVersion);
+        var speed = ScenarioLoader.ParseSpeed(gs.CurrentSpeed);
+        var runtimeObjects = new List<SpaceObjectRuntime>(gs.SpaceObjects.Count);
 
         // Build the full runtime world before mutating engine state. A scenario with
         // invalid type references or placement must not destroy the currently loaded world.
@@ -389,10 +392,61 @@ public sealed partial class SimulationEngine : IDisposable
             _stationDistrict = _economyTime.StationDistrict;
             _stationTravelReceipts.Clear();
             _stationTravelReceipts.UnionWith(_economyTime.TravelReceipts ?? []);
+            _tradingMap = gs.TradingMap;
             RestoreCommandJournal(gs);
             // Quotes issued against the previous world are never valid in this one.
             ResetQuoteSession();
         }
+    }
+
+    /// <summary>
+    /// Materializes a requested seeded trading map before runtime construction, or passes a
+    /// materialized save map through unchanged. All work is staged in the returned
+    /// <see cref="GameStateData"/> so a rejected graph, geometry, or generated station never
+    /// mutates the currently loaded world.
+    /// </summary>
+    private GameStateData MaterializeOrRestoreTradingMap(
+        ScenarioFile scenario,
+        GameStateData normalizedState,
+        bool isSave,
+        ulong masterSeed)
+    {
+        if (normalizedState.TradingMapGeneration is not { } request)
+            return normalizedState;
+
+        if (isSave || scenario.SaveFormatVersion != 0)
+            throw new ScenarioException("tradingMapGeneration is only valid while starting a New Game.");
+
+        var graph = TradingGraphGenerator.Generate(request, masterSeed, _registry);
+        var geometry = TradingMapGeometryGenerator.Generate(graph, normalizedState.SpaceObjects, masterSeed);
+        var mapState = geometry.State with
+        {
+            RngStreams = geometry.State.RngStreams.OrderBy(stream => stream.Name, StringComparer.Ordinal).ToArray(),
+        };
+        var generatedStations = geometry.Stations.ToDictionary(
+            station => station.ObjectId,
+            StringComparer.Ordinal);
+        var materializedObjects = new List<SpaceObjectData>(
+            normalizedState.SpaceObjects.Count + geometry.Stations.Count - 1);
+
+        foreach (var obj in normalizedState.SpaceObjects)
+        {
+            if (generatedStations.TryGetValue(obj.ObjectId, out var generatedStation))
+                materializedObjects.Add(generatedStation);
+            else
+                materializedObjects.Add(obj);
+        }
+
+        foreach (var station in geometry.Stations)
+            if (!normalizedState.SpaceObjects.Any(obj => string.Equals(obj.ObjectId, station.ObjectId, StringComparison.Ordinal)))
+                materializedObjects.Add(station);
+
+        return normalizedState with
+        {
+            SpaceObjects = materializedObjects,
+            TradingMapGeneration = null,
+            TradingMap = mapState,
+        };
     }
 
     private static ulong GenerateRandomMasterSeed()
@@ -887,7 +941,8 @@ public sealed partial class SimulationEngine : IDisposable
             CommandReceipts: CaptureCommandReceipts(),
             PendingCommands: CapturePendingCommands(),
             EconomyTime: CaptureEconomyTime(), SimulationTimeMs: gameTimeMs,
-            CatalogCompatibility: _registry.CatalogCompatibility);
+            CatalogCompatibility: _registry.CatalogCompatibility,
+            TradingMap: _tradingMap);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),

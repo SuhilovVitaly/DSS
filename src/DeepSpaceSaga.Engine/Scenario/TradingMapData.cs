@@ -174,7 +174,7 @@ internal static class TradingMapDataValidation
             var to = ResolveStation(flow.ToStationObjectId, stations, $"tradingMap.cargoFlows[{i}].toStationObjectId");
             if (string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
                 throw new ScenarioException($"tradingMap.cargoFlows[{i}] must have different endpoints.");
-            if (!edgePairs.Contains(EndpointKey(from, to)))
+            if (!edgePairs.Contains(EndpointKey(from, to)) && !edgePairs.Contains(EndpointKey(to, from)))
                 throw new ScenarioException($"tradingMap.cargoFlows[{i}] references a pair without a tradingMap edge.");
             var items = RequireCollection(flow.ItemTypeIds, $"tradingMap.cargoFlows[{i}].itemTypeIds");
             var itemIds = new HashSet<string>(StringComparer.Ordinal);
