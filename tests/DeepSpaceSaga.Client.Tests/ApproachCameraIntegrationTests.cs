@@ -21,6 +21,7 @@ public class ApproachCameraIntegrationTests
         var asteroid = save.GameState.SpaceObjects.First(o => o.ObjectType == SpaceObjectType.Asteroid);
         engine.LoadScenario(save with { GameState = save.GameState with {
             CurrentSpeed = "Speed0",
+            TradingMap = null,
             SpaceObjects = [
                 ship with { PositionX = 10000, PositionY = 10000, SpeedMps = 700, DirectionDegrees = 0 },
                 asteroid with { ObjectId = "TARGET-A", PositionX = 10000, PositionY = 10100, SpeedMps = 1069, DirectionDegrees = 57 },
@@ -97,7 +98,7 @@ public class ApproachCameraIntegrationTests
         var save = engine.CaptureSaveState();
         var ship = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId);
         var target = save.GameState.SpaceObjects.First(o => o.ObjectType == SpaceObjectType.Asteroid);
-        engine.LoadScenario(save with { GameState = save.GameState with { SpaceObjects = [
+        engine.LoadScenario(save with { GameState = save.GameState with { TradingMap = null, SpaceObjects = [
             ship with { PositionX = 0, PositionY = 0, SpeedMps = 700, DirectionDegrees = 0 },
             target with { PositionX = 200000, PositionY = 0, SpeedMps = 100, DirectionDegrees = 90 },
             target with { ObjectId = "NEXT-TARGET", PositionX = 200000, PositionY = 200000, SpeedMps = 1069, DirectionDegrees = 57 }

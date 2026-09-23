@@ -79,4 +79,40 @@ public class StationPricingTests
 
         Assert.Equal(baseline, StationPricing.ComputeUnitPriceCredits(1000, new[] { f1, f2, f3 }));
     }
+
+    [Fact]
+    public void Final_multiplier_clamp_uses_decimal_before_rounding()
+    {
+        // EP-0001-US-0015-TK-0002 / Documentation.md:96: final multiplier clamp 0.50..3.00 applies to the exact
+        // decimal multiplier (numerator / denominator), then one AwayFromZero round of base × multiplier.
+
+        // 0.4999 is clamped up to 0.50: 3 × 0.50 = 1.5 -> 2 (rounding 3 × 0.4999 = 1.4997 first would give 1).
+        Assert.Equal(2, StationPricing.ComputeClampedUnitPriceCredits(3, 4999m, 10000m, 500, 3000, out var floor));
+        Assert.Equal(PriceClampKind.Floor, floor);
+
+        // Exactly 0.50 is inside the bound: not reported as clamped, same price.
+        Assert.Equal(2, StationPricing.ComputeClampedUnitPriceCredits(3, 1m, 2m, 500, 3000, out var atFloor));
+        Assert.Equal(PriceClampKind.None, atFloor);
+
+        // 3.0001 is clamped down to 3.00: 7 × 3.00 = 21 (7 × 3.0001 = 21.0007 is never materialized).
+        Assert.Equal(21, StationPricing.ComputeClampedUnitPriceCredits(7, 30001m, 10000m, 500, 3000, out var ceiling));
+        Assert.Equal(PriceClampKind.Ceiling, ceiling);
+
+        // Exactly 3.00 via a non-terminating ratio (69000 / 23000): not clamped.
+        Assert.Equal(21, StationPricing.ComputeClampedUnitPriceCredits(7, 69000m, 23000m, 500, 3000, out var atCeiling));
+        Assert.Equal(PriceClampKind.None, atCeiling);
+
+        // Division happens once, last: 300 × 3700 × 1150 / 3000000 = 425.5 -> 426 (exact midpoint through a
+        // 1/3 ratio that an early 28-digit division can push just below .5).
+        Assert.Equal(426, StationPricing.ComputeClampedUnitPriceCredits(300, 3700m * 1150m, 3_000_000m, 500, 3000, out var inside));
+        Assert.Equal(PriceClampKind.None, inside);
+
+        // Positive base never prices below one credit: 1 × 0.50 = 0.5 -> 1.
+        Assert.Equal(1, StationPricing.ComputeClampedUnitPriceCredits(1, 1m, 10m, 500, 3000, out _));
+
+        // The unclamped legacy API keeps its behavior: no clamp, no minimum.
+        Assert.Equal(15, StationPricing.ComputeUnitPriceCredits(30, new[] { 500 }));
+        Assert.Equal(600, StationPricing.ComputeUnitPriceCredits(100, new[] { 2000, 3000 }));
+        Assert.Equal(0, StationPricing.ComputeUnitPriceCredits(0, new[] { 1000 }));
+    }
 }

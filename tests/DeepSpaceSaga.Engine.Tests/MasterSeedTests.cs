@@ -128,8 +128,9 @@ public class MasterSeedTests
         var engine = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
 
         Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
-        Assert.Equal(4, engine.RuntimeObjects.Length);
-        // Still the 2 fixed temporary asteroids — no procedural generation introduced.
+        Assert.Equal(8, engine.RuntimeObjects.Length);
+        Assert.Equal(5, engine.RuntimeObjects.Count(o => o.ObjectType == "Station"));
+        // The two fixed temporary asteroids remain alongside the seeded station network.
         Assert.Equal(2, engine.RuntimeObjects.Count(o => o.PersistenceType == "Temporary"));
 
         Assert.NotEqual(0UL, engine.MasterSeed);

@@ -13,7 +13,13 @@ public class RationScheduleTests
         var save = engine.CaptureSaveState();
         engine.LoadScenario(save with { GameState = save.GameState with {
             GameTimeMs = time,
-            SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId != save.GameState.PlayerShipObjectId ? o : o with {
+            TradingMap = null,
+            SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectType != "Station" ? o : o with {
+                MarketProfileId = null,
+                MarketProfileFingerprint = null,
+                MarketBudgetCredits = null,
+                MarketRevision = null,
+            }).Select(o => o.ObjectId != save.GameState.PlayerShipObjectId ? o : o with {
                 Passengers = Enumerable.Range(0, passengers).Select(i => new ShipPassengerData($"P{i}", $"Passenger {i}")).ToArray(),
                 Modules = o.Modules!.Select(m => m with { Cargo = m.Cargo?.Select(c => c.ItemTypeId == "item.food-rations"
                     ? c with { Quantity = rations } : c).ToArray() }).ToArray()
@@ -53,6 +59,7 @@ public class RationScheduleTests
         Assert.Equal(200, Food(engine.CaptureSnapshot()));
         var save = engine.CaptureSaveStateForTests(23 * GameCalendar.HourMs, SimulationSpeed.Speed0);
         engine.LoadScenario(save with { GameState = save.GameState with {
+            TradingMap = null,
             SpaceObjects = save.GameState.SpaceObjects.Select(o => o with { Passengers = [] }).ToArray()
         }});
         Assert.Equal(199, Food(engine.CaptureSnapshotForTests(GameCalendar.DayMs)));

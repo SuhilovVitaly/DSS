@@ -72,7 +72,9 @@ public sealed record GameStateData(
     [property: JsonPropertyName("pendingCommands")] IReadOnlyList<DeepSpaceSaga.Contracts.PlayerCommand>? PendingCommands = null,
     [property: JsonPropertyName("economyTime")] EconomyTimeData? EconomyTime = null,
     [property: JsonPropertyName("simulationTimeMs")] long? SimulationTimeMs = null,
-    [property: JsonPropertyName("catalogCompatibility")] CatalogCompatibilityData? CatalogCompatibility = null)
+    [property: JsonPropertyName("catalogCompatibility")] CatalogCompatibilityData? CatalogCompatibility = null,
+    [property: JsonPropertyName("tradingMapGeneration")] TradingMapGenerationData? TradingMapGeneration = null,
+    [property: JsonPropertyName("tradingMap")] TradingMapStateData? TradingMap = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
@@ -138,6 +140,8 @@ public sealed record SpaceObjectData(
     /// resolved" rule as <see cref="Credits"/>.
     /// </summary>
     [property: JsonPropertyName("inventory")] IReadOnlyList<StationInventoryItemData>? Inventory = null,
+    /// <summary>Item ids whose explicit scenario inventory overrides profile fallback stock.</summary>
+    [property: JsonPropertyName("explicitInventoryItemTypeIds")] IReadOnlyList<string>? ExplicitInventoryItemTypeIds = null,
     /// <summary>
     /// Station's size classification (requirements §59, Documentation\02-FirstRelease\TechnicalTasks\
     /// StationEconomyProductionAndSizing.md "Размеры станции") — one of "Huge"/"Large"/
@@ -204,7 +208,15 @@ public sealed record SpaceObjectData(
     /// interpretation, the maxBudget cap and the daily regeneration schedule belong to TK-0003.
     /// Only meaningful for ObjectType == Station.
     /// </summary>
-    [property: JsonPropertyName("marketBudgetCredits")] long? MarketBudgetCredits = null);
+    [property: JsonPropertyName("marketBudgetCredits")] long? MarketBudgetCredits = null,
+    /// <summary>
+    /// Market revision of a station with a market profile (EP-0001-US-0015-TK-0003): advanced once by every
+    /// effective market transaction and bound into every trade quote. Written for profile stations only and
+    /// null everywhere else — a profile-less station keeps its revision in memory only. Load resumes at
+    /// max(saved value, newest trade receipt), or max(1, newest receipt) when the field is missing;
+    /// an explicit value below 1, or any value on an object without a market profile, is rejected.
+    /// </summary>
+    [property: JsonPropertyName("marketRevision")] long? MarketRevision = null);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles

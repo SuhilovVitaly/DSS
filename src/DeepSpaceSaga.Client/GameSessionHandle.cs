@@ -176,7 +176,30 @@ public sealed class GameSessionHandle : IAsyncDisposable
     /// </summary>
     public string SendTradeCommand(
         string objectId, string moduleId, string commandType, string itemTypeId, long quantity,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        SendTrade(objectId, moduleId, commandType, itemTypeId, quantity, quoteId: null, marketRevision: null, cancellationToken);
+
+    /// <summary>
+    /// Send a quoted trade command: the requested <paramref name="quantity"/> together with the exact
+    /// <paramref name="quoteId"/>/<paramref name="marketRevision"/> binding the player was shown. One CommandId
+    /// is generated per call; the send itself stays fire-and-forget exactly like the unquoted overload.
+    /// </summary>
+    public string SendTradeCommand(
+        string objectId, string moduleId, string commandType, string itemTypeId, long quantity,
+        string quoteId, long marketRevision, CancellationToken cancellationToken = default) =>
+        SendTrade(objectId, moduleId, commandType, itemTypeId, quantity, quoteId, marketRevision, cancellationToken);
+
+    /// <summary>
+    /// Pass-through authoritative trade quote request. Never awaited by the render loop: the caller keeps the
+    /// task and observes its completion later. A failure or cancellation is returned to the caller and does not
+    /// fail the session.
+    /// </summary>
+    public ValueTask<TradeQuoteSnapshot> GetTradeQuoteAsync(TradeQuoteRequest request,
+        CancellationToken cancellationToken = default) =>
+        _connection.GetTradeQuoteAsync(request, cancellationToken);
+
+    private string SendTrade(string objectId, string moduleId, string commandType, string itemTypeId, long quantity,
+        string? quoteId, long? marketRevision, CancellationToken cancellationToken)
     {
         ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
         string commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
@@ -187,7 +210,9 @@ public sealed class GameSessionHandle : IAsyncDisposable
             ModuleId: moduleId,
             CommandType: commandType,
             ItemTypeId: itemTypeId,
-            Quantity: quantity);
+            Quantity: quantity,
+            QuoteId: quoteId,
+            MarketRevision: marketRevision);
 
         _ = SendTradeAsync(command, cancellationToken);
 

@@ -60,4 +60,98 @@ public class LocalizationTests
     {
         Assert.Equal("MainMenu.DoesNotExist", Localization.Get("MainMenu.DoesNotExist"));
     }
+
+    /// <summary>Quote/receipt flow messages and the placeholder indexes each one takes.</summary>
+    private static readonly (string Key, int[] Placeholders)[] TradeQuoteMessages =
+    {
+        ("TradeUX.QuoteLoading", []),
+        ("TradeUX.QuoteStale", []),
+        ("TradeUX.QuoteRequired", []),
+        ("TradeUX.InvalidQuote", []),
+        ("TradeUX.QuoteUnavailable", []),
+        ("TradeUX.StationCapacityLimit", []),
+        ("TradeUX.PartialPreview", [0, 1, 2]),
+        ("TradeUX.ReceiptUnavailable", []),
+        ("TradeUX.FuelServiceOnly", []),
+        ("TradeUX.StationBudgetLimit", []),
+        ("TradeUX.SuccessResult", [0, 1, 2]),
+        ("TradeUX.PartialResult", [0, 1, 2, 3]),
+    };
+
+    private static int[] PlaceholderIndexes(string text) =>
+        System.Text.RegularExpressions.Regex.Matches(text, @"\{(\d+)\}")
+            .Select(m => int.Parse(m.Groups[1].Value))
+            .Distinct()
+            .Order()
+            .ToArray();
+
+    [Theory]
+    [InlineData("English")]
+    [InlineData("Russian")]
+    public void Trade_quote_keys_exist_in_both_locales(string language)
+    {
+        var strings = Localization.LoadLocaleFile(language);
+
+        Assert.NotNull(strings);
+        foreach (var (key, _) in TradeQuoteMessages)
+        {
+            Assert.True(strings!.TryGetValue(key, out var text), $"{language}.json is missing key '{key}'");
+            Assert.False(string.IsNullOrWhiteSpace(text), $"{language}.json has an empty '{key}'");
+            Assert.NotEqual(key, text);
+        }
+
+        var english = Localization.LoadLocaleFile("English")!;
+        var russian = Localization.LoadLocaleFile("Russian")!;
+        Assert.Equal(
+            english.Keys.Where(k => k.StartsWith("TradeUX.", StringComparison.Ordinal)).Order(),
+            russian.Keys.Where(k => k.StartsWith("TradeUX.", StringComparison.Ordinal)).Order());
+    }
+
+    [Fact]
+    public void Trade_quote_messages_have_matching_expected_placeholders()
+    {
+        var english = Localization.LoadLocaleFile("English")!;
+        var russian = Localization.LoadLocaleFile("Russian")!;
+
+        foreach (var (key, placeholders) in TradeQuoteMessages)
+        {
+            Assert.True(placeholders.SequenceEqual(PlaceholderIndexes(english[key])), $"English '{key}' placeholders");
+            Assert.True(placeholders.SequenceEqual(PlaceholderIndexes(russian[key])), $"Russian '{key}' placeholders");
+        }
+
+        // The exact approved copy — no QuoteId, revision or hidden station cash leaks into the text.
+        Assert.Equal("Market conditions changed. Review the new quote and confirm again.", english["TradeUX.QuoteStale"]);
+        Assert.Equal("Условия торговли изменились. Проверьте новую котировку и подтвердите снова.", russian["TradeUX.QuoteStale"]);
+        Assert.Equal("Fuel is available through refuelling only.", english["TradeUX.FuelServiceOnly"]);
+        Assert.Equal("Топливо доступно только через заправку.", russian["TradeUX.FuelServiceOnly"]);
+        Assert.Equal("На складе станции нет места для этого товара.", russian["TradeUX.StationCapacityLimit"]);
+    }
+
+    [Theory]
+    [InlineData(1L, 10L, 25L)]
+    [InlineData(6L, 10L, 431L)]
+    [InlineData(999L, 1000L, 1234567L)]
+    public void Partial_preview_and_result_format_requested_actual_and_total(long actual, long requested, long total)
+    {
+        var english = Localization.LoadLocaleFile("English")!;
+        var russian = Localization.LoadLocaleFile("Russian")!;
+
+        Assert.Equal(
+            $"Will sell {actual} of {requested} for {total} tokens. The remainder stays in cargo.",
+            string.Format(english["TradeUX.PartialPreview"], actual, requested, total));
+        Assert.Equal(
+            $"Будет продано {actual} из {requested} за {total} токенов. Остаток останется в трюме.",
+            string.Format(russian["TradeUX.PartialPreview"], actual, requested, total));
+
+        // Existing result semantics: {0}=item, {1}=actual, {2}=total, {3}=requested.
+        Assert.Equal(
+            $"Ice: {actual} of {requested} completed · {total} tokens",
+            string.Format(english["TradeUX.PartialResult"], "Ice", actual, total, requested));
+        Assert.Equal(
+            $"Лёд: исполнено {actual} из {requested} · {total} токенов",
+            string.Format(russian["TradeUX.PartialResult"], "Лёд", actual, total, requested));
+        Assert.Equal(
+            $"Ice: {actual} completed · {total} tokens",
+            string.Format(english["TradeUX.SuccessResult"], "Ice", actual, total));
+    }
 }

@@ -10,7 +10,13 @@ namespace DeepSpaceSaga.Contracts;
 public sealed record StationTradeSnapshot(
     string StationObjectId,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<StationInventoryItemSnapshot>))]
-    ImmutableArray<StationInventoryItemSnapshot> Items = default);
+    ImmutableArray<StationInventoryItemSnapshot> Items = default,
+    /// <summary>
+    /// Current revision of this station's market, the value a <see cref="TradeQuoteSnapshot"/> is bound to.
+    /// <c>null</c> means the market publishes no revision (legacy snapshots, stations without a market
+    /// profile) — never revision zero.
+    /// </summary>
+    long? MarketRevision = null);
 
 /// <summary>
 /// One tradeable item on a docked station. The station's own Credits balance is never

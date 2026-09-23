@@ -155,18 +155,25 @@ public class EconomyTimeContinuityTests
                 SimulationTimeMs = 0,
                 MasterSeed = 17,
                 CatalogCompatibility = IntervalRegistry.CatalogCompatibility,
+                TradingMap = null,
                 DialogueState = null,
-                SpaceObjects = save.GameState.SpaceObjects.Where(o => o.ObjectType is "PlayerShip" or "Station").Select(o => o with
-                {
-                    Modules = o.ObjectType == "PlayerShip"
+                SpaceObjects = save.GameState.SpaceObjects
+                    .Where(o => o.ObjectId == save.GameState.PlayerShipObjectId || o.ObjectId == "SPC-0002")
+                    .Select(o => o with
+                    {
+                        Modules = o.ObjectType == "PlayerShip"
                         ? [new("cargo", "module.test-cargo", [new(4, 2)], 100, "On", "Ready", null,
                         rations > 0 ? [new("item.food-rations", rations)] : [])] : [],
-                    Credits = o.ObjectType == "Station" ? 10_000 : null,
-                    PriceCoefficient = o.ObjectType == "Station" ? 1000 : null,
-                    StationCrew = [],
-                    Inventory = o.ObjectType == "Station" ? [new("item.test-input", 10), new("item.food-rations", 0)] : null,
-                    ProducingModules = o.ObjectType == "Station" ? [new("factory.test-food")] : null
-                }).ToArray(),
+                        Credits = o.ObjectType == "Station" ? 10_000 : null,
+                        PriceCoefficient = o.ObjectType == "Station" ? 1000 : null,
+                        MarketProfileId = null,
+                        MarketProfileFingerprint = null,
+                        MarketBudgetCredits = null,
+                        MarketRevision = null,
+                        StationCrew = [],
+                        Inventory = o.ObjectType == "Station" ? [new("item.test-input", 10), new("item.food-rations", 0)] : null,
+                        ProducingModules = o.ObjectType == "Station" ? [new("factory.test-food")] : null
+                    }).ToArray(),
                 EconomyTime = save.GameState.EconomyTime! with
                 {
                     ActiveContracts = [new("contract.test", GameCalendar.DayMs, 750, "SPC-0002", ["P0"])]
@@ -562,12 +569,14 @@ public class EconomyTimeContinuityTests
             SaveFormatVersion = 0,
             GameState = gs with
             {
+                TradingMap = null,
                 SpaceObjects = gs.SpaceObjects
                     .Where(o => o.ObjectId == gs.PlayerShipObjectId || o.ObjectId == stationId)
                     .Select(o => o.ObjectId != stationId ? o : o with
                     {
                         MarketProfileId = profile.TypeId,
                         MarketProfileFingerprint = null,
+                        ExplicitInventoryItemTypeIds = null,
                         StationSize = nameof(StationSize.Medium),
                         Credits = null,
                         // Null lets the profile define the stock; an explicit list overrides it.
@@ -735,6 +744,45 @@ public class EconomyTimeContinuityTests
         "factory.market-test", "Market test",
         new RecipeDefinition("recipe.market-test", "Market test",
             [new("item.water", 4)], [new("item.ice", outputCount)], GameCalendar.HourMs));
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(GameCalendar.HourMs - 1)]
+    [InlineData(GameCalendar.HourMs)]
+    [InlineData(GameCalendar.HourMs + 1)]
+    public void Production_market_revision_is_independent_of_snapshot_and_save_boundaries(long splitAt)
+    {
+        const long horizon = 3 * GameCalendar.HourMs;
+        var (direct, registry) = CreateMarketEngine(
+            BoundedProfile(StationMarketProductionSource.Modules),
+            extraFactory: IceFactory(),
+            producingModules: [new StationProducingModuleData("factory.market-test")]);
+        using var _ = direct;
+        using var split = new SimulationEngine(registry, [], new SimulationClock(SimulationSpeed.Speed0, () => 0));
+        split.LoadScenario(direct.CaptureSaveState(), isSave: true);
+
+        var quote = split.GetTradeQuote(new TradeQuoteRequest("before-production", ShipId(split),
+            ContainerModuleId(split, registry), TradeCommandTypes.Buy, "item.ice", 1));
+        Assert.Null(quote.DisabledReason);
+        split.CaptureSnapshotForTests(splitAt);
+        Assert.False(split.IsQuoteIssuedForTests(quote.QuoteId));
+        var save = ScenarioLoader.LoadFromJson(
+            ScenarioLoader.Serialize(split.CaptureSaveStateForTests(splitAt, SimulationSpeed.Speed0)), true);
+        using var restored = new SimulationEngine(registry, [], new SimulationClock(SimulationSpeed.Speed0, () => 0));
+        restored.LoadScenario(save, isSave: true);
+
+        var expected = direct.CaptureSnapshotForTests(horizon);
+        Assert.Equal(7, expected.DockedStationTrade!.MarketRevision); // Three starts and three hourly completions.
+        foreach (var engine in new[] { split, restored })
+        {
+            var actual = engine.CaptureSnapshotForTests(horizon);
+            Assert.Equal(MarketFingerprint(direct, registry), MarketFingerprint(engine, registry));
+            Assert.Equal(expected.DockedStationTrade.MarketRevision, actual.DockedStationTrade!.MarketRevision);
+            Assert.Equal(expected.DockedStationTrade.MarketRevision,
+                engine.CaptureSaveStateForTests(horizon, SimulationSpeed.Speed0).GameState.SpaceObjects
+                    .Single(o => o.ObjectType == "Station").MarketRevision);
+        }
+    }
 
     [Fact]
     public void Modules_source_completes_once_without_profile_double_count()

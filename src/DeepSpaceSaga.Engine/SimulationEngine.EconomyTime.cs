@@ -22,10 +22,15 @@ public sealed partial class SimulationEngine
         // cannot repeat a meal, including midnight. Loading establishes the cursor.
         while (_processedWorldTimeMs < gameTimeMs)
         {
+            // Starting production changes the market at the interval's start. Commit it separately
+            // from its completion, regardless of whether a snapshot falls between these two moments.
+            CaptureMarketStateBeforeBoundary();
             // A blocked remainder must be handed over before a module may take on a new cycle,
             // so a freed slot is reused on the same pass rather than a later one.
             FlushPendingOutputs();
             StartAvailableProduction(_processedWorldTimeMs);
+            CommitChangedMarketRevisions();
+            CaptureMarketStateBeforeBoundary();
             long nextMeal = _processedWorldTimeMs - _processedWorldTimeMs % MealIntervalMs;
             nextMeal = nextMeal > long.MaxValue - MealIntervalMs ? long.MaxValue : nextMeal + MealIntervalMs;
             long next = gameTimeMs;
@@ -51,10 +56,65 @@ public sealed partial class SimulationEngine
             if (next == nextMeal && next % MealIntervalMs == 0) ConsumeScheduledRations(next);
             RenewPortFees(next);
             ApplyContractDeadlines(next);
+            CommitChangedMarketRevisions();
             _processedWorldTimeMs = next;
         }
         AdvanceMotionTo(simulationTimeMs);
         _processedSimulationTimeMs = simulationTimeMs;
+    }
+
+    // Market state of every station at the start of the current boundary (object index, stock rows and
+    // trading budget); reused across boundaries so the calendar loop allocates nothing extra.
+    private readonly List<(int Index, ImmutableArray<StationInventoryItemRuntime> Stock, long? Budget)> _marketStateBeforeBoundary = new();
+
+    private void CaptureMarketStateBeforeBoundary()
+    {
+        _marketStateBeforeBoundary.Clear();
+        for (int i = 0; i < _objects.Count; i++)
+        {
+            var obj = _objects[i];
+            if (obj.ObjectType == SpaceObjectType.Station)
+                _marketStateBeforeBoundary.Add((i, obj.Inventory, obj.MarketBudgetCredits));
+        }
+    }
+
+    /// <summary>
+    /// Everything one boundary did to a station's market (production, consumption, pending unload and
+    /// budget regeneration, over any number of rows) is one transaction: at most one revision per station.
+    /// Station Credits alone (port fees, dialogue payouts) are not market state. A station already at the
+    /// maximum revision keeps it, but its quotes are still invalidated.
+    /// </summary>
+    private void CommitChangedMarketRevisions()
+    {
+        foreach (var (i, stockBefore, budgetBefore) in _marketStateBeforeBoundary)
+        {
+            if (i >= _objects.Count) continue;
+            var station = _objects[i];
+            if (station.ObjectType != SpaceObjectType.Station) continue;
+            if (budgetBefore == station.MarketBudgetCredits && SameStock(stockBefore, station.Inventory)) continue;
+
+            if (station.MarketRevision == long.MaxValue)
+            {
+                OnMarketRevisionCommitted(station.InitialMotion.ObjectId);
+                continue;
+            }
+
+            long nextRevision = PrepareMarketRevision(i);
+            CommitMarketRevision(station.InitialMotion.ObjectId, nextRevision);
+        }
+    }
+
+    private static bool SameStock(ImmutableArray<StationInventoryItemRuntime> before, ImmutableArray<StationInventoryItemRuntime> after)
+    {
+        if (before == after || (before.IsDefaultOrEmpty && after.IsDefaultOrEmpty)) return true;
+        if (before.IsDefault || after.IsDefault || before.Length != after.Length) return false;
+        for (int i = 0; i < before.Length; i++)
+        {
+            if (before[i].ItemTypeIndex != after[i].ItemTypeIndex || before[i].StockQuantity != after[i].StockQuantity)
+                return false;
+        }
+
+        return true;
     }
 
     private void ConsumeScheduledRations(long time)

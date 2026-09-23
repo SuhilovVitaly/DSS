@@ -109,6 +109,19 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         return ValueTask.CompletedTask;
     }
 
+    /// <summary>
+    /// Thin request-response adapter: returns the exact quote the engine issued. The engine guards its world
+    /// state and quote cache itself, so there is no save gate, no local cache and no recomputation here.
+    /// </summary>
+    public ValueTask<TradeQuoteSnapshot> GetTradeQuoteAsync(
+        TradeQuoteRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return ValueTask.FromResult(_engine.GetTradeQuote(request));
+    }
+
     public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Contracts;
@@ -5,6 +8,7 @@ using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.LocalClient;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests;
@@ -379,6 +383,195 @@ public class LocalSessionIntegrationTests
     }
 
     [Fact]
+    public void Three_start_scenarios_have_equivalent_seeded_map_and_preserve_ship_state()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"dss-trading-scenarios-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+
+        try
+        {
+            string settingsPath = ResolveRealSettingsPath();
+            var scenarioPaths = CreateSeededScenarioCopies(tempRoot, masterSeed: 20260923UL);
+            TradingMapStateData? expectedMap = null;
+
+            foreach (var scenarioPath in scenarioPaths)
+            {
+                var source = ScenarioLoader.LoadFromFile(scenarioPath);
+                var sourceShip = Assert.Single(source.GameState.SpaceObjects,
+                    obj => obj.ObjectId == source.GameState.PlayerShipObjectId);
+                using var engine = SimulationEngine.CreateFromScenarioFile(settingsPath, scenarioPath);
+                var saved = engine.CaptureSaveState();
+                var savedShip = Assert.Single(saved.GameState.SpaceObjects,
+                    obj => obj.ObjectId == saved.GameState.PlayerShipObjectId);
+                Assert.NotNull(saved.GameState.TradingMap);
+                var map = saved.GameState.TradingMap!;
+
+                Assert.Null(saved.GameState.TradingMapGeneration);
+                Assert.Equal(5, saved.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
+                Assert.Equal(sourceShip.IsDocked, savedShip.IsDocked);
+                Assert.Equal(sourceShip.DockedStationObjectId, savedShip.DockedStationObjectId);
+                Assert.Equal(sourceShip.SpeedMps, savedShip.SpeedMps);
+                Assert.Equal(JsonSerializer.Serialize(sourceShip.Modules),
+                    JsonSerializer.Serialize(savedShip.Modules));
+
+                if (expectedMap is null)
+                    expectedMap = map;
+                else
+                    Assert.Equal(JsonSerializer.Serialize(expectedMap), JsonSerializer.Serialize(map));
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Each_seeded_scenario_publishes_five_station_markers_with_edge_and_flow_save()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"dss-trading-save-{Guid.NewGuid():N}");
+        string saveDirectory = Path.Combine(tempRoot, "Saves");
+        Directory.CreateDirectory(tempRoot);
+
+        try
+        {
+            string settingsPath = ResolveRealSettingsPath();
+            foreach (var scenarioPath in CreateSeededScenarioCopies(tempRoot, masterSeed: 20260923UL))
+            {
+                await using var connection = LocalGameSessionConnection.CreateFromScenarioFile(
+                    settingsPath, scenarioPath, saveDirectory);
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                AuthoritativeSnapshot? initial = null;
+                await foreach (var snapshot in connection.ReadSnapshotsAsync(timeout.Token))
+                {
+                    if (snapshot.Objects.Count(obj => obj.ObjectType == SpaceObjectType.Station) == 5)
+                    {
+                        initial = snapshot;
+                        break;
+                    }
+                }
+
+                Assert.NotNull(initial);
+                var stations = initial!.Objects.Where(obj => obj.ObjectType == SpaceObjectType.Station).ToArray();
+                Assert.All(stations, station =>
+                    Assert.Equal(TacticalMapMarkerPolicy.RegularMarkerSizePx,
+                        TacticalMapMarkerPolicy.GetMarkerSizePx(station.RenderObjectType)));
+
+                string slotId = Path.GetFileName(Path.GetDirectoryName(scenarioPath))!;
+                await connection.SaveAsync(slotId, timeout.Token);
+                var savePath = Path.Combine(saveDirectory, $"{slotId}.json");
+                var saved = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true);
+                Assert.NotNull(saved.GameState.TradingMap);
+                var map = saved.GameState.TradingMap!;
+
+                Assert.Null(saved.GameState.TradingMapGeneration);
+                Assert.Equal(5, saved.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
+                Assert.NotEmpty(map.Edges);
+                Assert.NotEmpty(map.CargoFlows);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Tactical_map_render_smoke_draws_all_five_station_markers_at_system_zoom()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"dss-trading-render-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+
+        try
+        {
+            string settingsPath = ResolveRealSettingsPath();
+            string scenarioPath = CreateSeededScenarioCopies(tempRoot, masterSeed: 20260923UL)[0];
+            await using var connection = LocalGameSessionConnection.CreateFromScenarioFile(
+                settingsPath, scenarioPath, saveDirectory: null);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            AuthoritativeSnapshot? initial = null;
+            await foreach (var snapshot in connection.ReadSnapshotsAsync(timeout.Token))
+            {
+                if (snapshot.Objects.Count(obj => obj.ObjectType == SpaceObjectType.Station) == 5)
+                {
+                    initial = snapshot;
+                    break;
+                }
+            }
+
+            Assert.NotNull(initial);
+            var buffer = new SnapshotBuffer();
+            buffer.Update(initial!);
+            var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
+
+            using var bitmap = new SKBitmap(1280, 720);
+            using var canvas = new SKCanvas(bitmap);
+            canvas.Clear(SKColors.Transparent);
+            screen.Render(canvas, bitmap.Width, bitmap.Height);
+            Assert.True(screen.FitMapView(MapFitMode.System));
+
+            canvas.Clear(SKColors.Transparent);
+            screen.Render(canvas, bitmap.Width, bitmap.Height);
+
+            var stationStates = screen.RenderStates
+                .Where(state => state.Pose.RenderObjectType == SpaceObjectType.Station)
+                .ToArray();
+            Assert.Equal(5, stationStates.Length);
+            foreach (var station in stationStates)
+            {
+                var (x, y) = (
+                    (float)(bitmap.Width / 2.0 +
+                        (station.Pose.X - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit),
+                    (float)(bitmap.Height / 2.0 +
+                        (station.Pose.Y - screen.CameraFocusY) * screen.CameraPixelsPerWorldUnit));
+                Assert.InRange(x, 0, bitmap.Width - 1);
+                Assert.InRange(y, 0, bitmap.Height - 1);
+                Assert.True(HasRenderedPixel(bitmap, x, y),
+                    $"Station marker '{station.Pose.ObjectId}' was not visible at ({x:F1}, {y:F1}).");
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Scenario_content_rejects_missing_role_template_or_risk_reference()
+    {
+        string defaultPath = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(ResolveRealSettingsPath())!, "Scenarios", "Default", "scenario.json"));
+        var source = JsonNode.Parse(File.ReadAllText(defaultPath))!.AsObject();
+
+        var missingRole = source.DeepClone().AsObject();
+        missingRole["gameState"]!["tradingMapGeneration"]!["stations"]!.AsArray().RemoveAt(1);
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(missingRole.ToJsonString()));
+
+        var missingTemplate = source.DeepClone().AsObject();
+        missingTemplate["gameState"]!["tradingMapGeneration"]!["templates"]!.AsArray().Clear();
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(missingTemplate.ToJsonString()));
+
+        var missingRisk = source.DeepClone().AsObject();
+        missingRisk["gameState"]!["tradingMapGeneration"]!["templates"]![0]!["links"]![0]!["riskProfileId"] = "risk.missing";
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(missingRisk.ToJsonString()));
+    }
+
+    [Fact]
+    public void Default_500_remains_the_existing_502_object_stress_scenario()
+    {
+        string path = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(ResolveRealSettingsPath())!, "Scenarios", "Default_500", "scenario.json"));
+        var scenario = ScenarioLoader.LoadFromFile(path);
+
+        Assert.Equal(502, scenario.GameState.SpaceObjects.Count);
+        Assert.Null(scenario.GameState.TradingMapGeneration);
+        Assert.Null(scenario.GameState.TradingMap);
+    }
+
+    [Fact]
     public async Task CreateFromScenarioFile_starts_a_session_from_an_explicitly_chosen_scenario()
     {
         // The New Game -> scenario picker path: LocalGameSessionConnection.CreateFromScenarioFile
@@ -402,6 +595,7 @@ public class LocalSessionIntegrationTests
     [Theory]
     [InlineData("default")]
     [InlineData("docked")]
+    [InlineData("undocked")]
     public async Task Client_build_output_starts_scenario_and_publishes_first_snapshot(string scenarioId)
     {
         // Regression: Settings.json now points itemTypes at the split Data/Items directory.
@@ -443,7 +637,7 @@ public class LocalSessionIntegrationTests
     [Fact]
     public void ScenarioRepository_lists_every_scenario_json_found_under_the_real_Scenarios_directory()
     {
-        // Exercises the real on-disk Scenarios/ tree (Default, Default_500, Docked) the
+        // Exercises the real on-disk Scenarios/ tree (Default, Default_500, Docked, Undocked) the
         // same way SkiaWindow's ListScenarios() will at runtime — proving Name/Description
         // round-trip through ScenarioLoader rather than just testing an isolated temp dir.
         string settingsPath = ResolveRealSettingsPath();
@@ -453,6 +647,7 @@ public class LocalSessionIntegrationTests
 
         Assert.Contains(scenarios, s => s.ScenarioId == "default" && !string.IsNullOrWhiteSpace(s.Description));
         Assert.Contains(scenarios, s => s.ScenarioId == "docked" && !string.IsNullOrWhiteSpace(s.Description));
+        Assert.Contains(scenarios, s => s.ScenarioId == "undocked" && !string.IsNullOrWhiteSpace(s.Description));
         Assert.All(scenarios, s => Assert.True(File.Exists(s.ScenarioPath)));
     }
 
@@ -471,6 +666,27 @@ public class LocalSessionIntegrationTests
 
         throw new FileNotFoundException(
             $"DeepSpaceSaga.Client build output was not found under '{clientBinRoot}'.");
+    }
+
+    private static string[] CreateSeededScenarioCopies(string tempRoot, ulong masterSeed)
+    {
+        string settingsPath = ResolveRealSettingsPath();
+        string scenariosRoot = Path.Combine(Path.GetDirectoryName(settingsPath)!, "Scenarios");
+        string[] scenarioIds = ["Default", "Docked", "Undocked"];
+        var paths = new string[scenarioIds.Length];
+
+        for (int i = 0; i < scenarioIds.Length; i++)
+        {
+            string scenarioId = scenarioIds[i];
+            var root = JsonNode.Parse(File.ReadAllText(
+                Path.Combine(scenariosRoot, scenarioId, "scenario.json")))!.AsObject();
+            root["gameState"]!["masterSeed"] = masterSeed;
+            paths[i] = Path.Combine(tempRoot, scenarioId, "scenario.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(paths[i])!);
+            File.WriteAllText(paths[i], root.ToJsonString());
+        }
+
+        return paths;
     }
 
     [Fact]
@@ -520,6 +736,334 @@ public class LocalSessionIntegrationTests
         }
     }
 
+    // --- EP-0001-US-0015-TK-0005: local quote transport ----------------------------------
+
+    private const string QuoteShipId = "SPC-0001";
+    private const string QuoteStationId = "SPC-0002";
+    private const string QuoteCargoModuleId = "MOD-PLAYER-CARGO-01";
+    private const string QuoteItemTypeId = "item.ice";
+    private static readonly TimeSpan QuoteTimeout = TimeSpan.FromSeconds(10);
+
+    [Fact]
+    public async Task Local_connection_returns_exact_authoritative_quote_without_world_mutation()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-quote-exact-{Guid.NewGuid():N}");
+        try
+        {
+            var engine = CreateProfileMarketEngine(dir);
+            await using var connection = new LocalGameSessionConnection(engine);
+            IGameSessionConnection session = connection;
+            long publishedRevision = await ReadPublishedMarketRevisionAsync(session);
+            string worldBefore = QuoteWorldState(engine);
+
+            var request = IceBuy("req-exact", 5);
+            var viaConnection = await session.GetTradeQuoteAsync(request).AsTask().WaitAsync(QuoteTimeout);
+
+            Assert.Null(viaConnection.DisabledReason);
+            Assert.StartsWith("QTE-", viaConnection.QuoteId);
+            Assert.Equal("req-exact", viaConnection.RequestId);
+            Assert.Equal(QuoteStationId, viaConnection.StationObjectId);
+            Assert.Equal(QuoteShipId, viaConnection.ObjectId);
+            Assert.Equal(QuoteCargoModuleId, viaConnection.ModuleId);
+            Assert.Equal(TradeCommandTypes.Buy, viaConnection.CommandType);
+            Assert.Equal(QuoteItemTypeId, viaConnection.ItemTypeId);
+            Assert.Equal(5, viaConnection.RequestedQuantity);
+            Assert.Equal(5, viaConnection.ExecutableQuantity);
+            Assert.Equal(publishedRevision, viaConnection.MarketRevision);
+            Assert.Equal(5, viaConnection.Curve.Sum(step => step.Quantity));
+            Assert.Equal(viaConnection.Curve.Sum(step => step.Quantity * step.UnitPriceCredits), viaConnection.TotalCredits);
+            Assert.False(viaConnection.PriceReasons.IsDefaultOrEmpty);
+
+            // The adapter hands back the very object the engine issued and cached — no copy, no recomputation.
+            Assert.Same(engine.GetTradeQuote(request), viaConnection);
+
+            // A fresh direct issue for the same binding carries identical terms.
+            var direct = engine.GetTradeQuote(request with { RequestId = "req-exact-direct" });
+            Assert.NotEqual(direct.QuoteId, viaConnection.QuoteId);
+            AssertSameQuoteTerms(direct, viaConnection);
+
+            Assert.Equal(worldBefore, QuoteWorldState(engine));
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Quote_request_honors_precancelled_token_and_disposed_connection()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-quote-cancel-{Guid.NewGuid():N}");
+        try
+        {
+            var engine = CreateProfileMarketEngine(dir);
+            var connection = new LocalGameSessionConnection(engine);
+            IGameSessionConnection session = connection;
+            using var cancelled = new CancellationTokenSource();
+            cancelled.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+                await session.GetTradeQuoteAsync(IceBuy("req-cancel", 5), cancelled.Token));
+
+            // The cancelled request never reached the engine: its RequestId is still free for another binding.
+            var afterCancel = await session.GetTradeQuoteAsync(IceBuy("req-cancel", 6)).AsTask().WaitAsync(QuoteTimeout);
+            Assert.Null(afterCancel.DisabledReason);
+            Assert.Equal(6, afterCancel.ExecutableQuantity);
+
+            await connection.DisposeAsync();
+
+            await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
+                await session.GetTradeQuoteAsync(IceBuy("req-disposed", 5)));
+            // Cancellation is checked before disposal, like every other session operation.
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+                await session.GetTradeQuoteAsync(IceBuy("req-disposed", 5), cancelled.Token));
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Quote_request_during_snapshot_loop_completes_without_deadlock()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-quote-loop-{Guid.NewGuid():N}");
+        try
+        {
+            var engine = CreateProfileMarketEngine(dir);
+            await using var connection = new LocalGameSessionConnection(engine);
+            IGameSessionConnection session = connection;
+            await session.SetSimulationSpeedAsync(SimulationSpeed.Speed1);
+
+            using var readerStop = new CancellationTokenSource();
+            var sequences = new System.Collections.Concurrent.ConcurrentQueue<ulong>();
+            var reader = Task.Run(async () =>
+            {
+                try
+                {
+                    await foreach (var snapshot in session.ReadSnapshotsAsync(readerStop.Token))
+                        sequences.Enqueue(snapshot.SnapshotSequence);
+                }
+                catch (OperationCanceledException) when (readerStop.IsCancellationRequested) { }
+            });
+
+            var quoteTasks = Enumerable.Range(0, 40)
+                .Select(i => Task.Run(async () =>
+                    await session.GetTradeQuoteAsync(IceBuy($"req-loop-{i}", 1 + i % 5))))
+                .ToArray();
+            var quotes = await Task.WhenAll(quoteTasks).WaitAsync(QuoteTimeout);
+
+            Assert.All(quotes, quote =>
+            {
+                Assert.Null(quote.DisabledReason);
+                Assert.Equal(quote.RequestedQuantity, quote.ExecutableQuantity);
+            });
+            Assert.Equal(quotes.Length, quotes.Select(quote => quote.QuoteId).Distinct(StringComparer.Ordinal).Count());
+
+            // The snapshot loop keeps publishing while and after quotes are served.
+            var deadline = DateTime.UtcNow + QuoteTimeout;
+            while (DateTime.UtcNow < deadline && sequences.Count < 2)
+                await Task.Delay(25);
+            readerStop.Cancel();
+            await reader.WaitAsync(QuoteTimeout);
+
+            ulong[] published = sequences.ToArray();
+            Assert.True(published.Length >= 2, "The engine loop should keep publishing snapshots.");
+            for (int i = 1; i < published.Length; i++)
+                Assert.True(published[i] > published[i - 1]);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Save_load_preserves_revision_but_invalidates_old_quote_token()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-quote-saveload-{Guid.NewGuid():N}");
+        string saveDirectory = Path.Combine(dir, "Saves");
+        try
+        {
+            TradeQuoteSnapshot staleQuote;
+            long savedRevision;
+            var engine = CreateProfileMarketEngine(dir);
+            await using (var connection = new LocalGameSessionConnection(engine, saveDirectory))
+            {
+                IGameSessionConnection session = connection;
+
+                // Execute one quote so the saved revision is above the initial one.
+                var executed = await session.GetTradeQuoteAsync(IceBuy("req-before-save", 3)).AsTask().WaitAsync(QuoteTimeout);
+                Assert.Null(executed.DisabledReason);
+                await session.SendCommandAsync(BindQuote("cmd-before-save", executed));
+                var executedResult = await WaitForCommandResultAsync(session, "cmd-before-save");
+                Assert.Equal(CommandResultStatus.Executed, executedResult.Status);
+
+                staleQuote = await session.GetTradeQuoteAsync(IceBuy("req-stale", 2)).AsTask().WaitAsync(QuoteTimeout);
+                Assert.Null(staleQuote.DisabledReason);
+                savedRevision = staleQuote.MarketRevision;
+                Assert.Equal(executed.MarketRevision + 1, savedRevision);
+
+                await connection.SaveAsync("quote-slot");
+            }
+
+            string savePath = Path.Combine(saveDirectory, "quote-slot.json");
+            var loadedEngine = SimulationEngine.CreateFromSaveFile(ResolveRealSettingsPath(), savePath);
+            await using var loadedConnection = new LocalGameSessionConnection(loadedEngine, saveDirectory);
+            IGameSessionConnection loaded = loadedConnection;
+
+            // The same RequestId and binding gets a brand-new quote on the saved revision.
+            var reissued = await loaded.GetTradeQuoteAsync(IceBuy("req-stale", 2)).AsTask().WaitAsync(QuoteTimeout);
+            Assert.Null(reissued.DisabledReason);
+            Assert.StartsWith("QTE-", reissued.QuoteId);
+            Assert.NotEqual(staleQuote.QuoteId, reissued.QuoteId);
+            Assert.Equal(savedRevision, reissued.MarketRevision);
+            AssertSameQuoteTerms(staleQuote, reissued);
+
+            // The pre-load quote token is not accepted by the new session.
+            await loaded.SendCommandAsync(BindQuote("cmd-stale", staleQuote));
+            var staleResult = await WaitForCommandResultAsync(loaded, "cmd-stale");
+            Assert.Equal(CommandResultStatus.Rejected, staleResult.Status);
+            Assert.Equal(CommandReasonCodes.StaleQuote, staleResult.ReasonCode);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Repeated_request_id_roundtrips_same_quote_and_conflict_is_preserved()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-quote-repeat-{Guid.NewGuid():N}");
+        try
+        {
+            var engine = CreateProfileMarketEngine(dir);
+            await using var connection = new LocalGameSessionConnection(engine);
+            IGameSessionConnection session = connection;
+
+            var first = await session.GetTradeQuoteAsync(IceBuy("req-repeat", 4)).AsTask().WaitAsync(QuoteTimeout);
+            var repeated = await session.GetTradeQuoteAsync(IceBuy("req-repeat", 4)).AsTask().WaitAsync(QuoteTimeout);
+            Assert.Null(first.DisabledReason);
+            Assert.Same(first, repeated);
+
+            var conflict = await session.GetTradeQuoteAsync(IceBuy("req-repeat", 7)).AsTask().WaitAsync(QuoteTimeout);
+            Assert.Equal("request_id_conflict", conflict.DisabledReason);
+            Assert.Equal("", conflict.QuoteId);
+            Assert.Equal(0, conflict.ExecutableQuantity);
+            Assert.Equal(0, conflict.TotalCredits);
+            Assert.Empty(conflict.Curve);
+            Assert.Equal(7, conflict.RequestedQuantity);
+
+            // The conflict neither replaced nor evicted the live quote.
+            var afterConflict = await session.GetTradeQuoteAsync(IceBuy("req-repeat", 4)).AsTask().WaitAsync(QuoteTimeout);
+            Assert.Same(first, afterConflict);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    private static TradeQuoteRequest IceBuy(string requestId, long quantity) =>
+        new(requestId, QuoteShipId, QuoteCargoModuleId, TradeCommandTypes.Buy, QuoteItemTypeId, quantity);
+
+    private static PlayerCommand BindQuote(string commandId, TradeQuoteSnapshot quote) =>
+        new(commandId, 1, quote.ObjectId, quote.ModuleId, quote.CommandType,
+            ItemTypeId: quote.ItemTypeId, Quantity: quote.RequestedQuantity,
+            QuoteId: quote.QuoteId, MarketRevision: quote.MarketRevision);
+
+    /// <summary>
+    /// The shipped Docked scenario (player ship docked at SPC-0002), with SPC-0002 turned into a real
+    /// profile market (market.mining from the real catalog) so quotes run along the sequential curve.
+    /// </summary>
+    private static SimulationEngine CreateProfileMarketEngine(string directory)
+    {
+        string settingsPath = ResolveRealSettingsPath();
+        string dockedPath = Path.Combine(Path.GetDirectoryName(settingsPath)!, "Scenarios", "Docked", "scenario.json");
+        var root = JsonNode.Parse(File.ReadAllText(dockedPath))!;
+        var station = root["gameState"]!["spaceObjects"]!.AsArray()
+            .Single(obj => (string?)obj!["objectId"] == QuoteStationId)!.AsObject();
+        station["marketProfileId"] = "market.mining";
+        station["stationSize"] = "Medium";
+        station.Remove("inventory");
+        root["gameState"]!.AsObject().Remove("tradingMapGeneration");
+
+        Directory.CreateDirectory(directory);
+        string scenarioPath = Path.Combine(directory, "scenario.json");
+        File.WriteAllText(scenarioPath, root.ToJsonString());
+        return SimulationEngine.CreateFromScenarioFile(settingsPath, scenarioPath);
+    }
+
+    /// <summary>Money, stock, cargo, budget and market revisions — everything a quote must never change.</summary>
+    private static string QuoteWorldState(SimulationEngine engine)
+    {
+        var save = engine.CaptureSaveState();
+        var state = save.GameState;
+        var station = state.SpaceObjects.Single(obj => obj.ObjectId == QuoteStationId);
+        var ship = state.SpaceObjects.Single(obj => obj.ObjectId == QuoteShipId);
+        return ScenarioLoader.Serialize(save with
+        {
+            GameState = state with
+            {
+                CommandReceipts = null,
+                SpaceObjects = [ship, station],
+            },
+        });
+    }
+
+    private static void AssertSameQuoteTerms(TradeQuoteSnapshot expected, TradeQuoteSnapshot actual)
+    {
+        Assert.Equal(expected.MarketRevision, actual.MarketRevision);
+        Assert.Equal(expected.StationObjectId, actual.StationObjectId);
+        Assert.Equal(expected.ObjectId, actual.ObjectId);
+        Assert.Equal(expected.ModuleId, actual.ModuleId);
+        Assert.Equal(expected.CommandType, actual.CommandType);
+        Assert.Equal(expected.ItemTypeId, actual.ItemTypeId);
+        Assert.Equal(expected.RequestedQuantity, actual.RequestedQuantity);
+        Assert.Equal(expected.ExecutableQuantity, actual.ExecutableQuantity);
+        Assert.Equal(expected.MaximumQuantity, actual.MaximumQuantity);
+        Assert.Equal(expected.TotalCredits, actual.TotalCredits);
+        Assert.Equal(expected.DisabledReason, actual.DisabledReason);
+        Assert.True(expected.Curve.SequenceEqual(actual.Curve), "Quote curves differ.");
+        Assert.True(expected.LimitReasons.SequenceEqual(actual.LimitReasons, StringComparer.Ordinal), "Limit reasons differ.");
+        Assert.True(expected.PriceReasons.SequenceEqual(actual.PriceReasons), "Price reasons differ.");
+    }
+
+    private static async Task<long> ReadPublishedMarketRevisionAsync(IGameSessionConnection connection)
+    {
+        using var timeout = new CancellationTokenSource(QuoteTimeout);
+        await foreach (var snapshot in connection.ReadSnapshotsAsync(timeout.Token))
+        {
+            if (snapshot.DockedStationTrade?.MarketRevision is { } revision)
+                return revision;
+        }
+
+        throw new InvalidOperationException("The snapshot stream ended without a docked profile market.");
+    }
+
+    private static async Task<CommandResult> WaitForCommandResultAsync(IGameSessionConnection connection, string commandId)
+    {
+        using var timeout = new CancellationTokenSource(QuoteTimeout);
+        await foreach (var snapshot in connection.ReadSnapshotsAsync(timeout.Token))
+        {
+            if (snapshot.CommandResults.IsDefault)
+                continue;
+            foreach (var result in snapshot.CommandResults)
+            {
+                if (result.CommandId == commandId)
+                    return result;
+            }
+        }
+
+        throw new InvalidOperationException($"The snapshot stream ended without a result for '{commandId}'.");
+    }
+
     private static (float x, float y) Center((float X, float Y, float W, float H) local)
     {
         float panelLeft = SaveLayout.PanelLeft(1920);
@@ -543,6 +1087,24 @@ public class LocalSessionIntegrationTests
         return settingsPath;
     }
 
+    private static bool HasRenderedPixel(SKBitmap bitmap, float x, float y)
+    {
+        int centerX = (int)Math.Round(x);
+        int centerY = (int)Math.Round(y);
+        for (int offsetY = -4; offsetY <= 4; offsetY++)
+            for (int offsetX = -4; offsetX <= 4; offsetX++)
+            {
+                int pixelX = centerX + offsetX;
+                int pixelY = centerY + offsetY;
+                if (pixelX < 0 || pixelX >= bitmap.Width || pixelY < 0 || pixelY >= bitmap.Height)
+                    continue;
+                if (bitmap.GetPixel(pixelX, pixelY).Alpha > 0)
+                    return true;
+            }
+
+        return false;
+    }
+
     private static string CreateCurrentCatalogSave(string settingsPath, bool includeMasterSeed)
     {
         using var source = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
@@ -551,7 +1113,10 @@ public class LocalSessionIntegrationTests
         {
             GameTimeMs = 1000,
             SimulationTimeMs = 1000,
-            MasterSeed = includeMasterSeed ? 42UL : null
+            MasterSeed = includeMasterSeed ? 42UL : null,
+            // The fixture deliberately substitutes a seed. A materialized map belongs to
+            // its original seed and must be discarded so the loader can regenerate it.
+            TradingMap = null,
         };
         return ScenarioLoader.Serialize(save with { SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion, GameState = state });
     }

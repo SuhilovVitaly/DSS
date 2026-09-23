@@ -328,10 +328,17 @@ public sealed class CatalogCompatibilityTests
         var save = original.CaptureSaveState();
         if (removePrice) registry = ChangeCatalog(registry, item => item.TypeId == itemId ? item with { BasePriceCredits = null } : item);
         var objects = save.GameState.SpaceObjects.Select(obj => obj.ObjectId == "SPC-0002"
-            ? obj with { Inventory = [new StationInventoryItemData(itemId, 1)] } : obj).ToArray();
+            ? obj with
+            {
+                MarketProfileId = null,
+                MarketProfileFingerprint = null,
+                MarketBudgetCredits = null,
+                MarketRevision = null,
+                Inventory = [new StationInventoryItemData(itemId, 1)]
+            } : obj).ToArray();
         using var engine = new SimulationEngine(registry);
         var ex = Assert.Throws<ScenarioException>(() => engine.LoadScenario(save with {
-            GameState = save.GameState with { SpaceObjects = objects, CatalogCompatibility = registry.CatalogCompatibility } }));
+            GameState = save.GameState with { TradingMap = null, SpaceObjects = objects, CatalogCompatibility = registry.CatalogCompatibility } }));
         Assert.Contains("SPC-0002", ex.Message);
         Assert.Contains(itemId, ex.Message);
     }

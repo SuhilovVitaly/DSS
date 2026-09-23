@@ -97,15 +97,14 @@ public static class ScenarioLoader
                 { ObjectId = Resolve(c.ObjectId), TargetObjectId = Resolve(c.TargetObjectId) }
             }).ToArray()
         }).ToArray();
-        return scenario with
+        var normalizedState = gs with
         {
-            GameState = gs with
-            {
-                PlayerShipObjectId = ids[gs.PlayerShipObjectId],
-                CurrentSpeed = KnownSpeeds.Single(s => s.Equals(gs.CurrentSpeed, StringComparison.OrdinalIgnoreCase)),
-                SpaceObjects = objects
-            }
+            PlayerShipObjectId = ids[gs.PlayerShipObjectId],
+            CurrentSpeed = KnownSpeeds.Single(s => s.Equals(gs.CurrentSpeed, StringComparison.OrdinalIgnoreCase)),
+            SpaceObjects = objects
         };
+        normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
+        return scenario with { GameState = normalizedState };
     }
 
     /// <summary>
@@ -240,6 +239,12 @@ public static class ScenarioLoader
             throw new ScenarioException($"Object '{obj.ObjectId}', marketProfileFingerprint must not be blank.");
         if (obj.MarketProfileFingerprint is not null && obj.MarketProfileId is null)
             throw new ScenarioException($"Object '{obj.ObjectId}', marketProfileFingerprint requires marketProfileId.");
+
+        // Market revision (EP-0001-US-0015-TK-0003): saved for profile markets only, and never below 1.
+        if (obj.MarketProfileId is null && obj.MarketRevision is not null)
+            throw new ScenarioException($"Object '{obj.ObjectId}', marketRevision requires a market profile.");
+        if (obj.MarketProfileId is not null && obj.MarketRevision is < 1)
+            throw new ScenarioException($"Station '{obj.ObjectId}', marketRevision must be at least 1.");
 
         bool hasProfileMetadata = obj.MarketProfileId is not null || obj.MarketProfileFingerprint is not null;
         if (hasProfileMetadata && !obj.ObjectType.Equals("Station", StringComparison.OrdinalIgnoreCase))

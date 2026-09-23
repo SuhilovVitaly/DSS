@@ -137,14 +137,16 @@ public sealed partial class TradeScreen
         double fraction = quote.Maximum <= 1 ? 0 : (double)(Math.Clamp(Model.Quantity, 1, quote.Maximum) - 1) / (quote.Maximum - 1);
         p.Bar(R(1040, 449, 520, 5), fraction, fraction);
         p.Box(R(1040 + (float)fraction * 508, 445, 12, 12), TradePainter.Cyan, radius: 6);
-        p.Text(quote.DisabledReason is { } error ? L(error) : F("Maximum", N(quote.Maximum), L(quote.LimitReason)),
-            R(1040, 470, 520, 25), 13, quote.DisabledReason is null ? TradePainter.Muted : TradePainter.Red);
+        p.Text(QuoteMessage, R(1040, 470, 520, 25), 13, quote.DisabledReason is null ? TradePainter.Muted : TradePainter.Red);
         p.Line(1040, 504, 1560);
         p.Text(L("Preview"), R(1040, 513, 520, 22), 13, TradePainter.Muted, true);
         long credits = _buffer?.Latest?.Snapshot.PlayerCredits ?? 0;
         Summary(p, 540, L("Balance"), quote.DisabledReason is null ? $"{N(credits)} → {N(quote.BalanceAfter)}" : N(credits));
         string amountLabel = L(Model.FuelMode ? "Tank" : "CargoAmount");
-        long cargoAfter = Model.Mode == TradeMode.Sell ? quote.CargoQuantity - Model.Quantity : quote.CargoQuantity + Math.Min(Model.Quantity, long.MaxValue - quote.CargoQuantity);
+        // Cargo after the trade follows the server's executable quantity, never the typed request.
+        long executable = quote.ExecutableQuantity;
+        long cargoAfter = quote.DisabledReason is not null || Model.FuelMode ? quote.CargoQuantity :
+            Model.Mode == TradeMode.Sell ? quote.CargoQuantity - executable : quote.CargoQuantity + executable;
         string amount = Model.FuelMode ? F("KgLoadChange", N(quote.AmountBefore), N(quote.AmountAfter), N(Model.Module?.FuelCapacityKg ?? 0))
             : $"{TradeItemPresentation.FormatQuantity(item.ItemTypeId, quote.CargoQuantity)} → {TradeItemPresentation.FormatQuantity(item.ItemTypeId, cargoAfter)}";
         Summary(p, 567, amountLabel, quote.DisabledReason is null ? amount : "—");
@@ -165,14 +167,32 @@ public sealed partial class TradeScreen
             }
         }
         p.Text(L("Total"), R(1040, 633, 160, 26), 19, bold: true);
-        p.Text(quote.DisabledReason == "ValueOverflow" ? "—" : F("Tokens", N(quote.Total)), R(1205, 633, 350, 26), 21, bold: true, align: SKTextAlign.Right);
+        // Total is the server's curve total; without a usable quote there is no total to show.
+        p.Text(quote.DisabledReason is not null ? "—" : F("Tokens", N(quote.Total)), R(1205, 633, 350, 26), 21, bold: true, align: SKTextAlign.Right);
+        // The confirm button names the quantity that will actually execute (a partial Sell shows the actual part).
+        long shown = quote.DisabledReason is null ? executable : Model.Quantity;
         string confirm = IsPending ? L("Pending") : Model.Mode == TradeMode.Refuel
-            ? F("ConfirmFuel", N(Model.Quantity), N(quote.Total))
+            ? F("ConfirmFuel", N(shown), N(quote.Total))
             : string.Format(CultureInfo.CurrentCulture,
                 Localization.Get(Model.Mode == TradeMode.Sell ? "Trade.ConfirmSellWithUnit" : "Trade.ConfirmBuyWithUnit"),
-                Model.Quantity, TradeItemPresentation.ItemUnitLabel(item.ItemTypeId, singular: Model.Quantity == 1), quote.Total);
+                shown, TradeItemPresentation.ItemUnitLabel(item.ItemTypeId, singular: shown == 1), quote.Total);
         Button(p, TradeLayout.Confirm, confirm, enabled: CanConfirm, primary: true, size: 16);
         DrawStatus(p);
+    }
+    /// <summary>
+    /// Line under the slider: the disabled reason, a partial Sell preview (actual of requested for the server total),
+    /// or the server maximum with its named limiter ("—" when the server names none).
+    /// </summary>
+    internal string QuoteMessage
+    {
+        get
+        {
+            var quote = Model.Quote;
+            if (quote.DisabledReason is { } error) return L(error);
+            if (Model.Mode == TradeMode.Sell && quote.ExecutableQuantity < Model.Quantity)
+                return F("PartialPreview", N(quote.ExecutableQuantity), N(Model.Quantity), N(quote.Total));
+            return F("Maximum", N(quote.Maximum), quote.LimitReason.Length > 0 ? L(quote.LimitReason) : "—");
+        }
     }
     private static void Summary(TradePainter p, float y, string name, string value)
     { p.Text(name, R(1040, y, 240), 15, TradePainter.Muted); p.Text(value, R(1290, y, 270), 16, align: SKTextAlign.Right); }
@@ -199,35 +219,29 @@ public sealed partial class TradeScreen
     {
         string item = TradeItemPresentation.ItemDisplayName(entry.ItemId);
         if (entry.Result is null) return F("SendingItem", item);
+        if (!entry.ResultMatchesBinding) return L("ReceiptUnavailable");
         if (entry.Result.Status != CommandResultStatus.Executed) return F("Rejected", item, Reason(entry.Result.ReasonCode));
-        long quantity = entry.Result.ExecutedQuantity ?? entry.RequestedQuantity;
-        decimal total = (decimal)quantity * entry.UnitPrice;
+        if (entry.ConfirmedReceipt is not { } receipt) return L("ReceiptUnavailable");
+        long quantity = receipt.ExecutedQuantity;
         string executed = TradeItemPresentation.FormatQuantity(entry.ItemId, quantity);
-        string totalText = total.ToString("N0", CultureInfo.CurrentCulture);
-        string requested = TradeItemPresentation.FormatQuantity(entry.ItemId, entry.RequestedQuantity);
-        if (quantity >= entry.RequestedQuantity) return F("SuccessResult", item, executed, totalText, requested);
-        // Remaining comes from the receipt (requested − executed), never from a stock difference.
-        long remaining = Math.Max(0, entry.RequestedQuantity - quantity);
-        return F("PartialWithRemaining", item, executed, totalText, requested,
-            TradeItemPresentation.FormatQuantity(entry.ItemId, remaining));
+        string totalText = receipt.TotalCredits.ToString("N0", CultureInfo.CurrentCulture);
+        string requested = TradeItemPresentation.FormatQuantity(entry.ItemId, receipt.RequestedQuantity!.Value);
+        if (quantity == receipt.RequestedQuantity) return F("SuccessResult", item, executed, totalText);
+        return F("PartialResult", item, executed, totalText, requested) + " · " +
+            string.Join(" · ", receipt.LimitReasons.Select(Reason).Distinct());
     }
     private void DrawStatus(TradePainter p)
     {
         string message; SKColor color;
         if (_handle?.Failure is not null) { message = L("ConnectionLost"); color = TradePainter.Red; }
         else if (IsPending) { message = L("AwaitingStation"); color = TradePainter.Muted; }
-        else if (_journal.Latest is { } entry) { message = EntryMessage(entry); color = entry.Result?.Status == CommandResultStatus.Executed ? TradePainter.Green : TradePainter.Red; }
+        else if (_journal.Latest is { } entry) { message = EntryMessage(entry); color = entry.ConfirmedReceipt is not null ? TradePainter.Green : TradePainter.Red; }
         else { message = Model.Item is not null && Model.Quote.DisabledReason is { } reason ? L(reason) : L("Ready"); color = TradePainter.Muted; }
         p.Text(message, R(1040, 716, 520, 23), 12, color);
     }
-    private static string Reason(string? code) => code switch
-    {
-        CommandReasonCodes.CargoCapacityExceeded => L("CapacityLimit"), CommandReasonCodes.FuelCapacityExceeded => L("TankLimit"),
-        CommandReasonCodes.InsufficientPlayerCredits => L("MoneyLimit"), CommandReasonCodes.InsufficientStationStock => L("StockLimit"),
-        CommandReasonCodes.InsufficientCargoQuantity => L("CargoLimit"), CommandReasonCodes.ModuleUnavailable => L("ModuleUnavailable"),
-        CommandReasonCodes.NotDocked => L("NotDocked"), CommandReasonCodes.InvalidQuantity => L("EnterQuantity"),
-        "value_overflow" => L("ValueOverflow"), "station_stock_full" => L("StationStorageLimit"), _ => L("TradeRejected")
-    };
+    /// <summary>Rejection text: the shared Engine-code → TradeUX key map (incl. quote codes), else TradeRejected.</summary>
+    private static string Reason(string? code) =>
+        L(code == "station_stock_full" ? "StationStorageLimit" : TradeQuote.ReasonKey(code) ?? "TradeRejected");
     private void DrawHistory(TradePainter p)
     {
         p.Text(F("History", _journal.Entries.Count), R(40, 157, 900, 40), 24, bold: true);
@@ -239,7 +253,7 @@ public sealed partial class TradeScreen
             string mode = L(entry.Mode switch { TradeMode.Sell => "Sell", TradeMode.Refuel => "Fuel", _ => "Buy" });
             p.Text(mode + " · " + entry.ModuleLabel, R(101, rect.Top, 250, 50), 14, TradePainter.Muted);
             p.Text(EntryMessage(entry), R(363, rect.Top, 595, 50), 15,
-                entry.Result is null ? TradePainter.Muted : entry.Result.Status == CommandResultStatus.Executed ? TradePainter.Green : TradePainter.Red);
+                entry.Result is null ? TradePainter.Muted : entry.ConfirmedReceipt is not null ? TradePainter.Green : TradePainter.Red);
             p.Line(36, rect.Bottom, 970);
         }
         if (_journal.Entries.Count == 0) p.Text(L("HistoryEmpty"), R(48, 333, 900, 40), 18, TradePainter.Muted);

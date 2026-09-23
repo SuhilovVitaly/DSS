@@ -131,43 +131,21 @@
         "movementType": "Stationary",
         "isKnown": true,
         "stationSize": "Large",
+        "marketProfileId": "market.transit",
+        "explicitInventoryItemTypeIds": [
+          "item.carbon-ore", "item.energy-cells", "item.food-rations", "item.fuel",
+          "item.ice", "item.iron-ore", "item.magnesium-ore", "item.silicon", "item.uranium-ore"
+        ],
         "inventory": [
-            {
-                "itemTypeId": "item.food-rations",
-                "quantity": 500
-            },
-            {
-                "itemTypeId": "item.energy-cells",
-                "quantity": 350
-            },
-            {
-                "itemTypeId": "item.fuel",
-                "quantity": 700
-            },
-            {
-                "itemTypeId": "item.ice",
-                "quantity": 320
-            },
-            {
-                "itemTypeId": "item.iron-ore",
-                "quantity": 410
-            },
-            {
-                "itemTypeId": "item.silicon",
-                "quantity": 70
-            },
-            {
-                "itemTypeId": "item.magnesium-ore",
-                "quantity": 120
-            },
-            {
-                "itemTypeId": "item.uranium-ore",
-                "quantity": 20
-            },
-            {
-                "itemTypeId": "item.carbon-ore",
-                "quantity": 510
-            }
+          { "itemTypeId": "item.food-rations", "quantity": 500 },
+          { "itemTypeId": "item.energy-cells", "quantity": 350 },
+          { "itemTypeId": "item.fuel", "quantity": 700 },
+          { "itemTypeId": "item.ice", "quantity": 320 },
+          { "itemTypeId": "item.iron-ore", "quantity": 410 },
+          { "itemTypeId": "item.silicon", "quantity": 70 },
+          { "itemTypeId": "item.magnesium-ore", "quantity": 120 },
+          { "itemTypeId": "item.uranium-ore", "quantity": 20 },
+          { "itemTypeId": "item.carbon-ore", "quantity": 510 }
         ],
         "stationCrew": [
             { "crewId": "CHR-0002", "role": "Station Director", "displayName": "Mari Lefeber" },
@@ -200,6 +178,87 @@
         "compositionType": "Ice",
         "isKnown": false
       }
-    ]
+    ],
+    "tradingMapGeneration": {
+      "schemaVersion": 1,
+      "startStationObjectId": "SPC-0002",
+      "referenceSpeedMps": 700,
+      "shortMaxGameTimeMs": 21600000,
+      "mediumMaxGameTimeMs": 64800000,
+      "maxTravelGameTimeMs": 129600000,
+      "minStationDistanceKm": 5,
+      "clearanceKm": 2,
+      "stations": [
+        { "objectId": "SPC-0002", "marketProfileId": "market.transit", "name": "Transit", "stationSize": "Large" },
+        { "objectId": "SPC-0005", "marketProfileId": "market.mining", "name": "Mining", "stationSize": "Medium" },
+        { "objectId": "SPC-0006", "marketProfileId": "market.industrial", "name": "Industrial", "stationSize": "Medium" },
+        { "objectId": "SPC-0007", "marketProfileId": "market.hydroponic", "name": "Hydroponic", "stationSize": "Medium" },
+        { "objectId": "SPC-0008", "marketProfileId": "market.scientific-military", "name": "Scientific/Military", "stationSize": "Medium" }
+      ],
+      "templates": [
+        {
+          "templateId": "cross-current",
+          "links": [
+            { "fromStationObjectId": "SPC-0002", "toStationObjectId": "SPC-0005", "riskProfileId": "risk.safe" },
+            { "fromStationObjectId": "SPC-0005", "toStationObjectId": "SPC-0006", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0006", "toStationObjectId": "SPC-0007", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0006", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.elevated" },
+            { "fromStationObjectId": "SPC-0007", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0008", "toStationObjectId": "SPC-0002", "riskProfileId": "risk.elevated" },
+            { "fromStationObjectId": "SPC-0005", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.normal" }
+          ],
+          "offsets": [
+            { "stationObjectId": "SPC-0002", "x": 0, "y": 0 },
+            { "stationObjectId": "SPC-0005", "x": 150, "y": 0 },
+            { "stationObjectId": "SPC-0006", "x": 0, "y": 800 },
+            { "stationObjectId": "SPC-0007", "x": -800, "y": 0 },
+            { "stationObjectId": "SPC-0008", "x": 0, "y": 1800 }
+          ]
+        },
+        {
+          "templateId": "ring-a",
+          "links": [
+            { "fromStationObjectId": "SPC-0002", "toStationObjectId": "SPC-0005", "riskProfileId": "risk.safe" },
+            { "fromStationObjectId": "SPC-0005", "toStationObjectId": "SPC-0006", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0006", "toStationObjectId": "SPC-0007", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0006", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.elevated" },
+            { "fromStationObjectId": "SPC-0007", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0008", "toStationObjectId": "SPC-0002", "riskProfileId": "risk.elevated" },
+            { "fromStationObjectId": "SPC-0005", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.normal" }
+          ],
+          "offsets": [
+            { "stationObjectId": "SPC-0002", "x": 0, "y": 0 },
+            { "stationObjectId": "SPC-0005", "x": 100, "y": 0 },
+            { "stationObjectId": "SPC-0006", "x": 0, "y": 1000 },
+            { "stationObjectId": "SPC-0007", "x": -1000, "y": 0 },
+            { "stationObjectId": "SPC-0008", "x": 0, "y": 1500 }
+          ]
+        },
+        {
+          "templateId": "wide-loop",
+          "links": [
+            { "fromStationObjectId": "SPC-0002", "toStationObjectId": "SPC-0005", "riskProfileId": "risk.safe" },
+            { "fromStationObjectId": "SPC-0005", "toStationObjectId": "SPC-0006", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0006", "toStationObjectId": "SPC-0007", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0006", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.elevated" },
+            { "fromStationObjectId": "SPC-0007", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0008", "toStationObjectId": "SPC-0002", "riskProfileId": "risk.elevated" },
+            { "fromStationObjectId": "SPC-0005", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.normal" }
+          ],
+          "offsets": [
+            { "stationObjectId": "SPC-0002", "x": 0, "y": 0 },
+            { "stationObjectId": "SPC-0005", "x": 200, "y": 0 },
+            { "stationObjectId": "SPC-0006", "x": 0, "y": 1200 },
+            { "stationObjectId": "SPC-0007", "x": -1200, "y": 0 },
+            { "stationObjectId": "SPC-0008", "x": 0, "y": 2200 }
+          ]
+        }
+      ],
+      "riskProfiles": [
+        { "riskProfileId": "risk.elevated", "fuelMultiplierPermille": 1250 },
+        { "riskProfileId": "risk.normal", "fuelMultiplierPermille": 1100 },
+        { "riskProfileId": "risk.safe", "fuelMultiplierPermille": 1000 }
+      ]
+    }
   }
 }

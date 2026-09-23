@@ -17,6 +17,17 @@ public interface IGameSessionConnection : IAsyncDisposable
         DialogueCommand command,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Request an authoritative <see cref="TradeQuoteSnapshot"/> for one trade binding. The quote carries the
+    /// exact curve and total; a quoted <see cref="PlayerCommand"/> then executes it by id. Invalid requests are
+    /// answered with a disabled quote. Connections that do not support quotes keep this default, which fails
+    /// with <see cref="NotSupportedException"/> instead of inventing a quote.
+    /// </summary>
+    ValueTask<TradeQuoteSnapshot> GetTradeQuoteAsync(
+        TradeQuoteRequest request,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.FromException<TradeQuoteSnapshot>(new NotSupportedException("Trade quotes are unavailable."));
+
     /// <summary>Send a player command to the authoritative session.</summary>
     ValueTask SendCommandAsync(
         PlayerCommand command,

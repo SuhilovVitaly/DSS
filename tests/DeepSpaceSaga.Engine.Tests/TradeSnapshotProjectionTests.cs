@@ -393,4 +393,58 @@ public class TradeSnapshotProjectionTests
         Assert.Equal(EnergyCellsId, stack.ItemTypeId);
         Assert.Equal(10, stack.Quantity);
     }
+
+    // --- EP-0001-US-0015-TK-0004: revision projection and static list price -------------------
+
+    [Fact]
+    public void Docked_profile_market_projects_revision_without_budget()
+    {
+        using var engine = QuotedTradeExecutionTests.CreateMarketEngine();
+        var station = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == QuotedTradeExecutionTests.StationId);
+        long budget = station.MarketBudgetCredits!.Value;
+
+        var trade = engine.CaptureSnapshot().DockedStationTrade!;
+        Assert.Equal(QuotedTradeExecutionTests.StationId, trade.StationObjectId);
+        Assert.Equal(1, trade.MarketRevision);
+
+        // A committed trade is visible as the next revision; the budget itself never is.
+        engine.ReceiveCommand(new PlayerCommand("buy", 1, QuotedTradeExecutionTests.ShipId,
+            QuotedTradeExecutionTests.CargoModuleId, TradeCommandTypes.Buy, ItemTypeId: QuotedTradeExecutionTests.Ice, Quantity: 2));
+        var after = engine.CaptureSnapshot();
+        Assert.Equal(CommandResultStatus.Executed, Assert.Single(after.CommandResults).Status);
+        Assert.Equal(2, after.DockedStationTrade!.MarketRevision);
+
+        string json = JsonSerializer.Serialize(after.DockedStationTrade);
+        Assert.Contains("\"MarketRevision\":2", json);
+        Assert.DoesNotContain("BudgetCredits", json, StringComparison.OrdinalIgnoreCase);
+        long budgetNow = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == QuotedTradeExecutionTests.StationId)
+            .MarketBudgetCredits!.Value;
+        Assert.DoesNotContain(":" + budget + ",", json);
+        Assert.DoesNotContain(":" + budgetNow + ",", json);
+
+        // A station without a market profile still publishes no revision.
+        Assert.Null(CreateEngine().CaptureSnapshotForTests().DockedStationTrade!.MarketRevision);
+    }
+
+    [Fact]
+    public void Snapshot_list_price_is_static_reference_and_may_differ_from_quote_first_step()
+    {
+        // Shortage: the quote's first unit carries the stock factor and the buy spread, the list price does not.
+        using var engine = QuotedTradeExecutionTests.CreateMarketEngine(QuotedTradeExecutionTests.IceStock(20));
+        var row = engine.CaptureSnapshot().DockedStationTrade!.Items.Single(i => i.ItemTypeId == QuotedTradeExecutionTests.Ice);
+        var quote = engine.GetTradeQuote(new TradeQuoteRequest("list", QuotedTradeExecutionTests.ShipId,
+            QuotedTradeExecutionTests.CargoModuleId, TradeCommandTypes.Buy, QuotedTradeExecutionTests.Ice, 1));
+        Assert.Null(quote.DisabledReason);
+        Assert.True(quote.Curve[0].UnitPriceCredits > row.UnitPriceCredits);
+
+        // The list price is the unquoted (legacy) charge and does not move with stock.
+        long before = engine.PlayerCredits;
+        engine.ReceiveCommand(new PlayerCommand("legacy", 1, QuotedTradeExecutionTests.ShipId,
+            QuotedTradeExecutionTests.CargoModuleId, TradeCommandTypes.Buy, ItemTypeId: QuotedTradeExecutionTests.Ice, Quantity: 5));
+        var after = engine.CaptureSnapshot();
+        Assert.Equal(CommandResultStatus.Executed, Assert.Single(after.CommandResults).Status);
+        Assert.Equal(before - 5 * row.UnitPriceCredits, engine.PlayerCredits);
+        Assert.Equal(row.UnitPriceCredits,
+            after.DockedStationTrade!.Items.Single(i => i.ItemTypeId == QuotedTradeExecutionTests.Ice).UnitPriceCredits);
+    }
 }

@@ -22,8 +22,21 @@ public sealed partial class TradeScreen : IScreen
     private string _quantityText = "1";
     internal bool IsPending => _journal.IsPending;
     internal IReadOnlyList<TradeJournal.Entry> History => _journal.Entries;
-    internal bool CanConfirm => Model.Quote.DisabledReason is null && !IsPending && _handle is not null && _handle.Failure is null;
+    internal bool CanConfirm => Model.AuthoritativeQuote is { DisabledReason: null } && Model.Quote.DisabledReason is null &&
+        !_closed && !IsPending && _handle is not null && _handle.Failure is null;
     internal int ScrollOffset => _scroll;
+
+    // ── Authoritative quote lifecycle (EP-0001-US-0003-TK-0004) ──
+    // Everything that a quote's numbers or binding depend on. Any change starts exactly one new request.
+    private readonly record struct QuoteKey(string StationId, long? MarketRevision, string ShipId, string ModuleId,
+        string CommandType, string ItemId, long Quantity, long PlayerCredits, long ItemStock, long MaxSellable,
+        long? FreeStockCapacity, long Cargo, long FreeCargoKg, long FuelAmountKg, long FuelCapacityKg, bool ModuleReady);
+    private QuoteKey? _quoteKey;
+    private long _quoteGeneration;
+    private string _quoteRequestId = "";
+    private CancellationTokenSource? _quoteCts;
+    private Task<TradeQuoteSnapshot>? _quoteTask;
+    private bool _requoteOnce, _closed;
 
     public TradeScreen(SnapshotBuffer? buffer = null, GameSessionHandle? handle = null)
     {
@@ -31,11 +44,72 @@ public sealed partial class TradeScreen : IScreen
     }
     private void Refresh()
     {
-        _journal.Refresh(_buffer);
+        bool staleResult = _journal.Refresh(_buffer);
         Model.Refresh(_buffer?.Latest?.Snapshot);
+        _requoteOnce |= staleResult;
+        UpdateQuote();
         _scroll = Math.Clamp(_scroll, 0, Math.Max(0, ListCount - TradeLayout.VisibleRows));
         _historyScroll = Math.Clamp(_historyScroll, 0, Math.Max(0, _journal.Entries.Count - TradeLayout.VisibleRows));
         _moduleScroll = Math.Clamp(_moduleScroll, 0, Math.Max(0, Model.Modules.Length - 5));
+    }
+    private QuoteKey? CurrentQuoteKey()
+    {
+        var snapshot = _buffer?.Latest?.Snapshot;
+        if (snapshot?.DockedStationTrade is not { } trade || string.IsNullOrEmpty(snapshot.PlayerShipObjectId) ||
+            Model.Item is not { } item || Model.Module is not { } module || Model.Quantity <= 0) return null;
+        return new(trade.StationObjectId, trade.MarketRevision, snapshot.PlayerShipObjectId, module.ModuleId, Model.CommandType,
+            item.ItemTypeId, Model.Quantity, snapshot.PlayerCredits, item.StockQuantity, item.MaxSellableQuantity, item.FreeStockCapacity,
+            Model.Cargo(item.ItemTypeId), module.AvailableCapacityKg ?? 0, module.FuelAmountKg ?? 0, module.FuelCapacityKg ?? 0,
+            module.PowerState == "On" && module.OperationalState == "Ready" && module.StructurePoints > 0);
+    }
+    /// <summary>
+    /// Runs on the UI path only (from Refresh). A changed key cancels the previous request, drops its quote and
+    /// starts one new request; an unchanged key starts nothing. A completed response is applied only when it
+    /// answers the current RequestId and binding; the render loop never blocks on an unfinished task.
+    /// </summary>
+    private void UpdateQuote()
+    {
+        if (_closed) return;
+        var key = CurrentQuoteKey();
+        if (key != _quoteKey || _requoteOnce)
+        {
+            _requoteOnce = false;
+            CancelQuoteRequest();
+            _quoteKey = key;
+            if (key is null) Model.InvalidateQuote("QuoteRequired");
+            else if (_handle is null) Model.InvalidateQuote("QuoteUnavailable");
+            else StartQuoteRequest(key.Value);
+        }
+        if (_quoteTask is not { IsCompleted: true } task) return;
+        _quoteTask = null;
+        _quoteCts?.Dispose(); _quoteCts = null;
+        if (!task.IsCompletedSuccessfully) Model.InvalidateQuote("QuoteUnavailable");
+        else if (_quoteKey is { } current && Answers(task.Result, current)) Model.ApplyQuote(task.Result);
+        else Model.InvalidateQuote("InvalidQuote");
+    }
+    private bool Answers(TradeQuoteSnapshot quote, QuoteKey key) =>
+        quote.RequestId == _quoteRequestId && quote.ObjectId == key.ShipId && quote.ModuleId == key.ModuleId &&
+        quote.CommandType == key.CommandType && quote.ItemTypeId == key.ItemId && quote.RequestedQuantity == key.Quantity &&
+        (quote.StationObjectId == key.StationId || quote.DisabledReason is not null && string.IsNullOrEmpty(quote.StationObjectId)) &&
+        // The engine may already be ahead of the latest snapshot, but must never be behind it.
+        (quote.DisabledReason is not null || key.MarketRevision is null || quote.MarketRevision >= key.MarketRevision);
+    private void StartQuoteRequest(QuoteKey key)
+    {
+        _quoteGeneration++;
+        _quoteRequestId = $"TQ-{_quoteGeneration:D6}-{Guid.NewGuid():N}";
+        _quoteCts = new CancellationTokenSource();
+        Model.InvalidateQuote("QuoteLoading");
+        var request = new TradeQuoteRequest(_quoteRequestId, key.ShipId, key.ModuleId, key.CommandType, key.ItemId, key.Quantity);
+        try { _quoteTask = _handle!.GetTradeQuoteAsync(request, _quoteCts.Token).AsTask(); }
+        catch (Exception error) { _quoteTask = Task.FromException<TradeQuoteSnapshot>(error); }
+    }
+    /// <summary>Make the current generation inactive: its late completion is never observed.</summary>
+    private void CancelQuoteRequest()
+    {
+        _quoteTask = null;
+        if (_quoteCts is not { } cts) return;
+        _quoteCts = null;
+        cts.Cancel(); cts.Dispose();
     }
     private int ListCount => Model.FuelMode ? Model.Modules.Length : Model.Rows.Length;
     private int CurrentCount => _history ? _journal.Entries.Count : ListCount;
@@ -44,11 +118,17 @@ public sealed partial class TradeScreen : IScreen
     internal static string L(string key) => Localization.Get("TradeUX." + key);
     internal static string N(long value) => value.ToString("N0", CultureInfo.InvariantCulture).Replace(',', ' ');
     internal static string F(string key, params object[] args) => string.Format(CultureInfo.CurrentCulture, L(key), args);
-    private void SetQuantity(long quantity) { Model.Quantity = Math.Max(0, quantity); _quantityText = Model.Quantity.ToString(CultureInfo.InvariantCulture); _focus = InputFocus.None; }
+    private void RetryFailedQuote()
+    {
+        if (_quoteTask is null && Model.Quote.DisabledReason is "QuoteUnavailable" or "InvalidQuote" or "QuoteStale")
+            _requoteOnce = true;
+    }
+    private void SetQuantity(long quantity) { RetryFailedQuote(); Model.Quantity = Math.Max(0, quantity); _quantityText = Model.Quantity.ToString(CultureInfo.InvariantCulture); _focus = InputFocus.None; }
     private void SetMode(TradeMode mode) { Model.SetMode(mode); SetQuantity(Model.Quantity); _scroll = 0; _history = false; _moduleOpen = false; }
     private void SelectRow(int index)
     {
         if (index < 0 || index >= ListCount) return;
+        RetryFailedQuote();
         if (Model.FuelMode) Model.SelectModule(Model.Modules[index].ModuleId);
         else Model.Select(Model.Rows[index].ItemTypeId);
         SetQuantity(Model.Quantity);
@@ -73,9 +153,14 @@ public sealed partial class TradeScreen : IScreen
     {
         _focus = InputFocus.None; _moduleOpen = false; _dragSlider = _dragScroll = false;
         _controlDown = _enterHeld = false; _stationHovered = _exitHovered = false;
-        Array.Clear(_toolbarHoverStarted); Refresh();
+        _closed = false; Array.Clear(_toolbarHoverStarted); Refresh();
     }
-    public void OnDeactivated() { _focus = InputFocus.None; _dragSlider = _dragScroll = false; _controlDown = _enterHeld = false; }
+    public void OnDeactivated()
+    {
+        _focus = InputFocus.None; _dragSlider = _dragScroll = false; _controlDown = _enterHeld = false;
+        // Cancel only the quote request; a sent trade keeps completing through the handle and the session journal.
+        _closed = true; CancelQuoteRequest(); _quoteKey = null; Model.InvalidateQuote("QuoteRequired");
+    }
     public ScreenEvent OnMouseDown(float x, float y) => OnMouseDown(x, y, MouseButton.Left);
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
@@ -139,9 +224,14 @@ public sealed partial class TradeScreen : IScreen
     {
         Refresh();
         if (!CanConfirm || Model.Item is not { } item || Model.Module is not { } module || _buffer?.Latest?.Snapshot.PlayerShipObjectId is not { } shipId) return;
-        string command = Model.Mode switch { TradeMode.Sell => TradeCommandTypes.Sell, TradeMode.Refuel => TradeCommandTypes.Refuel, _ => TradeCommandTypes.Buy };
-        string id = _handle!.SendTradeCommand(shipId, module.ModuleId, command, item.ItemTypeId, Model.Quantity);
-        _journal.Track(new(id, item.ItemTypeId, module.ModuleId, Model.Mode, Model.Quantity, item.UnitPriceCredits, ModuleLabel: ModuleLabel(module)));
+        // Freshness guard: the shown quote must answer exactly the current key; Refresh has just re-checked it.
+        if (Model.AuthoritativeQuote is not { } quote || _quoteKey is not { } key || key != CurrentQuoteKey() || !Answers(quote, key)) return;
+        // Requested quantity (not the executable part) travels with the exact shown binding.
+        string id = _handle!.SendTradeCommand(shipId, module.ModuleId, key.CommandType, item.ItemTypeId, Model.Quantity,
+            quote.QuoteId, quote.MarketRevision);
+        _journal.Track(new(id, item.ItemTypeId, module.ModuleId, Model.Mode, Model.Quantity, item.UnitPriceCredits, ModuleLabel: ModuleLabel(module),
+            QuoteId: quote.QuoteId, MarketRevision: quote.MarketRevision, QuotedTotalCredits: quote.TotalCredits,
+            QuotedExecutableQuantity: quote.ExecutableQuantity));
     }
     private void RevealSelection()
     {
@@ -194,7 +284,11 @@ public sealed partial class TradeScreen : IScreen
             ParseQuantity();
         }
     }
-    private void ParseQuantity() => Model.Quantity = long.TryParse(_quantityText, NumberStyles.None, CultureInfo.InvariantCulture, out long value) ? value : 0;
+    private void ParseQuantity()
+    {
+        RetryFailedQuote();
+        Model.Quantity = long.TryParse(_quantityText, NumberStyles.None, CultureInfo.InvariantCulture, out long value) ? value : 0;
+    }
     public ScreenEvent OnKeyDown(Key key)
     {
         Refresh();
