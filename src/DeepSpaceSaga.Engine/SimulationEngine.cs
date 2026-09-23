@@ -302,6 +302,9 @@ public sealed partial class SimulationEngine : IDisposable
                 Credits: credits,
                 PriceCoefficient: priceCoefficient,
                 Inventory: inventory,
+                ExplicitInventoryItemTypeIds: isStation
+                    ? (obj.ExplicitInventoryItemTypeIds ?? []).ToImmutableHashSet(StringComparer.Ordinal)
+                    : ImmutableHashSet<string>.Empty,
                 StationSize: stationSize,
                 ProducingModules: producingModules,
                 Events: events,
@@ -411,6 +414,13 @@ public sealed partial class SimulationEngine : IDisposable
         bool isSave,
         ulong masterSeed)
     {
+        if (normalizedState.TradingMap is { } savedMap)
+        {
+            TradingMapGeometryGenerator.ValidateMaterialized(
+                savedMap, normalizedState.SpaceObjects, masterSeed, _registry);
+            return normalizedState;
+        }
+
         if (normalizedState.TradingMapGeneration is not { } request)
             return normalizedState;
 
@@ -900,6 +910,9 @@ public sealed partial class SimulationEngine : IDisposable
                 PriceCoefficient: isStation ? obj.PriceCoefficient : null,
                 Inventory: isStation && !obj.Inventory.IsDefaultOrEmpty
                     ? obj.Inventory.Select(BuildSaveInventoryItem).ToList()
+                    : null,
+                ExplicitInventoryItemTypeIds: isStation && obj.ExplicitInventoryItemTypeIds is { Count: > 0 }
+                    ? obj.ExplicitInventoryItemTypeIds.Order(StringComparer.Ordinal).ToArray()
                     : null,
                 StationSize: isStation ? obj.StationSize.ToString() : null,
                 ProducingModules: isStation && !obj.ProducingModules.IsDefaultOrEmpty
@@ -3503,6 +3516,7 @@ internal sealed record SpaceObjectRuntime(
     /// ObjectType == Station; empty for every other object type.
     /// </summary>
     ImmutableArray<StationInventoryItemRuntime> Inventory = default,
+    ImmutableHashSet<string>? ExplicitInventoryItemTypeIds = null,
     /// <summary>
     /// Station's size classification (§59), resolved once by
     /// <see cref="SimulationEngine.ResolveStationSize"/> and then persisted explicitly — same

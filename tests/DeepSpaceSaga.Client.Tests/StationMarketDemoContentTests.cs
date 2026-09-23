@@ -383,7 +383,7 @@ public sealed class StationMarketDemoContentTests
             obj => obj.ObjectType.Equals("Station", StringComparison.OrdinalIgnoreCase));
 
         Assert.Equal("Large", station.StationSize);
-        Assert.Null(station.MarketProfileId);
+        Assert.Equal("market.transit", station.MarketProfileId);
         Assert.Equal(expected.OrderBy(pair => pair.Key, StringComparer.Ordinal),
             station.Inventory!.ToDictionary(item => item.ItemTypeId, item => item.Quantity,
                 StringComparer.Ordinal).OrderBy(pair => pair.Key, StringComparer.Ordinal));

@@ -29,6 +29,9 @@ public class TradeQuoteIssuanceTests
             SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId != StationId ? o : o with
             {
                 MarketProfileId = null,
+                MarketProfileFingerprint = null,
+                MarketBudgetCredits = null,
+                MarketRevision = null,
                 Credits = 100_000,
                 Inventory = [new(Ice, 500)],
             }).ToArray(),

@@ -140,6 +140,8 @@ public sealed record SpaceObjectData(
     /// resolved" rule as <see cref="Credits"/>.
     /// </summary>
     [property: JsonPropertyName("inventory")] IReadOnlyList<StationInventoryItemData>? Inventory = null,
+    /// <summary>Item ids whose explicit scenario inventory overrides profile fallback stock.</summary>
+    [property: JsonPropertyName("explicitInventoryItemTypeIds")] IReadOnlyList<string>? ExplicitInventoryItemTypeIds = null,
     /// <summary>
     /// Station's size classification (requirements §59, Documentation\02-FirstRelease\TechnicalTasks\
     /// StationEconomyProductionAndSizing.md "Размеры станции") — one of "Huge"/"Large"/

@@ -86,6 +86,72 @@ public sealed class TradingMapBootstrapTests
     }
 
     [Fact]
+    public void Saved_map_rejects_coordinate_drift_before_replacing_the_current_world()
+    {
+        using var engine = new SimulationEngine(Registry());
+        engine.LoadScenario(LegacyScenario());
+        var before = engine.CaptureSnapshotForTests();
+
+        using var source = new SimulationEngine(Registry());
+        source.LoadScenario(NewGameScenario());
+        var saved = source.CaptureSaveState();
+        var changedObjects = saved.GameState.SpaceObjects.Select(obj =>
+            obj.ObjectId == "SPC-0005" ? obj with { PositionX = obj.PositionX + 1 } : obj).ToArray();
+        var changed = saved with { GameState = saved.GameState with { SpaceObjects = changedObjects } };
+
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(changed, isSave: true));
+        Assert.Contains("coordinates", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(before.Objects.Select(MotionShape), engine.CaptureSnapshotForTests().Objects.Select(MotionShape));
+    }
+
+    [Fact]
+    public void Saved_map_rejects_edge_metadata_drift_before_replacing_the_current_world()
+    {
+        using var engine = new SimulationEngine(Registry());
+        engine.LoadScenario(LegacyScenario());
+        var before = engine.CaptureSnapshotForTests();
+
+        using var source = new SimulationEngine(Registry());
+        source.LoadScenario(NewGameScenario());
+        var saved = source.CaptureSaveState();
+        var map = saved.GameState.TradingMap!;
+        var firstEdge = map.Edges[0];
+        var changedMap = map with
+        {
+            Edges = map.Edges.Select(edge => edge == firstEdge
+                ? edge with { TravelEstimateGameTimeMs = edge.TravelEstimateGameTimeMs + 1 }
+                : edge).ToArray(),
+        };
+        var changed = saved with { GameState = saved.GameState with { TradingMap = changedMap } };
+
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(changed, isSave: true));
+        Assert.Contains("metadata", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(before.Objects.Select(MotionShape), engine.CaptureSnapshotForTests().Objects.Select(MotionShape));
+    }
+
+    [Fact]
+    public void Saved_map_rejects_rng_seed_drift_before_replacing_the_current_world()
+    {
+        using var engine = new SimulationEngine(Registry());
+        engine.LoadScenario(LegacyScenario());
+        var before = engine.CaptureSnapshotForTests();
+
+        using var source = new SimulationEngine(Registry());
+        source.LoadScenario(NewGameScenario());
+        var saved = source.CaptureSaveState();
+        var changedMap = saved.GameState.TradingMap! with
+        {
+            RngStreams = saved.GameState.TradingMap!.RngStreams.Select(stream =>
+                stream.Name == "TradingMap.Topology" ? stream with { Seed = stream.Seed + 1 } : stream).ToArray(),
+        };
+        var changed = saved with { GameState = saved.GameState with { TradingMap = changedMap } };
+
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(changed, isSave: true));
+        Assert.Contains("RNG", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(before.Objects.Select(MotionShape), engine.CaptureSnapshotForTests().Objects.Select(MotionShape));
+    }
+
+    [Fact]
     public void Invalid_map_does_not_replace_existing_world()
     {
         using var engine = new SimulationEngine(Registry());

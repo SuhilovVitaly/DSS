@@ -302,7 +302,7 @@ public sealed class MarketFlowContentTests
     }
 
     [Fact]
-    public void Shipping_fuel_and_legacy_scenarios_have_no_hourly_cargo_flow()
+    public void Shipping_fuel_and_seeded_start_inventory_keep_authoritative_market_metadata()
     {
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
         foreach (var expected in ExpectedEconomies)
@@ -315,25 +315,46 @@ public sealed class MarketFlowContentTests
         foreach (string scenario in new[] { "Default", "Docked" })
         {
             var source = ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", scenario, "scenario.json"));
-            Assert.All(source.GameState.SpaceObjects, obj => Assert.Null(obj.MarketProfileId));
+            Assert.Equal("market.transit", source.GameState.SpaceObjects
+                .Single(obj => obj.ObjectId == "SPC-0002").MarketProfileId);
         }
 
-        // The legacy docked New Game keeps its pre-economy trade rows across a public hour boundary.
+        // The seeded start station keeps its explicit legacy inventory while the profile-owned
+        // rows continue to publish authoritative economy metadata.
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(
             SettingsPath, Path.Combine(ClientRoot, "Scenarios", "Docked", "scenario.json"));
         var travelled = engine.TravelStation(new StationTravelCommand("legacy-to-market", StationDistrict.Market));
         Assert.True(travelled.Accepted, travelled.Error);
         Assert.Equal(GameCalendar.HourMs, travelled.Snapshot.GameTimeMs);
         Assert.NotNull(travelled.Snapshot.DockedStationTrade);
+        var profileItemIds = profileIdsFor("market.transit");
         Assert.All(travelled.Snapshot.DockedStationTrade!.Items, row =>
         {
-            Assert.Null(row.TargetStock);
-            Assert.Null(row.MaxStock);
-            Assert.Null(row.FreeStockCapacity);
-            Assert.Null(row.StockState);
+            if (profileItemIds.Contains(row.ItemTypeId))
+            {
+                Assert.NotNull(row.TargetStock);
+                Assert.NotNull(row.MaxStock);
+                Assert.NotNull(row.FreeStockCapacity);
+                Assert.NotNull(row.StockState);
+            }
+            else
+            {
+                Assert.Null(row.TargetStock);
+                Assert.Null(row.MaxStock);
+                Assert.Null(row.FreeStockCapacity);
+                Assert.Null(row.StockState);
+            }
         });
-        Assert.All(engine.CaptureSaveState().GameState.SpaceObjects,
-            obj => Assert.Null(obj.MarketBudgetCredits));
+        Assert.NotNull(engine.CaptureSaveState().GameState.SpaceObjects
+            .Single(obj => obj.ObjectId == "SPC-0002").MarketBudgetCredits);
+
+        static HashSet<string> profileIdsFor(string profileId)
+        {
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
+            var profile = registry.StationMarketProfiles.GetDefinition(
+                registry.StationMarketProfiles.GetIndex(profileId));
+            return profile.InitialInventory.Select(item => item.ItemTypeId).ToHashSet(StringComparer.Ordinal);
+        }
     }
 
     [Fact]

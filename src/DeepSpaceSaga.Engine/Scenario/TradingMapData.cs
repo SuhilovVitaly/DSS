@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Engine.Scenario;
@@ -406,18 +405,9 @@ internal static class TradingMapDataValidation
         if (counter < 10_000)
             throw new ScenarioException($"tradingMap.rngStreams['{name}'].counter must be at least 10000.");
         var remainder = counter % 10;
-        if (remainder == 0)
-            return counter;
-        try
-        {
-            var normalized = checked(counter + (10 - remainder));
-            Trace.TraceWarning("Rounded RNG stream '{0}' counter from {1} to {2}.", name, counter, normalized);
-            return normalized;
-        }
-        catch (OverflowException ex)
-        {
-            throw new ScenarioException($"tradingMap.rngStreams['{name}'].counter cannot be rounded without overflow.", ex);
-        }
+        if (remainder != 0)
+            throw new ScenarioException($"tradingMap.rngStreams['{name}'].counter must be a multiple of 10, got {counter}.");
+        return counter;
     }
 
     private static string NormalizeStationSize(string? value, string objectId)

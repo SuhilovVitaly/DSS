@@ -1,3 +1,5 @@
+using DeepSpaceSaga.Engine.Content;
+
 namespace DeepSpaceSaga.Engine.Scenario;
 
 internal sealed record TradingMapGeometryPlan(
@@ -58,6 +60,99 @@ internal static class TradingMapGeometryGenerator
             RngStreams: [graph.TopologyStream, geometrySelection.State]);
 
         return new TradingMapGeometryPlan(state, stations, geometrySelection.State);
+    }
+
+    internal static void ValidateMaterialized(
+        TradingMapStateData map,
+        IReadOnlyList<SpaceObjectData> existingObjects,
+        ulong masterSeed,
+        GameDataRegistry registry)
+    {
+        ArgumentNullException.ThrowIfNull(map);
+        ArgumentNullException.ThrowIfNull(existingObjects);
+        ArgumentNullException.ThrowIfNull(registry);
+
+        var rules = map.Rules ?? throw new ScenarioException("tradingMap saved state requires rules.");
+        var graph = TradingGraphGenerator.Generate(rules, masterSeed, registry);
+        if (!string.Equals(map.TemplateId, graph.Template.TemplateId, StringComparison.Ordinal))
+            throw new ScenarioException(
+                $"tradingMap saved template '{map.TemplateId}' does not match masterSeed-selected template '{graph.Template.TemplateId}'.");
+
+        var geometrySelection = TradingMapRandom.DrawIndex(masterSeed, "TradingMap.Geometry", 4);
+        if (map.QuarterTurns != geometrySelection.Value)
+            throw new ScenarioException(
+                $"tradingMap saved quarterTurns {map.QuarterTurns} does not match masterSeed-selected value {geometrySelection.Value}.");
+
+        var expectedStreams = new[] { graph.TopologyStream, geometrySelection.State }
+            .ToDictionary(stream => stream.Name, StringComparer.Ordinal);
+        var actualStreams = map.RngStreams.ToDictionary(stream => stream.Name, StringComparer.Ordinal);
+        if (actualStreams.Count != expectedStreams.Count || expectedStreams.Any(pair =>
+                !actualStreams.TryGetValue(pair.Key, out var actual) ||
+                actual.Seed != pair.Value.Seed || actual.Counter != pair.Value.Counter))
+        {
+            throw new ScenarioException("tradingMap saved RNG streams do not match the masterSeed replay.");
+        }
+
+        var stationById = rules.Stations.ToDictionary(station => station.ObjectId, StringComparer.OrdinalIgnoreCase);
+        var template = graph.Template;
+        var startStation = ResolveExistingStart(rules, stationById, existingObjects);
+        var existingById = CanonicalizeExistingObjects(existingObjects);
+        var expectedStations = BuildStations(rules, template, stationById, startStation, map.QuarterTurns);
+        var actualStations = new List<SpaceObjectData>(stationById.Count);
+
+        foreach (var stationRule in stationById.Values.OrderBy(station => station.ObjectId, StringComparer.Ordinal))
+        {
+            if (!existingById.TryGetValue(stationRule.ObjectId, out var actual))
+                throw new ScenarioException($"tradingMap saved state is missing station '{stationRule.ObjectId}'.");
+            if (!string.Equals(actual.ObjectType, "Station", StringComparison.OrdinalIgnoreCase))
+                throw new ScenarioException($"tradingMap saved station '{actual.ObjectId}' must have objectType Station.");
+            if (!actual.IsKnown || actual.SpeedMps != 0 ||
+                !string.Equals(actual.MovementType, "Stationary", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ScenarioException(
+                    $"tradingMap saved station '{actual.ObjectId}' must be known and stationary.");
+            }
+
+            var expected = expectedStations.Single(station =>
+                string.Equals(station.ObjectId, actual.ObjectId, StringComparison.OrdinalIgnoreCase));
+            if (!NearlyEqual(actual.PositionX, expected.PositionX) ||
+                !NearlyEqual(actual.PositionY, expected.PositionY))
+            {
+                throw new ScenarioException(
+                    $"tradingMap saved station '{actual.ObjectId}' coordinates do not match the selected template geometry.");
+            }
+            actualStations.Add(actual);
+        }
+
+        ValidatePlacement(rules, actualStations, existingObjects, startStation.ObjectId);
+        var expectedEdges = BuildEdges(rules, template, actualStations);
+        ValidateEdgeCoverage(rules, expectedEdges);
+        var actualEdges = map.Edges.ToDictionary(
+            edge => EndpointKey(edge.FromStationObjectId, edge.ToStationObjectId),
+            StringComparer.Ordinal);
+        if (actualEdges.Count != expectedEdges.Count)
+            throw new ScenarioException("tradingMap saved state edge count does not match the selected template geometry.");
+
+        foreach (var expectedEdge in expectedEdges)
+        {
+            var key = EndpointKey(expectedEdge.FromStationObjectId, expectedEdge.ToStationObjectId);
+            if (!actualEdges.TryGetValue(key, out var actualEdge))
+                throw new ScenarioException($"tradingMap saved state is missing edge '{key}'.");
+            if (!NearlyEqual(actualEdge.DistanceKm, expectedEdge.DistanceKm) ||
+                actualEdge.TravelEstimateGameTimeMs != expectedEdge.TravelEstimateGameTimeMs ||
+                !string.Equals(actualEdge.DistanceClass, expectedEdge.DistanceClass, StringComparison.Ordinal) ||
+                actualEdge.FuelMultiplierPermille != expectedEdge.FuelMultiplierPermille ||
+                !string.Equals(actualEdge.RiskProfileId, expectedEdge.RiskProfileId, StringComparison.Ordinal))
+            {
+                throw new ScenarioException(
+                    $"tradingMap saved edge '{expectedEdge.FromStationObjectId}'/'{expectedEdge.ToStationObjectId}' metadata does not match its coordinates and rules.");
+            }
+        }
+
+        var expectedFlows = graph.CargoFlows.Select(FlowShape).OrderBy(flow => flow, StringComparer.Ordinal).ToArray();
+        var actualFlows = map.CargoFlows.Select(FlowShape).OrderBy(flow => flow, StringComparer.Ordinal).ToArray();
+        if (!expectedFlows.SequenceEqual(actualFlows, StringComparer.Ordinal))
+            throw new ScenarioException("tradingMap saved cargo flows do not match the masterSeed-selected graph.");
     }
 
     private static IReadOnlyDictionary<string, TradingMapStationData> CanonicalizeStations(
@@ -138,6 +233,12 @@ internal static class TradingMapGeometryGenerator
         if (!string.Equals(start.ObjectType, "Station", StringComparison.OrdinalIgnoreCase))
             throw new ScenarioException(
                 $"tradingMap geometry start object '{start.ObjectId}' must have objectType Station.");
+        if (!start.IsKnown || start.SpeedMps != 0 ||
+            !string.Equals(start.MovementType, "Stationary", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ScenarioException(
+                $"tradingMap geometry start station '{start.ObjectId}' must be known and stationary.");
+        }
         if (!stationById.ContainsKey(start.ObjectId))
             throw new ScenarioException($"tradingMap geometry has no rule for start station '{start.ObjectId}'.");
         return start;
@@ -406,6 +507,15 @@ internal static class TradingMapGeometryGenerator
         var dy = y2 - y1;
         return Math.Sqrt(dx * dx + dy * dy) * WorldUnitToKm;
     }
+
+    private static bool NearlyEqual(double left, double right)
+    {
+        var tolerance = 1e-9 * Math.Max(1, Math.Max(Math.Abs(left), Math.Abs(right)));
+        return Math.Abs(left - right) <= tolerance;
+    }
+
+    private static string FlowShape(TradingMapCargoFlowData flow) =>
+        $"{flow.FromStationObjectId}>{flow.ToStationObjectId}:{string.Join(',', flow.ItemTypeIds)}";
 
     private static (double X, double Y) Rotate(double x, double y, int quarterTurns) => quarterTurns switch
     {

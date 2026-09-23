@@ -411,7 +411,7 @@ public class StationEconomyGenerationTests
         };
 
         Assert.Equal(StationSize.Large, station.StationSize);
-        Assert.Null(station.MarketProfileId);
+        Assert.Equal("market.transit", station.MarketProfileId);
         foreach (var pair in expected)
             Assert.Equal(pair.Value, Stock(station, registry, pair.Key));
     }

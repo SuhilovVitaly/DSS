@@ -1,4 +1,6 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Contracts;
@@ -6,6 +8,7 @@ using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.LocalClient;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests;
@@ -380,6 +383,195 @@ public class LocalSessionIntegrationTests
     }
 
     [Fact]
+    public void Three_start_scenarios_have_equivalent_seeded_map_and_preserve_ship_state()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"dss-trading-scenarios-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+
+        try
+        {
+            string settingsPath = ResolveRealSettingsPath();
+            var scenarioPaths = CreateSeededScenarioCopies(tempRoot, masterSeed: 20260923UL);
+            TradingMapStateData? expectedMap = null;
+
+            foreach (var scenarioPath in scenarioPaths)
+            {
+                var source = ScenarioLoader.LoadFromFile(scenarioPath);
+                var sourceShip = Assert.Single(source.GameState.SpaceObjects,
+                    obj => obj.ObjectId == source.GameState.PlayerShipObjectId);
+                using var engine = SimulationEngine.CreateFromScenarioFile(settingsPath, scenarioPath);
+                var saved = engine.CaptureSaveState();
+                var savedShip = Assert.Single(saved.GameState.SpaceObjects,
+                    obj => obj.ObjectId == saved.GameState.PlayerShipObjectId);
+                Assert.NotNull(saved.GameState.TradingMap);
+                var map = saved.GameState.TradingMap!;
+
+                Assert.Null(saved.GameState.TradingMapGeneration);
+                Assert.Equal(5, saved.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
+                Assert.Equal(sourceShip.IsDocked, savedShip.IsDocked);
+                Assert.Equal(sourceShip.DockedStationObjectId, savedShip.DockedStationObjectId);
+                Assert.Equal(sourceShip.SpeedMps, savedShip.SpeedMps);
+                Assert.Equal(JsonSerializer.Serialize(sourceShip.Modules),
+                    JsonSerializer.Serialize(savedShip.Modules));
+
+                if (expectedMap is null)
+                    expectedMap = map;
+                else
+                    Assert.Equal(JsonSerializer.Serialize(expectedMap), JsonSerializer.Serialize(map));
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Each_seeded_scenario_publishes_five_station_markers_with_edge_and_flow_save()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"dss-trading-save-{Guid.NewGuid():N}");
+        string saveDirectory = Path.Combine(tempRoot, "Saves");
+        Directory.CreateDirectory(tempRoot);
+
+        try
+        {
+            string settingsPath = ResolveRealSettingsPath();
+            foreach (var scenarioPath in CreateSeededScenarioCopies(tempRoot, masterSeed: 20260923UL))
+            {
+                await using var connection = LocalGameSessionConnection.CreateFromScenarioFile(
+                    settingsPath, scenarioPath, saveDirectory);
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                AuthoritativeSnapshot? initial = null;
+                await foreach (var snapshot in connection.ReadSnapshotsAsync(timeout.Token))
+                {
+                    if (snapshot.Objects.Count(obj => obj.ObjectType == SpaceObjectType.Station) == 5)
+                    {
+                        initial = snapshot;
+                        break;
+                    }
+                }
+
+                Assert.NotNull(initial);
+                var stations = initial!.Objects.Where(obj => obj.ObjectType == SpaceObjectType.Station).ToArray();
+                Assert.All(stations, station =>
+                    Assert.Equal(TacticalMapMarkerPolicy.RegularMarkerSizePx,
+                        TacticalMapMarkerPolicy.GetMarkerSizePx(station.RenderObjectType)));
+
+                string slotId = Path.GetFileName(Path.GetDirectoryName(scenarioPath))!;
+                await connection.SaveAsync(slotId, timeout.Token);
+                var savePath = Path.Combine(saveDirectory, $"{slotId}.json");
+                var saved = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true);
+                Assert.NotNull(saved.GameState.TradingMap);
+                var map = saved.GameState.TradingMap!;
+
+                Assert.Null(saved.GameState.TradingMapGeneration);
+                Assert.Equal(5, saved.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
+                Assert.NotEmpty(map.Edges);
+                Assert.NotEmpty(map.CargoFlows);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Tactical_map_render_smoke_draws_all_five_station_markers_at_system_zoom()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"dss-trading-render-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+
+        try
+        {
+            string settingsPath = ResolveRealSettingsPath();
+            string scenarioPath = CreateSeededScenarioCopies(tempRoot, masterSeed: 20260923UL)[0];
+            await using var connection = LocalGameSessionConnection.CreateFromScenarioFile(
+                settingsPath, scenarioPath, saveDirectory: null);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            AuthoritativeSnapshot? initial = null;
+            await foreach (var snapshot in connection.ReadSnapshotsAsync(timeout.Token))
+            {
+                if (snapshot.Objects.Count(obj => obj.ObjectType == SpaceObjectType.Station) == 5)
+                {
+                    initial = snapshot;
+                    break;
+                }
+            }
+
+            Assert.NotNull(initial);
+            var buffer = new SnapshotBuffer();
+            buffer.Update(initial!);
+            var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
+
+            using var bitmap = new SKBitmap(1280, 720);
+            using var canvas = new SKCanvas(bitmap);
+            canvas.Clear(SKColors.Transparent);
+            screen.Render(canvas, bitmap.Width, bitmap.Height);
+            Assert.True(screen.FitMapView(MapFitMode.System));
+
+            canvas.Clear(SKColors.Transparent);
+            screen.Render(canvas, bitmap.Width, bitmap.Height);
+
+            var stationStates = screen.RenderStates
+                .Where(state => state.Pose.RenderObjectType == SpaceObjectType.Station)
+                .ToArray();
+            Assert.Equal(5, stationStates.Length);
+            foreach (var station in stationStates)
+            {
+                var (x, y) = (
+                    (float)(bitmap.Width / 2.0 +
+                        (station.Pose.X - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit),
+                    (float)(bitmap.Height / 2.0 +
+                        (station.Pose.Y - screen.CameraFocusY) * screen.CameraPixelsPerWorldUnit));
+                Assert.InRange(x, 0, bitmap.Width - 1);
+                Assert.InRange(y, 0, bitmap.Height - 1);
+                Assert.True(HasRenderedPixel(bitmap, x, y),
+                    $"Station marker '{station.Pose.ObjectId}' was not visible at ({x:F1}, {y:F1}).");
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Scenario_content_rejects_missing_role_template_or_risk_reference()
+    {
+        string defaultPath = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(ResolveRealSettingsPath())!, "Scenarios", "Default", "scenario.json"));
+        var source = JsonNode.Parse(File.ReadAllText(defaultPath))!.AsObject();
+
+        var missingRole = source.DeepClone().AsObject();
+        missingRole["gameState"]!["tradingMapGeneration"]!["stations"]!.AsArray().RemoveAt(1);
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(missingRole.ToJsonString()));
+
+        var missingTemplate = source.DeepClone().AsObject();
+        missingTemplate["gameState"]!["tradingMapGeneration"]!["templates"]!.AsArray().Clear();
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(missingTemplate.ToJsonString()));
+
+        var missingRisk = source.DeepClone().AsObject();
+        missingRisk["gameState"]!["tradingMapGeneration"]!["templates"]![0]!["links"]![0]!["riskProfileId"] = "risk.missing";
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(missingRisk.ToJsonString()));
+    }
+
+    [Fact]
+    public void Default_500_remains_the_existing_502_object_stress_scenario()
+    {
+        string path = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(ResolveRealSettingsPath())!, "Scenarios", "Default_500", "scenario.json"));
+        var scenario = ScenarioLoader.LoadFromFile(path);
+
+        Assert.Equal(502, scenario.GameState.SpaceObjects.Count);
+        Assert.Null(scenario.GameState.TradingMapGeneration);
+        Assert.Null(scenario.GameState.TradingMap);
+    }
+
+    [Fact]
     public async Task CreateFromScenarioFile_starts_a_session_from_an_explicitly_chosen_scenario()
     {
         // The New Game -> scenario picker path: LocalGameSessionConnection.CreateFromScenarioFile
@@ -403,6 +595,7 @@ public class LocalSessionIntegrationTests
     [Theory]
     [InlineData("default")]
     [InlineData("docked")]
+    [InlineData("undocked")]
     public async Task Client_build_output_starts_scenario_and_publishes_first_snapshot(string scenarioId)
     {
         // Regression: Settings.json now points itemTypes at the split Data/Items directory.
@@ -444,7 +637,7 @@ public class LocalSessionIntegrationTests
     [Fact]
     public void ScenarioRepository_lists_every_scenario_json_found_under_the_real_Scenarios_directory()
     {
-        // Exercises the real on-disk Scenarios/ tree (Default, Default_500, Docked) the
+        // Exercises the real on-disk Scenarios/ tree (Default, Default_500, Docked, Undocked) the
         // same way SkiaWindow's ListScenarios() will at runtime — proving Name/Description
         // round-trip through ScenarioLoader rather than just testing an isolated temp dir.
         string settingsPath = ResolveRealSettingsPath();
@@ -454,6 +647,7 @@ public class LocalSessionIntegrationTests
 
         Assert.Contains(scenarios, s => s.ScenarioId == "default" && !string.IsNullOrWhiteSpace(s.Description));
         Assert.Contains(scenarios, s => s.ScenarioId == "docked" && !string.IsNullOrWhiteSpace(s.Description));
+        Assert.Contains(scenarios, s => s.ScenarioId == "undocked" && !string.IsNullOrWhiteSpace(s.Description));
         Assert.All(scenarios, s => Assert.True(File.Exists(s.ScenarioPath)));
     }
 
@@ -472,6 +666,27 @@ public class LocalSessionIntegrationTests
 
         throw new FileNotFoundException(
             $"DeepSpaceSaga.Client build output was not found under '{clientBinRoot}'.");
+    }
+
+    private static string[] CreateSeededScenarioCopies(string tempRoot, ulong masterSeed)
+    {
+        string settingsPath = ResolveRealSettingsPath();
+        string scenariosRoot = Path.Combine(Path.GetDirectoryName(settingsPath)!, "Scenarios");
+        string[] scenarioIds = ["Default", "Docked", "Undocked"];
+        var paths = new string[scenarioIds.Length];
+
+        for (int i = 0; i < scenarioIds.Length; i++)
+        {
+            string scenarioId = scenarioIds[i];
+            var root = JsonNode.Parse(File.ReadAllText(
+                Path.Combine(scenariosRoot, scenarioId, "scenario.json")))!.AsObject();
+            root["gameState"]!["masterSeed"] = masterSeed;
+            paths[i] = Path.Combine(tempRoot, scenarioId, "scenario.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(paths[i])!);
+            File.WriteAllText(paths[i], root.ToJsonString());
+        }
+
+        return paths;
     }
 
     [Fact]
@@ -777,6 +992,7 @@ public class LocalSessionIntegrationTests
         station["marketProfileId"] = "market.mining";
         station["stationSize"] = "Medium";
         station.Remove("inventory");
+        root["gameState"]!.AsObject().Remove("tradingMapGeneration");
 
         Directory.CreateDirectory(directory);
         string scenarioPath = Path.Combine(directory, "scenario.json");
@@ -871,6 +1087,24 @@ public class LocalSessionIntegrationTests
         return settingsPath;
     }
 
+    private static bool HasRenderedPixel(SKBitmap bitmap, float x, float y)
+    {
+        int centerX = (int)Math.Round(x);
+        int centerY = (int)Math.Round(y);
+        for (int offsetY = -4; offsetY <= 4; offsetY++)
+            for (int offsetX = -4; offsetX <= 4; offsetX++)
+            {
+                int pixelX = centerX + offsetX;
+                int pixelY = centerY + offsetY;
+                if (pixelX < 0 || pixelX >= bitmap.Width || pixelY < 0 || pixelY >= bitmap.Height)
+                    continue;
+                if (bitmap.GetPixel(pixelX, pixelY).Alpha > 0)
+                    return true;
+            }
+
+        return false;
+    }
+
     private static string CreateCurrentCatalogSave(string settingsPath, bool includeMasterSeed)
     {
         using var source = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
@@ -879,7 +1113,10 @@ public class LocalSessionIntegrationTests
         {
             GameTimeMs = 1000,
             SimulationTimeMs = 1000,
-            MasterSeed = includeMasterSeed ? 42UL : null
+            MasterSeed = includeMasterSeed ? 42UL : null,
+            // The fixture deliberately substitutes a seed. A materialized map belongs to
+            // its original seed and must be discarded so the loader can regenerate it.
+            TradingMap = null,
         };
         return ScenarioLoader.Serialize(save with { SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion, GameState = state });
     }

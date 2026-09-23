@@ -155,18 +155,25 @@ public class EconomyTimeContinuityTests
                 SimulationTimeMs = 0,
                 MasterSeed = 17,
                 CatalogCompatibility = IntervalRegistry.CatalogCompatibility,
+                TradingMap = null,
                 DialogueState = null,
-                SpaceObjects = save.GameState.SpaceObjects.Where(o => o.ObjectType is "PlayerShip" or "Station").Select(o => o with
-                {
-                    Modules = o.ObjectType == "PlayerShip"
+                SpaceObjects = save.GameState.SpaceObjects
+                    .Where(o => o.ObjectId == save.GameState.PlayerShipObjectId || o.ObjectId == "SPC-0002")
+                    .Select(o => o with
+                    {
+                        Modules = o.ObjectType == "PlayerShip"
                         ? [new("cargo", "module.test-cargo", [new(4, 2)], 100, "On", "Ready", null,
                         rations > 0 ? [new("item.food-rations", rations)] : [])] : [],
-                    Credits = o.ObjectType == "Station" ? 10_000 : null,
-                    PriceCoefficient = o.ObjectType == "Station" ? 1000 : null,
-                    StationCrew = [],
-                    Inventory = o.ObjectType == "Station" ? [new("item.test-input", 10), new("item.food-rations", 0)] : null,
-                    ProducingModules = o.ObjectType == "Station" ? [new("factory.test-food")] : null
-                }).ToArray(),
+                        Credits = o.ObjectType == "Station" ? 10_000 : null,
+                        PriceCoefficient = o.ObjectType == "Station" ? 1000 : null,
+                        MarketProfileId = null,
+                        MarketProfileFingerprint = null,
+                        MarketBudgetCredits = null,
+                        MarketRevision = null,
+                        StationCrew = [],
+                        Inventory = o.ObjectType == "Station" ? [new("item.test-input", 10), new("item.food-rations", 0)] : null,
+                        ProducingModules = o.ObjectType == "Station" ? [new("factory.test-food")] : null
+                    }).ToArray(),
                 EconomyTime = save.GameState.EconomyTime! with
                 {
                     ActiveContracts = [new("contract.test", GameCalendar.DayMs, 750, "SPC-0002", ["P0"])]
@@ -562,12 +569,14 @@ public class EconomyTimeContinuityTests
             SaveFormatVersion = 0,
             GameState = gs with
             {
+                TradingMap = null,
                 SpaceObjects = gs.SpaceObjects
                     .Where(o => o.ObjectId == gs.PlayerShipObjectId || o.ObjectId == stationId)
                     .Select(o => o.ObjectId != stationId ? o : o with
                     {
                         MarketProfileId = profile.TypeId,
                         MarketProfileFingerprint = null,
+                        ExplicitInventoryItemTypeIds = null,
                         StationSize = nameof(StationSize.Medium),
                         Credits = null,
                         // Null lets the profile define the stock; an explicit list overrides it.

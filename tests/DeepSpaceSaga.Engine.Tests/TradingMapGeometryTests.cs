@@ -35,15 +35,15 @@ public sealed class TradingMapGeometryTests
         var result = TradingMapGeometryGenerator.Generate(graph, ExistingObjects(), 77);
 
         foreach (var left in result.Stations)
-        foreach (var right in result.Stations.Where(station =>
-                     string.CompareOrdinal(left.ObjectId, station.ObjectId) < 0))
-        {
-            Assert.True(DistanceKm(left, right) >= Rules().MinStationDistanceKm);
-        }
+            foreach (var right in result.Stations.Where(station =>
+                         string.CompareOrdinal(left.ObjectId, station.ObjectId) < 0))
+            {
+                Assert.True(DistanceKm(left, right) >= Rules().MinStationDistanceKm);
+            }
 
         foreach (var station in result.Stations)
-        foreach (var asteroid in ExistingObjects().Where(obj => obj.ObjectType == "Asteroid"))
-            Assert.True(DistanceKm(station, asteroid) >= Rules().ClearanceKm);
+            foreach (var asteroid in ExistingObjects().Where(obj => obj.ObjectType == "Asteroid"))
+                Assert.True(DistanceKm(station, asteroid) >= Rules().ClearanceKm);
     }
 
     [Fact]
@@ -93,6 +93,24 @@ public sealed class TradingMapGeometryTests
 
         Assert.Contains("station", error.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("distance", error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData(false, 0, "Stationary")]
+    [InlineData(true, 1, "Linear")]
+    [InlineData(true, 0, "Linear")]
+    public void Start_station_must_be_known_and_stationary(bool isKnown, double speedMps, string movementType)
+    {
+        var graph = TradingGraphGenerator.Generate(Rules(), 77, Registry());
+        var existing = ExistingObjects().Select(obj => obj.ObjectId == "SPC-0002"
+            ? obj with { IsKnown = isKnown, SpeedMps = speedMps, MovementType = movementType }
+            : obj).ToArray();
+
+        var error = Assert.Throws<ScenarioException>(() =>
+            TradingMapGeometryGenerator.Generate(graph, existing, 77));
+
+        Assert.Contains("start station", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("stationary", error.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

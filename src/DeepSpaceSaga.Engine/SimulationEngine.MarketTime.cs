@@ -373,9 +373,17 @@ public sealed partial class SimulationEngine
                 // Fuel is sold from its own refuel stock and never takes part in cargo flow.
                 if (itemType.StorageKind == ItemStorageKind.FuelTank) continue;
                 if (!TryMarketLimits(profile, economy, station.StationSize, itemType.TypeId, out var limits))
+                {
+                    if (station.ExplicitInventoryItemTypeIds?.Contains(itemType.TypeId) == true && item.StockQuantity >= 0)
+                        continue;
                     throw new ScenarioException($"Station '{stationId}', market profile '{profileId}', inventory item '{itemType.TypeId}' has no stockTargets entry. Save was not modified.");
-                if (item.StockQuantity < 0 || item.StockQuantity > limits.MaxStock)
+                }
+                if (item.StockQuantity < 0 ||
+                    (item.StockQuantity > limits.MaxStock &&
+                     station.ExplicitInventoryItemTypeIds?.Contains(itemType.TypeId) != true))
+                {
                     throw new ScenarioException($"Station '{stationId}', market profile '{profileId}', inventory item '{itemType.TypeId}': stock {item.StockQuantity} is outside [0, {limits.MaxStock}]. Save was not modified.");
+                }
             }
 
             var producingModules = station.ProducingModules.IsDefault
@@ -439,4 +447,5 @@ public sealed partial class SimulationEngine
             }
         }
     }
+
 }

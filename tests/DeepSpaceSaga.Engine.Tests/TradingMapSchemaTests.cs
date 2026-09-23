@@ -72,7 +72,7 @@ public sealed class TradingMapSchemaTests
     }
 
     [Fact]
-    public void Counter_is_rounded_up_without_overflow_and_persisted()
+    public void Counter_rejects_non_multiple_of_ten_and_overflow_values()
     {
         var map = MaterializedMap() with
         {
@@ -83,8 +83,8 @@ public sealed class TradingMapSchemaTests
             ]
         };
 
-        var loaded = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(Scenario(map: map)));
-        Assert.Equal(10010UL, loaded.GameState.TradingMap!.RngStreams.Single(s => s.Name == "TradingMap.Topology").Counter);
+        Assert.Throws<ScenarioException>(() =>
+            ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(Scenario(map: map))));
 
         var overflow = map with
         {

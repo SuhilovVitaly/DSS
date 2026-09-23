@@ -102,6 +102,7 @@ public class QuotedTradeExecutionTests
             SaveFormatVersion = 0,
             GameState = gs with
             {
+                TradingMap = null,
                 SpaceObjects = gs.SpaceObjects
                     .Where(o => o.ObjectId == ShipId || o.ObjectId == StationId)
                     .Select(o => o.ObjectId != StationId ? o : o with
@@ -110,6 +111,8 @@ public class QuotedTradeExecutionTests
                         MarketProfileFingerprint = null,
                         StationSize = nameof(StationSize.Medium),
                         Credits = null,
+                        MarketBudgetCredits = null,
+                        MarketRevision = null,
                         Inventory = stock,
                         ProducingModules = null,
                         Events = null,
@@ -193,6 +196,9 @@ public class QuotedTradeExecutionTests
                     ObjectId = OtherStationId,
                     Name = "Other Station",
                     MarketProfileId = null,
+                    MarketProfileFingerprint = null,
+                    MarketBudgetCredits = null,
+                    MarketRevision = null,
                     Credits = 100_000,
                     Inventory = [new(Ice, 500)],
                     PortFeeCreditsPerDay = 10,
