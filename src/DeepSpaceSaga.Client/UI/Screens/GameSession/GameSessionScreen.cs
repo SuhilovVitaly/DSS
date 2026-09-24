@@ -38,6 +38,7 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly GameSessionHandle? _handle;
     private readonly Func<long> _timestampProvider;
     private readonly bool _showTrajectoryPrediction;
+    private readonly string _tacticalMapSnapshotDirectory;
 
     /// <summary>
     /// UI-only scale factor applied to the GameSession overlay panels (top-left
@@ -272,13 +273,15 @@ public sealed partial class GameSessionScreen : IScreen
         Func<long>? timestampProvider = null,
         bool showTrajectoryPrediction = true,
         float uiScale = 1.0f,
-        TacticalMapSettings? mapSettings = null)
+        TacticalMapSettings? mapSettings = null,
+        string? tacticalMapSnapshotDirectory = null)
     {
         _buffer = buffer;
         _predictor = predictor;
         _handle = handle;
         _timestampProvider = timestampProvider ?? Stopwatch.GetTimestamp;
         _showTrajectoryPrediction = showTrajectoryPrediction;
+        _tacticalMapSnapshotDirectory = tacticalMapSnapshotDirectory ?? TacticalMapSnapshotWriter.DefaultDirectory;
         _uiScale = ValidateUiScale(uiScale);
         _uiTimeStartTimestamp = _timestampProvider();
 

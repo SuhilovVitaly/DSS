@@ -69,12 +69,45 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         if (elapsedMs == 0)
             return state;
 
-        long remainingMs = elapsedMs;
         long untilNextTurnMs = state.TurnStepRemainingMs;
         double x = state.X;
         double y = state.Y;
         double direction = state.Direction;
 
+        AdvanceTurnSteps(state, elapsedMs, ref x, ref y, ref direction, ref untilNextTurnMs);
+        return state with { X = x, Y = y, Direction = direction, TurnStepRemainingMs = untilNextTurnMs };
+    }
+
+    /// <summary>
+    /// Samples ordinary discrete turns in one forward pass, including t=0.
+    /// Navigation commands retain their own projection semantics. The caller owns
+    /// the output storage; only the terminal motion snapshot is materialized.
+    /// </summary>
+    public static bool TryPredictTurnPositions(ObjectMotionSnapshot state, long sampleIntervalMs,
+        Span<(double X, double Y)> positions, out ObjectMotionSnapshot terminalState)
+    {
+        terminalState = state;
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sampleIntervalMs);
+        if (positions.IsEmpty || state.TurnStepDegrees == 0 || state.TurnStepIntervalMs <= 0 ||
+            state.TurnStepRemainingMs < 0 ||
+            state.ActiveEngineCommandType is NavigationComputerCommandTypes.Approach or ShipEngineCommandTypes.Orbit)
+            return false;
+
+        double x = state.X, y = state.Y, direction = state.Direction;
+        long untilNextTurnMs = state.TurnStepRemainingMs;
+        positions[0] = (x, y);
+        for (int i = 1; i < positions.Length; i++)
+        {
+            AdvanceTurnSteps(state, sampleIntervalMs, ref x, ref y, ref direction, ref untilNextTurnMs);
+            positions[i] = (x, y);
+        }
+        terminalState = state with { X = x, Y = y, Direction = direction, TurnStepRemainingMs = untilNextTurnMs };
+        return true;
+    }
+
+    private static void AdvanceTurnSteps(ObjectMotionSnapshot state, long remainingMs,
+        ref double x, ref double y, ref double direction, ref long untilNextTurnMs)
+    {
         while (remainingMs > 0)
         {
             long segmentMs = Math.Min(remainingMs, untilNextTurnMs);
@@ -89,7 +122,6 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             }
         }
 
-        return state with { X = x, Y = y, Direction = direction, TurnStepRemainingMs = untilNextTurnMs };
     }
 
     private static ObjectMotionSnapshot PredictNavigation(

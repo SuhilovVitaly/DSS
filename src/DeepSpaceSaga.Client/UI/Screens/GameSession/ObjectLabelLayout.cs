@@ -36,6 +36,9 @@ internal static class ObjectLabelLayout
     /// <summary>Viewport margin for clamp.</summary>
     private const float ViewportMargin = 2f;
 
+    internal static float MaximumTextWidth(float viewportWidth) => Math.Max(0,
+        viewportWidth - 2 * ViewportMargin - (2 * TextPaddingX + StatusSquareSize + StatusTextGap));
+
     /// <summary>
     /// Compute the full label geometry for an object.
     /// Plaque is placed behind the object relative to its direction of motion,
@@ -52,9 +55,11 @@ internal static class ObjectLabelLayout
         SKSize viewport,
         float markerRadius)
     {
+        if (viewport.Width <= 0 || viewport.Height <= 0) return default;
         float plaqueW = Math.Max(MinPlaqueWidth,
             TextPaddingX + StatusSquareSize + StatusTextGap + textWidth + TextPaddingX);
-        float plaqueH = PlaqueHeight;
+        plaqueW = Math.Min(plaqueW, Math.Max(0, viewport.Width - 2 * ViewportMargin));
+        float plaqueH = Math.Min(PlaqueHeight, Math.Max(0, viewport.Height - 2 * ViewportMargin));
         var plaqueSize = new SKSize(plaqueW, plaqueH);
 
         float safeRadius = markerRadius + SafeMarginPx;
@@ -149,10 +154,12 @@ internal static class ObjectLabelLayout
         float pw = plaque.Width;
         float ph = plaque.Height;
 
-        float maxCenterX = viewport.Width - ViewportMargin - pw / 2f;
-        float maxCenterY = viewport.Height - ViewportMargin - ph / 2f;
-        float minCenterX = ViewportMargin + pw / 2f;
-        float minCenterY = ViewportMargin + ph / 2f;
+        float marginX = Math.Min(ViewportMargin, viewport.Width / 2f);
+        float marginY = Math.Min(ViewportMargin, viewport.Height / 2f);
+        float maxCenterX = viewport.Width - marginX - pw / 2f;
+        float maxCenterY = viewport.Height - marginY - ph / 2f;
+        float minCenterX = marginX + pw / 2f;
+        float minCenterY = marginY + ph / 2f;
 
         double rad = directionDegrees * Math.PI / 180.0;
         float fx = (float)Math.Sin(rad);

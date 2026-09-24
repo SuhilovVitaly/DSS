@@ -10,7 +10,7 @@ public sealed partial class GameSessionScreen
     private readonly TacticalMapSettings _mapSettings;
     private readonly CameraZoomTransition _zoomTransition = new();
     private SKRect _mapToolbarRect;
-    private readonly SKRect[] _mapViewButtons = new SKRect[4];
+    private readonly SKRect[] _mapViewButtons = new SKRect[5];
     private readonly SKPaint _mapMarkerPaint = new() { IsAntialias = true };
     private readonly HashSet<string> _clusteredObjectIds = new(StringComparer.Ordinal);
     private readonly List<MapCluster> _mapClusters = new();
@@ -222,7 +222,9 @@ public sealed partial class GameSessionScreen
         for (int i = 0; i < _mapViewButtons.Length; i++)
         {
             if (!_mapViewButtons[i].Contains(x, y)) continue;
-            if (i == 0) SetFollowPlayer(); else FitMapView((MapFitMode)(i - 1));
+            if (i == 0) SetFollowPlayer();
+            else if (i < 4) FitMapView((MapFitMode)(i - 1));
+            else CaptureTacticalMapSnapshot();
             return true;
         }
         return _mapToolbarRect.Contains(x, y);
@@ -230,17 +232,17 @@ public sealed partial class GameSessionScreen
 
     private void DrawMapToolbar(SKCanvas canvas)
     {
-        float width = Math.Min(560, Math.Max(200, _uiViewportW - 16));
+        float width = Math.Min(640, Math.Max(260, _uiViewportW - 16));
         float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 62;
         _mapToolbarRect = new(left, top, left + width, top + 58);
         canvas.DrawRect(_mapToolbarRect, _panelBgPaint);
-        string[] keys = ["Map.Follow", "Map.ShipTarget", "Map.Route", "Map.System"];
-        float buttonWidth = (width - 12) / 4;
-        for (int i = 0; i < 4; i++)
+        string[] keys = ["Map.Follow", "Map.ShipTarget", "Map.Route", "Map.System", "Map.Snapshot"];
+        float buttonWidth = (width - 12) / keys.Length;
+        for (int i = 0; i < keys.Length; i++)
         {
             var r = new SKRect(left + 4 + i * buttonWidth, top + 4, left + 2 + (i + 1) * buttonWidth, top + 27);
             _mapViewButtons[i] = r;
-            bool enabled = IsMapViewAvailable(i);
+            bool enabled = i == 4 || IsMapViewAvailable(i);
             canvas.DrawRect(r, i == 0 && _isFocusAttachedToPlayer ? _scaleBtnActivePaint : _scaleBtnNormalPaint);
             canvas.DrawRect(r, _panelBorderPaint);
             _scaleBtnTextPaint.Color = enabled ? new SKColor(180, 180, 180) : new SKColor(80, 80, 80);

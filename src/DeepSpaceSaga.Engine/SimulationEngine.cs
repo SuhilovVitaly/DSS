@@ -3285,18 +3285,23 @@ public sealed partial class SimulationEngine : IDisposable
     {
         var target = _objects.Single(o => o.InitialMotion.ObjectId == targetObjectId);
         var targetMotion = PredictMotion(target, Math.Max(0, gameTimeMs - target.StartGameTimeMs));
-        var shipMotion = PredictMotion(obj, Math.Max(0, gameTimeMs - obj.StartGameTimeMs));
+        ObjectMotionSnapshot? shipMotion = null;
         var route = cycle.ApproachRoute;
         bool replan = route is null || route.PlannerVersion != ApproachLineCaptureMath.PlannerVersion ||
             ApproachLineCaptureMath.TargetChanged(route, targetMotion, cycle.DurationMs);
         bool complete = !replan && route!.ElapsedMs + cycle.DurationMs >= route.DurationMs - 1e-7;
-        if (complete && !ApproachLineCaptureMath.IsAlignedBehind(shipMotion, targetMotion))
+        if (complete)
         {
-            replan = true;
-            complete = false;
+            shipMotion = PredictMotion(obj, Math.Max(0, gameTimeMs - obj.StartGameTimeMs));
+            if (!ApproachLineCaptureMath.IsAlignedBehind(shipMotion, targetMotion))
+            {
+                replan = true;
+                complete = false;
+            }
         }
         if (replan)
         {
+            shipMotion ??= PredictMotion(obj, Math.Max(0, gameTimeMs - obj.StartGameTimeMs));
             route = ApproachLineCaptureMath.Plan(shipMotion, targetMotion.X, targetMotion.Y,
                 targetMotion.Direction, targetMotion.SpeedKmS,
                 cycle.NavigationApproachTrailDistanceWorldUnits ?? 10, moduleType.AngularInertiaDegPerSec ?? 0);
@@ -3319,6 +3324,17 @@ public sealed partial class SimulationEngine : IDisposable
                 NavigationEscapeCourseDegrees = null,
                 NavigationRequiredDepartureDistance = null
             };
+        if (!replan && !complete && nextCycle is not null)
+        {
+            // The route predicts from its immutable origin. Rebasing the ship's
+            // motion record at every steering checkpoint only allocates another
+            // pose; the route and cycle already carry the exact elapsed time.
+            return obj with
+            {
+                Modules = obj.Modules.SetItem(moduleIndex,
+                    obj.Modules[moduleIndex] with { ActiveCycle = nextCycle })
+            };
+        }
         return UpdateEngineMotion(obj, moduleIndex, gameTimeMs,
             module => module with { ActiveCycle = complete ? null : nextCycle }, motion => motion);
     }

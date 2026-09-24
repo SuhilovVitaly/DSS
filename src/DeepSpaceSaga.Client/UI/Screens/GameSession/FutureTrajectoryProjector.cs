@@ -17,6 +17,9 @@ internal sealed class FutureTrajectoryProjector
     internal static readonly int MaxSamplePoints = FutureTrajectoryHorizonMs / FutureTrajectorySampleIntervalMs + 1;
 
     private readonly IMotionPredictor _predictor;
+    private readonly (double X, double Y)[] _turnPositions = new (double, double)[MaxSamplePoints];
+    private ObjectMotionSnapshot? _cachedTurnState;
+    private ObjectMotionSnapshot? _cachedTurnTerminal;
 
     public FutureTrajectoryProjector(IMotionPredictor predictor)
     {
@@ -50,6 +53,7 @@ internal sealed class FutureTrajectoryProjector
             }
             return;
         }
+        if (TryProjectTurn(state, points)) return;
         ProjectDiscrete(state, points);
     }
 
@@ -69,7 +73,8 @@ internal sealed class FutureTrajectoryProjector
             return;
         }
         ProjectInto(state, points);
-        var lastState = _predictor.Predict(state, FutureTrajectoryHorizonMs);
+        var lastState = state == _cachedTurnState && _predictor is LinearMotionPredictor
+            ? _cachedTurnTerminal! : _predictor.Predict(state, FutureTrajectoryHorizonMs);
         if (lastState.SpeedKmS > 0 && LinearMotionPredictor.IsLinear(lastState))
             TrajectoryViewportGeometry.ExtendToEdge(points, lastState.Direction, camera, width, height);
     }
@@ -86,6 +91,21 @@ internal sealed class FutureTrajectoryProjector
             return true;
 
         return false;
+    }
+
+    private bool TryProjectTurn(ObjectMotionSnapshot state, List<FutureTrajectoryPoint> points)
+    {
+        if (_predictor is not LinearMotionPredictor) return false;
+        if (state != _cachedTurnState)
+        {
+            if (!LinearMotionPredictor.TryPredictTurnPositions(state, FutureTrajectorySampleIntervalMs,
+                    _turnPositions, out var terminal)) return false;
+            _cachedTurnState = state;
+            _cachedTurnTerminal = terminal;
+        }
+        foreach (var point in _turnPositions)
+            points.Add(new(point.X, point.Y));
+        return true;
     }
 
     private void ProjectDiscrete(ObjectMotionSnapshot predictedState, List<FutureTrajectoryPoint> points)

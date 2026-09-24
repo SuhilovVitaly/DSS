@@ -35,7 +35,7 @@ internal sealed class ObjectLabelRenderer
     private readonly Dictionary<string, LabelMetrics> _labels = new(StringComparer.Ordinal);
     private readonly List<string> _staleLabels = new();
     private readonly List<SKRect> _occupiedPlaques = new();
-    private readonly record struct LabelMetrics(string? RenderType, string? Name, string Text, float Width);
+    private readonly record struct LabelMetrics(string? RenderType, string? Name, string Text, float Width, float MaximumWidth);
 
     public ObjectLabelRenderer()
     {
@@ -111,6 +111,8 @@ internal sealed class ObjectLabelRenderer
         _opacity.Clear();
         _occupiedPlaques.Clear();
 
+        if (viewportW <= 0 || viewportH <= 0) return;
+
         if (resetSmoothing)
             _smoother.ResetAll();
 
@@ -118,92 +120,115 @@ internal sealed class ObjectLabelRenderer
 
         // Reserve space for the player and explicit targets before secondary labels.
         for (int pass = 0; pass < 2; pass++)
-        for (int i = 0; i < renderStates.Count; i++)
-        {
-            var state = renderStates[i];
-            var predicted = state.Pose;
-            string objectId = predicted.ObjectId;
-            if (clusteredIds?.Contains(objectId) == true) continue;
-            bool important = state.IsPlayerShip || isImportant?.Invoke(objectId) == true;
-            if (important != (pass == 0)) continue;
-            if (mapSettings is not null && !important && _occupiedPlaques.Count >= mapSettings.MaximumLabels) continue;
-            if (mapSettings is not null && !important && camera.PixelsPerWorldUnit < mapSettings.LabelDetailPpu * .5) continue;
-            _opacity[objectId] = mapSettings is null || important ? (byte)255 :
-                (byte)(255 * Math.Clamp((camera.PixelsPerWorldUnit / mapSettings.LabelDetailPpu - .5) * 2, 0, 1));
-
-            var (objSx, objSy) = camera.WorldToScreen(predicted.X, predicted.Y, viewportW, viewportH);
-
-            // Visibility filter: skip objects whose marker/glyph is fully outside viewport.
-            // Marker radius from the shared policy (player ship included) so the
-            // viewport culling matches the drawn marker size.
-            float markerRadius = TacticalMapMarkerPolicy.GetMarkerRadiusPx(
-                state.IsPlayerShip ? SpaceObjectType.PlayerShip : predicted.RenderObjectType);
-            if (objSx < -markerRadius || objSx > viewportW + markerRadius ||
-                objSy < -markerRadius || objSy > viewportH + markerRadius)
-                continue;
-
-            _activeIds.Add(objectId);
-            var objectScreen = new SKPoint(objSx, objSy);
-
-            bool isUnknown = predicted.RenderObjectType == SpaceObjectType.UnknownSpaceObject;
-            if (!_labels.TryGetValue(objectId, out var label) ||
-                label.RenderType != predicted.RenderObjectType || label.Name != predicted.DisplayName)
+            for (int i = 0; i < renderStates.Count; i++)
             {
-                string text = ObjectLabelText.Build(predicted.RenderObjectType, predicted.DisplayName, objectId);
-                label = new(predicted.RenderObjectType, predicted.DisplayName, text,
-                    (isUnknown ? _unknownTextPaint : _textPaint).MeasureText(text));
-                _labels[objectId] = label;
+                var state = renderStates[i];
+                var predicted = state.Pose;
+                string objectId = predicted.ObjectId;
+                if (clusteredIds?.Contains(objectId) == true) continue;
+                bool important = state.IsPlayerShip || isImportant?.Invoke(objectId) == true;
+                if (important != (pass == 0)) continue;
+                if (mapSettings is not null && !important && _occupiedPlaques.Count >= mapSettings.MaximumLabels) continue;
+                if (mapSettings is not null && !important && camera.PixelsPerWorldUnit < mapSettings.LabelDetailPpu * .5) continue;
+                _opacity[objectId] = mapSettings is null || important ? (byte)255 :
+                    (byte)(255 * Math.Clamp((camera.PixelsPerWorldUnit / mapSettings.LabelDetailPpu - .5) * 2, 0, 1));
+
+                var (objSx, objSy) = camera.WorldToScreen(predicted.X, predicted.Y, viewportW, viewportH);
+
+                // Visibility filter: skip objects whose marker/glyph is fully outside viewport.
+                // Marker radius from the shared policy (player ship included) so the
+                // viewport culling matches the drawn marker size.
+                float markerRadius = TacticalMapMarkerPolicy.GetMarkerRadiusPx(
+                    state.IsPlayerShip ? SpaceObjectType.PlayerShip : predicted.RenderObjectType);
+                if (objSx < -markerRadius || objSx > viewportW + markerRadius ||
+                    objSy < -markerRadius || objSy > viewportH + markerRadius)
+                    continue;
+
+                _activeIds.Add(objectId);
+                var objectScreen = new SKPoint(objSx, objSy);
+
+                bool isUnknown = predicted.RenderObjectType == SpaceObjectType.UnknownSpaceObject;
+                float maximumWidth = ObjectLabelLayout.MaximumTextWidth(viewportW);
+                if (!_labels.TryGetValue(objectId, out var label) ||
+                    label.RenderType != predicted.RenderObjectType || label.Name != predicted.DisplayName ||
+                    label.MaximumWidth != maximumWidth)
+                {
+                    string text = ObjectLabelText.Build(predicted.RenderObjectType, predicted.DisplayName, objectId);
+                    var paint = isUnknown ? _unknownTextPaint : _textPaint;
+                    text = FitText(text, paint, maximumWidth);
+                    label = new(predicted.RenderObjectType, predicted.DisplayName, text,
+                        paint.MeasureText(text), maximumWidth);
+                    _labels[objectId] = label;
+                }
+                float textWidth = label.Width;
+
+                // Target geometry from orbit layout (no smoothing).
+                var targetGeom = ObjectLabelLayout.Create(objectScreen, predicted.Direction, textWidth,
+                    viewport, markerRadius);
+
+                // Apply smoothing to get the visible plaque position.
+                SKRect visiblePlaque = _smoother.Update(
+                    objectId,
+                    targetGeom.PlaqueRect,
+                    targetGeom.PlaqueCenter,
+                    deltaSeconds,
+                    viewportW,
+                    viewportH,
+                    reset: resetSmoothing);
+
+                if (important && availableMap is { } free)
+                {
+                    // Explicit targets must remain readable when fitted beside a panel.
+                    float x = Math.Clamp(visiblePlaque.Left, free.Left + 4, Math.Max(free.Left + 4, free.Right - visiblePlaque.Width - 4));
+                    float y = Math.Clamp(visiblePlaque.Top, free.Top + 4, Math.Max(free.Top + 4, free.Bottom - visiblePlaque.Height - 4));
+                    visiblePlaque = new SKRect(x, y, x + visiblePlaque.Width, y + visiblePlaque.Height);
+                }
+
+                if (mapSettings is not null && !important && OverlapsExistingPlaque(visiblePlaque)) continue;
+                _occupiedPlaques.Add(visiblePlaque);
+
+                // Leader endpoint — always bottom-left corner of the visible plaque.
+                var leaderEndPoint = new SKPoint(visiblePlaque.Left, visiblePlaque.Bottom);
+
+                // Recompute status rect and text origin relative to the visible plaque.
+                float sqX = visiblePlaque.Left + ObjectLabelLayout.TextPaddingX + ObjectLabelLayout.ContentOffsetX;
+                float sqY = visiblePlaque.Top + (visiblePlaque.Height - ObjectLabelLayout.StatusSquareSize) / 2f
+                            + ObjectLabelLayout.StatusOffsetY;
+                var statusRect = new SKRect(sqX, sqY,
+                    sqX + ObjectLabelLayout.StatusSquareSize, sqY + ObjectLabelLayout.StatusSquareSize);
+
+                float textX = statusRect.Right + ObjectLabelLayout.StatusTextGap;
+                float textY = visiblePlaque.Top + ObjectLabelLayout.TextPaddingY + ObjectLabelLayout.TextOffsetY;
+
+                _geometries[objectId] = new ObjectLabelGeometry(
+                    visiblePlaque, leaderEndPoint, statusRect, new SKPoint(textX, textY),
+                    targetGeom.PlaqueCenter);
             }
-            float textWidth = label.Width;
-
-            // Target geometry from orbit layout (no smoothing).
-            var targetGeom = ObjectLabelLayout.Create(objectScreen, predicted.Direction, textWidth,
-                viewport, markerRadius);
-
-            // Apply smoothing to get the visible plaque position.
-            SKRect visiblePlaque = _smoother.Update(
-                objectId,
-                targetGeom.PlaqueRect,
-                targetGeom.PlaqueCenter,
-                deltaSeconds,
-                viewportW,
-                viewportH,
-                reset: resetSmoothing);
-
-            if (important && availableMap is { } free)
-            {
-                // Explicit targets must remain readable when fitted beside a panel.
-                float x = Math.Clamp(visiblePlaque.Left, free.Left + 4, Math.Max(free.Left + 4, free.Right - visiblePlaque.Width - 4));
-                float y = Math.Clamp(visiblePlaque.Top, free.Top + 4, Math.Max(free.Top + 4, free.Bottom - visiblePlaque.Height - 4));
-                visiblePlaque = new SKRect(x, y, x + visiblePlaque.Width, y + visiblePlaque.Height);
-            }
-
-            if (mapSettings is not null && !important && OverlapsExistingPlaque(visiblePlaque)) continue;
-            _occupiedPlaques.Add(visiblePlaque);
-
-            // Leader endpoint — always bottom-left corner of the visible plaque.
-            var leaderEndPoint = new SKPoint(visiblePlaque.Left, visiblePlaque.Bottom);
-
-            // Recompute status rect and text origin relative to the visible plaque.
-            float sqX = visiblePlaque.Left + ObjectLabelLayout.TextPaddingX + ObjectLabelLayout.ContentOffsetX;
-            float sqY = visiblePlaque.Top + (visiblePlaque.Height - ObjectLabelLayout.StatusSquareSize) / 2f
-                        + ObjectLabelLayout.StatusOffsetY;
-            var statusRect = new SKRect(sqX, sqY,
-                sqX + ObjectLabelLayout.StatusSquareSize, sqY + ObjectLabelLayout.StatusSquareSize);
-
-            float textX = statusRect.Right + ObjectLabelLayout.StatusTextGap;
-            float textY = visiblePlaque.Top + ObjectLabelLayout.TextPaddingY + ObjectLabelLayout.TextOffsetY;
-
-            _geometries[objectId] = new ObjectLabelGeometry(
-                visiblePlaque, leaderEndPoint, statusRect, new SKPoint(textX, textY),
-                targetGeom.PlaqueCenter);
-        }
 
         _smoother.RemoveStaleExcept(_activeIds);
         _staleLabels.Clear();
         foreach (string id in _labels.Keys)
             if (!_activeIds.Contains(id)) _staleLabels.Add(id);
         foreach (string id in _staleLabels) _labels.Remove(id);
+    }
+
+    internal static string FitText(string text, SKPaint paint, float maximumWidth)
+    {
+        if (maximumWidth <= 0) return string.Empty;
+        if (paint.MeasureText(text) <= maximumWidth) return text;
+        const string ellipsis = "…";
+        if (paint.MeasureText(ellipsis) > maximumWidth) return string.Empty;
+        // Cut on text-element boundaries, preserving surrogate pairs and combining marks.
+        int[] starts = System.Globalization.StringInfo.ParseCombiningCharacters(text);
+        int low = 0, high = starts.Length;
+        while (low < high)
+        {
+            int mid = low + (high - low + 1) / 2;
+            int end = mid == starts.Length ? text.Length : starts[mid];
+            if (paint.MeasureText(text[..end] + ellipsis) <= maximumWidth) low = mid;
+            else high = mid - 1;
+        }
+        return text[..(low == starts.Length ? text.Length : starts[low])] + ellipsis;
     }
 
     private bool OverlapsExistingPlaque(SKRect plaque)
@@ -305,7 +330,10 @@ internal sealed class ObjectLabelRenderer
             }
             float textY = geometry.TextOrigin.Y + textPaint.TextSize;
             textPaint.Color = textPaint.Color.WithAlpha(opacity);
+            canvas.Save();
+            canvas.ClipRect(geometry.PlaqueRect);
             canvas.DrawText(label, geometry.TextOrigin.X, textY, textPaint);
+            canvas.Restore();
         }
     }
 }
