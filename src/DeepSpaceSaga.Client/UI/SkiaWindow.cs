@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using DeepSpaceSaga.Client;
@@ -70,6 +71,7 @@ public sealed class SkiaWindow : IDisposable
     // TEMP DIAG — startup timing investigation, remove once resolved.
     private readonly System.Diagnostics.Stopwatch? _startupStopwatch;
     private bool _firstFrameLogged;
+    private long _previousProfileRenderTimestamp;
 
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory, System.Diagnostics.Stopwatch? startupStopwatch = null)
     {
@@ -256,6 +258,11 @@ public sealed class SkiaWindow : IDisposable
         if (_grContext is null || _gl is null || _closing)
             return;
 
+        long callbackStart = Stopwatch.GetTimestamp();
+        double callbackIntervalMs = _previousProfileRenderTimestamp == 0 ? 0
+            : Stopwatch.GetElapsedTime(_previousProfileRenderTimestamp, callbackStart).TotalMilliseconds;
+        _previousProfileRenderTimestamp = callbackStart;
+
         // TEMP DIAG — startup timing investigation, remove once resolved.
         bool isFirstFrame = !_firstFrameLogged;
         var diagSw = isFirstFrame ? System.Diagnostics.Stopwatch.StartNew() : null;
@@ -293,12 +300,14 @@ public sealed class SkiaWindow : IDisposable
         // (e.g. Trade opened from Station) look exactly as dim as a single overlay
         // instead of compounding darker with each nested level.
         int index = 0;
+        GameSessionScreen? profiledScreen = null;
         foreach (var screen in _screens.AllBottomToTop())
         {
             if (index == 1)
                 MenuStyle.DrawDimOverlay(canvas, windowSize.X, windowSize.Y);
 
             screen.Render(canvas, windowSize.X, windowSize.Y);
+            if (screen is GameSessionScreen sessionScreen) profiledScreen = sessionScreen;
             index++;
         }
         if (_session?.Failure is not null)
@@ -309,7 +318,9 @@ public sealed class SkiaWindow : IDisposable
             InterfaceLog.Write($"STARTUP DIAG: first-frame screen.Render (recording) done — {diagSw!.ElapsedMilliseconds} ms into OnRender");
 
         canvas.Restore();
+        long flushStart = Stopwatch.GetTimestamp();
         canvas.Flush();
+        long flushEnd = Stopwatch.GetTimestamp();
 
         if (isFirstFrame)
             InterfaceLog.Write($"STARTUP DIAG: first-frame canvas.Flush done — {diagSw!.ElapsedMilliseconds} ms into OnRender");
@@ -324,6 +335,12 @@ public sealed class SkiaWindow : IDisposable
 
         PollKeyboard();
         PollGameSessionAutoTransition();
+        // No Finish/readback: measure CPU submission without adding a GPU stall.
+        profiledScreen?.CompleteWindowProfile(new(callbackIntervalMs,
+            Stopwatch.GetElapsedTime(callbackStart, flushStart).TotalMilliseconds,
+            Stopwatch.GetElapsedTime(flushStart, flushEnd).TotalMilliseconds,
+            Stopwatch.GetElapsedTime(callbackStart).TotalMilliseconds,
+            _isFocused, _window.VSync, index, fbSize.X, fbSize.Y));
     }
 
     /// <summary>

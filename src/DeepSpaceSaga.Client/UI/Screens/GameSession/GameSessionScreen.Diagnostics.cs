@@ -4,15 +4,23 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 public sealed partial class GameSessionScreen
 {
-    private string? _lastTacticalMapSnapshotPath;
+    private bool _snapshotCaptureRequested;
+    private bool _captureThisFrame;
+    private readonly List<TacticalMapTrajectory> _capturedTrajectories = new();
+    internal Task<string?> SnapshotSaveTask { get; private set; } = Task.FromResult<string?>(null);
+    internal Func<TacticalMapSnapshotDocument, string, string> SnapshotWriter { get; set; } = TacticalMapSnapshotWriter.Write;
+    internal string? LastTacticalMapSnapshotPath => SnapshotSaveTask.IsCompletedSuccessfully ? SnapshotSaveTask.Result : null;
 
-    internal string? LastTacticalMapSnapshotPath => _lastTacticalMapSnapshotPath;
+    private void RequestTacticalMapSnapshot()
+    {
+        // One detached document at a time; repeated clicks cannot grow a writer queue.
+        if (SnapshotSaveTask.IsCompleted) _snapshotCaptureRequested = true;
+    }
 
-    private void CaptureTacticalMapSnapshot()
+    private void CaptureTacticalMapSnapshot(SnapshotPrediction? prediction, long frameTimestamp)
     {
         try
         {
-            SnapshotPrediction? prediction = _buffer.LatestPrediction;
             AuthoritativeSnapshot? authoritative = prediction?.BufferedSnapshot.Snapshot;
 
             var objectFrames = new List<TacticalMapObjectFrame>(_renderStates.Count);
@@ -38,7 +46,7 @@ public sealed partial class GameSessionScreen
                     pair.Value.Select(point => new TacticalMapPoint(point.X, point.Y, point.Timestamp)).ToArray()))
                 .ToArray();
 
-            var trajectories = CaptureTrajectories();
+            var trajectories = _capturedTrajectories.ToArray();
             var reconciliation = new TacticalMapReconciliationSnapshot(
                 _hasSnapshotBaseline,
                 _lastSnapshotBaselineSequence,
@@ -68,7 +76,7 @@ public sealed partial class GameSessionScreen
                 DateTimeOffset.UtcNow,
                 new TacticalMapSnapshotState(
                     authoritative,
-                    _timestampProvider(),
+                    frameTimestamp,
                     prediction?.BufferedSnapshot.ReceivedAtTimestamp,
                     prediction?.EffectivePredictionDeltaMs,
                     prediction is null ? null : GetPredictedGameTimeMs(prediction),
@@ -105,52 +113,43 @@ public sealed partial class GameSessionScreen
                     objectFrames,
                     trails,
                     trajectories,
-                    reconciliation));
+                    reconciliation),
+                _profileFrameId,
+                _showTrajectoryPrediction,
+                _frameRecorder.Capture());
 
-            _lastTacticalMapSnapshotPath = TacticalMapSnapshotWriter.Write(document, _tacticalMapSnapshotDirectory);
-            InterfaceLog.Write($"Tactical map snapshot saved: {_lastTacticalMapSnapshotPath}");
+            // Only owned DTOs cross the thread boundary, never live render collections/projectors.
+            SnapshotSaveTask = SaveSnapshotAsync(document, _tacticalMapSnapshotDirectory, SnapshotWriter);
         }
         catch (Exception ex)
         {
-            _lastTacticalMapSnapshotPath = null;
+            SnapshotSaveTask = Task.FromResult<string?>(null);
             InterfaceLog.Write($"Tactical map snapshot failed: {ex}");
         }
     }
 
-    private TacticalMapTrajectory[] CaptureTrajectories()
+    private static Task<string?> SaveSnapshotAsync(TacticalMapSnapshotDocument document, string directory,
+        Func<TacticalMapSnapshotDocument, string, string> writer) => Task.Run<string?>(() =>
     {
-        var trajectories = new List<TacticalMapTrajectory>();
-        foreach (var state in _renderStates)
+        try
         {
-            bool isTarget = state.Pose.ObjectId == _activeObjectId ||
-                            state.Pose.ObjectId == _selectedObjectId ||
-                            state.Pose.ObjectId == _navigationTargetId;
-            if (!state.IsPlayerShip && !isTarget)
-                continue;
-
-            List<FutureTrajectoryPoint> points;
-            string kind;
-            if (state.IsPlayerShip && state.Pose.NavigationTargetX is not null)
-            {
-                points = _navigationTrajectoryProjector.Project(state.Pose.ToSnapshot());
-                kind = "navigation";
-            }
-            else if (FutureTrajectoryProjector.ShouldDraw(state.Pose.ToSnapshot()))
-            {
-                points = _futureTrajectoryProjector.Project(state.Pose.ToSnapshot());
-                kind = "future";
-            }
-            else
-            {
-                continue;
-            }
-
-            trajectories.Add(new(
-                state.Pose.ObjectId,
-                kind,
-                points.Select(point => new TacticalMapPoint(point.X, point.Y)).ToArray()));
+            string path = writer(document, directory);
+            InterfaceLog.Write($"Tactical map snapshot saved: {path}");
+            return path;
         }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"Tactical map snapshot failed: {ex}");
+            return null;
+        }
+    });
 
-        return trajectories.ToArray();
+    private void CaptureDrawnTrajectory(string objectId, string kind, List<FutureTrajectoryPoint> points, bool isPlayer = false)
+    {
+        _profileForecastPointCount += points.Count;
+        if (isPlayer && points.Count > 0) _profilePlayerTrajectoryStart = points[0];
+        if (!_captureThisFrame) return;
+        _capturedTrajectories.Add(new(objectId, kind,
+            points.Select(point => new TacticalMapPoint(point.X, point.Y)).ToArray()));
     }
 }

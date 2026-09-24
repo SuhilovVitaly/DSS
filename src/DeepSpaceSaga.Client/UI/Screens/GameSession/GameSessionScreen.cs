@@ -991,6 +991,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void Render(SKCanvas canvas, int width, int height)
     {
+        BeginFrameProfile();
         DisplayedPlayerTrajectoryEnd = null;
         RenderStageCompleted?.Invoke("begin");
         _viewportW = width;
@@ -1034,7 +1035,7 @@ public sealed partial class GameSessionScreen : IScreen
         // stationary cursor (ТЗ §54). OnMouseMove already recomputes eagerly on input;
         // this catches every other trigger that isn't a mouse-move event.
         RecomputeActiveObjectId();
-        RenderStageCompleted?.Invoke("coordinates_and_hit_test");
+        CompleteRenderStage("coordinates_and_hit_test");
 
         if (_diagInterestingFrame && PauseResumeDiagnostics.Enabled)
         {
@@ -1050,7 +1051,7 @@ public sealed partial class GameSessionScreen : IScreen
         float cx = width / 2f;
         float cy = height / 2f;
         _depthRenderer.DrawFocusIndicator(canvas, cx, cy);
-        RenderStageCompleted?.Invoke("grid");
+        CompleteRenderStage("grid");
 
         // 3. Object trails
         if (prediction is not null)
@@ -1073,7 +1074,7 @@ public sealed partial class GameSessionScreen : IScreen
             }
 
             DrawObjectTrails(canvas, width, height);
-            RenderStageCompleted?.Invoke("trails");
+            CompleteRenderStage("trails");
 
             // 3.5. Future trajectory (before objects, after historical trails)
             DrawFutureTrajectories(canvas, width, height);
@@ -1081,7 +1082,7 @@ public sealed partial class GameSessionScreen : IScreen
             // 3.55. Navigation trajectory (Ctrl+Click) — after future trajectory,
             // painted last so the solid Approach covers the target forecast at overlaps.
             DrawNavigationTrajectories(canvas, width, height);
-            RenderStageCompleted?.Invoke("forecasts");
+            CompleteRenderStage("forecasts");
 
             // Compute smoothed label geometries once per frame so both
             // DrawLeaders and DrawPlaques see the same positions.
@@ -1150,7 +1151,7 @@ public sealed partial class GameSessionScreen : IScreen
             _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera);
             DrawMapClusters(canvas);
             DrawOffscreenTargets(canvas);
-            RenderStageCompleted?.Invoke("markers_and_labels");
+            CompleteRenderStage("markers_and_labels");
         }
 
         // UI overlay pass — everything from here on is a GameSession UI panel, never
@@ -1174,7 +1175,7 @@ public sealed partial class GameSessionScreen : IScreen
         // 6. Commands Panel (top-left)
         _commandsPanel.Render(canvas,
             buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty);
-        RenderStageCompleted?.Invoke("command_panel");
+        CompleteRenderStage("command_panel");
 
         // 7. Info panel (bottom-left)
         if (_panelVisible)
@@ -1190,9 +1191,10 @@ public sealed partial class GameSessionScreen : IScreen
         DrawMechanicsPanel(canvas);
         DrawMapToolbar(canvas);
         DrawGameTime(canvas);
-        RenderStageCompleted?.Invoke("info_panels");
+        CompleteRenderStage("info_panels");
 
         canvas.Restore();
+        FinishFrameProfile(prediction, now);
     }
 
     // ── Speed panel ─────────────────────────────────────────────
@@ -1245,6 +1247,8 @@ public sealed partial class GameSessionScreen : IScreen
         foreach (var obj in snapshot.Objects)
         {
             var predicted = PredictRenderMotion(obj, ed);
+            if (obj.ObjectId == playerShipObjectId) _profilePlayerRaw = predicted;
+            if (obj.ObjectId == _profileTargetId) _profileTargetRaw = predicted;
             _currentVisualObjectIds.Add(obj.ObjectId);
 
             if (isPaused)
@@ -1569,6 +1573,7 @@ public sealed partial class GameSessionScreen : IScreen
             if (points.Count < 2)
                 continue;
 
+            CaptureDrawnTrajectory(state.Pose.ObjectId, "future", points, state.IsPlayerShip);
             if (state.IsPlayerShip)
             {
                 DisplayedPlayerTrajectoryEnd = points[^1];
@@ -1609,6 +1614,7 @@ public sealed partial class GameSessionScreen : IScreen
                     predicted, _futureTrajectoryPoints, _camera, width, height, out bool isConfirmedIntercept, out var interceptPoint);
                 if (points.Count >= 2)
                 {
+                    CaptureDrawnTrajectory(state.Pose.ObjectId, "navigation", points, isPlayer: true);
                     DisplayedPlayerTrajectoryEnd = points[^1];
                     _depthRenderer.DrawNavigationTrajectory(canvas, points, _camera, width, height);
                 }
