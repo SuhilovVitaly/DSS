@@ -61,6 +61,8 @@ internal sealed class TacticalMapDepthRenderer
         StrokeCap = SKStrokeCap.Round,
         IsAntialias = true
     };
+    private readonly ReticleGlow _selectedGlow = new();
+    private readonly ReticleGlow _activeGlow = new();
 
     /// <summary>
     /// Radius-multiplier/alpha pairs for the glint halo, largest and faintest
@@ -118,24 +120,32 @@ internal sealed class TacticalMapDepthRenderer
         bodyColor: new SKColor(100, 92, 72, 230),
         highlightColor: new SKColor(198, 184, 142, 220));
 
-    private readonly SKPaint _targetTrajectoryPaint = new()
+    // Antialiased strokes supply the soft edge without a new blurred mask of
+    // the moving viewport-sized path on every frame (and GPU cache churn).
+    private readonly SKPaint _targetTrajectoryHaloPaint = CreateTargetTrajectoryPaint(2f, 35);
+    private readonly SKPaint _targetTrajectoryPaint = CreateTargetTrajectoryPaint(1f, 125);
+
+    private static SKPaint CreateTargetTrajectoryPaint(float width, byte alpha) => new()
     {
-        Color = new SKColor(198, 184, 142, 170),
+        Color = new SKColor(198, 184, 142, alpha),
         Style = SKPaintStyle.Stroke,
-        StrokeWidth = 1f,
+        StrokeWidth = width,
         StrokeCap = SKStrokeCap.Round,
         IsAntialias = true,
-        PathEffect = SKPathEffect.CreateDash([2f, 4f], 0),
-        MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 0.55f)
+        PathEffect = SKPathEffect.CreateDash([2f, 4f], 0)
     };
     private readonly SKPaint _courseAlignmentPaint = new()
     {
-        Color = new SKColor(126, 201, 215, 220), Style = SKPaintStyle.Stroke,
-        StrokeWidth = 1f, IsAntialias = true
+        Color = new SKColor(126, 201, 215, 220),
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 1f,
+        IsAntialias = true
     };
     private readonly SKPaint _courseAlignmentTextPaint = new()
     {
-        Color = new SKColor(126, 201, 215, 230), TextSize = 11f, IsAntialias = true
+        Color = new SKColor(126, 201, 215, 230),
+        TextSize = 11f,
+        IsAntialias = true
     };
 
     private readonly SKPaint _navigationTargetShadowPaint = new()
@@ -293,7 +303,7 @@ internal sealed class TacticalMapDepthRenderer
         float markerRadius,
         long uiTimeMs = 0)
     {
-        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(226, 232, 238), GetSelectedReticleRotationDegrees(uiTimeMs));
+        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(226, 232, 238), GetSelectedReticleRotationDegrees(uiTimeMs), _selectedGlow);
     }
 
     /// <summary>
@@ -307,7 +317,7 @@ internal sealed class TacticalMapDepthRenderer
         float markerRadius,
         long uiTimeMs = 0)
     {
-        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(255, 165, 0), GetActiveReticleRotationDegrees(uiTimeMs));
+        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(255, 165, 0), GetActiveReticleRotationDegrees(uiTimeMs), _activeGlow);
     }
 
     private void DrawObjectReticle(
@@ -316,7 +326,8 @@ internal sealed class TacticalMapDepthRenderer
         float centerY,
         float markerRadius,
         SKColor color,
-        float rotationDegrees)
+        float rotationDegrees,
+        ReticleGlow glow)
     {
         _selectionGlowPaint.Color = new SKColor(color.Red, color.Green, color.Blue, 42);
         _selectionPaint.Color = new SKColor(color.Red, color.Green, color.Blue, 125);
@@ -324,7 +335,7 @@ internal sealed class TacticalMapDepthRenderer
         float ringRadius = (markerRadius + 3.5f) * 2f;
         float crossExtent = ringRadius + 4f;
 
-        DrawReticleGeometry(canvas, centerX, centerY, ringRadius, crossExtent, rotationDegrees, _selectionGlowPaint);
+        glow.Draw(canvas, centerX, centerY, ringRadius, crossExtent, rotationDegrees, _selectionGlowPaint);
         DrawReticleGeometry(canvas, centerX, centerY, ringRadius, crossExtent, rotationDegrees, _selectionPaint);
     }
 
@@ -463,6 +474,7 @@ internal sealed class TacticalMapDepthRenderer
             (x, y) = camera.WorldToScreen(points[i].X, points[i].Y, width, height);
             _trajectoryPath.LineTo(x, y);
         }
+        canvas.DrawPath(_trajectoryPath, _targetTrajectoryHaloPaint);
         canvas.DrawPath(_trajectoryPath, _targetTrajectoryPaint);
     }
     public void DrawNavigationTrajectory(
@@ -596,6 +608,40 @@ internal sealed class TacticalMapDepthRenderer
             (byte)Math.Clamp((int)Math.Round(color.Green * baseAmount + 255 * whiteAmount), 0, 255),
             (byte)Math.Clamp((int)Math.Round(color.Blue * baseAmount + 255 * whiteAmount), 0, 255),
             alpha);
+    }
+
+    // Movement and rotation reuse one uploaded image rather than producing new
+    // GPU blur masks. Each state retains only its current marker size.
+    private sealed class ReticleGlow
+    {
+        private SKImage? _image;
+        private float _ringRadius;
+        private readonly SKPaint _imagePaint = new() { FilterQuality = SKFilterQuality.Low };
+
+        public void Draw(SKCanvas canvas, float x, float y, float ringRadius, float crossExtent,
+            float rotationDegrees, SKPaint glowPaint)
+        {
+            if (_image is null || _ringRadius != ringRadius)
+            {
+                const int rasterScale = 2;
+                int extent = (int)Math.Ceiling(crossExtent + 10); // stroke + 3 sigma + AA padding
+                using var surface = SKSurface.Create(new SKImageInfo(extent * 2 * rasterScale, extent * 2 * rasterScale));
+                surface.Canvas.Clear(SKColors.Transparent);
+                surface.Canvas.Scale(rasterScale);
+                DrawReticleGeometry(surface.Canvas, extent, extent, ringRadius, crossExtent, 0, glowPaint);
+                var image = surface.Snapshot();
+                _image?.Dispose();
+                _image = image;
+                _ringRadius = ringRadius;
+            }
+
+            float halfSize = _image.Width / 4f;
+            canvas.Save();
+            canvas.Translate(x, y);
+            canvas.RotateDegrees(rotationDegrees);
+            canvas.DrawImage(_image, new SKRect(-halfSize, -halfSize, halfSize, halfSize), _imagePaint);
+            canvas.Restore();
+        }
     }
 
     private sealed class TrajectoryPaintSet

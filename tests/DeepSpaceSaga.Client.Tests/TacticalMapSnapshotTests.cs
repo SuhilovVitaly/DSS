@@ -234,7 +234,7 @@ public sealed class TacticalMapSnapshotTests
         screen.SnapshotWriter = (document, _) => { saved = document; return "test-capture"; };
         using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
         screen.Render(surface.Canvas, 1280, 720);
-        screen.CompleteWindowProfile(new(16, 3, 2, 6, true, true, 1, 2560, 1440));
+        screen.CompleteWindowProfile(new(16, 3, 2, 6, true, true, 1, 2560, 1440, 125, "test GPU", "test GL", 20, 1024, 4096));
         clock = Stopwatch.Frequency * 8 / 10;
         buffer.Update(new(2, 900, SimulationSpeed.Speed1, [ship with { X = 10009 }], PlayerShipObjectId: "player"));
         var button = screen.MapViewButtonRects[4];
@@ -247,6 +247,11 @@ public sealed class TacticalMapSnapshotTests
         Assert.Equal(2, frames.Length);
         Assert.Equal(800, frames[1].FrameIntervalMs);
         Assert.Equal(2, frames[0].Window!.Value.CpuFlushMs);
+        Assert.Equal(125, frames[0].Window!.Value.PresentWaitMs);
+        Assert.Equal("test GPU", frames[0].Window!.Value.GraphicsRenderer);
+        Assert.Equal("test GL", frames[0].Window!.Value.GraphicsVersion);
+        Assert.Equal(1024, frames[0].Window!.Value.GpuCacheBytes);
+        Assert.Equal(4096, frames[0].Window!.Value.GpuCacheLimitBytes);
         Assert.Null(frames[1].Window); // Current callback has not completed yet.
         Assert.True(frames[1].NewSnapshot);
         Assert.Equal(100L, frames[1].ForwardJumpMs);

@@ -71,4 +71,26 @@ public sealed class TacticalMapSelectionReticleTests
         Assert.True(bitmap.GetPixel(64, 100).Alpha > 0);
         Assert.Equal(0, bitmap.GetPixel(112, 112).Alpha);
     }
+
+    [Fact]
+    public void Cached_glow_survives_size_color_and_rotation_changes_without_stale_pixels()
+    {
+        var reused = new TacticalMapDepthRenderer();
+        foreach (float radius in new[] { 5f, 25f, 12.5f, 5f })
+            foreach (bool active in new[] { true, false })
+            {
+                using var actual = new SKBitmap(180, 180);
+                using var expected = new SKBitmap(180, 180);
+                void Draw(SKBitmap bitmap, TacticalMapDepthRenderer renderer)
+                {
+                    using var canvas = new SKCanvas(bitmap);
+                    canvas.Clear(SKColors.Transparent);
+                    if (active) renderer.DrawActiveObjectReticle(canvas, 90.25f, 89.75f, radius, 1234);
+                    else renderer.DrawSelectionReticle(canvas, 90.25f, 89.75f, radius, 1234);
+                }
+                Draw(actual, reused);
+                Draw(expected, new TacticalMapDepthRenderer());
+                Assert.Equal(expected.Bytes, actual.Bytes);
+            }
+    }
 }

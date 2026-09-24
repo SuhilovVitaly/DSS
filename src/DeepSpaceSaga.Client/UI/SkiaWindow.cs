@@ -72,6 +72,8 @@ public sealed class SkiaWindow : IDisposable
     private readonly System.Diagnostics.Stopwatch? _startupStopwatch;
     private bool _firstFrameLogged;
     private long _previousProfileRenderTimestamp;
+    private string? _graphicsRenderer;
+    private string? _graphicsVersion;
 
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory, System.Diagnostics.Stopwatch? startupStopwatch = null)
     {
@@ -98,6 +100,9 @@ public sealed class SkiaWindow : IDisposable
             // The simulation clock and snapshot cadence remain independent.
             FramesPerSecond = 0,
             VSync = true,
+            // Measure the presentation wait as well as CPU drawing; automatic
+            // swapping happens outside OnRender and hid the map's GPU stalls.
+            ShouldSwapAutomatically = false,
             API = new GraphicsAPI(ContextAPI.OpenGL, ContextProfile.Core, ContextFlags.Default, new APIVersion(3, 3))
         };
 
@@ -160,10 +165,12 @@ public sealed class SkiaWindow : IDisposable
         }
 
         _gl = _window.CreateOpenGL();
+        _graphicsRenderer = _gl.GetStringS(StringName.Renderer);
+        _graphicsVersion = _gl.GetStringS(StringName.Version);
 
         var glInterface = GRGlInterface.Create();
         glInterface.Validate();
-        _grContext = GRContext.CreateGl(glInterface);
+        _grContext = GRContext.CreateGl(glInterface, SkiaGpuOptions.Create());
 
         _input = _window.CreateInput();
 
@@ -335,12 +342,18 @@ public sealed class SkiaWindow : IDisposable
 
         PollKeyboard();
         PollGameSessionAutoTransition();
-        // No Finish/readback: measure CPU submission without adding a GPU stall.
+        long presentStart = Stopwatch.GetTimestamp();
+        _window.SwapBuffers();
+        double presentWaitMs = Stopwatch.GetElapsedTime(presentStart).TotalMilliseconds;
+        _grContext.GetResourceCacheUsage(out int gpuResources, out long gpuCacheBytes);
+        // No Finish/readback: this is the existing swap, now timed explicitly.
         profiledScreen?.CompleteWindowProfile(new(callbackIntervalMs,
             Stopwatch.GetElapsedTime(callbackStart, flushStart).TotalMilliseconds,
             Stopwatch.GetElapsedTime(flushStart, flushEnd).TotalMilliseconds,
-            Stopwatch.GetElapsedTime(callbackStart).TotalMilliseconds,
-            _isFocused, _window.VSync, index, fbSize.X, fbSize.Y));
+            Stopwatch.GetElapsedTime(callbackStart, presentStart).TotalMilliseconds,
+            _isFocused, _window.VSync, index, fbSize.X, fbSize.Y,
+            presentWaitMs, _graphicsRenderer, _graphicsVersion,
+            gpuResources, gpuCacheBytes, _grContext.GetResourceCacheLimit()));
     }
 
     /// <summary>

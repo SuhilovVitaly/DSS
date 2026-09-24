@@ -19,7 +19,9 @@ internal readonly record struct TacticalMapTrackedObject(
 
 internal readonly record struct TacticalMapWindowTiming(
     double CallbackIntervalMs, double CpuBeforeFlushMs, double CpuFlushMs, double CpuCallbackMs,
-    bool IsFocused, bool VSync, int ScreenCount, int FramebufferWidth, int FramebufferHeight);
+    bool IsFocused, bool VSync, int ScreenCount, int FramebufferWidth, int FramebufferHeight,
+    double PresentWaitMs = 0, string? GraphicsRenderer = null, string? GraphicsVersion = null,
+    int GpuResources = 0, long GpuCacheBytes = 0, long GpuCacheLimitBytes = 0);
 
 internal readonly record struct TacticalMapFrameProfile(
     long FrameId, long TimestampTicks, double FrameIntervalMs, double RenderCpuMs,
@@ -107,7 +109,8 @@ internal sealed class TacticalMapFrameRecorder
             assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown",
             assembly.ManifestModule.ModuleVersionId.ToString(),
             "Frame intervals are unclamped render-start intervals and include scheduling, input and presentation waits. " +
-            "Stage/flush times measure CPU work, NOT GPU execution or actual presentation. " +
+            "Stage/flush times measure CPU work, NOT GPU execution. Window PresentWaitMs measures SwapBuffers, " +
+            "including driver/GPU/display waits, not physical scanout time. CpuCallbackMs excludes that wait. " +
             "GC counters and pause time are process-wide; allocations are on the UI thread. " +
             "Snapshot time and poses belong to the same rendered map frame. Capture is serviced on the next render. " +
             "Window timing and capture copy cost of the capture frame are not yet available; later captures include them. " +

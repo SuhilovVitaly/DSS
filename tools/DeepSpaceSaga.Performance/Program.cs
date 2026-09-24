@@ -10,6 +10,12 @@ using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
+if (args.Length >= 2 && args[0] == "--window-probe")
+{
+    WindowLoopProbe.Run(args);
+    return;
+}
+
 // Standalone, deterministic Release harness. No timings are assertions in unit tests.
 // Raster Skia executes the real screen's drawing pipeline; these are CPU/raster
 // timings, not GPU presentation FPS. Measurements exclude scenario loading/JIT warmup.

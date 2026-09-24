@@ -1092,6 +1092,7 @@ public sealed partial class GameSessionScreen : IScreen
 
             // 3.75. Label leader lines (behind objects)
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
+            RenderStageCompleted?.Invoke("label_leaders");
 
             // Important markers stay above background celestial markers and contacts.
             for (int markerPass = 0; markerPass < 2; markerPass++)
@@ -1116,6 +1117,8 @@ public sealed partial class GameSessionScreen : IScreen
                     _depthRenderer.DrawSelectionReticle(canvas, sx, sy, r, uiTimeMs);
                 else if (state.Pose.ObjectId == _activeObjectId)
                     _depthRenderer.DrawActiveObjectReticle(canvas, sx, sy, r, uiTimeMs);
+                if (state.Pose.ObjectId == _selectedObjectId || state.Pose.ObjectId == _activeObjectId)
+                    RenderStageCompleted?.Invoke("reticle");
 
                 if (state.IsPlayerShip)
                 {
@@ -1148,7 +1151,9 @@ public sealed partial class GameSessionScreen : IScreen
             }
 
             // 4.5. Object label plaques (on top of objects, before UI panels)
+            RenderStageCompleted?.Invoke("marker_geometry");
             _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera);
+            RenderStageCompleted?.Invoke("label_plaques");
             DrawMapClusters(canvas);
             DrawOffscreenTargets(canvas);
             CompleteRenderStage("markers_and_labels");
