@@ -74,7 +74,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("simulationTimeMs")] long? SimulationTimeMs = null,
     [property: JsonPropertyName("catalogCompatibility")] CatalogCompatibilityData? CatalogCompatibility = null,
     [property: JsonPropertyName("tradingMapGeneration")] TradingMapGenerationData? TradingMapGeneration = null,
-    [property: JsonPropertyName("tradingMap")] TradingMapStateData? TradingMap = null)
+    [property: JsonPropertyName("tradingMap")] TradingMapStateData? TradingMap = null,
+    [property: JsonPropertyName("stationResourceFields")] StationResourceFieldsState? StationResourceFields = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]

@@ -33,6 +33,10 @@ public sealed partial class SimulationEngine : IDisposable
     private ulong _nextEngineCycleId;
     private ulong _nextShipEventId;
     private TradingMapStateData? _tradingMap;
+    private StationResourceFieldConfig? _stationResourceFieldConfig;
+    private StationResourceFieldsState? _stationResourceFields;
+    private ImmutableDictionary<string, ResourceFieldAsteroidData> _resourceAsteroids = ImmutableDictionary<string, ResourceFieldAsteroidData>.Empty;
+    private ImmutableDictionary<string, string?> _neutralResourceImages = ImmutableDictionary<string, string?>.Empty;
     private bool _disposed;
 
     /// <summary>Number of commands received (test seam).</summary>
@@ -191,6 +195,10 @@ public sealed partial class SimulationEngine : IDisposable
         return false;
     }
 
+    /// <summary>Validates and freezes optional resource rules before the initial scenario load.</summary>
+    internal void ConfigureStationResourceFields(StationResourceFieldConfig? config) =>
+        _stationResourceFieldConfig = config is null ? null : StationResourceFields.ValidateConfig(config, _registry);
+
     /// <summary>
     /// Load initial state from a scenario file. Replaces any previously added objects.
     /// Sets the clock speed and game time from scenario data.
@@ -228,6 +236,15 @@ public sealed partial class SimulationEngine : IDisposable
         }
 
         gs = MaterializeOrRestoreTradingMap(scenario, gs, isSave, resolvedMasterSeed);
+        if (gs.StationResourceFields is not null)
+            gs = StationResourceFields.ValidateSaved(gs, _registry);
+        else if (!isSave && scenario.SaveFormatVersion == 0 && gs.TradingMap is not null && _stationResourceFieldConfig is not null)
+            gs = StationResourceFields.Generate(gs, resolvedMasterSeed, _stationResourceFieldConfig, _registry);
+        var resourceAsteroids = (gs.StationResourceFields?.Asteroids ?? [])
+            .ToImmutableDictionary(a => a.ObjectId, StringComparer.Ordinal);
+        var neutralResourceImages = gs.SpaceObjects.Where(o => resourceAsteroids.ContainsKey(o.ObjectId))
+            .ToImmutableDictionary(o => o.ObjectId,
+                o => ResolveObjectImage(o with { Image = null, CompositionType = "Silicate" }, false, true, resolvedMasterSeed), StringComparer.Ordinal);
         bool loadingSave = isSave || scenario.SaveFormatVersion > 0;
         var marketProfiles = ResolveMarketProfiles(gs.SpaceObjects, loadingSave, scenario.SaveFormatVersion);
         var speed = ScenarioLoader.ParseSpeed(gs.CurrentSpeed);
@@ -396,6 +413,9 @@ public sealed partial class SimulationEngine : IDisposable
             _stationTravelReceipts.Clear();
             _stationTravelReceipts.UnionWith(_economyTime.TravelReceipts ?? []);
             _tradingMap = gs.TradingMap;
+            _stationResourceFields = gs.StationResourceFields;
+            _resourceAsteroids = resourceAsteroids;
+            _neutralResourceImages = neutralResourceImages;
             RestoreCommandJournal(gs);
             // Quotes issued against the previous world are never valid in this one.
             ResetQuoteSession();
@@ -548,6 +568,7 @@ public sealed partial class SimulationEngine : IDisposable
                 bool known = obj.IsKnown || obj.InitialMotion.ObjectId == PlayerShipObjectId;
                 bool isPlayerShipRow = obj.InitialMotion.ObjectId == PlayerShipObjectId;
                 bool isKnownStation = known && obj.ObjectType == SpaceObjectType.Station;
+                _resourceAsteroids.TryGetValue(obj.InitialMotion.ObjectId, out var resourceAsteroid);
                 var dockOperator = isKnownStation && !obj.StationCrew.IsDefaultOrEmpty
                     ? obj.StationCrew.FirstOrDefault(c => c.Role == StationCrewRoles.DockOperator)
                     : null;
@@ -575,8 +596,14 @@ public sealed partial class SimulationEngine : IDisposable
                     ObjectType = known ? obj.ObjectType : null,
                     RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
                     RelationToPlayer = known ? GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType) : null,
-                    DisplayName = known ? obj.Name : null,
-                    Image = known ? obj.Image : null,
+                    DisplayName = known && resourceAsteroid is null ? obj.Name : null,
+                    Image = !known ? null : resourceAsteroid is { CompositionKnown: false }
+                        ? _neutralResourceImages[obj.InitialMotion.ObjectId] : obj.Image,
+                    Survey = resourceAsteroid is null ? null : new AsteroidSurveySnapshot(
+                        obj.MassKg!.Value, resourceAsteroid.CompositionKnown, false,
+                        resourceAsteroid.CompositionKnown ? obj.CompositionType : null,
+                        resourceAsteroid.CompositionKnown ? resourceAsteroid.Resources.Select(r =>
+                            new ResourceFractionSnapshot(r.ItemTypeId, r.Permille)).ToImmutableArray() : []),
                     MaxSpeedKmS = GetMaxSpeedKmS(obj),
                     IsDocked = obj.IsDocked,
                     DockedStationObjectId = obj.DockedStationObjectId,
@@ -955,7 +982,8 @@ public sealed partial class SimulationEngine : IDisposable
             PendingCommands: CapturePendingCommands(),
             EconomyTime: CaptureEconomyTime(), SimulationTimeMs: gameTimeMs,
             CatalogCompatibility: _registry.CatalogCompatibility,
-            TradingMap: _tradingMap);
+            TradingMap: _tradingMap,
+            StationResourceFields: _stationResourceFields);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
