@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "firstObjectNumber": 1000,
+  "maxPlacementAttempts": 64,
+  "innerRadiusKm": 2.5,
+  "outerRadiusKm": 4.5,
+  "stationClearanceKm": 2,
+  "asteroidSpacingKm": 0.1,
+  "corridorHalfWidthKm": 0.25,
+  "structuralScan": { "rangeKm": 120, "durationGameTimeMs": 60000, "successChancePercent": 85 },
+  "roles": [
+    {
+      "marketProfileId": "market.mining",
+      "fields": [
+        { "fieldKindId": "metal", "asteroidCount": 12 },
+        { "fieldKindId": "ice", "asteroidCount": 6 },
+        { "fieldKindId": "carbon", "asteroidCount": 3 }
+      ]
+    },
+    {
+      "marketProfileId": "market.industrial",
+      "fields": [
+        { "fieldKindId": "mixed", "asteroidCount": 9 },
+        { "fieldKindId": "carbon", "asteroidCount": 3 }
+      ]
+    },
+    { "marketProfileId": "market.hydroponic", "fields": [{ "fieldKindId": "ice", "asteroidCount": 12 }] },
+    { "marketProfileId": "market.transit", "fields": [{ "fieldKindId": "mixed", "asteroidCount": 6 }] },
+    { "marketProfileId": "market.scientific-military", "fields": [{ "fieldKindId": "mixed", "asteroidCount": 6 }] }
+  ],
+  "fieldKinds": [
+    {
+      "fieldKindId": "metal",
+      "variants": [
+        {
+          "variantId": "iron-rich", "compositionType": "Iron", "weight": 80,
+          "resources": [
+            { "itemTypeId": "item.iron-ore", "permille": 800 },
+            { "itemTypeId": "item.magnesium-ore", "permille": 150 },
+            { "itemTypeId": "item.carbon-ore", "permille": 50 }
+          ]
+        },
+        {
+          "variantId": "magnesium-rich", "compositionType": "Iron", "weight": 20,
+          "resources": [
+            { "itemTypeId": "item.iron-ore", "permille": 650 },
+            { "itemTypeId": "item.magnesium-ore", "permille": 300 },
+            { "itemTypeId": "item.carbon-ore", "permille": 50 }
+          ]
+        }
+      ]
+    },
+    {
+      "fieldKindId": "ice",
+      "variants": [
+        {
+          "variantId": "ice-rich", "compositionType": "Ice", "weight": 80,
+          "resources": [
+            { "itemTypeId": "item.ice", "permille": 950 },
+            { "itemTypeId": "item.carbon-ore", "permille": 50 }
+          ]
+        },
+        {
+          "variantId": "ice-mixed", "compositionType": "Ice", "weight": 20,
+          "resources": [
+            { "itemTypeId": "item.ice", "permille": 850 },
+            { "itemTypeId": "item.iron-ore", "permille": 100 },
+            { "itemTypeId": "item.carbon-ore", "permille": 50 }
+          ]
+        }
+      ]
+    },
+    {
+      "fieldKindId": "mixed",
+      "variants": [
+        {
+          "variantId": "mixed-common", "compositionType": "Silicate", "weight": 80,
+          "resources": [
+            { "itemTypeId": "item.iron-ore", "permille": 450 },
+            { "itemTypeId": "item.magnesium-ore", "permille": 400 },
+            { "itemTypeId": "item.silicon", "permille": 100 },
+            { "itemTypeId": "item.carbon-ore", "permille": 50 }
+          ]
+        },
+        {
+          "variantId": "mixed-low-silicon", "compositionType": "Silicate", "weight": 20,
+          "resources": [
+            { "itemTypeId": "item.iron-ore", "permille": 500 },
+            { "itemTypeId": "item.magnesium-ore", "permille": 400 },
+            { "itemTypeId": "item.silicon", "permille": 50 },
+            { "itemTypeId": "item.carbon-ore", "permille": 50 }
+          ]
+        }
+      ]
+    },
+    {
+      "fieldKindId": "carbon",
+      "variants": [
+        {
+          "variantId": "carbon-rich", "compositionType": "Silicate", "weight": 80,
+          "resources": [
+            { "itemTypeId": "item.carbon-ore", "permille": 800 },
+            { "itemTypeId": "item.iron-ore", "permille": 100 },
+            { "itemTypeId": "item.silicon", "permille": 100 }
+          ]
+        },
+        {
+          "variantId": "carbon-mixed", "compositionType": "Silicate", "weight": 20,
+          "resources": [
+            { "itemTypeId": "item.carbon-ore", "permille": 750 },
+            { "itemTypeId": "item.iron-ore", "permille": 200 },
+            { "itemTypeId": "item.silicon", "permille": 50 }
+          ]
+        }
+      ]
+    }
+  ],
+  "massBands": [
+    { "bandId": "small", "minKg": 1000000, "maxKg": 10000000, "weight": 60 },
+    { "bandId": "medium", "minKg": 10000001, "maxKg": 100000000, "weight": 30 },
+    { "bandId": "large", "minKg": 100000001, "maxKg": 500000000, "weight": 8 },
+    { "bandId": "very-large", "minKg": 500000001, "maxKg": 1000000000, "weight": 2 }
+  ]
+}
