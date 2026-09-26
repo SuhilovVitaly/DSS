@@ -10,7 +10,10 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 internal sealed record TacticalMapSnapshotDocument(
     int SchemaVersion,
     DateTimeOffset CapturedAtUtc,
-    TacticalMapSnapshotState State);
+    TacticalMapSnapshotState State,
+    long FrameId = 0,
+    bool ShowTrajectoryPrediction = true,
+    TacticalMapProfileCapture? Profile = null);
 
 internal sealed record TacticalMapSnapshotState(
     AuthoritativeSnapshot? AuthoritativeSnapshot,
@@ -105,7 +108,7 @@ internal sealed record TacticalMapAnchoredPose(
 internal static class TacticalMapSnapshotWriter
 {
     internal const string DefaultDirectory = "TacticalMapSnapshots";
-    internal const int CurrentSchemaVersion = 1;
+    internal const int CurrentSchemaVersion = 2;
 
     private static readonly object Sync = new();
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web)
@@ -123,6 +126,7 @@ internal static class TacticalMapSnapshotWriter
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(directory);
 
+        document = document with { Profile = document.Profile?.WithSummary() };
         string json = JsonSerializer.Serialize(document, SerializerOptions);
         string fullDirectory = Path.GetFullPath(directory);
         Directory.CreateDirectory(fullDirectory);

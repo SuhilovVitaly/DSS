@@ -15,7 +15,9 @@ public static class EngineContentLoader
     public static SimulationEngine CreateEngineFromSettingsFile(string settingsPath)
     {
         var loaded = LoadFromSettingsFile(settingsPath);
+        var fields = LoadStationResourceFields(settingsPath, loaded.Registry);
         var engine = new SimulationEngine(loaded.Registry, LoadCrewPortraits(settingsPath));
+        engine.ConfigureStationResourceFields(fields);
         engine.LoadScenario(loaded.DefaultScenario);
         return engine;
     }
@@ -30,7 +32,9 @@ public static class EngineContentLoader
     {
         var registry = LoadRegistryFromSettingsFile(settingsPath, out _, out _);
         var saveScenario = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true);
+        var fields = LoadStationResourceFields(settingsPath, registry);
         var engine = new SimulationEngine(registry, LoadCrewPortraits(settingsPath));
+        engine.ConfigureStationResourceFields(fields);
         engine.LoadScenario(saveScenario, isSave: true);
         return engine;
     }
@@ -45,9 +49,25 @@ public static class EngineContentLoader
     {
         var registry = LoadRegistryFromSettingsFile(settingsPath, out _, out _);
         var scenario = ScenarioLoader.LoadFromFile(scenarioPath);
+        var fields = LoadStationResourceFields(settingsPath, registry);
         var engine = new SimulationEngine(registry, LoadCrewPortraits(settingsPath));
+        engine.ConfigureStationResourceFields(fields);
         engine.LoadScenario(scenario);
         return engine;
+    }
+
+    private static StationResourceFieldConfig? LoadStationResourceFields(string settingsPath, GameDataRegistry registry)
+    {
+        var settings = ReadJson<EngineSettingsFile>(settingsPath, "settings");
+        if (settings.TypeData.StationResourceFields is not { } declaredPath) return null;
+        if (string.IsNullOrWhiteSpace(declaredPath))
+            throw new ContentException($"{settingsPath}: typeData.stationResourceFields contains an empty content path.");
+        string path = Resolve(Path.GetDirectoryName(Path.GetFullPath(settingsPath))!, declaredPath);
+        try
+        {
+            return StationResourceFields.ValidateConfig(ReadJson<StationResourceFieldConfig>(path, "station resource fields"), registry);
+        }
+        catch (ContentException ex) { throw new ContentException($"{path}: {ex.Message}", ex); }
     }
 
     /// <summary>Discover portable portrait references once at bootstrap; resolved choices are saved on crew members.</summary>
@@ -682,7 +702,17 @@ public static class EngineContentLoader
         [property: JsonPropertyName("recipes")] string? Recipes,
         [property: JsonPropertyName("dialogues")] string? Dialogues = null,
         [property: JsonPropertyName("quests")] string? Quests = null,
-        [property: JsonPropertyName("stationMarketProfiles"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketProfiles = null);
+        [property: JsonPropertyName("stationMarketProfiles"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketProfiles = null,
+        [property: JsonPropertyName("stationResourceFields"), JsonConverter(typeof(DeclaredResourceFieldPathConverter))] string? StationResourceFields = null);
+
+    private sealed class DeclaredResourceFieldPathConverter : JsonConverter<string>
+    {
+        public override bool HandleNull => true;
+        public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+            reader.TokenType == JsonTokenType.String ? reader.GetString()!
+                : throw new JsonException("stationResourceFields must be a non-null string path.");
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options) => writer.WriteStringValue(value);
+    }
 
     // An omitted optional path is different from an explicitly declared JSON null.
     private sealed class DeclaredProfilePathConverter : JsonConverter<string>

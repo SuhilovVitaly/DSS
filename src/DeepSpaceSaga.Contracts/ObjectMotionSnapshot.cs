@@ -1,3 +1,6 @@
+using System.Collections.Immutable;
+using System.Text.Json.Serialization;
+
 namespace DeepSpaceSaga.Contracts;
 
 /// <summary>
@@ -113,4 +116,56 @@ public sealed record ObjectMotionSnapshot(
     bool IsDestroyed = false,
     ApproachRoute? ApproachRoute = null,
     /// <summary>Player's confirmed navigation target identity, without revealing its unknown properties.</summary>
-    string? NavigationTargetObjectId = null);
+    string? NavigationTargetObjectId = null,
+    /// <summary>
+    /// Player-visible survey knowledge for a generated resource asteroid, independent of
+    /// technical motion data. Null preserves legacy snapshots and does not grant scan permission.
+    /// </summary>
+    AsteroidSurveySnapshot? Survey = null);
+
+/// <summary>
+/// A revealed mineralogical fraction in integer thousandths, not cargo quantity or mining yield.
+/// The producer supplies positive fractions totaling 1000 for a known composition.
+/// </summary>
+public sealed record ResourceFractionSnapshot(string ItemTypeId, int Permille);
+
+/// <summary>
+/// Player-visible knowledge of a generated resource asteroid. The producer hides composition
+/// and resources until a successful survey; this DTO does not validate world state or calculate
+/// mass, cargo, yield or money.
+/// </summary>
+/// <param name="MassKg">Known asteroid mass in kilograms, available before and after survey.</param>
+/// <param name="CompositionKnown">Whether structural survey has revealed the composition.</param>
+/// <param name="CanStructuralScan">
+/// Target/range eligibility with no current attempt for this target. The client checks the
+/// selected module's availability separately, and the Engine revalidates all conditions.
+/// False once composition is known.
+/// </param>
+/// <param name="CompositionType">
+/// Coarse composition: Ice, Silicate or Iron when known; null otherwise. Resource fractions
+/// describe mineralogy separately and do not introduce additional base composition types.
+/// </param>
+/// <param name="Resources">Revealed fractions totaling 1000; empty while composition is unknown.</param>
+public sealed record AsteroidSurveySnapshot(
+    long MassKg,
+    bool CompositionKnown,
+    bool CanStructuralScan,
+    string? CompositionType = null,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ResourceFractionSnapshot>))]
+    ImmutableArray<ResourceFractionSnapshot> Resources = default);
+
+/// <summary>
+/// Resource survey outcomes. Shared command failures reuse <see cref="CommandReasonCodes.Busy"/>,
+/// <see cref="CommandReasonCodes.ModuleUnavailable"/>, <see cref="CommandReasonCodes.MissingTarget"/>
+/// and <see cref="CommandReasonCodes.UnknownTarget"/>.
+/// </summary>
+public static class ResourceSurveyReasonCodes
+{
+    public const string UnsupportedTarget = "resource_survey_unsupported";
+    public const string TargetNotIdentified = "target_not_identified";
+    public const string AlreadyKnown = "target_already_structurally_identified";
+    public const string OutOfRange = "target_out_of_range";
+    public const string TargetLost = "target_lost";
+    public const string ScanFailed = "scan_failed";
+    public const string InvalidTime = "resource_survey_invalid_time";
+}

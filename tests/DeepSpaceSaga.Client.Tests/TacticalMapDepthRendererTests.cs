@@ -336,4 +336,19 @@ public class TacticalMapDepthRendererTests
     {
         return color.Red + color.Green + color.Blue;
     }
+
+    [Fact]
+    public void Target_forecast_keeps_visible_dashes_gaps_and_a_bounded_soft_edge()
+    {
+        using var bitmap = new SKBitmap(200, 80);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Transparent);
+        new TacticalMapDepthRenderer().DrawTargetTrajectory(canvas,
+            [new(-80, 0), new(80, 0)], new CameraState(0, 0, 1), 200, 80);
+
+        byte[] center = Enumerable.Range(30, 140).Select(x => bitmap.GetPixel(x, 40).Alpha).ToArray();
+        Assert.Contains(center, alpha => alpha >= 50);
+        Assert.Contains(center, alpha => alpha == 0);
+        Assert.All(Enumerable.Range(0, 200), x => Assert.Equal(0, bitmap.GetPixel(x, 44).Alpha));
+    }
 }

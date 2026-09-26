@@ -224,7 +224,7 @@ public sealed partial class GameSessionScreen
             if (!_mapViewButtons[i].Contains(x, y)) continue;
             if (i == 0) SetFollowPlayer();
             else if (i < 4) FitMapView((MapFitMode)(i - 1));
-            else CaptureTacticalMapSnapshot();
+            else RequestTacticalMapSnapshot();
             return true;
         }
         return _mapToolbarRect.Contains(x, y);
@@ -242,11 +242,12 @@ public sealed partial class GameSessionScreen
         {
             var r = new SKRect(left + 4 + i * buttonWidth, top + 4, left + 2 + (i + 1) * buttonWidth, top + 27);
             _mapViewButtons[i] = r;
-            bool enabled = i == 4 || IsMapViewAvailable(i);
+            bool enabled = i == 4 ? SnapshotSaveTask.IsCompleted && !_snapshotCaptureRequested && !_captureThisFrame : IsMapViewAvailable(i);
             canvas.DrawRect(r, i == 0 && _isFocusAttachedToPlayer ? _scaleBtnActivePaint : _scaleBtnNormalPaint);
             canvas.DrawRect(r, _panelBorderPaint);
             _scaleBtnTextPaint.Color = enabled ? new SKColor(180, 180, 180) : new SKColor(80, 80, 80);
-            canvas.DrawText(Localization.Get(keys[i]), r.MidX, r.MidY + 4, _scaleBtnTextPaint);
+            string label = Localization.Get(keys[i]) + (i == 4 && !enabled ? "…" : "");
+            canvas.DrawText(label, r.MidX, r.MidY + 4, _scaleBtnTextPaint);
         }
         _scaleBtnTextPaint.Color = new SKColor(180, 180, 180);
         string scale = $"1 px = {TacticalMapSettings.FormatDistance(100 / _camera.PixelsPerWorldUnit)}";
