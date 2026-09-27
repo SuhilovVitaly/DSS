@@ -346,6 +346,7 @@ public sealed partial class SimulationEngine : IDisposable
         // source per station and a well-formed pending remainder must all hold before anything is
         // replaced, so an invalid save leaves the running world untouched (AC-07).
         ValidateMarketWorld(runtimeObjects);
+        ValidateRestoredResourceSurveys(gs, runtimeObjects);
 
         // Market revisions (EP-0001-US-0015-TK-0003): a profile market resumes at its saved revision, a
         // profile-less one (never saved, D-U2) or a save predating the field at 1 — and neither ever falls
@@ -417,6 +418,7 @@ public sealed partial class SimulationEngine : IDisposable
             _resourceAsteroids = resourceAsteroids;
             _neutralResourceImages = neutralResourceImages;
             RestoreCommandJournal(gs);
+            RestoreResourceSurveyCommandIds();
             // Quotes issued against the previous world are never valid in this one.
             ResetQuoteSession();
         }
@@ -541,6 +543,7 @@ public sealed partial class SimulationEngine : IDisposable
             ApplyPendingCommands(gameTimeMs);
             ApplyPendingDialogueCommands(gameTimeMs);
             UpdateStationSecurity(gameTimeMs);
+            ValidateResourceSurveys(gameTimeMs, _ => _processedWorldTimeMs);
 
             // Re-validate on every snapshot (not only when the client reports new
             // interaction state): if the selected/active object disappeared from the
@@ -599,11 +602,7 @@ public sealed partial class SimulationEngine : IDisposable
                     DisplayName = known && resourceAsteroid is null ? obj.Name : null,
                     Image = !known ? null : resourceAsteroid is { CompositionKnown: false }
                         ? _neutralResourceImages[obj.InitialMotion.ObjectId] : obj.Image,
-                    Survey = resourceAsteroid is null ? null : new AsteroidSurveySnapshot(
-                        obj.MassKg!.Value, resourceAsteroid.CompositionKnown, false,
-                        resourceAsteroid.CompositionKnown ? obj.CompositionType : null,
-                        resourceAsteroid.CompositionKnown ? resourceAsteroid.Resources.Select(r =>
-                            new ResourceFractionSnapshot(r.ItemTypeId, r.Permille)).ToImmutableArray() : []),
+                    Survey = ProjectResourceSurvey(obj, resourceAsteroid, gameTimeMs),
                     MaxSpeedKmS = GetMaxSpeedKmS(obj),
                     IsDocked = obj.IsDocked,
                     DockedStationObjectId = obj.DockedStationObjectId,
@@ -780,7 +779,8 @@ public sealed partial class SimulationEngine : IDisposable
                 PowerState: module.PowerState,
                 OperationalState: module.OperationalState,
                 StructurePoints: module.StructurePoints,
-                ActiveCommandType: module.ActiveCycle?.CommandType,
+                ActiveCommandType: ResourceSurveyModuleCommand(ship.InitialMotion.ObjectId, module.ModuleId)
+                    ?? module.ActiveCycle?.CommandType,
                 FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null,
                 FuelCapacityKg: moduleType.FuelCapacityKg is > 0 ? moduleType.FuelCapacityKg : null,
                 Commands: BuildModuleCommands(moduleType.CommandTypeIds),
@@ -906,6 +906,7 @@ public sealed partial class SimulationEngine : IDisposable
         ApplyPendingCommands(gameTimeMs);
         ApplyPendingDialogueCommands(gameTimeMs);
         UpdateStationSecurity(gameTimeMs);
+        ValidateResourceSurveys(gameTimeMs, _ => _processedWorldTimeMs);
 
         var spaceObjects = new List<SpaceObjectData>(_objects.Count);
         foreach (var obj in _objects)
@@ -1981,7 +1982,8 @@ public sealed partial class SimulationEngine : IDisposable
             else if (outcome.Disposition == CommandStartDisposition.Rejected)
             {
                 // Rejected immediately — no cycle was created.
-                RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, outcome.ReasonCode,
+                RecordCommandResult(command, CommandResultStatus.Rejected,
+                    command.CommandType == ScannerCommandTypes.StructuralScan ? _processedWorldTimeMs : gameTimeMs, outcome.ReasonCode,
                     tradeReceipt: outcome.TradeReceipt);
             }
             // Started: the cycle was created. The final CommandResult is written later
@@ -2109,6 +2111,9 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     private CommandStartOutcome TryStartCommand(PlayerCommand command, long gameTimeMs)
     {
+        if (command.CommandType == ScannerCommandTypes.StructuralScan)
+            return TryStartResourceSurvey(command, gameTimeMs);
+
         // A quoted trade gets its zero-effect receipt even when refused before trade dispatch.
         bool quotedTrade = command.CommandType is TradeCommandTypes.Buy or TradeCommandTypes.Sell or TradeCommandTypes.Refuel &&
             (command.QuoteId is not null || command.MarketRevision is not null);
@@ -3058,9 +3063,9 @@ public sealed partial class SimulationEngine : IDisposable
         return default;
     }
 
-    private void AdvanceMotionTo(long gameTimeMs)
+    private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt)
     {
-        if (!_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        if (!HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
             return;
@@ -3082,9 +3087,11 @@ public sealed partial class SimulationEngine : IDisposable
                     _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed) &&
                     _objects.Any(o => o.InitialMotion.ObjectId == incident.StationObjectId && o.SecurityZoneRadiusKm is not null))
                     next = Math.Min(next, incident.DeadlineGameTimeMs);
+            ValidateResourceSurveys(next, surveyCalendarAt);
             UpdateStationSecurity(next);
             CompleteActiveEngineCycles(next);
             UpdateStationSecurity(next);
+            ValidateResourceSurveys(next, surveyCalendarAt);
             if (next >= gameTimeMs) break;
         }
     }
