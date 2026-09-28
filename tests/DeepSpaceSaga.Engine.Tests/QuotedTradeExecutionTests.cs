@@ -103,6 +103,7 @@ public class QuotedTradeExecutionTests
             GameState = gs with
             {
                 TradingMap = null,
+                VoyageState = null,
                 SpaceObjects = gs.SpaceObjects
                     .Where(o => o.ObjectId == ShipId || o.ObjectId == StationId)
                     .Select(o => o.ObjectId != StationId ? o : o with

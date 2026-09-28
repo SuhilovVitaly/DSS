@@ -66,6 +66,7 @@ public sealed partial class SimulationEngine
         }
         AdvanceMotionTo(simulationTimeMs, SurveyCalendarAt);
         _processedSimulationTimeMs = simulationTimeMs;
+        UpdateVoyageForMotion(simulationTimeMs);
     }
 
     // Market state of every station at the start of the current boundary (object index, stock rows and

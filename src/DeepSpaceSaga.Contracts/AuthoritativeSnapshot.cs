@@ -50,11 +50,16 @@ public sealed record AuthoritativeSnapshot(
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<TimedContractState>))]
     ImmutableArray<TimedContractState> ActiveContracts = default,
     long? RouteArrivalGameTimeMs = null,
-    long? SimulationTimeMs = null)
+    long? SimulationTimeMs = null,
+    VoyageSnapshot? Voyage = null)
 {
     /// <summary>Motion/cycle timestamp; legacy snapshots use GameTimeMs for both domains.</summary>
     [JsonIgnore]
     public long MotionTimeMs => SimulationTimeMs ?? GameTimeMs;
+
+    /// <summary>The active leg, if any; docked snapshots expose route options through Voyage.</summary>
+    [JsonIgnore]
+    public VoyageSnapshot? ActiveVoyage => Voyage is { Phase: not VoyagePhases.Docked } ? Voyage : null;
 }
 
 public sealed record PortFeeSnapshot(long FirstPortFeeGameTimeMs, long NextPortFeeDueGameTimeMs, long Debt);

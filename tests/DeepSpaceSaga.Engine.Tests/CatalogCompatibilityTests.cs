@@ -338,7 +338,9 @@ public sealed class CatalogCompatibilityTests
             } : obj).ToArray();
         using var engine = new SimulationEngine(registry);
         var ex = Assert.Throws<ScenarioException>(() => engine.LoadScenario(save with {
-            GameState = save.GameState with { TradingMap = null, SpaceObjects = objects, CatalogCompatibility = registry.CatalogCompatibility } }));
+            GameState = save.GameState with { TradingMap = null, VoyageState = null,
+                StationResourceFields = null, SpaceObjects = objects,
+                CatalogCompatibility = registry.CatalogCompatibility } }));
         Assert.Contains("SPC-0002", ex.Message);
         Assert.Contains(itemId, ex.Message);
     }

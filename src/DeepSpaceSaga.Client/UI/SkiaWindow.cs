@@ -48,6 +48,7 @@ public sealed class SkiaWindow : IDisposable
     private RawImage? _interactiveCursorImage;
 
     private GameSessionHandle? _session;
+    private string? _pendingUndockCommandId;
     private GameSessionScreen? _gameSessionScreen;
     private static readonly double[] AllowedUiScales = { 0.8, 1.0, 1.2, 1.5 };
     private static readonly string[] AllowedLanguages = { "English", "Russian" };
@@ -367,6 +368,19 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private void PollGameSessionAutoTransition()
     {
+        if (_screens.Current is StationScreen && _pendingUndockCommandId is { } pendingId &&
+            _session?.Buffer.Latest?.Snapshot is { } stationSnapshot)
+        {
+            var outcome = stationSnapshot.CommandResults.LastOrDefault(result => result.CommandId == pendingId);
+            if (outcome is { Status: CommandResultStatus.Executed })
+            {
+                _pendingUndockCommandId = null;
+                _ = PopModalAsync();
+            }
+            else if (outcome is { Status: CommandResultStatus.Rejected })
+                _pendingUndockCommandId = null;
+            return;
+        }
         if (_screens.Current is DialogueScreen dialogue)
         {
             var transition = dialogue.Poll();
@@ -681,13 +695,14 @@ public sealed class SkiaWindow : IDisposable
                         await _session.TravelStationAsync((StationDistrict)(evt - ScreenEvent.TravelDock));
                     break;
                 case ScreenEvent.CloseStation:
+                    _pendingUndockCommandId = null;
                     await CloseOverlayAsync();
                     break;
                 case ScreenEvent.Undock:
-                    if (_session is not null && _screens.Current is StationScreen)
+                    if (_session is not null && _screens.Current is StationScreen stationScreen &&
+                        _pendingUndockCommandId is null)
                     {
-                        _session.SendUndockCommand();
-                        await CloseOverlayAsync();
+                        _pendingUndockCommandId = _session.SendUndockCommand(stationScreen.SelectedDestinationId);
                     }
                     break;
                 case ScreenEvent.OpenDialogue:

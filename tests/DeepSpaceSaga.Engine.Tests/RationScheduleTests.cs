@@ -17,6 +17,7 @@ public class RationScheduleTests
             {
                 GameTimeMs = time,
                 TradingMap = null,
+                VoyageState = null,
                 StationResourceFields = null,
                 SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectType != "Station" ? o : o with
                 {
@@ -73,6 +74,7 @@ public class RationScheduleTests
             GameState = save.GameState with
             {
                 TradingMap = null,
+                VoyageState = null,
                 StationResourceFields = null,
                 SpaceObjects = save.GameState.SpaceObjects.Select(o => o with { Passengers = [] }).ToArray()
             }

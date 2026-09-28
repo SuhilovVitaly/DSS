@@ -254,6 +254,37 @@ public class StationScreenTests
     }
 
     [Fact]
+    public void Map_departure_requires_a_selected_current_station_route()
+    {
+        var buffer = new SnapshotBuffer();
+        AuthoritativeSnapshot AtStation(string stationId, string destination) =>
+            new(1, 0, SimulationSpeed.Speed0,
+                [new ObjectMotionSnapshot("ship", 0, 0, 0, 0)
+                    { IsDocked = true, DockedStationObjectId = stationId }],
+                PlayerShipObjectId: "ship",
+                Voyage: new VoyageSnapshot(VoyagePhases.Docked,
+                    RouteOptions: [new VoyageRouteOptionSnapshot(destination, destination, 1000, "Short")]));
+        buffer.Update(AtStation("A", "B"));
+        var screen = new StationScreen(buffer);
+        RenderScreen(screen);
+        screen.OnActivated();
+        var (left, top, right, bottom) = StationLayout.UndockButtonLocalRect();
+        float undockX = StationLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
+        float undockY = StationLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(undockX, undockY));
+
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(
+            StationLayout.PanelLeft(ScreenWidth) + 410,
+            StationLayout.PanelTop(ScreenHeight) + 450));
+        Assert.Equal("B", screen.SelectedDestinationId);
+        Assert.Equal(ScreenEvent.Undock, screen.OnMouseDown(undockX, undockY));
+
+        buffer.Update(AtStation("C", "D"));
+        Assert.Null(screen.SelectedDestinationId);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(undockX, undockY));
+    }
+
+    [Fact]
     public void Undock_button_hover_is_reported_interactive()
     {
         var screen = new StationScreen();
