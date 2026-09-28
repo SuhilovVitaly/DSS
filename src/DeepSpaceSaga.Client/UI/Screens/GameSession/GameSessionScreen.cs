@@ -710,8 +710,18 @@ public sealed partial class GameSessionScreen : IScreen
         if (commandType == NavigationComputerCommandTypes.StationsList)
             return false; // no station-list screen yet — visible, always disabled this pass
 
-        if (ResolveModuleId(commandType) is null)
+        string? moduleId = ResolveModuleId(commandType);
+        if (moduleId is null)
             return false; // no installed module exposes this commandType
+
+        if (commandType == ScannerCommandTypes.StructuralScan)
+        {
+            var selected = snapshot?.Objects.FirstOrDefault(o => o.ObjectId == _selectedObjectId);
+            var module = snapshot?.InstalledModules.FirstOrDefault(m => m.ModuleId == moduleId);
+            return FindCommandTarget(commandType) == "object"
+                && selected is { IsDestroyed: false, Survey: { CompositionKnown: false, CanStructuralScan: true } }
+                && module is { PowerState: "On", OperationalState: "Ready", StructurePoints: > 0, ActiveCommandType: null };
+        }
 
         string? target = FindCommandTarget(commandType);
         switch (target)
@@ -738,6 +748,9 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private void SendCommandFromPanel(string commandType)
     {
+        if (commandType == ScannerCommandTypes.StructuralScan && !IsModuleCommandEnabled(commandType))
+            return;
+
         string? moduleId = ResolveModuleId(commandType);
         if (moduleId is null)
             return; // defensive — IsModuleCommandEnabled already gates this
@@ -2119,7 +2132,9 @@ public sealed partial class GameSessionScreen : IScreen
             return null;
 
         var p = s.Pose;
-        return new ObjectInfoPanelData(p.ObjectId, p.DisplayName, p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image);
+        var survey = s.Source.Survey;
+        return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
+            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey);
     }
 
     /// <summary>

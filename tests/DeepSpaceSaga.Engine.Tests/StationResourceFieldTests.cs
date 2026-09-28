@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Rng;
 using DeepSpaceSaga.Engine.Scenario;
@@ -333,13 +334,18 @@ public sealed class StationResourceFieldTests
         var save = Save(engine);
         var ids = save.GameState.StationResourceFields!.Asteroids.Select(a => a.ObjectId).ToHashSet();
         var snapshot = engine.CaptureSnapshotForTests();
+        var player = snapshot.Objects.Single(o => o.ObjectId == snapshot.PlayerShipObjectId);
+        double rangeWorldUnits = save.GameState.StationResourceFields!.Rules.StructuralScan.RangeKm * 10;
+        Assert.Contains(snapshot.Objects, o => o.Survey?.CanStructuralScan == true);
+        Assert.Contains(snapshot.Objects, o => o.Survey?.CanStructuralScan == false);
         foreach (var row in snapshot.Objects.Where(o => ids.Contains(o.ObjectId)))
         {
             Assert.Null(row.DisplayName);
             Assert.NotNull(row.Image);
             Assert.DoesNotContain("ice", row.Image, StringComparison.OrdinalIgnoreCase);
             Assert.False(row.Survey!.CompositionKnown);
-            Assert.False(row.Survey.CanStructuralScan);
+            double distance = Math.Sqrt(Math.Pow(row.X - player.X, 2) + Math.Pow(row.Y - player.Y, 2));
+            Assert.Equal(distance <= rangeWorldUnits, row.Survey.CanStructuralScan);
             Assert.Null(row.Survey.CompositionType);
             Assert.Empty(row.Survey.Resources);
             Assert.Equal(save.GameState.SpaceObjects.Single(o => o.ObjectId == row.ObjectId).MassKg, row.Survey.MassKg);
@@ -454,10 +460,16 @@ public sealed class StationResourceFieldTests
     [Fact]
     public void Saved_survey_jobs_and_independent_streams_roundtrip_and_validate_shape()
     {
-        using var engine = Engine();
+        using var engine = Engine(scanner: true);
+        var target = engine.CaptureSnapshotForTests().Objects.First(o => o.Survey?.CanStructuralScan == true);
+        engine.ReceiveCommand(new("scan-1", 1, "SPC-0001", "MOD-TEST", ScannerCommandTypes.StructuralScan, target.ObjectId));
+        var started = engine.CaptureSnapshotForTests();
+        Assert.Empty(started.CommandResults);
+        Assert.Equal(ScannerCommandTypes.StructuralScan, Assert.Single(started.InstalledModules).ActiveCommandType);
         var saved = Save(engine);
         var fields = saved.GameState.StationResourceFields!;
-        var job = new ResourceSurveyJobData("scan-1", "SPC-0001", "MOD-TEST", fields.Asteroids[0].ObjectId, 0, 60000, 0);
+        var job = Assert.Single(fields.Surveys);
+        Assert.Equal(new ResourceSurveyJobData("scan-1", "SPC-0001", "MOD-TEST", target.ObjectId, 0, 60000, 0), job);
         const string streamName = "ResourceSurvey:SPC-0001:MOD-TEST";
         var stream = new ResourceFieldRngData(streamName, RngStreamSeedDerivation.DeriveStreamSeed(123, streamName), 10011);
         var withJob = saved with
@@ -465,7 +477,7 @@ public sealed class StationResourceFieldTests
             GameState = saved.GameState with
             {
                 StationResourceFields = fields with
-                { Surveys = [job], RngStreams = fields.RngStreams.Append(stream).ToArray() }
+                { RngStreams = fields.RngStreams.Append(stream).ToArray() }
             }
         };
         engine.LoadScenario(ScenarioLoader.LoadFromJson(Json(withJob), true), true);
@@ -605,9 +617,9 @@ public sealed class StationResourceFieldTests
         public void Dispose() => Directory.Delete(_directory, recursive: true);
     }
 
-    private static SimulationEngine Engine()
+    private static SimulationEngine Engine(bool scanner = false)
     {
-        var engine = new SimulationEngine(Registry());
+        var engine = new SimulationEngine(Registry(scanner));
         engine.ConfigureStationResourceFields(Config());
         engine.LoadScenario(Scenario());
         return engine;
@@ -685,16 +697,19 @@ public sealed class StationResourceFieldTests
         ])],
         [new("risk.elevated", 1250), new("risk.normal", 1100), new("risk.safe", 1000)]);
 
-    private static GameDataRegistry Registry() => GameDataRegistry.Create(
-        [new ModuleCategoryDefinition("module.test", "Test", 1, [])],
-        [new ModuleTypeDefinition("module.test", "Test", 1, 10, 100, 0, [], CargoCapacityKg: 100)],
+    private static GameDataRegistry Registry(bool scanner = false) => GameDataRegistry.Create(
+        [new ModuleCategoryDefinition("module.test", "Test", 1, scanner ? [ScannerCommandTypes.StructuralScan] : [])],
+        [new ModuleTypeDefinition("module.test", "Test", 1, 10, 100, 0,
+            scanner ? [ScannerCommandTypes.StructuralScan] : [], CargoCapacityKg: 100)],
         [new("item.ore", "Ore", 1, 10, Category: TradeCategory.Resource), new("item.steel", "Steel", 1, 10),
             new("item.fuel", "Fuel", 0, 10, TradeUnit: TradeUnit.Kilogram, StorageKind: ItemStorageKind.FuelTank),
             new("item.food", "Food", 1, 10), new("item.science", "Science", 1, 10),
             new("item.ice", "Ice", 1, 10, Category: TradeCategory.Resource),
             new("item.magnesium-ore", "Magnesium", 1, 10, Category: TradeCategory.Resource),
             new("item.silicon", "Silicon", 1, 10, Category: TradeCategory.Resource),
-            new("item.carbon-ore", "Carbon", 1, 10, Category: TradeCategory.Resource)], [], stationMarketProfiles: Profiles());
+            new("item.carbon-ore", "Carbon", 1, 10, Category: TradeCategory.Resource)],
+        scanner ? [new(ScannerCommandTypes.StructuralScan, "Structural Scan", Target: "object", Type: "module.test")] : [],
+        stationMarketProfiles: Profiles());
     private static StationMarketProfileDefinition[] Profiles()
     {
         var factors = new Dictionary<StationSize, int>

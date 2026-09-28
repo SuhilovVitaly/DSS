@@ -76,6 +76,7 @@ public class CommandsPanelSkeletonTests
             Commands: CommandsFor(EngineCommandTypeIds)),
         new InstalledModuleSnapshot(
             ScannerModuleId, "module.scanner.mk1", "Scanner MK I", Position: 2, ScannerCommandTypeIds,
+            PowerState: "On", StructurePoints: 60,
             Commands: CommandsFor(ScannerCommandTypeIds)));
 
     private static readonly ImmutableArray<InstalledModuleSnapshot> FullEngineModule = ImmutableArray.Create(
@@ -969,7 +970,7 @@ public class CommandsPanelSkeletonTests
     public async Task Scanner_buttons_disabled_without_selection_and_enabled_with_selection()
     {
         await using var fixture = CreateFixture(
-            EngineAndScannerModules, extraObjects: [ObjAt("OBJ-1", 10060)]);
+            EngineAndScannerModules, extraObjects: [SurveyTarget()]);
         Render(fixture.Screen);
         var panel = fixture.Screen.CommandsPanel;
 
@@ -989,6 +990,7 @@ public class CommandsPanelSkeletonTests
 
         generalScan = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == "scanner.generalScan");
         Assert.True(generalScan.Enabled);
+        Assert.True(Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == ScannerCommandTypes.StructuralScan).Enabled);
 
         fixture.Screen.OnMouseDown(generalScan.Rect.MidX, generalScan.Rect.MidY);
 
@@ -1095,7 +1097,161 @@ public class CommandsPanelSkeletonTests
         Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
     }
 
-    // ── Helpers ─────────────────────────────────────────────────
+    // ── Structural scanning ─────────────────────────────────────
+
+    [Theory]
+    [InlineData("eligible", true)]
+    [InlineData("no-selection", false)]
+    [InlineData("missing", false)]
+    [InlineData("legacy", false)]
+    [InlineData("known", false)]
+    [InlineData("range", false)]
+    [InlineData("destroyed", false)]
+    [InlineData("off", false)]
+    [InlineData("not-ready", false)]
+    [InlineData("broken", false)]
+    [InlineData("busy", false)]
+    [InlineData("no-module", false)]
+    [InlineData("no-metadata", false)]
+    [InlineData("first-unavailable", false)]
+    public async Task Structural_scan_requires_eligible_survey_and_ready_idle_scanner(string condition, bool enabled)
+    {
+        await using var fixture = CreateFixture(EngineAndScannerModules, [SurveyTarget()]);
+        Render(fixture.Screen);
+        if (condition != "no-selection") fixture.Screen.OnMouseDown(640, 420);
+        var snapshot = fixture.Handle.Buffer.Latest!.Snapshot;
+        var target = SurveyTarget();
+        target = condition switch
+        {
+            "legacy" => target with { Survey = null },
+            "known" => target with { Survey = target.Survey! with { CompositionKnown = true } },
+            "range" => target with { Survey = target.Survey! with { CanStructuralScan = false } },
+            "destroyed" => target with { IsDestroyed = true },
+            _ => target
+        };
+        var scanner = EngineAndScannerModules[1];
+        scanner = condition switch
+        {
+            "off" or "first-unavailable" => scanner with { PowerState = "Off" },
+            "not-ready" => scanner with { OperationalState = "Broken" },
+            "broken" => scanner with { StructurePoints = 0 },
+            "busy" => scanner with { ActiveCommandType = ScannerCommandTypes.GeneralScan },
+            "no-metadata" => scanner with { Commands = [] },
+            _ => scanner
+        };
+        var modules = EngineAndScannerModules.SetItem(1, scanner);
+        if (condition == "no-module") modules = OneEngineModule;
+        if (condition == "first-unavailable")
+            modules = modules.Insert(0, EngineAndScannerModules[1] with { ModuleId = "OTHER", Position = 9 });
+        fixture.Handle.Buffer.Update(snapshot with
+        {
+            SnapshotSequence = 2,
+            Objects = condition == "missing" ? [snapshot.Objects[0]] : [snapshot.Objects[0], target],
+            InstalledModules = modules
+        });
+        Render(fixture.Screen);
+        var button = StructuralButton(fixture.Screen);
+        Assert.Equal(enabled, button.Enabled);
+        fixture.Screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
+        Assert.Equal(enabled ? 1 : 0, fixture.Connection.Commands.Count);
+    }
+
+    [Fact]
+    public async Task Structural_scan_sends_selected_target_and_resolved_module()
+    {
+        var modules = EngineAndScannerModules.Insert(0,
+            EngineAndScannerModules[1] with { ModuleId = "HIGHER-POSITION", Position = 9 });
+        await using var fixture = CreateFixture(modules, [SurveyTarget(), ObjAt("HOVER", 10130)]);
+        Render(fixture.Screen);
+        fixture.Screen.OnMouseDown(640, 420);
+        fixture.Screen.OnMouseMove(640, 490);
+        Render(fixture.Screen);
+        Assert.Equal("HOVER", fixture.Screen.ActiveObjectId);
+        Assert.Equal("HOVER", fixture.Screen.SelectedOrActiveObjectInfo!.Value.ObjectId);
+        var button = StructuralButton(fixture.Screen);
+        Assert.True(button.Enabled);
+        fixture.Screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
+        fixture.Screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
+        Assert.Equal(2, fixture.Connection.Commands.Count);
+        Assert.All(fixture.Connection.Commands, command =>
+        {
+            Assert.Equal(PlayerShipId, command.ObjectId);
+            Assert.Equal("OBJ-1", command.TargetObjectId);
+            Assert.Equal(ScannerModuleId, command.ModuleId);
+            Assert.Equal(ScannerCommandTypes.StructuralScan, command.CommandType);
+        });
+        Assert.NotEqual(fixture.Connection.Commands[0].CommandId, fixture.Connection.Commands[1].CommandId);
+        Assert.False(fixture.Handle.Buffer.Latest!.Snapshot.Objects[1].Survey!.CompositionKnown);
+    }
+
+    [Fact]
+    public async Task Structural_scan_disables_after_success_and_reenables_after_failure()
+    {
+        await using var fixture = CreateFixture(EngineAndScannerModules, [SurveyTarget()]);
+        Render(fixture.Screen);
+        fixture.Screen.OnMouseDown(640, 420);
+        var snapshot = fixture.Handle.Buffer.Latest!.Snapshot;
+        foreach (string state in new[] { "busy", "failure", "success" })
+        {
+            var target = SurveyTarget();
+            target = target with
+            {
+                Survey = target.Survey! with
+                {
+                    CanStructuralScan = state == "failure",
+                    CompositionKnown = state == "success"
+                }
+            };
+            fixture.Handle.Buffer.Update(snapshot with
+            {
+                SnapshotSequence = snapshot.SnapshotSequence + 1,
+                Objects = [snapshot.Objects[0], target],
+                InstalledModules = EngineAndScannerModules.SetItem(1, EngineAndScannerModules[1] with
+                {
+                    ActiveCommandType = state == "busy" ? ScannerCommandTypes.StructuralScan : null
+                })
+            });
+            Render(fixture.Screen);
+            Assert.Equal(state == "failure", StructuralButton(fixture.Screen).Enabled);
+            snapshot = fixture.Handle.Buffer.Latest!.Snapshot;
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Structural_scan_sender_rechecks_latest_eligibility(bool moduleBecomesBusy)
+    {
+        await using var fixture = CreateFixture(EngineAndScannerModules, [SurveyTarget()]);
+        Render(fixture.Screen);
+        fixture.Screen.OnMouseDown(640, 420);
+        Render(fixture.Screen);
+        var button = StructuralButton(fixture.Screen);
+        Assert.True(button.Enabled);
+        var snapshot = fixture.Handle.Buffer.Latest!.Snapshot;
+        fixture.Handle.Buffer.Update(snapshot with
+        {
+            SnapshotSequence = 2,
+            Objects = moduleBecomesBusy ? snapshot.Objects : [snapshot.Objects[0]],
+            InstalledModules = moduleBecomesBusy
+                ? EngineAndScannerModules.SetItem(1, EngineAndScannerModules[1] with { ActiveCommandType = ScannerCommandTypes.StructuralScan })
+                : snapshot.InstalledModules
+        });
+        // Keep the previously rendered enabled button: the sender must read the new snapshot.
+        fixture.Screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
+        Assert.Empty(fixture.Connection.Commands);
+    }
+
+    private static ObjectMotionSnapshot SurveyTarget() => ObjAt("OBJ-1", 10060) with
+    {
+        Survey = new(1000000, CompositionKnown: false, CanStructuralScan: true)
+    };
+
+    private static (SKRect Rect, bool Enabled) StructuralButton(GameSessionScreen screen)
+    {
+        var button = Assert.Single(screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == ScannerCommandTypes.StructuralScan);
+        return (button.Rect, button.Enabled);
+    }
 
     private static GameSessionScreen CreateScreen(
         ImmutableArray<InstalledModuleSnapshot>? installedModules = null)

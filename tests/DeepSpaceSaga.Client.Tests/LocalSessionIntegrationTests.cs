@@ -1114,9 +1114,10 @@ public class LocalSessionIntegrationTests
             GameTimeMs = 1000,
             SimulationTimeMs = 1000,
             MasterSeed = includeMasterSeed ? 42UL : null,
-            // The fixture deliberately substitutes a seed. A materialized map belongs to
-            // its original seed and must be discarded so the loader can regenerate it.
+            // This legacy fixture substitutes a seed and has no materialized map.
+            // Resource fields also belong to the original seed/map and must be discarded.
             TradingMap = null,
+            StationResourceFields = null,
         };
         return ScenarioLoader.Serialize(save with { SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion, GameState = state });
     }
