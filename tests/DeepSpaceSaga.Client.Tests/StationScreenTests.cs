@@ -1,7 +1,9 @@
 using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.Station;
+using DeepSpaceSaga.Client.UI.Screens.Trade;
 using Silk.NET.Input;
 using SkiaSharp;
 
@@ -103,9 +105,10 @@ public class StationScreenTests
     }
 
     [Fact]
-    public void Trade_button_click_returns_OpenTrade()
+    public async Task Trade_button_click_returns_OpenTrade()
     {
-        var screen = new StationScreen();
+        await using var fixture = new VoyageUiFixture();
+        var screen = fixture.Station();
         RenderScreen(screen);
 
         var hit = StationLayout.HitTest(
@@ -123,9 +126,10 @@ public class StationScreenTests
     }
 
     [Fact]
-    public void Trade_button_hover_is_reported_interactive()
+    public async Task Trade_button_hover_is_reported_interactive()
     {
-        var screen = new StationScreen();
+        await using var fixture = new VoyageUiFixture();
+        var screen = fixture.Station();
         RenderScreen(screen);
 
         var (left, top, right, bottom) = StationLayout.TradeButtonLocalRect();
@@ -133,6 +137,168 @@ public class StationScreenTests
         float cy = StationLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
 
         Assert.True(screen.OnMouseMove(cx, cy));
+    }
+
+    [Fact]
+    public async Task Trade_cannot_open_from_stale_station_click_in_flight()
+    {
+        await using var fixture = new VoyageUiFixture();
+        var station = fixture.Station();
+        RenderScreen(station);
+        var click = VoyageUiFixture.TradeClick();
+        fixture.At(null, 0, 2);
+        Assert.Equal(ScreenEvent.None, station.OnMouseDown(click.X, click.Y));
+        Assert.False(station.OnMouseMove(click.X, click.Y));
+        fixture.At("A", 200, 3);
+        Assert.False(station.HasValidVisit);
+        Assert.Equal(ScreenEvent.None, station.OnMouseDown(click.X, click.Y));
+        var fresh = fixture.Station();
+        RenderScreen(fresh);
+        Assert.Equal(ScreenEvent.OpenTrade, fresh.OnMouseDown(click.X, click.Y));
+    }
+
+    [Fact]
+    public async Task Departure_removes_trade_and_station_with_one_final_resume()
+    {
+        await using var fixture = new VoyageUiFixture();
+        var stack = NewStack(fixture);
+        stack.Push(fixture.Trade());
+        fixture.At(null, 0, 2);
+        int pops = 0, resumes = 0;
+        var navigation = new StationTradeNavigation(() => fixture.Handle);
+        await navigation.RemoveInvalidOverlaysAsync(stack, () => fixture.Buffer.Latest?.Snapshot,
+            () => { stack.Pop(); pops++; if (stack.Count == 1) resumes++; return Task.CompletedTask; });
+        Assert.Equal(2, pops);
+        Assert.Equal(1, resumes);
+        Assert.Equal(1, stack.Count);
+    }
+
+    [Fact]
+    public async Task Rejected_departure_preserves_station_and_pause()
+    {
+        await using var fixture = new VoyageUiFixture();
+        var stack = NewStack(fixture);
+        var navigation = new StationTradeNavigation(() => fixture.Handle);
+        int pops = 0;
+        await navigation.RemoveInvalidOverlaysAsync(stack, () => fixture.Buffer.Latest?.Snapshot,
+            () => { pops++; stack.Pop(); return Task.CompletedTask; });
+        Assert.IsType<StationScreen>(stack.Current);
+        Assert.Equal(0, pops);
+    }
+
+    [Fact]
+    public async Task Arrival_and_return_open_only_current_station_market()
+    {
+        await using var fixture = new VoyageUiFixture();
+        Assert.True(StationTradeNavigation.CanOpen(fixture.Buffer.Latest?.Snapshot));
+        var old = fixture.Station();
+        fixture.At(null, 0, 2);
+        Assert.False(StationTradeNavigation.CanOpen(fixture.Buffer.Latest?.Snapshot));
+        fixture.At("B", 300, 3);
+        Assert.False(old.HasValidVisit);
+        Assert.Equal("B", fixture.Station().OpenedForStationObjectId);
+        fixture.At("A", 400, 4);
+        Assert.False(old.HasValidVisit);
+        Assert.Equal(400, fixture.Station().OpenedAtPortFeeGameTimeMs);
+    }
+
+    [Fact]
+    public async Task Duplicate_cleanup_while_resume_pending_does_not_pop_twice()
+    {
+        await using var fixture = new VoyageUiFixture();
+        var stack = NewStack(fixture);
+        stack.Push(fixture.Trade());
+        fixture.At(null, 0, 2);
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        int pops = 0;
+        Task Pop()
+        {
+            stack.Pop(); pops++;
+            return stack.Count == 1 ? gate.Task : Task.CompletedTask;
+        }
+        var navigation = new StationTradeNavigation(() => fixture.Handle);
+        var first = navigation.RemoveInvalidOverlaysAsync(stack, () => fixture.Buffer.Latest?.Snapshot, Pop);
+        var duplicate = navigation.RemoveInvalidOverlaysAsync(stack, () => fixture.Buffer.Latest?.Snapshot, Pop);
+        Assert.Same(first, duplicate);
+        Assert.Equal(2, pops);
+        gate.SetResult();
+        await Task.WhenAll(first, duplicate);
+        Assert.Equal(2, pops);
+    }
+
+    [Fact]
+    public async Task Context_or_session_change_during_pause_does_not_push_stale_window()
+    {
+        await using var fixture = new VoyageUiFixture();
+        var station = fixture.Station();
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        bool pushed = false;
+        GameSessionHandle? currentHandle = fixture.Handle;
+        async Task AttemptOpen()
+        {
+            await gate.Task;
+            if (ReferenceEquals(currentHandle, station.OpenedForHandle) && station.HasValidVisit &&
+                StationTradeNavigation.CanOpen(fixture.Buffer.Latest?.Snapshot))
+                pushed = true;
+        }
+        var opening = AttemptOpen();
+        fixture.At("B", 200, 2);
+        gate.SetResult();
+        await opening;
+        Assert.False(pushed);
+        var currentStation = fixture.Station();
+        var secondGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        async Task AttemptAfterSessionChange()
+        {
+            await secondGate.Task;
+            if (ReferenceEquals(currentHandle, currentStation.OpenedForHandle) && currentStation.HasValidVisit)
+                pushed = true;
+        }
+        var secondOpening = AttemptAfterSessionChange();
+        currentHandle = null;
+        secondGate.SetResult();
+        await secondOpening;
+        Assert.False(pushed);
+    }
+
+    [Fact]
+    public async Task Unrelated_modal_is_preserved_until_invalid_station_is_exposed()
+    {
+        await using var fixture = new VoyageUiFixture();
+        var stack = NewStack(fixture);
+        stack.Push(new DeepSpaceSaga.Client.UI.Screens.GameMenu.GameMenuScreen());
+        fixture.At(null, 0, 2);
+        int pops = 0;
+        var navigation = new StationTradeNavigation(() => fixture.Handle);
+        Task Pop() { stack.Pop(); pops++; return Task.CompletedTask; }
+        await navigation.RemoveInvalidOverlaysAsync(stack, () => fixture.Buffer.Latest?.Snapshot, Pop);
+        Assert.Equal(0, pops);
+        stack.Pop();
+        await navigation.RemoveInvalidOverlaysAsync(stack, () => fixture.Buffer.Latest?.Snapshot, Pop);
+        Assert.Equal(1, pops);
+    }
+
+    [Fact]
+    public async Task Initially_paused_session_remains_paused_after_cleanup()
+    {
+        await using var fixture = new VoyageUiFixture();
+        await fixture.Handle.SetSpeedAsync(SimulationSpeed.Speed0);
+        var savedSpeed = fixture.Buffer.CurrentSpeed;
+        var stack = NewStack(fixture);
+        fixture.At(null, 0, 2);
+        var navigation = new StationTradeNavigation(() => fixture.Handle);
+        await navigation.RemoveInvalidOverlaysAsync(stack, () => fixture.Buffer.Latest?.Snapshot,
+            async () => { stack.Pop(); await fixture.Handle.SetSpeedAsync(savedSpeed); });
+        Assert.Equal(SimulationSpeed.Speed0, fixture.Buffer.CurrentSpeed);
+        Assert.Equal([SimulationSpeed.Speed0, SimulationSpeed.Speed0], fixture.Wire.Speeds);
+    }
+
+    private static ScreenStack NewStack(VoyageUiFixture fixture)
+    {
+        var stack = new ScreenStack();
+        stack.SetRoot(new StationScreen());
+        stack.Push(fixture.Station());
+        return stack;
     }
 
     [Fact]

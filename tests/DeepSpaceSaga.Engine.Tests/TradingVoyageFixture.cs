@@ -10,19 +10,21 @@ internal sealed class TradingVoyageFixture : IDisposable
     private const string BridgeId = "MOD-PLAYER-BRIDGE-01";
     private const string EngineId = "MOD-PLAYER-ENGINE-01";
     private const string CargoId = "MOD-PLAYER-CARGO-01";
-    private const long TimeRatio = 300;
+    private const long DefaultCalendarRatio = 300;
 
     private long _motionTime;
     private long _nextCommand;
+    private readonly long _calendarRatio;
 
     private TradingVoyageFixture(SimulationEngine engine, string origin, string destination,
-        string outboundItem, string returnItem)
+        string outboundItem, string returnItem, long calendarRatio)
     {
         Engine = engine;
         Origin = origin;
         Destination = destination;
         OutboundItem = outboundItem;
         ReturnItem = returnItem;
+        _calendarRatio = calendarRatio;
         Snapshot = Capture();
     }
 
@@ -33,8 +35,13 @@ internal sealed class TradingVoyageFixture : IDisposable
     internal string OutboundItem { get; }
     internal string ReturnItem { get; }
     internal long MotionTime => _motionTime;
+    internal List<string> VoyageIds { get; } = [];
+    internal List<double> ApproachSpeeds { get; } = [];
+    internal PlayerCommand? LastDockCommand { get; private set; }
 
-    internal static TradingVoyageFixture Create(ulong seed = 1, bool controlled = true)
+    internal static TradingVoyageFixture Create(ulong seed = 1, bool controlled = true,
+        long initialDebt = 0, long? destinationBudget = null,
+        long calendarRatio = DefaultCalendarRatio)
     {
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
             "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
@@ -59,21 +66,30 @@ internal sealed class TradingVoyageFixture : IDisposable
                 .Select(i => i.ItemTypeId).FirstOrDefault();
             if (outbound is null || returning is null) continue;
             if (!controlled)
-                return new TradingVoyageFixture(engine, origin, neighbor, outbound, returning);
+                return new TradingVoyageFixture(engine, origin, neighbor, outbound, returning,
+                    calendarRatio);
 
             var controlledSave = save with
             {
                 GameState = save.GameState with
                 {
                     SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectType == SpaceObjectType.Station
-                        ? o with { PortFeeCreditsPerDay = 100 } : o.ObjectId == ShipId
-                        ? o with { Crew = [], Passengers = [] } : o).ToArray(),
+                        ? o with
+                        {
+                            PortFeeCreditsPerDay = 100,
+                            Credits = o.ObjectId == neighbor && destinationBudget is not null
+                                ? destinationBudget : o.Credits,
+                            MarketBudgetCredits = o.ObjectId == neighbor && destinationBudget is not null
+                                ? destinationBudget : o.MarketBudgetCredits,
+                        } : o.ObjectId == ShipId
+                        ? o with { Crew = [], Passengers = [], PortFeeDebt = initialDebt } : o).ToArray(),
                 }
             };
             engine.Dispose();
             var prepared = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
             prepared.LoadScenario(controlledSave, isSave: true);
-            return new TradingVoyageFixture(prepared, origin, neighbor, outbound, returning);
+            return new TradingVoyageFixture(prepared, origin, neighbor, outbound, returning,
+                calendarRatio);
         }
         engine.Dispose();
         throw new Xunit.Sdk.XunitException($"Seed {seed}: no adjacent A/B stock for reciprocal trades from {origin}; " +
@@ -81,13 +97,38 @@ internal sealed class TradingVoyageFixture : IDisposable
     }
 
     internal AuthoritativeSnapshot Capture() =>
-        Snapshot = Engine.CaptureSnapshotForTests(checked(_motionTime * TimeRatio),
+        Snapshot = Engine.CaptureSnapshotForTests(checked(_motionTime * _calendarRatio),
             SimulationSpeed.Speed0, _motionTime);
 
     internal AuthoritativeSnapshot Advance(long motionDeltaMs)
     {
         _motionTime = checked(_motionTime + motionDeltaMs);
         return Capture();
+    }
+
+    internal ScenarioFile Save() => Engine.CaptureSaveStateForTests(
+        checked(_motionTime * _calendarRatio), SimulationSpeed.Speed0);
+
+    internal long Cargo(string item) => Save().GameState.SpaceObjects.Single(o => o.ObjectId == ShipId)
+        .Modules!.Single(module => module.ModuleId == CargoId).Cargo?
+        .Where(stack => stack.ItemTypeId == item).Sum(stack => stack.Quantity) ?? 0;
+
+    private IReadOnlyList<(string Item, long Quantity)> OtherCargo(string item) =>
+        Save().GameState.SpaceObjects.Single(o => o.ObjectId == ShipId).Modules!
+            .SelectMany(module => module.Cargo ?? [])
+            .Where(stack => stack.ItemTypeId != item)
+            .GroupBy(stack => stack.ItemTypeId, StringComparer.Ordinal)
+            .OrderBy(group => group.Key, StringComparer.Ordinal)
+            .Select(group => (group.Key, group.Sum(stack => stack.Quantity))).ToArray();
+
+    internal long Stock(string station, string item) => Save().GameState.SpaceObjects
+        .Single(o => o.ObjectId == station).Inventory!
+        .Single(stock => stock.ItemTypeId == item).Quantity;
+
+    internal CommandResult? Replay(PlayerCommand command)
+    {
+        Engine.ReceiveCommand(command);
+        return Capture().CommandResults.SingleOrDefault(result => result.CommandId == command.CommandId);
     }
 
     internal (PlayerCommand Command, CommandResult? Result) Send(string module, string type,
@@ -111,6 +152,9 @@ internal sealed class TradingVoyageFixture : IDisposable
         Xunit.Assert.True(quote.ExecutableQuantity > 0);
         Xunit.Assert.Equal(CurrentStationId, quote.StationObjectId);
         var before = Capture();
+        long cargoBefore = Cargo(item);
+        long stockBefore = Stock(CurrentStationId, item);
+        var otherCargoBefore = OtherCargo(item);
         var (_, result) = Send(CargoId, type, item: item, quantity: quantity, quote: quote);
         Xunit.Assert.Equal(CommandResultStatus.Executed, result?.Status);
         var receipt = Xunit.Assert.IsType<TradeExecutionReceipt>(result?.TradeReceipt);
@@ -119,18 +163,29 @@ internal sealed class TradingVoyageFixture : IDisposable
         Xunit.Assert.Equal(type == TradeCommandTypes.Buy
             ? before.PlayerCredits - receipt.TotalCredits
             : before.PlayerCredits + receipt.TotalCredits, Snapshot.PlayerCredits);
+        long direction = type == TradeCommandTypes.Buy ? 1 : -1;
+        Xunit.Assert.Equal(cargoBefore + direction * receipt.ExecutedQuantity, Cargo(item));
+        Xunit.Assert.Equal(stockBefore - direction * receipt.ExecutedQuantity,
+            Stock(CurrentStationId, item));
+        Xunit.Assert.Equal(otherCargoBefore, OtherCargo(item));
         return receipt;
     }
 
     internal string CurrentStationId => Snapshot.Objects.Single(o => o.ObjectId == ShipId).DockedStationObjectId!;
 
-    internal void FlyTo(string destination)
+    internal void FlyTo(string destination, bool splitSnapshots = false)
     {
         var (_, undock) = Send(BridgeId, NavigationComputerCommandTypes.Undock, target: destination);
         Xunit.Assert.Equal(CommandResultStatus.Executed, undock?.Status);
         Xunit.Assert.Null(Snapshot.DockedStationTrade);
         Xunit.Assert.Equal(destination, Snapshot.ActiveVoyage?.DestinationStationObjectId);
+        VoyageIds.Add(Snapshot.ActiveVoyage!.VoyageId!);
 
+        FinishFlightTo(destination, splitSnapshots);
+    }
+
+    internal void FinishFlightTo(string destination, bool splitSnapshots = false)
+    {
         var (_, acceleration) = Send(EngineId, ShipEngineCommandTypes.Accelerate);
         Xunit.Assert.NotEqual(CommandResultStatus.Rejected, acceleration?.Status);
         WaitUntil(s => Ship(s).SpeedKmS > 0, "acceleration");
@@ -139,10 +194,16 @@ internal sealed class TradingVoyageFixture : IDisposable
         WaitUntil(s => Ship(s).ApproachRoute is not null, "approach plan");
         var route = Ship(Snapshot).ApproachRoute!;
         long end = checked(_motionTime + (long)Math.Ceiling(route.DurationMs));
-        if (end - _motionTime > 30 * GameCalendar.DayMs / TimeRatio)
+        if (end - _motionTime > 30 * GameCalendar.DayMs / _calendarRatio)
             throw new Xunit.Sdk.XunitException("Approach exceeds 30 calendar days.");
+        if (splitSnapshots)
+        {
+            long half = (end - _motionTime) / 2;
+            if (half > 0) Advance(half);
+        }
         Advance(end - _motionTime);
         Xunit.Assert.Equal(speed, Ship(Snapshot).SpeedKmS);
+        ApproachSpeeds.Add(speed);
         Xunit.Assert.False(Ship(Snapshot).IsDocked);
 
         Send(EngineId, ShipEngineCommandTypes.SpeedSynchronization, target: destination);
@@ -152,7 +213,9 @@ internal sealed class TradingVoyageFixture : IDisposable
             Send(EngineId, ShipEngineCommandTypes.DirectionSynchronization, target: destination);
             WaitUntil(s => Math.Abs(Ship(s).Direction) < 1e-6, "direction synchronization");
         }
-        var (_, docking) = Send(BridgeId, NavigationComputerCommandTypes.Dock, target: destination);
+        var (dockCommand, docking) = Send(BridgeId, NavigationComputerCommandTypes.Dock,
+            target: destination);
+        LastDockCommand = dockCommand;
         Xunit.Assert.Equal(CommandResultStatus.Executed, docking?.Status);
         foreach (string choice in new[] { "truthful_id", "accept_fee", "continue" })
         {
@@ -178,7 +241,7 @@ internal sealed class TradingVoyageFixture : IDisposable
             if (predicate(Snapshot)) return;
             Advance(1000);
         }
-        throw new Xunit.Sdk.XunitException($"{phase} timeout at physical={_motionTime}, calendar={_motionTime * TimeRatio}, " +
+        throw new Xunit.Sdk.XunitException($"{phase} timeout at physical={_motionTime}, calendar={_motionTime * _calendarRatio}, " +
             $"ship={Ship(Snapshot)}, voyage={Snapshot.Voyage}");
     }
 

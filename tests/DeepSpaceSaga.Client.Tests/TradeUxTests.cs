@@ -26,6 +26,18 @@ public class TradeUxTests
             new("item.ice", 400, 10, 500, TradeItemCategories.Resource), new("item.iron-ore", 350, 5, 500, TradeItemCategories.Resource),
             new("item.silicon", 150, 40, 500, TradeItemCategories.Resource), new("item.carbon-ore", 90, 30, 500, TradeItemCategories.Resource),
             new("item.uranium-ore", 25, 100, 500, TradeItemCategories.Resource)]));
+    private static AuthoritativeSnapshot AtStation(string stationId,
+        ImmutableArray<StationInventoryItemSnapshot> items, ulong sequence = 1)
+    {
+        var snapshot = Snapshot();
+        return snapshot with
+        {
+            SnapshotSequence = sequence,
+            Objects = snapshot.Objects.Select(obj => obj.ObjectId == "ship"
+                ? obj with { DockedStationObjectId = stationId } : obj).ToImmutableArray(),
+            DockedStationTrade = new(stationId, items)
+        };
+    }
     private static TradeModel Model()
     {
         var model = new TradeModel(); model.Refresh(Snapshot()); model.Select("item.water"); return model;
@@ -233,7 +245,7 @@ public class TradeUxTests
         string? previousItem = null;
         foreach (var profile in profiles)
         {
-            var snapshot = Snapshot() with { DockedStationTrade = new(profile.StationId, profile.Items.ToImmutableArray()) };
+            var snapshot = AtStation(profile.StationId, profile.Items.ToImmutableArray());
             model.Refresh(snapshot);
             var row = Assert.Single(model.Rows);
             Assert.Equal(profile.Items[0].ItemTypeId, row.ItemTypeId);
@@ -247,21 +259,21 @@ public class TradeUxTests
     public void Fuel_remains_refuel_only_after_profile_refresh()
     {
         var model = new TradeModel();
-        model.Refresh(Snapshot() with { DockedStationTrade = new("station-industrial", [new("item.electronics", 132, 150, 500), new("item.fuel", 200, 10, 500)]) });
+        model.Refresh(AtStation("station-industrial", [new("item.electronics", 132, 150, 500), new("item.fuel", 200, 10, 500)]));
         Assert.DoesNotContain(model.Rows, item => item.ItemTypeId == TradeModel.FuelId);
         model.SetMode(TradeMode.Refuel);
         Assert.Equal(TradeModel.FuelId, Assert.Single(model.Rows).ItemTypeId);
         model.ApplyQuote(ServerQuote(Request(TradeCommandTypes.Refuel, 1, "tank-1", TradeModel.FuelId), maximum: 180, station: "station-industrial"));
         model.FillTank(75);
         Assert.Equal(55, model.Quantity);
-        model.Refresh(Snapshot() with { SnapshotSequence = 2, DockedStationTrade = new("station-transit", [new("item.water", 144, 14, 500), new("item.fuel", 600, 10, 500)]) });
+        model.Refresh(AtStation("station-transit", [new("item.water", 144, 14, 500), new("item.fuel", 600, 10, 500)], 2));
         Assert.Equal(TradeModel.FuelId, Assert.Single(model.Rows).ItemTypeId);
-        Assert.Equal(55, model.Quantity);
+        Assert.Equal(1, model.Quantity);
         // Another station's quote never previews this one.
         model.ApplyQuote(ServerQuote(Request(TradeCommandTypes.Refuel, 55, "tank-1", TradeModel.FuelId), maximum: 180, station: "station-industrial"));
         Assert.Equal("QuoteLoading", model.Quote.DisabledReason);
-        model.ApplyQuote(ServerQuote(Request(TradeCommandTypes.Refuel, 55, "tank-1", TradeModel.FuelId), maximum: 180, station: "station-transit"));
-        Assert.Equal(375, model.Quote.AmountAfter);
+        model.ApplyQuote(ServerQuote(Request(TradeCommandTypes.Refuel, 1, "tank-1", TradeModel.FuelId), maximum: 180, station: "station-transit"));
+        Assert.Equal(321, model.Quote.AmountAfter);
     }
 
     private sealed class Fixture : IAsyncDisposable
@@ -759,7 +771,7 @@ public class TradeUxTests
         using (Render(f.Screen))
         {
             Assert.Null(f.Screen.Model.AuthoritativeQuote);
-            Assert.Equal(6, f.Connection.QuoteRequests.Count);
+            Assert.Equal(5, f.Connection.QuoteRequests.Count);
             Assert.False(f.Screen.CanConfirm);
         }
         Assert.Empty(f.Connection.Commands);

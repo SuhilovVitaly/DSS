@@ -3,6 +3,7 @@ using DeepSpaceSaga.Client.UI.Screens;
 using Silk.NET.Input;
 using SkiaSharp;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Client.UI.Screens.Trade;
 
 namespace DeepSpaceSaga.Client.UI.Screens.Station;
 
@@ -30,6 +31,20 @@ public sealed class StationScreen : IScreen
 {
     private readonly SnapshotBuffer? _buffer;
     private readonly GameSessionHandle? _session;
+    internal GameSessionHandle? OpenedForHandle => _session;
+    internal string? OpenedForStationObjectId { get; }
+    internal long? OpenedAtPortFeeGameTimeMs { get; }
+    internal bool HasValidVisit
+    {
+        get
+        {
+            var snapshot = _buffer?.Latest?.Snapshot;
+            return _session is not null && ReferenceEquals(_buffer, _session.Buffer) &&
+                _session.Failure is null && OpenedForStationObjectId is not null &&
+                OpenedForStationObjectId == TradeModel.ResolveLocalStationId(snapshot) &&
+                OpenedAtPortFeeGameTimeMs == snapshot?.PortFees?.FirstPortFeeGameTimeMs;
+        }
+    }
 
     private int _screenWidth;
     private int _screenHeight;
@@ -94,6 +109,9 @@ public sealed class StationScreen : IScreen
     {
         _buffer = buffer;
         _session = session;
+        var snapshot = buffer?.Latest?.Snapshot;
+        OpenedForStationObjectId = TradeModel.ResolveLocalStationId(snapshot);
+        OpenedAtPortFeeGameTimeMs = snapshot?.PortFees?.FirstPortFeeGameTimeMs;
     }
 
     /// <summary>
@@ -166,7 +184,7 @@ public sealed class StationScreen : IScreen
 
         var hit = StationLayout.HitTest(x, y, _screenWidth, _screenHeight);
         if (hit == StationButton.Trade)
-            return ScreenEvent.OpenTrade;
+            return HasValidVisit ? ScreenEvent.OpenTrade : ScreenEvent.None;
         if (hit == StationButton.Hire)
             return ScreenEvent.OpenHire;
         if (hit == StationButton.Finance)
@@ -192,6 +210,8 @@ public sealed class StationScreen : IScreen
     public bool OnMouseMove(float x, float y)
     {
         _hoveredButton = StationLayout.HitTest(x, y, _screenWidth, _screenHeight);
+        if (_hoveredButton == StationButton.Trade && !HasValidVisit)
+            _hoveredButton = StationButton.None;
         _isExitButtonHovered = IsExitButtonHit(x, y);
 
         // Not a button — hovering it only shows a delayed tooltip (see Render), so it must
@@ -357,6 +377,7 @@ public sealed class StationScreen : IScreen
         var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
 
         MenuStyle.DrawButton(canvas, rect, "TRADE",
+            !HasValidVisit ? ButtonState.Disabled :
             _hoveredButton == StationButton.Trade ? ButtonState.Hovered : ButtonState.Normal);
     }
 

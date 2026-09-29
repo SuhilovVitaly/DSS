@@ -345,7 +345,8 @@ internal static class TradingMapGeometryGenerator
                 Modules: null,
                 IsKnown: true,
                 MarketProfileId: station.MarketProfileId,
-                StationSize: station.StationSize));
+                StationSize: station.StationSize,
+                PortFeeCreditsPerDay: startStation.PortFeeCreditsPerDay));
         }
 
         return stations;
