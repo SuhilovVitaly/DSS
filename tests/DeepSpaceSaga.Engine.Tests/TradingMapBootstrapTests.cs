@@ -31,7 +31,7 @@ public sealed class TradingMapBootstrapTests
         var save = engine.CaptureSaveState();
         Assert.Null(save.GameState.TradingMapGeneration);
         Assert.NotNull(save.GameState.TradingMap);
-        Assert.Equal(9, save.SaveFormatVersion);
+        Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
     }
 
     [Fact]

@@ -15,10 +15,17 @@ public sealed partial class SimulationEngine
     private readonly List<CombatImpactSnapshot> _combatImpacts = new();
     private long _nextCombatGuidanceMs = long.MaxValue;
     private readonly Dictionary<string, (ObjectMotionSnapshot Pose, long Time)> _torpedoTargets = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _processedLaunchCommandIds = new(StringComparer.Ordinal);
     private bool HasActiveTorpedoes => _objects.Any(o => o.InitialMotion.Torpedo is not null);
 
     private CommandStartOutcome TryStartTorpedoFire(PlayerCommand command, long motionTimeMs)
     {
+        // Launch identities outlive the bounded general command receipt journal.
+        if (_processedLaunchCommandIds.Contains(command.CommandId))
+        {
+            RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
+            return CommandStartOutcome.Started;
+        }
         var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.ObjectId &&
             o.InitialMotion.ObjectId == PlayerShipObjectId && o.ObjectType == SpaceObjectType.PlayerShip && !o.IsDestroyed);
         if (owner is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
@@ -54,6 +61,7 @@ public sealed partial class SimulationEngine
         _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = id };
         _torpedoTargets[id] = (targetPose, motionTimeMs);
         _torpedoSequence = sequence;
+        _processedLaunchCommandIds.Add(command.CommandId);
         _nextCombatGuidanceMs = Math.Min(_nextCombatGuidanceMs, NextGuidanceBoundary(motionTimeMs));
         RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
         return CommandStartOutcome.Started;
@@ -351,10 +359,11 @@ public sealed partial class SimulationEngine
             if (!_registry.ShipClasses.Contains(classId))
                 throw new ScenarioException($"Object '{obj.ObjectId}' references unknown shipClassId '{classId}'.");
             var definition = _registry.ShipClasses.GetDefinition(_registry.ShipClasses.GetIndex(classId));
-            int currentHp = obj.HullHitPoints ?? definition.HullHitPointsMax;
-            if (currentHp <= 0 || currentHp > definition.HullHitPointsMax)
-                throw new ScenarioException($"Object '{obj.ObjectId}' hullHitPoints must be in 1..{definition.HullHitPointsMax}.");
-            hulls.Add(obj.ObjectId, new HullCombatSnapshot(classId, currentHp, definition.HullHitPointsMax));
+            int maxHp = obj.HullHitPointsMax ?? definition.HullHitPointsMax;
+            int currentHp = obj.HullHitPoints ?? maxHp;
+            if (currentHp <= 0 || currentHp > maxHp)
+                throw new ScenarioException($"Object '{obj.ObjectId}' hullHitPoints must be in 1..{maxHp}.");
+            hulls.Add(obj.ObjectId, new HullCombatSnapshot(classId, currentHp, maxHp));
         }
 
         foreach (var obj in runtimeObjects)

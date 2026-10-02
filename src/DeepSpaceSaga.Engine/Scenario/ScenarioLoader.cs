@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Engine.Scenario;
 public static class ScenarioLoader
 {
     private static readonly HashSet<string> KnownObjectTypes = new(StringComparer.OrdinalIgnoreCase)
-        { "PlayerShip", "NpcShip", "Station", "Asteroid", "Wreck" };
+        { "PlayerShip", "NpcShip", "Station", "Asteroid", "Wreck", "Missile" };
 
     private static readonly HashSet<string> KnownPersistenceTypes = new(StringComparer.OrdinalIgnoreCase)
         { "Permanent", "Temporary" };
@@ -104,6 +104,7 @@ public static class ScenarioLoader
             SpaceObjects = objects
         };
         normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
+        CombatSaveValidation.Validate(normalizedState, scenario.SaveFormatVersion);
         return scenario with { GameState = normalizedState };
     }
 

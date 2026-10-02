@@ -376,6 +376,7 @@ public sealed partial class SimulationEngine : IDisposable
 
         var restoredVoyage = ValidateVoyageState(gs, runtimeObjects);
         var combatState = BuildCombatState(gs.SpaceObjects, runtimeObjects);
+        StageCombatRestore(gs.CombatState, runtimeObjects, combatState.Launchers);
 
         lock (_worldStateLock)
         {
@@ -416,6 +417,7 @@ public sealed partial class SimulationEngine : IDisposable
             _combatImpacts.Clear();
             _torpedoTargets.Clear();
             _nextCombatGuidanceMs = long.MaxValue;
+            RestoreCombatState(gs.CombatState);
             _processedWorldTimeMs = gs.GameTimeMs;
             _processedSimulationTimeMs = gs.MotionTimeMs;
             LoadDialogueState(gs.DialogueState, gs.MotionTimeMs);
@@ -899,11 +901,11 @@ public sealed partial class SimulationEngine : IDisposable
     }
 
     /// <summary>Test seam: capture save state at an explicit (gameTimeMs, speed) instead of the real clock — mirrors CaptureSnapshotForTests.</summary>
-    internal ScenarioFile CaptureSaveStateForTests(long gameTimeMs, SimulationSpeed speed)
+    internal ScenarioFile CaptureSaveStateForTests(long gameTimeMs, SimulationSpeed speed, long? simulationTimeMs = null)
     {
         lock (_worldStateLock)
         {
-            return CaptureSaveStateCore(new SimulationClockState(gameTimeMs, speed));
+            return CaptureSaveStateCore(new SimulationClockState(gameTimeMs, speed, simulationTimeMs));
         }
     }
 
@@ -926,6 +928,7 @@ public sealed partial class SimulationEngine : IDisposable
         // Applying it here, in the same order BuildSnapshot uses (cycles, then commands),
         // makes "continue after F9" match "continue without saving" for this case too.
         ApplyPendingCommands(gameTimeMs);
+        RefreshCombatGuidance(gameTimeMs);
         ApplyPendingDialogueCommands(gameTimeMs);
         ReconcileVoyageAfterDialogue();
         UpdateStationSecurity(gameTimeMs);
@@ -994,7 +997,8 @@ public sealed partial class SimulationEngine : IDisposable
                 MarketRevision: isStation && obj.MarketProfileId is not null ? obj.MarketRevision : null,
                 RelationToPlayer: obj.RelationToPlayer,
                 ShipClassId: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.ShipClassId,
-                HullHitPoints: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.CurrentHp));
+                HullHitPoints: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.CurrentHp,
+                HullHitPointsMax: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.MaxHp));
         }
 
         var gameState = new GameStateData(
@@ -1012,7 +1016,8 @@ public sealed partial class SimulationEngine : IDisposable
             CatalogCompatibility: _registry.CatalogCompatibility,
             TradingMap: _tradingMap,
             StationResourceFields: _stationResourceFields,
-            VoyageState: _voyageState);
+            VoyageState: _voyageState,
+            CombatState: CaptureCombatState(gameTimeMs));
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),

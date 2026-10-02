@@ -21,9 +21,10 @@ public static class SaveFormat
     /// Version 8 persists a station market profile id and its economic fingerprint.
     /// Version 9 adds a station's bounded trading budget and producing modules' pending output
     /// remainder (US-0002 TK-0002); both are optional and absent for every earlier save.
+    /// Version 10 preserves captured combat parameters, active flights, guidance, history and identity counters.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 9;
+    public const int CurrentSaveFormatVersion = 10;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -76,7 +77,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("tradingMapGeneration")] TradingMapGenerationData? TradingMapGeneration = null,
     [property: JsonPropertyName("tradingMap")] TradingMapStateData? TradingMap = null,
     [property: JsonPropertyName("stationResourceFields")] StationResourceFieldsState? StationResourceFields = null,
-    [property: JsonPropertyName("voyageState")] VoyageStateData? VoyageState = null)
+    [property: JsonPropertyName("voyageState")] VoyageStateData? VoyageState = null,
+    [property: JsonPropertyName("combatState")] CombatStateData? CombatState = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
@@ -234,7 +236,8 @@ public sealed record SpaceObjectData(
     /// <summary>Explicit ship class identity; never inferred from image, name or hull geometry.</summary>
     [property: JsonPropertyName("shipClassId")] string? ShipClassId = null,
     /// <summary>Current hull HP. Null on a classified new ship means the configured maximum.</summary>
-    [property: JsonPropertyName("hullHitPoints")] int? HullHitPoints = null);
+    [property: JsonPropertyName("hullHitPoints")] int? HullHitPoints = null,
+    [property: JsonPropertyName("hullHitPointsMax")] int? HullHitPointsMax = null);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles
