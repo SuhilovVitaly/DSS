@@ -97,10 +97,21 @@ public sealed class GameSessionHandle : IAsyncDisposable
         string commandType,
         string? targetObjectId = null,
         CancellationToken cancellationToken = default)
+        => SendCommandAsync(objectId, moduleId, commandType, out _, targetObjectId, cancellationToken);
+
+    /// <summary>Expose identity before transport submission so UI can track retained command results.</summary>
+    public ValueTask SendCommandAsync(
+        string objectId,
+        string moduleId,
+        string commandType,
+        out string commandId,
+        string? targetObjectId = null,
+        CancellationToken cancellationToken = default)
     {
         ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
         var command = new PlayerCommand(
-            CommandId: $"CMD-{sequence:D8}-{Guid.NewGuid():N}",
+            CommandId: commandId,
             ClientSequence: sequence,
             ObjectId: objectId,
             ModuleId: moduleId,

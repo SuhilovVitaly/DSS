@@ -322,7 +322,7 @@ public sealed partial class GameSessionScreen : IScreen
         _mechanicsBtnHoverPaint = new SKPaint { Color = new SKColor(55, 55, 55), Style = SKPaintStyle.Fill };
         _mechanicsBtnTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 13f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
-        _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel);
+        _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel, GetLauncherStatus);
         _objectInfoPanel = new ObjectInfoPanel();
     }
 
@@ -410,11 +410,8 @@ public sealed partial class GameSessionScreen : IScreen
         if (_lastTempCharacterImageButtonRect.Contains(uiX, uiY))
             return ScreenEvent.OpenTempCharacterImage;
 
-        // 2. Commands Panel (top-left) — consume clicks, don't pan (ТЗ подзадача 1).
-        if (_commandsPanel.OnMouseDown(uiX, uiY))
-            return ScreenEvent.None;
-
-        // 3. Info panel close button
+        // The info overlay is painted above command groups; its close control
+        // must remain reachable even when the fifth group overlaps it.
         if (_panelVisible && _lastCloseRect.Contains(uiX, uiY))
         {
             _panelVisible = false;
@@ -426,6 +423,10 @@ public sealed partial class GameSessionScreen : IScreen
         {
             return ScreenEvent.None;
         }
+
+        // Commands are below the entire info overlay, not just its close button.
+        if (_commandsPanel.OnMouseDown(uiX, uiY))
+            return ScreenEvent.None;
 
         // 5. Object Info panel (top-right) — consume clicks, don't pan
         if (_objectInfoPanel.OnMouseDown(uiX, uiY))
@@ -527,7 +528,10 @@ public sealed partial class GameSessionScreen : IScreen
         _isShipButtonHovered = _lastShipButtonRect.Contains(_uiMouseX, _uiMouseY);
         _isTempCharacterImageButtonHovered = _lastTempCharacterImageButtonRect.Contains(_uiMouseX, _uiMouseY);
         bool objectInfoHovered = _objectInfoPanel.OnMouseMove(_uiMouseX, _uiMouseY);
-        return _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY) || objectInfoHovered || _isFinanceButtonHovered || _isShipButtonHovered || _isTempCharacterImageButtonHovered ||
+        bool infoOverlayHovered = _panelVisible && _lastPanelRect.Contains(_uiMouseX, _uiMouseY);
+        bool commandHovered = infoOverlayHovered
+            ? _commandsPanel.OnMouseMove(-1, -1) : _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY);
+        return commandHovered || objectInfoHovered || _isFinanceButtonHovered || _isShipButtonHovered || _isTempCharacterImageButtonHovered ||
             _mapViewButtons.Where((_, i) => IsMapViewAvailable(i)).Any(r => r.Contains(_uiMouseX, _uiMouseY));
     }
 
@@ -705,6 +709,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private bool IsModuleCommandEnabled(string commandType)
     {
+        if (commandType == CombatCommandTypes.Fire) return IsTorpedoFireEnabled();
         var snapshot = _buffer.Latest?.Snapshot;
         if (snapshot is not null && FindPlayerShipMotion(snapshot)?.IsDestroyed == true)
             return false;
@@ -749,7 +754,12 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private void SendCommandFromPanel(string commandType)
     {
-        if (commandType == ScannerCommandTypes.StructuralScan && !IsModuleCommandEnabled(commandType))
+        if (commandType == CombatCommandTypes.Fire)
+        {
+            SendTorpedoFire();
+            return;
+        }
+        if (commandType is ScannerCommandTypes.StructuralScan or CombatCommandTypes.Fire && !IsModuleCommandEnabled(commandType))
             return;
 
         string? moduleId = ResolveModuleId(commandType);
@@ -1192,8 +1202,11 @@ public sealed partial class GameSessionScreen : IScreen
 
 
         // 6. Commands Panel (top-left)
+        if (_panelVisible) LayoutInfoPanel(buffered);
+        float commandsBottom = _panelVisible && _lastPanelRect.Left < CommandsPanel.PanelWidth + PanelMargin
+            ? _lastPanelRect.Top - PanelMargin : _uiViewportH;
         _commandsPanel.Render(canvas,
-            buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty);
+            buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty, commandsBottom);
         CompleteRenderStage("command_panel");
 
         // 7. Info panel (bottom-left)
@@ -2019,7 +2032,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     // ── Info panel ──────────────────────────────────────────────
 
-    private void DrawInfoPanel(SKCanvas canvas, BufferedSnapshot? buffered)
+    private (IReadOnlyList<(string Label, string Value)> Lines, float LabelWidth) LayoutInfoPanel(BufferedSnapshot? buffered)
     {
         var lines = BuildPanelLines(buffered);
 
@@ -2037,12 +2050,28 @@ public sealed partial class GameSessionScreen : IScreen
 
         float panelX = PanelMargin;
         float panelY = _uiViewportH - panelH - PanelMargin;
+        // At small logical heights put the info panel beside the command column
+        // when there is room, preserving all captions plus the launcher controls.
+        float besideX = CommandsPanel.PanelWidth + PanelMargin * 2;
+        if (FindLauncher()?.LauncherCombat is not null && panelY - PanelMargin < CommandsPanel.MinimumExpandedHeight &&
+            besideX + panelW + PanelMargin <= _uiViewportW)
+            panelX = besideX;
 
         _lastPanelRect = new SKRect(panelX, panelY, panelX + panelW, panelY + panelH);
 
         float closeX = panelX + panelW - CloseButtonMargin - CloseButtonSize / 2f;
         float closeY = panelY + PanelPaddingY + CloseButtonSize - 2f;
         _lastCloseRect = new SKRect(closeX - 9, closeY - 16, closeX + 9, closeY + 4);
+
+        return (lines, labelWidth);
+    }
+
+    private void DrawInfoPanel(SKCanvas canvas, BufferedSnapshot? buffered)
+    {
+        var (lines, labelWidth) = LayoutInfoPanel(buffered);
+        float panelX = _lastPanelRect.Left, panelY = _lastPanelRect.Top;
+        float closeX = _lastCloseRect.MidX, closeY = _lastCloseRect.Top + 16;
+        const float gap = 8f;
 
         canvas.DrawRect(_lastPanelRect, _panelBgPaint);
         canvas.DrawRect(_lastPanelRect, _panelBorderPaint);
