@@ -181,6 +181,8 @@ public sealed class ObjectInfoPanel
             else
             {
                 lines.Add(("Direction", $"{d.Direction:F0}°"));
+                if (d.RenderObjectType == SpaceObjectType.NpcShip && d.CaptainDisplayName is { } captain)
+                    lines.Add(("Captain", captain));
             }
         }
         else
@@ -407,4 +409,5 @@ public readonly record struct ObjectInfoPanelData(
     double Direction,
     string? RenderObjectType,
     string? Image = null,
-    AsteroidSurveySnapshot? Survey = null);
+    AsteroidSurveySnapshot? Survey = null,
+    string? CaptainDisplayName = null);

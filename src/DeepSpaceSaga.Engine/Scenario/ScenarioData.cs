@@ -179,7 +179,7 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("events")] IReadOnlyList<StationEventData>? Events = null,
     /// <summary>
     /// Ship's crew members (story-20260901-112254, "Crew and cabin occupancy"). Only
-    /// meaningful for ObjectType == PlayerShip. Null/empty means the ship has no crew (the
+    /// meaningful for ObjectType == PlayerShip or NpcShip. Null/empty means the ship has no crew (the
     /// common case; every existing scenario/save predates this field).
     /// </summary>
     [property: JsonPropertyName("crew")] IReadOnlyList<ShipCrewMemberData>? Crew = null,
@@ -192,16 +192,16 @@ public sealed record SpaceObjectData(
     /// </summary>
     [property: JsonPropertyName("stationCrew")] IReadOnlyList<StationCrewMemberData>? StationCrew = null,
     /// <summary>
-    /// Player ship's captain display name — an independent named fact, not derived from
+    /// Ship's captain display name — an independent named fact, not derived from
     /// <see cref="Crew"/>[0] (story batch adding captain + dock operator client fields). Only
-    /// meaningful for ObjectType == PlayerShip. Explicit scenario/save value used as-is,
+    /// meaningful for ObjectType == PlayerShip or NpcShip. Explicit scenario/save value used as-is,
     /// otherwise deterministically generated once from masterSeed and persisted on save (same
     /// explicit-else-generate convention as <see cref="StationCrewMemberData.DisplayName"/>).
     /// Null/absent for every other object type and for every scenario/save predating this
     /// field.
     /// </summary>
     [property: JsonPropertyName("captainDisplayName")] string? CaptainDisplayName = null,
-    /// <summary>Player ship's captain portrait image path; see <see cref="CaptainDisplayName"/>.</summary>
+    /// <summary>Ship's captain portrait image path; see <see cref="CaptainDisplayName"/>.</summary>
     [property: JsonPropertyName("captainPortraitImage")] string? CaptainPortraitImage = null,
     [property: JsonPropertyName("portFeeCreditsPerDay")] long? PortFeeCreditsPerDay = null,
     [property: JsonPropertyName("securityZoneRadiusKm")] int? SecurityZoneRadiusKm = null,
@@ -228,7 +228,9 @@ public sealed record SpaceObjectData(
     /// max(saved value, newest trade receipt), or max(1, newest receipt) when the field is missing;
     /// an explicit value below 1, or any value on an object without a market profile, is rejected.
     /// </summary>
-    [property: JsonPropertyName("marketRevision")] long? MarketRevision = null);
+    [property: JsonPropertyName("marketRevision")] long? MarketRevision = null,
+    /// <summary>NPC ship allegiance; omitted values default to neutral. Persisted on save.</summary>
+    [property: JsonPropertyName("relationToPlayer")] string? RelationToPlayer = null);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles

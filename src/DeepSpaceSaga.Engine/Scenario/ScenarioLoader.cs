@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Engine.Scenario;
 public static class ScenarioLoader
 {
     private static readonly HashSet<string> KnownObjectTypes = new(StringComparer.OrdinalIgnoreCase)
-        { "PlayerShip", "Station", "Asteroid" };
+        { "PlayerShip", "NpcShip", "Station", "Asteroid" };
 
     private static readonly HashSet<string> KnownPersistenceTypes = new(StringComparer.OrdinalIgnoreCase)
         { "Permanent", "Temporary" };
@@ -325,6 +325,11 @@ public static class ScenarioLoader
             throw new ScenarioException($"Missing objectType for '{obj.ObjectId}'.");
         if (!KnownObjectTypes.Contains(obj.ObjectType))
             throw new ScenarioException($"Unknown objectType '{obj.ObjectType}' for '{obj.ObjectId}'.");
+
+        if (obj.RelationToPlayer is { } relation &&
+            (!string.Equals(obj.ObjectType, SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase) ||
+             relation is not (PlayerRelation.Enemy or PlayerRelation.Friend or PlayerRelation.Neutral)))
+            throw new ScenarioException($"Invalid relationToPlayer for '{obj.ObjectId}'.");
 
         if (string.IsNullOrWhiteSpace(obj.PersistenceType))
             throw new ScenarioException($"Missing persistenceType for '{obj.ObjectId}'.");

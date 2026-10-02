@@ -261,9 +261,10 @@ public sealed partial class SimulationEngine : IDisposable
 
             bool isStation = obj.ObjectType == SpaceObjectType.Station;
             bool isPlayerShip = obj.ObjectType == SpaceObjectType.PlayerShip;
+            bool isShip = isPlayerShip || obj.ObjectType == SpaceObjectType.NpcShip;
             bool isAsteroid = obj.ObjectType == SpaceObjectType.Asteroid;
             marketProfiles.TryGetValue(obj.ObjectId, out var marketProfile);
-            string? image = ResolveObjectImage(obj, isPlayerShip, isAsteroid, resolvedMasterSeed);
+            string? image = ResolveObjectImage(obj, isShip, isAsteroid, resolvedMasterSeed);
             var stationSize = isStation ? ResolveStationSize(obj) : StationSize.Medium;
             long credits = isStation
                 ? marketProfile is null
@@ -282,16 +283,16 @@ public sealed partial class SimulationEngine : IDisposable
             var events = isStation
                 ? ResolveStationEvents(obj)
                 : ImmutableArray<StationEventRuntime>.Empty;
-            var crew = isPlayerShip
+            var crew = isShip
                 ? ResolveShipCrew(obj)
                 : ImmutableArray<CrewMemberRuntime>.Empty;
             var stationCrew = isStation
                 ? ResolveStationCrew(obj, resolvedMasterSeed)
                 : ImmutableArray<StationCrewMemberRuntime>.Empty;
-            string? captainDisplayName = isPlayerShip
+            string? captainDisplayName = isShip
                 ? obj.CaptainDisplayName ?? ResolveCaptainDisplayName(obj.ObjectId, resolvedMasterSeed)
                 : null;
-            string? captainPortraitImage = isPlayerShip
+            string? captainPortraitImage = isShip
                 ? obj.CaptainPortraitImage ?? ResolveCaptainPortrait(obj.ObjectId, resolvedMasterSeed)
                 : null;
 
@@ -307,7 +308,7 @@ public sealed partial class SimulationEngine : IDisposable
                 // Keep that baseline on load; calendar time has a different pace.
                 StartGameTimeMs: gs.MotionTimeMs,
                 Modules: modules,
-                Name: obj.Name,
+                Name: obj.Name ?? (obj.ObjectType == SpaceObjectType.NpcShip ? ResolveShipName(obj.ObjectId, resolvedMasterSeed) : null),
                 PersistenceType: obj.PersistenceType,
                 MassKg: obj.MassKg,
                 CompositionType: obj.CompositionType,
@@ -339,7 +340,8 @@ public sealed partial class SimulationEngine : IDisposable
                 MarketProfileId: marketProfile?.TypeId,
                 MarketProfileFingerprint: marketProfile?.Fingerprint,
                 MarketBudgetCredits: ResolveMarketBudget(
-                    obj, isStation ? marketProfile : null, stationSize, credits, loadingSave, scenario.SaveFormatVersion)));
+                    obj, isStation ? marketProfile : null, stationSize, credits, loadingSave, scenario.SaveFormatVersion),
+                RelationToPlayer: obj.RelationToPlayer));
         }
 
         // Bounded-market preflight on the candidate world: stock/target coverage, one production
@@ -602,7 +604,7 @@ public sealed partial class SimulationEngine : IDisposable
                         .FirstOrDefault(m => m.ActiveCycle?.CommandType == NavigationComputerCommandTypes.Approach)?.ActiveCycle?.TargetObjectId : null,
                     ObjectType = known ? obj.ObjectType : null,
                     RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
-                    RelationToPlayer = known ? GetRelationToPlayer(obj.InitialMotion.ObjectId, obj.ObjectType) : null,
+                    RelationToPlayer = known ? GetRelationToPlayer(obj) : null,
                     DisplayName = known && resourceAsteroid is null ? obj.Name : null,
                     Image = !known ? null : resourceAsteroid is { CompositionKnown: false }
                         ? _neutralResourceImages[obj.InitialMotion.ObjectId] : obj.Image,
@@ -610,8 +612,8 @@ public sealed partial class SimulationEngine : IDisposable
                     MaxSpeedKmS = GetMaxSpeedKmS(obj),
                     IsDocked = obj.IsDocked,
                     DockedStationObjectId = obj.DockedStationObjectId,
-                    CaptainDisplayName = isPlayerShipRow ? obj.CaptainDisplayName : null,
-                    CaptainPortraitImage = isPlayerShipRow ? obj.CaptainPortraitImage : null,
+                    CaptainDisplayName = known ? obj.CaptainDisplayName : null,
+                    CaptainPortraitImage = known ? obj.CaptainPortraitImage : null,
                     DockOperatorDisplayName = dockOperator?.DisplayName,
                     DockOperatorPortraitImage = dockOperator?.PortraitImage,
                     IsDestroyed = obj.IsDestroyed
@@ -923,6 +925,7 @@ public sealed partial class SimulationEngine : IDisposable
             var motion = PredictMotion(obj, elapsed);
             bool isStation = obj.ObjectType == SpaceObjectType.Station;
             bool isPlayerShip = obj.ObjectType == SpaceObjectType.PlayerShip;
+            bool isShip = isPlayerShip || obj.ObjectType == SpaceObjectType.NpcShip;
 
             spaceObjects.Add(new SpaceObjectData(
                 ObjectId: obj.InitialMotion.ObjectId,
@@ -957,14 +960,14 @@ public sealed partial class SimulationEngine : IDisposable
                 Events: isStation && !obj.Events.IsDefaultOrEmpty
                     ? obj.Events.Select(BuildSaveEvent).ToList()
                     : null,
-                Crew: isPlayerShip && !obj.Crew.IsDefaultOrEmpty
+                Crew: isShip && !obj.Crew.IsDefaultOrEmpty
                     ? obj.Crew.Select(BuildSaveCrewMember).ToList()
                     : null,
                 StationCrew: isStation && !obj.StationCrew.IsDefaultOrEmpty
                     ? obj.StationCrew.Select(BuildSaveStationCrewMember).ToList()
                     : null,
-                CaptainDisplayName: isPlayerShip ? obj.CaptainDisplayName : null,
-                CaptainPortraitImage: isPlayerShip ? obj.CaptainPortraitImage : null,
+                CaptainDisplayName: isShip ? obj.CaptainDisplayName : null,
+                CaptainPortraitImage: isShip ? obj.CaptainPortraitImage : null,
                 PortFeeCreditsPerDay: obj.PortFeeCreditsPerDay,
                 SecurityZoneRadiusKm: obj.SecurityZoneRadiusKm,
                 PiracyWarningGracePeriodMs: obj.PiracyWarningGracePeriodMs,
@@ -975,7 +978,8 @@ public sealed partial class SimulationEngine : IDisposable
                 MarketProfileId: isStation ? obj.MarketProfileId : null,
                 MarketProfileFingerprint: isStation ? obj.MarketProfileFingerprint : null,
                 MarketBudgetCredits: isStation ? obj.MarketBudgetCredits : null,
-                MarketRevision: isStation && obj.MarketProfileId is not null ? obj.MarketRevision : null));
+                MarketRevision: isStation && obj.MarketProfileId is not null ? obj.MarketRevision : null,
+                RelationToPlayer: obj.RelationToPlayer));
         }
 
         var gameState = new GameStateData(
@@ -1333,7 +1337,7 @@ public sealed partial class SimulationEngine : IDisposable
     /// <summary>
     /// Resolve an object's graphical representation: explicit scenario/save value used
     /// as-is (so a resolved image, once saved, is never reshuffled on a later load),
-    /// otherwise the fixed Tetrarch sprite for the player ship, or — for an asteroid — a
+    /// otherwise the fixed Tetrarch sprite for a player or NPC ship, or — for an asteroid — a
     /// deterministic pick from the Ice or regular sprite pool (by compositionType) derived
     /// from masterSeed via the asteroid's own named RNG stream. Every other object type has
     /// no image assigned yet (null).
@@ -1737,8 +1741,18 @@ public sealed partial class SimulationEngine : IDisposable
         return _femaleCrewPortraits[random.Next(_femaleCrewPortraits.Length)];
     }
 
+    /// <summary>Generate an NPC ship name on an independent per-ship stream.</summary>
+    private static string ResolveShipName(string shipObjectId, ulong masterSeed)
+    {
+        string[] prefixes = ["Black", "Crimson", "Iron", "Silent", "Void", "Ash", "Dark", "Scarlet"];
+        string[] suffixes = ["Fang", "Corsair", "Raven", "Viper", "Reaver", "Wraith", "Talon", "Wolf"];
+        var random = RngStreamNames.CreateDeterministicRandom(
+            RngStreamSeedDerivation.DeriveStreamSeed(masterSeed, RngStreamNames.ShipName(shipObjectId)));
+        return $"{prefixes[random.Next(prefixes.Length)]} {suffixes[random.Next(suffixes.Length)]}";
+    }
+
     /// <summary>
-    /// Resolve the player ship's captain display name — an independent named fact, NOT
+    /// Resolve the ship's captain display name — an independent named fact, NOT
     /// derived from Crew[0]/<see cref="ResolveShipCrew"/>. Same "explicit
     /// scenario/save value used as-is, otherwise deterministic once from masterSeed and
     /// persisted on save" convention as <see cref="ResolveStationCrewMemberName"/>, except
@@ -1752,7 +1766,7 @@ public sealed partial class SimulationEngine : IDisposable
         return MaleCrewNames[random.Next(MaleCrewNames.Length)];
     }
 
-    /// <summary>Resolve the player ship's captain portrait image; see <see cref="ResolveCaptainDisplayName"/>.</summary>
+    /// <summary>Resolve the ship's captain portrait image; see <see cref="ResolveCaptainDisplayName"/>.</summary>
     private static string ResolveCaptainPortrait(string shipObjectId, ulong masterSeed)
     {
         return CharacterPortraits.DefaultMale;
@@ -1951,12 +1965,12 @@ public sealed partial class SimulationEngine : IDisposable
         }
     }
 
-    private string? GetRelationToPlayer(string objectId, string objectType)
+    private string? GetRelationToPlayer(SpaceObjectRuntime obj)
     {
-        if (objectId == PlayerShipObjectId)
+        if (obj.InitialMotion.ObjectId == PlayerShipObjectId)
             return PlayerRelation.Self;
-        if (objectType == SpaceObjectType.NpcShip)
-            return PlayerRelation.Neutral; // future: faction system
+        if (obj.ObjectType == SpaceObjectType.NpcShip)
+            return obj.RelationToPlayer ?? PlayerRelation.Neutral;
         return null;
     }
 
@@ -3631,7 +3645,7 @@ internal sealed record SpaceObjectRuntime(
     ImmutableArray<StationEventRuntime> Events = default,
     /// <summary>
     /// Ship's crew members (story-20260901-112254). Only meaningful for
-    /// ObjectType == PlayerShip; empty for every other object type.
+    /// ObjectType == PlayerShip or NpcShip; empty for every other object type.
     /// </summary>
     ImmutableArray<CrewMemberRuntime> Crew = default,
     /// <summary>
@@ -3642,12 +3656,12 @@ internal sealed record SpaceObjectRuntime(
     /// </summary>
     ImmutableArray<StationCrewMemberRuntime> StationCrew = default,
     /// <summary>
-    /// Player ship captain's display name — an independent named fact, not derived from
+    /// Ship captain's display name — an independent named fact, not derived from
     /// <see cref="Crew"/>[0]/<see cref="CrewMemberRuntime"/>. Only meaningful for
-    /// ObjectType == PlayerShip; null for every other object type.
+    /// ObjectType == PlayerShip or NpcShip; null for every other object type.
     /// </summary>
     string? CaptainDisplayName = null,
-    /// <summary>Player ship captain's portrait image path; see <see cref="CaptainDisplayName"/>.</summary>
+    /// <summary>Ship captain's portrait image path; see <see cref="CaptainDisplayName"/>.</summary>
     string? CaptainPortraitImage = null,
     long? PortFeeCreditsPerDay = null,
     int? SecurityZoneRadiusKm = null,
@@ -3666,7 +3680,8 @@ internal sealed record SpaceObjectRuntime(
     /// into every quote. At least 1 for every station; saved and published only for a station with a market
     /// profile (D-U2). 0 for every other object type.
     /// </summary>
-    long MarketRevision = 0);
+    long MarketRevision = 0,
+    string? RelationToPlayer = null);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName);

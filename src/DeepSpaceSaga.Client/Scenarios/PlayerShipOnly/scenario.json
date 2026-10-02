@@ -1,8 +1,8 @@
 {
   "scenarioMetadata": {
     "scenarioId": "player_ship_only",
-    "name": "Player Ship Only",
-    "description": "Only the player ship in empty space, with the standard Tetrarch hull, modules, crew and supplies."
+    "name": "Player Ship and Pirate",
+    "description": "A standard Tetrarch player ship and a visible hostile Tetrarch moving on a fixed course. The pirate ship and captain receive random names each new game."
   },
   "gameState": {
     "gameTimeMs": 0,
@@ -179,6 +179,168 @@
             "displayName": "Dunkan Su"
           }
         ]
+      },
+      {
+        "objectId": "SPC-0002",
+        "objectType": "NpcShip",
+        "persistenceType": "Permanent",
+        "name": null,
+        "positionX": 0,
+        "positionY": 5000,
+        "speedMps": 400,
+        "directionDegrees": 120,
+        "movementType": "Linear",
+        "isKnown": true,
+        "hullLayout": {
+          "width": 9,
+          "height": 9,
+          "cells": [
+            {
+              "x": 4,
+              "y": 0
+            },
+            {
+              "x": 3,
+              "y": 1
+            },
+            {
+              "x": 4,
+              "y": 1
+            },
+            {
+              "x": 5,
+              "y": 1
+            },
+            {
+              "x": 4,
+              "y": 2
+            },
+            {
+              "x": 4,
+              "y": 3
+            },
+            {
+              "x": 4,
+              "y": 4
+            },
+            {
+              "x": 3,
+              "y": 5
+            },
+            {
+              "x": 4,
+              "y": 5
+            },
+            {
+              "x": 5,
+              "y": 5
+            }
+          ]
+        },
+        "modules": [
+          {
+            "moduleId": "MOD-PIRATE-BRIDGE-01",
+            "moduleTypeId": "module.bridge.navigation.computer.basic",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 0
+              }
+            ],
+            "structurePoints": 80,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": []
+          },
+          {
+            "moduleId": "MOD-PIRATE-LIVING-QUARTERS-01",
+            "moduleTypeId": "living.quarters.mk1",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 1
+              }
+            ],
+            "structurePoints": 60,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": []
+          },
+          {
+            "moduleId": "MOD-PIRATE-CARGO-01",
+            "moduleTypeId": "module.container.basic",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 2
+              }
+            ],
+            "structurePoints": 400,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [
+              {
+                "itemTypeId": "item.energy-cells",
+                "quantity": 1000
+              },
+              {
+                "itemTypeId": "item.food-rations",
+                "quantity": 200
+              }
+            ]
+          },
+          {
+            "moduleId": "MOD-PIRATE-SCANNER-01",
+            "moduleTypeId": "module.scanner.mk1",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 3
+              }
+            ],
+            "structurePoints": 60,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": []
+          },
+          {
+            "moduleId": "MOD-PIRATE-GENERATOR-01",
+            "moduleTypeId": "module.generator.basic",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 4
+              }
+            ],
+            "structurePoints": 180,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": []
+          },
+          {
+            "moduleId": "MOD-PIRATE-ENGINE-01",
+            "moduleTypeId": "module.engine.basic",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 5
+              }
+            ],
+            "structurePoints": 100,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "fuelAmountKg": 750
+          }
+        ],
+        "crew": [],
+        "relationToPlayer": "enemy"
       }
     ]
   }
