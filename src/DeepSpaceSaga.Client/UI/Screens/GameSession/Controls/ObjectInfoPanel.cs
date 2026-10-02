@@ -184,6 +184,8 @@ public sealed class ObjectInfoPanel
                 if (d.RenderObjectType == SpaceObjectType.NpcShip && d.CaptainDisplayName is { } captain)
                     lines.Add(("Captain", captain));
             }
+            if (d.DistanceKm is { } distanceKm)
+                lines.Add(("Distance", TacticalMapSettings.FormatDistance(distanceKm * 1000)));
         }
         else
         {
@@ -417,4 +419,5 @@ public readonly record struct ObjectInfoPanelData(
     string? Image = null,
     AsteroidSurveySnapshot? Survey = null,
     string? CaptainDisplayName = null,
-    string? RelationToPlayer = null);
+    string? RelationToPlayer = null,
+    double? DistanceKm = null);

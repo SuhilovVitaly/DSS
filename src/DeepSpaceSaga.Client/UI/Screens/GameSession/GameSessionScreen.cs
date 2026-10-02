@@ -262,7 +262,8 @@ public sealed partial class GameSessionScreen : IScreen
     internal string? SelectedObjectId => _selectedObjectId;
     internal ObjectInfoPanelData? PlayerShipInfo => ToObjectInfoPanelData(FindPlayerShip(_renderStates));
     /// <summary>Object Info panel's "Selected Object" row content — hover (<see cref="ActiveObjectId"/>) takes priority over the last click (<see cref="SelectedObjectId"/>).</summary>
-    internal ObjectInfoPanelData? SelectedOrActiveObjectInfo => ToObjectInfoPanelData(FindRenderStateById(_activeObjectId ?? _selectedObjectId));
+    internal ObjectInfoPanelData? SelectedOrActiveObjectInfo => ToObjectInfoPanelData(
+        FindRenderStateById(_activeObjectId ?? _selectedObjectId), FindPlayerShip(_renderStates));
 
     // ── Constructor ─────────────────────────────────────────────
 
@@ -1203,7 +1204,7 @@ public sealed partial class GameSessionScreen : IScreen
         var playerShip = FindPlayerShip(_renderStates);
         var selectedOrActive = FindRenderStateById(_activeObjectId ?? _selectedObjectId);
         _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
-            ToObjectInfoPanelData(playerShip), ToObjectInfoPanelData(selectedOrActive));
+            ToObjectInfoPanelData(playerShip), ToObjectInfoPanelData(selectedOrActive, playerShip));
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);
@@ -2126,15 +2127,22 @@ public sealed partial class GameSessionScreen : IScreen
         return null;
     }
 
-    private static ObjectInfoPanelData? ToObjectInfoPanelData(ObjectRenderState? state)
+    private static ObjectInfoPanelData? ToObjectInfoPanelData(ObjectRenderState? state, ObjectRenderState? player = null)
     {
         if (state is not { } s)
             return null;
 
         var p = s.Pose;
         var survey = s.Source.Survey;
+        double? distanceKm = null;
+        if (player is { } ship)
+        {
+            double dx = p.X - ship.Pose.X;
+            double dy = p.Y - ship.Pose.Y;
+            distanceKm = double.Hypot(dx, dy) / 10.0;
+        }
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
-            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer);
+            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm);
     }
 
     /// <summary>

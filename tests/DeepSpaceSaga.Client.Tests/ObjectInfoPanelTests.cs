@@ -138,7 +138,7 @@ public class ObjectInfoPanelTests
         Assert.Same(data.Survey, projected.Survey);
         Assert.Equal("FIELD", projected.DisplayName);
         Assert.Equal("neutral.png", projected.Image);
-        Assert.Equal(ObjectInfoPanel.BuildLines(data), ObjectInfoPanel.BuildLines(projected));
+        Assert.Equal(ObjectInfoPanel.BuildLines(data with { DistanceKm = 6 }), ObjectInfoPanel.BuildLines(projected));
     }
 
     [Fact]
@@ -249,7 +249,7 @@ public class ObjectInfoPanelTests
             var unknown = ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo);
             Assert.Equal(("Composition", "Unknown"), unknown[3]);
             Assert.Equal(("Mass", $"{target.Survey!.MassKg} kg"), unknown[2]);
-            Assert.Equal(4, unknown.Count);
+            Assert.Equal(5, unknown.Count);
             RenderScreen(screen);
             var button = Assert.Single(screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == ScannerCommandTypes.StructuralScan);
             Assert.True(button.Enabled);
@@ -275,7 +275,7 @@ public class ObjectInfoPanelTests
             var known = ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo);
             Assert.Equal(("Composition", revealed.Survey.CompositionType), known[3]);
             Assert.Equal(revealed.Survey.Resources.OrderBy(r => r.ItemTypeId, StringComparer.Ordinal)
-                .Select(r => (TradeItemPresentation.ItemDisplayName(r.ItemTypeId), $"{r.Permille / 10m:0.#}%")), known.Skip(4));
+                .Select(r => (TradeItemPresentation.ItemDisplayName(r.ItemTypeId), $"{r.Permille / 10m:0.#}%")), known.Skip(4).Where(line => line.Label != "Distance"));
             Assert.False(Assert.Single(screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == ScannerCommandTypes.StructuralScan).Enabled);
             File.WriteAllText(savePath, JsonSerializer.Serialize(engine.CaptureSaveStateForTests(60000, SimulationSpeed.Speed0)));
             using var restored = EngineContentLoader.CreateEngineFromSaveFile(SettingsPath, savePath);
