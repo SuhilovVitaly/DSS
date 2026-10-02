@@ -117,3 +117,27 @@ public sealed record TrailSegment(
     double StartMotionTimeMs,
     TorpedoRouteSegment Segment,
     int PlannerVersion);
+
+/// <summary>
+/// Authoritative contact fact, retained in the session journal across snapshots.
+/// Consumers deduplicate by EventId within one session and clear that set when the
+/// session is replaced. IDs are monotonic within a session, not globally unique.
+/// MotionTimeMs is fractional physical time; X/Y and FinalTrail use world units.
+/// The final trail ends at contact and remains available after projectile removal.
+/// No UI clock, animation age or pixel geometry is transmitted or saved here.
+/// </summary>
+public sealed record CombatImpactSnapshot(
+    long EventId,
+    string TorpedoObjectId,
+    string OwnerObjectId,
+    string LauncherModuleId,
+    string TargetObjectId,
+    string HitObjectId,
+    double MotionTimeMs,
+    double X,
+    double Y,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<TrailSegment>))]
+    ImmutableArray<TrailSegment> FinalTrail = default,
+    int DamageApplied = 0,
+    string? DestroyedObjectId = null,
+    string? WreckObjectId = null);
