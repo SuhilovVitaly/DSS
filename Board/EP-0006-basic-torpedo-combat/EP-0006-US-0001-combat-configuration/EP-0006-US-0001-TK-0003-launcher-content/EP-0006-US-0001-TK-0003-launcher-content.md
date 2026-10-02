@@ -7,11 +7,11 @@ stage: draft
 layer: content-data
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: ["EP-0006-US-0001-TK-0002-combat-content-loader"]
-files_touched: 4
+files_touched: 5
 serves: ["AC-0002","AC-0003"]
 priority: P1
 created: 2026-10-02T08:22:58Z
-revision: 1
+revision: 2
 validation_status: not-run
 ---
 
@@ -44,7 +44,7 @@ validation_status: not-run
 
 ## Code context
 
-Полный write allowlist от корня DSS; 4 файлов, включая тесты. Другие файлы — read-only. Новые файлы из зависимостей должны реально существовать к началу исполнения.
+Полный write allowlist от корня DSS; 5 файлов, включая тесты. Другие файлы — read-only. Новые файлы из зависимостей должны реально существовать к началу исполнения.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -52,6 +52,9 @@ validation_status: not-run
 | `src/DeepSpaceSaga.Client/Data/Modules/TorpedoLauncher/modules-torpedolauncher.json` | Новый файл этого тикета; на baseline отсутствует | Только данные, явно названные в Public API и шагах этого тикета |
 | `src/DeepSpaceSaga.Client/Data/Commands/TorpedoLauncher/commands.json` | Новый файл этого тикета; на baseline отсутствует | Только данные, явно названные в Public API и шагах этого тикета |
 | `tests/DeepSpaceSaga.Client.Tests/TorpedoLauncherContentTests.cs` | Новый файл этого тикета; на baseline отсутствует | Только проверки поведения, перечисленные в Tests; существующие независимые assertions сохранить |
+| `tests/DeepSpaceSaga.Engine.Tests/ScenarioEngineTests.cs` | Существует; тест `Real_default_scenario_active_module_types_have_valid_command_type_ids` | Только ожидаемое число активных типов 5 → 6 и проверки `module.torpedo.launcher.basic`: единственная команда `torpedo.fire`, owning category `module.torpedo.launcher`, `target=object`; остальные assertions сохранить |
+
+Расширение с четырёх до пяти файлов явно согласовано пользователем в ходе реализации: «Да, исправить этот тест». Причина — добавление launcher увеличивает число активных типов, проверяемых существующим Engine-тестом. Основной test project остаётся Client.Tests; Engine.Tests добавлен только для указанной регрессии. Production layer остаётся `content-data`.
 
 Контекст для чтения: [grounding эпика](../../Documentation.md), [история](../EP-0006-US-0001-combat-configuration.md), `Documentation/01-Requirements/EngineRequirements.md` (§2, §52, §55–57, §60), `Documentation/00-Process/CLAUDE.md`. Code context определяет границу записи, ссылки для чтения её не расширяют.
 
@@ -90,14 +93,17 @@ category module.torpedo.launcher; implementation module.torpedo.launcher.basic; 
 
 - [ ] `Real_launcher_content_exposes_one_targeted_command`
 - [ ] `Launcher_parameters_are_150_3_90_and_no_ammo_cost`
+- [ ] `Real_default_scenario_active_module_types_have_valid_command_type_ids` — Engine.Tests; ожидаются шесть активных типов, включая новый аппарат с одной адресованной объекту командой.
 
 Из корня `D:/DeepSpaceSaga/DSS` (PowerShell):
 
 ```powershell
 dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore --filter 'FullyQualifiedName~Real_launcher_content_exposes_one_targeted_command|FullyQualifiedName~Launcher_parameters_are_150_3_90_and_no_ammo_cost'
 dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore
+dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj --no-restore --filter 'FullyQualifiedName~Real_default_scenario_active_module_types_have_valid_command_type_ids'
+dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj --no-restore
 dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --no-restore
-dotnet format whitespace DeepSpaceSaga.sln --verify-no-changes --no-restore --include tests/DeepSpaceSaga.Client.Tests/TorpedoLauncherContentTests.cs
+dotnet format whitespace DeepSpaceSaga.sln --verify-no-changes --no-restore --include tests/DeepSpaceSaga.Client.Tests/TorpedoLauncherContentTests.cs tests/DeepSpaceSaga.Engine.Tests/ScenarioEngineTests.cs
 git diff --check
 ```
 
