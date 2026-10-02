@@ -10,6 +10,8 @@ public sealed partial class SimulationEngine
     private Dictionary<string, HullCombatSnapshot> _hullCombat = new(StringComparer.Ordinal);
     private Dictionary<(string ObjectId, string ModuleId), LauncherCombatSnapshot> _launcherCombat = new();
     private long _torpedoSequence;
+    private long _combatImpactSequence;
+    private readonly List<CombatImpactSnapshot> _combatImpacts = new();
     private long _nextCombatGuidanceMs = long.MaxValue;
     private readonly Dictionary<string, (ObjectMotionSnapshot Pose, long Time)> _torpedoTargets = new(StringComparer.Ordinal);
     private bool HasActiveTorpedoes => _objects.Any(o => o.InitialMotion.Torpedo is not null);
@@ -68,66 +70,162 @@ public sealed partial class SimulationEngine
 
     private void AdvanceCombatTo(long motionTimeMs)
     {
+        // Recompute after each mutation: a previous contact may remove an obstacle
+        // (or, in the wreck lifecycle, replace it) inside this same physical interval.
+        double cursor = 0;
+        while (FindFirstImpact(cursor, motionTimeMs) is { } impact)
+        {
+            ApplyImpact(impact.Projectile, impact.Target, impact.Contact);
+            cursor = impact.Contact.MotionTimeMs;
+        }
         for (int i = 0; i < _objects.Count; i++)
         {
             var obj = _objects[i];
             if (obj.InitialMotion.Torpedo is not { } flight || motionTimeMs <= obj.StartGameTimeMs) continue;
             long elapsed = motionTimeMs - obj.StartGameTimeMs;
             var predicted = TorpedoGuidanceMath.Predict(obj.InitialMotion, elapsed);
-            var history = flight.Trail.ToBuilder();
-            double from = flight.Route.ElapsedMs, to = from + elapsed, cursor = 0;
-            foreach (var segment in flight.Route.Segments)
-            {
-                double start = Math.Max(from, cursor), end = Math.Min(to, cursor + segment.DurationMs);
-                if (end > start)
-                {
-                    var pose = TorpedoGuidanceMath.PredictSegment(segment, start - cursor);
-                    Append(new(flight.Route.StartMotionTimeMs + start,
-                        new(pose.X, pose.Y, pose.Direction, segment.SpeedKmS, segment.AngularVelocityDegPerSec, end - start),
-                        flight.Route.PlannerVersion));
-                }
-                cursor += segment.DurationMs;
-            }
-            if (to > Math.Max(from, cursor))
-            {
-                double start = Math.Max(from, cursor);
-                var pose = TorpedoGuidanceMath.PredictPose(flight.Route, start);
-                Append(new(flight.Route.StartMotionTimeMs + start,
-                    new(pose.X, pose.Y, pose.Direction, flight.SpeedKmS, 0, to - start), flight.Route.PlannerVersion));
-            }
-            predicted = predicted with
-            {
-                Torpedo = predicted.Torpedo! with
-                {
-                    DistanceTravelledWorldUnits = (motionTimeMs - flight.LaunchMotionTimeMs) * flight.SpeedKmS / 100,
-                    Trail = history.ToImmutable()
-                }
-            };
+            predicted = predicted with { Torpedo = CloseFlightHistory(obj, motionTimeMs, predicted.Torpedo!) };
             _objects[i] = obj with { InitialMotion = predicted, StartGameTimeMs = motionTimeMs };
+        }
+    }
 
-            void Append(TrailSegment segment)
+    private (SpaceObjectRuntime Projectile, SpaceObjectRuntime Target, TorpedoContact Contact)? FindFirstImpact(
+        double from, long to)
+    {
+        (SpaceObjectRuntime Projectile, SpaceObjectRuntime Target, TorpedoContact Contact)? first = null;
+        foreach (var projectile in _objects)
+        {
+            if (projectile.InitialMotion.Torpedo is not { } flight || to < projectile.StartGameTimeMs) continue;
+            var path = CombatPath(projectile);
+            foreach (var target in _objects)
             {
-                if (history.Count > 0)
-                {
-                    var previous = history[^1];
-                    var end = TorpedoGuidanceMath.PredictSegment(previous.Segment, previous.Segment.DurationMs);
-                    if (previous.PlannerVersion == segment.PlannerVersion &&
-                        previous.Segment.AngularVelocityDegPerSec == segment.Segment.AngularVelocityDegPerSec &&
-                        previous.Segment.SpeedKmS == segment.Segment.SpeedKmS &&
-                        Math.Abs(previous.StartMotionTimeMs + previous.Segment.DurationMs - segment.StartMotionTimeMs) < 1e-6 &&
-                        Math.Abs(end.X - segment.Segment.X) < 1e-6 && Math.Abs(end.Y - segment.Segment.Y) < 1e-6 &&
-                        Math.Abs((end.Direction - segment.Segment.Direction + 540) % 360 - 180) < 1e-8)
-                    {
-                        history[^1] = previous with
-                        {
-                            Segment = previous.Segment with
-                            { DurationMs = previous.Segment.DurationMs + segment.Segment.DurationMs }
-                        };
-                        return;
-                    }
-                }
-                history.Add(segment);
+                if (target.IsDestroyed || target.InitialMotion.ObjectId == projectile.InitialMotion.ObjectId ||
+                    target.InitialMotion.ObjectId == flight.OwnerObjectId) continue;
+                double start = Math.Max(from, Math.Max(projectile.StartGameTimeMs, target.StartGameTimeMs));
+                if (start > to) continue;
+                var hit = TorpedoCollisionMath.FirstContact(path, CombatPath(target), start, to);
+                if (hit is not { } contact) continue;
+                if (first is not { } previous || contact.MotionTimeMs < previous.Contact.MotionTimeMs ||
+                    (contact.MotionTimeMs == previous.Contact.MotionTimeMs &&
+                     (string.CompareOrdinal(projectile.InitialMotion.ObjectId, previous.Projectile.InitialMotion.ObjectId) < 0 ||
+                      (projectile.InitialMotion.ObjectId == previous.Projectile.InitialMotion.ObjectId &&
+                       string.CompareOrdinal(target.InitialMotion.ObjectId, previous.Target.InitialMotion.ObjectId) < 0))))
+                    first = (projectile, target, contact);
             }
+        }
+        return first;
+    }
+
+    private static CollisionPath CombatPath(SpaceObjectRuntime obj)
+    {
+        if (obj.InitialMotion.Torpedo is { } flight)
+            return new(t =>
+            {
+                var p = TorpedoGuidanceMath.PredictPose(flight.Route,
+                    flight.Route.ElapsedMs + t - obj.StartGameTimeMs);
+                return (p.X, p.Y);
+            }, flight.SpeedKmS / 100, flight.SpeedKmS / 100 * flight.TurnRateDegPerSec * Math.PI / 180000);
+        foreach (var module in obj.Modules)
+        {
+            if (module.ActiveCycle is { CommandType: NavigationComputerCommandTypes.Approach, ApproachRoute: { } route } cycle)
+                return new(t =>
+                {
+                    var p = ApproachLineCaptureMath.PredictPose(route, route.ElapsedMs + Math.Max(0, t - cycle.StartedGameTimeMs));
+                    return (p.X, p.Y);
+                }, route.SpeedKmS / 100);
+        }
+        if (LinearMotionPredictor.IsLinear(obj.InitialMotion))
+            return new(t =>
+            {
+                var p = TorpedoGuidanceMath.PredictSegment(new(obj.InitialMotion.X, obj.InitialMotion.Y,
+                    obj.InitialMotion.Direction, obj.InitialMotion.SpeedKmS, 0, 0), t - obj.StartGameTimeMs);
+                return (p.X, p.Y);
+            }, obj.InitialMotion.SpeedKmS / 100, 0);
+        // Legacy discrete-turn motion has integer-ms boundaries. Interpolate only
+        // inside one such interval, preserving its authoritative piecewise path.
+        return new(t =>
+        {
+            long a = (long)Math.Floor(t);
+            var p = RuntimeMotion.At(obj, a);
+            if (t == a || a == long.MaxValue) return (p.X, p.Y);
+            var q = RuntimeMotion.At(obj, a + 1);
+            return (p.X + (q.X - p.X) * (t - a), p.Y + (q.Y - p.Y) * (t - a));
+        }, obj.InitialMotion.SpeedKmS / 100);
+    }
+
+    private void ApplyImpact(SpaceObjectRuntime projectile, SpaceObjectRuntime target, TorpedoContact contact)
+    {
+        var flight = projectile.InitialMotion.Torpedo!;
+        var finalFlight = CloseFlightHistory(projectile, contact.MotionTimeMs, flight);
+        int damage = 0;
+        string hitId = target.InitialMotion.ObjectId;
+        if (_hullCombat.TryGetValue(hitId, out var hull) && hull.ShipClassId == "ship.tetrarch")
+        {
+            damage = Math.Min(hull.CurrentHp, flight.Damage);
+            _hullCombat[hitId] = hull with { CurrentHp = hull.CurrentHp - damage };
+        }
+        _objects.Remove(projectile);
+        _torpedoTargets.Remove(projectile.InitialMotion.ObjectId);
+        var key = (flight.OwnerObjectId, flight.LauncherModuleId);
+        if (_launcherCombat.TryGetValue(key, out var launcher))
+            _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = null };
+        _combatImpacts.Add(new(checked(++_combatImpactSequence), projectile.InitialMotion.ObjectId,
+            flight.OwnerObjectId, flight.LauncherModuleId, flight.TargetObjectId, hitId,
+            contact.MotionTimeMs, contact.X, contact.Y, finalFlight.Trail, damage));
+    }
+
+    private static TorpedoSnapshot CloseFlightHistory(SpaceObjectRuntime obj, double motionTimeMs, TorpedoSnapshot predicted)
+    {
+        var flight = obj.InitialMotion.Torpedo!;
+        var history = flight.Trail.ToBuilder();
+        double from = flight.Route.ElapsedMs, to = from + motionTimeMs - obj.StartGameTimeMs, cursor = 0;
+        foreach (var segment in flight.Route.Segments)
+        {
+            double start = Math.Max(from, cursor), end = Math.Min(to, cursor + segment.DurationMs);
+            if (end > start)
+            {
+                var pose = TorpedoGuidanceMath.PredictSegment(segment, start - cursor);
+                Append(new(flight.Route.StartMotionTimeMs + start,
+                    new(pose.X, pose.Y, pose.Direction, segment.SpeedKmS, segment.AngularVelocityDegPerSec, end - start),
+                    flight.Route.PlannerVersion));
+            }
+            cursor += segment.DurationMs;
+        }
+        if (to > Math.Max(from, cursor))
+        {
+            double start = Math.Max(from, cursor);
+            var pose = TorpedoGuidanceMath.PredictPose(flight.Route, start);
+            Append(new(flight.Route.StartMotionTimeMs + start,
+                new(pose.X, pose.Y, pose.Direction, flight.SpeedKmS, 0, to - start), flight.Route.PlannerVersion));
+        }
+        return predicted with
+        {
+            DistanceTravelledWorldUnits = (motionTimeMs - flight.LaunchMotionTimeMs) * flight.SpeedKmS / 100,
+            Trail = history.ToImmutable()
+        };
+
+        void Append(TrailSegment segment)
+        {
+            if (history.Count > 0)
+            {
+                var previous = history[^1];
+                var end = TorpedoGuidanceMath.PredictSegment(previous.Segment, previous.Segment.DurationMs);
+                if (previous.PlannerVersion == segment.PlannerVersion &&
+                    previous.Segment.AngularVelocityDegPerSec == segment.Segment.AngularVelocityDegPerSec &&
+                    previous.Segment.SpeedKmS == segment.Segment.SpeedKmS &&
+                    Math.Abs(previous.StartMotionTimeMs + previous.Segment.DurationMs - segment.StartMotionTimeMs) < 1e-6 &&
+                    Math.Abs(end.X - segment.Segment.X) < 1e-6 && Math.Abs(end.Y - segment.Segment.Y) < 1e-6 &&
+                    Math.Abs((end.Direction - segment.Segment.Direction + 540) % 360 - 180) < 1e-8)
+                {
+                    history[^1] = previous with
+                    {
+                        Segment = previous.Segment with
+                        { DurationMs = previous.Segment.DurationMs + segment.Segment.DurationMs }
+                    };
+                    return;
+                }
+            }
+            history.Add(segment);
         }
     }
 

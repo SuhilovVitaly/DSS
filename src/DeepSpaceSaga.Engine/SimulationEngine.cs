@@ -411,6 +411,8 @@ public sealed partial class SimulationEngine : IDisposable
             _hullCombat = combatState.Hulls;
             _launcherCombat = combatState.Launchers;
             _torpedoSequence = 0;
+            _combatImpactSequence = 0;
+            _combatImpacts.Clear();
             _torpedoTargets.Clear();
             _nextCombatGuidanceMs = long.MaxValue;
             _processedWorldTimeMs = gs.GameTimeMs;
@@ -671,7 +673,8 @@ public sealed partial class SimulationEngine : IDisposable
                 PortFees: BuildPortFeeSnapshot(), MissingRations: _economyTime.MissingRations,
                 ActiveContracts: (_economyTime.ActiveContracts ?? []).ToImmutableArray(),
                 RouteArrivalGameTimeMs: _economyTime.RouteArrivalGameTimeMs, SimulationTimeMs: gameTimeMs,
-                Voyage: BuildVoyageSnapshot());
+                Voyage: BuildVoyageSnapshot(),
+                CombatImpacts: _combatImpacts.ToImmutableArray());
         }
     }
 
