@@ -11,6 +11,7 @@ public sealed partial class SimulationEngine
     private Dictionary<(string ObjectId, string ModuleId), LauncherCombatSnapshot> _launcherCombat = new();
     private long _torpedoSequence;
     private long _combatImpactSequence;
+    private long _wreckSequence;
     private readonly List<CombatImpactSnapshot> _combatImpacts = new();
     private long _nextCombatGuidanceMs = long.MaxValue;
     private readonly Dictionary<string, (ObjectMotionSnapshot Pose, long Time)> _torpedoTargets = new(StringComparer.Ordinal);
@@ -158,11 +159,14 @@ public sealed partial class SimulationEngine
         var flight = projectile.InitialMotion.Torpedo!;
         var finalFlight = CloseFlightHistory(projectile, contact.MotionTimeMs, flight);
         int damage = 0;
+        string? wreckId = null;
         string hitId = target.InitialMotion.ObjectId;
         if (_hullCombat.TryGetValue(hitId, out var hull) && hull.ShipClassId == "ship.tetrarch")
         {
             damage = Math.Min(hull.CurrentHp, flight.Damage);
             _hullCombat[hitId] = hull with { CurrentHp = hull.CurrentHp - damage };
+            if (hull.CurrentHp == damage)
+                wreckId = CreateWreck(target, contact.MotionTimeMs);
         }
         _objects.Remove(projectile);
         _torpedoTargets.Remove(projectile.InitialMotion.ObjectId);
@@ -171,7 +175,62 @@ public sealed partial class SimulationEngine
             _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = null };
         _combatImpacts.Add(new(checked(++_combatImpactSequence), projectile.InitialMotion.ObjectId,
             flight.OwnerObjectId, flight.LauncherModuleId, flight.TargetObjectId, hitId,
-            contact.MotionTimeMs, contact.X, contact.Y, finalFlight.Trail, damage));
+            contact.MotionTimeMs, contact.X, contact.Y, finalFlight.Trail, damage,
+            wreckId is null ? null : hitId, wreckId));
+    }
+
+    private string CreateWreck(SpaceObjectRuntime destroyed, double impactMotionTimeMs)
+    {
+        string id;
+        do
+        {
+            id = "wreck-" + checked(++_wreckSequence).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        } while (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, id, StringComparison.OrdinalIgnoreCase)));
+        string destroyedId = destroyed.InitialMotion.ObjectId;
+        var point = CombatPath(destroyed).Position(impactMotionTimeMs);
+        _objects.Remove(destroyed);
+        _hullCombat.Remove(destroyedId);
+        foreach (var key in _launcherCombat.Keys.Where(k => k.ObjectId == destroyedId).ToArray())
+            _launcherCombat.Remove(key);
+        _objects.Add(new(new(id, point.X, point.Y, 0, 0), SpaceObjectType.Wreck,
+            (long)Math.Floor(impactMotionTimeMs), [], Name: "Wreck", IsKnown: destroyed.IsKnown));
+        if (SelectedObjectId == destroyedId) SelectedObjectId = null;
+        if (ActiveObjectId == destroyedId) ActiveObjectId = null;
+        ClearDestroyedTargetNavigation(destroyedId, impactMotionTimeMs);
+        return id;
+    }
+
+    private void ClearDestroyedTargetNavigation(string destroyedId, double motionTimeMs)
+    {
+        long anchor = (long)Math.Floor(motionTimeMs);
+        long eventTime = (long)Math.Ceiling(motionTimeMs);
+        for (int i = 0; i < _objects.Count; i++)
+        {
+            var obj = _objects[i];
+            var modules = obj.Modules;
+            bool changed = false;
+            var motion = RuntimeMotion.At(obj, anchor);
+            foreach (var module in obj.Modules)
+            {
+                if (module.ActiveCycle is not { } cycle || cycle.TargetObjectId != destroyedId) continue;
+                if (cycle.CommandType == NavigationComputerCommandTypes.Approach && cycle.ApproachRoute is { } route)
+                {
+                    var pose = ApproachLineCaptureMath.PredictPose(route, route.ElapsedMs + motionTimeMs - cycle.StartedGameTimeMs);
+                    // Anchor the new straight continuation on the integer clock without
+                    // moving the ship to a rounded contact position or extending its turn.
+                    var atAnchor = TorpedoGuidanceMath.PredictSegment(new(pose.X, pose.Y, pose.Direction,
+                        route.SpeedKmS, 0, 0), anchor - motionTimeMs);
+                    motion = new(obj.InitialMotion.ObjectId, atAnchor.X, atAnchor.Y, route.SpeedKmS, atAnchor.Direction);
+                }
+                RecordCommandResultFromCycle(cycle, CommandResultStatus.Cancelled, eventTime, CommandReasonCodes.UnknownTarget);
+                RecordShipEvent(obj.InitialMotion.ObjectId, module.ModuleId, ShipEventTypes.CycleInterrupted,
+                    CommandReasonCodes.UnknownTarget, eventTime);
+                modules = modules.SetItem(FindModuleIndex(modules, module.ModuleId), module with { ActiveCycle = null });
+                changed = true;
+            }
+            if (changed)
+                _objects[i] = obj with { InitialMotion = motion, StartGameTimeMs = anchor, Modules = modules };
+        }
     }
 
     private static TorpedoSnapshot CloseFlightHistory(SpaceObjectRuntime obj, double motionTimeMs, TorpedoSnapshot predicted)

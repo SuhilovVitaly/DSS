@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Engine.Scenario;
 public static class ScenarioLoader
 {
     private static readonly HashSet<string> KnownObjectTypes = new(StringComparer.OrdinalIgnoreCase)
-        { "PlayerShip", "NpcShip", "Station", "Asteroid" };
+        { "PlayerShip", "NpcShip", "Station", "Asteroid", "Wreck" };
 
     private static readonly HashSet<string> KnownPersistenceTypes = new(StringComparer.OrdinalIgnoreCase)
         { "Permanent", "Temporary" };
@@ -343,6 +343,15 @@ public static class ScenarioLoader
             throw new ScenarioException($"Missing persistenceType for '{obj.ObjectId}'.");
         if (!KnownPersistenceTypes.Contains(obj.PersistenceType))
             throw new ScenarioException($"Unknown persistenceType '{obj.PersistenceType}' for '{obj.ObjectId}'.");
+
+        if (string.Equals(obj.ObjectType, SpaceObjectType.Wreck, StringComparison.OrdinalIgnoreCase) &&
+            (!string.Equals(obj.PersistenceType, "Permanent", StringComparison.OrdinalIgnoreCase) ||
+             !string.Equals(obj.MovementType, "Stationary", StringComparison.OrdinalIgnoreCase) ||
+             obj.SpeedMps != 0 || obj.DirectionDegrees != 0 || obj.IsDestroyed || obj.IsDocked ||
+             obj.DockedStationObjectId is not null || obj.HullLayout is not null ||
+             obj.Modules is { Count: > 0 } || obj.Crew is { Count: > 0 } || obj.Passengers is { Count: > 0 } ||
+             obj.Inventory is { Count: > 0 } || obj.ProducingModules is { Count: > 0 }))
+            throw new ScenarioException($"Wreck '{obj.ObjectId}' must be permanent, stationary and empty.");
 
         if (obj.DirectionDegrees < 0 || obj.DirectionDegrees >= 360)
             throw new ScenarioException(

@@ -412,6 +412,7 @@ public sealed partial class SimulationEngine : IDisposable
             _launcherCombat = combatState.Launchers;
             _torpedoSequence = 0;
             _combatImpactSequence = 0;
+            _wreckSequence = 0;
             _combatImpacts.Clear();
             _torpedoTargets.Clear();
             _nextCombatGuidanceMs = long.MaxValue;
