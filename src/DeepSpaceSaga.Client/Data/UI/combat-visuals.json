@@ -1,0 +1,11 @@
+{
+    "schemaVersion": 1,
+    "torpedo": "#FFFF00FF",
+    "trail": "#FFFF00FF",
+    "prediction": "#FFFF00FF",
+    "intercept": "#FFFF00FF",
+    "preview": "#808080FF",
+    "hullHp": "#00FF00FF",
+    "explosion": "#FF0000FF",
+    "wreck": "#808080FF"
+}

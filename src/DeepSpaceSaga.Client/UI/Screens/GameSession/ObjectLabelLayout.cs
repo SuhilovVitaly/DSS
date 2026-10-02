@@ -12,6 +12,10 @@ internal static class ObjectLabelLayout
 {
     public const float MinPlaqueWidth = 120f;
     public const float PlaqueHeight = 18f;
+    public const float HullBarHeight = 3f;
+    public const float HullBarSpace = 6f;
+
+    internal static SKRect HullBarRect(SKRect bounds) => new(bounds.Left, Math.Max(bounds.Top, bounds.Bottom - HullBarHeight), bounds.Right, bounds.Bottom);
     public const float StripeHeight = 3f;
     public const float StatusSquareSize = 8f;
     public const float TextPaddingX = 12f;
@@ -53,13 +57,14 @@ internal static class ObjectLabelLayout
         double directionDegrees,
         float textWidth,
         SKSize viewport,
-        float markerRadius)
+        float markerRadius,
+        bool hasHullBar = false)
     {
         if (viewport.Width <= 0 || viewport.Height <= 0) return default;
         float plaqueW = Math.Max(MinPlaqueWidth,
             TextPaddingX + StatusSquareSize + StatusTextGap + textWidth + TextPaddingX);
         plaqueW = Math.Min(plaqueW, Math.Max(0, viewport.Width - 2 * ViewportMargin));
-        float plaqueH = Math.Min(PlaqueHeight, Math.Max(0, viewport.Height - 2 * ViewportMargin));
+        float plaqueH = Math.Min(PlaqueHeight + (hasHullBar ? HullBarSpace : 0), Math.Max(0, viewport.Height - 2 * ViewportMargin));
         var plaqueSize = new SKSize(plaqueW, plaqueH);
 
         float safeRadius = markerRadius + SafeMarginPx;

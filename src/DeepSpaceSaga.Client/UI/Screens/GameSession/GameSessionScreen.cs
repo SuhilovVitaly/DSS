@@ -14,6 +14,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 public sealed partial class GameSessionScreen : IScreen
 {
     private readonly SnapshotBuffer _buffer;
+    internal CombatVisualSettings CombatSettings { get; }
     private readonly IMotionPredictor _predictor;
     private readonly CameraState _camera;
     private readonly GridRenderer _grid;
@@ -275,9 +276,11 @@ public sealed partial class GameSessionScreen : IScreen
         bool showTrajectoryPrediction = true,
         float uiScale = 1.0f,
         TacticalMapSettings? mapSettings = null,
-        string? tacticalMapSnapshotDirectory = null)
+        string? tacticalMapSnapshotDirectory = null,
+        CombatVisualSettings? combatSettings = null)
     {
         _buffer = buffer;
+        CombatSettings = combatSettings ?? CombatVisualSettings.Default;
         _predictor = predictor;
         _handle = handle;
         _timestampProvider = timestampProvider ?? Stopwatch.GetTimestamp;
@@ -285,6 +288,8 @@ public sealed partial class GameSessionScreen : IScreen
         _tacticalMapSnapshotDirectory = tacticalMapSnapshotDirectory ?? TacticalMapSnapshotWriter.DefaultDirectory;
         _uiScale = ValidateUiScale(uiScale);
         _uiTimeStartTimestamp = _timestampProvider();
+        _combatEffects = new CombatEffectStore(_timestampProvider, _buffer.FindCombatImpactReceivedAtTimestamp);
+        _combatEffects.Reset(_buffer.Latest?.Snapshot.CombatImpacts ?? default);
 
         _mapSettings = (mapSettings ?? new()).Validate();
         ScaleTargets = _mapSettings.ScaleTargets;
@@ -293,7 +298,7 @@ public sealed partial class GameSessionScreen : IScreen
         _trailStore = new ObjectTrailStore(_predictor, _timestampProvider);
         _futureTrajectoryProjector = new FutureTrajectoryProjector(_predictor);
         _navigationTrajectoryProjector = new NavigationTrajectoryProjector();
-        _labelRenderer = new ObjectLabelRenderer();
+        _labelRenderer = new ObjectLabelRenderer(CombatSettings);
         _depthRenderer = new TacticalMapDepthRenderer();
 
         _trailPaint = new SKPaint { Color = new SKColor(190, 190, 190, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 2f, IsAntialias = true };
@@ -352,6 +357,8 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnDeactivated()
     {
+        ClearLaunchPreview();
+        ReleaseCombatPaints();
         _zoomTransition.Cancel();
         _isPanningMap = false;
         _isCtrlLeftDown = false;
@@ -907,6 +914,9 @@ public sealed partial class GameSessionScreen : IScreen
             double dx = x - sx;
             double dy = y - sy;
             double distanceSq = dx * dx + dy * dy;
+            if (ObjectLabelRenderer.HasHullBar(state.Source) &&
+                _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y))
+                distanceSq = 0;
             if (distanceSq > radiusSq)
                 continue;
 
@@ -1052,6 +1062,7 @@ public sealed partial class GameSessionScreen : IScreen
         UpdateObjectRenderStates(prediction, deltaSeconds);
 
         UpdateCameraFocusFromPlayer(_renderStates);
+        UpdateCombatImportance();
         UpdateMapClusters();
 
         // Recompute after render states + camera focus are current for this frame —
@@ -1106,6 +1117,10 @@ public sealed partial class GameSessionScreen : IScreen
             // 3.55. Navigation trajectory (Ctrl+Click) — after future trajectory,
             // painted last so the solid Approach covers the target forecast at overlaps.
             DrawNavigationTrajectories(canvas, width, height);
+            DrawCombatTrajectories(canvas, buffered);
+            RenderStageCompleted?.Invoke("combat_trajectories");
+            DrawLaunchPreview(canvas, prediction, viewportResized);
+            RenderStageCompleted?.Invoke("launch_preview");
             CompleteRenderStage("forecasts");
 
             // Compute smoothed label geometries once per frame so both
@@ -1120,59 +1135,65 @@ public sealed partial class GameSessionScreen : IScreen
 
             // Important markers stay above background celestial markers and contacts.
             for (int markerPass = 0; markerPass < 2; markerPass++)
-            foreach (var state in _renderStates)
-            {
-                if (IsImportantMapObject(state.Pose.ObjectId) != (markerPass == 1)) continue;
-                if (_clusteredObjectIds.Contains(state.Pose.ObjectId)) continue;
-                var (sx, sy) = _camera.WorldToScreen(state.Pose.X, state.Pose.Y, width, height);
-                // Marker radius from the shared policy (screen-space, zoom-independent).
-                // The player ship's render type comes from identity (IsPlayerShip), not
-                // the payload — legacy payloads without RenderObjectType still draw as a ship.
-                float r = TacticalMapMarkerPolicy.GetMarkerRadiusPx(
-                    state.IsPlayerShip ? SpaceObjectType.PlayerShip : state.Pose.RenderObjectType);
-                // Include halo, reticle and engine flame extents, not just the core.
-                float margin = r * 5 + 4;
-                if (sx < -margin || sy < -margin || sx > width + margin || sy > height + margin)
-                    continue;
-
-                // Selection takes visual priority when the same object is also active;
-                // orange is reserved for hovered objects that are not selected.
-                if (state.Pose.ObjectId == _selectedObjectId)
-                    _depthRenderer.DrawSelectionReticle(canvas, sx, sy, r, uiTimeMs);
-                else if (state.Pose.ObjectId == _activeObjectId)
-                    _depthRenderer.DrawActiveObjectReticle(canvas, sx, sy, r, uiTimeMs);
-                if (state.Pose.ObjectId == _selectedObjectId || state.Pose.ObjectId == _activeObjectId)
-                    RenderStageCompleted?.Invoke("reticle");
-
-                if (state.IsPlayerShip)
+                foreach (var state in _renderStates)
                 {
-                    if (state.Pose.ActiveEngineCommandType == ShipEngineCommandTypes.Accelerate)
+                    if (IsImportantMapObject(state.Pose.ObjectId) != (markerPass == 1)) continue;
+                    if (_clusteredObjectIds.Contains(state.Pose.ObjectId)) continue;
+                    var (sx, sy) = _camera.WorldToScreen(state.Pose.X, state.Pose.Y, width, height);
+                    // Marker radius from the shared policy (screen-space, zoom-independent).
+                    // The player ship's render type comes from identity (IsPlayerShip), not
+                    // the payload — legacy payloads without RenderObjectType still draw as a ship.
+                    float r = HasCombatMarker(state.Source) ? CombatMarkerRadius : TacticalMapMarkerPolicy.GetMarkerRadiusPx(
+                        state.IsPlayerShip ? SpaceObjectType.PlayerShip : state.Pose.RenderObjectType);
+                    // Include halo, reticle and engine flame extents, not just the core.
+                    float margin = r * 5 + 4;
+                    if (sx < -margin || sy < -margin || sx > width + margin || sy > height + margin)
+                        continue;
+
+                    // Selection takes visual priority when the same object is also active;
+                    // orange is reserved for hovered objects that are not selected.
+                    if (state.Pose.ObjectId == _selectedObjectId)
+                        _depthRenderer.DrawSelectionReticle(canvas, sx, sy, r, uiTimeMs);
+                    else if (state.Pose.ObjectId == _activeObjectId)
+                        _depthRenderer.DrawActiveObjectReticle(canvas, sx, sy, r, uiTimeMs);
+                    if (state.Pose.ObjectId == _selectedObjectId || state.Pose.ObjectId == _activeObjectId)
+                        RenderStageCompleted?.Invoke("reticle");
+
+                    if (HasCombatMarker(state.Source))
                     {
-                        _depthRenderer.DrawEngineFlame(canvas, sx, sy, state.Pose.Direction, r, uiTimeMs);
-                    }
-                    DrawPlayerShipGlyph(canvas, sx, sy, state.Pose.Direction, r);
-                }
-                else
-                {
-                    var markerColor = SpaceMapColorResolver.GetColor(
-                        state.Pose.RenderObjectType, state.Pose.RelationToPlayer);
-                    if (_camera.PixelsPerWorldUnit <= _mapSettings.CompactMarkerPpu && !IsImportantMapObject(state.Pose.ObjectId) &&
-                        state.Pose.RenderObjectType is not (SpaceObjectType.Planet or SpaceObjectType.Sun))
-                    {
-                        _mapMarkerPaint.Color = markerColor;
-                        canvas.DrawCircle(sx, sy, 2.5f, _mapMarkerPaint);
+                        DrawCombatMarker(canvas, state, sx, sy);
                         continue;
                     }
-                    if (TacticalMapMarkerPolicy.UsesGlintMarker(state.Pose.RenderObjectType))
+
+                    if (state.IsPlayerShip)
                     {
-                        _depthRenderer.DrawGlintMarker(canvas, sx, sy, r, markerColor);
+                        if (state.Pose.ActiveEngineCommandType == ShipEngineCommandTypes.Accelerate)
+                        {
+                            _depthRenderer.DrawEngineFlame(canvas, sx, sy, state.Pose.Direction, r, uiTimeMs);
+                        }
+                        DrawPlayerShipGlyph(canvas, sx, sy, state.Pose.Direction, r);
                     }
                     else
                     {
-                        _depthRenderer.DrawSphericalMarker(canvas, sx, sy, r, markerColor);
+                        var markerColor = SpaceMapColorResolver.GetColor(
+                            state.Pose.RenderObjectType, state.Pose.RelationToPlayer);
+                        if (_camera.PixelsPerWorldUnit <= _mapSettings.CompactMarkerPpu && !IsImportantMapObject(state.Pose.ObjectId) &&
+                            state.Pose.RenderObjectType is not (SpaceObjectType.Planet or SpaceObjectType.Sun))
+                        {
+                            _mapMarkerPaint.Color = markerColor;
+                            canvas.DrawCircle(sx, sy, 2.5f, _mapMarkerPaint);
+                            continue;
+                        }
+                        if (TacticalMapMarkerPolicy.UsesGlintMarker(state.Pose.RenderObjectType))
+                        {
+                            _depthRenderer.DrawGlintMarker(canvas, sx, sy, r, markerColor);
+                        }
+                        else
+                        {
+                            _depthRenderer.DrawSphericalMarker(canvas, sx, sy, r, markerColor);
+                        }
                     }
                 }
-            }
 
             // 4.5. Object label plaques (on top of objects, before UI panels)
             RenderStageCompleted?.Invoke("marker_geometry");
@@ -1182,6 +1203,9 @@ public sealed partial class GameSessionScreen : IScreen
             DrawOffscreenTargets(canvas);
             CompleteRenderStage("markers_and_labels");
         }
+
+        DrawCombatEffects(canvas, buffered, now);
+        RenderStageCompleted?.Invoke("combat_effects");
 
         // UI overlay pass — everything from here on is a GameSession UI panel, never
         // the tactical map. Panels are laid out in logical (unscaled) coordinates;
@@ -1261,6 +1285,8 @@ public sealed partial class GameSessionScreen : IScreen
         long ed = prediction.EffectivePredictionDeltaMs;
         var snapshot = prediction.BufferedSnapshot.Snapshot;
         string? playerShipObjectId = snapshot.PlayerShipObjectId;
+        UpdateCombatPoseObjects(snapshot);
+        long combatDelta = CombatPredictionDelta(prediction);
 
         // A fresh authoritative snapshot can reveal that the object's real trajectory
         // (velocity/heading) differed from what the client had been extrapolating from
@@ -1278,12 +1304,20 @@ public sealed partial class GameSessionScreen : IScreen
 
         foreach (var obj in snapshot.Objects)
         {
-            var predicted = PredictRenderMotion(obj, ed);
+            bool hasCombatPose = _combatPoseObjectIds.Contains(obj.ObjectId);
+            var predicted = PredictRenderMotion(obj, hasCombatPose ? combatDelta : ed);
             if (obj.ObjectId == playerShipObjectId) _profilePlayerRaw = predicted;
             if (obj.ObjectId == _profileTargetId) _profileTargetRaw = predicted;
             _currentVisualObjectIds.Add(obj.ObjectId);
 
-            if (isPaused)
+            // Combat participants share their confirmed display time with the launch
+            // preview and target path. A frozen/corrected marker would detach the line.
+            if (hasCombatPose)
+            {
+                _visualCorrections.Remove(obj.ObjectId);
+                _pausedVisualAnchors.Remove(obj.ObjectId);
+            }
+            else if (isPaused)
             {
                 if (!_pausedVisualAnchors.TryGetValue(obj.ObjectId, out var anchor))
                 {
@@ -1524,6 +1558,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         foreach (var kvp in _trailStore.Trails)
         {
+            if (FindRenderStateById(kvp.Key)?.Source.RenderObjectType == SpaceObjectType.Missile) continue;
             if (_camera.PixelsPerWorldUnit < _mapSettings.TrailDetailPpu && !IsImportantMapObject(kvp.Key)) continue;
             var points = kvp.Value;
             if (points.Count < 2)
@@ -1580,6 +1615,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         foreach (var state in _renderStates)
         {
+            if (state.Source.RenderObjectType == SpaceObjectType.Missile) continue;
             // The player ship always gets its own ballistic preview (subject to the
             // Approach exclusion below). A non-player object only gets one when it is
             // the current SelectedObjectId — e.g. the target of an active
@@ -2156,7 +2192,7 @@ public sealed partial class GameSessionScreen : IScreen
         return null;
     }
 
-    private static ObjectInfoPanelData? ToObjectInfoPanelData(ObjectRenderState? state, ObjectRenderState? player = null)
+    private ObjectInfoPanelData? ToObjectInfoPanelData(ObjectRenderState? state, ObjectRenderState? player = null)
     {
         if (state is not { } s)
             return null;
@@ -2171,7 +2207,7 @@ public sealed partial class GameSessionScreen : IScreen
             distanceKm = double.Hypot(dx, dy) / 10.0;
         }
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
-            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm);
+            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s));
     }
 
     /// <summary>

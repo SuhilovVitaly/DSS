@@ -11,6 +11,11 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// </summary>
 internal sealed class ObjectLabelRenderer
 {
+    private readonly CombatVisualSettings _combatSettings;
+    internal IReadOnlyDictionary<string, ObjectLabelGeometry> Geometries => _geometries;
+    internal static bool HasHullBar(ObjectMotionSnapshot source) =>
+        !source.IsDestroyed && source.RenderObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip &&
+        source.HullCombat is { ShipClassId: "ship.tetrarch", MaxHp: > 0, CurrentHp: > 0 };
     private readonly SKPaint _leaderLinePaint;
     private readonly SKPaint _plaqueBgPaint;
     private readonly SKPaint _plaqueBorderPaint;
@@ -37,8 +42,9 @@ internal sealed class ObjectLabelRenderer
     private readonly List<SKRect> _occupiedPlaques = new();
     private readonly record struct LabelMetrics(string? RenderType, string? Name, string Text, float Width, float MaximumWidth);
 
-    public ObjectLabelRenderer()
+    public ObjectLabelRenderer(CombatVisualSettings? combatSettings = null)
     {
+        _combatSettings = combatSettings ?? CombatVisualSettings.Default;
         var typeface = SKTypeface.FromFamilyName("Consolas") ?? SKTypeface.Default;
 
         _leaderLinePaint = new SKPaint
@@ -126,7 +132,7 @@ internal sealed class ObjectLabelRenderer
                 var predicted = state.Pose;
                 string objectId = predicted.ObjectId;
                 if (clusteredIds?.Contains(objectId) == true) continue;
-                bool important = state.IsPlayerShip || isImportant?.Invoke(objectId) == true ||
+                bool important = state.IsPlayerShip || HasHullBar(state.Source) || state.Source.Torpedo is not null || isImportant?.Invoke(objectId) == true ||
                     predicted is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy };
                 if (important != (pass == 0)) continue;
                 if (mapSettings is not null && !important && _occupiedPlaques.Count >= mapSettings.MaximumLabels) continue;
@@ -139,7 +145,7 @@ internal sealed class ObjectLabelRenderer
                 // Visibility filter: skip objects whose marker/glyph is fully outside viewport.
                 // Marker radius from the shared policy (player ship included) so the
                 // viewport culling matches the drawn marker size.
-                float markerRadius = TacticalMapMarkerPolicy.GetMarkerRadiusPx(
+                float markerRadius = GameSessionScreen.HasCombatMarker(state.Source) ? GameSessionScreen.CombatMarkerRadius : TacticalMapMarkerPolicy.GetMarkerRadiusPx(
                     state.IsPlayerShip ? SpaceObjectType.PlayerShip : predicted.RenderObjectType);
                 if (objSx < -markerRadius || objSx > viewportW + markerRadius ||
                     objSy < -markerRadius || objSy > viewportH + markerRadius)
@@ -165,7 +171,7 @@ internal sealed class ObjectLabelRenderer
 
                 // Target geometry from orbit layout (no smoothing).
                 var targetGeom = ObjectLabelLayout.Create(objectScreen, predicted.Direction, textWidth,
-                    viewport, markerRadius);
+                    viewport, markerRadius, HasHullBar(state.Source));
 
                 // Apply smoothing to get the visible plaque position.
                 SKRect visiblePlaque = _smoother.Update(
@@ -193,7 +199,7 @@ internal sealed class ObjectLabelRenderer
 
                 // Recompute status rect and text origin relative to the visible plaque.
                 float sqX = visiblePlaque.Left + ObjectLabelLayout.TextPaddingX + ObjectLabelLayout.ContentOffsetX;
-                float sqY = visiblePlaque.Top + (visiblePlaque.Height - ObjectLabelLayout.StatusSquareSize) / 2f
+                float sqY = visiblePlaque.Top + (Math.Min(visiblePlaque.Height, ObjectLabelLayout.PlaqueHeight) - ObjectLabelLayout.StatusSquareSize) / 2f
                             + ObjectLabelLayout.StatusOffsetY;
                 var statusRect = new SKRect(sqX, sqY,
                     sqX + ObjectLabelLayout.StatusSquareSize, sqY + ObjectLabelLayout.StatusSquareSize);
@@ -286,6 +292,10 @@ internal sealed class ObjectLabelRenderer
 
             var predicted = state.Pose;
 
+            var plaqueRect = geometry.PlaqueRect;
+            bool hasHullBar = HasHullBar(state.Source);
+            if (hasHullBar) plaqueRect.Bottom = Math.Max(plaqueRect.Top, plaqueRect.Bottom - ObjectLabelLayout.HullBarSpace);
+
             byte opacity = _opacity[objectId];
             _plaqueBgPaint.Color = _plaqueBgPaint.Color.WithAlpha(opacity);
             _plaqueBorderPaint.Color = _plaqueBorderPaint.Color.WithAlpha(opacity);
@@ -295,15 +305,15 @@ internal sealed class ObjectLabelRenderer
                 : SpaceMapColorResolver.GetColor(predicted.RenderObjectType, predicted.RelationToPlayer);
 
             // Plaque background + border
-            canvas.DrawRect(geometry.PlaqueRect, _plaqueBgPaint);
-            canvas.DrawRect(geometry.PlaqueRect, _plaqueBorderPaint);
+            canvas.DrawRect(plaqueRect, _plaqueBgPaint);
+            canvas.DrawRect(plaqueRect, _plaqueBorderPaint);
 
             // Bottom accent stripe
             var stripeRect = new SKRect(
-                geometry.PlaqueRect.Left,
-                geometry.PlaqueRect.Bottom - ObjectLabelLayout.StripeHeight,
-                geometry.PlaqueRect.Right,
-                geometry.PlaqueRect.Bottom);
+                plaqueRect.Left,
+                plaqueRect.Bottom - ObjectLabelLayout.StripeHeight,
+                plaqueRect.Right,
+                plaqueRect.Bottom);
 
             byte sr = (byte)((objectColor.Red + 52) / 3);
             byte sg = (byte)((objectColor.Green + 52) / 3);
@@ -332,9 +342,19 @@ internal sealed class ObjectLabelRenderer
             float textY = geometry.TextOrigin.Y + textPaint.TextSize;
             textPaint.Color = textPaint.Color.WithAlpha(opacity);
             canvas.Save();
-            canvas.ClipRect(geometry.PlaqueRect);
+            canvas.ClipRect(plaqueRect);
             canvas.DrawText(label, geometry.TextOrigin.X, textY, textPaint);
             canvas.Restore();
+            if (hasHullBar)
+            {
+                var hp = state.Source.HullCombat!;
+                var bar = ObjectLabelLayout.HullBarRect(geometry.PlaqueRect);
+                _stripePaint.Color = new SKColor(24, 40, 24);
+                canvas.DrawRect(bar, _stripePaint);
+                bar.Right = bar.Left + bar.Width * (float)Math.Clamp((double)hp.CurrentHp / hp.MaxHp, 0, 1);
+                _stripePaint.Color = _combatSettings.HullHp;
+                canvas.DrawRect(bar, _stripePaint);
+            }
         }
     }
 }

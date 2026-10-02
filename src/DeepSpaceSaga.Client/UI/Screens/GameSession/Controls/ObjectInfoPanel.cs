@@ -168,7 +168,14 @@ public sealed class ObjectInfoPanel
         {
             lines.Add(("Name", d.Survey is not null ? d.ObjectId : d.DisplayName ?? d.ObjectId));
             lines.Add(("Speed", $"{d.SpeedKmS:0.###} km/s"));
-            if (d.Survey is { } survey)
+            if (d.Torpedo is { } torpedo)
+            {
+                lines.Add(("Target", torpedo.Target));
+                lines.Add(("Travelled", $"{torpedo.TravelledKm:0.###} km"));
+                lines.Add(("ETA", torpedo.EtaSeconds is { } eta ? $"{eta:0.###} s" : "—"));
+                lines.Add(("Hit chance", $"{torpedo.HitChancePercent}%"));
+            }
+            else if (d.Survey is { } survey)
             {
                 lines.Add(("Mass", $"{survey.MassKg} kg"));
                 lines.Add(("Composition", survey.CompositionKnown ? survey.CompositionType ?? "Unknown" : "Unknown"));
@@ -320,7 +327,7 @@ public sealed class ObjectInfoPanel
         float textX = imageRect.Right + Padding;
         float textY = imgY + LineHeight - 3f;
         var lines = BuildLines(data);
-        float valueOffset = data?.Survey is not null
+        float valueOffset = data?.Survey is not null || data?.Torpedo is not null
             ? Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding)
             : 62f;
         foreach (var (label, value) in lines)
@@ -420,4 +427,8 @@ public readonly record struct ObjectInfoPanelData(
     AsteroidSurveySnapshot? Survey = null,
     string? CaptainDisplayName = null,
     string? RelationToPlayer = null,
-    double? DistanceKm = null);
+    double? DistanceKm = null,
+    TorpedoInspectionData? Torpedo = null);
+
+/// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
+public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);

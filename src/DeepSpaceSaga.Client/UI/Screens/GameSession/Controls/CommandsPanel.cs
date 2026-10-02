@@ -146,6 +146,20 @@ public sealed class CommandsPanel
         _hoveredCommandButtonIndex < _allCommandButtons.Count
             ? _allCommandButtons[_hoveredCommandButtonIndex].CommandTypeId : null;
 
+    /// <summary>Read-only hit-test against a visible command, with current enablement.</summary>
+    internal string? EnabledCommandAt(float x, float y)
+    {
+        if (_state == CommandsPanelState.Closed) return null;
+        foreach (var row in _panelRows)
+        {
+            if (!row.Opened || (_panelOpenedByName.TryGetValue(row.Name, out bool opened) && !opened)) continue;
+            foreach (var button in row.Buttons)
+                if (button.Rect.Contains(x, y) && button.Enabled && _isCommandEnabled(button.CommandTypeId))
+                    return button.CommandTypeId;
+        }
+        return null;
+    }
+
     // ── Paints ──────────────────────────────────────────────────
     private readonly SKPaint _panelBgPaint;
     private readonly SKPaint _mainCaptionBgPaint;
