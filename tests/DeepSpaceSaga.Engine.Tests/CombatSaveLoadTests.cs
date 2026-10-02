@@ -9,6 +9,62 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class CombatSaveLoadTests : IDisposable
 {
+    [Fact]
+    public void Real_combat_with_save_mid_second_flight_matches_continuous_run()
+    {
+        using var continuous = new BasicCombatEndToEndTests.CombatRun();
+        var resumed = new BasicCombatEndToEndTests.CombatRun();
+        string path = Path.Combine(_directory, "real-combat.json");
+        try
+        {
+            void Reload()
+            {
+                var before = resumed.Snapshot();
+                var save = resumed.Engine.CaptureSaveState();
+                File.WriteAllText(path, ScenarioLoader.Serialize(save));
+                resumed.Dispose();
+                resumed = new BasicCombatEndToEndTests.CombatRun(path);
+                BasicCombatEndToEndTests.SameWorld(before, resumed.Snapshot());
+                Assert.Empty(resumed.Snapshot().CombatImpacts);
+                var restored = resumed.Engine.CaptureSaveState();
+                Assert.Equal(JsonSerializer.Serialize(save.GameState.CombatState), JsonSerializer.Serialize(restored.GameState.CombatState));
+                Assert.Equal(save.GameState.MasterSeed, restored.GameState.MasterSeed);
+                Assert.Equal(JsonSerializer.Serialize(save.GameState.DialogueState), JsonSerializer.Serialize(restored.GameState.DialogueState));
+                Assert.Equal(JsonSerializer.Serialize(save.GameState.TradingMap?.RngStreams), JsonSerializer.Serialize(restored.GameState.TradingMap?.RngStreams));
+                Assert.Equal(JsonSerializer.Serialize(save.GameState.StationResourceFields?.RngStreams), JsonSerializer.Serialize(restored.GameState.StationResourceFields?.RngStreams));
+                Assert.Equal(JsonSerializer.Serialize(save.GameState.CommandReceipts), JsonSerializer.Serialize(restored.GameState.CommandReceipts));
+            }
+
+            for (int shot = 1; shot <= 3; shot++)
+            {
+                var launch = continuous.Launch(shot);
+                BasicCombatEndToEndTests.SameWorld(launch, resumed.Launch(shot));
+                long end = BasicCombatEndToEndTests.EndTime(launch);
+                if (shot == 2)
+                {
+                    long mid = launch.MotionTimeMs + (end - launch.MotionTimeMs) / 2;
+                    BasicCombatEndToEndTests.SameWorld(continuous.AdvanceTo(mid), resumed.AdvanceTo(mid, SimulationSpeed.Speed4, partition: true));
+                    Assert.NotEmpty(BasicCombatEndToEndTests.Flight(resumed.Snapshot()).Torpedo!.Trail);
+                    Reload();
+                    resumed.Engine.ReceiveCommand(Fire("proof-2"));
+                    Assert.Single(resumed.Snapshot().Objects, o => o.Torpedo is not null);
+                }
+                var expected = continuous.AdvanceTo(end);
+                var actual = resumed.AdvanceTo(end, SimulationSpeed.Speed3, partition: true);
+                BasicCombatEndToEndTests.SameWorld(expected, actual);
+                BasicCombatEndToEndTests.AssertHit(actual, shot);
+                BasicCombatEndToEndTests.SameImpact(expected.CombatImpacts[^1], Assert.Single(actual.CombatImpacts));
+                // Reload after every hit; earlier effects must not replay, nor may a prior
+                // accepted launch identity create another projectile in the new engine.
+                Reload();
+                resumed.Engine.ReceiveCommand(Fire("proof-" + shot));
+                BasicCombatEndToEndTests.SameWorld(expected, resumed.Snapshot());
+                Assert.Empty(resumed.Snapshot().CombatImpacts);
+            }
+        }
+        finally { resumed.Dispose(); }
+    }
+
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "dss-combat-" + Guid.NewGuid().ToString("N"));
     private static string Settings => Path.Combine(ClientRoot, "Settings.json");
     public CombatSaveLoadTests() => Directory.CreateDirectory(_directory);
