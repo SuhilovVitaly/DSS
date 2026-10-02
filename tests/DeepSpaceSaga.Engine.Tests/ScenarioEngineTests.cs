@@ -482,7 +482,14 @@ public class ScenarioEngineTests
             .Where(t => t.CommandTypeIds.Length > 0)
             .ToArray();
 
-        Assert.Equal(5, activeTypes.Length); // engine + scanner + bridge-navigation-computer + drilling unit + container
+        Assert.Equal(6, activeTypes.Length); // engine + scanner + bridge-navigation-computer + drilling unit + container + torpedo launcher
+
+        var launcherType = Assert.Single(activeTypes, t => t.TypeId == "module.torpedo.launcher.basic");
+        Assert.Equal(CombatCommandTypes.Fire, Assert.Single(launcherType.CommandTypeIds));
+        var fireCommand = registry.CommandDefinitions.GetDefinition(
+            registry.CommandDefinitions.GetIndex(CombatCommandTypes.Fire));
+        Assert.Equal("module.torpedo.launcher", fireCommand.Type);
+        Assert.Equal("object", fireCommand.Target);
 
         var engineType = Assert.Single(activeTypes, t => t.TypeId == "module.engine.basic");
         Assert.Equal(13, engineType.CommandTypeIds.Length); // + navigation.approach (story-20260827-083137, Batch 3)

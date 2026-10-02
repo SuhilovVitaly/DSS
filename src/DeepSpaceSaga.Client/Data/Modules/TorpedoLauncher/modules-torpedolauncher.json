@@ -1,0 +1,17 @@
+{
+  "moduleImplementations": [
+    {
+      "typeId": "module.torpedo.launcher.basic",
+      "displayName": "Torpedo Launcher",
+      "type": "module.torpedo.launcher",
+      "massKg": 2000,
+      "structurePointsMax": 60,
+      "powerConsumptionW": 0,
+      "baseCycleTimeMs": 1000,
+      "baseSuccessChancePercent": 100,
+      "torpedoDamage": 150,
+      "torpedoSpeedKmS": 3,
+      "torpedoTurnRateDegPerSec": 90
+    }
+  ]
+}

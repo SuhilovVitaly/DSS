@@ -83,6 +83,14 @@
       "commandTypeIds": []
     },
     {
+      "typeId": "module.torpedo.launcher",
+      "displayName": "Torpedo Launcher",
+      "slotSize": 1,
+      "commandTypeIds": [
+        "torpedo.fire"
+      ]
+    },
+    {
       "typeId": "living.quarters",
       "displayName": "Living quarters",
       "slotSize": 1,
