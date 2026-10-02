@@ -90,6 +90,15 @@ public sealed class TetrarchClassContentTests
         settings["typeData"]!.AsObject().Remove("shipClasses");
         File.WriteAllText(temporary.SettingsPath, settings.ToJsonString());
         File.Delete(Path.Combine(temporary.Root, ClassPath));
+        // A legacy scenario predates explicit combat identity as well as the class registry.
+        string scenarioPath = Path.Combine(temporary.Root, settings["defaultScenario"]!.GetValue<string>());
+        var scenario = JsonNode.Parse(File.ReadAllText(scenarioPath))!;
+        foreach (var obj in scenario["gameState"]!["spaceObjects"]!.AsArray())
+        {
+            obj!.AsObject().Remove("shipClassId");
+            obj.AsObject().Remove("hullHitPoints");
+        }
+        File.WriteAllText(scenarioPath, scenario.ToJsonString());
 
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(temporary.SettingsPath, out _, out _);
         Assert.Equal(0, registry.ShipClasses.Count);

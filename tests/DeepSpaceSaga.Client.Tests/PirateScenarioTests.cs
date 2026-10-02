@@ -22,12 +22,15 @@ public sealed class PirateScenarioTests
     private static ObjectMotionSnapshot Pirate(AuthoritativeSnapshot snapshot) => Assert.Single(snapshot.Objects, o => o.ObjectType == SpaceObjectType.NpcShip);
 
     [Fact]
-    public void Real_scenario_loads_two_ships_with_standard_modules_and_hostile_linear_pirate()
+    public void Existing_pirate_course_speed_and_identity_are_preserved()
     {
         Assert.Contains(ScenarioRepository.ListScenarios(Path.Combine(ClientRoot, "Scenarios")), s => s.ScenarioPath == ScenarioPath);
         using var engine = Create();
         var snapshot = engine.CaptureSnapshotForTests();
         Assert.Equal(2, snapshot.Objects.Length);
+        Assert.All(snapshot.Objects, o => Assert.Equal(new HullCombatSnapshot("ship.tetrarch", 450, 450), o.HullCombat));
+        Assert.Equal(new LauncherCombatSnapshot(null, 3, 90, 150),
+            Assert.Single(snapshot.InstalledModules, m => m.LauncherCombat is not null).LauncherCombat);
         var pirate = Pirate(snapshot);
         Assert.Equal((0d, 5000d, 0.4d, 120d), (pirate.X, pirate.Y, pirate.SpeedKmS, pirate.Direction));
         Assert.Equal(PlayerRelation.Enemy, pirate.RelationToPlayer);
@@ -147,6 +150,7 @@ public sealed class PirateScenarioTests
         Assert.Null(pirate.CaptainPortraitImage);
         Assert.Null(pirate.DisplayName);
         Assert.Null(pirate.RelationToPlayer);
+        Assert.Null(pirate.HullCombat);
         Assert.Equal(SpaceObjectType.UnknownSpaceObject, pirate.RenderObjectType);
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(source with
         {

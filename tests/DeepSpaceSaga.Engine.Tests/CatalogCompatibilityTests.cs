@@ -24,7 +24,8 @@ public sealed class CatalogCompatibilityTests
             Enumerable.Range(0, source.Recipes.Count).Select(source.Recipes.GetDefinition),
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
-                .Select(source.StationMarketProfiles.GetDefinition));
+                .Select(source.StationMarketProfiles.GetDefinition),
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
 
     private static ItemTypeDefinition[] Items(GameDataRegistry registry) =>
         Enumerable.Range(0, registry.ItemTypes.Count).Select(registry.ItemTypes.GetDefinition).ToArray();
