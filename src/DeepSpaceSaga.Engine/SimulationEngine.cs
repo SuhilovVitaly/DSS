@@ -410,6 +410,9 @@ public sealed partial class SimulationEngine : IDisposable
             _objects.AddRange(runtimeObjects);
             _hullCombat = combatState.Hulls;
             _launcherCombat = combatState.Launchers;
+            _torpedoSequence = 0;
+            _torpedoTargets.Clear();
+            _nextCombatGuidanceMs = long.MaxValue;
             _processedWorldTimeMs = gs.GameTimeMs;
             _processedSimulationTimeMs = gs.MotionTimeMs;
             LoadDialogueState(gs.DialogueState, gs.MotionTimeMs);
@@ -549,6 +552,7 @@ public sealed partial class SimulationEngine : IDisposable
             // needed here.
             AdvanceWorldTo(clockState.GameTimeMs, gameTimeMs);
             ApplyPendingCommands(gameTimeMs);
+            RefreshCombatGuidance(gameTimeMs);
             ApplyPendingDialogueCommands(gameTimeMs);
             ReconcileVoyageAfterDialogue();
             UpdateStationSecurity(gameTimeMs);
@@ -2158,6 +2162,9 @@ public sealed partial class SimulationEngine : IDisposable
         if (command.CommandType is TradeCommandTypes.Buy or TradeCommandTypes.Sell or TradeCommandTypes.Refuel)
             return TryStartTradeCommand(command, gameTimeMs);
 
+        if (command.CommandType == CombatCommandTypes.Fire)
+            return TryStartTorpedoFire(command, gameTimeMs);
+
         return TryStartEngineCommand(command, gameTimeMs);
     }
 
@@ -3126,7 +3133,7 @@ public sealed partial class SimulationEngine : IDisposable
 
     private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt)
     {
-        if (!HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        if (!HasActiveTorpedoes && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
             return;
@@ -3136,6 +3143,7 @@ public sealed partial class SimulationEngine : IDisposable
         while (true)
         {
             long next = gameTimeMs;
+            if (HasActiveTorpedoes) next = Math.Min(next, _nextCombatGuidanceMs);
             foreach (var obj in _objects)
             {
                 if (obj.InitialMotion.ObjectId != PlayerShipObjectId) continue;
@@ -3148,9 +3156,11 @@ public sealed partial class SimulationEngine : IDisposable
                     _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed) &&
                     _objects.Any(o => o.InitialMotion.ObjectId == incident.StationObjectId && o.SecurityZoneRadiusKm is not null))
                     next = Math.Min(next, incident.DeadlineGameTimeMs);
+            AdvanceCombatTo(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
             UpdateStationSecurity(next);
             CompleteActiveEngineCycles(next);
+            RefreshCombatGuidance(next);
             UpdateStationSecurity(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
             if (next >= gameTimeMs) break;
