@@ -121,7 +121,14 @@ public sealed record ObjectMotionSnapshot(
     /// Player-visible survey knowledge for a generated resource asteroid, independent of
     /// technical motion data. Null preserves legacy snapshots and does not grant scan permission.
     /// </summary>
-    AsteroidSurveySnapshot? Survey = null);
+    AsteroidSurveySnapshot? Survey = null,
+    /// <summary>
+    /// Authoritative, player-visible hull health and explicit class identity. Null for
+    /// legacy, ineligible or unidentified objects; never inferred from the image/name.
+    /// </summary>
+    HullCombatSnapshot? HullCombat = null,
+    /// <summary>Confirmed flight state for a torpedo using <see cref="SpaceObjectType.Missile"/>.</summary>
+    TorpedoSnapshot? Torpedo = null);
 
 /// <summary>
 /// A revealed mineralogical fraction in integer thousandths, not cargo quantity or mining yield.

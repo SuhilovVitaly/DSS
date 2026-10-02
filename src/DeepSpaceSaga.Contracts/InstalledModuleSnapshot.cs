@@ -52,4 +52,9 @@ public sealed record InstalledModuleSnapshot(
     /// </summary>
     int? CabinesCount = null,
     /// <summary>Total cargo capacity of this container; fuel tanks have their own capacity.</summary>
-    long? CargoCapacityKg = null);
+    long? CargoCapacityKg = null,
+    /// <summary>
+    /// Authoritative launcher parameters and active projectile identity. Null for legacy
+    /// and non-launcher modules; absence never grants the ability to fire.
+    /// </summary>
+    LauncherCombatSnapshot? LauncherCombat = null);
