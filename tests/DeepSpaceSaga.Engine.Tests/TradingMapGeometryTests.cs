@@ -29,6 +29,23 @@ public sealed class TradingMapGeometryTests
     }
 
     [Fact]
+    public void Generated_stations_inherit_start_station_port_fee()
+    {
+        var existing = ExistingObjects().Select(obj => obj.ObjectId == "SPC-0002"
+            ? obj with { PortFeeCreditsPerDay = 137 }
+            : obj).ToArray();
+        var graph = TradingGraphGenerator.Generate(Rules(), 77, Registry());
+
+        var result = TradingMapGeometryGenerator.Generate(graph, existing, 77);
+
+        Assert.Equal(existing.Single(obj => obj.ObjectId == "SPC-0002"),
+            result.Stations.Single(station => station.ObjectId == "SPC-0002"));
+        Assert.Equal(4, result.Stations.Count(station => station.ObjectId != "SPC-0002"));
+        Assert.All(result.Stations.Where(station => station.ObjectId != "SPC-0002"),
+            station => Assert.Equal(137, station.PortFeeCreditsPerDay));
+    }
+
+    [Fact]
     public void Stations_respect_minimum_separation_and_asteroid_clearance()
     {
         var graph = TradingGraphGenerator.Generate(Rules(), 77, Registry());

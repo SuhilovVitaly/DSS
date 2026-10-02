@@ -156,6 +156,7 @@ public class EconomyTimeContinuityTests
                 MasterSeed = 17,
                 CatalogCompatibility = IntervalRegistry.CatalogCompatibility,
                 TradingMap = null,
+                VoyageState = null,
                 DialogueState = null,
                 SpaceObjects = save.GameState.SpaceObjects
                     .Where(o => o.ObjectId == save.GameState.PlayerShipObjectId || o.ObjectId == "SPC-0002")
@@ -570,6 +571,7 @@ public class EconomyTimeContinuityTests
             GameState = gs with
             {
                 TradingMap = null,
+                VoyageState = null,
                 SpaceObjects = gs.SpaceObjects
                     .Where(o => o.ObjectId == gs.PlayerShipObjectId || o.ObjectId == stationId)
                     .Select(o => o.ObjectId != stationId ? o : o with

@@ -18,6 +18,9 @@ public sealed partial class SimulationEngine
         long MotionAt(long calendarTime) => gameTimeMs == fromCalendar ? simulationTimeMs :
             fromSimulation + (long)((decimal)(calendarTime - fromCalendar) *
                 (simulationTimeMs - fromSimulation) / (gameTimeMs - fromCalendar));
+        long SurveyCalendarAt(long physicalTime) => simulationTimeMs == fromSimulation ? gameTimeMs :
+            fromCalendar + (long)((decimal)(physicalTime - fromSimulation) *
+                (gameTimeMs - fromCalendar) / (simulationTimeMs - fromSimulation));
         // Process (previous, target] in order; repeated snapshots at the same time
         // cannot repeat a meal, including midnight. Loading establishes the cursor.
         while (_processedWorldTimeMs < gameTimeMs)
@@ -39,6 +42,7 @@ public sealed partial class SimulationEngine
             IncludeBoundary(NextContractDeadline());
             IncludeBoundary(NextProductionTime());
             IncludeBoundary(NextMarketHourTime());
+            IncludeBoundary(NextResourceSurveyTime());
 
             // Only boundaries in (processed, target] may move the cursor. A stale
             // schedule must not rewind motion or replay an already processed time.
@@ -49,7 +53,8 @@ public sealed partial class SimulationEngine
 
             // Keep equal-time effects ordered: start above, motion, completion, market hour,
             // pending unload, meal, fee, deadline, then commit the calendar cursor.
-            AdvanceMotionTo(MotionAt(next));
+            AdvanceMotionTo(MotionAt(next), SurveyCalendarAt);
+            CompleteResourceSurveys(next);
             CompleteProduction(next);
             if (next != long.MaxValue && next % GameCalendar.HourMs == 0) ApplyMarketHour(next);
             FlushPendingOutputs();
@@ -59,8 +64,9 @@ public sealed partial class SimulationEngine
             CommitChangedMarketRevisions();
             _processedWorldTimeMs = next;
         }
-        AdvanceMotionTo(simulationTimeMs);
+        AdvanceMotionTo(simulationTimeMs, SurveyCalendarAt);
         _processedSimulationTimeMs = simulationTimeMs;
+        UpdateVoyageForMotion(simulationTimeMs);
     }
 
     // Market state of every station at the start of the current boundary (object index, stock rows and

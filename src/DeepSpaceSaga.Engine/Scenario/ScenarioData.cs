@@ -75,12 +75,23 @@ public sealed record GameStateData(
     [property: JsonPropertyName("catalogCompatibility")] CatalogCompatibilityData? CatalogCompatibility = null,
     [property: JsonPropertyName("tradingMapGeneration")] TradingMapGenerationData? TradingMapGeneration = null,
     [property: JsonPropertyName("tradingMap")] TradingMapStateData? TradingMap = null,
-    [property: JsonPropertyName("stationResourceFields")] StationResourceFieldsState? StationResourceFields = null)
+    [property: JsonPropertyName("stationResourceFields")] StationResourceFieldsState? StationResourceFields = null,
+    [property: JsonPropertyName("voyageState")] VoyageStateData? VoyageState = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
     public long MotionTimeMs => SimulationTimeMs ?? GameTimeMs;
 }
+
+public sealed record VoyageStateData(
+    [property: JsonPropertyName("phase")] string Phase,
+    [property: JsonPropertyName("voyageId")] string? VoyageId = null,
+    [property: JsonPropertyName("originStationObjectId")] string? OriginStationObjectId = null,
+    [property: JsonPropertyName("destinationStationObjectId")] string? DestinationStationObjectId = null,
+    [property: JsonPropertyName("startedMotionTimeMs")] long StartedMotionTimeMs = 0,
+    [property: JsonPropertyName("initialDistanceWorldUnits")] double InitialDistanceWorldUnits = 0,
+    [property: JsonPropertyName("progressPermille")] int ProgressPermille = 0,
+    [property: JsonPropertyName("blockReasonCode")] string? BlockReasonCode = null);
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(

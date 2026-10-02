@@ -19,15 +19,22 @@ public class ApproachCameraIntegrationTests
         var save = engine.CaptureSaveState();
         var ship = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId);
         var asteroid = save.GameState.SpaceObjects.First(o => o.ObjectType == SpaceObjectType.Asteroid);
-        engine.LoadScenario(save with { GameState = save.GameState with {
-            CurrentSpeed = "Speed0",
-            TradingMap = null,
-            SpaceObjects = [
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                CurrentSpeed = "Speed0",
+                TradingMap = null,
+                VoyageState = null,
+                StationResourceFields = null,
+                SpaceObjects = [
                 ship with { PositionX = 10000, PositionY = 10000, SpeedMps = 700, DirectionDegrees = 0 },
                 asteroid with { ObjectId = "TARGET-A", PositionX = 10000, PositionY = 10100, SpeedMps = 1069, DirectionDegrees = 57 },
                 asteroid with { ObjectId = "TARGET-B", PositionX = 11500, PositionY = 10100, SpeedMps = 1911, DirectionDegrees = 110 },
                 asteroid with { ObjectId = "TARGET-C", PositionX = 11300, PositionY = 10000, SpeedMps = 1650, DirectionDegrees = 91 }
-            ] } });
+            ]
+            }
+        });
         var connection = new Connection(engine);
         await using var handle = new GameSessionHandle(connection);
         var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);
@@ -98,11 +105,20 @@ public class ApproachCameraIntegrationTests
         var save = engine.CaptureSaveState();
         var ship = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId);
         var target = save.GameState.SpaceObjects.First(o => o.ObjectType == SpaceObjectType.Asteroid);
-        engine.LoadScenario(save with { GameState = save.GameState with { TradingMap = null, SpaceObjects = [
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                TradingMap = null,
+                VoyageState = null,
+                StationResourceFields = null,
+                SpaceObjects = [
             ship with { PositionX = 0, PositionY = 0, SpeedMps = 700, DirectionDegrees = 0 },
             target with { PositionX = 200000, PositionY = 0, SpeedMps = 100, DirectionDegrees = 90 },
             target with { ObjectId = "NEXT-TARGET", PositionX = 200000, PositionY = 200000, SpeedMps = 1069, DirectionDegrees = 57 }
-        ] } });
+        ]
+            }
+        });
         var initial = engine.CaptureSnapshotForTests();
         var module = initial.InstalledModules.First(m => m.CommandTypeIds.Contains(NavigationComputerCommandTypes.Approach));
         engine.ReceiveCommand(new("long-approach", 1, ship.ObjectId, module.ModuleId, NavigationComputerCommandTypes.Approach, TargetObjectId: target.ObjectId));

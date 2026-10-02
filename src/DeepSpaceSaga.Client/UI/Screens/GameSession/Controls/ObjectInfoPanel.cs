@@ -1,4 +1,6 @@
 using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Client.UI.Screens.Trade;
+using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
@@ -7,8 +9,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 /// Object Info Panel (top-right) — mirrors the Commands Panel (top-left) chrome:
 /// a Caption (360×32) with a Hide/Show toggle button (26×26), followed by two
 /// fixed info rows — "Player Ship" and "Selected Object" — each a caption
-/// (360×36) over a fixed-height body showing an object's image placeholder,
-/// name, speed and direction.
+/// (360×36) over a body showing an object's image, name, speed and direction
+/// or authoritative resource survey knowledge. The body grows to fit all lines.
 /// The "Selected Object" row shows whichever object is currently hovered
 /// (ActiveObjectId) or, absent a hover, last clicked (SelectedObjectId) — the
 /// caller resolves that priority and passes the result in.
@@ -32,7 +34,7 @@ public sealed class ObjectInfoPanel
     public const float CaptionHeight = CommandsPanel.CaptionHeight;
     public const float RowCaptionHeight = CommandsPanel.PanelCaptionHeight;
 
-    /// <summary>Fixed body height for every info row: padding + image + border.</summary>
+    /// <summary>Minimum body height for an info row: padding + image + border.</summary>
     public const float RowBodyHeight = ImageHeight + 2 * Padding;
 
     private const float Margin = 8f;
@@ -164,9 +166,22 @@ public sealed class ObjectInfoPanel
 
         if (data is { } d)
         {
-            lines.Add(("Name", d.DisplayName ?? d.ObjectId));
+            lines.Add(("Name", d.Survey is not null ? d.ObjectId : d.DisplayName ?? d.ObjectId));
             lines.Add(("Speed", $"{d.SpeedKmS:0.###} km/s"));
-            lines.Add(("Direction", $"{d.Direction:F0}°"));
+            if (d.Survey is { } survey)
+            {
+                lines.Add(("Mass", $"{survey.MassKg} kg"));
+                lines.Add(("Composition", survey.CompositionKnown ? survey.CompositionType ?? "Unknown" : "Unknown"));
+                if (survey.CompositionKnown && !survey.Resources.IsDefaultOrEmpty)
+                {
+                    foreach (var resource in survey.Resources.OrderBy(r => r.ItemTypeId, StringComparer.Ordinal))
+                        lines.Add((TradeItemPresentation.ItemDisplayName(resource.ItemTypeId), $"{resource.Permille / 10m:0.#}%"));
+                }
+            }
+            else
+            {
+                lines.Add(("Direction", $"{d.Direction:F0}°"));
+            }
         }
         else
         {
@@ -246,10 +261,11 @@ public sealed class ObjectInfoPanel
             for (int i = 0; i < RowNames.Length; i++)
             {
                 bool opened = IsRowOpen(i);
+                float bodyHeight = Math.Max(RowBodyHeight, 2 * Padding + BuildLines(rowData[i]).Count * LineHeight);
 
                 var captionRect = new SKRect(left, rowY, left + PanelWidth, rowY + RowCaptionHeight);
                 var bodyRect = opened
-                    ? new SKRect(left, captionRect.Bottom, left + PanelWidth, captionRect.Bottom + RowBodyHeight)
+                    ? new SKRect(left, captionRect.Bottom, left + PanelWidth, captionRect.Bottom + bodyHeight)
                     : SKRect.Empty;
 
                 _rowCaptionRects[i] = captionRect;
@@ -261,7 +277,7 @@ public sealed class ObjectInfoPanel
                 if (opened)
                     DrawRowBody(canvas, bodyRect, rowData[i]);
 
-                rowY += opened ? (RowCaptionHeight + RowBodyHeight) : RowCaptionHeight;
+                rowY += opened ? (RowCaptionHeight + bodyHeight) : RowCaptionHeight;
                 if (!opened && i < RowNames.Length - 1)
                     rowY += CommandsPanel.CollapsedPanelGap;
             }
@@ -293,10 +309,14 @@ public sealed class ObjectInfoPanel
 
         float textX = imageRect.Right + Padding;
         float textY = imgY + LineHeight - 3f;
-        foreach (var (label, value) in BuildLines(data))
+        var lines = BuildLines(data);
+        float valueOffset = data?.Survey is not null
+            ? Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding)
+            : 62f;
+        foreach (var (label, value) in lines)
         {
             canvas.DrawText(label, textX, textY, _labelPaint);
-            canvas.DrawText(value, textX + 62f, textY, _valuePaint);
+            canvas.DrawText(value, textX + valueOffset, textY, _valuePaint);
             textY += LineHeight;
         }
     }
@@ -320,7 +340,7 @@ public sealed class ObjectInfoPanel
                 return byPath;
         }
 
-        if (data.RenderObjectType is not { } renderObjectType)
+        if (data.Survey is not null || data.RenderObjectType is not { } renderObjectType)
             return null;
 
         if (_objectImagesByType.TryGetValue(renderObjectType, out var byType))
@@ -379,11 +399,12 @@ public enum ObjectInfoPanelState
     Closed,
 }
 
-/// <summary>Snapshot of one object's info-panel content — image lookup key, name, speed, direction.</summary>
+/// <summary>Snapshot of one object's info-panel content, including optional authoritative survey knowledge.</summary>
 public readonly record struct ObjectInfoPanelData(
     string ObjectId,
     string? DisplayName,
     double SpeedKmS,
     double Direction,
     string? RenderObjectType,
-    string? Image = null);
+    string? Image = null,
+    AsteroidSurveySnapshot? Survey = null);

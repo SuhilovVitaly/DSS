@@ -11,20 +11,31 @@ public class RationScheduleTests
         var engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(root, "Settings.json"),
             Path.Combine(root, "Scenarios/Docked/scenario.json"));
         var save = engine.CaptureSaveState();
-        engine.LoadScenario(save with { GameState = save.GameState with {
-            GameTimeMs = time,
-            TradingMap = null,
-            SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectType != "Station" ? o : o with {
-                MarketProfileId = null,
-                MarketProfileFingerprint = null,
-                MarketBudgetCredits = null,
-                MarketRevision = null,
-            }).Select(o => o.ObjectId != save.GameState.PlayerShipObjectId ? o : o with {
-                Passengers = Enumerable.Range(0, passengers).Select(i => new ShipPassengerData($"P{i}", $"Passenger {i}")).ToArray(),
-                Modules = o.Modules!.Select(m => m with { Cargo = m.Cargo?.Select(c => c.ItemTypeId == "item.food-rations"
-                    ? c with { Quantity = rations } : c).ToArray() }).ToArray()
-            }).ToArray()
-        }});
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                GameTimeMs = time,
+                TradingMap = null,
+                VoyageState = null,
+                StationResourceFields = null,
+                SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectType != "Station" ? o : o with
+                {
+                    MarketProfileId = null,
+                    MarketProfileFingerprint = null,
+                    MarketBudgetCredits = null,
+                    MarketRevision = null,
+                }).Select(o => o.ObjectId != save.GameState.PlayerShipObjectId ? o : o with
+                {
+                    Passengers = Enumerable.Range(0, passengers).Select(i => new ShipPassengerData($"P{i}", $"Passenger {i}")).ToArray(),
+                    Modules = o.Modules!.Select(m => m with
+                    {
+                        Cargo = m.Cargo?.Select(c => c.ItemTypeId == "item.food-rations"
+                        ? c with { Quantity = rations } : c).ToArray()
+                    }).ToArray()
+                }).ToArray()
+            }
+        });
         return engine;
     }
 
@@ -58,10 +69,16 @@ public class RationScheduleTests
         using var engine = CreateEngine(time: 12 * GameCalendar.HourMs + 1, passengers: 1);
         Assert.Equal(200, Food(engine.CaptureSnapshot()));
         var save = engine.CaptureSaveStateForTests(23 * GameCalendar.HourMs, SimulationSpeed.Speed0);
-        engine.LoadScenario(save with { GameState = save.GameState with {
-            TradingMap = null,
-            SpaceObjects = save.GameState.SpaceObjects.Select(o => o with { Passengers = [] }).ToArray()
-        }});
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                TradingMap = null,
+                VoyageState = null,
+                StationResourceFields = null,
+                SpaceObjects = save.GameState.SpaceObjects.Select(o => o with { Passengers = [] }).ToArray()
+            }
+        });
         Assert.Equal(199, Food(engine.CaptureSnapshotForTests(GameCalendar.DayMs)));
     }
 

@@ -48,10 +48,13 @@ public sealed class SkiaWindow : IDisposable
     private RawImage? _interactiveCursorImage;
 
     private GameSessionHandle? _session;
+    private string? _pendingUndockCommandId;
     private GameSessionScreen? _gameSessionScreen;
     private static readonly double[] AllowedUiScales = { 0.8, 1.0, 1.2, 1.5 };
     private static readonly string[] AllowedLanguages = { "English", "Russian" };
     private readonly SemaphoreSlim _transitionLock = new(1, 1);
+    private readonly StationTradeNavigation _stationNavigation;
+    private Task? _stationCleanupTask;
     private int _modalDepth;
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _quickSaveLoadInFlight;
@@ -78,6 +81,7 @@ public sealed class SkiaWindow : IDisposable
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory, System.Diagnostics.Stopwatch? startupStopwatch = null)
     {
         _sessionFactory = sessionFactory;
+        _stationNavigation = new(() => _session);
         _handleKeyboardEdge = HandleKeyboardEdge;
         _startupStopwatch = startupStopwatch;
 
@@ -297,6 +301,7 @@ public sealed class SkiaWindow : IDisposable
         float scaleX = (float)fbSize.X / windowSize.X;
         float scaleY = (float)fbSize.Y / windowSize.Y;
 
+        RequestStationCleanup();
         canvas.Save();
         canvas.Scale(scaleX, scaleY);
 
@@ -310,6 +315,11 @@ public sealed class SkiaWindow : IDisposable
         GameSessionScreen? profiledScreen = null;
         foreach (var screen in _screens.AllBottomToTop())
         {
+            // A transition can be waiting for an authoritative speed acknowledgement.
+            // Do not paint an obsolete market while its serialized removal is pending.
+            if (screen is TradeScreen trade && (!ReferenceEquals(trade.OpenedForHandle, _session) || !trade.HasValidVisit) ||
+                screen is StationScreen station && (!ReferenceEquals(station.OpenedForHandle, _session) || !station.HasValidVisit))
+                continue;
             if (index == 1)
                 MenuStyle.DrawDimOverlay(canvas, windowSize.X, windowSize.Y);
 
@@ -367,6 +377,20 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private void PollGameSessionAutoTransition()
     {
+        RequestStationCleanup();
+        if (_screens.Current is StationScreen && _pendingUndockCommandId is { } pendingId &&
+            _session?.Buffer.Latest?.Snapshot is { } stationSnapshot)
+        {
+            var outcome = stationSnapshot.CommandResults.LastOrDefault(result => result.CommandId == pendingId);
+            if (outcome is { Status: CommandResultStatus.Executed })
+            {
+                _pendingUndockCommandId = null;
+                RequestStationCleanup();
+            }
+            else if (outcome is { Status: CommandResultStatus.Rejected })
+                _pendingUndockCommandId = null;
+            return;
+        }
         if (_screens.Current is DialogueScreen dialogue)
         {
             var transition = dialogue.Poll();
@@ -379,6 +403,40 @@ public sealed class SkiaWindow : IDisposable
         var evt = gameSessionScreen.ConsumePendingAutoTransition();
         if (evt != ScreenEvent.None)
             _ = HandleScreenEvent(evt);
+    }
+
+    private bool StationOverlayIsInvalid() => _screens.Current switch
+    {
+        TradeScreen trade => !ReferenceEquals(trade.OpenedForHandle, _session) || !trade.HasValidVisit,
+        StationScreen station => !ReferenceEquals(station.OpenedForHandle, _session) || !station.HasValidVisit,
+        _ => false
+    };
+
+    private void RequestStationCleanup()
+    {
+        if (_closing || !StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false })
+            return;
+        _stationCleanupTask = CleanStationOverlaysAsync();
+    }
+
+    private async Task CleanStationOverlaysAsync()
+    {
+        await _transitionLock.WaitAsync();
+        try
+        {
+            await _stationNavigation.RemoveInvalidOverlaysAsync(_screens,
+                () => _session?.Buffer.Latest?.Snapshot, PopModalAsync);
+            if (_screens.Current is not StationScreen)
+                _pendingUndockCommandId = null;
+        }
+        catch (Exception error)
+        {
+            InterfaceLog.Write($"Station overlay cleanup failed: {error}");
+        }
+        finally
+        {
+            _transitionLock.Release();
+        }
     }
 
     private void OnFramebufferResize(Silk.NET.Maths.Vector2D<int> newSize)
@@ -441,6 +499,9 @@ public sealed class SkiaWindow : IDisposable
     {
         if (_closing || (button != MouseButton.Left && button != MouseButton.Right))
             return;
+        RequestStationCleanup();
+        if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false })
+            return;
 
         // Capture the current screen and (if relevant) its click payload synchronously,
         // in this same call frame, before HandleScreenEvent's first await. This is what
@@ -462,6 +523,8 @@ public sealed class SkiaWindow : IDisposable
 
     private void OnMouseUp(IMouse mouse, MouseButton button)
     {
+        RequestStationCleanup();
+        if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
         if (button == MouseButton.Left && !_closing)
             _screens.Current.OnMouseUp(mouse.Position.X, mouse.Position.Y);
     }
@@ -470,6 +533,8 @@ public sealed class SkiaWindow : IDisposable
     {
         if (_closing)
             return;
+        RequestStationCleanup();
+        if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
 
         bool overInteractive = _screens.Current.OnMouseMove(position.X, position.Y);
 
@@ -485,6 +550,8 @@ public sealed class SkiaWindow : IDisposable
     {
         if (_closing)
             return;
+        RequestStationCleanup();
+        if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
 
         var screenEvent = _screens.Current.OnMouseWheel(
             mouse.Position.X,
@@ -498,6 +565,8 @@ public sealed class SkiaWindow : IDisposable
     {
         if (_closing)
             return;
+        RequestStationCleanup();
+        if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
 
         _screens.Current.OnTextInput(c);
     }
@@ -508,6 +577,8 @@ public sealed class SkiaWindow : IDisposable
     {
         if (_keyboard is null || _closing || !_isFocused)
             return;
+        RequestStationCleanup();
+        if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
 
         var (pressedCount, releasedCount) = _keyboardEdges.PollBoth(
             _keyboard, _keyboardPressedKeys, _keyboardReleasedKeys);
@@ -609,6 +680,8 @@ public sealed class SkiaWindow : IDisposable
         try
         {
             if (_closing) return;
+            await _stationNavigation.RemoveInvalidOverlaysAsync(_screens,
+                () => _session?.Buffer.Latest?.Snapshot, PopModalAsync);
             switch (evt)
             {
                 case ScreenEvent.NewGame:
@@ -681,13 +754,15 @@ public sealed class SkiaWindow : IDisposable
                         await _session.TravelStationAsync((StationDistrict)(evt - ScreenEvent.TravelDock));
                     break;
                 case ScreenEvent.CloseStation:
-                    await CloseOverlayAsync();
+                    _pendingUndockCommandId = null;
+                    if (_screens.Current is StationScreen)
+                        await CloseOverlayAsync();
                     break;
                 case ScreenEvent.Undock:
-                    if (_session is not null && _screens.Current is StationScreen)
+                    if (_session is not null && _screens.Current is StationScreen stationScreen &&
+                        _pendingUndockCommandId is null)
                     {
-                        _session.SendUndockCommand();
-                        await CloseOverlayAsync();
+                        _pendingUndockCommandId = _session.SendUndockCommand(stationScreen.SelectedDestinationId);
                     }
                     break;
                 case ScreenEvent.OpenDialogue:
@@ -718,7 +793,10 @@ public sealed class SkiaWindow : IDisposable
                     await OpenTradeAsync();
                     break;
                 case ScreenEvent.CloseTrade:
-                    await CloseOverlayAsync();
+                    if (_screens.Current is TradeScreen)
+                        await CloseOverlayAsync();
+                    await _stationNavigation.RemoveInvalidOverlaysAsync(_screens,
+                        () => _session?.Buffer.Latest?.Snapshot, PopModalAsync);
                     break;
                 case ScreenEvent.OpenHire:
                     await OpenHireAsync();
@@ -830,15 +908,25 @@ public sealed class SkiaWindow : IDisposable
     /// For nested modals (modalDepth &gt; 0): pushes immediately (already paused).
     /// Use this for ALL modal screens (GameMenu, Settings, Save, Load, etc.).
     /// </summary>
-    private async Task PushModalAsync(IScreen screen)
+    private async Task PushModalAsync(IScreen screen, Func<bool>? stillValid = null)
     {
+        var openingSession = _session;
         // First modal: confirm authoritative Pause before showing anything
-        if (_modalDepth == 0 && _session is not null)
+        if (_modalDepth == 0 && openingSession is not null)
         {
-            _savedSpeed = _session.Buffer.CurrentSpeed;
-            _session.ClearStationTravelPause();
-            await _session.SetSpeedAsync(SimulationSpeed.Speed0);
+            _savedSpeed = openingSession.Buffer.CurrentSpeed;
+            openingSession.ClearStationTravelPause();
+            await openingSession.SetSpeedAsync(SimulationSpeed.Speed0);
             // Speed0 is now confirmed — safe to show the overlay
+        }
+
+        if (stillValid is not null && (!ReferenceEquals(_session, openingSession) || !stillValid()))
+        {
+            if (_modalDepth == 0 && openingSession is not null &&
+                ReferenceEquals(_session, openingSession))
+                await openingSession.SetSpeedAsync(openingSession.KeepPausedAfterStationTravel
+                    ? SimulationSpeed.Speed0 : _savedSpeed);
+            return;
         }
 
         _screens.Push(screen);
@@ -921,18 +1009,21 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task OpenStationAsync()
     {
-        // Guard: don't push overlay on top of another overlay
-        if (_screens.Current is StationScreen)
-            return;
-
-        await PushModalAsync(new StationScreen(_session?.Buffer, _session));
+        if (_session is not { } handle || _screens.Current is not GameSessionScreen ||
+            !StationTradeNavigation.CanOpen(handle.Buffer.Latest?.Snapshot)) return;
+        var station = new StationScreen(handle.Buffer, handle);
+        await PushModalAsync(station, () => _screens.Current is GameSessionScreen &&
+            ReferenceEquals(_session, handle) && station.HasValidVisit);
     }
 
     /// <summary>Return from a nested station window to its hub.</summary>
     private async Task NavigateToStationAsync()
     {
+        if (_screens.Current is not TradeScreen) return;
         await PopModalAsync();
-        if (_screens.Current is not StationScreen)
+        await _stationNavigation.RemoveInvalidOverlaysAsync(_screens,
+            () => _session?.Buffer.Latest?.Snapshot, PopModalAsync);
+        if (_screens.Current is GameSessionScreen)
             await OpenStationAsync();
     }
 
@@ -947,11 +1038,14 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task OpenTradeAsync()
     {
-        // Guard: don't push overlay on top of another overlay
-        if (_screens.Current is TradeScreen)
+        if (_session is not { } handle || _screens.Current is not StationScreen station ||
+            !ReferenceEquals(station.OpenedForHandle, handle) || !station.HasValidVisit ||
+            !StationTradeNavigation.CanOpen(handle.Buffer.Latest?.Snapshot)) return;
+        var trade = new TradeScreen(handle.Buffer, handle);
+        if (!trade.HasValidVisit || trade.OpenedForStationObjectId != station.OpenedForStationObjectId)
             return;
-
-        await PushModalAsync(new TradeScreen(_session?.Buffer, _session));
+        await PushModalAsync(trade, () => ReferenceEquals(_session, handle) &&
+            ReferenceEquals(_screens.Current, station) && station.HasValidVisit && trade.HasValidVisit);
     }
 
     /// <summary>

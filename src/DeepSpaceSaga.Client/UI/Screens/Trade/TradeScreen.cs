@@ -13,6 +13,35 @@ public sealed partial class TradeScreen : IScreen
     private readonly GameSessionHandle? _handle;
     private readonly TradeJournal _journal;
     internal TradeModel Model { get; } = new();
+    internal string? OpenedForStationObjectId { get; }
+    internal long? OpenedAtPortFeeGameTimeMs { get; }
+    internal GameSessionHandle? OpenedForHandle => _handle;
+    private bool HasStandaloneStation
+    {
+        get
+        {
+            var snapshot = _buffer?.Latest?.Snapshot;
+            return _handle is null && snapshot is not null &&
+                snapshot.Objects.Any(obj => obj.ObjectId == snapshot.PlayerShipObjectId &&
+                    obj.IsDocked && !obj.IsDestroyed && !string.IsNullOrWhiteSpace(obj.DockedStationObjectId));
+        }
+    }
+    private readonly long _openedVisitEpoch;
+    private bool _visitInvalidated;
+    internal bool HasValidVisit
+    {
+        get
+        {
+            var snapshot = _buffer?.Latest?.Snapshot;
+            Model.Refresh(snapshot);
+            return !_visitInvalidated && _handle is not null &&
+                ReferenceEquals(_buffer, _handle.Buffer) && _handle.Failure is null &&
+                OpenedForStationObjectId is not null &&
+                OpenedForStationObjectId == Model.LocalStationObjectId &&
+                OpenedAtPortFeeGameTimeMs == Model.VisitStartGameTimeMs &&
+                _openedVisitEpoch == Model.VisitEpoch;
+        }
+    }
     private int _width, _height, _scroll, _historyScroll, _moduleScroll;
     private SKPoint _pointer = new(-1, -1);
     private bool _history, _moduleOpen, _dragSlider, _dragScroll, _replaceInput, _controlDown, _enterHeld;
@@ -23,12 +52,13 @@ public sealed partial class TradeScreen : IScreen
     internal bool IsPending => _journal.IsPending;
     internal IReadOnlyList<TradeJournal.Entry> History => _journal.Entries;
     internal bool CanConfirm => Model.AuthoritativeQuote is { DisabledReason: null } && Model.Quote.DisabledReason is null &&
-        !_closed && !IsPending && _handle is not null && _handle.Failure is null;
+        !_closed && HasValidVisit && !IsPending;
     internal int ScrollOffset => _scroll;
 
     // ── Authoritative quote lifecycle (EP-0001-US-0003-TK-0004) ──
     // Everything that a quote's numbers or binding depend on. Any change starts exactly one new request.
-    private readonly record struct QuoteKey(string StationId, long? MarketRevision, string ShipId, string ModuleId,
+    private readonly record struct QuoteKey(GameSessionHandle Handle, long VisitEpoch, long? VisitStartGameTimeMs,
+        string StationId, long? MarketRevision, string ShipId, string ModuleId,
         string CommandType, string ItemId, long Quantity, long PlayerCredits, long ItemStock, long MaxSellable,
         long? FreeStockCapacity, long Cargo, long FreeCargoKg, long FuelAmountKg, long FuelCapacityKg, bool ModuleReady);
     private QuoteKey? _quoteKey;
@@ -41,11 +71,25 @@ public sealed partial class TradeScreen : IScreen
     public TradeScreen(SnapshotBuffer? buffer = null, GameSessionHandle? handle = null)
     {
         _buffer = buffer; _handle = handle; _journal = handle?.Trades ?? new TradeJournal();
+        Model.Refresh(buffer?.Latest?.Snapshot);
+        OpenedForStationObjectId = Model.LocalStationObjectId;
+        OpenedAtPortFeeGameTimeMs = Model.VisitStartGameTimeMs;
+        _openedVisitEpoch = Model.VisitEpoch;
+        _visitInvalidated = OpenedForStationObjectId is null || handle is null ||
+            !ReferenceEquals(buffer, handle.Buffer);
     }
     private void Refresh()
     {
         bool staleResult = _journal.Refresh(_buffer);
         Model.Refresh(_buffer?.Latest?.Snapshot);
+        if (!HasValidVisit)
+        {
+            if (!_visitInvalidated) ResetTransientControls();
+            _visitInvalidated = true;
+            CancelQuoteRequest();
+            _quoteKey = null;
+            Model.ClearInvalidVisit();
+        }
         _requoteOnce |= staleResult;
         UpdateQuote();
         _scroll = Math.Clamp(_scroll, 0, Math.Max(0, ListCount - TradeLayout.VisibleRows));
@@ -55,9 +99,11 @@ public sealed partial class TradeScreen : IScreen
     private QuoteKey? CurrentQuoteKey()
     {
         var snapshot = _buffer?.Latest?.Snapshot;
-        if (snapshot?.DockedStationTrade is not { } trade || string.IsNullOrEmpty(snapshot.PlayerShipObjectId) ||
+        if (!HasValidVisit || _handle is null || snapshot?.DockedStationTrade is not { } trade ||
+            string.IsNullOrEmpty(snapshot.PlayerShipObjectId) ||
             Model.Item is not { } item || Model.Module is not { } module || Model.Quantity <= 0) return null;
-        return new(trade.StationObjectId, trade.MarketRevision, snapshot.PlayerShipObjectId, module.ModuleId, Model.CommandType,
+        return new(_handle, Model.VisitEpoch, Model.VisitStartGameTimeMs,
+            trade.StationObjectId, trade.MarketRevision, snapshot.PlayerShipObjectId, module.ModuleId, Model.CommandType,
             item.ItemTypeId, Model.Quantity, snapshot.PlayerCredits, item.StockQuantity, item.MaxSellableQuantity, item.FreeStockCapacity,
             Model.Cargo(item.ItemTypeId), module.AvailableCapacityKg ?? 0, module.FuelAmountKg ?? 0, module.FuelCapacityKg ?? 0,
             module.PowerState == "On" && module.OperationalState == "Ready" && module.StructurePoints > 0);
@@ -69,7 +115,7 @@ public sealed partial class TradeScreen : IScreen
     /// </summary>
     private void UpdateQuote()
     {
-        if (_closed) return;
+        if (_closed || !HasValidVisit) return;
         var key = CurrentQuoteKey();
         if (key != _quoteKey || _requoteOnce)
         {
@@ -110,6 +156,12 @@ public sealed partial class TradeScreen : IScreen
         if (_quoteCts is not { } cts) return;
         _quoteCts = null;
         cts.Cancel(); cts.Dispose();
+    }
+    private void ResetTransientControls()
+    {
+        _quantityText = "1";
+        _focus = InputFocus.None;
+        _moduleOpen = _dragSlider = _dragScroll = _replaceInput = _controlDown = _enterHeld = false;
     }
     private int ListCount => Model.FuelMode ? Model.Modules.Length : Model.Rows.Length;
     private int CurrentCount => _history ? _journal.Entries.Count : ListCount;
@@ -167,8 +219,11 @@ public sealed partial class TradeScreen : IScreen
         if (button != MouseButton.Left) return ScreenEvent.None;
         Refresh(); var p = Local(x, y);
         if (StationToolbar.ExitButtonLocalRect().Contains(p)) return ScreenEvent.CloseTrade;
-        if (StationNameRect.Contains(p)) return ScreenEvent.NavigateToStation;
+        if (StationNameRect.Contains(p))
+            return HasValidVisit || HasStandaloneStation
+                ? ScreenEvent.NavigateToStation : ScreenEvent.None;
         if (!SKRect.Create(0, 0, TradeLayout.PanelWidth, TradeLayout.PanelHeight).Contains(p)) return ScreenEvent.CloseTrade;
+        if (!HasValidVisit) return ScreenEvent.None;
         if (_moduleOpen)
         {
             for (int i = 0; i < Math.Min(5, Model.Modules.Length); i++)
@@ -248,6 +303,7 @@ public sealed partial class TradeScreen : IScreen
     public bool OnMouseMove(float x, float y)
     {
         Refresh(); _pointer = Local(x, y); UpdateToolbarHover(_pointer);
+        if (!HasValidVisit) return _exitHovered || _stationHovered && HasStandaloneStation;
         if (_dragSlider) SetSlider(_pointer.X);
         if (_dragScroll) DragScroll(_pointer.Y);
         if (_pointer.Y < StationToolbar.Height) return _stationHovered || _exitHovered;
@@ -264,13 +320,14 @@ public sealed partial class TradeScreen : IScreen
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
         Refresh(); var p = Local(x, y); int step = delta > 0 ? -1 : delta < 0 ? 1 : 0;
+        if (!HasValidVisit) return ScreenEvent.None;
         if (_moduleOpen) _moduleScroll = Math.Clamp(_moduleScroll + step, 0, Math.Max(0, Model.Modules.Length - 5));
         else if (TradeLayout.Catalog.Contains(p)) CurrentOffset = Math.Clamp(CurrentOffset + step, 0, Math.Max(0, CurrentCount - TradeLayout.VisibleRows));
         return ScreenEvent.None;
     }
     public void OnTextInput(char c)
     {
-        if (char.IsControl(c) || _controlDown) return;
+        if (!HasValidVisit || char.IsControl(c) || _controlDown) return;
         if (_focus == InputFocus.Search)
         {
             if (_replaceInput) { Model.Query = ""; _replaceInput = false; }
@@ -292,6 +349,7 @@ public sealed partial class TradeScreen : IScreen
     public ScreenEvent OnKeyDown(Key key)
     {
         Refresh();
+        if (!HasValidVisit) return key == Key.Escape ? ScreenEvent.CloseTrade : ScreenEvent.None;
         if (key is Key.ControlLeft or Key.ControlRight) { _controlDown = true; return ScreenEvent.None; }
         if (_controlDown && key == Key.A && _focus != InputFocus.None) { _replaceInput = true; return ScreenEvent.None; }
         if (key == Key.Escape)

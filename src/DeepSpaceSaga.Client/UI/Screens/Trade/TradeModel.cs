@@ -206,14 +206,31 @@ internal sealed class TradeModel
     internal string? SelectedItemId { get; private set; }
     internal string? SelectedModuleId { get; private set; }
     internal long Quantity { get; set; } = 1;
+    internal long VisitEpoch { get; private set; }
+    internal string? LocalStationObjectId { get; private set; }
+    internal long? VisitStartGameTimeMs { get; private set; }
     internal StationInventoryItemSnapshot[] Rows { get; private set; } = [];
     internal InstalledModuleSnapshot[] Modules { get; private set; } = [];
     internal InstalledModuleSnapshot? Module => Modules.FirstOrDefault(m => m.ModuleId == SelectedModuleId);
     internal StationInventoryItemSnapshot? Item => Rows.FirstOrDefault(i => i.ItemTypeId == SelectedItemId);
     internal string CommandType => TradeQuote.CommandType(Mode);
-    internal string? StationId => _snapshot?.DockedStationTrade?.StationObjectId;
-    internal TradeQuote Quote => TradeQuote.Calculate(Item, Module, Mode, Quantity, _snapshot?.PlayerCredits ?? 0,
-        AuthoritativeQuote, KnownMaximum, _quoteReason, StationId);
+    internal string? StationId => LocalStationObjectId;
+    internal TradeQuote Quote => LocalStationObjectId is null
+        ? new(0, 0, 0, 0, 0, _snapshot?.PlayerCredits ?? 0, "NotDocked", "NotDocked")
+        : TradeQuote.Calculate(Item, Module, Mode, Quantity, _snapshot?.PlayerCredits ?? 0,
+            AuthoritativeQuote, KnownMaximum, _quoteReason, StationId);
+
+    internal static string? ResolveLocalStationId(AuthoritativeSnapshot? snapshot)
+    {
+        if (snapshot is null || string.IsNullOrWhiteSpace(snapshot.PlayerShipObjectId) ||
+            snapshot.DockedStationTrade is not { } trade ||
+            snapshot.ActiveVoyage is { State: not VoyagePhases.Docked }) return null;
+        var player = snapshot.Objects.FirstOrDefault(obj => obj.ObjectId == snapshot.PlayerShipObjectId);
+        return player is { IsDocked: true, IsDestroyed: false } &&
+            !string.IsNullOrWhiteSpace(player.DockedStationObjectId) &&
+            StringComparer.Ordinal.Equals(player.DockedStationObjectId, trade.StationObjectId)
+                ? trade.StationObjectId : null;
+    }
 
     /// <summary>Latest server quote accepted for the current selection key (see TradeScreen); null while none is valid.</summary>
     internal TradeQuoteSnapshot? AuthoritativeQuote { get; private set; }
@@ -241,11 +258,42 @@ internal sealed class TradeModel
         _quoteReason = reasonKey;
     }
 
+    internal void ClearInvalidVisit()
+    {
+        Rows = [];
+        Modules = [];
+        SelectedItemId = null;
+        SelectedModuleId = null;
+        Quantity = 1;
+        _lastMaximum = null;
+        InvalidateQuote("NotDocked");
+    }
+
     internal void Refresh(AuthoritativeSnapshot? snapshot)
     {
         if (!ReferenceEquals(snapshot, _snapshot)) { _snapshot = snapshot; _dirty = true; }
         if (!_dirty) return;
         _dirty = false;
+        string? localStation = ResolveLocalStationId(snapshot);
+        long? visitStart = localStation is null ? null : snapshot?.PortFees?.FirstPortFeeGameTimeMs;
+        if (localStation != LocalStationObjectId || visitStart != VisitStartGameTimeMs)
+        {
+            VisitEpoch = checked(VisitEpoch + 1);
+            LocalStationObjectId = localStation;
+            VisitStartGameTimeMs = visitStart;
+            SelectedItemId = null;
+            SelectedModuleId = null;
+            Quantity = 1;
+            _lastMaximum = null;
+            InvalidateQuote(localStation is null ? "NotDocked" : "QuoteRequired");
+        }
+        if (localStation is null)
+        {
+            Rows = [];
+            Modules = [];
+            SelectedModuleId = null;
+            return;
+        }
         string command = CommandType;
         Modules = snapshot is null || snapshot.InstalledModules.IsDefaultOrEmpty ? [] : snapshot.InstalledModules
             .Where(m => !m.CommandTypeIds.IsDefaultOrEmpty && m.CommandTypeIds.Contains(command)).OrderBy(m => m.Position).ToArray();

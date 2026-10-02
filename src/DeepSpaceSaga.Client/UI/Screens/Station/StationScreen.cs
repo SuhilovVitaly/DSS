@@ -3,6 +3,7 @@ using DeepSpaceSaga.Client.UI.Screens;
 using Silk.NET.Input;
 using SkiaSharp;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Client.UI.Screens.Trade;
 
 namespace DeepSpaceSaga.Client.UI.Screens.Station;
 
@@ -30,11 +31,41 @@ public sealed class StationScreen : IScreen
 {
     private readonly SnapshotBuffer? _buffer;
     private readonly GameSessionHandle? _session;
+    internal GameSessionHandle? OpenedForHandle => _session;
+    internal string? OpenedForStationObjectId { get; }
+    internal long? OpenedAtPortFeeGameTimeMs { get; }
+    internal bool HasValidVisit
+    {
+        get
+        {
+            var snapshot = _buffer?.Latest?.Snapshot;
+            return _session is not null && ReferenceEquals(_buffer, _session.Buffer) &&
+                _session.Failure is null && OpenedForStationObjectId is not null &&
+                OpenedForStationObjectId == TradeModel.ResolveLocalStationId(snapshot) &&
+                OpenedAtPortFeeGameTimeMs == snapshot?.PortFees?.FirstPortFeeGameTimeMs;
+        }
+    }
 
     private int _screenWidth;
     private int _screenHeight;
     private StationButton _hoveredButton = StationButton.None;
     private bool _isExitButtonHovered;
+    private string? _selectedDestinationId;
+    private string? _selectionStationId;
+
+    public string? SelectedDestinationId
+    {
+        get
+        {
+            var snapshot = _buffer?.Latest?.Snapshot;
+            if (snapshot?.Voyage is not { Phase: VoyagePhases.Docked } voyage ||
+                CurrentStationId(snapshot) != _selectionStationId ||
+                !voyage.RouteOptions.Any(option => option.IsAvailable &&
+                    option.DestinationStationObjectId == _selectedDestinationId))
+                return null;
+            return _selectedDestinationId;
+        }
+    }
 
     /// <summary>
     /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
@@ -78,6 +109,9 @@ public sealed class StationScreen : IScreen
     {
         _buffer = buffer;
         _session = session;
+        var snapshot = buffer?.Latest?.Snapshot;
+        OpenedForStationObjectId = TradeModel.ResolveLocalStationId(snapshot);
+        OpenedAtPortFeeGameTimeMs = snapshot?.PortFees?.FirstPortFeeGameTimeMs;
     }
 
     /// <summary>
@@ -96,6 +130,10 @@ public sealed class StationScreen : IScreen
 
     public void OnActivated()
     {
+        var stationId = CurrentStationId(_buffer?.Latest?.Snapshot);
+        if (stationId != _selectionStationId)
+            _selectedDestinationId = null;
+        _selectionStationId = stationId;
         _hoveredButton = StationButton.None;
         _isExitButtonHovered = false;
         _foodRationsHoverStartedAtMs = null;
@@ -106,6 +144,9 @@ public sealed class StationScreen : IScreen
 
     public void OnDeactivated() { }
 
+    private static string? CurrentStationId(AuthoritativeSnapshot? snapshot) =>
+        snapshot?.Objects.FirstOrDefault(o => o.ObjectId == snapshot.PlayerShipObjectId)?.DockedStationObjectId;
+
     public ScreenEvent OnKeyDown(Key key) =>
         key == Key.Escape ? ScreenEvent.CloseStation : ScreenEvent.None;
 
@@ -115,6 +156,24 @@ public sealed class StationScreen : IScreen
             return ScreenEvent.None;
 
         if (_session?.StationTravelPending == true) return ScreenEvent.None;
+        var currentStationId = CurrentStationId(_buffer?.Latest?.Snapshot);
+        if (currentStationId != _selectionStationId)
+        {
+            _selectionStationId = currentStationId;
+            _selectedDestinationId = null;
+        }
+        var voyage = _buffer?.Latest?.Snapshot.Voyage;
+        if (voyage is { Phase: VoyagePhases.Docked })
+        {
+            for (int i = 0; i < voyage.RouteOptions.Length; i++)
+            {
+                if (!RouteRect(i).Contains(x, y)) continue;
+                var option = voyage.RouteOptions[i];
+                if (option.IsAvailable)
+                    _selectedDestinationId = option.DestinationStationObjectId;
+                return ScreenEvent.None;
+            }
+        }
         for (int i = 0; i < 4; i++)
         {
             var rect = DistrictRect(i);
@@ -125,7 +184,7 @@ public sealed class StationScreen : IScreen
 
         var hit = StationLayout.HitTest(x, y, _screenWidth, _screenHeight);
         if (hit == StationButton.Trade)
-            return ScreenEvent.OpenTrade;
+            return HasValidVisit ? ScreenEvent.OpenTrade : ScreenEvent.None;
         if (hit == StationButton.Hire)
             return ScreenEvent.OpenHire;
         if (hit == StationButton.Finance)
@@ -133,7 +192,7 @@ public sealed class StationScreen : IScreen
         if (hit == StationButton.Contracts)
             return ScreenEvent.OpenContracts;
         if (hit == StationButton.Undock)
-            return ScreenEvent.Undock;
+            return voyage is null || SelectedDestinationId is not null ? ScreenEvent.Undock : ScreenEvent.None;
 
         if (IsExitButtonHit(x, y))
             return ScreenEvent.CloseStation;
@@ -151,6 +210,8 @@ public sealed class StationScreen : IScreen
     public bool OnMouseMove(float x, float y)
     {
         _hoveredButton = StationLayout.HitTest(x, y, _screenWidth, _screenHeight);
+        if (_hoveredButton == StationButton.Trade && !HasValidVisit)
+            _hoveredButton = StationButton.None;
         _isExitButtonHovered = IsExitButtonHit(x, y);
 
         // Not a button — hovering it only shows a delayed tooltip (see Render), so it must
@@ -176,7 +237,9 @@ public sealed class StationScreen : IScreen
             _fuelHoverStartedAtMs = null;
 
         return _hoveredButton != StationButton.None || _isExitButtonHovered ||
-            Enumerable.Range(0, 4).Any(i => DistrictRect(i).Contains(x, y));
+            Enumerable.Range(0, 4).Any(i => DistrictRect(i).Contains(x, y)) ||
+            (_buffer?.Latest?.Snapshot.Voyage is { Phase: VoyagePhases.Docked } voyage &&
+             Enumerable.Range(0, voyage.RouteOptions.Length).Any(i => RouteRect(i).Contains(x, y)));
     }
 
     /// <summary>True when (x, y) lands on the toolbar's exit-button icon (see StationToolbar).</summary>
@@ -255,6 +318,22 @@ public sealed class StationScreen : IScreen
         DrawContractsButton(canvas, pl, pt);
         DrawUndockButton(canvas, pl, pt);
 
+        if (snapshot?.Voyage is { Phase: VoyagePhases.Docked } currentVoyage)
+        {
+            canvas.DrawText("DESTINATION", pl + 400, pt + 430, MenuStyle.TextStatus);
+            for (int i = 0; i < currentVoyage.RouteOptions.Length; i++)
+            {
+                var option = currentVoyage.RouteOptions[i];
+                string label = $"{option.DestinationDisplayName}  {option.DistanceClass}";
+                if (!option.IsAvailable) label += $"  ({option.BlockReasonCode})";
+                MenuStyle.DrawButton(canvas, RouteRect(i), label,
+                    !option.IsAvailable ? ButtonState.Disabled :
+                    option.DestinationStationObjectId == SelectedDestinationId ? ButtonState.Pressed : ButtonState.Normal);
+            }
+            if (currentVoyage.BlockReasonCode is { } reason)
+                canvas.DrawText(reason, pl + 400, pt + 645, MenuStyle.TextStatus);
+        }
+
         string[] districts = ["Док", "Рынок", "Жилой район", "Администрация"];
         for (int i = 0; i < districts.Length; i++)
             MenuStyle.DrawButton(canvas, DistrictRect(i), districts[i],
@@ -285,12 +364,20 @@ public sealed class StationScreen : IScreen
         return new SKRect(left, top, left + 185, top + 36);
     }
 
+    private SKRect RouteRect(int index)
+    {
+        float left = StationLayout.PanelLeft(_screenWidth) + 400;
+        float top = StationLayout.PanelTop(_screenHeight) + 445 + index * 38;
+        return new SKRect(left, top, left + 500, top + 32);
+    }
+
     private void DrawTradeButton(SKCanvas canvas, float panelLeft, float panelTop)
     {
         var (left, top, right, bottom) = StationLayout.TradeButtonLocalRect();
         var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
 
         MenuStyle.DrawButton(canvas, rect, "TRADE",
+            !HasValidVisit ? ButtonState.Disabled :
             _hoveredButton == StationButton.Trade ? ButtonState.Hovered : ButtonState.Normal);
     }
 

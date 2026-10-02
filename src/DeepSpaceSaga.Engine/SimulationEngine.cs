@@ -346,6 +346,7 @@ public sealed partial class SimulationEngine : IDisposable
         // source per station and a well-formed pending remainder must all hold before anything is
         // replaced, so an invalid save leaves the running world untouched (AC-07).
         ValidateMarketWorld(runtimeObjects);
+        ValidateRestoredResourceSurveys(gs, runtimeObjects);
 
         // Market revisions (EP-0001-US-0015-TK-0003): a profile market resumes at its saved revision, a
         // profile-less one (never saved, D-U2) or a save predating the field at 1 — and neither ever falls
@@ -370,6 +371,8 @@ public sealed partial class SimulationEngine : IDisposable
                 MarketRevision = Math.Max(Math.Max(1, saved), receiptRevisions.GetValueOrDefault(stationId)),
             };
         }
+
+        var restoredVoyage = ValidateVoyageState(gs, runtimeObjects);
 
         lock (_worldStateLock)
         {
@@ -413,10 +416,12 @@ public sealed partial class SimulationEngine : IDisposable
             _stationTravelReceipts.Clear();
             _stationTravelReceipts.UnionWith(_economyTime.TravelReceipts ?? []);
             _tradingMap = gs.TradingMap;
+            _voyageState = restoredVoyage;
             _stationResourceFields = gs.StationResourceFields;
             _resourceAsteroids = resourceAsteroids;
             _neutralResourceImages = neutralResourceImages;
             RestoreCommandJournal(gs);
+            RestoreResourceSurveyCommandIds();
             // Quotes issued against the previous world are never valid in this one.
             ResetQuoteSession();
         }
@@ -540,7 +545,9 @@ public sealed partial class SimulationEngine : IDisposable
             AdvanceWorldTo(clockState.GameTimeMs, gameTimeMs);
             ApplyPendingCommands(gameTimeMs);
             ApplyPendingDialogueCommands(gameTimeMs);
+            ReconcileVoyageAfterDialogue();
             UpdateStationSecurity(gameTimeMs);
+            ValidateResourceSurveys(gameTimeMs, _ => _processedWorldTimeMs);
 
             // Re-validate on every snapshot (not only when the client reports new
             // interaction state): if the selected/active object disappeared from the
@@ -599,11 +606,7 @@ public sealed partial class SimulationEngine : IDisposable
                     DisplayName = known && resourceAsteroid is null ? obj.Name : null,
                     Image = !known ? null : resourceAsteroid is { CompositionKnown: false }
                         ? _neutralResourceImages[obj.InitialMotion.ObjectId] : obj.Image,
-                    Survey = resourceAsteroid is null ? null : new AsteroidSurveySnapshot(
-                        obj.MassKg!.Value, resourceAsteroid.CompositionKnown, false,
-                        resourceAsteroid.CompositionKnown ? obj.CompositionType : null,
-                        resourceAsteroid.CompositionKnown ? resourceAsteroid.Resources.Select(r =>
-                            new ResourceFractionSnapshot(r.ItemTypeId, r.Permille)).ToImmutableArray() : []),
+                    Survey = ProjectResourceSurvey(obj, resourceAsteroid, gameTimeMs),
                     MaxSpeedKmS = GetMaxSpeedKmS(obj),
                     IsDocked = obj.IsDocked,
                     DockedStationObjectId = obj.DockedStationObjectId,
@@ -657,7 +660,8 @@ public sealed partial class SimulationEngine : IDisposable
                 CurrentStationDistrict: _stationDistrict,
                 PortFees: BuildPortFeeSnapshot(), MissingRations: _economyTime.MissingRations,
                 ActiveContracts: (_economyTime.ActiveContracts ?? []).ToImmutableArray(),
-                RouteArrivalGameTimeMs: _economyTime.RouteArrivalGameTimeMs, SimulationTimeMs: gameTimeMs);
+                RouteArrivalGameTimeMs: _economyTime.RouteArrivalGameTimeMs, SimulationTimeMs: gameTimeMs,
+                Voyage: BuildVoyageSnapshot());
         }
     }
 
@@ -686,6 +690,8 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     private StationTradeSnapshot? BuildDockedStationTradeProjection()
     {
+        if (_voyageState is { Phase: not VoyagePhases.Docked })
+            return null;
         if (string.IsNullOrWhiteSpace(PlayerShipObjectId))
             return null;
 
@@ -780,7 +786,8 @@ public sealed partial class SimulationEngine : IDisposable
                 PowerState: module.PowerState,
                 OperationalState: module.OperationalState,
                 StructurePoints: module.StructurePoints,
-                ActiveCommandType: module.ActiveCycle?.CommandType,
+                ActiveCommandType: ResourceSurveyModuleCommand(ship.InitialMotion.ObjectId, module.ModuleId)
+                    ?? module.ActiveCycle?.CommandType,
                 FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null,
                 FuelCapacityKg: moduleType.FuelCapacityKg is > 0 ? moduleType.FuelCapacityKg : null,
                 Commands: BuildModuleCommands(moduleType.CommandTypeIds),
@@ -905,7 +912,9 @@ public sealed partial class SimulationEngine : IDisposable
         // makes "continue after F9" match "continue without saving" for this case too.
         ApplyPendingCommands(gameTimeMs);
         ApplyPendingDialogueCommands(gameTimeMs);
+        ReconcileVoyageAfterDialogue();
         UpdateStationSecurity(gameTimeMs);
+        ValidateResourceSurveys(gameTimeMs, _ => _processedWorldTimeMs);
 
         var spaceObjects = new List<SpaceObjectData>(_objects.Count);
         foreach (var obj in _objects)
@@ -983,7 +992,8 @@ public sealed partial class SimulationEngine : IDisposable
             EconomyTime: CaptureEconomyTime(), SimulationTimeMs: gameTimeMs,
             CatalogCompatibility: _registry.CatalogCompatibility,
             TradingMap: _tradingMap,
-            StationResourceFields: _stationResourceFields);
+            StationResourceFields: _stationResourceFields,
+            VoyageState: _voyageState);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
@@ -1981,7 +1991,8 @@ public sealed partial class SimulationEngine : IDisposable
             else if (outcome.Disposition == CommandStartDisposition.Rejected)
             {
                 // Rejected immediately — no cycle was created.
-                RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, outcome.ReasonCode,
+                RecordCommandResult(command, CommandResultStatus.Rejected,
+                    command.CommandType == ScannerCommandTypes.StructuralScan ? _processedWorldTimeMs : gameTimeMs, outcome.ReasonCode,
                     tradeReceipt: outcome.TradeReceipt);
             }
             // Started: the cycle was created. The final CommandResult is written later
@@ -2109,6 +2120,9 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     private CommandStartOutcome TryStartCommand(PlayerCommand command, long gameTimeMs)
     {
+        if (command.CommandType == ScannerCommandTypes.StructuralScan)
+            return TryStartResourceSurvey(command, gameTimeMs);
+
         // A quoted trade gets its zero-effect receipt even when refused before trade dispatch.
         bool quotedTrade = command.CommandType is TradeCommandTypes.Buy or TradeCommandTypes.Sell or TradeCommandTypes.Refuel &&
             (command.QuoteId is not null || command.MarketRevision is not null);
@@ -2165,13 +2179,38 @@ public sealed partial class SimulationEngine : IDisposable
 
         if (command.CommandType == NavigationComputerCommandTypes.Undock)
         {
+            if (_tradingMap is not null && _voyageState is { Phase: not VoyagePhases.Docked })
+                return CommandStartOutcome.Rejected(CommandReasonCodes.VoyageAlreadyActive);
             if (!obj.IsDocked)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.NotDocked);
+            if (_tradingMap is not null)
+            {
+                var blocker = ResolveVoyageDepartureBlock(obj, command.TargetObjectId);
+                if (blocker is not null)
+                {
+                    if (!validateOnly)
+                        _voyageState = new VoyageStateData(VoyagePhases.Docked, BlockReasonCode: blocker);
+                    return CommandStartOutcome.Rejected(blocker);
+                }
+            }
             if (validateOnly)
                 return CommandStartOutcome.Started;
 
             long elapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
             var currentMotion = PredictMotion(obj, elapsedMs);
+            if (_tradingMap is not null)
+            {
+                var departureTarget = _objects.First(o => o.InitialMotion.ObjectId == command.TargetObjectId);
+                var departureMotion = PredictMotion(departureTarget,
+                    Math.Max(0, gameTimeMs - departureTarget.StartGameTimeMs));
+                double departureDx = departureMotion.X - currentMotion.X;
+                double departureDy = departureMotion.Y - currentMotion.Y;
+                double distance = Math.Sqrt(departureDx * departureDx + departureDy * departureDy);
+                if (!double.IsFinite(distance) || distance <= 0)
+                    return CommandStartOutcome.Rejected(CommandReasonCodes.VoyageDestinationUnavailable);
+                _voyageState = new VoyageStateData(VoyagePhases.Undocking, command.CommandId,
+                    obj.DockedStationObjectId, command.TargetObjectId, gameTimeMs, distance);
+            }
             _objects[objectIndex] = obj with
             {
                 InitialMotion = currentMotion,
@@ -2201,6 +2240,9 @@ public sealed partial class SimulationEngine : IDisposable
         var target = _objects[targetIndex];
         if (!string.Equals(target.ObjectType, SpaceObjectType.Station, StringComparison.OrdinalIgnoreCase))
             return CommandStartOutcome.Rejected(CommandReasonCodes.DockTargetNotStation);
+        if (_voyageState is { Phase: not VoyagePhases.Docked } activeVoyage &&
+            command.TargetObjectId != activeVoyage.DestinationStationObjectId)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.VoyageWrongDestination);
 
         long shipElapsedMs = Math.Max(0, gameTimeMs - obj.StartGameTimeMs);
         var shipMotion = PredictMotion(obj, shipElapsedMs);
@@ -2241,6 +2283,9 @@ public sealed partial class SimulationEngine : IDisposable
             command.CommandId, gameTimeMs);
         if (error is not null) return CommandStartOutcome.Rejected(error);
         _dialogue.ProcessedCommandIds = _dialogue.ProcessedCommandIds.Add(command.CommandId);
+
+        if (_voyageState is { Phase: not VoyagePhases.Docked } voyage)
+            _voyageState = voyage with { Phase = VoyagePhases.Docking, ProgressPermille = 1000 };
 
         RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
         return CommandStartOutcome.Started;
@@ -3058,9 +3103,9 @@ public sealed partial class SimulationEngine : IDisposable
         return default;
     }
 
-    private void AdvanceMotionTo(long gameTimeMs)
+    private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt)
     {
-        if (!_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        if (!HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
             return;
@@ -3082,9 +3127,11 @@ public sealed partial class SimulationEngine : IDisposable
                     _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed) &&
                     _objects.Any(o => o.InitialMotion.ObjectId == incident.StationObjectId && o.SecurityZoneRadiusKm is not null))
                     next = Math.Min(next, incident.DeadlineGameTimeMs);
+            ValidateResourceSurveys(next, surveyCalendarAt);
             UpdateStationSecurity(next);
             CompleteActiveEngineCycles(next);
             UpdateStationSecurity(next);
+            ValidateResourceSurveys(next, surveyCalendarAt);
             if (next >= gameTimeMs) break;
         }
     }

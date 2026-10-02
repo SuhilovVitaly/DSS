@@ -1,8 +1,14 @@
 using System.Collections.Immutable;
+using System.Globalization;
+using System.Text.Json;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
+using DeepSpaceSaga.Client.UI.Screens.Trade;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine;
+using DeepSpaceSaga.Engine.Content;
+using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
@@ -109,7 +115,211 @@ public class ObjectInfoPanelTests
         Assert.Equal("Prospector", Assert.Single(lines, l => l.Label == "Name").Value);
     }
 
-    // ── Panel geometry ───────────────────────────────────────────────
+    // ── Resource survey presentation and real-content flow ────────────
+
+    [Fact]
+    public void Unknown_resource_field_shows_id_speed_mass_and_unknown_composition()
+    {
+        var data = FieldData(new(long.MaxValue, false, true));
+        Assert.Equal(new[]
+        {
+            ("Name", "FIELD"), ("Speed", "0 km/s"),
+            ("Mass", "9223372036854775807 kg"), ("Composition", "Unknown")
+        }, ObjectInfoPanel.BuildLines(data));
+
+        var (buffer, screen) = CreateScreen();
+        var ship = new ObjectMotionSnapshot(PlayerShipId, 10000, 10000, 0, 0);
+        var target = new ObjectMotionSnapshot("FIELD", 10000, 10060, 0, 0,
+            DisplayName: "Hidden field kind", Image: "neutral.png", Survey: data.Survey);
+        buffer.Update(new(1, 0, SimulationSpeed.Speed0, [ship, target], PlayerShipObjectId: PlayerShipId));
+        RenderScreen(screen);
+        screen.OnMouseDown(640, 420);
+        var projected = screen.SelectedOrActiveObjectInfo!.Value;
+        Assert.Same(data.Survey, projected.Survey);
+        Assert.Equal("FIELD", projected.DisplayName);
+        Assert.Equal("neutral.png", projected.Image);
+        Assert.Equal(ObjectInfoPanel.BuildLines(data), ObjectInfoPanel.BuildLines(projected));
+    }
+
+    [Fact]
+    public void Unknown_flag_hides_inconsistent_resource_payload()
+    {
+        var data = FieldData(new(1000000, false, true, "Ice", [new("item.ice", 1000)]));
+        var lines = ObjectInfoPanel.BuildLines(data);
+        Assert.Equal(4, lines.Count);
+        Assert.Equal(("Composition", "Unknown"), lines[3]);
+        Assert.DoesNotContain(lines, l => l.Value.Contains('%') || l.Value == "Ice");
+    }
+
+    [Fact]
+    public void Known_resource_field_shows_authoritative_fractions_in_stable_order()
+    {
+        var data = FieldData(new(1234567, true, false, "Silicate",
+            [new("item.silicon", 99), new("item.iron-ore", 800), new("item.future", 101)]));
+        var lines = ObjectInfoPanel.BuildLines(data);
+        Assert.Equal(("Composition", "Silicate"), lines[3]);
+        Assert.Equal(new[]
+        {
+            ("item.future", $"{10.1m:0.#}%"),
+            (TradeItemPresentation.ItemDisplayName("item.iron-ore"), "80%"),
+            (TradeItemPresentation.ItemDisplayName("item.silicon"), $"{9.9m:0.#}%")
+        }, lines.Skip(4));
+        Assert.Equal(100m, lines.Skip(4).Sum(l => decimal.Parse(l.Value.TrimEnd('%'), CultureInfo.CurrentCulture)));
+        Assert.DoesNotContain(lines, l => l.Label == "Direction");
+        Assert.Equal(4, ObjectInfoPanel.BuildLines(FieldData(new(1, true, false, "Iron"))).Count);
+    }
+
+    [Fact]
+    public void Legacy_and_empty_panel_data_keep_existing_lines()
+    {
+        Assert.Equal(new[] { ("Name", "—"), ("Speed", "—"), ("Direction", "—") }, ObjectInfoPanel.BuildLines(null));
+        Assert.Equal(new[] { ("Name", "Legacy"), ("Speed", "5 km/s"), ("Direction", "90°") },
+            ObjectInfoPanel.BuildLines(new("OLD", "Legacy", 5, 90, "Asteroid")));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Resource_rows_fit_expanded_body_and_preserve_hit_regions(bool extended)
+    {
+        var config = JsonSerializer.Deserialize<StationResourceFieldConfig>(
+            File.ReadAllText(Path.Combine(ClientRoot, "Data", "World", "station-resource-fields.json")))!;
+        var variant = config.FieldKinds.SelectMany(k => k.Variants).First(v => v.Resources.Count == 4);
+        var resources = variant.Resources.Select(r => new ResourceFractionSnapshot(r.ItemTypeId, r.Permille)).ToImmutableArray();
+        if (extended) resources = resources.AddRange(Enumerable.Range(0, 12).Select(i => new ResourceFractionSnapshot($"item.{i:D2}", 1)));
+        var data = FieldData(new(1000000000, true, false, variant.CompositionType, resources));
+        var panel = new ObjectInfoPanel();
+        using var bitmap = new SKBitmap(ScreenWidth, 1200);
+        using var canvas = new SKCanvas(bitmap);
+        panel.Render(canvas, ScreenWidth, 8, null, data);
+        int lineCount = ObjectInfoPanel.BuildLines(data).Count;
+        Assert.Equal(extended ? 20 : 8, lineCount);
+        Assert.Equal(Math.Max(162f, 12f + lineCount * 16f), panel.RowBodyRects[1].Height);
+        Assert.Equal(162f, panel.RowBodyRects[0].Height);
+        Assert.Equal(panel.RowBodyRects[0].Bottom, panel.RowCaptionRects[1].Top);
+        Assert.Equal(panel.RowBodyRects[1].Bottom, panel.BodyRect.Bottom);
+        var body = panel.RowBodyRects[1];
+        Assert.True(panel.OnMouseDown(body.MidX, body.Bottom - 1));
+        var caption = panel.RowCaptionRects[1];
+        Assert.True(panel.OnMouseDown(caption.MidX, caption.MidY));
+        panel.Render(canvas, ScreenWidth, 8, null, data);
+        Assert.Equal(SKRect.Empty, panel.RowBodyRects[1]);
+        Assert.True(panel.IsRowOpen(0));
+        panel.OnMouseDown(caption.MidX, caption.MidY);
+        panel.Render(canvas, ScreenWidth, 8, null, data);
+        Assert.Equal(body, panel.RowBodyRects[1]);
+        var toggle = panel.HideShowButtonRect;
+        panel.OnMouseDown(toggle.MidX, toggle.MidY);
+        panel.Render(canvas, ScreenWidth, 8, null, data);
+        Assert.All(panel.RowBodyRects, r => Assert.Equal(SKRect.Empty, r));
+        panel.OnMouseDown(toggle.MidX, toggle.MidY);
+        panel.Render(canvas, ScreenWidth, 8, null, data);
+        Assert.Equal(body, panel.RowBodyRects[1]);
+    }
+
+    [Fact]
+    public async Task Real_content_scan_and_reload_update_existing_info_panel()
+    {
+        string scenarioPath = Path.GetTempFileName();
+        string savePath = Path.GetTempFileName();
+        try
+        {
+            var source = ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "Undocked", "scenario.json"));
+            // Seed 2: the production named survey stream's first draw is 0.8452141274908623 (< 85%).
+            File.WriteAllText(scenarioPath, JsonSerializer.Serialize(source with { GameState = source.GameState with { MasterSeed = 2 } }));
+            using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, scenarioPath);
+            var initial = engine.CaptureSnapshotForTests();
+            var target = initial.Objects.First(o => o.Survey is { CanStructuralScan: true });
+            // Place the stationary ship 6 km from this generated target for a deterministic screen click.
+            var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+            engine.LoadScenario(save with
+            {
+                GameState = save.GameState with
+                {
+                    SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId == PlayerShipId
+                        ? o with { PositionX = target.X, PositionY = target.Y - 60 } : o).ToArray()
+                }
+            }, isSave: true);
+            await using var handle = new GameSessionHandle(new PanelEngineConnection(engine));
+            var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);
+            handle.Buffer.Update(engine.CaptureSnapshotForTests());
+            RenderScreen(screen);
+            screen.OnMouseDown(640, 420);
+            Assert.Equal(target.ObjectId, screen.SelectedObjectId);
+            var unknown = ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo);
+            Assert.Equal(("Composition", "Unknown"), unknown[3]);
+            Assert.Equal(("Mass", $"{target.Survey!.MassKg} kg"), unknown[2]);
+            Assert.Equal(4, unknown.Count);
+            RenderScreen(screen);
+            var button = Assert.Single(screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == ScannerCommandTypes.StructuralScan);
+            Assert.True(button.Enabled);
+            screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
+            screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
+            var busy = engine.CaptureSnapshotForTests();
+            Assert.Equal(CommandReasonCodes.Busy, Assert.Single(busy.CommandResults).ReasonCode);
+            handle.Buffer.Update(busy);
+            RenderScreen(screen);
+            Assert.False(Assert.Single(screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == ScannerCommandTypes.StructuralScan).Enabled);
+            Assert.Equal(unknown, ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo));
+            // Repeated paused snapshots and a frame before due cannot reveal composition.
+            Assert.False(engine.CaptureSnapshotForTests(0).Objects.Single(o => o.ObjectId == target.ObjectId).Survey!.CompositionKnown);
+            Assert.False(engine.CaptureSnapshotForTests(59999).Objects.Single(o => o.ObjectId == target.ObjectId).Survey!.CompositionKnown);
+            var completed = engine.CaptureSnapshotForTests(60000);
+            Assert.Equal(CommandResultStatus.Executed, Assert.Single(completed.CommandResults).Status);
+            handle.Buffer.Update(completed);
+            RenderScreen(screen);
+            var revealed = completed.Objects.Single(o => o.ObjectId == target.ObjectId);
+            Assert.True(revealed.Survey!.CompositionKnown);
+            Assert.Same(revealed.Survey, screen.SelectedOrActiveObjectInfo!.Value.Survey);
+            Assert.Equal(revealed.Image, screen.SelectedOrActiveObjectInfo!.Value.Image);
+            var known = ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo);
+            Assert.Equal(("Composition", revealed.Survey.CompositionType), known[3]);
+            Assert.Equal(revealed.Survey.Resources.OrderBy(r => r.ItemTypeId, StringComparer.Ordinal)
+                .Select(r => (TradeItemPresentation.ItemDisplayName(r.ItemTypeId), $"{r.Permille / 10m:0.#}%")), known.Skip(4));
+            Assert.False(Assert.Single(screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == ScannerCommandTypes.StructuralScan).Enabled);
+            File.WriteAllText(savePath, JsonSerializer.Serialize(engine.CaptureSaveStateForTests(60000, SimulationSpeed.Speed0)));
+            using var restored = EngineContentLoader.CreateEngineFromSaveFile(SettingsPath, savePath);
+            var reloadBuffer = new SnapshotBuffer();
+            reloadBuffer.Update(restored.CaptureSnapshotForTests(60000));
+            var reloadScreen = new GameSessionScreen(reloadBuffer, new LinearMotionPredictor());
+            RenderScreen(reloadScreen);
+            reloadScreen.OnMouseDown(640, 420);
+            Assert.Equal(target.ObjectId, reloadScreen.SelectedObjectId);
+            Assert.Equal(known, ObjectInfoPanel.BuildLines(reloadScreen.SelectedOrActiveObjectInfo));
+        }
+        finally
+        {
+            File.Delete(scenarioPath);
+            File.Delete(savePath);
+        }
+    }
+
+    private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
+        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+    private static string SettingsPath => Path.Combine(ClientRoot, "Settings.json");
+    private static ObjectInfoPanelData FieldData(AsteroidSurveySnapshot survey) =>
+        new("FIELD", "Secret field kind", 0, 90, "Asteroid", Survey: survey);
+
+    private sealed class PanelEngineConnection(SimulationEngine engine) : IGameSessionConnection
+    {
+        public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default)
+        {
+            engine.ReceiveCommand(command);
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask SetSimulationSpeedAsync(SimulationSpeed speed, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask SetObjectInteractionStateAsync(string? activeObjectId, string? selectedObjectId, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        public async IAsyncEnumerable<AuthoritativeSnapshot> ReadSnapshotsAsync(
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.CompletedTask;
+            yield break;
+        }
+    }
 
     [Fact]
     public void Panel_rect_is_populated_after_render()
