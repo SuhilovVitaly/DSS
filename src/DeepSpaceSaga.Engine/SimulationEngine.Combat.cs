@@ -96,7 +96,9 @@ public sealed partial class SimulationEngine
         (SpaceObjectRuntime Projectile, SpaceObjectRuntime Target, TorpedoContact Contact)? first = null;
         foreach (var projectile in _objects)
         {
-            if (projectile.InitialMotion.Torpedo is not { } flight || to < projectile.StartGameTimeMs) continue;
+            // Initial overlap is resolved on the first physical advance (epic A03),
+            // never by repeated snapshots or calendar-only advancement on pause.
+            if (projectile.InitialMotion.Torpedo is not { } flight || to <= projectile.StartGameTimeMs) continue;
             var path = CombatPath(projectile);
             foreach (var target in _objects)
             {

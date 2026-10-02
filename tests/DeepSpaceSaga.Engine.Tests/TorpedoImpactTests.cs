@@ -49,6 +49,45 @@ public sealed class TorpedoImpactTests
     internal static SpaceObjectData Obstacle(string id, double x, double y) =>
         new(id, SpaceObjectType.Asteroid, "Permanent", id, x, y, 0, 0, "Stationary", 1_000_000, "Silicate", null, IsKnown: true);
 
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(0, 5)]
+    [InlineData(1234, 3)]
+    public void Initial_overlap_waits_for_physical_advance_through_repeated_paused_snapshots(long launchTime, double distance)
+    {
+        using var engine = Create(Scenario(o => o.ObjectId == Target ? o with { PositionY = -distance } : o));
+        At(engine, launchTime);
+        engine.ReceiveCommand(Fire("overlap"));
+        var launched = At(engine, launchTime);
+        Assert.Equal(SimulationSpeed.Speed0, launched.CurrentSpeed);
+        var projectile = Assert.Single(launched.Objects.Where(o => o.Torpedo is not null));
+
+        for (int i = 0; i < 4; i++)
+        {
+            var paused = At(engine, launchTime);
+            Assert.Equal(launchTime, paused.MotionTimeMs);
+            Assert.Equal(JsonSerializer.Serialize(projectile),
+                JsonSerializer.Serialize(Assert.Single(paused.Objects.Where(o => o.Torpedo is not null))));
+            Assert.Empty(paused.CombatImpacts);
+            Assert.Equal(450, paused.Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+            Assert.Equal(projectile.ObjectId,
+                paused.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+        }
+
+        // Calendar advancement alone must not trigger physical contact either.
+        Assert.Empty(At(engine, launchTime, launchTime + 1000).CombatImpacts);
+        var advanced = At(engine, launchTime + 1, launchTime + 1001);
+        var impact = Assert.Single(advanced.CombatImpacts);
+        Assert.Equal((double)launchTime, impact.MotionTimeMs);
+        Assert.Equal(Target, impact.HitObjectId);
+        Assert.Equal(150, impact.DamageApplied);
+        Assert.Empty(impact.FinalTrail);
+        Assert.DoesNotContain(advanced.Objects, o => o.Torpedo is not null);
+        Assert.Equal(300, advanced.Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+        Assert.Null(advanced.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+        Assert.Single(At(engine, launchTime + 1, launchTime + 1001).CombatImpacts);
+    }
+
     [Fact]
     public void Three_contacts_apply_150_without_rng_draws()
     {
