@@ -122,6 +122,7 @@ public sealed class PirateScenarioTests
         screen.OnMouseDown(640, 420);
         var pirate = Pirate(snapshot);
         Assert.Equal(pirate.ObjectId, screen.SelectedObjectId);
+        Assert.Equal(PlayerRelation.Enemy, screen.SelectedOrActiveObjectInfo?.RelationToPlayer);
         var lines = ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo);
         Assert.Contains(("Name", pirate.DisplayName!), lines);
         Assert.Contains(("Captain", pirate.CaptainDisplayName!), lines);

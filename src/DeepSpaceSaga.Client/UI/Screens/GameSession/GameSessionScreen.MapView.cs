@@ -63,6 +63,7 @@ public sealed partial class GameSessionScreen
         {
             var p = state.Pose;
             if (IsImportantMapObject(p.ObjectId) || p.RenderObjectType is SpaceObjectType.Sun or SpaceObjectType.Planet) continue;
+            if (p is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy }) continue;
             var (sx, sy) = _camera.WorldToScreen(p.X, p.Y, _viewportW, _viewportH);
             if (sx < -40 || sy < -40 || sx > _viewportW + 40 || sy > _viewportH + 40) continue;
             var key = (Math.Floor(p.X / cellSize), Math.Floor(p.Y / cellSize));

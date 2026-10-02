@@ -304,7 +304,13 @@ public sealed class ObjectInfoPanel
 
         var image = data is { } d ? ResolveObjectImage(d) : null;
         if (image is not null)
+        {
+            canvas.Save();
+            if (data is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy })
+                canvas.Scale(-1, 1, imageRect.MidX, imageRect.MidY);
             canvas.DrawBitmap(image, imageRect, _imagePaint);
+            canvas.Restore();
+        }
         else
             canvas.DrawRect(imageRect, _imagePlaceholderPaint);
         canvas.DrawRect(imageRect, _panelBorderPaint);
@@ -410,4 +416,5 @@ public readonly record struct ObjectInfoPanelData(
     string? RenderObjectType,
     string? Image = null,
     AsteroidSurveySnapshot? Survey = null,
-    string? CaptainDisplayName = null);
+    string? CaptainDisplayName = null,
+    string? RelationToPlayer = null);

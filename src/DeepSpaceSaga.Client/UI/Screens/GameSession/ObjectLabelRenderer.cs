@@ -126,7 +126,8 @@ internal sealed class ObjectLabelRenderer
                 var predicted = state.Pose;
                 string objectId = predicted.ObjectId;
                 if (clusteredIds?.Contains(objectId) == true) continue;
-                bool important = state.IsPlayerShip || isImportant?.Invoke(objectId) == true;
+                bool important = state.IsPlayerShip || isImportant?.Invoke(objectId) == true ||
+                    predicted is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy };
                 if (important != (pass == 0)) continue;
                 if (mapSettings is not null && !important && _occupiedPlaques.Count >= mapSettings.MaximumLabels) continue;
                 if (mapSettings is not null && !important && camera.PixelsPerWorldUnit < mapSettings.LabelDetailPpu * .5) continue;

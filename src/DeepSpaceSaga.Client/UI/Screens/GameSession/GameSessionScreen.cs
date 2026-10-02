@@ -2134,7 +2134,7 @@ public sealed partial class GameSessionScreen : IScreen
         var p = s.Pose;
         var survey = s.Source.Survey;
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
-            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName);
+            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer);
     }
 
     /// <summary>
