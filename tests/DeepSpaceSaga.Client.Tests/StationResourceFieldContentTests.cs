@@ -206,7 +206,8 @@ public sealed class StationResourceFieldContentTests
     [Fact]
     public void Default_500_and_legacy_without_map_remain_unchanged()
     {
-        const string baselineHash = "8E31E0462D2B893A54A0778234C3044DC4230D0BC9F4D278ADB8EB32BBE6A526";
+        // Baseline includes the EP-0006 launcher room; resource-field loading must not modify it.
+        const string baselineHash = "354975C44E050B4DBBF989453DD932CA2E0A1457E78BF74F590BE9A395C61168";
         Assert.Equal(baselineHash, Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(ScenarioPath("Default_500")))));
         using var enabled = new ContentFixture();
         using var disabled = new ContentFixture(enabled: false);

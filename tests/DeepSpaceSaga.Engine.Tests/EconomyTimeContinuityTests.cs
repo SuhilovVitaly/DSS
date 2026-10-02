@@ -162,6 +162,9 @@ public class EconomyTimeContinuityTests
                     .Where(o => o.ObjectId == save.GameState.PlayerShipObjectId || o.ObjectId == "SPC-0002")
                     .Select(o => o with
                     {
+                        // This fixture replaces the ship with a synthetic cargo-only economy object.
+                        ShipClassId = null,
+                        HullHitPoints = null,
                         Modules = o.ObjectType == "PlayerShip"
                         ? [new("cargo", "module.test-cargo", [new(4, 2)], 100, "On", "Ready", null,
                         rations > 0 ? [new("item.food-rations", rations)] : [])] : [],
@@ -530,7 +533,8 @@ public class EconomyTimeContinuityTests
             Enumerable.Range(0, source.Recipes.Count).Select(source.Recipes.GetDefinition),
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
-                .Select(source.StationMarketProfiles.GetDefinition).Append(profile));
+                .Select(source.StationMarketProfiles.GetDefinition).Append(profile),
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
     }
 
     /// <summary>
