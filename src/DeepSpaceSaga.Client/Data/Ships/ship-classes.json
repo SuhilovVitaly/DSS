@@ -1,0 +1,8 @@
+{
+  "shipClasses": [
+    {
+      "typeId": "ship.tetrarch",
+      "hullHitPointsMax": 450
+    }
+  ]
+}
