@@ -375,6 +375,7 @@ public sealed partial class SimulationEngine : IDisposable
         }
 
         var restoredVoyage = ValidateVoyageState(gs, runtimeObjects);
+        var combatState = BuildCombatState(gs.SpaceObjects, runtimeObjects);
 
         lock (_worldStateLock)
         {
@@ -407,6 +408,8 @@ public sealed partial class SimulationEngine : IDisposable
 
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
+            _hullCombat = combatState.Hulls;
+            _launcherCombat = combatState.Launchers;
             _processedWorldTimeMs = gs.GameTimeMs;
             _processedSimulationTimeMs = gs.MotionTimeMs;
             LoadDialogueState(gs.DialogueState, gs.MotionTimeMs);
@@ -616,7 +619,8 @@ public sealed partial class SimulationEngine : IDisposable
                     CaptainPortraitImage = known ? obj.CaptainPortraitImage : null,
                     DockOperatorDisplayName = dockOperator?.DisplayName,
                     DockOperatorPortraitImage = dockOperator?.PortraitImage,
-                    IsDestroyed = obj.IsDestroyed
+                    IsDestroyed = obj.IsDestroyed,
+                    HullCombat = known ? _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId) : null
                 });
             }
 
@@ -796,7 +800,8 @@ public sealed partial class SimulationEngine : IDisposable
                 Cargo: BuildCargoProjection(module.Cargo),
                 AvailableCapacityKg: module.AvailableCapacityKg,
                 CabinesCount: moduleType.CabinesCount,
-                CargoCapacityKg: moduleType.CargoCapacityKg));
+                CargoCapacityKg: moduleType.CargoCapacityKg,
+                LauncherCombat: _launcherCombat.GetValueOrDefault((ship.InitialMotion.ObjectId, module.ModuleId))));
         }
 
         return builder.MoveToImmutable();
@@ -979,7 +984,9 @@ public sealed partial class SimulationEngine : IDisposable
                 MarketProfileFingerprint: isStation ? obj.MarketProfileFingerprint : null,
                 MarketBudgetCredits: isStation ? obj.MarketBudgetCredits : null,
                 MarketRevision: isStation && obj.MarketProfileId is not null ? obj.MarketRevision : null,
-                RelationToPlayer: obj.RelationToPlayer));
+                RelationToPlayer: obj.RelationToPlayer,
+                ShipClassId: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.ShipClassId,
+                HullHitPoints: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.CurrentHp));
         }
 
         var gameState = new GameStateData(

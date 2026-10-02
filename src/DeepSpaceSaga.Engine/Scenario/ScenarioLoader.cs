@@ -316,6 +316,14 @@ public static class ScenarioLoader
 
     private static void ValidateObject(SpaceObjectData obj)
     {
+        if (obj.ShipClassId is not null &&
+            (string.IsNullOrWhiteSpace(obj.ShipClassId) ||
+             !(string.Equals(obj.ObjectType, SpaceObjectType.PlayerShip, StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(obj.ObjectType, SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase))))
+            throw new ScenarioException($"Object '{obj.ObjectId}' has invalid shipClassId or is not a ship.");
+        if (obj.HullHitPoints is not null && (obj.ShipClassId is null || obj.HullHitPoints <= 0))
+            throw new ScenarioException($"Object '{obj.ObjectId}' hullHitPoints requires a ship class and positive HP.");
+
         if (!double.IsFinite(obj.SpeedMps) || obj.SpeedMps < 0 || !double.IsFinite(obj.DirectionDegrees))
             throw new ScenarioException($"Invalid precise motion for '{obj.ObjectId}'.");
         if (string.IsNullOrWhiteSpace(obj.ObjectId))

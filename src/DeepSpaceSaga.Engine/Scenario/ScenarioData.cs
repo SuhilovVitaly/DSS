@@ -230,7 +230,11 @@ public sealed record SpaceObjectData(
     /// </summary>
     [property: JsonPropertyName("marketRevision")] long? MarketRevision = null,
     /// <summary>NPC ship allegiance; omitted values default to neutral. Persisted on save.</summary>
-    [property: JsonPropertyName("relationToPlayer")] string? RelationToPlayer = null);
+    [property: JsonPropertyName("relationToPlayer")] string? RelationToPlayer = null,
+    /// <summary>Explicit ship class identity; never inferred from image, name or hull geometry.</summary>
+    [property: JsonPropertyName("shipClassId")] string? ShipClassId = null,
+    /// <summary>Current hull HP. Null on a classified new ship means the configured maximum.</summary>
+    [property: JsonPropertyName("hullHitPoints")] int? HullHitPoints = null);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles
