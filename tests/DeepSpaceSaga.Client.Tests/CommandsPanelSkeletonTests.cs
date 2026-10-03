@@ -19,7 +19,7 @@ public class CommandsPanelSkeletonTests
     private const string NavigationComputerModuleId = "MOD-PLAYER-NAV-COMPUTER-01";
 
     private static readonly ImmutableArray<string> PanelOrder = ImmutableArray.Create(
-        "Navigation", "Maneuver", "Engine", "Space Control");
+        "Navigation", "Maneuver", "Engine", "Space Control", "Torpedo Launcher");
 
     /// <summary>
     /// Display names and targets mirror Client/Data/command-definitions.json —
@@ -113,7 +113,7 @@ public class CommandsPanelSkeletonTests
     [Fact]
     public void Panels_are_declared_in_fixed_order_with_fixed_command_composition()
     {
-        Assert.Equal(4, CommandsPanel.Panels.Length);
+        Assert.Equal(5, CommandsPanel.Panels.Length);
         Assert.Equal(PanelOrder, CommandsPanel.Panels.Select(p => p.Name));
 
         Assert.Equal(
@@ -156,7 +156,7 @@ public class CommandsPanelSkeletonTests
     // ── Geometry ────────────────────────────────────────────────
 
     [Fact]
-    public void Panel_renders_top_left_with_caption_360x32_and_body_spans_all_four_panels()
+    public void Panel_renders_top_left_with_caption_360x32_and_body_spans_all_five_panels()
     {
         var screen = CreateScreen();
         Render(screen);
@@ -170,14 +170,14 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Xenon_chrome_assets_are_loaded_without_changing_the_360x832_footprint()
+    public void Xenon_chrome_assets_are_loaded_without_changing_the_360x1034_footprint()
     {
         var screen = CreateScreen();
         Render(screen);
 
         Assert.True(screen.CommandsPanel.HasLoadedXenonChrome);
         Assert.Equal(CommandsPanel.PanelWidth, screen.CommandsPanel.CaptionRect.Width);
-        Assert.Equal(834f, screen.CommandsPanel.CaptionRect.Height + screen.CommandsPanel.BodyRect.Height);
+        Assert.Equal(1034f, screen.CommandsPanel.CaptionRect.Height + screen.CommandsPanel.BodyRect.Height);
     }
 
     [Fact]
@@ -211,7 +211,7 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Four_panels_are_always_shown_regardless_of_installed_modules()
+    public void Five_panels_are_always_shown_regardless_of_installed_modules()
     {
         var withNoModules = CreateScreen(ImmutableArray<InstalledModuleSnapshot>.Empty);
         Render(withNoModules);
@@ -373,7 +373,7 @@ public class CommandsPanelSkeletonTests
         Render(screen);
 
         Assert.Equal(CommandsPanelState.AllPanels, panel.State);
-        Assert.Equal(4, panel.CommandPanelRows.Count);
+        Assert.Equal(5, panel.CommandPanelRows.Count);
         Assert.True(panel.BodyRect.Height > 0);
     }
 
@@ -505,13 +505,13 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Empty_installed_modules_still_shows_all_four_panels_with_disabled_buttons()
+    public void Empty_installed_modules_still_shows_all_five_panels_with_disabled_buttons()
     {
         var screen = CreateScreen(ImmutableArray<InstalledModuleSnapshot>.Empty);
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        Assert.Equal(4, panel.CommandPanelRows.Count);
+        Assert.Equal(5, panel.CommandPanelRows.Count);
         Assert.Equal(PanelOrder, panel.CommandPanelRows.Select(r => r.Name));
 
         int expectedTotalButtons = CommandsPanel.Panels.Sum(p => p.CommandTypeIds.Length);
@@ -579,12 +579,14 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Every_command_in_the_panel_has_a_declared_icon()
+    public void Existing_commands_keep_icons_and_torpedo_uses_text_fallback()
     {
         Assert.Equal(
             CommandsPanel.Panels.SelectMany(panel => panel.CommandTypeIds)
+                .Where(id => id != CombatCommandTypes.Fire)
                 .OrderBy(k => k, StringComparer.Ordinal),
             CommandsPanel.CommandIconFileNames.Keys.OrderBy(k => k, StringComparer.Ordinal));
+        Assert.False(CommandsPanel.CommandIconFileNames.ContainsKey(CombatCommandTypes.Fire));
     }
 
     [Fact]
@@ -1284,6 +1286,10 @@ public class CommandsPanelSkeletonTests
             InstalledModules: installedModules ?? OneEngineModule));
 
         var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);
+        // These tests click exposed command controls. Close the foreground info
+        // overlay first instead of relying on clicks leaking through its body.
+        Render(screen);
+        screen.OnMouseDown(screen.LastCloseRect.MidX, screen.LastCloseRect.MidY);
         return new TestFixture(connection, handle, screen);
     }
 

@@ -28,6 +28,8 @@ public sealed class CommandsPanel
 
     /// <summary>Fixed body height for every panel (restored pre-ТЗ-04 constant: 200f row − 36f caption).</summary>
     public const float PanelBodyHeight = 164f;
+    internal static float MinimumExpandedHeight => Margin + CaptionHeight + MainCaptionToPanelsGap +
+        Panels.Length * PanelCaptionHeight + (Panels.Length - 1) * CollapsedPanelGap + PanelBodyHeight;
 
     private const float Margin = 8f;
     private const float Padding = 6f;
@@ -72,7 +74,8 @@ public sealed class CommandsPanel
             ShipEngineCommandTypes.MaintainSpeed)),
         new CommandPanelDefinition("Space Control", ImmutableArray.Create(
             ScannerCommandTypes.GeneralScan,
-            ScannerCommandTypes.StructuralScan)));
+            ScannerCommandTypes.StructuralScan)),
+        new CommandPanelDefinition("Torpedo Launcher", ImmutableArray.Create(CombatCommandTypes.Fire)));
 
     /// <summary>
     /// Per-command icon files under Images/UI/GameSessionScreenUI/commands-panel/.
@@ -137,6 +140,25 @@ public sealed class CommandsPanel
     // ── Hooks (ТЗ-04, injected by the screen) ───────────────────
     private readonly Func<string, bool> _isCommandEnabled;
     private readonly Action<string> _commandClicked;
+    private readonly Func<string?>? _launcherStatus;
+    private string? _preferredOpenedPanel;
+    internal string? HoveredCommandTypeId => _hoveredCommandButtonIndex >= 0 &&
+        _hoveredCommandButtonIndex < _allCommandButtons.Count
+            ? _allCommandButtons[_hoveredCommandButtonIndex].CommandTypeId : null;
+
+    /// <summary>Read-only hit-test against a visible command, with current enablement.</summary>
+    internal string? EnabledCommandAt(float x, float y)
+    {
+        if (_state == CommandsPanelState.Closed) return null;
+        foreach (var row in _panelRows)
+        {
+            if (!row.Opened || (_panelOpenedByName.TryGetValue(row.Name, out bool opened) && !opened)) continue;
+            foreach (var button in row.Buttons)
+                if (button.Rect.Contains(x, y) && button.Enabled && _isCommandEnabled(button.CommandTypeId))
+                    return button.CommandTypeId;
+        }
+        return null;
+    }
 
     // ── Paints ──────────────────────────────────────────────────
     private readonly SKPaint _panelBgPaint;
@@ -193,10 +215,12 @@ public sealed class CommandsPanel
     /// </summary>
     public CommandsPanel(
         Func<string, bool>? isCommandEnabled = null,
-        Action<string>? commandClicked = null)
+        Action<string>? commandClicked = null,
+        Func<string?>? launcherStatus = null)
     {
         _isCommandEnabled = isCommandEnabled ?? (_ => true);
         _commandClicked = commandClicked ?? (_ => { });
+        _launcherStatus = launcherStatus;
 
         var typeface = XenonStyle.TypefaceRegular;
 
@@ -381,8 +405,9 @@ public sealed class CommandsPanel
             if (row.CaptionRect.Contains(x, y))
             {
                 string name = row.Name;
-                bool wasOpened = !_panelOpenedByName.TryGetValue(name, out bool o) || o;
+                bool wasOpened = row.Opened;
                 _panelOpenedByName[name] = !wasOpened;
+                if (!wasOpened) _preferredOpenedPanel = name;
                 return true;
             }
         }
@@ -441,7 +466,7 @@ public sealed class CommandsPanel
 
     // ── Render ──────────────────────────────────────────────────
 
-    public void Render(SKCanvas canvas, IReadOnlyList<InstalledModuleSnapshot> modules)
+    public void Render(SKCanvas canvas, IReadOnlyList<InstalledModuleSnapshot> modules, float viewportHeight = float.PositiveInfinity)
     {
         LayoutButtons();
 
@@ -462,10 +487,37 @@ public sealed class CommandsPanel
                 ? arr
                 : ImmutableArray<InstalledModuleSnapshot>.Empty;
 
+            // Reserve every caption so all five groups remain reachable. Give an
+            // explicitly opened group priority, then the installed launcher.
+            HashSet<string>? visibleBodies = null;
+            bool hasLauncher = safeModules.Any(m => m.LauncherCombat is not null);
+            float BodyHeight(string name)
+            {
+                if (!hasLauncher) return PanelBodyHeight;
+                int rows = (Panels.First(p => p.Name == name).CommandTypeIds.Length + 3) / 4;
+                return BodyPaddingY * 2 + rows * CommandButtonHeight + (rows - 1) * CommandButtonGap +
+                    StatusBarHeight + XenonBodySliceInset;
+            }
+            if (hasLauncher)
+            {
+                visibleBodies = new(StringComparer.Ordinal);
+                float remaining = viewportHeight - rowY - Panels.Length * PanelCaptionHeight -
+                    (Panels.Length - 1) * CollapsedPanelGap;
+                foreach (string name in new[] { _preferredOpenedPanel, "Torpedo Launcher", "Navigation", "Space Control" }
+                    .Concat(Panels.Select(p => p.Name)).OfType<string>().Distinct(StringComparer.Ordinal))
+                {
+                    if (_panelOpenedByName.TryGetValue(name, out bool requested) && !requested) continue;
+                    if (remaining < BodyHeight(name)) continue;
+                    visibleBodies.Add(name);
+                    remaining -= BodyHeight(name);
+                }
+            }
+
             for (int panelIndex = 0; panelIndex < Panels.Length; panelIndex++)
             {
                 var panel = Panels[panelIndex];
                 bool opened = !_panelOpenedByName.TryGetValue(panel.Name, out bool o) || o;
+                if (visibleBodies is not null) opened &= visibleBodies.Contains(panel.Name);
 
                 if (_state == CommandsPanelState.ActivePanels && !opened)
                     continue;
@@ -477,7 +529,7 @@ public sealed class CommandsPanel
                 var bodyRect = opened
                     ? new SKRect(
                         Margin, rowY + PanelCaptionHeight,
-                        Margin + PanelWidth, rowY + PanelCaptionHeight + PanelBodyHeight)
+                        Margin + PanelWidth, rowY + PanelCaptionHeight + BodyHeight(panel.Name))
                     : SKRect.Empty;
 
                 int rowStartOrdinal = _commandButtons.Count;
@@ -504,11 +556,12 @@ public sealed class CommandsPanel
                     _hoveredCommandButtonIndex < rowEndOrdinalExclusive
                         ? _commandButtons[_hoveredCommandButtonIndex].Label
                         : null;
+                if (opened && panel.Name == "Torpedo Launcher") statusBarText = _launcherStatus?.Invoke() ?? statusBarText;
 
                 _panelRows.Add(new CommandPanelGeometry(
                     panel.Name, opened, captionRect, bodyRect, buttons, statusBarRect, statusBarText));
 
-                rowY += opened ? (PanelCaptionHeight + PanelBodyHeight) : PanelCaptionHeight;
+                rowY += opened ? (PanelCaptionHeight + BodyHeight(panel.Name)) : PanelCaptionHeight;
                 if (!opened && panelIndex < Panels.Length - 1)
                     rowY += CollapsedPanelGap;
             }

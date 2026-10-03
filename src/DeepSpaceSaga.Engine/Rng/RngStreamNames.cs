@@ -21,10 +21,12 @@ internal static class RngStreamNames
     public static string StationCrewMemberPortrait(string stationObjectId, string crewId) => $"StationCrewMemberPortrait:{stationObjectId}:{crewId}";
 
     /// <summary>
-    /// The player ship's captain — an independent named fact, not tied to a <c>Crew</c>
+    /// The ship's captain — an independent named fact, not tied to a <c>Crew</c>
     /// element, hence no crewId component (unlike the station crew streams above).
     /// </summary>
     public static string ShipCaptainName(string shipObjectId) => $"ShipCaptainName:{shipObjectId}";
+
+    public static string ShipName(string shipObjectId) => $"ShipName:{shipObjectId}";
 
     /// <summary>See <see cref="ShipCaptainName"/>.</summary>
     public static string ShipCaptainPortrait(string shipObjectId) => $"ShipCaptainPortrait:{shipObjectId}";

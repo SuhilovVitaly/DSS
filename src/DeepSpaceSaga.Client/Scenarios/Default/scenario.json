@@ -17,6 +17,7 @@
         {
             "objectId": "SPC-0001",
             "objectType": "PlayerShip",
+            "shipClassId": "ship.tetrarch",
             "persistenceType": "Permanent",
             "name": "Player Ship",
             "positionX": 10000.0,
@@ -34,7 +35,8 @@
                     {"x":4,"y":2},
                     {"x":4,"y":3},
                     {"x":4,"y":4},
-                    {"x":3,"y":5},{"x":4,"y":5},{"x":5,"y":5}
+                    {"x":3,"y":5},{"x":4,"y":5},{"x":5,"y":5},
+                    {"x":3,"y":2}
                 ]
             },
             "modules": [
@@ -107,6 +109,16 @@
                     "activeCycle": null,
                     "cargo": [],
                     "fuelAmountKg": 750
+                },
+                {
+                    "moduleId": "MOD-PLAYER-TORPEDO-01",
+                    "moduleTypeId": "module.torpedo.launcher.basic",
+                    "occupiedCells": [ {"x":3,"y":2} ],
+                    "structurePoints": 60,
+                    "powerState": "On",
+                    "operationalState": "Ready",
+                    "activeCycle": null,
+                    "cargo": []
                 }
             ],
             "crew": [

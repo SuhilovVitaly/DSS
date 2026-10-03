@@ -89,7 +89,8 @@ public class QuotedTradeExecutionTests
             dialogues: Enumerable.Range(0, source.Dialogues.Count).Select(source.Dialogues.GetDefinition),
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
-                .Select(source.StationMarketProfiles.GetDefinition).Append(profile));
+                .Select(source.StationMarketProfiles.GetDefinition).Append(profile),
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
     }
 
     internal static ScenarioFile MarketTemplate(IReadOnlyList<StationInventoryItemData>? stock = null)

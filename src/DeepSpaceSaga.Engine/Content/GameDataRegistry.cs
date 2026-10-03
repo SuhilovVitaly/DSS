@@ -19,7 +19,8 @@ internal sealed class GameDataRegistry
         TypeRegistry<QuestDefinition>? quests = null,
         int catalogVersion = 1,
         string? legacyCatalogFingerprint = null,
-        TypeRegistry<StationMarketProfileDefinition>? stationMarketProfiles = null)
+        TypeRegistry<StationMarketProfileDefinition>? stationMarketProfiles = null,
+        TypeRegistry<ShipClassDefinition>? shipClasses = null)
     {
         ModuleCategories = moduleCategories;
         ModuleTypes = moduleTypes;
@@ -30,6 +31,7 @@ internal sealed class GameDataRegistry
         Dialogues = dialogues ?? TypeRegistry<DialogueDefinition>.Empty;
         Quests = quests ?? TypeRegistry<QuestDefinition>.Empty;
         StationMarketProfiles = stationMarketProfiles ?? TypeRegistry<StationMarketProfileDefinition>.Empty;
+        ShipClasses = shipClasses ?? TypeRegistry<ShipClassDefinition>.Empty;
         CatalogVersion = catalogVersion;
         LegacyCatalogFingerprint = legacyCatalogFingerprint;
         var economicItems = Enumerable.Range(0, itemTypes.Count).Select(itemTypes.GetDefinition)
@@ -58,6 +60,7 @@ internal sealed class GameDataRegistry
     public TypeRegistry<DialogueDefinition> Dialogues { get; }
     public TypeRegistry<QuestDefinition> Quests { get; }
     public TypeRegistry<StationMarketProfileDefinition> StationMarketProfiles { get; }
+    public TypeRegistry<ShipClassDefinition> ShipClasses { get; }
     public int CatalogVersion { get; }
     public CatalogCompatibilityData CatalogCompatibility { get; }
     public string? LegacyCatalogFingerprint { get; }
@@ -81,12 +84,14 @@ internal sealed class GameDataRegistry
         IEnumerable<QuestDefinition>? quests = null,
         int catalogVersion = 1,
         string? legacyCatalogFingerprint = null,
-        IEnumerable<StationMarketProfileDefinition>? stationMarketProfiles = null)
+        IEnumerable<StationMarketProfileDefinition>? stationMarketProfiles = null,
+        IEnumerable<ShipClassDefinition>? shipClasses = null)
     {
         if (catalogVersion != 1) throw new ContentException($"Unsupported catalogVersion: {catalogVersion}.");
         var commandRegistry = TypeRegistry<CommandDefinition>.Create(commandDefinitions, "command definitions");
         var categoryRegistry = TypeRegistry<ModuleCategoryDefinition>.Create(moduleCategories, "module types");
         var moduleRegistry = TypeRegistry<ModuleTypeDefinition>.Create(moduleTypes, "module implementations");
+        var shipClassRegistry = CreateShipClassRegistry(shipClasses ?? []);
         var itemRegistry = TypeRegistry<ItemTypeDefinition>.Create(itemTypes, "item types");
         var catalogCodes = new HashSet<string>(StringComparer.Ordinal);
         for (int i = 0; i < itemRegistry.Count; i++)
@@ -151,7 +156,20 @@ internal sealed class GameDataRegistry
             }
         }
         return new GameDataRegistry(categoryRegistry, moduleRegistry, itemRegistry, commandRegistry, factoryRegistry, recipeRegistry,
-            dialogueRegistry, questRegistry, catalogVersion, legacyCatalogFingerprint, profileRegistry);
+            dialogueRegistry, questRegistry, catalogVersion, legacyCatalogFingerprint, profileRegistry, shipClassRegistry);
+    }
+
+    internal static TypeRegistry<ShipClassDefinition> CreateShipClassRegistry(IEnumerable<ShipClassDefinition> classes)
+    {
+        var definitions = classes.ToArray();
+        foreach (var definition in definitions)
+        {
+            if (definition is null)
+                throw new ContentException("shipClasses contains null.");
+            if (definition.HullHitPointsMax <= 0)
+                throw new ContentException($"Ship class '{definition.TypeId}': hullHitPointsMax must be greater than zero.");
+        }
+        return TypeRegistry<ShipClassDefinition>.Create(definitions, "shipClasses");
     }
 
     // Also used before a profile file is combined with its item catalog.

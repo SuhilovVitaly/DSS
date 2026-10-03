@@ -24,7 +24,8 @@ public sealed class CatalogCompatibilityTests
             Enumerable.Range(0, source.Recipes.Count).Select(source.Recipes.GetDefinition),
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
-                .Select(source.StationMarketProfiles.GetDefinition));
+                .Select(source.StationMarketProfiles.GetDefinition),
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
 
     private static ItemTypeDefinition[] Items(GameDataRegistry registry) =>
         Enumerable.Range(0, registry.ItemTypes.Count).Select(registry.ItemTypes.GetDefinition).ToArray();
@@ -213,7 +214,7 @@ public sealed class CatalogCompatibilityTests
         string path = Path.Combine(Path.GetDirectoryName(SettingsPath)!, "Scenarios", scenarioName, "scenario.json");
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, path);
         var save = engine.CaptureSaveState();
-        Assert.Equal(9, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(10, SaveFormat.CurrentSaveFormatVersion);
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         var registry = RealRegistry();
         Assert.Equal(registry.CatalogCompatibility, save.GameState.CatalogCompatibility);
@@ -652,7 +653,7 @@ public sealed class CatalogCompatibilityTests
     {
         using var engine = EngineContentLoader.CreateEngineFromSettingsFile(SettingsPath);
         var save = engine.CaptureSaveState();
-        Assert.Equal(9, save.SaveFormatVersion);
+        Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
 
         var station = save.GameState.SpaceObjects.First(obj =>
             string.Equals(obj.ObjectType, "Station", StringComparison.OrdinalIgnoreCase));

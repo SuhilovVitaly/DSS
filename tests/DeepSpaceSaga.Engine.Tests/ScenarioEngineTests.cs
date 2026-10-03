@@ -161,13 +161,16 @@ public class ScenarioEngineTests
         var playerShip = scenario.GameState.SpaceObjects
             .Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId);
 
-        // Tetrarch-class hull (requirements §57): 9x9 grid, 10 structural cells.
+        // Tetrarch-class hull (requirements §57): 9x9 grid, 11 structural cells including the launcher room.
         Assert.NotNull(playerShip.HullLayout);
         Assert.Equal(9, playerShip.HullLayout!.Width);
         Assert.Equal(9, playerShip.HullLayout.Height);
-        Assert.Equal(10, playerShip.HullLayout.Cells.Count);
+        Assert.Equal(11, playerShip.HullLayout.Cells.Count);
 
-        Assert.Equal(6, playerShip.Modules?.Count);
+        Assert.Equal(7, playerShip.Modules?.Count);
+        Assert.Equal("ship.tetrarch", playerShip.ShipClassId);
+        var launcher = Assert.Single(playerShip.Modules ?? [], m => m.ModuleTypeId == "module.torpedo.launcher.basic");
+        Assert.Equal(new HullCellCoordinate(3, 2), Assert.Single(launcher.OccupiedCells));
         var cargoModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         Assert.Equal("module.container.basic", cargoModule.ModuleTypeId);
         Assert.Equal([new HullCellCoordinate(4, 2)], cargoModule.OccupiedCells);
@@ -226,7 +229,7 @@ public class ScenarioEngineTests
 
         Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        Assert.Equal(6, playerShip.Modules.Length);
+        Assert.Equal(7, playerShip.Modules.Length);
         var cargoModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
         // Module type registry order follows the deterministic (ordinal) sort of
@@ -252,7 +255,7 @@ public class ScenarioEngineTests
     }
 
     [Fact]
-    public void Real_default_scenario_occupies_6_of_10_hull_cells()
+    public void Real_default_scenario_occupies_7_of_11_hull_cells()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
@@ -268,21 +271,22 @@ public class ScenarioEngineTests
         var engine = SimulationEngine.CreateFromSettingsFile(settingsPath);
 
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        Assert.Equal(6, playerShip.Modules.Length);
+        Assert.Equal(7, playerShip.Modules.Length);
         Assert.NotNull(playerShip.HullLayout);
-        Assert.Equal(10, playerShip.HullLayout!.Cells.Count);
+        Assert.Equal(11, playerShip.HullLayout!.Cells.Count);
 
         // Each module occupies exactly 1 hull cell (requirements §57: all real module
         // types are slotSize 1), and no two modules share a cell.
         var occupiedCells = playerShip.Modules.SelectMany(m => m.OccupiedCells).ToArray();
-        Assert.Equal(6, occupiedCells.Length);
-        Assert.Equal(6, occupiedCells.Distinct().Count());
+        Assert.Equal(7, occupiedCells.Length);
+        Assert.Contains((3, 2), occupiedCells);
+        Assert.Equal(7, occupiedCells.Distinct().Count());
 
         // Every occupied cell must belong to the object's hull layout.
         var hullCells = playerShip.HullLayout.Cells.Select(c => (c.X, c.Y)).ToHashSet();
         Assert.All(occupiedCells, cell => Assert.Contains(cell, hullCells));
 
-        // 4 of the 10 structural cells (the Y1/Y5 side wings) remain unoccupied.
+        // 4 of the 11 structural cells (the Y1/Y5 side wings) remain unoccupied.
         int freeCells = hullCells.Count - occupiedCells.Distinct().Count();
         Assert.Equal(4, freeCells);
     }
@@ -482,7 +486,14 @@ public class ScenarioEngineTests
             .Where(t => t.CommandTypeIds.Length > 0)
             .ToArray();
 
-        Assert.Equal(5, activeTypes.Length); // engine + scanner + bridge-navigation-computer + drilling unit + container
+        Assert.Equal(6, activeTypes.Length); // engine + scanner + bridge-navigation-computer + drilling unit + container + torpedo launcher
+
+        var launcherType = Assert.Single(activeTypes, t => t.TypeId == "module.torpedo.launcher.basic");
+        Assert.Equal(CombatCommandTypes.Fire, Assert.Single(launcherType.CommandTypeIds));
+        var fireCommand = registry.CommandDefinitions.GetDefinition(
+            registry.CommandDefinitions.GetIndex(CombatCommandTypes.Fire));
+        Assert.Equal("module.torpedo.launcher", fireCommand.Type);
+        Assert.Equal("object", fireCommand.Target);
 
         var engineType = Assert.Single(activeTypes, t => t.TypeId == "module.engine.basic");
         Assert.Equal(13, engineType.CommandTypeIds.Length); // + navigation.approach (story-20260827-083137, Batch 3)

@@ -77,7 +77,7 @@ public class EconomyTimeContinuityTests
         var boundary = original.CaptureSnapshotForTests(GameCalendar.DayMs, simulationTimeMs: 321);
         clock.Reset(GameCalendar.DayMs, SimulationSpeed.Speed0, 321);
         var save = original.CaptureSaveState();
-        if (legacyMotion) save = save with { SaveFormatVersion = 5, GameState = save.GameState with { SimulationTimeMs = null } };
+        if (legacyMotion) save = save with { SaveFormatVersion = 5, GameState = save.GameState with { SimulationTimeMs = null, CombatState = null } };
         using var loaded = CreateIntervalEngine();
         loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
         var restored = loaded.CaptureSnapshot();
@@ -158,10 +158,15 @@ public class EconomyTimeContinuityTests
                 TradingMap = null,
                 VoyageState = null,
                 DialogueState = null,
+                CombatState = save.GameState.CombatState! with { Launchers = [], Projectiles = [] },
                 SpaceObjects = save.GameState.SpaceObjects
                     .Where(o => o.ObjectId == save.GameState.PlayerShipObjectId || o.ObjectId == "SPC-0002")
                     .Select(o => o with
                     {
+                        // This fixture replaces the ship with a synthetic cargo-only economy object.
+                        ShipClassId = null,
+                        HullHitPoints = null,
+                        HullHitPointsMax = null,
                         Modules = o.ObjectType == "PlayerShip"
                         ? [new("cargo", "module.test-cargo", [new(4, 2)], 100, "On", "Ready", null,
                         rations > 0 ? [new("item.food-rations", rations)] : [])] : [],
@@ -530,7 +535,8 @@ public class EconomyTimeContinuityTests
             Enumerable.Range(0, source.Recipes.Count).Select(source.Recipes.GetDefinition),
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
-                .Select(source.StationMarketProfiles.GetDefinition).Append(profile));
+                .Select(source.StationMarketProfiles.GetDefinition).Append(profile),
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
     }
 
     /// <summary>
@@ -876,7 +882,7 @@ public class EconomyTimeContinuityTests
             // the time the world actually reached, otherwise the reload would replay the hour.
             clock.Reset(saveAt, SimulationSpeed.Speed0, saveAt / 300);
             var save = original.CaptureSaveState();
-            Assert.Equal(9, save.SaveFormatVersion);
+            Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
 
             using var loaded = new SimulationEngine(MarketRegistry(PendingProfile(), IceFactory()));
             loaded.LoadScenario(

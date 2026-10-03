@@ -32,6 +32,7 @@ public sealed class SkiaWindow : IDisposable
 {
     private readonly IWindow _window;
     private readonly IGameSessionFactory _sessionFactory;
+    private readonly CombatVisualSettings _combatSettings;
     private readonly ScreenStack _screens = new();
     private readonly WindowThreadContext _uiContext = new();
     private readonly SessionConnectionLoader _connectionLoader = new();
@@ -81,6 +82,7 @@ public sealed class SkiaWindow : IDisposable
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory, System.Diagnostics.Stopwatch? startupStopwatch = null)
     {
         _sessionFactory = sessionFactory;
+        _combatSettings = CombatVisualSettings.Load(Path.Combine(AppContext.BaseDirectory, CombatVisualSettings.RelativePath));
         _stationNavigation = new(() => _session);
         _handleKeyboardEdge = HandleKeyboardEdge;
         _startupStopwatch = startupStopwatch;
@@ -867,7 +869,7 @@ public sealed class SkiaWindow : IDisposable
             var predictor = new LinearMotionPredictor();
             var gameScreen = new GameSessionScreen(session.Buffer, predictor, session,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")));
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings);
 
             _session = session;
             _gameSessionScreen = gameScreen;
@@ -1509,7 +1511,7 @@ public sealed class SkiaWindow : IDisposable
             var predictor = new LinearMotionPredictor();
             newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")));
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings);
             await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
         }
         catch (Exception ex)

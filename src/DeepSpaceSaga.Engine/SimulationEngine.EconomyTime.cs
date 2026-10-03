@@ -69,9 +69,9 @@ public sealed partial class SimulationEngine
         UpdateVoyageForMotion(simulationTimeMs);
     }
 
-    // Market state of every station at the start of the current boundary (object index, stock rows and
+    // Market state of every station at the start of the current boundary (stable ID, stock rows and
     // trading budget); reused across boundaries so the calendar loop allocates nothing extra.
-    private readonly List<(int Index, ImmutableArray<StationInventoryItemRuntime> Stock, long? Budget)> _marketStateBeforeBoundary = new();
+    private readonly List<(string ObjectId, ImmutableArray<StationInventoryItemRuntime> Stock, long? Budget)> _marketStateBeforeBoundary = new();
 
     private void CaptureMarketStateBeforeBoundary()
     {
@@ -80,7 +80,7 @@ public sealed partial class SimulationEngine
         {
             var obj = _objects[i];
             if (obj.ObjectType == SpaceObjectType.Station)
-                _marketStateBeforeBoundary.Add((i, obj.Inventory, obj.MarketBudgetCredits));
+                _marketStateBeforeBoundary.Add((obj.InitialMotion.ObjectId, obj.Inventory, obj.MarketBudgetCredits));
         }
     }
 
@@ -92,9 +92,10 @@ public sealed partial class SimulationEngine
     /// </summary>
     private void CommitChangedMarketRevisions()
     {
-        foreach (var (i, stockBefore, budgetBefore) in _marketStateBeforeBoundary)
+        foreach (var (objectId, stockBefore, budgetBefore) in _marketStateBeforeBoundary)
         {
-            if (i >= _objects.Count) continue;
+            int i = _objects.FindIndex(o => o.InitialMotion.ObjectId == objectId);
+            if (i < 0) continue;
             var station = _objects[i];
             if (station.ObjectType != SpaceObjectType.Station) continue;
             if (budgetBefore == station.MarketBudgetCredits && SameStock(stockBefore, station.Inventory)) continue;

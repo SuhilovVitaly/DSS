@@ -51,7 +51,11 @@ public sealed record AuthoritativeSnapshot(
     ImmutableArray<TimedContractState> ActiveContracts = default,
     long? RouteArrivalGameTimeMs = null,
     long? SimulationTimeMs = null,
-    VoyageSnapshot? Voyage = null)
+    VoyageSnapshot? Voyage = null,
+    /// <summary>Retained session contact journal. Default/empty means no facts;
+    /// repeated entries are deduplicated by EventId, with a reset on session replacement.</summary>
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CombatImpactSnapshot>))]
+    ImmutableArray<CombatImpactSnapshot> CombatImpacts = default)
 {
     /// <summary>Motion/cycle timestamp; legacy snapshots use GameTimeMs for both domains.</summary>
     [JsonIgnore]

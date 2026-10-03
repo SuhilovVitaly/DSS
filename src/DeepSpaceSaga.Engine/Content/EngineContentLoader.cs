@@ -130,6 +130,13 @@ public static class EngineContentLoader
             profilePath = Resolve(basePath, declaredProfilePath);
         }
         var profiles = profilePath is null ? null : LoadStationMarketProfiles(profilePath);
+        IReadOnlyList<ShipClassDefinition>? shipClasses = null;
+        if (settings.TypeData.ShipClasses is { } declaredShipClassPath)
+        {
+            if (string.IsNullOrWhiteSpace(declaredShipClassPath))
+                throw new ContentException($"{settingsPath}: typeData.shipClasses contains an empty content path.");
+            shipClasses = LoadShipClasses(Resolve(basePath, declaredShipClassPath));
+        }
         var dialogues = settings.TypeData.Dialogues is null ? null : DialogueContentLoader.Load(Resolve(basePath, settings.TypeData.Dialogues));
         var quests = settings.TypeData.Quests is null ? null : DialogueContentLoader.LoadQuests(Resolve(basePath, settings.TypeData.Quests));
         if (profiles is not null)
@@ -146,7 +153,24 @@ public static class EngineContentLoader
         }
         return GameDataRegistry.Create(moduleCategories, moduleImplementations, catalog.Items, commands, factoryTypes, recipes,
             dialogues, quests, catalogVersion: catalog.Version,
-            legacyCatalogFingerprint: settings.Economy?.LegacyCatalogFingerprint, stationMarketProfiles: profiles);
+            legacyCatalogFingerprint: settings.Economy?.LegacyCatalogFingerprint, stationMarketProfiles: profiles,
+            shipClasses: shipClasses);
+    }
+
+    internal static IReadOnlyList<ShipClassDefinition> LoadShipClasses(string path)
+    {
+        try
+        {
+            var file = ReadJson<ShipClassesFile>(path, "ship classes");
+            if (file.ShipClasses is null || file.ShipClasses.Count == 0)
+                throw new ContentException("shipClasses must contain at least one class.");
+            _ = GameDataRegistry.CreateShipClassRegistry(file.ShipClasses);
+            return file.ShipClasses;
+        }
+        catch (ContentException ex)
+        {
+            throw new ContentException($"{path}: {ex.Message}", ex);
+        }
     }
 
     internal static IReadOnlyList<StationMarketProfileDefinition> LoadStationMarketProfiles(string path)
@@ -300,6 +324,14 @@ public static class EngineContentLoader
     {
         var categoriesByTypeId = categories.ToDictionary(c => c.TypeId, StringComparer.Ordinal);
 
+        IReadOnlyList<ModuleTypeDefinition> ValidateIds(IEnumerable<ModuleTypeDefinition> implementations)
+        {
+            var result = implementations.ToArray();
+            // Includes duplicates across separate files in a recursively loaded directory.
+            _ = TypeRegistry<ModuleTypeDefinition>.Create(result, $"{path}: module implementations");
+            return result;
+        }
+
         if (Directory.Exists(path))
         {
             var files = Directory.EnumerateFiles(path, "*.json", SearchOption.AllDirectories)
@@ -312,11 +344,11 @@ public static class EngineContentLoader
                     $"module-implementations directory contains no *.json files: {path}");
             }
 
-            return files.SelectMany(file => ReadModuleImplementationsFile(file, categoriesByTypeId)).ToArray();
+            return ValidateIds(files.SelectMany(file => ReadModuleImplementationsFile(file, categoriesByTypeId)));
         }
 
         if (File.Exists(path))
-            return ReadModuleImplementationsFile(path, categoriesByTypeId).ToArray();
+            return ValidateIds(ReadModuleImplementationsFile(path, categoriesByTypeId));
 
         throw new ContentException(
             $"module-implementations path not found (neither file nor directory): {path}");
@@ -345,6 +377,7 @@ public static class EngineContentLoader
             }
 
             ValidateEngineParameters(dto, category);
+            ValidateTorpedoParameters(dto, category, filePath);
 
             // A missing/null baseSuccessChancePercent normalizes to 100 (§56.5).
             int baseSuccessChancePercent = dto.BaseSuccessChancePercent ?? 100;
@@ -382,8 +415,31 @@ public static class EngineContentLoader
                 dto.FuelCapacityKg,
                 baseSuccessChancePercent,
                 dto.CabinesCount,
-                dto.BasePriceCredits);
+                dto.BasePriceCredits,
+                dto.TorpedoDamage,
+                dto.TorpedoSpeedKmS,
+                dto.TorpedoTurnRateDegPerSec);
         });
+    }
+
+    private static void ValidateTorpedoParameters(
+        ModuleImplementationDto dto, ModuleCategoryDefinition category, string filePath)
+    {
+        bool isLauncher = string.Equals(category.TypeId, "module.torpedo.launcher", StringComparison.Ordinal);
+        bool hasParameters = dto.TorpedoDamage.HasValue || dto.TorpedoSpeedKmS.HasValue || dto.TorpedoTurnRateDegPerSec.HasValue;
+        if (!isLauncher)
+        {
+            if (hasParameters)
+                throw new ContentException($"{filePath}: Module '{dto.TypeId}': torpedo parameters require category module.torpedo.launcher.");
+            return;
+        }
+
+        if (dto.TorpedoDamage is not > 0)
+            throw new ContentException($"{filePath}: Module '{dto.TypeId}': torpedoDamage is required and must be a positive integer.");
+        if (dto.TorpedoSpeedKmS is not > 0 || !double.IsFinite(dto.TorpedoSpeedKmS.Value))
+            throw new ContentException($"{filePath}: Module '{dto.TypeId}': torpedoSpeedKmS is required and must be positive and finite.");
+        if (dto.TorpedoTurnRateDegPerSec is not > 0 || !double.IsFinite(dto.TorpedoTurnRateDegPerSec.Value))
+            throw new ContentException($"{filePath}: Module '{dto.TypeId}': torpedoTurnRateDegPerSec is required and must be positive and finite.");
     }
 
     private static void ValidateEngineParameters(ModuleImplementationDto dto, ModuleCategoryDefinition category)
@@ -703,7 +759,20 @@ public static class EngineContentLoader
         [property: JsonPropertyName("dialogues")] string? Dialogues = null,
         [property: JsonPropertyName("quests")] string? Quests = null,
         [property: JsonPropertyName("stationMarketProfiles"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketProfiles = null,
-        [property: JsonPropertyName("stationResourceFields"), JsonConverter(typeof(DeclaredResourceFieldPathConverter))] string? StationResourceFields = null);
+        [property: JsonPropertyName("stationResourceFields"), JsonConverter(typeof(DeclaredResourceFieldPathConverter))] string? StationResourceFields = null,
+        [property: JsonPropertyName("shipClasses"), JsonConverter(typeof(DeclaredShipClassPathConverter))] string? ShipClasses = null);
+
+    private sealed class DeclaredShipClassPathConverter : JsonConverter<string>
+    {
+        public override bool HandleNull => true;
+        public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+            reader.TokenType == JsonTokenType.String ? reader.GetString()!
+                : throw new JsonException("shipClasses must be a non-null string path.");
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options) => writer.WriteStringValue(value);
+    }
+
+    private sealed record ShipClassesFile(
+        [property: JsonPropertyName("shipClasses")] IReadOnlyList<ShipClassDefinition>? ShipClasses);
 
     private sealed class DeclaredResourceFieldPathConverter : JsonConverter<string>
     {
@@ -789,7 +858,10 @@ public static class EngineContentLoader
         [property: JsonPropertyName("fuelCapacityKg")] long? FuelCapacityKg,
         [property: JsonPropertyName("baseSuccessChancePercent")] int? BaseSuccessChancePercent,
         [property: JsonPropertyName("cabines")] int? CabinesCount,
-        [property: JsonPropertyName("basePriceCredits")] long? BasePriceCredits = null);
+        [property: JsonPropertyName("basePriceCredits")] long? BasePriceCredits = null,
+        [property: JsonPropertyName("torpedoDamage")] int? TorpedoDamage = null,
+        [property: JsonPropertyName("torpedoSpeedKmS")] double? TorpedoSpeedKmS = null,
+        [property: JsonPropertyName("torpedoTurnRateDegPerSec")] double? TorpedoTurnRateDegPerSec = null);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto?>? ItemTypes,

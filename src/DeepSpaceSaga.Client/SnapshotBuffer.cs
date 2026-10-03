@@ -22,6 +22,13 @@ public sealed class SnapshotBuffer
 {
     private readonly object _sync = new();
     private readonly SessionEventHistory _events = new();
+    private readonly Dictionary<long, long> _combatImpactReceivedAt = new();
+
+    /// <summary>First local receipt of a session impact, retained across coalesced snapshots.</summary>
+    internal long? FindCombatImpactReceivedAtTimestamp(long eventId)
+    {
+        lock (_sync) return _combatImpactReceivedAt.TryGetValue(eventId, out long timestamp) ? timestamp : null;
+    }
 
     public CommandResult? FindCommandResult(string commandId)
     {
@@ -78,6 +85,10 @@ public sealed class SnapshotBuffer
 
         lock (_sync)
         {
+            if (!snapshot.CombatImpacts.IsDefaultOrEmpty)
+                foreach (var impact in snapshot.CombatImpacts)
+                    _combatImpactReceivedAt.TryAdd(impact.EventId, now);
+
             // A command reply may arrive before an older snapshot already in transport.
             // Retain its events, but never rewind authoritative time or district state.
             if (_latest is not null && snapshot.SnapshotSequence < _latest.Snapshot.SnapshotSequence)

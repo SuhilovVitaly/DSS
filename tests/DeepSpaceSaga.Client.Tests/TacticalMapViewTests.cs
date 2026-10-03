@@ -43,6 +43,16 @@ public class TacticalMapViewTests
         public void Dispose() { _canvas.Dispose(); _bitmap.Dispose(); }
     }
     private static ObjectMotionSnapshot Ship() => new("PLAYER", 10000, 10000, 0, 0, RenderObjectType: SpaceObjectType.PlayerShip);
+
+    [Fact]
+    public void Unselected_pirate_is_not_hidden_in_a_contact_cluster()
+    {
+        var pirate = Contact("pirate", 20000, 20000, SpaceObjectType.NpcShip) with { RelationToPlayer = PlayerRelation.Enemy };
+        using var scene = new Scene(null, pirate, Contact("asteroid", 20001, 20001, SpaceObjectType.Asteroid));
+        scene.Preset(4);
+        Assert.Null(scene.Screen.SelectedObjectId);
+        Assert.Equal(0, scene.Screen.MapClusterCount);
+    }
     private static ObjectMotionSnapshot Contact(string id, double x, double y, string type = SpaceObjectType.UnknownSpaceObject) =>
         new(id, x, y, 0, 0, RenderObjectType: type);
 

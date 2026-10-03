@@ -32,4 +32,10 @@ internal sealed record ModuleTypeDefinition(
     /// <c>StationSizeFactors.ModuleNeutralFactor</c> for the accompanying station-size factor
     /// placeholder.
     /// </summary>
-    long? BasePriceCredits = null) : ITypeDefinition;
+    long? BasePriceCredits = null,
+    /// <summary>Hull damage per contact in integer hit points; null for non-launchers.</summary>
+    int? TorpedoDamage = null,
+    /// <summary>Projectile's own constant speed in km/s, without carrier velocity.</summary>
+    double? TorpedoSpeedKmS = null,
+    /// <summary>Positive maximum projectile turn rate in degrees per physical second.</summary>
+    double? TorpedoTurnRateDegPerSec = null) : ITypeDefinition;

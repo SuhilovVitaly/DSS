@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Engine.Scenario;
 public static class ScenarioLoader
 {
     private static readonly HashSet<string> KnownObjectTypes = new(StringComparer.OrdinalIgnoreCase)
-        { "PlayerShip", "Station", "Asteroid" };
+        { "PlayerShip", "NpcShip", "Station", "Asteroid", "Wreck", "Missile" };
 
     private static readonly HashSet<string> KnownPersistenceTypes = new(StringComparer.OrdinalIgnoreCase)
         { "Permanent", "Temporary" };
@@ -104,6 +104,7 @@ public static class ScenarioLoader
             SpaceObjects = objects
         };
         normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
+        CombatSaveValidation.Validate(normalizedState, scenario.SaveFormatVersion);
         return scenario with { GameState = normalizedState };
     }
 
@@ -316,6 +317,14 @@ public static class ScenarioLoader
 
     private static void ValidateObject(SpaceObjectData obj)
     {
+        if (obj.ShipClassId is not null &&
+            (string.IsNullOrWhiteSpace(obj.ShipClassId) ||
+             !(string.Equals(obj.ObjectType, SpaceObjectType.PlayerShip, StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(obj.ObjectType, SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase))))
+            throw new ScenarioException($"Object '{obj.ObjectId}' has invalid shipClassId or is not a ship.");
+        if (obj.HullHitPoints is not null && (obj.ShipClassId is null || obj.HullHitPoints <= 0))
+            throw new ScenarioException($"Object '{obj.ObjectId}' hullHitPoints requires a ship class and positive HP.");
+
         if (!double.IsFinite(obj.SpeedMps) || obj.SpeedMps < 0 || !double.IsFinite(obj.DirectionDegrees))
             throw new ScenarioException($"Invalid precise motion for '{obj.ObjectId}'.");
         if (string.IsNullOrWhiteSpace(obj.ObjectId))
@@ -326,10 +335,24 @@ public static class ScenarioLoader
         if (!KnownObjectTypes.Contains(obj.ObjectType))
             throw new ScenarioException($"Unknown objectType '{obj.ObjectType}' for '{obj.ObjectId}'.");
 
+        if (obj.RelationToPlayer is { } relation &&
+            (!string.Equals(obj.ObjectType, SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase) ||
+             relation is not (PlayerRelation.Enemy or PlayerRelation.Friend or PlayerRelation.Neutral)))
+            throw new ScenarioException($"Invalid relationToPlayer for '{obj.ObjectId}'.");
+
         if (string.IsNullOrWhiteSpace(obj.PersistenceType))
             throw new ScenarioException($"Missing persistenceType for '{obj.ObjectId}'.");
         if (!KnownPersistenceTypes.Contains(obj.PersistenceType))
             throw new ScenarioException($"Unknown persistenceType '{obj.PersistenceType}' for '{obj.ObjectId}'.");
+
+        if (string.Equals(obj.ObjectType, SpaceObjectType.Wreck, StringComparison.OrdinalIgnoreCase) &&
+            (!string.Equals(obj.PersistenceType, "Permanent", StringComparison.OrdinalIgnoreCase) ||
+             !string.Equals(obj.MovementType, "Stationary", StringComparison.OrdinalIgnoreCase) ||
+             obj.SpeedMps != 0 || obj.DirectionDegrees != 0 || obj.IsDestroyed || obj.IsDocked ||
+             obj.DockedStationObjectId is not null || obj.HullLayout is not null ||
+             obj.Modules is { Count: > 0 } || obj.Crew is { Count: > 0 } || obj.Passengers is { Count: > 0 } ||
+             obj.Inventory is { Count: > 0 } || obj.ProducingModules is { Count: > 0 }))
+            throw new ScenarioException($"Wreck '{obj.ObjectId}' must be permanent, stationary and empty.");
 
         if (obj.DirectionDegrees < 0 || obj.DirectionDegrees >= 360)
             throw new ScenarioException(
