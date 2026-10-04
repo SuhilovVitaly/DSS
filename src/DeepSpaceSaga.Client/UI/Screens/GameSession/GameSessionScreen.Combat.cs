@@ -72,7 +72,7 @@ public sealed partial class GameSessionScreen
         var proposed = new TorpedoSnapshot(owner.ObjectId, FindLauncher()!.ModuleId, target.ObjectId, time,
             launcher.SpeedKmS, launcher.TurnRateDegPerSec, launcher.Damage, 0, LaunchPreviewRoute!, []);
         LaunchPreviewGeometry = CombatTrajectoryProjector.Project(proposed, target, _predictor, _camera, _viewportW, _viewportH);
-        DrawCombatGeometry(canvas, LaunchPreviewGeometry, CombatSettings.Preview, CombatSettings.Preview, CombatSettings.Preview);
+        DrawCombatGeometry(canvas, LaunchPreviewGeometry, CombatSettings.Preview, CombatSettings.Preview);
     }
 
     private readonly Dictionary<string, CombatTrajectoryProjector.Geometry> _combatTrajectories = new(StringComparer.Ordinal);
@@ -96,24 +96,16 @@ public sealed partial class GameSessionScreen
             }
             var geometry = CombatTrajectoryProjector.Project(flight, target, _predictor, _camera, _viewportW, _viewportH);
             _combatTrajectories[state.Source.ObjectId] = geometry;
-            DrawCombatGeometry(canvas, geometry, CombatSettings.Trail, CombatSettings.Prediction, CombatSettings.Intercept);
-        }
-        foreach (var effect in _combatEffects.Active)
-        {
-            var geometry = new CombatTrajectoryProjector.Geometry(
-                CombatTrajectoryProjector.History(effect.Impact.FinalTrail, _camera), [], [], null);
-            _combatTrajectories[effect.Impact.TorpedoObjectId] = geometry;
-            DrawCombatGeometry(canvas, geometry, CombatSettings.Trail, CombatSettings.Prediction, CombatSettings.Intercept);
+            DrawCombatGeometry(canvas, geometry, CombatSettings.Prediction, CombatSettings.Intercept);
         }
     }
 
     private void DrawCombatGeometry(SKCanvas canvas, CombatTrajectoryProjector.Geometry geometry,
-        SKColor trail, SKColor prediction, SKColor intercept)
+        SKColor prediction, SKColor intercept)
     {
         _combatTrajectoryPaint ??= new SKPaint { Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f, IsAntialias = true };
         _combatDash ??= SKPathEffect.CreateDash([6f, 4f], 0);
         _combatTrajectoryPath ??= new SKPath();
-        DrawPath(geometry.Travelled, trail, false);
         DrawPath(geometry.Prediction, prediction, true);
         DrawPath(geometry.Target, prediction, true);
         _combatTrajectoryPaint.PathEffect = null;

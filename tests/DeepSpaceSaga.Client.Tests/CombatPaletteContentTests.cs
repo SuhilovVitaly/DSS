@@ -18,7 +18,7 @@ public sealed class CombatPaletteContentTests
         {
             ["torpedo"] = "#FFFF00FF",
             ["trail"] = "#FFFF00FF",
-            ["prediction"] = "#FFFF00FF",
+            ["prediction"] = "#FFFF0066",
             ["intercept"] = "#FFFF00FF",
             ["preview"] = "#808080FF",
             ["hullHp"] = "#00FF00FF",

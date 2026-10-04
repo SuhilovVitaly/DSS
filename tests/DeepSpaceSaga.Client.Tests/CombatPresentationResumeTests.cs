@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class CombatPresentationResumeTests
 {
     [Fact]
-    public async Task Loaded_active_torpedo_restores_full_trail_and_busy_panel()
+    public async Task Loaded_active_torpedo_restores_remaining_prediction_and_busy_panel()
     {
         await using var fixture = await CombatSessionFixture.Create();
         await fixture.Launch("active");
@@ -27,13 +27,11 @@ public sealed class CombatPresentationResumeTests
             Assert.Equal("Guiding", screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText);
             Assert.False(screen.CommandsPanel.AllCommandButtons.Single(b => b.CommandTypeId == CombatCommandTypes.Fire).Enabled);
             Assert.Empty(screen.CombatEffects.Active);
-            var path = screen.CombatTrajectories[flightObject.ObjectId].Travelled;
+            var path = screen.CombatTrajectories[flightObject.ObjectId].Prediction;
             Assert.NotEmpty(path);
-            var origin = before.Objects.Single(o => o.Torpedo is not null).Torpedo!.Trail[0].Segment;
-            Assert.Equal(origin.X, path[0].X, 6);
-            Assert.Equal(origin.Y, path[0].Y, 6);
-            Assert.Equal(flightObject.X, path[^1].X, 6);
-            Assert.Equal(flightObject.Y, path[^1].Y, 6);
+            Assert.Equal(before.Objects.Single(o => o.Torpedo is not null).Torpedo!.Trail.ToArray(), flightObject.Torpedo!.Trail.ToArray());
+            Assert.Equal(flightObject.X, path[0].X, 6);
+            Assert.Equal(flightObject.Y, path[0].Y, 6);
             screen.OnDeactivated();
             now += Stopwatch.Frequency * 5;
         }

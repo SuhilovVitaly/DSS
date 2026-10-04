@@ -11,7 +11,7 @@ public sealed record CombatVisualSettings(
 {
     public const string RelativePath = "Data/UI/combat-visuals.json";
     public static CombatVisualSettings Default { get; } = new(
-        SKColors.Yellow, SKColors.Yellow, SKColors.Yellow, SKColors.Yellow,
+        SKColors.Yellow, SKColors.Yellow, new(255, 255, 0, 102), SKColors.Yellow,
         new(128, 128, 128), SKColors.Lime, SKColors.Red, new(128, 128, 128));
 
     public static CombatVisualSettings Load(string path)

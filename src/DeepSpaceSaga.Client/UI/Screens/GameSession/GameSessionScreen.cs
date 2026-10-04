@@ -1161,6 +1161,8 @@ public sealed partial class GameSessionScreen : IScreen
 
                     if (HasCombatMarker(state.Source))
                     {
+                        if (state.Source.Torpedo is not null)
+                            _depthRenderer.DrawEngineFlame(canvas, sx, sy, state.Pose.Direction, r, uiTimeMs);
                         DrawCombatMarker(canvas, state, sx, sy);
                         continue;
                     }
