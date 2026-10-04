@@ -10,6 +10,20 @@ namespace DeepSpaceSaga.Engine.Tests;
 public sealed class CombatSaveLoadTests : IDisposable
 {
     [Fact]
+    public void Case_variant_existing_id_does_not_break_save_reload()
+    {
+        using var engine = Create(TorpedoImpactTests.Scenario(null, Obstacle("TORPEDO-1", 1000, 1000)));
+        engine.ReceiveCommand(Fire("case-collision"));
+        var launched = At(engine, 0);
+        Assert.Equal("torpedo-2", Flight(launched).ObjectId);
+        using var restored = Roundtrip(engine.CaptureSaveState());
+        var resumed = At(restored, 0);
+        Assert.Contains(resumed.Objects, o => o.ObjectId == "TORPEDO-1");
+        Assert.Equal("torpedo-2", Flight(resumed).ObjectId);
+        SameWorld(launched, resumed);
+        Assert.Equal(Target, Assert.Single(At(restored, 5000).CombatImpacts).HitObjectId);
+    }
+    [Fact]
     public void Real_combat_with_save_mid_second_flight_matches_continuous_run()
     {
         using var continuous = new BasicCombatEndToEndTests.CombatRun();

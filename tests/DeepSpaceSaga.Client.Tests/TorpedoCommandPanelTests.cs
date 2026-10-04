@@ -11,7 +11,7 @@ public sealed class TorpedoCommandPanelTests
 {
     private static readonly InstalledModuleSnapshot Launcher = new("actual-launcher", "module.torpedo.launcher.basic", "Launcher", 1,
         [CombatCommandTypes.Fire], "On", "Ready", 60, Commands: [new(CombatCommandTypes.Fire, "Fire", "object")],
-        LauncherCombat: new(null, 3, 90, 150));
+        LauncherCombat: new(null, 3, 90, 150, new("crew", "Operator", WeaponSkillType.TorpedoAttack, 50, 30, 30)));
 
     [Fact]
     public async Task Busy_and_pending_launcher_disable_fire()
@@ -200,7 +200,7 @@ public sealed class TorpedoCommandPanelTests
         await using var f = new Fixture(scale);
         Render(f.Screen, height);
         var panel = f.Screen.CommandsPanel;
-        Assert.Equal(5, panel.CommandPanelRows.Count);
+        Assert.Equal(6, panel.CommandPanelRows.Count);
         Assert.True(panel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").Opened);
         Assert.All(panel.CommandPanelRows, r => Assert.True(r.CaptionRect.Bottom * scale <= height));
         Assert.True(panel.BodyRect.Bottom * scale <= height);

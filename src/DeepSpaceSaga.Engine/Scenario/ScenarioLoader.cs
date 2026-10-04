@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Engine.Scenario;
 public static class ScenarioLoader
 {
     private static readonly HashSet<string> KnownObjectTypes = new(StringComparer.OrdinalIgnoreCase)
-        { "PlayerShip", "NpcShip", "Station", "Asteroid", "Wreck", "Missile" };
+        { "PlayerShip", "NpcShip", "Station", "Asteroid", "Wreck", "Missile", "Countermeasure" };
 
     private static readonly HashSet<string> KnownPersistenceTypes = new(StringComparer.OrdinalIgnoreCase)
         { "Permanent", "Temporary" };
@@ -104,6 +104,7 @@ public static class ScenarioLoader
             SpaceObjects = objects
         };
         normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
+        normalizedState = CountermeasureSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
         CombatSaveValidation.Validate(normalizedState, scenario.SaveFormatVersion);
         return scenario with { GameState = normalizedState };
     }
@@ -396,6 +397,8 @@ public static class ScenarioLoader
                 throw new ScenarioException(
                     $"Asteroid '{obj.ObjectId}' massKg {obj.MassKg} is outside 1,000,000..1,000,000,000.");
         }
+
+        SimulationEngine.ValidateWeaponAssignments(obj);
 
         if (obj.Modules is { Count: > 0 })
         {

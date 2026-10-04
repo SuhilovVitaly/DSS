@@ -398,7 +398,7 @@ public static class EngineContentLoader
                     $"Active module type '{dto.TypeId}' must specify a positive baseCycleTimeMs.");
             }
 
-            return new ModuleTypeDefinition(
+            var definition = new ModuleTypeDefinition(
                 dto.TypeId,
                 dto.DisplayName,
                 category.SlotSize,
@@ -418,7 +418,16 @@ public static class EngineContentLoader
                 dto.BasePriceCredits,
                 dto.TorpedoDamage,
                 dto.TorpedoSpeedKmS,
-                dto.TorpedoTurnRateDegPerSec);
+                dto.TorpedoTurnRateDegPerSec,
+                dto.TorpedoBaseRating,
+                dto.CountermeasureBaseRating,
+                dto.CountermeasureSpeedKmS,
+                dto.CountermeasureTurnRateDegPerSec,
+                dto.CountermeasureRangeKm,
+                dto.CountermeasureReloadMs,
+                category.TypeId);
+            GameDataRegistry.ValidateWeaponRatings(definition);
+            return definition;
         });
     }
 
@@ -861,7 +870,13 @@ public static class EngineContentLoader
         [property: JsonPropertyName("basePriceCredits")] long? BasePriceCredits = null,
         [property: JsonPropertyName("torpedoDamage")] int? TorpedoDamage = null,
         [property: JsonPropertyName("torpedoSpeedKmS")] double? TorpedoSpeedKmS = null,
-        [property: JsonPropertyName("torpedoTurnRateDegPerSec")] double? TorpedoTurnRateDegPerSec = null);
+        [property: JsonPropertyName("torpedoTurnRateDegPerSec")] double? TorpedoTurnRateDegPerSec = null,
+        [property: JsonPropertyName("torpedoBaseRating")] decimal? TorpedoBaseRating = null,
+        [property: JsonPropertyName("countermeasureBaseRating")] decimal? CountermeasureBaseRating = null,
+        [property: JsonPropertyName("countermeasureSpeedKmS")] double? CountermeasureSpeedKmS = null,
+        [property: JsonPropertyName("countermeasureTurnRateDegPerSec")] double? CountermeasureTurnRateDegPerSec = null,
+        [property: JsonPropertyName("countermeasureRangeKm")] double? CountermeasureRangeKm = null,
+        [property: JsonPropertyName("countermeasureReloadMs")] long? CountermeasureReloadMs = null);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto?>? ItemTypes,

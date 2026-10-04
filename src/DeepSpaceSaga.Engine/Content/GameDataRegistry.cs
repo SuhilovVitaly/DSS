@@ -91,6 +91,8 @@ internal sealed class GameDataRegistry
         var commandRegistry = TypeRegistry<CommandDefinition>.Create(commandDefinitions, "command definitions");
         var categoryRegistry = TypeRegistry<ModuleCategoryDefinition>.Create(moduleCategories, "module types");
         var moduleRegistry = TypeRegistry<ModuleTypeDefinition>.Create(moduleTypes, "module implementations");
+        for (int i = 0; i < moduleRegistry.Count; i++)
+            ValidateWeaponRatings(moduleRegistry.GetDefinition(i));
         var shipClassRegistry = CreateShipClassRegistry(shipClasses ?? []);
         var itemRegistry = TypeRegistry<ItemTypeDefinition>.Create(itemTypes, "item types");
         var catalogCodes = new HashSet<string>(StringComparer.Ordinal);
@@ -408,5 +410,24 @@ internal sealed class GameDataRegistry
                         RejectEconomy("stockTargets", $"item '{target.ItemTypeId}' hourly rate exceeds capacity for {size}");
             }
         }
+    }
+
+    internal static void ValidateWeaponRatings(ModuleTypeDefinition module)
+    {
+        if (module.TorpedoBaseRating is < 0 || module.CountermeasureBaseRating is < 0)
+            throw new ContentException($"Module '{module.TypeId}': weapon base rating must be nonnegative.");
+        if (module.TorpedoBaseRating.HasValue && module.CategoryTypeId != "module.torpedo.launcher")
+            throw new ContentException($"Module '{module.TypeId}': torpedoBaseRating requires category module.torpedo.launcher.");
+        bool hasDefense = module.CountermeasureBaseRating.HasValue || module.CountermeasureSpeedKmS.HasValue ||
+            module.CountermeasureTurnRateDegPerSec.HasValue || module.CountermeasureRangeKm.HasValue || module.CountermeasureReloadMs.HasValue;
+        if (!hasDefense && module.CategoryTypeId != "module.countermeasure.launcher") return;
+        if (module.CategoryTypeId != "module.countermeasure.launcher")
+            throw new ContentException($"Module '{module.TypeId}': countermeasure parameters require category module.countermeasure.launcher.");
+        if (module.CountermeasureBaseRating is null ||
+            module.CountermeasureSpeedKmS is not > 0 || !double.IsFinite(module.CountermeasureSpeedKmS.Value) ||
+            module.CountermeasureTurnRateDegPerSec is not > 0 || !double.IsFinite(module.CountermeasureTurnRateDegPerSec.Value) ||
+            module.CountermeasureRangeKm is not > 0 || !double.IsFinite(module.CountermeasureRangeKm.Value) ||
+            module.CountermeasureReloadMs is not > 0)
+            throw new ContentException($"Module '{module.TypeId}': complete countermeasure parameters with nonnegative rating and positive finite speed/turn/range/reload are required.");
     }
 }

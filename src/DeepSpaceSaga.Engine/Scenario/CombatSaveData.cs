@@ -84,6 +84,7 @@ internal static class CombatSaveValidation
                 (obj.Modules?.Count ?? 0) == 0 && !obj.IsDestroyed && Finite(obj.PositionX, obj.PositionY), "orphan projectile or invalid pose.");
             var f = row.Flight;
             Require(f is not null && Parameters(f.SpeedKmS, f.TurnRateDegPerSec, f.Damage), "invalid captured weapon.");
+            CountermeasureSaveValidation.ValidateCapturedTorpedoRating(f!, format);
             Require(!string.IsNullOrWhiteSpace(f!.OwnerObjectId) && !string.IsNullOrWhiteSpace(f.LauncherModuleId) &&
                 launchers.TryGetValue((f.OwnerObjectId, f.LauncherModuleId), out var launcher) && launcher.ActiveTorpedoObjectId == row.ObjectId &&
                 launcher.SpeedKmS == f.SpeedKmS && launcher.TurnRateDegPerSec == f.TurnRateDegPerSec && launcher.Damage == f.Damage,

@@ -29,7 +29,7 @@ public sealed class TetrarchLoadoutTests
         Assert.Null(pirate.Name);
         Assert.Null(pirate.CaptainDisplayName);
         Assert.All(pirate.Modules!, m => Assert.Null(m.ActiveCycle));
-        Assert.Empty(pirate.Crew!);
+        Assert.Equal(2, pirate.Crew!.Count);
     }
 
     [Theory]
@@ -56,7 +56,7 @@ public sealed class TetrarchLoadoutTests
     [InlineData("Default_500", true)]
     [InlineData("Docked", true)]
     [InlineData("Undocked", true)]
-    public void All_standard_tetrarch_scenarios_load_with_launcher(string name, bool output)
+    public void Standard_tetrarch_loadouts_remain_valid(string name, bool output)
     {
         var scenario = AssertScenarioLoadout(output ? AppContext.BaseDirectory : ClientRoot, name);
         var player = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId);
@@ -72,7 +72,7 @@ public sealed class TetrarchLoadoutTests
             _ => (10000d, 10000d, 700d)
         };
         Assert.Equal(expectedMotion, (player.PositionX, player.PositionY, player.SpeedMps));
-        Assert.Equal("CHR-0001", Assert.Single(player.Crew!).CrewId);
+        Assert.Equal("CHR-0001", player.Crew![0].CrewId);
         if (name == "Default_500")
             Assert.Equal(500, scenario.GameState.SpaceObjects.Count(o => o.ObjectType == SpaceObjectType.Asteroid));
     }
@@ -80,7 +80,7 @@ public sealed class TetrarchLoadoutTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Market_profiles_legacy_fixture_is_not_reclassified(bool output)
+    public void Market_profiles_remains_unclassified(bool output)
     {
         string root = output ? AppContext.BaseDirectory : ClientRoot;
         string relativePath = Path.Combine("Scenarios", "MarketProfiles", "scenario.json");
@@ -115,7 +115,7 @@ public sealed class TetrarchLoadoutTests
         var ships = scenario.GameState.SpaceObjects.Where(o => o.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip).ToArray();
         Assert.NotEmpty(ships);
         foreach (var ship in ships)
-            AssertLoadout(ship, stressLoadout: name == "Default_500");
+            AssertLoadout(ship, stressLoadout: name == "Default_500", defense: true);
 
         // Production bootstrap exercises content resolution, placement validation and snapshot projection.
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(root, "Settings.json"), path);
@@ -128,27 +128,32 @@ public sealed class TetrarchLoadoutTests
             Assert.Equal(ship.DockedStationObjectId, actual.DockedStationObjectId);
         }
         var launcher = Assert.Single(snapshot.InstalledModules, m => m.ModuleTypeId == LauncherId);
-        Assert.Equal(new LauncherCombatSnapshot(null, 3, 90, 150), launcher.LauncherCombat);
+        Assert.NotNull(launcher.LauncherCombat);
+        Assert.Equal(new LauncherCombatSnapshot(null, 3, 90, 150), launcher.LauncherCombat with { Operator = null });
+        var assignedOperator = Assert.IsType<WeaponOperatorSnapshot>(launcher.LauncherCombat.Operator);
+        Assert.Equal("CHR-0001", assignedOperator.CrewId);
+        Assert.Equal(50, assignedOperator.Skill);
+        Assert.Equal(30m, assignedOperator.EffectiveRating);
         Assert.Equal("Ready", launcher.OperationalState);
         Assert.Equal("On", launcher.PowerState);
-        Assert.Equal(new[] { CombatCommandTypes.Fire }, launcher.CommandTypeIds);
+        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct }, launcher.CommandTypeIds);
         Assert.Null(launcher.ActiveCommandType);
         Assert.DoesNotContain(snapshot.Objects, o => o.Torpedo is not null);
         return scenario;
     }
 
-    private static void AssertLoadout(SpaceObjectData ship, bool stressLoadout)
+    private static void AssertLoadout(SpaceObjectData ship, bool stressLoadout, bool defense)
     {
         Assert.Equal("ship.tetrarch", ship.ShipClassId);
         Assert.Null(ship.HullHitPoints); // New games resolve the maximum from class content.
         Assert.NotNull(ship.HullLayout);
         Assert.Equal((9, 9), (ship.HullLayout.Width, ship.HullLayout.Height));
         var cells = ship.HullLayout.Cells.Select(c => (c.X, c.Y)).ToArray();
-        Assert.Equal(11, cells.Length);
-        Assert.Equal(11, cells.Distinct().Count());
-        Assert.Equal(new[] { (4, 0), (3, 1), (4, 1), (5, 1), (4, 2), (4, 3), (4, 4), (3, 5), (4, 5), (5, 5), (3, 2) }, cells);
+        Assert.Equal(defense ? 12 : 11, cells.Length);
+        Assert.Equal(cells.Length, cells.Distinct().Count());
+        Assert.Equal(new[] { (4, 0), (3, 1), (4, 1), (5, 1), (4, 2), (4, 3), (4, 4), (3, 5), (4, 5), (5, 5), (3, 2) }, cells.Take(11));
         Assert.NotNull(ship.Modules);
-        Assert.Equal(stressLoadout ? 4 : 7, ship.Modules.Count);
+        Assert.Equal((stressLoadout ? 4 : 7) + (defense ? 1 : 0), ship.Modules.Count);
         Assert.Equal(ship.Modules.Count, ship.Modules.Select(m => m.ModuleId).Distinct(StringComparer.Ordinal).Count());
         var occupied = new HashSet<(int X, int Y)>();
         foreach (var module in ship.Modules)
@@ -165,7 +170,18 @@ public sealed class TetrarchLoadoutTests
         Assert.Null(launcher.ActiveCycle);
         Assert.Empty(launcher.Cargo!);
 
-        var existing = ship.Modules.Where(m => m.ModuleTypeId != LauncherId).ToArray();
+        if (defense)
+        {
+            var defender = Assert.Single(ship.Modules, m => m.ModuleTypeId == "module.countermeasure.launcher.basic");
+            Assert.Equal(new HullCellCoordinate(5, 2), Assert.Single(defender.OccupiedCells));
+            Assert.True(defender.AutoDefenseEnabled);
+            Assert.Equal(2, ship.Crew!.Count);
+            Assert.NotEqual(launcher.OperatorCrewId, defender.OperatorCrewId);
+            Assert.Contains(ship.Crew, c => c.CrewId == launcher.OperatorCrewId);
+            Assert.Contains(ship.Crew, c => c.CrewId == defender.OperatorCrewId);
+            Assert.All(ship.Crew, c => { Assert.Equal(50, c.TorpedoSkill); Assert.Equal(50, c.CountermeasureSkill); });
+        }
+        var existing = ship.Modules.Where(m => m.ModuleTypeId != LauncherId && m.ModuleTypeId != "module.countermeasure.launcher.basic").ToArray();
         (string Type, int Row)[] fullLoadout = [("module.bridge.navigation.computer.basic", 0), ("living.quarters.mk1", 1),
             ("module.container.basic", 2), ("module.scanner.mk1", 3), ("module.generator.basic", 4), ("module.engine.basic", 5)];
         var expected = stressLoadout ? fullLoadout.Where(m => m.Row is 1 or 2 or 5).ToArray() : fullLoadout;

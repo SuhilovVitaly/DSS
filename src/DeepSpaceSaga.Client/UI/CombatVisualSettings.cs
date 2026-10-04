@@ -9,6 +9,12 @@ public sealed record CombatVisualSettings(
     SKColor Torpedo, SKColor Trail, SKColor Prediction, SKColor Intercept,
     SKColor Preview, SKColor HullHp, SKColor Explosion, SKColor Wreck)
 {
+    public SKColor Countermeasure { get; init; } = new(0, 204, 255);
+    public SKColor CountermeasureTrail { get; init; } = new(0, 204, 255);
+    public SKColor CountermeasurePrediction { get; init; } = new(0, 204, 255, 136);
+    public SKColor CountermeasureIntercept { get; init; } = new(0, 204, 255);
+    public SKColor DefenseRange { get; init; } = new(0, 204, 255, 85);
+    public SKColor DefenseText { get; init; } = new(153, 238, 255);
     public const string RelativePath = "Data/UI/combat-visuals.json";
     public static CombatVisualSettings Default { get; } = new(
         SKColors.Yellow, SKColors.Yellow, new(255, 255, 0, 102), SKColors.Yellow,
@@ -29,7 +35,22 @@ public sealed record CombatVisualSettings(
                 version.ValueKind != JsonValueKind.Number || !version.TryGetInt32(out int schema) || schema != 1)
                 throw Invalid("schemaVersion", "expected 1");
             return new(Color("torpedo"), Color("trail"), Color("prediction"), Color("intercept"),
-                Color("preview"), Color("hullHp"), Color("explosion"), Color("wreck"));
+                Color("preview"), Color("hullHp"), Color("explosion"), Color("wreck"))
+            {
+                Countermeasure = Optional("countermeasure", Default.Countermeasure),
+                CountermeasureTrail = Optional("countermeasureTrail", Default.CountermeasureTrail),
+                CountermeasurePrediction = Optional("countermeasurePrediction", Default.CountermeasurePrediction),
+                CountermeasureIntercept = Optional("countermeasureIntercept", Default.CountermeasureIntercept),
+                DefenseRange = Optional("defenseRange", Default.DefenseRange),
+                DefenseText = Optional("defenseText", Default.DefenseText)
+            };
+
+            // New fields remain compatible with v1 palettes. Invalid optional fields use the documented default.
+            SKColor Optional(string key, SKColor fallback)
+            {
+                try { return Color(key); }
+                catch (InvalidDataException) { return fallback; }
+            }
 
             SKColor Color(string key)
             {

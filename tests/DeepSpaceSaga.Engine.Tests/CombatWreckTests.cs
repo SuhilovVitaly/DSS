@@ -206,7 +206,7 @@ public sealed class CombatWreckTests
     [Fact]
     public void Original_scenario_three_real_launches_destroy_moving_pirate()
     {
-        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
+        var scenario = WithoutDefense(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
         using var engine = Create(scenario);
         long time = 0;
         for (int n = 0; n < 3; n++)

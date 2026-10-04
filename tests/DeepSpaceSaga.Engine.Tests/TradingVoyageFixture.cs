@@ -73,6 +73,11 @@ internal sealed class TradingVoyageFixture : IDisposable
             {
                 GameState = save.GameState with
                 {
+                    DefenseState = save.GameState.DefenseState! with
+                    {
+                        Launchers = save.GameState.DefenseState.Launchers.Select(l =>
+                        l.OwnerObjectId == ShipId ? l with { State = l.State with { Operator = null, State = DefenseState.NoOperator } } : l).ToArray()
+                    },
                     SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectType == SpaceObjectType.Station
                         ? o with
                         {
@@ -82,7 +87,7 @@ internal sealed class TradingVoyageFixture : IDisposable
                             MarketBudgetCredits = o.ObjectId == neighbor && destinationBudget is not null
                                 ? destinationBudget : o.MarketBudgetCredits,
                         } : o.ObjectId == ShipId
-                        ? o with { Crew = [], Passengers = [], PortFeeDebt = initialDebt } : o).ToArray(),
+                        ? o with { Crew = [], Passengers = [], PortFeeDebt = initialDebt, Modules = o.Modules?.Select(m => m with { OperatorCrewId = null }).ToArray() } : o).ToArray(),
                 }
             };
             engine.Dispose();

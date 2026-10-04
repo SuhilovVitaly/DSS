@@ -377,6 +377,9 @@ public sealed partial class SimulationEngine : IDisposable
         var restoredVoyage = ValidateVoyageState(gs, runtimeObjects);
         var combatState = BuildCombatState(gs.SpaceObjects, runtimeObjects);
         StageCombatRestore(gs.CombatState, runtimeObjects, combatState.Launchers);
+        StageLegacyWeaponRatings(runtimeObjects);
+        var defenses = BuildDefenseState(runtimeObjects);
+        StageDefenseRestore(gs.DefenseState, runtimeObjects, defenses);
 
         lock (_worldStateLock)
         {
@@ -411,6 +414,13 @@ public sealed partial class SimulationEngine : IDisposable
             _objects.AddRange(runtimeObjects);
             _hullCombat = combatState.Hulls;
             _launcherCombat = combatState.Launchers;
+            _defenses = defenses;
+            _countermeasureSequence = 0;
+            _combatJournal.Clear();
+            _combatJournalSequence = 0;
+            _countermeasureTargetPlans.Clear();
+            _countermeasureRng = new(resolvedMasterSeed);
+            _combatProcessedTimeMs = gs.MotionTimeMs;
             _torpedoSequence = 0;
             _combatImpactSequence = 0;
             _wreckSequence = 0;
@@ -418,6 +428,7 @@ public sealed partial class SimulationEngine : IDisposable
             _torpedoTargets.Clear();
             _nextCombatGuidanceMs = long.MaxValue;
             RestoreCombatState(gs.CombatState);
+            RestoreDefenseState(gs.DefenseState);
             _processedWorldTimeMs = gs.GameTimeMs;
             _processedSimulationTimeMs = gs.MotionTimeMs;
             LoadDialogueState(gs.DialogueState, gs.MotionTimeMs);
@@ -629,7 +640,8 @@ public sealed partial class SimulationEngine : IDisposable
                     DockOperatorDisplayName = dockOperator?.DisplayName,
                     DockOperatorPortraitImage = dockOperator?.PortraitImage,
                     IsDestroyed = obj.IsDestroyed,
-                    HullCombat = known ? _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId) : null
+                    HullCombat = known ? _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId) : null,
+                    Defense = known ? ProjectDefense(obj) : null
                 });
             }
 
@@ -677,7 +689,8 @@ public sealed partial class SimulationEngine : IDisposable
                 ActiveContracts: (_economyTime.ActiveContracts ?? []).ToImmutableArray(),
                 RouteArrivalGameTimeMs: _economyTime.RouteArrivalGameTimeMs, SimulationTimeMs: gameTimeMs,
                 Voyage: BuildVoyageSnapshot(),
-                CombatImpacts: _combatImpacts.ToImmutableArray());
+                CombatImpacts: _combatImpacts.ToImmutableArray(),
+                CombatJournal: _combatJournal.ToImmutableArray());
         }
     }
 
@@ -811,7 +824,12 @@ public sealed partial class SimulationEngine : IDisposable
                 AvailableCapacityKg: module.AvailableCapacityKg,
                 CabinesCount: moduleType.CabinesCount,
                 CargoCapacityKg: moduleType.CargoCapacityKg,
-                LauncherCombat: _launcherCombat.GetValueOrDefault((ship.InitialMotion.ObjectId, module.ModuleId))));
+                LauncherCombat: ProjectWeaponLauncher(ship, module),
+                Defense: _defenses.GetValueOrDefault((ship.InitialMotion.ObjectId, module.ModuleId)),
+                Operator: moduleType.TorpedoDamage is not null
+                    ? ResolveWeaponOperator(ship, module, WeaponSkillType.TorpedoAttack)
+                    : moduleType.CountermeasureBaseRating is not null
+                        ? ResolveWeaponOperator(ship, module, WeaponSkillType.CountermeasureDefense) : null));
         }
 
         return builder.MoveToImmutable();
@@ -1017,7 +1035,7 @@ public sealed partial class SimulationEngine : IDisposable
             TradingMap: _tradingMap,
             StationResourceFields: _stationResourceFields,
             VoyageState: _voyageState,
-            CombatState: CaptureCombatState(gameTimeMs));
+            CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState());
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
@@ -1048,7 +1066,9 @@ public sealed partial class SimulationEngine : IDisposable
                 FuelAmountKg: moduleType.FuelCapacityKg is > 0 ? module.FuelAmountKg : null,
                 LastTurnGameTimeMs: moduleType.AngularInertiaDegPerSec is > 0
                     ? module.LastTurnGameTimeMs
-                    : null));
+                    : null,
+                OperatorCrewId: module.OperatorCrewId,
+                AutoDefenseEnabled: module.AutoDefenseEnabled));
         }
 
         return modules;
@@ -1115,7 +1135,7 @@ public sealed partial class SimulationEngine : IDisposable
 
     private static ShipCrewMemberData BuildSaveCrewMember(CrewMemberRuntime member)
     {
-        return new ShipCrewMemberData(CrewId: member.Id, DisplayName: member.DisplayName);
+        return new ShipCrewMemberData(member.Id, member.DisplayName, member.TorpedoSkill, member.CountermeasureSkill);
     }
 
     private static StationCrewMemberData BuildSaveStationCrewMember(StationCrewMemberRuntime member) =>
@@ -1191,7 +1211,9 @@ public sealed partial class SimulationEngine : IDisposable
                 cargo,
                 fuelAmountKg,
                 lastTurnGameTimeMs,
-                availableCapacityKg));
+                availableCapacityKg,
+                module.OperatorCrewId,
+                module.AutoDefenseEnabled));
         }
 
         return modules.ToImmutable();
@@ -1710,7 +1732,7 @@ public sealed partial class SimulationEngine : IDisposable
                     $"Ship '{obj.ObjectId}' has duplicate crew member id '{member.CrewId}'.");
             }
 
-            crew.Add(new CrewMemberRuntime(member.CrewId, member.DisplayName));
+            crew.Add(new CrewMemberRuntime(member.CrewId, member.DisplayName, member.TorpedoSkill, member.CountermeasureSkill));
         }
 
         return crew.ToImmutable();
@@ -2173,6 +2195,10 @@ public sealed partial class SimulationEngine : IDisposable
 
         if (command.CommandType == CombatCommandTypes.Fire)
             return TryStartTorpedoFire(command, gameTimeMs);
+        if (command.CommandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
+            return TrySetDefense(command, gameTimeMs);
+        if (command.CommandType == CombatCommandTypes.SelfDestruct)
+            return TrySelfDestruct(command, gameTimeMs);
 
         return TryStartEngineCommand(command, gameTimeMs);
     }
@@ -3142,9 +3168,10 @@ public sealed partial class SimulationEngine : IDisposable
 
     private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt)
     {
-        if (!HasActiveTorpedoes && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        if (!HasActiveTorpedoes && !HasDefenseActivity && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
+            _combatProcessedTimeMs = gameTimeMs;
             return;
         }
         // Visit steering boundaries and security deadlines in time order. Predicting
@@ -3170,6 +3197,7 @@ public sealed partial class SimulationEngine : IDisposable
             UpdateStationSecurity(next);
             CompleteActiveEngineCycles(next);
             RefreshCombatGuidance(next);
+            RefreshCountermeasureGuidance(next);
             UpdateStationSecurity(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
             if (next >= gameTimeMs) break;
@@ -3710,7 +3738,7 @@ internal sealed record SpaceObjectRuntime(
     string? RelationToPlayer = null);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
-internal sealed record CrewMemberRuntime(string Id, string DisplayName);
+internal sealed record CrewMemberRuntime(string Id, string DisplayName, int? TorpedoSkill = null, int? CountermeasureSkill = null);
 
 /// <summary>One named crew member displayed on a station (see <see cref="StationCrewMemberData"/>).</summary>
 internal sealed record StationCrewMemberRuntime(string Id, string Role, string DisplayName, string PortraitImage);
@@ -3763,7 +3791,9 @@ internal sealed record InstalledModuleRuntime(
     ImmutableArray<CargoStackRuntime> Cargo,
     long FuelAmountKg = 0,
     long? LastTurnGameTimeMs = null,
-    long? AvailableCapacityKg = null);
+    long? AvailableCapacityKg = null,
+    string? OperatorCrewId = null,
+    bool AutoDefenseEnabled = true);
 
 internal sealed record CargoStackRuntime(
     int ItemTypeIndex,

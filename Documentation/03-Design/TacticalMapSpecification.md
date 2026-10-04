@@ -163,3 +163,8 @@ Hex: #1E2D41
 - `engine.turnRightUntilCancel` доступна через UI-кнопку Engine panel.
 - `engine.match-target-speed` и `engine.match-target-course` требуют явный `targetObjectId`; `SelectedObjectId` не является implicit authoritative target.
 - `engine.cancelAll` является legacy/current UI entry, если кнопка присутствует; не имеет отдельной keyboard hotkey.
+
+
+## EP-0007 — актуальное дополнение от 2026-10-04
+
+ПР: голубой core5 canvas px с glow, solid подтверждённый trail, dashed forecast и marker встречи. Шанс показан у ПР и marker; tooltip/info содержит frozen base/skill/effective ratings обоих операторов. Под пиратом показан статус защиты, при выборе круг100км зависит от zoom. Перехват/Промах и SelfDestruct ring/terminal trail исчезают за2 реальные секунды независимо от паузы. Ordinary torpedo trails скрыты. Палитра загружается из Data/UI/combat-visuals.json. [Технический контракт и приёмка](../04-Engineering/CountermeasureCombat.md).

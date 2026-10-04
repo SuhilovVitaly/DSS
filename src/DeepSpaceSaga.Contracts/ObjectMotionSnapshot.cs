@@ -128,7 +128,11 @@ public sealed record ObjectMotionSnapshot(
     /// </summary>
     HullCombatSnapshot? HullCombat = null,
     /// <summary>Confirmed flight state for a torpedo using <see cref="SpaceObjectType.Missile"/>.</summary>
-    TorpedoSnapshot? Torpedo = null);
+    TorpedoSnapshot? Torpedo = null,
+    CountermeasureSnapshot? Countermeasure = null,
+    DefenseSnapshot? Defense = null,
+    /// <summary>Authoritative per-torpedo attempt marker; clearing a defender does not clear this flag.</summary>
+    bool CountermeasureAttempted = false);
 
 /// <summary>
 /// A revealed mineralogical fraction in integer thousandths, not cargo quantity or mining yield.

@@ -132,7 +132,7 @@ public sealed class BasicCombatUiFlowTests
         Assert.Equal(450, hit.Objects.Single(o => o.ObjectId == Fixture.Player).HullCombat!.CurrentHp);
     }
 
-    private sealed class Fixture : IAsyncDisposable
+    internal sealed class Fixture : IAsyncDisposable
     {
         internal const string Player = "SPC-0001", Target = "SPC-0002", Launcher = "MOD-PLAYER-TORPEDO-01";
         private static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));

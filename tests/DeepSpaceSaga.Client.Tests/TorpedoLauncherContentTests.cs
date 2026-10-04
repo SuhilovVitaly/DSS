@@ -31,13 +31,13 @@ public sealed class TorpedoLauncherContentTests
         var launcher = Launcher(registry);
         Assert.Equal(1, category.SlotSize);
         Assert.Equal(1, launcher.SlotSize);
-        Assert.Equal(CombatCommandTypes.Fire, Assert.Single(category.CommandTypeIds));
-        Assert.Equal(CombatCommandTypes.Fire, Assert.Single(launcher.CommandTypeIds));
+        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct }, category.CommandTypeIds);
+        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct }, launcher.CommandTypeIds);
         var command = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(CombatCommandTypes.Fire));
         Assert.Equal(CategoryId, command.Type);
         Assert.Equal("object", command.Target);
-        Assert.Single(Enumerable.Range(0, registry.CommandDefinitions.Count)
-            .Select(registry.CommandDefinitions.GetDefinition), c => c.Type == CategoryId);
+        Assert.Equal(2, Enumerable.Range(0, registry.CommandDefinitions.Count)
+            .Select(registry.CommandDefinitions.GetDefinition).Count(c => c.Type == CategoryId));
     }
 
     [Theory]

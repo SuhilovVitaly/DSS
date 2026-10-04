@@ -7,6 +7,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 public sealed partial class GameSessionScreen
 {
+    private readonly CombatJournalPanel _combatJournalPanel = new();
     internal TorpedoRoute? LaunchPreviewRoute { get; private set; }
     internal CombatTrajectoryProjector.Geometry? LaunchPreviewGeometry { get; private set; }
     private (ObjectMotionSnapshot Owner, ObjectMotionSnapshot Target, LauncherCombatSnapshot Launcher, long Time)? _launchPreviewKey;
@@ -25,6 +26,11 @@ public sealed partial class GameSessionScreen
         _combatPoseObjectIds.Clear();
         foreach (var obj in snapshot.Objects)
         {
+            if (obj.Countermeasure is { } defenseFlight)
+            {
+                _combatPoseObjectIds.Add(obj.ObjectId);
+                _combatPoseObjectIds.Add(defenseFlight.TargetTorpedoId);
+            }
             if (obj.Torpedo is not { } flight) continue;
             _combatPoseObjectIds.Add(obj.ObjectId);
             _combatPoseObjectIds.Add(flight.TargetObjectId);
@@ -159,6 +165,23 @@ public sealed partial class GameSessionScreen
         foreach (var effect in _combatEffects.Active)
         {
             var (x, y) = _camera.WorldToScreen(effect.Impact.X, effect.Impact.Y, _viewportW, _viewportH);
+            if (!effect.TerminalTrail.IsDefaultOrEmpty)
+            {
+                using var trailPath = new SKPath();
+                var points = new List<FutureTrajectoryPoint>();
+                foreach (var trail in effect.TerminalTrail)
+                {
+                    int samples = Math.Max(1, (int)Math.Ceiling(trail.Segment.DurationMs / 25));
+                    for (int i = 0; i <= samples; i++)
+                    {
+                        var pose = TorpedoGuidanceMath.PredictSegment(trail.Segment, trail.Segment.DurationMs * i / samples);
+                        points.Add(new(pose.X, pose.Y));
+                    }
+                }
+                CombatTrajectoryProjector.BuildPath(trailPath, points, _camera, _viewportW, _viewportH);
+                _combatExplosionPaint.Color = CombatSettings.Torpedo.WithAlpha(effect.Alpha(now, CombatSettings.Torpedo.Alpha));
+                canvas.DrawPath(trailPath, _combatExplosionPaint);
+            }
             float radius = effect.RadiusPx(now);
             if (radius <= 0 || x < -52 || y < -52 || x > _viewportW + 52 || y > _viewportH + 52) continue;
             _combatExplosionPaint.Color = CombatSettings.Explosion.WithAlpha(effect.Alpha(now, CombatSettings.Explosion.Alpha));
@@ -177,6 +200,11 @@ public sealed partial class GameSessionScreen
         foreach (var state in _renderStates)
         {
             if (ObjectLabelRenderer.HasHullBar(state.Source)) _combatImportantIds.Add(state.Source.ObjectId);
+            if (state.Source.Countermeasure is { } defenseFlight)
+            {
+                _combatImportantIds.Add(state.Source.ObjectId);
+                _combatImportantIds.Add(defenseFlight.TargetTorpedoId);
+            }
             if (state.Source.Torpedo is not { } torpedo) continue;
             _combatImportantIds.Add(state.Source.ObjectId);
             _combatImportantIds.Add(torpedo.TargetObjectId);
@@ -185,18 +213,19 @@ public sealed partial class GameSessionScreen
 
     internal static bool HasCombatMarker(ObjectMotionSnapshot source) =>
         source.RenderObjectType == SpaceObjectType.Wreck ||
-        source is { RenderObjectType: SpaceObjectType.Missile, Torpedo: not null };
+        source is { RenderObjectType: SpaceObjectType.Missile, Torpedo: not null } or
+        { RenderObjectType: SpaceObjectType.Countermeasure, Countermeasure: not null };
 
     private void DrawCombatMarker(SKCanvas canvas, ObjectRenderState state, float x, float y)
     {
         _combatCorePaint ??= new SKPaint { IsAntialias = true };
-        if (state.Source.Torpedo is not null)
+        if (state.Source.Torpedo is not null || state.Source.Countermeasure is not null)
         {
             _combatBlur ??= SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 2f);
             _combatHaloPaint ??= new SKPaint { IsAntialias = true, MaskFilter = _combatBlur };
-            _combatHaloPaint.Color = CombatSettings.Torpedo;
+            _combatHaloPaint.Color = state.Source.Countermeasure is null ? CombatSettings.Torpedo : CombatSettings.Countermeasure;
             canvas.DrawCircle(x, y, CombatMarkerRadius, _combatHaloPaint);
-            _combatCorePaint.Color = CombatSettings.Torpedo;
+            _combatCorePaint.Color = _combatHaloPaint.Color;
         }
         else _combatCorePaint.Color = CombatSettings.Wreck;
         canvas.DrawCircle(x, y, CombatMarkerRadius, _combatCorePaint);
@@ -265,6 +294,36 @@ public sealed partial class GameSessionScreen
         }
     }
 
+    private bool IsSelfDestructEnabled()
+    {
+        RefreshTorpedoSubmission();
+        return !_torpedoSubmitPending && _buffer.Latest?.Snapshot.ActiveDialogue is null &&
+            FindLauncher() is { LauncherCombat.ActiveTorpedoObjectId: not null } launcher &&
+            launcher.Commands.Any(c => c.CommandTypeId == CombatCommandTypes.SelfDestruct);
+    }
+
+    private void SendSelfDestruct()
+    {
+        if (_handle is null || !IsSelfDestructEnabled()) return;
+        var launcher = FindLauncher()!;
+        var snapshot = _buffer.Latest!.Snapshot;
+        string targetId = launcher.LauncherCombat!.ActiveTorpedoObjectId!;
+        _torpedoSubmitPending = true;
+        _torpedoSendFailed = false;
+        _pendingTorpedoCommandId = null;
+        _torpedoSendTask = null;
+        try
+        {
+            _torpedoSendTask = _handle.SendCommandAsync(snapshot.PlayerShipObjectId!, launcher.ModuleId,
+                CombatCommandTypes.SelfDestruct, out _pendingTorpedoCommandId, targetId).AsTask();
+        }
+        catch (Exception)
+        {
+            _torpedoSendFailed = true;
+            _torpedoSubmitPending = false;
+        }
+    }
+
     internal string? HoveredCommandTypeId => _commandsPanel.HoveredCommandTypeId;
 
     private InstalledModuleSnapshot? FindLauncher()
@@ -284,14 +343,45 @@ public sealed partial class GameSessionScreen
             FindPlayerShipMotion(snapshot) is not { IsDestroyed: false } ||
             _selectedObjectId is null || _selectedObjectId == snapshot.PlayerShipObjectId)
             return false;
-        return snapshot.Objects.Any(o => o.ObjectId == _selectedObjectId && !o.IsDestroyed) &&
+        return snapshot.Objects.Any(o => o.ObjectId == _selectedObjectId && !o.IsDestroyed && o.RenderObjectType != SpaceObjectType.Countermeasure && o.Countermeasure is null) &&
             FindLauncher() is
             {
                 PowerState: "On", OperationalState: "Ready", StructurePoints: > 0,
-                ActiveCommandType: null, LauncherCombat.ActiveTorpedoObjectId: null
+                ActiveCommandType: null, LauncherCombat.ActiveTorpedoObjectId: null, LauncherCombat.Operator: not null
             } launcher && !launcher.Commands.IsDefaultOrEmpty &&
             launcher.Commands.Any(c => c.CommandTypeId == CombatCommandTypes.Fire && c.Target == "object");
     }
+
+    private InstalledModuleSnapshot? FindDefense() => _buffer.Latest?.Snapshot is { InstalledModules.IsDefaultOrEmpty: false } snapshot
+        ? snapshot.InstalledModules.FirstOrDefault(m => m.Defense is not null) : null;
+    private bool IsDefenseToggleEnabled(string commandType)
+    {
+        var snapshot = _buffer.Latest?.Snapshot;
+        return snapshot is not null && snapshot.ActiveDialogue is null && FindPlayerShipMotion(snapshot) is { IsDestroyed: false } &&
+            FindDefense() is { Defense: { } defense } module && !module.Commands.IsDefaultOrEmpty && module.Commands.Any(c => c.CommandTypeId == commandType) &&
+            defense.AutoEnabled != (commandType == DefenseCommandTypes.Enable);
+    }
+    private long DefensePresentationTime => _buffer.LatestPrediction is { } prediction
+        ? prediction.BufferedSnapshot.Snapshot.MotionTimeMs + CombatPredictionDelta(prediction)
+        : _buffer.Latest?.Snapshot.MotionTimeMs ?? 0;
+    private string? GetDefenseStatus() => FindDefense()?.Defense is { } defense
+        ? DefenseStatusText(defense, DefensePresentationTime) : null;
+    internal static string WeaponOperatorText(WeaponOperatorSnapshot? op) => op is null ? "Нет оператора" :
+        $"{op.DisplayName} · Навык {op.Skill} · R {op.EffectiveRating:0.##}";
+    private string? GetWeaponOperatorText(string panel) => panel switch
+    {
+        "Torpedo Launcher" => WeaponOperatorText(FindLauncher()?.LauncherCombat?.Operator),
+        "Countermeasure Launcher" => WeaponOperatorText(FindDefense()?.Defense?.Operator),
+        _ => null
+    };
+    internal static string DefenseStatusText(DefenseSnapshot defense, double time) =>
+        (defense.AutoEnabled ? "Авто ВКЛ · " : "Авто ВЫКЛ · ") + (defense.State switch
+        {
+            DefenseState.NoOperator => "Нет оператора",
+            DefenseState.Guiding => "Наведение",
+            DefenseState.Reloading => $"Перезарядка {Math.Max(0, (defense.ReloadDueMotionTimeMs!.Value - time) / 1000):0.0} с",
+            _ => "Готов"
+        });
 
     private string? GetLauncherStatus()
     {
@@ -301,6 +391,7 @@ public sealed partial class GameSessionScreen
         return FindLauncher() switch
         {
             { LauncherCombat.ActiveTorpedoObjectId: not null } => "Guiding",
+            { LauncherCombat.Operator: null } => "Нет оператора",
             { PowerState: "On", OperationalState: "Ready", StructurePoints: > 0, LauncherCombat: not null } => "Ready",
             { LauncherCombat: not null } => "Unavailable",
             _ => null

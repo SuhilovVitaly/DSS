@@ -119,3 +119,8 @@ US-0001 → US-0002 → US-0003 → US-0004 → US-0005 → US-0006 → US-0007 
 Planning: PASS — проверены 37 файлов, 8 историй, 27 тикетов, 236 локальных ссылок, IDs/frontmatter/counts, dependency DAG, layer boundaries, allowlists и coverage.
 Runtime: **не запускался**, поскольку эта задача создаёт только Board artifacts. Native smoke, integration run и Save/Load proof — будущие gates US-0008, а не факт текущей поставки.
 
+
+
+## Продолжение — EP-0007 (2026-10-04)
+
+Исторический план выше сохранён. Текущий этап добавляет операторов, автоматическую защиту, самоуничтожение, журнал и Save v11. [Реализация и evidence](../../Documentation/04-Engineering/CountermeasureCombat.md). Native acceptance не объявляется пройденной; пользователь разрешил завершить EP-0007 без native smoke.

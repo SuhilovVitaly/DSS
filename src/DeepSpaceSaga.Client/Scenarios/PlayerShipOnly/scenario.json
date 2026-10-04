@@ -73,6 +73,10 @@
             {
               "x": 3,
               "y": 2
+            },
+            {
+              "y": 2,
+              "x": 5
             }
           ]
         },
@@ -190,13 +194,39 @@
             "powerState": "On",
             "operationalState": "Ready",
             "activeCycle": null,
-            "cargo": []
+            "cargo": [],
+            "operatorCrewId": "CHR-0001"
+          },
+          {
+            "moduleId": "MOD-PLAYER-COUNTERMEASURE-01",
+            "moduleTypeId": "module.countermeasure.launcher.basic",
+            "occupiedCells": [
+              {
+                "y": 2,
+                "x": 5
+              }
+            ],
+            "structurePoints": 60,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "operatorCrewId": "CHR-PLAYER-DEFENSE",
+            "autoDefenseEnabled": true
           }
         ],
         "crew": [
           {
             "crewId": "CHR-0001",
-            "displayName": "Dunkan Su"
+            "displayName": "Dunkan Su",
+            "torpedoSkill": 50,
+            "countermeasureSkill": 50
+          },
+          {
+            "crewId": "CHR-PLAYER-DEFENSE",
+            "countermeasureSkill": 50,
+            "torpedoSkill": 50,
+            "displayName": "Defense operator"
           }
         ]
       },
@@ -259,6 +289,10 @@
             {
               "x": 3,
               "y": 2
+            },
+            {
+              "y": 2,
+              "x": 5
             }
           ]
         },
@@ -376,10 +410,41 @@
             "powerState": "On",
             "operationalState": "Ready",
             "activeCycle": null,
-            "cargo": []
+            "cargo": [],
+            "operatorCrewId": "CHR-PIRATE-TORPEDO"
+          },
+          {
+            "moduleId": "MOD-PIRATE-COUNTERMEASURE-01",
+            "moduleTypeId": "module.countermeasure.launcher.basic",
+            "occupiedCells": [
+              {
+                "y": 2,
+                "x": 5
+              }
+            ],
+            "structurePoints": 60,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "operatorCrewId": "CHR-PIRATE-DEFENSE",
+            "autoDefenseEnabled": true
           }
         ],
-        "crew": [],
+        "crew": [
+          {
+            "crewId": "CHR-PIRATE-TORPEDO",
+            "countermeasureSkill": 50,
+            "torpedoSkill": 50,
+            "displayName": "Torpedo operator"
+          },
+          {
+            "crewId": "CHR-PIRATE-DEFENSE",
+            "countermeasureSkill": 50,
+            "torpedoSkill": 50,
+            "displayName": "Defense operator"
+          }
+        ],
         "relationToPlayer": "enemy"
       }
     ]

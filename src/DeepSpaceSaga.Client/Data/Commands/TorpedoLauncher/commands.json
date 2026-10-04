@@ -3,10 +3,20 @@
     {
       "typeId": "torpedo.fire",
       "displayName": "Fire",
-      "timeFactor": 1.0,
-      "complexityFactor": 1.0,
-      "consumptionFactor": 1.0,
+      "timeFactor": 1,
+      "complexityFactor": 1,
+      "consumptionFactor": 1,
       "target": "object",
+      "activationEnergyCellsCost": 0,
+      "type": "module.torpedo.launcher"
+    },
+    {
+      "typeId": "torpedo.selfDestruct",
+      "displayName": "Самоуничтожение",
+      "timeFactor": 1,
+      "complexityFactor": 1,
+      "consumptionFactor": 1,
+      "target": "none",
       "activationEnergyCellsCost": 0,
       "type": "module.torpedo.launcher"
     }

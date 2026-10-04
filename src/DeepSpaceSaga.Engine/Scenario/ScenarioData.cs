@@ -24,7 +24,7 @@ public static class SaveFormat
     /// Version 10 preserves captured combat parameters, active flights, guidance, history and identity counters.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 10;
+    public const int CurrentSaveFormatVersion = 11;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -78,7 +78,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("tradingMap")] TradingMapStateData? TradingMap = null,
     [property: JsonPropertyName("stationResourceFields")] StationResourceFieldsState? StationResourceFields = null,
     [property: JsonPropertyName("voyageState")] VoyageStateData? VoyageState = null,
-    [property: JsonPropertyName("combatState")] CombatStateData? CombatState = null)
+    [property: JsonPropertyName("combatState")] CombatStateData? CombatState = null,
+    [property: JsonPropertyName("defenseState")] CountermeasureStateData? DefenseState = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
@@ -254,7 +255,9 @@ public static class StationCrewRoles
 /// <param name="DisplayName">UI display name.</param>
 public sealed record ShipCrewMemberData(
     [property: JsonPropertyName("crewId")] string CrewId,
-    [property: JsonPropertyName("displayName")] string DisplayName);
+    [property: JsonPropertyName("displayName")] string DisplayName,
+    [property: JsonPropertyName("torpedoSkill")] int? TorpedoSkill = null,
+    [property: JsonPropertyName("countermeasureSkill")] int? CountermeasureSkill = null);
 
 /// <summary>
 /// One crew member displayed on a station (director/dock operator etc.), cosmetic/narrative
@@ -350,7 +353,9 @@ public sealed record ShipModuleData(
     [property: JsonPropertyName("activeCycle")] ActiveCycleData? ActiveCycle,
     [property: JsonPropertyName("cargo")] IReadOnlyList<CargoStackData>? Cargo,
     [property: JsonPropertyName("fuelAmountKg")] long? FuelAmountKg = null,
-    [property: JsonPropertyName("lastTurnGameTimeMs")] long? LastTurnGameTimeMs = null);
+    [property: JsonPropertyName("lastTurnGameTimeMs")] long? LastTurnGameTimeMs = null,
+    [property: JsonPropertyName("operatorCrewId")] string? OperatorCrewId = null,
+    [property: JsonPropertyName("autoDefenseEnabled")] bool AutoDefenseEnabled = true);
 
 /// <summary>A single structural cell coordinate on a ship's hull grid (requirements §57).</summary>
 public sealed record HullCellCoordinate(

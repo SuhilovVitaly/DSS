@@ -41,8 +41,11 @@ public sealed partial class SimulationEngine
             return CommandStartOutcome.Rejected(CommandReasonCodes.Busy);
         if (string.IsNullOrWhiteSpace(command.TargetObjectId)) return CommandStartOutcome.Rejected(CommandReasonCodes.MissingTarget);
         var target = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.TargetObjectId && !o.IsDestroyed);
-        if (target is null || command.TargetObjectId == command.ObjectId)
+        if (target is null || target.ObjectType == SpaceObjectType.Countermeasure || command.TargetObjectId == command.ObjectId)
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownTarget);
+
+        var weaponOperator = ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack);
+        if (weaponOperator is null) return CommandStartOutcome.Rejected("no_weapon_operator");
 
         var origin = PredictMotion(owner, motionTimeMs - owner.StartGameTimeMs);
         var targetPose = PredictMotion(target, motionTimeMs - target.StartGameTimeMs);
@@ -53,18 +56,55 @@ public sealed partial class SimulationEngine
         {
             if (sequence == long.MaxValue) return CommandStartOutcome.Rejected("projectile_id_exhausted");
             id = "torpedo-" + (++sequence).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        } while (_objects.Any(o => o.InitialMotion.ObjectId == id));
+        } while (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, id, StringComparison.OrdinalIgnoreCase)));
         var flight = new TorpedoSnapshot(command.ObjectId, command.ModuleId, command.TargetObjectId!, motionTimeMs,
-            launcher.SpeedKmS, launcher.TurnRateDegPerSec, launcher.Damage, 0, route, [], ImpactTime(route));
+            launcher.SpeedKmS, launcher.TurnRateDegPerSec, launcher.Damage, 0, route, [], ImpactTime(route),
+            TorpedoRating: weaponOperator.EffectiveRating, RatingBreakdown: weaponOperator);
         var motion = new ObjectMotionSnapshot(id, origin.X, origin.Y, launcher.SpeedKmS, origin.Direction, Torpedo: flight);
         _objects.Add(new(motion, SpaceObjectType.Missile, motionTimeMs, [], Name: "Torpedo", IsKnown: true));
-        _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = id };
+        _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = id, Operator = weaponOperator };
         _torpedoTargets[id] = (targetPose, motionTimeMs);
         _torpedoSequence = sequence;
         _processedLaunchCommandIds.Add(command.CommandId);
+        AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Launch, command.ObjectId, command.TargetObjectId!, id,
+            origin.X, origin.Y, TorpedoOperator: weaponOperator, Result: "torpedo"));
         _nextCombatGuidanceMs = Math.Min(_nextCombatGuidanceMs, NextGuidanceBoundary(motionTimeMs));
         RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
         return CommandStartOutcome.Started;
+    }
+
+    private CommandStartOutcome TrySelfDestruct(PlayerCommand command, long motionTimeMs)
+    {
+        if (command.ObjectId != PlayerShipObjectId) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
+        var key = (command.ObjectId, command.ModuleId);
+        if (!_launcherCombat.TryGetValue(key, out var launcher)) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
+        if (launcher.ActiveTorpedoObjectId is null || launcher.ActiveTorpedoObjectId != command.TargetObjectId)
+            return CommandStartOutcome.Rejected("stale_projectile");
+        var projectile = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.TargetObjectId &&
+            o.InitialMotion.Torpedo is { } flight && flight.OwnerObjectId == command.ObjectId && flight.LauncherModuleId == command.ModuleId);
+        if (projectile is null) return CommandStartOutcome.Rejected("stale_projectile");
+        TerminateTorpedo(projectile, motionTimeMs, TorpedoTerminationKind.SelfDestruct);
+        RemoveLostCountermeasures(motionTimeMs);
+        RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
+        return CommandStartOutcome.Started;
+    }
+
+    private void TerminateTorpedo(SpaceObjectRuntime projectile, double motionTimeMs, TorpedoTerminationKind kind)
+    {
+        var flight = projectile.InitialMotion.Torpedo!;
+        var point = CombatPath(projectile).Position(motionTimeMs);
+        var final = CloseFlightHistory(projectile, motionTimeMs, flight);
+        _objects.Remove(projectile);
+        _torpedoTargets.Remove(projectile.InitialMotion.ObjectId);
+        var key = (flight.OwnerObjectId, flight.LauncherModuleId);
+        if (_launcherCombat.TryGetValue(key, out var launcher))
+            _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = null };
+        if (kind == TorpedoTerminationKind.SelfDestruct)
+            AppendCombatEvent(new(0, motionTimeMs, CombatEventType.SelfDestruct, flight.OwnerObjectId, flight.TargetObjectId,
+                projectile.InitialMotion.ObjectId, point.X, point.Y, TorpedoOperator: flight.RatingBreakdown, Damage: 0));
+        _combatImpacts.Add(new(checked(++_combatImpactSequence), projectile.InitialMotion.ObjectId,
+            flight.OwnerObjectId, flight.LauncherModuleId, flight.TargetObjectId, string.Empty,
+            motionTimeMs, point.X, point.Y, final.Trail, TerminationKind: kind));
     }
 
     private static long NextGuidanceBoundary(long time) => time > long.MaxValue - 100
@@ -81,15 +121,63 @@ public sealed partial class SimulationEngine
     {
         // Recompute after each mutation: a previous contact may remove an obstacle
         // (or, in the wreck lifecycle, replace it) inside this same physical interval.
-        double cursor = 0;
-        while (FindFirstImpact(cursor, motionTimeMs) is { } impact)
+        if (motionTimeMs <= _combatProcessedTimeMs) return;
+        double cursor = _combatProcessedTimeMs;
+        while (true)
         {
-            ApplyImpact(impact.Projectile, impact.Target, impact.Contact);
-            cursor = impact.Contact.MotionTimeMs;
+            var impact = FindFirstImpact(cursor, motionTimeMs);
+            var launch = NextDefenseLaunch(cursor, motionTimeMs);
+            var intercept = FindFirstIntercept(cursor, motionTimeMs);
+            var expiry = _objects.Where(o => o.InitialMotion.Countermeasure is { Phase: CountermeasurePhase.MissedCoast })
+                .OrderBy(o => o.InitialMotion.Countermeasure!.MissExpiresAtMotionTimeMs)
+                .ThenBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).FirstOrDefault();
+            double expiryTime = expiry?.InitialMotion.Countermeasure?.MissExpiresAtMotionTimeMs ?? double.PositiveInfinity;
+            double eventTime = Math.Min(launch?.Time ?? double.PositiveInfinity,
+                Math.Min(intercept?.Contact.MotionTimeMs ?? double.PositiveInfinity, expiryTime));
+            if (impact is { } hit && hit.Contact.MotionTimeMs <= eventTime)
+            {
+                ApplyImpact(hit.Projectile, hit.Target, hit.Contact);
+                cursor = hit.Contact.MotionTimeMs;
+                RemoveLostCountermeasures(cursor);
+                continue;
+            }
+            if (intercept is { } encounter && encounter.Contact.MotionTimeMs <= eventTime)
+            {
+                ResolveFirstIntercept(encounter.Projectile, encounter.Target, encounter.Contact);
+                cursor = encounter.Contact.MotionTimeMs;
+                RemoveLostCountermeasures(cursor);
+                continue;
+            }
+            if (expiry is not null && expiryTime <= eventTime && expiryTime <= motionTimeMs)
+            {
+                RemoveCountermeasure(expiry, expiryTime);
+                cursor = expiryTime;
+                continue;
+            }
+            if (launch is not null)
+            {
+                LaunchCountermeasure(launch);
+                cursor = launch.Time;
+                continue;
+            }
+            break;
         }
+        CompleteDefenseReloads(motionTimeMs);
+        _combatProcessedTimeMs = motionTimeMs;
         for (int i = 0; i < _objects.Count; i++)
         {
             var obj = _objects[i];
+            if (obj.InitialMotion.Countermeasure is { } defenseFlight && motionTimeMs > obj.StartGameTimeMs)
+            {
+                var predictedDefense = CountermeasureGuidanceMath.Predict(obj.InitialMotion, motionTimeMs - obj.StartGameTimeMs);
+                _objects[i] = obj with
+                {
+                    InitialMotion = predictedDefense with
+                    { Countermeasure = predictedDefense.Countermeasure! with { Trail = CloseCountermeasureHistory(obj, motionTimeMs) } },
+                    StartGameTimeMs = motionTimeMs
+                };
+                continue;
+            }
             if (obj.InitialMotion.Torpedo is not { } flight || motionTimeMs <= obj.StartGameTimeMs) continue;
             long elapsed = motionTimeMs - obj.StartGameTimeMs;
             var predicted = TorpedoGuidanceMath.Predict(obj.InitialMotion, elapsed);
@@ -110,7 +198,7 @@ public sealed partial class SimulationEngine
             var path = CombatPath(projectile);
             foreach (var target in _objects)
             {
-                if (target.IsDestroyed || target.InitialMotion.ObjectId == projectile.InitialMotion.ObjectId ||
+                if (target.IsDestroyed || target.ObjectType == SpaceObjectType.Countermeasure || target.InitialMotion.ObjectId == projectile.InitialMotion.ObjectId ||
                     target.InitialMotion.ObjectId == flight.OwnerObjectId) continue;
                 double start = Math.Max(from, Math.Max(projectile.StartGameTimeMs, target.StartGameTimeMs));
                 if (start > to) continue;
@@ -129,6 +217,14 @@ public sealed partial class SimulationEngine
 
     private static CollisionPath CombatPath(SpaceObjectRuntime obj)
     {
+        if (obj.InitialMotion.Countermeasure is { } defenseFlight)
+            return new(t =>
+            {
+                var p = TorpedoGuidanceMath.PredictPose(defenseFlight.Route, defenseFlight.Route.ElapsedMs + t - obj.StartGameTimeMs);
+                return (p.X, p.Y);
+            }, defenseFlight.Route.Segments[^1].SpeedKmS / 100,
+                defenseFlight.Route.Segments[^1].SpeedKmS / 100 *
+                defenseFlight.Route.Segments.Max(s => Math.Abs(s.AngularVelocityDegPerSec)) * Math.PI / 180000);
         if (obj.InitialMotion.Torpedo is { } flight)
             return new(t =>
             {
@@ -187,6 +283,11 @@ public sealed partial class SimulationEngine
             flight.OwnerObjectId, flight.LauncherModuleId, flight.TargetObjectId, hitId,
             contact.MotionTimeMs, contact.X, contact.Y, finalFlight.Trail, damage,
             wreckId is null ? null : hitId, wreckId));
+        AppendCombatEvent(new(0, contact.MotionTimeMs, CombatEventType.Hit, flight.OwnerObjectId, hitId,
+            projectile.InitialMotion.ObjectId, contact.X, contact.Y, TorpedoOperator: flight.RatingBreakdown, Damage: damage));
+        if (wreckId is not null)
+            AppendCombatEvent(new(0, contact.MotionTimeMs, CombatEventType.Destroyed, flight.OwnerObjectId, hitId,
+                projectile.InitialMotion.ObjectId, contact.X, contact.Y, Damage: damage, Result: wreckId));
     }
 
     private string CreateWreck(SpaceObjectRuntime destroyed, double impactMotionTimeMs)
@@ -200,6 +301,7 @@ public sealed partial class SimulationEngine
         var point = CombatPath(destroyed).Position(impactMotionTimeMs);
         _objects.Remove(destroyed);
         _hullCombat.Remove(destroyedId);
+        foreach (var defenseKey in _defenses.Keys.Where(k => k.ObjectId == destroyedId).ToArray()) _defenses.Remove(defenseKey);
         foreach (var key in _launcherCombat.Keys.Where(k => k.ObjectId == destroyedId).ToArray())
             _launcherCombat.Remove(key);
         _objects.Add(new(new(id, point.X, point.Y, 0, 0), SpaceObjectType.Wreck,
@@ -248,6 +350,8 @@ public sealed partial class SimulationEngine
         var flight = obj.InitialMotion.Torpedo!;
         var history = flight.Trail.ToBuilder();
         double from = flight.Route.ElapsedMs, to = from + motionTimeMs - obj.StartGameTimeMs, cursor = 0;
+        if (history.Count > 0)
+            from = Math.Max(from, history[^1].StartMotionTimeMs + history[^1].Segment.DurationMs - flight.Route.StartMotionTimeMs);
         foreach (var segment in flight.Route.Segments)
         {
             double start = Math.Max(from, cursor), end = Math.Min(to, cursor + segment.DurationMs);
@@ -371,6 +475,8 @@ public sealed partial class SimulationEngine
             foreach (var module in obj.Modules)
             {
                 var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+                if (definition.CountermeasureBaseRating is not null)
+                    _ = ResolveWeaponOperator(obj, module, WeaponSkillType.CountermeasureDefense);
                 if (definition.TorpedoDamage is not { } damage)
                     continue;
                 if (obj.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip))
@@ -379,7 +485,8 @@ public sealed partial class SimulationEngine
                     ActiveTorpedoObjectId: null,
                     SpeedKmS: definition.TorpedoSpeedKmS!.Value,
                     TurnRateDegPerSec: definition.TorpedoTurnRateDegPerSec!.Value,
-                    Damage: damage));
+                    Damage: damage,
+                    Operator: ResolveWeaponOperator(obj, module, WeaponSkillType.TorpedoAttack)));
             }
         }
 

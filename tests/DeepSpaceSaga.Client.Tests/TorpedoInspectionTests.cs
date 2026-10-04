@@ -102,7 +102,7 @@ public sealed class TorpedoInspectionTests
         handle.Buffer.Update(new(1, 0, SimulationSpeed.Speed0,
             [Player, new("wreck", 100, 100, 0, 0, RenderObjectType: SpaceObjectType.Wreck)], "player",
             InstalledModules: [new("launcher", "module.torpedo.launcher.basic", "Launcher", 1, [CombatCommandTypes.Fire],
-                "On", "Ready", 60, Commands: [new(CombatCommandTypes.Fire, "Fire", "object")], LauncherCombat: new(null, 3, 90, 150))]));
+                "On", "Ready", 60, Commands: [new(CombatCommandTypes.Fire, "Fire", "object")], LauncherCombat: new(null, 3, 90, 150, new("crew", "Operator", WeaponSkillType.TorpedoAttack, 50, 30, 30)))]));
         var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);
         Render(screen);
         // 30px screen hit radius, unrelated to the 2.5px drawn radius or collision world units.

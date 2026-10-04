@@ -22,7 +22,35 @@ public sealed class PirateScenarioTests
     private static ObjectMotionSnapshot Pirate(AuthoritativeSnapshot snapshot) => Assert.Single(snapshot.Objects, o => o.ObjectType == SpaceObjectType.NpcShip);
 
     [Fact]
-    public void Existing_pirate_course_speed_and_identity_are_preserved()
+    public void Two_distinct_operators_fit_two_cabins()
+    {
+        using var engine = Create();
+        var saved = engine.CaptureSaveState();
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
+        foreach (var ship in saved.GameState.SpaceObjects)
+        {
+            Assert.Equal(2, ship.Crew!.Count);
+            int cabins = ship.Modules!.Sum(m => registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId)).CabinesCount ?? 0);
+            Assert.Equal(2, cabins);
+            var assignments = ship.Modules!.Where(m => m.OperatorCrewId is not null).Select(m => m.OperatorCrewId).ToArray();
+            Assert.Equal(2, assignments.Distinct().Count());
+            Assert.All(assignments, id => Assert.Contains(ship.Crew, c => c.CrewId == id));
+        }
+    }
+
+    [Fact]
+    public void Both_ships_have_defense_in_new_room()
+    {
+        var scenario = ScenarioLoader.LoadFromFile(ScenarioPath);
+        foreach (var ship in scenario.GameState.SpaceObjects)
+        {
+            var module = Assert.Single(ship.Modules!, m => m.ModuleTypeId == "module.countermeasure.launcher.basic");
+            Assert.Equal(new HullCellCoordinate(5, 2), Assert.Single(module.OccupiedCells));
+            Assert.True(module.AutoDefenseEnabled);
+        }
+    }
+    [Fact]
+    public void Pirate_motion_and_identity_unchanged()
     {
         Assert.Contains(ScenarioRepository.ListScenarios(Path.Combine(ClientRoot, "Scenarios")), s => s.ScenarioPath == ScenarioPath);
         using var engine = Create();
@@ -30,7 +58,7 @@ public sealed class PirateScenarioTests
         Assert.Equal(2, snapshot.Objects.Length);
         Assert.All(snapshot.Objects, o => Assert.Equal(new HullCombatSnapshot("ship.tetrarch", 450, 450), o.HullCombat));
         Assert.Equal(new LauncherCombatSnapshot(null, 3, 90, 150),
-            Assert.Single(snapshot.InstalledModules, m => m.LauncherCombat is not null).LauncherCombat);
+            Assert.Single(snapshot.InstalledModules, m => m.LauncherCombat is not null).LauncherCombat! with { Operator = null });
         var pirate = Pirate(snapshot);
         Assert.Equal((0d, 5000d, 0.4d, 120d), (pirate.X, pirate.Y, pirate.SpeedKmS, pirate.Direction));
         Assert.Equal(PlayerRelation.Enemy, pirate.RelationToPlayer);
@@ -45,8 +73,8 @@ public sealed class PirateScenarioTests
         Assert.Equal(JsonSerializer.Serialize(player.HullLayout), JsonSerializer.Serialize(npc.HullLayout));
         Assert.Equal(player.Image, npc.Image);
         Assert.Equal(player.Modules!.Select(m => m.ModuleTypeId), npc.Modules!.Select(m => m.ModuleTypeId));
-        Assert.Equal(JsonSerializer.Serialize(player.Modules!.Select(m => m with { ModuleId = "test" })),
-            JsonSerializer.Serialize(npc.Modules!.Select(m => m with { ModuleId = "test" })));
+        Assert.Equal(JsonSerializer.Serialize(player.Modules!.Select(m => m with { ModuleId = "test", OperatorCrewId = m.OperatorCrewId is null ? null : m.ModuleTypeId })),
+            JsonSerializer.Serialize(npc.Modules!.Select(m => m with { ModuleId = "test", OperatorCrewId = m.OperatorCrewId is null ? null : m.ModuleTypeId })));
         var moved = Pirate(engine.CaptureSnapshotForTests(1000));
         Assert.Equal(3.4641016151377544, moved.X, 9);
         Assert.Equal(5002d, moved.Y, 9);

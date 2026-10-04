@@ -8,7 +8,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 public sealed class BasicCombatEndToEndTests
 {
     [Fact]
-    public void Real_pirate_scenario_three_manual_launches_create_one_wreck()
+    public void Legacy_three_hit_contract_stays_valid()
     {
         using var run = new CombatRun();
         var initial = run.Snapshot();
@@ -187,7 +187,7 @@ public sealed class BasicCombatEndToEndTests
     }
 
     // Only the monotonic clock is controlled. Scenario positions, motion, modules and HP
-    // are loaded unchanged; every shot is a real PlayerCommand through the Engine API.
+    // are loaded unchanged, with automatic defense explicitly disabled for the EP6 proof; every shot is a real PlayerCommand.
     internal sealed class CombatRun : IDisposable
     {
         private long _now;
@@ -195,7 +195,7 @@ public sealed class BasicCombatEndToEndTests
         internal ScenarioFile Source { get; }
         internal CombatRun(string? savePath = null)
         {
-            Source = ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
+            Source = WithoutDefense(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
             Engine = new SimulationEngine(Registry.Value, clock: new SimulationClock(SimulationSpeed.Speed0, () => _now));
             Engine.LoadScenario(savePath is null
                 ? Source with { GameState = Source.GameState with { MasterSeed = 42 } }
