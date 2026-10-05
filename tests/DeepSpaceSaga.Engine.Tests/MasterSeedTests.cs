@@ -128,7 +128,8 @@ public class MasterSeedTests
         var engine = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
 
         Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
-        Assert.Equal(65, engine.RuntimeObjects.Length);
+        var map = Assert.IsType<DeepSpaceSaga.Contracts.SolarSystemMapSnapshot>(engine.CaptureSnapshot().SolarSystemMap);
+        Assert.Equal(65 + 1 + map.Planets.Length, engine.RuntimeObjects.Length);
         Assert.Equal(5, engine.RuntimeObjects.Count(o => o.ObjectType == "Station"));
         // The two fixed temporary asteroids remain alongside the seeded station network
         // and the 57 generated station resource field asteroids.
