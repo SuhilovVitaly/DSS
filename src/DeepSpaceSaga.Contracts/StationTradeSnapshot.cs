@@ -16,7 +16,9 @@ public sealed record StationTradeSnapshot(
     /// <c>null</c> means the market publishes no revision (legacy snapshots, stations without a market
     /// profile) — never revision zero.
     /// </summary>
-    long? MarketRevision = null);
+    long? MarketRevision = null,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<StationMarketEventSnapshot>))]
+    ImmutableArray<StationMarketEventSnapshot> ActiveEvents = default);
 
 /// <summary>
 /// One tradeable item on a docked station. The station's own Credits balance is never
@@ -109,4 +111,31 @@ public static class TradeItemCategories
 {
     public const string Resource = "Resource";
     public const string Good = "Good";
+}
+
+public sealed record StationMarketEventSnapshot(
+    string EventId,
+    string DefinitionId,
+    string DisplayNameKey,
+    string DescriptionKey,
+    string EffectSummaryKey,
+    long StartedGameTimeMs,
+    long EndsGameTimeMs,
+    long RemainingGameTimeMs,
+    StationMarketRouteEffectSnapshot? RouteEffect = null,
+    string? LegacyDisplayName = null,
+    string? LegacyDescription = null);
+
+public sealed record StationMarketRouteEffectSnapshot(
+    string Availability,
+    int MaxAffectedIncidentEdges,
+    int TravelTimeMultiplierPermille,
+    int FuelMultiplierPermille,
+    string? RiskProfileId = null);
+
+public static class StationRouteAvailabilityEffects
+{
+    public const string None = "None";
+    public const string Restricted = "Restricted";
+    public const string Unavailable = "Unavailable";
 }

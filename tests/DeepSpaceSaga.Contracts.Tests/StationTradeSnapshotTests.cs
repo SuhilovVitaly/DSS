@@ -273,4 +273,36 @@ public class StationTradeSnapshotTests
             name.Contains("Credit", StringComparison.OrdinalIgnoreCase) &&
             name != nameof(StationInventoryItemSnapshot.UnitPriceCredits));
     }
+    [Fact]
+    public void Station_trade_snapshot_without_events_roundtrips_as_empty()
+    {
+        foreach (var snapshot in new[] { new StationTradeSnapshot("A", []), new StationTradeSnapshot("A", [], ActiveEvents: []) })
+        {
+            var json = JsonSerializer.Serialize(snapshot);
+            Assert.Contains("\"ActiveEvents\":[]", json);
+            Assert.Empty(JsonSerializer.Deserialize<StationTradeSnapshot>(json)!.ActiveEvents);
+        }
+        Assert.True(JsonSerializer.Deserialize<StationTradeSnapshot>("{\"StationObjectId\":\"A\"}")!.ActiveEvents.IsDefaultOrEmpty);
+    }
+
+    [Theory]
+    [InlineData(StationRouteAvailabilityEffects.Restricted)]
+    [InlineData(StationRouteAvailabilityEffects.Unavailable)]
+    public void Station_market_events_roundtrip_window_route_and_private_boundary(string availability)
+    {
+        var first = new StationMarketEventSnapshot("event-1", "definition-1", "Name", "Description", "Effect",
+            3600000, 7200000, 1000, new(availability, 1, 1500, 1200, "risk.quarantine"));
+        var second = new StationMarketEventSnapshot("legacy", "", "", "", "", 0, long.MaxValue, long.MaxValue,
+            LegacyDisplayName: "Конвой", LegacyDescription: "Поставка воды");
+        foreach (var events in new[] { ImmutableArray.Create(first), ImmutableArray.Create(first, second) })
+        {
+            var json = JsonSerializer.Serialize(new StationTradeSnapshot("A", [], 7, events));
+            var restored = JsonSerializer.Deserialize<StationTradeSnapshot>(json)!;
+            Assert.Equal(events.ToArray(), restored.ActiveEvents.ToArray());
+            Assert.Equal(7, restored.MarketRevision);
+            Assert.DoesNotContain("Credits", json);
+            Assert.DoesNotContain("Probability", json);
+            Assert.DoesNotContain("ItemEffects", json);
+        }
+    }
 }
