@@ -85,7 +85,7 @@ public sealed partial class SimulationEngine
                     stockItem with { StockQuantity = checked(stockItem.StockQuantity - executed) }),
             };
             updatedShip = quote.CommandType == TradeCommandTypes.Refuel
-                ? UpdateModule(target.Ship, target.ModuleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + executed) })
+                ? UpdateModule(target.Ship, target.ModuleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + executed), FuelCostBasisCredits = checked(m.FuelCostBasisCredits + total) })
                 : UpdateModule(target.Ship, target.ModuleIndex,
                     m => WithCargoDelta(m, target.ModuleType, target.ItemTypeIndex, executed));
         }

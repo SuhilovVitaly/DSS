@@ -391,7 +391,8 @@ public sealed record ShipModuleData(
     [property: JsonPropertyName("fuelAmountKg")] long? FuelAmountKg = null,
     [property: JsonPropertyName("lastTurnGameTimeMs")] long? LastTurnGameTimeMs = null,
     [property: JsonPropertyName("operatorCrewId")] string? OperatorCrewId = null,
-    [property: JsonPropertyName("autoDefenseEnabled")] bool AutoDefenseEnabled = true);
+    [property: JsonPropertyName("autoDefenseEnabled")] bool AutoDefenseEnabled = true,
+    [property: JsonPropertyName("fuelCostBasisCredits")] long? FuelCostBasisCredits = null);
 
 /// <summary>A single structural cell coordinate on a ship's hull grid (requirements §57).</summary>
 public sealed record HullCellCoordinate(

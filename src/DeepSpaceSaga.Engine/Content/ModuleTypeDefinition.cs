@@ -45,4 +45,5 @@ internal sealed record ModuleTypeDefinition(
     double? CountermeasureTurnRateDegPerSec = null,
     double? CountermeasureRangeKm = null,
     long? CountermeasureReloadMs = null,
-    string? CategoryTypeId = null) : ITypeDefinition;
+    string? CategoryTypeId = null,
+    long? FuelEfficiencyKmPerKg = null) : ITypeDefinition;

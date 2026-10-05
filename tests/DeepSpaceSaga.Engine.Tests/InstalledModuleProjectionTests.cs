@@ -300,7 +300,7 @@ public class InstalledModuleProjectionTests
                     StructurePointsMax: 50, PowerConsumptionW: 100,
                     CommandTypeIds: ImmutableArray<string>.Empty)
             ],
-            itemTypes: [],
+            itemTypes: [new ItemTypeDefinition("item.fuel", "Fuel", 1, BasePriceCredits: 1, TradeUnit: TradeUnit.Kilogram, StorageKind: ItemStorageKind.FuelTank)],
             commandDefinitions:
             [
                 new CommandDefinition("engine.accelerate", "Accelerate", Target: "none", Type: "module.engine.basic"),

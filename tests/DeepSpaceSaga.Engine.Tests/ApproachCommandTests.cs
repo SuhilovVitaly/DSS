@@ -475,7 +475,7 @@ public class ApproachCommandTests
                     CommandTypeIds: navCommandIds.ToImmutableArray(),
                     BaseCycleTimeMs: 1000)
             ],
-            [],
+            [new ItemTypeDefinition("item.fuel", "Fuel", 1, BasePriceCredits: 1, TradeUnit: TradeUnit.Kilogram, StorageKind: ItemStorageKind.FuelTank)],
             [
                 new CommandDefinition(
                     ShipEngineCommandTypes.Accelerate, "Accelerate", Type: "module.engine.basic"),

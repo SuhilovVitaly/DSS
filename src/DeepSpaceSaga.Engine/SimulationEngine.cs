@@ -1091,7 +1091,8 @@ public sealed partial class SimulationEngine : IDisposable
                     ? module.LastTurnGameTimeMs
                     : null,
                 OperatorCrewId: module.OperatorCrewId,
-                AutoDefenseEnabled: module.AutoDefenseEnabled));
+                AutoDefenseEnabled: module.AutoDefenseEnabled,
+                FuelCostBasisCredits: moduleType.FuelCapacityKg is > 0 ? module.FuelCostBasisCredits : null));
         }
 
         return modules;
@@ -1239,7 +1240,8 @@ public sealed partial class SimulationEngine : IDisposable
                 lastTurnGameTimeMs,
                 availableCapacityKg,
                 module.OperatorCrewId,
-                module.AutoDefenseEnabled));
+                module.AutoDefenseEnabled,
+                ResolveFuelCostBasis(module, moduleType, fuelAmountKg, obj.ObjectId)));
         }
 
         return modules.ToImmutable();
@@ -1326,6 +1328,37 @@ public sealed partial class SimulationEngine : IDisposable
         }
 
         return cargo.ToImmutable();
+    }
+
+    /// <summary>Resolve conserved acquisition cost; legacy tanks use the catalog base price once.</summary>
+    private long ResolveFuelCostBasis(ShipModuleData module, ModuleTypeDefinition type, long amount, string objectId)
+    {
+        void Reject(string detail) => throw new ScenarioException($"Module '{module.ModuleId}' on '{objectId}' fuelCostBasisCredits: {detail}.");
+        if (module.FuelCostBasisCredits is < 0) Reject("must be nonnegative");
+        if (type.FuelCapacityKg is not > 0 || amount == 0)
+        {
+            if (module.FuelCostBasisCredits is > 0) Reject("positive basis requires a nonempty fuel tank");
+            return 0;
+        }
+        if (module.FuelCostBasisCredits is { } basis) return basis;
+        if (!_registry.ItemTypes.Contains("item.fuel")) Reject("legacy bootstrap requires item.fuel");
+        var price = _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex("item.fuel")).BasePriceCredits;
+        if (price is not >= 0) Reject("legacy bootstrap requires a nonnegative item.fuel base price");
+        try { return checked(amount * price!.Value); }
+        catch (OverflowException error) { throw new ScenarioException($"Module '{module.ModuleId}' fuel basis bootstrap overflowed.", error); }
+    }
+
+    /// <summary>Conserved proportional basis; exact integer midpoint rounding without Int64 product overflow.</summary>
+    internal static long AllocateFuelCostBasis(long totalKg, long totalBasis, long takenKg)
+    {
+        if (totalKg < 0 || totalBasis < 0 || takenKg < 0 || takenKg > totalKg || totalKg == 0 && totalBasis != 0)
+            throw new ArgumentOutOfRangeException(nameof(takenKg), "Fuel allocation requires consistent nonnegative kg and basis.");
+        if (takenKg == 0) return 0;
+        if (takenKg == totalKg) return totalBasis;
+        Int128 scaled = checked((Int128)totalBasis * takenKg);
+        Int128 whole = scaled / totalKg;
+        if (scaled % totalKg * 2 >= totalKg) whole++;
+        return checked((long)whole);
     }
 
     /// <summary>
@@ -2604,7 +2637,7 @@ public sealed partial class SimulationEngine : IDisposable
                 Inventory = updatedInventory,
             };
 
-            var updatedShip = UpdateModule(obj, moduleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + qty) });
+            var updatedShip = UpdateModule(obj, moduleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + qty), FuelCostBasisCredits = checked(m.FuelCostBasisCredits + cost) });
             PlayerCredits = updatedCredits;
             _objects[stationIndex] = updatedStation;
             _objects[objectIndex] = updatedShip;
@@ -3853,7 +3886,8 @@ internal sealed record InstalledModuleRuntime(
     long? LastTurnGameTimeMs = null,
     long? AvailableCapacityKg = null,
     string? OperatorCrewId = null,
-    bool AutoDefenseEnabled = true);
+    bool AutoDefenseEnabled = true,
+    long FuelCostBasisCredits = 0);
 
 internal sealed record CargoStackRuntime(
     int ItemTypeIndex,

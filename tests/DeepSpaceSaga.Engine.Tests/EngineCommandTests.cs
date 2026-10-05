@@ -1596,7 +1596,7 @@ public class EngineCommandTests
                     LinearInertiaMps2: 40000, AngularInertiaDegPerSec: 4,
                     FuelCapacityKg: 1000)
             ],
-            itemTypes: [],
+            itemTypes: [new ItemTypeDefinition("item.fuel", "Fuel", 1, BasePriceCredits: 1, TradeUnit: TradeUnit.Kilogram, StorageKind: ItemStorageKind.FuelTank)],
             commandDefinitions: []);
 
         var engine = new SimulationEngine(registry);
@@ -1654,7 +1654,7 @@ public class EngineCommandTests
                     LinearInertiaMps2: 400,
                     FuelCapacityKg: 10000)
             ],
-            [],
+            [new ItemTypeDefinition("item.fuel", "Fuel", 1, BasePriceCredits: 1, TradeUnit: TradeUnit.Kilogram, StorageKind: ItemStorageKind.FuelTank)],
             []);
 
         var engine = new SimulationEngine(registry);

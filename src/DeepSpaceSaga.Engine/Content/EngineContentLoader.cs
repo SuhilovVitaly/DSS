@@ -424,6 +424,8 @@ public static class EngineContentLoader
             }
 
             ValidateEngineParameters(dto, category);
+            if (dto.FuelEfficiencyKmPerKg is { } efficiency && (efficiency <= 0 || category.TypeId != "module.engine"))
+                throw new ContentException($"Module '{dto.TypeId}': fuelEfficiencyKmPerKg must be positive and owned by module.engine.");
             ValidateTorpedoParameters(dto, category, filePath);
 
             // A missing/null baseSuccessChancePercent normalizes to 100 (§56.5).
@@ -472,7 +474,8 @@ public static class EngineContentLoader
                 dto.CountermeasureTurnRateDegPerSec,
                 dto.CountermeasureRangeKm,
                 dto.CountermeasureReloadMs,
-                category.TypeId);
+                category.TypeId,
+                dto.FuelEfficiencyKmPerKg);
             GameDataRegistry.ValidateWeaponRatings(definition);
             return definition;
         });
@@ -925,7 +928,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("countermeasureSpeedKmS")] double? CountermeasureSpeedKmS = null,
         [property: JsonPropertyName("countermeasureTurnRateDegPerSec")] double? CountermeasureTurnRateDegPerSec = null,
         [property: JsonPropertyName("countermeasureRangeKm")] double? CountermeasureRangeKm = null,
-        [property: JsonPropertyName("countermeasureReloadMs")] long? CountermeasureReloadMs = null);
+        [property: JsonPropertyName("countermeasureReloadMs")] long? CountermeasureReloadMs = null,
+        [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto?>? ItemTypes,

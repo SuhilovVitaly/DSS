@@ -168,7 +168,7 @@ public class QuotedTradeExecutionTests
         });
 
     internal static ScenarioFile WithFuel(ScenarioFile save, long fuelKg) =>
-        WithShipModules(save, m => m.ModuleId != EngineModuleId ? m : m with { FuelAmountKg = fuelKg });
+        WithShipModules(save, m => m.ModuleId != EngineModuleId ? m : m with { FuelAmountKg = fuelKg, FuelCostBasisCredits = null });
 
     /// <summary>A second container module on a free hull cell, so a quote can be replayed against another module.</summary>
     internal static ScenarioFile WithSecondContainer(ScenarioFile save) => save with
