@@ -41,7 +41,8 @@ public sealed class DefaultSystemContentTests
         foreach (var original in scenario.GameState.SpaceObjects)
         {
             var actual = saved.GameState.SpaceObjects.Single(o => o.ObjectId == original.ObjectId);
-            Assert.Equal(original.SpeedMps, actual.SpeedMps);
+            if (original.ObjectType != SpaceObjectType.Station) Assert.Equal(original.SpeedMps, actual.SpeedMps);
+            else Assert.NotNull(actual.Orbit);
             Assert.Equal((original.Modules ?? []).Select(m => (m.ModuleId, m.ModuleTypeId)),
                 (actual.Modules ?? []).Select(m => (m.ModuleId, m.ModuleTypeId)));
             foreach (var item in original.Inventory ?? [])

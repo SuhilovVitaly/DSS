@@ -43,20 +43,9 @@ internal static class SolarSystemGenerator
         double radius = vmax * days * 86400 / SimulationSpeedExtensions.BaseGameSecondsPerRealSecond * 10;
         double angle = start.NextDouble() * Math.Tau;
         double x = radius * Math.Sin(angle), y = -radius * Math.Cos(angle);
-        // Docked starts use the actual station plus the authoritative docking offset.
-        double playerX = player.PositionX, playerY = player.PositionY;
-        if (player.IsDocked)
-        {
-            var station = original.Single(o => string.Equals(o.ObjectId, player.DockedStationObjectId, StringComparison.OrdinalIgnoreCase));
-            playerX = station.PositionX + 1;
-            playerY = station.PositionY + 1;
-        }
-        var objects = original.Select(o => o with
-        {
-            PositionX = (o.ObjectId == player.ObjectId ? playerX : o.PositionX) + x - playerX,
-            PositionY = (o.ObjectId == player.ObjectId ? playerY : o.PositionY) + y - playerY,
-            IsKnown = true
-        }).ToList();
+        var translated = ScenarioGroupPlacement.Translate(source, x, y);
+        var objects = translated.GameState.SpaceObjects.OrderBy(o => o.ObjectId, StringComparer.Ordinal)
+            .Select(o => o with { IsKnown = true }).ToList();
         if (objects.Any(o => !double.IsFinite(o.PositionX) || !double.IsFinite(o.PositionY)))
             throw new PlacementException("non-finite translated position");
         double min = objects.Min(o => Math.Sqrt(o.PositionX * o.PositionX + o.PositionY * o.PositionY));
@@ -92,6 +81,18 @@ internal static class SolarSystemGenerator
                 objects.Add(new(id, "Planet", "Permanent", id, r * Math.Sin(phase * Math.PI / 180),
                     -r * Math.Cos(phase * Math.PI / 180), 0, 0, "Orbital", null, null, null, IsKnown: true, Orbit: orbit));
             }
+        }
+        long groupPeriod = CircularOrbit(radius, 0, vmax, c, source.GameState.MotionTimeMs).OrbitalPeriodMs;
+        var resourceIds = (source.GameState.StationResourceFields?.Asteroids ?? []).Select(a => a.ObjectId).ToHashSet(StringComparer.Ordinal);
+        for (int i = 0; i < objects.Count; i++)
+        {
+            var obj = objects[i];
+            if (obj.ObjectType != SpaceObjectType.Station && !resourceIds.Contains(obj.ObjectId)) continue;
+            double r = Math.Sqrt(obj.PositionX * obj.PositionX + obj.PositionY * obj.PositionY);
+            double phase = (Math.Atan2(obj.PositionX, -obj.PositionY) * 180 / Math.PI + 360) % 360;
+            var orbit = CircularOrbit(r, phase, vmax, c, source.GameState.MotionTimeMs) with { OrbitalPeriodMs = groupPeriod };
+            objects[i] = obj with { Orbit = orbit, MovementType = "Orbital" };
+            orbits.Add(new(obj.ObjectId, orbit));
         }
         AddBeltAsteroids(objects, belts, orbits, c, seed, vmax, source.GameState.MotionTimeMs, attempt);
         objects.Add(new("SYS-SUN", "Sun", "Permanent", "Sun", 0, 0, 0, 0, "Stationary", null, null, null, IsKnown: true));

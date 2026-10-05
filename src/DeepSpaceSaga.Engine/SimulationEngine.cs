@@ -237,7 +237,7 @@ public sealed partial class SimulationEngine : IDisposable
 
         gs = MaterializeOrRestoreTradingMap(scenario, gs, isSave, resolvedMasterSeed);
         if (gs.StationResourceFields is not null)
-            gs = StationResourceFields.ValidateSaved(gs, _registry);
+            gs = gs with { StationResourceFields = StationResourceFields.ValidateSaved(ScenarioGroupPlacement.InitialGeometry(gs), _registry).StationResourceFields };
         else if (!isSave && scenario.SaveFormatVersion == 0 && gs.TradingMap is not null && _stationResourceFieldConfig is not null)
             gs = StationResourceFields.Generate(gs, resolvedMasterSeed, _stationResourceFieldConfig, _registry);
         if (!isSave && scenario.SaveFormatVersion == 0 && generation is not null)
@@ -474,7 +474,9 @@ public sealed partial class SimulationEngine : IDisposable
         if (normalizedState.TradingMap is { } savedMap)
         {
             TradingMapGeometryGenerator.ValidateMaterialized(
-                savedMap, normalizedState.SpaceObjects, masterSeed, _registry);
+                savedMap, ScenarioGroupPlacement.InitialGeometry(normalizedState).SpaceObjects
+                    .Where(o => normalizedState.SolarSystem is null || (o.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip) && o.PersistenceType != "Temporary"))
+                    .ToArray(), masterSeed, _registry);
             return normalizedState;
         }
 
@@ -980,7 +982,7 @@ public sealed partial class SimulationEngine : IDisposable
                 PositionY: motion.Y,
                 SpeedMps: motion.SpeedKmS * 1000.0,
                 DirectionDegrees: motion.Direction,
-                MovementType: motion.SpeedKmS > 0 ? "Linear" : "Stationary",
+                MovementType: motion.Orbit is not null ? "Orbital" : motion.SpeedKmS > 0 ? "Linear" : "Stationary",
                 MassKg: obj.MassKg,
                 CompositionType: obj.CompositionType,
                 Modules: BuildSaveModules(obj),
