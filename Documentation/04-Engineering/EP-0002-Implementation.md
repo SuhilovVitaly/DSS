@@ -60,3 +60,13 @@ A real command-driven visit (no position reset during the journey) runs Approach
 Confirmed defects fixed: completed MaintainCourse left its cycle permanently busy; first free-flight docking never initialized the docked voyage state, hiding departure options. Added regression coverage for both. Dock validation now uses circular heading difference with the existing epsilon. The detached dialogue transaction installs orbital binding with docking and still rolls back fees on validation failure.
 
 Story review (same agent): checked legacy captured-target semantics, unchanged ApproachRoute/planner version/speed, completion timestamps, cancellation, heading seam, transactional revalidation, dialogue replay/abort, docked travel and release. No outstanding confirmed US-0005 findings. No new orbital interception API was introduced.
+## US-0006 — known system map
+
+| Ticket | Commit | Observed validation |
+|---|---|---|
+| TK-0001 | 39eee6a | Engine 1196/1196; spatial identities exposed without mutating IsKnown, detailed/private fields masked, remote quote rejected, resource composition remains unknown, legacy masking retained |
+| TK-0002 | afa7152 | Client 1591/1591; all six starts at 1280x720 and 1920x1080, UI 100/120/150%, free-viewport system/belt bounds, orbit toggle and protected selected labels |
+
+Added localized Orbits and Next belt actions to the existing toolbar. Orbit visibility is Client-local; snapshots and world distances remain unchanged. Active, selected and player objects are excluded from clustering and retain priority rendering.
+
+Story review (same agent): inspected disclosure boundaries, scan/market independence, snapshot-only rendering, orbit toggle, belt cycling, missing belt handling, viewport fitting, UI scaling, input routing and important marker/label order. No outstanding confirmed US-0006 findings. Native presented-frame validation remains US-0008.
