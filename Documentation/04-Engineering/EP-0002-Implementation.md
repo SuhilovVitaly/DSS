@@ -17,3 +17,13 @@ Commands: `dotnet test <matching-project> --no-restore`, focused filters matchin
 Story review (same implementing agent, not independent): compared contracts, generation, configuration, scenario integration, save projection and rendering against all three story acceptance criteria. Found P2: pre-existing Sun/Planet in a source scenario could exceed the generated celestial counts. Fixed by rejecting these inputs before placement; regression checks preserve the previous live save state on failure. No remaining confirmed US-0001 findings after the correction. Orbital runtime, other scenarios and playable belt asteroids remain the subsequent stories' work.
 
 The screenshot was produced by the real screen's Skia raster rendering path, not a native presented frame. Native/GPU and final performance evidence remain US-0008; no 80 FPS claim is made.
+
+## US-0002 — coherent orbital world
+
+| Ticket | Commit | Observed validation |
+|---|---|---|
+| TK-0001 | 73f39d1 | Motion: 141/141; independent ellipse quarter positions/derivatives, both directions, Int64 epochs, non-divisible periods, compact phase, split time, linear/Approach regression |
+| TK-0002 | d628830 | Engine: 1169/1169; focused runtime 7/7; Speed0-4, independent calendar hour, docking offsets, free flight, split advance and actual save-loader continuation |
+| TK-0003 | 392ae4c | Client: 1582/1582; render poses, pause/resume, docked prediction, real Default raster and epoch-zero trail regression; scoped format and diff checks |
+
+Story review (same agent): checked clock domains, Int128 remainder before floating-point conversion, derivative units/headings, all orbit prediction paths, immutable snapshot metadata, docking binding and release, persistence and client visual reconciliation. The full Client run exposed pre-zero trail bootstrap; TK-0003 fixes it only for orbital history. No remaining confirmed US-0002 findings. Current scenario stations acquire generated orbital elements in US-0004; runtime support is already exercised by station fixtures. No native/GPU evidence is claimed.
