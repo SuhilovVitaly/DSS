@@ -269,14 +269,14 @@ public sealed class FinanceScreen : IScreen
         ? TradeScreen.F("Tokens", value.ToString("N0", CultureInfo.CurrentCulture)) : Localization.Get("Finance.Unavailable");
     internal static string RouteText(VoyageFinanceSnapshot f) => string.Format(CultureInfo.CurrentCulture,
         Localization.Get("Finance.VoyageRoute"), f.OriginStationObjectId, f.DestinationStationObjectId ?? "—");
-    internal static string StateText(string state) => Localization.Get("Finance.VoyageState." + (state switch
+    internal static string StateText(string state) => Localization.Get(state switch
     {
-        VoyageFinanceStates.InTransit => "InTransit",
-        VoyageFinanceStates.AwaitingRealization => "AwaitingRealization",
-        VoyageFinanceStates.Finalized => "Finalized",
-        VoyageFinanceStates.Interrupted => "Interrupted",
-        _ => "Interrupted"
-    }));
+        VoyageFinanceStates.InTransit => "Finance.VoyageState.InTransit",
+        VoyageFinanceStates.AwaitingRealization => "Finance.VoyageState.AwaitingRealization",
+        VoyageFinanceStates.Finalized => "Finance.VoyageState.Finalized",
+        VoyageFinanceStates.Interrupted => "Finance.VoyageState.Interrupted",
+        _ => "Finance.Unavailable"
+    });
     internal VoyageFinanceSnapshot? SelectedReport => Reports.IsEmpty ? null : Reports[SelectedIndex(Reports)];
     internal int DetailScroll => _detailScroll;
     internal sealed record FinanceRow(string Label, string Value, bool IsCargo = false);

@@ -139,6 +139,7 @@ public sealed partial class SimulationEngine
                 + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length);
             if (needed == 0) continue;
             var modules = ship.Modules.ToBuilder();
+            var finance = _voyageLedgers;
             if (_registry.ItemTypes.Contains("item.food-rations"))
             {
                 int ration = _registry.ItemTypes.GetIndex("item.food-rations");
@@ -153,6 +154,7 @@ public sealed partial class SimulationEngine
                         needed -= consumed;
                         if (consumed == 0) continue;
                         var removed = RemoveCargoCost(cargo[c], consumed);
+                        finance = PrepareVoyageCargoRemoval(finance, ration, consumed);
                         if (removed.Remaining is null) cargo.RemoveAt(c);
                         else cargo[c] = removed.Remaining;
                     }
@@ -166,6 +168,7 @@ public sealed partial class SimulationEngine
                 }
             }
             _objects[i] = ship with { Modules = modules.ToImmutable() };
+            _voyageLedgers = finance;
             _economyTime = _economyTime with { MissingRations = _economyTime.MissingRations + needed };
             if (needed > 0)
                 RecordShipEvent(ship.InitialMotion.ObjectId, "", ShipEventTypes.RationsShortage,

@@ -194,7 +194,7 @@ internal sealed class TradeJournal
         var finances = buffer.Latest?.Snapshot.VoyageFinances ?? default;
         var currentIds = new HashSet<string>(StringComparer.Ordinal);
         if (!finances.IsDefaultOrEmpty)
-            foreach (var report in finances)
+            foreach (var report in finances.TakeLast(50))
             {
                 if (report is null || string.IsNullOrWhiteSpace(report.VoyageId) || !currentIds.Add(report.VoyageId)) continue;
                 if (!_voyages.ContainsKey(report.VoyageId)) AddDisplay(report.VoyageId, true);

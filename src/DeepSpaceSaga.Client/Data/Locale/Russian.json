@@ -286,7 +286,7 @@
   "Finance.PassengerPenalty": "Пассажирские штрафы",
   "Finance.NetProfit": "Чистая прибыль",
   "Finance.Unavailable": "Недоступно",
-  "Finance.UnsoldCargo": "{0}: {1} · Себестоимость: {2}",
+  "Finance.UnsoldCargo": "Непроданный груз: {0} · {1} · Себестоимость: {2}",
   "Finance.NoVoyages": "Отчётов о рейсах пока нет",
   "Trade.VoyageSummary": "{0} · {1} · {2}",
   "Trade.VoyageProfit": "Прибыль: {0}",

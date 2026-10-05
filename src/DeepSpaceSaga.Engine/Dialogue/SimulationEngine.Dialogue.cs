@@ -167,7 +167,11 @@ public sealed partial class SimulationEngine
         var error = PrepareChoice(active, choice, time, out var result);
         if (error is not null) return error;
         System.Collections.Immutable.ImmutableArray<VoyageLedgerEntry> finance;
-        try { finance = PrepareVoyageDockingFinance(result!.Objects, result.Credits); }
+        try
+        {
+            finance = PrepareVoyageDockingFinance(result!.Objects, result.Credits);
+            foreach (var removed in result.CargoRemovals) finance = PrepareVoyageCargoRemoval(finance, removed.ItemTypeIndex, removed.Quantity);
+        }
         catch (OverflowException) { return "dialogue_value_overflow"; }
         _objects.Clear();
         _objects.AddRange(result!.Objects);

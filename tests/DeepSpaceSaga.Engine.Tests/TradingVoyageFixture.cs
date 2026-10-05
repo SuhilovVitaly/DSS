@@ -1,5 +1,6 @@
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Engine.Content;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
@@ -42,13 +43,13 @@ internal sealed class TradingVoyageFixture : IDisposable
     internal static TradingVoyageFixture Create(ulong seed = 1, bool controlled = true,
         long initialDebt = 0, long? destinationBudget = null,
         long calendarRatio = DefaultCalendarRatio, long initialCredits = 1_000_000,
-        Func<ScenarioFile, ScenarioFile>? adjust = null)
+        Func<ScenarioFile, ScenarioFile>? adjust = null, GameDataRegistry? registry = null)
     {
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
             "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
         var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "Docked", "scenario.json"));
         scenario = scenario with { GameState = scenario.GameState with { MasterSeed = seed, PlayerTokens = initialCredits } };
-        var engine = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
+        var engine = new SimulationEngine(registry ?? QuotedTradeExecutionTests.RealRegistry());
         engine.LoadScenario(scenario);
         var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
         string origin = save.GameState.SpaceObjects.Single(o => o.ObjectId == ShipId).DockedStationObjectId!;
@@ -92,7 +93,7 @@ internal sealed class TradingVoyageFixture : IDisposable
                 }
             };
             engine.Dispose();
-            var prepared = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
+            var prepared = new SimulationEngine(registry ?? QuotedTradeExecutionTests.RealRegistry());
             prepared.LoadScenario(adjust is null ? controlledSave : adjust(controlledSave), isSave: true);
             return new TradingVoyageFixture(prepared, origin, neighbor, outbound, returning,
                 calendarRatio);

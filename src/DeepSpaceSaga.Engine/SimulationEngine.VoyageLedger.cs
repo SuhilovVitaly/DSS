@@ -182,4 +182,30 @@ public sealed partial class SimulationEngine
     private ImmutableArray<VoyageFinanceSnapshot> BuildVoyageFinanceProjection() =>
         _voyageLedgers.Select(v => v.Finance).ToImmutableArray();
 
+    private ImmutableArray<VoyageLedgerEntry> PrepareVoyageCargoRemoval(ImmutableArray<VoyageLedgerEntry> entries,
+        int itemTypeIndex, long removedQuantity)
+    {
+        if (removedQuantity <= 0) return entries;
+        string itemId = _registry.ItemTypes.GetDefinition(itemTypeIndex).TypeId;
+        for (int i = entries.Length - 1; i >= 0; i--)
+        {
+            var entry = entries[i]; var f = entry.Finance;
+            if (f.State is not (VoyageFinanceStates.InTransit or VoyageFinanceStates.AwaitingRealization)) continue;
+            for (int c = 0; c < f.UnsoldCargo.Length; c++)
+            {
+                var carried = f.UnsoldCargo[c];
+                if (carried.ItemTypeId != itemId) continue;
+                long removed = Math.Min(carried.Quantity, removedQuantity);
+                long? basis = carried.CostBasisCredits is { } known
+                    ? known - AllocateFuelCostBasis(carried.Quantity, known, removed) : null;
+                var remainder = carried with { Quantity = carried.Quantity - removed, CostBasisCredits = basis };
+                f = f with { UnsoldCargo = remainder.Quantity == 0 ? f.UnsoldCargo.RemoveAt(c) : f.UnsoldCargo.SetItem(c, remainder) };
+                // Consumption/grants have no sales posting and never manufacture COGS or net profit.
+                return entries.SetItem(i, entry with { Finance = f });
+            }
+            return entries;
+        }
+        return entries;
+    }
+
 }

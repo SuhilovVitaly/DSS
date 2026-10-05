@@ -293,4 +293,11 @@ public class FinanceScreenTests
             File.WriteAllBytes(Path.Combine(directory, "voyage-finance.png"), data.ToArray());
         }
     }
+    [Fact]
+    public void Unknown_finance_state_is_unavailable_and_does_not_claim_interruption()
+    {
+        Assert.Equal(Localization.Get("Finance.Unavailable"), FinanceScreen.StateText("future-state"));
+        Assert.NotEqual(FinanceScreen.StateText(VoyageFinanceStates.Interrupted), FinanceScreen.StateText("future-state"));
+    }
+
 }

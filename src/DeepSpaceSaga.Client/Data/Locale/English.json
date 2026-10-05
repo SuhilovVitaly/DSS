@@ -286,7 +286,7 @@
   "Finance.PassengerPenalty": "Passenger penalty",
   "Finance.NetProfit": "Net profit",
   "Finance.Unavailable": "Unavailable",
-  "Finance.UnsoldCargo": "{0}: {1} · Cost basis: {2}",
+  "Finance.UnsoldCargo": "Unsold cargo: {0} · {1} · Cost basis: {2}",
   "Finance.NoVoyages": "No voyage reports yet",
   "Trade.VoyageSummary": "{0} · {1} · {2}",
   "Trade.VoyageProfit": "Profit: {0}",
