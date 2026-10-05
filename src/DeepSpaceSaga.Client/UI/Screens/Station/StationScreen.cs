@@ -52,6 +52,10 @@ public sealed class StationScreen : IScreen
     private bool _isExitButtonHovered;
     private string? _selectedDestinationId;
     private string? _selectionStationId;
+    private int _routeScroll;
+    internal int RouteScrollOffset => _routeScroll;
+    internal System.Collections.Immutable.ImmutableArray<StationRouteRow> RouteRows =>
+        StationRoutePresentation.Build(_buffer?.Latest?.Snapshot.TradingRoutes ?? default);
 
     internal string? SelectedVoyageDestinationObjectId
     {
@@ -68,7 +72,8 @@ public sealed class StationScreen : IScreen
         {
             RefreshRouteSelection(_buffer?.Latest?.Snapshot);
             var options = _buffer?.Latest?.Snapshot.Voyage?.RouteOptions ?? default;
-            return !options.IsDefaultOrEmpty && options.Any(option => option.IsAvailable &&
+            return RouteRows.Any(r => r.DestinationStationObjectId == _selectedDestinationId && r.IsEnabled) &&
+                !options.IsDefaultOrEmpty && options.Any(option => option.IsAvailable &&
                 option.BlockReasonCode is null && option.DestinationStationObjectId == _selectedDestinationId)
                 ? _selectedDestinationId : null;
         }
@@ -80,14 +85,16 @@ public sealed class StationScreen : IScreen
         if (stationId != _selectionStationId)
             _selectedDestinationId = null;
         _selectionStationId = stationId;
-        if (snapshot?.Voyage is not { Phase: VoyagePhases.Docked } voyage || voyage.RouteOptions.IsDefaultOrEmpty)
+        var rows = StationRoutePresentation.Build(snapshot?.TradingRoutes ?? default);
+        _routeScroll = Math.Clamp(_routeScroll, 0, Math.Max(0, rows.Length - StationLayout.VisibleRouteRows));
+        if (snapshot?.Voyage is not { Phase: VoyagePhases.Docked } voyage || voyage.RouteOptions.IsDefaultOrEmpty || rows.IsDefaultOrEmpty)
         {
             _selectedDestinationId = null;
             return;
         }
-        if (!voyage.RouteOptions.Any(option => option.DestinationStationObjectId == _selectedDestinationId))
-            _selectedDestinationId = voyage.RouteOptions.FirstOrDefault(option => option.IsAvailable &&
-                option.BlockReasonCode is null)?.DestinationStationObjectId;
+        if (!rows.Any(row => row.DestinationStationObjectId == _selectedDestinationId && row.IsEnabled))
+            _selectedDestinationId = rows.FirstOrDefault(row => row.IsEnabled && voyage.RouteOptions.Any(option =>
+                option.DestinationStationObjectId == row.DestinationStationObjectId && option.IsAvailable && option.BlockReasonCode is null))?.DestinationStationObjectId;
     }
 
     internal static string RouteOptionText(VoyageRouteOptionSnapshot option) =>
@@ -97,6 +104,7 @@ public sealed class StationScreen : IScreen
     {
         CommandReasonCodes.VoyageDestinationRequired => "Select a destination",
         CommandReasonCodes.VoyageDestinationUnavailable => "Destination unavailable",
+        CommandReasonCodes.RouteUnavailable => "Route temporarily unavailable",
         CommandReasonCodes.VoyageAlreadyActive => "A voyage is already active",
         CommandReasonCodes.VoyageWrongDestination => "Dock at the voyage destination",
         CommandReasonCodes.VoyageOutstandingDebt => "Settle outstanding port debt",
@@ -191,16 +199,15 @@ public sealed class StationScreen : IScreen
         if (_session?.StationTravelPending == true) return ScreenEvent.None;
         RefreshRouteSelection(_buffer?.Latest?.Snapshot);
         var voyage = _buffer?.Latest?.Snapshot.Voyage;
-        if (voyage is { Phase: VoyagePhases.Docked } && !voyage.RouteOptions.IsDefaultOrEmpty)
-        {
-            for (int i = 0; i < voyage.RouteOptions.Length; i++)
+        var rows = RouteRows;
+        if (voyage is { Phase: VoyagePhases.Docked })
+            for (int i = 0; i < Math.Min(StationLayout.VisibleRouteRows, rows.Length - _routeScroll); i++)
             {
                 if (!RouteRect(i).Contains(x, y)) continue;
-                var option = voyage.RouteOptions[i];
-                _selectedDestinationId = option.DestinationStationObjectId;
+                var row = rows[i + _routeScroll];
+                if (row.IsEnabled) _selectedDestinationId = row.DestinationStationObjectId;
                 return ScreenEvent.None;
             }
-        }
         for (int i = 0; i < 4; i++)
         {
             var rect = DistrictRect(i);
@@ -219,7 +226,7 @@ public sealed class StationScreen : IScreen
         if (hit == StationButton.Contracts)
             return ScreenEvent.OpenContracts;
         if (hit == StationButton.Undock)
-            return voyage is null || SelectedDestinationId is not null ? ScreenEvent.Undock : ScreenEvent.None;
+            return _buffer is null || SelectedDestinationId is not null ? ScreenEvent.Undock : ScreenEvent.None;
 
         if (IsExitButtonHit(x, y))
             return ScreenEvent.CloseStation;
@@ -266,7 +273,8 @@ public sealed class StationScreen : IScreen
         return _hoveredButton != StationButton.None || _isExitButtonHovered ||
             Enumerable.Range(0, 4).Any(i => DistrictRect(i).Contains(x, y)) ||
             (_buffer?.Latest?.Snapshot.Voyage is { Phase: VoyagePhases.Docked } voyage &&
-             !voyage.RouteOptions.IsDefaultOrEmpty && Enumerable.Range(0, voyage.RouteOptions.Length).Any(i => RouteRect(i).Contains(x, y)));
+             RouteRows.Skip(_routeScroll).Take(StationLayout.VisibleRouteRows).Select((row, i) => (row, i))
+                 .Any(entry => entry.row.IsEnabled && RouteRect(entry.i).Contains(x, y)));
     }
 
     /// <summary>True when (x, y) lands on the toolbar's exit-button icon (see StationToolbar).</summary>
@@ -314,7 +322,16 @@ public sealed class StationScreen : IScreen
         return x >= pl + local.Left && x <= pl + local.Right && y >= pt + local.Top && y <= pt + local.Bottom;
     }
 
-    public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
+    public ScreenEvent OnMouseWheel(float x, float y, float delta)
+    {
+        RefreshRouteSelection(_buffer?.Latest?.Snapshot);
+        var viewport = StationLayout.RouteViewportLocalRect();
+        if (delta != 0 && float.IsFinite(delta) && x >= StationLayout.PanelLeft(_screenWidth) + viewport.Left &&
+            x <= StationLayout.PanelLeft(_screenWidth) + viewport.Right && y >= StationLayout.PanelTop(_screenHeight) + viewport.Top &&
+            y <= StationLayout.PanelTop(_screenHeight) + viewport.Bottom)
+            _routeScroll = Math.Clamp(_routeScroll + (delta < 0 ? 1 : -1), 0, Math.Max(0, RouteRows.Length - StationLayout.VisibleRouteRows));
+        return ScreenEvent.None;
+    }
 
     public void Render(SKCanvas canvas, int width, int height)
     {
@@ -346,25 +363,7 @@ public sealed class StationScreen : IScreen
         DrawContractsButton(canvas, pl, pt);
         DrawUndockButton(canvas, pl, pt);
 
-        if (snapshot?.Voyage is { Phase: VoyagePhases.Docked } currentVoyage)
-        {
-            var routeOptions = currentVoyage.RouteOptions.IsDefault
-                ? System.Collections.Immutable.ImmutableArray<VoyageRouteOptionSnapshot>.Empty : currentVoyage.RouteOptions;
-            canvas.DrawText("DESTINATION", pl + 400, pt + 430, MenuStyle.TextStatus);
-            for (int i = 0; i < routeOptions.Length; i++)
-            {
-                var option = routeOptions[i];
-                string label = RouteOptionText(option);
-                if (!option.IsAvailable || option.BlockReasonCode is not null) label += "  (blocked)";
-                MenuStyle.DrawButton(canvas, RouteRect(i), label,
-                    option.DestinationStationObjectId == _selectedDestinationId ? ButtonState.Pressed :
-                    !option.IsAvailable ? ButtonState.Disabled : ButtonState.Normal);
-            }
-            var selected = routeOptions.FirstOrDefault(o => o.DestinationStationObjectId == _selectedDestinationId);
-            var reason = selected?.BlockReasonCode ?? currentVoyage.BlockReasonCode;
-            if (reason is not null)
-                canvas.DrawText(DepartureReasonText(reason), pl + 400, pt + 645, MenuStyle.TextStatus);
-        }
+        DrawRoutes(canvas, snapshot, pl, pt);
 
         string[] districts = ["Док", "Рынок", "Жилой район", "Администрация"];
         for (int i = 0; i < districts.Length; i++)
@@ -398,9 +397,44 @@ public sealed class StationScreen : IScreen
 
     private SKRect RouteRect(int index)
     {
-        float left = StationLayout.PanelLeft(_screenWidth) + 400;
-        float top = StationLayout.PanelTop(_screenHeight) + 445 + index * 38;
-        return new SKRect(left, top, left + 500, top + 32);
+        var r = StationLayout.RouteRowLocalRect(index);
+        return new SKRect(StationLayout.PanelLeft(_screenWidth) + r.Left, StationLayout.PanelTop(_screenHeight) + r.Top,
+            StationLayout.PanelLeft(_screenWidth) + r.Right, StationLayout.PanelTop(_screenHeight) + r.Bottom);
+    }
+
+    private void DrawRoutes(SKCanvas canvas, AuthoritativeSnapshot? snapshot, float pl, float pt)
+    {
+        var rows = RouteRows;
+        using var text = MenuStyle.TextStatus.Clone();
+        text.TextAlign = SKTextAlign.Left;
+        text.TextSize = 12;
+        canvas.DrawText("DESTINATION", pl + 400, pt + 430, text);
+        var v = StationLayout.RouteViewportLocalRect();
+        canvas.Save();
+        canvas.ClipRect(new(pl + v.Left, pt + v.Top, pl + v.Right, pt + v.Bottom));
+        if (rows.IsDefaultOrEmpty) canvas.DrawText(StationRoutePresentation.EmptyMessage, pl + 410, pt + 465, text);
+        for (int i = 0; i < Math.Min(StationLayout.VisibleRouteRows, rows.Length - _routeScroll); i++)
+        {
+            var row = rows[i + _routeScroll];
+            var rect = RouteRect(i);
+            canvas.DrawRect(rect, row.DestinationStationObjectId == _selectedDestinationId ? MenuStyle.ButtonFillPressed : MenuStyle.ButtonFillNormal);
+            canvas.DrawRect(rect, MenuStyle.ButtonBorder);
+            text.Color = !row.IsEnabled ? MenuStyle.ColorTextDim : row.Availability == TradingRouteAvailability.Restricted || row.Risk == TradingRouteRisk.Elevated
+                ? new SKColor(255, 190, 80) : MenuStyle.ColorText;
+            canvas.DrawText(row.PrimaryText, rect.Left + 8, rect.Top + 15, text);
+            canvas.DrawText(row.SecondaryText, rect.Left + 8, rect.Top + 33, text);
+            string? blocker = snapshot?.Voyage?.RouteOptions.IsDefaultOrEmpty == false ? snapshot.Voyage.RouteOptions
+                .FirstOrDefault(o => o.DestinationStationObjectId == row.DestinationStationObjectId)?.BlockReasonCode : null;
+            string? reason = row.ReasonText is null ? null : string.Join("; ", row.ReasonText.Split("; ").Select(Localization.Get));
+            string context = string.Join("  ", new[] { reason, row.ActiveEventText, blocker is null ? null : DepartureReasonText(blocker) }
+                .Where(t => !string.IsNullOrEmpty(t)));
+            if (context.Length > 0) canvas.DrawText(context, rect.Left + 8, rect.Top + 51, text);
+        }
+        canvas.Restore();
+        if (rows.Length > StationLayout.VisibleRouteRows)
+            canvas.DrawText($"{_routeScroll + 1}-{Math.Min(_routeScroll + StationLayout.VisibleRouteRows, rows.Length)} / {rows.Length}  Scroll", pl + 400, pt + 745, text);
+        if (snapshot?.Voyage?.BlockReasonCode is { } reasonCode)
+            canvas.DrawText(DepartureReasonText(reasonCode), pl + 400, pt + 775, text);
     }
 
     private void DrawTradeButton(SKCanvas canvas, float panelLeft, float panelTop)
@@ -446,7 +480,7 @@ public sealed class StationScreen : IScreen
         var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
 
         MenuStyle.DrawButton(canvas, rect, "UNDOCK",
-            _buffer?.Latest?.Snapshot.Voyage is not null && SelectedDestinationId is null ? ButtonState.Disabled :
+            _buffer is not null && SelectedDestinationId is null ? ButtonState.Disabled :
             _hoveredButton == StationButton.Undock ? ButtonState.Hovered : ButtonState.Normal);
     }
 }

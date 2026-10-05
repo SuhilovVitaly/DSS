@@ -82,6 +82,8 @@ internal sealed class VoyageUiFixture : IAsyncDisposable
             DockedStationTrade = station is null ? null : original.DockedStationTrade! with
             { StationObjectId = station, MarketRevision = (long)sequence },
             PortFees = station is null ? null : new(visitStart, visitStart + GameCalendar.DayMs, 0),
+            TradingRoutes = station is null ? [] : [new(station, station == "A" ? "B" : "A", "Short", 1000, 1000, 1000, 1000,
+                "risk.safe", TradingRouteRisk.Safe, TradingRouteAvailability.Available)],
             Voyage = new(station is null ? VoyagePhases.InTransit : VoyagePhases.Docked,
                 RouteOptions: station is null ? [] :
                     [new(station == "A" ? "B" : "A", station == "A" ? "B" : "A", 1000, "Short")])
