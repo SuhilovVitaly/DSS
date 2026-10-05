@@ -42,6 +42,7 @@ public sealed partial class SimulationEngine
             IncludeBoundary(NextContractDeadline());
             IncludeBoundary(NextProductionTime());
             IncludeBoundary(NextMarketHourTime());
+            IncludeBoundary(NextMarketEventTime());
             IncludeBoundary(NextResourceSurveyTime());
 
             // Only boundaries in (processed, target] may move the cursor. A stale
@@ -57,11 +58,12 @@ public sealed partial class SimulationEngine
             CompleteResourceSurveys(next);
             CompleteProduction(next);
             if (next != long.MaxValue && next % GameCalendar.HourMs == 0) ApplyMarketEventAndHour(next);
+            else ExpireMarketEvents(next);
             FlushPendingOutputs();
             if (next == nextMeal && next % MealIntervalMs == 0) ConsumeScheduledRations(next);
             RenewPortFees(next);
             ApplyContractDeadlines(next);
-            CommitChangedMarketRevisions();
+            CommitChangedMarketRevisions(next);
             _processedWorldTimeMs = next;
         }
         AdvanceMotionTo(simulationTimeMs, SurveyCalendarAt);
@@ -81,7 +83,7 @@ public sealed partial class SimulationEngine
         {
             var obj = _objects[i];
             if (obj.ObjectType == SpaceObjectType.Station)
-                _marketStateBeforeBoundary.Add((obj.InitialMotion.ObjectId, obj.Inventory, obj.MarketBudgetCredits, obj.Events));
+                _marketStateBeforeBoundary.Add((obj.InitialMotion.ObjectId, obj.Inventory, obj.MarketBudgetCredits, ActiveMarketEvents(obj, _processedWorldTimeMs)));
         }
     }
 
@@ -91,7 +93,7 @@ public sealed partial class SimulationEngine
     /// Station Credits alone (port fees, dialogue payouts) are not market state. A station already at the
     /// maximum revision keeps it, but its quotes are still invalidated.
     /// </summary>
-    private void CommitChangedMarketRevisions()
+    private void CommitChangedMarketRevisions(long? atGameTimeMs = null)
     {
         foreach (var (objectId, stockBefore, budgetBefore, eventsBefore) in _marketStateBeforeBoundary)
         {
@@ -100,7 +102,7 @@ public sealed partial class SimulationEngine
             var station = _objects[i];
             if (station.ObjectType != SpaceObjectType.Station) continue;
             if (budgetBefore == station.MarketBudgetCredits && SameStock(stockBefore, station.Inventory) &&
-                (eventsBefore == station.Events || eventsBefore.IsDefaultOrEmpty && station.Events.IsDefaultOrEmpty)) continue;
+                eventsBefore.SequenceEqual(ActiveMarketEvents(station, atGameTimeMs ?? _processedWorldTimeMs))) continue;
 
             if (station.MarketRevision == long.MaxValue)
             {

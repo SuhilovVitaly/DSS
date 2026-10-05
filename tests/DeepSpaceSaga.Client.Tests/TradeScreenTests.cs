@@ -848,4 +848,21 @@ public class TradeScreenTests
         screen.OnMouseDown(TradeLayout.FuelTab.MidX, TradeLayout.FuelTab.MidY);
         Assert.Equal(TradeMode.Refuel, screen.Model.Mode);
     }
+    [Fact]
+    public async Task Event_badge_does_not_interrupt_an_existing_scroll_drag()
+    {
+        await using var handle = new GameSessionHandle(new EventUiConnection());
+        handle.Buffer.Update(SnapshotWithEvents(EventSnapshot()));
+        var screen = new TradeScreen(handle.Buffer, handle);
+        screen.OnActivated();
+        using var image = EventBitmap(screen);
+        screen.OnMouseDown(TradeLayout.Scroll.MidX, TradeLayout.Scroll.Bottom - 2);
+        Assert.True(screen.ScrollOffset > 0);
+        screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY);
+        Assert.Equal(0, screen.ScrollOffset);
+        Assert.False(screen.IsEventTooltipVisible);
+        screen.OnMouseUp(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY);
+        Assert.True(screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        Assert.True(screen.IsEventTooltipVisible);
+    }
 }

@@ -13,6 +13,44 @@ public sealed partial class SimulationEngine
     private static bool MarketEventActive(StationEventRuntime evt, long time) =>
         evt.StartedGameTimeMs <= time && (evt.DurationMs is null || time - evt.StartedGameTimeMs < evt.DurationMs.Value);
 
+    private static ImmutableArray<StationEventRuntime> ActiveMarketEvents(SpaceObjectRuntime station, long time) =>
+        station.Events.IsDefaultOrEmpty ? [] : station.Events.Where(e => MarketEventActive(e, time)).ToImmutableArray();
+
+    private long NextMarketEventTime()
+    {
+        long next = long.MaxValue;
+        foreach (var station in _objects.Where(o => o.ObjectType == SpaceObjectType.Station && !o.Events.IsDefaultOrEmpty))
+            foreach (var evt in station.Events)
+            {
+                if (evt.StartedGameTimeMs > _processedWorldTimeMs) next = Math.Min(next, evt.StartedGameTimeMs);
+                if (evt.DurationMs is { } duration)
+                {
+                    long end = checked(evt.StartedGameTimeMs + duration);
+                    if (end > _processedWorldTimeMs) next = Math.Min(next, end);
+                }
+            }
+        return next;
+    }
+
+    private void ExpireMarketEvents(long time)
+    {
+        for (int i = 0; i < _objects.Count; i++)
+        {
+            var station = _objects[i];
+            if (station.ObjectType != SpaceObjectType.Station || station.Events.IsDefaultOrEmpty) continue;
+            var retained = station.Events.Where(e => e.DurationMs is null || e.StartedGameTimeMs > time ||
+                time - e.StartedGameTimeMs < e.DurationMs.Value).ToImmutableArray();
+            if (retained.Length != station.Events.Length) _objects[i] = station with { Events = retained };
+        }
+    }
+
+    private static bool FitsMarketEventWindow(List<StationEventRuntime> existing, StationEventRuntime candidate)
+    {
+        long end = checked(candidate.StartedGameTimeMs + candidate.DurationMs!.Value);
+        return existing.Select(e => e.StartedGameTimeMs).Where(t => t >= candidate.StartedGameTimeMs && t < end)
+            .Append(candidate.StartedGameTimeMs).All(t => existing.Count(e => MarketEventActive(e, t)) < 2);
+    }
+
     private static ulong MarketEventRoll(ulong seed, string stationId, string definitionId, long hour, string purpose) =>
         RngStreamSeedDerivation.DeriveStreamSeed(seed,
             FormattableString.Invariant($"market-event:{purpose}:{stationId}:{definitionId}:{hour}"));
@@ -46,9 +84,10 @@ public sealed partial class SimulationEngine
                     .Where(e => e.EligibleMarketProfileIds.Contains(profileId, StringComparer.Ordinal) &&
                         !events.Any(active => active.DefinitionId == e.TypeId && MarketEventActive(active, time)) &&
                         MarketEventRoll(MasterSeed, station.InitialMotion.ObjectId, e.TypeId, hour, "roll") % 1000 < (ulong)e.ChancePermillePerHour)
-                    .OrderByDescending(e => e.Priority).ThenBy(e => e.TypeId, StringComparer.Ordinal).Take(slots).ToArray();
+                    .OrderByDescending(e => e.Priority).ThenBy(e => e.TypeId, StringComparer.Ordinal).ToArray();
                 foreach (var definition in candidates)
                 {
+                    if (slots == 0) break;
                     long hours = definition.MinDurationHours + (long)(MarketEventRoll(MasterSeed, station.InitialMotion.ObjectId,
                         definition.TypeId, hour, "duration") % (ulong)(definition.MaxDurationHours - definition.MinDurationHours + 1));
                     long duration = checked(hours * GameCalendar.HourMs);
@@ -58,8 +97,11 @@ public sealed partial class SimulationEngine
                     var evt = new StationEventRuntime(id, string.Empty, null, time, duration, EventPriceFactors(definition),
                         definition.TypeId, definition.DisplayNameKey, definition.DescriptionKey, definition.EffectSummaryKey,
                         EventItemEffects(definition), EventRouteEffect(definition), true);
+                    // Authored future events reserve capacity only where their intervals overlap.
+                    if (!FitsMarketEventWindow(events, evt)) continue;
                     station = ApplyActivationStockDeltas(station, evt);
                     events.Add(evt);
+                    slots--;
                 }
             }
             // Preserve the same array when no event changed, so revision tracking stays allocation-free.
@@ -182,7 +224,8 @@ public sealed partial class SimulationEngine
                 ActivationStockDeltaApplied = true
             };
         }
-        if (resolved.Count(e => MarketEventActive(e, time)) > 2)
+        if (resolved.Select(e => e.StartedGameTimeMs).Where(t => t >= time).Append(time)
+            .Any(t => resolved.Count(e => MarketEventActive(e, t)) > 2))
             throw new ScenarioException($"Station '{station.ObjectId}' has more than two simultaneous active events. Save was not modified.");
         return resolved.ToImmutable();
     }

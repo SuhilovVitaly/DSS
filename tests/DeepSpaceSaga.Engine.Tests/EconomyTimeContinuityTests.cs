@@ -1649,4 +1649,57 @@ public class EconomyTimeContinuityTests
             foreach (var (item, quantity) in stock) Assert.Equal(quantity, MarketStock(engine, registry, item));
         }
     }
+    [Fact]
+    public void MarketEvent_future_authored_event_cannot_push_generated_set_over_two()
+    {
+        var definitions = new[] { MarketEventDefinition(), MarketEventDefinition("event.decompression") };
+        var (engine, _) = CreateEventEngine(definitions, adjust: s => s with
+        {
+            GameState = s.GameState with
+            {
+                SpaceObjects = s.GameState.SpaceObjects.Select(o => o.ObjectType != "Station" ? o : o with
+                { Events = [new("future", "Future authored event", null, GameCalendar.HourMs + 100, GameCalendar.HourMs, [])] }).ToArray(),
+            }
+        });
+        using (engine)
+        {
+            var first = engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 0).DockedStationTrade!;
+            Assert.Single(first.ActiveEvents);
+            var overlapping = engine.CaptureSnapshotForTests(GameCalendar.HourMs + 100, simulationTimeMs: 0).DockedStationTrade!;
+            Assert.Equal(2, overlapping.ActiveEvents.Length);
+            Assert.Contains(overlapping.ActiveEvents, e => e.EventId == "future");
+            var save = engine.CaptureSaveStateForTests(GameCalendar.HourMs + 100, SimulationSpeed.Speed0, 0);
+            using var loaded = new SimulationEngine(MarketRegistry(BoundedProfile(), marketEvents: definitions));
+            loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
+        }
+    }
+
+    [Fact]
+    public void MarketEvent_authored_subhour_start_and_end_invalidate_quotes_exactly_once()
+    {
+        var profile = BoundedProfile() with { Economy = null };
+        var (engine, _) = CreateEventEngine([], profile: profile, adjust: s => s with
+        {
+            GameState = s.GameState with
+            {
+                SpaceObjects = s.GameState.SpaceObjects.Select(o => o.ObjectType != "Station" ? o : o with
+                { Events = [new("timed", "Timed", null, 500, 500, [new(null, "item.ice", 2000)])] }).ToArray(),
+            }
+        });
+        using (engine)
+        {
+            var quote = engine.GetTradeQuote(new TradeQuoteRequest("before-timed", "SPC-0001", "MOD-PLAYER-CARGO-01", TradeCommandTypes.Buy, "item.ice", 1));
+            Assert.Null(quote.DisabledReason);
+            var before = engine.CaptureSnapshotForTests(499, simulationTimeMs: 0).DockedStationTrade!;
+            var active = engine.CaptureSnapshotForTests(500, simulationTimeMs: 0).DockedStationTrade!;
+            Assert.Equal(before.MarketRevision + 1, active.MarketRevision);
+            Assert.Equal(active.MarketRevision, engine.CaptureSnapshotForTests(999, simulationTimeMs: 0).DockedStationTrade!.MarketRevision);
+            engine.ReceiveCommand(new PlayerCommand("old-timed", 1, "SPC-0001", "MOD-PLAYER-CARGO-01", TradeCommandTypes.Buy,
+                ItemTypeId: "item.ice", Quantity: 1, QuoteId: quote.QuoteId, MarketRevision: quote.MarketRevision));
+            Assert.Equal(CommandReasonCodes.StaleQuote, Assert.Single(engine.CaptureSnapshotForTests(999, simulationTimeMs: 0).CommandResults).ReasonCode);
+            var ended = engine.CaptureSnapshotForTests(1000, simulationTimeMs: 0).DockedStationTrade!;
+            Assert.Equal(active.MarketRevision + 1, ended.MarketRevision);
+            Assert.Empty(ended.ActiveEvents);
+        }
+    }
 }
