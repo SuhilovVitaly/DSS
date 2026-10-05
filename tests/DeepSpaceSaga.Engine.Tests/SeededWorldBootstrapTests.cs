@@ -107,6 +107,14 @@ public sealed class SeededWorldBootstrapTests
         var ex = Assert.Throws<ScenarioException>(() => engine.LoadScenario(input, generation: config));
         Assert.Contains("seed=1 version=1 stage=placement attempt=3", ex.Message);
         Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+        foreach (string type in new[] { "Sun", "Planet" })
+        {
+            var celestial = new SpaceObjectData("existing", type, "Permanent", null, 0, 0, 0, 0, "Stationary", null, null, null);
+            var invalid = input with { GameState = input.GameState with { SpaceObjects = [.. input.GameState.SpaceObjects, celestial] } };
+            Assert.Contains("source already contains celestial", Assert.Throws<ScenarioException>(() =>
+                engine.LoadScenario(invalid, generation: GenerationInputSchemaTests.Config())).Message);
+            Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+        }
         var collision = scenario.GameState.SpaceObjects[0] with { ObjectId = "sys-sun", ObjectType = "Asteroid", Modules = null, ShipClassId = null };
         input = input with { GameState = input.GameState with { SpaceObjects = [.. input.GameState.SpaceObjects, collision] } };
         Assert.Contains("collision", Assert.Throws<ScenarioException>(() => engine.LoadScenario(input, generation: GenerationInputSchemaTests.Config())).Message);

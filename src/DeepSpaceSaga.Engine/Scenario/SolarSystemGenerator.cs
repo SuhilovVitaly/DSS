@@ -14,6 +14,9 @@ internal static class SolarSystemGenerator
         if (source.GameState.SolarSystem is not null)
             throw new ScenarioException("solar-system/v1: New Game already has a materialized system.");
         var objects = source.GameState.SpaceObjects.OrderBy(o => o.ObjectId, StringComparer.Ordinal).ToArray();
+        if (objects.Any(o => o.ObjectType.Equals("Sun", StringComparison.OrdinalIgnoreCase) ||
+            o.ObjectType.Equals("Planet", StringComparison.OrdinalIgnoreCase)))
+            throw new ScenarioException($"solar-system/v1 seed={masterSeed} version=1 stage=input: source already contains celestial bodies.");
         var player = objects.Single(o => string.Equals(o.ObjectId, source.GameState.PlayerShipObjectId, StringComparison.OrdinalIgnoreCase));
         var engine = (player.Modules ?? []).OrderBy(m => m.ModuleId, StringComparer.Ordinal)
             .Where(m => m.PowerState == "On" && m.OperationalState == "Ready" && m.StructurePoints > 0)
