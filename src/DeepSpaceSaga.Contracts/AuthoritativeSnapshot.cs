@@ -61,7 +61,10 @@ public sealed record AuthoritativeSnapshot(
     [property: JsonPropertyName("solarSystemMap")] SolarSystemMapSnapshot? SolarSystemMap = null,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<TradingRouteSnapshot>))]
     ImmutableArray<TradingRouteSnapshot> TradingRoutes = default,
-    VoyageFuelSettlementSnapshot? LastVoyageFuelSettlement = null)
+    VoyageFuelSettlementSnapshot? LastVoyageFuelSettlement = null,
+    /// <summary>Recent voyage reports, oldest-first/newest-last, maximum fifty; legacy snapshots have none.</summary>
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<VoyageFinanceSnapshot>))]
+    ImmutableArray<VoyageFinanceSnapshot> VoyageFinances = default)
 {
     /// <summary>Motion/cycle timestamp; legacy snapshots use GameTimeMs for both domains.</summary>
     [JsonIgnore]
