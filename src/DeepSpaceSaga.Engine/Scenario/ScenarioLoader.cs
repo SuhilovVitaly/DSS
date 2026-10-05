@@ -128,6 +128,11 @@ public static class ScenarioLoader
             (!receipt.LimitReasons.IsDefault && receipt.LimitReasons.Any(string.IsNullOrWhiteSpace)))
             return false;
 
+        bool hasCargoResult = receipt.RealizedCargoCostCredits is not null || receipt.GrossResultCredits is not null;
+        if (hasCargoResult && (result.CommandType != TradeCommandTypes.Sell || result.Status != CommandResultStatus.Executed ||
+            receipt.RealizedCargoCostCredits is not >= 0 || receipt.GrossResultCredits is null ||
+            receipt.GrossResultCredits != receipt.TotalCredits - receipt.RealizedCargoCostCredits.Value)) return false;
+
         if (result.Status != CommandResultStatus.Executed)
         {
             return receipt.ExecutedQuantity == 0 && receipt.TotalCredits == 0 &&

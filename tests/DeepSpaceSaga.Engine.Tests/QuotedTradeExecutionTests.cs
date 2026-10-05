@@ -905,6 +905,8 @@ public class QuotedTradeExecutionTests
                 TotalCredits = 0,
                 LimitReasons = [],
                 RequestedQuantity = -7,
+                RealizedCargoCostCredits = null,
+                GrossResultCredits = null,
                 QuotedMarketRevision = -3,
                 QuoteId = null,
                 ItemTypeId = null,

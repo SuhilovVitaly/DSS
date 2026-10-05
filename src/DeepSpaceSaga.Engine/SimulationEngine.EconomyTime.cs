@@ -151,9 +151,10 @@ public sealed partial class SimulationEngine
                         if (cargo[c].ItemTypeIndex != ration) continue;
                         long consumed = Math.Min(cargo[c].Quantity, needed);
                         needed -= consumed;
-                        long left = cargo[c].Quantity - consumed;
-                        if (left == 0) cargo.RemoveAt(c);
-                        else cargo[c] = cargo[c] with { Quantity = left };
+                        if (consumed == 0) continue;
+                        var removed = RemoveCargoCost(cargo[c], consumed);
+                        if (removed.Remaining is null) cargo.RemoveAt(c);
+                        else cargo[c] = removed.Remaining;
                     }
                     var remainingCargo = cargo.ToImmutable();
                     modules[m] = module with

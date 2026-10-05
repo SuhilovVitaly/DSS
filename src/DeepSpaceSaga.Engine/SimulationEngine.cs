@@ -2551,14 +2551,8 @@ public sealed partial class SimulationEngine : IDisposable
                 Inventory = updatedInventory,
             };
 
-            var updatedShip = UpdateModule(obj, moduleIndex, m =>
-            {
-                int stackIndex = FindCargoStackIndex(m.Cargo, itemTypeIndex);
-                var updatedCargo = stackIndex >= 0
-                    ? m.Cargo.SetItem(stackIndex, m.Cargo[stackIndex] with { Quantity = checked(m.Cargo[stackIndex].Quantity + qty) })
-                    : m.Cargo.Add(new CargoStackRuntime(itemTypeIndex, qty));
-                return m with { Cargo = updatedCargo, AvailableCapacityKg = ComputeAvailableCapacityKg(moduleType, updatedCargo) };
-            });
+            var updatedShip = UpdateModule(obj, moduleIndex,
+                m => WithCargoDelta(m, moduleType, itemTypeIndex, qty, out _, cost));
 
             PlayerCredits = updatedCredits;
             _objects[stationIndex] = updatedStation;
@@ -2613,15 +2607,8 @@ public sealed partial class SimulationEngine : IDisposable
                 Inventory = updatedInventory,
             };
 
-            var updatedShip = UpdateModule(obj, moduleIndex, m =>
-            {
-                int idx = FindCargoStackIndex(m.Cargo, itemTypeIndex);
-                long remaining = m.Cargo[idx].Quantity - executedQty;
-                var updatedCargo = remaining > 0
-                    ? m.Cargo.SetItem(idx, m.Cargo[idx] with { Quantity = remaining })
-                    : m.Cargo.RemoveAt(idx);
-                return m with { Cargo = updatedCargo, AvailableCapacityKg = ComputeAvailableCapacityKg(moduleType, updatedCargo) };
-            });
+            var updatedShip = UpdateModule(obj, moduleIndex,
+                m => WithCargoDelta(m, moduleType, itemTypeIndex, -executedQty, out _));
 
             PlayerCredits = updatedCredits;
             _objects[stationIndex] = updatedStation;
