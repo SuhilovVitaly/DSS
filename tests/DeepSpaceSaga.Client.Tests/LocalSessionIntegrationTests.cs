@@ -1085,6 +1085,239 @@ public class LocalSessionIntegrationTests
         throw new InvalidOperationException($"The snapshot stream ended without a result for '{commandId}'.");
     }
 
+    private sealed record EconomicFixture(SimulationEngine Engine, ScenarioFile Save, PlayerCommand Buy,
+        CommandResult BuyResult, TradeQuoteSnapshot IssuedQuote, string Item);
+
+    private static EconomicFixture CreateEconomicFixture(bool inFlight)
+    {
+        string settings = ResolveRealSettingsPath();
+        var engine = SimulationEngine.CreateFromSettingsFile(settings);
+        var source = ScenarioLoader.LoadFromFile(Path.Combine(Path.GetDirectoryName(settings)!, "Scenarios", "Docked", "scenario.json"));
+        engine.LoadScenario(source with
+        {
+            GameState = source.GameState with
+            {
+                MasterSeed = 1,
+                PlayerTokens = 1000000,
+                CurrentSpeed = "Speed0",
+                SpaceObjects = source.GameState.SpaceObjects.Select(o => o.ObjectId == QuoteShipId ? o with
+                { Crew = [], Passengers = [], Modules = o.Modules!.Select(m => m with { OperatorCrewId = null }).ToArray() } : o).ToArray()
+            }
+        });
+        long calendar = 0, motion = 0; ulong sequence = 0;
+        AuthoritativeSnapshot Capture() => engine.CaptureSnapshotForTests(calendar, SimulationSpeed.Speed0, motion);
+        AuthoritativeSnapshot Advance(long delta)
+        { calendar += delta; motion += delta; return Capture(); }
+        CommandResult? Send(string module, string type, string? target = null, string? item = null, long? quantity = null, TradeQuoteSnapshot? quote = null)
+        {
+            var command = new PlayerCommand($"file-fixture-{++sequence}", sequence, QuoteShipId, module, type,
+                TargetObjectId: target, ItemTypeId: item, Quantity: quantity, QuoteId: quote?.QuoteId, MarketRevision: quote?.MarketRevision);
+            engine.ReceiveCommand(command);
+            return Capture().CommandResults.SingleOrDefault(r => r.CommandId == command.CommandId);
+        }
+        void WaitUntil(Func<AuthoritativeSnapshot, bool> predicate)
+        {
+            for (int i = 0; i < 5000; i++) { if (predicate(Capture())) return; Advance(1000); }
+            throw new InvalidOperationException("Economic fixture physical command timed out.");
+        }
+        for (int i = 0; i < 48 && !engine.CaptureSaveStateForTests(calendar, SimulationSpeed.Speed0, motion).GameState.SpaceObjects.SelectMany(o => o.Events ?? []).Any(e => e.DefinitionId is not null); i++)
+            Advance(GameCalendar.HourMs);
+        var snapshot = Capture();
+        // The actual save owns all non-default market/event fields; no copied schema names.
+        var activeEvents = engine.CaptureSaveStateForTests(calendar, SimulationSpeed.Speed0, motion).GameState.SpaceObjects.SelectMany(o => o.Events ?? []).Where(e => e.DefinitionId is not null).ToArray();
+        Assert.NotEmpty(activeEvents);
+        var item = snapshot.DockedStationTrade!.Items.First(i => i.ItemTypeId != "item.fuel" && i.StockQuantity >= 3).ItemTypeId;
+        var quote = engine.GetTradeQuote(new("file-buy-quote", QuoteShipId, QuoteCargoModuleId, TradeCommandTypes.Buy, item, 3));
+        Assert.Null(quote.DisabledReason);
+        var buy = new PlayerCommand("file-buy", ++sequence, QuoteShipId, QuoteCargoModuleId, TradeCommandTypes.Buy,
+            ItemTypeId: item, Quantity: 3, QuoteId: quote.QuoteId, MarketRevision: quote.MarketRevision);
+        engine.ReceiveCommand(buy); var result = Capture().CommandResults.Single(r => r.CommandId == buy.CommandId);
+        Assert.Equal(CommandResultStatus.Executed, result.Status);
+        string destination = Capture().Voyage!.RouteOptions.First(o => o.IsAvailable).DestinationStationObjectId;
+        Assert.Equal(CommandResultStatus.Executed, Send("MOD-PLAYER-BRIDGE-01", NavigationComputerCommandTypes.Undock, destination)?.Status);
+        if (!inFlight)
+        {
+            Send("MOD-PLAYER-ENGINE-01", ShipEngineCommandTypes.Accelerate);
+            WaitUntil(s => s.Objects.Single(o => o.ObjectId == QuoteShipId).SpeedKmS > 0);
+            Send("MOD-PLAYER-ENGINE-01", NavigationComputerCommandTypes.Approach, destination);
+            WaitUntil(s => s.Objects.Single(o => o.ObjectId == QuoteShipId).ApproachRoute is not null);
+            Advance((long)Math.Ceiling(Capture().Objects.Single(o => o.ObjectId == QuoteShipId).ApproachRoute!.DurationMs));
+            Send("MOD-PLAYER-ENGINE-01", ShipEngineCommandTypes.SpeedSynchronization, destination);
+            WaitUntil(s => s.Objects.Single(o => o.ObjectId == QuoteShipId).SpeedKmS == 0);
+            if (Math.Abs(Capture().Objects.Single(o => o.ObjectId == QuoteShipId).Direction) > 1e-6)
+            {
+                Send("MOD-PLAYER-ENGINE-01", ShipEngineCommandTypes.DirectionSynchronization, destination);
+                WaitUntil(s => Math.Abs(s.Objects.Single(o => o.ObjectId == QuoteShipId).Direction) < 1e-6);
+            }
+            Assert.Equal(CommandResultStatus.Executed, Send("MOD-PLAYER-BRIDGE-01", NavigationComputerCommandTypes.Dock, destination)?.Status);
+            foreach (string choice in new[] { "truthful_id", "accept_fee", "continue" })
+            {
+                var dialogue = Capture().ActiveDialogue!;
+                Assert.True(dialogue.Choices.Single(c => c.ChoiceId == choice).Enabled);
+                engine.ReceiveDialogueCommand(new($"file-dialogue-{++sequence}", DialogueAction.Choose, dialogue.InstanceId, dialogue.Revision, choice));
+                Capture();
+            }
+            Assert.True(Capture().Objects.Single(o => o.ObjectId == QuoteShipId).IsDocked);
+        }
+        var state = engine.CaptureSaveStateForTests(calendar, SimulationSpeed.Speed0, motion);
+        engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(state), true), true); // Bind the real clock before the background loop.
+        var issued = engine.GetTradeQuote(new("file-pre-save", QuoteShipId, QuoteCargoModuleId,
+            TradeCommandTypes.Sell, item, 1));
+        return new(engine, engine.CaptureSaveState(), buy, result, issued, item);
+    }
+
+    private static string EconomicState(ScenarioFile save) => JsonSerializer.Serialize(SimulationEngine.NormalizeTradingContinuationForTests(save.GameState));
+    private static string EconomicDirectory() => Path.Combine(Path.GetTempPath(), $"dss-economic-files-{Guid.NewGuid():N}");
+    private static async Task<AuthoritativeSnapshot> NextEconomicSnapshot(IGameSessionConnection session, Func<AuthoritativeSnapshot, bool>? condition = null)
+    {
+        using var timeout = new CancellationTokenSource(QuoteTimeout);
+        await foreach (var snapshot in session.ReadSnapshotsAsync(timeout.Token))
+            if (condition is null || condition(snapshot)) return snapshot;
+        throw new InvalidOperationException("Economic snapshot stream ended.");
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Economic_session_save_and_create_from_save_preserve_full_continuation(bool inFlight)
+    {
+        string dir = EconomicDirectory();
+        try
+        {
+            var f = CreateEconomicFixture(inFlight);
+            await using (var connection = new LocalGameSessionConnection(f.Engine, dir))
+                await connection.SaveAsync("economy-roundtrip");
+            string path = Path.Combine(dir, "economy-roundtrip.json");
+            var disk = ScenarioLoader.LoadFromFile(path, true);
+            Assert.Equal(EconomicState(f.Save), EconomicState(disk));
+            Assert.Equal(15, disk.SaveFormatVersion); Assert.NotNull(disk.GameState.TradingMap);
+            Assert.NotNull(disk.GameState.StationResourceFields); Assert.NotNull(disk.GameState.TradingEconomyContinuation);
+            Assert.Single(disk.GameState.VoyageLedgers!);
+            Assert.Equal(inFlight ? VoyageFinanceStates.InTransit : VoyageFinanceStates.AwaitingRealization, disk.GameState.VoyageLedgers![0].Finance.State);
+            await using var loaded = LocalGameSessionConnection.CreateFromSaveFile(ResolveRealSettingsPath(), path, dir);
+            var snapshot = await NextEconomicSnapshot(loaded);
+            Assert.Equal(disk.GameState.GameTimeMs, snapshot.GameTimeMs);
+            Assert.Equal(disk.GameState.PlayerTokens, snapshot.PlayerCredits);
+            await loaded.SaveAsync("reloaded");
+            Assert.Equal(EconomicState(disk), EconomicState(ScenarioLoader.LoadFromFile(Path.Combine(dir, "reloaded.json"), true)));
+        }
+        finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task Loaded_economic_session_continues_without_bootstrap_or_duplicate_effect()
+    {
+        string dir = EconomicDirectory();
+        try
+        {
+            var f = CreateEconomicFixture(false);
+            Assert.Null(f.IssuedQuote.DisabledReason);
+            await using (var connection = new LocalGameSessionConnection(f.Engine, dir)) await connection.SaveAsync("good");
+            await using var loaded = LocalGameSessionConnection.CreateFromSaveFile(ResolveRealSettingsPath(), Path.Combine(dir, "good.json"), dir);
+            await NextEconomicSnapshot(loaded);
+            await loaded.SendCommandAsync(f.Buy);
+            Assert.Equal(f.BuyResult, await WaitForCommandResultAsync(loaded, f.Buy.CommandId));
+            var stale = new PlayerCommand("file-stale", 50000, QuoteShipId, QuoteCargoModuleId, TradeCommandTypes.Sell,
+                ItemTypeId: f.Item, Quantity: 1, QuoteId: f.IssuedQuote.QuoteId, MarketRevision: f.IssuedQuote.MarketRevision);
+            await loaded.SendCommandAsync(stale);
+            Assert.Equal(CommandReasonCodes.StaleQuote, (await WaitForCommandResultAsync(loaded, stale.CommandId)).ReasonCode);
+            var fresh = await loaded.GetTradeQuoteAsync(new("file-fresh", QuoteShipId, QuoteCargoModuleId, TradeCommandTypes.Sell, f.Item, 1));
+            Assert.Null(fresh.DisabledReason); Assert.NotEqual(f.IssuedQuote.QuoteId, fresh.QuoteId);
+            await loaded.SendCommandAsync(stale with { CommandId = "file-fresh-sale", QuoteId = fresh.QuoteId, MarketRevision = fresh.MarketRevision });
+            var sale = await WaitForCommandResultAsync(loaded, "file-fresh-sale");
+            Assert.Equal(CommandResultStatus.Executed, sale.Status); Assert.NotNull(sale.TradeReceipt!.RealizedCargoCostCredits);
+            await loaded.SetSimulationSpeedAsync(SimulationSpeed.Speed1);
+            var advanced = await NextEconomicSnapshot(loaded, s => s.GameTimeMs > f.Save.GameState.GameTimeMs);
+            await loaded.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
+            Assert.True(advanced.GameTimeMs > f.Save.GameState.GameTimeMs);
+            await loaded.SaveAsync("continued");
+            var continued = ScenarioLoader.LoadFromFile(Path.Combine(dir, "continued.json"), true);
+            Assert.Single(continued.GameState.VoyageLedgers!);
+            Assert.Equal(fresh.TotalCredits, continued.GameState.VoyageLedgers![0].Finance.GrossSalesCredits);
+        }
+        finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task Cancelled_economic_save_preserves_previous_slot_and_removes_temp()
+    {
+        string dir = EconomicDirectory();
+        try
+        {
+            var f = CreateEconomicFixture(true);
+            await using var connection = new LocalGameSessionConnection(f.Engine, dir);
+            await connection.SaveAsync("good"); string path = Path.Combine(dir, "good.json");
+            byte[] before = await File.ReadAllBytesAsync(path);
+            using var cancelled = new CancellationTokenSource(); cancelled.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await connection.SaveAsync("good", cancelled.Token));
+            Assert.Equal(before, await File.ReadAllBytesAsync(path));
+            Assert.NotNull(ScenarioLoader.LoadFromFile(path, true)); Assert.Empty(Directory.GetFiles(dir, "*.tmp"));
+        }
+        finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task Failed_economic_overwrite_preserves_previous_slot_and_removes_temp()
+    {
+        string dir = EconomicDirectory();
+        try
+        {
+            var f = CreateEconomicFixture(true);
+            await using var connection = new LocalGameSessionConnection(f.Engine, dir);
+            await connection.SaveAsync("good"); string path = Path.Combine(dir, "good.json");
+            byte[] before = await File.ReadAllBytesAsync(path);
+            using (var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                await Assert.ThrowsAnyAsync<UnauthorizedAccessException>(async () => await connection.SaveAsync("good"));
+            Assert.Equal(before, await File.ReadAllBytesAsync(path)); Assert.Empty(Directory.GetFiles(dir, "*.tmp"));
+            await connection.SaveAsync("after-error");
+            Assert.NotNull(ScenarioLoader.LoadFromFile(Path.Combine(dir, "after-error.json"), true));
+        }
+        finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task Incompatible_economic_save_is_rejected_without_replacing_good_slot()
+    {
+        string dir = EconomicDirectory();
+        try
+        {
+            var f = CreateEconomicFixture(true);
+            await using var connection = new LocalGameSessionConnection(f.Engine, dir);
+            await connection.SaveAsync("good"); string path = Path.Combine(dir, "good.json");
+            byte[] before = await File.ReadAllBytesAsync(path);
+            var state = ScenarioLoader.LoadFromFile(path, true);
+            var bad = state with { GameState = state.GameState with { TradingEconomyContinuation = state.GameState.TradingEconomyContinuation! with { ConfigurationFingerprint = new string('0', 64) } } };
+            string badPath = Path.Combine(dir, "incompatible.json"); await File.WriteAllTextAsync(badPath, ScenarioLoader.Serialize(bad));
+            Assert.Contains("Save was not modified", Assert.Throws<ScenarioException>(() => LocalGameSessionConnection.CreateFromSaveFile(ResolveRealSettingsPath(), badPath, dir)).Message);
+            Assert.Equal(before, await File.ReadAllBytesAsync(path));
+            await connection.SaveAsync("still-usable");
+            Assert.Equal(EconomicState(state), EconomicState(ScenarioLoader.LoadFromFile(Path.Combine(dir, "still-usable.json"), true)));
+        }
+        finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task Concurrent_economic_saves_each_produce_complete_valid_state()
+    {
+        string dir = EconomicDirectory();
+        try
+        {
+            var f = CreateEconomicFixture(true);
+            await using var connection = new LocalGameSessionConnection(f.Engine, dir);
+            var slots = new[] { "a", "b", "same", "same" };
+            await Task.WhenAll(slots.Select(slot => connection.SaveAsync(slot).AsTask()));
+            foreach (string slot in slots.Distinct())
+            {
+                var disk = ScenarioLoader.LoadFromFile(Path.Combine(dir, slot + ".json"), true);
+                Assert.Equal(EconomicState(f.Save), EconomicState(disk));
+                await using var loaded = LocalGameSessionConnection.CreateFromSaveFile(ResolveRealSettingsPath(), Path.Combine(dir, slot + ".json"), dir);
+                Assert.NotNull((await NextEconomicSnapshot(loaded)).ActiveVoyage);
+            }
+            Assert.Empty(Directory.GetFiles(dir, "*.tmp"));
+        }
+        finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+    }
+
     private static (float x, float y) Center((float X, float Y, float W, float H) local)
     {
         float panelLeft = SaveLayout.PanelLeft(1920);
