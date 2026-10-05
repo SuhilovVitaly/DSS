@@ -165,6 +165,17 @@ internal sealed class TradeJournal
             receipt.RealizedCargoCostCredits is >= 0 && receipt.GrossResultCredits is { } gross &&
             gross == receipt.TotalCredits - receipt.RealizedCargoCostCredits.Value;
     }
+    internal sealed record DisplayEntry(Entry? Trade = null, VoyageFinanceSnapshot? Voyage = null);
+    private readonly List<(string Id, bool Voyage)> _displayOrder = [];
+    private readonly Dictionary<string, VoyageFinanceSnapshot> _voyages = new(StringComparer.Ordinal);
+    internal IReadOnlyList<DisplayEntry> DisplayEntries => _displayOrder.Select(k => k.Voyage
+        ? new DisplayEntry(Voyage: _voyages[k.Id]) : new DisplayEntry(Trade: _entries.Single(e => e.CommandId == k.Id))).ToArray();
+    internal int DisplayCount => _displayOrder.Count;
+    private void AddDisplay(string id, bool voyage)
+    {
+        _displayOrder.Add((id, voyage));
+        if (_displayOrder.Count > 50) _displayOrder.RemoveAt(0);
+    }
     private readonly List<Entry> _entries = new();
     internal IReadOnlyList<Entry> Entries => _entries;
     internal Entry? Latest => _entries.LastOrDefault();
@@ -173,12 +184,24 @@ internal sealed class TradeJournal
     {
         if (_entries.Any(existing => existing.CommandId == entry.CommandId)) return;
         _entries.Add(entry);
+        AddDisplay(entry.CommandId, false);
         if (_entries.Count > 50) _entries.RemoveAt(0);
     }
     /// <summary>Attach final results; returns true when a pending trade has just been refused as <c>stale_quote</c>.</summary>
     internal bool Refresh(SnapshotBuffer? buffer)
     {
         if (buffer is null) return false;
+        var finances = buffer.Latest?.Snapshot.VoyageFinances ?? default;
+        var currentIds = new HashSet<string>(StringComparer.Ordinal);
+        if (!finances.IsDefaultOrEmpty)
+            foreach (var report in finances)
+            {
+                if (report is null || string.IsNullOrWhiteSpace(report.VoyageId) || !currentIds.Add(report.VoyageId)) continue;
+                if (!_voyages.ContainsKey(report.VoyageId)) AddDisplay(report.VoyageId, true);
+                _voyages[report.VoyageId] = report;
+            }
+        foreach (string id in _voyages.Keys.Where(id => !currentIds.Contains(id) && !_displayOrder.Contains((id, true))).ToArray())
+            _voyages.Remove(id);
         bool stale = false;
         for (int i = 0; i < _entries.Count; i++)
         {

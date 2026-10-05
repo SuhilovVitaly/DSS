@@ -983,4 +983,77 @@ public class TradeScreenTests
         Assert.True(screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
         Assert.True(screen.IsEventTooltipVisible);
     }
+    [Theory]
+    [InlineData(123L)]
+    [InlineData(-123L)]
+    [InlineData(0L)]
+    [InlineData(null)]
+    public void Trade_history_uses_authoritative_voyage_net_and_never_recomputes_from_trades(long? net)
+    {
+        var report = FinanceScreenTests.Report(net: net);
+        string message = TradeScreen.VoyageMessage(report);
+        Assert.Contains(DeepSpaceSaga.Client.UI.Screens.Finance.FinanceScreen.RouteText(report), message);
+        Assert.Contains(DeepSpaceSaga.Client.UI.Screens.Finance.FinanceScreen.StateText(report.State), message);
+        if (net is null) Assert.Contains(Localization.Get("Trade.VoyageResultUnavailable"), message);
+        else Assert.Contains(DeepSpaceSaga.Client.UI.Screens.Finance.FinanceScreen.MoneyText(net), message);
+        Assert.DoesNotContain(DeepSpaceSaga.Client.UI.Screens.Finance.FinanceScreen.MoneyText(999), message);
+    }
+
+    [Fact]
+    public void Trade_history_updates_one_voyage_row_through_states_and_keeps_trade_receipts()
+    {
+        var journal = new TradeJournal(); var buffer = new SnapshotBuffer();
+        var pending = ReceiptEntry() with { Result = null };
+        journal.Track(pending);
+        var report = FinanceScreenTests.Report() with { State = VoyageFinanceStates.InTransit, CompletedGameTimeMs = null };
+        buffer.Update(new(1, 0, SimulationSpeed.Speed0, [], VoyageFinances: [report])); journal.Refresh(buffer);
+        Assert.Equal(2, journal.DisplayCount);
+        Assert.Equal(pending, journal.DisplayEntries[0].Trade);
+        foreach (string state in new[] { VoyageFinanceStates.AwaitingRealization, VoyageFinanceStates.Finalized })
+        {
+            report = report with { State = state, NetProfitCredits = -456 };
+            buffer.Update(new(state == VoyageFinanceStates.Finalized ? 3UL : 2UL, 0, SimulationSpeed.Speed0, [],
+                CommandResults: [ReceiptEntry().Result!], VoyageFinances: [report]));
+            journal.Refresh(buffer); journal.Refresh(buffer);
+            Assert.Equal(2, journal.DisplayCount);
+            Assert.Equal(report, journal.DisplayEntries[1].Voyage);
+            Assert.NotNull(journal.DisplayEntries[0].Trade!.ConfirmedReceipt);
+        }
+    }
+
+    [Fact]
+    public async Task Trade_history_survives_reopen_and_caps_combined_display_at_fifty()
+    {
+        await using var handle = new GameSessionHandle(new EventUiConnection());
+        var report = FinanceScreenTests.Report();
+        var snapshot = TradeUxTests.Snapshot() with { VoyageFinances = [report] };
+        handle.Buffer.Update(snapshot);
+        for (int i = 0; i < 51; i++) handle.Trades.Track(ReceiptEntry() with { CommandId = "sent-" + i });
+        var screen = new TradeScreen(handle.Buffer, handle); screen.OnActivated(); RenderScreen(screen);
+        Assert.Equal(50, handle.Trades.DisplayCount);
+        Assert.Single(handle.Trades.DisplayEntries, e => e.Voyage is not null);
+        screen.OnDeactivated();
+        screen = new TradeScreen(handle.Buffer, handle); screen.OnActivated(); RenderScreen(screen);
+        Assert.Equal(50, handle.Trades.DisplayCount);
+        Assert.Single(handle.Trades.DisplayEntries, e => e.Voyage is not null);
+        var reports = Enumerable.Range(0, 51).Select(i => report with { VoyageId = "different-leg-" + i }).ToImmutableArray();
+        handle.Buffer.Update(snapshot with { SnapshotSequence = 2, VoyageFinances = reports }); RenderScreen(screen);
+        Assert.Equal(50, handle.Trades.DisplayCount);
+        Assert.Equal(reports.Skip(1).Select(v => v.VoyageId), handle.Trades.DisplayEntries.Select(e => e.Voyage!.VoyageId));
+        RenderScreen(screen); RenderScreen(screen);
+        Assert.Equal(50, handle.Trades.DisplayCount);
+        Assert.Equal(50, handle.Trades.Entries.Count);
+        Assert.True(screen.HasValidVisit);
+        ClickTrade(screen, TradeLayout.History); RenderScreen(screen);
+        if (Environment.GetEnvironmentVariable("DSS_TRADE_RENDER_DIR") is { Length: > 0 } directory)
+        {
+            Directory.CreateDirectory(directory);
+            using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight); using var canvas = new SKCanvas(bitmap);
+            screen.Render(canvas, ScreenWidth, ScreenHeight);
+            using var image = SKImage.FromBitmap(bitmap); using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(Path.Combine(directory, "voyage-trade-history.png"), data.ToArray());
+        }
+        screen.OnDeactivated();
+    }
+
 }

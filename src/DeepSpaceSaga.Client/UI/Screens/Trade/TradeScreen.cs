@@ -95,7 +95,7 @@ public sealed partial class TradeScreen : IScreen
         _requoteOnce |= staleResult;
         UpdateQuote();
         _scroll = Math.Clamp(_scroll, 0, Math.Max(0, ListCount - TradeLayout.VisibleRows));
-        _historyScroll = Math.Clamp(_historyScroll, 0, Math.Max(0, _journal.Entries.Count - TradeLayout.VisibleRows));
+        _historyScroll = Math.Clamp(_historyScroll, 0, Math.Max(0, _journal.DisplayCount - TradeLayout.VisibleRows));
         _moduleScroll = Math.Clamp(_moduleScroll, 0, Math.Max(0, Model.Modules.Length - 5));
     }
     private QuoteKey? CurrentQuoteKey()
@@ -167,7 +167,7 @@ public sealed partial class TradeScreen : IScreen
         _moduleOpen = _dragSlider = _dragScroll = _replaceInput = _controlDown = _enterHeld = false;
     }
     private int ListCount => Model.FuelMode ? Model.Modules.Length : Model.Rows.Length;
-    private int CurrentCount => _history ? _journal.Entries.Count : ListCount;
+    private int CurrentCount => _history ? _journal.DisplayCount : ListCount;
     private int CurrentOffset { get => _history ? _historyScroll : _scroll; set { if (_history) _historyScroll = value; else _scroll = value; } }
     private SKPoint Local(float x, float y) => new(x - TradeLayout.PanelLeft(_width), y - TradeLayout.PanelTop(_height));
     internal static string L(string key) => Localization.Get("TradeUX." + key);

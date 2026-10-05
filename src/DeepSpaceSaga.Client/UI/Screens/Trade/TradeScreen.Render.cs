@@ -32,7 +32,7 @@ public sealed partial class TradeScreen
             else if (Model.FuelMode) DrawTanks(p);
             else DrawCatalog(p);
             DrawDetails(p);
-            Button(p, TradeLayout.History, F("History", _journal.Entries.Count), _history, size: 14);
+            Button(p, TradeLayout.History, F("History", _journal.DisplayCount), _history, size: 14);
             p.Text(L("Keys"), R(420, 757, 1140, 30), 13, TradePainter.Muted, align: SKTextAlign.Right);
             if (CurrentCount > TradeLayout.VisibleRows)
             {
@@ -282,11 +282,20 @@ public sealed partial class TradeScreen
         L(code == "station_stock_full" ? "StationStorageLimit" : TradeQuote.ReasonKey(code) ?? "TradeRejected");
     private void DrawHistory(TradePainter p)
     {
-        p.Text(F("History", _journal.Entries.Count), R(40, 157, 900, 40), 24, bold: true);
+        p.Text(F("History", _journal.DisplayCount), R(40, 157, 900, 40), 24, bold: true);
         p.Text(L("HistoryNote"), R(40, 209, 920, 35), 15, TradePainter.Muted);
-        for (int row = 0; row < TradeLayout.VisibleRows && row + _historyScroll < _journal.Entries.Count; row++)
+        for (int row = 0; row < TradeLayout.VisibleRows && row + _historyScroll < _journal.DisplayCount; row++)
         {
-            var entry = _journal.Entries[_journal.Entries.Count - 1 - row - _historyScroll]; var rect = TradeLayout.Row(row);
+            var display = _journal.DisplayEntries[_journal.DisplayCount - 1 - row - _historyScroll];
+            var rect = TradeLayout.Row(row);
+            if (display.Voyage is { } voyage)
+            {
+                p.Paragraph(VoyageMessage(voyage), R(48, rect.Top + 1, 910, 49), 14,
+                    voyage.NetProfitCredits is > 0 ? TradePainter.Green : voyage.NetProfitCredits is < 0 ? TradePainter.Red : TradePainter.Muted);
+                p.Line(36, rect.Bottom, 970);
+                continue;
+            }
+            var entry = display.Trade!;
             p.Icon(entry.ItemId, R(48, rect.Top + 6, 38, 38));
             string mode = L(entry.Mode switch { TradeMode.Sell => "Sell", TradeMode.Refuel => "Fuel", _ => "Buy" });
             p.Text(mode + " · " + entry.ModuleLabel, R(101, rect.Top, 250, 50), 14, TradePainter.Muted);
@@ -294,8 +303,18 @@ public sealed partial class TradeScreen
                 entry.Result is null ? TradePainter.Muted : entry.ConfirmedReceipt is not null ? TradePainter.Green : TradePainter.Red);
             p.Line(36, rect.Bottom, 970);
         }
-        if (_journal.Entries.Count == 0) p.Text(L("HistoryEmpty"), R(48, 333, 900, 40), 18, TradePainter.Muted);
+        if (_journal.DisplayCount == 0) p.Text(L("HistoryEmpty"), R(48, 333, 900, 40), 18, TradePainter.Muted);
     }
+    internal static string VoyageMessage(VoyageFinanceSnapshot voyage)
+    {
+        string result = voyage.NetProfitCredits is { } net
+            ? string.Format(CultureInfo.CurrentCulture, Localization.Get(net < 0 ? "Trade.VoyageLoss" : net > 0 ? "Trade.VoyageProfit" : "Finance.NetProfit")
+                + (net == 0 ? ": {0}" : ""), Finance.FinanceScreen.MoneyText(net))
+            : Localization.Get("Trade.VoyageResultUnavailable");
+        return string.Format(CultureInfo.CurrentCulture, Localization.Get("Trade.VoyageSummary"),
+            Finance.FinanceScreen.RouteText(voyage), Finance.FinanceScreen.StateText(voyage.State), result);
+    }
+
     private void DrawModuleOptions(TradePainter p)
     {
         for (int i = 0; i < Math.Min(5, Model.Modules.Length); i++)
