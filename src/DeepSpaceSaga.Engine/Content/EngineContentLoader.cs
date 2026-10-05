@@ -18,7 +18,8 @@ public static class EngineContentLoader
         var fields = LoadStationResourceFields(settingsPath, loaded.Registry);
         var engine = new SimulationEngine(loaded.Registry, LoadCrewPortraits(settingsPath));
         engine.ConfigureStationResourceFields(fields);
-        engine.LoadScenario(loaded.DefaultScenario);
+        var settings = ReadJson<EngineSettingsFile>(settingsPath, "settings");
+        engine.LoadScenario(loaded.DefaultScenario, generation: GenerationForScenario(settingsPath, settings.DefaultScenario));
         return engine;
     }
 
@@ -52,8 +53,15 @@ public static class EngineContentLoader
         var fields = LoadStationResourceFields(settingsPath, registry);
         var engine = new SimulationEngine(registry, LoadCrewPortraits(settingsPath));
         engine.ConfigureStationResourceFields(fields);
-        engine.LoadScenario(scenario);
+        engine.LoadScenario(scenario, generation: GenerationForScenario(settingsPath, scenarioPath));
         return engine;
+    }
+
+    private static SolarSystemGenerationConfig? GenerationForScenario(string settingsPath, string scenarioPath)
+    {
+        var config = LoadSolarSystemGenerationConfig(settingsPath);
+        var folder = Path.GetFileName(Path.GetDirectoryName(scenarioPath.Replace('/', Path.DirectorySeparatorChar)));
+        return config?.EnabledScenarios.Contains(folder, StringComparer.Ordinal) == true ? config : null;
     }
 
     public static SolarSystemGenerationConfig? LoadSolarSystemGenerationConfig(string settingsPath)

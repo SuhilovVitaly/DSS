@@ -203,7 +203,7 @@ public sealed partial class SimulationEngine : IDisposable
     /// Load initial state from a scenario file. Replaces any previously added objects.
     /// Sets the clock speed and game time from scenario data.
     /// </summary>
-    public void LoadScenario(ScenarioFile scenario, bool isSave = false)
+    public void LoadScenario(ScenarioFile scenario, bool isSave = false, SolarSystemGenerationConfig? generation = null)
     {
         scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true);
         var gs = scenario.GameState;
@@ -240,6 +240,8 @@ public sealed partial class SimulationEngine : IDisposable
             gs = StationResourceFields.ValidateSaved(gs, _registry);
         else if (!isSave && scenario.SaveFormatVersion == 0 && gs.TradingMap is not null && _stationResourceFieldConfig is not null)
             gs = StationResourceFields.Generate(gs, resolvedMasterSeed, _stationResourceFieldConfig, _registry);
+        if (!isSave && scenario.SaveFormatVersion == 0 && generation is not null)
+            gs = SolarSystemGenerator.Generate(scenario with { GameState = gs }, generation, _registry, resolvedMasterSeed).GameState;
         var resourceAsteroids = (gs.StationResourceFields?.Asteroids ?? [])
             .ToImmutableDictionary(a => a.ObjectId, StringComparer.Ordinal);
         var neutralResourceImages = gs.SpaceObjects.Where(o => resourceAsteroids.ContainsKey(o.ObjectId))
@@ -302,7 +304,8 @@ public sealed partial class SimulationEngine : IDisposable
                 X: obj.PositionX,
                 Y: obj.PositionY,
                 SpeedKmS: speedKmS,
-                Direction: obj.DirectionDegrees),
+                Direction: obj.DirectionDegrees, Orbit: obj.Orbit, OrbitSampleSimulationTimeMs: obj.Orbit is null ? null : gs.MotionTimeMs,
+                WorldOffsetX: obj.WorldOffsetX, WorldOffsetY: obj.WorldOffsetY),
                 ObjectType: obj.ObjectType,
                 // Saved positions and active ship cycles share the motion timestamp.
                 // Keep that baseline on load; calendar time has a different pace.
@@ -401,6 +404,7 @@ public sealed partial class SimulationEngine : IDisposable
             // not recomputed here, so this stays a pure assignment of the single value
             // already used to seed station generation.
             MasterSeed = resolvedMasterSeed;
+            _solarSystem = gs.SolarSystem;
             MasterSeedWasMissingOnLoad = resolvedMasterSeedWasMissingOnLoad;
 
             // Player Tokens (Documentation\02-FirstRelease\Mechanics\Money.md): the starting balance
@@ -690,7 +694,7 @@ public sealed partial class SimulationEngine : IDisposable
                 RouteArrivalGameTimeMs: _economyTime.RouteArrivalGameTimeMs, SimulationTimeMs: gameTimeMs,
                 Voyage: BuildVoyageSnapshot(),
                 CombatImpacts: _combatImpacts.ToImmutableArray(),
-                CombatJournal: _combatJournal.ToImmutableArray());
+                CombatJournal: _combatJournal.ToImmutableArray(), SolarSystemMap: _solarSystem);
         }
     }
 
@@ -1016,7 +1020,8 @@ public sealed partial class SimulationEngine : IDisposable
                 RelationToPlayer: obj.RelationToPlayer,
                 ShipClassId: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.ShipClassId,
                 HullHitPoints: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.CurrentHp,
-                HullHitPointsMax: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.MaxHp));
+                HullHitPointsMax: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.MaxHp,
+                Orbit: obj.InitialMotion.Orbit, WorldOffsetX: obj.InitialMotion.WorldOffsetX, WorldOffsetY: obj.InitialMotion.WorldOffsetY));
         }
 
         var gameState = new GameStateData(
@@ -1035,7 +1040,7 @@ public sealed partial class SimulationEngine : IDisposable
             TradingMap: _tradingMap,
             StationResourceFields: _stationResourceFields,
             VoyageState: _voyageState,
-            CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState());
+            CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState(), SolarSystem: _solarSystem);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
