@@ -122,6 +122,7 @@ public static class CommandReasonCodes
 {
     public const string VoyageDestinationRequired = "voyage_destination_required";
     public const string VoyageDestinationUnavailable = "voyage_destination_unavailable";
+    public const string RouteUnavailable = "route_unavailable";
     public const string VoyageAlreadyActive = "voyage_already_active";
     public const string VoyageWrongDestination = "voyage_wrong_destination";
     public const string VoyageOutstandingDebt = "voyage_outstanding_debt";

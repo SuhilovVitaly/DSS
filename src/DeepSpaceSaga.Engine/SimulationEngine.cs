@@ -383,6 +383,7 @@ public sealed partial class SimulationEngine : IDisposable
             };
         }
 
+        RestoreTradingRouteBindings(gs.TradingMap, runtimeObjects, gs.GameTimeMs, resolvedMasterSeed);
         var restoredVoyage = ValidateVoyageState(gs, runtimeObjects);
         var combatState = BuildCombatState(gs.SpaceObjects, runtimeObjects);
         StageCombatRestore(gs.CombatState, runtimeObjects, combatState.Launchers);
@@ -707,7 +708,8 @@ public sealed partial class SimulationEngine : IDisposable
                 RouteArrivalGameTimeMs: _economyTime.RouteArrivalGameTimeMs, SimulationTimeMs: gameTimeMs,
                 Voyage: BuildVoyageSnapshot(),
                 CombatImpacts: _combatImpacts.ToImmutableArray(),
-                CombatJournal: _combatJournal.ToImmutableArray(), SolarSystemMap: _solarSystem);
+                CombatJournal: _combatJournal.ToImmutableArray(), SolarSystemMap: _solarSystem,
+                TradingRoutes: BuildTradingRouteProjection(clockState.GameTimeMs));
         }
     }
 
@@ -2287,6 +2289,12 @@ public sealed partial class SimulationEngine : IDisposable
             var currentMotion = PredictMotion(obj, elapsedMs);
             if (_tradingMap is not null)
             {
+                var route = FindEffectiveDepartureRoute(obj.DockedStationObjectId!, command.TargetObjectId!);
+                if (route is null || route.Availability == TradingRouteAvailability.Unavailable)
+                    return CommandStartOutcome.Rejected(CommandReasonCodes.RouteUnavailable);
+                // Check the complete schedule before changing voyage or undocking state.
+                if (_processedWorldTimeMs > long.MaxValue - route.EffectiveTravelEstimateGameTimeMs)
+                    return CommandStartOutcome.Rejected(CommandReasonCodes.RouteUnavailable);
                 var departureTarget = _objects.First(o => o.InitialMotion.ObjectId == command.TargetObjectId);
                 var departureMotion = PredictMotion(departureTarget,
                     Math.Max(0, gameTimeMs - departureTarget.StartGameTimeMs));
@@ -2296,7 +2304,12 @@ public sealed partial class SimulationEngine : IDisposable
                 if (!double.IsFinite(distance) || distance <= 0)
                     return CommandStartOutcome.Rejected(CommandReasonCodes.VoyageDestinationUnavailable);
                 _voyageState = new VoyageStateData(VoyagePhases.Undocking, command.CommandId,
-                    obj.DockedStationObjectId, command.TargetObjectId, gameTimeMs, distance);
+                    obj.DockedStationObjectId, command.TargetObjectId, gameTimeMs, distance,
+                    TravelEstimateGameTimeMs: route.EffectiveTravelEstimateGameTimeMs,
+                    FuelMultiplierPermille: route.EffectiveFuelMultiplierPermille,
+                    RiskProfileId: route.BaseEdge.RiskProfileId, ActiveEventIds: route.ActiveEventIds,
+                    StartedGameTimeMs: _processedWorldTimeMs,
+                    ArrivalGameTimeMs: checked(_processedWorldTimeMs + route.EffectiveTravelEstimateGameTimeMs));
             }
             _objects[objectIndex] = obj with
             {

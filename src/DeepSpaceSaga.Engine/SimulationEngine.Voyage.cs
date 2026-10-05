@@ -19,6 +19,16 @@ public sealed partial class SimulationEngine
             throw new ScenarioException("voyageState requires a materialized map and player ship.");
         if (saved.BlockReasonCode is not null && string.IsNullOrWhiteSpace(saved.BlockReasonCode))
             throw new ScenarioException("voyageState.blockReasonCode is invalid.");
+        bool hasTerms = saved.TravelEstimateGameTimeMs is not null || saved.FuelMultiplierPermille is not null ||
+            saved.RiskProfileId is not null || saved.ActiveEventIds is not null || saved.StartedGameTimeMs is not null || saved.ArrivalGameTimeMs is not null;
+        if (hasTerms && (saved.Phase == VoyagePhases.Docked || saved.TravelEstimateGameTimeMs is not > 0 ||
+            saved.FuelMultiplierPermille is not > 0 || string.IsNullOrWhiteSpace(saved.RiskProfileId) ||
+            saved.ActiveEventIds is null || saved.ActiveEventIds.Any(string.IsNullOrWhiteSpace) ||
+            saved.ActiveEventIds.Distinct(StringComparer.Ordinal).Count() != saved.ActiveEventIds.Count ||
+            saved.StartedGameTimeMs is not >= 0 || saved.StartedGameTimeMs > state.GameTimeMs ||
+            saved.ArrivalGameTimeMs is null || saved.StartedGameTimeMs > long.MaxValue - saved.TravelEstimateGameTimeMs ||
+            saved.ArrivalGameTimeMs != saved.StartedGameTimeMs + saved.TravelEstimateGameTimeMs))
+            throw new ScenarioException("voyageState captured route terms are invalid.");
         if (saved.Phase == VoyagePhases.Docked)
         {
             if (!ship.IsDocked || saved.VoyageId is not null || saved.OriginStationObjectId is not null ||
@@ -42,6 +52,8 @@ public sealed partial class SimulationEngine
         if (!HasStation(saved.OriginStationObjectId) || !HasStation(saved.DestinationStationObjectId) ||
             !state.TradingMap.Edges.Any(e => Connects(e, saved.OriginStationObjectId, saved.DestinationStationObjectId)))
             throw new ScenarioException("Active voyageState does not follow a materialized edge.");
+        if (hasTerms && !state.TradingMap.Rules.RiskProfiles.Any(r => r.RiskProfileId == saved.RiskProfileId))
+            throw new ScenarioException("Active voyageState captured risk profile is unknown.");
         if (saved.Phase == VoyagePhases.Docking &&
             (state.DialogueState?.ActiveDialogue is not { } dialogue ||
              dialogue.DialogueDefinitionId != "dialogue.station-docking" ||
@@ -62,8 +74,11 @@ public sealed partial class SimulationEngine
         if (_tradingMap is null || ship.DockedStationObjectId is null ||
             !_tradingMap.Edges.Any(e => Connects(e, ship.DockedStationObjectId, destination)) ||
             !_objects.Any(o => o.InitialMotion.ObjectId == destination && o.ObjectType == SpaceObjectType.Station && !o.IsDestroyed))
-            return CommandReasonCodes.VoyageDestinationUnavailable;
-        return null;
+            return CommandReasonCodes.RouteUnavailable;
+        var route = FindEffectiveDepartureRoute(ship.DockedStationObjectId, destination);
+        return route is null || route.Availability == TradingRouteAvailability.Unavailable ||
+            _processedWorldTimeMs > long.MaxValue - route.EffectiveTravelEstimateGameTimeMs
+            ? CommandReasonCodes.RouteUnavailable : null;
     }
 
     private VoyageSnapshot? BuildVoyageSnapshot()
@@ -82,7 +97,7 @@ public sealed partial class SimulationEngine
                     var station = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == destination && o.ObjectType == SpaceObjectType.Station);
                     string? blocker = ResolveVoyageDepartureBlock(ship, destination);
                     options.Add(new VoyageRouteOptionSnapshot(destination, station?.Name ?? destination,
-                        edge.TravelEstimateGameTimeMs, edge.DistanceClass, blocker is null, blocker));
+                        FindEffectiveDepartureRoute(origin, destination)!.EffectiveTravelEstimateGameTimeMs, edge.DistanceClass, blocker is null, blocker));
                 }
             }
             return new VoyageSnapshot(VoyagePhases.Docked, BlockReasonCode: state.BlockReasonCode,

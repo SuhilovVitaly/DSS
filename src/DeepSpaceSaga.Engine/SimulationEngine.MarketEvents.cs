@@ -99,6 +99,9 @@ public sealed partial class SimulationEngine
                         EventItemEffects(definition), EventRouteEffect(definition), true);
                     // Authored future events reserve capacity only where their intervals overlap.
                     if (!FitsMarketEventWindow(events, evt)) continue;
+                    var boundEvent = BindRouteCandidate(_tradingMap, _objects, station with { Events = events.ToImmutableArray() }, evt, time, MasterSeed);
+                    if (boundEvent is null) continue;
+                    evt = boundEvent;
                     station = ApplyActivationStockDeltas(station, evt);
                     events.Add(evt);
                     slots--;
@@ -209,7 +212,7 @@ public sealed partial class SimulationEngine
             var expectedItems = EventItemEffects(definition);
             var expectedPrices = EventPriceFactors(definition);
             if (evt.DisplayNameKey != definition.DisplayNameKey || evt.DescriptionKey != definition.DescriptionKey ||
-                evt.EffectSummaryKey != definition.EffectSummaryKey || evt.RouteEffect != EventRouteEffect(definition) ||
+                evt.EffectSummaryKey != definition.EffectSummaryKey || (evt.RouteEffect is { } savedRoute ? savedRoute with { FromStationObjectId = null, ToStationObjectId = null } : null) != EventRouteEffect(definition) ||
                 evt.ItemEffects is null || evt.ItemEffects.Any(e => e is null) ||
                 !evt.ItemEffects.OrderBy(e => e.ItemTypeId, StringComparer.Ordinal).SequenceEqual(expectedItems) ||
                 !runtime[i].PriceFactors.OrderBy(e => e.ItemTypeIndex).SequenceEqual(expectedPrices.OrderBy(e => e.ItemTypeIndex))) Reject("resolved payload differs from catalog");

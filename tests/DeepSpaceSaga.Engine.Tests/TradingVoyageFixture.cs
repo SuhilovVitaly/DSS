@@ -180,6 +180,13 @@ internal sealed class TradingVoyageFixture : IDisposable
 
     internal void FlyTo(string destination, bool splitSnapshots = false)
     {
+        // Temporary route closures require waiting at port; they do not invalidate the
+        // command-driven round-trip proof or permit bypassing the authoritative gate.
+        for (int hour = 0; Snapshot.TradingRoutes.Single(r => r.DestinationStationObjectId == destination).Availability ==
+            TradingRouteAvailability.Unavailable && hour < 168; hour++)
+            Advance((GameCalendar.HourMs + _calendarRatio - 1) / _calendarRatio);
+        Xunit.Assert.NotEqual(TradingRouteAvailability.Unavailable,
+            Snapshot.TradingRoutes.Single(r => r.DestinationStationObjectId == destination).Availability);
         var (_, undock) = Send(BridgeId, NavigationComputerCommandTypes.Undock, target: destination);
         Xunit.Assert.Equal(CommandResultStatus.Executed, undock?.Status);
         Xunit.Assert.Null(Snapshot.DockedStationTrade);

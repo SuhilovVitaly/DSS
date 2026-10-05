@@ -98,7 +98,13 @@ public sealed record VoyageStateData(
     [property: JsonPropertyName("startedMotionTimeMs")] long StartedMotionTimeMs = 0,
     [property: JsonPropertyName("initialDistanceWorldUnits")] double InitialDistanceWorldUnits = 0,
     [property: JsonPropertyName("progressPermille")] int ProgressPermille = 0,
-    [property: JsonPropertyName("blockReasonCode")] string? BlockReasonCode = null);
+    [property: JsonPropertyName("blockReasonCode")] string? BlockReasonCode = null,
+    [property: JsonPropertyName("travelEstimateGameTimeMs")] long? TravelEstimateGameTimeMs = null,
+    [property: JsonPropertyName("fuelMultiplierPermille")] int? FuelMultiplierPermille = null,
+    [property: JsonPropertyName("riskProfileId")] string? RiskProfileId = null,
+    [property: JsonPropertyName("activeEventIds")] IReadOnlyList<string>? ActiveEventIds = null,
+    [property: JsonPropertyName("startedGameTimeMs")] long? StartedGameTimeMs = null,
+    [property: JsonPropertyName("arrivalGameTimeMs")] long? ArrivalGameTimeMs = null);
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(
@@ -353,7 +359,9 @@ public sealed record StationMarketEventRouteEffectData(
     [property: JsonPropertyName("maxAffectedIncidentEdges")] int MaxAffectedIncidentEdges,
     [property: JsonPropertyName("travelTimeMultiplierPermille")] int TravelTimeMultiplierPermille,
     [property: JsonPropertyName("fuelMultiplierPermille")] int FuelMultiplierPermille,
-    [property: JsonPropertyName("riskProfileId")] string? RiskProfileId = null);
+    [property: JsonPropertyName("riskProfileId")] string? RiskProfileId = null,
+    [property: JsonPropertyName("fromStationObjectId")] string? FromStationObjectId = null,
+    [property: JsonPropertyName("toStationObjectId")] string? ToStationObjectId = null);
 
 /// <summary>
 /// One multiplicative price factor contributed by a <see cref="StationEventData"/>. Addresses
