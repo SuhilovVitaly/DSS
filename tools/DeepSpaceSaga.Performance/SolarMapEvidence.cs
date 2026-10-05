@@ -16,6 +16,7 @@ public static class SolarMapEvidence
     public static int Run(string[] args)
     {
         string? output = args.Length > 1 ? Path.GetFullPath(args[1]) : null;
+        string originalDirectory = Directory.GetCurrentDirectory();
         try
         {
             if (args.Length < 2) throw new ArgumentException("Expected repository root and output.json.");
@@ -33,6 +34,7 @@ public static class SolarMapEvidence
             if (range.Length != 2 || !ulong.TryParse(range[0], out ulong from) || !ulong.TryParse(range[1], out ulong to) ||
                 from > to || to - from >= 10000) throw new ArgumentException("Invalid --seeds range (maximum 10000 seeds).");
             string client = Path.Combine(root, "src/DeepSpaceSaga.Client");
+            Directory.SetCurrentDirectory(client);
             string settings = Path.Combine(client, "Settings.json");
             var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settings, out _, out _);
             var config = EngineContentLoader.LoadSolarSystemGenerationConfig(settings)!;
@@ -107,6 +109,7 @@ public static class SolarMapEvidence
                 status = "passed",
                 backend = "CPU/Skia raster",
                 machine = Machine(),
+                assetRoot = client,
                 commit = Revision(root),
                 config,
                 seedRange = new { from, to },
@@ -125,6 +128,7 @@ public static class SolarMapEvidence
             Console.Error.WriteLine(ex.Message);
             return 1;
         }
+        finally { Directory.SetCurrentDirectory(originalDirectory); }
     }
 
     private static object Render(AuthoritativeSnapshot snapshot, string scenario, ulong seed, string view)

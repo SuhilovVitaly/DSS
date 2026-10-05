@@ -15,9 +15,12 @@ public sealed class SystemPerformanceReportTests
         string path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json");
         try
         {
+            string originalDirectory = Directory.GetCurrentDirectory();
             Assert.Equal(0, SolarMapEvidence.Run([Root, path, "--solar-map", "--seeds", "1:1", "--scenarios", "PlayerShipOnly", "--config", "min"]));
             using var json = JsonDocument.Parse(File.ReadAllText(path));
             var report = json.RootElement;
+            Assert.Equal(originalDirectory, Directory.GetCurrentDirectory());
+            Assert.Equal(Path.Combine(Root, "src/DeepSpaceSaga.Client"), report.GetProperty("assetRoot").GetString());
             Assert.Equal(1, report.GetProperty("schemaVersion").GetInt32());
             Assert.Equal("CPU/Skia raster", report.GetProperty("backend").GetString());
             Assert.Equal("not-measured", report.GetProperty("presentation").GetProperty("status").GetString());

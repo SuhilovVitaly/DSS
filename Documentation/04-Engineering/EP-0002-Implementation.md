@@ -83,11 +83,11 @@ Transport tests use the real SaveAsync file and production CreateFromSaveFile fa
 
 Story review (same agent): checked reader/writer version gate, optional legacy fields, no generation on Load, all preflight validation before live mutation, both time domains, parent binding reconstruction, active-route continuation, file atomicity and paused transport behavior. No outstanding confirmed US-0007 findings.
 
-## US-0008 — correctness and performance evidence (in progress)
+## US-0008 — correctness and performance evidence
 
 TK-0001: b31b1c2. Boundary corpus covers 4800 worlds: seeds 1..100, all six scenarios, 3/7 planets, 2/5 belts and 50/75 starting days. All 49 test rows passed. Full solution after fixes: Contracts 105, Motion 141, Engine 1264, Client 1591. Corpus exposed max-density seed 36 exhaustion: placement now retries each corridor before restarting the entire attempt, retaining bounded budgets. Configuration permits finite subranges within 50..75 to make the required boundary corpus possible; shipped 50..75 remains unchanged. Generated save data is resolved, so previously saved worlds do not regenerate.
 
-TK-0002 measurement commands (Release, sequential runs, source b31b1c2):
+TK-0002 initial measurement commands (Release, sequential runs, source b31b1c2; repository cwd, before the asset-directory correction; superseded below):
 
     dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/solar-performance-min.json --solar-map --seeds 1:100 --scenarios all --config min
     dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/solar-performance-max.json --solar-map --seeds 1:100 --scenarios all --config max
@@ -155,3 +155,31 @@ Final host native acceptance, after the cluster ordering fix (same hardware/wind
 All 18 cases passed the p99 <= 12.5 ms criterion: 10800 measured native frames in total, maximum case p99 11.379 ms. This supports the 80 FPS target on this hardware in the tested host conditions. It does not promise the same cadence inside restricted execution or on different hardware. Final host max/System/100% capture confirmed selected and player plaques remain visible above clusters.
 
 TK-0003 validation: Client 1596/1596 passed after the cluster regression and one-ULP pirate continuation fixture correction. PresentedFrameEvidenceTests covers ideal 80 FPS, dropped frames, display-limited refresh and disabled diagnostics. Release Client/performance build: zero warnings/errors. Scoped whitespace verification for Client/window/collector, tooling and Engine changes passed; git diff --check passed.
+
+US-0008 review: TK-0003 is bf517f6. Checked opt-in/no-IO behavior, 120/600 sample boundaries, percentile indexing, CPU versus swap separation, native context metadata, display-limit verdicts, fixed-seed reproduction, invalid CLI exit codes and visual priority. Corrected both native and raster runners' relative asset directory; raster Run restores the caller directory and reports its asset root. Tooling regressions passed 2/2 in Release after this review fix.
+
+Fresh final CPU/raster run: same Release production code as final native acceptance, host execution, working directory src/DeepSpaceSaga.Client (now selected automatically by the CLI), seeds 1:100, all six scenarios, min and max, sequential with no concurrent builds/tests. The explicit working directory already supplied the asset behavior in these measurements; the later runner change makes that behavior independent of the caller's cwd.
+
+| Configuration | Worlds | Maximum generation ms | Snapshot ms | Save capture + serialization ms | Largest save bytes | Worst raster p99 ms |
+|---|---:|---:|---:|---:|---:|---:|
+| min | 600 | 68.3373 | 13.2382 | 32.8908 | 950025 | 6.7381 |
+| max | 600 | 68.9454 | 14.3107 | 32.7044 | 1132976 | 6.6684 |
+
+CPU/raster percentiles below are milliseconds, seed 1, UI 100%, 1920x1080, 120 warmup / 600 measured frames per view. Generation/save rows use all 100 seeds per scenario. These are absolute measurements, not speedup claims against the preliminary run with different asset conditions.
+
+| Scenario / view | Min p50 | Min p95 | Min p99 | Max p50 | Max p95 | Max p99 |
+|---|---:|---:|---:|---:|---:|---:|
+| Default/system | 3.907 | 5.190 | 5.566 | 4.992 | 6.170 | 6.668 |
+| Default/belt | 5.012 | 6.122 | 6.432 | 2.658 | 3.959 | 5.820 |
+| Default_500/system | 3.419 | 4.604 | 5.079 | 5.000 | 5.808 | 6.219 |
+| Default_500/belt | 4.426 | 5.693 | 6.061 | 3.161 | 4.159 | 4.649 |
+| Docked/system | 3.728 | 5.127 | 5.558 | 4.925 | 5.821 | 6.448 |
+| Docked/belt | 5.253 | 6.331 | 6.727 | 2.829 | 3.867 | 4.349 |
+| MarketProfiles/system | 2.768 | 3.983 | 4.484 | 4.325 | 5.582 | 6.106 |
+| MarketProfiles/belt | 3.910 | 5.322 | 5.899 | 2.497 | 3.664 | 4.219 |
+| PlayerShipOnly/system | 2.818 | 4.005 | 4.457 | 4.301 | 5.491 | 5.935 |
+| PlayerShipOnly/belt | 3.692 | 5.338 | 5.921 | 2.431 | 3.690 | 4.412 |
+| Undocked/system | 3.469 | 4.820 | 5.160 | 4.938 | 5.824 | 6.130 |
+| Undocked/belt | 5.059 | 6.177 | 6.738 | 2.697 | 3.744 | 4.330 |
+
+No outstanding confirmed US-0008 findings remain. Native target passes in host execution; restricted execution adds substantial swap delay even for an empty window. Full epic integration findings are recorded separately below.
