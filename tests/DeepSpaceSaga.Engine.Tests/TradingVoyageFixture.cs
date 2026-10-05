@@ -41,7 +41,8 @@ internal sealed class TradingVoyageFixture : IDisposable
 
     internal static TradingVoyageFixture Create(ulong seed = 1, bool controlled = true,
         long initialDebt = 0, long? destinationBudget = null,
-        long calendarRatio = DefaultCalendarRatio, long initialCredits = 1_000_000)
+        long calendarRatio = DefaultCalendarRatio, long initialCredits = 1_000_000,
+        Func<ScenarioFile, ScenarioFile>? adjust = null)
     {
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
             "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
@@ -92,7 +93,7 @@ internal sealed class TradingVoyageFixture : IDisposable
             };
             engine.Dispose();
             var prepared = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
-            prepared.LoadScenario(controlledSave, isSave: true);
+            prepared.LoadScenario(adjust is null ? controlledSave : adjust(controlledSave), isSave: true);
             return new TradingVoyageFixture(prepared, origin, neighbor, outbound, returning,
                 calendarRatio);
         }

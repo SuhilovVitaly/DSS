@@ -713,7 +713,8 @@ public sealed partial class SimulationEngine : IDisposable
                 CombatImpacts: _combatImpacts.ToImmutableArray(),
                 CombatJournal: _combatJournal.ToImmutableArray(), SolarSystemMap: _solarSystem,
                 TradingRoutes: BuildTradingRouteProjection(clockState.GameTimeMs),
-                LastVoyageFuelSettlement: _lastVoyageFuelSettlement);
+                LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
+                VoyageFinances: BuildVoyageFinanceProjection());
         }
     }
 

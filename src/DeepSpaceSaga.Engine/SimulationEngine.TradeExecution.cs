@@ -96,10 +96,14 @@ public sealed partial class SimulationEngine
             quote.RequestedQuantity, executed, total, quote.LimitReasons, realizedCost,
             realizedCost is { } cost ? checked(total - cost) : null);
 
+        var finance = quote.CommandType == TradeCommandTypes.Sell
+            ? PrepareVoyageSale("sale:" + command.CommandId, receipt) : _voyageLedgers;
+
         // 7-9. Commit: plain assignments only, then the result, then the quote is consumed.
         _objects[target.ObjectIndex] = updatedShip;
         _objects[target.StationIndex] = updatedStation;
         PlayerCredits = updatedPlayerCredits;
+        _voyageLedgers = finance;
         CommitMarketRevision(station.InitialMotion.ObjectId, nextRevision);
         RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs,
             executedQuantity: executed < quote.RequestedQuantity ? executed : null, tradeReceipt: receipt);

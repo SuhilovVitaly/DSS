@@ -139,4 +139,47 @@ public sealed partial class SimulationEngine
         f = f with { NetProfitCredits = VoyageNet(f) };
         _voyageLedgers = _voyageLedgers.SetItem(index, new(f, entry.PostingIds.Add(postingId)));
     }
+    private ImmutableArray<VoyageLedgerEntry> PrepareVoyageSale(string postingId, TradeExecutionReceipt receipt)
+    {
+        if (string.IsNullOrWhiteSpace(postingId)) throw new ArgumentException("Sale posting requires identity.");
+        if (receipt.ExecutedQuantity <= 0) return _voyageLedgers;
+        for (int index = _voyageLedgers.Length - 1; index >= 0; index--)
+        {
+            var entry = _voyageLedgers[index]; var f = entry.Finance;
+            if (f.State != VoyageFinanceStates.AwaitingRealization || f.DestinationStationObjectId != receipt.StationObjectId ||
+                entry.PostingIds.Contains(postingId)) continue;
+            int item = -1;
+            for (int c = 0; c < f.UnsoldCargo.Length; c++)
+                if (f.UnsoldCargo[c].ItemTypeId == receipt.ItemTypeId) { item = c; break; }
+            if (item < 0) return _voyageLedgers;
+            var carried = f.UnsoldCargo[item];
+            long quantity = Math.Min(carried.Quantity, receipt.ExecutedQuantity);
+            if (quantity <= 0) return _voyageLedgers;
+            long proceeds = AllocateFuelCostBasis(receipt.ExecutedQuantity, receipt.TotalCredits, quantity);
+            long? cost = receipt.RealizedCargoCostCredits is { } basis
+                ? AllocateFuelCostBasis(receipt.ExecutedQuantity, basis, quantity) : null;
+            var remainder = carried with
+            {
+                Quantity = carried.Quantity - quantity,
+                // A local purchase can change the pooled receipt cost. If it exhausts more than
+                // the captured carried basis, its residual cannot be proven; never publish a negative or invented basis.
+                CostBasisCredits = carried.CostBasisCredits is { } original && cost is { } used && used <= original ? original - used : null
+            };
+            bool unknown = f.HasUnknownCostOfGoodsSold || cost is null;
+            f = f with
+            {
+                GrossSalesCredits = checked(f.GrossSalesCredits + proceeds),
+                CostOfGoodsSoldCredits = unknown ? null : checked(f.CostOfGoodsSoldCredits!.Value + cost!.Value),
+                HasUnknownCostOfGoodsSold = unknown,
+                UnsoldCargo = remainder.Quantity == 0 ? f.UnsoldCargo.RemoveAt(item) : f.UnsoldCargo.SetItem(item, remainder)
+            };
+            f = f with { NetProfitCredits = VoyageNet(f) };
+            return _voyageLedgers.SetItem(index, new(f, entry.PostingIds.Add(postingId)));
+        }
+        return _voyageLedgers;
+    }
+
+    private ImmutableArray<VoyageFinanceSnapshot> BuildVoyageFinanceProjection() =>
+        _voyageLedgers.Select(v => v.Finance).ToImmutableArray();
+
 }
