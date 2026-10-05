@@ -45,7 +45,7 @@ internal static class SolarSystemGenerator
         double x = radius * Math.Sin(angle), y = -radius * Math.Cos(angle);
         var translated = ScenarioGroupPlacement.Translate(source, x, y);
         var objects = translated.GameState.SpaceObjects.OrderBy(o => o.ObjectId, StringComparer.Ordinal)
-            .Select(o => o with { IsKnown = true }).ToList();
+            .ToList();
         if (objects.Any(o => !double.IsFinite(o.PositionX) || !double.IsFinite(o.PositionY)))
             throw new PlacementException("non-finite translated position");
         double min = objects.Min(o => Math.Sqrt(o.PositionX * o.PositionX + o.PositionY * o.PositionY));

@@ -609,6 +609,7 @@ public sealed partial class SimulationEngine : IDisposable
                 // without isKnown. Unknown objects get the sentinel render type
                 // and null factual fields.
                 bool known = obj.IsKnown || obj.InitialMotion.ObjectId == PlayerShipObjectId;
+                bool mapKnown = known || _solarSystem is not null;
                 bool isPlayerShipRow = obj.InitialMotion.ObjectId == PlayerShipObjectId;
                 bool isKnownStation = known && obj.ObjectType == SpaceObjectType.Station;
                 _resourceAsteroids.TryGetValue(obj.InitialMotion.ObjectId, out var resourceAsteroid);
@@ -636,10 +637,10 @@ public sealed partial class SimulationEngine : IDisposable
                     ApproachRoute = cycleMotion.ApproachRoute,
                     NavigationTargetObjectId = isPlayerShipRow ? obj.Modules
                         .FirstOrDefault(m => m.ActiveCycle?.CommandType == NavigationComputerCommandTypes.Approach)?.ActiveCycle?.TargetObjectId : null,
-                    ObjectType = known ? obj.ObjectType : null,
-                    RenderObjectType = known ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
+                    ObjectType = mapKnown ? obj.ObjectType : null,
+                    RenderObjectType = mapKnown ? obj.ObjectType : SpaceObjectType.UnknownSpaceObject,
                     RelationToPlayer = known ? GetRelationToPlayer(obj) : null,
-                    DisplayName = known && resourceAsteroid is null ? obj.Name : null,
+                    DisplayName = mapKnown && resourceAsteroid is null ? obj.Name : null,
                     Image = !known ? null : resourceAsteroid is { CompositionKnown: false }
                         ? _neutralResourceImages[obj.InitialMotion.ObjectId] : obj.Image,
                     Survey = ProjectResourceSurvey(obj, resourceAsteroid, gameTimeMs),
