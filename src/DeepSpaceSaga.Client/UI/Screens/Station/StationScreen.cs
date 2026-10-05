@@ -53,20 +53,56 @@ public sealed class StationScreen : IScreen
     private string? _selectedDestinationId;
     private string? _selectionStationId;
 
-    public string? SelectedDestinationId
+    internal string? SelectedVoyageDestinationObjectId
     {
         get
         {
-            var snapshot = _buffer?.Latest?.Snapshot;
-            if (snapshot?.Voyage is not { Phase: VoyagePhases.Docked } voyage ||
-                CurrentStationId(snapshot) != _selectionStationId ||
-                !voyage.RouteOptions.Any(option => option.IsAvailable &&
-                    option.DestinationStationObjectId == _selectedDestinationId))
-                return null;
+            RefreshRouteSelection(_buffer?.Latest?.Snapshot);
             return _selectedDestinationId;
         }
     }
 
+    public string? SelectedDestinationId
+    {
+        get
+        {
+            RefreshRouteSelection(_buffer?.Latest?.Snapshot);
+            var options = _buffer?.Latest?.Snapshot.Voyage?.RouteOptions ?? default;
+            return !options.IsDefaultOrEmpty && options.Any(option => option.IsAvailable &&
+                option.BlockReasonCode is null && option.DestinationStationObjectId == _selectedDestinationId)
+                ? _selectedDestinationId : null;
+        }
+    }
+
+    private void RefreshRouteSelection(AuthoritativeSnapshot? snapshot)
+    {
+        var stationId = CurrentStationId(snapshot);
+        if (stationId != _selectionStationId)
+            _selectedDestinationId = null;
+        _selectionStationId = stationId;
+        if (snapshot?.Voyage is not { Phase: VoyagePhases.Docked } voyage || voyage.RouteOptions.IsDefaultOrEmpty)
+        {
+            _selectedDestinationId = null;
+            return;
+        }
+        if (!voyage.RouteOptions.Any(option => option.DestinationStationObjectId == _selectedDestinationId))
+            _selectedDestinationId = voyage.RouteOptions.FirstOrDefault(option => option.IsAvailable &&
+                option.BlockReasonCode is null)?.DestinationStationObjectId;
+    }
+
+    internal static string RouteOptionText(VoyageRouteOptionSnapshot option) =>
+        $"{option.DestinationDisplayName}  {option.DistanceClass}  ETA {TimeSpan.FromMilliseconds(option.TravelEstimateGameTimeMs):g}";
+
+    internal static string DepartureReasonText(string? code) => code switch
+    {
+        CommandReasonCodes.VoyageDestinationRequired => "Select a destination",
+        CommandReasonCodes.VoyageDestinationUnavailable => "Destination unavailable",
+        CommandReasonCodes.VoyageAlreadyActive => "A voyage is already active",
+        CommandReasonCodes.VoyageWrongDestination => "Dock at the voyage destination",
+        CommandReasonCodes.VoyageOutstandingDebt => "Settle outstanding port debt",
+        CommandReasonCodes.VoyageInsufficientFuel => "Insufficient fuel",
+        _ => string.IsNullOrWhiteSpace(code) ? "Departure unavailable" : $"Departure unavailable ({code})",
+    };
     /// <summary>
     /// Real-time (Environment.TickCount64) timestamp the pointer first entered the
     /// food-rations readout, or null while not hovering it — the tooltip only appears
@@ -130,10 +166,7 @@ public sealed class StationScreen : IScreen
 
     public void OnActivated()
     {
-        var stationId = CurrentStationId(_buffer?.Latest?.Snapshot);
-        if (stationId != _selectionStationId)
-            _selectedDestinationId = null;
-        _selectionStationId = stationId;
+        RefreshRouteSelection(_buffer?.Latest?.Snapshot);
         _hoveredButton = StationButton.None;
         _isExitButtonHovered = false;
         _foodRationsHoverStartedAtMs = null;
@@ -156,21 +189,15 @@ public sealed class StationScreen : IScreen
             return ScreenEvent.None;
 
         if (_session?.StationTravelPending == true) return ScreenEvent.None;
-        var currentStationId = CurrentStationId(_buffer?.Latest?.Snapshot);
-        if (currentStationId != _selectionStationId)
-        {
-            _selectionStationId = currentStationId;
-            _selectedDestinationId = null;
-        }
+        RefreshRouteSelection(_buffer?.Latest?.Snapshot);
         var voyage = _buffer?.Latest?.Snapshot.Voyage;
-        if (voyage is { Phase: VoyagePhases.Docked })
+        if (voyage is { Phase: VoyagePhases.Docked } && !voyage.RouteOptions.IsDefaultOrEmpty)
         {
             for (int i = 0; i < voyage.RouteOptions.Length; i++)
             {
                 if (!RouteRect(i).Contains(x, y)) continue;
                 var option = voyage.RouteOptions[i];
-                if (option.IsAvailable)
-                    _selectedDestinationId = option.DestinationStationObjectId;
+                _selectedDestinationId = option.DestinationStationObjectId;
                 return ScreenEvent.None;
             }
         }
@@ -300,6 +327,7 @@ public sealed class StationScreen : IScreen
         MenuStyle.DrawPanel(canvas, panelRect);
 
         var snapshot = _buffer?.Latest?.Snapshot;
+        RefreshRouteSelection(snapshot);
         string? stationName = StationToolbar.ResolveDockedStationName(snapshot);
         StationToolbar.Draw(canvas, pl, pt, stationName, isStationHub: true,
             isExitButtonHovered: _isExitButtonHovered,
@@ -324,14 +352,16 @@ public sealed class StationScreen : IScreen
             for (int i = 0; i < currentVoyage.RouteOptions.Length; i++)
             {
                 var option = currentVoyage.RouteOptions[i];
-                string label = $"{option.DestinationDisplayName}  {option.DistanceClass}";
-                if (!option.IsAvailable) label += $"  ({option.BlockReasonCode})";
+                string label = RouteOptionText(option);
+                if (!option.IsAvailable || option.BlockReasonCode is not null) label += "  (blocked)";
                 MenuStyle.DrawButton(canvas, RouteRect(i), label,
-                    !option.IsAvailable ? ButtonState.Disabled :
-                    option.DestinationStationObjectId == SelectedDestinationId ? ButtonState.Pressed : ButtonState.Normal);
+                    option.DestinationStationObjectId == _selectedDestinationId ? ButtonState.Pressed :
+                    !option.IsAvailable ? ButtonState.Disabled : ButtonState.Normal);
             }
-            if (currentVoyage.BlockReasonCode is { } reason)
-                canvas.DrawText(reason, pl + 400, pt + 645, MenuStyle.TextStatus);
+            var selected = currentVoyage.RouteOptions.FirstOrDefault(o => o.DestinationStationObjectId == _selectedDestinationId);
+            var reason = selected?.BlockReasonCode ?? currentVoyage.BlockReasonCode;
+            if (reason is not null)
+                canvas.DrawText(DepartureReasonText(reason), pl + 400, pt + 645, MenuStyle.TextStatus);
         }
 
         string[] districts = ["Док", "Рынок", "Жилой район", "Администрация"];
@@ -414,6 +444,7 @@ public sealed class StationScreen : IScreen
         var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
 
         MenuStyle.DrawButton(canvas, rect, "UNDOCK",
+            _buffer?.Latest?.Snapshot.Voyage is not null && SelectedDestinationId is null ? ButtonState.Disabled :
             _hoveredButton == StationButton.Undock ? ButtonState.Hovered : ButtonState.Normal);
     }
 }
