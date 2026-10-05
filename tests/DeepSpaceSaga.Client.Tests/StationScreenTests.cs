@@ -570,4 +570,17 @@ public class StationScreenTests
         Assert.Equal("B", screen.SelectedDestinationId);
         Assert.Equal("Beta  Short  ETA 1:00:00", StationScreen.RouteOptionText(snapshot.Voyage!.RouteOptions[0]));
     }
+    [Fact]
+    public void Default_route_array_renders_and_hit_tests_without_failure()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(new(1, 0, SimulationSpeed.Speed0, [], Voyage: new(VoyagePhases.Docked)));
+        var screen = new StationScreen(buffer);
+        screen.OnActivated();
+        RenderScreen(screen);
+        Assert.Null(screen.SelectedDestinationId);
+        screen.OnMouseMove(0, 0);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(StationLayout.PanelLeft(ScreenWidth) + 410,
+            StationLayout.PanelTop(ScreenHeight) + 450));
+    }
 }

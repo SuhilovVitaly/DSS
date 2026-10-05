@@ -189,7 +189,8 @@ internal sealed class TradingVoyageFixture : IDisposable
         FinishFlightTo(destination, splitSnapshots);
     }
 
-    internal void FinishFlightTo(string destination, bool splitSnapshots = false)
+    internal void FinishFlightTo(string destination, bool splitSnapshots = false,
+        Action<TradingVoyageFixture>? beforeDialogue = null)
     {
         var (_, acceleration) = Send(EngineId, ShipEngineCommandTypes.Accelerate);
         Xunit.Assert.NotEqual(CommandResultStatus.Rejected, acceleration?.Status);
@@ -222,6 +223,7 @@ internal sealed class TradingVoyageFixture : IDisposable
             target: destination);
         LastDockCommand = dockCommand;
         Xunit.Assert.Equal(CommandResultStatus.Executed, docking?.Status);
+        beforeDialogue?.Invoke(this);
         foreach (string choice in new[] { "truthful_id", "accept_fee", "continue" })
         {
             var active = Xunit.Assert.IsType<DialogueState>(Snapshot.ActiveDialogue);

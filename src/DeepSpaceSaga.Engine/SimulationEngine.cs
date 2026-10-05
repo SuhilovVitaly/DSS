@@ -475,7 +475,10 @@ public sealed partial class SimulationEngine : IDisposable
         {
             TradingMapGeometryGenerator.ValidateMaterialized(
                 savedMap, ScenarioGroupPlacement.InitialGeometry(normalizedState).SpaceObjects
-                    .Where(o => normalizedState.SolarSystem is null || (o.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip) && o.PersistenceType != "Temporary"))
+                    // Moving ships may legitimately approach any station after generation.
+                    // Startup clearance is not a constraint on their saved flight position.
+                    .Where(o => (!isSave && scenario.SaveFormatVersion == 0 && normalizedState.SolarSystem is null) ||
+                        (o.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip) && o.PersistenceType != "Temporary"))
                     .ToArray(), masterSeed, _registry);
             return normalizedState;
         }

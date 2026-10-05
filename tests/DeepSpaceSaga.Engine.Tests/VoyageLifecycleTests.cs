@@ -13,12 +13,15 @@ public sealed class VoyageLifecycleTests
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
             "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
         var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "Docked", "scenario.json"));
-        return scenario with { GameState = scenario.GameState with
+        return scenario with
         {
-            MasterSeed = 1,
-            SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == ShipId
-                ? o with { PortFeeDebt = debt } : o).ToArray(),
-        } };
+            GameState = scenario.GameState with
+            {
+                MasterSeed = 1,
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == ShipId
+                    ? o with { PortFeeDebt = debt } : o).ToArray(),
+            }
+        };
     }
 
     internal static SimulationEngine CreateEngine(long debt = 0)
@@ -83,5 +86,85 @@ public sealed class VoyageLifecycleTests
         Assert.Null(after.ActiveVoyage);
         Assert.Equal(before.PortFees, after.PortFees);
         Assert.Equal(before.PlayerCredits, after.PlayerCredits);
+    }
+    [Fact]
+    public void Undock_preserves_motion_and_wrong_destination_cannot_dock()
+    {
+        using var voyage = TradingVoyageFixture.Create();
+        var before = voyage.Snapshot.Objects.Single(o => o.ObjectId == ShipId);
+        voyage.Send(BridgeId, NavigationComputerCommandTypes.Undock, target: voyage.Destination);
+        var after = voyage.Snapshot.Objects.Single(o => o.ObjectId == ShipId);
+        Assert.Equal((before.X, before.Y, before.SpeedKmS, before.Direction, before.ApproachRoute),
+            (after.X, after.Y, after.SpeedKmS, after.Direction, after.ApproachRoute));
+        var (_, denied) = voyage.Send(BridgeId, NavigationComputerCommandTypes.Dock, target: voyage.Origin);
+        Assert.Equal(CommandReasonCodes.VoyageWrongDestination, denied?.ReasonCode);
+        var (_, alreadyActive) = voyage.Send(BridgeId, NavigationComputerCommandTypes.Undock, target: voyage.Destination);
+        Assert.Equal(CommandReasonCodes.VoyageAlreadyActive, alreadyActive?.ReasonCode);
+        Assert.Equal(VoyagePhases.Undocking, voyage.Snapshot.ActiveVoyage!.Phase);
+        voyage.Advance(1);
+        Assert.Equal(VoyagePhases.InTransit, voyage.Snapshot.ActiveVoyage!.Phase);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Docking_save_continues_real_dialogue_and_abort_reconciles_to_transit(bool explicitSaveFlag)
+    {
+        using var voyage = TradingVoyageFixture.Create();
+        voyage.Send(BridgeId, NavigationComputerCommandTypes.Undock, target: voyage.Destination);
+        SimulationEngine? restored = null;
+        try
+        {
+            voyage.FinishFlightTo(voyage.Destination, beforeDialogue: current =>
+            {
+                Assert.Equal(VoyagePhases.Docking, current.Snapshot.ActiveVoyage!.Phase);
+                var save = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(current.Save()), true);
+                restored = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
+                restored.LoadScenario(save, isSave: explicitSaveFlag);
+                var snapshot = restored.CaptureSnapshotForTests(current.Snapshot.GameTimeMs, SimulationSpeed.Speed0, current.MotionTime);
+                Assert.Equal(current.Snapshot.ActiveVoyage, snapshot.ActiveVoyage);
+                var active = snapshot.ActiveDialogue!;
+                restored.ReceiveDialogueCommand(new("abort-saved-dialogue", DialogueAction.Abort,
+                    active.InstanceId, active.Revision));
+                snapshot = restored.CaptureSnapshotForTests(current.Snapshot.GameTimeMs, SimulationSpeed.Speed0, current.MotionTime);
+                Assert.Equal(VoyagePhases.InTransit, snapshot.ActiveVoyage!.Phase);
+                Assert.Null(snapshot.DockedStationTrade);
+                Assert.False(snapshot.Objects.Single(o => o.ObjectId == ShipId).IsDocked);
+            });
+            Assert.Equal(VoyagePhases.Docked, voyage.Snapshot.Voyage!.Phase);
+            Assert.Equal(voyage.Destination, voyage.Snapshot.DockedStationTrade!.StationObjectId);
+        }
+        finally
+        {
+            restored?.Dispose();
+        }
+    }
+    [Fact]
+    public void Progress_stays_monotonic_after_course_change_and_flying_away()
+    {
+        using var voyage = TradingVoyageFixture.Create(calendarRatio: 1);
+        const string engineModule = "MOD-PLAYER-ENGINE-01";
+        voyage.Send(BridgeId, NavigationComputerCommandTypes.Undock, target: voyage.Destination);
+        voyage.Send(engineModule, ShipEngineCommandTypes.Accelerate);
+        for (int i = 0; i < 10 && voyage.Snapshot.Objects.Single(o => o.ObjectId == ShipId).SpeedKmS == 0; i++)
+            voyage.Advance(1000);
+        Assert.True(voyage.Snapshot.Objects.Single(o => o.ObjectId == ShipId).SpeedKmS > 0);
+        voyage.Send(engineModule, NavigationComputerCommandTypes.Approach, target: voyage.Destination);
+        for (int i = 0; i < 10 && voyage.Snapshot.Objects.Single(o => o.ObjectId == ShipId).ApproachRoute is null; i++)
+            voyage.Advance(1000);
+        var route = Assert.IsType<ApproachRoute>(voyage.Snapshot.Objects.Single(o => o.ObjectId == ShipId).ApproachRoute);
+        voyage.Advance((long)Math.Ceiling(route.DurationMs / 2));
+        int progress = voyage.Snapshot.ActiveVoyage!.ProgressPermille;
+        Assert.InRange(progress, 1, 1000);
+        voyage.Send(engineModule, ShipEngineCommandTypes.CancelAll);
+        voyage.Send(engineModule, ShipEngineCommandTypes.TurnRightStep);
+        voyage.Advance(10000);
+        var before = voyage.Snapshot.Objects.Single(o => o.ObjectId == ShipId);
+        var station = voyage.Snapshot.Objects.Single(o => o.ObjectId == voyage.Destination);
+        double Distance(ObjectMotionSnapshot ship) => Math.Sqrt(Math.Pow(ship.X - station.X, 2) + Math.Pow(ship.Y - station.Y, 2));
+        voyage.Advance((long)Math.Ceiling(route.DurationMs * 4));
+        Assert.True(Distance(voyage.Snapshot.Objects.Single(o => o.ObjectId == ShipId)) > Distance(before));
+        Assert.True(voyage.Snapshot.ActiveVoyage!.ProgressPermille >= progress);
+        Assert.Equal(VoyagePhases.InTransit, voyage.Snapshot.ActiveVoyage.Phase);
     }
 }

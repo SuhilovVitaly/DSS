@@ -266,7 +266,7 @@ public sealed class StationScreen : IScreen
         return _hoveredButton != StationButton.None || _isExitButtonHovered ||
             Enumerable.Range(0, 4).Any(i => DistrictRect(i).Contains(x, y)) ||
             (_buffer?.Latest?.Snapshot.Voyage is { Phase: VoyagePhases.Docked } voyage &&
-             Enumerable.Range(0, voyage.RouteOptions.Length).Any(i => RouteRect(i).Contains(x, y)));
+             !voyage.RouteOptions.IsDefaultOrEmpty && Enumerable.Range(0, voyage.RouteOptions.Length).Any(i => RouteRect(i).Contains(x, y)));
     }
 
     /// <summary>True when (x, y) lands on the toolbar's exit-button icon (see StationToolbar).</summary>
@@ -348,17 +348,19 @@ public sealed class StationScreen : IScreen
 
         if (snapshot?.Voyage is { Phase: VoyagePhases.Docked } currentVoyage)
         {
+            var routeOptions = currentVoyage.RouteOptions.IsDefault
+                ? System.Collections.Immutable.ImmutableArray<VoyageRouteOptionSnapshot>.Empty : currentVoyage.RouteOptions;
             canvas.DrawText("DESTINATION", pl + 400, pt + 430, MenuStyle.TextStatus);
-            for (int i = 0; i < currentVoyage.RouteOptions.Length; i++)
+            for (int i = 0; i < routeOptions.Length; i++)
             {
-                var option = currentVoyage.RouteOptions[i];
+                var option = routeOptions[i];
                 string label = RouteOptionText(option);
                 if (!option.IsAvailable || option.BlockReasonCode is not null) label += "  (blocked)";
                 MenuStyle.DrawButton(canvas, RouteRect(i), label,
                     option.DestinationStationObjectId == _selectedDestinationId ? ButtonState.Pressed :
                     !option.IsAvailable ? ButtonState.Disabled : ButtonState.Normal);
             }
-            var selected = currentVoyage.RouteOptions.FirstOrDefault(o => o.DestinationStationObjectId == _selectedDestinationId);
+            var selected = routeOptions.FirstOrDefault(o => o.DestinationStationObjectId == _selectedDestinationId);
             var reason = selected?.BlockReasonCode ?? currentVoyage.BlockReasonCode;
             if (reason is not null)
                 canvas.DrawText(DepartureReasonText(reason), pl + 400, pt + 645, MenuStyle.TextStatus);
