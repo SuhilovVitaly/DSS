@@ -157,10 +157,10 @@
         }
       ],
       "routeEffect": {
-        "availability": "Unavailable",
+        "availability": "Restricted",
         "maxAffectedIncidentEdges": 1,
-        "travelTimeMultiplierPermille": 1000,
-        "fuelMultiplierPermille": 1400,
+        "travelTimeMultiplierPermille": 1500,
+        "fuelMultiplierPermille": 1250,
         "riskProfileId": "risk.pirate-blockade"
       }
     },
@@ -204,10 +204,10 @@
         }
       ],
       "routeEffect": {
-        "availability": "Restricted",
+        "availability": "Unavailable",
         "maxAffectedIncidentEdges": 1,
-        "travelTimeMultiplierPermille": 1500,
-        "fuelMultiplierPermille": 1200,
+        "travelTimeMultiplierPermille": 1000,
+        "fuelMultiplierPermille": 1000,
         "riskProfileId": "risk.quarantine"
       }
     },

@@ -49,8 +49,8 @@ public sealed class StationMarketEventContentTests
                 {
                     var route = Assert.IsType<StationMarketEventRouteEffectDefinition>(actual.RouteEffect);
                     bool blockade = expected.Id == "pirate-blockade";
-                    Assert.Equal((blockade ? "Unavailable" : "Restricted", 1, blockade ? 1000 : 1500,
-                        blockade ? 1400 : 1200, "risk." + expected.Id),
+                    Assert.Equal((blockade ? "Restricted" : "Unavailable", 1, blockade ? 1500 : 1000,
+                        blockade ? 1250 : 1000, "risk." + expected.Id),
                         (route.Availability, route.MaxAffectedIncidentEdges, route.TravelTimeMultiplierPermille,
                          route.FuelMultiplierPermille, route.RiskProfileId));
                 }
