@@ -2258,8 +2258,14 @@ public sealed partial class GameSessionScreen : IScreen
             double dy = p.Y - ship.Pose.Y;
             distanceKm = double.Hypot(dx, dy) / 10.0;
         }
+        // Resolve against this snapshot only. Unknown and non-station objects cannot inherit a market row.
+        StationMarketKnowledgeSnapshot? market = null;
+        var observations = _buffer.Latest?.Snapshot.StationMarketKnowledge ?? default;
+        if (s.Source.ObjectType == SpaceObjectType.Station && p.RenderObjectType == SpaceObjectType.Station &&
+            !observations.IsDefaultOrEmpty)
+            market = observations.FirstOrDefault(o => string.Equals(o.StationObjectId, p.ObjectId, StringComparison.Ordinal));
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
-            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), s.Source.Countermeasure);
+            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), s.Source.Countermeasure, market);
     }
 
     /// <summary>

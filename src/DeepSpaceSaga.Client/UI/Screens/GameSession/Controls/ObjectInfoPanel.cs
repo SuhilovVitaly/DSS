@@ -197,6 +197,19 @@ public sealed class ObjectInfoPanel
             }
             if (d.DistanceKm is { } distanceKm)
                 lines.Add(("Distance", TacticalMapSettings.FormatDistance(distanceKm * 1000)));
+            if (d.RenderObjectType == SpaceObjectType.Station && d.MarketKnowledge is { } market &&
+                string.Equals(market.StationObjectId, d.ObjectId, StringComparison.Ordinal))
+            {
+                lines.Add(("Role", market.StationRole));
+                lines.Add(("Market", $"{(market.IsAvailable ? "Available" : "Unavailable")} / {(market.IsStale ? "STALE" : "FRESH")}"));
+                lines.Add(("Observed", $"T+{market.ObservedAtGameTimeMs} ms"));
+                foreach (var band in new[] { StationMarketStockState.Shortage, StationMarketStockState.Normal, StationMarketStockState.Surplus })
+                {
+                    var items = market.StockBands.IsDefaultOrEmpty ? [] : market.StockBands
+                        .Where(b => b.StockState == band).Select(b => b.ItemTypeId).Order(StringComparer.Ordinal).ToArray();
+                    lines.Add((band.ToString(), items.Length == 0 ? "—" : string.Join(", ", items)));
+                }
+            }
         }
         else
         {
@@ -294,7 +307,7 @@ public sealed class ObjectInfoPanel
             for (int i = 0; i < RowNames.Length; i++)
             {
                 bool opened = IsRowOpen(i);
-                float bodyHeight = Math.Max(RowBodyHeight, 2 * Padding + BuildLines(rowData[i]).Count * LineHeight);
+                float bodyHeight = Math.Max(RowBodyHeight, 2 * Padding + BuildRenderLines(rowData[i]).Count * LineHeight);
 
                 var captionRect = new SKRect(left, rowY, left + PanelWidth, rowY + RowCaptionHeight);
                 var bodyRect = opened
@@ -324,6 +337,35 @@ public sealed class ObjectInfoPanel
         _bodyRect = new SKRect(left, _captionRect.Bottom, left + PanelWidth, rowY);
     }
 
+    private float ValueOffset(ObjectInfoPanelData? data, List<(string Label, string Value)> lines) =>
+        data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null || data?.MarketKnowledge is not null
+            ? Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding) : 62f;
+
+    /// <summary>Wrap market values using the same measured text width used for rendering and body height.</summary>
+    internal List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data)
+    {
+        var source = BuildLines(data);
+        if (data?.MarketKnowledge is null) return source;
+        float width = PanelWidth - ImageWidth - 4 * Padding - ValueOffset(data, source);
+        var result = new List<(string Label, string Value)>();
+        foreach (var (label, value) in source)
+        {
+            string remaining = value;
+            bool first = true;
+            while (_valuePaint.MeasureText(remaining) > width)
+            {
+                int length = Math.Max(1, (int)_valuePaint.BreakText(remaining, width));
+                int space = remaining.LastIndexOf(' ', length - 1, length);
+                if (space > 0) length = space;
+                result.Add((first ? label : "", remaining[..length].TrimEnd()));
+                remaining = remaining[length..].TrimStart();
+                first = false;
+            }
+            result.Add((first ? label : "", remaining));
+        }
+        return result;
+    }
+
     private void DrawRowBody(SKCanvas canvas, SKRect bodyRect, ObjectInfoPanelData? data)
     {
         canvas.DrawRect(bodyRect, _panelBgPaint);
@@ -348,10 +390,8 @@ public sealed class ObjectInfoPanel
 
         float textX = imageRect.Right + Padding;
         float textY = imgY + LineHeight - 3f;
-        var lines = BuildLines(data);
-        float valueOffset = data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null
-            ? Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding)
-            : 62f;
+        var lines = BuildRenderLines(data);
+        float valueOffset = ValueOffset(data, BuildLines(data));
         foreach (var (label, value) in lines)
         {
             canvas.DrawText(label, textX, textY, _labelPaint);
@@ -450,7 +490,8 @@ public readonly record struct ObjectInfoPanelData(
     string? CaptainDisplayName = null,
     string? RelationToPlayer = null,
     double? DistanceKm = null,
-    TorpedoInspectionData? Torpedo = null, CountermeasureSnapshot? Countermeasure = null);
+    TorpedoInspectionData? Torpedo = null, CountermeasureSnapshot? Countermeasure = null,
+    StationMarketKnowledgeSnapshot? MarketKnowledge = null);
 
 /// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
 public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);
