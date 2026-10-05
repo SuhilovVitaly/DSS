@@ -234,4 +234,59 @@ public class InfoPanelTests
         scaleLine = Assert.Single(screen.BuildPanelLines(null), line => line.Label == "Scale");
         Assert.Equal("0.8 px/unit", scaleLine.Value);
     }
+    [Theory]
+    [InlineData(DeepSpaceSaga.Contracts.VoyagePhases.Undocking, "Undocking")]
+    [InlineData(DeepSpaceSaga.Contracts.VoyagePhases.InTransit, "In transit")]
+    [InlineData(DeepSpaceSaga.Contracts.VoyagePhases.Docking, "Docking")]
+    public void Active_voyage_lines_show_authoritative_phase_destination_and_progress(string phase, string label)
+    {
+        var (buffer, _, screen) = CreateScreen();
+        buffer.Update(new(1, 0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, [],
+            Voyage: new(phase, DestinationDisplayName: "Beta", ProgressPermille: 753)));
+        var lines = screen.BuildPanelLines(buffer.Latest);
+        Assert.Contains(("Voyage", label), lines);
+        Assert.Contains(("Destination", "Beta"), lines);
+        Assert.Contains(("Progress", "75.3%"), lines);
+    }
+
+    [Theory]
+    [InlineData(-100, "0.0%")]
+    [InlineData(1500, "100.0%")]
+    public void Presentation_clamps_progress_without_mutating_snapshot(int progress, string label)
+    {
+        var (buffer, _, screen) = CreateScreen();
+        buffer.Update(new(1, 0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, [],
+            Voyage: new(DeepSpaceSaga.Contracts.VoyagePhases.InTransit, DestinationStationObjectId: "B", ProgressPermille: progress)));
+        Assert.Contains(("Progress", label), screen.BuildPanelLines(buffer.Latest));
+        Assert.Contains(("Destination", "B"), screen.BuildPanelLines(buffer.Latest));
+        Assert.Equal(progress, buffer.Latest!.Snapshot.Voyage!.ProgressPermille);
+    }
+
+    [Fact]
+    public void Docked_and_legacy_snapshots_keep_panel_compact_and_unknown_reason_visible()
+    {
+        var (buffer, _, screen) = CreateScreen();
+        var legacy = new DeepSpaceSaga.Contracts.AuthoritativeSnapshot(1, 0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, []);
+        buffer.Update(legacy);
+        var before = screen.BuildPanelLines(buffer.Latest);
+        buffer.Update(legacy with { Voyage = new(DeepSpaceSaga.Contracts.VoyagePhases.Docked) });
+        Assert.Equal(before, screen.BuildPanelLines(buffer.Latest));
+        buffer.Update(legacy with { Voyage = new(DeepSpaceSaga.Contracts.VoyagePhases.Docked, BlockReasonCode: "new_reason") });
+        Assert.Contains(("Departure", "Departure unavailable (new_reason)"), screen.BuildPanelLines(buffer.Latest));
+    }
+
+    [Theory]
+    [InlineData(DeepSpaceSaga.Contracts.CommandReasonCodes.VoyageDestinationRequired, "Select a destination")]
+    [InlineData(DeepSpaceSaga.Contracts.CommandReasonCodes.VoyageDestinationUnavailable, "Destination unavailable")]
+    [InlineData(DeepSpaceSaga.Contracts.CommandReasonCodes.VoyageAlreadyActive, "A voyage is already active")]
+    [InlineData(DeepSpaceSaga.Contracts.CommandReasonCodes.VoyageWrongDestination, "Dock at the voyage destination")]
+    [InlineData(DeepSpaceSaga.Contracts.CommandReasonCodes.VoyageOutstandingDebt, "Settle outstanding port debt")]
+    [InlineData(DeepSpaceSaga.Contracts.CommandReasonCodes.VoyageInsufficientFuel, "Insufficient fuel")]
+    public void Docked_rejection_shows_each_known_departure_reason(string reason, string label)
+    {
+        var (buffer, _, screen) = CreateScreen();
+        buffer.Update(new(1, 0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, [],
+            Voyage: new(DeepSpaceSaga.Contracts.VoyagePhases.Docked, BlockReasonCode: reason)));
+        Assert.Contains(("Departure", label), screen.BuildPanelLines(buffer.Latest));
+    }
 }

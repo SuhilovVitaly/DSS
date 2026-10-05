@@ -2195,8 +2195,23 @@ public sealed partial class GameSessionScreen : IScreen
         int objectCount = buffered?.Snapshot.Objects.Length ?? 0;
         lines.Add(("Celestial objects", objectCount.ToString()));
 
+        if (buffered?.Snapshot.Voyage is { } voyage)
+        {
+            if (voyage.Phase != VoyagePhases.Docked)
+            {
+                lines.Add(("Voyage", voyage.Phase == VoyagePhases.InTransit ? "In transit" : voyage.Phase));
+                lines.Add(("Destination", voyage.DestinationDisplayName ?? voyage.DestinationStationObjectId ?? "Unknown"));
+                lines.Add(("Progress", (Math.Clamp(voyage.ProgressPermille, 0, 1000) / 10m)
+                    .ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + "%"));
+            }
+            if (voyage.BlockReasonCode is not null)
+                lines.Add(("Departure", VoyageReasonText(voyage.BlockReasonCode)));
+        }
         return lines;
     }
+
+    internal static string VoyageReasonText(string? reasonCode) =>
+        Station.StationScreen.DepartureReasonText(reasonCode);
 
     // ── Object Info panel (top-right) ────────────────────────────
 
