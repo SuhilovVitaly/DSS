@@ -48,3 +48,15 @@ Story review (same agent): inspected stream isolation, IDs/case collisions, boun
 Current scenario discovery includes PlayerShipOnly, added since planning; it is covered alongside the five planned starts. Raw stationary templates remain explicit fixtures for legacy economy/dialogue tests. Production New Game tests exercise generated orbital starts and compare docked velocity with the parent's authoritative tangent.
 
 Story review (same agent): inspected immutable translation, docking offset normalization, relative geometry, configured start radius, resource-field rigid rotation, save placement validation at original epoch, all-scenario discovery and legacy Load isolation. Confirmed that runtime movers are excluded only from saved initial trading placement checks; resource/market manifests still validate. No outstanding confirmed US-0004 findings. Visiting a moving station remains US-0005.
+## US-0005 — orbital station visit
+
+| Ticket | Commit | Observed validation |
+|---|---|---|
+| TK-0001 | 0d3a984 | Engine 1187/1187; seeds 1, 2, 42 reach dock range within max(2 * straight time, 10 calendar days), constant Approach speed, live tangent completion, cancel/repeat and unreachable fallback |
+| TK-0002 | dc7de93 | Engine 1192/1192 before added abort regression; final focused docking 6/6 including abort and duplicate dialogue commands; scoped formatting and diff checks |
+
+A real command-driven visit (no position reset during the journey) runs Approach, separate speed/course synchronization, the paid docking dialogue and Undock on all three seeds. Docked motion preserves parent offset; release preserves exact pose, speed and heading and continues linearly. Station travel retains its existing one calendar hour / 12 physical seconds advance.
+
+Confirmed defects fixed: completed MaintainCourse left its cycle permanently busy; first free-flight docking never initialized the docked voyage state, hiding departure options. Added regression coverage for both. Dock validation now uses circular heading difference with the existing epsilon. The detached dialogue transaction installs orbital binding with docking and still rolls back fees on validation failure.
+
+Story review (same agent): checked legacy captured-target semantics, unchanged ApproachRoute/planner version/speed, completion timestamps, cancellation, heading seam, transactional revalidation, dialogue replay/abort, docked travel and release. No outstanding confirmed US-0005 findings. No new orbital interception API was introduced.
