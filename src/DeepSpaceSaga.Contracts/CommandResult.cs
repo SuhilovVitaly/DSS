@@ -112,7 +112,11 @@ public sealed record TradeExecutionReceipt(
     long ExecutedQuantity,
     long TotalCredits,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
-    ImmutableArray<string> LimitReasons = default);
+    ImmutableArray<string> LimitReasons = default,
+    /// <summary>Known successful Sell: acquisition cost of the executed cargo only. Null for Buy, Refuel, rejection or unknown history.</summary>
+    long? RealizedCargoCostCredits = null,
+    /// <summary>Known successful Sell: proceeds minus realized cargo cost; may be negative. Null is unavailable, never zero profit.</summary>
+    long? GrossResultCredits = null);
 
 /// <summary>
 /// Machine-readable reason codes for non-executed command results (snake_case,
