@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DeepSpaceSaga.Contracts;
@@ -101,6 +102,11 @@ public static class ScenarioLoader
         {
             PlayerShipObjectId = ids[gs.PlayerShipObjectId],
             CurrentSpeed = KnownSpeeds.Single(s => s.Equals(gs.CurrentSpeed, StringComparison.OrdinalIgnoreCase)),
+            SolarSystem = gs.SolarSystem is not { } solar ? null : solar with
+            {
+                Planets = solar.Planets.Select(p => p with { ObjectId = Resolve(p.ObjectId)! }).ToImmutableArray(),
+                Orbits = solar.Orbits.Select(o => o with { ObjectId = Resolve(o.ObjectId)! }).ToImmutableArray()
+            },
             SpaceObjects = objects
         };
         normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);

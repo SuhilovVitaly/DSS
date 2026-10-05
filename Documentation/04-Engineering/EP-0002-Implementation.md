@@ -2,6 +2,8 @@
 
 User authorization: implement every story and ticket, fix issues found by story/epic reviews, change project files and tests as needed, commit and push every ticket. Destination explicitly confirmed: origin (https://github.com/SuhilovVitaly/DSS), base-fight.
 
+Final outcome: all 21 tickets and eight story reviews are delivered. Final solution test run: 3113/3113 passed; 4800-world correctness corpus; 18 native host cases / 10800 measured frames, all passing the 80 FPS p99 criterion. Reviews were performed by the implementing agent. Story notes below are chronological; deferred native checks and subsequent integration corrections are resolved in US-0008 and the final epic review.
+
 ## US-0001 — seeded system start
 
 | Ticket | Commit | Observed validation |
@@ -98,7 +100,7 @@ Tooling tests: ReportHasReproductionAndBackend and InvalidConfigReturnsFailure p
 
 TK-0003 native protocol: Release production SkiaWindow with live LocalGameSessionConnection, Default_500 seed 1, min=3 planets/2 belts/50 days, max=7/5/75, 2048 decoration samples and 24 playable asteroids per belt. System fit, first-belt fit and selected-station view at UI 100/120/150%; 100% uses 1280x720, 120/150% use 1920x1080. Warmup 120 frames, measurement 600 frames per case. Actual UI speed buttons exercise Speed1 -> Speed0 -> Speed1 before measurement. The script drives the native window; the agent inspects captured frames. This is scripted native acceptance with visual inspection, not a human-operated play session.
 
-Hardware: Intel Arc 140V (reported 16GB), OpenGL 3.3.0 driver build 32.0.101.8860; monitor reports 100 Hz, VSync on. CPU reports Intel64 Family 6 Model 189 Stepping 1, 8 logical processors; .NET 8.0.26, Windows 10.0.26200. Native reports include assembly module ID and source commit (8e952b6 plus TK-0003 diagnostics). Swap completion intervals measure driver/display wait as part of presentation; they are not GPU execution or physical scanout measurements.
+Hardware: Intel Arc 140V (reported 16GB), OpenGL 3.3.0 driver build 32.0.101.8860; monitor reports 100 Hz, VSync on. CPU: Intel Core Ultra 7 258V (host Win32_Processor), Intel64 Family 6 Model 189 Stepping 1, 8 logical processors; .NET 8.0.26, Windows 10.0.26200. Native reports include assembly module ID and source commit (8e952b6 plus TK-0003 diagnostics). Swap completion intervals measure driver/display wait as part of presentation; they are not GPU execution or physical scanout measurements.
 
 Initial exploratory launches used the repository working directory and missed relative UI assets. They were discarded as acceptance evidence. The native runner now sets the client asset directory and loads production map/combat settings before constructing the screen.
 
@@ -183,3 +185,23 @@ CPU/raster percentiles below are milliseconds, seed 1, UI 100%, 1920x1080, 120 w
 | Undocked/belt | 5.059 | 6.177 | 6.738 | 2.697 | 3.744 | 4.330 |
 
 No outstanding confirmed US-0008 findings remain. Native target passes in host execution; restricted execution adds substantial swap delay even for an empty window. Full epic integration findings are recorded separately below.
+
+
+## Epic integration review
+
+Same-agent review rechecked New Game versus Load, normalized references, save format 12, absolute motion epochs, generated geometry and scenario preservation, command-driven station visits, presentation order and actual window evidence.
+
+Two additional defects were reproduced before fixing:
+- Orbital docking rejected even five seconds after successful synchronization (also at x100), because the continuously changing tangent immediately exceeded the legacy angular epsilon. Orbital targets now use the existing 1e-6 km/s budget for the full relative velocity vector; the scalar speed check and legacy angular epsilon remain unchanged. This is an explicit orbital docking validation extension: no automatic steering, speed change, teleport, Approach change or new holding state. Existing revalidation/fee rollback still rejects a one-degree heading mismatch. Delayed input is tested both uninterrupted and across save/load.
+- Case-insensitive saved solar-map references passed validation but were published with noncanonical spelling, so exact Client lookups could miss planet styling. Load now normalizes map planet/orbit references to the owning object IDs, matching other scenario references.
+
+The final Client run also exposed a one-ULP coordinate difference in the existing pirate save/load test after world translation: -203887.2149070323 versus -203887.21490703232. Its position assertions now use the established 1e-6 world-unit continuation tolerance (0.1 mm), while every other snapshot field remains an exact comparison.
+
+Final validation commands/results:
+- dotnet test DeepSpaceSaga.sln --no-restore: Contracts 105, Motion 141, Engine 1269, Client 1596, Performance 2; total 3113 passed, zero failures/skips.
+- After the raster asset-directory review change, dotnet test tools/DeepSpaceSaga.Performance.Tests -c Release --no-restore: 2/2 passed.
+- Release Client/performance build succeeded with zero warnings/errors. Scoped dotnet format whitespace --verify-no-changes --no-restore passed for the changed production files; changed test files were formatted and verified. git diff --check passed.
+- Epic regression tests include five cases: delayed docking at x1/x100, uninterrupted/save-load, and canonical solar-map references. Before fixes the original two delays and case-reference test all failed; after fixes these and the existing dock revalidation/rollback tests pass.
+- Native images and transient JSON measurements were inspected and removed after their textual evidence was recorded, as required by TK-0003.
+
+Final review outcome: no outstanding confirmed implementation findings. E2-AC-01..08 are covered by the story evidence, full test run, real-file continuation tests and native host acceptance. Human-operated playthrough was not performed; native input was scripted and captured frames were visually inspected. The restricted-execution presentation limit remains an environment-specific observation, not an unresolved code-performance finding.

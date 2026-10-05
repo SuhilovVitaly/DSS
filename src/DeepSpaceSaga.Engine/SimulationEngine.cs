@@ -2337,14 +2337,21 @@ public sealed partial class SimulationEngine : IDisposable
         if (distanceWorldUnits > rangeWorldUnits)
             return CommandStartOutcome.Rejected(CommandReasonCodes.DockOutOfRange);
 
-        // Synchronization tolerance: floating-point safety margin only, not a gameplay
-        // allowance — SpeedSynchronization/DirectionSynchronization capture and apply the
-        // target's exact value, so a genuinely synchronized ship matches almost exactly.
-        // Compare headings on the circle, including the 0/360 seam.
         const double speedEpsilonKmS = 1e-6;
         const double directionEpsilonDeg = 1e-6;
-        if (Math.Abs(shipMotion.SpeedKmS - targetMotion.SpeedKmS) > speedEpsilonKmS ||
-            Math.Abs((shipMotion.Direction - targetMotion.Direction + 540) % 360 - 180) > directionEpsilonDeg)
+        double headingDifference = Math.Abs((shipMotion.Direction - targetMotion.Direction + 540) % 360 - 180);
+        double speedDifference = shipMotion.SpeedKmS - targetMotion.SpeedKmS;
+        // An orbit's tangent changes continuously after synchronization. For orbital
+        // targets compare the full relative velocity against the same 1 mm/s budget,
+        // rather than requiring a click at the exact cycle-completion millisecond.
+        // The half-angle identity avoids cancellation for nearly parallel velocities.
+        double halfAngleSin = Math.Sin(headingDifference * Math.PI / 360);
+        double relativeVelocitySquared = speedDifference * speedDifference +
+            4 * shipMotion.SpeedKmS * targetMotion.SpeedKmS * halfAngleSin * halfAngleSin;
+        bool courseMismatch = targetMotion.Orbit is not null
+            ? relativeVelocitySquared > speedEpsilonKmS * speedEpsilonKmS
+            : headingDifference > directionEpsilonDeg;
+        if (Math.Abs(speedDifference) > speedEpsilonKmS || courseMismatch)
         {
             return CommandStartOutcome.Rejected(CommandReasonCodes.DockNotSynchronized);
         }
