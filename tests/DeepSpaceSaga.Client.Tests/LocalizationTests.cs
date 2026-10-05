@@ -154,4 +154,59 @@ public class LocalizationTests
             $"Ice: {actual} completed · {total} tokens",
             string.Format(english["TradeUX.SuccessResult"], "Ice", actual, total));
     }
+    [Fact]
+    public void Cargo_result_keys_exist_in_english_and_russian_with_matching_placeholders()
+    {
+        var english = Localization.LoadLocaleFile("English")!;
+        var russian = Localization.LoadLocaleFile("Russian")!;
+        string[] keys = ["PurchaseCost", "SaleProceeds", "RealizedCargoCost", "GrossCargoResult", "CargoCostUnavailable",
+            "CargoResultKnown", "CargoResultPartialKnown", "CargoResultUnknown", "CargoResultPartialUnknown"];
+        foreach (string name in keys)
+        {
+            string key = "Trade." + name;
+            Assert.True(english.ContainsKey(key));
+            Assert.True(russian.ContainsKey(key));
+            int[] placeholders = name.EndsWith("Known", StringComparison.Ordinal) ? [0, 1, 2, 3, 4, 5] :
+                name.EndsWith("Unknown", StringComparison.Ordinal) ? [0, 1, 2, 3] : [];
+            Assert.Equal(placeholders, PlaceholderIndexes(english[key]));
+            Assert.Equal(placeholders, PlaceholderIndexes(russian[key]));
+            foreach (var locale in new[] { english, russian })
+            {
+                string rendered = string.Format(locale[key], "Ice", 3, 5, 99, 150, -51);
+                if (placeholders.Length == 6) Assert.Contains("-51", rendered);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("English", "Cost unavailable")]
+    [InlineData("Russian", "Себестоимость недоступна")]
+    public void Unknown_cost_messages_are_explicit_and_never_render_zero_profit(string language, string unavailable)
+    {
+        var strings = Localization.LoadLocaleFile(language)!;
+        Assert.Equal(unavailable, strings["Trade.CargoCostUnavailable"]);
+        foreach (string key in new[] { "Trade.CargoResultUnknown", "Trade.CargoResultPartialUnknown" })
+        {
+            string message = string.Format(strings[key], "Ice", 3, 5, 99);
+            Assert.Contains(unavailable, message);
+            Assert.DoesNotContain("0", message);
+            Assert.DoesNotContain("profit", message, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("прибыль", message, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void Gross_result_labels_do_not_claim_net_voyage_profit()
+    {
+        foreach (string language in new[] { "English", "Russian" })
+        {
+            var strings = Localization.LoadLocaleFile(language)!;
+            foreach (string key in new[] { "Trade.GrossCargoResult", "Trade.CargoResultKnown", "Trade.CargoResultPartialKnown" })
+            {
+                Assert.DoesNotContain("net", strings[key], StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain("чистая", strings[key], StringComparison.OrdinalIgnoreCase);
+            }
+        }
+    }
+
 }
