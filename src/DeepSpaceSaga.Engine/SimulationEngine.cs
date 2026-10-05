@@ -207,6 +207,8 @@ public sealed partial class SimulationEngine : IDisposable
     {
         scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true);
         var gs = scenario.GameState;
+        if ((isSave || scenario.SaveFormatVersion > 0) && gs.MarketEventCatalogFingerprint is { } eventFingerprint && eventFingerprint != _registry.StationMarketEventCatalogFingerprint)
+            throw new ScenarioException("Incompatible market event catalog fingerprint. Save was not modified.");
         if (gs.CatalogCompatibility is { } catalog && catalog != _registry.CatalogCompatibility)
             throw new ScenarioException("Incompatible catalogVersion, rulesVersion or catalog fingerprint. Save was not modified.");
         if ((isSave || scenario.SaveFormatVersion > 0) && gs.CatalogCompatibility is null && _registry.ItemTypes.Count > 0 &&
@@ -283,7 +285,7 @@ public sealed partial class SimulationEngine : IDisposable
                 ? ResolveStationProducingModules(obj)
                 : ImmutableArray<StationProducingModuleRuntime>.Empty;
             var events = isStation
-                ? ResolveStationEvents(obj)
+                ? ResolveMarketEventsForLoad(obj, gs.GameTimeMs, gs.MarketEventCatalogFingerprint, isSave || scenario.SaveFormatVersion > 0)
                 : ImmutableArray<StationEventRuntime>.Empty;
             var crew = isShip
                 ? ResolveShipCrew(obj)
@@ -795,7 +797,7 @@ public sealed partial class SimulationEngine : IDisposable
 
         // Only a profile market publishes its revision; a profile-less one keeps it internal (D-U2).
         return new StationTradeSnapshot(station.InitialMotion.ObjectId, items.MoveToImmutable(),
-            station.MarketProfileId is null ? null : station.MarketRevision);
+            station.MarketProfileId is null ? null : station.MarketRevision, BuildActiveEventProjection(station, _processedWorldTimeMs));
     }
 
     /// <summary>
@@ -1053,7 +1055,8 @@ public sealed partial class SimulationEngine : IDisposable
             TradingMap: _tradingMap,
             StationResourceFields: _stationResourceFields,
             VoyageState: _voyageState,
-            CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState(), SolarSystem: _solarSystem);
+            CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState(), SolarSystem: _solarSystem,
+            MarketEventCatalogFingerprint: _registry.StationMarketEvents.Count > 0 ? _registry.StationMarketEventCatalogFingerprint : null);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
@@ -1136,7 +1139,10 @@ public sealed partial class SimulationEngine : IDisposable
             Description: evt.Description,
             StartedGameTimeMs: evt.StartedGameTimeMs,
             DurationMs: evt.DurationMs,
-            PriceFactors: evt.PriceFactors.Select(BuildSaveEventPriceFactor).ToList());
+            PriceFactors: evt.PriceFactors.Select(BuildSaveEventPriceFactor).ToList(), DefinitionId: evt.DefinitionId,
+            DisplayNameKey: evt.DisplayNameKey, DescriptionKey: evt.DescriptionKey, EffectSummaryKey: evt.EffectSummaryKey,
+            ItemEffects: evt.ItemEffects.IsDefault ? null : evt.ItemEffects.ToArray(), RouteEffect: evt.RouteEffect,
+            ActivationStockDeltaApplied: evt.ActivationStockDeltaApplied);
     }
 
     private StationEventPriceFactorData BuildSaveEventPriceFactor(StationEventPriceFactorRuntime factor)
@@ -3806,7 +3812,10 @@ internal sealed record StationEventRuntime(
     string? Description,
     long StartedGameTimeMs,
     long? DurationMs,
-    ImmutableArray<StationEventPriceFactorRuntime> PriceFactors);
+    ImmutableArray<StationEventPriceFactorRuntime> PriceFactors,
+    string? DefinitionId = null, string? DisplayNameKey = null, string? DescriptionKey = null, string? EffectSummaryKey = null,
+    ImmutableArray<StationMarketEventItemEffectData> ItemEffects = default, StationMarketEventRouteEffectData? RouteEffect = null,
+    bool ActivationStockDeltaApplied = false);
 
 /// <summary>
 /// One multiplicative price factor contributed by a <see cref="StationEventRuntime"/>. See

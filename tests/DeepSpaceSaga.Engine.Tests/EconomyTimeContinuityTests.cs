@@ -155,6 +155,7 @@ public class EconomyTimeContinuityTests
                 SimulationTimeMs = 0,
                 MasterSeed = 17,
                 CatalogCompatibility = IntervalRegistry.CatalogCompatibility,
+                MarketEventCatalogFingerprint = null,
                 TradingMap = null,
                 VoyageState = null,
                 DialogueState = null,
@@ -523,7 +524,7 @@ public class EconomyTimeContinuityTests
     /// </summary>
     private static GameDataRegistry MarketRegistry(
         StationMarketProfileDefinition profile,
-        FactoryTypeDefinition? extraFactory = null)
+        FactoryTypeDefinition? extraFactory = null, IEnumerable<StationMarketEventDefinition>? marketEvents = null)
     {
         var source = RealRegistry();
         var factories = Enumerable.Range(0, source.FactoryTypes.Count).Select(source.FactoryTypes.GetDefinition);
@@ -536,8 +537,8 @@ public class EconomyTimeContinuityTests
             Enumerable.Range(0, source.Recipes.Count).Select(source.Recipes.GetDefinition),
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
-                .Select(source.StationMarketProfiles.GetDefinition).Append(profile),
-            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
+                .Select(source.StationMarketProfiles.GetDefinition).Where(p => p.TypeId != profile.TypeId).Append(profile),
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition), stationMarketEvents: marketEvents);
     }
 
     /// <summary>
@@ -1284,5 +1285,368 @@ public class EconomyTimeContinuityTests
             Assert.Null(item.MaxStock);
             Assert.Null(item.StockState);
         });
+    }
+    // US-0007: real calendar/market/save paths with deliberately forced, small catalogs.
+    private static StationMarketEventDefinition MarketEventDefinition(string id = "event.reactor-accident", int chance = 1000, int priority = 10) =>
+        new(id, id + ".Name", id + ".Description", id + ".Effect", priority, chance, 2, 2, [BoundedProfile().TypeId],
+            [new("item.ice", 500, 1000, 2000), new("item.water", 1000, 1500, 1000, 24), new("item.steel", 1000, 1500, 1000)]);
+
+    private static (SimulationEngine Engine, GameDataRegistry Registry) CreateEventEngine(IEnumerable<StationMarketEventDefinition> definitions,
+        ulong seed = 1729, IReadOnlyList<StationInventoryItemData>? stock = null, SimulationClock? clock = null,
+        Func<ScenarioFile, ScenarioFile>? adjust = null, StationMarketProfileDefinition? profile = null)
+    {
+        profile ??= BoundedProfile();
+        var registry = MarketRegistry(profile, marketEvents: definitions);
+        var scenario = MarketTemplate(profile, stock);
+        scenario = scenario with { GameState = scenario.GameState with { MasterSeed = seed, MarketEventCatalogFingerprint = null } };
+        if (adjust is not null) scenario = adjust(scenario);
+        var engine = new SimulationEngine(registry, [], clock ?? new SimulationClock(SimulationSpeed.Speed0, () => 0));
+        engine.LoadScenario(scenario);
+        return (engine, registry);
+    }
+
+    private static string EventMarketState(SimulationEngine engine, long time) =>
+        System.Text.Json.JsonSerializer.Serialize(engine.CaptureSnapshotForTests(time, simulationTimeMs: 0).DockedStationTrade);
+
+    [Fact]
+    public void MarketEvent_forced_activation_effects_delta_price_and_single_revision_are_authoritative()
+    {
+        var (engine, registry) = CreateEventEngine([MarketEventDefinition()]);
+        using (engine)
+        {
+            var before = engine.CaptureSnapshotForTests(GameCalendar.HourMs - 1, simulationTimeMs: 0).DockedStationTrade!;
+            Assert.Empty(before.ActiveEvents);
+            long basePrice = before.Items.Single(i => i.ItemTypeId == "item.ice").UnitPriceCredits;
+            var actual = engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 0).DockedStationTrade!;
+            var evt = Assert.Single(actual.ActiveEvents);
+            Assert.Equal("event.reactor-accident@SPC-0002@1", evt.EventId);
+            Assert.Equal(3 * GameCalendar.HourMs, evt.EndsGameTimeMs);
+            Assert.Equal(2 * GameCalendar.HourMs, evt.RemainingGameTimeMs);
+            Assert.Equal(before.MarketRevision + 1, actual.MarketRevision);
+            Assert.Equal((117L, 90L, 69L), (MarketStock(engine, registry, "item.ice"), MarketStock(engine, registry, "item.water"), MarketStock(engine, registry, "item.steel")));
+            Assert.Equal(basePrice * 2, actual.Items.Single(i => i.ItemTypeId == "item.ice").UnitPriceCredits);
+            Assert.Equal(actual.MarketRevision, engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 0).DockedStationTrade!.MarketRevision);
+            var save = engine.CaptureSaveStateForTests(GameCalendar.HourMs, SimulationSpeed.Speed0, 0);
+            Assert.Equal(registry.StationMarketEventCatalogFingerprint, save.GameState.MarketEventCatalogFingerprint);
+            Assert.True(Assert.Single(save.GameState.SpaceObjects.Single(o => o.ObjectId == "SPC-0002").Events!).ActivationStockDeltaApplied);
+        }
+    }
+
+    [Fact]
+    public void MarketEvent_half_open_expiry_restores_prices_and_baseline_rates()
+    {
+        ulong seed = 1;
+        ulong Roll(ulong s, long h) => DeepSpaceSaga.Engine.Rng.RngStreamSeedDerivation.DeriveStreamSeed(s, $"market-event:roll:SPC-0002:event.reactor-accident:{h}") % 1000;
+        while (Roll(seed, 1) >= Roll(seed, 3)) seed++;
+        var definition = MarketEventDefinition(chance: (int)Roll(seed, 1) + 1);
+        var (engine, registry) = CreateEventEngine([definition], seed);
+        using (engine)
+        {
+            long baseline = engine.CaptureSnapshot().DockedStationTrade!.Items.Single(i => i.ItemTypeId == "item.ice").UnitPriceCredits;
+            var active = engine.CaptureSnapshotForTests(3 * GameCalendar.HourMs - 1, simulationTimeMs: 0).DockedStationTrade!;
+            Assert.Equal(1, Assert.Single(active.ActiveEvents).RemainingGameTimeMs);
+            long water = MarketStock(engine, registry, "item.water");
+            long ice = MarketStock(engine, registry, "item.ice");
+            var ended = engine.CaptureSnapshotForTests(3 * GameCalendar.HourMs, simulationTimeMs: 0).DockedStationTrade!;
+            Assert.Empty(ended.ActiveEvents);
+            Assert.Equal(baseline, ended.Items.Single(i => i.ItemTypeId == "item.ice").UnitPriceCredits);
+            Assert.Equal(water - 4, MarketStock(engine, registry, "item.water"));
+            Assert.Equal(ice + 18, MarketStock(engine, registry, "item.ice"));
+            Assert.Equal(active.MarketRevision + 1, ended.MarketRevision);
+        }
+    }
+
+    [Fact]
+    public void MarketEvent_priority_and_id_cap_candidates_independently_of_input_order()
+    {
+        var definitions = new[] { MarketEventDefinition("event.quarantine", priority: 20), MarketEventDefinition("event.decompression", priority: 20), MarketEventDefinition(priority: 1) };
+        var (first, _) = CreateEventEngine(definitions);
+        var (second, _) = CreateEventEngine(definitions.AsEnumerable().Reverse(), adjust: s => s with { GameState = s.GameState with { SpaceObjects = s.GameState.SpaceObjects.Reverse().ToArray() } });
+        using (first) using (second)
+        {
+            Assert.Equal(EventMarketState(first, GameCalendar.HourMs), EventMarketState(second, GameCalendar.HourMs));
+            Assert.Equal(new[] { "event.decompression", "event.quarantine" }, first.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 0).DockedStationTrade!.ActiveEvents.Select(e => e.DefinitionId));
+            // Two simultaneous 500 permille output multipliers: 18 * .5 * .5 = 4.5, rounded once to 5.
+            Assert.Equal(113, first.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 0).DockedStationTrade!.Items.Single(i => i.ItemTypeId == "item.ice").StockQuantity);
+        }
+    }
+
+    [Theory]
+    [InlineData(0, -100, 0)]
+    [InlineData(143, 24, 144)]
+    public void MarketEvent_delta_clamps_once_and_survives_mid_event_save(long initial, long delta, long expected)
+    {
+        var definition = MarketEventDefinition() with { ItemEffects = [new("item.water", 1000, 0, 1000, delta)] };
+        var (engine, registry) = CreateEventEngine([definition], stock: [new("item.ice", 108), new("item.water", initial), new("item.steel", 72)]);
+        using (engine)
+        {
+            var save = engine.CaptureSaveStateForTests(GameCalendar.HourMs, SimulationSpeed.Speed0, 0);
+            long clamped = Math.Clamp(initial + delta, 0, 144);
+            Assert.Equal(expected, MarketStock(engine, registry, "item.water"));
+            Assert.Equal(expected, clamped);
+            using var loaded = new SimulationEngine(registry);
+            loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
+            Assert.Equal(EventMarketState(engine, 2 * GameCalendar.HourMs), EventMarketState(loaded, 2 * GameCalendar.HourMs));
+            Assert.Equal(clamped, MarketStock(loaded, registry, "item.water"));
+        }
+    }
+
+    [Theory]
+    [InlineData("fingerprint")]
+    [InlineData("missing-fingerprint")]
+    [InlineData("effect")]
+    [InlineData("key")]
+    [InlineData("route")]
+    [InlineData("unapplied")]
+    [InlineData("duration")]
+    [InlineData("duplicate")]
+    [InlineData("three")]
+    public void MarketEvent_invalid_save_rejects_without_world_replacement(string defect)
+    {
+        var (original, registry) = CreateEventEngine([MarketEventDefinition()]);
+        using (original)
+        {
+            var save = original.CaptureSaveStateForTests(GameCalendar.HourMs, SimulationSpeed.Speed0, 0);
+            var station = save.GameState.SpaceObjects.Single(o => o.ObjectId == "SPC-0002");
+            var evt = Assert.Single(station.Events!);
+            IReadOnlyList<StationEventData> events = defect switch
+            {
+                "effect" => [evt with { ItemEffects = [new("item.water", 1000, 1500, 1000, 25)] }],
+                "key" => [evt with { DisplayNameKey = "Wrong" }],
+                "route" => [evt with { RouteEffect = new("Restricted", 1, 1000, 1000) }],
+                "unapplied" => [evt with { ActivationStockDeltaApplied = false }],
+                "duration" => [evt with { DurationMs = 0 }],
+                "duplicate" => [evt, evt],
+                "three" => [evt, new("legacy1", "One", null, 0, null, []), new("legacy2", "Two", null, 0, null, [])],
+                _ => [evt],
+            };
+            save = save with
+            {
+                GameState = save.GameState with
+                {
+                    MarketEventCatalogFingerprint = defect == "fingerprint" ? "WRONG" : defect == "missing-fingerprint" ? null : save.GameState.MarketEventCatalogFingerprint,
+                    SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId == station.ObjectId ? o with { Events = events } : o).ToArray(),
+                }
+            };
+            var (target, _) = CreateEventEngine([MarketEventDefinition()]);
+            using (target)
+            {
+                string before = ScenarioLoader.Serialize(target.CaptureSaveState());
+                Assert.Throws<ScenarioException>(() => target.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true)));
+                Assert.Equal(before, ScenarioLoader.Serialize(target.CaptureSaveState()));
+            }
+        }
+    }
+
+    [Fact]
+    public void MarketEvent_chunked_single_step_and_saved_continuation_are_identical()
+    {
+        var definition = MarketEventDefinition() with { MaxDurationHours = 4, ItemEffects = [new("item.ice", 500, 1000, 1200)] };
+        var (single, registry) = CreateEventEngine([definition]);
+        var (chunks, _) = CreateEventEngine([definition]);
+        using (single) using (chunks)
+        {
+            for (long time = 100003; time < 5 * GameCalendar.HourMs; time += 100003) chunks.CaptureSnapshotForTests(time, simulationTimeMs: 0);
+            var save = chunks.CaptureSaveStateForTests(5 * GameCalendar.HourMs + 123, SimulationSpeed.Speed0, 0);
+            using var loaded = new SimulationEngine(registry);
+            loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
+            string expected = EventMarketState(single, 12 * GameCalendar.HourMs);
+            Assert.Equal(expected, EventMarketState(chunks, 12 * GameCalendar.HourMs));
+            Assert.Equal(expected, EventMarketState(loaded, 12 * GameCalendar.HourMs));
+            Assert.Equal(0, loaded.CaptureSnapshotForTests(12 * GameCalendar.HourMs, simulationTimeMs: 0).MotionTimeMs);
+        }
+    }
+
+    [Fact]
+    public void MarketEvent_paused_clock_and_permanent_legacy_slots_do_not_roll()
+    {
+        long real = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed0, () => real);
+        var (engine, _) = CreateEventEngine([MarketEventDefinition()], clock: clock, adjust: s => s with
+        {
+            GameState = s.GameState with
+            {
+                SpaceObjects = s.GameState.SpaceObjects.Select(o => o.ObjectType != "Station" ? o : o with { Events = [new("legacy1", "One", "First", 0, null, []), new("legacy2", "Two", "Second", 0, null, [])] }).ToArray(),
+            }
+        });
+        using (engine)
+        {
+            string before = EventMarketState(engine, 0);
+            real = 10 * GameCalendar.DayMs;
+            Assert.Equal(before, System.Text.Json.JsonSerializer.Serialize(engine.CaptureSnapshot(advanceClock: true).DockedStationTrade));
+            var events = engine.CaptureSnapshotForTests(3 * GameCalendar.HourMs, simulationTimeMs: 0).DockedStationTrade!.ActiveEvents;
+            Assert.Equal(2, events.Length);
+            Assert.All(events, e => { Assert.Equal(long.MaxValue, e.RemainingGameTimeMs); Assert.Empty(e.DisplayNameKey); Assert.NotNull(e.LegacyDisplayName); });
+        }
+    }
+    [Fact]
+    public void MarketEvent_price_only_activation_invalidates_quote_without_stock_or_budget_change()
+    {
+        var profile = BoundedProfile() with { Economy = null };
+        var definition = MarketEventDefinition() with { ItemEffects = [new("item.ice", 1000, 1000, 2000)] };
+        var (engine, _) = CreateEventEngine([definition], profile: profile);
+        using (engine)
+        {
+            var quote = engine.GetTradeQuote(new TradeQuoteRequest("before-event", "SPC-0001", "MOD-PLAYER-CARGO-01", TradeCommandTypes.Buy, "item.ice", 1));
+            Assert.Null(quote.DisabledReason);
+            var before = engine.CaptureSnapshot().DockedStationTrade!;
+            var active = engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 0).DockedStationTrade!;
+            Assert.Equal(before.Items.Select(i => i.StockQuantity), active.Items.Select(i => i.StockQuantity));
+            Assert.Equal(before.MarketRevision + 1, active.MarketRevision);
+            engine.ReceiveCommand(new PlayerCommand("stale-event", 1, "SPC-0001", "MOD-PLAYER-CARGO-01", TradeCommandTypes.Buy,
+                ItemTypeId: "item.ice", Quantity: 1, QuoteId: quote.QuoteId, MarketRevision: quote.MarketRevision));
+            var result = engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 0);
+            Assert.Equal(CommandReasonCodes.StaleQuote, Assert.Single(result.CommandResults).ReasonCode);
+            Assert.Equal(active.MarketRevision, result.DockedStationTrade!.MarketRevision);
+            Assert.Equal(active.Items.ToArray(), result.DockedStationTrade.Items.ToArray());
+        }
+    }
+
+    [Fact]
+    public void MarketEvent_overflow_after_first_candidate_rolls_back_all_market_assignments()
+    {
+        var shortEvent = MarketEventDefinition(priority: 20) with { MinDurationHours = 1, MaxDurationHours = 1 };
+        var longEvent = MarketEventDefinition("event.decompression", priority: 10) with
+        {
+            MinDurationHours = 168,
+            MaxDurationHours = 168,
+            EligibleMarketProfileIds = ["market.transit"],
+            ItemEffects = [new("item.water", 1000, 1000, 1100, 24)],
+        };
+        var (engine, _) = CreateEventEngine([shortEvent, longEvent], adjust: s => s with
+        {
+            GameState = s.GameState with
+            {
+                SpaceObjects = s.GameState.SpaceObjects.Append(s.GameState.SpaceObjects.Single(o => o.ObjectType == "Station") with
+                { ObjectId = "SPC-9999", PositionX = 100000, MarketProfileId = "market.transit" }).ToArray(),
+            }
+        });
+        using (engine)
+        {
+            string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+            long time = long.MaxValue - 2 * GameCalendar.HourMs;
+            time -= time % GameCalendar.HourMs;
+            var method = typeof(SimulationEngine).GetMethod("ApplyMarketEventAndHour", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+            var error = Assert.Throws<System.Reflection.TargetInvocationException>(() => method.Invoke(engine, [time]));
+            Assert.IsType<ScenarioException>(error.InnerException);
+            Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+            Assert.Empty(engine.CaptureSnapshot().DockedStationTrade!.ActiveEvents);
+        }
+    }
+
+    [Fact]
+    public void MarketEvent_legacy_save_without_fingerprint_starts_future_rolls_without_replaying_past()
+    {
+        var definition = MarketEventDefinition();
+        var (original, registry) = CreateEventEngine([definition]);
+        using (original)
+        {
+            var save = original.CaptureSaveStateForTests(GameCalendar.HourMs + 123, SimulationSpeed.Speed0, 0);
+            save = save with
+            {
+                SaveFormatVersion = 9,
+                GameState = save.GameState with
+                {
+                    MarketEventCatalogFingerprint = null,
+                    SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectType == "Station" ? o with { Events = [] } : o).ToArray()
+                }
+            };
+            using var loaded = new SimulationEngine(registry);
+            loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
+            Assert.Empty(loaded.CaptureSnapshot().DockedStationTrade!.ActiveEvents);
+            var trade = loaded.CaptureSnapshotForTests(2 * GameCalendar.HourMs, simulationTimeMs: 0).DockedStationTrade!;
+            Assert.Equal("event.reactor-accident@SPC-0002@2", Assert.Single(trade.ActiveEvents).EventId);
+        }
+    }
+
+    [Fact]
+    public void MarketEvent_accelerated_and_normal_clocks_have_identical_calendar_effects()
+    {
+        long realNormal = 0, realFast = 0;
+        var normalClock = new SimulationClock(SimulationSpeed.Speed0, () => realNormal);
+        var fastClock = new SimulationClock(SimulationSpeed.Speed0, () => realFast);
+        var (normal, _) = CreateEventEngine([MarketEventDefinition()], clock: normalClock);
+        var (fast, _) = CreateEventEngine([MarketEventDefinition()], clock: fastClock);
+        using (normal) using (fast)
+        {
+            normalClock.SetSpeed(SimulationSpeed.Speed1);
+            fastClock.SetSpeed(SimulationSpeed.Speed4);
+            for (int hour = 1; hour <= 8; hour++)
+            {
+                realNormal = hour * GameCalendar.HourMs / 300;
+                realFast = realNormal / (int)SimulationSpeed.Speed4;
+                var left = normal.CaptureSnapshot(advanceClock: true);
+                var right = fast.CaptureSnapshot(advanceClock: true);
+                Assert.Equal(left.GameTimeMs, right.GameTimeMs);
+                Assert.Equal(left.MotionTimeMs, right.MotionTimeMs);
+                Assert.Equal(System.Text.Json.JsonSerializer.Serialize(left.DockedStationTrade), System.Text.Json.JsonSerializer.Serialize(right.DockedStationTrade));
+            }
+        }
+    }
+    [Theory]
+    [InlineData("event.pirate-blockade", "Unavailable", 1000, 1400)]
+    [InlineData("event.quarantine", "Restricted", 1500, 1200)]
+    public void MarketEvent_route_descriptor_is_projected_and_persisted_without_route_application(string id, string availability, int travel, int fuel)
+    {
+        var definition = MarketEventDefinition(id) with { RouteEffect = new(availability, 1, travel, fuel, "risk." + id[6..]) };
+        var (engine, registry) = CreateEventEngine([definition]);
+        using (engine)
+        {
+            var trade = engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 0).DockedStationTrade!;
+            var route = Assert.Single(trade.ActiveEvents).RouteEffect;
+            Assert.Equal(new StationMarketRouteEffectSnapshot(availability, 1, travel, fuel, "risk." + id[6..]), route);
+            var save = engine.CaptureSaveStateForTests(GameCalendar.HourMs, SimulationSpeed.Speed0, 0);
+            Assert.Null(save.GameState.TradingMap);
+            using var loaded = new SimulationEngine(registry);
+            loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
+            Assert.Equal(route, Assert.Single(loaded.CaptureSnapshot().DockedStationTrade!.ActiveEvents).RouteEffect);
+        }
+    }
+
+    [Theory]
+    [InlineData("event.reactor-accident")]
+    [InlineData("event.decompression")]
+    [InlineData("event.hydroponics-failure")]
+    [InlineData("event.pirate-blockade")]
+    [InlineData("event.cargo-convoy")]
+    [InlineData("event.quarantine")]
+    [InlineData("event.repair-boom")]
+    [InlineData("event.scientific-contract")]
+    public void MarketEvent_every_shipping_definition_runs_its_resolved_effects(string id)
+    {
+        var source = RealRegistry();
+        var definition = source.StationMarketEvents.GetDefinition(source.StationMarketEvents.GetIndex(id)) with { ChancePermillePerHour = 1000 };
+        var profile = source.StationMarketProfiles.GetDefinition(source.StationMarketProfiles.GetIndex(definition.EligibleMarketProfileIds[0]));
+        var (engine, registry) = CreateEventEngine([definition], profile: profile);
+        using (engine)
+        {
+            engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 0);
+            var station = MarketStation(engine);
+            var evt = Assert.Single(station.Events);
+            Assert.Equal(id, evt.DefinitionId);
+            Assert.True(evt.ActivationStockDeltaApplied);
+            Assert.Equal(definition.ItemEffects.Select(e => (e.ItemTypeId, e.ProductionMultiplierPermille, e.DemandMultiplierPermille, e.PriceMultiplierPermille, e.ActivationStockDelta)),
+                evt.ItemEffects.Select(e => (e.ItemTypeId, e.ProductionMultiplierPermille, e.DemandMultiplierPermille, e.PriceMultiplierPermille, e.ActivationStockDelta)));
+            // Independent table arithmetic: apply activation delta, consumption and the all-or-nothing hourly batch.
+            var stock = profile.InitialInventory.ToDictionary(e => e.ItemTypeId, e => e.Quantity);
+            foreach (var effect in definition.ItemEffects)
+                if (effect.ActivationStockDelta != 0) stock[effect.ItemTypeId] = Math.Clamp(stock[effect.ItemTypeId] + effect.ActivationStockDelta, 0,
+                    profile.Economy!.StockTargets.Single(t => t.ItemTypeId == effect.ItemTypeId).TargetStock * 2);
+            long Rate(StationMarketStockDefinition rate, bool output)
+            {
+                var effect = definition.ItemEffects.FirstOrDefault(e => e.ItemTypeId == rate.ItemTypeId);
+                int multiplier = effect is null ? 1000 : output ? effect.ProductionMultiplierPermille : effect.DemandMultiplierPermille;
+                return (long)decimal.Round(rate.Quantity * multiplier / 1000m, 0, MidpointRounding.AwayFromZero);
+            }
+            foreach (var rate in profile.Economy!.HourlyConsumption) stock[rate.ItemTypeId] = Math.Max(0, stock[rate.ItemTypeId] - Rate(rate, false));
+            bool fits = profile.Economy.HourlyInputs.All(r => stock[r.ItemTypeId] >= Rate(r, false)) &&
+                profile.Economy.HourlyOutputs.All(r => stock[r.ItemTypeId] + Rate(r, true) <= 2 * profile.Economy.StockTargets.Single(t => t.ItemTypeId == r.ItemTypeId).TargetStock);
+            if (fits)
+            {
+                foreach (var rate in profile.Economy.HourlyInputs) stock[rate.ItemTypeId] -= Rate(rate, false);
+                foreach (var rate in profile.Economy.HourlyOutputs) stock[rate.ItemTypeId] += Rate(rate, true);
+            }
+            foreach (var (item, quantity) in stock) Assert.Equal(quantity, MarketStock(engine, registry, item));
+        }
     }
 }

@@ -56,7 +56,7 @@ public sealed partial class SimulationEngine
             AdvanceMotionTo(MotionAt(next), SurveyCalendarAt);
             CompleteResourceSurveys(next);
             CompleteProduction(next);
-            if (next != long.MaxValue && next % GameCalendar.HourMs == 0) ApplyMarketHour(next);
+            if (next != long.MaxValue && next % GameCalendar.HourMs == 0) ApplyMarketEventAndHour(next);
             FlushPendingOutputs();
             if (next == nextMeal && next % MealIntervalMs == 0) ConsumeScheduledRations(next);
             RenewPortFees(next);
@@ -72,7 +72,7 @@ public sealed partial class SimulationEngine
 
     // Market state of every station at the start of the current boundary (stable ID, stock rows and
     // trading budget); reused across boundaries so the calendar loop allocates nothing extra.
-    private readonly List<(string ObjectId, ImmutableArray<StationInventoryItemRuntime> Stock, long? Budget)> _marketStateBeforeBoundary = new();
+    private readonly List<(string ObjectId, ImmutableArray<StationInventoryItemRuntime> Stock, long? Budget, ImmutableArray<StationEventRuntime> Events)> _marketStateBeforeBoundary = new();
 
     private void CaptureMarketStateBeforeBoundary()
     {
@@ -81,7 +81,7 @@ public sealed partial class SimulationEngine
         {
             var obj = _objects[i];
             if (obj.ObjectType == SpaceObjectType.Station)
-                _marketStateBeforeBoundary.Add((obj.InitialMotion.ObjectId, obj.Inventory, obj.MarketBudgetCredits));
+                _marketStateBeforeBoundary.Add((obj.InitialMotion.ObjectId, obj.Inventory, obj.MarketBudgetCredits, obj.Events));
         }
     }
 
@@ -93,13 +93,14 @@ public sealed partial class SimulationEngine
     /// </summary>
     private void CommitChangedMarketRevisions()
     {
-        foreach (var (objectId, stockBefore, budgetBefore) in _marketStateBeforeBoundary)
+        foreach (var (objectId, stockBefore, budgetBefore, eventsBefore) in _marketStateBeforeBoundary)
         {
             int i = _objects.FindIndex(o => o.InitialMotion.ObjectId == objectId);
             if (i < 0) continue;
             var station = _objects[i];
             if (station.ObjectType != SpaceObjectType.Station) continue;
-            if (budgetBefore == station.MarketBudgetCredits && SameStock(stockBefore, station.Inventory)) continue;
+            if (budgetBefore == station.MarketBudgetCredits && SameStock(stockBefore, station.Inventory) &&
+                (eventsBefore == station.Events || eventsBefore.IsDefaultOrEmpty && station.Events.IsDefaultOrEmpty)) continue;
 
             if (station.MarketRevision == long.MaxValue)
             {

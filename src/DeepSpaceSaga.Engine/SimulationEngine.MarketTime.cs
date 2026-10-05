@@ -98,7 +98,7 @@ public sealed partial class SimulationEngine
     /// </summary>
     private long NextMarketHourTime()
     {
-        if (!HasBoundedMarket()) return long.MaxValue;
+        if (!HasBoundedMarket() && _registry.StationMarketEvents.Count == 0) return long.MaxValue;
         long floor = _processedWorldTimeMs - _processedWorldTimeMs % GameCalendar.HourMs;
         return floor > long.MaxValue - GameCalendar.HourMs ? long.MaxValue : floor + GameCalendar.HourMs;
     }
@@ -124,8 +124,8 @@ public sealed partial class SimulationEngine
             var stock = station.Inventory.IsDefault
                 ? ImmutableArray<StationInventoryItemRuntime>.Empty.ToBuilder()
                 : station.Inventory.ToBuilder();
-            ApplyHourlyConsumption(stock, economy);
-            ApplyProfileBatch(stock, station, profile, economy);
+            ApplyHourlyConsumption(stock, station, economy, time);
+            ApplyProfileBatch(stock, station, profile, economy, time);
 
             long budget = station.MarketBudgetCredits ?? 0;
             long maxBudget = MarketMaxBudget(profile, station.StationSize);
@@ -147,13 +147,13 @@ public sealed partial class SimulationEngine
     /// <summary>Demand that exists independently of any production: each stock drops by min(stock, rate).</summary>
     private void ApplyHourlyConsumption(
         ImmutableArray<StationInventoryItemRuntime>.Builder stock,
-        StationMarketEconomyDefinition economy)
+        SpaceObjectRuntime station, StationMarketEconomyDefinition economy, long time)
     {
         foreach (var rate in economy.HourlyConsumption.OrderBy(entry => entry.ItemTypeId, StringComparer.Ordinal))
         {
             int slot = FindStockSlot(stock, rate.ItemTypeId);
             if (slot < 0) continue;
-            long taken = Math.Min(stock[slot].StockQuantity, rate.Quantity);
+            long taken = Math.Min(stock[slot].StockQuantity, ResolveEventRate(station, rate.ItemTypeId, rate.Quantity, MarketEventFlow.Demand, time));
             if (taken <= 0) continue;
             stock[slot] = stock[slot] with { StockQuantity = stock[slot].StockQuantity - taken };
         }
@@ -169,17 +169,20 @@ public sealed partial class SimulationEngine
         ImmutableArray<StationInventoryItemRuntime>.Builder stock,
         SpaceObjectRuntime station,
         StationMarketProfileDefinition profile,
-        StationMarketEconomyDefinition economy)
+        StationMarketEconomyDefinition economy, long time)
     {
         if (economy.ProductionSource != StationMarketProductionSource.Profile) return;
         if (economy.HourlyInputs.IsDefaultOrEmpty && economy.HourlyOutputs.IsDefaultOrEmpty) return;
 
-        foreach (var input in economy.HourlyInputs)
+        var inputs = economy.HourlyInputs.Select(r => r with { Quantity = ResolveEventRate(station, r.ItemTypeId, r.Quantity, MarketEventFlow.Demand, time) }).ToArray();
+        var outputs = economy.HourlyOutputs.Select(r => r with { Quantity = ResolveEventRate(station, r.ItemTypeId, r.Quantity, MarketEventFlow.Production, time) }).ToArray();
+        foreach (var input in inputs)
         {
+            if (input.Quantity == 0) continue;
             int slot = FindStockSlot(stock, input.ItemTypeId);
             if (slot < 0 || stock[slot].StockQuantity < input.Quantity) return;
         }
-        foreach (var output in economy.HourlyOutputs)
+        foreach (var output in outputs)
         {
             if (!TryMarketLimits(profile, economy, station.StationSize, output.ItemTypeId, out var limits)) return;
             int slot = FindStockSlot(stock, output.ItemTypeId);
@@ -188,13 +191,13 @@ public sealed partial class SimulationEngine
         }
 
         // Inputs and outputs are disjoint (TK-0002), so a single pass commits the whole batch.
-        foreach (var input in economy.HourlyInputs.OrderBy(entry => entry.ItemTypeId, StringComparer.Ordinal))
+        foreach (var input in inputs.OrderBy(entry => entry.ItemTypeId, StringComparer.Ordinal))
         {
             int slot = FindStockSlot(stock, input.ItemTypeId);
-            stock[slot] = stock[slot] with { StockQuantity = stock[slot].StockQuantity - input.Quantity };
+            if (input.Quantity > 0) stock[slot] = stock[slot] with { StockQuantity = stock[slot].StockQuantity - input.Quantity };
         }
-        foreach (var output in economy.HourlyOutputs.OrderBy(entry => entry.ItemTypeId, StringComparer.Ordinal))
-            AddStock(stock, _registry.ItemTypes.GetIndex(output.ItemTypeId), output.Quantity);
+        foreach (var output in outputs.OrderBy(entry => entry.ItemTypeId, StringComparer.Ordinal))
+            if (output.Quantity > 0) AddStock(stock, _registry.ItemTypes.GetIndex(output.ItemTypeId), output.Quantity);
     }
 
     /// <summary>
