@@ -147,7 +147,7 @@ public sealed partial class SimulationEngine
             return CommandReasonCodes.InsufficientStationStock;
         if (quote.CommandType == TradeCommandTypes.Refuel)
         {
-            return checked(target.Module.FuelAmountKg + executed) > (target.ModuleType.FuelCapacityKg ?? 0)
+            return checked(target.Module.FuelAmountKg + executed) > AvailableFuelTankCapacity(target.Module.ModuleId, target.ModuleType.FuelCapacityKg ?? 0)
                 ? CommandReasonCodes.FuelCapacityExceeded
                 : null;
         }

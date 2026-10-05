@@ -83,7 +83,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("combatState")] CombatStateData? CombatState = null,
     [property: JsonPropertyName("defenseState")] CountermeasureStateData? DefenseState = null,
     [property: JsonPropertyName("solarSystem")] DeepSpaceSaga.Contracts.SolarSystemMapSnapshot? SolarSystem = null,
-    [property: JsonPropertyName("marketEventCatalogFingerprint")] string? MarketEventCatalogFingerprint = null)
+    [property: JsonPropertyName("marketEventCatalogFingerprint")] string? MarketEventCatalogFingerprint = null,
+    [property: JsonPropertyName("lastVoyageFuelSettlement")] DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot? LastVoyageFuelSettlement = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
@@ -104,7 +105,15 @@ public sealed record VoyageStateData(
     [property: JsonPropertyName("riskProfileId")] string? RiskProfileId = null,
     [property: JsonPropertyName("activeEventIds")] IReadOnlyList<string>? ActiveEventIds = null,
     [property: JsonPropertyName("startedGameTimeMs")] long? StartedGameTimeMs = null,
-    [property: JsonPropertyName("arrivalGameTimeMs")] long? ArrivalGameTimeMs = null);
+    [property: JsonPropertyName("arrivalGameTimeMs")] long? ArrivalGameTimeMs = null,
+    [property: JsonPropertyName("fuelReservationParts")] IReadOnlyList<VoyageFuelReservationPartData>? FuelReservationParts = null,
+    [property: JsonPropertyName("fuelDistanceKm")] decimal? FuelDistanceKm = null,
+    [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null);
+
+public sealed record VoyageFuelReservationPartData(
+    [property: JsonPropertyName("moduleId")] string ModuleId,
+    [property: JsonPropertyName("reservedFuelKg")] long ReservedFuelKg,
+    [property: JsonPropertyName("reservedFuelCostBasisCredits")] long ReservedFuelCostBasisCredits);
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(

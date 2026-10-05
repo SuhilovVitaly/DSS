@@ -171,8 +171,9 @@ public sealed class VoyageFuelAccountingTests
     public void Individual_engine_commands_do_not_change_fuel_or_basis()
     {
         using var voyage = TradingVoyageFixture.Create(calendarRatio: 1);
+        voyage.Send(QuotedTradeExecutionTests.BridgeModuleId, NavigationComputerCommandTypes.Undock, target: voyage.Destination);
         var before = voyage.Save().GameState.SpaceObjects.Single(o => o.ObjectId == "SPC-0001").Modules!.Single(m => m.ModuleId == Tank);
-        voyage.FlyTo(voyage.Destination);
+        voyage.FinishFlightTo(voyage.Destination);
         var after = voyage.Save().GameState.SpaceObjects.Single(o => o.ObjectId == "SPC-0001").Modules!.Single(m => m.ModuleId == Tank);
         Assert.True(voyage.ApproachSpeeds.Count > 0);
         Assert.Equal(before.FuelAmountKg, after.FuelAmountKg);

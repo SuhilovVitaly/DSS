@@ -413,7 +413,17 @@ public class LocalSessionIntegrationTests
                 if (savedShip.IsDocked)
                     Assert.Equal(saved.GameState.SpaceObjects.Single(o => o.ObjectId == savedShip.DockedStationObjectId).SpeedMps, savedShip.SpeedMps);
                 else Assert.Equal(sourceShip.SpeedMps, savedShip.SpeedMps);
-                Assert.Equal(JsonSerializer.Serialize(sourceShip.Modules),
+                var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settingsPath, out _, out _);
+                long fuelPrice = registry.ItemTypes.GetDefinition(registry.ItemTypes.GetIndex("item.fuel")).BasePriceCredits!.Value;
+                var expectedModules = sourceShip.Modules!.Select(m =>
+                {
+                    var type = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId));
+                    return type.FuelCapacityKg is > 0 ? m with
+                    {
+                        FuelCostBasisCredits = m.FuelCostBasisCredits ?? checked((m.FuelAmountKg ?? type.FuelCapacityKg.Value) * fuelPrice)
+                    } : m;
+                }).ToArray();
+                Assert.Equal(JsonSerializer.Serialize(expectedModules),
                     JsonSerializer.Serialize(savedShip.Modules));
 
                 if (expectedMap is null)

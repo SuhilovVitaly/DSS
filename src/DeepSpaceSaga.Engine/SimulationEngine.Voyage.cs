@@ -59,7 +59,7 @@ public sealed partial class SimulationEngine
              dialogue.DialogueDefinitionId != "dialogue.station-docking" ||
              dialogue.StationObjectId != saved.DestinationStationObjectId))
             throw new ScenarioException("Docking voyageState requires the destination docking dialogue.");
-        return saved with { ActiveEventIds = saved.ActiveEventIds?.ToImmutableArray() };
+        return saved with { ActiveEventIds = saved.ActiveEventIds?.ToImmutableArray(), FuelReservationParts = saved.FuelReservationParts?.ToImmutableArray() };
     }
 
     private static bool Connects(TradingMapEdgeData edge, string a, string b) =>
@@ -76,9 +76,11 @@ public sealed partial class SimulationEngine
             !_objects.Any(o => o.InitialMotion.ObjectId == destination && o.ObjectType == SpaceObjectType.Station && !o.IsDestroyed))
             return CommandReasonCodes.RouteUnavailable;
         var route = FindEffectiveDepartureRoute(ship.DockedStationObjectId, destination);
-        return route is null || route.Availability == TradingRouteAvailability.Unavailable ||
-            _processedWorldTimeMs > long.MaxValue - route.EffectiveTravelEstimateGameTimeMs
-            ? CommandReasonCodes.RouteUnavailable : null;
+        if (route is null || route.Availability == TradingRouteAvailability.Unavailable ||
+            _processedWorldTimeMs > long.MaxValue - route.EffectiveTravelEstimateGameTimeMs)
+            return CommandReasonCodes.RouteUnavailable;
+        return PrepareVoyageFuel(ship, route.BaseEdge.DistanceKm, route.EffectiveFuelMultiplierPermille,
+            out _, out _, out _, out _);
     }
 
     private VoyageSnapshot? BuildVoyageSnapshot()
@@ -104,9 +106,13 @@ public sealed partial class SimulationEngine
                 RouteOptions: options.OrderBy(o => o.DestinationStationObjectId, StringComparer.Ordinal).ToImmutableArray());
         }
         var target = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == state.DestinationStationObjectId);
+        var fuel = ProjectVoyageFuel(state);
         return new VoyageSnapshot(state.Phase, state.VoyageId, state.OriginStationObjectId,
             state.DestinationStationObjectId, target?.Name ?? state.DestinationStationObjectId,
-            state.ProgressPermille, state.BlockReasonCode, ImmutableArray<VoyageRouteOptionSnapshot>.Empty);
+            state.ProgressPermille, state.BlockReasonCode, ImmutableArray<VoyageRouteOptionSnapshot>.Empty,
+            state.FuelReservationParts is null ? null : fuel.Reserved,
+            state.FuelReservationParts is null ? null : fuel.Consumed,
+            state.FuelReservationParts is null ? null : fuel.Cost);
     }
 
     private void UpdateVoyageForMotion(long motionTimeMs)
@@ -116,13 +122,10 @@ public sealed partial class SimulationEngine
         if (motionTimeMs <= state.StartedMotionTimeMs) return;
         var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
         var target = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == state.DestinationStationObjectId);
-        if (ship is null || target is null || target.IsDestroyed)
+        if (ship is null || ship.IsDestroyed || target is null || target.IsDestroyed)
         {
-            _voyageState = state with
-            {
-                Phase = VoyagePhases.InTransit,
-                BlockReasonCode = CommandReasonCodes.VoyageDestinationUnavailable
-            };
+            SettleVoyageFuel(state, arrived: false);
+            _voyageState = null;
             return;
         }
         var shipMotion = PredictMotion(ship, Math.Max(0, motionTimeMs - ship.StartGameTimeMs));
@@ -150,8 +153,11 @@ public sealed partial class SimulationEngine
             _voyageState = new VoyageStateData(VoyagePhases.Docked);
         if (_voyageState is not { Phase: VoyagePhases.Docking } state) return;
         var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
-        _voyageState = ship is { IsDocked: true } && ship.DockedStationObjectId == state.DestinationStationObjectId
-            ? new VoyageStateData(VoyagePhases.Docked)
-            : state with { Phase = VoyagePhases.InTransit };
+        if (ship is { IsDocked: true } && ship.DockedStationObjectId == state.DestinationStationObjectId)
+        {
+            SettleVoyageFuel(state, arrived: true);
+            _voyageState = new VoyageStateData(VoyagePhases.Docked);
+        }
+        else _voyageState = state with { Phase = VoyagePhases.InTransit };
     }
 }

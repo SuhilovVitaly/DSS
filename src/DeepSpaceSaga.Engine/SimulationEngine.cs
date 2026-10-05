@@ -385,6 +385,7 @@ public sealed partial class SimulationEngine : IDisposable
 
         RestoreTradingRouteBindings(gs.TradingMap, runtimeObjects, gs.GameTimeMs, resolvedMasterSeed);
         var restoredVoyage = ValidateVoyageState(gs, runtimeObjects);
+        ValidateVoyageFuelSave(gs, restoredVoyage, runtimeObjects);
         var combatState = BuildCombatState(gs.SpaceObjects, runtimeObjects);
         StageCombatRestore(gs.CombatState, runtimeObjects, combatState.Launchers);
         StageLegacyWeaponRatings(runtimeObjects);
@@ -452,6 +453,7 @@ public sealed partial class SimulationEngine : IDisposable
             _stationTravelReceipts.UnionWith(_economyTime.TravelReceipts ?? []);
             _tradingMap = gs.TradingMap;
             _voyageState = restoredVoyage;
+            _lastVoyageFuelSettlement = gs.LastVoyageFuelSettlement;
             _stationResourceFields = gs.StationResourceFields;
             _resourceAsteroids = resourceAsteroids;
             _neutralResourceImages = neutralResourceImages;
@@ -709,7 +711,8 @@ public sealed partial class SimulationEngine : IDisposable
                 Voyage: BuildVoyageSnapshot(),
                 CombatImpacts: _combatImpacts.ToImmutableArray(),
                 CombatJournal: _combatJournal.ToImmutableArray(), SolarSystemMap: _solarSystem,
-                TradingRoutes: BuildTradingRouteProjection(clockState.GameTimeMs));
+                TradingRoutes: BuildTradingRouteProjection(clockState.GameTimeMs),
+                LastVoyageFuelSettlement: _lastVoyageFuelSettlement);
         }
     }
 
@@ -1058,7 +1061,8 @@ public sealed partial class SimulationEngine : IDisposable
             StationResourceFields: _stationResourceFields,
             VoyageState: _voyageState,
             CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState(), SolarSystem: _solarSystem,
-            MarketEventCatalogFingerprint: _registry.StationMarketEvents.Count > 0 ? _registry.StationMarketEventCatalogFingerprint : null);
+            MarketEventCatalogFingerprint: _registry.StationMarketEvents.Count > 0 ? _registry.StationMarketEventCatalogFingerprint : null,
+            LastVoyageFuelSettlement: _lastVoyageFuelSettlement);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
@@ -2310,7 +2314,7 @@ public sealed partial class SimulationEngine : IDisposable
                 var blocker = ResolveVoyageDepartureBlock(obj, command.TargetObjectId);
                 if (blocker is not null)
                 {
-                    if (!validateOnly)
+                    if (!validateOnly && blocker is not (CommandReasonCodes.InsufficientVoyageFuel or CommandReasonCodes.FuelEfficiencyUnavailable or "value_overflow"))
                         _voyageState = new VoyageStateData(VoyagePhases.Docked, BlockReasonCode: blocker);
                     return CommandStartOutcome.Rejected(blocker);
                 }
@@ -2336,13 +2340,18 @@ public sealed partial class SimulationEngine : IDisposable
                 double distance = Math.Sqrt(departureDx * departureDx + departureDy * departureDy);
                 if (!double.IsFinite(distance) || distance <= 0)
                     return CommandStartOutcome.Rejected(CommandReasonCodes.VoyageDestinationUnavailable);
+                var fuelBlocker = PrepareVoyageFuel(obj, route.BaseEdge.DistanceKm, route.EffectiveFuelMultiplierPermille,
+                    out var reservedModules, out var fuelParts, out var fuelDistance, out var efficiency);
+                if (fuelBlocker is not null) return CommandStartOutcome.Rejected(fuelBlocker);
+                obj = obj with { Modules = reservedModules };
                 _voyageState = new VoyageStateData(VoyagePhases.Undocking, command.CommandId,
                     obj.DockedStationObjectId, command.TargetObjectId, gameTimeMs, distance,
                     TravelEstimateGameTimeMs: route.EffectiveTravelEstimateGameTimeMs,
                     FuelMultiplierPermille: route.EffectiveFuelMultiplierPermille,
                     RiskProfileId: route.BaseEdge.RiskProfileId, ActiveEventIds: route.ActiveEventIds,
                     StartedGameTimeMs: _processedWorldTimeMs,
-                    ArrivalGameTimeMs: checked(_processedWorldTimeMs + route.EffectiveTravelEstimateGameTimeMs));
+                    ArrivalGameTimeMs: checked(_processedWorldTimeMs + route.EffectiveTravelEstimateGameTimeMs),
+                    FuelReservationParts: fuelParts, FuelDistanceKm: fuelDistance, FuelEfficiencyKmPerKg: efficiency);
             }
             _objects[objectIndex] = obj with
             {
@@ -2614,7 +2623,7 @@ public sealed partial class SimulationEngine : IDisposable
         // 084409 decision 3: Fuel is only special-cased for Buy/Refuel routing, not for how its
         // mass is measured on this branch).
         {
-            long fuelCapacityKg = moduleType.FuelCapacityKg ?? 0;
+            long fuelCapacityKg = AvailableFuelTankCapacity(module.ModuleId, moduleType.FuelCapacityKg ?? 0);
             long cost = checked(unitPriceCredits * qty);
             if (cost > PlayerCredits)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientPlayerCredits);
