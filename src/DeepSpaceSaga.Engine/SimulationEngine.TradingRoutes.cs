@@ -55,7 +55,10 @@ public sealed partial class SimulationEngine
             var station = objects[index];
             if (station.Events.IsDefaultOrEmpty) continue;
             var events = station.Events.ToBuilder();
-            for (int j = 0; j < events.Count; j++)
+            foreach (int j in Enumerable.Range(0, events.Count)
+                .OrderByDescending(i => events[i].DefinitionId is { } id ? _registry.StationMarketEvents.GetDefinition(
+                    _registry.StationMarketEvents.GetIndex(id)).Priority : -1)
+                .ThenBy(i => events[i].StartedGameTimeMs).ThenBy(i => events[i].EventId, StringComparer.Ordinal))
             {
                 var evt = events[j];
                 if (evt.RouteEffect is not { } route) continue;

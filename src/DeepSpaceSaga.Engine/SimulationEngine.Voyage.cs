@@ -59,7 +59,7 @@ public sealed partial class SimulationEngine
              dialogue.DialogueDefinitionId != "dialogue.station-docking" ||
              dialogue.StationObjectId != saved.DestinationStationObjectId))
             throw new ScenarioException("Docking voyageState requires the destination docking dialogue.");
-        return saved;
+        return saved with { ActiveEventIds = saved.ActiveEventIds?.ToImmutableArray() };
     }
 
     private static bool Connects(TradingMapEdgeData edge, string a, string b) =>

@@ -327,6 +327,94 @@ public sealed class RouteRiskIntegrationTests
         Assert.Equal(CommandResultStatus.Rejected, result.Status);
     }
 
+
+    [Fact]
+    public void Loaded_captured_event_ids_are_isolated_from_the_callers_mutable_save_array()
+    {
+        var registry = Registry(Definition());
+        using var source = Create(registry);
+        var route = Assert.Single(Snapshot(source).TradingRoutes.Where(r => r.ActiveEventIds.Length > 0));
+        source.ReceiveCommand(VoyageLifecycleTests.Undock("isolation", route.DestinationStationObjectId));
+        Snapshot(source);
+        var save = Save(source);
+        var ids = save.GameState.VoyageState!.ActiveEventIds!.ToArray();
+        save = save with { GameState = save.GameState with { VoyageState = save.GameState.VoyageState with { ActiveEventIds = ids } } };
+        using var loaded = new SimulationEngine(registry);
+        loaded.LoadScenario(save, isSave: true);
+        ids[0] = "changed-after-load";
+        Assert.DoesNotContain("changed-after-load", Save(loaded).GameState.VoyageState!.ActiveEventIds!);
+    }
+
+    [Fact]
+    public void Legacy_route_binding_migration_is_independent_of_saved_event_array_order()
+    {
+        var a = Definition(availability: "Unavailable");
+        var b = Definition("event.quarantine", "Unavailable", priority: 800);
+        var registry = Registry(a, b);
+        bool exercised = false;
+        for (ulong seed = 1; seed <= 64 && !exercised; seed++)
+        {
+            using var source = Create(registry, seed);
+            var initial = Save(source, 0);
+            string origin = initial.GameState.SpaceObjects.Single(o => o.ObjectId == Ship).DockedStationObjectId!;
+            var map = initial.GameState.TradingMap!;
+            if (map.Edges.Count(e => e.FromStationObjectId == origin || e.ToStationObjectId == origin) != 2) continue;
+            ulong Roll(string id) => RngStreamSeedDerivation.DeriveStreamSeed(seed, $"market-event:route:{origin}:{id}:1") % 2;
+            if (Roll(a.TypeId) == Roll(b.TypeId)) continue;
+            Snapshot(source);
+            var save = Save(source);
+            ScenarioFile Legacy(bool reverse) => save with
+            {
+                GameState = save.GameState with
+                {
+                    SpaceObjects = save.GameState.SpaceObjects.Select(o => o.Events is not { Count: > 0 } ? o : o with
+                    {
+                        Events = (reverse ? o.Events.AsEnumerable().Reverse() : o.Events).Select(e => e with
+                        { RouteEffect = e.RouteEffect! with { FromStationObjectId = null, ToStationObjectId = null } }).ToArray()
+                    }).ToArray()
+                }
+            };
+            using var first = new SimulationEngine(registry);
+            using var second = new SimulationEngine(registry);
+            first.LoadScenario(Legacy(false), isSave: true);
+            second.LoadScenario(Legacy(true), isSave: true);
+            Assert.Equal(Routes(Snapshot(first)), Routes(Snapshot(second)));
+            exercised = true;
+        }
+        Assert.True(exercised);
+    }
+
+
+    [Fact]
+    public void Saved_incident_closures_that_isolate_a_station_reject_before_world_replacement()
+    {
+        var registry = Registry(Definition(availability: "Unavailable"), Definition("event.quarantine", "Unavailable", priority: 800));
+        using var engine = Create(registry);
+        var snapshot = Snapshot(engine);
+        string origin = snapshot.Objects.Single(o => o.ObjectId == Ship).DockedStationObjectId!;
+        var saved = Save(engine);
+        var incident = TradingRouteEvaluator.Evaluate(saved.GameState.TradingMap!, []).Select(e => e.BaseEdge)
+            .Where(e => e.FromStationObjectId == origin || e.ToStationObjectId == origin).ToArray();
+        Assert.Equal(2, incident.Length);
+        var bad = saved with
+        {
+            GameState = saved.GameState with
+            {
+                SpaceObjects = saved.GameState.SpaceObjects.Select(o => o.ObjectId != origin ? o : o with
+                {
+                    Events = o.Events!.Select((e, i) => e with
+                    {
+                        RouteEffect = e.RouteEffect! with
+                        { FromStationObjectId = incident[i].FromStationObjectId, ToStationObjectId = incident[i].ToStationObjectId }
+                    }).ToArray()
+                }).ToArray()
+            }
+        };
+        string before = ScenarioLoader.Serialize(saved);
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(bad, isSave: true));
+        Assert.Equal(before, ScenarioLoader.Serialize(Save(engine)));
+    }
+
     [Fact]
     public void Legacy_no_map_snapshot_has_no_routes()
     {

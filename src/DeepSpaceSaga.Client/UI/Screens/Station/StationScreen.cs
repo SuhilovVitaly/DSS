@@ -83,7 +83,10 @@ public sealed class StationScreen : IScreen
     {
         var stationId = CurrentStationId(snapshot);
         if (stationId != _selectionStationId)
+        {
             _selectedDestinationId = null;
+            _routeScroll = 0;
+        }
         _selectionStationId = stationId;
         var rows = StationRoutePresentation.Build(snapshot?.TradingRoutes ?? default);
         _routeScroll = Math.Clamp(_routeScroll, 0, Math.Max(0, rows.Length - StationLayout.VisibleRouteRows));
@@ -419,6 +422,7 @@ public sealed class StationScreen : IScreen
             var rect = RouteRect(i);
             canvas.DrawRect(rect, row.DestinationStationObjectId == _selectedDestinationId ? MenuStyle.ButtonFillPressed : MenuStyle.ButtonFillNormal);
             canvas.DrawRect(rect, MenuStyle.ButtonBorder);
+            text.TextSize = 12;
             text.Color = !row.IsEnabled ? MenuStyle.ColorTextDim : row.Availability == TradingRouteAvailability.Restricted || row.Risk == TradingRouteRisk.Elevated
                 ? new SKColor(255, 190, 80) : MenuStyle.ColorText;
             canvas.DrawText(row.PrimaryText, rect.Left + 8, rect.Top + 15, text);
@@ -426,9 +430,11 @@ public sealed class StationScreen : IScreen
             string? blocker = snapshot?.Voyage?.RouteOptions.IsDefaultOrEmpty == false ? snapshot.Voyage.RouteOptions
                 .FirstOrDefault(o => o.DestinationStationObjectId == row.DestinationStationObjectId)?.BlockReasonCode : null;
             string? reason = row.ReasonText is null ? null : string.Join("; ", row.ReasonText.Split("; ").Select(Localization.Get));
-            string context = string.Join("  ", new[] { reason, row.ActiveEventText, blocker is null ? null : DepartureReasonText(blocker) }
+            string context = string.Join("  ", new[] { reason, blocker is null ? null : DepartureReasonText(blocker) }
                 .Where(t => !string.IsNullOrEmpty(t)));
-            if (context.Length > 0) canvas.DrawText(context, rect.Left + 8, rect.Top + 51, text);
+            text.TextSize = 11;
+            if (context.Length > 0) canvas.DrawText(context, rect.Left + 8, rect.Top + 49, text);
+            if (row.ActiveEventText is { } events) canvas.DrawText(events, rect.Left + 8, rect.Top + 63, text);
         }
         canvas.Restore();
         if (rows.Length > StationLayout.VisibleRouteRows)
