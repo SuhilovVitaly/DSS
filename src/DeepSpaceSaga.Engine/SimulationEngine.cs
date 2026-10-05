@@ -3333,6 +3333,19 @@ public sealed partial class SimulationEngine : IDisposable
         long gameTimeMs,
         ActiveCycleData? nextCycle)
     {
+        // Orbital targets have an analytic, continuously changing tangent. Sample at
+        // this cycle's physical completion epoch; preserve captured legacy semantics.
+        if (IsMatchEngineCommand(cycle.CommandType) && cycle.TargetObjectId is { } matchId &&
+            _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == matchId) is { } match &&
+            match.InitialMotion.Orbit is not null)
+        {
+            var tangent = RuntimeMotion.At(match, gameTimeMs);
+            cycle = cycle with
+            {
+                CapturedTargetSpeedKmS = tangent.SpeedKmS,
+                CapturedTargetCourseDegrees = tangent.Direction
+            };
+        }
         return cycle.CommandType switch
         {
             ShipEngineCommandTypes.Accelerate => UpdateEngineMotion(
@@ -3375,7 +3388,7 @@ public sealed partial class SimulationEngine : IDisposable
                 gameTimeMs,
                 nextCycle),
 
-            // Match cycles (§56.9) complete using ONLY the scalar captured at cycle start —
+            // Legacy match cycles (§56.9) use the scalar captured at cycle start;
             // later target changes or the target disappearing do not affect the result.
             // SpeedSynchronization changes only the scalar speed (course untouched),
             // DirectionSynchronization changes only the course (speed untouched).
@@ -3428,7 +3441,8 @@ public sealed partial class SimulationEngine : IDisposable
 
             NavigationComputerCommandTypes.Approach => obj,
 
-            _ => obj
+            _ => UpdateEngineMotion(obj, moduleIndex, gameTimeMs,
+                module => module with { ActiveCycle = nextCycle }, motion => motion)
         };
     }
 
