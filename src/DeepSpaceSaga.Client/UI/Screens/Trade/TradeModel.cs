@@ -210,6 +210,7 @@ internal sealed class TradeModel
     internal string? LocalStationObjectId { get; private set; }
     internal long? VisitStartGameTimeMs { get; private set; }
     internal StationInventoryItemSnapshot[] Rows { get; private set; } = [];
+    internal StationMarketEventSnapshot[] ActiveEvents { get; private set; } = [];
     internal InstalledModuleSnapshot[] Modules { get; private set; } = [];
     internal InstalledModuleSnapshot? Module => Modules.FirstOrDefault(m => m.ModuleId == SelectedModuleId);
     internal StationInventoryItemSnapshot? Item => Rows.FirstOrDefault(i => i.ItemTypeId == SelectedItemId);
@@ -260,6 +261,7 @@ internal sealed class TradeModel
 
     internal void ClearInvalidVisit()
     {
+        ActiveEvents = [];
         Rows = [];
         Modules = [];
         SelectedItemId = null;
@@ -287,6 +289,10 @@ internal sealed class TradeModel
             _lastMaximum = null;
             InvalidateQuote(localStation is null ? "NotDocked" : "QuoteRequired");
         }
+        var events = localStation is null ? null : snapshot?.DockedStationTrade?.ActiveEvents;
+        ActiveEvents = events is null || events.Value.IsDefaultOrEmpty ? [] : events.Value
+            .Where(e => e is not null && e.RemainingGameTimeMs > 0)
+            .OrderBy(e => e.StartedGameTimeMs).ThenBy(e => e.EventId, StringComparer.Ordinal).Take(2).ToArray();
         if (localStation is null)
         {
             Rows = [];
@@ -324,6 +330,25 @@ internal sealed class TradeModel
         if (FuelMode) SelectedItemId = Rows.FirstOrDefault()?.ItemTypeId;
         else if (SelectedItemId is not null && !Rows.Any(i => i.ItemTypeId == SelectedItemId)) SelectedItemId = null;
     }
+    internal static string EventText(string key, string? legacyFallback, string id)
+    {
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            string fullKey = key.StartsWith("TradeUX.", StringComparison.Ordinal) ? key : "TradeUX." + key;
+            string value = Localization.Get(fullKey);
+            if (!string.IsNullOrWhiteSpace(value) && value != fullKey) return value;
+        }
+        return string.IsNullOrWhiteSpace(legacyFallback) ? id : legacyFallback;
+    }
+
+    internal static string EventRemaining(StationMarketEventSnapshot evt)
+    {
+        if (evt.RemainingGameTimeMs == long.MaxValue) return Localization.Get("TradeUX.EventPermanent");
+        long remaining = Math.Max(1, evt.RemainingGameTimeMs);
+        long hours = remaining / GameCalendar.HourMs + (remaining % GameCalendar.HourMs == 0 ? 0 : 1);
+        return string.Format(System.Globalization.CultureInfo.CurrentCulture, Localization.Get("TradeUX.EventRemainingHours"), hours);
+    }
+
     internal long Cargo(string itemId) => Module?.Cargo.IsDefaultOrEmpty == false
         ? Module.Cargo.FirstOrDefault(c => c.ItemTypeId == itemId)?.Quantity ?? 0 : 0;
     internal void Select(string itemId) { SelectedItemId = itemId; Quantity = 1; }

@@ -44,6 +44,8 @@ public sealed partial class TradeScreen : IScreen
     }
     private int _width, _height, _scroll, _historyScroll, _moduleScroll;
     private SKPoint _pointer = new(-1, -1);
+    private bool _eventsHovered;
+    internal bool IsEventTooltipVisible => !_closed && HasValidVisit && _eventsHovered && Model.ActiveEvents.Length > 0;
     private bool _history, _moduleOpen, _dragSlider, _dragScroll, _replaceInput, _controlDown, _enterHeld;
     private float _scrollGrab;
     private enum InputFocus { None, Search, Quantity }
@@ -160,6 +162,7 @@ public sealed partial class TradeScreen : IScreen
     private void ResetTransientControls()
     {
         _quantityText = "1";
+        _eventsHovered = false;
         _focus = InputFocus.None;
         _moduleOpen = _dragSlider = _dragScroll = _replaceInput = _controlDown = _enterHeld = false;
     }
@@ -204,11 +207,12 @@ public sealed partial class TradeScreen : IScreen
     public void OnActivated()
     {
         _focus = InputFocus.None; _moduleOpen = false; _dragSlider = _dragScroll = false;
-        _controlDown = _enterHeld = false; _stationHovered = _exitHovered = false;
+        _controlDown = _enterHeld = false; _stationHovered = _exitHovered = _eventsHovered = false;
         _closed = false; Array.Clear(_toolbarHoverStarted); Refresh();
     }
     public void OnDeactivated()
     {
+        _eventsHovered = false;
         _focus = InputFocus.None; _dragSlider = _dragScroll = false; _controlDown = _enterHeld = false;
         // Cancel only the quote request; a sent trade keeps completing through the handle and the session journal.
         _closed = true; CancelQuoteRequest(); _quoteKey = null; Model.InvalidateQuote("QuoteRequired");
@@ -224,6 +228,7 @@ public sealed partial class TradeScreen : IScreen
                 ? ScreenEvent.NavigateToStation : ScreenEvent.None;
         if (!SKRect.Create(0, 0, TradeLayout.PanelWidth, TradeLayout.PanelHeight).Contains(p)) return ScreenEvent.CloseTrade;
         if (!HasValidVisit) return ScreenEvent.None;
+        if (Model.ActiveEvents.Length > 0 && TradeLayout.EventBadge.Contains(p)) return ScreenEvent.None;
         if (_moduleOpen)
         {
             for (int i = 0; i < Math.Min(5, Model.Modules.Length); i++)
@@ -303,6 +308,8 @@ public sealed partial class TradeScreen : IScreen
     public bool OnMouseMove(float x, float y)
     {
         Refresh(); _pointer = Local(x, y); UpdateToolbarHover(_pointer);
+        _eventsHovered = HasValidVisit && !_dragSlider && !_dragScroll && Model.ActiveEvents.Length > 0 && TradeLayout.EventBadge.Contains(_pointer);
+        if (_eventsHovered) return true;
         if (!HasValidVisit) return _exitHovered || _stationHovered && HasStandaloneStation;
         if (_dragSlider) SetSlider(_pointer.X);
         if (_dragScroll) DragScroll(_pointer.Y);
@@ -321,6 +328,7 @@ public sealed partial class TradeScreen : IScreen
     {
         Refresh(); var p = Local(x, y); int step = delta > 0 ? -1 : delta < 0 ? 1 : 0;
         if (!HasValidVisit) return ScreenEvent.None;
+        if (Model.ActiveEvents.Length > 0 && TradeLayout.EventBadge.Contains(p)) return ScreenEvent.None;
         if (_moduleOpen) _moduleScroll = Math.Clamp(_moduleScroll + step, 0, Math.Max(0, Model.Modules.Length - 5));
         else if (TradeLayout.Catalog.Contains(p)) CurrentOffset = Math.Clamp(CurrentOffset + step, 0, Math.Max(0, CurrentCount - TradeLayout.VisibleRows));
         return ScreenEvent.None;

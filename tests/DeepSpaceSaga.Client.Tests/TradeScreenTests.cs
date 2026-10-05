@@ -673,4 +673,179 @@ public class TradeScreenTests
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);
     }
+    private static StationMarketEventSnapshot EventSnapshot(string id = "A", long start = 0, long remaining = 3600001) =>
+        new(id, "event.reactor-accident", "TradeUX.Event.ReactorAccident.Name", "TradeUX.Event.ReactorAccident.Description",
+            "TradeUX.Event.ReactorAccident.Effect", start, start + remaining, remaining);
+
+    private static AuthoritativeSnapshot SnapshotWithEvents(params StationMarketEventSnapshot[] events)
+    {
+        var snapshot = TradeUxTests.Snapshot();
+        return snapshot with { DockedStationTrade = snapshot.DockedStationTrade! with { ActiveEvents = events.ToImmutableArray() } };
+    }
+
+    private sealed class EventUiConnection : IGameSessionConnection
+    {
+        internal int Commands;
+        public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default) { Commands++; return ValueTask.CompletedTask; }
+        public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask SetSimulationSpeedAsync(SimulationSpeed speed, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask SetObjectInteractionStateAsync(string? activeObjectId, string? selectedObjectId, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        public async IAsyncEnumerable<AuthoritativeSnapshot> ReadSnapshotsAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        { await Task.Delay(Timeout.Infinite, cancellationToken); yield break; }
+    }
+
+    private static SKBitmap EventBitmap(TradeScreen screen)
+    {
+        var bitmap = new SKBitmap(1600, 800);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, 1600, 800);
+        return bitmap;
+    }
+
+    [Fact]
+    public void Event_model_orders_filters_caps_and_clears_authoritative_events_without_price_mutation()
+    {
+        var model = new TradeModel();
+        var snapshot = SnapshotWithEvents(EventSnapshot("B", 2), EventSnapshot("A", 2), EventSnapshot("C", 3), EventSnapshot("Expired", 0, 0));
+        model.Refresh(snapshot);
+        Assert.Equal(new[] { "A", "B" }, model.ActiveEvents.Select(e => e.EventId));
+        Assert.Equal(snapshot.DockedStationTrade!.Items.Single(i => i.ItemTypeId == "item.water").UnitPriceCredits,
+            model.Rows.Single(i => i.ItemTypeId == "item.water").UnitPriceCredits);
+        model.Refresh(snapshot with { SnapshotSequence = 2, DockedStationTrade = snapshot.DockedStationTrade with { ActiveEvents = default } });
+        Assert.Empty(model.ActiveEvents);
+        model.Refresh(snapshot);
+        model.Refresh(snapshot with { SnapshotSequence = 3, DockedStationTrade = null });
+        Assert.Empty(model.ActiveEvents);
+    }
+
+    [Fact]
+    public void Event_text_handles_full_suffix_unknown_empty_and_legacy_keys()
+    {
+        string translated = Localization.Get("TradeUX.Event.ReactorAccident.Name");
+        Assert.Equal(translated, TradeModel.EventText("TradeUX.Event.ReactorAccident.Name", "Legacy", "ID"));
+        Assert.Equal(translated, TradeModel.EventText("Event.ReactorAccident.Name", "Legacy", "ID"));
+        Assert.Equal("Legacy", TradeModel.EventText("Unknown.Name", "Legacy", "ID"));
+        Assert.Equal("ID", TradeModel.EventText("", null, "ID"));
+        Assert.Equal("ID", TradeModel.EventText("Unknown.Name", " ", "ID"));
+        Assert.Equal("Authored explanation", TradeModel.EventText("", "Authored explanation", "ID"));
+    }
+
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(3600000, 1)]
+    [InlineData(3600001, 2)]
+    [InlineData(7200000, 2)]
+    [InlineData(long.MaxValue - 1, 2562047788016)]
+    public void Event_duration_uses_authoritative_ceil_hours_without_TimeSpan_overflow(long remaining, long hours)
+    {
+        var evt = EventSnapshot(remaining: remaining);
+        Assert.Equal(string.Format(System.Globalization.CultureInfo.CurrentCulture, Localization.Get("TradeUX.EventRemainingHours"), hours), TradeModel.EventRemaining(evt));
+        Assert.Equal(Localization.Get("TradeUX.EventPermanent"), TradeModel.EventRemaining(evt with { RemainingGameTimeMs = long.MaxValue }));
+    }
+
+    [Fact]
+    public async Task Event_badge_click_preserves_search_focus_selection_mode_and_history()
+    {
+        var connection = new EventUiConnection();
+        await using var handle = new GameSessionHandle(connection);
+        handle.Buffer.Update(SnapshotWithEvents(EventSnapshot()));
+        var screen = new TradeScreen(handle.Buffer, handle);
+        screen.OnActivated();
+        using var first = EventBitmap(screen);
+        screen.Model.Select("item.water");
+        screen.OnMouseDown(TradeLayout.Search.Left + 5, TradeLayout.Search.MidY);
+        foreach (char c in "item.") screen.OnTextInput(c);
+        string selected = screen.Model.SelectedItemId!;
+        Assert.True(screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        Assert.True(screen.IsEventTooltipVisible);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        screen.OnTextInput('w');
+        Assert.Equal("item.w", screen.Model.Query);
+        Assert.Equal(selected, screen.Model.SelectedItemId);
+        Assert.Equal(TradeMode.Buy, screen.Model.Mode);
+        Assert.Empty(screen.History);
+        Assert.Equal(0, connection.Commands);
+        screen.OnMouseMove(0, 0);
+        Assert.False(screen.IsEventTooltipVisible);
+        screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY);
+        screen.OnDeactivated();
+        Assert.False(screen.IsEventTooltipVisible);
+        screen.OnActivated();
+        Assert.False(screen.IsEventTooltipVisible);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task Event_tooltip_pixels_stay_within_bounds_and_paused_renders_are_identical(int count)
+    {
+        await using var handle = new GameSessionHandle(new EventUiConnection());
+        handle.Buffer.Update(SnapshotWithEvents(Enumerable.Range(0, count).Select(i => EventSnapshot(i.ToString(), i)).ToArray()));
+        var screen = new TradeScreen(handle.Buffer, handle);
+        screen.OnActivated();
+        using var plain = EventBitmap(screen);
+        Assert.True(screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        using var hover = EventBitmap(screen);
+        using var repeated = EventBitmap(screen);
+        Assert.Equal(hover.Pixels, repeated.Pixels);
+        int changed = 0;
+        var before = plain.Pixels;
+        var after = hover.Pixels;
+        for (int i = 0; i < before.Length; i++)
+        {
+            if (before[i] == after[i]) continue;
+            changed++;
+            Assert.True(TradeLayout.EventTooltip.Contains(i % plain.Width + .5f, i / plain.Width + .5f), $"pixel {i % plain.Width},{i / plain.Width}");
+        }
+        Assert.True(changed > 1000);
+        if (count == 2)
+        {
+            using var image = SKImage.FromBitmap(hover);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(Path.Combine(AppContext.BaseDirectory, "market-events-tooltip.png"), data.ToArray());
+        }
+    }
+
+    [Fact]
+    public async Task Event_badge_remains_in_fuel_and_history_and_disappears_when_station_context_ends()
+    {
+        await using var handle = new GameSessionHandle(new EventUiConnection());
+        var snapshot = SnapshotWithEvents(EventSnapshot());
+        handle.Buffer.Update(snapshot);
+        var screen = new TradeScreen(handle.Buffer, handle);
+        screen.OnActivated();
+        using var market = EventBitmap(screen);
+        screen.OnMouseDown(TradeLayout.FuelTab.MidX, TradeLayout.FuelTab.MidY);
+        Assert.Equal(TradeMode.Refuel, screen.Model.Mode);
+        screen.OnMouseDown(TradeLayout.History.MidX, TradeLayout.History.MidY);
+        Assert.True(screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        Assert.True(screen.IsEventTooltipVisible);
+        using var history = EventBitmap(screen);
+        Assert.Single(screen.Model.ActiveEvents);
+        handle.Buffer.Update(snapshot with { SnapshotSequence = 2, DockedStationTrade = null });
+        Assert.False(screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        Assert.Empty(screen.Model.ActiveEvents);
+        Assert.False(screen.IsEventTooltipVisible);
+    }
+
+    [Fact]
+    public async Task No_event_preserves_control_geometry_and_badge_is_not_interactive()
+    {
+        Assert.Equal(new SKRect(20, 80, 185, 126), TradeLayout.MarketTab);
+        Assert.Equal(new SKRect(197, 80, 380, 126), TradeLayout.FuelTab);
+        Assert.Equal(new SKRect(1040, 190, 1300, 228), TradeLayout.Buy);
+        Assert.Equal(new SKRect(1300, 190, 1560, 228), TradeLayout.Sell);
+        await using var handle = new GameSessionHandle(new EventUiConnection());
+        handle.Buffer.Update(SnapshotWithEvents());
+        var screen = new TradeScreen(handle.Buffer, handle);
+        screen.OnActivated();
+        using var image = EventBitmap(screen);
+        Assert.False(screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        Assert.False(screen.IsEventTooltipVisible);
+        Assert.True(screen.OnMouseMove(TradeLayout.MarketTab.MidX, TradeLayout.MarketTab.MidY));
+        screen.OnMouseDown(TradeLayout.FuelTab.MidX, TradeLayout.FuelTab.MidY);
+        Assert.Equal(TradeMode.Refuel, screen.Model.Mode);
+    }
 }

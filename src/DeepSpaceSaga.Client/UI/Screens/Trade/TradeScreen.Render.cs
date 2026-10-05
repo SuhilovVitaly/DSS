@@ -25,7 +25,7 @@ public sealed partial class TradeScreen
             p.Box(new(1, 61, 1599, 799), TradePainter.Background, radius: 0);
             Button(p, TradeLayout.MarketTab, L("Market"), !Model.FuelMode);
             Button(p, TradeLayout.FuelTab, L("Fuel"), Model.FuelMode);
-            p.Text(L(_buffer?.Latest?.Snapshot.DockedStationTrade is null ? "NotDocked" : "Paused"), R(450, 84, 534, 36), 14, TradePainter.Muted, align: SKTextAlign.Right);
+            p.Text(L(_buffer?.Latest?.Snapshot.DockedStationTrade is null ? "NotDocked" : "Paused"), R(450, 84, 240, 42), 14, TradePainter.Muted, align: SKTextAlign.Right);
             p.Box(TradeLayout.Catalog, border: TradePainter.Border);
             p.Box(TradeLayout.Detail, border: TradePainter.Border);
             if (_history) DrawHistory(p);
@@ -40,10 +40,36 @@ public sealed partial class TradeScreen
                 p.Box(ScrollThumb, TradePainter.Muted, radius: 5);
             }
             if (_moduleOpen) DrawModuleOptions(p);
+            DrawMarketEvents(canvas, p);
         }
         canvas.Restore();
         DrawToolbarTooltips(canvas, pl, pt);
     }
+    private void DrawMarketEvents(SKCanvas canvas, TradePainter p)
+    {
+        if (!HasValidVisit || Model.ActiveEvents.Length == 0) return;
+        p.Box(TradeLayout.EventBadge, border: TradePainter.Amber);
+        p.Text($"{L("ActiveEvents")} ({Model.ActiveEvents.Length})", R(712, 84, 260, 42), 14, TradePainter.Amber);
+        if (!IsEventTooltipVisible) return;
+        canvas.Save(); canvas.ClipRect(TradeLayout.EventTooltip);
+        p.Box(TradeLayout.EventTooltip, TradePainter.Surface, TradePainter.Amber);
+        float sectionHeight = (TradeLayout.EventTooltip.Height - 16) / Model.ActiveEvents.Length;
+        for (int i = 0; i < Model.ActiveEvents.Length; i++)
+        {
+            var evt = Model.ActiveEvents[i];
+            string id = string.IsNullOrWhiteSpace(evt.DefinitionId) ? evt.EventId : evt.DefinitionId;
+            float top = TradeLayout.EventTooltip.Top + 8 + i * sectionHeight;
+            if (i > 0) p.Line(662, top - 4, 972);
+            p.Text(TradeModel.EventText(evt.DisplayNameKey, evt.LegacyDisplayName, id), R(662, top, 310, 18), 14, bold: true);
+            p.Text(TradeModel.EventRemaining(evt), R(662, top + 18, 310, 14), 11, TradePainter.Amber);
+            float textHeight = (sectionHeight - 32) / 2;
+            p.Paragraph(TradeModel.EventText(evt.DescriptionKey, evt.LegacyDescription, id), R(662, top + 32, 310, textHeight), 10);
+            p.Paragraph(TradeModel.EventText(evt.EffectSummaryKey, $"{L("ActiveEvents")}: {id}", id),
+                R(662, top + 32 + textHeight, 310, textHeight), 10, TradePainter.TextColor);
+        }
+        canvas.Restore();
+    }
+
     private void DrawCatalog(TradePainter p)
     {
         p.Box(TradeLayout.Search, border: _focus == InputFocus.Search ? TradePainter.Cyan : TradePainter.Border);

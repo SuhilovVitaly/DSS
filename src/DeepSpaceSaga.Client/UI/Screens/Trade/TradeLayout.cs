@@ -16,6 +16,8 @@ public sealed class TradeLayout
 
     internal static readonly SKRect MarketTab = new(20, 80, 185, 126);
     internal static readonly SKRect FuelTab = new(197, 80, 380, 126);
+    internal static readonly SKRect EventBadge = new(700, 84, 984, 126);
+    internal static readonly SKRect EventTooltip = new(650, 130, 984, 330);
     internal static readonly SKRect Catalog = new(20, 142, 1000, 744);
     internal static readonly SKRect Detail = new(1020, 80, 1580, 744);
     internal static readonly SKRect Search = new(36, 158, 478, 202);
