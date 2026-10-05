@@ -157,8 +157,13 @@ internal sealed class TradeJournal
             receipt.ExecutedQuantity > 0 && receipt.ExecutedQuantity <= RequestedQuantity && receipt.TotalCredits >= 0 &&
             (Mode == TradeMode.Sell || receipt.ExecutedQuantity == RequestedQuantity) &&
             (receipt.ExecutedQuantity == RequestedQuantity || !receipt.LimitReasons.IsDefaultOrEmpty) &&
-            QuotedTotalCredits == receipt.TotalCredits && QuotedExecutableQuantity == receipt.ExecutedQuantity
+            QuotedTotalCredits == receipt.TotalCredits && QuotedExecutableQuantity == receipt.ExecutedQuantity &&
+            (Mode == TradeMode.Sell || receipt.RealizedCargoCostCredits is null && receipt.GrossResultCredits is null)
                 ? receipt : null;
+
+        internal bool HasKnownCargoResult => Mode == TradeMode.Sell && ConfirmedReceipt is { } receipt &&
+            receipt.RealizedCargoCostCredits is >= 0 && receipt.GrossResultCredits is { } gross &&
+            gross == receipt.TotalCredits - receipt.RealizedCargoCostCredits.Value;
     }
     private readonly List<Entry> _entries = new();
     internal IReadOnlyList<Entry> Entries => _entries;

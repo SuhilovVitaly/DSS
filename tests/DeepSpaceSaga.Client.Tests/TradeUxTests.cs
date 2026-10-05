@@ -558,9 +558,9 @@ public class TradeUxTests
         using var rendered = Render(f.Screen);
 
         var entry = Assert.Single(f.Screen.History);
-        Assert.Equal(TradeScreen.F("PartialResult", TradeItemPresentation.ItemDisplayName("item.water"),
-            TradeItemPresentation.FormatQuantity("item.water", 3), 33L.ToString("N0", CultureInfo.CurrentCulture),
-            TradeItemPresentation.FormatQuantity("item.water", 5)) + " · " + TradeScreen.L("StationBudgetLimit"),
+        Assert.Equal(string.Format(CultureInfo.CurrentCulture, Localization.Get("Trade.CargoResultPartialUnknown"),
+            TradeItemPresentation.ItemDisplayName("item.water"), TradeItemPresentation.FormatQuantity("item.water", 3),
+            TradeItemPresentation.FormatQuantity("item.water", 5), TradeScreen.F("Tokens", 33L.ToString("N0", CultureInfo.CurrentCulture))) + " · " + TradeScreen.L("StationBudgetLimit"),
             f.Screen.EntryMessage(entry));
 
         var legacy = entry with { Result = entry.Result! with { TradeReceipt = null } };

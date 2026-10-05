@@ -252,9 +252,21 @@ public sealed partial class TradeScreen
         string executed = TradeItemPresentation.FormatQuantity(entry.ItemId, quantity);
         string totalText = receipt.TotalCredits.ToString("N0", CultureInfo.CurrentCulture);
         string requested = TradeItemPresentation.FormatQuantity(entry.ItemId, receipt.RequestedQuantity!.Value);
-        if (quantity == receipt.RequestedQuantity) return F("SuccessResult", item, executed, totalText);
-        return F("PartialResult", item, executed, totalText, requested) + " · " +
-            string.Join(" · ", receipt.LimitReasons.Select(Reason).Distinct());
+        bool partial = quantity != receipt.RequestedQuantity;
+        string message;
+        if (entry.Mode == TradeMode.Buy)
+            message = $"{item}: {executed} · {Localization.Get("Trade.PurchaseCost")}: {F("Tokens", totalText)}";
+        else if (entry.Mode == TradeMode.Sell)
+        {
+            string key = partial ? "Trade.CargoResultPartial" : "Trade.CargoResult";
+            key += entry.HasKnownCargoResult ? "Known" : "Unknown";
+            message = string.Format(CultureInfo.CurrentCulture, Localization.Get(key), item, executed, requested,
+                F("Tokens", totalText),
+                entry.HasKnownCargoResult ? F("Tokens", receipt.RealizedCargoCostCredits!.Value.ToString("N0", CultureInfo.CurrentCulture)) : "",
+                entry.HasKnownCargoResult ? F("Tokens", receipt.GrossResultCredits!.Value.ToString("N0", CultureInfo.CurrentCulture)) : "");
+        }
+        else message = F("SuccessResult", item, executed, totalText);
+        return partial ? message + " · " + string.Join(" · ", receipt.LimitReasons.Select(Reason).Distinct()) : message;
     }
     private void DrawStatus(TradePainter p)
     {
@@ -278,7 +290,7 @@ public sealed partial class TradeScreen
             p.Icon(entry.ItemId, R(48, rect.Top + 6, 38, 38));
             string mode = L(entry.Mode switch { TradeMode.Sell => "Sell", TradeMode.Refuel => "Fuel", _ => "Buy" });
             p.Text(mode + " · " + entry.ModuleLabel, R(101, rect.Top, 250, 50), 14, TradePainter.Muted);
-            p.Text(EntryMessage(entry), R(363, rect.Top, 595, 50), 15,
+            p.Paragraph(EntryMessage(entry), R(363, rect.Top + 1, 595, 49), 11,
                 entry.Result is null ? TradePainter.Muted : entry.ConfirmedReceipt is not null ? TradePainter.Green : TradePainter.Red);
             p.Line(36, rect.Bottom, 970);
         }
