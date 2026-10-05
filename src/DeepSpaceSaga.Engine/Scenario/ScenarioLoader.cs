@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Engine.Scenario;
 public static class ScenarioLoader
 {
     private static readonly HashSet<string> KnownObjectTypes = new(StringComparer.OrdinalIgnoreCase)
-        { "PlayerShip", "NpcShip", "Station", "Asteroid", "Wreck", "Missile", "Countermeasure" };
+        { "PlayerShip", "NpcShip", "Station", "Asteroid", "Wreck", "Missile", "Countermeasure", "Sun", "Planet" };
 
     private static readonly HashSet<string> KnownPersistenceTypes = new(StringComparer.OrdinalIgnoreCase)
         { "Permanent", "Temporary" };
@@ -224,6 +224,7 @@ public static class ScenarioLoader
                 $"Player ship '{playerShip.ObjectId}' has objectType '{playerShip.ObjectType}', expected 'PlayerShip'.");
 
         ValidateEconomyTime(scenario);
+        SolarSystemGeneration.ValidateWorld(gs);
 
         // Validate each object (nulls already caught in the duplicate-check loop)
         foreach (var obj in objects)

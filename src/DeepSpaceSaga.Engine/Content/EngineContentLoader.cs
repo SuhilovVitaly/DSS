@@ -56,6 +56,27 @@ public static class EngineContentLoader
         return engine;
     }
 
+    public static SolarSystemGenerationConfig? LoadSolarSystemGenerationConfig(string settingsPath)
+    {
+        var settings = ReadJson<EngineSettingsFile>(settingsPath, "settings");
+        if (settings.TypeData is null) throw new ContentException($"{settingsPath}: missing typeData.");
+        if (settings.TypeData.SolarSystem is not { } declaredPath) return null;
+        if (string.IsNullOrWhiteSpace(declaredPath))
+            throw new ContentException($"{settingsPath}: typeData.solarSystem contains an empty path.");
+        var path = Resolve(Path.GetDirectoryName(Path.GetFullPath(settingsPath))!, declaredPath);
+        try { return SolarSystemGeneration.ValidateConfig(ReadJson<SolarSystemGenerationConfig>(path, "solarSystem")); }
+        catch (ContentException ex) { throw new ContentException($"{path}: {ex.Message}", ex); }
+    }
+
+    private sealed class DeclaredSolarSystemPathConverter : JsonConverter<string>
+    {
+        public override bool HandleNull => true;
+        public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+            reader.TokenType == JsonTokenType.String ? reader.GetString()!
+                : throw new JsonException("solarSystem must be a non-null string path.");
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options) => writer.WriteStringValue(value);
+    }
+
     private static StationResourceFieldConfig? LoadStationResourceFields(string settingsPath, GameDataRegistry registry)
     {
         var settings = ReadJson<EngineSettingsFile>(settingsPath, "settings");
@@ -769,7 +790,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("quests")] string? Quests = null,
         [property: JsonPropertyName("stationMarketProfiles"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketProfiles = null,
         [property: JsonPropertyName("stationResourceFields"), JsonConverter(typeof(DeclaredResourceFieldPathConverter))] string? StationResourceFields = null,
-        [property: JsonPropertyName("shipClasses"), JsonConverter(typeof(DeclaredShipClassPathConverter))] string? ShipClasses = null);
+        [property: JsonPropertyName("shipClasses"), JsonConverter(typeof(DeclaredShipClassPathConverter))] string? ShipClasses = null,
+        [property: JsonPropertyName("solarSystem"), JsonConverter(typeof(DeclaredSolarSystemPathConverter))] string? SolarSystem = null);
 
     private sealed class DeclaredShipClassPathConverter : JsonConverter<string>
     {

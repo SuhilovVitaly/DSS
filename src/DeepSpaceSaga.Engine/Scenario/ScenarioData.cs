@@ -79,7 +79,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("stationResourceFields")] StationResourceFieldsState? StationResourceFields = null,
     [property: JsonPropertyName("voyageState")] VoyageStateData? VoyageState = null,
     [property: JsonPropertyName("combatState")] CombatStateData? CombatState = null,
-    [property: JsonPropertyName("defenseState")] CountermeasureStateData? DefenseState = null)
+    [property: JsonPropertyName("defenseState")] CountermeasureStateData? DefenseState = null,
+    [property: JsonPropertyName("solarSystem")] DeepSpaceSaga.Contracts.SolarSystemMapSnapshot? SolarSystem = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
@@ -238,7 +239,10 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("shipClassId")] string? ShipClassId = null,
     /// <summary>Current hull HP. Null on a classified new ship means the configured maximum.</summary>
     [property: JsonPropertyName("hullHitPoints")] int? HullHitPoints = null,
-    [property: JsonPropertyName("hullHitPointsMax")] int? HullHitPointsMax = null);
+    [property: JsonPropertyName("hullHitPointsMax")] int? HullHitPointsMax = null,
+    [property: JsonPropertyName("orbit")] DeepSpaceSaga.Contracts.OrbitalElements? Orbit = null,
+    [property: JsonPropertyName("worldOffsetX")] double WorldOffsetX = 0,
+    [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles
