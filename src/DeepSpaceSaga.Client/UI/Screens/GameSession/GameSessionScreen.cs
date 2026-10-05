@@ -224,6 +224,7 @@ public sealed partial class GameSessionScreen : IScreen
     // ── Test seams ──────────────────────────────────────────────
 
     internal bool IsPanelVisible => _panelVisible;
+    internal AuthoritativeSnapshot? FrameEvidenceSnapshot => _buffer.Latest?.Snapshot;
     internal double CameraFocusX => _camera.FocusX;
     internal double CameraFocusY => _camera.FocusY;
     internal double CameraPixelsPerWorldUnit => _camera.PixelsPerWorldUnit;
@@ -1161,7 +1162,8 @@ public sealed partial class GameSessionScreen : IScreen
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
             RenderStageCompleted?.Invoke("label_leaders");
 
-            // Important markers stay above background celestial markers and contacts.
+            DrawMapClusters(canvas);
+            // Important markers and plaques stay above clusters and background contacts.
             for (int markerPass = 0; markerPass < 2; markerPass++)
                 foreach (var state in _renderStates)
                 {
@@ -1229,7 +1231,6 @@ public sealed partial class GameSessionScreen : IScreen
             RenderStageCompleted?.Invoke("marker_geometry");
             _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera);
             RenderStageCompleted?.Invoke("label_plaques");
-            DrawMapClusters(canvas);
             DrawOffscreenTargets(canvas);
             CompleteRenderStage("markers_and_labels");
         }

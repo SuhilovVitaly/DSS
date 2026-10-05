@@ -62,3 +62,23 @@ Run the production generation/resource pipeline for all requested seeds and scen
 --config min|max selects 3/7 planets, 2/5 belts and 50/75 starting days. --scenarios accepts all or a comma-separated list of scenario folder names. Invalid input returns exit code 1 with a failed report.
 
 Every world records generation time/allocations, snapshot time/allocations and serialized save time/bytes. Catalog parsing is outside the generation timer. Raster rendering samples the first requested seed in every scenario, at System and belt views: 120 warmup frames and 600 measured frames at 1920x1080. It records p50/p95/p99 and allocation bytes/frame. Report status indicates successful measurement; presentation.status=not-measured explicitly prevents treating raster timing as evidence of GPU 80 FPS. Hardware/runtime, source commit, full generation configuration and seed range accompany the measurements.
+
+Native solar-system window evidence (actual production SkiaWindow, live local session):
+
+    dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/window-max.json --solar-window max system 1.5 1920x1080
+
+Select min|max, system|belt|selected, UI scale 1|1.2|1.5, and window dimensions.
+The runner uses client assets/settings, selects the start station, exercises actual
+pause/resume buttons during warmup, captures a PNG, measures 600 frames after 120
+warmup frames, and closes its window. Run cases sequentially without concurrent
+builds/tests. The production client supports the same opt-in collector through
+DSS_MAP_FRAME_REPORT; without it no evidence files or engine requests are added.
+DSS_MAP_FRAME_IMAGE, DSS_MAP_FRAME_WINDOW and DSS_MAP_FRAME_EXIT are optional
+diagnostic controls, enabled only with the report collector.
+
+Reports distinguish CPU submit, SwapBuffers wait, and intervals between completed
+swaps. None measures physical scanout or GPU execution alone. targetVerdict is
+failed when p99 exceeds 12.5 ms, or display-limited when VSync's reported monitor
+refresh is below 80 Hz; measurement completion never implies the FPS target passed.
+Keep final textual results with hardware, commit, settings and limitations; remove
+temporary PNG/JSON after inspection.

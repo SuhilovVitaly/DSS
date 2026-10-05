@@ -95,3 +95,63 @@ TK-0002 measurement commands (Release, sequential runs, source b31b1c2):
 Both measurement reports completed successfully, 600 generated worlds each. First seed per scenario is rendered separately in System and belt views, 120 warmup / 600 measured frames at 1920x1080. CPU/Skia raster maximum p99 across views: min 6.3785 ms, max 6.6625 ms. Largest saves: 950025 / 1132976 UTF-8 bytes. Maximum generation time: 67.0542 / 67.1579 ms (includes initial JIT); maximum snapshot sample: 15.8739 / 11.5505 ms. These are absolute observations, not comparisons against a historical baseline. GPU/presentation status remains not-measured here.
 
 Tooling tests: ReportHasReproductionAndBackend and InvalidConfigReturnsFailure passed 2/2; the latter runs the CLI process and verifies exit code 1. The new test project is included in the solution.
+
+TK-0003 native protocol: Release production SkiaWindow with live LocalGameSessionConnection, Default_500 seed 1, min=3 planets/2 belts/50 days, max=7/5/75, 2048 decoration samples and 24 playable asteroids per belt. System fit, first-belt fit and selected-station view at UI 100/120/150%; 100% uses 1280x720, 120/150% use 1920x1080. Warmup 120 frames, measurement 600 frames per case. Actual UI speed buttons exercise Speed1 -> Speed0 -> Speed1 before measurement. The script drives the native window; the agent inspects captured frames. This is scripted native acceptance with visual inspection, not a human-operated play session.
+
+Hardware: Intel Arc 140V (reported 16GB), OpenGL 3.3.0 driver build 32.0.101.8860; monitor reports 100 Hz, VSync on. CPU reports Intel64 Family 6 Model 189 Stepping 1, 8 logical processors; .NET 8.0.26, Windows 10.0.26200. Native reports include assembly module ID and source commit (8e952b6 plus TK-0003 diagnostics). Swap completion intervals measure driver/display wait as part of presentation; they are not GPU execution or physical scanout measurements.
+
+Initial exploratory launches used the repository working directory and missed relative UI assets. They were discarded as acceptance evidence. The native runner now sets the client asset directory and loads production map/combat settings before constructing the screen.
+
+Restricted-environment diagnostic results (superseded by host acceptance below): milliseconds; every case reports targetVerdict=failed. All reports observed both Speed0 and Speed1, and retained SPC-0002 selection.
+
+| Configuration / view / UI | Frame p50 | p95 | p99 | CPU p99 | Swap p99 | Mean FPS |
+|---|---:|---:|---:|---:|---:|---:|
+| max-belt-1.2 | 38.54 | 46.23 | 49.98 | 5.91 | 45.76 | 26.21 |
+| max-belt-1.5 | 39.53 | 47.99 | 50.30 | 6.89 | 45.74 | 25.50 |
+| max-belt-1 | 37.84 | 46.18 | 50.00 | 6.60 | 45.75 | 26.36 |
+| max-selected-1.2 | 38.91 | 48.22 | 52.16 | 9.55 | 44.77 | 25.78 |
+| max-selected-1.5 | 39.89 | 50.49 | 53.44 | 11.17 | 43.96 | 24.97 |
+| max-selected-1 | 38.70 | 46.09 | 50.02 | 6.23 | 45.12 | 26.18 |
+| max-system-1.2 | 39.38 | 48.69 | 50.49 | 9.91 | 44.37 | 25.70 |
+| max-system-1.5 | 35.88 | 47.46 | 50.10 | 6.32 | 45.31 | 26.74 |
+| max-system-1 | 39.12 | 48.03 | 50.19 | 7.16 | 45.46 | 25.76 |
+| min-belt-1.2 | 39.07 | 47.70 | 50.15 | 7.03 | 45.65 | 25.71 |
+| min-belt-1.5 | 36.66 | 48.11 | 50.10 | 7.44 | 45.83 | 26.18 |
+| min-belt-1 | 36.35 | 46.91 | 49.86 | 6.84 | 45.54 | 26.51 |
+| min-selected-1.2 | 39.86 | 49.90 | 51.89 | 11.60 | 44.70 | 25.10 |
+| min-selected-1.5 | 39.84 | 50.75 | 54.12 | 11.47 | 44.75 | 25.16 |
+| min-selected-1 | 38.93 | 47.85 | 50.26 | 7.04 | 45.54 | 25.83 |
+| min-system-1.2 | 39.02 | 46.17 | 50.17 | 7.40 | 44.74 | 25.92 |
+| min-system-1.5 | 38.37 | 47.96 | 49.93 | 6.96 | 45.40 | 26.05 |
+| min-system-1 | 36.07 | 47.58 | 48.89 | 5.76 | 45.16 | 26.76 |
+
+The restricted-environment timing was isolated with fresh sequential empty-window controls on the same GPU, VSync enabled, 1280x720, 12 seconds including 3 seconds warmup. Restricted: 248 frames, p50/p95/p99 35.30/44.40/45.89 ms, maximum swap 49.93 ms. Host (outside restricted execution): 901 frames, 9.96/10.66/11.13 ms, maximum swap 11.50 ms. Therefore final acceptance uses host runs; the restricted values above are retained as diagnostic evidence, not as the game's standalone cadence.
+
+Visual inspection exposed clusters painting over selected plaques at 1280x720/max. Moved clusters before individual markers/plaques. A real generated-world raster regression compared plaque pixels after the label pass with the end of map drawing: it failed before the fix. Source assets, celestial geometry, orbit/belt layers, station selection and pause/resume were inspected in representative min/max captures at all three UI scales.
+
+Final host native acceptance, after the cluster ordering fix (same hardware/window/seed/settings; TK-0003 plus final integration fixes):
+
+| Configuration / view / UI | Frame p50 | p95 | p99 | CPU p99 | Swap p99 | Mean FPS |
+|---|---:|---:|---:|---:|---:|---:|
+| max-belt-1.2 | 9.98 | 10.44 | 10.61 | 6.29 | 7.10 | 100.06 |
+| max-belt-1.5 | 9.97 | 10.45 | 10.62 | 4.28 | 7.25 | 100.11 |
+| max-belt-1 | 10.00 | 10.55 | 11.31 | 4.26 | 8.11 | 100.09 |
+| max-selected-1.2 | 10.02 | 10.35 | 10.46 | 7.34 | 4.32 | 99.96 |
+| max-selected-1.5 | 10.00 | 10.38 | 10.49 | 9.83 | 2.76 | 99.71 |
+| max-selected-1 | 10.02 | 10.44 | 10.54 | 5.02 | 6.73 | 99.83 |
+| max-system-1.2 | 10.00 | 10.44 | 10.58 | 7.42 | 5.94 | 100.09 |
+| max-system-1.5 | 9.99 | 10.46 | 10.68 | 4.99 | 6.71 | 99.89 |
+| max-system-1 | 9.99 | 10.46 | 10.63 | 4.50 | 7.20 | 100.05 |
+| min-belt-1.2 | 10.00 | 10.42 | 10.62 | 7.40 | 6.67 | 99.78 |
+| min-belt-1.5 | 10.02 | 10.47 | 10.76 | 6.52 | 6.86 | 99.93 |
+| min-belt-1 | 10.02 | 10.44 | 10.57 | 4.77 | 6.95 | 100.10 |
+| min-selected-1.2 | 10.01 | 10.37 | 10.52 | 7.14 | 4.64 | 99.50 |
+| min-selected-1.5 | 10.02 | 10.38 | 10.53 | 9.01 | 2.98 | 99.54 |
+| min-selected-1 | 10.03 | 10.44 | 10.64 | 4.64 | 7.02 | 99.83 |
+| min-system-1.2 | 10.02 | 10.40 | 10.54 | 7.58 | 6.43 | 99.78 |
+| min-system-1.5 | 10.01 | 10.46 | 10.80 | 4.24 | 7.30 | 99.97 |
+| min-system-1 | 9.97 | 10.92 | 11.38 | 4.15 | 8.39 | 100.02 |
+
+All 18 cases passed the p99 <= 12.5 ms criterion: 10800 measured native frames in total, maximum case p99 11.379 ms. This supports the 80 FPS target on this hardware in the tested host conditions. It does not promise the same cadence inside restricted execution or on different hardware. Final host max/System/100% capture confirmed selected and player plaques remain visible above clusters.
+
+TK-0003 validation: Client 1596/1596 passed after the cluster regression and one-ULP pirate continuation fixture correction. PresentedFrameEvidenceTests covers ideal 80 FPS, dropped frames, display-limited refresh and disabled diagnostics. Release Client/performance build: zero warnings/errors. Scoped whitespace verification for Client/window/collector, tooling and Engine changes passed; git diff --check passed.

@@ -10,6 +10,12 @@ using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
+if (args.Contains("--solar-window"))
+{
+    Environment.ExitCode = SolarNativeEvidence.Run(args);
+    return;
+}
+
 if (args.Contains("--solar-map"))
 {
     Environment.ExitCode = SolarMapEvidence.Run(args);

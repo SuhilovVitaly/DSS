@@ -70,6 +70,37 @@ public sealed class SystemMapNavigationTests
     }
 
     [Fact]
+    public void MapClustersDoNotPaintOverSelectedPlaque()
+    {
+        using var engine = SimulationEngine.CreateFromSettingsFile(DefaultSystemContentTests.Settings);
+        var source = ScenarioLoader.LoadFromFile(Path.Combine(AppContext.BaseDirectory, "Scenarios", "Default_500", "scenario.json"));
+        var config = DeepSpaceSaga.Engine.Content.EngineContentLoader.LoadSolarSystemGenerationConfig(DefaultSystemContentTests.Settings)! with
+        { MinPlanets = 7, MaxPlanets = 7, MinBelts = 5, MaxBelts = 5, StartMinDays = 75, StartMaxDays = 75 };
+        engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = 1, CurrentSpeed = "Speed0" } }, generation: config);
+        var buffer = new SnapshotBuffer();
+        buffer.Update(engine.CaptureSnapshot() with { SelectedObjectId = "SPC-0002" });
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
+        using var bitmap = new SKBitmap(1280, 720);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, 1280, 720);
+        screen.FitMapView(MapFitMode.System);
+        SKColor[]? plaque = null;
+        screen.RenderStageCompleted = stage =>
+        {
+            if (stage is not ("label_plaques" or "markers_and_labels")) return;
+            var rect = screen.MapLabels["SPC-0002"].PlaqueRect;
+            var pixels = new List<SKColor>();
+            for (int y = Math.Max(0, (int)rect.Top); y < Math.Min(bitmap.Height, (int)rect.Bottom); y++)
+                for (int x = Math.Max(0, (int)rect.Left); x < Math.Min(bitmap.Width, (int)rect.Right); x++)
+                    pixels.Add(bitmap.GetPixel(x, y));
+            if (stage == "label_plaques") plaque = pixels.ToArray();
+            else Assert.Equal(plaque!, pixels.ToArray());
+        };
+        screen.Render(canvas, 1280, 720);
+        Assert.NotNull(plaque);
+        Assert.True(screen.MapClusterCount > 0);
+    }
+    [Fact]
     public void FitAndResizePreserveWorldDistances()
     {
         foreach (var scenario in ScenarioRepository.ListScenarios(Path.Combine(AppContext.BaseDirectory, "Scenarios")))
