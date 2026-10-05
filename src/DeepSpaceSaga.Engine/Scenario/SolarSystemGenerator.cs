@@ -100,7 +100,7 @@ internal static class SolarSystemGenerator
             if (!ids.Add(id)) throw new ScenarioException($"solar-system/v1 seed={seed} version=1 stage=ids attempt={attempt + 1}: collision {id}.");
         double extent = Math.Max(max, corridors.Max(p => p.Outer));
         var map = new SolarSystemMapSnapshot(1, seed, extent * 1.1,
-            belts.OrderBy(b => b.InnerRadius).ToImmutableArray(), planets.ToImmutableArray(), orbits.ToImmutableArray());
+            belts.OrderBy(b => b.InnerRadius).Select(b => b with { DecorationSamples = c.DecorationSamplesPerBelt }).ToImmutableArray(), planets.ToImmutableArray(), orbits.ToImmutableArray());
         var result = source with
         {
             GameState = source.GameState with

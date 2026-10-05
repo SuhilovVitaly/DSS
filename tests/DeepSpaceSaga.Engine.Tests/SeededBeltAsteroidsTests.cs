@@ -45,7 +45,10 @@ public sealed class SeededBeltAsteroidsTests
     {
         var a = Generate(GenerationInputSchemaTests.Config() with { DecorationSamplesPerBelt = 2048 });
         var b = Generate(GenerationInputSchemaTests.Config() with { DecorationSamplesPerBelt = 8192 });
-        Assert.Equal(ScenarioLoader.Serialize(a), ScenarioLoader.Serialize(b));
+        Assert.Equal(JsonSerializer.Serialize(a.GameState.SpaceObjects), JsonSerializer.Serialize(b.GameState.SpaceObjects));
+        Assert.Equal(JsonSerializer.Serialize(a.GameState.SolarSystem!.Orbits), JsonSerializer.Serialize(b.GameState.SolarSystem!.Orbits));
+        Assert.Equal(a.GameState.SolarSystem.Belts.Select(x => x.DecorationSeed), b.GameState.SolarSystem.Belts.Select(x => x.DecorationSeed));
+        Assert.All(b.GameState.SolarSystem.Belts, belt => Assert.Equal(8192, belt.DecorationSamples));
     }
 
     [Fact]

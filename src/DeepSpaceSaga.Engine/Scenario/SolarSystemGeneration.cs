@@ -69,7 +69,7 @@ public static class SolarSystemGeneration
         {
             if (belt is null || string.IsNullOrWhiteSpace(belt.Id) || !ids.Add(belt.Id) || objects.ContainsKey(belt.Id) ||
                 !double.IsFinite(belt.InnerRadius) || !double.IsFinite(belt.OuterRadius) ||
-                belt.InnerRadius <= 0 || belt.OuterRadius <= belt.InnerRadius || belt.OuterRadius > map.SystemRadius)
+                belt.DecorationSamples < 0 || belt.InnerRadius <= 0 || belt.OuterRadius <= belt.InnerRadius || belt.OuterRadius > map.SystemRadius)
                 throw new ScenarioException("solarSystem.belts: invalid id or radii.");
         }
         ids.Clear();

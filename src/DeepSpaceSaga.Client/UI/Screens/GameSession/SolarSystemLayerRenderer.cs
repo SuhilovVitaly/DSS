@@ -3,10 +3,11 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
-internal static class SolarSystemLayerRenderer
+internal sealed class SolarSystemLayerRenderer
 {
-    internal static void Draw(SKCanvas canvas, SolarSystemMapSnapshot map, CameraState camera, SKRect viewport)
+    internal void Draw(SKCanvas canvas, SolarSystemMapSnapshot map, CameraState camera, SKRect viewport)
     {
+        PrepareMap(map);
         var (cx, cy) = camera.WorldToScreen(0, 0, (int)viewport.Width, (int)viewport.Height);
         using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
         canvas.Save();
@@ -16,9 +17,10 @@ internal static class SolarSystemLayerRenderer
         {
             Ring(belt.InnerRadius);
             Ring(belt.OuterRadius);
+            DrawDecoration(canvas, belt, camera, viewport);
         }
         paint.Color = new SKColor(105, 135, 160, 45);
-        foreach (var orbit in map.Orbits)
+        foreach (var orbit in map.Orbits.Where(o => map.Planets.Any(p => p.ObjectId == o.ObjectId)))
         {
             float a = (float)(orbit.Elements.SemiMajorAxis * camera.PixelsPerWorldUnit);
             float b = (float)(orbit.Elements.SemiMinorAxis * camera.PixelsPerWorldUnit);
@@ -34,6 +36,57 @@ internal static class SolarSystemLayerRenderer
             float pixels = (float)(radius * camera.PixelsPerWorldUnit);
             if (float.IsFinite(pixels)) canvas.DrawCircle(cx, cy, pixels, paint);
         }
+    }
+
+    private readonly Dictionary<(BeltMapData Belt, int Lod), (double X, double Y)[]> _decoration = new();
+    private SolarSystemMapSnapshot? _map;
+    internal int CachedPatterns => _decoration.Count;
+
+    private void PrepareMap(SolarSystemMapSnapshot map)
+    {
+        if (ReferenceEquals(map, _map)) return;
+        foreach (var key in _decoration.Keys.Where(k => !map.Belts.Contains(k.Belt)).ToArray()) _decoration.Remove(key);
+        _map = map;
+    }
+
+    private void DrawDecoration(SKCanvas canvas, BeltMapData belt, CameraState camera, SKRect viewport)
+    {
+        int lod = (belt.OuterRadius - belt.InnerRadius) * camera.PixelsPerWorldUnit < 12 ? 0 : 1;
+        var samples = Decoration(belt, lod);
+        using var paint = new SKPaint { IsAntialias = false, Color = new SKColor(150, 160, 165, 80), StrokeWidth = 1 };
+        foreach (var (x, y) in samples)
+        {
+            var (sx, sy) = camera.WorldToScreen(x, y, (int)viewport.Width, (int)viewport.Height);
+            if (viewport.Contains(sx, sy)) canvas.DrawPoint(sx, sy, paint);
+        }
+    }
+
+    internal (double X, double Y)[] Decoration(BeltMapData belt, int lod)
+    {
+        if (_decoration.TryGetValue((belt, lod), out var cached)) return cached;
+        // A bounded visual sample budget cannot allocate arbitrary entity-sized worlds.
+        int count = Math.Min(Math.Max(0, belt.DecorationSamples), 65536) / (lod == 0 ? 4 : 1);
+        var points = new (double X, double Y)[count];
+        ulong state = belt.DecorationSeed;
+        double Next()
+        {
+            unchecked
+            {
+                ulong z = (state += 0x9E3779B97F4A7C15UL);
+                z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL;
+                z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL;
+                return ((z ^ (z >> 31)) >> 11) * (1.0 / 9007199254740992.0);
+            }
+        }
+        double rotation = Next() * Math.Tau;
+        for (int i = 0; i < count; i++)
+        {
+            double angle = rotation + (i % 5) * Math.Tau / 5 + Next() * 0.7;
+            double radius = belt.InnerRadius + (belt.OuterRadius - belt.InnerRadius) * Next();
+            points[i] = (radius * Math.Sin(angle), -radius * Math.Cos(angle));
+        }
+        _decoration[(belt, lod)] = points;
+        return points;
     }
 
     internal static void DrawPlanet(SKCanvas canvas, PlanetMapData planet, double x, double y,

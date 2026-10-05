@@ -18,7 +18,8 @@ public sealed record BeltMapData(
     [property: JsonPropertyName("id")] string Id,
     [property: JsonPropertyName("innerRadius")] double InnerRadius,
     [property: JsonPropertyName("outerRadius")] double OuterRadius,
-    [property: JsonPropertyName("decorationSeed")] ulong DecorationSeed);
+    [property: JsonPropertyName("decorationSeed")] ulong DecorationSeed,
+    [property: JsonPropertyName("decorationSamples")] int DecorationSamples = 2048);
 
 /// <summary>Kind is Rocky, Icy or Gas; visual radius is in world units.</summary>
 public sealed record PlanetMapData(

@@ -25,6 +25,7 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly TacticalMapDepthRenderer _depthRenderer;
     private readonly List<ObjectRenderState> _renderStates = new();
     private readonly List<FutureTrajectoryPoint> _futureTrajectoryPoints = new(FutureTrajectoryProjector.MaxSamplePoints);
+    private readonly SolarSystemLayerRenderer _solarSystemLayer = new();
     private readonly Dictionary<string, RenderMotion> _pausedVisualAnchors = new(StringComparer.Ordinal);
     private readonly Dictionary<string, VisualCorrection> _visualCorrections = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ObjectMotionSnapshot> _lastSnapshotBaselineObjects = new(StringComparer.Ordinal);
@@ -1101,7 +1102,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         if (buffered?.Snapshot.SolarSystemMap is { } systemMap)
         {
-            SolarSystemLayerRenderer.Draw(canvas, systemMap, _camera, SKRect.Create(width, height));
+            _solarSystemLayer.Draw(canvas, systemMap, _camera, SKRect.Create(width, height));
             foreach (var planet in systemMap.Planets)
                 foreach (var state in _renderStates)
                     if (state.Pose.ObjectId == planet.ObjectId)
