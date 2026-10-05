@@ -29,7 +29,9 @@ public sealed record VoyageSnapshot(
     string? BlockReasonCode = null,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<VoyageRouteOptionSnapshot>))]
     ImmutableArray<VoyageRouteOptionSnapshot> RouteOptions = default,
-    long? ReservedFuelKg = null)
+    long? ReservedFuelKg = null,
+    long? ProjectedConsumedFuelKg = null,
+    long? ProjectedRouteFuelCostCredits = null)
 {
     [JsonIgnore]
     public string State => Phase;
