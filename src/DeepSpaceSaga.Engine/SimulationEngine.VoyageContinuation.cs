@@ -33,6 +33,7 @@ public sealed partial class SimulationEngine
         if ((state.VoyageFuelSettlements?.Count ?? 0) > 51) throw InvalidVoyageContinuation("settlement history exceeds finance retention");
         foreach (var receipt in state.VoyageFuelSettlements ?? [])
         {
+            if (receipt is null) throw InvalidVoyageContinuation("null fuel settlement");
             ValidateVoyageFuelSave(state with { LastVoyageFuelSettlement = receipt }, voyage, objects);
             if (!terminal.Contains(receipt.VoyageId) || !settlements.TryAdd(receipt.VoyageId, receipt))
                 throw InvalidVoyageContinuation("invalid or duplicate durable fuel settlement");
@@ -45,6 +46,7 @@ public sealed partial class SimulationEngine
         long previousStarted = -1;
         foreach (var saved in ledgers ?? [])
         {
+            if (saved is null) throw InvalidVoyageContinuation("null voyage ledger");
             var f = saved.Finance;
             if (f is null || string.IsNullOrWhiteSpace(f.VoyageId) || !seen.Add(f.VoyageId) ||
                 !stationIds.Contains(f.OriginStationObjectId) || f.DestinationStationObjectId is null ||
@@ -60,11 +62,26 @@ public sealed partial class SimulationEngine
                 transit && (f.OriginStationObjectId != voyage!.OriginStationObjectId || f.DestinationStationObjectId != voyage.DestinationStationObjectId ||
                     voyage.StartedGameTimeMs is not null && f.StartedGameTimeMs != voyage.StartedGameTimeMs))
                 throw InvalidVoyageContinuation("active/terminal ledger disagrees with voyage");
-            if (f.UnsoldCargo.IsDefault || f.UnsoldCargo.Any(c => c.Quantity <= 0 || c.CostBasisCredits is < 0 ||
+            if (f.UnsoldCargo.IsDefault || f.UnsoldCargo.Any(c => c is null || string.IsNullOrWhiteSpace(c.ItemTypeId) || c.Quantity <= 0 || c.CostBasisCredits is < 0 ||
                 !_registry.ItemTypes.Contains(c.ItemTypeId)) ||
                 !f.UnsoldCargo.Select(c => c.ItemTypeId).SequenceEqual(f.UnsoldCargo.Select(c => c.ItemTypeId).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)))
                 throw InvalidVoyageContinuation("invalid carried cargo");
+            if (transit || f.State == VoyageFinanceStates.AwaitingRealization)
+            {
+                var ship = objects.FirstOrDefault(o => o.InitialMotion.ObjectId == state.PlayerShipObjectId);
+                if (ship is null || f.State == VoyageFinanceStates.AwaitingRealization &&
+                    (!ship.IsDocked || ship.DockedStationObjectId != f.DestinationStationObjectId))
+                    throw InvalidVoyageContinuation("unrealized ledger destination disagrees with docked ship");
+                foreach (var carried in f.UnsoldCargo)
+                {
+                    int item = _registry.ItemTypes.GetIndex(carried.ItemTypeId);
+                    Int128 actual = 0;
+                    foreach (var stack in ship.Modules.SelectMany(m => m.Cargo).Where(c => c.ItemTypeIndex == item)) actual += stack.Quantity;
+                    if (carried.Quantity > actual) throw InvalidVoyageContinuation("unrealized carried quantity exceeds ship cargo");
+                }
+            }
             var postings = saved.Postings ?? throw InvalidVoyageContinuation("missing posting entries");
+            if (postings.Any(p => p is null)) throw InvalidVoyageContinuation("null monetary posting");
             var ids = postings.Select(p => p.PostingId).ToArray();
             if (ids.Any(string.IsNullOrWhiteSpace) || !ids.SequenceEqual(ids.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)))
                 throw InvalidVoyageContinuation("duplicate or unordered ledger posting IDs");
@@ -107,6 +124,14 @@ public sealed partial class SimulationEngine
             throw InvalidVoyageContinuation("active voyage requires exactly one open ledger");
         if (restored.Count(v => v.Finance.State is VoyageFinanceStates.InTransit or VoyageFinanceStates.AwaitingRealization) > 1)
             throw InvalidVoyageContinuation("multiple unfinished ledgers");
+        if (current)
+        {
+            var latestFuelLedger = restored.LastOrDefault(l => settlements.ContainsKey(l.Finance.VoyageId));
+            if (settlements.Count > 0 && state.LastVoyageFuelSettlement is null || latestFuelLedger is not null &&
+                state.LastVoyageFuelSettlement?.VoyageId != latestFuelLedger.Finance.VoyageId ||
+                settlements.Keys.Count(id => !seen.Contains(id)) > 1)
+                throw InvalidVoyageContinuation("last fuel receipt disagrees with retained terminal chronology");
+        }
         if (state.LastVoyageFuelSettlement is { } last)
         {
             if (current && (!terminal.Contains(last.VoyageId) || !settlements.TryGetValue(last.VoyageId, out var matching) || matching != last))
