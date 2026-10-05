@@ -1347,7 +1347,7 @@ public sealed partial class GameSessionScreen : IScreen
 
             // Combat participants share their confirmed display time with the launch
             // preview and target path. A frozen/corrected marker would detach the line.
-            if (hasCombatPose)
+            if (hasCombatPose || predicted.HasAbsoluteOrbit)
             {
                 _visualCorrections.Remove(obj.ObjectId);
                 _pausedVisualAnchors.Remove(obj.ObjectId);
@@ -1463,7 +1463,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     private RenderMotion PredictRenderMotion(ObjectMotionSnapshot state, long elapsedMs)
     {
-        if (elapsedMs == 0) return new(state);
+        if (elapsedMs == 0 && state.Orbit is null) return new(state);
         if (_predictor is LinearMotionPredictor &&
             LinearMotionPredictor.TryPredictLinearPosition(state, elapsedMs, out double x, out double y))
             return new(state, x, y, state.Direction);
