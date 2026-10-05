@@ -17,7 +17,7 @@ public class CountermeasureSaveLoadTests
         using var continuous = Create(DefenseScenario());
         continuous.ReceiveCommand(Fire("fire")); At(continuous, 0); At(continuous, saveAt);
         var saved = continuous.CaptureSaveStateForTests(saveAt, SimulationSpeed.Speed0);
-        Assert.Equal(11, saved.SaveFormatVersion);
+        Assert.Equal(SaveFormat.CurrentSaveFormatVersion, saved.SaveFormatVersion);
         var loaded = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(saved), true);
         using var resumed = new SimulationEngine(Registry.Value);
         resumed.LoadScenario(loaded, isSave: true);

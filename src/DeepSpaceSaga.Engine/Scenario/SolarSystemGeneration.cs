@@ -63,6 +63,16 @@ public static class SolarSystemGeneration
             map.Belts.IsDefault || map.Planets.IsDefault || map.Orbits.IsDefault ||
             state.MasterSeed != map.Seed)
             throw new ScenarioException("solarSystem: invalid version, seed, radius or arrays.");
+        if (map.Planets.Length is < 3 or > 7 || map.Belts.Length is < 2 or > 5 ||
+            state.SpaceObjects.Count(o => string.Equals(o.ObjectType, "Sun", StringComparison.OrdinalIgnoreCase)) != 1 ||
+            state.SpaceObjects.Count(o => string.Equals(o.ObjectType, "Planet", StringComparison.OrdinalIgnoreCase)) != map.Planets.Length)
+            throw new ScenarioException("solarSystem: invalid celestial counts.");
+        var sun = state.SpaceObjects.Single(o => string.Equals(o.ObjectType, "Sun", StringComparison.OrdinalIgnoreCase));
+        if (sun.Orbit is not null || sun.PositionX != 0 || sun.PositionY != 0 || sun.SpeedMps != 0)
+            throw new ScenarioException("solarSystem: Sun must remain at the origin.");
+        if (state.SpaceObjects.Any(o => o.WorldOffsetX != 0 || o.WorldOffsetY != 0 ||
+            string.Equals(o.ObjectType, "Station", StringComparison.OrdinalIgnoreCase) && o.Orbit is null))
+            throw new ScenarioException("solarSystem: invalid offset or missing station orbit.");
         var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.OrdinalIgnoreCase);
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var belt in map.Belts)
@@ -72,6 +82,7 @@ public static class SolarSystemGeneration
                 belt.DecorationSamples < 0 || belt.InnerRadius <= 0 || belt.OuterRadius <= belt.InnerRadius || belt.OuterRadius > map.SystemRadius)
                 throw new ScenarioException("solarSystem.belts: invalid id or radii.");
         }
+        var corridors = map.Belts.Select(b => (Inner: b.InnerRadius, Outer: b.OuterRadius)).ToList();
         ids.Clear();
         foreach (var planet in map.Planets)
         {
@@ -81,7 +92,15 @@ public static class SolarSystemGeneration
                 !objects.TryGetValue(planet.ObjectId, out var obj) ||
                 !string.Equals(obj.ObjectType, "Planet", StringComparison.OrdinalIgnoreCase))
                 throw new ScenarioException("solarSystem.planets: invalid kind, radius or object reference.");
+            if (obj.Orbit is not { } orbit || obj.WorldOffsetX != 0 || obj.WorldOffsetY != 0 ||
+                orbit.SemiMinorAxis <= planet.VisualRadius || orbit.SemiMajorAxis + planet.VisualRadius > map.SystemRadius)
+                throw new ScenarioException("solarSystem.planets: missing orbit or invalid radial extent.");
+            corridors.Add((orbit.SemiMinorAxis - planet.VisualRadius, orbit.SemiMajorAxis + planet.VisualRadius));
         }
+        var ordered = corridors.OrderBy(c => c.Inner).ToArray();
+        for (int i = 1; i < ordered.Length; i++)
+            if (ordered[i].Inner < ordered[i - 1].Outer)
+                throw new ScenarioException("solarSystem: overlapping radial corridors.");
         ids.Clear();
         foreach (var row in map.Orbits)
         {

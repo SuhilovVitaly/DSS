@@ -22,9 +22,11 @@ public static class SaveFormat
     /// Version 9 adds a station's bounded trading budget and producing modules' pending output
     /// remainder (US-0002 TK-0002); both are optional and absent for every earlier save.
     /// Version 10 preserves captured combat parameters, active flights, guidance, history and identity counters.
+    /// Version 11 preserves countermeasure defenses and combat operator assignments.
+    /// Version 12 preserves resolved solar-system geography and absolute orbital motion.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 11;
+    public const int CurrentSaveFormatVersion = 12;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>

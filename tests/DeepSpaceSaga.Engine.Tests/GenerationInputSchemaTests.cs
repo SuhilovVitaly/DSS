@@ -70,15 +70,20 @@ public sealed class GenerationInputSchemaTests
         var planet = new SpaceObjectData("planet", "Planet", "Permanent", "Planet", 0, -720000, 0, 0,
             "Orbital", null, null, null, Orbit: orbit);
         var map = new SolarSystemMapSnapshot(1, ulong.MaxValue, 1000000,
-            [new BeltMapData("belt", 800000, 900000, 5)],
-            [new PlanetMapData("planet", "Rocky", 10)], [new OrbitMapData("planet", orbit)]);
+            [new BeltMapData("belt", 800000, 900000, 5), new BeltMapData("belt2", 930000, 970000, 6)],
+            [new PlanetMapData("planet", "Rocky", 10), new PlanetMapData("planet2", "Icy", 10), new PlanetMapData("planet3", "Gas", 10)],
+            [new OrbitMapData("planet", orbit), new OrbitMapData("planet2", orbit with { SemiMajorAxis = 300000, SemiMinorAxis = 300000 }),
+             new OrbitMapData("planet3", orbit with { SemiMajorAxis = 400000, SemiMinorAxis = 400000 })]);
         scenario = scenario with
         {
             GameState = scenario.GameState with
             {
                 MasterSeed = ulong.MaxValue,
                 SolarSystem = map,
-                SpaceObjects = [scenario.GameState.SpaceObjects[0], planet]
+                SpaceObjects = [scenario.GameState.SpaceObjects[0], planet,
+                    planet with { ObjectId = "planet2", Orbit = map.Orbits[1].Elements },
+                    planet with { ObjectId = "planet3", Orbit = map.Orbits[2].Elements },
+                    new("sun", "Sun", "Permanent", "Sun", 0, 0, 0, 0, "Stationary", null, null, null)]
             }
         };
         var restored = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(scenario));
