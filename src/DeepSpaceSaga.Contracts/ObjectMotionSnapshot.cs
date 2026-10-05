@@ -132,7 +132,11 @@ public sealed record ObjectMotionSnapshot(
     CountermeasureSnapshot? Countermeasure = null,
     DefenseSnapshot? Defense = null,
     /// <summary>Authoritative per-torpedo attempt marker; clearing a defender does not clear this flag.</summary>
-    bool CountermeasureAttempted = false);
+    bool CountermeasureAttempted = false,
+    [property: JsonPropertyName("orbit")] OrbitalElements? Orbit = null,
+    [property: JsonPropertyName("orbitSampleSimulationTimeMs")] long? OrbitSampleSimulationTimeMs = null,
+    [property: JsonPropertyName("worldOffsetX")] double WorldOffsetX = 0,
+    [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0);
 
 /// <summary>
 /// A revealed mineralogical fraction in integer thousandths, not cargo quantity or mining yield.

@@ -57,7 +57,8 @@ public sealed record AuthoritativeSnapshot(
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CombatImpactSnapshot>))]
     ImmutableArray<CombatImpactSnapshot> CombatImpacts = default,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CombatJournalEntry>))]
-    ImmutableArray<CombatJournalEntry> CombatJournal = default)
+    ImmutableArray<CombatJournalEntry> CombatJournal = default,
+    [property: JsonPropertyName("solarSystemMap")] SolarSystemMapSnapshot? SolarSystemMap = null)
 {
     /// <summary>Motion/cycle timestamp; legacy snapshots use GameTimeMs for both domains.</summary>
     [JsonIgnore]
