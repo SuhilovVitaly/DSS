@@ -27,3 +27,14 @@ The screenshot was produced by the real screen's Skia raster rendering path, not
 | TK-0003 | 392ae4c | Client: 1582/1582; render poses, pause/resume, docked prediction, real Default raster and epoch-zero trail regression; scoped format and diff checks |
 
 Story review (same agent): checked clock domains, Int128 remainder before floating-point conversion, derivative units/headings, all orbit prediction paths, immutable snapshot metadata, docking binding and release, persistence and client visual reconciliation. The full Client run exposed pre-zero trail bootstrap; TK-0003 fixes it only for orbital history. No remaining confirmed US-0002 findings. Current scenario stations acquire generated orbital elements in US-0004; runtime support is already exercised by station fixtures. No native/GPU evidence is claimed.
+
+## US-0003 — playable asteroid belts
+
+| Ticket | Commit | Observed validation |
+|---|---|---|
+| TK-0001 | 91e9639 | Engine 1172/1172; deterministic grouped belt entities, annulus containment including very large epochs, unchanged temporary asteroids and independent decoration settings |
+| TK-0002 | 4d683dc | Full solution passed: Contracts 105, Motion 141, Engine 1172, Client 1584; cached detail/LOD/selection and cache invalidation; scoped format and diff clean |
+
+Resolved planning gap: DecorationSamplesPerBelt existed in generation config but the planned snapshot could not carry it to Client. Added optional camelCase `BeltMapData.decorationSamples` with compatible default 2048. Changing this field changes only decorative sampling; tests compare unchanged authoritative objects, orbits and decoration seeds. Rendering caps samples at 65536 per belt and uses one quarter at overview LOD. Cache keys include full belt geometry, seed, count and LOD; obsolete map entries are removed. No decorative snapshot entities are created.
+
+Story review (same agent): inspected stream isolation, IDs/case collisions, bounded placement/clearance, masses/compositions, orbital containment, temporary-object preservation, geometry bounds, rendering order, selection and cache lifetime. No confirmed outstanding story findings. Native presentation/performance remains US-0008.
