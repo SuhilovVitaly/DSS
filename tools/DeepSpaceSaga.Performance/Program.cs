@@ -10,6 +10,12 @@ using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
+if (args.Contains("--solar-map"))
+{
+    Environment.ExitCode = SolarMapEvidence.Run(args);
+    return;
+}
+
 if (args.Length >= 2 && args[0] == "--window-probe")
 {
     WindowLoopProbe.Run(args);
@@ -128,14 +134,23 @@ void WriteReport()
     Directory.CreateDirectory(Path.GetDirectoryName(output)!);
     File.WriteAllText(output, JsonSerializer.Serialize(new
     {
-        Scenario = scenario.Metadata.ScenarioId, Objects = scenario.GameState.SpaceObjects.Count,
-        Seed = 500, Width = renderWidth, Height = renderHeight, Frames = frames, SeparateCalendar = separateCalendar,
+        Scenario = scenario.Metadata.ScenarioId,
+        Objects = scenario.GameState.SpaceObjects.Count,
+        Seed = 500,
+        Width = renderWidth,
+        Height = renderHeight,
+        Frames = frames,
+        SeparateCalendar = separateCalendar,
         Runtime = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
         OS = System.Runtime.InteropServices.RuntimeInformation.OSDescription,
-        ProcessorCount = Environment.ProcessorCount, Backend = "Skia raster, full GameSessionScreen.Render",
+        ProcessorCount = Environment.ProcessorCount,
+        Backend = "Skia raster, full GameSessionScreen.Render",
         Measurements = results,
-        Stages = stages.ToDictionary(p => p.Key, p => new { MeanMs = p.Value.Ms / p.Value.Count,
-            AllocatedBytesPerFrame = p.Value.Bytes / (double)p.Value.Count })
+        Stages = stages.ToDictionary(p => p.Key, p => new
+        {
+            MeanMs = p.Value.Ms / p.Value.Count,
+            AllocatedBytesPerFrame = p.Value.Bytes / (double)p.Value.Count
+        })
     }, new JsonSerializerOptions { WriteIndented = true }));
     Console.WriteLine(output);
 }
@@ -266,19 +281,34 @@ void RenderTrajectoryReview()
     var baseline = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
     var ship = baseline.Objects.Single(o => o.ObjectId == baseline.PlayerShipObjectId) with
     {
-        X = -1000, Y = 500, SpeedKmS = 3, Direction = 270,
+        X = -1000,
+        Y = 500,
+        SpeedKmS = 3,
+        Direction = 270,
         ActiveEngineCommandType = NavigationComputerCommandTypes.Approach,
-        NavigationTargetX = 0, NavigationTargetY = 0, NavigationTargetSpeedKmS = 5,
-        NavigationTargetDirectionDegrees = 90, NavigationTargetObjectId = "QA-TARGET"
+        NavigationTargetX = 0,
+        NavigationTargetY = 0,
+        NavigationTargetSpeedKmS = 5,
+        NavigationTargetDirectionDegrees = 90,
+        NavigationTargetObjectId = "QA-TARGET"
     };
     ship = ship with { ApproachRoute = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 5, 10, 4) };
     foreach (var (name, preset, approach) in new[] { ("approach", 1, true), ("approach-far", 4, true), ("straight-far", 4, false) })
     {
-        var player = approach ? ship : ship with { ApproachRoute = null, ActiveEngineCommandType = null,
-            NavigationTargetX = null, NavigationTargetY = null, Direction = 90 };
+        var player = approach ? ship : ship with
+        {
+            ApproachRoute = null,
+            ActiveEngineCommandType = null,
+            NavigationTargetX = null,
+            NavigationTargetY = null,
+            Direction = 90
+        };
         var buffer = new SnapshotBuffer();
-        buffer.Update(baseline with { Objects = [player, new("QA-TARGET", 0, 0, 5, 90,
-            RenderObjectType: SpaceObjectType.Asteroid, DisplayName: "Faster target")] });
+        buffer.Update(baseline with
+        {
+            Objects = [player, new("QA-TARGET", 0, 0, 5, 90,
+            RenderObjectType: SpaceObjectType.Asteroid, DisplayName: "Faster target")]
+        });
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
         using var surface = SKSurface.Create(new SKImageInfo(1920, 1080));
         screen.Render(surface.Canvas, 1920, 1080);
@@ -299,8 +329,12 @@ void RenderMapReview()
     var baseline = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
     var player = baseline.Objects.Single(o => o.ObjectId == baseline.PlayerShipObjectId) with
     {
-        X = 1.4e9, Y = 0, SpeedKmS = 0, NavigationTargetX = 1.4e9 + 10000,
-        NavigationTargetY = 10000, NavigationTargetObjectId = "QA-TARGET"
+        X = 1.4e9,
+        Y = 0,
+        SpeedKmS = 0,
+        NavigationTargetX = 1.4e9 + 10000,
+        NavigationTargetY = 10000,
+        NavigationTargetObjectId = "QA-TARGET"
     };
     var objects = System.Collections.Immutable.ImmutableArray.Create(player,
         new ObjectMotionSnapshot("QA-TARGET", 1.4e9 + 10000, 10000, 0, 0, RenderObjectType: SpaceObjectType.UnknownSpaceObject),
@@ -350,17 +384,34 @@ void RunSoak()
         GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
         process.Refresh();
         var trails = screen.TrailStatistics;
-        var sample = new { RealSeconds = frame / 80, SimulationSeconds = frame * (int)speed / 80, ManagedBytes = GC.GetTotalMemory(false),
-            PrivateBytes = process.PrivateMemorySize64, WorkingSetBytes = process.WorkingSet64,
-            trails.Trails, trails.Points, trails.Capacity };
+        var sample = new
+        {
+            RealSeconds = frame / 80,
+            SimulationSeconds = frame * (int)speed / 80,
+            ManagedBytes = GC.GetTotalMemory(false),
+            PrivateBytes = process.PrivateMemorySize64,
+            WorkingSetBytes = process.WorkingSet64,
+            trails.Trails,
+            trails.Points,
+            trails.Capacity
+        };
         samples.Add(sample);
         Console.WriteLine(JsonSerializer.Serialize(sample));
     }
     Directory.CreateDirectory(Path.GetDirectoryName(output)!);
-    File.WriteAllText(output, JsonSerializer.Serialize(new { Objects = 502, Frames = 9600,
-        RealSeconds = 120, SimulationSeconds = 120 * (int)speed, Speed = (int)speed,
-        Width = renderWidth, Height = renderHeight, SeparateCalendar = separateCalendar,
-        Backend = "Skia raster, full GameSessionScreen.Render", Samples = samples },
+    File.WriteAllText(output, JsonSerializer.Serialize(new
+    {
+        Objects = 502,
+        Frames = 9600,
+        RealSeconds = 120,
+        SimulationSeconds = 120 * (int)speed,
+        Speed = (int)speed,
+        Width = renderWidth,
+        Height = renderHeight,
+        SeparateCalendar = separateCalendar,
+        Backend = "Skia raster, full GameSessionScreen.Render",
+        Samples = samples
+    },
         new JsonSerializerOptions { WriteIndented = true }));
     GC.KeepAlive(screen);
 }
@@ -377,16 +428,21 @@ void CompareFrames(string before, string after)
         long error = 0, changed = 0;
         int maximum = 0;
         for (int y = 0; y < a.Height; y++)
-        for (int x = 0; x < a.Width; x++)
+            for (int x = 0; x < a.Width; x++)
+            {
+                var p = a.GetPixel(x, y); var q = b.GetPixel(x, y);
+                int r = Math.Abs(p.Red - q.Red), g = Math.Abs(p.Green - q.Green), blue = Math.Abs(p.Blue - q.Blue);
+                error += r + g + blue;
+                if (r + g + blue > 0) changed++;
+                maximum = Math.Max(maximum, Math.Max(r, Math.Max(g, blue)));
+            }
+        comparisons.Add(new
         {
-            var p = a.GetPixel(x, y); var q = b.GetPixel(x, y);
-            int r = Math.Abs(p.Red - q.Red), g = Math.Abs(p.Green - q.Green), blue = Math.Abs(p.Blue - q.Blue);
-            error += r + g + blue;
-            if (r + g + blue > 0) changed++;
-            maximum = Math.Max(maximum, Math.Max(r, Math.Max(g, blue)));
-        }
-        comparisons.Add(new { Name = name, MeanAbsoluteChannelError = error / (double)(a.Width * a.Height * 3),
-            ChangedPixelPercent = 100d * changed / (a.Width * a.Height), MaxChannelDifference = maximum });
+            Name = name,
+            MeanAbsoluteChannelError = error / (double)(a.Width * a.Height * 3),
+            ChangedPixelPercent = 100d * changed / (a.Width * a.Height),
+            MaxChannelDifference = maximum
+        });
     }
     File.WriteAllText(output, JsonSerializer.Serialize(comparisons, new JsonSerializerOptions { WriteIndented = true }));
     Console.WriteLine(File.ReadAllText(output));

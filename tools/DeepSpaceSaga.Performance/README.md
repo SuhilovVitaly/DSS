@@ -52,3 +52,13 @@ historical buffers. An Approach can finish during a long probe.
 
 See [the September 24 investigation](../../Documentation/04-Engineering/Performance500/gpu-jitter-2026-09-24.md)
 for the captured failure and validation results.
+
+## Solar-system evidence
+
+Run the production generation/resource pipeline for all requested seeds and scenarios:
+
+    dotnet run -c Release --project tools/DeepSpaceSaga.Performance -- D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/solar-max.json --solar-map --seeds 1:100 --scenarios all --config max
+
+--config min|max selects 3/7 planets, 2/5 belts and 50/75 starting days. --scenarios accepts all or a comma-separated list of scenario folder names. Invalid input returns exit code 1 with a failed report.
+
+Every world records generation time/allocations, snapshot time/allocations and serialized save time/bytes. Catalog parsing is outside the generation timer. Raster rendering samples the first requested seed in every scenario, at System and belt views: 120 warmup frames and 600 measured frames at 1920x1080. It records p50/p95/p99 and allocation bytes/frame. Report status indicates successful measurement; presentation.status=not-measured explicitly prevents treating raster timing as evidence of GPU 80 FPS. Hardware/runtime, source commit, full generation configuration and seed range accompany the measurements.

@@ -82,3 +82,16 @@ Save writer version is 12 (branch previously 11). Parent station orbital element
 Transport tests use the real SaveAsync file and production CreateFromSaveFile factory. A controlled clock prevents wall-time races; first paused and continued snapshots preserve all identities, orbits, geometry and motion. Invalid version, parent and JSON leave the original bytes untouched.
 
 Story review (same agent): checked reader/writer version gate, optional legacy fields, no generation on Load, all preflight validation before live mutation, both time domains, parent binding reconstruction, active-route continuation, file atomicity and paused transport behavior. No outstanding confirmed US-0007 findings.
+
+## US-0008 — correctness and performance evidence (in progress)
+
+TK-0001: b31b1c2. Boundary corpus covers 4800 worlds: seeds 1..100, all six scenarios, 3/7 planets, 2/5 belts and 50/75 starting days. All 49 test rows passed. Full solution after fixes: Contracts 105, Motion 141, Engine 1264, Client 1591. Corpus exposed max-density seed 36 exhaustion: placement now retries each corridor before restarting the entire attempt, retaining bounded budgets. Configuration permits finite subranges within 50..75 to make the required boundary corpus possible; shipped 50..75 remains unchanged. Generated save data is resolved, so previously saved worlds do not regenerate.
+
+TK-0002 measurement commands (Release, sequential runs, source b31b1c2):
+
+    dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/solar-performance-min.json --solar-map --seeds 1:100 --scenarios all --config min
+    dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/solar-performance-max.json --solar-map --seeds 1:100 --scenarios all --config max
+
+Both measurement reports completed successfully, 600 generated worlds each. First seed per scenario is rendered separately in System and belt views, 120 warmup / 600 measured frames at 1920x1080. CPU/Skia raster maximum p99 across views: min 6.3785 ms, max 6.6625 ms. Largest saves: 950025 / 1132976 UTF-8 bytes. Maximum generation time: 67.0542 / 67.1579 ms (includes initial JIT); maximum snapshot sample: 15.8739 / 11.5505 ms. These are absolute observations, not comparisons against a historical baseline. GPU/presentation status remains not-measured here.
+
+Tooling tests: ReportHasReproductionAndBackend and InvalidConfigReturnsFailure passed 2/2; the latter runs the CLI process and verifies exit code 1. The new test project is included in the solution.
