@@ -159,6 +159,12 @@ public static class EngineContentLoader
             profilePath = Resolve(basePath, declaredProfilePath);
         }
         var profiles = profilePath is null ? null : LoadStationMarketProfiles(profilePath);
+        IReadOnlyList<StationMarketEventDefinition>? marketEvents = null;
+        if (settings.TypeData.StationMarketEvents is { } eventPath)
+        {
+            if (string.IsNullOrWhiteSpace(eventPath)) throw new ContentException("stationMarketEvents path is empty.");
+            marketEvents = LoadStationMarketEvents(Resolve(basePath, eventPath));
+        }
         IReadOnlyList<ShipClassDefinition>? shipClasses = null;
         if (settings.TypeData.ShipClasses is { } declaredShipClassPath)
         {
@@ -183,8 +189,20 @@ public static class EngineContentLoader
         return GameDataRegistry.Create(moduleCategories, moduleImplementations, catalog.Items, commands, factoryTypes, recipes,
             dialogues, quests, catalogVersion: catalog.Version,
             legacyCatalogFingerprint: settings.Economy?.LegacyCatalogFingerprint, stationMarketProfiles: profiles,
-            shipClasses: shipClasses);
+            shipClasses: shipClasses, stationMarketEvents: marketEvents, requireCompleteMarketEventSet: marketEvents is not null);
     }
+
+    internal static IReadOnlyList<StationMarketEventDefinition> LoadStationMarketEvents(string path)
+    {
+        var file = ReadJson<StationMarketEventsFile>(path, "station market events");
+        if (file.SchemaVersion != 1 || file.Events.IsDefaultOrEmpty || file.Events.Any(e => e is null))
+            throw new ContentException($"{path}: schemaVersion must equal 1 and events must be a nonempty array without null members.");
+        return file.Events;
+    }
+
+    private sealed record StationMarketEventsFile(
+        [property: JsonPropertyName("schemaVersion"), JsonRequired] int SchemaVersion,
+        [property: JsonPropertyName("events"), JsonRequired] ImmutableArray<StationMarketEventDefinition> Events);
 
     internal static IReadOnlyList<ShipClassDefinition> LoadShipClasses(string path)
     {
@@ -799,7 +817,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("stationMarketProfiles"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketProfiles = null,
         [property: JsonPropertyName("stationResourceFields"), JsonConverter(typeof(DeclaredResourceFieldPathConverter))] string? StationResourceFields = null,
         [property: JsonPropertyName("shipClasses"), JsonConverter(typeof(DeclaredShipClassPathConverter))] string? ShipClasses = null,
-        [property: JsonPropertyName("solarSystem"), JsonConverter(typeof(DeclaredSolarSystemPathConverter))] string? SolarSystem = null);
+        [property: JsonPropertyName("solarSystem"), JsonConverter(typeof(DeclaredSolarSystemPathConverter))] string? SolarSystem = null,
+        [property: JsonPropertyName("stationMarketEvents"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketEvents = null);
 
     private sealed class DeclaredShipClassPathConverter : JsonConverter<string>
     {

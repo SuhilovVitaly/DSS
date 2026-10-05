@@ -82,7 +82,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("voyageState")] VoyageStateData? VoyageState = null,
     [property: JsonPropertyName("combatState")] CombatStateData? CombatState = null,
     [property: JsonPropertyName("defenseState")] CountermeasureStateData? DefenseState = null,
-    [property: JsonPropertyName("solarSystem")] DeepSpaceSaga.Contracts.SolarSystemMapSnapshot? SolarSystem = null)
+    [property: JsonPropertyName("solarSystem")] DeepSpaceSaga.Contracts.SolarSystemMapSnapshot? SolarSystem = null,
+    [property: JsonPropertyName("marketEventCatalogFingerprint")] string? MarketEventCatalogFingerprint = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
@@ -331,7 +332,28 @@ public sealed record StationEventData(
     [property: JsonPropertyName("description")] string? Description,
     [property: JsonPropertyName("startedGameTimeMs")] long StartedGameTimeMs,
     [property: JsonPropertyName("durationMs")] long? DurationMs,
-    [property: JsonPropertyName("priceFactors")] IReadOnlyList<StationEventPriceFactorData> PriceFactors);
+    [property: JsonPropertyName("priceFactors")] IReadOnlyList<StationEventPriceFactorData> PriceFactors,
+    [property: JsonPropertyName("definitionId")] string? DefinitionId = null,
+    [property: JsonPropertyName("displayNameKey")] string? DisplayNameKey = null,
+    [property: JsonPropertyName("descriptionKey")] string? DescriptionKey = null,
+    [property: JsonPropertyName("effectSummaryKey")] string? EffectSummaryKey = null,
+    [property: JsonPropertyName("itemEffects")] IReadOnlyList<StationMarketEventItemEffectData>? ItemEffects = null,
+    [property: JsonPropertyName("routeEffect")] StationMarketEventRouteEffectData? RouteEffect = null,
+    [property: JsonPropertyName("activationStockDeltaApplied")] bool ActivationStockDeltaApplied = false);
+
+public sealed record StationMarketEventItemEffectData(
+    [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
+    [property: JsonPropertyName("productionMultiplierPermille")] int ProductionMultiplierPermille,
+    [property: JsonPropertyName("demandMultiplierPermille")] int DemandMultiplierPermille,
+    [property: JsonPropertyName("priceMultiplierPermille")] int PriceMultiplierPermille,
+    [property: JsonPropertyName("activationStockDelta")] long ActivationStockDelta = 0);
+
+public sealed record StationMarketEventRouteEffectData(
+    [property: JsonPropertyName("availability")] string Availability,
+    [property: JsonPropertyName("maxAffectedIncidentEdges")] int MaxAffectedIncidentEdges,
+    [property: JsonPropertyName("travelTimeMultiplierPermille")] int TravelTimeMultiplierPermille,
+    [property: JsonPropertyName("fuelMultiplierPermille")] int FuelMultiplierPermille,
+    [property: JsonPropertyName("riskProfileId")] string? RiskProfileId = null);
 
 /// <summary>
 /// One multiplicative price factor contributed by a <see cref="StationEventData"/>. Addresses
