@@ -70,3 +70,15 @@ Story review (same agent): checked legacy captured-target semantics, unchanged A
 Added localized Orbits and Next belt actions to the existing toolbar. Orbit visibility is Client-local; snapshots and world distances remain unchanged. Active, selected and player objects are excluded from clustering and retain priority rendering.
 
 Story review (same agent): inspected disclosure boundaries, scan/market independence, snapshot-only rendering, orbit toggle, belt cycling, missing belt handling, viewport fitting, UI scaling, input routing and important marker/label order. No outstanding confirmed US-0006 findings. Native presented-frame validation remains US-0008.
+## US-0007 — resume generated system
+
+| Ticket | Commit | Observed validation |
+|---|---|---|
+| TK-0001 | 4bf4006 | Engine 1206/1206; six scenarios, independent calendar/motion epochs, active Approach, real docking, legacy v11, atomic malformed-map rejection |
+| TK-0002 | 8c3ec6a | Local file roundtrip 9/9; full solution Contracts 105, Motion 141, Engine 1215, Client 1591 all passed; format and diff checks |
+
+Save writer version is 12 (branch previously 11). Parent station orbital elements are saved; a docked ship's fixed offset binding is reconstructed from its validated parent instead of introducing a duplicate map orbit. Loader additionally rejects invalid counts, missing Sun/planet/station orbit, noncentral offsets, overlapping radial corridors, bad references and out-of-bounds planet extents.
+
+Transport tests use the real SaveAsync file and production CreateFromSaveFile factory. A controlled clock prevents wall-time races; first paused and continued snapshots preserve all identities, orbits, geometry and motion. Invalid version, parent and JSON leave the original bytes untouched.
+
+Story review (same agent): checked reader/writer version gate, optional legacy fields, no generation on Load, all preflight validation before live mutation, both time domains, parent binding reconstruction, active-route continuation, file atomicity and paused transport behavior. No outstanding confirmed US-0007 findings.
