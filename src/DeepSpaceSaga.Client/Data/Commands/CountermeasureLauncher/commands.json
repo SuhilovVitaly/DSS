@@ -1,0 +1,24 @@
+{
+  "commandDefinitions": [
+    {
+      "typeId": "defense.enable",
+      "displayName": "Enable defense",
+      "timeFactor": 1.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0,
+      "target": "none",
+      "activationEnergyCellsCost": 0,
+      "type": "module.countermeasure.launcher"
+    },
+    {
+      "typeId": "defense.disable",
+      "displayName": "Disable defense",
+      "timeFactor": 1.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0,
+      "target": "none",
+      "activationEnergyCellsCost": 0,
+      "type": "module.countermeasure.launcher"
+    }
+  ]
+}

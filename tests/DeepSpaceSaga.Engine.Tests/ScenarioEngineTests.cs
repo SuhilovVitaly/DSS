@@ -165,9 +165,9 @@ public class ScenarioEngineTests
         Assert.NotNull(playerShip.HullLayout);
         Assert.Equal(9, playerShip.HullLayout!.Width);
         Assert.Equal(9, playerShip.HullLayout.Height);
-        Assert.Equal(11, playerShip.HullLayout.Cells.Count);
+        Assert.Equal(12, playerShip.HullLayout.Cells.Count);
 
-        Assert.Equal(7, playerShip.Modules?.Count);
+        Assert.Equal(8, playerShip.Modules?.Count);
         Assert.Equal("ship.tetrarch", playerShip.ShipClassId);
         var launcher = Assert.Single(playerShip.Modules ?? [], m => m.ModuleTypeId == "module.torpedo.launcher.basic");
         Assert.Equal(new HullCellCoordinate(3, 2), Assert.Single(launcher.OccupiedCells));
@@ -206,7 +206,8 @@ public class ScenarioEngineTests
         Assert.Equal(200, foodRations.Quantity);
 
         // story-20260901-112254 (Batch A, U4): a single crew member, "Dunkan Su".
-        var crewMember = Assert.Single(playerShip.Crew!);
+        Assert.Equal(2, playerShip.Crew!.Count);
+        var crewMember = Assert.Single(playerShip.Crew, c => c.CrewId == "CHR-0001");
         Assert.Equal("CHR-0001", crewMember.CrewId);
         Assert.Equal("Dunkan Su", crewMember.DisplayName);
     }
@@ -229,13 +230,13 @@ public class ScenarioEngineTests
 
         Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        Assert.Equal(7, playerShip.Modules.Length);
+        Assert.Equal(8, playerShip.Modules.Length);
         var cargoModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
         // Module type registry order follows the deterministic (ordinal) sort of
         // Data/Modules/**/*.json file paths, not the historical flat module-types.json order.
         Assert.Equal(2, cargoModule.ModuleTypeIndex);
-        Assert.Equal(4, engineModule.ModuleTypeIndex);
+        Assert.Equal(5, engineModule.ModuleTypeIndex);
         Assert.Null(engineModule.ActiveCycle);
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-BRIDGE-01");
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
@@ -255,7 +256,7 @@ public class ScenarioEngineTests
     }
 
     [Fact]
-    public void Real_default_scenario_occupies_7_of_11_hull_cells()
+    public void Real_default_scenario_occupies_8_of_12_hull_cells()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
@@ -271,16 +272,16 @@ public class ScenarioEngineTests
         var engine = SimulationEngine.CreateFromSettingsFile(settingsPath);
 
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        Assert.Equal(7, playerShip.Modules.Length);
+        Assert.Equal(8, playerShip.Modules.Length);
         Assert.NotNull(playerShip.HullLayout);
-        Assert.Equal(11, playerShip.HullLayout!.Cells.Count);
+        Assert.Equal(12, playerShip.HullLayout!.Cells.Count);
 
         // Each module occupies exactly 1 hull cell (requirements §57: all real module
         // types are slotSize 1), and no two modules share a cell.
         var occupiedCells = playerShip.Modules.SelectMany(m => m.OccupiedCells).ToArray();
-        Assert.Equal(7, occupiedCells.Length);
+        Assert.Equal(8, occupiedCells.Length);
         Assert.Contains((3, 2), occupiedCells);
-        Assert.Equal(7, occupiedCells.Distinct().Count());
+        Assert.Equal(8, occupiedCells.Distinct().Count());
 
         // Every occupied cell must belong to the object's hull layout.
         var hullCells = playerShip.HullLayout.Cells.Select(c => (c.X, c.Y)).ToHashSet();
@@ -302,7 +303,7 @@ public class ScenarioEngineTests
 
         var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
 
-        Assert.Equal(1, snapshot.PlayerCrewCount);
+        Assert.Equal(2, snapshot.PlayerCrewCount);
 
         var livingQuarters = Assert.Single(
             snapshot.InstalledModules, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
@@ -326,7 +327,7 @@ public class ScenarioEngineTests
 
         var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
 
-        Assert.Equal(1, snapshot.PlayerCrewCount);
+        Assert.Equal(2, snapshot.PlayerCrewCount);
 
         var livingQuarters = Assert.Single(
             snapshot.InstalledModules, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
@@ -402,9 +403,9 @@ public class ScenarioEngineTests
         // own coordinates: two objects at literally identical coordinates are unselectable
         // apart from each other on the tactical map (FindNearestObjectId's tie-break always
         // picks the lexicographically smaller object id — the ship, "SPC-0001" < "SPC-0002").
-        Assert.Equal(station.InitialMotion.X + 1.0, playerShip.InitialMotion.X);
-        Assert.Equal(station.InitialMotion.Y + 1.0, playerShip.InitialMotion.Y);
-        Assert.Equal(0, playerShip.InitialMotion.SpeedKmS);
+        Assert.InRange(Math.Abs(station.InitialMotion.X + 1.0 - playerShip.InitialMotion.X), 0, 1e-6);
+        Assert.InRange(Math.Abs(station.InitialMotion.Y + 1.0 - playerShip.InitialMotion.Y), 0, 1e-6);
+        Assert.Equal(engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == "SPC-0002").SpeedKmS, playerShip.InitialMotion.SpeedKmS);
         Assert.True(playerShip.IsDocked);
         Assert.Equal("SPC-0002", playerShip.DockedStationObjectId);
     }
@@ -486,10 +487,21 @@ public class ScenarioEngineTests
             .Where(t => t.CommandTypeIds.Length > 0)
             .ToArray();
 
-        Assert.Equal(6, activeTypes.Length); // engine + scanner + bridge-navigation-computer + drilling unit + container + torpedo launcher
+        Assert.Equal(7, activeTypes.Length); // engine + scanner + bridge + drilling + container + torpedo + defense
 
         var launcherType = Assert.Single(activeTypes, t => t.TypeId == "module.torpedo.launcher.basic");
-        Assert.Equal(CombatCommandTypes.Fire, Assert.Single(launcherType.CommandTypeIds));
+        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct }, launcherType.CommandTypeIds);
+        var cancel = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(CombatCommandTypes.SelfDestruct));
+        Assert.Equal("module.torpedo.launcher", cancel.Type);
+        Assert.Equal("none", cancel.Target);
+        var defenseType = Assert.Single(activeTypes, t => t.TypeId == "module.countermeasure.launcher.basic");
+        Assert.Equal(new[] { DefenseCommandTypes.Enable, DefenseCommandTypes.Disable }, defenseType.CommandTypeIds);
+        foreach (var id in defenseType.CommandTypeIds)
+        {
+            var command = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(id));
+            Assert.Equal("module.countermeasure.launcher", command.Type);
+            Assert.Equal("none", command.Target);
+        }
         var fireCommand = registry.CommandDefinitions.GetDefinition(
             registry.CommandDefinitions.GetIndex(CombatCommandTypes.Fire));
         Assert.Equal("module.torpedo.launcher", fireCommand.Type);

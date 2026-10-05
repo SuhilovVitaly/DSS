@@ -128,12 +128,13 @@ public class MasterSeedTests
         var engine = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
 
         Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
-        Assert.Equal(65, engine.RuntimeObjects.Length);
+        var map = Assert.IsType<DeepSpaceSaga.Contracts.SolarSystemMapSnapshot>(engine.CaptureSnapshot().SolarSystemMap);
+        Assert.Equal(65 + 1 + map.Planets.Length + map.Belts.Length * 24, engine.RuntimeObjects.Length);
         Assert.Equal(5, engine.RuntimeObjects.Count(o => o.ObjectType == "Station"));
         // The two fixed temporary asteroids remain alongside the seeded station network
         // and the 57 generated station resource field asteroids.
         Assert.Equal(2, engine.RuntimeObjects.Count(o => o.PersistenceType == "Temporary"));
-        Assert.Equal(57, engine.RuntimeObjects.Count(o => o.ObjectType == "Asteroid" && o.PersistenceType != "Temporary"));
+        Assert.Equal(57, engine.RuntimeObjects.Count(o => o.ObjectType == "Asteroid" && o.PersistenceType != "Temporary" && !o.InitialMotion.ObjectId.StartsWith("SYS-AST-", StringComparison.Ordinal)));
 
         Assert.NotEqual(0UL, engine.MasterSeed);
         Assert.True(engine.MasterSeedWasMissingOnLoad); // DefaultScenario has no masterSeed field

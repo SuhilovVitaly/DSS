@@ -22,9 +22,11 @@ public static class SaveFormat
     /// Version 9 adds a station's bounded trading budget and producing modules' pending output
     /// remainder (US-0002 TK-0002); both are optional and absent for every earlier save.
     /// Version 10 preserves captured combat parameters, active flights, guidance, history and identity counters.
+    /// Version 11 preserves countermeasure defenses and combat operator assignments.
+    /// Version 12 preserves resolved solar-system geography and absolute orbital motion.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 10;
+    public const int CurrentSaveFormatVersion = 12;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -78,7 +80,9 @@ public sealed record GameStateData(
     [property: JsonPropertyName("tradingMap")] TradingMapStateData? TradingMap = null,
     [property: JsonPropertyName("stationResourceFields")] StationResourceFieldsState? StationResourceFields = null,
     [property: JsonPropertyName("voyageState")] VoyageStateData? VoyageState = null,
-    [property: JsonPropertyName("combatState")] CombatStateData? CombatState = null)
+    [property: JsonPropertyName("combatState")] CombatStateData? CombatState = null,
+    [property: JsonPropertyName("defenseState")] CountermeasureStateData? DefenseState = null,
+    [property: JsonPropertyName("solarSystem")] DeepSpaceSaga.Contracts.SolarSystemMapSnapshot? SolarSystem = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
@@ -237,7 +241,10 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("shipClassId")] string? ShipClassId = null,
     /// <summary>Current hull HP. Null on a classified new ship means the configured maximum.</summary>
     [property: JsonPropertyName("hullHitPoints")] int? HullHitPoints = null,
-    [property: JsonPropertyName("hullHitPointsMax")] int? HullHitPointsMax = null);
+    [property: JsonPropertyName("hullHitPointsMax")] int? HullHitPointsMax = null,
+    [property: JsonPropertyName("orbit")] DeepSpaceSaga.Contracts.OrbitalElements? Orbit = null,
+    [property: JsonPropertyName("worldOffsetX")] double WorldOffsetX = 0,
+    [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles
@@ -254,7 +261,9 @@ public static class StationCrewRoles
 /// <param name="DisplayName">UI display name.</param>
 public sealed record ShipCrewMemberData(
     [property: JsonPropertyName("crewId")] string CrewId,
-    [property: JsonPropertyName("displayName")] string DisplayName);
+    [property: JsonPropertyName("displayName")] string DisplayName,
+    [property: JsonPropertyName("torpedoSkill")] int? TorpedoSkill = null,
+    [property: JsonPropertyName("countermeasureSkill")] int? CountermeasureSkill = null);
 
 /// <summary>
 /// One crew member displayed on a station (director/dock operator etc.), cosmetic/narrative
@@ -350,7 +359,9 @@ public sealed record ShipModuleData(
     [property: JsonPropertyName("activeCycle")] ActiveCycleData? ActiveCycle,
     [property: JsonPropertyName("cargo")] IReadOnlyList<CargoStackData>? Cargo,
     [property: JsonPropertyName("fuelAmountKg")] long? FuelAmountKg = null,
-    [property: JsonPropertyName("lastTurnGameTimeMs")] long? LastTurnGameTimeMs = null);
+    [property: JsonPropertyName("lastTurnGameTimeMs")] long? LastTurnGameTimeMs = null,
+    [property: JsonPropertyName("operatorCrewId")] string? OperatorCrewId = null,
+    [property: JsonPropertyName("autoDefenseEnabled")] bool AutoDefenseEnabled = true);
 
 /// <summary>A single structural cell coordinate on a ship's hull grid (requirements §57).</summary>
 public sealed record HullCellCoordinate(

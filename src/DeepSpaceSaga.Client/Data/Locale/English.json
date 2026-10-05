@@ -1,4 +1,6 @@
 {
+  "Map.Orbits": "Orbits",
+  "Map.Belt": "Next belt",
   "Map.Follow": "Follow ship",
   "Map.Route": "Full route",
   "Map.Selected": "Selected",

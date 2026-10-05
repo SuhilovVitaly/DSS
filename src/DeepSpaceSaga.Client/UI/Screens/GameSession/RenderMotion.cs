@@ -10,6 +10,7 @@ internal readonly record struct RenderMotion(ObjectMotionSnapshot Motion, double
 {
     internal RenderMotion(ObjectMotionSnapshot motion) : this(motion, motion.X, motion.Y, motion.Direction) { }
     internal string ObjectId => Motion.ObjectId;
+    internal bool HasAbsoluteOrbit => Motion.Orbit is not null;
     internal double SpeedKmS => Motion.SpeedKmS;
     internal string? RenderObjectType => Motion.RenderObjectType;
     internal string? RelationToPlayer => Motion.RelationToPlayer;

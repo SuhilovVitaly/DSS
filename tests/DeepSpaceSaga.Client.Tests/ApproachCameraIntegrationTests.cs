@@ -25,6 +25,7 @@ public class ApproachCameraIntegrationTests
             {
                 CurrentSpeed = "Speed0",
                 TradingMap = null,
+                SolarSystem = null,
                 VoyageState = null,
                 StationResourceFields = null,
                 SpaceObjects = [
@@ -110,6 +111,7 @@ public class ApproachCameraIntegrationTests
             GameState = save.GameState with
             {
                 TradingMap = null,
+                SolarSystem = null,
                 VoyageState = null,
                 StationResourceFields = null,
                 SpaceObjects = [

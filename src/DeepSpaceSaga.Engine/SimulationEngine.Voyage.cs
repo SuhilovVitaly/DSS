@@ -60,7 +60,7 @@ public sealed partial class SimulationEngine
         if (ship.PortFeeDebt > 0) return CommandReasonCodes.VoyageOutstandingDebt;
         if (string.IsNullOrWhiteSpace(destination)) return CommandReasonCodes.VoyageDestinationRequired;
         if (_tradingMap is null || ship.DockedStationObjectId is null ||
-            ! _tradingMap.Edges.Any(e => Connects(e, ship.DockedStationObjectId, destination)) ||
+            !_tradingMap.Edges.Any(e => Connects(e, ship.DockedStationObjectId, destination)) ||
             !_objects.Any(o => o.InitialMotion.ObjectId == destination && o.ObjectType == SpaceObjectType.Station && !o.IsDestroyed))
             return CommandReasonCodes.VoyageDestinationUnavailable;
         return null;
@@ -103,8 +103,11 @@ public sealed partial class SimulationEngine
         var target = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == state.DestinationStationObjectId);
         if (ship is null || target is null || target.IsDestroyed)
         {
-            _voyageState = state with { Phase = VoyagePhases.InTransit,
-                BlockReasonCode = CommandReasonCodes.VoyageDestinationUnavailable };
+            _voyageState = state with
+            {
+                Phase = VoyagePhases.InTransit,
+                BlockReasonCode = CommandReasonCodes.VoyageDestinationUnavailable
+            };
             return;
         }
         var shipMotion = PredictMotion(ship, Math.Max(0, motionTimeMs - ship.StartGameTimeMs));
@@ -114,13 +117,23 @@ public sealed partial class SimulationEngine
         double remaining = Math.Sqrt(dx * dx + dy * dy);
         int progress = (int)Math.Round(Math.Clamp(1 - remaining / state.InitialDistanceWorldUnits, 0, 1) * 1000,
             MidpointRounding.AwayFromZero);
-        _voyageState = state with { Phase = VoyagePhases.InTransit,
-            ProgressPermille = Math.Max(state.ProgressPermille, progress), BlockReasonCode = null };
+        _voyageState = state with
+        {
+            Phase = VoyagePhases.InTransit,
+            ProgressPermille = Math.Max(state.ProgressPermille, progress),
+            BlockReasonCode = null
+        };
     }
 
     private void ReconcileVoyageAfterDialogue()
     {
-        if (_voyageState is not { Phase: VoyagePhases.Docking } state || _dialogue.Active is not null) return;
+        if (_dialogue.Active is not null) return;
+        // A free-flight start can dock without an existing voyage. Publish departure
+        // options for that first visit as soon as its dialogue has finished.
+        if (_tradingMap is not null && _voyageState is null &&
+            _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && o.IsDocked))
+            _voyageState = new VoyageStateData(VoyagePhases.Docked);
+        if (_voyageState is not { Phase: VoyagePhases.Docking } state) return;
         var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
         _voyageState = ship is { IsDocked: true } && ship.DockedStationObjectId == state.DestinationStationObjectId
             ? new VoyageStateData(VoyagePhases.Docked)

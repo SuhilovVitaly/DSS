@@ -214,7 +214,7 @@ public sealed class CatalogCompatibilityTests
         string path = Path.Combine(Path.GetDirectoryName(SettingsPath)!, "Scenarios", scenarioName, "scenario.json");
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, path);
         var save = engine.CaptureSaveState();
-        Assert.Equal(10, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(12, SaveFormat.CurrentSaveFormatVersion);
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         var registry = RealRegistry();
         Assert.Equal(registry.CatalogCompatibility, save.GameState.CatalogCompatibility);
@@ -312,8 +312,10 @@ public sealed class CatalogCompatibilityTests
             save.GameState.CatalogCompatibility! with { RulesVersion = 2 },
             save.GameState.CatalogCompatibility! with { Fingerprint = "changed" } })
         {
-            Assert.Throws<ScenarioException>(() => engine.LoadScenario(save with {
-                GameState = save.GameState with { PlayerTokens = 0, CatalogCompatibility = stamp } }));
+            Assert.Throws<ScenarioException>(() => engine.LoadScenario(save with
+            {
+                GameState = save.GameState with { PlayerTokens = 0, CatalogCompatibility = stamp }
+            }));
             Assert.Equal(balance, engine.PlayerCredits);
             Assert.Equal(save.GameState.PlayerShipObjectId, engine.PlayerShipObjectId);
         }
@@ -338,10 +340,17 @@ public sealed class CatalogCompatibilityTests
                 Inventory = [new StationInventoryItemData(itemId, 1)]
             } : obj).ToArray();
         using var engine = new SimulationEngine(registry);
-        var ex = Assert.Throws<ScenarioException>(() => engine.LoadScenario(save with {
-            GameState = save.GameState with { TradingMap = null, VoyageState = null,
-                StationResourceFields = null, SpaceObjects = objects,
-                CatalogCompatibility = registry.CatalogCompatibility } }));
+        var ex = Assert.Throws<ScenarioException>(() => engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                TradingMap = null,
+                VoyageState = null,
+                StationResourceFields = null,
+                SpaceObjects = objects,
+                CatalogCompatibility = registry.CatalogCompatibility
+            }
+        }));
         Assert.Contains("SPC-0002", ex.Message);
         Assert.Contains(itemId, ex.Message);
     }

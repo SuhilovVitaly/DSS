@@ -42,17 +42,26 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
     internal LocalGameSessionConnection Connection { get; }
     internal LocalGameSessionConnection? Restored { get; private set; }
     private long _now;
-    private CombatSessionFixture()
+    private CombatSessionFixture(bool defense)
     {
         Directory.CreateDirectory(DirectoryPath);
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Settings, out _, out _);
         Engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _now)));
-        Engine.LoadScenario(ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json")));
+        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json"));
+        if (!defense) scenario = scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                SpaceObjects = scenario.GameState.SpaceObjects
+            .Select(o => o with { Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = false }).ToArray() }).ToArray()
+            }
+        };
+        Engine.LoadScenario(scenario);
         Connection = new(Engine, DirectoryPath);
     }
-    internal static async Task<CombatSessionFixture> Create()
+    internal static async Task<CombatSessionFixture> Create(bool defense = false)
     {
-        var fixture = new CombatSessionFixture();
+        var fixture = new CombatSessionFixture(defense);
         await First(fixture.Connection);
         return fixture;
     }

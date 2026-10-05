@@ -161,3 +161,8 @@ Baseline: commit `02403b4`, рабочее дерево до планирова�
 
 
 - Итоговая проверка planning package: PASS — 37 Markdown-файлов, 8 историй, 27 тикетов, 236 локальных ссылок; IDs/frontmatter/allowlists/layers/coverage согласованы, dependency cycles отсутствуют. Проверен UTF-8 без replacement characters и trailing whitespace; git status содержит только новый EP-0006. Runtime проверки не выполнялись.
+
+
+## Продолжение — EP-0007 (2026-10-04)
+
+Исторический план выше сохранён. Текущий этап добавляет операторов, автоматическую защиту, самоуничтожение, журнал и Save v11. [Реализация и evidence](../../Documentation/04-Engineering/CountermeasureCombat.md). Native acceptance не объявляется пройденной; пользователь разрешил завершить EP-0007 без native smoke.

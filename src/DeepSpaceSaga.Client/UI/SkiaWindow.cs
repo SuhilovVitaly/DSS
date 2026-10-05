@@ -78,6 +78,8 @@ public sealed class SkiaWindow : IDisposable
     private long _previousProfileRenderTimestamp;
     private string? _graphicsRenderer;
     private string? _graphicsVersion;
+    private readonly MapFrameEvidence? _mapFrameEvidence = MapFrameEvidence.FromEnvironment();
+    private double? _monitorRefreshHz;
 
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory, System.Diagnostics.Stopwatch? startupStopwatch = null)
     {
@@ -155,6 +157,7 @@ public sealed class SkiaWindow : IDisposable
         if (target is not null)
         {
             _window.Position = target.Bounds.Origin;
+            _monitorRefreshHz = target.VideoMode.RefreshRate;
 
             // Deliberately 1px shorter than the monitor's native resolution. A
             // borderless window whose size exactly matches the monitor is picked up
@@ -168,6 +171,14 @@ public sealed class SkiaWindow : IDisposable
             // indistinguishable from true fullscreen.
             var resolution = target.VideoMode.Resolution ?? target.Bounds.Size;
             _window.Size = new Silk.NET.Maths.Vector2D<int>(resolution.X, resolution.Y - 1);
+        }
+
+        if (_mapFrameEvidence is not null && Environment.GetEnvironmentVariable("DSS_MAP_FRAME_WINDOW") is { } requested)
+        {
+            var dimensions = requested.Split('x');
+            if (dimensions.Length == 2 && int.TryParse(dimensions[0], out int width) && int.TryParse(dimensions[1], out int height) &&
+                width >= 640 && height >= 480)
+                _window.Size = new Silk.NET.Maths.Vector2D<int>(width, height);
         }
 
         _gl = _window.CreateOpenGL();
@@ -354,9 +365,26 @@ public sealed class SkiaWindow : IDisposable
 
         PollKeyboard();
         PollGameSessionAutoTransition();
+        if (_mapFrameEvidence is { FrameCount: 119 } && Environment.GetEnvironmentVariable("DSS_MAP_FRAME_IMAGE") is { } imagePath)
+        {
+            using var image = _surface.Snapshot();
+            using var encoded = image.Encode(SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(imagePath, encoded.ToArray());
+        }
         long presentStart = Stopwatch.GetTimestamp();
         _window.SwapBuffers();
         double presentWaitMs = Stopwatch.GetElapsedTime(presentStart).TotalMilliseconds;
+        if (_mapFrameEvidence is { Completed: false } evidence && profiledScreen is not null)
+        {
+            var snapshot = profiledScreen.FrameEvidenceSnapshot;
+            var map = snapshot?.SolarSystemMap;
+            evidence.Record(Stopwatch.GetTimestamp(), Stopwatch.GetElapsedTime(callbackStart, presentStart).TotalMilliseconds,
+                new(fbSize.X, fbSize.Y, _window.VSync, _monitorRefreshHz, _graphicsRenderer, _graphicsVersion,
+                    profiledScreen.UiScale, snapshot?.CurrentSpeed.ToString() ?? "unavailable", map?.Seed, map?.GeneratorVersion,
+                    map?.Planets.Length ?? 0, map?.Belts.Length ?? 0, snapshot?.Objects.Length ?? 0,
+                    profiledScreen.CameraPixelsPerWorldUnit, profiledScreen.SelectedObjectId), presentWaitMs);
+            if (evidence.Completed && Environment.GetEnvironmentVariable("DSS_MAP_FRAME_EXIT") == "1") _window.Close();
+        }
         _grContext.GetResourceCacheUsage(out int gpuResources, out long gpuCacheBytes);
         // No Finish/readback: this is the existing swap, now timed explicitly.
         profiledScreen?.CompleteWindowProfile(new(callbackIntervalMs,

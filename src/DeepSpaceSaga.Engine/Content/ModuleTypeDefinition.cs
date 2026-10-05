@@ -38,4 +38,11 @@ internal sealed record ModuleTypeDefinition(
     /// <summary>Projectile's own constant speed in km/s, without carrier velocity.</summary>
     double? TorpedoSpeedKmS = null,
     /// <summary>Positive maximum projectile turn rate in degrees per physical second.</summary>
-    double? TorpedoTurnRateDegPerSec = null) : ITypeDefinition;
+    double? TorpedoTurnRateDegPerSec = null,
+    decimal? TorpedoBaseRating = null,
+    decimal? CountermeasureBaseRating = null,
+    double? CountermeasureSpeedKmS = null,
+    double? CountermeasureTurnRateDegPerSec = null,
+    double? CountermeasureRangeKm = null,
+    long? CountermeasureReloadMs = null,
+    string? CategoryTypeId = null) : ITypeDefinition;

@@ -168,7 +168,11 @@ public sealed class ObjectInfoPanel
         {
             lines.Add(("Name", d.Survey is not null ? d.ObjectId : d.DisplayName ?? d.ObjectId));
             lines.Add(("Speed", $"{d.SpeedKmS:0.###} km/s"));
-            if (d.Torpedo is { } torpedo)
+            if (d.Countermeasure is { } countermeasure)
+            {
+                lines.AddRange(CountermeasureLines(countermeasure));
+            }
+            else if (d.Torpedo is { } torpedo)
             {
                 lines.Add(("Target", torpedo.Target));
                 lines.Add(("Travelled", $"{torpedo.TravelledKm:0.###} km"));
@@ -202,6 +206,24 @@ public sealed class ObjectInfoPanel
         }
 
         return lines;
+    }
+
+    public static List<(string Label, string Value)> CountermeasureLines(CountermeasureSnapshot flight)
+    {
+        var defense = flight.RatingBreakdown.DefenseOperator;
+        var attack = flight.RatingBreakdown.TorpedoOperator;
+        return [
+            ("Цель", flight.TargetTorpedoId),
+            ("Состояние", flight.Phase == CountermeasurePhase.Guiding ? "Наведение" : "Промах"),
+            ("Шанс", $"{flight.FrozenChanceTenths / 10m:0.0}%"),
+            ("Оператор ПР", defense.DisplayName),
+            ("База / навык", $"{defense.BaseRating:0.##} / {defense.Skill}"),
+            ("Рейтинг ПР", $"{defense.EffectiveRating:0.##}"),
+            ("Торпедист", attack?.DisplayName ?? "Legacy"),
+            ("База / навык", attack is null ? "—" : $"{attack.BaseRating:0.##} / {attack.Skill}"),
+            ("Рейтинг цели", $"{flight.RatingBreakdown.TorpedoRating:0.##}"),
+            ("Формула", "clamp(50 + Rпр − Rт, 0, 100)")
+        ];
     }
 
     // ── Input ───────────────────────────────────────────────────
@@ -327,7 +349,7 @@ public sealed class ObjectInfoPanel
         float textX = imageRect.Right + Padding;
         float textY = imgY + LineHeight - 3f;
         var lines = BuildLines(data);
-        float valueOffset = data?.Survey is not null || data?.Torpedo is not null
+        float valueOffset = data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null
             ? Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding)
             : 62f;
         foreach (var (label, value) in lines)
@@ -428,7 +450,7 @@ public readonly record struct ObjectInfoPanelData(
     string? CaptainDisplayName = null,
     string? RelationToPlayer = null,
     double? DistanceKm = null,
-    TorpedoInspectionData? Torpedo = null);
+    TorpedoInspectionData? Torpedo = null, CountermeasureSnapshot? Countermeasure = null);
 
 /// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
 public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);

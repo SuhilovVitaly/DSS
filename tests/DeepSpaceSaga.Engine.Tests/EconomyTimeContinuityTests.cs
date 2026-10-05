@@ -26,7 +26,7 @@ public class EconomyTimeContinuityTests
             realMs = hour * GameCalendar.HourMs / 300;
             actual = regular.CaptureSnapshot(advanceClock: true);
             regularEvents.AddRange(actual.ShipEvents);
-            if (hour == 12) Assert.Equal(1, RationScheduleTests.Food(actual));
+            if (hour == 12) Assert.Equal(0, RationScheduleTests.Food(actual));
         }
 
         var expected = explicitInterval.CaptureSnapshotForTests(2 * GameCalendar.DayMs,
@@ -36,7 +36,7 @@ public class EconomyTimeContinuityTests
         Assert.Equal(2 * GameCalendar.DayMs / 300, actual.SimulationTimeMs);
         Assert.Equal(777, expected.SimulationTimeMs);
         Assert.Equal(1800, expected.PlayerCredits);
-        Assert.Equal(3, expected.MissingRations);
+        Assert.Equal(4, expected.MissingRations);
         Assert.Equal(0, RationScheduleTests.Food(expected));
         Assert.True(Assert.Single(expected.ActiveContracts).DeadlineMissed);
         Assert.Equal(8, ProducedFood(explicitInterval));
@@ -128,7 +128,7 @@ public class EconomyTimeContinuityTests
         Assert.Equal(0, ProducedFood(engine));
         var meal = engine.CaptureSnapshotForTests(12 * GameCalendar.HourMs,
             simulationTimeMs: 10 * GameCalendar.DayMs);
-        Assert.Equal(3, meal.MissingRations);
+        Assert.Equal(4, meal.MissingRations);
         Assert.Equal(12 * GameCalendar.HourMs, Assert.Single(meal.ShipEvents).GameTimeMs);
         Assert.Equal(10 * GameCalendar.DayMs, meal.SimulationTimeMs);
         Assert.Equal(2, ProducedFood(engine));
@@ -159,6 +159,7 @@ public class EconomyTimeContinuityTests
                 VoyageState = null,
                 DialogueState = null,
                 CombatState = save.GameState.CombatState! with { Launchers = [], Projectiles = [] },
+                DefenseState = save.GameState.DefenseState! with { Launchers = [], Projectiles = [] },
                 SpaceObjects = save.GameState.SpaceObjects
                     .Where(o => o.ObjectId == save.GameState.PlayerShipObjectId || o.ObjectId == "SPC-0002")
                     .Select(o => o with
@@ -226,11 +227,11 @@ public class EconomyTimeContinuityTests
         var after = loaded.CaptureSnapshot();
         Assert.Equal(before.GameTimeMs, after.GameTimeMs);
         Assert.Equal(before.CurrentStationDistrict, after.CurrentStationDistrict);
-        Assert.Equal(197, RationScheduleTests.Food(after));
+        Assert.Equal(196, RationScheduleTests.Food(after));
         Assert.Equal(2, loaded.CaptureSaveState().GameState.SpaceObjects.Single(o => o.ObjectType == "PlayerShip").Passengers!.Count);
         Assert.Equal(before.GameTimeMs, loaded.TravelStation(command).Snapshot.GameTimeMs);
         var end = loaded.CaptureSnapshotForTests(GameCalendar.DayMs);
-        Assert.Equal(194, RationScheduleTests.Food(end));
+        Assert.Equal(192, RationScheduleTests.Food(end));
         Assert.Equal(1900, end.PlayerCredits);
         Assert.Equal(original.CaptureSnapshotForTests(GameCalendar.DayMs).PortFees, end.PortFees);
     }

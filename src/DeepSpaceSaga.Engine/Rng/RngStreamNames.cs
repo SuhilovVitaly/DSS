@@ -8,6 +8,7 @@ namespace DeepSpaceSaga.Engine.Rng;
 /// </summary>
 internal static class RngStreamNames
 {
+    public const string CountermeasureIntercept = "combat.countermeasure.intercept.v1";
     public static string StationCredits(string stationObjectId) => $"StationCredits:{stationObjectId}";
 
     public static string StationPriceCoefficient(string stationObjectId) => $"StationPriceCoefficient:{stationObjectId}";

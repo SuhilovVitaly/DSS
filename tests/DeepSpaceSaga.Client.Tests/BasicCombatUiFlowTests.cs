@@ -56,10 +56,7 @@ public sealed class BasicCombatUiFlowTests
             Assert.Equal("Ready", f.LauncherStatus);
             var effect = Assert.Single(f.Screen.CombatEffects.Active);
             Assert.Equal(shot, effect.Impact.EventId);
-            var terminal = f.Screen.CombatTrajectories[missile.ObjectId];
-            Assert.NotEmpty(terminal.Travelled);
-            Assert.Empty(terminal.Prediction);
-            Assert.Null(terminal.Intercept);
+            Assert.DoesNotContain(missile.ObjectId, f.Screen.CombatTrajectories.Keys);
             // Real-time effect expiry is independent of the paused simulation clock.
             f.UiNow = f.Handle.Buffer.Latest!.ReceivedAtTimestamp + 2 * Stopwatch.Frequency;
             f.Render();
@@ -112,7 +109,6 @@ public sealed class BasicCombatUiFlowTests
         Assert.NotNull(inspection.EtaSeconds);
         Assert.False(f.Button.Enabled);
         var geometry = f.Screen.CombatTrajectories[original.ObjectId];
-        Assert.NotEmpty(geometry.Travelled);
         Assert.NotEmpty(geometry.Prediction);
         Assert.NotEmpty(geometry.Target);
         Assert.NotNull(geometry.Intercept);
@@ -136,7 +132,7 @@ public sealed class BasicCombatUiFlowTests
         Assert.Equal(450, hit.Objects.Single(o => o.ObjectId == Fixture.Player).HullCombat!.CurrentHp);
     }
 
-    private sealed class Fixture : IAsyncDisposable
+    internal sealed class Fixture : IAsyncDisposable
     {
         internal const string Player = "SPC-0001", Target = "SPC-0002", Launcher = "MOD-PLAYER-TORPEDO-01";
         private static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));

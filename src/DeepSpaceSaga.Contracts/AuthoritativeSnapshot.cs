@@ -55,7 +55,10 @@ public sealed record AuthoritativeSnapshot(
     /// <summary>Retained session contact journal. Default/empty means no facts;
     /// repeated entries are deduplicated by EventId, with a reset on session replacement.</summary>
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CombatImpactSnapshot>))]
-    ImmutableArray<CombatImpactSnapshot> CombatImpacts = default)
+    ImmutableArray<CombatImpactSnapshot> CombatImpacts = default,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CombatJournalEntry>))]
+    ImmutableArray<CombatJournalEntry> CombatJournal = default,
+    [property: JsonPropertyName("solarSystemMap")] SolarSystemMapSnapshot? SolarSystemMap = null)
 {
     /// <summary>Motion/cycle timestamp; legacy snapshots use GameTimeMs for both domains.</summary>
     [JsonIgnore]

@@ -88,9 +88,10 @@ public sealed class CombatTrajectoryTests
             if (stage != "combat_trajectories") return;
             observed = true;
             var solid = bitmap.GetPixel(1060, 680);
-            Assert.True(solid.Red > 240 && solid.Green > 240 && solid.Blue == 0 && solid.Alpha > 100);
-            int dashPixels = Enumerable.Range(420, 100).Count(y => bitmap.GetPixel(1060, y).Alpha > 100);
+            Assert.Equal(0, solid.Alpha); // No travelled path behind the torpedo.
+            int dashPixels = Enumerable.Range(420, 100).Count(y => bitmap.GetPixel(1060, y).Alpha > 20);
             Assert.InRange(dashPixels, 30, 80);
+            Assert.All(Enumerable.Range(420, 100), y => Assert.InRange(bitmap.GetPixel(1060, y).Alpha, (byte)0, (byte)102));
             Assert.True(bitmap.GetPixel(1060, 340).Alpha > 100); // confirmed encounter cross
         };
         screen.Render(canvas, 1920, 1080);
@@ -120,13 +121,14 @@ public sealed class CombatTrajectoryTests
         Assert.Equal(geometry.Prediction[^1], geometry.Intercept);
         Assert.Equal(geometry.Intercept!.Value.X, geometry.Target[^1].X, 6);
         Assert.Equal(geometry.Intercept.Value.Y, geometry.Target[^1].Y, 6);
-        Assert.Equal(geometry.Travelled[^1], geometry.Prediction[0]);
+        var current = TorpedoGuidanceMath.PredictPose(route, elapsed);
+        Assert.Equal(new FutureTrajectoryPoint(current.X, current.Y), geometry.Prediction[0]);
     }
 
     [Theory]
     [InlineData(SimulationSpeed.Speed0)]
     [InlineData(SimulationSpeed.Speed4)]
-    public void Terminal_trail_lives_exactly_two_real_seconds(SimulationSpeed speed)
+    public void Impact_hides_all_trajectories_while_explosion_lives_two_real_seconds(SimulationSpeed speed)
     {
         long now = 0;
         var buffer = new SnapshotBuffer(() => now);
@@ -139,14 +141,12 @@ public sealed class CombatTrajectoryTests
         now = Ticks(1000);
         buffer.Update(buffer.Latest!.Snapshot with { SnapshotSequence = 3 });
         Render(screen);
-        var terminal = screen.CombatTrajectories["torpedo"];
-        Assert.NotEmpty(terminal.Travelled);
-        Assert.Empty(terminal.Prediction);
-        Assert.Empty(terminal.Target);
-        Assert.Null(terminal.Intercept);
+        Assert.Empty(screen.CombatTrajectories);
+        Assert.Single(screen.CombatEffects.Active);
         now = Ticks(1999);
         Render(screen);
-        Assert.Contains("torpedo", screen.CombatTrajectories.Keys);
+        Assert.Empty(screen.CombatTrajectories);
+        Assert.Single(screen.CombatEffects.Active);
         now = Ticks(2000);
         Render(screen);
         Assert.Empty(screen.CombatTrajectories);
@@ -182,11 +182,11 @@ public sealed class CombatTrajectoryTests
         var camera = new CameraState(0, 0, 1);
         var geometry = CombatTrajectoryProjector.Project(Flight, Target, new LinearMotionPredictor(), camera, 1920, 1080);
         using var path = new SKPath();
-        CombatTrajectoryProjector.BuildPath(path, geometry.Travelled, camera, 1920, 1080);
+        CombatTrajectoryProjector.BuildPath(path, geometry.Prediction, camera, 1920, 1080);
         float x = path.LastPoint.X;
         camera.SetZoom(2);
         camera.SetFocus(10, 0);
-        CombatTrajectoryProjector.BuildPath(path, geometry.Travelled, camera, 1920, 1080);
+        CombatTrajectoryProjector.BuildPath(path, geometry.Prediction, camera, 1920, 1080);
         Assert.NotEqual(x, path.LastPoint.X);
         Assert.Equal(1140, path.LastPoint.X);
         Assert.Equal(before, JsonSerializer.Serialize(Flight));
@@ -196,15 +196,45 @@ public sealed class CombatTrajectoryTests
     }
 
     [Fact]
-    public void Active_history_is_available_on_first_frame_after_session_replacement()
+    public void Prediction_starts_at_current_pose_after_session_replacement()
     {
         var buffer = new SnapshotBuffer(() => 0);
         buffer.Update(Snapshot);
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
         Render(screen);
-        var history = screen.CombatTrajectories["torpedo"].Travelled;
-        Assert.Equal(new FutureTrajectoryPoint(100, 160), history[0]);
-        Assert.Equal(new FutureTrajectoryPoint(100, 100), history[^1]);
+        var prediction = screen.CombatTrajectories["torpedo"].Prediction;
+        Assert.Equal(new FutureTrajectoryPoint(100, 100), prediction[0]);
+        Assert.Equal(new FutureTrajectoryPoint(100, -200), prediction[^1]);
+        screen.OnDeactivated();
+    }
+
+    [Theory]
+    [InlineData(0, 0, 4)]
+    [InlineData(90, -4, 0)]
+    public void Torpedo_draws_ship_engine_flame_behind_its_current_heading(double heading, int offsetX, int offsetY)
+    {
+        var flight = Flight with
+        {
+            Route = new(0, 1, TorpedoRoutePhase.Straight, false, [new(100, 100, heading, 3, 0, 12000)], 0)
+        };
+        var buffer = new SnapshotBuffer(() => 0);
+        buffer.Update(Snapshot with { Objects = [Player, Torpedo with { Direction = heading, Torpedo = flight }] });
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
+        using var bitmap = new SKBitmap(1920, 1080);
+        using var canvas = new SKCanvas(bitmap);
+        bool observed = false;
+        screen.RenderStageCompleted = stage =>
+        {
+            if (stage == "combat_trajectories") canvas.Clear(SKColors.Transparent);
+            if (stage != "marker_geometry") return;
+            observed = true;
+            var behind = bitmap.GetPixel(1060 + offsetX, 640 + offsetY);
+            var ahead = bitmap.GetPixel(1060 - offsetX, 640 - offsetY);
+            Assert.True(behind.Red > behind.Green && behind.Alpha > 100, $"Expected orange exhaust, got {behind}");
+            Assert.True(behind.Alpha > ahead.Alpha, $"Exhaust must point behind the torpedo: {behind}, {ahead}");
+        };
+        screen.Render(canvas, 1920, 1080);
+        Assert.True(observed);
         screen.OnDeactivated();
     }
 

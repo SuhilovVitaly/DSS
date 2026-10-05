@@ -22,7 +22,7 @@
 10. Игрок хранит, покупает и продает `Energy Cells` как товар для реактора/электросистемы.
 11. Игрок начинает с `0 Credits`, а станции имеют собственный запас `Credits`.
 12. Игрок имеет экипаж как людей на корабле, размещенных в каютах `Living quarters`.
-13. Стартовый экипаж состоит из одного персонажа: главного героя.
+13. Стартовый экипаж состоит из двух персонажей: операторов торпедного и противоракетного аппаратов.
 14. Игрок общается с членами экипажа и торговым агентом станции через линейные диалоги.
 
 ## Документы релиза
@@ -137,8 +137,8 @@
 
 - Стартовый корабль первого релиза - Tetrarch Class.
 - `Living quarters MK I` имеет `cabines = 2`.
-- Стартовый экипаж - `1` персонаж, главный герой.
-- Командные панели первого релиза: Navigation, Maneuver, Engine, Space Control.
+- Стартовый экипаж — два назначенных оператора: торпедного и противоракетного аппаратов.
+- Командные панели первого релиза: Navigation, Maneuver, Engine, Space Control, Torpedo Launcher, Countermeasure Launcher.
 - `scanner.nearbySignatures` показывается на панели Space Control.
 - Mining capability реализуется через Drilling Unit и команды `mining.extractIce`, `mining.stopExtraction`.
 - `Energy Cells` остаются в игре как отдельный товар.
@@ -185,19 +185,19 @@
 
 ### Tetrarch Class
 
-Tetrarch Class является стартовым кораблем игрока. В стартовую комплектацию входят Navigation Computer, Living quarters, Cargo hold, Scanner, Reactor и Engine. Старые стартовые модули `Battery`, `Drilling Unit`, `Combat Laser` и старый `Habitation Module` не входят в новую стартовую комплектацию.
+Tetrarch Class является стартовым кораблем игрока. В стартовую комплектацию входят Navigation Computer, Living quarters, Cargo hold, Scanner, Reactor, Engine, Torpedo Launcher и Countermeasure Launcher. Старые стартовые модули `Battery`, `Drilling Unit`, `Combat Laser` и старый `Habitation Module` не входят в новую стартовую комплектацию.
 
 Детали: `Documentation/02-FirstRelease/Mechanics/TetrarchClass.md`.
 
 ### Командные панели
 
-Команды корабля группируются по смыслу в четыре панели: Navigation, Maneuver, Engine и Space Control. Панели отображают module-addressed команды Navigation Computer, Engine, Scanner и Drilling Unit. `scanner.nearbySignatures` показывается на Space Control panel.
+Команды корабля группируются по смыслу в шесть панелей: Navigation, Maneuver, Engine, Space Control, Torpedo Launcher и Countermeasure Launcher. Панели отображают module-addressed команды Navigation Computer, Engine, Scanner и Drilling Unit. `scanner.nearbySignatures` показывается на Space Control panel.
 
 Детали: `Documentation/02-FirstRelease/Mechanics/CommandPanels.md`.
 
 ### Тактическая карта и маневрирование
 
-Игрок управляет кораблем на `GameSessionScreen`: масштабирует карту, выбирает объекты, отдает команды через панели Navigation, Maneuver, Engine и Space Control.
+Игрок управляет кораблем на `GameSessionScreen`: масштабирует карту, выбирает объекты, отдает команды через панели Navigation, Maneuver, Engine, Space Control, Torpedo Launcher и Countermeasure Launcher.
 
 Детали: `Documentation/02-FirstRelease/Mechanics/TacticalMapAndManeuvering.md`.
 
@@ -251,7 +251,7 @@ MVP торговли уже реализован как authoritative Engine + C
 
 ### Экипаж, пассажиры и жилой модуль
 
-Экипаж и пассажиры являются людьми на корабле. Для их размещения нужен `Living quarters` с каютами; стартовый `living.quarters.mk1` имеет `cabines = 2`. На старте новой игры на корабле один персонаж - главный герой; пассажира можно взять через станционный контракт при наличии свободной каюты.
+Экипаж и пассажиры являются людьми на корабле. Для их размещения нужен `Living quarters` с каютами; стартовый `living.quarters.mk1` имеет `cabines = 2`. На старте новой игры оба места заняты двумя членами экипажа; пассажира можно взять через станционный контракт при наличии свободной каюты.
 
 Реализована пока только заглушка экрана контрактов (`ContractsScreen`: открытие кнопкой `CONTRACTS` со `Station`, закрытие, пауза; выделен из `Hire`, который теперь означает наём экипажа) — сам список контрактов и их принятие не реализованы.
 
@@ -296,3 +296,8 @@ MVP торговли уже реализован как authoritative Engine + C
 - Fuel cost для команд двигателя/навигации.
 - Детальная цена и условия установки `module.drilling.unit.basic` на станции.
 - Сложная экономика пассажирских перевозок.
+
+
+### Этап боя EP-0007 (2026-10-04)
+
+Реализованы назначенные операторы, автоматическая противоракетная защита, самоуничтожение торпеды, шанс перехвата, журнал боя и Save v11. Наступательного AI нет. [Канонический контракт](EngineRequirements.md#countermeasure-combat), [реализация и результаты проверок](../04-Engineering/CountermeasureCombat.md). Native acceptance пропущена по прямому указанию пользователя, а не подтверждена автоматическими тестами.

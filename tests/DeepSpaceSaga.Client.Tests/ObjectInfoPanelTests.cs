@@ -251,6 +251,12 @@ public class ObjectInfoPanelTests
             Assert.Equal(("Mass", $"{target.Survey!.MassKg} kg"), unknown[2]);
             Assert.Equal(5, unknown.Count);
             RenderScreen(screen);
+            var scannerRow = screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Space Control");
+            if (!scannerRow.Opened)
+            {
+                screen.OnMouseDown(scannerRow.CaptionRect.MidX, scannerRow.CaptionRect.MidY);
+                RenderScreen(screen);
+            }
             var button = Assert.Single(screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == ScannerCommandTypes.StructuralScan);
             Assert.True(button.Enabled);
             screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);

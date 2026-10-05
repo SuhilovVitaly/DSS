@@ -7,6 +7,7 @@ namespace DeepSpaceSaga.Contracts;
 public static class CombatCommandTypes
 {
     public const string Fire = "torpedo.fire";
+    public const string SelfDestruct = "torpedo.selfDestruct";
 }
 
 /// <summary>
@@ -24,7 +25,8 @@ public sealed record LauncherCombatSnapshot(
     string? ActiveTorpedoObjectId,
     double SpeedKmS,
     double TurnRateDegPerSec,
-    int Damage);
+    int Damage,
+    WeaponOperatorSnapshot? Operator = null);
 
 /// <summary>
 /// Immutable confirmed torpedo flight. The Engine produces this state; the DTO performs
@@ -59,7 +61,12 @@ public sealed record TorpedoSnapshot(
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<TrailSegment>))]
     ImmutableArray<TrailSegment> Trail = default,
     long? PredictedImpactMotionTimeMs = null,
-    int HitChancePercent = 100);
+    int HitChancePercent = 100,
+    /// <summary>Rating captured at launch. Null only in legacy payloads before Engine migration.</summary>
+    decimal? TorpedoRating = null,
+    WeaponOperatorSnapshot? RatingBreakdown = null,
+    /// <summary>True when the Engine supplied legacy migration rating 30 without inventing an operator.</summary>
+    bool RatingMigratedFromLegacySave = false);
 
 /// <summary>Current execution phase, independent of whether the route predicts an intercept.</summary>
 public enum TorpedoRoutePhase
@@ -140,4 +147,7 @@ public sealed record CombatImpactSnapshot(
     ImmutableArray<TrailSegment> FinalTrail = default,
     int DamageApplied = 0,
     string? DestroyedObjectId = null,
-    string? WreckObjectId = null);
+    string? WreckObjectId = null,
+    TorpedoTerminationKind TerminationKind = TorpedoTerminationKind.Impact);
+
+public enum TorpedoTerminationKind { Impact, SelfDestruct, Intercept }

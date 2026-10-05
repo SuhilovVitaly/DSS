@@ -43,8 +43,10 @@ internal static class DialogueEffectTransaction
                             if (effect.AmountSource == "station.portFeeCreditsPerDay")
                             {
                                 paidPortFee = Math.Min(credits, amount);
-                                candidate[shipIndex] = candidate[shipIndex] with {
-                                    PortFeeDebt = candidate[shipIndex].PortFeeDebt + amount - paidPortFee.Value };
+                                candidate[shipIndex] = candidate[shipIndex] with
+                                {
+                                    PortFeeDebt = candidate[shipIndex].PortFeeDebt + amount - paidPortFee.Value
+                                };
                                 amount = paidPortFee.Value;
                             }
                             if (credits < amount) return CommandReasonCodes.InsufficientPlayerCredits;
@@ -64,18 +66,27 @@ internal static class DialogueEffectTransaction
                         case "CompleteQuestObjective":
                         case "FailQuestObjective":
                             if (!progress.Quests.TryGetValue(effect.QuestId!, out var quest) || !quest.ObjectiveStates.ContainsKey(effect.ObjectiveId!)) return "unknown_quest_objective";
-                            progress = progress with { Quests = progress.Quests.SetItem(quest.QuestId,
-                                QuestStateStore.SetObjective(quest, effect.ObjectiveId!, effect.Type == "CompleteQuestObjective" ? "completed" : "failed")) }; break;
+                            progress = progress with
+                            {
+                                Quests = progress.Quests.SetItem(quest.QuestId,
+                                QuestStateStore.SetObjective(quest, effect.ObjectiveId!, effect.Type == "CompleteQuestObjective" ? "completed" : "failed"))
+                            }; break;
                         case "GrantStationAccess":
                         case "DenyStationAccess":
-                            progress = progress with { StationAccessStates = progress.StationAccessStates.SetItem(dialogue.StationObjectId!,
-                                new(dialogue.StationObjectId!, effect.Type == "DenyStationAccess")) }; break;
+                            progress = progress with
+                            {
+                                StationAccessStates = progress.StationAccessStates.SetItem(dialogue.StationObjectId!,
+                                new(dialogue.StationObjectId!, effect.Type == "DenyStationAccess"))
+                            }; break;
                         case "ArmSecurityIncident":
                             var station = candidate[stationIndex];
                             if (station.SecurityZoneRadiusKm is null || station.PiracyWarningGracePeriodMs is not { } grace) return "station_security_unavailable";
-                            progress = progress with { SecurityIncidents = progress.SecurityIncidents.Add(
+                            progress = progress with
+                            {
+                                SecurityIncidents = progress.SecurityIncidents.Add(
                                 new($"{dialogue.InstanceId}-{dialogue.Revision}-{progress.SecurityIncidents.Length}", dialogue.StationObjectId!,
-                                    effect.IncidentType!, time, time + grace)) }; break;
+                                    effect.IncidentType!, time, time + grace))
+                            }; break;
                         case "DockPlayerToStation":
                             if (progress.StationAccessStates.TryGetValue(dialogue.StationObjectId!, out var access) && access.AccessDenied) return "station_access_denied";
                             var dockError = validateDock();
@@ -85,9 +96,22 @@ internal static class DialogueEffectTransaction
                             var ship = candidate[shipIndex];
                             candidate[shipIndex] = ship with
                             {
-                                InitialMotion = ship.InitialMotion with { X = motion.X + 1, Y = motion.Y + 1, SpeedKmS = motion.SpeedKmS, Direction = motion.Direction },
-                                StartGameTimeMs = time, IsDocked = true, DockedStationObjectId = dialogue.StationObjectId,
-                                FirstPortFeeGameTimeMs = calendarTimeMs ?? time, NextPortFeeDueGameTimeMs = (calendarTimeMs ?? time) + GameCalendar.DayMs,
+                                InitialMotion = ship.InitialMotion with
+                                {
+                                    X = motion.X + 1,
+                                    Y = motion.Y + 1,
+                                    SpeedKmS = motion.SpeedKmS,
+                                    Direction = motion.Direction,
+                                    Orbit = motion.Orbit,
+                                    OrbitSampleSimulationTimeMs = motion.Orbit is null ? null : time,
+                                    WorldOffsetX = motion.Orbit is null ? 0 : motion.WorldOffsetX + 1,
+                                    WorldOffsetY = motion.Orbit is null ? 0 : motion.WorldOffsetY + 1
+                                },
+                                StartGameTimeMs = time,
+                                IsDocked = true,
+                                DockedStationObjectId = dialogue.StationObjectId,
+                                FirstPortFeeGameTimeMs = calendarTimeMs ?? time,
+                                NextPortFeeDueGameTimeMs = (calendarTimeMs ?? time) + GameCalendar.DayMs,
                                 Modules = ship.Modules.Select(m => m with { ActiveCycle = null }).ToImmutableArray()
                             };
                             progress = progress with { StationAccessStates = progress.StationAccessStates.SetItem(dialogue.StationObjectId!, new(dialogue.StationObjectId!, false)) };

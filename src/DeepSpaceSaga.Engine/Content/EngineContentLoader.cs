@@ -18,7 +18,8 @@ public static class EngineContentLoader
         var fields = LoadStationResourceFields(settingsPath, loaded.Registry);
         var engine = new SimulationEngine(loaded.Registry, LoadCrewPortraits(settingsPath));
         engine.ConfigureStationResourceFields(fields);
-        engine.LoadScenario(loaded.DefaultScenario);
+        var settings = ReadJson<EngineSettingsFile>(settingsPath, "settings");
+        engine.LoadScenario(loaded.DefaultScenario, generation: GenerationForScenario(settingsPath, settings.DefaultScenario));
         return engine;
     }
 
@@ -52,8 +53,36 @@ public static class EngineContentLoader
         var fields = LoadStationResourceFields(settingsPath, registry);
         var engine = new SimulationEngine(registry, LoadCrewPortraits(settingsPath));
         engine.ConfigureStationResourceFields(fields);
-        engine.LoadScenario(scenario);
+        engine.LoadScenario(scenario, generation: GenerationForScenario(settingsPath, scenarioPath));
         return engine;
+    }
+
+    private static SolarSystemGenerationConfig? GenerationForScenario(string settingsPath, string scenarioPath)
+    {
+        var config = LoadSolarSystemGenerationConfig(settingsPath);
+        var folder = Path.GetFileName(Path.GetDirectoryName(scenarioPath.Replace('/', Path.DirectorySeparatorChar)));
+        return config?.EnabledScenarios.Contains(folder, StringComparer.Ordinal) == true ? config : null;
+    }
+
+    public static SolarSystemGenerationConfig? LoadSolarSystemGenerationConfig(string settingsPath)
+    {
+        var settings = ReadJson<EngineSettingsFile>(settingsPath, "settings");
+        if (settings.TypeData is null) throw new ContentException($"{settingsPath}: missing typeData.");
+        if (settings.TypeData.SolarSystem is not { } declaredPath) return null;
+        if (string.IsNullOrWhiteSpace(declaredPath))
+            throw new ContentException($"{settingsPath}: typeData.solarSystem contains an empty path.");
+        var path = Resolve(Path.GetDirectoryName(Path.GetFullPath(settingsPath))!, declaredPath);
+        try { return SolarSystemGeneration.ValidateConfig(ReadJson<SolarSystemGenerationConfig>(path, "solarSystem")); }
+        catch (ContentException ex) { throw new ContentException($"{path}: {ex.Message}", ex); }
+    }
+
+    private sealed class DeclaredSolarSystemPathConverter : JsonConverter<string>
+    {
+        public override bool HandleNull => true;
+        public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+            reader.TokenType == JsonTokenType.String ? reader.GetString()!
+                : throw new JsonException("solarSystem must be a non-null string path.");
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options) => writer.WriteStringValue(value);
     }
 
     private static StationResourceFieldConfig? LoadStationResourceFields(string settingsPath, GameDataRegistry registry)
@@ -398,7 +427,7 @@ public static class EngineContentLoader
                     $"Active module type '{dto.TypeId}' must specify a positive baseCycleTimeMs.");
             }
 
-            return new ModuleTypeDefinition(
+            var definition = new ModuleTypeDefinition(
                 dto.TypeId,
                 dto.DisplayName,
                 category.SlotSize,
@@ -418,7 +447,16 @@ public static class EngineContentLoader
                 dto.BasePriceCredits,
                 dto.TorpedoDamage,
                 dto.TorpedoSpeedKmS,
-                dto.TorpedoTurnRateDegPerSec);
+                dto.TorpedoTurnRateDegPerSec,
+                dto.TorpedoBaseRating,
+                dto.CountermeasureBaseRating,
+                dto.CountermeasureSpeedKmS,
+                dto.CountermeasureTurnRateDegPerSec,
+                dto.CountermeasureRangeKm,
+                dto.CountermeasureReloadMs,
+                category.TypeId);
+            GameDataRegistry.ValidateWeaponRatings(definition);
+            return definition;
         });
     }
 
@@ -760,7 +798,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("quests")] string? Quests = null,
         [property: JsonPropertyName("stationMarketProfiles"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketProfiles = null,
         [property: JsonPropertyName("stationResourceFields"), JsonConverter(typeof(DeclaredResourceFieldPathConverter))] string? StationResourceFields = null,
-        [property: JsonPropertyName("shipClasses"), JsonConverter(typeof(DeclaredShipClassPathConverter))] string? ShipClasses = null);
+        [property: JsonPropertyName("shipClasses"), JsonConverter(typeof(DeclaredShipClassPathConverter))] string? ShipClasses = null,
+        [property: JsonPropertyName("solarSystem"), JsonConverter(typeof(DeclaredSolarSystemPathConverter))] string? SolarSystem = null);
 
     private sealed class DeclaredShipClassPathConverter : JsonConverter<string>
     {
@@ -861,7 +900,13 @@ public static class EngineContentLoader
         [property: JsonPropertyName("basePriceCredits")] long? BasePriceCredits = null,
         [property: JsonPropertyName("torpedoDamage")] int? TorpedoDamage = null,
         [property: JsonPropertyName("torpedoSpeedKmS")] double? TorpedoSpeedKmS = null,
-        [property: JsonPropertyName("torpedoTurnRateDegPerSec")] double? TorpedoTurnRateDegPerSec = null);
+        [property: JsonPropertyName("torpedoTurnRateDegPerSec")] double? TorpedoTurnRateDegPerSec = null,
+        [property: JsonPropertyName("torpedoBaseRating")] decimal? TorpedoBaseRating = null,
+        [property: JsonPropertyName("countermeasureBaseRating")] decimal? CountermeasureBaseRating = null,
+        [property: JsonPropertyName("countermeasureSpeedKmS")] double? CountermeasureSpeedKmS = null,
+        [property: JsonPropertyName("countermeasureTurnRateDegPerSec")] double? CountermeasureTurnRateDegPerSec = null,
+        [property: JsonPropertyName("countermeasureRangeKm")] double? CountermeasureRangeKm = null,
+        [property: JsonPropertyName("countermeasureReloadMs")] long? CountermeasureReloadMs = null);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto?>? ItemTypes,

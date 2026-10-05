@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\DeepSpaceSaga.Engine\DeepSpaceSaga.Engine.csproj" />
+    <ProjectReference Include="..\..\src\DeepSpaceSaga.Engine.LocalClient\DeepSpaceSaga.Engine.LocalClient.csproj" />
   </ItemGroup>
 
 </Project>

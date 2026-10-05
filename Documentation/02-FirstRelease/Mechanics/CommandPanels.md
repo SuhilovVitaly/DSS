@@ -57,10 +57,15 @@
 
 ## Требования первого релиза
 
-- `GameSessionScreen` должен показывать команды через четыре панели: Navigation, Maneuver, Engine, Space Control.
+- `GameSessionScreen` должен показывать команды через шесть панелей: Navigation, Maneuver, Engine, Space Control, Torpedo Launcher, Countermeasure Launcher.
 - Панели должны работать поверх существующей module-addressed command model.
 - Команды Navigation Computer: `navigation.dock`, `navigation.stationsList`.
 - Команды Engine: `engine.accelerate`, `engine.brake`, `engine.maintainCourse`, `engine.maintainSpeed`, `engine.turnLeftStep`, `engine.turnRightStep`, `engine.turnLeftUntilCancel`, `engine.turnRightUntilCancel`, `engine.speedSynchronization`, `engine.directionSynchronization`, `engine.orbit`, `navigation.approach` (физически команда Engine, отображается в панели Navigation).
 - Команды Scanner: `scanner.generalScan`, `scanner.structuralScan`, `scanner.nearbySignatures`.
 - Команды Drilling Unit: `mining.extractIce`, `mining.stopExtraction`.
 - UI должен показывать недоступность команды через понятную причину: нет цели, цель неверного типа, не выполнена синхронизация, нет топлива, нет `Energy Cells`, нет mining module, нет места в cargo, корабль не в нужном состоянии.
+
+
+## Weapon panels — EP-0007
+
+Torpedo Launcher показывает назначенного оператора, навык и рейтинг, состояние Ready/Guiding/NoOperator. `torpedo.fire` захватывает выбранную разрешённую цель; `torpedo.selfDestruct` захватывает ID своей активной торпеды и работает на паузе. Countermeasure Launcher показывает отдельного оператора, auto on/off, Ready/Guiding/Reloading/NoOperator и физический countdown. Кнопки `defense.enable`/`defense.disable` меняют только будущие пуски; ручной пуск ПР отсутствует. Шесть заголовков доступны при адаптивном сворачивании на малой высоте экрана. [Контракт и доказательства](../../04-Engineering/CountermeasureCombat.md).

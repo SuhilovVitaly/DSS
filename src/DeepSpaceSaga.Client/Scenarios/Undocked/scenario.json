@@ -28,106 +28,211 @@
             "isKnown": true,
             "isDocked": false,
             "hullLayout": {
-                "width": 9,
-                "height": 9,
-                "cells": [
-                    {"x":4,"y":0},
-                    {"x":3,"y":1},{"x":4,"y":1},{"x":5,"y":1},
-                    {"x":4,"y":2},
-                    {"x":4,"y":3},
-                    {"x":4,"y":4},
-                    {"x":3,"y":5},{"x":4,"y":5},{"x":5,"y":5},
-                    {"x":3,"y":2}
-                ]
+              "width": 9,
+              "height": 9,
+              "cells": [
+                {
+                  "x": 4,
+                  "y": 0
+                },
+                {
+                  "x": 3,
+                  "y": 1
+                },
+                {
+                  "x": 4,
+                  "y": 1
+                },
+                {
+                  "x": 5,
+                  "y": 1
+                },
+                {
+                  "x": 4,
+                  "y": 2
+                },
+                {
+                  "x": 4,
+                  "y": 3
+                },
+                {
+                  "x": 4,
+                  "y": 4
+                },
+                {
+                  "x": 3,
+                  "y": 5
+                },
+                {
+                  "x": 4,
+                  "y": 5
+                },
+                {
+                  "x": 5,
+                  "y": 5
+                },
+                {
+                  "x": 3,
+                  "y": 2
+                },
+                {
+                  "x": 5,
+                  "y": 2
+                }
+              ]
             },
             "modules": [
-                {
-                    "moduleId": "MOD-PLAYER-BRIDGE-01",
-                    "moduleTypeId": "module.bridge.navigation.computer.basic",
-                    "occupiedCells": [ {"x":4,"y":0} ],
-                    "structurePoints": 80,
-                    "powerState": "On",
-                    "operationalState": "Ready",
-                    "activeCycle": null,
-                    "cargo": []
-                },
-                {
-                    "moduleId": "MOD-PLAYER-LIVING-QUARTERS-01",
-                    "moduleTypeId": "living.quarters.mk1",
-                    "occupiedCells": [ {"x":4,"y":1} ],
-                    "structurePoints": 60,
-                    "powerState": "On",
-                    "operationalState": "Ready",
-                    "activeCycle": null,
-                    "cargo": []
-                },
-                {
-                    "moduleId": "MOD-PLAYER-CARGO-01",
-                    "moduleTypeId": "module.container.basic",
-                    "occupiedCells": [ {"x":4,"y":2} ],
-                    "structurePoints": 400,
-                    "powerState": "On",
-                    "operationalState": "Ready",
-                    "activeCycle": null,
-                    "cargo": [
-                        {
-                            "itemTypeId": "item.energy-cells",
-                            "quantity": 1000
-                        },
-                        {
-                            "itemTypeId": "item.food-rations",
-                            "quantity": 200
-                        }
-                    ]
-                },
-                {
-                    "moduleId": "MOD-PLAYER-SCANNER-01",
-                    "moduleTypeId": "module.scanner.mk1",
-                    "occupiedCells": [ {"x":4,"y":3} ],
-                    "structurePoints": 60,
-                    "powerState": "On",
-                    "operationalState": "Ready",
-                    "activeCycle": null,
-                    "cargo": []
-                },
-                {
-                    "moduleId": "MOD-PLAYER-GENERATOR-01",
-                    "moduleTypeId": "module.generator.basic",
-                    "occupiedCells": [ {"x":4,"y":4} ],
-                    "structurePoints": 180,
-                    "powerState": "On",
-                    "operationalState": "Ready",
-                    "activeCycle": null,
-                    "cargo": []
-                },
-                {
-                    "moduleId": "MOD-PLAYER-ENGINE-01",
-                    "moduleTypeId": "module.engine.basic",
-                    "occupiedCells": [ {"x":4,"y":5} ],
-                    "structurePoints": 100,
-                    "powerState": "On",
-                    "operationalState": "Ready",
-                    "activeCycle": null,
-                    "cargo": [],
-                    "fuelAmountKg": 750
-                },
-                {
-                    "moduleId": "MOD-PLAYER-TORPEDO-01",
-                    "moduleTypeId": "module.torpedo.launcher.basic",
-                    "occupiedCells": [ {"x":3,"y":2} ],
-                    "structurePoints": 60,
-                    "powerState": "On",
-                    "operationalState": "Ready",
-                    "activeCycle": null,
-                    "cargo": []
-                }
+              {
+                "moduleId": "MOD-PLAYER-BRIDGE-01",
+                "moduleTypeId": "module.bridge.navigation.computer.basic",
+                "occupiedCells": [
+                  {
+                    "x": 4,
+                    "y": 0
+                  }
+                ],
+                "structurePoints": 80,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": []
+              },
+              {
+                "moduleId": "MOD-PLAYER-LIVING-QUARTERS-01",
+                "moduleTypeId": "living.quarters.mk1",
+                "occupiedCells": [
+                  {
+                    "x": 4,
+                    "y": 1
+                  }
+                ],
+                "structurePoints": 60,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": []
+              },
+              {
+                "moduleId": "MOD-PLAYER-CARGO-01",
+                "moduleTypeId": "module.container.basic",
+                "occupiedCells": [
+                  {
+                    "x": 4,
+                    "y": 2
+                  }
+                ],
+                "structurePoints": 400,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": [
+                  {
+                    "itemTypeId": "item.energy-cells",
+                    "quantity": 1000
+                  },
+                  {
+                    "itemTypeId": "item.food-rations",
+                    "quantity": 200
+                  }
+                ]
+              },
+              {
+                "moduleId": "MOD-PLAYER-SCANNER-01",
+                "moduleTypeId": "module.scanner.mk1",
+                "occupiedCells": [
+                  {
+                    "x": 4,
+                    "y": 3
+                  }
+                ],
+                "structurePoints": 60,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": []
+              },
+              {
+                "moduleId": "MOD-PLAYER-GENERATOR-01",
+                "moduleTypeId": "module.generator.basic",
+                "occupiedCells": [
+                  {
+                    "x": 4,
+                    "y": 4
+                  }
+                ],
+                "structurePoints": 180,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": []
+              },
+              {
+                "moduleId": "MOD-PLAYER-ENGINE-01",
+                "moduleTypeId": "module.engine.basic",
+                "occupiedCells": [
+                  {
+                    "x": 4,
+                    "y": 5
+                  }
+                ],
+                "structurePoints": 100,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": [],
+                "fuelAmountKg": 750
+              },
+              {
+                "moduleId": "MOD-PLAYER-TORPEDO-01",
+                "moduleTypeId": "module.torpedo.launcher.basic",
+                "occupiedCells": [
+                  {
+                    "x": 3,
+                    "y": 2
+                  }
+                ],
+                "structurePoints": 60,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": [],
+                "operatorCrewId": "CHR-0001"
+              },
+              {
+                "moduleId": "MOD-PLAYER-COUNTERMEASURE-01",
+                "moduleTypeId": "module.countermeasure.launcher.basic",
+                "occupiedCells": [
+                  {
+                    "x": 5,
+                    "y": 2
+                  }
+                ],
+                "structurePoints": 60,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": [],
+                "operatorCrewId": "CHR-PLAYER-DEFENSE",
+                "autoDefenseEnabled": true
+              }
             ],
             "crew": [
-                { "crewId": "CHR-0001", "displayName": "Dunkan Su" }
+              {
+                "crewId": "CHR-0001",
+                "displayName": "Dunkan Su",
+                "torpedoSkill": 50,
+                "countermeasureSkill": 50
+              },
+              {
+                "crewId": "CHR-PLAYER-DEFENSE",
+                "displayName": "Defense operator",
+                "torpedoSkill": 50,
+                "countermeasureSkill": 50
+              }
             ],
             "captainDisplayName": "Dunkan Su",
             "captainPortraitImage": "Images/Persons/M4/Portraits/CHR-20260915-105947-6DC202.png"
-        },
+          },
       {
         "objectId": "SPC-0002",
         "objectType": "Station",

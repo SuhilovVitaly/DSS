@@ -73,6 +73,11 @@ internal sealed class TradingVoyageFixture : IDisposable
             {
                 GameState = save.GameState with
                 {
+                    DefenseState = save.GameState.DefenseState! with
+                    {
+                        Launchers = save.GameState.DefenseState.Launchers.Select(l =>
+                        l.OwnerObjectId == ShipId ? l with { State = l.State with { Operator = null, State = DefenseState.NoOperator } } : l).ToArray()
+                    },
                     SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectType == SpaceObjectType.Station
                         ? o with
                         {
@@ -82,7 +87,7 @@ internal sealed class TradingVoyageFixture : IDisposable
                             MarketBudgetCredits = o.ObjectId == neighbor && destinationBudget is not null
                                 ? destinationBudget : o.MarketBudgetCredits,
                         } : o.ObjectId == ShipId
-                        ? o with { Crew = [], Passengers = [], PortFeeDebt = initialDebt } : o).ToArray(),
+                        ? o with { Crew = [], Passengers = [], PortFeeDebt = initialDebt, Modules = o.Modules?.Select(m => m with { OperatorCrewId = null }).ToArray() } : o).ToArray(),
                 }
             };
             engine.Dispose();
@@ -184,7 +189,8 @@ internal sealed class TradingVoyageFixture : IDisposable
         FinishFlightTo(destination, splitSnapshots);
     }
 
-    internal void FinishFlightTo(string destination, bool splitSnapshots = false)
+    internal void FinishFlightTo(string destination, bool splitSnapshots = false,
+        Action<TradingVoyageFixture>? beforeDialogue = null)
     {
         var (_, acceleration) = Send(EngineId, ShipEngineCommandTypes.Accelerate);
         Xunit.Assert.NotEqual(CommandResultStatus.Rejected, acceleration?.Status);
@@ -217,6 +223,7 @@ internal sealed class TradingVoyageFixture : IDisposable
             target: destination);
         LastDockCommand = dockCommand;
         Xunit.Assert.Equal(CommandResultStatus.Executed, docking?.Status);
+        beforeDialogue?.Invoke(this);
         foreach (string choice in new[] { "truthful_id", "accept_fee", "continue" })
         {
             var active = Xunit.Assert.IsType<DialogueState>(Snapshot.ActiveDialogue);

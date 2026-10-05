@@ -231,6 +231,7 @@ internal sealed class ObjectTrailStore
         long rawNow)
     {
         long oldestGameTimeMs = currentGameTimeMs - HistoryGameTimeMs;
+        if (obj.HasAbsoluteOrbit) oldestGameTimeMs = Math.Max(0, oldestGameTimeMs);
         var motion = obj.ToSnapshot();
 
         for (long sampleGameTimeMs = oldestGameTimeMs;

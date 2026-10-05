@@ -1,0 +1,19 @@
+{
+  "moduleImplementations": [
+    {
+      "typeId": "module.countermeasure.launcher.basic",
+      "displayName": "Countermeasure Launcher",
+      "type": "module.countermeasure.launcher",
+      "massKg": 2000,
+      "structurePointsMax": 60,
+      "powerConsumptionW": 0,
+      "baseCycleTimeMs": 1,
+      "baseSuccessChancePercent": 100,
+      "countermeasureBaseRating": 30,
+      "countermeasureSpeedKmS": 12,
+      "countermeasureTurnRateDegPerSec": 90,
+      "countermeasureRangeKm": 100,
+      "countermeasureReloadMs": 10000
+    }
+  ]
+}

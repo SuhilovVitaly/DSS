@@ -18,12 +18,18 @@ public sealed class CombatPaletteContentTests
         {
             ["torpedo"] = "#FFFF00FF",
             ["trail"] = "#FFFF00FF",
-            ["prediction"] = "#FFFF00FF",
+            ["prediction"] = "#FFFF0066",
             ["intercept"] = "#FFFF00FF",
             ["preview"] = "#808080FF",
             ["hullHp"] = "#00FF00FF",
             ["explosion"] = "#FF0000FF",
-            ["wreck"] = "#808080FF"
+            ["wreck"] = "#808080FF",
+            ["countermeasure"] = "#00CCFFFF",
+            ["countermeasureTrail"] = "#00CCFFFF",
+            ["countermeasurePrediction"] = "#00CCFF88",
+            ["countermeasureIntercept"] = "#00CCFFFF",
+            ["defenseRange"] = "#00CCFF55",
+            ["defenseText"] = "#99EEFFFF"
         };
         Assert.Equal(expected.Count + 1, root.EnumerateObject().Count());
         foreach (var (key, value) in expected)

@@ -10,6 +10,8 @@ public class RationScheduleTests
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
         var engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(root, "Settings.json"),
             Path.Combine(root, "Scenarios/Docked/scenario.json"));
+        // Ration/economy fixtures deliberately exercise the legacy stationary world.
+        engine.LoadScenario(ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios/Docked/scenario.json")));
         var save = engine.CaptureSaveState();
         engine.LoadScenario(save with
         {
@@ -47,10 +49,10 @@ public class RationScheduleTests
     {
         using var engine = CreateEngine(passengers: 2);
         Assert.Equal(200, Food(engine.CaptureSnapshotForTests(12 * GameCalendar.HourMs - 1)));
-        Assert.Equal(197, Food(engine.CaptureSnapshotForTests(12 * GameCalendar.HourMs)));
-        Assert.Equal(197, Food(engine.CaptureSnapshotForTests(12 * GameCalendar.HourMs)));
-        Assert.Equal(194, Food(engine.CaptureSnapshotForTests(GameCalendar.DayMs)));
-        Assert.Equal(194, Food(engine.CaptureSnapshotForTests(GameCalendar.DayMs)));
+        Assert.Equal(196, Food(engine.CaptureSnapshotForTests(12 * GameCalendar.HourMs)));
+        Assert.Equal(196, Food(engine.CaptureSnapshotForTests(12 * GameCalendar.HourMs)));
+        Assert.Equal(192, Food(engine.CaptureSnapshotForTests(GameCalendar.DayMs)));
+        Assert.Equal(192, Food(engine.CaptureSnapshotForTests(GameCalendar.DayMs)));
     }
 
     [Fact]
@@ -58,9 +60,9 @@ public class RationScheduleTests
     {
         using var engine = CreateEngine(time: 11 * GameCalendar.HourMs);
         var result = engine.TravelStation(new("travel", StationDistrict.Market));
-        Assert.Equal(199, Food(result.Snapshot));
-        Assert.Equal(199, Food(engine.TravelStation(new("travel", StationDistrict.Market)).Snapshot));
-        Assert.Equal(199, Food(engine.CaptureSnapshot()));
+        Assert.Equal(198, Food(result.Snapshot));
+        Assert.Equal(198, Food(engine.TravelStation(new("travel", StationDistrict.Market)).Snapshot));
+        Assert.Equal(198, Food(engine.CaptureSnapshot()));
     }
 
     [Fact]
@@ -79,7 +81,7 @@ public class RationScheduleTests
                 SpaceObjects = save.GameState.SpaceObjects.Select(o => o with { Passengers = [] }).ToArray()
             }
         });
-        Assert.Equal(199, Food(engine.CaptureSnapshotForTests(GameCalendar.DayMs)));
+        Assert.Equal(198, Food(engine.CaptureSnapshotForTests(GameCalendar.DayMs)));
     }
 
     [Fact]

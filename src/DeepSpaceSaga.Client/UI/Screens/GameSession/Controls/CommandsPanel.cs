@@ -75,7 +75,8 @@ public sealed class CommandsPanel
         new CommandPanelDefinition("Space Control", ImmutableArray.Create(
             ScannerCommandTypes.GeneralScan,
             ScannerCommandTypes.StructuralScan)),
-        new CommandPanelDefinition("Torpedo Launcher", ImmutableArray.Create(CombatCommandTypes.Fire)));
+        new CommandPanelDefinition("Torpedo Launcher", ImmutableArray.Create(CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct)),
+        new CommandPanelDefinition("Countermeasure Launcher", ImmutableArray.Create(DefenseCommandTypes.Enable, DefenseCommandTypes.Disable)));
 
     /// <summary>
     /// Per-command icon files under Images/UI/GameSessionScreenUI/commands-panel/.
@@ -141,6 +142,8 @@ public sealed class CommandsPanel
     private readonly Func<string, bool> _isCommandEnabled;
     private readonly Action<string> _commandClicked;
     private readonly Func<string?>? _launcherStatus;
+    private readonly Func<string?>? _defenseStatus;
+    private readonly Func<string, string?>? _operatorText;
     private string? _preferredOpenedPanel;
     internal string? HoveredCommandTypeId => _hoveredCommandButtonIndex >= 0 &&
         _hoveredCommandButtonIndex < _allCommandButtons.Count
@@ -216,11 +219,13 @@ public sealed class CommandsPanel
     public CommandsPanel(
         Func<string, bool>? isCommandEnabled = null,
         Action<string>? commandClicked = null,
-        Func<string?>? launcherStatus = null)
+        Func<string?>? launcherStatus = null, Func<string?>? defenseStatus = null, Func<string, string?>? operatorText = null)
     {
         _isCommandEnabled = isCommandEnabled ?? (_ => true);
         _commandClicked = commandClicked ?? (_ => { });
         _launcherStatus = launcherStatus;
+        _defenseStatus = defenseStatus;
+        _operatorText = operatorText;
 
         var typeface = XenonStyle.TypefaceRegular;
 
@@ -490,18 +495,19 @@ public sealed class CommandsPanel
             // Reserve every caption so all five groups remain reachable. Give an
             // explicitly opened group priority, then the installed launcher.
             HashSet<string>? visibleBodies = null;
-            bool hasLauncher = safeModules.Any(m => m.LauncherCombat is not null);
+            bool hasLauncher = safeModules.Any(m => m.LauncherCombat is not null || m.Defense is not null);
+            float captionHeight = hasLauncher && viewportHeight < MinimumExpandedHeight ? 28f : PanelCaptionHeight;
             float BodyHeight(string name)
             {
                 if (!hasLauncher) return PanelBodyHeight;
                 int rows = (Panels.First(p => p.Name == name).CommandTypeIds.Length + 3) / 4;
                 return BodyPaddingY * 2 + rows * CommandButtonHeight + (rows - 1) * CommandButtonGap +
-                    StatusBarHeight + XenonBodySliceInset;
+                    StatusBarHeight + XenonBodySliceInset + (name is "Torpedo Launcher" or "Countermeasure Launcher" ? 32f : 0);
             }
             if (hasLauncher)
             {
                 visibleBodies = new(StringComparer.Ordinal);
-                float remaining = viewportHeight - rowY - Panels.Length * PanelCaptionHeight -
+                float remaining = viewportHeight - rowY - Panels.Length * captionHeight -
                     (Panels.Length - 1) * CollapsedPanelGap;
                 foreach (string name in new[] { _preferredOpenedPanel, "Torpedo Launcher", "Navigation", "Space Control" }
                     .Concat(Panels.Select(p => p.Name)).OfType<string>().Distinct(StringComparer.Ordinal))
@@ -524,12 +530,12 @@ public sealed class CommandsPanel
 
                 var captionRect = new SKRect(
                     Margin, rowY,
-                    Margin + PanelWidth, rowY + PanelCaptionHeight);
+                    Margin + PanelWidth, rowY + captionHeight);
 
                 var bodyRect = opened
                     ? new SKRect(
-                        Margin, rowY + PanelCaptionHeight,
-                        Margin + PanelWidth, rowY + PanelCaptionHeight + BodyHeight(panel.Name))
+                        Margin, rowY + captionHeight,
+                        Margin + PanelWidth, rowY + captionHeight + BodyHeight(panel.Name))
                     : SKRect.Empty;
 
                 int rowStartOrdinal = _commandButtons.Count;
@@ -557,11 +563,12 @@ public sealed class CommandsPanel
                         ? _commandButtons[_hoveredCommandButtonIndex].Label
                         : null;
                 if (opened && panel.Name == "Torpedo Launcher") statusBarText = _launcherStatus?.Invoke() ?? statusBarText;
+                if (opened && panel.Name == "Countermeasure Launcher") statusBarText = _defenseStatus?.Invoke() ?? statusBarText;
 
                 _panelRows.Add(new CommandPanelGeometry(
                     panel.Name, opened, captionRect, bodyRect, buttons, statusBarRect, statusBarText));
 
-                rowY += opened ? (PanelCaptionHeight + BodyHeight(panel.Name)) : PanelCaptionHeight;
+                rowY += opened ? (captionHeight + BodyHeight(panel.Name)) : captionHeight;
                 if (!opened && panelIndex < Panels.Length - 1)
                     rowY += CollapsedPanelGap;
             }
@@ -710,6 +717,15 @@ public sealed class CommandsPanel
                 DrawCommandButton(canvas, _commandButtonDrawOrdinal++);
             }
 
+            if (_operatorText?.Invoke(row.Name) is { } operatorText)
+            {
+                using var paint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 12f, IsAntialias = true };
+                var rect = row.BodyRect;
+                canvas.Save();
+                canvas.ClipRect(new SKRect(rect.Left + 8, rect.Top + 58, rect.Right - 8, row.StatusBarRect.Top));
+                canvas.DrawText(operatorText, rect.Left + 10, rect.Top + 80, paint);
+                canvas.Restore();
+            }
             DrawPanelStatusBar(canvas, row);
         }
     }

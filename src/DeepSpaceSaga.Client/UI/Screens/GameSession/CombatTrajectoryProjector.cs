@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
@@ -9,7 +8,6 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 internal static class CombatTrajectoryProjector
 {
     internal sealed record Geometry(
-        List<FutureTrajectoryPoint> Travelled,
         List<FutureTrajectoryPoint> Prediction,
         List<FutureTrajectoryPoint> Target,
         FutureTrajectoryPoint? Intercept);
@@ -17,16 +15,10 @@ internal static class CombatTrajectoryProjector
     internal static Geometry Project(TorpedoSnapshot flight, ObjectMotionSnapshot? target,
         IMotionPredictor predictor, CameraState camera, int width, int height)
     {
-        var travelled = History(flight.Trail, camera);
-        // Trail ends at the snapshot; append only the confirmed route's presentation extrapolation.
-        double historyEnd = flight.Trail.IsDefaultOrEmpty ? flight.LaunchMotionTimeMs
-            : flight.Trail[^1].StartMotionTimeMs + flight.Trail[^1].Segment.DurationMs;
-        SampleRoute(flight.Route, Math.Max(0, historyEnd - flight.Route.StartMotionTimeMs),
-            flight.Route.ElapsedMs, camera, travelled);
         var prediction = new List<FutureTrajectoryPoint>();
         var targetPath = new List<FutureTrajectoryPoint>();
         var route = flight.Route;
-        if (route.Segments.IsDefaultOrEmpty) return new(travelled, prediction, targetPath, null);
+        if (route.Segments.IsDefaultOrEmpty) return new(prediction, targetPath, null);
         double duration = route.Segments.Sum(s => s.DurationMs);
         double elapsed = route.ElapsedMs;
         bool intercept = route.HasIntercept && duration >= elapsed && target is not null;
@@ -37,7 +29,7 @@ internal static class CombatTrajectoryProjector
             // only to the viewport; the Engine will continue to guide the actual projectile.
             var end = TorpedoGuidanceMath.PredictPose(route, Math.Max(elapsed, duration));
             TrajectoryViewportGeometry.ExtendToEdge(prediction, end.Direction, camera, width, height);
-            return new(travelled, prediction, targetPath, null);
+            return new(prediction, targetPath, null);
         }
 
         double remaining = duration - elapsed;
@@ -46,21 +38,13 @@ internal static class CombatTrajectoryProjector
         // A manoeuvring target can invalidate the last confirmed linear interception.
         // Do not advertise a meeting that shared motion no longer predicts.
         if (Math.Abs(targetEnd.X - encounter.X) + Math.Abs(targetEnd.Y - encounter.Y) > 1e-3)
-            return new(travelled, prediction, targetPath, null);
+            return new(prediction, targetPath, null);
         if (target!.RenderObjectType != SpaceObjectType.UnknownSpaceObject)
         {
             int samples = LinearMotionPredictor.IsLinear(target) ? 1 : 256;
             for (int i = 0; i <= samples; i++) targetPath.Add(PredictTarget(target, remaining * i / samples, predictor));
         }
-        return new(travelled, prediction, targetPath, encounter);
-    }
-
-    internal static List<FutureTrajectoryPoint> History(ImmutableArray<TrailSegment> history, CameraState camera)
-    {
-        var points = new List<FutureTrajectoryPoint>();
-        if (!history.IsDefaultOrEmpty)
-            foreach (var entry in history) SampleSegment(entry.Segment, 0, entry.Segment.DurationMs, camera, points);
-        return points;
+        return new(prediction, targetPath, encounter);
     }
 
     private static FutureTrajectoryPoint PredictTarget(ObjectMotionSnapshot target, double ms, IMotionPredictor predictor)

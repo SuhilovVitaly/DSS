@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DeepSpaceSaga.Contracts;
@@ -10,7 +11,7 @@ namespace DeepSpaceSaga.Engine.Scenario;
 public static class ScenarioLoader
 {
     private static readonly HashSet<string> KnownObjectTypes = new(StringComparer.OrdinalIgnoreCase)
-        { "PlayerShip", "NpcShip", "Station", "Asteroid", "Wreck", "Missile" };
+        { "PlayerShip", "NpcShip", "Station", "Asteroid", "Wreck", "Missile", "Countermeasure", "Sun", "Planet" };
 
     private static readonly HashSet<string> KnownPersistenceTypes = new(StringComparer.OrdinalIgnoreCase)
         { "Permanent", "Temporary" };
@@ -101,9 +102,15 @@ public static class ScenarioLoader
         {
             PlayerShipObjectId = ids[gs.PlayerShipObjectId],
             CurrentSpeed = KnownSpeeds.Single(s => s.Equals(gs.CurrentSpeed, StringComparison.OrdinalIgnoreCase)),
+            SolarSystem = gs.SolarSystem is not { } solar ? null : solar with
+            {
+                Planets = solar.Planets.Select(p => p with { ObjectId = Resolve(p.ObjectId)! }).ToImmutableArray(),
+                Orbits = solar.Orbits.Select(o => o with { ObjectId = Resolve(o.ObjectId)! }).ToImmutableArray()
+            },
             SpaceObjects = objects
         };
         normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
+        normalizedState = CountermeasureSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
         CombatSaveValidation.Validate(normalizedState, scenario.SaveFormatVersion);
         return scenario with { GameState = normalizedState };
     }
@@ -223,6 +230,7 @@ public static class ScenarioLoader
                 $"Player ship '{playerShip.ObjectId}' has objectType '{playerShip.ObjectType}', expected 'PlayerShip'.");
 
         ValidateEconomyTime(scenario);
+        SolarSystemGeneration.ValidateWorld(gs);
 
         // Validate each object (nulls already caught in the duplicate-check loop)
         foreach (var obj in objects)
@@ -396,6 +404,8 @@ public static class ScenarioLoader
                 throw new ScenarioException(
                     $"Asteroid '{obj.ObjectId}' massKg {obj.MassKg} is outside 1,000,000..1,000,000,000.");
         }
+
+        SimulationEngine.ValidateWeaponAssignments(obj);
 
         if (obj.Modules is { Count: > 0 })
         {

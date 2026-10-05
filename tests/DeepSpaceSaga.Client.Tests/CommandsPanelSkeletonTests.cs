@@ -19,7 +19,7 @@ public class CommandsPanelSkeletonTests
     private const string NavigationComputerModuleId = "MOD-PLAYER-NAV-COMPUTER-01";
 
     private static readonly ImmutableArray<string> PanelOrder = ImmutableArray.Create(
-        "Navigation", "Maneuver", "Engine", "Space Control", "Torpedo Launcher");
+        "Navigation", "Maneuver", "Engine", "Space Control", "Torpedo Launcher", "Countermeasure Launcher");
 
     /// <summary>
     /// Display names and targets mirror Client/Data/command-definitions.json —
@@ -113,7 +113,7 @@ public class CommandsPanelSkeletonTests
     [Fact]
     public void Panels_are_declared_in_fixed_order_with_fixed_command_composition()
     {
-        Assert.Equal(5, CommandsPanel.Panels.Length);
+        Assert.Equal(6, CommandsPanel.Panels.Length);
         Assert.Equal(PanelOrder, CommandsPanel.Panels.Select(p => p.Name));
 
         Assert.Equal(
@@ -177,7 +177,7 @@ public class CommandsPanelSkeletonTests
 
         Assert.True(screen.CommandsPanel.HasLoadedXenonChrome);
         Assert.Equal(CommandsPanel.PanelWidth, screen.CommandsPanel.CaptionRect.Width);
-        Assert.Equal(1034f, screen.CommandsPanel.CaptionRect.Height + screen.CommandsPanel.BodyRect.Height);
+        Assert.Equal(1234f, screen.CommandsPanel.CaptionRect.Height + screen.CommandsPanel.BodyRect.Height);
     }
 
     [Fact]
@@ -373,7 +373,7 @@ public class CommandsPanelSkeletonTests
         Render(screen);
 
         Assert.Equal(CommandsPanelState.AllPanels, panel.State);
-        Assert.Equal(5, panel.CommandPanelRows.Count);
+        Assert.Equal(6, panel.CommandPanelRows.Count);
         Assert.True(panel.BodyRect.Height > 0);
     }
 
@@ -511,7 +511,7 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        Assert.Equal(5, panel.CommandPanelRows.Count);
+        Assert.Equal(6, panel.CommandPanelRows.Count);
         Assert.Equal(PanelOrder, panel.CommandPanelRows.Select(r => r.Name));
 
         int expectedTotalButtons = CommandsPanel.Panels.Sum(p => p.CommandTypeIds.Length);
@@ -583,7 +583,7 @@ public class CommandsPanelSkeletonTests
     {
         Assert.Equal(
             CommandsPanel.Panels.SelectMany(panel => panel.CommandTypeIds)
-                .Where(id => id != CombatCommandTypes.Fire)
+                .Where(id => id is not (CombatCommandTypes.Fire or CombatCommandTypes.SelfDestruct or DefenseCommandTypes.Enable or DefenseCommandTypes.Disable))
                 .OrderBy(k => k, StringComparer.Ordinal),
             CommandsPanel.CommandIconFileNames.Keys.OrderBy(k => k, StringComparer.Ordinal));
         Assert.False(CommandsPanel.CommandIconFileNames.ContainsKey(CombatCommandTypes.Fire));

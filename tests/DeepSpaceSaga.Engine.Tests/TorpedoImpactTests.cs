@@ -26,6 +26,7 @@ public sealed class TorpedoImpactTests
                 {
                     var configured = o with
                     {
+                        Modules = o.Modules?.Select(m => m with { AutoDefenseEnabled = false }).ToArray(),
                         PositionX = 0,
                         PositionY = o.ObjectId == Player ? 0 : -100,
                         SpeedMps = 0,
@@ -37,6 +38,29 @@ public sealed class TorpedoImpactTests
             }
         };
     }
+    internal static ScenarioFile WithoutDefense(ScenarioFile scenario) => scenario with
+    {
+        GameState = scenario.GameState with
+        {
+            SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o with
+            {
+                Modules = o.Modules?.Select(m => m with { AutoDefenseEnabled = false }).ToArray()
+            }).ToArray()
+        }
+    };
+
+    [Fact]
+    public void Legacy_fixtures_explicitly_disable_defense()
+    {
+        var scenario = Scenario();
+        foreach (var ship in scenario.GameState.SpaceObjects)
+        {
+            var defense = Assert.Single(ship.Modules!, m => m.ModuleTypeId == "module.countermeasure.launcher.basic");
+            Assert.False(defense.AutoDefenseEnabled);
+            Assert.Contains(ship.Crew!, c => c.CrewId == defense.OperatorCrewId);
+        }
+    }
+
     internal static SimulationEngine Create(ScenarioFile? scenario = null)
     {
         var engine = new SimulationEngine(Registry.Value);
@@ -215,7 +239,7 @@ public sealed class TorpedoImpactTests
     public void Real_pirate_scenario_contact_closes_arc_and_straight_history()
     {
         var scenario = ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
-        using var engine = Create(scenario);
+        using var engine = Create(WithoutDefense(scenario));
         engine.ReceiveCommand(Fire("real-flight"));
         var launched = At(engine, 0);
         var torpedo = Assert.Single(launched.Objects.Where(o => o.Torpedo is not null)).Torpedo!;

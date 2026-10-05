@@ -87,8 +87,15 @@
       "displayName": "Torpedo Launcher",
       "slotSize": 1,
       "commandTypeIds": [
-        "torpedo.fire"
+        "torpedo.fire",
+        "torpedo.selfDestruct"
       ]
+    },
+    {
+      "typeId": "module.countermeasure.launcher",
+      "displayName": "Countermeasure Launcher",
+      "slotSize": 1,
+      "commandTypeIds": ["defense.enable", "defense.disable"]
     },
     {
       "typeId": "living.quarters",

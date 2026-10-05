@@ -437,7 +437,7 @@ public class StationScreenTests
         var (left, top, right, bottom) = StationLayout.UndockButtonLocalRect();
         float undockX = StationLayout.PanelLeft(ScreenWidth) + (left + right) / 2f;
         float undockY = StationLayout.PanelTop(ScreenHeight) + (top + bottom) / 2f;
-        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(undockX, undockY));
+        Assert.Equal(ScreenEvent.Undock, screen.OnMouseDown(undockX, undockY));
 
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(
             StationLayout.PanelLeft(ScreenWidth) + 410,
@@ -446,8 +446,8 @@ public class StationScreenTests
         Assert.Equal(ScreenEvent.Undock, screen.OnMouseDown(undockX, undockY));
 
         buffer.Update(AtStation("C", "D"));
-        Assert.Null(screen.SelectedDestinationId);
-        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(undockX, undockY));
+        Assert.Equal("D", screen.SelectedDestinationId);
+        Assert.Equal(ScreenEvent.Undock, screen.OnMouseDown(undockX, undockY));
     }
 
     [Fact]
@@ -518,5 +518,69 @@ public class StationScreenTests
 
         var result = screen.OnMouseDown(2f, 2f, MouseButton.Right);
         Assert.Equal(ScreenEvent.None, result);
+    }
+    [Theory]
+    [InlineData(CommandReasonCodes.VoyageOutstandingDebt)]
+    [InlineData(CommandReasonCodes.VoyageInsufficientFuel)]
+    [InlineData(CommandReasonCodes.VoyageDestinationUnavailable)]
+    public void Blocked_route_can_be_selected_for_reason_without_departure(string reason)
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(new(1, 0, SimulationSpeed.Speed0,
+            [new ObjectMotionSnapshot("ship", 0, 0, 0, 0) { IsDocked = true, DockedStationObjectId = "A" }],
+            PlayerShipObjectId: "ship", Voyage: new(VoyagePhases.Docked, RouteOptions:
+            [new("blocked", "Blocked", 3600000, "Short", false, reason),
+             new("open", "Open", 7200000, "Medium")])));
+        var screen = new StationScreen(buffer);
+        screen.OnActivated();
+        RenderScreen(screen);
+        Assert.Equal("open", screen.SelectedDestinationId);
+        screen.OnMouseDown(StationLayout.PanelLeft(ScreenWidth) + 410, StationLayout.PanelTop(ScreenHeight) + 450);
+        Assert.Equal("blocked", screen.SelectedVoyageDestinationObjectId);
+        Assert.Null(screen.SelectedDestinationId);
+        var (left, top, right, bottom) = StationLayout.UndockButtonLocalRect();
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(StationLayout.PanelLeft(ScreenWidth) + (left + right) / 2,
+            StationLayout.PanelTop(ScreenHeight) + (top + bottom) / 2));
+        Assert.DoesNotContain(reason, StationScreen.DepartureReasonText(reason));
+        RenderScreen(screen);
+        Assert.Equal("blocked", screen.SelectedVoyageDestinationObjectId);
+    }
+
+    [Fact]
+    public void Selection_is_preserved_then_falls_back_when_option_disappears()
+    {
+        var buffer = new SnapshotBuffer();
+        var snapshot = new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed0,
+            [new ObjectMotionSnapshot("ship", 0, 0, 0, 0) { IsDocked = true, DockedStationObjectId = "A" }],
+            PlayerShipObjectId: "ship", Voyage: new(VoyagePhases.Docked,
+                RouteOptions: [new("B", "Beta", 3600000, "Short"), new("C", "Gamma", 7200000, "Medium")]));
+        buffer.Update(snapshot);
+        var screen = new StationScreen(buffer);
+        RenderScreen(screen);
+        screen.OnMouseDown(StationLayout.PanelLeft(ScreenWidth) + 410, StationLayout.PanelTop(ScreenHeight) + 490);
+        Assert.Equal("C", screen.SelectedDestinationId);
+        buffer.Update(snapshot with { SnapshotSequence = 2 });
+        Assert.Equal("C", screen.SelectedDestinationId);
+        buffer.Update(snapshot with
+        {
+            SnapshotSequence = 3,
+            Voyage = snapshot.Voyage! with
+            { RouteOptions = [new("B", "Beta", 3600000, "Short")] }
+        });
+        Assert.Equal("B", screen.SelectedDestinationId);
+        Assert.Equal("Beta  Short  ETA 1:00:00", StationScreen.RouteOptionText(snapshot.Voyage!.RouteOptions[0]));
+    }
+    [Fact]
+    public void Default_route_array_renders_and_hit_tests_without_failure()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(new(1, 0, SimulationSpeed.Speed0, [], Voyage: new(VoyagePhases.Docked)));
+        var screen = new StationScreen(buffer);
+        screen.OnActivated();
+        RenderScreen(screen);
+        Assert.Null(screen.SelectedDestinationId);
+        screen.OnMouseMove(0, 0);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(StationLayout.PanelLeft(ScreenWidth) + 410,
+            StationLayout.PanelTop(ScreenHeight) + 450));
     }
 }

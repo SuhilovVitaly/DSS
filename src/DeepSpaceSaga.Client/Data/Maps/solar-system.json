@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "generatorVersion": 1,
+  "maxPlacementAttempts": 64,
+  "minPlanets": 3,
+  "maxPlanets": 7,
+  "minBelts": 2,
+  "maxBelts": 5,
+  "startMinDays": 50,
+  "startMaxDays": 75,
+  "orbitSpeedFraction": 0.001,
+  "beltWidthFraction": 0.08,
+  "orbitClearanceWorld": 100,
+  "asteroidsPerBelt": 24,
+  "decorationSamplesPerBelt": 2048,
+  "enabledScenarios": ["Default", "Default_500", "Docked", "Undocked", "MarketProfiles", "PlayerShipOnly"]
+}

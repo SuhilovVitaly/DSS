@@ -12,6 +12,9 @@ This folder is the single home for DSS project documentation.
 - [Approach requirements](01-Requirements/EngineRequirements.md#approach-shortest-route) - shortest rendezvous, captured trailing-point fallback, and planner version 3 (2026-09-20).
 - [Approach implementation](04-Engineering/ApproachRoutes.md) - solver, numerical tolerances, prediction, and save compatibility.
 
+- [Countermeasure combat](04-Engineering/CountermeasureCombat.md) — EP-0007, операторы, защита, Save v11 и фактическая приёмка.
+- [Countermeasure Graphify](06-Tooling/CountermeasureGraphify.md) — корпус, перестройка и проверка графа.
+
 ## Sections
 
 | Folder | Purpose |

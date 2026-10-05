@@ -65,6 +65,7 @@ public sealed partial class SimulationEngine
             _processedWorldTimeMs = next;
         }
         AdvanceMotionTo(simulationTimeMs, SurveyCalendarAt);
+        SynchronizeOrbitalBindings(_objects, simulationTimeMs);
         _processedSimulationTimeMs = simulationTimeMs;
         UpdateVoyageForMotion(simulationTimeMs);
     }

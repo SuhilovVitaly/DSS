@@ -32,7 +32,7 @@
 
 ## Требующие проектирования элементы UI
 
-- Четыре смысловые командные панели: Navigation, Maneuver, Engine, Space Control.
+- Шесть командных панелей: Navigation, Maneuver, Engine, Space Control, Torpedo Launcher, Countermeasure Launcher (реализованы).
 - Команды `navigation.dock` и `navigation.stationsList` навигационного компьютера.
 - Команды Scanner: `scanner.generalScan`, `scanner.structuralScan`, `scanner.nearbySignatures`.
 - Команды Drilling Unit: `mining.extractIce`, `mining.stopExtraction`.
@@ -58,3 +58,8 @@
 - `StationDialogues`.
 - `IceMining`.
 - `Fuel`.
+
+
+## Боевой этап EP-0007
+
+Экран отображает назначенных операторов, самоуничтожение торпеды и автоматическую защиту. ПР выбирается на карте, но недоступна для Fire. Frozen chance/breakdown приходят в snapshot; UI не бросает RNG. Сворачиваемый журнал сохраняет authoritative историю. Круг100км виден у выбранного пирата. [Контракт, Save/Load и проверки](../../04-Engineering/CountermeasureCombat.md).

@@ -55,6 +55,10 @@ public sealed record InstalledModuleSnapshot(
     long? CargoCapacityKg = null,
     /// <summary>
     /// Authoritative launcher parameters and active projectile identity. Null for legacy
-    /// and non-launcher modules; absence never grants the ability to fire.
+    /// and non-launcher modules; absence never grants the ability to fire. Its Operator
+    /// is the authoritative assignment, distinct from an assigned zero-skill operator.
     /// </summary>
-    LauncherCombatSnapshot? LauncherCombat = null);
+    LauncherCombatSnapshot? LauncherCombat = null,
+    DefenseSnapshot? Defense = null,
+    /// <summary>Current authoritative operator for either weapon family; null means unassigned.</summary>
+    WeaponOperatorSnapshot? Operator = null);
