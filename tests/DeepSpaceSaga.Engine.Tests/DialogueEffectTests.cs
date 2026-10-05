@@ -23,7 +23,7 @@ public class DialogueEffectTests
         var engine = new SimulationEngine(registry);
         // This fixture deliberately defines a different catalog from the docking fixture.
         var initial = original.CaptureSaveState();
-        engine.LoadScenario(initial with
+        var preparedWorld = initial with
         {
             GameState = initial.GameState with
             {
@@ -31,6 +31,11 @@ public class DialogueEffectTests
                 SpaceObjects = initialCargo is null ? initial.GameState.SpaceObjects : initial.GameState.SpaceObjects.Select(o =>
                     o.ObjectId != "SPC-0001" ? o : o with { Modules = o.Modules!.Select(m => m with { Cargo = initialCargo }).ToArray() }).ToArray()
             }
+        };
+        engine.LoadScenario(preparedWorld with
+        {
+            GameState = preparedWorld.GameState with
+            { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(preparedWorld.GameState) }
         });
         engine.ReceiveDialogueCommand(new("start", DialogueAction.Start, "", 0,
             DialogueDefinitionId: "test", ParticipantId: "operator", StationObjectId: "STATION-01"));

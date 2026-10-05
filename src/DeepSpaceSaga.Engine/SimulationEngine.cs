@@ -384,20 +384,19 @@ public sealed partial class SimulationEngine : IDisposable
         }
 
         RestoreTradingRouteBindings(gs.TradingMap, runtimeObjects, gs.GameTimeMs, resolvedMasterSeed);
-        var restoredMarket = StageMarketContinuation(scenario with { GameState = gs }, runtimeObjects);
-        var restoredKnowledge = InitializeOrLoadMarketKnowledge(gs, runtimeObjects, scenario.SaveFormatVersion, loadingSave);
         var restoredVoyage = ValidateVoyageState(gs, runtimeObjects);
         ValidateVoyageFuelSave(gs, restoredVoyage, runtimeObjects);
-        var restoredVoyageContinuation = StageVoyageContinuation(scenario with { GameState = gs }, runtimeObjects, restoredVoyage);
+        var restoredTrading = StageTradingContinuation(scenario with { GameState = gs }, runtimeObjects, restoredVoyage);
+        var restoredKnowledge = InitializeOrLoadMarketKnowledge(gs, runtimeObjects, scenario.SaveFormatVersion, loadingSave);
         var combatState = BuildCombatState(gs.SpaceObjects, runtimeObjects);
         StageCombatRestore(gs.CombatState, runtimeObjects, combatState.Launchers);
         StageLegacyWeaponRatings(runtimeObjects);
         var defenses = BuildDefenseState(runtimeObjects);
         StageDefenseRestore(gs.DefenseState, runtimeObjects, defenses);
 
+        ValidateDialogueState(gs.DialogueState, runtimeObjects);
         lock (_worldStateLock)
         {
-            ValidateDialogueState(gs.DialogueState, runtimeObjects);
             PlayerShipObjectId = gs.PlayerShipObjectId;
             // Session-interaction state (§54) — never carried over from the previous
             // world, and never read from scenario/save data. Every New Game and Quick
@@ -457,15 +456,14 @@ public sealed partial class SimulationEngine : IDisposable
             _tradingMap = gs.TradingMap;
             _voyageState = restoredVoyage;
             _lastVoyageFuelSettlement = gs.LastVoyageFuelSettlement;
-            CommitVoyageContinuation(restoredVoyageContinuation);
+            CommitTradingContinuation(restoredTrading);
             _marketKnowledge = restoredKnowledge;
             _stationResourceFields = gs.StationResourceFields;
             _resourceAsteroids = resourceAsteroids;
             _neutralResourceImages = neutralResourceImages;
             RestoreCommandJournal(gs);
             RestoreResourceSurveyCommandIds();
-            // Restore the scheduling cursor and invalidate issued quotes only after the entire candidate commits.
-            CommitMarketContinuation(restoredMarket);
+
         }
     }
 
@@ -1072,7 +1070,8 @@ public sealed partial class SimulationEngine : IDisposable
             LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
             MarketKnowledge: CaptureMarketKnowledge(clockState.GameTimeMs),
             VoyageLedgers: CaptureVoyageLedgers(),
-            VoyageFuelSettlements: _voyageFuelSettlements.Values.OrderBy(v => v.VoyageId, StringComparer.Ordinal).ToArray());
+            VoyageFuelSettlements: _voyageFuelSettlements.Values.OrderBy(v => v.VoyageId, StringComparer.Ordinal).ToArray(),
+            EngineIdentityCounters: new(_nextEngineCycleId, _nextShipEventId));
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),

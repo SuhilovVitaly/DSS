@@ -16,6 +16,7 @@ public sealed class TradingEconomySaveSchemaTests
             TradingEconomyContinuation = null,
             VoyageLedgers = null,
             VoyageFuelSettlements = null,
+            EngineIdentityCounters = null,
             MarketKnowledge = version < 14 ? null : source.GameState.MarketKnowledge
         }
     };
@@ -27,6 +28,7 @@ public sealed class TradingEconomySaveSchemaTests
             TradingEconomyContinuation = null,
             VoyageLedgers = null,
             VoyageFuelSettlements = null,
+            EngineIdentityCounters = null,
             MarketKnowledge = version < 14 ? null : current.GameState.MarketKnowledge
         };
         if (version <= 8) state = state with

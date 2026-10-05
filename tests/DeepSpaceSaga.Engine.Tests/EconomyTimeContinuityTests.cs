@@ -193,6 +193,11 @@ public class EconomyTimeContinuityTests
             }
         };
         var engine = new SimulationEngine(IntervalRegistry, [], clock ?? new SimulationClock(SimulationSpeed.Speed0, () => 0));
+        save = save with
+        {
+            GameState = save.GameState with
+            { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(save.GameState) }
+        };
         engine.LoadScenario(save);
         return engine;
     }

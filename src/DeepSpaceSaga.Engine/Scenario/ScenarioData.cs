@@ -96,7 +96,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("marketKnowledge")] IReadOnlyList<StationMarketKnowledgeData>? MarketKnowledge = null,
     [property: JsonPropertyName("tradingEconomyContinuation")] TradingEconomyContinuationData? TradingEconomyContinuation = null,
     [property: JsonPropertyName("voyageLedgers")] IReadOnlyList<VoyageLedgerData>? VoyageLedgers = null,
-    [property: JsonPropertyName("voyageFuelSettlements")] IReadOnlyList<DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot>? VoyageFuelSettlements = null)
+    [property: JsonPropertyName("voyageFuelSettlements")] IReadOnlyList<DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot>? VoyageFuelSettlements = null,
+    [property: JsonPropertyName("engineIdentityCounters")] EngineIdentityCountersData? EngineIdentityCounters = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
@@ -115,6 +116,11 @@ public sealed record TradingEconomyContinuationData(
     [property: JsonPropertyName("nextMarketRevision")] long NextMarketRevision,
     [property: JsonPropertyName("nextMarketEventSequence")] long NextMarketEventSequence,
     [property: JsonPropertyName("durableTerminalReceiptIds")] IReadOnlyList<string>? DurableTerminalReceiptIds = null);
+
+/// <summary>Existing cycle/event allocators, preserved after completed cycles disappear.</summary>
+public sealed record EngineIdentityCountersData(
+    [property: JsonPropertyName("engineCycle")] ulong EngineCycle,
+    [property: JsonPropertyName("shipEvent")] ulong ShipEvent);
 
 /// <summary>Persisted authoritative ledger and its stable monetary postings; no recalculation on load.</summary>
 public sealed record VoyageLedgerData(
