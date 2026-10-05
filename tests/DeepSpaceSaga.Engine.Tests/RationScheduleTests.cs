@@ -10,6 +10,8 @@ public class RationScheduleTests
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
         var engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(root, "Settings.json"),
             Path.Combine(root, "Scenarios/Docked/scenario.json"));
+        // Ration/economy fixtures deliberately exercise the legacy stationary world.
+        engine.LoadScenario(ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios/Docked/scenario.json")));
         var save = engine.CaptureSaveState();
         engine.LoadScenario(save with
         {

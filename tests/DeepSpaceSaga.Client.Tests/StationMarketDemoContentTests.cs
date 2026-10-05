@@ -210,8 +210,10 @@ public sealed class StationMarketDemoContentTests
         string stationId, string representativeSupplyItemId)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-        await using IGameSessionConnection connection =
-            LocalGameSessionConnection.CreateFromScenarioFile(SettingsPath, DemoScenarioPath, saveDirectory: null);
+        // This trade/dialogue regression uses the stationary template; orbital navigation has separate coverage.
+        var engine = SimulationEngine.CreateFromScenarioFile(SettingsPath, DemoScenarioPath);
+        engine.LoadScenario(ScenarioLoader.LoadFromFile(DemoScenarioPath));
+        await using IGameSessionConnection connection = new LocalGameSessionConnection(engine);
         await using var snapshots = connection.ReadSnapshotsAsync(timeout.Token)
             .GetAsyncEnumerator(timeout.Token);
 

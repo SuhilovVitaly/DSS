@@ -403,9 +403,9 @@ public class ScenarioEngineTests
         // own coordinates: two objects at literally identical coordinates are unselectable
         // apart from each other on the tactical map (FindNearestObjectId's tie-break always
         // picks the lexicographically smaller object id — the ship, "SPC-0001" < "SPC-0002").
-        Assert.Equal(station.InitialMotion.X + 1.0, playerShip.InitialMotion.X);
-        Assert.Equal(station.InitialMotion.Y + 1.0, playerShip.InitialMotion.Y);
-        Assert.Equal(0, playerShip.InitialMotion.SpeedKmS);
+        Assert.InRange(Math.Abs(station.InitialMotion.X + 1.0 - playerShip.InitialMotion.X), 0, 1e-6);
+        Assert.InRange(Math.Abs(station.InitialMotion.Y + 1.0 - playerShip.InitialMotion.Y), 0, 1e-6);
+        Assert.Equal(engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == "SPC-0002").SpeedKmS, playerShip.InitialMotion.SpeedKmS);
         Assert.True(playerShip.IsDocked);
         Assert.Equal("SPC-0002", playerShip.DockedStationObjectId);
     }

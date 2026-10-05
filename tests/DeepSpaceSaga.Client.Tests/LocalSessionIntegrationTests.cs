@@ -410,7 +410,9 @@ public class LocalSessionIntegrationTests
                 Assert.Equal(5, saved.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
                 Assert.Equal(sourceShip.IsDocked, savedShip.IsDocked);
                 Assert.Equal(sourceShip.DockedStationObjectId, savedShip.DockedStationObjectId);
-                Assert.Equal(sourceShip.SpeedMps, savedShip.SpeedMps);
+                if (savedShip.IsDocked)
+                    Assert.Equal(saved.GameState.SpaceObjects.Single(o => o.ObjectId == savedShip.DockedStationObjectId).SpeedMps, savedShip.SpeedMps);
+                else Assert.Equal(sourceShip.SpeedMps, savedShip.SpeedMps);
                 Assert.Equal(JsonSerializer.Serialize(sourceShip.Modules),
                     JsonSerializer.Serialize(savedShip.Modules));
 
@@ -589,7 +591,8 @@ public class LocalSessionIntegrationTests
 
         var ship = handle.Buffer.Latest?.Snapshot.Objects.FirstOrDefault(o => o.ObjectId == "SPC-0001");
         Assert.NotNull(ship);
-        Assert.Equal(0, ship!.SpeedKmS);
+        Assert.True(ship!.IsDocked);
+        Assert.Equal(handle.Buffer.Latest!.Snapshot.Objects.Single(o => o.ObjectId == ship.DockedStationObjectId).SpeedKmS, ship.SpeedKmS);
     }
 
     [Theory]

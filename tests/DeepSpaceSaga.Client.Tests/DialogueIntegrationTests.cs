@@ -17,14 +17,22 @@ public class DialogueIntegrationTests
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "DeepSpaceSaga.sln"))) dir = dir.Parent;
         string settings = Path.Combine(dir!.FullName, "src/DeepSpaceSaga.Client/Settings.json");
         var engine = SimulationEngine.CreateFromSettingsFile(settings);
+        engine.LoadScenario(DeepSpaceSaga.Engine.Scenario.ScenarioLoader.LoadFromFile(
+            Path.Combine(Path.GetDirectoryName(settings)!, "Scenarios/Default/scenario.json")));
         engine.SetSpeed(SimulationSpeed.Speed0);
         var save = engine.CaptureSaveState();
         var station = save.GameState.SpaceObjects.First(o => o.ObjectType == SpaceObjectType.Station);
         var player = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId);
         var nav = player.Modules!.Single(m => m.ModuleTypeId == "module.bridge.navigation.computer.basic");
-        engine.LoadScenario(save with { GameState = save.GameState with { CurrentSpeed = "Speed2",
-            SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId == player.ObjectId ? o with
-            { PositionX = station.PositionX + 10, PositionY = station.PositionY, SpeedMps = station.SpeedMps, DirectionDegrees = station.DirectionDegrees } : o).ToArray() } });
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                CurrentSpeed = "Speed2",
+                SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId == player.ObjectId ? o with
+                { PositionX = station.PositionX + 10, PositionY = station.PositionY, SpeedMps = station.SpeedMps, DirectionDegrees = station.DirectionDegrees } : o).ToArray()
+            }
+        });
         await using var connection = new LocalGameSessionConnection(engine);
         await using var handle = new GameSessionHandle(connection);
         var initial = await WaitFor(handle, s => true);
