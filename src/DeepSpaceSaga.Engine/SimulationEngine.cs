@@ -2339,12 +2339,11 @@ public sealed partial class SimulationEngine : IDisposable
         // Synchronization tolerance: floating-point safety margin only, not a gameplay
         // allowance — SpeedSynchronization/DirectionSynchronization capture and apply the
         // target's exact value, so a genuinely synchronized ship matches almost exactly.
-        // No direction wraparound handling (e.g. 359.999 vs 0.001): stations are always
-        // Stationary in the current content, so this does not arise in practice.
+        // Compare headings on the circle, including the 0/360 seam.
         const double speedEpsilonKmS = 1e-6;
         const double directionEpsilonDeg = 1e-6;
         if (Math.Abs(shipMotion.SpeedKmS - targetMotion.SpeedKmS) > speedEpsilonKmS ||
-            Math.Abs(shipMotion.Direction - targetMotion.Direction) > directionEpsilonDeg)
+            Math.Abs((shipMotion.Direction - targetMotion.Direction + 540) % 360 - 180) > directionEpsilonDeg)
         {
             return CommandStartOutcome.Rejected(CommandReasonCodes.DockNotSynchronized);
         }
