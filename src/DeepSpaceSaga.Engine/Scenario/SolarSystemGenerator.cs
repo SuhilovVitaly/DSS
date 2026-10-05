@@ -93,6 +93,7 @@ internal static class SolarSystemGenerator
                     -r * Math.Cos(phase * Math.PI / 180), 0, 0, "Orbital", null, null, null, IsKnown: true, Orbit: orbit));
             }
         }
+        AddBeltAsteroids(objects, belts, orbits, c, seed, vmax, source.GameState.MotionTimeMs, attempt);
         objects.Add(new("SYS-SUN", "Sun", "Permanent", "Sun", 0, 0, 0, 0, "Stationary", null, null, null, IsKnown: true));
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var id in objects.Select(o => o.ObjectId).Concat(belts.Select(b => b.Id)))
@@ -111,6 +112,38 @@ internal static class SolarSystemGenerator
         };
         SolarSystemGeneration.ValidateWorld(result.GameState);
         return result;
+    }
+
+    private static void AddBeltAsteroids(List<SpaceObjectData> objects, List<BeltMapData> belts,
+        List<OrbitMapData> orbits, SolarSystemGenerationConfig config, ulong seed, double vmax, long epoch, int attempt)
+    {
+        foreach (var belt in belts.OrderBy(b => b.Id, StringComparer.Ordinal))
+        {
+            var rng = new GeneratorRng(seed, $"belts/{belt.Id}", attempt);
+            double orientation = rng.NextDouble() * 360;
+            for (int index = 0; index < config.AsteroidsPerBelt; index++)
+            {
+                bool placed = false;
+                for (int placement = 0; placement < config.MaxPlacementAttempts; placement++)
+                {
+                    double radius = belt.InnerRadius + (belt.OuterRadius - belt.InnerRadius) * rng.NextDouble();
+                    // Three clusters separated by empty sectors, independent of the decorative stream.
+                    double phase = (orientation + index % 3 * 120 + rng.NextDouble() * 35) % 360;
+                    double x = radius * Math.Sin(phase * Math.PI / 180), y = -radius * Math.Cos(phase * Math.PI / 180);
+                    if (objects.Any(o => Math.Sqrt(Math.Pow(x - o.PositionX, 2) + Math.Pow(y - o.PositionY, 2)) < config.OrbitClearanceWorld)) continue;
+                    var orbit = CircularOrbit(radius, phase, vmax, config, epoch);
+                    string id = $"SYS-AST-{belt.Id[9..]}-{index + 1}";
+                    string composition = new[] { "Ice", "Silicate", "Iron" }[rng.NextInt(0, 3)];
+                    long mass = rng.NextInt(1000000, 1000000001);
+                    objects.Add(new(id, "Asteroid", "Permanent", id, x, y, 0, 0, "Orbital", mass,
+                        composition, null, IsKnown: true, Orbit: orbit));
+                    orbits.Add(new(id, orbit));
+                    placed = true;
+                    break;
+                }
+                if (!placed) throw new PlacementException($"belt {belt.Id} asteroid {index + 1} clearance exhausted");
+            }
+        }
     }
 
     internal static OrbitalElements CircularOrbit(double radius, double phase, double vmax,
