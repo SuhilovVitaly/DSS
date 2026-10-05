@@ -38,3 +38,13 @@ Story review (same agent): checked clock domains, Int128 remainder before floati
 Resolved planning gap: DecorationSamplesPerBelt existed in generation config but the planned snapshot could not carry it to Client. Added optional camelCase `BeltMapData.decorationSamples` with compatible default 2048. Changing this field changes only decorative sampling; tests compare unchanged authoritative objects, orbits and decoration seeds. Rendering caps samples at 65536 per belt and uses one quarter at overview LOD. Cache keys include full belt geometry, seed, count and LOD; obsolete map entries are removed. No decorative snapshot entities are created.
 
 Story review (same agent): inspected stream isolation, IDs/case collisions, bounded placement/clearance, masses/compositions, orbital containment, temporary-object preservation, geometry bounds, rendering order, selection and cache lifetime. No confirmed outstanding story findings. Native presentation/performance remains US-0008.
+## US-0004 — preserved scenario starts
+
+| Ticket | Commit | Observed validation |
+|---|---|---|
+| TK-0001 | 2d885d8 | Scenario translation matrix 10/10, including real resource-world save/load after motion; Engine suite before final regression 1181/1181 |
+| TK-0002 | de29f4a | Engine 1182/1182, Client 1586/1586, Contracts 105/105, Motion 141/141; format and diff checks |
+
+Current scenario discovery includes PlayerShipOnly, added since planning; it is covered alongside the five planned starts. Raw stationary templates remain explicit fixtures for legacy economy/dialogue tests. Production New Game tests exercise generated orbital starts and compare docked velocity with the parent's authoritative tangent.
+
+Story review (same agent): inspected immutable translation, docking offset normalization, relative geometry, configured start radius, resource-field rigid rotation, save placement validation at original epoch, all-scenario discovery and legacy Load isolation. Confirmed that runtime movers are excluded only from saved initial trading placement checks; resource/market manifests still validate. No outstanding confirmed US-0004 findings. Visiting a moving station remains US-0005.
