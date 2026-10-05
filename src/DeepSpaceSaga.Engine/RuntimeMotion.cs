@@ -9,6 +9,8 @@ internal static class RuntimeMotion
 
     internal static ObjectMotionSnapshot At(SpaceObjectRuntime obj, long gameTimeMs)
     {
+        if (obj.InitialMotion.Orbit is { } orbit)
+            return OrbitalMotionMath.At(obj.InitialMotion, orbit, gameTimeMs);
         foreach (var module in obj.Modules)
         {
             var cycle = module.ActiveCycle;

@@ -350,6 +350,10 @@ public sealed partial class SimulationEngine : IDisposable
         // Bounded-market preflight on the candidate world: stock/target coverage, one production
         // source per station and a well-formed pending remainder must all hold before anything is
         // replaced, so an invalid save leaves the running world untouched (AC-07).
+        foreach (var candidate in runtimeObjects)
+            if (candidate.InitialMotion.Orbit is { } orbit)
+                _ = OrbitalMotionMath.At(candidate.InitialMotion, orbit, gs.MotionTimeMs);
+        SynchronizeOrbitalBindings(runtimeObjects, gs.MotionTimeMs);
         ValidateMarketWorld(runtimeObjects);
         ValidateRestoredResourceSurveys(gs, runtimeObjects);
 
@@ -575,6 +579,7 @@ public sealed partial class SimulationEngine : IDisposable
             RefreshCombatGuidance(gameTimeMs);
             ApplyPendingDialogueCommands(gameTimeMs);
             ReconcileVoyageAfterDialogue();
+            SynchronizeOrbitalBindings(_objects, gameTimeMs);
             UpdateStationSecurity(gameTimeMs);
             ValidateResourceSurveys(gameTimeMs, _ => _processedWorldTimeMs);
 
@@ -953,6 +958,7 @@ public sealed partial class SimulationEngine : IDisposable
         RefreshCombatGuidance(gameTimeMs);
         ApplyPendingDialogueCommands(gameTimeMs);
         ReconcileVoyageAfterDialogue();
+        SynchronizeOrbitalBindings(_objects, gameTimeMs);
         UpdateStationSecurity(gameTimeMs);
         ValidateResourceSurveys(gameTimeMs, _ => _processedWorldTimeMs);
 
@@ -1021,7 +1027,8 @@ public sealed partial class SimulationEngine : IDisposable
                 ShipClassId: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.ShipClassId,
                 HullHitPoints: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.CurrentHp,
                 HullHitPointsMax: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.MaxHp,
-                Orbit: obj.InitialMotion.Orbit, WorldOffsetX: obj.InitialMotion.WorldOffsetX, WorldOffsetY: obj.InitialMotion.WorldOffsetY));
+                Orbit: obj.IsDocked ? null : obj.InitialMotion.Orbit,
+                WorldOffsetX: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetX, WorldOffsetY: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetY));
         }
 
         var gameState = new GameStateData(
@@ -2281,7 +2288,7 @@ public sealed partial class SimulationEngine : IDisposable
             }
             _objects[objectIndex] = obj with
             {
-                InitialMotion = currentMotion,
+                InitialMotion = currentMotion with { Orbit = null, OrbitSampleSimulationTimeMs = null, WorldOffsetX = 0, WorldOffsetY = 0 },
                 StartGameTimeMs = gameTimeMs,
                 IsDocked = false,
                 DockedStationObjectId = null,
