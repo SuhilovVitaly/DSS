@@ -30,10 +30,13 @@ public sealed class VoyagePersistenceTests
         using var engine = VoyageLifecycleTests.CreateEngine();
         var before = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0, 0);
         var saved = engine.CaptureSaveState();
-        var bad = saved with { GameState = saved.GameState with
+        var bad = saved with
         {
-            VoyageState = new VoyageStateData(VoyagePhases.InTransit, "bad", "SPC-0002", "missing", 0, 100),
-        } };
+            GameState = saved.GameState with
+            {
+                VoyageState = new VoyageStateData(VoyagePhases.InTransit, "bad", "SPC-0002", "missing", 0, 100),
+            }
+        };
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(bad, isSave: true));
         var after = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0, 0);
         Assert.Equal(before.Objects.Select(o => (o.ObjectId, o.X, o.Y, o.IsDocked, o.DockedStationObjectId)),
@@ -41,5 +44,69 @@ public sealed class VoyagePersistenceTests
         Assert.Equal(before.Voyage?.Phase, after.Voyage?.Phase);
         Assert.Equal(before.Voyage?.BlockReasonCode, after.Voyage?.BlockReasonCode);
         Assert.Equal(before.Voyage?.RouteOptions.ToArray(), after.Voyage?.RouteOptions.ToArray());
+    }
+    [Theory]
+    [InlineData("phase")]
+    [InlineData("id")]
+    [InlineData("same-station")]
+    [InlineData("progress-negative")]
+    [InlineData("progress-overflow")]
+    [InlineData("distance")]
+    [InlineData("start-future")]
+    [InlineData("ship-conflict")]
+    [InlineData("docking-without-dialogue")]
+    [InlineData("no-map")]
+    public void Invalid_active_shapes_are_rejected_atomically(string defect)
+    {
+        using var engine = VoyageLifecycleTests.CreateEngine();
+        string destination = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0, 0)
+            .Voyage!.RouteOptions.First(o => o.IsAvailable).DestinationStationObjectId;
+        engine.ReceiveCommand(VoyageLifecycleTests.Undock("valid-leg", destination));
+        var before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        var save = engine.CaptureSaveState();
+        var state = save.GameState.VoyageState!;
+        state = defect switch
+        {
+            "phase" => state with { Phase = "Flying" },
+            "id" => state with { VoyageId = " " },
+            "same-station" => state with { DestinationStationObjectId = state.OriginStationObjectId },
+            "progress-negative" => state with { ProgressPermille = -1 },
+            "progress-overflow" => state with { ProgressPermille = 1001 },
+            "distance" => state with { InitialDistanceWorldUnits = 0 },
+            "start-future" => state with { StartedMotionTimeMs = save.GameState.MotionTimeMs + 1 },
+            "docking-without-dialogue" => state with { Phase = VoyagePhases.Docking },
+            _ => state,
+        };
+        var bad = save with
+        {
+            GameState = save.GameState with
+            {
+                VoyageState = state,
+                TradingMap = defect == "no-map" ? null : save.GameState.TradingMap,
+                SpaceObjects = defect == "ship-conflict"
+                ? save.GameState.SpaceObjects.Select(o => o.ObjectId == "SPC-0001"
+                    ? o with { IsDocked = true, DockedStationObjectId = state.OriginStationObjectId } : o).ToArray()
+                : save.GameState.SpaceObjects,
+            }
+        };
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(bad, isSave: true));
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+
+    [Fact]
+    public void In_transit_json_continuation_preserves_next_physical_progress()
+    {
+        using var voyage = TradingVoyageFixture.Create();
+        voyage.Send("MOD-PLAYER-BRIDGE-01", NavigationComputerCommandTypes.Undock, target: voyage.Destination);
+        voyage.Advance(1);
+        Assert.Equal(VoyagePhases.InTransit, voyage.Snapshot.ActiveVoyage!.Phase);
+        var save = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(voyage.Save()), true);
+        using var restored = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
+        restored.LoadScenario(save, isSave: true);
+        var next = voyage.Advance(1000);
+        var loaded = restored.CaptureSnapshotForTests(next.GameTimeMs, SimulationSpeed.Speed0, voyage.MotionTime);
+        Assert.Equal(next.ActiveVoyage, loaded.ActiveVoyage);
+        Assert.Equal(next.Objects.Select(o => (o.ObjectId, o.X, o.Y, o.SpeedKmS)),
+            loaded.Objects.Select(o => (o.ObjectId, o.X, o.Y, o.SpeedKmS)));
     }
 }
