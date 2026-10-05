@@ -30,6 +30,22 @@ public sealed class StationMarketEventCatalogTests
         Assert.Throws<ContentException>(() => Registry(definitions.Append(definitions[0]), true));
     }
 
+    [Fact]
+    public void Approved_hydroponic_ration_demand_is_no_op_without_changing_profile_flows()
+    {
+        var definition = Valid() with
+        {
+            TypeId = "event.hydroponics-failure",
+            EligibleMarketProfileIds = ["market.hydroponic"],
+            ItemEffects = [new("item.food-rations", 300, 1600, 1450)]
+        };
+        var registry = Registry([definition]);
+        var profile = registry.StationMarketProfiles.GetDefinition(registry.StationMarketProfiles.GetIndex("market.hydroponic"));
+        Assert.DoesNotContain("item.food-rations", profile.DemandItemTypeIds);
+        Assert.DoesNotContain(profile.Economy!.HourlyInputs.Concat(profile.Economy.HourlyConsumption), e => e.ItemTypeId == "item.food-rations");
+        Assert.Throws<ContentException>(() => Registry([definition with { TypeId = "event.reactor-accident" }]));
+        Assert.Throws<ContentException>(() => Registry([definition with { ItemEffects = [new("item.protein-mass", 300, 1600, 1450)] }]));
+    }
     [Theory]
     [InlineData("profile")]
     [InlineData("item")]

@@ -77,7 +77,11 @@ internal static class StationMarketEventCatalog
                     Reject("effect multiplier/delta outside allowed range");
                 if (effect.ProductionMultiplierPermille != 1000 && !eligible.Any(p => p.SupplyItemTypeIds.Contains(effect.ItemTypeId)))
                     Reject("production effect has no eligible supply flow");
-                if (effect.DemandMultiplierPermille != 1000 && !eligible.Any(p => p.DemandItemTypeIds.Contains(effect.ItemTypeId)))
+                // TK-0003 specifies ration demand as a no-op for hydroponic producers.
+                bool declaredHydroponicNoOp = definition.TypeId == "event.hydroponics-failure" &&
+                    effect.ItemTypeId == "item.food-rations" && eligible.All(p => p.TypeId == "market.hydroponic");
+                if (effect.DemandMultiplierPermille != 1000 && !declaredHydroponicNoOp &&
+                    !eligible.Any(p => p.DemandItemTypeIds.Contains(effect.ItemTypeId)))
                     Reject("demand effect has no eligible demand flow");
                 if (effect.ActivationStockDelta != 0 && !eligible.All(p => p.Economy?.StockTargets.Any(t => t.ItemTypeId == effect.ItemTypeId) == true))
                     Reject("activation stock delta requires a target in every eligible profile");
