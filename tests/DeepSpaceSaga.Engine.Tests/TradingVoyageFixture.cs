@@ -18,7 +18,7 @@ internal sealed class TradingVoyageFixture : IDisposable
     private readonly long _calendarRatio;
 
     private TradingVoyageFixture(SimulationEngine engine, string origin, string destination,
-        string outboundItem, string returnItem, long calendarRatio)
+        string outboundItem, string returnItem, long calendarRatio, long motionTime = 0)
     {
         Engine = engine;
         Origin = origin;
@@ -26,6 +26,7 @@ internal sealed class TradingVoyageFixture : IDisposable
         OutboundItem = outboundItem;
         ReturnItem = returnItem;
         _calendarRatio = calendarRatio;
+        _motionTime = motionTime;
         Snapshot = Capture();
     }
 
@@ -114,7 +115,17 @@ internal sealed class TradingVoyageFixture : IDisposable
     }
 
     internal ScenarioFile Save() => Engine.CaptureSaveStateForTests(
-        checked(_motionTime * _calendarRatio), SimulationSpeed.Speed0);
+        checked(_motionTime * _calendarRatio), SimulationSpeed.Speed0, _motionTime);
+
+    internal TradingVoyageFixture Reload()
+    {
+        var engine = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
+        engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(Save()), true), true);
+        var restored = new TradingVoyageFixture(engine, Origin, Destination, OutboundItem, ReturnItem, _calendarRatio, _motionTime)
+        { _nextCommand = _nextCommand };
+        restored.Capture();
+        return restored;
+    }
 
     internal long Cargo(string item) => Save().GameState.SpaceObjects.Single(o => o.ObjectId == ShipId)
         .Modules!.Single(module => module.ModuleId == CargoId).Cargo?

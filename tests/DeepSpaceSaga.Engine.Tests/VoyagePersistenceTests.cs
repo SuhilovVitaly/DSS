@@ -106,7 +106,13 @@ public sealed class VoyagePersistenceTests
         var next = voyage.Advance(1000);
         var loaded = restored.CaptureSnapshotForTests(next.GameTimeMs, SimulationSpeed.Speed0, voyage.MotionTime);
         Assert.Equal(next.ActiveVoyage, loaded.ActiveVoyage);
-        Assert.Equal(next.Objects.Select(o => (o.ObjectId, o.X, o.Y, o.SpeedKmS)),
-            loaded.Objects.Select(o => (o.ObjectId, o.X, o.Y, o.SpeedKmS)));
+        Assert.Equal(next.Objects.Select(o => (o.ObjectId, o.SpeedKmS)), loaded.Objects.Select(o => (o.ObjectId, o.SpeedKmS)));
+        foreach (var expected in next.Objects)
+        {
+            var actual = loaded.Objects.Single(o => o.ObjectId == expected.ObjectId);
+            // Linear binary64 origins rebase on save; sub-millimetre rounding is not physical motion.
+            Assert.InRange(Math.Abs(expected.X - actual.X), 0, 1e-6);
+            Assert.InRange(Math.Abs(expected.Y - actual.Y), 0, 1e-6);
+        }
     }
 }

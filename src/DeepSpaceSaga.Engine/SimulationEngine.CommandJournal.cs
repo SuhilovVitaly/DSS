@@ -23,7 +23,7 @@ public sealed partial class SimulationEngine
             {
                 string id = _receiptOrder.Dequeue();
                 _commandReceipts.Remove(id);
-                if (!_objects.Any(o => o.Modules.Any(m => m.ActiveCycle?.CommandId == id)))
+                if (!_durableVoyageTerminalIds.Contains(id) && !_objects.Any(o => o.Modules.Any(m => m.ActiveCycle?.CommandId == id)))
                     _knownCommands.Remove(id);
             }
         }
@@ -35,6 +35,7 @@ public sealed partial class SimulationEngine
         {
             _knownCommands.Clear(); _commandReceipts.Clear(); _receiptOrder.Clear();
             _pendingCommands.Clear(); _commandResults.Clear(); _replayedResults.Clear();
+            foreach (string terminalId in _durableVoyageTerminalIds) _knownCommands.Add(terminalId);
             foreach (var result in state.CommandReceipts ?? []) RememberResult(result);
             foreach (var cycle in _objects.SelectMany(o => o.Modules).Select(m => m.ActiveCycle))
                 if (cycle?.CommandId is { } id) _knownCommands.Add(id);

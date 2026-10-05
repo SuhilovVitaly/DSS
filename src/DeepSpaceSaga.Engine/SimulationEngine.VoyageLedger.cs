@@ -6,9 +6,30 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
-    internal sealed record VoyageLedgerEntry(VoyageFinanceSnapshot Finance, ImmutableHashSet<string> PostingIds);
+    internal sealed record VoyageLedgerEntry(VoyageFinanceSnapshot Finance, ImmutableHashSet<string> PostingIds,
+        ImmutableArray<VoyageLedgerPostingData> Postings = default);
     private ImmutableArray<VoyageLedgerEntry> _voyageLedgers = [];
     internal ImmutableArray<VoyageFinanceSnapshot> VoyageFinancesForTests => _voyageLedgers.Select(v => v.Finance).ToImmutableArray();
+
+    private static VoyageLedgerEntry AppendVoyagePosting(VoyageLedgerEntry before, VoyageFinanceSnapshot after,
+        ImmutableHashSet<string> ids)
+    {
+        var added = ids.Except(before.PostingIds).ToArray();
+        if (added.Length == 0) return before with { Finance = after };
+        if (added.Length != 1) throw new InvalidOperationException("A ledger mutation requires one stable posting.");
+        var f = before.Finance;
+        var posting = new VoyageLedgerPostingData(added[0], checked(after.GrossSalesCredits - f.GrossSalesCredits),
+            after.CostOfGoodsSoldCredits is { } cost && f.CostOfGoodsSoldCredits is { } old ? checked(cost - old) : 0,
+            after.HasUnknownCostOfGoodsSold && !f.HasUnknownCostOfGoodsSold,
+            checked(after.RouteFuelCostCredits - f.RouteFuelCostCredits),
+            checked(after.PortFeesAssessedCredits - f.PortFeesAssessedCredits),
+            checked(after.PortFeesPaidCredits - f.PortFeesPaidCredits),
+            checked(after.OutstandingPortFeeDebtCredits - f.OutstandingPortFeeDebtCredits),
+            checked(after.EventCostsCredits - f.EventCostsCredits),
+            checked(after.PassengerPayoutCredits - f.PassengerPayoutCredits),
+            checked(after.PassengerPenaltyCredits - f.PassengerPenaltyCredits));
+        return new(after, ids, (before.Postings.IsDefault ? [] : before.Postings).Add(posting));
+    }
 
     private static long? VoyageNet(VoyageFinanceSnapshot f) => f.HasUnknownCostOfGoodsSold ? null : checked(
         f.GrossSalesCredits - f.CostOfGoodsSoldCredits!.Value - f.RouteFuelCostCredits - f.PortFeesAssessedCredits
@@ -73,7 +94,7 @@ public sealed partial class SimulationEngine
                 State = interrupted ? VoyageFinanceStates.Interrupted : VoyageFinanceStates.AwaitingRealization
             };
             f = f with { NetProfitCredits = VoyageNet(f) };
-            return entries.SetItem(i, new(f, ids));
+            return entries.SetItem(i, AppendVoyagePosting(entry, f, ids));
         }
         return entries;
     }
@@ -103,7 +124,7 @@ public sealed partial class SimulationEngine
                 OutstandingPortFeeDebtCredits = checked(f.OutstandingPortFeeDebtCredits + debtAdded)
             };
             f = f with { NetProfitCredits = VoyageNet(f) };
-            return entries.SetItem(i, new(f, entry.PostingIds.Add(postingId)));
+            return entries.SetItem(i, AppendVoyagePosting(entry, f, entry.PostingIds.Add(postingId)));
         }
         return entries;
     }
@@ -137,7 +158,7 @@ public sealed partial class SimulationEngine
             _ => f with { PassengerPenaltyCredits = checked(f.PassengerPenaltyCredits + credits) }
         };
         f = f with { NetProfitCredits = VoyageNet(f) };
-        _voyageLedgers = _voyageLedgers.SetItem(index, new(f, entry.PostingIds.Add(postingId)));
+        _voyageLedgers = _voyageLedgers.SetItem(index, AppendVoyagePosting(entry, f, entry.PostingIds.Add(postingId)));
     }
     private ImmutableArray<VoyageLedgerEntry> PrepareVoyageSale(string postingId, TradeExecutionReceipt receipt)
     {
@@ -174,7 +195,7 @@ public sealed partial class SimulationEngine
                 UnsoldCargo = remainder.Quantity == 0 ? f.UnsoldCargo.RemoveAt(item) : f.UnsoldCargo.SetItem(item, remainder)
             };
             f = f with { NetProfitCredits = VoyageNet(f) };
-            return _voyageLedgers.SetItem(index, new(f, entry.PostingIds.Add(postingId)));
+            return _voyageLedgers.SetItem(index, AppendVoyagePosting(entry, f, entry.PostingIds.Add(postingId)));
         }
         return _voyageLedgers;
     }

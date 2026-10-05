@@ -100,8 +100,13 @@ public sealed partial class SimulationEngine
     // are staged in original tanks; any invalid capacity or identity leaves state intact.
     private VoyageFuelSettlementSnapshot? SettleVoyageFuel(VoyageStateData voyage, bool arrived)
     {
-        if (_lastVoyageFuelSettlement?.VoyageId == voyage.VoyageId) return _lastVoyageFuelSettlement;
-        if (voyage.FuelReservationParts is null) return null;
+        if (_durableVoyageTerminalIds.Contains(voyage.VoyageId!))
+            return _voyageFuelSettlements.GetValueOrDefault(voyage.VoyageId!);
+        if (voyage.FuelReservationParts is null)
+        {
+            RememberVoyageTerminal(voyage.VoyageId!);
+            return null;
+        }
         var projected = ProjectVoyageFuel(voyage, arrived);
         int shipIndex = _objects.FindIndex(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
         if (shipIndex < 0) throw new InvalidOperationException("Reserved fuel requires its player ship.");
@@ -127,6 +132,10 @@ public sealed partial class SimulationEngine
             projected.Reserved - projected.Consumed, projected.Cost);
         _objects[shipIndex] = ship with { Modules = modules.ToImmutable() };
         _lastVoyageFuelSettlement = result;
+        RememberVoyageTerminal(result.VoyageId);
+        _voyageFuelSettlements[result.VoyageId] = result;
+        foreach (string oldId in _voyageFuelSettlements.Keys.Where(id => id != result.VoyageId &&
+            !_voyageLedgers.Any(l => l.Finance.VoyageId == id)).ToArray()) _voyageFuelSettlements.Remove(oldId);
         return result;
     }
 

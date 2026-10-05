@@ -11,7 +11,13 @@ public sealed class TradingEconomySaveSchemaTests
     internal static ScenarioFile WithoutNewContinuation(ScenarioFile source, int version) => source with
     {
         SaveFormatVersion = version,
-        GameState = source.GameState with { TradingEconomyContinuation = null, MarketKnowledge = version < 14 ? null : source.GameState.MarketKnowledge }
+        GameState = source.GameState with
+        {
+            TradingEconomyContinuation = null,
+            VoyageLedgers = null,
+            VoyageFuelSettlements = null,
+            MarketKnowledge = version < 14 ? null : source.GameState.MarketKnowledge
+        }
     };
 
     private static ScenarioFile Legacy(ScenarioFile current, int version)
@@ -19,6 +25,8 @@ public sealed class TradingEconomySaveSchemaTests
         var state = current.GameState with
         {
             TradingEconomyContinuation = null,
+            VoyageLedgers = null,
+            VoyageFuelSettlements = null,
             MarketKnowledge = version < 14 ? null : current.GameState.MarketKnowledge
         };
         if (version <= 8) state = state with

@@ -94,7 +94,9 @@ public sealed record GameStateData(
     [property: JsonPropertyName("marketEventCatalogFingerprint")] string? MarketEventCatalogFingerprint = null,
     [property: JsonPropertyName("lastVoyageFuelSettlement")] DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot? LastVoyageFuelSettlement = null,
     [property: JsonPropertyName("marketKnowledge")] IReadOnlyList<StationMarketKnowledgeData>? MarketKnowledge = null,
-    [property: JsonPropertyName("tradingEconomyContinuation")] TradingEconomyContinuationData? TradingEconomyContinuation = null)
+    [property: JsonPropertyName("tradingEconomyContinuation")] TradingEconomyContinuationData? TradingEconomyContinuation = null,
+    [property: JsonPropertyName("voyageLedgers")] IReadOnlyList<VoyageLedgerData>? VoyageLedgers = null,
+    [property: JsonPropertyName("voyageFuelSettlements")] IReadOnlyList<DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot>? VoyageFuelSettlements = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
@@ -113,6 +115,17 @@ public sealed record TradingEconomyContinuationData(
     [property: JsonPropertyName("nextMarketRevision")] long NextMarketRevision,
     [property: JsonPropertyName("nextMarketEventSequence")] long NextMarketEventSequence,
     [property: JsonPropertyName("durableTerminalReceiptIds")] IReadOnlyList<string>? DurableTerminalReceiptIds = null);
+
+/// <summary>Persisted authoritative ledger and its stable monetary postings; no recalculation on load.</summary>
+public sealed record VoyageLedgerData(
+    [property: JsonPropertyName("finance")] DeepSpaceSaga.Contracts.VoyageFinanceSnapshot Finance,
+    [property: JsonPropertyName("postings")] IReadOnlyList<VoyageLedgerPostingData> Postings);
+
+public sealed record VoyageLedgerPostingData(
+    string PostingId, long GrossSalesCredits = 0, long CostOfGoodsSoldCredits = 0,
+    bool UnknownCostOfGoodsSold = false, long RouteFuelCostCredits = 0,
+    long PortFeesAssessedCredits = 0, long PortFeesPaidCredits = 0, long OutstandingPortFeeDebtCredits = 0,
+    long EventCostsCredits = 0, long PassengerPayoutCredits = 0, long PassengerPenaltyCredits = 0);
 
 /// <summary>Persisted last observation; stale is derived from the current market at publication.</summary>
 public sealed record StationMarketKnowledgeData(

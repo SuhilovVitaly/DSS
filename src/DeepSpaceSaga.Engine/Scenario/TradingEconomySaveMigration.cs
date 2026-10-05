@@ -21,7 +21,8 @@ internal static class TradingEconomySaveMigration
         var state = source.GameState;
         if (version == 0)
         {
-            if (state.TradingEconomyContinuation is not null) throw Invalid("scenario cannot contain a continuation manifest");
+            if (state.TradingEconomyContinuation is not null || state.VoyageLedgers is { Count: > 0 } || state.VoyageFuelSettlements is { Count: > 0 })
+                throw Invalid("scenario cannot contain trading continuation history");
             return source;
         }
         // Explicit merged history: 1-4 motion/journal; 5 economy; 6 split clocks; 7 catalog;
@@ -42,7 +43,8 @@ internal static class TradingEconomySaveMigration
         var manifest = state.TradingEconomyContinuation;
         if (version < ManifestSaveVersion)
         {
-            if (manifest is not null) throw Invalid("manifest under a legacy version");
+            if (manifest is not null || state.VoyageLedgers is { Count: > 0 } || state.VoyageFuelSettlements is { Count: > 0 })
+                throw Invalid("continuation state under a legacy version");
             manifest = ManifestFromPersistedFacts(state);
         }
         else if (manifest is null) throw Invalid("missing tradingEconomyContinuation");
