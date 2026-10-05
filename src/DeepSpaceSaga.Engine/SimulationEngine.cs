@@ -384,6 +384,7 @@ public sealed partial class SimulationEngine : IDisposable
         }
 
         RestoreTradingRouteBindings(gs.TradingMap, runtimeObjects, gs.GameTimeMs, resolvedMasterSeed);
+        var restoredMarket = StageMarketContinuation(scenario with { GameState = gs }, runtimeObjects);
         var restoredKnowledge = InitializeOrLoadMarketKnowledge(gs, runtimeObjects, scenario.SaveFormatVersion, loadingSave);
         var restoredVoyage = ValidateVoyageState(gs, runtimeObjects);
         ValidateVoyageFuelSave(gs, restoredVoyage, runtimeObjects);
@@ -462,8 +463,8 @@ public sealed partial class SimulationEngine : IDisposable
             _neutralResourceImages = neutralResourceImages;
             RestoreCommandJournal(gs);
             RestoreResourceSurveyCommandIds();
-            // Quotes issued against the previous world are never valid in this one.
-            ResetQuoteSession();
+            // Restore the scheduling cursor and invalidate issued quotes only after the entire candidate commits.
+            CommitMarketContinuation(restoredMarket);
         }
     }
 
@@ -1072,7 +1073,7 @@ public sealed partial class SimulationEngine : IDisposable
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
-            GameState: gameState with { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(gameState) },
+            GameState: gameState with { TradingEconomyContinuation = CaptureMarketContinuation(TradingEconomySaveMigration.ManifestFromPersistedFacts(gameState)) },
             SaveFormatVersion: SaveFormat.CurrentSaveFormatVersion);
     }
 

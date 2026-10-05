@@ -13,7 +13,7 @@ public class RationScheduleTests
         // Ration/economy fixtures deliberately exercise the legacy stationary world.
         engine.LoadScenario(ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios/Docked/scenario.json")));
         var save = engine.CaptureSaveState();
-        engine.LoadScenario(save with
+        var preparedWorld = save with
         {
             GameState = save.GameState with
             {
@@ -38,6 +38,11 @@ public class RationScheduleTests
                     }).ToArray()
                 }).ToArray()
             }
+        };
+        engine.LoadScenario(preparedWorld with
+        {
+            GameState = preparedWorld.GameState with
+            { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(preparedWorld.GameState) }
         });
         return engine;
     }

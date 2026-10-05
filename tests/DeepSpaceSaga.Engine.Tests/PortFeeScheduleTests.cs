@@ -43,7 +43,12 @@ public class PortFeeScheduleTests
     {
         var engine = DockCommandTests.CreateEngine(playerCredits: credits);
         var save = engine.CaptureSaveState();
-        engine.LoadScenario(save with { GameState = save.GameState with { GameTimeMs = time } });
+        var state = save.GameState with { GameTimeMs = time };
+        engine.LoadScenario(save with
+        {
+            GameState = state with
+            { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(state) }
+        });
         engine.ReceiveCommand(new("dock", 1, "SPC-0001", "MOD-NAV-01", NavigationComputerCommandTypes.Dock,
             TargetObjectId: "STATION-01"));
         engine.CaptureSnapshot();
@@ -105,11 +110,24 @@ public class PortFeeScheduleTests
         using var engine = DockAt(start);
         var save = engine.CaptureSaveState();
         var player = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId);
-        var other = player with { ObjectId = "OTHER-SHIP", Modules = [], HullLayout = null,
-            Crew = [], Passengers = [], FirstPortFeeGameTimeMs = 0,
-            NextPortFeeDueGameTimeMs = GameCalendar.DayMs, PortFeeDebt = 75 };
-        engine.LoadScenario(save with { GameState = save.GameState with {
-            SpaceObjects = save.GameState.SpaceObjects.Append(other).ToArray() } });
+        var other = player with
+        {
+            ObjectId = "OTHER-SHIP",
+            Modules = [],
+            HullLayout = null,
+            Crew = [],
+            Passengers = [],
+            FirstPortFeeGameTimeMs = 0,
+            NextPortFeeDueGameTimeMs = GameCalendar.DayMs,
+            PortFeeDebt = 75
+        };
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Append(other).ToArray()
+            }
+        });
 
         // The other ship's deadline is earlier: it must neither bill the player nor
         // hold the event loop at an unprocessed deadline after it is ignored.

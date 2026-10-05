@@ -205,6 +205,11 @@ public class MarketRevisionTests
     {
         using var engine = CreateMarketEngine(adjust: save => WithCargo(save, Ice, 20));
         var atMaximum = WithObject(engine.CaptureSaveState(), StationId, o => o with { MarketRevision = long.MaxValue });
+        atMaximum = atMaximum with
+        {
+            GameState = atMaximum.GameState with
+            { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(atMaximum.GameState) }
+        };
         engine.LoadScenario(RoundTrip(atMaximum), isSave: true);
         Assert.Equal(long.MaxValue, Revision(engine));
 
@@ -284,12 +289,14 @@ public class MarketRevisionTests
         var quote = Quote(engine, TradeCommandTypes.Sell, Ice, 2);
         var executed = Apply(engine, Bind("quoted", quote));
         Assert.Equal(3, executed.TradeReceipt!.ResultMarketRevision);
-        var withReceipt = WithObject(engine.CaptureSaveState(), StationId, o => o with { MarketRevision = null });
+        var withReceipt = TradingEconomySaveSchemaTests.WithoutNewContinuation(
+            WithObject(engine.CaptureSaveState(), StationId, o => o with { MarketRevision = null }), 13);
         using (var migrated = LoadInto(RoundTrip(withReceipt)))
             Assert.Equal(3, Revision(migrated));
 
         // A saved value below the newest receipt never rewinds the revision: max(saved, receipts).
-        var behind = WithObject(engine.CaptureSaveState(), StationId, o => o with { MarketRevision = 1 });
+        var behind = TradingEconomySaveSchemaTests.WithoutNewContinuation(
+            WithObject(engine.CaptureSaveState(), StationId, o => o with { MarketRevision = 1 }), 13);
         using (var migrated = LoadInto(RoundTrip(behind)))
             Assert.Equal(3, Revision(migrated));
 

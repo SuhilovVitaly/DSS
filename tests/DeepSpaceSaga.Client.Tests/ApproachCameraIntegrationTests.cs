@@ -2,6 +2,7 @@ using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.LocalClient;
+using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
@@ -19,7 +20,7 @@ public class ApproachCameraIntegrationTests
         var save = engine.CaptureSaveState();
         var ship = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId);
         var asteroid = save.GameState.SpaceObjects.First(o => o.ObjectType == SpaceObjectType.Asteroid);
-        engine.LoadScenario(save with
+        var preparedWorld = save with
         {
             GameState = save.GameState with
             {
@@ -36,6 +37,11 @@ public class ApproachCameraIntegrationTests
                 asteroid with { ObjectId = "TARGET-C", PositionX = 11300, PositionY = 10000, SpeedMps = 1650, DirectionDegrees = 91 }
             ]
             }
+        };
+        engine.LoadScenario(preparedWorld with
+        {
+            GameState = preparedWorld.GameState with
+            { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(preparedWorld.GameState) }
         });
         var connection = new Connection(engine);
         await using var handle = new GameSessionHandle(connection);
@@ -107,7 +113,7 @@ public class ApproachCameraIntegrationTests
         var save = engine.CaptureSaveState();
         var ship = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId);
         var target = save.GameState.SpaceObjects.First(o => o.ObjectType == SpaceObjectType.Asteroid);
-        engine.LoadScenario(save with
+        var preparedWorld = save with
         {
             GameState = save.GameState with
             {
@@ -122,6 +128,11 @@ public class ApproachCameraIntegrationTests
             target with { ObjectId = "NEXT-TARGET", PositionX = 200000, PositionY = 200000, SpeedMps = 1069, DirectionDegrees = 57 }
         ]
             }
+        };
+        engine.LoadScenario(preparedWorld with
+        {
+            GameState = preparedWorld.GameState with
+            { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(preparedWorld.GameState) }
         });
         var initial = engine.CaptureSnapshotForTests();
         var module = initial.InstalledModules.First(m => m.CommandTypeIds.Contains(NavigationComputerCommandTypes.Approach));

@@ -992,6 +992,18 @@ public class QuotedTradeExecutionTests
                 }).ToArray(),
             },
         };
+        atMaximum = atMaximum with
+        {
+            GameState = atMaximum.GameState with
+            {
+                SpaceObjects = atMaximum.GameState.SpaceObjects.Select(o => o.ObjectId == StationId ? o with { MarketRevision = long.MaxValue } : o).ToArray()
+            }
+        };
+        atMaximum = atMaximum with
+        {
+            GameState = atMaximum.GameState with
+            { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(atMaximum.GameState) }
+        };
         using var engine = new SimulationEngine(Registry, [], new SimulationClock(SimulationSpeed.Speed0, () => 0));
         engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(atMaximum), true));
         Assert.Equal(long.MaxValue, Revision(engine));

@@ -1206,8 +1206,8 @@ public class EconomyTimeContinuityTests
             producingModules: [new StationProducingModuleData("factory.market-test")]);
         using var _ = engine;
         engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 1);
-        var save = engine.CaptureSaveState();
-        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        var save = engine.CaptureSaveStateForTests(GameCalendar.HourMs, SimulationSpeed.Speed0, 1);
+        string before = ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(GameCalendar.HourMs, SimulationSpeed.Speed0, 1));
 
         ScenarioFile Corrupt(Func<SpaceObjectData, SpaceObjectData> change) => save with
         {
@@ -1263,7 +1263,7 @@ public class EconomyTimeContinuityTests
         {
             var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(candidate, isSave: true));
             Assert.True(error.Message.Contains(expected, StringComparison.Ordinal), $"{name}: {error.Message}");
-            Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+            Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(GameCalendar.HourMs, SimulationSpeed.Speed0, 1)));
         }
     }
 

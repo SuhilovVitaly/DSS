@@ -22,7 +22,8 @@ public sealed partial class SimulationEngine
             fromCalendar + (long)((decimal)(physicalTime - fromSimulation) *
                 (gameTimeMs - fromCalendar) / (simulationTimeMs - fromSimulation));
         // Process (previous, target] in order; repeated snapshots at the same time
-        // cannot repeat a meal, including midnight. Loading establishes the cursor.
+        // cannot repeat a meal, including midnight. Staged market continuation restores this same
+        // cursor only after all world validation succeeds; a saved boundary is already processed.
         while (_processedWorldTimeMs < gameTimeMs)
         {
             // Starting production changes the market at the interval's start. Commit it separately
