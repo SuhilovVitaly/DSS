@@ -97,7 +97,8 @@ public sealed partial class SimulationEngine
         var station = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == active.StationObjectId);
         var speaker = station?.StationCrew.FirstOrDefault(c => c.Role == node.SpeakerRole);
         var captain = node.SpeakerRole == "Captain" ? _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId) : null;
-        return active with {
+        return active with
+        {
             SpeakerRole = node.SpeakerRole,
             SpeakerDisplayName = captain?.CaptainDisplayName ?? speaker?.DisplayName ?? active.SpeakerDisplayName,
             SpeakerPortraitImage = captain?.CaptainPortraitImage ?? speaker?.PortraitImage ?? active.SpeakerPortraitImage,
@@ -107,7 +108,8 @@ public sealed partial class SimulationEngine
         {
             var error = PrepareChoice(active, choice, time, out _);
             return new DialogueChoiceSnapshot(choice.ChoiceId, choice.TextKey, error is null, error);
-        }).ToImmutableArray() };
+        }).ToImmutableArray()
+        };
     }
 
     private void ApplyPendingDialogueCommands(long time)
@@ -164,18 +166,27 @@ public sealed partial class SimulationEngine
         if (active.Revision == long.MaxValue) return "dialogue_value_overflow";
         var error = PrepareChoice(active, choice, time, out var result);
         if (error is not null) return error;
+        System.Collections.Immutable.ImmutableArray<VoyageLedgerEntry> finance;
+        try { finance = PrepareVoyageDockingFinance(result!.Objects, result.Credits); }
+        catch (OverflowException) { return "dialogue_value_overflow"; }
         _objects.Clear();
         _objects.AddRange(result!.Objects);
         PlayerCredits = result.Credits;
         _dialogue.Progress = result.Progress;
+        _voyageLedgers = finance;
         if (choice.NextNodeId is null || result.EndDialogue)
         {
             EndDialogue(time, command.CommandId, "dialogue_completed");
             return null;
         }
         var node = definitionForChoice.Node(choice.NextNodeId);
-        _dialogue.Active = active with { CurrentNodeId = node.NodeId, TextKey = node.TextKey,
-            SpeakerRole = node.SpeakerRole, Revision = active.Revision + 1 };
+        _dialogue.Active = active with
+        {
+            CurrentNodeId = node.NodeId,
+            TextKey = node.TextKey,
+            SpeakerRole = node.SpeakerRole,
+            Revision = active.Revision + 1
+        };
         // Terminal nodes expose an acknowledgement so the final line stays visible while time remains paused.
         _dialogue.Emit(active.InstanceId, "dialogue_advanced", time, command.CommandId, node.TextKey, active.Parameters);
 

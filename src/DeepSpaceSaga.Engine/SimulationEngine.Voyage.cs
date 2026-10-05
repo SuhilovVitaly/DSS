@@ -122,7 +122,9 @@ public sealed partial class SimulationEngine
         var target = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == state.DestinationStationObjectId);
         if (ship is null || ship.IsDestroyed || target is null || target.IsDestroyed)
         {
+            var terminalFinance = PrepareVoyageTerminal(state, arrived: false);
             SettleVoyageFuel(state, arrived: false);
+            _voyageLedgers = terminalFinance;
             _voyageState = null;
             int shipIndex = _objects.FindIndex(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
             if (shipIndex >= 0 && _objects[shipIndex].IsDocked)
@@ -165,7 +167,9 @@ public sealed partial class SimulationEngine
         var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
         if (ship is { IsDocked: true } && ship.DockedStationObjectId == state.DestinationStationObjectId)
         {
+            var terminalFinance = PrepareVoyageTerminal(state, arrived: true);
             SettleVoyageFuel(state, arrived: true);
+            _voyageLedgers = terminalFinance;
             _voyageState = new VoyageStateData(VoyagePhases.Docked);
         }
         else _voyageState = state with { Phase = VoyagePhases.InTransit };

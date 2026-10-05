@@ -41,9 +41,12 @@ public sealed partial class SimulationEngine
             long debt = checked(ship.PortFeeDebt + fee - paid);
             long stationCredits = checked(station.Credits + paid);
             long next = checked(due + GameCalendar.DayMs);
+            var finance = PrepareVoyagePortFee(_voyageLedgers, ship.DockedStationObjectId,
+                $"port:{_voyageLedgers.LastOrDefault()?.Finance.VoyageId}:{ship.DockedStationObjectId}:{due}", fee, paid, fee - paid);
             PlayerCredits -= paid;
             _objects[stationIndex] = station with { Credits = stationCredits };
             _objects[i] = ship with { PortFeeDebt = debt, NextPortFeeDueGameTimeMs = next };
+            _voyageLedgers = finance;
             RecordShipEvent(ship.InitialMotion.ObjectId, "", "port_fee_renewed",
                 paid < fee ? "port_fee_debt" : null, due);
         }

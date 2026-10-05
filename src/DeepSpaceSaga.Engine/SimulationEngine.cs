@@ -454,6 +454,7 @@ public sealed partial class SimulationEngine : IDisposable
             _tradingMap = gs.TradingMap;
             _voyageState = restoredVoyage;
             _lastVoyageFuelSettlement = gs.LastVoyageFuelSettlement;
+            _voyageLedgers = []; // Persistence/migration is added by US-0012.
             _stationResourceFields = gs.StationResourceFields;
             _resourceAsteroids = resourceAsteroids;
             _neutralResourceImages = neutralResourceImages;
@@ -2360,7 +2361,7 @@ public sealed partial class SimulationEngine : IDisposable
                     out var reservedModules, out var fuelParts, out var fuelDistance, out var efficiency);
                 if (fuelBlocker is not null) return CommandStartOutcome.Rejected(fuelBlocker);
                 obj = obj with { Modules = reservedModules };
-                _voyageState = new VoyageStateData(VoyagePhases.Undocking, command.CommandId,
+                var departureVoyage = new VoyageStateData(VoyagePhases.Undocking, command.CommandId,
                     obj.DockedStationObjectId, command.TargetObjectId, gameTimeMs, distance,
                     TravelEstimateGameTimeMs: route.EffectiveTravelEstimateGameTimeMs,
                     FuelMultiplierPermille: route.EffectiveFuelMultiplierPermille,
@@ -2368,6 +2369,9 @@ public sealed partial class SimulationEngine : IDisposable
                     StartedGameTimeMs: _processedWorldTimeMs,
                     ArrivalGameTimeMs: checked(_processedWorldTimeMs + route.EffectiveTravelEstimateGameTimeMs),
                     FuelReservationParts: fuelParts, FuelDistanceKm: fuelDistance, FuelEfficiencyKmPerKg: efficiency);
+                try { BeginVoyageLedger(departureVoyage, _processedWorldTimeMs); }
+                catch (OverflowException) { return CommandStartOutcome.Rejected("value_overflow"); }
+                _voyageState = departureVoyage;
             }
             _objects[objectIndex] = obj with
             {

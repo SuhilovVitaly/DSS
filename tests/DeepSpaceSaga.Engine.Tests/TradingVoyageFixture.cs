@@ -41,12 +41,12 @@ internal sealed class TradingVoyageFixture : IDisposable
 
     internal static TradingVoyageFixture Create(ulong seed = 1, bool controlled = true,
         long initialDebt = 0, long? destinationBudget = null,
-        long calendarRatio = DefaultCalendarRatio)
+        long calendarRatio = DefaultCalendarRatio, long initialCredits = 1_000_000)
     {
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
             "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
         var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "Docked", "scenario.json"));
-        scenario = scenario with { GameState = scenario.GameState with { MasterSeed = seed, PlayerTokens = 1_000_000 } };
+        scenario = scenario with { GameState = scenario.GameState with { MasterSeed = seed, PlayerTokens = initialCredits } };
         var engine = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
         engine.LoadScenario(scenario);
         var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
