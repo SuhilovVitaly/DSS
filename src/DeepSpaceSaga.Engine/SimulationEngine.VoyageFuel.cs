@@ -144,6 +144,14 @@ public sealed partial class SimulationEngine
         if (voyage.Phase == VoyagePhases.Docked || voyage.FuelReservationParts is not { Count: > 0 } parts ||
             voyage.FuelDistanceKm is not > 0 || voyage.FuelEfficiencyKmPerKg is not > 0 || voyage.FuelMultiplierPermille is not > 0)
             throw new ScenarioException("voyageState fuel reservation metadata is incomplete.");
+        var edge = state.TradingMap!.Edges.Single(e => Connects(e, voyage.OriginStationObjectId!, voyage.DestinationStationObjectId!));
+        try
+        {
+            if (voyage.FuelDistanceKm != CaptureFuelDistance(edge.DistanceKm))
+                throw new ScenarioException("voyageState fuel distance differs from its materialized edge.");
+        }
+        catch (Exception error) when (error is OverflowException or FormatException)
+        { throw new ScenarioException("voyageState materialized fuel distance is invalid.", error); }
         var ship = objects.Single(o => o.InitialMotion.ObjectId == state.PlayerShipObjectId);
         var seen = new HashSet<string>(StringComparer.Ordinal);
         long reserved = 0, totalBasis = 0;

@@ -118,16 +118,26 @@ public sealed partial class SimulationEngine
     private void UpdateVoyageForMotion(long motionTimeMs)
     {
         if (_voyageState is not { } state || state.Phase == VoyagePhases.Docked) return;
-        if (state.Phase == VoyagePhases.Docking) return;
-        if (motionTimeMs <= state.StartedMotionTimeMs) return;
         var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
         var target = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == state.DestinationStationObjectId);
         if (ship is null || ship.IsDestroyed || target is null || target.IsDestroyed)
         {
             SettleVoyageFuel(state, arrived: false);
             _voyageState = null;
+            int shipIndex = _objects.FindIndex(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
+            if (shipIndex >= 0 && _objects[shipIndex].IsDocked)
+                _objects[shipIndex] = _objects[shipIndex] with
+                {
+                    IsDocked = false,
+                    DockedStationObjectId = null,
+                    FirstPortFeeGameTimeMs = null,
+                    NextPortFeeDueGameTimeMs = null
+                };
+            if (_dialogue.Active?.StationObjectId == state.DestinationStationObjectId)
+                EndDialogue(motionTimeMs, null, "dialogue_aborted");
             return;
         }
+        if (state.Phase == VoyagePhases.Docking || motionTimeMs <= state.StartedMotionTimeMs) return;
         var shipMotion = PredictMotion(ship, Math.Max(0, motionTimeMs - ship.StartGameTimeMs));
         var targetMotion = PredictMotion(target, Math.Max(0, motionTimeMs - target.StartGameTimeMs));
         double dx = targetMotion.X - shipMotion.X;

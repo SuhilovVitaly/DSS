@@ -111,7 +111,8 @@ public sealed class StationScreen : IScreen
         CommandReasonCodes.VoyageAlreadyActive => "A voyage is already active",
         CommandReasonCodes.VoyageWrongDestination => "Dock at the voyage destination",
         CommandReasonCodes.VoyageOutstandingDebt => "Settle outstanding port debt",
-        CommandReasonCodes.VoyageInsufficientFuel => "Insufficient fuel",
+        CommandReasonCodes.VoyageInsufficientFuel or CommandReasonCodes.InsufficientVoyageFuel => "Insufficient fuel",
+        CommandReasonCodes.FuelEfficiencyUnavailable => "Engine fuel efficiency unavailable",
         _ => string.IsNullOrWhiteSpace(code) ? "Departure unavailable" : $"Departure unavailable ({code})",
     };
     /// <summary>

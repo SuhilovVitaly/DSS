@@ -524,6 +524,8 @@ public class StationScreenTests
     [Theory]
     [InlineData(CommandReasonCodes.VoyageOutstandingDebt)]
     [InlineData(CommandReasonCodes.VoyageInsufficientFuel)]
+    [InlineData(CommandReasonCodes.InsufficientVoyageFuel)]
+    [InlineData(CommandReasonCodes.FuelEfficiencyUnavailable)]
     [InlineData(CommandReasonCodes.VoyageDestinationUnavailable)]
     public void Blocked_route_can_be_selected_for_reason_without_departure(string reason)
     {

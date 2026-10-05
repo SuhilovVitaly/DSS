@@ -158,8 +158,7 @@ public sealed class VoyageFuelLifecycleTests
         {
             GameState = save.GameState with
             {
-                VoyageState = voyage,
-                SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId == destination ? o with { IsDestroyed = true } : o).ToArray()
+                VoyageState = voyage
             }
         };
         using var engine = Load(save);
@@ -167,6 +166,15 @@ public sealed class VoyageFuelLifecycleTests
         long reserved = voyage.FuelReservationParts.Sum(p => p.ReservedFuelKg);
         long consumed = (reserved * progress + 999) / 1000;
         Assert.Equal(consumed, projected.ProjectedConsumedFuelKg);
+        save = save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects
+            .Select(o => o.ObjectId == destination ? o with { IsDestroyed = true } : o).ToArray()
+            }
+        };
+        engine.LoadScenario(save, true);
         var interrupted = Snapshot(engine, 1);
         Assert.Null(interrupted.ActiveVoyage);
         var receipt = Assert.IsType<VoyageFuelSettlementSnapshot>(interrupted.LastVoyageFuelSettlement);
@@ -255,4 +263,81 @@ public sealed class VoyageFuelLifecycleTests
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(bad, true));
         Assert.Equal(before, ScenarioLoader.Serialize(Save(engine)));
     }
+    [Fact]
+    public void Destroyed_destination_during_docking_interrupts_and_clears_dialogue()
+    {
+        using var voyage = TradingVoyageFixture.Create(calendarRatio: 1);
+        voyage.Send(QuotedTradeExecutionTests.BridgeModuleId, NavigationComputerCommandTypes.Undock, target: voyage.Destination);
+        voyage.FinishFlightTo(voyage.Destination, beforeDialogue: current =>
+        {
+            var save = current.Save();
+            save = save with
+            {
+                GameState = save.GameState with
+                {
+                    SpaceObjects = save.GameState.SpaceObjects
+                .Select(o => o.ObjectId == current.Destination ? o with { IsDestroyed = true } : o).ToArray()
+                }
+            };
+            using var restored = Load(save);
+            var terminal = Snapshot(restored, current.MotionTime + 1);
+            Assert.Null(terminal.ActiveVoyage);
+            Assert.Null(terminal.ActiveDialogue);
+            Assert.NotNull(terminal.LastVoyageFuelSettlement);
+        });
+    }
+
+    [Fact]
+    public void Captured_distance_must_match_the_materialized_edge()
+    {
+        using var engine = Load(Initial());
+        engine.ReceiveCommand(VoyageLifecycleTests.Undock("distance-tamper", Destination(engine)));
+        Snapshot(engine);
+        var save = Save(engine);
+        var voyage = save.GameState.VoyageState!;
+        // Keep the same rounded kg: validation must still check the captured route distance.
+        var bad = save with { GameState = save.GameState with { VoyageState = voyage with { FuelDistanceKm = voyage.FuelDistanceKm - 0.000000001m } } };
+        Assert.Equal(SimulationEngine.CalculateVoyageFuel(voyage.FuelDistanceKm!.Value, voyage.FuelMultiplierPermille!.Value, 10),
+            SimulationEngine.CalculateVoyageFuel(bad.GameState.VoyageState!.FuelDistanceKm!.Value, voyage.FuelMultiplierPermille.Value, 10));
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(bad, true));
+        Assert.Equal(ScenarioLoader.Serialize(save), ScenarioLoader.Serialize(Save(engine)));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Dialogue_blocks_refuel_while_reservation_is_active(bool quoted)
+    {
+        using var voyage = TradingVoyageFixture.Create(calendarRatio: 1);
+        voyage.Send(QuotedTradeExecutionTests.BridgeModuleId, NavigationComputerCommandTypes.Undock, target: voyage.Destination);
+        voyage.FinishFlightTo(voyage.Destination, beforeDialogue: current =>
+        {
+            var save = current.Save();
+            var part = save.GameState.VoyageState!.FuelReservationParts!.Single();
+            save = save with
+            {
+                GameState = save.GameState with
+                {
+                    SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId != Ship ? o : o with
+                    {
+                        IsDocked = true,
+                        DockedStationObjectId = current.Destination,
+                        FirstPortFeeGameTimeMs = save.GameState.GameTimeMs,
+                        Modules = o.Modules!.Select(m => m.ModuleId == Tank ? m with { FuelCostBasisCredits = long.MaxValue - part.ReservedFuelCostBasisCredits } : m).ToArray()
+                    }).ToArray()
+                }
+            };
+            using var restored = Load(save);
+            var quote = restored.GetTradeQuote(new("escrow-cost", Ship, Tank, TradeCommandTypes.Refuel, "item.fuel", 1));
+            Assert.Null(quote.DisabledReason);
+            var command = quoted ? QuotedTradeExecutionTests.Bind("escrow-overflow", quote) :
+                new PlayerCommand("escrow-overflow", 1, Ship, Tank, TradeCommandTypes.Refuel, ItemTypeId: "item.fuel", Quantity: 1);
+            string before = QuotedTradeExecutionTests.WorldProjection(restored);
+            restored.ReceiveCommand(command);
+            var result = Assert.Single(Snapshot(restored, current.MotionTime).CommandResults);
+            Assert.Equal("dialogue_active", result.ReasonCode);
+            Assert.Equal(before, QuotedTradeExecutionTests.WorldProjection(restored));
+        });
+    }
+
 }
