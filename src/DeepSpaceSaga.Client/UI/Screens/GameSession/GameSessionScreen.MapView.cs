@@ -153,6 +153,13 @@ public sealed partial class GameSessionScreen
         bounds.Include(ship.X, ship.Y);
         if (mode == MapFitMode.System)
         {
+            if (_buffer.Latest?.Snapshot.SolarSystemMap is { } system)
+            {
+                bounds.Include(-system.SystemRadius, -system.SystemRadius);
+                bounds.Include(system.SystemRadius, system.SystemRadius);
+                FitMapBounds(bounds);
+                return true;
+            }
             // Fit only known celestial/installation metadata; unknown types never become known through map framing.
             var sun = _renderStates.FirstOrDefault(s => s.Pose.RenderObjectType == SpaceObjectType.Sun).Predicted;
             double radius = 0;

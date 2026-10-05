@@ -1099,6 +1099,15 @@ public sealed partial class GameSessionScreen : IScreen
         // 1. Grid
         _grid.Draw(canvas, _camera, width, height);
 
+        if (buffered?.Snapshot.SolarSystemMap is { } systemMap)
+        {
+            SolarSystemLayerRenderer.Draw(canvas, systemMap, _camera, SKRect.Create(width, height));
+            foreach (var planet in systemMap.Planets)
+                foreach (var state in _renderStates)
+                    if (state.Pose.ObjectId == planet.ObjectId)
+                        SolarSystemLayerRenderer.DrawPlanet(canvas, planet, state.Pose.X, state.Pose.Y, _camera, width, height);
+        }
+
         // 2. Camera focus indicator
         float cx = width / 2f;
         float cy = height / 2f;
