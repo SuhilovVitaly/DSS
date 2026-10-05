@@ -5,7 +5,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 internal sealed class SolarSystemLayerRenderer
 {
-    internal void Draw(SKCanvas canvas, SolarSystemMapSnapshot map, CameraState camera, SKRect viewport)
+    internal void Draw(SKCanvas canvas, SolarSystemMapSnapshot map, CameraState camera, SKRect viewport, bool showOrbits = true)
     {
         PrepareMap(map);
         var (cx, cy) = camera.WorldToScreen(0, 0, (int)viewport.Width, (int)viewport.Height);
@@ -20,7 +20,7 @@ internal sealed class SolarSystemLayerRenderer
             DrawDecoration(canvas, belt, camera, viewport);
         }
         paint.Color = new SKColor(105, 135, 160, 45);
-        foreach (var orbit in map.Orbits.Where(o => map.Planets.Any(p => p.ObjectId == o.ObjectId)))
+        foreach (var orbit in showOrbits ? map.Orbits : [])
         {
             float a = (float)(orbit.Elements.SemiMajorAxis * camera.PixelsPerWorldUnit);
             float b = (float)(orbit.Elements.SemiMinorAxis * camera.PixelsPerWorldUnit);

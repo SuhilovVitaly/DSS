@@ -1102,7 +1102,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         if (buffered?.Snapshot.SolarSystemMap is { } systemMap)
         {
-            _solarSystemLayer.Draw(canvas, systemMap, _camera, SKRect.Create(width, height));
+            _solarSystemLayer.Draw(canvas, systemMap, _camera, SKRect.Create(width, height), ShowOrbits);
             foreach (var planet in systemMap.Planets)
                 foreach (var state in _renderStates)
                     if (state.Pose.ObjectId == planet.ObjectId)
