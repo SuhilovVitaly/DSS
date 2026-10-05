@@ -25,9 +25,10 @@ public static class SaveFormat
     /// Version 11 preserves countermeasure defenses and combat operator assignments.
     /// Version 12 preserves resolved solar-system geography and absolute orbital motion.
     /// Version 13 requires cargo acquisition basis/provenance; versions 1-12 migrate missing history as unknown.
+    /// Version 14 requires last-observed coarse station market knowledge; older saves omit unknown observations.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 13;
+    public const int CurrentSaveFormatVersion = 14;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -85,12 +86,26 @@ public sealed record GameStateData(
     [property: JsonPropertyName("defenseState")] CountermeasureStateData? DefenseState = null,
     [property: JsonPropertyName("solarSystem")] DeepSpaceSaga.Contracts.SolarSystemMapSnapshot? SolarSystem = null,
     [property: JsonPropertyName("marketEventCatalogFingerprint")] string? MarketEventCatalogFingerprint = null,
-    [property: JsonPropertyName("lastVoyageFuelSettlement")] DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot? LastVoyageFuelSettlement = null)
+    [property: JsonPropertyName("lastVoyageFuelSettlement")] DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot? LastVoyageFuelSettlement = null,
+    [property: JsonPropertyName("marketKnowledge")] IReadOnlyList<StationMarketKnowledgeData>? MarketKnowledge = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
     public long MotionTimeMs => SimulationTimeMs ?? GameTimeMs;
 }
+
+/// <summary>Persisted last observation; stale is derived from the current market at publication.</summary>
+public sealed record StationMarketKnowledgeData(
+    [property: JsonPropertyName("stationObjectId")] string StationObjectId,
+    [property: JsonPropertyName("stationRole")] string StationRole,
+    [property: JsonPropertyName("isAvailable")] bool IsAvailable,
+    [property: JsonPropertyName("observedAtGameTimeMs")] long ObservedAtGameTimeMs,
+    [property: JsonPropertyName("observedMarketRevision")] ulong ObservedMarketRevision,
+    [property: JsonPropertyName("stockBands")] IReadOnlyList<StationMarketStockBandData> StockBands);
+
+public sealed record StationMarketStockBandData(
+    [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
+    [property: JsonPropertyName("stockState")] DeepSpaceSaga.Contracts.StationMarketStockState StockState);
 
 public sealed record VoyageStateData(
     [property: JsonPropertyName("phase")] string Phase,

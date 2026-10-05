@@ -578,6 +578,7 @@ public class EconomyTimeContinuityTests
             SaveFormatVersion = 0,
             GameState = gs with
             {
+                MarketKnowledge = null, // New fixture profile gets its own initial observation.
                 TradingMap = null,
                 VoyageState = null,
                 SpaceObjects = gs.SpaceObjects

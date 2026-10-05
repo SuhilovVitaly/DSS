@@ -274,6 +274,7 @@ public class MarketRevisionTests
         Assert.Equal(2, Revision(engine));
         var save = engine.CaptureSaveState();
         var missing = WithObject(save, StationId, o => o with { MarketRevision = null });
+        missing = missing with { SaveFormatVersion = 13, GameState = missing.GameState with { MarketKnowledge = null } };
 
         // No field and no receipt: the profile market starts over at 1.
         using (var migrated = LoadInto(RoundTrip(missing)))

@@ -24,6 +24,7 @@ public class ApproachCameraIntegrationTests
             GameState = save.GameState with
             {
                 CurrentSpeed = "Speed0",
+                MarketKnowledge = [], // Fixture removes all stations.
                 TradingMap = null,
                 SolarSystem = null,
                 VoyageState = null,
@@ -110,6 +111,7 @@ public class ApproachCameraIntegrationTests
         {
             GameState = save.GameState with
             {
+                MarketKnowledge = [], // Fixture removes all stations.
                 TradingMap = null,
                 SolarSystem = null,
                 VoyageState = null,

@@ -384,6 +384,7 @@ public sealed partial class SimulationEngine : IDisposable
         }
 
         RestoreTradingRouteBindings(gs.TradingMap, runtimeObjects, gs.GameTimeMs, resolvedMasterSeed);
+        var restoredKnowledge = InitializeOrLoadMarketKnowledge(gs, runtimeObjects, scenario.SaveFormatVersion, loadingSave);
         var restoredVoyage = ValidateVoyageState(gs, runtimeObjects);
         ValidateVoyageFuelSave(gs, restoredVoyage, runtimeObjects);
         var combatState = BuildCombatState(gs.SpaceObjects, runtimeObjects);
@@ -455,6 +456,7 @@ public sealed partial class SimulationEngine : IDisposable
             _voyageState = restoredVoyage;
             _lastVoyageFuelSettlement = gs.LastVoyageFuelSettlement;
             _voyageLedgers = []; // Persistence/migration is added by US-0012.
+            _marketKnowledge = restoredKnowledge;
             _stationResourceFields = gs.StationResourceFields;
             _resourceAsteroids = resourceAsteroids;
             _neutralResourceImages = neutralResourceImages;
@@ -714,7 +716,8 @@ public sealed partial class SimulationEngine : IDisposable
                 CombatJournal: _combatJournal.ToImmutableArray(), SolarSystemMap: _solarSystem,
                 TradingRoutes: BuildTradingRouteProjection(clockState.GameTimeMs),
                 LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
-                VoyageFinances: BuildVoyageFinanceProjection());
+                VoyageFinances: BuildVoyageFinanceProjection(),
+                StationMarketKnowledge: BuildStationMarketKnowledgeProjection(clockState.GameTimeMs));
         }
     }
 
@@ -1064,7 +1067,8 @@ public sealed partial class SimulationEngine : IDisposable
             VoyageState: _voyageState,
             CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState(), SolarSystem: _solarSystem,
             MarketEventCatalogFingerprint: _registry.StationMarketEvents.Count > 0 ? _registry.StationMarketEventCatalogFingerprint : null,
-            LastVoyageFuelSettlement: _lastVoyageFuelSettlement);
+            LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
+            MarketKnowledge: CaptureMarketKnowledge(clockState.GameTimeMs));
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),

@@ -18,6 +18,7 @@ public class RationScheduleTests
             GameState = save.GameState with
             {
                 GameTimeMs = time,
+                MarketKnowledge = [], // This synthetic legacy world has no bounded station markets.
                 TradingMap = null,
                 VoyageState = null,
                 StationResourceFields = null,
@@ -75,6 +76,7 @@ public class RationScheduleTests
         {
             GameState = save.GameState with
             {
+                MarketKnowledge = [], // This synthetic legacy world has no bounded station markets.
                 TradingMap = null,
                 VoyageState = null,
                 StationResourceFields = null,

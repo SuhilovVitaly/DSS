@@ -215,7 +215,7 @@ public sealed class CatalogCompatibilityTests
         string path = Path.Combine(Path.GetDirectoryName(SettingsPath)!, "Scenarios", scenarioName, "scenario.json");
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, path);
         var save = engine.CaptureSaveState();
-        Assert.Equal(13, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(14, SaveFormat.CurrentSaveFormatVersion);
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         var registry = RealRegistry();
         Assert.Equal(registry.CatalogCompatibility, save.GameState.CatalogCompatibility);
@@ -735,7 +735,7 @@ public sealed class CargoCostPersistenceTests
                 }).ToArray()
                 }
             };
-        return save with { SaveFormatVersion = version };
+        return save with { SaveFormatVersion = version, GameState = save.GameState with { MarketKnowledge = version < 14 ? null : save.GameState.MarketKnowledge } };
     }
     private static CargoStackData Stack(SimulationEngine engine) => engine.CaptureSaveStateForTests(0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 0)
         .GameState.SpaceObjects.Single(o => o.ObjectId == QuotedTradeExecutionTests.ShipId).Modules!.Single(m => m.ModuleId == Cargo).Cargo!.Single();
@@ -751,7 +751,7 @@ public sealed class CargoCostPersistenceTests
         Assert.Null(stack.CostBasisCredits);
         Assert.Equal(new[] { "legacy-unknown" }, stack.AcquisitionSources);
         var save = engine.CaptureSaveStateForTests(0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 0);
-        Assert.Equal(13, save.SaveFormatVersion);
+        Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         using var loaded = new SimulationEngine(QuotedTradeExecutionTests.Registry);
         loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), true);
         Assert.Equal(JsonSerializer.Serialize(stack), JsonSerializer.Serialize(Stack(loaded)));
@@ -765,7 +765,7 @@ public sealed class CargoCostPersistenceTests
         var stack = unknown ? new CargoStackData("item.ice", 3, null, ["legacy-unknown"]) :
             new CargoStackData("item.ice", 3, long.MaxValue, ["produced", "mined"]);
         using var engine = new SimulationEngine(QuotedTradeExecutionTests.Registry);
-        engine.LoadScenario(Template(13, stack), true);
+        engine.LoadScenario(Template(SaveFormat.CurrentSaveFormatVersion, stack), true);
         var actual = Stack(engine);
         Assert.Equal(stack.CostBasisCredits, actual.CostBasisCredits);
         Assert.Equal(unknown ? new[] { "legacy-unknown" } : ["mined", "produced"], actual.AcquisitionSources);

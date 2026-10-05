@@ -103,6 +103,7 @@ public class QuotedTradeExecutionTests
             SaveFormatVersion = 0,
             GameState = gs with
             {
+                MarketKnowledge = null, // New fixture profile gets its own initial observation.
                 TradingMap = null,
                 VoyageState = null,
                 SpaceObjects = gs.SpaceObjects
@@ -881,8 +882,10 @@ public class QuotedTradeExecutionTests
 
             var withoutRevision = legacyOnly with
             {
+                SaveFormatVersion = 13,
                 GameState = legacyOnly.GameState with
                 {
+                    MarketKnowledge = null,
                     SpaceObjects = legacyOnly.GameState.SpaceObjects
                         .Select(o => o with { MarketRevision = null }).ToArray(),
                 },
