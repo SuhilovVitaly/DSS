@@ -39,6 +39,8 @@ public class WeaponOperatorRuntimeTests
             SaveFormatVersion = 10,
             GameState = saved.GameState with
             {
+                TradingEconomyContinuation = null,
+                MarketKnowledge = null,
                 DefenseState = null,
                 SpaceObjects = saved.GameState.SpaceObjects.Select(o => o with
                 {

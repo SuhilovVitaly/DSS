@@ -1144,6 +1144,10 @@ public class LocalSessionIntegrationTests
             VoyageState = null,
             StationResourceFields = null,
         };
-        return ScenarioLoader.Serialize(save with { SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion, GameState = state });
+        return ScenarioLoader.Serialize(save with
+        {
+            SaveFormatVersion = includeMasterSeed ? SaveFormat.CurrentSaveFormatVersion : 14,
+            GameState = state with { TradingEconomyContinuation = includeMasterSeed ? TradingEconomySaveMigration.ManifestFromPersistedFacts(state) : null }
+        });
     }
 }

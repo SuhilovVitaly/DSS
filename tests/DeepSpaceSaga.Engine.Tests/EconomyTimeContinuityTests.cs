@@ -77,7 +77,11 @@ public class EconomyTimeContinuityTests
         var boundary = original.CaptureSnapshotForTests(GameCalendar.DayMs, simulationTimeMs: 321);
         clock.Reset(GameCalendar.DayMs, SimulationSpeed.Speed0, 321);
         var save = original.CaptureSaveState();
-        if (legacyMotion) save = save with { SaveFormatVersion = 5, GameState = save.GameState with { SimulationTimeMs = null, CombatState = null } };
+        if (legacyMotion)
+        {
+            save = TradingEconomySaveSchemaTests.WithoutNewContinuation(save, 5);
+            save = save with { GameState = save.GameState with { SimulationTimeMs = null, CombatState = null } };
+        }
         using var loaded = CreateIntervalEngine();
         loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
         var restored = loaded.CaptureSnapshot();
@@ -300,6 +304,8 @@ public class EconomyTimeContinuityTests
             SaveFormatVersion = 4,
             GameState = save.GameState with
             {
+                TradingEconomyContinuation = null,
+                MarketKnowledge = null,
                 EconomyTime = null,
                 SpaceObjects = save.GameState.SpaceObjects.Select(o => o with
                 {
@@ -578,6 +584,7 @@ public class EconomyTimeContinuityTests
             SaveFormatVersion = 0,
             GameState = gs with
             {
+                TradingEconomyContinuation = null, // A fresh scenario has no continuation manifest.
                 MarketKnowledge = null, // New fixture profile gets its own initial observation.
                 TradingMap = null,
                 VoyageState = null,
@@ -1548,6 +1555,8 @@ public class EconomyTimeContinuityTests
                 SaveFormatVersion = 9,
                 GameState = save.GameState with
                 {
+                    TradingEconomyContinuation = null,
+                    MarketKnowledge = null,
                     MarketEventCatalogFingerprint = null,
                     SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectType == "Station" ? o with { Events = [] } : o).ToArray()
                 }

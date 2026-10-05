@@ -112,7 +112,7 @@ public static class ScenarioLoader
         normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
         normalizedState = CountermeasureSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
         CombatSaveValidation.Validate(normalizedState, scenario.SaveFormatVersion);
-        return scenario with { GameState = normalizedState };
+        return TradingEconomySaveMigration.Normalize(scenario with { GameState = normalizedState });
     }
 
     /// <summary>
@@ -186,6 +186,8 @@ public static class ScenarioLoader
         var gs = scenario.GameState;
         if (gs is null)
             throw new ScenarioException("Missing gameState.");
+        if (scenario.SaveFormatVersion >= TradingEconomySaveMigration.ManifestSaveVersion && gs.MasterSeed is null)
+            throw new ScenarioException("Trading economy save: missing masterSeed. Save was not modified.");
         if (scenario.SaveFormatVersion >= 7 && gs.CatalogCompatibility is null)
             throw new ScenarioException("Missing catalogCompatibility in save format 7 or later.");
         if (scenario.SaveFormatVersion >= 6 && gs.SimulationTimeMs is null)

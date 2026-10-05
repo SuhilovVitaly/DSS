@@ -79,7 +79,7 @@ public sealed class GeneratedWorldPersistenceTests
     {
         using var original = new SimulationEngine(SeededWorldBootstrapTests.Registry());
         original.LoadScenario(SeededWorldBootstrapTests.Scenario());
-        var save = original.CaptureSaveState() with { SaveFormatVersion = 11 };
+        var save = TradingEconomySaveSchemaTests.WithoutNewContinuation(original.CaptureSaveState(), 11);
         using var loaded = new SimulationEngine(SeededWorldBootstrapTests.Registry());
         loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), isSave: true,
             generation: GenerationInputSchemaTests.Config());

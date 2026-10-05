@@ -103,6 +103,7 @@ public class QuotedTradeExecutionTests
             SaveFormatVersion = 0,
             GameState = gs with
             {
+                TradingEconomyContinuation = null, // A fresh scenario has no continuation manifest.
                 MarketKnowledge = null, // New fixture profile gets its own initial observation.
                 TradingMap = null,
                 VoyageState = null,
@@ -885,6 +886,7 @@ public class QuotedTradeExecutionTests
                 SaveFormatVersion = 13,
                 GameState = legacyOnly.GameState with
                 {
+                    TradingEconomyContinuation = null,
                     MarketKnowledge = null,
                     SpaceObjects = legacyOnly.GameState.SpaceObjects
                         .Select(o => o with { MarketRevision = null }).ToArray(),

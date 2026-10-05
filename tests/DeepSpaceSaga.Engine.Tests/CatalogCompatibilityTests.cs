@@ -215,7 +215,7 @@ public sealed class CatalogCompatibilityTests
         string path = Path.Combine(Path.GetDirectoryName(SettingsPath)!, "Scenarios", scenarioName, "scenario.json");
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, path);
         var save = engine.CaptureSaveState();
-        Assert.Equal(14, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(15, SaveFormat.CurrentSaveFormatVersion);
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         var registry = RealRegistry();
         Assert.Equal(registry.CatalogCompatibility, save.GameState.CatalogCompatibility);
@@ -735,7 +735,7 @@ public sealed class CargoCostPersistenceTests
                 }).ToArray()
                 }
             };
-        return save with { SaveFormatVersion = version, GameState = save.GameState with { MarketKnowledge = version < 14 ? null : save.GameState.MarketKnowledge } };
+        return save with { SaveFormatVersion = version, GameState = save.GameState with { MarketKnowledge = version < 14 ? null : save.GameState.MarketKnowledge, TradingEconomyContinuation = version < 15 ? null : save.GameState.TradingEconomyContinuation } };
     }
     private static CargoStackData Stack(SimulationEngine engine) => engine.CaptureSaveStateForTests(0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 0)
         .GameState.SpaceObjects.Single(o => o.ObjectId == QuotedTradeExecutionTests.ShipId).Modules!.Single(m => m.ModuleId == Cargo).Cargo!.Single();

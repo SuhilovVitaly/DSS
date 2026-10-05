@@ -43,6 +43,7 @@ public sealed class MarketKnowledgeTests
             SaveFormatVersion = 0,
             GameState = save.GameState with
             {
+                TradingEconomyContinuation = null,
                 MarketKnowledge = null,
                 TradingMap = null,
                 StationResourceFields = null,
@@ -195,7 +196,7 @@ public sealed class MarketKnowledgeTests
         using var f = TradingVoyageFixture.Create();
         var save = f.Save();
         using var loaded = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
-        loaded.LoadScenario(save with { SaveFormatVersion = 13, GameState = save.GameState with { MarketKnowledge = null } }, isSave: true);
+        loaded.LoadScenario(save with { SaveFormatVersion = 13, GameState = save.GameState with { MarketKnowledge = null, TradingEconomyContinuation = null } }, isSave: true);
         var snapshot = loaded.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
         Assert.Equal(f.Origin, Assert.Single(snapshot.StationMarketKnowledge).StationObjectId);
         Assert.NotNull(snapshot.DockedStationTrade);

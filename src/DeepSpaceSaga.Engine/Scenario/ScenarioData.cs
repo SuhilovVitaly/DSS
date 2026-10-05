@@ -26,16 +26,22 @@ public static class SaveFormat
     /// Version 12 preserves resolved solar-system geography and absolute orbital motion.
     /// Version 13 requires cargo acquisition basis/provenance; versions 1-12 migrate missing history as unknown.
     /// Version 14 requires last-observed coarse station market knowledge; older saves omit unknown observations.
+    /// Version 15 requires a versioned trading continuation manifest and complete voyage finance history.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 14;
+    public const int CurrentSaveFormatVersion = 15;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
 public sealed record ScenarioFile(
     [property: JsonPropertyName("scenarioMetadata")] ScenarioMetadata Metadata,
     [property: JsonPropertyName("gameState")] GameStateData GameState,
-    [property: JsonPropertyName("saveFormatVersion")] int SaveFormatVersion = 0);
+    [property: JsonPropertyName("saveFormatVersion")] int SaveFormatVersion = 0)
+{
+    // Derived only on the legacy load path; never written under an older on-disk version.
+    [JsonIgnore]
+    internal TradingEconomyContinuationData? MigratedTradingEconomyContinuation { get; init; }
+}
 
 /// <summary>Scenario identification.</summary>
 /// <param name="Description">
@@ -87,12 +93,26 @@ public sealed record GameStateData(
     [property: JsonPropertyName("solarSystem")] DeepSpaceSaga.Contracts.SolarSystemMapSnapshot? SolarSystem = null,
     [property: JsonPropertyName("marketEventCatalogFingerprint")] string? MarketEventCatalogFingerprint = null,
     [property: JsonPropertyName("lastVoyageFuelSettlement")] DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot? LastVoyageFuelSettlement = null,
-    [property: JsonPropertyName("marketKnowledge")] IReadOnlyList<StationMarketKnowledgeData>? MarketKnowledge = null)
+    [property: JsonPropertyName("marketKnowledge")] IReadOnlyList<StationMarketKnowledgeData>? MarketKnowledge = null,
+    [property: JsonPropertyName("tradingEconomyContinuation")] TradingEconomyContinuationData? TradingEconomyContinuation = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
     public long MotionTimeMs => SimulationTimeMs ?? GameTimeMs;
 }
+
+/// <summary>
+/// Cross-cutting continuation identity, not a second copy of subsystem state. Revision high-water
+/// mark is an integrity fact for per-station counters (MaxValue denotes exhaustion). Events use
+/// deterministic station/hour IDs; the event cursor is the next calendar hour, not a new allocator.
+/// </summary>
+public sealed record TradingEconomyContinuationData(
+    [property: JsonPropertyName("schemaVersion")] int SchemaVersion,
+    [property: JsonPropertyName("configurationFingerprint")] string ConfigurationFingerprint,
+    [property: JsonPropertyName("lastProcessedMarketGameTimeMs")] long LastProcessedMarketGameTimeMs,
+    [property: JsonPropertyName("nextMarketRevision")] long NextMarketRevision,
+    [property: JsonPropertyName("nextMarketEventSequence")] long NextMarketEventSequence,
+    [property: JsonPropertyName("durableTerminalReceiptIds")] IReadOnlyList<string>? DurableTerminalReceiptIds = null);
 
 /// <summary>Persisted last observation; stale is derived from the current market at publication.</summary>
 public sealed record StationMarketKnowledgeData(

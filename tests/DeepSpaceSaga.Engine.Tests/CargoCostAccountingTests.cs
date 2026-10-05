@@ -125,8 +125,8 @@ public sealed class CargoCostAccountingTests
     {
         using var engine = Create(3);
         var old = QuotedTradeExecutionTests.WithShipModules(Save(engine), m => m with
-        { Cargo = m.Cargo?.Select(c => c with { CostBasisCredits = null, AcquisitionSources = null }).ToArray() }) with
-        { SaveFormatVersion = 12 };
+        { Cargo = m.Cargo?.Select(c => c with { CostBasisCredits = null, AcquisitionSources = null }).ToArray() });
+        old = TradingEconomySaveSchemaTests.WithoutNewContinuation(old, 12);
         engine.LoadScenario(old, true);
         Trade(engine, "mixed-purchase", TradeCommandTypes.Buy, 1);
         Assert.Null(Stack(engine)!.CostBasisCredits);

@@ -405,8 +405,12 @@ public class StationEconomyGenerationTests
         var station = engine.RuntimeObjects.Single(obj => obj.InitialMotion.ObjectId == "SPC-0002");
         var expected = new Dictionary<string, long>
         {
-            ["item.food-rations"] = 500, ["item.energy-cells"] = 350, ["item.fuel"] = 700,
-            ["item.ice"] = 320, ["item.iron-ore"] = 410, ["item.silicon"] = 70,
+            ["item.food-rations"] = 500,
+            ["item.energy-cells"] = 350,
+            ["item.fuel"] = 700,
+            ["item.ice"] = 320,
+            ["item.iron-ore"] = 410,
+            ["item.silicon"] = 70,
             ["item.magnesium-ore"] = 120,
         };
 
@@ -425,7 +429,7 @@ public class StationEconomyGenerationTests
         var station = valid.GameState.SpaceObjects.Single(obj => obj.ObjectId == StationObjectId);
         var ship = valid.GameState.SpaceObjects.Single(obj => obj.ObjectId == ShipObjectId);
         ScenarioFile WithObjects(params SpaceObjectData[] objects) => valid with
-            { GameState = valid.GameState with { SpaceObjects = objects } };
+        { GameState = valid.GameState with { SpaceObjects = objects } };
         var invalidScenarios = new[]
         {
             WithObjects(ship, station with { MarketProfileId = "market.unknown" }),
@@ -566,7 +570,7 @@ public class StationEconomyGenerationTests
         var station = save.GameState.SpaceObjects.Single(obj => obj.ObjectId == StationObjectId);
         var ship = save.GameState.SpaceObjects.Single(obj => obj.ObjectId == ShipObjectId);
         ScenarioFile WithStation(SpaceObjectData replacement) => save with
-            { GameState = save.GameState with { SpaceObjects = [ship, replacement] } };
+        { GameState = save.GameState with { SpaceObjects = [ship, replacement] } };
         var invalidSaves = new[]
         {
             WithStation(station with { MarketProfileFingerprint = "changed" }),
@@ -592,7 +596,7 @@ public class StationEconomyGenerationTests
         var legacy = captured with
         {
             SaveFormatVersion = 6,
-            GameState = captured.GameState with { CatalogCompatibility = null },
+            GameState = captured.GameState with { CatalogCompatibility = null, TradingEconomyContinuation = null, MarketKnowledge = null },
         };
 
         using var loaded = new SimulationEngine(registry);

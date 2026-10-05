@@ -81,7 +81,8 @@ public class EngineCommandTests
     {
         using var original = CreateEngine(speedMps: 1000, directionDegrees: 90);
         var save = original.CaptureSaveStateForTests(12_345, SimulationSpeed.Speed1);
-        save = save with { SaveFormatVersion = 5, GameState = save.GameState with { SimulationTimeMs = null } };
+        save = TradingEconomySaveSchemaTests.WithoutNewContinuation(save, 5);
+        save = save with { GameState = save.GameState with { SimulationTimeMs = null } };
         save = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true);
         long realMs = 0;
         using var loaded = new SimulationEngine(CreateRegistry(), clock:

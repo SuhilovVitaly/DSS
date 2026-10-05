@@ -82,7 +82,8 @@ public sealed class CombatSaveSchemaTests
     {
         using var engine = Create(TorpedoImpactTests.Scenario(o => o with { ShipClassId = null, Modules = null }));
         var save = engine.CaptureSaveState();
-        save = save with { SaveFormatVersion = 9, GameState = save.GameState with { CombatState = null } };
+        save = TradingEconomySaveSchemaTests.WithoutNewContinuation(save, 9);
+        save = save with { GameState = save.GameState with { CombatState = null } };
         var loaded = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true);
         engine.LoadScenario(loaded, true);
         Assert.All(At(engine, 0).Objects, o => Assert.Null(o.HullCombat));

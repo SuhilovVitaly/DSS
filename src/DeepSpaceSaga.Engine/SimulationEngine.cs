@@ -1072,7 +1072,7 @@ public sealed partial class SimulationEngine : IDisposable
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
-            GameState: gameState,
+            GameState: gameState with { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(gameState) },
             SaveFormatVersion: SaveFormat.CurrentSaveFormatVersion);
     }
 
