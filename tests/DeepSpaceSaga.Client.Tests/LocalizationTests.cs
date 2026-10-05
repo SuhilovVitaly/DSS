@@ -209,4 +209,40 @@ public class LocalizationTests
         }
     }
 
+    [Fact]
+    public void Voyage_finance_keys_and_placeholders_match_in_all_locales()
+    {
+        string[] keys = ["Finance.VoyageTitle", "Finance.VoyageRoute", "Finance.VoyageState.InTransit",
+            "Finance.VoyageState.AwaitingRealization", "Finance.VoyageState.Finalized", "Finance.VoyageState.Interrupted",
+            "Finance.GrossSales", "Finance.CostOfGoodsSold", "Finance.RouteFuelCost", "Finance.PortFeesAssessed",
+            "Finance.PortFeesPaid", "Finance.PortFeeDebt", "Finance.EventCosts", "Finance.PassengerPayout",
+            "Finance.PassengerPenalty", "Finance.NetProfit", "Finance.Unavailable", "Finance.UnsoldCargo",
+            "Finance.NoVoyages", "Trade.VoyageSummary", "Trade.VoyageProfit", "Trade.VoyageLoss", "Trade.VoyageResultUnavailable"];
+        var english = Localization.LoadLocaleFile("English")!;
+        var russian = Localization.LoadLocaleFile("Russian")!;
+        foreach (string key in keys)
+        {
+            Assert.True(english.ContainsKey(key), key);
+            Assert.True(russian.ContainsKey(key), key);
+            int[] expected = key switch
+            {
+                "Finance.VoyageRoute" => [0, 1],
+                "Finance.UnsoldCargo" or "Trade.VoyageSummary" => [0, 1, 2],
+                "Trade.VoyageProfit" or "Trade.VoyageLoss" => [0],
+                _ => []
+            };
+            foreach (var locale in new[] { english, russian })
+            {
+                Assert.False(string.IsNullOrWhiteSpace(locale[key]));
+                Assert.Equal(expected, PlaceholderIndexes(locale[key]));
+                Assert.NotNull(string.Format(locale[key], -123, "B", "Unavailable"));
+            }
+            // Include repeated placeholders in parity, not only distinct indexes.
+            Assert.Equal(System.Text.RegularExpressions.Regex.Matches(english[key], @"\{(\d+)\}").Select(m => m.Value),
+                System.Text.RegularExpressions.Regex.Matches(russian[key], @"\{(\d+)\}").Select(m => m.Value));
+        }
+        Assert.NotEqual(english["Finance.PortFeesAssessed"], english["Finance.PortFeesPaid"]);
+        Assert.NotEqual(russian["Finance.PortFeesAssessed"], russian["Finance.PortFeeDebt"]);
+    }
+
 }
