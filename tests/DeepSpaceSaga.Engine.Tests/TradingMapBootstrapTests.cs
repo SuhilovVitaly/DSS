@@ -54,7 +54,11 @@ public sealed class TradingMapBootstrapTests
             var module = Assert.Single(ship.Modules!);
             Assert.Equal("MOD-ENGINE-01", module.ModuleId);
             Assert.Equal("module.engine.basic", module.ModuleTypeId);
-            Assert.Equal([new CargoStackData("item.ore", 3)], module.Cargo);
+            var cargo = Assert.Single(module.Cargo!);
+            Assert.Equal("item.ore", cargo.ItemTypeId);
+            Assert.Equal(3, cargo.Quantity);
+            Assert.Equal(30, cargo.CostBasisCredits);
+            Assert.Equal(new[] { "bootstrap" }, cargo.AcquisitionSources);
         }
 
         Assert.Equal(3, shapes.Count);

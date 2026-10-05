@@ -24,9 +24,10 @@ public static class SaveFormat
     /// Version 10 preserves captured combat parameters, active flights, guidance, history and identity counters.
     /// Version 11 preserves countermeasure defenses and combat operator assignments.
     /// Version 12 preserves resolved solar-system geography and absolute orbital motion.
+    /// Version 13 requires cargo acquisition basis/provenance; versions 1-12 migrate missing history as unknown.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 12;
+    public const int CurrentSaveFormatVersion = 13;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -518,7 +519,15 @@ public sealed record ActiveCycleData(
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(
     [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
-    [property: JsonPropertyName("quantity")] long Quantity);
+    [property: JsonPropertyName("quantity")] long Quantity,
+    [property: JsonPropertyName("costBasisCredits")] long? CostBasisCredits = null,
+    [property: JsonPropertyName("acquisitionSources")] IReadOnlyList<string>? AcquisitionSources = null);
+
+internal static class CargoAcquisitionSources
+{
+    internal const string LegacyUnknown = "legacy-unknown";
+    internal static bool IsKnown(string source) => source is "bootstrap" or "purchased" or "produced" or "mined" or "dialogue-grant";
+}
 
 /// <summary>One tradeable item's stock on a station (see StationInventoryItemRuntime).</summary>
 public sealed record StationInventoryItemData(

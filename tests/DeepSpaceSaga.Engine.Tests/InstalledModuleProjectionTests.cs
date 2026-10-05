@@ -88,8 +88,8 @@ public class InstalledModuleProjectionTests
             ],
             itemTypes:
             [
-                new ItemTypeDefinition("item.ice", "Ice", UnitMassKg: 20),
-                new ItemTypeDefinition("item.energyCells", "Energy Cells", UnitMassKg: 5)
+                new ItemTypeDefinition("item.ice", "Ice", UnitMassKg: 20, BasePriceCredits: 1),
+                new ItemTypeDefinition("item.energyCells", "Energy Cells", UnitMassKg: 5, BasePriceCredits: 1)
             ],
             commandDefinitions: []);
 

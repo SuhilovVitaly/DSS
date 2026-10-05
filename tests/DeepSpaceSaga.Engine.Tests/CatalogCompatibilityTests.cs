@@ -215,7 +215,7 @@ public sealed class CatalogCompatibilityTests
         string path = Path.Combine(Path.GetDirectoryName(SettingsPath)!, "Scenarios", scenarioName, "scenario.json");
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, path);
         var save = engine.CaptureSaveState();
-        Assert.Equal(12, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(13, SaveFormat.CurrentSaveFormatVersion);
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         var registry = RealRegistry();
         Assert.Equal(registry.CatalogCompatibility, save.GameState.CatalogCompatibility);
@@ -709,4 +709,152 @@ public sealed class CatalogCompatibilityTests
         Assert.True(module!.Active);
         Assert.Null(module.PendingOutput);
     }
+}
+
+
+public sealed class CargoCostPersistenceTests
+{
+    private const string Cargo = QuotedTradeExecutionTests.CargoModuleId;
+    private static ScenarioFile Template(int version, CargoStackData stack)
+    {
+        using var engine = QuotedTradeExecutionTests.CreateMarketEngine();
+        var save = engine.CaptureSaveStateForTests(0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 0);
+        save = QuotedTradeExecutionTests.WithShipModules(save, m => m.ModuleId == Cargo ? m with { Cargo = [stack] } : m);
+        if (version < 9)
+            save = save with
+            {
+                GameState = save.GameState with
+                {
+                    SpaceObjects = save.GameState.SpaceObjects.Select(o =>
+                o.ObjectType != "Station" ? o : o with
+                {
+                    MarketBudgetCredits = null,
+                    MarketRevision = null,
+                    MarketProfileId = version == 0 ? o.MarketProfileId : null,
+                    MarketProfileFingerprint = null
+                }).ToArray()
+                }
+            };
+        return save with { SaveFormatVersion = version };
+    }
+    private static CargoStackData Stack(SimulationEngine engine) => engine.CaptureSaveStateForTests(0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 0)
+        .GameState.SpaceObjects.Single(o => o.ObjectId == QuotedTradeExecutionTests.ShipId).Modules!.Single(m => m.ModuleId == Cargo).Cargo!.Single();
+
+    [Theory]
+    [InlineData(8)]
+    [InlineData(12)]
+    public void Legacy_save_without_basis_stays_unknown_instead_of_zero_or_current_price(int version)
+    {
+        using var engine = new SimulationEngine(QuotedTradeExecutionTests.Registry);
+        engine.LoadScenario(Template(version, new("item.ice", 3)), true);
+        var stack = Stack(engine);
+        Assert.Null(stack.CostBasisCredits);
+        Assert.Equal(new[] { "legacy-unknown" }, stack.AcquisitionSources);
+        var save = engine.CaptureSaveStateForTests(0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 0);
+        Assert.Equal(13, save.SaveFormatVersion);
+        using var loaded = new SimulationEngine(QuotedTradeExecutionTests.Registry);
+        loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), true);
+        Assert.Equal(JsonSerializer.Serialize(stack), JsonSerializer.Serialize(Stack(loaded)));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Current_save_roundtrips_known_and_legacy_unknown_cargo_metadata(bool unknown)
+    {
+        var stack = unknown ? new CargoStackData("item.ice", 3, null, ["legacy-unknown"]) :
+            new CargoStackData("item.ice", 3, long.MaxValue, ["produced", "mined"]);
+        using var engine = new SimulationEngine(QuotedTradeExecutionTests.Registry);
+        engine.LoadScenario(Template(13, stack), true);
+        var actual = Stack(engine);
+        Assert.Equal(stack.CostBasisCredits, actual.CostBasisCredits);
+        Assert.Equal(unknown ? new[] { "legacy-unknown" } : ["mined", "produced"], actual.AcquisitionSources);
+        using var loaded = new SimulationEngine(QuotedTradeExecutionTests.Registry);
+        loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 0)), true), true);
+        Assert.Equal(JsonSerializer.Serialize(actual), JsonSerializer.Serialize(Stack(loaded)));
+    }
+
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("negative")]
+    [InlineData("duplicate")]
+    [InlineData("unknown-source")]
+    [InlineData("blank")]
+    [InlineData("mixed-legacy")]
+    [InlineData("known-legacy")]
+    [InlineData("null-known")]
+    [InlineData("empty-sources")]
+    [InlineData("empty-positive")]
+    public void Current_save_rejects_invalid_cost_metadata_without_world_replacement(string failure)
+    {
+        using var engine = new SimulationEngine(QuotedTradeExecutionTests.Registry);
+        var good = Template(13, new("item.ice", 3, 123, ["purchased"]));
+        engine.LoadScenario(good, true);
+        var badStack = failure switch
+        {
+            "missing" => new CargoStackData("item.ice", 3),
+            "negative" => new("item.ice", 3, -1, ["purchased"]),
+            "duplicate" => new("item.ice", 3, 1, ["purchased", "purchased"]),
+            "unknown-source" => new("item.ice", 3, 1, ["market-price"]),
+            "blank" => new("item.ice", 3, 1, [" "]),
+            "mixed-legacy" => new("item.ice", 3, null, ["legacy-unknown", "purchased"]),
+            "known-legacy" => new("item.ice", 3, 1, ["legacy-unknown"]),
+            "null-known" => new("item.ice", 3, null, ["purchased"]),
+            "empty-sources" => new("item.ice", 3, 0, []),
+            _ => new("item.ice", 0, 1, ["purchased"])
+        };
+        var bad = QuotedTradeExecutionTests.WithShipModules(good, m => m.ModuleId == Cargo ? m with { Cargo = [badStack] } : m);
+        var before = JsonSerializer.Serialize(Stack(engine));
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(bad, true));
+        Assert.Equal(before, JsonSerializer.Serialize(Stack(engine)));
+    }
+
+    [Fact]
+    public void New_scenario_bootstraps_exact_basis_and_source_while_overflow_is_atomic()
+    {
+        using var engine = new SimulationEngine(QuotedTradeExecutionTests.Registry);
+        engine.LoadScenario(Template(0, new("item.ice", 3)));
+        var stack = Stack(engine);
+        long price = QuotedTradeExecutionTests.Registry.ItemTypes.GetDefinition(QuotedTradeExecutionTests.Registry.ItemTypes.GetIndex("item.ice")).BasePriceCredits!.Value;
+        Assert.Equal(3 * price, stack.CostBasisCredits);
+        Assert.Equal(new[] { "bootstrap" }, stack.AcquisitionSources);
+        var before = JsonSerializer.Serialize(stack);
+        var overflow = Template(0, new("item.ice", long.MaxValue));
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(overflow));
+        Assert.Contains("overflow", error.Message);
+        Assert.Equal(before, JsonSerializer.Serialize(Stack(engine)));
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(Template(0, new("item.ice", 3, null, ["legacy-unknown"]))));
+    }
+    [Fact]
+    public void New_scenario_without_positive_catalog_price_requires_explicit_cost()
+    {
+        var source = QuotedTradeExecutionTests.Registry;
+        var registry = GameDataRegistry.Create(
+            Enumerable.Range(0, source.ModuleCategories.Count).Select(source.ModuleCategories.GetDefinition),
+            Enumerable.Range(0, source.ModuleTypes.Count).Select(source.ModuleTypes.GetDefinition),
+            [new ItemTypeDefinition("item.ice", "Ice", 1)],
+            Enumerable.Range(0, source.CommandDefinitions.Count).Select(source.CommandDefinitions.GetDefinition),
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
+        var save = Template(0, new("item.ice", 3));
+        var ship = save.GameState.SpaceObjects.Single(o => o.ObjectId == QuotedTradeExecutionTests.ShipId);
+        save = save with
+        {
+            GameState = save.GameState with
+            {
+                CatalogCompatibility = null,
+                DefenseState = null,
+                CombatState = null,
+                SpaceObjects = [ship with { IsDocked = false, DockedStationObjectId = null,
+                Modules = ship.Modules!.Where(m => m.ModuleId == Cargo).ToArray() }]
+            }
+        };
+        using var engine = new SimulationEngine(registry);
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(save));
+        Assert.Contains("positive base price", error.Message);
+        save = QuotedTradeExecutionTests.WithShipModules(save, m => m with { Cargo = [new("item.ice", 3, 0, ["produced"])] });
+        engine.LoadScenario(save);
+        Assert.Equal(0, Stack(engine).CostBasisCredits);
+        Assert.Equal(new[] { "produced" }, Stack(engine).AcquisitionSources);
+    }
+
 }

@@ -1842,7 +1842,7 @@ public class ScenarioEngineTests
                 new ItemTypeDefinition(
                     "item.energy-cells",
                     "Energy Cells",
-                    UnitMassKg: 10, TradeUnit: TradeUnit.EnergyCell)
+                    UnitMassKg: 10, BasePriceCredits: 1, TradeUnit: TradeUnit.EnergyCell)
             ],
             []);
 

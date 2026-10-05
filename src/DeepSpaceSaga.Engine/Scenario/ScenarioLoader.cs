@@ -236,8 +236,30 @@ public static class ScenarioLoader
         foreach (var obj in objects)
         {
             ValidateObject(obj);
+            foreach (var module in obj.Modules ?? [])
+                foreach (var stack in module.Cargo ?? []) ValidateCargoCostMetadata(stack, scenario.SaveFormatVersion);
             ValidateMarketProfileMetadata(scenario.SaveFormatVersion, obj);
         }
+    }
+
+    private static void ValidateCargoCostMetadata(CargoStackData stack, int version)
+    {
+        void Reject() => throw new ScenarioException($"Cargo '{stack.ItemTypeId}' costBasisCredits/acquisitionSources metadata is invalid for save format {version}.");
+        bool missing = stack.CostBasisCredits is null && stack.AcquisitionSources is null;
+        if (missing)
+        {
+            if (version >= 13) Reject();
+            return;
+        }
+        if (stack.CostBasisCredits is < 0 || stack.Quantity == 0 && stack.CostBasisCredits is > 0 ||
+            stack.AcquisitionSources is not { Count: > 0 } sources)
+        { Reject(); return; }
+        if (sources.Any(string.IsNullOrWhiteSpace) || sources.Distinct(StringComparer.Ordinal).Count() != sources.Count) Reject();
+        if (sources.Contains(CargoAcquisitionSources.LegacyUnknown, StringComparer.Ordinal))
+        {
+            if (version == 0 || sources.Count != 1 || stack.CostBasisCredits is not null) Reject();
+        }
+        else if (stack.CostBasisCredits is null || sources.Any(s => !CargoAcquisitionSources.IsKnown(s))) Reject();
     }
 
     private static void ValidateMarketProfileMetadata(int saveFormatVersion, SpaceObjectData obj)

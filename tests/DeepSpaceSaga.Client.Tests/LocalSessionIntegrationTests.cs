@@ -418,6 +418,14 @@ public class LocalSessionIntegrationTests
                 var expectedModules = sourceShip.Modules!.Select(m =>
                 {
                     var type = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId));
+                    m = m with
+                    {
+                        Cargo = m.Cargo?.Select(c => c.CostBasisCredits is not null ? c : c with
+                        {
+                            CostBasisCredits = checked(c.Quantity * registry.ItemTypes.GetDefinition(registry.ItemTypes.GetIndex(c.ItemTypeId)).BasePriceCredits!.Value),
+                            AcquisitionSources = ["bootstrap"]
+                        }).ToArray()
+                    };
                     return type.FuelCapacityKg is > 0 ? m with
                     {
                         FuelCostBasisCredits = m.FuelCostBasisCredits ?? checked((m.FuelAmountKg ?? type.FuelCapacityKg.Value) * fuelPrice)

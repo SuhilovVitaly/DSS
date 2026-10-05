@@ -33,7 +33,7 @@ public class RationScheduleTests
                     Modules = o.Modules!.Select(m => m with
                     {
                         Cargo = m.Cargo?.Select(c => c.ItemTypeId == "item.food-rations"
-                        ? c with { Quantity = rations } : c).ToArray()
+                        ? c with { Quantity = rations, CostBasisCredits = checked(rations * 20), AcquisitionSources = ["bootstrap"] } : c).ToArray()
                     }).ToArray()
                 }).ToArray()
             }

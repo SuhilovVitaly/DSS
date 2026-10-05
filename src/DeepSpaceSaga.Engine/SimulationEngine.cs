@@ -261,7 +261,7 @@ public sealed partial class SimulationEngine : IDisposable
             // Convert m/s to km/s for the existing motion system
             double speedKmS = obj.SpeedMps / 1000.0;
 
-            var modules = BuildRuntimeModules(obj);
+            var modules = BuildRuntimeModules(obj, scenario.SaveFormatVersion);
 
             bool isStation = obj.ObjectType == SpaceObjectType.Station;
             bool isPlayerShip = obj.ObjectType == SpaceObjectType.PlayerShip;
@@ -1111,7 +1111,10 @@ public sealed partial class SimulationEngine : IDisposable
         foreach (var stack in module.Cargo)
         {
             var itemType = _registry.ItemTypes.GetDefinition(stack.ItemTypeIndex);
-            cargo.Add(new CargoStackData(ItemTypeId: itemType.TypeId, Quantity: stack.Quantity));
+            cargo.Add(new CargoStackData(ItemTypeId: itemType.TypeId, Quantity: stack.Quantity,
+                CostBasisCredits: stack.Quantity == 0 ? 0 : stack.CostBasisCredits,
+                AcquisitionSources: stack.Quantity == 0 ? ["bootstrap"] : stack.AcquisitionSources.IsDefaultOrEmpty
+                    ? [CargoAcquisitionSources.LegacyUnknown] : stack.AcquisitionSources.ToArray()));
         }
 
         return cargo;
@@ -1177,7 +1180,7 @@ public sealed partial class SimulationEngine : IDisposable
         _disposed = true;
     }
 
-    private ImmutableArray<InstalledModuleRuntime> BuildRuntimeModules(SpaceObjectData obj)
+    private ImmutableArray<InstalledModuleRuntime> BuildRuntimeModules(SpaceObjectData obj, int saveVersion)
     {
         if (obj.Modules is not { Count: > 0 })
             return ImmutableArray<InstalledModuleRuntime>.Empty;
@@ -1212,7 +1215,7 @@ public sealed partial class SimulationEngine : IDisposable
                     $"Module '{module.ModuleId}' structurePoints {module.StructurePoints} is outside 0..{moduleType.StructurePointsMax}.");
             }
 
-            var cargo = BuildRuntimeCargo(obj, module);
+            var cargo = BuildRuntimeCargo(obj, module, saveVersion);
 
             // Fuel: engine module types carry a FuelCapacityKg; the installed instance
             // stores its current FuelAmountKg. If the JSON omits FuelAmountKg for an
@@ -1313,7 +1316,7 @@ public sealed partial class SimulationEngine : IDisposable
         return placedCells.MoveToImmutable();
     }
 
-    private ImmutableArray<CargoStackRuntime> BuildRuntimeCargo(SpaceObjectData obj, ShipModuleData module)
+    private ImmutableArray<CargoStackRuntime> BuildRuntimeCargo(SpaceObjectData obj, ShipModuleData module, int saveVersion)
     {
         if (module.Cargo is not { Count: > 0 })
             return ImmutableArray<CargoStackRuntime>.Empty;
@@ -1328,7 +1331,20 @@ public sealed partial class SimulationEngine : IDisposable
                     $"Cargo stack '{stack.ItemTypeId}' in module '{module.ModuleId}' on '{obj.ObjectId}' has negative quantity.");
             }
 
-            cargo.Add(new CargoStackRuntime(itemTypeIndex, stack.Quantity));
+            long? basis = stack.CostBasisCredits;
+            var sources = stack.AcquisitionSources?.Order(StringComparer.Ordinal).ToImmutableArray() ?? default;
+            if (stack.Quantity == 0 && basis is null) { basis = 0; sources = ["bootstrap"]; }
+            else if (sources.IsDefault && saveVersion == 0)
+            {
+                var price = _registry.ItemTypes.GetDefinition(itemTypeIndex).BasePriceCredits;
+                if (price is not > 0)
+                    throw new ScenarioException($"Cargo '{stack.ItemTypeId}' bootstrap requires a positive base price or explicit acquisition metadata.");
+                try { basis = checked(stack.Quantity * price.Value); }
+                catch (OverflowException error) { throw new ScenarioException($"Cargo '{stack.ItemTypeId}' cost basis bootstrap overflowed.", error); }
+                sources = ["bootstrap"];
+            }
+            else if (sources.IsDefault) sources = [CargoAcquisitionSources.LegacyUnknown];
+            cargo.Add(new CargoStackRuntime(itemTypeIndex, stack.Quantity, basis, sources));
         }
 
         return cargo.ToImmutable();
@@ -3900,7 +3916,9 @@ internal sealed record InstalledModuleRuntime(
 
 internal sealed record CargoStackRuntime(
     int ItemTypeIndex,
-    long Quantity);
+    long Quantity,
+    long? CostBasisCredits = null,
+    ImmutableArray<string> AcquisitionSources = default);
 
 /// <summary>One tradeable item's stock on a station (see StationInventoryItemData).</summary>
 internal sealed record StationInventoryItemRuntime(
