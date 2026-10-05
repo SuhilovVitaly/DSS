@@ -63,11 +63,20 @@ internal static class SolarSystemGenerator
         for (int i = 1; i < beltCount + planetCount; i++)
         {
             bool belt = i < beltCount;
-            double r = radius * (0.12 + placement.NextDouble() * 2.1);
-            double width = belt ? r * c.BeltWidthFraction / 2 : r * 0.005;
-            var corridor = (Inner: r - width, Outer: r + width);
-            if (corridors.Any(p => corridor.Inner < p.Outer + c.OrbitClearanceWorld && corridor.Outer > p.Inner - c.OrbitClearanceWorld))
-                throw new PlacementException("overlapping orbital corridors");
+            double r = 0, width = 0;
+            (double Inner, double Outer) corridor = default;
+            bool fits = false;
+            for (int candidate = 0; candidate < c.MaxPlacementAttempts; candidate++)
+            {
+                r = radius * (0.12 + placement.NextDouble() * 2.1);
+                width = belt ? r * c.BeltWidthFraction / 2 : r * 0.005;
+                corridor = (r - width, r + width);
+                if (corridors.Any(p => corridor.Inner < p.Outer + c.OrbitClearanceWorld && corridor.Outer > p.Inner - c.OrbitClearanceWorld))
+                    continue;
+                fits = true;
+                break;
+            }
+            if (!fits) throw new PlacementException("orbital corridor attempts exhausted");
             corridors.Add(corridor);
             if (belt) belts.Add(new($"SYS-BELT-{i + 1}", corridor.Inner, corridor.Outer, placement.Next()));
             else

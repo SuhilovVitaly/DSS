@@ -29,7 +29,8 @@ public static class SolarSystemGeneration
             throw new ContentException("solarSystem: unsupported schemaVersion/generatorVersion.");
         if (c.MaxPlacementAttempts <= 0 || c.MinPlanets < 3 || c.MaxPlanets > 7 || c.MaxPlanets < c.MinPlanets ||
             c.MinBelts < 2 || c.MaxBelts > 5 || c.MaxBelts < c.MinBelts ||
-            c.StartMinDays != 50 || c.StartMaxDays != 75 ||
+            !double.IsFinite(c.StartMinDays) || !double.IsFinite(c.StartMaxDays) ||
+            c.StartMinDays < 50 || c.StartMaxDays > 75 || c.StartMaxDays < c.StartMinDays ||
             !double.IsFinite(c.OrbitSpeedFraction) || c.OrbitSpeedFraction <= 0 || c.OrbitSpeedFraction >= 1 ||
             !double.IsFinite(c.BeltWidthFraction) || c.BeltWidthFraction <= 0 || c.BeltWidthFraction >= 1 ||
             !double.IsFinite(c.OrbitClearanceWorld) || c.OrbitClearanceWorld < 0 ||
