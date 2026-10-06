@@ -2,7 +2,7 @@
   "scenarioMetadata": {
     "scenarioId": "market-profiles",
     "name": "Five Station Markets",
-    "description": "Choose a station and dock to compare its market. Start this scenario again to inspect another station; continuous voyages are outside this demo."
+    "description": "Choose a station, synchronize speed and course, then dock to compare its market. Start this scenario again to inspect another station; continuous voyages are outside this demo."
   },
   "gameState": {
     "gameTimeMs": 0,
