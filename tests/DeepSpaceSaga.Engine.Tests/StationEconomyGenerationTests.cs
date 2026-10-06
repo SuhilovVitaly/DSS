@@ -459,50 +459,62 @@ public class StationEconomyGenerationTests
         var (engine, registry) = CreateProfileEngine(profileId);
         int supplyIndex = registry.ItemTypes.GetIndex(ProfileSupplyItemId);
         int fuelIndex = registry.ItemTypes.GetIndex(FuelItemId);
-        var initialSnapshot = engine.CaptureSnapshotForTests();
-        long supplyPrice = initialSnapshot.DockedStationTrade!.Items.Single(item => item.ItemTypeId == ProfileSupplyItemId).UnitPriceCredits;
-        long fuelPrice = initialSnapshot.DockedStationTrade.Items.Single(item => item.ItemTypeId == FuelItemId).UnitPriceCredits;
         long initialPlayerCredits = engine.PlayerCredits;
         var initialStation = engine.RuntimeObjects.Single(obj => obj.InitialMotion.ObjectId == StationObjectId);
         long initialStationCredits = initialStation.Credits;
         long initialSupply = Stock(initialStation, registry, ProfileSupplyItemId);
         long initialFuel = Stock(initialStation, registry, FuelItemId);
 
+        var buyQuote = engine.GetTradeQuote(new($"{profileId}-buy-quote", ShipObjectId, CargoModuleId, TradeCommandTypes.Buy, ProfileSupplyItemId, 1));
+        Assert.Null(buyQuote.DisabledReason);
         engine.ReceiveCommand(new PlayerCommand($"{profileId}-buy", 1, ShipObjectId, CargoModuleId,
-            TradeCommandTypes.Buy, ItemTypeId: ProfileSupplyItemId, Quantity: 1));
+            TradeCommandTypes.Buy, ItemTypeId: ProfileSupplyItemId, Quantity: 1, QuoteId: buyQuote.QuoteId, MarketRevision: buyQuote.MarketRevision));
         var buy = engine.CaptureSnapshotForTests();
         Assert.Equal(CommandResultStatus.Executed, Assert.Single(buy.CommandResults).Status);
-        Assert.Null(buy.CommandResults[0].ExecutedQuantity);
+        Assert.Null(buy.CommandResults[0].ExecutedQuantity); // Legacy delta field is populated only for partial execution.
+        Assert.Equal(1, buy.CommandResults[0].TradeReceipt!.ExecutedQuantity);
+        Assert.Equal(buyQuote.TotalCredits, buy.CommandResults[0].TradeReceipt!.TotalCredits);
+        Assert.Equal(buyQuote.QuoteId, buy.CommandResults[0].TradeReceipt!.QuoteId);
         var stationAfterBuy = engine.RuntimeObjects.Single(obj => obj.InitialMotion.ObjectId == StationObjectId);
         var shipAfterBuy = engine.RuntimeObjects.Single(obj => obj.InitialMotion.ObjectId == ShipObjectId);
-        Assert.Equal(initialPlayerCredits - supplyPrice, engine.PlayerCredits);
-        Assert.Equal(initialStationCredits + supplyPrice, stationAfterBuy.Credits);
+        Assert.Equal(initialPlayerCredits - buyQuote.TotalCredits, engine.PlayerCredits);
+        Assert.Equal(initialStationCredits + buyQuote.TotalCredits, stationAfterBuy.Credits);
         Assert.Equal(initialSupply - 1, Stock(stationAfterBuy, registry, ProfileSupplyItemId));
         Assert.Equal(1, shipAfterBuy.Modules.Single(module => module.ModuleId == CargoModuleId).Cargo
             .Single(stack => stack.ItemTypeIndex == supplyIndex).Quantity);
 
+        var sellQuote = engine.GetTradeQuote(new($"{profileId}-sell-quote", ShipObjectId, CargoModuleId, TradeCommandTypes.Sell, ProfileSupplyItemId, 1));
+        Assert.Null(sellQuote.DisabledReason);
         engine.ReceiveCommand(new PlayerCommand($"{profileId}-sell", 2, ShipObjectId, CargoModuleId,
-            TradeCommandTypes.Sell, ItemTypeId: ProfileSupplyItemId, Quantity: 1));
+            TradeCommandTypes.Sell, ItemTypeId: ProfileSupplyItemId, Quantity: 1, QuoteId: sellQuote.QuoteId, MarketRevision: sellQuote.MarketRevision));
         var sell = engine.CaptureSnapshotForTests();
         Assert.Equal(CommandResultStatus.Executed, Assert.Single(sell.CommandResults).Status);
-        Assert.Null(sell.CommandResults[0].ExecutedQuantity);
+        Assert.Null(sell.CommandResults[0].ExecutedQuantity); // Legacy delta field is populated only for partial execution.
+        Assert.Equal(1, sell.CommandResults[0].TradeReceipt!.ExecutedQuantity);
+        Assert.Equal(sellQuote.TotalCredits, sell.CommandResults[0].TradeReceipt!.TotalCredits);
+        Assert.Equal(sellQuote.QuoteId, sell.CommandResults[0].TradeReceipt!.QuoteId);
         var stationAfterSell = engine.RuntimeObjects.Single(obj => obj.InitialMotion.ObjectId == StationObjectId);
         var shipAfterSell = engine.RuntimeObjects.Single(obj => obj.InitialMotion.ObjectId == ShipObjectId);
-        Assert.Equal(initialPlayerCredits, engine.PlayerCredits);
-        Assert.Equal(initialStationCredits, stationAfterSell.Credits);
+        Assert.Equal(initialPlayerCredits - buyQuote.TotalCredits + sellQuote.TotalCredits, engine.PlayerCredits);
+        Assert.Equal(initialStationCredits + buyQuote.TotalCredits - sellQuote.TotalCredits, stationAfterSell.Credits);
         Assert.Equal(initialSupply, Stock(stationAfterSell, registry, ProfileSupplyItemId));
         Assert.DoesNotContain(shipAfterSell.Modules.Single(module => module.ModuleId == CargoModuleId).Cargo,
             stack => stack.ItemTypeIndex == supplyIndex);
 
+        var refuelQuote = engine.GetTradeQuote(new($"{profileId}-refuel-quote", ShipObjectId, EngineModuleId, TradeCommandTypes.Refuel, FuelItemId, 1));
+        Assert.Null(refuelQuote.DisabledReason);
         engine.ReceiveCommand(new PlayerCommand($"{profileId}-refuel", 3, ShipObjectId, EngineModuleId,
-            TradeCommandTypes.Refuel, ItemTypeId: FuelItemId, Quantity: 1));
+            TradeCommandTypes.Refuel, ItemTypeId: FuelItemId, Quantity: 1, QuoteId: refuelQuote.QuoteId, MarketRevision: refuelQuote.MarketRevision));
         var refuel = engine.CaptureSnapshotForTests();
         Assert.Equal(CommandResultStatus.Executed, Assert.Single(refuel.CommandResults).Status);
-        Assert.Null(refuel.CommandResults[0].ExecutedQuantity);
+        Assert.Null(refuel.CommandResults[0].ExecutedQuantity); // Legacy delta field is populated only for partial execution.
+        Assert.Equal(1, refuel.CommandResults[0].TradeReceipt!.ExecutedQuantity);
+        Assert.Equal(refuelQuote.TotalCredits, refuel.CommandResults[0].TradeReceipt!.TotalCredits);
+        Assert.Equal(refuelQuote.QuoteId, refuel.CommandResults[0].TradeReceipt!.QuoteId);
         var stationAfterRefuel = engine.RuntimeObjects.Single(obj => obj.InitialMotion.ObjectId == StationObjectId);
         var shipAfterRefuel = engine.RuntimeObjects.Single(obj => obj.InitialMotion.ObjectId == ShipObjectId);
-        Assert.Equal(initialPlayerCredits - fuelPrice, engine.PlayerCredits);
-        Assert.Equal(initialStationCredits + fuelPrice, stationAfterRefuel.Credits);
+        Assert.Equal(initialPlayerCredits - buyQuote.TotalCredits + sellQuote.TotalCredits - refuelQuote.TotalCredits, engine.PlayerCredits);
+        Assert.Equal(initialStationCredits + buyQuote.TotalCredits - sellQuote.TotalCredits + refuelQuote.TotalCredits, stationAfterRefuel.Credits);
         Assert.Equal(initialFuel - 1, Stock(stationAfterRefuel, registry, FuelItemId));
         Assert.Equal(1, shipAfterRefuel.Modules.Single(module => module.ModuleId == EngineModuleId).FuelAmountKg);
         Assert.Equal(fuelIndex, stationAfterRefuel.Inventory.Single(item => item.ItemTypeIndex == fuelIndex).ItemTypeIndex);
