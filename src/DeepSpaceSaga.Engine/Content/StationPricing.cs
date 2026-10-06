@@ -72,7 +72,18 @@ internal static class StationPricing
         else
         {
             clamp = PriceClampKind.None;
-            amount = basePriceCredits * multiplierNumerator / multiplierDenominator;
+            try { amount = basePriceCredits * multiplierNumerator / multiplierDenominator; }
+            catch (OverflowException)
+            {
+                // A large common stock/target scale can overflow the intermediate product while
+                // its final price fits. Cancel only exact integer factors, retaining the single
+                // final division and rounding; fractional decimal overflow remains checked.
+                if (multiplierNumerator != decimal.Truncate(multiplierNumerator) ||
+                    multiplierDenominator != decimal.Truncate(multiplierDenominator)) throw;
+                decimal a = multiplierNumerator, b = multiplierDenominator;
+                while (b != 0) (a, b) = (b, a % b);
+                amount = basePriceCredits * (multiplierNumerator / a) / (multiplierDenominator / a);
+            }
         }
 
         long price = RoundToCredits(amount);
