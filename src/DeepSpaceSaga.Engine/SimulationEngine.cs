@@ -759,6 +759,25 @@ public sealed partial class SimulationEngine : IDisposable
         if (station is null || station.Inventory.IsDefaultOrEmpty)
             return null;
 
+        return BuildStationTradeProjection(station);
+    }
+
+    // Read-only diagnostic projection reuses the authoritative market owner. It neither docks
+    // the player nor exposes hidden station budgets through a production Contracts API.
+    internal ImmutableArray<(StationTradeSnapshot Market, long Budget, long MaximumBudget)> CaptureMarketDiagnosticsForTests()
+    {
+        lock (_worldStateLock)
+        {
+            return _objects.Where(o => o.ObjectType == SpaceObjectType.Station && o.MarketProfileId is not null)
+                .OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal)
+                .Select(o => (BuildStationTradeProjection(o), o.MarketBudgetCredits ?? 0,
+                    MarketProfileOf(o) is { Economy: not null } profile ? MarketMaxBudget(profile, o.StationSize) : o.Credits))
+                .ToImmutableArray();
+        }
+    }
+
+    private StationTradeSnapshot BuildStationTradeProjection(SpaceObjectRuntime station)
+    {
         bool bounded = TryGetMarket(station, out var marketProfile, out var marketEconomy);
         var items = ImmutableArray.CreateBuilder<StationInventoryItemSnapshot>(station.Inventory.Length);
         foreach (var item in station.Inventory)
