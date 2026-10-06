@@ -89,6 +89,39 @@ public sealed class TradingMapBootstrapTests
         Assert.Null(roundTrip.GameState.TradingMapGeneration);
     }
 
+    [Theory]
+    [InlineData(10001UL, true)]
+    [InlineData(10009UL, true)]
+    [InlineData(10011UL, false)]
+    public void Saved_map_normalizes_counter_but_still_requires_exact_generated_draw_count(ulong counter, bool valid)
+    {
+        using var source = new SimulationEngine(Registry());
+        source.LoadScenario(NewGameScenario());
+        var saved = source.CaptureSaveState();
+        var changed = saved with
+        {
+            GameState = saved.GameState with
+            {
+                TradingMap = saved.GameState.TradingMap! with
+                {
+                    RngStreams = saved.GameState.TradingMap!.RngStreams.Select(s => s with { Counter = counter }).ToArray(),
+                },
+            }
+        };
+        using var restored = new SimulationEngine(Registry());
+        restored.LoadScenario(LegacyScenario());
+        string before = ScenarioLoader.Serialize(restored.CaptureSaveState());
+        if (!valid)
+        {
+            Assert.Throws<ScenarioException>(() => restored.LoadScenario(
+                ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(changed), true), isSave: true));
+            Assert.Equal(before, ScenarioLoader.Serialize(restored.CaptureSaveState()));
+            return;
+        }
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(changed), true), isSave: true);
+        Assert.Equal(ScenarioLoader.Serialize(saved), ScenarioLoader.Serialize(restored.CaptureSaveState()));
+    }
+
     [Fact]
     public void Saved_map_rejects_coordinate_drift_before_replacing_the_current_world()
     {
