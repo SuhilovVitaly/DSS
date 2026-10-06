@@ -2520,7 +2520,8 @@ public sealed partial class SimulationEngine : IDisposable
     /// the station's hidden Credits balance cannot afford the full request (Money.md) — see
     /// <see cref="CommandResult.ExecutedQuantity"/>.
     /// A command carrying any quote binding field (QuoteId or MarketRevision) goes through the quoted
-    /// path (SimulationEngine.TradeExecution.cs) and never falls back to this legacy one
+    /// path (SimulationEngine.TradeExecution.cs) and never falls back to this legacy one.
+    /// Profile markets require a quote; only no-profile stations retain unquoted execution
     /// (EP-0001-US-0003-TK-0002).
     /// </summary>
     private CommandStartOutcome TryStartTradeCommand(PlayerCommand command, long gameTimeMs)
@@ -2539,6 +2540,9 @@ public sealed partial class SimulationEngine : IDisposable
         if (!TryResolveTradeTarget(command.ObjectId, command.ModuleId, command.CommandType, command.ItemTypeId,
                 command.Quantity, out var target, out string reasonCode))
             return CommandStartOutcome.Rejected(reasonCode);
+
+        if (target.Station.MarketProfileId is not null)
+            return RejectQuotedTrade(command, CommandReasonCodes.QuoteRequired);
 
         int objectIndex = target.ObjectIndex;
         var obj = target.Ship;

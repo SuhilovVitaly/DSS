@@ -10,8 +10,25 @@ public sealed class VoyageFuelAccountingTests
     private const string Tank = QuotedTradeExecutionTests.EngineModuleId;
     private static ShipModuleData SavedTank(SimulationEngine engine) => engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0, 0)
         .GameState.SpaceObjects.Single(o => o.ObjectId == QuotedTradeExecutionTests.ShipId).Modules!.Single(m => m.ModuleId == Tank);
-    private static SimulationEngine Create(long amount = 750, long? basis = null) => QuotedTradeExecutionTests.CreateMarketEngine(adjust: save =>
-        QuotedTradeExecutionTests.WithShipModules(save, m => m.ModuleId == Tank ? m with { FuelAmountKg = amount, FuelCostBasisCredits = basis } : m));
+    private static SimulationEngine Create(long amount = 750, long? basis = null, bool profile = true) =>
+        QuotedTradeExecutionTests.CreateMarketEngine(adjust: save =>
+        {
+            save = QuotedTradeExecutionTests.WithShipModules(save,
+                m => m.ModuleId == Tank ? m with { FuelAmountKg = amount, FuelCostBasisCredits = basis } : m);
+            return profile ? save : save with
+            {
+                GameState = save.GameState with
+                {
+                    SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId != QuotedTradeExecutionTests.StationId ? o : o with
+                    {
+                        MarketProfileId = null,
+                        MarketProfileFingerprint = null,
+                        MarketBudgetCredits = null,
+                        MarketRevision = null
+                    }).ToArray()
+                }
+            };
+        });
 
     [Theory]
     [InlineData(null, "module.engine", true)]
@@ -118,7 +135,7 @@ public sealed class VoyageFuelAccountingTests
     [InlineData(false)]
     public void Refuel_adds_exact_authoritative_cost_to_tank_basis_atomically_and_replay_is_free(bool quoted)
     {
-        using var engine = Create(basis: 1234);
+        using var engine = Create(basis: 1234, profile: quoted);
         var quote = QuotedTradeExecutionTests.Quote(engine, TradeCommandTypes.Refuel, "item.fuel", 10);
         Assert.Null(quote.DisabledReason);
         var command = quoted ? QuotedTradeExecutionTests.Bind("basis-refuel", quote) : new PlayerCommand("basis-refuel", 1,
@@ -141,7 +158,7 @@ public sealed class VoyageFuelAccountingTests
     [InlineData(false)]
     public void Overflowing_refuel_basis_rejects_without_money_stock_tank_or_basis_mutation(bool quoted)
     {
-        using var engine = Create(basis: long.MaxValue);
+        using var engine = Create(basis: long.MaxValue, profile: quoted);
         var quote = QuotedTradeExecutionTests.Quote(engine, TradeCommandTypes.Refuel, "item.fuel", 1);
         var command = quoted ? QuotedTradeExecutionTests.Bind("basis-overflow", quote) : new PlayerCommand("basis-overflow", 1,
             QuotedTradeExecutionTests.ShipId, Tank, TradeCommandTypes.Refuel, ItemTypeId: "item.fuel", Quantity: 1);

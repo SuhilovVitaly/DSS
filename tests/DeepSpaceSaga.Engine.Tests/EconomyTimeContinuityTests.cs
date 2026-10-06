@@ -893,8 +893,10 @@ public class EconomyTimeContinuityTests
         Assert.Equal(18, Assert.Single(MarketStation(engine).ProducingModules.Single().PendingOutput).StockQuantity);
 
         // The player buys 5 ice, which is the only room that appears.
-        engine.ReceiveCommand(new PlayerCommand("buy-ice", 1, ShipId(engine), ContainerModuleId(engine, registry),
-            TradeCommandTypes.Buy, ItemTypeId: "item.ice", Quantity: 5));
+        var buy = engine.GetTradeQuote(new("buy-ice-quote", ShipId(engine), ContainerModuleId(engine, registry),
+            TradeCommandTypes.Buy, "item.ice", 5));
+        Assert.Null(buy.DisabledReason);
+        engine.ReceiveCommand(QuotedTradeExecutionTests.Bind("buy-ice", buy));
         engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 1);
         Assert.Equal(2 * IceTarget - 5, MarketStock(engine, registry, "item.ice"));
 
@@ -1105,12 +1107,14 @@ public class EconomyTimeContinuityTests
 
         // The player buys: the station keeps every credit of the price, while the budget may only
         // climb to its cap — the surplus stays as Credits instead of being destroyed.
-        long priceEach = engine.CaptureSnapshot().DockedStationTrade!.Items
-            .Single(i => i.ItemTypeId == "item.ice").UnitPriceCredits;
-        engine.ReceiveCommand(new PlayerCommand("buy", 1, ShipId(engine), ContainerModuleId(engine, registry),
-            TradeCommandTypes.Buy, ItemTypeId: "item.ice", Quantity: 5));
-        engine.CaptureSnapshot();
-        long income = priceEach * 5;
+        var buy = engine.GetTradeQuote(new("budget-buy-quote", ShipId(engine), ContainerModuleId(engine, registry),
+            TradeCommandTypes.Buy, "item.ice", 5));
+        Assert.Null(buy.DisabledReason);
+        engine.ReceiveCommand(QuotedTradeExecutionTests.Bind("buy", buy));
+        var bought = Assert.Single(engine.CaptureSnapshot().CommandResults);
+        Assert.Equal(CommandResultStatus.Executed, bought.Status);
+        Assert.Equal(buy.TotalCredits, bought.TradeReceipt!.TotalCredits);
+        long income = bought.TradeReceipt.TotalCredits;
         station = MarketStation(engine);
         Assert.Equal(MarketMaxBudget - 100 + income, station.Credits);
         Assert.Equal(Math.Min(MarketMaxBudget, MarketMaxBudget - 100 + income), station.MarketBudgetCredits);
@@ -1169,28 +1173,36 @@ public class EconomyTimeContinuityTests
         long stockBefore = MarketStock(engine, registry, "item.ice");
         long budgetBefore = MarketBudget(engine);
         long playerBefore = engine.PlayerCredits;
-        long priceEach = engine.CaptureSnapshot().DockedStationTrade!.Items
-            .Single(i => i.ItemTypeId == "item.ice").UnitPriceCredits;
+        var sell = engine.GetTradeQuote(new("capacity-sell-quote", ShipId(engine), moduleId,
+            TradeCommandTypes.Sell, "item.ice", 5));
+        Assert.Null(sell.DisabledReason);
+        Assert.Equal(3, sell.ExecutableQuantity);
+        Assert.Contains(CommandReasonCodes.StationCapacityExceeded, sell.LimitReasons);
 
-        engine.ReceiveCommand(new PlayerCommand("sell", 2, ShipId(engine), moduleId,
-            TradeCommandTypes.Sell, ItemTypeId: "item.ice", Quantity: 5));
+        engine.ReceiveCommand(QuotedTradeExecutionTests.Bind("sell", sell));
         var result = Assert.Single(engine.CaptureSnapshot().CommandResults);
 
         Assert.Equal(CommandResultStatus.Executed, result.Status);
         Assert.Equal(3, result.ExecutedQuantity);
         Assert.Equal(stockBefore + 3, MarketStock(engine, registry, "item.ice"));
         Assert.Equal(2 * IceTarget, MarketStock(engine, registry, "item.ice"));
-        Assert.Equal(playerBefore + 3 * priceEach, engine.PlayerCredits);
-        Assert.Equal(budgetBefore - 3 * priceEach, MarketBudget(engine));
+        Assert.Equal(sell.TotalCredits, result.TradeReceipt!.TotalCredits);
+        Assert.Equal(playerBefore + result.TradeReceipt.TotalCredits, engine.PlayerCredits);
+        Assert.Equal(budgetBefore - result.TradeReceipt.TotalCredits, MarketBudget(engine));
 
         // A completely full market refuses outright and changes nothing.
         long fullStock = MarketStock(engine, registry, "item.ice");
         long fullBudget = MarketBudget(engine);
-        engine.ReceiveCommand(new PlayerCommand("sell-full", 3, ShipId(engine), moduleId,
-            TradeCommandTypes.Sell, ItemTypeId: "item.ice", Quantity: 1));
+        var full = engine.GetTradeQuote(new("full-sell-quote", ShipId(engine), moduleId,
+            TradeCommandTypes.Sell, "item.ice", 1));
+        Assert.Equal(CommandReasonCodes.StationCapacityExceeded, full.DisabledReason);
+        Assert.Equal(0, full.ExecutableQuantity);
+        Assert.Empty(full.QuoteId);
+        engine.ReceiveCommand(QuotedTradeExecutionTests.Bind("sell-full", full));
         var rejected = Assert.Single(engine.CaptureSnapshot().CommandResults);
         Assert.Equal(CommandResultStatus.Rejected, rejected.Status);
-        Assert.Equal("station_stock_full", rejected.ReasonCode);
+        Assert.Equal(CommandReasonCodes.InvalidQuote, rejected.ReasonCode);
+        Assert.Equal(0, rejected.TradeReceipt!.ExecutedQuantity);
         Assert.Equal(fullStock, MarketStock(engine, registry, "item.ice"));
         Assert.Equal(fullBudget, MarketBudget(engine));
     }
