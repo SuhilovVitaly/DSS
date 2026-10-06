@@ -1272,6 +1272,120 @@ public class EconomyTimeContinuityTests
         }
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void Explicit_inventory_marker_cannot_bypass_bounded_market_validation(bool isSave, bool missingTarget)
+    {
+        var profile = BoundedProfile();
+        var (engine, _) = CreateMarketEngine(profile);
+        using var lifetime = engine;
+        var baseline = engine.CaptureSaveState();
+        string before = ScenarioLoader.Serialize(baseline);
+        var source = isSave ? baseline : MarketTemplate(profile);
+        string badItem = missingTarget ? "item.energy-cells" : "item.ice";
+        var candidate = source with
+        {
+            GameState = source.GameState with
+            {
+                SpaceObjects = source.GameState.SpaceObjects.Select(obj => obj.MarketProfileId is null ? obj : obj with
+                {
+                    ExplicitInventoryItemTypeIds = [badItem],
+                    Inventory = missingTarget
+                        ? (obj.Inventory ?? profile.InitialInventory.Select(stock => new StationInventoryItemData(stock.ItemTypeId, stock.Quantity)).ToArray())
+                            .Append(new StationInventoryItemData(badItem, 1)).ToArray()
+                        : (obj.Inventory ?? profile.InitialInventory.Select(stock => new StationInventoryItemData(stock.ItemTypeId, stock.Quantity)).ToArray())
+                            .Select(stock => stock.ItemTypeId == badItem ? stock with { Quantity = 2 * IceTarget + 1 } : stock).ToArray(),
+                }).ToArray(),
+            },
+        };
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(candidate, isSave));
+        Assert.Contains(badItem, error.Message);
+        Assert.Contains(missingTarget ? "has no stockTargets entry" : "is outside [0,", error.Message);
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+
+    [Theory]
+    [InlineData("Default")]
+    [InlineData("Docked")]
+    [InlineData("Undocked")]
+    public void Shipping_explicit_cargo_is_preserved_bounded_and_validated_after_save_load(string scenarioName)
+    {
+        string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+        string scenarioPath = Path.Combine(root, "Scenarios", scenarioName, "scenario.json");
+        var authored = ScenarioLoader.LoadFromFile(scenarioPath).GameState.SpaceObjects.Single(obj => obj.ObjectId == "SPC-0002");
+        using var engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(root, "Settings.json"), scenarioPath);
+        var initial = engine.CaptureSaveState();
+        var station = initial.GameState.SpaceObjects.Single(obj => obj.ObjectId == "SPC-0002");
+        Assert.Equal("Large", station.StationSize);
+        foreach (var item in authored.Inventory!)
+            Assert.Equal(item.Quantity, station.Inventory!.Single(stock => stock.ItemTypeId == item.ItemTypeId).Quantity);
+        var markets = engine.CaptureMarketDiagnosticsForTests();
+        Assert.Equal(5, markets.Length);
+        foreach (var market in markets)
+            foreach (var item in market.Market.Items.Where(item => item.ItemTypeId != "item.fuel"))
+            {
+                Assert.NotNull(item.TargetStock);
+                Assert.Equal(2 * item.TargetStock, item.MaxStock);
+                Assert.InRange(item.StockQuantity, 0, item.MaxStock!.Value);
+                Assert.Equal(item.MaxStock - item.StockQuantity, item.FreeStockCapacity);
+            }
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
+        using var restored = new SimulationEngine(registry);
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(initial), true), true);
+        Assert.Equal(ScenarioLoader.Serialize(initial), ScenarioLoader.Serialize(restored.CaptureSaveState()));
+        var ice = markets.Single(market => market.Market.StationObjectId == "SPC-0002").Market.Items.Single(item => item.ItemTypeId == "item.ice");
+        var corrupted = initial with
+        {
+            GameState = initial.GameState with
+            {
+                SpaceObjects = initial.GameState.SpaceObjects.Select(obj => obj.ObjectId != "SPC-0002" ? obj : obj with
+                {
+                    Inventory = obj.Inventory!.Select(stock => stock.ItemTypeId == "item.ice" ? stock with { Quantity = ice.MaxStock!.Value + 1 } : stock).ToArray(),
+                }).ToArray(),
+            }
+        };
+        var error = Assert.Throws<ScenarioException>(() => restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(corrupted), true), true));
+        Assert.Contains("item.ice", error.Message);
+        Assert.Contains("is outside [0,", error.Message);
+        Assert.Equal(ScenarioLoader.Serialize(initial), ScenarioLoader.Serialize(restored.CaptureSaveState()));
+    }
+
+    [Fact]
+    public void Near_int64_capacity_skips_overfull_profile_batch_without_overflow_or_input_loss()
+    {
+        var profile = BoundedProfile();
+        profile = profile with
+        {
+            Economy = profile.Economy! with
+            {
+                StockTargets = profile.Economy.StockTargets.Select(target => target.ItemTypeId == "item.ice"
+                    ? target with { TargetStock = long.MaxValue / 4 } : target).ToImmutableArray(),
+                HourlyOutputs = [new("item.ice", 1_000_000_000_000_000_000)],
+            }
+        };
+        var (engine, registry) = CreateMarketEngine(profile,
+            stock: [new("item.ice", long.MaxValue - 10), new("item.water", WaterTarget), new("item.steel", SteelTarget)],
+            adjust: source => source with
+            {
+                GameState = source.GameState with
+                {
+                    SpaceObjects = source.GameState.SpaceObjects.Select(obj => obj.MarketProfileId is null ? obj : obj with
+                    { StationSize = nameof(StationSize.Huge) }).ToArray(),
+                }
+            });
+        using var lifetime = engine;
+        var before = MarketState(engine, registry);
+        engine.CaptureSnapshotForTests(GameCalendar.HourMs, simulationTimeMs: 0);
+        var after = MarketState(engine, registry);
+        Assert.Equal(before.Ice, after.Ice);
+        Assert.Equal(before.Water, after.Water);
+        // Independent hourly steel consumption still applies when the production batch is skipped.
+        Assert.Equal(before.Steel - 2, after.Steel);
+    }
+
     [Fact]
     public void Existing_legacy_production_and_motion_are_unchanged()
     {

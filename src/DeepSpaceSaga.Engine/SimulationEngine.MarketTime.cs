@@ -53,7 +53,7 @@ public sealed partial class SimulationEngine
         string itemTypeId,
         out MarketItemLimits limits)
     {
-        foreach (var target in economy.StockTargets)
+        foreach (var target in economy.AllStockTargets)
         {
             if (!string.Equals(target.ItemTypeId, itemTypeId, StringComparison.Ordinal)) continue;
             long scaled = ScaleProfileValue(target.TargetStock, profile.SizeFactors[size]);
@@ -187,7 +187,7 @@ public sealed partial class SimulationEngine
             if (!TryMarketLimits(profile, economy, station.StationSize, output.ItemTypeId, out var limits)) return;
             int slot = FindStockSlot(stock, output.ItemTypeId);
             long have = slot < 0 ? 0 : stock[slot].StockQuantity;
-            if (checked(have + output.Quantity) > limits.MaxStock) return;
+            if (output.Quantity > limits.MaxStock - have) return;
         }
 
         // Inputs and outputs are disjoint (TK-0002), so a single pass commits the whole batch.
@@ -377,13 +377,9 @@ public sealed partial class SimulationEngine
                 if (itemType.StorageKind == ItemStorageKind.FuelTank) continue;
                 if (!TryMarketLimits(profile, economy, station.StationSize, itemType.TypeId, out var limits))
                 {
-                    if (station.ExplicitInventoryItemTypeIds?.Contains(itemType.TypeId) == true && item.StockQuantity >= 0)
-                        continue;
                     throw new ScenarioException($"Station '{stationId}', market profile '{profileId}', inventory item '{itemType.TypeId}' has no stockTargets entry. Save was not modified.");
                 }
-                if (item.StockQuantity < 0 ||
-                    (item.StockQuantity > limits.MaxStock &&
-                     station.ExplicitInventoryItemTypeIds?.Contains(itemType.TypeId) != true))
+                if (item.StockQuantity < 0 || item.StockQuantity > limits.MaxStock)
                 {
                     throw new ScenarioException($"Station '{stationId}', market profile '{profileId}', inventory item '{itemType.TypeId}': stock {item.StockQuantity} is outside [0, {limits.MaxStock}]. Save was not modified.");
                 }

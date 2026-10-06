@@ -14,7 +14,8 @@ public sealed class CatalogCompatibilityTests
 
     private static GameDataRegistry RealRegistry() => EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
 
-    private static GameDataRegistry ChangeCatalog(GameDataRegistry source, Func<ItemTypeDefinition, ItemTypeDefinition> change) =>
+    private static GameDataRegistry ChangeCatalog(GameDataRegistry source, Func<ItemTypeDefinition, ItemTypeDefinition> change,
+        Func<StationMarketProfileDefinition, StationMarketProfileDefinition>? profileChange = null) =>
         GameDataRegistry.Create(
             Enumerable.Range(0, source.ModuleCategories.Count).Select(source.ModuleCategories.GetDefinition),
             Enumerable.Range(0, source.ModuleTypes.Count).Select(source.ModuleTypes.GetDefinition),
@@ -24,7 +25,7 @@ public sealed class CatalogCompatibilityTests
             Enumerable.Range(0, source.Recipes.Count).Select(source.Recipes.GetDefinition),
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
-                .Select(source.StationMarketProfiles.GetDefinition),
+                .Select(source.StationMarketProfiles.GetDefinition).Select(profile => profileChange?.Invoke(profile) ?? profile),
             shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition),
             stationMarketEvents: Enumerable.Range(0, source.StationMarketEvents.Count).Select(source.StationMarketEvents.GetDefinition));
 
@@ -330,7 +331,17 @@ public sealed class CatalogCompatibilityTests
         var registry = RealRegistry();
         using var original = EngineContentLoader.CreateEngineFromSettingsFile(SettingsPath);
         var save = original.CaptureSaveState();
-        if (removePrice) registry = ChangeCatalog(registry, item => item.TypeId == itemId ? item with { BasePriceCredits = null } : item);
+        if (removePrice) registry = ChangeCatalog(registry, item => item.TypeId == itemId ? item with { BasePriceCredits = null } : item,
+            profile => profile.Economy is not { } economy ? profile : profile with
+            {
+                // This fixture exercises scenario inventory validation; remove the optional profile
+                // reference so the newly nontradeable catalog still reaches that exact boundary.
+                Economy = economy with
+                {
+                    ExplicitStockTargets = economy.ExplicitStockTargets.IsDefault ? [] :
+                    economy.ExplicitStockTargets.Where(target => target.ItemTypeId != itemId).ToImmutableArray()
+                },
+            });
         var objects = save.GameState.SpaceObjects.Select(obj => obj.ObjectId == "SPC-0002"
             ? obj with
             {

@@ -211,10 +211,18 @@
         ],
         "stockTargets": [
           { "itemTypeId": "item.water", "targetStock": 96 },
-          { "itemTypeId": "item.food-rations", "targetStock": 96 },
-          { "itemTypeId": "item.energy-cells", "targetStock": 96 },
+          { "itemTypeId": "item.food-rations", "targetStock": 167 },
+          { "itemTypeId": "item.energy-cells", "targetStock": 117 },
           { "itemTypeId": "item.steel", "targetStock": 96 },
           { "itemTypeId": "item.electronics", "targetStock": 96 }
+        ],
+        "explicitStockTargets": [
+          { "itemTypeId": "item.ice", "targetStock": 144 },
+          { "itemTypeId": "item.iron-ore", "targetStock": 144 },
+          { "itemTypeId": "item.magnesium-ore", "targetStock": 144 },
+          { "itemTypeId": "item.silicon", "targetStock": 144 },
+          { "itemTypeId": "item.uranium-ore", "targetStock": 144 },
+          { "itemTypeId": "item.carbon-ore", "targetStock": 170 }
         ],
         "shortageThresholdPermille": 500,
         "surplusThresholdPermille": 1500,
