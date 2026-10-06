@@ -403,6 +403,10 @@ internal static class StationResourceFields
                 Saved((player!.Modules ?? []).Any(m => stream.Name == $"ResourceSurvey:{player.ObjectId}:{m.ModuleId}"), "Unknown RNG namespace/module.");
                 seed = RngStreamSeedDerivation.DeriveStreamSeed(state.MasterSeed!.Value, stream.Name);
                 Saved(counter >= 10000 && counter <= ulong.MaxValue - 10, "Invalid survey RNG counter: no next draw is representable.");
+                // This module can finish at most one sequential scan per configured duration.
+                // Validate before a lazy RNG restore attempts to replay an impossible number of draws.
+                Saved((Int128)counter - 10000 <= (Int128)(state.GameTimeMs / rules.StructuralScan.DurationGameTimeMs) * 10,
+                    "Invalid survey RNG counter for elapsed scan time.");
             }
             Saved(stream.Seed == seed, "RNG seed mismatch.");
             streams.Add(stream with { Counter = counter });
