@@ -402,7 +402,7 @@ internal static class StationResourceFields
             {
                 Saved((player!.Modules ?? []).Any(m => stream.Name == $"ResourceSurvey:{player.ObjectId}:{m.ModuleId}"), "Unknown RNG namespace/module.");
                 seed = RngStreamSeedDerivation.DeriveStreamSeed(state.MasterSeed!.Value, stream.Name);
-                Saved(counter >= 10000, "Invalid survey RNG counter.");
+                Saved(counter >= 10000 && counter <= ulong.MaxValue - 10, "Invalid survey RNG counter: no next draw is representable.");
             }
             Saved(stream.Seed == seed, "RNG seed mismatch.");
             streams.Add(stream with { Counter = counter });

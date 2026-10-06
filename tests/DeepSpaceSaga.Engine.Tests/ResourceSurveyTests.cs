@@ -460,6 +460,29 @@ public sealed class ResourceSurveyTests
         Assert.Equal(CommandResultStatus.Executed, resumed.CommandResults.Single(r => r.CommandId == "scan").Status);
     }
 
+    [Fact]
+    public void Exhausted_saved_survey_stream_is_rejected_before_replacing_world()
+    {
+        using var engine = Create();
+        Start(engine, Target(engine));
+        var original = Save(engine, 1000);
+        var fields = original.GameState.StationResourceFields!;
+        var exhausted = new ResourceFieldRngData(Stream,
+            RngStreamSeedDerivation.DeriveStreamSeed(original.GameState.MasterSeed!.Value, Stream),
+            ulong.MaxValue - 5);
+        var malformed = RoundTrip(original with
+        {
+            GameState = original.GameState with
+            {
+                StationResourceFields = fields with { RngStreams = fields.RngStreams.Append(exhausted).ToImmutableArray() }
+            }
+        });
+
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(malformed, isSave: true));
+        Assert.Contains("survey RNG counter", error.Message, StringComparison.Ordinal);
+        Assert.Equal(Json(original), Json(Save(engine, 1000)));
+    }
+
     private static StationResourceFieldConfig Config(int chance) =>
         JsonSerializer.Deserialize<StationResourceFieldConfig>(File.ReadAllText(Path.Combine(ClientRoot, "Data", "World", "station-resource-fields.json")))! is { } config
             ? config with { StructuralScan = config.StructuralScan with { SuccessChancePercent = chance } } : throw new InvalidOperationException();
