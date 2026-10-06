@@ -193,6 +193,26 @@ public sealed class TradingMapGeometryTests
     }
 
     [Fact]
+    public void Travel_estimate_at_binary64_int64_boundary_is_a_contextual_scenario_error()
+    {
+        double unrepresentable = Math.ScaleB(1.0, 63);
+        double referenceSpeedMps = Math.BitDecrement(10 * 1000.0 * 1000 * 300 / unrepresentable);
+        Assert.Equal(unrepresentable, 10 / (referenceSpeedMps / 1000) * 1000 * 300);
+        var rules = Rules() with
+        {
+            ReferenceSpeedMps = referenceSpeedMps,
+            ShortMaxGameTimeMs = long.MaxValue / 3,
+            MediumMaxGameTimeMs = long.MaxValue / 3 * 2,
+            MaxTravelGameTimeMs = long.MaxValue,
+        };
+        var graph = TradingGraphGenerator.Generate(rules, 77, Registry());
+        var error = Assert.Throws<ScenarioException>(() => TradingMapGeometryGenerator.Generate(graph, ExistingObjects(), 77));
+        Assert.Contains("unrepresentable travel estimate", error.Message, StringComparison.Ordinal);
+        Assert.Contains("SPC-0002", error.Message, StringComparison.Ordinal);
+        Assert.Contains("SPC-0005", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Distance_classes_use_inclusive_boundaries_and_configured_reference_speed()
     {
         const double referenceSpeedMps = 350;
