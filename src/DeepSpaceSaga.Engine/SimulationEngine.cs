@@ -1742,7 +1742,7 @@ public sealed partial class SimulationEngine : IDisposable
             var recipe = _registry.FactoryTypes.GetDefinition(factoryTypeIndex).Recipe;
             if (recipe.CycleDurationMs <= 0 || recipe.Inputs.Concat(recipe.Outputs).Any(m => m.Count <= 0 || !_registry.ItemTypes.Contains(m.ItemTypeId)) ||
                 recipe.Inputs.Select(m => m.ItemTypeId).Distinct(StringComparer.Ordinal).Count() != recipe.Inputs.Length)
-                throw new ScenarioException("Invalid timed production recipe.");
+                throw new ScenarioException($"Station '{obj.ObjectId}', market profile '{obj.MarketProfileId ?? "legacy"}', producing module '{module.ProducingModuleTypeId}': recipe duration and material counts must be positive, material IDs known, and inputs unique. Save was not modified.");
             // Pending remainders are addressed by stable item id in the save and resolved to
             // registry indices here; their semantic checks run in the market preflight.
             var pendingOutput = ImmutableArray<StationInventoryItemRuntime>.Empty;

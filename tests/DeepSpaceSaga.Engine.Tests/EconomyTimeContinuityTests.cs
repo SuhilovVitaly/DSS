@@ -807,6 +807,41 @@ public class EconomyTimeContinuityTests
         }
     }
 
+    [Theory]
+    [InlineData("input", 0)]
+    [InlineData("input", -1)]
+    [InlineData("output", 0)]
+    [InlineData("output", -1)]
+    [InlineData("duration", 0)]
+    [InlineData("duration", -1)]
+    [InlineData("duplicate-input", 6)]
+    public void Bounded_module_recipe_rejects_invalid_materials_or_duration_with_context_before_world_replacement(string field, long value)
+    {
+        var profile = BoundedProfile(StationMarketProductionSource.Modules);
+        var factory = IceFactory();
+        factory = factory with
+        {
+            Recipe = field switch
+            {
+                "input" => factory.Recipe with { Inputs = [new("item.water", value)] },
+                "output" => factory.Recipe with { Outputs = [new("item.ice", value)] },
+                "duplicate-input" => factory.Recipe with { Inputs = [new("item.water", value), new("item.water", value)] },
+                _ => factory.Recipe with { CycleDurationMs = value },
+            }
+        };
+        using var engine = new SimulationEngine(MarketRegistry(profile, factory));
+        var valid = MarketTemplate(profile);
+        engine.LoadScenario(valid);
+        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        var invalid = MarketTemplate(profile, producingModules: [new StationProducingModuleData(factory.TypeId)]);
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(invalid));
+        Assert.Contains(factory.TypeId, error.Message, StringComparison.Ordinal);
+        Assert.Contains(profile.TypeId, error.Message, StringComparison.Ordinal);
+        Assert.Contains("Station", error.Message, StringComparison.Ordinal);
+        Assert.Contains("positive", error.Message, StringComparison.Ordinal);
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+
     [Fact]
     public void Modules_source_completes_once_without_profile_double_count()
     {
