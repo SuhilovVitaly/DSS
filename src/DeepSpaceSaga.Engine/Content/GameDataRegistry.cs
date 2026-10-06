@@ -357,6 +357,15 @@ internal sealed class GameDataRegistry
         if (!targetIds.SetEquals(inventory))
             RejectEconomy("stockTargets", "must exactly cover initialInventory items");
 
+        var allTargetIds = new HashSet<string>(targetIds, StringComparer.Ordinal);
+        foreach (var target in economy.ExplicitStockTargets.IsDefault ? [] : economy.ExplicitStockTargets)
+        {
+            if (target is null) { RejectEconomy("explicitStockTargets", "entry must not be null"); continue; }
+            validateItem(target.ItemTypeId, "economy.explicitStockTargets", false);
+            if (!allTargetIds.Add(target.ItemTypeId)) RejectEconomy("explicitStockTargets", $"duplicate item '{target.ItemTypeId}'");
+            if (target.TargetStock <= 0) RejectEconomy("explicitStockTargets", $"item '{target.ItemTypeId}' targetStock must be positive");
+        }
+
         var rates = economy.HourlyOutputs.Concat(economy.HourlyInputs).Concat(economy.HourlyConsumption).ToArray();
         foreach (var rate in rates)
             if (!targetIds.Contains(rate.ItemTypeId))
@@ -401,15 +410,16 @@ internal sealed class GameDataRegistry
             if (scaledCredits <= 0) reject("initialCredits", $"scaled amount is not positive for {size}");
             DoubleChecked(scaledCredits, size, "initialCredits"); // maxBudget = 2×scaledCredits overflow check
 
-            foreach (var target in economy.StockTargets)
+            foreach (var target in economy.AllStockTargets)
             {
-                long scaledTarget = ScaleForSize(target.TargetStock, factor, size, "economy.stockTargets");
+                string targetField = targetIds.Contains(target.ItemTypeId) ? "economy.stockTargets" : "economy.explicitStockTargets";
+                long scaledTarget = ScaleForSize(target.TargetStock, factor, size, targetField);
                 if (scaledTarget <= 0)
-                    RejectEconomy("stockTargets", $"item '{target.ItemTypeId}' scaled target is not positive for {size}");
-                long maxStock = DoubleChecked(scaledTarget, size, "economy.stockTargets");
+                    reject(targetField, $"item '{target.ItemTypeId}' scaled target is not positive for {size}");
+                long maxStock = DoubleChecked(scaledTarget, size, targetField);
 
-                var initial = profile.InitialInventory.First(stock => stock.ItemTypeId == target.ItemTypeId);
-                long scaledInitial = ScaleForSize(initial.Quantity, factor, size, "initialInventory");
+                var initial = profile.InitialInventory.FirstOrDefault(stock => stock.ItemTypeId == target.ItemTypeId);
+                long scaledInitial = initial is null ? 0 : ScaleForSize(initial.Quantity, factor, size, "initialInventory");
                 if (scaledInitial > maxStock)
                     reject("initialInventory", $"item '{target.ItemTypeId}' scaled stock exceeds capacity for {size}");
 

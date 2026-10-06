@@ -285,9 +285,10 @@ public static class EngineContentLoader
     /// <summary>
     /// Parses the optional "economy" fragment of a market profile (US-0002 TK-0002). Null/absent
     /// stays null — the profile keeps US-0001 bootstrap-only behavior. Once present, every one of
-    /// its own fields is required (missing/null is rejected explicitly here so it never falls
+    /// baseline fields is required (missing/null is rejected explicitly here so it never falls
     /// through as an implied zero/empty default) — only its four Hourly*/stockTargets arrays may
-    /// themselves be legitimately empty. Semantic cross-checks against the owning profile's
+    /// themselves be legitimately empty. explicitStockTargets is an optional capacity extension.
+    /// Semantic cross-checks against the owning profile's
     /// supply/demand/inventory (GameDataRegistry.ValidateStationMarketProfiles) happen after this
     /// method returns.
     /// </summary>
@@ -315,14 +316,16 @@ public static class EngineContentLoader
                 return new StationMarketStockDefinition(stock.ItemTypeId, stock.Quantity.Value);
             }).ToImmutableArray();
 
-        var targets = dto.StockTargets.Select(target =>
-        {
-            if (target is null) throw new ContentException("economy.stockTargets entry must not be null.");
-            if (target.ItemTypeId is null) throw new ContentException("economy.stockTargets entry: itemTypeId is required.");
-            if (target.TargetStock is null)
-                throw new ContentException($"economy.stockTargets item '{target.ItemTypeId}': targetStock is required.");
-            return new StationMarketTargetDefinition(target.ItemTypeId, target.TargetStock.Value);
-        }).ToImmutableArray();
+        static ImmutableArray<StationMarketTargetDefinition> ParseTargets(IReadOnlyList<StationMarketTargetDto?> list, string field) =>
+            list.Select(target =>
+            {
+                if (target is null) throw new ContentException($"{field} entry must not be null.");
+                if (target.ItemTypeId is null) throw new ContentException($"{field} entry: itemTypeId is required.");
+                if (target.TargetStock is null)
+                    throw new ContentException($"{field} item '{target.ItemTypeId}': targetStock is required.");
+                return new StationMarketTargetDefinition(target.ItemTypeId, target.TargetStock.Value);
+            }).ToImmutableArray();
+        var targets = ParseTargets(dto.StockTargets, "economy.stockTargets");
 
         return new StationMarketEconomyDefinition(
             source,
@@ -332,7 +335,8 @@ public static class EngineContentLoader
             targets,
             dto.ShortageThresholdPermille.Value,
             dto.SurplusThresholdPermille.Value,
-            dto.BudgetRegenerationDivisorPerDay.Value);
+            dto.BudgetRegenerationDivisorPerDay.Value,
+            dto.ExplicitStockTargets is null ? [] : ParseTargets(dto.ExplicitStockTargets, "economy.explicitStockTargets"));
     }
 
     /// <summary>
@@ -885,7 +889,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("stockTargets")] IReadOnlyList<StationMarketTargetDto?>? StockTargets,
         [property: JsonPropertyName("shortageThresholdPermille")] int? ShortageThresholdPermille,
         [property: JsonPropertyName("surplusThresholdPermille")] int? SurplusThresholdPermille,
-        [property: JsonPropertyName("budgetRegenerationDivisorPerDay")] int? BudgetRegenerationDivisorPerDay);
+        [property: JsonPropertyName("budgetRegenerationDivisorPerDay")] int? BudgetRegenerationDivisorPerDay,
+        [property: JsonPropertyName("explicitStockTargets")] IReadOnlyList<StationMarketTargetDto?>? ExplicitStockTargets = null);
 
     private sealed record StationMarketTargetDto(
         [property: JsonPropertyName("itemTypeId")] string? ItemTypeId,

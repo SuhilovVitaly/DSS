@@ -659,6 +659,90 @@ public sealed class CatalogCompatibilityTests
     }
 
     [Fact]
+    public void Explicit_stock_targets_are_optional_capacity_without_bootstrap_or_flow()
+    {
+        var baseline = Assert.Single(LoadProfiles(EconomyProfileJson));
+        Assert.Equal("54D14BC95D1BFD36716F76195E9666759BB10F0FAA7C1815F405DBBE2B91EFFA", baseline.Fingerprint);
+        Assert.True(baseline.Economy!.ExplicitStockTargets.IsDefaultOrEmpty);
+        Assert.Equal(baseline.Fingerprint, (baseline with { Economy = baseline.Economy with { ExplicitStockTargets = [] } }).Fingerprint);
+        var document = EconomyDocument();
+        EconomyNode(document)["explicitStockTargets"] = new JsonArray
+        {
+            new JsonObject { ["itemTypeId"] = "item.energy-cells", ["targetStock"] = 144 },
+            new JsonObject { ["itemTypeId"] = "item.silicon", ["targetStock"] = 144 },
+        };
+        var extended = Assert.Single(LoadProfiles(document.ToJsonString()));
+        var created = GameDataRegistry.Create([], [], Items(RealRegistry()), [], stationMarketProfiles: [extended]);
+        Assert.Equal(2, created.StationMarketProfiles.GetDefinition(0).Economy!.ExplicitStockTargets.Length);
+        Assert.Equal(baseline.InitialInventory.ToArray(), extended.InitialInventory.ToArray());
+        Assert.Equal(baseline.SupplyItemTypeIds.ToArray(), extended.SupplyItemTypeIds.ToArray());
+        Assert.Equal(baseline.DemandItemTypeIds.ToArray(), extended.DemandItemTypeIds.ToArray());
+        Assert.Equal(baseline.Economy.HourlyInputs.ToArray(), extended.Economy!.HourlyInputs.ToArray());
+        Assert.Equal(baseline.Economy.HourlyOutputs.ToArray(), extended.Economy.HourlyOutputs.ToArray());
+        Assert.Equal(baseline.Economy.HourlyConsumption.ToArray(), extended.Economy.HourlyConsumption.ToArray());
+        Assert.Equal(5, extended.Economy.AllStockTargets.Count());
+        Assert.NotEqual(baseline.Fingerprint, extended.Fingerprint);
+        Assert.Equal(extended.Fingerprint, (extended with
+        {
+            Economy = extended.Economy with
+            {
+                ExplicitStockTargets = extended.Economy.ExplicitStockTargets.Reverse().ToImmutableArray(),
+            }
+        }).Fingerprint);
+        Assert.NotEqual(extended.Fingerprint, (extended with
+        {
+            Economy = extended.Economy with
+            {
+                ExplicitStockTargets = extended.Economy.ExplicitStockTargets.SetItem(0, new("item.energy-cells", 145)),
+            }
+        }).Fingerprint);
+    }
+
+    [Fact]
+    public void Explicit_stock_target_schema_rejects_malformed_json_with_field_context()
+    {
+        (JsonNode? Value, string Expected)[] cases =
+        [
+            (new JsonObject(), "explicitStockTargets"),
+            (new JsonArray((JsonNode?)null), "explicitStockTargets"),
+            (new JsonArray(new JsonObject { ["itemTypeId"] = "item.energy-cells" }), "targetStock"),
+            (new JsonArray(new JsonObject { ["targetStock"] = 144 }), "itemTypeId"),
+            (new JsonArray(new JsonObject { ["itemTypeId"] = "item.energy-cells", ["targetStock"] = 0.5m }), "explicitStockTargets"),
+            (new JsonArray(new JsonObject { ["itemTypeId"] = "item.energy-cells", ["targetStock"] = 144, ["typo"] = 1 }), "typo"),
+        ];
+        foreach (var (value, expected) in cases)
+        {
+            var document = EconomyDocument();
+            EconomyNode(document)["explicitStockTargets"] = value;
+            Assert.Contains(expected, LoadProfilesError(document.ToJsonString()).Message);
+        }
+    }
+
+    [Fact]
+    public void Explicit_stock_target_semantics_are_validated_on_direct_registry_create()
+    {
+        var baseline = Assert.Single(LoadProfiles(EconomyProfileJson));
+        (ImmutableArray<StationMarketTargetDefinition> Targets, string Expected)[] cases =
+        [
+            ([new("item.unknown", 144)], "unknown item"),
+            ([new("item.fuel", 144)], "refuelStockKg"),
+            ([new("item.ice", 144)], "duplicate item"),
+            ([new("item.energy-cells", 144), new("item.energy-cells", 145)], "duplicate item"),
+            ([new("item.energy-cells", 0)], "must be positive"),
+            ([new("item.energy-cells", long.MaxValue)], "overflows Int64"),
+            ([null!], "must not be null"),
+        ];
+        var items = Items(RealRegistry());
+        foreach (var (targets, expected) in cases)
+        {
+            var profile = baseline with { Economy = baseline.Economy! with { ExplicitStockTargets = targets } };
+            var error = Assert.Throws<ContentException>(() => GameDataRegistry.Create([], [], items, [], stationMarketProfiles: [profile]));
+            Assert.Contains(expected, error.Message);
+            Assert.Contains("explicitStockTargets", error.Message);
+        }
+    }
+
+    [Fact]
     public void Save_v9_roundtrips_market_budget_and_pending_output()
     {
         using var engine = EngineContentLoader.CreateEngineFromSettingsFile(SettingsPath);
