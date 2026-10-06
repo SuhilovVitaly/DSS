@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using DeepSpaceSaga.EconomyBalance;
+using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.EconomyBalance.Tests;
 
@@ -14,6 +15,26 @@ public sealed class BalanceRunTests
     internal static BalanceMatrix Matrix(int hours = 2) => new([1], [Starter], hours * 3_600_000L, 3_600_000, hours / 2 * 3_600_000L);
     private static ImmutableArray<BalanceCaseEvidence> Run(BalanceMatrix? matrix = null, string? scenario = null) =>
         new EconomyBalanceRunner().Run(Settings, scenario ?? Scenario, matrix ?? Matrix());
+
+    [Theory]
+    [InlineData("item")]
+    [InlineData("category")]
+    [InlineData("all")]
+    [InlineData("neutral")]
+    public void Legacy_price_event_preserves_actual_item_category_and_all_item_scope(string scope)
+    {
+        (string ItemId, string Category)[] inventory = [("item.ice", "Resource"), ("item.iron-ore", "Resource"), ("item.water", "Good"), ("item.fuel", "Good")];
+        var factor = new StationEventPriceFactorData(scope == "category" ? "rEsOuRcE" : null, scope == "item" ? "item.ice" : null, scope == "neutral" ? 1000 : 1500);
+        var evt = new StationEventData("legacy-scope", "Legacy scope", null, 0, 3_600_000, [factor]);
+        var expected = inventory.Where(i => scope != "neutral" && (scope == "all" || scope == "item" && i.ItemId == "item.ice" || scope == "category" && i.Category == "Resource"))
+            .Select(i => i.ItemId).Order(StringComparer.Ordinal).ToArray();
+        var influenced = EconomyBalanceRunner.InfluencedItems(evt, inventory);
+        Assert.Equal(expected, influenced.ToArray());
+        var sample = MarketHealthEvaluatorTests.Healthy().HourlySamples[0] with
+        { Events = [new("A", evt.EventId, "legacy", 0, 3_600_000, influenced, false)] };
+        Assert.All(inventory, i => Assert.Equal(expected.Contains(i.ItemId), MarketHealthEvaluator.Influenced(sample, "A", i.ItemId)));
+        Assert.All(expected, item => Assert.False(MarketHealthEvaluator.Influenced(sample with { GameTimeMs = 3_600_000 }, "A", item)));
+    }
 
     [Fact]
     public void Matrix_rejects_duplicate_seed_id_nonpositive_multiplier_or_misaligned_time()
@@ -66,6 +87,8 @@ public sealed class BalanceRunTests
         Assert.All(proof.RoundTripLegs, s => Assert.Equal(2, s.Replays.Length));
         foreach (var s in completed)
         {
+            Assert.NotNull(s.DepartureRoute); Assert.Equal(s.BuyGameTimeMs, s.DepartureGameTimeMs);
+            Assert.Equal(s.Origin, s.DepartureRoute.Origin); Assert.Equal(s.Destination, s.DepartureRoute.Destination);
             Assert.NotNull(s.BuyQuote); Assert.NotNull(s.SellQuote); Assert.NotNull(s.Ledger);
             Assert.Equal(s.Origin, s.BuyReceipt!.StationObjectId); Assert.Equal(s.Destination, s.SellReceipt!.StationObjectId);
             Assert.Equal(s.Origin + "/" + s.Destination, s.Ledger.RouteId);

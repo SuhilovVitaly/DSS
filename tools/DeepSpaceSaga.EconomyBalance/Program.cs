@@ -74,6 +74,7 @@ internal static class Program
 
     private static BalanceStrategyEvidence CanonicalStrategy(BalanceStrategyEvidence s) => s with
     {
+        DepartureRoute = s.DepartureRoute is { } route ? route with { EventIds = route.EventIds.Order(StringComparer.Ordinal).ToImmutableArray() } : null,
         PostingIds = s.PostingIds.Order(StringComparer.Ordinal).ToImmutableArray(),
         Replays = s.Replays.OrderBy(r => r.CommandId, StringComparer.Ordinal).ToImmutableArray(),
         RoundTripLegs = s.RoundTripLegs.Select(CanonicalStrategy).ToImmutableArray(), // Physical leg sequence is semantic.

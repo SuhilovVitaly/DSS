@@ -43,6 +43,8 @@ internal sealed record BalanceStrategyEvidence(long StateGameTimeMs, bool EventS
     public string? RoundTripStopReason { get; init; }
     public long BatchCeilingQuantity { get; init; }
     public long ReservedArrivalFeeCredits { get; init; }
+    public BalanceRoute? DepartureRoute { get; init; }
+    public long? DepartureGameTimeMs { get; init; }
 }
 internal sealed record BalanceCaseEvidence(ulong Seed, string ShipConfigurationId, ImmutableArray<BalanceHourlySample> HourlySamples,
     ImmutableArray<BalanceStrategyEvidence> Strategies, string ContinuousStateHash, string SaveLoadStateHash)
@@ -173,6 +175,16 @@ internal sealed class EconomyBalanceRunner
         catch { engine.Dispose(); throw; }
     }
 
+    internal static ImmutableArray<string> InfluencedItems(StationEventData evt, IEnumerable<(string ItemId, string Category)> inventory)
+    {
+        var affected = (evt.ItemEffects ?? []).Where(i => i.ProductionMultiplierPermille != 1000 || i.DemandMultiplierPermille != 1000 ||
+            i.PriceMultiplierPermille != 1000 || i.ActivationStockDelta != 0).Select(i => i.ItemTypeId);
+        var factors = (evt.PriceFactors ?? []).Where(f => f.Factor != 1000).ToArray();
+        return affected.Concat(inventory.Where(i => factors.Any(f => f.ItemTypeId is { } item ? item == i.ItemId :
+            f.Category is null || string.Equals(f.Category, i.Category, StringComparison.OrdinalIgnoreCase))).Select(i => i.ItemId))
+            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray();
+    }
+
     internal static BalanceHourlySample Sample(SimulationEngine engine, GameDataRegistry registry, ScenarioFile save)
     {
         long time = save.GameState.GameTimeMs;
@@ -182,8 +194,11 @@ internal sealed class EconomyBalanceRunner
                 (e.DurationMs is null || e.StartedGameTimeMs + e.DurationMs > time)).OrderBy(e => e.EventId, StringComparer.Ordinal)
                 .Select(e => new BalanceEvent(o.ObjectId, e.EventId, e.DefinitionId ?? "legacy", e.StartedGameTimeMs,
                     e.DurationMs is null ? long.MaxValue : checked(e.StartedGameTimeMs + e.DurationMs.Value),
-                    (e.ItemEffects ?? []).Where(i => i.ProductionMultiplierPermille != 1000 || i.DemandMultiplierPermille != 1000 ||
-                        i.PriceMultiplierPermille != 1000 || i.ActivationStockDelta != 0).Select(i => i.ItemTypeId).Order(StringComparer.Ordinal).ToImmutableArray(),
+                    InfluencedItems(e, (o.Inventory ?? []).Select(i =>
+                    {
+                        var item = registry.ItemTypes.GetDefinition(registry.ItemTypes.GetIndex(i.ItemTypeId));
+                        return (item.TypeId, item.Category.ToString());
+                    })),
                     e.RouteEffect?.FromStationObjectId is not null))).ToImmutableArray();
         var modifiers = save.GameState.SpaceObjects.SelectMany(o => (o.Events ?? []).Where(e => e.StartedGameTimeMs <= time &&
                 (e.DurationMs is null || e.StartedGameTimeMs + e.DurationMs > time) && e.RouteEffect?.FromStationObjectId is not null)
@@ -347,6 +362,7 @@ internal sealed class BalanceDriver : IDisposable
     internal BalanceStrategyEvidence Run(BalanceHourlySample state, BalanceRoute route, string item, BalanceShipConfiguration config)
     {
         long capacity = 0, analytical = 0, requested = 0, ceiling = 0, arrivalFee = 0, buyTime = _calendar, sellTime = _calendar;
+        BalanceRoute? departureRoute = null; long? departureTime = null;
         TradeQuoteSnapshot? buyQuote = null, sellQuote = null; TradeExecutionReceipt? buy = null, sell = null;
         BalanceLedgerEvidence? ledger = null; ImmutableArray<string> postingIds = []; var replays = ImmutableArray.CreateBuilder<BalanceReplayEvidence>();
         BalanceStrategyEvidence Evidence(string outcome, string? reason) => new(state.GameTimeMs, state.Events.Length > 0,
@@ -354,7 +370,7 @@ internal sealed class BalanceDriver : IDisposable
             capacity, analytical, requested, buy?.ExecutedQuantity ?? 0, sell?.ExecutedQuantity ?? 0, buyTime, sellTime,
             outcome, reason, buyQuote is null ? null : Terms(buyQuote), sellQuote is null ? null : Terms(sellQuote),
             BalanceCanonical.Receipt(buy), BalanceCanonical.Receipt(sell), ledger, postingIds, replays.ToImmutable())
-        { BatchCeilingQuantity = ceiling, ReservedArrivalFeeCredits = arrivalFee };
+        { BatchCeilingQuantity = ceiling, ReservedArrivalFeeCredits = arrivalFee, DepartureRoute = departureRoute, DepartureGameTimeMs = departureTime };
         if (PositionAt(route.Origin) is { } positioningReason) return Evidence("rejected", positioningReason);
         var module = _snapshot.InstalledModules.Single(m => m.ModuleId == _cargo);
         capacity = module.AvailableCapacityKg ?? 0;
@@ -382,6 +398,8 @@ internal sealed class BalanceDriver : IDisposable
         var buyResult = Send(_cargo, TradeCommandTypes.Buy, item: item, quantity: requested, quote: buyQuote); buy = buyResult.Result?.TradeReceipt;
         if (buyResult.Result?.Status != CommandResultStatus.Executed) return Evidence("rejected", buyResult.Result?.ReasonCode ?? "buy_incomplete");
         replays.Add(Replay(buyResult.Command, buyQuote, "predeparture"));
+        departureTime = _calendar;
+        departureRoute = EconomyBalanceRunner.Sample(_engine, _registry, Save()).Routes.Single(r => r.Origin == route.Origin && r.Destination == route.Destination);
         if (Fly(route.Destination) is { } flightReason) return Evidence("rejected", flightReason);
         string? voyageId = _snapshot.VoyageFinances.LastOrDefault(v => v.OriginStationObjectId == route.Origin && v.DestinationStationObjectId == route.Destination)?.VoyageId;
         if (voyageId is null) return Evidence("unknown", "matching_ledger_missing");

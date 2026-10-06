@@ -28,9 +28,15 @@ internal static class StrategyBalanceEvaluator
         Int128 net = (Int128)l.GrossSalesCredits - l.CostOfGoodsSoldCredits.Value - l.RouteFuelCostCredits - l.PortFeesAssessedCredits - l.EventCostsCredits + l.PassengerPayoutCredits - l.PassengerPenaltyCredits;
         return l.NetProfitCredits is { } published && net == published;
     }
+    private static bool DepartureBinding(BalanceStrategyEvidence s) => s.DepartureRoute is not { } route ? s.DepartureGameTimeMs is null :
+        s.DepartureGameTimeMs is { } time && time >= s.BuyGameTimeMs && time <= s.SellGameTimeMs &&
+        route.Origin == s.Origin && route.Destination == s.Destination && route.DistanceClass == s.DistanceClass && route.RiskProfileId == s.RiskProfileId &&
+        Enum.IsDefined(route.Risk) && route.Availability is TradingRouteAvailability.Available or TradingRouteAvailability.Restricted &&
+        route.TravelTimeMs > 0 && route.FuelMultiplierPermille > 0;
+
     private static bool Binding(BalanceStrategyEvidence s)
     {
-        if (string.IsNullOrWhiteSpace(s.Origin) || string.IsNullOrWhiteSpace(s.Destination) || s.Origin == s.Destination || string.IsNullOrWhiteSpace(s.ItemTypeId) ||
+        if (!DepartureBinding(s) || string.IsNullOrWhiteSpace(s.Origin) || string.IsNullOrWhiteSpace(s.Destination) || s.Origin == s.Destination || string.IsNullOrWhiteSpace(s.ItemTypeId) ||
             s.ExecutedBuyQuantity <= 0 || s.ExecutedSellQuantity <= 0 || s.ExecutedBuyQuantity > s.RequestedQuantity || s.ExecutedSellQuantity > s.ExecutedBuyQuantity ||
             s.RequestedQuantity > s.BatchCeilingQuantity || s.ActualCapacityKg < 0 || s.AnalyticalCapacityKg < 0 || s.ReservedArrivalFeeCredits < 0 ||
             s.BuyReceipt is not { } buy || s.SellReceipt is not { } sell || s.BuyQuote is not { } bq || s.SellQuote is not { } sq) return false;
@@ -149,7 +155,7 @@ internal static class StrategyBalanceEvaluator
             .Select(s => new { s.StateGameTimeMs, Route = Key(s), Margin = Margin(s.Ledger), s.Ledger }));
         foreach (string distanceClass in new[] { "Short", "Medium", "Long" })
         {
-            var subset = candidates.Where(s => s.DistanceClass == distanceClass && (distanceClass != "Short" || Route(evidence, s)?.Risk == TradingRouteRisk.Safe)).ToArray();
+            var subset = candidates.Where(s => s.DistanceClass == distanceClass && (distanceClass != "Short" || (s.DepartureRoute?.Risk ?? Route(evidence, s)?.Risk) == TradingRouteRisk.Safe)).ToArray();
             if (subset.Length == 0) Add("missing_comparable_strategy", "known positive-COGS completed " + distanceClass + " strategy", Observed(strategies.Where(s => s.DistanceClass == distanceClass)));
             if (distanceClass == "Short" && !subset.Any(s => Margin(s.Ledger) is >= 50 and <= 150))
                 Add("short_margin_band", "at least one safe Short margin50..150 permille", Observed(subset));

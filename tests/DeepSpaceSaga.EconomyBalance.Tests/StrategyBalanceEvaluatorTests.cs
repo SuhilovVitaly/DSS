@@ -34,6 +34,21 @@ public sealed class StrategyBalanceEvaluatorTests
         S("long-event", "D", "E", "Long", -10, time: 3_600_000, evt: true));
     private static ImmutableArray<BalanceViolation> E(BalanceCaseEvidence c) => StrategyBalanceEvaluator.EvaluateCase(c);
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Safe_short_margin_uses_actual_departure_risk_after_positioning(bool becameElevated)
+    {
+        var strategy = S("departure"); var c = C(strategy);
+        var route = c.HourlySamples[0].Routes[0];
+        c = c with
+        {
+            HourlySamples = c.HourlySamples.Select(h => h with { Routes = [route with { Risk = becameElevated ? TradingRouteRisk.Safe : TradingRouteRisk.Elevated }] }).ToImmutableArray(),
+            Strategies = [strategy with { DepartureRoute = route with { Risk = becameElevated ? TradingRouteRisk.Elevated : TradingRouteRisk.Safe }, DepartureGameTimeMs = strategy.BuyGameTimeMs }]
+        };
+        Assert.Equal(becameElevated, E(c).Any(v => v.Code == "short_margin_band"));
+    }
+
     [Fact]
     public void Published_ledger_identity_is_audited_without_using_player_credit_delta()
     {
