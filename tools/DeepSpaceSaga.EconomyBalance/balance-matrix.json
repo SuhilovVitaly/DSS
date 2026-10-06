@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "seeds": [
+    1,
+    2,
+    3,
+    5,
+    8,
+    13,
+    21,
+    34,
+    55,
+    89,
+    144,
+    233
+  ],
+  "shipConfigurations": [
+    {
+      "id": "starter",
+      "cargoCapacityMultiplierPermille": 1000,
+      "fuelEfficiencyMultiplierPermille": 1000
+    },
+    {
+      "id": "cargo-upgrade",
+      "cargoCapacityMultiplierPermille": 2000,
+      "fuelEfficiencyMultiplierPermille": 1000
+    }
+  ],
+  "horizonHours": 240,
+  "sampleIntervalHours": 1,
+  "saveLoadCheckpointHours": 120,
+  "zeroStockMaximumPermille": 250,
+  "shortMarginMinimumPermille": 50,
+  "shortMarginMaximumPermille": 150,
+  "mediumMarginMinimumPermille": 150,
+  "mediumMarginMaximumPermille": 350,
+  "maximumToMedianMultiplierPermille": 2000
+}
