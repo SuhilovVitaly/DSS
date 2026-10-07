@@ -11,12 +11,12 @@ public sealed class VoyageFuelContentTests
         "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
 
     [Fact]
-    public void Packaged_basic_engine_declares_ten_km_per_kg_efficiency()
+    public void Packaged_basic_engine_declares_cluster_voyage_efficiency()
     {
         using var json = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "Data", "Modules", "Engine", "modules-engine.json")));
         var engine = Assert.Single(json.RootElement.GetProperty("moduleImplementations").EnumerateArray(),
             m => m.GetProperty("typeId").GetString() == "module.engine.basic");
-        Assert.Equal(100, Assert.Single(engine.EnumerateObject(), p => p.Name == "fuelEfficiencyKmPerKg").Value.GetInt64());
+        Assert.Equal(200, Assert.Single(engine.EnumerateObject(), p => p.Name == "fuelEfficiencyKmPerKg").Value.GetInt64());
     }
 
     [Theory]
@@ -30,7 +30,7 @@ public sealed class VoyageFuelContentTests
         engine.LoadScenario(ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", scenario, "scenario.json")));
         var snapshot = engine.CaptureSnapshotForTests(0, simulationTimeMs: 0);
         Assert.Contains(snapshot.Objects, o => o.ObjectId == snapshot.PlayerShipObjectId);
-        Assert.Equal(100, registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.engine.basic")).FuelEfficiencyKmPerKg);
+        Assert.Equal(200, registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.engine.basic")).FuelEfficiencyKmPerKg);
     }
 
     [Fact]

@@ -54,9 +54,14 @@ internal sealed class ClusterBalanceRunner
             bootstrap.LoadScenario(source with { GameState = source.GameState with { MasterSeed = seed, CurrentSpeed = "Speed0" } }, generation: generation);
             var save = bootstrap.CaptureSaveStateForTests(0, SimulationSpeed.Speed0, 0);
             var map = save.GameState.ClusterMap ?? throw new BalanceConfigurationException("clusterMap missing");
-            string origin = map.Stations.Where(s => s.ClusterId == map.StartClusterId && s.MarketProfileId == "market.mining").OrderBy(s => s.ObjectId, StringComparer.Ordinal).First().ObjectId;
+            var originalStationIds = source.GameState.SpaceObjects.Where(o => o.ObjectType == SpaceObjectType.Station).Select(o => o.ObjectId).ToHashSet(StringComparer.Ordinal);
+            string origin = map.Stations.Where(s => s.ClusterId == map.StartClusterId && s.MarketProfileId == "market.mining")
+                .OrderBy(s => originalStationIds.Contains(s.ObjectId) ? 0 : 1).ThenBy(s => s.ObjectId, StringComparer.Ordinal).First().ObjectId;
+            var initialGeography = bootstrap.CaptureClusterVoyageMapForTools()!;
             string Destination(bool remote) => map.Stations.Where(s => s.MarketProfileId == "market.industrial" && (s.ClusterId != map.StartClusterId) == remote &&
-                map.Links.Any(l => l.FromStationId == origin && l.ToStationId == s.ObjectId)).OrderBy(s => s.ObjectId, StringComparer.Ordinal).First().ObjectId;
+                map.Links.Any(l => l.FromStationId == origin && l.ToStationId == s.ObjectId))
+                .OrderBy(s => initialGeography.Edges.Single(e => e.FromStationObjectId == origin && e.ToStationObjectId == s.ObjectId || e.ToStationObjectId == origin && e.FromStationObjectId == s.ObjectId).DistanceKm)
+                .ThenBy(s => s.ObjectId, StringComparer.Ordinal).First().ObjectId;
             var samples = ImmutableArray.CreateBuilder<BalanceHourlySample>();
             var shortages = ImmutableArray.CreateBuilder<ClusterInputShortage>();
             void Sample(SimulationEngine engine, ScenarioFile state)

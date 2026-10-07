@@ -13,7 +13,7 @@
       "angularInertiaDegPerSec": 4,
       "baseCycleTimeMs": 1000,
       "fuelCapacityKg": 1000,
-      "fuelEfficiencyKmPerKg": 100,
+      "fuelEfficiencyKmPerKg": 200,
       "baseSuccessChancePercent": 100
     }
   ]

@@ -7,17 +7,19 @@ namespace DeepSpaceSaga.EconomyBalance.Tests;
 public sealed class LongVoyageRunnerTests
 {
     private static readonly Lazy<ImmutableArray<ClusterCaseEvidence>> Cases = new(() => new ClusterBalanceRunner().Run(
-        BalanceRunTests.Settings, BalanceRunTests.Scenario, ClusterMatrixFile.Default with { Seeds = [1], ShipConfigurations = [BalanceRunTests.Starter] }));
+        BalanceRunTests.Settings, BalanceRunTests.Scenario, ClusterMatrixFile.Default with { ShipConfigurations = [BalanceRunTests.Starter] }));
 
     [Fact]
     public void ClusterRunCompletesReturnBeyondHundredDays()
     {
-        var c = Assert.Single(Cases.Value);
-        Assert.True(c.Outcome == "completed", c.StopReason);
-        Assert.Equal(3, c.CompletedLocalCycles); Assert.Equal(1, c.CompletedRoundTrips);
-        Assert.InRange(c.HorizonReachedDays, 100, 1000);
-        Assert.Equal(c.Economy.Strategies.First().Origin, c.Economy.Strategies.Last().Destination);
-        Assert.Equal(c.Economy.ContinuousStateHash, c.Economy.SaveLoadStateHash);
+        foreach (var c in Cases.Value)
+        {
+            Assert.True(c.Outcome == "completed", $"seed={c.Seed}: {c.StopReason}");
+            Assert.Equal(3, c.CompletedLocalCycles); Assert.Equal(1, c.CompletedRoundTrips);
+            Assert.InRange(c.HorizonReachedDays, 100, 1000);
+            Assert.Equal(c.Economy.Strategies.First().Origin, c.Economy.Strategies.Last().Destination);
+            Assert.Equal(c.Economy.ContinuousStateHash, c.Economy.SaveLoadStateHash);
+        }
         var capped = Assert.Single(new ClusterBalanceRunner().Run(BalanceRunTests.Settings, BalanceRunTests.Scenario,
             ClusterMatrixFile.Default with { Seeds = [1], ShipConfigurations = [BalanceRunTests.Starter], MaxHorizonDays = 100 }));
         Assert.Equal("incomplete", capped.Outcome); Assert.Equal("cluster_horizon_cap_reached", capped.StopReason);
@@ -26,7 +28,7 @@ public sealed class LongVoyageRunnerTests
     [Fact]
     public void HourlyEconomyAndLedgerAreAuthoritative()
     {
-        var c = Assert.Single(Cases.Value);
+        var c = Cases.Value.First();
         Assert.True(c.Outcome == "completed", c.StopReason);
         Assert.True(c.Economy.HourlySamples.Length >= 2401);
         Assert.Equal(Enumerable.Range(0, c.Economy.HourlySamples.Length).Select(h => h * GameCalendar.HourMs), c.Economy.HourlySamples.Select(s => s.GameTimeMs));
