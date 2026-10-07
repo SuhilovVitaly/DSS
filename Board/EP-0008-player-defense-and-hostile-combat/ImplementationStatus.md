@@ -14,7 +14,7 @@ Execution started 2026-10-07 under [EpicExecutionPrompt](../EpicExecutionPrompt.
 ## Preparation
 
 - Root/process guides and execution prompt read.
-- Documentation and epic inventory: 131 Markdown files, being read in six semantic batches; reading evidence is in `D:/DeepSpaceSaga/ep8-validation/`.
+- Documentation and epic inventory: all 131 Markdown files read completely in six semantic batches; reading evidence is in `D:/DeepSpaceSaga/ep8-validation/`. Truncated output was reread in smaller batches.
 - Board preflight: 13 stories, 44 tickets, 60 Markdown files; dependency DAG is acyclic, no missing dependencies or broken relative links after Windows path normalization.
 - US-0013 already covers the final project-wide documentation audit and depends on all functional/acceptance stories.
 - Existing Graphify output lives in `src/graphify-out/`; the final tooling ticket must use this actual path. Graph output is navigation evidence, not runtime proof.
@@ -25,14 +25,16 @@ Execution started 2026-10-07 under [EpicExecutionPrompt](../EpicExecutionPrompt.
 | Check | Observed result |
 |---|---|
 | Contracts project, `dotnet test ... --no-restore` | PASS: 161/161 |
-| Solution baseline test run | RUNNING; Contracts 161/161 and Motion 141/141 observed |
+| Solution baseline test run | Engine still RUNNING; Contracts 161/161, Motion 141/141, Client 1735/1735, EconomyBalance 58/58 and Performance 4/4 completed |
 | Native acceptance | NOT RUN |
 
 The solution run uses `dotnet test DeepSpaceSaga.sln --no-restore --logger "trx;LogFilePrefix=ep8-baseline" --results-directory D:/DeepSpaceSaga/ep8-validation/baseline-tests`.
 
 ## Ticket publication
 
-No implementation ticket has yet been completed or published. Planning/readiness checks do not establish gameplay acceptance.
+Preparation commit `198d20a76e8812a0a2c1e268b5613daa2ad1284d`: pushed and verified on origin/base-fight.
+
+TK-0001 weapon-contract implemented and validated (Contracts 165/165; build/format/diff PASS); its commit/push is the next publication step. Runtime formulas and other epic criteria remain open. Planning/readiness checks do not establish gameplay acceptance.
 
 ## Execution scope notes
 

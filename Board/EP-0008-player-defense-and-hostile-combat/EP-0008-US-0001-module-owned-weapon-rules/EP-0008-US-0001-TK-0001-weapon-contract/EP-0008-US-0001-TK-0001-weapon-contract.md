@@ -3,7 +3,7 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0001-module-owned-weapon-rules
 ticket: EP-0008-US-0001-TK-0001-weapon-contract
 title: "Контракт характеристик торпеды"
-stage: draft
+stage: implemented
 layer: contracts
 depends_on: []
 files_touched: 5
@@ -14,7 +14,7 @@ revision: 1
 
 # Контракт характеристик торпеды
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED — automated checks passed; self-review completed.
 
 ## Why
 
@@ -70,8 +70,8 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Weapon_parameters_roundtrip`
-- [ ] `Operator_skill_is_metadata`
+- [x] `Weapon_parameters_roundtrip`
+- [x] `Operator_skill_is_metadata`
 
 Команды из корня DSS после реализации:
 
@@ -95,3 +95,19 @@ git diff --check
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-07
+
+Implemented in the five allowlisted files. Launcher RangeKm/Maneuverability and flight CapturedManeuverability/OwnerPlayerRelationAtLaunch are explicit nullable transport fields; absence does not invent module defaults. Added shared LaunchMode and countermeasure termination reasons; journal retains module, mode, accuracy, target maneuverability and expiry facts after projectile removal. Existing enum values keep their numeric identities.
+
+Operator Skill remains metadata in the DTO. Predecessor rating transport fields remain temporarily so this contract commit does not break the existing Engine; runtime formula/capture changes belong to TK-0005 and are not claimed here. DTO tests cover skill 0/50/100 independently of module maneuverability, decimal roundtrip, launch provenance, hull-hit chance distinction and expiry without a fabricated roll/damage.
+
+Observed validation:
+
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj --no-restore`: PASS, 165/165.
+- `dotnet build src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.csproj --no-restore`: PASS, 0 warnings/errors.
+- `dotnet format whitespace DeepSpaceSaga.sln --verify-no-changes --no-restore --include src/DeepSpaceSaga.Contracts/CombatSnapshot.cs src/DeepSpaceSaga.Contracts/WeaponOperatorSnapshot.cs src/DeepSpaceSaga.Contracts/CombatJournalEntry.cs tests/DeepSpaceSaga.Contracts.Tests/CombatSnapshotTests.cs tests/DeepSpaceSaga.Contracts.Tests/WeaponOperatorSnapshotTests.cs`: PASS.
+- `git diff --check`: PASS.
+- Self-review: no confirmed findings in this contract scope. No native UI change in this ticket; epic native acceptance remains NOT RUN. This is not user APPROVED.
+
+Publication is recorded by the Git commit carrying this full ticket ID and subsequent remote verification; no SHA is predicted in advance.

@@ -7,6 +7,22 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public class WeaponOperatorSnapshotTests
 {
     [Theory]
+    [InlineData(0)]
+    [InlineData(50)]
+    [InlineData(100)]
+    public void Operator_skill_is_metadata(int skill)
+    {
+        var assigned = new WeaponOperatorSnapshot("crew", "Operator", WeaponSkillType.TorpedoAttack, skill, 5, 5);
+        var launcher = new LauncherCombatSnapshot(null, 3, 90, 150, assigned, RangeKm: 200, Maneuverability: 5);
+        var restored = JsonSerializer.Deserialize<LauncherCombatSnapshot>(JsonSerializer.Serialize(launcher))!;
+        Assert.Equal(skill, restored.Operator!.Skill);
+        Assert.Equal("crew", restored.Operator.CrewId);
+        Assert.Equal(5m, restored.Maneuverability);
+        Assert.Equal(200, restored.RangeKm);
+        Assert.Equal(launcher, restored);
+    }
+
+    [Theory]
     [InlineData(WeaponSkillType.TorpedoAttack)]
     [InlineData(WeaponSkillType.CountermeasureDefense)]
     public void Operator_payload_roundtrips(WeaponSkillType skillType)

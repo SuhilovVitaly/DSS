@@ -10,6 +10,12 @@ public static class CombatCommandTypes
     public const string SelfDestruct = "torpedo.selfDestruct";
 }
 
+/// <summary>Origin of a launch; independent of the launcher's current automatic-defense toggle.</summary>
+public enum LaunchMode { Auto, Manual }
+
+/// <summary>Why a countermeasure flight ended. Only a resolved contact consumes an interception roll.</summary>
+public enum CountermeasureTerminationKind { Intercept, MissedCoastExpired, LifetimeExpired, TargetLost, OwnerLost }
+
 /// <summary>
 /// Player-visible authoritative hull health in integer hit points. ShipClassId is an
 /// explicit content identity, independent of sprite/name. The Engine owns damage and masking.
@@ -26,7 +32,11 @@ public sealed record LauncherCombatSnapshot(
     double SpeedKmS,
     double TurnRateDegPerSec,
     int Damage,
-    WeaponOperatorSnapshot? Operator = null);
+    WeaponOperatorSnapshot? Operator = null,
+    /// <summary>Inclusive launch range in km, supplied by the module definition. Null means not supplied.</summary>
+    double? RangeKm = null,
+    /// <summary>Module-owned interception resistance in 0..100, distinct from physical turn rate.</summary>
+    decimal? Maneuverability = null);
 
 /// <summary>
 /// Immutable confirmed torpedo flight. The Engine produces this state; the DTO performs
@@ -66,7 +76,11 @@ public sealed record TorpedoSnapshot(
     decimal? TorpedoRating = null,
     WeaponOperatorSnapshot? RatingBreakdown = null,
     /// <summary>True when the Engine supplied legacy migration rating 30 without inventing an operator.</summary>
-    bool RatingMigratedFromLegacySave = false);
+    bool RatingMigratedFromLegacySave = false,
+    /// <summary>Module maneuverability captured at launch; replan and operator changes never replace it.</summary>
+    decimal? CapturedManeuverability = null,
+    /// <summary>Launching owner's relation to the player, retained as provenance after the owner disappears.</summary>
+    string? OwnerPlayerRelationAtLaunch = null);
 
 /// <summary>Current execution phase, independent of whether the route predicts an intercept.</summary>
 public enum TorpedoRoutePhase

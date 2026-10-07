@@ -8,9 +8,11 @@ public enum WeaponSkillType
 }
 
 /// <summary>
-/// Authoritative operator and rating breakdown. Skill is in 0..100; ratings use decimal
-/// arithmetic without intermediate rounding (base rating * skill / 50). A null operator
-/// means no assignment, whereas a present operator with zero skill has zero rating.
+/// Authoritative operator identity and skill metadata (0..100). A null operator means
+/// no assignment; an assigned zero-skill operator remains an operator. This DTO does
+/// not compute weapon performance. BaseRating and EffectiveRating are retained transport
+/// fields for the predecessor runtime; EP-0008 consumers use the explicit module-owned
+/// accuracy/maneuverability fields, independently of Skill.
 /// </summary>
 public sealed record WeaponOperatorSnapshot(
     string CrewId,
