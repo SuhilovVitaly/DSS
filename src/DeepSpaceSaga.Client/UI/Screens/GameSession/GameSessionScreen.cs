@@ -565,6 +565,7 @@ public sealed partial class GameSessionScreen : IScreen
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
         if (_combatJournalPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
+        if (_objectInfoPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (!float.IsFinite(delta) || delta == 0 || _viewportW <= 0 || _viewportH <= 0 ||
             IsClickOnUiPanel(x / _uiScale, y / _uiScale))
             return ScreenEvent.None;
@@ -1280,7 +1281,7 @@ public sealed partial class GameSessionScreen : IScreen
         var playerShip = FindPlayerShip(_renderStates);
         var selectedOrActive = FindRenderStateById(_activeObjectId ?? _selectedObjectId);
         _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
-            ToObjectInfoPanelData(playerShip), ToObjectInfoPanelData(selectedOrActive, playerShip));
+            ToObjectInfoPanelData(playerShip), ToObjectInfoPanelData(selectedOrActive, playerShip), _uiViewportH);
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);

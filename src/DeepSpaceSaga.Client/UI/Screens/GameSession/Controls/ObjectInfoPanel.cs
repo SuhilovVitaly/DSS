@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 /// a Caption (360×32) with a Hide/Show toggle button (26×26), followed by two
 /// fixed info rows — "Player Ship" and "Selected Object" — each a caption
 /// (360×36) over a body showing an object's image, name, speed and direction
-/// or authoritative resource survey knowledge. The body grows to fit all lines.
+/// or authoritative resource survey knowledge. Long bodies scroll within the viewport.
 /// The "Selected Object" row shows whichever object is currently hovered
 /// (ActiveObjectId) or, absent a hover, last clicked (SelectedObjectId) — the
 /// caller resolves that priority and passes the result in.
@@ -54,6 +54,9 @@ public sealed class ObjectInfoPanel
     private SKRect _bodyRect;
     private readonly SKRect[] _rowCaptionRects = new SKRect[RowNames.Length];
     private readonly SKRect[] _rowBodyRects = new SKRect[RowNames.Length];
+    private readonly float[] _rowScrollOffsets = new float[RowNames.Length];
+    private readonly float[] _rowScrollLimits = new float[RowNames.Length];
+    private readonly string?[] _rowObjectIds = new string?[RowNames.Length];
 
     private int _hoveredButtonIndex = -1; // 0 = toggle, -1 = none
     private int _pressedButtonIndex = -1;
@@ -201,9 +204,9 @@ public sealed class ObjectInfoPanel
             {
                 lines.Add(("Cluster", cluster));
                 lines.Add(("Profile", d.ClusterProfile ?? "—"));
-                lines.Add(("Potential cargo", d.ClusterDirections ?? "—"));
                 lines.Add(("Straight flight estimate", d.StraightFlightDays is { } days ? $"{days:0.###} calendar days" : "Unavailable"));
                 lines.Add(("Estimate epoch", $"T+{d.EstimateMotionTimeMs} simulation ms"));
+                lines.Add(("Potential cargo", d.ClusterDirections ?? "—"));
             }
             if (d.ResourceCluster is { } resourceCluster)
             {
@@ -286,6 +289,20 @@ public sealed class ObjectInfoPanel
 
     public void OnMouseUp(float x, float y) => _pressedButtonIndex = -1;
 
+    public bool Scroll(float x, float y, float delta)
+    {
+        if (!float.IsFinite(delta) || delta == 0) return false;
+        for (int i = 0; i < _rowBodyRects.Length; i++)
+        {
+            if (!_rowBodyRects[i].Contains(x, y)) continue;
+            _rowScrollOffsets[i] = Math.Clamp(_rowScrollOffsets[i] - Math.Sign(delta) * 3 * LineHeight, 0, _rowScrollLimits[i]);
+            return true;
+        }
+        return false;
+    }
+
+    internal float ScrollOffset(int row) => _rowScrollOffsets[row];
+
     // ── Render ──────────────────────────────────────────────────
 
     /// <param name="viewportWidth">Logical (unscaled) viewport width — the panel is right-aligned against it.</param>
@@ -294,7 +311,8 @@ public sealed class ObjectInfoPanel
     /// whatever else already occupies the top-right corner (the Speed/Scale panels),
     /// since a fixed <see cref="Margin"/> from the top would overlap them.
     /// </param>
-    public void Render(SKCanvas canvas, float viewportWidth, float top, ObjectInfoPanelData? playerShip, ObjectInfoPanelData? selectedOrActive)
+    public void Render(SKCanvas canvas, float viewportWidth, float top, ObjectInfoPanelData? playerShip, ObjectInfoPanelData? selectedOrActive,
+        float viewportHeight = float.PositiveInfinity)
     {
         float left = viewportWidth - Margin - PanelWidth;
 
@@ -321,6 +339,15 @@ public sealed class ObjectInfoPanel
             {
                 bool opened = IsRowOpen(i);
                 float bodyHeight = Math.Max(RowBodyHeight, 2 * Padding + BuildRenderLines(rowData[i]).Count * LineHeight);
+                float fullHeight = bodyHeight;
+                bodyHeight = Math.Min(bodyHeight, Math.Max(0, viewportHeight - Margin - rowY - RowCaptionHeight));
+                if (_rowObjectIds[i] != rowData[i]?.ObjectId)
+                {
+                    _rowObjectIds[i] = rowData[i]?.ObjectId;
+                    _rowScrollOffsets[i] = 0;
+                }
+                _rowScrollLimits[i] = Math.Max(0, fullHeight - bodyHeight);
+                _rowScrollOffsets[i] = Math.Clamp(_rowScrollOffsets[i], 0, _rowScrollLimits[i]);
 
                 var captionRect = new SKRect(left, rowY, left + PanelWidth, rowY + RowCaptionHeight);
                 var bodyRect = opened
@@ -334,7 +361,7 @@ public sealed class ObjectInfoPanel
                 canvas.DrawText(RowNames[i], captionRect.Left + Padding, captionRect.MidY + _rowTitlePaint.TextSize / 3f, _rowTitlePaint);
 
                 if (opened)
-                    DrawRowBody(canvas, bodyRect, rowData[i]);
+                    DrawRowBody(canvas, bodyRect, rowData[i], _rowScrollOffsets[i], _rowScrollLimits[i]);
 
                 rowY += opened ? (RowCaptionHeight + bodyHeight) : RowCaptionHeight;
                 if (!opened && i < RowNames.Length - 1)
@@ -351,14 +378,14 @@ public sealed class ObjectInfoPanel
     }
 
     private float ValueOffset(ObjectInfoPanelData? data, List<(string Label, string Value)> lines) =>
-        data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null || data?.MarketKnowledge is not null
+        data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null || data?.MarketKnowledge is not null || data?.ClusterName is not null
             ? Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding) : 62f;
 
     /// <summary>Wrap market values using the same measured text width used for rendering and body height.</summary>
     internal List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data)
     {
         var source = BuildLines(data);
-        if (data?.MarketKnowledge is null) return source;
+        if (data?.MarketKnowledge is null && data?.ClusterName is null) return source;
         float width = PanelWidth - ImageWidth - 4 * Padding - ValueOffset(data, source);
         var result = new List<(string Label, string Value)>();
         foreach (var (label, value) in source)
@@ -379,13 +406,16 @@ public sealed class ObjectInfoPanel
         return result;
     }
 
-    private void DrawRowBody(SKCanvas canvas, SKRect bodyRect, ObjectInfoPanelData? data)
+    private void DrawRowBody(SKCanvas canvas, SKRect bodyRect, ObjectInfoPanelData? data, float scrollOffset, float scrollLimit)
     {
         canvas.DrawRect(bodyRect, _panelBgPaint);
         canvas.DrawRect(bodyRect, _panelBorderPaint);
 
+        canvas.Save();
+        canvas.ClipRect(bodyRect);
+
         float imgX = bodyRect.Left + Padding;
-        float imgY = bodyRect.Top + Padding;
+        float imgY = bodyRect.Top + Padding - scrollOffset;
         var imageRect = new SKRect(imgX, imgY, imgX + ImageWidth, imgY + ImageHeight);
 
         var image = data is { } d ? ResolveObjectImage(d) : null;
@@ -410,6 +440,13 @@ public sealed class ObjectInfoPanel
             canvas.DrawText(label, textX, textY, _labelPaint);
             canvas.DrawText(value, textX + valueOffset, textY, _valuePaint);
             textY += LineHeight;
+        }
+        canvas.Restore();
+        if (scrollLimit > 0 && bodyRect.Height > 0)
+        {
+            float thumbHeight = Math.Max(12, bodyRect.Height * bodyRect.Height / (bodyRect.Height + scrollLimit));
+            float thumbTop = bodyRect.Top + (bodyRect.Height - thumbHeight) * scrollOffset / scrollLimit;
+            canvas.DrawRect(new SKRect(bodyRect.Right - 4, thumbTop, bodyRect.Right - 1, thumbTop + thumbHeight), _labelPaint);
         }
     }
 

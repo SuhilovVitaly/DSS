@@ -252,6 +252,33 @@ public class ObjectInfoPanelTests
     }
 
     [Fact]
+    public void Cluster_directions_scroll_within_small_viewport_and_reset_on_selection()
+    {
+        var panel = new ObjectInfoPanel();
+        var data = MarketData(Market()) with
+        {
+            ClusterName = "District 5", ClusterProfile = "market.transit", StraightFlightDays = 12,
+            EstimateMotionTimeMs = 123, ClusterDirections = string.Join("; ", Enumerable.Range(1, 60).Select(i => $"Station {i}: visit / return"))
+        };
+        var lines = panel.BuildRenderLines(data);
+        Assert.True(lines.FindIndex(l => l.Label == "Straight flight estimate") < lines.FindIndex(l => l.Label == "Potential cargo"));
+        Assert.Contains("Station 60", string.Join(" ", lines.Select(l => l.Value)));
+        using var bitmap = new SKBitmap(1280, 480);
+        using var canvas = new SKCanvas(bitmap);
+        panel.Render(canvas, 1280, 8, null, data, 480);
+        var body = panel.RowBodyRects[1];
+        Assert.InRange(body.Bottom, 0, 472);
+        Assert.True(panel.Scroll(body.MidX, body.MidY, -1));
+        Assert.True(panel.ScrollOffset(1) > 0);
+        Assert.False(panel.Scroll(0, 0, -1));
+        Assert.False(panel.Scroll(body.MidX, body.MidY, float.NaN));
+        for (int i = 0; i < 200; i++) panel.Scroll(body.MidX, body.MidY, -1);
+        Assert.InRange(panel.ScrollOffset(1), 0, lines.Count * 16 + 12 - body.Height);
+        panel.Render(canvas, 1280, 8, null, data with { ObjectId = "STATION-B" }, 480);
+        Assert.Equal(0, panel.ScrollOffset(1));
+    }
+
+    [Fact]
     public void Market_values_wrap_inside_existing_panel_and_determine_body_height()
     {
         var panel = new ObjectInfoPanel();
