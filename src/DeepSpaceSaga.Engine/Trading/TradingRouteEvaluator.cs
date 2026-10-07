@@ -14,11 +14,11 @@ internal sealed record EffectiveTradingRoute(TradingMapEdgeData BaseEdge, long E
 
 internal static class TradingRouteEvaluator
 {
-    internal static ImmutableArray<EffectiveTradingRoute> Evaluate(TradingMapStateData map, IReadOnlyList<TradingRouteModifier> activeModifiers)
+    internal static ImmutableArray<EffectiveTradingRoute> Evaluate(TradingMapStateData map, IReadOnlyList<TradingRouteModifier> activeModifiers, bool clusterGeography = false)
     {
         if (map?.Rules?.Stations is null || map.Rules.RiskProfiles is null || map.Edges is null || map.CargoFlows is null || activeModifiers is null)
             throw new ScenarioException("Trading route evaluation requires map rules, edges, cargo flows and modifiers.");
-        if (map.SchemaVersion != 1 || map.Rules.SchemaVersion != 1 || map.Rules.Stations.Count != 5)
+        if (map.SchemaVersion != 1 || map.Rules.SchemaVersion != 1 || (clusterGeography ? map.Rules.Stations.Count < 2 : map.Rules.Stations.Count != 5))
             throw new ScenarioException("Trading route map requires schemaVersion 1 and exactly five stations.");
         var stations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var station in map.Rules.Stations)
@@ -110,10 +110,10 @@ internal static class TradingRouteEvaluator
         return result.MoveToImmutable();
     }
 
-    internal static bool CanApply(TradingMapStateData map, IReadOnlyList<TradingRouteModifier> activeModifiers, IReadOnlyList<TradingRouteModifier> candidateModifiers)
+    internal static bool CanApply(TradingMapStateData map, IReadOnlyList<TradingRouteModifier> activeModifiers, IReadOnlyList<TradingRouteModifier> candidateModifiers, bool clusterGeography = false)
     {
         if (activeModifiers is null || candidateModifiers is null) throw new ScenarioException("Route modifiers must be declared.");
-        var evaluated = Evaluate(map, activeModifiers.Concat(candidateModifiers).ToArray());
+        var evaluated = Evaluate(map, activeModifiers.Concat(candidateModifiers).ToArray(), clusterGeography);
         var adjacency = map.Rules.Stations.ToDictionary(s => s.ObjectId, _ => new HashSet<string>(StringComparer.Ordinal), StringComparer.OrdinalIgnoreCase);
         foreach (var route in evaluated.Where(r => r.Availability != TradingRouteAvailability.Unavailable))
         {
@@ -129,8 +129,9 @@ internal static class TradingRouteEvaluator
                     if (seen.Add(next)) queue.Enqueue(next);
             return seen;
         }
-        if (Reachable(adjacency.Keys.Order(StringComparer.Ordinal).First()).Count != adjacency.Count) return false;
-        return map.CargoFlows.All(f => Reachable(f.FromStationObjectId).Contains(f.ToStationObjectId));
+        // Evaluate has already resolved every cargo endpoint. A connected undirected
+        // network connects every one of those pairs; repeated BFS per cargo flow is redundant.
+        return Reachable(adjacency.Keys.Order(StringComparer.Ordinal).First()).Count == adjacency.Count;
     }
 
     private static (string From, string To) Pair(string from, string to) =>

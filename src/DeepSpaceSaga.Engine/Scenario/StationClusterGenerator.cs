@@ -161,7 +161,8 @@ internal static class StationClusterGenerator
             var orbit = new OrbitalElements(radius, radius, period, (int)p, p - (int)p, source.GameState.MotionTimeMs, "clockwise");
             stations.Add(new(id, "Station", "Permanent", $"Home {i + 1}", radius * Math.Sin(p * Math.PI / 180),
                 -radius * Math.Cos(p * Math.PI / 180), 0, 0, "Orbital", null, null, null,
-                IsKnown: true, StationSize: "Medium", MarketProfileId: profile, Orbit: orbit));
+                IsKnown: true, StationSize: "Medium", MarketProfileId: profile, Orbit: orbit,
+                PortFeeCreditsPerDay: original.FirstOrDefault()?.PortFeeCreditsPerDay ?? 100));
             double clearance = Math.Max(100, (source.GameState.TradingMap?.Rules.ClearanceKm ?? 0) * 10);
             if (source.GameState.SpaceObjects.Any(o => Distance(o, stations[^1]) < clearance) || stations.Take(stations.Count - 1).Any(o => Distance(o, stations[^1]) < clearance))
                 throw new ScenarioException("clusters: generated station violates scenario clearance.");

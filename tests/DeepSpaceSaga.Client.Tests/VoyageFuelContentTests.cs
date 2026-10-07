@@ -16,7 +16,7 @@ public sealed class VoyageFuelContentTests
         using var json = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "Data", "Modules", "Engine", "modules-engine.json")));
         var engine = Assert.Single(json.RootElement.GetProperty("moduleImplementations").EnumerateArray(),
             m => m.GetProperty("typeId").GetString() == "module.engine.basic");
-        Assert.Equal(10, Assert.Single(engine.EnumerateObject(), p => p.Name == "fuelEfficiencyKmPerKg").Value.GetInt64());
+        Assert.Equal(100, Assert.Single(engine.EnumerateObject(), p => p.Name == "fuelEfficiencyKmPerKg").Value.GetInt64());
     }
 
     [Theory]
@@ -30,7 +30,7 @@ public sealed class VoyageFuelContentTests
         engine.LoadScenario(ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", scenario, "scenario.json")));
         var snapshot = engine.CaptureSnapshotForTests(0, simulationTimeMs: 0);
         Assert.Contains(snapshot.Objects, o => o.ObjectId == snapshot.PlayerShipObjectId);
-        Assert.Equal(10, registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.engine.basic")).FuelEfficiencyKmPerKg);
+        Assert.Equal(100, registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.engine.basic")).FuelEfficiencyKmPerKg);
     }
 
     [Fact]

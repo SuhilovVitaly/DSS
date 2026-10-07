@@ -243,7 +243,7 @@ public sealed partial class SimulationEngine : IDisposable
             gs = gs with { StationResourceFields = StationResourceFields.ValidateSaved(ScenarioGroupPlacement.InitialGeometry(gs), _registry).StationResourceFields };
         else if (!isSave && scenario.SaveFormatVersion == 0 && gs.TradingMap is not null && _stationResourceFieldConfig is not null)
             gs = StationResourceFields.Generate(gs, resolvedMasterSeed, _stationResourceFieldConfig, _registry);
-        StationClusterMapSnapshot? clusterMap = null;
+        StationClusterMapSnapshot? clusterMap = gs.ClusterMap;
         if (!isSave && scenario.SaveFormatVersion == 0 && generation is not null)
         {
             gs = SolarSystemGenerator.Generate(scenario with { GameState = gs }, generation, _registry, resolvedMasterSeed).GameState;
@@ -398,9 +398,10 @@ public sealed partial class SimulationEngine : IDisposable
             };
         }
 
-        RestoreTradingRouteBindings(gs.TradingMap, runtimeObjects, gs.GameTimeMs, resolvedMasterSeed);
-        var restoredVoyage = ValidateVoyageState(gs, runtimeObjects);
-        ValidateVoyageFuelSave(gs, restoredVoyage, runtimeObjects);
+        RestoreTradingRouteBindings(BuildClusterVoyageMap(gs.TradingMap, clusterMap, runtimeObjects, gs.MotionTimeMs), runtimeObjects, gs.GameTimeMs, resolvedMasterSeed, clusterMap is not null);
+        var voyageMap = BuildClusterVoyageMap(gs.TradingMap, clusterMap, runtimeObjects, gs.MotionTimeMs);
+        var restoredVoyage = ValidateVoyageState(gs with { TradingMap = voyageMap }, runtimeObjects);
+        ValidateVoyageFuelSave(gs, restoredVoyage, runtimeObjects, clusterMap);
         var restoredTrading = StageTradingContinuation(scenario with { GameState = gs }, runtimeObjects, restoredVoyage);
         var restoredKnowledge = InitializeOrLoadMarketKnowledge(gs, runtimeObjects, scenario.SaveFormatVersion, loadingSave);
         var combatState = BuildCombatState(gs.SpaceObjects, runtimeObjects);
@@ -1106,7 +1107,7 @@ public sealed partial class SimulationEngine : IDisposable
             MarketKnowledge: CaptureMarketKnowledge(clockState.GameTimeMs),
             VoyageLedgers: CaptureVoyageLedgers(),
             VoyageFuelSettlements: _voyageFuelSettlements.Values.OrderBy(v => v.VoyageId, StringComparer.Ordinal).ToArray(),
-            EngineIdentityCounters: new(_nextEngineCycleId, _nextShipEventId));
+            EngineIdentityCounters: new(_nextEngineCycleId, _nextShipEventId), ClusterMap: _clusterMap);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),

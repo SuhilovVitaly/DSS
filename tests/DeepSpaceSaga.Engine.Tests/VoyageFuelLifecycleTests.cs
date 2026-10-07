@@ -11,6 +11,23 @@ public sealed class VoyageFuelLifecycleTests
     private const string Ship = QuotedTradeExecutionTests.ShipId;
     private const string Tank = QuotedTradeExecutionTests.EngineModuleId;
     private const string SecondTank = "second-engine-tank";
+    // Numeric escrow fixtures use an explicit 10 km/kg engine independently of shipped geography content.
+    internal static GameDataRegistry NumericRegistry()
+    {
+        var source = QuotedTradeExecutionTests.RealRegistry();
+        return GameDataRegistry.Create(
+            Enumerable.Range(0, source.ModuleCategories.Count).Select(source.ModuleCategories.GetDefinition),
+            Enumerable.Range(0, source.ModuleTypes.Count).Select(source.ModuleTypes.GetDefinition)
+                .Select(m => m.TypeId == "module.engine.basic" ? m with { FuelEfficiencyKmPerKg = 10 } : m),
+            Enumerable.Range(0, source.ItemTypes.Count).Select(source.ItemTypes.GetDefinition),
+            Enumerable.Range(0, source.CommandDefinitions.Count).Select(source.CommandDefinitions.GetDefinition),
+            Enumerable.Range(0, source.FactoryTypes.Count).Select(source.FactoryTypes.GetDefinition),
+            Enumerable.Range(0, source.Recipes.Count).Select(source.Recipes.GetDefinition),
+            dialogues: Enumerable.Range(0, source.Dialogues.Count).Select(source.Dialogues.GetDefinition),
+            stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count).Select(source.StationMarketProfiles.GetDefinition),
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition),
+            stationMarketEvents: Enumerable.Range(0, source.StationMarketEvents.Count).Select(source.StationMarketEvents.GetDefinition));
+    }
     private static ScenarioFile Save(SimulationEngine e, long time = 0) => e.CaptureSaveStateForTests(time, SimulationSpeed.Speed0, time);
     private static AuthoritativeSnapshot Snapshot(SimulationEngine e, long time = 0) => e.CaptureSnapshotForTests(time, SimulationSpeed.Speed0, time);
     private static ShipModuleData[] Tanks(ScenarioFile save) => save.GameState.SpaceObjects.Single(o => o.ObjectId == Ship).Modules!
@@ -20,13 +37,14 @@ public sealed class VoyageFuelLifecycleTests
     private static string Destination(SimulationEngine e) => Snapshot(e).Voyage!.RouteOptions.First(o => o.IsAvailable).DestinationStationObjectId;
     private static SimulationEngine Load(ScenarioFile save, GameDataRegistry? registry = null)
     {
-        var engine = new SimulationEngine(registry ?? QuotedTradeExecutionTests.RealRegistry());
+        var engine = new SimulationEngine(registry ?? NumericRegistry());
         engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), isSave: save.SaveFormatVersion > 0);
         return engine;
     }
     private static ScenarioFile Initial(bool second = false, long firstAmount = 1000)
     {
-        using var engine = VoyageLifecycleTests.CreateEngine();
+        using var engine = new SimulationEngine(NumericRegistry());
+        engine.LoadScenario(VoyageLifecycleTests.DockedScenario());
         var save = Save(engine);
         return save with
         {
@@ -196,7 +214,7 @@ public sealed class VoyageFuelLifecycleTests
     [Fact]
     public void Real_arrival_consumes_full_reservation_once_and_post_settlement_save_is_exact()
     {
-        using var voyage = TradingVoyageFixture.Create(calendarRatio: 1);
+        using var voyage = TradingVoyageFixture.Create(calendarRatio: 1, registry: NumericRegistry());
         var before = Tanks(voyage.Save())[0];
         var (_, result) = voyage.Send(QuotedTradeExecutionTests.BridgeModuleId, NavigationComputerCommandTypes.Undock, target: voyage.Destination);
         Assert.Equal(CommandResultStatus.Executed, result!.Status);
@@ -266,7 +284,7 @@ public sealed class VoyageFuelLifecycleTests
     [Fact]
     public void Destroyed_destination_during_docking_interrupts_and_clears_dialogue()
     {
-        using var voyage = TradingVoyageFixture.Create(calendarRatio: 1);
+        using var voyage = TradingVoyageFixture.Create(calendarRatio: 1, registry: NumericRegistry());
         voyage.Send(QuotedTradeExecutionTests.BridgeModuleId, NavigationComputerCommandTypes.Undock, target: voyage.Destination);
         voyage.FinishFlightTo(voyage.Destination, beforeDialogue: current =>
         {
@@ -308,7 +326,7 @@ public sealed class VoyageFuelLifecycleTests
     [InlineData(false)]
     public void Dialogue_blocks_refuel_while_reservation_is_active(bool quoted)
     {
-        using var voyage = TradingVoyageFixture.Create(calendarRatio: 1);
+        using var voyage = TradingVoyageFixture.Create(calendarRatio: 1, registry: NumericRegistry());
         voyage.Send(QuotedTradeExecutionTests.BridgeModuleId, NavigationComputerCommandTypes.Undock, target: voyage.Destination);
         voyage.FinishFlightTo(voyage.Destination, beforeDialogue: current =>
         {

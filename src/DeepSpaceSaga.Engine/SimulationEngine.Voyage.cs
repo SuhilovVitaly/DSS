@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Engine.Trading;
 
 namespace DeepSpaceSaga.Engine;
 
@@ -66,16 +67,15 @@ public sealed partial class SimulationEngine
         edge.FromStationObjectId == a && edge.ToStationObjectId == b ||
         edge.FromStationObjectId == b && edge.ToStationObjectId == a;
 
-    private string? ResolveVoyageDepartureBlock(SpaceObjectRuntime ship, string? destination)
+    private string? ResolveVoyageDepartureBlock(SpaceObjectRuntime ship, string? destination, EffectiveTradingRoute? sampledRoute = null)
     {
         if (_voyageState is { Phase: not VoyagePhases.Docked }) return CommandReasonCodes.VoyageAlreadyActive;
         if (ship.PortFeeDebt > 0) return CommandReasonCodes.VoyageOutstandingDebt;
         if (string.IsNullOrWhiteSpace(destination)) return CommandReasonCodes.VoyageDestinationRequired;
         if (_tradingMap is null || ship.DockedStationObjectId is null ||
-            !_tradingMap.Edges.Any(e => Connects(e, ship.DockedStationObjectId, destination)) ||
             !_objects.Any(o => o.InitialMotion.ObjectId == destination && o.ObjectType == SpaceObjectType.Station && !o.IsDestroyed))
             return CommandReasonCodes.RouteUnavailable;
-        var route = FindEffectiveDepartureRoute(ship.DockedStationObjectId, destination);
+        var route = sampledRoute ?? FindEffectiveDepartureRoute(ship.DockedStationObjectId, destination);
         if (route is null || route.Availability == TradingRouteAvailability.Unavailable ||
             _processedWorldTimeMs > long.MaxValue - route.EffectiveTravelEstimateGameTimeMs)
             return CommandReasonCodes.RouteUnavailable;
@@ -92,14 +92,16 @@ public sealed partial class SimulationEngine
             var options = ImmutableArray.CreateBuilder<VoyageRouteOptionSnapshot>();
             if (ship?.DockedStationObjectId is { } origin)
             {
-                foreach (var edge in _tradingMap.Edges)
+                var routes = TradingRouteEvaluator.Evaluate(CurrentVoyageMap()!, BuildActiveRouteModifiers(_objects, _processedWorldTimeMs), _clusterMap is not null);
+                foreach (var route in routes)
                 {
+                    var edge = route.BaseEdge;
                     if (edge.FromStationObjectId != origin && edge.ToStationObjectId != origin) continue;
                     string destination = edge.FromStationObjectId == origin ? edge.ToStationObjectId : edge.FromStationObjectId;
                     var station = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == destination && o.ObjectType == SpaceObjectType.Station);
-                    string? blocker = ResolveVoyageDepartureBlock(ship, destination);
+                    string? blocker = ResolveVoyageDepartureBlock(ship, destination, route);
                     options.Add(new VoyageRouteOptionSnapshot(destination, station?.Name ?? destination,
-                        FindEffectiveDepartureRoute(origin, destination)!.EffectiveTravelEstimateGameTimeMs, edge.DistanceClass, blocker is null, blocker));
+                        route.EffectiveTravelEstimateGameTimeMs, edge.DistanceClass, blocker is null, blocker));
                 }
             }
             return new VoyageSnapshot(VoyagePhases.Docked, BlockReasonCode: state.BlockReasonCode,

@@ -75,7 +75,7 @@ public sealed class VoyageSaveLoadContinuityTests
     [Fact]
     public void Interrupted_voyage_after_load_refunds_unused_fuel_once()
     {
-        using var f = TradingVoyageFixture.Create(calendarRatio: 1);
+        using var f = TradingVoyageFixture.Create(calendarRatio: 1, registry: VoyageFuelLifecycleTests.NumericRegistry());
         var voyage = Depart(f);
         var state = f.Save();
         var damaged = state with

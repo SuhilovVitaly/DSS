@@ -24,13 +24,13 @@ public sealed partial class SimulationEngine
     }
 
     private StationEventRuntime? BindRouteCandidate(TradingMapStateData? map, IEnumerable<SpaceObjectRuntime> objects,
-        SpaceObjectRuntime station, StationEventRuntime evt, long time, ulong seed)
+        SpaceObjectRuntime station, StationEventRuntime evt, long time, ulong seed, bool clusterGeography = false)
     {
         if (map is null || evt.RouteEffect is null) return evt;
         string stationId = station.InitialMotion.ObjectId;
         // Include earlier candidates from the same station before they are published to the world.
         var active = BuildActiveRouteModifiers(objects.Where(o => o.InitialMotion.ObjectId != stationId).Append(station), time);
-        var edges = TradingRouteEvaluator.Evaluate(map, []).Select(e => e.BaseEdge)
+        var edges = TradingRouteEvaluator.Evaluate(map, [], clusterGeography).Select(e => e.BaseEdge)
             .Where(e => e.FromStationObjectId == stationId || e.ToStationObjectId == stationId)
             .OrderBy(e => e.FromStationObjectId, StringComparer.Ordinal).ThenBy(e => e.ToStationObjectId, StringComparer.Ordinal).ToArray();
         int offset = edges.Length == 0 ? 0 : (int)(MarketEventRoll(seed, stationId, evt.DefinitionId!,
@@ -43,12 +43,12 @@ public sealed partial class SimulationEngine
                 RouteEffect = evt.RouteEffect with
                 { FromStationObjectId = edge.FromStationObjectId, ToStationObjectId = edge.ToStationObjectId }
             };
-            if (TradingRouteEvaluator.CanApply(map, active, [RouteModifier(bound)])) return bound;
+            if (TradingRouteEvaluator.CanApply(map, active, [RouteModifier(bound)], clusterGeography)) return bound;
         }
         return null;
     }
 
-    private void RestoreTradingRouteBindings(TradingMapStateData? map, List<SpaceObjectRuntime> objects, long time, ulong seed)
+    private void RestoreTradingRouteBindings(TradingMapStateData? map, List<SpaceObjectRuntime> objects, long time, ulong seed, bool clusterGeography = false)
     {
         foreach (int index in Enumerable.Range(0, objects.Count).OrderBy(i => objects[i].InitialMotion.ObjectId, StringComparer.Ordinal))
         {
@@ -79,7 +79,7 @@ public sealed partial class SimulationEngine
                 {
                     // Additive compatibility for US-0007 saves predating captured endpoints.
                     // Resolve once in stable station/event order, then persist the chosen edge.
-                    var bound = BindRouteCandidate(map, objects, station with { Events = events.ToImmutable() }, evt, time, seed);
+                    var bound = BindRouteCandidate(map, objects, station with { Events = events.ToImmutable() }, evt, time, seed, clusterGeography);
                     if (bound is null) throw new ScenarioException($"Legacy event '{evt.EventId}' cannot preserve route connectivity.");
                     events[j] = bound;
                 }
@@ -88,21 +88,21 @@ public sealed partial class SimulationEngine
         }
         if (map is null) return;
         var modifiers = BuildActiveRouteModifiers(objects, time);
-        _ = TradingRouteEvaluator.Evaluate(map, modifiers);
+        _ = TradingRouteEvaluator.Evaluate(map, modifiers, clusterGeography);
         foreach (var modifier in modifiers)
-            if (!TradingRouteEvaluator.CanApply(map, modifiers.Where(m => m.EventId != modifier.EventId).ToArray(), [modifier]))
+            if (!TradingRouteEvaluator.CanApply(map, modifiers.Where(m => m.EventId != modifier.EventId).ToArray(), [modifier], clusterGeography))
                 throw new ScenarioException("Saved route events disconnect the trading network. Running world was not replaced.");
     }
 
-    private EffectiveTradingRoute? FindEffectiveDepartureRoute(string origin, string destination) => _tradingMap is null ? null :
-        TradingRouteEvaluator.Evaluate(_tradingMap, BuildActiveRouteModifiers(_objects, _processedWorldTimeMs))
+    private EffectiveTradingRoute? FindEffectiveDepartureRoute(string origin, string destination) => CurrentVoyageMap() is not { } map ? null :
+        TradingRouteEvaluator.Evaluate(map, BuildActiveRouteModifiers(_objects, _processedWorldTimeMs), _clusterMap is not null)
             .FirstOrDefault(e => Connects(e.BaseEdge, origin, destination));
 
     private ImmutableArray<TradingRouteSnapshot> BuildTradingRouteProjection(long time)
     {
         if (_tradingMap is null || _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId) is not
             { IsDocked: true, DockedStationObjectId: { } origin }) return [];
-        return TradingRouteEvaluator.Evaluate(_tradingMap, BuildActiveRouteModifiers(_objects, time))
+        return TradingRouteEvaluator.Evaluate(CurrentVoyageMap()!, BuildActiveRouteModifiers(_objects, time), _clusterMap is not null)
             .Where(e => e.BaseEdge.FromStationObjectId == origin || e.BaseEdge.ToStationObjectId == origin).Select(e =>
             {
                 var b = e.BaseEdge;

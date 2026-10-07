@@ -139,7 +139,7 @@ public sealed partial class SimulationEngine
         return result;
     }
 
-    private void ValidateVoyageFuelSave(GameStateData state, VoyageStateData? voyage, IReadOnlyList<SpaceObjectRuntime> objects)
+    private void ValidateVoyageFuelSave(GameStateData state, VoyageStateData? voyage, IReadOnlyList<SpaceObjectRuntime> objects, StationClusterMapSnapshot? clusterMap = null)
     {
         var receipt = state.LastVoyageFuelSettlement;
         if (receipt is not null && (string.IsNullOrWhiteSpace(receipt.VoyageId) || receipt.ReservedFuelKg <= 0 ||
@@ -153,7 +153,8 @@ public sealed partial class SimulationEngine
         if (voyage.Phase == VoyagePhases.Docked || voyage.FuelReservationParts is not { Count: > 0 } parts ||
             voyage.FuelDistanceKm is not > 0 || voyage.FuelEfficiencyKmPerKg is not > 0 || voyage.FuelMultiplierPermille is not > 0)
             throw new ScenarioException("voyageState fuel reservation metadata is incomplete.");
-        var edge = state.TradingMap!.Edges.Single(e => Connects(e, voyage.OriginStationObjectId!, voyage.DestinationStationObjectId!));
+        var departureMap = BuildClusterVoyageMap(state.TradingMap, clusterMap, objects, voyage.StartedMotionTimeMs)!;
+        var edge = departureMap.Edges.Single(e => Connects(e, voyage.OriginStationObjectId!, voyage.DestinationStationObjectId!));
         try
         {
             if (voyage.FuelDistanceKm != CaptureFuelDistance(edge.DistanceKm))

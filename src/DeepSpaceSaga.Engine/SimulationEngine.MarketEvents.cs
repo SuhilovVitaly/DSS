@@ -99,7 +99,7 @@ public sealed partial class SimulationEngine
                         EventItemEffects(definition), EventRouteEffect(definition), true);
                     // Authored future events reserve capacity only where their intervals overlap.
                     if (!FitsMarketEventWindow(events, evt)) continue;
-                    var boundEvent = BindRouteCandidate(_tradingMap, _objects, station with { Events = events.ToImmutableArray() }, evt, time, MasterSeed);
+                    var boundEvent = BindRouteCandidate(CurrentVoyageMap(), _objects, station with { Events = events.ToImmutableArray() }, evt, time, MasterSeed, _clusterMap is not null);
                     if (boundEvent is null) continue;
                     evt = boundEvent;
                     station = ApplyActivationStockDeltas(station, evt);
