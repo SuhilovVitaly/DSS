@@ -202,6 +202,8 @@ public sealed class ObjectInfoPanel
                 lines.Add(("Cluster", cluster));
                 lines.Add(("Profile", d.ClusterProfile ?? "—"));
                 lines.Add(("Potential cargo", d.ClusterDirections ?? "—"));
+                lines.Add(("Straight flight estimate", d.StraightFlightDays is { } days ? $"{days:0.###} calendar days" : "Unavailable"));
+                lines.Add(("Estimate epoch", $"T+{d.EstimateMotionTimeMs} simulation ms"));
             }
             if (d.ResourceCluster is { } resourceCluster)
             {
@@ -504,7 +506,8 @@ public readonly record struct ObjectInfoPanelData(
     TorpedoInspectionData? Torpedo = null, CountermeasureSnapshot? Countermeasure = null,
     StationMarketKnowledgeSnapshot? MarketKnowledge = null,
     string? ClusterName = null, string? ClusterProfile = null, string? ClusterDirections = null,
-    string? ResourceCluster = null, string? ResourceOwner = null);
+    string? ResourceCluster = null, string? ResourceOwner = null,
+    double? StraightFlightDays = null, long? EstimateMotionTimeMs = null);
 
 /// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
 public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);

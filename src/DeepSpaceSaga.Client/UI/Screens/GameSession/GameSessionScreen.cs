@@ -31,6 +31,7 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly Dictionary<string, ObjectMotionSnapshot> _lastSnapshotBaselineObjects = new(StringComparer.Ordinal);
     private ulong _lastSnapshotBaselineSequence;
     private long _lastSnapshotBaselineGameTimeMs;
+    private long _travelEstimateMotionTimeMs;
     private long _lastObservedForwardJumpMs;
     private bool _hasSnapshotBaseline;
     private bool _diagInterestingFrame;
@@ -1079,6 +1080,7 @@ public sealed partial class GameSessionScreen : IScreen
         var prediction = _buffer.LatestPrediction;
         var buffered = prediction?.BufferedSnapshot;
         UpdateObjectRenderStates(prediction, deltaSeconds);
+        _travelEstimateMotionTimeMs = prediction is null ? 0 : GetPredictedGameTimeMs(prediction);
 
         UpdateCameraFocusFromPlayer(_renderStates);
         UpdateCombatImportance();
@@ -1112,7 +1114,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         // 2. Camera focus indicator
         if (buffered is not null)
-            ClusterMapPresentation.Draw(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height);
+            ClusterMapPresentation.Draw(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
         float cx = width / 2f;
         float cy = height / 2f;
         _depthRenderer.DrawFocusIndicator(canvas, cx, cy);
@@ -2271,7 +2273,10 @@ public sealed partial class GameSessionScreen : IScreen
         var resourceCluster = resource is null ? null : _buffer.Latest?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
             p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), s.Source.Countermeasure, market,
-            cluster?.ClusterName, cluster?.Profile, cluster?.Directions, resourceCluster, resource?.AnchorStationId);
+            cluster?.ClusterName, cluster?.Profile, cluster?.Directions, resourceCluster, resource?.AnchorStationId,
+            cluster is not null && distanceKm is { } distance && player is { } playerState
+                ? ClusterMapPresentation.EstimateStraightDays(distance * 10, playerState.Source.MaxSpeedKmS ?? 0) : null,
+            cluster is null ? null : _travelEstimateMotionTimeMs);
     }
 
     /// <summary>

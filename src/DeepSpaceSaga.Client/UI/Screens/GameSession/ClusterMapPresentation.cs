@@ -7,6 +7,38 @@ internal sealed record ClusterStationPresentation(string ClusterName, string Pro
 
 internal static class ClusterMapPresentation
 {
+    internal static double? EstimateStraightDays(double distanceWorld, double maxSpeedKmS)
+    {
+        if (!double.IsFinite(distanceWorld) || distanceWorld < 0 || !double.IsFinite(maxSpeedKmS) || maxSpeedKmS <= 0) return null;
+        double days = distanceWorld / 10 / maxSpeedKmS * 300 / 86400;
+        return double.IsFinite(days) ? days : null;
+    }
+
+    internal static void DrawDirections(SKCanvas canvas, StationClusterMapSnapshot map, string? selectedId,
+        IReadOnlyList<ObjectMotionSnapshot> poses, CameraState camera, int width, int height)
+    {
+        if (selectedId is null || map.Links.IsDefaultOrEmpty) return;
+        var source = poses.FirstOrDefault(o => o.ObjectId == selectedId && o.RenderObjectType == SpaceObjectType.Station);
+        if (source is null) return;
+        using var dash = SKPathEffect.CreateDash([8, 6], 0);
+        using var paint = new SKPaint
+        {
+            Color = new SKColor(180, 190, 120, 150),
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1,
+            PathEffect = dash
+        };
+        var (x, y) = camera.WorldToScreen(source.X, source.Y, width, height);
+        foreach (var destination in map.Links.Where(l => l.FromStationId == selectedId).Select(l => l.ToStationId).Distinct())
+        {
+            var target = poses.FirstOrDefault(o => o.ObjectId == destination && o.RenderObjectType == SpaceObjectType.Station);
+            if (target is null) continue;
+            var (tx, ty) = camera.WorldToScreen(target.X, target.Y, width, height);
+            canvas.DrawLine(x, y, tx, ty, paint);
+        }
+    }
+
     internal static ClusterStationPresentation? Station(AuthoritativeSnapshot? snapshot, string objectId)
     {
         if (snapshot?.ClusterMap is not { } map || map.Stations.IsDefaultOrEmpty || map.Clusters.IsDefaultOrEmpty) return null;
@@ -39,10 +71,11 @@ internal static class ClusterMapPresentation
         return bindings.IsDefaultOrEmpty ? null : bindings.FirstOrDefault(b => b.FieldId == objectId);
     }
 
-    internal static void Draw(SKCanvas canvas, AuthoritativeSnapshot snapshot, IEnumerable<ObjectMotionSnapshot> objects, CameraState camera, int width, int height)
+    internal static void Draw(SKCanvas canvas, AuthoritativeSnapshot snapshot, IEnumerable<ObjectMotionSnapshot> objects, CameraState camera, int width, int height, string? selectedId = null)
     {
         if (snapshot.ClusterMap is not { } map || map.Clusters.IsDefaultOrEmpty) return;
         var poses = objects.ToArray();
+        DrawDirections(canvas, map, selectedId, poses, camera, width, height);
         using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(160, 210, 225), TextSize = 14 };
         foreach (var cluster in map.Clusters)
         {
