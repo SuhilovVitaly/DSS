@@ -51,4 +51,12 @@ Review covered real A→B→A and A→C→A commands for seeds 1, 2, 42, quotes,
 
 The shipped starter engine efficiency changed from 10 to 100 km/kg: the existing 1000 kg tank could not support the required 15–35 day return voyage at the former content value. Engine fuel formulas, speed and capacity are unchanged. Numeric conservation tests explicitly retain their 10 km/kg fixture. Optional cluster-map save wiring landed here to keep newly generated route-event endpoints valid in existing save tests; full validation/continuation is delivered in US-0006. Review found and repaired departure-distance restoration: absolute orbit epochs must be used after save rebasing. Native acceptance remains NOT RUN.
 
-US-0006–0008 and final epic review remain open. No completion is inferred from planning stage fields.
+## US-0006 — Save and local resume
+
+Both tickets committed and pushed separately. ClusterJsonRoundTripAndContinuation covers seeds 1, 2, 42, an active Approach, docked continuation, 100 days of bounded economy and the return trade. NoMarketResetOnLoad verifies canonical resources and market diagnostics. Invalid membership/profile/belt/link/resource/null references and a removed return path reject atomically. LocalClient saves to actual files, reloads through Settings and completes the same return commands; replayed Buy has exactly one durable receipt and no second posting.
+
+Full Engine run: 1706 passed, two pre-existing catalog-diagnostic assertions failed because new cluster preflight ran before inventory validation (`ep3-save-engine.trx`). Preflight now runs after candidate inventory construction and before publication. The repaired complete non-corpus regression passes 1661/1661 (`ep3-save-regression-fixed.trx`), including the two catalog cases, new reverse-connectivity rejection and active fuel restoration after an earlier completed voyage. The 4800-world corpus passed in the preceding full run. Focused long-run cap save also passes.
+
+Story review found and repaired missing cluster context in fuel validation invoked for historical settlements while another voyage remains active. Quote IDs issued after load are transient session capabilities; comparison excludes those only, retaining exact economic amounts, revisions, command IDs and persisted receipts. Save format remains the existing version with an optional additive clusterMap. Legacy saves remain loadable. Native Client interaction is still NOT RUN; LocalClient file/transport evidence above is automated, not manual UI acceptance.
+
+US-0007–0008 and final epic review remain open. No completion is inferred from planning stage fields.
