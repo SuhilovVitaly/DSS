@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "status": "incomplete",
+  "commit": "cbe143e995fc8600b046423b0fb75e5f48327639",
+  "matrix": {
+    "schemaVersion": 1,
+    "seeds": [
+      1,
+      2,
+      42
+    ],
+    "shipConfigurations": [
+      {
+        "id": "starter",
+        "cargoCapacityMultiplierPermille": 1000,
+        "fuelEfficiencyMultiplierPermille": 1000
+      },
+      {
+        "id": "cargo-upgrade",
+        "cargoCapacityMultiplierPermille": 2000,
+        "fuelEfficiencyMultiplierPermille": 1000
+      }
+    ],
+    "horizonDays": 100,
+    "sampleIntervalHours": 1,
+    "maxHorizonDays": 1000,
+    "localCycles": 3
+  },
+  "rawReportSha256": "7f7634a170b0f6948cf71805b7ecf07c80bec6891e835d75145d1a262c41b25f",
+  "cases": [
+    {
+      "seed": 1,
+      "shipConfigurationId": "cargo-upgrade",
+      "clusterScenario": "Default",
+      "horizonReachedDays": 150.00209722222223,
+      "completedLocalCycles": 3,
+      "completedRoundTrips": 1,
+      "outcome": "completed",
+      "stopReason": null,
+      "geometrySampleSimulationTimeMs": 43200604,
+      "initialCredits": 2000,
+      "finalCredits": 1214,
+      "actualCargoCapacityKg": 200000,
+      "scenarioPolicy": "Unit batches; three local cycles; outbound in-transit hold until horizon before Approach; return follows actual docking/trade commands",
+      "hourlySampleCount": 3601,
+      "continuationMatches": true,
+      "ledgerNetCredits": [
+        -226,
+        -206,
+        -226,
+        -207,
+        -226,
+        -207,
+        -2967,
+        -2948
+      ],
+      "findingCounts": {
+        "violation": 0,
+        "observation": 753,
+        "not-assessed": 1
+      }
+    },
+    {
+      "seed": 1,
+      "shipConfigurationId": "starter",
+      "clusterScenario": "Default",
+      "horizonReachedDays": 150.00209722222223,
+      "completedLocalCycles": 3,
+      "completedRoundTrips": 1,
+      "outcome": "completed",
+      "stopReason": null,
+      "geometrySampleSimulationTimeMs": 43200604,
+      "initialCredits": 2000,
+      "finalCredits": 1214,
+      "actualCargoCapacityKg": 100000,
+      "scenarioPolicy": "Unit batches; three local cycles; outbound in-transit hold until horizon before Approach; return follows actual docking/trade commands",
+      "hourlySampleCount": 3601,
+      "continuationMatches": true,
+      "ledgerNetCredits": [
+        -226,
+        -206,
+        -226,
+        -207,
+        -226,
+        -207,
+        -2967,
+        -2948
+      ],
+      "findingCounts": {
+        "violation": 0,
+        "observation": 753,
+        "not-assessed": 1
+      }
+    },
+    {
+      "seed": 2,
+      "shipConfigurationId": "cargo-upgrade",
+      "clusterScenario": "Default",
+      "horizonReachedDays": 135.69870833333334,
+      "completedLocalCycles": 3,
+      "completedRoundTrips": 0,
+      "outcome": "incomplete",
+      "stopReason": "insufficient_voyage_fuel",
+      "geometrySampleSimulationTimeMs": 39081228,
+      "initialCredits": 2000,
+      "finalCredits": 572,
+      "actualCargoCapacityKg": 200000,
+      "scenarioPolicy": "Unit batches; three local cycles; outbound in-transit hold until horizon before Approach; return follows actual docking/trade commands",
+      "hourlySampleCount": 3257,
+      "continuationMatches": true,
+      "ledgerNetCredits": [
+        -307,
+        -286,
+        -307,
+        -287,
+        -307,
+        -276,
+        -3406
+      ],
+      "findingCounts": {
+        "violation": 0,
+        "observation": 782,
+        "not-assessed": 1
+      }
+    },
+    {
+      "seed": 2,
+      "shipConfigurationId": "starter",
+      "clusterScenario": "Default",
+      "horizonReachedDays": 135.69870833333334,
+      "completedLocalCycles": 3,
+      "completedRoundTrips": 0,
+      "outcome": "incomplete",
+      "stopReason": "insufficient_voyage_fuel",
+      "geometrySampleSimulationTimeMs": 39081228,
+      "initialCredits": 2000,
+      "finalCredits": 572,
+      "actualCargoCapacityKg": 100000,
+      "scenarioPolicy": "Unit batches; three local cycles; outbound in-transit hold until horizon before Approach; return follows actual docking/trade commands",
+      "hourlySampleCount": 3257,
+      "continuationMatches": true,
+      "ledgerNetCredits": [
+        -307,
+        -286,
+        -307,
+        -287,
+        -307,
+        -276,
+        -3406
+      ],
+      "findingCounts": {
+        "violation": 0,
+        "observation": 782,
+        "not-assessed": 1
+      }
+    },
+    {
+      "seed": 42,
+      "shipConfigurationId": "cargo-upgrade",
+      "clusterScenario": "Default",
+      "horizonReachedDays": 148.3944965277778,
+      "completedLocalCycles": 3,
+      "completedRoundTrips": 1,
+      "outcome": "completed",
+      "stopReason": null,
+      "geometrySampleSimulationTimeMs": 42737615,
+      "initialCredits": 2000,
+      "finalCredits": 1233,
+      "actualCargoCapacityKg": 200000,
+      "scenarioPolicy": "Unit batches; three local cycles; outbound in-transit hold until horizon before Approach; return follows actual docking/trade commands",
+      "hourlySampleCount": 3562,
+      "continuationMatches": true,
+      "ledgerNetCredits": [
+        -117,
+        -96,
+        -117,
+        -97,
+        -117,
+        -97,
+        -2866,
+        -2848
+      ],
+      "findingCounts": {
+        "violation": 0,
+        "observation": 551,
+        "not-assessed": 1
+      }
+    },
+    {
+      "seed": 42,
+      "shipConfigurationId": "starter",
+      "clusterScenario": "Default",
+      "horizonReachedDays": 148.3944965277778,
+      "completedLocalCycles": 3,
+      "completedRoundTrips": 1,
+      "outcome": "completed",
+      "stopReason": null,
+      "geometrySampleSimulationTimeMs": 42737615,
+      "initialCredits": 2000,
+      "finalCredits": 1233,
+      "actualCargoCapacityKg": 100000,
+      "scenarioPolicy": "Unit batches; three local cycles; outbound in-transit hold until horizon before Approach; return follows actual docking/trade commands",
+      "hourlySampleCount": 3562,
+      "continuationMatches": true,
+      "ledgerNetCredits": [
+        -117,
+        -96,
+        -117,
+        -97,
+        -117,
+        -97,
+        -2866,
+        -2848
+      ],
+      "findingCounts": {
+        "violation": 0,
+        "observation": 551,
+        "not-assessed": 1
+      }
+    }
+  ]
+}

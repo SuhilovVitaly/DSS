@@ -61,7 +61,15 @@ internal sealed class ClusterBalanceRunner
             var shortages = ImmutableArray.CreateBuilder<ClusterInputShortage>();
             void Sample(SimulationEngine engine, ScenarioFile state)
             {
-                var sample = EconomyBalanceRunner.Sample(engine, registry, state, engine.CaptureClusterVoyageMapForTools()); samples.Add(sample);
+                var sample = EconomyBalanceRunner.Sample(engine, registry, state, engine.CaptureClusterVoyageMapForTools());
+                string localDestination = Destination(false), remoteDestination = Destination(true);
+                sample = sample with
+                {
+                    Routes = sample.Routes.Where(r => (r.Origin == origin && (r.Destination == localDestination || r.Destination == remoteDestination)) ||
+                    (r.Destination == origin && (r.Origin == localDestination || r.Origin == remoteDestination))).ToImmutableArray(),
+                    CargoFlows = state.GameState.GameTimeMs == 0 ? sample.CargoFlows : []
+                };
+                samples.Add(sample);
                 foreach (var station in sample.Stations)
                 {
                     var member = map.Stations.Single(s => s.ObjectId == station.StationId);
@@ -147,7 +155,14 @@ internal static class ClusterBalanceCli
             string commit = git.StandardOutput.ReadToEnd().Trim(); git.WaitForExit();
             cases = cases.Select(c => c with { Assessment = ClusterEconomyEvaluator.Evaluate(c.Economy) }).ToImmutableArray();
             var report = new ClusterBalanceReport(1, cases.All(c => c.Outcome == "completed" && c.Assessment!.Correctness == "passed") ? "correctness-completed-balance-not-assessed" : "incomplete", commit, matrix, cases);
-            Program.WriteAtomic(target, System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(report, Json) + "\n"));
+            string temp = target + ".tmp-" + Guid.NewGuid().ToString("N");
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            try
+            {
+                using (var stream = File.Create(temp)) JsonSerializer.Serialize(stream, report, new JsonSerializerOptions(Json) { WriteIndented = false });
+                File.Move(temp, target, true);
+            }
+            finally { if (File.Exists(temp)) File.Delete(temp); }
             output.WriteLine($"status={report.Status};cases={cases.Length};output={target}");
             return report.Status == "correctness-completed-balance-not-assessed" ? 0 : 1;
         }
