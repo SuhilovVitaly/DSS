@@ -128,6 +128,7 @@ public sealed partial class GameSessionScreen
         }
         Add(_commandsPanel.CaptionRect); Add(_commandsPanel.BodyRect);
         Add(_objectInfoPanel.CaptionRect); Add(_objectInfoPanel.BodyRect);
+        Add(_combatJournalPanel.Bounds);
         if (_panelVisible) Add(_lastPanelRect);
         Add(_lastScalePanelRect); Add(_lastSpeedPanelRect); Add(_lastMechanicsPanelRect); Add(_mapToolbarRect);
         var hash = new HashCode(); hash.Add(_viewportW); hash.Add(_viewportH);

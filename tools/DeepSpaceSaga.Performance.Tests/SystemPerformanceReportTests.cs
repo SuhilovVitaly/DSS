@@ -3,6 +3,7 @@ using System.Text.Json;
 
 namespace DeepSpaceSaga.Performance.Tests;
 
+[Collection("Solar map evidence")]
 public sealed class SystemPerformanceReportTests
 {
     private static string Root
