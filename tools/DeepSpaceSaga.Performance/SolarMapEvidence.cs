@@ -55,13 +55,20 @@ public static class SolarMapEvidence
             string economyPath = Option("--economy-report", "");
             object? economyReportRef = null;
             var economicSeeds = new HashSet<ulong>();
+            var economicCases = new HashSet<(string Scenario, ulong Seed)>();
             if (clusters && economyPath.Length > 0)
             {
                 economyPath = Path.GetFullPath(economyPath);
                 using var economy = JsonDocument.Parse(File.ReadAllText(economyPath));
                 var e = economy.RootElement;
                 if (e.GetProperty("schemaVersion").GetInt32() != 1 || !e.TryGetProperty("commit", out var commit) || string.IsNullOrWhiteSpace(commit.GetString())) throw new ArgumentException("Invalid economy report identity.");
-                foreach (var c in e.GetProperty("cases").EnumerateArray()) economicSeeds.Add(c.GetProperty("seed").GetUInt64());
+                foreach (var c in e.GetProperty("cases").EnumerateArray())
+                {
+                    ulong economicSeed = c.GetProperty("seed").GetUInt64();
+                    economicSeeds.Add(economicSeed);
+                    if (c.TryGetProperty("clusterScenario", out var scenario) && scenario.GetString() is { } scenarioName)
+                        economicCases.Add((scenarioName, economicSeed));
+                }
                 economyReportRef = new
                 {
                     path = economyPath,
@@ -69,6 +76,8 @@ public static class SolarMapEvidence
                     commit = commit.GetString(),
                     status = e.GetProperty("status").GetString(),
                     seeds = economicSeeds.Order().ToArray(),
+                    scenarios = economicCases.Select(c => c.Scenario).Distinct().Order(StringComparer.Ordinal).ToArray(),
+                    coverage = "Scenario and seed reference only; economy ship/config runs are independent of this boundary corpus.",
                     shipConfigurations = e.GetProperty("matrix").GetProperty("shipConfigurations").EnumerateArray().Select(c => c.GetProperty("id").GetString()).ToArray(),
                     balance = "not-assessed"
                 };
@@ -146,7 +155,7 @@ public static class SolarMapEvidence
                                 resourceAsteroids = snapshot.ClusterMap.ResourceBindings.Length,
                                 markets = snapshot.Objects.Count(o => o.ObjectType == "Station")
                             } : null,
-                            economyEvidence = clusters ? economicSeeds.Contains(seed) ? "linked-by-seed; balance-not-assessed" : "missing-seed-evidence" : null,
+                            economyEvidence = clusters ? economicCases.Contains((name, seed)) ? "linked-by-scenario-and-seed; independent-config; balance-not-assessed" : "missing-scenario-seed-evidence" : null,
                             generationMs,
                             generationBytes,
                             snapshotMs,
@@ -181,7 +190,7 @@ public static class SolarMapEvidence
                 scenarios = names,
                 measurements = rows,
                 rendering,
-                renderSampling = "First requested seed per scenario; 120 warmup and 600 measured frames for each system/belt view.",
+                renderSampling = "First requested seed per scenario; 120 warmup and 600 measured frames for each requested view.",
                 generationTiming = "Production LoadScenario pipeline with configured resources; catalog file parsing excluded.",
                 presentation = new { status = "not-measured", targetFps = 80, reason = "Raster timings do not measure GPU presentation." }
             });

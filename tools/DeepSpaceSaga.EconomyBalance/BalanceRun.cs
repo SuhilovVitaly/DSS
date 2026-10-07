@@ -395,7 +395,8 @@ internal sealed class BalanceDriver : IDisposable
         if (PositionAt(route.Origin) is { } positioningReason) return Evidence("rejected", positioningReason);
         var module = _snapshot.InstalledModules.Single(m => m.ModuleId == _cargo);
         capacity = module.AvailableCapacityKg ?? 0;
-        analytical = checked((long)((Int128)capacity * config.CargoCapacityMultiplierPermille / 1000));
+        // Cluster configurations already install the upgraded capacity in the registry.
+        analytical = _clusterRun ? capacity : checked((long)((Int128)capacity * config.CargoCapacityMultiplierPermille / 1000));
         buyQuote = Quote(TradeCommandTypes.Buy, item, 1);
         long unitMass = _snapshot.DockedStationTrade?.Items.FirstOrDefault(i => i.ItemTypeId == item)?.UnitMassKg ?? 1;
         ceiling = Math.Min(buyQuote.MaximumQuantity, unitMass > 0 ? analytical / unitMass : long.MaxValue);

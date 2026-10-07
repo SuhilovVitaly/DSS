@@ -48,6 +48,16 @@ public sealed class LongVoyageRunnerTests
     }
 
     [Fact]
+    public void CargoUpgradeIsAppliedOnceToAuthoritativeAndAnalyticalCapacity()
+    {
+        var upgraded = Assert.Single(new ClusterBalanceRunner().Run(BalanceRunTests.Settings, BalanceRunTests.Scenario,
+            ClusterMatrixFile.Default with { Seeds = [1], ShipConfigurations = [new("cargo-upgrade", 2000, 1000)] }));
+        Assert.Equal("completed", upgraded.Outcome);
+        Assert.Equal(200000, upgraded.ActualCargoCapacityKg);
+        Assert.All(upgraded.Economy.Strategies, leg => Assert.Equal(leg.ActualCapacityKg, leg.AnalyticalCapacityKg));
+    }
+
+    [Fact]
     public void LegacyMatrixUnchanged()
     {
         var legacy = Assert.Single(new EconomyBalanceRunner().Run(BalanceRunTests.Settings, BalanceRunTests.Scenario, BalanceRunTests.Matrix()));

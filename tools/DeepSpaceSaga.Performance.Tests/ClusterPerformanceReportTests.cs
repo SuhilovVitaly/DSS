@@ -12,7 +12,7 @@ public sealed class ClusterPerformanceReportTests
         string path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"), economy = path + ".economy";
         try
         {
-            File.WriteAllText(economy, """{"schemaVersion":1,"commit":"test-identity","status":"incomplete","matrix":{"shipConfigurations":[{"id":"starter"}]},"cases":[{"seed":1}]}""");
+            File.WriteAllText(economy, """{"schemaVersion":1,"commit":"test-identity","status":"incomplete","matrix":{"shipConfigurations":[{"id":"starter"}]},"cases":[{"seed":1,"clusterScenario":"Default"}]}""");
             Assert.Equal(0, SolarMapEvidence.Run([Root, path, "--solar-map", "--clusters", "--seeds", "1:1", "--scenarios", "PlayerShipOnly", "--economy-report", economy]));
             using var json = JsonDocument.Parse(File.ReadAllText(path)); var r = json.RootElement;
             Assert.Equal(8, r.GetProperty("clusterCounts").GetArrayLength());
@@ -24,6 +24,7 @@ public sealed class ClusterPerformanceReportTests
                 var counts = m.GetProperty("clusterCounts"); Assert.True(counts.GetProperty("resourceAsteroids").GetInt32() > 0);
                 Assert.Equal(counts.GetProperty("stations").GetInt32(), counts.GetProperty("markets").GetInt32());
                 Assert.True(m.GetProperty("saveAllocationBytes").GetInt64() > 0);
+                Assert.Equal("missing-scenario-seed-evidence", m.GetProperty("economyEvidence").GetString());
             });
         }
         finally { File.Delete(path); File.Delete(economy); }
