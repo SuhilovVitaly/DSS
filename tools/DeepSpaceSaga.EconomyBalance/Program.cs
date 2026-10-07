@@ -130,6 +130,7 @@ internal static class Program
     {
         try
         {
+            if (args.Length == 4 && args[2] == "--cluster-matrix") return ClusterBalanceCli.Execute(args, output, error);
             if (args.Length is not (2 or 4) || args.Any(string.IsNullOrWhiteSpace) || args.Length == 4 && args[2] != "--matrix")
                 throw new BalanceConfigurationException("usage: <DSS-root> <output.json> [--matrix <matrix.json>]");
             string root = Path.GetFullPath(args[0]); string reportPath = Path.GetFullPath(args[1]);

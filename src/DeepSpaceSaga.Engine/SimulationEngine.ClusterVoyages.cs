@@ -9,6 +9,11 @@ public sealed partial class SimulationEngine
     // Membership and directions are stable; distances and estimates are sampled anew.
     private TradingMapStateData? CurrentVoyageMap() => BuildClusterVoyageMap(_tradingMap, _clusterMap, _objects, _processedSimulationTimeMs);
 
+    internal TradingMapStateData? CaptureClusterVoyageMapForTools()
+    {
+        lock (_worldStateLock) return CurrentVoyageMap();
+    }
+
     private TradingMapStateData? BuildClusterVoyageMap(TradingMapStateData? legacy, StationClusterMapSnapshot? clusters,
         IReadOnlyList<SpaceObjectRuntime> objects, long motionTime)
     {

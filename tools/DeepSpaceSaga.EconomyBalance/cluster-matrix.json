@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "seeds": [1, 2, 42],
+  "shipConfigurations": [
+    {"id": "starter", "cargoCapacityMultiplierPermille": 1000, "fuelEfficiencyMultiplierPermille": 1000},
+    {"id": "cargo-upgrade", "cargoCapacityMultiplierPermille": 2000, "fuelEfficiencyMultiplierPermille": 1000}
+  ],
+  "horizonDays": 100,
+  "sampleIntervalHours": 1,
+  "maxHorizonDays": 1000,
+  "localCycles": 3
+}

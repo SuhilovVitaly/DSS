@@ -166,10 +166,8 @@ internal sealed class EconomyBalanceRunner
         var engine = EngineContentLoader.CreateEngineFromScenarioFile(settings, scenarioPath);
         try
         {
-            var generation = EngineContentLoader.LoadSolarSystemGenerationConfig(settings);
-            string? folder = Path.GetFileName(Path.GetDirectoryName(scenarioPath));
             engine.LoadScenario(scenario with { GameState = scenario.GameState with { MasterSeed = seed } },
-                generation: generation?.EnabledScenarios.Contains(folder, StringComparer.Ordinal) == true ? generation : null);
+                generation: null);
             return engine;
         }
         catch { engine.Dispose(); throw; }
@@ -185,10 +183,10 @@ internal sealed class EconomyBalanceRunner
             .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray();
     }
 
-    internal static BalanceHourlySample Sample(SimulationEngine engine, GameDataRegistry registry, ScenarioFile save)
+    internal static BalanceHourlySample Sample(SimulationEngine engine, GameDataRegistry registry, ScenarioFile save, TradingMapStateData? geography = null)
     {
         long time = save.GameState.GameTimeMs;
-        var map = save.GameState.TradingMap ?? throw new BalanceConfigurationException("scenario.tradingMap: a materialized trading map is required.");
+        var map = geography ?? save.GameState.TradingMap ?? throw new BalanceConfigurationException("scenario.tradingMap: a materialized trading map is required.");
         var events = save.GameState.SpaceObjects.Where(o => o.ObjectType == SpaceObjectType.Station)
             .OrderBy(o => o.ObjectId, StringComparer.Ordinal).SelectMany(o => (o.Events ?? []).Where(e => e.StartedGameTimeMs <= time &&
                 (e.DurationMs is null || e.StartedGameTimeMs + e.DurationMs > time)).OrderBy(e => e.EventId, StringComparer.Ordinal)
@@ -210,7 +208,7 @@ internal sealed class EconomyBalanceRunner
                     effect.FromStationObjectId!, effect.ToStationObjectId!, Enum.Parse<TradingRouteAvailability>(effect.Availability),
                     effect.TravelTimeMultiplierPermille, effect.FuelMultiplierPermille, definition.EffectSummaryKey);
             })).ToArray();
-        var routes = TradingRouteEvaluator.Evaluate(map, modifiers).SelectMany(r => new[]
+        var routes = TradingRouteEvaluator.Evaluate(map, modifiers, geography is not null).SelectMany(r => new[]
         {
             new BalanceRoute(r.BaseEdge.FromStationObjectId, r.BaseEdge.ToStationObjectId, r.BaseEdge.DistanceClass,
                 r.BaseEdge.RiskProfileId, r.Risk, r.Availability, r.EffectiveTravelEstimateGameTimeMs, r.EffectiveFuelMultiplierPermille, r.ActiveEventIds),
@@ -231,6 +229,10 @@ internal sealed class EconomyBalanceRunner
 /// <summary>All movements, docking, quotes and cash postings are accepted by the real Engine.</summary>
 internal sealed class BalanceDriver : IDisposable
 {
+    private readonly bool _clusterRun;
+    private readonly Action<SimulationEngine, ScenarioFile>? _hourly;
+    private readonly long _cap;
+    internal long MinimumDepartureHoldGameTimeMs { get; set; }
     private readonly SimulationEngine _engine;
     private readonly GameDataRegistry _registry;
     private readonly string _ship, _bridge, _engineModule, _cargo;
@@ -239,8 +241,10 @@ internal sealed class BalanceDriver : IDisposable
     private long _pendingStartedMotionTime;
     private readonly Dictionary<string, CommandResult> _results = new(StringComparer.Ordinal);
     private AuthoritativeSnapshot _snapshot;
-    internal BalanceDriver(GameDataRegistry registry, ScenarioFile save)
+    internal BalanceDriver(GameDataRegistry registry, ScenarioFile save, bool clusterRun = false,
+        Action<SimulationEngine, ScenarioFile>? hourly = null, long cap = long.MaxValue)
     {
+        _clusterRun = clusterRun; _hourly = hourly; _cap = cap;
         _registry = registry; _engine = new(registry);
         _engine.LoadScenario(save, true);
         _calendar = save.GameState.GameTimeMs; _motion = save.GameState.SimulationTimeMs ?? _calendar;
@@ -262,7 +266,20 @@ internal sealed class BalanceDriver : IDisposable
                 .Any(m => m.ActiveCycle?.CommandId == _pendingCommandId));
     private ObjectMotionSnapshot Ship => _snapshot.Objects.Single(o => o.ObjectId == _ship);
     private ScenarioFile Save() => _engine.CaptureSaveStateForTests(_calendar, SimulationSpeed.Speed0, _motion);
-    private void Advance(long ms) { _calendar = checked(_calendar + checked(ms * SimulationSpeedExtensions.BaseGameSecondsPerRealSecond)); _motion = checked(_motion + ms); Capture(); }
+    internal ScenarioFile CurrentSave => Save();
+    internal AuthoritativeSnapshot CurrentSnapshot => _snapshot;
+    internal BalanceHourlySample CurrentSample => EconomyBalanceRunner.Sample(_engine, _registry, Save(), _clusterRun ? _engine.CaptureClusterVoyageMapForTools() : null);
+    private void Advance(long ms)
+    {
+        while (ms > 0)
+        {
+            long step = _hourly is null ? ms : Math.Min(ms, (GameCalendar.HourMs - _calendar % GameCalendar.HourMs) / 300);
+            if (step <= 0) step = 1;
+            if (checked(_calendar + step * 300) > _cap) throw new BalanceConfigurationException("cluster_horizon_cap_reached");
+            _calendar = checked(_calendar + step * 300); _motion = checked(_motion + step); ms -= step; Capture();
+            if (_calendar % GameCalendar.HourMs == 0) _hourly?.Invoke(_engine, Save());
+        }
+    }
     private (PlayerCommand Command, CommandResult? Result) Send(string module, string type, string? target = null,
         string? item = null, long? quantity = null, TradeQuoteSnapshot? quote = null)
     {
@@ -289,11 +306,11 @@ internal sealed class BalanceDriver : IDisposable
         if (Ship.IsDocked) return Ship.DockedStationObjectId == station ? null : "already_docked_elsewhere";
         // A departing orbital station can leave a tiny nonzero drift speed. Execute a real
         // acceleration step before Approach rather than mistaking that drift for cruise.
-        if (_snapshot.ActiveVoyage is not null || Ship.SpeedKmS <= 0.0041)
+        if (_clusterRun || _snapshot.ActiveVoyage is not null || Ship.SpeedKmS <= 0.0041)
         {
             var acceleration = Send(_engineModule, ShipEngineCommandTypes.Accelerate);
             if (Rejected(acceleration.Result, "acceleration_rejected") is { } accelerationReason) return accelerationReason;
-            if (Wait(() => MotionCommandCompleted && Ship.SpeedKmS > 0, "acceleration") is { } waitReason) return waitReason;
+            if (Wait(() => MotionCommandCompleted && (_clusterRun ? Ship.SpeedKmS >= Ship.MaxSpeedKmS : Ship.SpeedKmS > 0), "acceleration") is { } waitReason) return waitReason;
         }
         var approach = Send(_engineModule, NavigationComputerCommandTypes.Approach, station);
         if (Rejected(approach.Result, "approach_rejected") is { } approachReason) return approachReason;
@@ -323,14 +340,18 @@ internal sealed class BalanceDriver : IDisposable
     }
     private string? Fly(string station)
     {
+        if (_clusterRun)
+            for (int hour = 0; _snapshot.Voyage?.RouteOptions.FirstOrDefault(r => r.DestinationStationObjectId == station)?.IsAvailable == false && hour < 168; hour++) Advance(12000);
         var departure = Send(_bridge, NavigationComputerCommandTypes.Undock, station);
+        if (_clusterRun && departure.Result?.Status != CommandResultStatus.Rejected && _calendar < MinimumDepartureHoldGameTimeMs)
+            Advance((MinimumDepartureHoldGameTimeMs - _calendar + 299) / 300);
         return Rejected(departure.Result, "undock_rejected") ?? DockAt(station);
     }
     private string? PositionAt(string origin)
     {
         if (!Ship.IsDocked) return DockAt(origin);
         if (Ship.DockedStationObjectId == origin) return null;
-        var sample = EconomyBalanceRunner.Sample(_engine, _registry, Save());
+        var sample = CurrentSample;
         var queue = new Queue<string>(); queue.Enqueue(Ship.DockedStationObjectId!);
         var previous = new Dictionary<string, string?>(StringComparer.Ordinal) { [Ship.DockedStationObjectId!] = null };
         while (queue.TryDequeue(out var station))
@@ -378,6 +399,7 @@ internal sealed class BalanceDriver : IDisposable
         buyQuote = Quote(TradeCommandTypes.Buy, item, 1);
         long unitMass = _snapshot.DockedStationTrade?.Items.FirstOrDefault(i => i.ItemTypeId == item)?.UnitMassKg ?? 1;
         ceiling = Math.Min(buyQuote.MaximumQuantity, unitMass > 0 ? analytical / unitMass : long.MaxValue);
+        if (_clusterRun) ceiling = Math.Min(ceiling, 1);
         if (ceiling <= 0 || buyQuote.DisabledReason is not null) return Evidence("rejected", buyQuote.DisabledReason ?? "zero_batch_ceiling");
         // Batch ceiling is an upper bound. Keep the destination's declared first port fee
         // available instead of deliberately creating irrecoverable debt on every maximal Buy.
@@ -399,7 +421,7 @@ internal sealed class BalanceDriver : IDisposable
         if (buyResult.Result?.Status != CommandResultStatus.Executed) return Evidence("rejected", buyResult.Result?.ReasonCode ?? "buy_incomplete");
         replays.Add(Replay(buyResult.Command, buyQuote, "predeparture"));
         departureTime = _calendar;
-        departureRoute = EconomyBalanceRunner.Sample(_engine, _registry, Save()).Routes.Single(r => r.Origin == route.Origin && r.Destination == route.Destination);
+        departureRoute = CurrentSample.Routes.Single(r => r.Origin == route.Origin && r.Destination == route.Destination);
         if (Fly(route.Destination) is { } flightReason) return Evidence("rejected", flightReason);
         string? voyageId = _snapshot.VoyageFinances.LastOrDefault(v => v.OriginStationObjectId == route.Origin && v.DestinationStationObjectId == route.Destination)?.VoyageId;
         if (voyageId is null) return Evidence("unknown", "matching_ledger_missing");
