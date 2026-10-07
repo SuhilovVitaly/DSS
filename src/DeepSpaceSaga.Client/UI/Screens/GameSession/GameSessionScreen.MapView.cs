@@ -10,7 +10,7 @@ public sealed partial class GameSessionScreen
     private readonly TacticalMapSettings _mapSettings;
     private readonly CameraZoomTransition _zoomTransition = new();
     private SKRect _mapToolbarRect;
-    private readonly SKRect[] _mapViewButtons = new SKRect[7];
+    private readonly SKRect[] _mapViewButtons = new SKRect[8];
     private readonly SKPaint _mapMarkerPaint = new() { IsAntialias = true };
     private readonly HashSet<string> _clusteredObjectIds = new(StringComparer.Ordinal);
     private readonly List<MapCluster> _mapClusters = new();
@@ -21,6 +21,7 @@ public sealed partial class GameSessionScreen
     private SKRect _freeViewport;
     private string? _navigationTargetId;
     private string? _fittedBeltId;
+    private string? _fittedClusterId;
     internal bool ShowOrbits { get; private set; } = true;
     internal IReadOnlyDictionary<string, ObjectLabelGeometry> MapLabels => _labelRenderer.Geometries;
     internal IReadOnlyList<SKRect> MapViewButtonRects => _mapViewButtons;
@@ -160,12 +161,31 @@ public sealed partial class GameSessionScreen
         return true;
     }
 
+    internal bool FitCluster(string clusterId)
+    {
+        var cluster = _buffer.Latest?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == clusterId);
+        if (cluster is null || _viewportW <= 0 || _viewportH <= 0) return false;
+        var bounds = ClusterMapPresentation.Bounds(cluster, _renderStates.Select(s => s.Predicted));
+        if (!bounds.HasValue) return false;
+        _fittedClusterId = clusterId;
+        FitMapBounds(bounds);
+        return true;
+    }
+
     private void FitNextBelt()
     {
         if (_buffer.Latest?.Snapshot.SolarSystemMap is not { } map || map.Belts.IsEmpty) return;
         int index = -1;
         for (int i = 0; i < map.Belts.Length; i++) if (map.Belts[i].Id == _fittedBeltId) index = i;
         FitBelt(map.Belts[(index + 1) % map.Belts.Length].Id);
+    }
+
+    private void FitNextCluster()
+    {
+        if (_buffer.Latest?.Snapshot.ClusterMap is not { } map || map.Clusters.IsDefaultOrEmpty) return;
+        int index = -1;
+        for (int i = 0; i < map.Clusters.Length; i++) if (map.Clusters[i].Id == _fittedClusterId) index = i;
+        FitCluster(map.Clusters[(index + 1) % map.Clusters.Length].Id);
     }
 
     internal bool FitMapView(MapFitMode mode)
@@ -258,6 +278,7 @@ public sealed partial class GameSessionScreen
             else if (i == 4) RequestTacticalMapSnapshot();
             else if (i == 5 && IsMapViewAvailable(i)) ShowOrbits = !ShowOrbits;
             else if (i == 6) FitNextBelt();
+            else if (i == 7) FitNextCluster();
             return true;
         }
         return _mapToolbarRect.Contains(x, y);
@@ -269,7 +290,7 @@ public sealed partial class GameSessionScreen
         float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 62;
         _mapToolbarRect = new(left, top, left + width, top + 58);
         canvas.DrawRect(_mapToolbarRect, _panelBgPaint);
-        string[] keys = ["Map.Follow", "Map.ShipTarget", "Map.Route", "Map.System", "Map.Snapshot", "Map.Orbits", "Map.Belt"];
+        string[] keys = ["Map.Follow", "Map.ShipTarget", "Map.Route", "Map.System", "Map.Snapshot", "Map.Orbits", "Map.Belt", "Map.Cluster"];
         float buttonWidth = (width - 12) / keys.Length;
         for (int i = 0; i < keys.Length; i++)
         {
@@ -317,6 +338,7 @@ public sealed partial class GameSessionScreen
             2 => ship.NavigationTargetX is not null,
             5 => _buffer.Latest?.Snapshot.SolarSystemMap is not null,
             6 => _buffer.Latest?.Snapshot.SolarSystemMap?.Belts.Length > 0,
+            7 => _buffer.Latest?.Snapshot.ClusterMap?.Clusters.Length > 0,
             _ => true
         };
     }

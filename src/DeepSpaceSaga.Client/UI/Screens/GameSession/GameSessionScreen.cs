@@ -1111,6 +1111,8 @@ public sealed partial class GameSessionScreen : IScreen
         }
 
         // 2. Camera focus indicator
+        if (buffered is not null)
+            ClusterMapPresentation.Draw(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height);
         float cx = width / 2f;
         float cy = height / 2f;
         _depthRenderer.DrawFocusIndicator(canvas, cx, cy);
@@ -2264,8 +2266,10 @@ public sealed partial class GameSessionScreen : IScreen
         if (s.Source.ObjectType == SpaceObjectType.Station && p.RenderObjectType == SpaceObjectType.Station &&
             !observations.IsDefaultOrEmpty)
             market = observations.FirstOrDefault(o => string.Equals(o.StationObjectId, p.ObjectId, StringComparison.Ordinal));
+        var cluster = ClusterMapPresentation.Station(_buffer.Latest?.Snapshot, p.ObjectId);
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
-            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), s.Source.Countermeasure, market);
+            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), s.Source.Countermeasure, market,
+            cluster?.ClusterName, cluster?.Profile, cluster?.Directions);
     }
 
     /// <summary>

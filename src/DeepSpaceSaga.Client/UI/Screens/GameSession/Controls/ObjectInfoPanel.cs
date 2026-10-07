@@ -197,6 +197,12 @@ public sealed class ObjectInfoPanel
             }
             if (d.DistanceKm is { } distanceKm)
                 lines.Add(("Distance", TacticalMapSettings.FormatDistance(distanceKm * 1000)));
+            if (d.ClusterName is { } cluster)
+            {
+                lines.Add(("Cluster", cluster));
+                lines.Add(("Profile", d.ClusterProfile ?? "—"));
+                lines.Add(("Potential cargo", d.ClusterDirections ?? "—"));
+            }
             if (d.RenderObjectType == SpaceObjectType.Station && d.MarketKnowledge is { } market &&
                 string.Equals(market.StationObjectId, d.ObjectId, StringComparison.Ordinal))
             {
@@ -491,7 +497,8 @@ public readonly record struct ObjectInfoPanelData(
     string? RelationToPlayer = null,
     double? DistanceKm = null,
     TorpedoInspectionData? Torpedo = null, CountermeasureSnapshot? Countermeasure = null,
-    StationMarketKnowledgeSnapshot? MarketKnowledge = null);
+    StationMarketKnowledgeSnapshot? MarketKnowledge = null,
+    string? ClusterName = null, string? ClusterProfile = null, string? ClusterDirections = null);
 
 /// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
 public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);

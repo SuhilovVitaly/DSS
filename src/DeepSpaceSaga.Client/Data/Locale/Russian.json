@@ -1,6 +1,7 @@
 {
   "Map.Orbits": "Орбиты",
   "Map.Belt": "Пояс",
+  "Map.Cluster": "Кластер",
   "Map.Follow": "За кораблём",
   "Map.Route": "Весь маршрут",
   "Map.Selected": "Выбрано",
