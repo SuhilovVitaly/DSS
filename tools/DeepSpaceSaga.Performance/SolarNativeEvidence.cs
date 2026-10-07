@@ -51,10 +51,18 @@ internal static class SolarNativeEvidence
         var stationIds = snapshot.ClusterMap?.Clusters.SelectMany(c => c.StationIds).ToArray() ?? [];
         var selected = new HashSet<string>(StringComparer.Ordinal);
         bool inspectionScrollPassed = false;
+        int[]? gcStart = null;
+        TimeSpan gcPauseStart = default;
+        long allocatedStart = 0;
         screen.RenderStageCompleted = stage =>
         {
             if (stage != "begin") return;
             frame++;
+            if (frame == 121)
+            {
+                gcStart = Enumerable.Range(0, 3).Select(GC.CollectionCount).ToArray();
+                gcPauseStart = GC.GetTotalPauseDuration(); allocatedStart = GC.GetTotalAllocatedBytes();
+            }
             if (frame == 2)
             {
                 if (view == "system") screen.FitMapView(MapFitMode.System);
@@ -111,7 +119,16 @@ internal static class SolarNativeEvidence
             window.Run();
             if (File.Exists(output) && clusters)
             {
+                var renderGc = new
+                {
+                    collections = Enumerable.Range(0, 3).Select(i => GC.CollectionCount(i) - (gcStart?[i] ?? 0)).ToArray(),
+                    pauseMs = (GC.GetTotalPauseDuration() - gcPauseStart).TotalMilliseconds,
+                    allocatedBytes = GC.GetTotalAllocatedBytes() - allocatedStart
+                };
                 var report = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(output))!;
+                report["renderGc"] = JsonSerializer.SerializeToNode(renderGc);
+                report["worstCpuFrames"] = JsonSerializer.SerializeToNode(screen.CaptureFrameProfile().Frames.Where(f => f.FrameId > 120)
+                    .OrderByDescending(f => f.Window?.CpuCallbackMs ?? f.RenderCpuMs).Take(10));
                 report["clusterInteraction"] = JsonSerializer.SerializeToNode(new { requested = stationIds.Length, selected = selected.Count, inspectionScrollPassed, passed = selected.Count == stationIds.Length && inspectionScrollPassed, clusters = 5, stationsPerCluster = 12 });
                 File.WriteAllText(output, report.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
             }
