@@ -4,6 +4,8 @@ using Silk.NET.Input;
 using SkiaSharp;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Client.UI.Screens.Trade;
+using DeepSpaceSaga.Client.UI.Screens.GameSession;
+using System.Collections.Immutable;
 
 namespace DeepSpaceSaga.Client.UI.Screens.Station;
 
@@ -55,7 +57,10 @@ public sealed class StationScreen : IScreen
     private int _routeScroll;
     internal int RouteScrollOffset => _routeScroll;
     internal System.Collections.Immutable.ImmutableArray<StationRouteRow> RouteRows =>
-        StationRoutePresentation.Build(_buffer?.Latest?.Snapshot.TradingRoutes ?? default);
+        StationRoutePresentation.Build(_buffer?.Latest?.Snapshot.TradingRoutes ?? default)
+            .Select(row => ClusterMapPresentation.ClusterName(_buffer?.Latest?.Snapshot, row.DestinationStationObjectId) is { } cluster
+                ? row with { PrimaryText = row.PrimaryText.Replace(row.DestinationStationObjectId, $"{row.DestinationStationObjectId} · {cluster}", StringComparison.Ordinal) } : row)
+            .ToImmutableArray();
 
     internal string? SelectedVoyageDestinationObjectId
     {
@@ -96,7 +101,9 @@ public sealed class StationScreen : IScreen
             return;
         }
         if (!rows.Any(row => row.DestinationStationObjectId == _selectedDestinationId && row.IsEnabled))
-            _selectedDestinationId = rows.FirstOrDefault(row => row.IsEnabled && voyage.RouteOptions.Any(option =>
+            _selectedDestinationId = rows.FirstOrDefault(row => row.DestinationStationObjectId == snapshot.SelectedObjectId && row.IsEnabled && voyage.RouteOptions.Any(option =>
+                option.DestinationStationObjectId == row.DestinationStationObjectId && option.IsAvailable && option.BlockReasonCode is null))?.DestinationStationObjectId
+                ?? rows.FirstOrDefault(row => row.IsEnabled && voyage.RouteOptions.Any(option =>
                 option.DestinationStationObjectId == row.DestinationStationObjectId && option.IsAvailable && option.BlockReasonCode is null))?.DestinationStationObjectId;
     }
 

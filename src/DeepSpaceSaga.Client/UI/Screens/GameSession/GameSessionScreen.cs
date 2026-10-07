@@ -2205,6 +2205,8 @@ public sealed partial class GameSessionScreen : IScreen
             {
                 lines.Add(("Voyage", voyage.Phase == VoyagePhases.InTransit ? "In transit" : voyage.Phase));
                 lines.Add(("Destination", voyage.DestinationDisplayName ?? voyage.DestinationStationObjectId ?? "Unknown"));
+                if (ClusterMapPresentation.ClusterName(buffered.Snapshot, voyage.DestinationStationObjectId) is { } district)
+                    lines.Add(("Destination cluster", district));
                 lines.Add(("Progress", (Math.Clamp(voyage.ProgressPermille, 0, 1000) / 10m)
                     .ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + "%"));
             }

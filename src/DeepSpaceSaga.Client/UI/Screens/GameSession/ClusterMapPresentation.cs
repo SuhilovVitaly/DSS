@@ -7,6 +7,14 @@ internal sealed record ClusterStationPresentation(string ClusterName, string Pro
 
 internal static class ClusterMapPresentation
 {
+    internal static string? ClusterName(AuthoritativeSnapshot? snapshot, string? stationId)
+    {
+        var map = snapshot?.ClusterMap;
+        if (map is null || map.Stations.IsDefaultOrEmpty || map.Clusters.IsDefaultOrEmpty) return null;
+        string? clusterId = map.Stations.FirstOrDefault(s => s.ObjectId == stationId)?.ClusterId;
+        return map.Clusters.FirstOrDefault(c => c.Id == clusterId)?.Name;
+    }
+
     internal static double? EstimateStraightDays(double distanceWorld, double maxSpeedKmS)
     {
         if (!double.IsFinite(distanceWorld) || distanceWorld < 0 || !double.IsFinite(maxSpeedKmS) || maxSpeedKmS <= 0) return null;
