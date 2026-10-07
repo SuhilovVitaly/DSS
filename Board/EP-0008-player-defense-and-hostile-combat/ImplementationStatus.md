@@ -34,7 +34,11 @@ The solution run uses `dotnet test DeepSpaceSaga.sln --no-restore --logger "trx;
 
 Preparation commit `198d20a76e8812a0a2c1e268b5613daa2ad1284d`: pushed and verified on origin/base-fight.
 
-TK-0001 weapon-contract implemented and validated (Contracts 165/165; build/format/diff PASS); its commit/push is the next publication step. Runtime formulas and other epic criteria remain open. Planning/readiness checks do not establish gameplay acceptance.
+| Ticket | Commit | Push |
+|---|---|---|
+| EP-0008-US-0001-TK-0001 | `4233f52346b7d77edc4e04d677f52d7328353fda` | Verified on origin/base-fight |
+
+TK-0002 defense-contract implemented and validated (Contracts 170/170; build/format/diff PASS); its commit/push is the next publication step. Runtime formulas and other epic criteria remain open. Planning/readiness checks do not establish gameplay acceptance.
 
 ## Execution scope notes
 

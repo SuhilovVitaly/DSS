@@ -8,6 +8,7 @@ public enum DefenseState { Ready, Guiding, Reloading, NoOperator }
 
 public static class DefenseCommandTypes
 {
+    public const string Fire = "defense.fire";
     public const string Enable = "defense.enable";
     public const string Disable = "defense.disable";
 }
@@ -25,7 +26,13 @@ public sealed record DefenseSnapshot(
     DefenseState State,
     string? ActiveProjectileId = null,
     double? ReloadDueMotionTimeMs = null,
-    double RangeKm = 100);
+    double RangeKm = 100,
+    /// <summary>Independent inclusive manual launch range in km.</summary>
+    double? ManualRangeKm = null,
+    decimal? Accuracy = null,
+    double? SpeedKmS = null,
+    double? TurnRateDegPerSec = null,
+    long? MaxFlightTimeMs = null);
 
 /// <summary>
 /// Separate projectile type, never a torpedo fire target. All times use physical simulation
@@ -46,4 +53,13 @@ public sealed record CountermeasureSnapshot(
     double? MissExpiresAtMotionTimeMs = null,
     double? PredictedEncounterMotionTimeMs = null,
     int? ResolutionRoll = null,
-    double? ResolvedAtMotionTimeMs = null);
+    double? ResolvedAtMotionTimeMs = null,
+    LaunchMode Mode = LaunchMode.Auto,
+    decimal? CapturedAccuracy = null,
+    decimal? CapturedTargetManeuverability = null,
+    /// <summary>Captured maximum physical duration, shared by Guiding and MissedCoast.</summary>
+    long? MaxFlightTimeMs = null,
+    /// <summary>Absolute physical launch time plus captured lifetime; not extended by replans or toggles.</summary>
+    long? ExpiresAtMotionTimeMs = null,
+    double? SpeedKmS = null,
+    double? TurnRateDegPerSec = null);

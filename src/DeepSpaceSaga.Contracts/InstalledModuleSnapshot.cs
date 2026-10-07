@@ -61,4 +61,6 @@ public sealed record InstalledModuleSnapshot(
     LauncherCombatSnapshot? LauncherCombat = null,
     DefenseSnapshot? Defense = null,
     /// <summary>Current authoritative operator for either weapon family; null means unassigned.</summary>
-    WeaponOperatorSnapshot? Operator = null);
+    WeaponOperatorSnapshot? Operator = null,
+    /// <summary>Eligibility for this exact module and target; never an aggregate over all defense modules.</summary>
+    DefenseLaunchPreview? DefensePreview = null);
