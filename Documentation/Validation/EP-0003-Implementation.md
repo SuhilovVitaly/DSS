@@ -29,4 +29,12 @@ Delivered TK-0001 `0ca294a`, TK-0002 `262971a`, TK-0003 `76ab1fc`; each pushed s
 
 Review compared all three tickets and AC-0001–0003: source stations remain in the home quota, uninhabited belts are allowed, profiles and resource ownership are not inferred from camera aggregation, and intercluster links contain resolved endpoints and cargo candidates without permanent ETAs. No unresolved defect found in this story's contribution. Native acceptance remains NOT RUN until US-0008 evidence.
 
-US-0003–0008 and final epic review remain open. No completion is inferred from the planning documents' stage fields.
+## US-0003 — Resource surroundings
+
+Delivered TK-0001 `5f7b9df`, TK-0002 `14e3a7a`, TK-0003 `33f7499`; each pushed separately. Contracts 161/161; Engine 1682/1682 (`ep3-resource-engine.trx`, eight minutes); Client 1720/1720 (`ep3-resource-client.trx`). Scoped format verification and diff checks passed. Build was included in the matching full test runs with no warnings or errors.
+
+Story review checked all three tickets and their source-of-truth invariant. Every station receives the existing EP-0001 role-specific asteroid counts and composition, canonical asteroid IDs serve as resource binding IDs, and no duplicate field inventory is introduced. Resource surveys are already known only in the new cluster mode. Legacy resource tests retain unknown composition and scanning. Relative distances are preserved at 1/7/30/100/365 days, deterministic generation and manifest JSON continuation pass, and a control world without fields has identical authoritative market diagnostics after one day. Resources do not produce market stock. The Client renders composition, resolved cluster and anchor IDs from the same snapshot. No unresolved defect found in this story's contribution.
+
+Native acceptance remains NOT RUN. Full cluster-map save persistence belongs to US-0006; the manifest round trip above does not claim that future contribution is complete.
+
+US-0004–0008 and final epic review remain open. No completion is inferred from the planning documents' stage fields.
