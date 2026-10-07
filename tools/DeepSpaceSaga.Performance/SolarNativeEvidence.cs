@@ -14,10 +14,10 @@ internal static class SolarNativeEvidence
 {
     internal static int Run(string[] args)
     {
-        if (args.Length < 7) throw new ArgumentException("Usage: <root> <output.json> --solar-window min|max system|belt|selected 1|1.2|1.5 1280x720|1920x1080");
+        if (args.Length < 7) throw new ArgumentException("Usage: <root> <output.json> --solar-window min|max system|belt|selected|cluster 1|1.2|1.5 1280x720|1920x1080");
         string root = Path.GetFullPath(args[0]), output = Path.GetFullPath(args[1]), mode = args[3], view = args[4];
         float scale = float.Parse(args[5], CultureInfo.InvariantCulture);
-        if (mode is not ("min" or "max") || view is not ("system" or "belt" or "selected") || scale is not (1f or 1.2f or 1.5f))
+        if (mode is not ("min" or "max") || view is not ("system" or "belt" or "selected" or "cluster") || scale is not (1f or 1.2f or 1.5f))
             throw new ArgumentException("Unsupported native evidence case.");
         string client = Path.Combine(root, "src/DeepSpaceSaga.Client");
         Directory.SetCurrentDirectory(client);
@@ -50,6 +50,7 @@ internal static class SolarNativeEvidence
         int frame = 0;
         var stationIds = snapshot.ClusterMap?.Clusters.SelectMany(c => c.StationIds).ToArray() ?? [];
         var selected = new HashSet<string>(StringComparer.Ordinal);
+        bool inspectionScrollPassed = false;
         screen.RenderStageCompleted = stage =>
         {
             if (stage != "begin") return;
@@ -58,6 +59,7 @@ internal static class SolarNativeEvidence
             {
                 if (view == "system") screen.FitMapView(MapFitMode.System);
                 else if (view == "belt") screen.FitBelt(snapshot.SolarSystemMap!.Belts[0].Id);
+                else if (view == "cluster" && clusters) screen.FitCluster(snapshot.ClusterMap!.StartClusterId);
                 else screen.FitMapView(MapFitMode.Target);
             }
             // Exercise actual UI speed buttons during warmup; measured frames resume.
@@ -67,7 +69,15 @@ internal static class SolarNativeEvidence
             {
                 if (view == "system") screen.FitMapView(MapFitMode.System);
                 else if (view == "belt") screen.FitBelt(snapshot.SolarSystemMap!.Belts[0].Id);
+                else if (view == "cluster" && clusters) screen.FitCluster(snapshot.ClusterMap!.Stations.Single(s => s.ObjectId == screen.SelectedObjectId).ClusterId);
                 else screen.FitMapView(MapFitMode.Target);
+            }
+            if (clusters && frame is 95 or 100)
+            {
+                var body = screen.ObjectInfoPanel.RowBodyRects[1];
+                double zoom = screen.CameraPixelsPerWorldUnit;
+                screen.OnMouseWheel(body.MidX * scale, body.MidY * scale, frame == 95 ? -1 : 1);
+                if (frame == 95) inspectionScrollPassed = screen.ObjectInfoPanel.ScrollOffset(1) > 0 && screen.CameraPixelsPerWorldUnit == zoom;
             }
             if (clusters && frame is >= 25 and < 85)
             {
@@ -102,10 +112,10 @@ internal static class SolarNativeEvidence
             if (File.Exists(output) && clusters)
             {
                 var report = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(output))!;
-                report["clusterInteraction"] = JsonSerializer.SerializeToNode(new { requested = stationIds.Length, selected = selected.Count, passed = selected.Count == stationIds.Length, clusters = 5, stationsPerCluster = 12 });
+                report["clusterInteraction"] = JsonSerializer.SerializeToNode(new { requested = stationIds.Length, selected = selected.Count, inspectionScrollPassed, passed = selected.Count == stationIds.Length && inspectionScrollPassed, clusters = 5, stationsPerCluster = 12 });
                 File.WriteAllText(output, report.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
             }
-            return File.Exists(output) && (!clusters || selected.Count == stationIds.Length) ? 0 : 1;
+            return File.Exists(output) && (!clusters || selected.Count == stationIds.Length && inspectionScrollPassed) ? 0 : 1;
         }
         finally { handle.DisposeAsync().AsTask().GetAwaiter().GetResult(); }
     }
