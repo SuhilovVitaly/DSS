@@ -23,4 +23,10 @@ The cluster snapshot is intentionally not yet persisted: US-0006 owns that exten
 
 ## Remaining work
 
-US-0002–0008 and final epic review remain open. No completion is inferred from the planning documents' stage fields.
+## US-0002 — Distinct orbital districts
+
+Delivered TK-0001 `0ca294a`, TK-0002 `262971a`, TK-0003 `76ab1fc`; each pushed separately. Engine full regression 1679/1679 (`ep3-full-network-engine.trx`); Client full regression 1718/1718 (`ep3-multi-client.trx`). Boundary content covers all six scenarios, 2/5 belts, 3/5 clusters, 10/12 stations and seeds 1, 2, 42. Repeatability, 365-day rigid-distance checks, actual cluster framing and moving bounds passed. Swept radial envelopes are disjoint, proving separation at conjunction and opposition as well as sampled epochs. Group periods differ with radius. Initial nearest-cluster distances are validated from actual centroids against configured 15–35 days.
+
+Review compared all three tickets and AC-0001–0003: source stations remain in the home quota, uninhabited belts are allowed, profiles and resource ownership are not inferred from camera aggregation, and intercluster links contain resolved endpoints and cargo candidates without permanent ETAs. No unresolved defect found in this story's contribution. Native acceptance remains NOT RUN until US-0008 evidence.
+
+US-0003–0008 and final epic review remain open. No completion is inferred from the planning documents' stage fields.
