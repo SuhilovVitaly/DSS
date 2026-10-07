@@ -44,6 +44,14 @@ internal static class ClusterMapPresentation
             if (members.Length == 0) continue;
             var (x, y) = camera.WorldToScreen(members.Average(o => o.X), members.Average(o => o.Y), width, height);
             if (x < 0 || x > width || y < 0 || y > height) continue;
+            var bounds = Bounds(cluster, members);
+            var (left, top) = camera.WorldToScreen(bounds.MinX, bounds.MinY, width, height);
+            var (right, bottom) = camera.WorldToScreen(bounds.MaxX, bounds.MaxY, width, height);
+            paint.Style = SKPaintStyle.Stroke;
+            paint.Color = new SKColor(160, 210, 225, 90);
+            canvas.DrawRoundRect(new SKRect(left - 10, top - 10, right + 10, bottom + 10), 8, 8, paint);
+            paint.Style = SKPaintStyle.Fill;
+            paint.Color = new SKColor(160, 210, 225);
             canvas.DrawText($"{cluster.Name} · {members.Length} stations", x, y - 24, paint);
         }
     }
