@@ -33,6 +33,7 @@ public sealed partial class SimulationEngine : IDisposable
     private ulong _nextEngineCycleId;
     private ulong _nextShipEventId;
     private TradingMapStateData? _tradingMap;
+    private StationClusterMapSnapshot? _clusterMap;
     private StationResourceFieldConfig? _stationResourceFieldConfig;
     private StationResourceFieldsState? _stationResourceFields;
     private ImmutableDictionary<string, ResourceFieldAsteroidData> _resourceAsteroids = ImmutableDictionary<string, ResourceFieldAsteroidData>.Empty;
@@ -242,8 +243,17 @@ public sealed partial class SimulationEngine : IDisposable
             gs = gs with { StationResourceFields = StationResourceFields.ValidateSaved(ScenarioGroupPlacement.InitialGeometry(gs), _registry).StationResourceFields };
         else if (!isSave && scenario.SaveFormatVersion == 0 && gs.TradingMap is not null && _stationResourceFieldConfig is not null)
             gs = StationResourceFields.Generate(gs, resolvedMasterSeed, _stationResourceFieldConfig, _registry);
+        StationClusterMapSnapshot? clusterMap = null;
         if (!isSave && scenario.SaveFormatVersion == 0 && generation is not null)
+        {
             gs = SolarSystemGenerator.Generate(scenario with { GameState = gs }, generation, _registry, resolvedMasterSeed).GameState;
+            if (generation.Clusters is { } clusters)
+            {
+                var result = StationClusterGenerator.Generate(scenario with { GameState = gs }, clusters, _registry, resolvedMasterSeed);
+                gs = result.World.GameState;
+                clusterMap = result.Map;
+            }
+        }
         var resourceAsteroids = (gs.StationResourceFields?.Asteroids ?? [])
             .ToImmutableDictionary(a => a.ObjectId, StringComparer.Ordinal);
         var neutralResourceImages = gs.SpaceObjects.Where(o => resourceAsteroids.ContainsKey(o.ObjectId))
@@ -415,6 +425,7 @@ public sealed partial class SimulationEngine : IDisposable
             // already used to seed station generation.
             MasterSeed = resolvedMasterSeed;
             _solarSystem = gs.SolarSystem;
+            _clusterMap = clusterMap;
             MasterSeedWasMissingOnLoad = resolvedMasterSeedWasMissingOnLoad;
 
             // Player Tokens (Documentation\02-FirstRelease\Mechanics\Money.md): the starting balance
@@ -717,7 +728,7 @@ public sealed partial class SimulationEngine : IDisposable
                 TradingRoutes: BuildTradingRouteProjection(clockState.GameTimeMs),
                 LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
                 VoyageFinances: BuildVoyageFinanceProjection(),
-                StationMarketKnowledge: BuildStationMarketKnowledgeProjection(clockState.GameTimeMs));
+                StationMarketKnowledge: BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: _clusterMap);
         }
     }
 
