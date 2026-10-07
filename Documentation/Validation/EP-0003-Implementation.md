@@ -43,4 +43,12 @@ TK-0001 delivered and pushed separately. Client full regression 1723/1723 (`ep3-
 
 Story review checked AC-0001–0003: distance uses the displayed predicted poses, speed comes from the authoritative installed-engine maximum, days use the world-to-km and calendar ratio 300, and the epoch is physical simulation time. Missing, nonpositive, nonfinite speed or numeric overflow produces an unavailable estimate. Camera fitting and viewport changes preserve distance/estimate; moving districts change estimates, paused replay preserves them. Selected-station potential directions are dashed and contain no rendezvous marker; the existing confirmed Approach projection still passes its 31 tests. Stale/unavailable market observations are retained without refreshing a remote quote. No unresolved defect found in this story's contribution.
 
-US-0005–0008 and final epic review remain open. Native acceptance is still NOT RUN. No completion is inferred from planning stage fields.
+## US-0005 — Real trading voyages
+
+Delivered TK-0001 `b27bcea`, TK-0002 `e6cbfe1`; each committed and pushed separately. Engine full regression 1689/1689 (`ep3-voyage-engine-fixed.trx`); Client 1728/1728 (`ep3-voyage-client.trx`). Follow-up voyage, fuel, route and save/resume checks 97/97 (`ep3-save-fixed-focus.trx`); strengthened Client command-path assertions 5/5.
+
+Review covered real A→B→A and A→C→A commands for seeds 1, 2, 42, quotes, receipts, finite station/player budgets, docking dialogues, replay idempotency, installed-speed Approach and ledger-owned profit. Current orbital distances feed the existing EP-0001 route owner. Repeated route evaluation during snapshot construction was removed; no distance cache is persisted. Generated stations now inherit the scenario port fee so their docking dialogue can execute.
+
+The shipped starter engine efficiency changed from 10 to 100 km/kg: the existing 1000 kg tank could not support the required 15–35 day return voyage at the former content value. Engine fuel formulas, speed and capacity are unchanged. Numeric conservation tests explicitly retain their 10 km/kg fixture. Optional cluster-map save wiring landed here to keep newly generated route-event endpoints valid in existing save tests; full validation/continuation is delivered in US-0006. Review found and repaired departure-distance restoration: absolute orbit epochs must be used after save rebasing. Native acceptance remains NOT RUN.
+
+US-0006–0008 and final epic review remain open. No completion is inferred from planning stage fields.
