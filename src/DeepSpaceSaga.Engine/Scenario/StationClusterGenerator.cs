@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
+using DeepSpaceSaga.Engine.Rng;
 
 namespace DeepSpaceSaga.Engine.Scenario;
 
@@ -26,10 +27,96 @@ internal static class StationClusterGenerator
         string reason = "placement exhausted";
         for (int attempt = 0; attempt < 128; attempt++)
         {
-            try { return Place(source, config, registry, seed, attempt); }
+            try { return Expand(Place(source, config, registry, seed, attempt), config, registry, seed); }
             catch (ScenarioException ex) { reason = ex.Message; }
         }
         throw new ScenarioException($"clusters/v1 seed={seed} stage=local attempts=128: {reason}");
+    }
+
+    private static ClusterGenerationResult Expand(ClusterGenerationResult first, ClusterGenerationConfig config, GameDataRegistry registry, ulong seed)
+    {
+        var countRng = new SolarSystemGenerator.GeneratorRng(seed, "clusters/count", 0);
+        int count = countRng.NextInt(config.MinClusters, config.MaxClusters + 1);
+        if (count == 1) return first;
+        var state = first.World.GameState;
+        var system = state.SolarSystem!;
+        var belt = system.Belts.Single(b => b.Id == first.Map.Clusters[0].BeltId);
+        var player = state.SpaceObjects.Single(o => o.ObjectId == state.PlayerShipObjectId);
+        var homeStations = state.SpaceObjects.Where(o => first.Map.Clusters[0].StationIds.Contains(o.ObjectId)).ToArray();
+        double radius = Math.Sqrt(player.PositionX * player.PositionX + player.PositionY * player.PositionY);
+        double phase = Math.Atan2(player.PositionX, -player.PositionY);
+        double minHome = homeStations.Min(s => s.Orbit!.SemiMajorAxis), maxHome = homeStations.Max(s => s.Orbit!.SemiMajorAxis);
+        double padding = Math.Max(200, (maxHome - minHome) * 0.1);
+        // Reserve radial lanes inside the human belt. Different lanes can reach conjunction
+        // without merging: each group's entire radial envelope is disjoint.
+        var lanes = Enumerable.Range(1, count * 3).Select(i => belt.InnerRadius + (belt.OuterRadius - belt.InnerRadius) * i / (count * 3 + 1.0))
+            .Where(r => r < minHome - padding || r > maxHome + padding).OrderBy(r => Math.Abs(r - radius)).Take(count - 1).ToArray();
+        if (lanes.Length != count - 1) throw new ScenarioException("clusters: belt cannot fit separate swept radial lanes.");
+        var engine = (player.Modules ?? []).Select(m => registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId))).First(m => m.MaxSpeedMps is > 0);
+        double unitsPerDay = engine.MaxSpeedMps!.Value / 1000.0 * 86400 / 300 * 10;
+        double spacing = (config.InterclusterMinDays + config.InterclusterMaxDays) / 2 * unitsPerDay;
+        if (spacing >= 2 * lanes.Min()) throw new ScenarioException("clusters: intercluster spacing does not fit belt circumference.");
+        var clusters = first.Map.Clusters.ToBuilder();
+        var members = first.Map.Stations.ToBuilder();
+        var links = first.Map.Links.ToBuilder();
+        var objects = state.SpaceObjects.ToList();
+        var ids = objects.Select(o => o.ObjectId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        for (int index = 1; index < count; index++)
+        {
+            string clusterId = $"CLUSTER-{index + 1}";
+            double r = lanes[index - 1];
+            double p = phase + index * 2 * Math.Asin(spacing / (2 * radius));
+            var isolated = first.World with
+            {
+                GameState = state with
+                {
+                    TradingMap = null,
+                    SpaceObjects = state.SpaceObjects.Where(o => o.ObjectType != SpaceObjectType.Station).Select(o => o.ObjectId != player.ObjectId ? o : o with
+                    { PositionX = r * Math.Sin(p), PositionY = -r * Math.Cos(p), IsDocked = false, DockedStationObjectId = null }).ToArray()
+                }
+            };
+            ulong groupSeed = RngStreamSeedDerivation.DeriveStreamSeed(seed, $"station-clusters/v1/{clusterId}");
+            var group = Generate(isolated, config with { MinClusters = 1, MaxClusters = 1 }, registry, groupSeed);
+            var groupStations = group.World.GameState.SpaceObjects.Where(o => group.Map.Clusters[0].StationIds.Contains(o.ObjectId))
+                .Select(o => o with { ObjectId = o.ObjectId.Replace("CLUSTER-1", clusterId, StringComparison.Ordinal), Name = $"District {index + 1} {o.Name}" }).ToArray();
+            foreach (var station in groupStations)
+                if (!ids.Add(station.ObjectId)) throw new ScenarioException($"clusters: duplicate generated ID {station.ObjectId}.");
+            string specialization = groupStations.GroupBy(s => s.MarketProfileId).OrderByDescending(g => g.Count()).ThenBy(g => g.Key, StringComparer.Ordinal).First().Key!;
+            clusters.Add(new(clusterId, $"District {index + 1}", belt.Id, groupStations.Select(s => s.ObjectId).ToImmutableArray(), specialization));
+            members.AddRange(groupStations.Select(s => new ClusterStationData(s.ObjectId, clusterId, s.MarketProfileId!)));
+            links.AddRange(group.Map.Links.Select(l => l with
+            { Id = l.Id.Replace("CLUSTER-1", clusterId, StringComparison.Ordinal), FromStationId = l.FromStationId.Replace("CLUSTER-1", clusterId, StringComparison.Ordinal), ToStationId = l.ToStationId.Replace("CLUSTER-1", clusterId, StringComparison.Ordinal) }));
+            objects.AddRange(groupStations);
+        }
+        // Resolved intercluster cargo candidates carry current endpoints, never cached ETAs.
+        for (int index = 1; index < clusters.Count; index++)
+        {
+            var a = objects.Where(o => clusters[index - 1].StationIds.Contains(o.ObjectId)).ToArray();
+            var b = objects.Where(o => clusters[index].StationIds.Contains(o.ObjectId)).ToArray();
+            links.AddRange(BuildLinks(a.Concat(b).ToArray(), registry, (x, y) => a.Contains(x) != a.Contains(y)));
+        }
+        var centers = clusters.Select(c =>
+        {
+            var stations = objects.Where(o => c.StationIds.Contains(o.ObjectId)).ToArray();
+            return (X: stations.Average(o => o.PositionX), Y: stations.Average(o => o.PositionY));
+        }).ToArray();
+        for (int i = 0; i < centers.Length; i++)
+        {
+            double nearest = centers.Where((_, j) => j != i).Min(c => Math.Sqrt(Math.Pow(c.X - centers[i].X, 2) + Math.Pow(c.Y - centers[i].Y, 2))) / unitsPerDay;
+            if (nearest < config.InterclusterMinDays || nearest > config.InterclusterMaxDays)
+                throw new ScenarioException("clusters: initial neighbour distance outside configured days.");
+        }
+        var result = first.World with
+        {
+            GameState = state with
+            {
+                SpaceObjects = objects.OrderBy(o => o.ObjectId, StringComparer.Ordinal).ToArray(),
+                SolarSystem = system with
+                { Orbits = objects.Where(o => o.Orbit is not null).Select(o => new OrbitMapData(o.ObjectId, o.Orbit!)).ToImmutableArray() }
+            }
+        };
+        SolarSystemGeneration.ValidateWorld(result.GameState);
+        return new(result, first.Map with { Clusters = clusters.ToImmutable(), Stations = members.ToImmutable(), Links = links.ToImmutable() });
     }
 
     private static ClusterGenerationResult Place(ScenarioFile source, ClusterGenerationConfig config, GameDataRegistry registry, ulong seed, int attempt)
