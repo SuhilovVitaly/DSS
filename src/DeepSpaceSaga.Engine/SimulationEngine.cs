@@ -250,6 +250,11 @@ public sealed partial class SimulationEngine : IDisposable
             if (generation.Clusters is { } clusters)
             {
                 var result = StationClusterGenerator.Generate(scenario with { GameState = gs }, clusters, _registry, resolvedMasterSeed);
+                if (_stationResourceFieldConfig is { } resourceConfig)
+                {
+                    result = result with { World = result.World with { GameState = StationResourceFields.ExtendForClusters(result.World.GameState, resolvedMasterSeed, resourceConfig, _registry) } };
+                    result = StationClusterGenerator.BindResources(result);
+                }
                 gs = result.World.GameState;
                 clusterMap = result.Map;
             }

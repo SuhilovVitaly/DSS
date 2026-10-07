@@ -231,6 +231,14 @@ internal static class StationResourceFields
 
     private static TradingMapStationData[] Stations(GameStateData state)
     {
+        if (state.SolarSystem is not null)
+        {
+            var owners = (state.StationResourceFields?.Asteroids ?? []).Select(a => a.StationObjectId).Distinct(StringComparer.Ordinal).ToArray();
+            var rank = owners.Select((id, i) => (id, i)).ToDictionary(p => p.id, p => p.i, StringComparer.Ordinal);
+            return state.SpaceObjects.Where(o => o.ObjectType == "Station" && o.MarketProfileId is not null)
+                .OrderBy(o => rank.GetValueOrDefault(o.ObjectId, int.MaxValue)).ThenBy(o => o.ObjectId, StringComparer.Ordinal)
+                .Select(o => new TradingMapStationData(o.ObjectId, o.MarketProfileId!, o.Name ?? o.ObjectId, o.StationSize ?? "Medium")).ToArray();
+        }
         Saved(state.TradingMap is not null, "Materialized trading map is required.");
         var stations = state.TradingMap!.Rules.Stations.OrderBy(s => s.ObjectId, StringComparer.Ordinal).ToArray();
         Saved(stations.Length == 5 && stations.Select(s => s.MarketProfileId).ToHashSet(StringComparer.Ordinal).SetEquals(Profiles),
@@ -242,18 +250,27 @@ internal static class StationResourceFields
     }
 
     internal static GameStateData Generate(GameStateData materialized, ulong masterSeed, StationResourceFieldConfig config, GameDataRegistry registry)
+        => GenerateCore(materialized, masterSeed, config, registry, false);
+
+    internal static GameStateData ExtendForClusters(GameStateData materialized, ulong masterSeed, StationResourceFieldConfig config, GameDataRegistry registry)
+        => GenerateCore(materialized, masterSeed, config, registry, true);
+
+    private static GameStateData GenerateCore(GameStateData materialized, ulong masterSeed, StationResourceFieldConfig config, GameDataRegistry registry, bool append)
     {
         config = ValidateConfig(config, registry);
-        Saved(materialized.StationResourceFields is null, "Fields are already materialized.");
-        var stations = Stations(materialized);
+        Saved(append || materialized.StationResourceFields is null, "Fields are already materialized.");
+        var previous = materialized.StationResourceFields;
+        var owners = (previous?.Asteroids ?? []).Select(a => a.StationObjectId).ToHashSet(StringComparer.Ordinal);
+        var stations = Stations(materialized).Where(s => !owners.Contains(s.ObjectId)).ToArray();
         var objects = materialized.SpaceObjects.ToList();
         var ids = objects.Select(o => o.ObjectId).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        int count = config.Roles.SelectMany(r => r.Fields).Sum(f => f.AsteroidCount);
+        int count = checked(stations.Sum(s => config.Roles.Single(r => r.MarketProfileId == s.MarketProfileId).Fields.Sum(f => f.AsteroidCount)));
+        int first = previous?.NextObjectNumber ?? config.FirstObjectNumber;
         for (int i = 0; i < count; i++)
-            Saved(!ids.Contains(ObjectId(checked(config.FirstObjectNumber + i))), "Generated object ID collision.");
-        var manifest = new List<ResourceFieldAsteroidData>(count);
-        var streams = new List<ResourceFieldRngData>();
-        int next = config.FirstObjectNumber;
+            Saved(!ids.Contains(ObjectId(checked(first + i))), "Generated object ID collision.");
+        var manifest = new List<ResourceFieldAsteroidData>(previous?.Asteroids ?? []);
+        var streams = new List<ResourceFieldRngData>(previous?.RngStreams ?? []);
+        int next = first;
         foreach (var station in stations)
         {
             var owner = objects.Single(o => o.ObjectId == station.ObjectId);
@@ -299,7 +316,7 @@ internal static class StationResourceFields
         {
             SpaceObjects = objects.ToImmutableArray(),
             StationResourceFields = new(1, config, next, manifest.ToImmutableArray(),
-                streams.OrderBy(s => s.Name, StringComparer.Ordinal).ToImmutableArray(), [])
+                streams.OrderBy(s => s.Name, StringComparer.Ordinal).ToImmutableArray(), previous?.Surveys ?? [])
         };
     }
 
@@ -310,10 +327,10 @@ internal static class StationResourceFields
     {
         if (!double.IsFinite(x) || !double.IsFinite(y)) return false;
         // Materialized-map validation also checks every asteroid on save/load.
-        double stationClearanceKm = Math.Max(rules.StationClearanceKm, world.TradingMap!.Rules.ClearanceKm);
+        double stationClearanceKm = Math.Max(rules.StationClearanceKm, world.TradingMap?.Rules.ClearanceKm ?? 0);
         if (world.SpaceObjects.Where(o => o.ObjectType == "Station").Any(o => Distance(x, y, o) < stationClearanceKm)) return false;
         if (asteroids.Any(o => Distance(x, y, o) < rules.AsteroidSpacingKm)) return false;
-        foreach (var edge in world.TradingMap!.Edges)
+        foreach (var edge in world.TradingMap?.Edges ?? [])
         {
             var a = world.SpaceObjects.Single(o => o.ObjectId == edge.FromStationObjectId);
             var b = world.SpaceObjects.Single(o => o.ObjectId == edge.ToStationObjectId);

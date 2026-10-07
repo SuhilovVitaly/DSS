@@ -195,6 +195,38 @@ internal static class StationClusterGenerator
 
     internal static double Distance(SpaceObjectData a, SpaceObjectData b) => Math.Sqrt(Math.Pow(a.PositionX - b.PositionX, 2) + Math.Pow(a.PositionY - b.PositionY, 2));
 
+    internal static ClusterGenerationResult BindResources(ClusterGenerationResult result)
+    {
+        var fields = result.World.GameState.StationResourceFields;
+        if (fields is null) return result;
+        var objects = result.World.GameState.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.Ordinal);
+        var bindings = ImmutableArray.CreateBuilder<ClusterResourceBinding>();
+        foreach (var asteroid in fields.Asteroids)
+        {
+            var owner = objects[asteroid.StationObjectId];
+            var member = result.Map.Stations.Single(s => s.ObjectId == owner.ObjectId);
+            var obj = objects[asteroid.ObjectId];
+            double radius = Math.Sqrt(obj.PositionX * obj.PositionX + obj.PositionY * obj.PositionY);
+            double phase = (Math.Atan2(obj.PositionX, -obj.PositionY) * 180 / Math.PI + 360) % 360;
+            var orbit = owner.Orbit! with { SemiMajorAxis = radius, SemiMinorAxis = radius, InitialPhase = (int)phase, PhaseOffsetDegrees = phase - (int)phase };
+            objects[obj.ObjectId] = obj with { Orbit = orbit, MovementType = "Orbital" };
+            // The existing resource API is an asteroid manifest, with no separate field entity.
+            // Use its canonical object ID as the binding ID, preserving one source of composition.
+            bindings.Add(new(obj.ObjectId, member.ClusterId, owner.ObjectId, obj.PositionX - owner.PositionX, obj.PositionY - owner.PositionY));
+        }
+        var world = result.World with
+        {
+            GameState = result.World.GameState with
+            {
+                SpaceObjects = objects.Values.OrderBy(o => o.ObjectId, StringComparer.Ordinal).ToArray(),
+                StationResourceFields = fields with { Asteroids = fields.Asteroids.Select(a => a with { CompositionKnown = true }).ToArray() },
+                SolarSystem = result.World.GameState.SolarSystem! with { Orbits = objects.Values.Where(o => o.Orbit is not null).Select(o => new OrbitMapData(o.ObjectId, o.Orbit!)).ToImmutableArray() }
+            }
+        };
+        SolarSystemGeneration.ValidateWorld(world.GameState);
+        return new(world, result.Map with { ResourceBindings = bindings.ToImmutable() });
+    }
+
     internal static ImmutableArray<ClusterTradeLink> BuildLinks(IReadOnlyList<SpaceObjectData> stations, GameDataRegistry registry, Func<SpaceObjectData, SpaceObjectData, bool> eligible)
     {
         var links = ImmutableArray.CreateBuilder<ClusterTradeLink>();
