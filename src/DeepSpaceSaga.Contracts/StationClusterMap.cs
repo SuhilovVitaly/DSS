@@ -33,4 +33,15 @@ public sealed record StationClusterMapSnapshot(
     [property: JsonPropertyName("stations"), JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ClusterStationData>))]
     ImmutableArray<ClusterStationData> Stations,
     [property: JsonPropertyName("links"), JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ClusterTradeLink>))]
-    ImmutableArray<ClusterTradeLink> Links);
+    ImmutableArray<ClusterTradeLink> Links,
+    [property: JsonPropertyName("resourceBindings"), JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ClusterResourceBinding>))]
+    ImmutableArray<ClusterResourceBinding> ResourceBindings = default);
+
+/// <summary>References a canonical resource object/field. Offset is at the orbital epoch,
+/// in world units, and rotates with the owning group; composition remains in resource state.</summary>
+public sealed record ClusterResourceBinding(
+    [property: JsonPropertyName("fieldId")] string FieldId,
+    [property: JsonPropertyName("clusterId")] string ClusterId,
+    [property: JsonPropertyName("anchorStationId")] string AnchorStationId,
+    [property: JsonPropertyName("offsetX")] double OffsetX,
+    [property: JsonPropertyName("offsetY")] double OffsetY);
