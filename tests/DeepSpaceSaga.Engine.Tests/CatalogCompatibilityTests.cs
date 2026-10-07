@@ -350,6 +350,9 @@ public sealed class CatalogCompatibilityTests
                 MarketBudgetCredits = null,
                 MarketRevision = null,
                 Inventory = [new StationInventoryItemData(itemId, 1)]
+            } : obj.MarketProfileId is { } profileId ? obj with
+            {
+                MarketProfileFingerprint = registry.StationMarketProfiles.GetDefinition(registry.StationMarketProfiles.GetIndex(profileId)).Fingerprint
             } : obj).ToArray();
         using var engine = new SimulationEngine(registry);
         var ex = Assert.Throws<ScenarioException>(() => engine.LoadScenario(save with

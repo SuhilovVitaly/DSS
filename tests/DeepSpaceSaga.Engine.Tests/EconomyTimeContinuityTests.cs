@@ -1370,7 +1370,7 @@ public class EconomyTimeContinuityTests
         foreach (var item in authored.Inventory!)
             Assert.Equal(item.Quantity, station.Inventory!.Single(stock => stock.ItemTypeId == item.ItemTypeId).Quantity);
         var markets = engine.CaptureMarketDiagnosticsForTests();
-        Assert.Equal(5, markets.Length);
+        Assert.Equal(engine.CaptureSnapshot().ClusterMap!.Stations.Length, markets.Length);
         foreach (var market in markets)
             foreach (var item in market.Market.Items.Where(item => item.ItemTypeId != "item.fuel"))
             {

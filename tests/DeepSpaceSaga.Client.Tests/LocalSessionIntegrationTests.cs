@@ -407,7 +407,7 @@ public class LocalSessionIntegrationTests
                 var map = saved.GameState.TradingMap!;
 
                 Assert.Null(saved.GameState.TradingMapGeneration);
-                Assert.Equal(5, saved.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
+                Assert.Equal(engine.CaptureSnapshot().ClusterMap!.Stations.Length, saved.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
                 Assert.Equal(sourceShip.IsDocked, savedShip.IsDocked);
                 Assert.Equal(sourceShip.DockedStationObjectId, savedShip.DockedStationObjectId);
                 if (savedShip.IsDocked)
@@ -465,7 +465,7 @@ public class LocalSessionIntegrationTests
                 AuthoritativeSnapshot? initial = null;
                 await foreach (var snapshot in connection.ReadSnapshotsAsync(timeout.Token))
                 {
-                    if (snapshot.Objects.Count(obj => obj.ObjectType == SpaceObjectType.Station) == 5)
+                    if (snapshot.ClusterMap is not null)
                     {
                         initial = snapshot;
                         break;
@@ -486,7 +486,7 @@ public class LocalSessionIntegrationTests
                 var map = saved.GameState.TradingMap!;
 
                 Assert.Null(saved.GameState.TradingMapGeneration);
-                Assert.Equal(5, saved.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
+                Assert.Equal(initial.ClusterMap!.Stations.Length, saved.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
                 Assert.NotEmpty(map.Edges);
                 Assert.NotEmpty(map.CargoFlows);
             }
@@ -514,7 +514,7 @@ public class LocalSessionIntegrationTests
             AuthoritativeSnapshot? initial = null;
             await foreach (var snapshot in connection.ReadSnapshotsAsync(timeout.Token))
             {
-                if (snapshot.Objects.Count(obj => obj.ObjectType == SpaceObjectType.Station) == 5)
+                if (snapshot.ClusterMap is not null)
                 {
                     initial = snapshot;
                     break;
@@ -538,7 +538,7 @@ public class LocalSessionIntegrationTests
             var stationStates = screen.RenderStates
                 .Where(state => state.Pose.RenderObjectType == SpaceObjectType.Station)
                 .ToArray();
-            Assert.Equal(5, stationStates.Length);
+            Assert.Equal(initial!.ClusterMap!.Stations.Length, stationStates.Length);
             foreach (var station in stationStates)
             {
                 var (x, y) = (
