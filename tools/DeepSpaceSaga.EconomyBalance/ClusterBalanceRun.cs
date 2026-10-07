@@ -28,7 +28,11 @@ internal sealed record ClusterInputShortage(long GameTimeMs, string StationId, s
 internal sealed record ClusterCaseEvidence(ulong Seed, string ShipConfigurationId, string ClusterScenario,
     double HorizonReachedDays, int CompletedLocalCycles, int CompletedRoundTrips, string Outcome, string? StopReason,
     long GeometrySampleSimulationTimeMs, long InitialCredits, long FinalCredits, long ActualCargoCapacityKg,
-    BalanceCaseEvidence Economy, ImmutableArray<ClusterInputShortage> ProductionInputShortages);
+    BalanceCaseEvidence Economy, ImmutableArray<ClusterInputShortage> ProductionInputShortages)
+{
+    public ClusterEconomyAssessment? Assessment { get; init; }
+    public string ScenarioPolicy => "Unit batches; three local cycles; outbound in-transit hold until horizon before Approach; return follows actual docking/trade commands";
+}
 internal sealed record ClusterBalanceReport(int SchemaVersion, string Status, string Commit, ClusterMatrixFile Matrix,
     ImmutableArray<ClusterCaseEvidence> Cases);
 
@@ -133,7 +137,7 @@ internal static class ClusterBalanceCli
         try
         {
             string root = Path.GetFullPath(args[0]), target = Path.GetFullPath(args[1]), matrixPath = Path.GetFullPath(args[3]);
-            string client = Path.Combine(root, "src/DeepSpaceSaga.Client"), settings = Path.Combine(client, "Settings.json");
+            string client = Path.GetFullPath(Path.Combine(root, "src/DeepSpaceSaga.Client")), settings = Path.Combine(client, "Settings.json");
             if (target.StartsWith(client + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) || target.Equals(matrixPath, StringComparison.OrdinalIgnoreCase)) throw new BalanceConfigurationException("output may not replace content or matrix input");
             var matrix = JsonSerializer.Deserialize<ClusterMatrixFile>(File.ReadAllText(matrixPath), Json) ?? throw new BalanceConfigurationException("null matrix");
             matrix.Validate();
@@ -141,10 +145,11 @@ internal static class ClusterBalanceCli
             var cases = new ClusterBalanceRunner().Run(settings, Path.GetFullPath(Path.Combine(basePath, loaded.DefaultScenario)), matrix);
             using var git = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("git") { WorkingDirectory = root, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true, ArgumentList = { "rev-parse", "HEAD" } })!;
             string commit = git.StandardOutput.ReadToEnd().Trim(); git.WaitForExit();
-            var report = new ClusterBalanceReport(1, cases.All(c => c.Outcome == "completed") ? "correctness-completed-balance-not-assessed" : "incomplete", commit, matrix, cases);
+            cases = cases.Select(c => c with { Assessment = ClusterEconomyEvaluator.Evaluate(c.Economy) }).ToImmutableArray();
+            var report = new ClusterBalanceReport(1, cases.All(c => c.Outcome == "completed" && c.Assessment!.Correctness == "passed") ? "correctness-completed-balance-not-assessed" : "incomplete", commit, matrix, cases);
             Program.WriteAtomic(target, System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(report, Json) + "\n"));
             output.WriteLine($"status={report.Status};cases={cases.Length};output={target}");
-            return cases.All(c => c.Outcome == "completed") ? 0 : 1;
+            return report.Status == "correctness-completed-balance-not-assessed" ? 0 : 1;
         }
         catch (Exception e) { error.WriteLine("configuration/runtime failure: " + e.Message); return 2; }
     }
