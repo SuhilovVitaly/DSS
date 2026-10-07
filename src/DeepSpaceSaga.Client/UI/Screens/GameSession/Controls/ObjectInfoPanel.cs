@@ -203,6 +203,11 @@ public sealed class ObjectInfoPanel
                 lines.Add(("Profile", d.ClusterProfile ?? "—"));
                 lines.Add(("Potential cargo", d.ClusterDirections ?? "—"));
             }
+            if (d.ResourceCluster is { } resourceCluster)
+            {
+                lines.Add(("Resource cluster", resourceCluster));
+                lines.Add(("Resource owner", d.ResourceOwner ?? "—"));
+            }
             if (d.RenderObjectType == SpaceObjectType.Station && d.MarketKnowledge is { } market &&
                 string.Equals(market.StationObjectId, d.ObjectId, StringComparison.Ordinal))
             {
@@ -498,7 +503,8 @@ public readonly record struct ObjectInfoPanelData(
     double? DistanceKm = null,
     TorpedoInspectionData? Torpedo = null, CountermeasureSnapshot? Countermeasure = null,
     StationMarketKnowledgeSnapshot? MarketKnowledge = null,
-    string? ClusterName = null, string? ClusterProfile = null, string? ClusterDirections = null);
+    string? ClusterName = null, string? ClusterProfile = null, string? ClusterDirections = null,
+    string? ResourceCluster = null, string? ResourceOwner = null);
 
 /// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
 public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);

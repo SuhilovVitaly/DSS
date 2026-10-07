@@ -33,6 +33,12 @@ internal static class ClusterMapPresentation
         return bounds;
     }
 
+    internal static ClusterResourceBinding? Resource(AuthoritativeSnapshot? snapshot, string objectId)
+    {
+        var bindings = snapshot?.ClusterMap?.ResourceBindings ?? default;
+        return bindings.IsDefaultOrEmpty ? null : bindings.FirstOrDefault(b => b.FieldId == objectId);
+    }
+
     internal static void Draw(SKCanvas canvas, AuthoritativeSnapshot snapshot, IEnumerable<ObjectMotionSnapshot> objects, CameraState camera, int width, int height)
     {
         if (snapshot.ClusterMap is not { } map || map.Clusters.IsDefaultOrEmpty) return;

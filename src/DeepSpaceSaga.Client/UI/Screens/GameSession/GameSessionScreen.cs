@@ -2267,9 +2267,11 @@ public sealed partial class GameSessionScreen : IScreen
             !observations.IsDefaultOrEmpty)
             market = observations.FirstOrDefault(o => string.Equals(o.StationObjectId, p.ObjectId, StringComparison.Ordinal));
         var cluster = ClusterMapPresentation.Station(_buffer.Latest?.Snapshot, p.ObjectId);
+        var resource = ClusterMapPresentation.Resource(_buffer.Latest?.Snapshot, p.ObjectId);
+        var resourceCluster = resource is null ? null : _buffer.Latest?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
             p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), s.Source.Countermeasure, market,
-            cluster?.ClusterName, cluster?.Profile, cluster?.Directions);
+            cluster?.ClusterName, cluster?.Profile, cluster?.Directions, resourceCluster, resource?.AnchorStationId);
     }
 
     /// <summary>
