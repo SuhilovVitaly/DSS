@@ -37,4 +37,10 @@ Story review checked all three tickets and their source-of-truth invariant. Ever
 
 Native acceptance remains NOT RUN. Full cluster-map save persistence belongs to US-0006; the manifest round trip above does not claim that future contribution is complete.
 
-US-0004–0008 and final epic review remain open. No completion is inferred from the planning documents' stage fields.
+## US-0004 — Current travel estimates
+
+TK-0001 delivered and pushed separately. Client full regression 1723/1723 (`ep3-travel-client.trx`). Focused travel plus existing Approach projection tests 34/34 after the numeric-boundary repair. Build, scoped format and diff checks passed.
+
+Story review checked AC-0001–0003: distance uses the displayed predicted poses, speed comes from the authoritative installed-engine maximum, days use the world-to-km and calendar ratio 300, and the epoch is physical simulation time. Missing, nonpositive, nonfinite speed or numeric overflow produces an unavailable estimate. Camera fitting and viewport changes preserve distance/estimate; moving districts change estimates, paused replay preserves them. Selected-station potential directions are dashed and contain no rendezvous marker; the existing confirmed Approach projection still passes its 31 tests. Stale/unavailable market observations are retained without refreshing a remote quote. No unresolved defect found in this story's contribution.
+
+US-0005–0008 and final epic review remain open. Native acceptance is still NOT RUN. No completion is inferred from planning stage fields.
