@@ -364,6 +364,8 @@ public sealed partial class SimulationEngine : IDisposable
                 RelationToPlayer: obj.RelationToPlayer));
         }
 
+        StationClusterSaveValidation.Validate(gs, _registry);
+
         // Bounded-market preflight on the candidate world: stock/target coverage, one production
         // source per station and a well-formed pending remainder must all hold before anything is
         // replaced, so an invalid save leaves the running world untouched (AC-07).

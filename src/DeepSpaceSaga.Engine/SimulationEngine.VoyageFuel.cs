@@ -153,7 +153,7 @@ public sealed partial class SimulationEngine
         if (voyage.Phase == VoyagePhases.Docked || voyage.FuelReservationParts is not { Count: > 0 } parts ||
             voyage.FuelDistanceKm is not > 0 || voyage.FuelEfficiencyKmPerKg is not > 0 || voyage.FuelMultiplierPermille is not > 0)
             throw new ScenarioException("voyageState fuel reservation metadata is incomplete.");
-        var departureMap = BuildClusterVoyageMap(state.TradingMap, clusterMap, objects, voyage.StartedMotionTimeMs)!;
+        var departureMap = BuildClusterVoyageMap(state.TradingMap, clusterMap ?? state.ClusterMap, objects, voyage.StartedMotionTimeMs)!;
         var edge = departureMap.Edges.Single(e => Connects(e, voyage.OriginStationObjectId!, voyage.DestinationStationObjectId!));
         try
         {

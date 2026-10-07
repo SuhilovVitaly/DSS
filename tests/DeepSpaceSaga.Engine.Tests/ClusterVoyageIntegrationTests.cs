@@ -11,6 +11,8 @@ internal sealed class ClusterVoyageFixture : IDisposable
     internal AuthoritativeSnapshot Snapshot { get; private set; } = null!;
     internal long Time { get; private set; }
     private long _id;
+    private long _flightStartTime;
+    private double _straightDays;
     internal string Origin { get; }
     internal string Destination { get; }
     internal string OutboundItem => "item.iron-ore";
@@ -18,12 +20,12 @@ internal sealed class ClusterVoyageFixture : IDisposable
     internal List<(double StraightDays, double ActualDays)> Flights { get; } = [];
     internal List<TradeExecutionReceipt> Receipts { get; } = [];
 
-    internal ClusterVoyageFixture(ulong seed, bool intercluster)
+    internal ClusterVoyageFixture(ulong seed, bool intercluster, long? initialCredits = null)
     {
         Engine = new SimulationEngine(SeededWorldBootstrapTests.Registry());
         var config = EngineContentLoader.LoadSolarSystemGenerationConfig(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Settings.json"))!;
         var source = SeededWorldBootstrapTests.Scenario("Docked");
-        Engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = seed, CurrentSpeed = "Speed0" } }, generation: config);
+        Engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = seed, CurrentSpeed = "Speed0", PlayerTokens = initialCredits ?? source.GameState.PlayerTokens } }, generation: config);
         Capture();
         Origin = Player.DockedStationObjectId!;
         var map = Snapshot.ClusterMap!;
@@ -31,8 +33,20 @@ internal sealed class ClusterVoyageFixture : IDisposable
         Destination = map.Stations.Where(s => s.MarketProfileId == "market.industrial" && (s.ClusterId != home) == intercluster &&
             Snapshot.Voyage!.RouteOptions.Any(r => r.DestinationStationObjectId == s.ObjectId))
             .OrderBy(s => s.ObjectId, StringComparer.Ordinal).First().ObjectId;
-        Assert.Equal(source.GameState.PlayerTokens, Snapshot.PlayerCredits);
+        Assert.Equal(initialCredits ?? source.GameState.PlayerTokens, Snapshot.PlayerCredits);
     }
+
+    private ClusterVoyageFixture(ScenarioFile saved, ClusterVoyageFixture source, SimulationEngine? restoredEngine)
+    {
+        Engine = restoredEngine ?? new SimulationEngine(SeededWorldBootstrapTests.Registry());
+        if (restoredEngine is null) Engine.LoadScenario(saved, true);
+        Time = saved.GameState.MotionTimeMs; _id = source._id;
+        Origin = source.Origin; Destination = source.Destination;
+        _flightStartTime = source._flightStartTime; _straightDays = source._straightDays;
+        Receipts.AddRange(source.Receipts); Capture();
+    }
+    internal ClusterVoyageFixture Reload(ScenarioFile? saved = null, SimulationEngine? restoredEngine = null) =>
+        new(saved ?? ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(Save()), true), this, restoredEngine);
 
     internal ObjectMotionSnapshot Player => Snapshot.Objects.Single(o => o.ObjectId == Ship);
     internal AuthoritativeSnapshot Capture() => Snapshot = Engine.CaptureSnapshotForTests(Time * 300, SimulationSpeed.Speed0, Time);
@@ -66,9 +80,9 @@ internal sealed class ClusterVoyageFixture : IDisposable
     {
         for (int hour = 0; !Snapshot.Voyage!.RouteOptions.Single(r => r.DestinationStationObjectId == destination).IsAvailable && hour < 168; hour++)
             Advance(12000);
-        long start = Time;
+        _flightStartTime = Time;
         var target = Snapshot.Objects.Single(o => o.ObjectId == destination);
-        double straight = double.Hypot(target.X - Player.X, target.Y - Player.Y) / 10 / Player.MaxSpeedKmS!.Value * 300 / 86400;
+        _straightDays = double.Hypot(target.X - Player.X, target.Y - Player.Y) / 10 / Player.MaxSpeedKmS!.Value * 300 / 86400;
         var position = Player;
         Send(Bridge, NavigationComputerCommandTypes.Undock, destination);
         Assert.False(Player.IsDocked); Assert.Null(Snapshot.DockedStationTrade);
@@ -82,7 +96,14 @@ internal sealed class ClusterVoyageFixture : IDisposable
         double speed = Player.SpeedKmS;
         long remaining = (long)Math.Ceiling(route.DurationMs - route.ElapsedMs);
         Assert.InRange(remaining, 1, 1000 * 288000L);
-        Advance(remaining / 2); midpoint?.Invoke(this); Advance(remaining - remaining / 2);
+        Advance(remaining / 2); midpoint?.Invoke(this); FinishFlightTo(destination);
+    }
+
+    internal void FinishFlightTo(string destination)
+    {
+        var route = Assert.IsType<ApproachRoute>(Player.ApproachRoute);
+        double speed = Player.SpeedKmS;
+        Advance((long)Math.Ceiling(route.DurationMs - route.ElapsedMs));
         Assert.Equal(speed, Player.SpeedKmS);
         foreach (string command in new[] { ShipEngineCommandTypes.SpeedSynchronization, ShipEngineCommandTypes.DirectionSynchronization })
         {
@@ -104,7 +125,7 @@ internal sealed class ClusterVoyageFixture : IDisposable
         }
         Assert.True(Player.IsDocked); Assert.Equal(destination, Player.DockedStationObjectId);
         Assert.Null(Snapshot.ActiveVoyage);
-        Flights.Add((straight, (Time - start) / 288000d));
+        Flights.Add((_straightDays, (Time - _flightStartTime) / 288000d));
     }
     public void Dispose() => Engine.Dispose();
 }
