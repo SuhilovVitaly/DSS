@@ -19,8 +19,8 @@ public sealed class LocalClusterContentTests
             using var engine = SimulationEngine.CreateFromScenarioFile(DefaultSystemContentTests.Settings,
                 Path.Combine(AppContext.BaseDirectory, "Scenarios", name, "scenario.json"));
             var map = engine.CaptureSnapshot().ClusterMap!;
-            Assert.Single(map.Clusters);
-            Assert.InRange(map.Stations.Length, 10, 12);
+            Assert.InRange(map.Clusters.Length, config.Clusters.MinClusters, config.Clusters.MaxClusters);
+            Assert.All(map.Clusters, c => Assert.InRange(c.StationIds.Length, 10, 12));
             Assert.Equal(new[] { "market.hydroponic", "market.industrial", "market.mining", "market.scientific-military", "market.transit" },
                 map.Stations.Select(s => s.MarketProfileId).Distinct().Order(StringComparer.Ordinal));
         }
