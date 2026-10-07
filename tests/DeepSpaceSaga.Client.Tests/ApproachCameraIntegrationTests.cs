@@ -28,6 +28,7 @@ public class ApproachCameraIntegrationTests
                 MarketKnowledge = [], // Fixture removes all stations.
                 TradingMap = null,
                 SolarSystem = null,
+                ClusterMap = null,
                 VoyageState = null,
                 StationResourceFields = null,
                 SpaceObjects = [
@@ -120,6 +121,7 @@ public class ApproachCameraIntegrationTests
                 MarketKnowledge = [], // Fixture removes all stations.
                 TradingMap = null,
                 SolarSystem = null,
+                ClusterMap = null,
                 VoyageState = null,
                 StationResourceFields = null,
                 SpaceObjects = [

@@ -24,6 +24,7 @@ internal static class SolarNativeEvidence
         string settings = Path.Combine(client, "Settings.json");
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settings, out _, out _);
         var config = EngineContentLoader.LoadSolarSystemGenerationConfig(settings)!;
+        bool clusters = args.Contains("--clusters");
         int planets = mode == "min" ? 3 : 7, belts = mode == "min" ? 2 : 5;
         config = config with
         {
@@ -32,7 +33,8 @@ internal static class SolarNativeEvidence
             MinBelts = belts,
             MaxBelts = belts,
             StartMinDays = mode == "min" ? 50 : 75,
-            StartMaxDays = mode == "min" ? 50 : 75
+            StartMaxDays = mode == "min" ? 50 : 75,
+            Clusters = clusters ? config.Clusters! with { MinClusters = 5, MaxClusters = 5, MinStations = 12, MaxStations = 12 } : null
         };
         var engine = new SimulationEngine(registry);
         engine.ConfigureStationResourceFields(JsonSerializer.Deserialize<StationResourceFieldConfig>(File.ReadAllText(Path.Combine(client, "Data/World/station-resource-fields.json")))!);
@@ -46,6 +48,8 @@ internal static class SolarNativeEvidence
         var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle, uiScale: scale,
             mapSettings: TacticalMapSettings.Load(settings), combatSettings: CombatVisualSettings.Load(Path.Combine(client, CombatVisualSettings.RelativePath)));
         int frame = 0;
+        var stationIds = snapshot.ClusterMap?.Clusters.SelectMany(c => c.StationIds).ToArray() ?? [];
+        var selected = new HashSet<string>(StringComparer.Ordinal);
         screen.RenderStageCompleted = stage =>
         {
             if (stage != "begin") return;
@@ -59,6 +63,24 @@ internal static class SolarNativeEvidence
             // Exercise actual UI speed buttons during warmup; measured frames resume.
             if (frame is 20 or 90) ClickSpeed(1);
             if (frame == 60) ClickSpeed(0);
+            if (frame == 110)
+            {
+                if (view == "system") screen.FitMapView(MapFitMode.System);
+                else if (view == "belt") screen.FitBelt(snapshot.SolarSystemMap!.Belts[0].Id);
+                else screen.FitMapView(MapFitMode.Target);
+            }
+            if (clusters && frame is >= 25 and < 85)
+            {
+                string id = stationIds[frame - 25];
+                var district = snapshot.ClusterMap!.Clusters.Single(c => c.StationIds.Contains(id));
+                screen.FitCluster(district.Id);
+                var pose = screen.RenderStates.First(s => s.Pose.ObjectId == id).Pose;
+                var size = args[6].Split('x'); float width = float.Parse(size[0]), height = float.Parse(size[1]);
+                float x = (float)(width / 2 + (pose.X - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit);
+                float y = (float)(height / 2 + (pose.Y - screen.CameraFocusY) * screen.CameraPixelsPerWorldUnit);
+                screen.OnMouseDown(x, y); screen.OnMouseUp(x, y);
+                if (screen.SelectedObjectId == id) selected.Add(id);
+            }
             void ClickSpeed(int index)
             {
                 var r = screen.SpeedButtonRects[index];
@@ -77,7 +99,13 @@ internal static class SolarNativeEvidence
         {
             using var window = new SkiaWindow(screen, new EvidenceFactory(settings), System.Diagnostics.Stopwatch.StartNew());
             window.Run();
-            return File.Exists(output) ? 0 : 1;
+            if (File.Exists(output) && clusters)
+            {
+                var report = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(output))!;
+                report["clusterInteraction"] = JsonSerializer.SerializeToNode(new { requested = stationIds.Length, selected = selected.Count, passed = selected.Count == stationIds.Length, clusters = 5, stationsPerCluster = 12 });
+                File.WriteAllText(output, report.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            }
+            return File.Exists(output) && (!clusters || selected.Count == stationIds.Length) ? 0 : 1;
         }
         finally { handle.DisposeAsync().AsTask().GetAwaiter().GetResult(); }
     }
