@@ -338,7 +338,10 @@ public sealed class ObjectInfoPanel
             for (int i = 0; i < RowNames.Length; i++)
             {
                 bool opened = IsRowOpen(i);
-                float bodyHeight = Math.Max(RowBodyHeight, 2 * Padding + BuildRenderLines(rowData[i]).Count * LineHeight);
+                var sourceLines = BuildLines(rowData[i]);
+                float valueOffset = ValueOffset(rowData[i], sourceLines);
+                var renderLines = BuildRenderLines(rowData[i], sourceLines, valueOffset);
+                float bodyHeight = Math.Max(RowBodyHeight, 2 * Padding + renderLines.Count * LineHeight);
                 float fullHeight = bodyHeight;
                 bodyHeight = Math.Min(bodyHeight, Math.Max(0, viewportHeight - Margin - rowY - RowCaptionHeight));
                 if (_rowObjectIds[i] != rowData[i]?.ObjectId)
@@ -361,7 +364,7 @@ public sealed class ObjectInfoPanel
                 canvas.DrawText(RowNames[i], captionRect.Left + Padding, captionRect.MidY + _rowTitlePaint.TextSize / 3f, _rowTitlePaint);
 
                 if (opened)
-                    DrawRowBody(canvas, bodyRect, rowData[i], _rowScrollOffsets[i], _rowScrollLimits[i]);
+                    DrawRowBody(canvas, bodyRect, rowData[i], _rowScrollOffsets[i], _rowScrollLimits[i], renderLines, valueOffset);
 
                 rowY += opened ? (RowCaptionHeight + bodyHeight) : RowCaptionHeight;
                 if (!opened && i < RowNames.Length - 1)
@@ -385,8 +388,13 @@ public sealed class ObjectInfoPanel
     internal List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data)
     {
         var source = BuildLines(data);
+        return BuildRenderLines(data, source, ValueOffset(data, source));
+    }
+
+    private List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data, List<(string Label, string Value)> source, float valueOffset)
+    {
         if (data?.MarketKnowledge is null && data?.ClusterName is null) return source;
-        float width = PanelWidth - ImageWidth - 4 * Padding - ValueOffset(data, source);
+        float width = PanelWidth - ImageWidth - 4 * Padding - valueOffset;
         var result = new List<(string Label, string Value)>();
         foreach (var (label, value) in source)
         {
@@ -406,7 +414,8 @@ public sealed class ObjectInfoPanel
         return result;
     }
 
-    private void DrawRowBody(SKCanvas canvas, SKRect bodyRect, ObjectInfoPanelData? data, float scrollOffset, float scrollLimit)
+    private void DrawRowBody(SKCanvas canvas, SKRect bodyRect, ObjectInfoPanelData? data, float scrollOffset, float scrollLimit,
+        List<(string Label, string Value)> lines, float valueOffset)
     {
         canvas.DrawRect(bodyRect, _panelBgPaint);
         canvas.DrawRect(bodyRect, _panelBorderPaint);
@@ -433,8 +442,6 @@ public sealed class ObjectInfoPanel
 
         float textX = imageRect.Right + Padding;
         float textY = imgY + LineHeight - 3f;
-        var lines = BuildRenderLines(data);
-        float valueOffset = ValueOffset(data, BuildLines(data));
         foreach (var (label, value) in lines)
         {
             canvas.DrawText(label, textX, textY, _labelPaint);

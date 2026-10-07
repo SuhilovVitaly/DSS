@@ -24,10 +24,20 @@ internal static class ClusterMapPresentation
 
     internal static void DrawDirections(SKCanvas canvas, StationClusterMapSnapshot map, string? selectedId,
         IReadOnlyList<ObjectMotionSnapshot> poses, CameraState camera, int width, int height)
+        => DrawDirections(canvas, map, selectedId, PosesById(poses), camera, width, height);
+
+    private static Dictionary<string, ObjectMotionSnapshot> PosesById(IEnumerable<ObjectMotionSnapshot> objects)
+    {
+        var poses = new Dictionary<string, ObjectMotionSnapshot>(StringComparer.Ordinal);
+        foreach (var obj in objects) poses.TryAdd(obj.ObjectId, obj);
+        return poses;
+    }
+
+    private static void DrawDirections(SKCanvas canvas, StationClusterMapSnapshot map, string? selectedId,
+        IReadOnlyDictionary<string, ObjectMotionSnapshot> poses, CameraState camera, int width, int height)
     {
         if (selectedId is null || map.Links.IsDefaultOrEmpty) return;
-        var source = poses.FirstOrDefault(o => o.ObjectId == selectedId && o.RenderObjectType == SpaceObjectType.Station);
-        if (source is null) return;
+        if (!poses.TryGetValue(selectedId, out var source) || source.RenderObjectType != SpaceObjectType.Station) return;
         using var dash = SKPathEffect.CreateDash([8, 6], 0);
         using var paint = new SKPaint
         {
@@ -40,8 +50,7 @@ internal static class ClusterMapPresentation
         var (x, y) = camera.WorldToScreen(source.X, source.Y, width, height);
         foreach (var destination in map.Links.Where(l => l.FromStationId == selectedId).Select(l => l.ToStationId).Distinct())
         {
-            var target = poses.FirstOrDefault(o => o.ObjectId == destination && o.RenderObjectType == SpaceObjectType.Station);
-            if (target is null) continue;
+            if (!poses.TryGetValue(destination, out var target) || target.RenderObjectType != SpaceObjectType.Station) continue;
             var (tx, ty) = camera.WorldToScreen(target.X, target.Y, width, height);
             canvas.DrawLine(x, y, tx, ty, paint);
         }
@@ -82,12 +91,13 @@ internal static class ClusterMapPresentation
     internal static void Draw(SKCanvas canvas, AuthoritativeSnapshot snapshot, IEnumerable<ObjectMotionSnapshot> objects, CameraState camera, int width, int height, string? selectedId = null)
     {
         if (snapshot.ClusterMap is not { } map || map.Clusters.IsDefaultOrEmpty) return;
-        var poses = objects.ToArray();
+        var poses = PosesById(objects);
         DrawDirections(canvas, map, selectedId, poses, camera, width, height);
         using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(160, 210, 225), TextSize = 14 };
         foreach (var cluster in map.Clusters)
         {
-            var members = poses.Where(o => !cluster.StationIds.IsDefaultOrEmpty && cluster.StationIds.Contains(o.ObjectId)).ToArray();
+            if (cluster.StationIds.IsDefaultOrEmpty) continue;
+            var members = cluster.StationIds.Where(poses.ContainsKey).Select(id => poses[id]).ToArray();
             if (members.Length == 0) continue;
             var (x, y) = camera.WorldToScreen(members.Average(o => o.X), members.Average(o => o.Y), width, height);
             if (x < 0 || x > width || y < 0 || y > height) continue;
