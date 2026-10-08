@@ -1,6 +1,6 @@
 # EP-0004 — отчёт исполнения
 
-Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0006 реализованы (19/26 тикетов), US-0007–US-0009 ожидают исполнения.
+Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0007 реализованы (21/26 тикетов), US-0008–US-0009 ожидают исполнения.
 
 ## База и изоляция
 
@@ -90,3 +90,7 @@ POI contract/generation/content/rendering complete. Contracts 173/173; Engine no
 ## US-0006 / TK-0001 and story review
 
 Layer flags/cycling/adaptive controls complete. Full Client1755/1755 PASS after UI150 panel/toolbar regression repairs; build/scoped format/diff PASS. Native NOT RUN before US8. US5 TK4 published70491f4.
+
+## US-0007 / TK-0001–0002 and story review
+
+Complete map JSON/local-file restoration and continuation passed. Engine non-corpus1689/1689; named persistence3/3 and local4/4. Territory-link namespace fixed. No regeneration, atomic invalid ingress and legacy absence proved. US6 published1bdb14d; US7 TK1 ae5d953. Full corpus/native/performance next US8.
