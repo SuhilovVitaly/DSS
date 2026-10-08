@@ -29,6 +29,7 @@ public class ApproachCameraIntegrationTests
                 TradingMap = null,
                 SolarSystem = null,
                 ClusterMap = null,
+                AiMap = null,
                 VoyageState = null,
                 StationResourceFields = null,
                 SpaceObjects = [
@@ -122,6 +123,7 @@ public class ApproachCameraIntegrationTests
                 TradingMap = null,
                 SolarSystem = null,
                 ClusterMap = null,
+                AiMap = null,
                 VoyageState = null,
                 StationResourceFields = null,
                 SpaceObjects = [

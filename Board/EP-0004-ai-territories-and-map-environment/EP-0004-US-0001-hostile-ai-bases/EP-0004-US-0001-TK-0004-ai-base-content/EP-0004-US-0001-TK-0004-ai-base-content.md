@@ -3,10 +3,10 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0001-hostile-ai-bases
 ticket: EP-0004-US-0001-TK-0004-ai-base-content
 title: Начальные настройки баз ИИ
-stage: approved
+stage: done
 layer: content-data
 depends_on: [EP-0002-US-0006-TK-0001-known-map-projection, EP-0002-US-0006-TK-0002-system-map-navigation, EP-0003-US-0002-TK-0001-multi-cluster-placement, EP-0003-US-0002-TK-0002-full-cluster-content, EP-0003-US-0002-TK-0003-multi-cluster-overview, EP-0004-US-0001-TK-0003-authoritative-hostile-access]
-files_touched: 2
+files_touched: 4
 serves: [AC-0001, AC-0002]
 created: 2026-09-22T14:40:41Z
 revision: 1
@@ -140,3 +140,13 @@ public sealed record AiGenerationConfig(int MinBases,int MaxBases,double Defence
 ### EP-0004-US-0001-TK-0003-authoritative-hostile-access
 
 No API shape change. Stable reason station_access_denied; существующие quote failure semantics и rollback сохраняются. Engine owner lookup helper IsHostileAiBase(string id) может быть internal static predicate от runtime metadata, доступный transaction через validateDock.
+
+## Актуализация scope 2026-10-08
+
+Включение штатных AI обнаружило assumptions в старых integration fixtures. Добавлены tests/DeepSpaceSaga.Client.Tests/ApproachCameraIntegrationTests.cs и LocalSessionIntegrationTests.cs: при искусственном удалении всей map очищать AiMap вместе с SolarSystem/ClusterMap; total Station count теперь равен human cluster members плюс AiMap.Bases. Проверка human count не ослабляется, обе категории считаются явно. Проверяются все шесть актуальных сценариев (включая PlayerShipOnly), seed 1/2/42 и count2/4.
+
+## Выполнение и review 2026-10-08
+
+Штатный ai config: 2..4, 200/1000 km, 64 attempts. Оба named tests покрывают загрузку и все 6 сценариев × seed1/2/42 × count2/4; human descriptors и полностью сохранённые human stations побайтно совпадают с контролем без AI. Старые synthetic legacy fixtures очищают AiMap, station total явно включает обе категории.
+
+Targeted 42/42 PASS; полный Client suite после исправлений 1737/1737 PASS (ep4-us1-tk4-final.trx, 1m16s); build/scoped format/diff check PASS. Первый полный прогон обнаружил 7 устаревших fixture assertions, исправления подтверждены повторным полным прогоном. Native ещё NOT RUN.

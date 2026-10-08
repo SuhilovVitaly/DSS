@@ -44,3 +44,7 @@ US-0001 → US-0002 → US-0003 → US-0004 → US-0005 → US-0006 → US-0007 
 ## US-0001 / TK-0003
 
 AI dock/trade gates завершены; Engine без correctness corpus 1669/1669 PASS, format/diff PASS. TK-0002 опубликован 580e9e6. Legacy/quoted/quote/forged dock/dialogue grant paths проверены.
+
+## US-0001 / TK-0004
+
+Штатные базы включены во всех шести сценариях. Content matrix 36 миров с control без AI; targeted 42/42 и Client full 1737/1737 PASS. TK-0003 опубликован a35f101.
