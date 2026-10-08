@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.Engine.Tests;
@@ -72,7 +74,7 @@ public sealed class TradingMapSchemaTests
     }
 
     [Fact]
-    public void Counter_rejects_non_multiple_of_ten_and_overflow_values()
+    public void Counter_is_rounded_up_without_overflow_warned_and_persisted()
     {
         var map = MaterializedMap() with
         {
@@ -83,8 +85,21 @@ public sealed class TradingMapSchemaTests
             ]
         };
 
-        Assert.Throws<ScenarioException>(() =>
-            ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(Scenario(map: map))));
+        using var listener = new CounterTraceListener();
+        Trace.Listeners.Add(listener);
+        ScenarioFile loaded;
+        try
+        {
+            loaded = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(Scenario(map: map)));
+        }
+        finally { Trace.Listeners.Remove(listener); }
+        Assert.Equal(10010UL, loaded.GameState.TradingMap!.RngStreams.Single(s => s.Name == "TradingMap.Topology").Counter);
+        var warning = string.Join("\n", listener.Messages);
+        Assert.Contains("TradingMap.Topology", warning, StringComparison.Ordinal);
+        Assert.Contains("10001", warning, StringComparison.Ordinal);
+        Assert.Contains("10010", warning, StringComparison.Ordinal);
+        var repeated = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(loaded));
+        Assert.Equal(ScenarioLoader.Serialize(loaded), ScenarioLoader.Serialize(repeated));
 
         var overflow = map with
         {
@@ -95,6 +110,18 @@ public sealed class TradingMapSchemaTests
             ]
         };
         Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(Scenario(map: overflow))));
+    }
+
+    [Fact]
+    public void Counter_can_round_to_last_representable_multiple_without_intermediate_overflow()
+    {
+        var map = MaterializedMap() with
+        {
+            RngStreams = [new("TradingMap.Topology", 1, ulong.MaxValue - 6), new("TradingMap.Geometry", 2, 10000)],
+        };
+        var loaded = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(Scenario(map: map)));
+        Assert.Equal(ulong.MaxValue - 5,
+            loaded.GameState.TradingMap!.RngStreams.Single(s => s.Name == "TradingMap.Topology").Counter);
     }
 
     [Fact]
@@ -322,4 +349,11 @@ public sealed class TradingMapSchemaTests
             CargoFlows = MaterializedMap().CargoFlows.Reverse().ToArray()
         };
     }
+    private sealed class CounterTraceListener : TraceListener
+    {
+        internal ConcurrentQueue<string> Messages { get; } = new();
+        public override void Write(string? message) => Messages.Enqueue(message ?? "");
+        public override void WriteLine(string? message) => Messages.Enqueue(message ?? "");
+    }
+
 }

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.csproj" />
+    <ProjectReference Include="../../src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj" />
+    <InternalsVisibleTo Include="DeepSpaceSaga.EconomyBalance.Tests" />
+    <None Update="balance-matrix.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

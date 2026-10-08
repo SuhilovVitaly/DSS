@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Contracts;
@@ -429,7 +430,8 @@ public class StationScreenTests
                     { IsDocked = true, DockedStationObjectId = stationId }],
                 PlayerShipObjectId: "ship",
                 Voyage: new VoyageSnapshot(VoyagePhases.Docked,
-                    RouteOptions: [new VoyageRouteOptionSnapshot(destination, destination, 1000, "Short")]));
+                    RouteOptions: [new VoyageRouteOptionSnapshot(destination, destination, 1000, "Short")]),
+                TradingRoutes: [Route(destination, origin: stationId)]);
         buffer.Update(AtStation("A", "B"));
         var screen = new StationScreen(buffer);
         RenderScreen(screen);
@@ -522,6 +524,8 @@ public class StationScreenTests
     [Theory]
     [InlineData(CommandReasonCodes.VoyageOutstandingDebt)]
     [InlineData(CommandReasonCodes.VoyageInsufficientFuel)]
+    [InlineData(CommandReasonCodes.InsufficientVoyageFuel)]
+    [InlineData(CommandReasonCodes.FuelEfficiencyUnavailable)]
     [InlineData(CommandReasonCodes.VoyageDestinationUnavailable)]
     public void Blocked_route_can_be_selected_for_reason_without_departure(string reason)
     {
@@ -530,7 +534,8 @@ public class StationScreenTests
             [new ObjectMotionSnapshot("ship", 0, 0, 0, 0) { IsDocked = true, DockedStationObjectId = "A" }],
             PlayerShipObjectId: "ship", Voyage: new(VoyagePhases.Docked, RouteOptions:
             [new("blocked", "Blocked", 3600000, "Short", false, reason),
-             new("open", "Open", 7200000, "Medium")])));
+             new("open", "Open", 7200000, "Medium")]),
+            TradingRoutes: [Route("blocked"), Route("open")]));
         var screen = new StationScreen(buffer);
         screen.OnActivated();
         RenderScreen(screen);
@@ -553,17 +558,19 @@ public class StationScreenTests
         var snapshot = new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed0,
             [new ObjectMotionSnapshot("ship", 0, 0, 0, 0) { IsDocked = true, DockedStationObjectId = "A" }],
             PlayerShipObjectId: "ship", Voyage: new(VoyagePhases.Docked,
-                RouteOptions: [new("B", "Beta", 3600000, "Short"), new("C", "Gamma", 7200000, "Medium")]));
+                RouteOptions: [new("B", "Beta", 3600000, "Short"), new("C", "Gamma", 7200000, "Medium")]),
+            TradingRoutes: [Route("B"), Route("C")]);
         buffer.Update(snapshot);
         var screen = new StationScreen(buffer);
         RenderScreen(screen);
-        screen.OnMouseDown(StationLayout.PanelLeft(ScreenWidth) + 410, StationLayout.PanelTop(ScreenHeight) + 490);
+        screen.OnMouseDown(StationLayout.PanelLeft(ScreenWidth) + 410, StationLayout.PanelTop(ScreenHeight) + 525);
         Assert.Equal("C", screen.SelectedDestinationId);
         buffer.Update(snapshot with { SnapshotSequence = 2 });
         Assert.Equal("C", screen.SelectedDestinationId);
         buffer.Update(snapshot with
         {
             SnapshotSequence = 3,
+            TradingRoutes = [Route("B")],
             Voyage = snapshot.Voyage! with
             { RouteOptions = [new("B", "Beta", 3600000, "Short")] }
         });
@@ -582,5 +589,135 @@ public class StationScreenTests
         screen.OnMouseMove(0, 0);
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(StationLayout.PanelLeft(ScreenWidth) + 410,
             StationLayout.PanelTop(ScreenHeight) + 450));
+    }
+    private static TradingRouteSnapshot Route(string destination, TradingRouteAvailability availability = TradingRouteAvailability.Available,
+        TradingRouteRisk risk = TradingRouteRisk.Safe, string origin = "A", string? reason = null) =>
+        new(origin, destination, "Medium", 3600000, 5400000, 1000, 1250, "risk.safe", risk, availability, reason, ["event.quarantine@A@1"]);
+
+    private static AuthoritativeSnapshot RouteSnapshot(params TradingRouteSnapshot[] routes) =>
+        new(1, 0, SimulationSpeed.Speed0,
+            [new ObjectMotionSnapshot("ship", 0, 0, 0, 0) { IsDocked = true, DockedStationObjectId = "A" }],
+            PlayerShipObjectId: "ship", TradingRoutes: routes.ToImmutableArray(),
+            Voyage: new(VoyagePhases.Docked, RouteOptions: routes.Select(r => new VoyageRouteOptionSnapshot(
+                r.DestinationStationObjectId, r.DestinationStationObjectId, r.EffectiveTravelEstimateGameTimeMs,
+                r.DistanceClass, r.Availability != TradingRouteAvailability.Unavailable,
+                r.Availability == TradingRouteAvailability.Unavailable ? CommandReasonCodes.RouteUnavailable : null)).ToImmutableArray()));
+
+    [Fact]
+    public void Route_rows_show_safe_risk_effective_time_fuel_and_authoritative_reason()
+    {
+        var rows = StationRoutePresentation.Build([Route("B"), Route("C", TradingRouteAvailability.Restricted, TradingRouteRisk.Elevated, reason: "Authoritative reason")]);
+        Assert.Contains("[SAFE]", rows[0].PrimaryText);
+        Assert.Contains("[RISK]", rows[1].PrimaryText);
+        Assert.Equal("Medium  ETA 01:30  Fuel x1.25  (base 01:00, x1.00)", rows[1].SecondaryText);
+        Assert.Equal("Authoritative reason", rows[1].ReasonText);
+        Assert.Equal("Events: event.quarantine@A@1", rows[1].ActiveEventText);
+        Assert.True(rows[1].IsEnabled);
+        Assert.Equal(TradingRouteAvailability.Restricted, rows[1].Availability);
+    }
+
+    [Fact]
+    public void Unavailable_route_is_visible_but_disabled_and_available_alternative_is_selectable()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(RouteSnapshot(Route("closed", TradingRouteAvailability.Unavailable, reason: "Closed"), Route("open")));
+        var screen = new StationScreen(buffer);
+        RenderScreen(screen);
+        Assert.Equal(2, screen.RouteRows.Length);
+        Assert.False(screen.RouteRows[0].IsEnabled);
+        Assert.Equal("open", screen.SelectedDestinationId);
+        var rect = StationLayout.RouteRowLocalRect(0);
+        float x = StationLayout.PanelLeft(ScreenWidth) + rect.Left + 10;
+        float y = StationLayout.PanelTop(ScreenHeight) + rect.Top + 10;
+        Assert.False(screen.OnMouseMove(x, y));
+        screen.OnMouseDown(x, y);
+        Assert.Equal("open", screen.SelectedDestinationId);
+        Assert.Equal("Closed", screen.RouteRows[0].ReasonText);
+    }
+
+    [Fact]
+    public void Restricted_route_remains_selectable_with_warning_state_and_falls_back_when_closed()
+    {
+        var buffer = new SnapshotBuffer();
+        var snapshot = RouteSnapshot(Route("B"), Route("C", TradingRouteAvailability.Restricted, TradingRouteRisk.Elevated));
+        buffer.Update(snapshot);
+        var screen = new StationScreen(buffer);
+        RenderScreen(screen);
+        var rect = StationLayout.RouteRowLocalRect(1);
+        screen.OnMouseDown(StationLayout.PanelLeft(ScreenWidth) + rect.Left + 10, StationLayout.PanelTop(ScreenHeight) + rect.Top + 10);
+        Assert.Equal("C", screen.SelectedDestinationId);
+        Assert.True(screen.RouteRows[1].IsEnabled);
+        buffer.Update(RouteSnapshot(Route("B"), Route("C", TradingRouteAvailability.Unavailable)) with { SnapshotSequence = 2 });
+        Assert.Equal("B", screen.SelectedDestinationId);
+    }
+
+    [Fact]
+    public void Empty_routes_show_neutral_message_and_disable_departure()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(RouteSnapshot());
+        var screen = new StationScreen(buffer);
+        RenderScreen(screen);
+        Assert.Empty(screen.RouteRows);
+        Assert.Equal("Маршруты недоступны", StationRoutePresentation.EmptyMessage);
+        Assert.Null(screen.SelectedDestinationId);
+        var r = StationLayout.UndockButtonLocalRect();
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(StationLayout.PanelLeft(ScreenWidth) + r.Left + 5, StationLayout.PanelTop(ScreenHeight) + r.Top + 5));
+    }
+
+    [Fact]
+    public void Route_order_and_values_are_not_recomputed_by_client()
+    {
+        var first = Route("Z") with
+        {
+            EffectiveTravelEstimateGameTimeMs = 60001,
+            EffectiveFuelMultiplierPermille = 1005,
+            ReasonText = "Uninterpreted",
+            ActiveEventIds = default
+        };
+        var second = Route("A") with { EffectiveTravelEstimateGameTimeMs = 10000, EffectiveFuelMultiplierPermille = 777 };
+        var rows = StationRoutePresentation.Build([first, second]);
+        Assert.Equal(new[] { "Z", "A" }, rows.Select(r => r.DestinationStationObjectId));
+        Assert.Contains("ETA 00:02  Fuel x1.01", rows[0].SecondaryText);
+        Assert.Contains("ETA 00:01  Fuel x0.78", rows[1].SecondaryText);
+        Assert.Equal("Uninterpreted", rows[0].ReasonText);
+        Assert.Null(rows[0].ActiveEventText);
+        Assert.Empty(StationRoutePresentation.Build(default));
+        Assert.Equal("106751991167d 07:13", StationRoutePresentation.FormatGameDuration(long.MaxValue));
+    }
+
+    [Fact]
+    public void Route_panel_does_not_overlap_existing_station_buttons_or_close_hit_target()
+    {
+        var v = StationLayout.RouteViewportLocalRect();
+        var buttons = new[] { StationLayout.TradeButtonLocalRect(), StationLayout.HireButtonLocalRect(),
+            StationLayout.FinanceButtonLocalRect(), StationLayout.ContractsButtonLocalRect(), StationLayout.UndockButtonLocalRect() };
+        var exit = StationToolbar.ExitButtonLocalRect();
+        Assert.True(v.Top >= exit.Bottom || v.Bottom <= exit.Top || v.Left >= exit.Right || v.Right <= exit.Left);
+        Assert.All(buttons, b => Assert.True(v.Top >= b.Bottom || v.Bottom <= b.Top || v.Left >= b.Right || v.Right <= b.Left));
+        for (int i = 0; i < StationLayout.VisibleRouteRows; i++)
+        {
+            var r = StationLayout.RouteRowLocalRect(i);
+            Assert.True(r.Top >= v.Top && r.Bottom <= v.Bottom && r.Left >= v.Left && r.Right <= v.Right);
+        }
+    }
+
+    [Fact]
+    public void Long_route_list_scrolls_clips_and_hit_tests_only_visible_rows()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Update(RouteSnapshot(Enumerable.Range(0, 8).Select(i => Route("route-" + i)).ToArray()));
+        var screen = new StationScreen(buffer);
+        RenderScreen(screen);
+        for (int i = 0; i < 12; i++) screen.OnMouseWheel(StationLayout.PanelLeft(ScreenWidth) + 410, StationLayout.PanelTop(ScreenHeight) + 450, -1);
+        Assert.Equal(4, screen.RouteScrollOffset);
+        screen.OnMouseDown(StationLayout.PanelLeft(ScreenWidth) + 410, StationLayout.PanelTop(ScreenHeight) + 450);
+        Assert.Equal("route-4", screen.SelectedDestinationId);
+        screen.OnMouseWheel(0, 0, 1);
+        Assert.Equal(4, screen.RouteScrollOffset);
+        buffer.Update(RouteSnapshot(Route("remaining")) with { SnapshotSequence = 2 });
+        RenderScreen(screen);
+        Assert.Equal(0, screen.RouteScrollOffset);
+        Assert.Equal("remaining", screen.SelectedDestinationId);
     }
 }

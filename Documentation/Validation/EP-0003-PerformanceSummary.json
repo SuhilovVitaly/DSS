@@ -1,0 +1,2658 @@
+{
+  "schemaVersion": 1,
+  "status": "measured; profitability-not-assessed",
+  "backend": "CPU/Skia raster",
+  "machine": {
+    "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+    "logicalProcessors": 8,
+    "runtime": ".NET 8.0.26",
+    "os": "Microsoft Windows 10.0.26200",
+    "architecture": "X64"
+  },
+  "commit": "ecb6344af8beea745bd0092f1fe0d5af21a7b813",
+  "config": {
+    "schemaVersion": 1,
+    "generatorVersion": 1,
+    "maxPlacementAttempts": 64,
+    "minPlanets": 7,
+    "maxPlanets": 7,
+    "minBelts": 5,
+    "maxBelts": 5,
+    "startMinDays": 75,
+    "startMaxDays": 75,
+    "orbitSpeedFraction": 0.001,
+    "beltWidthFraction": 0.08,
+    "orbitClearanceWorld": 100,
+    "asteroidsPerBelt": 24,
+    "decorationSamplesPerBelt": 2048,
+    "enabledScenarios": [
+      "Default",
+      "Default_500",
+      "Docked",
+      "Undocked",
+      "MarketProfiles",
+      "PlayerShipOnly"
+    ],
+    "clusters": {
+      "minClusters": 3,
+      "maxClusters": 5,
+      "minStations": 10,
+      "maxStations": 12,
+      "neighbourMinDays": 0.5,
+      "neighbourMaxDays": 2,
+      "diameterMinDays": 3,
+      "diameterMaxDays": 7,
+      "interclusterMinDays": 15,
+      "interclusterMaxDays": 35
+    }
+  },
+  "clusterCounts": [
+    {
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 2
+    },
+    {
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 5
+    },
+    {
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 2
+    },
+    {
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 5
+    },
+    {
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 2
+    },
+    {
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 5
+    },
+    {
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 2
+    },
+    {
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 5
+    }
+  ],
+  "economyReportRef": {
+    "path": "D:\\DeepSpaceSaga\\DSS\\Documentation\\Validation\\EP-0003-EconomySummary.json",
+    "sha256": "859B3848B6207D8993B39E2F3835C760AD17695DB33C5175BEB2EAA5C626B7E7",
+    "commit": "ecb6344af8beea745bd0092f1fe0d5af21a7b813",
+    "status": "correctness-completed-balance-not-assessed",
+    "seeds": [
+      1,
+      2,
+      42
+    ],
+    "scenarios": [
+      "Default"
+    ],
+    "coverage": "Scenario and seed reference only; economy ship/config runs are independent of this boundary corpus.",
+    "shipConfigurations": [
+      "starter",
+      "cargo-upgrade"
+    ],
+    "balance": "not-assessed"
+  },
+  "economicAcceptance": "linked; profitability-not-assessed; see seed coverage",
+  "baselineRef": {
+    "path": "D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.Performance\\bin\\Release\\net8.0\\ep3-baseline-final.json",
+    "commit": "ecb6344af8beea745bd0092f1fe0d5af21a7b813",
+    "comparison": "same host/runtime; inspect per-scenario/config measurements"
+  },
+  "seedRange": {
+    "from": 1,
+    "to": 100
+  },
+  "scenarios": [
+    "Default",
+    "Default_500",
+    "Docked",
+    "MarketProfiles",
+    "PlayerShipOnly",
+    "Undocked"
+  ],
+  "renderSampling": "First requested seed per scenario; 120 warmup and 600 measured frames for each requested view.",
+  "presentation": {
+    "status": "not-measured",
+    "targetFps": 80,
+    "reason": "Raster timings do not measure GPU presentation."
+  },
+  "rawReportSha256": "0093624e175f57517beae2c1b27ca800a4c358be5ae3f229e694c30575f21d8d",
+  "baselineRawSha256": "126ccc28e8e13445f392ed3eec1f44036204dbe312cc9aeeb41d4f3999f85e26",
+  "worldCount": 4800,
+  "aggregate": {
+    "generationMs": {
+      "median": 15.543849999999999,
+      "maximum": 129.8355
+    },
+    "generationBytes": {
+      "median": 7160128.0,
+      "maximum": 14910328
+    },
+    "snapshotMs": {
+      "median": 0.7536499999999999,
+      "maximum": 28.4951
+    },
+    "snapshotBytes": {
+      "median": 967924.0,
+      "maximum": 3998792
+    },
+    "saveSerializationMs": {
+      "median": 4.45875,
+      "maximum": 47.6394
+    },
+    "saveAllocationBytes": {
+      "median": 5848560.0,
+      "maximum": 9847608
+    },
+    "saveBytes": {
+      "median": 2431114.0,
+      "maximum": 4128845
+    }
+  },
+  "baselineAggregate": {
+    "generationMs": {
+      "median": 1.9018,
+      "maximum": 86.3472
+    },
+    "generationBytes": {
+      "median": 1308140.0,
+      "maximum": 1903848
+    },
+    "snapshotMs": {
+      "median": 0.12434999999999999,
+      "maximum": 17.3264
+    },
+    "snapshotBytes": {
+      "median": 244848.0,
+      "maximum": 434208
+    },
+    "saveSerializationMs": {
+      "median": 1.06845,
+      "maximum": 48.2994
+    },
+    "saveAllocationBytes": {
+      "median": 1389980.0,
+      "maximum": 5391560
+    },
+    "saveBytes": {
+      "median": 537452.5,
+      "maximum": 1134134
+    }
+  },
+  "economicCoverageCounts": {
+    "linked-by-scenario-and-seed; independent-config; balance-not-assessed": 24,
+    "missing-scenario-seed-evidence": 4776
+  },
+  "scenarioBoundaries": [
+    {
+      "scenario": "Default",
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        380,
+        473
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 17.71505,
+          "maximum": 129.8355
+        },
+        "generationBytes": {
+          "median": 5830948.0,
+          "maximum": 7086248
+        },
+        "snapshotMs": {
+          "median": 0.6453,
+          "maximum": 16.2091
+        },
+        "snapshotBytes": {
+          "median": 570556.0,
+          "maximum": 630656
+        },
+        "saveSerializationMs": {
+          "median": 6.4521999999999995,
+          "maximum": 47.6394
+        },
+        "saveAllocationBytes": {
+          "median": 3669188.0,
+          "maximum": 8965560
+        },
+        "saveBytes": {
+          "median": 1506203.5,
+          "maximum": 1646334
+        }
+      }
+    },
+    {
+      "scenario": "Default",
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        452,
+        545
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 11.29115,
+          "maximum": 29.9064
+        },
+        "generationBytes": {
+          "median": 6240840.0,
+          "maximum": 7650912
+        },
+        "snapshotMs": {
+          "median": 0.2598,
+          "maximum": 13.7379
+        },
+        "snapshotBytes": {
+          "median": 646588.0,
+          "maximum": 706688
+        },
+        "saveSerializationMs": {
+          "median": 3.3352500000000003,
+          "maximum": 20.5237
+        },
+        "saveAllocationBytes": {
+          "median": 4107716.0,
+          "maximum": 4446064
+        },
+        "saveBytes": {
+          "median": 1679387.5,
+          "maximum": 1819480
+        }
+      }
+    },
+    {
+      "scenario": "Default",
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        434,
+        557
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 11.3475,
+          "maximum": 30.593
+        },
+        "generationBytes": {
+          "median": 6811488.0,
+          "maximum": 7604976
+        },
+        "snapshotMs": {
+          "median": 0.26105,
+          "maximum": 16.5226
+        },
+        "snapshotBytes": {
+          "median": 668760.0,
+          "maximum": 744736
+        },
+        "saveSerializationMs": {
+          "median": 3.4890499999999998,
+          "maximum": 5.2503
+        },
+        "saveAllocationBytes": {
+          "median": 4352608.0,
+          "maximum": 4778240
+        },
+        "saveBytes": {
+          "median": 1797978.5,
+          "maximum": 1972986
+        }
+      }
+    },
+    {
+      "scenario": "Default",
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        506,
+        629
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 13.43735,
+          "maximum": 27.8152
+        },
+        "generationBytes": {
+          "median": 7197704.0,
+          "maximum": 8040840
+        },
+        "snapshotMs": {
+          "median": 0.2807,
+          "maximum": 4.5111
+        },
+        "snapshotBytes": {
+          "median": 744792.0,
+          "maximum": 820768
+        },
+        "saveSerializationMs": {
+          "median": 3.6256000000000004,
+          "maximum": 5.7936
+        },
+        "saveAllocationBytes": {
+          "median": 4791400.0,
+          "maximum": 9404856
+        },
+        "saveBytes": {
+          "median": 1971186.5,
+          "maximum": 2146253
+        }
+      }
+    },
+    {
+      "scenario": "Default",
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        622,
+        739
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 16.839399999999998,
+          "maximum": 36.4113
+        },
+        "generationBytes": {
+          "median": 9614332.0,
+          "maximum": 12339544
+        },
+        "snapshotMs": {
+          "median": 0.34365,
+          "maximum": 2.4906
+        },
+        "snapshotBytes": {
+          "median": 905476.0,
+          "maximum": 990744
+        },
+        "saveSerializationMs": {
+          "median": 4.346349999999999,
+          "maximum": 6.0156
+        },
+        "saveAllocationBytes": {
+          "median": 5857996.0,
+          "maximum": 6327640
+        },
+        "saveBytes": {
+          "median": 2428156.0,
+          "maximum": 2620066
+        }
+      }
+    },
+    {
+      "scenario": "Default",
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        694,
+        811
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 19.48775,
+          "maximum": 39.4931
+        },
+        "generationBytes": {
+          "median": 10150020.0,
+          "maximum": 13202872
+        },
+        "snapshotMs": {
+          "median": 0.3637,
+          "maximum": 2.404
+        },
+        "snapshotBytes": {
+          "median": 981508.0,
+          "maximum": 1066776
+        },
+        "saveSerializationMs": {
+          "median": 4.76835,
+          "maximum": 6.3146
+        },
+        "saveAllocationBytes": {
+          "median": 6296908.0,
+          "maximum": 6766528
+        },
+        "saveBytes": {
+          "median": 2601418.5,
+          "maximum": 2793212
+        }
+      }
+    },
+    {
+      "scenario": "Default",
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        734,
+        881
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 20.6476,
+          "maximum": 39.8467
+        },
+        "generationBytes": {
+          "median": 11323744.0,
+          "maximum": 12235456
+        },
+        "snapshotMs": {
+          "median": 0.4136,
+          "maximum": 1.2172
+        },
+        "snapshotBytes": {
+          "median": 1066320.0,
+          "maximum": 1184960
+        },
+        "saveSerializationMs": {
+          "median": 5.17395,
+          "maximum": 9.2692
+        },
+        "saveAllocationBytes": {
+          "median": 7003832.0,
+          "maximum": 7667080
+        },
+        "saveBytes": {
+          "median": 2918927.5,
+          "maximum": 3190589
+        }
+      }
+    },
+    {
+      "scenario": "Default",
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        806,
+        953
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 23.186700000000002,
+          "maximum": 49.8335
+        },
+        "generationBytes": {
+          "median": 11785708.0,
+          "maximum": 12750216
+        },
+        "snapshotMs": {
+          "median": 0.43520000000000003,
+          "maximum": 10.2332
+        },
+        "snapshotBytes": {
+          "median": 1142352.0,
+          "maximum": 1260992
+        },
+        "saveSerializationMs": {
+          "median": 5.6189,
+          "maximum": 8.1341
+        },
+        "saveAllocationBytes": {
+          "median": 7442176.0,
+          "maximum": 8106216
+        },
+        "saveBytes": {
+          "median": 3092141.0,
+          "maximum": 3363856
+        }
+      }
+    },
+    {
+      "scenario": "Default_500",
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        884,
+        962
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 11.384049999999998,
+          "maximum": 29.2464
+        },
+        "generationBytes": {
+          "median": 6110628.0,
+          "maximum": 8200880
+        },
+        "snapshotMs": {
+          "median": 0.8459,
+          "maximum": 15.7942
+        },
+        "snapshotBytes": {
+          "median": 857596.0,
+          "maximum": 907056
+        },
+        "saveSerializationMs": {
+          "median": 3.9887,
+          "maximum": 11.4709
+        },
+        "saveAllocationBytes": {
+          "median": 5476364.0,
+          "maximum": 5747096
+        },
+        "saveBytes": {
+          "median": 2297678.0,
+          "maximum": 2408604
+        }
+      }
+    },
+    {
+      "scenario": "Default_500",
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        956,
+        1034
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 13.2985,
+          "maximum": 32.4119
+        },
+        "generationBytes": {
+          "median": 6451016.0,
+          "maximum": 8528584
+        },
+        "snapshotMs": {
+          "median": 0.8633500000000001,
+          "maximum": 17.3893
+        },
+        "snapshotBytes": {
+          "median": 933628.0,
+          "maximum": 983088
+        },
+        "saveSerializationMs": {
+          "median": 4.25965,
+          "maximum": 13.6185
+        },
+        "saveAllocationBytes": {
+          "median": 5914840.0,
+          "maximum": 6185712
+        },
+        "saveBytes": {
+          "median": 2470946.0,
+          "maximum": 2581867
+        }
+      }
+    },
+    {
+      "scenario": "Default_500",
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        938,
+        1055
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 12.9123,
+          "maximum": 32.0482
+        },
+        "generationBytes": {
+          "median": 6637856.0,
+          "maximum": 10950112
+        },
+        "snapshotMs": {
+          "median": 0.9971,
+          "maximum": 17.9072
+        },
+        "snapshotBytes": {
+          "median": 956792.0,
+          "maximum": 1033808
+        },
+        "saveSerializationMs": {
+          "median": 4.49545,
+          "maximum": 7.5762
+        },
+        "saveAllocationBytes": {
+          "median": 6171088.0,
+          "maximum": 6591552
+        },
+        "saveBytes": {
+          "median": 2594378.0,
+          "maximum": 2766062
+        }
+      }
+    },
+    {
+      "scenario": "Default_500",
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        1010,
+        1127
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 14.97695,
+          "maximum": 35.2322
+        },
+        "generationBytes": {
+          "median": 6957948.0,
+          "maximum": 11273080
+        },
+        "snapshotMs": {
+          "median": 1.01115,
+          "maximum": 9.1632
+        },
+        "snapshotBytes": {
+          "median": 1032824.0,
+          "maximum": 1109840
+        },
+        "saveSerializationMs": {
+          "median": 4.703250000000001,
+          "maximum": 7.4847
+        },
+        "saveAllocationBytes": {
+          "median": 6609376.0,
+          "maximum": 7030160
+        },
+        "saveBytes": {
+          "median": 2767551.5,
+          "maximum": 2939289
+        }
+      }
+    },
+    {
+      "scenario": "Default_500",
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        1120,
+        1222
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 18.923099999999998,
+          "maximum": 39.2431
+        },
+        "generationBytes": {
+          "median": 9246260.0,
+          "maximum": 13642472
+        },
+        "snapshotMs": {
+          "median": 1.2879,
+          "maximum": 3.5844
+        },
+        "snapshotBytes": {
+          "median": 1188944.0,
+          "maximum": 1260016
+        },
+        "saveSerializationMs": {
+          "median": 5.6024,
+          "maximum": 7.8955
+        },
+        "saveAllocationBytes": {
+          "median": 7635344.0,
+          "maximum": 8032176
+        },
+        "saveBytes": {
+          "median": 3206880.0,
+          "maximum": 3368584
+        }
+      }
+    },
+    {
+      "scenario": "Default_500",
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        1192,
+        1294
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 20.66245,
+          "maximum": 40.0494
+        },
+        "generationBytes": {
+          "median": 9616404.0,
+          "maximum": 14012600
+        },
+        "snapshotMs": {
+          "median": 1.3671,
+          "maximum": 5.7667
+        },
+        "snapshotBytes": {
+          "median": 1264976.0,
+          "maximum": 1336048
+        },
+        "saveSerializationMs": {
+          "median": 5.7814499999999995,
+          "maximum": 9.0411
+        },
+        "saveAllocationBytes": {
+          "median": 8074112.0,
+          "maximum": 8470632
+        },
+        "saveBytes": {
+          "median": 3380074.0,
+          "maximum": 3541730
+        }
+      }
+    },
+    {
+      "scenario": "Default_500",
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        1217,
+        1367
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 22.9053,
+          "maximum": 36.8331
+        },
+        "generationBytes": {
+          "median": 9893732.0,
+          "maximum": 14544848
+        },
+        "snapshotMs": {
+          "median": 1.567,
+          "maximum": 6.0594
+        },
+        "snapshotBytes": {
+          "median": 1358456.0,
+          "maximum": 1458696
+        },
+        "saveSerializationMs": {
+          "median": 6.453799999999999,
+          "maximum": 10.8843
+        },
+        "saveAllocationBytes": {
+          "median": 8837216.0,
+          "maximum": 9408800
+        },
+        "saveBytes": {
+          "median": 3719843.5,
+          "maximum": 3955521
+        }
+      }
+    },
+    {
+      "scenario": "Default_500",
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        1289,
+        1439
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 22.012500000000003,
+          "maximum": 41.3571
+        },
+        "generationBytes": {
+          "median": 10269856.0,
+          "maximum": 14910328
+        },
+        "snapshotMs": {
+          "median": 1.63945,
+          "maximum": 7.0826
+        },
+        "snapshotBytes": {
+          "median": 1434488.0,
+          "maximum": 1534728
+        },
+        "saveSerializationMs": {
+          "median": 6.81745,
+          "maximum": 13.3882
+        },
+        "saveAllocationBytes": {
+          "median": 9275644.0,
+          "maximum": 9847608
+        },
+        "saveBytes": {
+          "median": 3893044.0,
+          "maximum": 4128845
+        }
+      }
+    },
+    {
+      "scenario": "Docked",
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        380,
+        473
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 9.17655,
+          "maximum": 26.1894
+        },
+        "generationBytes": {
+          "median": 5830516.0,
+          "maximum": 7095320
+        },
+        "snapshotMs": {
+          "median": 0.9138,
+          "maximum": 17.2869
+        },
+        "snapshotBytes": {
+          "median": 1630716.0,
+          "maximum": 1682904
+        },
+        "saveSerializationMs": {
+          "median": 2.7555500000000004,
+          "maximum": 16.7558
+        },
+        "saveAllocationBytes": {
+          "median": 3675532.0,
+          "maximum": 4018280
+        },
+        "saveBytes": {
+          "median": 1507250.0,
+          "maximum": 1648919
+        }
+      }
+    },
+    {
+      "scenario": "Docked",
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        452,
+        545
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 10.950849999999999,
+          "maximum": 34.9343
+        },
+        "generationBytes": {
+          "median": 6245848.0,
+          "maximum": 7659944
+        },
+        "snapshotMs": {
+          "median": 0.8945000000000001,
+          "maximum": 17.9179
+        },
+        "snapshotBytes": {
+          "median": 1710680.0,
+          "maximum": 1763976
+        },
+        "saveSerializationMs": {
+          "median": 3.04015,
+          "maximum": 5.2368
+        },
+        "saveAllocationBytes": {
+          "median": 4114060.0,
+          "maximum": 4456728
+        },
+        "saveBytes": {
+          "median": 1680471.5,
+          "maximum": 1822065
+        }
+      }
+    },
+    {
+      "scenario": "Docked",
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        434,
+        557
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 11.286200000000001,
+          "maximum": 27.6942
+        },
+        "generationBytes": {
+          "median": 6825040.0,
+          "maximum": 7603096
+        },
+        "snapshotMs": {
+          "median": 1.26865,
+          "maximum": 20.6005
+        },
+        "snapshotBytes": {
+          "median": 2145492.0,
+          "maximum": 2216560
+        },
+        "saveSerializationMs": {
+          "median": 3.14575,
+          "maximum": 5.1764
+        },
+        "saveAllocationBytes": {
+          "median": 4363712.0,
+          "maximum": 4786040
+        },
+        "saveBytes": {
+          "median": 1801481.5,
+          "maximum": 1974138
+        }
+      }
+    },
+    {
+      "scenario": "Docked",
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        506,
+        629
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 12.6842,
+          "maximum": 35.821
+        },
+        "generationBytes": {
+          "median": 7208284.0,
+          "maximum": 8037016
+        },
+        "snapshotMs": {
+          "median": 1.21765,
+          "maximum": 15.8817
+        },
+        "snapshotBytes": {
+          "median": 2227156.0,
+          "maximum": 2296984
+        },
+        "saveSerializationMs": {
+          "median": 3.53425,
+          "maximum": 5.7563
+        },
+        "saveAllocationBytes": {
+          "median": 4802332.0,
+          "maximum": 5224728
+        },
+        "saveBytes": {
+          "median": 1974712.5,
+          "maximum": 2147405
+        }
+      }
+    },
+    {
+      "scenario": "Docked",
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        622,
+        739
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 17.0947,
+          "maximum": 36.7355
+        },
+        "generationBytes": {
+          "median": 9641744.0,
+          "maximum": 12351840
+        },
+        "snapshotMs": {
+          "median": 1.4046,
+          "maximum": 5.0426
+        },
+        "snapshotBytes": {
+          "median": 2752608.0,
+          "maximum": 2952120
+        },
+        "saveSerializationMs": {
+          "median": 4.53235,
+          "maximum": 7.0062
+        },
+        "saveAllocationBytes": {
+          "median": 5865760.0,
+          "maximum": 6338304
+        },
+        "saveBytes": {
+          "median": 2429288.5,
+          "maximum": 2622651
+        }
+      }
+    },
+    {
+      "scenario": "Docked",
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        694,
+        811
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 19.2061,
+          "maximum": 37.1862
+        },
+        "generationBytes": {
+          "median": 10163560.0,
+          "maximum": 13215040
+        },
+        "snapshotMs": {
+          "median": 1.7391,
+          "maximum": 4.5508
+        },
+        "snapshotBytes": {
+          "median": 2830016.0,
+          "maximum": 3028152
+        },
+        "saveSerializationMs": {
+          "median": 4.692,
+          "maximum": 8.8999
+        },
+        "saveAllocationBytes": {
+          "median": 6304668.0,
+          "maximum": 6776752
+        },
+        "saveBytes": {
+          "median": 2602553.5,
+          "maximum": 2795797
+        }
+      }
+    },
+    {
+      "scenario": "Docked",
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        734,
+        881
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 20.07475,
+          "maximum": 46.7368
+        },
+        "generationBytes": {
+          "median": 11311452.0,
+          "maximum": 12252632
+        },
+        "snapshotMs": {
+          "median": 2.43885,
+          "maximum": 12.4633
+        },
+        "snapshotBytes": {
+          "median": 3815664.0,
+          "maximum": 3923200
+        },
+        "saveSerializationMs": {
+          "median": 5.3988499999999995,
+          "maximum": 10.0027
+        },
+        "saveAllocationBytes": {
+          "median": 7018872.0,
+          "maximum": 7674880
+        },
+        "saveBytes": {
+          "median": 2921494.5,
+          "maximum": 3191741
+        }
+      }
+    },
+    {
+      "scenario": "Docked",
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        806,
+        953
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 22.419800000000002,
+          "maximum": 45.1638
+        },
+        "generationBytes": {
+          "median": 11773904.0,
+          "maximum": 12761592
+        },
+        "snapshotMs": {
+          "median": 2.4414,
+          "maximum": 5.5311
+        },
+        "snapshotBytes": {
+          "median": 3891548.0,
+          "maximum": 3998792
+        },
+        "saveSerializationMs": {
+          "median": 5.64525,
+          "maximum": 17.9857
+        },
+        "saveAllocationBytes": {
+          "median": 7457528.0,
+          "maximum": 8113576
+        },
+        "saveBytes": {
+          "median": 3094697.0,
+          "maximum": 3365008
+        }
+      }
+    },
+    {
+      "scenario": "MarketProfiles",
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        378,
+        471
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 5.895250000000001,
+          "maximum": 22.8342
+        },
+        "generationBytes": {
+          "median": 3944088.0,
+          "maximum": 5111512
+        },
+        "snapshotMs": {
+          "median": 0.4426,
+          "maximum": 15.4692
+        },
+        "snapshotBytes": {
+          "median": 566960.0,
+          "maximum": 626760
+        },
+        "saveSerializationMs": {
+          "median": 2.74665,
+          "maximum": 24.1935
+        },
+        "saveAllocationBytes": {
+          "median": 3593384.0,
+          "maximum": 3931264
+        },
+        "saveBytes": {
+          "median": 1492503.0,
+          "maximum": 1631508
+        }
+      }
+    },
+    {
+      "scenario": "MarketProfiles",
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        450,
+        543
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 6.5151,
+          "maximum": 24.2939
+        },
+        "generationBytes": {
+          "median": 4317908.0,
+          "maximum": 5552920
+        },
+        "snapshotMs": {
+          "median": 0.46440000000000003,
+          "maximum": 19.2803
+        },
+        "snapshotBytes": {
+          "median": 642992.0,
+          "maximum": 702792
+        },
+        "saveSerializationMs": {
+          "median": 3.15415,
+          "maximum": 20.6464
+        },
+        "saveAllocationBytes": {
+          "median": 4032568.0,
+          "maximum": 4369720
+        },
+        "saveBytes": {
+          "median": 1665776.0,
+          "maximum": 1804654
+        }
+      }
+    },
+    {
+      "scenario": "MarketProfiles",
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        432,
+        555
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 6.728949999999999,
+          "maximum": 25.0218
+        },
+        "generationBytes": {
+          "median": 4540828.0,
+          "maximum": 5213768
+        },
+        "snapshotMs": {
+          "median": 0.58265,
+          "maximum": 16.5532
+        },
+        "snapshotBytes": {
+          "median": 666224.0,
+          "maximum": 740600
+        },
+        "saveSerializationMs": {
+          "median": 3.32795,
+          "maximum": 21.5212
+        },
+        "saveAllocationBytes": {
+          "median": 4285892.0,
+          "maximum": 4699336
+        },
+        "saveBytes": {
+          "median": 1788614.0,
+          "maximum": 1956664
+        }
+      }
+    },
+    {
+      "scenario": "MarketProfiles",
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        504,
+        627
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 7.7170000000000005,
+          "maximum": 25.4518
+        },
+        "generationBytes": {
+          "median": 4896636.0,
+          "maximum": 5576232
+        },
+        "snapshotMs": {
+          "median": 0.60015,
+          "maximum": 15.8957
+        },
+        "snapshotBytes": {
+          "median": 742256.0,
+          "maximum": 816632
+        },
+        "saveSerializationMs": {
+          "median": 3.6039000000000003,
+          "maximum": 17.8987
+        },
+        "saveAllocationBytes": {
+          "median": 4724832.0,
+          "maximum": 5137592
+        },
+        "saveBytes": {
+          "median": 1961896.0,
+          "maximum": 2129931
+        }
+      }
+    },
+    {
+      "scenario": "MarketProfiles",
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        620,
+        737
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 10.6394,
+          "maximum": 34.3854
+        },
+        "generationBytes": {
+          "median": 6673156.0,
+          "maximum": 9222744
+        },
+        "snapshotMs": {
+          "median": 0.9439,
+          "maximum": 18.4478
+        },
+        "snapshotBytes": {
+          "median": 901140.0,
+          "maximum": 986848
+        },
+        "saveSerializationMs": {
+          "median": 4.4824,
+          "maximum": 8.7552
+        },
+        "saveAllocationBytes": {
+          "median": 5783640.0,
+          "maximum": 6251288
+        },
+        "saveBytes": {
+          "median": 2414127.0,
+          "maximum": 2605240
+        }
+      }
+    },
+    {
+      "scenario": "MarketProfiles",
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        692,
+        809
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 11.81665,
+          "maximum": 32.7641
+        },
+        "generationBytes": {
+          "median": 7126776.0,
+          "maximum": 9835000
+        },
+        "snapshotMs": {
+          "median": 1.0072,
+          "maximum": 14.6481
+        },
+        "snapshotBytes": {
+          "median": 977172.0,
+          "maximum": 1062880
+        },
+        "saveSerializationMs": {
+          "median": 4.5417000000000005,
+          "maximum": 7.3366
+        },
+        "saveAllocationBytes": {
+          "median": 6222612.0,
+          "maximum": 6690184
+        },
+        "saveBytes": {
+          "median": 2587387.0,
+          "maximum": 2778386
+        }
+      }
+    },
+    {
+      "scenario": "MarketProfiles",
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        732,
+        879
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 12.39645,
+          "maximum": 37.0717
+        },
+        "generationBytes": {
+          "median": 7512468.0,
+          "maximum": 8381712
+        },
+        "snapshotMs": {
+          "median": 1.3077999999999999,
+          "maximum": 4.8009
+        },
+        "snapshotBytes": {
+          "median": 1062864.0,
+          "maximum": 1180824
+        },
+        "saveSerializationMs": {
+          "median": 5.2953,
+          "maximum": 10.4632
+        },
+        "saveAllocationBytes": {
+          "median": 6932524.0,
+          "maximum": 7588168
+        },
+        "saveBytes": {
+          "median": 2904186.5,
+          "maximum": 3174261
+        }
+      }
+    },
+    {
+      "scenario": "MarketProfiles",
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        804,
+        951
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 14.34695,
+          "maximum": 38.6124
+        },
+        "generationBytes": {
+          "median": 7932200.0,
+          "maximum": 8832240
+        },
+        "snapshotMs": {
+          "median": 1.3298,
+          "maximum": 12.2964
+        },
+        "snapshotBytes": {
+          "median": 1138896.0,
+          "maximum": 1256856
+        },
+        "saveSerializationMs": {
+          "median": 5.5428,
+          "maximum": 10.1045
+        },
+        "saveAllocationBytes": {
+          "median": 7371176.0,
+          "maximum": 8026424
+        },
+        "saveBytes": {
+          "median": 3077389.0,
+          "maximum": 3347528
+        }
+      }
+    },
+    {
+      "scenario": "PlayerShipOnly",
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        391,
+        472
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 5.81715,
+          "maximum": 22.5984
+        },
+        "generationBytes": {
+          "median": 4005384.0,
+          "maximum": 5288752
+        },
+        "snapshotMs": {
+          "median": 0.20124999999999998,
+          "maximum": 8.2352
+        },
+        "snapshotBytes": {
+          "median": 569952.0,
+          "maximum": 630152
+        },
+        "saveSerializationMs": {
+          "median": 2.7663,
+          "maximum": 25.3786
+        },
+        "saveAllocationBytes": {
+          "median": 3624376.0,
+          "maximum": 3959176
+        },
+        "saveBytes": {
+          "median": 1504639.0,
+          "maximum": 1642379
+        }
+      }
+    },
+    {
+      "scenario": "PlayerShipOnly",
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        463,
+        544
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 7.03135,
+          "maximum": 24.8623
+        },
+        "generationBytes": {
+          "median": 4399284.0,
+          "maximum": 5732608
+        },
+        "snapshotMs": {
+          "median": 0.2373,
+          "maximum": 6.4423
+        },
+        "snapshotBytes": {
+          "median": 645984.0,
+          "maximum": 706184
+        },
+        "saveSerializationMs": {
+          "median": 3.1068499999999997,
+          "maximum": 21.8488
+        },
+        "saveAllocationBytes": {
+          "median": 4063044.0,
+          "maximum": 4397728
+        },
+        "saveBytes": {
+          "median": 1677828.0,
+          "maximum": 1815574
+        }
+      }
+    },
+    {
+      "scenario": "PlayerShipOnly",
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        433,
+        553
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 6.915900000000001,
+          "maximum": 24.1896
+        },
+        "generationBytes": {
+          "median": 4580932.0,
+          "maximum": 5286120
+        },
+        "snapshotMs": {
+          "median": 0.2476,
+          "maximum": 14.6672
+        },
+        "snapshotBytes": {
+          "median": 663732.0,
+          "maximum": 740248
+        },
+        "saveSerializationMs": {
+          "median": 3.31345,
+          "maximum": 17.0082
+        },
+        "saveAllocationBytes": {
+          "median": 4283464.0,
+          "maximum": 4713768
+        },
+        "saveBytes": {
+          "median": 1785607.5,
+          "maximum": 1962827
+        }
+      }
+    },
+    {
+      "scenario": "PlayerShipOnly",
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        505,
+        625
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 7.9148,
+          "maximum": 26.9536
+        },
+        "generationBytes": {
+          "median": 4929936.0,
+          "maximum": 5662632
+        },
+        "snapshotMs": {
+          "median": 0.27815,
+          "maximum": 17.415
+        },
+        "snapshotBytes": {
+          "median": 739764.0,
+          "maximum": 816280
+        },
+        "saveSerializationMs": {
+          "median": 3.6273,
+          "maximum": 15.3053
+        },
+        "saveAllocationBytes": {
+          "median": 4721704.0,
+          "maximum": 5152392
+        },
+        "saveBytes": {
+          "median": 1958758.0,
+          "maximum": 2136059
+        }
+      }
+    },
+    {
+      "scenario": "PlayerShipOnly",
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        621,
+        738
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 10.72755,
+          "maximum": 28.8883
+        },
+        "generationBytes": {
+          "median": 6785088.0,
+          "maximum": 9197784
+        },
+        "snapshotMs": {
+          "median": 0.3452,
+          "maximum": 16.529
+        },
+        "snapshotBytes": {
+          "median": 904932.0,
+          "maximum": 990240
+        },
+        "saveSerializationMs": {
+          "median": 4.4196,
+          "maximum": 11.4431
+        },
+        "saveAllocationBytes": {
+          "median": 5803384.0,
+          "maximum": 6279616
+        },
+        "saveBytes": {
+          "median": 2422555.5,
+          "maximum": 2616100
+        }
+      }
+    },
+    {
+      "scenario": "PlayerShipOnly",
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        693,
+        810
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 12.1198,
+          "maximum": 36.6937
+        },
+        "generationBytes": {
+          "median": 7240004.0,
+          "maximum": 9814744
+        },
+        "snapshotMs": {
+          "median": 0.3718,
+          "maximum": 8.0671
+        },
+        "snapshotBytes": {
+          "median": 980964.0,
+          "maximum": 1066272
+        },
+        "saveSerializationMs": {
+          "median": 4.6456,
+          "maximum": 7.205
+        },
+        "saveAllocationBytes": {
+          "median": 6242116.0,
+          "maximum": 6717752
+        },
+        "saveBytes": {
+          "median": 2595806.5,
+          "maximum": 2789306
+        }
+      }
+    },
+    {
+      "scenario": "PlayerShipOnly",
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        736,
+        874
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 12.49255,
+          "maximum": 34.9522
+        },
+        "generationBytes": {
+          "median": 7616848.0,
+          "maximum": 8386064
+        },
+        "snapshotMs": {
+          "median": 0.4173,
+          "maximum": 7.4018
+        },
+        "snapshotBytes": {
+          "median": 1067548.0,
+          "maximum": 1176568
+        },
+        "saveSerializationMs": {
+          "median": 5.2604500000000005,
+          "maximum": 10.4062
+        },
+        "saveAllocationBytes": {
+          "median": 6979544.0,
+          "maximum": 7583288
+        },
+        "saveBytes": {
+          "median": 2923705.5,
+          "maximum": 3172735
+        }
+      }
+    },
+    {
+      "scenario": "PlayerShipOnly",
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        808,
+        946
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 14.55665,
+          "maximum": 32.7737
+        },
+        "generationBytes": {
+          "median": 8040284.0,
+          "maximum": 8855496
+        },
+        "snapshotMs": {
+          "median": 0.44484999999999997,
+          "maximum": 4.9891
+        },
+        "snapshotBytes": {
+          "median": 1143580.0,
+          "maximum": 1252600
+        },
+        "saveSerializationMs": {
+          "median": 5.632300000000001,
+          "maximum": 10.023
+        },
+        "saveAllocationBytes": {
+          "median": 7418104.0,
+          "maximum": 8022096
+        },
+        "saveBytes": {
+          "median": 3096907.0,
+          "maximum": 3346059
+        }
+      }
+    },
+    {
+      "scenario": "Undocked",
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        380,
+        473
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 9.20235,
+          "maximum": 35.6782
+        },
+        "generationBytes": {
+          "median": 5827336.0,
+          "maximum": 7092544
+        },
+        "snapshotMs": {
+          "median": 0.21715,
+          "maximum": 12.2607
+        },
+        "snapshotBytes": {
+          "median": 570556.0,
+          "maximum": 630656
+        },
+        "saveSerializationMs": {
+          "median": 2.7813999999999997,
+          "maximum": 19.7745
+        },
+        "saveAllocationBytes": {
+          "median": 3670912.0,
+          "maximum": 4011712
+        },
+        "saveBytes": {
+          "median": 1506603.5,
+          "maximum": 1648296
+        }
+      }
+    },
+    {
+      "scenario": "Undocked",
+      "clusters": 3,
+      "stationsPerCluster": 10,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        452,
+        545
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 11.04485,
+          "maximum": 28.7987
+        },
+        "generationBytes": {
+          "median": 6242124.0,
+          "maximum": 7656392
+        },
+        "snapshotMs": {
+          "median": 0.24025000000000002,
+          "maximum": 28.4951
+        },
+        "snapshotBytes": {
+          "median": 646588.0,
+          "maximum": 706688
+        },
+        "saveSerializationMs": {
+          "median": 3.0100499999999997,
+          "maximum": 20.6728
+        },
+        "saveAllocationBytes": {
+          "median": 4107440.0,
+          "maximum": 4450168
+        },
+        "saveBytes": {
+          "median": 1679825.0,
+          "maximum": 1821442
+        }
+      }
+    },
+    {
+      "scenario": "Undocked",
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        434,
+        557
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 11.306049999999999,
+          "maximum": 41.6231
+        },
+        "generationBytes": {
+          "median": 6820616.0,
+          "maximum": 7599440
+        },
+        "snapshotMs": {
+          "median": 0.24925,
+          "maximum": 17.7436
+        },
+        "snapshotBytes": {
+          "median": 669780.0,
+          "maximum": 744736
+        },
+        "saveSerializationMs": {
+          "median": 3.1862500000000002,
+          "maximum": 5.4807
+        },
+        "saveAllocationBytes": {
+          "median": 4357364.0,
+          "maximum": 4779480
+        },
+        "saveBytes": {
+          "median": 1800858.0,
+          "maximum": 1973519
+        }
+      }
+    },
+    {
+      "scenario": "Undocked",
+      "clusters": 3,
+      "stationsPerCluster": 12,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        506,
+        629
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 13.3529,
+          "maximum": 33.0692
+        },
+        "generationBytes": {
+          "median": 7206168.0,
+          "maximum": 8037752
+        },
+        "snapshotMs": {
+          "median": 0.28225,
+          "maximum": 10.6137
+        },
+        "snapshotBytes": {
+          "median": 745812.0,
+          "maximum": 820768
+        },
+        "saveSerializationMs": {
+          "median": 3.5151,
+          "maximum": 19.9312
+        },
+        "saveAllocationBytes": {
+          "median": 4795988.0,
+          "maximum": 5218176
+        },
+        "saveBytes": {
+          "median": 1974089.0,
+          "maximum": 2146786
+        }
+      }
+    },
+    {
+      "scenario": "Undocked",
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        622,
+        739
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 16.889000000000003,
+          "maximum": 38.9536
+        },
+        "generationBytes": {
+          "median": 9638560.0,
+          "maximum": 12349376
+        },
+        "snapshotMs": {
+          "median": 0.3403,
+          "maximum": 2.5763
+        },
+        "snapshotBytes": {
+          "median": 905256.0,
+          "maximum": 990744
+        },
+        "saveSerializationMs": {
+          "median": 4.460050000000001,
+          "maximum": 6.7844
+        },
+        "saveAllocationBytes": {
+          "median": 5859440.0,
+          "maximum": 6332176
+        },
+        "saveBytes": {
+          "median": 2428678.5,
+          "maximum": 2622028
+        }
+      }
+    },
+    {
+      "scenario": "Undocked",
+      "clusters": 5,
+      "stationsPerCluster": 10,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        694,
+        811
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 19.21495,
+          "maximum": 40.5476
+        },
+        "generationBytes": {
+          "median": 10160120.0,
+          "maximum": 13212576
+        },
+        "snapshotMs": {
+          "median": 0.3692,
+          "maximum": 2.9987
+        },
+        "snapshotBytes": {
+          "median": 981288.0,
+          "maximum": 1066776
+        },
+        "saveSerializationMs": {
+          "median": 4.6753,
+          "maximum": 8.3225
+        },
+        "saveAllocationBytes": {
+          "median": 6297908.0,
+          "maximum": 6770192
+        },
+        "saveBytes": {
+          "median": 2601943.5,
+          "maximum": 2795174
+        }
+      }
+    },
+    {
+      "scenario": "Undocked",
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 2,
+      "worldCount": 100,
+      "objectRange": [
+        734,
+        881
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 21.11815,
+          "maximum": 46.2865
+        },
+        "generationBytes": {
+          "median": 11306800.0,
+          "maximum": 12250168
+        },
+        "snapshotMs": {
+          "median": 0.4214,
+          "maximum": 1.3957
+        },
+        "snapshotBytes": {
+          "median": 1067000.0,
+          "maximum": 1184960
+        },
+        "saveSerializationMs": {
+          "median": 5.2507,
+          "maximum": 8.1914
+        },
+        "saveAllocationBytes": {
+          "median": 7012760.0,
+          "maximum": 7668328
+        },
+        "saveBytes": {
+          "median": 2920870.5,
+          "maximum": 3191122
+        }
+      }
+    },
+    {
+      "scenario": "Undocked",
+      "clusters": 5,
+      "stationsPerCluster": 12,
+      "belts": 5,
+      "worldCount": 100,
+      "objectRange": [
+        806,
+        953
+      ],
+      "metrics": {
+        "generationMs": {
+          "median": 23.21785,
+          "maximum": 50.6999
+        },
+        "generationBytes": {
+          "median": 11771220.0,
+          "maximum": 12760192
+        },
+        "snapshotMs": {
+          "median": 0.44645,
+          "maximum": 3.8835
+        },
+        "snapshotBytes": {
+          "median": 1143032.0,
+          "maximum": 1260992
+        },
+        "saveSerializationMs": {
+          "median": 5.569649999999999,
+          "maximum": 9.0802
+        },
+        "saveAllocationBytes": {
+          "median": 7451416.0,
+          "maximum": 8107016
+        },
+        "saveBytes": {
+          "median": 3094073.0,
+          "maximum": 3364389
+        }
+      }
+    }
+  ],
+  "rendering": [
+    {
+      "scenario": "Default",
+      "seed": 1,
+      "view": "system",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 9.7654,
+      "p95Ms": 11.2735,
+      "p99Ms": 12.0835,
+      "meanMs": 9.92517833333335,
+      "allocationBytesPerFrame": 510854.76
+    },
+    {
+      "scenario": "Default",
+      "seed": 1,
+      "view": "belt",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 4.9658,
+      "p95Ms": 5.7931,
+      "p99Ms": 6.4364,
+      "meanMs": 5.034536166666662,
+      "allocationBytesPerFrame": 489064.1066666667
+    },
+    {
+      "scenario": "Default",
+      "seed": 1,
+      "view": "cluster",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 9.9049,
+      "p95Ms": 11.2641,
+      "p99Ms": 11.702,
+      "meanMs": 10.023582500000009,
+      "allocationBytesPerFrame": 490072.1066666667
+    },
+    {
+      "scenario": "Default_500",
+      "seed": 1,
+      "view": "system",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 9.8419,
+      "p95Ms": 10.8077,
+      "p99Ms": 11.7439,
+      "meanMs": 9.920272999999998,
+      "allocationBytesPerFrame": 569870.08
+    },
+    {
+      "scenario": "Default_500",
+      "seed": 1,
+      "view": "belt",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 5.4024,
+      "p95Ms": 6.813,
+      "p99Ms": 8.3835,
+      "meanMs": 5.553227833333332,
+      "allocationBytesPerFrame": 548053.2266666667
+    },
+    {
+      "scenario": "Default_500",
+      "seed": 1,
+      "view": "cluster",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 10.2766,
+      "p95Ms": 11.4704,
+      "p99Ms": 12.5596,
+      "meanMs": 10.374174166666668,
+      "allocationBytesPerFrame": 549060.3733333333
+    },
+    {
+      "scenario": "Docked",
+      "seed": 1,
+      "view": "system",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 9.9325,
+      "p95Ms": 11.0245,
+      "p99Ms": 12.4429,
+      "meanMs": 10.114435166666661,
+      "allocationBytesPerFrame": 851369.64
+    },
+    {
+      "scenario": "Docked",
+      "seed": 1,
+      "view": "belt",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 5.1394,
+      "p95Ms": 6.1704,
+      "p99Ms": 6.946,
+      "meanMs": 5.267194499999999,
+      "allocationBytesPerFrame": 829571.4133333333
+    },
+    {
+      "scenario": "Docked",
+      "seed": 1,
+      "view": "cluster",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 10.86,
+      "p95Ms": 11.9981,
+      "p99Ms": 12.7456,
+      "meanMs": 10.953672166666657,
+      "allocationBytesPerFrame": 830579.4133333333
+    },
+    {
+      "scenario": "MarketProfiles",
+      "seed": 1,
+      "view": "system",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 9.7225,
+      "p95Ms": 10.9689,
+      "p99Ms": 11.7565,
+      "meanMs": 9.850973333333341,
+      "allocationBytesPerFrame": 513609.81333333335
+    },
+    {
+      "scenario": "MarketProfiles",
+      "seed": 1,
+      "view": "belt",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 5.0411,
+      "p95Ms": 5.8897,
+      "p99Ms": 6.2423,
+      "meanMs": 5.117486000000003,
+      "allocationBytesPerFrame": 491824.1066666667
+    },
+    {
+      "scenario": "MarketProfiles",
+      "seed": 1,
+      "view": "cluster",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 9.9534,
+      "p95Ms": 11.3036,
+      "p99Ms": 12.3521,
+      "meanMs": 10.087983666666673,
+      "allocationBytesPerFrame": 492832.1066666667
+    },
+    {
+      "scenario": "PlayerShipOnly",
+      "seed": 1,
+      "view": "system",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 9.9693,
+      "p95Ms": 11.4274,
+      "p99Ms": 12.3246,
+      "meanMs": 10.073297666666663,
+      "allocationBytesPerFrame": 511361.81333333335
+    },
+    {
+      "scenario": "PlayerShipOnly",
+      "seed": 1,
+      "view": "belt",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 4.9205,
+      "p95Ms": 5.7771,
+      "p99Ms": 6.2476,
+      "meanMs": 5.019042166666661,
+      "allocationBytesPerFrame": 489480.1066666667
+    },
+    {
+      "scenario": "PlayerShipOnly",
+      "seed": 1,
+      "view": "cluster",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 10.0467,
+      "p95Ms": 11.2189,
+      "p99Ms": 11.7366,
+      "meanMs": 10.168968499999993,
+      "allocationBytesPerFrame": 490584.1066666667
+    },
+    {
+      "scenario": "Undocked",
+      "seed": 1,
+      "view": "system",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 9.8721,
+      "p95Ms": 11.1329,
+      "p99Ms": 11.815,
+      "meanMs": 9.965327999999994,
+      "allocationBytesPerFrame": 510859.84
+    },
+    {
+      "scenario": "Undocked",
+      "seed": 1,
+      "view": "belt",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 5.2429,
+      "p95Ms": 7.7955,
+      "p99Ms": 9.2074,
+      "meanMs": 5.560415499999998,
+      "allocationBytesPerFrame": 489064.1066666667
+    },
+    {
+      "scenario": "Undocked",
+      "seed": 1,
+      "view": "cluster",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 9.6483,
+      "p95Ms": 11.0365,
+      "p99Ms": 11.819,
+      "meanMs": 9.80504866666666,
+      "allocationBytesPerFrame": 490072.1066666667
+    }
+  ],
+  "renderingCommit": "59b8643f804b3f95bf9d5bdf30e182e66132d626",
+  "renderingRawSha256": "47867deb7f31fdee787df6b231e853515d213b972b44ef6281b0131a0c0c561a",
+  "baselineRendering": [
+    {
+      "scenario": "Default",
+      "seed": 1,
+      "view": "system",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 4.7287,
+      "p95Ms": 6.5303,
+      "p99Ms": 7.4684,
+      "meanMs": 4.9686105000000085,
+      "allocationBytesPerFrame": 152319.62666666668
+    },
+    {
+      "scenario": "Default",
+      "seed": 1,
+      "view": "belt",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 2.6454,
+      "p95Ms": 3.4893,
+      "p99Ms": 4.089,
+      "meanMs": 2.771604166666665,
+      "allocationBytesPerFrame": 135235.09333333332
+    },
+    {
+      "scenario": "Default_500",
+      "seed": 1,
+      "view": "system",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 4.7803,
+      "p95Ms": 6.0195,
+      "p99Ms": 6.9141,
+      "meanMs": 4.9244569999999985,
+      "allocationBytesPerFrame": 140307.09333333332
+    },
+    {
+      "scenario": "Default_500",
+      "seed": 1,
+      "view": "belt",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 3.1416,
+      "p95Ms": 4.1965,
+      "p99Ms": 4.7465,
+      "meanMs": 3.2815708333333364,
+      "allocationBytesPerFrame": 123290.24
+    },
+    {
+      "scenario": "Docked",
+      "seed": 1,
+      "view": "system",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 4.6303,
+      "p95Ms": 5.6847,
+      "p99Ms": 6.2636,
+      "meanMs": 4.751741999999998,
+      "allocationBytesPerFrame": 492744.1066666667
+    },
+    {
+      "scenario": "Docked",
+      "seed": 1,
+      "view": "belt",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 2.7773,
+      "p95Ms": 3.5458,
+      "p99Ms": 4.1737,
+      "meanMs": 2.890290166666666,
+      "allocationBytesPerFrame": 475759.25333333336
+    },
+    {
+      "scenario": "MarketProfiles",
+      "seed": 1,
+      "view": "system",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 4.0346,
+      "p95Ms": 5.347,
+      "p99Ms": 6.3153,
+      "meanMs": 4.266144666666667,
+      "allocationBytesPerFrame": 128986.24
+    },
+    {
+      "scenario": "MarketProfiles",
+      "seed": 1,
+      "view": "belt",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 2.5491,
+      "p95Ms": 3.7489,
+      "p99Ms": 5.3765,
+      "meanMs": 2.8219715,
+      "allocationBytesPerFrame": 112001.38666666667
+    },
+    {
+      "scenario": "PlayerShipOnly",
+      "seed": 1,
+      "view": "system",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 4.142,
+      "p95Ms": 5.2776,
+      "p99Ms": 5.9689,
+      "meanMs": 4.275758499999997,
+      "allocationBytesPerFrame": 124242.24
+    },
+    {
+      "scenario": "PlayerShipOnly",
+      "seed": 1,
+      "view": "belt",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 2.4277,
+      "p95Ms": 3.3214,
+      "p99Ms": 3.9267,
+      "meanMs": 2.562371666666668,
+      "allocationBytesPerFrame": 107377.38666666667
+    },
+    {
+      "scenario": "Undocked",
+      "seed": 1,
+      "view": "system",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 4.4526,
+      "p95Ms": 5.3278,
+      "p99Ms": 5.7778,
+      "meanMs": 4.551030333333338,
+      "allocationBytesPerFrame": 152219.94666666666
+    },
+    {
+      "scenario": "Undocked",
+      "seed": 1,
+      "view": "belt",
+      "backend": "CPU/Skia raster",
+      "width": 1920,
+      "height": 1080,
+      "uiScale": 1,
+      "warmupFrames": 120,
+      "measuredFrames": 600,
+      "p50Ms": 2.6734,
+      "p95Ms": 3.5395,
+      "p99Ms": 4.1218,
+      "meanMs": 2.803586500000001,
+      "allocationBytesPerFrame": 135235.09333333332
+    }
+  ]
+}

@@ -58,7 +58,17 @@ public sealed record AuthoritativeSnapshot(
     ImmutableArray<CombatImpactSnapshot> CombatImpacts = default,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CombatJournalEntry>))]
     ImmutableArray<CombatJournalEntry> CombatJournal = default,
-    [property: JsonPropertyName("solarSystemMap")] SolarSystemMapSnapshot? SolarSystemMap = null)
+    [property: JsonPropertyName("solarSystemMap")] SolarSystemMapSnapshot? SolarSystemMap = null,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<TradingRouteSnapshot>))]
+    ImmutableArray<TradingRouteSnapshot> TradingRoutes = default,
+    VoyageFuelSettlementSnapshot? LastVoyageFuelSettlement = null,
+    /// <summary>Recent voyage reports, oldest-first/newest-last, maximum fifty; legacy snapshots have none.</summary>
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<VoyageFinanceSnapshot>))]
+    ImmutableArray<VoyageFinanceSnapshot> VoyageFinances = default,
+    /// <summary>Last observed coarse markets; legacy snapshots have no observations.</summary>
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<StationMarketKnowledgeSnapshot>))]
+    ImmutableArray<StationMarketKnowledgeSnapshot> StationMarketKnowledge = default,
+    [property: JsonPropertyName("clusterMap")] StationClusterMapSnapshot? ClusterMap = null)
 {
     /// <summary>Motion/cycle timestamp; legacy snapshots use GameTimeMs for both domains.</summary>
     [JsonIgnore]

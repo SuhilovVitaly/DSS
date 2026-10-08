@@ -20,7 +20,8 @@ internal sealed class GameDataRegistry
         int catalogVersion = 1,
         string? legacyCatalogFingerprint = null,
         TypeRegistry<StationMarketProfileDefinition>? stationMarketProfiles = null,
-        TypeRegistry<ShipClassDefinition>? shipClasses = null)
+        TypeRegistry<ShipClassDefinition>? shipClasses = null,
+        TypeRegistry<StationMarketEventDefinition>? stationMarketEvents = null)
     {
         ModuleCategories = moduleCategories;
         ModuleTypes = moduleTypes;
@@ -32,6 +33,8 @@ internal sealed class GameDataRegistry
         Quests = quests ?? TypeRegistry<QuestDefinition>.Empty;
         StationMarketProfiles = stationMarketProfiles ?? TypeRegistry<StationMarketProfileDefinition>.Empty;
         ShipClasses = shipClasses ?? TypeRegistry<ShipClassDefinition>.Empty;
+        StationMarketEvents = stationMarketEvents ?? TypeRegistry<StationMarketEventDefinition>.Empty;
+        StationMarketEventCatalogFingerprint = StationMarketEventCatalog.Fingerprint(StationMarketEvents);
         CatalogVersion = catalogVersion;
         LegacyCatalogFingerprint = legacyCatalogFingerprint;
         var economicItems = Enumerable.Range(0, itemTypes.Count).Select(itemTypes.GetDefinition)
@@ -61,6 +64,8 @@ internal sealed class GameDataRegistry
     public TypeRegistry<QuestDefinition> Quests { get; }
     public TypeRegistry<StationMarketProfileDefinition> StationMarketProfiles { get; }
     public TypeRegistry<ShipClassDefinition> ShipClasses { get; }
+    public TypeRegistry<StationMarketEventDefinition> StationMarketEvents { get; }
+    public string StationMarketEventCatalogFingerprint { get; }
     public int CatalogVersion { get; }
     public CatalogCompatibilityData CatalogCompatibility { get; }
     public string? LegacyCatalogFingerprint { get; }
@@ -85,7 +90,9 @@ internal sealed class GameDataRegistry
         int catalogVersion = 1,
         string? legacyCatalogFingerprint = null,
         IEnumerable<StationMarketProfileDefinition>? stationMarketProfiles = null,
-        IEnumerable<ShipClassDefinition>? shipClasses = null)
+        IEnumerable<ShipClassDefinition>? shipClasses = null,
+        IEnumerable<StationMarketEventDefinition>? stationMarketEvents = null,
+        bool requireCompleteMarketEventSet = false)
     {
         if (catalogVersion != 1) throw new ContentException($"Unsupported catalogVersion: {catalogVersion}.");
         var commandRegistry = TypeRegistry<CommandDefinition>.Create(commandDefinitions, "command definitions");
@@ -106,6 +113,7 @@ internal sealed class GameDataRegistry
         var profiles = (stationMarketProfiles ?? []).ToArray();
         ValidateStationMarketProfiles(profiles, itemRegistry);
         var profileRegistry = TypeRegistry<StationMarketProfileDefinition>.Create(profiles, "station market profiles");
+        var eventRegistry = StationMarketEventCatalog.Create(stationMarketEvents ?? [], itemRegistry, profileRegistry, requireCompleteMarketEventSet);
         var factoryRegistry = TypeRegistry<FactoryTypeDefinition>.Create(factoryTypes ?? [], "factory types");
         var recipeRegistry = TypeRegistry<RecipeDefinition>.Create(recipes ?? [], "recipes");
         var allRecipes = Enumerable.Range(0, recipeRegistry.Count).Select(recipeRegistry.GetDefinition)
@@ -158,7 +166,7 @@ internal sealed class GameDataRegistry
             }
         }
         return new GameDataRegistry(categoryRegistry, moduleRegistry, itemRegistry, commandRegistry, factoryRegistry, recipeRegistry,
-            dialogueRegistry, questRegistry, catalogVersion, legacyCatalogFingerprint, profileRegistry, shipClassRegistry);
+            dialogueRegistry, questRegistry, catalogVersion, legacyCatalogFingerprint, profileRegistry, shipClassRegistry, eventRegistry);
     }
 
     internal static TypeRegistry<ShipClassDefinition> CreateShipClassRegistry(IEnumerable<ShipClassDefinition> classes)
@@ -349,6 +357,15 @@ internal sealed class GameDataRegistry
         if (!targetIds.SetEquals(inventory))
             RejectEconomy("stockTargets", "must exactly cover initialInventory items");
 
+        var allTargetIds = new HashSet<string>(targetIds, StringComparer.Ordinal);
+        foreach (var target in economy.ExplicitStockTargets.IsDefault ? [] : economy.ExplicitStockTargets)
+        {
+            if (target is null) { RejectEconomy("explicitStockTargets", "entry must not be null"); continue; }
+            validateItem(target.ItemTypeId, "economy.explicitStockTargets", false);
+            if (!allTargetIds.Add(target.ItemTypeId)) RejectEconomy("explicitStockTargets", $"duplicate item '{target.ItemTypeId}'");
+            if (target.TargetStock <= 0) RejectEconomy("explicitStockTargets", $"item '{target.ItemTypeId}' targetStock must be positive");
+        }
+
         var rates = economy.HourlyOutputs.Concat(economy.HourlyInputs).Concat(economy.HourlyConsumption).ToArray();
         foreach (var rate in rates)
             if (!targetIds.Contains(rate.ItemTypeId))
@@ -393,15 +410,16 @@ internal sealed class GameDataRegistry
             if (scaledCredits <= 0) reject("initialCredits", $"scaled amount is not positive for {size}");
             DoubleChecked(scaledCredits, size, "initialCredits"); // maxBudget = 2×scaledCredits overflow check
 
-            foreach (var target in economy.StockTargets)
+            foreach (var target in economy.AllStockTargets)
             {
-                long scaledTarget = ScaleForSize(target.TargetStock, factor, size, "economy.stockTargets");
+                string targetField = targetIds.Contains(target.ItemTypeId) ? "economy.stockTargets" : "economy.explicitStockTargets";
+                long scaledTarget = ScaleForSize(target.TargetStock, factor, size, targetField);
                 if (scaledTarget <= 0)
-                    RejectEconomy("stockTargets", $"item '{target.ItemTypeId}' scaled target is not positive for {size}");
-                long maxStock = DoubleChecked(scaledTarget, size, "economy.stockTargets");
+                    reject(targetField, $"item '{target.ItemTypeId}' scaled target is not positive for {size}");
+                long maxStock = DoubleChecked(scaledTarget, size, targetField);
 
-                var initial = profile.InitialInventory.First(stock => stock.ItemTypeId == target.ItemTypeId);
-                long scaledInitial = ScaleForSize(initial.Quantity, factor, size, "initialInventory");
+                var initial = profile.InitialInventory.FirstOrDefault(stock => stock.ItemTypeId == target.ItemTypeId);
+                long scaledInitial = initial is null ? 0 : ScaleForSize(initial.Quantity, factor, size, "initialInventory");
                 if (scaledInitial > maxStock)
                     reject("initialInventory", $"item '{target.ItemTypeId}' scaled stock exceeds capacity for {size}");
 

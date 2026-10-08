@@ -132,4 +132,5 @@ public sealed partial class GameSessionScreen
     }
 
     internal void CompleteWindowProfile(TacticalMapWindowTiming timing) => _frameRecorder.CompleteWindow(timing);
+    internal TacticalMapProfileCapture CaptureFrameProfile() => _frameRecorder.Capture();
 }

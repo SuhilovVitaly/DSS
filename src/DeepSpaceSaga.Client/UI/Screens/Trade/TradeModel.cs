@@ -157,8 +157,24 @@ internal sealed class TradeJournal
             receipt.ExecutedQuantity > 0 && receipt.ExecutedQuantity <= RequestedQuantity && receipt.TotalCredits >= 0 &&
             (Mode == TradeMode.Sell || receipt.ExecutedQuantity == RequestedQuantity) &&
             (receipt.ExecutedQuantity == RequestedQuantity || !receipt.LimitReasons.IsDefaultOrEmpty) &&
-            QuotedTotalCredits == receipt.TotalCredits && QuotedExecutableQuantity == receipt.ExecutedQuantity
+            QuotedTotalCredits == receipt.TotalCredits && QuotedExecutableQuantity == receipt.ExecutedQuantity &&
+            (Mode == TradeMode.Sell || receipt.RealizedCargoCostCredits is null && receipt.GrossResultCredits is null)
                 ? receipt : null;
+
+        internal bool HasKnownCargoResult => Mode == TradeMode.Sell && ConfirmedReceipt is { } receipt &&
+            receipt.RealizedCargoCostCredits is >= 0 && receipt.GrossResultCredits is { } gross &&
+            gross == receipt.TotalCredits - receipt.RealizedCargoCostCredits.Value;
+    }
+    internal sealed record DisplayEntry(Entry? Trade = null, VoyageFinanceSnapshot? Voyage = null);
+    private readonly List<(string Id, bool Voyage)> _displayOrder = [];
+    private readonly Dictionary<string, VoyageFinanceSnapshot> _voyages = new(StringComparer.Ordinal);
+    internal IReadOnlyList<DisplayEntry> DisplayEntries => _displayOrder.Select(k => k.Voyage
+        ? new DisplayEntry(Voyage: _voyages[k.Id]) : new DisplayEntry(Trade: _entries.Single(e => e.CommandId == k.Id))).ToArray();
+    internal int DisplayCount => _displayOrder.Count;
+    private void AddDisplay(string id, bool voyage)
+    {
+        _displayOrder.Add((id, voyage));
+        if (_displayOrder.Count > 50) _displayOrder.RemoveAt(0);
     }
     private readonly List<Entry> _entries = new();
     internal IReadOnlyList<Entry> Entries => _entries;
@@ -168,12 +184,24 @@ internal sealed class TradeJournal
     {
         if (_entries.Any(existing => existing.CommandId == entry.CommandId)) return;
         _entries.Add(entry);
+        AddDisplay(entry.CommandId, false);
         if (_entries.Count > 50) _entries.RemoveAt(0);
     }
     /// <summary>Attach final results; returns true when a pending trade has just been refused as <c>stale_quote</c>.</summary>
     internal bool Refresh(SnapshotBuffer? buffer)
     {
         if (buffer is null) return false;
+        var finances = buffer.Latest?.Snapshot.VoyageFinances ?? default;
+        var currentIds = new HashSet<string>(StringComparer.Ordinal);
+        if (!finances.IsDefaultOrEmpty)
+            foreach (var report in finances.TakeLast(50))
+            {
+                if (report is null || string.IsNullOrWhiteSpace(report.VoyageId) || !currentIds.Add(report.VoyageId)) continue;
+                if (!_voyages.ContainsKey(report.VoyageId)) AddDisplay(report.VoyageId, true);
+                _voyages[report.VoyageId] = report;
+            }
+        foreach (string id in _voyages.Keys.Where(id => !currentIds.Contains(id) && !_displayOrder.Contains((id, true))).ToArray())
+            _voyages.Remove(id);
         bool stale = false;
         for (int i = 0; i < _entries.Count; i++)
         {
@@ -210,6 +238,7 @@ internal sealed class TradeModel
     internal string? LocalStationObjectId { get; private set; }
     internal long? VisitStartGameTimeMs { get; private set; }
     internal StationInventoryItemSnapshot[] Rows { get; private set; } = [];
+    internal StationMarketEventSnapshot[] ActiveEvents { get; private set; } = [];
     internal InstalledModuleSnapshot[] Modules { get; private set; } = [];
     internal InstalledModuleSnapshot? Module => Modules.FirstOrDefault(m => m.ModuleId == SelectedModuleId);
     internal StationInventoryItemSnapshot? Item => Rows.FirstOrDefault(i => i.ItemTypeId == SelectedItemId);
@@ -260,6 +289,7 @@ internal sealed class TradeModel
 
     internal void ClearInvalidVisit()
     {
+        ActiveEvents = [];
         Rows = [];
         Modules = [];
         SelectedItemId = null;
@@ -287,6 +317,10 @@ internal sealed class TradeModel
             _lastMaximum = null;
             InvalidateQuote(localStation is null ? "NotDocked" : "QuoteRequired");
         }
+        var events = localStation is null ? null : snapshot?.DockedStationTrade?.ActiveEvents;
+        ActiveEvents = events is null || events.Value.IsDefaultOrEmpty ? [] : events.Value
+            .Where(e => e is not null && e.RemainingGameTimeMs > 0)
+            .OrderBy(e => e.StartedGameTimeMs).ThenBy(e => e.EventId, StringComparer.Ordinal).Take(2).ToArray();
         if (localStation is null)
         {
             Rows = [];
@@ -324,6 +358,25 @@ internal sealed class TradeModel
         if (FuelMode) SelectedItemId = Rows.FirstOrDefault()?.ItemTypeId;
         else if (SelectedItemId is not null && !Rows.Any(i => i.ItemTypeId == SelectedItemId)) SelectedItemId = null;
     }
+    internal static string EventText(string key, string? legacyFallback, string id)
+    {
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            string fullKey = key.StartsWith("TradeUX.", StringComparison.Ordinal) ? key : "TradeUX." + key;
+            string value = Localization.Get(fullKey);
+            if (!string.IsNullOrWhiteSpace(value) && value != fullKey) return value;
+        }
+        return string.IsNullOrWhiteSpace(legacyFallback) ? id : legacyFallback;
+    }
+
+    internal static string EventRemaining(StationMarketEventSnapshot evt)
+    {
+        if (evt.RemainingGameTimeMs == long.MaxValue) return Localization.Get("TradeUX.EventPermanent");
+        long remaining = Math.Max(1, evt.RemainingGameTimeMs);
+        long hours = remaining / GameCalendar.HourMs + (remaining % GameCalendar.HourMs == 0 ? 0 : 1);
+        return string.Format(System.Globalization.CultureInfo.CurrentCulture, Localization.Get("TradeUX.EventRemainingHours"), hours);
+    }
+
     internal long Cargo(string itemId) => Module?.Cargo.IsDefaultOrEmpty == false
         ? Module.Cargo.FirstOrDefault(c => c.ItemTypeId == itemId)?.Quantity ?? 0 : 0;
     internal void Select(string itemId) { SelectedItemId = itemId; Quantity = 1; }

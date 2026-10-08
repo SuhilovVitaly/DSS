@@ -458,7 +458,8 @@ internal static class TradingMapGeometryGenerator
     {
         var referenceSpeedKmPerSecond = rules.ReferenceSpeedMps / 1000.0;
         var gameMilliseconds = distanceKm / referenceSpeedKmPerSecond * 1000.0 * GameMillisecondsPerSecond;
-        if (!double.IsFinite(gameMilliseconds) || gameMilliseconds <= 0 || gameMilliseconds > long.MaxValue)
+        // Binary64 rounds Int64.MaxValue upward to 2^63, which cannot be cast to Int64.
+        if (!double.IsFinite(gameMilliseconds) || gameMilliseconds <= 0 || gameMilliseconds >= (double)long.MaxValue)
             throw new ScenarioException(
                 $"template '{templateId}' edge '{fromStationId}'/'{toStationId}' has an unrepresentable travel estimate.");
 

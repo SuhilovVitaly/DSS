@@ -466,26 +466,38 @@ public sealed class StationResourceFieldTests
         var started = engine.CaptureSnapshotForTests();
         Assert.Empty(started.CommandResults);
         Assert.Equal(ScannerCommandTypes.StructuralScan, Assert.Single(started.InstalledModules).ActiveCommandType);
-        var saved = Save(engine);
+        var scanned = new HashSet<string> { target.ObjectId };
+        for (var scan = 1; scan <= 2; scan++)
+        {
+            engine.CaptureSnapshotForTests(scan * 60000, simulationTimeMs: 0);
+            target = engine.CaptureSnapshotForTests(scan * 60000, simulationTimeMs: 0).Objects
+                .First(o => o.Survey?.CanStructuralScan == true && !scanned.Contains(o.ObjectId));
+            scanned.Add(target.ObjectId);
+            engine.ReceiveCommand(new($"scan-{scan + 1}", (ulong)(scan + 1), "SPC-0001", "MOD-TEST", ScannerCommandTypes.StructuralScan, target.ObjectId));
+            engine.CaptureSnapshotForTests(scan * 60000, simulationTimeMs: 0);
+        }
+        ScenarioFile CurrentSave() => engine.CaptureSaveStateForTests(120000, SimulationSpeed.Speed0, 0);
+        var saved = CurrentSave();
         var fields = saved.GameState.StationResourceFields!;
         var job = Assert.Single(fields.Surveys);
-        Assert.Equal(new ResourceSurveyJobData("scan-1", "SPC-0001", "MOD-TEST", target.ObjectId, 0, 60000, 0), job);
+        Assert.Equal(new ResourceSurveyJobData("scan-3", "SPC-0001", "MOD-TEST", target.ObjectId, 120000, 180000, 0), job);
         const string streamName = "ResourceSurvey:SPC-0001:MOD-TEST";
+        Assert.Equal(10020UL, fields.RngStreams.Single(s => s.Name == streamName).Counter);
         var stream = new ResourceFieldRngData(streamName, RngStreamSeedDerivation.DeriveStreamSeed(123, streamName), 10011);
         var withJob = saved with
         {
             GameState = saved.GameState with
             {
                 StationResourceFields = fields with
-                { RngStreams = fields.RngStreams.Append(stream).ToArray() }
+                { RngStreams = fields.RngStreams.Select(s => s.Name == streamName ? stream : s).ToArray() }
             }
         };
         engine.LoadScenario(ScenarioLoader.LoadFromJson(Json(withJob), true), true);
-        var normalized = Save(engine);
+        var normalized = CurrentSave();
         Assert.Equal(10020UL, normalized.GameState.StationResourceFields!.RngStreams.Single(s => s.Name == streamName).Counter);
         Assert.Equal(job, Assert.Single(normalized.GameState.StationResourceFields.Surveys));
         engine.LoadScenario(normalized, true);
-        Assert.Equal(Json(normalized), Json(Save(engine)));
+        Assert.Equal(Json(normalized), Json(CurrentSave()));
         foreach (var bad in new[]
         {
             job with { CommandId = "" }, job with { ObjectId = "SPC-0002" }, job with { ModuleId = "missing" },
@@ -510,7 +522,7 @@ public sealed class StationResourceFieldTests
                 { Asteroids = fields.Asteroids.Select(a => a with { CompositionKnown = true }).ToArray() }
             }
         }, true));
-        Assert.Equal(Json(normalized), Json(Save(engine)));
+        Assert.Equal(Json(normalized), Json(CurrentSave()));
     }
 
     [Fact]

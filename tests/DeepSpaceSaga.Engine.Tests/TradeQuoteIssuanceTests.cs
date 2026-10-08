@@ -499,9 +499,8 @@ public class TradeQuoteIssuanceTests
     public void Price_reasons_explain_profile_stock_event_spread_and_clamp_in_deterministic_order()
     {
         using var engine = CreateMarketEngine(IceStock(20), save => WithCargo(WithStationEvents(save,
-            new StationEventData("event.b", "B", null, 0, null, [new StationEventPriceFactorData(null, Ice, 1200)]),
-            new StationEventData("event.a", "A", null, 0, null, [new StationEventPriceFactorData("Resource", null, 2000)]),
-            new StationEventData("event.c", "C", null, 0, null, [new StationEventPriceFactorData(null, Water, 5000)])),
+            new StationEventData("event.b", "B", null, 0, null, [new StationEventPriceFactorData(null, Ice, 1200), new StationEventPriceFactorData(null, Water, 5000)]),
+            new StationEventData("event.a", "A", null, 0, null, [new StationEventPriceFactorData("Resource", null, 2000)])),
             Ice, 5));
         var ice = Registry.ItemTypes.GetDefinition(Registry.ItemTypes.GetIndex(Ice));
         int size = StationSizeFactors.Resolve(StationSize.Medium, ice.Category);

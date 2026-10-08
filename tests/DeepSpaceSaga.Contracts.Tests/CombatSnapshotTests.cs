@@ -6,6 +6,34 @@ namespace DeepSpaceSaga.Contracts.Tests;
 
 public class CombatSnapshotTests
 {
+    [Fact]
+    public void Weapon_parameters_roundtrip()
+    {
+        var launcher = new LauncherCombatSnapshot("torpedo", 3, 90, 150,
+            RangeKm: 200.25, Maneuverability: 5.125m);
+        var flight = new TorpedoSnapshot("owner", "launcher", "target", 100,
+            3, 90, 150, 0, new(100, 1, TorpedoRoutePhase.Straight, false),
+            CapturedManeuverability: 5.125m, OwnerPlayerRelationAtLaunch: PlayerRelation.Enemy);
+        var restoredLauncher = JsonSerializer.Deserialize<LauncherCombatSnapshot>(JsonSerializer.Serialize(launcher));
+        var restoredFlight = JsonSerializer.Deserialize<TorpedoSnapshot>(JsonSerializer.Serialize(flight))!;
+        Assert.Equal(launcher, restoredLauncher);
+        Assert.Equal(5.125m, restoredFlight.CapturedManeuverability);
+        Assert.Equal(PlayerRelation.Enemy, restoredFlight.OwnerPlayerRelationAtLaunch);
+        Assert.Equal(90, restoredFlight.TurnRateDegPerSec);
+        Assert.Equal(100, restoredFlight.HitChancePercent);
+
+        // Journal facts retain the removed launcher's identity and distinguish expiry from a miss.
+        var entry = new CombatJournalEntry(1, 60100, CombatEventType.Expired,
+            "owner", "target", "countermeasure", 10, 20, ChanceTenths: 499,
+            LauncherModuleId: "defense-2", LaunchMode: LaunchMode.Manual,
+            Accuracy: 55m, TargetManeuverability: 5.125m,
+            TerminationKind: CountermeasureTerminationKind.LifetimeExpired);
+        var restoredEntry = JsonSerializer.Deserialize<CombatJournalEntry>(JsonSerializer.Serialize(entry))!;
+        Assert.Equal(entry, restoredEntry);
+        Assert.Null(restoredEntry.Roll);
+        Assert.Null(restoredEntry.Damage);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("torpedo-1")]

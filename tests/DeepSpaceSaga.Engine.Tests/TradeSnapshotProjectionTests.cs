@@ -408,8 +408,9 @@ public class TradeSnapshotProjectionTests
         Assert.Equal(1, trade.MarketRevision);
 
         // A committed trade is visible as the next revision; the budget itself never is.
-        engine.ReceiveCommand(new PlayerCommand("buy", 1, QuotedTradeExecutionTests.ShipId,
-            QuotedTradeExecutionTests.CargoModuleId, TradeCommandTypes.Buy, ItemTypeId: QuotedTradeExecutionTests.Ice, Quantity: 2));
+        var quote = QuotedTradeExecutionTests.Quote(engine, TradeCommandTypes.Buy, QuotedTradeExecutionTests.Ice, 2);
+        Assert.Null(quote.DisabledReason);
+        engine.ReceiveCommand(QuotedTradeExecutionTests.Bind("buy", quote));
         var after = engine.CaptureSnapshot();
         Assert.Equal(CommandResultStatus.Executed, Assert.Single(after.CommandResults).Status);
         Assert.Equal(2, after.DockedStationTrade!.MarketRevision);
@@ -437,13 +438,14 @@ public class TradeSnapshotProjectionTests
         Assert.Null(quote.DisabledReason);
         Assert.True(quote.Curve[0].UnitPriceCredits > row.UnitPriceCredits);
 
-        // The list price is the unquoted (legacy) charge and does not move with stock.
+        // The reference list price stays static; the actual profile trade charges its issued curve.
         long before = engine.PlayerCredits;
-        engine.ReceiveCommand(new PlayerCommand("legacy", 1, QuotedTradeExecutionTests.ShipId,
-            QuotedTradeExecutionTests.CargoModuleId, TradeCommandTypes.Buy, ItemTypeId: QuotedTradeExecutionTests.Ice, Quantity: 5));
+        var executable = QuotedTradeExecutionTests.Quote(engine, TradeCommandTypes.Buy, QuotedTradeExecutionTests.Ice, 5);
+        Assert.Null(executable.DisabledReason);
+        engine.ReceiveCommand(QuotedTradeExecutionTests.Bind("quoted", executable));
         var after = engine.CaptureSnapshot();
         Assert.Equal(CommandResultStatus.Executed, Assert.Single(after.CommandResults).Status);
-        Assert.Equal(before - 5 * row.UnitPriceCredits, engine.PlayerCredits);
+        Assert.Equal(before - executable.TotalCredits, engine.PlayerCredits);
         Assert.Equal(row.UnitPriceCredits,
             after.DockedStationTrade!.Items.Single(i => i.ItemTypeId == QuotedTradeExecutionTests.Ice).UnitPriceCredits);
     }

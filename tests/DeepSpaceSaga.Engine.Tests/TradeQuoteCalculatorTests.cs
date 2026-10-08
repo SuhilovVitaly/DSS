@@ -316,6 +316,19 @@ public class TradeQuoteCalculatorTests
         Assert.Equal(1, Total(Input(1, 1000, 10, TradeQuoteDirection.Sell, 1, 100)));
     }
 
+    [Theory]
+    [InlineData("Buy", 100000L, 115000L)]
+    [InlineData("Buy", 4000000000000000000L, 4600000000000000000L)]
+    [InlineData("Sell", 100000L, 85000L)]
+    [InlineData("Sell", 4000000000000000000L, 3400000000000000000L)]
+    [InlineData("Refuel", 100000L, 115000L)]
+    [InlineData("Refuel", 4000000000000000000L, 4600000000000000000L)]
+    public void Common_stock_target_scale_does_not_overflow_a_representable_price(string direction, long basePrice, long expected)
+    {
+        long target = long.MaxValue / 2;
+        Assert.Equal(expected, Total(Input(basePrice, target, target, Dir(direction), 1)));
+    }
+
     [Fact]
     public void Invalid_factor_stock_and_checked_overflow_fail_before_result()
     {

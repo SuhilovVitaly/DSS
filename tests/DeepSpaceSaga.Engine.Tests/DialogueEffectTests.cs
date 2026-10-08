@@ -7,8 +7,8 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class DialogueEffectTests
 {
-    private static (SimulationEngine Engine, GameDataRegistry Registry) Create(ImmutableArray<DialogueEffect> effects,
-        bool canAbort = true, ImmutableArray<DialogueCondition> conditions = default, ImmutableArray<DialogueNode> nodes = default)
+    internal static (SimulationEngine Engine, GameDataRegistry Registry) Create(ImmutableArray<DialogueEffect> effects,
+        bool canAbort = true, ImmutableArray<DialogueCondition> conditions = default, ImmutableArray<DialogueNode> nodes = default, IReadOnlyList<CargoStackData>? initialCargo = null)
     {
         var baseRegistry = DockCommandTests.CreateRegistry(200);
         var definition = new DialogueDefinition("test", "Test", "entry", canAbort,
@@ -23,7 +23,20 @@ public class DialogueEffectTests
         var engine = new SimulationEngine(registry);
         // This fixture deliberately defines a different catalog from the docking fixture.
         var initial = original.CaptureSaveState();
-        engine.LoadScenario(initial with { GameState = initial.GameState with { CatalogCompatibility = registry.CatalogCompatibility } });
+        var preparedWorld = initial with
+        {
+            GameState = initial.GameState with
+            {
+                CatalogCompatibility = registry.CatalogCompatibility,
+                SpaceObjects = initialCargo is null ? initial.GameState.SpaceObjects : initial.GameState.SpaceObjects.Select(o =>
+                    o.ObjectId != "SPC-0001" ? o : o with { Modules = o.Modules!.Select(m => m with { Cargo = initialCargo }).ToArray() }).ToArray()
+            }
+        };
+        engine.LoadScenario(preparedWorld with
+        {
+            GameState = preparedWorld.GameState with
+            { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(preparedWorld.GameState) }
+        });
         engine.ReceiveDialogueCommand(new("start", DialogueAction.Start, "", 0,
             DialogueDefinitionId: "test", ParticipantId: "operator", StationObjectId: "STATION-01"));
         Assert.NotNull(engine.CaptureSnapshotForTests().ActiveDialogue);

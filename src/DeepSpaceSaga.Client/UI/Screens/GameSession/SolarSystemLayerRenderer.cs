@@ -10,6 +10,7 @@ internal sealed class SolarSystemLayerRenderer
         PrepareMap(map);
         var (cx, cy) = camera.WorldToScreen(0, 0, (int)viewport.Width, (int)viewport.Height);
         using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
+        using var visibleArc = new SKPath();
         canvas.Save();
         canvas.ClipRect(viewport);
         paint.Color = new SKColor(145, 160, 170, 90);
@@ -24,7 +25,7 @@ internal sealed class SolarSystemLayerRenderer
         {
             float a = (float)(orbit.Elements.SemiMajorAxis * camera.PixelsPerWorldUnit);
             float b = (float)(orbit.Elements.SemiMinorAxis * camera.PixelsPerWorldUnit);
-            if (float.IsFinite(a) && float.IsFinite(b)) canvas.DrawOval(cx, cy, a, b, paint);
+            Ellipse(a, b);
         }
         paint.Color = new SKColor(255, 210, 100);
         paint.StrokeWidth = 2;
@@ -34,7 +35,63 @@ internal sealed class SolarSystemLayerRenderer
         void Ring(double radius)
         {
             float pixels = (float)(radius * camera.PixelsPerWorldUnit);
-            if (float.IsFinite(pixels)) canvas.DrawCircle(cx, cy, pixels, paint);
+            Ellipse(pixels, pixels);
+        }
+
+        void Ellipse(float a, float b)
+        {
+            if (!float.IsFinite(a) || !float.IsFinite(b) || a <= 0 || b <= 0) return;
+            if (Math.Max(a, b) <= 4 * Math.Max(viewport.Width, viewport.Height))
+                canvas.DrawOval(cx, cy, a, b, paint);
+            else
+            {
+                // Huge analytic ovals generate viewport-sized GPU coverage even
+                // when only a tiny arc is visible. Bound geometry before submission.
+                var expanded = viewport; expanded.Inflate(2, 2);
+                BuildVisibleEllipse(cx, cy, a, b, expanded, visibleArc);
+                if (!visibleArc.IsEmpty) canvas.DrawPath(visibleArc, paint);
+            }
+        }
+    }
+
+    internal static void BuildVisibleEllipse(double cx, double cy, double a, double b, SKRect viewport, SKPath path)
+    {
+        path.Rewind();
+        if (!double.IsFinite(cx) || !double.IsFinite(cy) || !double.IsFinite(a) || !double.IsFinite(b) || a <= 0 || b <= 0) return;
+        Span<double> cuts = stackalloc double[10];
+        int count = 0;
+        cuts[count++] = 0; cuts[count++] = Math.Tau;
+        AddX((viewport.Left - cx) / a, cuts, ref count); AddX((viewport.Right - cx) / a, cuts, ref count);
+        AddY((viewport.Top - cy) / b, cuts, ref count); AddY((viewport.Bottom - cy) / b, cuts, ref count);
+        cuts[..count].Sort();
+        // Chord deviation is bounded by max(a,b) * angleStep^2 / 8 <= 0.25 pixel.
+        double step = Math.Sqrt(2 / Math.Max(a, b));
+        for (int i = 1; i < count; i++)
+        {
+            double from = cuts[i - 1], to = cuts[i], middle = (from + to) / 2;
+            double x = cx + a * Math.Cos(middle), y = cy + b * Math.Sin(middle);
+            if (to <= from || x < viewport.Left || x > viewport.Right || y < viewport.Top || y > viewport.Bottom) continue;
+            int segments = (int)Math.Clamp(Math.Ceiling((to - from) / step), 1, 4096);
+            path.MoveTo((float)(cx + a * Math.Cos(from)), (float)(cy + b * Math.Sin(from)));
+            for (int j = 1; j <= segments; j++)
+            {
+                double angle = from + (to - from) * j / segments;
+                path.LineTo((float)(cx + a * Math.Cos(angle)), (float)(cy + b * Math.Sin(angle)));
+            }
+        }
+
+        static void AddX(double v, Span<double> cuts, ref int count)
+        {
+            if (v < -1 || v > 1) return;
+            double angle = Math.Acos(v);
+            cuts[count++] = angle; cuts[count++] = Math.Tau - angle;
+        }
+        static void AddY(double v, Span<double> cuts, ref int count)
+        {
+            if (v < -1 || v > 1) return;
+            double angle = Math.Asin(v);
+            cuts[count++] = (angle + Math.Tau) % Math.Tau;
+            cuts[count++] = (Math.PI - angle + Math.Tau) % Math.Tau;
         }
     }
 

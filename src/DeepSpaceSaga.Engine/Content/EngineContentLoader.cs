@@ -159,6 +159,12 @@ public static class EngineContentLoader
             profilePath = Resolve(basePath, declaredProfilePath);
         }
         var profiles = profilePath is null ? null : LoadStationMarketProfiles(profilePath);
+        IReadOnlyList<StationMarketEventDefinition>? marketEvents = null;
+        if (settings.TypeData.StationMarketEvents is { } eventPath)
+        {
+            if (string.IsNullOrWhiteSpace(eventPath)) throw new ContentException("stationMarketEvents path is empty.");
+            marketEvents = LoadStationMarketEvents(Resolve(basePath, eventPath));
+        }
         IReadOnlyList<ShipClassDefinition>? shipClasses = null;
         if (settings.TypeData.ShipClasses is { } declaredShipClassPath)
         {
@@ -183,8 +189,20 @@ public static class EngineContentLoader
         return GameDataRegistry.Create(moduleCategories, moduleImplementations, catalog.Items, commands, factoryTypes, recipes,
             dialogues, quests, catalogVersion: catalog.Version,
             legacyCatalogFingerprint: settings.Economy?.LegacyCatalogFingerprint, stationMarketProfiles: profiles,
-            shipClasses: shipClasses);
+            shipClasses: shipClasses, stationMarketEvents: marketEvents, requireCompleteMarketEventSet: marketEvents is not null);
     }
+
+    internal static IReadOnlyList<StationMarketEventDefinition> LoadStationMarketEvents(string path)
+    {
+        var file = ReadJson<StationMarketEventsFile>(path, "station market events");
+        if (file.SchemaVersion != 1 || file.Events.IsDefaultOrEmpty || file.Events.Any(e => e is null))
+            throw new ContentException($"{path}: schemaVersion must equal 1 and events must be a nonempty array without null members.");
+        return file.Events;
+    }
+
+    private sealed record StationMarketEventsFile(
+        [property: JsonPropertyName("schemaVersion"), JsonRequired] int SchemaVersion,
+        [property: JsonPropertyName("events"), JsonRequired] ImmutableArray<StationMarketEventDefinition> Events);
 
     internal static IReadOnlyList<ShipClassDefinition> LoadShipClasses(string path)
     {
@@ -267,9 +285,10 @@ public static class EngineContentLoader
     /// <summary>
     /// Parses the optional "economy" fragment of a market profile (US-0002 TK-0002). Null/absent
     /// stays null — the profile keeps US-0001 bootstrap-only behavior. Once present, every one of
-    /// its own fields is required (missing/null is rejected explicitly here so it never falls
+    /// baseline fields is required (missing/null is rejected explicitly here so it never falls
     /// through as an implied zero/empty default) — only its four Hourly*/stockTargets arrays may
-    /// themselves be legitimately empty. Semantic cross-checks against the owning profile's
+    /// themselves be legitimately empty. explicitStockTargets is an optional capacity extension.
+    /// Semantic cross-checks against the owning profile's
     /// supply/demand/inventory (GameDataRegistry.ValidateStationMarketProfiles) happen after this
     /// method returns.
     /// </summary>
@@ -297,14 +316,16 @@ public static class EngineContentLoader
                 return new StationMarketStockDefinition(stock.ItemTypeId, stock.Quantity.Value);
             }).ToImmutableArray();
 
-        var targets = dto.StockTargets.Select(target =>
-        {
-            if (target is null) throw new ContentException("economy.stockTargets entry must not be null.");
-            if (target.ItemTypeId is null) throw new ContentException("economy.stockTargets entry: itemTypeId is required.");
-            if (target.TargetStock is null)
-                throw new ContentException($"economy.stockTargets item '{target.ItemTypeId}': targetStock is required.");
-            return new StationMarketTargetDefinition(target.ItemTypeId, target.TargetStock.Value);
-        }).ToImmutableArray();
+        static ImmutableArray<StationMarketTargetDefinition> ParseTargets(IReadOnlyList<StationMarketTargetDto?> list, string field) =>
+            list.Select(target =>
+            {
+                if (target is null) throw new ContentException($"{field} entry must not be null.");
+                if (target.ItemTypeId is null) throw new ContentException($"{field} entry: itemTypeId is required.");
+                if (target.TargetStock is null)
+                    throw new ContentException($"{field} item '{target.ItemTypeId}': targetStock is required.");
+                return new StationMarketTargetDefinition(target.ItemTypeId, target.TargetStock.Value);
+            }).ToImmutableArray();
+        var targets = ParseTargets(dto.StockTargets, "economy.stockTargets");
 
         return new StationMarketEconomyDefinition(
             source,
@@ -314,7 +335,8 @@ public static class EngineContentLoader
             targets,
             dto.ShortageThresholdPermille.Value,
             dto.SurplusThresholdPermille.Value,
-            dto.BudgetRegenerationDivisorPerDay.Value);
+            dto.BudgetRegenerationDivisorPerDay.Value,
+            dto.ExplicitStockTargets is null ? [] : ParseTargets(dto.ExplicitStockTargets, "economy.explicitStockTargets"));
     }
 
     /// <summary>
@@ -406,6 +428,8 @@ public static class EngineContentLoader
             }
 
             ValidateEngineParameters(dto, category);
+            if (dto.FuelEfficiencyKmPerKg is { } efficiency && (efficiency <= 0 || category.TypeId != "module.engine"))
+                throw new ContentException($"Module '{dto.TypeId}': fuelEfficiencyKmPerKg must be positive and owned by module.engine.");
             ValidateTorpedoParameters(dto, category, filePath);
 
             // A missing/null baseSuccessChancePercent normalizes to 100 (§56.5).
@@ -454,7 +478,8 @@ public static class EngineContentLoader
                 dto.CountermeasureTurnRateDegPerSec,
                 dto.CountermeasureRangeKm,
                 dto.CountermeasureReloadMs,
-                category.TypeId);
+                category.TypeId,
+                dto.FuelEfficiencyKmPerKg);
             GameDataRegistry.ValidateWeaponRatings(definition);
             return definition;
         });
@@ -799,7 +824,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("stationMarketProfiles"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketProfiles = null,
         [property: JsonPropertyName("stationResourceFields"), JsonConverter(typeof(DeclaredResourceFieldPathConverter))] string? StationResourceFields = null,
         [property: JsonPropertyName("shipClasses"), JsonConverter(typeof(DeclaredShipClassPathConverter))] string? ShipClasses = null,
-        [property: JsonPropertyName("solarSystem"), JsonConverter(typeof(DeclaredSolarSystemPathConverter))] string? SolarSystem = null);
+        [property: JsonPropertyName("solarSystem"), JsonConverter(typeof(DeclaredSolarSystemPathConverter))] string? SolarSystem = null,
+        [property: JsonPropertyName("stationMarketEvents"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketEvents = null);
 
     private sealed class DeclaredShipClassPathConverter : JsonConverter<string>
     {
@@ -863,7 +889,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("stockTargets")] IReadOnlyList<StationMarketTargetDto?>? StockTargets,
         [property: JsonPropertyName("shortageThresholdPermille")] int? ShortageThresholdPermille,
         [property: JsonPropertyName("surplusThresholdPermille")] int? SurplusThresholdPermille,
-        [property: JsonPropertyName("budgetRegenerationDivisorPerDay")] int? BudgetRegenerationDivisorPerDay);
+        [property: JsonPropertyName("budgetRegenerationDivisorPerDay")] int? BudgetRegenerationDivisorPerDay,
+        [property: JsonPropertyName("explicitStockTargets")] IReadOnlyList<StationMarketTargetDto?>? ExplicitStockTargets = null);
 
     private sealed record StationMarketTargetDto(
         [property: JsonPropertyName("itemTypeId")] string? ItemTypeId,
@@ -906,7 +933,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("countermeasureSpeedKmS")] double? CountermeasureSpeedKmS = null,
         [property: JsonPropertyName("countermeasureTurnRateDegPerSec")] double? CountermeasureTurnRateDegPerSec = null,
         [property: JsonPropertyName("countermeasureRangeKm")] double? CountermeasureRangeKm = null,
-        [property: JsonPropertyName("countermeasureReloadMs")] long? CountermeasureReloadMs = null);
+        [property: JsonPropertyName("countermeasureReloadMs")] long? CountermeasureReloadMs = null,
+        [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto?>? ItemTypes,

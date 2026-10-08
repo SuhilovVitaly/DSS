@@ -1,5 +1,6 @@
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Engine.Content;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
@@ -17,7 +18,7 @@ internal sealed class TradingVoyageFixture : IDisposable
     private readonly long _calendarRatio;
 
     private TradingVoyageFixture(SimulationEngine engine, string origin, string destination,
-        string outboundItem, string returnItem, long calendarRatio)
+        string outboundItem, string returnItem, long calendarRatio, long motionTime = 0)
     {
         Engine = engine;
         Origin = origin;
@@ -25,6 +26,7 @@ internal sealed class TradingVoyageFixture : IDisposable
         OutboundItem = outboundItem;
         ReturnItem = returnItem;
         _calendarRatio = calendarRatio;
+        _motionTime = motionTime;
         Snapshot = Capture();
     }
 
@@ -41,13 +43,14 @@ internal sealed class TradingVoyageFixture : IDisposable
 
     internal static TradingVoyageFixture Create(ulong seed = 1, bool controlled = true,
         long initialDebt = 0, long? destinationBudget = null,
-        long calendarRatio = DefaultCalendarRatio)
+        long calendarRatio = DefaultCalendarRatio, long initialCredits = 1_000_000,
+        Func<ScenarioFile, ScenarioFile>? adjust = null, GameDataRegistry? registry = null)
     {
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
             "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
         var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "Docked", "scenario.json"));
-        scenario = scenario with { GameState = scenario.GameState with { MasterSeed = seed, PlayerTokens = 1_000_000 } };
-        var engine = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
+        scenario = scenario with { GameState = scenario.GameState with { MasterSeed = seed, PlayerTokens = initialCredits } };
+        var engine = new SimulationEngine(registry ?? QuotedTradeExecutionTests.RealRegistry());
         engine.LoadScenario(scenario);
         var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
         string origin = save.GameState.SpaceObjects.Single(o => o.ObjectId == ShipId).DockedStationObjectId!;
@@ -91,8 +94,8 @@ internal sealed class TradingVoyageFixture : IDisposable
                 }
             };
             engine.Dispose();
-            var prepared = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
-            prepared.LoadScenario(controlledSave, isSave: true);
+            var prepared = new SimulationEngine(registry ?? QuotedTradeExecutionTests.RealRegistry());
+            prepared.LoadScenario(adjust is null ? controlledSave : adjust(controlledSave), isSave: true);
             return new TradingVoyageFixture(prepared, origin, neighbor, outbound, returning,
                 calendarRatio);
         }
@@ -112,7 +115,17 @@ internal sealed class TradingVoyageFixture : IDisposable
     }
 
     internal ScenarioFile Save() => Engine.CaptureSaveStateForTests(
-        checked(_motionTime * _calendarRatio), SimulationSpeed.Speed0);
+        checked(_motionTime * _calendarRatio), SimulationSpeed.Speed0, _motionTime);
+
+    internal TradingVoyageFixture Reload()
+    {
+        var engine = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
+        engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(Save()), true), true);
+        var restored = new TradingVoyageFixture(engine, Origin, Destination, OutboundItem, ReturnItem, _calendarRatio, _motionTime)
+        { _nextCommand = _nextCommand };
+        restored.Capture();
+        return restored;
+    }
 
     internal long Cargo(string item) => Save().GameState.SpaceObjects.Single(o => o.ObjectId == ShipId)
         .Modules!.Single(module => module.ModuleId == CargoId).Cargo?
@@ -180,6 +193,13 @@ internal sealed class TradingVoyageFixture : IDisposable
 
     internal void FlyTo(string destination, bool splitSnapshots = false)
     {
+        // Temporary route closures require waiting at port; they do not invalidate the
+        // command-driven round-trip proof or permit bypassing the authoritative gate.
+        for (int hour = 0; Snapshot.TradingRoutes.Single(r => r.DestinationStationObjectId == destination).Availability ==
+            TradingRouteAvailability.Unavailable && hour < 168; hour++)
+            Advance((GameCalendar.HourMs + _calendarRatio - 1) / _calendarRatio);
+        Xunit.Assert.NotEqual(TradingRouteAvailability.Unavailable,
+            Snapshot.TradingRoutes.Single(r => r.DestinationStationObjectId == destination).Availability);
         var (_, undock) = Send(BridgeId, NavigationComputerCommandTypes.Undock, target: destination);
         Xunit.Assert.Equal(CommandResultStatus.Executed, undock?.Status);
         Xunit.Assert.Null(Snapshot.DockedStationTrade);

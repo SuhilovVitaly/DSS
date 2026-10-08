@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 /// a Caption (360×32) with a Hide/Show toggle button (26×26), followed by two
 /// fixed info rows — "Player Ship" and "Selected Object" — each a caption
 /// (360×36) over a body showing an object's image, name, speed and direction
-/// or authoritative resource survey knowledge. The body grows to fit all lines.
+/// or authoritative resource survey knowledge. Long bodies scroll within the viewport.
 /// The "Selected Object" row shows whichever object is currently hovered
 /// (ActiveObjectId) or, absent a hover, last clicked (SelectedObjectId) — the
 /// caller resolves that priority and passes the result in.
@@ -54,6 +54,9 @@ public sealed class ObjectInfoPanel
     private SKRect _bodyRect;
     private readonly SKRect[] _rowCaptionRects = new SKRect[RowNames.Length];
     private readonly SKRect[] _rowBodyRects = new SKRect[RowNames.Length];
+    private readonly float[] _rowScrollOffsets = new float[RowNames.Length];
+    private readonly float[] _rowScrollLimits = new float[RowNames.Length];
+    private readonly string?[] _rowObjectIds = new string?[RowNames.Length];
 
     private int _hoveredButtonIndex = -1; // 0 = toggle, -1 = none
     private int _pressedButtonIndex = -1;
@@ -197,6 +200,32 @@ public sealed class ObjectInfoPanel
             }
             if (d.DistanceKm is { } distanceKm)
                 lines.Add(("Distance", TacticalMapSettings.FormatDistance(distanceKm * 1000)));
+            if (d.ClusterName is { } cluster)
+            {
+                lines.Add(("Cluster", cluster));
+                lines.Add(("Profile", d.ClusterProfile ?? "—"));
+                lines.Add(("Straight flight estimate", d.StraightFlightDays is { } days ? $"{days:0.###} calendar days" : "Unavailable"));
+                lines.Add(("Estimate epoch", $"T+{d.EstimateMotionTimeMs} simulation ms"));
+                lines.Add(("Potential cargo", d.ClusterDirections ?? "—"));
+            }
+            if (d.ResourceCluster is { } resourceCluster)
+            {
+                lines.Add(("Resource cluster", resourceCluster));
+                lines.Add(("Resource owner", d.ResourceOwner ?? "—"));
+            }
+            if (d.RenderObjectType == SpaceObjectType.Station && d.MarketKnowledge is { } market &&
+                string.Equals(market.StationObjectId, d.ObjectId, StringComparison.Ordinal))
+            {
+                lines.Add(("Role", market.StationRole));
+                lines.Add(("Market", $"{(market.IsAvailable ? "Available" : "Unavailable")} / {(market.IsStale ? "STALE" : "FRESH")}"));
+                lines.Add(("Observed", $"T+{market.ObservedAtGameTimeMs} ms"));
+                foreach (var band in new[] { StationMarketStockState.Shortage, StationMarketStockState.Normal, StationMarketStockState.Surplus })
+                {
+                    var items = market.StockBands.IsDefaultOrEmpty ? [] : market.StockBands
+                        .Where(b => b.StockState == band).Select(b => b.ItemTypeId).Order(StringComparer.Ordinal).ToArray();
+                    lines.Add((band.ToString(), items.Length == 0 ? "—" : string.Join(", ", items)));
+                }
+            }
         }
         else
         {
@@ -260,6 +289,20 @@ public sealed class ObjectInfoPanel
 
     public void OnMouseUp(float x, float y) => _pressedButtonIndex = -1;
 
+    public bool Scroll(float x, float y, float delta)
+    {
+        if (!float.IsFinite(delta) || delta == 0) return false;
+        for (int i = 0; i < _rowBodyRects.Length; i++)
+        {
+            if (!_rowBodyRects[i].Contains(x, y)) continue;
+            _rowScrollOffsets[i] = Math.Clamp(_rowScrollOffsets[i] - Math.Sign(delta) * 3 * LineHeight, 0, _rowScrollLimits[i]);
+            return true;
+        }
+        return false;
+    }
+
+    internal float ScrollOffset(int row) => _rowScrollOffsets[row];
+
     // ── Render ──────────────────────────────────────────────────
 
     /// <param name="viewportWidth">Logical (unscaled) viewport width — the panel is right-aligned against it.</param>
@@ -268,7 +311,8 @@ public sealed class ObjectInfoPanel
     /// whatever else already occupies the top-right corner (the Speed/Scale panels),
     /// since a fixed <see cref="Margin"/> from the top would overlap them.
     /// </param>
-    public void Render(SKCanvas canvas, float viewportWidth, float top, ObjectInfoPanelData? playerShip, ObjectInfoPanelData? selectedOrActive)
+    public void Render(SKCanvas canvas, float viewportWidth, float top, ObjectInfoPanelData? playerShip, ObjectInfoPanelData? selectedOrActive,
+        float viewportHeight = float.PositiveInfinity)
     {
         float left = viewportWidth - Margin - PanelWidth;
 
@@ -294,7 +338,19 @@ public sealed class ObjectInfoPanel
             for (int i = 0; i < RowNames.Length; i++)
             {
                 bool opened = IsRowOpen(i);
-                float bodyHeight = Math.Max(RowBodyHeight, 2 * Padding + BuildLines(rowData[i]).Count * LineHeight);
+                var sourceLines = BuildLines(rowData[i]);
+                float valueOffset = ValueOffset(rowData[i], sourceLines);
+                var renderLines = BuildRenderLines(rowData[i], sourceLines, valueOffset);
+                float bodyHeight = Math.Max(RowBodyHeight, 2 * Padding + renderLines.Count * LineHeight);
+                float fullHeight = bodyHeight;
+                bodyHeight = Math.Min(bodyHeight, Math.Max(0, viewportHeight - Margin - rowY - RowCaptionHeight));
+                if (_rowObjectIds[i] != rowData[i]?.ObjectId)
+                {
+                    _rowObjectIds[i] = rowData[i]?.ObjectId;
+                    _rowScrollOffsets[i] = 0;
+                }
+                _rowScrollLimits[i] = Math.Max(0, fullHeight - bodyHeight);
+                _rowScrollOffsets[i] = Math.Clamp(_rowScrollOffsets[i], 0, _rowScrollLimits[i]);
 
                 var captionRect = new SKRect(left, rowY, left + PanelWidth, rowY + RowCaptionHeight);
                 var bodyRect = opened
@@ -308,7 +364,7 @@ public sealed class ObjectInfoPanel
                 canvas.DrawText(RowNames[i], captionRect.Left + Padding, captionRect.MidY + _rowTitlePaint.TextSize / 3f, _rowTitlePaint);
 
                 if (opened)
-                    DrawRowBody(canvas, bodyRect, rowData[i]);
+                    DrawRowBody(canvas, bodyRect, rowData[i], _rowScrollOffsets[i], _rowScrollLimits[i], renderLines, valueOffset);
 
                 rowY += opened ? (RowCaptionHeight + bodyHeight) : RowCaptionHeight;
                 if (!opened && i < RowNames.Length - 1)
@@ -324,13 +380,51 @@ public sealed class ObjectInfoPanel
         _bodyRect = new SKRect(left, _captionRect.Bottom, left + PanelWidth, rowY);
     }
 
-    private void DrawRowBody(SKCanvas canvas, SKRect bodyRect, ObjectInfoPanelData? data)
+    private float ValueOffset(ObjectInfoPanelData? data, List<(string Label, string Value)> lines) =>
+        data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null || data?.MarketKnowledge is not null || data?.ClusterName is not null
+            ? Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding) : 62f;
+
+    /// <summary>Wrap market values using the same measured text width used for rendering and body height.</summary>
+    internal List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data)
+    {
+        var source = BuildLines(data);
+        return BuildRenderLines(data, source, ValueOffset(data, source));
+    }
+
+    private List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data, List<(string Label, string Value)> source, float valueOffset)
+    {
+        if (data?.MarketKnowledge is null && data?.ClusterName is null) return source;
+        float width = PanelWidth - ImageWidth - 4 * Padding - valueOffset;
+        var result = new List<(string Label, string Value)>();
+        foreach (var (label, value) in source)
+        {
+            string remaining = value;
+            bool first = true;
+            while (_valuePaint.MeasureText(remaining) > width)
+            {
+                int length = Math.Max(1, (int)_valuePaint.BreakText(remaining, width));
+                int space = remaining.LastIndexOf(' ', length - 1, length);
+                if (space > 0) length = space;
+                result.Add((first ? label : "", remaining[..length].TrimEnd()));
+                remaining = remaining[length..].TrimStart();
+                first = false;
+            }
+            result.Add((first ? label : "", remaining));
+        }
+        return result;
+    }
+
+    private void DrawRowBody(SKCanvas canvas, SKRect bodyRect, ObjectInfoPanelData? data, float scrollOffset, float scrollLimit,
+        List<(string Label, string Value)> lines, float valueOffset)
     {
         canvas.DrawRect(bodyRect, _panelBgPaint);
         canvas.DrawRect(bodyRect, _panelBorderPaint);
 
+        canvas.Save();
+        canvas.ClipRect(bodyRect);
+
         float imgX = bodyRect.Left + Padding;
-        float imgY = bodyRect.Top + Padding;
+        float imgY = bodyRect.Top + Padding - scrollOffset;
         var imageRect = new SKRect(imgX, imgY, imgX + ImageWidth, imgY + ImageHeight);
 
         var image = data is { } d ? ResolveObjectImage(d) : null;
@@ -348,15 +442,18 @@ public sealed class ObjectInfoPanel
 
         float textX = imageRect.Right + Padding;
         float textY = imgY + LineHeight - 3f;
-        var lines = BuildLines(data);
-        float valueOffset = data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null
-            ? Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding)
-            : 62f;
         foreach (var (label, value) in lines)
         {
             canvas.DrawText(label, textX, textY, _labelPaint);
             canvas.DrawText(value, textX + valueOffset, textY, _valuePaint);
             textY += LineHeight;
+        }
+        canvas.Restore();
+        if (scrollLimit > 0 && bodyRect.Height > 0)
+        {
+            float thumbHeight = Math.Max(12, bodyRect.Height * bodyRect.Height / (bodyRect.Height + scrollLimit));
+            float thumbTop = bodyRect.Top + (bodyRect.Height - thumbHeight) * scrollOffset / scrollLimit;
+            canvas.DrawRect(new SKRect(bodyRect.Right - 4, thumbTop, bodyRect.Right - 1, thumbTop + thumbHeight), _labelPaint);
         }
     }
 
@@ -450,7 +547,11 @@ public readonly record struct ObjectInfoPanelData(
     string? CaptainDisplayName = null,
     string? RelationToPlayer = null,
     double? DistanceKm = null,
-    TorpedoInspectionData? Torpedo = null, CountermeasureSnapshot? Countermeasure = null);
+    TorpedoInspectionData? Torpedo = null, CountermeasureSnapshot? Countermeasure = null,
+    StationMarketKnowledgeSnapshot? MarketKnowledge = null,
+    string? ClusterName = null, string? ClusterProfile = null, string? ClusterDirections = null,
+    string? ResourceCluster = null, string? ResourceOwner = null,
+    double? StraightFlightDays = null, long? EstimateMotionTimeMs = null);
 
 /// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
 public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);

@@ -5,8 +5,10 @@ using DeepSpaceSaga.Motion;
 
 namespace DeepSpaceSaga.Engine.Dialogue;
 
+internal sealed record DialogueCargoRemoval(int ItemTypeIndex, long Quantity);
+
 internal sealed record DialogueEffectResult(ImmutableArray<SpaceObjectRuntime> Objects,
-    long Credits, DialogueProgressState Progress, bool EndDialogue);
+    long Credits, DialogueProgressState Progress, bool EndDialogue, ImmutableArray<DialogueCargoRemoval> CargoRemovals);
 
 /// <summary>Builds a detached candidate world. Failure discards it; the engine commits it under its world lock.</summary>
 internal static class DialogueEffectTransaction
@@ -22,6 +24,7 @@ internal static class DialogueEffectTransaction
         if (shipIndex < 0 || objects[shipIndex].IsDestroyed) return "player_destroyed";
         bool end = false;
         long? paidPortFee = null;
+        var cargoRemovals = ImmutableArray.CreateBuilder<DialogueCargoRemoval>();
         try
         {
             checked
@@ -136,9 +139,13 @@ internal static class DialogueEffectTransaction
                                 long unitMass = registry.ItemTypes.GetDefinition(itemIndex).UnitMassKg;
                                 long changed = effect.Type == "RemoveCargoItem" ? Math.Min(oldQuantity, remaining)
                                     : Math.Min(remaining, unitMass == 0 ? remaining : Math.Max(0, capacity - mass) / unitMass);
-                                long quantity = effect.Type == "RemoveCargoItem" ? oldQuantity - changed : oldQuantity + changed;
                                 if (changed == 0) continue;
-                                cargo = stackIndex < 0 ? cargo.Add(new(itemIndex, quantity)) : quantity == 0 ? cargo.RemoveAt(stackIndex) : cargo.SetItem(stackIndex, new(itemIndex, quantity));
+                                if (effect.Type == "RemoveCargoItem") cargoRemovals.Add(new(itemIndex, changed));
+                                var replacement = effect.Type == "RemoveCargoItem"
+                                    ? SimulationEngine.RemoveCargoCost(cargo[stackIndex], changed).Remaining
+                                    : SimulationEngine.AddCargoCost(stackIndex < 0 ? null : cargo[stackIndex], itemIndex, changed, 0, "dialogue-grant");
+                                cargo = stackIndex < 0 ? cargo.Add(replacement!) : replacement is null
+                                    ? cargo.RemoveAt(stackIndex) : cargo.SetItem(stackIndex, replacement);
                                 long newMass = effect.Type == "RemoveCargoItem" ? mass - changed * unitMass : mass + changed * unitMass;
                                 modules[i] = module with { Cargo = cargo, AvailableCapacityKg = capacity - newMass };
                                 remaining -= changed;
@@ -152,7 +159,7 @@ internal static class DialogueEffectTransaction
             }
         }
         catch (OverflowException) { return "dialogue_value_overflow"; }
-        result = new(candidate.ToImmutable(), credits, progress, end);
+        result = new(candidate.ToImmutable(), credits, progress, end, cargoRemovals.ToImmutable());
         return null;
     }
 }

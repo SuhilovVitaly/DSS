@@ -210,10 +210,7 @@ public sealed class StationMarketDemoContentTests
         string stationId, string representativeSupplyItemId)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-        // This trade/dialogue regression uses the stationary template; orbital navigation has separate coverage.
-        var engine = SimulationEngine.CreateFromScenarioFile(SettingsPath, DemoScenarioPath);
-        engine.LoadScenario(ScenarioLoader.LoadFromFile(DemoScenarioPath));
-        await using IGameSessionConnection connection = new LocalGameSessionConnection(engine);
+        await using IGameSessionConnection connection = LocalGameSessionConnection.CreateFromScenarioFile(SettingsPath, DemoScenarioPath);
         await using var snapshots = connection.ReadSnapshotsAsync(timeout.Token)
             .GetAsyncEnumerator(timeout.Token);
 
@@ -221,15 +218,30 @@ public sealed class StationMarketDemoContentTests
             snapshot => snapshot.PlayerShipObjectId == PlayerId, timeout.Token);
         Assert.Equal(100000, initial.PlayerCredits);
 
-        const ulong dockSequence = 1;
+        // The shipped loader preserves the current orbital system. Synchronize through
+        // the same commands as the player; never replace its world with the static template.
+        await connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1, timeout.Token);
+        ulong navigationSequence = 0;
+        foreach (string commandType in new[] { ShipEngineCommandTypes.SpeedSynchronization, ShipEngineCommandTypes.DirectionSynchronization })
+        {
+            string id = $"{stationId}-{commandType}";
+            await connection.SendCommandAsync(new PlayerCommand(id, ++navigationSequence, PlayerId, EngineModuleId, commandType, TargetObjectId: stationId), timeout.Token);
+            var accepted = await WaitForSnapshotAsync(snapshots, snapshot => HasCommandResult(snapshot, id), timeout.Token);
+            AssertCommandExecuted(accepted, id, null);
+            await WaitForSnapshotAsync(snapshots, snapshot => snapshot.InstalledModules.Single(m => m.ModuleId == EngineModuleId).ActiveCommandType is null, timeout.Token);
+        }
+        await connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0, timeout.Token);
+        await WaitForSnapshotAsync(snapshots, snapshot => snapshot.CurrentSpeed == SimulationSpeed.Speed0, timeout.Token);
+        const ulong dockSequence = 3;
         string dockCommandId = $"{stationId}-dock";
         await connection.SendCommandAsync(new PlayerCommand(
             dockCommandId, dockSequence, PlayerId, NavigationModuleId,
             NavigationComputerCommandTypes.Dock, TargetObjectId: stationId), timeout.Token);
 
-        var identityRequest = await WaitForSnapshotAsync(snapshots,
-            snapshot => snapshot.ActiveDialogue?.CurrentNodeId == "request_ship_id", timeout.Token);
-        AssertCommandExecuted(identityRequest, dockCommandId, requestedQuantity: null);
+        var dockResult = await WaitForSnapshotAsync(snapshots, snapshot => HasCommandResult(snapshot, dockCommandId), timeout.Token);
+        AssertCommandExecuted(dockResult, dockCommandId, requestedQuantity: null);
+        var identityRequest = dockResult.ActiveDialogue?.CurrentNodeId == "request_ship_id" ? dockResult :
+            await WaitForSnapshotAsync(snapshots, snapshot => snapshot.ActiveDialogue?.CurrentNodeId == "request_ship_id", timeout.Token);
 
         await connection.SendDialogueCommandAsync(new DialogueCommand(
             $"{stationId}-truthful", DialogueAction.Choose,
@@ -266,42 +278,48 @@ public sealed class StationMarketDemoContentTests
         var supplyBefore = TradeItem(readyToTrade, representativeSupplyItemId);
         var cargoBeforeBuy = CargoQuantity(readyToTrade, representativeSupplyItemId);
         string buyCommandId = $"{stationId}-buy";
+        var buyQuote = await connection.GetTradeQuoteAsync(new($"{stationId}-buy-quote", PlayerId, CargoModuleId, TradeCommandTypes.Buy, representativeSupplyItemId, 1), timeout.Token);
+        Assert.Null(buyQuote.DisabledReason);
         await connection.SendCommandAsync(new PlayerCommand(
-            buyCommandId, 2, PlayerId, CargoModuleId, TradeCommandTypes.Buy,
-            ItemTypeId: representativeSupplyItemId, Quantity: 1), timeout.Token);
+            buyCommandId, 4, PlayerId, CargoModuleId, TradeCommandTypes.Buy,
+            ItemTypeId: representativeSupplyItemId, Quantity: 1, QuoteId: buyQuote.QuoteId, MarketRevision: buyQuote.MarketRevision), timeout.Token);
         var bought = await WaitForSnapshotAsync(snapshots,
             snapshot => HasCommandResult(snapshot, buyCommandId), timeout.Token);
         AssertCommandExecuted(bought, buyCommandId, 1);
         Assert.Equal(supplyBefore.StockQuantity - 1,
             TradeItem(bought, representativeSupplyItemId).StockQuantity);
         Assert.Equal(cargoBeforeBuy + 1, CargoQuantity(bought, representativeSupplyItemId));
-        Assert.Equal(readyToTrade.PlayerCredits - supplyBefore.UnitPriceCredits, bought.PlayerCredits);
+        Assert.Equal(readyToTrade.PlayerCredits - buyQuote.TotalCredits, bought.PlayerCredits);
 
         var waterBefore = TradeItem(bought, "item.water");
         long cargoWaterBefore = CargoQuantity(bought, "item.water");
         string sellCommandId = $"{stationId}-sell";
+        var sellQuote = await connection.GetTradeQuoteAsync(new($"{stationId}-sell-quote", PlayerId, CargoModuleId, TradeCommandTypes.Sell, "item.water", 1), timeout.Token);
+        Assert.Null(sellQuote.DisabledReason);
         await connection.SendCommandAsync(new PlayerCommand(
-            sellCommandId, 3, PlayerId, CargoModuleId, TradeCommandTypes.Sell,
-            ItemTypeId: "item.water", Quantity: 1), timeout.Token);
+            sellCommandId, 5, PlayerId, CargoModuleId, TradeCommandTypes.Sell,
+            ItemTypeId: "item.water", Quantity: 1, QuoteId: sellQuote.QuoteId, MarketRevision: sellQuote.MarketRevision), timeout.Token);
         var sold = await WaitForSnapshotAsync(snapshots,
             snapshot => HasCommandResult(snapshot, sellCommandId), timeout.Token);
         AssertCommandExecuted(sold, sellCommandId, 1);
         Assert.Equal(waterBefore.StockQuantity + 1, TradeItem(sold, "item.water").StockQuantity);
         Assert.Equal(cargoWaterBefore - 1, CargoQuantity(sold, "item.water"));
-        Assert.Equal(bought.PlayerCredits + waterBefore.UnitPriceCredits, sold.PlayerCredits);
+        Assert.Equal(bought.PlayerCredits + sellQuote.TotalCredits, sold.PlayerCredits);
 
         var fuelBefore = TradeItem(sold, "item.fuel");
         long tankBefore = FuelQuantity(sold);
         string refuelCommandId = $"{stationId}-refuel";
+        var refuelQuote = await connection.GetTradeQuoteAsync(new($"{stationId}-refuel-quote", PlayerId, EngineModuleId, TradeCommandTypes.Refuel, "item.fuel", 1), timeout.Token);
+        Assert.Null(refuelQuote.DisabledReason);
         await connection.SendCommandAsync(new PlayerCommand(
-            refuelCommandId, 4, PlayerId, EngineModuleId, TradeCommandTypes.Refuel,
-            ItemTypeId: "item.fuel", Quantity: 1), timeout.Token);
+            refuelCommandId, 6, PlayerId, EngineModuleId, TradeCommandTypes.Refuel,
+            ItemTypeId: "item.fuel", Quantity: 1, QuoteId: refuelQuote.QuoteId, MarketRevision: refuelQuote.MarketRevision), timeout.Token);
         var refueled = await WaitForSnapshotAsync(snapshots,
             snapshot => HasCommandResult(snapshot, refuelCommandId), timeout.Token);
         AssertCommandExecuted(refueled, refuelCommandId, 1);
         Assert.Equal(fuelBefore.StockQuantity - 1, TradeItem(refueled, "item.fuel").StockQuantity);
         Assert.Equal(tankBefore + 1, FuelQuantity(refueled));
-        Assert.Equal(sold.PlayerCredits - fuelBefore.UnitPriceCredits, refueled.PlayerCredits);
+        Assert.Equal(sold.PlayerCredits - refuelQuote.TotalCredits, refueled.PlayerCredits);
     }
 
     [Fact]
@@ -419,6 +437,7 @@ public sealed class StationMarketDemoContentTests
         if (requestedQuantity is { } quantity)
         {
             Assert.Equal(1, quantity);
+            Assert.Equal(quantity, result.TradeReceipt!.ExecutedQuantity);
             // These one-unit operations must be full fills; the contract encodes a full fill as null.
             Assert.Null(result.ExecutedQuantity);
         }

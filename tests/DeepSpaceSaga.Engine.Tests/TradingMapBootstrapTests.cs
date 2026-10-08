@@ -54,7 +54,11 @@ public sealed class TradingMapBootstrapTests
             var module = Assert.Single(ship.Modules!);
             Assert.Equal("MOD-ENGINE-01", module.ModuleId);
             Assert.Equal("module.engine.basic", module.ModuleTypeId);
-            Assert.Equal([new CargoStackData("item.ore", 3)], module.Cargo);
+            var cargo = Assert.Single(module.Cargo!);
+            Assert.Equal("item.ore", cargo.ItemTypeId);
+            Assert.Equal(3, cargo.Quantity);
+            Assert.Equal(30, cargo.CostBasisCredits);
+            Assert.Equal(new[] { "bootstrap" }, cargo.AcquisitionSources);
         }
 
         Assert.Equal(3, shapes.Count);
@@ -83,6 +87,39 @@ public sealed class TradingMapBootstrapTests
             roundTrip.GameState.SpaceObjects.Select(ObjectShape));
         Assert.Equal(5, roundTrip.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
         Assert.Null(roundTrip.GameState.TradingMapGeneration);
+    }
+
+    [Theory]
+    [InlineData(10001UL, true)]
+    [InlineData(10009UL, true)]
+    [InlineData(10011UL, false)]
+    public void Saved_map_normalizes_counter_but_still_requires_exact_generated_draw_count(ulong counter, bool valid)
+    {
+        using var source = new SimulationEngine(Registry());
+        source.LoadScenario(NewGameScenario());
+        var saved = source.CaptureSaveState();
+        var changed = saved with
+        {
+            GameState = saved.GameState with
+            {
+                TradingMap = saved.GameState.TradingMap! with
+                {
+                    RngStreams = saved.GameState.TradingMap!.RngStreams.Select(s => s with { Counter = counter }).ToArray(),
+                },
+            }
+        };
+        using var restored = new SimulationEngine(Registry());
+        restored.LoadScenario(LegacyScenario());
+        string before = ScenarioLoader.Serialize(restored.CaptureSaveState());
+        if (!valid)
+        {
+            Assert.Throws<ScenarioException>(() => restored.LoadScenario(
+                ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(changed), true), isSave: true));
+            Assert.Equal(before, ScenarioLoader.Serialize(restored.CaptureSaveState()));
+            return;
+        }
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(changed), true), isSave: true);
+        Assert.Equal(ScenarioLoader.Serialize(saved), ScenarioLoader.Serialize(restored.CaptureSaveState()));
     }
 
     [Fact]

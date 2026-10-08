@@ -271,11 +271,19 @@ public class TradeScreenTests
         string item = TradeItemPresentation.ItemDisplayName(entry.ItemId);
         string actual = TradeItemPresentation.FormatQuantity(entry.ItemId, receipt.ExecutedQuantity);
         string total = receipt.TotalCredits.ToString("N0", System.Globalization.CultureInfo.CurrentCulture);
-        return receipt.ExecutedQuantity == receipt.RequestedQuantity
-            ? TradeScreen.F("SuccessResult", item, actual, total)
-            : TradeScreen.F("PartialResult", item, actual, total,
-                TradeItemPresentation.FormatQuantity(entry.ItemId, receipt.RequestedQuantity!.Value)) + " · " +
-                string.Join(" · ", receipt.LimitReasons.Select(reason => TradeScreen.L(TradeQuote.QuoteReasonKey(reason))));
+        string requested = TradeItemPresentation.FormatQuantity(entry.ItemId, receipt.RequestedQuantity!.Value);
+        bool partial = receipt.ExecutedQuantity != receipt.RequestedQuantity;
+        string message = entry.Mode switch
+        {
+            TradeMode.Buy => $"{item}: {actual} · {Localization.Get("Trade.PurchaseCost")}: {TradeScreen.F("Tokens", total)}",
+            TradeMode.Sell => string.Format(System.Globalization.CultureInfo.CurrentCulture,
+                Localization.Get("Trade.CargoResult" + (partial ? "Partial" : "") + (entry.HasKnownCargoResult ? "Known" : "Unknown")),
+                item, actual, requested, TradeScreen.F("Tokens", total),
+                entry.HasKnownCargoResult ? TradeScreen.F("Tokens", receipt.RealizedCargoCostCredits!.Value.ToString("N0", System.Globalization.CultureInfo.CurrentCulture)) : "",
+                entry.HasKnownCargoResult ? TradeScreen.F("Tokens", receipt.GrossResultCredits!.Value.ToString("N0", System.Globalization.CultureInfo.CurrentCulture)) : ""),
+            _ => TradeScreen.F("SuccessResult", item, actual, total)
+        };
+        return partial ? message + " · " + string.Join(" · ", receipt.LimitReasons.Select(reason => TradeScreen.L(TradeQuote.QuoteReasonKey(reason)))) : message;
     }
 
     [Fact]
@@ -514,6 +522,116 @@ public class TradeScreenTests
         Assert.Equal(messages, f.Screen.History.Select(f.Screen.EntryMessage));
     }
 
+    [Fact]
+    public void Buy_history_labels_receipt_total_as_purchase_cost_without_profit()
+    {
+        var entry = ReceiptEntry();
+        entry = entry with { Mode = TradeMode.Buy, Result = entry.Result! with { CommandType = TradeCommandTypes.Buy } };
+        string text = new TradeScreen().EntryMessage(entry);
+        Assert.Contains(Localization.Get("Trade.PurchaseCost"), text);
+        Assert.Contains(TradeScreen.F("Tokens", "431"), text);
+        Assert.DoesNotContain(Localization.Get("Trade.GrossCargoResult"), text);
+        Assert.DoesNotContain(Localization.Get("Trade.RealizedCargoCost"), text);
+        entry = entry with { Result = entry.Result! with { TradeReceipt = entry.Result.TradeReceipt! with { RealizedCargoCostCredits = 0, GrossResultCredits = 431 } } };
+        Assert.Equal(TradeScreen.L("ReceiptUnavailable"), new TradeScreen().EntryMessage(entry));
+    }
+
+    [Theory]
+    [InlineData(0, 431)]
+    [InlineData(431, 0)]
+    [InlineData(1000, -569)]
+    [InlineData(long.MaxValue, 431 - long.MaxValue)]
+    public void Known_sell_history_shows_actual_requested_proceeds_realized_cost_and_signed_gross(long cost, long gross)
+    {
+        var entry = ReceiptEntry();
+        entry = entry with { Result = entry.Result! with { TradeReceipt = entry.Result.TradeReceipt! with { RealizedCargoCostCredits = cost, GrossResultCredits = gross } } };
+        string text = new TradeScreen().EntryMessage(entry);
+        Assert.True(entry.HasKnownCargoResult);
+        Assert.Contains(Localization.Get("Trade.SaleProceeds"), text);
+        Assert.Contains(Localization.Get("Trade.RealizedCargoCost"), text);
+        Assert.Contains(Localization.Get("Trade.GrossCargoResult"), text);
+        Assert.Contains(TradeScreen.F("Tokens", gross.ToString("N0", System.Globalization.CultureInfo.CurrentCulture)), text);
+        Assert.DoesNotContain(Localization.Get("Trade.CargoCostUnavailable"), text);
+        Assert.Equal(text, new TradeScreen().EntryMessage(entry with { UnitPrice = long.MaxValue }));
+    }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData(null, 0L)]
+    [InlineData(0L, null)]
+    [InlineData(-1L, 432L)]
+    [InlineData(100L, 330L)]
+    [InlineData(long.MaxValue, long.MinValue)]
+    public void Unknown_or_mismatched_cost_receipt_shows_unavailable_and_never_zero_profit(long? cost, long? gross)
+    {
+        var entry = ReceiptEntry();
+        entry = entry with { Result = entry.Result! with { TradeReceipt = entry.Result.TradeReceipt! with { RealizedCargoCostCredits = cost, GrossResultCredits = gross } } };
+        string text = new TradeScreen().EntryMessage(entry);
+        Assert.False(entry.HasKnownCargoResult);
+        Assert.Contains(Localization.Get("Trade.CargoCostUnavailable"), text);
+        Assert.Contains(TradeScreen.F("Tokens", "431"), text);
+        Assert.DoesNotContain(Localization.Get("Trade.GrossCargoResult"), text);
+    }
+
+    [Fact]
+    public async Task Real_two_price_purchases_partial_sell_save_reload_and_replay_match_receipt_and_remaining_basis()
+    {
+        await using var f = new RealTradeFixture("market.mining");
+        var first = f.Execute(TradeMode.Buy, 60, "item.ice");
+        var second = f.Execute(TradeMode.Buy, 10, "item.ice");
+        Assert.NotEqual(first.TotalCredits * second.ExecutedQuantity, second.TotalCredits * first.ExecutedQuantity);
+        long pooled = first.TotalCredits + second.TotalCredits;
+        var save = f.Engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        f.Engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId == "SPC-0002"
+                    ? o with { Credits = 50, MarketBudgetCredits = 50 } : o).ToArray()
+            }
+        }, true);
+        f.Publish(); f.Reopen();
+        var sale = f.Execute(TradeMode.Sell, 70, "item.ice");
+        Assert.InRange(sale.ExecutedQuantity, 1, 69);
+        long realized = (long)decimal.Round((decimal)pooled * sale.ExecutedQuantity / 70, 0, MidpointRounding.AwayFromZero);
+        Assert.Equal(realized, sale.RealizedCargoCostCredits);
+        Assert.Equal(sale.TotalCredits - realized, sale.GrossResultCredits);
+        var command = f.Connection.Commands[^1];
+        save = f.Engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        var remaining = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId)
+            .Modules!.Single(m => m.ModuleId == command.ModuleId).Cargo!.Single(c => c.ItemTypeId == "item.ice");
+        Assert.Equal(70 - sale.ExecutedQuantity, remaining.Quantity);
+        Assert.Equal(pooled - realized, remaining.CostBasisCredits);
+        var entry = f.Screen.History[^1];
+        string message = f.Screen.EntryMessage(entry);
+        Assert.Contains(Localization.Get("Trade.GrossCargoResult"), message);
+        Assert.Contains(TradeScreen.F("Tokens", realized.ToString("N0", System.Globalization.CultureInfo.CurrentCulture)), message);
+        Assert.DoesNotContain(TradeScreen.F("Tokens", remaining.CostBasisCredits!.Value.ToString("N0", System.Globalization.CultureInfo.CurrentCulture)), message);
+        Assert.Equal(message, new TradeScreen().EntryMessage(entry with { UnitPrice = 999999 }));
+        f.Engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), true);
+        f.Publish(); f.Reopen();
+        Assert.Equal(message, f.Screen.EntryMessage(f.Screen.History[^1]));
+        await f.Connection.SendCommandAsync(command);
+        f.Publish(); RenderScreen(f.Screen); f.Reopen();
+        Assert.Equal(3, f.Screen.History.Count);
+        Assert.Equal(message, f.Screen.EntryMessage(f.Screen.History[^1]));
+        var replayed = f.Engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(save.GameState.SpaceObjects),
+            System.Text.Json.JsonSerializer.Serialize(replayed.GameState.SpaceObjects));
+        // The normal history layout wraps the immutable receipt without adding controls.
+        ClickTrade(f.Screen, TradeLayout.History);
+        using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
+        using var canvas = new SKCanvas(bitmap);
+        f.Screen.Render(canvas, ScreenWidth, ScreenHeight);
+        if (Environment.GetEnvironmentVariable("DSS_TRADE_RENDER_DIR") is { Length: > 0 } directory)
+        {
+            Directory.CreateDirectory(directory);
+            using var image = SKImage.FromBitmap(bitmap);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(Path.Combine(directory, "cargo-cost-history.png"), data.ToArray());
+        }
+    }
+
     private static void ClickTrade(TradeScreen screen, SKRect rectangle) => screen.OnMouseDown(
         TradeLayout.PanelLeft(ScreenWidth) + rectangle.MidX, TradeLayout.PanelTop(ScreenHeight) + rectangle.MidY);
 
@@ -526,7 +644,7 @@ public class TradeScreenTests
         private ulong _sequence;
         internal long Balance => Handle.Buffer.Latest!.Snapshot.PlayerCredits;
 
-        internal RealTradeFixture()
+        internal RealTradeFixture(string marketProfile = "market.industrial")
         {
             string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
             string client = Path.Combine(root, "src", "DeepSpaceSaga.Client");
@@ -534,7 +652,7 @@ public class TradeScreenTests
             var source = ScenarioLoader.LoadFromFile(Path.Combine(client, "Scenarios", "Default", "scenario.json"));
             var station = source.GameState.SpaceObjects.Single(o => o.ObjectId == "SPC-0002") with
             {
-                MarketProfileId = "market.industrial",
+                MarketProfileId = marketProfile,
                 MarketProfileFingerprint = null,
                 Inventory = null,
                 Credits = null,
@@ -573,13 +691,13 @@ public class TradeScreenTests
             RenderScreen(Screen);
         }
 
-        internal TradeQuoteSnapshot Prepare(TradeMode mode, long quantity)
+        internal TradeQuoteSnapshot Prepare(TradeMode mode, long quantity, string itemId = "item.energy-cells")
         {
             Screen.Model.SetMode(mode);
             string command = TradeQuote.CommandType(mode);
             var module = Handle.Buffer.Latest!.Snapshot.InstalledModules.First(m => m.CommandTypeIds.Contains(command));
             Screen.Model.SelectModule(module.ModuleId);
-            Screen.Model.Select(mode == TradeMode.Refuel ? "item.fuel" : "item.energy-cells");
+            Screen.Model.Select(mode == TradeMode.Refuel ? "item.fuel" : itemId);
             Screen.Model.Quantity = quantity;
             RenderScreen(Screen);
             Assert.True(Screen.CanConfirm, Screen.QuoteMessage);
@@ -593,9 +711,9 @@ public class TradeScreenTests
             Assert.Null(Handle.Failure);
         }
 
-        internal TradeExecutionReceipt Execute(TradeMode mode, long quantity)
+        internal TradeExecutionReceipt Execute(TradeMode mode, long quantity, string itemId = "item.energy-cells")
         {
-            var quote = Prepare(mode, quantity);
+            var quote = Prepare(mode, quantity, itemId);
             var before = Screen.Model.Module!;
             long cargoBefore = Screen.Model.Cargo(quote.ItemTypeId);
             int count = Connection.Commands.Count;
@@ -673,4 +791,269 @@ public class TradeScreenTests
         float y = TradeLayout.PanelTop(ScreenHeight) + local.MidY;
         return (x, y);
     }
+    private static StationMarketEventSnapshot EventSnapshot(string id = "A", long start = 0, long remaining = 3600001) =>
+        new(id, "event.reactor-accident", "TradeUX.Event.ReactorAccident.Name", "TradeUX.Event.ReactorAccident.Description",
+            "TradeUX.Event.ReactorAccident.Effect", start, start + remaining, remaining);
+
+    private static AuthoritativeSnapshot SnapshotWithEvents(params StationMarketEventSnapshot[] events)
+    {
+        var snapshot = TradeUxTests.Snapshot();
+        return snapshot with { DockedStationTrade = snapshot.DockedStationTrade! with { ActiveEvents = events.ToImmutableArray() } };
+    }
+
+    private sealed class EventUiConnection : IGameSessionConnection
+    {
+        internal int Commands;
+        public ValueTask SendCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default) { Commands++; return ValueTask.CompletedTask; }
+        public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask SetSimulationSpeedAsync(SimulationSpeed speed, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask SetObjectInteractionStateAsync(string? activeObjectId, string? selectedObjectId, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        public async IAsyncEnumerable<AuthoritativeSnapshot> ReadSnapshotsAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        { await Task.Delay(Timeout.Infinite, cancellationToken); yield break; }
+    }
+
+    private static SKBitmap EventBitmap(TradeScreen screen)
+    {
+        var bitmap = new SKBitmap(1600, 800);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, 1600, 800);
+        return bitmap;
+    }
+
+    [Fact]
+    public void Event_model_orders_filters_caps_and_clears_authoritative_events_without_price_mutation()
+    {
+        var model = new TradeModel();
+        var snapshot = SnapshotWithEvents(EventSnapshot("B", 2), EventSnapshot("A", 2), EventSnapshot("C", 3), EventSnapshot("Expired", 0, 0));
+        model.Refresh(snapshot);
+        Assert.Equal(new[] { "A", "B" }, model.ActiveEvents.Select(e => e.EventId));
+        Assert.Equal(snapshot.DockedStationTrade!.Items.Single(i => i.ItemTypeId == "item.water").UnitPriceCredits,
+            model.Rows.Single(i => i.ItemTypeId == "item.water").UnitPriceCredits);
+        model.Refresh(snapshot with { SnapshotSequence = 2, DockedStationTrade = snapshot.DockedStationTrade with { ActiveEvents = default } });
+        Assert.Empty(model.ActiveEvents);
+        model.Refresh(snapshot);
+        model.Refresh(snapshot with { SnapshotSequence = 3, DockedStationTrade = null });
+        Assert.Empty(model.ActiveEvents);
+    }
+
+    [Fact]
+    public void Event_text_handles_full_suffix_unknown_empty_and_legacy_keys()
+    {
+        string translated = Localization.Get("TradeUX.Event.ReactorAccident.Name");
+        Assert.Equal(translated, TradeModel.EventText("TradeUX.Event.ReactorAccident.Name", "Legacy", "ID"));
+        Assert.Equal(translated, TradeModel.EventText("Event.ReactorAccident.Name", "Legacy", "ID"));
+        Assert.Equal("Legacy", TradeModel.EventText("Unknown.Name", "Legacy", "ID"));
+        Assert.Equal("ID", TradeModel.EventText("", null, "ID"));
+        Assert.Equal("ID", TradeModel.EventText("Unknown.Name", " ", "ID"));
+        Assert.Equal("Authored explanation", TradeModel.EventText("", "Authored explanation", "ID"));
+    }
+
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(3600000, 1)]
+    [InlineData(3600001, 2)]
+    [InlineData(7200000, 2)]
+    [InlineData(long.MaxValue - 1, 2562047788016)]
+    public void Event_duration_uses_authoritative_ceil_hours_without_TimeSpan_overflow(long remaining, long hours)
+    {
+        var evt = EventSnapshot(remaining: remaining);
+        Assert.Equal(string.Format(System.Globalization.CultureInfo.CurrentCulture, Localization.Get("TradeUX.EventRemainingHours"), hours), TradeModel.EventRemaining(evt));
+        Assert.Equal(Localization.Get("TradeUX.EventPermanent"), TradeModel.EventRemaining(evt with { RemainingGameTimeMs = long.MaxValue }));
+    }
+
+    [Fact]
+    public async Task Event_badge_click_preserves_search_focus_selection_mode_and_history()
+    {
+        var connection = new EventUiConnection();
+        await using var handle = new GameSessionHandle(connection);
+        handle.Buffer.Update(SnapshotWithEvents(EventSnapshot()));
+        var screen = new TradeScreen(handle.Buffer, handle);
+        screen.OnActivated();
+        using var first = EventBitmap(screen);
+        screen.Model.Select("item.water");
+        screen.OnMouseDown(TradeLayout.Search.Left + 5, TradeLayout.Search.MidY);
+        foreach (char c in "item.") screen.OnTextInput(c);
+        string selected = screen.Model.SelectedItemId!;
+        Assert.True(screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        Assert.True(screen.IsEventTooltipVisible);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        screen.OnTextInput('w');
+        Assert.Equal("item.w", screen.Model.Query);
+        Assert.Equal(selected, screen.Model.SelectedItemId);
+        Assert.Equal(TradeMode.Buy, screen.Model.Mode);
+        Assert.Empty(screen.History);
+        Assert.Equal(0, connection.Commands);
+        screen.OnMouseMove(0, 0);
+        Assert.False(screen.IsEventTooltipVisible);
+        screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY);
+        screen.OnDeactivated();
+        Assert.False(screen.IsEventTooltipVisible);
+        screen.OnActivated();
+        Assert.False(screen.IsEventTooltipVisible);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task Event_tooltip_pixels_stay_within_bounds_and_paused_renders_are_identical(int count)
+    {
+        await using var handle = new GameSessionHandle(new EventUiConnection());
+        handle.Buffer.Update(SnapshotWithEvents(Enumerable.Range(0, count).Select(i => EventSnapshot(i.ToString(), i)).ToArray()));
+        var screen = new TradeScreen(handle.Buffer, handle);
+        screen.OnActivated();
+        using var plain = EventBitmap(screen);
+        Assert.True(screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        using var hover = EventBitmap(screen);
+        using var repeated = EventBitmap(screen);
+        Assert.Equal(hover.Pixels, repeated.Pixels);
+        int changed = 0;
+        var before = plain.Pixels;
+        var after = hover.Pixels;
+        for (int i = 0; i < before.Length; i++)
+        {
+            if (before[i] == after[i]) continue;
+            changed++;
+            Assert.True(TradeLayout.EventTooltip.Contains(i % plain.Width + .5f, i / plain.Width + .5f), $"pixel {i % plain.Width},{i / plain.Width}");
+        }
+        Assert.True(changed > 1000);
+        if (count == 2)
+        {
+            using var image = SKImage.FromBitmap(hover);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(Path.Combine(AppContext.BaseDirectory, "market-events-tooltip.png"), data.ToArray());
+        }
+    }
+
+    [Fact]
+    public async Task Event_badge_remains_in_fuel_and_history_and_disappears_when_station_context_ends()
+    {
+        await using var handle = new GameSessionHandle(new EventUiConnection());
+        var snapshot = SnapshotWithEvents(EventSnapshot());
+        handle.Buffer.Update(snapshot);
+        var screen = new TradeScreen(handle.Buffer, handle);
+        screen.OnActivated();
+        using var market = EventBitmap(screen);
+        screen.OnMouseDown(TradeLayout.FuelTab.MidX, TradeLayout.FuelTab.MidY);
+        Assert.Equal(TradeMode.Refuel, screen.Model.Mode);
+        screen.OnMouseDown(TradeLayout.History.MidX, TradeLayout.History.MidY);
+        Assert.True(screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        Assert.True(screen.IsEventTooltipVisible);
+        using var history = EventBitmap(screen);
+        Assert.Single(screen.Model.ActiveEvents);
+        handle.Buffer.Update(snapshot with { SnapshotSequence = 2, DockedStationTrade = null });
+        Assert.False(screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        Assert.Empty(screen.Model.ActiveEvents);
+        Assert.False(screen.IsEventTooltipVisible);
+    }
+
+    [Fact]
+    public async Task No_event_preserves_control_geometry_and_badge_is_not_interactive()
+    {
+        Assert.Equal(new SKRect(20, 80, 185, 126), TradeLayout.MarketTab);
+        Assert.Equal(new SKRect(197, 80, 380, 126), TradeLayout.FuelTab);
+        Assert.Equal(new SKRect(1040, 190, 1300, 228), TradeLayout.Buy);
+        Assert.Equal(new SKRect(1300, 190, 1560, 228), TradeLayout.Sell);
+        await using var handle = new GameSessionHandle(new EventUiConnection());
+        handle.Buffer.Update(SnapshotWithEvents());
+        var screen = new TradeScreen(handle.Buffer, handle);
+        screen.OnActivated();
+        using var image = EventBitmap(screen);
+        Assert.False(screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        Assert.False(screen.IsEventTooltipVisible);
+        Assert.True(screen.OnMouseMove(TradeLayout.MarketTab.MidX, TradeLayout.MarketTab.MidY));
+        screen.OnMouseDown(TradeLayout.FuelTab.MidX, TradeLayout.FuelTab.MidY);
+        Assert.Equal(TradeMode.Refuel, screen.Model.Mode);
+    }
+    [Fact]
+    public async Task Event_badge_does_not_interrupt_an_existing_scroll_drag()
+    {
+        await using var handle = new GameSessionHandle(new EventUiConnection());
+        handle.Buffer.Update(SnapshotWithEvents(EventSnapshot()));
+        var screen = new TradeScreen(handle.Buffer, handle);
+        screen.OnActivated();
+        using var image = EventBitmap(screen);
+        screen.OnMouseDown(TradeLayout.Scroll.MidX, TradeLayout.Scroll.Bottom - 2);
+        Assert.True(screen.ScrollOffset > 0);
+        screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY);
+        Assert.Equal(0, screen.ScrollOffset);
+        Assert.False(screen.IsEventTooltipVisible);
+        screen.OnMouseUp(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY);
+        Assert.True(screen.OnMouseMove(TradeLayout.EventBadge.MidX, TradeLayout.EventBadge.MidY));
+        Assert.True(screen.IsEventTooltipVisible);
+    }
+    [Theory]
+    [InlineData(123L)]
+    [InlineData(-123L)]
+    [InlineData(0L)]
+    [InlineData(null)]
+    public void Trade_history_uses_authoritative_voyage_net_and_never_recomputes_from_trades(long? net)
+    {
+        var report = FinanceScreenTests.Report(net: net);
+        string message = TradeScreen.VoyageMessage(report);
+        Assert.Contains(DeepSpaceSaga.Client.UI.Screens.Finance.FinanceScreen.RouteText(report), message);
+        Assert.Contains(DeepSpaceSaga.Client.UI.Screens.Finance.FinanceScreen.StateText(report.State), message);
+        if (net is null) Assert.Contains(Localization.Get("Trade.VoyageResultUnavailable"), message);
+        else Assert.Contains(DeepSpaceSaga.Client.UI.Screens.Finance.FinanceScreen.MoneyText(net), message);
+        Assert.DoesNotContain(DeepSpaceSaga.Client.UI.Screens.Finance.FinanceScreen.MoneyText(999), message);
+    }
+
+    [Fact]
+    public void Trade_history_updates_one_voyage_row_through_states_and_keeps_trade_receipts()
+    {
+        var journal = new TradeJournal(); var buffer = new SnapshotBuffer();
+        var pending = ReceiptEntry() with { Result = null };
+        journal.Track(pending);
+        var report = FinanceScreenTests.Report() with { State = VoyageFinanceStates.InTransit, CompletedGameTimeMs = null };
+        buffer.Update(new(1, 0, SimulationSpeed.Speed0, [], VoyageFinances: [report])); journal.Refresh(buffer);
+        Assert.Equal(2, journal.DisplayCount);
+        Assert.Equal(pending, journal.DisplayEntries[0].Trade);
+        foreach (string state in new[] { VoyageFinanceStates.AwaitingRealization, VoyageFinanceStates.Finalized })
+        {
+            report = report with { State = state, NetProfitCredits = -456 };
+            buffer.Update(new(state == VoyageFinanceStates.Finalized ? 3UL : 2UL, 0, SimulationSpeed.Speed0, [],
+                CommandResults: [ReceiptEntry().Result!], VoyageFinances: [report]));
+            journal.Refresh(buffer); journal.Refresh(buffer);
+            Assert.Equal(2, journal.DisplayCount);
+            Assert.Equal(report, journal.DisplayEntries[1].Voyage);
+            Assert.NotNull(journal.DisplayEntries[0].Trade!.ConfirmedReceipt);
+        }
+    }
+
+    [Fact]
+    public async Task Trade_history_survives_reopen_and_caps_combined_display_at_fifty()
+    {
+        await using var handle = new GameSessionHandle(new EventUiConnection());
+        var report = FinanceScreenTests.Report();
+        var snapshot = TradeUxTests.Snapshot() with { VoyageFinances = [report] };
+        handle.Buffer.Update(snapshot);
+        for (int i = 0; i < 51; i++) handle.Trades.Track(ReceiptEntry() with { CommandId = "sent-" + i });
+        var screen = new TradeScreen(handle.Buffer, handle); screen.OnActivated(); RenderScreen(screen);
+        Assert.Equal(50, handle.Trades.DisplayCount);
+        Assert.Single(handle.Trades.DisplayEntries, e => e.Voyage is not null);
+        screen.OnDeactivated();
+        screen = new TradeScreen(handle.Buffer, handle); screen.OnActivated(); RenderScreen(screen);
+        Assert.Equal(50, handle.Trades.DisplayCount);
+        Assert.Single(handle.Trades.DisplayEntries, e => e.Voyage is not null);
+        var reports = Enumerable.Range(0, 51).Select(i => report with { VoyageId = "different-leg-" + i }).ToImmutableArray();
+        handle.Buffer.Update(snapshot with { SnapshotSequence = 2, VoyageFinances = reports }); RenderScreen(screen);
+        Assert.Equal(50, handle.Trades.DisplayCount);
+        Assert.Equal(reports.Skip(1).Select(v => v.VoyageId), handle.Trades.DisplayEntries.Select(e => e.Voyage!.VoyageId));
+        RenderScreen(screen); RenderScreen(screen);
+        Assert.Equal(50, handle.Trades.DisplayCount);
+        Assert.Equal(50, handle.Trades.Entries.Count);
+        Assert.True(screen.HasValidVisit);
+        ClickTrade(screen, TradeLayout.History); RenderScreen(screen);
+        if (Environment.GetEnvironmentVariable("DSS_TRADE_RENDER_DIR") is { Length: > 0 } directory)
+        {
+            Directory.CreateDirectory(directory);
+            using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight); using var canvas = new SKCanvas(bitmap);
+            screen.Render(canvas, ScreenWidth, ScreenHeight);
+            using var image = SKImage.FromBitmap(bitmap); using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(Path.Combine(directory, "voyage-trade-history.png"), data.ToArray());
+        }
+        screen.OnDeactivated();
+    }
+
 }

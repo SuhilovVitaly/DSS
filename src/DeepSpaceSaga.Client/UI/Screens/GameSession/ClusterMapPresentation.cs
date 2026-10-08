@@ -1,0 +1,115 @@
+using DeepSpaceSaga.Contracts;
+using SkiaSharp;
+
+namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
+
+internal sealed record ClusterStationPresentation(string ClusterName, string Profile, string Directions);
+
+internal static class ClusterMapPresentation
+{
+    internal static string? ClusterName(AuthoritativeSnapshot? snapshot, string? stationId)
+    {
+        var map = snapshot?.ClusterMap;
+        if (map is null || map.Stations.IsDefaultOrEmpty || map.Clusters.IsDefaultOrEmpty) return null;
+        string? clusterId = map.Stations.FirstOrDefault(s => s.ObjectId == stationId)?.ClusterId;
+        return map.Clusters.FirstOrDefault(c => c.Id == clusterId)?.Name;
+    }
+
+    internal static double? EstimateStraightDays(double distanceWorld, double maxSpeedKmS)
+    {
+        if (!double.IsFinite(distanceWorld) || distanceWorld < 0 || !double.IsFinite(maxSpeedKmS) || maxSpeedKmS <= 0) return null;
+        double days = distanceWorld / 10 / maxSpeedKmS * 300 / 86400;
+        return double.IsFinite(days) ? days : null;
+    }
+
+    internal static void DrawDirections(SKCanvas canvas, StationClusterMapSnapshot map, string? selectedId,
+        IReadOnlyList<ObjectMotionSnapshot> poses, CameraState camera, int width, int height)
+        => DrawDirections(canvas, map, selectedId, PosesById(poses), camera, width, height);
+
+    private static Dictionary<string, ObjectMotionSnapshot> PosesById(IEnumerable<ObjectMotionSnapshot> objects)
+    {
+        var poses = new Dictionary<string, ObjectMotionSnapshot>(StringComparer.Ordinal);
+        foreach (var obj in objects) poses.TryAdd(obj.ObjectId, obj);
+        return poses;
+    }
+
+    private static void DrawDirections(SKCanvas canvas, StationClusterMapSnapshot map, string? selectedId,
+        IReadOnlyDictionary<string, ObjectMotionSnapshot> poses, CameraState camera, int width, int height)
+    {
+        if (selectedId is null || map.Links.IsDefaultOrEmpty) return;
+        if (!poses.TryGetValue(selectedId, out var source) || source.RenderObjectType != SpaceObjectType.Station) return;
+        using var dash = SKPathEffect.CreateDash([8, 6], 0);
+        using var paint = new SKPaint
+        {
+            Color = new SKColor(180, 190, 120, 150),
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1,
+            PathEffect = dash
+        };
+        var (x, y) = camera.WorldToScreen(source.X, source.Y, width, height);
+        foreach (var destination in map.Links.Where(l => l.FromStationId == selectedId).Select(l => l.ToStationId).Distinct())
+        {
+            if (!poses.TryGetValue(destination, out var target) || target.RenderObjectType != SpaceObjectType.Station) continue;
+            var (tx, ty) = camera.WorldToScreen(target.X, target.Y, width, height);
+            canvas.DrawLine(x, y, tx, ty, paint);
+        }
+    }
+
+    internal static ClusterStationPresentation? Station(AuthoritativeSnapshot? snapshot, string objectId)
+    {
+        if (snapshot?.ClusterMap is not { } map || map.Stations.IsDefaultOrEmpty || map.Clusters.IsDefaultOrEmpty) return null;
+        if (!snapshot.Objects.Any(o => o.ObjectId == objectId && o.RenderObjectType == SpaceObjectType.Station)) return null;
+        var member = map.Stations.FirstOrDefault(s => s.ObjectId == objectId);
+        var cluster = map.Clusters.FirstOrDefault(c => c.Id == member?.ClusterId);
+        if (member is null || cluster is null) return null;
+        var links = map.Links.IsDefaultOrEmpty ? [] : map.Links.Where(l => l.FromStationId == objectId).ToArray();
+        string directions = string.Join("; ", links.Select(l =>
+        {
+            var target = snapshot.Objects.FirstOrDefault(o => o.ObjectId == l.ToStationId);
+            string cargo = l.ItemTypeIds.IsDefaultOrEmpty ? "visit / return" : string.Join(", ", l.ItemTypeIds);
+            return $"{target?.DisplayName ?? l.ToStationId}: {cargo}";
+        }));
+        return new(cluster.Name, member.MarketProfileId, directions);
+    }
+
+    internal static MapWorldBounds Bounds(StationClusterData cluster, IEnumerable<ObjectMotionSnapshot> objects)
+    {
+        MapWorldBounds bounds = new();
+        if (cluster.StationIds.IsDefaultOrEmpty) return bounds;
+        var members = cluster.StationIds.ToHashSet(StringComparer.Ordinal);
+        foreach (var obj in objects) if (members.Contains(obj.ObjectId)) bounds.Include(obj.X, obj.Y);
+        return bounds;
+    }
+
+    internal static ClusterResourceBinding? Resource(AuthoritativeSnapshot? snapshot, string objectId)
+    {
+        var bindings = snapshot?.ClusterMap?.ResourceBindings ?? default;
+        return bindings.IsDefaultOrEmpty ? null : bindings.FirstOrDefault(b => b.FieldId == objectId);
+    }
+
+    internal static void Draw(SKCanvas canvas, AuthoritativeSnapshot snapshot, IEnumerable<ObjectMotionSnapshot> objects, CameraState camera, int width, int height, string? selectedId = null)
+    {
+        if (snapshot.ClusterMap is not { } map || map.Clusters.IsDefaultOrEmpty) return;
+        var poses = PosesById(objects);
+        DrawDirections(canvas, map, selectedId, poses, camera, width, height);
+        using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(160, 210, 225), TextSize = 14 };
+        foreach (var cluster in map.Clusters)
+        {
+            if (cluster.StationIds.IsDefaultOrEmpty) continue;
+            var members = cluster.StationIds.Where(poses.ContainsKey).Select(id => poses[id]).ToArray();
+            if (members.Length == 0) continue;
+            var (x, y) = camera.WorldToScreen(members.Average(o => o.X), members.Average(o => o.Y), width, height);
+            if (x < 0 || x > width || y < 0 || y > height) continue;
+            var bounds = Bounds(cluster, members);
+            var (left, top) = camera.WorldToScreen(bounds.MinX, bounds.MinY, width, height);
+            var (right, bottom) = camera.WorldToScreen(bounds.MaxX, bounds.MaxY, width, height);
+            paint.Style = SKPaintStyle.Stroke;
+            paint.Color = new SKColor(160, 210, 225, 90);
+            canvas.DrawRoundRect(new SKRect(left - 10, top - 10, right + 10, bottom + 10), 8, 8, paint);
+            paint.Style = SKPaintStyle.Fill;
+            paint.Color = new SKColor(160, 210, 225);
+            canvas.DrawText($"{cluster.Name} · {members.Length} stations", x, y - 24, paint);
+        }
+    }
+}

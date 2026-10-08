@@ -25,14 +25,14 @@ public sealed partial class TradeScreen
             p.Box(new(1, 61, 1599, 799), TradePainter.Background, radius: 0);
             Button(p, TradeLayout.MarketTab, L("Market"), !Model.FuelMode);
             Button(p, TradeLayout.FuelTab, L("Fuel"), Model.FuelMode);
-            p.Text(L(_buffer?.Latest?.Snapshot.DockedStationTrade is null ? "NotDocked" : "Paused"), R(450, 84, 534, 36), 14, TradePainter.Muted, align: SKTextAlign.Right);
+            p.Text(L(_buffer?.Latest?.Snapshot.DockedStationTrade is null ? "NotDocked" : "Paused"), R(450, 84, 240, 42), 14, TradePainter.Muted, align: SKTextAlign.Right);
             p.Box(TradeLayout.Catalog, border: TradePainter.Border);
             p.Box(TradeLayout.Detail, border: TradePainter.Border);
             if (_history) DrawHistory(p);
             else if (Model.FuelMode) DrawTanks(p);
             else DrawCatalog(p);
             DrawDetails(p);
-            Button(p, TradeLayout.History, F("History", _journal.Entries.Count), _history, size: 14);
+            Button(p, TradeLayout.History, F("History", _journal.DisplayCount), _history, size: 14);
             p.Text(L("Keys"), R(420, 757, 1140, 30), 13, TradePainter.Muted, align: SKTextAlign.Right);
             if (CurrentCount > TradeLayout.VisibleRows)
             {
@@ -40,10 +40,36 @@ public sealed partial class TradeScreen
                 p.Box(ScrollThumb, TradePainter.Muted, radius: 5);
             }
             if (_moduleOpen) DrawModuleOptions(p);
+            DrawMarketEvents(canvas, p);
         }
         canvas.Restore();
         DrawToolbarTooltips(canvas, pl, pt);
     }
+    private void DrawMarketEvents(SKCanvas canvas, TradePainter p)
+    {
+        if (!HasValidVisit || Model.ActiveEvents.Length == 0) return;
+        p.Box(TradeLayout.EventBadge, border: TradePainter.Amber);
+        p.Text($"{L("ActiveEvents")} ({Model.ActiveEvents.Length})", R(712, 84, 260, 42), 14, TradePainter.Amber);
+        if (!IsEventTooltipVisible) return;
+        canvas.Save(); canvas.ClipRect(TradeLayout.EventTooltip);
+        p.Box(TradeLayout.EventTooltip, TradePainter.Surface, TradePainter.Amber);
+        float sectionHeight = (TradeLayout.EventTooltip.Height - 16) / Model.ActiveEvents.Length;
+        for (int i = 0; i < Model.ActiveEvents.Length; i++)
+        {
+            var evt = Model.ActiveEvents[i];
+            string id = string.IsNullOrWhiteSpace(evt.DefinitionId) ? evt.EventId : evt.DefinitionId;
+            float top = TradeLayout.EventTooltip.Top + 8 + i * sectionHeight;
+            if (i > 0) p.Line(662, top - 4, 972);
+            p.Text(TradeModel.EventText(evt.DisplayNameKey, evt.LegacyDisplayName, id), R(662, top, 310, 18), 14, bold: true);
+            p.Text(TradeModel.EventRemaining(evt), R(662, top + 18, 310, 14), 11, TradePainter.Amber);
+            float textHeight = (sectionHeight - 32) / 2;
+            p.Paragraph(TradeModel.EventText(evt.DescriptionKey, evt.LegacyDescription, id), R(662, top + 32, 310, textHeight), 10);
+            p.Paragraph(TradeModel.EventText(evt.EffectSummaryKey, $"{L("ActiveEvents")}: {id}", id),
+                R(662, top + 32 + textHeight, 310, textHeight), 10, TradePainter.TextColor);
+        }
+        canvas.Restore();
+    }
+
     private void DrawCatalog(TradePainter p)
     {
         p.Box(TradeLayout.Search, border: _focus == InputFocus.Search ? TradePainter.Cyan : TradePainter.Border);
@@ -226,9 +252,21 @@ public sealed partial class TradeScreen
         string executed = TradeItemPresentation.FormatQuantity(entry.ItemId, quantity);
         string totalText = receipt.TotalCredits.ToString("N0", CultureInfo.CurrentCulture);
         string requested = TradeItemPresentation.FormatQuantity(entry.ItemId, receipt.RequestedQuantity!.Value);
-        if (quantity == receipt.RequestedQuantity) return F("SuccessResult", item, executed, totalText);
-        return F("PartialResult", item, executed, totalText, requested) + " · " +
-            string.Join(" · ", receipt.LimitReasons.Select(Reason).Distinct());
+        bool partial = quantity != receipt.RequestedQuantity;
+        string message;
+        if (entry.Mode == TradeMode.Buy)
+            message = $"{item}: {executed} · {Localization.Get("Trade.PurchaseCost")}: {F("Tokens", totalText)}";
+        else if (entry.Mode == TradeMode.Sell)
+        {
+            string key = partial ? "Trade.CargoResultPartial" : "Trade.CargoResult";
+            key += entry.HasKnownCargoResult ? "Known" : "Unknown";
+            message = string.Format(CultureInfo.CurrentCulture, Localization.Get(key), item, executed, requested,
+                F("Tokens", totalText),
+                entry.HasKnownCargoResult ? F("Tokens", receipt.RealizedCargoCostCredits!.Value.ToString("N0", CultureInfo.CurrentCulture)) : "",
+                entry.HasKnownCargoResult ? F("Tokens", receipt.GrossResultCredits!.Value.ToString("N0", CultureInfo.CurrentCulture)) : "");
+        }
+        else message = F("SuccessResult", item, executed, totalText);
+        return partial ? message + " · " + string.Join(" · ", receipt.LimitReasons.Select(Reason).Distinct()) : message;
     }
     private void DrawStatus(TradePainter p)
     {
@@ -244,20 +282,39 @@ public sealed partial class TradeScreen
         L(code == "station_stock_full" ? "StationStorageLimit" : TradeQuote.ReasonKey(code) ?? "TradeRejected");
     private void DrawHistory(TradePainter p)
     {
-        p.Text(F("History", _journal.Entries.Count), R(40, 157, 900, 40), 24, bold: true);
+        p.Text(F("History", _journal.DisplayCount), R(40, 157, 900, 40), 24, bold: true);
         p.Text(L("HistoryNote"), R(40, 209, 920, 35), 15, TradePainter.Muted);
-        for (int row = 0; row < TradeLayout.VisibleRows && row + _historyScroll < _journal.Entries.Count; row++)
+        for (int row = 0; row < TradeLayout.VisibleRows && row + _historyScroll < _journal.DisplayCount; row++)
         {
-            var entry = _journal.Entries[_journal.Entries.Count - 1 - row - _historyScroll]; var rect = TradeLayout.Row(row);
+            var display = _journal.DisplayEntries[_journal.DisplayCount - 1 - row - _historyScroll];
+            var rect = TradeLayout.Row(row);
+            if (display.Voyage is { } voyage)
+            {
+                p.Paragraph(VoyageMessage(voyage), R(48, rect.Top + 1, 910, 49), 14,
+                    voyage.NetProfitCredits is > 0 ? TradePainter.Green : voyage.NetProfitCredits is < 0 ? TradePainter.Red : TradePainter.Muted);
+                p.Line(36, rect.Bottom, 970);
+                continue;
+            }
+            var entry = display.Trade!;
             p.Icon(entry.ItemId, R(48, rect.Top + 6, 38, 38));
             string mode = L(entry.Mode switch { TradeMode.Sell => "Sell", TradeMode.Refuel => "Fuel", _ => "Buy" });
             p.Text(mode + " · " + entry.ModuleLabel, R(101, rect.Top, 250, 50), 14, TradePainter.Muted);
-            p.Text(EntryMessage(entry), R(363, rect.Top, 595, 50), 15,
+            p.Paragraph(EntryMessage(entry), R(363, rect.Top + 1, 595, 49), 11,
                 entry.Result is null ? TradePainter.Muted : entry.ConfirmedReceipt is not null ? TradePainter.Green : TradePainter.Red);
             p.Line(36, rect.Bottom, 970);
         }
-        if (_journal.Entries.Count == 0) p.Text(L("HistoryEmpty"), R(48, 333, 900, 40), 18, TradePainter.Muted);
+        if (_journal.DisplayCount == 0) p.Text(L("HistoryEmpty"), R(48, 333, 900, 40), 18, TradePainter.Muted);
     }
+    internal static string VoyageMessage(VoyageFinanceSnapshot voyage)
+    {
+        string result = voyage.NetProfitCredits is { } net
+            ? string.Format(CultureInfo.CurrentCulture, Localization.Get(net < 0 ? "Trade.VoyageLoss" : net > 0 ? "Trade.VoyageProfit" : "Finance.NetProfit")
+                + (net == 0 ? ": {0}" : ""), Finance.FinanceScreen.MoneyText(net))
+            : Localization.Get("Trade.VoyageResultUnavailable");
+        return string.Format(CultureInfo.CurrentCulture, Localization.Get("Trade.VoyageSummary"),
+            Finance.FinanceScreen.RouteText(voyage), Finance.FinanceScreen.StateText(voyage.State), result);
+    }
+
     private void DrawModuleOptions(TradePainter p)
     {
         for (int i = 0; i < Math.Min(5, Model.Modules.Length); i++)

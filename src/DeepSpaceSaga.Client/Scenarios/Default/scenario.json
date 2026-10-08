@@ -364,7 +364,7 @@
         }
       ],
       "riskProfiles": [
-        { "riskProfileId": "risk.elevated", "fuelMultiplierPermille": 1250 },
+        { "riskProfileId": "risk.elevated", "fuelMultiplierPermille": 1300 },
         { "riskProfileId": "risk.normal", "fuelMultiplierPermille": 1100 },
         { "riskProfileId": "risk.safe", "fuelMultiplierPermille": 1000 }
       ]

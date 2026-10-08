@@ -113,8 +113,11 @@ public class MarketRevisionTests
         using var engine = CreateMarketEngine(adjust: save => WithCargo(save, Ice, 20));
         Assert.Equal(1, Revision(engine));
 
-        // One legacy trade moves stock, Credits and budget together: exactly one increment.
-        Assert.Equal(CommandResultStatus.Executed, Apply(engine, UnquotedBuy("legacy-ok", 5)).Status);
+        // One actual quoted trade moves stock, Credits and budget together: one increment.
+        var firstQuote = Quote(engine, TradeCommandTypes.Buy, Ice, 5);
+        AssertEnabled(firstQuote, 5);
+        var firstCommand = Bind("first-buy", firstQuote);
+        Assert.Equal(CommandResultStatus.Executed, Apply(engine, firstCommand).Status);
         Assert.Equal(2, Revision(engine));
 
         // Rejections change nothing.
@@ -138,7 +141,7 @@ public class MarketRevisionTests
         // No-ops: repeated snapshots at the same time and a duplicate CommandId.
         engine.CaptureSnapshot();
         engine.CaptureSnapshot();
-        engine.ReceiveCommand(UnquotedBuy("legacy-ok", 5));
+        engine.ReceiveCommand(firstCommand);
         engine.CaptureSnapshot();
         Assert.Equal(3, Revision(engine));
         Assert.Equal(3, engine.CaptureSnapshot().DockedStationTrade!.MarketRevision);
@@ -205,14 +208,21 @@ public class MarketRevisionTests
     {
         using var engine = CreateMarketEngine(adjust: save => WithCargo(save, Ice, 20));
         var atMaximum = WithObject(engine.CaptureSaveState(), StationId, o => o with { MarketRevision = long.MaxValue });
+        atMaximum = atMaximum with
+        {
+            GameState = atMaximum.GameState with
+            { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(atMaximum.GameState) }
+        };
         engine.LoadScenario(RoundTrip(atMaximum), isSave: true);
         Assert.Equal(long.MaxValue, Revision(engine));
 
-        // A legacy trade cannot advance the revision: zero-effect value_overflow.
+        // A valid issued quote cannot advance the revision: zero-effect value_overflow.
+        var overflowQuote = Quote(engine, TradeCommandTypes.Buy, Ice, 5);
+        AssertEnabled(overflowQuote, 5);
         string before = WorldProjection(engine);
-        var legacy = Apply(engine, UnquotedBuy("legacy-overflow", 5));
-        Assert.Equal(CommandResultStatus.Rejected, legacy.Status);
-        Assert.Equal("value_overflow", legacy.ReasonCode);
+        var overflow = Apply(engine, Bind("quoted-overflow", overflowQuote));
+        Assert.Equal(CommandResultStatus.Rejected, overflow.Status);
+        Assert.Equal("value_overflow", overflow.ReasonCode);
         Assert.Equal(before, WorldProjection(engine));
 
         // The event seam fails before any assignment as well.
@@ -236,9 +246,11 @@ public class MarketRevisionTests
     public void Revision_round_trips_save_load_but_runtime_invalidation_state_does_not()
     {
         using var engine = CreateMarketEngine(adjust: save => WithPlainStation(save, "SPC-0998"));
-        Assert.Equal(CommandResultStatus.Executed, Apply(engine, UnquotedBuy("legacy", 5)).Status);
+        var buy = Quote(engine, TradeCommandTypes.Buy, Ice, 5);
+        AssertEnabled(buy, 5);
+        Assert.Equal(CommandResultStatus.Executed, Apply(engine, Bind("buy-before-save", buy)).Status);
         engine.CaptureSnapshotForTests(GameCalendar.HourMs);
-        // One legacy trade (no receipt) and one hourly pass: the journal knows neither.
+        // The trade receipt covers its own revision; the saved field also retains the hourly pass.
         Assert.Equal(3, Revision(engine));
         var quote = Quote(engine, TradeCommandTypes.Buy, Ice, 1);
         AssertEnabled(quote, 1);
@@ -270,10 +282,12 @@ public class MarketRevisionTests
     public void Legacy_profile_save_missing_revision_migrates_to_one_and_invalid_values_are_rejected()
     {
         using var engine = CreateMarketEngine(adjust: save => WithPlainStation(WithCargo(save, Ice, 20), "SPC-0998"));
-        Assert.Equal(CommandResultStatus.Executed, Apply(engine, UnquotedBuy("legacy", 5)).Status);
+        // An effective event revision has no trade receipt: exercise the legacy no-receipt migration.
+        engine.CommitEventMarketChangeForTests(StationId);
         Assert.Equal(2, Revision(engine));
         var save = engine.CaptureSaveState();
         var missing = WithObject(save, StationId, o => o with { MarketRevision = null });
+        missing = missing with { SaveFormatVersion = 13, GameState = missing.GameState with { MarketKnowledge = null, TradingEconomyContinuation = null } };
 
         // No field and no receipt: the profile market starts over at 1.
         using (var migrated = LoadInto(RoundTrip(missing)))
@@ -283,12 +297,14 @@ public class MarketRevisionTests
         var quote = Quote(engine, TradeCommandTypes.Sell, Ice, 2);
         var executed = Apply(engine, Bind("quoted", quote));
         Assert.Equal(3, executed.TradeReceipt!.ResultMarketRevision);
-        var withReceipt = WithObject(engine.CaptureSaveState(), StationId, o => o with { MarketRevision = null });
+        var withReceipt = TradingEconomySaveSchemaTests.WithoutNewContinuation(
+            WithObject(engine.CaptureSaveState(), StationId, o => o with { MarketRevision = null }), 13);
         using (var migrated = LoadInto(RoundTrip(withReceipt)))
             Assert.Equal(3, Revision(migrated));
 
         // A saved value below the newest receipt never rewinds the revision: max(saved, receipts).
-        var behind = WithObject(engine.CaptureSaveState(), StationId, o => o with { MarketRevision = 1 });
+        var behind = TradingEconomySaveSchemaTests.WithoutNewContinuation(
+            WithObject(engine.CaptureSaveState(), StationId, o => o with { MarketRevision = 1 }), 13);
         using (var migrated = LoadInto(RoundTrip(behind)))
             Assert.Equal(3, Revision(migrated));
 

@@ -112,7 +112,7 @@ public static class ScenarioLoader
         normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
         normalizedState = CountermeasureSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
         CombatSaveValidation.Validate(normalizedState, scenario.SaveFormatVersion);
-        return scenario with { GameState = normalizedState };
+        return TradingEconomySaveMigration.Normalize(scenario with { GameState = normalizedState });
     }
 
     /// <summary>
@@ -127,6 +127,11 @@ public static class ScenarioLoader
             receipt.ExecutedQuantity < 0 || receipt.TotalCredits < 0 ||
             (!receipt.LimitReasons.IsDefault && receipt.LimitReasons.Any(string.IsNullOrWhiteSpace)))
             return false;
+
+        bool hasCargoResult = receipt.RealizedCargoCostCredits is not null || receipt.GrossResultCredits is not null;
+        if (hasCargoResult && (result.CommandType != TradeCommandTypes.Sell || result.Status != CommandResultStatus.Executed ||
+            receipt.RealizedCargoCostCredits is not >= 0 || receipt.GrossResultCredits is null ||
+            receipt.GrossResultCredits != receipt.TotalCredits - receipt.RealizedCargoCostCredits.Value)) return false;
 
         if (result.Status != CommandResultStatus.Executed)
         {
@@ -181,6 +186,8 @@ public static class ScenarioLoader
         var gs = scenario.GameState;
         if (gs is null)
             throw new ScenarioException("Missing gameState.");
+        if (scenario.SaveFormatVersion >= TradingEconomySaveMigration.ManifestSaveVersion && gs.MasterSeed is null)
+            throw new ScenarioException("Trading economy save: missing masterSeed. Save was not modified.");
         if (scenario.SaveFormatVersion >= 7 && gs.CatalogCompatibility is null)
             throw new ScenarioException("Missing catalogCompatibility in save format 7 or later.");
         if (scenario.SaveFormatVersion >= 6 && gs.SimulationTimeMs is null)
@@ -236,8 +243,30 @@ public static class ScenarioLoader
         foreach (var obj in objects)
         {
             ValidateObject(obj);
+            foreach (var module in obj.Modules ?? [])
+                foreach (var stack in module.Cargo ?? []) ValidateCargoCostMetadata(stack, scenario.SaveFormatVersion);
             ValidateMarketProfileMetadata(scenario.SaveFormatVersion, obj);
         }
+    }
+
+    private static void ValidateCargoCostMetadata(CargoStackData stack, int version)
+    {
+        void Reject() => throw new ScenarioException($"Cargo '{stack.ItemTypeId}' costBasisCredits/acquisitionSources metadata is invalid for save format {version}.");
+        bool missing = stack.CostBasisCredits is null && stack.AcquisitionSources is null;
+        if (missing)
+        {
+            if (version >= 13) Reject();
+            return;
+        }
+        if (stack.CostBasisCredits is < 0 || stack.Quantity == 0 && stack.CostBasisCredits is > 0 ||
+            stack.AcquisitionSources is not { Count: > 0 } sources)
+        { Reject(); return; }
+        if (sources.Any(string.IsNullOrWhiteSpace) || sources.Distinct(StringComparer.Ordinal).Count() != sources.Count) Reject();
+        if (sources.Contains(CargoAcquisitionSources.LegacyUnknown, StringComparer.Ordinal))
+        {
+            if (version == 0 || sources.Count != 1 || stack.CostBasisCredits is not null) Reject();
+        }
+        else if (stack.CostBasisCredits is null || sources.Any(s => !CargoAcquisitionSources.IsKnown(s))) Reject();
     }
 
     private static void ValidateMarketProfileMetadata(int saveFormatVersion, SpaceObjectData obj)

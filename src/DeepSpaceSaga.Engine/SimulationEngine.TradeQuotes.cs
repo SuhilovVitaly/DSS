@@ -209,7 +209,7 @@ public sealed partial class SimulationEngine
         string roomReason;
         if (direction == TradeQuoteDirection.Refuel)
         {
-            byRoom = Math.Max(0, (target.ModuleType.FuelCapacityKg ?? 0) - target.Module.FuelAmountKg);
+            byRoom = Math.Max(0, AvailableFuelTankCapacity(target.Module.ModuleId, target.ModuleType.FuelCapacityKg ?? 0) - target.Module.FuelAmountKg);
             roomReason = CommandReasonCodes.FuelCapacityExceeded;
         }
         else

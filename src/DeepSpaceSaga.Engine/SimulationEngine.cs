@@ -33,6 +33,7 @@ public sealed partial class SimulationEngine : IDisposable
     private ulong _nextEngineCycleId;
     private ulong _nextShipEventId;
     private TradingMapStateData? _tradingMap;
+    private StationClusterMapSnapshot? _clusterMap;
     private StationResourceFieldConfig? _stationResourceFieldConfig;
     private StationResourceFieldsState? _stationResourceFields;
     private ImmutableDictionary<string, ResourceFieldAsteroidData> _resourceAsteroids = ImmutableDictionary<string, ResourceFieldAsteroidData>.Empty;
@@ -207,6 +208,8 @@ public sealed partial class SimulationEngine : IDisposable
     {
         scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true);
         var gs = scenario.GameState;
+        if ((isSave || scenario.SaveFormatVersion > 0) && gs.MarketEventCatalogFingerprint is { } eventFingerprint && eventFingerprint != _registry.StationMarketEventCatalogFingerprint)
+            throw new ScenarioException("Incompatible market event catalog fingerprint. Save was not modified.");
         if (gs.CatalogCompatibility is { } catalog && catalog != _registry.CatalogCompatibility)
             throw new ScenarioException("Incompatible catalogVersion, rulesVersion or catalog fingerprint. Save was not modified.");
         if ((isSave || scenario.SaveFormatVersion > 0) && gs.CatalogCompatibility is null && _registry.ItemTypes.Count > 0 &&
@@ -240,8 +243,22 @@ public sealed partial class SimulationEngine : IDisposable
             gs = gs with { StationResourceFields = StationResourceFields.ValidateSaved(ScenarioGroupPlacement.InitialGeometry(gs), _registry).StationResourceFields };
         else if (!isSave && scenario.SaveFormatVersion == 0 && gs.TradingMap is not null && _stationResourceFieldConfig is not null)
             gs = StationResourceFields.Generate(gs, resolvedMasterSeed, _stationResourceFieldConfig, _registry);
+        StationClusterMapSnapshot? clusterMap = gs.ClusterMap;
         if (!isSave && scenario.SaveFormatVersion == 0 && generation is not null)
+        {
             gs = SolarSystemGenerator.Generate(scenario with { GameState = gs }, generation, _registry, resolvedMasterSeed).GameState;
+            if (generation.Clusters is { } clusters)
+            {
+                var result = StationClusterGenerator.Generate(scenario with { GameState = gs }, clusters, _registry, resolvedMasterSeed);
+                if (_stationResourceFieldConfig is { } resourceConfig)
+                {
+                    result = result with { World = result.World with { GameState = StationResourceFields.ExtendForClusters(result.World.GameState, resolvedMasterSeed, resourceConfig, _registry) } };
+                    result = StationClusterGenerator.BindResources(result);
+                }
+                gs = result.World.GameState;
+                clusterMap = result.Map;
+            }
+        }
         var resourceAsteroids = (gs.StationResourceFields?.Asteroids ?? [])
             .ToImmutableDictionary(a => a.ObjectId, StringComparer.Ordinal);
         var neutralResourceImages = gs.SpaceObjects.Where(o => resourceAsteroids.ContainsKey(o.ObjectId))
@@ -259,7 +276,7 @@ public sealed partial class SimulationEngine : IDisposable
             // Convert m/s to km/s for the existing motion system
             double speedKmS = obj.SpeedMps / 1000.0;
 
-            var modules = BuildRuntimeModules(obj);
+            var modules = BuildRuntimeModules(obj, scenario.SaveFormatVersion);
 
             bool isStation = obj.ObjectType == SpaceObjectType.Station;
             bool isPlayerShip = obj.ObjectType == SpaceObjectType.PlayerShip;
@@ -283,7 +300,7 @@ public sealed partial class SimulationEngine : IDisposable
                 ? ResolveStationProducingModules(obj)
                 : ImmutableArray<StationProducingModuleRuntime>.Empty;
             var events = isStation
-                ? ResolveStationEvents(obj)
+                ? ResolveMarketEventsForLoad(obj, gs.GameTimeMs, gs.MarketEventCatalogFingerprint, isSave || scenario.SaveFormatVersion > 0)
                 : ImmutableArray<StationEventRuntime>.Empty;
             var crew = isShip
                 ? ResolveShipCrew(obj)
@@ -347,6 +364,8 @@ public sealed partial class SimulationEngine : IDisposable
                 RelationToPlayer: obj.RelationToPlayer));
         }
 
+        StationClusterSaveValidation.Validate(gs, _registry);
+
         // Bounded-market preflight on the candidate world: stock/target coverage, one production
         // source per station and a well-formed pending remainder must all hold before anything is
         // replaced, so an invalid save leaves the running world untouched (AC-07).
@@ -381,16 +400,21 @@ public sealed partial class SimulationEngine : IDisposable
             };
         }
 
-        var restoredVoyage = ValidateVoyageState(gs, runtimeObjects);
+        RestoreTradingRouteBindings(BuildClusterVoyageMap(gs.TradingMap, clusterMap, runtimeObjects, gs.MotionTimeMs), runtimeObjects, gs.GameTimeMs, resolvedMasterSeed, clusterMap is not null);
+        var voyageMap = BuildClusterVoyageMap(gs.TradingMap, clusterMap, runtimeObjects, gs.MotionTimeMs);
+        var restoredVoyage = ValidateVoyageState(gs with { TradingMap = voyageMap }, runtimeObjects);
+        ValidateVoyageFuelSave(gs, restoredVoyage, runtimeObjects, clusterMap);
+        var restoredTrading = StageTradingContinuation(scenario with { GameState = gs }, runtimeObjects, restoredVoyage);
+        var restoredKnowledge = InitializeOrLoadMarketKnowledge(gs, runtimeObjects, scenario.SaveFormatVersion, loadingSave);
         var combatState = BuildCombatState(gs.SpaceObjects, runtimeObjects);
         StageCombatRestore(gs.CombatState, runtimeObjects, combatState.Launchers);
         StageLegacyWeaponRatings(runtimeObjects);
         var defenses = BuildDefenseState(runtimeObjects);
         StageDefenseRestore(gs.DefenseState, runtimeObjects, defenses);
 
+        ValidateDialogueState(gs.DialogueState, runtimeObjects);
         lock (_worldStateLock)
         {
-            ValidateDialogueState(gs.DialogueState, runtimeObjects);
             PlayerShipObjectId = gs.PlayerShipObjectId;
             // Session-interaction state (§54) — never carried over from the previous
             // world, and never read from scenario/save data. Every New Game and Quick
@@ -409,6 +433,7 @@ public sealed partial class SimulationEngine : IDisposable
             // already used to seed station generation.
             MasterSeed = resolvedMasterSeed;
             _solarSystem = gs.SolarSystem;
+            _clusterMap = clusterMap;
             MasterSeedWasMissingOnLoad = resolvedMasterSeedWasMissingOnLoad;
 
             // Player Tokens (Documentation\02-FirstRelease\Mechanics\Money.md): the starting balance
@@ -449,13 +474,15 @@ public sealed partial class SimulationEngine : IDisposable
             _stationTravelReceipts.UnionWith(_economyTime.TravelReceipts ?? []);
             _tradingMap = gs.TradingMap;
             _voyageState = restoredVoyage;
+            _lastVoyageFuelSettlement = gs.LastVoyageFuelSettlement;
+            CommitTradingContinuation(restoredTrading);
+            _marketKnowledge = restoredKnowledge;
             _stationResourceFields = gs.StationResourceFields;
             _resourceAsteroids = resourceAsteroids;
             _neutralResourceImages = neutralResourceImages;
             RestoreCommandJournal(gs);
             RestoreResourceSurveyCommandIds();
-            // Quotes issued against the previous world are never valid in this one.
-            ResetQuoteSession();
+
         }
     }
 
@@ -705,7 +732,11 @@ public sealed partial class SimulationEngine : IDisposable
                 RouteArrivalGameTimeMs: _economyTime.RouteArrivalGameTimeMs, SimulationTimeMs: gameTimeMs,
                 Voyage: BuildVoyageSnapshot(),
                 CombatImpacts: _combatImpacts.ToImmutableArray(),
-                CombatJournal: _combatJournal.ToImmutableArray(), SolarSystemMap: _solarSystem);
+                CombatJournal: _combatJournal.ToImmutableArray(), SolarSystemMap: _solarSystem,
+                TradingRoutes: BuildTradingRouteProjection(clockState.GameTimeMs),
+                LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
+                VoyageFinances: BuildVoyageFinanceProjection(),
+                StationMarketKnowledge: BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: _clusterMap);
         }
     }
 
@@ -747,6 +778,25 @@ public sealed partial class SimulationEngine : IDisposable
         if (station is null || station.Inventory.IsDefaultOrEmpty)
             return null;
 
+        return BuildStationTradeProjection(station);
+    }
+
+    // Read-only diagnostic projection reuses the authoritative market owner. It neither docks
+    // the player nor exposes hidden station budgets through a production Contracts API.
+    internal ImmutableArray<(StationTradeSnapshot Market, long Budget, long MaximumBudget)> CaptureMarketDiagnosticsForTests()
+    {
+        lock (_worldStateLock)
+        {
+            return _objects.Where(o => o.ObjectType == SpaceObjectType.Station && o.MarketProfileId is not null)
+                .OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal)
+                .Select(o => (BuildStationTradeProjection(o), o.MarketBudgetCredits ?? 0,
+                    MarketProfileOf(o) is { Economy: not null } profile ? MarketMaxBudget(profile, o.StationSize) : o.Credits))
+                .ToImmutableArray();
+        }
+    }
+
+    private StationTradeSnapshot BuildStationTradeProjection(SpaceObjectRuntime station)
+    {
         bool bounded = TryGetMarket(station, out var marketProfile, out var marketEconomy);
         var items = ImmutableArray.CreateBuilder<StationInventoryItemSnapshot>(station.Inventory.Length);
         foreach (var item in station.Inventory)
@@ -795,7 +845,7 @@ public sealed partial class SimulationEngine : IDisposable
 
         // Only a profile market publishes its revision; a profile-less one keeps it internal (D-U2).
         return new StationTradeSnapshot(station.InitialMotion.ObjectId, items.MoveToImmutable(),
-            station.MarketProfileId is null ? null : station.MarketRevision);
+            station.MarketProfileId is null ? null : station.MarketRevision, BuildActiveEventProjection(station, _processedWorldTimeMs));
     }
 
     /// <summary>
@@ -1053,11 +1103,22 @@ public sealed partial class SimulationEngine : IDisposable
             TradingMap: _tradingMap,
             StationResourceFields: _stationResourceFields,
             VoyageState: _voyageState,
-            CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState(), SolarSystem: _solarSystem);
+            CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState(), SolarSystem: _solarSystem,
+            MarketEventCatalogFingerprint: _registry.StationMarketEvents.Count > 0 ? _registry.StationMarketEventCatalogFingerprint : null,
+            LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
+            MarketKnowledge: CaptureMarketKnowledge(clockState.GameTimeMs),
+            VoyageLedgers: CaptureVoyageLedgers(),
+            VoyageFuelSettlements: _voyageFuelSettlements.Values.OrderBy(v => v.VoyageId, StringComparer.Ordinal).ToArray(),
+            EngineIdentityCounters: new(_nextEngineCycleId, _nextShipEventId), ClusterMap: _clusterMap);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
-            GameState: gameState,
+            GameState: gameState with
+            {
+                TradingEconomyContinuation = CaptureMarketContinuation(TradingEconomySaveMigration.ManifestFromPersistedFacts(gameState))
+                with
+                { DurableTerminalReceiptIds = _durableVoyageTerminalIds.Order(StringComparer.Ordinal).ToArray() }
+            },
             SaveFormatVersion: SaveFormat.CurrentSaveFormatVersion);
     }
 
@@ -1086,7 +1147,8 @@ public sealed partial class SimulationEngine : IDisposable
                     ? module.LastTurnGameTimeMs
                     : null,
                 OperatorCrewId: module.OperatorCrewId,
-                AutoDefenseEnabled: module.AutoDefenseEnabled));
+                AutoDefenseEnabled: module.AutoDefenseEnabled,
+                FuelCostBasisCredits: moduleType.FuelCapacityKg is > 0 ? module.FuelCostBasisCredits : null));
         }
 
         return modules;
@@ -1101,7 +1163,10 @@ public sealed partial class SimulationEngine : IDisposable
         foreach (var stack in module.Cargo)
         {
             var itemType = _registry.ItemTypes.GetDefinition(stack.ItemTypeIndex);
-            cargo.Add(new CargoStackData(ItemTypeId: itemType.TypeId, Quantity: stack.Quantity));
+            cargo.Add(new CargoStackData(ItemTypeId: itemType.TypeId, Quantity: stack.Quantity,
+                CostBasisCredits: stack.Quantity == 0 ? 0 : stack.CostBasisCredits,
+                AcquisitionSources: stack.Quantity == 0 ? ["bootstrap"] : stack.AcquisitionSources.IsDefaultOrEmpty
+                    ? [CargoAcquisitionSources.LegacyUnknown] : stack.AcquisitionSources.ToArray()));
         }
 
         return cargo;
@@ -1136,7 +1201,10 @@ public sealed partial class SimulationEngine : IDisposable
             Description: evt.Description,
             StartedGameTimeMs: evt.StartedGameTimeMs,
             DurationMs: evt.DurationMs,
-            PriceFactors: evt.PriceFactors.Select(BuildSaveEventPriceFactor).ToList());
+            PriceFactors: evt.PriceFactors.Select(BuildSaveEventPriceFactor).ToList(), DefinitionId: evt.DefinitionId,
+            DisplayNameKey: evt.DisplayNameKey, DescriptionKey: evt.DescriptionKey, EffectSummaryKey: evt.EffectSummaryKey,
+            ItemEffects: evt.ItemEffects.IsDefault ? null : evt.ItemEffects.ToArray(), RouteEffect: evt.RouteEffect,
+            ActivationStockDeltaApplied: evt.ActivationStockDeltaApplied);
     }
 
     private StationEventPriceFactorData BuildSaveEventPriceFactor(StationEventPriceFactorRuntime factor)
@@ -1164,7 +1232,7 @@ public sealed partial class SimulationEngine : IDisposable
         _disposed = true;
     }
 
-    private ImmutableArray<InstalledModuleRuntime> BuildRuntimeModules(SpaceObjectData obj)
+    private ImmutableArray<InstalledModuleRuntime> BuildRuntimeModules(SpaceObjectData obj, int saveVersion)
     {
         if (obj.Modules is not { Count: > 0 })
             return ImmutableArray<InstalledModuleRuntime>.Empty;
@@ -1199,7 +1267,7 @@ public sealed partial class SimulationEngine : IDisposable
                     $"Module '{module.ModuleId}' structurePoints {module.StructurePoints} is outside 0..{moduleType.StructurePointsMax}.");
             }
 
-            var cargo = BuildRuntimeCargo(obj, module);
+            var cargo = BuildRuntimeCargo(obj, module, saveVersion);
 
             // Fuel: engine module types carry a FuelCapacityKg; the installed instance
             // stores its current FuelAmountKg. If the JSON omits FuelAmountKg for an
@@ -1231,7 +1299,8 @@ public sealed partial class SimulationEngine : IDisposable
                 lastTurnGameTimeMs,
                 availableCapacityKg,
                 module.OperatorCrewId,
-                module.AutoDefenseEnabled));
+                module.AutoDefenseEnabled,
+                ResolveFuelCostBasis(module, moduleType, fuelAmountKg, obj.ObjectId)));
         }
 
         return modules.ToImmutable();
@@ -1299,7 +1368,7 @@ public sealed partial class SimulationEngine : IDisposable
         return placedCells.MoveToImmutable();
     }
 
-    private ImmutableArray<CargoStackRuntime> BuildRuntimeCargo(SpaceObjectData obj, ShipModuleData module)
+    private ImmutableArray<CargoStackRuntime> BuildRuntimeCargo(SpaceObjectData obj, ShipModuleData module, int saveVersion)
     {
         if (module.Cargo is not { Count: > 0 })
             return ImmutableArray<CargoStackRuntime>.Empty;
@@ -1314,10 +1383,54 @@ public sealed partial class SimulationEngine : IDisposable
                     $"Cargo stack '{stack.ItemTypeId}' in module '{module.ModuleId}' on '{obj.ObjectId}' has negative quantity.");
             }
 
-            cargo.Add(new CargoStackRuntime(itemTypeIndex, stack.Quantity));
+            long? basis = stack.CostBasisCredits;
+            var sources = stack.AcquisitionSources?.Order(StringComparer.Ordinal).ToImmutableArray() ?? default;
+            if (stack.Quantity == 0 && basis is null) { basis = 0; sources = ["bootstrap"]; }
+            else if (sources.IsDefault && saveVersion == 0)
+            {
+                var price = _registry.ItemTypes.GetDefinition(itemTypeIndex).BasePriceCredits;
+                if (price is not > 0)
+                    throw new ScenarioException($"Cargo '{stack.ItemTypeId}' bootstrap requires a positive base price or explicit acquisition metadata.");
+                try { basis = checked(stack.Quantity * price.Value); }
+                catch (OverflowException error) { throw new ScenarioException($"Cargo '{stack.ItemTypeId}' cost basis bootstrap overflowed.", error); }
+                sources = ["bootstrap"];
+            }
+            else if (sources.IsDefault) sources = [CargoAcquisitionSources.LegacyUnknown];
+            cargo.Add(new CargoStackRuntime(itemTypeIndex, stack.Quantity, basis, sources));
         }
 
         return cargo.ToImmutable();
+    }
+
+    /// <summary>Resolve conserved acquisition cost; legacy tanks use the catalog base price once.</summary>
+    private long ResolveFuelCostBasis(ShipModuleData module, ModuleTypeDefinition type, long amount, string objectId)
+    {
+        void Reject(string detail) => throw new ScenarioException($"Module '{module.ModuleId}' on '{objectId}' fuelCostBasisCredits: {detail}.");
+        if (module.FuelCostBasisCredits is < 0) Reject("must be nonnegative");
+        if (type.FuelCapacityKg is not > 0 || amount == 0)
+        {
+            if (module.FuelCostBasisCredits is > 0) Reject("positive basis requires a nonempty fuel tank");
+            return 0;
+        }
+        if (module.FuelCostBasisCredits is { } basis) return basis;
+        if (!_registry.ItemTypes.Contains("item.fuel")) Reject("legacy bootstrap requires item.fuel");
+        var price = _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex("item.fuel")).BasePriceCredits;
+        if (price is not >= 0) Reject("legacy bootstrap requires a nonnegative item.fuel base price");
+        try { return checked(amount * price!.Value); }
+        catch (OverflowException error) { throw new ScenarioException($"Module '{module.ModuleId}' fuel basis bootstrap overflowed.", error); }
+    }
+
+    /// <summary>Conserved proportional basis; exact integer midpoint rounding without Int64 product overflow.</summary>
+    internal static long AllocateFuelCostBasis(long totalKg, long totalBasis, long takenKg)
+    {
+        if (totalKg < 0 || totalBasis < 0 || takenKg < 0 || takenKg > totalKg || totalKg == 0 && totalBasis != 0)
+            throw new ArgumentOutOfRangeException(nameof(takenKg), "Fuel allocation requires consistent nonnegative kg and basis.");
+        if (takenKg == 0) return 0;
+        if (takenKg == totalKg) return totalBasis;
+        Int128 scaled = checked((Int128)totalBasis * takenKg);
+        Int128 whole = scaled / totalKg;
+        if (scaled % totalKg * 2 >= totalKg) whole++;
+        return checked((long)whole);
     }
 
     /// <summary>
@@ -1648,7 +1761,7 @@ public sealed partial class SimulationEngine : IDisposable
             var recipe = _registry.FactoryTypes.GetDefinition(factoryTypeIndex).Recipe;
             if (recipe.CycleDurationMs <= 0 || recipe.Inputs.Concat(recipe.Outputs).Any(m => m.Count <= 0 || !_registry.ItemTypes.Contains(m.ItemTypeId)) ||
                 recipe.Inputs.Select(m => m.ItemTypeId).Distinct(StringComparer.Ordinal).Count() != recipe.Inputs.Length)
-                throw new ScenarioException("Invalid timed production recipe.");
+                throw new ScenarioException($"Station '{obj.ObjectId}', market profile '{obj.MarketProfileId ?? "legacy"}', producing module '{module.ProducingModuleTypeId}': recipe duration and material counts must be positive, material IDs known, and inputs unique. Save was not modified.");
             // Pending remainders are addressed by stable item id in the save and resolved to
             // registry indices here; their semantic checks run in the market preflight.
             var pendingOutput = ImmutableArray<StationInventoryItemRuntime>.Empty;
@@ -2269,7 +2382,7 @@ public sealed partial class SimulationEngine : IDisposable
                 var blocker = ResolveVoyageDepartureBlock(obj, command.TargetObjectId);
                 if (blocker is not null)
                 {
-                    if (!validateOnly)
+                    if (!validateOnly && blocker is not (CommandReasonCodes.InsufficientVoyageFuel or CommandReasonCodes.FuelEfficiencyUnavailable or "value_overflow"))
                         _voyageState = new VoyageStateData(VoyagePhases.Docked, BlockReasonCode: blocker);
                     return CommandStartOutcome.Rejected(blocker);
                 }
@@ -2281,6 +2394,12 @@ public sealed partial class SimulationEngine : IDisposable
             var currentMotion = PredictMotion(obj, elapsedMs);
             if (_tradingMap is not null)
             {
+                var route = FindEffectiveDepartureRoute(obj.DockedStationObjectId!, command.TargetObjectId!);
+                if (route is null || route.Availability == TradingRouteAvailability.Unavailable)
+                    return CommandStartOutcome.Rejected(CommandReasonCodes.RouteUnavailable);
+                // Check the complete schedule before changing voyage or undocking state.
+                if (_processedWorldTimeMs > long.MaxValue - route.EffectiveTravelEstimateGameTimeMs)
+                    return CommandStartOutcome.Rejected(CommandReasonCodes.RouteUnavailable);
                 var departureTarget = _objects.First(o => o.InitialMotion.ObjectId == command.TargetObjectId);
                 var departureMotion = PredictMotion(departureTarget,
                     Math.Max(0, gameTimeMs - departureTarget.StartGameTimeMs));
@@ -2289,8 +2408,21 @@ public sealed partial class SimulationEngine : IDisposable
                 double distance = Math.Sqrt(departureDx * departureDx + departureDy * departureDy);
                 if (!double.IsFinite(distance) || distance <= 0)
                     return CommandStartOutcome.Rejected(CommandReasonCodes.VoyageDestinationUnavailable);
-                _voyageState = new VoyageStateData(VoyagePhases.Undocking, command.CommandId,
-                    obj.DockedStationObjectId, command.TargetObjectId, gameTimeMs, distance);
+                var fuelBlocker = PrepareVoyageFuel(obj, route.BaseEdge.DistanceKm, route.EffectiveFuelMultiplierPermille,
+                    out var reservedModules, out var fuelParts, out var fuelDistance, out var efficiency);
+                if (fuelBlocker is not null) return CommandStartOutcome.Rejected(fuelBlocker);
+                obj = obj with { Modules = reservedModules };
+                var departureVoyage = new VoyageStateData(VoyagePhases.Undocking, command.CommandId,
+                    obj.DockedStationObjectId, command.TargetObjectId, gameTimeMs, distance,
+                    TravelEstimateGameTimeMs: route.EffectiveTravelEstimateGameTimeMs,
+                    FuelMultiplierPermille: route.EffectiveFuelMultiplierPermille,
+                    RiskProfileId: route.BaseEdge.RiskProfileId, ActiveEventIds: route.ActiveEventIds,
+                    StartedGameTimeMs: _processedWorldTimeMs,
+                    ArrivalGameTimeMs: checked(_processedWorldTimeMs + route.EffectiveTravelEstimateGameTimeMs),
+                    FuelReservationParts: fuelParts, FuelDistanceKm: fuelDistance, FuelEfficiencyKmPerKg: efficiency);
+                try { BeginVoyageLedger(departureVoyage, _processedWorldTimeMs); }
+                catch (OverflowException) { return CommandStartOutcome.Rejected("value_overflow"); }
+                _voyageState = departureVoyage;
             }
             _objects[objectIndex] = obj with
             {
@@ -2407,7 +2539,8 @@ public sealed partial class SimulationEngine : IDisposable
     /// the station's hidden Credits balance cannot afford the full request (Money.md) — see
     /// <see cref="CommandResult.ExecutedQuantity"/>.
     /// A command carrying any quote binding field (QuoteId or MarketRevision) goes through the quoted
-    /// path (SimulationEngine.TradeExecution.cs) and never falls back to this legacy one
+    /// path (SimulationEngine.TradeExecution.cs) and never falls back to this legacy one.
+    /// Profile markets require a quote; only no-profile stations retain unquoted execution
     /// (EP-0001-US-0003-TK-0002).
     /// </summary>
     private CommandStartOutcome TryStartTradeCommand(PlayerCommand command, long gameTimeMs)
@@ -2426,6 +2559,9 @@ public sealed partial class SimulationEngine : IDisposable
         if (!TryResolveTradeTarget(command.ObjectId, command.ModuleId, command.CommandType, command.ItemTypeId,
                 command.Quantity, out var target, out string reasonCode))
             return CommandStartOutcome.Rejected(reasonCode);
+
+        if (target.Station.MarketProfileId is not null)
+            return RejectQuotedTrade(command, CommandReasonCodes.QuoteRequired);
 
         int objectIndex = target.ObjectIndex;
         var obj = target.Ship;
@@ -2474,14 +2610,8 @@ public sealed partial class SimulationEngine : IDisposable
                 Inventory = updatedInventory,
             };
 
-            var updatedShip = UpdateModule(obj, moduleIndex, m =>
-            {
-                int stackIndex = FindCargoStackIndex(m.Cargo, itemTypeIndex);
-                var updatedCargo = stackIndex >= 0
-                    ? m.Cargo.SetItem(stackIndex, m.Cargo[stackIndex] with { Quantity = checked(m.Cargo[stackIndex].Quantity + qty) })
-                    : m.Cargo.Add(new CargoStackRuntime(itemTypeIndex, qty));
-                return m with { Cargo = updatedCargo, AvailableCapacityKg = ComputeAvailableCapacityKg(moduleType, updatedCargo) };
-            });
+            var updatedShip = UpdateModule(obj, moduleIndex,
+                m => WithCargoDelta(m, moduleType, itemTypeIndex, qty, out _, cost));
 
             PlayerCredits = updatedCredits;
             _objects[stationIndex] = updatedStation;
@@ -2536,15 +2666,8 @@ public sealed partial class SimulationEngine : IDisposable
                 Inventory = updatedInventory,
             };
 
-            var updatedShip = UpdateModule(obj, moduleIndex, m =>
-            {
-                int idx = FindCargoStackIndex(m.Cargo, itemTypeIndex);
-                long remaining = m.Cargo[idx].Quantity - executedQty;
-                var updatedCargo = remaining > 0
-                    ? m.Cargo.SetItem(idx, m.Cargo[idx] with { Quantity = remaining })
-                    : m.Cargo.RemoveAt(idx);
-                return m with { Cargo = updatedCargo, AvailableCapacityKg = ComputeAvailableCapacityKg(moduleType, updatedCargo) };
-            });
+            var updatedShip = UpdateModule(obj, moduleIndex,
+                m => WithCargoDelta(m, moduleType, itemTypeIndex, -executedQty, out _));
 
             PlayerCredits = updatedCredits;
             _objects[stationIndex] = updatedStation;
@@ -2562,7 +2685,7 @@ public sealed partial class SimulationEngine : IDisposable
         // 084409 decision 3: Fuel is only special-cased for Buy/Refuel routing, not for how its
         // mass is measured on this branch).
         {
-            long fuelCapacityKg = moduleType.FuelCapacityKg ?? 0;
+            long fuelCapacityKg = AvailableFuelTankCapacity(module.ModuleId, moduleType.FuelCapacityKg ?? 0);
             long cost = checked(unitPriceCredits * qty);
             if (cost > PlayerCredits)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.InsufficientPlayerCredits);
@@ -2585,7 +2708,7 @@ public sealed partial class SimulationEngine : IDisposable
                 Inventory = updatedInventory,
             };
 
-            var updatedShip = UpdateModule(obj, moduleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + qty) });
+            var updatedShip = UpdateModule(obj, moduleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + qty), FuelCostBasisCredits = checked(m.FuelCostBasisCredits + cost) });
             PlayerCredits = updatedCredits;
             _objects[stationIndex] = updatedStation;
             _objects[objectIndex] = updatedShip;
@@ -3806,7 +3929,10 @@ internal sealed record StationEventRuntime(
     string? Description,
     long StartedGameTimeMs,
     long? DurationMs,
-    ImmutableArray<StationEventPriceFactorRuntime> PriceFactors);
+    ImmutableArray<StationEventPriceFactorRuntime> PriceFactors,
+    string? DefinitionId = null, string? DisplayNameKey = null, string? DescriptionKey = null, string? EffectSummaryKey = null,
+    ImmutableArray<StationMarketEventItemEffectData> ItemEffects = default, StationMarketEventRouteEffectData? RouteEffect = null,
+    bool ActivationStockDeltaApplied = false);
 
 /// <summary>
 /// One multiplicative price factor contributed by a <see cref="StationEventRuntime"/>. See
@@ -3831,11 +3957,14 @@ internal sealed record InstalledModuleRuntime(
     long? LastTurnGameTimeMs = null,
     long? AvailableCapacityKg = null,
     string? OperatorCrewId = null,
-    bool AutoDefenseEnabled = true);
+    bool AutoDefenseEnabled = true,
+    long FuelCostBasisCredits = 0);
 
 internal sealed record CargoStackRuntime(
     int ItemTypeIndex,
-    long Quantity);
+    long Quantity,
+    long? CostBasisCredits = null,
+    ImmutableArray<string> AcquisitionSources = default);
 
 /// <summary>One tradeable item's stock on a station (see StationInventoryItemData).</summary>
 internal sealed record StationInventoryItemRuntime(

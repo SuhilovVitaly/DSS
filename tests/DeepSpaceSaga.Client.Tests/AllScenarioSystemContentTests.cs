@@ -26,7 +26,7 @@ public sealed class AllScenarioSystemContentTests
             Assert.InRange(Math.Sqrt(ship.X * ship.X + ship.Y * ship.Y) / 10 / ship.MaxSpeedKmS!.Value * 300 / 86400, 50, 75);
             string name = Path.GetFileName(Path.GetDirectoryName(scenario.ScenarioPath))!;
             if (name == "Default_500") Assert.Equal(500, snapshot.Objects.Count(o => o.ObjectType == "Asteroid" && o.Orbit is null));
-            if (name == "MarketProfiles") Assert.Equal(5, snapshot.Objects.Count(o => o.ObjectType == "Station"));
+            Assert.InRange(snapshot.ClusterMap!.Clusters.Single(c => c.Id == snapshot.ClusterMap.StartClusterId).StationIds.Length, 10, 12);
             Assert.Equal(name == "Docked", ship.IsDocked);
         }
     }

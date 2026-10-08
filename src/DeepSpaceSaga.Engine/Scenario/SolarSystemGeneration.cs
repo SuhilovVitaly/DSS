@@ -19,7 +19,20 @@ public sealed record SolarSystemGenerationConfig(
     [property: JsonPropertyName("orbitClearanceWorld")] double OrbitClearanceWorld,
     [property: JsonPropertyName("asteroidsPerBelt")] int AsteroidsPerBelt,
     [property: JsonPropertyName("decorationSamplesPerBelt")] int DecorationSamplesPerBelt,
-    [property: JsonPropertyName("enabledScenarios")] IReadOnlyList<string> EnabledScenarios);
+    [property: JsonPropertyName("enabledScenarios")] IReadOnlyList<string> EnabledScenarios,
+    [property: JsonPropertyName("clusters")] ClusterGenerationConfig? Clusters = null);
+
+public sealed record ClusterGenerationConfig(
+    [property: JsonPropertyName("minClusters")] int MinClusters,
+    [property: JsonPropertyName("maxClusters")] int MaxClusters,
+    [property: JsonPropertyName("minStations")] int MinStations,
+    [property: JsonPropertyName("maxStations")] int MaxStations,
+    [property: JsonPropertyName("neighbourMinDays")] double NeighbourMinDays,
+    [property: JsonPropertyName("neighbourMaxDays")] double NeighbourMaxDays,
+    [property: JsonPropertyName("diameterMinDays")] double DiameterMinDays,
+    [property: JsonPropertyName("diameterMaxDays")] double DiameterMaxDays,
+    [property: JsonPropertyName("interclusterMinDays")] double InterclusterMinDays,
+    [property: JsonPropertyName("interclusterMaxDays")] double InterclusterMaxDays);
 
 public static class SolarSystemGeneration
 {
@@ -38,6 +51,7 @@ public static class SolarSystemGeneration
             c.EnabledScenarios is null || c.EnabledScenarios.Any(string.IsNullOrWhiteSpace) ||
             c.EnabledScenarios.Distinct(StringComparer.OrdinalIgnoreCase).Count() != c.EnabledScenarios.Count)
             throw new ContentException("solarSystem: invalid generation ranges, dimensions or enabledScenarios.");
+        if (c.Clusters is { } clusters) StationClusterGenerator.ValidateConfig(clusters);
         return c;
     }
 

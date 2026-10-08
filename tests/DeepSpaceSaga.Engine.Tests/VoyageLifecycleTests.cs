@@ -54,7 +54,7 @@ public sealed class VoyageLifecycleTests
 
         engine.ReceiveCommand(Undock("unknown", "not-a-station"));
         var unavailable = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0, 0);
-        Assert.Equal(CommandReasonCodes.VoyageDestinationUnavailable,
+        Assert.Equal(CommandReasonCodes.RouteUnavailable,
             Assert.Single(unavailable.CommandResults).ReasonCode);
 
         string destination = options.First(o => o.IsAvailable).DestinationStationObjectId;

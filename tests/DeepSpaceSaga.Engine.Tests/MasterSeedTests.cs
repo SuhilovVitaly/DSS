@@ -129,12 +129,14 @@ public class MasterSeedTests
 
         Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
         var map = Assert.IsType<DeepSpaceSaga.Contracts.SolarSystemMapSnapshot>(engine.CaptureSnapshot().SolarSystemMap);
-        Assert.Equal(65 + 1 + map.Planets.Length + map.Belts.Length * 24, engine.RuntimeObjects.Length);
-        Assert.Equal(5, engine.RuntimeObjects.Count(o => o.ObjectType == "Station"));
+        int stations = engine.CaptureSnapshot().ClusterMap!.Stations.Length;
+        int resources = engine.CaptureSaveState().GameState.StationResourceFields!.Asteroids.Count;
+        Assert.Equal(3 + resources + stations + 1 + map.Planets.Length + map.Belts.Length * 24, engine.RuntimeObjects.Length);
+        Assert.InRange(engine.CaptureSnapshot().ClusterMap!.Clusters.Single(c => c.Id == engine.CaptureSnapshot().ClusterMap!.StartClusterId).StationIds.Length, 10, 12);
         // The two fixed temporary asteroids remain alongside the seeded station network
         // and the 57 generated station resource field asteroids.
         Assert.Equal(2, engine.RuntimeObjects.Count(o => o.PersistenceType == "Temporary"));
-        Assert.Equal(57, engine.RuntimeObjects.Count(o => o.ObjectType == "Asteroid" && o.PersistenceType != "Temporary" && !o.InitialMotion.ObjectId.StartsWith("SYS-AST-", StringComparison.Ordinal)));
+        Assert.Equal(resources, engine.RuntimeObjects.Count(o => o.ObjectType == "Asteroid" && o.PersistenceType != "Temporary" && !o.InitialMotion.ObjectId.StartsWith("SYS-AST-", StringComparison.Ordinal)));
 
         Assert.NotEqual(0UL, engine.MasterSeed);
         Assert.True(engine.MasterSeedWasMissingOnLoad); // DefaultScenario has no masterSeed field

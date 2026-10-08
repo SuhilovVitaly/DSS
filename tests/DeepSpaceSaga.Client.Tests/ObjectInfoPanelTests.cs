@@ -115,6 +115,200 @@ public class ObjectInfoPanelTests
         Assert.Equal("Prospector", Assert.Single(lines, l => l.Label == "Name").Value);
     }
 
+    private static StationMarketKnowledgeSnapshot Market(string id = "STATION-A", bool stale = false, bool available = true) =>
+        new(id, "Mining", available, 731, 53, stale,
+            [new("item.water", StationMarketStockState.Shortage), new("item.steel", StationMarketStockState.Normal),
+             new("item.ice", StationMarketStockState.Surplus), new("item.iron-ore", StationMarketStockState.Surplus)]);
+
+    private static ObjectInfoPanelData MarketData(StationMarketKnowledgeSnapshot? market) =>
+        new("STATION-A", "Station A", 0, 90, SpaceObjectType.Station, MarketKnowledge: market);
+
+    private static AuthoritativeSnapshot MarketSnapshot(ulong sequence = 1,
+        ImmutableArray<StationMarketKnowledgeSnapshot> markets = default, string targetType = SpaceObjectType.Station) =>
+        new(sequence, 999999, SimulationSpeed.Speed0,
+            [new(PlayerShipId, 10000, 10000, 0, 0, ObjectType: SpaceObjectType.PlayerShip, RenderObjectType: SpaceObjectType.PlayerShip),
+             new("STATION-A", 10000, 10060, 0, 90, ObjectType: targetType, RenderObjectType: targetType),
+             new("STATION-B", 10060, 10000, 0, 0, ObjectType: SpaceObjectType.Station, RenderObjectType: SpaceObjectType.Station)],
+            PlayerShipObjectId: PlayerShipId, StationMarketKnowledge: markets,
+            DockedStationTrade: new("STATION-A", [new("item.ice", 88114455, 99112233, 77115566)]));
+
+    [Theory]
+    [InlineData(false, true, "Available / FRESH")]
+    [InlineData(true, true, "Available / STALE")]
+    [InlineData(false, false, "Unavailable / FRESH")]
+    [InlineData(true, false, "Unavailable / STALE")]
+    public void Market_lines_show_role_availability_observed_time_and_freshness(bool stale, bool available, string text)
+    {
+        var lines = ObjectInfoPanel.BuildLines(MarketData(Market(stale: stale, available: available)));
+        Assert.Equal(new[] { "Name", "Speed", "Direction", "Role", "Market", "Observed", "Shortage", "Normal", "Surplus" }, lines.Select(l => l.Label));
+        Assert.Equal(("Role", "Mining"), lines[3]);
+        Assert.Equal(("Market", text), lines[4]);
+        Assert.Equal(("Observed", "T+731 ms"), lines[5]);
+    }
+
+    [Fact]
+    public void Market_lines_group_sorted_item_ids_by_authoritative_band()
+    {
+        var market = Market() with { StockBands = [new("z", StationMarketStockState.Normal), new("a", StationMarketStockState.Normal)] };
+        var lines = ObjectInfoPanel.BuildLines(MarketData(market));
+        Assert.Equal(("Shortage", "—"), lines[6]);
+        Assert.Equal(("Normal", "a, z"), lines[7]);
+        Assert.Equal(("Surplus", "—"), lines[8]);
+        Assert.Equal("—", ObjectInfoPanel.BuildLines(MarketData(market with { StockBands = default }))[7].Value);
+    }
+
+    [Fact]
+    public void Stale_market_is_explicit_text_not_inferred_client_side()
+    {
+        var (buffer, screen) = CreateScreen();
+        buffer.Update(MarketSnapshot(markets: [Market()]));
+        RenderScreen(screen);
+        screen.OnMouseDown(640, 420);
+        Assert.Equal("Available / FRESH", Assert.Single(ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo), l => l.Label == "Market").Value);
+        buffer.Update(MarketSnapshot(2, [Market(stale: true)]));
+        RenderScreen(screen);
+        Assert.Equal("Available / STALE", Assert.Single(ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo), l => l.Label == "Market").Value);
+        Assert.Equal("T+731 ms", Assert.Single(ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo), l => l.Label == "Observed").Value);
+    }
+
+    [Fact]
+    public void Station_without_observation_has_no_market_lines()
+    {
+        Assert.Equal(3, ObjectInfoPanel.BuildLines(MarketData(null)).Count);
+        var (buffer, screen) = CreateScreen();
+        buffer.Update(MarketSnapshot());
+        RenderScreen(screen);
+        screen.OnMouseDown(640, 420);
+        Assert.Null(screen.SelectedOrActiveObjectInfo!.Value.MarketKnowledge);
+        Assert.DoesNotContain(ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo), l => l.Label == "Market");
+    }
+
+    [Theory]
+    [InlineData(SpaceObjectType.PlayerShip)]
+    [InlineData(SpaceObjectType.Asteroid)]
+    [InlineData(SpaceObjectType.NpcShip)]
+    [InlineData(SpaceObjectType.UnknownSpaceObject)]
+    public void Non_station_never_receives_station_market_knowledge(string type)
+    {
+        var (buffer, screen) = CreateScreen();
+        buffer.Update(MarketSnapshot(markets: [Market(), Market(PlayerShipId)], targetType: type));
+        RenderScreen(screen);
+        screen.OnMouseDown(640, 420);
+        Assert.Null(screen.SelectedOrActiveObjectInfo!.Value.MarketKnowledge);
+        Assert.Null(screen.PlayerShipInfo!.Value.MarketKnowledge);
+        Assert.Equal(3, ObjectInfoPanel.BuildLines(MarketData(Market()) with { RenderObjectType = type }).Count);
+    }
+
+    [Fact]
+    public void Hovered_station_knowledge_has_priority_over_selected_station()
+    {
+        var (buffer, screen) = CreateScreen();
+        var a = Market();
+        var b = Market("STATION-B", stale: true);
+        buffer.Update(MarketSnapshot(markets: [a, b]));
+        RenderScreen(screen);
+        screen.OnMouseDown(640, 420);
+        Assert.Same(a, screen.SelectedOrActiveObjectInfo!.Value.MarketKnowledge);
+        screen.OnMouseMove(700, 360);
+        RenderScreen(screen);
+        Assert.Equal("STATION-A", screen.SelectedObjectId);
+        Assert.Equal("STATION-B", screen.ActiveObjectId);
+        Assert.Same(b, screen.SelectedOrActiveObjectInfo!.Value.MarketKnowledge);
+        screen.OnMouseMove(-1, -1);
+        RenderScreen(screen);
+        Assert.Same(a, screen.SelectedOrActiveObjectInfo!.Value.MarketKnowledge);
+    }
+
+    [Fact]
+    public void New_snapshot_replaces_market_knowledge_without_client_cache()
+    {
+        var (buffer, screen) = CreateScreen();
+        buffer.Update(MarketSnapshot(markets: [Market()]));
+        RenderScreen(screen);
+        screen.OnMouseDown(640, 420);
+        buffer.Update(MarketSnapshot(2, [Market() with { StationRole = "Industrial" }]));
+        RenderScreen(screen);
+        Assert.Equal("Industrial", screen.SelectedOrActiveObjectInfo!.Value.MarketKnowledge!.StationRole);
+        buffer.Update(MarketSnapshot(3));
+        RenderScreen(screen);
+        Assert.Null(screen.SelectedOrActiveObjectInfo!.Value.MarketKnowledge);
+        buffer.Update(MarketSnapshot(4, [Market("station-a")]));
+        RenderScreen(screen);
+        Assert.Null(screen.SelectedOrActiveObjectInfo!.Value.MarketKnowledge);
+    }
+
+    [Fact]
+    public void Market_lines_never_show_price_quantity_budget_or_quote()
+    {
+        var (buffer, screen) = CreateScreen();
+        buffer.Update(MarketSnapshot(markets: [Market()]));
+        RenderScreen(screen);
+        screen.OnMouseDown(640, 420);
+        var lines = JsonSerializer.Serialize(ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo)
+            .Select(l => new { l.Label, l.Value }));
+        foreach (string forbidden in new[] { "88114455", "99112233", "77115566", "Price", "Quantity", "Budget", "Quote", "Credits" })
+            Assert.DoesNotContain(forbidden, lines, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(3, ObjectInfoPanel.BuildLines(MarketData(Market("WRONG-ID"))).Count);
+    }
+
+    [Fact]
+    public void Cluster_directions_scroll_within_small_viewport_and_reset_on_selection()
+    {
+        var panel = new ObjectInfoPanel();
+        var data = MarketData(Market()) with
+        {
+            ClusterName = "District 5", ClusterProfile = "market.transit", StraightFlightDays = 12,
+            EstimateMotionTimeMs = 123, ClusterDirections = string.Join("; ", Enumerable.Range(1, 60).Select(i => $"Station {i}: visit / return"))
+        };
+        var lines = panel.BuildRenderLines(data);
+        Assert.True(lines.FindIndex(l => l.Label == "Straight flight estimate") < lines.FindIndex(l => l.Label == "Potential cargo"));
+        Assert.Contains("Station 60", string.Join(" ", lines.Select(l => l.Value)));
+        using var bitmap = new SKBitmap(1280, 480);
+        using var canvas = new SKCanvas(bitmap);
+        panel.Render(canvas, 1280, 8, null, data, 480);
+        var body = panel.RowBodyRects[1];
+        Assert.InRange(body.Bottom, 0, 472);
+        Assert.True(panel.Scroll(body.MidX, body.MidY, -1));
+        Assert.True(panel.ScrollOffset(1) > 0);
+        Assert.False(panel.Scroll(0, 0, -1));
+        Assert.False(panel.Scroll(body.MidX, body.MidY, float.NaN));
+        for (int i = 0; i < 200; i++) panel.Scroll(body.MidX, body.MidY, -1);
+        Assert.InRange(panel.ScrollOffset(1), 0, lines.Count * 16 + 12 - body.Height);
+        panel.Render(canvas, 1280, 8, null, data with { ObjectId = "STATION-B" }, 480);
+        Assert.Equal(0, panel.ScrollOffset(1));
+    }
+
+    [Fact]
+    public void Market_values_wrap_inside_existing_panel_and_determine_body_height()
+    {
+        var panel = new ObjectInfoPanel();
+        var data = MarketData(Market() with { StockBands = [new(new string('x', 120), StationMarketStockState.Normal)] });
+        var wrapped = panel.BuildRenderLines(data);
+        Assert.True(wrapped.Count > 9);
+        Assert.Equal(new string('x', 120), string.Concat(wrapped.SkipWhile(l => l.Label != "Normal").TakeWhile(l => l.Label != "Surplus").Select(l => l.Value)));
+        using var bitmap = new SKBitmap(1280, 800);
+        using var canvas = new SKCanvas(bitmap);
+        panel.Render(canvas, 1280, 0, null, data);
+        Assert.True(panel.RowBodyRects[1].Height >= wrapped.Count * 16 + 12);
+        var directory = Environment.GetEnvironmentVariable("DSS_TRADE_RENDER_DIR");
+        if (directory is not null)
+        {
+            Directory.CreateDirectory(directory);
+            canvas.Clear(new SKColor(2, 16, 24));
+            panel.Render(canvas, 1280, 0, null, MarketData(Market() with
+            {
+                StockBands =
+                [new("item.food-rations", StationMarketStockState.Shortage), new("item.energy-cells", StationMarketStockState.Shortage),
+                 new("item.electronics", StationMarketStockState.Normal), new("item.iron-ore", StationMarketStockState.Normal),
+                 new("item.steel", StationMarketStockState.Normal), new("item.water", StationMarketStockState.Normal),
+                 new("item.ice", StationMarketStockState.Surplus)]
+            }));
+            using var image = SKImage.FromBitmap(bitmap);
+            using var encoded = image.Encode(SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(Path.Combine(directory, "station-market-knowledge.png"), encoded.ToArray());
+        }
+    }
+
     // ── Resource survey presentation and real-content flow ────────────
 
     [Fact]

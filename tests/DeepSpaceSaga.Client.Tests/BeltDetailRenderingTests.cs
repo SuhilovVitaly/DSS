@@ -8,6 +8,34 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class BeltDetailRenderingTests
 {
+    [Theory]
+    [InlineData(100256d)]
+    [InlineData(50000d)]
+    public void HugeOrbitsSubmitOnlyVisibleAccurateArcs(double minorAxis)
+    {
+        using var path = new SKPath();
+        var viewport = SKRect.Create(512, 128);
+        SolarSystemLayerRenderer.BuildVisibleEllipse(-100000, 64, 100256, minorAxis, viewport, path);
+        Assert.False(path.IsEmpty);
+        Assert.InRange(path.PointCount, 2, 64);
+        Assert.All(path.Points, point =>
+        {
+            Assert.InRange(point.X, -.02f, 512.02f); Assert.InRange(point.Y, -.02f, 128.02f);
+        });
+        using var bitmap = new SKBitmap(512, 128); using var canvas = new SKCanvas(bitmap);
+        using var paint = new SKPaint { Color = SKColors.White, Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = true };
+        canvas.Clear(SKColors.Transparent); canvas.DrawPath(path, paint);
+        foreach (int y in new[] { 10, 64, 118 })
+        {
+            int x = (int)(-100000 + 100256 * Math.Sqrt(1 - Math.Pow((y - 64) / minorAxis, 2)));
+            Assert.Contains(Enumerable.Range(x - 2, 5), px => bitmap.GetPixel(px, y).Alpha > 0);
+        }
+        SolarSystemLayerRenderer.BuildVisibleEllipse(0, 0, 100000, 100000, viewport, path);
+        Assert.True(path.IsEmpty);
+        SolarSystemLayerRenderer.BuildVisibleEllipse(double.NaN, 0, 100000, 100000, viewport, path);
+        Assert.True(path.IsEmpty);
+    }
+
     [Fact]
     public void BeltDetailLodAndSelection()
     {

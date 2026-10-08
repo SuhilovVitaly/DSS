@@ -13,11 +13,12 @@ public class RationScheduleTests
         // Ration/economy fixtures deliberately exercise the legacy stationary world.
         engine.LoadScenario(ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios/Docked/scenario.json")));
         var save = engine.CaptureSaveState();
-        engine.LoadScenario(save with
+        var preparedWorld = save with
         {
             GameState = save.GameState with
             {
                 GameTimeMs = time,
+                MarketKnowledge = [], // This synthetic legacy world has no bounded station markets.
                 TradingMap = null,
                 VoyageState = null,
                 StationResourceFields = null,
@@ -33,10 +34,15 @@ public class RationScheduleTests
                     Modules = o.Modules!.Select(m => m with
                     {
                         Cargo = m.Cargo?.Select(c => c.ItemTypeId == "item.food-rations"
-                        ? c with { Quantity = rations } : c).ToArray()
+                        ? c with { Quantity = rations, CostBasisCredits = checked(rations * 20), AcquisitionSources = ["bootstrap"] } : c).ToArray()
                     }).ToArray()
                 }).ToArray()
             }
+        };
+        engine.LoadScenario(preparedWorld with
+        {
+            GameState = preparedWorld.GameState with
+            { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(preparedWorld.GameState) }
         });
         return engine;
     }
@@ -75,6 +81,7 @@ public class RationScheduleTests
         {
             GameState = save.GameState with
             {
+                MarketKnowledge = [], // This synthetic legacy world has no bounded station markets.
                 TradingMap = null,
                 VoyageState = null,
                 StationResourceFields = null,

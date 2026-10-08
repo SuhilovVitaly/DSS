@@ -9,6 +9,7 @@
     "dialogues": "Data/Dialogues",
     "quests": "Data/Quests",
     "stationMarketProfiles": "Data/Markets/station-market-profiles.json",
+    "stationMarketEvents": "Data/Markets/station-market-events.json",
     "stationResourceFields": "Data/World/station-resource-fields.json",
     "shipClasses": "Data/Ships/ship-classes.json",
     "solarSystem": "Data/Maps/solar-system.json"

@@ -13,5 +13,17 @@
   "orbitClearanceWorld": 100,
   "asteroidsPerBelt": 24,
   "decorationSamplesPerBelt": 2048,
-  "enabledScenarios": ["Default", "Default_500", "Docked", "Undocked", "MarketProfiles", "PlayerShipOnly"]
+  "enabledScenarios": ["Default", "Default_500", "Docked", "Undocked", "MarketProfiles", "PlayerShipOnly"],
+  "clusters": {
+    "minClusters": 3,
+    "maxClusters": 5,
+    "minStations": 10,
+    "maxStations": 12,
+    "neighbourMinDays": 0.5,
+    "neighbourMaxDays": 2,
+    "diameterMinDays": 3,
+    "diameterMaxDays": 7,
+    "interclusterMinDays": 15,
+    "interclusterMaxDays": 35
+  }
 }

@@ -364,4 +364,54 @@ public class CommandResultTests
         Assert.Equal("fuel_trade_forbidden", CommandReasonCodes.FuelTradeForbidden);
         Assert.Equal("insufficient_cargo_quantity", CommandReasonCodes.InsufficientCargoQuantity);
     }
+    [Theory]
+    [InlineData(40L, 60L)]
+    [InlineData(150L, -50L)]
+    [InlineData(100L, 0L)]
+    [InlineData(long.MaxValue, -9223372036854775707L)]
+    public void Trade_receipt_roundtrips_realized_cost_and_positive_negative_or_zero_gross_result(long cost, long gross)
+    {
+        var receipt = new TradeExecutionReceipt("station", "item", "quote", 1, 2, 10, 10, 100,
+            RealizedCargoCostCredits: cost, GrossResultCredits: gross);
+        var actual = JsonSerializer.Deserialize<TradeExecutionReceipt>(JsonSerializer.Serialize(receipt))!;
+        Assert.Equal(cost, actual.RealizedCargoCostCredits);
+        Assert.Equal(gross, actual.GrossResultCredits);
+        Assert.Equal(100 - cost, actual.GrossResultCredits);
+        Assert.Equal(100, actual.TotalCredits);
+    }
+
+    [Fact]
+    public void Legacy_unknown_sell_roundtrips_null_cost_and_result_without_turning_them_into_zero()
+    {
+        var receipt = new TradeExecutionReceipt("station", "item", "quote", 1, 2, 10, 10, 100);
+        var actual = JsonSerializer.Deserialize<TradeExecutionReceipt>(JsonSerializer.Serialize(receipt))!;
+        Assert.Null(actual.RealizedCargoCostCredits);
+        Assert.Null(actual.GrossResultCredits);
+        Assert.Equal(100, actual.TotalCredits);
+    }
+
+    [Theory]
+    [InlineData(TradeCommandTypes.Buy, CommandResultStatus.Executed)]
+    [InlineData(TradeCommandTypes.Refuel, CommandResultStatus.Executed)]
+    [InlineData(TradeCommandTypes.Sell, CommandResultStatus.Rejected)]
+    public void Buy_refuel_and_rejected_receipts_keep_cargo_result_null(string type, CommandResultStatus status)
+    {
+        var result = new CommandResult("command", "ship", "module", type, status, 0,
+            TradeReceipt: new("station", "item", "quote", 1, 2, 1, status == CommandResultStatus.Executed ? 1 : 0, 0));
+        var actual = JsonSerializer.Deserialize<CommandResult>(JsonSerializer.Serialize(result))!.TradeReceipt!;
+        Assert.Null(actual.RealizedCargoCostCredits);
+        Assert.Null(actual.GrossResultCredits);
+    }
+
+    [Fact]
+    public void Legacy_receipt_json_without_cargo_result_fields_remains_compatible()
+    {
+        var receipt = JsonSerializer.Deserialize<TradeExecutionReceipt>(
+            """{"StationObjectId":"station","ExecutedQuantity":1,"TotalCredits":100}""")!;
+        Assert.Null(receipt.RealizedCargoCostCredits);
+        Assert.Null(receipt.GrossResultCredits);
+        Assert.Equal(100, receipt.TotalCredits);
+        Assert.True(receipt.LimitReasons.IsDefaultOrEmpty);
+    }
+
 }

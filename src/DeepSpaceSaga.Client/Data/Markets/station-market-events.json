@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 1,
+  "events": [
+    {
+      "typeId": "event.cargo-convoy",
+      "displayNameKey": "TradeUX.Event.CargoConvoy.Name",
+      "descriptionKey": "TradeUX.Event.CargoConvoy.Description",
+      "effectSummaryKey": "TradeUX.Event.CargoConvoy.Effect",
+      "priority": 40,
+      "chancePermillePerHour": 8,
+      "minDurationHours": 4,
+      "maxDurationHours": 8,
+      "eligibleMarketProfileIds": [
+        "market.hydroponic",
+        "market.industrial",
+        "market.mining",
+        "market.scientific-military",
+        "market.transit"
+      ],
+      "itemEffects": [
+        {
+          "itemTypeId": "item.food-rations",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1000,
+          "priceMultiplierPermille": 800,
+          "activationStockDelta": 24
+        },
+        {
+          "itemTypeId": "item.steel",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1000,
+          "priceMultiplierPermille": 850,
+          "activationStockDelta": 16
+        },
+        {
+          "itemTypeId": "item.water",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1000,
+          "priceMultiplierPermille": 800,
+          "activationStockDelta": 24
+        }
+      ]
+    },
+    {
+      "typeId": "event.decompression",
+      "displayNameKey": "TradeUX.Event.Decompression.Name",
+      "descriptionKey": "TradeUX.Event.Decompression.Description",
+      "effectSummaryKey": "TradeUX.Event.Decompression.Effect",
+      "priority": 80,
+      "chancePermillePerHour": 5,
+      "minDurationHours": 4,
+      "maxDurationHours": 12,
+      "eligibleMarketProfileIds": [
+        "market.hydroponic",
+        "market.industrial",
+        "market.mining",
+        "market.scientific-military",
+        "market.transit"
+      ],
+      "itemEffects": [
+        {
+          "itemTypeId": "item.food-rations",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1500,
+          "priceMultiplierPermille": 1300,
+          "activationStockDelta": 0
+        },
+        {
+          "itemTypeId": "item.steel",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1300,
+          "priceMultiplierPermille": 1200,
+          "activationStockDelta": 0
+        },
+        {
+          "itemTypeId": "item.water",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1600,
+          "priceMultiplierPermille": 1350,
+          "activationStockDelta": 0
+        }
+      ]
+    },
+    {
+      "typeId": "event.hydroponics-failure",
+      "displayNameKey": "TradeUX.Event.HydroponicsFailure.Name",
+      "descriptionKey": "TradeUX.Event.HydroponicsFailure.Description",
+      "effectSummaryKey": "TradeUX.Event.HydroponicsFailure.Effect",
+      "priority": 85,
+      "chancePermillePerHour": 4,
+      "minDurationHours": 8,
+      "maxDurationHours": 24,
+      "eligibleMarketProfileIds": [
+        "market.hydroponic"
+      ],
+      "itemEffects": [
+        {
+          "itemTypeId": "item.food-rations",
+          "productionMultiplierPermille": 300,
+          "demandMultiplierPermille": 1600,
+          "priceMultiplierPermille": 1450,
+          "activationStockDelta": 0
+        },
+        {
+          "itemTypeId": "item.protein-mass",
+          "productionMultiplierPermille": 300,
+          "demandMultiplierPermille": 1000,
+          "priceMultiplierPermille": 1400,
+          "activationStockDelta": 0
+        }
+      ]
+    },
+    {
+      "typeId": "event.pirate-blockade",
+      "displayNameKey": "TradeUX.Event.PirateBlockade.Name",
+      "descriptionKey": "TradeUX.Event.PirateBlockade.Description",
+      "effectSummaryKey": "TradeUX.Event.PirateBlockade.Effect",
+      "priority": 100,
+      "chancePermillePerHour": 3,
+      "minDurationHours": 6,
+      "maxDurationHours": 18,
+      "eligibleMarketProfileIds": [
+        "market.hydroponic",
+        "market.industrial",
+        "market.mining",
+        "market.scientific-military",
+        "market.transit"
+      ],
+      "itemEffects": [
+        {
+          "itemTypeId": "item.electronics",
+          "productionMultiplierPermille": 700,
+          "demandMultiplierPermille": 1300,
+          "priceMultiplierPermille": 1250,
+          "activationStockDelta": 0
+        },
+        {
+          "itemTypeId": "item.food-rations",
+          "productionMultiplierPermille": 700,
+          "demandMultiplierPermille": 1300,
+          "priceMultiplierPermille": 1250,
+          "activationStockDelta": 0
+        },
+        {
+          "itemTypeId": "item.steel",
+          "productionMultiplierPermille": 700,
+          "demandMultiplierPermille": 1300,
+          "priceMultiplierPermille": 1250,
+          "activationStockDelta": 0
+        },
+        {
+          "itemTypeId": "item.water",
+          "productionMultiplierPermille": 700,
+          "demandMultiplierPermille": 1300,
+          "priceMultiplierPermille": 1250,
+          "activationStockDelta": 0
+        }
+      ],
+      "routeEffect": {
+        "availability": "Restricted",
+        "maxAffectedIncidentEdges": 1,
+        "travelTimeMultiplierPermille": 1500,
+        "fuelMultiplierPermille": 1250,
+        "riskProfileId": "risk.pirate-blockade"
+      }
+    },
+    {
+      "typeId": "event.quarantine",
+      "displayNameKey": "TradeUX.Event.Quarantine.Name",
+      "descriptionKey": "TradeUX.Event.Quarantine.Description",
+      "effectSummaryKey": "TradeUX.Event.Quarantine.Effect",
+      "priority": 95,
+      "chancePermillePerHour": 3,
+      "minDurationHours": 8,
+      "maxDurationHours": 24,
+      "eligibleMarketProfileIds": [
+        "market.hydroponic",
+        "market.industrial",
+        "market.mining",
+        "market.scientific-military",
+        "market.transit"
+      ],
+      "itemEffects": [
+        {
+          "itemTypeId": "item.energy-cells",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1200,
+          "priceMultiplierPermille": 1150,
+          "activationStockDelta": 0
+        },
+        {
+          "itemTypeId": "item.food-rations",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1500,
+          "priceMultiplierPermille": 1300,
+          "activationStockDelta": 0
+        },
+        {
+          "itemTypeId": "item.water",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1400,
+          "priceMultiplierPermille": 1250,
+          "activationStockDelta": 0
+        }
+      ],
+      "routeEffect": {
+        "availability": "Unavailable",
+        "maxAffectedIncidentEdges": 1,
+        "travelTimeMultiplierPermille": 1000,
+        "fuelMultiplierPermille": 1000,
+        "riskProfileId": "risk.quarantine"
+      }
+    },
+    {
+      "typeId": "event.reactor-accident",
+      "displayNameKey": "TradeUX.Event.ReactorAccident.Name",
+      "descriptionKey": "TradeUX.Event.ReactorAccident.Description",
+      "effectSummaryKey": "TradeUX.Event.ReactorAccident.Effect",
+      "priority": 90,
+      "chancePermillePerHour": 4,
+      "minDurationHours": 6,
+      "maxDurationHours": 18,
+      "eligibleMarketProfileIds": [
+        "market.hydroponic",
+        "market.industrial",
+        "market.mining",
+        "market.scientific-military",
+        "market.transit"
+      ],
+      "itemEffects": [
+        {
+          "itemTypeId": "item.energy-cells",
+          "productionMultiplierPermille": 500,
+          "demandMultiplierPermille": 1600,
+          "priceMultiplierPermille": 1500,
+          "activationStockDelta": 0
+        }
+      ]
+    },
+    {
+      "typeId": "event.repair-boom",
+      "displayNameKey": "TradeUX.Event.RepairBoom.Name",
+      "descriptionKey": "TradeUX.Event.RepairBoom.Description",
+      "effectSummaryKey": "TradeUX.Event.RepairBoom.Effect",
+      "priority": 60,
+      "chancePermillePerHour": 6,
+      "minDurationHours": 8,
+      "maxDurationHours": 20,
+      "eligibleMarketProfileIds": [
+        "market.industrial",
+        "market.mining",
+        "market.transit"
+      ],
+      "itemEffects": [
+        {
+          "itemTypeId": "item.electronics",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1500,
+          "priceMultiplierPermille": 1350,
+          "activationStockDelta": 0
+        },
+        {
+          "itemTypeId": "item.iron-ore",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1600,
+          "priceMultiplierPermille": 1350,
+          "activationStockDelta": 0
+        },
+        {
+          "itemTypeId": "item.magnesium-ore",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1500,
+          "priceMultiplierPermille": 1300,
+          "activationStockDelta": 0
+        },
+        {
+          "itemTypeId": "item.steel",
+          "productionMultiplierPermille": 1300,
+          "demandMultiplierPermille": 1000,
+          "priceMultiplierPermille": 1150,
+          "activationStockDelta": 0
+        }
+      ]
+    },
+    {
+      "typeId": "event.scientific-contract",
+      "displayNameKey": "TradeUX.Event.ScientificContract.Name",
+      "descriptionKey": "TradeUX.Event.ScientificContract.Description",
+      "effectSummaryKey": "TradeUX.Event.ScientificContract.Effect",
+      "priority": 70,
+      "chancePermillePerHour": 5,
+      "minDurationHours": 6,
+      "maxDurationHours": 16,
+      "eligibleMarketProfileIds": [
+        "market.scientific-military"
+      ],
+      "itemEffects": [
+        {
+          "itemTypeId": "item.electronics",
+          "productionMultiplierPermille": 500,
+          "demandMultiplierPermille": 1000,
+          "priceMultiplierPermille": 1450,
+          "activationStockDelta": 0
+        },
+        {
+          "itemTypeId": "item.energy-cells",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1500,
+          "priceMultiplierPermille": 1350,
+          "activationStockDelta": 0
+        },
+        {
+          "itemTypeId": "item.silicon",
+          "productionMultiplierPermille": 1000,
+          "demandMultiplierPermille": 1700,
+          "priceMultiplierPermille": 1500,
+          "activationStockDelta": 0
+        }
+      ]
+    }
+  ]
+}

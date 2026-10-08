@@ -24,6 +24,7 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly ObjectLabelRenderer _labelRenderer;
     private readonly TacticalMapDepthRenderer _depthRenderer;
     private readonly List<ObjectRenderState> _renderStates = new();
+    private readonly HashSet<string> _missileTrailIds = new(StringComparer.Ordinal);
     private readonly List<FutureTrajectoryPoint> _futureTrajectoryPoints = new(FutureTrajectoryProjector.MaxSamplePoints);
     private readonly SolarSystemLayerRenderer _solarSystemLayer = new();
     private readonly Dictionary<string, RenderMotion> _pausedVisualAnchors = new(StringComparer.Ordinal);
@@ -31,6 +32,7 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly Dictionary<string, ObjectMotionSnapshot> _lastSnapshotBaselineObjects = new(StringComparer.Ordinal);
     private ulong _lastSnapshotBaselineSequence;
     private long _lastSnapshotBaselineGameTimeMs;
+    private long _travelEstimateMotionTimeMs;
     private long _lastObservedForwardJumpMs;
     private bool _hasSnapshotBaseline;
     private bool _diagInterestingFrame;
@@ -564,6 +566,7 @@ public sealed partial class GameSessionScreen : IScreen
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
         if (_combatJournalPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
+        if (_objectInfoPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (!float.IsFinite(delta) || delta == 0 || _viewportW <= 0 || _viewportH <= 0 ||
             IsClickOnUiPanel(x / _uiScale, y / _uiScale))
             return ScreenEvent.None;
@@ -1079,6 +1082,7 @@ public sealed partial class GameSessionScreen : IScreen
         var prediction = _buffer.LatestPrediction;
         var buffered = prediction?.BufferedSnapshot;
         UpdateObjectRenderStates(prediction, deltaSeconds);
+        _travelEstimateMotionTimeMs = prediction is null ? 0 : GetPredictedGameTimeMs(prediction);
 
         UpdateCameraFocusFromPlayer(_renderStates);
         UpdateCombatImportance();
@@ -1111,6 +1115,8 @@ public sealed partial class GameSessionScreen : IScreen
         }
 
         // 2. Camera focus indicator
+        if (buffered is not null)
+            ClusterMapPresentation.Draw(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
         float cx = width / 2f;
         float cy = height / 2f;
         _depthRenderer.DrawFocusIndicator(canvas, cx, cy);
@@ -1276,7 +1282,7 @@ public sealed partial class GameSessionScreen : IScreen
         var playerShip = FindPlayerShip(_renderStates);
         var selectedOrActive = FindRenderStateById(_activeObjectId ?? _selectedObjectId);
         _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
-            ToObjectInfoPanelData(playerShip), ToObjectInfoPanelData(selectedOrActive, playerShip));
+            ToObjectInfoPanelData(playerShip), ToObjectInfoPanelData(selectedOrActive, playerShip), _uiViewportH);
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);
@@ -1587,15 +1593,17 @@ public sealed partial class GameSessionScreen : IScreen
     private void DrawObjectTrails(SKCanvas canvas, int width, int height)
     {
         string? playerShipId = null;
+        _missileTrailIds.Clear();
         foreach (var state in _renderStates)
         {
             if (state.IsPlayerShip)
                 playerShipId = state.Pose.ObjectId;
+            if (state.Source.RenderObjectType == SpaceObjectType.Missile) _missileTrailIds.Add(state.Pose.ObjectId);
         }
 
         foreach (var kvp in _trailStore.Trails)
         {
-            if (FindRenderStateById(kvp.Key)?.Source.RenderObjectType == SpaceObjectType.Missile) continue;
+            if (_missileTrailIds.Contains(kvp.Key)) continue;
             if (_camera.PixelsPerWorldUnit < _mapSettings.TrailDetailPpu && !IsImportantMapObject(kvp.Key)) continue;
             var points = kvp.Value;
             if (points.Count < 2)
@@ -2201,6 +2209,8 @@ public sealed partial class GameSessionScreen : IScreen
             {
                 lines.Add(("Voyage", voyage.Phase == VoyagePhases.InTransit ? "In transit" : voyage.Phase));
                 lines.Add(("Destination", voyage.DestinationDisplayName ?? voyage.DestinationStationObjectId ?? "Unknown"));
+                if (ClusterMapPresentation.ClusterName(buffered.Snapshot, voyage.DestinationStationObjectId) is { } district)
+                    lines.Add(("Destination cluster", district));
                 lines.Add(("Progress", (Math.Clamp(voyage.ProgressPermille, 0, 1000) / 10m)
                     .ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + "%"));
             }
@@ -2258,8 +2268,21 @@ public sealed partial class GameSessionScreen : IScreen
             double dy = p.Y - ship.Pose.Y;
             distanceKm = double.Hypot(dx, dy) / 10.0;
         }
+        // Resolve against this snapshot only. Unknown and non-station objects cannot inherit a market row.
+        StationMarketKnowledgeSnapshot? market = null;
+        var observations = _buffer.Latest?.Snapshot.StationMarketKnowledge ?? default;
+        if (s.Source.ObjectType == SpaceObjectType.Station && p.RenderObjectType == SpaceObjectType.Station &&
+            !observations.IsDefaultOrEmpty)
+            market = observations.FirstOrDefault(o => string.Equals(o.StationObjectId, p.ObjectId, StringComparison.Ordinal));
+        var cluster = ClusterMapPresentation.Station(_buffer.Latest?.Snapshot, p.ObjectId);
+        var resource = ClusterMapPresentation.Resource(_buffer.Latest?.Snapshot, p.ObjectId);
+        var resourceCluster = resource is null ? null : _buffer.Latest?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
-            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), s.Source.Countermeasure);
+            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), s.Source.Countermeasure, market,
+            cluster?.ClusterName, cluster?.Profile, cluster?.Directions, resourceCluster, resource?.AnchorStationId,
+            cluster is not null && distanceKm is { } distance && player is { } playerState
+                ? ClusterMapPresentation.EstimateStraightDays(distance * 10, playerState.Source.MaxSpeedKmS ?? 0) : null,
+            cluster is null ? null : _travelEstimateMotionTimeMs);
     }
 
     /// <summary>

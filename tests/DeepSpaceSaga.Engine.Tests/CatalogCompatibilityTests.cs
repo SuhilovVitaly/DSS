@@ -14,7 +14,8 @@ public sealed class CatalogCompatibilityTests
 
     private static GameDataRegistry RealRegistry() => EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
 
-    private static GameDataRegistry ChangeCatalog(GameDataRegistry source, Func<ItemTypeDefinition, ItemTypeDefinition> change) =>
+    private static GameDataRegistry ChangeCatalog(GameDataRegistry source, Func<ItemTypeDefinition, ItemTypeDefinition> change,
+        Func<StationMarketProfileDefinition, StationMarketProfileDefinition>? profileChange = null) =>
         GameDataRegistry.Create(
             Enumerable.Range(0, source.ModuleCategories.Count).Select(source.ModuleCategories.GetDefinition),
             Enumerable.Range(0, source.ModuleTypes.Count).Select(source.ModuleTypes.GetDefinition),
@@ -24,8 +25,9 @@ public sealed class CatalogCompatibilityTests
             Enumerable.Range(0, source.Recipes.Count).Select(source.Recipes.GetDefinition),
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
-                .Select(source.StationMarketProfiles.GetDefinition),
-            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
+                .Select(source.StationMarketProfiles.GetDefinition).Select(profile => profileChange?.Invoke(profile) ?? profile),
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition),
+            stationMarketEvents: Enumerable.Range(0, source.StationMarketEvents.Count).Select(source.StationMarketEvents.GetDefinition));
 
     private static ItemTypeDefinition[] Items(GameDataRegistry registry) =>
         Enumerable.Range(0, registry.ItemTypes.Count).Select(registry.ItemTypes.GetDefinition).ToArray();
@@ -214,7 +216,7 @@ public sealed class CatalogCompatibilityTests
         string path = Path.Combine(Path.GetDirectoryName(SettingsPath)!, "Scenarios", scenarioName, "scenario.json");
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, path);
         var save = engine.CaptureSaveState();
-        Assert.Equal(12, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(15, SaveFormat.CurrentSaveFormatVersion);
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         var registry = RealRegistry();
         Assert.Equal(registry.CatalogCompatibility, save.GameState.CatalogCompatibility);
@@ -329,7 +331,17 @@ public sealed class CatalogCompatibilityTests
         var registry = RealRegistry();
         using var original = EngineContentLoader.CreateEngineFromSettingsFile(SettingsPath);
         var save = original.CaptureSaveState();
-        if (removePrice) registry = ChangeCatalog(registry, item => item.TypeId == itemId ? item with { BasePriceCredits = null } : item);
+        if (removePrice) registry = ChangeCatalog(registry, item => item.TypeId == itemId ? item with { BasePriceCredits = null } : item,
+            profile => profile.Economy is not { } economy ? profile : profile with
+            {
+                // This fixture exercises scenario inventory validation; remove the optional profile
+                // reference so the newly nontradeable catalog still reaches that exact boundary.
+                Economy = economy with
+                {
+                    ExplicitStockTargets = economy.ExplicitStockTargets.IsDefault ? [] :
+                    economy.ExplicitStockTargets.Where(target => target.ItemTypeId != itemId).ToImmutableArray()
+                },
+            });
         var objects = save.GameState.SpaceObjects.Select(obj => obj.ObjectId == "SPC-0002"
             ? obj with
             {
@@ -338,6 +350,9 @@ public sealed class CatalogCompatibilityTests
                 MarketBudgetCredits = null,
                 MarketRevision = null,
                 Inventory = [new StationInventoryItemData(itemId, 1)]
+            } : obj.MarketProfileId is { } profileId ? obj with
+            {
+                MarketProfileFingerprint = registry.StationMarketProfiles.GetDefinition(registry.StationMarketProfiles.GetIndex(profileId)).Fingerprint
             } : obj).ToArray();
         using var engine = new SimulationEngine(registry);
         var ex = Assert.Throws<ScenarioException>(() => engine.LoadScenario(save with
@@ -658,6 +673,90 @@ public sealed class CatalogCompatibilityTests
     }
 
     [Fact]
+    public void Explicit_stock_targets_are_optional_capacity_without_bootstrap_or_flow()
+    {
+        var baseline = Assert.Single(LoadProfiles(EconomyProfileJson));
+        Assert.Equal("54D14BC95D1BFD36716F76195E9666759BB10F0FAA7C1815F405DBBE2B91EFFA", baseline.Fingerprint);
+        Assert.True(baseline.Economy!.ExplicitStockTargets.IsDefaultOrEmpty);
+        Assert.Equal(baseline.Fingerprint, (baseline with { Economy = baseline.Economy with { ExplicitStockTargets = [] } }).Fingerprint);
+        var document = EconomyDocument();
+        EconomyNode(document)["explicitStockTargets"] = new JsonArray
+        {
+            new JsonObject { ["itemTypeId"] = "item.energy-cells", ["targetStock"] = 144 },
+            new JsonObject { ["itemTypeId"] = "item.silicon", ["targetStock"] = 144 },
+        };
+        var extended = Assert.Single(LoadProfiles(document.ToJsonString()));
+        var created = GameDataRegistry.Create([], [], Items(RealRegistry()), [], stationMarketProfiles: [extended]);
+        Assert.Equal(2, created.StationMarketProfiles.GetDefinition(0).Economy!.ExplicitStockTargets.Length);
+        Assert.Equal(baseline.InitialInventory.ToArray(), extended.InitialInventory.ToArray());
+        Assert.Equal(baseline.SupplyItemTypeIds.ToArray(), extended.SupplyItemTypeIds.ToArray());
+        Assert.Equal(baseline.DemandItemTypeIds.ToArray(), extended.DemandItemTypeIds.ToArray());
+        Assert.Equal(baseline.Economy.HourlyInputs.ToArray(), extended.Economy!.HourlyInputs.ToArray());
+        Assert.Equal(baseline.Economy.HourlyOutputs.ToArray(), extended.Economy.HourlyOutputs.ToArray());
+        Assert.Equal(baseline.Economy.HourlyConsumption.ToArray(), extended.Economy.HourlyConsumption.ToArray());
+        Assert.Equal(5, extended.Economy.AllStockTargets.Count());
+        Assert.NotEqual(baseline.Fingerprint, extended.Fingerprint);
+        Assert.Equal(extended.Fingerprint, (extended with
+        {
+            Economy = extended.Economy with
+            {
+                ExplicitStockTargets = extended.Economy.ExplicitStockTargets.Reverse().ToImmutableArray(),
+            }
+        }).Fingerprint);
+        Assert.NotEqual(extended.Fingerprint, (extended with
+        {
+            Economy = extended.Economy with
+            {
+                ExplicitStockTargets = extended.Economy.ExplicitStockTargets.SetItem(0, new("item.energy-cells", 145)),
+            }
+        }).Fingerprint);
+    }
+
+    [Fact]
+    public void Explicit_stock_target_schema_rejects_malformed_json_with_field_context()
+    {
+        (JsonNode? Value, string Expected)[] cases =
+        [
+            (new JsonObject(), "explicitStockTargets"),
+            (new JsonArray((JsonNode?)null), "explicitStockTargets"),
+            (new JsonArray(new JsonObject { ["itemTypeId"] = "item.energy-cells" }), "targetStock"),
+            (new JsonArray(new JsonObject { ["targetStock"] = 144 }), "itemTypeId"),
+            (new JsonArray(new JsonObject { ["itemTypeId"] = "item.energy-cells", ["targetStock"] = 0.5m }), "explicitStockTargets"),
+            (new JsonArray(new JsonObject { ["itemTypeId"] = "item.energy-cells", ["targetStock"] = 144, ["typo"] = 1 }), "typo"),
+        ];
+        foreach (var (value, expected) in cases)
+        {
+            var document = EconomyDocument();
+            EconomyNode(document)["explicitStockTargets"] = value;
+            Assert.Contains(expected, LoadProfilesError(document.ToJsonString()).Message);
+        }
+    }
+
+    [Fact]
+    public void Explicit_stock_target_semantics_are_validated_on_direct_registry_create()
+    {
+        var baseline = Assert.Single(LoadProfiles(EconomyProfileJson));
+        (ImmutableArray<StationMarketTargetDefinition> Targets, string Expected)[] cases =
+        [
+            ([new("item.unknown", 144)], "unknown item"),
+            ([new("item.fuel", 144)], "refuelStockKg"),
+            ([new("item.ice", 144)], "duplicate item"),
+            ([new("item.energy-cells", 144), new("item.energy-cells", 145)], "duplicate item"),
+            ([new("item.energy-cells", 0)], "must be positive"),
+            ([new("item.energy-cells", long.MaxValue)], "overflows Int64"),
+            ([null!], "must not be null"),
+        ];
+        var items = Items(RealRegistry());
+        foreach (var (targets, expected) in cases)
+        {
+            var profile = baseline with { Economy = baseline.Economy! with { ExplicitStockTargets = targets } };
+            var error = Assert.Throws<ContentException>(() => GameDataRegistry.Create([], [], items, [], stationMarketProfiles: [profile]));
+            Assert.Contains(expected, error.Message);
+            Assert.Contains("explicitStockTargets", error.Message);
+        }
+    }
+
+    [Fact]
     public void Save_v9_roundtrips_market_budget_and_pending_output()
     {
         using var engine = EngineContentLoader.CreateEngineFromSettingsFile(SettingsPath);
@@ -708,4 +807,152 @@ public sealed class CatalogCompatibilityTests
         Assert.True(module!.Active);
         Assert.Null(module.PendingOutput);
     }
+}
+
+
+public sealed class CargoCostPersistenceTests
+{
+    private const string Cargo = QuotedTradeExecutionTests.CargoModuleId;
+    private static ScenarioFile Template(int version, CargoStackData stack)
+    {
+        using var engine = QuotedTradeExecutionTests.CreateMarketEngine();
+        var save = engine.CaptureSaveStateForTests(0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 0);
+        save = QuotedTradeExecutionTests.WithShipModules(save, m => m.ModuleId == Cargo ? m with { Cargo = [stack] } : m);
+        if (version < 9)
+            save = save with
+            {
+                GameState = save.GameState with
+                {
+                    SpaceObjects = save.GameState.SpaceObjects.Select(o =>
+                o.ObjectType != "Station" ? o : o with
+                {
+                    MarketBudgetCredits = null,
+                    MarketRevision = null,
+                    MarketProfileId = version == 0 ? o.MarketProfileId : null,
+                    MarketProfileFingerprint = null
+                }).ToArray()
+                }
+            };
+        return save with { SaveFormatVersion = version, GameState = save.GameState with { MarketKnowledge = version < 14 ? null : save.GameState.MarketKnowledge, TradingEconomyContinuation = version < 15 ? null : save.GameState.TradingEconomyContinuation } };
+    }
+    private static CargoStackData Stack(SimulationEngine engine) => engine.CaptureSaveStateForTests(0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 0)
+        .GameState.SpaceObjects.Single(o => o.ObjectId == QuotedTradeExecutionTests.ShipId).Modules!.Single(m => m.ModuleId == Cargo).Cargo!.Single();
+
+    [Theory]
+    [InlineData(8)]
+    [InlineData(12)]
+    public void Legacy_save_without_basis_stays_unknown_instead_of_zero_or_current_price(int version)
+    {
+        using var engine = new SimulationEngine(QuotedTradeExecutionTests.Registry);
+        engine.LoadScenario(Template(version, new("item.ice", 3)), true);
+        var stack = Stack(engine);
+        Assert.Null(stack.CostBasisCredits);
+        Assert.Equal(new[] { "legacy-unknown" }, stack.AcquisitionSources);
+        var save = engine.CaptureSaveStateForTests(0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 0);
+        Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
+        using var loaded = new SimulationEngine(QuotedTradeExecutionTests.Registry);
+        loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), true);
+        Assert.Equal(JsonSerializer.Serialize(stack), JsonSerializer.Serialize(Stack(loaded)));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Current_save_roundtrips_known_and_legacy_unknown_cargo_metadata(bool unknown)
+    {
+        var stack = unknown ? new CargoStackData("item.ice", 3, null, ["legacy-unknown"]) :
+            new CargoStackData("item.ice", 3, long.MaxValue, ["produced", "mined"]);
+        using var engine = new SimulationEngine(QuotedTradeExecutionTests.Registry);
+        engine.LoadScenario(Template(SaveFormat.CurrentSaveFormatVersion, stack), true);
+        var actual = Stack(engine);
+        Assert.Equal(stack.CostBasisCredits, actual.CostBasisCredits);
+        Assert.Equal(unknown ? new[] { "legacy-unknown" } : ["mined", "produced"], actual.AcquisitionSources);
+        using var loaded = new SimulationEngine(QuotedTradeExecutionTests.Registry);
+        loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 0)), true), true);
+        Assert.Equal(JsonSerializer.Serialize(actual), JsonSerializer.Serialize(Stack(loaded)));
+    }
+
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("negative")]
+    [InlineData("duplicate")]
+    [InlineData("unknown-source")]
+    [InlineData("blank")]
+    [InlineData("mixed-legacy")]
+    [InlineData("known-legacy")]
+    [InlineData("null-known")]
+    [InlineData("empty-sources")]
+    [InlineData("empty-positive")]
+    public void Current_save_rejects_invalid_cost_metadata_without_world_replacement(string failure)
+    {
+        using var engine = new SimulationEngine(QuotedTradeExecutionTests.Registry);
+        var good = Template(13, new("item.ice", 3, 123, ["purchased"]));
+        engine.LoadScenario(good, true);
+        var badStack = failure switch
+        {
+            "missing" => new CargoStackData("item.ice", 3),
+            "negative" => new("item.ice", 3, -1, ["purchased"]),
+            "duplicate" => new("item.ice", 3, 1, ["purchased", "purchased"]),
+            "unknown-source" => new("item.ice", 3, 1, ["market-price"]),
+            "blank" => new("item.ice", 3, 1, [" "]),
+            "mixed-legacy" => new("item.ice", 3, null, ["legacy-unknown", "purchased"]),
+            "known-legacy" => new("item.ice", 3, 1, ["legacy-unknown"]),
+            "null-known" => new("item.ice", 3, null, ["purchased"]),
+            "empty-sources" => new("item.ice", 3, 0, []),
+            _ => new("item.ice", 0, 1, ["purchased"])
+        };
+        var bad = QuotedTradeExecutionTests.WithShipModules(good, m => m.ModuleId == Cargo ? m with { Cargo = [badStack] } : m);
+        var before = JsonSerializer.Serialize(Stack(engine));
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(bad, true));
+        Assert.Equal(before, JsonSerializer.Serialize(Stack(engine)));
+    }
+
+    [Fact]
+    public void New_scenario_bootstraps_exact_basis_and_source_while_overflow_is_atomic()
+    {
+        using var engine = new SimulationEngine(QuotedTradeExecutionTests.Registry);
+        engine.LoadScenario(Template(0, new("item.ice", 3)));
+        var stack = Stack(engine);
+        long price = QuotedTradeExecutionTests.Registry.ItemTypes.GetDefinition(QuotedTradeExecutionTests.Registry.ItemTypes.GetIndex("item.ice")).BasePriceCredits!.Value;
+        Assert.Equal(3 * price, stack.CostBasisCredits);
+        Assert.Equal(new[] { "bootstrap" }, stack.AcquisitionSources);
+        var before = JsonSerializer.Serialize(stack);
+        var overflow = Template(0, new("item.ice", long.MaxValue));
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(overflow));
+        Assert.Contains("overflow", error.Message);
+        Assert.Equal(before, JsonSerializer.Serialize(Stack(engine)));
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(Template(0, new("item.ice", 3, null, ["legacy-unknown"]))));
+    }
+    [Fact]
+    public void New_scenario_without_positive_catalog_price_requires_explicit_cost()
+    {
+        var source = QuotedTradeExecutionTests.Registry;
+        var registry = GameDataRegistry.Create(
+            Enumerable.Range(0, source.ModuleCategories.Count).Select(source.ModuleCategories.GetDefinition),
+            Enumerable.Range(0, source.ModuleTypes.Count).Select(source.ModuleTypes.GetDefinition),
+            [new ItemTypeDefinition("item.ice", "Ice", 1)],
+            Enumerable.Range(0, source.CommandDefinitions.Count).Select(source.CommandDefinitions.GetDefinition),
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
+        var save = Template(0, new("item.ice", 3));
+        var ship = save.GameState.SpaceObjects.Single(o => o.ObjectId == QuotedTradeExecutionTests.ShipId);
+        save = save with
+        {
+            GameState = save.GameState with
+            {
+                CatalogCompatibility = null,
+                DefenseState = null,
+                CombatState = null,
+                SpaceObjects = [ship with { IsDocked = false, DockedStationObjectId = null,
+                Modules = ship.Modules!.Where(m => m.ModuleId == Cargo).ToArray() }]
+            }
+        };
+        using var engine = new SimulationEngine(registry);
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(save));
+        Assert.Contains("positive base price", error.Message);
+        save = QuotedTradeExecutionTests.WithShipModules(save, m => m with { Cargo = [new("item.ice", 3, 0, ["produced"])] });
+        engine.LoadScenario(save);
+        Assert.Equal(0, Stack(engine).CostBasisCredits);
+        Assert.Equal(new[] { "produced" }, Stack(engine).AcquisitionSources);
+    }
+
 }

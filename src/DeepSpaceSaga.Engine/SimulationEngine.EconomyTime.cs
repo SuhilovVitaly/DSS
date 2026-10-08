@@ -22,7 +22,8 @@ public sealed partial class SimulationEngine
             fromCalendar + (long)((decimal)(physicalTime - fromSimulation) *
                 (gameTimeMs - fromCalendar) / (simulationTimeMs - fromSimulation));
         // Process (previous, target] in order; repeated snapshots at the same time
-        // cannot repeat a meal, including midnight. Loading establishes the cursor.
+        // cannot repeat a meal, including midnight. Staged market continuation restores this same
+        // cursor only after all world validation succeeds; a saved boundary is already processed.
         while (_processedWorldTimeMs < gameTimeMs)
         {
             // Starting production changes the market at the interval's start. Commit it separately
@@ -42,6 +43,7 @@ public sealed partial class SimulationEngine
             IncludeBoundary(NextContractDeadline());
             IncludeBoundary(NextProductionTime());
             IncludeBoundary(NextMarketHourTime());
+            IncludeBoundary(NextMarketEventTime());
             IncludeBoundary(NextResourceSurveyTime());
 
             // Only boundaries in (processed, target] may move the cursor. A stale
@@ -56,12 +58,13 @@ public sealed partial class SimulationEngine
             AdvanceMotionTo(MotionAt(next), SurveyCalendarAt);
             CompleteResourceSurveys(next);
             CompleteProduction(next);
-            if (next != long.MaxValue && next % GameCalendar.HourMs == 0) ApplyMarketHour(next);
+            if (next != long.MaxValue && next % GameCalendar.HourMs == 0) ApplyMarketEventAndHour(next);
+            else ExpireMarketEvents(next);
             FlushPendingOutputs();
             if (next == nextMeal && next % MealIntervalMs == 0) ConsumeScheduledRations(next);
             RenewPortFees(next);
             ApplyContractDeadlines(next);
-            CommitChangedMarketRevisions();
+            CommitChangedMarketRevisions(next);
             _processedWorldTimeMs = next;
         }
         AdvanceMotionTo(simulationTimeMs, SurveyCalendarAt);
@@ -72,7 +75,7 @@ public sealed partial class SimulationEngine
 
     // Market state of every station at the start of the current boundary (stable ID, stock rows and
     // trading budget); reused across boundaries so the calendar loop allocates nothing extra.
-    private readonly List<(string ObjectId, ImmutableArray<StationInventoryItemRuntime> Stock, long? Budget)> _marketStateBeforeBoundary = new();
+    private readonly List<(string ObjectId, ImmutableArray<StationInventoryItemRuntime> Stock, long? Budget, ImmutableArray<StationEventRuntime> Events)> _marketStateBeforeBoundary = new();
 
     private void CaptureMarketStateBeforeBoundary()
     {
@@ -81,7 +84,7 @@ public sealed partial class SimulationEngine
         {
             var obj = _objects[i];
             if (obj.ObjectType == SpaceObjectType.Station)
-                _marketStateBeforeBoundary.Add((obj.InitialMotion.ObjectId, obj.Inventory, obj.MarketBudgetCredits));
+                _marketStateBeforeBoundary.Add((obj.InitialMotion.ObjectId, obj.Inventory, obj.MarketBudgetCredits, ActiveMarketEvents(obj, _processedWorldTimeMs)));
         }
     }
 
@@ -91,15 +94,16 @@ public sealed partial class SimulationEngine
     /// Station Credits alone (port fees, dialogue payouts) are not market state. A station already at the
     /// maximum revision keeps it, but its quotes are still invalidated.
     /// </summary>
-    private void CommitChangedMarketRevisions()
+    private void CommitChangedMarketRevisions(long? atGameTimeMs = null)
     {
-        foreach (var (objectId, stockBefore, budgetBefore) in _marketStateBeforeBoundary)
+        foreach (var (objectId, stockBefore, budgetBefore, eventsBefore) in _marketStateBeforeBoundary)
         {
             int i = _objects.FindIndex(o => o.InitialMotion.ObjectId == objectId);
             if (i < 0) continue;
             var station = _objects[i];
             if (station.ObjectType != SpaceObjectType.Station) continue;
-            if (budgetBefore == station.MarketBudgetCredits && SameStock(stockBefore, station.Inventory)) continue;
+            if (budgetBefore == station.MarketBudgetCredits && SameStock(stockBefore, station.Inventory) &&
+                eventsBefore.SequenceEqual(ActiveMarketEvents(station, atGameTimeMs ?? _processedWorldTimeMs))) continue;
 
             if (station.MarketRevision == long.MaxValue)
             {
@@ -136,6 +140,7 @@ public sealed partial class SimulationEngine
                 + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length);
             if (needed == 0) continue;
             var modules = ship.Modules.ToBuilder();
+            var finance = _voyageLedgers;
             if (_registry.ItemTypes.Contains("item.food-rations"))
             {
                 int ration = _registry.ItemTypes.GetIndex("item.food-rations");
@@ -148,9 +153,11 @@ public sealed partial class SimulationEngine
                         if (cargo[c].ItemTypeIndex != ration) continue;
                         long consumed = Math.Min(cargo[c].Quantity, needed);
                         needed -= consumed;
-                        long left = cargo[c].Quantity - consumed;
-                        if (left == 0) cargo.RemoveAt(c);
-                        else cargo[c] = cargo[c] with { Quantity = left };
+                        if (consumed == 0) continue;
+                        var removed = RemoveCargoCost(cargo[c], consumed);
+                        finance = PrepareVoyageCargoRemoval(finance, ration, consumed);
+                        if (removed.Remaining is null) cargo.RemoveAt(c);
+                        else cargo[c] = removed.Remaining;
                     }
                     var remainingCargo = cargo.ToImmutable();
                     modules[m] = module with
@@ -162,6 +169,7 @@ public sealed partial class SimulationEngine
                 }
             }
             _objects[i] = ship with { Modules = modules.ToImmutable() };
+            _voyageLedgers = finance;
             _economyTime = _economyTime with { MissingRations = _economyTime.MissingRations + needed };
             if (needed > 0)
                 RecordShipEvent(ship.InitialMotion.ObjectId, "", ShipEventTypes.RationsShortage,

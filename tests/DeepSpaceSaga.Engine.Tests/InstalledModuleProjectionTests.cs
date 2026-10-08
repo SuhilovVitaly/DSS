@@ -88,8 +88,8 @@ public class InstalledModuleProjectionTests
             ],
             itemTypes:
             [
-                new ItemTypeDefinition("item.ice", "Ice", UnitMassKg: 20),
-                new ItemTypeDefinition("item.energyCells", "Energy Cells", UnitMassKg: 5)
+                new ItemTypeDefinition("item.ice", "Ice", UnitMassKg: 20, BasePriceCredits: 1),
+                new ItemTypeDefinition("item.energyCells", "Energy Cells", UnitMassKg: 5, BasePriceCredits: 1)
             ],
             commandDefinitions: []);
 
@@ -300,7 +300,7 @@ public class InstalledModuleProjectionTests
                     StructurePointsMax: 50, PowerConsumptionW: 100,
                     CommandTypeIds: ImmutableArray<string>.Empty)
             ],
-            itemTypes: [],
+            itemTypes: [new ItemTypeDefinition("item.fuel", "Fuel", 1, BasePriceCredits: 1, TradeUnit: TradeUnit.Kilogram, StorageKind: ItemStorageKind.FuelTank)],
             commandDefinitions:
             [
                 new CommandDefinition("engine.accelerate", "Accelerate", Target: "none", Type: "module.engine.basic"),

@@ -21,7 +21,7 @@ public sealed class GeneratedWorldPersistenceTests
         original.SetSpeed(SimulationSpeed.Speed0);
         var before = original.CaptureSnapshotForTests(GameCalendar.DayMs + 12345, SimulationSpeed.Speed0, 12345);
         var save = original.CaptureSaveStateForTests(before.GameTimeMs, SimulationSpeed.Speed0, before.SimulationTimeMs);
-        Assert.Equal(12, save.SaveFormatVersion);
+        Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         using var restored = new SimulationEngine(SeededWorldBootstrapTests.Registry());
         restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), isSave: true);
         EqualWorld(before, restored.CaptureSnapshot());
@@ -79,7 +79,7 @@ public sealed class GeneratedWorldPersistenceTests
     {
         using var original = new SimulationEngine(SeededWorldBootstrapTests.Registry());
         original.LoadScenario(SeededWorldBootstrapTests.Scenario());
-        var save = original.CaptureSaveState() with { SaveFormatVersion = 11 };
+        var save = TradingEconomySaveSchemaTests.WithoutNewContinuation(original.CaptureSaveState(), 11);
         using var loaded = new SimulationEngine(SeededWorldBootstrapTests.Registry());
         loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), isSave: true,
             generation: GenerationInputSchemaTests.Config());
@@ -104,7 +104,7 @@ public sealed class GeneratedWorldPersistenceTests
             map with { Planets = map.Planets.SetItem(0, map.Planets[0] with { VisualRadius = map.SystemRadius }) }
         };
         var invalid = invalidMaps.Select(m => save with { GameState = save.GameState with { SolarSystem = m } }).ToList();
-        invalid.Add(save with { SaveFormatVersion = 13 });
+        invalid.Add(save with { SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion + 1 });
         invalid.Add(save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Where(o => o.ObjectType != "Sun").ToArray() } });
         invalid.Add(save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Append(save.GameState.SpaceObjects[0] with { ObjectId = save.GameState.SpaceObjects[0].ObjectId.ToLowerInvariant() }).ToArray() } });
         string baseline = ScenarioLoader.Serialize(save);

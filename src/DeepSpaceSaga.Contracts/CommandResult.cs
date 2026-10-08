@@ -112,7 +112,11 @@ public sealed record TradeExecutionReceipt(
     long ExecutedQuantity,
     long TotalCredits,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
-    ImmutableArray<string> LimitReasons = default);
+    ImmutableArray<string> LimitReasons = default,
+    /// <summary>Known successful Sell: acquisition cost of the executed cargo only. Null for Buy, Refuel, rejection or unknown history.</summary>
+    long? RealizedCargoCostCredits = null,
+    /// <summary>Known successful Sell: proceeds minus realized cargo cost; may be negative. Null is unavailable, never zero profit.</summary>
+    long? GrossResultCredits = null);
 
 /// <summary>
 /// Machine-readable reason codes for non-executed command results (snake_case,
@@ -122,6 +126,9 @@ public static class CommandReasonCodes
 {
     public const string VoyageDestinationRequired = "voyage_destination_required";
     public const string VoyageDestinationUnavailable = "voyage_destination_unavailable";
+    public const string RouteUnavailable = "route_unavailable";
+    public const string InsufficientVoyageFuel = "insufficient_voyage_fuel";
+    public const string FuelEfficiencyUnavailable = "fuel_efficiency_unavailable";
     public const string VoyageAlreadyActive = "voyage_already_active";
     public const string VoyageWrongDestination = "voyage_wrong_destination";
     public const string VoyageOutstandingDebt = "voyage_outstanding_debt";

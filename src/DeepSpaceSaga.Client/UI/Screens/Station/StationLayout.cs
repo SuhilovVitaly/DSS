@@ -25,6 +25,12 @@ public sealed class StationLayout
     public const float PanelWidth = 1600f;
     public const float PanelHeight = 800f;
 
+    public const int VisibleRouteRows = 4;
+    public const float RouteRowHeight = 70f;
+    public static (float Left, float Top, float Right, float Bottom) RouteViewportLocalRect() => (400, 445, 1500, 725);
+    public static (float Left, float Top, float Right, float Bottom) RouteRowLocalRect(int visibleIndex) =>
+        (400, 445 + visibleIndex * RouteRowHeight, 1500, 445 + (visibleIndex + 1) * RouteRowHeight - 4);
+
     public const float BodyStartY = 100f;
     public const float BodyLineHeight = 28f;
 

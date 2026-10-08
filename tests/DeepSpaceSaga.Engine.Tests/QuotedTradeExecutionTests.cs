@@ -103,6 +103,8 @@ public class QuotedTradeExecutionTests
             SaveFormatVersion = 0,
             GameState = gs with
             {
+                TradingEconomyContinuation = null, // A fresh scenario has no continuation manifest.
+                MarketKnowledge = null, // New fixture profile gets its own initial observation.
                 TradingMap = null,
                 VoyageState = null,
                 SpaceObjects = gs.SpaceObjects
@@ -168,7 +170,7 @@ public class QuotedTradeExecutionTests
         });
 
     internal static ScenarioFile WithFuel(ScenarioFile save, long fuelKg) =>
-        WithShipModules(save, m => m.ModuleId != EngineModuleId ? m : m with { FuelAmountKg = fuelKg });
+        WithShipModules(save, m => m.ModuleId != EngineModuleId ? m : m with { FuelAmountKg = fuelKg, FuelCostBasisCredits = null });
 
     /// <summary>A second container module on a free hull cell, so a quote can be replayed against another module.</summary>
     internal static ScenarioFile WithSecondContainer(ScenarioFile save) => save with
@@ -743,9 +745,10 @@ public class QuotedTradeExecutionTests
                 }
             case "stock":
                 {
-                    // An unquoted trade of the same item by another command moves stock (and the revision).
-                    var other = Apply(engine, new PlayerCommand("legacy-buy", 9, ShipId, CargoModuleId, TradeCommandTypes.Buy,
-                        ItemTypeId: Ice, Quantity: 1));
+                    // Another actual quoted trade moves stock and invalidates the earlier quote.
+                    var otherQuote = Quote(engine, TradeCommandTypes.Buy, Ice, 1);
+                    AssertEnabled(otherQuote, 1);
+                    var other = Apply(engine, Bind("other-buy", otherQuote));
                     Assert.Equal(CommandResultStatus.Executed, other.Status);
                     break;
                 }
@@ -881,8 +884,11 @@ public class QuotedTradeExecutionTests
 
             var withoutRevision = legacyOnly with
             {
+                SaveFormatVersion = 13,
                 GameState = legacyOnly.GameState with
                 {
+                    TradingEconomyContinuation = null,
+                    MarketKnowledge = null,
                     SpaceObjects = legacyOnly.GameState.SpaceObjects
                         .Select(o => o with { MarketRevision = null }).ToArray(),
                 },
@@ -905,6 +911,8 @@ public class QuotedTradeExecutionTests
                 TotalCredits = 0,
                 LimitReasons = [],
                 RequestedQuantity = -7,
+                RealizedCargoCostCredits = null,
+                GrossResultCredits = null,
                 QuotedMarketRevision = -3,
                 QuoteId = null,
                 ItemTypeId = null,
@@ -985,6 +993,18 @@ public class QuotedTradeExecutionTests
                 }).ToArray(),
             },
         };
+        atMaximum = atMaximum with
+        {
+            GameState = atMaximum.GameState with
+            {
+                SpaceObjects = atMaximum.GameState.SpaceObjects.Select(o => o.ObjectId == StationId ? o with { MarketRevision = long.MaxValue } : o).ToArray()
+            }
+        };
+        atMaximum = atMaximum with
+        {
+            GameState = atMaximum.GameState with
+            { TradingEconomyContinuation = TradingEconomySaveMigration.ManifestFromPersistedFacts(atMaximum.GameState) }
+        };
         using var engine = new SimulationEngine(Registry, [], new SimulationClock(SimulationSpeed.Speed0, () => 0));
         engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(atMaximum), true));
         Assert.Equal(long.MaxValue, Revision(engine));
@@ -1036,41 +1056,38 @@ public class QuotedTradeExecutionTests
 
     // --- Legacy coexistence and quote identity ------------------------------------------
 
-    [Fact]
-    public void Unquoted_profile_trade_keeps_legacy_path_until_quote_ui()
+    [Theory]
+    [InlineData(TradeCommandTypes.Buy)]
+    [InlineData(TradeCommandTypes.Sell)]
+    [InlineData(TradeCommandTypes.Refuel)]
+    public void Profile_trade_without_quote_is_zero_effect_and_keeps_issued_quote_executable(string commandType)
     {
-        using var engine = CreateMarketEngine();
-        // The unquoted legacy path charges the static list price of the snapshot row, not the quote curve
-        // (story CP-0 (c), R4): the two may differ.
-        long price = ListPrice(engine, Ice);
-        var pending = Quote(engine, TradeCommandTypes.Buy, Ice, 5);
-        long playerBefore = engine.PlayerCredits;
+        using var engine = CreateMarketEngine(adjust: save => WithCargo(WithFuel(save, 0), Ice, 20));
+        string item = commandType == TradeCommandTypes.Refuel ? Fuel : Ice;
+        string module = commandType == TradeCommandTypes.Refuel ? EngineModuleId : CargoModuleId;
+        var pending = Quote(engine, commandType, item, 5);
+        AssertEnabled(pending, 5);
+        var command = new PlayerCommand("unquoted", 1, ShipId, module, commandType,
+            ItemTypeId: item, Quantity: 5);
+        string before = WorldProjection(engine);
 
-        var result = Apply(engine, new PlayerCommand("unquoted", 1, ShipId, CargoModuleId, TradeCommandTypes.Buy,
-            ItemTypeId: Ice, Quantity: 5));
-        Assert.Equal(CommandResultStatus.Executed, result.Status);
-        Assert.Null(result.ReasonCode);
-        Assert.Null(result.ExecutedQuantity);
-        Assert.Null(result.TradeReceipt);
-        Assert.Equal(playerBefore - 5 * price, engine.PlayerCredits);
+        AssertRejected(Apply(engine, command), CommandReasonCodes.QuoteRequired, command, StationId, 1);
+        Assert.Equal(before, WorldProjection(engine));
+        Assert.Equal(1, Revision(engine));
+        Assert.True(engine.IsQuoteIssuedForTests(pending.QuoteId));
 
-        // The legacy commit still advances the market revision, so quotes issued before it are stale.
+        AssertExecuted(Apply(engine, Bind("properly-quoted", pending)), pending);
         Assert.Equal(2, Revision(engine));
-        var stale = Bind("after-legacy", pending);
-        AssertRejected(Apply(engine, stale), CommandReasonCodes.StaleQuote, stale, StationId, 2);
+        string afterTrade = WorldProjection(engine);
+        AssertRejected(Apply(engine, command), CommandReasonCodes.QuoteRequired, command, StationId, 1);
+        Assert.Equal(afterTrade, WorldProjection(engine));
+        Assert.Equal(2, Revision(engine));
 
-        // Legacy Sell and Refuel advance it exactly once each as well.
-        var sell = Apply(engine, new PlayerCommand("unquoted-sell", 2, ShipId, CargoModuleId, TradeCommandTypes.Sell,
-            ItemTypeId: Ice, Quantity: 5));
-        Assert.Equal(CommandResultStatus.Executed, sell.Status);
-        Assert.Null(sell.TradeReceipt);
-        Assert.Equal(3, Revision(engine));
-
-        var refuel = Apply(engine, new PlayerCommand("unquoted-refuel", 3, ShipId, EngineModuleId, TradeCommandTypes.Refuel,
-            ItemTypeId: Fuel, Quantity: 10));
-        Assert.Equal(CommandResultStatus.Executed, refuel.Status);
-        Assert.Null(refuel.TradeReceipt);
-        Assert.Equal(4, Revision(engine));
+        Reload(engine);
+        Assert.Equal(afterTrade, WorldProjection(engine));
+        AssertRejected(Apply(engine, command), CommandReasonCodes.QuoteRequired, command, StationId, 1);
+        Assert.Equal(afterTrade, WorldProjection(engine));
+        Assert.Equal(2, Revision(engine));
     }
 
     [Fact]

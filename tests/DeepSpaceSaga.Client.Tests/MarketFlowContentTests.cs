@@ -71,7 +71,7 @@ public sealed class MarketFlowContentTests
             ],
             Targets:
             [
-                ("item.water", 96), ("item.food-rations", 96), ("item.energy-cells", 96),
+                ("item.water", 96), ("item.food-rations", 167), ("item.energy-cells", 117),
                 ("item.steel", 96), ("item.electronics", 96),
             ]),
         new("market.scientific-military",
@@ -176,6 +176,35 @@ public sealed class MarketFlowContentTests
     }
 
     [Fact]
+    public void Transit_declares_legacy_extra_capacity_without_extending_profile_assortment_or_flow()
+    {
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
+        var profile = registry.StationMarketProfiles.GetDefinition(registry.StationMarketProfiles.GetIndex("market.transit"));
+        (string ItemId, long Quantity)[] expected =
+        [
+            ("item.ice", 144), ("item.iron-ore", 144), ("item.magnesium-ore", 144),
+            ("item.silicon", 144), ("item.uranium-ore", 144), ("item.carbon-ore", 170),
+        ];
+        Assert.Equal(Sorted(expected), Sorted(profile.Economy!.ExplicitStockTargets.Select(target => (target.ItemTypeId, target.TargetStock))));
+        Assert.Empty(profile.SupplyItemTypeIds);
+        Assert.Equal(5, profile.DemandItemTypeIds.Length);
+        Assert.Equal(5, profile.InitialInventory.Length);
+        foreach (var target in profile.Economy.ExplicitStockTargets)
+        {
+            Assert.DoesNotContain(profile.InitialInventory, stock => stock.ItemTypeId == target.ItemTypeId);
+            Assert.DoesNotContain(profile.DemandItemTypeIds, item => item == target.ItemTypeId);
+            Assert.DoesNotContain(profile.Economy.HourlyConsumption, rate => rate.ItemTypeId == target.ItemTypeId);
+        }
+        using var engine = CreateDockedEngine("SPC-MARKET-TRANSIT", nameof(StationSize.Large));
+        var market = engine.CaptureSnapshot().DockedStationTrade!;
+        Assert.Equal(6, market.Items.Length); // Five original goods plus Fuel; no invented cargo.
+        Assert.Equal(251, market.Items.Single(item => item.ItemTypeId == "item.food-rations").TargetStock);
+        Assert.Equal(502, market.Items.Single(item => item.ItemTypeId == "item.food-rations").MaxStock);
+        Assert.Equal(176, market.Items.Single(item => item.ItemTypeId == "item.energy-cells").TargetStock);
+        Assert.Equal(352, market.Items.Single(item => item.ItemTypeId == "item.energy-cells").MaxStock);
+    }
+
+    [Fact]
     public void Every_size_has_valid_stock_bounds_and_initial_budget()
     {
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
@@ -198,9 +227,8 @@ public sealed class MarketFlowContentTests
                 Assert.Equal(factor, profile.SizeFactors[size]);
                 foreach (var (itemId, target) in expected.Targets)
                 {
-                    // Every shipped target and initial stock divides evenly by 1000 at every factor,
-                    // so the plain product is exact here (no rounding case is involved).
-                    long scaledTarget = target * factor / 1000;
+                    // Configured targets use the contract's AwayFromZero rounding before doubling.
+                    long scaledTarget = (long)decimal.Round((decimal)target * factor / 1000, 0, MidpointRounding.AwayFromZero);
                     long maxStock = 2 * scaledTarget;
                     long initial = profile.InitialInventory.Single(stock => stock.ItemTypeId == itemId).Quantity;
                     Assert.True(scaledTarget > 0, $"{expected.ProfileId}/{size}/{itemId}: target is not positive");
@@ -230,8 +258,9 @@ public sealed class MarketFlowContentTests
                 foreach (var (itemId, target) in expected.Targets)
                 {
                     var row = Assert.Single(trade.Items, item => item.ItemTypeId == itemId);
-                    Assert.Equal(target * factor / 1000, row.TargetStock);
-                    Assert.Equal(2 * target * factor / 1000, row.MaxStock);
+                    long scaledTarget = (long)decimal.Round((decimal)target * factor / 1000, 0, MidpointRounding.AwayFromZero);
+                    Assert.Equal(scaledTarget, row.TargetStock);
+                    Assert.Equal(2 * scaledTarget, row.MaxStock);
                     Assert.InRange(row.StockQuantity, 0, row.MaxStock!.Value);
                     Assert.Equal(row.MaxStock - row.StockQuantity, row.FreeStockCapacity);
                     Assert.NotNull(row.StockState);
@@ -284,8 +313,9 @@ public sealed class MarketFlowContentTests
         {
             var row = TradeRow(after, itemId);
             Assert.Equal(stockAfter, row.StockQuantity);
-            Assert.Equal(targets[itemId] * factor / 1000, row.TargetStock);
-            Assert.Equal(2 * targets[itemId] * factor / 1000, row.MaxStock);
+            long scaledTarget = (long)decimal.Round((decimal)targets[itemId] * factor / 1000, 0, MidpointRounding.AwayFromZero);
+            Assert.Equal(scaledTarget, row.TargetStock);
+            Assert.Equal(2 * scaledTarget, row.MaxStock);
             Assert.InRange(row.StockQuantity, 0, row.MaxStock!.Value);
         }
 
@@ -319,8 +349,8 @@ public sealed class MarketFlowContentTests
                 .Single(obj => obj.ObjectId == "SPC-0002").MarketProfileId);
         }
 
-        // The seeded start station keeps its explicit legacy inventory while the profile-owned
-        // rows continue to publish authoritative economy metadata.
+        // The seeded start station keeps its explicit legacy inventory; all actual cargo rows
+        // publish their explicitly configured bounded economy metadata. Fuel remains separate.
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(
             SettingsPath, Path.Combine(ClientRoot, "Scenarios", "Docked", "scenario.json"));
         var travelled = engine.TravelStation(new StationTravelCommand("legacy-to-market", StationDistrict.Market));
@@ -336,6 +366,8 @@ public sealed class MarketFlowContentTests
                 Assert.NotNull(row.MaxStock);
                 Assert.NotNull(row.FreeStockCapacity);
                 Assert.NotNull(row.StockState);
+                Assert.InRange(row.StockQuantity, 0, row.MaxStock!.Value);
+                Assert.Equal(row.MaxStock - row.StockQuantity, row.FreeStockCapacity);
             }
             else
             {
@@ -353,7 +385,7 @@ public sealed class MarketFlowContentTests
             var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
             var profile = registry.StationMarketProfiles.GetDefinition(
                 registry.StationMarketProfiles.GetIndex(profileId));
-            return profile.InitialInventory.Select(item => item.ItemTypeId).ToHashSet(StringComparer.Ordinal);
+            return profile.Economy!.AllStockTargets.Select(item => item.ItemTypeId).ToHashSet(StringComparer.Ordinal);
         }
     }
 

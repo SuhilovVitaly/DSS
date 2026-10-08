@@ -60,6 +60,7 @@ public sealed partial class SimulationEngine
         long updatedPlayerCredits;
         SpaceObjectRuntime updatedStation;
         SpaceObjectRuntime updatedShip;
+        long? realizedCost = null;
         if (quote.CommandType == TradeCommandTypes.Sell)
         {
             bool bounded = TryGetMarket(station, out _, out _);
@@ -72,7 +73,7 @@ public sealed partial class SimulationEngine
                     stockItem with { StockQuantity = checked(stockItem.StockQuantity + executed) }),
             };
             updatedShip = UpdateModule(target.Ship, target.ModuleIndex,
-                m => WithCargoDelta(m, target.ModuleType, target.ItemTypeIndex, -executed));
+                m => WithCargoDelta(m, target.ModuleType, target.ItemTypeIndex, -executed, out realizedCost));
         }
         else
         {
@@ -85,19 +86,24 @@ public sealed partial class SimulationEngine
                     stockItem with { StockQuantity = checked(stockItem.StockQuantity - executed) }),
             };
             updatedShip = quote.CommandType == TradeCommandTypes.Refuel
-                ? UpdateModule(target.Ship, target.ModuleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + executed) })
+                ? UpdateModule(target.Ship, target.ModuleIndex, m => m with { FuelAmountKg = checked(m.FuelAmountKg + executed), FuelCostBasisCredits = checked(m.FuelCostBasisCredits + total) })
                 : UpdateModule(target.Ship, target.ModuleIndex,
-                    m => WithCargoDelta(m, target.ModuleType, target.ItemTypeIndex, executed));
+                    m => WithCargoDelta(m, target.ModuleType, target.ItemTypeIndex, executed, out _, total));
         }
 
         var receipt = new TradeExecutionReceipt(
             station.InitialMotion.ObjectId, quote.ItemTypeId, quote.QuoteId, quote.MarketRevision, nextRevision,
-            quote.RequestedQuantity, executed, total, quote.LimitReasons);
+            quote.RequestedQuantity, executed, total, quote.LimitReasons, realizedCost,
+            realizedCost is { } cost ? checked(total - cost) : null);
+
+        var finance = quote.CommandType == TradeCommandTypes.Sell
+            ? PrepareVoyageSale("sale:" + command.CommandId, receipt) : _voyageLedgers;
 
         // 7-9. Commit: plain assignments only, then the result, then the quote is consumed.
         _objects[target.ObjectIndex] = updatedShip;
         _objects[target.StationIndex] = updatedStation;
         PlayerCredits = updatedPlayerCredits;
+        _voyageLedgers = finance;
         CommitMarketRevision(station.InitialMotion.ObjectId, nextRevision);
         RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs,
             executedQuantity: executed < quote.RequestedQuantity ? executed : null, tradeReceipt: receipt);
@@ -147,7 +153,7 @@ public sealed partial class SimulationEngine
             return CommandReasonCodes.InsufficientStationStock;
         if (quote.CommandType == TradeCommandTypes.Refuel)
         {
-            return checked(target.Module.FuelAmountKg + executed) > (target.ModuleType.FuelCapacityKg ?? 0)
+            return checked(target.Module.FuelAmountKg + executed) > AvailableFuelTankCapacity(target.Module.ModuleId, target.ModuleType.FuelCapacityKg ?? 0)
                 ? CommandReasonCodes.FuelCapacityExceeded
                 : null;
         }
@@ -299,15 +305,21 @@ public sealed partial class SimulationEngine
 
     /// <summary>Add (positive) or remove (negative) units of one item and refresh the stored free capacity.</summary>
     private InstalledModuleRuntime WithCargoDelta(
-        InstalledModuleRuntime module, ModuleTypeDefinition moduleType, int itemTypeIndex, long delta)
+        InstalledModuleRuntime module, ModuleTypeDefinition moduleType, int itemTypeIndex, long delta,
+        out long? realizedCost, long acquisitionCostCredits = 0)
     {
         int stackIndex = FindCargoStackIndex(module.Cargo, itemTypeIndex);
-        long remaining = checked((stackIndex >= 0 ? module.Cargo[stackIndex].Quantity : 0) + delta);
-        var cargo = stackIndex < 0
-            ? module.Cargo.Add(new CargoStackRuntime(itemTypeIndex, remaining))
-            : remaining > 0
-                ? module.Cargo.SetItem(stackIndex, module.Cargo[stackIndex] with { Quantity = remaining })
-                : module.Cargo.RemoveAt(stackIndex);
+        var existing = stackIndex < 0 ? null : module.Cargo[stackIndex];
+        CargoStackRuntime? replacement;
+        realizedCost = null;
+        if (delta > 0) replacement = AddCargoCost(existing, itemTypeIndex, delta, acquisitionCostCredits, "purchased");
+        else
+        {
+            if (existing is null) throw new ArgumentException("Cargo removal requires its source stack.");
+            (replacement, realizedCost) = RemoveCargoCost(existing, checked(-delta));
+        }
+        var cargo = stackIndex < 0 ? module.Cargo.Add(replacement!) : replacement is null
+            ? module.Cargo.RemoveAt(stackIndex) : module.Cargo.SetItem(stackIndex, replacement);
         return module with { Cargo = cargo, AvailableCapacityKg = ComputeAvailableCapacityKg(moduleType, cargo) };
     }
 }

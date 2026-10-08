@@ -63,7 +63,17 @@ internal sealed record StationMarketEconomyDefinition(
     ImmutableArray<StationMarketTargetDefinition> StockTargets,
     int ShortageThresholdPermille,
     int SurplusThresholdPermille,
-    int BudgetRegenerationDivisorPerDay);
+    int BudgetRegenerationDivisorPerDay,
+    /// <summary>
+    /// Explicit capacity declarations for optional scenario cargo outside the profile assortment.
+    /// These never create initial inventory, supply/demand or hourly flow. Absent declarations
+    /// do not imply a capacity; any actual extra cargo still requires a declared target.
+    /// </summary>
+    ImmutableArray<StationMarketTargetDefinition> ExplicitStockTargets = default)
+{
+    internal IEnumerable<StationMarketTargetDefinition> AllStockTargets =>
+        ExplicitStockTargets.IsDefaultOrEmpty ? StockTargets : StockTargets.Concat(ExplicitStockTargets);
+}
 
 internal sealed record StationMarketProfileDefinition(
     string TypeId,
@@ -106,16 +116,25 @@ internal sealed record StationMarketProfileDefinition(
             RefuelStockKg,
             SizeFactors = SizeFactors.OrderBy(pair => pair.Key.ToString(), StringComparer.Ordinal)
                 .Select(pair => new { Size = pair.Key.ToString(), Factor = pair.Value }),
-            Economy = new
-            {
-                Economy.ProductionSource,
-                HourlyInputs = Economy.HourlyInputs.OrderBy(stock => stock.ItemTypeId, StringComparer.Ordinal),
-                HourlyOutputs = Economy.HourlyOutputs.OrderBy(stock => stock.ItemTypeId, StringComparer.Ordinal),
-                HourlyConsumption = Economy.HourlyConsumption.OrderBy(stock => stock.ItemTypeId, StringComparer.Ordinal),
-                StockTargets = Economy.StockTargets.OrderBy(target => target.ItemTypeId, StringComparer.Ordinal),
-                Economy.ShortageThresholdPermille,
-                Economy.SurplusThresholdPermille,
-                Economy.BudgetRegenerationDivisorPerDay,
-            },
+            Economy = EconomyFingerprintPayload(Economy),
         })));
+
+    private static Dictionary<string, object> EconomyFingerprintPayload(StationMarketEconomyDefinition economy)
+    {
+        // Preserve the original economic payload byte-for-byte when the optional extension is absent.
+        var payload = new Dictionary<string, object>
+        {
+            [nameof(economy.ProductionSource)] = economy.ProductionSource,
+            [nameof(economy.HourlyInputs)] = economy.HourlyInputs.OrderBy(stock => stock.ItemTypeId, StringComparer.Ordinal),
+            [nameof(economy.HourlyOutputs)] = economy.HourlyOutputs.OrderBy(stock => stock.ItemTypeId, StringComparer.Ordinal),
+            [nameof(economy.HourlyConsumption)] = economy.HourlyConsumption.OrderBy(stock => stock.ItemTypeId, StringComparer.Ordinal),
+            [nameof(economy.StockTargets)] = economy.StockTargets.OrderBy(target => target.ItemTypeId, StringComparer.Ordinal),
+            [nameof(economy.ShortageThresholdPermille)] = economy.ShortageThresholdPermille,
+            [nameof(economy.SurplusThresholdPermille)] = economy.SurplusThresholdPermille,
+            [nameof(economy.BudgetRegenerationDivisorPerDay)] = economy.BudgetRegenerationDivisorPerDay,
+        };
+        if (!economy.ExplicitStockTargets.IsDefaultOrEmpty)
+            payload.Add(nameof(economy.ExplicitStockTargets), economy.ExplicitStockTargets.OrderBy(target => target.ItemTypeId, StringComparer.Ordinal));
+        return payload;
+    }
 }

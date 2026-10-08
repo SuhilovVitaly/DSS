@@ -24,16 +24,24 @@ public static class SaveFormat
     /// Version 10 preserves captured combat parameters, active flights, guidance, history and identity counters.
     /// Version 11 preserves countermeasure defenses and combat operator assignments.
     /// Version 12 preserves resolved solar-system geography and absolute orbital motion.
+    /// Version 13 requires cargo acquisition basis/provenance; versions 1-12 migrate missing history as unknown.
+    /// Version 14 requires last-observed coarse station market knowledge; older saves omit unknown observations.
+    /// Version 15 requires a versioned trading continuation manifest and complete voyage finance history.
     /// Integer-valued motion fields from earlier supported saves remain readable.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 12;
+    public const int CurrentSaveFormatVersion = 15;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
 public sealed record ScenarioFile(
     [property: JsonPropertyName("scenarioMetadata")] ScenarioMetadata Metadata,
     [property: JsonPropertyName("gameState")] GameStateData GameState,
-    [property: JsonPropertyName("saveFormatVersion")] int SaveFormatVersion = 0);
+    [property: JsonPropertyName("saveFormatVersion")] int SaveFormatVersion = 0)
+{
+    // Derived only on the legacy load path; never written under an older on-disk version.
+    [JsonIgnore]
+    internal TradingEconomyContinuationData? MigratedTradingEconomyContinuation { get; init; }
+}
 
 /// <summary>Scenario identification.</summary>
 /// <param name="Description">
@@ -82,12 +90,62 @@ public sealed record GameStateData(
     [property: JsonPropertyName("voyageState")] VoyageStateData? VoyageState = null,
     [property: JsonPropertyName("combatState")] CombatStateData? CombatState = null,
     [property: JsonPropertyName("defenseState")] CountermeasureStateData? DefenseState = null,
-    [property: JsonPropertyName("solarSystem")] DeepSpaceSaga.Contracts.SolarSystemMapSnapshot? SolarSystem = null)
+    [property: JsonPropertyName("solarSystem")] DeepSpaceSaga.Contracts.SolarSystemMapSnapshot? SolarSystem = null,
+    [property: JsonPropertyName("marketEventCatalogFingerprint")] string? MarketEventCatalogFingerprint = null,
+    [property: JsonPropertyName("lastVoyageFuelSettlement")] DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot? LastVoyageFuelSettlement = null,
+    [property: JsonPropertyName("marketKnowledge")] IReadOnlyList<StationMarketKnowledgeData>? MarketKnowledge = null,
+    [property: JsonPropertyName("tradingEconomyContinuation")] TradingEconomyContinuationData? TradingEconomyContinuation = null,
+    [property: JsonPropertyName("voyageLedgers")] IReadOnlyList<VoyageLedgerData>? VoyageLedgers = null,
+    [property: JsonPropertyName("voyageFuelSettlements")] IReadOnlyList<DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot>? VoyageFuelSettlements = null,
+    [property: JsonPropertyName("engineIdentityCounters")] EngineIdentityCountersData? EngineIdentityCounters = null,
+    [property: JsonPropertyName("clusterMap")] DeepSpaceSaga.Contracts.StationClusterMapSnapshot? ClusterMap = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]
     public long MotionTimeMs => SimulationTimeMs ?? GameTimeMs;
 }
+
+/// <summary>
+/// Cross-cutting continuation identity, not a second copy of subsystem state. Revision high-water
+/// mark is an integrity fact for per-station counters (MaxValue denotes exhaustion). Events use
+/// deterministic station/hour IDs; the event cursor is the next calendar hour, not a new allocator.
+/// </summary>
+public sealed record TradingEconomyContinuationData(
+    [property: JsonPropertyName("schemaVersion")] int SchemaVersion,
+    [property: JsonPropertyName("configurationFingerprint")] string ConfigurationFingerprint,
+    [property: JsonPropertyName("lastProcessedMarketGameTimeMs")] long LastProcessedMarketGameTimeMs,
+    [property: JsonPropertyName("nextMarketRevision")] long NextMarketRevision,
+    [property: JsonPropertyName("nextMarketEventSequence")] long NextMarketEventSequence,
+    [property: JsonPropertyName("durableTerminalReceiptIds")] IReadOnlyList<string>? DurableTerminalReceiptIds = null);
+
+/// <summary>Existing cycle/event allocators, preserved after completed cycles disappear.</summary>
+public sealed record EngineIdentityCountersData(
+    [property: JsonPropertyName("engineCycle")] ulong EngineCycle,
+    [property: JsonPropertyName("shipEvent")] ulong ShipEvent);
+
+/// <summary>Persisted authoritative ledger and its stable monetary postings; no recalculation on load.</summary>
+public sealed record VoyageLedgerData(
+    [property: JsonPropertyName("finance")] DeepSpaceSaga.Contracts.VoyageFinanceSnapshot Finance,
+    [property: JsonPropertyName("postings")] IReadOnlyList<VoyageLedgerPostingData> Postings);
+
+public sealed record VoyageLedgerPostingData(
+    string PostingId, long GrossSalesCredits = 0, long CostOfGoodsSoldCredits = 0,
+    bool UnknownCostOfGoodsSold = false, long RouteFuelCostCredits = 0,
+    long PortFeesAssessedCredits = 0, long PortFeesPaidCredits = 0, long OutstandingPortFeeDebtCredits = 0,
+    long EventCostsCredits = 0, long PassengerPayoutCredits = 0, long PassengerPenaltyCredits = 0);
+
+/// <summary>Persisted last observation; stale is derived from the current market at publication.</summary>
+public sealed record StationMarketKnowledgeData(
+    [property: JsonPropertyName("stationObjectId")] string StationObjectId,
+    [property: JsonPropertyName("stationRole")] string StationRole,
+    [property: JsonPropertyName("isAvailable")] bool IsAvailable,
+    [property: JsonPropertyName("observedAtGameTimeMs")] long ObservedAtGameTimeMs,
+    [property: JsonPropertyName("observedMarketRevision")] ulong ObservedMarketRevision,
+    [property: JsonPropertyName("stockBands")] IReadOnlyList<StationMarketStockBandData> StockBands);
+
+public sealed record StationMarketStockBandData(
+    [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
+    [property: JsonPropertyName("stockState")] DeepSpaceSaga.Contracts.StationMarketStockState StockState);
 
 public sealed record VoyageStateData(
     [property: JsonPropertyName("phase")] string Phase,
@@ -97,7 +155,21 @@ public sealed record VoyageStateData(
     [property: JsonPropertyName("startedMotionTimeMs")] long StartedMotionTimeMs = 0,
     [property: JsonPropertyName("initialDistanceWorldUnits")] double InitialDistanceWorldUnits = 0,
     [property: JsonPropertyName("progressPermille")] int ProgressPermille = 0,
-    [property: JsonPropertyName("blockReasonCode")] string? BlockReasonCode = null);
+    [property: JsonPropertyName("blockReasonCode")] string? BlockReasonCode = null,
+    [property: JsonPropertyName("travelEstimateGameTimeMs")] long? TravelEstimateGameTimeMs = null,
+    [property: JsonPropertyName("fuelMultiplierPermille")] int? FuelMultiplierPermille = null,
+    [property: JsonPropertyName("riskProfileId")] string? RiskProfileId = null,
+    [property: JsonPropertyName("activeEventIds")] IReadOnlyList<string>? ActiveEventIds = null,
+    [property: JsonPropertyName("startedGameTimeMs")] long? StartedGameTimeMs = null,
+    [property: JsonPropertyName("arrivalGameTimeMs")] long? ArrivalGameTimeMs = null,
+    [property: JsonPropertyName("fuelReservationParts")] IReadOnlyList<VoyageFuelReservationPartData>? FuelReservationParts = null,
+    [property: JsonPropertyName("fuelDistanceKm")] decimal? FuelDistanceKm = null,
+    [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null);
+
+public sealed record VoyageFuelReservationPartData(
+    [property: JsonPropertyName("moduleId")] string ModuleId,
+    [property: JsonPropertyName("reservedFuelKg")] long ReservedFuelKg,
+    [property: JsonPropertyName("reservedFuelCostBasisCredits")] long ReservedFuelCostBasisCredits);
 
 /// <summary>Camera focus configuration.</summary>
 public sealed record FocusData(
@@ -331,7 +403,30 @@ public sealed record StationEventData(
     [property: JsonPropertyName("description")] string? Description,
     [property: JsonPropertyName("startedGameTimeMs")] long StartedGameTimeMs,
     [property: JsonPropertyName("durationMs")] long? DurationMs,
-    [property: JsonPropertyName("priceFactors")] IReadOnlyList<StationEventPriceFactorData> PriceFactors);
+    [property: JsonPropertyName("priceFactors")] IReadOnlyList<StationEventPriceFactorData> PriceFactors,
+    [property: JsonPropertyName("definitionId")] string? DefinitionId = null,
+    [property: JsonPropertyName("displayNameKey")] string? DisplayNameKey = null,
+    [property: JsonPropertyName("descriptionKey")] string? DescriptionKey = null,
+    [property: JsonPropertyName("effectSummaryKey")] string? EffectSummaryKey = null,
+    [property: JsonPropertyName("itemEffects")] IReadOnlyList<StationMarketEventItemEffectData>? ItemEffects = null,
+    [property: JsonPropertyName("routeEffect")] StationMarketEventRouteEffectData? RouteEffect = null,
+    [property: JsonPropertyName("activationStockDeltaApplied")] bool ActivationStockDeltaApplied = false);
+
+public sealed record StationMarketEventItemEffectData(
+    [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
+    [property: JsonPropertyName("productionMultiplierPermille")] int ProductionMultiplierPermille,
+    [property: JsonPropertyName("demandMultiplierPermille")] int DemandMultiplierPermille,
+    [property: JsonPropertyName("priceMultiplierPermille")] int PriceMultiplierPermille,
+    [property: JsonPropertyName("activationStockDelta")] long ActivationStockDelta = 0);
+
+public sealed record StationMarketEventRouteEffectData(
+    [property: JsonPropertyName("availability")] string Availability,
+    [property: JsonPropertyName("maxAffectedIncidentEdges")] int MaxAffectedIncidentEdges,
+    [property: JsonPropertyName("travelTimeMultiplierPermille")] int TravelTimeMultiplierPermille,
+    [property: JsonPropertyName("fuelMultiplierPermille")] int FuelMultiplierPermille,
+    [property: JsonPropertyName("riskProfileId")] string? RiskProfileId = null,
+    [property: JsonPropertyName("fromStationObjectId")] string? FromStationObjectId = null,
+    [property: JsonPropertyName("toStationObjectId")] string? ToStationObjectId = null);
 
 /// <summary>
 /// One multiplicative price factor contributed by a <see cref="StationEventData"/>. Addresses
@@ -361,7 +456,8 @@ public sealed record ShipModuleData(
     [property: JsonPropertyName("fuelAmountKg")] long? FuelAmountKg = null,
     [property: JsonPropertyName("lastTurnGameTimeMs")] long? LastTurnGameTimeMs = null,
     [property: JsonPropertyName("operatorCrewId")] string? OperatorCrewId = null,
-    [property: JsonPropertyName("autoDefenseEnabled")] bool AutoDefenseEnabled = true);
+    [property: JsonPropertyName("autoDefenseEnabled")] bool AutoDefenseEnabled = true,
+    [property: JsonPropertyName("fuelCostBasisCredits")] long? FuelCostBasisCredits = null);
 
 /// <summary>A single structural cell coordinate on a ship's hull grid (requirements §57).</summary>
 public sealed record HullCellCoordinate(
@@ -478,7 +574,15 @@ public sealed record ActiveCycleData(
 /// <summary>A stack of cargo stored inside a ship module.</summary>
 public sealed record CargoStackData(
     [property: JsonPropertyName("itemTypeId")] string ItemTypeId,
-    [property: JsonPropertyName("quantity")] long Quantity);
+    [property: JsonPropertyName("quantity")] long Quantity,
+    [property: JsonPropertyName("costBasisCredits")] long? CostBasisCredits = null,
+    [property: JsonPropertyName("acquisitionSources")] IReadOnlyList<string>? AcquisitionSources = null);
+
+internal static class CargoAcquisitionSources
+{
+    internal const string LegacyUnknown = "legacy-unknown";
+    internal static bool IsKnown(string source) => source is "bootstrap" or "purchased" or "produced" or "mined" or "dialogue-grant";
+}
 
 /// <summary>One tradeable item's stock on a station (see StationInventoryItemRuntime).</summary>
 public sealed record StationInventoryItemData(

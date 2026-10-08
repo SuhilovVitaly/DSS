@@ -1,3 +1,7 @@
+using System.Collections.Immutable;
+using System.Globalization;
+using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Client.UI.Screens.Trade;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using Silk.NET.Input;
@@ -6,10 +10,8 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Finance;
 
 /// <summary>
-/// Finance overlay (ТЗ Documentation/02-FirstRelease/Screens/Finance.md). Placeholder shell:
-/// the Money/Trading/StationInventory mechanics it will report on are not yet
-/// implemented in the Engine, so every section shows a "not available yet" line
-/// instead of fabricated numbers. Opened via the bottom-center Finance panel
+/// Finance overlay with authoritative voyage finances and existing Credits/station placeholders.
+/// Opened via the bottom-center Finance panel
 /// button or Ctrl+F; closes via the toolbar's exit-button icon (see StationToolbar),
 /// Escape, or a click outside the panel (on the dimmed background).
 /// Pause-on-open/resume-on-close is handled generically by SkiaWindow's
@@ -91,7 +93,6 @@ public sealed class FinanceScreen : IScreen
     {
         "Player Credits balance: not available yet",
         "Station price summary: not available yet",
-        "Recent trading results: not available yet",
     };
 
     public void OnActivated()
@@ -106,8 +107,15 @@ public sealed class FinanceScreen : IScreen
 
     public void OnDeactivated() { }
 
-    public ScreenEvent OnKeyDown(Key key) =>
-        key == Key.Escape ? ScreenEvent.CloseFinance : ScreenEvent.None;
+    public ScreenEvent OnKeyDown(Key key)
+    {
+        if (key == Key.Escape) return ScreenEvent.CloseFinance;
+        var reports = Reports;
+        if (reports.IsEmpty || key is not (Key.Up or Key.Down)) return ScreenEvent.None;
+        int index = Math.Clamp(SelectedIndex(reports) + (key == Key.Up ? -1 : 1), 0, reports.Length - 1);
+        SelectReport(reports, index);
+        return ScreenEvent.None;
+    }
 
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
@@ -124,6 +132,13 @@ public sealed class FinanceScreen : IScreen
         if (!FinanceLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
             return ScreenEvent.CloseFinance;
 
+        var reports = Reports;
+        float localX = x - FinanceLayout.PanelLeft(_screenWidth), localY = y - FinanceLayout.PanelTop(_screenHeight);
+        if (localX is >= 40 and <= 510 && localY is >= 388 and < 748)
+        {
+            int index = _listScroll + (int)((localY - 388) / 36);
+            if (index < reports.Length) SelectReport(reports, index);
+        }
         return ScreenEvent.None;
     }
 
@@ -157,10 +172,25 @@ public sealed class FinanceScreen : IScreen
         else
             _fuelHoverStartedAtMs = null;
 
-        return _isStationNameHovered || _isExitButtonHovered;
+        float localX = x - FinanceLayout.PanelLeft(_screenWidth), localY = y - FinanceLayout.PanelTop(_screenHeight);
+        return _isStationNameHovered || _isExitButtonHovered ||
+            !Reports.IsEmpty && localX is >= 40 and <= 510 && localY is >= 388 and < 748 &&
+            _listScroll + (int)((localY - 388) / 36) < Reports.Length;
     }
 
-    public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
+    public ScreenEvent OnMouseWheel(float x, float y, float delta)
+    {
+        float localX = x - FinanceLayout.PanelLeft(_screenWidth), localY = y - FinanceLayout.PanelTop(_screenHeight);
+        if (delta == 0 || localY is < 350 or > 775) return ScreenEvent.None;
+        int step = delta > 0 ? -3 : 3;
+        if (localX is >= 40 and <= 510)
+        {
+            _selectedVoyageId ??= Reports.LastOrDefault()?.VoyageId;
+            _listScroll = Math.Clamp(_listScroll + step, 0, Math.Max(0, Reports.Length - 10));
+        }
+        else if (localX is >= 550 and <= 1560) _detailScroll = Math.Clamp(_detailScroll + step, 0, Math.Max(0, VoyageRows.Count - 13));
+        return ScreenEvent.None;
+    }
 
     public void Render(SKCanvas canvas, int width, int height)
     {
@@ -202,6 +232,8 @@ public sealed class FinanceScreen : IScreen
             canvas.DrawText($"Портовая задолженность: {fees.Debt}", cx, pt + 330, MenuStyle.TextStatus);
         }
 
+        DrawVoyageFinances(canvas, pl, pt);
+
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.
         StationToolbar.DrawTooltips(canvas, pl, pt,
@@ -209,6 +241,111 @@ public sealed class FinanceScreen : IScreen
             isCrewHovered: IsCrewTooltipVisible,
             isTokensHovered: IsTokensTooltipVisible,
             isFuelHovered: IsFuelTooltipVisible);
+    }
+
+    private string? _selectedVoyageId;
+    private int _listScroll, _detailScroll;
+    private ImmutableArray<VoyageFinanceSnapshot> Reports
+    {
+        get
+        {
+            var reports = _buffer?.Latest?.Snapshot.VoyageFinances ?? default;
+            return reports.IsDefaultOrEmpty ? [] : reports.Where(v => v is not null && !string.IsNullOrWhiteSpace(v.VoyageId))
+                .DistinctBy(v => v.VoyageId, StringComparer.Ordinal).TakeLast(50).ToImmutableArray();
+        }
+    }
+    private int SelectedIndex(ImmutableArray<VoyageFinanceSnapshot> reports)
+    {
+        for (int i = 0; i < reports.Length; i++) if (reports[i].VoyageId == _selectedVoyageId) return i;
+        return reports.Length - 1;
+    }
+    private void SelectReport(ImmutableArray<VoyageFinanceSnapshot> reports, int index)
+    {
+        _selectedVoyageId = reports[index].VoyageId; _detailScroll = 0;
+        if (index < _listScroll) _listScroll = index;
+        else if (index >= _listScroll + 10) _listScroll = index - 9;
+    }
+    internal static string MoneyText(long? amount) => amount is { } value
+        ? TradeScreen.F("Tokens", value.ToString("N0", CultureInfo.CurrentCulture)) : Localization.Get("Finance.Unavailable");
+    internal static string RouteText(VoyageFinanceSnapshot f) => string.Format(CultureInfo.CurrentCulture,
+        Localization.Get("Finance.VoyageRoute"), f.OriginStationObjectId, f.DestinationStationObjectId ?? "—");
+    internal static string StateText(string state) => Localization.Get(state switch
+    {
+        VoyageFinanceStates.InTransit => "Finance.VoyageState.InTransit",
+        VoyageFinanceStates.AwaitingRealization => "Finance.VoyageState.AwaitingRealization",
+        VoyageFinanceStates.Finalized => "Finance.VoyageState.Finalized",
+        VoyageFinanceStates.Interrupted => "Finance.VoyageState.Interrupted",
+        _ => "Finance.Unavailable"
+    });
+    internal VoyageFinanceSnapshot? SelectedReport => Reports.IsEmpty ? null : Reports[SelectedIndex(Reports)];
+    internal int DetailScroll => _detailScroll;
+    internal sealed record FinanceRow(string Label, string Value, bool IsCargo = false);
+    internal IReadOnlyList<FinanceRow> VoyageRows
+    {
+        get
+        {
+            var reports = Reports;
+            if (reports.IsEmpty) return [];
+            var f = reports[SelectedIndex(reports)];
+            var rows = new List<FinanceRow>();
+            void Add(string key, long? value) => rows.Add(new(Localization.Get("Finance." + key), MoneyText(value)));
+            Add("GrossSales", f.GrossSalesCredits); Add("CostOfGoodsSold", f.CostOfGoodsSoldCredits);
+            Add("RouteFuelCost", f.RouteFuelCostCredits); Add("PortFeesAssessed", f.PortFeesAssessedCredits);
+            Add("PortFeesPaid", f.PortFeesPaidCredits); Add("PortFeeDebt", f.OutstandingPortFeeDebtCredits);
+            if (f.EventCostsCredits != 0) Add("EventCosts", f.EventCostsCredits);
+            if (f.PassengerPayoutCredits != 0) Add("PassengerPayout", f.PassengerPayoutCredits);
+            if (f.PassengerPenaltyCredits != 0) Add("PassengerPenalty", f.PassengerPenaltyCredits);
+            Add("NetProfit", f.NetProfitCredits);
+            if (!f.UnsoldCargo.IsDefaultOrEmpty)
+                foreach (var c in f.UnsoldCargo)
+                    rows.Add(new(TradeItemPresentation.ItemDisplayName(c.ItemTypeId), string.Format(CultureInfo.CurrentCulture,
+                        Localization.Get("Finance.UnsoldCargo"), TradeItemPresentation.ItemDisplayName(c.ItemTypeId),
+                        TradeItemPresentation.FormatQuantity(c.ItemTypeId, c.Quantity), MoneyText(c.CostBasisCredits)), true));
+            return rows;
+        }
+    }
+    private void DrawVoyageFinances(SKCanvas canvas, float left, float top)
+    {
+        var reports = Reports;
+        canvas.Save(); canvas.Translate(left, top); canvas.ClipRect(new SKRect(20, 350, 1580, 782));
+        using var p = new TradePainter(canvas);
+        p.Text(Localization.Get("Finance.VoyageTitle"), new(40, 350, 510, 382), 22, bold: true);
+        if (reports.IsEmpty)
+        {
+            p.Text(Localization.Get("Finance.NoVoyages"), new(40, 388, 1560, 428), 18, TradePainter.Muted);
+            canvas.Restore(); return;
+        }
+        int selected = SelectedIndex(reports);
+        if (_selectedVoyageId is not null && !reports.Any(v => v.VoyageId == _selectedVoyageId)) _selectedVoyageId = null;
+        if (_selectedVoyageId is null) _listScroll = Math.Max(0, selected - 9);
+        _listScroll = Math.Clamp(_listScroll, 0, Math.Max(0, reports.Length - 10));
+        for (int row = 0; row < 10 && row + _listScroll < reports.Length; row++)
+        {
+            var report = reports[row + _listScroll];
+            var rect = new SKRect(40, 388 + row * 36, 510, 420 + row * 36);
+            p.Box(rect, row + _listScroll == selected ? TradePainter.Selected : TradePainter.Surface);
+            p.Text(RouteText(report) + " · " + StateText(report.State), new(rect.Left + 8, rect.Top, rect.Right - 8, rect.Bottom), 13);
+        }
+        var chosen = reports[selected];
+        p.Text(RouteText(chosen) + " · " + StateText(chosen.State), new(550, 350, 1560, 382), 18, bold: true);
+        var rows = VoyageRows;
+        _detailScroll = Math.Clamp(_detailScroll, 0, Math.Max(0, rows.Count - 13));
+        for (int row = 0; row < 13 && row + _detailScroll < rows.Count; row++)
+        {
+            var value = rows[row + _detailScroll];
+            float y = 388 + row * 28;
+            if (value.IsCargo)
+            {
+                p.Text(value.Value, new(550, y, 1560, y + 26), 14, TradePainter.Muted);
+                continue;
+            }
+            p.Text(value.Label, new(550, y, 1010, y + 26), 14, TradePainter.Muted);
+            SKColor color = value.Label == Localization.Get("Finance.NetProfit") && chosen.NetProfitCredits is > 0
+                ? TradePainter.Green : value.Label == Localization.Get("Finance.NetProfit") && chosen.NetProfitCredits is < 0
+                    ? TradePainter.Red : TradePainter.TextColor;
+            p.Text(value.Value, new(1020, y, 1560, y + 26), 14, color, align: SKTextAlign.Right);
+        }
+        canvas.Restore();
     }
 
     /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>
