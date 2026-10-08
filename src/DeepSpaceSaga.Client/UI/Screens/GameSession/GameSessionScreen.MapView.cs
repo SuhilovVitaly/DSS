@@ -149,7 +149,9 @@ public sealed partial class GameSessionScreen
     private bool TryExpandMapCluster(float x, float y)
     {
         // Explicit targets win over a nearby aggregate.
-        if (_renderStates.Any(s => IsImportantMapObject(s.Pose.ObjectId) && Near(s.Pose.X, s.Pose.Y))) return false;
+        if (_renderStates.Any(s => (IsImportantMapObject(s.Pose.ObjectId) ||
+            s.Pose.RenderObjectType is SpaceObjectType.Sun or SpaceObjectType.Planet) && Near(s.Pose.X, s.Pose.Y))) return false;
+        if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest) && _poiGeometry.Any(p => Near(p.X, p.Y))) return false;
         foreach (var cluster in _mapClusters)
         {
             if (!Near(cluster.X, cluster.Y)) continue;

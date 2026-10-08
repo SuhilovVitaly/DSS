@@ -1,6 +1,6 @@
 # EP-0004 — отчёт исполнения
 
-Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0007 реализованы (23/26 тикетов вместе с US8 TK1–2); US8 продолжается, US9 ожидает исполнения.
+Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: функциональная реализация и evidence US1–US8 поставлены; 23/26 тикетов закрыты, US8 TK3 имеет OPEN FPS acceptance. US9 ожидает исполнения. Записи ниже хронологические: промежуточные NOT RUN заменены финальным native отчётом.
 
 ## База и изоляция
 
@@ -102,3 +102,7 @@ Final Engine Release1803/1803 PASS (12m33s), including 10800 primary generated w
 ## US-0008 / TK-0002
 
 Tooling9/9 PASS; matched fresh baseline/full600+600 worlds and18+18 raster views complete. Every matched world adds only4 AI entities. Full generation median44.62ms, snapshot1.28ms, save6.51ms; raster p997.37–19.47ms. Hardware/config/provenance/complete distributions: evidence/us8-performance-summary.json. Native80FPS not inferred; next TK3. TK1 published8421ea4.
+
+## US-0008 / TK-0003 and story review
+
+Client final1758/1758; combined validated projects3884/3884 PASS. Native scripted interaction8/8 PASS with all8 PNGs inspected after overlap/selection/close repairs. Native FPS target FAILED: p9950.5839–54.4007ms, target12.5ms. Fresh baseline and empty-window controls also fail; root cause not proven. Durable evidence: [native summary](evidence/us8-native-summary.json). GPU execution/physical scanout unmeasured, human playthrough NOT RUN. Implementation/evidence complete, ticket/story performance acceptance OPEN; continue independent documentation under execution prompt. TK2 publishede94f469.

@@ -423,6 +423,13 @@ public sealed partial class GameSessionScreen : IScreen
         if (button != MouseButton.Left)
             return ScreenEvent.None;
 
+        // The diagnostic overlay must remain dismissible even in a crowded viewport.
+        if (_panelVisible && _lastCloseRect.Contains(uiX, uiY))
+        {
+            _panelVisible = false;
+            return ScreenEvent.None;
+        }
+
         if (_combatJournalPanel.Click(uiX, uiY)) return ScreenEvent.None;
         if (HandleMapToolbarClick(uiX, uiY)) return ScreenEvent.None;
 
@@ -449,14 +456,6 @@ public sealed partial class GameSessionScreen : IScreen
             return ScreenEvent.OpenShip;
         if (_lastTempCharacterImageButtonRect.Contains(uiX, uiY))
             return ScreenEvent.OpenTempCharacterImage;
-
-        // The info overlay is painted above command groups; its close control
-        // must remain reachable even when the fifth group overlaps it.
-        if (_panelVisible && _lastCloseRect.Contains(uiX, uiY))
-        {
-            _panelVisible = false;
-            return ScreenEvent.None;
-        }
 
         // 4. Info panel (consume, don't pan)
         if (_panelVisible && _lastPanelRect.Contains(uiX, uiY))
@@ -497,7 +496,7 @@ public sealed partial class GameSessionScreen : IScreen
             _selectedFieldId = null; _selectedPoiId = null;
             SetSelectedObjectId(hitObjectId);
 
-            if (hitObjectId == _buffer.Latest?.Snapshot.PlayerShipObjectId)
+            if (hitObjectId == _buffer.Latest?.Snapshot.PlayerShipObjectId && _selectionCycle.Length == 1)
             {
                 SetFollowPlayer();
             }
@@ -1337,13 +1336,20 @@ public sealed partial class GameSessionScreen : IScreen
 
         // 8. Object Info panel (top-right) — Player Ship + Selected/Active Object rows
         var playerShip = FindPlayerShip(_renderStates);
+        // Reserve the two-row toolbar at narrow widths; overflowing details remain scrollable.
+        float infoBottom = buffered?.Snapshot.AiMap is null ? float.PositiveInfinity : ComputeScaleSpeedRowY() - 62 - 28 - 27 - 8;
         _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
-            ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH);
+            ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH, infoBottom);
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);
         DrawMapToolbar(canvas);
         DrawGameTime(canvas);
+        if (_panelVisible)
+        {
+            canvas.DrawRect(_lastCloseRect, _panelBgPaint);
+            canvas.DrawText("×", _lastCloseRect.MidX, _lastCloseRect.Top + 16, _panelClosePaint);
+        }
         CompleteRenderStage("info_panels");
 
         canvas.Restore();
@@ -2207,12 +2213,10 @@ public sealed partial class GameSessionScreen : IScreen
     {
         var (lines, labelWidth) = LayoutInfoPanel(buffered);
         float panelX = _lastPanelRect.Left, panelY = _lastPanelRect.Top;
-        float closeX = _lastCloseRect.MidX, closeY = _lastCloseRect.Top + 16;
         const float gap = 8f;
 
         canvas.DrawRect(_lastPanelRect, _panelBgPaint);
         canvas.DrawRect(_lastPanelRect, _panelBorderPaint);
-        canvas.DrawText("×", closeX, closeY, _panelClosePaint);
 
         float textY = panelY + PanelPaddingY + PanelLineHeight - 3f;
         float labelX = panelX + PanelPaddingX;

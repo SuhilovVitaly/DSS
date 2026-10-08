@@ -339,12 +339,12 @@ public sealed class ObjectInfoPanel
     /// since a fixed <see cref="Margin"/> from the top would overlap them.
     /// </param>
     public void Render(SKCanvas canvas, float viewportWidth, float top, ObjectInfoPanelData? playerShip, ObjectInfoPanelData? selectedOrActive,
-        float viewportHeight = float.PositiveInfinity)
+        float viewportHeight = float.PositiveInfinity, float maximumBottom = float.PositiveInfinity)
     {
         bool compact = viewportWidth < 1100 && float.IsFinite(viewportHeight);
         _renderPanelWidth = compact ? Math.Clamp(viewportWidth * .38f, 320, PanelWidth) : PanelWidth;
         _renderImageWidth = Math.Min(ImageWidth, Math.Max(48, _renderPanelWidth - 296));
-        float panelBottom = compact ? viewportHeight * .58f : viewportHeight;
+        float panelBottom = Math.Min(compact ? viewportHeight * .58f : viewportHeight, maximumBottom);
         float left = viewportWidth - Margin - _renderPanelWidth;
 
         _captionRect = new SKRect(left, top, left + _renderPanelWidth, top + CaptionHeight);

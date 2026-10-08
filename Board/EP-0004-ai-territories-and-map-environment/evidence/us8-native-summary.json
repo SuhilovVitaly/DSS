@@ -1,0 +1,3330 @@
+{
+  "sourceRevision": "e94f469 + US8 TK3 working tree",
+  "sourceHashes": {
+    "src\\DeepSpaceSaga.Client\\UI\\MapFrameEvidence.cs": "8e4ff44091125817e210c563e40adce078aa709cb96afd66fde5f535bd11b098",
+    "src\\DeepSpaceSaga.Client\\UI\\SkiaWindow.cs": "8b76a64a83f80f2b66ac6f96ee08c009b5bd043c36c7f89a6399e4479b4a0ec9",
+    "src\\DeepSpaceSaga.Client\\UI\\Screens\\GameSession\\Controls\\ObjectInfoPanel.cs": "5f0ad570dac4d83c8255804f353310169ba0941a6f585eb3d0edc0856a1834c7",
+    "src\\DeepSpaceSaga.Client\\UI\\Screens\\GameSession\\GameSessionScreen.MapView.cs": "71596534ad48a6946cc8cfd7984a282a6857a938ee9ab954f23faa83778300f3",
+    "src\\DeepSpaceSaga.Client\\UI\\Screens\\GameSession\\GameSessionScreen.cs": "520da532064dd7ed2d9498f5714c02cea00c78f23ab43e6bf75a722532936556",
+    "tools\\DeepSpaceSaga.Performance\\SolarNativeEvidence.cs": "98b8be82a241c7639b36ee7437503fdb7a13f1118386d408bb87d0ba951ce83e"
+  },
+  "cases": [
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=system UI=1; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "21b6c594-b9ef-47db-81e1-766125213523",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1920,
+        "Height": 1080,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1328,
+        "PixelsPerWorldUnit": 0.0001923256511091202,
+        "SelectedObjectId": "CLUSTER-5-STATION-9",
+        "MapCounts": {
+          "Entities": 1328,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 0,
+          "Territories": 0,
+          "Fields": 0,
+          "PointsOfInterest": 0,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 0
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8826000,
+        "MotionEpochMs": 29420,
+        "SelectedFieldId": null,
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 44.77404899999999,
+        "P50Ms": 45.7894,
+        "P95Ms": 49.8577,
+        "P99Ms": 53.2056,
+        "MaxMs": 63.3974,
+        "MeanFps": 22.33436605208522
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 6.934029833333334,
+        "P50Ms": 6.7542,
+        "P95Ms": 8.0091,
+        "P99Ms": 10.5863,
+        "MaxMs": 29.9653,
+        "MeanFps": 144.21628173458248
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 37.73691199999997,
+        "P50Ms": 38.6877,
+        "P95Ms": 42.5951,
+        "P99Ms": 44.3507,
+        "MaxMs": 47.7342,
+        "MeanFps": 26.49925356902549
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          156,
+          32,
+          1
+        ],
+        "pauseMs": 85.309,
+        "allocatedBytes": 974923048
+      },
+      "clusterInteraction": {
+        "requested": 60,
+        "selected": 60,
+        "inspectionScrollPassed": true,
+        "passed": true,
+        "clusters": 5,
+        "stationsPerCluster": 12
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": null,
+        "environment": null,
+        "poiTemplates": null
+      },
+      "allMapLayers": false,
+      "rawName": "ep4-native-baseline-system-1.json",
+      "rawSha256": "1a6f8d4657821bae96ba2eb5b630c968b2f0312eb17f43180b1c52e546a64852",
+      "pngSha256": "1b093040f2d47182ae0a3130f61af7ff2c149d38db22044f5827596b53734d84",
+      "finalAcceptedInteractionCase": false
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=base UI=1.5; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "2e025079-5202-479f-a328-2f37bd035895",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1280,
+        "Height": 720,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1.5,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 4.083220913874338e-05,
+        "SelectedObjectId": "SYS-AI-1",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8787600,
+        "MotionEpochMs": 29292,
+        "SelectedFieldId": null,
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 44.107014666666636,
+        "P50Ms": 45.1761,
+        "P95Ms": 49.5731,
+        "P99Ms": 51.4917,
+        "MaxMs": 59.2611,
+        "MeanFps": 22.672130670311233
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 5.803653166666665,
+        "P50Ms": 5.6103,
+        "P95Ms": 7.1246,
+        "P99Ms": 9.4436,
+        "MaxMs": 21.7642,
+        "MeanFps": 172.30526554266012
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 38.192082999999975,
+        "P50Ms": 39.2482,
+        "P95Ms": 43.1859,
+        "P99Ms": 45.0082,
+        "MaxMs": 49.1941,
+        "MeanFps": 26.183437022798696
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          281,
+          89,
+          1
+        ],
+        "pauseMs": 131.375,
+        "allocatedBytes": 1753911536
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "diagnosticPanelClosed": false,
+        "baseScrollPassed": true,
+        "runningObserved": true,
+        "pausedObserved": true,
+        "resumedObserved": true,
+        "passed": false
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-final-max-base-1.5-1280x720.json",
+      "rawSha256": "2458e5aec6662c5bc69d90c640a84d44528688400327fef9a2faa943a323cb90",
+      "pngSha256": "37abdea29a7e68b7fb458cb2775d2f47c3fa6f1b4f4f9fd690b0ea80b7d5d22e",
+      "finalAcceptedInteractionCase": false
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=belt UI=1.2; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "2e025079-5202-479f-a328-2f37bd035895",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1920,
+        "Height": 1080,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1.2,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 0.00291706150502077,
+        "SelectedObjectId": "SYS-SUN",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8776800,
+        "MotionEpochMs": 29256,
+        "SelectedFieldId": null,
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 44.55285433333329,
+        "P50Ms": 45.6866,
+        "P95Ms": 49.1108,
+        "P99Ms": 53.4469,
+        "MaxMs": 58.1394,
+        "MeanFps": 22.4452510386484
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 5.649049166666665,
+        "P50Ms": 5.3232,
+        "P95Ms": 8.3325,
+        "P99Ms": 10.0084,
+        "MaxMs": 13.8432,
+        "MeanFps": 177.02094113478395
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 38.767036333333344,
+        "P50Ms": 39.8402,
+        "P95Ms": 43.0239,
+        "P99Ms": 45.1275,
+        "MaxMs": 48.7258,
+        "MeanFps": 25.795110861754544
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          257,
+          58,
+          1
+        ],
+        "pauseMs": 105.557,
+        "allocatedBytes": 1603843712
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "diagnosticPanelClosed": true,
+        "baseScrollPassed": true,
+        "runningObserved": true,
+        "pausedObserved": true,
+        "resumedObserved": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-final-max-belt-1.2-1920x1080.json",
+      "rawSha256": "97c7fbe94f1204df9ca5b16b584ca5b6c3b149525b69c8cd741e4ed1e6ac34c7",
+      "pngSha256": "8e02ff7df1c54dca34fcabccfa1885d3d4563bb63ffe515490146c9e3238d37c",
+      "finalAcceptedInteractionCase": true,
+      "sourcePhase": "before diagnostic close repair; overlay already closed in measured frames"
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=cluster UI=1.5; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "2e025079-5202-479f-a328-2f37bd035895",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1920,
+        "Height": 1080,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1.5,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 0.01785663050204596,
+        "SelectedObjectId": "SYS-SUN",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8786100,
+        "MotionEpochMs": 29287,
+        "SelectedFieldId": null,
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 43.87933549999998,
+        "P50Ms": 45.1575,
+        "P95Ms": 48.8869,
+        "P99Ms": 51.0783,
+        "MaxMs": 57.2584,
+        "MeanFps": 22.789770825039053
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 5.585269499999998,
+        "P50Ms": 5.4562,
+        "P95Ms": 6.7223,
+        "P99Ms": 8.7078,
+        "MaxMs": 11.6289,
+        "MeanFps": 179.04238998673213
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 38.1760233333334,
+        "P50Ms": 39.5109,
+        "P95Ms": 43.094,
+        "P99Ms": 44.9414,
+        "MaxMs": 51.4264,
+        "MeanFps": 26.19445171825558
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          267,
+          66,
+          1
+        ],
+        "pauseMs": 110.354,
+        "allocatedBytes": 1666588912
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "diagnosticPanelClosed": true,
+        "baseScrollPassed": true,
+        "runningObserved": true,
+        "pausedObserved": true,
+        "resumedObserved": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-final-max-cluster-1.5-1920x1080.json",
+      "rawSha256": "8835c5ca4140876d3e7ac336f1c275cf9068dba2827f5c23b54514cff5065dce",
+      "pngSha256": "38bcafad095b6fb0fc6f2c0429f01ad1e79c458713b035b367c9094f6f6fb707",
+      "finalAcceptedInteractionCase": true,
+      "sourcePhase": "before diagnostic close repair; overlay already closed in measured frames"
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=field UI=1.5; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "2e025079-5202-479f-a328-2f37bd035895",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1920,
+        "Height": 1080,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1.5,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 0.00013512109847153573,
+        "SelectedObjectId": "SYS-SUN",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8774700,
+        "MotionEpochMs": 29249,
+        "SelectedFieldId": "SYS-FIELD-RADIATION-1",
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 44.37124933333334,
+        "P50Ms": 45.4013,
+        "P95Ms": 49.9618,
+        "P99Ms": 53.3024,
+        "MaxMs": 69.5623,
+        "MeanFps": 22.537116151218278
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 6.629056999999994,
+        "P50Ms": 6.3309,
+        "P95Ms": 8.4722,
+        "P99Ms": 12.2301,
+        "MaxMs": 30.9672,
+        "MeanFps": 150.85101847819394
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 37.62715700000004,
+        "P50Ms": 38.6254,
+        "P95Ms": 42.8812,
+        "P99Ms": 44.8882,
+        "MaxMs": 45.7818,
+        "MeanFps": 26.57654948525606
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          248,
+          66,
+          1
+        ],
+        "pauseMs": 125.336,
+        "allocatedBytes": 1549454376
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "diagnosticPanelClosed": true,
+        "baseScrollPassed": true,
+        "runningObserved": true,
+        "pausedObserved": true,
+        "resumedObserved": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-final-max-field-1.5-1920x1080.json",
+      "rawSha256": "ca3296a7f1ad64d32386df81542beab205cb03cad6e62c03c4d7e40802938c3c",
+      "pngSha256": "732b0dfaf27d9a5626f454b3a14fc7c399f921a8adfb55093e028f7e0cd231ec",
+      "finalAcceptedInteractionCase": true,
+      "sourcePhase": "before diagnostic close repair; overlay already closed in measured frames"
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=poi UI=1.2; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "2e025079-5202-479f-a328-2f37bd035895",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1280,
+        "Height": 720,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1.2,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 6.86454616601493e-05,
+        "SelectedObjectId": "SYS-PLANET-5",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8794500,
+        "MotionEpochMs": 29315,
+        "SelectedFieldId": null,
+        "SelectedPoiId": "SYS-POI-1"
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 44.24959949999999,
+        "P50Ms": 45.4058,
+        "P95Ms": 48.6251,
+        "P99Ms": 51.3795,
+        "MaxMs": 63.4951,
+        "MeanFps": 22.599074597274043
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 6.015415333333333,
+        "P50Ms": 5.7417,
+        "P95Ms": 8.0006,
+        "P99Ms": 10.5663,
+        "MaxMs": 18.423,
+        "MeanFps": 166.2395602941465
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 38.11646483333333,
+        "P50Ms": 39.2019,
+        "P95Ms": 42.8347,
+        "P99Ms": 44.9516,
+        "MaxMs": 48.6573,
+        "MeanFps": 26.235381596183267
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          280,
+          89,
+          1
+        ],
+        "pauseMs": 136.255,
+        "allocatedBytes": 1751524368
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "diagnosticPanelClosed": true,
+        "baseScrollPassed": true,
+        "runningObserved": true,
+        "pausedObserved": true,
+        "resumedObserved": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-final-max-poi-1.2-1280x720.json",
+      "rawSha256": "c3e6cfecd5510ca7b196baa5be649177bce214fa121b82e04244131bd21a8c87",
+      "pngSha256": "cfb1ba5adccb5088f29ce7a90af33d7e2f1adcfc6289db068f2837367a2c37b4",
+      "finalAcceptedInteractionCase": true,
+      "sourcePhase": "before diagnostic close repair; overlay already closed in measured frames"
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=poi UI=1.5; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "2e025079-5202-479f-a328-2f37bd035895",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1920,
+        "Height": 1080,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1.5,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 0.00013512109847153573,
+        "SelectedObjectId": "SYS-SUN",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8802000,
+        "MotionEpochMs": 29340,
+        "SelectedFieldId": null,
+        "SelectedPoiId": "SYS-POI-1"
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 44.17781400000002,
+        "P50Ms": 45.4126,
+        "P95Ms": 48.6545,
+        "P99Ms": 52.1404,
+        "MaxMs": 54.4271,
+        "MeanFps": 22.635796329804812
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 6.361576833333334,
+        "P50Ms": 6.2528,
+        "P95Ms": 7.4841,
+        "P99Ms": 10.089,
+        "MaxMs": 11.8082,
+        "MeanFps": 157.1937313969406
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 37.70846233333336,
+        "P50Ms": 38.7656,
+        "P95Ms": 42.1368,
+        "P99Ms": 44.4629,
+        "MaxMs": 45.9732,
+        "MeanFps": 26.51924629437951
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          248,
+          79,
+          1
+        ],
+        "pauseMs": 121.143,
+        "allocatedBytes": 1550652952
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "diagnosticPanelClosed": true,
+        "baseScrollPassed": true,
+        "runningObserved": true,
+        "pausedObserved": true,
+        "resumedObserved": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-final-max-poi-1.5-1920x1080.json",
+      "rawSha256": "c45e7270eb5850c75e4e13f394a18048dc4405052b0c1362816f946add4169ff",
+      "pngSha256": "f012d9c71538af3e77a3e5b6eb07c8fc7808d59474924a13a5c1cdd961fd263b",
+      "finalAcceptedInteractionCase": true,
+      "sourcePhase": "before diagnostic close repair; overlay already closed in measured frames"
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=system UI=1; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "2e025079-5202-479f-a328-2f37bd035895",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1920,
+        "Height": 1080,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 0.00018542165337699794,
+        "SelectedObjectId": "SYS-SUN",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 9098100,
+        "MotionEpochMs": 30327,
+        "SelectedFieldId": null,
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 44.95309666666668,
+        "P50Ms": 45.501,
+        "P95Ms": 51.7997,
+        "P99Ms": 54.4007,
+        "MaxMs": 75.4001,
+        "MeanFps": 22.245408529141738
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 7.8314321666666755,
+        "P50Ms": 7.5925,
+        "P95Ms": 9.2219,
+        "P99Ms": 12.3482,
+        "MaxMs": 38.2959,
+        "MeanFps": 127.69056523995076
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 37.01007716666663,
+        "P50Ms": 37.6492,
+        "P95Ms": 43.5004,
+        "P99Ms": 45.1471,
+        "MaxMs": 50.8059,
+        "MeanFps": 27.019668062207028
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          250,
+          77,
+          1
+        ],
+        "pauseMs": 130.665,
+        "allocatedBytes": 1559365104
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "diagnosticPanelClosed": true,
+        "baseScrollPassed": true,
+        "runningObserved": true,
+        "pausedObserved": true,
+        "resumedObserved": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-final-max-system-1-1920x1080.json",
+      "rawSha256": "e14ff9de092198a95d986452d43db66c82da4d9ab3fe812b3f7eb3fb9bcf9597",
+      "pngSha256": "5a77019ae33025b94917fc8ad7bff38c350cea9e500024555861194282648abb",
+      "finalAcceptedInteractionCase": true,
+      "sourcePhase": "before diagnostic close repair; overlay already closed in measured frames"
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=min view=system UI=1; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "2e025079-5202-479f-a328-2f37bd035895",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1280,
+        "Height": 720,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 3,
+        "Belts": 2,
+        "Objects": 930,
+        "PixelsPerWorldUnit": 0.00018767790782973524,
+        "SelectedObjectId": "SYS-PLANET-1",
+        "MapCounts": {
+          "Entities": 930,
+          "Clusters": 3,
+          "HumanStations": 30,
+          "AiBases": 2,
+          "Territories": 2,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 4096,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8814000,
+        "MotionEpochMs": 29380,
+        "SelectedFieldId": null,
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 43.98116449999999,
+        "P50Ms": 45.3802,
+        "P95Ms": 48.2928,
+        "P99Ms": 52.3941,
+        "MaxMs": 60.5936,
+        "MeanFps": 22.737005974455275
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 5.291444999999992,
+        "P50Ms": 5.0089,
+        "P95Ms": 8.0745,
+        "P99Ms": 9.383,
+        "MaxMs": 19.3231,
+        "MeanFps": 188.98429446020916
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 38.57922766666671,
+        "P50Ms": 39.8407,
+        "P95Ms": 42.8939,
+        "P99Ms": 44.9515,
+        "MaxMs": 45.6039,
+        "MeanFps": 25.9206847954611
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          236,
+          49,
+          1
+        ],
+        "pauseMs": 97.875,
+        "allocatedBytes": 1475114928
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "diagnosticPanelClosed": true,
+        "baseScrollPassed": true,
+        "runningObserved": true,
+        "pausedObserved": true,
+        "resumedObserved": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 3,
+        "maxPlanets": 3,
+        "minBelts": 2,
+        "maxBelts": 2,
+        "startMinDays": 50,
+        "startMaxDays": 50,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 3,
+          "maxClusters": 3,
+          "minStations": 10,
+          "maxStations": 10,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 2,
+          "maxBases": 2,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-final-min-system-1-1280x720.json",
+      "rawSha256": "d09c8f61fcfbfed41670cb802a5eba9a131508140b159815c85016854985d8b3",
+      "pngSha256": "1863b72ef3bb8099eb93669397686e918310b96cd193494bd221dd5223993d92",
+      "finalAcceptedInteractionCase": true,
+      "sourcePhase": "before diagnostic close repair; overlay already closed in measured frames"
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=base UI=1.5; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "dc9b16b2-64a6-493e-969e-649b138098f3",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1280,
+        "Height": 720,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1.5,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 4.083220913874338e-05,
+        "SelectedObjectId": "SYS-AI-1",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8780700,
+        "MotionEpochMs": 29269,
+        "SelectedFieldId": null,
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 44.09490149999997,
+        "P50Ms": 45.256,
+        "P95Ms": 48.7335,
+        "P99Ms": 50.5839,
+        "MaxMs": 51.9763,
+        "MeanFps": 22.67835885742937
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 5.6532296666666655,
+        "P50Ms": 5.5655,
+        "P95Ms": 6.7246,
+        "P99Ms": 8.1032,
+        "MaxMs": 9.9256,
+        "MeanFps": 176.89003613214845
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 38.32291549999997,
+        "P50Ms": 39.46,
+        "P95Ms": 42.6248,
+        "P99Ms": 44.7581,
+        "MaxMs": 45.3475,
+        "MeanFps": 26.094048089843287
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          280,
+          87,
+          1
+        ],
+        "pauseMs": 126.458,
+        "allocatedBytes": 1751451336
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "diagnosticPanelClosed": true,
+        "baseScrollPassed": true,
+        "runningObserved": true,
+        "pausedObserved": true,
+        "resumedObserved": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-final-repaired-max-base-1.5-1280x720.json",
+      "rawSha256": "b8b7eb00b546801e401d019fe97ba6c28e3f9b2785d4adba017ec9d37d5d83a7",
+      "pngSha256": "fbcf075d8c2c390b918aa7646650015f71255897ca9236bdb2af1d2d64863de6",
+      "finalAcceptedInteractionCase": true,
+      "sourcePhase": "after diagnostic close repair"
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=system UI=1; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "21b6c594-b9ef-47db-81e1-766125213523",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1920,
+        "Height": 1080,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 0.00018542165337699794,
+        "SelectedObjectId": "SYS-SUN",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 7588800,
+        "MotionEpochMs": 25296,
+        "SelectedFieldId": null,
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 38.02618349999999,
+        "P50Ms": 37.9212,
+        "P95Ms": 39.7362,
+        "P99Ms": 42.9559,
+        "MaxMs": 55.3541,
+        "MeanFps": 26.29766934144207
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 7.622707166666676,
+        "P50Ms": 7.4998,
+        "P95Ms": 9.0524,
+        "P99Ms": 11.381,
+        "MaxMs": 25.2435,
+        "MeanFps": 131.18698883946354
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 30.332879999999992,
+        "P50Ms": 30.2758,
+        "P95Ms": 31.1663,
+        "P99Ms": 31.5817,
+        "MaxMs": 39.6384,
+        "MeanFps": 32.96752566851549
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          248,
+          87,
+          1
+        ],
+        "pauseMs": 123.198,
+        "allocatedBytes": 1550410736
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "diagnosticFineTimer": true,
+      "rawName": "ep4-native-fine-timer.json",
+      "rawSha256": "e451fcaa09009d76a0632d8e0d7cbe7d5823c570724baef82fc288d731a7e579",
+      "pngSha256": "c72cae3b314454cb6f3b000d3bdb551c80b6ee471fc25552e6415e501b984f95",
+      "finalAcceptedInteractionCase": false
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=base UI=1.5; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "21b6c594-b9ef-47db-81e1-766125213523",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1280,
+        "Height": 720,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1.5,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 4.083220913874338e-05,
+        "SelectedObjectId": "SYS-AI-1",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8798700,
+        "MotionEpochMs": 29329,
+        "SelectedFieldId": null,
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 43.81684816666667,
+        "P50Ms": 45.0333,
+        "P95Ms": 48.8883,
+        "P99Ms": 50.8406,
+        "MaxMs": 54.596,
+        "MeanFps": 22.82227138283174
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 5.703383333333335,
+        "P50Ms": 5.5629,
+        "P95Ms": 6.75,
+        "P99Ms": 8.8401,
+        "MaxMs": 21.5469,
+        "MeanFps": 175.3345236599328
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 37.999725499999954,
+        "P50Ms": 39.1428,
+        "P95Ms": 42.8055,
+        "P99Ms": 44.7716,
+        "MaxMs": 45.4687,
+        "MeanFps": 26.31597957201036
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          281,
+          87,
+          1
+        ],
+        "pauseMs": 126.649,
+        "allocatedBytes": 1753913904
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-max-base-1.5-1280x720.json",
+      "rawSha256": "2e3ac15390d2bdeb7911902f95c7be9f564671edfbdd167771861fbf70a936e1",
+      "pngSha256": "fb9afe1ba79fa51104935002a5bc927850ab38aa3eb0782eb1e37f8ee6965ca8",
+      "finalAcceptedInteractionCase": false
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=belt UI=1.2; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "21b6c594-b9ef-47db-81e1-766125213523",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1920,
+        "Height": 1080,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1.2,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 0.00291706150502077,
+        "SelectedObjectId": "SYS-SUN",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8769900,
+        "MotionEpochMs": 29233,
+        "SelectedFieldId": null,
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 44.27885666666664,
+        "P50Ms": 45.3961,
+        "P95Ms": 49.6185,
+        "P99Ms": 51.7818,
+        "MaxMs": 60.1693,
+        "MeanFps": 22.584142303584034
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 5.286278833333338,
+        "P50Ms": 5.1009,
+        "P95Ms": 6.36,
+        "P99Ms": 9.2974,
+        "MaxMs": 22.3049,
+        "MeanFps": 189.1689847486603
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 38.88787450000002,
+        "P50Ms": 40.0151,
+        "P95Ms": 43.7891,
+        "P99Ms": 45.1375,
+        "MaxMs": 50.1582,
+        "MeanFps": 25.71495647055741
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          257,
+          60,
+          1
+        ],
+        "pauseMs": 102.806,
+        "allocatedBytes": 1605032488
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-max-belt-1.2-1920x1080.json",
+      "rawSha256": "159bebf2c1d452dc22beb2a3c061f8085546e184f0268fff69ba828979d29dcf",
+      "pngSha256": "93b688c27e724dde494f86b45cc0e17996321f5d8dc73d6fc9a805303431406d",
+      "finalAcceptedInteractionCase": false
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=cluster UI=1.5; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "21b6c594-b9ef-47db-81e1-766125213523",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1920,
+        "Height": 1080,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1.5,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 0.017856630483259327,
+        "SelectedObjectId": "SYS-SUN",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8774400,
+        "MotionEpochMs": 29248,
+        "SelectedFieldId": null,
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 44.20758883333332,
+        "P50Ms": 45.3716,
+        "P95Ms": 49.0132,
+        "P99Ms": 51.1796,
+        "MaxMs": 59.7985,
+        "MeanFps": 22.620550597547677
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 5.479854166666666,
+        "P50Ms": 5.3528,
+        "P95Ms": 6.6673,
+        "P99Ms": 8.3204,
+        "MaxMs": 15.0986,
+        "MeanFps": 182.48660814422527
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 38.60882016666668,
+        "P50Ms": 39.7037,
+        "P95Ms": 43.1561,
+        "P99Ms": 45.1665,
+        "MaxMs": 48.4993,
+        "MeanFps": 25.90081736979262
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          267,
+          56,
+          1
+        ],
+        "pauseMs": 106.305,
+        "allocatedBytes": 1668070480
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-max-cluster-1.5-1920x1080.json",
+      "rawSha256": "23d212320a9b665f7d2dfcecbd0ffaae204ac6d7443edb59cae08e4adcf1b6db",
+      "pngSha256": "668e02d67f6afa69c07ddb3a62ecee17c823880d2222c98d428fcb5ec8fc5ebe",
+      "finalAcceptedInteractionCase": false
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=field UI=1.5; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "21b6c594-b9ef-47db-81e1-766125213523",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1920,
+        "Height": 1080,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1.5,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 0.00013512109847153573,
+        "SelectedObjectId": "SYS-SUN",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8768100,
+        "MotionEpochMs": 29227,
+        "SelectedFieldId": "SYS-FIELD-RADIATION-1",
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 44.14913600000001,
+        "P50Ms": 45.2667,
+        "P95Ms": 48.718,
+        "P99Ms": 51.5669,
+        "MaxMs": 55.1816,
+        "MeanFps": 22.65049988747231
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 6.224123333333337,
+        "P50Ms": 6.1031,
+        "P95Ms": 7.2517,
+        "P99Ms": 9.6245,
+        "MaxMs": 15.9717,
+        "MeanFps": 160.66519675863313
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 37.814873,
+        "P50Ms": 38.9225,
+        "P95Ms": 42.5443,
+        "P99Ms": 44.7195,
+        "MaxMs": 45.5575,
+        "MeanFps": 26.44462140597431
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          248,
+          64,
+          1
+        ],
+        "pauseMs": 123.988,
+        "allocatedBytes": 1550943008
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-max-field-1.5-1920x1080.json",
+      "rawSha256": "0fd31650d86ae0f56128e7ccc43436539354130a8b5c87249dd8dbd49426fa76",
+      "pngSha256": "5a9d198e8110e1aa7d489b4294c2370f2a9fa448d534c5638750d61bb19af2fc",
+      "finalAcceptedInteractionCase": false
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=poi UI=1.2; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "21b6c594-b9ef-47db-81e1-766125213523",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1280,
+        "Height": 720,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1.2,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 6.86454616601493e-05,
+        "SelectedObjectId": "SYS-PLANET-5",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8804400,
+        "MotionEpochMs": 29348,
+        "SelectedFieldId": null,
+        "SelectedPoiId": "SYS-POI-1"
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 43.904595000000015,
+        "P50Ms": 45.0851,
+        "P95Ms": 47.9196,
+        "P99Ms": 50.6074,
+        "MaxMs": 66.0222,
+        "MeanFps": 22.776659254002904
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 5.709641333333333,
+        "P50Ms": 5.4811,
+        "P95Ms": 7.0548,
+        "P99Ms": 9.7168,
+        "MaxMs": 26.765,
+        "MeanFps": 175.14234986389104
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 38.08487416666668,
+        "P50Ms": 39.3028,
+        "P95Ms": 42.6726,
+        "P99Ms": 44.7289,
+        "MaxMs": 45.9622,
+        "MeanFps": 26.25714333789864
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          281,
+          94,
+          1
+        ],
+        "pauseMs": 131.696,
+        "allocatedBytes": 1752569312
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-max-poi-1.2-1280x720.json",
+      "rawSha256": "324caec435036b5a7f4199cdaa3657d4e0528d302e4edf7d8d073887f4f3dea2",
+      "pngSha256": "4196ca3e4c30b01d54e689dce926f9c2649366d253d99690033ab7f0c3fd7195",
+      "finalAcceptedInteractionCase": false
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=poi UI=1.5; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "21b6c594-b9ef-47db-81e1-766125213523",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1920,
+        "Height": 1080,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1.5,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 0.00013512109847153573,
+        "SelectedObjectId": "SYS-SUN",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8789100,
+        "MotionEpochMs": 29297,
+        "SelectedFieldId": null,
+        "SelectedPoiId": "SYS-POI-1"
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 44.412472333333305,
+        "P50Ms": 45.511,
+        "P95Ms": 50.1617,
+        "P99Ms": 52.4573,
+        "MaxMs": 70.4357,
+        "MeanFps": 22.516197533310045
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 6.451721833333337,
+        "P50Ms": 6.1714,
+        "P95Ms": 8.0843,
+        "P99Ms": 11.4668,
+        "MaxMs": 34.5338,
+        "MeanFps": 154.9973829983525
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 37.84982283333332,
+        "P50Ms": 38.9468,
+        "P95Ms": 43.4449,
+        "P99Ms": 44.7446,
+        "MaxMs": 47.4432,
+        "MeanFps": 26.420202926797504
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          248,
+          85,
+          1
+        ],
+        "pauseMs": 128.323,
+        "allocatedBytes": 1552140072
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-max-poi-1.5-1920x1080.json",
+      "rawSha256": "4169f0c1d038751be15e009d2b2b0c9e37c43ccc0b9de45c3fe4a1a9e41e703a",
+      "pngSha256": "838ebad3bf3aa873ad160e7261a7728cc277574de7ed9e31ace7036792ed9c59",
+      "finalAcceptedInteractionCase": false
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=max view=system UI=1; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "21b6c594-b9ef-47db-81e1-766125213523",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1920,
+        "Height": 1080,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 7,
+        "Belts": 5,
+        "Objects": 1332,
+        "PixelsPerWorldUnit": 0.00018542165337699794,
+        "SelectedObjectId": "SYS-SUN",
+        "MapCounts": {
+          "Entities": 1332,
+          "Clusters": 5,
+          "HumanStations": 60,
+          "AiBases": 4,
+          "Territories": 4,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 10240,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8996700,
+        "MotionEpochMs": 29989,
+        "SelectedFieldId": null,
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 44.854179833333355,
+        "P50Ms": 45.5933,
+        "P95Ms": 51.658,
+        "P99Ms": 53.4132,
+        "MaxMs": 58.1073,
+        "MeanFps": 22.29446628420682
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 7.456070999999999,
+        "P50Ms": 7.3158,
+        "P95Ms": 8.8509,
+        "P99Ms": 10.801,
+        "MaxMs": 13.783,
+        "MeanFps": 134.11889452232955
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 37.292932166666674,
+        "P50Ms": 38.034,
+        "P95Ms": 43.3996,
+        "P99Ms": 45.2226,
+        "MaxMs": 47.6645,
+        "MeanFps": 26.814732494910235
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          249,
+          79,
+          1
+        ],
+        "pauseMs": 125.097,
+        "allocatedBytes": 1557891808
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 7,
+        "maxPlanets": 7,
+        "minBelts": 5,
+        "maxBelts": 5,
+        "startMinDays": 75,
+        "startMaxDays": 75,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 5,
+          "maxClusters": 5,
+          "minStations": 12,
+          "maxStations": 12,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 4,
+          "maxBases": 4,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-max-system-1.json",
+      "rawSha256": "82f8b0bc0774bd99a757728c79bf58e4b4b21b02ed6abc28e3855d1ead040376",
+      "pngSha256": "f5c7b8a5b9254643b7708a2feed8a48a4e6685dbafc2f275109ba341bb11d52c",
+      "finalAcceptedInteractionCase": false
+    },
+    {
+      "startedFrom": "Default_500 seed=1 config=min view=system UI=1; scripted native UI acceptance",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "moduleId": "21b6c594-b9ef-47db-81e1-766125213523",
+      "machine": {
+        "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+        "logicalProcessors": 8,
+        "runtime": ".NET 8.0.26",
+        "os": "Microsoft Windows 10.0.26200"
+      },
+      "context": {
+        "Width": 1280,
+        "Height": 720,
+        "VSync": true,
+        "MonitorRefreshHz": 100,
+        "Gpu": "Intel(R) Arc(TM) 140V GPU (16GB)",
+        "GraphicsVersion": "3.3.0 - Build 32.0.101.8860",
+        "UiScale": 1,
+        "Speed": "Speed1",
+        "Seed": 1,
+        "GeneratorVersion": 1,
+        "Planets": 3,
+        "Belts": 2,
+        "Objects": 930,
+        "PixelsPerWorldUnit": 0.00018767790782973524,
+        "SelectedObjectId": "SYS-PLANET-1",
+        "MapCounts": {
+          "Entities": 930,
+          "Clusters": 3,
+          "HumanStations": 30,
+          "AiBases": 2,
+          "Territories": 2,
+          "Fields": 5,
+          "PointsOfInterest": 2,
+          "ConfiguredBeltDecorationSamples": 4096,
+          "ConfiguredDebrisDecorationSamples": 128
+        },
+        "Layers": "All",
+        "CalendarEpochMs": 8809200,
+        "MotionEpochMs": 29364,
+        "SelectedFieldId": null,
+        "SelectedPoiId": null
+      },
+      "measuredFrames": 600,
+      "warmupFrames": 120,
+      "frameIntervals": {
+        "Count": 600,
+        "MeanMs": 43.9577986666667,
+        "P50Ms": 45.3214,
+        "P95Ms": 48.4466,
+        "P99Ms": 50.3094,
+        "MaxMs": 55.4074,
+        "MeanFps": 22.74909186383581
+      },
+      "cpuSubmit": {
+        "Count": 600,
+        "MeanMs": 4.924314000000001,
+        "P50Ms": 4.854,
+        "P95Ms": 5.8025,
+        "P99Ms": 6.6516,
+        "MaxMs": 12.493,
+        "MeanFps": 203.07397131864457
+      },
+      "swapWait": {
+        "Count": 600,
+        "MeanMs": 38.923854833333316,
+        "P50Ms": 40.2576,
+        "P95Ms": 43.4207,
+        "P99Ms": 45.3947,
+        "MaxMs": 45.8069,
+        "MeanFps": 25.691186144894047
+      },
+      "observedSpeeds": [
+        "Speed0",
+        "Speed1"
+      ],
+      "targetVerdict": "failed",
+      "timingDefinition": "CPU submit ends before SwapBuffers. Intervals include the actual swap wait; GPU execution/physical scanout are not measured.",
+      "renderGc": {
+        "collections": [
+          237,
+          54,
+          1
+        ],
+        "pauseMs": 92.908,
+        "allocatedBytes": 1476612640
+      },
+      "fullMapInteraction": {
+        "systemFitted": true,
+        "clusterFitted": true,
+        "baseSelected": true,
+        "fieldSelected": true,
+        "poiSelected": true,
+        "layersOff": true,
+        "layersOn": true,
+        "passed": true
+      },
+      "config": {
+        "schemaVersion": 1,
+        "generatorVersion": 1,
+        "maxPlacementAttempts": 64,
+        "minPlanets": 3,
+        "maxPlanets": 3,
+        "minBelts": 2,
+        "maxBelts": 2,
+        "startMinDays": 50,
+        "startMaxDays": 50,
+        "orbitSpeedFraction": 0.001,
+        "beltWidthFraction": 0.08,
+        "orbitClearanceWorld": 100,
+        "asteroidsPerBelt": 24,
+        "decorationSamplesPerBelt": 2048,
+        "enabledScenarios": [
+          "Default",
+          "Default_500",
+          "Docked",
+          "Undocked",
+          "MarketProfiles",
+          "PlayerShipOnly"
+        ],
+        "clusters": {
+          "minClusters": 3,
+          "maxClusters": 3,
+          "minStations": 10,
+          "maxStations": 10,
+          "neighbourMinDays": 0.5,
+          "neighbourMaxDays": 2,
+          "diameterMinDays": 3,
+          "diameterMaxDays": 7,
+          "interclusterMinDays": 15,
+          "interclusterMaxDays": 35
+        },
+        "ai": {
+          "minBases": 2,
+          "maxBases": 2,
+          "defenceRadiusKm": 200,
+          "patrolRadiusKm": 1000,
+          "maxPlacementAttempts": 64
+        },
+        "environment": {
+          "radiationCount": 1,
+          "dustCount": 2,
+          "debrisCount": 2,
+          "radiationRadiusKm": 5000,
+          "dustWidthKm": 100,
+          "debrisRadiusKm": 250,
+          "intensity": 0.5
+        },
+        "poiTemplates": [
+          {
+            "id": "abandoned-relay",
+            "name": "Заброшенный ретранслятор",
+            "description": "Неактивный узел связи. Исследование пока недоступно."
+          },
+          {
+            "id": "abandoned-platform",
+            "name": "Пустая платформа",
+            "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+          }
+        ]
+      },
+      "allMapLayers": true,
+      "rawName": "ep4-native-min-system-1-1280x720.json",
+      "rawSha256": "e60b63e9dd901a147f559434e73c23d280ceb43b10f4ee4d00da52230c4950d8",
+      "pngSha256": "85180c203e220a4393c1b38018475a7fbe370da936d38c40923327704f004e03",
+      "finalAcceptedInteractionCase": false
+    }
+  ],
+  "controls": [
+    {
+      "renderer": "Intel(R) Arc(TM) 140V GPU (16GB)",
+      "graphicsVersion": "3.3.0 - Build 32.0.101.8860",
+      "visible": true,
+      "vsync": true,
+      "inputEnabled": true,
+      "startedAtUtc": "2026-10-08T09:16:24.1312863+00:00",
+      "Summary": {
+        "Frames": 196,
+        "EventsMaxMs": 0.2813,
+        "SwapMaxMs": 45.8559,
+        "IntervalP50Ms": 34.0579,
+        "IntervalP95Ms": 45.0679,
+        "IntervalP99Ms": 45.7321,
+        "IntervalMaxMs": 45.9081,
+        "FramesOver50Ms": 0,
+        "MaximumGpuCacheBytes": 0
+      },
+      "WarmupSeconds": 3,
+      "duration": 10,
+      "snapshotPath": null,
+      "rawName": "ep4-native-empty-control.json",
+      "rawSha256": "0596d4327f4a22ca99ff48f45cc3b7eda150b1219771e55aabff641e5c21ea14"
+    },
+    {
+      "renderer": "Intel(R) Arc(TM) 140V GPU (16GB)",
+      "graphicsVersion": "3.3.0 - Build 32.0.101.8860",
+      "visible": true,
+      "vsync": false,
+      "inputEnabled": true,
+      "startedAtUtc": "2026-10-08T09:17:33.3824615+00:00",
+      "Summary": {
+        "Frames": 479,
+        "EventsMaxMs": 0.6342,
+        "SwapMaxMs": 0.99,
+        "IntervalP50Ms": 15.2871,
+        "IntervalP95Ms": 16.2229,
+        "IntervalP99Ms": 19.8397,
+        "IntervalMaxMs": 20.9959,
+        "FramesOver50Ms": 0,
+        "MaximumGpuCacheBytes": 0
+      },
+      "WarmupSeconds": 3,
+      "duration": 10,
+      "snapshotPath": null,
+      "rawName": "ep4-native-empty-no-vsync.json",
+      "rawSha256": "974a0f77229a5973c4e7a87b8102bcb86ffd5fa26ce672008c488d6da9c9bfbd"
+    }
+  ],
+  "acceptance": {
+    "scriptedInteraction": "PASS final 8/8; intermediate failures retained",
+    "fps80": "OPEN; measured failures",
+    "gpuExecution": "not-measured",
+    "physicalScanout": "not-measured",
+    "humanPlaythrough": "not-run"
+  },
+  "diagnosis": "Fresh same-host baseline and empty OpenGL window also miss target with VSync. Empty no-VSync control reduces swap wait below1ms but sleeps5ms by harness design and is not gameplay FPS evidence. Temporary process1ms timer diagnostic did not meet target and was removed. Driver/OS root cause is not proven.",
+  "finalMatrix": {
+    "cases": 8,
+    "scriptedInteractionPassed": 8,
+    "fpsPassed": 0,
+    "p99MsMin": 50.5839,
+    "p99MsMax": 54.4007,
+    "pngReview": [
+      "ep4-native-final-max-belt-1.2-1920x1080.png",
+      "ep4-native-final-max-cluster-1.5-1920x1080.png",
+      "ep4-native-final-max-field-1.5-1920x1080.png",
+      "ep4-native-final-max-poi-1.2-1280x720.png",
+      "ep4-native-final-max-poi-1.5-1920x1080.png",
+      "ep4-native-final-max-system-1-1920x1080.png",
+      "ep4-native-final-min-system-1-1280x720.png",
+      "ep4-native-final-repaired-max-base-1.5-1280x720.png"
+    ],
+    "pngReviewResult": "All eight inspected. Reproduced panel/toolbar overlap and unreachable diagnostic X repaired, affected native case repeated; selected compact base panel was scrolled to the bottom through actual wheel handler."
+  },
+  "sourceHashScope": "Final source bytes; earlier cases retain their own moduleId and phase, not asserted identical to final build.",
+  "clientTests": {
+    "path": "tests\\DeepSpaceSaga.Client.Tests\\TestResults\\ep4-client-native-final.trx",
+    "sha256": "2bedbd3920c0b809f1909b2c3e02b4fc8dd6123bcfc94e9177540f72207ef137",
+    "counters": {
+      "total": "1758",
+      "executed": "1758",
+      "passed": "1758",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    }
+  },
+  "linkedReportProbe": {
+    "sha256": "eed282fb104d31f674b266b6aa0b897069feab7d0fb964f47ccbb58c60ac2d01",
+    "nativeReference": {
+      "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\TestResults\\ep4-native-final-repaired-max-base-1.5-1280x720.json",
+      "sha256": "B8B7EB00B546801E401D019FE97BA6C28E3F9B2785D4ADBA017EC9D37D5D83A7",
+      "commit": "e94f4699ce24bd8a0ce818ff374635bb1959c327",
+      "targetVerdict": "failed",
+      "coverage": "Independent native case; inspect its map counts, layers, config and epoch. Not GPU execution timing."
+    },
+    "criteria": {
+      "generationSnapshotSave": "measured",
+      "rasterFrames": "measured",
+      "nativePresentation": "linked-independent-case",
+      "gpuExecution": "not-measured",
+      "improvement": "not-measured; missing fresh baseline"
+    },
+    "note": "One maximum PlayerShipOnly case verifies native evidence reference; not the 600-world performance corpus. Use absolute paths for output and --client-frame-report because the runner enters its asset directory."
+  }
+}
