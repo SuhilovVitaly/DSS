@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0005-known-points-of-interest
 ticket: EP-0004-US-0005-TK-0004-poi-map-selection
 title: Выбор точек интереса среди существующих ресурсов
-stage: approved
+stage: done
 layer: client
 depends_on: [EP-0004-US-0004-TK-0001-environment-field-contract, EP-0004-US-0004-TK-0002-seeded-environment-fields, EP-0004-US-0004-TK-0003-environment-field-content, EP-0004-US-0004-TK-0004-environment-field-rendering, EP-0003-US-0003-TK-0001-resource-orbit-binding, EP-0003-US-0003-TK-0002-cluster-resource-placement, EP-0003-US-0003-TK-0003-cluster-resource-map, EP-0004-US-0005-TK-0003-abandoned-object-content]
 files_touched: 4
@@ -157,3 +157,7 @@ public sealed record PoiTemplate(string Id,string Name,string Description); conf
 ### EP-0004-US-0005-TK-0003-abandoned-object-content
 
 No API change. poiTemplates используют Id/Name/Description с camelCase в JSON; локализация шаблонов позднее не блокирует этот content scope.
+
+## Execution evidence — 2026-10-08
+
+Distinct hexagonal POI markers resolve from shared motion/parent prediction; local descriptor selection shows measured wrapped name, description and unavailable-exploration notice. Real command selection is preserved, object commands disabled during descriptor inspection. Existing resources retain canonical IDs/composition/bindings; no duplicate entities. Named tests 3/3; full Client 1752/1752 PASS (ep4-us5-tk4.trx); build, scoped production/test format and diff check PASS. Self-review found no remaining defect in this four-file scope. Coincident marker cycling belongs to US6; native acceptance remains US8.

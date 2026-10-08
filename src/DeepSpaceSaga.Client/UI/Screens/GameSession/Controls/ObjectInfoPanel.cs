@@ -170,6 +170,12 @@ public sealed class ObjectInfoPanel
         if (data is { } d)
         {
             lines.Add(("Name", d.Survey is not null ? d.ObjectId : d.DisplayName ?? d.ObjectId));
+            if (d.PoiDescription is { } description)
+            {
+                lines.Add(("Description", description));
+                lines.Add(("Information", AiMapPresentation.PoiNotice));
+                return lines;
+            }
             if (d.FieldKind is { } fieldKind)
             {
                 lines.Add(("Field type", fieldKind));
@@ -400,7 +406,7 @@ public sealed class ObjectInfoPanel
     }
 
     private float ValueOffset(ObjectInfoPanelData? data, List<(string Label, string Value)> lines) =>
-        data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null || data?.MarketKnowledge is not null || data?.ClusterName is not null || data?.Owner is not null || data?.FieldKind is not null
+        data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null || data?.MarketKnowledge is not null || data?.ClusterName is not null || data?.Owner is not null || data?.FieldKind is not null || data?.PoiDescription is not null
             ? Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding) : 62f;
 
     /// <summary>Wrap market values using the same measured text width used for rendering and body height.</summary>
@@ -412,7 +418,7 @@ public sealed class ObjectInfoPanel
 
     private List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data, List<(string Label, string Value)> source, float valueOffset)
     {
-        if (data?.MarketKnowledge is null && data?.ClusterName is null && data?.Owner is null && data?.FieldKind is null) return source;
+        if (data?.MarketKnowledge is null && data?.ClusterName is null && data?.Owner is null && data?.FieldKind is null && data?.PoiDescription is null) return source;
         float width = PanelWidth - ImageWidth - 4 * Padding - valueOffset;
         var result = new List<(string Label, string Value)>();
         foreach (var (label, value) in source)
@@ -573,7 +579,7 @@ public readonly record struct ObjectInfoPanelData(
     double? StraightFlightDays = null, long? EstimateMotionTimeMs = null,
     string? Owner = null, string? BaseType = null,
     double? DefenceRadiusKm = null, double? PatrolRadiusKm = null,
-    string? FieldKind = null, double? FieldIntensity = null);
+    string? FieldKind = null, double? FieldIntensity = null, string? PoiDescription = null);
 
 /// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
 public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);

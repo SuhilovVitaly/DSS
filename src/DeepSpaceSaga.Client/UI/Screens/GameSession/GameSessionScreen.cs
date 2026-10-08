@@ -158,6 +158,8 @@ public sealed partial class GameSessionScreen : IScreen
     private string? _activeObjectId;
     private string? _selectedObjectId;
     private string? _selectedFieldId;
+    private string? _selectedPoiId;
+    private IReadOnlyList<AiMapPresentation.PoiGeometry> _poiGeometry = [];
     private readonly EnvironmentFieldRenderer _fieldRenderer = new();
     private IReadOnlyList<EnvironmentFieldRenderer.Geometry> _fieldGeometry = [];
 
@@ -272,11 +274,18 @@ public sealed partial class GameSessionScreen : IScreen
     internal string? ActiveObjectId => _activeObjectId;
     internal string? SelectedObjectId => _selectedObjectId;
     internal string? SelectedFieldId => _selectedFieldId;
+    internal string? SelectedPoiId => _selectedPoiId;
     internal ObjectInfoPanelData? PlayerShipInfo => ToObjectInfoPanelData(FindPlayerShip(_renderStates));
     /// <summary>Object Info panel's "Selected Object" row content — hover (<see cref="ActiveObjectId"/>) takes priority over the last click (<see cref="SelectedObjectId"/>).</summary>
     internal ObjectInfoPanelData? SelectedOrActiveObjectInfo => _activeObjectId is not null
         ? ToObjectInfoPanelData(FindRenderStateById(_activeObjectId), FindPlayerShip(_renderStates))
-        : SelectedFieldInfo() ?? ToObjectInfoPanelData(FindRenderStateById(_selectedObjectId), FindPlayerShip(_renderStates));
+        : SelectedPoiInfo() ?? SelectedFieldInfo() ?? ToObjectInfoPanelData(FindRenderStateById(_selectedObjectId), FindPlayerShip(_renderStates));
+
+    private ObjectInfoPanelData? SelectedPoiInfo()
+    {
+        var point = _poiGeometry.FirstOrDefault(p => p.Data.ObjectId == _selectedPoiId)?.Data;
+        return point is null ? null : new(point.ObjectId, point.Name, 0, 0, null, PoiDescription: point.Description);
+    }
 
     private ObjectInfoPanelData? SelectedFieldInfo()
     {
@@ -404,7 +413,7 @@ public sealed partial class GameSessionScreen : IScreen
             // navigation command.
             if (!IsClickOnUiPanel(uiX, uiY))
             {
-                _selectedFieldId = null;
+                _selectedFieldId = null; _selectedPoiId = null;
                 SetSelectedObjectId(null);
             }
 
@@ -478,7 +487,7 @@ public sealed partial class GameSessionScreen : IScreen
         string? hitObjectId = FindNearestObjectId(x, y);
         if (hitObjectId is not null)
         {
-            _selectedFieldId = null;
+            _selectedFieldId = null; _selectedPoiId = null;
             SetSelectedObjectId(hitObjectId);
 
             if (hitObjectId == _buffer.Latest?.Snapshot.PlayerShipObjectId)
@@ -506,11 +515,20 @@ public sealed partial class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
+        var hitPoi = _poiGeometry.Select(p => (Point: p, Screen: _camera.WorldToScreen(p.X, p.Y, _viewportW, _viewportH)))
+            .Where(p => double.Hypot(p.Screen.X - x, p.Screen.Y - y) <= 15)
+            .OrderBy(p => double.Hypot(p.Screen.X - x, p.Screen.Y - y)).ThenBy(p => p.Point.Data.ObjectId, StringComparer.Ordinal).FirstOrDefault();
+        if (hitPoi.Point is not null)
+        {
+            _selectedPoiId = hitPoi.Point.Data.ObjectId; _selectedFieldId = null;
+            return ScreenEvent.None;
+        }
+
         var fieldPoint = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
         var hitField = _fieldGeometry.FirstOrDefault(f => f.Contains(fieldPoint.Item1, fieldPoint.Item2));
         if (!IsCtrlDown && hitField is not null)
         {
-            _selectedFieldId = hitField.Data.Id;
+            _selectedFieldId = hitField.Data.Id; _selectedPoiId = null;
             return ScreenEvent.None;
         }
 
@@ -751,7 +769,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     internal bool IsModuleCommandEnabled(string commandType)
     {
-        if (_selectedFieldId is not null && FindCommandTarget(commandType) == "object") return false;
+        if ((_selectedFieldId is not null || _selectedPoiId is not null) && FindCommandTarget(commandType) == "object") return false;
         if (commandType == CombatCommandTypes.Fire) return IsTorpedoFireEnabled();
         if (commandType == CombatCommandTypes.SelfDestruct) return IsSelfDestructEnabled();
         if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
@@ -802,7 +820,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private void SendCommandFromPanel(string commandType)
     {
-        if (_selectedFieldId is not null && FindCommandTarget(commandType) == "object") return;
+        if ((_selectedFieldId is not null || _selectedPoiId is not null) && FindCommandTarget(commandType) == "object") return;
         if (commandType == NavigationComputerCommandTypes.Dock && !IsModuleCommandEnabled(commandType)) return;
         if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable && !IsDefenseToggleEnabled(commandType)) return;
         if (commandType == CombatCommandTypes.SelfDestruct)
@@ -1114,6 +1132,8 @@ public sealed partial class GameSessionScreen : IScreen
         _fieldGeometry = buffered is null ? [] : EnvironmentFieldRenderer.Resolve(buffered.Snapshot,
             _renderStates.Select(s => s.Predicted), _travelEstimateMotionTimeMs);
         if (_selectedFieldId is not null && !_fieldGeometry.Any(f => f.Data.Id == _selectedFieldId)) _selectedFieldId = null;
+        _poiGeometry = buffered is null ? [] : AiMapPresentation.Points(buffered.Snapshot, _renderStates.Select(s => s.Predicted), _travelEstimateMotionTimeMs);
+        if (_selectedPoiId is not null && !_poiGeometry.Any(p => p.Data.ObjectId == _selectedPoiId)) _selectedPoiId = null;
 
         UpdateCameraFocusFromPlayer(_renderStates);
         UpdateCombatImportance();
@@ -1201,6 +1221,7 @@ public sealed partial class GameSessionScreen : IScreen
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
             RenderStageCompleted?.Invoke("label_leaders");
 
+            AiMapPresentation.DrawPoints(canvas, _poiGeometry, _camera, width, height, _selectedPoiId);
             DrawMapClusters(canvas);
             // Important markers and plaques stay above clusters and background contacts.
             for (int markerPass = 0; markerPass < 2; markerPass++)

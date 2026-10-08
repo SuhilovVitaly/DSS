@@ -1,10 +1,48 @@
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 internal static class AiMapPresentation
 {
+    internal const string PoiNotice = "Исследование пока недоступно";
+    internal sealed record PoiGeometry(PointOfInterestData Data, double X, double Y);
+
+    internal static IReadOnlyList<PoiGeometry> Points(AuthoritativeSnapshot snapshot, IEnumerable<ObjectMotionSnapshot> poses, long motionTimeMs)
+    {
+        if (snapshot.AiMap is not { } map || map.PointsOfInterest.IsDefaultOrEmpty) return [];
+        var objects = poses.ToDictionary(p => p.ObjectId, StringComparer.OrdinalIgnoreCase);
+        var result = new List<PoiGeometry>();
+        foreach (var point in map.PointsOfInterest.OrderBy(p => p.ObjectId, StringComparer.Ordinal))
+        {
+            ObjectMotionSnapshot? anchor = null;
+            if (point.ParentObjectId is { } parent) objects.TryGetValue(parent, out anchor);
+            else if (point.Orbit is { } orbit) anchor = OrbitalMotionMath.At(new(point.ObjectId, 0, 0, 0, 0), orbit, motionTimeMs);
+            if (anchor is not null) result.Add(new(point, anchor.X + point.OffsetX, anchor.Y + point.OffsetY));
+        }
+        return result;
+    }
+
+    internal static void DrawPoints(SKCanvas canvas, IReadOnlyList<PoiGeometry> points, CameraState camera, int width, int height, string? selectedId)
+    {
+        using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(150, 215, 210), Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
+        foreach (var point in points)
+        {
+            var (x, y) = camera.WorldToScreen(point.X, point.Y, width, height);
+            if (!float.IsFinite(x) || !float.IsFinite(y) || x < -30 || x > width + 30 || y < -30 || y > height + 30) continue;
+            using var path = new SKPath();
+            for (int i = 0; i < 6; i++)
+            {
+                float dx = 9 * (float)Math.Cos(i * Math.PI / 3), dy = 9 * (float)Math.Sin(i * Math.PI / 3);
+                if (i == 0) path.MoveTo(x + dx, y + dy); else path.LineTo(x + dx, y + dy);
+            }
+            path.Close(); paint.Style = SKPaintStyle.Stroke; canvas.DrawPath(path, paint);
+            if (point.Data.ObjectId == selectedId) canvas.DrawCircle(x, y, 14, paint);
+            paint.Style = SKPaintStyle.Fill; paint.TextSize = 12; canvas.DrawText("POI", x + 13, y - 10, paint);
+        }
+    }
+
     internal const string TerritoryNotice = "Территория ИИ; патрули будут добавлены позднее";
     internal sealed record TerritoryGeometry(TerritoryMapData Data, double X, double Y,
         double DefenceRadiusWorld, double PatrolRadiusWorld);
