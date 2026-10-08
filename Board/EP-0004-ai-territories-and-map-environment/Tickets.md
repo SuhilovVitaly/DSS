@@ -1,5 +1,16 @@
 # Тикеты EP-0004-ai-territories-and-map-environment
 
+## Текущий план исполнения — 2026-10-08
+
+9 историй, 26 тикетов. Исходные 24 тикета выполняются последовательно по зависимостям; затем обязательная US-0009. Историческая planning-сводка ниже сохранена как история.
+
+| Тикет US-0009 | Результат | Зависимости |
+|---|---|---|
+| [TK-0001](EP-0004-US-0009-project-documentation/EP-0004-US-0009-TK-0001-sync-project-docs/EP-0004-US-0009-TK-0001-sync-project-docs.md) | Инвентаризация влияния и синхронизация документации всего проекта | US-0001–0008 |
+| [TK-0002](EP-0004-US-0009-project-documentation/EP-0004-US-0009-TK-0002-final-evidence-and-graph/EP-0004-US-0009-TK-0002-final-evidence-and-graph.md) | Итоговые ссылки, evidence, Board и Graphify | US-0009/TK-0001 |
+
+Фактические статусы и опубликованные SHA: [ImplementationStatus.md](ImplementationStatus.md).
+
 Созданы 2026-09-22T14:40:41Z по запросу пользователя. 8 историй, 24 тикетов. Planning complete; production/test execution не выполнялись. Story и epic draft сохранены, ticket approval — автоматический StoryBuilder workflow.
 
 Основной порядок EP-0002 → EP-0003 → EP-0004; EP-0003 также ждёт указанные в story файлах поставки EP-0001. Внутри эпика US-0001→…→US-0008 — безопасный порядок, фактические dependency edges — в frontmatter.
