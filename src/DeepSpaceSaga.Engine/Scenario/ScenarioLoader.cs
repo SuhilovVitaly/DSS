@@ -238,6 +238,7 @@ public static class ScenarioLoader
 
         ValidateEconomyTime(scenario);
         SolarSystemGeneration.ValidateWorld(gs);
+        AiBaseGenerator.ValidateWorld(gs);
 
         // Validate each object (nulls already caught in the duplicate-check loop)
         foreach (var obj in objects)

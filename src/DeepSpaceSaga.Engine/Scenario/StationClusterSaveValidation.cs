@@ -11,6 +11,8 @@ internal static class StationClusterSaveValidation
     internal static void Validate(GameStateData state, GameDataRegistry registry)
     {
         if (state.ClusterMap is not { } map) return;
+        AiBaseGenerator.ValidateWorld(state);
+        var aiIds = (state.AiMap?.Bases ?? []).Select(b => b.ObjectId).ToHashSet(StringComparer.OrdinalIgnoreCase);
         void Require([DoesNotReturnIf(false)] bool valid, string detail) { if (!valid) throw new ScenarioException($"clusterMap: {detail}. Running world was not replaced."); }
         Require(state.SolarSystem is not null && map.RulesVersion == 1 && !map.Clusters.IsDefaultOrEmpty &&
             !map.Stations.IsDefaultOrEmpty && !map.Links.IsDefaultOrEmpty, "solar system, version and resolved arrays required");
@@ -35,7 +37,7 @@ internal static class StationClusterSaveValidation
         }
         var declared = map.Clusters.SelectMany(c => c.StationIds).ToArray();
         Require(declared.Length == members.Count && declared.Distinct(StringComparer.OrdinalIgnoreCase).Count() == members.Count &&
-            declared.All(id => members.ContainsKey(id)) && state.SpaceObjects.Where(o => o.ObjectType == SpaceObjectType.Station).All(o => members.ContainsKey(o.ObjectId)),
+            declared.All(id => members.ContainsKey(id) && !aiIds.Contains(id)) && state.SpaceObjects.Where(o => o.ObjectType == SpaceObjectType.Station && !aiIds.Contains(o.ObjectId)).All(o => members.ContainsKey(o.ObjectId)),
             "partial or multiply owned station membership");
         var linkIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var pairs = new HashSet<(string, string)>();

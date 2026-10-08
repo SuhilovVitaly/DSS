@@ -3,10 +3,10 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0001-hostile-ai-bases
 ticket: EP-0004-US-0001-TK-0002-seeded-ai-bases
 title: Воспроизводимые планетные и свободные базы
-stage: approved
+stage: done
 layer: engine
 depends_on: [EP-0002-US-0006-TK-0001-known-map-projection, EP-0002-US-0006-TK-0002-system-map-navigation, EP-0003-US-0002-TK-0001-multi-cluster-placement, EP-0003-US-0002-TK-0002-full-cluster-content, EP-0003-US-0002-TK-0003-multi-cluster-overview, EP-0004-US-0001-TK-0001-ai-base-contract]
-files_touched: 5
+files_touched: 7
 serves: [AC-0001, AC-0002]
 created: 2026-09-22T14:40:41Z
 revision: 1
@@ -137,3 +137,15 @@ public sealed record ClusterResourceBinding(string FieldId,string ClusterId,stri
 ### EP-0004-US-0001-TK-0001-ai-base-contract
 
 public sealed record AiBaseMapData(string ObjectId,string BaseType,string Owner,string? ParentObjectId,OrbitalElements? Orbit,double OffsetX,double OffsetY);  public sealed record AiMapEnvironmentSnapshot(int RulesVersion,ImmutableArray<AiBaseMapData> Bases); AuthoritativeSnapshot: AiMapEnvironmentSnapshot? AiMap=null. Owner="Ai"; BaseType="Planetary"|"Orbital"; ровно один parent/own orbit. Не вводить новую общую diplomacy system. Все новые properties используют явные JsonPropertyName camelCase; ImmutableArray optional/default использует существующий ImmutableArrayDefaultJsonConverter<T>, как AuthoritativeSnapshot. Отсутствующие optional поля совместимы со старым JSON.
+
+## Актуализация scope 2026-10-08
+
+Стадия кластеров теперь находится в SimulationEngine.LoadScenario; AI stage подключается после неё. Дополнительно разрешены Scenario/ScenarioData.cs и Scenario/ScenarioLoader.cs: optional materialized aiMap нужен для проверки входных parent/IDs и сохранения принадлежности при уже существующем Save/Load. Это раннее wiring не заменяет полную US-0007 валидацию будущих полей/территорий. SolarSystemGenerator.cs переиспользуется read-only (RNG и circular orbit). По count выбирается до count-1 планет, строго меньше общего числа планет, оставшиеся базы Orbital; оба типа при count>=2. Допустимые count 2..1024, attempts 1..4096 как конечные защитные пределы; они не меняют штатные 2..4.
+
+Обнаружено тестом: StationClusterSaveValidation требовал membership всех Station, включая новые AI. Scope расширен на Scenario/StationClusterSaveValidation.cs: human completeness сохраняется, исключение только для валидированных AiMap bases; AiMap проверяется до исключения.
+
+## Выполнение и review 2026-10-08
+
+Реализован detached AI stage после кластеров, отдельные ai/counts и ai/placement streams, стабильные IDs, подмножество планет + свободные орбиты, известные Enemy projection, без рынка/stock/producers. Snapshot и сохранение несут materialized descriptors; loader проверяет owner/parents/duplicates до замены мира. Исключение AI из human cluster membership ограничено валидированными descriptors. Исправлен fallback заполнения пустого склада AI.
+
+Проверки: SeededAiBasesTests 5/5 PASS; полный Engine suite 1765/1765 PASS, 12m12s, TestResults/ep4-us1-tk2.trx; build через test PASS; scoped dotnet format Engine/test PASS; git diff --check PASS. Review проверил независимость человеческих рынков, same-seed, shared Motion, реальные serialized save restore и атомарные ошибки. Территории/обходы пока не реализованы и не заявлены.

@@ -34,6 +34,7 @@ public sealed partial class SimulationEngine : IDisposable
     private ulong _nextShipEventId;
     private TradingMapStateData? _tradingMap;
     private StationClusterMapSnapshot? _clusterMap;
+    private AiMapEnvironmentSnapshot? _aiMap;
     private StationResourceFieldConfig? _stationResourceFieldConfig;
     private StationResourceFieldsState? _stationResourceFields;
     private ImmutableDictionary<string, ResourceFieldAsteroidData> _resourceAsteroids = ImmutableDictionary<string, ResourceFieldAsteroidData>.Empty;
@@ -258,6 +259,8 @@ public sealed partial class SimulationEngine : IDisposable
                 gs = result.World.GameState;
                 clusterMap = result.Map;
             }
+            if (generation.Ai is not null)
+                gs = AiBaseGenerator.Generate(gs with { ClusterMap = clusterMap }, generation, _registry, resolvedMasterSeed);
         }
         var resourceAsteroids = (gs.StationResourceFields?.Asteroids ?? [])
             .ToImmutableDictionary(a => a.ObjectId, StringComparer.Ordinal);
@@ -279,6 +282,7 @@ public sealed partial class SimulationEngine : IDisposable
             var modules = BuildRuntimeModules(obj, scenario.SaveFormatVersion);
 
             bool isStation = obj.ObjectType == SpaceObjectType.Station;
+            bool isAiStation = gs.AiMap is { } aiMap && aiMap.Bases.Any(b => string.Equals(b.ObjectId, obj.ObjectId, StringComparison.OrdinalIgnoreCase));
             bool isPlayerShip = obj.ObjectType == SpaceObjectType.PlayerShip;
             bool isShip = isPlayerShip || obj.ObjectType == SpaceObjectType.NpcShip;
             bool isAsteroid = obj.ObjectType == SpaceObjectType.Asteroid;
@@ -291,7 +295,7 @@ public sealed partial class SimulationEngine : IDisposable
                     : ResolveProfileStationCredits(obj, marketProfile, stationSize)
                 : 0;
             int priceCoefficient = isStation ? ResolveStationPriceCoefficient(obj, resolvedMasterSeed) : 1000;
-            var inventory = isStation
+            var inventory = isStation && !isAiStation
                 ? marketProfile is null
                     ? ResolveStationInventory(obj, resolvedMasterSeed)
                     : ResolveProfileStationInventory(obj, marketProfile, stationSize)
@@ -434,6 +438,7 @@ public sealed partial class SimulationEngine : IDisposable
             MasterSeed = resolvedMasterSeed;
             _solarSystem = gs.SolarSystem;
             _clusterMap = clusterMap;
+            _aiMap = gs.AiMap;
             MasterSeedWasMissingOnLoad = resolvedMasterSeedWasMissingOnLoad;
 
             // Player Tokens (Documentation\02-FirstRelease\Mechanics\Money.md): the starting balance
@@ -736,7 +741,7 @@ public sealed partial class SimulationEngine : IDisposable
                 TradingRoutes: BuildTradingRouteProjection(clockState.GameTimeMs),
                 LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
                 VoyageFinances: BuildVoyageFinanceProjection(),
-                StationMarketKnowledge: BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: _clusterMap);
+                StationMarketKnowledge: BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: _clusterMap, AiMap: _aiMap);
         }
     }
 
@@ -1109,7 +1114,7 @@ public sealed partial class SimulationEngine : IDisposable
             MarketKnowledge: CaptureMarketKnowledge(clockState.GameTimeMs),
             VoyageLedgers: CaptureVoyageLedgers(),
             VoyageFuelSettlements: _voyageFuelSettlements.Values.OrderBy(v => v.VoyageId, StringComparer.Ordinal).ToArray(),
-            EngineIdentityCounters: new(_nextEngineCycleId, _nextShipEventId), ClusterMap: _clusterMap);
+            EngineIdentityCounters: new(_nextEngineCycleId, _nextShipEventId), ClusterMap: _clusterMap, AiMap: _aiMap);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
@@ -2140,12 +2145,16 @@ public sealed partial class SimulationEngine : IDisposable
 
     private string? GetRelationToPlayer(SpaceObjectRuntime obj)
     {
+        if (IsAiBase(obj.InitialMotion.ObjectId)) return PlayerRelation.Enemy;
         if (obj.InitialMotion.ObjectId == PlayerShipObjectId)
             return PlayerRelation.Self;
         if (obj.ObjectType == SpaceObjectType.NpcShip)
             return obj.RelationToPlayer ?? PlayerRelation.Neutral;
         return null;
     }
+
+    private bool IsAiBase(string? objectId) => objectId is not null && _aiMap is { } map &&
+        !map.Bases.IsDefaultOrEmpty && map.Bases.Any(b => string.Equals(b.ObjectId, objectId, StringComparison.OrdinalIgnoreCase));
 
     internal AuthoritativeSnapshot CaptureSnapshotForTests(
         long gameTimeMs = 0,

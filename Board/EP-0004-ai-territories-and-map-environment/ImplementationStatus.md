@@ -30,3 +30,13 @@ US-0001 → US-0002 → US-0003 → US-0004 → US-0005 → US-0006 → US-0007 
 ## US-0001 / TK-0001
 
 Контракт AiMap реализован, Contracts 167/167 PASS, scoped format PASS. Подготовительный commit 20ea959 опубликован; remote SHA проверен. Первый auto-review отказ снят после read-only проверки public origin и явного разрешения в промте. Dependency probes: Engine 7/7, Client 11/11 PASS. Native не требуется для DTO. Graphify документации: 150 nodes/166 edges; 3 обратные пары объединены undirected graph, dangling endpoints 0; граф не является runtime evidence.
+
+## Проверка внешних зависимостей
+
+Полностью прочитаны карточки непосредственно используемых EP-0002 US-0006/US-0008 и EP-0003 US-0002/US-0003/US-0004/US-0006/US-0008, их тикеты; внешние входы прослежены до EP-0001 resource/trade/save и EP-0002 orbital contracts. Коммиты поставок EP-0002 являются ancestors базы; код, именованные тесты и итоговые отчёты EP-0002/EP-0003 сверены. Свежие узкие dependency tests: Engine 7/7, Client 11/11 PASS. Исторические native/corpus цифры не считаются EP-0004 acceptance.
+
+Расхождения планов учтены: текущий SaveFormat=15; шесть сценариев с PlayerShipOnly; BeltMapData.DecorationSamples optional; ClusterResourceBinding является поставленным именем; continuation хранит revision high-water и следующий календарный час, а не новый allocator. Открытая география не раскрывает удалённые котировки и не заменяет scan; открытые cluster-resource данные ограничены cluster mode. Финальные native EP-0003 результаты scripted, human playthrough не заявлен.
+
+## US-0001 / TK-0002
+
+Генерация баз и materialized Save/Load wiring завершены. Targeted 5/5; Engine full 1765/1765 PASS (12m12s); scoped format и diff check PASS. TK-0001 опубликован 798226f. Геометрия территорий и доступ к базам — следующие тикеты.
