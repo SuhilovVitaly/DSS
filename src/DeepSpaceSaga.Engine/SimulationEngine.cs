@@ -267,6 +267,8 @@ public sealed partial class SimulationEngine : IDisposable
             }
             if (generation.Ai is not null)
                 gs = AiBaseGenerator.Generate(gs with { ClusterMap = clusterMap }, generation, _registry, resolvedMasterSeed, out aiPlacementValidation);
+            if (generation.Environment is { } environment)
+                gs = EnvironmentFieldGenerator.Generate(gs with { ClusterMap = clusterMap }, environment, resolvedMasterSeed);
         }
         var resourceAsteroids = (gs.StationResourceFields?.Asteroids ?? [])
             .ToImmutableDictionary(a => a.ObjectId, StringComparer.Ordinal);

@@ -21,7 +21,17 @@ public sealed record SolarSystemGenerationConfig(
     [property: JsonPropertyName("decorationSamplesPerBelt")] int DecorationSamplesPerBelt,
     [property: JsonPropertyName("enabledScenarios")] IReadOnlyList<string> EnabledScenarios,
     [property: JsonPropertyName("clusters")] ClusterGenerationConfig? Clusters = null,
-    [property: JsonPropertyName("ai")] AiGenerationConfig? Ai = null);
+    [property: JsonPropertyName("ai")] AiGenerationConfig? Ai = null,
+    [property: JsonPropertyName("environment")] EnvironmentGenerationConfig? Environment = null);
+
+public sealed record EnvironmentGenerationConfig(
+    [property: JsonPropertyName("radiationCount")] int RadiationCount,
+    [property: JsonPropertyName("dustCount")] int DustCount,
+    [property: JsonPropertyName("debrisCount")] int DebrisCount,
+    [property: JsonPropertyName("radiationRadiusKm")] double RadiationRadiusKm,
+    [property: JsonPropertyName("dustWidthKm")] double DustWidthKm,
+    [property: JsonPropertyName("debrisRadiusKm")] double DebrisRadiusKm,
+    [property: JsonPropertyName("intensity")] double Intensity);
 
 public sealed record AiGenerationConfig(
     [property: JsonPropertyName("minBases")] int MinBases,
@@ -61,6 +71,7 @@ public static class SolarSystemGeneration
             throw new ContentException("solarSystem: invalid generation ranges, dimensions or enabledScenarios.");
         if (c.Clusters is { } clusters) StationClusterGenerator.ValidateConfig(clusters);
         if (c.Ai is { } ai) AiBaseGenerator.ValidateConfig(ai);
+        if (c.Environment is { } environment) EnvironmentFieldGenerator.ValidateConfig(environment);
         return c;
     }
 
