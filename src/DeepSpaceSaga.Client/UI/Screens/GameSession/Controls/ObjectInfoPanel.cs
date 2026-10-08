@@ -176,6 +176,12 @@ public sealed class ObjectInfoPanel
                 lines.Add(("Owner", owner));
                 lines.Add(("Base type", d.BaseType ?? "—"));
                 lines.Add(("Access", "Docking and trade unavailable"));
+                if (d.DefenceRadiusKm is { } defence && d.PatrolRadiusKm is { } patrol)
+                {
+                    lines.Add(("Defence radius", $"{defence:G} km"));
+                    lines.Add(("Patrol radius", $"{patrol:G} km"));
+                    lines.Add(("Territory", AiMapPresentation.TerritoryNotice));
+                }
             }
             if (d.Countermeasure is { } countermeasure)
             {
@@ -558,7 +564,8 @@ public readonly record struct ObjectInfoPanelData(
     string? ClusterName = null, string? ClusterProfile = null, string? ClusterDirections = null,
     string? ResourceCluster = null, string? ResourceOwner = null,
     double? StraightFlightDays = null, long? EstimateMotionTimeMs = null,
-    string? Owner = null, string? BaseType = null);
+    string? Owner = null, string? BaseType = null,
+    double? DefenceRadiusKm = null, double? PatrolRadiusKm = null);
 
 /// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
 public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);

@@ -2,7 +2,7 @@
 epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0002-moving-ai-territories
 title: Движущиеся области будущей угрозы
-stage: draft
+stage: done
 dependencies: [EP-0004-US-0001-hostile-ai-bases]
 created: 2026-09-22T14:40:41Z
 source_request: "сделай тикеты для историй в эпиках 2 3 и 4&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0004-ai-territories-and-map-environment"
@@ -104,3 +104,7 @@ Implementation gates (перед первым тикетом, проверяют
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0002-TK-0001-territory-radii-contract | stage approved; 2 files; contracts; AC 1/2 |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0002-TK-0002-moving-territory-data | stage approved; 4 files; engine; AC 1/2/3 |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0002-TK-0003-territory-rendering | stage approved; 4 files; client; AC 1/2/3 |
+
+## Implementation and story self-review — 2026-10-08
+
+Три тикета реализованы. AC-0001: exact DTO/raster zoom, общий fill и выбор каждой базы; AC-0002: общая orbital math и predicted pose, Engine pause/calendar/continuation tests; AC-0003: validation радиусов, стартовая сеть и отсутствие эффектов проверены MovingTerritoryDataTests. Contracts 169/169, Engine non-corpus 1672/1672, Client 1742/1742 PASS. Длительный temporal proof относится к US-0003; native viewport/input gate US-0008 NOT RUN. Это собственное review, не независимое одобрение.

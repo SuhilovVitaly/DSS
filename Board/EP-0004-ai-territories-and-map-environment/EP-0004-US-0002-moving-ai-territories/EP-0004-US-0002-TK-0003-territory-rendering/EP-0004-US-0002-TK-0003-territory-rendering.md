@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0002-moving-ai-territories
 ticket: EP-0004-US-0002-TK-0003-territory-rendering
 title: Читаемые радиусы будущей угрозы
-stage: approved
+stage: done
 layer: client
 depends_on: [EP-0004-US-0001-TK-0001-ai-base-contract, EP-0004-US-0001-TK-0002-seeded-ai-bases, EP-0004-US-0001-TK-0003-authoritative-hostile-access, EP-0004-US-0001-TK-0004-ai-base-content, EP-0004-US-0001-TK-0005-ai-base-presentation, EP-0004-US-0002-TK-0002-moving-territory-data]
 files_touched: 4
@@ -145,3 +145,7 @@ public sealed record TerritoryMapData(string Id,string BaseObjectId,double Defen
 ### EP-0004-US-0002-TK-0002-moving-territory-data
 
 No command API. Territory centers вычисляются по BaseObjectId; generator failure code ai_start_network_overlap включает base/link ID.
+
+## Execution / self-review — 2026-10-08
+
+Оба радиуса используют world=km*10 и predicted pose базы. Общая winding-заливка не накапливает alpha при перекрытии; контуры и выбор владельцев сохранены, сведения явно информационные. Targeted TerritoryRenderingTests: 2/2 PASS; полный Client: 1742/1742 PASS (ep4-us2-tk3.trx); build, scoped format обоих проектов и diff check PASS. Self-review diff по AC: подтверждённых дефектов нет. Native gate перенесён в консолидированную US-0008 и остаётся NOT RUN.

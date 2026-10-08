@@ -1119,7 +1119,11 @@ public sealed partial class GameSessionScreen : IScreen
 
         // 2. Camera focus indicator
         if (buffered is not null)
+        {
+            AiMapPresentation.DrawTerritories(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
+            RenderStageCompleted?.Invoke("territories");
             ClusterMapPresentation.Draw(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
+        }
         float cx = width / 2f;
         float cy = height / 2f;
         _depthRenderer.DrawFocusIndicator(canvas, cx, cy);
@@ -2284,6 +2288,7 @@ public sealed partial class GameSessionScreen : IScreen
             market = observations.FirstOrDefault(o => string.Equals(o.StationObjectId, p.ObjectId, StringComparison.Ordinal));
         var cluster = ClusterMapPresentation.Station(_buffer.Latest?.Snapshot, p.ObjectId);
         var ai = AiMapPresentation.Base(_buffer.Latest?.Snapshot, p.ObjectId);
+        var territory = AiMapPresentation.Territory(_buffer.Latest?.Snapshot, p.ObjectId);
         var resource = ClusterMapPresentation.Resource(_buffer.Latest?.Snapshot, p.ObjectId);
         var resourceCluster = resource is null ? null : _buffer.Latest?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
@@ -2291,7 +2296,8 @@ public sealed partial class GameSessionScreen : IScreen
             cluster?.ClusterName, cluster?.Profile, cluster?.Directions, resourceCluster, resource?.AnchorStationId,
             cluster is not null && distanceKm is { } distance && player is { } playerState
                 ? ClusterMapPresentation.EstimateStraightDays(distance * 10, playerState.Source.MaxSpeedKmS ?? 0) : null,
-            cluster is null ? null : _travelEstimateMotionTimeMs, ai?.Owner, ai?.BaseType);
+            cluster is null ? null : _travelEstimateMotionTimeMs, ai?.Owner, ai?.BaseType,
+            territory?.DefenceRadiusKm, territory?.PatrolRadiusKm);
     }
 
     /// <summary>

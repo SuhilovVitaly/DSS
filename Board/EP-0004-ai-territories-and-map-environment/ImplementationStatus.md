@@ -1,6 +1,6 @@
 # EP-0004 — отчёт исполнения
 
-Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: подготовка; ни один тикет реализации пока не завершён.
+Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001 и US-0002 реализованы (8/26 тикетов), остальные истории ожидают исполнения.
 
 ## База и изоляция
 
@@ -21,7 +21,7 @@ US-0001 → US-0002 → US-0003 → US-0004 → US-0005 → US-0006 → US-0007 
 
 ## Публикации
 
-Тикеты реализации ещё не опубликованы. Подготовительный коммит Board не заменяет коммиты тикетов.
+Публикация каждого завершённого тикета проверяется через remote SHA. История Git ветки codex/ep-0004-ai-territories содержит отдельные коммиты; полная таблица SHA синхронизируется последней историей.
 
 ## Технические допущения
 
@@ -60,3 +60,7 @@ Distinct AI glyph/label, owner/type panel, selection, Dock gate завершен
 ## US-0002 / TK-0002
 
 Движущиеся territory descriptors, start network segment exclusion, AI-only bounded retry и no-effects контроль завершены. Engine1672/1672 (без unchanged corpora), content2/2, focused30/30 PASS. TK-0001 опубликован a014eeb; исправление content bootstrap assertion6fad865 опубликовано отдельно. Temporal365d validation ещё OPEN/US3.
+
+## US-0002 / TK-0003 and story review
+
+Territory rendering: targeted 2/2, Client full 1742/1742 PASS; build/scoped format/diff PASS. Story self-review: AC покрыты совокупностью DTO, generation, pause/continuation и реальных render/input tests. Native NOT RUN до US-0008. TK-0002 опубликован b7c476b.
