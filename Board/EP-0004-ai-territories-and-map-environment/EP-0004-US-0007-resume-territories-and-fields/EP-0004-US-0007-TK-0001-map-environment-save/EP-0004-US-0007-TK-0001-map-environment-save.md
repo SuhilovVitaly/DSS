@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0007-resume-territories-and-fields
 ticket: EP-0004-US-0007-TK-0001-map-environment-save
 title: Сохранение баз, областей, полей и точек интереса
-stage: approved
+stage: done
 layer: engine
 depends_on: [EP-0004-US-0006-TK-0001-map-layer-controls, EP-0003-US-0006-TK-0001-cluster-save-state, EP-0003-US-0006-TK-0002-cluster-local-resume]
 files_touched: 5
@@ -151,3 +151,13 @@ public sealed record EnvironmentFieldData(string Id,string Kind,double Intensity
 ### EP-0004-US-0005-TK-0001-poi-contract
 
 public sealed record PointOfInterestData(string ObjectId,string Name,string Description,string? ParentObjectId,OrbitalElements? Orbit,double OffsetX,double OffsetY); AiMapEnvironmentSnapshot: ImmutableArray<PointOfInterestData> PointsOfInterest=default. Только map metadata, без rewards/quest triggers. Все новые properties используют явные JsonPropertyName camelCase; ImmutableArray optional/default использует существующий ImmutableArrayDefaultJsonConverter<T>, как AuthoritativeSnapshot. Отсутствующие optional поля совместимы со старым JSON.
+
+## Execution contract refinement — 2026-10-08
+
+The additive aiMap save/snapshot wiring is already implemented by earlier tickets. SaveFormat remains15: optional aiMap is compatible with absence, while aiMap.rulesVersion has its own strict supported-value check. No independent format migration. This ticket validates resolved-state restoration, ingress atomicity and closes the territory-ID versus cluster-link namespace gap. Per-ticket Engine regression uses FullyQualifiedName!~CorrectnessCorpusTests; all generated boundary corpora are rerun in US8 after complete save integration. Production changes remain within the existing allowlist.
+
+## Execution evidence — 2026-10-08
+
+Resolved aiMap round-trip and continuation proved during an actual quoted trade/voyage/arrival/sell, with complete map and finance comparison. Overlapping territories, parent/own-orbit fields, decoration seeds and POI survive JSON and 0/1/30/365-day snapshots; invalid generation config supplied on load is ignored. Legacy absent aiMap remains absent. Nineteen malformed map cases plus future save version reject atomically with unchanged save/markets. Territory ID versus cluster link (case-insensitive) gap reproduced and repaired. Negative fixture first validates its control save; initial incorrect implicit-clock fixture was corrected to explicit-time save before defect reproduction.
+
+Named3/3 and Engine non-corpus1685/1685 PASS (ep4-us7-tk1.trx); Engine build, scoped format and diff PASS. Full corpus follows US8. Self-review no remaining confirmed issue within persistence scope. Existing optional save15 wiring was reused; production change only AiBaseGenerator namespace validation, plus test file.

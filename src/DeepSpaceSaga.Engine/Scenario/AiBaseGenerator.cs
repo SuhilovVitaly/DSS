@@ -178,7 +178,9 @@ internal static class AiBaseGenerator
             var clusterIds = state.ClusterMap is { } clusters && !clusters.Clusters.IsDefault
                 ? clusters.Clusters.Where(c => c is not null).Select(c => c.Id) : [];
             var globalIds = objects.Keys.Concat(state.SolarSystem?.Belts.Select(b => b.Id) ?? [])
-                .Concat(clusterIds).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                .Concat(clusterIds)
+                .Concat(state.ClusterMap is { } links && !links.Links.IsDefault ? links.Links.Where(l => l is not null).Select(l => l.Id) : [])
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
             var owners = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var t in map.Territories)
                 if (t is null || string.IsNullOrWhiteSpace(t.Id) || !globalIds.Add(t.Id) ||
