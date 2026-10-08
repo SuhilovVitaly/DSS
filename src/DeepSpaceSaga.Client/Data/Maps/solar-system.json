@@ -14,6 +14,18 @@
   "asteroidsPerBelt": 24,
   "decorationSamplesPerBelt": 2048,
   "enabledScenarios": ["Default", "Default_500", "Docked", "Undocked", "MarketProfiles", "PlayerShipOnly"],
+  "poiTemplates": [
+    {
+      "id": "abandoned-relay",
+      "name": "Заброшенный ретранслятор",
+      "description": "Неактивный узел связи. Исследование пока недоступно."
+    },
+    {
+      "id": "abandoned-platform",
+      "name": "Пустая платформа",
+      "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+    }
+  ],
   "environment": {
     "radiationCount": 1,
     "dustCount": 2,
