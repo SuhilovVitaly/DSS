@@ -1,6 +1,6 @@
 # EP-0004 — отчёт исполнения
 
-Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0003 реализованы (10/26 тикетов), остальные истории ожидают исполнения.
+Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0003 реализованы (10/26 тикетов); дополнительно US-0004 TK-0001–0003 выполнены, всего 13/26, остальные истории ожидают исполнения.
 
 ## База и изоляция
 
@@ -74,3 +74,7 @@ Publication note: финальный append Board после проверок TK
 ## US-0003 / TK-0002 and story review
 
 Tooling 6/6 PASS; 600-world max report exits 0: 6044448 checks, 492 critical epochs, component count 1 throughout. Streaming repaired reproduced OOM and Windows handle failure. Compact evidence in evidence/us3-placement-max-summary.json. Story AC covered, finite horizon stated. TK-0001 published 30608e6 with evidence correction 86c022e.
+
+## US-0004 / TK-0001–0003
+
+Fields DTO, seeded generation, strict atomic ingress and shipped content complete. Contracts 171/171; Engine non-corpus 1678/1678 plus final focused 3/3; Client 1744/1744 PASS. All speeds/365d and 48h moving ship plus real market-event no-effects comparison passed. Published: DTO 6bb5e7e, Engine aa419ae; US-0003 report 2667134. UI rendering is next.
