@@ -68,7 +68,8 @@ public sealed record AuthoritativeSnapshot(
     /// <summary>Last observed coarse markets; legacy snapshots have no observations.</summary>
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<StationMarketKnowledgeSnapshot>))]
     ImmutableArray<StationMarketKnowledgeSnapshot> StationMarketKnowledge = default,
-    [property: JsonPropertyName("clusterMap")] StationClusterMapSnapshot? ClusterMap = null)
+    [property: JsonPropertyName("clusterMap")] StationClusterMapSnapshot? ClusterMap = null,
+    [property: JsonPropertyName("aiMap")] AiMapEnvironmentSnapshot? AiMap = null)
 {
     /// <summary>Motion/cycle timestamp; legacy snapshots use GameTimeMs for both domains.</summary>
     [JsonIgnore]

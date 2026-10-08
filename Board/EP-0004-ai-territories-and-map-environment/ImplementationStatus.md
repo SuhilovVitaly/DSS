@@ -26,3 +26,7 @@ US-0001 → US-0002 → US-0003 → US-0004 → US-0005 → US-0006 → US-0007 
 ## Технические допущения
 
 Текущие требования имеют приоритет над историческими planning-only ограничениями. Поля и территории не создают gameplay effects; базы ИИ не становятся человеческими рынками. Конкретные API сверяются с текущим кодом; необходимые изменения scope фиксируются в карточке до реализации. Граф — навигация, не runtime evidence.
+
+## US-0001 / TK-0001
+
+Контракт AiMap реализован, Contracts 167/167 PASS, scoped format PASS. Подготовительный commit 20ea959 опубликован; remote SHA проверен. Первый auto-review отказ снят после read-only проверки public origin и явного разрешения в промте. Dependency probes: Engine 7/7, Client 11/11 PASS. Native не требуется для DTO. Graphify документации: 150 nodes/166 edges; 3 обратные пары объединены undirected graph, dangling endpoints 0; граф не является runtime evidence.
