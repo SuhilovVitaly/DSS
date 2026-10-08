@@ -150,3 +150,7 @@ No API shape change. Stable reason station_access_denied; существующи
 Штатный ai config: 2..4, 200/1000 km, 64 attempts. Оба named tests покрывают загрузку и все 6 сценариев × seed1/2/42 × count2/4; human descriptors и полностью сохранённые human stations побайтно совпадают с контролем без AI. Старые synthetic legacy fixtures очищают AiMap, station total явно включает обе категории.
 
 Targeted 42/42 PASS; полный Client suite после исправлений 1737/1737 PASS (ep4-us1-tk4-final.trx, 1m16s); build/scoped format/diff check PASS. Первый полный прогон обнаружил 7 устаревших fixture assertions, исправления подтверждены повторным полным прогоном. Native ещё NOT RUN.
+
+## Исправляющий review commit 2026-10-08
+
+Во время следующей интеграции обнаружен ещё один legacy assertion в tests/DeepSpaceSaga.Engine.Tests/MasterSeedTests.cs: общее число runtime объектов не включало AI. Scope расширен этим тестом, formula дополнена AiMap.Bases.Length. Targeted MasterSeed/ClusterSave/Territory integration30/30 PASS; исходный production content не меняется. Исправление публикуется отдельным commit без переписывания истории.

@@ -131,7 +131,7 @@ public class MasterSeedTests
         var map = Assert.IsType<DeepSpaceSaga.Contracts.SolarSystemMapSnapshot>(engine.CaptureSnapshot().SolarSystemMap);
         int stations = engine.CaptureSnapshot().ClusterMap!.Stations.Length;
         int resources = engine.CaptureSaveState().GameState.StationResourceFields!.Asteroids.Count;
-        Assert.Equal(3 + resources + stations + 1 + map.Planets.Length + map.Belts.Length * 24, engine.RuntimeObjects.Length);
+        Assert.Equal(3 + resources + stations + engine.CaptureSnapshot().AiMap!.Bases.Length + 1 + map.Planets.Length + map.Belts.Length * 24, engine.RuntimeObjects.Length);
         Assert.InRange(engine.CaptureSnapshot().ClusterMap!.Clusters.Single(c => c.Id == engine.CaptureSnapshot().ClusterMap!.StartClusterId).StationIds.Length, 10, 12);
         // The two fixed temporary asteroids remain alongside the seeded station network
         // and the 57 generated station resource field asteroids.
