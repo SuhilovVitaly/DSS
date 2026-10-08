@@ -4,13 +4,15 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 internal enum MapFitMode { Target, Route, System }
+[Flags]
+internal enum MapLayerFlags { Orbits = 1, Territories = 2, Fields = 4, PointsOfInterest = 8, All = 15 }
 
 public sealed partial class GameSessionScreen
 {
     private readonly TacticalMapSettings _mapSettings;
     private readonly CameraZoomTransition _zoomTransition = new();
     private SKRect _mapToolbarRect;
-    private readonly SKRect[] _mapViewButtons = new SKRect[8];
+    private readonly SKRect[] _mapViewButtons = new SKRect[11];
     private readonly SKPaint _mapMarkerPaint = new() { IsAntialias = true };
     private readonly HashSet<string> _clusteredObjectIds = new(StringComparer.Ordinal);
     private readonly List<MapCluster> _mapClusters = new();
@@ -22,13 +24,55 @@ public sealed partial class GameSessionScreen
     private string? _navigationTargetId;
     private string? _fittedBeltId;
     private string? _fittedClusterId;
-    internal bool ShowOrbits { get; private set; } = true;
+    internal MapLayerFlags MapLayers { get; private set; } = MapLayerFlags.All;
+    internal bool ShowOrbits => MapLayers.HasFlag(MapLayerFlags.Orbits);
+    private void ToggleMapLayer(MapLayerFlags layer)
+    {
+        MapLayers ^= layer;
+        if (!MapLayers.HasFlag(MapLayerFlags.Fields)) _selectedFieldId = null;
+        if (!MapLayers.HasFlag(MapLayerFlags.PointsOfInterest)) _selectedPoiId = null;
+        _selectionCycle = []; _selectionCycleIndex = 0;
+    }
     internal IReadOnlyDictionary<string, ObjectLabelGeometry> MapLabels => _labelRenderer.Geometries;
     internal IReadOnlyList<SKRect> MapViewButtonRects => _mapViewButtons;
     internal SKRect MapToolbarRect => _mapToolbarRect;
     internal int MapClusterCount => _mapClusters.Count;
     internal bool IsZoomAnimating => _zoomTransition.Active;
     private readonly record struct MapCluster(double X, double Y, int Count, MapWorldBounds Bounds);
+    private string[] _selectionCycle = [];
+    private int _selectionCycleIndex;
+    private float _selectionCycleX, _selectionCycleY;
+
+    private (string? Id, int Kind) PickMapItem(float x, float y)
+    {
+        var candidates = new List<(string Id, int Kind, int Priority, double Distance)>();
+        foreach (var state in _renderStates)
+        {
+            if (_clusteredObjectIds.Contains(state.Pose.ObjectId)) continue;
+            var p = _camera.WorldToScreen(state.Pose.X, state.Pose.Y, _viewportW, _viewportH);
+            double distance = double.Hypot(p.X - x, p.Y - y);
+            if (ObjectLabelRenderer.HasHullBar(state.Source) && _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y)) distance = 0;
+            if (distance <= ObjectHitTestRadiusPx) candidates.Add((state.Pose.ObjectId, 0, GetClickPriority(state), distance));
+        }
+        if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest))
+            foreach (var point in _poiGeometry)
+            {
+                var p = _camera.WorldToScreen(point.X, point.Y, _viewportW, _viewportH);
+                double distance = double.Hypot(p.X - x, p.Y - y);
+                if (distance <= 15) candidates.Add((point.Data.ObjectId, 1, 4, distance));
+            }
+        if (!IsCtrlDown && MapLayers.HasFlag(MapLayerFlags.Fields))
+        {
+            var p = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
+            foreach (var field in _fieldGeometry.Where(f => f.Contains(p.Item1, p.Item2))) candidates.Add((field.Data.Id, 2, 5, 0));
+        }
+        var sorted = candidates.OrderBy(c => c.Priority).ThenBy(c => c.Distance).ThenBy(c => c.Id, StringComparer.Ordinal).ToArray();
+        var ids = sorted.Select(c => c.Id).ToArray();
+        bool repeat = double.Hypot(x - _selectionCycleX, y - _selectionCycleY) <= 3 && ids.SequenceEqual(_selectionCycle);
+        _selectionCycleIndex = repeat && ids.Length > 0 ? (_selectionCycleIndex + 1) % ids.Length : 0;
+        _selectionCycle = ids; _selectionCycleX = x; _selectionCycleY = y;
+        return sorted.Length == 0 ? (null, -1) : (sorted[_selectionCycleIndex].Id, sorted[_selectionCycleIndex].Kind);
+    }
 
     private bool IsImportantMapObject(string id) => id == _selectedObjectId || id == _activeObjectId || id == _navigationTargetId ||
         id == _buffer.Latest?.Snapshot.PlayerShipObjectId || _combatImportantIds.Contains(id) ||
@@ -278,9 +322,10 @@ public sealed partial class GameSessionScreen
             if (i == 0) SetFollowPlayer();
             else if (i < 4) FitMapView((MapFitMode)(i - 1));
             else if (i == 4) RequestTacticalMapSnapshot();
-            else if (i == 5 && IsMapViewAvailable(i)) ShowOrbits = !ShowOrbits;
+            else if (i == 5 && IsMapViewAvailable(i)) ToggleMapLayer(MapLayerFlags.Orbits);
             else if (i == 6) FitNextBelt();
             else if (i == 7) FitNextCluster();
+            else if (i >= 8) ToggleMapLayer((MapLayerFlags)(1 << (i - 7)));
             return true;
         }
         return _mapToolbarRect.Contains(x, y);
@@ -288,15 +333,25 @@ public sealed partial class GameSessionScreen
 
     private void DrawMapToolbar(SKCanvas canvas)
     {
+        bool hasMapLayers = _buffer.Latest?.Snapshot.AiMap is not null;
+        float layerRowHeight = hasMapLayers ? 28 : 0;
         float width = Math.Min(640, Math.Max(260, _uiViewportW - 16));
-        float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 62;
-        _mapToolbarRect = new(left, top, left + width, top + 58);
+        float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 62 - layerRowHeight;
+        if (hasMapLayers && _commandsPanel.BodyRect.Bottom > top - 27)
+        {
+            left = Math.Max(left, _commandsPanel.BodyRect.Right + 8);
+            width = Math.Min(width, _uiViewportW - left - 8);
+        }
+        int columns = width < 520 ? 4 : 8;
+        float wrappedRowHeight = columns == 4 ? 27 : 0;
+        top -= wrappedRowHeight;
+        _mapToolbarRect = new(left, top, left + width, top + 58 + layerRowHeight + wrappedRowHeight);
         canvas.DrawRect(_mapToolbarRect, _panelBgPaint);
         string[] keys = ["Map.Follow", "Map.ShipTarget", "Map.Route", "Map.System", "Map.Snapshot", "Map.Orbits", "Map.Belt", "Map.Cluster"];
-        float buttonWidth = (width - 12) / keys.Length;
+        float buttonWidth = (width - 12) / columns;
         for (int i = 0; i < keys.Length; i++)
         {
-            var r = new SKRect(left + 4 + i * buttonWidth, top + 4, left + 2 + (i + 1) * buttonWidth, top + 27);
+            var r = new SKRect(left + 4 + (i % columns) * buttonWidth, top + 4 + (i / columns) * 27, left + 2 + (i % columns + 1) * buttonWidth, top + 27 + (i / columns) * 27);
             _mapViewButtons[i] = r;
             bool enabled = i == 4 ? SnapshotSaveTask.IsCompleted && !_snapshotCaptureRequested && !_captureThisFrame : IsMapViewAvailable(i);
             canvas.DrawRect(r, (i == 0 && _isFocusAttachedToPlayer || i == 5 && ShowOrbits && IsMapViewAvailable(i)) ? _scaleBtnActivePaint : _scaleBtnNormalPaint);
@@ -305,16 +360,27 @@ public sealed partial class GameSessionScreen
             string label = Localization.Get(keys[i]) + (i == 4 && !enabled ? "…" : "");
             canvas.DrawText(label, r.MidX, r.MidY + 4, _scaleBtnTextPaint);
         }
+        string[] layers = ["Territories", "Fields", "POI"];
+        Array.Clear(_mapViewButtons, 8, 3);
+        for (int i = 0; hasMapLayers && i < layers.Length; i++)
+        {
+            var r = new SKRect(left + 4 + i * (width - 8) / 3, top + 31 + wrappedRowHeight, left + 2 + (i + 1) * (width - 8) / 3, top + 54 + wrappedRowHeight);
+            _mapViewButtons[8 + i] = r;
+            canvas.DrawRect(r, MapLayers.HasFlag((MapLayerFlags)(1 << (i + 1))) ? _scaleBtnActivePaint : _scaleBtnNormalPaint);
+            canvas.DrawRect(r, _panelBorderPaint);
+            _scaleBtnTextPaint.Color = new SKColor(180, 180, 180);
+            canvas.DrawText(layers[i], r.MidX, r.MidY + 4, _scaleBtnTextPaint);
+        }
         _scaleBtnTextPaint.Color = new SKColor(180, 180, 180);
         string scale = $"1 px = {TacticalMapSettings.FormatDistance(100 / _camera.PixelsPerWorldUnit)}";
-        canvas.DrawText(scale, left + 8, top + 46, _panelTextPaint);
+        canvas.DrawText(scale, left + 8, top + 46 + layerRowHeight + wrappedRowHeight, _panelTextPaint);
         // Ruler uses raw map pixels even though this canvas is in logical UI coordinates.
         double rawLength = Math.Min(120 * _uiScale, width * _uiScale * .24);
         double meters = rawLength / _camera.PixelsPerWorldUnit * 100;
         double power = Math.Pow(10, Math.Floor(Math.Log10(meters)));
         double nice = new[] { 1d, 2, 5 }.LastOrDefault(m => m * power <= meters, 1) * power;
         float rulerWidth = (float)(nice / 100 * _camera.PixelsPerWorldUnit / _uiScale);
-        float rx = left + width - rulerWidth - 10, ry = top + 49;
+        float rx = left + width - rulerWidth - 10, ry = top + 49 + layerRowHeight + wrappedRowHeight;
         _mapMarkerPaint.Color = new SKColor(160, 175, 185); _mapMarkerPaint.StrokeWidth = 1;
         canvas.DrawLine(rx, ry, rx + rulerWidth, ry, _mapMarkerPaint);
         canvas.DrawLine(rx, ry - 3, rx, ry + 3, _mapMarkerPaint);

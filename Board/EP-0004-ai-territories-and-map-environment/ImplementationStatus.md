@@ -1,6 +1,6 @@
 # EP-0004 — отчёт исполнения
 
-Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0005 реализованы (18/26 тикетов), US-0006–US-0009 ожидают исполнения.
+Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0006 реализованы (19/26 тикетов), US-0007–US-0009 ожидают исполнения.
 
 ## База и изоляция
 
@@ -86,3 +86,7 @@ Client rendering/input complete: full 1747/1747, final angular-edge regression 3
 ## US-0005 / TK-0001–0004 and story review
 
 POI contract/generation/content/rendering complete. Contracts 173/173; Engine non-corpus 1682/1682; Client full 1752/1752 PASS. No effects, canonical resource identity, local selection/no session action verified. Self-review no remaining finding in story scope; native NOT RUN before US8. Published TK1 32bcfcc, TK2 ae4856b, TK3 87ddcb6; US4 rendering ba3be06.
+
+## US-0006 / TK-0001 and story review
+
+Layer flags/cycling/adaptive controls complete. Full Client1755/1755 PASS after UI150 panel/toolbar regression repairs; build/scoped format/diff PASS. Native NOT RUN before US8. US5 TK4 published70491f4.

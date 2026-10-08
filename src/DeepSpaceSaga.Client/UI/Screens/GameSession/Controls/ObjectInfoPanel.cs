@@ -36,6 +36,8 @@ public sealed class ObjectInfoPanel
 
     /// <summary>Minimum body height for an info row: padding + image + border.</summary>
     public const float RowBodyHeight = ImageHeight + 2 * Padding;
+    private float _renderPanelWidth = PanelWidth;
+    private float _renderImageWidth = ImageWidth;
 
     private const float Margin = 8f;
     private const float Padding = 6f;
@@ -339,9 +341,13 @@ public sealed class ObjectInfoPanel
     public void Render(SKCanvas canvas, float viewportWidth, float top, ObjectInfoPanelData? playerShip, ObjectInfoPanelData? selectedOrActive,
         float viewportHeight = float.PositiveInfinity)
     {
-        float left = viewportWidth - Margin - PanelWidth;
+        bool compact = viewportWidth < 1100 && float.IsFinite(viewportHeight);
+        _renderPanelWidth = compact ? Math.Clamp(viewportWidth * .38f, 320, PanelWidth) : PanelWidth;
+        _renderImageWidth = Math.Min(ImageWidth, Math.Max(48, _renderPanelWidth - 296));
+        float panelBottom = compact ? viewportHeight * .58f : viewportHeight;
+        float left = viewportWidth - Margin - _renderPanelWidth;
 
-        _captionRect = new SKRect(left, top, left + PanelWidth, top + CaptionHeight);
+        _captionRect = new SKRect(left, top, left + _renderPanelWidth, top + CaptionHeight);
         _hideShowButtonRect = new SKRect(
             left + ButtonLeftPadding, top + 2f,
             left + ButtonLeftPadding + ButtonSize, top + 2f + ButtonSize);
@@ -366,9 +372,10 @@ public sealed class ObjectInfoPanel
                 var sourceLines = BuildLines(rowData[i]);
                 float valueOffset = ValueOffset(rowData[i], sourceLines);
                 var renderLines = BuildRenderLines(rowData[i], sourceLines, valueOffset);
-                float bodyHeight = Math.Max(RowBodyHeight, 2 * Padding + renderLines.Count * LineHeight);
+                float bodyHeight = Math.Max(_renderImageWidth * ImageHeight / ImageWidth + 2 * Padding, 2 * Padding + renderLines.Count * LineHeight);
                 float fullHeight = bodyHeight;
-                bodyHeight = Math.Min(bodyHeight, Math.Max(0, viewportHeight - Margin - rowY - RowCaptionHeight));
+                float available = Math.Max(0, panelBottom - Margin - rowY - (RowNames.Length - i) * RowCaptionHeight);
+                bodyHeight = Math.Min(bodyHeight, compact ? available / (RowNames.Length - i) : available);
                 if (_rowObjectIds[i] != rowData[i]?.ObjectId)
                 {
                     _rowObjectIds[i] = rowData[i]?.ObjectId;
@@ -377,9 +384,9 @@ public sealed class ObjectInfoPanel
                 _rowScrollLimits[i] = Math.Max(0, fullHeight - bodyHeight);
                 _rowScrollOffsets[i] = Math.Clamp(_rowScrollOffsets[i], 0, _rowScrollLimits[i]);
 
-                var captionRect = new SKRect(left, rowY, left + PanelWidth, rowY + RowCaptionHeight);
+                var captionRect = new SKRect(left, rowY, left + _renderPanelWidth, rowY + RowCaptionHeight);
                 var bodyRect = opened
-                    ? new SKRect(left, captionRect.Bottom, left + PanelWidth, captionRect.Bottom + bodyHeight)
+                    ? new SKRect(left, captionRect.Bottom, left + _renderPanelWidth, captionRect.Bottom + bodyHeight)
                     : SKRect.Empty;
 
                 _rowCaptionRects[i] = captionRect;
@@ -402,7 +409,7 @@ public sealed class ObjectInfoPanel
             Array.Clear(_rowBodyRects);
         }
 
-        _bodyRect = new SKRect(left, _captionRect.Bottom, left + PanelWidth, rowY);
+        _bodyRect = new SKRect(left, _captionRect.Bottom, left + _renderPanelWidth, rowY);
     }
 
     private float ValueOffset(ObjectInfoPanelData? data, List<(string Label, string Value)> lines) =>
@@ -419,7 +426,7 @@ public sealed class ObjectInfoPanel
     private List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data, List<(string Label, string Value)> source, float valueOffset)
     {
         if (data?.MarketKnowledge is null && data?.ClusterName is null && data?.Owner is null && data?.FieldKind is null && data?.PoiDescription is null) return source;
-        float width = PanelWidth - ImageWidth - 4 * Padding - valueOffset;
+        float width = Math.Max(32, _renderPanelWidth - _renderImageWidth - 4 * Padding - valueOffset);
         var result = new List<(string Label, string Value)>();
         foreach (var (label, value) in source)
         {
@@ -450,7 +457,7 @@ public sealed class ObjectInfoPanel
 
         float imgX = bodyRect.Left + Padding;
         float imgY = bodyRect.Top + Padding - scrollOffset;
-        var imageRect = new SKRect(imgX, imgY, imgX + ImageWidth, imgY + ImageHeight);
+        var imageRect = new SKRect(imgX, imgY, imgX + _renderImageWidth, imgY + _renderImageWidth * ImageHeight / ImageWidth);
 
         var image = data is { } d ? ResolveObjectImage(d) : null;
         if (image is not null)

@@ -43,6 +43,23 @@ internal static class AiMapPresentation
         }
     }
 
+    internal static void DrawSelectedPointLabel(SKCanvas canvas, IReadOnlyList<PoiGeometry> points, CameraState camera, int width, int height, string? selectedId)
+    {
+        var point = points.FirstOrDefault(p => p.Data.ObjectId == selectedId);
+        if (point is null) return;
+        var (x, y) = camera.WorldToScreen(point.X, point.Y, width, height);
+        if (!float.IsFinite(x) || !float.IsFinite(y) || x < 0 || x > width || y < 0 || y > height) return;
+        using var paint = new SKPaint { IsAntialias = true, TextSize = 14, Color = new SKColor(170, 230, 225) };
+        string name = point.Data.Name;
+        while (name.Length > 1 && paint.MeasureText(name) > width - 24) name = name[..^1];
+        float labelWidth = paint.MeasureText(name);
+        float left = Math.Clamp(x + 18, 8, Math.Max(8, width - labelWidth - 8));
+        float top = Math.Clamp(y + 18, 8, Math.Max(8, height - 24));
+        using var background = new SKPaint { Color = new SKColor(15, 25, 35, 240) };
+        canvas.DrawRect(new SKRect(left - 4, top - 15, left + labelWidth + 4, top + 5), background);
+        canvas.DrawText(name, left, top, paint);
+    }
+
     internal const string TerritoryNotice = "Территория ИИ; патрули будут добавлены позднее";
     internal sealed record TerritoryGeometry(TerritoryMapData Data, double X, double Y,
         double DefenceRadiusWorld, double PatrolRadiusWorld);

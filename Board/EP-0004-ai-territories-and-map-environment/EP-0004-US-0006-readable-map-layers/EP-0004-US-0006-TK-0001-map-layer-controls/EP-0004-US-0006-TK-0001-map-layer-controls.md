@@ -3,10 +3,10 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0006-readable-map-layers
 ticket: EP-0004-US-0006-TK-0001-map-layer-controls
 title: Переключаемые слои и приоритет взаимодействия
-stage: approved
+stage: done
 layer: client
 depends_on: [EP-0004-US-0005-TK-0001-poi-contract, EP-0004-US-0005-TK-0002-seeded-abandoned-objects, EP-0004-US-0005-TK-0003-abandoned-object-content, EP-0004-US-0005-TK-0004-poi-map-selection, EP-0003-US-0004-TK-0001-cluster-travel-estimates]
-files_touched: 5
+files_touched: 6
 serves: [AC-0001, AC-0002, AC-0003]
 created: 2026-09-22T14:40:41Z
 revision: 1
@@ -151,3 +151,13 @@ public sealed record EnvironmentFieldData(string Id,string Kind,double Intensity
 ### EP-0004-US-0005-TK-0001-poi-contract
 
 public sealed record PointOfInterestData(string ObjectId,string Name,string Description,string? ParentObjectId,OrbitalElements? Orbit,double OffsetX,double OffsetY); AiMapEnvironmentSnapshot: ImmutableArray<PointOfInterestData> PointsOfInterest=default. Только map metadata, без rewards/quest triggers. Все новые properties используют явные JsonPropertyName camelCase; ImmutableArray optional/default использует существующий ImmutableArrayDefaultJsonConverter<T>, как AuthoritativeSnapshot. Отсутствующие optional поля совместимы со старым JSON.
+
+## Authorized scope refinement — 2026-10-08
+
+The UI150/1280x720 regression reproduces an expanded ObjectInfoPanel covering almost the whole map (744 physical pixels wide, 648 high), blocking repeated marker selection. Add src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ObjectInfoPanel.cs to the allowed scope for responsive panel width/height using existing wrapping/scrolling; six permitted files including tests. EpicExecutionPrompt authorizes necessary scope correction before implementation. Existing fixed-width policy must adapt to preserve map access at required scales.
+
+## Execution evidence — 2026-10-08
+
+Local MapLayerFlags default all; hidden layers excluded from hit tests without changing real selected object, snapshot or quote requests. Repeated picks within 3 screen pixels cycle a stable visible list: station/player/NPC/other object, POI, field; move or visible-ID change resets it. Selected descriptor/label remains readable over coincident markers. Toolbar wraps and avoids commands; compact ObjectInfoPanel scales its image/width, reserves map space and scrolls both rows. Legacy maps without AiMap retain the existing toolbar layout.
+
+Named tests 3/3, focused related regressions 18/18, final full Client 1755/1755 PASS (ep4-us6-tk1-final.trx); build, scoped production/test format and diff PASS. Matrix covers 1280/1920, UI100/120/150, overlapping picks and generated min/max planet/belt/AI worlds. Initial five regression failures were repaired before final pass (legacy toolbar consumed pan/defense click; unconstrained panel-render fixture required original image dimensions). Actual compact UI defect reproduced and fixed. Self-review no remaining confirmed finding; native/raster visual acceptance US8 pending.

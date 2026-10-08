@@ -2,7 +2,7 @@
 epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0006-readable-map-layers
 title: Управляемые слои полной карты
-stage: draft
+stage: done
 dependencies: [EP-0004-US-0005-known-points-of-interest, EP-0003-US-0004-cluster-map-and-travel-estimates]
 created: 2026-09-22T14:40:41Z
 source_request: "сделай тикеты для историй в эпиках 2 3 и 4&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0004-ai-territories-and-map-environment"
@@ -101,3 +101,7 @@ Implementation gates (перед первым тикетом, проверяют
 |---|---|---|---|
 | 2026-09-22T14:40:41Z | Точное сообщение в разделе входного задания | Grounding, карта тикетов и assumptions | Автоматический workflow; без дополнительного approval эпика |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0006-TK-0001-map-layer-controls | stage approved; 5 files; client; AC 1/2/3 |
+
+## Story self-review — 2026-10-08
+
+AC-0001–0003 automated coverage passes: layer toggles, overlapping selection, priority, generated boundary cases, UI scale/viewport matrix, base/field descriptions, no world/quote mutation. Client full1755/1755 PASS after reproduced compact-panel and toolbar repairs. Native/manual acceptance remains NOT RUN before US8. Implementer self-review only.

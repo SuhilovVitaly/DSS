@@ -277,9 +277,9 @@ public sealed partial class GameSessionScreen : IScreen
     internal string? SelectedPoiId => _selectedPoiId;
     internal ObjectInfoPanelData? PlayerShipInfo => ToObjectInfoPanelData(FindPlayerShip(_renderStates));
     /// <summary>Object Info panel's "Selected Object" row content — hover (<see cref="ActiveObjectId"/>) takes priority over the last click (<see cref="SelectedObjectId"/>).</summary>
-    internal ObjectInfoPanelData? SelectedOrActiveObjectInfo => _activeObjectId is not null
+    internal ObjectInfoPanelData? SelectedOrActiveObjectInfo => SelectedPoiInfo() ?? SelectedFieldInfo() ?? (_activeObjectId is not null && _selectionCycleIndex == 0
         ? ToObjectInfoPanelData(FindRenderStateById(_activeObjectId), FindPlayerShip(_renderStates))
-        : SelectedPoiInfo() ?? SelectedFieldInfo() ?? ToObjectInfoPanelData(FindRenderStateById(_selectedObjectId), FindPlayerShip(_renderStates));
+        : ToObjectInfoPanelData(FindRenderStateById(_selectedObjectId), FindPlayerShip(_renderStates)));
 
     private ObjectInfoPanelData? SelectedPoiInfo()
     {
@@ -484,7 +484,14 @@ public sealed partial class GameSessionScreen : IScreen
         // Ctrl+C. Selecting any OTHER object leaves camera state completely
         // untouched (UX change, story-20260827-083137.md: selecting an object no
         // longer makes the camera follow/re-center on it).
-        string? hitObjectId = FindNearestObjectId(x, y);
+        var picked = PickMapItem(x, y);
+        if (picked.Kind is 1 or 2)
+        {
+            _selectedPoiId = picked.Kind == 1 ? picked.Id : null;
+            _selectedFieldId = picked.Kind == 2 ? picked.Id : null;
+            return ScreenEvent.None;
+        }
+        string? hitObjectId = picked.Id;
         if (hitObjectId is not null)
         {
             _selectedFieldId = null; _selectedPoiId = null;
@@ -515,23 +522,6 @@ public sealed partial class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        var hitPoi = _poiGeometry.Select(p => (Point: p, Screen: _camera.WorldToScreen(p.X, p.Y, _viewportW, _viewportH)))
-            .Where(p => double.Hypot(p.Screen.X - x, p.Screen.Y - y) <= 15)
-            .OrderBy(p => double.Hypot(p.Screen.X - x, p.Screen.Y - y)).ThenBy(p => p.Point.Data.ObjectId, StringComparer.Ordinal).FirstOrDefault();
-        if (hitPoi.Point is not null)
-        {
-            _selectedPoiId = hitPoi.Point.Data.ObjectId; _selectedFieldId = null;
-            return ScreenEvent.None;
-        }
-
-        var fieldPoint = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
-        var hitField = _fieldGeometry.FirstOrDefault(f => f.Contains(fieldPoint.Item1, fieldPoint.Item2));
-        if (!IsCtrlDown && hitField is not null)
-        {
-            _selectedFieldId = hitField.Data.Id; _selectedPoiId = null;
-            return ScreenEvent.None;
-        }
-
         // 5.6. Ctrl+Click navigation: free map area only (object case handled above)
         // — send exactly one engine.orbit command with world coordinates.
         // The camera focus is NOT changed.
@@ -559,6 +549,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
+        if (double.Hypot(x - _selectionCycleX, y - _selectionCycleY) > 3) { _selectionCycle = []; _selectionCycleIndex = 0; }
         // _mouseX/_mouseY stay raw (displayed as "Cursor Window" and used to compute
         // "Cursor Game" via the camera); _uiMouseX/_uiMouseY are the logical-space
         // coordinates UI panels hover-test against.
@@ -1164,9 +1155,9 @@ public sealed partial class GameSessionScreen : IScreen
         // 2. Camera focus indicator
         if (buffered is not null)
         {
-            _fieldRenderer.Draw(canvas, _fieldGeometry, _camera, width, height, _selectedFieldId);
+            if (MapLayers.HasFlag(MapLayerFlags.Fields)) _fieldRenderer.Draw(canvas, _fieldGeometry, _camera, width, height, _selectedFieldId);
             RenderStageCompleted?.Invoke("fields");
-            AiMapPresentation.DrawTerritories(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
+            if (MapLayers.HasFlag(MapLayerFlags.Territories)) AiMapPresentation.DrawTerritories(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
             RenderStageCompleted?.Invoke("territories");
             ClusterMapPresentation.Draw(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
         }
@@ -1221,7 +1212,7 @@ public sealed partial class GameSessionScreen : IScreen
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
             RenderStageCompleted?.Invoke("label_leaders");
 
-            AiMapPresentation.DrawPoints(canvas, _poiGeometry, _camera, width, height, _selectedPoiId);
+            if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest)) AiMapPresentation.DrawPoints(canvas, _poiGeometry, _camera, width, height, _selectedPoiId);
             DrawMapClusters(canvas);
             // Important markers and plaques stay above clusters and background contacts.
             for (int markerPass = 0; markerPass < 2; markerPass++)
@@ -1301,6 +1292,7 @@ public sealed partial class GameSessionScreen : IScreen
             // 4.5. Object label plaques (on top of objects, before UI panels)
             RenderStageCompleted?.Invoke("marker_geometry");
             _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera);
+            if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest)) AiMapPresentation.DrawSelectedPointLabel(canvas, _poiGeometry, _camera, width, height, _selectedPoiId);
             RenderStageCompleted?.Invoke("label_plaques");
             DrawOffscreenTargets(canvas);
             CompleteRenderStage("markers_and_labels");
