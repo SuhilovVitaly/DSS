@@ -52,3 +52,7 @@ AI dock/trade gates завершены; Engine без correctness corpus 1669/16
 ## US-0001 / TK-0005 и review истории
 
 Distinct AI glyph/label, owner/type panel, selection, Dock gate завершены. Client full 1740/1740 PASS; scoped format/diff PASS. Review US1 не выявил оставшихся подтверждённых дефектов в её scope. Native для всех слоёв OPEN/US8. TK-0004 опубликован ceefaf0. Территории/поля/POI ещё не реализованы.
+
+## US-0002 / TK-0001
+
+Контракт территорий завершён, Contracts169/169 PASS. US1 TK5 опубликован 17f5be4.

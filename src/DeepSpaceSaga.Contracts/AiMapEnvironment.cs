@@ -19,4 +19,14 @@ public sealed record AiBaseMapData(
 public sealed record AiMapEnvironmentSnapshot(
     [property: JsonPropertyName("rulesVersion")] int RulesVersion,
     [property: JsonPropertyName("bases"), JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<AiBaseMapData>))]
-    ImmutableArray<AiBaseMapData> Bases);
+    ImmutableArray<AiBaseMapData> Bases,
+    [property: JsonPropertyName("territories"), JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<TerritoryMapData>))]
+    ImmutableArray<TerritoryMapData> Territories = default);
+
+/// <summary>Informational circles centered on the referenced base's current pose.
+/// Radii are km, never world coordinates; overlapping circles retain both contributors.</summary>
+public sealed record TerritoryMapData(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("baseObjectId")] string BaseObjectId,
+    [property: JsonPropertyName("defenceRadiusKm")] double DefenceRadiusKm,
+    [property: JsonPropertyName("patrolRadiusKm")] double PatrolRadiusKm);
