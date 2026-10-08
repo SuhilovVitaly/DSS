@@ -1,0 +1,303 @@
+{
+  "node_count": 10376,
+  "unverified_node_count": 0,
+  "raw_edge_count": 33607,
+  "non_object_edges": 0,
+  "missing_endpoint_edges": 0,
+  "dangling_endpoint_edges": 0,
+  "external_reference_edges": 0,
+  "self_loop_edges": 0,
+  "valid_candidate_edges": 33607,
+  "exact_duplicate_edges": 0,
+  "directed_unique_endpoint_pairs": 32592,
+  "directed_same_endpoint_collapsed_edges": 1015,
+  "undirected_unique_endpoint_pairs": 32530,
+  "undirected_same_endpoint_collapsed_edges": 1077,
+  "same_endpoint_group_count": 538,
+  "relation_variant_groups": 42,
+  "source_file_variant_groups": 6,
+  "source_location_variant_groups": 505,
+  "context_variant_groups": 47,
+  "post_build_graph_type": "Graph",
+  "post_build_node_count": 10376,
+  "post_build_edge_count": 32530,
+  "post_build_error": "",
+  "producer_suppression": {
+    "path": "D:\\DeepSpaceSaga\\.graphify-venv\\Lib\\site-packages\\graphify\\extract.py",
+    "total_sites": 12,
+    "sites": [
+      {
+        "line": 1349,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids = {n[\"id\"] for n in nodes}"
+      },
+      {
+        "line": 1882,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids = {n[\"id\"] for n in nodes}"
+      },
+      {
+        "line": 1884,
+        "name": "seen_doc_refs",
+        "tuple_arity": 0,
+        "sample": "seen_doc_refs: set[str] = set()"
+      },
+      {
+        "line": 2254,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = {n[\"id\"] for n in nodes}"
+      },
+      {
+        "line": 2401,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids = {n.get(\"id\") for n in nodes}"
+      },
+      {
+        "line": 3127,
+        "name": "seen_keys",
+        "tuple_arity": 0,
+        "sample": "seen_keys: set[tuple] = set()"
+      },
+      {
+        "line": 3296,
+        "name": "seen_keys",
+        "tuple_arity": 0,
+        "sample": "seen_keys: set[tuple] = set()"
+      },
+      {
+        "line": 5370,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 5478,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 5557,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 6072,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 6073,
+        "name": "seen_edges",
+        "tuple_arity": 4,
+        "sample": "seen_edges: set[tuple[str, str, str, str | None]] = set()"
+      }
+    ],
+    "error": ""
+  },
+  "examples": [
+    {
+      "source": "src_deepspacesaga_client_ui_screens_trade_tradelayout_deepspacesaga_client_ui_screens_trade_tradelayout",
+      "target": "src_deepspacesaga_client_ui_screens_trade_tradelayout_cs_skrect",
+      "edge_count": 26,
+      "relations": [
+        "references"
+      ],
+      "source_files": [
+        "src/DeepSpaceSaga.Client/UI/Screens/Trade/TradeLayout.cs"
+      ],
+      "source_locations": [
+        "L17",
+        "L18",
+        "L19",
+        "L20",
+        "L21",
+        "L22",
+        "L23",
+        "L24",
+        "L25",
+        "L26",
+        "L27",
+        "L28",
+        "L29",
+        "L30",
+        "L31",
+        "L32",
+        "L33",
+        "L34",
+        "L35",
+        "L36",
+        "L37",
+        "L38",
+        "L39",
+        "L40",
+        "L41",
+        "L42"
+      ],
+      "contexts": [
+        "field"
+      ]
+    },
+    {
+      "source": "src_deepspacesaga_client_ui_screens_gamesession_tacticalmapdepthrenderer_deepspacesaga_client_ui_screens_gamesession_tacticalmapdepthrenderer",
+      "target": "src_deepspacesaga_client_ui_screens_gamesession_tacticalmapdepthrenderer_cs_skpaint",
+      "edge_count": 25,
+      "relations": [
+        "references"
+      ],
+      "source_files": [
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapDepthRenderer.cs"
+      ],
+      "source_locations": [
+        "L105",
+        "L125",
+        "L126",
+        "L137",
+        "L144",
+        "L151",
+        "L157",
+        "L164",
+        "L170",
+        "L177",
+        "L24",
+        "L25",
+        "L26",
+        "L27",
+        "L28",
+        "L35",
+        "L36",
+        "L38",
+        "L47",
+        "L56",
+        "L82",
+        "L83",
+        "L84",
+        "L91",
+        "L99"
+      ],
+      "contexts": [
+        "field"
+      ]
+    },
+    {
+      "source": "src_deepspacesaga_client_ui_screens_gamesession_controls_commandspanel_deepspacesaga_client_ui_screens_gamesession_controls_commandspanel",
+      "target": "src_deepspacesaga_client_ui_screens_gamesession_controls_commandspanel_cs_skpaint",
+      "edge_count": 24,
+      "relations": [
+        "references"
+      ],
+      "source_files": [
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CommandsPanel.cs"
+      ],
+      "source_locations": [
+        "L167",
+        "L168",
+        "L169",
+        "L170",
+        "L171",
+        "L172",
+        "L173",
+        "L175",
+        "L176",
+        "L177",
+        "L178",
+        "L179",
+        "L181",
+        "L184",
+        "L185",
+        "L186",
+        "L187",
+        "L188",
+        "L189",
+        "L190",
+        "L191",
+        "L194",
+        "L195",
+        "L196"
+      ],
+      "contexts": [
+        "field"
+      ]
+    },
+    {
+      "source": "src_deepspacesaga_client_ui_controls_gridpanel_deepspacesaga_client_ui_controls_gridpanel",
+      "target": "src_deepspacesaga_client_ui_controls_gridpanel_cs_skpaint",
+      "edge_count": 21,
+      "relations": [
+        "references"
+      ],
+      "source_files": [
+        "src/DeepSpaceSaga.Client/UI/Controls/GridPanel.cs"
+      ],
+      "source_locations": [
+        "L105",
+        "L113",
+        "L121",
+        "L126",
+        "L131",
+        "L136",
+        "L142",
+        "L148",
+        "L154",
+        "L159",
+        "L166",
+        "L173",
+        "L179",
+        "L184",
+        "L189",
+        "L194",
+        "L199",
+        "L204",
+        "L210",
+        "L88",
+        "L93"
+      ],
+      "contexts": [
+        "field"
+      ]
+    },
+    {
+      "source": "src_deepspacesaga_client_ui_screens_gamesession_gamesessionscreen_combat_deepspacesaga_client_ui_screens_gamesession_gamesessionscreen",
+      "target": "src_deepspacesaga_client_ui_screens_gamesession_gamesessionscreen_cs_skrect",
+      "edge_count": 20,
+      "relations": [
+        "references"
+      ],
+      "source_files": [
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs"
+      ],
+      "source_locations": [
+        "L107",
+        "L108",
+        "L112",
+        "L113",
+        "L116",
+        "L117",
+        "L121",
+        "L122",
+        "L123",
+        "L124",
+        "L134",
+        "L239",
+        "L240",
+        "L242",
+        "L243",
+        "L244",
+        "L245",
+        "L246",
+        "L247",
+        "L248"
+      ],
+      "contexts": [
+        "field",
+        "generic_arg"
+      ]
+    }
+  ]
+}

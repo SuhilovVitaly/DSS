@@ -12,6 +12,11 @@ created: 2026-09-22T14:40:41Z
 revision: 1
 ---
 
+## Текущий контракт — 2026-10-08
+
+Исходный план и скопированные dependency inputs ниже сохранены для трассировки. Фактические версии/API и расширенный scope определяются Execution/Resolved sections и [текущим контрактом](../../../../Documentation/04-Engineering/AiMapEnvironment.md). SaveFormat15, AiMap rulesVersion1, шесть сценариев, inline poiTemplates; Field/POI metadata не являются entities или engine command targets. Исторический NOT RUN не заменяет финальное native evidence US8; FPS80 acceptance остаётся OPEN.
+
+
 # Авторитетный запрет стыковки и торговли с ИИ
 
 ## Why

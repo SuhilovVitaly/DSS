@@ -1,0 +1,74 @@
+{
+  "inputHashesVerified": 692,
+  "changedInputs": [],
+  "nodes": 10376,
+  "edges": 32530,
+  "communities": 320,
+  "graphifyVersion": "0.9.66",
+  "graphSha256": "48bc97417c20686c7709c2ff61dbc29dea00c914560e171b72a955610f81230f",
+  "extractionSha256": "0035601c3b25d02da36413c0e55f2ad90723b35199481a737c942f6b8ad98248",
+  "sourceValidation": {
+    "missingSourceFiles": 0,
+    "outOfBoundsNodeOrEdgeLocations": 0,
+    "locatedNodesWithoutLine": 0,
+    "unlocatedAstReferences": 2144,
+    "unresolvedImportStubs": 29,
+    "resolvedImportEdges": 24,
+    "astFailedSources": [],
+    "freshSemanticFiles": 53,
+    "reusedSemanticFiles": 57,
+    "explicitDocumentBridges": 612,
+    "droppedStaleReuseEdges": 95,
+    "hyperedges": 7
+  },
+  "nativeAcceptance": "OPEN; FPS target measured failed",
+  "semanticTokenUsage": "unmeasured",
+  "verifiedNavigationEdges": [
+    {
+      "source": "src_deepspacesaga_engine_scenario_aibasegenerator_deepspacesaga_engine_scenario_aibasegenerator_generate",
+      "target": "src_deepspacesaga_engine_scenario_aitradeplacementvalidator_deepspacesaga_engine_scenario_aitradeplacementvalidator_validate",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/DeepSpaceSaga.Engine/Scenario/AiBaseGenerator.cs",
+      "source_location": "L33",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_deepspacesaga_engine_scenario_environmentfieldgenerator_deepspacesaga_engine_scenario_environmentfieldgenerator_generate",
+      "target": "src_deepspacesaga_engine_scenario_environmentfieldgenerator_deepspacesaga_engine_scenario_environmentfieldgenerator_validateworld",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Engine/Scenario/EnvironmentFieldGenerator.cs",
+      "source_location": "L64",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_deepspacesaga_engine_scenario_pointofinterestgenerator_deepspacesaga_engine_scenario_pointofinterestgenerator_generate",
+      "target": "src_deepspacesaga_engine_scenario_pointofinterestgenerator_deepspacesaga_engine_scenario_pointofinterestgenerator_validateworld",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Engine/Scenario/PointOfInterestGenerator.cs",
+      "source_location": "L51",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_deepspacesaga_client_tests_fullmaprenderevidencetests_deepspacesaga_client_tests_fullmaprenderevidencetests_rendernevercallssession",
+      "target": "tests_deepspacesaga_client_tests_fullmaprenderevidencetests_deepspacesaga_client_tests_throwingconnection",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Client.Tests/FullMapRenderEvidenceTests.cs",
+      "source_location": "L38",
+      "weight": 1.0,
+      "_origin": "ast"
+    }
+  ],
+  "navigationLimit": "These edges are parser evidence with retained confidence, not independent runtime proof."
+}

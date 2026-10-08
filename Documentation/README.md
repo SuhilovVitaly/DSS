@@ -40,3 +40,5 @@ Operational skill files that must be discovered in-place, such as the character-
 3. Put implementation investigations, measurements, and one-off reviews in `04-Engineering/`.
 4. When a document moves or is renamed, update links in Markdown, code comments, and project files in the same change.
 5. Keep old paths out of new documentation; link from `Documentation/` paths.
+
+- [EP-0004 Graphify](06-Tooling/AiMapGraphify.md) — текущий код, документы, hash manifest и ограничения AST.

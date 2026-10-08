@@ -1,6 +1,6 @@
 # EP-0004 — отчёт исполнения
 
-Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: функциональная реализация и evidence US1–US8 поставлены; 23/26 тикетов закрыты, US8 TK3 имеет OPEN FPS acceptance. US9 ожидает исполнения. Записи ниже хронологические: промежуточные NOT RUN заменены финальным native отчётом.
+Дата начала: 2026-10-08. Функциональная реализация/evidence поставлены; native80FPS FAILED и приёмка OPEN. Итоговый состав9 историй/26 тикетов;25 done после последней публикации, US8 TK3 in_progress по FPS. Ниже хронологические записи и финальный реестр.
 
 ## База и изоляция
 
@@ -109,7 +109,7 @@ Client final1758/1758; combined validated projects3884/3884 PASS. Native scripte
 
 ## US-0009 / TK-0001 — документационная инвентаризация
 
-Native ticket published3b435693273bdda96ef16d650e15134bb8ff6505. Its OPEN FPS gate remains visible; independent documentation continues. Entire initial Documentation corpus73 files was read before code; final inventory follows touched contracts, names, schema and input behavior.
+Native ticket published3b435693273bdda96ef16d650e15134bb8ff6505. Its OPEN FPS gate remains visible; independent documentation continues. Entire baseline Documentation corpus71 Markdown files was read before code; final inventory follows touched contracts, names, schema and input behavior.
 
 | Документ | Влияние | Изменение | Проверка |
 |---|---|---|---|
@@ -137,3 +137,55 @@ Native ticket published3b435693273bdda96ef16d650e15134bb8ff6505. Its OPEN FPS ga
 | EP-0004 Documentation.md / Tickets.md / all story and ticket cards | final statuses, API resolution, coverage and SHA registry | deferred to next dedicated TK-0002 | final graph built after their final text |
 
 Confirmed documentation contradictions repaired: Save15 vs historical11, six scenarios, Sun static sector, authoritative AI gate, current economy implementation, overlap cycle and engine.orbit, compact scrolling, absolute-path tooling and honest native failures. Old Countermeasure graph links now explicitly historical local paths rather than broken clickable references. No gameplay changes in this ticket.
+
+## Финальный реестр публикаций
+
+Ветка `codex/ep-0004-ai-territories`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`. Каждый предыдущий коммит опубликован немедленно, remote SHA проверен перед следующим тикетом. Собственный SHA заключительного коммита не предсказывается; проверяется Git после создания.
+
+| Тикет | Commit SHA | Push |
+|---|---|---|
+| [EP-0004-US-0001-TK-0001](EP-0004-US-0001-hostile-ai-bases/EP-0004-US-0001-TK-0001-ai-base-contract/EP-0004-US-0001-TK-0001-ai-base-contract.md) | `798226fe46129f093e653629f57837ad887b8b99` | verified remote |
+| [EP-0004-US-0001-TK-0002](EP-0004-US-0001-hostile-ai-bases/EP-0004-US-0001-TK-0002-seeded-ai-bases/EP-0004-US-0001-TK-0002-seeded-ai-bases.md) | `580e9e6d3f23eaf21b8d2bd596ea1a04acda3b49` | verified remote |
+| [EP-0004-US-0001-TK-0003](EP-0004-US-0001-hostile-ai-bases/EP-0004-US-0001-TK-0003-authoritative-hostile-access/EP-0004-US-0001-TK-0003-authoritative-hostile-access.md) | `a35f101c96f5ffa092dc831bf7a7a4b87541e6e5` | verified remote |
+| [EP-0004-US-0001-TK-0004](EP-0004-US-0001-hostile-ai-bases/EP-0004-US-0001-TK-0004-ai-base-content/EP-0004-US-0001-TK-0004-ai-base-content.md) | `ceefaf0d21cff716f005ef8b538b0a247ab8c1ec` | verified remote |
+| [EP-0004-US-0001-TK-0005](EP-0004-US-0001-hostile-ai-bases/EP-0004-US-0001-TK-0005-ai-base-presentation/EP-0004-US-0001-TK-0005-ai-base-presentation.md) | `17f5be4fffc31e24397c34d502f5567bd5f6b2d3` | verified remote |
+| [EP-0004-US-0002-TK-0001](EP-0004-US-0002-moving-ai-territories/EP-0004-US-0002-TK-0001-territory-radii-contract/EP-0004-US-0002-TK-0001-territory-radii-contract.md) | `a014eeb7c5078e7c7aa5bb8dc66a4e918ab4e380` | verified remote |
+| [EP-0004-US-0002-TK-0002](EP-0004-US-0002-moving-ai-territories/EP-0004-US-0002-TK-0002-moving-territory-data/EP-0004-US-0002-TK-0002-moving-territory-data.md) | `b7c476ba24caac139259bbef7a28a11175013dc4` | verified remote |
+| [EP-0004-US-0002-TK-0003](EP-0004-US-0002-moving-ai-territories/EP-0004-US-0002-TK-0003-territory-rendering/EP-0004-US-0002-TK-0003-territory-rendering.md) | `846d0d264a690abd124e8de368fbd177f5472760` | verified remote |
+| [EP-0004-US-0003-TK-0001](EP-0004-US-0003-trade-compatible-ai-placement/EP-0004-US-0003-TK-0001-temporal-placement-validation/EP-0004-US-0003-TK-0001-temporal-placement-validation.md) | `30608e6586259db4bb054308fa2f722d510b552c` | verified remote |
+| [EP-0004-US-0003-TK-0002](EP-0004-US-0003-trade-compatible-ai-placement/EP-0004-US-0003-TK-0002-placement-evidence-report/EP-0004-US-0003-TK-0002-placement-evidence-report.md) | `26671348b66e37675b66fdf9dd084bda51d4e372` | verified remote |
+| [EP-0004-US-0004-TK-0001](EP-0004-US-0004-informational-environment-fields/EP-0004-US-0004-TK-0001-environment-field-contract/EP-0004-US-0004-TK-0001-environment-field-contract.md) | `6bb5e7e65d001b31c09a6982f4a3d4c3d5a0cc7b` | verified remote |
+| [EP-0004-US-0004-TK-0002](EP-0004-US-0004-informational-environment-fields/EP-0004-US-0004-TK-0002-seeded-environment-fields/EP-0004-US-0004-TK-0002-seeded-environment-fields.md) | `aa419ae65ca68d90cba48d283cd990c53461375d` | verified remote |
+| [EP-0004-US-0004-TK-0003](EP-0004-US-0004-informational-environment-fields/EP-0004-US-0004-TK-0003-environment-field-content/EP-0004-US-0004-TK-0003-environment-field-content.md) | `1b9fe220b9b1a6ca468957e406c6727289c72d82` | verified remote |
+| [EP-0004-US-0004-TK-0004](EP-0004-US-0004-informational-environment-fields/EP-0004-US-0004-TK-0004-environment-field-rendering/EP-0004-US-0004-TK-0004-environment-field-rendering.md) | `ba3be0691805504ada3624b1e63c3925c3ff8d9d` | verified remote |
+| [EP-0004-US-0005-TK-0001](EP-0004-US-0005-known-points-of-interest/EP-0004-US-0005-TK-0001-poi-contract/EP-0004-US-0005-TK-0001-poi-contract.md) | `32bcfcc61a14fef703e85d9980dfda4c546926f6` | verified remote |
+| [EP-0004-US-0005-TK-0002](EP-0004-US-0005-known-points-of-interest/EP-0004-US-0005-TK-0002-seeded-abandoned-objects/EP-0004-US-0005-TK-0002-seeded-abandoned-objects.md) | `ae4856b5b809578dd6eff38465848b6ae7a8543d` | verified remote |
+| [EP-0004-US-0005-TK-0003](EP-0004-US-0005-known-points-of-interest/EP-0004-US-0005-TK-0003-abandoned-object-content/EP-0004-US-0005-TK-0003-abandoned-object-content.md) | `87ddcb6c609162c4abac4ba2d2723264abf6fe01` | verified remote |
+| [EP-0004-US-0005-TK-0004](EP-0004-US-0005-known-points-of-interest/EP-0004-US-0005-TK-0004-poi-map-selection/EP-0004-US-0005-TK-0004-poi-map-selection.md) | `70491f40e509d1abf80d3f6c20237b6c4b94f030` | verified remote |
+| [EP-0004-US-0006-TK-0001](EP-0004-US-0006-readable-map-layers/EP-0004-US-0006-TK-0001-map-layer-controls/EP-0004-US-0006-TK-0001-map-layer-controls.md) | `1bdb14dcd1388d4c428486649163ece04412bd2b` | verified remote |
+| [EP-0004-US-0007-TK-0001](EP-0004-US-0007-resume-territories-and-fields/EP-0004-US-0007-TK-0001-map-environment-save/EP-0004-US-0007-TK-0001-map-environment-save.md) | `ae5d953c4d1cf0f0e9b9894d2ea5ff00b501b913` | verified remote |
+| [EP-0004-US-0007-TK-0002](EP-0004-US-0007-resume-territories-and-fields/EP-0004-US-0007-TK-0002-full-map-local-load/EP-0004-US-0007-TK-0002-full-map-local-load.md) | `db657ea44a0abad6f2b54ddd59a409f90498e463` | verified remote |
+| [EP-0004-US-0008-TK-0001](EP-0004-US-0008-complete-map-evidence/EP-0004-US-0008-TK-0001-full-map-correctness-corpus/EP-0004-US-0008-TK-0001-full-map-correctness-corpus.md) | `8421ea4d675ab099794953439b8c1f4434546238` | verified remote |
+| [EP-0004-US-0008-TK-0002](EP-0004-US-0008-complete-map-evidence/EP-0004-US-0008-TK-0002-full-map-performance-report/EP-0004-US-0008-TK-0002-full-map-performance-report.md) | `e94f4699ce24bd8a0ce818ff374635bb1959c327` | verified remote |
+| [EP-0004-US-0008-TK-0003](EP-0004-US-0008-complete-map-evidence/EP-0004-US-0008-TK-0003-full-map-render-evidence/EP-0004-US-0008-TK-0003-full-map-render-evidence.md) | `3b435693273bdda96ef16d650e15134bb8ff6505` | verified remote |
+| [EP-0004-US-0009-TK-0001](EP-0004-US-0009-project-documentation/EP-0004-US-0009-TK-0001-sync-project-docs/EP-0004-US-0009-TK-0001-sync-project-docs.md) | `6f9a666983e2b01b6860d088bf711567c1a6cd2c` | verified remote |
+| [EP-0004-US-0009-TK-0002](EP-0004-US-0009-project-documentation/EP-0004-US-0009-TK-0002-final-evidence-and-graph/EP-0004-US-0009-TK-0002-final-evidence-and-graph.md) | `own SHA verified after commit; see Git subject/final reply` | verify immediately after commit |
+
+Отдельные опубликованные исправления:
+
+- `EP-0004-US-0001-TK-0004` — `6fad865c7ee1664f807811eebb2cc5ea91c8e834`: EP-0004-US-0001-TK-0004: account for AI in bootstrap regression
+- `EP-0004-US-0003-TK-0001` — `86c022e80ac95478516f1af410fcf02d167f8009`: EP-0004-US-0003-TK-0001: correct final evidence whitespace
+
+Подготовительная публикация: `20ea9593c93d076356c8999444347e32651e1079`.
+
+## Итоговое review и остаточная работа
+
+US1–US7 functional AC проверены; US8 correctness/performance/native evidence записаны. Automated3884/3884 PASS; corpus10800 primary worlds; native interactions8/8 PASS. No confirmed remaining functional defect in epic scope. Единственный незакрытый измеренный gate — native FPS80: p9950.5839–54.4007ms против12.5ms. Остаток US8 TK3: определить presentation pacing cause на целевой среде, исправить подтверждённую причину и повторить native matrix. Baseline/empty-window controls также не достигают цели; не доказана конкретная driver/OS причина. GPU execution/scanout unmeasured, human playthrough NOT RUN. Balance не переоценивался.
+
+US9 документация/evidence не превращают этот результат в полную приёмку. После финальной graph verification/push статус25 done/1 in_progress; US8 и эпик остаются in_progress. Все review в этом исполнении — self-review, не независимое APPROVED. Исторические cloned API в карточках уточнены текущим каноническим контрактом, portable links ведут в эту checkout.
+
+## US-0009 / TK-0002 — финальная проверка
+
+Graph10376 nodes/32530 edges/320 communities built from692 hashed inputs after final code/text;0 dangling/missing endpoints,0 self-loops. Health limits:1077 collapsed parallel/reverse edges and2144 unlocated AST reference nodes, retained and explained in [Graphify report](../../Documentation/06-Tooling/AiMapGraphify.md). All320 labels reviewed, source paths/line bounds and CLI traversal checked. Four self-referential run/status documents explicitly outside graph hash inputs.
+
+Board9 stories/26 unique tickets;25 done, US8 TK3 in_progress (native FPS OPEN). All25 predecessor ticket commits verified ancestors of remote6f9a666; final own SHA checked after publication in Git and final response. Documentation links and diff check PASS. Original DSS HEAD02c89d4 and its pre-existing four status entries unchanged. No new runtime code in final docs/graph ticket. Overall result remains partial acceptance: all functional implementation/evidence delivered, native80FPS criterion unmet.

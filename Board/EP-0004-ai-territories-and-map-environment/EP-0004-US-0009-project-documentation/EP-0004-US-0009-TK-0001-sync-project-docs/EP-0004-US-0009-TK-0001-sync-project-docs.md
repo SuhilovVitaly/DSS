@@ -9,6 +9,11 @@ depends_on: [EP-0004-US-0008-TK-0003-full-map-render-evidence]
 serves: [AC-0001, AC-0002]
 ---
 
+## Текущий контракт — 2026-10-08
+
+Исходный план и скопированные dependency inputs ниже сохранены для трассировки. Фактические версии/API и расширенный scope определяются Execution/Resolved sections и [текущим контрактом](../../../../Documentation/04-Engineering/AiMapEnvironment.md). SaveFormat15, AiMap rulesVersion1, шесть сценариев, inline poiTemplates; Field/POI metadata не являются entities или engine command targets. Исторический NOT RUN не заменяет финальное native evidence US8; FPS80 acceptance остаётся OPEN.
+
+
 # Синхронизация документации проекта
 
 ## Code context и шаги

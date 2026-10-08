@@ -5,7 +5,8 @@ stage: in_progress
 created: 2026-09-22T08:50:39Z
 source_request: >-
   Сделай тут три эпика по принципу первого. Не дели пока на юзерсторис. к каждому добавь файл документации D:\DeepSpaceSaga\DSS\Board\\
-current_review: slicing
+current_review: self_review_complete
+acceptance: open_native_fps
 dependencies: [EP-0002-procedural-solar-system, EP-0003-station-clusters-and-trade-geography]
 ---
 
@@ -18,7 +19,24 @@ dependencies: [EP-0002-procedural-solar-system, EP-0003-station-clusters-and-tra
 - [Завершающая история документации](EP-0004-US-0009-project-documentation/EP-0004-US-0009-project-documentation.md).
 - [Фактический отчёт исполнения](ImplementationStatus.md).
 
-## Статус и границы работы
+## Итог реализации — 2026-10-08
+
+Поставлены AI bases/access, движущиеся территории, bounded trade-compatible placement, поля/POI, слои/input, materialized Save/Load и evidence. 9 историй/26 тикетов: 25 могут быть закрыты после финальной публикации документации; US8 TK3 остаётся in_progress только по FPS acceptance. Engine/Client/Contracts/Motion/tooling3884/3884 PASS; native interactions8/8 PASS, FPS80 FAILED. Эпик полностью принятым не объявляется.
+
+[Текущий контракт](../../Documentation/04-Engineering/AiMapEnvironment.md) · [Реестр и публикации](ImplementationStatus.md).
+
+| Criterion | Поставленный результат / evidence | Acceptance |
+|---|---|---|
+| E4-AC-01 | Seed/version repeatability, anchors and strict ingress; US1/2/4/5 + full-map corpus | PASS |
+| E4-AC-02 | No human planetary settlements; distinct AI and authoritative dock/trade denial; US1 | PASS |
+| E4-AC-03 | Orbital/parent movement at all speeds/pause, independent overlapping territories; US1/2/4 | PASS within stated finite scope |
+| E4-AC-04 | Starting network exclusion and bounded365d trade detours; US2/3 + corpus | PASS |
+| E4-AC-05 | Known map, toggles, selected glyph/text/radii; US1/2/4/5/6 + native8/8 | PASS |
+| E4-AC-06 | No gameplay/economic effects or patrol promises; US2/4/5/6 + no-effects tests | PASS functional |
+| E4-AC-07 | Materialized real-file Save/Load + trade continuation; US7 | PASS |
+| E4-AC-08 | Full corpus/performance/native measurements, no sync Engine render or decoration entities; US8 | Measurements complete; target80FPS FAILED / OPEN |
+
+## Исторический статус и границы планирования — 2026-09-22
 
 Третий из трёх эпиков первой стадии карты. Описывает продуктовую цель, требования, зависимости и критерии готовности в формате существующего EP-0001. По текущему запросу выделены draft user stories; тикеты и реализация по файлам не создаются. Детализация имеет статус draft.
 
