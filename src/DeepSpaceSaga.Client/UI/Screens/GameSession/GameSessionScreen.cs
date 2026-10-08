@@ -157,6 +157,9 @@ public sealed partial class GameSessionScreen : IScreen
     // Object interaction state — ТЗ: ActiveObject and SelectedObject
     private string? _activeObjectId;
     private string? _selectedObjectId;
+    private string? _selectedFieldId;
+    private readonly EnvironmentFieldRenderer _fieldRenderer = new();
+    private IReadOnlyList<EnvironmentFieldRenderer.Geometry> _fieldGeometry = [];
 
     /// <summary>Last snapshot sequence <see cref="ConsumePendingAutoTransition"/> already
     /// checked for a dialogue or docking-state transition — see that method.</summary>
@@ -268,10 +271,18 @@ public sealed partial class GameSessionScreen : IScreen
     internal IReadOnlyList<ObjectTrailPoint> GetObjectTrail(string objectId) => _trailStore.GetTrail(objectId);
     internal string? ActiveObjectId => _activeObjectId;
     internal string? SelectedObjectId => _selectedObjectId;
+    internal string? SelectedFieldId => _selectedFieldId;
     internal ObjectInfoPanelData? PlayerShipInfo => ToObjectInfoPanelData(FindPlayerShip(_renderStates));
     /// <summary>Object Info panel's "Selected Object" row content — hover (<see cref="ActiveObjectId"/>) takes priority over the last click (<see cref="SelectedObjectId"/>).</summary>
-    internal ObjectInfoPanelData? SelectedOrActiveObjectInfo => ToObjectInfoPanelData(
-        FindRenderStateById(_activeObjectId ?? _selectedObjectId), FindPlayerShip(_renderStates));
+    internal ObjectInfoPanelData? SelectedOrActiveObjectInfo => _activeObjectId is not null
+        ? ToObjectInfoPanelData(FindRenderStateById(_activeObjectId), FindPlayerShip(_renderStates))
+        : SelectedFieldInfo() ?? ToObjectInfoPanelData(FindRenderStateById(_selectedObjectId), FindPlayerShip(_renderStates));
+
+    private ObjectInfoPanelData? SelectedFieldInfo()
+    {
+        var field = _fieldGeometry.FirstOrDefault(f => f.Data.Id == _selectedFieldId)?.Data;
+        return field is null ? null : new(field.Id, field.Kind, 0, 0, null, FieldKind: field.Kind, FieldIntensity: field.Intensity);
+    }
 
     // ── Constructor ─────────────────────────────────────────────
 
@@ -392,7 +403,10 @@ public sealed partial class GameSessionScreen : IScreen
             // never touches ActiveObjectId, and never moves the camera or sends a
             // navigation command.
             if (!IsClickOnUiPanel(uiX, uiY))
+            {
+                _selectedFieldId = null;
                 SetSelectedObjectId(null);
+            }
 
             return ScreenEvent.None;
         }
@@ -464,6 +478,7 @@ public sealed partial class GameSessionScreen : IScreen
         string? hitObjectId = FindNearestObjectId(x, y);
         if (hitObjectId is not null)
         {
+            _selectedFieldId = null;
             SetSelectedObjectId(hitObjectId);
 
             if (hitObjectId == _buffer.Latest?.Snapshot.PlayerShipObjectId)
@@ -488,6 +503,14 @@ public sealed partial class GameSessionScreen : IScreen
                 return ScreenEvent.OpenStation;
             }
 
+            return ScreenEvent.None;
+        }
+
+        var fieldPoint = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
+        var hitField = _fieldGeometry.FirstOrDefault(f => f.Contains(fieldPoint.Item1, fieldPoint.Item2));
+        if (!IsCtrlDown && hitField is not null)
+        {
+            _selectedFieldId = hitField.Data.Id;
             return ScreenEvent.None;
         }
 
@@ -728,6 +751,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     internal bool IsModuleCommandEnabled(string commandType)
     {
+        if (_selectedFieldId is not null && FindCommandTarget(commandType) == "object") return false;
         if (commandType == CombatCommandTypes.Fire) return IsTorpedoFireEnabled();
         if (commandType == CombatCommandTypes.SelfDestruct) return IsSelfDestructEnabled();
         if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
@@ -778,6 +802,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private void SendCommandFromPanel(string commandType)
     {
+        if (_selectedFieldId is not null && FindCommandTarget(commandType) == "object") return;
         if (commandType == NavigationComputerCommandTypes.Dock && !IsModuleCommandEnabled(commandType)) return;
         if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable && !IsDefenseToggleEnabled(commandType)) return;
         if (commandType == CombatCommandTypes.SelfDestruct)
@@ -833,7 +858,7 @@ public sealed partial class GameSessionScreen : IScreen
     private string? FindCommandTarget(string commandType)
     {
         var snapshot = _buffer.Latest?.Snapshot;
-        if (snapshot is null)
+        if (snapshot is null || snapshot.InstalledModules.IsDefaultOrEmpty)
             return null;
 
         foreach (var module in snapshot.InstalledModules)
@@ -1086,6 +1111,9 @@ public sealed partial class GameSessionScreen : IScreen
         var buffered = prediction?.BufferedSnapshot;
         UpdateObjectRenderStates(prediction, deltaSeconds);
         _travelEstimateMotionTimeMs = prediction is null ? 0 : GetPredictedGameTimeMs(prediction);
+        _fieldGeometry = buffered is null ? [] : EnvironmentFieldRenderer.Resolve(buffered.Snapshot,
+            _renderStates.Select(s => s.Predicted), _travelEstimateMotionTimeMs);
+        if (_selectedFieldId is not null && !_fieldGeometry.Any(f => f.Data.Id == _selectedFieldId)) _selectedFieldId = null;
 
         UpdateCameraFocusFromPlayer(_renderStates);
         UpdateCombatImportance();
@@ -1111,15 +1139,13 @@ public sealed partial class GameSessionScreen : IScreen
         if (buffered?.Snapshot.SolarSystemMap is { } systemMap)
         {
             _solarSystemLayer.Draw(canvas, systemMap, _camera, SKRect.Create(width, height), ShowOrbits);
-            foreach (var planet in systemMap.Planets)
-                foreach (var state in _renderStates)
-                    if (state.Pose.ObjectId == planet.ObjectId)
-                        SolarSystemLayerRenderer.DrawPlanet(canvas, planet, state.Pose.X, state.Pose.Y, _camera, width, height);
         }
 
         // 2. Camera focus indicator
         if (buffered is not null)
         {
+            _fieldRenderer.Draw(canvas, _fieldGeometry, _camera, width, height, _selectedFieldId);
+            RenderStageCompleted?.Invoke("fields");
             AiMapPresentation.DrawTerritories(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
             RenderStageCompleted?.Invoke("territories");
             ClusterMapPresentation.Draw(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
@@ -1192,6 +1218,12 @@ public sealed partial class GameSessionScreen : IScreen
                     float margin = r * 5 + 4;
                     if (sx < -margin || sy < -margin || sx > width + margin || sy > height + margin)
                         continue;
+
+                    if (state.Pose.RenderObjectType == SpaceObjectType.Planet && buffered?.Snapshot.SolarSystemMap is { } planetMap)
+                    {
+                        var planet = planetMap.Planets.FirstOrDefault(p => p.ObjectId == state.Pose.ObjectId);
+                        if (planet is not null) SolarSystemLayerRenderer.DrawPlanet(canvas, planet, state.Pose.X, state.Pose.Y, _camera, width, height);
+                    }
 
                     // Selection takes visual priority when the same object is also active;
                     // orange is reserved for hovered objects that are not selected.
@@ -1292,9 +1324,8 @@ public sealed partial class GameSessionScreen : IScreen
 
         // 8. Object Info panel (top-right) — Player Ship + Selected/Active Object rows
         var playerShip = FindPlayerShip(_renderStates);
-        var selectedOrActive = FindRenderStateById(_activeObjectId ?? _selectedObjectId);
         _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
-            ToObjectInfoPanelData(playerShip), ToObjectInfoPanelData(selectedOrActive, playerShip), _uiViewportH);
+            ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH);
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);

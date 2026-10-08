@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0004-informational-environment-fields
 ticket: EP-0004-US-0004-TK-0004-environment-field-rendering
 title: Различимые поля и сведения об интенсивности
-stage: approved
+stage: done
 layer: client
 depends_on: [EP-0004-US-0003-TK-0001-temporal-placement-validation, EP-0004-US-0003-TK-0002-placement-evidence-report, EP-0004-US-0004-TK-0003-environment-field-content]
 files_touched: 5
@@ -155,3 +155,13 @@ public sealed record EnvironmentGenerationConfig(int RadiationCount,int DustCoun
 ### EP-0004-US-0004-TK-0003-environment-field-content
 
 No API change. JSON environment соответствует EnvironmentGenerationConfig.
+
+## Execution decisions — 2026-10-08
+
+Use current five-file scope; AiMapPresentation is read-only unless shared drawing is needed. Field selection is a separate local ID, never sent to Engine. A retained valid real selection is not overwritten by inspecting a field; object-target commands are disabled while field inspection is active, and clicking a real marker clears local field inspection. Right-click on map clears both. Predicted parent poses and shared OrbitalMotionMath resolve anchors; patterns use ID/seed cache and clipped geometry. Native UI acceptance remains the consolidated US-0008 gate.
+
+## Execution / self-review — 2026-10-08
+
+Four implementation files changed: EnvironmentFieldRenderer, GameSessionScreen, ObjectInfoPanel, EnvironmentFieldRenderingTests. Rings/hatching/triangles differ in alpha masks independent of color. Authoritative circle/annular-sector bounds clip patterns; ID/seed/sample cache is evicted on descriptor removal. Parent poses and shared orbital math resolve anchors. Real marker selection wins; field inspection is local, retains the real target, disables object-target commands at display and send time. Ctrl+Click navigation remains available through fields. Planet visuals now render in the marker pass above overlays.
+
+Targeted 3/3 PASS; full Client 1747/1747 PASS (`ep4-us4-tk4.trx`). Review added angular start/end/wrap assertions and reproduced a floating-point start-edge miss; tolerance across 360/0 fixed it, targeted 3/3 repeated PASS. Empty installed-module snapshot crash found by input integration test also fixed. Final build 0 warnings/errors; scoped format and diff PASS. Bounds, moving parent, own orbital quarter-turn, real mouse selection, density/rezoom/entity invariance and cache eviction covered. Native/GPU NOT RUN; final US-0008 gate remains open.

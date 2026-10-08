@@ -1,6 +1,6 @@
 # EP-0004 — отчёт исполнения
 
-Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0003 реализованы (10/26 тикетов); дополнительно US-0004 TK-0001–0003 выполнены, всего 13/26, остальные истории ожидают исполнения.
+Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0004 реализованы (14/26 тикетов), US-0005–US-0009 ожидают исполнения.
 
 ## База и изоляция
 
@@ -78,3 +78,7 @@ Tooling 6/6 PASS; 600-world max report exits 0: 6044448 checks, 492 critical epo
 ## US-0004 / TK-0001–0003
 
 Fields DTO, seeded generation, strict atomic ingress and shipped content complete. Contracts 171/171; Engine non-corpus 1678/1678 plus final focused 3/3; Client 1744/1744 PASS. All speeds/365d and 48h moving ship plus real market-event no-effects comparison passed. Published: DTO 6bb5e7e, Engine aa419ae; US-0003 report 2667134. UI rendering is next.
+
+## US-0004 / TK-0004 and story review
+
+Client rendering/input complete: full 1747/1747, final angular-edge regression 3/3, build/format/diff PASS. Two reproduced UI defects fixed. All story AC automated coverage complete; native NOT RUN before US-0008. Content published 1b9fe22.
