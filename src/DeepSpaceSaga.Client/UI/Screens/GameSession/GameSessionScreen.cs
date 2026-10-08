@@ -726,13 +726,15 @@ public sealed partial class GameSessionScreen : IScreen
     /// its target metadata is missing (never send a command blind). navigation.stationsList
     /// has no station-list screen yet, so it stays visible but always disabled.
     /// </summary>
-    private bool IsModuleCommandEnabled(string commandType)
+    internal bool IsModuleCommandEnabled(string commandType)
     {
         if (commandType == CombatCommandTypes.Fire) return IsTorpedoFireEnabled();
         if (commandType == CombatCommandTypes.SelfDestruct) return IsSelfDestructEnabled();
         if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
             return IsDefenseToggleEnabled(commandType);
         var snapshot = _buffer.Latest?.Snapshot;
+        if (commandType == NavigationComputerCommandTypes.Dock && AiMapPresentation.Base(snapshot, _selectedObjectId) is not null)
+            return false;
         if (snapshot is not null && FindPlayerShipMotion(snapshot)?.IsDestroyed == true)
             return false;
         if (commandType == NavigationComputerCommandTypes.StationsList)
@@ -776,6 +778,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private void SendCommandFromPanel(string commandType)
     {
+        if (commandType == NavigationComputerCommandTypes.Dock && !IsModuleCommandEnabled(commandType)) return;
         if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable && !IsDefenseToggleEnabled(commandType)) return;
         if (commandType == CombatCommandTypes.SelfDestruct)
         {
@@ -1195,6 +1198,11 @@ public sealed partial class GameSessionScreen : IScreen
                     if (state.Pose.ObjectId == _selectedObjectId || state.Pose.ObjectId == _activeObjectId)
                         RenderStageCompleted?.Invoke("reticle");
 
+                    if (AiMapPresentation.Base(buffered?.Snapshot, state.Pose.ObjectId) is { } aiBase)
+                    {
+                        AiMapPresentation.DrawBase(canvas, aiBase, sx, sy, r);
+                        continue;
+                    }
                     if (HasCombatMarker(state.Source))
                     {
                         if (state.Source.Torpedo is not null)
@@ -2275,6 +2283,7 @@ public sealed partial class GameSessionScreen : IScreen
             !observations.IsDefaultOrEmpty)
             market = observations.FirstOrDefault(o => string.Equals(o.StationObjectId, p.ObjectId, StringComparison.Ordinal));
         var cluster = ClusterMapPresentation.Station(_buffer.Latest?.Snapshot, p.ObjectId);
+        var ai = AiMapPresentation.Base(_buffer.Latest?.Snapshot, p.ObjectId);
         var resource = ClusterMapPresentation.Resource(_buffer.Latest?.Snapshot, p.ObjectId);
         var resourceCluster = resource is null ? null : _buffer.Latest?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
@@ -2282,7 +2291,7 @@ public sealed partial class GameSessionScreen : IScreen
             cluster?.ClusterName, cluster?.Profile, cluster?.Directions, resourceCluster, resource?.AnchorStationId,
             cluster is not null && distanceKm is { } distance && player is { } playerState
                 ? ClusterMapPresentation.EstimateStraightDays(distance * 10, playerState.Source.MaxSpeedKmS ?? 0) : null,
-            cluster is null ? null : _travelEstimateMotionTimeMs);
+            cluster is null ? null : _travelEstimateMotionTimeMs, ai?.Owner, ai?.BaseType);
     }
 
     /// <summary>

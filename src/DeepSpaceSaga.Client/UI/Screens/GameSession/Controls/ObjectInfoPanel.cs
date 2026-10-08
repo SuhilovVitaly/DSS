@@ -171,6 +171,12 @@ public sealed class ObjectInfoPanel
         {
             lines.Add(("Name", d.Survey is not null ? d.ObjectId : d.DisplayName ?? d.ObjectId));
             lines.Add(("Speed", $"{d.SpeedKmS:0.###} km/s"));
+            if (d.Owner is { } owner)
+            {
+                lines.Add(("Owner", owner));
+                lines.Add(("Base type", d.BaseType ?? "—"));
+                lines.Add(("Access", "Docking and trade unavailable"));
+            }
             if (d.Countermeasure is { } countermeasure)
             {
                 lines.AddRange(CountermeasureLines(countermeasure));
@@ -381,7 +387,7 @@ public sealed class ObjectInfoPanel
     }
 
     private float ValueOffset(ObjectInfoPanelData? data, List<(string Label, string Value)> lines) =>
-        data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null || data?.MarketKnowledge is not null || data?.ClusterName is not null
+        data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null || data?.MarketKnowledge is not null || data?.ClusterName is not null || data?.Owner is not null
             ? Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding) : 62f;
 
     /// <summary>Wrap market values using the same measured text width used for rendering and body height.</summary>
@@ -393,7 +399,7 @@ public sealed class ObjectInfoPanel
 
     private List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data, List<(string Label, string Value)> source, float valueOffset)
     {
-        if (data?.MarketKnowledge is null && data?.ClusterName is null) return source;
+        if (data?.MarketKnowledge is null && data?.ClusterName is null && data?.Owner is null) return source;
         float width = PanelWidth - ImageWidth - 4 * Padding - valueOffset;
         var result = new List<(string Label, string Value)>();
         foreach (var (label, value) in source)
@@ -551,7 +557,8 @@ public readonly record struct ObjectInfoPanelData(
     StationMarketKnowledgeSnapshot? MarketKnowledge = null,
     string? ClusterName = null, string? ClusterProfile = null, string? ClusterDirections = null,
     string? ResourceCluster = null, string? ResourceOwner = null,
-    double? StraightFlightDays = null, long? EstimateMotionTimeMs = null);
+    double? StraightFlightDays = null, long? EstimateMotionTimeMs = null,
+    string? Owner = null, string? BaseType = null);
 
 /// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
 public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);

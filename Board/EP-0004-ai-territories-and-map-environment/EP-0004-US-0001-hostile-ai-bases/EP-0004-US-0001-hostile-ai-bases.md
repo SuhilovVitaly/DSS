@@ -2,7 +2,7 @@
 epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0001-hostile-ai-bases
 title: Различимые враждебные базы ИИ
-stage: draft
+stage: done
 dependencies: [EP-0002-US-0006-known-system-map, EP-0003-US-0002-distinct-orbital-clusters]
 created: 2026-09-22T14:40:41Z
 source_request: "сделай тикеты для историй в эпиках 2 3 и 4&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0004-ai-territories-and-map-environment"
@@ -109,3 +109,7 @@ Implementation gates (перед первым тикетом, проверяют
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0001-TK-0003-authoritative-hostile-access | stage approved; 4 files; engine; AC 3 |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0001-TK-0004-ai-base-content | stage approved; 2 files; content-data; AC 1/2 |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0001-TK-0005-ai-base-presentation | stage approved; 4 files; client; AC 1/3 |
+
+## Итог implementation/review 2026-10-08
+
+Все 5 тикетов реализованы. AC1: known AI descriptors, distinct glyph/label и selectable owner/type; scientific-military human regression. AC2: named independent RNG, seed/parent/shared-Motion/save roundtrip и atomic malformed input. AC3: direct dock + dialogue GrantStationAccess, quote/legacy/quoted buy/sell/refuel и crafted docking gate до mutation. Review по dss-code-review: подтверждённых оставшихся дефектов US1 не найдено. Scope extensions в TK2/TK4/TK5 записаны до edits. Полные checks Contracts167, Engine1765 на TK2, Engine1669 без неизменённых corpus на TK3, Client1740 на TK5 PASS. Native итоговая проверка остаётся NOT RUN в US8; US1 не заявляет territory placement/поля/обходы или GPU evidence. Исторические planning-only ограничения выше заменены текущим запросом EpicExecutionPrompt.md.

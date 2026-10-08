@@ -3,10 +3,10 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0001-hostile-ai-bases
 ticket: EP-0004-US-0001-TK-0005-ai-base-presentation
 title: Выбор базы и различимая принадлежность
-stage: approved
+stage: done
 layer: client
 depends_on: [EP-0002-US-0006-TK-0001-known-map-projection, EP-0002-US-0006-TK-0002-system-map-navigation, EP-0003-US-0002-TK-0001-multi-cluster-placement, EP-0003-US-0002-TK-0002-full-cluster-content, EP-0003-US-0002-TK-0003-multi-cluster-overview, EP-0004-US-0001-TK-0004-ai-base-content]
-files_touched: 4
+files_touched: 5
 serves: [AC-0001, AC-0003]
 created: 2026-09-22T14:40:41Z
 revision: 1
@@ -146,3 +146,13 @@ No API shape change. Stable reason station_access_denied; существующи
 ### EP-0004-US-0001-TK-0004-ai-base-content
 
 No API change. ai block соответствует AiGenerationConfig из TK-0002.
+
+## Актуализация scope 2026-10-08
+
+Дополнительно GameSessionScreen.MapView.cs: AI markers должны сохраняться при coarse zoom; исключить их из visual clustering через существующую IsImportantMapObject policy. Иначе renderer descriptor не виден и не выбирается. Всего 5 implementation files. Native итоговая приёмка всех слоёв выполняется в US8; здесь actual raster/input tests и полный Client suite.
+
+## Выполнение и review 2026-10-08
+
+AI diamond glyph с AI label и разными внутренними символами Planetary/Orbital; при coarse zoom AI не скрывается в visual clusters. Реальный hit-test выбирает station поверх совпадающей planet. Panel owner/type/access, перенос строк и Dock-disabled по descriptor. Human scientific-military даже с Enemy цветом не классифицируется AI.
+
+AiBasePresentationTests 3/3 PASS; полный Client 1740/1740 PASS (ep4-us1-tk5.trx, 1m11s); scoped format/diff PASS. Raster и реальные input handlers проверены; native window/GPU NOT RUN, consolidated acceptance остаётся US8.

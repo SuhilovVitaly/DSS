@@ -31,7 +31,8 @@ public sealed partial class GameSessionScreen
     private readonly record struct MapCluster(double X, double Y, int Count, MapWorldBounds Bounds);
 
     private bool IsImportantMapObject(string id) => id == _selectedObjectId || id == _activeObjectId || id == _navigationTargetId ||
-        id == _buffer.Latest?.Snapshot.PlayerShipObjectId || _combatImportantIds.Contains(id);
+        id == _buffer.Latest?.Snapshot.PlayerShipObjectId || _combatImportantIds.Contains(id) ||
+        AiMapPresentation.Base(_buffer.Latest?.Snapshot, id) is not null;
 
     private void SetFollowPlayer()
     {

@@ -48,3 +48,7 @@ AI dock/trade gates завершены; Engine без correctness corpus 1669/16
 ## US-0001 / TK-0004
 
 Штатные базы включены во всех шести сценариях. Content matrix 36 миров с control без AI; targeted 42/42 и Client full 1737/1737 PASS. TK-0003 опубликован a35f101.
+
+## US-0001 / TK-0005 и review истории
+
+Distinct AI glyph/label, owner/type panel, selection, Dock gate завершены. Client full 1740/1740 PASS; scoped format/diff PASS. Review US1 не выявил оставшихся подтверждённых дефектов в её scope. Native для всех слоёв OPEN/US8. TK-0004 опубликован ceefaf0. Территории/поля/POI ещё не реализованы.
