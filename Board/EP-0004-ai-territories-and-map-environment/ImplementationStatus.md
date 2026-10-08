@@ -56,3 +56,7 @@ Distinct AI glyph/label, owner/type panel, selection, Dock gate завершен
 ## US-0002 / TK-0001
 
 Контракт территорий завершён, Contracts169/169 PASS. US1 TK5 опубликован 17f5be4.
+
+## US-0002 / TK-0002
+
+Движущиеся territory descriptors, start network segment exclusion, AI-only bounded retry и no-effects контроль завершены. Engine1672/1672 (без unchanged corpora), content2/2, focused30/30 PASS. TK-0001 опубликован a014eeb; исправление content bootstrap assertion6fad865 опубликовано отдельно. Temporal365d validation ещё OPEN/US3.

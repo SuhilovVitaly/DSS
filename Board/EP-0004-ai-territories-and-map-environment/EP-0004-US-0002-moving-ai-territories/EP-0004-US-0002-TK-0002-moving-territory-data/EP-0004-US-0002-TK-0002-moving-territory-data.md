@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0002-moving-ai-territories
 ticket: EP-0004-US-0002-TK-0002-moving-territory-data
 title: Движущиеся области и безопасная стартовая сеть
-stage: approved
+stage: done
 layer: engine
 depends_on: [EP-0004-US-0001-TK-0001-ai-base-contract, EP-0004-US-0001-TK-0002-seeded-ai-bases, EP-0004-US-0001-TK-0003-authoritative-hostile-access, EP-0004-US-0001-TK-0004-ai-base-content, EP-0004-US-0001-TK-0005-ai-base-presentation, EP-0004-US-0002-TK-0001-territory-radii-contract]
 files_touched: 4
@@ -142,3 +142,15 @@ public sealed record AiBaseMapData(string ObjectId,string BaseType,string Owner,
 ### EP-0004-US-0002-TK-0001-territory-radii-contract
 
 public sealed record TerritoryMapData(string Id,string BaseObjectId,double DefenceRadiusKm,double PatrolRadiusKm); AiMapEnvironmentSnapshot: ImmutableArray<TerritoryMapData> Territories=default. Правило 0<DefenceRadiusKm<=PatrolRadiusKm finite. Все новые properties используют явные JsonPropertyName camelCase; ImmutableArray optional/default использует существующий ImmutableArrayDefaultJsonConverter<T>, как AuthoritativeSnapshot. Отсутствующие optional поля совместимы со старым JSON.
+
+## Validation plan 2026-10-08
+
+Текущий bounded AI stage изменяется ещё в US3 (temporal placement). Здесь named integration tests + весь Engine regression кроме неизменённых EP2/EP3 correctness corpus и shipped content36-world matrix. Полный корпус повторяется после законченного temporal placement и в US8, а не на каждом промежуточном шаге одного генератора. Радиусы также валидируются при materialized load; optional empty Territories сохраняет legacy совместимость.
+
+Scope дополнен tests/DeepSpaceSaga.Engine.Tests/MasterSeedTests.cs: старый assertion общего числа runtime objects должен включать штатные AiMap.Bases (после US1 content). Новая validation территорий не должна бросать NullReferenceException на уже существующем corrupted null-cluster fixture; прежний ScenarioException сохраняется.
+
+## Выполнение/review 2026-10-08
+
+Один TerritoryMapData на каждую базу; finite positive km radii и unique owner/ID validation при load. Центр не сохраняется отдельно: actual shared-Motion base pose. Start overlap проверяет player, все home station nodes и полные local link segments; tangency запрещена. Retry меняет только AI placement stream/attempt, finite limit и base/node/link диагностика. Equal-time контроль без Territories не отличается по snapshot gameplay state.
+
+Named tests3 + AI5 PASS; targeted integration30/30 PASS; Engine regression без двух неизменённых corpus1672/1672 PASS,51s (ep4-us2-tk2-final.trx), shipped content36-world matrix2/2 PASS; scopedformat/diff PASS. Первые 2 regression failures исправлены: null-cluster validation и отдельно опубликованный fix bootstrap count6fad865. Temporal365d обходы относятся к US3 и пока не заявлены.

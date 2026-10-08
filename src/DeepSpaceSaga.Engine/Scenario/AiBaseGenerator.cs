@@ -20,6 +20,21 @@ internal static class AiBaseGenerator
     internal static GameStateData Generate(GameStateData source, SolarSystemGenerationConfig config,
         GameDataRegistry registry, ulong seed)
     {
+        ValidateConfig(config.Ai!);
+        string reason = "ai_start_network_overlap";
+        for (int attempt = 0; attempt < config.Ai!.MaxPlacementAttempts; attempt++)
+        {
+            var candidate = Place(source, config, registry, seed, attempt);
+            var overlap = StartNetworkOverlap(candidate, candidate.MotionTimeMs);
+            if (overlap is null) return candidate;
+            reason = overlap;
+        }
+        throw new ScenarioException($"ai/v1 seed={seed} attempts={config.Ai.MaxPlacementAttempts}: {reason}.");
+    }
+
+    private static GameStateData Place(GameStateData source, SolarSystemGenerationConfig config,
+        GameDataRegistry registry, ulong seed, int attempt)
+    {
         var c = config.Ai!;
         ValidateConfig(c);
         var map = source.SolarSystem ?? throw new ScenarioException("ai/v1: solar system required.");
@@ -40,7 +55,7 @@ internal static class AiBaseGenerator
             .Concat(source.ClusterMap?.Clusters.Select(x => x.Id) ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var bases = ImmutableArray.CreateBuilder<AiBaseMapData>();
         var orbits = map.Orbits.ToBuilder();
-        var placement = new SolarSystemGenerator.GeneratorRng(seed, "ai/placement", 0);
+        var placement = new SolarSystemGenerator.GeneratorRng(seed, "ai/placement", attempt);
         // Shuffle only the detached planet list; neither prior stages nor their streams change.
         for (int i = planets.Length - 1; i > 0; i--)
         {
@@ -73,11 +88,48 @@ internal static class AiBaseGenerator
         {
             SpaceObjects = objects.OrderBy(o => o.ObjectId, StringComparer.Ordinal).ToArray(),
             SolarSystem = map with { Orbits = orbits.ToImmutable() },
-            AiMap = new(1, bases.ToImmutable())
+            AiMap = new(1, bases.ToImmutable(), bases.Select((b, i) =>
+                new TerritoryMapData($"SYS-TERRITORY-{i + 1}", b.ObjectId, c.DefenceRadiusKm, c.PatrolRadiusKm)).ToImmutableArray())
         };
         SolarSystemGeneration.ValidateWorld(result);
         ValidateWorld(result);
         return result;
+    }
+
+    internal static ObjectMotionSnapshot Pose(SpaceObjectData obj, long time) => obj.Orbit is { } orbit
+        ? OrbitalMotionMath.At(new(obj.ObjectId, obj.PositionX, obj.PositionY, 0, 0), orbit, time)
+        : new(obj.ObjectId, obj.PositionX, obj.PositionY, obj.SpeedMps / 1000, obj.DirectionDegrees);
+
+    internal static double SegmentDistance(double x, double y, ObjectMotionSnapshot a, ObjectMotionSnapshot b)
+    {
+        double dx = b.X - a.X, dy = b.Y - a.Y;
+        double lengthSquared = dx * dx + dy * dy;
+        double fraction = lengthSquared == 0 ? 0 : Math.Clamp(((x - a.X) * dx + (y - a.Y) * dy) / lengthSquared, 0, 1);
+        return Math.Sqrt(Math.Pow(x - a.X - fraction * dx, 2) + Math.Pow(y - a.Y - fraction * dy, 2));
+    }
+
+    internal static string? StartNetworkOverlap(GameStateData state, long time)
+    {
+        if (state.AiMap is not { } map || map.Territories.IsDefaultOrEmpty) return null;
+        var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.OrdinalIgnoreCase);
+        var home = state.ClusterMap?.Clusters.First(c => c.Id == state.ClusterMap.StartClusterId);
+        var nodes = (home?.StationIds ?? []).Append(state.PlayerShipObjectId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var links = state.ClusterMap?.Links.Where(l => nodes.Contains(l.FromStationId) && nodes.Contains(l.ToStationId)) ?? [];
+        foreach (var territory in map.Territories)
+        {
+            var center = Pose(objects[territory.BaseObjectId], time);
+            double radius = territory.PatrolRadiusKm * 10;
+            foreach (var id in nodes)
+            {
+                var p = Pose(objects[id], time);
+                if (SegmentDistance(center.X, center.Y, p, p) <= radius)
+                    return $"ai_start_network_overlap base={territory.BaseObjectId} node={id}";
+            }
+            foreach (var link in links)
+                if (SegmentDistance(center.X, center.Y, Pose(objects[link.FromStationId], time), Pose(objects[link.ToStationId], time)) <= radius)
+                    return $"ai_start_network_overlap base={territory.BaseObjectId} link={link.Id}";
+        }
+        return null;
     }
 
     internal static void ValidateWorld(GameStateData state)
@@ -111,6 +163,21 @@ internal static class AiBaseGenerator
             if (expected is null || obj.Orbit != expected || obj.WorldOffsetX != 0 || obj.WorldOffsetY != 0)
                 throw new ScenarioException("aiMap.bases: inconsistent orbital binding.");
             SolarSystemGeneration.ValidateOrbit(expected, b.ObjectId);
+        }
+        if (!map.Territories.IsDefaultOrEmpty)
+        {
+            var clusterIds = state.ClusterMap is { } clusters && !clusters.Clusters.IsDefault
+                ? clusters.Clusters.Where(c => c is not null).Select(c => c.Id) : [];
+            var globalIds = objects.Keys.Concat(state.SolarSystem?.Belts.Select(b => b.Id) ?? [])
+                .Concat(clusterIds).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var owners = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var t in map.Territories)
+                if (t is null || string.IsNullOrWhiteSpace(t.Id) || !globalIds.Add(t.Id) ||
+                    string.IsNullOrWhiteSpace(t.BaseObjectId) || !ids.Contains(t.BaseObjectId) || !owners.Add(t.BaseObjectId) ||
+                    !double.IsFinite(t.DefenceRadiusKm) || !double.IsFinite(t.PatrolRadiusKm * 10) ||
+                    t.DefenceRadiusKm <= 0 || t.PatrolRadiusKm < t.DefenceRadiusKm)
+                    throw new ScenarioException("aiMap.territories: invalid identity, base or radii.");
+            if (!owners.SetEquals(ids)) throw new ScenarioException("aiMap.territories: incomplete base coverage.");
         }
     }
 }
