@@ -17,6 +17,8 @@ public static class SolarMapEvidence
     {
         string? output = args.Length > 1 ? Path.GetFullPath(args[1]) : null;
         string originalDirectory = Directory.GetCurrentDirectory();
+        object? failureRepro = null;
+        string? measurementsPath = null;
         try
         {
             if (args.Length < 2) throw new ArgumentException("Expected repository root and output.json.");
@@ -39,6 +41,20 @@ public static class SolarMapEvidence
             var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settings, out _, out _);
             var config = EngineContentLoader.LoadSolarSystemGenerationConfig(settings)!;
             bool clusters = args.Contains("--clusters");
+            bool aiPlacement = args.Contains("--ai-placement");
+            if (aiPlacement && !clusters) throw new ArgumentException("--ai-placement requires --clusters.");
+            var aiConfig = aiPlacement ? config.Ai ?? throw new ArgumentException("AI config missing.") : null;
+            if (aiConfig is not null)
+            {
+                int count = mode == "min" ? aiConfig.MinBases : aiConfig.MaxBases;
+                aiConfig = aiConfig with
+                {
+                    MinBases = count,
+                    MaxBases = count,
+                    PatrolRadiusKm = double.Parse(Option("--ai-patrol-radius-km", aiConfig.PatrolRadiusKm.ToString(System.Globalization.CultureInfo.InvariantCulture)), System.Globalization.CultureInfo.InvariantCulture),
+                    MaxPlacementAttempts = int.Parse(Option("--ai-attempts", aiConfig.MaxPlacementAttempts.ToString(System.Globalization.CultureInfo.InvariantCulture)), System.Globalization.CultureInfo.InvariantCulture)
+                };
+            }
             int planets = mode == "min" ? 3 : 7, belts = mode == "min" ? 2 : 5;
             config = config with
             {
@@ -48,9 +64,11 @@ public static class SolarMapEvidence
                 MaxBelts = belts,
                 StartMinDays = mode == "min" ? 50 : 75,
                 StartMaxDays = mode == "min" ? 50 : 75,
-                Clusters = clusters ? config.Clusters : null
+                Clusters = clusters ? config.Clusters : null,
+                Ai = aiConfig
             };
-            var boundaries = clusters ? (from c in new[] { 3, 5 } from s in new[] { 10, 12 } from b in new[] { 2, 5 } select (Clusters: c, Stations: s, Belts: b)).ToArray()
+            var boundaries = aiPlacement ? [(Clusters: mode == "min" ? 3 : 5, Stations: mode == "min" ? 10 : 12, Belts: belts)]
+                : clusters ? (from c in new[] { 3, 5 } from s in new[] { 10, 12 } from b in new[] { 2, 5 } select (Clusters: c, Stations: s, Belts: b)).ToArray()
                 : [(Clusters: 0, Stations: 5, Belts: belts)];
             string economyPath = Option("--economy-report", "");
             object? economyReportRef = null;
@@ -103,9 +121,11 @@ public static class SolarMapEvidence
             {
                 var requested = scenarioArgument.Split(',');
                 if (requested.Any(n => !names.Contains(n))) throw new ArgumentException("Unknown scenario.");
-                names = requested;
+                names = requested.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
             }
-            var rows = new List<object>();
+            Directory.CreateDirectory(Path.GetDirectoryName(output!)!);
+            measurementsPath = output + "." + Guid.NewGuid().ToString("N") + ".rows.tmp";
+            using var measurementsWriter = new StreamWriter(measurementsPath, false, new UTF8Encoding(false));
             var rendering = new List<object>();
             foreach (string name in names)
             {
@@ -121,6 +141,7 @@ public static class SolarMapEvidence
                     };
                     for (ulong seed = from; ; seed++)
                     {
+                        failureRepro = new { scenario = name, seed, config = caseConfig };
                         long allocated = GC.GetAllocatedBytesForCurrentThread();
                         long start = Stopwatch.GetTimestamp();
                         using var engine = new SimulationEngine(registry);
@@ -137,7 +158,10 @@ public static class SolarMapEvidence
                         string save = ScenarioLoader.Serialize(engine.CaptureSaveState());
                         double saveSerializationMs = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
                         long saveAllocationBytes = GC.GetAllocatedBytesForCurrentThread() - allocated;
-                        rows.Add(new
+                        var placement = engine.CaptureAiPlacementValidation();
+                        if (aiPlacement && placement is not { IsValid: true }) throw new InvalidOperationException("Missing or invalid production placement diagnostics.");
+                        // Spill each world's detailed proof; a large corpus must not retain millions of checks in memory.
+                        measurementsWriter.WriteLine(JsonSerializer.Serialize(new
                         {
                             scenario = name,
                             seed,
@@ -146,6 +170,20 @@ public static class SolarMapEvidence
                             objects = snapshot.Objects.Length,
                             planets,
                             belts = boundary.Belts,
+                            placement = placement is null ? null : new
+                            {
+                                status = placement.IsValid ? "passed" : "failed",
+                                horizonDays = placement.HorizonGameTimeMs / (double)AiTradePlacementValidator.Day,
+                                scope = "Geometric horizon; not a guarantee of future safety or an autopilot.",
+                                sunExclusionRadiusWorld = placement.SunExclusionRadius,
+                                attempts = placement.Attempts,
+                                criticalEpochs = placement.CriticalEpochs,
+                                components = placement.Connectivity.Select(c => new { epochGameTimeMs = c.EpochGameTimeMs, count = c.Components }).ToArray(),
+                                minSampledClearanceWorld = placement.Checks.IsEmpty ? (double?)null : placement.Checks.Min(c => c.Clearance),
+                                placementChecks = placement.Checks.OrderBy(c => c.EpochGameTimeMs).ThenBy(c => c.BaseId, StringComparer.Ordinal).ThenBy(c => c.LinkId, StringComparer.Ordinal)
+                                    .Select(c => new { epochGameTimeMs = c.EpochGameTimeMs, baseId = c.BaseId, linkId = c.LinkId, clearance = c.Clearance }).ToArray(),
+                                violations = placement.Violations
+                            },
                             clusterCounts = clusters ? new
                             {
                                 clusters = snapshot.ClusterMap!.Clusters.Length,
@@ -153,7 +191,7 @@ public static class SolarMapEvidence
                                 stations = snapshot.ClusterMap.Stations.Length,
                                 belts = boundary.Belts,
                                 resourceAsteroids = snapshot.ClusterMap.ResourceBindings.Length,
-                                markets = snapshot.Objects.Count(o => o.ObjectType == "Station")
+                                markets = snapshot.ClusterMap.Stations.Length
                             } : null,
                             economyEvidence = clusters ? economicCases.Contains((name, seed)) ? "linked-by-scenario-and-seed; independent-config; balance-not-assessed" : "missing-scenario-seed-evidence" : null,
                             generationMs,
@@ -163,16 +201,18 @@ public static class SolarMapEvidence
                             saveSerializationMs,
                             saveAllocationBytes,
                             saveBytes = Encoding.UTF8.GetByteCount(save)
-                        });
+                        }));
                         // Rendering is sampled at the first requested seed for every scenario,
                         // separately from the complete generation/save seed corpus.
-                        if (seed == from && (!clusters || boundary is (5, 12, 5)))
+                        if (seed == from && (aiPlacement || !clusters || boundary is (5, 12, 5)))
                             foreach (string view in clusters ? new[] { "system", "belt", "cluster" } : new[] { "system", "belt" })
                                 rendering.Add(Render(snapshot, name, seed, view));
                         if (seed == to) break;
                     }
                 }
             }
+            measurementsWriter.Flush();
+            measurementsWriter.Dispose();
             Write(output!, new
             {
                 schemaVersion = 1,
@@ -182,13 +222,14 @@ public static class SolarMapEvidence
                 assetRoot = client,
                 commit = Revision(root),
                 config,
+                aiPlacement,
                 clusterCounts = clusters ? boundaries.Select(b => new { clusters = b.Clusters, stationsPerCluster = b.Stations, belts = b.Belts }).ToArray() : null,
                 economyReportRef,
                 economicAcceptance = clusters ? economyReportRef is null ? "missing-report; not-assessed" : "linked; profitability-not-assessed; see seed coverage" : null,
                 baselineRef,
                 seedRange = new { from, to },
                 scenarios = names,
-                measurements = rows,
+                measurements = ReadMeasurements(measurementsPath),
                 rendering,
                 renderSampling = "First requested seed per scenario; 120 warmup and 600 measured frames for each requested view.",
                 generationTiming = "Production LoadScenario pipeline with configured resources; catalog file parsing excluded.",
@@ -198,11 +239,24 @@ public static class SolarMapEvidence
         }
         catch (Exception ex)
         {
-            if (output is not null) Write(output, new { schemaVersion = 1, status = "failed", backend = "CPU/Skia raster", machine = Machine(), error = ex.ToString() });
+            if (output is not null) Write(output, new { schemaVersion = 1, status = "failed", backend = "CPU/Skia raster", machine = Machine(), repro = failureRepro, error = ex.ToString() });
             Console.Error.WriteLine(ex.Message);
             return 1;
         }
-        finally { Directory.SetCurrentDirectory(originalDirectory); }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+            if (measurementsPath is not null) File.Delete(measurementsPath);
+        }
+    }
+
+    private static IEnumerable<JsonElement> ReadMeasurements(string path)
+    {
+        foreach (string line in File.ReadLines(path))
+        {
+            using var document = JsonDocument.Parse(line);
+            yield return document.RootElement;
+        }
     }
 
     private static object Render(AuthoritativeSnapshot snapshot, string scenario, ulong seed, string view)
@@ -271,6 +325,7 @@ public static class SolarMapEvidence
     private static void Write(string path, object report)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
+        using var stream = File.Create(path);
+        JsonSerializer.Serialize(stream, report, new JsonSerializerOptions { WriteIndented = true });
     }
 }

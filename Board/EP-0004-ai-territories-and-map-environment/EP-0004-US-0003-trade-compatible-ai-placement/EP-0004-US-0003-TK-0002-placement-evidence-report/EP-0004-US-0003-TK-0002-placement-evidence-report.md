@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0003-trade-compatible-ai-placement
 ticket: EP-0004-US-0003-TK-0002-placement-evidence-report
 title: Воспроизводимый отчёт геометрического размещения
-stage: approved
+stage: done
 layer: tooling
 depends_on: [EP-0004-US-0002-TK-0001-territory-radii-contract, EP-0004-US-0002-TK-0002-moving-territory-data, EP-0004-US-0002-TK-0003-territory-rendering, EP-0003-US-0004-TK-0001-cluster-travel-estimates, EP-0004-US-0003-TK-0001-temporal-placement-validation, EP-0002-US-0008-TK-0002-system-performance-report]
 files_touched: 3
@@ -149,3 +149,15 @@ public sealed record TerritoryMapData(string Id,string BaseObjectId,double Defen
 ### EP-0004-US-0003-TK-0001-temporal-placement-validation
 
 internal static PlacementValidationResult AiTradePlacementValidator.Validate(ScenarioFile world,StationClusterMapSnapshot clusters,AiMapEnvironmentSnapshot ai,long horizonGameTimeMs); result содержит IsValid, checks(epochGameTimeMs,baseId,linkId,clearance), violations; raw placement data доступна generator, не новая session command.
+
+## Execution scope and CLI decisions — 2026-10-08
+
+Existing SolarMapEvidence/Program already dispatch --solar-map. Program remains read-only unless wiring needs a change. `--ai-placement` requires `--clusters`, uses the selected min/max cluster/station/belt and AI-count boundary (one boundary per scenario/seed). Existing --clusters-only retains its eight-boundary matrix with AI disabled, enabling a comparable pre-AI baseline. Explicit --ai-patrol-radius-km and --ai-attempts overrides allow reproducing impossible geometry without editing shipped content; validated by the same production config validator. Full checks remain raw report data, separate from timings; large seed reports are not committed as raw logs. Failure repro captures actual scenario/seed/config before production generation.
+
+## Execution and self-review — 2026-10-08
+
+Production CLI diagnostics wired without a second geometry implementation. Critical epochs, sorted checks, sampled clearance, actual connectivity, attempts and failure repro are exported. Existing baseline mode excludes AI and counts only human markets. Actual process failure test verifies nonzero exit with seed/config/attempts/reason.
+
+Tooling full suite: 6/6 PASS (`ep4-us3-tk2-stream-final.trx`, Release); Debug build 0 warnings/errors; scoped format and diff PASS. Corpus command above: 600/600 worlds, 6044448 checks, 492 critical epoch entries, all component counts 1, max attempts 1, minimum sampled clearance 19168.79893827299 world. Compact evidence: `../../evidence/us3-placement-max-summary.json`; raw JSON SHA-256 recorded there. Source revision identifies base 86c022e plus this ticket's working tree, not a falsely claimed committed implementation. Timings from this run overlap regression work and are not a performance acceptance result.
+
+Confirmed report defect reproduced: complete corpus failed while creating a single 1.3 GB JSON string (OutOfMemoryException). Fixed with per-world temporary spool and streaming JSON output; Windows exclusive writer handle is closed before spool read. Repeated full corpus exits 0 and temporary spool is removed. Intermediate streaming regression failed 4/6 due to that handle; final 6/6 and actual large report validate repair. Own review: no unresolved defect. Native gate belongs to US-0008.

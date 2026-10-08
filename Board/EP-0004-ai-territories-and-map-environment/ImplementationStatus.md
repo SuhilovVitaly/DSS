@@ -1,6 +1,6 @@
 # EP-0004 — отчёт исполнения
 
-Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001 и US-0002 реализованы (8/26 тикетов), остальные истории ожидают исполнения.
+Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0003 реализованы (10/26 тикетов), остальные истории ожидают исполнения.
 
 ## База и изоляция
 
@@ -70,3 +70,7 @@ Territory rendering: targeted 2/2, Client full 1742/1742 PASS; build/scoped form
 Temporal placement implemented. Engine full 1774/1774 PASS; final diagnostic refinement Release non-corpus 1675/1675 PASS, content 2/2, build/format/diff PASS. Critical epochs + conservative local intervals + visibility graph within Sun/system bounds. Finite horizon 365d; uncertainty rejects. US-0002 TK-0003 published 846d0d2.
 
 Publication note: финальный append Board после проверок TK-0001 добавил пустую строку EOF; diff check сообщил её. Исправлено отдельным documentation commit без изменения runtime; повторный diff check PASS.
+
+## US-0003 / TK-0002 and story review
+
+Tooling 6/6 PASS; 600-world max report exits 0: 6044448 checks, 492 critical epochs, component count 1 throughout. Streaming repaired reproduced OOM and Windows handle failure. Compact evidence in evidence/us3-placement-max-summary.json. Story AC covered, finite horizon stated. TK-0001 published 30608e6 with evidence correction 86c022e.
