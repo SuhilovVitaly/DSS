@@ -69,3 +69,4 @@ Territory rendering: targeted 2/2, Client full 1742/1742 PASS; build/scoped form
 
 Temporal placement implemented. Engine full 1774/1774 PASS; final diagnostic refinement Release non-corpus 1675/1675 PASS, content 2/2, build/format/diff PASS. Critical epochs + conservative local intervals + visibility graph within Sun/system bounds. Finite horizon 365d; uncertainty rejects. US-0002 TK-0003 published 846d0d2.
 
+Publication note: финальный append Board после проверок TK-0001 добавил пустую строку EOF; diff check сообщил её. Исправлено отдельным documentation commit без изменения runtime; повторный diff check PASS.
