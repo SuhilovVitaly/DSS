@@ -35,6 +35,11 @@ public sealed partial class SimulationEngine : IDisposable
     private TradingMapStateData? _tradingMap;
     private StationClusterMapSnapshot? _clusterMap;
     private AiMapEnvironmentSnapshot? _aiMap;
+    private PlacementValidationResult? _aiPlacementValidation;
+    internal PlacementValidationResult? CaptureAiPlacementValidation()
+    {
+        lock (_worldStateLock) return _aiPlacementValidation;
+    }
     private StationResourceFieldConfig? _stationResourceFieldConfig;
     private StationResourceFieldsState? _stationResourceFields;
     private ImmutableDictionary<string, ResourceFieldAsteroidData> _resourceAsteroids = ImmutableDictionary<string, ResourceFieldAsteroidData>.Empty;
@@ -209,6 +214,7 @@ public sealed partial class SimulationEngine : IDisposable
     {
         scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true);
         var gs = scenario.GameState;
+        PlacementValidationResult? aiPlacementValidation = null;
         if ((isSave || scenario.SaveFormatVersion > 0) && gs.MarketEventCatalogFingerprint is { } eventFingerprint && eventFingerprint != _registry.StationMarketEventCatalogFingerprint)
             throw new ScenarioException("Incompatible market event catalog fingerprint. Save was not modified.");
         if (gs.CatalogCompatibility is { } catalog && catalog != _registry.CatalogCompatibility)
@@ -260,7 +266,7 @@ public sealed partial class SimulationEngine : IDisposable
                 clusterMap = result.Map;
             }
             if (generation.Ai is not null)
-                gs = AiBaseGenerator.Generate(gs with { ClusterMap = clusterMap }, generation, _registry, resolvedMasterSeed);
+                gs = AiBaseGenerator.Generate(gs with { ClusterMap = clusterMap }, generation, _registry, resolvedMasterSeed, out aiPlacementValidation);
         }
         var resourceAsteroids = (gs.StationResourceFields?.Asteroids ?? [])
             .ToImmutableDictionary(a => a.ObjectId, StringComparer.Ordinal);
@@ -439,6 +445,7 @@ public sealed partial class SimulationEngine : IDisposable
             _solarSystem = gs.SolarSystem;
             _clusterMap = clusterMap;
             _aiMap = gs.AiMap;
+            _aiPlacementValidation = aiPlacementValidation;
             MasterSeedWasMissingOnLoad = resolvedMasterSeedWasMissingOnLoad;
 
             // Player Tokens (Documentation\02-FirstRelease\Mechanics\Money.md): the starting balance

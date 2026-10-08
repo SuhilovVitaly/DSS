@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0003-trade-compatible-ai-placement
 ticket: EP-0004-US-0003-TK-0001-temporal-placement-validation
 title: Проверка обходов и критических эпох
-stage: approved
+stage: done
 layer: engine
 depends_on: [EP-0004-US-0002-TK-0001-territory-radii-contract, EP-0004-US-0002-TK-0002-moving-territory-data, EP-0004-US-0002-TK-0003-territory-rendering, EP-0003-US-0004-TK-0001-cluster-travel-estimates]
 files_touched: 4
@@ -143,3 +143,17 @@ public sealed record AiBaseMapData(string ObjectId,string BaseType,string Owner,
 ### EP-0004-US-0002-TK-0001-territory-radii-contract
 
 public sealed record TerritoryMapData(string Id,string BaseObjectId,double DefenceRadiusKm,double PatrolRadiusKm); AiMapEnvironmentSnapshot: ImmutableArray<TerritoryMapData> Territories=default. Правило 0<DefenceRadiusKm<=PatrolRadiusKm finite. Все новые properties используют явные JsonPropertyName camelCase; ImmutableArray optional/default использует существующий ImmutableArrayDefaultJsonConverter<T>, как AuthoritativeSnapshot. Отсутствующие optional поля совместимы со старым JSON.
+
+## Execution scope and engineering decisions — 2026-10-08
+
+Перед реализацией scope расширен на `src/DeepSpaceSaga.Engine/SimulationEngine.cs`: хранить immutable результат последней успешной генерации в экземпляре Engine, публиковать только в atomic world lock, выдавать internal read-only capture для Performance friend. Общая static last-result недопустима при параллельных мирах. `SolarSystemGenerator.cs` остаётся read-only: существующая orbital math достаточна. Итого четыре изменяемых implementation files плюс этот Board.
+
+Инженерные границы proof: 365 календарных дней, motion ms = calendar/300; Sun exclusion radius = 1% system radius (минимум 1 world unit), это только резервирование обходов, не новая физика/урон. Polygon 64 vertices, epsilon 1e-6; касание blocked. Локальные связи всех human clusters сертифицируются Lipschitz bound между эпохами; стартовый player проверяется только при генерации. Межкластерная связность проверяется в перечисленных и критических эпохах, не обещает непрерывный автопилот. Работа ограничена 8192 эпохами, 100000 subdivisions и depth 32; исчерпание означает uncertain/invalid, а не успешную проверку.
+
+Review clarification: дополнительно ограничены 200000 записей checks, 8192 visibility nodes и 2000000 edge checks на эпоху. Diagnostics содержат criticalEpochs и фактическое число компонент; отрицательный sentinel означает исчерпание бюджета, ноль — невалидную access-точку. Результат unknown не принимается. DTO internal immutable; Performance friend читает CaptureAiPlacementValidation. Public session API не меняется.
+
+## Execution evidence and self-review — 2026-10-08
+
+Implemented named critical epochs, bounded conservative interval proof for all local human routes/nodes, 64-vertex visibility detours, Sun/system boundaries, bounded Ai-only retries and atomic per-engine diagnostics. Human geometry is unchanged. Tests reproduce conjunction between days 1/7, an interval-only crossing, overlapping discs, blocked chokepoint, tangency, Sun and outer bounds, deterministic reports and unchanged world/diagnostics on failure.
+
+Validation: focused 11/11 PASS; Engine full 1774/1774 PASS in 14m58s (`ep4-us3-tk1-full.trx`, includes current shipped AI settings across cluster corpus); after final diagnostic/component budget refinement, Release non-corpus 1675/1675 PASS (`ep4-us3-tk1-final-noncorpus.trx`). Client shipped content tests 2/2 PASS across six scenarios and count boundaries. Engine build 0 warnings/errors, scoped format in production/test projects and diff check PASS. One concurrent Debug rebuild failed due to DLL lock from the corpus; isolated Release validation recovered, no test failure was suppressed. Self-review: no outstanding confirmed defect. This proves the documented finite horizon and local interval clearance, not future gameplay safety or native UI acceptance.

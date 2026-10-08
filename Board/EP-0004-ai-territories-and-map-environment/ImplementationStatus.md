@@ -64,3 +64,8 @@ Distinct AI glyph/label, owner/type panel, selection, Dock gate завершен
 ## US-0002 / TK-0003 and story review
 
 Territory rendering: targeted 2/2, Client full 1742/1742 PASS; build/scoped format/diff PASS. Story self-review: AC покрыты совокупностью DTO, generation, pause/continuation и реальных render/input tests. Native NOT RUN до US-0008. TK-0002 опубликован b7c476b.
+
+## US-0003 / TK-0001
+
+Temporal placement implemented. Engine full 1774/1774 PASS; final diagnostic refinement Release non-corpus 1675/1675 PASS, content 2/2, build/format/diff PASS. Critical epochs + conservative local intervals + visibility graph within Sun/system bounds. Finite horizon 365d; uncertainty rejects. US-0002 TK-0003 published 846d0d2.
+

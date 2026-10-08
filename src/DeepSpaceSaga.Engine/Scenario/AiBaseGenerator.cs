@@ -18,16 +18,24 @@ internal static class AiBaseGenerator
     }
 
     internal static GameStateData Generate(GameStateData source, SolarSystemGenerationConfig config,
-        GameDataRegistry registry, ulong seed)
+        GameDataRegistry registry, ulong seed, out PlacementValidationResult? diagnostics)
     {
         ValidateConfig(config.Ai!);
+        diagnostics = null;
         string reason = "ai_start_network_overlap";
         for (int attempt = 0; attempt < config.Ai!.MaxPlacementAttempts; attempt++)
         {
             var candidate = Place(source, config, registry, seed, attempt);
             var overlap = StartNetworkOverlap(candidate, candidate.MotionTimeMs);
-            if (overlap is null) return candidate;
-            reason = overlap;
+            if (overlap is not null) { reason = overlap; continue; }
+            if (candidate.ClusterMap is { } clusters)
+            {
+                diagnostics = AiTradePlacementValidator.Validate(new(new("placement", "placement"), candidate),
+                    clusters, candidate.AiMap!, AiTradePlacementValidator.DefaultHorizon) with
+                { Attempts = attempt + 1 };
+                if (!diagnostics.IsValid) { reason = string.Join("; ", diagnostics.Violations); continue; }
+            }
+            return candidate;
         }
         throw new ScenarioException($"ai/v1 seed={seed} attempts={config.Ai.MaxPlacementAttempts}: {reason}.");
     }
@@ -97,7 +105,8 @@ internal static class AiBaseGenerator
     }
 
     internal static ObjectMotionSnapshot Pose(SpaceObjectData obj, long time) => obj.Orbit is { } orbit
-        ? OrbitalMotionMath.At(new(obj.ObjectId, obj.PositionX, obj.PositionY, 0, 0), orbit, time)
+        ? OrbitalMotionMath.At(new(obj.ObjectId, obj.PositionX, obj.PositionY, 0, 0,
+            WorldOffsetX: obj.WorldOffsetX, WorldOffsetY: obj.WorldOffsetY), orbit, time)
         : new(obj.ObjectId, obj.PositionX, obj.PositionY, obj.SpeedMps / 1000, obj.DirectionDegrees);
 
     internal static double SegmentDistance(double x, double y, ObjectMotionSnapshot a, ObjectMotionSnapshot b)
