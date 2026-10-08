@@ -276,7 +276,7 @@ public sealed partial class GameSessionScreen : IScreen
     internal string? SelectedFieldId => _selectedFieldId;
     internal string? SelectedPoiId => _selectedPoiId;
     internal ObjectInfoPanelData? PlayerShipInfo => ToObjectInfoPanelData(FindPlayerShip(_renderStates));
-    /// <summary>Object Info panel's "Selected Object" row content — hover (<see cref="ActiveObjectId"/>) takes priority over the last click (<see cref="SelectedObjectId"/>).</summary>
+    /// <summary>Object Info prioritizes a selected POI/field, then the cycled real selection; otherwise hover precedes the last real click.</summary>
     internal ObjectInfoPanelData? SelectedOrActiveObjectInfo => SelectedPoiInfo() ?? SelectedFieldInfo() ?? (_activeObjectId is not null && _selectionCycleIndex == 0
         ? ToObjectInfoPanelData(FindRenderStateById(_activeObjectId), FindPlayerShip(_renderStates))
         : ToObjectInfoPanelData(FindRenderStateById(_selectedObjectId), FindPlayerShip(_renderStates)));
@@ -473,16 +473,9 @@ public sealed partial class GameSessionScreen : IScreen
         if (IsClickOnUiPanel(uiX, uiY)) return ScreenEvent.None;
         if (TryExpandMapCluster(x, y)) return ScreenEvent.None;
 
-        // 5.5. Object selection takes priority over both plain pan and Ctrl+Click
-        // navigation (ТЗ §54, TacticalMapSpecification.md line 79: "клик поглощается,
-        // камера не двигается, navigation command не отправляется"): a left click
-        // within the 30 px hit radius of a visible object selects it — the camera
-        // does not move and no navigation command is sent, whether or not Ctrl is
-        // held. Selecting the player ship itself is the one exception: it reattaches
-        // camera focus to the player (existing, still-wanted behavior), same as
-        // Ctrl+C. Selecting any OTHER object leaves camera state completely
-        // untouched (UX change, story-20260827-083137.md: selecting an object no
-        // longer makes the camera follow/re-center on it).
+        // Stable overlap cycling precedes map panning and Ctrl+Click navigation.
+        // Descriptor selections stay client-local. A unique player candidate enables
+        // Follow; cycling overlapping objects preserves the camera for the next click.
         var picked = PickMapItem(x, y);
         if (picked.Kind is 1 or 2)
         {

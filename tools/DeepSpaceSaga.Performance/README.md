@@ -82,3 +82,19 @@ failed when p99 exceeds 12.5 ms, or display-limited when VSync's reported monito
 refresh is below 80 Hz; measurement completion never implies the FPS target passed.
 Keep final textual results with hardware, commit, settings and limitations; remove
 temporary PNG/JSON after inspection.
+
+## EP-0004 complete-map evidence (2026-10-08)
+
+Use absolute repository/output/reference paths: the runner enters the Client asset directory. All layers require `--clusters`; without `--all-map-layers`, environment/POI are disabled for a clean baseline. `--ai-placement` enables detailed bounded placement diagnostics. `--boundary-only` makes the baseline select one min/max cluster boundary, matching the full-map run.
+
+```powershell
+dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS-EP-0004 D:/DeepSpaceSaga/baseline.json --solar-map --clusters --boundary-only --seeds 1:100 --scenarios all --config max
+dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS-EP-0004 D:/DeepSpaceSaga/full.json --solar-map --clusters --all-map-layers --seeds 1:100 --scenarios all --config max
+dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS-EP-0004 D:/DeepSpaceSaga/native.json --solar-window max base 1.5 1280x720 --clusters --all-map-layers
+```
+
+Full-map min forces3x10 human stations/2 AI, max5x12/4 AI; native default scenario is Default_500 seed1. Native views: system, belt, selected, cluster, base, field, poi; descriptor views require all-map-layers. During warmup the runner fits System/cluster, selects real AI/field/POI through mouse handlers, toggles layers, closes diagnostics, scrolls the selected-base info and observes run/pause/resume. Exit0 means interaction/report completion, **not**80FPS. For native acceptance inspect fullMapInteraction, targetVerdict and PNG. Final tested matrix: min/system/1/1280x720; max/system/1/1920x1080, belt/1.2/1920x1080, cluster/1.5/1920x1080, base/1.5/1280x720, field/1.5/1920x1080, poi/1.2/1280x720, poi/1.5/1920x1080.
+
+Rows distinguish real entities, descriptors, configured decoration samples, layer flags, calendar and motion epochs. Decorations can be culled by LOD, so configured samples are not the exact drawn count. Full-map raster samples System/belt/cluster, first requested seed in each scenario,120 warmup+600 measured frames. Native reports carry live counts and actual OpenGL context separately. Optional `--client-frame-report D:/absolute/native.json` on --solar-map validates and hashes an existing native case; it is an independent case, not a substitute for matching all raster configurations. `--economy-report` is a separate optional acceptance input; this epic does not establish profitability.
+
+Current measurements: scripted native8/8 PASS, FPS target0/8 PASS (p9950.5839–54.4007ms vs12.5ms), with VSync reported100Hz on Intel Arc140V. Fresh baseline/empty-window controls also fail; exact driver/OS cause unproven. Do not claim GPU execution, physical scanout or human playthrough. Compact results and source/raw hashes are retained in [EP-0004 evidence](../../Board/EP-0004-ai-territories-and-map-environment/ImplementationStatus.md); temporary native JSON/PNG were removed after review. [Current map contract](../../Documentation/04-Engineering/AiMapEnvironment.md).

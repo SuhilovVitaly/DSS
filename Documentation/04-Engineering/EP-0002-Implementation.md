@@ -205,3 +205,9 @@ Final validation commands/results:
 - Native images and transient JSON measurements were inspected and removed after their textual evidence was recorded, as required by TK-0003.
 
 Final review outcome: no outstanding confirmed implementation findings. E2-AC-01..08 are covered by the story evidence, full test run, real-file continuation tests and native host acceptance. Human-operated playthrough was not performed; native input was scripted and captured frames were visually inspected. The restricted-execution presentation limit remains an environment-specific observation, not an unresolved code-performance finding.
+
+## Актуализация EP-0004 — 2026-10-08
+
+Результаты выше — датированная поставка EP-0002. EP-0004 добавляет AI/поля/POI и строгую persistence/selection интеграцию; её текущая native80FPS acceptance OPEN. Старые FPS/счётчики EP-0002 не являются повторным измерением полной карты.
+
+[Текущий технический контракт и evidence](AiMapEnvironment.md).

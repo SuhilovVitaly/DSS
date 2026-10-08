@@ -63,3 +63,9 @@
 ## Боевой этап EP-0007
 
 Экран отображает назначенных операторов, самоуничтожение торпеды и автоматическую защиту. ПР выбирается на карте, но недоступна для Fire. Frozen chance/breakdown приходят в snapshot; UI не бросает RNG. Сворачиваемый журнал сохраняет authoritative историю. Круг100км виден у выбранного пирата. [Контракт, Save/Load и проверки](../../04-Engineering/CountermeasureCombat.md).
+
+## Актуализация EP-0004 — 2026-10-08
+
+Карта показывает AI diamond/owner/type, движущиеся defence/patrol circles, Radiation/Dust/Debris и известные POI. Toolbar переключает четыре слоя; выбор перекрытий циклический. Поля показывают отсутствие эффектов, POI — отсутствие исследования. База недоступна для стыковки/торговли и в UI, и в Engine. Панель AI/POI/field компактна и прокручивается на малом viewport; выбор descriptors не отправляет engine command. Native interactions8/8 PASS;80FPS acceptance OPEN.
+
+[Текущий технический контракт и evidence](../../04-Engineering/AiMapEnvironment.md).

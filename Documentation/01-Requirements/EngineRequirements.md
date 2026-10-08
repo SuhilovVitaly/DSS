@@ -5406,3 +5406,9 @@ Engine фиксирует неизменяемый `ApproachRoute`; исполн
 - SaveFormatVersion11, DefenseState.Version1 и RngVersion1: сохранять аппарат/фазы/маршруты/следы, frozen breakdown, attempt flags, абсолютные deadlines, RNG state/counter, sequences, журнал и выбор живой ПР. Некорректные данные отклонять атомарно; ID нормализовать OrdinalIgnoreCase. Legacy летящая торпеда без rating получает30 с явным provenance; отсутствующие операторы остаются отсутствующими.
 
 [Реализация, тесты, миграция и статус native acceptance](../04-Engineering/CountermeasureCombat.md).
+
+## Актуализация EP-0004 — 2026-10-08
+
+Действующее уточнение EP-0004: Engine владеет материализованным AiMap rulesVersion1 и атомарным Save15. Hostile AI stations отклоняют dock/dialogue/trade/quote/refuel с station_access_denied. Территории, Radiation/Dust/Debris и POI информационные и не меняют движение, урон, топливо, экономику или RNG. Локальные связи проверяются на365-дневном горизонте, межкластерная связность — в объявленных/критических эпохах; это не бесконечное непрерывное доказательство. Для SolarSystem стратегическая видимость известных объектов заменяет legacy proximity-only ограничение §40; доступ к котировкам и survey не раскрывается. Overlap cycling и client-local descriptor selection уточняют nearest-only правило §54; hover остаётся нециклическим с приоритетом Station/player/NPC/other, затем distance/ordinal ID. Точные units, bounds, epochs и исключения находятся в текущем контракте.
+
+[Текущий технический контракт и evidence](../04-Engineering/AiMapEnvironment.md).

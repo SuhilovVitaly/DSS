@@ -12,8 +12,12 @@ This folder is the single home for DSS project documentation.
 - [Approach requirements](01-Requirements/EngineRequirements.md#approach-shortest-route) - shortest rendezvous, captured trailing-point fallback, and planner version 3 (2026-09-20).
 - [Approach implementation](04-Engineering/ApproachRoutes.md) - solver, numerical tolerances, prediction, and save compatibility.
 
-- [Countermeasure combat](04-Engineering/CountermeasureCombat.md) — EP-0007, операторы, защита, Save v11 и фактическая приёмка.
+- [Countermeasure combat](04-Engineering/CountermeasureCombat.md) — исторический EP-0007, операторы, защита и приёмка Save v11; текущий SaveFormat=15.
 - [Countermeasure Graphify](06-Tooling/CountermeasureGraphify.md) — корпус, перестройка и проверка графа.
+
+- [AI map environment](04-Engineering/AiMapEnvironment.md) — текущий EP-0004: контракты, конфигурация, Save15, слои и открытая FPS acceptance.
+- [Solar-system concept](02-FirstRelease/Mechanics/SolarSystemMapConcept.md) — продуктовый контракт карты.
+- [EP-0002 implementation](04-Engineering/EP-0002-Implementation.md) и [EP-0003 evidence](Validation/EP-0003-Implementation.md) — датированные поставки предшественников.
 
 ## Sections
 

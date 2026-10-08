@@ -137,3 +137,9 @@ Final matching project regressions:
 Engine Release regression includes the legacy and cluster 4800-world corpuses. Client Debug regression ran after the last Client change; the final Release build and all final native/raster measurements also use `59b8643`. Economy/Performance tooling regressions cover `ecb6344`; later changes affect Client rendering and were verified by the complete Client suite and actual Release CLI runs. Matching builds report zero warnings/errors. Scoped `dotnet format --verify-no-changes --no-restore --include <changed files>` and `git diff --check` pass. Reproduce project regressions with `dotnet test <project.csproj> --no-restore --logger "trx;LogFileName=<report.trx>"`, using Release for Engine and the tools and the recorded project configuration for other suites.
 
 Compact JSON summaries preserve source commits, raw SHA256 hashes, coverage, measured distributions and diagnostic findings. Ignored temporary raw reports, screenshots and the one-off compaction helper are removed after evidence review as required by TK-0003; the commands above regenerate them. TRX reports remain local test evidence. The two unrelated Board files remain untouched and excluded from all commits.
+
+## Актуализация EP-0004 — 2026-10-08
+
+Результаты выше — датированная поставка EP-0003. EP-0004 сохраняет человеческую географию и добавляет AI placement/поля/POI; новый matched baseline/full600+600-world report измеряет дополнительную стоимость. Native FPS текущего полного набора не достиг цели, balance acceptance не расширялась.
+
+[Текущий технический контракт и evidence](../04-Engineering/AiMapEnvironment.md).

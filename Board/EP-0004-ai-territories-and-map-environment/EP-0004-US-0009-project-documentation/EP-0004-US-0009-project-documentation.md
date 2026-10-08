@@ -2,7 +2,7 @@
 epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0009-project-documentation
 title: Актуальная документация полной карты
-stage: approved
+stage: in_progress
 dependencies: [EP-0004-US-0001-hostile-ai-bases, EP-0004-US-0002-moving-ai-territories, EP-0004-US-0003-trade-compatible-ai-placement, EP-0004-US-0004-informational-environment-fields, EP-0004-US-0005-known-points-of-interest, EP-0004-US-0006-readable-map-layers, EP-0004-US-0007-resume-territories-and-fields, EP-0004-US-0008-complete-map-evidence]
 ---
 
@@ -24,3 +24,7 @@ dependencies: [EP-0004-US-0001-hostile-ai-bases, EP-0004-US-0002-moving-ai-terri
 2. [TK-0002 — итоговые evidence и граф](EP-0004-US-0009-TK-0002-final-evidence-and-graph/EP-0004-US-0009-TK-0002-final-evidence-and-graph.md).
 
 Изменения, необходимые для актуальности документов, разрешены исходным запросом. Несвязанные переписывания исключены. Каждый тикет имеет отдельный коммит и push.
+
+## Execution — 2026-10-08
+
+TK-0001 project documentation synchronized; relative links/scoped format/diff checked. TK-0002 final Board/SHA registry/graph follows. Native performance OPEN in US8 is preserved, not blocked on documentation.

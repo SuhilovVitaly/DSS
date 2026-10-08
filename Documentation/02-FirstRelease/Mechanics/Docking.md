@@ -53,3 +53,9 @@
 - Блокировка обычных engine-команд корабля, пока он пристыкован: технически можно отправить engine-команду и физически уплыть от станции, оставаясь помеченным `IsDocked = true`.
 - `navigation.stationsList`.
 - Полный функционал экрана станции (Trade/Finance/Representatives/Install Drilling Unit/Hire) — см. `Documentation/02-FirstRelease/Screens/Station.md`.
+
+## Актуализация EP-0004 — 2026-10-08
+
+Для AI/hostile station Engine отклоняет Dock до геометрического разрешения, включая dialogue grant и подделанное docked state; station_access_denied. Эта поставленная проверка доступа имеет приоритет над общими плановыми описаниями станций выше. Human docking сохраняет свои прежние правила; база ИИ не является торговой станцией.
+
+[Текущий технический контракт и evidence](../../04-Engineering/AiMapEnvironment.md).

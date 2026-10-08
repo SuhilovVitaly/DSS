@@ -200,3 +200,9 @@ Session-control is done via `IGameSessionConnection.SetSimulationSpeedAsync(Simu
 ## Current state
 
 Playable end-to-end pipeline: Engine → Snapshot → Connection → Buffer → Renderer, with content-driven simulation (module/item/command/factory/recipe definitions from JSON), scenario loading, master-seed RNG, save/load, tactical map with object selection, ship command panel, object labels and trails, camera pan/zoom, UI scale (100/120/150%), settings screen, and modal pause. Engine behavior requirements live in `Documentation/01-Requirements/EngineRequirements.md` (source of truth; see `Documentation/00-Process/AGENTS.md`).
+
+## Актуализация EP-0004 — 2026-10-08
+
+AiMap описан в Contracts/AiMapEnvironment.cs; generation/placement/strict ingress принадлежат Engine, общая орбитальная математика — Motion, presentation/local descriptor selection — Client. Content находится в Data/Maps/solar-system.json (включая inline poiTemplates). SaveFormat15, AiMap rulesVersion1. Для изменений сохранять no-effects/atomic load и различать raster/native/physical scanout evidence.
+
+[Текущий технический контракт и evidence](../04-Engineering/AiMapEnvironment.md).

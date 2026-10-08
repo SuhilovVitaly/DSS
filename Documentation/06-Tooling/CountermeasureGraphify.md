@@ -1,5 +1,7 @@
 # EP-0007 — полный rebuild Graphify
 
+Исторический отчёт EP-0007: перечисленные ниже src/graphify-out артефакты не входят в эту рабочую копию и не являются текущим графом. Новый EP-0004 граф поставляется завершающим тикетом документации в корневом graphify-out.
+
 Выполнен 2026-10-04T17:56:29.165048+00:00. Исходная база: `5fa0595816569b4c8aefc198fdc6a3856dedeabb` + незакоммиченный рабочий набор. Это навигационный граф исходников и документов; он не подтверждает прохождение игровых проверок.
 
 ## Корпус и свежесть
@@ -12,7 +14,7 @@
 
 Совокупный SHA-256 отсортированного mapping path→SHA-256: `47b1096962ae00ae6636222fed75aa5da141f4c1fadf2789334723b4d70e6c44`.
 
-[Полные hashes, HEAD, время и dirty paths](../../src/graphify-out/input-evidence.json); [manifest](../../src/graphify-out/manifest.json); [проверка совпадения входов/выходов](../../src/graphify-out/verification.json). Пути узлов нормализованы относительно DSS; staging paths отсутствуют. После финального snapshot повторно проверены hashes всех входов и HEAD.
+`../../src/graphify-out/input-evidence.json` (исторический локальный артефакт); `../../src/graphify-out/manifest.json` (исторический локальный артефакт); `../../src/graphify-out/verification.json` (исторический локальный артефакт). Пути узлов нормализованы относительно DSS; staging paths отсутствуют. После финального snapshot повторно проверены hashes всех входов и HEAD.
 
 ## Инструментарий и воспроизведение
 
@@ -62,17 +64,17 @@ save_manifest(stamped_files, manifest_path, root=ROOT, scan_corpus=full_corpus)
 
 **Graph health warning сохраняется.** Raw dangling references включают внешние namespace System.Diagnostics, System.Reflection, System.Text.Json, а также неразрешённый локальный DefenseLaunch. Часть локальных ссылок библиотека разрешает при build; для остальных создаёт endpoint placeholders (например System.* и BasicCombatUiFlowTests.Fixture); они явно помечены `unresolved_reference_placeholder`, не имеют выдуманных source paths и не считаются подтверждёнными code symbols. Для сигнатуры LaunchCountermeasure→DefenseLaunch отдельно добавлена проверенная source-reference связь на настоящий узел, исходное предупреждение не скрыто.
 
-AST также содержит reference/type stubs без проверенной декларации (например Fact, SKPaint, ImmutableArray). Они помечены `unlocated_ast_reference`; отсутствие source_file не означает наличие реализации в репозитории. Graph — обычный недирективный networkx.Graph: несколько references/calls между одной парой узлов схлопываются. Например TacticalMapDepthRenderer→SKPaint содержит25 source locations, CommandsPanel→SKPaint24, TradeLayout→SKRect24. Данные о каждом исходном ребре сохранены в [extraction.json](../../src/graphify-out/extraction.json), реальные диагностики — в [diagnostics.json](../../src/graphify-out/diagnostics.json). Навигационные contains_concept/documents edges означают принадлежность или явное упоминание, а не runtime вызов. AST calls с confidence INFERRED остаются выводом парсера и требуют чтения исходника.
+AST также содержит reference/type stubs без проверенной декларации (например Fact, SKPaint, ImmutableArray). Они помечены `unlocated_ast_reference`; отсутствие source_file не означает наличие реализации в репозитории. Graph — обычный недирективный networkx.Graph: несколько references/calls между одной парой узлов схлопываются. Например TacticalMapDepthRenderer→SKPaint содержит25 source locations, CommandsPanel→SKPaint24, TradeLayout→SKRect24. Данные о каждом исходном ребре сохранены в `../../src/graphify-out/extraction.json` (исторический локальный артефакт), реальные диагностики — в `../../src/graphify-out/diagnostics.json` (исторический локальный артефакт). Навигационные contains_concept/documents edges означают принадлежность или явное упоминание, а не runtime вызов. AST calls с confidence INFERRED остаются выводом парсера и требуют чтения исходника.
 
 Пустой граф запрещён assert. Новый node count выше старого, shrink guard не обходился; force не использовался. Старый набор сохранён вне git, в `D:/DeepSpaceSaga/ep7-validation/graphify-before-EP7/`.
 
 HTML содержит **260 community nodes**, поскольку исходный граф >5000 узлов. Полный уровень symbols остаётся в graph.json/CLI. Браузерная проверка: Codex in-app browser: финальный reload, canvas отрисован, 260 communities / 1869 aggregate edges; поиск Countermeasure показывает State Data, Snapshot, Bootstrap Tests, Save Schema Tests, Content Tests.. HTML использует pinned vis-network9.1.6 CDN; для повторного отображения нужен доступ к нему. JSON/CLI от CDN не зависят.
 
-Числовые cohesion scores каждого сообщества: [community-cohesion.json](../../src/graphify-out/community-cohesion.json). Минимум 0.017418509280006763, максимум 1.0.
+Числовые cohesion scores каждого сообщества: `../../src/graphify-out/community-cohesion.json` (исторический локальный артефакт). Минимум 0.017418509280006763, максимум 1.0.
 
 ## Пять проверенных трасс
 
-Проверка выполнялась NetworkX по конкретным node IDs и существующим ребрам. Ниже ↔ означает навигационную связь; направление вызова, confidence и точные evidence всех ребер сохранены в [verification-traces.json](../../src/graphify-out/verification-traces.json).
+Проверка выполнялась NetworkX по конкретным node IDs и существующим ребрам. Ниже ↔ означает навигационную связь; направление вызова, confidence и точные evidence всех ребер сохранены в `../../src/graphify-out/verification-traces.json` (исторический локальный артефакт).
 
 ### operator-rating-launch
 
@@ -116,10 +118,10 @@ HTML содержит **260 community nodes**, поскольку исходны
 
 ## Артефакты
 
-- [graph.json](../../src/graphify-out/graph.json) — полный граф.
-- [graph.html](../../src/graphify-out/graph.html) — интерактивная карта сообществ.
-- [GRAPH_REPORT.md](../../src/graphify-out/GRAPH_REPORT.md) — hubs, cohesion, bridges, suggested queries.
-- [corpus.json](../../src/graphify-out/corpus.json), [input-evidence.json](../../src/graphify-out/input-evidence.json), [verification.json](../../src/graphify-out/verification.json) — воспроизводимое происхождение.
+- `../../src/graphify-out/graph.json` (исторический локальный артефакт) — полный граф.
+- `../../src/graphify-out/graph.html` (исторический локальный артефакт) — интерактивная карта сообществ.
+- `../../src/graphify-out/GRAPH_REPORT.md` (исторический локальный артефакт) — hubs, cohesion, bridges, suggested queries.
+- `../../src/graphify-out/corpus.json` (исторический локальный артефакт), `../../src/graphify-out/input-evidence.json` (исторический локальный артефакт), `../../src/graphify-out/verification.json` (исторический локальный артефакт) — воспроизводимое происхождение.
 
 Обновлены только Graphify configuration/generated artifacts и этот отчёт. Commit/push/облачная публикация не выполнялись. Нативная приёмка игры этим тикетом не подменяется.
 

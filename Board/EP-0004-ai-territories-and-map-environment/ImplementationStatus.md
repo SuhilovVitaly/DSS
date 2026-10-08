@@ -106,3 +106,34 @@ Tooling9/9 PASS; matched fresh baseline/full600+600 worlds and18+18 raster views
 ## US-0008 / TK-0003 and story review
 
 Client final1758/1758; combined validated projects3884/3884 PASS. Native scripted interaction8/8 PASS with all8 PNGs inspected after overlap/selection/close repairs. Native FPS target FAILED: p9950.5839–54.4007ms, target12.5ms. Fresh baseline and empty-window controls also fail; root cause not proven. Durable evidence: [native summary](evidence/us8-native-summary.json). GPU execution/physical scanout unmeasured, human playthrough NOT RUN. Implementation/evidence complete, ticket/story performance acceptance OPEN; continue independent documentation under execution prompt. TK2 publishede94f469.
+
+## US-0009 / TK-0001 — документационная инвентаризация
+
+Native ticket published3b435693273bdda96ef16d650e15134bb8ff6505. Its OPEN FPS gate remains visible; independent documentation continues. Entire initial Documentation corpus73 files was read before code; final inventory follows touched contracts, names, schema and input behavior.
+
+| Документ | Влияние | Изменение | Проверка |
+|---|---|---|---|
+| `Documentation/README.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Documentation/04-Engineering/AiMapEnvironment.md` | current contract and integration | new canonical implementation/evidence report | source/evidence cross-check; link/diff validation |
+| `Documentation/01-Requirements/EngineRequirements.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Documentation/02-FirstRelease/Mechanics/SolarSystemMapConcept.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Documentation/03-Design/TacticalMapSpecification.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Documentation/02-FirstRelease/Screens/GameSession.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Documentation/02-FirstRelease/Screens/Save.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Documentation/02-FirstRelease/Screens/Load.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Documentation/02-FirstRelease/Mechanics/Docking.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Documentation/02-FirstRelease/Mechanics/Trading.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Documentation/02-FirstRelease/Mechanics/TacticalMapAndManeuvering.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Documentation/00-Process/CLAUDE.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `tools/DeepSpaceSaga.Performance/README.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Documentation/04-Engineering/EP-0002-Implementation.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Documentation/Validation/EP-0003-Implementation.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Documentation/06-Tooling/CountermeasureGraphify.md` | current contract and integration | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Board/EP-0002-procedural-solar-system/Documentation.md` | dependency handoff | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `Board/EP-0003-station-clusters-and-trade-geography/Documentation.md` | dependency handoff | current behavior/handoff; preserve dated history | source/evidence cross-check; link/diff validation |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` | current contract and integration | comments only: descriptor/cycle priority and unique-player Follow | source/evidence cross-check; link/diff validation |
+| Root AGENTS.md / CLAUDE.md and Documentation/00-Process/AGENTS.md / DocumentationSystem.md | workflow wrappers | no change; current links/rules remain valid | read and link check |
+| Remaining Documentation and asset-workflow Markdown | no affected current EP4 contract | no unrelated rewrite; dated evidence retained | initial full reading + final symbol/diff search |
+| EP-0004 Documentation.md / Tickets.md / all story and ticket cards | final statuses, API resolution, coverage and SHA registry | deferred to next dedicated TK-0002 | final graph built after their final text |
+
+Confirmed documentation contradictions repaired: Save15 vs historical11, six scenarios, Sun static sector, authoritative AI gate, current economy implementation, overlap cycle and engine.orbit, compact scrolling, absolute-path tooling and honest native failures. Old Countermeasure graph links now explicitly historical local paths rather than broken clickable references. No gameplay changes in this ticket.
