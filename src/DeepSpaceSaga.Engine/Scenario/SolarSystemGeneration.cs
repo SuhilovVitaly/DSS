@@ -22,7 +22,13 @@ public sealed record SolarSystemGenerationConfig(
     [property: JsonPropertyName("enabledScenarios")] IReadOnlyList<string> EnabledScenarios,
     [property: JsonPropertyName("clusters")] ClusterGenerationConfig? Clusters = null,
     [property: JsonPropertyName("ai")] AiGenerationConfig? Ai = null,
-    [property: JsonPropertyName("environment")] EnvironmentGenerationConfig? Environment = null);
+    [property: JsonPropertyName("environment")] EnvironmentGenerationConfig? Environment = null,
+    [property: JsonPropertyName("poiTemplates")] IReadOnlyList<PoiTemplate>? PoiTemplates = null);
+
+public sealed record PoiTemplate(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("description")] string Description);
 
 public sealed record EnvironmentGenerationConfig(
     [property: JsonPropertyName("radiationCount")] int RadiationCount,
@@ -72,6 +78,7 @@ public static class SolarSystemGeneration
         if (c.Clusters is { } clusters) StationClusterGenerator.ValidateConfig(clusters);
         if (c.Ai is { } ai) AiBaseGenerator.ValidateConfig(ai);
         if (c.Environment is { } environment) EnvironmentFieldGenerator.ValidateConfig(environment);
+        if (c.PoiTemplates is { } templates) PointOfInterestGenerator.ValidateConfig(templates);
         return c;
     }
 

@@ -240,6 +240,7 @@ public static class ScenarioLoader
         SolarSystemGeneration.ValidateWorld(gs);
         AiBaseGenerator.ValidateWorld(gs);
         EnvironmentFieldGenerator.ValidateWorld(gs);
+        PointOfInterestGenerator.ValidateWorld(gs);
 
         // Validate each object (nulls already caught in the duplicate-check loop)
         foreach (var obj in objects)

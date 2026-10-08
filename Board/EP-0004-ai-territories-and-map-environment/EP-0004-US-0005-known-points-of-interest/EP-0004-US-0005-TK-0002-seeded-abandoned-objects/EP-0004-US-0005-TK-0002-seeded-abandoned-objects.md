@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0005-known-points-of-interest
 ticket: EP-0004-US-0005-TK-0002-seeded-abandoned-objects
 title: Генерация заброшенных объектов рядом с ресурсами
-stage: approved
+stage: done
 layer: engine
 depends_on: [EP-0004-US-0004-TK-0001-environment-field-contract, EP-0004-US-0004-TK-0002-seeded-environment-fields, EP-0004-US-0004-TK-0003-environment-field-content, EP-0004-US-0004-TK-0004-environment-field-rendering, EP-0003-US-0003-TK-0001-resource-orbit-binding, EP-0003-US-0003-TK-0002-cluster-resource-placement, EP-0003-US-0003-TK-0003-cluster-resource-map, EP-0004-US-0005-TK-0001-poi-contract]
 files_touched: 5
@@ -151,3 +151,12 @@ public sealed record EnvironmentFieldData(string Id,string Kind,double Intensity
 ### EP-0004-US-0005-TK-0001-poi-contract
 
 public sealed record PointOfInterestData(string ObjectId,string Name,string Description,string? ParentObjectId,OrbitalElements? Orbit,double OffsetX,double OffsetY); AiMapEnvironmentSnapshot: ImmutableArray<PointOfInterestData> PointsOfInterest=default. Только map metadata, без rewards/quest triggers. Все новые properties используют явные JsonPropertyName camelCase; ImmutableArray optional/default использует существующий ImmutableArrayDefaultJsonConverter<T>, как AuthoritativeSnapshot. Отсутствующие optional поля совместимы со старым JSON.
+
+## Execution scope and decisions — 2026-10-08
+
+Replace read-only SolarSystemGenerator in the original five-file scope with ScenarioLoader for atomic POI ingress validation. PointOfInterestGenerator, SolarSystemGeneration, SimulationEngine and named tests remain in scope. IDs use the specified SYS-POI-{ordinal}, ordered by template ID; per-template named streams are isolated. Prefer canonical resource asteroid parents with small world offsets; without resources, use a resolved circular orbit inside a belt, sharing the existing orbital evaluator. Parent links can only point to SpaceObjects, so descriptor cycles are rejected. Templates are optional, 0..128, unique case-insensitive IDs and nonblank name/description. Focused plus full Engine non-corpus validation now; combined corpus is US-0008 after all layers.
+
+
+## Execution / self-review — 2026-10-08
+
+POI templates and detached generation implemented after environment stage; ordinal IDs, per-template streams, canonical resource parents or belt orbit fallback. No SpaceObjects, inventory, rewards or event hooks added. Authoritative loader validates global ID collisions, text, offsets and one-of references before publication. Targeted 4/4 and Engine non-corpus 1682/1682 PASS (ep4-us5-tk2.trx); build 0 warnings/errors, scoped format/diff PASS. Tests verify repeat seed/text/pose, unchanged resource composition/bindings and complete earlier world, actual visit and rejected fake object selection with equal-time snapshot/save comparison, atomic malformed input. Own review: no findings.
