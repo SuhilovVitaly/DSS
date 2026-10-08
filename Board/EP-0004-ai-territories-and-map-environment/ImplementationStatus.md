@@ -1,6 +1,6 @@
 # EP-0004 — отчёт исполнения
 
-Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0007 реализованы (22/26 тикетов вместе с US8 TK1); US8 продолжается, US9 ожидает исполнения.
+Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0007 реализованы (23/26 тикетов вместе с US8 TK1–2); US8 продолжается, US9 ожидает исполнения.
 
 ## База и изоляция
 
@@ -98,3 +98,7 @@ Complete map JSON/local-file restoration and continuation passed. Engine non-cor
 ## US-0008 / TK-0001
 
 Final Engine Release1803/1803 PASS (12m33s), including 10800 primary generated worlds across three corpora. Full-map1200 worlds add independent geometry, deterministic repetition, JSON restoration/continuation. Combined namespace repair rejects AI-base/trade-link collisions. Fresh Contracts173/173, Motion141/141, Client1755/1755 PASS. Full raw Engine TRX hash and counters: evidence/us8-correctness-summary.json. US7 TK2 publisheddb657ea. Native/performance still pending.
+
+## US-0008 / TK-0002
+
+Tooling9/9 PASS; matched fresh baseline/full600+600 worlds and18+18 raster views complete. Every matched world adds only4 AI entities. Full generation median44.62ms, snapshot1.28ms, save6.51ms; raster p997.37–19.47ms. Hardware/config/provenance/complete distributions: evidence/us8-performance-summary.json. Native80FPS not inferred; next TK3. TK1 published8421ea4.

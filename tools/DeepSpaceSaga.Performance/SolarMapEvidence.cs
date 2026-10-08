@@ -42,8 +42,11 @@ public static class SolarMapEvidence
             var config = EngineContentLoader.LoadSolarSystemGenerationConfig(settings)!;
             bool clusters = args.Contains("--clusters");
             bool aiPlacement = args.Contains("--ai-placement");
+            bool allMapLayers = args.Contains("--all-map-layers");
+            bool boundaryOnly = allMapLayers || aiPlacement || args.Contains("--boundary-only");
             if (aiPlacement && !clusters) throw new ArgumentException("--ai-placement requires --clusters.");
-            var aiConfig = aiPlacement ? config.Ai ?? throw new ArgumentException("AI config missing.") : null;
+            if (allMapLayers && !clusters) throw new ArgumentException("--all-map-layers requires --clusters.");
+            var aiConfig = aiPlacement || allMapLayers ? config.Ai ?? throw new ArgumentException("AI config missing.") : null;
             if (aiConfig is not null)
             {
                 int count = mode == "min" ? aiConfig.MinBases : aiConfig.MaxBases;
@@ -65,9 +68,11 @@ public static class SolarMapEvidence
                 StartMinDays = mode == "min" ? 50 : 75,
                 StartMaxDays = mode == "min" ? 50 : 75,
                 Clusters = clusters ? config.Clusters : null,
-                Ai = aiConfig
+                Ai = aiConfig,
+                Environment = allMapLayers ? config.Environment : null,
+                PoiTemplates = allMapLayers ? config.PoiTemplates : null
             };
-            var boundaries = aiPlacement ? [(Clusters: mode == "min" ? 3 : 5, Stations: mode == "min" ? 10 : 12, Belts: belts)]
+            var boundaries = clusters && boundaryOnly ? [(Clusters: mode == "min" ? 3 : 5, Stations: mode == "min" ? 10 : 12, Belts: belts)]
                 : clusters ? (from c in new[] { 3, 5 } from s in new[] { 10, 12 } from b in new[] { 2, 5 } select (Clusters: c, Stations: s, Belts: b)).ToArray()
                 : [(Clusters: 0, Stations: 5, Belts: belts)];
             string economyPath = Option("--economy-report", "");
@@ -111,7 +116,18 @@ public static class SolarMapEvidence
                     DateTime.UtcNow - File.GetLastWriteTimeUtc(baselinePath) > TimeSpan.FromHours(3) ||
                     baseline.RootElement.GetProperty("config").GetProperty("maxPlanets").GetInt32() != config.MaxPlanets ||
                     baseline.RootElement.GetProperty("config").GetProperty("startMaxDays").GetDouble() != config.StartMaxDays) throw new ArgumentException("Baseline must be fresh and from this host/runtime/max config.");
-                baselineRef = new { path = baselinePath, commit = baseline.RootElement.GetProperty("commit").GetString(), comparison = "same host/runtime; inspect per-scenario/config measurements" };
+                baselineRef = new { path = baselinePath, sha256 = Hash(baselinePath), commit = baseline.RootElement.GetProperty("commit").GetString(), comparison = "same host/runtime; inspect per-scenario/config measurements; no automatic speedup claim" };
+            }
+            string framePath = Option("--client-frame-report", "");
+            object? clientFrameReportRef = null;
+            if (framePath.Length > 0)
+            {
+                framePath = Path.GetFullPath(framePath);
+                using var frameReport = JsonDocument.Parse(File.ReadAllText(framePath));
+                var f = frameReport.RootElement;
+                if (f.GetProperty("backend").GetString()?.StartsWith("OpenGL/Skia native window") != true ||
+                    f.GetProperty("measuredFrames").GetInt32() <= 0) throw new ArgumentException("Expected actual client frame evidence.");
+                clientFrameReportRef = new { path = framePath, sha256 = Hash(framePath), commit = f.GetProperty("commit").GetString(), targetVerdict = f.GetProperty("targetVerdict").GetString(), coverage = "Independent native case; inspect its map counts, layers, config and epoch. Not GPU execution timing." };
             }
             var fields = JsonSerializer.Deserialize<StationResourceFieldConfig>(File.ReadAllText(Path.Combine(client, "Data/World/station-resource-fields.json")))!;
             string scenarioArgument = Option("--scenarios", "all");
@@ -159,7 +175,7 @@ public static class SolarMapEvidence
                         double saveSerializationMs = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
                         long saveAllocationBytes = GC.GetAllocatedBytesForCurrentThread() - allocated;
                         var placement = engine.CaptureAiPlacementValidation();
-                        if (aiPlacement && placement is not { IsValid: true }) throw new InvalidOperationException("Missing or invalid production placement diagnostics.");
+                        if ((aiPlacement || allMapLayers) && placement is not { IsValid: true }) throw new InvalidOperationException("Missing or invalid production placement diagnostics.");
                         // Spill each world's detailed proof; a large corpus must not retain millions of checks in memory.
                         measurementsWriter.WriteLine(JsonSerializer.Serialize(new
                         {
@@ -168,6 +184,8 @@ public static class SolarMapEvidence
                             generatorVersion = 1,
                             saveFormatVersion = SaveFormat.CurrentSaveFormatVersion,
                             objects = snapshot.Objects.Length,
+                            mapCounts = Counts(snapshot),
+                            epoch = new { calendarTimeMs = snapshot.GameTimeMs, motionTimeMs = snapshot.MotionTimeMs },
                             planets,
                             belts = boundary.Belts,
                             placement = placement is null ? null : new
@@ -180,7 +198,9 @@ public static class SolarMapEvidence
                                 criticalEpochs = placement.CriticalEpochs,
                                 components = placement.Connectivity.Select(c => new { epochGameTimeMs = c.EpochGameTimeMs, count = c.Components }).ToArray(),
                                 minSampledClearanceWorld = placement.Checks.IsEmpty ? (double?)null : placement.Checks.Min(c => c.Clearance),
-                                placementChecks = placement.Checks.OrderBy(c => c.EpochGameTimeMs).ThenBy(c => c.BaseId, StringComparer.Ordinal).ThenBy(c => c.LinkId, StringComparer.Ordinal)
+                                checkCount = placement.Checks.Length,
+                                checksPolicy = aiPlacement ? "complete" : "summary; use --ai-placement for complete checks",
+                                placementChecks = !aiPlacement ? null : placement.Checks.OrderBy(c => c.EpochGameTimeMs).ThenBy(c => c.BaseId, StringComparer.Ordinal).ThenBy(c => c.LinkId, StringComparer.Ordinal)
                                     .Select(c => new { epochGameTimeMs = c.EpochGameTimeMs, baseId = c.BaseId, linkId = c.LinkId, clearance = c.Clearance }).ToArray(),
                                 violations = placement.Violations
                             },
@@ -204,7 +224,7 @@ public static class SolarMapEvidence
                         }));
                         // Rendering is sampled at the first requested seed for every scenario,
                         // separately from the complete generation/save seed corpus.
-                        if (seed == from && (aiPlacement || !clusters || boundary is (5, 12, 5)))
+                        if (seed == from && (boundaryOnly || !clusters || boundary is (5, 12, 5)))
                             foreach (string view in clusters ? new[] { "system", "belt", "cluster" } : new[] { "system", "belt" })
                                 rendering.Add(Render(snapshot, name, seed, view));
                         if (seed == to) break;
@@ -223,6 +243,12 @@ public static class SolarMapEvidence
                 commit = Revision(root),
                 config,
                 aiPlacement,
+                allMapLayers,
+                boundaryOnly,
+                layerContent = new { orbits = true, territories = aiConfig is not null, fields = allMapLayers, pointsOfInterest = allMapLayers },
+                vsync = "not-applicable; CPU raster has no window",
+                clientFrameReportRef,
+                criteria = new { generationSnapshotSave = "measured", rasterFrames = "measured", nativePresentation = clientFrameReportRef is null ? "not-measured" : "linked-independent-case", gpuExecution = "not-measured", improvement = baselineRef is null ? "not-measured; missing fresh baseline" : "not-assessed; inspect matched cases" },
                 clusterCounts = clusters ? boundaries.Select(b => new { clusters = b.Clusters, stationsPerCluster = b.Stations, belts = b.Belts }).ToArray() : null,
                 economyReportRef,
                 economicAcceptance = clusters ? economyReportRef is null ? "missing-report; not-assessed" : "linked; profitability-not-assessed; see seed coverage" : null,
@@ -289,6 +315,9 @@ public static class SolarMapEvidence
             width = 1920,
             height = 1080,
             uiScale = 1,
+            layers = screen.MapLayers.ToString(),
+            mapCounts = Counts(snapshot),
+            epoch = new { calendarTimeMs = snapshot.GameTimeMs, motionTimeMs = snapshot.MotionTimeMs },
             warmupFrames = 120,
             measuredFrames = 600,
             p50Ms = ms[299],
@@ -297,6 +326,24 @@ public static class SolarMapEvidence
             meanMs = ms.Average(),
             allocationBytesPerFrame = bytes / 600d
         };
+    }
+
+    public static object Counts(AuthoritativeSnapshot snapshot) => new
+    {
+        authoritativeEntities = snapshot.Objects.Length,
+        aiBases = snapshot.AiMap?.Bases.Length ?? 0,
+        territories = snapshot.AiMap is { Territories.IsDefaultOrEmpty: false } a ? a.Territories.Length : 0,
+        fields = snapshot.AiMap is { Fields.IsDefaultOrEmpty: false } b ? b.Fields.Length : 0,
+        pointsOfInterest = snapshot.AiMap is { PointsOfInterest.IsDefaultOrEmpty: false } c ? c.PointsOfInterest.Length : 0,
+        configuredBeltDecorationSamples = snapshot.SolarSystemMap?.Belts.Sum(b => Math.Clamp(b.DecorationSamples, 0, 65536)) ?? 0,
+        configuredDebrisDecorationSamples = snapshot.AiMap is { Fields.IsDefaultOrEmpty: false } d ? d.Fields.Count(f => f.Kind == "Debris") * 64 : 0,
+        decorationMeaning = "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+    };
+
+    private static string Hash(string path)
+    {
+        using var stream = File.OpenRead(path);
+        return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream));
     }
 
     public static object Machine() => new
