@@ -3,10 +3,10 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0008-complete-map-evidence
 ticket: EP-0004-US-0008-TK-0001-full-map-correctness-corpus
 title: Корпус полной карты и отсутствия побочных эффектов
-stage: approved
+stage: done
 layer: engine
 depends_on: [EP-0004-US-0007-TK-0001-map-environment-save, EP-0004-US-0007-TK-0002-full-map-local-load, EP-0003-US-0008-TK-0001-cluster-correctness-corpus, EP-0003-US-0008-TK-0002-cluster-performance-report, EP-0003-US-0008-TK-0003-cluster-interaction-evidence, EP-0002-US-0008-TK-0001-system-correctness-corpus, EP-0002-US-0008-TK-0002-system-performance-report, EP-0002-US-0008-TK-0003-presented-frame-evidence]
-files_touched: 1
+files_touched: 2
 serves: [AC-0001, AC-0003]
 created: 2026-09-22T14:40:41Z
 revision: 1
@@ -56,7 +56,7 @@ No API change. Корпус фиксирует versions/seed/settings; неза�
 
 ## Implementation steps
 
-1. Seeds1..100 × пять scenarios × min/max config; проверить reproducible IDs/types/geometry, base ownership/access rejection, start graph/bypass validation до365d и critical epochs, fields no-effects, save continuation.
+1. Seeds1..100 × шесть scenarios × min/max config; проверить reproducible IDs/types/geometry, base ownership/access rejection, start graph/bypass validation до365d и critical epochs, fields no-effects, save continuation.
 2. Отдельные invalid defence/patrol radii, NaN/Infinity, parent cycles, duplicate IDs, невозможный placement. Не создавать fake pass при timeout — failed case с config/seed/stage/attempt.
 3. Сравнить equal-time world with/without informational fields: ship fuel/damage/sensors/movement и экономические receipts одинаковы, события EP-0001 продолжаются независимо.
 4. Добавить именованные тесты ниже, привязать результаты к served criteria и записать фактические команды/результат в review evidence этого тикета. Нельзя помечать passed ещё не выполненный прогон.
@@ -145,3 +145,15 @@ public sealed record EnvironmentFieldData(string Id,string Kind,double Intensity
 ### EP-0004-US-0005-TK-0001-poi-contract
 
 public sealed record PointOfInterestData(string ObjectId,string Name,string Description,string? ParentObjectId,OrbitalElements? Orbit,double OffsetX,double OffsetY); AiMapEnvironmentSnapshot: ImmutableArray<PointOfInterestData> PointsOfInterest=default. Только map metadata, без rewards/quest triggers. Все новые properties используют явные JsonPropertyName camelCase; ImmutableArray optional/default использует существующий ImmutableArrayDefaultJsonConverter<T>, как AuthoritativeSnapshot. Отсутствующие optional поля совместимы со старым JSON.
+
+## Corpus resolution — 2026-10-08
+
+Current shipped scenarios are six, including PlayerShipOnly. Matrix uses 100 seeds x 6 scenarios x min/max boundaries (1200 worlds), explicit clusters3/5, stations10/12, planets3/7, belts2/5, bases2/4. Independent analytic poses, segment-distance and visibility reachability oracles validate finite-horizon placement at declared and critical epochs; production report itself is not the oracle. Both old correctness corpora and new all-layer corpus run in the full Engine suite.
+
+## Review repair scope — 2026-10-08
+
+AiBaseIdCannotAliasTradeDirection reproduced accepted malformed save with a cluster link ID equal to an AI base ID (case variant). Extend scope with src/DeepSpaceSaga.Engine/Scenario/AiBaseGenerator.cs to reject base IDs colliding with belt/cluster/link descriptors, including generation ID reservation. This closes the combined namespace contract; no gameplay change. Run final Release Engine validation after repair; earlier running Debug corpus results are labelled pre-repair.
+
+## Execution and self-review — 2026-10-08
+
+Final Release full Engine: 1803/1803 PASS, zero skipped, 12m33s; all three corpora included (4800 + 4800 + 1200 primary worlds, plus repeats, continuations and negative cases). Fresh Contracts173/173, Motion141/141 and Client1755/1755 PASS. Scoped format and diff check PASS. Namespace defect reproduced before repair and final suite rerun. Earlier Debug run was deliberately aborted against pre-repair binaries: 1762 completed tests, not a full PASS. No native/FPS assertion belongs to this ticket. Self-review confirms independent geometry oracle, real JSON continuation and atomic invalid ingress; not independent approval.

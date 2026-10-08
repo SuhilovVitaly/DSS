@@ -60,7 +60,8 @@ internal static class AiBaseGenerator
         if (drive?.MaxSpeedMps is not > 0) throw new ScenarioException("ai/v1: operational engine required.");
         var objects = source.SpaceObjects.ToList();
         var ids = objects.Select(o => o.ObjectId).Concat(map.Belts.Select(b => b.Id))
-            .Concat(source.ClusterMap?.Clusters.Select(x => x.Id) ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            .Concat(source.ClusterMap?.Clusters.Select(x => x.Id) ?? [])
+            .Concat(source.ClusterMap?.Links.Select(x => x.Id) ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var bases = ImmutableArray.CreateBuilder<AiBaseMapData>();
         var orbits = map.Orbits.ToBuilder();
         var placement = new SolarSystemGenerator.GeneratorRng(seed, "ai/placement", attempt);
@@ -148,9 +149,13 @@ internal static class AiBaseGenerator
             throw new ScenarioException("aiMap: unsupported version or missing bases.");
         var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.OrdinalIgnoreCase);
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var descriptorIds = (state.SolarSystem?.Belts.Select(b => b.Id) ?? [])
+            .Concat(state.ClusterMap is { } c && !c.Clusters.IsDefault ? c.Clusters.Where(x => x is not null).Select(x => x.Id) : [])
+            .Concat(state.ClusterMap is { } l && !l.Links.IsDefault ? l.Links.Where(x => x is not null).Select(x => x.Id) : [])
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var b in map.Bases)
         {
-            if (b is null || string.IsNullOrWhiteSpace(b.ObjectId) || !ids.Add(b.ObjectId) || b.Owner != "Ai" ||
+            if (b is null || string.IsNullOrWhiteSpace(b.ObjectId) || !ids.Add(b.ObjectId) || descriptorIds.Contains(b.ObjectId) || b.Owner != "Ai" ||
                 b.BaseType is not ("Planetary" or "Orbital") || b.OffsetX != 0 || b.OffsetY != 0 ||
                 !objects.TryGetValue(b.ObjectId, out var obj) || obj.ObjectType != "Station" ||
                 !obj.IsKnown || obj.MarketProfileId is not null || (obj.Inventory?.Count ?? 0) != 0 ||

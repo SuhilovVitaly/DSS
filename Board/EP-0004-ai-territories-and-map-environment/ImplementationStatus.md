@@ -1,6 +1,6 @@
 # EP-0004 — отчёт исполнения
 
-Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0007 реализованы (21/26 тикетов), US-0008–US-0009 ожидают исполнения.
+Дата начала: 2026-10-08. Исполнение разрешено пользователем по `D:/DeepSpaceSaga/DSS/Board/EpicExecutionPrompt.md`. Статус: выполняется; US-0001–US-0007 реализованы (22/26 тикетов вместе с US8 TK1); US8 продолжается, US9 ожидает исполнения.
 
 ## База и изоляция
 
@@ -94,3 +94,7 @@ Layer flags/cycling/adaptive controls complete. Full Client1755/1755 PASS after 
 ## US-0007 / TK-0001–0002 and story review
 
 Complete map JSON/local-file restoration and continuation passed. Engine non-corpus1689/1689; named persistence3/3 and local4/4. Territory-link namespace fixed. No regeneration, atomic invalid ingress and legacy absence proved. US6 published1bdb14d; US7 TK1 ae5d953. Full corpus/native/performance next US8.
+
+## US-0008 / TK-0001
+
+Final Engine Release1803/1803 PASS (12m33s), including 10800 primary generated worlds across three corpora. Full-map1200 worlds add independent geometry, deterministic repetition, JSON restoration/continuation. Combined namespace repair rejects AI-base/trade-link collisions. Fresh Contracts173/173, Motion141/141, Client1755/1755 PASS. Full raw Engine TRX hash and counters: evidence/us8-correctness-summary.json. US7 TK2 publisheddb657ea. Native/performance still pending.
