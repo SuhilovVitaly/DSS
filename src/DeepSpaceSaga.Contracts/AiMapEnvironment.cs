@@ -23,7 +23,9 @@ public sealed record AiMapEnvironmentSnapshot(
     [property: JsonPropertyName("territories"), JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<TerritoryMapData>))]
     ImmutableArray<TerritoryMapData> Territories = default,
     [property: JsonPropertyName("fields"), JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<EnvironmentFieldData>))]
-    ImmutableArray<EnvironmentFieldData> Fields = default);
+    ImmutableArray<EnvironmentFieldData> Fields = default,
+    [property: JsonPropertyName("pointsOfInterest"), JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<PointOfInterestData>))]
+    ImmutableArray<PointOfInterestData> PointsOfInterest = default);
 
 /// <summary>Informational circles centered on the referenced base's current pose.
 /// Radii are km, never world coordinates; overlapping circles retain both contributors.</summary>
@@ -50,3 +52,14 @@ public sealed record EnvironmentFieldData(
     [property: JsonPropertyName("startAngleDegrees")] double StartAngleDegrees,
     [property: JsonPropertyName("sweepDegrees")] double SweepDegrees,
     [property: JsonPropertyName("decorationSeed")] ulong DecorationSeed);
+
+/// <summary>Known map metadata, not a runtime entity or a reward/quest definition.
+/// Exactly one parent or own orbit anchors the point; offsets use world units (100 m).</summary>
+public sealed record PointOfInterestData(
+    [property: JsonPropertyName("objectId")] string ObjectId,
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("description")] string Description,
+    [property: JsonPropertyName("parentObjectId")] string? ParentObjectId,
+    [property: JsonPropertyName("orbit")] OrbitalElements? Orbit,
+    [property: JsonPropertyName("offsetX")] double OffsetX,
+    [property: JsonPropertyName("offsetY")] double OffsetY);
