@@ -780,7 +780,7 @@ public sealed partial class SimulationEngine : IDisposable
             return null;
 
         var station = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == ship.DockedStationObjectId);
-        if (station is null || station.Inventory.IsDefaultOrEmpty)
+        if (station is null || IsAiBase(station.InitialMotion.ObjectId) || station.Inventory.IsDefaultOrEmpty)
             return null;
 
         return BuildStationTradeProjection(station);
@@ -2447,6 +2447,7 @@ public sealed partial class SimulationEngine : IDisposable
             return CommandStartOutcome.Started;
         }
 
+        if (IsAiBase(command.TargetObjectId)) return CommandStartOutcome.Rejected("station_access_denied");
         if (obj.IsDocked) return CommandStartOutcome.Rejected("already_docked");
         if (_dialogue.Progress.StationAccessStates.TryGetValue(command.TargetObjectId ?? "", out var access) && access.AccessDenied)
             return CommandStartOutcome.Rejected("station_access_denied");
