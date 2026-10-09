@@ -7,6 +7,27 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class ApproachRouteProjectionTests
 {
+    [Fact]
+    public void Visual_join_preserves_every_authoritative_sample_and_maneuver_boundary()
+    {
+        var route = new ApproachRoute(0, 0, 90, 3, 4, "LSR", .1, 1200.123, .2,
+            2000, 0, 90, 5, 10, PlannerVersion: 3);
+        var ship = SnapshotAt(route);
+        var projector = new NavigationTrajectoryProjector();
+        var points = projector.ProjectPlayerInto(ship, [], new(0, 0, .1), 1280, 720,
+            out _, out var endpoint, out int maneuverCount);
+        var original = points.ToArray();
+        var join = new List<FutureTrajectoryPoint>();
+        var rendered = new RenderMotion(ship, ship.X + 25, ship.Y - 10, ship.Direction);
+        NavigationTrajectoryProjector.BuildVisualJoin(rendered, points, join);
+        Assert.Equal(new FutureTrajectoryPoint(rendered.X, rendered.Y), join[0]);
+        Assert.Equal(points[0], join[1]);
+        Assert.Equal(original, points);
+        Assert.Equal(endpoint, points[maneuverCount - 1]);
+        NavigationTrajectoryProjector.BuildVisualJoin(new RenderMotion(ship), points, join);
+        Assert.Empty(join);
+    }
+
     [Theory]
     [InlineData(1)]
     [InlineData(2.9999)]

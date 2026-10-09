@@ -15,6 +15,18 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// </summary>
 internal sealed class NavigationTrajectoryProjector
 {
+    /// <summary>Presentation connector only; never shifts or resamples the committed route.</summary>
+    internal static void BuildVisualJoin(RenderMotion rendered, IReadOnlyList<FutureTrajectoryPoint> route,
+        List<FutureTrajectoryPoint> join)
+    {
+        join.Clear();
+        if (rendered.ApproachRoute is null || route.Count == 0) return;
+        double dx = rendered.X - route[0].X, dy = rendered.Y - route[0].Y;
+        if (dx * dx + dy * dy <= 1e-12) return;
+        join.Add(new(rendered.X, rendered.Y));
+        join.Add(route[0]);
+    }
+
     private readonly LinearMotionPredictor _displayPredictor = new();
     private ApproachRouteGeometryCache? _approachRouteCache;
     /// <summary>Same horizon as the future trajectory — never longer than the engine can fly.</summary>

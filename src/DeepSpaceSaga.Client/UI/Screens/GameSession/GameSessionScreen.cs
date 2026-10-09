@@ -1827,11 +1827,16 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
                 var points = cached.Points;
                 bool isConfirmedIntercept = cached.Confirmed;
                 var interceptPoint = cached.Intercept;
+                if (cached.Join.Count == 2)
+                {
+                    CaptureDrawnTrajectory(state.Pose.ObjectId, "navigation-join", cached.Join, isPlayer: true);
+                    _depthRenderer.DrawNavigationTrajectory(canvas, cached.Join, _camera, width, height);
+                }
                 if (points.Count >= 2)
                 {
-                    CaptureDrawnTrajectory(state.Pose.ObjectId, "navigation", points, isPlayer: true);
+                    CaptureDrawnTrajectory(state.Pose.ObjectId, "navigation", points, isPlayer: cached.Join.Count == 0);
                     DisplayedPlayerTrajectoryEnd = points[^1];
-                    _depthRenderer.DrawNavigationTrajectory(canvas, points, _camera, width, height);
+                    _depthRenderer.DrawNavigationTrajectory(canvas, points, _camera, width, height, cached.ManeuverPointCount);
                 }
 
                 DrawNavigationTargetMarker(canvas, predicted.NavigationTargetX.Value, predicted.NavigationTargetY!.Value, width, height);

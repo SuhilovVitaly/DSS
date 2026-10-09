@@ -21,8 +21,8 @@ Draft assumptions accepted for this execution: 2000 ms real-time stale limit, de
 | EP-0005-US-0001-TK-0009-nonblocking-render-io | implemented; Client 1767/1767 plus final async 5/5, Release/format/diff pass; native OPEN | eef73de431413f43ccd469ab73838f2d11610e6d; push and remote SHA verified |
 | EP-0005-US-0001-TK-0010-deterministic-resource-lifetime | implemented; Client 1774/1774, 100 native-handle cycles, Release/format/diff pass; native window OPEN | d1f6ee45791857f8b3ecfa845b51b8f8d4b69a71; push and remote SHA verified |
 | EP-0005-US-0001-TK-0011-map-localization | implemented; Client 1777/1777, Release/format/diff pass; native OPEN | 0a20825b06e3520e4498bf77a9901dc94cc02169; push and remote SHA verified |
-| EP-0005-US-0001-TK-0012-stable-cluster-membership | implemented; reproduced 2 failures, Client 1783/1783, Release/format/diff pass; native OPEN | awaiting commit and immediate push |
-| EP-0005-US-0001-TK-0013-reconciled-route-join | pending | pending |
+| EP-0005-US-0001-TK-0012-stable-cluster-membership | implemented; reproduced 2 failures, Client 1783/1783, Release/format/diff pass; native OPEN | 355a332a6250bb1b8034eeeda4f29ed8156ccc84; push and remote SHA verified |
+| EP-0005-US-0001-TK-0013-reconciled-route-join | implemented; reproduced 2 failures, Client 1787/1787, Release/format/diff pass; native OPEN | awaiting commit and immediate push |
 | EP-0005-US-0001-TK-0014-stale-snapshot-policy | pending | pending |
 | EP-0005-US-0001-TK-0015-free-viewport-cost | pending | pending |
 | EP-0005-US-0002-TK-0001-frame-state-update | pending | pending |

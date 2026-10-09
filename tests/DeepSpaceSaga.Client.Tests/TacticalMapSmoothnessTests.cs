@@ -10,6 +10,79 @@ namespace DeepSpaceSaga.Client.Tests;
 public class TacticalMapSmoothnessTests
 {
     [Fact]
+    public async Task Legacy_approach_returned_geometry_is_drawn_from_cache()
+    {
+        var ship = new ObjectMotionSnapshot("player", 0, 0, 1, 90,
+            ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+            NavigationTargetX: 1000, NavigationTargetY: 0,
+            NavigationTargetSpeedKmS: 0, NavigationTargetDirectionDegrees: 0,
+            TurnStepDegrees: 1, TurnStepIntervalMs: 250, TurnStepRemainingMs: 250);
+        var buffer = new SnapshotBuffer(() => 0);
+        buffer.Update(new(1, 0, SimulationSpeed.Speed0, [ship], PlayerShipObjectId: "player"));
+        using var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
+        using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
+        screen.Render(surface.Canvas, 1280, 720);
+        TacticalMapSnapshotDocument? captured = null;
+        screen.SnapshotWriter = (document, _) => { captured = document; return "probe"; };
+        screen.RequestTacticalMapSnapshot();
+        await screen.SnapshotSaveTask;
+        var drawn = Assert.Single(captured!.State.Trajectories, t => t.Kind == "navigation");
+        Assert.True(drawn.Points.Count > 1);
+        Assert.Equal((0d, 0d), (drawn.Points[0].X, drawn.Points[0].Y));
+        Assert.InRange(Math.Abs(drawn.Points[^1].X - 1000), 0, 1);
+        Assert.DoesNotContain(captured.State.Trajectories, t => t.Kind == "navigation-join");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Reconciliation_keeps_marker_joined_to_route_and_join_expires(bool resume)
+    {
+        long clock = 0;
+        ObjectMotionSnapshot Ship(double x)
+        {
+            var ship = new ObjectMotionSnapshot("player", x, 500, 3, 270,
+                ActiveEngineCommandType: NavigationComputerCommandTypes.Approach,
+                NavigationTargetX: 0, NavigationTargetY: 0, NavigationPhase: ApproachLineCaptureMath.Phase);
+            return ship with { ApproachRoute = ApproachLineCaptureMath.Plan(ship, 0, 0, 90, 2, 10, 4)! };
+        }
+        var buffer = new SnapshotBuffer(() => clock);
+        buffer.Update(new(1, 0, resume ? SimulationSpeed.Speed0 : SimulationSpeed.Speed1,
+            [Ship(-1000)], PlayerShipObjectId: "player"));
+        using var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => clock);
+        using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
+        screen.Render(surface.Canvas, 1280, 720);
+        var updated = Ship(-800);
+        clock += Stopwatch.Frequency / 80;
+        buffer.Update(new(2, 0, SimulationSpeed.Speed1, [updated], PlayerShipObjectId: "player"));
+        screen.Render(surface.Canvas, 1280, 720);
+        async Task<TacticalMapSnapshotDocument> Capture()
+        {
+            TacticalMapSnapshotDocument? result = null;
+            screen.SnapshotWriter = (document, _) => { result = document; return "probe"; };
+            screen.RequestTacticalMapSnapshot();
+            await screen.SnapshotSaveTask;
+            return result!;
+        }
+        var first = await Capture();
+        var marker = Assert.Single(first.State.Objects).Rendered;
+        var route = Assert.Single(first.State.Trajectories, t => t.Kind == "navigation");
+        Assert.True(Math.Abs(marker.X - route.Points[0].X) > 1);
+        var join = Assert.Single(first.State.Trajectories, t => t.Kind == "navigation-join");
+        Assert.Equal((marker.X, marker.Y), (join.Points[0].X, join.Points[0].Y));
+        Assert.Equal(route.Points[0], join.Points[^1]);
+        var endpoint = ApproachLineCaptureMath.PredictPose(updated.ApproachRoute!, updated.ApproachRoute!.DurationMs);
+        Assert.Contains(route.Points, p => p.X == endpoint.X && p.Y == endpoint.Y);
+        for (int i = 0; i < 40; i++)
+        {
+            clock += Stopwatch.Frequency / 80;
+            screen.Render(surface.Canvas, 1280, 720);
+        }
+        var settled = await Capture();
+        Assert.DoesNotContain(settled.State.Trajectories, t => t.Kind == "navigation-join");
+    }
+
+    [Fact]
     public void Paused_time_advance_rebases_pose_camera_and_trail()
     {
         long clock = 0;

@@ -82,3 +82,10 @@ No public API change.
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Reproduction and scope 2026-10-09
+Both integration probes reproduce a >1-world-unit gap between the captured rendered marker and the drawn authoritative route, on fresh snapshot and resume. Add a separate presentation-only two-point navigation-join, leaving every original route sample and maneuverPointCount unchanged. It disappears when rendered pose matches route start. Expand scope to GameSessionScreen.GeometryCache.cs to retain join geometry and maneuver boundary. Review also found the cache ignored the projector return value for legacy Approach (which can return a different list); repair this confirmed integration defect in the same navigation path and cover it with regression.
+
+## Execution evidence 2026-10-09
+Separate cached navigation-join geometry connects rendered pose to the unchanged analytical start. The painter and detached capture consume this same connector; profiling attributes the first visible point to the marker. Endpoint, route samples and maneuver boundary remain unchanged. Cache now retains the projector-returned list for legacy Approach and forwards maneuverPointCount to the painter.
+Before fix both new-snapshot/resume probes failed because the marker differed from the line start and no connector was drawn. After fix: navigation/smoothness/route tests 79/79; full Client 1787/1787; Release 0 warnings/errors; scoped whitespace verification and diff check pass. Tests assert actual captured draw paths, exact endpoint, connector removal after correction, unchanged full sample sequence/maneuver boundary, and actual legacy Approach rendering. No Motion/Engine physics changes. Native/manual matrix remains OPEN.

@@ -11,7 +11,9 @@ public sealed partial class GameSessionScreen
     {
         internal TrajectoryKey Key;
         internal bool HasValue;
-        internal readonly List<FutureTrajectoryPoint> Points = new();
+        internal List<FutureTrajectoryPoint> Points = new();
+        internal readonly List<FutureTrajectoryPoint> Join = new(2);
+        internal int ManeuverPointCount;
         internal bool Confirmed;
         internal FutureTrajectoryPoint Intercept;
     }
@@ -61,8 +63,9 @@ public sealed partial class GameSessionScreen
         var key = new TrajectoryKey(pose, CurrentGeometryView);
         if (!entry.HasValue || entry.Key != key)
         {
-            _navigationTrajectoryProjector.ProjectPlayerInto(pose.ToSnapshot(), entry.Points,
-                _camera, _viewportW, _viewportH, out entry.Confirmed, out entry.Intercept);
+            entry.Points = _navigationTrajectoryProjector.ProjectPlayerInto(pose.ToSnapshot(), entry.Points,
+                _camera, _viewportW, _viewportH, out entry.Confirmed, out entry.Intercept, out entry.ManeuverPointCount);
+            NavigationTrajectoryProjector.BuildVisualJoin(pose, entry.Points, entry.Join);
             entry.Key = key;
             entry.HasValue = true;
             NavigationGeometryBuilds++;
