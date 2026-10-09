@@ -10,6 +10,12 @@ using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
+if (args.Contains("--tactical-pipeline"))
+{
+    Environment.ExitCode = TacticalPipelineEvidence.Run(args);
+    return;
+}
+
 if (args.Contains("--solar-window"))
 {
     Environment.ExitCode = SolarNativeEvidence.Run(args);

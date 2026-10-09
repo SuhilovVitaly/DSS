@@ -14,6 +14,10 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 public sealed partial class GameSessionScreen : IScreen, IDisposable
 {
     private readonly SnapshotBuffer _buffer;
+    private bool _isPreparingFrame;
+    private AuthoritativeSnapshot? InteractionSnapshot => _isPreparingFrame
+        ? _framePrediction?.BufferedSnapshot.Snapshot : _buffer.Latest?.Snapshot;
+    private SimulationSpeed PresentationSpeed => _framePrediction?.CurrentSpeed ?? _buffer.CurrentSpeed;
     internal CombatVisualSettings CombatSettings { get; }
     private readonly IMotionPredictor _predictor;
     private readonly CameraState _camera;
@@ -231,7 +235,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
     // ── Test seams ──────────────────────────────────────────────
 
     internal bool IsPanelVisible => _panelVisible;
-    internal AuthoritativeSnapshot? FrameEvidenceSnapshot => _buffer.Latest?.Snapshot;
+    internal AuthoritativeSnapshot? FrameEvidenceSnapshot => _presentedFrame?.Prediction?.BufferedSnapshot.Snapshot;
     internal double CameraFocusX => _camera.FocusX;
     internal double CameraFocusY => _camera.FocusY;
     internal double CameraPixelsPerWorldUnit => _camera.PixelsPerWorldUnit;
@@ -303,8 +307,8 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         _uiScale = ValidateUiScale(uiScale);
         _uiTimeStartTimestamp = _timestampProvider();
         _combatEffects = new CombatEffectStore(_timestampProvider, _buffer.FindCombatImpactReceivedAtTimestamp);
-        _combatEffects.Reset(_buffer.Latest?.Snapshot.CombatImpacts ?? default);
-        _combatEffects.ResetJournal(_buffer.Latest?.Snapshot.CombatJournal ?? default);
+        _combatEffects.Reset(InteractionSnapshot?.CombatImpacts ?? default);
+        _combatEffects.ResetJournal(InteractionSnapshot?.CombatJournal ?? default);
 
         _mapSettings = (mapSettings ?? new()).Validate();
         ScaleTargets = _mapSettings.ScaleTargets;
@@ -433,8 +437,9 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         // UI panels are laid out and hit-tested in logical (unscaled) space — the
         // raw window coordinates must be converted before testing against them.
         // The map (below) always uses the raw x, y.
-        float uiX = x / _uiScale;
-        float uiY = y / _uiScale;
+        float inputScale = _presentedFrame?.Viewport.UiScale ?? _uiScale;
+        float uiX = x / inputScale;
+        float uiY = y / inputScale;
 
         if (button == MouseButton.Right)
         {
@@ -517,7 +522,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         {
             SetSelectedObjectId(hitObjectId);
 
-            if (hitObjectId == _buffer.Latest?.Snapshot.PlayerShipObjectId)
+            if (hitObjectId == InteractionSnapshot?.PlayerShipObjectId)
             {
                 SetFollowPlayer();
             }
@@ -531,7 +536,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
             // snapshot) therefore (re)opens the Station screen — clicking "the ship" and
             // clicking "the station" are the same physical spot once docked. Docking
             // itself is unaffected by this click either way.
-            var snapshot = _buffer.Latest?.Snapshot;
+            var snapshot = InteractionSnapshot;
             var playerShip = snapshot?.Objects.FirstOrDefault(o => o.ObjectId == snapshot.PlayerShipObjectId);
             if (playerShip is { IsDocked: true } dockedShip &&
                 (hitObjectId == dockedShip.DockedStationObjectId || hitObjectId == dockedShip.ObjectId))
@@ -549,7 +554,9 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         // The camera focus is NOT changed.
         if (IsCtrlDown)
         {
-            var (navWorldX, navWorldY) = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
+            var view = _presentedFrame?.Scene.View;
+            double navWorldX = view is null ? _camera.FocusX : view.Camera.X + (x - view.Width / 2.0) / view.Camera.PixelsPerWorldUnit;
+            double navWorldY = view is null ? _camera.FocusY : view.Camera.Y + (y - view.Height / 2.0) / view.Camera.PixelsPerWorldUnit;
             SendNavigationCommand(navWorldX, navWorldY);
             return ScreenEvent.None;
         }
@@ -708,7 +715,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
             _ => null
         };
 
-        if (commandType is not null && CanSendEngineCommand(commandType, _buffer.Latest?.Snapshot))
+        if (commandType is not null && CanSendEngineCommand(commandType, InteractionSnapshot))
         {
             SendEngineCommand(commandType);
             return ScreenEvent.None;
@@ -790,7 +797,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         if (commandType == CombatCommandTypes.SelfDestruct) return IsSelfDestructEnabled();
         if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
             return IsDefenseToggleEnabled(commandType);
-        var snapshot = _buffer.Latest?.Snapshot;
+        var snapshot = InteractionSnapshot;
         if (snapshot is not null && FindPlayerShipMotion(snapshot)?.IsDestroyed == true)
             return false;
         if (commandType == NavigationComputerCommandTypes.StationsList)
@@ -818,7 +825,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
                 return _selectedObjectId is not null;
             case "none":
                 return commandType.StartsWith("engine.", StringComparison.Ordinal)
-                    ? CanSendEngineCommand(commandType, _buffer.Latest?.Snapshot)
+                    ? CanSendEngineCommand(commandType, InteractionSnapshot)
                     : true;
             default:
                 return false; // metadata missing — never send a command blind
@@ -867,7 +874,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
     /// </summary>
     private string? ResolveModuleId(string commandType)
     {
-        var modules = _buffer.Latest?.Snapshot.InstalledModules;
+        var modules = InteractionSnapshot?.InstalledModules;
         if (modules is null || modules.Value.IsDefaultOrEmpty)
             return null; // no snapshot yet, or InstalledModules left at its default (uninitialized) value
 
@@ -887,7 +894,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
     /// <summary>Target requirement ("none"/"point"/"object") for a command type, from the buffered snapshot's Commands metadata.</summary>
     private string? FindCommandTarget(string commandType)
     {
-        var snapshot = _buffer.Latest?.Snapshot;
+        var snapshot = InteractionSnapshot;
         if (snapshot is null)
             return null;
 
@@ -978,8 +985,27 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
     /// lexicographically smaller ObjectId (Ordinal) so the result never depends on
     /// iteration/snapshot order.
     /// </summary>
-    private string? FindNearestObjectId(float x, float y)
+    private string? FindNearestObjectId(float x, float y, bool presented = true)
     {
+        if (presented)
+        {
+            LastInputFrameId = PresentedFrameId;
+            if (_presentedFrame is not { } displayed) return null;
+            var view = displayed.Scene.View;
+            if (x < 0 || y < 0 || x > view.Width || y > view.Height || view.Obstacles.Any(r => r.Contains(x, y))) return null;
+            TacticalMapHitCandidate? best = null;
+            double distance = double.MaxValue;
+            foreach (var hit in displayed.Scene.HitCandidates)
+            {
+                double dx = x - hit.Center.X, dy = y - hit.Center.Y;
+                double candidate = hit.HullPlaque?.Contains(x, y) == true ? 0 : dx * dx + dy * dy;
+                if (candidate > ObjectHitTestRadiusPx * ObjectHitTestRadiusPx) continue;
+                if (best is null || hit.Priority < best.Value.Priority || hit.Priority == best.Value.Priority &&
+                    (candidate < distance || candidate == distance && string.CompareOrdinal(hit.ObjectId, best.Value.ObjectId) < 0))
+                { best = hit; distance = candidate; }
+            }
+            return best?.ObjectId;
+        }
         if (x < 0 || y < 0 || x > _viewportW || y > _viewportH ||
             IsClickOnUiPanel(x / _uiScale, y / _uiScale))
             return null;
@@ -1044,14 +1070,14 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
     /// and no further OnMouseMove arrives) is also treated as "no cursor" rather than
     /// hit-testing against a stale in-window position.
     /// </summary>
-    private void RecomputeActiveObjectId()
+    private void RecomputeActiveObjectId(bool presented = true)
     {
         bool cursorInViewport = _hasMousePosition &&
             _viewportW > 0 && _viewportH > 0 &&
             _mouseX >= 0 && _mouseX <= _viewportW &&
             _mouseY >= 0 && _mouseY <= _viewportH;
 
-        string? candidate = cursorInViewport ? FindNearestObjectId(_mouseX, _mouseY) : null;
+        string? candidate = cursorInViewport ? FindNearestObjectId(_mouseX, _mouseY, presented) : null;
         SetActiveObjectId(candidate);
     }
 
@@ -1119,6 +1145,13 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
     public void Render(SKCanvas output, int width, int height)
     {
+        _isPreparingFrame = true;
+        try { RenderFrame(output, width, height); }
+        finally { _isPreparingFrame = false; }
+    }
+
+    private void RenderFrame(SKCanvas output, int width, int height)
+    {
         ObjectDisposedException.ThrowIf(_disposed, this);
         BeginFrameProfile();
         DisplayedPlayerTrajectoryEnd = null;
@@ -1160,6 +1193,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
         if (_isFocusAttachedToPlayer && _mapFrame?.PlayerFocus is { } focus)
             _camera.SetFocus(focus.X, focus.Y);
+        CompletePipelineUpdate();
         UpdateCombatImportance();
         UpdateMapClusters();
         LayoutOverlayPanels(buffered);
@@ -1169,7 +1203,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         // stationary cursor (ТЗ §54). OnMouseMove already recomputes eagerly on input;
         // this catches every other trigger that isn't a mouse-move event.
         string? previousActive = _activeObjectId;
-        RecomputeActiveObjectId();
+        RecomputeActiveObjectId(presented: false);
         if (previousActive != _activeObjectId) LayoutObjectInfoPanel();
         CompleteRenderStage("coordinates_and_hit_test");
 
@@ -1183,7 +1217,10 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         var paintKey = CurrentPaintKey;
         if (TryReusePausedScene(paintKey))
         {
+            PreparePresentation(prediction, now);
+            BeginPipelineDraw();
             _mapPainter.Draw(output, PreparedScene!, uiTimeMs / 1000.0, RenderStageCompleted);
+            EndPipelineDraw();
             FinishFrameProfile(prediction, now);
             return;
         }
@@ -1385,7 +1422,10 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         {
             PublishSceneGeometry(commands);
             _lastPaintKey = paintKey;
+            PreparePresentation(prediction, now);
+            BeginPipelineDraw();
             _mapPainter.Draw(output, PreparedScene!, uiTimeMs / 1000.0, RenderStageCompleted);
+            EndPipelineDraw();
             FinishFrameProfile(prediction, now);
         }
         catch
@@ -1755,7 +1795,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         float btnX = _lastSpeedPanelRect.Left + SpeedPanelPadX;
         float btnY = _lastSpeedPanelRect.Top + SpeedPanelPadY;
 
-        var currentSpeed = _buffer.CurrentSpeed;
+        var currentSpeed = PresentationSpeed;
         int activeIdx = Array.IndexOf(SpeedValues, currentSpeed);
         if (activeIdx < 0) activeIdx = 0;
 
@@ -1940,7 +1980,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
     /// </summary>
     internal ScreenEvent ConsumePendingAutoTransition()
     {
-        var snapshot = _buffer.Latest?.Snapshot;
+        var snapshot = InteractionSnapshot;
         if (snapshot is null || snapshot.SnapshotSequence == _lastAutoTransitionCheckedSnapshotSequence)
             return ScreenEvent.None;
 
@@ -2162,13 +2202,13 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         }
         // Resolve against this snapshot only. Unknown and non-station objects cannot inherit a market row.
         StationMarketKnowledgeSnapshot? market = null;
-        var observations = _buffer.Latest?.Snapshot.StationMarketKnowledge ?? default;
+        var observations = InteractionSnapshot?.StationMarketKnowledge ?? default;
         if (s.Source.ObjectType == SpaceObjectType.Station && p.RenderObjectType == SpaceObjectType.Station &&
             !observations.IsDefaultOrEmpty)
             market = observations.FirstOrDefault(o => string.Equals(o.StationObjectId, p.ObjectId, StringComparison.Ordinal));
-        var cluster = ClusterMapPresentation.Station(_buffer.Latest?.Snapshot, p.ObjectId);
-        var resource = ClusterMapPresentation.Resource(_buffer.Latest?.Snapshot, p.ObjectId);
-        var resourceCluster = resource is null ? null : _buffer.Latest?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
+        var cluster = ClusterMapPresentation.Station(InteractionSnapshot, p.ObjectId);
+        var resource = ClusterMapPresentation.Resource(InteractionSnapshot, p.ObjectId);
+        var resourceCluster = resource is null ? null : InteractionSnapshot?.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
             p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), s.Source.Countermeasure, market,
             cluster?.ClusterName, cluster?.Profile, cluster?.Directions, resourceCluster, resource?.AnchorStationId,

@@ -257,7 +257,7 @@ public sealed partial class GameSessionScreen
     private void SendTorpedoFire()
     {
         if (_handle is null || !IsTorpedoFireEnabled()) return;
-        var snapshot = _buffer.Latest!.Snapshot;
+        var snapshot = InteractionSnapshot!;
         string moduleId = FindLauncher()!.ModuleId;
         string? targetId = _selectedObjectId;
         _torpedoSubmitPending = true;
@@ -279,7 +279,7 @@ public sealed partial class GameSessionScreen
     private bool IsSelfDestructEnabled()
     {
         RefreshTorpedoSubmission();
-        return !_torpedoSubmitPending && _buffer.Latest?.Snapshot.ActiveDialogue is null &&
+        return !_torpedoSubmitPending && InteractionSnapshot?.ActiveDialogue is null &&
             FindLauncher() is { LauncherCombat.ActiveTorpedoObjectId: not null } launcher &&
             launcher.Commands.Any(c => c.CommandTypeId == CombatCommandTypes.SelfDestruct);
     }
@@ -288,7 +288,7 @@ public sealed partial class GameSessionScreen
     {
         if (_handle is null || !IsSelfDestructEnabled()) return;
         var launcher = FindLauncher()!;
-        var snapshot = _buffer.Latest!.Snapshot;
+        var snapshot = InteractionSnapshot!;
         string targetId = launcher.LauncherCombat!.ActiveTorpedoObjectId!;
         _torpedoSubmitPending = true;
         _torpedoSendFailed = false;
@@ -311,7 +311,7 @@ public sealed partial class GameSessionScreen
     private InstalledModuleSnapshot? FindLauncher()
     {
         string? moduleId = ResolveModuleId(CombatCommandTypes.Fire);
-        var modules = _buffer.Latest?.Snapshot.InstalledModules;
+        var modules = InteractionSnapshot?.InstalledModules;
         return moduleId is null || modules is null || modules.Value.IsDefaultOrEmpty
             ? null : modules.Value.FirstOrDefault(m => m.ModuleId == moduleId);
     }
@@ -320,7 +320,7 @@ public sealed partial class GameSessionScreen
     {
         RefreshTorpedoSubmission();
         if (_torpedoSubmitPending) return false;
-        var snapshot = _buffer.Latest?.Snapshot;
+        var snapshot = InteractionSnapshot;
         if (snapshot is null || snapshot.ActiveDialogue is not null ||
             FindPlayerShipMotion(snapshot) is not { IsDestroyed: false } ||
             _selectedObjectId is null || _selectedObjectId == snapshot.PlayerShipObjectId)
@@ -334,18 +334,18 @@ public sealed partial class GameSessionScreen
             launcher.Commands.Any(c => c.CommandTypeId == CombatCommandTypes.Fire && c.Target == "object");
     }
 
-    private InstalledModuleSnapshot? FindDefense() => _buffer.Latest?.Snapshot is { InstalledModules.IsDefaultOrEmpty: false } snapshot
+    private InstalledModuleSnapshot? FindDefense() => InteractionSnapshot is { InstalledModules.IsDefaultOrEmpty: false } snapshot
         ? snapshot.InstalledModules.FirstOrDefault(m => m.Defense is not null) : null;
     private bool IsDefenseToggleEnabled(string commandType)
     {
-        var snapshot = _buffer.Latest?.Snapshot;
+        var snapshot = InteractionSnapshot;
         return snapshot is not null && snapshot.ActiveDialogue is null && FindPlayerShipMotion(snapshot) is { IsDestroyed: false } &&
             FindDefense() is { Defense: { } defense } module && !module.Commands.IsDefaultOrEmpty && module.Commands.Any(c => c.CommandTypeId == commandType) &&
             defense.AutoEnabled != (commandType == DefenseCommandTypes.Enable);
     }
-    private long DefensePresentationTime => _buffer.LatestPrediction is { } prediction
+    private long DefensePresentationTime => _framePrediction is { } prediction
         ? prediction.BufferedSnapshot.Snapshot.MotionTimeMs + CombatPredictionDelta(prediction)
-        : _buffer.Latest?.Snapshot.MotionTimeMs ?? 0;
+        : InteractionSnapshot?.MotionTimeMs ?? 0;
     private string? GetDefenseStatus() => FindDefense()?.Defense is { } defense
         ? DefenseStatusText(defense, DefensePresentationTime) : null;
     internal static string WeaponOperatorText(WeaponOperatorSnapshot? op) => op is null ? "Нет оператора" :

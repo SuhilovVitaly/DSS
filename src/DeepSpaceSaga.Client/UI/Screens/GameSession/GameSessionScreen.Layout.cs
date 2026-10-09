@@ -50,7 +50,7 @@ public sealed partial class GameSessionScreen
         _commandsPanel.Layout(buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty, commandsBottom);
         _combatJournalPanel.Layout(_uiViewportW, _uiViewportH, buffered?.Snapshot.CombatJournal ?? default);
         LayoutObjectInfoPanel();
-        _gameTimeText = GameTimeDisplay.Minutes(buffered?.Snapshot.GameTimeMs) + " · " + GameTimeDisplay.Status(_buffer.CurrentSpeed);
+        _gameTimeText = GameTimeDisplay.Minutes(buffered?.Snapshot.GameTimeMs) + " · " + GameTimeDisplay.Status(PresentationSpeed);
         if (buffered?.Snapshot.MissingRations > 0) _gameTimeText += " · Не хватает рационов";
         float timeWidth = _gameTimeTextPaint.MeasureText(_gameTimeText) + 24;
         _gameTimeRect = new(_uiViewportW / 2 - timeWidth / 2, ComputeScaleSpeedRowY() - 128,

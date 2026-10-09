@@ -82,3 +82,11 @@ failed when p99 exceeds 12.5 ms, or display-limited when VSync's reported monito
 refresh is below 80 Hz; measurement completion never implies the FPS target passed.
 Keep final textual results with hardware, commit, settings and limitations; remove
 temporary PNG/JSON after inspection.
+
+## EP-0005 tactical pipeline matrix
+
+`dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll <root> <output.json> --tactical-pipeline`
+
+Runs deterministic 500/5000-contact fixtures at 1920x1080 and 3440x1440 in paused/live/zoom/pan/route modes (120 warmup + 600 measured frames each). Navigation uses the valid 250 ms turn cadence. Results include CPU/raster p50/p95/p99, allocations, GC, Update/Prepare/Draw, represented path points, geometry/paint reuse and spatial-update counters. Synthetic snapshot generation is outside Render timing. Reports include the measured client binary hash; raster timing is not GPU FPS.
+
+Add `--native --objects 5000 --size 1920x1080 --scale 1.5` for the actual production SkiaWindow collector. Supported presentation scales are 0.8/1/1.2/1.5. Each process exercises zoom, pan, pause/resume and selection during warmup, captures PNG, measures 600 presented frames and closes. Run native cases sequentially, without concurrent builds/tests/raster benchmarks. Reports distinguish scripted native checks, image inspection and human manual acceptance, and retain the native swap/driver/refresh limitations above. Native fixture timing uses a real clock and refreshes snapshots once per second.

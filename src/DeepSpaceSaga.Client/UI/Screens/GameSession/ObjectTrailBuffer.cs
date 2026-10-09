@@ -6,37 +6,77 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 internal sealed class ObjectTrailBuffer : IReadOnlyList<ObjectTrailPoint>
 {
     internal const int MaximumPoints = 512;
-    private ObjectTrailPoint[] _points = new ObjectTrailPoint[16];
+    private const int PageSize = 16;
+    private ObjectTrailPoint[][] _pages = [new ObjectTrailPoint[PageSize]];
+    private bool[] _shared = new bool[1];
+    private bool _sharedRoot;
+    private int _capacity = PageSize;
+    private Frozen? _frozen;
+    internal sealed class Frozen(ObjectTrailPoint[][] pages, int head, int count, int capacity, long revision) : IReadOnlyList<ObjectTrailPoint>
+    {
+        public int Count => count;
+        internal int Capacity => capacity;
+        internal long Revision => revision;
+        public ObjectTrailPoint this[int index]
+        {
+            get
+            {
+                if ((uint)index >= (uint)count) throw new ArgumentOutOfRangeException(nameof(index));
+                int physical = (head + index) % capacity;
+                return pages[physical / PageSize][physical % PageSize];
+            }
+        }
+        public IEnumerator<ObjectTrailPoint> GetEnumerator() { for (int i = 0; i < count; i++) yield return this[i]; }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+    internal Frozen Freeze()
+    {
+        if (_frozen?.Revision == Revision) return _frozen;
+        _sharedRoot = true;
+        Array.Fill(_shared, true);
+        return _frozen = new(_pages, _head, Count, _capacity, Revision);
+    }
+    private void Write(int physical, ObjectTrailPoint value)
+    {
+        if (_sharedRoot) { _pages = (ObjectTrailPoint[][])_pages.Clone(); _sharedRoot = false; }
+        int page = physical / PageSize;
+        if (_shared[page]) { _pages[page] = (ObjectTrailPoint[])_pages[page].Clone(); _shared[page] = false; }
+        _pages[page][physical % PageSize] = value;
+    }
+    private ObjectTrailPoint Read(int physical) => _pages[physical / PageSize][physical % PageSize];
     private int _head;
     private bool _boundsDirty = true;
     private (double MinX, double MinY, double MaxX, double MaxY) _bounds;
     public int Count { get; private set; }
-    internal int Capacity => _points.Length;
+    internal int Capacity => _capacity;
     internal long Revision { get; private set; }
 
     public ObjectTrailPoint this[int index]
     {
-        get => _points[PhysicalIndex(index)];
-        set { _points[PhysicalIndex(index)] = value; _boundsDirty = true; Revision++; }
+        get => Read(PhysicalIndex(index));
+        set { Write(PhysicalIndex(index), value); _boundsDirty = true; Revision++; }
     }
 
     private int PhysicalIndex(int index)
     {
         if ((uint)index >= (uint)Count) throw new ArgumentOutOfRangeException(nameof(index));
-        return (_head + index) % _points.Length;
+        return (_head + index) % _capacity;
     }
 
     public void Add(ObjectTrailPoint point)
     {
         if (Count == MaximumPoints) RemoveFirst(1);
-        if (Count == _points.Length)
+        if (Count == _capacity)
         {
-            var expanded = new ObjectTrailPoint[_points.Length * 2];
-            for (int i = 0; i < Count; i++) expanded[i] = this[i];
-            _points = expanded;
+            var old = this.ToArray();
+            _capacity *= 2;
+            _pages = Enumerable.Range(0, _capacity / PageSize).Select(_ => new ObjectTrailPoint[PageSize]).ToArray();
+            _shared = new bool[_pages.Length];
+            _sharedRoot = false;
             _head = 0;
+            for (int i = 0; i < old.Length; i++) Write(i, old[i]);
         }
-        _points[(_head + Count++) % _points.Length] = point;
+        Write((_head + Count++) % _capacity, point);
         _boundsDirty = true;
         Revision++;
     }
@@ -44,7 +84,7 @@ internal sealed class ObjectTrailBuffer : IReadOnlyList<ObjectTrailPoint>
     public void RemoveFirst(int count)
     {
         if ((uint)count > (uint)Count) throw new ArgumentOutOfRangeException(nameof(count));
-        _head = (_head + count) % _points.Length;
+        _head = (_head + count) % _capacity;
         Count -= count;
         _boundsDirty = true;
         Revision++;

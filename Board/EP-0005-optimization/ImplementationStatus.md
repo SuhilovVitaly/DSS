@@ -28,7 +28,7 @@ Draft assumptions accepted for this execution: 2000 ms real-time stale limit, de
 | EP-0005-US-0002-TK-0001-frame-state-update | implemented; Client 1804/1804, Release/format/diff pass; native OPEN | 3d82b3a7220f7b3224a6e9043cd1db2ace525a34; push and remote SHA verified |
 | EP-0005-US-0002-TK-0002-scene-geometry-prepare | implemented shadow seam; Client 1807/1807, Release/format/diff pass; native OPEN | 782ad02412cb86e0639c661fa563fd6467310d93; push and remote SHA verified |
 | EP-0005-US-0002-TK-0003-read-only-map-painter | implemented; Client 1810/1810, raster replay/layers/native lifetime pass, Release/format/diff pass; native OPEN | 789c08ac0a9787ab66b2d6aae57a79c0de97e231; push and remote SHA verified |
-| EP-0005-US-0002-TK-0004-revision-driven-scene-cache | implemented; Client 1822/1822, revision/cache/spatial cases 12/12, Release/format/diff pass; native OPEN | publication pending |
-| EP-0005-US-0002-TK-0005-frame-consumers-and-performance | pending | pending |
+| EP-0005-US-0002-TK-0004-revision-driven-scene-cache | implemented; Client 1822/1822, revision/cache/spatial cases 12/12, Release/format/diff pass; native OPEN | 35081a109fa747dee6bbdbdd523da1022ba2a946; push and remote SHA verified |
+| EP-0005-US-0002-TK-0005-frame-consumers-and-performance | implemented; Client 1826/1826, Release/format/diff pass; 20 raster + 16 native cases, 80 scripted actions pass; 80 FPS FAILED, manual OPEN | commit/push verification follows this ticket |
 | EP-0005-US-0003-TK-0001-documentation-sync | pending | pending |
 | EP-0005-US-0003-TK-0002-graph-rebuild | pending | pending |

@@ -134,7 +134,7 @@ public sealed partial class GameSessionScreen
     }
 
     private bool IsImportantMapObject(string id) => id == _selectedObjectId || id == _activeObjectId || id == _navigationTargetId ||
-        id == _buffer.Latest?.Snapshot.PlayerShipObjectId || _combatImportantIds.Contains(id);
+        id == _framePrediction?.BufferedSnapshot.Snapshot.PlayerShipObjectId || _combatImportantIds.Contains(id);
 
     private void SetFollowPlayer()
     {
@@ -221,20 +221,18 @@ public sealed partial class GameSessionScreen
 
     private bool TryExpandMapCluster(float x, float y)
     {
-        MapCluster? best = null;
+        if (_presentedFrame is not { } frame) return false;
+        LastInputFrameId = frame.Id;
+        TacticalMapClusterGeometry? best = null;
         double bestDistance = double.MaxValue;
-        foreach (var cluster in _mapClusters)
+        foreach (var cluster in frame.Scene.View.Clusters)
         {
-            var p = _camera.WorldToScreen(cluster.X, cluster.Y, _viewportW, _viewportH);
-            double distance = (p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y);
+            double dx = cluster.Center.X - x, dy = cluster.Center.Y - y;
+            double distance = dx * dx + dy * dy;
             if (distance > 225) continue;
-            if (best is null || distance < bestDistance ||
-                (distance == bestDistance && (cluster.CellX < best.Value.CellX ||
-                    (cluster.CellX == best.Value.CellX && cluster.CellY < best.Value.CellY))))
-            {
-                best = cluster;
-                bestDistance = distance;
-            }
+            if (best is null || distance < bestDistance || distance == bestDistance &&
+                (cluster.CellX < best.Value.CellX || cluster.CellX == best.Value.CellX && cluster.CellY < best.Value.CellY))
+            { best = cluster; bestDistance = distance; }
         }
         if (best is null) return false;
         FitMapBounds(best.Value.Bounds);
@@ -281,7 +279,7 @@ public sealed partial class GameSessionScreen
 
     internal bool FitBelt(string beltId)
     {
-        var belt = _buffer.Latest?.Snapshot.SolarSystemMap?.Belts.FirstOrDefault(b => b.Id == beltId);
+        var belt = InteractionSnapshot?.SolarSystemMap?.Belts.FirstOrDefault(b => b.Id == beltId);
         if (belt is null || _viewportW <= 0 || _viewportH <= 0) return false;
         MapWorldBounds bounds = new();
         bounds.Include(-belt.OuterRadius, -belt.OuterRadius);
@@ -293,7 +291,7 @@ public sealed partial class GameSessionScreen
 
     internal bool FitCluster(string clusterId)
     {
-        var cluster = _buffer.Latest?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == clusterId);
+        var cluster = InteractionSnapshot?.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == clusterId);
         if (cluster is null || _viewportW <= 0 || _viewportH <= 0) return false;
         var bounds = ClusterMapPresentation.Bounds(cluster, _renderStates.Select(s => s.Predicted));
         if (!bounds.HasValue) return false;
@@ -304,7 +302,7 @@ public sealed partial class GameSessionScreen
 
     private void FitNextBelt()
     {
-        if (_buffer.Latest?.Snapshot.SolarSystemMap is not { } map || map.Belts.IsEmpty) return;
+        if (InteractionSnapshot?.SolarSystemMap is not { } map || map.Belts.IsEmpty) return;
         int index = -1;
         for (int i = 0; i < map.Belts.Length; i++) if (map.Belts[i].Id == _fittedBeltId) index = i;
         FitBelt(map.Belts[(index + 1) % map.Belts.Length].Id);
@@ -312,7 +310,7 @@ public sealed partial class GameSessionScreen
 
     private void FitNextCluster()
     {
-        if (_buffer.Latest?.Snapshot.ClusterMap is not { } map || map.Clusters.IsDefaultOrEmpty) return;
+        if (InteractionSnapshot?.ClusterMap is not { } map || map.Clusters.IsDefaultOrEmpty) return;
         int index = -1;
         for (int i = 0; i < map.Clusters.Length; i++) if (map.Clusters[i].Id == _fittedClusterId) index = i;
         FitCluster(map.Clusters[(index + 1) % map.Clusters.Length].Id);
@@ -326,7 +324,7 @@ public sealed partial class GameSessionScreen
         bounds.Include(ship.X, ship.Y);
         if (mode == MapFitMode.System)
         {
-            if (_buffer.Latest?.Snapshot.SolarSystemMap is { } system)
+            if (InteractionSnapshot?.SolarSystemMap is { } system)
             {
                 bounds.Include(-system.SystemRadius, -system.SystemRadius);
                 bounds.Include(system.SystemRadius, system.SystemRadius);
@@ -472,9 +470,9 @@ public sealed partial class GameSessionScreen
         {
             1 => (_selectedObjectId is not null && _selectedObjectId != ship.ObjectId) || ship.NavigationTargetX is not null,
             2 => ship.NavigationTargetX is not null,
-            5 => _buffer.Latest?.Snapshot.SolarSystemMap is not null,
-            6 => _buffer.Latest?.Snapshot.SolarSystemMap?.Belts.Length > 0,
-            7 => _buffer.Latest?.Snapshot.ClusterMap?.Clusters.Length > 0,
+            5 => InteractionSnapshot?.SolarSystemMap is not null,
+            6 => InteractionSnapshot?.SolarSystemMap?.Belts.Length > 0,
+            7 => InteractionSnapshot?.ClusterMap?.Clusters.Length > 0,
             _ => true
         };
     }

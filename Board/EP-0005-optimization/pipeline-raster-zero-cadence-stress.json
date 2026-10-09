@@ -1,0 +1,760 @@
+{
+  "status": "interrupted-known-invalid-fixture",
+  "backend": "Skia raster; CPU only, not GPU presentation",
+  "warmupFrames": 120,
+  "measuredFrames": 600,
+  "machine": {
+    "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+    "logicalProcessors": 8,
+    "runtime": ".NET 8.0.26",
+    "os": "Microsoft Windows 10.0.26200",
+    "baseCommit": "35081a109fa747dee6bbdbdd523da1022ba2a946",
+    "clientBinarySha256": "7D3133ECC11CEF41AC145850473EC5A5F5AD96D20A0BF42595A021018295EB87",
+    "note": "Binary hash identifies measured implementation, including uncommitted ticket changes. Deterministic synthetic contacts; snapshot preparation is outside raster Render timing."
+  },
+  "results": [
+    {
+      "objects": 500,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "paused",
+      "cpuMs": {
+        "p50": 2.274,
+        "p95": 3.3598,
+        "p99": 3.961,
+        "mean": 2.4341941666666678,
+        "max": 8.6966
+      },
+      "allocatedBytes": {
+        "p50": 6688,
+        "p95": 6952,
+        "p99": 6976,
+        "mean": 7095.613333333334,
+        "max": 216376
+      },
+      "updateMs": {
+        "p50": 0.0873,
+        "p95": 0.1433,
+        "p99": 0.1744,
+        "mean": 0.08242399999999989,
+        "max": 0.2686
+      },
+      "prepareMs": {
+        "p50": 0.06,
+        "p95": 0.1421,
+        "p99": 0.2083,
+        "mean": 0.07759983333333324,
+        "max": 4.5131
+      },
+      "drawMs": {
+        "p50": 2.0855,
+        "p95": 3.151,
+        "p99": 3.5256,
+        "mean": 2.2460048333333367,
+        "max": 3.8862
+      },
+      "geometryBuilds": 0,
+      "paintBuilds": 1,
+      "paintReuses": 599,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 0,
+      "gcCollections": [
+        1,
+        1,
+        1
+      ],
+      "gcPauseMs": 2.816
+    },
+    {
+      "objects": 500,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "live",
+      "cpuMs": {
+        "p50": 3.4626,
+        "p95": 5.9607,
+        "p99": 7.1037,
+        "mean": 3.890445666666671,
+        "max": 12.1048
+      },
+      "allocatedBytes": {
+        "p50": 258760,
+        "p95": 266200,
+        "p99": 266712,
+        "mean": 260415.65333333332,
+        "max": 267224
+      },
+      "updateMs": {
+        "p50": 0.0211,
+        "p95": 0.0385,
+        "p99": 0.0759,
+        "mean": 0.025499666666666667,
+        "max": 0.7043
+      },
+      "prepareMs": {
+        "p50": 0.9873,
+        "p95": 3.2461,
+        "p99": 3.9169,
+        "mean": 1.4491185000000013,
+        "max": 9.1683
+      },
+      "drawMs": {
+        "p50": 2.1037,
+        "p95": 3.0703,
+        "p99": 3.6149,
+        "mean": 2.2349681666666688,
+        "max": 5.0651
+      },
+      "geometryBuilds": 9000,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        25,
+        0,
+        0
+      ],
+      "gcPauseMs": 18.459
+    },
+    {
+      "objects": 500,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "zoom",
+      "cpuMs": {
+        "p50": 5.4497,
+        "p95": 8.3143,
+        "p99": 10.8204,
+        "mean": 5.475307999999996,
+        "max": 12.4474
+      },
+      "allocatedBytes": {
+        "p50": 312880,
+        "p95": 378352,
+        "p99": 397880,
+        "mean": 318541.25333333336,
+        "max": 498168
+      },
+      "updateMs": {
+        "p50": 0.0255,
+        "p95": 0.048,
+        "p99": 0.0741,
+        "mean": 0.029242499999999984,
+        "max": 0.7573
+      },
+      "prepareMs": {
+        "p50": 1.0459,
+        "p95": 2.7273,
+        "p99": 3.2662,
+        "mean": 1.255391000000002,
+        "max": 3.8596
+      },
+      "drawMs": {
+        "p50": 4.0375,
+        "p95": 6.4452,
+        "p99": 8.7988,
+        "mean": 4.051024,
+        "max": 9.4648
+      },
+      "geometryBuilds": 11159,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        31,
+        0,
+        0
+      ],
+      "gcPauseMs": 21.984
+    },
+    {
+      "objects": 500,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "pan",
+      "cpuMs": {
+        "p50": 3.2748,
+        "p95": 4.6843,
+        "p99": 5.787,
+        "mean": 3.464129666666669,
+        "max": 6.6026
+      },
+      "allocatedBytes": {
+        "p50": 258568,
+        "p95": 265936,
+        "p99": 268040,
+        "mean": 260131.57333333333,
+        "max": 268984
+      },
+      "updateMs": {
+        "p50": 0.0196,
+        "p95": 0.0333,
+        "p99": 0.0739,
+        "mean": 0.02278083333333334,
+        "max": 0.2652
+      },
+      "prepareMs": {
+        "p50": 0.9533,
+        "p95": 1.8967,
+        "p99": 3.3385,
+        "mean": 1.1195936666666646,
+        "max": 4.06
+      },
+      "drawMs": {
+        "p50": 2.1175,
+        "p95": 2.8702,
+        "p99": 3.186,
+        "mean": 2.2189451666666686,
+        "max": 3.5728
+      },
+      "geometryBuilds": 9029,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        25,
+        0,
+        0
+      ],
+      "gcPauseMs": 15.913
+    },
+    {
+      "objects": 500,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "route",
+      "cpuMs": {
+        "p50": 68.1046,
+        "p95": 78.4247,
+        "p99": 87.838,
+        "mean": 69.30820766666662,
+        "max": 107.5703
+      },
+      "allocatedBytes": {
+        "p50": 5055728,
+        "p95": 5063552,
+        "p99": 5064064,
+        "mean": 5057492.586666667,
+        "max": 5067568
+      },
+      "updateMs": {
+        "p50": 0.0346,
+        "p95": 0.0567,
+        "p99": 0.1134,
+        "mean": 0.03971216666666666,
+        "max": 0.9725
+      },
+      "prepareMs": {
+        "p50": 15.1366,
+        "p95": 18.2633,
+        "p99": 20.7529,
+        "mean": 15.536138333333332,
+        "max": 23.0814
+      },
+      "drawMs": {
+        "p50": 52.6649,
+        "p95": 60.8598,
+        "p99": 67.4749,
+        "mean": 53.46966933333337,
+        "max": 92.2929
+      },
+      "geometryBuilds": 9600,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 120001800,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        90,
+        66,
+        66
+      ],
+      "gcPauseMs": 41.235
+    },
+    {
+      "objects": 500,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "paused",
+      "cpuMs": {
+        "p50": 4.3795,
+        "p95": 5.1174,
+        "p99": 5.9826,
+        "mean": 4.466911833333331,
+        "max": 9.6661
+      },
+      "allocatedBytes": {
+        "p50": 7280,
+        "p95": 7280,
+        "p99": 7280,
+        "mean": 7733.373333333333,
+        "max": 278792
+      },
+      "updateMs": {
+        "p50": 0.0567,
+        "p95": 0.0706,
+        "p99": 0.1214,
+        "mean": 0.05873350000000002,
+        "max": 0.1904
+      },
+      "prepareMs": {
+        "p50": 0.0435,
+        "p95": 0.0557,
+        "p99": 0.1295,
+        "mean": 0.04639099999999998,
+        "max": 1.2063
+      },
+      "drawMs": {
+        "p50": 4.2491,
+        "p95": 4.9496,
+        "p99": 5.642,
+        "mean": 4.338351499999996,
+        "max": 9.4471
+      },
+      "geometryBuilds": 0,
+      "paintBuilds": 1,
+      "paintReuses": 599,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 0,
+      "gcCollections": [
+        1,
+        0,
+        0
+      ],
+      "gcPauseMs": 1.069
+    },
+    {
+      "objects": 500,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "live",
+      "cpuMs": {
+        "p50": 6.1632,
+        "p95": 7.9615,
+        "p99": 9.8844,
+        "mean": 6.3975676666666725,
+        "max": 21.259
+      },
+      "allocatedBytes": {
+        "p50": 329768,
+        "p95": 345280,
+        "p99": 345400,
+        "mean": 333465.86666666664,
+        "max": 348280
+      },
+      "updateMs": {
+        "p50": 0.027,
+        "p95": 0.0441,
+        "p99": 0.0765,
+        "mean": 0.031384666666666644,
+        "max": 0.8062
+      },
+      "prepareMs": {
+        "p50": 1.0674,
+        "p95": 2.0495,
+        "p99": 3.498,
+        "mean": 1.2436526666666672,
+        "max": 15.6167
+      },
+      "drawMs": {
+        "p50": 4.843,
+        "p95": 5.5949,
+        "p99": 7.6157,
+        "mean": 4.98409816666667,
+        "max": 14.639
+      },
+      "geometryBuilds": 17340,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        32,
+        0,
+        0
+      ],
+      "gcPauseMs": 29.91
+    },
+    {
+      "objects": 500,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "zoom",
+      "cpuMs": {
+        "p50": 8.5455,
+        "p95": 11.4064,
+        "p99": 12.745,
+        "mean": 8.416461999999994,
+        "max": 16.9884
+      },
+      "allocatedBytes": {
+        "p50": 364056,
+        "p95": 421752,
+        "p99": 435480,
+        "mean": 359444.62666666665,
+        "max": 558552
+      },
+      "updateMs": {
+        "p50": 0.032,
+        "p95": 0.0482,
+        "p99": 0.0894,
+        "mean": 0.03645266666666665,
+        "max": 0.579
+      },
+      "prepareMs": {
+        "p50": 1.0939,
+        "p95": 2.242,
+        "p99": 3.2337,
+        "mean": 1.2704196666666672,
+        "max": 4.1101
+      },
+      "drawMs": {
+        "p50": 7.079,
+        "p95": 9.3994,
+        "p99": 10.8843,
+        "mean": 6.951364333333328,
+        "max": 13.5045
+      },
+      "geometryBuilds": 17061,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        35,
+        3,
+        1
+      ],
+      "gcPauseMs": 20.922
+    },
+    {
+      "objects": 500,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "pan",
+      "cpuMs": {
+        "p50": 5.8147,
+        "p95": 6.5886,
+        "p99": 7.577,
+        "mean": 5.907822166666664,
+        "max": 8.5372
+      },
+      "allocatedBytes": {
+        "p50": 329464,
+        "p95": 344864,
+        "p99": 347024,
+        "mean": 332916.5466666667,
+        "max": 347792
+      },
+      "updateMs": {
+        "p50": 0.0262,
+        "p95": 0.0352,
+        "p99": 0.0698,
+        "mean": 0.027923333333333335,
+        "max": 0.1497
+      },
+      "prepareMs": {
+        "p50": 1.0612,
+        "p95": 1.5945,
+        "p99": 2.7539,
+        "mean": 1.1564738333333333,
+        "max": 2.9086
+      },
+      "drawMs": {
+        "p50": 4.5498,
+        "p95": 5.1601,
+        "p99": 5.3811,
+        "mean": 4.602056000000002,
+        "max": 5.5648
+      },
+      "geometryBuilds": 17112,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        32,
+        0,
+        0
+      ],
+      "gcPauseMs": 17.566
+    },
+    {
+      "objects": 500,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "route",
+      "cpuMs": {
+        "p50": 82.9706,
+        "p95": 87.6071,
+        "p99": 90.9537,
+        "mean": 83.58592733333333,
+        "max": 140.8336
+      },
+      "allocatedBytes": {
+        "p50": 5126896,
+        "p95": 5142248,
+        "p99": 5142760,
+        "mean": 5130570.493333333,
+        "max": 5145248
+      },
+      "updateMs": {
+        "p50": 0.0366,
+        "p95": 0.0541,
+        "p99": 0.0791,
+        "mean": 0.03964316666666667,
+        "max": 0.1645
+      },
+      "prepareMs": {
+        "p50": 15.3211,
+        "p95": 18.6079,
+        "p99": 20.792,
+        "mean": 15.679134333333316,
+        "max": 32.9124
+      },
+      "drawMs": {
+        "p50": 67.3224,
+        "p95": 70.2298,
+        "p99": 71.9949,
+        "mean": 67.6012308333333,
+        "max": 107.6755
+      },
+      "geometryBuilds": 17940,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 120001800,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        99,
+        68,
+        68
+      ],
+      "gcPauseMs": 40.342
+    },
+    {
+      "objects": 5000,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "paused",
+      "cpuMs": {
+        "p50": 2.9584,
+        "p95": 5.0789,
+        "p99": 5.4861,
+        "mean": 3.254839166666668,
+        "max": 5.9232
+      },
+      "allocatedBytes": {
+        "p50": 6664,
+        "p95": 6664,
+        "p99": 6664,
+        "mean": 7493.333333333333,
+        "max": 504264
+      },
+      "updateMs": {
+        "p50": 0.5865,
+        "p95": 1.0877,
+        "p99": 1.1828,
+        "mean": 0.6712771666666674,
+        "max": 2.1907
+      },
+      "prepareMs": {
+        "p50": 0.064,
+        "p95": 0.1964,
+        "p99": 0.2674,
+        "mean": 0.08774799999999994,
+        "max": 2.1284
+      },
+      "drawMs": {
+        "p50": 2.1708,
+        "p95": 3.7736,
+        "p99": 4.0411,
+        "mean": 2.40611933333333,
+        "max": 4.3452
+      },
+      "geometryBuilds": 0,
+      "paintBuilds": 1,
+      "paintReuses": 599,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 0,
+      "gcCollections": [
+        0,
+        0,
+        0
+      ],
+      "gcPauseMs": 0
+    },
+    {
+      "objects": 5000,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "live",
+      "cpuMs": {
+        "p50": 6.3163,
+        "p95": 7.8989,
+        "p99": 9.2154,
+        "mean": 6.492105666666669,
+        "max": 9.7959
+      },
+      "allocatedBytes": {
+        "p50": 852680,
+        "p95": 860504,
+        "p99": 860568,
+        "mean": 854390.3466666667,
+        "max": 863232
+      },
+      "updateMs": {
+        "p50": 0.1694,
+        "p95": 0.302,
+        "p99": 0.5546,
+        "mean": 0.1892776666666667,
+        "max": 0.683
+      },
+      "prepareMs": {
+        "p50": 3.5289,
+        "p95": 4.9671,
+        "p99": 6.14,
+        "mean": 3.736641000000001,
+        "max": 7.2142
+      },
+      "drawMs": {
+        "p50": 2.2325,
+        "p95": 3.1029,
+        "p99": 3.4598,
+        "mean": 2.3743513333333315,
+        "max": 4.2672
+      },
+      "geometryBuilds": 9000,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 375600,
+      "gcCollections": [
+        69,
+        24,
+        10
+      ],
+      "gcPauseMs": 68.384
+    },
+    {
+      "objects": 5000,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "zoom",
+      "cpuMs": {
+        "p50": 8.6078,
+        "p95": 14.3183,
+        "p99": 15.4149,
+        "mean": 9.143698333333331,
+        "max": 20.7998
+      },
+      "allocatedBytes": {
+        "p50": 906800,
+        "p95": 1104360,
+        "p99": 1106288,
+        "mean": 934084.44,
+        "max": 1107520
+      },
+      "updateMs": {
+        "p50": 0.1993,
+        "p95": 0.3723,
+        "p99": 0.6256,
+        "mean": 0.22524283333333328,
+        "max": 1.9176
+      },
+      "prepareMs": {
+        "p50": 3.6524,
+        "p95": 5.4454,
+        "p99": 7.1986,
+        "mean": 3.9120983333333275,
+        "max": 7.8737
+      },
+      "drawMs": {
+        "p50": 4.2685,
+        "p95": 9.0019,
+        "p99": 10.7681,
+        "mean": 4.768386166666664,
+        "max": 13.0455
+      },
+      "geometryBuilds": 11213,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 375600,
+      "gcCollections": [
+        79,
+        26,
+        12
+      ],
+      "gcPauseMs": 74.975
+    },
+    {
+      "objects": 5000,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "pan",
+      "cpuMs": {
+        "p50": 6.3226,
+        "p95": 7.779,
+        "p99": 8.7632,
+        "mean": 6.466017333333333,
+        "max": 9.6393
+      },
+      "allocatedBytes": {
+        "p50": 852520,
+        "p95": 860072,
+        "p99": 862448,
+        "mean": 854156.3466666667,
+        "max": 863256
+      },
+      "updateMs": {
+        "p50": 0.1689,
+        "p95": 0.3004,
+        "p99": 0.5518,
+        "mean": 0.1875766666666667,
+        "max": 0.7459
+      },
+      "prepareMs": {
+        "p50": 3.5356,
+        "p95": 4.8003,
+        "p99": 5.3711,
+        "mean": 3.7254706666666637,
+        "max": 6.5568
+      },
+      "drawMs": {
+        "p50": 2.2497,
+        "p95": 2.8962,
+        "p99": 3.4982,
+        "mean": 2.3599693333333334,
+        "max": 3.9181
+      },
+      "geometryBuilds": 9029,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 375600,
+      "gcCollections": [
+        74,
+        31,
+        14
+      ],
+      "gcPauseMs": 58.888
+    }
+  ],
+  "limitation": "Synthetic Orbit omitted TurnStepIntervalMs and used legacy 1ms fallback: about 200000 path points/frame. Kept as supplementary malformed/legacy stress evidence, not the normal route matrix."
+}

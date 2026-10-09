@@ -1,0 +1,1077 @@
+{
+  "status": "measured",
+  "backend": "Skia raster; CPU only, not GPU presentation",
+  "warmupFrames": 120,
+  "measuredFrames": 600,
+  "machine": {
+    "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+    "logicalProcessors": 8,
+    "runtime": ".NET 8.0.26",
+    "os": "Microsoft Windows 10.0.26200",
+    "baseCommit": "35081a109fa747dee6bbdbdd523da1022ba2a946",
+    "clientBinarySha256": "68D3317082CD01575E2F498ED716AB59BAFD57985E120E45D81F6B9EB665EB16",
+    "note": "Binary hash identifies measured implementation, including uncommitted ticket changes. Deterministic synthetic contacts; snapshot preparation is outside raster Render timing."
+  },
+  "results": [
+    {
+      "objects": 500,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "paused",
+      "cpuMs": {
+        "p50": 2.2656,
+        "p95": 3.2656,
+        "p99": 3.629,
+        "mean": 2.4057761666666666,
+        "max": 7.4855
+      },
+      "allocatedBytes": {
+        "p50": 6688,
+        "p95": 6952,
+        "p99": 6976,
+        "mean": 7092.133333333333,
+        "max": 216376
+      },
+      "updateMs": {
+        "p50": 0.071,
+        "p95": 0.2913,
+        "p99": 0.347,
+        "mean": 0.10558716666666661,
+        "max": 0.4255
+      },
+      "prepareMs": {
+        "p50": 0.0564,
+        "p95": 0.1428,
+        "p99": 0.2454,
+        "mean": 0.07578366666666671,
+        "max": 4.3979
+      },
+      "drawMs": {
+        "p50": 2.0461,
+        "p95": 2.9403,
+        "p99": 3.3857,
+        "mean": 2.1966816666666653,
+        "max": 3.5853
+      },
+      "geometryBuilds": 0,
+      "paintBuilds": 1,
+      "paintReuses": 599,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 0,
+      "gcCollections": [
+        1,
+        1,
+        1
+      ],
+      "gcPauseMs": 4.317
+    },
+    {
+      "objects": 500,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "live",
+      "cpuMs": {
+        "p50": 3.4375,
+        "p95": 5.9552,
+        "p99": 6.9656,
+        "mean": 3.8204100000000003,
+        "max": 12.9035
+      },
+      "allocatedBytes": {
+        "p50": 258808,
+        "p95": 266200,
+        "p99": 266712,
+        "mean": 260420.56,
+        "max": 269392
+      },
+      "updateMs": {
+        "p50": 0.0207,
+        "p95": 0.0362,
+        "p99": 0.0757,
+        "mean": 0.024405333333333324,
+        "max": 0.2971
+      },
+      "prepareMs": {
+        "p50": 0.9611,
+        "p95": 3.1756,
+        "p99": 3.7859,
+        "mean": 1.4012679999999988,
+        "max": 9.9679
+      },
+      "drawMs": {
+        "p50": 2.1046,
+        "p95": 2.9422,
+        "p99": 3.4744,
+        "mean": 2.2260810000000006,
+        "max": 3.7782
+      },
+      "geometryBuilds": 9000,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        26,
+        3,
+        1
+      ],
+      "gcPauseMs": 16.226
+    },
+    {
+      "objects": 500,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "zoom",
+      "cpuMs": {
+        "p50": 5.33,
+        "p95": 7.9466,
+        "p99": 9.5645,
+        "mean": 5.331007666666659,
+        "max": 12.4739
+      },
+      "allocatedBytes": {
+        "p50": 312880,
+        "p95": 378352,
+        "p99": 397880,
+        "mean": 318541.25333333336,
+        "max": 498168
+      },
+      "updateMs": {
+        "p50": 0.0251,
+        "p95": 0.0407,
+        "p99": 0.0788,
+        "mean": 0.028294166666666676,
+        "max": 0.63
+      },
+      "prepareMs": {
+        "p50": 1.0284,
+        "p95": 2.67,
+        "p99": 3.1647,
+        "mean": 1.2196336666666674,
+        "max": 3.6715
+      },
+      "drawMs": {
+        "p50": 3.9269,
+        "p95": 6.1864,
+        "p99": 7.1931,
+        "mean": 3.9459734999999965,
+        "max": 10.5355
+      },
+      "geometryBuilds": 11159,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        31,
+        0,
+        0
+      ],
+      "gcPauseMs": 18.563
+    },
+    {
+      "objects": 500,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "pan",
+      "cpuMs": {
+        "p50": 3.2437,
+        "p95": 4.6399,
+        "p99": 5.417,
+        "mean": 3.4139594999999963,
+        "max": 6.0432
+      },
+      "allocatedBytes": {
+        "p50": 258568,
+        "p95": 265936,
+        "p99": 268040,
+        "mean": 260142.97333333333,
+        "max": 268984
+      },
+      "updateMs": {
+        "p50": 0.0195,
+        "p95": 0.0358,
+        "p99": 0.0656,
+        "mean": 0.023285166666666645,
+        "max": 0.2888
+      },
+      "prepareMs": {
+        "p50": 0.9439,
+        "p95": 1.792,
+        "p99": 2.7857,
+        "mean": 1.0901873333333334,
+        "max": 3.4377
+      },
+      "drawMs": {
+        "p50": 2.073,
+        "p95": 2.9198,
+        "p99": 3.4177,
+        "mean": 2.1973468333333366,
+        "max": 3.7967
+      },
+      "geometryBuilds": 9029,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        26,
+        3,
+        1
+      ],
+      "gcPauseMs": 15.117
+    },
+    {
+      "objects": 500,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "route",
+      "cpuMs": {
+        "p50": 4.1675,
+        "p95": 6.0816,
+        "p99": 7.024,
+        "mean": 4.375122166666664,
+        "max": 9.0423
+      },
+      "allocatedBytes": {
+        "p50": 274952,
+        "p95": 282776,
+        "p99": 282840,
+        "mean": 276655.9066666667,
+        "max": 294448
+      },
+      "updateMs": {
+        "p50": 0.027,
+        "p95": 0.0539,
+        "p99": 0.0802,
+        "mean": 0.029860666666666653,
+        "max": 0.2322
+      },
+      "prepareMs": {
+        "p50": 1.0902,
+        "p95": 2.586,
+        "p99": 3.4536,
+        "mean": 1.2927976666666665,
+        "max": 4.5939
+      },
+      "drawMs": {
+        "p50": 2.8001,
+        "p95": 3.9762,
+        "p99": 4.6149,
+        "mean": 2.925143499999999,
+        "max": 5.0721
+      },
+      "geometryBuilds": 9600,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 482400,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        27,
+        0,
+        0
+      ],
+      "gcPauseMs": 18.153
+    },
+    {
+      "objects": 500,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "paused",
+      "cpuMs": {
+        "p50": 4.312,
+        "p95": 4.9167,
+        "p99": 5.327,
+        "mean": 4.379265833333337,
+        "max": 6.2493
+      },
+      "allocatedBytes": {
+        "p50": 7280,
+        "p95": 7280,
+        "p99": 7280,
+        "mean": 7733.373333333333,
+        "max": 278792
+      },
+      "updateMs": {
+        "p50": 0.0574,
+        "p95": 0.0694,
+        "p99": 0.0977,
+        "mean": 0.0597601666666667,
+        "max": 0.9862
+      },
+      "prepareMs": {
+        "p50": 0.0426,
+        "p95": 0.053,
+        "p99": 0.0993,
+        "mean": 0.042495666666666626,
+        "max": 1.0802
+      },
+      "drawMs": {
+        "p50": 4.1869,
+        "p95": 4.767,
+        "p99": 5.1471,
+        "mean": 4.2544356666666685,
+        "max": 6.1353
+      },
+      "geometryBuilds": 0,
+      "paintBuilds": 1,
+      "paintReuses": 599,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 0,
+      "gcCollections": [
+        1,
+        0,
+        0
+      ],
+      "gcPauseMs": 0.914
+    },
+    {
+      "objects": 500,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "live",
+      "cpuMs": {
+        "p50": 6.0807,
+        "p95": 8.446,
+        "p99": 10.3807,
+        "mean": 6.387809499999994,
+        "max": 26.1972
+      },
+      "allocatedBytes": {
+        "p50": 329768,
+        "p95": 345280,
+        "p99": 345456,
+        "mean": 333467.32,
+        "max": 348280
+      },
+      "updateMs": {
+        "p50": 0.0302,
+        "p95": 0.0494,
+        "p99": 0.0745,
+        "mean": 0.03150933333333331,
+        "max": 0.1412
+      },
+      "prepareMs": {
+        "p50": 1.0845,
+        "p95": 2.572,
+        "p99": 3.2836,
+        "mean": 1.2939668333333332,
+        "max": 6.8583
+      },
+      "drawMs": {
+        "p50": 4.6659,
+        "p95": 6.1956,
+        "p99": 7.7536,
+        "mean": 4.912260500000005,
+        "max": 24.6315
+      },
+      "geometryBuilds": 17340,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        31,
+        1,
+        0
+      ],
+      "gcPauseMs": 19.717
+    },
+    {
+      "objects": 500,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "zoom",
+      "cpuMs": {
+        "p50": 8.3747,
+        "p95": 11.6451,
+        "p99": 14.1716,
+        "mean": 8.40075749999999,
+        "max": 18.2598
+      },
+      "allocatedBytes": {
+        "p50": 364056,
+        "p95": 421680,
+        "p99": 435480,
+        "mean": 359437.44,
+        "max": 558552
+      },
+      "updateMs": {
+        "p50": 0.0327,
+        "p95": 0.0573,
+        "p99": 0.1054,
+        "mean": 0.038636500000000025,
+        "max": 0.7807
+      },
+      "prepareMs": {
+        "p50": 1.112,
+        "p95": 1.9708,
+        "p99": 3.0552,
+        "mean": 1.2748795000000004,
+        "max": 3.7604
+      },
+      "drawMs": {
+        "p50": 6.8839,
+        "p95": 9.8535,
+        "p99": 12.4629,
+        "mean": 6.928349833333335,
+        "max": 14.4144
+      },
+      "geometryBuilds": 17061,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        34,
+        0,
+        0
+      ],
+      "gcPauseMs": 20.284
+    },
+    {
+      "objects": 500,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "pan",
+      "cpuMs": {
+        "p50": 5.9582,
+        "p95": 8.2733,
+        "p99": 10.1258,
+        "mean": 6.1993420000000015,
+        "max": 11.4817
+      },
+      "allocatedBytes": {
+        "p50": 329464,
+        "p95": 344888,
+        "p99": 347472,
+        "mean": 332925.49333333335,
+        "max": 351360
+      },
+      "updateMs": {
+        "p50": 0.0277,
+        "p95": 0.05,
+        "p99": 0.0688,
+        "mean": 0.02964033333333333,
+        "max": 0.106
+      },
+      "prepareMs": {
+        "p50": 1.0779,
+        "p95": 2.0108,
+        "p99": 3.0933,
+        "mean": 1.2510776666666668,
+        "max": 3.7967
+      },
+      "drawMs": {
+        "p50": 4.6044,
+        "p95": 6.0614,
+        "p99": 7.7202,
+        "mean": 4.7774863333333375,
+        "max": 9.4406
+      },
+      "geometryBuilds": 17112,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        33,
+        1,
+        1
+      ],
+      "gcPauseMs": 19.413
+    },
+    {
+      "objects": 500,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "route",
+      "cpuMs": {
+        "p50": 7.0126,
+        "p95": 8.2314,
+        "p99": 9.3649,
+        "mean": 7.108520333333325,
+        "max": 11.1286
+      },
+      "allocatedBytes": {
+        "p50": 345960,
+        "p95": 361472,
+        "p99": 361984,
+        "mean": 349714.74666666664,
+        "max": 364472
+      },
+      "updateMs": {
+        "p50": 0.0302,
+        "p95": 0.0554,
+        "p99": 0.0749,
+        "mean": 0.03352883333333334,
+        "max": 0.3777
+      },
+      "prepareMs": {
+        "p50": 1.157,
+        "p95": 1.9232,
+        "p99": 3.1432,
+        "mean": 1.298517166666667,
+        "max": 4.8386
+      },
+      "drawMs": {
+        "p50": 5.5343,
+        "p95": 6.5841,
+        "p99": 7.1422,
+        "mean": 5.640182166666662,
+        "max": 8.7658
+      },
+      "geometryBuilds": 17940,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 482400,
+      "spatialUpdates": 38400,
+      "gcCollections": [
+        34,
+        0,
+        0
+      ],
+      "gcPauseMs": 19.244
+    },
+    {
+      "objects": 5000,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "paused",
+      "cpuMs": {
+        "p50": 2.9106,
+        "p95": 3.9211,
+        "p99": 4.6232,
+        "mean": 3.0439794999999994,
+        "max": 5.189
+      },
+      "allocatedBytes": {
+        "p50": 6664,
+        "p95": 6664,
+        "p99": 6664,
+        "mean": 7494.1866666666665,
+        "max": 504264
+      },
+      "updateMs": {
+        "p50": 0.5845,
+        "p95": 0.9412,
+        "p99": 1.15,
+        "mean": 0.6297755000000008,
+        "max": 1.4407
+      },
+      "prepareMs": {
+        "p50": 0.0597,
+        "p95": 0.1488,
+        "p99": 0.285,
+        "mean": 0.07848699999999995,
+        "max": 2.3087
+      },
+      "drawMs": {
+        "p50": 2.1382,
+        "p95": 2.9204,
+        "p99": 3.3383,
+        "mean": 2.2527074999999988,
+        "max": 3.8356
+      },
+      "geometryBuilds": 0,
+      "paintBuilds": 1,
+      "paintReuses": 599,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 0,
+      "gcCollections": [
+        1,
+        0,
+        0
+      ],
+      "gcPauseMs": 1.309
+    },
+    {
+      "objects": 5000,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "live",
+      "cpuMs": {
+        "p50": 6.3049,
+        "p95": 8.9471,
+        "p99": 11.6373,
+        "mean": 6.692474499999995,
+        "max": 17.5334
+      },
+      "allocatedBytes": {
+        "p50": 852680,
+        "p95": 860504,
+        "p99": 861016,
+        "mean": 854419.24,
+        "max": 867864
+      },
+      "updateMs": {
+        "p50": 0.1802,
+        "p95": 0.3662,
+        "p99": 0.5427,
+        "mean": 0.20634999999999978,
+        "max": 0.6197
+      },
+      "prepareMs": {
+        "p50": 3.5452,
+        "p95": 5.5556,
+        "p99": 7.2473,
+        "mean": 3.865576666666671,
+        "max": 13.5232
+      },
+      "drawMs": {
+        "p50": 2.2627,
+        "p95": 3.1515,
+        "p99": 4.0676,
+        "mean": 2.416265666666669,
+        "max": 12.9421
+      },
+      "geometryBuilds": 9000,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 375600,
+      "gcCollections": [
+        72,
+        27,
+        13
+      ],
+      "gcPauseMs": 75.716
+    },
+    {
+      "objects": 5000,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "zoom",
+      "cpuMs": {
+        "p50": 8.4737,
+        "p95": 14.3036,
+        "p99": 20.9294,
+        "mean": 9.248565000000001,
+        "max": 29.8497
+      },
+      "allocatedBytes": {
+        "p50": 906800,
+        "p95": 1104360,
+        "p99": 1106288,
+        "mean": 934065.8,
+        "max": 1107152
+      },
+      "updateMs": {
+        "p50": 0.1958,
+        "p95": 0.3803,
+        "p99": 0.5835,
+        "mean": 0.22348733333333337,
+        "max": 0.8759
+      },
+      "prepareMs": {
+        "p50": 3.5981,
+        "p95": 5.829,
+        "p99": 7.433,
+        "mean": 3.9912113333333332,
+        "max": 20.3404
+      },
+      "drawMs": {
+        "p50": 4.2014,
+        "p95": 9.3047,
+        "p99": 11.5404,
+        "mean": 4.7892288333333335,
+        "max": 19.058
+      },
+      "geometryBuilds": 11213,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 375600,
+      "gcCollections": [
+        81,
+        32,
+        14
+      ],
+      "gcPauseMs": 77.013
+    },
+    {
+      "objects": 5000,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "pan",
+      "cpuMs": {
+        "p50": 7.0212,
+        "p95": 11.3049,
+        "p99": 12.526,
+        "mean": 7.530964999999998,
+        "max": 14.8464
+      },
+      "allocatedBytes": {
+        "p50": 852504,
+        "p95": 860048,
+        "p99": 862376,
+        "mean": 854156.32,
+        "max": 863352
+      },
+      "updateMs": {
+        "p50": 0.2051,
+        "p95": 0.4323,
+        "p99": 0.5446,
+        "mean": 0.23934283333333337,
+        "max": 1.103
+      },
+      "prepareMs": {
+        "p50": 3.8947,
+        "p95": 6.8282,
+        "p99": 8.1309,
+        "mean": 4.369395666666665,
+        "max": 10.8733
+      },
+      "drawMs": {
+        "p50": 2.5344,
+        "p95": 3.7373,
+        "p99": 4.0436,
+        "mean": 2.682943333333336,
+        "max": 5.9289
+      },
+      "geometryBuilds": 9029,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 375600,
+      "gcCollections": [
+        73,
+        30,
+        14
+      ],
+      "gcPauseMs": 80.104
+    },
+    {
+      "objects": 5000,
+      "Width": 1920,
+      "Height": 1080,
+      "scale": 1,
+      "mode": "route",
+      "cpuMs": {
+        "p50": 7.3834,
+        "p95": 9.5281,
+        "p99": 11.4829,
+        "mean": 7.671807166666666,
+        "max": 16.6328
+      },
+      "allocatedBytes": {
+        "p50": 868920,
+        "p95": 876696,
+        "p99": 877208,
+        "mean": 870653.0933333334,
+        "max": 879488
+      },
+      "updateMs": {
+        "p50": 0.1899,
+        "p95": 0.3387,
+        "p99": 0.5611,
+        "mean": 0.20991383333333313,
+        "max": 0.9869
+      },
+      "prepareMs": {
+        "p50": 3.8734,
+        "p95": 5.741,
+        "p99": 6.6738,
+        "mean": 4.1243881666666615,
+        "max": 11.2987
+      },
+      "drawMs": {
+        "p50": 3.0409,
+        "p95": 3.775,
+        "p99": 4.7973,
+        "mean": 3.1045576666666657,
+        "max": 6.5787
+      },
+      "geometryBuilds": 9600,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 482400,
+      "spatialUpdates": 375600,
+      "gcCollections": [
+        75,
+        33,
+        14
+      ],
+      "gcPauseMs": 83.481
+    },
+    {
+      "objects": 5000,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "paused",
+      "cpuMs": {
+        "p50": 5.1999,
+        "p95": 5.8027,
+        "p99": 6.3551,
+        "mean": 5.251051333333334,
+        "max": 8.8701
+      },
+      "allocatedBytes": {
+        "p50": 7280,
+        "p95": 7280,
+        "p99": 7280,
+        "mean": 8213.373333333333,
+        "max": 566792
+      },
+      "updateMs": {
+        "p50": 0.6198,
+        "p95": 0.7722,
+        "p99": 0.866,
+        "mean": 0.6391981666666668,
+        "max": 1.2089
+      },
+      "prepareMs": {
+        "p50": 0.0737,
+        "p95": 0.1331,
+        "p99": 0.2232,
+        "mean": 0.087375,
+        "max": 2.9548
+      },
+      "drawMs": {
+        "p50": 4.3955,
+        "p95": 4.9492,
+        "p99": 5.3834,
+        "mean": 4.432685500000004,
+        "max": 7.354
+      },
+      "geometryBuilds": 0,
+      "paintBuilds": 1,
+      "paintReuses": 599,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 0,
+      "gcCollections": [
+        1,
+        1,
+        0
+      ],
+      "gcPauseMs": 2.847
+    },
+    {
+      "objects": 5000,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "live",
+      "cpuMs": {
+        "p50": 9.0987,
+        "p95": 10.7785,
+        "p99": 12.3342,
+        "mean": 9.272635499999993,
+        "max": 14.4254
+      },
+      "allocatedBytes": {
+        "p50": 923888,
+        "p95": 939200,
+        "p99": 939712,
+        "mean": 927530.16,
+        "max": 943496
+      },
+      "updateMs": {
+        "p50": 0.2051,
+        "p95": 0.3645,
+        "p99": 0.5571,
+        "mean": 0.23464250000000006,
+        "max": 4.7755
+      },
+      "prepareMs": {
+        "p50": 3.6983,
+        "p95": 5.1024,
+        "p99": 6.7345,
+        "mean": 3.901896333333337,
+        "max": 8.3394
+      },
+      "drawMs": {
+        "p50": 4.8152,
+        "p95": 5.6015,
+        "p99": 6.2394,
+        "mean": 4.887926999999996,
+        "max": 6.9269
+      },
+      "geometryBuilds": 17340,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 375600,
+      "gcCollections": [
+        86,
+        43,
+        21
+      ],
+      "gcPauseMs": 82.955
+    },
+    {
+      "objects": 5000,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "zoom",
+      "cpuMs": {
+        "p50": 13.8654,
+        "p95": 25.7675,
+        "p99": 27.4088,
+        "mean": 14.951967166666657,
+        "max": 29.7082
+      },
+      "allocatedBytes": {
+        "p50": 1094288,
+        "p95": 1455704,
+        "p99": 1459704,
+        "mean": 1135804,
+        "max": 1477776
+      },
+      "updateMs": {
+        "p50": 0.2359,
+        "p95": 0.4251,
+        "p99": 0.6445,
+        "mean": 0.2700520000000001,
+        "max": 1.01
+      },
+      "prepareMs": {
+        "p50": 3.8031,
+        "p95": 5.3212,
+        "p99": 6.6316,
+        "mean": 3.9833253333333367,
+        "max": 8.6111
+      },
+      "drawMs": {
+        "p50": 9.192,
+        "p95": 20.6955,
+        "p99": 22.0831,
+        "mean": 10.368196833333338,
+        "max": 24.6376
+      },
+      "geometryBuilds": 22864,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 375600,
+      "gcCollections": [
+        116,
+        57,
+        37
+      ],
+      "gcPauseMs": 75.21
+    },
+    {
+      "objects": 5000,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "pan",
+      "cpuMs": {
+        "p50": 9.0655,
+        "p95": 10.3996,
+        "p99": 11.0559,
+        "mean": 9.1864275,
+        "max": 19.1214
+      },
+      "allocatedBytes": {
+        "p50": 923448,
+        "p95": 938880,
+        "p99": 941712,
+        "mean": 927008.2666666667,
+        "max": 943368
+      },
+      "updateMs": {
+        "p50": 0.2042,
+        "p95": 0.3571,
+        "p99": 0.5495,
+        "mean": 0.22207133333333323,
+        "max": 0.7281
+      },
+      "prepareMs": {
+        "p50": 3.7161,
+        "p95": 4.8392,
+        "p99": 5.707,
+        "mean": 3.8737261666666685,
+        "max": 13.9815
+      },
+      "drawMs": {
+        "p50": 4.7856,
+        "p95": 5.4918,
+        "p99": 5.9351,
+        "mean": 4.846450500000001,
+        "max": 6.3934
+      },
+      "geometryBuilds": 17112,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 1200,
+      "spatialUpdates": 375600,
+      "gcCollections": [
+        94,
+        54,
+        28
+      ],
+      "gcPauseMs": 64.362
+    },
+    {
+      "objects": 5000,
+      "Width": 3440,
+      "Height": 1440,
+      "scale": 1,
+      "mode": "route",
+      "cpuMs": {
+        "p50": 10.4162,
+        "p95": 13.0001,
+        "p99": 15.3782,
+        "mean": 10.697628333333334,
+        "max": 19.0068
+      },
+      "allocatedBytes": {
+        "p50": 940096,
+        "p95": 955392,
+        "p99": 958736,
+        "mean": 943841.9333333333,
+        "max": 960424
+      },
+      "updateMs": {
+        "p50": 0.2045,
+        "p95": 0.365,
+        "p99": 0.5546,
+        "mean": 0.2294423333333333,
+        "max": 1.4784
+      },
+      "prepareMs": {
+        "p50": 3.9271,
+        "p95": 5.6535,
+        "p99": 6.7833,
+        "mean": 4.135813500000003,
+        "max": 9.3409
+      },
+      "drawMs": {
+        "p50": 5.9413,
+        "p95": 7.2539,
+        "p99": 8.8156,
+        "mean": 6.053871666666667,
+        "max": 10.2635
+      },
+      "geometryBuilds": 17940,
+      "paintBuilds": 600,
+      "paintReuses": 0,
+      "representedPathPoints": 482400,
+      "spatialUpdates": 375600,
+      "gcCollections": [
+        96,
+        56,
+        28
+      ],
+      "gcPauseMs": 75.806
+    }
+  ]
+}

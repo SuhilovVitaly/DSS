@@ -59,9 +59,9 @@ Hit-test и capture должны описывать тот же кадр, кот
 
 ## Критерии приёмки — AC-0005
 
-- [ ] `Input_and_capture_use_presented_frame`: ID и позиции input/capture совпадают с показанным кадром.
-- [ ] `Pipeline_handles_resize_modal_pause_and_disposal`: Integration fixtures покрывают переходы без stale geometry и ресурсов.
-- [ ] `Stage_instrumentation_has_bounded_overhead`: Операционные counters проверены автоматически; время и FPS подтверждаются benchmark evidence, не flaky unit assertions.
+- [x] `Input_and_capture_use_presented_frame`: ID и позиции input/capture совпадают с показанным кадром.
+- [x] `Pipeline_handles_resize_modal_pause_and_disposal`: Integration fixtures покрывают переходы без stale geometry и ресурсов.
+- [x] `Stage_instrumentation_has_bounded_overhead`: Операционные counters проверены автоматически; время и FPS подтверждаются benchmark evidence, не flaky unit assertions.
 
 ## Инварианты и границы
 
@@ -83,3 +83,19 @@ Hit-test и capture должны описывать тот же кадр, кот
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution scope 2026-10-09
+
+EpicExecutionPrompt authorizes expansion to the GameSession files `GameSessionScreen.MapView.cs`, `GameSessionScreen.GeometryCache.cs`, `GameSessionScreen.Combat.cs`, `GameSessionScreen.Profiling.cs`, `TacticalMapFrameProfile.cs`, `TacticalMapFrameState.cs`, `TacticalMapStateUpdater.cs`, `ObjectTrailBuffer.cs`, plus `tools/DeepSpaceSaga.Performance/Program.cs`, new `TacticalPipelineEvidence.cs`, and `README.md`. Existing consumer tests may be updated only where the explicit last-presented-frame contract changes pre-render interaction assumptions, with reasons recorded. Board benchmark/native reports belong to this ticket evidence. Frozen trail views use small copy-on-write pages, preserving exact diagnostic histories without copying every historical point on every frame.
+
+Also allow `GameSessionScreen.Layout.cs`: freeze speed/panel data to the captured prediction during preparation; command/input reads outside Render retain current authoritative state.
+
+## Execution evidence 2026-10-09
+
+Implemented last-presented scene input/capture, owned reconciliation and copy-on-write frozen trail histories, coherent preparation snapshot/speed, and opt-in Update/Prepare/Draw counters. Disabled additional counters read no timestamps and create no additional metrics allocations. Commands outside Render continue to consume current authoritative state.
+
+Validation: `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore` passed 1826/1826 after the final snapshot coherence repair; four new integration tests passed. `dotnet build tools/DeepSpaceSaga.Performance/DeepSpaceSaga.Performance.csproj -c Release --no-restore` passed with 0 warnings/errors (includes Client). Scoped `dotnet format whitespace DeepSpaceSaga.sln --verify-no-changes --no-restore --include <changed C# files>` and `git diff --check` passed.
+
+Final measured binary: 20 CPU/raster cases and 16 native window cases, 600 measured frames each. All 80 scripted native actions passed. Native p99 presentation 49.742–116.265 ms: 80 FPS gate FAILED/OPEN. Human manual and native modal/resize/locale acceptance NOT RUN. High-scale panel accessibility remains unaccepted. CPU zoom/allocation and legacy zero-cadence route costs remain documented limitations. Full methodology, raw JSON/PNG links and hashes: [PerformanceEvidence](../../PerformanceEvidence.md). [Story self-review](../../US-0002-Review.md). No shared simulation/save changes.
+
+Implementation and automated ACs complete; performance/manual acceptance remains open. Publication is recorded in the registry after exact remote SHA verification.

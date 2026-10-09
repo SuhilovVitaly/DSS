@@ -37,7 +37,11 @@ internal readonly record struct TacticalMapFrameProfile(
     int CorrectionCount,
     double LargestCorrectionPixels, TacticalMapTrackedObject? Player, TacticalMapTrackedObject? Target,
     bool CaptureRequested, bool CaptureWriterBusy,
-    double CaptureCopyMs = 0, TacticalMapWindowTiming? Window = null);
+    double CaptureCopyMs = 0, TacticalMapWindowTiming? Window = null, TacticalMapPipelineMetrics? Pipeline = null);
+
+internal readonly record struct TacticalMapPipelineMetrics(double UpdateMs, double PrepareMs, double DrawMs,
+    int PoseObjects, long SceneBuilds, long TrailBuilds, long FutureBuilds, long NavigationBuilds, long LabelBuilds,
+    long PaintBuilds, long PaintReuses, long SpatialUpdates, int PathPoints);
 
 internal sealed record TacticalMapProfileSummary(
     int FrameCount, double HistorySeconds, double FrameIntervalP50Ms, double FrameIntervalP95Ms,
@@ -112,7 +116,7 @@ internal sealed class TacticalMapFrameRecorder
             "Stage/flush times measure CPU work, NOT GPU execution. Window PresentWaitMs measures SwapBuffers, " +
             "including driver/GPU/display waits, not physical scanout time. CpuCallbackMs excludes that wait. " +
             "GC counters and pause time are process-wide; allocations are on the UI thread. " +
-            "Snapshot time and poses belong to the same rendered map frame. Capture is serviced on the next render. " +
+            "Snapshot time and poses belong to the same rendered map frame. Capture reads the last completed presented scene, including frozen histories. " +
             "Window timing and capture copy cost of the capture frame are not yet available; later captures include them. " +
             "History retains at most 30 seconds and 4096 frames (less time on high-refresh displays).",
             frames);

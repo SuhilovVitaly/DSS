@@ -5,6 +5,26 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 public sealed partial class GameSessionScreen
 {
     private readonly TacticalMapFrameRecorder _frameRecorder = new();
+    internal bool PipelineMetricsEnabled { get; set; }
+    internal TacticalMapPipelineMetrics? LastPipelineMetrics { get; private set; }
+    internal long PipelineTimestampReads { get; private set; }
+    private long _pipelineStart, _pipelineUpdateEnd, _pipelineDrawStart;
+    private (long Scene, long Trail, long Future, long Navigation, long Label, long Paint, long Reuse, long Spatial) _pipelineBefore;
+    private long PipelineTimestamp() { PipelineTimestampReads++; return Stopwatch.GetTimestamp(); }
+    private void CompletePipelineUpdate() { if (PipelineMetricsEnabled) _pipelineUpdateEnd = PipelineTimestamp(); }
+    private void BeginPipelineDraw() { if (PipelineMetricsEnabled) _pipelineDrawStart = PipelineTimestamp(); }
+    private void EndPipelineDraw()
+    {
+        if (!PipelineMetricsEnabled) return;
+        long end = PipelineTimestamp();
+        LastPipelineMetrics = new(Stopwatch.GetElapsedTime(_pipelineStart, _pipelineUpdateEnd).TotalMilliseconds,
+            Stopwatch.GetElapsedTime(_pipelineUpdateEnd, _pipelineDrawStart).TotalMilliseconds,
+            Stopwatch.GetElapsedTime(_pipelineDrawStart, end).TotalMilliseconds, _renderStates.Count,
+            SceneGeometryBuilds - _pipelineBefore.Scene, TrailGeometryBuilds - _pipelineBefore.Trail,
+            FutureGeometryBuilds - _pipelineBefore.Future, NavigationGeometryBuilds - _pipelineBefore.Navigation,
+            LabelGeometryBuilds - _pipelineBefore.Label, PaintPreparations - _pipelineBefore.Paint,
+            PaintReuses - _pipelineBefore.Reuse, SpatialBoundsUpdates - _pipelineBefore.Spatial, _profileForecastPointCount);
+    }
     private long _profileFrameId;
     private long _profilePreviousTimestamp;
     private long _profileStartedAt;
@@ -27,6 +47,13 @@ public sealed partial class GameSessionScreen
 
     private void BeginFrameProfile()
     {
+        LastPipelineMetrics = null;
+        if (PipelineMetricsEnabled)
+        {
+            _pipelineStart = PipelineTimestamp();
+            _pipelineBefore = (SceneGeometryBuilds, TrailGeometryBuilds, FutureGeometryBuilds, NavigationGeometryBuilds,
+                LabelGeometryBuilds, PaintPreparations, PaintReuses, SpatialBoundsUpdates);
+        }
         _profileStartedAt = _profileStageStartedAt = Stopwatch.GetTimestamp();
         _profileAllocatedAtStart = GC.GetAllocatedBytesForCurrentThread();
         _profileStages = default;
@@ -84,8 +111,9 @@ public sealed partial class GameSessionScreen
             if (state.IsPlayerShip) player = TrackProfileObject(state, _profilePlayerRaw);
             if (state.Pose.ObjectId == _profileTargetId) target = TrackProfileObject(state, _profileTargetRaw);
         }
+        _profileFrameId = _mapFrame?.FrameId ?? _profileFrameId + 1;
         _frameRecorder.Add(new(
-            ++_profileFrameId, timestamp,
+            _profileFrameId, timestamp,
             _profileFrameId == 1 ? 0 : (timestamp - _profilePreviousTimestamp) * 1000.0 / Stopwatch.Frequency,
             Stopwatch.GetElapsedTime(_profileStartedAt).TotalMilliseconds, _profileStages,
             allocated - _profileAllocatedAtStart,
@@ -102,7 +130,7 @@ public sealed partial class GameSessionScreen
             _renderStates.Count, _mapClusters.Count, TrailStatistics.Points, _profileForecastPointCount,
             _profilePlayerTrajectoryStart?.X, _profilePlayerTrajectoryStart?.Y,
             DisplayedPlayerTrajectoryEnd?.X, DisplayedPlayerTrajectoryEnd?.Y, _visualCorrections.Count,
-            maxCorrection * _camera.PixelsPerWorldUnit, player, target, false, !SnapshotSaveTask.IsCompleted));
+            maxCorrection * _camera.PixelsPerWorldUnit, player, target, false, !SnapshotSaveTask.IsCompleted, Pipeline: LastPipelineMetrics));
         _profilePreviousTimestamp = timestamp;
         _profilePreviousAllocated = _profileAllocatedAtStart;
         _profilePreviousCameraX = _camera.FocusX;

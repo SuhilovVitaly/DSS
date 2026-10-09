@@ -13,6 +13,8 @@ internal sealed class TacticalMapStateUpdater
     private readonly List<string> _diagnostics = new();
     private long _frameId;
     private ImmutableArray<ObjectRenderState> _publishedObjects = [];
+    private ImmutableDictionary<string, RenderMotion> _publishedAnchors = ImmutableDictionary<string, RenderMotion>.Empty;
+    private ImmutableDictionary<string, VisualCorrection> _publishedCorrections = ImmutableDictionary<string, VisualCorrection>.Empty;
     internal int PoseDtoMaterializations { get; private set; }
     internal long ContactMembershipBuilds { get; private set; }
     internal string? PreviewTargetId { get; set; }
@@ -36,8 +38,19 @@ internal sealed class TacticalMapStateUpdater
     private TacticalMapFrameState Publish(SnapshotPrediction? prediction, long timestamp, bool rebased)
     {
         if (!_publishedObjects.SequenceEqual(_renderStates)) _publishedObjects = _renderStates.ToImmutableArray();
+        if (_publishedAnchors.Count != _pausedVisualAnchors.Count ||
+            _pausedVisualAnchors.Any(p => !_publishedAnchors.TryGetValue(p.Key, out var value) || value != p.Value))
+            _publishedAnchors = _pausedVisualAnchors.ToImmutableDictionary(StringComparer.Ordinal);
+        if (_publishedCorrections.Count != _visualCorrections.Count ||
+            _visualCorrections.Any(p => !_publishedCorrections.TryGetValue(p.Key, out var value) || value != p.Value))
+            _publishedCorrections = _visualCorrections.ToImmutableDictionary(StringComparer.Ordinal);
         return new(++_frameId, timestamp, prediction, _publishedObjects, rebased,
-            _profilePlayerRaw, _profileTargetRaw, _diagnostics.ToImmutableArray());
+            _profilePlayerRaw, _profileTargetRaw, _diagnostics.ToImmutableArray())
+        {
+            Reconciliation = new(_hasSnapshotBaseline, _lastSnapshotBaselineSequence, _lastSnapshotBaselineGameTimeMs,
+                _lastObservedForwardJumpMs, _previousRenderSpeed, prediction?.BufferedSnapshot.Snapshot.Objects ?? [],
+                _publishedCorrections, _publishedAnchors)
+        };
     }
 
     private static long CombatPredictionDelta(SnapshotPrediction prediction) =>

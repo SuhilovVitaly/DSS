@@ -9,9 +9,15 @@ internal sealed record TacticalMapFrameState(
     ImmutableArray<ObjectRenderState> Objects, bool AuthoritativeRebase,
     RenderMotion? PlayerRaw, RenderMotion? TargetRaw, ImmutableArray<string> Diagnostics)
 {
+    internal TacticalMapReconciliationFrame? Reconciliation { get; init; }
     internal ulong? SnapshotRevision => Prediction?.BufferedSnapshot.Snapshot.SnapshotSequence;
     internal long MotionTimeMs => Prediction is { } p
         ? p.BufferedSnapshot.Snapshot.MotionTimeMs + p.EffectivePredictionDeltaMs : 0;
     internal RenderMotion? PlayerFocus => Objects.Where(state => state.IsPlayerShip)
         .Select(state => (RenderMotion?)state.Pose).FirstOrDefault();
 }
+
+internal sealed record TacticalMapReconciliationFrame(bool HasBaseline, ulong Sequence, long MotionTime,
+    long ForwardJump, SimulationSpeed PreviousSpeed, ImmutableArray<ObjectMotionSnapshot> Baseline,
+    ImmutableDictionary<string, TacticalMapStateUpdater.VisualCorrection> Corrections,
+    ImmutableDictionary<string, RenderMotion> Anchors);

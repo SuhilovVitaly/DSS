@@ -37,7 +37,7 @@ public sealed partial class GameSessionScreen
         _staleGeometryIds.Clear();
         foreach (string id in _futureGeometryCache.Keys)
             if (!_currentVisualObjectIds.Contains(id) ||
-                (id != _selectedObjectId && id != _navigationTargetId && id != _buffer.Latest?.Snapshot.PlayerShipObjectId))
+                (id != _selectedObjectId && id != _navigationTargetId && id != _framePrediction?.BufferedSnapshot.Snapshot.PlayerShipObjectId))
                 _staleGeometryIds.Add(id);
         foreach (string id in _staleGeometryIds) _futureGeometryCache.Remove(id);
     }

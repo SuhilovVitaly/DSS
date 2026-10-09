@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
@@ -7,9 +8,13 @@ public sealed partial class GameSessionScreen
     private readonly List<(string ObjectId, string Kind, IReadOnlyList<FutureTrajectoryPoint> Points)> _capturedTrajectories = new();
     private sealed record PresentedFrame(SnapshotPrediction? Prediction, long Timestamp, long Id,
         TacticalMapCameraSnapshot Camera, TacticalMapViewportSnapshot Viewport, TacticalMapUiSnapshot Ui,
-        string? Active, string? Selected, string? Navigation);
+        string? Active, string? Selected, string? Navigation, TacticalMapSceneGeometry Scene,
+        ImmutableArray<(string Id, ObjectTrailBuffer.Frozen Points)> Trails);
     private PresentedFrame? _presentedFrame;
-    private readonly HashSet<string> _presentedClusteredIds = new(StringComparer.Ordinal);
+    private PresentedFrame? _preparedPresentation;
+    internal long PresentedFrameId => _presentedFrame?.Id ?? 0;
+    internal long LastInputFrameId { get; private set; }
+    private void SealPresentedFrame(SnapshotPrediction? prediction, long timestamp) => _presentedFrame = _preparedPresentation;
     internal Task<string?> SnapshotSaveTask { get; private set; } = Task.FromResult<string?>(null);
     private readonly CancellationTokenSource _ioStop = new();
     internal Func<TacticalMapSnapshotDocument, string, string>? SnapshotWriter { get; set; }
@@ -21,16 +26,18 @@ public sealed partial class GameSessionScreen
         if (!_disposed && SnapshotSaveTask.IsCompleted) CaptureTacticalMapSnapshot(_presentedFrame?.Prediction, _presentedFrame?.Timestamp ?? 0);
     }
 
-    private void SealPresentedFrame(SnapshotPrediction? prediction, long timestamp)
+    private void PreparePresentation(SnapshotPrediction? prediction, long timestamp)
     {
-        _presentedClusteredIds.Clear();
-        _presentedClusteredIds.UnionWith(_clusteredObjectIds);
-        _presentedFrame = new(prediction, timestamp, _profileFrameId,
-            new(_camera.FocusX, _camera.FocusY, _camera.PixelsPerWorldUnit, _isFocusAttachedToPlayer,
+        var scene = PreparedScene!;
+        var view = scene.View;
+        var trails = _trailStore.Trails.OrderBy(p => p.Key, StringComparer.Ordinal)
+            .Select(p => (p.Key, p.Value.Freeze())).ToImmutableArray();
+        _preparedPresentation = new(prediction, timestamp, scene.Frame.FrameId,
+            new(view.Camera.X, view.Camera.Y, view.Camera.PixelsPerWorldUnit, _isFocusAttachedToPlayer,
                 _zoomTransition.Active, _zoomTransition.TargetPpu(_camera)),
-            new(_viewportW, _viewportH, _uiScale, _mouseX, _mouseY, _uiMouseX, _uiMouseY, _hasMousePosition),
-            new(_panelVisible, _isPanningMap, IsCtrlDown, _mapClusters.Count, _clusteredObjectIds.Count),
-            _activeObjectId, _selectedObjectId, _navigationTargetId);
+            new(view.Width, view.Height, view.UiScale, _mouseX, _mouseY, _uiMouseX, _uiMouseY, _hasMousePosition),
+            new(_panelVisible, _isPanningMap, IsCtrlDown, view.Clusters.Length, view.ClusteredIds.Count),
+            view.Active, view.Selected, view.Navigation, scene, trails);
     }
 
     private void CaptureTacticalMapSnapshot(SnapshotPrediction? prediction, long frameTimestamp)
@@ -42,8 +49,8 @@ public sealed partial class GameSessionScreen
             var camera = frame?.Camera ?? new TacticalMapCameraSnapshot(0, 0, 1, false, false, 1);
             var viewport = frame?.Viewport ?? new TacticalMapViewportSnapshot(0, 0, 1, 0, 0, 0, 0, false);
 
-            var objectFrames = new List<TacticalMapObjectFrame>(_renderStates.Count);
-            foreach (var state in _renderStates)
+            var objectFrames = new List<TacticalMapObjectFrame>(frame?.Scene.Frame.Objects.Length ?? 0);
+            foreach (var state in frame?.Scene.Frame.Objects ?? [])
             {
                 float screenX = (float)(viewport.Width / 2.0 + (state.Pose.X - camera.FocusX) * camera.PixelsPerWorldUnit);
                 float screenY = (float)(viewport.Height / 2.0 + (state.Pose.Y - camera.FocusY) * camera.PixelsPerWorldUnit);
@@ -55,42 +62,23 @@ public sealed partial class GameSessionScreen
                     screenY,
                     state.Pose.ObjectId == frame?.Active,
                     state.Pose.ObjectId == frame?.Selected,
-                    _presentedClusteredIds.Contains(state.Pose.ObjectId)));
+                    frame!.Scene.View.ClusteredIds.Contains(state.Pose.ObjectId)));
             }
 
-            var trails = _trailStore.Trails
-                .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-                .Select(pair => new TacticalMapTrail(
-                    pair.Key,
-                    pair.Value.Capacity,
-                    pair.Value.Select(point => new TacticalMapPoint(point.X, point.Y, point.Timestamp)).ToArray()))
-                .ToArray();
-
-            var trajectories = _capturedTrajectories.Select(t => new TacticalMapTrajectory(t.ObjectId, t.Kind,
-                t.Points.Select(p => new TacticalMapPoint(p.X, p.Y)).ToArray())).ToArray();
+            var trails = (frame?.Trails ?? []).Select(t => new TacticalMapTrail(t.Id, t.Points.Capacity,
+                t.Points.Select(p => new TacticalMapPoint(p.X, p.Y, p.Timestamp)).ToArray())).ToArray();
+            var trajectories = (frame?.Scene.View.Paths ?? []).Select(t => new TacticalMapTrajectory(t.ObjectId, t.Kind,
+                t.WorldPoints.Select(p => new TacticalMapPoint(p.X, p.Y)).ToArray())).ToArray();
+            var source = frame?.Scene.Frame.Reconciliation;
             var reconciliation = new TacticalMapReconciliationSnapshot(
-                _hasSnapshotBaseline,
-                _lastSnapshotBaselineSequence,
-                _lastSnapshotBaselineGameTimeMs,
-                _lastObservedForwardJumpMs,
-                _previousRenderSpeed,
-                _lastSnapshotBaselineObjects
-                    .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-                    .Select(pair => pair.Value)
-                    .ToArray(),
-                _visualCorrections
-                    .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-                    .Select(pair => new TacticalMapCorrection(
-                        pair.Key,
-                        pair.Value.OffsetX,
-                        pair.Value.OffsetY,
-                        pair.Value.DirectionOffset,
-                        pair.Value.ElapsedSeconds))
-                    .ToArray(),
-                _pausedVisualAnchors
-                    .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-                    .Select(pair => new TacticalMapAnchoredPose(pair.Key, pair.Value.ToSnapshot()))
-                    .ToArray());
+                source?.HasBaseline ?? false, source?.Sequence ?? 0, source?.MotionTime ?? 0,
+                source?.ForwardJump ?? 0, source?.PreviousSpeed ?? SimulationSpeed.Speed1,
+                source?.Baseline ?? [],
+                source?.Corrections.OrderBy(p => p.Key, StringComparer.Ordinal)
+                    .Select(p => new TacticalMapCorrection(p.Key, p.Value.OffsetX, p.Value.OffsetY,
+                        p.Value.DirectionOffset, p.Value.ElapsedSeconds)).ToArray() ?? [],
+                source?.Anchors.OrderBy(p => p.Key, StringComparer.Ordinal)
+                    .Select(p => new TacticalMapAnchoredPose(p.Key, p.Value.ToSnapshot())).ToArray() ?? []);
 
             var profile = _frameRecorder.Capture();
             if (profile.Frames.Length > 0) profile.Frames[^1] = profile.Frames[^1] with { CaptureRequested = true };
