@@ -13,8 +13,8 @@ Draft assumptions accepted for this execution: 2000 ms real-time stale limit, de
 | EP-0005-US-0001-TK-0001-paused-authoritative-rebase | implemented; Client 1736/1736, Release/format/diff pass; native OPEN | 4f30eb63f839dd65e2186a8531860011e4ad0fec; push and remote SHA verified |
 | EP-0005-US-0001-TK-0002-visible-object-hit-testing | implemented; full 1743 pass plus repaired fixture/new cases 9/9; Release/format/diff pass; native OPEN | 48d1274b732ad85d04482c713b6a3d922ddef414; push and remote SHA verified |
 | EP-0005-US-0001-TK-0003-cluster-click-priority | implemented; Client 1747/1747, Release/diff pass, baseline format debt; native OPEN | 4a2f9852a4bbfa96d2bf8b290f3e7e8846236fe3; push and remote SHA verified |
-| EP-0005-US-0001-TK-0004-important-label-placement | implemented; Client 1751/1751, Release/format/diff pass; native OPEN | awaiting commit/push |
-| EP-0005-US-0001-TK-0005-bounded-offscreen-work | pending | pending |
+| EP-0005-US-0001-TK-0004-important-label-placement | implemented; Client 1751/1751, Release/format/diff pass; native OPEN | d81d58c50fdf3de7f1c20695abc369e9bdfdb270; push and remote SHA verified |
+| EP-0005-US-0001-TK-0005-bounded-offscreen-work | implemented; Client 1755/1755, Release/format/diff pass; native OPEN | awaiting commit/push |
 | EP-0005-US-0001-TK-0006-paused-geometry-invalidation | pending | pending |
 | EP-0005-US-0001-TK-0007-coherent-frame-diagnostics | pending | pending |
 | EP-0005-US-0001-TK-0008-layout-before-map | pending | pending |

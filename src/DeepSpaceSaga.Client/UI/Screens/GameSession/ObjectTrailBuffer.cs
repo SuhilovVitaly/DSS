@@ -5,7 +5,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// <summary>Chronological ring buffer with lazily recomputed conservative drawing bounds.</summary>
 internal sealed class ObjectTrailBuffer : IReadOnlyList<ObjectTrailPoint>
 {
-    private ObjectTrailPoint[] _points = new ObjectTrailPoint[256];
+    internal const int MaximumPoints = 512;
+    private ObjectTrailPoint[] _points = new ObjectTrailPoint[16];
     private int _head;
     private bool _boundsDirty = true;
     private (double MinX, double MinY, double MaxX, double MaxY) _bounds;
@@ -26,6 +27,7 @@ internal sealed class ObjectTrailBuffer : IReadOnlyList<ObjectTrailPoint>
 
     public void Add(ObjectTrailPoint point)
     {
+        if (Count == MaximumPoints) RemoveFirst(1);
         if (Count == _points.Length)
         {
             var expanded = new ObjectTrailPoint[_points.Length * 2];

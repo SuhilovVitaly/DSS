@@ -19,6 +19,11 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly CameraState _camera;
     private readonly GridRenderer _grid;
     private readonly ObjectTrailStore _trailStore;
+    private readonly List<ObjectRenderState> _detailedTrailStates = new();
+    internal int DetailedTrailObjectsProcessed => _detailedTrailStates.Count;
+    internal int RenderPoseObjectsProcessed => _renderStates.Count;
+    internal int PoseDtoMaterializations { get; private set; }
+    internal long ContactMembershipBuilds { get; private set; }
     private readonly FutureTrajectoryProjector _futureTrajectoryProjector;
     private readonly NavigationTrajectoryProjector _navigationTrajectoryProjector;
     private readonly ObjectLabelRenderer _labelRenderer;
@@ -1139,12 +1144,13 @@ public sealed partial class GameSessionScreen : IScreen
         // 3. Object trails
         if (prediction is not null)
         {
+            PrepareDetailedTrailObjects();
             CaptureInitialTrailBootstrapObjects();
             long predictedGameTimeMs = GetPredictedGameTimeMs(prediction);
             bool shouldBootstrapInitialTrails = _shouldBootstrapInitialTrails;
 
             _trailStore.Update(
-                _renderStates,
+                _detailedTrailStates,
                 prediction.CurrentSpeed,
                 predictedGameTimeMs,
                 shouldBootstrapInitialTrails,
@@ -1312,6 +1318,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     private void UpdateObjectRenderStates(SnapshotPrediction? prediction, double deltaSeconds)
     {
+        PoseDtoMaterializations = 0;
         if (prediction is null)
         {
             _renderStates.Clear();
@@ -1335,10 +1342,15 @@ public sealed partial class GameSessionScreen : IScreen
         }
 
         _renderStates.Clear();
-        _currentVisualObjectIds.Clear();
 
         long ed = prediction.EffectivePredictionDeltaMs;
         var snapshot = prediction.BufferedSnapshot.Snapshot;
+        bool membershipChanged = !_hasSnapshotBaseline || snapshot.SnapshotSequence != _lastSnapshotBaselineSequence;
+        if (membershipChanged)
+        {
+            _currentVisualObjectIds.Clear();
+            ContactMembershipBuilds++;
+        }
         if (!_hasSnapshotBaseline && _selectedObjectId is null)
             _selectedObjectId = snapshot.SelectedObjectId;
         string? playerShipObjectId = snapshot.PlayerShipObjectId;
@@ -1375,7 +1387,7 @@ public sealed partial class GameSessionScreen : IScreen
             var predicted = PredictRenderMotion(obj, hasCombatPose ? combatDelta : ed);
             if (obj.ObjectId == playerShipObjectId) _profilePlayerRaw = predicted;
             if (obj.ObjectId == _profileTargetId) _profileTargetRaw = predicted;
-            _currentVisualObjectIds.Add(obj.ObjectId);
+            if (membershipChanged) _currentVisualObjectIds.Add(obj.ObjectId);
 
             // Combat participants share their confirmed display time with the launch
             // preview and target path. A frozen/corrected marker would detach the line.
@@ -1462,7 +1474,7 @@ public sealed partial class GameSessionScreen : IScreen
                     $"correctionActive={_visualCorrections.ContainsKey(obj.ObjectId)}");
             }
 
-            _lastSnapshotBaselineObjects[obj.ObjectId] = obj;
+            if (membershipChanged) _lastSnapshotBaselineObjects[obj.ObjectId] = obj;
 
             // Every client-visible contact stays available. Labels, compact markers and
             // clusters reduce detail without removing selected/navigation targets.
@@ -1470,9 +1482,12 @@ public sealed partial class GameSessionScreen : IScreen
             _renderStates.Add(new ObjectRenderState(obj, predicted, obj.ObjectId == playerShipObjectId));
         }
 
-        RemoveMissingVisualStates(_pausedVisualAnchors);
-        RemoveMissingVisualStates(_visualCorrections);
-        RemoveMissingVisualStates(_lastSnapshotBaselineObjects);
+        if (membershipChanged)
+        {
+            RemoveMissingVisualStates(_pausedVisualAnchors);
+            RemoveMissingVisualStates(_visualCorrections);
+            RemoveMissingVisualStates(_lastSnapshotBaselineObjects);
+        }
 
         if (resuming)
             _pausedVisualAnchors.Clear();
@@ -1499,6 +1514,7 @@ public sealed partial class GameSessionScreen : IScreen
         if (_predictor is LinearMotionPredictor &&
             LinearMotionPredictor.TryPredictLinearPosition(state, elapsedMs, out double x, out double y))
             return new(state, x, y, state.Direction);
+        PoseDtoMaterializations++;
         return new(_predictor.Predict(state, elapsedMs));
     }
     private static RenderMotion ApplyVisualPose(
@@ -1608,10 +1624,36 @@ public sealed partial class GameSessionScreen : IScreen
         if (_capturedInitialTrailBootstrapObjects)
             return;
 
-        for (int i = 0; i < _renderStates.Count; i++)
-            _initialTrailBootstrapObjectIds.Add(_renderStates[i].Pose.ObjectId);
+        for (int i = 0; i < _detailedTrailStates.Count; i++)
+            _initialTrailBootstrapObjectIds.Add(_detailedTrailStates[i].Pose.ObjectId);
 
         _capturedInitialTrailBootstrapObjects = true;
+    }
+
+    private void PrepareDetailedTrailObjects()
+    {
+        _detailedTrailStates.Clear();
+        const float margin = 64;
+        foreach (var state in _renderStates)
+        {
+            if (state.Pose.SpeedKmS <= 0) continue;
+            bool keep = IsImportantMapObject(state.Pose.ObjectId);
+            var (x, y) = _camera.WorldToScreen(state.Pose.X, state.Pose.Y, _viewportW, _viewportH);
+            if (_camera.PixelsPerWorldUnit >= _mapSettings.TrailDetailPpu)
+            {
+                keep |= x >= -margin && y >= -margin && x <= _viewportW + margin && y <= _viewportH + margin;
+                // Retain recorded paths crossing the viewport even if the current
+                // marker is outside. Never reconstruct history on viewport reentry.
+                if (!keep && _trailStore.Trails.TryGetValue(state.Pose.ObjectId, out var trail) && trail.Count > 0)
+                {
+                    var b = trail.Bounds;
+                    var a = _camera.WorldToScreen(b.MinX, b.MinY, _viewportW, _viewportH);
+                    var z = _camera.WorldToScreen(b.MaxX, b.MaxY, _viewportW, _viewportH);
+                    keep = z.X >= -margin && z.Y >= -margin && a.X <= _viewportW + margin && a.Y <= _viewportH + margin;
+                }
+            }
+            if (keep) _detailedTrailStates.Add(state);
+        }
     }
 
     private void DrawObjectTrails(SKCanvas canvas, int width, int height)

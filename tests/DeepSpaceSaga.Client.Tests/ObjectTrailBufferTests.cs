@@ -11,10 +11,10 @@ public class ObjectTrailBufferTests
         for (int i = 0; i < 250; i++) buffer.Add(new(i, -i, i));
         buffer.RemoveFirst(200);
         for (int i = 250; i < 900; i++) buffer.Add(new(i, -i, i));
-        Assert.Equal(700, buffer.Count);
-        Assert.Equal(Enumerable.Range(200, 700).Select(i => (long)i), buffer.Select(p => p.Timestamp));
-        Assert.Equal((200d, -899d, 899d, -200d), buffer.Bounds);
-        buffer.RemoveFirst(699);
+        Assert.Equal(512, buffer.Count);
+        Assert.Equal(Enumerable.Range(388, 512).Select(i => (long)i), buffer.Select(p => p.Timestamp));
+        Assert.Equal((388d, -899d, 899d, -388d), buffer.Bounds);
+        buffer.RemoveFirst(511);
         Assert.Equal((899d, -899d, 899d, -899d), buffer.Bounds);
         buffer[0] = new(10, 20, 900);
         Assert.Equal((10d, 20d, 10d, 20d), buffer.Bounds);

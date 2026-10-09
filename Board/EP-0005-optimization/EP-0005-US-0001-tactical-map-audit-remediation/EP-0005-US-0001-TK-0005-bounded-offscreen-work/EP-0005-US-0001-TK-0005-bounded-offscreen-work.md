@@ -82,3 +82,16 @@ No public API change.
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution scope 2026-10-09
+Add tests/DeepSpaceSaga.Client.Tests/ObjectTrailBufferTests.cs: replace its old unbounded 700-point expectation with the retained last 512 chronological points and exact bounds/removal checks. This is the required bounded-history contract, not a relaxation of chronological correctness.
+
+## Execution evidence
+
+Pre-fix 500/5000 fully offscreen moving contacts produced 100500/1005000 trail points. Both now produce zero detailed trail points/capacity while every contact remains in RenderStates for full-model consumers. Detailed history covers important contacts plus a 64-pixel viewport margin and already-recorded crossing paths; low-detail scales retain important trails only. Dropped contacts return with one observed point, never reconstructed history. Buffers start at 16 and cap at 512 chronological points; the ten-second pruning policy still applies.
+
+Membership maps rebuild only on a new snapshot sequence; screen counters expose processed poses, predictor DTO materializations, detailed trail objects and membership builds alongside point/capacity statistics. Paused linear offscreen fixtures materialize no pose DTOs. Full pose projection remains proportional to the complete contact model; this ticket does not claim spatial-index acceleration or GPU FPS.
+
+Focused trail/smoothness regression 33/33 before the additional budget cases; all four budget cases passed. Release build and full scoped format passed; diff review checked pause rebasing, crossing history retention, selected/navigation preservation and exact ring-buffer chronology. Native acceptance remains OPEN.
+
+Final full Client regression 1755/1755 passed (ep5-us1-tk5-client-final.trx); git diff --check passed. Implementation complete; native OPEN.
