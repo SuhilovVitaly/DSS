@@ -11,7 +11,7 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
-public sealed partial class GameSessionScreen : IScreen
+public sealed partial class GameSessionScreen : IScreen, IDisposable
 {
     private readonly SnapshotBuffer _buffer;
     internal CombatVisualSettings CombatSettings { get; }
@@ -359,6 +359,18 @@ public sealed partial class GameSessionScreen : IScreen
     internal void SetUiScale(float scale) => _uiScale = ValidateUiScale(scale);
 
     // ── IScreen ─────────────────────────────────────────────────
+
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _ioStop.Cancel();
+        _objectInfoPanel.CancelImageIo();
+        _ = SnapshotSaveTask.ContinueWith(_ => _ioStop.Dispose(), CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+    }
 
     public void OnActivated()
     {

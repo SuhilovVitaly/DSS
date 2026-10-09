@@ -93,26 +93,13 @@ public sealed class ObjectInfoPanel
     private readonly SKBitmap? _showHoverImage;
     private readonly SKBitmap? _showPressedImage;
 
-    /// <summary>
-    /// Lazily-resolved per-type object image, keyed by RenderObjectType (see
-    /// <see cref="SpaceObjectType"/>), loaded from
-    /// <c>Images/UI/GameSessionScreenUI/object-info/&lt;type-lowercase&gt;.png</c>. Used
-    /// only as a fallback when <see cref="ObjectInfoPanelData.Image"/> is null or its file
-    /// is missing — no files exist yet at this path, so this fallback currently always
-    /// misses. A missing file is cached as null so the disk is only probed once per type.
-    /// </summary>
-    private readonly Dictionary<string, SKBitmap?> _objectImagesByType = new(StringComparer.Ordinal);
+    private readonly AsyncObjectImageCache _objectImages;
 
-    /// <summary>
-    /// Lazily-resolved per-object image, keyed by <see cref="ObjectInfoPanelData.Image"/>
-    /// (the object's own resolved sprite path, e.g. an asteroid/ship sprite under
-    /// <c>Images/CelestialObjects</c>). A missing file is cached as null so the disk is
-    /// only probed once per path.
-    /// </summary>
-    private readonly Dictionary<string, SKBitmap?> _objectImagesByPath = new(StringComparer.Ordinal);
+    public ObjectInfoPanel() : this(new AsyncObjectImageCache(LoadImage)) { }
 
-    public ObjectInfoPanel()
+    internal ObjectInfoPanel(AsyncObjectImageCache objectImages)
     {
+        _objectImages = objectImages;
         var typeface = XenonStyle.TypefaceRegular;
 
         _mainCaptionBgPaint = new SKPaint { Color = new SKColor(6, 30, 43), Style = SKPaintStyle.Fill, BlendMode = SKBlendMode.Src };
@@ -324,6 +311,7 @@ public sealed class ObjectInfoPanel
     internal void Layout(float viewportWidth, float top, ObjectInfoPanelData? playerShip, ObjectInfoPanelData? selectedOrActive,
         float viewportHeight)
     {
+        _objectImages.Pump();
         _preparedRows.Clear();
         float left = viewportWidth - Margin - PanelWidth;
 
@@ -364,6 +352,7 @@ public sealed class ObjectInfoPanel
                 _rowCaptionRects[i] = captionRect;
                 _rowBodyRects[i] = bodyRect;
 
+                if (opened && rowData[i] is { } imageData) RequestObjectImage(imageData);
                 _preparedRows.Add(new(i, opened, captionRect, bodyRect, rowData[i], renderLines, valueOffset));
 
                 rowY += opened ? (RowCaptionHeight + bodyHeight) : RowCaptionHeight;
@@ -473,34 +462,22 @@ public sealed class ObjectInfoPanel
         }
     }
 
-    /// <summary>
-    /// Resolves the bitmap to draw for one row: the object's own resolved sprite
-    /// (<see cref="ObjectInfoPanelData.Image"/>) when present and loadable, otherwise the
-    /// generic per-type icon, otherwise null (caller draws the placeholder rect).
-    /// </summary>
+    internal void CancelImageIo() => _objectImages.Dispose();
+    internal Task PendingImageWork => _objectImages.PendingWork;
+
+    private void RequestObjectImage(ObjectInfoPanelData data)
+    {
+        if (data.Image is { Length: > 0 } path) _objectImages.Request(path);
+        if (data.Survey is null && data.RenderObjectType is { } type)
+            _objectImages.Request($"{ObjectImageAssetsPath}/{type.ToLowerInvariant()}.png");
+    }
+
+    /// <summary>Reads only published images; pending/missing images use a placeholder.</summary>
     private SKBitmap? ResolveObjectImage(ObjectInfoPanelData data)
     {
-        if (data.Image is { Length: > 0 } imagePath)
-        {
-            if (!_objectImagesByPath.TryGetValue(imagePath, out var byPath))
-            {
-                byPath = LoadImage(imagePath);
-                _objectImagesByPath[imagePath] = byPath;
-            }
-
-            if (byPath is not null)
-                return byPath;
-        }
-
-        if (data.Survey is not null || data.RenderObjectType is not { } renderObjectType)
-            return null;
-
-        if (_objectImagesByType.TryGetValue(renderObjectType, out var byType))
-            return byType;
-
-        var fallback = LoadImage($"{ObjectImageAssetsPath}/{renderObjectType.ToLowerInvariant()}.png");
-        _objectImagesByType[renderObjectType] = fallback;
-        return fallback;
+        if (data.Image is { Length: > 0 } path && _objectImages.Get(path) is { } image) return image;
+        return data.Survey is null && data.RenderObjectType is { } type
+            ? _objectImages.Get($"{ObjectImageAssetsPath}/{type.ToLowerInvariant()}.png") : null;
     }
 
     private void DrawButton(SKCanvas canvas, SKRect rect, SKBitmap? image)

@@ -37,6 +37,7 @@ public sealed class ScreenStack
         if (_stack.Count > 0)
             Current.OnDeactivated();
 
+        foreach (var removed in _stack) (removed as IDisposable)?.Dispose();
         _stack.Clear();
         _stack.Push(screen);
         screen.OnActivated();
@@ -60,6 +61,7 @@ public sealed class ScreenStack
 
         var old = _stack.Pop();
         old.OnDeactivated();
+        (old as IDisposable)?.Dispose();
 
         Current.OnActivated();
     }
@@ -71,6 +73,7 @@ public sealed class ScreenStack
         {
             var old = _stack.Pop();
             old.OnDeactivated();
+            (old as IDisposable)?.Dispose();
         }
 
         _stack.Push(screen);
@@ -84,6 +87,7 @@ public sealed class ScreenStack
         if (_stack.Count > 0)
             Current.OnDeactivated();
 
+        foreach (var removed in _stack) (removed as IDisposable)?.Dispose();
         _stack.Clear();
         _stack.Push(screen);
         screen.OnActivated();
@@ -95,6 +99,7 @@ public sealed class ScreenStack
         if (_stack.Count > 0)
             Current.OnDeactivated();
 
+        foreach (var removed in _stack) (removed as IDisposable)?.Dispose();
         _stack.Clear();
     }
 }

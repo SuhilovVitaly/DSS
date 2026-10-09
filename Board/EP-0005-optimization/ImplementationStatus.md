@@ -17,8 +17,8 @@ Draft assumptions accepted for this execution: 2000 ms real-time stale limit, de
 | EP-0005-US-0001-TK-0005-bounded-offscreen-work | implemented; Client 1755/1755, Release/format/diff pass; native OPEN | 7ab6af2af3eab4c5d0ec7d4866a54184bfc3018e; push and remote SHA verified |
 | EP-0005-US-0001-TK-0006-paused-geometry-invalidation | implemented; Client 1757/1757, Release/format/diff pass; native OPEN | 415660a95b491ee0c89c201394671b09455696f5; push and remote SHA verified |
 | EP-0005-US-0001-TK-0007-coherent-frame-diagnostics | implemented; Client 1759/1759, Release/format/diff pass; native OPEN | cd33d91c3920648dbfe03b6f9b0dc1572a102899; push and remote SHA verified |
-| EP-0005-US-0001-TK-0008-layout-before-map | implemented; Client 1763/1763, Release/format/diff pass; native OPEN | awaiting commit and immediate push |
-| EP-0005-US-0001-TK-0009-nonblocking-render-io | pending | pending |
+| EP-0005-US-0001-TK-0008-layout-before-map | implemented; Client 1763/1763, Release/format/diff pass; native OPEN | f23224d8c0181870d766a750f9698719b4a9a7bc; push and remote SHA verified |
+| EP-0005-US-0001-TK-0009-nonblocking-render-io | implemented; Client 1767/1767 plus final async 5/5, Release/format/diff pass; native OPEN | awaiting commit and immediate push |
 | EP-0005-US-0001-TK-0010-deterministic-resource-lifetime | pending | pending |
 | EP-0005-US-0001-TK-0011-map-localization | pending | pending |
 | EP-0005-US-0001-TK-0012-stable-cluster-membership | pending | pending |

@@ -123,9 +123,11 @@ internal static class TacticalMapSnapshotWriter
         SerializerOptions.Converters.Add(new JsonStringEnumConverter());
     }
 
-    internal static string Write(TacticalMapSnapshotDocument document, string directory = DefaultDirectory)
+    internal static string Write(TacticalMapSnapshotDocument document, string directory = DefaultDirectory,
+        CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(directory);
+        cancellationToken.ThrowIfCancellationRequested();
 
         document = document with { Profile = document.Profile?.WithSummary() };
         string json = JsonSerializer.Serialize(document, SerializerOptions);
@@ -138,6 +140,7 @@ internal static class TacticalMapSnapshotWriter
 
         lock (Sync)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             for (int suffix = 0; ; suffix++)
             {
                 string name = suffix == 0 ? $"{baseName}.json" : $"{baseName}-{suffix}.json";
@@ -149,6 +152,7 @@ internal static class TacticalMapSnapshotWriter
                 try
                 {
                     File.WriteAllText(temporaryPath, json, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                    cancellationToken.ThrowIfCancellationRequested();
                     File.Move(temporaryPath, path);
                     return path;
                 }

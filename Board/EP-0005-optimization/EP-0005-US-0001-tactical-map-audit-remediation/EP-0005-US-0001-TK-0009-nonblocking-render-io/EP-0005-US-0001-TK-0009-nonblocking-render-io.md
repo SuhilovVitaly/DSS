@@ -82,3 +82,12 @@ No public API change.
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution scope 2026-10-09
+Expand to Controls/AsyncObjectImageCache.cs, GameSessionScreen.cs and UI/ScreenStack.cs: bounded decode ownership needs a reusable cache and permanent removal must cancel work without cancelling modal deactivation. Introduce IDisposable cancellation now; TK-0010 extends it to all owned graphics resources. Existing asynchronous snapshot writer is retained with cancellation before atomic publication.
+Additional scope: PiratePresentationTests.cs must await real asynchronous image decoding before its existing red/blue pixel mirror assertions; first-frame placeholder is now intentional. Preserve all four relation/type cases and pixel expectations.
+
+## Execution evidence 2026-10-09
+Object images now decode outside Render through a UI-owned cache (128 ready/negative entries, 16 pending requests, one active decoder). Layout publishes completed images; Draw only reads them and uses placeholders until ready. Cache teardown cancels queued work and disposes late native results without blocking the UI. Permanent ScreenStack removal calls IDisposable; modal deactivation preserves the screen.
+Snapshot capture retains its single-worker bound and detached document. Cancellation is checked before serialization and atomic final rename; temporary files are cleaned in finally. Completed cancelled work is not published back to the removed screen. An already completed atomic rename may remain as a complete JSON; no partial final document is exposed.
+Validation: focused panel/snapshot/stack/async suite 65/65; initial full run exposed four obsolete synchronous pirate-image fixtures. After preserving pixel assertions and awaiting decode: focused 11/11, full Client 1767/1767. Review added protected diagnostic logging on decoder errors; final targeted async tests 5/5 including failure caching. Release 0 warnings/errors, scoped whitespace verification and diff check pass. Full rerun after the final error-only guard is deferred to next ticket's full suite. Native/manual matrix NOT RUN/OPEN.

@@ -34,7 +34,7 @@ public sealed class PiratePresentationTests
     [InlineData(SpaceObjectType.NpcShip, PlayerRelation.Neutral, false)]
     [InlineData(SpaceObjectType.NpcShip, PlayerRelation.Friend, false)]
     [InlineData(SpaceObjectType.PlayerShip, PlayerRelation.Self, false)]
-    public void Selected_ship_image_is_mirrored_only_for_pirates(string type, string relation, bool mirrored)
+    public async Task Selected_ship_image_is_mirrored_only_for_pirates(string type, string relation, bool mirrored)
     {
         var path = Path.Combine(Path.GetTempPath(), $"pirate-image-{Guid.NewGuid():N}.png");
         try
@@ -53,10 +53,14 @@ public sealed class PiratePresentationTests
             using var canvas = new SKCanvas(bitmap);
             panel.Render(canvas, 1280, 8, null,
                 new("ship", "Black Fang", .4, 120, type, Image: path, RelationToPlayer: relation));
+            await panel.PendingImageWork.WaitAsync(TimeSpan.FromSeconds(5));
+            panel.Render(canvas, 1280, 8, null,
+                new("ship", "Black Fang", .4, 120, type, Image: path, RelationToPlayer: relation));
             canvas.Flush();
             var body = panel.RowBodyRects[1];
             Assert.Equal(mirrored ? SKColors.Blue : SKColors.Red, bitmap.GetPixel((int)body.Left + 31, (int)body.Top + 81));
             Assert.Equal(mirrored ? SKColors.Red : SKColors.Blue, bitmap.GetPixel((int)body.Left + 181, (int)body.Top + 81));
+            panel.CancelImageIo();
         }
         finally { File.Delete(path); }
     }

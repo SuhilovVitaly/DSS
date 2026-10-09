@@ -11,13 +11,14 @@ public sealed partial class GameSessionScreen
     private PresentedFrame? _presentedFrame;
     private readonly HashSet<string> _presentedClusteredIds = new(StringComparer.Ordinal);
     internal Task<string?> SnapshotSaveTask { get; private set; } = Task.FromResult<string?>(null);
-    internal Func<TacticalMapSnapshotDocument, string, string> SnapshotWriter { get; set; } = TacticalMapSnapshotWriter.Write;
+    private readonly CancellationTokenSource _ioStop = new();
+    internal Func<TacticalMapSnapshotDocument, string, string>? SnapshotWriter { get; set; }
     internal string? LastTacticalMapSnapshotPath => SnapshotSaveTask.IsCompletedSuccessfully ? SnapshotSaveTask.Result : null;
 
     internal void RequestTacticalMapSnapshot()
     {
         // One detached document at a time; repeated clicks cannot grow a writer queue.
-        if (SnapshotSaveTask.IsCompleted) CaptureTacticalMapSnapshot(_presentedFrame?.Prediction, _presentedFrame?.Timestamp ?? 0);
+        if (!_disposed && SnapshotSaveTask.IsCompleted) CaptureTacticalMapSnapshot(_presentedFrame?.Prediction, _presentedFrame?.Timestamp ?? 0);
     }
 
     private void SealPresentedFrame(SnapshotPrediction? prediction, long timestamp)
@@ -123,7 +124,7 @@ public sealed partial class GameSessionScreen
                 frame is not null);
 
             // Only owned DTOs cross the thread boundary, never live render collections/projectors.
-            SnapshotSaveTask = SaveSnapshotAsync(document, _tacticalMapSnapshotDirectory, SnapshotWriter);
+            SnapshotSaveTask = SaveSnapshotAsync(document, _tacticalMapSnapshotDirectory, SnapshotWriter, _ioStop.Token);
         }
         catch (Exception ex)
         {
@@ -133,14 +134,17 @@ public sealed partial class GameSessionScreen
     }
 
     private static Task<string?> SaveSnapshotAsync(TacticalMapSnapshotDocument document, string directory,
-        Func<TacticalMapSnapshotDocument, string, string> writer) => Task.Run<string?>(() =>
+        Func<TacticalMapSnapshotDocument, string, string>? writer, CancellationToken token) => Task.Run<string?>(() =>
     {
         try
         {
-            string path = writer(document, directory);
+            token.ThrowIfCancellationRequested();
+            string path = writer is null ? TacticalMapSnapshotWriter.Write(document, directory, token) : writer(document, directory);
+            token.ThrowIfCancellationRequested();
             InterfaceLog.Write($"Tactical map snapshot saved: {path}");
             return path;
         }
+        catch (OperationCanceledException) { return null; }
         catch (Exception ex)
         {
             InterfaceLog.Write($"Tactical map snapshot failed: {ex}");
