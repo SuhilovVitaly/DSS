@@ -29,8 +29,8 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly ObjectLabelRenderer _labelRenderer;
     private readonly TacticalMapDepthRenderer _depthRenderer;
     private readonly List<ObjectRenderState> _renderStates = new();
-    private readonly HashSet<string> _missileTrailIds = new(StringComparer.Ordinal);
     private readonly List<FutureTrajectoryPoint> _futureTrajectoryPoints = new(FutureTrajectoryProjector.MaxSamplePoints);
+    private readonly HashSet<string> _missileTrailIds = new(StringComparer.Ordinal);
     private readonly SolarSystemLayerRenderer _solarSystemLayer = new();
     private readonly Dictionary<string, RenderMotion> _pausedVisualAnchors = new(StringComparer.Ordinal);
     private readonly Dictionary<string, VisualCorrection> _visualCorrections = new(StringComparer.Ordinal);
@@ -62,7 +62,6 @@ public sealed partial class GameSessionScreen : IScreen
 
     // Object paints
     private readonly SKPaint _trailPaint;
-    private readonly ObjectTrailGeometry _trailGeometry = new();
     private readonly SKPath _playerShipGlyphPath = new();
 
     // Shared UI paints
@@ -1162,6 +1161,7 @@ public sealed partial class GameSessionScreen : IScreen
                 _initialTrailBootstrapObjectIds.Clear();
             }
 
+            PruneGeometryCaches();
             DrawObjectTrails(canvas, width, height);
             CompleteRenderStage("trails");
 
@@ -1181,8 +1181,7 @@ public sealed partial class GameSessionScreen : IScreen
             // Compute smoothed label geometries once per frame so both
             // DrawLeaders and DrawPlaques see the same positions.
             bool resetSmoothing = viewportResized;
-            _labelRenderer.ComputeGeometries(_renderStates, deltaSeconds, width, height, _camera, resetSmoothing,
-                _mapSettings, IsImportantMapObject, _clusteredObjectIds, AvailableMapRect(), _selectedObjectId, _navigationTargetId);
+            PrepareLabelGeometry(prediction, deltaSeconds, resetSmoothing);
 
             // 3.75. Label leader lines (behind objects)
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
@@ -1683,11 +1682,15 @@ public sealed partial class GameSessionScreen : IScreen
             if (right < -2 || bottom < -2 || left > width + 2 || top > height + 2)
                 continue;
             bool isShip = kvp.Key == playerShipId;
-            _trailGeometry.Build(points, _camera, width, height, isShip);
-            foreach (var segment in _trailGeometry.Segments)
+            if (!_trailGeometryCache.TryGetValue(kvp.Key, out var geometry))
+                _trailGeometryCache[kvp.Key] = geometry = new();
+            long previousBuilds = geometry.BuildCount;
+            geometry.Build(points, _camera, width, height, isShip);
+            TrailGeometryBuilds += geometry.BuildCount - previousBuilds;
+            foreach (var segment in geometry.Segments)
             {
-                var from = _trailGeometry.Points[segment.Start];
-                var to = _trailGeometry.Points[segment.End];
+                var from = geometry.Points[segment.Start];
+                var to = geometry.Points[segment.End];
                 float fromX = from.X, fromY = from.Y, toX = to.X, toY = to.Y;
 
                 // A long trail can cross the viewport while most of its segments
@@ -1747,8 +1750,7 @@ public sealed partial class GameSessionScreen : IScreen
             if (state.IsPlayerShip && state.Pose.NavigationTargetX is not null)
                 continue;
 
-            _futureTrajectoryProjector.ProjectViewportInto(state.Pose.ToSnapshot(), _futureTrajectoryPoints, _camera, width, height);
-            var points = _futureTrajectoryPoints;
+            var points = CachedFuture(state.Pose);
             if (points.Count < 2)
                 continue;
 
@@ -1789,8 +1791,10 @@ public sealed partial class GameSessionScreen : IScreen
             if (predicted.NavigationTargetX is not null)
             {
                 // Draw the maneuver and its continuation as one continuous path.
-                var points = _navigationTrajectoryProjector.ProjectPlayerInto(
-                    predicted, _futureTrajectoryPoints, _camera, width, height, out bool isConfirmedIntercept, out var interceptPoint);
+                var cached = CachedNavigation(state.Pose);
+                var points = cached.Points;
+                bool isConfirmedIntercept = cached.Confirmed;
+                var interceptPoint = cached.Intercept;
                 if (points.Count >= 2)
                 {
                     CaptureDrawnTrajectory(state.Pose.ObjectId, "navigation", points, isPlayer: true);

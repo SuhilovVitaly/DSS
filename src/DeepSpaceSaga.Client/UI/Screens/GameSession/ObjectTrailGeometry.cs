@@ -15,10 +15,22 @@ internal sealed class ObjectTrailGeometry
     private readonly Stack<(int Start, int End)> _pending = new();
     internal List<(int Start, int End)> Segments { get; } = new(128);
     internal IReadOnlyList<SKPoint> Points => _projected;
+    internal long BuildCount { get; private set; }
+    private ObjectTrailBuffer? _source;
+    private (long Revision, double X, double Y, double Zoom, int Width, int Height, bool Ship) _key;
 
     internal void Build(IReadOnlyList<ObjectTrailPoint> points, CameraState camera,
         int width, int height, bool isShip)
     {
+        if (points is ObjectTrailBuffer buffer)
+        {
+            var key = (buffer.Revision, camera.FocusX, camera.FocusY, camera.PixelsPerWorldUnit, width, height, isShip);
+            if (ReferenceEquals(_source, buffer) && _key == key) return;
+            _source = buffer;
+            _key = key;
+        }
+        else _source = null;
+        BuildCount++;
         _projected.Clear();
         for (int i = 0; i < points.Count; i++)
         {

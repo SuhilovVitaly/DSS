@@ -82,3 +82,14 @@ No public API change.
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution scope 2026-10-09
+Add ObjectTrailBuffer.cs for mutation revision and GameSessionScreen.GeometryCache.cs for bounded screen-owned cache helpers. Keep cache logic separate from the already large screen file. Cache geometry by actual history/pose and view, retaining UI-time drawing. The final pipeline story owns comprehensive stage extraction and spatial indexing.
+
+## Execution evidence
+
+History mutation revisions invalidate per-contact screen trail geometry. Trajectory caches retain at most the current player/selected/navigation forecasts and one navigation route, keyed by immutable pose plus camera/viewport. Removed histories and old forecast selections evict their entries. Paused label geometry uses snapshot/view/layout/selection keys; UI drawing and real-time effects continue each frame. New physical snapshots still run paused rebase and invalidate geometry.
+
+Focused paused/smoothness/Approach/trail geometry checks: 44/44. Repeated 40-frame paused fixtures assert unchanged build counters for ordinary forecast and navigation; zoom rebuilds screen geometry and a paused time advance updates the pose. Release build zero warnings/errors, scoped formatting and diff checks passed. Full architecture/spatial-index extraction remains US-0002; native acceptance OPEN.
+
+Full Client regression 1757/1757 passed (ep5-us1-tk6-client.trx). Implementation complete; native OPEN.

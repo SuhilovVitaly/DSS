@@ -12,11 +12,12 @@ internal sealed class ObjectTrailBuffer : IReadOnlyList<ObjectTrailPoint>
     private (double MinX, double MinY, double MaxX, double MaxY) _bounds;
     public int Count { get; private set; }
     internal int Capacity => _points.Length;
+    internal long Revision { get; private set; }
 
     public ObjectTrailPoint this[int index]
     {
         get => _points[PhysicalIndex(index)];
-        set { _points[PhysicalIndex(index)] = value; _boundsDirty = true; }
+        set { _points[PhysicalIndex(index)] = value; _boundsDirty = true; Revision++; }
     }
 
     private int PhysicalIndex(int index)
@@ -37,6 +38,7 @@ internal sealed class ObjectTrailBuffer : IReadOnlyList<ObjectTrailPoint>
         }
         _points[(_head + Count++) % _points.Length] = point;
         _boundsDirty = true;
+        Revision++;
     }
 
     public void RemoveFirst(int count)
@@ -45,6 +47,7 @@ internal sealed class ObjectTrailBuffer : IReadOnlyList<ObjectTrailPoint>
         _head = (_head + count) % _points.Length;
         Count -= count;
         _boundsDirty = true;
+        Revision++;
     }
 
     public (double MinX, double MinY, double MaxX, double MaxY) Bounds
