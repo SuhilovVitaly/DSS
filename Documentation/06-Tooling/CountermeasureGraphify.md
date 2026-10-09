@@ -124,3 +124,9 @@ HTML содержит **260 community nodes**, поскольку исходны
 Обновлены только Graphify configuration/generated artifacts и этот отчёт. Commit/push/облачная публикация не выполнялись. Нативная приёмка игры этим тикетом не подменяется.
 
 Benchmark Graphify: эвристическая оценка 29.5x меньше токенов на типовой запрос (565600 naive / 19150 average query). Это модель стоимости из структуры графа, не измеренное использование токенов агентами; полный вывод сохранён в benchmark.txt.
+
+## Последующая навигация
+
+Этот документ и `src/graphify-out` описывают исторический EP-0007 corpus. EP-0005 выполняет новый rebuild в корневой `graphify-out`, включая текущие src/tests/Documentation и Board/EP-0005. Свежесть и ограничения нового запуска фиксируются в [EP-0005 graph ticket](../../Board/EP-0005-optimization/EP-0005-US-0003-documentation-and-graph/EP-0005-US-0003-TK-0002-graph-rebuild/EP-0005-US-0003-TK-0002-graph-rebuild.md); старые hashes/counts не являются evidence текущего checkout.
+
+Ссылки на исторические `src/graphify-out` артефакты требуют исходного локального checkout: эта ignored папка не входит в изолированный EP-0005 worktree. Они сохранены как происхождение старого отчёта и отмечены в documentation-validation.json, не перенаправлены на другой corpus.

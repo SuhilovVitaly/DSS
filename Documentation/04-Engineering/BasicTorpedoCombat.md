@@ -163,3 +163,7 @@ UI scale, zoom, speed и исходный scenario/seed. F10 сохраняет 
 
 Дефект production, обнаруженный здесь, требует targeted follow-up с отдельным
 allowlist; TK-0002 не разрешает исправлять renderer, Engine или content.
+
+## EP-0005 rendering integration — 2026-10-09
+
+Combat poses/effects now flow through the coherent Client frame and prepared display list; input/capture use the last presented frame. Layer order and combat raster regression fixtures pass in Client 1827/1827. Engine combat outcomes, RNG, pending commands and save contracts are unchanged. This is rendering regression evidence, not new gameplay/manual acceptance. [Pipeline and lifetime](../06-Tooling/GameSessionScreenUI.md); [native limitations](../../Board/EP-0005-optimization/PerformanceEvidence.md).

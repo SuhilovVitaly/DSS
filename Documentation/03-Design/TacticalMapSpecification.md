@@ -83,17 +83,17 @@ Hex: #1E2D41
 - Координаты карты обрабатываются в raw screen pixels viewport.
 - UI панели hit-testятся в logical UI coordinates с учётом `uiScale`.
 - Клик по UI панели не считается кликом по карте.
-- Если несколько объектов попадают в hit-test, выбирается ближайший к курсору; при равной дистанции выбирается меньший `ObjectId` по `StringComparison.Ordinal`.
+- Если несколько объектов попадают в hit-test, сначала действует приоритет Station → player identity → NpcShip → прочие (EngineRequirements 54.9), затем расстояние до курсора и `ObjectId` по `StringComparison.Ordinal`.
 - Для `ActiveObjectId` и `SelectedObjectId` используется фиксированный радиус `30 px` от центра видимого маркера объекта, без зависимости от zoom, marker size и `uiScale`.
 
 | Действие | Условие | Результат |
 | --- | --- | --- |
-| Движение мыши над картой | Курсор находится в радиусе `30 px` от видимого объекта | `ActiveObjectId` получает `ObjectId` ближайшего объекта. Полная пара `(ActiveObjectId, SelectedObjectId)` отправляется в Engine через session-control. |
+| Движение мыши над картой | Курсор находится в радиусе `30 px` от видимого объекта | `ActiveObjectId` получает `ObjectId` объекта по приоритету, расстоянию и Ordinal ID. Полная пара `(ActiveObjectId, SelectedObjectId)` отправляется в Engine через session-control. |
 | Движение мыши над картой | Курсор покинул радиус `30 px` от всех видимых объектов | `ActiveObjectId` сбрасывается в `null`; изменение отправляется в Engine. |
-| Левая кнопка по объекту | Клик в радиусе `30 px` от видимого объекта | `SelectedObjectId` получает `ObjectId` ближайшего объекта; клик поглощается, камера не двигается, navigation command не отправляется. |
+| Левая кнопка по объекту | Клик в радиусе `30 px` от видимого объекта | `SelectedObjectId` получает `ObjectId` объекта по приоритету, расстоянию и Ordinal ID; клик поглощается, камера не двигается, navigation command не отправляется. |
 | `Ctrl` + левая кнопка по объекту | Клик в радиусе `30 px` от видимого объекта | Работает как выбор объекта: обновляет `SelectedObjectId`; navigation command не отправляется. |
-| Левая кнопка по свободной карте | Клик не попал в UI и не попал в объект | Камера переносит focus в world point под курсором, follow player отключается. |
-| `Ctrl` + левая кнопка по свободной карте | Клик не попал в UI и не попал в объект | Отправляется `engine.navigate-to-point` с world coordinates клика; камера не двигается. `Ctrl` действует только на текущий клик. |
+| Левая кнопка по свободной карте | Клик не попал в UI, отдельный объект или cluster | Камера переносит focus в world point под курсором, follow player отключается. |
+| `Ctrl` + левая кнопка по свободной карте | Клик не попал в UI, отдельный объект или cluster | Отправляется `engine.navigate-to-point` с world coordinates клика; камера не двигается. `Ctrl` действует только на текущий клик. |
 | Правая кнопка по карте | Любой клик по карте, включая объект или пустое место | `SelectedObjectId` сбрасывается в `null`. `ActiveObjectId`, камера и navigation не меняются. |
 | Правая кнопка по UI панели | Клик попал в speed/scale/command/info/player panel | Клик не считается map click и не сбрасывает `SelectedObjectId`. |
 | Колесо мыши вверх | Tactical map active | Zoom in вокруг курсора, до максимума `2.0 px/unit`. |
@@ -168,3 +168,17 @@ Hex: #1E2D41
 ## EP-0007 — актуальное дополнение от 2026-10-04
 
 ПР: голубой core5 canvas px с glow, solid подтверждённый trail, dashed forecast и marker встречи. Шанс показан у ПР и marker; tooltip/info содержит frozen base/skill/effective ratings обоих операторов. Под пиратом показан статус защиты, при выборе круг100км зависит от zoom. Перехват/Промах и SelfDestruct ring/terminal trail исчезают за2 реальные секунды независимо от паузы. Ordinary torpedo trails скрыты. Палитра загружается из Data/UI/combat-visuals.json. [Технический контракт и приёмка](../04-Engineering/CountermeasureCombat.md).
+
+## EP-0005: кадр, видимость и подписи
+
+Состояние карты публикуется как immutable frame; геометрия, camera, viewport, UI obstacles и hit candidates принадлежат подготовленной сцене. Input и snapshot capture используют последний нарисованный кадр, даже если следующий уже готовится. При частично видимом core объект участвует в hit-test; полностью за границей viewport — нет. UI scale применяется один раз при переходе между raw canvas и logical UI coordinates.
+
+Selected → navigation target → player → обычные объекты определяют приоритет размещения подписей. Поиск ограничен 25 кандидатами; при нехватке места важные подписи используют общий ограниченный plaque с leader lines. Пустая свободная область не подменяется полным экраном. RU/EN unknown/course-alignment подписи и кэш размеров инвалидируются по revision локали.
+
+Cluster выбирается только после проверки отдельного объекта, в том числе при Ctrl. World-cell membership стабильно при pan; hysteresis препятствует дрожанию на границе масштаба. Невидимый cluster badge не должен скрывать видимый отдельный контакт.
+
+Approach сохраняет аналитическую геометрию и конечную позу. Если reconciliation сместил нарисованный корабль, отдельный `navigation-join` соединяет его с началом подтверждённого пути; это визуальный connector, не новый манёвр.
+
+Layout панелей, toolbar и игрового времени выполняется до карты. Кэши invalidation учитывают snapshot/pose/route/trail, camera, layout, settings, locale, selection и готовность изображений. В неизменном paused кадре geometry и paint preparations переиспользуются, UI-анимация сохраняется.
+
+[Фактическая приёмка и ограничения](../../Board/EP-0005-optimization/PerformanceEvidence.md): 1826 Client tests, 20 raster cases, 16 scripted native cases; 80 FPS FAILED/OPEN, human manual NOT RUN. Высокий UI scale требует отдельной проверки доступности нижних command panels.

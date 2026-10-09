@@ -36,3 +36,13 @@ Operational skill files that must be discovered in-place, such as the character-
 3. Put implementation investigations, measurements, and one-off reviews in `04-Engineering/`.
 4. When a document moves or is renamed, update links in Markdown, code comments, and project files in the same change.
 5. Keep old paths out of new documentation; link from `Documentation/` paths.
+
+## Tactical map optimization — EP-0005
+
+- [Current visual/input contract](03-Design/TacticalMapSpecification.md).
+- [Frame pipeline, caches, lifetime and capture](06-Tooling/GameSessionScreenUI.md).
+- [Execution and publication registry](../Board/EP-0005-optimization/ImplementationStatus.md).
+- [Performance measurements and open acceptance gates](../Board/EP-0005-optimization/PerformanceEvidence.md).
+- [Repository documentation inventory](../Board/EP-0005-optimization/DocumentationInventory.md).
+
+Implementation tests pass; the 80 FPS native gate failed on the measured host, and human manual acceptance remains open.

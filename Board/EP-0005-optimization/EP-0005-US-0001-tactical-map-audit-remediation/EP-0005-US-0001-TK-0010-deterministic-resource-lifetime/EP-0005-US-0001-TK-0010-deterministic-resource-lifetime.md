@@ -3,7 +3,7 @@ epic: EP-0005-optimization
 story: EP-0005-US-0001-tactical-map-audit-remediation
 ticket: EP-0005-US-0001-TK-0010-deterministic-resource-lifetime
 title: "Освобождать ресурсы карты при уничтожении экрана"
-stage: draft
+stage: implemented
 layer: client
 depends_on: ["EP-0005-US-0001-TK-0009-nonblocking-render-io"]
 files_touched: 9
@@ -23,17 +23,17 @@ revision: 1
 
 ## Решения и полномочия
 
-Пользователь поручил создать story и тикеты. Этот документ — план; он не означает разрешения на реализацию, commit или push. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
+Историческая карточка планирования; исполнение, расширение scope, commit и push разрешены запросом 2026-10-09 по EpicExecutionPrompt.md. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
 
 ## Предположения и проверка основания
 
 Основание — аудит текущего working tree; номера строк могут сдвинуться. Перед реализацией сверить актуальный код и сохранить независимые изменения.
 
-Целевой результат: Освобождать ресурсы карты при уничтожении экрана. Значения новых порогов, явно названные draft assumption, подлежат согласованию при утверждении тикета.
+Целевой результат: Освобождать ресурсы карты при уничтожении экрана. Исходные draft assumptions рассмотрены при исполнении; принятые технические решения записаны в execution evidence и не выдаются за отдельное пользовательское одобрение.
 
 ## Контекст и разрешённые файлы
 
-Все пути от корня DSS. Это полный write allowlist; прочие файлы доступны только для чтения. Новые тесты располагаются только в перечисленных файлах.
+Все пути от корня DSS. Ниже исходный scope; расширения, необходимые для исполнения и разрешённые EpicExecutionPrompt.md, записаны в execution sections.
 
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` — существует
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs` — существует
@@ -65,9 +65,9 @@ No public API change.
 
 ## Критерии приёмки — AC-0010
 
-- [ ] `Replacing_root_disposes_owned_resources_once`: Owned resources освобождаются ровно один раз.
-- [ ] `Pushing_modal_preserves_map_resources`: Возврат из modal сохраняет рабочую карту.
-- [ ] `Repeated_sessions_release_native_resources`: 100 циклов после завершения workers не дают линейного роста owned handles.
+- [x] `Replacing_root_disposes_owned_resources_once`: Owned resources освобождаются ровно один раз.
+- [x] `Pushing_modal_preserves_map_resources`: Возврат из modal сохраняет рабочую карту.
+- [x] `Repeated_sessions_release_native_resources`: 100 циклов после завершения workers не дают линейного роста owned handles.
 
 ## Инварианты и границы
 
@@ -88,9 +88,11 @@ No public API change.
 
 ## Проверка самодостаточности
 
-В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Историческая проверка планирования завершена. Фактическая реализация и проверки записаны ниже; native/manual acceptance отделена от автоматических AC.
 
 ## Execution evidence 2026-10-09
 Extended the TK-0009 permanent-removal lifecycle to deterministic, idempotent disposal of screen, grid, label/depth renderers and both panels. Explicit owned-resource lists include paints, paths, filters, dash effects, command bitmaps, trajectory paint sets and lazy reticle textures; decoded image workers retain the cancellation/late-disposal contract. Temporary scale/speed indicator paths and locally created typeface wrappers now have lexical disposal. Shared Xenon fonts, SKTypeface.Default and the process-wide portrait-button paint are not screen-owned and remain alive. SolarSystemLayerRenderer and CombatJournalPanel have no retained native resources; their temporary Skia objects already use using.
 Modal OnDeactivated now retains combat graphics resources; permanent Dispose releases them. Screen Render rejects use after disposal. ScreenStack integration from TK-0009 covers SetRoot/Pop/Replace/ReplaceAll/DeactivateAll; production call sites create replacement instances.
 Validation: lifecycle/async/stack 23/23; final lifecycle 6/6; full Client 1774/1774; Release 0 warnings/errors; scoped whitespace verification and diff check pass. The 100-cycle raster test retains over 9000 native wrappers, exercises lazy reticle SKImages and verifies every owned handle becomes zero without relying on GC; shared font stays valid. This is native Skia ownership evidence, not real-window/GPU memory evidence. Native window/manual matrix remains OPEN. Self-review found no remaining owned field omitted by the direct-resource traversal.
+
+Current status: implementation and automated checks recorded in execution evidence; [publication registry](../../ImplementationStatus.md). [Final native/performance evidence](../../PerformanceEvidence.md) supersedes earlier NOT RUN notes only for the executed scripted cases. Human manual acceptance remains OPEN.

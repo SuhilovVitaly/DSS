@@ -69,3 +69,9 @@
 ## Weapon panels — EP-0007
 
 Torpedo Launcher показывает назначенного оператора, навык и рейтинг, состояние Ready/Guiding/NoOperator. `torpedo.fire` захватывает выбранную разрешённую цель; `torpedo.selfDestruct` захватывает ID своей активной торпеды и работает на паузе. Countermeasure Launcher показывает отдельного оператора, auto on/off, Ready/Guiding/Reloading/NoOperator и физический countdown. Кнопки `defense.enable`/`defense.disable` меняют только будущие пуски; ручной пуск ПР отсутствует. Шесть заголовков доступны при адаптивном сворачивании на малой высоте экрана. [Контракт и доказательства](../../04-Engineering/CountermeasureCombat.md).
+
+## EP-0005 — актуализация 2026-10-09
+
+Layout command/info panels известен до подготовки карты и участвует в её obstacles с учётом uiScale. Внутри кадра панели используют captured snapshot/speed; действия между кадрами проверяются по текущему authoritative snapshot. Высокие масштабы не имеют завершённой human manual acceptance.
+
+[Контракт карты](../../03-Design/TacticalMapSpecification.md); [фактическая приёмка](../../../Board/EP-0005-optimization/PerformanceEvidence.md). Client 1827/1827; native scripted actions 80/80. Performance 80 FPS FAILED/OPEN; human manual smoke NOT RUN.

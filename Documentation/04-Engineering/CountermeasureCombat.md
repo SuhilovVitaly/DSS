@@ -107,3 +107,7 @@ git diff --check
 ## Навигация
 
 [План эпика](../../Board/EP-0007-countermeasure-combat/Tickets.md), [решения](../../Board/EP-0007-countermeasure-combat/Documentation.md), [исторический EP6](BasicTorpedoCombat.md), [перестройка графа](../06-Tooling/CountermeasureGraphify.md).
+
+## EP-0005 rendering integration — 2026-10-09
+
+Combat poses/effects now flow through the coherent Client frame and prepared display list; input/capture use the last presented frame. Layer order and combat raster regression fixtures pass in Client 1827/1827. Engine combat outcomes, RNG, pending commands and save contracts are unchanged. This is rendering regression evidence, not new gameplay/manual acceptance. [Pipeline and lifetime](../06-Tooling/GameSessionScreenUI.md); [native limitations](../../Board/EP-0005-optimization/PerformanceEvidence.md).

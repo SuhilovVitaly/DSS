@@ -3,13 +3,13 @@ epic: EP-0005-optimization
 story: EP-0005-US-0002-tactical-map-render-pipeline
 ticket: EP-0005-US-0002-TK-0003-read-only-map-painter
 title: "Сделать рисование потребителем готовой сцены"
-stage: draft
+stage: implemented
 layer: client
 depends_on: ["EP-0005-US-0002-TK-0002-scene-geometry-prepare"]
 files_touched: 10
 serves: [AC-0003]
 source_finding: A03
-evidence_status: architecture-proposal
+evidence_status: automated-validated-native-open
 priority: P2
 created: 2026-09-23T20:29:35Z
 revision: 1
@@ -23,17 +23,17 @@ revision: 1
 
 ## Решения и полномочия
 
-Пользователь поручил создать story и тикеты. Этот документ — план; он не означает разрешения на реализацию, commit или push. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
+Историческая карточка планирования; исполнение, расширение scope, commit и push разрешены запросом 2026-10-09 по EpicExecutionPrompt.md. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
 
 ## Предположения и проверка основания
 
 Основание — аудит текущего working tree; номера строк могут сдвинуться. Перед реализацией сверить актуальный код и сохранить независимые изменения.
 
-Целевой результат: Сделать рисование потребителем готовой сцены. Значения новых порогов, явно названные draft assumption, подлежат согласованию при утверждении тикета.
+Целевой результат: Сделать рисование потребителем готовой сцены. Исходные draft assumptions рассмотрены при исполнении; принятые технические решения записаны в execution evidence и не выдаются за отдельное пользовательское одобрение.
 
 ## Контекст и разрешённые файлы
 
-Все пути от корня DSS. Это полный write allowlist; прочие файлы доступны только для чтения. Новые тесты располагаются только в перечисленных файлах.
+Все пути от корня DSS. Ниже исходный scope; расширения, необходимые для исполнения и разрешённые EpicExecutionPrompt.md, записаны в execution sections.
 
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` — существует
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapRenderer.cs` — создать в этом тикете / после зависимости
@@ -85,7 +85,7 @@ revision: 1
 
 ## Проверка самодостаточности
 
-В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Историческая проверка планирования завершена. Фактическая реализация и проверки записаны ниже; native/manual acceptance отделена от автоматических AC.
 
 ## Execution design and scope 2026-10-09
 
@@ -98,3 +98,5 @@ Expand allowlist with `TacticalMapPaintCommands.cs`, `TacticalMapSceneGeometry.c
 Production Render now updates state, prepares a scene-owned vector display list, then TacticalMapRenderer.Draw consumes that publication. Draw has no buffer/session/predictor/projector/layout/filesystem references. Value-only animation commands preserve UI-time reticles, engine flames and status blinking; picture boundaries retain UI transforms and clip extents. Test-only layer observers execute on the actual output canvas during replay. Replaced pictures and painter resources are explicitly disposed.
 
 Checks: existing combat raster/preview/diagnostic/lifetime/layout tests 61/61; new replay equality, forbidden-operation counters, UI-time and clipping/ownership fixtures included in full Client 1810/1810. Release build 0 warnings/errors, scoped format and diff checks pass. A test was corrected to avoid comparing Task.WhenAll wrapper identities (the cache creates a new wrapper per read). Native/GPU performance remains OPEN; no FPS claim from raster tests.
+
+Current status: implementation and automated checks recorded in execution evidence; [publication registry](../../ImplementationStatus.md). [Final native/performance evidence](../../PerformanceEvidence.md) supersedes earlier NOT RUN notes only for the executed scripted cases. Human manual acceptance remains OPEN.

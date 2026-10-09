@@ -3,7 +3,7 @@ epic: EP-0005-optimization
 story: EP-0005-US-0001-tactical-map-audit-remediation
 ticket: EP-0005-US-0001-TK-0002-visible-object-hit-testing
 title: "Исключить UI и невидимые маркеры из наведения"
-stage: draft
+stage: implemented
 layer: client
 depends_on: []
 files_touched: 2
@@ -23,17 +23,17 @@ RecomputeActiveObjectId не исключает панели, FindNearestObjectI
 
 ## Решения и полномочия
 
-Пользователь поручил создать story и тикеты. Этот документ — план; он не означает разрешения на реализацию, commit или push. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
+Историческая карточка планирования; исполнение, расширение scope, commit и push разрешены запросом 2026-10-09 по EpicExecutionPrompt.md. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
 
 ## Предположения и проверка основания
 
 Основание — аудит текущего working tree; номера строк могут сдвинуться. Перед реализацией сверить актуальный код и сохранить независимые изменения.
 
-Целевой результат: Исключить UI и невидимые маркеры из наведения. Значения новых порогов, явно названные draft assumption, подлежат согласованию при утверждении тикета.
+Целевой результат: Исключить UI и невидимые маркеры из наведения. Исходные draft assumptions рассмотрены при исполнении; принятые технические решения записаны в execution evidence и не выдаются за отдельное пользовательское одобрение.
 
 ## Контекст и разрешённые файлы
 
-Все пути от корня DSS. Это полный write allowlist; прочие файлы доступны только для чтения. Новые тесты располагаются только в перечисленных файлах.
+Все пути от корня DSS. Ниже исходный scope; расширения, необходимые для исполнения и разрешённые EpicExecutionPrompt.md, записаны в execution sections.
 
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` — существует
 - `tests/DeepSpaceSaga.Client.Tests/TacticalMapInteractionTests.cs` — создать в этом тикете / после зависимости
@@ -56,9 +56,9 @@ No public API change.
 
 ## Критерии приёмки — AC-0002
 
-- [ ] `Hover_over_panel_does_not_activate_map_object`: UI scale 0.8/1/1.2/1.5: объект под панелью не активируется.
-- [ ] `Offscreen_marker_is_not_interactive`: Полностью невидимый marker недоступен, частично видимый доступен.
-- [ ] `Visible_hit_priority_is_stable`: Hover и click совпадают при одинаковых входах.
+- [x] `Hover_over_panel_does_not_activate_map_object`: UI scale 0.8/1/1.2/1.5: объект под панелью не активируется.
+- [x] `Offscreen_marker_is_not_interactive`: Полностью невидимый marker недоступен, частично видимый доступен.
+- [x] `Visible_hit_priority_is_stable`: Hover и click совпадают при одинаковых входах.
 
 ## Инварианты и границы
 
@@ -79,7 +79,7 @@ No public API change.
 
 ## Проверка самодостаточности
 
-В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Историческая проверка планирования завершена. Фактическая реализация и проверки записаны ниже; native/manual acceptance отделена от автоматических AC.
 
 ## Execution scope 2026-10-09
 Additional test file: tests/DeepSpaceSaga.Client.Tests/GameSessionObjectInteractionTests.cs. Its hover-preference fixture uses a point under the mechanics panel; move the second contact to open map space while preserving all assertions. Authorized by EpicExecutionPrompt.md to reconcile obsolete fixtures without weakening the intended contract.
@@ -89,3 +89,5 @@ Additional test file: tests/DeepSpaceSaga.Client.Tests/GameSessionObjectInteract
 Five regressions reproduced before the fix: panel hover at UI scales .8/1/1.2/1.5 and a fully offscreen marker. The shared object hit test now excludes UI and requires the actual marker core (including compact/combat radii) to intersect the viewport. Partial cores remain selectable; 30 raw pixels, type priority and ordinal ties are preserved.
 
 Full Client run: 1743 passed, one outdated hover-preference fixture failed (ep5-us1-tk2-client-final.trx). After moving that fixture into open map space, focused regression passed 9/9 including all eight new cases and the repaired existing test. No production changes followed that full run. Release build: zero warnings/errors; scoped whitespace verification and git diff --check passed. Review covered raw/UI coordinate conversion, compact marker sizes, hull-bar selection and existing click priority. Native/manual acceptance OPEN until integrated evidence.
+
+Current status: implementation and automated checks recorded in execution evidence; [publication registry](../../ImplementationStatus.md). [Final native/performance evidence](../../PerformanceEvidence.md) supersedes earlier NOT RUN notes only for the executed scripted cases. Human manual acceptance remains OPEN.

@@ -3,7 +3,7 @@ epic: EP-0005-optimization
 story: EP-0005-US-0001-tactical-map-audit-remediation
 ticket: EP-0005-US-0001-TK-0003-cluster-click-priority
 title: "Согласовать приоритет цели и кластера"
-stage: draft
+stage: implemented
 layer: client
 depends_on: ["EP-0005-US-0001-TK-0002-visible-object-hit-testing"]
 files_touched: 3
@@ -23,17 +23,17 @@ TryExpandMapCluster защищает important objects в 15 px вместо 30 
 
 ## Решения и полномочия
 
-Пользователь поручил создать story и тикеты. Этот документ — план; он не означает разрешения на реализацию, commit или push. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
+Историческая карточка планирования; исполнение, расширение scope, commit и push разрешены запросом 2026-10-09 по EpicExecutionPrompt.md. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
 
 ## Предположения и проверка основания
 
 Основание — аудит текущего working tree; номера строк могут сдвинуться. Перед реализацией сверить актуальный код и сохранить независимые изменения.
 
-Целевой результат: Согласовать приоритет цели и кластера. Значения новых порогов, явно названные draft assumption, подлежат согласованию при утверждении тикета.
+Целевой результат: Согласовать приоритет цели и кластера. Исходные draft assumptions рассмотрены при исполнении; принятые технические решения записаны в execution evidence и не выдаются за отдельное пользовательское одобрение.
 
 ## Контекст и разрешённые файлы
 
-Все пути от корня DSS. Это полный write allowlist; прочие файлы доступны только для чтения. Новые тесты располагаются только в перечисленных файлах.
+Все пути от корня DSS. Ниже исходный scope; расширения, необходимые для исполнения и разрешённые EpicExecutionPrompt.md, записаны в execution sections.
 
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` — существует
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs` — существует
@@ -57,9 +57,9 @@ No public API change.
 
 ## Критерии приёмки — AC-0003
 
-- [ ] `Cluster_does_not_capture_selected_target_hit`: В кольце 15..30 px цели соседний cluster не перехватывает click.
-- [ ] `Cluster_ties_are_deterministic`: При равных расстояниях порядок snapshot не меняет победителя.
-- [ ] `Ctrl_cluster_click_does_not_navigate`: Кластер раскрывается только при отсутствии object hit.
+- [x] `Cluster_does_not_capture_selected_target_hit`: В кольце 15..30 px цели соседний cluster не перехватывает click.
+- [x] `Cluster_ties_are_deterministic`: При равных расстояниях порядок snapshot не меняет победителя.
+- [x] `Ctrl_cluster_click_does_not_navigate`: Кластер раскрывается только при отсутствии object hit.
 
 ## Инварианты и границы
 
@@ -80,7 +80,7 @@ No public API change.
 
 ## Проверка самодостаточности
 
-В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Историческая проверка планирования завершена. Фактическая реализация и проверки записаны ниже; native/manual acceptance отделена от автоматических AC.
 
 ## Execution 2026-10-09
 
@@ -89,3 +89,11 @@ Three regression cases reproduced: plain/Ctrl target click at 24.9 px expanded a
 Release build passed with zero warnings/errors. Production scoped format passed. Full scoped format reports only existing formatting debt in unchanged portions of TacticalMapViewTests (legacy multiline object initializer and multiple InlineData attributes); confirmed against HEAD and preserved. git diff --check passed. Native/manual acceptance remains OPEN for integrated pipeline validation.
 
 Full Client regression: 1747/1747 passed (ep5-us1-tk3-client.trx). Diff review confirmed deterministic ties and that both selected-object and cluster paths return before gameplay navigation. Implementation complete, native OPEN.
+
+Current status: implementation and automated checks recorded in execution evidence; [publication registry](../../ImplementationStatus.md). [Final native/performance evidence](../../PerformanceEvidence.md) supersedes earlier NOT RUN notes only for the executed scripted cases. Human manual acceptance remains OPEN.
+
+## AC-to-test naming map
+
+Planned names are AC labels; actual tests consolidate related transitions without dropping assertions:
+
+- `Ctrl_cluster_click_does_not_navigate` → `Close_contacts_cluster_and_click_expands_them_without_navigation` (combined behavioral fixture).

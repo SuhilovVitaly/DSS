@@ -76,3 +76,7 @@
 - `ApproachCommandTests`: исполнение, отмена, перепланирование, Save/Load и версии `0/1/2 → 3`; `ApproachRouteProjectionTests` и `TrajectoryViewportTests`: совпадение прогноза и различение манёвра/продолжения.
 - Последняя проверка реализации: Motion **110/110**, Engine **542/542**; сборка без предупреждений, форматирование изменённых файлов проходит. В полном прогоне сохранены **38 известных падений клиентских тестов портретов** из-за отсутствующих ассетов; их нельзя записывать как успешный полный прогон.
 - [Performance500](Performance500/README.md) содержит исторические измерения прежнего планировщика. Новые CPU/allocation показатели версии 3 должны измеряться отдельно в T3.
+
+## Client presentation update — 2026-10-09
+
+EP-0005 preserves the analytical route endpoint and shared Motion implementation. `navigation-join` is a separate visual segment from reconciled ship pose to the analytical route start. Camera/pose/route invalidation and last-presented capture are described in [TacticalMapSpecification](../03-Design/TacticalMapSpecification.md). Earlier test counts above are historical; [current performance/acceptance evidence](../../Board/EP-0005-optimization/PerformanceEvidence.md) uses a different synthetic fixture and does not establish a planner speedup. Legacy zero-cadence forecasts remain an expensive stress case.

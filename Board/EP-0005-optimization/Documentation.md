@@ -1,7 +1,7 @@
 ---
 epic: EP-0005-optimization
 title: Оптимизация тактической карты
-stage: draft
+stage: implemented-acceptance-open
 created: 2026-09-23T20:29:35Z
 revision: 1
 ---
@@ -14,14 +14,14 @@ revision: 1
 
 Аудит охватывал tactical map pipeline в текущем рабочем дереве DSS: snapshot prediction/reconciliation, trails/forecast/routes, clusters/labels, camera/layout, hit-test, diagnostics и lifecycle. Подтверждённые находки обозначены F01–F13; дополнительные риски — R01–R04. Это перечень обнаруженного в проверенном объёме, а не утверждение об отсутствии иных ошибок.
 
-## Выполнено по прямому поручению
+## История: выполнено по прямому поручению до этого эпика
 
 - **F01 / P1:** длинные подписи и узкий viewport могли вызывать исключение Math.Clamp. Ширина plaque ограничена viewport, текст сокращается с учётом grapheme boundaries, диапазоны clamp безопасны для малых размеров, рисование текста clip-ится plaque.
 - **F03 / P2:** generic turning forecast повторно проходил физику от начала для каждого sample. Теперь shared LinearMotionPredictor вычисляет samples одним проходом в reusable buffer; одинаковое состояние использует кэш, terminal state переиспользуется. Approach/Orbit и custom predictor сохраняют прежний fallback.
 
 Production files этих исправлений: `LinearMotionPredictor.cs`, `FutureTrajectoryProjector.cs`, `ObjectLabelLayout.cs`, `ObjectLabelRenderer.cs`. Добавлены `TurnPositionSamplingTests.cs`, `TurnTrajectorySamplingTests.cs`, `TacticalMapLabelBoundsTests.cs`. Оставшиеся findings не исправлялись в рамках этого поручения.
 
-## Проверки выполненных исправлений
+## Исторические проверки первоначальных исправлений
 
 - Motion suite: 118 passed.
 - Client suite: 1346 passed.
@@ -35,9 +35,9 @@ Production files этих исправлений: `LinearMotionPredictor.cs`, `F
 1. [Устранение находок аудита тактической карты](EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-tactical-map-audit-remediation.md): 11 оставшихся подтверждённых находок и 4 риска, отдельный тикет на каждую позицию.
 2. [Разделение состояния, геометрии и рисования](EP-0005-US-0002-tactical-map-render-pipeline/EP-0005-US-0002-tactical-map-render-pipeline.md): 5 последовательных тикетов архитектурного перехода.
 
-Полная карта: [Tickets.md](Tickets.md). Все story и tickets имеют stage draft. Планирование не означает разрешения на реализацию, commit или push.
+Полная карта: [Tickets.md](Tickets.md). Исходные draft-карточки выполнены по разрешению 2026-10-09; текущие implementation/validation/publication states находятся в registry.
 
-## Предлагаемая архитектура
+## Реализованная архитектура
 
 `SnapshotPrediction + monotonic clock -> Update -> TacticalMapFrameState -> Prepare(view/layout/settings) -> TacticalMapSceneGeometry -> Draw(canvas, uiTime)`.
 
@@ -53,3 +53,7 @@ Update единожды формирует presentation state кадра. Prepar
 
 ## Execution 2026-10-09
 User authorized implementation, review, validation, individual commits and immediate pushes through EpicExecutionPrompt.md. Added final [documentation and graph story](EP-0005-US-0003-documentation-and-graph/EP-0005-US-0003-documentation-and-graph.md) before code changes. Total: 3 stories, 22 tickets. Existing draft notes are planning history; actual progress is tracked in [ImplementationStatus.md](ImplementationStatus.md).
+
+## Текущее состояние
+
+20 функциональных тикетов реализованы и опубликованы, Client 1826/1826; self-review историй выполнено. Документация и Graphify завершаются в US-0003. [PerformanceEvidence](PerformanceEvidence.md): 20 raster cases, 16 native cases, 80 scripted actions PASS; 80 FPS FAILED/OPEN и human manual NOT RUN. Полная приёмка эпика не объявляется. [Epic review](EpicReview.md), [documentation inventory](DocumentationInventory.md), [publication ledger](ImplementationStatus.md).

@@ -3,7 +3,7 @@ epic: EP-0005-optimization
 story: EP-0005-US-0001-tactical-map-audit-remediation
 ticket: EP-0005-US-0001-TK-0012-stable-cluster-membership
 title: "Проверить устойчивость кластеров при плавном zoom"
-stage: draft
+stage: implemented
 layer: client
 depends_on: ["EP-0005-US-0001-TK-0003-cluster-click-priority"]
 files_touched: 3
@@ -23,17 +23,17 @@ revision: 1
 
 ## Решения и полномочия
 
-Пользователь поручил создать story и тикеты. Этот документ — план; он не означает разрешения на реализацию, commit или push. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
+Историческая карточка планирования; исполнение, расширение scope, commit и push разрешены запросом 2026-10-09 по EpicExecutionPrompt.md. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
 
 ## Предположения и проверка основания
 
 Сначала воспроизвести риск и записать evidence. Если риск не подтверждается, сохранить regression/probe и обоснованный результат not-reproduced; оптимизацию не внедрять без evidence.
 
-Целевой результат: Проверить устойчивость кластеров при плавном zoom. Значения новых порогов, явно названные draft assumption, подлежат согласованию при утверждении тикета.
+Целевой результат: Проверить устойчивость кластеров при плавном zoom. Исходные draft assumptions рассмотрены при исполнении; принятые технические решения записаны в execution evidence и не выдаются за отдельное пользовательское одобрение.
 
 ## Контекст и разрешённые файлы
 
-Все пути от корня DSS. Это полный write allowlist; прочие файлы доступны только для чтения. Новые тесты располагаются только в перечисленных файлах.
+Все пути от корня DSS. Ниже исходный scope; расширения, необходимые для исполнения и разрешённые EpicExecutionPrompt.md, записаны в execution sections.
 
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs` — существует
 - `src/DeepSpaceSaga.Client/UI/TacticalMapSettings.cs` — существует
@@ -57,9 +57,9 @@ No public API change.
 
 ## Критерии приёмки — AC-0012
 
-- [ ] `Cluster_membership_is_stable_within_zoom_band`: Микроколебания zoom внутри уровня не меняют состав.
-- [ ] `Pan_does_not_reassign_cluster_cells`: Pan не меняет identity clusters.
-- [ ] `Cluster_boundary_transition_is_deterministic`: Есть reproduce/fix или обоснованный not-reproduced outcome.
+- [x] `Cluster_membership_is_stable_within_zoom_band`: Микроколебания zoom внутри уровня не меняют состав.
+- [x] `Pan_does_not_reassign_cluster_cells`: Pan не меняет identity clusters.
+- [x] `Cluster_boundary_transition_is_deterministic`: Есть reproduce/fix или обоснованный not-reproduced outcome.
 
 ## Инварианты и границы
 
@@ -80,7 +80,7 @@ No public API change.
 
 ## Проверка самодостаточности
 
-В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Историческая проверка планирования завершена. Фактическая реализация и проверки записаны ниже; native/manual acceptance отделена от автоматических AC.
 
 ## Reproduction and technical decision 2026-10-09
 Both new probes fail before production changes: zoom 0.001 -> 0.0009999 changes [c0,c1]/[c2,c3] into [c0,c1,c2]/[c3]; panning fixed contacts outside viewport removes all cells. Use world cell sizes ClusterCellPixels / ClusterPpu * 2^level, configurable ClusterHysteresis default 0.1 (validated 0..0.4). Stable identity is (level, world cell X, world cell Y). Membership is independent of camera pan; viewport culls drawing, not world grouping. Important contacts remain excluded. This is an implementation choice under the execution prompt, not a separately supplied user answer.
@@ -88,3 +88,5 @@ Both new probes fail before production changes: zoom 0.001 -> 0.0009999 changes 
 ## Execution evidence 2026-10-09
 Implemented discrete world levels with hysteresis, stable (level,X,Y) identity and deterministic cell ordering. Bounds midpoint/count depend only on members; pan affects badge culling only. Offscreen centroids do not suppress visible individual contacts. Important contacts and hostile ships retain prior exclusions.
 Both pre-fix failures now pass. Focused cluster/view/combat/system tests 48/48; full Client 1783/1783; Release 0 warnings/errors; scoped whitespace verification and diff check pass. Boundary tests verify entry/exit hysteresis and reversed snapshot order; invalid configured hysteresis rejects NaN/out-of-range. Self-review: Engine geometry unchanged; world membership uses all eligible contacts, retaining O(N) membership work for later scene-cache optimization. Native visual matrix remains OPEN; risk reproduction is automated membership evidence.
+
+Current status: implementation and automated checks recorded in execution evidence; [publication registry](../../ImplementationStatus.md). [Final native/performance evidence](../../PerformanceEvidence.md) supersedes earlier NOT RUN notes only for the executed scripted cases. Human manual acceptance remains OPEN.

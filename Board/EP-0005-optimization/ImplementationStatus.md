@@ -4,7 +4,7 @@ Authorized 2026-10-09 under EpicExecutionPrompt.md. Isolated checkout D:/DeepSpa
 
 The table below records progress for the original 20 tickets. Final documentation/Graphify story adds 2 tickets. Execute US1 TK1..15, then US2 TK1..5, then US3 TK1..2; review each story and epic. Publish each ticket before starting the next.
 
-Preparation: Documentation and epic contracts read; existing Graphify queried as navigation. NuGet restore succeeded on host. Branch created on origin; per-ticket publication recorded below. Native/manual acceptance NOT RUN. Build/test evidence pending.
+Preparation: Documentation and epic contracts read; existing Graphify queried as navigation. NuGet restore succeeded on host. Branch created on origin; per-ticket publication recorded below. Final automated Client 1827/1827; Release/format/diff pass. Native scripted matrix 16 cases/80 actions completed; performance 80 FPS FAILED/OPEN, human manual NOT RUN. See PerformanceEvidence.md.
 
 Draft assumptions accepted for this execution: 2000 ms real-time stale limit, deterministic bounded label fallback. Shared Engine/Motion/save contracts remain unchanged unless a confirmed dependency requires an explicit scope entry.
 
@@ -29,6 +29,8 @@ Draft assumptions accepted for this execution: 2000 ms real-time stale limit, de
 | EP-0005-US-0002-TK-0002-scene-geometry-prepare | implemented shadow seam; Client 1807/1807, Release/format/diff pass; native OPEN | 782ad02412cb86e0639c661fa563fd6467310d93; push and remote SHA verified |
 | EP-0005-US-0002-TK-0003-read-only-map-painter | implemented; Client 1810/1810, raster replay/layers/native lifetime pass, Release/format/diff pass; native OPEN | 789c08ac0a9787ab66b2d6aae57a79c0de97e231; push and remote SHA verified |
 | EP-0005-US-0002-TK-0004-revision-driven-scene-cache | implemented; Client 1822/1822, revision/cache/spatial cases 12/12, Release/format/diff pass; native OPEN | 35081a109fa747dee6bbdbdd523da1022ba2a946; push and remote SHA verified |
-| EP-0005-US-0002-TK-0005-frame-consumers-and-performance | implemented; Client 1826/1826, Release/format/diff pass; 20 raster + 16 native cases, 80 scripted actions pass; 80 FPS FAILED, manual OPEN | commit/push verification follows this ticket |
-| EP-0005-US-0003-TK-0001-documentation-sync | pending | pending |
+| EP-0005-US-0002-TK-0005-frame-consumers-and-performance | implemented; Client 1826/1826, Release/format/diff pass; 20 raster + 16 native cases, 80 scripted actions pass; 80 FPS FAILED, manual OPEN | 10b6414b9226956f4eb99b89741176d102ab2102; push and remote SHA verified |
+| EP-0005-US-0003-TK-0001-documentation-sync | implemented; repository Markdown inventory, canonical/status sync, links/IDs/DAG/diff checked | commit/push verification follows this ticket |
 | EP-0005-US-0003-TK-0002-graph-rebuild | pending | pending |
+
+Review follow-up: US1 TK3 additional Ctrl-cluster expansion case; 29/29 focused and 1827/1827 full Client pass. Commit `cc736b7a2c4ecce314ae3a844aa88a079b6301c8`, immediate push and exact remote SHA verified. Production binary/evidence unchanged.

@@ -2,7 +2,7 @@
 epic: EP-0005-optimization
 story: EP-0005-US-0001-tactical-map-audit-remediation
 title: "Устранение находок аудита тактической карты"
-stage: draft
+stage: implemented
 depends_on: []
 ticket_count: 15
 created: 2026-09-23T20:29:35Z
@@ -38,21 +38,21 @@ current_review: complete
 
 | Тикет | Основание | Приоритет | Критерий | Статус |
 |---|---|---|---|---|
-| [EP-0005-US-0001-TK-0001-paused-authoritative-rebase](EP-0005-US-0001-TK-0001-paused-authoritative-rebase/EP-0005-US-0001-TK-0001-paused-authoritative-rebase.md) | F02 | P1 | AC-0001 | draft |
-| [EP-0005-US-0001-TK-0002-visible-object-hit-testing](EP-0005-US-0001-TK-0002-visible-object-hit-testing/EP-0005-US-0001-TK-0002-visible-object-hit-testing.md) | F04 | P2 | AC-0002 | draft |
-| [EP-0005-US-0001-TK-0003-cluster-click-priority](EP-0005-US-0001-TK-0003-cluster-click-priority/EP-0005-US-0001-TK-0003-cluster-click-priority.md) | F05 | P2 | AC-0003 | draft |
-| [EP-0005-US-0001-TK-0004-important-label-placement](EP-0005-US-0001-TK-0004-important-label-placement/EP-0005-US-0001-TK-0004-important-label-placement.md) | F06 | P2 | AC-0004 | draft |
-| [EP-0005-US-0001-TK-0005-bounded-offscreen-work](EP-0005-US-0001-TK-0005-bounded-offscreen-work/EP-0005-US-0001-TK-0005-bounded-offscreen-work.md) | F07 | P2 | AC-0005 | draft |
-| [EP-0005-US-0001-TK-0006-paused-geometry-invalidation](EP-0005-US-0001-TK-0006-paused-geometry-invalidation/EP-0005-US-0001-TK-0006-paused-geometry-invalidation.md) | F08 | P2 | AC-0006 | draft |
-| [EP-0005-US-0001-TK-0007-coherent-frame-diagnostics](EP-0005-US-0001-TK-0007-coherent-frame-diagnostics/EP-0005-US-0001-TK-0007-coherent-frame-diagnostics.md) | F09 | P2 | AC-0007 | draft |
-| [EP-0005-US-0001-TK-0008-layout-before-map](EP-0005-US-0001-TK-0008-layout-before-map/EP-0005-US-0001-TK-0008-layout-before-map.md) | F10 | P2 | AC-0008 | draft |
-| [EP-0005-US-0001-TK-0009-nonblocking-render-io](EP-0005-US-0001-TK-0009-nonblocking-render-io/EP-0005-US-0001-TK-0009-nonblocking-render-io.md) | F11 | P3 | AC-0009 | draft |
-| [EP-0005-US-0001-TK-0010-deterministic-resource-lifetime](EP-0005-US-0001-TK-0010-deterministic-resource-lifetime/EP-0005-US-0001-TK-0010-deterministic-resource-lifetime.md) | F12 | P3 | AC-0010 | draft |
-| [EP-0005-US-0001-TK-0011-map-localization](EP-0005-US-0001-TK-0011-map-localization/EP-0005-US-0001-TK-0011-map-localization.md) | F13 | P3 | AC-0011 | draft |
-| [EP-0005-US-0001-TK-0012-stable-cluster-membership](EP-0005-US-0001-TK-0012-stable-cluster-membership/EP-0005-US-0001-TK-0012-stable-cluster-membership.md) | R01 | P2 | AC-0012 | draft |
-| [EP-0005-US-0001-TK-0013-reconciled-route-join](EP-0005-US-0001-TK-0013-reconciled-route-join/EP-0005-US-0001-TK-0013-reconciled-route-join.md) | R02 | P2 | AC-0013 | draft |
-| [EP-0005-US-0001-TK-0014-stale-snapshot-policy](EP-0005-US-0001-TK-0014-stale-snapshot-policy/EP-0005-US-0001-TK-0014-stale-snapshot-policy.md) | R03 | P2 | AC-0014 | draft |
-| [EP-0005-US-0001-TK-0015-free-viewport-cost](EP-0005-US-0001-TK-0015-free-viewport-cost/EP-0005-US-0001-TK-0015-free-viewport-cost.md) | R04 | P2 | AC-0015 | draft |
+| [EP-0005-US-0001-TK-0001-paused-authoritative-rebase](EP-0005-US-0001-TK-0001-paused-authoritative-rebase/EP-0005-US-0001-TK-0001-paused-authoritative-rebase.md) | F02 | P1 | AC-0001 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0002-visible-object-hit-testing](EP-0005-US-0001-TK-0002-visible-object-hit-testing/EP-0005-US-0001-TK-0002-visible-object-hit-testing.md) | F04 | P2 | AC-0002 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0003-cluster-click-priority](EP-0005-US-0001-TK-0003-cluster-click-priority/EP-0005-US-0001-TK-0003-cluster-click-priority.md) | F05 | P2 | AC-0003 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0004-important-label-placement](EP-0005-US-0001-TK-0004-important-label-placement/EP-0005-US-0001-TK-0004-important-label-placement.md) | F06 | P2 | AC-0004 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0005-bounded-offscreen-work](EP-0005-US-0001-TK-0005-bounded-offscreen-work/EP-0005-US-0001-TK-0005-bounded-offscreen-work.md) | F07 | P2 | AC-0005 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0006-paused-geometry-invalidation](EP-0005-US-0001-TK-0006-paused-geometry-invalidation/EP-0005-US-0001-TK-0006-paused-geometry-invalidation.md) | F08 | P2 | AC-0006 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0007-coherent-frame-diagnostics](EP-0005-US-0001-TK-0007-coherent-frame-diagnostics/EP-0005-US-0001-TK-0007-coherent-frame-diagnostics.md) | F09 | P2 | AC-0007 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0008-layout-before-map](EP-0005-US-0001-TK-0008-layout-before-map/EP-0005-US-0001-TK-0008-layout-before-map.md) | F10 | P2 | AC-0008 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0009-nonblocking-render-io](EP-0005-US-0001-TK-0009-nonblocking-render-io/EP-0005-US-0001-TK-0009-nonblocking-render-io.md) | F11 | P3 | AC-0009 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0010-deterministic-resource-lifetime](EP-0005-US-0001-TK-0010-deterministic-resource-lifetime/EP-0005-US-0001-TK-0010-deterministic-resource-lifetime.md) | F12 | P3 | AC-0010 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0011-map-localization](EP-0005-US-0001-TK-0011-map-localization/EP-0005-US-0001-TK-0011-map-localization.md) | F13 | P3 | AC-0011 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0012-stable-cluster-membership](EP-0005-US-0001-TK-0012-stable-cluster-membership/EP-0005-US-0001-TK-0012-stable-cluster-membership.md) | R01 | P2 | AC-0012 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0013-reconciled-route-join](EP-0005-US-0001-TK-0013-reconciled-route-join/EP-0005-US-0001-TK-0013-reconciled-route-join.md) | R02 | P2 | AC-0013 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0014-stale-snapshot-policy](EP-0005-US-0001-TK-0014-stale-snapshot-policy/EP-0005-US-0001-TK-0014-stale-snapshot-policy.md) | R03 | P2 | AC-0014 | implemented; native OPEN |
+| [EP-0005-US-0001-TK-0015-free-viewport-cost](EP-0005-US-0001-TK-0015-free-viewport-cost/EP-0005-US-0001-TK-0015-free-viewport-cost.md) | R04 | P2 | AC-0015 | implemented; native OPEN |
 
 ## Зависимости и порядок
 
@@ -66,4 +66,8 @@ Engine simulation, RNG, save format и gameplay navigation не перепрое
 
 ## Статус проверки
 
-Структура, покрытие findings, зависимости и ссылки проверяются на этапе планирования. `current_review: complete` относится только к полноте draft. Никакой тикет этой story не реализован и не объявлен runtime-validated. Approval story/tickets и разрешение на реализацию — отдельные действия.
+Структура, покрытие findings, зависимости и ссылки проверяются на этапе планирования. `current_review: complete` относится только к полноте draft. Тикеты реализованы и опубликованы по поручению 2026-10-09. Automated validation подтверждена; native/manual и performance gates ведутся отдельно.
+
+## Execution result 2026-10-09
+
+Implementation and automated ACs complete. Final Client 1826/1826; Release and scoped checks pass. [Registry](../ImplementationStatus.md), [performance/native evidence](../PerformanceEvidence.md). Executor self-review is not independent approval. 80 FPS FAILED/OPEN; human manual NOT RUN.

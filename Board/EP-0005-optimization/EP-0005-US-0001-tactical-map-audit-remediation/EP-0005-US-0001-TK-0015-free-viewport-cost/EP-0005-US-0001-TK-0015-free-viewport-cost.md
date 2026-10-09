@@ -3,7 +3,7 @@ epic: EP-0005-optimization
 story: EP-0005-US-0001-tactical-map-audit-remediation
 ticket: EP-0005-US-0001-TK-0015-free-viewport-cost
 title: "Проверить стоимость поиска свободной области"
-stage: draft
+stage: implemented
 layer: client
 depends_on: ["EP-0005-US-0001-TK-0008-layout-before-map"]
 files_touched: 3
@@ -23,17 +23,17 @@ revision: 1
 
 ## Решения и полномочия
 
-Пользователь поручил создать story и тикеты. Этот документ — план; он не означает разрешения на реализацию, commit или push. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
+Историческая карточка планирования; исполнение, расширение scope, commit и push разрешены запросом 2026-10-09 по EpicExecutionPrompt.md. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
 
 ## Предположения и проверка основания
 
 Сначала воспроизвести риск и записать evidence. Если риск не подтверждается, сохранить regression/probe и обоснованный результат not-reproduced; оптимизацию не внедрять без evidence.
 
-Целевой результат: Проверить стоимость поиска свободной области. Значения новых порогов, явно названные draft assumption, подлежат согласованию при утверждении тикета.
+Целевой результат: Проверить стоимость поиска свободной области. Исходные draft assumptions рассмотрены при исполнении; принятые технические решения записаны в execution evidence и не выдаются за отдельное пользовательское одобрение.
 
 ## Контекст и разрешённые файлы
 
-Все пути от корня DSS. Это полный write allowlist; прочие файлы доступны только для чтения. Новые тесты располагаются только в перечисленных файлах.
+Все пути от корня DSS. Ниже исходный scope; расширения, необходимые для исполнения и разрешённые EpicExecutionPrompt.md, записаны в execution sections.
 
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/MapViewGeometry.cs` — существует
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs` — существует
@@ -57,9 +57,9 @@ No public API change.
 
 ## Критерии приёмки — AC-0015
 
-- [ ] `Free_viewport_matches_exhaustive_oracle`: Для fixed/random small fixtures результат равен exhaustive oracle.
-- [ ] `Fully_occluded_viewport_is_empty`: Полностью перекрытый viewport не выдаётся свободным.
-- [ ] `Repeated_layout_reuses_free_viewport`: Одинаковый layout не запускает поиск; результат риска подтверждён evidence.
+- [x] `Free_viewport_matches_exhaustive_oracle`: Для fixed/random small fixtures результат равен exhaustive oracle.
+- [x] `Fully_occluded_viewport_is_empty`: Полностью перекрытый viewport не выдаётся свободным.
+- [x] `Repeated_layout_reuses_free_viewport`: Одинаковый layout не запускает поиск; результат риска подтверждён evidence.
 
 ## Инварианты и границы
 
@@ -80,7 +80,7 @@ No public API change.
 
 ## Проверка самодостаточности
 
-В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Историческая проверка планирования завершена. Фактическая реализация и проверки записаны ниже; native/manual acceptance отделена от автоматических AC.
 
 ## Reproduction and decision 2026-10-09
 Independent integer-grid oracle and full-occlusion tests both fail before production edits (tie-order mismatch; full viewport returned under complete occlusion). Baseline frequent-resize probe, 101 samples per count, recorded in ../free-viewport-before.json: p99 0/4/8/16/32 obstacles = 0.0032/0.2314/1.2997/19.002/143.1619 ms. This exceeds the 12.5ms entire-frame target at 16/32 obstacles, so replace four-boundary enumeration with deduplicated X pairs plus unioned blocked Y intervals. Tie order is top,left,bottom,right. Replace hash-only cache with exact layout equality including cached-empty results. Board before/after JSON measurements are part of this ticket evidence.
@@ -90,3 +90,5 @@ Consumer correction scope: ObjectLabelRenderer.cs must honor an explicitly empty
 Replaced exhaustive four-edge search with deduplicated X pairs and sorted union of blocked Y intervals. Empty/invalid-size viewport returns Empty; equal areas use top,left,bottom,right. Exact obstacle/size cache reuses empty results and exposes build count. Fit leaves camera unchanged for empty free area; labels no longer fall back beneath fully occluding panels.
 Validation: pre-fix oracle/full-occlusion failures reproduced. Targeted geometry/view/labels/layout 90/90; full Client 1800/1800; final added fractional-coordinate/permuted-order/empty-fit probes 6/6. Release 0 warnings/errors; scoped whitespace verification and diff check pass. Oracle enumerates all integer rectangles on 200 small fixtures independently; additional 20 scaled/permuted fixtures pass. Cache test covers repeated empty layout, resize and mutation of the caller's obstacle array.
 Measured in Debug .NET 8 on this Windows host, same deterministic fixtures and 101 frequent-resize samples per count (not native GPU/frame timing). See ../free-viewport-before.json and ../free-viewport-after.json. For 32 obstacles p50/p95/p99 improved 130.5584/137.6709/143.1619 -> 0.6845/0.8556/0.9747 ms; optimized search considered 8637 gaps and 64512 obstacle checks at 1920x1080. Old enumeration visited 4601025 rectangles for 66 X/Y edge entries. No elapsed-time assertion in tests. Self-review confirms interval union and deterministic tie policy; native/manual matrix remains OPEN.
+
+Current status: implementation and automated checks recorded in execution evidence; [publication registry](../../ImplementationStatus.md). [Final native/performance evidence](../../PerformanceEvidence.md) supersedes earlier NOT RUN notes only for the executed scripted cases. Human manual acceptance remains OPEN.

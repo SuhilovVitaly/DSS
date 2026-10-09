@@ -5406,3 +5406,17 @@ Engine фиксирует неизменяемый `ApproachRoute`; исполн
 - SaveFormatVersion11, DefenseState.Version1 и RngVersion1: сохранять аппарат/фазы/маршруты/следы, frozen breakdown, attempt flags, абсолютные deadlines, RNG state/counter, sequences, журнал и выбор живой ПР. Некорректные данные отклонять атомарно; ID нормализовать OrdinalIgnoreCase. Legacy летящая торпеда без rating получает30 с явным provenance; отсутствующие операторы остаются отсутствующими.
 
 [Реализация, тесты, миграция и статус native acceptance](../04-Engineering/CountermeasureCombat.md).
+
+## EP-0005: согласованный тактический кадр — 2026-10-09
+
+Уточняет клиентские разделы 54 и правила prediction; не изменяет simulation, RNG, команды или save format.
+
+- Update получает один `SnapshotPrediction` и monotonic timestamp; Prepare использует этот baseline для геометрии и панелей. Draw читает подготовленную сцену. Hit-test и diagnostic capture используют последний нарисованный кадр.
+- При новом authoritative `MotionTimeMs` во время паузы старые visual anchors/corrections и история следов перебазируются. Обычная пауза без изменения физического времени сохраняет визуальную непрерывность.
+- Extrapolation ограничена 2000 ms реального времени после принятого снимка независимо от выбранной скорости; после предела позы замораживаются и виден локализованный stale indicator. Старый sequence не продлевает срок свежести. Это клиентская policy EP-0005; Engine продолжает владеть временем мира.
+- Для hit-test маркер должен пересекать viewport; курсор вне viewport или под UI не выбирает карту. Частично видимый core остаётся доступным. Приоритет Station → player identity → NpcShip → прочие из 54.9 сохраняется; внутри группы distance², затем Ordinal ID. Порядок клика: UI → отдельный объект → cluster → действие свободной карты, включая Ctrl.
+- Выбранный объект, navigation target и корабль игрока получают приоритет подписи. Для тесного viewport применяется ограниченный детерминированный fallback, а не неограниченный поиск размещения. Размеры всех панелей известны до hit-test и map layout.
+- Кластеризация привязана к стабильным world cells с hysteresis масштаба. Pan не меняет членство по экранной сетке. Детальная история обычных объектов ограничена важными/видимыми контактами и резервом, не требует полного прогноза для каждого невидимого объекта.
+- 80 FPS / 12.5 ms остаётся целевым требованием. [Измерения EP-0005](../../Board/EP-0005-optimization/PerformanceEvidence.md) его не подтвердили: native performance acceptance OPEN; human manual smoke NOT RUN. Автотесты и raster timing не заменяют этот gate.
+
+Подробности rendering/input: [TacticalMapSpecification](../03-Design/TacticalMapSpecification.md). Архитектура, lifetime и диагностика: [GameSessionScreenUI](../06-Tooling/GameSessionScreenUI.md).

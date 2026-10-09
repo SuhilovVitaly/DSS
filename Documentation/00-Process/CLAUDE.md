@@ -200,3 +200,7 @@ Session-control is done via `IGameSessionConnection.SetSimulationSpeedAsync(Simu
 ## Current state
 
 Playable end-to-end pipeline: Engine → Snapshot → Connection → Buffer → Renderer, with content-driven simulation (module/item/command/factory/recipe definitions from JSON), scenario loading, master-seed RNG, save/load, tactical map with object selection, ship command panel, object labels and trails, camera pan/zoom, UI scale (100/120/150%), settings screen, and modal pause. Engine behavior requirements live in `Documentation/01-Requirements/EngineRequirements.md` (source of truth; see `Documentation/00-Process/AGENTS.md`).
+
+### Tactical map pipeline (EP-0005, 2026-10-09)
+
+Client Update publishes one immutable frame from a captured prediction; Prepare owns geometry, layout and display-list recording; Draw replays it. Input/capture consume the last presented scene. Cache/lifetime and asynchronous image/snapshot rules: [GameSessionScreenUI](../06-Tooling/GameSessionScreenUI.md). 80 FPS is a target; [current native evidence](../../Board/EP-0005-optimization/PerformanceEvidence.md) failed the p99 budget. Do not treat functional tests or Graphify as native acceptance.

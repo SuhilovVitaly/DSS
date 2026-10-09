@@ -3,7 +3,7 @@ epic: EP-0005-optimization
 story: EP-0005-US-0001-tactical-map-audit-remediation
 ticket: EP-0005-US-0001-TK-0005-bounded-offscreen-work
 title: "Сократить обработку объектов вне экрана"
-stage: draft
+stage: implemented
 layer: client
 depends_on: []
 files_touched: 4
@@ -23,17 +23,17 @@ revision: 1
 
 ## Решения и полномочия
 
-Пользователь поручил создать story и тикеты. Этот документ — план; он не означает разрешения на реализацию, commit или push. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
+Историческая карточка планирования; исполнение, расширение scope, commit и push разрешены запросом 2026-10-09 по EpicExecutionPrompt.md. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
 
 ## Предположения и проверка основания
 
 Основание — аудит текущего working tree; номера строк могут сдвинуться. Перед реализацией сверить актуальный код и сохранить независимые изменения.
 
-Целевой результат: Сократить обработку объектов вне экрана. Значения новых порогов, явно названные draft assumption, подлежат согласованию при утверждении тикета.
+Целевой результат: Сократить обработку объектов вне экрана. Исходные draft assumptions рассмотрены при исполнении; принятые технические решения записаны в execution evidence и не выдаются за отдельное пользовательское одобрение.
 
 ## Контекст и разрешённые файлы
 
-Все пути от корня DSS. Это полный write allowlist; прочие файлы доступны только для чтения. Новые тесты располагаются только в перечисленных файлах.
+Все пути от корня DSS. Ниже исходный scope; расширения, необходимые для исполнения и разрешённые EpicExecutionPrompt.md, записаны в execution sections.
 
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` — существует
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectTrailStore.cs` — существует
@@ -58,9 +58,9 @@ No public API change.
 
 ## Критерии приёмки — AC-0005
 
-- [ ] `Offscreen_contacts_do_not_bootstrap_full_trails`: Невидимый неважный контакт не получает 201 bootstrap point.
-- [ ] `Trail_budget_preserves_important_targets`: Память ограничена независимо от длительности сессии; важные цели сохраняются.
-- [ ] `Pan_back_does_not_invent_history`: Возврат в кадр не меняет identity и не фабрикует историю.
+- [x] `Offscreen_contacts_do_not_bootstrap_full_trails`: Невидимый неважный контакт не получает 201 bootstrap point.
+- [x] `Trail_budget_preserves_important_targets`: Память ограничена независимо от длительности сессии; важные цели сохраняются.
+- [x] `Pan_back_does_not_invent_history`: Возврат в кадр не меняет identity и не фабрикует историю.
 
 ## Инварианты и границы
 
@@ -81,7 +81,7 @@ No public API change.
 
 ## Проверка самодостаточности
 
-В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Историческая проверка планирования завершена. Фактическая реализация и проверки записаны ниже; native/manual acceptance отделена от автоматических AC.
 
 ## Execution scope 2026-10-09
 Add tests/DeepSpaceSaga.Client.Tests/ObjectTrailBufferTests.cs: replace its old unbounded 700-point expectation with the retained last 512 chronological points and exact bounds/removal checks. This is the required bounded-history contract, not a relaxation of chronological correctness.
@@ -95,3 +95,5 @@ Membership maps rebuild only on a new snapshot sequence; screen counters expose 
 Focused trail/smoothness regression 33/33 before the additional budget cases; all four budget cases passed. Release build and full scoped format passed; diff review checked pause rebasing, crossing history retention, selected/navigation preservation and exact ring-buffer chronology. Native acceptance remains OPEN.
 
 Final full Client regression 1755/1755 passed (ep5-us1-tk5-client-final.trx); git diff --check passed. Implementation complete; native OPEN.
+
+Current status: implementation and automated checks recorded in execution evidence; [publication registry](../../ImplementationStatus.md). [Final native/performance evidence](../../PerformanceEvidence.md) supersedes earlier NOT RUN notes only for the executed scripted cases. Human manual acceptance remains OPEN.

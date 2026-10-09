@@ -63,3 +63,9 @@
 ## Боевой этап EP-0007
 
 Экран отображает назначенных операторов, самоуничтожение торпеды и автоматическую защиту. ПР выбирается на карте, но недоступна для Fire. Frozen chance/breakdown приходят в snapshot; UI не бросает RNG. Сворачиваемый журнал сохраняет authoritative историю. Круг100км виден у выбранного пирата. [Контракт, Save/Load и проверки](../../04-Engineering/CountermeasureCombat.md).
+
+## EP-0005 — актуализация 2026-10-09
+
+При паузе новое физическое время authoritative snapshot перебазирует карту. UI/hit-test/capture согласованы с показанным кадром. Stale indicator появляется после 2000 ms без свежего снимка; locale, resize и scale инвалидируют нужную геометрию.
+
+[Контракт карты](../../03-Design/TacticalMapSpecification.md); [фактическая приёмка](../../../Board/EP-0005-optimization/PerformanceEvidence.md). Client 1827/1827; native scripted actions 80/80. Performance 80 FPS FAILED/OPEN; human manual smoke NOT RUN.

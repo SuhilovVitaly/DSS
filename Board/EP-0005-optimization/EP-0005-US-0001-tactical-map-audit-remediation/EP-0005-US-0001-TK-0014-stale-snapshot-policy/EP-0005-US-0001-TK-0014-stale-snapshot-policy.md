@@ -3,7 +3,7 @@ epic: EP-0005-optimization
 story: EP-0005-US-0001-tactical-map-audit-remediation
 ticket: EP-0005-US-0001-TK-0014-stale-snapshot-policy
 title: "Ограничить прогноз при зависшем потоке снимков"
-stage: draft
+stage: implemented
 layer: client
 depends_on: []
 files_touched: 4
@@ -23,17 +23,17 @@ revision: 1
 
 ## Решения и полномочия
 
-Пользователь поручил создать story и тикеты. Этот документ — план; он не означает разрешения на реализацию, commit или push. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
+Историческая карточка планирования; исполнение, расширение scope, commit и push разрешены запросом 2026-10-09 по EpicExecutionPrompt.md. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
 
 ## Предположения и проверка основания
 
 Сначала воспроизвести риск и записать evidence. Если риск не подтверждается, сохранить regression/probe и обоснованный результат not-reproduced; оптимизацию не внедрять без evidence.
 
-Целевой результат: Ограничить прогноз при зависшем потоке снимков. Значения новых порогов, явно названные draft assumption, подлежат согласованию при утверждении тикета.
+Целевой результат: Ограничить прогноз при зависшем потоке снимков. Исходные draft assumptions рассмотрены при исполнении; принятые технические решения записаны в execution evidence и не выдаются за отдельное пользовательское одобрение.
 
 ## Контекст и разрешённые файлы
 
-Все пути от корня DSS. Это полный write allowlist; прочие файлы доступны только для чтения. Новые тесты располагаются только в перечисленных файлах.
+Все пути от корня DSS. Ниже исходный scope; расширения, необходимые для исполнения и разрешённые EpicExecutionPrompt.md, записаны в execution sections.
 
 - `src/DeepSpaceSaga.Client/SnapshotBuffer.cs` — существует
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` — существует
@@ -58,9 +58,9 @@ revision: 1
 
 ## Критерии приёмки — AC-0014
 
-- [ ] `Stalled_snapshot_stream_caps_prediction`: Зависший поток не уводит marker бесконечно далеко.
-- [ ] `Stale_age_is_real_time_at_all_speeds`: Speed4 не меняет допустимый real age.
-- [ ] `Fresh_snapshot_recovers_from_stale_state`: Свежий снимок восстанавливает карту без rewind authoritative state.
+- [x] `Stalled_snapshot_stream_caps_prediction`: Зависший поток не уводит marker бесконечно далеко.
+- [x] `Stale_age_is_real_time_at_all_speeds`: Speed4 не меняет допустимый real age.
+- [x] `Fresh_snapshot_recovers_from_stale_state`: Свежий снимок восстанавливает карту без rewind authoritative state.
 
 ## Инварианты и границы
 
@@ -81,7 +81,7 @@ revision: 1
 
 ## Проверка самодостаточности
 
-В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Историческая проверка планирования завершена. Фактическая реализация и проверки записаны ниже; native/manual acceptance отделена от автоматических AC.
 
 ## Reproduction and scope 2026-10-09
 Stopped-stream probe fails at all four running speeds: e.g. Speed4 grows from 200000 to 6000000 ms while receipt age grows from 2 to 60 seconds. Speed0 already stays fixed. Apply the authorized 2000 ms real receipt-age cap to all speed segments and reconciliation baselines; stale is age >= 2000 ms. Monotonic local observation prevents backwards clock reads from reducing age/prediction. Expand scope to English/Russian locale assets for the existing info-panel stale indication. Transport, Engine pause and Failure flow remain unchanged.
@@ -89,3 +89,11 @@ Stopped-stream probe fails at all four running speeds: e.g. Speed4 grows from 20
 ## Execution evidence 2026-10-09
 SnapshotPrediction now exposes client-only IsStale/SnapshotAgeMs. All prediction speed segments clamp to the receipt+2000ms deadline; speed changes and fresh-snapshot reconciliation use that same capped baseline. Monotonic observation is serialized with buffer state. The existing info panel reads stale status from the frame's captured prediction and displays localized status. No pause command or authoritative clock mutation is introduced.
 Pre-fix stopped-stream test: 4 running-speed failures, Speed0 passed. After fix: buffer/smoothness 26/26; full Client 1795/1795; Release 0 warnings/errors; scoped whitespace and diff checks pass. Coverage includes exact threshold, every speed, mixed speeds, pause/resume after stale, backwards timestamp reads, old packet rejection, frozen marker and smooth fresh-snapshot recovery. Self-review checked all segment accumulation sites and combat prediction consumers. Native/manual stale/recovery smoke remains OPEN.
+
+Current status: implementation and automated checks recorded in execution evidence; [publication registry](../../ImplementationStatus.md). [Final native/performance evidence](../../PerformanceEvidence.md) supersedes earlier NOT RUN notes only for the executed scripted cases. Human manual acceptance remains OPEN.
+
+## AC-to-test naming map
+
+Planned names are AC labels; actual tests consolidate related transitions without dropping assertions:
+
+- `Stale_age_is_real_time_at_all_speeds` → `Stale_age_is_real_time_across_speed_changes_and_pause` (combined behavioral fixture).

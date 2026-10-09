@@ -301,3 +301,9 @@ MVP торговли уже реализован как authoritative Engine + C
 ### Этап боя EP-0007 (2026-10-04)
 
 Реализованы назначенные операторы, автоматическая противоракетная защита, самоуничтожение торпеды, шанс перехвата, журнал боя и Save v11. Наступательного AI нет. [Канонический контракт](EngineRequirements.md#countermeasure-combat), [реализация и результаты проверок](../04-Engineering/CountermeasureCombat.md). Native acceptance пропущена по прямому указанию пользователя, а не подтверждена автоматическими тестами.
+
+## EP-0005 — актуализация 2026-10-09
+
+Тактическая карта использует согласованный frame pipeline, bounded stale prediction (2000 ms), корректный paused rebase и приоритетный выбор видимых объектов. 80 FPS остаётся открытым gate.
+
+[Контракт карты](../03-Design/TacticalMapSpecification.md); [фактическая приёмка](../../Board/EP-0005-optimization/PerformanceEvidence.md). Client 1827/1827; native scripted actions 80/80. Performance 80 FPS FAILED/OPEN; human manual smoke NOT RUN.

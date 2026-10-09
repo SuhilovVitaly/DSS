@@ -51,3 +51,9 @@
 ## EP-0007 — актуальное дополнение от 2026-10-04
 
 ПР — самостоятельный selectable объект с полным подтверждённым следом и прогнозом встречи; Fire по ПР запрещён. Круг защиты100км масштабируется камерой, маркер5px сохраняет экранный размер. Шанс и операторские рейтинги приходят из Engine. [Технический контракт и приёмка](../../04-Engineering/CountermeasureCombat.md).
+
+## EP-0005 — актуализация 2026-10-09
+
+Input использует последний нарисованный кадр: UI → отдельный объект → cluster → свободная карта/Ctrl. Approach может иметь отдельный визуальный reconciliation connector, не меняющий authoritative endpoint. Prediction замораживается после 2000 ms без свежего snapshot.
+
+[Контракт карты](../../03-Design/TacticalMapSpecification.md); [фактическая приёмка](../../../Board/EP-0005-optimization/PerformanceEvidence.md). Client 1827/1827; native scripted actions 80/80. Performance 80 FPS FAILED/OPEN; human manual smoke NOT RUN.

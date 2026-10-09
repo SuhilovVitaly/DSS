@@ -3,7 +3,7 @@ epic: EP-0005-optimization
 story: EP-0005-US-0001-tactical-map-audit-remediation
 ticket: EP-0005-US-0001-TK-0013-reconciled-route-join
 title: "Проверить стык сглаженного корабля и Approach"
-stage: draft
+stage: implemented
 layer: client
 depends_on: []
 files_touched: 4
@@ -23,17 +23,17 @@ revision: 1
 
 ## Решения и полномочия
 
-Пользователь поручил создать story и тикеты. Этот документ — план; он не означает разрешения на реализацию, commit или push. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
+Историческая карточка планирования; исполнение, расширение scope, commit и push разрешены запросом 2026-10-09 по EpicExecutionPrompt.md. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
 
 ## Предположения и проверка основания
 
 Сначала воспроизвести риск и записать evidence. Если риск не подтверждается, сохранить regression/probe и обоснованный результат not-reproduced; оптимизацию не внедрять без evidence.
 
-Целевой результат: Проверить стык сглаженного корабля и Approach. Значения новых порогов, явно названные draft assumption, подлежат согласованию при утверждении тикета.
+Целевой результат: Проверить стык сглаженного корабля и Approach. Исходные draft assumptions рассмотрены при исполнении; принятые технические решения записаны в execution evidence и не выдаются за отдельное пользовательское одобрение.
 
 ## Контекст и разрешённые файлы
 
-Все пути от корня DSS. Это полный write allowlist; прочие файлы доступны только для чтения. Новые тесты располагаются только в перечисленных файлах.
+Все пути от корня DSS. Ниже исходный scope; расширения, необходимые для исполнения и разрешённые EpicExecutionPrompt.md, записаны в execution sections.
 
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` — существует
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/NavigationTrajectoryProjector.cs` — существует
@@ -58,9 +58,9 @@ No public API change.
 
 ## Критерии приёмки — AC-0013
 
-- [ ] `Reconciliation_keeps_marker_joined_to_route`: В ходе correction marker связан с маршрутом.
-- [ ] `Visual_join_preserves_authoritative_endpoint`: Route endpoint остаётся точным.
-- [ ] `Resume_connector_disappears_after_correction`: Evidence показывает reproduce/fix либо not-reproduced.
+- [x] `Reconciliation_keeps_marker_joined_to_route`: В ходе correction marker связан с маршрутом.
+- [x] `Visual_join_preserves_authoritative_endpoint`: Route endpoint остаётся точным.
+- [x] `Resume_connector_disappears_after_correction`: Evidence показывает reproduce/fix либо not-reproduced.
 
 ## Инварианты и границы
 
@@ -81,7 +81,7 @@ No public API change.
 
 ## Проверка самодостаточности
 
-В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Историческая проверка планирования завершена. Фактическая реализация и проверки записаны ниже; native/manual acceptance отделена от автоматических AC.
 
 ## Reproduction and scope 2026-10-09
 Both integration probes reproduce a >1-world-unit gap between the captured rendered marker and the drawn authoritative route, on fresh snapshot and resume. Add a separate presentation-only two-point navigation-join, leaving every original route sample and maneuverPointCount unchanged. It disappears when rendered pose matches route start. Expand scope to GameSessionScreen.GeometryCache.cs to retain join geometry and maneuver boundary. Review also found the cache ignored the projector return value for legacy Approach (which can return a different list); repair this confirmed integration defect in the same navigation path and cover it with regression.
@@ -89,3 +89,12 @@ Both integration probes reproduce a >1-world-unit gap between the captured rende
 ## Execution evidence 2026-10-09
 Separate cached navigation-join geometry connects rendered pose to the unchanged analytical start. The painter and detached capture consume this same connector; profiling attributes the first visible point to the marker. Endpoint, route samples and maneuver boundary remain unchanged. Cache now retains the projector-returned list for legacy Approach and forwards maneuverPointCount to the painter.
 Before fix both new-snapshot/resume probes failed because the marker differed from the line start and no connector was drawn. After fix: navigation/smoothness/route tests 79/79; full Client 1787/1787; Release 0 warnings/errors; scoped whitespace verification and diff check pass. Tests assert actual captured draw paths, exact endpoint, connector removal after correction, unchanged full sample sequence/maneuver boundary, and actual legacy Approach rendering. No Motion/Engine physics changes. Native/manual matrix remains OPEN.
+
+Current status: implementation and automated checks recorded in execution evidence; [publication registry](../../ImplementationStatus.md). [Final native/performance evidence](../../PerformanceEvidence.md) supersedes earlier NOT RUN notes only for the executed scripted cases. Human manual acceptance remains OPEN.
+
+## AC-to-test naming map
+
+Planned names are AC labels; actual tests consolidate related transitions without dropping assertions:
+
+- `Visual_join_preserves_authoritative_endpoint` → `Visual_join_preserves_every_authoritative_sample_and_maneuver_boundary` (combined behavioral fixture).
+- `Resume_connector_disappears_after_correction` → `Reconciliation_keeps_marker_joined_to_route_and_join_expires` (combined behavioral fixture).

@@ -3,7 +3,7 @@ epic: EP-0005-optimization
 story: EP-0005-US-0001-tactical-map-audit-remediation
 ticket: EP-0005-US-0001-TK-0007-coherent-frame-diagnostics
 title: "Сохранять диагностику одного завершённого кадра"
-stage: draft
+stage: implemented
 layer: client
 depends_on: []
 files_touched: 4
@@ -23,17 +23,17 @@ LatestPrediction смешивается с renderStates прошлого кад�
 
 ## Решения и полномочия
 
-Пользователь поручил создать story и тикеты. Этот документ — план; он не означает разрешения на реализацию, commit или push. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
+Историческая карточка планирования; исполнение, расширение scope, commit и push разрешены запросом 2026-10-09 по EpicExecutionPrompt.md. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
 
 ## Предположения и проверка основания
 
 Основание — аудит текущего working tree; номера строк могут сдвинуться. Перед реализацией сверить актуальный код и сохранить независимые изменения.
 
-Целевой результат: Сохранять диагностику одного завершённого кадра. Значения новых порогов, явно названные draft assumption, подлежат согласованию при утверждении тикета.
+Целевой результат: Сохранять диагностику одного завершённого кадра. Исходные draft assumptions рассмотрены при исполнении; принятые технические решения записаны в execution evidence и не выдаются за отдельное пользовательское одобрение.
 
 ## Контекст и разрешённые файлы
 
-Все пути от корня DSS. Это полный write allowlist; прочие файлы доступны только для чтения. Новые тесты располагаются только в перечисленных файлах.
+Все пути от корня DSS. Ниже исходный scope; расширения, необходимые для исполнения и разрешённые EpicExecutionPrompt.md, записаны в execution sections.
 
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` — существует
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Diagnostics.cs` — существует
@@ -58,9 +58,9 @@ No public API change.
 
 ## Критерии приёмки — AC-0007
 
-- [ ] `Capture_uses_rendered_snapshot_when_new_snapshot_arrives`: Snapshot arrival между Render и click не смешивает baseline/poses.
-- [ ] `Capture_preserves_drawn_viewport_trajectory`: Saved endpoints равны показанным.
-- [ ] `Capture_respects_hidden_forecast`: Отключённый forecast не появляется в capture.
+- [x] `Capture_uses_rendered_snapshot_when_new_snapshot_arrives`: Snapshot arrival между Render и click не смешивает baseline/poses.
+- [x] `Capture_preserves_drawn_viewport_trajectory`: Saved endpoints равны показанным.
+- [x] `Capture_respects_hidden_forecast`: Отключённый forecast не появляется в capture.
 
 ## Инварианты и границы
 
@@ -81,7 +81,7 @@ No public API change.
 
 ## Проверка самодостаточности
 
-В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Историческая проверка планирования завершена. Фактическая реализация и проверки записаны ниже; native/manual acceptance отделена от автоматических AC.
 
 ## Execution scope 2026-10-09
 Add GameSessionScreen.Profiling.cs to seal presented metadata at the actual end of Render. Existing async writer and copied same-render trajectories are baseline functionality; this ticket changes capture to the last completed displayed frame, including frozen camera/input state. Schema 3 adds HasPresentedFrame; schema 2 readers that tolerate additive fields remain structurally compatible, but capture timing semantics change.
@@ -97,3 +97,12 @@ Schema 3 retains existing state fields and adds hasPresentedFrame; before the fi
 Focused snapshot/combat regressions 20/20, Release build zero warnings/errors, scoped formatting and git diff --check passed. Native/manual acceptance OPEN. Existing bounded async writer/atomic rename are prior baseline functionality, not newly claimed work.
 
 Full Client regression 1759/1759 passed (ep5-us1-tk7-client.trx). Diff review confirmed consistent baseline and owned worker data. Implementation complete; native OPEN.
+
+Current status: implementation and automated checks recorded in execution evidence; [publication registry](../../ImplementationStatus.md). [Final native/performance evidence](../../PerformanceEvidence.md) supersedes earlier NOT RUN notes only for the executed scripted cases. Human manual acceptance remains OPEN.
+
+## AC-to-test naming map
+
+Planned names are AC labels; actual tests consolidate related transitions without dropping assertions:
+
+- `Capture_preserves_drawn_viewport_trajectory` → `Capture_keeps_one_rendered_frame_when_snapshot_arrives_during_render` (combined behavioral fixture).
+- `Capture_respects_hidden_forecast` → `Capture_keeps_one_rendered_frame_when_snapshot_arrives_during_render` (combined behavioral fixture).

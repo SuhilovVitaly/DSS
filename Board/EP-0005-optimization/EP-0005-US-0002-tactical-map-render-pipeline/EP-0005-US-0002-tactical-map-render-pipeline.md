@@ -2,7 +2,7 @@
 epic: EP-0005-optimization
 story: EP-0005-US-0002-tactical-map-render-pipeline
 title: "Разделение состояния, геометрии и рисования"
-stage: draft
+stage: implemented
 depends_on: ["EP-0005-US-0001-tactical-map-audit-remediation"]
 ticket_count: 5
 created: 2026-09-23T20:29:35Z
@@ -28,11 +28,11 @@ current_review: complete
 
 | Тикет | Основание | Приоритет | Критерий | Статус |
 |---|---|---|---|---|
-| [EP-0005-US-0002-TK-0001-frame-state-update](EP-0005-US-0002-TK-0001-frame-state-update/EP-0005-US-0002-TK-0001-frame-state-update.md) | A01 | P2 | AC-0001 | draft |
-| [EP-0005-US-0002-TK-0002-scene-geometry-prepare](EP-0005-US-0002-TK-0002-scene-geometry-prepare/EP-0005-US-0002-TK-0002-scene-geometry-prepare.md) | A02 | P2 | AC-0002 | draft |
-| [EP-0005-US-0002-TK-0003-read-only-map-painter](EP-0005-US-0002-TK-0003-read-only-map-painter/EP-0005-US-0002-TK-0003-read-only-map-painter.md) | A03 | P2 | AC-0003 | draft |
-| [EP-0005-US-0002-TK-0004-revision-driven-scene-cache](EP-0005-US-0002-TK-0004-revision-driven-scene-cache/EP-0005-US-0002-TK-0004-revision-driven-scene-cache.md) | A04 | P2 | AC-0004 | draft |
-| [EP-0005-US-0002-TK-0005-frame-consumers-and-performance](EP-0005-US-0002-TK-0005-frame-consumers-and-performance/EP-0005-US-0002-TK-0005-frame-consumers-and-performance.md) | A05 | P2 | AC-0005 | draft |
+| [EP-0005-US-0002-TK-0001-frame-state-update](EP-0005-US-0002-TK-0001-frame-state-update/EP-0005-US-0002-TK-0001-frame-state-update.md) | A01 | P2 | AC-0001 | implemented; native OPEN |
+| [EP-0005-US-0002-TK-0002-scene-geometry-prepare](EP-0005-US-0002-TK-0002-scene-geometry-prepare/EP-0005-US-0002-TK-0002-scene-geometry-prepare.md) | A02 | P2 | AC-0002 | implemented; native OPEN |
+| [EP-0005-US-0002-TK-0003-read-only-map-painter](EP-0005-US-0002-TK-0003-read-only-map-painter/EP-0005-US-0002-TK-0003-read-only-map-painter.md) | A03 | P2 | AC-0003 | implemented; native OPEN |
+| [EP-0005-US-0002-TK-0004-revision-driven-scene-cache](EP-0005-US-0002-TK-0004-revision-driven-scene-cache/EP-0005-US-0002-TK-0004-revision-driven-scene-cache.md) | A04 | P2 | AC-0004 | implemented; native OPEN |
+| [EP-0005-US-0002-TK-0005-frame-consumers-and-performance](EP-0005-US-0002-TK-0005-frame-consumers-and-performance/EP-0005-US-0002-TK-0005-frame-consumers-and-performance.md) | A05 | P2 | AC-0005 | implemented; native OPEN |
 
 ## Зависимости и порядок
 
@@ -46,4 +46,8 @@ Prepare/Draw separation само по себе не гарантирует ус�
 
 ## Статус проверки
 
-Структура, покрытие findings, зависимости и ссылки проверяются на этапе планирования. `current_review: complete` относится только к полноте draft. Никакой тикет этой story не реализован и не объявлен runtime-validated. Approval story/tickets и разрешение на реализацию — отдельные действия.
+Структура, покрытие findings, зависимости и ссылки проверяются на этапе планирования. `current_review: complete` относится только к полноте draft. Тикеты реализованы и опубликованы по поручению 2026-10-09. Automated validation подтверждена; native/manual и performance gates ведутся отдельно.
+
+## Execution result 2026-10-09
+
+Implementation and automated ACs complete. Final Client 1826/1826; Release and scoped checks pass. [Registry](../ImplementationStatus.md), [performance/native evidence](../PerformanceEvidence.md). Executor self-review is not independent approval. 80 FPS FAILED/OPEN; human manual NOT RUN.

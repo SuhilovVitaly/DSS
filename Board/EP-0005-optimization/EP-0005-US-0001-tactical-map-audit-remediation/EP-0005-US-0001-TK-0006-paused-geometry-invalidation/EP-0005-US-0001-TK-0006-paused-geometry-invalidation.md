@@ -3,7 +3,7 @@ epic: EP-0005-optimization
 story: EP-0005-US-0001-tactical-map-audit-remediation
 ticket: EP-0005-US-0001-TK-0006-paused-geometry-invalidation
 title: "Повторно использовать геометрию на паузе"
-stage: draft
+stage: implemented
 layer: client
 depends_on: ["EP-0005-US-0001-TK-0001-paused-authoritative-rebase"]
 files_touched: 4
@@ -23,17 +23,17 @@ Render повторяет подготовку карты под modal и на �
 
 ## Решения и полномочия
 
-Пользователь поручил создать story и тикеты. Этот документ — план; он не означает разрешения на реализацию, commit или push. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
+Историческая карточка планирования; исполнение, расширение scope, commit и push разрешены запросом 2026-10-09 по EpicExecutionPrompt.md. Исправления F01 и F03 выполнены отдельным прямым поручением и не входят в этот тикет. Канонический контракт: `Documentation/01-Requirements/EngineRequirements.md`; архитектурные рекомендации не заменяют его.
 
 ## Предположения и проверка основания
 
 Основание — аудит текущего working tree; номера строк могут сдвинуться. Перед реализацией сверить актуальный код и сохранить независимые изменения.
 
-Целевой результат: Повторно использовать геометрию на паузе. Значения новых порогов, явно названные draft assumption, подлежат согласованию при утверждении тикета.
+Целевой результат: Повторно использовать геометрию на паузе. Исходные draft assumptions рассмотрены при исполнении; принятые технические решения записаны в execution evidence и не выдаются за отдельное пользовательское одобрение.
 
 ## Контекст и разрешённые файлы
 
-Все пути от корня DSS. Это полный write allowlist; прочие файлы доступны только для чтения. Новые тесты располагаются только в перечисленных файлах.
+Все пути от корня DSS. Ниже исходный scope; расширения, необходимые для исполнения и разрешённые EpicExecutionPrompt.md, записаны в execution sections.
 
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` — существует
 - `src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectTrailGeometry.cs` — существует
@@ -58,9 +58,9 @@ No public API change.
 
 ## Критерии приёмки — AC-0006
 
-- [ ] `Paused_frames_reuse_geometry`: На одинаковом paused frame geometry build counters не растут.
-- [ ] `Paused_zoom_invalidates_screen_geometry`: Изменение камеры обновляет screen geometry в следующий кадр.
-- [ ] `Ui_animation_does_not_rebuild_motion`: Анимация UI не запускает физическое прогнозирование.
+- [x] `Paused_frames_reuse_geometry`: На одинаковом paused frame geometry build counters не растут.
+- [x] `Paused_zoom_invalidates_screen_geometry`: Изменение камеры обновляет screen geometry в следующий кадр.
+- [x] `Ui_animation_does_not_rebuild_motion`: Анимация UI не запускает физическое прогнозирование.
 
 ## Инварианты и границы
 
@@ -81,7 +81,7 @@ No public API change.
 
 ## Проверка самодостаточности
 
-В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Историческая проверка планирования завершена. Фактическая реализация и проверки записаны ниже; native/manual acceptance отделена от автоматических AC.
 
 ## Execution scope 2026-10-09
 Add ObjectTrailBuffer.cs for mutation revision and GameSessionScreen.GeometryCache.cs for bounded screen-owned cache helpers. Keep cache logic separate from the already large screen file. Cache geometry by actual history/pose and view, retaining UI-time drawing. The final pipeline story owns comprehensive stage extraction and spatial indexing.
@@ -93,3 +93,12 @@ History mutation revisions invalidate per-contact screen trail geometry. Traject
 Focused paused/smoothness/Approach/trail geometry checks: 44/44. Repeated 40-frame paused fixtures assert unchanged build counters for ordinary forecast and navigation; zoom rebuilds screen geometry and a paused time advance updates the pose. Release build zero warnings/errors, scoped formatting and diff checks passed. Full architecture/spatial-index extraction remains US-0002; native acceptance OPEN.
 
 Full Client regression 1757/1757 passed (ep5-us1-tk6-client.trx). Implementation complete; native OPEN.
+
+Current status: implementation and automated checks recorded in execution evidence; [publication registry](../../ImplementationStatus.md). [Final native/performance evidence](../../PerformanceEvidence.md) supersedes earlier NOT RUN notes only for the executed scripted cases. Human manual acceptance remains OPEN.
+
+## AC-to-test naming map
+
+Planned names are AC labels; actual tests consolidate related transitions without dropping assertions:
+
+- `Paused_zoom_invalidates_screen_geometry` → `Paused_frames_reuse_geometry` (combined behavioral fixture).
+- `Ui_animation_does_not_rebuild_motion` → `Paused_frames_reuse_geometry` (combined behavioral fixture).

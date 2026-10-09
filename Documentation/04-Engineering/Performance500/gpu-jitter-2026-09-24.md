@@ -1,5 +1,7 @@
 # Рывки карты: GPU-кэш масок, 24 сентября 2026
 
+> Исторические результаты сохранены. Текущие pipeline/cache/input правила: [GameSessionScreenUI](../../06-Tooling/GameSessionScreenUI.md); измерения новой реализации от 2026-10-09: [EP-0005 evidence](../../../Board/EP-0005-optimization/PerformanceEvidence.md). Разные fixtures не образуют сопоставимого before/after. 80 FPS по новой native матрице не достигнуты.
+
 Исходный код: `83dfab4` (Snapshot). В трёх пользовательских снимках
 `tactical-map-20260924-052432-652-seq61.json`, `...052436-537-seq65.json`,
 `...052439-628-seq68.json` записано 3351 уникальных кадров после удаления
