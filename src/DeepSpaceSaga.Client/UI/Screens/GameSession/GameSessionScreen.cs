@@ -1176,7 +1176,7 @@ public sealed partial class GameSessionScreen : IScreen
             // DrawLeaders and DrawPlaques see the same positions.
             bool resetSmoothing = viewportResized;
             _labelRenderer.ComputeGeometries(_renderStates, deltaSeconds, width, height, _camera, resetSmoothing,
-                _mapSettings, IsImportantMapObject, _clusteredObjectIds, AvailableMapRect());
+                _mapSettings, IsImportantMapObject, _clusteredObjectIds, AvailableMapRect(), _selectedObjectId, _navigationTargetId);
 
             // 3.75. Label leader lines (behind objects)
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);

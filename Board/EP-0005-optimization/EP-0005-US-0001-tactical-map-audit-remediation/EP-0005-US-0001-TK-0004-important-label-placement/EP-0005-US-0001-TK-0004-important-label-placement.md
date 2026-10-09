@@ -81,3 +81,14 @@ No public API change.
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution scope 2026-10-09
+Add GameSessionScreen.cs to pass explicit selected/navigation identities into label placement; the existing importance predicate cannot express required ordering. Group fallback keeps the highest-priority name and an explicit count, with leader links for every grouped contact. All text remains knowledge-safe and viewport-clipped.
+
+## Execution evidence
+
+Docked labels overlapped in the pre-fix regression. Placement now sorts selected/navigation/player before other important contacts and ordinal secondary IDs, checks at most 25 candidates after smoothing/clamping, and constrains important text to the free region. If those candidates cannot fit, a single highest-priority group plaque with +N count has explicit leaders from every grouped contact. No hidden object identity enters text. Existing Unicode-safe truncation and hull rendering remain.
+
+Focused label/bounds tests: 56/56. Release build: zero warnings/errors. Full scoped formatting and git diff --check passed. Review checked snapshot-order independence, viewport bounds, group draw-once behavior, leader completeness and layer order. Native visual matrix remains OPEN for integrated validation.
+
+Full Client regression: 1751/1751 passed (ep5-us1-tk4-client.trx). Implementation complete; native acceptance OPEN.

@@ -40,6 +40,12 @@ internal sealed class ObjectLabelRenderer
     private readonly Dictionary<string, LabelMetrics> _labels = new(StringComparer.Ordinal);
     private readonly List<string> _staleLabels = new();
     private readonly List<SKRect> _occupiedPlaques = new();
+    private readonly List<ObjectRenderState> _placementOrder = new();
+    private readonly HashSet<string> _groupedIds = new(StringComparer.Ordinal);
+    private string? _groupOwner;
+    private string _groupText = string.Empty;
+    internal IReadOnlySet<string> GroupedLabelIds => _groupedIds;
+    internal string GroupLabelText => _groupText;
     private readonly record struct LabelMetrics(string? RenderType, string? Name, string Text, float Width, float MaximumWidth);
 
     public ObjectLabelRenderer(CombatVisualSettings? combatSettings = null)
@@ -110,12 +116,17 @@ internal sealed class ObjectLabelRenderer
         TacticalMapSettings? mapSettings = null,
         Func<string, bool>? isImportant = null,
         IReadOnlySet<string>? clusteredIds = null,
-        SKRect? availableMap = null)
+        SKRect? availableMap = null,
+        string? selectedObjectId = null,
+        string? navigationTargetId = null)
     {
         _geometries.Clear();
         _activeIds.Clear();
         _opacity.Clear();
         _occupiedPlaques.Clear();
+        _groupedIds.Clear();
+        _groupOwner = null;
+        _groupText = string.Empty;
 
         if (viewportW <= 0 || viewportH <= 0) return;
 
@@ -123,17 +134,32 @@ internal sealed class ObjectLabelRenderer
             _smoother.ResetAll();
 
         var viewport = new SKSize(viewportW, viewportH);
+        var labelBounds = new SKRect(0, 0, viewportW, viewportH);
+        if (availableMap is { } available && !available.IsEmpty)
+            labelBounds = SKRect.Intersect(labelBounds, available);
+        bool needsGroup = false;
+        bool Important(ObjectRenderState s) => s.IsPlayerShip || HasHullBar(s.Source) ||
+            s.Source.Torpedo is not null || isImportant?.Invoke(s.Pose.ObjectId) == true ||
+            s.Pose is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy };
+        int Rank(ObjectRenderState s) => s.Pose.ObjectId == selectedObjectId ? 0 :
+            s.Pose.ObjectId == navigationTargetId ? 1 : s.IsPlayerShip ? 2 : Important(s) ? 3 : 4;
+        _placementOrder.Clear();
+        _placementOrder.AddRange(renderStates);
+        _placementOrder.Sort((a, b) =>
+        {
+            int rank = Rank(a).CompareTo(Rank(b));
+            return rank != 0 ? rank : string.CompareOrdinal(a.Pose.ObjectId, b.Pose.ObjectId);
+        });
 
         // Reserve space for the player and explicit targets before secondary labels.
         for (int pass = 0; pass < 2; pass++)
-            for (int i = 0; i < renderStates.Count; i++)
+            for (int i = 0; i < _placementOrder.Count; i++)
             {
-                var state = renderStates[i];
+                var state = _placementOrder[i];
                 var predicted = state.Pose;
                 string objectId = predicted.ObjectId;
                 if (clusteredIds?.Contains(objectId) == true) continue;
-                bool important = state.IsPlayerShip || HasHullBar(state.Source) || state.Source.Torpedo is not null || isImportant?.Invoke(objectId) == true ||
-                    predicted is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy };
+                bool important = Important(state);
                 if (important != (pass == 0)) continue;
                 if (mapSettings is not null && !important && _occupiedPlaques.Count >= mapSettings.MaximumLabels) continue;
                 if (mapSettings is not null && !important && camera.PixelsPerWorldUnit < mapSettings.LabelDetailPpu * .5) continue;
@@ -155,7 +181,7 @@ internal sealed class ObjectLabelRenderer
                 var objectScreen = new SKPoint(objSx, objSy);
 
                 bool isUnknown = predicted.RenderObjectType == SpaceObjectType.UnknownSpaceObject;
-                float maximumWidth = ObjectLabelLayout.MaximumTextWidth(viewportW);
+                float maximumWidth = ObjectLabelLayout.MaximumTextWidth(important ? labelBounds.Width : viewportW);
                 if (!_labels.TryGetValue(objectId, out var label) ||
                     label.RenderType != predicted.RenderObjectType || label.Name != predicted.DisplayName ||
                     label.MaximumWidth != maximumWidth)
@@ -183,12 +209,9 @@ internal sealed class ObjectLabelRenderer
                     viewportH,
                     reset: resetSmoothing);
 
-                if (important && availableMap is { } free)
+                if (important)
                 {
-                    // Explicit targets must remain readable when fitted beside a panel.
-                    float x = Math.Clamp(visiblePlaque.Left, free.Left + 4, Math.Max(free.Left + 4, free.Right - visiblePlaque.Width - 4));
-                    float y = Math.Clamp(visiblePlaque.Top, free.Top + 4, Math.Max(free.Top + 4, free.Bottom - visiblePlaque.Height - 4));
-                    visiblePlaque = new SKRect(x, y, x + visiblePlaque.Width, y + visiblePlaque.Height);
+                    if (!TryPlaceImportant(visiblePlaque, labelBounds, out visiblePlaque)) needsGroup = true;
                 }
 
                 if (mapSettings is not null && !important && OverlapsExistingPlaque(visiblePlaque)) continue;
@@ -211,6 +234,27 @@ internal sealed class ObjectLabelRenderer
                     visiblePlaque, leaderEndPoint, statusRect, new SKPoint(textX, textY),
                     targetGeom.PlaqueCenter);
             }
+
+        if (needsGroup)
+        {
+            // One explicit group with a link from every member. Keep the selected
+            // identity first and show the remaining count even when text is truncated.
+            var members = _placementOrder.Where(s => Important(s) && _geometries.ContainsKey(s.Pose.ObjectId)).ToArray();
+            if (members.Length > 0)
+            {
+                _groupOwner = members[0].Pose.ObjectId;
+                var ownerGeometry = _geometries[_groupOwner];
+                _geometries.Clear();
+                string suffix = $" +{members.Length - 1}";
+                _groupText = FitText(_labels[_groupOwner].Text, _textPaint,
+                    Math.Max(0, ownerGeometry.PlaqueRect.Width - 38 - _textPaint.MeasureText(suffix))) + suffix;
+                foreach (var member in members)
+                {
+                    _groupedIds.Add(member.Pose.ObjectId);
+                    _geometries[member.Pose.ObjectId] = ownerGeometry;
+                }
+            }
+        }
 
         _smoother.RemoveStaleExcept(_activeIds);
         _staleLabels.Clear();
@@ -241,6 +285,29 @@ internal sealed class ObjectLabelRenderer
     private bool OverlapsExistingPlaque(SKRect plaque)
     {
         foreach (var r in _occupiedPlaques) if (r.IntersectsWith(plaque)) return true;
+        return false;
+    }
+
+    private bool TryPlaceImportant(SKRect preferred, SKRect bounds, out SKRect result)
+    {
+        float width = Math.Min(preferred.Width, Math.Max(0, bounds.Width));
+        float height = Math.Min(preferred.Height, Math.Max(0, bounds.Height));
+        float x = Math.Clamp(preferred.Left, bounds.Left, Math.Max(bounds.Left, bounds.Right - width));
+        float y = Math.Clamp(preferred.Top, bounds.Top, Math.Max(bounds.Top, bounds.Bottom - height));
+        result = new(x, y, x + width, y + height);
+        // Fixed, bounded candidate set. Revalidate after smoothing and clamping.
+        ReadOnlySpan<int> offsets = [0, 1, -1, 2, -2];
+        foreach (int row in offsets)
+            foreach (int column in offsets)
+            {
+                float left = x + column * (width + 4), top = y + row * (height + 4);
+                var candidate = new SKRect(left, top, left + width, top + height);
+                if (bounds.Contains(candidate) && !OverlapsExistingPlaque(candidate))
+                {
+                    result = candidate;
+                    return true;
+                }
+            }
         return false;
     }
 
@@ -287,6 +354,7 @@ internal sealed class ObjectLabelRenderer
         {
             var state = renderStates[i];
             string objectId = state.Pose.ObjectId;
+            if (_groupedIds.Contains(objectId) && objectId != _groupOwner) continue;
             if (!_geometries.TryGetValue(objectId, out var geometry))
                 continue;
 
@@ -329,7 +397,7 @@ internal sealed class ObjectLabelRenderer
             }
 
             // Text
-            string label = _labels[objectId].Text;
+            string label = objectId == _groupOwner ? _groupText : _labels[objectId].Text;
             bool isUnknown = predicted.RenderObjectType == SpaceObjectType.UnknownSpaceObject;
             var textPaint = isUnknown ? _unknownTextPaint : _textPaint;
             if (!isUnknown)

@@ -6,6 +6,57 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class ObjectLabelTests
 {
+    [Fact]
+    public void Important_labels_do_not_overlap_when_docked()
+    {
+        var renderer = new ObjectLabelRenderer();
+        var states = LabelContacts();
+        renderer.ComputeGeometries(states, .02, 800, 600, new(0, 0, 1),
+            isImportant: _ => true, availableMap: new(200, 100, 600, 500));
+        var rects = renderer.Geometries.Values.Select(g => g.PlaqueRect).ToArray();
+        Assert.Equal(3, rects.Length);
+        for (int i = 0; i < rects.Length; i++)
+            for (int j = i + 1; j < rects.Length; j++)
+                Assert.False(rects[i].IntersectsWith(rects[j]));
+    }
+
+    private static ObjectRenderState[] LabelContacts() => new[] { "selected", "navigation", "player" }
+        .Select(id => new ObjectMotionSnapshot(id, 0, 0, 0, 0,
+            RenderObjectType: SpaceObjectType.Station, DisplayName: id))
+        .Select(o => new ObjectRenderState(o, new RenderMotion(o), o.ObjectId == "player")).ToArray();
+
+    [Fact]
+    public void Label_placement_is_snapshot_order_independent()
+    {
+        var a = new ObjectLabelRenderer();
+        var b = new ObjectLabelRenderer();
+        var states = LabelContacts();
+        a.ComputeGeometries(states, .02, 800, 600, new(0, 0, 1), isImportant: _ => true,
+            selectedObjectId: "selected", navigationTargetId: "navigation");
+        b.ComputeGeometries(states.AsEnumerable().Reverse().ToArray(), .02, 800, 600, new(0, 0, 1),
+            isImportant: _ => true, selectedObjectId: "selected", navigationTargetId: "navigation");
+        foreach (var (id, geometry) in a.Geometries) Assert.Equal(geometry, b.Geometries[id]);
+        Assert.True(a.Geometries["selected"].PlaqueRect.Top < a.Geometries["navigation"].PlaqueRect.Top);
+    }
+
+    [Theory]
+    [InlineData(80, 20)]
+    [InlineData(120, 30)]
+    public void Crowded_labels_use_bounded_fallback(int width, int height)
+    {
+        var renderer = new ObjectLabelRenderer();
+        var states = LabelContacts();
+        renderer.ComputeGeometries(states, .02, width, height, new(0, 0, 1),
+            isImportant: _ => true, selectedObjectId: "selected", navigationTargetId: "navigation");
+        Assert.Equal(3, renderer.GroupedLabelIds.Count);
+        Assert.EndsWith(" +2", renderer.GroupLabelText);
+        foreach (var geometry in renderer.Geometries.Values)
+            Assert.True(new SKRect(0, 0, width, height).Contains(geometry.PlaqueRect));
+        using var surface = SKSurface.Create(new SKImageInfo(width, height));
+        renderer.DrawLeaders(surface.Canvas, states, width, height, new(0, 0, 1));
+        renderer.DrawPlaques(surface.Canvas, states, 0, SimulationSpeed.Speed0, width, height, new(0, 0, 1));
+    }
+
     private static readonly SKSize TestViewport = new(800, 600);
 
     // Marker radius comes from the shared policy (ТЗ-10 AC 7): labels and
