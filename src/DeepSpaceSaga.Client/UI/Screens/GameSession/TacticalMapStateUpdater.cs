@@ -12,6 +12,7 @@ internal sealed class TacticalMapStateUpdater
     private readonly HashSet<string> _combatPoseObjectIds = new(StringComparer.Ordinal);
     private readonly List<string> _diagnostics = new();
     private long _frameId;
+    private ImmutableArray<ObjectRenderState> _publishedObjects = [];
     internal int PoseDtoMaterializations { get; private set; }
     internal long ContactMembershipBuilds { get; private set; }
     internal string? PreviewTargetId { get; set; }
@@ -32,9 +33,12 @@ internal sealed class TacticalMapStateUpdater
 
     internal TacticalMapStateUpdater(IMotionPredictor predictor) => _predictor = predictor;
 
-    private TacticalMapFrameState Publish(SnapshotPrediction? prediction, long timestamp, bool rebased) =>
-        new(++_frameId, timestamp, prediction, _renderStates.ToImmutableArray(), rebased,
+    private TacticalMapFrameState Publish(SnapshotPrediction? prediction, long timestamp, bool rebased)
+    {
+        if (!_publishedObjects.SequenceEqual(_renderStates)) _publishedObjects = _renderStates.ToImmutableArray();
+        return new(++_frameId, timestamp, prediction, _publishedObjects, rebased,
             _profilePlayerRaw, _profileTargetRaw, _diagnostics.ToImmutableArray());
+    }
 
     private static long CombatPredictionDelta(SnapshotPrediction prediction) =>
         prediction.CurrentSpeed == SimulationSpeed.Speed0 && prediction.BufferedSnapshot.Snapshot.CurrentSpeed == SimulationSpeed.Speed0

@@ -375,6 +375,9 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         _commandsPanel.Dispose();
         _grid.Dispose();
         PreparedScene?.PaintCommands?.Dispose();
+        _sceneBuilder.Cache.Clear();
+        _sceneBuilder.Index.Clear();
+        PreparedScene = null;
         _mapPainter.Dispose();
         _labelRenderer.Dispose();
         _depthRenderer.Dispose();
@@ -405,6 +408,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
     public void OnActivated()
     {
+        _inputRevision++;
         // Wait for a fresh MouseMove before hit-testing again — the position we had
         // before this screen was last deactivated (e.g. under a since-closed modal) is
         // stale and must not silently reactivate an object under it.
@@ -413,6 +417,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
     public void OnDeactivated()
     {
+        _inputRevision++;
         ClearLaunchPreview();
         _zoomTransition.Cancel();
         _isPanningMap = false;
@@ -424,6 +429,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
+        _inputRevision++;
         // UI panels are laid out and hit-tested in logical (unscaled) space — the
         // raw window coordinates must be converted before testing against them.
         // The map (below) always uses the raw x, y.
@@ -565,6 +571,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
     public bool OnMouseMove(float x, float y)
     {
+        _inputRevision++;
         // _mouseX/_mouseY stay raw (displayed as "Cursor Window" and used to compute
         // "Cursor Game" via the camera); _uiMouseX/_uiMouseY are the logical-space
         // coordinates UI panels hover-test against.
@@ -601,6 +608,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
     public void OnMouseUp(float x, float y)
     {
+        _inputRevision++;
         _mouseX = x;
         _mouseY = y;
         _uiMouseX = x / _uiScale;
@@ -612,6 +620,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
+        _inputRevision++;
         if (_combatJournalPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_objectInfoPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (!float.IsFinite(delta) || delta == 0 || _viewportW <= 0 || _viewportH <= 0 ||
@@ -623,6 +632,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
     public ScreenEvent OnKeyDown(Key key)
     {
+        _inputRevision++;
         if (key is Key.Equal or Key.KeypadAdd or Key.Minus or Key.KeypadSubtract)
         {
             ZoomBy(key is Key.Equal or Key.KeypadAdd ? 1 : -1, _viewportW / 2f, _viewportH / 2f);
@@ -709,6 +719,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
     public void OnKeyUp(Key key)
     {
+        _inputRevision++;
         if (key == Key.ControlLeft)
             _isCtrlLeftDown = false;
         else if (key == Key.ControlRight)
@@ -1169,6 +1180,13 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
             _diagInterestingFrame = false;
         }
 
+        var paintKey = CurrentPaintKey;
+        if (TryReusePausedScene(paintKey))
+        {
+            _mapPainter.Draw(output, PreparedScene!, uiTimeMs / 1000.0, RenderStageCompleted);
+            FinishFrameProfile(prediction, now);
+            return;
+        }
         using var recorder = new TacticalMapPaintRecorder(width, height);
         var canvas = recorder.Canvas;
 
@@ -1366,6 +1384,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         try
         {
             PublishSceneGeometry(commands);
+            _lastPaintKey = paintKey;
             _mapPainter.Draw(output, PreparedScene!, uiTimeMs / 1000.0, RenderStageCompleted);
             FinishFrameProfile(prediction, now);
         }

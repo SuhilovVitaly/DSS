@@ -7,8 +7,31 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// <summary>Projects the single frame baseline; existing projectors supply owned path samples.</summary>
 internal sealed class TacticalMapSceneBuilder
 {
+    internal TacticalMapSceneCache Cache { get; } = new();
+    internal TacticalMapSpatialIndex Index { get; }
+    private readonly HashSet<string> _candidates = new(StringComparer.Ordinal);
+    internal TacticalMapSceneBuilder(int indexCapacity = 10000) => Index = new(indexCapacity);
     internal TacticalMapSceneGeometry Prepare(TacticalMapFrameState frame, TacticalMapViewInput view)
     {
+        var changes = Cache.Changes(frame, view);
+        bool rebuildMarkers = (changes & TacticalMapSceneCache.MarkerDependencies) != 0;
+        bool rebuildHits = (changes & TacticalMapSceneCache.HitDependencies) != 0;
+        if (!rebuildMarkers && !rebuildHits && Cache.Current is { } cached)
+        {
+            var reused = new TacticalMapSceneGeometry(frame, view, RefreshMarkerStates(cached, frame), cached.HitCandidates);
+            Cache.Store(reused, false, false);
+            return reused;
+        }
+        Index.BeginUpdate();
+        foreach (var state in frame.Objects)
+            Index.Include(state.Pose.ObjectId, new(state.Pose.X, state.Pose.Y, state.Pose.X, state.Pose.Y));
+        Index.EndUpdate();
+        double ppu = view.Camera.PixelsPerWorldUnit;
+        const double marginPixels = 256; // Greater than every marker/halo extent; exact cull follows.
+        bool indexed = Index.Query(new(view.Camera.X - (view.Width / 2.0 + marginPixels) / ppu,
+            view.Camera.Y - (view.Height / 2.0 + marginPixels) / ppu,
+            view.Camera.X + (view.Width / 2.0 + marginPixels) / ppu,
+            view.Camera.Y + (view.Height / 2.0 + marginPixels) / ppu), _candidates);
         var markers = ImmutableArray.CreateBuilder<TacticalMapMarkerGeometry>();
         var hits = ImmutableArray.CreateBuilder<TacticalMapHitCandidate>();
         if (view.Width <= 0 || view.Height <= 0) return new(frame, view, markers.ToImmutable(), hits.ToImmutable());
@@ -17,6 +40,7 @@ internal sealed class TacticalMapSceneBuilder
             foreach (var state in frame.Objects)
             {
                 string id = state.Pose.ObjectId;
+                if (indexed && !_candidates.Contains(id)) continue;
                 bool important = view.ImportantIds.Contains(id);
                 if (important != (pass == 1) || view.ClusteredIds.Contains(id)) continue;
                 var point = view.Camera.Project(state.Pose.X, state.Pose.Y, view.Width, view.Height);
@@ -38,6 +62,16 @@ internal sealed class TacticalMapSceneBuilder
                     ? label.Geometry.PlaqueRect : null;
                 hits.Add(new(id, point, core, priority, plaque));
             }
-        return new(frame, view, markers.ToImmutable(), hits.ToImmutable());
+        var scene = new TacticalMapSceneGeometry(frame, view,
+            rebuildMarkers ? markers.ToImmutable() : RefreshMarkerStates(Cache.Current!, frame), hits.ToImmutable());
+        Cache.Store(scene, rebuildMarkers, rebuildHits);
+        return scene;
     }
+    private static ImmutableArray<TacticalMapMarkerGeometry> RefreshMarkerStates(TacticalMapSceneGeometry cached, TacticalMapFrameState frame)
+    {
+        if (cached.Frame.Objects == frame.Objects) return cached.Markers;
+        var states = frame.Objects.ToDictionary(s => s.Source.ObjectId, StringComparer.Ordinal);
+        return cached.Markers.Select(marker => marker with { State = states[marker.State.Source.ObjectId] }).ToImmutableArray();
+    }
+
 }

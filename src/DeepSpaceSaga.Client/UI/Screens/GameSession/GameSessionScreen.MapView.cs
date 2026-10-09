@@ -12,6 +12,38 @@ public sealed partial class GameSessionScreen
     private readonly TacticalMapSceneBuilder _sceneBuilder = new();
     internal TacticalMapSceneGeometry? PreparedScene { get; private set; }
 
+    private readonly record struct PaintReuseKey(GeometryView Camera, float Scale, long Locale, long Input,
+        long Image, string? Selected, string? Active, string? Navigation, bool Follow, bool Orbits, bool Stale);
+    private PaintReuseKey? _lastPaintKey;
+    private long _inputRevision;
+    private FutureTrajectoryPoint? _cachedTrajectoryEnd, _cachedTrajectoryStart;
+    internal long SceneGeometryBuilds => _sceneBuilder.Cache.MarkerBuilds;
+    internal long SpatialBoundsUpdates => _sceneBuilder.Index.BoundsUpdates;
+    internal long PaintPreparations { get; private set; }
+    internal long PaintReuses { get; private set; }
+    private PaintReuseKey CurrentPaintKey => new(CurrentGeometryView, _uiScale, Localization.Revision,
+        _inputRevision, _objectInfoPanel.ImageRevision, _selectedObjectId, _activeObjectId, _navigationTargetId,
+        _isFocusAttachedToPlayer, ShowOrbits, _framePrediction?.IsStale ?? false);
+
+    private bool TryReusePausedScene(PaintReuseKey key)
+    {
+        if (_mapFrame is not { Prediction.CurrentSpeed: SimulationSpeed.Speed0 } frame ||
+            PreparedScene is not { PaintCommands.IsDisposed: false } previous || _lastPaintKey != key ||
+            previous.Frame.Prediction?.CurrentSpeed != SimulationSpeed.Speed0 ||
+            !ReferenceEquals(frame.Prediction.BufferedSnapshot, previous.Frame.Prediction.BufferedSnapshot) ||
+            !frame.Objects.SequenceEqual(previous.Frame.Objects) || _combatEffects.Active.Count != 0 ||
+            _combatEffects.Results.Count != 0 || _torpedoSendTask is not null || _torpedoSubmitPending) return false;
+        var free = AvailableMapRect();
+        if (free != previous.View.FreeViewport || !_mapObstacles.SequenceEqual(previous.View.Obstacles)) return false;
+        PreparedScene = previous with { Frame = frame };
+        foreach (var path in previous.View.Paths)
+            CaptureDrawnTrajectory(path.ObjectId, path.Kind, path.WorldPoints);
+        DisplayedPlayerTrajectoryEnd = _cachedTrajectoryEnd;
+        _profilePlayerTrajectoryStart = _cachedTrajectoryStart;
+        PaintReuses++;
+        return true;
+    }
+
     private void PublishSceneGeometry(TacticalMapPaintCommands commands)
     {
         if (_mapFrame is not { } frame) return;
@@ -48,6 +80,9 @@ public sealed partial class GameSessionScreen
                 _mapSettings.GridBaseCellPixels, _mapSettings.GridMinimumPixels, _mapSettings.GridFadePixels)
         };
         PreparedScene = _sceneBuilder.Prepare(frame, view) with { PaintCommands = commands };
+        _cachedTrajectoryEnd = DisplayedPlayerTrajectoryEnd;
+        _cachedTrajectoryStart = _profilePlayerTrajectoryStart;
+        PaintPreparations++;
     }
 
     private readonly CameraZoomTransition _zoomTransition = new();
@@ -120,9 +155,17 @@ public sealed partial class GameSessionScreen
         InterfaceLog.Write($"Scale → PPU={target:G6}");
     }
 
+    private (ImmutableArray<ObjectRenderState> Objects, GeometryView View, string? Selected, string? Active, string? Navigation)? _clusterGeometryKey;
+    internal long ClusterGeometryBuilds { get; private set; }
+
     private void UpdateMapClusters()
     {
         _navigationTargetId = FindPlayerShip(_renderStates)?.Pose.NavigationTargetObjectId;
+        var clusterKey = (_mapFrame?.Objects ?? ImmutableArray<ObjectRenderState>.Empty, CurrentGeometryView,
+            _selectedObjectId, _activeObjectId, _navigationTargetId);
+        if (_clusterGeometryKey == clusterKey) return;
+        _clusterGeometryKey = clusterKey;
+        ClusterGeometryBuilds++;
         foreach (var cell in _clusterCells.Values)
         {
             cell.Clear();

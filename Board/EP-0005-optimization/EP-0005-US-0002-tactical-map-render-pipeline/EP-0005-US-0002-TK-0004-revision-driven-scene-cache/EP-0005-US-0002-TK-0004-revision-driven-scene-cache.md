@@ -6,7 +6,7 @@ title: "Добавить адресную инвалидацию и ограни
 stage: draft
 layer: client
 depends_on: ["EP-0005-US-0002-TK-0003-read-only-map-painter"]
-files_touched: 5
+files_touched: 10
 serves: [AC-0004]
 source_finding: A04
 evidence_status: architecture-proposal
@@ -59,9 +59,9 @@ revision: 1
 
 ## Критерии приёмки — AC-0004
 
-- [ ] `Unchanged_frame_reuses_geometry`: Пауза и неизменный view дают ноль повторных geometry builds.
-- [ ] `Each_revision_invalidates_only_dependents`: Табличный тест всех revisions проверяет правильные invalidation sets.
-- [ ] `Cache_is_bounded_and_spatial_query_is_complete`: Удалённые объекты очищены; индекс не пропускает пересекающие viewport элементы.
+- [x] `Unchanged_frame_reuses_geometry`: Пауза и неизменный view дают ноль повторных geometry builds.
+- [x] `Each_revision_invalidates_only_dependents`: Табличный тест всех revisions проверяет правильные invalidation sets.
+- [x] `Cache_is_bounded_and_spatial_query_is_complete`: Удалённые объекты очищены; индекс не пропускает пересекающие viewport элементы.
 
 ## Инварианты и границы
 
@@ -83,3 +83,15 @@ revision: 1
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution scope and dependency matrix 2026-10-09
+
+EpicExecutionPrompt authorizes expansion to `GameSessionScreen.cs`, `GameSessionScreen.MapView.cs`, `TacticalMapSceneGeometry.cs`, `Controls/AsyncObjectImageCache.cs`, `Controls/ObjectInfoPanel.cs` under the same GameSession directory for production reuse and image publication invalidation.
+
+Spatial membership depends on world/pose bounds only. Markers depend on world/pose/camera/settings/selection; hit targets additionally layout/locale (hull plaques). Paths depend on pose/route/camera/settings/selection; trails depend on trail/camera/settings; labels depend on world/pose/camera/layout/settings/locale/selection. UI time does not invalidate geometry. The scene cache retains one current entry; the spatial index has a fixed contact capacity and uses a complete linear fallback on overflow. Native display lists are reused only for unchanged paused frame/view/UI with no active transient combat effects or pending command submission; decoded image publication has its own revision.
+
+## Execution evidence 2026-10-09
+
+One-entry scene cache, explicit revision dependencies, reused immutable pose arrays and paused display lists are active in production. Cluster geometry now has a value/reference key. Decoded image publication increments its own revision; input and transient combat effects prevent stale display-list reuse. A bounded spatial grid updates only changed contact bounds, expands queries beyond maximum marker/halo radius and falls back to the complete frame on capacity overflow. Large spanning bounds are retained separately; removed entries and screen disposal clear index state. Original path clipping continues to retain viewport-crossing segments.
+
+Checks: new revision table/reuse/capacity/completeness cases 12/12; full Client 1822/1822; Release 0 warnings/errors; scoped format and diff pass. Forty unchanged paused frames have zero additional marker/cluster/trail/forecast/label/paint builds; selection does not update static bounds. Native performance acceptance remains OPEN for TK-0005.

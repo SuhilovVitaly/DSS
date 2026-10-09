@@ -15,6 +15,7 @@ internal sealed class AsyncObjectImageCache : IDisposable
     private bool _disposed;
 
     internal AsyncObjectImageCache(Func<string, SKBitmap?> decode) => _decode = decode;
+    internal long Revision { get; private set; }
     internal int ReadyCount => _ready.Count;
     internal int PendingCount => _pending.Count;
     internal Task PendingWork => Task.WhenAll(_pending.Values);
@@ -57,6 +58,7 @@ internal sealed class AsyncObjectImageCache : IDisposable
         foreach (var entry in _pending.Where(p => p.Value.IsCompleted).ToArray())
         {
             _pending.Remove(entry.Key);
+            Revision++;
             if (_ready.Count == Capacity)
             {
                 string oldest = _order.Dequeue();

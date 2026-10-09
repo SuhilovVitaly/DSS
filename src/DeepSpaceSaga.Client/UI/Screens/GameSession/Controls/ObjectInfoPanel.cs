@@ -493,6 +493,7 @@ public sealed class ObjectInfoPanel : IDisposable
     }
 
     internal void CancelImageIo() => _objectImages.Dispose();
+    internal long ImageRevision => _objectImages.Revision;
     internal Task PendingImageWork => _objectImages.PendingWork;
 
     private void RequestObjectImage(ObjectInfoPanelData data)
