@@ -82,3 +82,11 @@ No public API change.
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution 2026-10-09
+
+The execution request authorizes this ticket. The regression runs through GameSessionScreen.Render with distinct calendar and physical clocks. It reproduced authoritative X=100000/rendered X=0 before the fix. A changed physical baseline while already paused now clears incompatible anchors/corrections and starts a one-point trail; ordinary entry into pause retains existing smoothing. Same-time publications keep the anchor, contact removal/addition follows the snapshot, and resume stays at the new position.
+
+All regression assertions are colocated in TacticalMapSmoothnessTests; the planned separate ObjectTrailTests file is unnecessary because the production screen test inspects actual trail history and camera. No Engine, Motion, transport or save changes. Native/manual acceptance remains OPEN; the complete viewport/scale/modal matrix belongs to the final integrated pipeline validation and has not run for this commit.
+
+Validation: full Client suite 1736/1736 (ep5-us1-tk1-client-final.trx); Release Client build 0 warnings/errors; scoped dotnet format whitespace --verify-no-changes and git diff --check passed. Diff review confirmed no authoritative changes and preserved ordinary pause-entry reconciliation. Implementation complete; native/manual acceptance OPEN.

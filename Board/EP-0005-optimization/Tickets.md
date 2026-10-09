@@ -26,3 +26,5 @@ F01 и F03 исправлены отдельно. Ниже только draft-п
 | [EP-0005-US-0002-TK-0003-read-only-map-painter](EP-0005-US-0002-tactical-map-render-pipeline/EP-0005-US-0002-TK-0003-read-only-map-painter/EP-0005-US-0002-TK-0003-read-only-map-painter.md) | A03 | P2 | draft |
 | [EP-0005-US-0002-TK-0004-revision-driven-scene-cache](EP-0005-US-0002-tactical-map-render-pipeline/EP-0005-US-0002-TK-0004-revision-driven-scene-cache/EP-0005-US-0002-TK-0004-revision-driven-scene-cache.md) | A04 | P2 | draft |
 | [EP-0005-US-0002-TK-0005-frame-consumers-and-performance](EP-0005-US-0002-tactical-map-render-pipeline/EP-0005-US-0002-TK-0005-frame-consumers-and-performance/EP-0005-US-0002-TK-0005-frame-consumers-and-performance.md) | A05 | P2 | draft |
+| [EP-0005-US-0003-TK-0001-documentation-sync](EP-0005-US-0003-documentation-and-graph/EP-0005-US-0003-TK-0001-documentation-sync/EP-0005-US-0003-TK-0001-documentation-sync.md) | Documentation | P2 | approved |
+| [EP-0005-US-0003-TK-0002-graph-rebuild](EP-0005-US-0003-documentation-and-graph/EP-0005-US-0003-TK-0002-graph-rebuild/EP-0005-US-0003-TK-0002-graph-rebuild.md) | Documentation | P2 | approved |

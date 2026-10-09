@@ -9,6 +9,48 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class TacticalMapSmoothnessTests
 {
+    [Fact]
+    public void Paused_time_advance_rebases_pose_camera_and_trail()
+    {
+        long clock = 0;
+        var buffer = new SnapshotBuffer(() => clock);
+        var obj = new ObjectMotionSnapshot("player", 0, 0, 1, 90);
+        buffer.Update(new(1, 0, SimulationSpeed.Speed0, [obj], PlayerShipObjectId: "player"));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => clock);
+        using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
+        screen.Render(surface.Canvas, 1280, 720);
+        Assert.True(screen.GetObjectTrail("player").Count > 1);
+        clock += Stopwatch.Frequency / 80;
+        buffer.Update(new(2, 3000000, SimulationSpeed.Speed0,
+            [obj with { X = 100000 }], PlayerShipObjectId: "player", SimulationTimeMs: 10000));
+        screen.Render(surface.Canvas, 1280, 720);
+        Assert.Equal(100000, screen.RenderStates[0].Pose.X);
+        Assert.Equal(100000, screen.CameraFocusX);
+        Assert.Equal(100000, Assert.Single(screen.GetObjectTrail("player")).X);
+
+        // Repeated paused publications at the same physical time retain the anchor.
+        buffer.Update(new(3, 3000001, SimulationSpeed.Speed0,
+            [obj with { X = 100001 }], PlayerShipObjectId: "player", SimulationTimeMs: 10000));
+        screen.Render(surface.Canvas, 1280, 720);
+        Assert.Equal(100000, screen.RenderStates[0].Pose.X);
+
+        // Membership still follows the current publication at the same paused time.
+        buffer.Update(new(4, 3000001, SimulationSpeed.Speed0,
+            [obj with { ObjectId = "replacement", X = 200000 }], SimulationTimeMs: 10000));
+        screen.Render(surface.Canvas, 1280, 720);
+        Assert.Equal("replacement", Assert.Single(screen.RenderStates).Pose.ObjectId);
+        Assert.Empty(screen.GetObjectTrail("player"));
+
+        buffer.Update(new(5, 3000001, SimulationSpeed.Speed0,
+            [obj with { X = 100000 }], PlayerShipObjectId: "player", SimulationTimeMs: 10000));
+        screen.Render(surface.Canvas, 1280, 720);
+        buffer.Update(new(6, 3000001, SimulationSpeed.Speed1,
+            [obj with { X = 100000 }], PlayerShipObjectId: "player", SimulationTimeMs: 10000));
+        clock += Stopwatch.Frequency / 80;
+        screen.Render(surface.Canvas, 1280, 720);
+        Assert.InRange(screen.RenderStates[0].Pose.X, 100000, 100001);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

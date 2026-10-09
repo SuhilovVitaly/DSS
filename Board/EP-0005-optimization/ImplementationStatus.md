@@ -1,0 +1,34 @@
+# EP-0005 execution registry
+
+Authorized 2026-10-09 under EpicExecutionPrompt.md. Isolated checkout D:/DeepSpaceSaga/DSS-EP-0005, branch codex/ep-0005-optimization, base origin/base-fight 4233f52346b7d77edc4e04d677f52d7328353fda. Original checkout and unpublished EP-0008 changes preserved.
+
+All original 20 tickets remain pending. Final documentation/Graphify story adds 2 tickets. Execute US1 TK1..15, then US2 TK1..5, then US3 TK1..2; review each story and epic. Publish each ticket before starting the next.
+
+Preparation: Documentation and epic contracts read; existing Graphify queried as navigation. NuGet restore succeeded on host. Branch created on origin; no implementation published yet. Native/manual acceptance NOT RUN. Build/test evidence pending.
+
+Draft assumptions accepted for this execution: 2000 ms real-time stale limit, deterministic bounded label fallback. Shared Engine/Motion/save contracts remain unchanged unless a confirmed dependency requires an explicit scope entry.
+
+| Ticket | Implementation / checks | Publication |
+|---|---|---|
+| EP-0005-US-0001-TK-0001-paused-authoritative-rebase | implemented; Client 1736/1736, Release/format/diff pass; native OPEN | awaiting commit/push |
+| EP-0005-US-0001-TK-0002-visible-object-hit-testing | pending | pending |
+| EP-0005-US-0001-TK-0003-cluster-click-priority | pending | pending |
+| EP-0005-US-0001-TK-0004-important-label-placement | pending | pending |
+| EP-0005-US-0001-TK-0005-bounded-offscreen-work | pending | pending |
+| EP-0005-US-0001-TK-0006-paused-geometry-invalidation | pending | pending |
+| EP-0005-US-0001-TK-0007-coherent-frame-diagnostics | pending | pending |
+| EP-0005-US-0001-TK-0008-layout-before-map | pending | pending |
+| EP-0005-US-0001-TK-0009-nonblocking-render-io | pending | pending |
+| EP-0005-US-0001-TK-0010-deterministic-resource-lifetime | pending | pending |
+| EP-0005-US-0001-TK-0011-map-localization | pending | pending |
+| EP-0005-US-0001-TK-0012-stable-cluster-membership | pending | pending |
+| EP-0005-US-0001-TK-0013-reconciled-route-join | pending | pending |
+| EP-0005-US-0001-TK-0014-stale-snapshot-policy | pending | pending |
+| EP-0005-US-0001-TK-0015-free-viewport-cost | pending | pending |
+| EP-0005-US-0002-TK-0001-frame-state-update | pending | pending |
+| EP-0005-US-0002-TK-0002-scene-geometry-prepare | pending | pending |
+| EP-0005-US-0002-TK-0003-read-only-map-painter | pending | pending |
+| EP-0005-US-0002-TK-0004-revision-driven-scene-cache | pending | pending |
+| EP-0005-US-0002-TK-0005-frame-consumers-and-performance | pending | pending |
+| EP-0005-US-0003-TK-0001-documentation-sync | pending | pending |
+| EP-0005-US-0003-TK-0002-graph-rebuild | pending | pending |

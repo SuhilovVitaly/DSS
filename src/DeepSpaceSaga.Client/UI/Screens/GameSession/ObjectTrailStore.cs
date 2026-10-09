@@ -47,6 +47,13 @@ internal sealed class ObjectTrailStore
 
     internal Dictionary<string, ObjectTrailBuffer> Trails => _trails;
 
+    internal void ResetHistory()
+    {
+        _trails.Clear();
+        _lastSampleTimestamps.Clear();
+        _previousSnapshotSequence = null;
+    }
+
     internal void Update(
         IReadOnlyList<ObjectRenderState> renderStates,
         SimulationSpeed currentSpeed,

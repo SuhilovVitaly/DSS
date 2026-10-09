@@ -1343,6 +1343,16 @@ public sealed partial class GameSessionScreen : IScreen
         // correction, otherwise it snaps instantly on whichever frame receives it — not
         // necessarily the pause/resume transition frame at all.
         bool newSnapshotArrived = _hasSnapshotBaseline && snapshot.SnapshotSequence != _lastSnapshotBaselineSequence;
+        if (isPaused && !enteringPause && newSnapshotArrived && snapshot.MotionTimeMs != _lastSnapshotBaselineGameTimeMs)
+        {
+            // A station action can advance the authoritative world while Speed0 stays
+            // selected. This is a new physical baseline, not pause/resume smoothing.
+            _pausedVisualAnchors.Clear();
+            _visualCorrections.Clear();
+            _trailStore.ResetHistory();
+            _shouldBootstrapInitialTrails = false;
+            _initialTrailBootstrapObjectIds.Clear();
+        }
         long targetGameTimeMs = snapshot.MotionTimeMs + ed;
 
         foreach (var obj in snapshot.Objects)
