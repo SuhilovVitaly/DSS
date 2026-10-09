@@ -195,25 +195,21 @@ public sealed class SnapshotBuffer
     /// The delta is accumulated in speed segments so changing speed between
     /// snapshots does not retroactively apply the new speed to old real time.
     /// </summary>
-    public SnapshotPrediction? LatestPrediction
+    public SnapshotPrediction? LatestPrediction => PredictionAt(_timestampProvider());
+
+    internal long GetTimestamp() => _timestampProvider();
+
+    internal SnapshotPrediction? PredictionAt(long now)
     {
-        get
+        lock (_sync)
         {
-            long now = _timestampProvider();
-
-            lock (_sync)
-            {
-                now = ObserveTimestamp(now);
-                if (_latest is null)
-                    return null;
-
-                long effectiveDelta = _accumulatedPredictionGameTimeMs
-                    + SegmentPredictionMs(now);
-
-                long age = (long)(Math.Max(0, now - _latest.ReceivedAtTimestamp) * (1000.0 / Stopwatch.Frequency));
-                return new SnapshotPrediction(_latest, effectiveDelta, _currentSpeed, _lastReconciliationForwardJumpMs,
-                    _totalReconciliationForwardJumpMs, age >= MaximumSnapshotAgeMs, age);
-            }
+            now = ObserveTimestamp(now);
+            if (_latest is null)
+                return null;
+            long effectiveDelta = _accumulatedPredictionGameTimeMs + SegmentPredictionMs(now);
+            long age = (long)(Math.Max(0, now - _latest.ReceivedAtTimestamp) * (1000.0 / Stopwatch.Frequency));
+            return new SnapshotPrediction(_latest, effectiveDelta, _currentSpeed, _lastReconciliationForwardJumpMs,
+                _totalReconciliationForwardJumpMs, age >= MaximumSnapshotAgeMs, age);
         }
     }
 

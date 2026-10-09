@@ -1,0 +1,11 @@
+# EP-0005-US-0001 implementation review — 2026-10-09
+
+Reviewed published range 4233f523..91b2feca against all 15 ACs and ticket evidence. This is executor self-review, not independent review or operator approval.
+
+No additional confirmed defects found in the reviewed diff. Functional integration covers pause/time advance/resume; visible hover/click and cluster priority; deterministic important-label fallback; bounded trail work; paused cache invalidation; completed-frame capture; current layout; asynchronous I/O cancellation; graphics ownership; locale changes; stable clusters; Approach joins; stale receipt policy; free-viewport oracle/cost.
+
+Observed validation: latest full Client 1800/1800, then final geometry tests 6/6 after adding fractional/permuted oracle and empty-fit coverage. Release build 0 warnings/errors. Per-ticket scoped formatting and diff checks passed except preserved pre-existing formatting debt documented in TK-0003. Each of the 15 ticket commits was immediately pushed and exact remote head verified. See ImplementationStatus.md for publication map.
+
+Integration repairs discovered during execution were included and tested in their relevant tickets: synchronous image pixel fixtures now await decoding; Approach cache retains returned legacy geometry and maneuver boundary; empty free viewport is respected by label/fit consumers. Explicit scope extensions are in ticket execution sections. All production changes remain in Client; Engine, Contracts, Motion and save format are unchanged.
+
+Remaining acceptance gates: native real-window/GPU matrix and 80 FPS target NOT RUN/OPEN at this stage. The 100-cycle native Skia handle test is raster ownership evidence, not GPU/scanout memory evidence. The free-viewport microbenchmark is CPU Debug evidence only. Immutable frame ownership, read-only painting, complete revision matrix and final frame consumers belong to US-0002 and are not claimed delivered by this story. Full project documentation/Graphify synchronization is intentionally deferred to final US-0003. Board draft planning text will be reconciled with actual execution evidence there.

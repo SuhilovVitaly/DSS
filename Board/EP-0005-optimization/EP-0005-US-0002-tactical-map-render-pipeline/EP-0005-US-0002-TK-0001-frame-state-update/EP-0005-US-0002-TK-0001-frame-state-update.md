@@ -6,7 +6,7 @@ title: "Выделить обновление состояния тактиче�
 stage: draft
 layer: client
 depends_on: ["EP-0005-US-0001-tactical-map-audit-remediation"]
-files_touched: 4
+files_touched: 6
 serves: [AC-0001]
 source_finding: A01
 evidence_status: architecture-proposal
@@ -58,9 +58,9 @@ revision: 1
 
 ## Критерии приёмки — AC-0001
 
-- [ ] `Frame_update_uses_one_baseline_and_clock`: Все объекты кадра относятся к одному baseline и timestamp.
-- [ ] `Frame_state_is_immutable_after_next_update`: Следующий update не меняет опубликованный frame.
-- [ ] `Frame_update_preserves_pause_and_reconciliation`: Pause/time advance/resume и corrections эквивалентны исправленной реализации.
+- [x] `Frame_update_uses_one_baseline_and_clock`: Все объекты кадра относятся к одному baseline и timestamp.
+- [x] `Frame_state_is_immutable_after_next_update`: Следующий update не меняет опубликованный frame.
+- [x] `Frame_update_preserves_pause_and_reconciliation`: Pause/time advance/resume и corrections эквивалентны исправленной реализации.
 
 ## Инварианты и границы
 
@@ -82,3 +82,15 @@ revision: 1
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution scope 2026-10-09
+
+EpicExecutionPrompt authorizes implementation and scope expansion. Also allow `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs`: transfer combat pose membership to the state updater while retaining preview intent in the screen adapter. Board status/review evidence is maintained with this ticket.
+
+Also allow `src/DeepSpaceSaga.Client/SnapshotBuffer.cs`: add a timestamp-taking internal prediction read, so the screen clock and prediction share the same frame timestamp. Existing public reads remain compatible.
+
+## Execution evidence 2026-10-09
+
+Implemented the production TacticalMapStateUpdater and immutable TacticalMapFrameState; prediction, combat pose membership, pause/rebase, reconciliation and player-follow pose use one captured baseline/timestamp. Adapter retains selection commands, trail reset and diagnostic I/O. SnapshotBuffer.PredictionAt accepts the frame timestamp and default screen clock shares the buffer clock.
+
+Validation: focused state/pause tests 10/10; full Client 1804/1804 after repairing shared-clock default (first full run exposed one failure); Release build 0 warnings/errors; scoped whitespace verification and diff check pass. Existing pause, combat, stale, diagnostics and geometry regressions retained. Native/GPU acceptance remains OPEN for the integrated performance ticket.

@@ -11,7 +11,6 @@ public sealed partial class GameSessionScreen
     internal TorpedoRoute? LaunchPreviewRoute { get; private set; }
     internal CombatTrajectoryProjector.Geometry? LaunchPreviewGeometry { get; private set; }
     private (ObjectMotionSnapshot Owner, ObjectMotionSnapshot Target, LauncherCombatSnapshot Launcher, long Time)? _launchPreviewKey;
-    private readonly HashSet<string> _combatPoseObjectIds = new(StringComparer.Ordinal);
 
     private bool IsLaunchPreviewRequested() => _hasMousePosition &&
         !(_panelVisible && _lastPanelRect.Contains(_uiMouseX, _uiMouseY)) &&
@@ -20,27 +19,6 @@ public sealed partial class GameSessionScreen
     private static long CombatPredictionDelta(SnapshotPrediction prediction) =>
         prediction.CurrentSpeed == SimulationSpeed.Speed0 && prediction.BufferedSnapshot.Snapshot.CurrentSpeed == SimulationSpeed.Speed0
             ? 0 : prediction.EffectivePredictionDeltaMs;
-
-    private void UpdateCombatPoseObjects(AuthoritativeSnapshot snapshot)
-    {
-        _combatPoseObjectIds.Clear();
-        foreach (var obj in snapshot.Objects)
-        {
-            if (obj.Countermeasure is { } defenseFlight)
-            {
-                _combatPoseObjectIds.Add(obj.ObjectId);
-                _combatPoseObjectIds.Add(defenseFlight.TargetTorpedoId);
-            }
-            if (obj.Torpedo is not { } flight) continue;
-            _combatPoseObjectIds.Add(obj.ObjectId);
-            _combatPoseObjectIds.Add(flight.TargetObjectId);
-        }
-        if (IsLaunchPreviewRequested())
-        {
-            if (snapshot.PlayerShipObjectId is { } playerId) _combatPoseObjectIds.Add(playerId);
-            if (_selectedObjectId is { } targetId) _combatPoseObjectIds.Add(targetId);
-        }
-    }
 
     private void ClearLaunchPreview()
     {

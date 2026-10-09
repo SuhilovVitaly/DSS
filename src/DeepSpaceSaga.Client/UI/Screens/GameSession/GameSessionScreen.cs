@@ -22,27 +22,31 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
     private readonly List<ObjectRenderState> _detailedTrailStates = new();
     internal int DetailedTrailObjectsProcessed => _detailedTrailStates.Count;
     internal int RenderPoseObjectsProcessed => _renderStates.Count;
-    internal int PoseDtoMaterializations { get; private set; }
-    internal long ContactMembershipBuilds { get; private set; }
+    internal int PoseDtoMaterializations => _stateUpdater.PoseDtoMaterializations;
+    internal long ContactMembershipBuilds => _stateUpdater.ContactMembershipBuilds;
     private readonly FutureTrajectoryProjector _futureTrajectoryProjector;
     private readonly NavigationTrajectoryProjector _navigationTrajectoryProjector;
     private readonly ObjectLabelRenderer _labelRenderer;
     private readonly TacticalMapDepthRenderer _depthRenderer;
-    private readonly List<ObjectRenderState> _renderStates = new();
+    private IReadOnlyList<ObjectRenderState> _renderStates = Array.Empty<ObjectRenderState>();
+    private readonly TacticalMapStateUpdater _stateUpdater;
+    private TacticalMapFrameState? _mapFrame;
+    private IReadOnlySet<string> _currentVisualObjectIds => _stateUpdater.ContactIds;
+    private const double VisualReconciliationDurationSeconds = TacticalMapStateUpdater.VisualReconciliationDurationSeconds;
+    private bool _hasSnapshotBaseline => _stateUpdater.HasBaseline;
+    private ulong _lastSnapshotBaselineSequence => _stateUpdater.BaselineSequence;
+    private long _lastSnapshotBaselineGameTimeMs => _stateUpdater.BaselineMotionTimeMs;
+    private long _lastObservedForwardJumpMs => _stateUpdater.ObservedForwardJumpMs;
+    private SimulationSpeed _previousRenderSpeed => _stateUpdater.PreviousSpeed;
+    private IReadOnlyDictionary<string, ObjectMotionSnapshot> _lastSnapshotBaselineObjects => _stateUpdater.BaselineObjects;
+    private IReadOnlyDictionary<string, TacticalMapStateUpdater.VisualCorrection> _visualCorrections => _stateUpdater.VisualCorrections;
+    private IReadOnlyDictionary<string, RenderMotion> _pausedVisualAnchors => _stateUpdater.PausedVisualAnchors;
+
     private readonly List<FutureTrajectoryPoint> _futureTrajectoryPoints = new(FutureTrajectoryProjector.MaxSamplePoints);
     private readonly HashSet<string> _missileTrailIds = new(StringComparer.Ordinal);
     private readonly SolarSystemLayerRenderer _solarSystemLayer = new();
-    private readonly Dictionary<string, RenderMotion> _pausedVisualAnchors = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, VisualCorrection> _visualCorrections = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, ObjectMotionSnapshot> _lastSnapshotBaselineObjects = new(StringComparer.Ordinal);
-    private ulong _lastSnapshotBaselineSequence;
-    private long _lastSnapshotBaselineGameTimeMs;
     private long _travelEstimateMotionTimeMs;
-    private long _lastObservedForwardJumpMs;
-    private bool _hasSnapshotBaseline;
     private bool _diagInterestingFrame;
-    private readonly HashSet<string> _currentVisualObjectIds = new(StringComparer.Ordinal);
-    private readonly List<string> _visualObjectIdsToRemove = new();
     private readonly HashSet<string> _initialTrailBootstrapObjectIds = new(StringComparer.Ordinal);
     private readonly GameSessionHandle? _handle;
     private readonly Func<long> _timestampProvider;
@@ -101,7 +105,6 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
     private bool _capturedInitialTrailBootstrapObjects;
     private long _lastFrameTimestamp;
     private bool _hasLastFrameTimestamp;
-    private SimulationSpeed _previousRenderSpeed = SimulationSpeed.Speed1;
 
     /// <summary>Monotonic start reference for UI-time (status square blink).</summary>
     private readonly long _uiTimeStartTimestamp;
@@ -183,9 +186,6 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
     private const float CloseButtonSize = 14f;
     private const float CloseButtonMargin = 4f;
     private const float PanelMargin = 8f;
-    private const double VisualReconciliationDurationSeconds = 0.3;
-    private const double ReconciliationCorrectionToleranceWorldUnitsSq = 0.25; // 0.5 world unit (~50 m)
-    private const double ReconciliationCorrectionToleranceDegrees = 0.25;
 
     // Speed panel layout
     private const float SpeedBtnW = 32f;
@@ -294,8 +294,9 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         _selectedObjectId = buffer.Latest?.Snapshot.SelectedObjectId;
         CombatSettings = combatSettings ?? CombatVisualSettings.Default;
         _predictor = predictor;
+        _stateUpdater = new(predictor);
         _handle = handle;
-        _timestampProvider = timestampProvider ?? Stopwatch.GetTimestamp;
+        _timestampProvider = timestampProvider ?? buffer.GetTimestamp;
         _showTrajectoryPrediction = showTrajectoryPrediction;
         _tacticalMapSnapshotDirectory = tacticalMapSnapshotDirectory ?? TacticalMapSnapshotWriter.DefaultDirectory;
         _uiScale = ValidateUiScale(uiScale);
@@ -1137,13 +1138,14 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         if (viewportResized) _zoomTransition.Cancel();
         _zoomTransition.Advance(_camera, deltaSeconds, _isFocusAttachedToPlayer, _mapSettings, width, height);
 
-        var prediction = _buffer.LatestPrediction;
+        var prediction = _buffer.PredictionAt(now);
         _framePrediction = prediction;
         var buffered = prediction?.BufferedSnapshot;
-        UpdateObjectRenderStates(prediction, deltaSeconds);
+        UpdateObjectRenderStates(prediction, now, deltaSeconds);
         _travelEstimateMotionTimeMs = prediction is null ? 0 : GetPredictedGameTimeMs(prediction);
 
-        UpdateCameraFocusFromPlayer(_renderStates);
+        if (_isFocusAttachedToPlayer && _mapFrame?.PlayerFocus is { } focus)
+            _camera.SetFocus(focus.X, focus.Y);
         UpdateCombatImportance();
         UpdateMapClusters();
         LayoutOverlayPanels(buffered);
@@ -1349,286 +1351,31 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
     // ── Speed panel ─────────────────────────────────────────────
 
-    private void UpdateObjectRenderStates(SnapshotPrediction? prediction, double deltaSeconds)
+    private void UpdateObjectRenderStates(SnapshotPrediction? prediction, long timestamp, double deltaSeconds)
     {
-        PoseDtoMaterializations = 0;
-        if (prediction is null)
+        if (!_stateUpdater.HasBaseline && _selectedObjectId is null)
+            _selectedObjectId = prediction?.BufferedSnapshot.Snapshot.SelectedObjectId;
+        _stateUpdater.PreviewTargetId = IsLaunchPreviewRequested() ? _selectedObjectId : null;
+        _stateUpdater.ProfileTargetId = _profileTargetId;
+        _stateUpdater.CaptureDiagnostics = PauseResumeDiagnostics.Enabled;
+        _mapFrame = _stateUpdater.Update(prediction, timestamp, deltaSeconds);
+        _renderStates = _mapFrame.Objects;
+        _profilePlayerRaw = _mapFrame.PlayerRaw;
+        _profileTargetRaw = _mapFrame.TargetRaw;
+        if (_mapFrame.AuthoritativeRebase)
         {
-            _renderStates.Clear();
-            return;
-        }
-
-        bool isPaused = prediction.CurrentSpeed == SimulationSpeed.Speed0;
-        bool enteringPause = isPaused && _previousRenderSpeed != SimulationSpeed.Speed0;
-        bool resuming = !isPaused && _previousRenderSpeed == SimulationSpeed.Speed0;
-
-        if (enteringPause)
-        {
-            _pausedVisualAnchors.Clear();
-            for (int i = 0; i < _renderStates.Count; i++)
-            {
-                var state = _renderStates[i];
-                _pausedVisualAnchors[state.Pose.ObjectId] = state.Pose;
-            }
-
-            _visualCorrections.Clear();
-        }
-
-        _renderStates.Clear();
-
-        long ed = prediction.EffectivePredictionDeltaMs;
-        var snapshot = prediction.BufferedSnapshot.Snapshot;
-        bool membershipChanged = !_hasSnapshotBaseline || snapshot.SnapshotSequence != _lastSnapshotBaselineSequence;
-        if (membershipChanged)
-        {
-            _currentVisualObjectIds.Clear();
-            ContactMembershipBuilds++;
-        }
-        if (!_hasSnapshotBaseline && _selectedObjectId is null)
-            _selectedObjectId = snapshot.SelectedObjectId;
-        string? playerShipObjectId = snapshot.PlayerShipObjectId;
-        UpdateCombatPoseObjects(snapshot);
-        long combatDelta = CombatPredictionDelta(prediction);
-
-        // A fresh authoritative snapshot can reveal that the object's real trajectory
-        // (velocity/heading) differed from what the client had been extrapolating from
-        // the PREVIOUS snapshot — e.g. an engine command or turn cycle progressed while
-        // paused/off-screen, or the engine's and client's clocks simply disagree by a few
-        // ms (amplified hugely at Speed4). Either way, "what the client was already
-        // showing, carried forward to the same target time" is the previous baseline
-        // object extrapolated to now — NOT the new snapshot's own object (which is the
-        // discontinuity itself, not a continuity reference). Must apply exactly once (the
-        // first frame that observes this snapshot as latest) and smooth like a resume
-        // correction, otherwise it snaps instantly on whichever frame receives it — not
-        // necessarily the pause/resume transition frame at all.
-        bool newSnapshotArrived = _hasSnapshotBaseline && snapshot.SnapshotSequence != _lastSnapshotBaselineSequence;
-        if (isPaused && !enteringPause && newSnapshotArrived && snapshot.MotionTimeMs != _lastSnapshotBaselineGameTimeMs)
-        {
-            // A station action can advance the authoritative world while Speed0 stays
-            // selected. This is a new physical baseline, not pause/resume smoothing.
-            _pausedVisualAnchors.Clear();
-            _visualCorrections.Clear();
             _trailStore.ResetHistory();
             _shouldBootstrapInitialTrails = false;
             _initialTrailBootstrapObjectIds.Clear();
         }
-        long targetGameTimeMs = snapshot.MotionTimeMs + ed;
-
-        foreach (var obj in snapshot.Objects)
+        foreach (string message in _mapFrame.Diagnostics)
         {
-            bool hasCombatPose = _combatPoseObjectIds.Contains(obj.ObjectId);
-            var predicted = PredictRenderMotion(obj, hasCombatPose ? combatDelta : ed);
-            if (obj.ObjectId == playerShipObjectId) _profilePlayerRaw = predicted;
-            if (obj.ObjectId == _profileTargetId) _profileTargetRaw = predicted;
-            if (membershipChanged) _currentVisualObjectIds.Add(obj.ObjectId);
-
-            // Combat participants share their confirmed display time with the launch
-            // preview and target path. A frozen/corrected marker would detach the line.
-            if (hasCombatPose || predicted.HasAbsoluteOrbit)
-            {
-                _visualCorrections.Remove(obj.ObjectId);
-                _pausedVisualAnchors.Remove(obj.ObjectId);
-            }
-            else if (isPaused)
-            {
-                if (!_pausedVisualAnchors.TryGetValue(obj.ObjectId, out var anchor))
-                {
-                    anchor = predicted;
-                    _pausedVisualAnchors[obj.ObjectId] = anchor;
-                }
-
-                predicted = ApplyVisualPose(predicted, anchor);
-            }
-            else
-            {
-                bool correctionCreated = false;
-                if (resuming && _pausedVisualAnchors.TryGetValue(obj.ObjectId, out var anchor))
-                {
-                    var newCorrection = CreateVisualCorrection(anchor, predicted);
-                    if (newCorrection.HasOffset)
-                    {
-                        _visualCorrections[obj.ObjectId] = newCorrection;
-                        correctionCreated = true;
-                    }
-                }
-                else if (newSnapshotArrived &&
-                         _lastSnapshotBaselineObjects.TryGetValue(obj.ObjectId, out var prevBaseline))
-                {
-                    long unseenForwardJump = prediction.TotalReconciliationForwardJumpMs - _lastObservedForwardJumpMs;
-                    long elapsedFromPrevBaseline = targetGameTimeMs - unseenForwardJump - _lastSnapshotBaselineGameTimeMs;
-                    var continuityExpected = elapsedFromPrevBaseline > 0
-                        ? PredictRenderMotion(prevBaseline, elapsedFromPrevBaseline)
-                        : new RenderMotion(prevBaseline);
-
-                    // Carry any unfinished correction into this rebase; otherwise a
-                    // second snapshot during smoothing would snap back to raw motion.
-                    if (_visualCorrections.TryGetValue(obj.ObjectId, out var previousCorrection))
-                        continuityExpected = ApplyVisualCorrection(continuityExpected,
-                            previousCorrection with { ElapsedSeconds = previousCorrection.ElapsedSeconds + deltaSeconds });
-                    var newCorrection = CreateVisualCorrection(continuityExpected, predicted);
-                    if (IsMeaningfulCorrection(newCorrection))
-                    {
-                        _visualCorrections[obj.ObjectId] = newCorrection;
-                        correctionCreated = true;
-                    }
-                    else
-                    {
-                        // The new baseline may already include the old correction.
-                        // Keeping it here would apply that offset for a second time.
-                        _visualCorrections.Remove(obj.ObjectId);
-                    }
-                }
-
-                if (_visualCorrections.TryGetValue(obj.ObjectId, out var correction))
-                {
-                    if (!correctionCreated)
-                        correction = correction with { ElapsedSeconds = correction.ElapsedSeconds + deltaSeconds };
-
-                    predicted = ApplyVisualCorrection(predicted, correction);
-                    if (correction.ElapsedSeconds >= VisualReconciliationDurationSeconds)
-                        _visualCorrections.Remove(obj.ObjectId);
-                    else
-                        _visualCorrections[obj.ObjectId] = correction;
-                }
-            }
-
-            if (PauseResumeDiagnostics.Enabled && obj.ObjectId == playerShipObjectId &&
-                (enteringPause || resuming || newSnapshotArrived ||
-                 _visualCorrections.ContainsKey(obj.ObjectId) || isPaused))
-            {
-                _diagInterestingFrame = true;
-                PauseResumeDiagnostics.Write(
-                    $"OBJECT id={obj.ObjectId} isPaused={isPaused} enteringPause={enteringPause} resuming={resuming} " +
-                    $"newSnapshotArrived={newSnapshotArrived} " +
-                    $"snapSeq={snapshot.SnapshotSequence} snapGameTimeMs={snapshot.MotionTimeMs} ed={ed} " +
-                    $"authX={obj.X:F3} authY={obj.Y:F3} authDir={obj.Direction:F3} " +
-                    $"visualX={predicted.X:F3} visualY={predicted.Y:F3} visualDir={predicted.Direction:F3} " +
-                    $"turnStepDeg={obj.TurnStepDegrees} turnStepRemainingMs={obj.TurnStepRemainingMs} " +
-                    $"correctionActive={_visualCorrections.ContainsKey(obj.ObjectId)}");
-            }
-
-            if (membershipChanged) _lastSnapshotBaselineObjects[obj.ObjectId] = obj;
-
-            // Every client-visible contact stays available. Labels, compact markers and
-            // clusters reduce detail without removing selected/navigation targets.
-
-            _renderStates.Add(new ObjectRenderState(obj, predicted, obj.ObjectId == playerShipObjectId));
+            _diagInterestingFrame = true;
+            PauseResumeDiagnostics.Write(message);
         }
-
-        if (membershipChanged)
-        {
-            RemoveMissingVisualStates(_pausedVisualAnchors);
-            RemoveMissingVisualStates(_visualCorrections);
-            RemoveMissingVisualStates(_lastSnapshotBaselineObjects);
-        }
-
-        if (resuming)
-            _pausedVisualAnchors.Clear();
-
-        _lastObservedForwardJumpMs = prediction.TotalReconciliationForwardJumpMs;
-        _lastSnapshotBaselineGameTimeMs = snapshot.MotionTimeMs;
-        _lastSnapshotBaselineSequence = snapshot.SnapshotSequence;
-        _hasSnapshotBaseline = true;
-
-        // SelectedObjectId survives a scale-filter change (it isn't recomputed from
-        // _renderStates like ActiveObjectId) but must still be cleared the moment the
-        // object no longer exists in the authoritative world at all — checked against
-        // every object in this snapshot, not just the scale-filtered _renderStates
-        // (ТЗ §54 "Жизненный цикл объекта").
-        if (_selectedObjectId is not null && !_currentVisualObjectIds.Contains(_selectedObjectId))
+        if (prediction is not null && _selectedObjectId is not null &&
+            !_stateUpdater.ContactIds.Contains(_selectedObjectId))
             SetSelectedObjectId(null);
-
-        _previousRenderSpeed = prediction.CurrentSpeed;
-    }
-
-    private RenderMotion PredictRenderMotion(ObjectMotionSnapshot state, long elapsedMs)
-    {
-        if (elapsedMs == 0 && state.Orbit is null) return new(state);
-        if (_predictor is LinearMotionPredictor &&
-            LinearMotionPredictor.TryPredictLinearPosition(state, elapsedMs, out double x, out double y))
-            return new(state, x, y, state.Direction);
-        PoseDtoMaterializations++;
-        return new(_predictor.Predict(state, elapsedMs));
-    }
-    private static RenderMotion ApplyVisualPose(
-        RenderMotion target,
-        RenderMotion visualPose)
-    {
-        if (target.X == visualPose.X && target.Y == visualPose.Y && target.Direction == visualPose.Direction)
-            return target;
-        return target with
-        {
-            X = visualPose.X,
-            Y = visualPose.Y,
-            Direction = visualPose.Direction
-        };
-    }
-
-    private static VisualCorrection CreateVisualCorrection(
-        RenderMotion visualPose,
-        RenderMotion target)
-    {
-        return new VisualCorrection(
-            visualPose.X - target.X,
-            visualPose.Y - target.Y,
-            ShortestDirectionDelta(visualPose.Direction, target.Direction),
-            ElapsedSeconds: 0);
-    }
-
-    private static RenderMotion ApplyVisualCorrection(
-        RenderMotion target,
-        VisualCorrection correction)
-    {
-        double progress = Math.Clamp(
-            correction.ElapsedSeconds / VisualReconciliationDurationSeconds,
-            0,
-            1);
-        double smoothProgress = progress * progress * (3 - 2 * progress);
-        double remaining = 1 - smoothProgress;
-
-        return target with
-        {
-            X = target.X + correction.OffsetX * remaining,
-            Y = target.Y + correction.OffsetY * remaining,
-            Direction = NormalizeDirection(target.Direction + correction.DirectionOffset * remaining)
-        };
-    }
-
-    private static bool IsMeaningfulCorrection(VisualCorrection correction)
-    {
-        double distanceSq = correction.OffsetX * correction.OffsetX + correction.OffsetY * correction.OffsetY;
-        return distanceSq > ReconciliationCorrectionToleranceWorldUnitsSq ||
-               Math.Abs(correction.DirectionOffset) > ReconciliationCorrectionToleranceDegrees;
-    }
-
-    private static double ShortestDirectionDelta(double visualDirection, double targetDirection)
-    {
-        double delta = (visualDirection - targetDirection) % 360;
-        if (delta > 180)
-            delta -= 360;
-        else if (delta < -180)
-            delta += 360;
-
-        return delta;
-    }
-
-    private static double NormalizeDirection(double direction)
-    {
-        double normalized = direction % 360;
-        return normalized < 0 ? normalized + 360 : normalized;
-    }
-
-    private void RemoveMissingVisualStates<T>(Dictionary<string, T> states)
-    {
-        _visualObjectIdsToRemove.Clear();
-        foreach (string objectId in states.Keys)
-        {
-            if (!_currentVisualObjectIds.Contains(objectId))
-                _visualObjectIdsToRemove.Add(objectId);
-        }
-
-        for (int i = 0; i < _visualObjectIdsToRemove.Count; i++)
-            states.Remove(_visualObjectIdsToRemove[i]);
     }
 
     private void UpdateCameraFocusFromPlayer(IReadOnlyList<ObjectRenderState> renderStates)
@@ -2412,13 +2159,6 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         canvas.DrawText(label, rect.MidX, textY, _mechanicsBtnTextPaint);
     }
 
-    private readonly record struct VisualCorrection(
-        double OffsetX,
-        double OffsetY,
-        double DirectionOffset,
-        double ElapsedSeconds)
-    {
-        internal bool HasOffset => OffsetX != 0 || OffsetY != 0 || DirectionOffset != 0;
-    }
+
 
 }
