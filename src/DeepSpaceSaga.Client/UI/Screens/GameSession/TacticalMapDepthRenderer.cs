@@ -8,8 +8,50 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// trajectories. The lighting direction is fixed in screen space (upper-left),
 /// so camera pan, zoom, and object heading never change the visual light source.
 /// </summary>
-internal sealed class TacticalMapDepthRenderer
+internal sealed class TacticalMapDepthRenderer : IDisposable
 {
+    private bool _disposed;
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _selectionGlowPaint.MaskFilter?.Dispose();
+        _targetTrajectoryHaloPaint.PathEffect?.Dispose();
+        _targetTrajectoryPaint.PathEffect?.Dispose();
+        _markerShadowPaint.Dispose();
+        _markerBasePaint.Dispose();
+        _markerShadePaint.Dispose();
+        _markerHighlightPaint.Dispose();
+        _markerRimPaint.Dispose();
+        _glintHaloPaint.Dispose();
+        _glintCorePaint.Dispose();
+        _focusIndicatorPaint.Dispose();
+        _focusIndicatorPath.Dispose();
+        _selectionGlowPaint.Dispose();
+        _selectionPaint.Dispose();
+        _glyphShadowPaint.Dispose();
+        _glyphBasePaint.Dispose();
+        _glyphHighlightPaint.Dispose();
+        _glyphRimPaint.Dispose();
+        _engineFlameOuterPaint.Dispose();
+        _engineFlameInnerPaint.Dispose();
+        _engineFlamePath.Dispose();
+        _trajectoryPath.Dispose();
+        _targetTrajectoryHaloPaint.Dispose();
+        _targetTrajectoryPaint.Dispose();
+        _courseAlignmentPaint.Dispose();
+        _courseAlignmentTextPaint.Dispose();
+        _navigationTargetShadowPaint.Dispose();
+        _navigationTargetPaint.Dispose();
+        _interceptPointShadowPaint.Dispose();
+        _interceptPointRingPaint.Dispose();
+        _interceptPointCorePaint.Dispose();
+        _selectedGlow.Dispose();
+        _activeGlow.Dispose();
+        _futureTrajectoryPaints.Dispose();
+        _navigationTrajectoryPaints.Dispose();
+    }
+
     private const float LightOffsetX = -0.45f;
     private const float LightOffsetY = -0.45f;
     private const float TrajectoryShadowOffset = 1.25f;
@@ -612,8 +654,9 @@ internal sealed class TacticalMapDepthRenderer
 
     // Movement and rotation reuse one uploaded image rather than producing new
     // GPU blur masks. Each state retains only its current marker size.
-    private sealed class ReticleGlow
+    private sealed class ReticleGlow : IDisposable
     {
+        public void Dispose() { _image?.Dispose(); _image = null; _imagePaint.Dispose(); }
         private SKImage? _image;
         private float _ringRadius;
         private readonly SKPaint _imagePaint = new() { FilterQuality = SKFilterQuality.Low };
@@ -644,8 +687,9 @@ internal sealed class TacticalMapDepthRenderer
         }
     }
 
-    private sealed class TrajectoryPaintSet
+    private sealed class TrajectoryPaintSet : IDisposable
     {
+        public void Dispose() { Shadow.Dispose(); Edge.Dispose(); Body.Dispose(); Highlight.Dispose(); }
         public TrajectoryPaintSet(SKColor edgeColor, SKColor bodyColor, SKColor highlightColor)
         {
             Shadow = CreateStrokePaint(new SKColor(6, 6, 6, 235), 5.5f);

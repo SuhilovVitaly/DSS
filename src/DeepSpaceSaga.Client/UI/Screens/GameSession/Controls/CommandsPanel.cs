@@ -12,8 +12,51 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 /// each caption 360×36 with a fixed-height body (same size for every panel,
 /// regardless of how many commands it holds).
 /// </summary>
-public sealed class CommandsPanel
+public sealed class CommandsPanel : IDisposable
 {
+    private bool _disposed;
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _panelBgPaint.Dispose();
+        _mainCaptionBgPaint.Dispose();
+        _moduleCaptionBgPaint.Dispose();
+        _mainCaptionHighlightPaint.Dispose();
+        _mainCaptionShadowPaint.Dispose();
+        _panelBorderPaint.Dispose();
+        _titlePaint.Dispose();
+        _btnNormalPaint.Dispose();
+        _btnHoverPaint.Dispose();
+        _btnPressedPaint.Dispose();
+        _btnActivePaint.Dispose();
+        _btnBorderPaint.Dispose();
+        _moduleCaptionTextPaint.Dispose();
+        _commandBtnNormalPaint.Dispose();
+        _commandBtnHoverPaint.Dispose();
+        _commandBtnPressedPaint.Dispose();
+        _commandBtnDisabledPaint.Dispose();
+        _commandBtnTextPaint.Dispose();
+        _commandBtnTextDisabledPaint.Dispose();
+        _commandBtnBorderPaint.Dispose();
+        _commandBtnIconPaint.Dispose();
+        _statusBarBgPaint.Dispose();
+        _statusBarBorderPaint.Dispose();
+        _statusBarTextPaint.Dispose();
+        _moduleBodyBackgroundImage?.Dispose();
+        _hideImage?.Dispose();
+        _showImage?.Dispose();
+        _hideHoverImage?.Dispose();
+        _hidePressedImage?.Dispose();
+        _showHoverImage?.Dispose();
+        _showPressedImage?.Dispose();
+        _commandButtonNormalImage?.Dispose();
+        _commandButtonHoverImage?.Dispose();
+        _commandButtonPressedImage?.Dispose();
+        foreach (var pair in _commandIcons.Values) { pair.Normal?.Dispose(); pair.Active?.Dispose(); }
+        _commandIcons.Clear();
+    }
+
     private const string XenonAssetsPath = "Images/UI/Themes/Xenon/GameSession/CommandPanels";
     private const float XenonBodySliceInset = 12f;
     private const float XenonButtonSliceInset = 8f;

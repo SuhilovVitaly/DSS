@@ -3,8 +3,16 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI;
 
 /// <summary>World-aligned nested 5×5 cells with continuous density-based color and bounded work.</summary>
-public sealed class GridRenderer
+public sealed class GridRenderer : IDisposable
 {
+    private bool _disposed;
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _paint.Dispose();
+    }
+
     public const int Subdivision = 5;
     private readonly TacticalMapSettings _settings;
     private readonly SKPaint _paint = new() { Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = true };

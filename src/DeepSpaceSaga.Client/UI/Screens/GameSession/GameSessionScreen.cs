@@ -319,7 +319,8 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         _panelBgPaint = new SKPaint { Color = new SKColor(0, 0, 0, 200), Style = SKPaintStyle.Fill };
         _panelBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
 
-        var typeface = SKTypeface.FromFamilyName("Consolas") ?? SKTypeface.Default;
+        using var ownedTypeface = SKTypeface.FromFamilyName("Consolas");
+        var typeface = ownedTypeface ?? SKTypeface.Default;
 
         _panelTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = PanelFontSize, IsAntialias = true, Typeface = typeface };
         _panelLabelPaint = new SKPaint { Color = new SKColor(140, 140, 140), TextSize = PanelFontSize, IsAntialias = true, Typeface = typeface };
@@ -367,7 +368,32 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         if (_disposed) return;
         _disposed = true;
         _ioStop.Cancel();
-        _objectInfoPanel.CancelImageIo();
+        _objectInfoPanel.Dispose();
+        _commandsPanel.Dispose();
+        _grid.Dispose();
+        _labelRenderer.Dispose();
+        _depthRenderer.Dispose();
+        _mapMarkerPaint.Dispose();
+        ReleaseCombatPaints();
+        _trailPaint.Dispose();
+        _playerShipGlyphPath.Dispose();
+        _panelBgPaint.Dispose();
+        _panelBorderPaint.Dispose();
+        _panelTextPaint.Dispose();
+        _panelLabelPaint.Dispose();
+        _panelClosePaint.Dispose();
+        _speedBtnNormalPaint.Dispose();
+        _speedBtnActivePaint.Dispose();
+        _speedBtnTextPaint.Dispose();
+        _gameTimeTextPaint.Dispose();
+        _speedIndicatorPaint.Dispose();
+        _scaleBtnNormalPaint.Dispose();
+        _scaleBtnActivePaint.Dispose();
+        _scaleBtnTextPaint.Dispose();
+        _scaleIndicatorPaint.Dispose();
+        _mechanicsBtnNormalPaint.Dispose();
+        _mechanicsBtnHoverPaint.Dispose();
+        _mechanicsBtnTextPaint.Dispose();
         _ = SnapshotSaveTask.ContinueWith(_ => _ioStop.Dispose(), CancellationToken.None,
             TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
@@ -383,7 +409,6 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
     public void OnDeactivated()
     {
         ClearLaunchPreview();
-        ReleaseCombatPaints();
         _zoomTransition.Cancel();
         _isPanningMap = false;
         _isCtrlLeftDown = false;
@@ -1078,6 +1103,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
     public void Render(SKCanvas canvas, int width, int height)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         BeginFrameProfile();
         DisplayedPlayerTrajectoryEnd = null;
         RenderStageCompleted?.Invoke("begin");
@@ -1948,7 +1974,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
             {
                 float indX = btnX + SpeedBtnW / 2f - SpeedIndicatorSize / 2f;
                 float indY = btnY + SpeedBtnH + 1f;
-                var path = new SKPath();
+                using var path = new SKPath();
                 path.MoveTo(indX, indY);
                 path.LineTo(indX + SpeedIndicatorSize, indY);
                 path.LineTo(indX + SpeedIndicatorSize / 2f, indY + SpeedIndicatorSize);
@@ -1992,7 +2018,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         // Continuous indicator — under the active button or between buttons.
         float indX = ComputeScaleIndicatorPosition() - ScaleIndicatorSize / 2f;
         float indY = panelY + ScalePanelPadY + ScaleBtnH + 1f;
-        var path = new SKPath();
+        using var path = new SKPath();
         path.MoveTo(indX, indY);
         path.LineTo(indX + ScaleIndicatorSize, indY);
         path.LineTo(indX + ScaleIndicatorSize / 2f, indY + ScaleIndicatorSize);

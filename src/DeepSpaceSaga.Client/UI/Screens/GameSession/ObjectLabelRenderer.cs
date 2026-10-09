@@ -9,8 +9,22 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// leader line → dark plaque → bottom accent stripe → status square → text.
 /// Uses orbit-based layout and per-object smoothing for plaque position.
 /// </summary>
-internal sealed class ObjectLabelRenderer
+internal sealed class ObjectLabelRenderer : IDisposable
 {
+    private bool _disposed;
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _leaderLinePaint.Dispose();
+        _plaqueBgPaint.Dispose();
+        _plaqueBorderPaint.Dispose();
+        _textPaint.Dispose();
+        _unknownTextPaint.Dispose();
+        _statusSquarePaint.Dispose();
+        _stripePaint.Dispose();
+    }
+
     private readonly CombatVisualSettings _combatSettings;
     internal IReadOnlyDictionary<string, ObjectLabelGeometry> Geometries => _geometries;
     internal static bool HasHullBar(ObjectMotionSnapshot source) =>
@@ -51,7 +65,8 @@ internal sealed class ObjectLabelRenderer
     public ObjectLabelRenderer(CombatVisualSettings? combatSettings = null)
     {
         _combatSettings = combatSettings ?? CombatVisualSettings.Default;
-        var typeface = SKTypeface.FromFamilyName("Consolas") ?? SKTypeface.Default;
+        using var ownedTypeface = SKTypeface.FromFamilyName("Consolas");
+        var typeface = ownedTypeface ?? SKTypeface.Default;
 
         _leaderLinePaint = new SKPaint
         {

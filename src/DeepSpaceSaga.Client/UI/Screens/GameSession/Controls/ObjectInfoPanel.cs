@@ -15,8 +15,38 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 /// (ActiveObjectId) or, absent a hover, last clicked (SelectedObjectId) — the
 /// caller resolves that priority and passes the result in.
 /// </summary>
-public sealed class ObjectInfoPanel
+public sealed class ObjectInfoPanel : IDisposable
 {
+    private bool _disposed;
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _mainCaptionBgPaint.Dispose();
+        _rowCaptionBgPaint.Dispose();
+        _captionHighlightPaint.Dispose();
+        _captionShadowPaint.Dispose();
+        _titlePaint.Dispose();
+        _rowTitlePaint.Dispose();
+        _panelBgPaint.Dispose();
+        _panelBorderPaint.Dispose();
+        _labelPaint.Dispose();
+        _valuePaint.Dispose();
+        _imagePlaceholderPaint.Dispose();
+        _imagePaint.Dispose();
+        _btnNormalPaint.Dispose();
+        _btnHoverPaint.Dispose();
+        _btnPressedPaint.Dispose();
+        _btnBorderPaint.Dispose();
+        _hideImage?.Dispose();
+        _hideHoverImage?.Dispose();
+        _hidePressedImage?.Dispose();
+        _showImage?.Dispose();
+        _showHoverImage?.Dispose();
+        _showPressedImage?.Dispose();
+        _objectImages.Dispose();
+    }
+
     private const string XenonAssetsPath = "Images/UI/Themes/Xenon/GameSession/CommandPanels";
     private const string ObjectImageAssetsPath = "Images/UI/GameSessionScreenUI/object-info";
 
