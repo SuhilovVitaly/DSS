@@ -34,8 +34,6 @@ public sealed partial class GameSessionScreen
         _profileForecastPointCount = 0;
         _profilePlayerRaw = _profileTargetRaw = null;
         _profileTargetId = _selectedObjectId ?? _navigationTargetId ?? _activeObjectId;
-        _captureThisFrame = _snapshotCaptureRequested;
-        _snapshotCaptureRequested = false;
         _capturedTrajectories.Clear();
     }
 
@@ -99,7 +97,7 @@ public sealed partial class GameSessionScreen
             _renderStates.Count, _mapClusters.Count, TrailStatistics.Points, _profileForecastPointCount,
             _profilePlayerTrajectoryStart?.X, _profilePlayerTrajectoryStart?.Y,
             DisplayedPlayerTrajectoryEnd?.X, DisplayedPlayerTrajectoryEnd?.Y, _visualCorrections.Count,
-            maxCorrection * _camera.PixelsPerWorldUnit, player, target, _captureThisFrame, !SnapshotSaveTask.IsCompleted));
+            maxCorrection * _camera.PixelsPerWorldUnit, player, target, false, !SnapshotSaveTask.IsCompleted));
         _profilePreviousTimestamp = timestamp;
         _profilePreviousAllocated = _profileAllocatedAtStart;
         _profilePreviousCameraX = _camera.FocusX;
@@ -109,14 +107,7 @@ public sealed partial class GameSessionScreen
         _profileGen1 = gen1;
         _profileGen2 = gen2;
         _profileGcPause = pause;
-        if (_captureThisFrame)
-        {
-            long start = Stopwatch.GetTimestamp();
-            CaptureTacticalMapSnapshot(prediction, timestamp);
-            _frameRecorder.RecordCaptureCost(Stopwatch.GetElapsedTime(start).TotalMilliseconds);
-            _captureThisFrame = false;
-            _capturedTrajectories.Clear();
-        }
+        SealPresentedFrame(prediction, timestamp);
     }
 
     private TacticalMapTrackedObject TrackProfileObject(ObjectRenderState state, RenderMotion? raw)

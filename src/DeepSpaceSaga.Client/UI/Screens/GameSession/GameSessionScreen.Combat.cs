@@ -79,6 +79,8 @@ public sealed partial class GameSessionScreen
             launcher.SpeedKmS, launcher.TurnRateDegPerSec, launcher.Damage, 0, LaunchPreviewRoute!, []);
         LaunchPreviewGeometry = CombatTrajectoryProjector.Project(proposed, target, _predictor, _camera, _viewportW, _viewportH);
         DrawCombatGeometry(canvas, LaunchPreviewGeometry, CombatSettings.Preview, CombatSettings.Preview);
+        CaptureDrawnTrajectory(owner.ObjectId, "launch-preview", LaunchPreviewGeometry.Prediction);
+        CaptureDrawnTrajectory(target.ObjectId, "launch-target", LaunchPreviewGeometry.Target);
     }
 
     private readonly Dictionary<string, CombatTrajectoryProjector.Geometry> _combatTrajectories = new(StringComparer.Ordinal);
@@ -103,6 +105,8 @@ public sealed partial class GameSessionScreen
             var geometry = CombatTrajectoryProjector.Project(flight, target, _predictor, _camera, _viewportW, _viewportH);
             _combatTrajectories[state.Source.ObjectId] = geometry;
             DrawCombatGeometry(canvas, geometry, CombatSettings.Prediction, CombatSettings.Intercept);
+            CaptureDrawnTrajectory(state.Source.ObjectId, "combat-prediction", geometry.Prediction);
+            CaptureDrawnTrajectory(flight.TargetObjectId, "combat-target", geometry.Target);
         }
     }
 

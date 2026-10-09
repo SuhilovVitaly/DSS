@@ -301,7 +301,7 @@ public sealed partial class GameSessionScreen
         {
             var r = new SKRect(left + 4 + i * buttonWidth, top + 4, left + 2 + (i + 1) * buttonWidth, top + 27);
             _mapViewButtons[i] = r;
-            bool enabled = i == 4 ? SnapshotSaveTask.IsCompleted && !_snapshotCaptureRequested && !_captureThisFrame : IsMapViewAvailable(i);
+            bool enabled = i == 4 ? SnapshotSaveTask.IsCompleted : IsMapViewAvailable(i);
             canvas.DrawRect(r, (i == 0 && _isFocusAttachedToPlayer || i == 5 && ShowOrbits && IsMapViewAvailable(i)) ? _scaleBtnActivePaint : _scaleBtnNormalPaint);
             canvas.DrawRect(r, _panelBorderPaint);
             _scaleBtnTextPaint.Color = enabled ? new SKColor(180, 180, 180) : new SKColor(80, 80, 80);

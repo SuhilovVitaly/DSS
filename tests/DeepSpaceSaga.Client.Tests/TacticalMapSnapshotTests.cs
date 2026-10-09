@@ -13,6 +13,34 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class TacticalMapSnapshotTests
 {
     [Fact]
+    public async Task Capture_uses_rendered_snapshot_when_new_snapshot_arrives()
+    {
+        var buffer = new SnapshotBuffer(() => 0);
+        var ship = new ObjectMotionSnapshot("player", 0, 0, 1, 90);
+        buffer.Update(new(1, 0, SimulationSpeed.Speed0, [ship], PlayerShipObjectId: "player"));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
+        TacticalMapSnapshotDocument? saved = null;
+        screen.SnapshotWriter = (document, _) => { saved = document; return "capture"; };
+        using var surface = SKSurface.Create(new SKImageInfo(1920, 1080));
+        screen.Render(surface.Canvas, 1920, 1080);
+        var shownEndpoint = screen.DisplayedPlayerTrajectoryEnd;
+        buffer.Update(new(2, 10000, SimulationSpeed.Speed0, [ship with { X = 100000 }], PlayerShipObjectId: "player"));
+        screen.OnMouseDown(1000, 400);
+        screen.OnMouseMove(1050, 400);
+        screen.OnMouseUp(1050, 400); // Camera changed by input, but has not been presented yet.
+        var button = screen.MapViewButtonRects[4];
+        screen.OnMouseDown(button.MidX, button.MidY);
+        screen.Render(surface.Canvas, 1920, 1080);
+        await screen.SnapshotSaveTask;
+        Assert.NotNull(saved);
+        Assert.Equal(1UL, saved.State.AuthoritativeSnapshot!.SnapshotSequence);
+        Assert.Equal(0, Assert.Single(saved.State.Objects).Rendered.X);
+        Assert.Equal(0, saved.State.Camera.FocusX);
+        Assert.Equal(960, saved.State.Objects[0].ScreenX);
+        Assert.Equal(shownEndpoint!.Value.X, Assert.Single(saved.State.Trajectories).Points[^1].X);
+    }
+
+    [Fact]
     public async Task Snapshot_button_writes_authoritative_and_render_state_with_camera_selection_and_speed()
     {
         string directory = Path.Combine(Path.GetTempPath(), "DSS-TacticalMapSnapshotTests", Guid.NewGuid().ToString("N"));
@@ -48,6 +76,7 @@ public sealed class TacticalMapSnapshotTests
             // Select the target first so the capture proves that the click-state is
             // written independently from the authoritative snapshot's object list.
             screen.OnMouseDown(1010, 540);
+            screen.Render(canvas, 1920, 1080); // Present the selection before capture.
             screen.OnMouseDown(screen.MapViewButtonRects[4].MidX, screen.MapViewButtonRects[4].MidY);
 
             screen.Render(canvas, 1920, 1080);
@@ -56,7 +85,8 @@ public sealed class TacticalMapSnapshotTests
             using var document = JsonDocument.Parse(File.ReadAllText(path!));
             JsonElement state = document.RootElement.GetProperty("state");
 
-            Assert.Equal(2, document.RootElement.GetProperty("schemaVersion").GetInt32());
+            Assert.Equal(3, document.RootElement.GetProperty("schemaVersion").GetInt32());
+            Assert.True(document.RootElement.GetProperty("hasPresentedFrame").GetBoolean());
             Assert.Equal(17UL, state.GetProperty("authoritativeSnapshot").GetProperty("snapshotSequence").GetUInt64());
             Assert.Equal("PLAYER", state.GetProperty("playerShipObjectId").GetString());
             Assert.Equal("TARGET", state.GetProperty("selectedObjectId").GetString());
@@ -139,7 +169,6 @@ public sealed class TacticalMapSnapshotTests
         using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
         screen.Render(surface.Canvas, 1280, 720);
         var button = screen.MapViewButtonRects[4];
-        screen.OnMouseDown(button.MidX, button.MidY);
         clock = Stopwatch.Frequency / 10;
         screen.RenderStageCompleted = stage =>
         {
@@ -148,6 +177,7 @@ public sealed class TacticalMapSnapshotTests
             buffer.Update(new(18, 5000, SimulationSpeed.Speed1, [ship with { X = 12000 }], PlayerShipObjectId: "player"));
         };
         screen.Render(surface.Canvas, 1280, 720);
+        screen.OnMouseDown(button.MidX, button.MidY);
         await screen.SnapshotSaveTask;
 
         Assert.NotNull(saved);
@@ -218,7 +248,7 @@ public sealed class TacticalMapSnapshotTests
         Assert.NotNull(saved);
         // Subsequent renders did not mutate the worker's owned frame or history.
         Assert.Equal(10000, saved.State.Objects[0].Rendered.X);
-        Assert.Equal(2, saved.Profile!.Frames.Length);
+        Assert.Single(saved.Profile!.Frames);
         Assert.Equal(10000, saved.Profile.Frames[^1].Player!.Value.RenderedX);
     }
 
@@ -238,8 +268,8 @@ public sealed class TacticalMapSnapshotTests
         clock = Stopwatch.Frequency * 8 / 10;
         buffer.Update(new(2, 900, SimulationSpeed.Speed1, [ship with { X = 10009 }], PlayerShipObjectId: "player"));
         var button = screen.MapViewButtonRects[4];
-        screen.OnMouseDown(button.MidX, button.MidY);
         screen.Render(surface.Canvas, 1280, 720);
+        screen.OnMouseDown(button.MidX, button.MidY);
         await screen.SnapshotSaveTask;
 
         Assert.NotNull(saved);
@@ -281,5 +311,23 @@ public sealed class TacticalMapSnapshotTests
         Assert.Equal(5001, second.Frames[1].FrameId);
         Assert.Equal(5000, first.Frames[^1].FrameId);
         Assert.Equal(first.SessionId, second.SessionId);
+    }
+
+    [Fact]
+    public async Task Capture_before_first_frame_is_explicitly_empty()
+    {
+        var buffer = new SnapshotBuffer(() => 0);
+        buffer.Update(new(1, 0, SimulationSpeed.Speed0, [new("unshown", 0, 0, 1, 90)]));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
+        TacticalMapSnapshotDocument? saved = null;
+        screen.SnapshotWriter = (document, _) => { saved = document; return "capture"; };
+        screen.RequestTacticalMapSnapshot();
+        await screen.SnapshotSaveTask;
+        Assert.NotNull(saved);
+        Assert.False(saved.HasPresentedFrame);
+        Assert.Equal(0, saved.FrameId);
+        Assert.Null(saved.State.AuthoritativeSnapshot);
+        Assert.Empty(saved.State.Objects);
+        Assert.Empty(saved.State.Trajectories);
     }
 }

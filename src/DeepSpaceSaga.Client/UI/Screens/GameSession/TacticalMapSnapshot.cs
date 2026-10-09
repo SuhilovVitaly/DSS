@@ -13,7 +13,8 @@ internal sealed record TacticalMapSnapshotDocument(
     TacticalMapSnapshotState State,
     long FrameId = 0,
     bool ShowTrajectoryPrediction = true,
-    TacticalMapProfileCapture? Profile = null);
+    TacticalMapProfileCapture? Profile = null,
+    bool HasPresentedFrame = true);
 
 internal sealed record TacticalMapSnapshotState(
     AuthoritativeSnapshot? AuthoritativeSnapshot,
@@ -108,7 +109,7 @@ internal sealed record TacticalMapAnchoredPose(
 internal static class TacticalMapSnapshotWriter
 {
     internal const string DefaultDirectory = "TacticalMapSnapshots";
-    internal const int CurrentSchemaVersion = 2;
+    internal const int CurrentSchemaVersion = 3;
 
     private static readonly object Sync = new();
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web)

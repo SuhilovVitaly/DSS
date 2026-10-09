@@ -82,3 +82,18 @@ No public API change.
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution scope 2026-10-09
+Add GameSessionScreen.Profiling.cs to seal presented metadata at the actual end of Render. Existing async writer and copied same-render trajectories are baseline functionality; this ticket changes capture to the last completed displayed frame, including frozen camera/input state. Schema 3 adds HasPresentedFrame; schema 2 readers that tolerate additive fields remain structurally compatible, but capture timing semantics change.
+
+Additional scope: GameSessionScreen.MapView.cs removes obsolete queued-capture button flags; GameSessionScreen.Combat.cs registers the actually drawn combat and preview paths as capture inputs. No combat projection math changes.
+
+## Execution evidence
+
+The new regression reproduced next-frame capture (expected snapshot 1, saved snapshot 2). Capture now detaches the last completed Render at click time: frozen prediction/timestamp/frame ID, camera/viewport/selection/cluster metadata, actual rendered poses and already-drawn ordinary/navigation/combat/preview paths. No projector or fresh SnapshotBuffer read occurs during capture. Input-only camera movement before the next Render does not alter the captured projection. Worker DTOs remain independent of subsequent frames.
+
+Schema 3 retains existing state fields and adds hasPresentedFrame; before the first Render it is false, frameId is zero and snapshot/object/path data is empty. Old schema-2 structural readers that ignore new fields can read the shape, but must account for the change from next-render to last-completed-render timing. The repository performance reader does not reject schema 3. Forecast-off stays absent, hidden paths are not reconstructed. Existing profile tests now request capture after the frame they inspect.
+
+Focused snapshot/combat regressions 20/20, Release build zero warnings/errors, scoped formatting and git diff --check passed. Native/manual acceptance OPEN. Existing bounded async writer/atomic rename are prior baseline functionality, not newly claimed work.
+
+Full Client regression 1759/1759 passed (ep5-us1-tk7-client.trx). Diff review confirmed consistent baseline and owned worker data. Implementation complete; native OPEN.
