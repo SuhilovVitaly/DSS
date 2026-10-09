@@ -2,9 +2,9 @@
 
 Authorized 2026-10-09 under EpicExecutionPrompt.md. Isolated checkout D:/DeepSpaceSaga/DSS-EP-0005, branch codex/ep-0005-optimization, base origin/base-fight 4233f52346b7d77edc4e04d677f52d7328353fda. Original checkout and unpublished EP-0008 changes preserved.
 
-All original 20 tickets remain pending. Final documentation/Graphify story adds 2 tickets. Execute US1 TK1..15, then US2 TK1..5, then US3 TK1..2; review each story and epic. Publish each ticket before starting the next.
+The table below records progress for the original 20 tickets. Final documentation/Graphify story adds 2 tickets. Execute US1 TK1..15, then US2 TK1..5, then US3 TK1..2; review each story and epic. Publish each ticket before starting the next.
 
-Preparation: Documentation and epic contracts read; existing Graphify queried as navigation. NuGet restore succeeded on host. Branch created on origin; no implementation published yet. Native/manual acceptance NOT RUN. Build/test evidence pending.
+Preparation: Documentation and epic contracts read; existing Graphify queried as navigation. NuGet restore succeeded on host. Branch created on origin; per-ticket publication recorded below. Native/manual acceptance NOT RUN. Build/test evidence pending.
 
 Draft assumptions accepted for this execution: 2000 ms real-time stale limit, deterministic bounded label fallback. Shared Engine/Motion/save contracts remain unchanged unless a confirmed dependency requires an explicit scope entry.
 
@@ -16,8 +16,8 @@ Draft assumptions accepted for this execution: 2000 ms real-time stale limit, de
 | EP-0005-US-0001-TK-0004-important-label-placement | implemented; Client 1751/1751, Release/format/diff pass; native OPEN | d81d58c50fdf3de7f1c20695abc369e9bdfdb270; push and remote SHA verified |
 | EP-0005-US-0001-TK-0005-bounded-offscreen-work | implemented; Client 1755/1755, Release/format/diff pass; native OPEN | 7ab6af2af3eab4c5d0ec7d4866a54184bfc3018e; push and remote SHA verified |
 | EP-0005-US-0001-TK-0006-paused-geometry-invalidation | implemented; Client 1757/1757, Release/format/diff pass; native OPEN | 415660a95b491ee0c89c201394671b09455696f5; push and remote SHA verified |
-| EP-0005-US-0001-TK-0007-coherent-frame-diagnostics | implemented; Client 1759/1759, Release/format/diff pass; native OPEN | awaiting commit/push |
-| EP-0005-US-0001-TK-0008-layout-before-map | pending | pending |
+| EP-0005-US-0001-TK-0007-coherent-frame-diagnostics | implemented; Client 1759/1759, Release/format/diff pass; native OPEN | cd33d91c3920648dbfe03b6f9b0dc1572a102899; push and remote SHA verified |
+| EP-0005-US-0001-TK-0008-layout-before-map | implemented; Client 1763/1763, Release/format/diff pass; native OPEN | awaiting commit and immediate push |
 | EP-0005-US-0001-TK-0009-nonblocking-render-io | pending | pending |
 | EP-0005-US-0001-TK-0010-deterministic-resource-lifetime | pending | pending |
 | EP-0005-US-0001-TK-0011-map-localization | pending | pending |

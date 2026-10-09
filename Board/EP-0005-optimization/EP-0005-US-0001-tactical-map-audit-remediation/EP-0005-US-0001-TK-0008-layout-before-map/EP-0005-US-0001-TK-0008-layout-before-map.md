@@ -83,3 +83,11 @@ No public API change.
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution scope 2026-10-09
+Add GameSessionScreen.Layout.cs for overlay layout and Controls/CombatJournalPanel.cs because its rectangle also obstructs the map. Split CommandsPanel/ObjectInfoPanel layout from Draw while retaining Render wrappers for existing consumers. Screen computes current UI rectangles before hit testing and label geometry.
+
+## Execution evidence 2026-10-09
+Implemented current-frame layout for all map-obstructing panels, toolbar and time display before hit testing and label placement. Draw consumes prepared panel rectangles; selected/hover data relayout precedes geometry. Existing public Render wrappers remain compatible.
+Regression reproduced: all four scale cases failed on the first frame with empty panel rectangles before the fix. After fix: focused 46/46; full Client 1763/1763; Release build 0 warnings/errors; scoped whitespace verification and git diff --check pass. Tests cover first frame, resize, UI scale 0.8/1/1.2/1.5 and panel collapse, asserting identical layout at map preparation and completed frame.
+Self-review: Engine/Motion/session/save unchanged; current-frame snapshot also drives time text. Native GPU/manual matrix NOT RUN here, remains OPEN for integrated epic validation.

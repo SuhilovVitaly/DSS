@@ -1040,6 +1040,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private bool IsClickOnUiPanel(float uiX, float uiY)
     {
+        if (_gameTimeRect.Contains(uiX, uiY)) return true;
         if (_combatJournalPanel.Contains(uiX, uiY)) return true;
         if (_mapToolbarRect.Contains(uiX, uiY) || _lastScalePanelRect.Contains(uiX, uiY) ||
             _lastSpeedPanelRect.Contains(uiX, uiY) || _lastMechanicsPanelRect.Contains(uiX, uiY)) return true;
@@ -1105,12 +1106,15 @@ public sealed partial class GameSessionScreen : IScreen
         UpdateCameraFocusFromPlayer(_renderStates);
         UpdateCombatImportance();
         UpdateMapClusters();
+        LayoutOverlayPanels(buffered);
 
         // Recompute after render states + camera focus are current for this frame —
         // covers pan/zoom, camera-focus changes, and an object moving under a
         // stationary cursor (ТЗ §54). OnMouseMove already recomputes eagerly on input;
         // this catches every other trigger that isn't a mouse-move event.
+        string? previousActive = _activeObjectId;
         RecomputeActiveObjectId();
+        if (previousActive != _activeObjectId) LayoutObjectInfoPanel();
         CompleteRenderStage("coordinates_and_hit_test");
 
         if (_diagInterestingFrame && PauseResumeDiagnostics.Enabled)
@@ -1270,9 +1274,6 @@ public sealed partial class GameSessionScreen : IScreen
         // the canvas transform is the only thing that grows them to _uiScale. Text
         // scales vectorially as part of this transform — base font sizes are never
         // multiplied, and the transform is never combined with a TextSize change.
-        _uiViewportW = width / _uiScale;
-        _uiViewportH = height / _uiScale;
-
         canvas.Save();
         canvas.Scale(_uiScale);
 
@@ -1284,24 +1285,17 @@ public sealed partial class GameSessionScreen : IScreen
 
 
         // 6. Commands Panel (top-left)
-        if (_panelVisible) LayoutInfoPanel(buffered);
-        float commandsBottom = _panelVisible && _lastPanelRect.Left < CommandsPanel.PanelWidth + PanelMargin
-            ? _lastPanelRect.Top - PanelMargin : _uiViewportH;
-        _commandsPanel.Render(canvas,
-            buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty, commandsBottom);
+        _commandsPanel.Draw(canvas);
         CompleteRenderStage("command_panel");
 
-        _combatJournalPanel.Render(canvas, _uiViewportW, _uiViewportH, buffered?.Snapshot.CombatJournal ?? default);
+        _combatJournalPanel.Draw(canvas);
 
         // 7. Info panel (bottom-left)
         if (_panelVisible)
             DrawInfoPanel(canvas, buffered);
 
         // 8. Object Info panel (top-right) — Player Ship + Selected/Active Object rows
-        var playerShip = FindPlayerShip(_renderStates);
-        var selectedOrActive = FindRenderStateById(_activeObjectId ?? _selectedObjectId);
-        _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
-            ToObjectInfoPanelData(playerShip), ToObjectInfoPanelData(selectedOrActive, playerShip), _uiViewportH);
+        _objectInfoPanel.Draw(canvas);
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);
@@ -1907,21 +1901,15 @@ public sealed partial class GameSessionScreen : IScreen
 
     private void DrawGameTime(SKCanvas canvas)
     {
-        string text = GameTimeDisplay.Minutes(_buffer.Latest?.Snapshot.GameTimeMs)
-            + " · " + GameTimeDisplay.Status(_buffer.CurrentSpeed);
-        if (_buffer.Latest?.Snapshot.MissingRations > 0) text += " · Не хватает рационов";
-        float width = _gameTimeTextPaint.MeasureText(text) + 24;
-        var rect = new SKRect(_uiViewportW / 2 - width / 2, ComputeScaleSpeedRowY() - 128,
-            _uiViewportW / 2 + width / 2, ComputeScaleSpeedRowY() - 98);
+        var rect = _gameTimeRect;
         canvas.DrawRect(rect, _panelBgPaint);
         canvas.DrawRect(rect, _panelBorderPaint);
-        canvas.DrawText(text, rect.MidX, rect.Top + 20, _gameTimeTextPaint);
+        canvas.DrawText(_gameTimeText, rect.MidX, rect.Top + 20, _gameTimeTextPaint);
     }
 
     private void DrawSpeedPanel(SKCanvas canvas)
     {
         int btnCount = SpeedLabels.Length;
-        _lastSpeedPanelRect = ComputeSpeedPanelRect();
         canvas.DrawRect(_lastSpeedPanelRect, _panelBgPaint);
         canvas.DrawRect(_lastSpeedPanelRect, _panelBorderPaint);
 
@@ -1934,8 +1922,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         for (int i = 0; i < btnCount; i++)
         {
-            var btnRect = new SKRect(btnX, btnY, btnX + SpeedBtnW, btnY + SpeedBtnH);
-            _speedButtonRects[i] = btnRect;
+            var btnRect = _speedButtonRects[i];
 
             bool isActive = (i == activeIdx);
             canvas.DrawRect(btnRect, isActive ? _speedBtnActivePaint : _speedBtnNormalPaint);
@@ -1966,13 +1953,8 @@ public sealed partial class GameSessionScreen : IScreen
     private void DrawScalePanel(SKCanvas canvas)
     {
         int btnCount = ScaleLabels.Length;
-        float totalW = ComputeScalePanelWidth();
-        float panelH = ScalePanelPadY * 2 + ScaleBtnH + ScaleIndicatorSize + 2f;
-
-        float panelX = ComputeScaleSpeedRowLeft();
-        float panelY = ComputeScaleSpeedRowY();
-
-        _lastScalePanelRect = new SKRect(panelX, panelY, panelX + totalW, panelY + panelH);
+        float panelX = _lastScalePanelRect.Left;
+        float panelY = _lastScalePanelRect.Top;
         canvas.DrawRect(_lastScalePanelRect, _panelBgPaint);
         canvas.DrawRect(_lastScalePanelRect, _panelBorderPaint);
 
@@ -1983,8 +1965,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         for (int i = 0; i < btnCount; i++)
         {
-            var btnRect = new SKRect(btnX, btnY, btnX + ScaleBtnW, btnY + ScaleBtnH);
-            _scaleButtonRects[i] = btnRect;
+            var btnRect = _scaleButtonRects[i];
 
             bool isActive = (i == activeIdx);
             canvas.DrawRect(btnRect, isActive ? _scaleBtnActivePaint : _scaleBtnNormalPaint);
@@ -2219,7 +2200,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     private void DrawInfoPanel(SKCanvas canvas, BufferedSnapshot? buffered)
     {
-        var (lines, labelWidth) = LayoutInfoPanel(buffered);
+        var (lines, labelWidth) = _infoPanelLayout;
         float panelX = _lastPanelRect.Left, panelY = _lastPanelRect.Top;
         float closeX = _lastCloseRect.MidX, closeY = _lastCloseRect.Top + 16;
         const float gap = 8f;
@@ -2365,28 +2346,11 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private void DrawMechanicsPanel(SKCanvas canvas)
     {
-        const int buttonCount = 2;
-        const float portraitButtonWidth = 188f;
-        float panelW = MechanicsButtonWidth * buttonCount + MechanicsButtonGap * buttonCount + MechanicsPanelPadding * 2 + portraitButtonWidth;
-        float panelH = MechanicsButtonHeight + MechanicsPanelPadding * 2;
-        float panelX = (_uiViewportW - panelW) / 2f;
-        float panelY = _uiViewportH - panelH - PanelMargin;
-
-        _lastMechanicsPanelRect = new SKRect(panelX, panelY, panelX + panelW, panelY + panelH);
         canvas.DrawRect(_lastMechanicsPanelRect, _panelBgPaint);
         canvas.DrawRect(_lastMechanicsPanelRect, _panelBorderPaint);
 
-        float btnX = panelX + MechanicsPanelPadding;
-        float btnY = panelY + MechanicsPanelPadding;
-
-        _lastFinanceButtonRect = new SKRect(btnX, btnY, btnX + MechanicsButtonWidth, btnY + MechanicsButtonHeight);
         DrawMechanicsButton(canvas, _lastFinanceButtonRect, "F", _isFinanceButtonHovered);
-
-        btnX += MechanicsButtonWidth + MechanicsButtonGap;
-        _lastShipButtonRect = new SKRect(btnX, btnY, btnX + MechanicsButtonWidth, btnY + MechanicsButtonHeight);
         DrawMechanicsButton(canvas, _lastShipButtonRect, "S", _isShipButtonHovered);
-        btnX += MechanicsButtonWidth + MechanicsButtonGap;
-        _lastTempCharacterImageButtonRect = new SKRect(btnX, btnY, btnX + portraitButtonWidth, btnY + MechanicsButtonHeight);
         canvas.DrawRect(_lastTempCharacterImageButtonRect, _isTempCharacterImageButtonHovered ? _mechanicsBtnHoverPaint : _mechanicsBtnNormalPaint);
         canvas.DrawRect(_lastTempCharacterImageButtonRect, _panelBorderPaint);
         canvas.DrawText("TempCharacterImage", _lastTempCharacterImageButtonRect.MidX, _lastTempCharacterImageButtonRect.MidY + 5, PortraitButtonTextPaint);

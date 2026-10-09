@@ -302,6 +302,9 @@ public sealed class ObjectInfoPanel
     }
 
     internal float ScrollOffset(int row) => _rowScrollOffsets[row];
+    private sealed record PreparedRow(int Index, bool Opened, SKRect Caption, SKRect Body,
+        ObjectInfoPanelData? Data, List<(string Label, string Value)> Lines, float ValueOffset);
+    private readonly List<PreparedRow> _preparedRows = new();
 
     // ── Render ──────────────────────────────────────────────────
 
@@ -314,19 +317,20 @@ public sealed class ObjectInfoPanel
     public void Render(SKCanvas canvas, float viewportWidth, float top, ObjectInfoPanelData? playerShip, ObjectInfoPanelData? selectedOrActive,
         float viewportHeight = float.PositiveInfinity)
     {
+        Layout(viewportWidth, top, playerShip, selectedOrActive, viewportHeight);
+        Draw(canvas);
+    }
+
+    internal void Layout(float viewportWidth, float top, ObjectInfoPanelData? playerShip, ObjectInfoPanelData? selectedOrActive,
+        float viewportHeight)
+    {
+        _preparedRows.Clear();
         float left = viewportWidth - Margin - PanelWidth;
 
         _captionRect = new SKRect(left, top, left + PanelWidth, top + CaptionHeight);
         _hideShowButtonRect = new SKRect(
             left + ButtonLeftPadding, top + 2f,
             left + ButtonLeftPadding + ButtonSize, top + 2f + ButtonSize);
-
-        DrawBeveledCaption(canvas, _captionRect, _mainCaptionBgPaint);
-        DrawButton(canvas, _hideShowButtonRect, ResolveHideShowImage());
-
-        float titleX = _hideShowButtonRect.Right + Padding + 2f;
-        float titleY = _captionRect.MidY + _titlePaint.TextSize / 3f;
-        canvas.DrawText("Object Info", titleX, titleY, _titlePaint);
 
         float rowY = _captionRect.Bottom;
 
@@ -360,11 +364,7 @@ public sealed class ObjectInfoPanel
                 _rowCaptionRects[i] = captionRect;
                 _rowBodyRects[i] = bodyRect;
 
-                DrawBeveledCaption(canvas, captionRect, _rowCaptionBgPaint);
-                canvas.DrawText(RowNames[i], captionRect.Left + Padding, captionRect.MidY + _rowTitlePaint.TextSize / 3f, _rowTitlePaint);
-
-                if (opened)
-                    DrawRowBody(canvas, bodyRect, rowData[i], _rowScrollOffsets[i], _rowScrollLimits[i], renderLines, valueOffset);
+                _preparedRows.Add(new(i, opened, captionRect, bodyRect, rowData[i], renderLines, valueOffset));
 
                 rowY += opened ? (RowCaptionHeight + bodyHeight) : RowCaptionHeight;
                 if (!opened && i < RowNames.Length - 1)
@@ -378,6 +378,22 @@ public sealed class ObjectInfoPanel
         }
 
         _bodyRect = new SKRect(left, _captionRect.Bottom, left + PanelWidth, rowY);
+    }
+
+    internal void Draw(SKCanvas canvas)
+    {
+        DrawBeveledCaption(canvas, _captionRect, _mainCaptionBgPaint);
+        DrawButton(canvas, _hideShowButtonRect, ResolveHideShowImage());
+        canvas.DrawText("Object Info", _hideShowButtonRect.Right + Padding + 2f,
+            _captionRect.MidY + _titlePaint.TextSize / 3f, _titlePaint);
+        foreach (var row in _preparedRows)
+        {
+            DrawBeveledCaption(canvas, row.Caption, _rowCaptionBgPaint);
+            canvas.DrawText(RowNames[row.Index], row.Caption.Left + Padding,
+                row.Caption.MidY + _rowTitlePaint.TextSize / 3f, _rowTitlePaint);
+            if (row.Opened)
+                DrawRowBody(canvas, row.Body, row.Data, _rowScrollOffsets[row.Index], _rowScrollLimits[row.Index], row.Lines, row.ValueOffset);
+        }
     }
 
     private float ValueOffset(ObjectInfoPanelData? data, List<(string Label, string Value)> lines) =>

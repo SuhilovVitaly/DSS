@@ -135,6 +135,7 @@ public sealed partial class GameSessionScreen
         Add(_combatJournalPanel.Bounds);
         if (_panelVisible) Add(_lastPanelRect);
         Add(_lastScalePanelRect); Add(_lastSpeedPanelRect); Add(_lastMechanicsPanelRect); Add(_mapToolbarRect);
+        Add(_gameTimeRect);
         var hash = new HashCode(); hash.Add(_viewportW); hash.Add(_viewportH);
         foreach (var r in _mapObstacles) hash.Add(r);
         int value = hash.ToHashCode();
@@ -289,18 +290,24 @@ public sealed partial class GameSessionScreen
         return _mapToolbarRect.Contains(x, y);
     }
 
-    private void DrawMapToolbar(SKCanvas canvas)
+    private void LayoutMapToolbar()
     {
         float width = Math.Min(640, Math.Max(260, _uiViewportW - 16));
         float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 62;
         _mapToolbarRect = new(left, top, left + width, top + 58);
+        float buttonWidth = (width - 12) / _mapViewButtons.Length;
+        for (int i = 0; i < _mapViewButtons.Length; i++)
+            _mapViewButtons[i] = new(left + 4 + i * buttonWidth, top + 4, left + 2 + (i + 1) * buttonWidth, top + 27);
+    }
+
+    private void DrawMapToolbar(SKCanvas canvas)
+    {
+        float width = _mapToolbarRect.Width, left = _mapToolbarRect.Left, top = _mapToolbarRect.Top;
         canvas.DrawRect(_mapToolbarRect, _panelBgPaint);
         string[] keys = ["Map.Follow", "Map.ShipTarget", "Map.Route", "Map.System", "Map.Snapshot", "Map.Orbits", "Map.Belt", "Map.Cluster"];
-        float buttonWidth = (width - 12) / keys.Length;
         for (int i = 0; i < keys.Length; i++)
         {
-            var r = new SKRect(left + 4 + i * buttonWidth, top + 4, left + 2 + (i + 1) * buttonWidth, top + 27);
-            _mapViewButtons[i] = r;
+            var r = _mapViewButtons[i];
             bool enabled = i == 4 ? SnapshotSaveTask.IsCompleted : IsMapViewAvailable(i);
             canvas.DrawRect(r, (i == 0 && _isFocusAttachedToPlayer || i == 5 && ShowOrbits && IsMapViewAvailable(i)) ? _scaleBtnActivePaint : _scaleBtnNormalPaint);
             canvas.DrawRect(r, _panelBorderPaint);

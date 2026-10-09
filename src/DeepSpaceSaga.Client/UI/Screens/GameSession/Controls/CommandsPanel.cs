@@ -473,6 +473,12 @@ public sealed class CommandsPanel
 
     public void Render(SKCanvas canvas, IReadOnlyList<InstalledModuleSnapshot> modules, float viewportHeight = float.PositiveInfinity)
     {
+        Layout(modules, viewportHeight);
+        Draw(canvas);
+    }
+
+    internal void Layout(IReadOnlyList<InstalledModuleSnapshot> modules, float viewportHeight)
+    {
         LayoutButtons();
 
         _captionRect = new SKRect(
@@ -579,6 +585,10 @@ public sealed class CommandsPanel
             Margin, _captionRect.Bottom,
             Margin + PanelWidth, bodyBottom);
 
+    }
+
+    internal void Draw(SKCanvas canvas)
+    {
         _commandButtonDrawOrdinal = 0;
         DrawCaption(canvas);
         foreach (var row in _panelRows)
