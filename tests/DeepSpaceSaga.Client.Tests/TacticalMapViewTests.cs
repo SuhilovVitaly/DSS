@@ -57,6 +57,39 @@ public class TacticalMapViewTests
         new(id, x, y, 0, 0, RenderObjectType: type);
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Cluster_does_not_capture_selected_target_hit(bool ctrl)
+    {
+        using var s = new Scene(null, Contact("SELECTED", 10100, 10000, SpaceObjectType.Station),
+            Contact("A", 35000, 10000), Contact("B", 35020, 10000));
+        s.Screen.OnMouseDown(1060, 540);
+        s.Preset(2);
+        Assert.Equal(1, s.Screen.MapClusterCount);
+        s.Screen.OnMouseMove(985, 540);
+        Assert.Equal("SELECTED", s.Screen.ActiveObjectId);
+        if (ctrl) s.Screen.OnKeyDown(Key.ControlLeft);
+        s.Screen.OnMouseDown(985, 540);
+        Assert.Equal("SELECTED", s.Screen.SelectedObjectId);
+        Assert.Equal(.001, s.Screen.CameraPixelsPerWorldUnit, 9);
+    }
+
+    [Fact]
+    public void Cluster_ties_are_deterministic()
+    {
+        var contacts = new[] { Contact("A", 78990, 10000), Contact("B", 79010, 10000),
+            Contact("C", 80990, 10000), Contact("D", 81010, 10000) };
+        using var first = new Scene(null, contacts);
+        using var reversed = new Scene(null, contacts.AsEnumerable().Reverse().ToArray());
+        first.Preset(2); reversed.Preset(2);
+        Assert.Equal(2, first.Screen.MapClusterCount);
+        first.Screen.OnMouseDown(1030, 540);
+        reversed.Screen.OnMouseDown(1030, 540);
+        Assert.Equal(first.Screen.CameraFocusX, reversed.Screen.CameraFocusX);
+        Assert.Equal(first.Screen.CameraFocusY, reversed.Screen.CameraFocusY);
+    }
+
+    [Theory]
     [InlineData(0, 100, 192)]
     [InlineData(1, 1000, 1920)]
     [InlineData(2, 100000, 192000)]

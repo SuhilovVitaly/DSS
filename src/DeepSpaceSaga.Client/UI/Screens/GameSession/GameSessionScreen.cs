@@ -449,7 +449,6 @@ public sealed partial class GameSessionScreen : IScreen
         if (_objectInfoPanel.OnMouseDown(uiX, uiY))
             return ScreenEvent.None;
         if (IsClickOnUiPanel(uiX, uiY)) return ScreenEvent.None;
-        if (TryExpandMapCluster(x, y)) return ScreenEvent.None;
 
         // 5.5. Object selection takes priority over both plain pan and Ctrl+Click
         // navigation (ТЗ §54, TacticalMapSpecification.md line 79: "клик поглощается,
@@ -490,6 +489,8 @@ public sealed partial class GameSessionScreen : IScreen
 
             return ScreenEvent.None;
         }
+
+        if (TryExpandMapCluster(x, y)) return ScreenEvent.None;
 
         // 5.6. Ctrl+Click navigation: free map area only (object case handled above)
         // — send exactly one engine.orbit command with world coordinates.

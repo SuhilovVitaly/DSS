@@ -81,3 +81,11 @@ No public API change.
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution 2026-10-09
+
+Three regression cases reproduced: plain/Ctrl target click at 24.9 px expanded an adjacent cluster from .001 to 1 PPU; equal-distance clusters selected different bounds after snapshot permutation. Object selection now precedes cluster expansion, which precedes free-space navigation. Clusters are selected by nearest distance, then world cell X/Y. Existing target selection and dock behavior remain unchanged.
+
+Release build passed with zero warnings/errors. Production scoped format passed. Full scoped format reports only existing formatting debt in unchanged portions of TacticalMapViewTests (legacy multiline object initializer and multiple InlineData attributes); confirmed against HEAD and preserved. git diff --check passed. Native/manual acceptance remains OPEN for integrated pipeline validation.
+
+Full Client regression: 1747/1747 passed (ep5-us1-tk3-client.trx). Diff review confirmed deterministic ties and that both selected-object and cluster paths return before gameplay navigation. Implementation complete, native OPEN.

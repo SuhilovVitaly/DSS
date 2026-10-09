@@ -28,7 +28,7 @@ public sealed partial class GameSessionScreen
     internal SKRect MapToolbarRect => _mapToolbarRect;
     internal int MapClusterCount => _mapClusters.Count;
     internal bool IsZoomAnimating => _zoomTransition.Active;
-    private readonly record struct MapCluster(double X, double Y, int Count, MapWorldBounds Bounds);
+    private readonly record struct MapCluster(double X, double Y, int Count, MapWorldBounds Bounds, double CellX, double CellY);
 
     private bool IsImportantMapObject(string id) => id == _selectedObjectId || id == _activeObjectId || id == _navigationTargetId ||
         id == _buffer.Latest?.Snapshot.PlayerShipObjectId || _combatImportantIds.Contains(id);
@@ -75,7 +75,7 @@ public sealed partial class GameSessionScreen
                 _clusterCells[key] = cell = _clusterCellPool.TryPop(out var reused) ? reused : new();
             cell.Add(state);
         }
-        foreach (var cell in _clusterCells.Values)
+        foreach (var (key, cell) in _clusterCells)
         {
             if (cell.Count < 2) continue;
             MapWorldBounds bounds = new();
@@ -85,7 +85,7 @@ public sealed partial class GameSessionScreen
                 _clusteredObjectIds.Add(state.Pose.ObjectId);
             }
             _mapClusters.Add(new(bounds.MinX + (bounds.MaxX - bounds.MinX) / 2,
-                bounds.MinY + (bounds.MaxY - bounds.MinY) / 2, cell.Count, bounds));
+                bounds.MinY + (bounds.MaxY - bounds.MinY) / 2, cell.Count, bounds, key.X, key.Y));
         }
     }
 
@@ -103,20 +103,24 @@ public sealed partial class GameSessionScreen
 
     private bool TryExpandMapCluster(float x, float y)
     {
-        // Explicit targets win over a nearby aggregate.
-        if (_renderStates.Any(s => IsImportantMapObject(s.Pose.ObjectId) && Near(s.Pose.X, s.Pose.Y))) return false;
+        MapCluster? best = null;
+        double bestDistance = double.MaxValue;
         foreach (var cluster in _mapClusters)
         {
-            if (!Near(cluster.X, cluster.Y)) continue;
-            FitMapBounds(cluster.Bounds);
-            return true;
+            var p = _camera.WorldToScreen(cluster.X, cluster.Y, _viewportW, _viewportH);
+            double distance = (p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y);
+            if (distance > 225) continue;
+            if (best is null || distance < bestDistance ||
+                (distance == bestDistance && (cluster.CellX < best.Value.CellX ||
+                    (cluster.CellX == best.Value.CellX && cluster.CellY < best.Value.CellY))))
+            {
+                best = cluster;
+                bestDistance = distance;
+            }
         }
-        return false;
-        bool Near(double wx, double wy)
-        {
-            var p = _camera.WorldToScreen(wx, wy, _viewportW, _viewportH);
-            return (p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y) <= 225;
-        }
+        if (best is null) return false;
+        FitMapBounds(best.Value.Bounds);
+        return true;
     }
 
     internal SKRect AvailableMapRect()
