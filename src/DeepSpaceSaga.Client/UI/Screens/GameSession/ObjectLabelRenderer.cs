@@ -151,7 +151,7 @@ internal sealed class ObjectLabelRenderer : IDisposable
         _groupOwner = null;
         _groupText = string.Empty;
 
-        if (viewportW <= 0 || viewportH <= 0) return;
+        if (viewportW <= 0 || viewportH <= 0 || availableMap is { IsEmpty: true }) return;
 
         if (resetSmoothing)
             _smoother.ResetAll();

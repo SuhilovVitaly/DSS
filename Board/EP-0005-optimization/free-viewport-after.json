@@ -1,0 +1,47 @@
+[
+  {
+    "obstacles": 0,
+    "samples": 101,
+    "candidates": 1,
+    "obstacleChecks": 0,
+    "p50_ms": 0.0002,
+    "p95_ms": 0.0004,
+    "p99_ms": 0.001
+  },
+  {
+    "obstacles": 4,
+    "samples": 101,
+    "candidates": 97,
+    "obstacleChecks": 180,
+    "p50_ms": 0.0046,
+    "p95_ms": 0.0051,
+    "p99_ms": 0.0053
+  },
+  {
+    "obstacles": 8,
+    "samples": 101,
+    "candidates": 523,
+    "obstacleChecks": 1088,
+    "p50_ms": 0.0191,
+    "p95_ms": 0.0204,
+    "p99_ms": 0.0208
+  },
+  {
+    "obstacles": 16,
+    "samples": 101,
+    "candidates": 2423,
+    "obstacleChecks": 8688,
+    "p50_ms": 0.1195,
+    "p95_ms": 0.1402,
+    "p99_ms": 0.1608
+  },
+  {
+    "obstacles": 32,
+    "samples": 101,
+    "candidates": 8637,
+    "obstacleChecks": 64512,
+    "p50_ms": 0.6845,
+    "p95_ms": 0.8556,
+    "p99_ms": 0.9747
+  }
+]

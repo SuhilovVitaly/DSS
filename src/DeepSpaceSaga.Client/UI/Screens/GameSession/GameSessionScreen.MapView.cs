@@ -17,7 +17,10 @@ public sealed partial class GameSessionScreen
     private readonly Dictionary<(double X, double Y), List<ObjectRenderState>> _clusterCells = new();
     private readonly Stack<List<ObjectRenderState>> _clusterCellPool = new();
     private readonly List<SKRect> _mapObstacles = new();
-    private int _freeViewportHash;
+    private bool _hasFreeViewport;
+    private (int Width, int Height) _freeViewportSize;
+    private SKRect[] _freeViewportObstacles = [];
+    internal long FreeViewportBuilds { get; private set; }
     private SKRect _freeViewport;
     private string? _navigationTargetId;
     private string? _fittedBeltId;
@@ -166,13 +169,19 @@ public sealed partial class GameSessionScreen
         if (_panelVisible) Add(_lastPanelRect);
         Add(_lastScalePanelRect); Add(_lastSpeedPanelRect); Add(_lastMechanicsPanelRect); Add(_mapToolbarRect);
         Add(_gameTimeRect);
-        var hash = new HashCode(); hash.Add(_viewportW); hash.Add(_viewportH);
-        foreach (var r in _mapObstacles) hash.Add(r);
-        int value = hash.ToHashCode();
-        if (value != _freeViewportHash || _freeViewport.IsEmpty)
+        return ResolveFreeViewport(_viewportW, _viewportH, _mapObstacles);
+    }
+
+    internal SKRect ResolveFreeViewport(int width, int height, IReadOnlyList<SKRect> obstacles)
+    {
+        if (!_hasFreeViewport || _freeViewportSize != (width, height) ||
+            !obstacles.SequenceEqual(_freeViewportObstacles))
         {
-            _freeViewport = MapViewGeometry.FreeViewport(_viewportW, _viewportH, _mapObstacles);
-            _freeViewportHash = value;
+            _freeViewport = MapViewGeometry.FreeViewport(width, height, obstacles);
+            _freeViewportSize = (width, height);
+            _freeViewportObstacles = obstacles.ToArray();
+            _hasFreeViewport = true;
+            FreeViewportBuilds++;
         }
         return _freeViewport;
     }

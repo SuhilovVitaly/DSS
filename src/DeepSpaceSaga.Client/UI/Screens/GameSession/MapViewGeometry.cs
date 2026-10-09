@@ -16,34 +16,61 @@ internal struct MapWorldBounds
 
 internal static class MapViewGeometry
 {
-    internal static SKRect FreeViewport(int width, int height, IReadOnlyList<SKRect> obstacles)
+    internal static SKRect FreeViewport(int width, int height, IReadOnlyList<SKRect> obstacles) =>
+        FreeViewport(width, height, obstacles, out _, out _);
+
+    internal static SKRect FreeViewport(int width, int height, IReadOnlyList<SKRect> obstacles,
+        out int candidates, out int obstacleChecks)
     {
-        var xs = new List<float> { 0, width };
-        var ys = new List<float> { 0, height };
-        foreach (var r in obstacles)
+        candidates = obstacleChecks = 0;
+        if (width <= 0 || height <= 0) return SKRect.Empty;
+        var clipped = new List<SKRect>();
+        var xs = new SortedSet<float> { 0, width };
+        foreach (var obstacle in obstacles)
         {
-            xs.Add(Math.Clamp(r.Left, 0, width)); xs.Add(Math.Clamp(r.Right, 0, width));
-            ys.Add(Math.Clamp(r.Top, 0, height)); ys.Add(Math.Clamp(r.Bottom, 0, height));
+            if (!float.IsFinite(obstacle.Left) || !float.IsFinite(obstacle.Top) ||
+                !float.IsFinite(obstacle.Right) || !float.IsFinite(obstacle.Bottom)) continue;
+            var r = new SKRect(Math.Clamp(obstacle.Left, 0, width), Math.Clamp(obstacle.Top, 0, height),
+                Math.Clamp(obstacle.Right, 0, width), Math.Clamp(obstacle.Bottom, 0, height));
+            if (r.Width <= 0 || r.Height <= 0) continue;
+            clipped.Add(r); xs.Add(r.Left); xs.Add(r.Right);
         }
-        xs.Sort(); ys.Sort();
-        SKRect best = new(0, 0, width, height);
-        float area = 0;
-        for (int l = 0; l < xs.Count - 1; l++)
-        for (int r = l + 1; r < xs.Count; r++)
-        for (int t = 0; t < ys.Count - 1; t++)
-        for (int b = t + 1; b < ys.Count; b++)
+        clipped.Sort((a, b) => a.Top != b.Top ? a.Top.CompareTo(b.Top) : a.Bottom.CompareTo(b.Bottom));
+        var edges = xs.ToArray();
+        SKRect best = SKRect.Empty;
+        double bestArea = 0;
+        int considered = 0;
+        void Consider(float left, float top, float right, float bottom)
         {
-            var candidate = new SKRect(xs[l], ys[t], xs[r], ys[b]);
-            float a = candidate.Width * candidate.Height;
-            if (a <= area || obstacles.Any(o => candidate.IntersectsWith(o))) continue;
-            best = candidate; area = a;
+            if (bottom <= top) return;
+            considered++;
+            var r = new SKRect(left, top, right, bottom);
+            double area = (double)r.Width * r.Height;
+            if (area > bestArea || area == bestArea && Before(r, best)) { best = r; bestArea = area; }
         }
+        for (int l = 0; l < edges.Length - 1; l++)
+            for (int r = l + 1; r < edges.Length; r++)
+            {
+                float cursor = 0;
+                foreach (var obstacle in clipped)
+                {
+                    obstacleChecks++;
+                    if (obstacle.Right <= edges[l] || obstacle.Left >= edges[r]) continue;
+                    Consider(edges[l], cursor, edges[r], obstacle.Top);
+                    cursor = Math.Max(cursor, obstacle.Bottom);
+                    if (cursor >= height) break;
+                }
+                Consider(edges[l], cursor, edges[r], height);
+            }
+        candidates = considered;
         return best;
     }
 
+    private static bool Before(SKRect a, SKRect b) => a.Top < b.Top || a.Top == b.Top &&
+        (a.Left < b.Left || a.Left == b.Left && (a.Bottom < b.Bottom || a.Bottom == b.Bottom && a.Right < b.Right));
     internal static void Fit(CameraState camera, MapWorldBounds bounds, SKRect available, int width, int height, TacticalMapSettings settings)
     {
-        if (!bounds.HasValue || width <= 0 || height <= 0) return;
+        if (!bounds.HasValue || width <= 0 || height <= 0 || available.IsEmpty) return;
         float padding = (float)Math.Min(settings.FitPaddingPixels, Math.Min(available.Width, available.Height) / 4);
         available.Inflate(-padding, -padding);
         double ppu = Math.Min(Math.Max(1, available.Width) / Math.Max(1, bounds.MaxX - bounds.MinX),
