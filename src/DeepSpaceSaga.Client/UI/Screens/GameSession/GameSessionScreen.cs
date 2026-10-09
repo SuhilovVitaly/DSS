@@ -362,6 +362,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
     // ── IScreen ─────────────────────────────────────────────────
 
     private bool _disposed;
+    private SnapshotPrediction? _framePrediction;
 
     public void Dispose()
     {
@@ -1137,6 +1138,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         _zoomTransition.Advance(_camera, deltaSeconds, _isFocusAttachedToPlayer, _mapSettings, width, height);
 
         var prediction = _buffer.LatestPrediction;
+        _framePrediction = prediction;
         var buffered = prediction?.BufferedSnapshot;
         UpdateObjectRenderStates(prediction, deltaSeconds);
         _travelEstimateMotionTimeMs = prediction is null ? 0 : GetPredictedGameTimeMs(prediction);
@@ -2274,6 +2276,8 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
             long sec = ms / 1000;
             lines.Add(("Game Time", $"{sec / 3600:D2}:{(sec % 3600) / 60:D2}:{sec % 60:D2}"));
             lines.Add(("Speed", buffered.Snapshot.CurrentSpeed.ToString()));
+            if (_framePrediction is { IsStale: true } frame && ReferenceEquals(buffered, frame.BufferedSnapshot))
+                lines.Add((Localization.Get("Map.SnapshotStatus"), Localization.Get("Map.SnapshotStale")));
         }
         else
         {

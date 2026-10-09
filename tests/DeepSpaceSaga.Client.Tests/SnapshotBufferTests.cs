@@ -7,6 +7,72 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class SnapshotBufferTests
 {
+    [Theory]
+    [InlineData(SimulationSpeed.Speed0)]
+    [InlineData(SimulationSpeed.Speed1)]
+    [InlineData(SimulationSpeed.Speed2)]
+    [InlineData(SimulationSpeed.Speed3)]
+    [InlineData(SimulationSpeed.Speed4)]
+    public void Stalled_snapshot_stream_caps_prediction(SimulationSpeed speed)
+    {
+        long clock = 0;
+        var buffer = new SnapshotBuffer(() => clock);
+        buffer.Update(new(1, 0, speed, []));
+        clock = Stopwatch.Frequency * 2;
+        long cap = buffer.LatestPrediction!.EffectivePredictionDeltaMs;
+        clock = Stopwatch.Frequency * 60;
+        Assert.Equal(cap, buffer.LatestPrediction!.EffectivePredictionDeltaMs);
+        Assert.Equal(2000L * (int)speed, cap);
+        Assert.Equal(speed, buffer.CurrentSpeed);
+        Assert.True(buffer.LatestPrediction.IsStale);
+        Assert.Equal(60000, buffer.LatestPrediction.SnapshotAgeMs);
+    }
+
+    [Fact]
+    public void Stale_age_is_real_time_across_speed_changes_and_pause()
+    {
+        long clock = 0;
+        var buffer = new SnapshotBuffer(() => clock);
+        buffer.Update(new(1, 0, SimulationSpeed.Speed1, []));
+        clock = Stopwatch.Frequency;
+        buffer.CurrentSpeed = SimulationSpeed.Speed4;
+        clock = Stopwatch.Frequency * 2 - Stopwatch.Frequency / 1000;
+        Assert.False(buffer.LatestPrediction!.IsStale);
+        clock = Stopwatch.Frequency * 2;
+        Assert.True(buffer.LatestPrediction!.IsStale);
+        Assert.Equal(101000, buffer.EffectivePredictionDeltaMs);
+        clock = Stopwatch.Frequency * 10;
+        buffer.CurrentSpeed = SimulationSpeed.Speed0;
+        buffer.CurrentSpeed = SimulationSpeed.Speed4;
+        clock = Stopwatch.Frequency * 20;
+        Assert.Equal(101000, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(20000, buffer.LatestPrediction!.SnapshotAgeMs);
+        buffer.Update(new(2, 150000, SimulationSpeed.Speed4, []));
+        Assert.False(buffer.LatestPrediction!.IsStale);
+        Assert.Equal(0, buffer.LatestPrediction.SnapshotAgeMs);
+        Assert.Equal(0, buffer.EffectivePredictionDeltaMs);
+        clock += Stopwatch.Frequency / 10;
+        Assert.Equal(10000, buffer.EffectivePredictionDeltaMs);
+    }
+
+    [Fact]
+    public void Backwards_clock_and_old_packets_cannot_reset_receipt_age()
+    {
+        long clock = 0;
+        var buffer = new SnapshotBuffer(() => clock);
+        buffer.Update(new(2, 1000, SimulationSpeed.Speed1, []));
+        clock = Stopwatch.Frequency * 3 / 2;
+        Assert.Equal(1500, buffer.LatestPrediction!.SnapshotAgeMs);
+        clock = Stopwatch.Frequency;
+        Assert.Equal(1500, buffer.LatestPrediction!.SnapshotAgeMs);
+        Assert.Equal(1500, buffer.EffectivePredictionDeltaMs);
+        clock = Stopwatch.Frequency * 4;
+        buffer.Update(new(1, 0, SimulationSpeed.Speed0, []));
+        Assert.Equal(4000, buffer.LatestPrediction!.SnapshotAgeMs);
+        Assert.True(buffer.LatestPrediction.IsStale);
+        Assert.Equal(2UL, buffer.Latest!.Snapshot.SnapshotSequence);
+    }
+
     [Fact]
     public void Update_replaces_previous_snapshot()
     {

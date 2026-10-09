@@ -295,5 +295,7 @@
   "Trade.VoyageResultUnavailable": "Voyage result unavailable",
   "Map.UnknownObject": "Unknown object",
   "Map.CourseAlignment": "Course alignment",
-  "Map.CourseAlignmentTargetFaster": "Course alignment - target faster"
+  "Map.CourseAlignmentTargetFaster": "Course alignment - target faster",
+  "Map.SnapshotStatus": "Snapshot",
+  "Map.SnapshotStale": "Stale — prediction frozen"
 }

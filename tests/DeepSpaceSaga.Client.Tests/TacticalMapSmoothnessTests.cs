@@ -10,6 +10,36 @@ namespace DeepSpaceSaga.Client.Tests;
 public class TacticalMapSmoothnessTests
 {
     [Fact]
+    public void Fresh_snapshot_recovers_from_stale_state_without_gameplay_pause()
+    {
+        long clock = 0;
+        var buffer = new SnapshotBuffer(() => clock);
+        var ship = new ObjectMotionSnapshot("player", 0, 0, 1, 90);
+        buffer.Update(new(1, 0, SimulationSpeed.Speed1, [ship], PlayerShipObjectId: "player"));
+        using var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => clock);
+        using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
+        void Frame() => screen.Render(surface.Canvas, 1280, 720);
+        Frame();
+        clock = Stopwatch.Frequency * 2;
+        Frame();
+        double cappedX = screen.RenderStates[0].Pose.X;
+        Assert.Equal(20, cappedX, 6);
+        clock = Stopwatch.Frequency * 10;
+        Frame();
+        Assert.Equal(cappedX, screen.RenderStates[0].Pose.X);
+        Assert.Contains(screen.BuildPanelLines(buffer.Latest), line => line.Value == Localization.Get("Map.SnapshotStale"));
+        Assert.Equal(SimulationSpeed.Speed1, buffer.CurrentSpeed);
+        Assert.Equal(0, buffer.Latest!.Snapshot.MotionTimeMs);
+        buffer.Update(new(2, 10000, SimulationSpeed.Speed1, [ship with { X = 100 }], PlayerShipObjectId: "player"));
+        Frame();
+        Assert.Equal(cappedX, screen.RenderStates[0].Pose.X, 6);
+        Assert.DoesNotContain(screen.BuildPanelLines(buffer.Latest), line => line.Value == Localization.Get("Map.SnapshotStale"));
+        for (int i = 0; i < 40; i++) { clock += Stopwatch.Frequency / 80; Frame(); }
+        Assert.True(screen.RenderStates[0].Pose.X > 100);
+        Assert.Equal(10000, buffer.Latest.Snapshot.MotionTimeMs);
+    }
+
+    [Fact]
     public async Task Legacy_approach_returned_geometry_is_drawn_from_cache()
     {
         var ship = new ObjectMotionSnapshot("player", 0, 0, 1, 90,

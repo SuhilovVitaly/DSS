@@ -9,7 +9,9 @@ public sealed record SnapshotPrediction(
     long EffectivePredictionDeltaMs,
     SimulationSpeed CurrentSpeed,
     long ReconciliationForwardJumpMs,
-    long TotalReconciliationForwardJumpMs = 0);
+    long TotalReconciliationForwardJumpMs = 0,
+    bool IsStale = false,
+    long SnapshotAgeMs = 0);
 
 /// <summary>
 /// Thread-safe holder for the latest authoritative snapshot.
@@ -20,6 +22,23 @@ public sealed record SnapshotPrediction(
 /// </summary>
 public sealed class SnapshotBuffer
 {
+    public const long MaximumSnapshotAgeMs = 2000;
+    private static readonly long MaximumSnapshotAgeTicks = Stopwatch.Frequency * MaximumSnapshotAgeMs / 1000;
+    private long _lastObservedTimestamp;
+
+    // Called only under _sync. A delayed concurrent caller cannot rewind local time.
+    private long ObserveTimestamp(long now) => _lastObservedTimestamp = Math.Max(_lastObservedTimestamp, now);
+
+    private long SegmentPredictionMs(long now)
+    {
+        if (_latest is { } latest)
+        {
+            long receipt = latest.ReceivedAtTimestamp;
+            long deadline = receipt > long.MaxValue - MaximumSnapshotAgeTicks ? long.MaxValue : receipt + MaximumSnapshotAgeTicks;
+            now = Math.Min(now, deadline);
+        }
+        return RealTicksToGameMs(now - _predictionSegmentStartedAtTimestamp, _currentSpeed);
+    }
     private readonly object _sync = new();
     private readonly SessionEventHistory _events = new();
     private readonly Dictionary<long, long> _combatImpactReceivedAt = new();
@@ -58,6 +77,7 @@ public sealed class SnapshotBuffer
     {
         _timestampProvider = timestampProvider;
         _predictionSegmentStartedAtTimestamp = timestampProvider();
+        _lastObservedTimestamp = _predictionSegmentStartedAtTimestamp;
     }
 
     /// <summary>
@@ -81,10 +101,11 @@ public sealed class SnapshotBuffer
     public void Update(AuthoritativeSnapshot snapshot)
     {
         long now = _timestampProvider();
-        var value = new BufferedSnapshot(snapshot, now);
 
         lock (_sync)
         {
+            now = ObserveTimestamp(now);
+            var value = new BufferedSnapshot(snapshot, now);
             if (!snapshot.CombatImpacts.IsDefaultOrEmpty)
                 foreach (var impact in snapshot.CombatImpacts)
                     _combatImpactReceivedAt.TryAdd(impact.EventId, now);
@@ -100,7 +121,7 @@ public sealed class SnapshotBuffer
             if (_latest is not null)
             {
                 long previousPredictionDeltaMs = _accumulatedPredictionGameTimeMs
-                    + RealTicksToGameMs(now - _predictionSegmentStartedAtTimestamp, _currentSpeed);
+                    + SegmentPredictionMs(now);
                 previousPredictedGameTimeMs = _latest.Snapshot.MotionTimeMs + previousPredictionDeltaMs;
             }
 
@@ -148,7 +169,7 @@ public sealed class SnapshotBuffer
                 {
                     _awaitingFirstSnapshotAfterResume = false;
                     long effectiveDelta = _accumulatedPredictionGameTimeMs
-                        + RealTicksToGameMs(now - _predictionSegmentStartedAtTimestamp, _currentSpeed);
+                        + SegmentPredictionMs(now);
                     PauseResumeDiagnostics.Write(
                         $"RESUME STATE: first snapshot after resume{Environment.NewLine}" +
                         FormatSnapshotState(snapshot, effectiveDelta, now));
@@ -182,13 +203,16 @@ public sealed class SnapshotBuffer
 
             lock (_sync)
             {
+                now = ObserveTimestamp(now);
                 if (_latest is null)
                     return null;
 
                 long effectiveDelta = _accumulatedPredictionGameTimeMs
-                    + RealTicksToGameMs(now - _predictionSegmentStartedAtTimestamp, _currentSpeed);
+                    + SegmentPredictionMs(now);
 
-                return new SnapshotPrediction(_latest, effectiveDelta, _currentSpeed, _lastReconciliationForwardJumpMs, _totalReconciliationForwardJumpMs);
+                long age = (long)(Math.Max(0, now - _latest.ReceivedAtTimestamp) * (1000.0 / Stopwatch.Frequency));
+                return new SnapshotPrediction(_latest, effectiveDelta, _currentSpeed, _lastReconciliationForwardJumpMs,
+                    _totalReconciliationForwardJumpMs, age >= MaximumSnapshotAgeMs, age);
             }
         }
     }
@@ -201,8 +225,9 @@ public sealed class SnapshotBuffer
 
             lock (_sync)
             {
+                now = ObserveTimestamp(now);
                 return _accumulatedPredictionGameTimeMs
-                    + RealTicksToGameMs(now - _predictionSegmentStartedAtTimestamp, _currentSpeed);
+                    + SegmentPredictionMs(now);
             }
         }
     }
@@ -213,6 +238,7 @@ public sealed class SnapshotBuffer
 
         lock (_sync)
         {
+            now = ObserveTimestamp(now);
             _pendingConfirmedSpeed = speed;
 
             if (speed == _currentSpeed)
@@ -224,9 +250,7 @@ public sealed class SnapshotBuffer
 
             if (PauseResumeDiagnostics.Enabled)
             {
-                long frozenAccumMs = _accumulatedPredictionGameTimeMs + RealTicksToGameMs(
-                    now - _predictionSegmentStartedAtTimestamp,
-                    _currentSpeed);
+                long frozenAccumMs = _accumulatedPredictionGameTimeMs + SegmentPredictionMs(now);
                 PauseResumeDiagnostics.Write(
                     $"SETSPEED {_currentSpeed} -> {speed}  frozenAccumMs={frozenAccumMs} " +
                     $"baselineGameTimeMs={_latest?.Snapshot.MotionTimeMs}");
@@ -246,9 +270,7 @@ public sealed class SnapshotBuffer
                 }
             }
 
-            _accumulatedPredictionGameTimeMs += RealTicksToGameMs(
-                now - _predictionSegmentStartedAtTimestamp,
-                _currentSpeed);
+            _accumulatedPredictionGameTimeMs += SegmentPredictionMs(now);
 
             _predictionSegmentStartedAtTimestamp = now;
             _currentSpeed = speed;
