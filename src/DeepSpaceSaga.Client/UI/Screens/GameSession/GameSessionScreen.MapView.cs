@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 
@@ -8,6 +9,47 @@ internal enum MapFitMode { Target, Route, System }
 public sealed partial class GameSessionScreen
 {
     private readonly TacticalMapSettings _mapSettings;
+    private readonly TacticalMapSceneBuilder _sceneBuilder = new();
+    internal TacticalMapSceneGeometry? PreparedScene { get; private set; }
+
+    private void PublishSceneGeometry()
+    {
+        if (_mapFrame is not { } frame) return;
+        var camera = new TacticalMapCamera(_camera.FocusX, _camera.FocusY, _camera.PixelsPerWorldUnit);
+        var clusters = _mapClusters.Where(ClusterVisible).Select(c => new TacticalMapClusterGeometry(
+            c.Level, c.CellX, c.CellY, c.X, c.Y, camera.Project(c.X, c.Y, _viewportW, _viewportH), c.Count, c.Bounds)).ToImmutableArray();
+        var paths = _capturedTrajectories.Select(path => new TacticalMapPathGeometry(path.ObjectId, path.Kind,
+            path.Points.ToImmutableArray(), path.Points.Select(p => camera.Project(p.X, p.Y, _viewportW, _viewportH)).ToImmutableArray())).ToImmutableArray();
+        var trails = ImmutableArray.CreateBuilder<TacticalMapTrailSegment>();
+        foreach (var (id, geometry) in _trailGeometryCache)
+        {
+            if (!_trailStore.Trails.TryGetValue(id, out var history) || history.Count < 2 ||
+                (_camera.PixelsPerWorldUnit < _mapSettings.TrailDetailPpu && !IsImportantMapObject(id)) || _missileTrailIds.Contains(id)) continue;
+            // Only a cache entry prepared for this camera and history may be published.
+            if (!geometry.Matches(history, _camera, _viewportW, _viewportH, id == frame.Prediction?.BufferedSnapshot.Snapshot.PlayerShipObjectId)) continue;
+            foreach (var segment in geometry.Segments)
+            {
+                var a = geometry.Points[segment.Start]; var b = geometry.Points[segment.End];
+                if ((a.X < -2 && b.X < -2) || (a.Y < -2 && b.Y < -2) ||
+                    (a.X > _viewportW + 2 && b.X > _viewportW + 2) || (a.Y > _viewportH + 2 && b.Y > _viewportH + 2)) continue;
+                trails.Add(new(a, b, GetTrailSegmentColor((float)segment.End / (history.Count - 1),
+                    id == frame.Prediction?.BufferedSnapshot.Snapshot.PlayerShipObjectId)));
+            }
+        }
+        var free = AvailableMapRect();
+        var view = new TacticalMapViewInput(camera, _viewportW, _viewportH, _uiScale, free, _mapObstacles.ToImmutableArray(),
+            Localization.Revision, _mapSettings.CompactMarkerPpu, _selectedObjectId, _activeObjectId, _navigationTargetId,
+            frame.Objects.Where(s => IsImportantMapObject(s.Pose.ObjectId)).Select(s => s.Pose.ObjectId).ToImmutableHashSet(StringComparer.Ordinal),
+            _clusteredObjectIds.ToImmutableHashSet(StringComparer.Ordinal), clusters,
+            _labelRenderer.CaptureGeometry(_renderStates), paths, trails.ToImmutable())
+        {
+            Settings = new(_mapSettings.LabelDetailPpu, _mapSettings.TrailDetailPpu, _mapSettings.MaximumLabels,
+                _mapSettings.ClusterPpu, _mapSettings.ClusterCellPixels, _mapSettings.ClusterHysteresis,
+                _mapSettings.GridBaseCellPixels, _mapSettings.GridMinimumPixels, _mapSettings.GridFadePixels)
+        };
+        PreparedScene = _sceneBuilder.Prepare(frame, view);
+    }
+
     private readonly CameraZoomTransition _zoomTransition = new();
     private SKRect _mapToolbarRect;
     private readonly SKRect[] _mapViewButtons = new SKRect[8];

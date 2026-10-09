@@ -6,7 +6,7 @@ title: "Выделить подготовку геометрии кадра"
 stage: draft
 layer: client
 depends_on: ["EP-0005-US-0002-TK-0001-frame-state-update"]
-files_touched: 5
+files_touched: 7
 serves: [AC-0002]
 source_finding: A02
 evidence_status: architecture-proposal
@@ -59,9 +59,9 @@ revision: 1
 
 ## Критерии приёмки — AC-0002
 
-- [ ] `Scene_preparation_is_deterministic`: Одинаковые входы дают одинаковую геометрию и hit candidates.
-- [ ] `Scene_geometry_matches_current_render_contract`: Сохранены слои, viewport clipping, пути и label priorities.
-- [ ] `Large_coordinates_keep_camera_relative_precision`: При больших world coordinates близкие объекты сохраняют различимое положение.
+- [x] `Scene_preparation_is_deterministic`: Одинаковые входы дают одинаковую геометрию и hit candidates.
+- [x] `Scene_geometry_matches_current_render_contract`: Сохранены слои, viewport clipping, пути и label priorities.
+- [x] `Large_coordinates_keep_camera_relative_precision`: При больших world coordinates близкие объекты сохраняют различимое положение.
 
 ## Инварианты и границы
 
@@ -83,3 +83,15 @@ revision: 1
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution scope 2026-10-09
+
+EpicExecutionPrompt authorizes implementation and expansion. Add `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` for the production shadow publication after existing projectors and label placement complete. TK-0003 switches painting to the prepared publication. Existing projector output is retained, never resampled by the shadow builder.
+
+Add `src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectTrailGeometry.cs` for a read-only cache key match needed to exclude stale offscreen trail entries from scene publication.
+
+## Execution evidence 2026-10-09
+
+Production shadow/adaptor publication added after the existing projectors and label preparation. Immutable scene includes frame identity, camera-relative markers and click candidates, layout obstacles, geometry settings, locale/selection, clusters, labels, projected/world paths and visible trail segments. Cached trail keys are verified before copying; retained previous scenes survive subsequent renders unchanged. Painter migration remains TK-0003.
+
+Checks: new deterministic/contract/large-coordinate tests 3/3; full Client 1807/1807; final metadata addition rechecked 3/3; Release build and scoped format/diff checks pass. Native/GPU comparison OPEN.

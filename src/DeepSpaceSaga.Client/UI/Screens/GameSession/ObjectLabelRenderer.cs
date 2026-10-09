@@ -53,6 +53,19 @@ internal sealed class ObjectLabelRenderer : IDisposable
     private readonly Dictionary<string, byte> _opacity = new(StringComparer.Ordinal);
     private readonly Dictionary<string, LabelMetrics> _labels = new(StringComparer.Ordinal);
     private long _localeRevision = -1;
+    internal System.Collections.Immutable.ImmutableArray<TacticalMapLabelGeometry> CaptureGeometry(IReadOnlyList<ObjectRenderState> states)
+    {
+        var result = System.Collections.Immutable.ImmutableArray.CreateBuilder<TacticalMapLabelGeometry>();
+        foreach (var state in states)
+        {
+            string id = state.Pose.ObjectId;
+            if (!_geometries.TryGetValue(id, out var geometry)) continue;
+            result.Add(new(state, geometry, _opacity[id], id == _groupOwner ? _groupText : _labels[id].Text,
+                !_groupedIds.Contains(id) || id == _groupOwner));
+        }
+        return result.ToImmutable();
+    }
+
     internal string? PreparedText(string objectId) => _labels.TryGetValue(objectId, out var label) ? label.Text : null;
     private readonly List<string> _staleLabels = new();
     private readonly List<SKRect> _occupiedPlaques = new();

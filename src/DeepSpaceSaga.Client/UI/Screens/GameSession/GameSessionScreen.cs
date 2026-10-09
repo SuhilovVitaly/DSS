@@ -1346,6 +1346,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         CompleteRenderStage("info_panels");
 
         canvas.Restore();
+        PublishSceneGeometry();
         FinishFrameProfile(prediction, now);
     }
 

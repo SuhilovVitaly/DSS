@@ -19,6 +19,9 @@ internal sealed class ObjectTrailGeometry
     private ObjectTrailBuffer? _source;
     private (long Revision, double X, double Y, double Zoom, int Width, int Height, bool Ship) _key;
 
+    internal bool Matches(ObjectTrailBuffer buffer, CameraState camera, int width, int height, bool ship) =>
+        ReferenceEquals(_source, buffer) && _key == (buffer.Revision, camera.FocusX, camera.FocusY, camera.PixelsPerWorldUnit, width, height, ship);
+
     internal void Build(IReadOnlyList<ObjectTrailPoint> points, CameraState camera,
         int width, int height, bool isShip)
     {
