@@ -1,11 +1,64 @@
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests;
 
-public class ObjectLabelTests
+[CollectionDefinition("Map locale", DisableParallelization = true)]
+public sealed class MapLocaleCollection { }
+
+[Collection("Map locale")]
+public class ObjectLabelTests : IDisposable
 {
+    private readonly string _previousLanguage = Localization.CurrentLanguage;
+    public ObjectLabelTests() => Localization.SetLanguage("Russian");
+    public void Dispose() => Localization.SetLanguage(_previousLanguage);
+
+    [Theory]
+    [InlineData("English", "Unknown object", "Course alignment", "Course alignment - target faster")]
+    [InlineData("Russian", "Неизвестный объект", "Выравнивание курса", "Выравнивание курса — цель быстрее")]
+    public void Unknown_label_and_course_alignment_use_current_locale(string language, string unknown, string course, string faster)
+    {
+        Localization.SetLanguage(language);
+        Assert.Equal(unknown, ObjectLabelText.Build(SpaceObjectType.UnknownSpaceObject, "Secret asteroid", "secret-id"));
+        Assert.Equal(course, TacticalMapDepthRenderer.CourseAlignmentText(false));
+        Assert.Equal(faster, TacticalMapDepthRenderer.CourseAlignmentText(true));
+        long revision = Localization.Revision;
+        Localization.SetLanguage(language);
+        Assert.Equal(revision, Localization.Revision);
+    }
+
+    [Fact]
+    public void Language_change_invalidates_label_metrics_and_paused_geometry()
+    {
+        Localization.SetLanguage("English");
+        var obj = new ObjectMotionSnapshot("secret-id", 0, 0, 0, 0,
+            RenderObjectType: SpaceObjectType.UnknownSpaceObject, DisplayName: "Secret identity");
+        ObjectRenderState[] states = [new(obj, obj, false)];
+        using var renderer = new ObjectLabelRenderer();
+        renderer.ComputeGeometries(states, 0, 800, 600, new(0, 0, 1));
+        float englishWidth = renderer.Geometries[obj.ObjectId].PlaqueRect.Width;
+        Assert.Equal("Unknown object", renderer.PreparedText(obj.ObjectId));
+        var buffer = new SnapshotBuffer(() => 0);
+        buffer.Update(new(1, 0, SimulationSpeed.Speed0, [obj]));
+        using var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
+        using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
+        screen.Render(surface.Canvas, 1280, 720);
+        long builds = screen.LabelGeometryBuilds;
+        screen.Render(surface.Canvas, 1280, 720);
+        Assert.Equal(builds, screen.LabelGeometryBuilds);
+        Localization.SetLanguage("Russian");
+        renderer.ComputeGeometries(states, 0, 800, 600, new(0, 0, 1));
+        Assert.Equal("Неизвестный объект", renderer.PreparedText(obj.ObjectId));
+        Assert.True(renderer.Geometries[obj.ObjectId].PlaqueRect.Width > englishWidth);
+        renderer.ComputeGeometries(states, 0, 80, 100, new(0, 0, 1));
+        Assert.True(renderer.Geometries[obj.ObjectId].PlaqueRect.Width <= 80);
+        Assert.DoesNotContain("secret", renderer.PreparedText(obj.ObjectId)!, StringComparison.OrdinalIgnoreCase);
+        screen.Render(surface.Canvas, 1280, 720);
+        Assert.Equal(builds + 1, screen.LabelGeometryBuilds);
+    }
+
     [Fact]
     public void Important_labels_do_not_overlap_when_docked()
     {

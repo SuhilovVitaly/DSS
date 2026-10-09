@@ -86,3 +86,10 @@ No public API change.
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution scope 2026-10-09
+Expand to Localization.cs, UI/SkiaWindow.cs and GameSessionScreen.GeometryCache.cs: existing locale loader is restart-only; live Settings selection must publish a new locale revision, and paused geometry must include that revision. Preserve public Get API and English fallback; no Engine contract changes. Locale-changing tests use a non-parallel xUnit collection and restore prior language.
+
+## Execution evidence 2026-10-09
+Added RU/EN Map.UnknownObject and both Map.CourseAlignment variants. Localization publishes immutable-by-ownership dictionaries with a monotonically increasing revision on real language changes; English remains the missing-key fallback. Settings SaveLanguage invokes the live switch after persistence. Label metrics clear and reset smoothing on revision changes, and the paused geometry key includes locale revision.
+Validation: focused labels/localization/paused work 69/69; full Client 1777/1777; Release 0 warnings/errors; scoped whitespace verification and diff check pass. Tests switch RU/EN, preserve unknown identity masking even when a secret display name is present, check updated plaque width and narrow viewport bounds, and verify exactly one paused-geometry rebuild on language change. Tests restore language and run in an isolated collection. Self-review confirms dictionaries are not mutated after publication and no Engine/Motion/save changes. Native/manual language-switch smoke remains OPEN.

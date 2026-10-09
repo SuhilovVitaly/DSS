@@ -292,5 +292,8 @@
   "Trade.VoyageSummary": "{0} · {1} · {2}",
   "Trade.VoyageProfit": "Прибыль: {0}",
   "Trade.VoyageLoss": "Убыток: {0}",
-  "Trade.VoyageResultUnavailable": "Результат рейса недоступен"
+  "Trade.VoyageResultUnavailable": "Результат рейса недоступен",
+  "Map.UnknownObject": "Неизвестный объект",
+  "Map.CourseAlignment": "Выравнивание курса",
+  "Map.CourseAlignmentTargetFaster": "Выравнивание курса — цель быстрее"
 }

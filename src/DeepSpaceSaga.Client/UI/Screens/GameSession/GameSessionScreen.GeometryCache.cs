@@ -19,7 +19,7 @@ public sealed partial class GameSessionScreen
     private readonly Dictionary<string, CachedTrajectory> _futureGeometryCache = new(StringComparer.Ordinal);
     private readonly CachedTrajectory _navigationGeometryCache = new();
     private readonly List<string> _staleGeometryIds = new();
-    private (ulong Snapshot, GeometryView View, string? Selected, string? Active, string? Navigation, float Scale, SKRect Free)? _labelGeometryKey;
+    private (ulong Snapshot, GeometryView View, string? Selected, string? Active, string? Navigation, float Scale, SKRect Free, long Locale)? _labelGeometryKey;
     internal long TrailGeometryBuilds { get; private set; }
     internal long FutureGeometryBuilds { get; private set; }
     internal long NavigationGeometryBuilds { get; private set; }
@@ -74,7 +74,7 @@ public sealed partial class GameSessionScreen
     {
         var free = AvailableMapRect();
         var key = (prediction.BufferedSnapshot.Snapshot.SnapshotSequence, CurrentGeometryView,
-            _selectedObjectId, _activeObjectId, _navigationTargetId, _uiScale, free);
+            _selectedObjectId, _activeObjectId, _navigationTargetId, _uiScale, free, Localization.Revision);
         if (prediction.CurrentSpeed == SimulationSpeed.Speed0 && !resetSmoothing && _labelGeometryKey == key) return;
         _labelRenderer.ComputeGeometries(_renderStates, deltaSeconds, _viewportW, _viewportH, _camera, resetSmoothing,
             _mapSettings, IsImportantMapObject, _clusteredObjectIds, free, _selectedObjectId, _navigationTargetId);

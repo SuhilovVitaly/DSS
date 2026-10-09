@@ -538,9 +538,12 @@ internal sealed class TacticalMapDepthRenderer : IDisposable
     public void DrawCourseAlignmentPoint(SKCanvas canvas, float x, float y, bool targetFaster)
     {
         canvas.DrawRect(x - 3, y - 3, 6, 6, _courseAlignmentPaint);
-        canvas.DrawText(targetFaster ? "Course alignment - target faster" : "Course alignment",
+        canvas.DrawText(CourseAlignmentText(targetFaster),
             x + 8, y - 8, _courseAlignmentTextPaint);
     }
+
+    internal static string CourseAlignmentText(bool targetFaster) =>
+        Localization.Get(targetFaster ? "Map.CourseAlignmentTargetFaster" : "Map.CourseAlignment");
 
     public void DrawNavigationTarget(SKCanvas canvas, float centerX, float centerY)
     {

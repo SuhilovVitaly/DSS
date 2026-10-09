@@ -5,24 +5,35 @@ namespace DeepSpaceSaga.Client;
 /// <summary>
 /// Resolves UI text by key from the JSON dictionary under Data\Locale\ that matches the
 /// language saved in Settings.json (gameSettings.language, written by SkiaWindow's
-/// SaveLanguage). Loaded once and cached, same "applies after restart" model as the
-/// other gameSettings-backed values in SkiaWindow.cs — no live-switch support yet.
+/// SaveLanguage). Settings can atomically publish a new dictionary and revision.
 /// </summary>
 public static class Localization
 {
-    private static readonly Lazy<Dictionary<string, string>> _strings = new(Load);
+    private sealed record LocaleState(string Language, Dictionary<string, string> Strings, long Revision);
+    private static readonly object Sync = new();
+    private static LocaleState _state = Load(ReadLanguageSetting(), 0);
+    internal static long Revision => Volatile.Read(ref _state).Revision;
+    internal static string CurrentLanguage => Volatile.Read(ref _state).Language;
 
     public static string Get(string key) =>
-        _strings.Value.TryGetValue(key, out var value) ? value : key;
+        Volatile.Read(ref _state).Strings.TryGetValue(key, out var value) ? value : key;
 
-    private static Dictionary<string, string> Load()
+    internal static void SetLanguage(string language)
     {
-        var language = ReadLanguageSetting();
-        var strings = LoadLocaleFile(language);
-        if (strings is { Count: > 0 })
-            return strings;
+        language = language is "English" or "Russian" ? language : "English";
+        lock (Sync)
+        {
+            if (_state.Language == language) return;
+            Volatile.Write(ref _state, Load(language, _state.Revision + 1));
+        }
+    }
 
-        return LoadLocaleFile("English") ?? new Dictionary<string, string>();
+    private static LocaleState Load(string language, long revision)
+    {
+        var strings = LoadLocaleFile("English") ?? new Dictionary<string, string>();
+        if (language != "English" && LoadLocaleFile(language) is { } translated)
+            foreach (var (key, value) in translated) strings[key] = value;
+        return new(language, strings, revision);
     }
 
     private static string ReadLanguageSetting()

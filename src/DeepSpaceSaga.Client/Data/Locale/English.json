@@ -292,5 +292,8 @@
   "Trade.VoyageSummary": "{0} · {1} · {2}",
   "Trade.VoyageProfit": "Profit: {0}",
   "Trade.VoyageLoss": "Loss: {0}",
-  "Trade.VoyageResultUnavailable": "Voyage result unavailable"
+  "Trade.VoyageResultUnavailable": "Voyage result unavailable",
+  "Map.UnknownObject": "Unknown object",
+  "Map.CourseAlignment": "Course alignment",
+  "Map.CourseAlignmentTargetFaster": "Course alignment - target faster"
 }

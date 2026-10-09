@@ -1382,9 +1382,7 @@ public sealed class SkiaWindow : IDisposable
     }
 
     /// <summary>
-    /// Persists the chosen language immediately (per requirements), but there is no
-    /// runtime localization system yet — same "applies after restart" caveat as
-    /// <see cref="SaveSelectedMonitorIndex"/> until one is wired up.
+    /// Persists the chosen language and updates the runtime dictionary immediately.
     /// </summary>
     private static void SaveLanguage(string language)
     {
@@ -1403,6 +1401,7 @@ public sealed class SkiaWindow : IDisposable
             gameSettings["language"] = language;
 
             File.WriteAllText(SettingsFilePath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            Localization.SetLanguage(language);
             InterfaceLog.Write($"Settings: language saved = {language}");
         }
         catch (Exception ex)

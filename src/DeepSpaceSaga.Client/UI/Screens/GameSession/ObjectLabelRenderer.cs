@@ -52,6 +52,8 @@ internal sealed class ObjectLabelRenderer : IDisposable
     private readonly HashSet<string> _activeIds = new(StringComparer.Ordinal);
     private readonly Dictionary<string, byte> _opacity = new(StringComparer.Ordinal);
     private readonly Dictionary<string, LabelMetrics> _labels = new(StringComparer.Ordinal);
+    private long _localeRevision = -1;
+    internal string? PreparedText(string objectId) => _labels.TryGetValue(objectId, out var label) ? label.Text : null;
     private readonly List<string> _staleLabels = new();
     private readonly List<SKRect> _occupiedPlaques = new();
     private readonly List<ObjectRenderState> _placementOrder = new();
@@ -135,6 +137,12 @@ internal sealed class ObjectLabelRenderer : IDisposable
         string? selectedObjectId = null,
         string? navigationTargetId = null)
     {
+        if (_localeRevision != Localization.Revision)
+        {
+            _labels.Clear();
+            _localeRevision = Localization.Revision;
+            resetSmoothing = true;
+        }
         _geometries.Clear();
         _activeIds.Clear();
         _opacity.Clear();
