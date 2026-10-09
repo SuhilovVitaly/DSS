@@ -2,9 +2,12 @@
 !/src/
 !/tests/
 !/Documentation/
+!/tools/
+!/AGENTS.md
+!/CLAUDE.md
 !/Board/
 /Board/*
-!/Board/EP-0007-countermeasure-combat/
+!/Board/EP-0005-optimization/
 **/bin/
 **/obj/
 **/.git/
@@ -41,6 +44,8 @@
 *.otf
 *.woff
 *.woff2
-Documentation/06-Tooling/CountermeasureGraphify.md
 
 **/Images/
+
+Board/EP-0005-optimization/GraphRebuild.md
+Board/EP-0005-optimization/US-0003-Review.md

@@ -1,0 +1,13 @@
+{
+  "runs": [
+    {
+      "date": "2026-10-09T14:36:48.996767+00:00",
+      "input_tokens": null,
+      "output_tokens": null,
+      "files": 752,
+      "accounting": "Host agent API did not expose token usage; no external LLM API calls"
+    }
+  ],
+  "total_input_tokens": null,
+  "total_output_tokens": null
+}

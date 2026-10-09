@@ -1,7 +1,7 @@
 ---
 epic: EP-0005-optimization
 story: EP-0005-US-0003-documentation-and-graph
-stage: approved
+stage: implemented
 depends_on: [EP-0005-US-0002-tactical-map-render-pipeline]
 ticket_count: 2
 ---
@@ -20,3 +20,5 @@ ticket_count: 2
 
 1. Repository-wide inventory Markdown, affected canonical and external documentation updated; unchanged/out-of-scope entries justified; links resolve.
 2. Full fresh Graphify corpus with input hashes and source commit; verified paths and representative navigation traces. Graph is navigation evidence only.
+
+Execution result: documentation inventory/canonical sync and final graph artifacts delivered with separate ticket commits. [Final graph evidence](../GraphRebuild.md), [story self-review](../US-0003-Review.md), [publication registry](../ImplementationStatus.md). Full epic performance/manual acceptance remains OPEN.

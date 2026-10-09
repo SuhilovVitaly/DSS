@@ -1,0 +1,7 @@
+# EP-0005-US-0003 documentation and graph review — 2026-10-09
+
+Executor self-review, not independent review or user approval. TK-0001 synchronized current map contracts, diagnostic schema, ownership, input/capture, bounded caches and measured acceptance limitations; its repository-wide inventory preserves unrelated and historical evidence. TK-0002 rebuilt the full declared code/documentation corpus after those edits. Reviewed artifact hashes, source paths, edge endpoints, five representative document/code traces, query truncation and graph health limitations. No additional confirmed defect remains in this delivery scope.
+
+[Graph rebuild](GraphRebuild.md) records 752 source files and the exact validation evidence. [Documentation inventory](DocumentationInventory.md) and [final link validation](../../graphify-out/final-documentation-validation.json) distinguish existing broken links from newly introduced links. IDs and dependency DAG cover 22 tickets and 3 stories.
+
+Epic implementation and publication do not imply full acceptance: the 80 FPS native gate remains FAILED/OPEN, human manual playthrough and native resize/modal/locale matrix remain NOT RUN, and GPU execution/physical scanout was not measured. The [epic review](EpicReview.md) and [performance evidence](PerformanceEvidence.md) retain these limitations. No Engine, Contracts or Motion source was changed relative to the epic base.

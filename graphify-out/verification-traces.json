@@ -1,0 +1,355 @@
+{
+  "frame-update": {
+    "querySymbol": "TacticalMapStateUpdater",
+    "path": [
+      "documentation_06_tooling_gamesessionscreenui_document",
+      "src_deepspacesaga_client_ui_screens_gamesession_tacticalmapstateupdater_deepspacesaga_client_ui_screens_gamesession_tacticalmapstateupdater"
+    ],
+    "nodes": [
+      {
+        "id": "documentation_06_tooling_gamesessionscreenui_document",
+        "label": "GameSessionScreen UI and pipeline",
+        "file_type": "document",
+        "source_file": "Documentation/06-Tooling/GameSessionScreenUI.md",
+        "source_location": "13-31",
+        "source_url": null,
+        "captured_at": null,
+        "author": null,
+        "contributor": null,
+        "rationale": "Documents the coherent immutable Update/Prepare/Draw publication, bounded scene/spatial/trail/image caches, deterministic lifetime, and diagnostic schema v3 capturing the last presented frame."
+      },
+      {
+        "id": "src_deepspacesaga_client_ui_screens_gamesession_tacticalmapstateupdater_deepspacesaga_client_ui_screens_gamesession_tacticalmapstateupdater",
+        "label": "TacticalMapStateUpdater",
+        "file_type": "code",
+        "source_file": "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapStateUpdater.cs",
+        "source_location": "L8",
+        "metadata": {
+          "namespace": "DeepSpaceSaga.Client.UI.Screens.GameSession",
+          "scope_chain": [
+            "s100"
+          ]
+        },
+        "_callable": true,
+        "_callable_class": true,
+        "_origin": "ast"
+      }
+    ],
+    "evidence": [
+      {
+        "source": "documentation_06_tooling_gamesessionscreenui_document",
+        "target": "src_deepspacesaga_client_ui_screens_gamesession_tacticalmapstateupdater_deepspacesaga_client_ui_screens_gamesession_tacticalmapstateupdater",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/06-Tooling/GameSessionScreenUI.md",
+        "source_location": "L17",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      }
+    ],
+    "interpretation": "explicit document citation to verified source declaration; navigation, not runtime proof"
+  },
+  "read-only-painter": {
+    "querySymbol": "TacticalMapRenderer",
+    "path": [
+      "documentation_06_tooling_gamesessionscreenui_document",
+      "src_deepspacesaga_client_ui_screens_gamesession_tacticalmaprenderer_deepspacesaga_client_ui_screens_gamesession_tacticalmaprenderer"
+    ],
+    "nodes": [
+      {
+        "id": "documentation_06_tooling_gamesessionscreenui_document",
+        "label": "GameSessionScreen UI and pipeline",
+        "file_type": "document",
+        "source_file": "Documentation/06-Tooling/GameSessionScreenUI.md",
+        "source_location": "13-31",
+        "source_url": null,
+        "captured_at": null,
+        "author": null,
+        "contributor": null,
+        "rationale": "Documents the coherent immutable Update/Prepare/Draw publication, bounded scene/spatial/trail/image caches, deterministic lifetime, and diagnostic schema v3 capturing the last presented frame."
+      },
+      {
+        "id": "src_deepspacesaga_client_ui_screens_gamesession_tacticalmaprenderer_deepspacesaga_client_ui_screens_gamesession_tacticalmaprenderer",
+        "label": "TacticalMapRenderer",
+        "file_type": "code",
+        "source_file": "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapRenderer.cs",
+        "source_location": "L6",
+        "metadata": {
+          "namespace": "DeepSpaceSaga.Client.UI.Screens.GameSession",
+          "scope_chain": [
+            "s20"
+          ]
+        },
+        "_callable": true,
+        "_callable_class": true,
+        "_origin": "ast"
+      }
+    ],
+    "evidence": [
+      {
+        "source": "documentation_06_tooling_gamesessionscreenui_document",
+        "target": "src_deepspacesaga_client_ui_screens_gamesession_tacticalmaprenderer_deepspacesaga_client_ui_screens_gamesession_tacticalmaprenderer",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/06-Tooling/GameSessionScreenUI.md",
+        "source_location": "L17",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      },
+      {
+        "source": "documentation_06_tooling_gamesessionscreenui_document",
+        "target": "src_deepspacesaga_client_ui_screens_gamesession_tacticalmaprenderer_deepspacesaga_client_ui_screens_gamesession_tacticalmaprenderer",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/06-Tooling/GameSessionScreenUI.md",
+        "source_location": "L19",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      }
+    ],
+    "interpretation": "explicit document citation to verified source declaration; navigation, not runtime proof"
+  },
+  "revision-cache": {
+    "querySymbol": "TacticalMapSceneCache",
+    "path": [
+      "documentation_06_tooling_gamesessionscreenui_document",
+      "src_deepspacesaga_client_ui_screens_gamesession_tacticalmapscenecache_deepspacesaga_client_ui_screens_gamesession_tacticalmapscenecache"
+    ],
+    "nodes": [
+      {
+        "id": "documentation_06_tooling_gamesessionscreenui_document",
+        "label": "GameSessionScreen UI and pipeline",
+        "file_type": "document",
+        "source_file": "Documentation/06-Tooling/GameSessionScreenUI.md",
+        "source_location": "13-31",
+        "source_url": null,
+        "captured_at": null,
+        "author": null,
+        "contributor": null,
+        "rationale": "Documents the coherent immutable Update/Prepare/Draw publication, bounded scene/spatial/trail/image caches, deterministic lifetime, and diagnostic schema v3 capturing the last presented frame."
+      },
+      {
+        "id": "src_deepspacesaga_client_ui_screens_gamesession_tacticalmapscenecache_deepspacesaga_client_ui_screens_gamesession_tacticalmapscenecache",
+        "label": "TacticalMapSceneCache",
+        "file_type": "code",
+        "source_file": "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapSceneCache.cs",
+        "source_location": "L11",
+        "metadata": {
+          "namespace": "DeepSpaceSaga.Client.UI.Screens.GameSession",
+          "scope_chain": [
+            "s0"
+          ]
+        },
+        "_callable": true,
+        "_callable_class": true,
+        "_origin": "ast"
+      }
+    ],
+    "evidence": [
+      {
+        "source": "documentation_06_tooling_gamesessionscreenui_document",
+        "target": "src_deepspacesaga_client_ui_screens_gamesession_tacticalmapscenecache_deepspacesaga_client_ui_screens_gamesession_tacticalmapscenecache",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/06-Tooling/GameSessionScreenUI.md",
+        "source_location": "L21",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      }
+    ],
+    "interpretation": "explicit document citation to verified source declaration; navigation, not runtime proof"
+  },
+  "frozen-capture-history": {
+    "querySymbol": "ObjectTrailBuffer",
+    "path": [
+      "documentation_04_engineering_performance500_readme_document",
+      "src_deepspacesaga_client_ui_screens_gamesession_objecttrailbuffer_deepspacesaga_client_ui_screens_gamesession_objecttrailbuffer"
+    ],
+    "nodes": [
+      {
+        "id": "documentation_04_engineering_performance500_readme_document",
+        "label": "Performance500 historical CPU profiling",
+        "file_type": "document",
+        "source_file": "Documentation/04-Engineering/Performance500/README.md",
+        "source_location": "3-17,19-21",
+        "source_url": null,
+        "captured_at": null,
+        "author": null,
+        "contributor": null,
+        "rationale": "Uses actual Engine, SnapshotBuffer and screen rendering for controlled CPU/raster measurements, explicitly excluding proof of GPU/VSync FPS and newer Approach version 3 performance."
+      },
+      {
+        "id": "src_deepspacesaga_client_ui_screens_gamesession_objecttrailbuffer_deepspacesaga_client_ui_screens_gamesession_objecttrailbuffer",
+        "label": "ObjectTrailBuffer",
+        "file_type": "code",
+        "source_file": "src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectTrailBuffer.cs",
+        "source_location": "L6",
+        "metadata": {
+          "namespace": "DeepSpaceSaga.Client.UI.Screens.GameSession",
+          "scope_chain": [
+            "s29"
+          ]
+        },
+        "_callable": true,
+        "_callable_class": true,
+        "_origin": "ast"
+      }
+    ],
+    "evidence": [
+      {
+        "source": "documentation_04_engineering_performance500_readme_document",
+        "target": "src_deepspacesaga_client_ui_screens_gamesession_objecttrailbuffer_deepspacesaga_client_ui_screens_gamesession_objecttrailbuffer",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/04-Engineering/Performance500/README.md",
+        "source_location": "L43",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      },
+      {
+        "source": "documentation_06_tooling_gamesessionscreenui_document",
+        "target": "src_deepspacesaga_client_ui_screens_gamesession_objecttrailbuffer_deepspacesaga_client_ui_screens_gamesession_objecttrailbuffer",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/06-Tooling/GameSessionScreenUI.md",
+        "source_location": "L23",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      }
+    ],
+    "interpretation": "explicit document citation to verified source declaration; navigation, not runtime proof"
+  },
+  "stale-prediction": {
+    "querySymbol": "SnapshotBuffer",
+    "path": [
+      "documentation_00_process_claude_document",
+      "src_deepspacesaga_client_snapshotbuffer_deepspacesaga_client_snapshotbuffer"
+    ],
+    "nodes": [
+      {
+        "id": "documentation_00_process_claude_document",
+        "label": "Canonical developer guide",
+        "file_type": "document",
+        "source_file": "Documentation/00-Process/CLAUDE.md",
+        "source_location": "19-54;204-206",
+        "source_url": null,
+        "captured_at": null,
+        "author": null,
+        "contributor": null
+      },
+      {
+        "id": "src_deepspacesaga_client_snapshotbuffer_deepspacesaga_client_snapshotbuffer",
+        "label": "SnapshotBuffer",
+        "file_type": "code",
+        "source_file": "src/DeepSpaceSaga.Client/SnapshotBuffer.cs",
+        "source_location": "L23",
+        "metadata": {
+          "namespace": "DeepSpaceSaga.Client",
+          "scope_chain": [
+            "s93"
+          ]
+        },
+        "_callable": true,
+        "_callable_class": true,
+        "_origin": "ast"
+      }
+    ],
+    "evidence": [
+      {
+        "source": "documentation_00_process_claude_document",
+        "target": "src_deepspacesaga_client_snapshotbuffer_deepspacesaga_client_snapshotbuffer",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/00-Process/CLAUDE.md",
+        "source_location": "L34",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      },
+      {
+        "source": "documentation_00_process_claude_document",
+        "target": "src_deepspacesaga_client_snapshotbuffer_deepspacesaga_client_snapshotbuffer",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/00-Process/CLAUDE.md",
+        "source_location": "L52",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      },
+      {
+        "source": "documentation_00_process_claude_document",
+        "target": "src_deepspacesaga_client_snapshotbuffer_deepspacesaga_client_snapshotbuffer",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/00-Process/CLAUDE.md",
+        "source_location": "L170",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      },
+      {
+        "source": "documentation_00_process_claude_document",
+        "target": "src_deepspacesaga_client_snapshotbuffer_deepspacesaga_client_snapshotbuffer",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/00-Process/CLAUDE.md",
+        "source_location": "L198",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      },
+      {
+        "source": "documentation_01_requirements_enginerequirements_document",
+        "target": "src_deepspacesaga_client_snapshotbuffer_deepspacesaga_client_snapshotbuffer",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/01-Requirements/EngineRequirements.md",
+        "source_location": "L3024",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      },
+      {
+        "source": "documentation_01_requirements_enginerequirements_document",
+        "target": "src_deepspacesaga_client_snapshotbuffer_deepspacesaga_client_snapshotbuffer",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/01-Requirements/EngineRequirements.md",
+        "source_location": "L3168",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      },
+      {
+        "source": "documentation_02_firstrelease_mechanics_tacticalmapandmaneuvering_document",
+        "target": "src_deepspacesaga_client_snapshotbuffer_deepspacesaga_client_snapshotbuffer",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/02-FirstRelease/Mechanics/TacticalMapAndManeuvering.md",
+        "source_location": "L17",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      },
+      {
+        "source": "documentation_06_tooling_gamesessionscreenui_document",
+        "target": "src_deepspacesaga_client_snapshotbuffer_deepspacesaga_client_snapshotbuffer",
+        "relation": "documents",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Documentation/06-Tooling/GameSessionScreenUI.md",
+        "source_location": "L17",
+        "weight": 1.0,
+        "context": "explicit document navigation, not a runtime call"
+      }
+    ],
+    "interpretation": "explicit document citation to verified source declaration; navigation, not runtime proof"
+  }
+}

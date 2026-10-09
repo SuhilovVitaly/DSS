@@ -1,0 +1,16 @@
+{
+  "nodes": 10314,
+  "edges": 32559,
+  "communities": 329,
+  "astNodes": 10239,
+  "astEdges": 32815,
+  "semanticNodes": 136,
+  "semanticEdges": 172,
+  "documentBridges": 1280,
+  "unresolvedReferences": 2202,
+  "files": 752,
+  "fileCounts": {
+    "code": 644,
+    "document": 108
+  }
+}

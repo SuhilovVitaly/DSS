@@ -1,0 +1,24 @@
+{
+  "verifiedAt": "2026-10-09T14:36:49.256804+00:00",
+  "sourcePathsMissing": 0,
+  "endpointIdsMissing": 0,
+  "traceGroups": [
+    "frame-update",
+    "read-only-painter",
+    "revision-cache",
+    "frozen-capture-history",
+    "stale-prediction"
+  ],
+  "corpusFiles": 752,
+  "mediaFiles": 0,
+  "inputHashesMatch": true,
+  "inputAggregateSha256": "3f6a32c6077c89fb4aecaa5d1a4ae4ab0f17c10158eb869f668d1cce8154a852",
+  "outputs": {
+    "graph.json": "f8a5500c308b6a2c40d2d41ecb67cf2e0dd415f7f44e8c39b761c83d8574067c",
+    "graph.html": "9f2cc65cd88ebe26cb8b76fdb97a626bb61fa2932843b7f7021d796486f912c7",
+    "GRAPH_REPORT.md": "53d0e1e22a5a492acfc39caa04ad6edf651e8fe4b340b31b48554283ca39833f",
+    "manifest.json": "58596b67568ae356eeb7ee2501e7327bcb07a7384775f83bafc57d575d3fda2e",
+    "extraction.json": "b91410013f42dea5e2e161e33c578309ddc871e41be9126ba2e4552c0c3d1f66"
+  },
+  "browserVerified": false
+}

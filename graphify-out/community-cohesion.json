@@ -1,0 +1,1647 @@
+{
+  "0": {
+    "name": "Game Session Rendering",
+    "nodes": 258,
+    "cohesion": 0.011974783579163274
+  },
+  "1": {
+    "name": "Client Graphics Dependencies",
+    "nodes": 218,
+    "cohesion": 0.029509998731661945
+  },
+  "2": {
+    "name": "Engine Scenario Content",
+    "nodes": 162,
+    "cohesion": 0.03243616287094548
+  },
+  "3": {
+    "name": "Authoritative Snapshot Prediction",
+    "nodes": 161,
+    "cohesion": 0.034472049689440995
+  },
+  "4": {
+    "name": "Simulation Engine Economy",
+    "nodes": 150,
+    "cohesion": 0.024787472035794185
+  },
+  "5": {
+    "name": "Simulation Speed Label Layout",
+    "nodes": 121,
+    "cohesion": 0.027823691460055096
+  },
+  "6": {
+    "name": "Economy Time Continuity",
+    "nodes": 110,
+    "cohesion": 0.062385321100917435
+  },
+  "7": {
+    "name": "Scenario Market Content Loading",
+    "nodes": 107,
+    "cohesion": 0.031211426556162936
+  },
+  "8": {
+    "name": "Shared Contract Serialization",
+    "nodes": 96,
+    "cohesion": 0.0418859649122807
+  },
+  "9": {
+    "name": "Local Session Integration",
+    "nodes": 93,
+    "cohesion": 0.07012622720897616
+  },
+  "10": {
+    "name": "Command Panel Tests",
+    "nodes": 91,
+    "cohesion": 0.07228327228327229
+  },
+  "11": {
+    "name": "Screen Event Tests",
+    "nodes": 91,
+    "cohesion": 0.0844932844932845
+  },
+  "12": {
+    "name": "Scenario Engine Tests",
+    "nodes": 86,
+    "cohesion": 0.06976744186046512
+  },
+  "13": {
+    "name": "Solar System Map Snapshot",
+    "nodes": 85,
+    "cohesion": 0.054061624649859946
+  },
+  "14": {
+    "name": "Load Screen",
+    "nodes": 84,
+    "cohesion": 0.05823293172690763
+  },
+  "15": {
+    "name": "Tactical Map Depth Renderer",
+    "nodes": 83,
+    "cohesion": 0.06171025565677343
+  },
+  "16": {
+    "name": "Game Session Object Interaction Tests",
+    "nodes": 83,
+    "cohesion": 0.09491625036732294
+  },
+  "17": {
+    "name": "Skia Window",
+    "nodes": 82,
+    "cohesion": 0.06172839506172839
+  },
+  "18": {
+    "name": "Content Exception",
+    "nodes": 81,
+    "cohesion": 0.05123456790123457
+  },
+  "19": {
+    "name": "Trade Screen Tests",
+    "nodes": 81,
+    "cohesion": 0.08456790123456791
+  },
+  "20": {
+    "name": "Engine Command Tests",
+    "nodes": 80,
+    "cohesion": 0.09556962025316455
+  },
+  "21": {
+    "name": "Trade Ux Tests",
+    "nodes": 78,
+    "cohesion": 0.11022311022311022
+  },
+  "22": {
+    "name": "Trade Quote Calculator Tests",
+    "nodes": 76,
+    "cohesion": 0.062456140350877196
+  },
+  "23": {
+    "name": "Finance Screen",
+    "nodes": 74,
+    "cohesion": 0.07219548315438726
+  },
+  "24": {
+    "name": "Canonical Engine requirements",
+    "nodes": 73,
+    "cohesion": 0.05707762557077625
+  },
+  "25": {
+    "name": "Scenario Exception",
+    "nodes": 71,
+    "cohesion": 0.07686116700201208
+  },
+  "26": {
+    "name": "Quoted Trade Execution Tests",
+    "nodes": 71,
+    "cohesion": 0.13722334004024145
+  },
+  "27": {
+    "name": "Game Data Registry",
+    "nodes": 70,
+    "cohesion": 0.0650103519668737
+  },
+  "28": {
+    "name": "Save Layout",
+    "nodes": 69,
+    "cohesion": 0.0763000852514919
+  },
+  "29": {
+    "name": "Station Market Profile Definition",
+    "nodes": 69,
+    "cohesion": 0.06606990622335891
+  },
+  "30": {
+    "name": "Local Cluster Generation Tests",
+    "nodes": 66,
+    "cohesion": 0.06060606060606061
+  },
+  "31": {
+    "name": "Space Object Runtime",
+    "nodes": 65,
+    "cohesion": 0.06394230769230769
+  },
+  "32": {
+    "name": "Object Motion Snapshot",
+    "nodes": 65,
+    "cohesion": 0.06682692307692308
+  },
+  "33": {
+    "name": "Map View Geometry Tests",
+    "nodes": 63,
+    "cohesion": 0.05683563748079877
+  },
+  "34": {
+    "name": "Station Toolbar Tests",
+    "nodes": 63,
+    "cohesion": 0.0819252432155658
+  },
+  "35": {
+    "name": "Commands Panel",
+    "nodes": 62,
+    "cohesion": 0.05764145954521417
+  },
+  "36": {
+    "name": "Approach Pursuit Math Tests",
+    "nodes": 60,
+    "cohesion": 0.0807909604519774
+  },
+  "37": {
+    "name": "Trade Painter",
+    "nodes": 60,
+    "cohesion": 0.10734463276836158
+  },
+  "38": {
+    "name": "Temp Character Image Screen",
+    "nodes": 59,
+    "cohesion": 0.07188778492109878
+  },
+  "39": {
+    "name": "Dialogue State",
+    "nodes": 59,
+    "cohesion": 0.053185271770894216
+  },
+  "40": {
+    "name": "Game Menu Screen",
+    "nodes": 57,
+    "cohesion": 0.07832080200501253
+  },
+  "41": {
+    "name": "Trade Screen",
+    "nodes": 56,
+    "cohesion": 0.052597402597402594
+  },
+  "42": {
+    "name": "Linear Motion Predictor",
+    "nodes": 55,
+    "cohesion": 0.10505050505050505
+  },
+  "43": {
+    "name": "Object Render State",
+    "nodes": 55,
+    "cohesion": 0.06666666666666667
+  },
+  "44": {
+    "name": "Camera State",
+    "nodes": 54,
+    "cohesion": 0.09294199860237597
+  },
+  "45": {
+    "name": "Trade Model",
+    "nodes": 54,
+    "cohesion": 0.04891684136967156
+  },
+  "46": {
+    "name": "Grid Panel",
+    "nodes": 54,
+    "cohesion": 0.09713487071977638
+  },
+  "47": {
+    "name": "Object Trail Store",
+    "nodes": 53,
+    "cohesion": 0.14658925979680695
+  },
+  "48": {
+    "name": "Approach Route",
+    "nodes": 53,
+    "cohesion": 0.11901306240928883
+  },
+  "49": {
+    "name": "Screen Event",
+    "nodes": 52,
+    "cohesion": 0.03996983408748114
+  },
+  "50": {
+    "name": "Scenario Select Screen",
+    "nodes": 52,
+    "cohesion": 0.06184012066365008
+  },
+  "51": {
+    "name": "Save Screen",
+    "nodes": 52,
+    "cohesion": 0.06108597285067873
+  },
+  "52": {
+    "name": "Combat Trajectory Tests",
+    "nodes": 52,
+    "cohesion": 0.07013574660633484
+  },
+  "53": {
+    "name": "Main Menu Screen",
+    "nodes": 52,
+    "cohesion": 0.08446455505279035
+  },
+  "54": {
+    "name": "Portrait Asset Repository",
+    "nodes": 50,
+    "cohesion": 0.09142857142857143
+  },
+  "55": {
+    "name": "Installed Module Runtime",
+    "nodes": 50,
+    "cohesion": 0.07183673469387755
+  },
+  "56": {
+    "name": "Screen Stack",
+    "nodes": 50,
+    "cohesion": 0.10612244897959183
+  },
+  "57": {
+    "name": "IGame Session Connection",
+    "nodes": 50,
+    "cohesion": 0.060408163265306125
+  },
+  "58": {
+    "name": "Trading Map Schema Tests",
+    "nodes": 50,
+    "cohesion": 0.08979591836734693
+  },
+  "59": {
+    "name": "Trading Map Bootstrap Tests",
+    "nodes": 49,
+    "cohesion": 0.09863945578231292
+  },
+  "60": {
+    "name": "Navigation Trajectory Projector",
+    "nodes": 48,
+    "cohesion": 0.12677304964539007
+  },
+  "61": {
+    "name": "Balance Report Tests",
+    "nodes": 48,
+    "cohesion": 0.08421985815602837
+  },
+  "62": {
+    "name": "Snapshot Mailbox",
+    "nodes": 48,
+    "cohesion": 0.08067375886524823
+  },
+  "63": {
+    "name": "Hire Screen",
+    "nodes": 48,
+    "cohesion": 0.12677304964539007
+  },
+  "64": {
+    "name": "Station Screen Tests",
+    "nodes": 48,
+    "cohesion": 0.17109929078014185
+  },
+  "65": {
+    "name": "Resource Field Random",
+    "nodes": 48,
+    "cohesion": 0.08599290780141844
+  },
+  "66": {
+    "name": "Route Risk Content Tests",
+    "nodes": 47,
+    "cohesion": 0.08325624421831637
+  },
+  "67": {
+    "name": "Player Command",
+    "nodes": 47,
+    "cohesion": 0.10545790934320073
+  },
+  "68": {
+    "name": "Simulation Clock",
+    "nodes": 46,
+    "cohesion": 0.11690821256038647
+  },
+  "69": {
+    "name": "Trading Map State Data",
+    "nodes": 46,
+    "cohesion": 0.10531400966183575
+  },
+  "70": {
+    "name": "Voyage State Data",
+    "nodes": 45,
+    "cohesion": 0.07676767676767676
+  },
+  "71": {
+    "name": "Object Label Tests",
+    "nodes": 45,
+    "cohesion": 0.10808080808080808
+  },
+  "72": {
+    "name": "Voyage Ui Fixture",
+    "nodes": 45,
+    "cohesion": 0.10404040404040404
+  },
+  "73": {
+    "name": "Item Catalog Schema Tests",
+    "nodes": 45,
+    "cohesion": 0.13333333333333333
+  },
+  "74": {
+    "name": "Object Info Panel",
+    "nodes": 44,
+    "cohesion": 0.10042283298097252
+  },
+  "75": {
+    "name": "Resource Survey Tests",
+    "nodes": 44,
+    "cohesion": 0.21458773784355178
+  },
+  "76": {
+    "name": "Combat Effect Store",
+    "nodes": 43,
+    "cohesion": 0.08970099667774087
+  },
+  "77": {
+    "name": "Keyboard Edge Tracker Tests",
+    "nodes": 43,
+    "cohesion": 0.12956810631229235
+  },
+  "78": {
+    "name": "Tactical Map State Updater",
+    "nodes": 43,
+    "cohesion": 0.07198228128460686
+  },
+  "79": {
+    "name": "Scenario Select Layout Tests",
+    "nodes": 43,
+    "cohesion": 0.12181616832779624
+  },
+  "80": {
+    "name": "Trading Economy Continuation Data",
+    "nodes": 43,
+    "cohesion": 0.06201550387596899
+  },
+  "81": {
+    "name": "Torpedo Preview Tests",
+    "nodes": 43,
+    "cohesion": 0.08637873754152824
+  },
+  "82": {
+    "name": "Controlled Connection",
+    "nodes": 42,
+    "cohesion": 0.11614401858304298
+  },
+  "83": {
+    "name": "Deep Space Saga Economy Balance",
+    "nodes": 42,
+    "cohesion": 0.08246225319396051
+  },
+  "84": {
+    "name": "Station Economy Batch2Tests",
+    "nodes": 41,
+    "cohesion": 0.16097560975609757
+  },
+  "85": {
+    "name": "Contracts Screen",
+    "nodes": 41,
+    "cohesion": 0.12317073170731707
+  },
+  "86": {
+    "name": "Cargo Stack Data",
+    "nodes": 41,
+    "cohesion": 0.1024390243902439
+  },
+  "87": {
+    "name": "Object Info Panel Tests",
+    "nodes": 41,
+    "cohesion": 0.15609756097560976
+  },
+  "88": {
+    "name": "Cluster Map Presentation",
+    "nodes": 40,
+    "cohesion": 0.08076923076923077
+  },
+  "89": {
+    "name": "Trajectory Viewport Tests",
+    "nodes": 39,
+    "cohesion": 0.09986504723346828
+  },
+  "90": {
+    "name": "Dialogue Definition",
+    "nodes": 38,
+    "cohesion": 0.0953058321479374
+  },
+  "91": {
+    "name": "Ship Screen",
+    "nodes": 38,
+    "cohesion": 0.10241820768136557
+  },
+  "92": {
+    "name": "Station Market Event Definition",
+    "nodes": 38,
+    "cohesion": 0.09246088193456614
+  },
+  "93": {
+    "name": "Station Resource Field Tests",
+    "nodes": 38,
+    "cohesion": 0.2019914651493599
+  },
+  "94": {
+    "name": "Trade Command Tests",
+    "nodes": 38,
+    "cohesion": 0.15220483641536273
+  },
+  "95": {
+    "name": "Trading Map Generation Data",
+    "nodes": 37,
+    "cohesion": 0.14264264264264265
+  },
+  "96": {
+    "name": "Game Session Scale Panel Tests",
+    "nodes": 37,
+    "cohesion": 0.16666666666666666
+  },
+  "97": {
+    "name": "Object Trail Buffer",
+    "nodes": 36,
+    "cohesion": 0.09841269841269841
+  },
+  "98": {
+    "name": "Cluster Voyage Fixture",
+    "nodes": 35,
+    "cohesion": 0.09747899159663866
+  },
+  "99": {
+    "name": "Pause Simulation Tests",
+    "nodes": 35,
+    "cohesion": 0.16974789915966387
+  },
+  "100": {
+    "name": "Deep Space Saga Client Portraits",
+    "nodes": 35,
+    "cohesion": 0.08235294117647059
+  },
+  "101": {
+    "name": "Tactical Map Snapshot State",
+    "nodes": 35,
+    "cohesion": 0.10756302521008404
+  },
+  "102": {
+    "name": "Dialogue Screen",
+    "nodes": 35,
+    "cohesion": 0.1226890756302521
+  },
+  "103": {
+    "name": "Future Trajectory Point",
+    "nodes": 35,
+    "cohesion": 0.11092436974789915
+  },
+  "104": {
+    "name": "Trading Voyage Fixture",
+    "nodes": 35,
+    "cohesion": 0.09243697478991597
+  },
+  "105": {
+    "name": "Generic Window Type A",
+    "nodes": 34,
+    "cohesion": 0.10160427807486631
+  },
+  "106": {
+    "name": "Game Session Handle",
+    "nodes": 34,
+    "cohesion": 0.10873440285204991
+  },
+  "107": {
+    "name": "Station Screen",
+    "nodes": 34,
+    "cohesion": 0.08021390374331551
+  },
+  "108": {
+    "name": "Station Toolbar",
+    "nodes": 34,
+    "cohesion": 0.11586452762923351
+  },
+  "109": {
+    "name": "Station Economy Generation Tests",
+    "nodes": 34,
+    "cohesion": 0.16042780748663102
+  },
+  "110": {
+    "name": "Balance Strategy Evidence",
+    "nodes": 34,
+    "cohesion": 0.1443850267379679
+  },
+  "111": {
+    "name": "Approach Pursuit Math",
+    "nodes": 33,
+    "cohesion": 0.14962121212121213
+  },
+  "112": {
+    "name": "IScreen Concepts",
+    "nodes": 33,
+    "cohesion": 0.12310606060606061
+  },
+  "113": {
+    "name": "Trading Map Geometry Tests",
+    "nodes": 33,
+    "cohesion": 0.22537878787878787
+  },
+  "114": {
+    "name": "Trade Quote Snapshot",
+    "nodes": 32,
+    "cohesion": 0.125
+  },
+  "115": {
+    "name": "Market Knowledge Tests",
+    "nodes": 32,
+    "cohesion": 0.16330645161290322
+  },
+  "116": {
+    "name": "Balance Run Tests",
+    "nodes": 31,
+    "cohesion": 0.12043010752688173
+  },
+  "117": {
+    "name": "Text Input Box",
+    "nodes": 31,
+    "cohesion": 0.14408602150537633
+  },
+  "118": {
+    "name": "Torpedo Route",
+    "nodes": 31,
+    "cohesion": 0.13763440860215054
+  },
+  "119": {
+    "name": "Game State Data",
+    "nodes": 31,
+    "cohesion": 0.14838709677419354
+  },
+  "120": {
+    "name": "Voyage Fuel Lifecycle Tests",
+    "nodes": 31,
+    "cohesion": 0.25161290322580643
+  },
+  "121": {
+    "name": "Station Market Demo Content Tests",
+    "nodes": 30,
+    "cohesion": 0.09885057471264368
+  },
+  "122": {
+    "name": "Immutable Array Default Json Converter",
+    "nodes": 30,
+    "cohesion": 0.1103448275862069
+  },
+  "123": {
+    "name": "Station Inventory Item Snapshot",
+    "nodes": 30,
+    "cohesion": 0.1310344827586207
+  },
+  "124": {
+    "name": "Navigation Waypoint Math",
+    "nodes": 30,
+    "cohesion": 0.1724137931034483
+  },
+  "125": {
+    "name": "Tactical Map View Tests",
+    "nodes": 30,
+    "cohesion": 0.167816091954023
+  },
+  "126": {
+    "name": "Render Motion",
+    "nodes": 29,
+    "cohesion": 0.08374384236453201
+  },
+  "127": {
+    "name": "Trading Graph Generator Tests",
+    "nodes": 29,
+    "cohesion": 0.18226600985221675
+  },
+  "128": {
+    "name": "Object Trail Geometry",
+    "nodes": 28,
+    "cohesion": 0.10052910052910052
+  },
+  "129": {
+    "name": "Cluster Case Evidence",
+    "nodes": 28,
+    "cohesion": 0.10052910052910052
+  },
+  "130": {
+    "name": "Variant Assets",
+    "nodes": 28,
+    "cohesion": 0.12433862433862433
+  },
+  "131": {
+    "name": "Menu Style",
+    "nodes": 27,
+    "cohesion": 0.08831908831908832
+  },
+  "132": {
+    "name": "Space Object Data",
+    "nodes": 27,
+    "cohesion": 0.1623931623931624
+  },
+  "133": {
+    "name": "Recording Connection",
+    "nodes": 27,
+    "cohesion": 0.11396011396011396
+  },
+  "134": {
+    "name": "Market Health Evaluator Tests",
+    "nodes": 27,
+    "cohesion": 0.22507122507122507
+  },
+  "135": {
+    "name": "Station Market Profile Content Tests",
+    "nodes": 27,
+    "cohesion": 0.1737891737891738
+  },
+  "136": {
+    "name": "Deep Space Saga Client UI",
+    "nodes": 26,
+    "cohesion": 0.10153846153846154
+  },
+  "137": {
+    "name": "Info Panel Tests",
+    "nodes": 26,
+    "cohesion": 0.20615384615384616
+  },
+  "138": {
+    "name": "Async Object Image Cache",
+    "nodes": 26,
+    "cohesion": 0.13538461538461538
+  },
+  "139": {
+    "name": "Station Market Catalog Content Tests",
+    "nodes": 26,
+    "cohesion": 0.12923076923076923
+  },
+  "140": {
+    "name": "Combat Bootstrap Tests",
+    "nodes": 26,
+    "cohesion": 0.1476923076923077
+  },
+  "141": {
+    "name": "Balance Driver",
+    "nodes": 26,
+    "cohesion": 0.15384615384615385
+  },
+  "142": {
+    "name": "Basic Combat Ui Flow Tests",
+    "nodes": 26,
+    "cohesion": 0.1076923076923077
+  },
+  "143": {
+    "name": "Speed Panel Tests",
+    "nodes": 26,
+    "cohesion": 0.23692307692307693
+  },
+  "144": {
+    "name": "Combat Content Loader Tests",
+    "nodes": 26,
+    "cohesion": 0.19384615384615383
+  },
+  "145": {
+    "name": "Portrait Composer",
+    "nodes": 25,
+    "cohesion": 0.17666666666666667
+  },
+  "146": {
+    "name": "Scenario Select Row Visuals Tests",
+    "nodes": 25,
+    "cohesion": 0.24333333333333335
+  },
+  "147": {
+    "name": "Command Result",
+    "nodes": 25,
+    "cohesion": 0.16666666666666666
+  },
+  "148": {
+    "name": "Delayed Travel Connection",
+    "nodes": 25,
+    "cohesion": 0.14666666666666667
+  },
+  "149": {
+    "name": "Dialogue Tests",
+    "nodes": 25,
+    "cohesion": 0.24333333333333335
+  },
+  "150": {
+    "name": "Torpedo Command Panel Tests",
+    "nodes": 25,
+    "cohesion": 0.26
+  },
+  "151": {
+    "name": "Generic Button Type A",
+    "nodes": 24,
+    "cohesion": 0.13043478260869565
+  },
+  "152": {
+    "name": "Portrait Part",
+    "nodes": 24,
+    "cohesion": 0.09782608695652174
+  },
+  "153": {
+    "name": "Settings Screen",
+    "nodes": 24,
+    "cohesion": 0.17753623188405798
+  },
+  "154": {
+    "name": "Scenario File",
+    "nodes": 24,
+    "cohesion": 0.18115942028985507
+  },
+  "155": {
+    "name": "Route Risk Integration Tests",
+    "nodes": 24,
+    "cohesion": 0.36231884057971014
+  },
+  "156": {
+    "name": "Torpedo Impact Tests",
+    "nodes": 24,
+    "cohesion": 0.2753623188405797
+  },
+  "157": {
+    "name": "Presented frame consumers and performance",
+    "nodes": 23,
+    "cohesion": 0.14624505928853754
+  },
+  "158": {
+    "name": "Window Thread Context",
+    "nodes": 23,
+    "cohesion": 0.09486166007905138
+  },
+  "159": {
+    "name": "Controllable Connection",
+    "nodes": 23,
+    "cohesion": 0.19367588932806323
+  },
+  "160": {
+    "name": "Grid Renderer Tests",
+    "nodes": 23,
+    "cohesion": 0.19367588932806323
+  },
+  "161": {
+    "name": "Tactical Map Spatial Index",
+    "nodes": 23,
+    "cohesion": 0.17391304347826086
+  },
+  "162": {
+    "name": "Recording Connection",
+    "nodes": 23,
+    "cohesion": 0.1422924901185771
+  },
+  "163": {
+    "name": "Orbital Synchronization Tests",
+    "nodes": 23,
+    "cohesion": 0.1976284584980237
+  },
+  "164": {
+    "name": "Image Button",
+    "nodes": 22,
+    "cohesion": 0.1471861471861472
+  },
+  "165": {
+    "name": "Character Appearance",
+    "nodes": 22,
+    "cohesion": 0.12121212121212122
+  },
+  "166": {
+    "name": "Combat Impact Snapshot",
+    "nodes": 22,
+    "cohesion": 0.12121212121212122
+  },
+  "167": {
+    "name": "Space Map Color Resolver Tests",
+    "nodes": 22,
+    "cohesion": 0.22077922077922077
+  },
+  "168": {
+    "name": "Tactical Map Settings",
+    "nodes": 22,
+    "cohesion": 0.09090909090909091
+  },
+  "169": {
+    "name": "Station Event Runtime",
+    "nodes": 22,
+    "cohesion": 0.18614718614718614
+  },
+  "170": {
+    "name": "Weapon Operator Schema Tests",
+    "nodes": 22,
+    "cohesion": 0.16883116883116883
+  },
+  "171": {
+    "name": "Engine Trade Connection",
+    "nodes": 22,
+    "cohesion": 0.16017316017316016
+  },
+  "172": {
+    "name": "Strategy Balance Evaluator Tests",
+    "nodes": 22,
+    "cohesion": 0.3116883116883117
+  },
+  "173": {
+    "name": "Approach Command Tests",
+    "nodes": 22,
+    "cohesion": 0.31601731601731603
+  },
+  "174": {
+    "name": "Combat Run",
+    "nodes": 22,
+    "cohesion": 0.22510822510822512
+  },
+  "175": {
+    "name": "Save Slot Repository Tests",
+    "nodes": 21,
+    "cohesion": 0.1761904761904762
+  },
+  "176": {
+    "name": "Combat Visual Settings",
+    "nodes": 21,
+    "cohesion": 0.14761904761904762
+  },
+  "177": {
+    "name": "Combat Journal Entry",
+    "nodes": 21,
+    "cohesion": 0.20476190476190476
+  },
+  "178": {
+    "name": "Torpedo Guidance Tests",
+    "nodes": 21,
+    "cohesion": 0.18095238095238095
+  },
+  "179": {
+    "name": "Navigation Trajectory Projector",
+    "nodes": 21,
+    "cohesion": 0.1380952380952381
+  },
+  "180": {
+    "name": "Combat Save Load Tests",
+    "nodes": 21,
+    "cohesion": 0.2714285714285714
+  },
+  "181": {
+    "name": "Trade Journal",
+    "nodes": 20,
+    "cohesion": 0.14210526315789473
+  },
+  "182": {
+    "name": "Countermeasure Snapshot",
+    "nodes": 20,
+    "cohesion": 0.14210526315789473
+  },
+  "183": {
+    "name": "Localization Tests",
+    "nodes": 20,
+    "cohesion": 0.20526315789473684
+  },
+  "184": {
+    "name": "Dialogue Command",
+    "nodes": 20,
+    "cohesion": 0.1736842105263158
+  },
+  "185": {
+    "name": "Collision Path",
+    "nodes": 20,
+    "cohesion": 0.16842105263157894
+  },
+  "186": {
+    "name": "Station Resource Field Content Tests",
+    "nodes": 20,
+    "cohesion": 0.24736842105263157
+  },
+  "187": {
+    "name": "Trade Snapshot Projection Tests",
+    "nodes": 20,
+    "cohesion": 0.22105263157894736
+  },
+  "188": {
+    "name": "Voyage Ledger Lifecycle Tests",
+    "nodes": 20,
+    "cohesion": 0.20526315789473684
+  },
+  "189": {
+    "name": "August 9 small technical tasks",
+    "nodes": 19,
+    "cohesion": 0.15204678362573099
+  },
+  "190": {
+    "name": "Ship Event",
+    "nodes": 19,
+    "cohesion": 0.15789473684210525
+  },
+  "191": {
+    "name": "Station Screen",
+    "nodes": 19,
+    "cohesion": 0.3216374269005848
+  },
+  "192": {
+    "name": "Map Frame Evidence",
+    "nodes": 19,
+    "cohesion": 0.13450292397660818
+  },
+  "193": {
+    "name": "Command Definition Loader Directory Tests",
+    "nodes": 19,
+    "cohesion": 0.27485380116959063
+  },
+  "194": {
+    "name": "Repeatable Trading Voyage Ui Tests",
+    "nodes": 19,
+    "cohesion": 0.16374269005847952
+  },
+  "195": {
+    "name": "Automatic Defense Tests",
+    "nodes": 19,
+    "cohesion": 0.1871345029239766
+  },
+  "196": {
+    "name": "Cargo Cost Accounting Tests",
+    "nodes": 19,
+    "cohesion": 0.27485380116959063
+  },
+  "197": {
+    "name": "Countermeasure Rng",
+    "nodes": 18,
+    "cohesion": 0.1437908496732026
+  },
+  "198": {
+    "name": "Quote Terms",
+    "nodes": 18,
+    "cohesion": 0.16993464052287582
+  },
+  "199": {
+    "name": "Game Time Display",
+    "nodes": 18,
+    "cohesion": 0.1568627450980392
+  },
+  "200": {
+    "name": "Progress Bar Tests",
+    "nodes": 18,
+    "cohesion": 0.19607843137254902
+  },
+  "201": {
+    "name": "Tactical Map Revision",
+    "nodes": 18,
+    "cohesion": 0.13071895424836602
+  },
+  "202": {
+    "name": "Balance Hourly Sample",
+    "nodes": 18,
+    "cohesion": 0.27450980392156865
+  },
+  "203": {
+    "name": "Combat Session Fixture",
+    "nodes": 18,
+    "cohesion": 0.16993464052287582
+  },
+  "204": {
+    "name": "Orbital Docking Departure Tests",
+    "nodes": 18,
+    "cohesion": 0.19607843137254902
+  },
+  "205": {
+    "name": "Voyage Fuel Accounting Tests",
+    "nodes": 18,
+    "cohesion": 0.26143790849673204
+  },
+  "206": {
+    "name": "Voyage Profit Accounting Tests",
+    "nodes": 18,
+    "cohesion": 0.3202614379084967
+  },
+  "207": {
+    "name": "Installed Module Snapshot",
+    "nodes": 17,
+    "cohesion": 0.2426470588235294
+  },
+  "208": {
+    "name": "Settings Layout",
+    "nodes": 17,
+    "cohesion": 0.27205882352941174
+  },
+  "209": {
+    "name": "Game Session Docking Request Tests",
+    "nodes": 17,
+    "cohesion": 0.22058823529411764
+  },
+  "210": {
+    "name": "Recording Connection",
+    "nodes": 17,
+    "cohesion": 0.19852941176470587
+  },
+  "211": {
+    "name": "Dock Command Tests",
+    "nodes": 17,
+    "cohesion": 0.3602941176470588
+  },
+  "212": {
+    "name": "Dialogue Layout",
+    "nodes": 16,
+    "cohesion": 0.30833333333333335
+  },
+  "213": {
+    "name": "Tactical Map Marker Policy Tests",
+    "nodes": 16,
+    "cohesion": 0.26666666666666666
+  },
+  "214": {
+    "name": "Station Layout",
+    "nodes": 16,
+    "cohesion": 0.45
+  },
+  "215": {
+    "name": "Trading Economy Save Schema Tests",
+    "nodes": 16,
+    "cohesion": 0.2833333333333333
+  },
+  "216": {
+    "name": "Game Session Scale Filter Tests",
+    "nodes": 16,
+    "cohesion": 0.2916666666666667
+  },
+  "217": {
+    "name": "Game Session Ui Scale Tests",
+    "nodes": 16,
+    "cohesion": 0.30833333333333335
+  },
+  "218": {
+    "name": "Voyage Save Load Continuity Tests",
+    "nodes": 16,
+    "cohesion": 0.35833333333333334
+  },
+  "219": {
+    "name": "Whole Face Assets",
+    "nodes": 16,
+    "cohesion": 0.24166666666666667
+  },
+  "220": {
+    "name": "Whole Head Assets",
+    "nodes": 15,
+    "cohesion": 0.21904761904761905
+  },
+  "221": {
+    "name": "Station Market Event Content Tests",
+    "nodes": 15,
+    "cohesion": 0.1523809523809524
+  },
+  "222": {
+    "name": "Portrait Style Profile",
+    "nodes": 15,
+    "cohesion": 0.13333333333333333
+  },
+  "223": {
+    "name": "Deep Space Saga Contracts csproj",
+    "nodes": 15,
+    "cohesion": 0.17142857142857143
+  },
+  "224": {
+    "name": "Trading Map Data Validation",
+    "nodes": 15,
+    "cohesion": 0.3142857142857143
+  },
+  "225": {
+    "name": "Defense Command Panel Tests",
+    "nodes": 15,
+    "cohesion": 0.18095238095238095
+  },
+  "226": {
+    "name": "Mechanics Panel Tests",
+    "nodes": 15,
+    "cohesion": 0.41904761904761906
+  },
+  "227": {
+    "name": "Torpedo Launcher Content Tests",
+    "nodes": 15,
+    "cohesion": 0.26666666666666666
+  },
+  "228": {
+    "name": "Combat Wreck Tests",
+    "nodes": 15,
+    "cohesion": 0.2761904761904762
+  },
+  "229": {
+    "name": "Torpedo History Tests",
+    "nodes": 15,
+    "cohesion": 0.24761904761904763
+  },
+  "230": {
+    "name": "Trading Economy Continuity Tests",
+    "nodes": 15,
+    "cohesion": 0.34285714285714286
+  },
+  "231": {
+    "name": "Revision driven scene cache ticket",
+    "nodes": 14,
+    "cohesion": 0.17582417582417584
+  },
+  "232": {
+    "name": "Tetrarch Class starting ship",
+    "nodes": 14,
+    "cohesion": 0.21978021978021978
+  },
+  "233": {
+    "name": "Reference Feature Assets",
+    "nodes": 14,
+    "cohesion": 0.26373626373626374
+  },
+  "234": {
+    "name": "Ui Asset Loader Tests",
+    "nodes": 14,
+    "cohesion": 0.2087912087912088
+  },
+  "235": {
+    "name": "Approach Camera Integration Tests",
+    "nodes": 14,
+    "cohesion": 0.17582417582417584
+  },
+  "236": {
+    "name": "Voyage Snapshot",
+    "nodes": 14,
+    "cohesion": 0.2087912087912088
+  },
+  "237": {
+    "name": "Recording Connection",
+    "nodes": 14,
+    "cohesion": 0.26373626373626374
+  },
+  "238": {
+    "name": "Recording Connection",
+    "nodes": 14,
+    "cohesion": 0.25274725274725274
+  },
+  "239": {
+    "name": "Nine Patch Tests",
+    "nodes": 14,
+    "cohesion": 0.3076923076923077
+  },
+  "240": {
+    "name": "Tactical Map Cluster Stability Tests",
+    "nodes": 14,
+    "cohesion": 0.1978021978021978
+  },
+  "241": {
+    "name": "Smoke Tests",
+    "nodes": 14,
+    "cohesion": 0.26373626373626374
+  },
+  "242": {
+    "name": "Market Save Load Continuity Tests",
+    "nodes": 14,
+    "cohesion": 0.3626373626373626
+  },
+  "243": {
+    "name": "Person Sex",
+    "nodes": 13,
+    "cohesion": 0.20512820512820512
+  },
+  "244": {
+    "name": "Countermeasure Content Loader Tests",
+    "nodes": 13,
+    "cohesion": 0.2692307692307692
+  },
+  "245": {
+    "name": "Recording Connection",
+    "nodes": 13,
+    "cohesion": 0.28205128205128205
+  },
+  "246": {
+    "name": "Temporary Content",
+    "nodes": 13,
+    "cohesion": 0.23076923076923078
+  },
+  "247": {
+    "name": "Torpedo Inspection Tests",
+    "nodes": 13,
+    "cohesion": 0.28205128205128205
+  },
+  "248": {
+    "name": "Countermeasure Bootstrap Tests",
+    "nodes": 13,
+    "cohesion": 0.24358974358974358
+  },
+  "249": {
+    "name": "Portrait Generator Tests",
+    "nodes": 12,
+    "cohesion": 0.24242424242424243
+  },
+  "250": {
+    "name": "Xenon Style",
+    "nodes": 12,
+    "cohesion": 0.30303030303030304
+  },
+  "251": {
+    "name": "Asteroid Survey Snapshot",
+    "nodes": 12,
+    "cohesion": 0.30303030303030304
+  },
+  "252": {
+    "name": "Combat State Data",
+    "nodes": 12,
+    "cohesion": 0.24242424242424243
+  },
+  "253": {
+    "name": "Object Label Layout",
+    "nodes": 11,
+    "cohesion": 0.38181818181818183
+  },
+  "254": {
+    "name": "Station Market Knowledge Snapshot",
+    "nodes": 11,
+    "cohesion": 0.3090909090909091
+  },
+  "255": {
+    "name": "Station Size Factors Tests",
+    "nodes": 11,
+    "cohesion": 0.36363636363636365
+  },
+  "256": {
+    "name": "Approach Camera Integration Tests",
+    "nodes": 11,
+    "cohesion": 0.36363636363636365
+  },
+  "257": {
+    "name": "Game Session Dock Auto Open",
+    "nodes": 11,
+    "cohesion": 0.4727272727272727
+  },
+  "258": {
+    "name": "Panel Engine Connection",
+    "nodes": 11,
+    "cohesion": 0.36363636363636365
+  },
+  "259": {
+    "name": "Legacy Connection",
+    "nodes": 11,
+    "cohesion": 0.36363636363636365
+  },
+  "260": {
+    "name": "Ration Schedule Tests",
+    "nodes": 11,
+    "cohesion": 0.4
+  },
+  "261": {
+    "name": "Object Image Resolution Tests",
+    "nodes": 11,
+    "cohesion": 0.4
+  },
+  "262": {
+    "name": "Localization Concepts",
+    "nodes": 10,
+    "cohesion": 0.24444444444444444
+  },
+  "263": {
+    "name": "Grid Renderer",
+    "nodes": 10,
+    "cohesion": 0.3333333333333333
+  },
+  "264": {
+    "name": "Game Session Screen Trail Color",
+    "nodes": 10,
+    "cohesion": 0.4222222222222222
+  },
+  "265": {
+    "name": "Dialogue Integration Tests",
+    "nodes": 10,
+    "cohesion": 0.28888888888888886
+  },
+  "266": {
+    "name": "Status Square Animator",
+    "nodes": 10,
+    "cohesion": 0.35555555555555557
+  },
+  "267": {
+    "name": "Combat Event Type",
+    "nodes": 10,
+    "cohesion": 0.2
+  },
+  "268": {
+    "name": "Pirate Scenario Tests",
+    "nodes": 10,
+    "cohesion": 0.4888888888888889
+  },
+  "269": {
+    "name": "Settings Screen Tests",
+    "nodes": 10,
+    "cohesion": 0.35555555555555557
+  },
+  "270": {
+    "name": "Unified Portrait Tests",
+    "nodes": 10,
+    "cohesion": 0.28888888888888886
+  },
+  "271": {
+    "name": "Port Fee Schedule Tests",
+    "nodes": 10,
+    "cohesion": 0.4222222222222222
+  },
+  "272": {
+    "name": "Hair Assets",
+    "nodes": 10,
+    "cohesion": 0.3333333333333333
+  },
+  "273": {
+    "name": "Deep Space Saga Client csproj",
+    "nodes": 9,
+    "cohesion": 0.2222222222222222
+  },
+  "274": {
+    "name": "Tactical Pipeline Evidence",
+    "nodes": 9,
+    "cohesion": 0.2777777777777778
+  },
+  "275": {
+    "name": "Station District",
+    "nodes": 9,
+    "cohesion": 0.2222222222222222
+  },
+  "276": {
+    "name": "Tetrarch Loadout Tests",
+    "nodes": 9,
+    "cohesion": 0.5
+  },
+  "277": {
+    "name": "Voyage Finance Contract Tests",
+    "nodes": 9,
+    "cohesion": 0.3611111111111111
+  },
+  "278": {
+    "name": "Voyage Fuel Contract Tests",
+    "nodes": 9,
+    "cohesion": 0.3055555555555556
+  },
+  "279": {
+    "name": "Trading Continuation Review Tests",
+    "nodes": 9,
+    "cohesion": 0.4444444444444444
+  },
+  "280": {
+    "name": "Voyage Lifecycle Tests",
+    "nodes": 9,
+    "cohesion": 0.3888888888888889
+  },
+  "281": {
+    "name": "Economy Balance Seam Tests",
+    "nodes": 8,
+    "cohesion": 0.39285714285714285
+  },
+  "282": {
+    "name": "Combat Save Validation",
+    "nodes": 8,
+    "cohesion": 0.5
+  },
+  "283": {
+    "name": "Countermeasure Save Validation",
+    "nodes": 8,
+    "cohesion": 0.6428571428571429
+  },
+  "284": {
+    "name": "Snapshot Render Metadata Tests",
+    "nodes": 8,
+    "cohesion": 0.5714285714285714
+  },
+  "285": {
+    "name": "Content Fixture",
+    "nodes": 8,
+    "cohesion": 0.2857142857142857
+  },
+  "286": {
+    "name": "Deep Space Saga Performance Tests",
+    "nodes": 8,
+    "cohesion": 0.25
+  },
+  "287": {
+    "name": "Tactical Pipeline Evidence",
+    "nodes": 8,
+    "cohesion": 0.4642857142857143
+  },
+  "288": {
+    "name": "Countermeasure Ui Flow Tests",
+    "nodes": 7,
+    "cohesion": 0.2857142857142857
+  },
+  "289": {
+    "name": "Nine Patch",
+    "nodes": 7,
+    "cohesion": 0.5238095238095238
+  },
+  "290": {
+    "name": "Deep Space Saga Client Tests",
+    "nodes": 7,
+    "cohesion": 0.2857142857142857
+  },
+  "291": {
+    "name": "Main Menu Screen Tests",
+    "nodes": 7,
+    "cohesion": 0.3333333333333333
+  },
+  "292": {
+    "name": "Scenario Select Screen Tests",
+    "nodes": 7,
+    "cohesion": 0.3333333333333333
+  },
+  "293": {
+    "name": "Deep Space Saga Contracts Tests",
+    "nodes": 7,
+    "cohesion": 0.2857142857142857
+  },
+  "294": {
+    "name": "Deep Space Saga Engine Tests",
+    "nodes": 7,
+    "cohesion": 0.2857142857142857
+  },
+  "295": {
+    "name": "Deep Space Saga Motion Tests",
+    "nodes": 7,
+    "cohesion": 0.2857142857142857
+  },
+  "296": {
+    "name": "Game Info",
+    "nodes": 6,
+    "cohesion": 0.4
+  },
+  "297": {
+    "name": "Tactical Map Animation Kind",
+    "nodes": 6,
+    "cohesion": 0.3333333333333333
+  },
+  "298": {
+    "name": "Settings Button",
+    "nodes": 6,
+    "cohesion": 0.3333333333333333
+  },
+  "299": {
+    "name": "Station Route Presentation",
+    "nodes": 6,
+    "cohesion": 0.5333333333333333
+  },
+  "300": {
+    "name": "Countermeasure Termination Kind",
+    "nodes": 6,
+    "cohesion": 0.3333333333333333
+  },
+  "301": {
+    "name": "Countermeasure State Data",
+    "nodes": 6,
+    "cohesion": 0.4666666666666667
+  },
+  "302": {
+    "name": "Countermeasure Content Tests",
+    "nodes": 6,
+    "cohesion": 0.6
+  },
+  "303": {
+    "name": "Default System Content Tests",
+    "nodes": 6,
+    "cohesion": 0.4
+  },
+  "304": {
+    "name": "Local Cluster Content Tests",
+    "nodes": 6,
+    "cohesion": 0.3333333333333333
+  },
+  "305": {
+    "name": "Countermeasure Event Tests",
+    "nodes": 6,
+    "cohesion": 0.4
+  },
+  "306": {
+    "name": "Deep Space Saga Economy Balance",
+    "nodes": 6,
+    "cohesion": 0.3333333333333333
+  },
+  "307": {
+    "name": "Cluster Voyage Integration Tests",
+    "nodes": 6,
+    "cohesion": 0.6
+  },
+  "308": {
+    "name": "Xenon Combo Box",
+    "nodes": 5,
+    "cohesion": 0.4
+  },
+  "309": {
+    "name": "Navigation Phase",
+    "nodes": 5,
+    "cohesion": 0.4
+  },
+  "310": {
+    "name": "Combat Palette Content Tests",
+    "nodes": 5,
+    "cohesion": 0.5
+  },
+  "311": {
+    "name": "Object Info Panel Tests",
+    "nodes": 5,
+    "cohesion": 0.6
+  },
+  "312": {
+    "name": "Save Reliability Tests",
+    "nodes": 5,
+    "cohesion": 0.6
+  },
+  "313": {
+    "name": "System Performance Report Tests",
+    "nodes": 5,
+    "cohesion": 0.5
+  },
+  "314": {
+    "name": "Test Assembly Setup",
+    "nodes": 4,
+    "cohesion": 0.5
+  },
+  "315": {
+    "name": "Entry Concepts",
+    "nodes": 4,
+    "cohesion": 0.5
+  },
+  "316": {
+    "name": "Voyage Amount Kind",
+    "nodes": 4,
+    "cohesion": 0.5
+  },
+  "317": {
+    "name": "Countermeasure Palette Tests",
+    "nodes": 4,
+    "cohesion": 0.5
+  },
+  "318": {
+    "name": "Countermeasure Visual Settings Tests",
+    "nodes": 4,
+    "cohesion": 0.5
+  },
+  "319": {
+    "name": "Image Button Tests",
+    "nodes": 4,
+    "cohesion": 0.6666666666666666
+  },
+  "320": {
+    "name": "Countermeasure Snapshot Tests",
+    "nodes": 4,
+    "cohesion": 0.6666666666666666
+  },
+  "321": {
+    "name": "Smoke Tests",
+    "nodes": 4,
+    "cohesion": 0.5
+  },
+  "322": {
+    "name": "Object Info Panel State",
+    "nodes": 3,
+    "cohesion": 0.6666666666666666
+  },
+  "323": {
+    "name": "Trading Map Schema Tests cs",
+    "nodes": 3,
+    "cohesion": 0.6666666666666666
+  },
+  "324": {
+    "name": "Launch Mode",
+    "nodes": 3,
+    "cohesion": 0.6666666666666666
+  },
+  "325": {
+    "name": "Tactical Map Label Bounds Tests",
+    "nodes": 3,
+    "cohesion": 0.6666666666666666
+  },
+  "326": {
+    "name": "Tactical Map View Tests",
+    "nodes": 3,
+    "cohesion": 0.6666666666666666
+  },
+  "327": {
+    "name": "Object Label Text",
+    "nodes": 2,
+    "cohesion": 1.0
+  },
+  "328": {
+    "name": "Export Tactical Button Assets ps1",
+    "nodes": 2,
+    "cohesion": 1.0
+  }
+}

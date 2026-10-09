@@ -30,7 +30,9 @@ Draft assumptions accepted for this execution: 2000 ms real-time stale limit, de
 | EP-0005-US-0002-TK-0003-read-only-map-painter | implemented; Client 1810/1810, raster replay/layers/native lifetime pass, Release/format/diff pass; native OPEN | 789c08ac0a9787ab66b2d6aae57a79c0de97e231; push and remote SHA verified |
 | EP-0005-US-0002-TK-0004-revision-driven-scene-cache | implemented; Client 1822/1822, revision/cache/spatial cases 12/12, Release/format/diff pass; native OPEN | 35081a109fa747dee6bbdbdd523da1022ba2a946; push and remote SHA verified |
 | EP-0005-US-0002-TK-0005-frame-consumers-and-performance | implemented; Client 1826/1826, Release/format/diff pass; 20 raster + 16 native cases, 80 scripted actions pass; 80 FPS FAILED, manual OPEN | 10b6414b9226956f4eb99b89741176d102ab2102; push and remote SHA verified |
-| EP-0005-US-0003-TK-0001-documentation-sync | implemented; repository Markdown inventory, canonical/status sync, links/IDs/DAG/diff checked | commit/push verification follows this ticket |
-| EP-0005-US-0003-TK-0002-graph-rebuild | pending | pending |
+| EP-0005-US-0003-TK-0001-documentation-sync | implemented; repository Markdown inventory, canonical/status sync, links/IDs/DAG/diff checked | 2de330c78b1e3f1ec2154001d35c75a300d2fd6d; push and remote SHA verified |
+| EP-0005-US-0003-TK-0002-graph-rebuild | delivered graph/corpus/hash/health/query evidence: GraphRebuild.md; native gates unchanged | own commit and exact remote SHA verified after creation; see Git/final execution reply |
 
 Review follow-up: US1 TK3 additional Ctrl-cluster expansion case; 29/29 focused and 1827/1827 full Client pass. Commit `cc736b7a2c4ecce314ae3a844aa88a079b6301c8`, immediate push and exact remote SHA verified. Production binary/evidence unchanged.
+
+Final delivery: all 22 ticket implementations and the TK3 review follow-up are recorded separately. Documentation/navigation story artifacts do not close 80 FPS FAILED/OPEN or human manual NOT RUN. See GraphRebuild.md and US-0003-Review.md for final derived validation.

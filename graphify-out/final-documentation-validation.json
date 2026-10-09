@@ -1,0 +1,546 @@
+{
+  "markdownFiles": 454,
+  "relativeLinksChecked": 1949,
+  "newBrokenLinks": [],
+  "preexistingUnresolvedLinks": [
+    {
+      "file": "Documentation/06-Tooling/CountermeasureGraphify.md",
+      "target": "../../src/graphify-out/input-evidence.json"
+    },
+    {
+      "file": "Documentation/06-Tooling/CountermeasureGraphify.md",
+      "target": "../../src/graphify-out/manifest.json"
+    },
+    {
+      "file": "Documentation/06-Tooling/CountermeasureGraphify.md",
+      "target": "../../src/graphify-out/verification.json"
+    },
+    {
+      "file": "Documentation/06-Tooling/CountermeasureGraphify.md",
+      "target": "../../src/graphify-out/extraction.json"
+    },
+    {
+      "file": "Documentation/06-Tooling/CountermeasureGraphify.md",
+      "target": "../../src/graphify-out/diagnostics.json"
+    },
+    {
+      "file": "Documentation/06-Tooling/CountermeasureGraphify.md",
+      "target": "../../src/graphify-out/community-cohesion.json"
+    },
+    {
+      "file": "Documentation/06-Tooling/CountermeasureGraphify.md",
+      "target": "../../src/graphify-out/verification-traces.json"
+    },
+    {
+      "file": "Documentation/06-Tooling/CountermeasureGraphify.md",
+      "target": "../../src/graphify-out/graph.json"
+    },
+    {
+      "file": "Documentation/06-Tooling/CountermeasureGraphify.md",
+      "target": "../../src/graphify-out/graph.html"
+    },
+    {
+      "file": "Documentation/06-Tooling/CountermeasureGraphify.md",
+      "target": "../../src/graphify-out/GRAPH_REPORT.md"
+    },
+    {
+      "file": "Documentation/06-Tooling/CountermeasureGraphify.md",
+      "target": "../../src/graphify-out/corpus.json"
+    },
+    {
+      "file": "Documentation/06-Tooling/CountermeasureGraphify.md",
+      "target": "../../src/graphify-out/input-evidence.json"
+    },
+    {
+      "file": "Documentation/06-Tooling/CountermeasureGraphify.md",
+      "target": "../../src/graphify-out/verification.json"
+    },
+    {
+      "file": "review-handoff/EP-0001-result-20261006.md",
+      "target": "../artifacts/EP-0001-trading-system/balance-20261006/run-1.json"
+    },
+    {
+      "file": "review-handoff/EP-0001-result-20261006.md",
+      "target": "../artifacts/EP-0001-trading-system/balance-20261006/run-2.json"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/Tickets.md",
+      "target": "../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/ImplementationStatus.md",
+      "target": "../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0013-project-documentation-and-graph/EP-0008-US-0013-TK-0002-refresh-graph-and-links/EP-0008-US-0013-TK-0002-refresh-graph-and-links.md",
+      "target": "../../EP-0008-US-0013-project-documentation-and-graph/EP-0008-US-0013-TK-0001-update-project-documents/EP-0008-US-0013-TK-0001-update-project-documents.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0013-project-documentation-and-graph/EP-0008-US-0013-TK-0001-update-project-documents/EP-0008-US-0013-TK-0001-update-project-documents.md",
+      "target": "../../EP-0008-US-0012-phase-three-acceptance/EP-0008-US-0012-TK-0004-epic-review/EP-0008-US-0012-TK-0004-epic-review.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0013-project-documentation-and-graph/EP-0008-US-0013-project-documentation-and-graph.md",
+      "target": "../../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0012-phase-three-acceptance/EP-0008-US-0012-TK-0004-epic-review/EP-0008-US-0012-TK-0004-epic-review.md",
+      "target": "../../EP-0008-US-0012-phase-three-acceptance/EP-0008-US-0012-TK-0003-native-ui-acceptance/EP-0008-US-0012-TK-0003-native-ui-acceptance.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0002-dual-defense-loadout/EP-0008-US-0002-TK-0002-dual-bootstrap/EP-0008-US-0002-TK-0002-dual-bootstrap.md",
+      "target": "../../EP-0008-US-0002-dual-defense-loadout/EP-0008-US-0002-TK-0001-living-variant-and-scenario/EP-0008-US-0002-TK-0001-living-variant-and-scenario.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0012-phase-three-acceptance/EP-0008-US-0012-TK-0003-native-ui-acceptance/EP-0008-US-0012-TK-0003-native-ui-acceptance.md",
+      "target": "../../EP-0008-US-0012-phase-three-acceptance/EP-0008-US-0012-TK-0002-end-to-end-combat/EP-0008-US-0012-TK-0002-end-to-end-combat.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0002-dual-defense-loadout/EP-0008-US-0002-TK-0001-living-variant-and-scenario/EP-0008-US-0002-TK-0001-living-variant-and-scenario.md",
+      "target": "../../EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-TK-0005-chance-resolution/EP-0008-US-0001-TK-0005-chance-resolution.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0012-phase-three-acceptance/EP-0008-US-0012-TK-0002-end-to-end-combat/EP-0008-US-0012-TK-0002-end-to-end-combat.md",
+      "target": "../../EP-0008-US-0012-phase-three-acceptance/EP-0008-US-0012-TK-0001-compatibility-fixtures/EP-0008-US-0012-TK-0001-compatibility-fixtures.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0002-dual-defense-loadout/EP-0008-US-0002-dual-defense-loadout.md",
+      "target": "../../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-TK-0005-chance-resolution/EP-0008-US-0001-TK-0005-chance-resolution.md",
+      "target": "../../EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-TK-0004-weapon-catalog/EP-0008-US-0001-TK-0004-weapon-catalog.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-TK-0004-weapon-catalog/EP-0008-US-0001-TK-0004-weapon-catalog.md",
+      "target": "../../EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-TK-0003-weapon-content-schema/EP-0008-US-0001-TK-0003-weapon-content-schema.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0012-phase-three-acceptance/EP-0008-US-0012-TK-0001-compatibility-fixtures/EP-0008-US-0012-TK-0001-compatibility-fixtures.md",
+      "target": "../../EP-0008-US-0011-phase-three-save-continuation/EP-0008-US-0011-TK-0004-load-ui-and-transport/EP-0008-US-0011-TK-0004-load-ui-and-transport.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-TK-0003-weapon-content-schema/EP-0008-US-0001-TK-0003-weapon-content-schema.md",
+      "target": "../../EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-TK-0002-defense-contract/EP-0008-US-0001-TK-0002-defense-contract.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0012-phase-three-acceptance/EP-0008-US-0012-phase-three-acceptance.md",
+      "target": "../../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-TK-0004-combat-localization/EP-0008-US-0007-TK-0004-combat-localization.md",
+      "target": "../../EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-TK-0003-combat-info/EP-0008-US-0007-TK-0003-combat-info.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-TK-0003-combat-info/EP-0008-US-0007-TK-0003-combat-info.md",
+      "target": "../../EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-TK-0002-panel-command-routing/EP-0008-US-0007-TK-0002-panel-command-routing.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-TK-0002-panel-command-routing/EP-0008-US-0007-TK-0002-panel-command-routing.md",
+      "target": "../../EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-TK-0001-panel-instances/EP-0008-US-0007-TK-0001-panel-instances.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-TK-0001-panel-instances/EP-0008-US-0007-TK-0001-panel-instances.md",
+      "target": "../../EP-0008-US-0006-lifetime-and-auto-arbitration/EP-0008-US-0006-TK-0003-combat-journal-facts/EP-0008-US-0006-TK-0003-combat-journal-facts.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-independent-defense-panels.md",
+      "target": "../../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-TK-0002-defense-contract/EP-0008-US-0001-TK-0002-defense-contract.md",
+      "target": "../../EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-TK-0001-weapon-contract/EP-0008-US-0001-TK-0001-weapon-contract.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-module-owned-weapon-rules.md",
+      "target": "../../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/Documentation.md",
+      "target": "../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/Decisions.md",
+      "target": "../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0006-lifetime-and-auto-arbitration/EP-0008-US-0006-TK-0003-combat-journal-facts/EP-0008-US-0006-TK-0003-combat-journal-facts.md",
+      "target": "../../EP-0008-US-0006-lifetime-and-auto-arbitration/EP-0008-US-0006-TK-0002-auto-launcher-selection/EP-0008-US-0006-TK-0002-auto-launcher-selection.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0011-phase-three-save-continuation/EP-0008-US-0011-TK-0004-load-ui-and-transport/EP-0008-US-0011-TK-0004-load-ui-and-transport.md",
+      "target": "../../EP-0008-US-0011-phase-three-save-continuation/EP-0008-US-0011-TK-0003-save-runtime-continuation/EP-0008-US-0011-TK-0003-save-runtime-continuation.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0006-lifetime-and-auto-arbitration/EP-0008-US-0006-TK-0002-auto-launcher-selection/EP-0008-US-0006-TK-0002-auto-launcher-selection.md",
+      "target": "../../EP-0008-US-0006-lifetime-and-auto-arbitration/EP-0008-US-0006-TK-0001-global-lifetime/EP-0008-US-0006-TK-0001-global-lifetime.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0006-lifetime-and-auto-arbitration/EP-0008-US-0006-TK-0001-global-lifetime/EP-0008-US-0006-TK-0001-global-lifetime.md",
+      "target": "../../EP-0008-US-0005-manual-countermeasure-fire/EP-0008-US-0005-TK-0004-defense-preview-projection/EP-0008-US-0005-TK-0004-defense-preview-projection.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0006-lifetime-and-auto-arbitration/EP-0008-US-0006-lifetime-and-auto-arbitration.md",
+      "target": "../../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0011-phase-three-save-continuation/EP-0008-US-0011-TK-0003-save-runtime-continuation/EP-0008-US-0011-TK-0003-save-runtime-continuation.md",
+      "target": "../../EP-0008-US-0011-phase-three-save-continuation/EP-0008-US-0011-TK-0002-save-combat-validation/EP-0008-US-0011-TK-0002-save-combat-validation.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0005-manual-countermeasure-fire/EP-0008-US-0005-TK-0004-defense-preview-projection/EP-0008-US-0005-TK-0004-defense-preview-projection.md",
+      "target": "../../EP-0008-US-0005-manual-countermeasure-fire/EP-0008-US-0005-TK-0003-defense-fire-catalog/EP-0008-US-0005-TK-0003-defense-fire-catalog.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0011-phase-three-save-continuation/EP-0008-US-0011-TK-0002-save-combat-validation/EP-0008-US-0011-TK-0002-save-combat-validation.md",
+      "target": "../../EP-0008-US-0011-phase-three-save-continuation/EP-0008-US-0011-TK-0001-new-save-version-gate/EP-0008-US-0011-TK-0001-new-save-version-gate.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0005-manual-countermeasure-fire/EP-0008-US-0005-TK-0003-defense-fire-catalog/EP-0008-US-0005-TK-0003-defense-fire-catalog.md",
+      "target": "../../EP-0008-US-0005-manual-countermeasure-fire/EP-0008-US-0005-TK-0002-manual-launch-execution/EP-0008-US-0005-TK-0002-manual-launch-execution.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0010-documentation-and-graph/EP-0007-US-0010-TK-0001-update-affected-documentation/EP-0007-US-0010-TK-0001-update-affected-documentation.md",
+      "target": "../../EP-0007-US-0009-countermeasure-acceptance/EP-0007-US-0009-TK-0003-native-defense-acceptance/EP-0007-US-0009-TK-0003-native-defense-acceptance.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0005-manual-countermeasure-fire/EP-0008-US-0005-TK-0002-manual-launch-execution/EP-0008-US-0005-TK-0002-manual-launch-execution.md",
+      "target": "../../EP-0008-US-0005-manual-countermeasure-fire/EP-0008-US-0005-TK-0001-manual-guidance/EP-0008-US-0005-TK-0001-manual-guidance.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0011-phase-three-save-continuation/EP-0008-US-0011-TK-0001-new-save-version-gate/EP-0008-US-0011-TK-0001-new-save-version-gate.md",
+      "target": "../../EP-0008-US-0010-defeat-screen-and-recovery/EP-0008-US-0010-TK-0003-defeat-navigation/EP-0008-US-0010-TK-0003-defeat-navigation.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0011-phase-three-save-continuation/EP-0008-US-0011-phase-three-save-continuation.md",
+      "target": "../../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0005-manual-countermeasure-fire/EP-0008-US-0005-TK-0001-manual-guidance/EP-0008-US-0005-TK-0001-manual-guidance.md",
+      "target": "../../EP-0008-US-0004-hostile-pursuit-and-orbit/EP-0008-US-0004-TK-0004-combat-path-integration/EP-0008-US-0004-TK-0004-combat-path-integration.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0005-manual-countermeasure-fire/EP-0008-US-0005-manual-countermeasure-fire.md",
+      "target": "../../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0009-countermeasure-acceptance/EP-0007-US-0009-TK-0004-catalog-regression-compatibility/EP-0007-US-0009-TK-0004-catalog-regression-compatibility.md",
+      "target": "../../EP-0007-US-0003-torpedo-self-destruct/EP-0007-US-0003-TK-0003-self-destruct-content/EP-0007-US-0003-TK-0003-self-destruct-content.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0009-countermeasure-acceptance/EP-0007-US-0009-TK-0003-native-defense-acceptance/EP-0007-US-0009-TK-0003-native-defense-acceptance.md",
+      "target": "../../EP-0007-US-0009-countermeasure-acceptance/EP-0007-US-0009-TK-0002-defense-end-to-end/EP-0007-US-0009-TK-0002-defense-end-to-end.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0009-countermeasure-acceptance/EP-0007-US-0009-TK-0002-defense-end-to-end/EP-0007-US-0009-TK-0002-defense-end-to-end.md",
+      "target": "../../EP-0007-US-0008-defense-save-load/EP-0007-US-0008-TK-0003-defense-client-reset/EP-0007-US-0008-TK-0003-defense-client-reset.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0004-hostile-pursuit-and-orbit/EP-0008-US-0004-TK-0004-combat-path-integration/EP-0008-US-0004-TK-0004-combat-path-integration.md",
+      "target": "../../EP-0008-US-0004-hostile-pursuit-and-orbit/EP-0008-US-0004-TK-0003-hostile-controller/EP-0008-US-0004-TK-0003-hostile-controller.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0009-countermeasure-acceptance/EP-0007-US-0009-TK-0001-legacy-combat-fixtures/EP-0007-US-0009-TK-0001-legacy-combat-fixtures.md",
+      "target": "../../EP-0007-US-0002-countermeasure-equipped-tetrarch/EP-0007-US-0002-TK-0004-other-tetrarch-scenarios/EP-0007-US-0002-TK-0004-other-tetrarch-scenarios.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0004-hostile-pursuit-and-orbit/EP-0008-US-0004-TK-0003-hostile-controller/EP-0008-US-0004-TK-0003-hostile-controller.md",
+      "target": "../../EP-0008-US-0004-hostile-pursuit-and-orbit/EP-0008-US-0004-TK-0002-relative-orbit-math/EP-0008-US-0004-TK-0002-relative-orbit-math.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0010-defeat-screen-and-recovery/EP-0008-US-0010-TK-0003-defeat-navigation/EP-0008-US-0010-TK-0003-defeat-navigation.md",
+      "target": "../../EP-0008-US-0010-defeat-screen-and-recovery/EP-0008-US-0010-TK-0002-defeat-modal/EP-0008-US-0010-TK-0002-defeat-modal.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0008-defense-save-load/EP-0007-US-0008-TK-0003-defense-client-reset/EP-0007-US-0008-TK-0003-defense-client-reset.md",
+      "target": "../../EP-0007-US-0008-defense-save-load/EP-0007-US-0008-TK-0002-defense-persistence/EP-0007-US-0008-TK-0002-defense-persistence.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0010-defeat-screen-and-recovery/EP-0008-US-0010-TK-0002-defeat-modal/EP-0008-US-0010-TK-0002-defeat-modal.md",
+      "target": "../../EP-0008-US-0010-defeat-screen-and-recovery/EP-0008-US-0010-TK-0001-defeated-session-save-guard/EP-0008-US-0010-TK-0001-defeated-session-save-guard.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0004-hostile-pursuit-and-orbit/EP-0008-US-0004-TK-0002-relative-orbit-math/EP-0008-US-0004-TK-0002-relative-orbit-math.md",
+      "target": "../../EP-0008-US-0004-hostile-pursuit-and-orbit/EP-0008-US-0004-TK-0001-hostile-motion-contract/EP-0008-US-0004-TK-0001-hostile-motion-contract.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0008-defense-save-load/EP-0007-US-0008-TK-0002-defense-persistence/EP-0007-US-0008-TK-0002-defense-persistence.md",
+      "target": "../../EP-0007-US-0008-defense-save-load/EP-0007-US-0008-TK-0001-defense-save-schema/EP-0007-US-0008-TK-0001-defense-save-schema.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0008-defense-save-load/EP-0007-US-0008-TK-0001-defense-save-schema/EP-0007-US-0008-TK-0001-defense-save-schema.md",
+      "target": "../../EP-0007-US-0007-combat-journal/EP-0007-US-0007-TK-0002-collapsible-combat-journal/EP-0007-US-0007-TK-0002-collapsible-combat-journal.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0004-hostile-pursuit-and-orbit/EP-0008-US-0004-TK-0001-hostile-motion-contract/EP-0008-US-0004-TK-0001-hostile-motion-contract.md",
+      "target": "../../EP-0008-US-0003-ranged-hostile-torpedo-fire/EP-0008-US-0003-TK-0003-player-range-feedback/EP-0008-US-0003-TK-0003-player-range-feedback.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0004-hostile-pursuit-and-orbit/EP-0008-US-0004-hostile-pursuit-and-orbit.md",
+      "target": "../../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0010-defeat-screen-and-recovery/EP-0008-US-0010-TK-0001-defeated-session-save-guard/EP-0008-US-0010-TK-0001-defeated-session-save-guard.md",
+      "target": "../../EP-0008-US-0009-authoritative-player-defeat/EP-0008-US-0009-TK-0003-defeat-clock-boundary/EP-0008-US-0009-TK-0003-defeat-clock-boundary.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0010-defeat-screen-and-recovery/EP-0008-US-0010-defeat-screen-and-recovery.md",
+      "target": "../../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0007-combat-journal/EP-0007-US-0007-TK-0002-collapsible-combat-journal/EP-0007-US-0007-TK-0002-collapsible-combat-journal.md",
+      "target": "../../EP-0007-US-0007-combat-journal/EP-0007-US-0007-TK-0001-authoritative-combat-journal/EP-0007-US-0007-TK-0001-authoritative-combat-journal.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0007-combat-journal/EP-0007-US-0007-TK-0001-authoritative-combat-journal/EP-0007-US-0007-TK-0001-authoritative-combat-journal.md",
+      "target": "../../EP-0007-US-0006-defense-tactical-ui/EP-0007-US-0006-TK-0005-defense-map-annotations/EP-0007-US-0006-TK-0005-defense-map-annotations.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0009-authoritative-player-defeat/EP-0008-US-0009-TK-0003-defeat-clock-boundary/EP-0008-US-0009-TK-0003-defeat-clock-boundary.md",
+      "target": "../../EP-0008-US-0009-authoritative-player-defeat/EP-0008-US-0009-TK-0002-defeat-transition/EP-0008-US-0009-TK-0002-defeat-transition.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0003-ranged-hostile-torpedo-fire/EP-0008-US-0003-TK-0003-player-range-feedback/EP-0008-US-0003-TK-0003-player-range-feedback.md",
+      "target": "../../EP-0008-US-0003-ranged-hostile-torpedo-fire/EP-0008-US-0003-TK-0002-hostile-fire-scheduler/EP-0008-US-0003-TK-0002-hostile-fire-scheduler.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0006-defense-tactical-ui/EP-0007-US-0006-TK-0005-defense-map-annotations/EP-0007-US-0006-TK-0005-defense-map-annotations.md",
+      "target": "../../EP-0007-US-0006-defense-tactical-ui/EP-0007-US-0006-TK-0004-defense-command-panels/EP-0007-US-0006-TK-0004-defense-command-panels.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0009-authoritative-player-defeat/EP-0008-US-0009-TK-0002-defeat-transition/EP-0008-US-0009-TK-0002-defeat-transition.md",
+      "target": "../../EP-0008-US-0009-authoritative-player-defeat/EP-0008-US-0009-TK-0001-defeat-contract/EP-0008-US-0009-TK-0001-defeat-contract.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0003-ranged-hostile-torpedo-fire/EP-0008-US-0003-TK-0002-hostile-fire-scheduler/EP-0008-US-0003-TK-0002-hostile-fire-scheduler.md",
+      "target": "../../EP-0008-US-0003-ranged-hostile-torpedo-fire/EP-0008-US-0003-TK-0001-shared-launch-validation/EP-0008-US-0003-TK-0001-shared-launch-validation.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0006-defense-tactical-ui/EP-0007-US-0006-TK-0004-defense-command-panels/EP-0007-US-0006-TK-0004-defense-command-panels.md",
+      "target": "../../EP-0007-US-0006-defense-tactical-ui/EP-0007-US-0006-TK-0003-countermeasure-rendering/EP-0007-US-0006-TK-0003-countermeasure-rendering.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0009-authoritative-player-defeat/EP-0008-US-0009-TK-0001-defeat-contract/EP-0008-US-0009-TK-0001-defeat-contract.md",
+      "target": "../../EP-0008-US-0008-manual-preview-and-map/EP-0008-US-0008-TK-0003-journal-presentation/EP-0008-US-0008-TK-0003-journal-presentation.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0009-authoritative-player-defeat/EP-0008-US-0009-authoritative-player-defeat.md",
+      "target": "../../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0003-ranged-hostile-torpedo-fire/EP-0008-US-0003-TK-0001-shared-launch-validation/EP-0008-US-0003-TK-0001-shared-launch-validation.md",
+      "target": "../../EP-0008-US-0002-dual-defense-loadout/EP-0008-US-0002-TK-0002-dual-bootstrap/EP-0008-US-0002-TK-0002-dual-bootstrap.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0003-ranged-hostile-torpedo-fire/EP-0008-US-0003-ranged-hostile-torpedo-fire.md",
+      "target": "../../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0006-defense-tactical-ui/EP-0007-US-0006-TK-0003-countermeasure-rendering/EP-0007-US-0006-TK-0003-countermeasure-rendering.md",
+      "target": "../../EP-0007-US-0006-defense-tactical-ui/EP-0007-US-0006-TK-0002-defense-visual-settings/EP-0007-US-0006-TK-0002-defense-visual-settings.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0006-defense-tactical-ui/EP-0007-US-0006-TK-0002-defense-visual-settings/EP-0007-US-0006-TK-0002-defense-visual-settings.md",
+      "target": "../../EP-0007-US-0006-defense-tactical-ui/EP-0007-US-0006-TK-0001-defense-palette/EP-0007-US-0006-TK-0001-defense-palette.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0006-defense-tactical-ui/EP-0007-US-0006-TK-0001-defense-palette/EP-0007-US-0006-TK-0001-defense-palette.md",
+      "target": "../../EP-0007-US-0005-chance-and-resolution/EP-0007-US-0005-TK-0002-resolve-interception/EP-0007-US-0005-TK-0002-resolve-interception.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0008-manual-preview-and-map/EP-0008-US-0008-TK-0003-journal-presentation/EP-0008-US-0008-TK-0003-journal-presentation.md",
+      "target": "../../EP-0008-US-0008-manual-preview-and-map/EP-0008-US-0008-TK-0002-hover-ranges-and-countdown/EP-0008-US-0008-TK-0002-hover-ranges-and-countdown.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0005-chance-and-resolution/EP-0007-US-0005-TK-0002-resolve-interception/EP-0007-US-0005-TK-0002-resolve-interception.md",
+      "target": "../../EP-0007-US-0005-chance-and-resolution/EP-0007-US-0005-TK-0001-defense-event-contract/EP-0007-US-0005-TK-0001-defense-event-contract.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0005-chance-and-resolution/EP-0007-US-0005-TK-0001-defense-event-contract/EP-0007-US-0005-TK-0001-defense-event-contract.md",
+      "target": "../../EP-0007-US-0004-automatic-intercept-flight/EP-0007-US-0004-TK-0003-automatic-defense-scheduler/EP-0007-US-0004-TK-0003-automatic-defense-scheduler.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0008-manual-preview-and-map/EP-0008-US-0008-TK-0002-hover-ranges-and-countdown/EP-0008-US-0008-TK-0002-hover-ranges-and-countdown.md",
+      "target": "../../EP-0008-US-0008-manual-preview-and-map/EP-0008-US-0008-TK-0001-preview-geometry/EP-0008-US-0008-TK-0001-preview-geometry.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0001-assigned-weapon-operators/EP-0007-US-0001-TK-0005-combat-id-compatibility/EP-0007-US-0001-TK-0005-combat-id-compatibility.md",
+      "target": "../../EP-0007-US-0001-assigned-weapon-operators/EP-0007-US-0001-TK-0003-weapon-rating-content-schema/EP-0007-US-0001-TK-0003-weapon-rating-content-schema.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0008-manual-preview-and-map/EP-0008-US-0008-TK-0001-preview-geometry/EP-0008-US-0008-TK-0001-preview-geometry.md",
+      "target": "../../EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-TK-0004-combat-localization/EP-0008-US-0007-TK-0004-combat-localization.md"
+    },
+    {
+      "file": "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0008-manual-preview-and-map/EP-0008-US-0008-manual-preview-and-map.md",
+      "target": "../../EpicExecutionPrompt.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0004-automatic-intercept-flight/EP-0007-US-0004-TK-0003-automatic-defense-scheduler/EP-0007-US-0004-TK-0003-automatic-defense-scheduler.md",
+      "target": "../../EP-0007-US-0004-automatic-intercept-flight/EP-0007-US-0004-TK-0002-chance-and-named-rng/EP-0007-US-0004-TK-0002-chance-and-named-rng.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0001-assigned-weapon-operators/EP-0007-US-0001-TK-0004-authoritative-operators/EP-0007-US-0001-TK-0004-authoritative-operators.md",
+      "target": "../../EP-0007-US-0009-countermeasure-acceptance/EP-0007-US-0009-TK-0001-legacy-combat-fixtures/EP-0007-US-0009-TK-0001-legacy-combat-fixtures.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0004-automatic-intercept-flight/EP-0007-US-0004-TK-0002-chance-and-named-rng/EP-0007-US-0004-TK-0002-chance-and-named-rng.md",
+      "target": "../../EP-0007-US-0004-automatic-intercept-flight/EP-0007-US-0004-TK-0001-interceptor-guidance/EP-0007-US-0004-TK-0001-interceptor-guidance.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0001-assigned-weapon-operators/EP-0007-US-0001-TK-0003-weapon-rating-content-schema/EP-0007-US-0001-TK-0003-weapon-rating-content-schema.md",
+      "target": "../../EP-0007-US-0001-assigned-weapon-operators/EP-0007-US-0001-TK-0002-operator-schema/EP-0007-US-0001-TK-0002-operator-schema.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0004-automatic-intercept-flight/EP-0007-US-0004-TK-0001-interceptor-guidance/EP-0007-US-0004-TK-0001-interceptor-guidance.md",
+      "target": "../../EP-0007-US-0003-torpedo-self-destruct/EP-0007-US-0003-TK-0004-self-destruct-panel/EP-0007-US-0003-TK-0004-self-destruct-panel.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0001-assigned-weapon-operators/EP-0007-US-0001-TK-0002-operator-schema/EP-0007-US-0001-TK-0002-operator-schema.md",
+      "target": "../../EP-0007-US-0001-assigned-weapon-operators/EP-0007-US-0001-TK-0001-operator-contract/EP-0007-US-0001-TK-0001-operator-contract.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0008-basic-combat-proof/EP-0006-US-0008-TK-0002-native-combat-acceptance/EP-0006-US-0008-TK-0002-native-combat-acceptance.md",
+      "target": "../../EP-0006-US-0008-basic-combat-proof/EP-0006-US-0008-TK-0001-three-hit-integration/EP-0006-US-0008-TK-0001-three-hit-integration.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0003-torpedo-self-destruct/EP-0007-US-0003-TK-0004-self-destruct-panel/EP-0007-US-0003-TK-0004-self-destruct-panel.md",
+      "target": "../../EP-0007-US-0009-countermeasure-acceptance/EP-0007-US-0009-TK-0004-catalog-regression-compatibility/EP-0007-US-0009-TK-0004-catalog-regression-compatibility.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0008-basic-combat-proof/EP-0006-US-0008-TK-0001-three-hit-integration/EP-0006-US-0008-TK-0001-three-hit-integration.md",
+      "target": "../../EP-0006-US-0007-combat-save-load/EP-0006-US-0007-TK-0003-combat-presentation-resume/EP-0006-US-0007-TK-0003-combat-presentation-resume.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0003-torpedo-self-destruct/EP-0007-US-0003-TK-0003-self-destruct-content/EP-0007-US-0003-TK-0003-self-destruct-content.md",
+      "target": "../../EP-0007-US-0003-torpedo-self-destruct/EP-0007-US-0003-TK-0002-self-destruct-execution/EP-0007-US-0003-TK-0002-self-destruct-execution.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0003-torpedo-self-destruct/EP-0007-US-0003-TK-0001-self-destruct-contract/EP-0007-US-0003-TK-0001-self-destruct-contract.md",
+      "target": "../../EP-0007-US-0002-countermeasure-equipped-tetrarch/EP-0007-US-0002-TK-0005-defense-bootstrap/EP-0007-US-0002-TK-0005-defense-bootstrap.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0003-torpedo-self-destruct/EP-0007-US-0003-TK-0002-self-destruct-execution/EP-0007-US-0003-TK-0002-self-destruct-execution.md",
+      "target": "../../EP-0007-US-0003-torpedo-self-destruct/EP-0007-US-0003-TK-0001-self-destruct-contract/EP-0007-US-0003-TK-0001-self-destruct-contract.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0002-countermeasure-equipped-tetrarch/EP-0007-US-0002-TK-0005-defense-bootstrap/EP-0007-US-0002-TK-0005-defense-bootstrap.md",
+      "target": "../../EP-0007-US-0001-assigned-weapon-operators/EP-0007-US-0001-TK-0004-authoritative-operators/EP-0007-US-0001-TK-0004-authoritative-operators.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0007-combat-save-load/EP-0006-US-0007-TK-0003-combat-presentation-resume/EP-0006-US-0007-TK-0003-combat-presentation-resume.md",
+      "target": "../../EP-0006-US-0007-combat-save-load/EP-0006-US-0007-TK-0002-combat-persistence/EP-0006-US-0007-TK-0002-combat-persistence.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0007-combat-save-load/EP-0006-US-0007-TK-0002-combat-persistence/EP-0006-US-0007-TK-0002-combat-persistence.md",
+      "target": "../../EP-0006-US-0007-combat-save-load/EP-0006-US-0007-TK-0001-combat-save-schema/EP-0006-US-0007-TK-0001-combat-save-schema.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0007-combat-save-load/EP-0006-US-0007-TK-0001-combat-save-schema/EP-0006-US-0007-TK-0001-combat-save-schema.md",
+      "target": "../../EP-0006-US-0006-torpedo-trajectories/EP-0006-US-0006-TK-0003-launch-hover-preview/EP-0006-US-0006-TK-0003-launch-hover-preview.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0002-countermeasure-equipped-tetrarch/EP-0007-US-0002-TK-0004-other-tetrarch-scenarios/EP-0007-US-0002-TK-0004-other-tetrarch-scenarios.md",
+      "target": "../../EP-0007-US-0002-countermeasure-equipped-tetrarch/EP-0007-US-0002-TK-0003-combat-scenario-operators/EP-0007-US-0002-TK-0003-combat-scenario-operators.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0002-countermeasure-equipped-tetrarch/EP-0007-US-0002-TK-0003-combat-scenario-operators/EP-0007-US-0002-TK-0003-combat-scenario-operators.md",
+      "target": "../../EP-0007-US-0002-countermeasure-equipped-tetrarch/EP-0007-US-0002-TK-0002-countermeasure-catalog/EP-0007-US-0002-TK-0002-countermeasure-catalog.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0006-torpedo-trajectories/EP-0006-US-0006-TK-0003-launch-hover-preview/EP-0006-US-0006-TK-0003-launch-hover-preview.md",
+      "target": "../../EP-0006-US-0006-torpedo-trajectories/EP-0006-US-0006-TK-0002-live-flight-trajectories/EP-0006-US-0006-TK-0002-live-flight-trajectories.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0002-countermeasure-equipped-tetrarch/EP-0007-US-0002-TK-0002-countermeasure-catalog/EP-0007-US-0002-TK-0002-countermeasure-catalog.md",
+      "target": "../../EP-0007-US-0002-countermeasure-equipped-tetrarch/EP-0007-US-0002-TK-0001-countermeasure-contract/EP-0007-US-0002-TK-0001-countermeasure-contract.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0006-torpedo-trajectories/EP-0006-US-0006-TK-0002-live-flight-trajectories/EP-0006-US-0006-TK-0002-live-flight-trajectories.md",
+      "target": "../../EP-0006-US-0006-torpedo-trajectories/EP-0006-US-0006-TK-0001-authoritative-flight-history/EP-0006-US-0006-TK-0001-authoritative-flight-history.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0006-torpedo-trajectories/EP-0006-US-0006-TK-0001-authoritative-flight-history/EP-0006-US-0006-TK-0001-authoritative-flight-history.md",
+      "target": "../../EP-0006-US-0005-combat-map-feedback/EP-0006-US-0005-TK-0005-torpedo-inspection/EP-0006-US-0005-TK-0005-torpedo-inspection.md"
+    },
+    {
+      "file": "Board/EP-0007-countermeasure-combat/EP-0007-US-0002-countermeasure-equipped-tetrarch/EP-0007-US-0002-TK-0001-countermeasure-contract/EP-0007-US-0002-TK-0001-countermeasure-contract.md",
+      "target": "../../EP-0007-US-0001-assigned-weapon-operators/EP-0007-US-0001-TK-0005-combat-id-compatibility/EP-0007-US-0001-TK-0005-combat-id-compatibility.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0005-combat-map-feedback/EP-0006-US-0005-TK-0005-torpedo-inspection/EP-0006-US-0005-TK-0005-torpedo-inspection.md",
+      "target": "../../EP-0006-US-0005-combat-map-feedback/EP-0006-US-0005-TK-0004-impact-animation/EP-0006-US-0005-TK-0004-impact-animation.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0005-combat-map-feedback/EP-0006-US-0005-TK-0004-impact-animation/EP-0006-US-0005-TK-0004-impact-animation.md",
+      "target": "../../EP-0006-US-0005-combat-map-feedback/EP-0006-US-0005-TK-0003-combat-markers-and-hp/EP-0006-US-0005-TK-0003-combat-markers-and-hp.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0005-combat-map-feedback/EP-0006-US-0005-TK-0003-combat-markers-and-hp/EP-0006-US-0005-TK-0003-combat-markers-and-hp.md",
+      "target": "../../EP-0006-US-0005-combat-map-feedback/EP-0006-US-0005-TK-0002-combat-palette-loading/EP-0006-US-0005-TK-0002-combat-palette-loading.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0005-combat-map-feedback/EP-0006-US-0005-TK-0002-combat-palette-loading/EP-0006-US-0005-TK-0002-combat-palette-loading.md",
+      "target": "../../EP-0006-US-0005-combat-map-feedback/EP-0006-US-0005-TK-0001-combat-palette-content/EP-0006-US-0005-TK-0001-combat-palette-content.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0005-combat-map-feedback/EP-0006-US-0005-TK-0001-combat-palette-content/EP-0006-US-0005-TK-0001-combat-palette-content.md",
+      "target": "../../EP-0006-US-0004-impact-and-wreck/EP-0006-US-0004-TK-0004-wreck-lifecycle/EP-0006-US-0004-TK-0004-wreck-lifecycle.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0004-impact-and-wreck/EP-0006-US-0004-TK-0004-wreck-lifecycle/EP-0006-US-0004-TK-0004-wreck-lifecycle.md",
+      "target": "../../EP-0006-US-0004-impact-and-wreck/EP-0006-US-0004-TK-0003-authoritative-impacts/EP-0006-US-0004-TK-0003-authoritative-impacts.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0001-combat-configuration/EP-0006-US-0001-TK-0004-tetrarch-class-content/EP-0006-US-0001-TK-0004-tetrarch-class-content.md",
+      "target": "../../EP-0006-US-0001-combat-configuration/EP-0006-US-0001-TK-0003-launcher-content/EP-0006-US-0001-TK-0003-launcher-content.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0001-combat-configuration/EP-0006-US-0001-TK-0003-launcher-content/EP-0006-US-0001-TK-0003-launcher-content.md",
+      "target": "../../EP-0006-US-0001-combat-configuration/EP-0006-US-0001-TK-0002-combat-content-loader/EP-0006-US-0001-TK-0002-combat-content-loader.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0001-combat-configuration/EP-0006-US-0001-TK-0002-combat-content-loader/EP-0006-US-0001-TK-0002-combat-content-loader.md",
+      "target": "../../EP-0006-US-0001-combat-configuration/EP-0006-US-0001-TK-0001-combat-contract/EP-0006-US-0001-TK-0001-combat-contract.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0004-impact-and-wreck/EP-0006-US-0004-TK-0003-authoritative-impacts/EP-0006-US-0004-TK-0003-authoritative-impacts.md",
+      "target": "../../EP-0006-US-0004-impact-and-wreck/EP-0006-US-0004-TK-0002-impact-event-contract/EP-0006-US-0004-TK-0002-impact-event-contract.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0004-impact-and-wreck/EP-0006-US-0004-TK-0002-impact-event-contract/EP-0006-US-0004-TK-0002-impact-event-contract.md",
+      "target": "../../EP-0006-US-0004-impact-and-wreck/EP-0006-US-0004-TK-0001-swept-impact-math/EP-0006-US-0004-TK-0001-swept-impact-math.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0003-manual-guided-launch/EP-0006-US-0003-TK-0003-launcher-command-panel/EP-0006-US-0003-TK-0003-launcher-command-panel.md",
+      "target": "../../EP-0006-US-0003-manual-guided-launch/EP-0006-US-0003-TK-0002-authoritative-launch/EP-0006-US-0003-TK-0002-authoritative-launch.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0004-impact-and-wreck/EP-0006-US-0004-TK-0001-swept-impact-math/EP-0006-US-0004-TK-0001-swept-impact-math.md",
+      "target": "../../EP-0006-US-0003-manual-guided-launch/EP-0006-US-0003-TK-0003-launcher-command-panel/EP-0006-US-0003-TK-0003-launcher-command-panel.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0003-manual-guided-launch/EP-0006-US-0003-TK-0002-authoritative-launch/EP-0006-US-0003-TK-0002-authoritative-launch.md",
+      "target": "../../EP-0006-US-0003-manual-guided-launch/EP-0006-US-0003-TK-0001-torpedo-guidance/EP-0006-US-0003-TK-0001-torpedo-guidance.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0003-manual-guided-launch/EP-0006-US-0003-TK-0001-torpedo-guidance/EP-0006-US-0003-TK-0001-torpedo-guidance.md",
+      "target": "../../EP-0006-US-0002-tetrarch-launcher-room/EP-0006-US-0002-TK-0003-remaining-tetrarch-loadouts/EP-0006-US-0002-TK-0003-remaining-tetrarch-loadouts.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0002-tetrarch-launcher-room/EP-0006-US-0002-TK-0003-remaining-tetrarch-loadouts/EP-0006-US-0002-TK-0003-remaining-tetrarch-loadouts.md",
+      "target": "../../EP-0006-US-0002-tetrarch-launcher-room/EP-0006-US-0002-TK-0002-primary-scenario-loadout/EP-0006-US-0002-TK-0002-primary-scenario-loadout.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0002-tetrarch-launcher-room/EP-0006-US-0002-TK-0002-primary-scenario-loadout/EP-0006-US-0002-TK-0002-primary-scenario-loadout.md",
+      "target": "../../EP-0006-US-0002-tetrarch-launcher-room/EP-0006-US-0002-TK-0001-combat-bootstrap/EP-0006-US-0002-TK-0001-combat-bootstrap.md"
+    },
+    {
+      "file": "Board/EP-0006-basic-torpedo-combat/EP-0006-US-0002-tetrarch-launcher-room/EP-0006-US-0002-TK-0001-combat-bootstrap/EP-0006-US-0002-TK-0001-combat-bootstrap.md",
+      "target": "../../EP-0006-US-0001-combat-configuration/EP-0006-US-0001-TK-0004-tetrarch-class-content/EP-0006-US-0001-TK-0004-tetrarch-class-content.md"
+    }
+  ],
+  "ticketCount": 22,
+  "storyCount": 3,
+  "dependencyDag": "pass"
+}

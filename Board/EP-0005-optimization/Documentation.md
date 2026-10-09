@@ -56,4 +56,4 @@ User authorized implementation, review, validation, individual commits and immed
 
 ## Текущее состояние
 
-20 функциональных тикетов реализованы и опубликованы, Client 1826/1826; self-review историй выполнено. Документация и Graphify завершаются в US-0003. [PerformanceEvidence](PerformanceEvidence.md): 20 raster cases, 16 native cases, 80 scripted actions PASS; 80 FPS FAILED/OPEN и human manual NOT RUN. Полная приёмка эпика не объявляется. [Epic review](EpicReview.md), [documentation inventory](DocumentationInventory.md), [publication ledger](ImplementationStatus.md).
+20 функциональных тикетов реализованы и опубликованы, Client 1827/1827; self-review историй выполнено. Документация и Graphify доставлены в завершающей US-0003; результаты rebuild находятся в GraphRebuild.md. [PerformanceEvidence](PerformanceEvidence.md): 20 raster cases, 16 native cases, 80 scripted actions PASS; 80 FPS FAILED/OPEN и human manual NOT RUN. Полная приёмка эпика не объявляется. [Epic review](EpicReview.md), [documentation inventory](DocumentationInventory.md), [publication ledger](ImplementationStatus.md).

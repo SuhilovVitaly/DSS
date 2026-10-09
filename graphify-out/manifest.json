@@ -1,0 +1,4514 @@
+{
+  "src/DeepSpaceSaga.Client/BufferedSnapshot.cs": {
+    "mtime": 1791545789.5859282,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ed53627420eae1f487d58501ab9356de",
+    "semantic_hash": "ed53627420eae1f487d58501ab9356de"
+  },
+  "src/DeepSpaceSaga.Client/Data/Commands/Container/commands.json": {
+    "mtime": 1791545789.5927498,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a11b4ad96c7fdcae9ade1b9638a389b1",
+    "semantic_hash": "a11b4ad96c7fdcae9ade1b9638a389b1"
+  },
+  "src/DeepSpaceSaga.Client/Data/Commands/CountermeasureLauncher/commands.json": {
+    "mtime": 1791545789.5927498,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c38387b247d3e7bc82f99ea6c59fdf51",
+    "semantic_hash": "c38387b247d3e7bc82f99ea6c59fdf51"
+  },
+  "src/DeepSpaceSaga.Client/Data/Commands/DrillingUnit/commands.json": {
+    "mtime": 1791545789.5927498,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b1541858661a2acd7359f694b18f31cf",
+    "semantic_hash": "b1541858661a2acd7359f694b18f31cf"
+  },
+  "src/DeepSpaceSaga.Client/Data/Commands/Engine/commands.json": {
+    "mtime": 1791545789.595305,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5726d1c3d20f0d3a04e8605711dc9df9",
+    "semantic_hash": "5726d1c3d20f0d3a04e8605711dc9df9"
+  },
+  "src/DeepSpaceSaga.Client/Data/Commands/NavigationComputer/commands.json": {
+    "mtime": 1791545789.5956786,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a3f519a12cb867cf830973dbc8c46a2e",
+    "semantic_hash": "a3f519a12cb867cf830973dbc8c46a2e"
+  },
+  "src/DeepSpaceSaga.Client/Data/Commands/Scanner/commands.json": {
+    "mtime": 1791545789.5956786,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7a1fe0128f678128f9bcae913050bf63",
+    "semantic_hash": "7a1fe0128f678128f9bcae913050bf63"
+  },
+  "src/DeepSpaceSaga.Client/Data/Commands/TorpedoLauncher/commands.json": {
+    "mtime": 1791545789.5956786,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1ecfec24276efa6f1b542fbffde4b6d9",
+    "semantic_hash": "1ecfec24276efa6f1b542fbffde4b6d9"
+  },
+  "src/DeepSpaceSaga.Client/Data/Dialogues/station-docking.json": {
+    "mtime": 1791545789.5956786,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b2702ea7d189d5beffd55e2e766a4bda",
+    "semantic_hash": "b2702ea7d189d5beffd55e2e766a4bda"
+  },
+  "src/DeepSpaceSaga.Client/Data/Items/Good/items-good.json": {
+    "mtime": 1791545789.5956786,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a4e9b599fb52a89471e18668e42d6032",
+    "semantic_hash": "a4e9b599fb52a89471e18668e42d6032"
+  },
+  "src/DeepSpaceSaga.Client/Data/Items/Resource/items-resource.json": {
+    "mtime": 1791545789.5956786,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fd23232c85f67e5a3456244c546e919a",
+    "semantic_hash": "fd23232c85f67e5a3456244c546e919a"
+  },
+  "src/DeepSpaceSaga.Client/Data/Locale/English.json": {
+    "mtime": 1791550653.9305835,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d573eb005e21014c8c123e12f2046a36",
+    "semantic_hash": "d573eb005e21014c8c123e12f2046a36"
+  },
+  "src/DeepSpaceSaga.Client/Data/Locale/Russian.json": {
+    "mtime": 1791550653.925091,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bfefe6f0f47bbc6853aafc5798682150",
+    "semantic_hash": "bfefe6f0f47bbc6853aafc5798682150"
+  },
+  "src/DeepSpaceSaga.Client/Data/Maps/solar-system.json": {
+    "mtime": 1791545789.5956786,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b25e8455f01b5fe32ee245404a78ba69",
+    "semantic_hash": "b25e8455f01b5fe32ee245404a78ba69"
+  },
+  "src/DeepSpaceSaga.Client/Data/Markets/station-market-events.json": {
+    "mtime": 1791545789.5956786,
+    "seen": 1791556608.9498315,
+    "ast_hash": "126025911267b5b60530234dc669acc6",
+    "semantic_hash": "126025911267b5b60530234dc669acc6"
+  },
+  "src/DeepSpaceSaga.Client/Data/Markets/station-market-profiles.json": {
+    "mtime": 1791545789.6028495,
+    "seen": 1791556608.9498315,
+    "ast_hash": "28e5a4aacb2c421179aca2b5eef3ca48",
+    "semantic_hash": "28e5a4aacb2c421179aca2b5eef3ca48"
+  },
+  "src/DeepSpaceSaga.Client/Data/Modules/Battery/modules-battery.json": {
+    "mtime": 1791545789.6028495,
+    "seen": 1791556608.9498315,
+    "ast_hash": "81c18cb9269164de71ca644b5895c158",
+    "semantic_hash": "81c18cb9269164de71ca644b5895c158"
+  },
+  "src/DeepSpaceSaga.Client/Data/Modules/CombatLaser/modules-combatlaser.json": {
+    "mtime": 1791545789.605291,
+    "seen": 1791556608.9498315,
+    "ast_hash": "998701ee0b2ff5c790da45616a1fb5f5",
+    "semantic_hash": "998701ee0b2ff5c790da45616a1fb5f5"
+  },
+  "src/DeepSpaceSaga.Client/Data/Modules/Container/modules-container.json": {
+    "mtime": 1791545789.6056447,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c4e077169aad7df49be83adbc1cb60e7",
+    "semantic_hash": "c4e077169aad7df49be83adbc1cb60e7"
+  },
+  "src/DeepSpaceSaga.Client/Data/Modules/CountermeasureLauncher/modules-countermeasurelauncher.json": {
+    "mtime": 1791545789.6056447,
+    "seen": 1791556608.9498315,
+    "ast_hash": "67e70794b5d28387587310877585b9ad",
+    "semantic_hash": "67e70794b5d28387587310877585b9ad"
+  },
+  "src/DeepSpaceSaga.Client/Data/Modules/DrillingUnit/modules-drillingunit.json": {
+    "mtime": 1791545789.6056447,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0728ca0d1df3b5d52c58f2461cce9b67",
+    "semantic_hash": "0728ca0d1df3b5d52c58f2461cce9b67"
+  },
+  "src/DeepSpaceSaga.Client/Data/Modules/Engine/modules-engine.json": {
+    "mtime": 1791545789.6056447,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8ab68581bb021eef12433f495ca3418c",
+    "semantic_hash": "8ab68581bb021eef12433f495ca3418c"
+  },
+  "src/DeepSpaceSaga.Client/Data/Modules/Generator/modules-generator.json": {
+    "mtime": 1791545789.6056447,
+    "seen": 1791556608.9498315,
+    "ast_hash": "21c9ac7ee2ba5477009379877bbb74c1",
+    "semantic_hash": "21c9ac7ee2ba5477009379877bbb74c1"
+  },
+  "src/DeepSpaceSaga.Client/Data/Modules/Habitation/modules-habitation.json": {
+    "mtime": 1791545789.6056447,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7bfdd5ec26eaf86a0343dc22effd7f93",
+    "semantic_hash": "7bfdd5ec26eaf86a0343dc22effd7f93"
+  },
+  "src/DeepSpaceSaga.Client/Data/Modules/LivingQuarters/modules-livingquarters.json": {
+    "mtime": 1791545789.6056447,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d5a3d5c8fb532c4c80aa61eb58c39b98",
+    "semantic_hash": "d5a3d5c8fb532c4c80aa61eb58c39b98"
+  },
+  "src/DeepSpaceSaga.Client/Data/Modules/NavigationComputer/modules-navigationcomputer.json": {
+    "mtime": 1791545789.6056447,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f9a0bd86e1a607855a3a832b1298d561",
+    "semantic_hash": "f9a0bd86e1a607855a3a832b1298d561"
+  },
+  "src/DeepSpaceSaga.Client/Data/Modules/Scanner/modules-scanner.json": {
+    "mtime": 1791545789.6056447,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d963cd4dc9591a91cdb7c2bb6d5e8e4f",
+    "semantic_hash": "d963cd4dc9591a91cdb7c2bb6d5e8e4f"
+  },
+  "src/DeepSpaceSaga.Client/Data/Modules/TorpedoLauncher/modules-torpedolauncher.json": {
+    "mtime": 1791545789.61288,
+    "seen": 1791556608.9498315,
+    "ast_hash": "da1467a5f8f63fadfaf18cd3b655869e",
+    "semantic_hash": "da1467a5f8f63fadfaf18cd3b655869e"
+  },
+  "src/DeepSpaceSaga.Client/Data/Quests/station-arrival.json": {
+    "mtime": 1791545789.61288,
+    "seen": 1791556608.9498315,
+    "ast_hash": "23ff8868814044c5ece4e8a856dbd6b4",
+    "semantic_hash": "23ff8868814044c5ece4e8a856dbd6b4"
+  },
+  "src/DeepSpaceSaga.Client/Data/Ships/ship-classes.json": {
+    "mtime": 1791545789.61288,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1e561be6cb32385f96c82b6c9a060ee1",
+    "semantic_hash": "1e561be6cb32385f96c82b6c9a060ee1"
+  },
+  "src/DeepSpaceSaga.Client/Data/UI/combat-visuals.json": {
+    "mtime": 1791545789.615605,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9815b86a4ce8f7c4c1fe0a79f3ddbce7",
+    "semantic_hash": "9815b86a4ce8f7c4c1fe0a79f3ddbce7"
+  },
+  "src/DeepSpaceSaga.Client/Data/World/station-resource-fields.json": {
+    "mtime": 1791545789.6166089,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6ba4857fb81f0f2997b079c9d68910ed",
+    "semantic_hash": "6ba4857fb81f0f2997b079c9d68910ed"
+  },
+  "src/DeepSpaceSaga.Client/Data/factory-types.json": {
+    "mtime": 1791545789.6166089,
+    "seen": 1791556608.9498315,
+    "ast_hash": "14b546d8825485d4aba6ec1bcb85bf9d",
+    "semantic_hash": "14b546d8825485d4aba6ec1bcb85bf9d"
+  },
+  "src/DeepSpaceSaga.Client/Data/module-types.json": {
+    "mtime": 1791545789.6166089,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2173a4d725aca88eea0b4bb11b7b2323",
+    "semantic_hash": "2173a4d725aca88eea0b4bb11b7b2323"
+  },
+  "src/DeepSpaceSaga.Client/Data/recipes.json": {
+    "mtime": 1791545789.6176083,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b80cc23c518b14a3c2690c34b4ecf3dc",
+    "semantic_hash": "b80cc23c518b14a3c2690c34b4ecf3dc"
+  },
+  "src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj": {
+    "mtime": 1791545789.6176083,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bbb305a1052fc6d84e41a486d25877c3",
+    "semantic_hash": "bbb305a1052fc6d84e41a486d25877c3"
+  },
+  "src/DeepSpaceSaga.Client/GameInfo.cs": {
+    "mtime": 1791545789.6186082,
+    "seen": 1791556608.9498315,
+    "ast_hash": "94814c5957fdd86e88da5a35088e7696",
+    "semantic_hash": "94814c5957fdd86e88da5a35088e7696"
+  },
+  "src/DeepSpaceSaga.Client/GameSessionHandle.cs": {
+    "mtime": 1791545789.6186082,
+    "seen": 1791556608.9498315,
+    "ast_hash": "560f0c5e9d0c2a5748c8d4f44bb27cd6",
+    "semantic_hash": "560f0c5e9d0c2a5748c8d4f44bb27cd6"
+  },
+  "src/DeepSpaceSaga.Client/IGameSessionFactory.cs": {
+    "mtime": 1791545789.6196084,
+    "seen": 1791556608.9498315,
+    "ast_hash": "953bc010033d9f8785428db42a6922a7",
+    "semantic_hash": "953bc010033d9f8785428db42a6922a7"
+  },
+  "src/DeepSpaceSaga.Client/Localization.cs": {
+    "mtime": 1791549769.4729216,
+    "seen": 1791556608.9498315,
+    "ast_hash": "81bf742e8d242015994fd103baf439dd",
+    "semantic_hash": "81bf742e8d242015994fd103baf439dd"
+  },
+  "src/DeepSpaceSaga.Client/Portraits/PortraitAssetRepository.cs": {
+    "mtime": 1791545790.26625,
+    "seen": 1791556608.9498315,
+    "ast_hash": "faf70356f21f25503f8cee5686deae13",
+    "semantic_hash": "faf70356f21f25503f8cee5686deae13"
+  },
+  "src/DeepSpaceSaga.Client/Portraits/PortraitModels.cs": {
+    "mtime": 1791545790.26625,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f17cc1943ee7935a32260d94ff819531",
+    "semantic_hash": "f17cc1943ee7935a32260d94ff819531"
+  },
+  "src/DeepSpaceSaga.Client/Portraits/PortraitRenderer.cs": {
+    "mtime": 1791545790.26625,
+    "seen": 1791556608.9498315,
+    "ast_hash": "90272c3948a304290cb5ae1f514f0381",
+    "semantic_hash": "90272c3948a304290cb5ae1f514f0381"
+  },
+  "src/DeepSpaceSaga.Client/Program.cs": {
+    "mtime": 1791545790.26625,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c7b7fdcae3526b373fbbc919edb38fea",
+    "semantic_hash": "c7b7fdcae3526b373fbbc919edb38fea"
+  },
+  "src/DeepSpaceSaga.Client/SaveSlots.cs": {
+    "mtime": 1791545790.26625,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c0d8e024cf44fbbde3434c02fb7dbb69",
+    "semantic_hash": "c0d8e024cf44fbbde3434c02fb7dbb69"
+  },
+  "src/DeepSpaceSaga.Client/Scenarios/Default/scenario.json": {
+    "mtime": 1791545790.26625,
+    "seen": 1791556608.9498315,
+    "ast_hash": "de203dc85393c8bfea8a6141d8da2bd8",
+    "semantic_hash": "de203dc85393c8bfea8a6141d8da2bd8"
+  },
+  "src/DeepSpaceSaga.Client/Scenarios/Default_500/scenario.json": {
+    "mtime": 1791545790.272883,
+    "seen": 1791556608.9498315,
+    "ast_hash": "58da20aacf6ede16a7a79ace2a6daa48",
+    "semantic_hash": "58da20aacf6ede16a7a79ace2a6daa48"
+  },
+  "src/DeepSpaceSaga.Client/Scenarios/Docked/scenario.json": {
+    "mtime": 1791545790.2754326,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d83eb3239fcd5f5d4eba7c7cc1e0c1ce",
+    "semantic_hash": "d83eb3239fcd5f5d4eba7c7cc1e0c1ce"
+  },
+  "src/DeepSpaceSaga.Client/Scenarios/MarketProfiles/scenario.json": {
+    "mtime": 1791545790.2766633,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d6c82bcdf6d88755590815272d8d5a57",
+    "semantic_hash": "d6c82bcdf6d88755590815272d8d5a57"
+  },
+  "src/DeepSpaceSaga.Client/Scenarios/PlayerShipOnly/scenario.json": {
+    "mtime": 1791545790.2776673,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0a26204ed816a496c3b423c6bb43b089",
+    "semantic_hash": "0a26204ed816a496c3b423c6bb43b089"
+  },
+  "src/DeepSpaceSaga.Client/Scenarios/Undocked/scenario.json": {
+    "mtime": 1791545790.2776673,
+    "seen": 1791556608.9498315,
+    "ast_hash": "37315cc39ee011f10f1ad58692d10764",
+    "semantic_hash": "37315cc39ee011f10f1ad58692d10764"
+  },
+  "src/DeepSpaceSaga.Client/SessionConnectionLoader.cs": {
+    "mtime": 1791545790.2786674,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4229fbf897623d2c0e44560b0cd7258c",
+    "semantic_hash": "4229fbf897623d2c0e44560b0cd7258c"
+  },
+  "src/DeepSpaceSaga.Client/SessionEventHistory.cs": {
+    "mtime": 1791545790.279242,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7a04266909fd0df32ae90b1808e0ecf5",
+    "semantic_hash": "7a04266909fd0df32ae90b1808e0ecf5"
+  },
+  "src/DeepSpaceSaga.Client/Settings.json": {
+    "mtime": 1791545790.279242,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e48588df66076249425c929e768937ef",
+    "semantic_hash": "e48588df66076249425c929e768937ef"
+  },
+  "src/DeepSpaceSaga.Client/SnapshotBuffer.cs": {
+    "mtime": 1791551794.3805585,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7785308437b8c9ab0cf6248e229839cb",
+    "semantic_hash": "7785308437b8c9ab0cf6248e229839cb"
+  },
+  "src/DeepSpaceSaga.Client/UI/Assets/UiAssetLoader.cs": {
+    "mtime": 1791545790.281245,
+    "seen": 1791556608.9498315,
+    "ast_hash": "60b152b20b858357beaf620b49df1d33",
+    "semantic_hash": "60b152b20b858357beaf620b49df1d33"
+  },
+  "src/DeepSpaceSaga.Client/UI/CameraState.cs": {
+    "mtime": 1791545790.281245,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b523286a0d40f1c85e725bbe593032d3",
+    "semantic_hash": "b523286a0d40f1c85e725bbe593032d3"
+  },
+  "src/DeepSpaceSaga.Client/UI/CameraZoomTransition.cs": {
+    "mtime": 1791545790.281245,
+    "seen": 1791556608.9498315,
+    "ast_hash": "858b53879da724720b3f5ff033599573",
+    "semantic_hash": "858b53879da724720b3f5ff033599573"
+  },
+  "src/DeepSpaceSaga.Client/UI/CombatVisualSettings.cs": {
+    "mtime": 1791545790.2827482,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5a3f6b20e4ab2e7907e73401a4a8618d",
+    "semantic_hash": "5a3f6b20e4ab2e7907e73401a4a8618d"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/GameTimeDisplay.cs": {
+    "mtime": 1791545790.2837532,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ad7d64641dee04a1074a1f237b9c6280",
+    "semantic_hash": "ad7d64641dee04a1074a1f237b9c6280"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/GenericButtonTypeA.cs": {
+    "mtime": 1791545790.2837532,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f94208034e8d7720217ea31bc6cc4edc",
+    "semantic_hash": "f94208034e8d7720217ea31bc6cc4edc"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/GenericWindowTypeA.cs": {
+    "mtime": 1791545790.2847521,
+    "seen": 1791556608.9498315,
+    "ast_hash": "646cecce65605a53111317cfb0fc74b1",
+    "semantic_hash": "646cecce65605a53111317cfb0fc74b1"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/GridPanel.cs": {
+    "mtime": 1791545790.2847521,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6db0ce467e99b161f64aa80eeb8bf584",
+    "semantic_hash": "6db0ce467e99b161f64aa80eeb8bf584"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/ImageButton.cs": {
+    "mtime": 1791545790.2858982,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9a60dede14539dab563b126b0b3dd1f4",
+    "semantic_hash": "9a60dede14539dab563b126b0b3dd1f4"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/ImagePanel.cs": {
+    "mtime": 1791545790.2858982,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f2ba84709e42f334796d9c2d556ed3ac",
+    "semantic_hash": "f2ba84709e42f334796d9c2d556ed3ac"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/MenuStyle.cs": {
+    "mtime": 1791545790.2858982,
+    "seen": 1791556608.9498315,
+    "ast_hash": "da534ae923b626ae8a4fb90329e45736",
+    "semantic_hash": "da534ae923b626ae8a4fb90329e45736"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/NinePatch.cs": {
+    "mtime": 1791545790.2858982,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9276e6695bddd67ed61718c2bbb2c50d",
+    "semantic_hash": "9276e6695bddd67ed61718c2bbb2c50d"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/ProgressBar.cs": {
+    "mtime": 1791545790.2858982,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d2d3132e60feccd7fb0b3989ee78127c",
+    "semantic_hash": "d2d3132e60feccd7fb0b3989ee78127c"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/StationToolbar.cs": {
+    "mtime": 1791545790.2858982,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bd77f334a230a431b31441f074556907",
+    "semantic_hash": "bd77f334a230a431b31441f074556907"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/TextInputBox.cs": {
+    "mtime": 1791545790.2858982,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b158f5742d76625ddb8c8aef2c6894e3",
+    "semantic_hash": "b158f5742d76625ddb8c8aef2c6894e3"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/XenonComboBox.cs": {
+    "mtime": 1791545790.2858982,
+    "seen": 1791556608.9498315,
+    "ast_hash": "43f9e842b04d8e05bf2b0725514a3bdf",
+    "semantic_hash": "43f9e842b04d8e05bf2b0725514a3bdf"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/XenonStyle.cs": {
+    "mtime": 1791545790.2858982,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f32af814fa635a973e5d8bbc51056b95",
+    "semantic_hash": "f32af814fa635a973e5d8bbc51056b95"
+  },
+  "src/DeepSpaceSaga.Client/UI/Controls/XenonWindowChrome.cs": {
+    "mtime": 1791545790.2858982,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8d257ebe7eda57c1121a61f7872aaeb5",
+    "semantic_hash": "8d257ebe7eda57c1121a61f7872aaeb5"
+  },
+  "src/DeepSpaceSaga.Client/UI/GridRenderer.cs": {
+    "mtime": 1791549413.2621603,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ba6bd9fc44a8f68125ca8003ea2963b0",
+    "semantic_hash": "ba6bd9fc44a8f68125ca8003ea2963b0"
+  },
+  "src/DeepSpaceSaga.Client/UI/InterfaceLog.cs": {
+    "mtime": 1791545790.2928154,
+    "seen": 1791556608.9498315,
+    "ast_hash": "359130ab302396b224c28b7da5c7be57",
+    "semantic_hash": "359130ab302396b224c28b7da5c7be57"
+  },
+  "src/DeepSpaceSaga.Client/UI/KeyboardEdgeTracker.cs": {
+    "mtime": 1791545790.2928154,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f76f73810747d4151c35c46e37bd378e",
+    "semantic_hash": "f76f73810747d4151c35c46e37bd378e"
+  },
+  "src/DeepSpaceSaga.Client/UI/MapFrameEvidence.cs": {
+    "mtime": 1791545790.2928154,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c48626a29f1525dfe871b640a61fdb59",
+    "semantic_hash": "c48626a29f1525dfe871b640a61fdb59"
+  },
+  "src/DeepSpaceSaga.Client/UI/PauseResumeDiagnostics.cs": {
+    "mtime": 1791545790.2928154,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ec3743e6451259306c656f9c748f743a",
+    "semantic_hash": "ec3743e6451259306c656f9c748f743a"
+  },
+  "src/DeepSpaceSaga.Client/UI/Portraits/DialoguePortraitComposer.cs": {
+    "mtime": 1791545790.2928154,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bfa4037725e9eda63024a94c5e93c4da",
+    "semantic_hash": "bfa4037725e9eda63024a94c5e93c4da"
+  },
+  "src/DeepSpaceSaga.Client/UI/Portraits/PortraitComposer.cs": {
+    "mtime": 1791545790.2954352,
+    "seen": 1791556608.9498315,
+    "ast_hash": "30adf0a51ebd7edc4c68394b5c37a566",
+    "semantic_hash": "30adf0a51ebd7edc4c68394b5c37a566"
+  },
+  "src/DeepSpaceSaga.Client/UI/ScreenStack.cs": {
+    "mtime": 1791549105.496188,
+    "seen": 1791556608.9498315,
+    "ast_hash": "396cbd027b9093193841d78ae840ca91",
+    "semantic_hash": "396cbd027b9093193841d78ae840ca91"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Contracts/ContractsLayout.cs": {
+    "mtime": 1791545790.2958486,
+    "seen": 1791556608.9498315,
+    "ast_hash": "66aa8a38c1fd0f32e44cec5b4221e0fb",
+    "semantic_hash": "66aa8a38c1fd0f32e44cec5b4221e0fb"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Contracts/ContractsScreen.cs": {
+    "mtime": 1791545790.2958486,
+    "seen": 1791556608.9498315,
+    "ast_hash": "122eeafa8c0f60b02d42c1761a4a8dc6",
+    "semantic_hash": "122eeafa8c0f60b02d42c1761a4a8dc6"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Dialogue/DialogueLayout.cs": {
+    "mtime": 1791545790.2958486,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1aa96423335cdc26e4c8aed7973b0ced",
+    "semantic_hash": "1aa96423335cdc26e4c8aed7973b0ced"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Dialogue/DialogueScreen.cs": {
+    "mtime": 1791545790.2958486,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0e168cb9458439104d293c689063575b",
+    "semantic_hash": "0e168cb9458439104d293c689063575b"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Finance/FinanceLayout.cs": {
+    "mtime": 1791545790.2958486,
+    "seen": 1791556608.9498315,
+    "ast_hash": "266c23ee00fa028b7073c684907bbeed",
+    "semantic_hash": "266c23ee00fa028b7073c684907bbeed"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Finance/FinanceScreen.cs": {
+    "mtime": 1791545790.2958486,
+    "seen": 1791556608.9498315,
+    "ast_hash": "631434e30fc977327db7d60c45358ff3",
+    "semantic_hash": "631434e30fc977327db7d60c45358ff3"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameMenu/GameMenuLayout.cs": {
+    "mtime": 1791545790.2958486,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3a557a46f83d43d5034398e30851f74c",
+    "semantic_hash": "3a557a46f83d43d5034398e30851f74c"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameMenu/GameMenuScreen.cs": {
+    "mtime": 1791545790.2958486,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c46bfc089504761f1de3cba03f5675f3",
+    "semantic_hash": "c46bfc089504761f1de3cba03f5675f3"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/ClusterMapPresentation.cs": {
+    "mtime": 1791545790.302709,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6db6392cda1629588e5329d689d2a433",
+    "semantic_hash": "6db6392cda1629588e5329d689d2a433"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatEffectStore.cs": {
+    "mtime": 1791545790.302709,
+    "seen": 1791556608.9498315,
+    "ast_hash": "25651cfbfcf8a471a05bc4bb471ce496",
+    "semantic_hash": "25651cfbfcf8a471a05bc4bb471ce496"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatTrajectoryProjector.cs": {
+    "mtime": 1791545790.302709,
+    "seen": 1791556608.9498315,
+    "ast_hash": "41a3b4f450aba86f0aa27ff2185975c1",
+    "semantic_hash": "41a3b4f450aba86f0aa27ff2185975c1"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/AsyncObjectImageCache.cs": {
+    "mtime": 1791552825.7027986,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f4d5d959924d7566565b91ea672424e1",
+    "semantic_hash": "f4d5d959924d7566565b91ea672424e1"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CombatJournalPanel.cs": {
+    "mtime": 1791548527.0580547,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1efe8a2bd9e202b75225ecc7d14beb98",
+    "semantic_hash": "1efe8a2bd9e202b75225ecc7d14beb98"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CommandsPanel.cs": {
+    "mtime": 1791549413.2597332,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e848dd4e20f24d52ab9b47c28c290aa7",
+    "semantic_hash": "e848dd4e20f24d52ab9b47c28c290aa7"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ObjectInfoPanel.cs": {
+    "mtime": 1791552825.703793,
+    "seen": 1791556608.9498315,
+    "ast_hash": "dd5a3dd65330d80d4a2e54caed72c7f9",
+    "semantic_hash": "dd5a3dd65330d80d4a2e54caed72c7f9"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/FutureTrajectoryProjector.cs": {
+    "mtime": 1791545790.3070128,
+    "seen": 1791556608.9498315,
+    "ast_hash": "345a2d2d9d6d92ca2e45ae885fbe25bb",
+    "semantic_hash": "345a2d2d9d6d92ca2e45ae885fbe25bb"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs": {
+    "mtime": 1791554363.1844006,
+    "seen": 1791556608.9498315,
+    "ast_hash": "989e1bcf1307ec407b042b8def28554d",
+    "semantic_hash": "989e1bcf1307ec407b042b8def28554d"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Countermeasures.cs": {
+    "mtime": 1791545790.3080192,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0ff4b3168faf5674fe8891b212865269",
+    "semantic_hash": "0ff4b3168faf5674fe8891b212865269"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Diagnostics.cs": {
+    "mtime": 1791553540.092037,
+    "seen": 1791556608.9498315,
+    "ast_hash": "aa663d6abb3ca0126c2dbf7b8f818089",
+    "semantic_hash": "aa663d6abb3ca0126c2dbf7b8f818089"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.GeometryCache.cs": {
+    "mtime": 1791553540.092037,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5ec81d6372a1f52ba7d30ba3d2a8ec76",
+    "semantic_hash": "5ec81d6372a1f52ba7d30ba3d2a8ec76"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Layout.cs": {
+    "mtime": 1791554345.5922656,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6314c20908569ecc6c6956d19dddeeeb",
+    "semantic_hash": "6314c20908569ecc6c6956d19dddeeeb"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs": {
+    "mtime": 1791554363.1833236,
+    "seen": 1791556608.9498315,
+    "ast_hash": "889ac46864d30d6104c3cf0fbcb771ee",
+    "semantic_hash": "889ac46864d30d6104c3cf0fbcb771ee"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Profiling.cs": {
+    "mtime": 1791554102.8780327,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2d28ff94060e63028f03087ee13092a5",
+    "semantic_hash": "2d28ff94060e63028f03087ee13092a5"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs": {
+    "mtime": 1791554363.1833236,
+    "seen": 1791556608.9498315,
+    "ast_hash": "22174afe4b37c248f119e58b62392e17",
+    "semantic_hash": "22174afe4b37c248f119e58b62392e17"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/MapViewGeometry.cs": {
+    "mtime": 1791551110.7170753,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a931ff08cc310c5752bf10d9e2a0741c",
+    "semantic_hash": "a931ff08cc310c5752bf10d9e2a0741c"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/NavigationTrajectoryProjector.cs": {
+    "mtime": 1791550359.6149466,
+    "seen": 1791556608.9498315,
+    "ast_hash": "243d4c160a77c6b8cdb3e1fb9a994c45",
+    "semantic_hash": "243d4c160a77c6b8cdb3e1fb9a994c45"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectLabelGeometry.cs": {
+    "mtime": 1791545790.313016,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4fe8c3b387e9bed41e412057b8d80ae0",
+    "semantic_hash": "4fe8c3b387e9bed41e412057b8d80ae0"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectLabelLayout.cs": {
+    "mtime": 1791545790.313016,
+    "seen": 1791556608.9498315,
+    "ast_hash": "41b83f3b20942ed6bd783e7a78388aa5",
+    "semantic_hash": "41b83f3b20942ed6bd783e7a78388aa5"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectLabelRenderer.cs": {
+    "mtime": 1791552391.1161299,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5af16af2e33fa6cb3002e854f8e8c18f",
+    "semantic_hash": "5af16af2e33fa6cb3002e854f8e8c18f"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectLabelSmoother.cs": {
+    "mtime": 1791545790.3140461,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2e648f935f0e4e4681bf2410e61202b6",
+    "semantic_hash": "2e648f935f0e4e4681bf2410e61202b6"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectLabelText.cs": {
+    "mtime": 1791549777.07915,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2ac8a280a366ab450360dac9659fad63",
+    "semantic_hash": "2ac8a280a366ab450360dac9659fad63"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectTrailBuffer.cs": {
+    "mtime": 1791553490.7789786,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5c74247142f01af5f4c0d45c308063f1",
+    "semantic_hash": "5c74247142f01af5f4c0d45c308063f1"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectTrailGeometry.cs": {
+    "mtime": 1791552043.9131825,
+    "seen": 1791556608.9498315,
+    "ast_hash": "545224f0800fb066b707dd9c8c7d21c4",
+    "semantic_hash": "545224f0800fb066b707dd9c8c7d21c4"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectTrailStore.cs": {
+    "mtime": 1791546464.509483,
+    "seen": 1791556608.9498315,
+    "ast_hash": "dd0bd4bb7feb816b0106f131a264f6da",
+    "semantic_hash": "dd0bd4bb7feb816b0106f131a264f6da"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/RenderMotion.cs": {
+    "mtime": 1791545790.3159318,
+    "seen": 1791556608.9498315,
+    "ast_hash": "dd505af39f75f48b5a7931f327f09a04",
+    "semantic_hash": "dd505af39f75f48b5a7931f327f09a04"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/SolarSystemLayerRenderer.cs": {
+    "mtime": 1791545790.3159318,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ac44a94703539568ce517b48358bbca9",
+    "semantic_hash": "ac44a94703539568ce517b48358bbca9"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/StatusSquareAnimator.cs": {
+    "mtime": 1791545790.3159318,
+    "seen": 1791556608.9498315,
+    "ast_hash": "cd1c049ad40686e7f17a03a3da9e849e",
+    "semantic_hash": "cd1c049ad40686e7f17a03a3da9e849e"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapDepthRenderer.cs": {
+    "mtime": 1791549780.8755512,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c2179deea79ec2ab1b6a57c384787647",
+    "semantic_hash": "c2179deea79ec2ab1b6a57c384787647"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapFrameProfile.cs": {
+    "mtime": 1791553659.680106,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8236b4e933a1558aab6e0c8ecd85f3a1",
+    "semantic_hash": "8236b4e933a1558aab6e0c8ecd85f3a1"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapFrameState.cs": {
+    "mtime": 1791553490.7789786,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e4b3f1e36b3a0bed5af4aabdc6ccef90",
+    "semantic_hash": "e4b3f1e36b3a0bed5af4aabdc6ccef90"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapMarkerPolicy.cs": {
+    "mtime": 1791545790.3159318,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9e4121874461ab6f5b09f026c7a68bcb",
+    "semantic_hash": "9e4121874461ab6f5b09f026c7a68bcb"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapPaintCommands.cs": {
+    "mtime": 1791552422.497233,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2da929ed864339795c28d6f1d7ec9b72",
+    "semantic_hash": "2da929ed864339795c28d6f1d7ec9b72"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapRenderer.cs": {
+    "mtime": 1791552391.1054096,
+    "seen": 1791556608.9498315,
+    "ast_hash": "78f7ac7ce719b3628f2fa06b890b32ff",
+    "semantic_hash": "78f7ac7ce719b3628f2fa06b890b32ff"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapSceneBuilder.cs": {
+    "mtime": 1791552985.734585,
+    "seen": 1791556608.9498315,
+    "ast_hash": "39c71e49e64a8c6002db9a93ca44dac7",
+    "semantic_hash": "39c71e49e64a8c6002db9a93ca44dac7"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapSceneCache.cs": {
+    "mtime": 1791553067.5615413,
+    "seen": 1791556608.9498315,
+    "ast_hash": "faec0dfc94b2392d4abdbe1bc0daca42",
+    "semantic_hash": "faec0dfc94b2392d4abdbe1bc0daca42"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapSceneGeometry.cs": {
+    "mtime": 1791552391.1054096,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9aadf9677fd27f33155e0b4bc1709ae7",
+    "semantic_hash": "9aadf9677fd27f33155e0b4bc1709ae7"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapSnapshot.cs": {
+    "mtime": 1791548993.6172068,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c64d28a747ce733723ab267df485bb13",
+    "semantic_hash": "c64d28a747ce733723ab267df485bb13"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapSpatialIndex.cs": {
+    "mtime": 1791552985.7355838,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b859d6994e9e454374c09cd2e2017ca5",
+    "semantic_hash": "b859d6994e9e454374c09cd2e2017ca5"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TacticalMapStateUpdater.cs": {
+    "mtime": 1791553490.7799783,
+    "seen": 1791556608.9498315,
+    "ast_hash": "dfb51955ff39778427e6fcb6d637cc55",
+    "semantic_hash": "dfb51955ff39778427e6fcb6d637cc55"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/GameSession/TrajectoryViewportGeometry.cs": {
+    "mtime": 1791545790.3159318,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ab6df72293db1cf8f516de8ed7a73c06",
+    "semantic_hash": "ab6df72293db1cf8f516de8ed7a73c06"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Hire/HireLayout.cs": {
+    "mtime": 1791545790.3227298,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e4a07fa33e526794571850242811a240",
+    "semantic_hash": "e4a07fa33e526794571850242811a240"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Hire/HireScreen.cs": {
+    "mtime": 1791545790.3227298,
+    "seen": 1791556608.9498315,
+    "ast_hash": "820b0fbc3d4a71f05fa3265e12420d67",
+    "semantic_hash": "820b0fbc3d4a71f05fa3265e12420d67"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/IScreen.cs": {
+    "mtime": 1791545790.3227298,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7176f93bbaf0ca82ed95e43c32dfb125",
+    "semantic_hash": "7176f93bbaf0ca82ed95e43c32dfb125"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Load/LoadLayout.cs": {
+    "mtime": 1791545790.3227298,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4d3a4c51645111e428098a52d892e462",
+    "semantic_hash": "4d3a4c51645111e428098a52d892e462"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Load/LoadScreen.cs": {
+    "mtime": 1791545790.3258166,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5ce6bb7a72d5536c627db63ff3c54ec7",
+    "semantic_hash": "5ce6bb7a72d5536c627db63ff3c54ec7"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/MainMenu/MainMenuScreen.cs": {
+    "mtime": 1791545790.3268192,
+    "seen": 1791556608.9498315,
+    "ast_hash": "69856a0f9f5ee9b40ff858f49b5a3a53",
+    "semantic_hash": "69856a0f9f5ee9b40ff858f49b5a3a53"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/MainMenu/MenuLayout.cs": {
+    "mtime": 1791545790.3268192,
+    "seen": 1791556608.9498315,
+    "ast_hash": "439afb1825a1b7a2276d2c3549d019c2",
+    "semantic_hash": "439afb1825a1b7a2276d2c3549d019c2"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Save/SaveLayout.cs": {
+    "mtime": 1791545790.328093,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2dd3910865d2b91ec4b740185e8a851f",
+    "semantic_hash": "2dd3910865d2b91ec4b740185e8a851f"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Save/SaveScreen.cs": {
+    "mtime": 1791545790.328093,
+    "seen": 1791556608.9498315,
+    "ast_hash": "97b5d35bf14c70367728a91056fdb8b8",
+    "semantic_hash": "97b5d35bf14c70367728a91056fdb8b8"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/ScenarioSelect/ScenarioSelectLayout.cs": {
+    "mtime": 1791545790.3290958,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f94e6f9c49703655bf30b26e1991d719",
+    "semantic_hash": "f94e6f9c49703655bf30b26e1991d719"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/ScenarioSelect/ScenarioSelectScreen.cs": {
+    "mtime": 1791545790.3300955,
+    "seen": 1791556608.9498315,
+    "ast_hash": "95fa505dbfe934e4ce18b8f95b694357",
+    "semantic_hash": "95fa505dbfe934e4ce18b8f95b694357"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Settings/SettingsLayout.cs": {
+    "mtime": 1791545790.3310957,
+    "seen": 1791556608.9498315,
+    "ast_hash": "05562150545d85190490bc2468473866",
+    "semantic_hash": "05562150545d85190490bc2468473866"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Settings/SettingsScreen.cs": {
+    "mtime": 1791545790.3310957,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c2cdc85f05652e0b98a5961cebe23f85",
+    "semantic_hash": "c2cdc85f05652e0b98a5961cebe23f85"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipLayout.cs": {
+    "mtime": 1791545790.3320959,
+    "seen": 1791556608.9498315,
+    "ast_hash": "75a9707af1161f5377b72310cc228549",
+    "semantic_hash": "75a9707af1161f5377b72310cc228549"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipScreen.cs": {
+    "mtime": 1791545790.3330965,
+    "seen": 1791556608.9498315,
+    "ast_hash": "be02800796b0578be9ccf90c6db1c0f4",
+    "semantic_hash": "be02800796b0578be9ccf90c6db1c0f4"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Station/StationLayout.cs": {
+    "mtime": 1791545790.334145,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d5bf8ea8f03b10afacc0b30b363df67c",
+    "semantic_hash": "d5bf8ea8f03b10afacc0b30b363df67c"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Station/StationRoutePresentation.cs": {
+    "mtime": 1791545790.3359122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "866025ae6cbd522bf134da4956c696c7",
+    "semantic_hash": "866025ae6cbd522bf134da4956c696c7"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Station/StationScreen.cs": {
+    "mtime": 1791545790.3359122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5685d3001ef3bbda387be05c43fd949a",
+    "semantic_hash": "5685d3001ef3bbda387be05c43fd949a"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/TempCharacterImage/TempCharacterImageScreen.cs": {
+    "mtime": 1791545790.3359122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0bf5cadcae944f39625c087e5841cc43",
+    "semantic_hash": "0bf5cadcae944f39625c087e5841cc43"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Trade/TradeItemPresentation.cs": {
+    "mtime": 1791545790.3359122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "07e1b95faaf77786082be18a52c964b9",
+    "semantic_hash": "07e1b95faaf77786082be18a52c964b9"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Trade/TradeLayout.cs": {
+    "mtime": 1791545790.3359122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "061f7702979e29e41297ecf42ba1ed18",
+    "semantic_hash": "061f7702979e29e41297ecf42ba1ed18"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Trade/TradeModel.cs": {
+    "mtime": 1791545790.3359122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6d90c105bf5e40444f502f7fcfd3755c",
+    "semantic_hash": "6d90c105bf5e40444f502f7fcfd3755c"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Trade/TradePainter.cs": {
+    "mtime": 1791545790.3359122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "194519e95d6c0694e9892049c0aafd28",
+    "semantic_hash": "194519e95d6c0694e9892049c0aafd28"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Trade/TradeScreen.Render.cs": {
+    "mtime": 1791545790.3359122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d481ce44cd308754db71750a2a991caa",
+    "semantic_hash": "d481ce44cd308754db71750a2a991caa"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Trade/TradeScreen.Toolbar.cs": {
+    "mtime": 1791545790.3359122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "809a0eaf6b23ef84f1a321a8e4226f1e",
+    "semantic_hash": "809a0eaf6b23ef84f1a321a8e4226f1e"
+  },
+  "src/DeepSpaceSaga.Client/UI/Screens/Trade/TradeScreen.cs": {
+    "mtime": 1791545790.3359122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b48bcbc90193c2ebddf7da8dd3889963",
+    "semantic_hash": "b48bcbc90193c2ebddf7da8dd3889963"
+  },
+  "src/DeepSpaceSaga.Client/UI/SkiaGpuOptions.cs": {
+    "mtime": 1791545790.3359122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0901741287912c0dfaebbc89a3c80f2c",
+    "semantic_hash": "0901741287912c0dfaebbc89a3c80f2c"
+  },
+  "src/DeepSpaceSaga.Client/UI/SkiaWindow.cs": {
+    "mtime": 1791549773.2737207,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b47ba1177e141c99c70b05b19fd9124a",
+    "semantic_hash": "b47ba1177e141c99c70b05b19fd9124a"
+  },
+  "src/DeepSpaceSaga.Client/UI/SpaceMapColorResolver.cs": {
+    "mtime": 1791545790.3428411,
+    "seen": 1791556608.9498315,
+    "ast_hash": "77e4e73031170cdb6e3aa16f329880a1",
+    "semantic_hash": "77e4e73031170cdb6e3aa16f329880a1"
+  },
+  "src/DeepSpaceSaga.Client/UI/StationTradeNavigation.cs": {
+    "mtime": 1791545790.3428411,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a15b2cd6489570ee04ae7362bb20e963",
+    "semantic_hash": "a15b2cd6489570ee04ae7362bb20e963"
+  },
+  "src/DeepSpaceSaga.Client/UI/TacticalMapSettings.cs": {
+    "mtime": 1791550080.6864765,
+    "seen": 1791556608.9498315,
+    "ast_hash": "125de2faa91675d80ed0540af9f5f312",
+    "semantic_hash": "125de2faa91675d80ed0540af9f5f312"
+  },
+  "src/DeepSpaceSaga.Client/UI/WindowThreadContext.cs": {
+    "mtime": 1791545790.3455741,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4f57aaf910ce995864c6571d6ae3a2d9",
+    "semantic_hash": "4f57aaf910ce995864c6571d6ae3a2d9"
+  },
+  "src/DeepSpaceSaga.Client/gameinfo.json": {
+    "mtime": 1791545790.3455741,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f59399d931cc2cfe242ac1b773b6df24",
+    "semantic_hash": "f59399d931cc2cfe242ac1b773b6df24"
+  },
+  "src/DeepSpaceSaga.Contracts/ApproachRoute.cs": {
+    "mtime": 1791545790.3468406,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d2ea936d56f8c2c431b9daa65e25c2ef",
+    "semantic_hash": "d2ea936d56f8c2c431b9daa65e25c2ef"
+  },
+  "src/DeepSpaceSaga.Contracts/AuthoritativeSnapshot.cs": {
+    "mtime": 1791545790.3478413,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2cc40d093921cb7f10c8b3ab9539454c",
+    "semantic_hash": "2cc40d093921cb7f10c8b3ab9539454c"
+  },
+  "src/DeepSpaceSaga.Contracts/CargoStackSnapshot.cs": {
+    "mtime": 1791545790.3478413,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8265f871388c6381e2edef28c524f9f3",
+    "semantic_hash": "8265f871388c6381e2edef28c524f9f3"
+  },
+  "src/DeepSpaceSaga.Contracts/CharacterPortraits.cs": {
+    "mtime": 1791545790.3488388,
+    "seen": 1791556608.9498315,
+    "ast_hash": "cbe8453e13c4abc493088423b5974412",
+    "semantic_hash": "cbe8453e13c4abc493088423b5974412"
+  },
+  "src/DeepSpaceSaga.Contracts/CombatJournalEntry.cs": {
+    "mtime": 1791545790.349839,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1c4783b2d3d9ee09ae2a97bc31ddecc3",
+    "semantic_hash": "1c4783b2d3d9ee09ae2a97bc31ddecc3"
+  },
+  "src/DeepSpaceSaga.Contracts/CombatSnapshot.cs": {
+    "mtime": 1791545790.349839,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c061f29d591fc006a9514d2a3585d890",
+    "semantic_hash": "c061f29d591fc006a9514d2a3585d890"
+  },
+  "src/DeepSpaceSaga.Contracts/CommandResult.cs": {
+    "mtime": 1791545790.3508384,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e1acf41c37c9fa0ec0bb43d786ae24c7",
+    "semantic_hash": "e1acf41c37c9fa0ec0bb43d786ae24c7"
+  },
+  "src/DeepSpaceSaga.Contracts/CountermeasureSnapshot.cs": {
+    "mtime": 1791545790.3508384,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b88ff5a4ca6dae0f5292e025a3cf622f",
+    "semantic_hash": "b88ff5a4ca6dae0f5292e025a3cf622f"
+  },
+  "src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.csproj": {
+    "mtime": 1791545790.3518386,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a09b26111c660da58a84b7d66e16c694",
+    "semantic_hash": "a09b26111c660da58a84b7d66e16c694"
+  },
+  "src/DeepSpaceSaga.Contracts/DialogueChoiceSnapshot.cs": {
+    "mtime": 1791545790.3518386,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c27eac800609b82ce5da7e79660d951a",
+    "semantic_hash": "c27eac800609b82ce5da7e79660d951a"
+  },
+  "src/DeepSpaceSaga.Contracts/DialogueCommand.cs": {
+    "mtime": 1791545790.352841,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9e060d17c44560a688a301f8e8d78356",
+    "semantic_hash": "9e060d17c44560a688a301f8e8d78356"
+  },
+  "src/DeepSpaceSaga.Contracts/DialogueEvent.cs": {
+    "mtime": 1791545790.3540354,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e5e3d18497a7cdbfa23f4e9f3723675e",
+    "semantic_hash": "e5e3d18497a7cdbfa23f4e9f3723675e"
+  },
+  "src/DeepSpaceSaga.Contracts/DialogueState.cs": {
+    "mtime": 1791545790.3550348,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3f480eb30d711bb2edcebe1a52a3dc3c",
+    "semantic_hash": "3f480eb30d711bb2edcebe1a52a3dc3c"
+  },
+  "src/DeepSpaceSaga.Contracts/GameCalendar.cs": {
+    "mtime": 1791545790.3554568,
+    "seen": 1791556608.9498315,
+    "ast_hash": "50db05da54654c07dc60ba1b18652c8c",
+    "semantic_hash": "50db05da54654c07dc60ba1b18652c8c"
+  },
+  "src/DeepSpaceSaga.Contracts/IGameSessionConnection.cs": {
+    "mtime": 1791545790.3565543,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1df952baaa60f139992776cbe27a8e03",
+    "semantic_hash": "1df952baaa60f139992776cbe27a8e03"
+  },
+  "src/DeepSpaceSaga.Contracts/ImmutableArrayDefaultJsonConverter.cs": {
+    "mtime": 1791545790.3575523,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fc7784b3b2805f4bd70f96c0d39e9cdf",
+    "semantic_hash": "fc7784b3b2805f4bd70f96c0d39e9cdf"
+  },
+  "src/DeepSpaceSaga.Contracts/InstalledModuleSnapshot.cs": {
+    "mtime": 1791545790.3575523,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fd0549a12c6a50946f97b54c8e6cee79",
+    "semantic_hash": "fd0549a12c6a50946f97b54c8e6cee79"
+  },
+  "src/DeepSpaceSaga.Contracts/ModuleCommandSnapshot.cs": {
+    "mtime": 1791545790.3585515,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c744321187916fbaf785b46daec65b94",
+    "semantic_hash": "c744321187916fbaf785b46daec65b94"
+  },
+  "src/DeepSpaceSaga.Contracts/NavigationComputerCommandTypes.cs": {
+    "mtime": 1791545790.3585515,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3f21e7892ad31075bdb65c9b37b7d567",
+    "semantic_hash": "3f21e7892ad31075bdb65c9b37b7d567"
+  },
+  "src/DeepSpaceSaga.Contracts/NavigationPhase.cs": {
+    "mtime": 1791545790.359552,
+    "seen": 1791556608.9498315,
+    "ast_hash": "eeea08616be4882515f497b7be385b20",
+    "semantic_hash": "eeea08616be4882515f497b7be385b20"
+  },
+  "src/DeepSpaceSaga.Contracts/ObjectMotionSnapshot.cs": {
+    "mtime": 1791545790.359552,
+    "seen": 1791556608.9498315,
+    "ast_hash": "34131ef43bf89096056fcf0d3cca5828",
+    "semantic_hash": "34131ef43bf89096056fcf0d3cca5828"
+  },
+  "src/DeepSpaceSaga.Contracts/PlayerCommand.cs": {
+    "mtime": 1791545790.360552,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bdf8d1f719c6acb32376305441b9e7f6",
+    "semantic_hash": "bdf8d1f719c6acb32376305441b9e7f6"
+  },
+  "src/DeepSpaceSaga.Contracts/SaveSlotInfo.cs": {
+    "mtime": 1791545790.3611476,
+    "seen": 1791556608.9498315,
+    "ast_hash": "69ab4fa009aabc7488efee7e3e2fc599",
+    "semantic_hash": "69ab4fa009aabc7488efee7e3e2fc599"
+  },
+  "src/DeepSpaceSaga.Contracts/ScannerCommandTypes.cs": {
+    "mtime": 1791545790.3611476,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e63f18a0728cf9293c1577ce37983ac5",
+    "semantic_hash": "e63f18a0728cf9293c1577ce37983ac5"
+  },
+  "src/DeepSpaceSaga.Contracts/ScenarioInfo.cs": {
+    "mtime": 1791545790.3626537,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3d84131d264dde0616e36a5294c96de1",
+    "semantic_hash": "3d84131d264dde0616e36a5294c96de1"
+  },
+  "src/DeepSpaceSaga.Contracts/ShipEngineCommandTypes.cs": {
+    "mtime": 1791545790.3626537,
+    "seen": 1791556608.9498315,
+    "ast_hash": "31b8d532a6aecfdae12aac60b7644d65",
+    "semantic_hash": "31b8d532a6aecfdae12aac60b7644d65"
+  },
+  "src/DeepSpaceSaga.Contracts/ShipEvent.cs": {
+    "mtime": 1791545790.3626537,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b60f36a50303897bfd0d3719786a5d41",
+    "semantic_hash": "b60f36a50303897bfd0d3719786a5d41"
+  },
+  "src/DeepSpaceSaga.Contracts/SimulationSpeed.cs": {
+    "mtime": 1791545790.3626537,
+    "seen": 1791556608.9498315,
+    "ast_hash": "afee2185b45fe1971db0cefa03da30d4",
+    "semantic_hash": "afee2185b45fe1971db0cefa03da30d4"
+  },
+  "src/DeepSpaceSaga.Contracts/SolarSystemMap.cs": {
+    "mtime": 1791545790.3626537,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0a4dc707b4347f8a453ee3976590f492",
+    "semantic_hash": "0a4dc707b4347f8a453ee3976590f492"
+  },
+  "src/DeepSpaceSaga.Contracts/SpaceObjectType.cs": {
+    "mtime": 1791545790.365529,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ad89789ac879cfc7f993120be0401de9",
+    "semantic_hash": "ad89789ac879cfc7f993120be0401de9"
+  },
+  "src/DeepSpaceSaga.Contracts/StationClusterMap.cs": {
+    "mtime": 1791545790.3662198,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c1a2e14809831b5f77ce85625e3d3e95",
+    "semantic_hash": "c1a2e14809831b5f77ce85625e3d3e95"
+  },
+  "src/DeepSpaceSaga.Contracts/StationMarketKnowledgeSnapshot.cs": {
+    "mtime": 1791545790.3662198,
+    "seen": 1791556608.9498315,
+    "ast_hash": "143baf63ba896600fe27178c7a0f1c26",
+    "semantic_hash": "143baf63ba896600fe27178c7a0f1c26"
+  },
+  "src/DeepSpaceSaga.Contracts/StationTradeSnapshot.cs": {
+    "mtime": 1791545790.3662198,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0513673ac91a53022e2af4381eb76ea0",
+    "semantic_hash": "0513673ac91a53022e2af4381eb76ea0"
+  },
+  "src/DeepSpaceSaga.Contracts/StationTravelCommand.cs": {
+    "mtime": 1791545790.3662198,
+    "seen": 1791556608.9498315,
+    "ast_hash": "544695dcc64a3c0fc3bedf0c32e457af",
+    "semantic_hash": "544695dcc64a3c0fc3bedf0c32e457af"
+  },
+  "src/DeepSpaceSaga.Contracts/TimedContractState.cs": {
+    "mtime": 1791545790.3662198,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bf3a8542096e47d71a3e52b9c6fff2ae",
+    "semantic_hash": "bf3a8542096e47d71a3e52b9c6fff2ae"
+  },
+  "src/DeepSpaceSaga.Contracts/TradeCommandTypes.cs": {
+    "mtime": 1791545790.3662198,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a3a2cd54e87f5412c2cef70e1c7eca42",
+    "semantic_hash": "a3a2cd54e87f5412c2cef70e1c7eca42"
+  },
+  "src/DeepSpaceSaga.Contracts/TradeQuote.cs": {
+    "mtime": 1791545790.3662198,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4890d6d7d2eacdb0682965595e5e1366",
+    "semantic_hash": "4890d6d7d2eacdb0682965595e5e1366"
+  },
+  "src/DeepSpaceSaga.Contracts/TradingRouteSnapshot.cs": {
+    "mtime": 1791545790.3662198,
+    "seen": 1791556608.9498315,
+    "ast_hash": "108d0cdb01910fdd9c531eb0ee0cd5d2",
+    "semantic_hash": "108d0cdb01910fdd9c531eb0ee0cd5d2"
+  },
+  "src/DeepSpaceSaga.Contracts/VoyageFinanceSnapshot.cs": {
+    "mtime": 1791545790.3662198,
+    "seen": 1791556608.9498315,
+    "ast_hash": "465cc2c620b5a00b588bb08e5e01fed9",
+    "semantic_hash": "465cc2c620b5a00b588bb08e5e01fed9"
+  },
+  "src/DeepSpaceSaga.Contracts/VoyageFuelSettlementSnapshot.cs": {
+    "mtime": 1791545790.3662198,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f7f4ac61f259ff787ff131c4675cd0bc",
+    "semantic_hash": "f7f4ac61f259ff787ff131c4675cd0bc"
+  },
+  "src/DeepSpaceSaga.Contracts/VoyageSnapshot.cs": {
+    "mtime": 1791545790.3727791,
+    "seen": 1791556608.9498315,
+    "ast_hash": "63a5663bb2a38337f3cc92095a600e96",
+    "semantic_hash": "63a5663bb2a38337f3cc92095a600e96"
+  },
+  "src/DeepSpaceSaga.Contracts/WeaponOperatorSnapshot.cs": {
+    "mtime": 1791545790.3727791,
+    "seen": 1791556608.9498315,
+    "ast_hash": "225c57964e5241e9eb362613e2bc4d6c",
+    "semantic_hash": "225c57964e5241e9eb362613e2bc4d6c"
+  },
+  "src/DeepSpaceSaga.Engine.LocalClient/DeepSpaceSaga.Engine.LocalClient.csproj": {
+    "mtime": 1791545790.3727791,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b52e09550f3fbcfc49504fe345b47c3c",
+    "semantic_hash": "b52e09550f3fbcfc49504fe345b47c3c"
+  },
+  "src/DeepSpaceSaga.Engine.LocalClient/LocalGameSessionConnection.cs": {
+    "mtime": 1791545790.3727791,
+    "seen": 1791556608.9498315,
+    "ast_hash": "16bd21e7338b729c266b4f2cdefd8e2f",
+    "semantic_hash": "16bd21e7338b729c266b4f2cdefd8e2f"
+  },
+  "src/DeepSpaceSaga.Engine.LocalClient/SaveSlotNaming.cs": {
+    "mtime": 1791545790.3754854,
+    "seen": 1791556608.9498315,
+    "ast_hash": "245ebdb344770c7c1a3920532cefefd2",
+    "semantic_hash": "245ebdb344770c7c1a3920532cefefd2"
+  },
+  "src/DeepSpaceSaga.Engine.LocalClient/SaveSlotRepository.cs": {
+    "mtime": 1791545790.3764923,
+    "seen": 1791556608.9498315,
+    "ast_hash": "70e193be9563a02d121b902f3bcc17e3",
+    "semantic_hash": "70e193be9563a02d121b902f3bcc17e3"
+  },
+  "src/DeepSpaceSaga.Engine.LocalClient/ScenarioRepository.cs": {
+    "mtime": 1791545790.3764923,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d7643d7730063e5b7113781ae8aa341c",
+    "semantic_hash": "d7643d7730063e5b7113781ae8aa341c"
+  },
+  "src/DeepSpaceSaga.Engine.LocalClient/SnapshotMailbox.cs": {
+    "mtime": 1791545790.3774993,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c25977fcbb74df0e1f4f01052b0698f3",
+    "semantic_hash": "c25977fcbb74df0e1f4f01052b0698f3"
+  },
+  "src/DeepSpaceSaga.Engine/Combat/CountermeasureRng.cs": {
+    "mtime": 1791545790.3784983,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e52a3058d6377b278246aee997291aff",
+    "semantic_hash": "e52a3058d6377b278246aee997291aff"
+  },
+  "src/DeepSpaceSaga.Engine/Combat/InterceptionMath.cs": {
+    "mtime": 1791545790.379458,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a9fb3ed5f15276a8f74645798a7b036b",
+    "semantic_hash": "a9fb3ed5f15276a8f74645798a7b036b"
+  },
+  "src/DeepSpaceSaga.Engine/Content/CommandDefinition.cs": {
+    "mtime": 1791545790.3850133,
+    "seen": 1791556608.9498315,
+    "ast_hash": "abb2d1b56d32dd76dd7b3c10dfdff78a",
+    "semantic_hash": "abb2d1b56d32dd76dd7b3c10dfdff78a"
+  },
+  "src/DeepSpaceSaga.Engine/Content/ContentException.cs": {
+    "mtime": 1791545790.387551,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6f26c0d4c26e895cd988d36f45ced5c6",
+    "semantic_hash": "6f26c0d4c26e895cd988d36f45ced5c6"
+  },
+  "src/DeepSpaceSaga.Engine/Content/DialogueContentLoader.cs": {
+    "mtime": 1791545790.3885531,
+    "seen": 1791556608.9498315,
+    "ast_hash": "cf8116b55fae04d8e46cc3f042ef49f2",
+    "semantic_hash": "cf8116b55fae04d8e46cc3f042ef49f2"
+  },
+  "src/DeepSpaceSaga.Engine/Content/DialogueDefinition.cs": {
+    "mtime": 1791545790.3895535,
+    "seen": 1791556608.9498315,
+    "ast_hash": "40b88117628ed65e607e826c1e3365ab",
+    "semantic_hash": "40b88117628ed65e607e826c1e3365ab"
+  },
+  "src/DeepSpaceSaga.Engine/Content/EngineContentLoader.cs": {
+    "mtime": 1791545790.3905554,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0df57ceddfff97c9997ba067f991f613",
+    "semantic_hash": "0df57ceddfff97c9997ba067f991f613"
+  },
+  "src/DeepSpaceSaga.Engine/Content/FactoryTypeDefinition.cs": {
+    "mtime": 1791545790.3930619,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8fddc8b1888173dae859054dc4416dfb",
+    "semantic_hash": "8fddc8b1888173dae859054dc4416dfb"
+  },
+  "src/DeepSpaceSaga.Engine/Content/GameDataRegistry.cs": {
+    "mtime": 1791545790.397707,
+    "seen": 1791556608.9498315,
+    "ast_hash": "54e91a3f87a07bce60f0ca9663a3e1bf",
+    "semantic_hash": "54e91a3f87a07bce60f0ca9663a3e1bf"
+  },
+  "src/DeepSpaceSaga.Engine/Content/ItemCatalogValidation.cs": {
+    "mtime": 1791545790.3997166,
+    "seen": 1791556608.9498315,
+    "ast_hash": "57451e22d98df093b24b996c84cb371a",
+    "semantic_hash": "57451e22d98df093b24b996c84cb371a"
+  },
+  "src/DeepSpaceSaga.Engine/Content/ItemTypeDefinition.cs": {
+    "mtime": 1791545790.3997166,
+    "seen": 1791556608.9498315,
+    "ast_hash": "43e2e331d1743718767b4b9b6e25b4e9",
+    "semantic_hash": "43e2e331d1743718767b4b9b6e25b4e9"
+  },
+  "src/DeepSpaceSaga.Engine/Content/ModuleCategoryDefinition.cs": {
+    "mtime": 1791545790.3997166,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0b3f54d8d6cdab6ff60a8b4fb413cd58",
+    "semantic_hash": "0b3f54d8d6cdab6ff60a8b4fb413cd58"
+  },
+  "src/DeepSpaceSaga.Engine/Content/ModuleTypeDefinition.cs": {
+    "mtime": 1791545790.3997166,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d9458693f49f5756ef3b68b76fadeb89",
+    "semantic_hash": "d9458693f49f5756ef3b68b76fadeb89"
+  },
+  "src/DeepSpaceSaga.Engine/Content/RecipeDefinition.cs": {
+    "mtime": 1791545790.4031048,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2651aebb5199885d570c0ec795ba79cf",
+    "semantic_hash": "2651aebb5199885d570c0ec795ba79cf"
+  },
+  "src/DeepSpaceSaga.Engine/Content/ShipClassDefinition.cs": {
+    "mtime": 1791545790.4031048,
+    "seen": 1791556608.9498315,
+    "ast_hash": "70526f9a83961d2108c34bd9ef19b20b",
+    "semantic_hash": "70526f9a83961d2108c34bd9ef19b20b"
+  },
+  "src/DeepSpaceSaga.Engine/Content/StationMarketEventDefinition.cs": {
+    "mtime": 1791545790.4031048,
+    "seen": 1791556608.9498315,
+    "ast_hash": "39f6922fece0976f85d1fa913e0148b5",
+    "semantic_hash": "39f6922fece0976f85d1fa913e0148b5"
+  },
+  "src/DeepSpaceSaga.Engine/Content/StationMarketProfileDefinition.cs": {
+    "mtime": 1791545790.405464,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2f9ee782dc41dd6069b971db7b5f4278",
+    "semantic_hash": "2f9ee782dc41dd6069b971db7b5f4278"
+  },
+  "src/DeepSpaceSaga.Engine/Content/StationPricing.cs": {
+    "mtime": 1791545790.405464,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a26aa60c94fe5f28ac679c8a2cb3ff08",
+    "semantic_hash": "a26aa60c94fe5f28ac679c8a2cb3ff08"
+  },
+  "src/DeepSpaceSaga.Engine/Content/StationSize.cs": {
+    "mtime": 1791545790.406735,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fb87926f510a409b0d8fd4b8747715ec",
+    "semantic_hash": "fb87926f510a409b0d8fd4b8747715ec"
+  },
+  "src/DeepSpaceSaga.Engine/Content/TypeDefinition.cs": {
+    "mtime": 1791545790.406735,
+    "seen": 1791556608.9498315,
+    "ast_hash": "973dddfd35cbb46cf0a98eebf9d67aee",
+    "semantic_hash": "973dddfd35cbb46cf0a98eebf9d67aee"
+  },
+  "src/DeepSpaceSaga.Engine/Content/TypeRegistry.cs": {
+    "mtime": 1791545790.4087336,
+    "seen": 1791556608.9498315,
+    "ast_hash": "01a7ae6ea75f5f4b0b4351fc32066ad1",
+    "semantic_hash": "01a7ae6ea75f5f4b0b4351fc32066ad1"
+  },
+  "src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj": {
+    "mtime": 1791545790.4097342,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d7842f280c3db37d784e51e9e5d28f66",
+    "semantic_hash": "d7842f280c3db37d784e51e9e5d28f66"
+  },
+  "src/DeepSpaceSaga.Engine/Dialogue/DialogueEffectTransaction.cs": {
+    "mtime": 1791545790.4097342,
+    "seen": 1791556608.9498315,
+    "ast_hash": "721d7fa507f83382d0bcaf6621c7cf36",
+    "semantic_hash": "721d7fa507f83382d0bcaf6621c7cf36"
+  },
+  "src/DeepSpaceSaga.Engine/Dialogue/DialogueRuntime.cs": {
+    "mtime": 1791545790.4107337,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4ff6f789dfc2380b651237ff2b81d1a6",
+    "semantic_hash": "4ff6f789dfc2380b651237ff2b81d1a6"
+  },
+  "src/DeepSpaceSaga.Engine/Dialogue/SimulationEngine.Dialogue.cs": {
+    "mtime": 1791545790.4107337,
+    "seen": 1791556608.9498315,
+    "ast_hash": "91ebd110b1c60c470629995ed3c40444",
+    "semantic_hash": "91ebd110b1c60c470629995ed3c40444"
+  },
+  "src/DeepSpaceSaga.Engine/Dialogue/StationSecuritySystem.cs": {
+    "mtime": 1791545790.4119935,
+    "seen": 1791556608.9498315,
+    "ast_hash": "485e43610832748071d7ebfd6004678d",
+    "semantic_hash": "485e43610832748071d7ebfd6004678d"
+  },
+  "src/DeepSpaceSaga.Engine/Rng/RngStreamNames.cs": {
+    "mtime": 1791545790.4123847,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a60f576bf8bc9aea902de082a4d138d0",
+    "semantic_hash": "a60f576bf8bc9aea902de082a4d138d0"
+  },
+  "src/DeepSpaceSaga.Engine/Rng/RngStreamSeedDerivation.cs": {
+    "mtime": 1791545790.4128897,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3d57038c97772693e0cf3812a6a9230d",
+    "semantic_hash": "3d57038c97772693e0cf3812a6a9230d"
+  },
+  "src/DeepSpaceSaga.Engine/RuntimeMotion.cs": {
+    "mtime": 1791545790.4128897,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3f3476fc5636180937fe4e6dd2da907a",
+    "semantic_hash": "3f3476fc5636180937fe4e6dd2da907a"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/CatalogCompatibilityData.cs": {
+    "mtime": 1791545790.4138958,
+    "seen": 1791556608.9498315,
+    "ast_hash": "beebd56880127b461119948a01aa9da4",
+    "semantic_hash": "beebd56880127b461119948a01aa9da4"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/CombatSaveData.cs": {
+    "mtime": 1791545790.415341,
+    "seen": 1791556608.9498315,
+    "ast_hash": "82d12399c9906659d0f61d12eb3bb03f",
+    "semantic_hash": "82d12399c9906659d0f61d12eb3bb03f"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/CountermeasureSaveData.cs": {
+    "mtime": 1791545790.4159746,
+    "seen": 1791556608.9498315,
+    "ast_hash": "21b65751416b2c653dbef3c9ea18aa15",
+    "semantic_hash": "21b65751416b2c653dbef3c9ea18aa15"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/EconomyTimeData.cs": {
+    "mtime": 1791545790.4159746,
+    "seen": 1791556608.9498315,
+    "ast_hash": "47618270e112f6f8f955e515776a3a57",
+    "semantic_hash": "47618270e112f6f8f955e515776a3a57"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs": {
+    "mtime": 1791545790.4159746,
+    "seen": 1791556608.9498315,
+    "ast_hash": "925b9f54392c506dc619cd8ccf2b8f29",
+    "semantic_hash": "925b9f54392c506dc619cd8ccf2b8f29"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/ScenarioGroupPlacement.cs": {
+    "mtime": 1791545790.4159746,
+    "seen": 1791556608.9498315,
+    "ast_hash": "67b593c4add468651d476d98519d4f65",
+    "semantic_hash": "67b593c4add468651d476d98519d4f65"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs": {
+    "mtime": 1791545790.4159746,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ceb81262024c1fe431e08fb22967ba61",
+    "semantic_hash": "ceb81262024c1fe431e08fb22967ba61"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/SolarSystemGeneration.cs": {
+    "mtime": 1791545790.4159746,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8468fcdeb705a6496e73d7e6ecdff6ff",
+    "semantic_hash": "8468fcdeb705a6496e73d7e6ecdff6ff"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/SolarSystemGenerator.cs": {
+    "mtime": 1791545790.4159746,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0471bd6186f013088d1a8d0ca8ad4019",
+    "semantic_hash": "0471bd6186f013088d1a8d0ca8ad4019"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/StationClusterGenerator.cs": {
+    "mtime": 1791545790.4159746,
+    "seen": 1791556608.9498315,
+    "ast_hash": "28603f6caf8b93f09e031cc1ff8db193",
+    "semantic_hash": "28603f6caf8b93f09e031cc1ff8db193"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/StationClusterSaveValidation.cs": {
+    "mtime": 1791545790.4159746,
+    "seen": 1791556608.9498315,
+    "ast_hash": "cb3556474e411399369f6e6da37807c6",
+    "semantic_hash": "cb3556474e411399369f6e6da37807c6"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/StationResourceFields.cs": {
+    "mtime": 1791545790.4159746,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9b41c998b60c559fc02345286c58c323",
+    "semantic_hash": "9b41c998b60c559fc02345286c58c323"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/TradingEconomySaveMigration.cs": {
+    "mtime": 1791545790.4159746,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3857cfa43af0d2bcc39ce0c83165e29e",
+    "semantic_hash": "3857cfa43af0d2bcc39ce0c83165e29e"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/TradingGraphGenerator.cs": {
+    "mtime": 1791545790.4230661,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4bdeb34678c6bcfb35530bce59f7383d",
+    "semantic_hash": "4bdeb34678c6bcfb35530bce59f7383d"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/TradingMapData.cs": {
+    "mtime": 1791545790.4230661,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8a87c5c545896bba3cd121984d0e4e7c",
+    "semantic_hash": "8a87c5c545896bba3cd121984d0e4e7c"
+  },
+  "src/DeepSpaceSaga.Engine/Scenario/TradingMapGeometryGenerator.cs": {
+    "mtime": 1791545790.4230661,
+    "seen": 1791556608.9498315,
+    "ast_hash": "90c5f81736a2eb92cf1bf7395569c70a",
+    "semantic_hash": "90c5f81736a2eb92cf1bf7395569c70a"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationClock.cs": {
+    "mtime": 1791545790.4255335,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a0ba7b9fa8b45bab072f3c35c1f64ffa",
+    "semantic_hash": "a0ba7b9fa8b45bab072f3c35c1f64ffa"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.CargoCost.cs": {
+    "mtime": 1791545790.4255335,
+    "seen": 1791556608.9498315,
+    "ast_hash": "482d172fe703942ad6f08ce9f63e6a1c",
+    "semantic_hash": "482d172fe703942ad6f08ce9f63e6a1c"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.ClusterVoyages.cs": {
+    "mtime": 1791545790.4267454,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4ab74762b843e553f23e2ef606d09bdd",
+    "semantic_hash": "4ab74762b843e553f23e2ef606d09bdd"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs": {
+    "mtime": 1791545790.4267454,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6d1b8c07df13d4527f9f195463a797c7",
+    "semantic_hash": "6d1b8c07df13d4527f9f195463a797c7"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs": {
+    "mtime": 1791545790.4277427,
+    "seen": 1791556608.9498315,
+    "ast_hash": "17ee54c4a29d21f582e881a74876a602",
+    "semantic_hash": "17ee54c4a29d21f582e881a74876a602"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.CombatPersistence.cs": {
+    "mtime": 1791545790.4277427,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f9c15785e7c23303a4182519194ae774",
+    "semantic_hash": "f9c15785e7c23303a4182519194ae774"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.CommandJournal.cs": {
+    "mtime": 1791545790.4287727,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d9c002bb45349cff59ab198f8422dd2c",
+    "semantic_hash": "d9c002bb45349cff59ab198f8422dd2c"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs": {
+    "mtime": 1791545790.429168,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2a566880d97b26d02b8763d8c6b88dfb",
+    "semantic_hash": "2a566880d97b26d02b8763d8c6b88dfb"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.EconomyTime.cs": {
+    "mtime": 1791545790.4301753,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f27272e3770488a9a794ac2a5ea4775e",
+    "semantic_hash": "f27272e3770488a9a794ac2a5ea4775e"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.MarketContinuation.cs": {
+    "mtime": 1791545790.4301753,
+    "seen": 1791556608.9498315,
+    "ast_hash": "71fdc15a6d6a6878c0b09bcb3b051fe9",
+    "semantic_hash": "71fdc15a6d6a6878c0b09bcb3b051fe9"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.MarketEvents.cs": {
+    "mtime": 1791545790.4301753,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ea77c7f10e2beef5a69ebd57f9fc45b7",
+    "semantic_hash": "ea77c7f10e2beef5a69ebd57f9fc45b7"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.MarketKnowledge.cs": {
+    "mtime": 1791545790.4311738,
+    "seen": 1791556608.9498315,
+    "ast_hash": "12ead6047410f9315dd5becd3df39261",
+    "semantic_hash": "12ead6047410f9315dd5becd3df39261"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.MarketTime.cs": {
+    "mtime": 1791545790.4311738,
+    "seen": 1791556608.9498315,
+    "ast_hash": "dbd7558b76199f05efc0d73d03225b97",
+    "semantic_hash": "dbd7558b76199f05efc0d73d03225b97"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.PortFees.cs": {
+    "mtime": 1791545790.4326782,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ca1d7afca332ac3ef21d29e13a136bb0",
+    "semantic_hash": "ca1d7afca332ac3ef21d29e13a136bb0"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.ProductionTime.cs": {
+    "mtime": 1791545790.4336834,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d9c7dda3763e3e191dd7bb85efa7c2a4",
+    "semantic_hash": "d9c7dda3763e3e191dd7bb85efa7c2a4"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.ResourceSurvey.cs": {
+    "mtime": 1791545790.4336834,
+    "seen": 1791556608.9498315,
+    "ast_hash": "393c6e5181fdb9308ebdea6be41c7fd9",
+    "semantic_hash": "393c6e5181fdb9308ebdea6be41c7fd9"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.SolarSystem.cs": {
+    "mtime": 1791545790.434684,
+    "seen": 1791556608.9498315,
+    "ast_hash": "884319181bdf2335b64a33de8f888c6b",
+    "semantic_hash": "884319181bdf2335b64a33de8f888c6b"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.Time.cs": {
+    "mtime": 1791545790.434684,
+    "seen": 1791556608.9498315,
+    "ast_hash": "beaa1eefb0cd2c29f857dd459ce8e923",
+    "semantic_hash": "beaa1eefb0cd2c29f857dd459ce8e923"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.TradeExecution.cs": {
+    "mtime": 1791545790.4354625,
+    "seen": 1791556608.9498315,
+    "ast_hash": "71e50f4752908f0b408708edc2e9afbe",
+    "semantic_hash": "71e50f4752908f0b408708edc2e9afbe"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.TradeQuotes.cs": {
+    "mtime": 1791545790.4363122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bab91fd0811900edc24962395b241d3f",
+    "semantic_hash": "bab91fd0811900edc24962395b241d3f"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.TradingContinuation.cs": {
+    "mtime": 1791545790.4363122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2b198236cbc32096b252396855887233",
+    "semantic_hash": "2b198236cbc32096b252396855887233"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.TradingRoutes.cs": {
+    "mtime": 1791545790.4363122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ce9b97fa62928c4feed977c2e439e666",
+    "semantic_hash": "ce9b97fa62928c4feed977c2e439e666"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.Voyage.cs": {
+    "mtime": 1791545790.4363122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "48255ad6bf89d5594cda6dac13172e9c",
+    "semantic_hash": "48255ad6bf89d5594cda6dac13172e9c"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.VoyageContinuation.cs": {
+    "mtime": 1791545790.4363122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "dca73f71f5bc61045c457d101cb22e6a",
+    "semantic_hash": "dca73f71f5bc61045c457d101cb22e6a"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.VoyageFuel.cs": {
+    "mtime": 1791545790.4363122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e8103b01eea4484dad401b5ec4705d49",
+    "semantic_hash": "e8103b01eea4484dad401b5ec4705d49"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.VoyageLedger.cs": {
+    "mtime": 1791545790.4363122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "dd175d5511447cdb1e27a9a64120f276",
+    "semantic_hash": "dd175d5511447cdb1e27a9a64120f276"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.WeaponOperators.cs": {
+    "mtime": 1791545790.4363122,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bdaf3b32c7627fc13cd2eb1a9a6e5894",
+    "semantic_hash": "bdaf3b32c7627fc13cd2eb1a9a6e5894"
+  },
+  "src/DeepSpaceSaga.Engine/SimulationEngine.cs": {
+    "mtime": 1791545790.4427807,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2fec0c65b1bf30d73e3e220974cf311b",
+    "semantic_hash": "2fec0c65b1bf30d73e3e220974cf311b"
+  },
+  "src/DeepSpaceSaga.Engine/TradeQuoteCalculator.cs": {
+    "mtime": 1791545790.4427807,
+    "seen": 1791556608.9498315,
+    "ast_hash": "69129a48aff6c56fbc60cc75b9d0080f",
+    "semantic_hash": "69129a48aff6c56fbc60cc75b9d0080f"
+  },
+  "src/DeepSpaceSaga.Engine/Trading/TradingRouteEvaluator.cs": {
+    "mtime": 1791545790.4427807,
+    "seen": 1791556608.9498315,
+    "ast_hash": "42094fadff7d5fd88dee2ef9129f4e0b",
+    "semantic_hash": "42094fadff7d5fd88dee2ef9129f4e0b"
+  },
+  "src/DeepSpaceSaga.Motion/ApproachLineCaptureMath.cs": {
+    "mtime": 1791545790.4427807,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4ac843605050c7f3cfa9f45137f4e462",
+    "semantic_hash": "4ac843605050c7f3cfa9f45137f4e462"
+  },
+  "src/DeepSpaceSaga.Motion/ApproachPursuitMath.cs": {
+    "mtime": 1791545790.445799,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b1cd1fae37d0629d79adfc70941f566b",
+    "semantic_hash": "b1cd1fae37d0629d79adfc70941f566b"
+  },
+  "src/DeepSpaceSaga.Motion/CountermeasureGuidanceMath.cs": {
+    "mtime": 1791545790.4468522,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0956c33ff37175d6d0dc735a84673ffe",
+    "semantic_hash": "0956c33ff37175d6d0dc735a84673ffe"
+  },
+  "src/DeepSpaceSaga.Motion/DeepSpaceSaga.Motion.csproj": {
+    "mtime": 1791545790.4468522,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d13a5d507e4740d0527640ea33b36bab",
+    "semantic_hash": "d13a5d507e4740d0527640ea33b36bab"
+  },
+  "src/DeepSpaceSaga.Motion/IMotionPredictor.cs": {
+    "mtime": 1791545790.447852,
+    "seen": 1791556608.9498315,
+    "ast_hash": "83a504b49694d454740da30259979cb8",
+    "semantic_hash": "83a504b49694d454740da30259979cb8"
+  },
+  "src/DeepSpaceSaga.Motion/LinearMotionPredictor.cs": {
+    "mtime": 1791545790.448852,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f4a345da3f34c5c820121c57dae1168a",
+    "semantic_hash": "f4a345da3f34c5c820121c57dae1168a"
+  },
+  "src/DeepSpaceSaga.Motion/NavigationWaypointMath.cs": {
+    "mtime": 1791545790.4497974,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e07839cbc61e9fbb548d4df14cecee15",
+    "semantic_hash": "e07839cbc61e9fbb548d4df14cecee15"
+  },
+  "src/DeepSpaceSaga.Motion/OrbitalMotionMath.cs": {
+    "mtime": 1791545790.4497974,
+    "seen": 1791556608.9498315,
+    "ast_hash": "39a07e6476c3757df32493de8f1fc28a",
+    "semantic_hash": "39a07e6476c3757df32493de8f1fc28a"
+  },
+  "src/DeepSpaceSaga.Motion/TorpedoCollisionMath.cs": {
+    "mtime": 1791545790.450812,
+    "seen": 1791556608.9498315,
+    "ast_hash": "757cbb7844a84b5019e3e37bdd008bb8",
+    "semantic_hash": "757cbb7844a84b5019e3e37bdd008bb8"
+  },
+  "src/DeepSpaceSaga.Motion/TorpedoGuidanceMath.cs": {
+    "mtime": 1791545790.450812,
+    "seen": 1791556608.9498315,
+    "ast_hash": "54eabd5d0d2ba75f2b9de01c63203277",
+    "semantic_hash": "54eabd5d0d2ba75f2b9de01c63203277"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/AllScenarioSystemContentTests.cs": {
+    "mtime": 1791545790.4518025,
+    "seen": 1791556608.9498315,
+    "ast_hash": "87de8c5e4611ea3a804ebd716fee9688",
+    "semantic_hash": "87de8c5e4611ea3a804ebd716fee9688"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ApproachCameraIntegrationTests.cs": {
+    "mtime": 1791545790.4528077,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bc804a0438690f1afeb220f211e42ef0",
+    "semantic_hash": "bc804a0438690f1afeb220f211e42ef0"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ApproachRouteProjectionTests.cs": {
+    "mtime": 1791550411.807745,
+    "seen": 1791556608.9498315,
+    "ast_hash": "56a065d2f740e161ff84edd8cb51cc5a",
+    "semantic_hash": "56a065d2f740e161ff84edd8cb51cc5a"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/BasicCombatUiFlowTests.cs": {
+    "mtime": 1791545790.4528077,
+    "seen": 1791556608.9498315,
+    "ast_hash": "be1bf9675c97a007becd64cf627cf21d",
+    "semantic_hash": "be1bf9675c97a007becd64cf627cf21d"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/BeltDetailRenderingTests.cs": {
+    "mtime": 1791545790.4539747,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fde14d2542383f0df08cc36e8be84b15",
+    "semantic_hash": "fde14d2542383f0df08cc36e8be84b15"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CameraStateTests.cs": {
+    "mtime": 1791545790.4539747,
+    "seen": 1791556608.9498315,
+    "ast_hash": "76a02fff39461017f12d9b0c98dd721e",
+    "semantic_hash": "76a02fff39461017f12d9b0c98dd721e"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CameraStateZoomTests.cs": {
+    "mtime": 1791545790.4549727,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fb0ae57cd6b5beaad57fbced43953936",
+    "semantic_hash": "fb0ae57cd6b5beaad57fbced43953936"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ClusterInteractionEvidenceTests.cs": {
+    "mtime": 1791545790.456601,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4405fae803201a6c254b2f2d294c596a",
+    "semantic_hash": "4405fae803201a6c254b2f2d294c596a"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ClusterResourceMapTests.cs": {
+    "mtime": 1791545790.456601,
+    "seen": 1791556608.9498315,
+    "ast_hash": "300b366330be0d8efbec5533f1748e6f",
+    "semantic_hash": "300b366330be0d8efbec5533f1748e6f"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ClusterTravelEstimatesTests.cs": {
+    "mtime": 1791545790.4575992,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2b3eab774ef1bff28e327a190076278a",
+    "semantic_hash": "2b3eab774ef1bff28e327a190076278a"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CombatEffectTests.cs": {
+    "mtime": 1791545790.4575992,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8c46d5db6d4cd92b07ac0d986acf5f60",
+    "semantic_hash": "8c46d5db6d4cd92b07ac0d986acf5f60"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CombatJournalPanelTests.cs": {
+    "mtime": 1791545790.4585989,
+    "seen": 1791556608.9498315,
+    "ast_hash": "07d348eeb562600cb8bd44fe2841cb38",
+    "semantic_hash": "07d348eeb562600cb8bd44fe2841cb38"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CombatMapVisualTests.cs": {
+    "mtime": 1791545790.4585989,
+    "seen": 1791556608.9498315,
+    "ast_hash": "27cd44bceadb698a9e7d124ac013d285",
+    "semantic_hash": "27cd44bceadb698a9e7d124ac013d285"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CombatPaletteContentTests.cs": {
+    "mtime": 1791545790.4595926,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b5fa361a7423a1364d7e04c855e61e24",
+    "semantic_hash": "b5fa361a7423a1364d7e04c855e61e24"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CombatPresentationResumeTests.cs": {
+    "mtime": 1791545790.4595926,
+    "seen": 1791556608.9498315,
+    "ast_hash": "40f29c8dac8ff0b1c61d9570b86df539",
+    "semantic_hash": "40f29c8dac8ff0b1c61d9570b86df539"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CombatSessionRoundtripTests.cs": {
+    "mtime": 1791545790.460601,
+    "seen": 1791556608.9498315,
+    "ast_hash": "75c35500139f59d90d4dea2718fd5f71",
+    "semantic_hash": "75c35500139f59d90d4dea2718fd5f71"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CombatTrajectoryTests.cs": {
+    "mtime": 1791545790.460601,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e7652b870640754ffaf170af92f8497c",
+    "semantic_hash": "e7652b870640754ffaf170af92f8497c"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CombatVisualSettingsTests.cs": {
+    "mtime": 1791545790.4616,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f14283d076e247579b62e1a113143483",
+    "semantic_hash": "f14283d076e247579b62e1a113143483"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CommandsPanelSkeletonTests.cs": {
+    "mtime": 1791545790.4631095,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bc40bdc8678540d2d67764a6e2376139",
+    "semantic_hash": "bc40bdc8678540d2d67764a6e2376139"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ContractsScreenTests.cs": {
+    "mtime": 1791545790.4631095,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b2b4fb5323ea672b1dac9c19c980449f",
+    "semantic_hash": "b2b4fb5323ea672b1dac9c19c980449f"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CountermeasureContentTests.cs": {
+    "mtime": 1791545790.4641135,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8621abcde3eb5c7568857f7ab7a5d6b0",
+    "semantic_hash": "8621abcde3eb5c7568857f7ab7a5d6b0"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CountermeasurePaletteTests.cs": {
+    "mtime": 1791545790.4641135,
+    "seen": 1791556608.9498315,
+    "ast_hash": "aad979bfc0fdaef0b5d42cc12f3e1c66",
+    "semantic_hash": "aad979bfc0fdaef0b5d42cc12f3e1c66"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CountermeasureRenderingTests.cs": {
+    "mtime": 1791545790.4641135,
+    "seen": 1791556608.9498315,
+    "ast_hash": "21eaacc50f627b97555d8a4000429524",
+    "semantic_hash": "21eaacc50f627b97555d8a4000429524"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CountermeasureSessionRoundtripTests.cs": {
+    "mtime": 1791545790.4654827,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c9bb8116785503c03ebac53ede0396dc",
+    "semantic_hash": "c9bb8116785503c03ebac53ede0396dc"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CountermeasureUiFlowTests.cs": {
+    "mtime": 1791545790.4654827,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7c9cad059f19011a91bea576e4065fb6",
+    "semantic_hash": "7c9cad059f19011a91bea576e4065fb6"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/CountermeasureVisualSettingsTests.cs": {
+    "mtime": 1791545790.4662294,
+    "seen": 1791556608.9498315,
+    "ast_hash": "487dea8ea450103e789211f7f5fd6784",
+    "semantic_hash": "487dea8ea450103e789211f7f5fd6784"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj": {
+    "mtime": 1791545790.4662294,
+    "seen": 1791556608.9498315,
+    "ast_hash": "38c733a09eed7a3ab679114a5b86d0ff",
+    "semantic_hash": "38c733a09eed7a3ab679114a5b86d0ff"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/DefaultSystemContentTests.cs": {
+    "mtime": 1791545790.4662294,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6444209e68608afcaa3f0c57693cfa82",
+    "semantic_hash": "6444209e68608afcaa3f0c57693cfa82"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/DefenseCommandPanelTests.cs": {
+    "mtime": 1791545790.4662294,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a55849a1d7484bfe5b57f05bc5e015c4",
+    "semantic_hash": "a55849a1d7484bfe5b57f05bc5e015c4"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/DefenseMapAnnotationsTests.cs": {
+    "mtime": 1791545790.4662294,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e9a5c56fd25079a6be69553baa3b53bd",
+    "semantic_hash": "e9a5c56fd25079a6be69553baa3b53bd"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/DialogueIntegrationTests.cs": {
+    "mtime": 1791545790.4662294,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4298c77509e313c55246622bd1904bce",
+    "semantic_hash": "4298c77509e313c55246622bd1904bce"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/DialoguePortraitComposerTests.cs": {
+    "mtime": 1791545790.4662294,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d6d673010c3c6dfafb33d989882ad665",
+    "semantic_hash": "d6d673010c3c6dfafb33d989882ad665"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/DialogueScreenTests.cs": {
+    "mtime": 1791545790.4662294,
+    "seen": 1791556608.9498315,
+    "ast_hash": "18d594afac1b7eb180b7551bf93f9902",
+    "semantic_hash": "18d594afac1b7eb180b7551bf93f9902"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/FinanceScreenTests.cs": {
+    "mtime": 1791545790.4662294,
+    "seen": 1791556608.9498315,
+    "ast_hash": "381f60c195da1da9bdaa64c843c28a82",
+    "semantic_hash": "381f60c195da1da9bdaa64c843c28a82"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/FullClusterContentTests.cs": {
+    "mtime": 1791545790.4662294,
+    "seen": 1791556608.9498315,
+    "ast_hash": "464a6cb84d4d77c1a976137542fe8ee8",
+    "semantic_hash": "464a6cb84d4d77c1a976137542fe8ee8"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/FutureTrajectoryTests.cs": {
+    "mtime": 1791545790.4728608,
+    "seen": 1791556608.9498315,
+    "ast_hash": "274c1486892a5286dd2ded500958d09a",
+    "semantic_hash": "274c1486892a5286dd2ded500958d09a"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GameMenuLayoutTests.cs": {
+    "mtime": 1791545790.4728608,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d0e14419ce68893714a9a5d9088aff37",
+    "semantic_hash": "d0e14419ce68893714a9a5d9088aff37"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GameMenuVisualTests.cs": {
+    "mtime": 1791545790.4728608,
+    "seen": 1791556608.9498315,
+    "ast_hash": "99e237e52f13ca7dce972335f2b6c7c0",
+    "semantic_hash": "99e237e52f13ca7dce972335f2b6c7c0"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GameSessionDockAutoOpenTests.cs": {
+    "mtime": 1791545790.4728608,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c20c4e3a85f8bd33750415af0f5636ed",
+    "semantic_hash": "c20c4e3a85f8bd33750415af0f5636ed"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GameSessionDockingRequestTests.cs": {
+    "mtime": 1791545790.4728608,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7f239dc8879278c6149e5e1dbd312311",
+    "semantic_hash": "7f239dc8879278c6149e5e1dbd312311"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GameSessionNavigationTests.cs": {
+    "mtime": 1791545790.4755177,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c3cca3d5d04b02e263b015bae901042d",
+    "semantic_hash": "c3cca3d5d04b02e263b015bae901042d"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GameSessionObjectInteractionTests.cs": {
+    "mtime": 1791546756.537792,
+    "seen": 1791556608.9498315,
+    "ast_hash": "58c2eab7804cc9b6c8ae0b244ced2d52",
+    "semantic_hash": "58c2eab7804cc9b6c8ae0b244ced2d52"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GameSessionPlayerShipTests.cs": {
+    "mtime": 1791545790.4769804,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3239010cedbdfdb8569d6a1a38c63928",
+    "semantic_hash": "3239010cedbdfdb8569d6a1a38c63928"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GameSessionScaleFilterTests.cs": {
+    "mtime": 1791545790.4769804,
+    "seen": 1791556608.9498315,
+    "ast_hash": "da4b3ae6f8d8dd854e9c39a8645a7c08",
+    "semantic_hash": "da4b3ae6f8d8dd854e9c39a8645a7c08"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GameSessionScalePanelTests.cs": {
+    "mtime": 1791545790.4779835,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ae8b0dd2b6965619c5b8a61f736685f6",
+    "semantic_hash": "ae8b0dd2b6965619c5b8a61f736685f6"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GameSessionScreenTrailColorTests.cs": {
+    "mtime": 1791545790.4779835,
+    "seen": 1791556608.9498315,
+    "ast_hash": "de46b523c09334acca4a9ec813daddf9",
+    "semantic_hash": "de46b523c09334acca4a9ec813daddf9"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GameSessionUiScaleTests.cs": {
+    "mtime": 1791545790.4779835,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e559037436be7e16edd3acd48a9c6428",
+    "semantic_hash": "e559037436be7e16edd3acd48a9c6428"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GameSessionZoomTests.cs": {
+    "mtime": 1791545790.4789839,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ecf97e3a183faa0bb744658ffb633716",
+    "semantic_hash": "ecf97e3a183faa0bb744658ffb633716"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GameTimeDisplayTests.cs": {
+    "mtime": 1791545790.4789839,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b8a761d7a9a6f99625eb3f75b123bdf4",
+    "semantic_hash": "b8a761d7a9a6f99625eb3f75b123bdf4"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GenericButtonTypeATests.cs": {
+    "mtime": 1791545790.4799845,
+    "seen": 1791556608.9498315,
+    "ast_hash": "93e879489ca17a1d3a19709931a8e0b0",
+    "semantic_hash": "93e879489ca17a1d3a19709931a8e0b0"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GenericWindowTypeATests.cs": {
+    "mtime": 1791545790.4799845,
+    "seen": 1791556608.9498315,
+    "ast_hash": "021e73c41421a0e371ed7524cb460f3e",
+    "semantic_hash": "021e73c41421a0e371ed7524cb460f3e"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GridPanelTests.cs": {
+    "mtime": 1791545790.4809835,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ffd5d1424dd802197396b0dc1316a2f9",
+    "semantic_hash": "ffd5d1424dd802197396b0dc1316a2f9"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/GridRendererTests.cs": {
+    "mtime": 1791545790.4809835,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e9176a088d168aa4536309de03324ef6",
+    "semantic_hash": "e9176a088d168aa4536309de03324ef6"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/HireScreenTests.cs": {
+    "mtime": 1791545790.481984,
+    "seen": 1791556608.9498315,
+    "ast_hash": "639ec9748d3bc75e5196e5f47579f27b",
+    "semantic_hash": "639ec9748d3bc75e5196e5f47579f27b"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ImageButtonTests.cs": {
+    "mtime": 1791545790.481984,
+    "seen": 1791556608.9498315,
+    "ast_hash": "620be343533672b51901e785d4f197ea",
+    "semantic_hash": "620be343533672b51901e785d4f197ea"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ImagePanelTests.cs": {
+    "mtime": 1791545790.4829836,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c4c837c7027c9411d72ea350136fc7cd",
+    "semantic_hash": "c4c837c7027c9411d72ea350136fc7cd"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/InfoPanelTests.cs": {
+    "mtime": 1791545790.4829836,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2af16e6e7d0ec3f5d326184476fb55f1",
+    "semantic_hash": "2af16e6e7d0ec3f5d326184476fb55f1"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/InitialSystemViewTests.cs": {
+    "mtime": 1791545790.484023,
+    "seen": 1791556608.9498315,
+    "ast_hash": "35f797dfef53f10f54001bcba74dae35",
+    "semantic_hash": "35f797dfef53f10f54001bcba74dae35"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/KeyboardEdgeTrackerTests.cs": {
+    "mtime": 1791545790.484023,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2adf2e8185e077d9ddfa7951dcdbc8fb",
+    "semantic_hash": "2adf2e8185e077d9ddfa7951dcdbc8fb"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/LoadLayoutTests.cs": {
+    "mtime": 1791545790.4850225,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f2dad82c9204019f81f9b1094926326b",
+    "semantic_hash": "f2dad82c9204019f81f9b1094926326b"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/LoadScreenVisualTests.cs": {
+    "mtime": 1791545790.4866605,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0e7d243420428512155d9883031bf6ef",
+    "semantic_hash": "0e7d243420428512155d9883031bf6ef"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/LocalClusterContentTests.cs": {
+    "mtime": 1791545790.4866605,
+    "seen": 1791556608.9498315,
+    "ast_hash": "cdb233845b5aad629130b0b8f2bb23e0",
+    "semantic_hash": "cdb233845b5aad629130b0b8f2bb23e0"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/LocalClusterMapTests.cs": {
+    "mtime": 1791545790.487651,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a9d8cbbab1492788e40f687fb3fc420d",
+    "semantic_hash": "a9d8cbbab1492788e40f687fb3fc420d"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/LocalSessionIntegrationTests.cs": {
+    "mtime": 1791545790.4886503,
+    "seen": 1791556608.9498315,
+    "ast_hash": "23242164072bb9b90ca9c9973f45d548",
+    "semantic_hash": "23242164072bb9b90ca9c9973f45d548"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/LocalizationTests.cs": {
+    "mtime": 1791545790.4886503,
+    "seen": 1791556608.9498315,
+    "ast_hash": "acb807300f04e41bb0e1236533447b49",
+    "semantic_hash": "acb807300f04e41bb0e1236533447b49"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/LogTailReader.cs": {
+    "mtime": 1791545790.4896495,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9588a97ba7021db7c0890f7dc997b4ad",
+    "semantic_hash": "9588a97ba7021db7c0890f7dc997b4ad"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/MainMenuScreenTests.cs": {
+    "mtime": 1791545790.4896495,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bddd8c787eede80a2a6416373c3ab0f3",
+    "semantic_hash": "bddd8c787eede80a2a6416373c3ab0f3"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/MalePortraitTests.cs": {
+    "mtime": 1791545790.4906502,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2c48053fbfe63999998ba9b382f41559",
+    "semantic_hash": "2c48053fbfe63999998ba9b382f41559"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/MapViewGeometryTests.cs": {
+    "mtime": 1791551215.3238802,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0e144f776d3b5125bad4b3eb740ab51f",
+    "semantic_hash": "0e144f776d3b5125bad4b3eb740ab51f"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/MarketFlowContentTests.cs": {
+    "mtime": 1791545790.4906502,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d1b355c78c48864baeac03daaeb4d814",
+    "semantic_hash": "d1b355c78c48864baeac03daaeb4d814"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/MechanicsPanelTests.cs": {
+    "mtime": 1791545790.4916508,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c2be8452c266e22a5e23b77061435d74",
+    "semantic_hash": "c2be8452c266e22a5e23b77061435d74"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/MenuLayoutTests.cs": {
+    "mtime": 1791545790.4916508,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3f966a86051f3095f5cf6608c58bfa19",
+    "semantic_hash": "3f966a86051f3095f5cf6608c58bfa19"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ModalPauseTests.cs": {
+    "mtime": 1791545790.492755,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3c5a04e2e9131f7990219d5c43076de6",
+    "semantic_hash": "3c5a04e2e9131f7990219d5c43076de6"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ModalTransitionTests.cs": {
+    "mtime": 1791545790.4931161,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b21b0667b5a040c10e8a3f911c6031c1",
+    "semantic_hash": "b21b0667b5a040c10e8a3f911c6031c1"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/MultiClusterOverviewTests.cs": {
+    "mtime": 1791545790.4931161,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2ad28179b45fbb9ab55fdbda9351c2dd",
+    "semantic_hash": "2ad28179b45fbb9ab55fdbda9351c2dd"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/NinePatchTests.cs": {
+    "mtime": 1791545790.4941227,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f1e4612c81b3cc68100e7ea72291f2ea",
+    "semantic_hash": "f1e4612c81b3cc68100e7ea72291f2ea"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ObjectInfoPanelTests.cs": {
+    "mtime": 1791545790.4951193,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9f8a99e1c47e07c3ac61f4586d9ee3ab",
+    "semantic_hash": "9f8a99e1c47e07c3ac61f4586d9ee3ab"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ObjectLabelTests.cs": {
+    "mtime": 1791549831.4214072,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e66aa4148c12a257356237ff94479bd4",
+    "semantic_hash": "e66aa4148c12a257356237ff94479bd4"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ObjectTrailBufferTests.cs": {
+    "mtime": 1791547502.0793843,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d6d9721033547872d190cc50c46bf6c2",
+    "semantic_hash": "d6d9721033547872d190cc50c46bf6c2"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ObjectTrailGeometryTests.cs": {
+    "mtime": 1791545790.4969063,
+    "seen": 1791556608.9498315,
+    "ast_hash": "267df63adbf98f0bc0ef46cd6ea67606",
+    "semantic_hash": "267df63adbf98f0bc0ef46cd6ea67606"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ObjectTrailStoreTests.cs": {
+    "mtime": 1791545790.4969063,
+    "seen": 1791556608.9498315,
+    "ast_hash": "286c39bf4f1f192adaa4f71fb68db712",
+    "semantic_hash": "286c39bf4f1f192adaa4f71fb68db712"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/OrbitalClientPredictionTests.cs": {
+    "mtime": 1791545790.498081,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c6f329ac64df1f2d285a11ef3e6bd9ce",
+    "semantic_hash": "c6f329ac64df1f2d285a11ef3e6bd9ce"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/PauseResumeVisualContinuityTests.cs": {
+    "mtime": 1791545790.498081,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ccebdccab65b43cac761c951c41ebb49",
+    "semantic_hash": "ccebdccab65b43cac761c951c41ebb49"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/PiratePresentationTests.cs": {
+    "mtime": 1791549133.923258,
+    "seen": 1791556608.9498315,
+    "ast_hash": "504e78d7ce93f7d9813f34ef3476780a",
+    "semantic_hash": "504e78d7ce93f7d9813f34ef3476780a"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/PirateScenarioTests.cs": {
+    "mtime": 1791545790.498081,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f314b2911910594fb645bc905e9504d5",
+    "semantic_hash": "f314b2911910594fb645bc905e9504d5"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/PortraitComposerTests.cs": {
+    "mtime": 1791545790.498081,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d9a29bd115da6ffe07eb45186c5cc75f",
+    "semantic_hash": "d9a29bd115da6ffe07eb45186c5cc75f"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/PortraitGeneratorTests.cs": {
+    "mtime": 1791545790.498081,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f2f14e3a81bc2039ac1adb41985c0f00",
+    "semantic_hash": "f2f14e3a81bc2039ac1adb41985c0f00"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/PresentedFrameEvidenceTests.cs": {
+    "mtime": 1791545790.498081,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9f62f789a0b670f156056ea358cd3643",
+    "semantic_hash": "9f62f789a0b670f156056ea358cd3643"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ProgressBarTests.cs": {
+    "mtime": 1791545790.498081,
+    "seen": 1791556608.9498315,
+    "ast_hash": "54573cb2d95d405a4a3b0f9e9ed2e566",
+    "semantic_hash": "54573cb2d95d405a4a3b0f9e9ed2e566"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/RepeatableTradingVoyageUiTests.cs": {
+    "mtime": 1791545790.498081,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b0579ca0cf4e3415e0ac10ca3c8746ed",
+    "semantic_hash": "b0579ca0cf4e3415e0ac10ca3c8746ed"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/RouteRiskContentTests.cs": {
+    "mtime": 1791545790.498081,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e530478568d45dd29d9ed4dc3cff9317",
+    "semantic_hash": "e530478568d45dd29d9ed4dc3cff9317"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/SaveLayoutTests.cs": {
+    "mtime": 1791545790.502878,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b88944bea4565d8b9e450ceadcbd1df7",
+    "semantic_hash": "b88944bea4565d8b9e450ceadcbd1df7"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/SaveReliabilityTests.cs": {
+    "mtime": 1791545790.502878,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5f07bacbb79083f931621eece75410b2",
+    "semantic_hash": "5f07bacbb79083f931621eece75410b2"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/SaveScreenVisualTests.cs": {
+    "mtime": 1791545790.502878,
+    "seen": 1791556608.9498315,
+    "ast_hash": "37a92496a0abc8b0631901aeba9a496c",
+    "semantic_hash": "37a92496a0abc8b0631901aeba9a496c"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/SaveSlotRepositoryTests.cs": {
+    "mtime": 1791545790.5054903,
+    "seen": 1791556608.9498315,
+    "ast_hash": "97659486c2a600c1cdde20f301832cf3",
+    "semantic_hash": "97659486c2a600c1cdde20f301832cf3"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/SaveSlotsTests.cs": {
+    "mtime": 1791545790.5054903,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0d115f6f128752a0b148de49f97691aa",
+    "semantic_hash": "0d115f6f128752a0b148de49f97691aa"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ScenarioSelectLayoutTests.cs": {
+    "mtime": 1791545790.506497,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ee50d1d32e4fb6940e20fcdcdd886230",
+    "semantic_hash": "ee50d1d32e4fb6940e20fcdcdd886230"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ScenarioSelectRowVisualsTests.cs": {
+    "mtime": 1791545790.5074728,
+    "seen": 1791556608.9498315,
+    "ast_hash": "574bcbf3ef52d4d55b648d10f58419e1",
+    "semantic_hash": "574bcbf3ef52d4d55b648d10f58419e1"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ScenarioSelectScreenTests.cs": {
+    "mtime": 1791545790.5074728,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9e84097d69d7faea3b1bc4324177f4fd",
+    "semantic_hash": "9e84097d69d7faea3b1bc4324177f4fd"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ScreenEventTests.cs": {
+    "mtime": 1791545790.5085645,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7ce97ea30b25e7554ab5fdbb8174577d",
+    "semantic_hash": "7ce97ea30b25e7554ab5fdbb8174577d"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ScreenStackTests.cs": {
+    "mtime": 1791545790.5085645,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7b2fda35580435545280a16d0527a5fb",
+    "semantic_hash": "7b2fda35580435545280a16d0527a5fb"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/SelectedObjectDistanceTests.cs": {
+    "mtime": 1791545790.5095634,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9c3efd3b56fc398f131ee66389e2a5bb",
+    "semantic_hash": "9c3efd3b56fc398f131ee66389e2a5bb"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/SessionReliabilityTests.cs": {
+    "mtime": 1791545790.5095634,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b573e52f3b04fef27a238fda365aef90",
+    "semantic_hash": "b573e52f3b04fef27a238fda365aef90"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/SettingsScreenTests.cs": {
+    "mtime": 1791545790.510564,
+    "seen": 1791556608.9498315,
+    "ast_hash": "cb4decb0d6774f888bf45ea18a298c2e",
+    "semantic_hash": "cb4decb0d6774f888bf45ea18a298c2e"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/ShipScreenTests.cs": {
+    "mtime": 1791545790.510564,
+    "seen": 1791556608.9498315,
+    "ast_hash": "48a4a3d8f6f9aa6ecaa1269870d24577",
+    "semantic_hash": "48a4a3d8f6f9aa6ecaa1269870d24577"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/SnapshotBufferTests.cs": {
+    "mtime": 1791550716.848391,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b21b0c6cb644b55465bff2af32d1a8f3",
+    "semantic_hash": "b21b0c6cb644b55465bff2af32d1a8f3"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/SpaceMapColorResolverTests.cs": {
+    "mtime": 1791545790.5121922,
+    "seen": 1791556608.9498315,
+    "ast_hash": "61ec5f763444f1fafb55c5afff20cdad",
+    "semantic_hash": "61ec5f763444f1fafb55c5afff20cdad"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/SpeedPanelTests.cs": {
+    "mtime": 1791545790.5130312,
+    "seen": 1791556608.9498315,
+    "ast_hash": "650ee70f2bf9f077723d9b343a51e495",
+    "semantic_hash": "650ee70f2bf9f077723d9b343a51e495"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/StationMarketCatalogContentTests.cs": {
+    "mtime": 1791545790.5130312,
+    "seen": 1791556608.9498315,
+    "ast_hash": "618e640ae941e8b5e3d1d539728b269c",
+    "semantic_hash": "618e640ae941e8b5e3d1d539728b269c"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/StationMarketDemoContentTests.cs": {
+    "mtime": 1791545790.5140364,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b735680e93edc22c684080cf07a19abf",
+    "semantic_hash": "b735680e93edc22c684080cf07a19abf"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/StationMarketEventContentTests.cs": {
+    "mtime": 1791545790.5140364,
+    "seen": 1791556608.9498315,
+    "ast_hash": "28bf36e1b8e2bb48ccafe441733dd064",
+    "semantic_hash": "28bf36e1b8e2bb48ccafe441733dd064"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/StationResourceFieldContentTests.cs": {
+    "mtime": 1791545790.515036,
+    "seen": 1791556608.9498315,
+    "ast_hash": "528c772c8bc05f5ccef3272e49227a03",
+    "semantic_hash": "528c772c8bc05f5ccef3272e49227a03"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/StationScreenTests.cs": {
+    "mtime": 1791545790.515436,
+    "seen": 1791556608.9498315,
+    "ast_hash": "72962d6319a57f3710a304e183392865",
+    "semantic_hash": "72962d6319a57f3710a304e183392865"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/StationToolbarTests.cs": {
+    "mtime": 1791545790.5164862,
+    "seen": 1791556608.9498315,
+    "ast_hash": "89bb02e521ddb132729156e16c952fbb",
+    "semantic_hash": "89bb02e521ddb132729156e16c952fbb"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/SystemMapNavigationTests.cs": {
+    "mtime": 1791545790.5170128,
+    "seen": 1791556608.9498315,
+    "ast_hash": "675e0b111826fdca87776bd660ee9cc7",
+    "semantic_hash": "675e0b111826fdca87776bd660ee9cc7"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapAsyncIoTests.cs": {
+    "mtime": 1791549296.2106488,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d25d278baa1a34281bffeee1fda066ae",
+    "semantic_hash": "d25d278baa1a34281bffeee1fda066ae"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapClusterStabilityTests.cs": {
+    "mtime": 1791550162.3585503,
+    "seen": 1791556608.9498315,
+    "ast_hash": "72abe5badddcefc4f5a13650e47bc462",
+    "semantic_hash": "72abe5badddcefc4f5a13650e47bc462"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapDepthRendererTests.cs": {
+    "mtime": 1791545790.5170128,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3a4b1bf41d84b0870fa8749b787d87ba",
+    "semantic_hash": "3a4b1bf41d84b0870fa8749b787d87ba"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapFrameStateTests.cs": {
+    "mtime": 1791551687.85229,
+    "seen": 1791556608.9498315,
+    "ast_hash": "183ab21a09c7929133f4d04a548a0185",
+    "semantic_hash": "183ab21a09c7929133f4d04a548a0185"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapInteractionTests.cs": {
+    "mtime": 1791546705.0841687,
+    "seen": 1791556608.9498315,
+    "ast_hash": "86d3df38ead42315142ba62053743006",
+    "semantic_hash": "86d3df38ead42315142ba62053743006"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapLabelBoundsTests.cs": {
+    "mtime": 1791545790.5180817,
+    "seen": 1791556608.9498315,
+    "ast_hash": "800fdc8cdb7892661645421f0d301fa6",
+    "semantic_hash": "800fdc8cdb7892661645421f0d301fa6"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapLayoutOrderTests.cs": {
+    "mtime": 1791548810.5537207,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c28bcd51dedf0f0fa8f221bcbda8b241",
+    "semantic_hash": "c28bcd51dedf0f0fa8f221bcbda8b241"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapMarkerPolicyTests.cs": {
+    "mtime": 1791545790.5180817,
+    "seen": 1791556608.9498315,
+    "ast_hash": "41a4559786d21811eba53660275cf536",
+    "semantic_hash": "41a4559786d21811eba53660275cf536"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapPausedWorkTests.cs": {
+    "mtime": 1791547907.2515492,
+    "seen": 1791556608.9498315,
+    "ast_hash": "426d061d283a86d2ebd9fe16028a5cce",
+    "semantic_hash": "426d061d283a86d2ebd9fe16028a5cce"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapPipelineIntegrationTests.cs": {
+    "mtime": 1791553659.9784572,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bc09dd74cdcc1691e24da4231b497b49",
+    "semantic_hash": "bc09dd74cdcc1691e24da4231b497b49"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapRendererTests.cs": {
+    "mtime": 1791552529.7994351,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0e11a9abcfa3f92ee776a110454d255e",
+    "semantic_hash": "0e11a9abcfa3f92ee776a110454d255e"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapResourceLifetimeTests.cs": {
+    "mtime": 1791549580.0106323,
+    "seen": 1791556608.9498315,
+    "ast_hash": "96f1a182dd3764fceccdba60db49b235",
+    "semantic_hash": "96f1a182dd3764fceccdba60db49b235"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapSceneCacheTests.cs": {
+    "mtime": 1791553118.410858,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3c7963d88e7a142be32740d9d71da155",
+    "semantic_hash": "3c7963d88e7a142be32740d9d71da155"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapSceneGeometryTests.cs": {
+    "mtime": 1791552114.6147478,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f2d77ebdb8512f64f58f1294db3f2e7a",
+    "semantic_hash": "f2d77ebdb8512f64f58f1294db3f2e7a"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapSelectionReticleTests.cs": {
+    "mtime": 1791545790.5180817,
+    "seen": 1791556608.9498315,
+    "ast_hash": "03cdf0cb0de8e5b67f9b1c17b7747781",
+    "semantic_hash": "03cdf0cb0de8e5b67f9b1c17b7747781"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapSmoothnessTests.cs": {
+    "mtime": 1791550720.9356172,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f1168bc11a62d735e81787ab58c22c7f",
+    "semantic_hash": "f1168bc11a62d735e81787ab58c22c7f"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapSnapshotTests.cs": {
+    "mtime": 1791548284.120647,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5e4a96f1d0284b508e6b09a2c14adf33",
+    "semantic_hash": "5e4a96f1d0284b508e6b09a2c14adf33"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapViewTests.cs": {
+    "mtime": 1791555743.8143933,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2ab92c62e17245d705beda8aa8b4464d",
+    "semantic_hash": "2ab92c62e17245d705beda8aa8b4464d"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TacticalMapWorkBudgetTests.cs": {
+    "mtime": 1791547531.7422383,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bab69b0c82f7956d560372cd7cecef18",
+    "semantic_hash": "bab69b0c82f7956d560372cd7cecef18"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TestAssemblySetup.cs": {
+    "mtime": 1791545790.520081,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2480e7f723ba8ac7bb9e152ca3a5c126",
+    "semantic_hash": "2480e7f723ba8ac7bb9e152ca3a5c126"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TetrarchClassContentTests.cs": {
+    "mtime": 1791545790.5210812,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c078ca91a502e93831a7fc8f5a2b5f93",
+    "semantic_hash": "c078ca91a502e93831a7fc8f5a2b5f93"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TetrarchLoadoutTests.cs": {
+    "mtime": 1791545790.5220804,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c133f65cd270c15c8d085a4c660e4a17",
+    "semantic_hash": "c133f65cd270c15c8d085a4c660e4a17"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TextInputBoxTests.cs": {
+    "mtime": 1791545790.5220804,
+    "seen": 1791556608.9498315,
+    "ast_hash": "46629c6b88a0b6adb89a0c4d546ab4e2",
+    "semantic_hash": "46629c6b88a0b6adb89a0c4d546ab4e2"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TimeSessionContinuityTests.cs": {
+    "mtime": 1791545790.52308,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6e30f5db22139e3989a6f7beb72052c2",
+    "semantic_hash": "6e30f5db22139e3989a6f7beb72052c2"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TorpedoCommandContentTests.cs": {
+    "mtime": 1791545790.52308,
+    "seen": 1791556608.9498315,
+    "ast_hash": "736739f79ab90163b69e3d5539ee357e",
+    "semantic_hash": "736739f79ab90163b69e3d5539ee357e"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TorpedoCommandPanelTests.cs": {
+    "mtime": 1791545790.52308,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b50c284252f0feb4cf17089dc43f27ed",
+    "semantic_hash": "b50c284252f0feb4cf17089dc43f27ed"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TorpedoInspectionTests.cs": {
+    "mtime": 1791545790.5241635,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5bf990550a3ec2aca773ae721cdac5c0",
+    "semantic_hash": "5bf990550a3ec2aca773ae721cdac5c0"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TorpedoLauncherContentTests.cs": {
+    "mtime": 1791545790.5241635,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0d1911befa33e194276478b1c6204c4b",
+    "semantic_hash": "0d1911befa33e194276478b1c6204c4b"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TorpedoPreviewTests.cs": {
+    "mtime": 1791545790.5251632,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4aed2be0a13dedbd5bda137150240f0b",
+    "semantic_hash": "4aed2be0a13dedbd5bda137150240f0b"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TorpedoSelfDestructUiTests.cs": {
+    "mtime": 1791545790.525469,
+    "seen": 1791556608.9498315,
+    "ast_hash": "10c7d8f1d6bc8ebb35dfe0c9d9bd69c5",
+    "semantic_hash": "10c7d8f1d6bc8ebb35dfe0c9d9bd69c5"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TradeScreenTests.cs": {
+    "mtime": 1791545790.5267217,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9e55452651d2a5723301d2300ffc7e49",
+    "semantic_hash": "9e55452651d2a5723301d2300ffc7e49"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TradeUxTests.cs": {
+    "mtime": 1791545790.5267217,
+    "seen": 1791556608.9498315,
+    "ast_hash": "58414e21787ee0f0ac6be87fd1fc8487",
+    "semantic_hash": "58414e21787ee0f0ac6be87fd1fc8487"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TradeVisitContextTests.cs": {
+    "mtime": 1791545790.5267217,
+    "seen": 1791556608.9498315,
+    "ast_hash": "da50a8473f5a29d1ffa3fc8ab2e6abc7",
+    "semantic_hash": "da50a8473f5a29d1ffa3fc8ab2e6abc7"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TrajectoryViewportTests.cs": {
+    "mtime": 1791545790.5267217,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2ceef3a09a0ee495681cd7d5cbc54f88",
+    "semantic_hash": "2ceef3a09a0ee495681cd7d5cbc54f88"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/TurnTrajectorySamplingTests.cs": {
+    "mtime": 1791545790.5267217,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fc4d13c5e237ef1e791db60ee22dd8dc",
+    "semantic_hash": "fc4d13c5e237ef1e791db60ee22dd8dc"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/UiAssetLoaderTests.cs": {
+    "mtime": 1791545790.5267217,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0bf0638b74bbbbf2254d7d28cfb8a8cb",
+    "semantic_hash": "0bf0638b74bbbbf2254d7d28cfb8a8cb"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/UnifiedPortraitTests.cs": {
+    "mtime": 1791545790.5267217,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6ac83377c1a183deba9022f7b311a72b",
+    "semantic_hash": "6ac83377c1a183deba9022f7b311a72b"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/VoyageFuelContentTests.cs": {
+    "mtime": 1791545790.5267217,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4664e39cfb342af59dd6449c040286fc",
+    "semantic_hash": "4664e39cfb342af59dd6449c040286fc"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/VoyageUserPathTests.cs": {
+    "mtime": 1791545790.5267217,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1fdc3d10948e40cb64110ae83f8102b9",
+    "semantic_hash": "1fdc3d10948e40cb64110ae83f8102b9"
+  },
+  "tests/DeepSpaceSaga.Client.Tests/XenonWindowChromeTests.cs": {
+    "mtime": 1791545790.5267217,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a6af06f665a8e2b6ca10e3139a28926f",
+    "semantic_hash": "a6af06f665a8e2b6ca10e3139a28926f"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/ArchitectureTests.cs": {
+    "mtime": 1791545790.5267217,
+    "seen": 1791556608.9498315,
+    "ast_hash": "62d5e187da02ecefe28b0d7fd44e28b2",
+    "semantic_hash": "62d5e187da02ecefe28b0d7fd44e28b2"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/ClusterGeographyContractTests.cs": {
+    "mtime": 1791545790.5267217,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e46069001dd0c4c7112cc0d48d264443",
+    "semantic_hash": "e46069001dd0c4c7112cc0d48d264443"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/CombatEventTests.cs": {
+    "mtime": 1791545790.5267217,
+    "seen": 1791556608.9498315,
+    "ast_hash": "09269b244c2f963510f9368d5e828eaa",
+    "semantic_hash": "09269b244c2f963510f9368d5e828eaa"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/CombatSnapshotTests.cs": {
+    "mtime": 1791545790.5328608,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ae6b0281857d471470d65e54072f603d",
+    "semantic_hash": "ae6b0281857d471470d65e54072f603d"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/CommandResultTests.cs": {
+    "mtime": 1791545790.5328608,
+    "seen": 1791556608.9498315,
+    "ast_hash": "938a58b5acf5f393e4d1aae2c8a6cb1e",
+    "semantic_hash": "938a58b5acf5f393e4d1aae2c8a6cb1e"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/CountermeasureEventTests.cs": {
+    "mtime": 1791545790.5328608,
+    "seen": 1791556608.9498315,
+    "ast_hash": "88266cadf02ee65274f43ad054061297",
+    "semantic_hash": "88266cadf02ee65274f43ad054061297"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/CountermeasureSnapshotTests.cs": {
+    "mtime": 1791545790.5328608,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1a81e4a1f80d3687f1d51a785abe53ba",
+    "semantic_hash": "1a81e4a1f80d3687f1d51a785abe53ba"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj": {
+    "mtime": 1791545790.5328608,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0e7671aa1251f6b18a08e091f76de9bf",
+    "semantic_hash": "0e7671aa1251f6b18a08e091f76de9bf"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/DialogueContractTests.cs": {
+    "mtime": 1791545790.5355504,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6701eac9a702db28f35f9577a07eb8cc",
+    "semantic_hash": "6701eac9a702db28f35f9577a07eb8cc"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/GameCalendarTests.cs": {
+    "mtime": 1791545790.5355504,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c4465b343ea839f12a19e8a52a462cfd",
+    "semantic_hash": "c4465b343ea839f12a19e8a52a462cfd"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/InstalledModuleSnapshotTests.cs": {
+    "mtime": 1791545790.5366132,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8e86568ac2d6327b69a66ce7da5c8b20",
+    "semantic_hash": "8e86568ac2d6327b69a66ce7da5c8b20"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/ResourceOrbitBindingTests.cs": {
+    "mtime": 1791545790.5376112,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5fc476fe04b397bf98f91acf793c35f2",
+    "semantic_hash": "5fc476fe04b397bf98f91acf793c35f2"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/ResourceSurveySnapshotTests.cs": {
+    "mtime": 1791545790.5376112,
+    "seen": 1791556608.9498315,
+    "ast_hash": "cf6bb2a096e0c2dea9f2265fbf7b9106",
+    "semantic_hash": "cf6bb2a096e0c2dea9f2265fbf7b9106"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/SaveSlotInfoTests.cs": {
+    "mtime": 1791545790.5376112,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7f180cfcb4f573c07e7a4f85a2d55442",
+    "semantic_hash": "7f180cfcb4f573c07e7a4f85a2d55442"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/ShipEventTests.cs": {
+    "mtime": 1791545790.538612,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0231b97a1ade3d29fa5d7e9858d83a50",
+    "semantic_hash": "0231b97a1ade3d29fa5d7e9858d83a50"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/SmokeTests.cs": {
+    "mtime": 1791545790.538612,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d12150484848b97775a56b21e4d869f5",
+    "semantic_hash": "d12150484848b97775a56b21e4d869f5"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/StationMarketKnowledgeSnapshotTests.cs": {
+    "mtime": 1791545790.538612,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2af5fc9982ae89fe7ee68da92ed9b196",
+    "semantic_hash": "2af5fc9982ae89fe7ee68da92ed9b196"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/StationTradeSnapshotTests.cs": {
+    "mtime": 1791545790.538612,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1b5302385a2607448f77ee273f401ca4",
+    "semantic_hash": "1b5302385a2607448f77ee273f401ca4"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/SystemMapContractTests.cs": {
+    "mtime": 1791545790.538612,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e5f1cecf0f3cedebba2553c87f74032d",
+    "semantic_hash": "e5f1cecf0f3cedebba2553c87f74032d"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/TorpedoTerminationTests.cs": {
+    "mtime": 1791545790.538612,
+    "seen": 1791556608.9498315,
+    "ast_hash": "790e808287f816779334d5bb58cb32db",
+    "semantic_hash": "790e808287f816779334d5bb58cb32db"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/TradeQuoteContractTests.cs": {
+    "mtime": 1791545790.538612,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9d058019279ed321b83579ee5e189bbf",
+    "semantic_hash": "9d058019279ed321b83579ee5e189bbf"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/TradingRouteSnapshotTests.cs": {
+    "mtime": 1791545790.538612,
+    "seen": 1791556608.9498315,
+    "ast_hash": "870011cdc54e9f118e744c012b6c7576",
+    "semantic_hash": "870011cdc54e9f118e744c012b6c7576"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/VoyageFinanceContractTests.cs": {
+    "mtime": 1791545790.5429196,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2f5b386268b43fc4b5a7eb21486474a2",
+    "semantic_hash": "2f5b386268b43fc4b5a7eb21486474a2"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/VoyageFuelContractTests.cs": {
+    "mtime": 1791545790.5429196,
+    "seen": 1791556608.9498315,
+    "ast_hash": "46c08d3934fea2613d6d029edd8774bc",
+    "semantic_hash": "46c08d3934fea2613d6d029edd8774bc"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/VoyageSnapshotTests.cs": {
+    "mtime": 1791545790.5429196,
+    "seen": 1791556608.9498315,
+    "ast_hash": "69c96ce0446141cfa0707bc6587daaec",
+    "semantic_hash": "69c96ce0446141cfa0707bc6587daaec"
+  },
+  "tests/DeepSpaceSaga.Contracts.Tests/WeaponOperatorSnapshotTests.cs": {
+    "mtime": 1791545790.5429196,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7dd79cdf21b3a09f25209ce882646d92",
+    "semantic_hash": "7dd79cdf21b3a09f25209ce882646d92"
+  },
+  "tests/DeepSpaceSaga.EconomyBalance.Tests/BalanceReportTests.cs": {
+    "mtime": 1791545790.5454822,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f2d61c75d1195190ce1b9ba8a3984b74",
+    "semantic_hash": "f2d61c75d1195190ce1b9ba8a3984b74"
+  },
+  "tests/DeepSpaceSaga.EconomyBalance.Tests/BalanceRunTests.cs": {
+    "mtime": 1791545790.5454822,
+    "seen": 1791556608.9498315,
+    "ast_hash": "aa52f20f8e67d811d0760045029f6eaa",
+    "semantic_hash": "aa52f20f8e67d811d0760045029f6eaa"
+  },
+  "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj": {
+    "mtime": 1791545790.5466688,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ad222d05b06512a8fe4787f5f4f8eb98",
+    "semantic_hash": "ad222d05b06512a8fe4787f5f4f8eb98"
+  },
+  "tests/DeepSpaceSaga.EconomyBalance.Tests/LongVoyageDiagnosticsTests.cs": {
+    "mtime": 1791545790.5470753,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ee817827f98d7b74e2bf6744cb1f70ec",
+    "semantic_hash": "ee817827f98d7b74e2bf6744cb1f70ec"
+  },
+  "tests/DeepSpaceSaga.EconomyBalance.Tests/LongVoyageRunnerTests.cs": {
+    "mtime": 1791545790.5470753,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2c9d5d00046e72ef9b009afdf0db0e2b",
+    "semantic_hash": "2c9d5d00046e72ef9b009afdf0db0e2b"
+  },
+  "tests/DeepSpaceSaga.EconomyBalance.Tests/MarketHealthEvaluatorTests.cs": {
+    "mtime": 1791545790.5480807,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b64ca9d9ffc48dac8e36d2b0daacfc3f",
+    "semantic_hash": "b64ca9d9ffc48dac8e36d2b0daacfc3f"
+  },
+  "tests/DeepSpaceSaga.EconomyBalance.Tests/StrategyBalanceEvaluatorTests.cs": {
+    "mtime": 1791545790.5490794,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c089cefc8bfe00567cbb21dbc3e0a86b",
+    "semantic_hash": "c089cefc8bfe00567cbb21dbc3e0a86b"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ApproachCommandTests.cs": {
+    "mtime": 1791545790.5490794,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c96d57caad352b4a296c48bd61ba9504",
+    "semantic_hash": "c96d57caad352b4a296c48bd61ba9504"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/AuthoritativeOrbitRuntimeTests.cs": {
+    "mtime": 1791545790.5500789,
+    "seen": 1791556608.9498315,
+    "ast_hash": "18520ac04aceb1ad5bcc924f65056979",
+    "semantic_hash": "18520ac04aceb1ad5bcc924f65056979"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/AutomaticDefenseTests.cs": {
+    "mtime": 1791545790.5500789,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3a95b8b9d081d34f9cf2f4df8adb581c",
+    "semantic_hash": "3a95b8b9d081d34f9cf2f4df8adb581c"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/BasicCombatEndToEndTests.cs": {
+    "mtime": 1791545790.551079,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4698f985ad4d4598933a8a9bc0fa1ecc",
+    "semantic_hash": "4698f985ad4d4598933a8a9bc0fa1ecc"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CargoCostAccountingTests.cs": {
+    "mtime": 1791545790.5520804,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9853ca96eaaeb7bcd153a001125d4a3b",
+    "semantic_hash": "9853ca96eaaeb7bcd153a001125d4a3b"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CatalogCompatibilityTests.cs": {
+    "mtime": 1791545790.5530796,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2c8c6e1b11853e73e4dc12e06bdfe906",
+    "semantic_hash": "2c8c6e1b11853e73e4dc12e06bdfe906"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ClusterCorrectnessCorpusTests.cs": {
+    "mtime": 1791545790.5541565,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a220cebdbe151b00af25c03043d6175e",
+    "semantic_hash": "a220cebdbe151b00af25c03043d6175e"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ClusterLocalResumeTests.cs": {
+    "mtime": 1791545790.5541565,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d34b9d4fdcc08e1e48a07bbc2ffa3ec6",
+    "semantic_hash": "d34b9d4fdcc08e1e48a07bbc2ffa3ec6"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ClusterResourcePlacementTests.cs": {
+    "mtime": 1791545790.5551565,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a8ccd2bcdb7a77e700f0c4856ec3f447",
+    "semantic_hash": "a8ccd2bcdb7a77e700f0c4856ec3f447"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ClusterSaveStateTests.cs": {
+    "mtime": 1791545790.5557992,
+    "seen": 1791556608.9498315,
+    "ast_hash": "354b8aa8a943eb8a7016d70e2f87a92b",
+    "semantic_hash": "354b8aa8a943eb8a7016d70e2f87a92b"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ClusterVoyageIntegrationTests.cs": {
+    "mtime": 1791545790.5557992,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2563a90f97bfd6aab147e6850d93a471",
+    "semantic_hash": "2563a90f97bfd6aab147e6850d93a471"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CombatBootstrapTests.cs": {
+    "mtime": 1791545790.5568326,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b7f3c01418f041da3f10205db56d010f",
+    "semantic_hash": "b7f3c01418f041da3f10205db56d010f"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CombatContentLoaderTests.cs": {
+    "mtime": 1791545790.5568326,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ffe2828754f29283c6694cee7ae024f9",
+    "semantic_hash": "ffe2828754f29283c6694cee7ae024f9"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CombatJournalTests.cs": {
+    "mtime": 1791545790.5568326,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f3560220b32f975deacbf3d32c1075f9",
+    "semantic_hash": "f3560220b32f975deacbf3d32c1075f9"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CombatSaveLoadTests.cs": {
+    "mtime": 1791545790.5578315,
+    "seen": 1791556608.9498315,
+    "ast_hash": "775b15cb0b6404f059004cc03c776768",
+    "semantic_hash": "775b15cb0b6404f059004cc03c776768"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CombatSaveSchemaTests.cs": {
+    "mtime": 1791545790.5578315,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5621e86559099ea74354a2059fde954d",
+    "semantic_hash": "5621e86559099ea74354a2059fde954d"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CombatWreckTests.cs": {
+    "mtime": 1791545790.5588326,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4c9c718c4a9ae0eee972c945eb2fae40",
+    "semantic_hash": "4c9c718c4a9ae0eee972c945eb2fae40"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CommandDefinitionLoaderDirectoryTests.cs": {
+    "mtime": 1791545790.5598352,
+    "seen": 1791556608.9498315,
+    "ast_hash": "484ad821b0f27226a2609d716f98127f",
+    "semantic_hash": "484ad821b0f27226a2609d716f98127f"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CommandDefinitionLoaderTests.cs": {
+    "mtime": 1791545790.5598352,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0528861eb790515dfe46214ae1bf19b2",
+    "semantic_hash": "0528861eb790515dfe46214ae1bf19b2"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CountermeasureBootstrapTests.cs": {
+    "mtime": 1791545790.5608318,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a3bf1cdfa24d377b8740e2e345e189e1",
+    "semantic_hash": "a3bf1cdfa24d377b8740e2e345e189e1"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CountermeasureContentLoaderTests.cs": {
+    "mtime": 1791545790.5608318,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a774be1c8d9cac843bd0f71fe4dfb11b",
+    "semantic_hash": "a774be1c8d9cac843bd0f71fe4dfb11b"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CountermeasureEndToEndTests.cs": {
+    "mtime": 1791545790.5608318,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c7bf568ac9b1e6da5e19116b65b34118",
+    "semantic_hash": "c7bf568ac9b1e6da5e19116b65b34118"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CountermeasureResolutionTests.cs": {
+    "mtime": 1791545790.561832,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a668844005565dbe20f110c4fdce405b",
+    "semantic_hash": "a668844005565dbe20f110c4fdce405b"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CountermeasureSaveLoadTests.cs": {
+    "mtime": 1791545790.561832,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6d9f00986f71771dac3342008517595f",
+    "semantic_hash": "6d9f00986f71771dac3342008517595f"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/CountermeasureSaveSchemaTests.cs": {
+    "mtime": 1791545790.5630476,
+    "seen": 1791556608.9498315,
+    "ast_hash": "eedf81673ff2a239d448edd58e9bebad",
+    "semantic_hash": "eedf81673ff2a239d448edd58e9bebad"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj": {
+    "mtime": 1791545790.5630476,
+    "seen": 1791556608.9498315,
+    "ast_hash": "dbdc2eb3a685fd574478af28a4f08c13",
+    "semantic_hash": "dbdc2eb3a685fd574478af28a4f08c13"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/DialogueEffectTests.cs": {
+    "mtime": 1791545790.5630476,
+    "seen": 1791556608.9498315,
+    "ast_hash": "95c93c27049396f3a830e81a7aad75cd",
+    "semantic_hash": "95c93c27049396f3a830e81a7aad75cd"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/DialoguePortraitGenerationTests.cs": {
+    "mtime": 1791545790.564051,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f1e7411925229fe88cdf359ae64244d1",
+    "semantic_hash": "f1e7411925229fe88cdf359ae64244d1"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/DialogueTests.cs": {
+    "mtime": 1791545790.564051,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fb6a446faaa1fd2ad55ed9711b9ecf51",
+    "semantic_hash": "fb6a446faaa1fd2ad55ed9711b9ecf51"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/DockCommandTests.cs": {
+    "mtime": 1791545790.5654714,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ab8adea0cf56f440872523ad200af101",
+    "semantic_hash": "ab8adea0cf56f440872523ad200af101"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/EconomyBalanceSeamTests.cs": {
+    "mtime": 1791545790.5654714,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f478c4724d43dcaf561c037698fed875",
+    "semantic_hash": "f478c4724d43dcaf561c037698fed875"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/EconomyTimeContinuityTests.cs": {
+    "mtime": 1791545790.5654714,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8fd66b4ae143253fd39ecd1360c9f067",
+    "semantic_hash": "8fd66b4ae143253fd39ecd1360c9f067"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/EngineCommandTests.cs": {
+    "mtime": 1791545790.5654714,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1b2796bd21113b28b2c0e2d09cbad76b",
+    "semantic_hash": "1b2796bd21113b28b2c0e2d09cbad76b"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/EngineContentLoaderSaveFileTests.cs": {
+    "mtime": 1791545790.5654714,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7f1f8bbf7abed801d9a2d7b5d89d9024",
+    "semantic_hash": "7f1f8bbf7abed801d9a2d7b5d89d9024"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/EpicSolarIntegrationTests.cs": {
+    "mtime": 1791545790.5654714,
+    "seen": 1791556608.9498315,
+    "ast_hash": "00a69ca689646376cde0b6995ab4118f",
+    "semantic_hash": "00a69ca689646376cde0b6995ab4118f"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/GameDataRegistryTests.cs": {
+    "mtime": 1791545790.5654714,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d405dbda168fc32cf0b993cdfcdcdf27",
+    "semantic_hash": "d405dbda168fc32cf0b993cdfcdcdf27"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/GeneratedWorldPersistenceTests.cs": {
+    "mtime": 1791545790.5654714,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d9ef393010f33a5044bcf5fdae40a7c1",
+    "semantic_hash": "d9ef393010f33a5044bcf5fdae40a7c1"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/GenerationInputSchemaTests.cs": {
+    "mtime": 1791545790.5654714,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f1afb829a187a80a639e5825efc165a6",
+    "semantic_hash": "f1afb829a187a80a639e5825efc165a6"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/InstalledModuleProjectionTests.cs": {
+    "mtime": 1791545790.5654714,
+    "seen": 1791556608.9498315,
+    "ast_hash": "86d4a37a3591752baa524dc36276644c",
+    "semantic_hash": "86d4a37a3591752baa524dc36276644c"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/InterceptionChanceTests.cs": {
+    "mtime": 1791545790.5654714,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c2c3b89c0db5e0c2c6e6c64b7297730d",
+    "semantic_hash": "c2c3b89c0db5e0c2c6e6c64b7297730d"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ItemCatalogSchemaTests.cs": {
+    "mtime": 1791545790.5731027,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1de48d66a5c53d40a51af31f5f5de192",
+    "semantic_hash": "1de48d66a5c53d40a51af31f5f5de192"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ItemCatalogTests.cs": {
+    "mtime": 1791545790.5731027,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ad0c0dd1e3d1357a631c952c605578cb",
+    "semantic_hash": "ad0c0dd1e3d1357a631c952c605578cb"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/KnownMapProjectionTests.cs": {
+    "mtime": 1791545790.5731027,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ea2393ac2093acb95974f5a2b7a2a166",
+    "semantic_hash": "ea2393ac2093acb95974f5a2b7a2a166"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/LocalClusterGenerationTests.cs": {
+    "mtime": 1791545790.5731027,
+    "seen": 1791556608.9498315,
+    "ast_hash": "637ee038cd5ee9e2efef654d995d4bfe",
+    "semantic_hash": "637ee038cd5ee9e2efef654d995d4bfe"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/LocalWorldSaveRoundtripTests.cs": {
+    "mtime": 1791545790.5731027,
+    "seen": 1791556608.9498315,
+    "ast_hash": "71cfa9d190b29fd4304552aeee864e96",
+    "semantic_hash": "71cfa9d190b29fd4304552aeee864e96"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/MarketKnowledgeTests.cs": {
+    "mtime": 1791545790.5754929,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7806a9827e2811949b2876c19b1c095d",
+    "semantic_hash": "7806a9827e2811949b2876c19b1c095d"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/MarketRevisionTests.cs": {
+    "mtime": 1791545790.5754929,
+    "seen": 1791556608.9498315,
+    "ast_hash": "aaf191195d528b7633482e35e73d1712",
+    "semantic_hash": "aaf191195d528b7633482e35e73d1712"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/MarketSaveLoadContinuityTests.cs": {
+    "mtime": 1791545790.5767672,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0c132ae6f4facf94b4c30c03680db616",
+    "semantic_hash": "0c132ae6f4facf94b4c30c03680db616"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/MasterSeedTests.cs": {
+    "mtime": 1791545790.5767672,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7850e8145762e5e77a5c72e687cc93ba",
+    "semantic_hash": "7850e8145762e5e77a5c72e687cc93ba"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ModuleDefinitionLoaderTests.cs": {
+    "mtime": 1791545790.577771,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d50d7c1e2380f1acb382b21e27904c9c",
+    "semantic_hash": "d50d7c1e2380f1acb382b21e27904c9c"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/MultiClusterPlacementTests.cs": {
+    "mtime": 1791545790.577771,
+    "seen": 1791556608.9498315,
+    "ast_hash": "cdc88925291b47aa98b549eff271f839",
+    "semantic_hash": "cdc88925291b47aa98b549eff271f839"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ObjectImageResolutionTests.cs": {
+    "mtime": 1791545790.577771,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7389f14cefb55d77e47b435b9f381317",
+    "semantic_hash": "7389f14cefb55d77e47b435b9f381317"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ObjectInteractionStateTests.cs": {
+    "mtime": 1791545790.5789921,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6883b32e73222855eaa56ad224f3431f",
+    "semantic_hash": "6883b32e73222855eaa56ad224f3431f"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/OrbitalDockingDepartureTests.cs": {
+    "mtime": 1791545790.5799952,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0d5c222b9e6943f1bb1f5776e6f6491e",
+    "semantic_hash": "0d5c222b9e6943f1bb1f5776e6f6491e"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/OrbitalSynchronizationTests.cs": {
+    "mtime": 1791545790.5799952,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d93c1888a6b8871f62e9ccad6540a602",
+    "semantic_hash": "d93c1888a6b8871f62e9ccad6540a602"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/PauseSimulationTests.cs": {
+    "mtime": 1791545790.5799952,
+    "seen": 1791556608.9498315,
+    "ast_hash": "84325dea85211af1500e63c3f5d2efb7",
+    "semantic_hash": "84325dea85211af1500e63c3f5d2efb7"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/PortFeeScheduleTests.cs": {
+    "mtime": 1791545790.5809958,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ce4e5f0443d3de758f18b25a0e54f279",
+    "semantic_hash": "ce4e5f0443d3de758f18b25a0e54f279"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/QuotedTradeExecutionTests.cs": {
+    "mtime": 1791545790.581996,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ccc3ad46b2516920b9fb2de28b44c0d5",
+    "semantic_hash": "ccc3ad46b2516920b9fb2de28b44c0d5"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/RationScheduleTests.cs": {
+    "mtime": 1791545790.581996,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0723cbb14d32d4dde6e84efaed8a8902",
+    "semantic_hash": "0723cbb14d32d4dde6e84efaed8a8902"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/RepeatableTradingVoyageTests.cs": {
+    "mtime": 1791545790.5829961,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d59d751b9a76781fe63ec9f378258980",
+    "semantic_hash": "d59d751b9a76781fe63ec9f378258980"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ResourceSurveyTests.cs": {
+    "mtime": 1791545790.5829961,
+    "seen": 1791556608.9498315,
+    "ast_hash": "cfd99b9e4542b91a3164e51403d963a4",
+    "semantic_hash": "cfd99b9e4542b91a3164e51403d963a4"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ReviewRegressionTests.cs": {
+    "mtime": 1791545790.5829961,
+    "seen": 1791556608.9498315,
+    "ast_hash": "caca193a8a206a279d4024b10b34ecd5",
+    "semantic_hash": "caca193a8a206a279d4024b10b34ecd5"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/RngStreamNamesTests.cs": {
+    "mtime": 1791545790.5843534,
+    "seen": 1791556608.9498315,
+    "ast_hash": "caf1fc29b54228a01f8bfe83dc4f08ad",
+    "semantic_hash": "caf1fc29b54228a01f8bfe83dc4f08ad"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/RouteRiskIntegrationTests.cs": {
+    "mtime": 1791545790.5843534,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4425a569aa643e7c56903464b8db8f9e",
+    "semantic_hash": "4425a569aa643e7c56903464b8db8f9e"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/SaveLoadContinuityTests.cs": {
+    "mtime": 1791545790.5859296,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f2fe057340bd954aea9deefc18a5afd5",
+    "semantic_hash": "f2fe057340bd954aea9deefc18a5afd5"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ScenarioEngineTests.cs": {
+    "mtime": 1791545790.5869622,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4e99c436ab151df1d361a3b32d5c3039",
+    "semantic_hash": "4e99c436ab151df1d361a3b32d5c3039"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ScenarioGroupTranslationTests.cs": {
+    "mtime": 1791545790.5869622,
+    "seen": 1791556608.9498315,
+    "ast_hash": "75cb90f99110b57974a6ffc1d7d799ef",
+    "semantic_hash": "75cb90f99110b57974a6ffc1d7d799ef"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/ScenarioLoaderTests.cs": {
+    "mtime": 1791545790.5879607,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b25d7ba594f84fb87d2d12bf8a855dfe",
+    "semantic_hash": "b25d7ba594f84fb87d2d12bf8a855dfe"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/SeededBeltAsteroidsTests.cs": {
+    "mtime": 1791545790.5879607,
+    "seen": 1791556608.9498315,
+    "ast_hash": "113dd17719db1e27dbc1e5f8a240d76f",
+    "semantic_hash": "113dd17719db1e27dbc1e5f8a240d76f"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/SeededWorldBootstrapTests.cs": {
+    "mtime": 1791545790.5889618,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c87217dccc0982c7704f28f9ee5553ed",
+    "semantic_hash": "c87217dccc0982c7704f28f9ee5553ed"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/SimulationClockTests.cs": {
+    "mtime": 1791545790.5889618,
+    "seen": 1791556608.9498315,
+    "ast_hash": "955d74fe887520d3cc0e8614e3ea4d1a",
+    "semantic_hash": "955d74fe887520d3cc0e8614e3ea4d1a"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/SmokeTests.cs": {
+    "mtime": 1791545790.5899615,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b0dcf84c80d9aa1a408dec72b3607f4f",
+    "semantic_hash": "b0dcf84c80d9aa1a408dec72b3607f4f"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/SnapshotRenderMetadataTests.cs": {
+    "mtime": 1791545790.5899615,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5c0bf75dab8e024ca00621ee62507002",
+    "semantic_hash": "5c0bf75dab8e024ca00621ee62507002"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/StationEconomyBatch2Tests.cs": {
+    "mtime": 1791545790.5919616,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4bebb5c9cc8c11fa3ae8281871da144b",
+    "semantic_hash": "4bebb5c9cc8c11fa3ae8281871da144b"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/StationEconomyGenerationTests.cs": {
+    "mtime": 1791545790.5919616,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1e142612408c4f1b2e7986e76bc0ae67",
+    "semantic_hash": "1e142612408c4f1b2e7986e76bc0ae67"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/StationMarketEventCatalogTests.cs": {
+    "mtime": 1791545790.5929613,
+    "seen": 1791556608.9498315,
+    "ast_hash": "57d88fb9438f858fef33cc32f0abd602",
+    "semantic_hash": "57d88fb9438f858fef33cc32f0abd602"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/StationMarketProfileContentTests.cs": {
+    "mtime": 1791545790.5929613,
+    "seen": 1791556608.9498315,
+    "ast_hash": "71d2c4c3dbe618f69a2abb8fac5c1ee6",
+    "semantic_hash": "71d2c4c3dbe618f69a2abb8fac5c1ee6"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/StationPricingTests.cs": {
+    "mtime": 1791545790.5940008,
+    "seen": 1791556608.9498315,
+    "ast_hash": "636d1dd0d49b02d274f586a44c622ed9",
+    "semantic_hash": "636d1dd0d49b02d274f586a44c622ed9"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/StationResourceFieldTests.cs": {
+    "mtime": 1791545790.5940008,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f2efe62388d5327ac317a5a74ce542ca",
+    "semantic_hash": "f2efe62388d5327ac317a5a74ce542ca"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/StationSizeFactorsTests.cs": {
+    "mtime": 1791545790.595,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2eb74a44e9afe0dcb6efbf3dc93039cd",
+    "semantic_hash": "2eb74a44e9afe0dcb6efbf3dc93039cd"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/StationTravelTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "dd3a49bb99342404f0c7e6f1cd8fe0ed",
+    "semantic_hash": "dd3a49bb99342404f0c7e6f1cd8fe0ed"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/SystemCorrectnessCorpusTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "86e455aa0b54a553dd7fbeb0a9bed75e",
+    "semantic_hash": "86e455aa0b54a553dd7fbeb0a9bed75e"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TorpedoHistoryTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ef275af6926263a83581bfd15ac4faad",
+    "semantic_hash": "ef275af6926263a83581bfd15ac4faad"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TorpedoImpactTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8f423a8df84b0d8f272c6f87ddd2d98c",
+    "semantic_hash": "8f423a8df84b0d8f272c6f87ddd2d98c"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TorpedoLaunchTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "25d949c84569598943fc04d6bb25560f",
+    "semantic_hash": "25d949c84569598943fc04d6bb25560f"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TorpedoSelfDestructTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a88921ccfe140f699e6d0a1e4e32f06a",
+    "semantic_hash": "a88921ccfe140f699e6d0a1e4e32f06a"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TradeCommandTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "50b418b170de4b4ec1e0a43a2ef98000",
+    "semantic_hash": "50b418b170de4b4ec1e0a43a2ef98000"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TradeQuoteCalculatorTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "68ccfd8d21edc5a627ab87431b2fdc09",
+    "semantic_hash": "68ccfd8d21edc5a627ab87431b2fdc09"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TradeQuoteIssuanceTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0f4afcd41246767942b652a67fb9c9f0",
+    "semantic_hash": "0f4afcd41246767942b652a67fb9c9f0"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TradeSnapshotProjectionTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "99dfc09bc14cf71bde756fe30f09a333",
+    "semantic_hash": "99dfc09bc14cf71bde756fe30f09a333"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TradingContinuationReviewTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "cafceb1c154d5e6ea15496cfd1090b2f",
+    "semantic_hash": "cafceb1c154d5e6ea15496cfd1090b2f"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TradingEconomyContinuityTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e8596e8e659dfb1121d696834278f178",
+    "semantic_hash": "e8596e8e659dfb1121d696834278f178"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TradingEconomySaveSchemaTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f973aaae8542c7f5f326825ddb16ce0c",
+    "semantic_hash": "f973aaae8542c7f5f326825ddb16ce0c"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TradingGraphGeneratorTests.cs": {
+    "mtime": 1791545790.5954726,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e1f521efaa341963b39428be0ee938b8",
+    "semantic_hash": "e1f521efaa341963b39428be0ee938b8"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TradingMapBootstrapTests.cs": {
+    "mtime": 1791545790.6028566,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a6323603a58b97944664ef708249a6ea",
+    "semantic_hash": "a6323603a58b97944664ef708249a6ea"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TradingMapGeometryTests.cs": {
+    "mtime": 1791545790.6028566,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fd03cc648dcb984528f33fe1d8f869ed",
+    "semantic_hash": "fd03cc648dcb984528f33fe1d8f869ed"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TradingMapSchemaTests.cs": {
+    "mtime": 1791545790.6028566,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a6bc3003b44db4ff03b4c9c431236038",
+    "semantic_hash": "a6bc3003b44db4ff03b4c9c431236038"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TradingRouteEvaluatorTests.cs": {
+    "mtime": 1791545790.6028566,
+    "seen": 1791556608.9498315,
+    "ast_hash": "caf4379f54996ba1353bbb20e8433104",
+    "semantic_hash": "caf4379f54996ba1353bbb20e8433104"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/TradingVoyageFixture.cs": {
+    "mtime": 1791545790.6028566,
+    "seen": 1791556608.9498315,
+    "ast_hash": "38e257437b211111cd387396cfa47f95",
+    "semantic_hash": "38e257437b211111cd387396cfa47f95"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/VoyageFuelAccountingTests.cs": {
+    "mtime": 1791545790.6055043,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d6e5afc6d06db2564fa27fa923bae4c4",
+    "semantic_hash": "d6e5afc6d06db2564fa27fa923bae4c4"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/VoyageFuelLifecycleTests.cs": {
+    "mtime": 1791545790.6055043,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6e4fc74d7353adea1554a1b8cc0c777d",
+    "semantic_hash": "6e4fc74d7353adea1554a1b8cc0c777d"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/VoyageLedgerLifecycleTests.cs": {
+    "mtime": 1791545790.6071594,
+    "seen": 1791556608.9498315,
+    "ast_hash": "515c5d4cec60e29d7ac5f1691d284427",
+    "semantic_hash": "515c5d4cec60e29d7ac5f1691d284427"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/VoyageLifecycleTests.cs": {
+    "mtime": 1791545790.6071594,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1e9c07fcf7520f152004de061f5f02b7",
+    "semantic_hash": "1e9c07fcf7520f152004de061f5f02b7"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/VoyagePersistenceTests.cs": {
+    "mtime": 1791545790.6081638,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a6aa94645ef50c3d818d520a11a89979",
+    "semantic_hash": "a6aa94645ef50c3d818d520a11a89979"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/VoyageProfitAccountingTests.cs": {
+    "mtime": 1791545790.6081638,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8ba2d8c851779d23e50aa7020a5f5151",
+    "semantic_hash": "8ba2d8c851779d23e50aa7020a5f5151"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/VoyageSaveLoadContinuityTests.cs": {
+    "mtime": 1791545790.6091623,
+    "seen": 1791556608.9498315,
+    "ast_hash": "63cd7b1f0d7c29f92f268150f6dd91b3",
+    "semantic_hash": "63cd7b1f0d7c29f92f268150f6dd91b3"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorRuntimeTests.cs": {
+    "mtime": 1791545790.6091623,
+    "seen": 1791556608.9498315,
+    "ast_hash": "66d1dde008ed1e65fae504e3259c45bf",
+    "semantic_hash": "66d1dde008ed1e65fae504e3259c45bf"
+  },
+  "tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorSchemaTests.cs": {
+    "mtime": 1791545790.6091623,
+    "seen": 1791556608.9498315,
+    "ast_hash": "51948656a7bb62ad34695d02618a9848",
+    "semantic_hash": "51948656a7bb62ad34695d02618a9848"
+  },
+  "tests/DeepSpaceSaga.Motion.Tests/AbsoluteOrbitMathTests.cs": {
+    "mtime": 1791545790.6101635,
+    "seen": 1791556608.9498315,
+    "ast_hash": "faaddfca158d3a467892d0f995ac42b3",
+    "semantic_hash": "faaddfca158d3a467892d0f995ac42b3"
+  },
+  "tests/DeepSpaceSaga.Motion.Tests/ApproachLineCaptureTests.cs": {
+    "mtime": 1791545790.6111636,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bb61a5929095f347b94862d386f64df1",
+    "semantic_hash": "bb61a5929095f347b94862d386f64df1"
+  },
+  "tests/DeepSpaceSaga.Motion.Tests/ApproachPursuitMathTests.cs": {
+    "mtime": 1791545790.6111636,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9b7fe64c555f5a4ab03d7c4bb06bc2ce",
+    "semantic_hash": "9b7fe64c555f5a4ab03d7c4bb06bc2ce"
+  },
+  "tests/DeepSpaceSaga.Motion.Tests/CountermeasureGuidanceTests.cs": {
+    "mtime": 1791545790.6126678,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fc92ed1c0ce7748f9eb532b9bfffecff",
+    "semantic_hash": "fc92ed1c0ce7748f9eb532b9bfffecff"
+  },
+  "tests/DeepSpaceSaga.Motion.Tests/DeepSpaceSaga.Motion.Tests.csproj": {
+    "mtime": 1791545790.613672,
+    "seen": 1791556608.9498315,
+    "ast_hash": "660cb0d051dc01b399a76ee62fc72601",
+    "semantic_hash": "660cb0d051dc01b399a76ee62fc72601"
+  },
+  "tests/DeepSpaceSaga.Motion.Tests/LinearMotionTests.cs": {
+    "mtime": 1791545790.613672,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bafb27efa284fbfae77412cf080a52c3",
+    "semantic_hash": "bafb27efa284fbfae77412cf080a52c3"
+  },
+  "tests/DeepSpaceSaga.Motion.Tests/MotionPositionTests.cs": {
+    "mtime": 1791545790.613672,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2eb3ba09c29ed0f039d8202ae01e992c",
+    "semantic_hash": "2eb3ba09c29ed0f039d8202ae01e992c"
+  },
+  "tests/DeepSpaceSaga.Motion.Tests/NavigationWaypointMathTests.cs": {
+    "mtime": 1791545790.614672,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e08c76abd4c8300c3182e64511e926f2",
+    "semantic_hash": "e08c76abd4c8300c3182e64511e926f2"
+  },
+  "tests/DeepSpaceSaga.Motion.Tests/SmokeTests.cs": {
+    "mtime": 1791545790.6154654,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fea405211334356279b2838f55b27e4c",
+    "semantic_hash": "fea405211334356279b2838f55b27e4c"
+  },
+  "tests/DeepSpaceSaga.Motion.Tests/TorpedoCollisionTests.cs": {
+    "mtime": 1791545790.6154654,
+    "seen": 1791556608.9498315,
+    "ast_hash": "284dc35e09eccb42f5c0428808376bf8",
+    "semantic_hash": "284dc35e09eccb42f5c0428808376bf8"
+  },
+  "tests/DeepSpaceSaga.Motion.Tests/TorpedoGuidanceTests.cs": {
+    "mtime": 1791545790.616762,
+    "seen": 1791556608.9498315,
+    "ast_hash": "38405052ae12232e134e092bc7191992",
+    "semantic_hash": "38405052ae12232e134e092bc7191992"
+  },
+  "tests/DeepSpaceSaga.Motion.Tests/TurnPositionSamplingTests.cs": {
+    "mtime": 1791545790.616762,
+    "seen": 1791556608.9498315,
+    "ast_hash": "eafa02cd64904a8990ce3a4951214311",
+    "semantic_hash": "eafa02cd64904a8990ce3a4951214311"
+  },
+  "tools/DeepSpaceSaga.EconomyBalance/BalanceRun.cs": {
+    "mtime": 1791545790.617762,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f2ac969bb58f00c1e5d371ff76721df5",
+    "semantic_hash": "f2ac969bb58f00c1e5d371ff76721df5"
+  },
+  "tools/DeepSpaceSaga.EconomyBalance/ClusterBalanceRun.cs": {
+    "mtime": 1791545790.618762,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b60700577a87820d31fb1fc92aa434dc",
+    "semantic_hash": "b60700577a87820d31fb1fc92aa434dc"
+  },
+  "tools/DeepSpaceSaga.EconomyBalance/ClusterEconomyEvaluator.cs": {
+    "mtime": 1791545790.618762,
+    "seen": 1791556608.9498315,
+    "ast_hash": "209bc105e15aa03367f17f976618b1a5",
+    "semantic_hash": "209bc105e15aa03367f17f976618b1a5"
+  },
+  "tools/DeepSpaceSaga.EconomyBalance/DeepSpaceSaga.EconomyBalance.csproj": {
+    "mtime": 1791545790.618762,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ac1336683f6ee96e0859ec35c9a78bf6",
+    "semantic_hash": "ac1336683f6ee96e0859ec35c9a78bf6"
+  },
+  "tools/DeepSpaceSaga.EconomyBalance/MarketHealthEvaluator.cs": {
+    "mtime": 1791545790.6197617,
+    "seen": 1791556608.9498315,
+    "ast_hash": "afef3ab96071b7ea68425fc46d54ec37",
+    "semantic_hash": "afef3ab96071b7ea68425fc46d54ec37"
+  },
+  "tools/DeepSpaceSaga.EconomyBalance/Program.cs": {
+    "mtime": 1791545790.6207616,
+    "seen": 1791556608.9498315,
+    "ast_hash": "586a04a68e3c24dfd0ef2b75f1179980",
+    "semantic_hash": "586a04a68e3c24dfd0ef2b75f1179980"
+  },
+  "tools/DeepSpaceSaga.EconomyBalance/StrategyBalanceEvaluator.cs": {
+    "mtime": 1791545790.6207616,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5beae391193cf86fa7461594de6ed24e",
+    "semantic_hash": "5beae391193cf86fa7461594de6ed24e"
+  },
+  "tools/DeepSpaceSaga.EconomyBalance/balance-matrix.json": {
+    "mtime": 1791545790.6207616,
+    "seen": 1791556608.9498315,
+    "ast_hash": "455050f00c88e55d6e22d2600dafd02c",
+    "semantic_hash": "455050f00c88e55d6e22d2600dafd02c"
+  },
+  "tools/DeepSpaceSaga.EconomyBalance/cluster-matrix.json": {
+    "mtime": 1791545790.6217618,
+    "seen": 1791556608.9498315,
+    "ast_hash": "644f7b2089556c05e5ed4ad2f04cfcd6",
+    "semantic_hash": "644f7b2089556c05e5ed4ad2f04cfcd6"
+  },
+  "tools/DeepSpaceSaga.Performance.Tests/ClusterPerformanceReportTests.cs": {
+    "mtime": 1791545790.6227622,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c9bcd9e44372fc94f9069eba49872b5e",
+    "semantic_hash": "c9bcd9e44372fc94f9069eba49872b5e"
+  },
+  "tools/DeepSpaceSaga.Performance.Tests/DeepSpaceSaga.Performance.Tests.csproj": {
+    "mtime": 1791545790.6227622,
+    "seen": 1791556608.9498315,
+    "ast_hash": "14369a9388bb0b4e25f7e4916a117c59",
+    "semantic_hash": "14369a9388bb0b4e25f7e4916a117c59"
+  },
+  "tools/DeepSpaceSaga.Performance.Tests/SystemPerformanceReportTests.cs": {
+    "mtime": 1791545790.6237779,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2b64f93d2fc7b9fa1f65c88f36030a6e",
+    "semantic_hash": "2b64f93d2fc7b9fa1f65c88f36030a6e"
+  },
+  "tools/DeepSpaceSaga.Performance/DeepSpaceSaga.Performance.csproj": {
+    "mtime": 1791545790.6241083,
+    "seen": 1791556608.9498315,
+    "ast_hash": "948067656359e676996904ecbf683f4e",
+    "semantic_hash": "948067656359e676996904ecbf683f4e"
+  },
+  "tools/DeepSpaceSaga.Performance/Program.cs": {
+    "mtime": 1791553871.9550984,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b991241b3ce1b8bad53680bc687fbf50",
+    "semantic_hash": "b991241b3ce1b8bad53680bc687fbf50"
+  },
+  "tools/DeepSpaceSaga.Performance/SolarMapEvidence.cs": {
+    "mtime": 1791545790.6254747,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b7d38eb15ef83fe2247ed4f1efa3af1e",
+    "semantic_hash": "b7d38eb15ef83fe2247ed4f1efa3af1e"
+  },
+  "tools/DeepSpaceSaga.Performance/SolarNativeEvidence.cs": {
+    "mtime": 1791545790.6254747,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0c06c9e5b33ab3c1657e585e13e7779b",
+    "semantic_hash": "0c06c9e5b33ab3c1657e585e13e7779b"
+  },
+  "tools/DeepSpaceSaga.Performance/TacticalPipelineEvidence.cs": {
+    "mtime": 1791554351.6854408,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d668367b133a399be0e52e35b2b3ee52",
+    "semantic_hash": "d668367b133a399be0e52e35b2b3ee52"
+  },
+  "tools/DeepSpaceSaga.Performance/WindowLoopProbe.cs": {
+    "mtime": 1791545790.6254747,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f1aeaf6c70ed886d1c429ccab89d55cf",
+    "semantic_hash": "f1aeaf6c70ed886d1c429ccab89d55cf"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/DeepSpaceSaga.PortraitAssets.csproj": {
+    "mtime": 1791545790.6254747,
+    "seen": 1791556608.9498315,
+    "ast_hash": "40406a244d02f711294c88ddde987302",
+    "semantic_hash": "40406a244d02f711294c88ddde987302"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/EyeAssets.cs": {
+    "mtime": 1791545790.6254747,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f2d1fe1c6a85a99771b118215e5c0792",
+    "semantic_hash": "f2d1fe1c6a85a99771b118215e5c0792"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/FaceAssets.cs": {
+    "mtime": 1791545790.6254747,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8d231cb7f733adf435b0ffacddbef870",
+    "semantic_hash": "8d231cb7f733adf435b0ffacddbef870"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/FaceEyeAssets.cs": {
+    "mtime": 1791545790.6254747,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a5cddffb543ae6cb2ec3c231388b5807",
+    "semantic_hash": "a5cddffb543ae6cb2ec3c231388b5807"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/HairAssets.cs": {
+    "mtime": 1791545790.6254747,
+    "seen": 1791556608.9498315,
+    "ast_hash": "78abe4cb4b4ae6726f3f78dd27ca88ad",
+    "semantic_hash": "78abe4cb4b4ae6726f3f78dd27ca88ad"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/Program.cs": {
+    "mtime": 1791545790.6254747,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e6285dbaee382e3ea8f5453b9b7b62fb",
+    "semantic_hash": "e6285dbaee382e3ea8f5453b9b7b62fb"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/ReferenceFeatureAssets.cs": {
+    "mtime": 1791545790.6254747,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3f142c6ffa72b2105f9a94aaa8a50cf6",
+    "semantic_hash": "3f142c6ffa72b2105f9a94aaa8a50cf6"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/UnifiedPortraitAssets.cs": {
+    "mtime": 1791545790.632992,
+    "seen": 1791556608.9498315,
+    "ast_hash": "177f8a9205b381f39c22c3b3ac72548a",
+    "semantic_hash": "177f8a9205b381f39c22c3b3ac72548a"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/VariantAssets.cs": {
+    "mtime": 1791545790.632992,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c62883e6372d565d10ba3fcca9802818",
+    "semantic_hash": "c62883e6372d565d10ba3fcca9802818"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/WholeFaceAssets.cs": {
+    "mtime": 1791545790.632992,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e32e364d0c99c268c997e1a0d2f0cb92",
+    "semantic_hash": "e32e364d0c99c268c997e1a0d2f0cb92"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/WholeHeadAssets.cs": {
+    "mtime": 1791545790.632992,
+    "seen": 1791556608.9498315,
+    "ast_hash": "dbd4ec42575856ce17b75ae66518acfc",
+    "semantic_hash": "dbd4ec42575856ce17b75ae66518acfc"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/eye-prompts.json": {
+    "mtime": 1791545790.632992,
+    "seen": 1791556608.9498315,
+    "ast_hash": "32386020ae17550fd53665760f71e260",
+    "semantic_hash": "32386020ae17550fd53665760f71e260"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/face-identity-prompts.json": {
+    "mtime": 1791545790.6355627,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5cc59e39829a0d11c23f5cea60a53850",
+    "semantic_hash": "5cc59e39829a0d11c23f5cea60a53850"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/frontal-prompts.json": {
+    "mtime": 1791545790.636836,
+    "seen": 1791556608.9498315,
+    "ast_hash": "22d568a9b953ba0dffe2a98902e708be",
+    "semantic_hash": "22d568a9b953ba0dffe2a98902e708be"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/hair-prompts.json": {
+    "mtime": 1791545790.636836,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a1e7a4a5f0eaa9e5111114675eacbbb9",
+    "semantic_hash": "a1e7a4a5f0eaa9e5111114675eacbbb9"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/reference-face-prompts.json": {
+    "mtime": 1791545790.6378345,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1f025bfa891fafb62c6162c858fe3885",
+    "semantic_hash": "1f025bfa891fafb62c6162c858fe3885"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/variant-prompts.json": {
+    "mtime": 1791545790.6378345,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8b6442e70424ab92924842144599dfd3",
+    "semantic_hash": "8b6442e70424ab92924842144599dfd3"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/w1-prompts.json": {
+    "mtime": 1791545790.6378345,
+    "seen": 1791556608.9498315,
+    "ast_hash": "31cfede31d1d6036cce1c54f5ab1f476",
+    "semantic_hash": "31cfede31d1d6036cce1c54f5ab1f476"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/w2-prompts.json": {
+    "mtime": 1791545790.6388345,
+    "seen": 1791556608.9498315,
+    "ast_hash": "95a7932fbe107419c0ac6eb3b6018463",
+    "semantic_hash": "95a7932fbe107419c0ac6eb3b6018463"
+  },
+  "tools/DeepSpaceSaga.PortraitAssets/w4-prompts.json": {
+    "mtime": 1791545790.6388345,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4db1a35abb39b74919f0a78aa3012cd1",
+    "semantic_hash": "4db1a35abb39b74919f0a78aa3012cd1"
+  },
+  "tools/Export-TacticalButtonAssets.ps1": {
+    "mtime": 1791545790.6398342,
+    "seen": 1791556608.9498315,
+    "ast_hash": "759a6e3aca51bf9b25dbff34f696077a",
+    "semantic_hash": "759a6e3aca51bf9b25dbff34f696077a"
+  },
+  "AGENTS.md": {
+    "mtime": 1791545789.133068,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7b63c28c79a0356c28ef8cc3ec8ced57",
+    "semantic_hash": "7b63c28c79a0356c28ef8cc3ec8ced57"
+  },
+  "Board/EP-0005-optimization/Documentation.md": {
+    "mtime": 1791555925.4310913,
+    "seen": 1791556608.9498315,
+    "ast_hash": "795529e97b96fa3306c73768c2f96b00",
+    "semantic_hash": "795529e97b96fa3306c73768c2f96b00"
+  },
+  "Board/EP-0005-optimization/DocumentationInventory.md": {
+    "mtime": 1791555802.2814586,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a47a72ba841085706db9bd98f0220f2e",
+    "semantic_hash": "a47a72ba841085706db9bd98f0220f2e"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0001-paused-authoritative-rebase/EP-0005-US-0001-TK-0001-paused-authoritative-rebase.md": {
+    "mtime": 1791555641.5488598,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a1c38657cb033ad210b1eaa1492019d2",
+    "semantic_hash": "a1c38657cb033ad210b1eaa1492019d2"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0002-visible-object-hit-testing/EP-0005-US-0001-TK-0002-visible-object-hit-testing.md": {
+    "mtime": 1791555641.5514903,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4800f05427a69ca3d9d3cfe34d089e07",
+    "semantic_hash": "4800f05427a69ca3d9d3cfe34d089e07"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0003-cluster-click-priority/EP-0005-US-0001-TK-0003-cluster-click-priority.md": {
+    "mtime": 1791555641.5514903,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f48523a647e9c773145a7f7a19dea28e",
+    "semantic_hash": "f48523a647e9c773145a7f7a19dea28e"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0004-important-label-placement/EP-0005-US-0001-TK-0004-important-label-placement.md": {
+    "mtime": 1791555641.5524948,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e5a9dd9ac121a73ee34ab3a3acdec4c9",
+    "semantic_hash": "e5a9dd9ac121a73ee34ab3a3acdec4c9"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0005-bounded-offscreen-work/EP-0005-US-0001-TK-0005-bounded-offscreen-work.md": {
+    "mtime": 1791555641.5534933,
+    "seen": 1791556608.9498315,
+    "ast_hash": "35d093c5c20b555c47890eb030f79462",
+    "semantic_hash": "35d093c5c20b555c47890eb030f79462"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0006-paused-geometry-invalidation/EP-0005-US-0001-TK-0006-paused-geometry-invalidation.md": {
+    "mtime": 1791555641.5534933,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2caf6d5477758a244dd21ec882d39f14",
+    "semantic_hash": "2caf6d5477758a244dd21ec882d39f14"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0007-coherent-frame-diagnostics/EP-0005-US-0001-TK-0007-coherent-frame-diagnostics.md": {
+    "mtime": 1791555641.5544934,
+    "seen": 1791556608.9498315,
+    "ast_hash": "65fe9384a599da81235853a640dcdaf1",
+    "semantic_hash": "65fe9384a599da81235853a640dcdaf1"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0008-layout-before-map/EP-0005-US-0001-TK-0008-layout-before-map.md": {
+    "mtime": 1791555641.5544934,
+    "seen": 1791556608.9498315,
+    "ast_hash": "258beb93c07258fb829bbbd0f8cfd494",
+    "semantic_hash": "258beb93c07258fb829bbbd0f8cfd494"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0009-nonblocking-render-io/EP-0005-US-0001-TK-0009-nonblocking-render-io.md": {
+    "mtime": 1791555641.5554957,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a891fb73201ab94be59c968687af7cf7",
+    "semantic_hash": "a891fb73201ab94be59c968687af7cf7"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0010-deterministic-resource-lifetime/EP-0005-US-0001-TK-0010-deterministic-resource-lifetime.md": {
+    "mtime": 1791555641.5554957,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d0f9b81cd5092a0446c0517a6642fcf5",
+    "semantic_hash": "d0f9b81cd5092a0446c0517a6642fcf5"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0011-map-localization/EP-0005-US-0001-TK-0011-map-localization.md": {
+    "mtime": 1791555641.5564964,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a0e8612b6f6ee1f7382442a3f8976441",
+    "semantic_hash": "a0e8612b6f6ee1f7382442a3f8976441"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0012-stable-cluster-membership/EP-0005-US-0001-TK-0012-stable-cluster-membership.md": {
+    "mtime": 1791555641.5564964,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b6510a2b3e94d7caeb6fd1dd9029afa8",
+    "semantic_hash": "b6510a2b3e94d7caeb6fd1dd9029afa8"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0013-reconciled-route-join/EP-0005-US-0001-TK-0013-reconciled-route-join.md": {
+    "mtime": 1791555641.5574963,
+    "seen": 1791556608.9498315,
+    "ast_hash": "65524a9aa52cd17e2d036b2265e97ab0",
+    "semantic_hash": "65524a9aa52cd17e2d036b2265e97ab0"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0014-stale-snapshot-policy/EP-0005-US-0001-TK-0014-stale-snapshot-policy.md": {
+    "mtime": 1791555641.5574963,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8da6daca60410b8405461675ea26f3d9",
+    "semantic_hash": "8da6daca60410b8405461675ea26f3d9"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-TK-0015-free-viewport-cost/EP-0005-US-0001-TK-0015-free-viewport-cost.md": {
+    "mtime": 1791555641.5588145,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ab41db7355d524ad28151e4f3b7dbba9",
+    "semantic_hash": "ab41db7355d524ad28151e4f3b7dbba9"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0001-tactical-map-audit-remediation/EP-0005-US-0001-tactical-map-audit-remediation.md": {
+    "mtime": 1791555490.5535471,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b06da2c40b6c0307e33d0f8d56f0df5c",
+    "semantic_hash": "b06da2c40b6c0307e33d0f8d56f0df5c"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0002-tactical-map-render-pipeline/EP-0005-US-0002-TK-0001-frame-state-update/EP-0005-US-0002-TK-0001-frame-state-update.md": {
+    "mtime": 1791555641.5588145,
+    "seen": 1791556608.9498315,
+    "ast_hash": "168acc5a090463af4c6d2cf9018b6c60",
+    "semantic_hash": "168acc5a090463af4c6d2cf9018b6c60"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0002-tactical-map-render-pipeline/EP-0005-US-0002-TK-0002-scene-geometry-prepare/EP-0005-US-0002-TK-0002-scene-geometry-prepare.md": {
+    "mtime": 1791555641.5588145,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d2672b3a754df8e0c87e373cec235994",
+    "semantic_hash": "d2672b3a754df8e0c87e373cec235994"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0002-tactical-map-render-pipeline/EP-0005-US-0002-TK-0003-read-only-map-painter/EP-0005-US-0002-TK-0003-read-only-map-painter.md": {
+    "mtime": 1791555641.5588145,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2e0697b425d2cd1787c67f1047736950",
+    "semantic_hash": "2e0697b425d2cd1787c67f1047736950"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0002-tactical-map-render-pipeline/EP-0005-US-0002-TK-0004-revision-driven-scene-cache/EP-0005-US-0002-TK-0004-revision-driven-scene-cache.md": {
+    "mtime": 1791555641.5588145,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1ab307e09a2a903c90978957587ff7f5",
+    "semantic_hash": "1ab307e09a2a903c90978957587ff7f5"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0002-tactical-map-render-pipeline/EP-0005-US-0002-TK-0005-frame-consumers-and-performance/EP-0005-US-0002-TK-0005-frame-consumers-and-performance.md": {
+    "mtime": 1791555641.5588145,
+    "seen": 1791556608.9498315,
+    "ast_hash": "81d27efedd2af21f84c3e4269cf5f5a7",
+    "semantic_hash": "81d27efedd2af21f84c3e4269cf5f5a7"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0002-tactical-map-render-pipeline/EP-0005-US-0002-tactical-map-render-pipeline.md": {
+    "mtime": 1791555490.5545473,
+    "seen": 1791556608.9498315,
+    "ast_hash": "54223b78dc201e4af35a05b0779b5b19",
+    "semantic_hash": "54223b78dc201e4af35a05b0779b5b19"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0003-documentation-and-graph/EP-0005-US-0003-TK-0001-documentation-sync/EP-0005-US-0003-TK-0001-documentation-sync.md": {
+    "mtime": 1791555800.9579508,
+    "seen": 1791556608.9498315,
+    "ast_hash": "63e54c44a83d4ea9ba6e805bf93f87ca",
+    "semantic_hash": "63e54c44a83d4ea9ba6e805bf93f87ca"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0003-documentation-and-graph/EP-0005-US-0003-TK-0002-graph-rebuild/EP-0005-US-0003-TK-0002-graph-rebuild.md": {
+    "mtime": 1791555925.4310913,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9011deca0ffe56cae546f93822391dba",
+    "semantic_hash": "9011deca0ffe56cae546f93822391dba"
+  },
+  "Board/EP-0005-optimization/EP-0005-US-0003-documentation-and-graph/EP-0005-US-0003-documentation-and-graph.md": {
+    "mtime": 1791555925.4310913,
+    "seen": 1791556608.9498315,
+    "ast_hash": "821a542262d649d8eec23af647642787",
+    "semantic_hash": "821a542262d649d8eec23af647642787"
+  },
+  "Board/EP-0005-optimization/EpicReview.md": {
+    "mtime": 1791555800.9579508,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7b4f60de57086b5b90df1a758ba67001",
+    "semantic_hash": "7b4f60de57086b5b90df1a758ba67001"
+  },
+  "Board/EP-0005-optimization/ImplementationStatus.md": {
+    "mtime": 1791555925.4310913,
+    "seen": 1791556608.9498315,
+    "ast_hash": "379bc7610597890529ec14d507d97c2f",
+    "semantic_hash": "379bc7610597890529ec14d507d97c2f"
+  },
+  "Board/EP-0005-optimization/PerformanceEvidence.md": {
+    "mtime": 1791555239.464612,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fc3d723c32a99b899d4cc6af611a72e0",
+    "semantic_hash": "fc3d723c32a99b899d4cc6af611a72e0"
+  },
+  "Board/EP-0005-optimization/TK-0003-ReviewFollowup.md": {
+    "mtime": 1791555743.8117075,
+    "seen": 1791556608.9498315,
+    "ast_hash": "58203b80e6c38d883600773772444e87",
+    "semantic_hash": "58203b80e6c38d883600773772444e87"
+  },
+  "Board/EP-0005-optimization/Tickets.md": {
+    "mtime": 1791555925.4310913,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b22f942f06b8a56036ef854679454c5b",
+    "semantic_hash": "b22f942f06b8a56036ef854679454c5b"
+  },
+  "Board/EP-0005-optimization/US-0001-Review.md": {
+    "mtime": 1791551338.557397,
+    "seen": 1791556608.9498315,
+    "ast_hash": "410a279f5aeb069d3aa495a26bae52b8",
+    "semantic_hash": "410a279f5aeb069d3aa495a26bae52b8"
+  },
+  "Board/EP-0005-optimization/US-0002-Review.md": {
+    "mtime": 1791555266.0896482,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4bde30ff38c979d235dfd3fbc907c013",
+    "semantic_hash": "4bde30ff38c979d235dfd3fbc907c013"
+  },
+  "CLAUDE.md": {
+    "mtime": 1791545789.4649262,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0d6465c672633a6b1c1962aacff62b48",
+    "semantic_hash": "0d6465c672633a6b1c1962aacff62b48"
+  },
+  "Documentation/00-Process/AGENTS.md": {
+    "mtime": 1791545789.4756444,
+    "seen": 1791556608.9498315,
+    "ast_hash": "abe1415dfadeae33f437f977dcda5cb0",
+    "semantic_hash": "abe1415dfadeae33f437f977dcda5cb0"
+  },
+  "Documentation/00-Process/CLAUDE.md": {
+    "mtime": 1791555490.5308118,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1180811baa96f692bcdf93d9536e8d4b",
+    "semantic_hash": "1180811baa96f692bcdf93d9536e8d4b"
+  },
+  "Documentation/00-Process/DocumentationSystem.md": {
+    "mtime": 1791545789.4766517,
+    "seen": 1791556608.9498315,
+    "ast_hash": "90e536affba42582e39c728d3547a5ed",
+    "semantic_hash": "90e536affba42582e39c728d3547a5ed"
+  },
+  "Documentation/01-Requirements/EngineRequirements.md": {
+    "mtime": 1791555490.5281353,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d02fb53180c60dbeea532c638a5b2553",
+    "semantic_hash": "d02fb53180c60dbeea532c638a5b2553"
+  },
+  "Documentation/01-Requirements/FirstReleaseRequirements.md": {
+    "mtime": 1791555800.6583169,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e0b0aef6c1ac790b6bc993cd2919a88c",
+    "semantic_hash": "e0b0aef6c1ac790b6bc993cd2919a88c"
+  },
+  "Documentation/02-FirstRelease/Mechanics/CargoHold.md": {
+    "mtime": 1791545789.4817088,
+    "seen": 1791556608.9498315,
+    "ast_hash": "169ae0b62f19d050c24ba540759616a6",
+    "semantic_hash": "169ae0b62f19d050c24ba540759616a6"
+  },
+  "Documentation/02-FirstRelease/Mechanics/CommandPanels.md": {
+    "mtime": 1791555800.9579508,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8bcaaf4eccc012e4a7536c1d100365e6",
+    "semantic_hash": "8bcaaf4eccc012e4a7536c1d100365e6"
+  },
+  "Documentation/02-FirstRelease/Mechanics/CrewAndHabitation.md": {
+    "mtime": 1791545789.4837148,
+    "seen": 1791556608.9498315,
+    "ast_hash": "469bc86780f21e5169bae111b394b4fe",
+    "semantic_hash": "469bc86780f21e5169bae111b394b4fe"
+  },
+  "Documentation/02-FirstRelease/Mechanics/CrewDialogues.md": {
+    "mtime": 1791545789.484715,
+    "seen": 1791556608.9498315,
+    "ast_hash": "635fd9306625d1a892d009a8f54aa6c2",
+    "semantic_hash": "635fd9306625d1a892d009a8f54aa6c2"
+  },
+  "Documentation/02-FirstRelease/Mechanics/Docking.md": {
+    "mtime": 1791545789.4851465,
+    "seen": 1791556608.9498315,
+    "ast_hash": "73d20ae6576d0c47b5c0164c0c9c2714",
+    "semantic_hash": "73d20ae6576d0c47b5c0164c0c9c2714"
+  },
+  "Documentation/02-FirstRelease/Mechanics/ElectricityAndEnergyCells.md": {
+    "mtime": 1791545789.4855697,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c92861151a822755bfa15f99784181eb",
+    "semantic_hash": "c92861151a822755bfa15f99784181eb"
+  },
+  "Documentation/02-FirstRelease/Mechanics/Fuel.md": {
+    "mtime": 1791545789.4865985,
+    "seen": 1791556608.9498315,
+    "ast_hash": "80fd56be7c887911fbf6189bed859928",
+    "semantic_hash": "80fd56be7c887911fbf6189bed859928"
+  },
+  "Documentation/02-FirstRelease/Mechanics/IceMining.md": {
+    "mtime": 1791545789.4865985,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5cde94531a25c8daa31541b1db370c54",
+    "semantic_hash": "5cde94531a25c8daa31541b1db370c54"
+  },
+  "Documentation/02-FirstRelease/Mechanics/Money.md": {
+    "mtime": 1791545789.487598,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9700d29a047fafbe045e6c7accb38587",
+    "semantic_hash": "9700d29a047fafbe045e6c7accb38587"
+  },
+  "Documentation/02-FirstRelease/Mechanics/PassengerContracts.md": {
+    "mtime": 1791545789.487598,
+    "seen": 1791556608.9498315,
+    "ast_hash": "8028540ff28bde2f1006bad939d155c2",
+    "semantic_hash": "8028540ff28bde2f1006bad939d155c2"
+  },
+  "Documentation/02-FirstRelease/Mechanics/SolarSystemMapConcept.md": {
+    "mtime": 1791555800.9579508,
+    "seen": 1791556608.9498315,
+    "ast_hash": "57a660eb44e01c66eac1fdfb3b8bcb08",
+    "semantic_hash": "57a660eb44e01c66eac1fdfb3b8bcb08"
+  },
+  "Documentation/02-FirstRelease/Mechanics/StationDialogues.md": {
+    "mtime": 1791545789.4895985,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3497e11f9380744920c4f38f02e11f6d",
+    "semantic_hash": "3497e11f9380744920c4f38f02e11f6d"
+  },
+  "Documentation/02-FirstRelease/Mechanics/StationInventory.md": {
+    "mtime": 1791545789.4895985,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2345eb850eb72a737051fd701921d1b8",
+    "semantic_hash": "2345eb850eb72a737051fd701921d1b8"
+  },
+  "Documentation/02-FirstRelease/Mechanics/TacticalMapAndManeuvering.md": {
+    "mtime": 1791555800.9579508,
+    "seen": 1791556608.9498315,
+    "ast_hash": "09da8103eae8ed6f63f47a27854c3b9c",
+    "semantic_hash": "09da8103eae8ed6f63f47a27854c3b9c"
+  },
+  "Documentation/02-FirstRelease/Mechanics/TetrarchClass.md": {
+    "mtime": 1791545789.4905987,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c126153bd6bc2e18bb67eb6ee633fcc2",
+    "semantic_hash": "c126153bd6bc2e18bb67eb6ee633fcc2"
+  },
+  "Documentation/02-FirstRelease/Mechanics/Trading.md": {
+    "mtime": 1791545789.4915981,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f170af403e0cee09d81e43f8b702bd2e",
+    "semantic_hash": "f170af403e0cee09d81e43f8b702bd2e"
+  },
+  "Documentation/02-FirstRelease/Mechanics/TradingSystemConcept.md": {
+    "mtime": 1791545789.4915981,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a8e4590cd774c9b1363293047afc7887",
+    "semantic_hash": "a8e4590cd774c9b1363293047afc7887"
+  },
+  "Documentation/02-FirstRelease/Mechanics/TradingSystemMvpStories.md": {
+    "mtime": 1791545789.4915981,
+    "seen": 1791556608.9498315,
+    "ast_hash": "2301eb1574a8918e609d42374e7a21c4",
+    "semantic_hash": "2301eb1574a8918e609d42374e7a21c4"
+  },
+  "Documentation/02-FirstRelease/Screens/Cargo.md": {
+    "mtime": 1791545789.4931023,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0d78fda7ba5d6b06957cd497d95afad0",
+    "semantic_hash": "0d78fda7ba5d6b06957cd497d95afad0"
+  },
+  "Documentation/02-FirstRelease/Screens/CharacterCommunication.md": {
+    "mtime": 1791545789.4941077,
+    "seen": 1791556608.9498315,
+    "ast_hash": "64b6d73f6db668e7f2073ff3dfda9338",
+    "semantic_hash": "64b6d73f6db668e7f2073ff3dfda9338"
+  },
+  "Documentation/02-FirstRelease/Screens/Contracts.md": {
+    "mtime": 1791545789.4941077,
+    "seen": 1791556608.9498315,
+    "ast_hash": "b573d8afe3b7cbf31f3efd2e9fb956ea",
+    "semantic_hash": "b573d8afe3b7cbf31f3efd2e9fb956ea"
+  },
+  "Documentation/02-FirstRelease/Screens/Dialog.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "6f76297ca0602be4bc900ac308a57cf5",
+    "semantic_hash": "6f76297ca0602be4bc900ac308a57cf5"
+  },
+  "Documentation/02-FirstRelease/Screens/Finance.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7fc8f551aeaf91783173da74c2df6c8d",
+    "semantic_hash": "7fc8f551aeaf91783173da74c2df6c8d"
+  },
+  "Documentation/02-FirstRelease/Screens/GameMenu.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "32c52c886d7ec9dc224a487b4ca0ba52",
+    "semantic_hash": "32c52c886d7ec9dc224a487b4ca0ba52"
+  },
+  "Documentation/02-FirstRelease/Screens/GameSession.md": {
+    "mtime": 1791555800.9579508,
+    "seen": 1791556608.9498315,
+    "ast_hash": "bd8d53b398af11e058469eb1739b12fb",
+    "semantic_hash": "bd8d53b398af11e058469eb1739b12fb"
+  },
+  "Documentation/02-FirstRelease/Screens/Hire.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f3795f9fd9fbc77842e4921884c549be",
+    "semantic_hash": "f3795f9fd9fbc77842e4921884c549be"
+  },
+  "Documentation/02-FirstRelease/Screens/Load.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "60f2e4b161946f19a91a4cfc6239305c",
+    "semantic_hash": "60f2e4b161946f19a91a4cfc6239305c"
+  },
+  "Documentation/02-FirstRelease/Screens/Loot.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5ef0585cd79942d182e2398dbfb2b45b",
+    "semantic_hash": "5ef0585cd79942d182e2398dbfb2b45b"
+  },
+  "Documentation/02-FirstRelease/Screens/MainMenu.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "94726de2475d31d858dacdfa883a2e8f",
+    "semantic_hash": "94726de2475d31d858dacdfa883a2e8f"
+  },
+  "Documentation/02-FirstRelease/Screens/Save.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "29590facc07baf1875cf4d26891f5dc8",
+    "semantic_hash": "29590facc07baf1875cf4d26891f5dc8"
+  },
+  "Documentation/02-FirstRelease/Screens/ScenarioSelect.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "15a42b29d4cf183dc1dfffdb871f36a5",
+    "semantic_hash": "15a42b29d4cf183dc1dfffdb871f36a5"
+  },
+  "Documentation/02-FirstRelease/Screens/ScreenCatalog.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "cd0fc8c6b719a02d5388a799eb8826a7",
+    "semantic_hash": "cd0fc8c6b719a02d5388a799eb8826a7"
+  },
+  "Documentation/02-FirstRelease/Screens/Settings.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "7e7df6983f21365ae5f578f4cf010286",
+    "semantic_hash": "7e7df6983f21365ae5f578f4cf010286"
+  },
+  "Documentation/02-FirstRelease/Screens/Ship.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c1dc9d7403b7e889e4cf8a49cea6c7a5",
+    "semantic_hash": "c1dc9d7403b7e889e4cf8a49cea6c7a5"
+  },
+  "Documentation/02-FirstRelease/Screens/Station.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c4e0a006221e34f2423df8c2c2ed8c23",
+    "semantic_hash": "c4e0a006221e34f2423df8c2c2ed8c23"
+  },
+  "Documentation/02-FirstRelease/Screens/Trade.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "708e3ced3a9bb8a39bf2187640bab0cb",
+    "semantic_hash": "708e3ced3a9bb8a39bf2187640bab0cb"
+  },
+  "Documentation/02-FirstRelease/TechnicalTasks/ScreenNamingConventionRefactor.md": {
+    "mtime": 1791545789.4951067,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4d9ecd3c3e3c7604762f2ea316252935",
+    "semantic_hash": "4d9ecd3c3e3c7604762f2ea316252935"
+  },
+  "Documentation/02-FirstRelease/TechnicalTasks/StationEconomyProductionAndSizing.md": {
+    "mtime": 1791545789.502906,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5daaae6fcecd0551bb0b4ecfe5a8afe2",
+    "semantic_hash": "5daaae6fcecd0551bb0b4ecfe5a8afe2"
+  },
+  "Documentation/03-Design/DialoguePortraits.md": {
+    "mtime": 1791545789.502906,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e989739655108946db6ea9922ad868d2",
+    "semantic_hash": "e989739655108946db6ea9922ad868d2"
+  },
+  "Documentation/03-Design/FemaleFaceProportions.md": {
+    "mtime": 1791545789.502906,
+    "seen": 1791556608.9498315,
+    "ast_hash": "86b46f589f27e900b6daa54782b791fb",
+    "semantic_hash": "86b46f589f27e900b6daa54782b791fb"
+  },
+  "Documentation/03-Design/PortraitGenerator.md": {
+    "mtime": 1791545789.505193,
+    "seen": 1791556608.9498315,
+    "ast_hash": "eddba54b2180871c2cd45b2f6d9ec6e7",
+    "semantic_hash": "eddba54b2180871c2cd45b2f6d9ec6e7"
+  },
+  "Documentation/03-Design/PortraitGeneratorM4.md": {
+    "mtime": 1791545789.505193,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fbca7337ac1068dd633b6a3ca95e32ff",
+    "semantic_hash": "fbca7337ac1068dd633b6a3ca95e32ff"
+  },
+  "Documentation/03-Design/PortraitGeneratorW1.md": {
+    "mtime": 1791545789.5063963,
+    "seen": 1791556608.9498315,
+    "ast_hash": "f148bbb9b440fd2394e0e60a009960c1",
+    "semantic_hash": "f148bbb9b440fd2394e0e60a009960c1"
+  },
+  "Documentation/03-Design/PortraitGeneratorW2.md": {
+    "mtime": 1791545789.5063963,
+    "seen": 1791556608.9498315,
+    "ast_hash": "9a594b35302bc576585886f945a516b0",
+    "semantic_hash": "9a594b35302bc576585886f945a516b0"
+  },
+  "Documentation/03-Design/PortraitGeneratorW4.md": {
+    "mtime": 1791545789.5073295,
+    "seen": 1791556608.9498315,
+    "ast_hash": "a1e99fa54c4cde86b9908644d68a00d8",
+    "semantic_hash": "a1e99fa54c4cde86b9908644d68a00d8"
+  },
+  "Documentation/03-Design/TacticalButtons/STYLE.md": {
+    "mtime": 1791545789.5073295,
+    "seen": 1791556608.9498315,
+    "ast_hash": "e5e5060ef0965da13ed0f1ad5da4a9d8",
+    "semantic_hash": "e5e5060ef0965da13ed0f1ad5da4a9d8"
+  },
+  "Documentation/03-Design/TacticalMapSpecification.md": {
+    "mtime": 1791555490.5291493,
+    "seen": 1791556608.9498315,
+    "ast_hash": "fdb3ea1ec132e847a8ae7640e7a90634",
+    "semantic_hash": "fdb3ea1ec132e847a8ae7640e7a90634"
+  },
+  "Documentation/04-Engineering/ApproachRoutes.md": {
+    "mtime": 1791555490.5308118,
+    "seen": 1791556608.9498315,
+    "ast_hash": "dfff3ac225f075c2113b7bd4e160853e",
+    "semantic_hash": "dfff3ac225f075c2113b7bd4e160853e"
+  },
+  "Documentation/04-Engineering/BasicTorpedoCombat.md": {
+    "mtime": 1791555800.9572792,
+    "seen": 1791556608.9498315,
+    "ast_hash": "133588cdbdca4f051af5011d4ee16507",
+    "semantic_hash": "133588cdbdca4f051af5011d4ee16507"
+  },
+  "Documentation/04-Engineering/CodeReview20260912/Fixes.md": {
+    "mtime": 1791545789.512835,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d4e3d0579ffc4a1b0eba00377ea77d41",
+    "semantic_hash": "d4e3d0579ffc4a1b0eba00377ea77d41"
+  },
+  "Documentation/04-Engineering/CodeReview20260912/README.md": {
+    "mtime": 1791545789.512835,
+    "seen": 1791556608.9498315,
+    "ast_hash": "c909d04e3dd60dd6ded218c66a3e52c2",
+    "semantic_hash": "c909d04e3dd60dd6ded218c66a3e52c2"
+  },
+  "Documentation/04-Engineering/CountermeasureCombat.md": {
+    "mtime": 1791555800.9579508,
+    "seen": 1791556608.9498315,
+    "ast_hash": "71886a51094dc562e16bd7463fefc440",
+    "semantic_hash": "71886a51094dc562e16bd7463fefc440"
+  },
+  "Documentation/04-Engineering/EP-0002-Implementation.md": {
+    "mtime": 1791545789.553822,
+    "seen": 1791556608.9498315,
+    "ast_hash": "0549b4af70ffe2061ae6eb06a4a41bbe",
+    "semantic_hash": "0549b4af70ffe2061ae6eb06a4a41bbe"
+  },
+  "Documentation/04-Engineering/ItemCatalogSchema.md": {
+    "mtime": 1791545789.5548224,
+    "seen": 1791556608.9498315,
+    "ast_hash": "d504490eee0e654fa2642b9e170299e4",
+    "semantic_hash": "d504490eee0e654fa2642b9e170299e4"
+  },
+  "Documentation/04-Engineering/MapScaling20260914/README.md": {
+    "mtime": 1791555490.5308118,
+    "seen": 1791556608.9498315,
+    "ast_hash": "13e366409360bd615be4700c787ede72",
+    "semantic_hash": "13e366409360bd615be4700c787ede72"
+  },
+  "Documentation/04-Engineering/Performance500/README.md": {
+    "mtime": 1791555490.5308118,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5b79d2890b6d4035c0f378e5fb2e4835",
+    "semantic_hash": "5b79d2890b6d4035c0f378e5fb2e4835"
+  },
+  "Documentation/04-Engineering/Performance500/gpu-jitter-2026-09-24.md": {
+    "mtime": 1791555490.5308118,
+    "seen": 1791556608.9498315,
+    "ast_hash": "72bceedf99cebe025f6c2e1d7fb3ea16",
+    "semantic_hash": "72bceedf99cebe025f6c2e1d7fb3ea16"
+  },
+  "Documentation/04-Engineering/Performance500/x100-smoothness-2026-09-16.md": {
+    "mtime": 1791555490.5308118,
+    "seen": 1791556608.9498315,
+    "ast_hash": "4b3247922c27240f9151e4b6e4272c51",
+    "semantic_hash": "4b3247922c27240f9151e4b6e4272c51"
+  },
+  "Documentation/04-Engineering/TradeUI20260912/README.md": {
+    "mtime": 1791545789.5650501,
+    "seen": 1791556608.9498315,
+    "ast_hash": "5784a5fb312b04fecd260f5752839e4f",
+    "semantic_hash": "5784a5fb312b04fecd260f5752839e4f"
+  },
+  "Documentation/05-Backlog/ImplementationTaskDiffs03-12.md": {
+    "mtime": 1791545789.5790386,
+    "seen": 1791556608.9498315,
+    "ast_hash": "69b117ce2570263bac31330ec18e605a",
+    "semantic_hash": "69b117ce2570263bac31330ec18e605a"
+  },
+  "Documentation/05-Backlog/TechnicalTasksSmall2026-08-09.md": {
+    "mtime": 1791545789.5806572,
+    "seen": 1791556608.9498315,
+    "ast_hash": "1ae6ce6880a86e3fcf81ec846beffa9e",
+    "semantic_hash": "1ae6ce6880a86e3fcf81ec846beffa9e"
+  },
+  "Documentation/06-Tooling/CountermeasureGraphify.md": {
+    "mtime": 1791555800.9579508,
+    "seen": 1791556608.9498315,
+    "ast_hash": "46d6de7900b7aeb8e0093b860f4f515c",
+    "semantic_hash": "46d6de7900b7aeb8e0093b860f4f515c"
+  },
+  "Documentation/06-Tooling/DeepSpaceSaga.PortraitAssets.md": {
+    "mtime": 1791545789.5820336,
+    "seen": 1791556608.9498315,
+    "ast_hash": "3b5f4ca3efbc9445049de7456f8ebfda",
+    "semantic_hash": "3b5f4ca3efbc9445049de7456f8ebfda"
+  },
+  "Documentation/06-Tooling/GameSessionScreenUI.md": {
+    "mtime": 1791555525.8887827,
+    "seen": 1791556608.9498315,
+    "ast_hash": "777a9078b7abe44a48f2e497a980a750",
+    "semantic_hash": "777a9078b7abe44a48f2e497a980a750"
+  },
+  "Documentation/README.md": {
+    "mtime": 1791555490.5308118,
+    "seen": 1791556608.9498315,
+    "ast_hash": "ff9fd5aaca2d2549c76fd81c4b273c1e",
+    "semantic_hash": "ff9fd5aaca2d2549c76fd81c4b273c1e"
+  },
+  "Documentation/Validation/EP-0003-Implementation.md": {
+    "mtime": 1791545789.5840492,
+    "seen": 1791556608.9498315,
+    "ast_hash": "889c39f699989e07b540cbe8afd158ca",
+    "semantic_hash": "889c39f699989e07b540cbe8afd158ca"
+  },
+  "tools/DeepSpaceSaga.Performance/README.md": {
+    "mtime": 1791555490.5408807,
+    "seen": 1791556608.9498315,
+    "ast_hash": "124141f499a4abcc57dce58c8d5d24f5",
+    "semantic_hash": "124141f499a4abcc57dce58c8d5d24f5"
+  }
+}
