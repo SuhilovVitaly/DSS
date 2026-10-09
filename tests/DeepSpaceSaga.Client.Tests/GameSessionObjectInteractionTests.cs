@@ -785,13 +785,13 @@ public class GameSessionObjectInteractionTests
     [Fact]
     public async Task Object_info_panel_selected_row_prefers_the_hovered_object_over_the_clicked_one()
     {
-        await using var fixture = CreateFixture([ObjAt("OBJ-1", 10000), ObjAt("OBJ-2", 10200)]);
+        await using var fixture = CreateFixture([ObjAt("OBJ-1", 10000), ObjAt("OBJ-2", 9900)]);
         Render(fixture.Screen);
 
         fixture.Screen.OnMouseMove(640, 360);
         fixture.Screen.OnMouseDown(640, 360); // Selected -> OBJ-1
 
-        fixture.Screen.OnMouseMove(640, 560); // Active -> OBJ-2, Selected stays OBJ-1
+        fixture.Screen.OnMouseMove(640, 260); // Open map: Active -> OBJ-2, Selected stays OBJ-1
 
         Assert.Equal("OBJ-1", fixture.Screen.SelectedObjectId);
         Assert.Equal("OBJ-2", fixture.Screen.ActiveObjectId);

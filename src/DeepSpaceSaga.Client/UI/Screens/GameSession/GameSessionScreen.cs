@@ -922,6 +922,10 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private string? FindNearestObjectId(float x, float y)
     {
+        if (x < 0 || y < 0 || x > _viewportW || y > _viewportH ||
+            IsClickOnUiPanel(x / _uiScale, y / _uiScale))
+            return null;
+
         string? bestId = null;
         int bestPriority = int.MaxValue;
         double bestDistanceSq = double.MaxValue;
@@ -932,6 +936,15 @@ public sealed partial class GameSessionScreen : IScreen
             var state = _renderStates[i];
             if (_clusteredObjectIds.Contains(state.Pose.ObjectId)) continue;
             var (sx, sy) = _camera.WorldToScreen(state.Pose.X, state.Pose.Y, _viewportW, _viewportH);
+            float markerRadius = HasCombatMarker(state.Source) ? CombatMarkerRadius :
+                !state.IsPlayerShip && _camera.PixelsPerWorldUnit <= _mapSettings.CompactMarkerPpu &&
+                !IsImportantMapObject(state.Pose.ObjectId) &&
+                state.Pose.RenderObjectType is not (SpaceObjectType.Planet or SpaceObjectType.Sun)
+                    ? 2.5f : TacticalMapMarkerPolicy.GetMarkerRadiusPx(
+                        state.IsPlayerShip ? SpaceObjectType.PlayerShip : state.Pose.RenderObjectType);
+            if (sx + markerRadius < 0 || sy + markerRadius < 0 ||
+                sx - markerRadius > _viewportW || sy - markerRadius > _viewportH)
+                continue;
             double dx = x - sx;
             double dy = y - sy;
             double distanceSq = dx * dx + dy * dy;

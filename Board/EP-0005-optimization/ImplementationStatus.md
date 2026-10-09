@@ -10,8 +10,8 @@ Draft assumptions accepted for this execution: 2000 ms real-time stale limit, de
 
 | Ticket | Implementation / checks | Publication |
 |---|---|---|
-| EP-0005-US-0001-TK-0001-paused-authoritative-rebase | implemented; Client 1736/1736, Release/format/diff pass; native OPEN | awaiting commit/push |
-| EP-0005-US-0001-TK-0002-visible-object-hit-testing | pending | pending |
+| EP-0005-US-0001-TK-0001-paused-authoritative-rebase | implemented; Client 1736/1736, Release/format/diff pass; native OPEN | 4f30eb63f839dd65e2186a8531860011e4ad0fec; push and remote SHA verified |
+| EP-0005-US-0001-TK-0002-visible-object-hit-testing | implemented; full 1743 pass plus repaired fixture/new cases 9/9; Release/format/diff pass; native OPEN | awaiting commit/push |
 | EP-0005-US-0001-TK-0003-cluster-click-priority | pending | pending |
 | EP-0005-US-0001-TK-0004-important-label-placement | pending | pending |
 | EP-0005-US-0001-TK-0005-bounded-offscreen-work | pending | pending |

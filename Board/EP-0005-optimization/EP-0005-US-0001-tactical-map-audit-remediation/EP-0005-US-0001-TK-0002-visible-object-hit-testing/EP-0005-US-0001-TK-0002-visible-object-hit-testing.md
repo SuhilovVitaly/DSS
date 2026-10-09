@@ -80,3 +80,12 @@ No public API change.
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution scope 2026-10-09
+Additional test file: tests/DeepSpaceSaga.Client.Tests/GameSessionObjectInteractionTests.cs. Its hover-preference fixture uses a point under the mechanics panel; move the second contact to open map space while preserving all assertions. Authorized by EpicExecutionPrompt.md to reconcile obsolete fixtures without weakening the intended contract.
+
+## Execution evidence
+
+Five regressions reproduced before the fix: panel hover at UI scales .8/1/1.2/1.5 and a fully offscreen marker. The shared object hit test now excludes UI and requires the actual marker core (including compact/combat radii) to intersect the viewport. Partial cores remain selectable; 30 raw pixels, type priority and ordinal ties are preserved.
+
+Full Client run: 1743 passed, one outdated hover-preference fixture failed (ep5-us1-tk2-client-final.trx). After moving that fixture into open map space, focused regression passed 9/9 including all eight new cases and the repaired existing test. No production changes followed that full run. Release build: zero warnings/errors; scoped whitespace verification and git diff --check passed. Review covered raw/UI coordinate conversion, compact marker sizes, hull-bar selection and existing click priority. Native/manual acceptance OPEN until integrated evidence.
