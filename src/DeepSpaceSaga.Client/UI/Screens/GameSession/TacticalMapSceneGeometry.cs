@@ -42,6 +42,8 @@ internal readonly record struct TacticalMapTrailSegment(SKPoint From, SKPoint To
 internal sealed record TacticalMapSceneGeometry(TacticalMapFrameState Frame, TacticalMapViewInput View,
     ImmutableArray<TacticalMapMarkerGeometry> Markers, ImmutableArray<TacticalMapHitCandidate> HitCandidates)
 {
+    internal TacticalMapPaintCommands? PaintCommands { get; init; }
+
     internal static ImmutableArray<string> LayerOrder { get; } =
         ["grid", "trails", "forecasts", "label_leaders", "clusters", "markers", "label_plaques", "combat_effects", "ui"];
 }

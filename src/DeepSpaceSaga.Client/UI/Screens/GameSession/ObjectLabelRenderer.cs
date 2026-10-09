@@ -386,6 +386,19 @@ internal sealed class ObjectLabelRenderer : IDisposable
         int viewportH,
         CameraState camera)
     {
+        DrawPlaquesCore(ref canvas, renderStates, uiTimeMs, speed, viewportW, viewportH, camera, null);
+    }
+
+    internal void RecordPlaques(TacticalMapPaintRecorder recorder, IReadOnlyList<ObjectRenderState> renderStates,
+        long uiTimeMs, SimulationSpeed speed, int viewportW, int viewportH, CameraState camera)
+    {
+        var canvas = recorder.Canvas;
+        DrawPlaquesCore(ref canvas, renderStates, uiTimeMs, speed, viewportW, viewportH, camera, recorder);
+    }
+
+    private void DrawPlaquesCore(ref SKCanvas canvas, IReadOnlyList<ObjectRenderState> renderStates,
+        long uiTimeMs, SimulationSpeed speed, int viewportW, int viewportH, CameraState camera, TacticalMapPaintRecorder? recorder)
+    {
         for (int i = 0; i < renderStates.Count; i++)
         {
             var state = renderStates[i];
@@ -426,7 +439,10 @@ internal sealed class ObjectLabelRenderer : IDisposable
             canvas.DrawRect(stripeRect, _stripePaint);
 
             // Status square — blink driven by real/UI time, not game time
-            if (StatusSquareAnimator.IsStatusSquareVisible(uiTimeMs, speed))
+            if (recorder is not null)
+                canvas = recorder.Animate(new(TacticalMapAnimationKind.Status, 0, 0, 0,
+                    Rect: geometry.StatusRect, Color: objectColor.WithAlpha(opacity), Speed: speed));
+            else if (StatusSquareAnimator.IsStatusSquareVisible(uiTimeMs, speed))
             {
                 _statusSquarePaint.Color = objectColor.WithAlpha(opacity);
                 canvas.DrawRect(geometry.StatusRect, _statusSquarePaint);

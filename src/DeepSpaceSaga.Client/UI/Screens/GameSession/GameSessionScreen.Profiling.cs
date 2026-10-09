@@ -39,6 +39,12 @@ public sealed partial class GameSessionScreen
 
     private void CompleteRenderStage(string stage)
     {
+        CompletePrepareStage(stage);
+        RenderStageCompleted?.Invoke(stage);
+    }
+
+    private void CompletePrepareStage(string stage)
+    {
         long now = Stopwatch.GetTimestamp();
         double ms = Stopwatch.GetElapsedTime(_profileStageStartedAt, now).TotalMilliseconds;
         _profileStageStartedAt = now;
@@ -53,7 +59,6 @@ public sealed partial class GameSessionScreen
             "info_panels" => _profileStages with { InfoPanelsMs = ms },
             _ => _profileStages
         };
-        RenderStageCompleted?.Invoke(stage);
     }
 
     private void FinishFrameProfile(SnapshotPrediction? prediction, long timestamp)

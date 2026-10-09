@@ -26,8 +26,8 @@ Draft assumptions accepted for this execution: 2000 ms real-time stale limit, de
 | EP-0005-US-0001-TK-0014-stale-snapshot-policy | implemented; reproduced 4 failures, Client 1795/1795, Release/format/diff pass; native OPEN | fd46544e140bd72e2d8a96e4e27c099862124afd; push and remote SHA verified |
 | EP-0005-US-0001-TK-0015-free-viewport-cost | implemented; Client 1800/1800 plus final geometry 6/6, p99 32 obstacles 143.16 -> 0.97ms; native OPEN | 91b2feca58456d9d5f83b5a593b047a57493b5f1; push and remote SHA verified |
 | EP-0005-US-0002-TK-0001-frame-state-update | implemented; Client 1804/1804, Release/format/diff pass; native OPEN | 3d82b3a7220f7b3224a6e9043cd1db2ace525a34; push and remote SHA verified |
-| EP-0005-US-0002-TK-0002-scene-geometry-prepare | implemented shadow seam; Client 1807/1807, Release/format/diff pass; native OPEN | publication pending |
-| EP-0005-US-0002-TK-0003-read-only-map-painter | pending | pending |
+| EP-0005-US-0002-TK-0002-scene-geometry-prepare | implemented shadow seam; Client 1807/1807, Release/format/diff pass; native OPEN | 782ad02412cb86e0639c661fa563fd6467310d93; push and remote SHA verified |
+| EP-0005-US-0002-TK-0003-read-only-map-painter | implemented; Client 1810/1810, raster replay/layers/native lifetime pass, Release/format/diff pass; native OPEN | publication pending |
 | EP-0005-US-0002-TK-0004-revision-driven-scene-cache | pending | pending |
 | EP-0005-US-0002-TK-0005-frame-consumers-and-performance | pending | pending |
 | EP-0005-US-0003-TK-0001-documentation-sync | pending | pending |

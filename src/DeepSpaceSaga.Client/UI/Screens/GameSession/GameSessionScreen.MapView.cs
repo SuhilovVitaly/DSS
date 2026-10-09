@@ -12,7 +12,7 @@ public sealed partial class GameSessionScreen
     private readonly TacticalMapSceneBuilder _sceneBuilder = new();
     internal TacticalMapSceneGeometry? PreparedScene { get; private set; }
 
-    private void PublishSceneGeometry()
+    private void PublishSceneGeometry(TacticalMapPaintCommands commands)
     {
         if (_mapFrame is not { } frame) return;
         var camera = new TacticalMapCamera(_camera.FocusX, _camera.FocusY, _camera.PixelsPerWorldUnit);
@@ -47,7 +47,7 @@ public sealed partial class GameSessionScreen
                 _mapSettings.ClusterPpu, _mapSettings.ClusterCellPixels, _mapSettings.ClusterHysteresis,
                 _mapSettings.GridBaseCellPixels, _mapSettings.GridMinimumPixels, _mapSettings.GridFadePixels)
         };
-        PreparedScene = _sceneBuilder.Prepare(frame, view);
+        PreparedScene = _sceneBuilder.Prepare(frame, view) with { PaintCommands = commands };
     }
 
     private readonly CameraZoomTransition _zoomTransition = new();

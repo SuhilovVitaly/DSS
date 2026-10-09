@@ -6,7 +6,7 @@ title: "Сделать рисование потребителем готово�
 stage: draft
 layer: client
 depends_on: ["EP-0005-US-0002-TK-0002-scene-geometry-prepare"]
-files_touched: 6
+files_touched: 10
 serves: [AC-0003]
 source_finding: A03
 evidence_status: architecture-proposal
@@ -62,9 +62,9 @@ revision: 1
 
 ## Критерии приёмки — AC-0003
 
-- [ ] `Drawing_same_scene_does_not_mutate_state`: Повтор Draw оставляет frame/scene/revisions неизменными.
-- [ ] `Draw_does_not_run_geometry_or_io`: Счётчики запрещённых операций равны нулю.
-- [ ] `Painter_preserves_layer_order_and_clipping`: Golden/recording fixtures покрывают пересечения marker/path/label/UI.
+- [x] `Drawing_same_scene_does_not_mutate_state`: Повтор Draw оставляет frame/scene/revisions неизменными.
+- [x] `Draw_does_not_run_geometry_or_io`: Счётчики запрещённых операций равны нулю.
+- [x] `Painter_preserves_layer_order_and_clipping`: Golden/recording fixtures покрывают пересечения marker/path/label/UI.
 
 ## Инварианты и границы
 
@@ -86,3 +86,15 @@ revision: 1
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Execution design and scope 2026-10-09
+
+EpicExecutionPrompt authorizes implementation. Prepare records immutable Skia vector display lists, interleaved with value-only UI animation commands and layer markers; Draw replays them without predictors, route samplers, layout, hit mutation or session access. This preserves the established complex combat/planet/UI paint code without duplicating it. Scene owns native pictures until replacement/disposal; metadata owns immutable arrays. UI-time reticle/flame/status animations remain Draw operations. Stage observers are test-only and execute during replay, preserving raster evidence hooks.
+
+Expand allowlist with `TacticalMapPaintCommands.cs`, `TacticalMapSceneGeometry.cs`, `GameSessionScreen.MapView.cs`, `GameSessionScreen.Profiling.cs` in the same GameSession directory. Remove no existing test assertions. The original DepthRenderer/GridRenderer allowlist remains available. Native performance is measured in TK-0005; display-list recording is not claimed free.
+
+## Execution evidence 2026-10-09
+
+Production Render now updates state, prepares a scene-owned vector display list, then TacticalMapRenderer.Draw consumes that publication. Draw has no buffer/session/predictor/projector/layout/filesystem references. Value-only animation commands preserve UI-time reticles, engine flames and status blinking; picture boundaries retain UI transforms and clip extents. Test-only layer observers execute on the actual output canvas during replay. Replaced pictures and painter resources are explicitly disposed.
+
+Checks: existing combat raster/preview/diagnostic/lifetime/layout tests 61/61; new replay equality, forbidden-operation counters, UI-time and clipping/ownership fixtures included in full Client 1810/1810. Release build 0 warnings/errors, scoped format and diff checks pass. A test was corrected to avoid comparing Task.WhenAll wrapper identities (the cache creates a new wrapper per read). Native/GPU performance remains OPEN; no FPS claim from raster tests.

@@ -18,6 +18,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
     private readonly IMotionPredictor _predictor;
     private readonly CameraState _camera;
     private readonly GridRenderer _grid;
+    private readonly TacticalMapRenderer _mapPainter = new();
     private readonly ObjectTrailStore _trailStore;
     private readonly List<ObjectRenderState> _detailedTrailStates = new();
     internal int DetailedTrailObjectsProcessed => _detailedTrailStates.Count;
@@ -373,6 +374,8 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         _objectInfoPanel.Dispose();
         _commandsPanel.Dispose();
         _grid.Dispose();
+        PreparedScene?.PaintCommands?.Dispose();
+        _mapPainter.Dispose();
         _labelRenderer.Dispose();
         _depthRenderer.Dispose();
         _mapMarkerPaint.Dispose();
@@ -1103,7 +1106,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
     // ── Render ──────────────────────────────────────────────────
 
-    public void Render(SKCanvas canvas, int width, int height)
+    public void Render(SKCanvas output, int width, int height)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         BeginFrameProfile();
@@ -1166,6 +1169,9 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
             _diagInterestingFrame = false;
         }
 
+        using var recorder = new TacticalMapPaintRecorder(width, height);
+        var canvas = recorder.Canvas;
+
         // 1. Grid
         _grid.Draw(canvas, _camera, width, height);
 
@@ -1184,7 +1190,8 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         float cx = width / 2f;
         float cy = height / 2f;
         _depthRenderer.DrawFocusIndicator(canvas, cx, cy);
-        CompleteRenderStage("grid");
+        CompletePrepareStage("grid");
+        canvas = recorder.Stage("grid");
 
         // 3. Object trails
         if (prediction is not null)
@@ -1209,7 +1216,8 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
             PruneGeometryCaches();
             DrawObjectTrails(canvas, width, height);
-            CompleteRenderStage("trails");
+            CompletePrepareStage("trails");
+            canvas = recorder.Stage("trails");
 
             // 3.5. Future trajectory (before objects, after historical trails)
             DrawFutureTrajectories(canvas, width, height);
@@ -1219,10 +1227,11 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
             DrawNavigationTrajectories(canvas, width, height);
             DrawCombatTrajectories(canvas, buffered);
             DrawCountermeasureTrajectories(canvas);
-            RenderStageCompleted?.Invoke("combat_trajectories");
+            canvas = recorder.Stage("combat_trajectories");
             DrawLaunchPreview(canvas, prediction, viewportResized);
-            RenderStageCompleted?.Invoke("launch_preview");
-            CompleteRenderStage("forecasts");
+            canvas = recorder.Stage("launch_preview");
+            CompletePrepareStage("forecasts");
+            canvas = recorder.Stage("forecasts");
 
             // Compute smoothed label geometries once per frame so both
             // DrawLeaders and DrawPlaques see the same positions.
@@ -1231,7 +1240,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
             // 3.75. Label leader lines (behind objects)
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
-            RenderStageCompleted?.Invoke("label_leaders");
+            canvas = recorder.Stage("label_leaders");
 
             DrawMapClusters(canvas);
             // Important markers and plaques stay above clusters and background contacts.
@@ -1254,16 +1263,16 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
                     // Selection takes visual priority when the same object is also active;
                     // orange is reserved for hovered objects that are not selected.
                     if (state.Pose.ObjectId == _selectedObjectId)
-                        _depthRenderer.DrawSelectionReticle(canvas, sx, sy, r, uiTimeMs);
+                        canvas = recorder.Animate(new(TacticalMapAnimationKind.Selection, sx, sy, r));
                     else if (state.Pose.ObjectId == _activeObjectId)
-                        _depthRenderer.DrawActiveObjectReticle(canvas, sx, sy, r, uiTimeMs);
+                        canvas = recorder.Animate(new(TacticalMapAnimationKind.Active, sx, sy, r));
                     if (state.Pose.ObjectId == _selectedObjectId || state.Pose.ObjectId == _activeObjectId)
-                        RenderStageCompleted?.Invoke("reticle");
+                        canvas = recorder.Stage("reticle");
 
                     if (HasCombatMarker(state.Source))
                     {
                         if (state.Source.Torpedo is not null)
-                            _depthRenderer.DrawEngineFlame(canvas, sx, sy, state.Pose.Direction, r, uiTimeMs);
+                            canvas = recorder.Animate(new(TacticalMapAnimationKind.EngineFlame, sx, sy, r, state.Pose.Direction));
                         DrawCombatMarker(canvas, state, sx, sy);
                         continue;
                     }
@@ -1272,7 +1281,7 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
                     {
                         if (state.Pose.ActiveEngineCommandType == ShipEngineCommandTypes.Accelerate)
                         {
-                            _depthRenderer.DrawEngineFlame(canvas, sx, sy, state.Pose.Direction, r, uiTimeMs);
+                            canvas = recorder.Animate(new(TacticalMapAnimationKind.EngineFlame, sx, sy, r, state.Pose.Direction));
                         }
                         DrawPlayerShipGlyph(canvas, sx, sy, state.Pose.Direction, r);
                     }
@@ -1299,17 +1308,19 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
                 }
 
             // 4.5. Object label plaques (on top of objects, before UI panels)
-            RenderStageCompleted?.Invoke("marker_geometry");
-            _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera);
-            RenderStageCompleted?.Invoke("label_plaques");
+            canvas = recorder.Stage("marker_geometry");
+            _labelRenderer.RecordPlaques(recorder, _renderStates, uiTimeMs, prediction.CurrentSpeed, width, height, _camera);
+            canvas = recorder.Canvas;
+            canvas = recorder.Stage("label_plaques");
             DrawOffscreenTargets(canvas);
-            CompleteRenderStage("markers_and_labels");
+            CompletePrepareStage("markers_and_labels");
+            canvas = recorder.Stage("markers_and_labels");
         }
 
         DrawCombatEffects(canvas, buffered, now);
         DrawCountermeasureResults(canvas, buffered);
         DrawDefenseAnnotations(canvas);
-        RenderStageCompleted?.Invoke("combat_effects");
+        canvas = recorder.Stage("combat_effects");
 
         // UI overlay pass — everything from here on is a GameSession UI panel, never
         // the tactical map. Panels are laid out in logical (unscaled) coordinates;
@@ -1328,7 +1339,9 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
 
         // 6. Commands Panel (top-left)
         _commandsPanel.Draw(canvas);
-        CompleteRenderStage("command_panel");
+        CompletePrepareStage("command_panel");
+        canvas = recorder.Stage("command_panel");
+
 
         _combatJournalPanel.Draw(canvas);
 
@@ -1343,11 +1356,25 @@ public sealed partial class GameSessionScreen : IScreen, IDisposable
         DrawMechanicsPanel(canvas);
         DrawMapToolbar(canvas);
         DrawGameTime(canvas);
-        CompleteRenderStage("info_panels");
+        CompletePrepareStage("info_panels");
+        canvas = recorder.Stage("info_panels");
+
 
         canvas.Restore();
-        PublishSceneGeometry();
-        FinishFrameProfile(prediction, now);
+        var previousCommands = PreparedScene?.PaintCommands;
+        var commands = recorder.Finish();
+        try
+        {
+            PublishSceneGeometry(commands);
+            _mapPainter.Draw(output, PreparedScene!, uiTimeMs / 1000.0, RenderStageCompleted);
+            FinishFrameProfile(prediction, now);
+        }
+        catch
+        {
+            commands.Dispose();
+            throw;
+        }
+        finally { previousCommands?.Dispose(); }
     }
 
     // ── Speed panel ─────────────────────────────────────────────
