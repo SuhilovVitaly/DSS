@@ -20,6 +20,7 @@ public sealed record TacticalMapSettings
     public int MaximumLabels { get; init; } = 48;
     public double ClusterPpu { get; init; } = .001;
     public double ClusterCellPixels { get; init; } = 40;
+    public double ClusterHysteresis { get; init; } = .1;
     public double GridBaseCellPixels { get; init; } = 200;
     public double GridMinimumPixels { get; init; } = 20;
     public double GridFadePixels { get; init; } = 20;
@@ -37,7 +38,7 @@ public sealed record TacticalMapSettings
             !InRange(ZoomAnimationMs, 0, 500) || !InRange(LabelDetailPpu, MinimumPpu, MaximumPpu) ||
             !InRange(CompactMarkerPpu, MinimumPpu, LabelDetailPpu) || !InRange(ClusterPpu, MinimumPpu, CompactMarkerPpu) ||
             !InRange(TrailDetailPpu, MinimumPpu, MaximumPpu) || MaximumLabels is < 4 or > 200 ||
-            !InRange(ClusterCellPixels, 16, 128) || !InRange(GridMinimumPixels, 10, 100) ||
+            !InRange(ClusterCellPixels, 16, 128) || !InRange(ClusterHysteresis, 0, .4) || !InRange(GridMinimumPixels, 10, 100) ||
             !InRange(GridFadePixels, 1, 100) || !InRange(FitPaddingPixels, 8, 100) ||
             !InRange(GridBaseCellPixels, GridMinimumPixels + GridFadePixels, 1000))
             throw new ArgumentException("Invalid tactical map settings.");

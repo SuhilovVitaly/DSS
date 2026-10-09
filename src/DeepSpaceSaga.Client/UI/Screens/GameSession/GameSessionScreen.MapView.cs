@@ -27,8 +27,31 @@ public sealed partial class GameSessionScreen
     internal IReadOnlyList<SKRect> MapViewButtonRects => _mapViewButtons;
     internal SKRect MapToolbarRect => _mapToolbarRect;
     internal int MapClusterCount => _mapClusters.Count;
+    internal IReadOnlyList<(int Level, double X, double Y)> MapClusterIds => _mapClusters.Select(c => c.Id).ToArray();
     internal bool IsZoomAnimating => _zoomTransition.Active;
-    private readonly record struct MapCluster(double X, double Y, int Count, MapWorldBounds Bounds, double CellX, double CellY);
+    private int? _clusterLevel;
+    internal int? ClusterLevel => _clusterLevel;
+    private readonly record struct MapCluster(double X, double Y, int Count, MapWorldBounds Bounds, double CellX, double CellY, int Level)
+    {
+        internal (int Level, double X, double Y) Id => (Level, CellX, CellY);
+    }
+
+    private double? ClusterCellSize()
+    {
+        double ppu = _camera.PixelsPerWorldUnit, threshold = _mapSettings.ClusterPpu;
+        double hysteresis = _mapSettings.ClusterHysteresis;
+        if (_clusterLevel is null)
+        {
+            if (ppu > threshold) return null;
+            _clusterLevel = Math.Max(0, (int)Math.Floor(Math.Log2(threshold / ppu)));
+        }
+        if (ppu > threshold * (1 + hysteresis)) { _clusterLevel = null; return null; }
+        int level = _clusterLevel.Value;
+        while (ppu < threshold / Math.Pow(2, level + 1) * (1 - hysteresis)) level++;
+        while (level > 0 && ppu > threshold / Math.Pow(2, level) * (1 + hysteresis)) level--;
+        _clusterLevel = level;
+        return _mapSettings.ClusterCellPixels / threshold * Math.Pow(2, level);
+    }
 
     private bool IsImportantMapObject(string id) => id == _selectedObjectId || id == _activeObjectId || id == _navigationTargetId ||
         id == _buffer.Latest?.Snapshot.PlayerShipObjectId || _combatImportantIds.Contains(id);
@@ -61,38 +84,45 @@ public sealed partial class GameSessionScreen
             _clusterCellPool.Push(cell);
         }
         _mapClusters.Clear(); _clusteredObjectIds.Clear(); _clusterCells.Clear();
-        if (_camera.PixelsPerWorldUnit > _mapSettings.ClusterPpu) return;
-        double cellSize = _mapSettings.ClusterCellPixels / _camera.PixelsPerWorldUnit;
+        if (ClusterCellSize() is not { } cellSize) return;
         foreach (var state in _renderStates)
         {
             var p = state.Pose;
             if (IsImportantMapObject(p.ObjectId) || p.RenderObjectType is SpaceObjectType.Sun or SpaceObjectType.Planet) continue;
             if (p is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy }) continue;
-            var (sx, sy) = _camera.WorldToScreen(p.X, p.Y, _viewportW, _viewportH);
-            if (sx < -40 || sy < -40 || sx > _viewportW + 40 || sy > _viewportH + 40) continue;
             var key = (Math.Floor(p.X / cellSize), Math.Floor(p.Y / cellSize));
             if (!_clusterCells.TryGetValue(key, out var cell))
                 _clusterCells[key] = cell = _clusterCellPool.TryPop(out var reused) ? reused : new();
             cell.Add(state);
         }
-        foreach (var (key, cell) in _clusterCells)
+        foreach (var (key, cell) in _clusterCells.OrderBy(c => c.Key.X).ThenBy(c => c.Key.Y))
         {
             if (cell.Count < 2) continue;
             MapWorldBounds bounds = new();
             foreach (var state in cell)
             {
                 bounds.Include(state.Pose.X, state.Pose.Y);
-                _clusteredObjectIds.Add(state.Pose.ObjectId);
             }
-            _mapClusters.Add(new(bounds.MinX + (bounds.MaxX - bounds.MinX) / 2,
-                bounds.MinY + (bounds.MaxY - bounds.MinY) / 2, cell.Count, bounds, key.X, key.Y));
+            var cluster = new MapCluster(bounds.MinX + (bounds.MaxX - bounds.MinX) / 2,
+                bounds.MinY + (bounds.MaxY - bounds.MinY) / 2, cell.Count, bounds, key.X, key.Y, _clusterLevel!.Value);
+            _mapClusters.Add(cluster);
+            // An offscreen centroid cannot replace a visible contact with an invisible badge.
+            if (ClusterVisible(cluster))
+                foreach (var state in cell) _clusteredObjectIds.Add(state.Pose.ObjectId);
         }
+    }
+
+    private bool ClusterVisible(MapCluster cluster)
+    {
+        var (x, y) = _camera.WorldToScreen(cluster.X, cluster.Y, _viewportW, _viewportH);
+        return x >= -15 && y >= -15 && x <= _viewportW + 15 && y <= _viewportH + 15;
     }
 
     private void DrawMapClusters(SKCanvas canvas)
     {
         foreach (var cluster in _mapClusters)
         {
+            if (!ClusterVisible(cluster)) continue;
             var (x, y) = _camera.WorldToScreen(cluster.X, cluster.Y, _viewportW, _viewportH);
             _mapMarkerPaint.Color = new SKColor(22, 45, 60);
             canvas.DrawCircle(x, y, 15, _mapMarkerPaint);

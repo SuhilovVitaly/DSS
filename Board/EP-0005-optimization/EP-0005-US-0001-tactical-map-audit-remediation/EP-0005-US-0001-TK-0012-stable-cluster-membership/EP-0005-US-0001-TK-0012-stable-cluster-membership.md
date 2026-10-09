@@ -81,3 +81,10 @@ No public API change.
 ## Проверка самодостаточности
 
 В тикете указаны причина, границы, API, зависимости, allowlist, шаги, наблюдаемые критерии и проверки. Cross-ticket dependencies названы явно. Планирование завершено; реализация и runtime/UI validation не выполнялись в рамках этого draft.
+
+## Reproduction and technical decision 2026-10-09
+Both new probes fail before production changes: zoom 0.001 -> 0.0009999 changes [c0,c1]/[c2,c3] into [c0,c1,c2]/[c3]; panning fixed contacts outside viewport removes all cells. Use world cell sizes ClusterCellPixels / ClusterPpu * 2^level, configurable ClusterHysteresis default 0.1 (validated 0..0.4). Stable identity is (level, world cell X, world cell Y). Membership is independent of camera pan; viewport culls drawing, not world grouping. Important contacts remain excluded. This is an implementation choice under the execution prompt, not a separately supplied user answer.
+
+## Execution evidence 2026-10-09
+Implemented discrete world levels with hysteresis, stable (level,X,Y) identity and deterministic cell ordering. Bounds midpoint/count depend only on members; pan affects badge culling only. Offscreen centroids do not suppress visible individual contacts. Important contacts and hostile ships retain prior exclusions.
+Both pre-fix failures now pass. Focused cluster/view/combat/system tests 48/48; full Client 1783/1783; Release 0 warnings/errors; scoped whitespace verification and diff check pass. Boundary tests verify entry/exit hysteresis and reversed snapshot order; invalid configured hysteresis rejects NaN/out-of-range. Self-review: Engine geometry unchanged; world membership uses all eligible contacts, retaining O(N) membership work for later scene-cache optimization. Native visual matrix remains OPEN; risk reproduction is automated membership evidence.
