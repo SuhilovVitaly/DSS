@@ -172,12 +172,15 @@ public class TacticalMapViewTests
         Assert.Equal(0, s.Screen.MapClusterCount);
     }
 
-    [Fact]
-    public void Close_contacts_cluster_and_click_expands_them_without_navigation()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Close_contacts_cluster_and_click_expands_them_without_navigation(bool ctrl)
     {
         using var s = new Scene(null, Contact("A", 1000000, 10000), Contact("B", 1000020, 10010));
         s.Preset(3); Assert.Equal(1, s.Screen.MapClusterCount);
         double before = s.Screen.CameraPixelsPerWorldUnit;
+        if (ctrl) s.Screen.OnKeyDown(Key.ControlLeft);
         s.Screen.OnMouseDown(1059, 540);
         s.Render(); Assert.True(s.Screen.CameraPixelsPerWorldUnit > before);
         Assert.Equal(0, s.Screen.MapClusterCount);
