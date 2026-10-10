@@ -2,7 +2,7 @@
 epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0007-resume-territories-and-fields
 title: Продолжение мира с прежними территориями и полями
-stage: draft
+stage: done
 dependencies: [EP-0004-US-0006-readable-map-layers, EP-0003-US-0006-resume-cluster-voyage]
 created: 2026-09-22T14:40:41Z
 source_request: "сделай тикеты для историй в эпиках 2 3 и 4&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0004-ai-territories-and-map-environment"
@@ -103,3 +103,7 @@ Implementation gates (перед первым тикетом, проверяют
 | 2026-09-22T14:40:41Z | Точное сообщение в разделе входного задания | Grounding, карта тикетов и assumptions | Автоматический workflow; без дополнительного approval эпика |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0007-TK-0001-map-environment-save | stage approved; 5 files; engine; AC 1/2/3 |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0007-TK-0002-full-map-local-load | stage approved; 2 files; local-client; AC 1/2/3 |
+
+## Story self-review — 2026-10-08
+
+All three AC covered by full JSON state/continuation/atomic ingress and actual local file/factory matrix. DTO15 optional compatibility retained, absent aiMap not regenerated. Territory-link namespace defect repaired in TK1 ae5d953. Engine1689/1689 excluding correctness corpora PASS; corpus/native gates remain US8. Implementer self-review, not independent approval.

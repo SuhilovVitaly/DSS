@@ -2,7 +2,7 @@
 epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0004-informational-environment-fields
 title: Различимые пространственные поля
-stage: draft
+stage: done
 dependencies: [EP-0004-US-0003-trade-compatible-ai-placement]
 created: 2026-09-22T14:40:41Z
 source_request: "сделай тикеты для историй в эпиках 2 3 и 4&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0004-ai-territories-and-map-environment"
@@ -106,3 +106,8 @@ Implementation gates (перед первым тикетом, проверяют
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0004-TK-0002-seeded-environment-fields | stage approved; 5 files; engine; AC 1/2/3 |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0004-TK-0003-environment-field-content | stage approved; 2 files; content-data; AC 1/2/3 |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0004-TK-0004-environment-field-rendering | stage approved; 5 files; client; AC 1/2/3 |
+
+
+## Implementation and story self-review — 2026-10-08
+
+All four tickets implemented. AC-0001: patterns distinguish all types without color, exact geometry and local panel selection; AC-0002: named RNG independence, loader validation, speed/calendar/anchor tests; AC-0003: 48h moving ship and active market-event comparison proves identical snapshots/save state excluding metadata, decorations cannot change bounds/entities. Contracts 171/171, Engine non-corpus 1678/1678, Client 1747/1747 and final edge regression 3/3 PASS. Two confirmed UI defects were repaired before publication. This is own review; native and all-layer evidence remain US-0008 gates.

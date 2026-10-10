@@ -1,10 +1,15 @@
 /*
 !/src/
 !/tests/
+!/tools/
 !/Documentation/
 !/Board/
 /Board/*
 !/Board/EP-0007-countermeasure-combat/
+!/Board/EP-0001-trading-system/
+!/Board/EP-0002-procedural-solar-system/
+!/Board/EP-0003-station-clusters-and-trade-geography/
+!/Board/EP-0004-ai-territories-and-map-environment/
 **/bin/
 **/obj/
 **/.git/
@@ -42,5 +47,6 @@
 *.woff
 *.woff2
 Documentation/06-Tooling/CountermeasureGraphify.md
+Documentation/06-Tooling/TradingSolarGraphify.md
 
 **/Images/

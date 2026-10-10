@@ -1,5 +1,13 @@
 # Стыковка
 
+## Сверка реализации — 2026-10-10
+
+Обновление после исправлений: F01–F05 закрыты кодом и регрессиями; EP-0004 включён в текущий рабочий набор. Баланс, 80 FPS и человеческая приёмка остаются открытыми. Текущий статус — `Documentation/04-Engineering/EpicReview20261010/Fixes.md`.
+
+Реализованы navigation.undock, выбор назначения и voyage lifecycle. Орбитальная станция задаёт движение пристыкованного корабля; после физического Approach требуется корректная синхронизация/Dock и диалог. Закрытие окна не отменяет стыковку. EP-0004 добавляет authoritative запрет доступа к базам ИИ; код включён в текущую рабочую копию.
+
+[Текущее устройство](../../04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](../../04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
+
 Статус: MVP реализован. `navigation.dock` и `navigation.undock` — настоящие authoritative-команды; полный станционный функционал (Trade/Finance/Hire/установка Drilling Unit) остаётся за рамками MVP — см. «Статус реализации (MVP)» ниже.
 
 Связанные документы: `CommandPanels.md`, `TacticalMapAndManeuvering.md`, `Station.md`.
@@ -53,3 +61,9 @@
 - Блокировка обычных engine-команд корабля, пока он пристыкован: технически можно отправить engine-команду и физически уплыть от станции, оставаясь помеченным `IsDocked = true`.
 - `navigation.stationsList`.
 - Полный функционал экрана станции (Trade/Finance/Representatives/Install Drilling Unit/Hire) — см. `Documentation/02-FirstRelease/Screens/Station.md`.
+
+## Актуализация EP-0004 — 2026-10-08
+
+Для AI/hostile station Engine отклоняет Dock до геометрического разрешения, включая dialogue grant и подделанное docked state; station_access_denied. Эта поставленная проверка доступа имеет приоритет над общими плановыми описаниями станций выше. Human docking сохраняет свои прежние правила; база ИИ не является торговой станцией.
+
+[Текущий технический контракт и evidence](../../04-Engineering/AiMapEnvironment.md).

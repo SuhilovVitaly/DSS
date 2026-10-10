@@ -1,5 +1,13 @@
 # Deep Space Saga — контрольная точка требований к движку
 
+## Сверка реализации — 2026-10-10
+
+Обновление после исправлений: F01–F05 закрыты кодом и регрессиями; EP-0004 включён в текущий рабочий набор. Баланс, 80 FPS и человеческая приёмка остаются открытыми. Текущий статус — `Documentation/04-Engineering/EpicReview20261010/Fixes.md`.
+
+EP-0001 реализует профили/часовую экономику, события, authoritative quotes/receipts, физические рейсы, резерв/settlement топлива, cargo cost basis, voyage ledger и remote market knowledge. Приёмка баланса остаётся OPEN; cargo-upgrade теперь меняет реальную capacity в обоих runner (F01 исправлен). EP-0002–0003 реализованы в base-fight: seeded система и общая орбитальная математика, кластеры/ресурсы/торговые направления, текущие ETA и materialized Save/Load. EP-0004 интегрирован в текущий незакоммиченный рабочий набор; native80FPS FAILED. F02–F04 исправлены и проверены новыми регрессиями. Эта сверка фиксирует выполненные решения и ограничения, не ослабляет нормативные AC. Текущий SaveFormatVersion=15; более ранние версии в исторических этапах не описывают нынешний writer.
+
+[Текущее устройство](../04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](../04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
+
 Дата первоначальной фиксации: 2026-08-01
 
 Дата последней синхронизации с DSS: 2026-08-02
@@ -5406,3 +5414,9 @@ Engine фиксирует неизменяемый `ApproachRoute`; исполн
 - SaveFormatVersion11, DefenseState.Version1 и RngVersion1: сохранять аппарат/фазы/маршруты/следы, frozen breakdown, attempt flags, абсолютные deadlines, RNG state/counter, sequences, журнал и выбор живой ПР. Некорректные данные отклонять атомарно; ID нормализовать OrdinalIgnoreCase. Legacy летящая торпеда без rating получает30 с явным provenance; отсутствующие операторы остаются отсутствующими.
 
 [Реализация, тесты, миграция и статус native acceptance](../04-Engineering/CountermeasureCombat.md).
+
+## Актуализация EP-0004 — 2026-10-08
+
+Действующее уточнение EP-0004: Engine владеет материализованным AiMap rulesVersion1 и атомарным Save15. Hostile AI stations отклоняют dock/dialogue/trade/quote/refuel с station_access_denied. Территории, Radiation/Dust/Debris и POI информационные и не меняют движение, урон, топливо, экономику или RNG. Локальные связи проверяются на365-дневном горизонте, межкластерная связность — в объявленных/критических эпохах; это не бесконечное непрерывное доказательство. Для SolarSystem стратегическая видимость известных объектов заменяет legacy proximity-only ограничение §40; доступ к котировкам и survey не раскрывается. Overlap cycling и client-local descriptor selection уточняют nearest-only правило §54; hover остаётся нециклическим с приоритетом Station/player/NPC/other, затем distance/ordinal ID. Точные units, bounds, epochs и исключения находятся в текущем контракте.
+
+[Текущий технический контракт и evidence](../04-Engineering/AiMapEnvironment.md).

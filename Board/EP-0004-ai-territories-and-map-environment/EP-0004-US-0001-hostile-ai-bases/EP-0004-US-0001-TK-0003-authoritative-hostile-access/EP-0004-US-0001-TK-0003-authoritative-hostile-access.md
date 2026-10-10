@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0001-hostile-ai-bases
 ticket: EP-0004-US-0001-TK-0003-authoritative-hostile-access
 title: Авторитетный запрет стыковки и торговли с ИИ
-stage: approved
+stage: done
 layer: engine
 depends_on: [EP-0002-US-0006-TK-0001-known-map-projection, EP-0002-US-0006-TK-0002-system-map-navigation, EP-0003-US-0002-TK-0001-multi-cluster-placement, EP-0003-US-0002-TK-0002-full-cluster-content, EP-0003-US-0002-TK-0003-multi-cluster-overview, EP-0004-US-0001-TK-0002-seeded-ai-bases]
 files_touched: 4
@@ -11,6 +11,11 @@ serves: [AC-0003]
 created: 2026-09-22T14:40:41Z
 revision: 1
 ---
+
+## Текущий контракт — 2026-10-08
+
+Исходный план и скопированные dependency inputs ниже сохранены для трассировки. Фактические версии/API и расширенный scope определяются Execution/Resolved sections и [текущим контрактом](../../../../Documentation/04-Engineering/AiMapEnvironment.md). SaveFormat15, AiMap rulesVersion1, шесть сценариев, inline poiTemplates; Field/POI metadata не являются entities или engine command targets. Исторический NOT RUN не заменяет финальное native evidence US8; FPS80 acceptance остаётся OPEN.
+
 
 # Авторитетный запрет стыковки и торговли с ИИ
 
@@ -138,3 +143,13 @@ public sealed record AiBaseMapData(string ObjectId,string BaseType,string Owner,
 ### EP-0004-US-0001-TK-0002-seeded-ai-bases
 
 public sealed record AiGenerationConfig(int MinBases,int MaxBases,double DefenceRadiusKm,double PatrolRadiusKm,int MaxPlacementAttempts); SolarSystemGenerationConfig.Ai optional. internal AiBaseGenerator.Generate возвращает detached World+AiMap; parent поза разрешается один раз в orbital binding и валидируется при load. Content values задаёт отдельный тикет.
+
+## Актуализация проверок 2026-10-08
+
+DialogueEffectTransaction уже вызывает authoritative validateDock перед commit; gate добавляется в общий TryStartNavigationCommand и автоматически защищает повторную effect validation. Транзакционный файл не требует изменения. Для этого узкого ticket выполняются named tests и весь Engine suite кроме неизменённых дорогих correctness corpora (полный 1765/1765 PASS непосредственно на TK2). Корпус повторяется при изменении geometry и итоговом review эпика. Это уточнение supersedes историческую безусловную команду полного corpus на каждом малом изменении.
+
+## Выполнение и review 2026-10-08
+
+Owner gate IsAiBase защищает direct dock, повторную validation в dialogue effect, quote/legacy/quoted buy/sell/refuel и docked trade projection. GrantStationAccess не меняет owner. Crafted dock save и stale quote возвращают station_access_denied без изменений денег, объектов/груза/топлива/рынков и voyage ledgers. Human scientific-military quote остаётся доступна.
+
+Engine regression без двух неизменённых correctness corpus: 1669/1669 PASS, 51s, ep4-us1-tk3.trx; все 3 named tests включены. Scoped format и diff check PASS. Полный исходный gate предыдущего тикета: 1765/1765. Review: общий authoritative путь, callback не обходит gate, UI не является границей доступа.

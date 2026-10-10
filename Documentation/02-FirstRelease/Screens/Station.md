@@ -1,5 +1,13 @@
 # Station
 
+## Сверка реализации — 2026-10-10
+
+Обновление после исправлений: F01–F05 закрыты кодом и регрессиями; EP-0004 включён в текущий рабочий набор. Баланс, 80 FPS и человеческая приёмка остаются открытыми. Текущий статус — `Documentation/04-Engineering/EpicReview20261010/Fixes.md`.
+
+Работают выбор назначения, доступность/причины отказа, ETA и navigation.undock с переходом к карте. Trade и Finance открывают реальные торговые/финансовые данные. Hire/Contracts и отдельные сервисы остаются вне выполненного торгового scope; весь экран уже нельзя считать заглушкой.
+
+[Текущее устройство](../../04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](../../04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
+
 Статус: реализована заглушка станционного hub-экрана; кнопка `Trade` открывает реализованный MVP торговли, данные новой экономики станции требуют интеграции.
 
 Код: `src/DeepSpaceSaga.Client/UI/Screens/Station/` (`StationScreen.cs`, `StationLayout.cs`).
@@ -55,9 +63,9 @@
 - Кнопки `Trade`, `Hire` и `Contracts` — реальные, кликабельные (не placeholder-строки): открывают `TradeScreen`/`HireScreen`/`ContractsScreen` вложенным modal поверх `Station`, тем же `PushModalAsync`/`PopModalAsync`, что и `GameMenu → Save/Load`. `TradeScreen` реализует MVP торговли; `HireScreen` и `ContractsScreen` остаются заглушками. Закрытие возвращает на `Station`. `Contracts` выделен из исходного `Hire` (наём экипажа vs. пассажирские контракты — разные механики) и занимает новый ряд `6` панели, добавленный после исходных шести рядов, а не переиспользующий чей-то старый. Детали: `Documentation/02-FirstRelease/Screens/Trade.md`, `Documentation/02-FirstRelease/Screens/Hire.md`, `Documentation/02-FirstRelease/Screens/Contracts.md`.
 - Кнопка `Finance` тоже реальная — но, в отличие от `Trade`/`Hire`/`Contracts`, открывает не новый экран, а уже существовавший `FinanceScreen` (ранее доступный только с кнопки `F`/`Ctrl+F` на панели механик `GameSessionScreen`). Детали: `Documentation/02-FirstRelease/Screens/Finance.md`.
 
-Не реализовано — экран показывает placeholder-строки "not available yet" вместо этого:
+Оставшиеся сервисы и реализованный уход:
 
-- Название станции и список доступных станционных действий (данные не читаются из snapshot).
+- Название/контекст станции и направления берутся из snapshot; отдельные сервисы остаются placeholder.
 - Кнопки `Representatives` и `Install Drilling Unit` — сейчас это статичные текстовые строки, не интерактивные элементы (в отличие от `Trade`/`Hire`/`Finance`/`Contracts`/`Undock`, см. выше).
 - `Undock` — реальная кнопка: отправляет authoritative `navigation.undock` и закрывает station overlay, возвращая игрока к карте.
 

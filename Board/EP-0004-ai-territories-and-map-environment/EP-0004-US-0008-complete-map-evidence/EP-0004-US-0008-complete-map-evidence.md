@@ -2,7 +2,7 @@
 epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0008-complete-map-evidence
 title: Проверяемая работа карты со всеми слоями
-stage: draft
+stage: in_progress
 dependencies: [EP-0004-US-0007-resume-territories-and-fields, EP-0003-US-0008-cluster-scale-evidence, EP-0002-US-0008-system-generation-evidence]
 created: 2026-09-22T14:40:41Z
 source_request: "сделай тикеты для историй в эпиках 2 3 и 4&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0004-ai-territories-and-map-environment"
@@ -106,3 +106,7 @@ Implementation gates (перед первым тикетом, проверяют
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0008-TK-0001-full-map-correctness-corpus | stage approved; 1 files; engine; AC 1/3 |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0008-TK-0002-full-map-performance-report | stage approved; 3 files; tooling; AC 1/2/3 |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0008-TK-0003-full-map-render-evidence | stage approved; 2 files; client; AC 2/3 |
+
+## Execution review — 2026-10-08
+
+Correctness, 600+600-world performance comparison, native measurement and interaction evidence delivered. All automated checks pass; native interaction8/8 PASS. FPS80 FAILED on this environment, acceptance remains OPEN in TK-0003. See [execution registry](../ImplementationStatus.md) and [native evidence](../evidence/us8-native-summary.json). No remaining confirmed functional finding in story scope; presentation pacing needs further diagnosis.

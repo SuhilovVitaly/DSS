@@ -1,5 +1,13 @@
 # Deep Space Saga Documentation
 
+## Сверка реализации — 2026-10-10
+
+Обновление после исправлений: F01–F05 закрыты кодом и регрессиями; EP-0004 включён в текущий рабочий набор. Баланс, 80 FPS и человеческая приёмка остаются открытыми. Текущий статус — `Documentation/04-Engineering/EpicReview20261010/Fixes.md`.
+
+Обновлены связанные требования, механики, экраны и отчёты EP-0001–0004. Обзор различает текущую ветку, отдельную поставку EP-0004, подтверждённые дефекты и открытые gates.
+
+[Текущее устройство](04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
+
 This folder is the single home for DSS project documentation.
 
 ## Start Here
@@ -12,8 +20,12 @@ This folder is the single home for DSS project documentation.
 - [Approach requirements](01-Requirements/EngineRequirements.md#approach-shortest-route) - shortest rendezvous, captured trailing-point fallback, and planner version 3 (2026-09-20).
 - [Approach implementation](04-Engineering/ApproachRoutes.md) - solver, numerical tolerances, prediction, and save compatibility.
 
-- [Countermeasure combat](04-Engineering/CountermeasureCombat.md) — EP-0007, операторы, защита, Save v11 и фактическая приёмка.
+- [Countermeasure combat](04-Engineering/CountermeasureCombat.md) — исторический EP-0007, операторы, защита и приёмка Save v11; текущий SaveFormat=15.
 - [Countermeasure Graphify](06-Tooling/CountermeasureGraphify.md) — корпус, перестройка и проверка графа.
+
+- [AI map environment](04-Engineering/AiMapEnvironment.md) — текущий EP-0004: контракты, конфигурация, Save15, слои и открытая FPS acceptance.
+- [Solar-system concept](02-FirstRelease/Mechanics/SolarSystemMapConcept.md) — продуктовый контракт карты.
+- [EP-0002 implementation](04-Engineering/EP-0002-Implementation.md) и [EP-0003 evidence](Validation/EP-0003-Implementation.md) — датированные поставки предшественников.
 
 ## Sections
 
@@ -36,3 +48,5 @@ Operational skill files that must be discovered in-place, such as the character-
 3. Put implementation investigations, measurements, and one-off reviews in `04-Engineering/`.
 4. When a document moves or is renamed, update links in Markdown, code comments, and project files in the same change.
 5. Keep old paths out of new documentation; link from `Documentation/` paths.
+
+- [EP-0004 Graphify](06-Tooling/AiMapGraphify.md) — текущий код, документы, hash manifest и ограничения AST.

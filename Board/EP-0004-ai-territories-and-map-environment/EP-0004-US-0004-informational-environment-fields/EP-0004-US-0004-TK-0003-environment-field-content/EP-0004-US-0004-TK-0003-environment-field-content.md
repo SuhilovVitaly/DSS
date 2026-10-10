@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0004-informational-environment-fields
 ticket: EP-0004-US-0004-TK-0003-environment-field-content
 title: Настройки трёх типов пространственных полей
-stage: approved
+stage: done
 layer: content-data
 depends_on: [EP-0004-US-0003-TK-0001-temporal-placement-validation, EP-0004-US-0003-TK-0002-placement-evidence-report, EP-0004-US-0004-TK-0002-seeded-environment-fields]
 files_touched: 2
@@ -11,6 +11,11 @@ serves: [AC-0001, AC-0002, AC-0003]
 created: 2026-09-22T14:40:41Z
 revision: 1
 ---
+
+## Текущий контракт — 2026-10-08
+
+Исходный план и скопированные dependency inputs ниже сохранены для трассировки. Фактические версии/API и расширенный scope определяются Execution/Resolved sections и [текущим контрактом](../../../../Documentation/04-Engineering/AiMapEnvironment.md). SaveFormat15, AiMap rulesVersion1, шесть сценариев, inline poiTemplates; Field/POI metadata не являются entities или engine command targets. Исторический NOT RUN не заменяет финальное native evidence US8; FPS80 acceptance остаётся OPEN.
+
 
 # Настройки трёх типов пространственных полей
 
@@ -146,3 +151,8 @@ public sealed record EnvironmentFieldData(string Id,string Kind,double Intensity
 ### EP-0004-US-0004-TK-0002-seeded-environment-fields
 
 public sealed record EnvironmentGenerationConfig(int RadiationCount,int DustCount,int DebrisCount,double RadiationRadiusKm,double DustWidthKm,double DebrisRadiusKm,double Intensity); config.Environment optional; поле в AiMap.Fields. Motion anchor разрешается в snapshot orbit/parent data, без graphics.
+
+
+## Execution / self-review — 2026-10-08
+
+Shipped environment config is 1 radiation / 2 dust / 2 debris, dimensions 5000/100/250 km, intensity 0.5. Actual scenario factory startup checked for all six scenarios; fields retain unique IDs and create no SpaceObjects. Strict content loader rejects damage/price/sensor/fuel modifier properties and reports the exact invalid dimension/path. Client full 1744/1744 PASS (ep4-us4-tk3.trx), build 0 warnings/errors, scoped format and diff check PASS. Self-review: no findings; visual acceptance belongs to TK-0004/US-0008.

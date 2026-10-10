@@ -20,7 +20,31 @@ public sealed record SolarSystemGenerationConfig(
     [property: JsonPropertyName("asteroidsPerBelt")] int AsteroidsPerBelt,
     [property: JsonPropertyName("decorationSamplesPerBelt")] int DecorationSamplesPerBelt,
     [property: JsonPropertyName("enabledScenarios")] IReadOnlyList<string> EnabledScenarios,
-    [property: JsonPropertyName("clusters")] ClusterGenerationConfig? Clusters = null);
+    [property: JsonPropertyName("clusters")] ClusterGenerationConfig? Clusters = null,
+    [property: JsonPropertyName("ai")] AiGenerationConfig? Ai = null,
+    [property: JsonPropertyName("environment")] EnvironmentGenerationConfig? Environment = null,
+    [property: JsonPropertyName("poiTemplates")] IReadOnlyList<PoiTemplate>? PoiTemplates = null);
+
+public sealed record PoiTemplate(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("description")] string Description);
+
+public sealed record EnvironmentGenerationConfig(
+    [property: JsonPropertyName("radiationCount")] int RadiationCount,
+    [property: JsonPropertyName("dustCount")] int DustCount,
+    [property: JsonPropertyName("debrisCount")] int DebrisCount,
+    [property: JsonPropertyName("radiationRadiusKm")] double RadiationRadiusKm,
+    [property: JsonPropertyName("dustWidthKm")] double DustWidthKm,
+    [property: JsonPropertyName("debrisRadiusKm")] double DebrisRadiusKm,
+    [property: JsonPropertyName("intensity")] double Intensity);
+
+public sealed record AiGenerationConfig(
+    [property: JsonPropertyName("minBases")] int MinBases,
+    [property: JsonPropertyName("maxBases")] int MaxBases,
+    [property: JsonPropertyName("defenceRadiusKm")] double DefenceRadiusKm,
+    [property: JsonPropertyName("patrolRadiusKm")] double PatrolRadiusKm,
+    [property: JsonPropertyName("maxPlacementAttempts")] int MaxPlacementAttempts);
 
 public sealed record ClusterGenerationConfig(
     [property: JsonPropertyName("minClusters")] int MinClusters,
@@ -36,22 +60,32 @@ public sealed record ClusterGenerationConfig(
 
 public static class SolarSystemGeneration
 {
+    public const int MaximumPlacementAttempts = 256;
+    public const int MaximumAsteroidsPerBelt = 1024;
+    public const int MaximumDecorationSamplesPerBelt = 65536;
+    public const long MaximumAsteroidPlacementWork = 10_000_000;
+
     public static SolarSystemGenerationConfig ValidateConfig(SolarSystemGenerationConfig c)
     {
         if (c.SchemaVersion != 1 || c.GeneratorVersion != 1)
             throw new ContentException("solarSystem: unsupported schemaVersion/generatorVersion.");
-        if (c.MaxPlacementAttempts <= 0 || c.MinPlanets < 3 || c.MaxPlanets > 7 || c.MaxPlanets < c.MinPlanets ||
+        if (c.MaxPlacementAttempts is <= 0 or > MaximumPlacementAttempts || c.MinPlanets < 3 || c.MaxPlanets > 7 || c.MaxPlanets < c.MinPlanets ||
             c.MinBelts < 2 || c.MaxBelts > 5 || c.MaxBelts < c.MinBelts ||
             !double.IsFinite(c.StartMinDays) || !double.IsFinite(c.StartMaxDays) ||
             c.StartMinDays < 50 || c.StartMaxDays > 75 || c.StartMaxDays < c.StartMinDays ||
             !double.IsFinite(c.OrbitSpeedFraction) || c.OrbitSpeedFraction <= 0 || c.OrbitSpeedFraction >= 1 ||
             !double.IsFinite(c.BeltWidthFraction) || c.BeltWidthFraction <= 0 || c.BeltWidthFraction >= 1 ||
             !double.IsFinite(c.OrbitClearanceWorld) || c.OrbitClearanceWorld < 0 ||
-            c.AsteroidsPerBelt < 0 || c.DecorationSamplesPerBelt < 0 ||
+            c.AsteroidsPerBelt is < 0 or > MaximumAsteroidsPerBelt ||
+            c.DecorationSamplesPerBelt is < 0 or > MaximumDecorationSamplesPerBelt ||
+            (long)c.MaxPlacementAttempts * c.MaxPlacementAttempts * c.MaxBelts * c.AsteroidsPerBelt > MaximumAsteroidPlacementWork ||
             c.EnabledScenarios is null || c.EnabledScenarios.Any(string.IsNullOrWhiteSpace) ||
             c.EnabledScenarios.Distinct(StringComparer.OrdinalIgnoreCase).Count() != c.EnabledScenarios.Count)
             throw new ContentException("solarSystem: invalid generation ranges, dimensions or enabledScenarios.");
         if (c.Clusters is { } clusters) StationClusterGenerator.ValidateConfig(clusters);
+        if (c.Ai is { } ai) AiBaseGenerator.ValidateConfig(ai);
+        if (c.Environment is { } environment) EnvironmentFieldGenerator.ValidateConfig(environment);
+        if (c.PoiTemplates is { } templates) PointOfInterestGenerator.ValidateConfig(templates);
         return c;
     }
 

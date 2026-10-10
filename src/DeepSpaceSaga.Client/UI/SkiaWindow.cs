@@ -382,7 +382,9 @@ public sealed class SkiaWindow : IDisposable
                 new(fbSize.X, fbSize.Y, _window.VSync, _monitorRefreshHz, _graphicsRenderer, _graphicsVersion,
                     profiledScreen.UiScale, snapshot?.CurrentSpeed.ToString() ?? "unavailable", map?.Seed, map?.GeneratorVersion,
                     map?.Planets.Length ?? 0, map?.Belts.Length ?? 0, snapshot?.Objects.Length ?? 0,
-                    profiledScreen.CameraPixelsPerWorldUnit, profiledScreen.SelectedObjectId), presentWaitMs);
+                    profiledScreen.CameraPixelsPerWorldUnit, profiledScreen.SelectedObjectId,
+                    MapFrameCounts.From(snapshot), profiledScreen.MapLayers.ToString(), snapshot?.GameTimeMs, snapshot?.MotionTimeMs,
+                    profiledScreen.SelectedFieldId, profiledScreen.SelectedPoiId), presentWaitMs);
             if (evidence.Completed && Environment.GetEnvironmentVariable("DSS_MAP_FRAME_EXIT") == "1") _window.Close();
         }
         _grContext.GetResourceCacheUsage(out int gpuResources, out long gpuCacheBytes);

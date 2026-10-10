@@ -1,5 +1,13 @@
 # ScenarioSelect
 
+## Сверка реализации — 2026-10-10
+
+Обновление после исправлений: F01–F05 закрыты кодом и регрессиями; EP-0004 включён в текущий рабочий набор. Баланс, 80 FPS и человеческая приёмка остаются открытыми. Текущий статус — `Documentation/04-Engineering/EpicReview20261010/Fixes.md`.
+
+Штатные сценарии используют seeded solar/cluster generation при New Game, сохраняя назначение, исходные ID и explicit inventory. Load существующего save не выполняет New Game generation. AI/поля/POI EP-0004 включены в штатную конфигурацию текущей рабочей копии.
+
+[Текущее устройство](../../04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](../../04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
+
 Статус: экран реализован.
 
 Код: `src/DeepSpaceSaga.Client/UI/Screens/ScenarioSelect/` (`ScenarioSelectScreen.cs`, `ScenarioSelectLayout.cs`).

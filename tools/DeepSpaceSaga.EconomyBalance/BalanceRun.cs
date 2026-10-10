@@ -130,6 +130,7 @@ internal sealed class EconomyBalanceRunner
                 }
                 foreach (var config in matrix.ShipConfigurations.OrderBy(c => c.Id, StringComparer.Ordinal))
                 {
+                    var configuredRegistry = ClusterBalanceRunner.ConfigureCargo(registry, config);
                     var strategies = ImmutableArray.CreateBuilder<BalanceStrategyEvidence>();
                     bool replayProofAttempted = false;
                     foreach (var (time, save) in checkpoints)
@@ -140,7 +141,7 @@ internal sealed class EconomyBalanceRunner
                             var source = sample.Stations.Single(s => s.StationId == route.Origin);
                             foreach (var item in source.Stocks.Where(s => s.Target is not null).OrderBy(s => s.ItemTypeId, StringComparer.Ordinal))
                             {
-                                using var driver = new BalanceDriver(registry, save);
+                                using var driver = new BalanceDriver(configuredRegistry, save);
                                 var strategy = driver.Run(sample, route, item.ItemTypeId, config);
                                 if (!replayProofAttempted && strategy.Outcome == "completed")
                                 {
@@ -395,8 +396,8 @@ internal sealed class BalanceDriver : IDisposable
         if (PositionAt(route.Origin) is { } positioningReason) return Evidence("rejected", positioningReason);
         var module = _snapshot.InstalledModules.Single(m => m.ModuleId == _cargo);
         capacity = module.AvailableCapacityKg ?? 0;
-        // Cluster configurations already install the upgraded capacity in the registry.
-        analytical = _clusterRun ? capacity : checked((long)((Int128)capacity * config.CargoCapacityMultiplierPermille / 1000));
+        // Both runners install the configuration in the authoritative registry before quoting.
+        analytical = capacity;
         buyQuote = Quote(TradeCommandTypes.Buy, item, 1);
         long unitMass = _snapshot.DockedStationTrade?.Items.FirstOrDefault(i => i.ItemTypeId == item)?.UnitMassKg ?? 1;
         ceiling = Math.Min(buyQuote.MaximumQuantity, unitMass > 0 ? analytical / unitMass : long.MaxValue);

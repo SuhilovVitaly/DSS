@@ -11,6 +11,8 @@ internal static class StationClusterSaveValidation
     internal static void Validate(GameStateData state, GameDataRegistry registry)
     {
         if (state.ClusterMap is not { } map) return;
+        AiBaseGenerator.ValidateWorld(state);
+        var aiIds = (state.AiMap?.Bases ?? []).Select(b => b.ObjectId).ToHashSet(StringComparer.OrdinalIgnoreCase);
         void Require([DoesNotReturnIf(false)] bool valid, string detail) { if (!valid) throw new ScenarioException($"clusterMap: {detail}. Running world was not replaced."); }
         Require(state.SolarSystem is not null && map.RulesVersion == 1 && !map.Clusters.IsDefaultOrEmpty &&
             !map.Stations.IsDefaultOrEmpty && !map.Links.IsDefaultOrEmpty, "solar system, version and resolved arrays required");
@@ -35,7 +37,7 @@ internal static class StationClusterSaveValidation
         }
         var declared = map.Clusters.SelectMany(c => c.StationIds).ToArray();
         Require(declared.Length == members.Count && declared.Distinct(StringComparer.OrdinalIgnoreCase).Count() == members.Count &&
-            declared.All(id => members.ContainsKey(id)) && state.SpaceObjects.Where(o => o.ObjectType == SpaceObjectType.Station).All(o => members.ContainsKey(o.ObjectId)),
+            declared.All(id => members.ContainsKey(id) && !aiIds.Contains(id)) && state.SpaceObjects.Where(o => o.ObjectType == SpaceObjectType.Station && !aiIds.Contains(o.ObjectId)).All(o => members.ContainsKey(o.ObjectId)),
             "partial or multiply owned station membership");
         var linkIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var pairs = new HashSet<(string, string)>();
@@ -59,6 +61,14 @@ internal static class StationClusterSaveValidation
             Require(reference is not null && stations.All(o => o.Orbit is { } orbit && orbit.SemiMajorAxis == orbit.SemiMinorAxis &&
                 orbit.OrbitalPeriodMs == reference.OrbitalPeriodMs && orbit.EpochSimulationTimeMs == reference.EpochSimulationTimeMs &&
                 orbit.OrbitDirection == reference.OrbitDirection && orbit.SemiMajorAxis >= belt.InnerRadius && orbit.SemiMajorAxis <= belt.OuterRadius), "nonrigid or out-of-belt group");
+            // Compare analytical positions at the common epoch, not possibly stale serialized poses.
+            // Legacy source stations can be closer than the generated-station clearance.
+            var positions = stations.Select(o => OrbitalMotionMath.At(new(o.ObjectId, o.PositionX, o.PositionY, 0, 0),
+                o.Orbit!, reference!.EpochSimulationTimeMs)).ToArray();
+            for (int i = 0; i < positions.Length; i++)
+                for (int j = i + 1; j < positions.Length; j++)
+                    Require(double.Hypot(positions[i].X - positions[j].X, positions[i].Y - positions[j].Y) > 0.000001,
+                        $"overlapping stations {stations[i].ObjectId}/{stations[j].ObjectId}");
             StationClusterGenerator.ValidateGraph(stations, map.Links.Where(l => c.StationIds.Contains(l.FromStationId) && c.StationIds.Contains(l.ToStationId)).ToImmutableArray(), registry);
         }
         var seen = new HashSet<string>(StringComparer.Ordinal) { map.Stations[0].ObjectId };

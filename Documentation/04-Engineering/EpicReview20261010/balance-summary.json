@@ -1,0 +1,1274 @@
+{
+  "isAcceptanceCorpus": true,
+  "caseCount": 24,
+  "sampleCount": 5784,
+  "strategyCount": 12840,
+  "completedStrategyCount": 6784,
+  "rejectedStrategyCount": 4512,
+  "partialStrategyCount": 1544,
+  "unknownStrategyCount": 0,
+  "violationCount": 125,
+  "status": "violations",
+  "violationCodes": {
+    "event_did_not_change_leader": 2,
+    "long_upgrade_crossover": 1,
+    "route_always_best": 2,
+    "route_margin_dominance": 108,
+    "short_margin_band": 12
+  },
+  "rawSha256": "6f29df6c3968051be2ab7b7b7bbf21b2a8a6196bdae41a0521ecb453fdd54521",
+  "rawBytes": 182937091,
+  "continuationsMatch": true,
+  "violations": [
+    {
+      "code": "event_did_not_change_leader",
+      "seed": 233,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one normal/event leader change"
+    },
+    {
+      "code": "event_did_not_change_leader",
+      "seed": 233,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one normal/event leader change"
+    },
+    {
+      "code": "long_upgrade_crossover",
+      "seed": 0,
+      "shipConfigurationId": "corpus",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "same seed/state/Long route/item: starter net<=0 and cargo-upgrade net>0"
+    },
+    {
+      "code": "route_always_best",
+      "seed": 233,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "no route/item wins every checked state"
+    },
+    {
+      "code": "route_always_best",
+      "seed": 233,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "no route/item wins every checked state"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 1,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 1,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 7200000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 1,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 93600000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 1,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 1,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 1,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 1,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 7200000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 1,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 93600000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 1,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 1,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 2,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 2,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 7200000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 2,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 36000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 2,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 2,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 7200000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 2,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 36000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 3,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 3,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 18000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 3,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 244800000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 3,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 3,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 3,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 3,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 18000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 3,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 244800000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 3,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 3,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 5,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 5,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 14400000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 5,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 194400000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 5,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 5,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 5,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 5,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 14400000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 5,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 194400000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 5,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 5,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 8,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 14400000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 8,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 28800000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 8,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 8,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 8,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 14400000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 8,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 28800000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 8,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 8,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 13,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 13,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 14400000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 13,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 172800000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 13,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 13,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 13,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 13,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 14400000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 13,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 172800000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 13,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 13,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 21,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 21,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 115200000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 21,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 21,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 21,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 21,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 115200000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 21,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 21,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 34,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 34,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 10800000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 34,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 57600000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 34,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 34,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 34,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 10800000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 34,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 57600000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 34,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 55,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 55,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 18000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 55,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 46800000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 55,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 55,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 55,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 18000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 55,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 46800000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 55,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 89,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 89,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 25200000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 89,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 75600000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 89,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 89,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 89,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 89,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 25200000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 89,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 75600000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 89,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 89,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 144,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 144,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 3600000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 144,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 25200000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 144,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 144,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 144,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 144,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 3600000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 144,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 25200000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 144,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 144,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 233,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 233,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 57600000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 233,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 100800000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 233,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 233,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 233,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 0,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 233,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 57600000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 233,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 100800000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 233,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 432000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "route_margin_dominance",
+      "seed": 233,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": 864000000,
+      "expected": "maximum margin<=2*median"
+    },
+    {
+      "code": "short_margin_band",
+      "seed": 1,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one safe Short margin50..150 permille"
+    },
+    {
+      "code": "short_margin_band",
+      "seed": 1,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one safe Short margin50..150 permille"
+    },
+    {
+      "code": "short_margin_band",
+      "seed": 3,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one safe Short margin50..150 permille"
+    },
+    {
+      "code": "short_margin_band",
+      "seed": 3,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one safe Short margin50..150 permille"
+    },
+    {
+      "code": "short_margin_band",
+      "seed": 8,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one safe Short margin50..150 permille"
+    },
+    {
+      "code": "short_margin_band",
+      "seed": 8,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one safe Short margin50..150 permille"
+    },
+    {
+      "code": "short_margin_band",
+      "seed": 13,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one safe Short margin50..150 permille"
+    },
+    {
+      "code": "short_margin_band",
+      "seed": 13,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one safe Short margin50..150 permille"
+    },
+    {
+      "code": "short_margin_band",
+      "seed": 21,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one safe Short margin50..150 permille"
+    },
+    {
+      "code": "short_margin_band",
+      "seed": 21,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one safe Short margin50..150 permille"
+    },
+    {
+      "code": "short_margin_band",
+      "seed": 144,
+      "shipConfigurationId": "cargo-upgrade",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one safe Short margin50..150 permille"
+    },
+    {
+      "code": "short_margin_band",
+      "seed": 144,
+      "shipConfigurationId": "starter",
+      "stationObjectId": null,
+      "routeId": null,
+      "itemTypeId": null,
+      "gameTimeMs": null,
+      "expected": "at least one safe Short margin50..150 permille"
+    }
+  ]
+}

@@ -157,6 +157,11 @@ public sealed partial class GameSessionScreen : IScreen
     // Object interaction state — ТЗ: ActiveObject and SelectedObject
     private string? _activeObjectId;
     private string? _selectedObjectId;
+    private string? _selectedFieldId;
+    private string? _selectedPoiId;
+    private IReadOnlyList<AiMapPresentation.PoiGeometry> _poiGeometry = [];
+    private readonly EnvironmentFieldRenderer _fieldRenderer = new();
+    private IReadOnlyList<EnvironmentFieldRenderer.Geometry> _fieldGeometry = [];
 
     /// <summary>Last snapshot sequence <see cref="ConsumePendingAutoTransition"/> already
     /// checked for a dialogue or docking-state transition — see that method.</summary>
@@ -268,10 +273,25 @@ public sealed partial class GameSessionScreen : IScreen
     internal IReadOnlyList<ObjectTrailPoint> GetObjectTrail(string objectId) => _trailStore.GetTrail(objectId);
     internal string? ActiveObjectId => _activeObjectId;
     internal string? SelectedObjectId => _selectedObjectId;
+    internal string? SelectedFieldId => _selectedFieldId;
+    internal string? SelectedPoiId => _selectedPoiId;
     internal ObjectInfoPanelData? PlayerShipInfo => ToObjectInfoPanelData(FindPlayerShip(_renderStates));
-    /// <summary>Object Info panel's "Selected Object" row content — hover (<see cref="ActiveObjectId"/>) takes priority over the last click (<see cref="SelectedObjectId"/>).</summary>
-    internal ObjectInfoPanelData? SelectedOrActiveObjectInfo => ToObjectInfoPanelData(
-        FindRenderStateById(_activeObjectId ?? _selectedObjectId), FindPlayerShip(_renderStates));
+    /// <summary>Object Info prioritizes a selected POI/field, then the cycled real selection; otherwise hover precedes the last real click.</summary>
+    internal ObjectInfoPanelData? SelectedOrActiveObjectInfo => SelectedPoiInfo() ?? SelectedFieldInfo() ?? (_activeObjectId is not null && _selectionCycleIndex == 0
+        ? ToObjectInfoPanelData(FindRenderStateById(_activeObjectId), FindPlayerShip(_renderStates))
+        : ToObjectInfoPanelData(FindRenderStateById(_selectedObjectId), FindPlayerShip(_renderStates)));
+
+    private ObjectInfoPanelData? SelectedPoiInfo()
+    {
+        var point = _poiGeometry.FirstOrDefault(p => p.Data.ObjectId == _selectedPoiId)?.Data;
+        return point is null ? null : new(point.ObjectId, point.Name, 0, 0, null, PoiDescription: point.Description);
+    }
+
+    private ObjectInfoPanelData? SelectedFieldInfo()
+    {
+        var field = _fieldGeometry.FirstOrDefault(f => f.Data.Id == _selectedFieldId)?.Data;
+        return field is null ? null : new(field.Id, field.Kind, 0, 0, null, FieldKind: field.Kind, FieldIntensity: field.Intensity);
+    }
 
     // ── Constructor ─────────────────────────────────────────────
 
@@ -392,13 +412,23 @@ public sealed partial class GameSessionScreen : IScreen
             // never touches ActiveObjectId, and never moves the camera or sends a
             // navigation command.
             if (!IsClickOnUiPanel(uiX, uiY))
+            {
+                _selectedFieldId = null; _selectedPoiId = null;
                 SetSelectedObjectId(null);
+            }
 
             return ScreenEvent.None;
         }
 
         if (button != MouseButton.Left)
             return ScreenEvent.None;
+
+        // The diagnostic overlay must remain dismissible even in a crowded viewport.
+        if (_panelVisible && _lastCloseRect.Contains(uiX, uiY))
+        {
+            _panelVisible = false;
+            return ScreenEvent.None;
+        }
 
         if (_combatJournalPanel.Click(uiX, uiY)) return ScreenEvent.None;
         if (HandleMapToolbarClick(uiX, uiY)) return ScreenEvent.None;
@@ -427,14 +457,6 @@ public sealed partial class GameSessionScreen : IScreen
         if (_lastTempCharacterImageButtonRect.Contains(uiX, uiY))
             return ScreenEvent.OpenTempCharacterImage;
 
-        // The info overlay is painted above command groups; its close control
-        // must remain reachable even when the fifth group overlaps it.
-        if (_panelVisible && _lastCloseRect.Contains(uiX, uiY))
-        {
-            _panelVisible = false;
-            return ScreenEvent.None;
-        }
-
         // 4. Info panel (consume, don't pan)
         if (_panelVisible && _lastPanelRect.Contains(uiX, uiY))
         {
@@ -451,22 +473,23 @@ public sealed partial class GameSessionScreen : IScreen
         if (IsClickOnUiPanel(uiX, uiY)) return ScreenEvent.None;
         if (TryExpandMapCluster(x, y)) return ScreenEvent.None;
 
-        // 5.5. Object selection takes priority over both plain pan and Ctrl+Click
-        // navigation (ТЗ §54, TacticalMapSpecification.md line 79: "клик поглощается,
-        // камера не двигается, navigation command не отправляется"): a left click
-        // within the 30 px hit radius of a visible object selects it — the camera
-        // does not move and no navigation command is sent, whether or not Ctrl is
-        // held. Selecting the player ship itself is the one exception: it reattaches
-        // camera focus to the player (existing, still-wanted behavior), same as
-        // Ctrl+C. Selecting any OTHER object leaves camera state completely
-        // untouched (UX change, story-20260827-083137.md: selecting an object no
-        // longer makes the camera follow/re-center on it).
-        string? hitObjectId = FindNearestObjectId(x, y);
+        // Stable overlap cycling precedes map panning and Ctrl+Click navigation.
+        // Descriptor selections stay client-local. A unique player candidate enables
+        // Follow; cycling overlapping objects preserves the camera for the next click.
+        var picked = PickMapItem(x, y);
+        if (picked.Kind is 1 or 2)
+        {
+            _selectedPoiId = picked.Kind == 1 ? picked.Id : null;
+            _selectedFieldId = picked.Kind == 2 ? picked.Id : null;
+            return ScreenEvent.None;
+        }
+        string? hitObjectId = picked.Id;
         if (hitObjectId is not null)
         {
+            _selectedFieldId = null; _selectedPoiId = null;
             SetSelectedObjectId(hitObjectId);
 
-            if (hitObjectId == _buffer.Latest?.Snapshot.PlayerShipObjectId)
+            if (hitObjectId == _buffer.Latest?.Snapshot.PlayerShipObjectId && _selectionCycle.Length == 1)
             {
                 SetFollowPlayer();
             }
@@ -518,6 +541,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
+        if (double.Hypot(x - _selectionCycleX, y - _selectionCycleY) > 3) { _selectionCycle = []; _selectionCycleIndex = 0; }
         // _mouseX/_mouseY stay raw (displayed as "Cursor Window" and used to compute
         // "Cursor Game" via the camera); _uiMouseX/_uiMouseY are the logical-space
         // coordinates UI panels hover-test against.
@@ -726,13 +750,16 @@ public sealed partial class GameSessionScreen : IScreen
     /// its target metadata is missing (never send a command blind). navigation.stationsList
     /// has no station-list screen yet, so it stays visible but always disabled.
     /// </summary>
-    private bool IsModuleCommandEnabled(string commandType)
+    internal bool IsModuleCommandEnabled(string commandType)
     {
+        if ((_selectedFieldId is not null || _selectedPoiId is not null) && FindCommandTarget(commandType) == "object") return false;
         if (commandType == CombatCommandTypes.Fire) return IsTorpedoFireEnabled();
         if (commandType == CombatCommandTypes.SelfDestruct) return IsSelfDestructEnabled();
         if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
             return IsDefenseToggleEnabled(commandType);
         var snapshot = _buffer.Latest?.Snapshot;
+        if (commandType == NavigationComputerCommandTypes.Dock && AiMapPresentation.Base(snapshot, _selectedObjectId) is not null)
+            return false;
         if (snapshot is not null && FindPlayerShipMotion(snapshot)?.IsDestroyed == true)
             return false;
         if (commandType == NavigationComputerCommandTypes.StationsList)
@@ -776,6 +803,8 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private void SendCommandFromPanel(string commandType)
     {
+        if ((_selectedFieldId is not null || _selectedPoiId is not null) && FindCommandTarget(commandType) == "object") return;
+        if (commandType == NavigationComputerCommandTypes.Dock && !IsModuleCommandEnabled(commandType)) return;
         if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable && !IsDefenseToggleEnabled(commandType)) return;
         if (commandType == CombatCommandTypes.SelfDestruct)
         {
@@ -830,7 +859,7 @@ public sealed partial class GameSessionScreen : IScreen
     private string? FindCommandTarget(string commandType)
     {
         var snapshot = _buffer.Latest?.Snapshot;
-        if (snapshot is null)
+        if (snapshot is null || snapshot.InstalledModules.IsDefaultOrEmpty)
             return null;
 
         foreach (var module in snapshot.InstalledModules)
@@ -1083,6 +1112,11 @@ public sealed partial class GameSessionScreen : IScreen
         var buffered = prediction?.BufferedSnapshot;
         UpdateObjectRenderStates(prediction, deltaSeconds);
         _travelEstimateMotionTimeMs = prediction is null ? 0 : GetPredictedGameTimeMs(prediction);
+        _fieldGeometry = buffered is null ? [] : EnvironmentFieldRenderer.Resolve(buffered.Snapshot,
+            _renderStates.Select(s => s.Predicted), _travelEstimateMotionTimeMs);
+        if (_selectedFieldId is not null && !_fieldGeometry.Any(f => f.Data.Id == _selectedFieldId)) _selectedFieldId = null;
+        _poiGeometry = buffered is null ? [] : AiMapPresentation.Points(buffered.Snapshot, _renderStates.Select(s => s.Predicted), _travelEstimateMotionTimeMs);
+        if (_selectedPoiId is not null && !_poiGeometry.Any(p => p.Data.ObjectId == _selectedPoiId)) _selectedPoiId = null;
 
         UpdateCameraFocusFromPlayer(_renderStates);
         UpdateCombatImportance();
@@ -1108,15 +1142,17 @@ public sealed partial class GameSessionScreen : IScreen
         if (buffered?.Snapshot.SolarSystemMap is { } systemMap)
         {
             _solarSystemLayer.Draw(canvas, systemMap, _camera, SKRect.Create(width, height), ShowOrbits);
-            foreach (var planet in systemMap.Planets)
-                foreach (var state in _renderStates)
-                    if (state.Pose.ObjectId == planet.ObjectId)
-                        SolarSystemLayerRenderer.DrawPlanet(canvas, planet, state.Pose.X, state.Pose.Y, _camera, width, height);
         }
 
         // 2. Camera focus indicator
         if (buffered is not null)
+        {
+            if (MapLayers.HasFlag(MapLayerFlags.Fields)) _fieldRenderer.Draw(canvas, _fieldGeometry, _camera, width, height, _selectedFieldId);
+            RenderStageCompleted?.Invoke("fields");
+            if (MapLayers.HasFlag(MapLayerFlags.Territories)) AiMapPresentation.DrawTerritories(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
+            RenderStageCompleted?.Invoke("territories");
             ClusterMapPresentation.Draw(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
+        }
         float cx = width / 2f;
         float cy = height / 2f;
         _depthRenderer.DrawFocusIndicator(canvas, cx, cy);
@@ -1168,6 +1204,7 @@ public sealed partial class GameSessionScreen : IScreen
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
             RenderStageCompleted?.Invoke("label_leaders");
 
+            if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest)) AiMapPresentation.DrawPoints(canvas, _poiGeometry, _camera, width, height, _selectedPoiId);
             DrawMapClusters(canvas);
             // Important markers and plaques stay above clusters and background contacts.
             for (int markerPass = 0; markerPass < 2; markerPass++)
@@ -1186,6 +1223,12 @@ public sealed partial class GameSessionScreen : IScreen
                     if (sx < -margin || sy < -margin || sx > width + margin || sy > height + margin)
                         continue;
 
+                    if (state.Pose.RenderObjectType == SpaceObjectType.Planet && buffered?.Snapshot.SolarSystemMap is { } planetMap)
+                    {
+                        var planet = planetMap.Planets.FirstOrDefault(p => p.ObjectId == state.Pose.ObjectId);
+                        if (planet is not null) SolarSystemLayerRenderer.DrawPlanet(canvas, planet, state.Pose.X, state.Pose.Y, _camera, width, height);
+                    }
+
                     // Selection takes visual priority when the same object is also active;
                     // orange is reserved for hovered objects that are not selected.
                     if (state.Pose.ObjectId == _selectedObjectId)
@@ -1195,6 +1238,11 @@ public sealed partial class GameSessionScreen : IScreen
                     if (state.Pose.ObjectId == _selectedObjectId || state.Pose.ObjectId == _activeObjectId)
                         RenderStageCompleted?.Invoke("reticle");
 
+                    if (AiMapPresentation.Base(buffered?.Snapshot, state.Pose.ObjectId) is { } aiBase)
+                    {
+                        AiMapPresentation.DrawBase(canvas, aiBase, sx, sy, r);
+                        continue;
+                    }
                     if (HasCombatMarker(state.Source))
                     {
                         if (state.Source.Torpedo is not null)
@@ -1236,6 +1284,7 @@ public sealed partial class GameSessionScreen : IScreen
             // 4.5. Object label plaques (on top of objects, before UI panels)
             RenderStageCompleted?.Invoke("marker_geometry");
             _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera);
+            if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest)) AiMapPresentation.DrawSelectedPointLabel(canvas, _poiGeometry, _camera, width, height, _selectedPoiId);
             RenderStageCompleted?.Invoke("label_plaques");
             DrawOffscreenTargets(canvas);
             CompleteRenderStage("markers_and_labels");
@@ -1280,14 +1329,20 @@ public sealed partial class GameSessionScreen : IScreen
 
         // 8. Object Info panel (top-right) — Player Ship + Selected/Active Object rows
         var playerShip = FindPlayerShip(_renderStates);
-        var selectedOrActive = FindRenderStateById(_activeObjectId ?? _selectedObjectId);
+        // Reserve the two-row toolbar at narrow widths; overflowing details remain scrollable.
+        float infoBottom = buffered?.Snapshot.AiMap is null ? float.PositiveInfinity : ComputeScaleSpeedRowY() - 62 - 28 - 27 - 8;
         _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
-            ToObjectInfoPanelData(playerShip), ToObjectInfoPanelData(selectedOrActive, playerShip), _uiViewportH);
+            ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH, infoBottom);
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);
         DrawMapToolbar(canvas);
         DrawGameTime(canvas);
+        if (_panelVisible)
+        {
+            canvas.DrawRect(_lastCloseRect, _panelBgPaint);
+            canvas.DrawText("×", _lastCloseRect.MidX, _lastCloseRect.Top + 16, _panelClosePaint);
+        }
         CompleteRenderStage("info_panels");
 
         canvas.Restore();
@@ -2151,12 +2206,10 @@ public sealed partial class GameSessionScreen : IScreen
     {
         var (lines, labelWidth) = LayoutInfoPanel(buffered);
         float panelX = _lastPanelRect.Left, panelY = _lastPanelRect.Top;
-        float closeX = _lastCloseRect.MidX, closeY = _lastCloseRect.Top + 16;
         const float gap = 8f;
 
         canvas.DrawRect(_lastPanelRect, _panelBgPaint);
         canvas.DrawRect(_lastPanelRect, _panelBorderPaint);
-        canvas.DrawText("×", closeX, closeY, _panelClosePaint);
 
         float textY = panelY + PanelPaddingY + PanelLineHeight - 3f;
         float labelX = panelX + PanelPaddingX;
@@ -2275,6 +2328,8 @@ public sealed partial class GameSessionScreen : IScreen
             !observations.IsDefaultOrEmpty)
             market = observations.FirstOrDefault(o => string.Equals(o.StationObjectId, p.ObjectId, StringComparison.Ordinal));
         var cluster = ClusterMapPresentation.Station(_buffer.Latest?.Snapshot, p.ObjectId);
+        var ai = AiMapPresentation.Base(_buffer.Latest?.Snapshot, p.ObjectId);
+        var territory = AiMapPresentation.Territory(_buffer.Latest?.Snapshot, p.ObjectId);
         var resource = ClusterMapPresentation.Resource(_buffer.Latest?.Snapshot, p.ObjectId);
         var resourceCluster = resource is null ? null : _buffer.Latest?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
@@ -2282,7 +2337,8 @@ public sealed partial class GameSessionScreen : IScreen
             cluster?.ClusterName, cluster?.Profile, cluster?.Directions, resourceCluster, resource?.AnchorStationId,
             cluster is not null && distanceKm is { } distance && player is { } playerState
                 ? ClusterMapPresentation.EstimateStraightDays(distance * 10, playerState.Source.MaxSpeedKmS ?? 0) : null,
-            cluster is null ? null : _travelEstimateMotionTimeMs);
+            cluster is null ? null : _travelEstimateMotionTimeMs, ai?.Owner, ai?.BaseType,
+            territory?.DefenceRadiusKm, territory?.PatrolRadiusKm);
     }
 
     /// <summary>

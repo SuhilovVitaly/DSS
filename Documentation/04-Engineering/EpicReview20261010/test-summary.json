@@ -1,0 +1,214 @@
+[
+  {
+    "path": "D:/DeepSpaceSaga/DSS/tests/DeepSpaceSaga.Client.Tests/TestResults/review-ep1-4-20261010.trx",
+    "counts": {
+      "total": "1735",
+      "executed": "1735",
+      "passed": "1734",
+      "failed": "1",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failed": [
+      {
+        "executionId": "5462d9a3-517b-4797-ba7d-3d54e1eb633a",
+        "testId": "33cd22d9-fe0f-7f99-2326-8c8d60e76e2d",
+        "testName": "DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(stationId: \"SPC-MARKET-INDUSTRIAL\", representativeSupplyItemId: \"item.steel\")",
+        "computerName": "VITA-CASTLE",
+        "duration": "00:00:15.0494043",
+        "startTime": "2026-10-10T10:15:05.2011369+03:00",
+        "endTime": "2026-10-10T10:15:05.2011372+03:00",
+        "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+        "outcome": "Failed",
+        "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+        "relativeResultsDirectory": "5462d9a3-517b-4797-ba7d-3d54e1eb633a"
+      }
+    ]
+  },
+  {
+    "path": "D:/DeepSpaceSaga/DSS/tests/DeepSpaceSaga.Client.Tests/TestResults/review-ep1-4-client-recheck.trx",
+    "counts": {
+      "total": "5",
+      "executed": "5",
+      "passed": "5",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failed": []
+  },
+  {
+    "path": "D:/DeepSpaceSaga/DSS/tests/DeepSpaceSaga.Contracts.Tests/TestResults/review-ep1-4-20261010.trx",
+    "counts": {
+      "total": "170",
+      "executed": "170",
+      "passed": "170",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failed": []
+  },
+  {
+    "path": "D:/DeepSpaceSaga/DSS/tests/DeepSpaceSaga.EconomyBalance.Tests/TestResults/review-ep1-4-20261010.trx",
+    "counts": {
+      "total": "58",
+      "executed": "58",
+      "passed": "58",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failed": []
+  },
+  {
+    "path": "D:/DeepSpaceSaga/DSS/tests/DeepSpaceSaga.Engine.Tests/TestResults/review-ep1-4-20261010.trx",
+    "counts": {
+      "total": "1661",
+      "executed": "1661",
+      "passed": "1661",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failed": []
+  },
+  {
+    "path": "D:/DeepSpaceSaga/DSS/tests/DeepSpaceSaga.Motion.Tests/TestResults/review-ep1-4-20261010.trx",
+    "counts": {
+      "total": "141",
+      "executed": "141",
+      "passed": "141",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failed": []
+  },
+  {
+    "path": "D:/DeepSpaceSaga/DSS/tools/DeepSpaceSaga.Performance.Tests/TestResults/review-ep1-4-20261010.trx",
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failed": []
+  },
+  {
+    "path": "D:/DeepSpaceSaga/DSS-EP-0004/tests/DeepSpaceSaga.Client.Tests/TestResults/review-ep4-client-20261010.trx",
+    "counts": {
+      "total": "44",
+      "executed": "44",
+      "passed": "44",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failed": []
+  },
+  {
+    "path": "D:/DeepSpaceSaga/DSS-EP-0004/tests/DeepSpaceSaga.Engine.Tests/TestResults/review-ep4-20261010.trx",
+    "counts": {
+      "total": "18",
+      "executed": "18",
+      "passed": "18",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failed": []
+  }
+]

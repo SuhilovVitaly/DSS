@@ -55,6 +55,34 @@ public sealed class GenerationInputSchemaTests
     }
 
     [Fact]
+    public void Generation_work_is_bounded_before_replacing_the_world()
+    {
+        var config = Config();
+        Assert.Same(config, SolarSystemGeneration.ValidateConfig(config));
+        SolarSystemGeneration.ValidateConfig(config with { MaxPlacementAttempts = SolarSystemGeneration.MaximumPlacementAttempts });
+        SolarSystemGeneration.ValidateConfig(config with
+        {
+            AsteroidsPerBelt = SolarSystemGeneration.MaximumAsteroidsPerBelt,
+            DecorationSamplesPerBelt = SolarSystemGeneration.MaximumDecorationSamplesPerBelt
+        });
+        using var engine = new SimulationEngine(SeededWorldBootstrapTests.Registry());
+        var source = SeededWorldBootstrapTests.Scenario(); engine.LoadScenario(source);
+        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        foreach (var bad in new[] {
+            config with { MaxPlacementAttempts = SolarSystemGeneration.MaximumPlacementAttempts + 1 },
+            config with { MaxPlacementAttempts = int.MaxValue },
+            config with { AsteroidsPerBelt = SolarSystemGeneration.MaximumAsteroidsPerBelt + 1 },
+            config with { AsteroidsPerBelt = int.MaxValue },
+            config with { DecorationSamplesPerBelt = SolarSystemGeneration.MaximumDecorationSamplesPerBelt + 1 },
+            config with { MaxPlacementAttempts = SolarSystemGeneration.MaximumPlacementAttempts,
+                AsteroidsPerBelt = SolarSystemGeneration.MaximumAsteroidsPerBelt } })
+        {
+            Assert.Throws<ContentException>(() => engine.LoadScenario(source, generation: bad));
+            Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+        }
+    }
+
+    [Fact]
     public void JsonLoaderRoundTrip()
     {
         const string legacy = """

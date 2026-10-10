@@ -2,7 +2,7 @@
 epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0003-trade-compatible-ai-placement
 title: Территории ИИ вокруг доступной торговой сети
-stage: draft
+stage: done
 dependencies: [EP-0004-US-0002-moving-ai-territories, EP-0003-US-0004-cluster-map-and-travel-estimates]
 created: 2026-09-22T14:40:41Z
 source_request: "сделай тикеты для историй в эпиках 2 3 и 4&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0004-ai-territories-and-map-environment"
@@ -107,3 +107,8 @@ Implementation gates (перед первым тикетом, проверяют
 | 2026-09-22T14:40:41Z | Точное сообщение в разделе входного задания | Grounding, карта тикетов и assumptions | Автоматический workflow; без дополнительного approval эпика |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0003-TK-0001-temporal-placement-validation | stage approved; 4 files; engine; AC 1/2/3 |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0003-TK-0002-placement-evidence-report | stage approved; 3 files; tooling; AC 1/2/3 |
+
+
+## Implementation and story self-review — 2026-10-08
+
+AC-0001: actual production diagnostics and 600-world report cover requested epochs and critical approaches. AC-0002: local interval clearance and Sun/system bounded visibility graph checked, human geometry unchanged. AC-0003: deterministic bounded retries and atomic failure covered. Engine full 1774/1774, final non-corpus 1675/1675, tooling 6/6 PASS. Report defect found by corpus was fixed and full report repeated successfully. This is self-review; horizon 365d is finite, balance/performance/native acceptance not inferred. Compact report: [evidence](../evidence/us3-placement-max-summary.json).

@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0004-informational-environment-fields
 ticket: EP-0004-US-0004-TK-0001-environment-field-contract
 title: Геометрия и привязки информационных полей
-stage: approved
+stage: done
 layer: contracts
 depends_on: [EP-0004-US-0003-TK-0001-temporal-placement-validation, EP-0004-US-0003-TK-0002-placement-evidence-report]
 files_touched: 2
@@ -11,6 +11,11 @@ serves: [AC-0001, AC-0002, AC-0003]
 created: 2026-09-22T14:40:41Z
 revision: 1
 ---
+
+## Текущий контракт — 2026-10-08
+
+Исходный план и скопированные dependency inputs ниже сохранены для трассировки. Фактические версии/API и расширенный scope определяются Execution/Resolved sections и [текущим контрактом](../../../../Documentation/04-Engineering/AiMapEnvironment.md). SaveFormat15, AiMap rulesVersion1, шесть сценариев, inline poiTemplates; Field/POI metadata не являются entities или engine command targets. Исторический NOT RUN не заменяет финальное native evidence US8; FPS80 acceptance остаётся OPEN.
+
 
 # Геометрия и привязки информационных полей
 
@@ -138,3 +143,8 @@ public sealed record AiBaseMapData(string ObjectId,string BaseType,string Owner,
 ### EP-0004-US-0002-TK-0001-territory-radii-contract
 
 public sealed record TerritoryMapData(string Id,string BaseObjectId,double DefenceRadiusKm,double PatrolRadiusKm); AiMapEnvironmentSnapshot: ImmutableArray<TerritoryMapData> Territories=default. Правило 0<DefenceRadiusKm<=PatrolRadiusKm finite. Все новые properties используют явные JsonPropertyName camelCase; ImmutableArray optional/default использует существующий ImmutableArrayDefaultJsonConverter<T>, как AuthoritativeSnapshot. Отсутствующие optional поля совместимы со старым JSON.
+
+
+## Execution / self-review — 2026-10-08
+
+Implemented immutable informational field DTO with explicit camelCase properties, world geometry/angles, exact ulong decoration seed and optional default-safe Fields array. Parent/Orbit/Sun round-trip and closed property inventory tested; legacy arrays remain empty. Contracts full 171/171 PASS (ep4-us4-tk1.trx), build 0 warnings/errors, scoped format and diff check PASS. Validation of values/anchors belongs to dependent Engine ticket; DTO carries no gameplay modifiers. Self-review: no findings.

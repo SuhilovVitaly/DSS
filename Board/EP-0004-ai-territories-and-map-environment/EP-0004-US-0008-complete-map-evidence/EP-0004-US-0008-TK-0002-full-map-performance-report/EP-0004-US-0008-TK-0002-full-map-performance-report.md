@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0008-complete-map-evidence
 ticket: EP-0004-US-0008-TK-0002-full-map-performance-report
 title: Сводный отчёт полной карты со всеми слоями
-stage: approved
+stage: done
 layer: tooling
 depends_on: [EP-0004-US-0007-TK-0001-map-environment-save, EP-0004-US-0007-TK-0002-full-map-local-load, EP-0003-US-0008-TK-0001-cluster-correctness-corpus, EP-0003-US-0008-TK-0002-cluster-performance-report, EP-0003-US-0008-TK-0003-cluster-interaction-evidence, EP-0002-US-0008-TK-0001-system-correctness-corpus, EP-0002-US-0008-TK-0002-system-performance-report, EP-0002-US-0008-TK-0003-presented-frame-evidence, EP-0004-US-0008-TK-0001-full-map-correctness-corpus]
 files_touched: 3
@@ -11,6 +11,11 @@ serves: [AC-0001, AC-0002, AC-0003]
 created: 2026-09-22T14:40:41Z
 revision: 1
 ---
+
+## Текущий контракт — 2026-10-08
+
+Исходный план и скопированные dependency inputs ниже сохранены для трассировки. Фактические версии/API и расширенный scope определяются Execution/Resolved sections и [текущим контрактом](../../../../Documentation/04-Engineering/AiMapEnvironment.md). SaveFormat15, AiMap rulesVersion1, шесть сценариев, inline poiTemplates; Field/POI metadata не являются entities или engine command targets. Исторический NOT RUN не заменяет финальное native evidence US8; FPS80 acceptance остаётся OPEN.
+
 
 # Сводный отчёт полной карты со всеми слоями
 
@@ -154,3 +159,11 @@ public sealed record PointOfInterestData(string ObjectId,string Name,string Desc
 ### EP-0004-US-0008-TK-0001-full-map-correctness-corpus
 
 No API change. Корпус фиксирует versions/seed/settings; независимые oracle проверки, не только повтор собственного hash.
+
+## Resolved implementation scope — 2026-10-08
+
+Actual tooling paths already match Code context. Use --all-map-layers with --clusters and min/max single boundary; --boundary-only selects the same single boundary for a fresh E3 baseline. Without all-map-layers, Environment/PoiTemplates are explicitly disabled (prevent shipped defaults contaminating baseline); --ai-placement retains detailed AI proof semantics. Full-map rows retain proof counts/minimum/epochs/components rather than millions of duplicate checks. Report records actual layer flags, descriptor versus entity versus configured decoration counts, motion/calendar epoch, VSync not-applicable for raster, per-criterion measured/not-measured verdicts, optional hashed --client-frame-report reference. Native acceptance follows TK3; no raster-to-GPU inference. Program dispatcher already forwards all arguments unchanged, so no gratuitous Program edit. Fresh baseline comparison is incremental feature cost, not a claim of speedup.
+
+## Execution and self-review — 2026-10-08
+
+Release tooling9/9 PASS (2m02s), build/scoped format/diff PASS. Actual sequential baseline/full CLI each600 worlds, six scenarios seeds1..100, max boundary, eighteen raster views. Exact matched case keys; every full-map world has exactly4 extra authoritative entities; fields5/POI2/territories4 remain metadata. Full medians generation44.6164ms, snapshot1.2844ms, save serialization6.51055ms, payload3136968.5bytes. Baseline23.25685/1.3491/6.40935ms. Raster p99 full7.3695..19.4668ms; no GPU or speedup assertion. Machine/config/raw hashes and all eighteen view distributions: ../../evidence/us8-performance-summary.json. Source8421ea4 plus this ticket working tree; harness hash recorded. Native reference capability is implemented; actual native execution is the dependent TK3 and remains not-measured here. Self-review: backend/provenance and honest criteria, baseline excludes informational defaults, streamed bounded-memory output retained.

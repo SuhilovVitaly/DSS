@@ -132,11 +132,11 @@ internal sealed class ClusterBalanceRunner
         return cases.ToImmutable();
     }
 
-    private static GameDataRegistry ConfigureCargo(GameDataRegistry r, BalanceShipConfiguration c)
+    internal static GameDataRegistry ConfigureCargo(GameDataRegistry r, BalanceShipConfiguration c)
     {
         static IEnumerable<T> All<T>(TypeRegistry<T> types) where T : ITypeDefinition => Enumerable.Range(0, types.Count).Select(types.GetDefinition);
         return GameDataRegistry.Create(All(r.ModuleCategories), All(r.ModuleTypes).Select(m => m.CargoCapacityKg is { } kg
-            ? m with { CargoCapacityKg = checked(kg * c.CargoCapacityMultiplierPermille / 1000) } : m), All(r.ItemTypes), All(r.CommandDefinitions),
+            ? m with { CargoCapacityKg = checked((long)((Int128)kg * c.CargoCapacityMultiplierPermille / 1000)) } : m), All(r.ItemTypes), All(r.CommandDefinitions),
             All(r.FactoryTypes), All(r.Recipes), All(r.Dialogues), All(r.Quests), r.CatalogVersion, r.LegacyCatalogFingerprint,
             All(r.StationMarketProfiles), All(r.ShipClasses), All(r.StationMarketEvents));
     }

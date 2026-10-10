@@ -17,7 +17,7 @@ internal static class SolarNativeEvidence
         if (args.Length < 7) throw new ArgumentException("Usage: <root> <output.json> --solar-window min|max system|belt|selected|cluster 1|1.2|1.5 1280x720|1920x1080");
         string root = Path.GetFullPath(args[0]), output = Path.GetFullPath(args[1]), mode = args[3], view = args[4];
         float scale = float.Parse(args[5], CultureInfo.InvariantCulture);
-        if (mode is not ("min" or "max") || view is not ("system" or "belt" or "selected" or "cluster") || scale is not (1f or 1.2f or 1.5f))
+        if (mode is not ("min" or "max") || view is not ("system" or "belt" or "selected" or "cluster" or "base" or "field" or "poi") || scale is not (1f or 1.2f or 1.5f))
             throw new ArgumentException("Unsupported native evidence case.");
         string client = Path.Combine(root, "src/DeepSpaceSaga.Client");
         Directory.SetCurrentDirectory(client);
@@ -25,6 +25,10 @@ internal static class SolarNativeEvidence
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settings, out _, out _);
         var config = EngineContentLoader.LoadSolarSystemGenerationConfig(settings)!;
         bool clusters = args.Contains("--clusters");
+        bool allMapLayers = args.Contains("--all-map-layers");
+        if (allMapLayers && !clusters) throw new ArgumentException("--all-map-layers requires --clusters.");
+        if (!allMapLayers && view is "base" or "field" or "poi") throw new ArgumentException("Descriptor views require --all-map-layers.");
+        int clusterCount = allMapLayers && mode == "min" ? 3 : 5, stationCount = allMapLayers && mode == "min" ? 10 : 12;
         int planets = mode == "min" ? 3 : 7, belts = mode == "min" ? 2 : 5;
         config = config with
         {
@@ -34,7 +38,10 @@ internal static class SolarNativeEvidence
             MaxBelts = belts,
             StartMinDays = mode == "min" ? 50 : 75,
             StartMaxDays = mode == "min" ? 50 : 75,
-            Clusters = clusters ? config.Clusters! with { MinClusters = 5, MaxClusters = 5, MinStations = 12, MaxStations = 12 } : null
+            Clusters = clusters ? config.Clusters! with { MinClusters = clusterCount, MaxClusters = clusterCount, MinStations = stationCount, MaxStations = stationCount } : null,
+            Ai = allMapLayers ? config.Ai! with { MinBases = mode == "min" ? 2 : 4, MaxBases = mode == "min" ? 2 : 4 } : null,
+            Environment = allMapLayers ? config.Environment : null,
+            PoiTemplates = allMapLayers ? config.PoiTemplates : null
         };
         var engine = new SimulationEngine(registry);
         engine.ConfigureStationResourceFields(JsonSerializer.Deserialize<StationResourceFieldConfig>(File.ReadAllText(Path.Combine(client, "Data/World/station-resource-fields.json")))!);
@@ -51,6 +58,10 @@ internal static class SolarNativeEvidence
         var stationIds = snapshot.ClusterMap?.Clusters.SelectMany(c => c.StationIds).ToArray() ?? [];
         var selected = new HashSet<string>(StringComparer.Ordinal);
         bool inspectionScrollPassed = false;
+        bool baseSelected = false, fieldSelected = false, poiSelected = false, systemFitted = false, clusterFitted = false, layersOff = false, layersOn = false;
+        bool runningObserved = false, pausedObserved = false, resumedObserved = false, baseScrollPassed = false, diagnosticPanelClosed = false;
+        long? pausedAtMotionTimeMs = null;
+        var size = args[6].Split('x'); int width = int.Parse(size[0]), height = int.Parse(size[1]);
         int[]? gcStart = null;
         TimeSpan gcPauseStart = default;
         long allocatedStart = 0;
@@ -65,7 +76,8 @@ internal static class SolarNativeEvidence
             }
             if (frame == 2)
             {
-                if (view == "system") screen.FitMapView(MapFitMode.System);
+                if (allMapLayers) systemFitted = screen.FitMapView(MapFitMode.System);
+                else if (view == "system") screen.FitMapView(MapFitMode.System);
                 else if (view == "belt") screen.FitBelt(snapshot.SolarSystemMap!.Belts[0].Id);
                 else if (view == "cluster" && clusters) screen.FitCluster(snapshot.ClusterMap!.StartClusterId);
                 else screen.FitMapView(MapFitMode.Target);
@@ -75,30 +87,93 @@ internal static class SolarNativeEvidence
             if (frame == 60) ClickSpeed(0);
             if (frame == 110)
             {
-                if (view == "system") screen.FitMapView(MapFitMode.System);
+                if (view is "system" or "base" or "field" or "poi") screen.FitMapView(MapFitMode.System);
                 else if (view == "belt") screen.FitBelt(snapshot.SolarSystemMap!.Belts[0].Id);
-                else if (view == "cluster" && clusters) screen.FitCluster(snapshot.ClusterMap!.Stations.Single(s => s.ObjectId == screen.SelectedObjectId).ClusterId);
+                else if (view == "cluster" && clusters) screen.FitCluster(allMapLayers ? snapshot.ClusterMap!.StartClusterId : snapshot.ClusterMap!.Stations.Single(s => s.ObjectId == screen.SelectedObjectId).ClusterId);
                 else screen.FitMapView(MapFitMode.Target);
             }
-            if (clusters && frame is 95 or 100)
+            if (clusters && !allMapLayers && frame is 95 or 100)
             {
                 var body = screen.ObjectInfoPanel.RowBodyRects[1];
                 double zoom = screen.CameraPixelsPerWorldUnit;
                 screen.OnMouseWheel(body.MidX * scale, body.MidY * scale, frame == 95 ? -1 : 1);
                 if (frame == 95) inspectionScrollPassed = screen.ObjectInfoPanel.ScrollOffset(1) > 0 && screen.CameraPixelsPerWorldUnit == zoom;
             }
-            if (clusters && frame is >= 25 and < 85)
+            if (clusters && !allMapLayers && frame is >= 25 and < 85)
             {
                 string id = stationIds[frame - 25];
                 var district = snapshot.ClusterMap!.Clusters.Single(c => c.StationIds.Contains(id));
                 screen.FitCluster(district.Id);
                 var pose = screen.RenderStates.First(s => s.Pose.ObjectId == id).Pose;
-                var size = args[6].Split('x'); float width = float.Parse(size[0]), height = float.Parse(size[1]);
                 float x = (float)(width / 2 + (pose.X - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit);
                 float y = (float)(height / 2 + (pose.Y - screen.CameraFocusY) * screen.CameraPixelsPerWorldUnit);
                 screen.OnMouseDown(x, y); screen.OnMouseUp(x, y);
                 if (screen.SelectedObjectId == id) selected.Add(id);
             }
+            if (allMapLayers)
+            {
+                if (frame == 3) { Click(screen.LastCloseRect); diagnosticPanelClosed = !screen.IsPanelVisible; }
+                if (frame == 5) clusterFitted = screen.FitCluster(snapshot.ClusterMap!.StartClusterId);
+                if (frame == 10) screen.FitMapView(MapFitMode.System);
+                // Transport is asynchronous: observe the interval after each UI action,
+                // not one arbitrary render frame. Resume must advance authoritative time.
+                var observed = handle.Buffer.Latest?.Snapshot;
+                if (frame is > 20 and < 60) runningObserved |= observed?.CurrentSpeed == SimulationSpeed.Speed1;
+                if (frame is > 60 and < 90 && observed?.CurrentSpeed == SimulationSpeed.Speed0)
+                {
+                    pausedObserved = true;
+                    pausedAtMotionTimeMs = observed.SimulationTimeMs;
+                }
+                if (frame is > 90 and <= 120 && observed?.CurrentSpeed == SimulationSpeed.Speed1 &&
+                    pausedAtMotionTimeMs is { } pausedAt && observed.SimulationTimeMs > pausedAt)
+                    resumedObserved = true;
+                if (frame is >= 25 and < 35 && !baseSelected) Pick("base");
+                if (frame == 34 && baseSelected)
+                {
+                    var body = screen.ObjectInfoPanel.RowBodyRects[1]; double zoom = screen.CameraPixelsPerWorldUnit;
+                    screen.OnMouseWheel(body.MidX * scale, body.MidY * scale, -10);
+                    baseScrollPassed = screen.CameraPixelsPerWorldUnit == zoom && (width / scale >= 1100 || screen.ObjectInfoPanel.ScrollOffset(1) > 0);
+                    screen.OnMouseWheel(body.MidX * scale, body.MidY * scale, 10);
+                }
+                if (frame is >= 35 and < 45 && !fieldSelected) Pick("field");
+                if (frame is >= 45 and < 85 && !poiSelected) Pick("poi");
+                if (frame is 85 or 95)
+                {
+                    foreach (int index in new[] { 5, 8, 9, 10 }) Click(screen.MapViewButtonRects[index]);
+                    if (frame == 85) layersOff = screen.MapLayers == 0;
+                    else layersOn = screen.MapLayers == MapLayerFlags.All;
+                }
+                if (frame is >= 111 and < 119 && view is "base" or "field" or "poi")
+                {
+                    if (view == "base" && (screen.SelectedObjectId != snapshot.AiMap!.Bases[0].ObjectId || screen.SelectedPoiId is not null || screen.SelectedFieldId is not null) ||
+                        view == "field" && screen.SelectedFieldId is null || view == "poi" && screen.SelectedPoiId is null) Pick(view);
+                }
+                if (frame == 117 && view == "base")
+                {
+                    var body = screen.ObjectInfoPanel.RowBodyRects[1];
+                    for (int i = 0; i < 10; i++) screen.OnMouseWheel(body.MidX * scale, body.MidY * scale, -1);
+                }
+            }
+            void Pick(string kind)
+            {
+                var current = handle.Buffer.Latest!.Snapshot;
+                var poses = screen.RenderStates.Select(s => s.Predicted).ToArray();
+                double x, y;
+                if (kind == "base") { var p = poses.First(p => p.ObjectId == current.AiMap!.Bases[0].ObjectId); x = p.X; y = p.Y; }
+                else if (kind == "field")
+                {
+                    var p = EnvironmentFieldRenderer.Resolve(current, poses, current.MotionTimeMs).First(f => f.Data.Kind == "Radiation");
+                    x = p.X + p.Data.OuterRadius * .5; y = p.Y;
+                }
+                else { var p = AiMapPresentation.Points(current, poses, current.MotionTimeMs)[0]; x = p.X; y = p.Y; }
+                float sx = (float)(width / 2d + (x - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit);
+                float sy = (float)(height / 2d + (y - screen.CameraFocusY) * screen.CameraPixelsPerWorldUnit);
+                screen.OnMouseDown(sx, sy); screen.OnMouseUp(sx, sy);
+                baseSelected |= screen.SelectedObjectId == current.AiMap!.Bases[0].ObjectId;
+                fieldSelected |= screen.SelectedFieldId is not null;
+                poiSelected |= screen.SelectedPoiId is not null;
+            }
+            void Click(SkiaSharp.SKRect r) { screen.OnMouseDown(r.MidX * scale, r.MidY * scale); screen.OnMouseUp(r.MidX * scale, r.MidY * scale); }
             void ClickSpeed(int index)
             {
                 var r = screen.SpeedButtonRects[index];
@@ -129,12 +204,17 @@ internal static class SolarNativeEvidence
                 report["renderGc"] = JsonSerializer.SerializeToNode(renderGc);
                 report["worstCpuFrames"] = JsonSerializer.SerializeToNode(screen.CaptureFrameProfile().Frames.Where(f => f.FrameId > 120)
                     .OrderByDescending(f => f.Window?.CpuCallbackMs ?? f.RenderCpuMs).Take(10));
-                report["clusterInteraction"] = JsonSerializer.SerializeToNode(new { requested = stationIds.Length, selected = selected.Count, inspectionScrollPassed, passed = selected.Count == stationIds.Length && inspectionScrollPassed, clusters = 5, stationsPerCluster = 12 });
+                report["config"] = JsonSerializer.SerializeToNode(config);
+                report["allMapLayers"] = allMapLayers;
+                if (allMapLayers) report["fullMapInteraction"] = JsonSerializer.SerializeToNode(new { systemFitted, clusterFitted, baseSelected, fieldSelected, poiSelected, layersOff, layersOn, diagnosticPanelClosed, baseScrollPassed, runningObserved, pausedObserved, resumedObserved, passed = FullMapPassed() });
+                else report["clusterInteraction"] = JsonSerializer.SerializeToNode(new { requested = stationIds.Length, selected = selected.Count, inspectionScrollPassed, passed = selected.Count == stationIds.Length && inspectionScrollPassed, clusters = clusterCount, stationsPerCluster = stationCount });
                 File.WriteAllText(output, report.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
             }
-            return File.Exists(output) && (!clusters || selected.Count == stationIds.Length && inspectionScrollPassed) ? 0 : 1;
+            return File.Exists(output) && (allMapLayers ? FullMapPassed() : !clusters || selected.Count == stationIds.Length && inspectionScrollPassed) ? 0 : 1;
         }
         finally { handle.DisposeAsync().AsTask().GetAwaiter().GetResult(); }
+        bool FullMapPassed() => systemFitted && clusterFitted && baseSelected && fieldSelected && poiSelected && layersOff && layersOn &&
+            diagnosticPanelClosed && baseScrollPassed && runningObserved && pausedObserved && resumedObserved;
     }
 
     private sealed class EvidenceFactory(string settings) : IGameSessionFactory

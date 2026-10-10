@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0005-known-points-of-interest
 ticket: EP-0004-US-0005-TK-0003-abandoned-object-content
 title: Содержимое заброшенных точек интереса
-stage: approved
+stage: done
 layer: content-data
 depends_on: [EP-0004-US-0004-TK-0001-environment-field-contract, EP-0004-US-0004-TK-0002-seeded-environment-fields, EP-0004-US-0004-TK-0003-environment-field-content, EP-0004-US-0004-TK-0004-environment-field-rendering, EP-0003-US-0003-TK-0001-resource-orbit-binding, EP-0003-US-0003-TK-0002-cluster-resource-placement, EP-0003-US-0003-TK-0003-cluster-resource-map, EP-0004-US-0005-TK-0002-seeded-abandoned-objects]
 files_touched: 2
@@ -11,6 +11,11 @@ serves: [AC-0001, AC-0003]
 created: 2026-09-22T14:40:41Z
 revision: 1
 ---
+
+## Текущий контракт — 2026-10-08
+
+Исходный план и скопированные dependency inputs ниже сохранены для трассировки. Фактические версии/API и расширенный scope определяются Execution/Resolved sections и [текущим контрактом](../../../../Documentation/04-Engineering/AiMapEnvironment.md). SaveFormat15, AiMap rulesVersion1, шесть сценариев, inline poiTemplates; Field/POI metadata не являются entities или engine command targets. Исторический NOT RUN не заменяет финальное native evidence US8; FPS80 acceptance остаётся OPEN.
+
 
 # Содержимое заброшенных точек интереса
 
@@ -148,3 +153,7 @@ public sealed record PointOfInterestData(string ObjectId,string Name,string Desc
 ### EP-0004-US-0005-TK-0002-seeded-abandoned-objects
 
 public sealed record PoiTemplate(string Id,string Name,string Description); config.PoiTemplates optional IReadOnlyList<PoiTemplate>; resolved AiMap.PointsOfInterest. ID uniqueness проверяется совместно с map/space object namespaces.
+
+## Execution evidence — 2026-10-08
+
+Implemented the two exact POI templates; all six shipped scenarios resolve two descriptors without new space objects. Strict loader rejects reward/cost/production/actions. Client full suite 1749/1749 PASS (ep4-us5-tk3.trx); Client build and scoped test format PASS. Initial CS8604 in the new test fixed before successful run. Self-review: no remaining findings in content scope; native acceptance belongs to US8. Implementation remains within the two allowed files.

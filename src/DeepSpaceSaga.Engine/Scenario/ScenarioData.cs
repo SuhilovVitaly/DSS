@@ -98,7 +98,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("voyageLedgers")] IReadOnlyList<VoyageLedgerData>? VoyageLedgers = null,
     [property: JsonPropertyName("voyageFuelSettlements")] IReadOnlyList<DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot>? VoyageFuelSettlements = null,
     [property: JsonPropertyName("engineIdentityCounters")] EngineIdentityCountersData? EngineIdentityCounters = null,
-    [property: JsonPropertyName("clusterMap")] DeepSpaceSaga.Contracts.StationClusterMapSnapshot? ClusterMap = null)
+    [property: JsonPropertyName("clusterMap")] DeepSpaceSaga.Contracts.StationClusterMapSnapshot? ClusterMap = null,
+    [property: JsonPropertyName("aiMap")] DeepSpaceSaga.Contracts.AiMapEnvironmentSnapshot? AiMap = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]

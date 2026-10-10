@@ -14,7 +14,7 @@ revision: 1
 
 # Контракт пуска ПРО, времени жизни и preview
 
-STATUS: IMPLEMENTED — automated checks passed; self-review completed.
+STATUS: IMPLEMENTED / PUBLICATION BLOCKED — automated checks passed; self-review completed.
 
 ## Why
 
@@ -103,3 +103,5 @@ Implemented in the five planned files. Added `defense.fire`, per-flight mode, ca
 Validation: `dotnet test tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj --no-restore` PASS 170/170; `dotnet build src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.csproj --no-restore` PASS 0 warnings/errors. `dotnet format whitespace DeepSpaceSaga.sln --verify-no-changes --no-restore --include` followed by the five Code context C# paths PASS; `git diff --check` PASS. Tests cover Auto/Manual and Guiding/MissedCoast roundtrip, decimal captured values, unknown ETA, independent module/target identity and missing legacy optional fields.
 
 Self-review found no confirmed defect in the DTO scope. No native behavior changed here; native epic gate remains NOT RUN. Publication is verified from the Git commit carrying this ticket ID, not a guessed future SHA. No user APPROVED claimed.
+
+Publication update: commit `02c89d4a51687ed291a11285a8b704991b42cf20` exists locally. Four push attempts returned GitHub `Internal Server Error`; remote still points to TK-0001 `4233f52`. See [ImplementationStatus](../../ImplementationStatus.md) for exact diagnostics and resumption point. This ticket's publication gate remains open.
