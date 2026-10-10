@@ -1,0 +1,956 @@
+[
+  {
+    "ticket": "EP-0001-US-0001-TK-0001-market-profile-schema",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0001-station-market-profiles\\EP-0001-US-0001-TK-0001-market-profile-schema\\EP-0001-US-0001-TK-0001-market-profile-schema.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0001-TK-0002-profile-market-bootstrap",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0001-station-market-profiles\\EP-0001-US-0001-TK-0002-profile-market-bootstrap\\EP-0001-US-0001-TK-0002-profile-market-bootstrap.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0001-TK-0003-market-catalog-content",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0001-station-market-profiles\\EP-0001-US-0001-TK-0003-market-catalog-content\\EP-0001-US-0001-TK-0003-market-catalog-content.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0001-TK-0004-five-market-demo",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0001-station-market-profiles\\EP-0001-US-0001-TK-0004-five-market-demo\\EP-0001-US-0001-TK-0004-five-market-demo.md",
+    "findings": [
+      "F05"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0001-TK-0005-profile-trade-presentation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0001-station-market-profiles\\EP-0001-US-0001-TK-0005-profile-trade-presentation\\EP-0001-US-0001-TK-0005-profile-trade-presentation.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0002-TK-0001-market-stock-snapshot",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0002-market-replenishment\\EP-0001-US-0002-TK-0001-market-stock-snapshot\\EP-0001-US-0002-TK-0001-market-stock-snapshot.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0002-TK-0002-market-economy-schema",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0002-market-replenishment\\EP-0001-US-0002-TK-0002-market-economy-schema\\EP-0001-US-0002-TK-0002-market-economy-schema.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0002-TK-0003-hourly-market-simulation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0002-market-replenishment\\EP-0001-US-0002-TK-0003-hourly-market-simulation\\EP-0001-US-0002-TK-0003-hourly-market-simulation.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0002-TK-0004-market-flow-content",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0002-market-replenishment\\EP-0001-US-0002-TK-0004-market-flow-content\\EP-0001-US-0002-TK-0004-market-flow-content.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0002-TK-0005-market-state-trade-ui",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0002-market-replenishment\\EP-0001-US-0002-TK-0005-market-state-trade-ui\\EP-0001-US-0002-TK-0005-market-state-trade-ui.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0003-TK-0001-trade-execution-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0003-dynamic-market-trading\\EP-0001-US-0003-TK-0001-trade-execution-contract\\EP-0001-US-0003-TK-0001-trade-execution-contract.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0003-TK-0002-atomic-quote-execution",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0003-dynamic-market-trading\\EP-0001-US-0003-TK-0002-atomic-quote-execution\\EP-0001-US-0003-TK-0002-atomic-quote-execution.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0003-TK-0003-trade-result-texts",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0003-dynamic-market-trading\\EP-0001-US-0003-TK-0003-trade-result-texts\\EP-0001-US-0003-TK-0003-trade-result-texts.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0003-TK-0004-quoted-trade-controls",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0003-dynamic-market-trading\\EP-0001-US-0003-TK-0004-quoted-trade-controls\\EP-0001-US-0003-TK-0004-quoted-trade-controls.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0003-TK-0005-confirmed-trade-history",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0003-dynamic-market-trading\\EP-0001-US-0003-TK-0005-confirmed-trade-history\\EP-0001-US-0003-TK-0005-confirmed-trade-history.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0004-TK-0001-trading-map-schema",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0004-seeded-trading-map\\EP-0001-US-0004-TK-0001-trading-map-schema\\EP-0001-US-0004-TK-0001-trading-map-schema.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0004-TK-0002-economic-graph",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0004-seeded-trading-map\\EP-0001-US-0004-TK-0002-economic-graph\\EP-0001-US-0004-TK-0002-economic-graph.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0004-TK-0003-map-geometry",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0004-seeded-trading-map\\EP-0001-US-0004-TK-0003-map-geometry\\EP-0001-US-0004-TK-0003-map-geometry.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0004-TK-0004-map-bootstrap-save",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0004-seeded-trading-map\\EP-0001-US-0004-TK-0004-map-bootstrap-save\\EP-0001-US-0004-TK-0004-map-bootstrap-save.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0004-TK-0005-trading-scenario-content",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0004-seeded-trading-map\\EP-0001-US-0004-TK-0005-trading-scenario-content\\EP-0001-US-0004-TK-0005-trading-scenario-content.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0005-TK-0001-resource-survey-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0005-station-resource-fields\\EP-0001-US-0005-TK-0001-resource-survey-contract\\EP-0001-US-0005-TK-0001-resource-survey-contract.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0005-TK-0002-seeded-resource-fields",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0005-station-resource-fields\\EP-0001-US-0005-TK-0002-seeded-resource-fields\\EP-0001-US-0005-TK-0002-seeded-resource-fields.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0005-TK-0003-resource-field-content",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0005-station-resource-fields\\EP-0001-US-0005-TK-0003-resource-field-content\\EP-0001-US-0005-TK-0003-resource-field-content.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0005-TK-0004-structural-resource-survey",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0005-station-resource-fields\\EP-0001-US-0005-TK-0004-structural-resource-survey\\EP-0001-US-0005-TK-0004-structural-resource-survey.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0005-TK-0005-resource-info-panel",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0005-station-resource-fields\\EP-0001-US-0005-TK-0005-resource-info-panel\\EP-0001-US-0005-TK-0005-resource-info-panel.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0006-TK-0001-round-trip-engine-proof",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0006-repeatable-trading-voyage\\EP-0001-US-0006-TK-0001-round-trip-engine-proof\\EP-0001-US-0006-TK-0001-round-trip-engine-proof.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0006-TK-0002-trade-visit-context",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0006-repeatable-trading-voyage\\EP-0001-US-0006-TK-0002-trade-visit-context\\EP-0001-US-0006-TK-0002-trade-visit-context.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0006-TK-0003-station-trade-navigation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0006-repeatable-trading-voyage\\EP-0001-US-0006-TK-0003-station-trade-navigation\\EP-0001-US-0006-TK-0003-station-trade-navigation.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0007-TK-0001-market-event-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0007-temporary-market-events\\EP-0001-US-0007-TK-0001-market-event-contract\\EP-0001-US-0007-TK-0001-market-event-contract.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0007-TK-0002-market-event-catalog",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0007-temporary-market-events\\EP-0001-US-0007-TK-0002-market-event-catalog\\EP-0001-US-0007-TK-0002-market-event-catalog.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0007-TK-0003-market-event-content",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0007-temporary-market-events\\EP-0001-US-0007-TK-0003-market-event-content\\EP-0001-US-0007-TK-0003-market-event-content.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0007-TK-0004-market-event-lifecycle",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0007-temporary-market-events\\EP-0001-US-0007-TK-0004-market-event-lifecycle\\EP-0001-US-0007-TK-0004-market-event-lifecycle.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0007-TK-0005-trade-event-presentation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0007-temporary-market-events\\EP-0001-US-0007-TK-0005-trade-event-presentation\\EP-0001-US-0007-TK-0005-trade-event-presentation.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0008-TK-0001-route-risk-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0008-route-risk-and-alternatives\\EP-0001-US-0008-TK-0001-route-risk-contract\\EP-0001-US-0008-TK-0001-route-risk-contract.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0008-TK-0002-effective-route-evaluator",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0008-route-risk-and-alternatives\\EP-0001-US-0008-TK-0002-effective-route-evaluator\\EP-0001-US-0008-TK-0002-effective-route-evaluator.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0008-TK-0003-route-event-voyage-integration",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0008-route-risk-and-alternatives\\EP-0001-US-0008-TK-0003-route-event-voyage-integration\\EP-0001-US-0008-TK-0003-route-event-voyage-integration.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0008-TK-0004-route-choice-presentation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0008-route-risk-and-alternatives\\EP-0001-US-0008-TK-0004-route-choice-presentation\\EP-0001-US-0008-TK-0004-route-choice-presentation.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0008-TK-0005-route-risk-content",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0008-route-risk-and-alternatives\\EP-0001-US-0008-TK-0005-route-risk-content\\EP-0001-US-0008-TK-0005-route-risk-content.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0009-TK-0001-voyage-fuel-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0009-voyage-fuel-cost\\EP-0001-US-0009-TK-0001-voyage-fuel-contract\\EP-0001-US-0009-TK-0001-voyage-fuel-contract.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0009-TK-0002-fuel-accounting-foundation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0009-voyage-fuel-cost\\EP-0001-US-0009-TK-0002-fuel-accounting-foundation\\EP-0001-US-0009-TK-0002-fuel-accounting-foundation.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0009-TK-0003-engine-efficiency-content",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0009-voyage-fuel-cost\\EP-0001-US-0009-TK-0003-engine-efficiency-content\\EP-0001-US-0009-TK-0003-engine-efficiency-content.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0009-TK-0004-voyage-fuel-settlement",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0009-voyage-fuel-cost\\EP-0001-US-0009-TK-0004-voyage-fuel-settlement\\EP-0001-US-0009-TK-0004-voyage-fuel-settlement.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0010-TK-0001-cargo-result-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0010-cargo-cost-and-trade-receipts\\EP-0001-US-0010-TK-0001-cargo-result-contract\\EP-0001-US-0010-TK-0001-cargo-result-contract.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0010-TK-0002-persisted-cargo-cost-basis",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0010-cargo-cost-and-trade-receipts\\EP-0001-US-0010-TK-0002-persisted-cargo-cost-basis\\EP-0001-US-0010-TK-0002-persisted-cargo-cost-basis.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0010-TK-0003-weighted-cost-accounting",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0010-cargo-cost-and-trade-receipts\\EP-0001-US-0010-TK-0003-weighted-cost-accounting\\EP-0001-US-0010-TK-0003-weighted-cost-accounting.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0010-TK-0004-cargo-result-texts",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0010-cargo-cost-and-trade-receipts\\EP-0001-US-0010-TK-0004-cargo-result-texts\\EP-0001-US-0010-TK-0004-cargo-result-texts.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0010-TK-0005-trade-cost-history",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0010-cargo-cost-and-trade-receipts\\EP-0001-US-0010-TK-0005-trade-cost-history\\EP-0001-US-0010-TK-0005-trade-cost-history.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0011-TK-0001-voyage-finance-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0011-net-voyage-profit\\EP-0001-US-0011-TK-0001-voyage-finance-contract\\EP-0001-US-0011-TK-0001-voyage-finance-contract.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0011-TK-0002-voyage-ledger-lifecycle",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0011-net-voyage-profit\\EP-0001-US-0011-TK-0002-voyage-ledger-lifecycle\\EP-0001-US-0011-TK-0002-voyage-ledger-lifecycle.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0011-TK-0003-voyage-profit-realization",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0011-net-voyage-profit\\EP-0001-US-0011-TK-0003-voyage-profit-realization\\EP-0001-US-0011-TK-0003-voyage-profit-realization.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0011-TK-0004-voyage-profit-texts",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0011-net-voyage-profit\\EP-0001-US-0011-TK-0004-voyage-profit-texts\\EP-0001-US-0011-TK-0004-voyage-profit-texts.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0011-TK-0005-voyage-profit-presentation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0011-net-voyage-profit\\EP-0001-US-0011-TK-0005-voyage-profit-presentation\\EP-0001-US-0011-TK-0005-voyage-profit-presentation.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0012-TK-0001-economy-save-schema",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0012-resume-trading-economy\\EP-0001-US-0012-TK-0001-economy-save-schema\\EP-0001-US-0012-TK-0001-economy-save-schema.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0012-TK-0002-market-state-continuity",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0012-resume-trading-economy\\EP-0001-US-0012-TK-0002-market-state-continuity\\EP-0001-US-0012-TK-0002-market-state-continuity.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0012-TK-0003-voyage-ledger-continuity",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0012-resume-trading-economy\\EP-0001-US-0012-TK-0003-voyage-ledger-continuity\\EP-0001-US-0012-TK-0003-voyage-ledger-continuity.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0012-TK-0004-deterministic-economy-continuation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0012-resume-trading-economy\\EP-0001-US-0012-TK-0004-deterministic-economy-continuation\\EP-0001-US-0012-TK-0004-deterministic-economy-continuation.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0012-TK-0005-local-save-roundtrip",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0012-resume-trading-economy\\EP-0001-US-0012-TK-0005-local-save-roundtrip\\EP-0001-US-0012-TK-0005-local-save-roundtrip.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0013-TK-0001-balance-diagnostic-seam",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0013-economy-balance-evidence\\EP-0001-US-0013-TK-0001-balance-diagnostic-seam\\EP-0001-US-0013-TK-0001-balance-diagnostic-seam.md",
+    "findings": [
+      "F01",
+      "G03"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0013-TK-0002-balance-run-matrix",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0013-economy-balance-evidence\\EP-0001-US-0013-TK-0002-balance-run-matrix\\EP-0001-US-0013-TK-0002-balance-run-matrix.md",
+    "findings": [
+      "F01",
+      "G03"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0013-TK-0003-market-health-evaluation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0013-economy-balance-evidence\\EP-0001-US-0013-TK-0003-market-health-evaluation\\EP-0001-US-0013-TK-0003-market-health-evaluation.md",
+    "findings": [
+      "F01",
+      "G03"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0013-TK-0004-strategy-balance-evaluation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0013-economy-balance-evidence\\EP-0001-US-0013-TK-0004-strategy-balance-evaluation\\EP-0001-US-0013-TK-0004-strategy-balance-evaluation.md",
+    "findings": [
+      "F01",
+      "G03"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0013-TK-0005-balance-report-cli",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0013-economy-balance-evidence\\EP-0001-US-0013-TK-0005-balance-report-cli\\EP-0001-US-0013-TK-0005-balance-report-cli.md",
+    "findings": [
+      "F01",
+      "G03"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0014-TK-0001-voyage-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0014-voyage-lifecycle\\EP-0001-US-0014-TK-0001-voyage-contract\\EP-0001-US-0014-TK-0001-voyage-contract.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0014-TK-0002-authoritative-voyage-lifecycle",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0014-voyage-lifecycle\\EP-0001-US-0014-TK-0002-authoritative-voyage-lifecycle\\EP-0001-US-0014-TK-0002-authoritative-voyage-lifecycle.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0014-TK-0003-station-route-departure",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0014-voyage-lifecycle\\EP-0001-US-0014-TK-0003-station-route-departure\\EP-0001-US-0014-TK-0003-station-route-departure.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0014-TK-0004-voyage-status-presentation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0014-voyage-lifecycle\\EP-0001-US-0014-TK-0004-voyage-status-presentation\\EP-0001-US-0014-TK-0004-voyage-status-presentation.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0015-TK-0001-trade-quote-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0015-authoritative-market-quotes\\EP-0001-US-0015-TK-0001-trade-quote-contract\\EP-0001-US-0015-TK-0001-trade-quote-contract.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0015-TK-0002-sequential-price-curve",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0015-authoritative-market-quotes\\EP-0001-US-0015-TK-0002-sequential-price-curve\\EP-0001-US-0015-TK-0002-sequential-price-curve.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0015-TK-0003-market-revision-lifecycle",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0015-authoritative-market-quotes\\EP-0001-US-0015-TK-0003-market-revision-lifecycle\\EP-0001-US-0015-TK-0003-market-revision-lifecycle.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0015-TK-0004-authoritative-quote-issuer",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0015-authoritative-market-quotes\\EP-0001-US-0015-TK-0004-authoritative-quote-issuer\\EP-0001-US-0015-TK-0004-authoritative-quote-issuer.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0015-TK-0005-local-quote-transport",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0015-authoritative-market-quotes\\EP-0001-US-0015-TK-0005-local-quote-transport\\EP-0001-US-0015-TK-0005-local-quote-transport.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0016-TK-0001-market-knowledge-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0016-market-knowledge\\EP-0001-US-0016-TK-0001-market-knowledge-contract\\EP-0001-US-0016-TK-0001-market-knowledge-contract.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0016-TK-0002-authoritative-market-observations",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0016-market-knowledge\\EP-0001-US-0016-TK-0002-authoritative-market-observations\\EP-0001-US-0016-TK-0002-authoritative-market-observations.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0001-US-0016-TK-0003-market-knowledge-presentation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0001-trading-system\\EP-0001-US-0016-market-knowledge\\EP-0001-US-0016-TK-0003-market-knowledge-presentation\\EP-0001-US-0016-TK-0003-market-knowledge-presentation.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0001-TK-0001-system-map-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0001-seeded-system-start\\EP-0002-US-0001-TK-0001-system-map-contract\\EP-0002-US-0001-TK-0001-system-map-contract.md",
+    "findings": [
+      "F03",
+      "F04"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0001-TK-0002-generation-input-schema",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0001-seeded-system-start\\EP-0002-US-0001-TK-0002-generation-input-schema\\EP-0002-US-0001-TK-0002-generation-input-schema.md",
+    "findings": [
+      "F03",
+      "F04"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0001-TK-0003-seeded-world-bootstrap",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0001-seeded-system-start\\EP-0002-US-0001-TK-0003-seeded-world-bootstrap\\EP-0002-US-0001-TK-0003-seeded-world-bootstrap.md",
+    "findings": [
+      "F03",
+      "F04"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0001-TK-0004-default-system-content",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0001-seeded-system-start\\EP-0002-US-0001-TK-0004-default-system-content\\EP-0002-US-0001-TK-0004-default-system-content.md",
+    "findings": [
+      "F03",
+      "F04"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0001-TK-0005-initial-system-view",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0001-seeded-system-start\\EP-0002-US-0001-TK-0005-initial-system-view\\EP-0002-US-0001-TK-0005-initial-system-view.md",
+    "findings": [
+      "F03",
+      "F04"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0002-TK-0001-absolute-orbit-math",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0002-coherent-orbital-world\\EP-0002-US-0002-TK-0001-absolute-orbit-math\\EP-0002-US-0002-TK-0001-absolute-orbit-math.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0002-TK-0002-authoritative-orbit-runtime",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0002-coherent-orbital-world\\EP-0002-US-0002-TK-0002-authoritative-orbit-runtime\\EP-0002-US-0002-TK-0002-authoritative-orbit-runtime.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0002-TK-0003-orbital-client-prediction",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0002-coherent-orbital-world\\EP-0002-US-0002-TK-0003-orbital-client-prediction\\EP-0002-US-0002-TK-0003-orbital-client-prediction.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0003-TK-0001-seeded-belt-asteroids",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0003-playable-asteroid-belts\\EP-0002-US-0003-TK-0001-seeded-belt-asteroids\\EP-0002-US-0003-TK-0001-seeded-belt-asteroids.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0003-TK-0002-belt-detail-rendering",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0003-playable-asteroid-belts\\EP-0002-US-0003-TK-0002-belt-detail-rendering\\EP-0002-US-0003-TK-0002-belt-detail-rendering.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0004-TK-0001-scenario-group-translation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0004-preserved-scenario-starts\\EP-0002-US-0004-TK-0001-scenario-group-translation\\EP-0002-US-0004-TK-0001-scenario-group-translation.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0004-TK-0002-all-scenario-system-content",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0004-preserved-scenario-starts\\EP-0002-US-0004-TK-0002-all-scenario-system-content\\EP-0002-US-0004-TK-0002-all-scenario-system-content.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0005-TK-0001-orbital-synchronization",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0005-orbital-station-visit\\EP-0002-US-0005-TK-0001-orbital-synchronization\\EP-0002-US-0005-TK-0001-orbital-synchronization.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0005-TK-0002-orbital-docking-departure",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0005-orbital-station-visit\\EP-0002-US-0005-TK-0002-orbital-docking-departure\\EP-0002-US-0005-TK-0002-orbital-docking-departure.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0006-TK-0001-known-map-projection",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0006-known-system-map\\EP-0002-US-0006-TK-0001-known-map-projection\\EP-0002-US-0006-TK-0001-known-map-projection.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0006-TK-0002-system-map-navigation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0006-known-system-map\\EP-0002-US-0006-TK-0002-system-map-navigation\\EP-0002-US-0006-TK-0002-system-map-navigation.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0007-TK-0001-generated-world-persistence",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0007-resume-generated-system\\EP-0002-US-0007-TK-0001-generated-world-persistence\\EP-0002-US-0007-TK-0001-generated-world-persistence.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0007-TK-0002-local-world-save-roundtrip",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0007-resume-generated-system\\EP-0002-US-0007-TK-0002-local-world-save-roundtrip\\EP-0002-US-0007-TK-0002-local-world-save-roundtrip.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0008-TK-0001-system-correctness-corpus",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0008-system-generation-evidence\\EP-0002-US-0008-TK-0001-system-correctness-corpus\\EP-0002-US-0008-TK-0001-system-correctness-corpus.md",
+    "findings": [
+      "F03",
+      "F04"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0008-TK-0002-system-performance-report",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0008-system-generation-evidence\\EP-0002-US-0008-TK-0002-system-performance-report\\EP-0002-US-0008-TK-0002-system-performance-report.md",
+    "findings": [
+      "F03",
+      "F04"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0002-US-0008-TK-0003-presented-frame-evidence",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system\\EP-0002-US-0008-system-generation-evidence\\EP-0002-US-0008-TK-0003-presented-frame-evidence\\EP-0002-US-0008-TK-0003-presented-frame-evidence.md",
+    "findings": [
+      "F03",
+      "F04"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0001-TK-0001-cluster-geography-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0001-local-trading-cluster\\EP-0003-US-0001-TK-0001-cluster-geography-contract\\EP-0003-US-0001-TK-0001-cluster-geography-contract.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0001-TK-0002-local-cluster-generation",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0001-local-trading-cluster\\EP-0003-US-0001-TK-0002-local-cluster-generation\\EP-0003-US-0001-TK-0002-local-cluster-generation.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0001-TK-0003-local-cluster-content",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0001-local-trading-cluster\\EP-0003-US-0001-TK-0003-local-cluster-content\\EP-0003-US-0001-TK-0003-local-cluster-content.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0001-TK-0004-local-cluster-map",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0001-local-trading-cluster\\EP-0003-US-0001-TK-0004-local-cluster-map\\EP-0003-US-0001-TK-0004-local-cluster-map.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0002-TK-0001-multi-cluster-placement",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0002-distinct-orbital-clusters\\EP-0003-US-0002-TK-0001-multi-cluster-placement\\EP-0003-US-0002-TK-0001-multi-cluster-placement.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0002-TK-0002-full-cluster-content",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0002-distinct-orbital-clusters\\EP-0003-US-0002-TK-0002-full-cluster-content\\EP-0003-US-0002-TK-0002-full-cluster-content.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0002-TK-0003-multi-cluster-overview",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0002-distinct-orbital-clusters\\EP-0003-US-0002-TK-0003-multi-cluster-overview\\EP-0003-US-0002-TK-0003-multi-cluster-overview.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0003-TK-0001-resource-orbit-binding",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0003-cluster-resource-surroundings\\EP-0003-US-0003-TK-0001-resource-orbit-binding\\EP-0003-US-0003-TK-0001-resource-orbit-binding.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0003-TK-0002-cluster-resource-placement",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0003-cluster-resource-surroundings\\EP-0003-US-0003-TK-0002-cluster-resource-placement\\EP-0003-US-0003-TK-0002-cluster-resource-placement.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0003-TK-0003-cluster-resource-map",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0003-cluster-resource-surroundings\\EP-0003-US-0003-TK-0003-cluster-resource-map\\EP-0003-US-0003-TK-0003-cluster-resource-map.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0004-TK-0001-cluster-travel-estimates",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0004-cluster-map-and-travel-estimates\\EP-0003-US-0004-TK-0001-cluster-travel-estimates\\EP-0003-US-0004-TK-0001-cluster-travel-estimates.md",
+    "findings": [
+      "F03"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0005-TK-0001-cluster-voyage-integration",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0005-local-and-intercluster-voyages\\EP-0003-US-0005-TK-0001-cluster-voyage-integration\\EP-0003-US-0005-TK-0001-cluster-voyage-integration.md",
+    "findings": [
+      "F03"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0005-TK-0002-voyage-user-path",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0005-local-and-intercluster-voyages\\EP-0003-US-0005-TK-0002-voyage-user-path\\EP-0003-US-0005-TK-0002-voyage-user-path.md",
+    "findings": [
+      "F03"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0006-TK-0001-cluster-save-state",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0006-resume-cluster-voyage\\EP-0003-US-0006-TK-0001-cluster-save-state\\EP-0003-US-0006-TK-0001-cluster-save-state.md",
+    "findings": [
+      "F02"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0006-TK-0002-cluster-local-resume",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0006-resume-cluster-voyage\\EP-0003-US-0006-TK-0002-cluster-local-resume\\EP-0003-US-0006-TK-0002-cluster-local-resume.md",
+    "findings": [
+      "F02"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0007-TK-0001-long-voyage-runner",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0007-long-voyage-economy-evidence\\EP-0003-US-0007-TK-0001-long-voyage-runner\\EP-0003-US-0007-TK-0001-long-voyage-runner.md",
+    "findings": [
+      "G04"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0007-TK-0002-long-voyage-diagnostics",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0007-long-voyage-economy-evidence\\EP-0003-US-0007-TK-0002-long-voyage-diagnostics\\EP-0003-US-0007-TK-0002-long-voyage-diagnostics.md",
+    "findings": [
+      "G04"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0008-TK-0001-cluster-correctness-corpus",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0008-cluster-scale-evidence\\EP-0003-US-0008-TK-0001-cluster-correctness-corpus\\EP-0003-US-0008-TK-0001-cluster-correctness-corpus.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0008-TK-0002-cluster-performance-report",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0008-cluster-scale-evidence\\EP-0003-US-0008-TK-0002-cluster-performance-report\\EP-0003-US-0008-TK-0002-cluster-performance-report.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0003-US-0008-TK-0003-cluster-interaction-evidence",
+    "path": "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\\EP-0003-US-0008-cluster-scale-evidence\\EP-0003-US-0008-TK-0003-cluster-interaction-evidence\\EP-0003-US-0008-TK-0003-cluster-interaction-evidence.md",
+    "findings": [],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0001-TK-0001-ai-base-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0001-hostile-ai-bases\\EP-0004-US-0001-TK-0001-ai-base-contract\\EP-0004-US-0001-TK-0001-ai-base-contract.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0001-TK-0002-seeded-ai-bases",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0001-hostile-ai-bases\\EP-0004-US-0001-TK-0002-seeded-ai-bases\\EP-0004-US-0001-TK-0002-seeded-ai-bases.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0001-TK-0003-authoritative-hostile-access",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0001-hostile-ai-bases\\EP-0004-US-0001-TK-0003-authoritative-hostile-access\\EP-0004-US-0001-TK-0003-authoritative-hostile-access.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0001-TK-0004-ai-base-content",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0001-hostile-ai-bases\\EP-0004-US-0001-TK-0004-ai-base-content\\EP-0004-US-0001-TK-0004-ai-base-content.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0001-TK-0005-ai-base-presentation",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0001-hostile-ai-bases\\EP-0004-US-0001-TK-0005-ai-base-presentation\\EP-0004-US-0001-TK-0005-ai-base-presentation.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0002-TK-0001-territory-radii-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0002-moving-ai-territories\\EP-0004-US-0002-TK-0001-territory-radii-contract\\EP-0004-US-0002-TK-0001-territory-radii-contract.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0002-TK-0002-moving-territory-data",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0002-moving-ai-territories\\EP-0004-US-0002-TK-0002-moving-territory-data\\EP-0004-US-0002-TK-0002-moving-territory-data.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0002-TK-0003-territory-rendering",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0002-moving-ai-territories\\EP-0004-US-0002-TK-0003-territory-rendering\\EP-0004-US-0002-TK-0003-territory-rendering.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0003-TK-0001-temporal-placement-validation",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0003-trade-compatible-ai-placement\\EP-0004-US-0003-TK-0001-temporal-placement-validation\\EP-0004-US-0003-TK-0001-temporal-placement-validation.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0003-TK-0002-placement-evidence-report",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0003-trade-compatible-ai-placement\\EP-0004-US-0003-TK-0002-placement-evidence-report\\EP-0004-US-0003-TK-0002-placement-evidence-report.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0004-TK-0001-environment-field-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0004-informational-environment-fields\\EP-0004-US-0004-TK-0001-environment-field-contract\\EP-0004-US-0004-TK-0001-environment-field-contract.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0004-TK-0002-seeded-environment-fields",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0004-informational-environment-fields\\EP-0004-US-0004-TK-0002-seeded-environment-fields\\EP-0004-US-0004-TK-0002-seeded-environment-fields.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0004-TK-0003-environment-field-content",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0004-informational-environment-fields\\EP-0004-US-0004-TK-0003-environment-field-content\\EP-0004-US-0004-TK-0003-environment-field-content.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0004-TK-0004-environment-field-rendering",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0004-informational-environment-fields\\EP-0004-US-0004-TK-0004-environment-field-rendering\\EP-0004-US-0004-TK-0004-environment-field-rendering.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0005-TK-0001-poi-contract",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0005-known-points-of-interest\\EP-0004-US-0005-TK-0001-poi-contract\\EP-0004-US-0005-TK-0001-poi-contract.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0005-TK-0002-seeded-abandoned-objects",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0005-known-points-of-interest\\EP-0004-US-0005-TK-0002-seeded-abandoned-objects\\EP-0004-US-0005-TK-0002-seeded-abandoned-objects.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0005-TK-0003-abandoned-object-content",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0005-known-points-of-interest\\EP-0004-US-0005-TK-0003-abandoned-object-content\\EP-0004-US-0005-TK-0003-abandoned-object-content.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0005-TK-0004-poi-map-selection",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0005-known-points-of-interest\\EP-0004-US-0005-TK-0004-poi-map-selection\\EP-0004-US-0005-TK-0004-poi-map-selection.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0006-TK-0001-map-layer-controls",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0006-readable-map-layers\\EP-0004-US-0006-TK-0001-map-layer-controls\\EP-0004-US-0006-TK-0001-map-layer-controls.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0007-TK-0001-map-environment-save",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0007-resume-territories-and-fields\\EP-0004-US-0007-TK-0001-map-environment-save\\EP-0004-US-0007-TK-0001-map-environment-save.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0007-TK-0002-full-map-local-load",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0007-resume-territories-and-fields\\EP-0004-US-0007-TK-0002-full-map-local-load\\EP-0004-US-0007-TK-0002-full-map-local-load.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0008-TK-0001-full-map-correctness-corpus",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0008-complete-map-evidence\\EP-0004-US-0008-TK-0001-full-map-correctness-corpus\\EP-0004-US-0008-TK-0001-full-map-correctness-corpus.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0008-TK-0002-full-map-performance-report",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0008-complete-map-evidence\\EP-0004-US-0008-TK-0002-full-map-performance-report\\EP-0004-US-0008-TK-0002-full-map-performance-report.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0008-TK-0003-full-map-render-evidence",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0008-complete-map-evidence\\EP-0004-US-0008-TK-0003-full-map-render-evidence\\EP-0004-US-0008-TK-0003-full-map-render-evidence.md",
+    "findings": [
+      "G01",
+      "G02"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0009-TK-0001-sync-project-docs",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0009-project-documentation\\EP-0004-US-0009-TK-0001-sync-project-docs\\EP-0004-US-0009-TK-0001-sync-project-docs.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  },
+  {
+    "ticket": "EP-0004-US-0009-TK-0002-final-evidence-and-graph",
+    "path": "D:\\DeepSpaceSaga\\DSS-EP-0004\\Board\\EP-0004-ai-territories-and-map-environment\\EP-0004-US-0009-project-documentation\\EP-0004-US-0009-TK-0002-final-evidence-and-graph\\EP-0004-US-0009-TK-0002-final-evidence-and-graph.md",
+    "findings": [
+      "G01"
+    ],
+    "acceptance_recertified": false
+  }
+]

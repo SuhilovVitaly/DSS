@@ -6,6 +6,32 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public class CountermeasureSnapshotTests
 {
     [Theory]
+    [InlineData(LaunchMode.Auto, CountermeasurePhase.Guiding)]
+    [InlineData(LaunchMode.Manual, CountermeasurePhase.Guiding)]
+    [InlineData(LaunchMode.Manual, CountermeasurePhase.MissedCoast)]
+    public void Countermeasure_lifetime_and_mode_roundtrip(LaunchMode mode, CountermeasurePhase phase)
+    {
+        var flight = new CountermeasureSnapshot("owner", "defense-2", "torpedo", phase,
+            new(100, 1, TorpedoRoutePhase.Straight, false), 100, 500,
+            new(new("crew", "Defense", WeaponSkillType.CountermeasureDefense, 0, 55, 55), 5),
+            Mode: mode, CapturedAccuracy: 55, CapturedTargetManeuverability: 5,
+            MaxFlightTimeMs: 60000, ExpiresAtMotionTimeMs: 60100,
+            SpeedKmS: 12.5, TurnRateDegPerSec: 85.25);
+        var restored = JsonSerializer.Deserialize<CountermeasureSnapshot>(JsonSerializer.Serialize(flight))!;
+        Assert.Equal(mode, restored.Mode);
+        Assert.Equal(phase, restored.Phase);
+        Assert.Equal(55m, restored.CapturedAccuracy);
+        Assert.Equal(5m, restored.CapturedTargetManeuverability);
+        Assert.Equal(60000, restored.MaxFlightTimeMs);
+        Assert.Equal(60100, restored.ExpiresAtMotionTimeMs);
+        Assert.Equal(12.5, restored.SpeedKmS);
+        Assert.Equal(85.25, restored.TurnRateDegPerSec);
+        Assert.Null(restored.PredictedEncounterMotionTimeMs);
+        Assert.Null(restored.ResolutionRoll);
+        Assert.Empty(restored.Trail);
+    }
+
+    [Theory]
     [InlineData(CountermeasurePhase.Guiding)]
     [InlineData(CountermeasurePhase.MissedCoast)]
     public void Countermeasure_states_roundtrip(CountermeasurePhase phase)

@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0007-resume-territories-and-fields
 ticket: EP-0004-US-0007-TK-0002-full-map-local-load
 title: Продолжение полной карты через файловое сохранение
-stage: approved
+stage: done
 layer: local-client
 depends_on: [EP-0004-US-0006-TK-0001-map-layer-controls, EP-0003-US-0006-TK-0001-cluster-save-state, EP-0003-US-0006-TK-0002-cluster-local-resume, EP-0004-US-0007-TK-0001-map-environment-save]
 files_touched: 2
@@ -11,6 +11,11 @@ serves: [AC-0001, AC-0002, AC-0003]
 created: 2026-09-22T14:40:41Z
 revision: 1
 ---
+
+## Текущий контракт — 2026-10-08
+
+Исходный план и скопированные dependency inputs ниже сохранены для трассировки. Фактические версии/API и расширенный scope определяются Execution/Resolved sections и [текущим контрактом](../../../../Documentation/04-Engineering/AiMapEnvironment.md). SaveFormat15, AiMap rulesVersion1, шесть сценариев, inline poiTemplates; Field/POI metadata не являются entities или engine command targets. Исторический NOT RUN не заменяет финальное native evidence US8; FPS80 acceptance остаётся OPEN.
+
 
 # Продолжение полной карты через файловое сохранение
 
@@ -153,3 +158,11 @@ public sealed record PointOfInterestData(string ObjectId,string Name,string Desc
 ### EP-0004-US-0007-TK-0001-map-environment-save
 
 GameStateData: [JsonPropertyName("aiMap")] AiMapEnvironmentSnapshot? AiMap=null. Единый save-format owner EP-0002, никаких independent file/format миграций.
+
+## Validation refinement — 2026-10-08
+
+The LocalClient project reference already exists and is reused. Per-ticket Engine regression excludes CorrectnessCorpusTests; the complete old and new corpora run in US8 after transport/save integration. Production files require no change.
+
+## Execution evidence — 2026-10-08
+
+Real LocalGameSessionConnection.SaveAsync writes a slot, public factory loads it paused and publishes complete map/time/voyage bindings, file remains unchanged. Explicit-time resumed Engine matches continuous world in-flight, docked and paused, then next step and quoted sell preserve finance/markets. Broken AI parent rejects factory publication without rewriting file. Named4/4; Engine non-corpus1689/1689 PASS (ep4-us7-tk2.trx); LocalClient build, scoped test format and diff PASS. No production/reference change needed. Self-review no remaining finding; all corpora rerun US8.

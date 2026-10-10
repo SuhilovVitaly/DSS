@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Client.UI;
 
@@ -84,4 +85,18 @@ internal sealed class MapFrameEvidence
 internal sealed record FrameStatistics(int Count, double MeanMs, double P50Ms, double P95Ms, double P99Ms, double MaxMs, double MeanFps);
 internal sealed record MapFrameContext(int Width, int Height, bool VSync, double? MonitorRefreshHz,
     string? Gpu, string? GraphicsVersion, float UiScale, string Speed, ulong? Seed, int? GeneratorVersion,
-    int Planets, int Belts, int Objects, double PixelsPerWorldUnit, string? SelectedObjectId);
+    int Planets, int Belts, int Objects, double PixelsPerWorldUnit, string? SelectedObjectId,
+    MapFrameCounts? MapCounts = null, string? Layers = null, long? CalendarEpochMs = null, long? MotionEpochMs = null,
+    string? SelectedFieldId = null, string? SelectedPoiId = null);
+
+internal sealed record MapFrameCounts(int Entities, int Clusters, int HumanStations, int AiBases, int Territories,
+    int Fields, int PointsOfInterest, int ConfiguredBeltDecorationSamples, int ConfiguredDebrisDecorationSamples)
+{
+    internal static MapFrameCounts From(AuthoritativeSnapshot? s) => new(s?.Objects.Length ?? 0,
+        s?.ClusterMap?.Clusters.Length ?? 0, s?.ClusterMap?.Stations.Length ?? 0, s?.AiMap?.Bases.Length ?? 0,
+        s?.AiMap is { Territories.IsDefaultOrEmpty: false } a ? a.Territories.Length : 0,
+        s?.AiMap is { Fields.IsDefaultOrEmpty: false } b ? b.Fields.Length : 0,
+        s?.AiMap is { PointsOfInterest.IsDefaultOrEmpty: false } c ? c.PointsOfInterest.Length : 0,
+        s?.SolarSystemMap?.Belts.Sum(b => Math.Clamp(b.DecorationSamples, 0, 65536)) ?? 0,
+        s?.AiMap is { Fields.IsDefaultOrEmpty: false } d ? d.Fields.Count(f => f.Kind == "Debris") * 64 : 0);
+}

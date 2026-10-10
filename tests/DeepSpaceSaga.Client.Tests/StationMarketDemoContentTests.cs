@@ -414,14 +414,48 @@ public sealed class StationMarketDemoContentTests
     private static async Task<AuthoritativeSnapshot> WaitForSnapshotAsync(
         IAsyncEnumerator<AuthoritativeSnapshot> snapshots,
         Func<AuthoritativeSnapshot, bool> predicate,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [System.Runtime.CompilerServices.CallerArgumentExpression(nameof(predicate))] string? expected = null)
     {
-        while (await snapshots.MoveNextAsync().AsTask().WaitAsync(cancellationToken))
+        // The enumerator already owns this token. Await cancellation of MoveNext itself
+        // before await-using disposes it; WaitAsync can abandon a still-running iterator.
+        AuthoritativeSnapshot? last = null;
+        try
         {
-            if (predicate(snapshots.Current)) return snapshots.Current;
+            while (await snapshots.MoveNextAsync())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                last = snapshots.Current;
+                if (predicate(last)) return last;
+            }
+        }
+        catch (OperationCanceledException ex) when (cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException($"Expected {expected}; last snapshot: {last?.GameTimeMs.ToString() ?? "none"} game ms.", ex);
         }
 
         throw new InvalidOperationException("Snapshot stream completed before the expected state was published.");
+    }
+
+    [Fact]
+    public async Task Snapshot_timeout_completes_pending_read_before_disposal()
+    {
+        using var cancellation = new CancellationTokenSource();
+        bool exited = false;
+        async IAsyncEnumerable<AuthoritativeSnapshot> Stream(
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken token)
+        {
+            try { await Task.Delay(Timeout.Infinite, token); }
+            finally { exited = true; }
+            yield break;
+        }
+        await using var snapshots = Stream(cancellation.Token).GetAsyncEnumerator();
+        var pending = WaitForSnapshotAsync(snapshots, _ => false, cancellation.Token);
+        cancellation.Cancel();
+        var error = await Assert.ThrowsAsync<TimeoutException>(() => pending);
+        Assert.IsAssignableFrom<OperationCanceledException>(error.InnerException);
+        Assert.Contains("last snapshot: none", error.Message);
+        Assert.True(exited);
     }
 
     private static bool HasCommandResult(AuthoritativeSnapshot snapshot, string commandId) =>

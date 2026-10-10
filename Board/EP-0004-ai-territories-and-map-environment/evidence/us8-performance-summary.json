@@ -1,0 +1,1406 @@
+{
+  "sourceRevision": "8421ea4d675ab099794953439b8c1f4434546238",
+  "sourceState": "US8 TK2 working tree before publication",
+  "harnessSha256": "21fff8fd792d8552142753d9aeef81a563bd497436b92913fb4ef1501e5dc1ae",
+  "machine": {
+    "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+    "logicalProcessors": 8,
+    "runtime": ".NET 8.0.26",
+    "os": "Microsoft Windows 10.0.26200",
+    "architecture": "X64"
+  },
+  "commands": [
+    "--solar-map --clusters --boundary-only --seeds 1:100 --scenarios all --config max",
+    "--solar-map --clusters --all-map-layers --seeds 1:100 --scenarios all --config max --baseline ep4-baseline-max.json"
+  ],
+  "baselineSha256": "ab067317d1837e87ef7b7b02c2c7eb7c935d3ae54235fa193bd8af39f1ace530",
+  "fullSha256": "491b7d69cf43d675806c725eedfc5ec7b166ddcffb07f93e72bd403aaa04898b",
+  "baseline": {
+    "cases": 600,
+    "median": {
+      "generationMs": 23.25685,
+      "generationBytes": 11198904.0,
+      "snapshotMs": 1.3491,
+      "snapshotBytes": 1200828.0,
+      "saveSerializationMs": 6.40935,
+      "saveAllocationBytes": 7501132.0,
+      "saveBytes": 3121367.0
+    },
+    "byScenario": {
+      "Default": {
+        "generationMs": 29.81255,
+        "generationBytes": 11809684.0,
+        "snapshotMs": 0.6251,
+        "snapshotBytes": 1163088.0,
+        "saveSerializationMs": 6.52705,
+        "saveAllocationBytes": 7444132.0,
+        "saveBytes": 3092229.0
+      },
+      "Default_500": {
+        "generationMs": 23.65615,
+        "generationBytes": 10304944.0,
+        "snapshotMs": 1.74845,
+        "snapshotBytes": 1461272.0,
+        "saveSerializationMs": 7.56865,
+        "saveAllocationBytes": 9275968.0,
+        "saveBytes": 3893132.0
+      },
+      "Docked": {
+        "generationMs": 24.419800000000002,
+        "generationBytes": 11794092.0,
+        "snapshotMs": 2.5643,
+        "snapshotBytes": 3912996.0,
+        "saveSerializationMs": 6.0842,
+        "saveAllocationBytes": 7457720.0,
+        "saveBytes": 3094785.0
+      },
+      "MarketProfiles": {
+        "generationMs": 15.574,
+        "generationBytes": 7952808.0,
+        "snapshotMs": 1.3523,
+        "snapshotBytes": 1159568.0,
+        "saveSerializationMs": 6.2669,
+        "saveAllocationBytes": 7371232.0,
+        "saveBytes": 3077409.0
+      },
+      "PlayerShipOnly": {
+        "generationMs": 15.875050000000002,
+        "generationBytes": 8062072.0,
+        "snapshotMs": 0.45655,
+        "snapshotBytes": 1164352.0,
+        "saveSerializationMs": 6.17385,
+        "saveAllocationBytes": 7417992.0,
+        "saveBytes": 3097063.0
+      },
+      "Undocked": {
+        "generationMs": 25.810000000000002,
+        "generationBytes": 11791868.0,
+        "snapshotMs": 0.47785,
+        "snapshotBytes": 1163768.0,
+        "saveSerializationMs": 6.13075,
+        "saveAllocationBytes": 7451388.0,
+        "saveBytes": 3094161.0
+      }
+    },
+    "entityRange": [
+      804,
+      1439
+    ],
+    "rendering": [
+      {
+        "scenario": "Default",
+        "seed": 1,
+        "view": "system",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 854,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.0747,
+        "p95Ms": 12.3344,
+        "p99Ms": 16.5465,
+        "meanMs": 10.398172833333337,
+        "allocationBytesPerFrame": 729533.4533333334
+      },
+      {
+        "scenario": "Default",
+        "seed": 1,
+        "view": "belt",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 854,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 5.2517,
+        "p95Ms": 6.2284,
+        "p99Ms": 6.7188,
+        "meanMs": 5.321797,
+        "allocationBytesPerFrame": 726619.7333333333
+      },
+      {
+        "scenario": "Default",
+        "seed": 1,
+        "view": "cluster",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 854,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.1958,
+        "p95Ms": 11.7612,
+        "p99Ms": 12.9329,
+        "meanMs": 10.421372166666663,
+        "allocationBytesPerFrame": 734180.5866666667
+      },
+      {
+        "scenario": "Default_500",
+        "seed": 1,
+        "view": "system",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 1328,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.2823,
+        "p95Ms": 11.9729,
+        "p99Ms": 13.5482,
+        "meanMs": 10.508969000000002,
+        "allocationBytesPerFrame": 906095.4
+      },
+      {
+        "scenario": "Default_500",
+        "seed": 1,
+        "view": "belt",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 1328,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 5.5481,
+        "p95Ms": 6.6935,
+        "p99Ms": 9.1904,
+        "meanMs": 5.678512333333327,
+        "allocationBytesPerFrame": 914547.0933333334
+      },
+      {
+        "scenario": "Default_500",
+        "seed": 1,
+        "view": "cluster",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 1328,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.8421,
+        "p95Ms": 12.2293,
+        "p99Ms": 13.4977,
+        "meanMs": 11.007194666666667,
+        "allocationBytesPerFrame": 944861.6533333333
+      },
+      {
+        "scenario": "Docked",
+        "seed": 1,
+        "view": "system",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 854,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.2825,
+        "p95Ms": 12.2623,
+        "p99Ms": 15.346,
+        "meanMs": 10.53440616666666,
+        "allocationBytesPerFrame": 1070015.8933333333
+      },
+      {
+        "scenario": "Docked",
+        "seed": 1,
+        "view": "belt",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 854,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 5.3309,
+        "p95Ms": 6.2367,
+        "p99Ms": 6.8394,
+        "meanMs": 5.428670333333335,
+        "allocationBytesPerFrame": 1067127.04
+      },
+      {
+        "scenario": "Docked",
+        "seed": 1,
+        "view": "cluster",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 854,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 11.5103,
+        "p95Ms": 13.2539,
+        "p99Ms": 15.5944,
+        "meanMs": 11.721464833333338,
+        "allocationBytesPerFrame": 1074687.8933333333
+      },
+      {
+        "scenario": "MarketProfiles",
+        "seed": 1,
+        "view": "system",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 852,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 9.9905,
+        "p95Ms": 10.8216,
+        "p99Ms": 12.0454,
+        "meanMs": 10.033034499999994,
+        "allocationBytesPerFrame": 731777.8
+      },
+      {
+        "scenario": "MarketProfiles",
+        "seed": 1,
+        "view": "belt",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 852,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 5.328,
+        "p95Ms": 6.3173,
+        "p99Ms": 6.902,
+        "meanMs": 5.409648166666665,
+        "allocationBytesPerFrame": 728834.88
+      },
+      {
+        "scenario": "MarketProfiles",
+        "seed": 1,
+        "view": "cluster",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 852,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.2439,
+        "p95Ms": 11.6172,
+        "p99Ms": 12.8754,
+        "meanMs": 10.413257833333338,
+        "allocationBytesPerFrame": 736300.5866666667
+      },
+      {
+        "scenario": "PlayerShipOnly",
+        "seed": 1,
+        "view": "system",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 853,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.0098,
+        "p95Ms": 11.1698,
+        "p99Ms": 15.3348,
+        "meanMs": 10.203705999999993,
+        "allocationBytesPerFrame": 729682.1333333333
+      },
+      {
+        "scenario": "PlayerShipOnly",
+        "seed": 1,
+        "view": "belt",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 853,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 5.257,
+        "p95Ms": 6.0758,
+        "p99Ms": 6.7964,
+        "meanMs": 5.312965999999996,
+        "allocationBytesPerFrame": 726618.88
+      },
+      {
+        "scenario": "PlayerShipOnly",
+        "seed": 1,
+        "view": "cluster",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 853,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.4476,
+        "p95Ms": 12.0025,
+        "p99Ms": 13.5762,
+        "meanMs": 10.626388833333317,
+        "allocationBytesPerFrame": 734203.7333333333
+      },
+      {
+        "scenario": "Undocked",
+        "seed": 1,
+        "view": "system",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 854,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 9.9773,
+        "p95Ms": 11.1745,
+        "p99Ms": 12.1216,
+        "meanMs": 10.10552333333333,
+        "allocationBytesPerFrame": 729512.4133333333
+      },
+      {
+        "scenario": "Undocked",
+        "seed": 1,
+        "view": "belt",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 854,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 5.2835,
+        "p95Ms": 6.4065,
+        "p99Ms": 8.5832,
+        "meanMs": 5.41245683333334,
+        "allocationBytesPerFrame": 726619.7333333333
+      },
+      {
+        "scenario": "Undocked",
+        "seed": 1,
+        "view": "cluster",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 854,
+          "aiBases": 0,
+          "territories": 0,
+          "fields": 0,
+          "pointsOfInterest": 0,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 0,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 12.3313,
+        "p95Ms": 18.6827,
+        "p99Ms": 20.7603,
+        "meanMs": 13.217385666666663,
+        "allocationBytesPerFrame": 734180.5866666667
+      }
+    ],
+    "config": {
+      "schemaVersion": 1,
+      "generatorVersion": 1,
+      "maxPlacementAttempts": 64,
+      "minPlanets": 7,
+      "maxPlanets": 7,
+      "minBelts": 5,
+      "maxBelts": 5,
+      "startMinDays": 75,
+      "startMaxDays": 75,
+      "orbitSpeedFraction": 0.001,
+      "beltWidthFraction": 0.08,
+      "orbitClearanceWorld": 100,
+      "asteroidsPerBelt": 24,
+      "decorationSamplesPerBelt": 2048,
+      "enabledScenarios": [
+        "Default",
+        "Default_500",
+        "Docked",
+        "Undocked",
+        "MarketProfiles",
+        "PlayerShipOnly"
+      ],
+      "clusters": {
+        "minClusters": 3,
+        "maxClusters": 5,
+        "minStations": 10,
+        "maxStations": 12,
+        "neighbourMinDays": 0.5,
+        "neighbourMaxDays": 2,
+        "diameterMinDays": 3,
+        "diameterMaxDays": 7,
+        "interclusterMinDays": 15,
+        "interclusterMaxDays": 35
+      },
+      "ai": null,
+      "environment": null,
+      "poiTemplates": null
+    }
+  },
+  "full": {
+    "cases": 600,
+    "median": {
+      "generationMs": 44.6164,
+      "generationBytes": 57442180.0,
+      "snapshotMs": 1.2844,
+      "snapshotBytes": 1262460.0,
+      "saveSerializationMs": 6.51055,
+      "saveAllocationBytes": 7538588.0,
+      "saveBytes": 3136968.5
+    },
+    "byScenario": {
+      "Default": {
+        "generationMs": 50.393,
+        "generationBytes": 58923680.0,
+        "snapshotMs": 0.72855,
+        "snapshotBytes": 1222832.0,
+        "saveSerializationMs": 6.6058,
+        "saveAllocationBytes": 7481896.0,
+        "saveBytes": 3107824.0
+      },
+      "Default_500": {
+        "generationMs": 45.50125,
+        "generationBytes": 56418600.0,
+        "snapshotMs": 1.7746,
+        "snapshotBytes": 1537144.0,
+        "saveSerializationMs": 7.6239,
+        "saveAllocationBytes": 9327664.0,
+        "saveBytes": 3908891.0
+      },
+      "Docked": {
+        "generationMs": 50.1678,
+        "generationBytes": 58926168.0,
+        "snapshotMs": 2.5380000000000003,
+        "snapshotBytes": 3974248.0,
+        "saveSerializationMs": 6.32285,
+        "saveAllocationBytes": 7495716.0,
+        "saveBytes": 3110711.5
+      },
+      "MarketProfiles": {
+        "generationMs": 41.814499999999995,
+        "generationBytes": 55076536.0,
+        "snapshotMs": 1.3513,
+        "snapshotBytes": 1219248.0,
+        "saveSerializationMs": 6.10075,
+        "saveAllocationBytes": 7409452.0,
+        "saveBytes": 3093335.5
+      },
+      "PlayerShipOnly": {
+        "generationMs": 35.46795,
+        "generationBytes": 54056964.0,
+        "snapshotMs": 0.5015000000000001,
+        "snapshotBytes": 1224192.0,
+        "saveSerializationMs": 6.08765,
+        "saveAllocationBytes": 7455944.0,
+        "saveBytes": 3112821.0
+      },
+      "Undocked": {
+        "generationMs": 45.515550000000005,
+        "generationBytes": 58923784.0,
+        "snapshotMs": 0.49275,
+        "snapshotBytes": 1223512.0,
+        "saveSerializationMs": 6.5534,
+        "saveAllocationBytes": 7489384.0,
+        "saveBytes": 3110087.5
+      }
+    },
+    "entityRange": [
+      808,
+      1443
+    ],
+    "rendering": [
+      {
+        "scenario": "Default",
+        "seed": 1,
+        "view": "system",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 858,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.7043,
+        "p95Ms": 14.0334,
+        "p99Ms": 17.3733,
+        "meanMs": 11.1455495,
+        "allocationBytesPerFrame": 1172559.5733333332
+      },
+      {
+        "scenario": "Default",
+        "seed": 1,
+        "view": "belt",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 858,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 5.8964,
+        "p95Ms": 7.6912,
+        "p99Ms": 8.9735,
+        "meanMs": 6.093473000000004,
+        "allocationBytesPerFrame": 1214186.9866666666
+      },
+      {
+        "scenario": "Default",
+        "seed": 1,
+        "view": "cluster",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 858,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.8724,
+        "p95Ms": 12.1557,
+        "p99Ms": 13.0833,
+        "meanMs": 10.970024333333328,
+        "allocationBytesPerFrame": 1239053.5466666666
+      },
+      {
+        "scenario": "Default_500",
+        "seed": 1,
+        "view": "system",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 1332,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.8555,
+        "p95Ms": 12.4981,
+        "p99Ms": 15.0999,
+        "meanMs": 11.035762999999987,
+        "allocationBytesPerFrame": 1663206.8266666667
+      },
+      {
+        "scenario": "Default_500",
+        "seed": 1,
+        "view": "belt",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 1332,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 6.2127,
+        "p95Ms": 8.1869,
+        "p99Ms": 10.4416,
+        "meanMs": 6.488394333333341,
+        "allocationBytesPerFrame": 1746518.5066666666
+      },
+      {
+        "scenario": "Default_500",
+        "seed": 1,
+        "view": "cluster",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 1332,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 11.306,
+        "p95Ms": 13.0832,
+        "p99Ms": 15.4203,
+        "meanMs": 11.530016000000014,
+        "allocationBytesPerFrame": 1854829.1066666667
+      },
+      {
+        "scenario": "Docked",
+        "seed": 1,
+        "view": "system",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 858,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.7451,
+        "p95Ms": 12.1576,
+        "p99Ms": 13.6919,
+        "meanMs": 10.901430166666664,
+        "allocationBytesPerFrame": 1513067.7333333334
+      },
+      {
+        "scenario": "Docked",
+        "seed": 1,
+        "view": "belt",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 858,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 5.8883,
+        "p95Ms": 6.8239,
+        "p99Ms": 7.6751,
+        "meanMs": 6.014208833333331,
+        "allocationBytesPerFrame": 1554694.2933333332
+      },
+      {
+        "scenario": "Docked",
+        "seed": 1,
+        "view": "cluster",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 858,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 11.7165,
+        "p95Ms": 13.4087,
+        "p99Ms": 14.43,
+        "meanMs": 11.905702666666675,
+        "allocationBytesPerFrame": 1579560.8533333333
+      },
+      {
+        "scenario": "MarketProfiles",
+        "seed": 1,
+        "view": "system",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 856,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.6139,
+        "p95Ms": 12.6355,
+        "p99Ms": 15.2573,
+        "meanMs": 10.859164666666663,
+        "allocationBytesPerFrame": 1174183.5733333332
+      },
+      {
+        "scenario": "MarketProfiles",
+        "seed": 1,
+        "view": "belt",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 856,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 5.7945,
+        "p95Ms": 6.802,
+        "p99Ms": 7.3695,
+        "meanMs": 5.926316666666667,
+        "allocationBytesPerFrame": 1215634.9866666666
+      },
+      {
+        "scenario": "MarketProfiles",
+        "seed": 1,
+        "view": "cluster",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 856,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.7478,
+        "p95Ms": 12.255,
+        "p99Ms": 13.4062,
+        "meanMs": 10.90290533333333,
+        "allocationBytesPerFrame": 1240444.6933333334
+      },
+      {
+        "scenario": "PlayerShipOnly",
+        "seed": 1,
+        "view": "system",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 857,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.6842,
+        "p95Ms": 16.0824,
+        "p99Ms": 19.4668,
+        "meanMs": 11.330909166666665,
+        "allocationBytesPerFrame": 1172157.5733333332
+      },
+      {
+        "scenario": "PlayerShipOnly",
+        "seed": 1,
+        "view": "belt",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 857,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 5.7058,
+        "p95Ms": 6.7302,
+        "p99Ms": 7.3906,
+        "meanMs": 5.799136000000001,
+        "allocationBytesPerFrame": 1213418.9866666666
+      },
+      {
+        "scenario": "PlayerShipOnly",
+        "seed": 1,
+        "view": "cluster",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 857,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.8553,
+        "p95Ms": 13.1864,
+        "p99Ms": 18.4667,
+        "meanMs": 11.282287833333328,
+        "allocationBytesPerFrame": 1238116.6933333334
+      },
+      {
+        "scenario": "Undocked",
+        "seed": 1,
+        "view": "system",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 858,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.5551,
+        "p95Ms": 11.9787,
+        "p99Ms": 12.9044,
+        "meanMs": 10.690583833333333,
+        "allocationBytesPerFrame": 1172559.5733333332
+      },
+      {
+        "scenario": "Undocked",
+        "seed": 1,
+        "view": "belt",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 858,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 5.7829,
+        "p95Ms": 6.7718,
+        "p99Ms": 8.0144,
+        "meanMs": 5.860048499999995,
+        "allocationBytesPerFrame": 1214187.84
+      },
+      {
+        "scenario": "Undocked",
+        "seed": 1,
+        "view": "cluster",
+        "backend": "CPU/Skia raster",
+        "width": 1920,
+        "height": 1080,
+        "uiScale": 1,
+        "layers": "All",
+        "mapCounts": {
+          "authoritativeEntities": 858,
+          "aiBases": 4,
+          "territories": 4,
+          "fields": 5,
+          "pointsOfInterest": 2,
+          "configuredBeltDecorationSamples": 10240,
+          "configuredDebrisDecorationSamples": 128,
+          "decorationMeaning": "Configured sample budgets; LOD/viewport may draw fewer. Metadata and decoration are not entities."
+        },
+        "epoch": {
+          "calendarTimeMs": 0,
+          "motionTimeMs": 0
+        },
+        "warmupFrames": 120,
+        "measuredFrames": 600,
+        "p50Ms": 10.7096,
+        "p95Ms": 13.1272,
+        "p99Ms": 15.7764,
+        "meanMs": 11.050785833333329,
+        "allocationBytesPerFrame": 1239053.5466666666
+      }
+    ],
+    "config": {
+      "schemaVersion": 1,
+      "generatorVersion": 1,
+      "maxPlacementAttempts": 64,
+      "minPlanets": 7,
+      "maxPlanets": 7,
+      "minBelts": 5,
+      "maxBelts": 5,
+      "startMinDays": 75,
+      "startMaxDays": 75,
+      "orbitSpeedFraction": 0.001,
+      "beltWidthFraction": 0.08,
+      "orbitClearanceWorld": 100,
+      "asteroidsPerBelt": 24,
+      "decorationSamplesPerBelt": 2048,
+      "enabledScenarios": [
+        "Default",
+        "Default_500",
+        "Docked",
+        "Undocked",
+        "MarketProfiles",
+        "PlayerShipOnly"
+      ],
+      "clusters": {
+        "minClusters": 3,
+        "maxClusters": 5,
+        "minStations": 10,
+        "maxStations": 12,
+        "neighbourMinDays": 0.5,
+        "neighbourMaxDays": 2,
+        "diameterMinDays": 3,
+        "diameterMaxDays": 7,
+        "interclusterMinDays": 15,
+        "interclusterMaxDays": 35
+      },
+      "ai": {
+        "minBases": 4,
+        "maxBases": 4,
+        "defenceRadiusKm": 200,
+        "patrolRadiusKm": 1000,
+        "maxPlacementAttempts": 64
+      },
+      "environment": {
+        "radiationCount": 1,
+        "dustCount": 2,
+        "debrisCount": 2,
+        "radiationRadiusKm": 5000,
+        "dustWidthKm": 100,
+        "debrisRadiusKm": 250,
+        "intensity": 0.5
+      },
+      "poiTemplates": [
+        {
+          "id": "abandoned-relay",
+          "name": "Заброшенный ретранслятор",
+          "description": "Неактивный узел связи. Исследование пока недоступно."
+        },
+        {
+          "id": "abandoned-platform",
+          "name": "Пустая платформа",
+          "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+        }
+      ]
+    }
+  },
+  "matchedCases": 600,
+  "additionalEntitiesEveryCase": 4,
+  "descriptorCounts": {
+    "territories": 4,
+    "fields": 5,
+    "pointsOfInterest": 2
+  },
+  "placement": {
+    "checks": 6044448,
+    "maxAttempts": 1,
+    "minClearanceWorld": 19168.79893827299
+  },
+  "criteria": {
+    "generationSnapshotSave": "measured",
+    "rasterFrames": "measured",
+    "nativePresentation": "not-measured",
+    "gpuExecution": "not-measured",
+    "improvement": "not-assessed; inspect matched cases"
+  },
+  "nativeEvidence": "Owned by subsequent US8 TK3; not measured here",
+  "interpretation": "Measured incremental feature cost on matched cases, not a speedup claim. No generation/snapshot/save budgets specified. Raster is not GPU execution or presentation."
+}

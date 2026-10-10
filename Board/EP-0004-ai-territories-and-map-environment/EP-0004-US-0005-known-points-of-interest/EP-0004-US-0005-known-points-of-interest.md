@@ -2,7 +2,7 @@
 epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0005-known-points-of-interest
 title: Известные заброшенные объекты среди ресурсов
-stage: draft
+stage: done
 dependencies: [EP-0004-US-0004-informational-environment-fields, EP-0003-US-0003-cluster-resource-surroundings]
 created: 2026-09-22T14:40:41Z
 source_request: "сделай тикеты для историй в эпиках 2 3 и 4&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0002-procedural-solar-system&#x20;\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0003-station-clusters-and-trade-geography\nD:\\DeepSpaceSaga\\DSS\\Board\\EP-0004-ai-territories-and-map-environment"
@@ -107,3 +107,7 @@ Implementation gates (перед первым тикетом, проверяют
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0005-TK-0002-seeded-abandoned-objects | stage approved; 5 files; engine; AC 1/2/3 |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0005-TK-0003-abandoned-object-content | stage approved; 2 files; content-data; AC 1/3 |
 | 2026-09-22T14:40:41Z | StoryBuilder | Создан EP-0004-US-0005-TK-0004-poi-map-selection | stage approved; 4 files; client; AC 1/2/3 |
+
+## Story self-review — 2026-10-08
+
+AC-0001–0003 covered across immutable DTO, seeded no-entity generator, strict content and real renderer/input tests. Engine non-corpus 1682/1682, Contracts 173/173, Client 1752/1752 PASS. Publication: TK1 32bcfcc, TK2 ae4856b, TK3 87ddcb6; TK4 accompanies this review. Automated acceptance complete in story scope; native/manual acceptance NOT RUN until US8. This is implementer self-review, not independent approval.

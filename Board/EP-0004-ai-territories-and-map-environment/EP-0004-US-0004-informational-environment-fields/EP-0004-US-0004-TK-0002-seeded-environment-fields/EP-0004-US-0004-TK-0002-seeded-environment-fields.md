@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0004-informational-environment-fields
 ticket: EP-0004-US-0004-TK-0002-seeded-environment-fields
 title: Воспроизводимые поля с проверяемыми привязками
-stage: approved
+stage: done
 layer: engine
 depends_on: [EP-0004-US-0003-TK-0001-temporal-placement-validation, EP-0004-US-0003-TK-0002-placement-evidence-report, EP-0004-US-0004-TK-0001-environment-field-contract]
 files_touched: 5
@@ -11,6 +11,11 @@ serves: [AC-0001, AC-0002, AC-0003]
 created: 2026-09-22T14:40:41Z
 revision: 1
 ---
+
+## Текущий контракт — 2026-10-08
+
+Исходный план и скопированные dependency inputs ниже сохранены для трассировки. Фактические версии/API и расширенный scope определяются Execution/Resolved sections и [текущим контрактом](../../../../Documentation/04-Engineering/AiMapEnvironment.md). SaveFormat15, AiMap rulesVersion1, шесть сценариев, inline poiTemplates; Field/POI metadata не являются entities или engine command targets. Исторический NOT RUN не заменяет финальное native evidence US8; FPS80 acceptance остаётся OPEN.
+
 
 # Воспроизводимые поля с проверяемыми привязками
 
@@ -147,3 +152,13 @@ public sealed record TerritoryMapData(string Id,string BaseObjectId,double Defen
 ### EP-0004-US-0004-TK-0001-environment-field-contract
 
 public sealed record EnvironmentFieldData(string Id,string Kind,double Intensity,string AnchorKind,string? ParentObjectId,OrbitalElements? Orbit,double OffsetX,double OffsetY,double InnerRadius,double OuterRadius,double StartAngleDegrees,double SweepDegrees,ulong DecorationSeed); AiMapEnvironmentSnapshot: ImmutableArray<EnvironmentFieldData> Fields=default. AnchorKind=Parent|Orbit|Sun; Kind=Radiation|Dust|Debris; intensity[0,1], 0<=inner<outer, sweep(0,360]. World dimensions, angles clockwise0up. Все новые properties используют явные JsonPropertyName camelCase; ImmutableArray optional/default использует существующий ImmutableArrayDefaultJsonConverter<T>, как AuthoritativeSnapshot. Отсутствующие optional поля совместимы со старым JSON.
+
+## Execution scope and decisions — 2026-10-08
+
+Scope correction before implementation: `SolarSystemGenerator.cs` remains read-only; add `ScenarioLoader.cs` for authoritative validation on scenario/save ingress, and `AiBaseGenerator.cs` only to validate the shared AiMap block through the existing validator call. Shared metadata stages run after AI and never create SpaceObjects. Parent anchors reference only actual SpaceObjects; field-to-field or self references are rejected structurally, so cycles cannot enter the model. World offsets translate anchors without changing their orbital equations. Count engineering limit 0..64 for each kind; positive finite configured dimensions and intensity [0,1]. Dust width is clipped to the selected belt's width. The final US-0008 corpus will exercise all layers; this ticket uses focused tests plus complete Engine non-corpus regression (the full 1774-test corpus just passed in US-0003).
+
+## Execution / self-review — 2026-10-08
+
+Five implementation files changed: EnvironmentFieldGenerator, SolarSystemGeneration, SimulationEngine, ScenarioLoader and SeededEnvironmentFieldsTests. AiBaseGenerator/SolarSystemGenerator remain read-only. Separate per-kind named streams preserve previous stages. Radiation is an axisymmetric Sun-centered circle; dust is a stationary Sun-centered belt sector; debris alternates parent and own orbital anchors. Sun denotes stationary center, not a requirement that every dust sector be axisymmetric. Fields do not create runtime entities.
+
+Authoritative ingress rejects invalid geometry/intensity/one-of anchor/dangling parent/self-reference/case duplicate before world replacement. Config errors identify the actual property. Targeted 3/3 PASS; Engine non-corpus 1678/1678 PASS (`ep4-us4-tk2.trx`); targeted 3/3 repeated after property-specific error messages. Build 0 warnings/errors, scoped format/diff PASS. Tests cover all speeds and 0/1/365d anchors, unchanged earlier stages, atomic malformed inputs, and 48 hours of moving ship + active market events compared with the same world without fields (complete snapshot and save state equality excluding descriptors). Own review found no outstanding defect. Rendering and final combined corpus remain dependent tickets.

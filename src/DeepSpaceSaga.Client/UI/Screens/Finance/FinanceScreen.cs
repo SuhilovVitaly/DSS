@@ -10,7 +10,7 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Finance;
 
 /// <summary>
-/// Finance overlay with authoritative voyage finances and existing Credits/station placeholders.
+/// Finance overlay with authoritative voyage finances, player Credits and station availability.
 /// Opened via the bottom-center Finance panel
 /// button or Ctrl+F; closes via the toolbar's exit-button icon (see StationToolbar),
 /// Escape, or a click outside the panel (on the dimmed background).
@@ -88,12 +88,6 @@ public sealed class FinanceScreen : IScreen
 
     /// <summary>True if the background PNG file was found and decoded at startup.</summary>
     internal static bool HasLoadedBackground => BackgroundImage is not null;
-
-    private static readonly string[] PlaceholderLines =
-    {
-        "Player Credits balance: not available yet",
-        "Station price summary: not available yet",
-    };
 
     public void OnActivated()
     {
@@ -218,12 +212,10 @@ public sealed class FinanceScreen : IScreen
 
         float cx = pl + FinanceLayout.PanelWidth / 2f;
 
-        float textY = pt + FinanceLayout.BodyStartY;
-        foreach (var line in PlaceholderLines)
-        {
-            canvas.DrawText(line, cx, textY, MenuStyle.TextStatus);
-            textY += FinanceLayout.BodyLineHeight;
-        }
+        canvas.DrawText(snapshot is null ? "Ожидание данных о балансе" : $"Баланс: {snapshot.PlayerCredits:N0} Credits",
+            cx, pt + FinanceLayout.BodyStartY, MenuStyle.TextStatus);
+        canvas.DrawText(snapshot?.DockedStationTrade is not null ? "Цены и доступные партии — на экране торговли" : "Для торговли пристыкуйтесь к станции",
+            cx, pt + FinanceLayout.BodyStartY + FinanceLayout.BodyLineHeight, MenuStyle.TextStatus);
 
         if (snapshot?.PortFees is { } fees)
         {

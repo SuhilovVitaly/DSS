@@ -1,6 +1,9 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using DeepSpaceSaga.EconomyBalance;
+using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine;
+using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.EconomyBalance.Tests;
@@ -61,6 +64,47 @@ public sealed class BalanceRunTests
             Assert.Equal(c.ContinuousStateHash, c.SaveLoadStateHash);
         }
         Assert.Equal(BalanceCanonical.Json(cases[0].HourlySamples), BalanceCanonical.Json(cases[1].HourlySamples));
+    }
+
+    [Fact]
+    public void Cargo_upgrade_increases_authoritative_capacity_quote_and_executed_batch()
+    {
+        var cases = Run(Matrix() with { ShipConfigurations = [Starter, Upgrade] });
+        var starter = cases.Single(c => c.ShipConfigurationId == "starter");
+        var upgrade = cases.Single(c => c.ShipConfigurationId == "cargo-upgrade");
+        var pairs = starter.Strategies.Join(upgrade.Strategies,
+            s => (s.StateGameTimeMs, s.Origin, s.Destination, s.ItemTypeId),
+            s => (s.StateGameTimeMs, s.Origin, s.Destination, s.ItemTypeId), (s, u) => (s, u)).ToArray();
+        Assert.Contains(pairs, p => p.u.ActualCapacityKg > p.s.ActualCapacityKg);
+        Assert.All(upgrade.Strategies, s => Assert.Equal(s.ActualCapacityKg, s.AnalyticalCapacityKg));
+
+        var original = EngineContentLoader.LoadRegistryFromSettingsFile(Settings, out _, out _);
+        var small = ClusterBalanceRunner.ConfigureCargo(original, new("test-small", 1, 1000));
+        var larger = ClusterBalanceRunner.ConfigureCargo(small, Upgrade);
+        var source = ScenarioLoader.LoadFromFile(Scenario);
+        source = source with
+        {
+            GameState = source.GameState with
+            {
+                PlayerTokens = 1000000,
+                SpaceObjects = source.GameState.SpaceObjects.Select(o => o with
+                {
+                    Modules = o.Modules?.Select(m =>
+                    original.ModuleTypes.GetDefinition(original.ModuleTypes.GetIndex(m.ModuleTypeId)).CargoCapacityKg is not null
+                        ? m with { Cargo = [] } : m).ToArray()
+                }).ToArray()
+            }
+        };
+        BalanceStrategyEvidence Trade(GameDataRegistry registry, BalanceShipConfiguration configuration)
+        {
+            using var engine = new SimulationEngine(registry); engine.LoadScenario(source);
+            var save = engine.CaptureSaveState(); var sample = EconomyBalanceRunner.Sample(engine, registry, save);
+            using var driver = new BalanceDriver(registry, save);
+            return driver.Run(sample, sample.Routes.First(r => r.Origin == "SPC-0002"), "item.energy-cells", configuration);
+        }
+        var a = Trade(small, Starter); var b = Trade(larger, Upgrade);
+        Assert.True(b.BuyQuote!.MaximumQuantity > a.BuyQuote!.MaximumQuantity);
+        Assert.True(b.ExecutedBuyQuantity > a.ExecutedBuyQuantity);
     }
 
     [Fact]

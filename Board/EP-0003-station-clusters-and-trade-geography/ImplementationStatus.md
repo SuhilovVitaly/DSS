@@ -1,5 +1,11 @@
 # EP-0003 execution record
 
+## Сверка реализации — 2026-10-10
+
+Текущая сверка: [ReviewStatus.md](ReviewStatus.md). Исторические публикации и результаты ниже сохранены. Новые F/G и свежие проверки находятся в review 2026-10-10; прежние зелёные результаты не закрывают новые дефекты.
+
+[Текущее устройство](../../Documentation/04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](../../Documentation/04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
+
 The user authorized the complete epic, all project/test files, and a separate commit and push after each ticket on 2026-10-07. Execution uses the existing `base-fight` branch. Planning metadata is historical; this record reports implementation and validation separately.
 
 | Story | Ticket | Implementation commit |

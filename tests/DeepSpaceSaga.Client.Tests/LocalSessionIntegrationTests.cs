@@ -407,7 +407,7 @@ public class LocalSessionIntegrationTests
                 var map = saved.GameState.TradingMap!;
 
                 Assert.Null(saved.GameState.TradingMapGeneration);
-                Assert.Equal(engine.CaptureSnapshot().ClusterMap!.Stations.Length, saved.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
+                Assert.Equal(engine.CaptureSnapshot().ClusterMap!.Stations.Length + saved.GameState.AiMap!.Bases.Length, saved.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
                 Assert.Equal(sourceShip.IsDocked, savedShip.IsDocked);
                 Assert.Equal(sourceShip.DockedStationObjectId, savedShip.DockedStationObjectId);
                 if (savedShip.IsDocked)
@@ -486,7 +486,7 @@ public class LocalSessionIntegrationTests
                 var map = saved.GameState.TradingMap!;
 
                 Assert.Null(saved.GameState.TradingMapGeneration);
-                Assert.Equal(initial.ClusterMap!.Stations.Length, saved.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
+                Assert.Equal(initial.ClusterMap!.Stations.Length + initial.AiMap!.Bases.Length, saved.GameState.SpaceObjects.Count(obj => obj.ObjectType == "Station"));
                 Assert.NotEmpty(map.Edges);
                 Assert.NotEmpty(map.CargoFlows);
             }
@@ -538,7 +538,7 @@ public class LocalSessionIntegrationTests
             var stationStates = screen.RenderStates
                 .Where(state => state.Pose.RenderObjectType == SpaceObjectType.Station)
                 .ToArray();
-            Assert.Equal(initial!.ClusterMap!.Stations.Length, stationStates.Length);
+            Assert.Equal(initial!.ClusterMap!.Stations.Length + initial.AiMap!.Bases.Length, stationStates.Length);
             foreach (var station in stationStates)
             {
                 var (x, y) = (
@@ -1371,6 +1371,7 @@ public class LocalSessionIntegrationTests
             MasterSeed = includeMasterSeed ? 42UL : null,
             SolarSystem = null,
             ClusterMap = null,
+            AiMap = null,
             SpaceObjects = save.GameState.SpaceObjects.Select(o => o with { Orbit = null }).ToArray(),
             // This legacy fixture substitutes a seed and has no materialized map.
             // Resource fields also belong to the original seed/map and must be discarded.

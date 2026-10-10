@@ -7,6 +7,13 @@ namespace DeepSpaceSaga.Engine.Scenario;
 
 internal static class SolarSystemGenerator
 {
+    internal static double? OperationalMaxSpeedKmS(SpaceObjectData ship, GameDataRegistry registry) =>
+        (ship.Modules ?? []).OrderBy(m => m.ModuleId, StringComparer.Ordinal)
+            .Where(m => string.Equals(m.PowerState, "On", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(m.OperationalState, "Ready", StringComparison.OrdinalIgnoreCase) && m.StructurePoints > 0)
+            .Select(m => registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId)).MaxSpeedMps)
+            .FirstOrDefault(speed => speed is > 0) / 1000.0;
+
     internal static ScenarioFile Generate(ScenarioFile source, SolarSystemGenerationConfig config,
         GameDataRegistry registry, ulong masterSeed)
     {
@@ -18,13 +25,8 @@ internal static class SolarSystemGenerator
             o.ObjectType.Equals("Planet", StringComparison.OrdinalIgnoreCase)))
             throw new ScenarioException($"solar-system/v1 seed={masterSeed} version=1 stage=input: source already contains celestial bodies.");
         var player = objects.Single(o => string.Equals(o.ObjectId, source.GameState.PlayerShipObjectId, StringComparison.OrdinalIgnoreCase));
-        var engine = (player.Modules ?? []).OrderBy(m => m.ModuleId, StringComparer.Ordinal)
-            .Where(m => m.PowerState == "On" && m.OperationalState == "Ready" && m.StructurePoints > 0)
-            .Select(m => registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId)))
-            .FirstOrDefault(m => m.MaxSpeedMps is > 0);
-        if (engine?.MaxSpeedMps is not > 0)
+        double vmax = OperationalMaxSpeedKmS(player, registry) ??
             throw new ScenarioException($"solar-system/v1 seed={masterSeed} stage=start: no operational engine Vmax.");
-        double vmax = engine.MaxSpeedMps.Value / 1000.0;
         string reason = "placement exhausted";
         for (int attempt = 0; attempt < config.MaxPlacementAttempts; attempt++)
         {

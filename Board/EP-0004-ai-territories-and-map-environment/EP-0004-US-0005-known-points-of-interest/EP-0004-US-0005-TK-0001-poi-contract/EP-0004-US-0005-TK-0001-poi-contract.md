@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0005-known-points-of-interest
 ticket: EP-0004-US-0005-TK-0001-poi-contract
 title: Известные точки интереса без игровой механики
-stage: approved
+stage: done
 layer: contracts
 depends_on: [EP-0004-US-0004-TK-0001-environment-field-contract, EP-0004-US-0004-TK-0002-seeded-environment-fields, EP-0004-US-0004-TK-0003-environment-field-content, EP-0004-US-0004-TK-0004-environment-field-rendering, EP-0003-US-0003-TK-0001-resource-orbit-binding, EP-0003-US-0003-TK-0002-cluster-resource-placement, EP-0003-US-0003-TK-0003-cluster-resource-map]
 files_touched: 2
@@ -11,6 +11,11 @@ serves: [AC-0001, AC-0002, AC-0003]
 created: 2026-09-22T14:40:41Z
 revision: 1
 ---
+
+## Текущий контракт — 2026-10-08
+
+Исходный план и скопированные dependency inputs ниже сохранены для трассировки. Фактические версии/API и расширенный scope определяются Execution/Resolved sections и [текущим контрактом](../../../../Documentation/04-Engineering/AiMapEnvironment.md). SaveFormat15, AiMap rulesVersion1, шесть сценариев, inline poiTemplates; Field/POI metadata не являются entities или engine command targets. Исторический NOT RUN не заменяет финальное native evidence US8; FPS80 acceptance остаётся OPEN.
+
 
 # Известные точки интереса без игровой механики
 
@@ -141,3 +146,8 @@ public sealed record TerritoryMapData(string Id,string BaseObjectId,double Defen
 ### EP-0004-US-0004-TK-0001-environment-field-contract
 
 public sealed record EnvironmentFieldData(string Id,string Kind,double Intensity,string AnchorKind,string? ParentObjectId,OrbitalElements? Orbit,double OffsetX,double OffsetY,double InnerRadius,double OuterRadius,double StartAngleDegrees,double SweepDegrees,ulong DecorationSeed); AiMapEnvironmentSnapshot: ImmutableArray<EnvironmentFieldData> Fields=default. AnchorKind=Parent|Orbit|Sun; Kind=Radiation|Dust|Debris; intensity[0,1], 0<=inner<outer, sweep(0,360]. World dimensions, angles clockwise0up. Все новые properties используют явные JsonPropertyName camelCase; ImmutableArray optional/default использует существующий ImmutableArrayDefaultJsonConverter<T>, как AuthoritativeSnapshot. Отсутствующие optional поля совместимы со старым JSON.
+
+
+## Execution / self-review — 2026-10-08
+
+Added immutable POI metadata with explicit camelCase names, Unicode descriptions, parent/orbit anchor and world offsets. Optional collection is default-safe for legacy JSON. Exact closed property inventory excludes rewards and resource composition. Contracts 173/173 PASS (ep4-us5-tk1.trx), build 0 warnings/errors, scoped format/diff PASS. Initial test compared ImmutableArray backing identity; replaced it with element-by-element array equality, retaining full JSON/record assertions. Self-review: no findings.

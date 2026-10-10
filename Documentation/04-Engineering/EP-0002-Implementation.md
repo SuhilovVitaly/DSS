@@ -1,5 +1,13 @@
 # EP-0002 implementation evidence
 
+## Сверка реализации — 2026-10-10
+
+Обновление после исправлений: F01–F05 закрыты кодом и регрессиями; EP-0004 включён в текущий рабочий набор. Баланс, 80 FPS и человеческая приёмка остаются открытыми. Текущий статус — `Documentation/04-Engineering/EpicReview20261010/Fixes.md`.
+
+Исторические implementation/native evidence ниже сохранены. Новое ревью выявило F03 (Vmax только для basic TypeId) и F04 (неограниченные content budgets). Новые проверки приведены в отчёте; прежние результаты не переписаны как свежие.
+
+[Текущее устройство](TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
+
 User authorization: implement every story and ticket, fix issues found by story/epic reviews, change project files and tests as needed, commit and push every ticket. Destination explicitly confirmed: origin (https://github.com/SuhilovVitaly/DSS), base-fight.
 
 Final outcome: all 21 tickets and eight story reviews are delivered. Final solution test run: 3113/3113 passed; 4800-world correctness corpus; 18 native host cases / 10800 measured frames, all passing the 80 FPS p99 criterion. Reviews were performed by the implementing agent. Story notes below are chronological; deferred native checks and subsequent integration corrections are resolved in US-0008 and the final epic review.
@@ -205,3 +213,9 @@ Final validation commands/results:
 - Native images and transient JSON measurements were inspected and removed after their textual evidence was recorded, as required by TK-0003.
 
 Final review outcome: no outstanding confirmed implementation findings. E2-AC-01..08 are covered by the story evidence, full test run, real-file continuation tests and native host acceptance. Human-operated playthrough was not performed; native input was scripted and captured frames were visually inspected. The restricted-execution presentation limit remains an environment-specific observation, not an unresolved code-performance finding.
+
+## Актуализация EP-0004 — 2026-10-08
+
+Результаты выше — датированная поставка EP-0002. EP-0004 добавляет AI/поля/POI и строгую persistence/selection интеграцию; её текущая native80FPS acceptance OPEN. Старые FPS/счётчики EP-0002 не являются повторным измерением полной карты.
+
+[Текущий технический контракт и evidence](AiMapEnvironment.md).

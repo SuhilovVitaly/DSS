@@ -34,6 +34,12 @@ public sealed partial class SimulationEngine : IDisposable
     private ulong _nextShipEventId;
     private TradingMapStateData? _tradingMap;
     private StationClusterMapSnapshot? _clusterMap;
+    private AiMapEnvironmentSnapshot? _aiMap;
+    private PlacementValidationResult? _aiPlacementValidation;
+    internal PlacementValidationResult? CaptureAiPlacementValidation()
+    {
+        lock (_worldStateLock) return _aiPlacementValidation;
+    }
     private StationResourceFieldConfig? _stationResourceFieldConfig;
     private StationResourceFieldsState? _stationResourceFields;
     private ImmutableDictionary<string, ResourceFieldAsteroidData> _resourceAsteroids = ImmutableDictionary<string, ResourceFieldAsteroidData>.Empty;
@@ -208,6 +214,7 @@ public sealed partial class SimulationEngine : IDisposable
     {
         scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true);
         var gs = scenario.GameState;
+        PlacementValidationResult? aiPlacementValidation = null;
         if ((isSave || scenario.SaveFormatVersion > 0) && gs.MarketEventCatalogFingerprint is { } eventFingerprint && eventFingerprint != _registry.StationMarketEventCatalogFingerprint)
             throw new ScenarioException("Incompatible market event catalog fingerprint. Save was not modified.");
         if (gs.CatalogCompatibility is { } catalog && catalog != _registry.CatalogCompatibility)
@@ -258,6 +265,12 @@ public sealed partial class SimulationEngine : IDisposable
                 gs = result.World.GameState;
                 clusterMap = result.Map;
             }
+            if (generation.Ai is not null)
+                gs = AiBaseGenerator.Generate(gs with { ClusterMap = clusterMap }, generation, _registry, resolvedMasterSeed, out aiPlacementValidation);
+            if (generation.Environment is { } environment)
+                gs = EnvironmentFieldGenerator.Generate(gs with { ClusterMap = clusterMap }, environment, resolvedMasterSeed);
+            if (generation.PoiTemplates is { } templates)
+                gs = PointOfInterestGenerator.Generate(gs with { ClusterMap = clusterMap }, templates, resolvedMasterSeed);
         }
         var resourceAsteroids = (gs.StationResourceFields?.Asteroids ?? [])
             .ToImmutableDictionary(a => a.ObjectId, StringComparer.Ordinal);
@@ -279,6 +292,7 @@ public sealed partial class SimulationEngine : IDisposable
             var modules = BuildRuntimeModules(obj, scenario.SaveFormatVersion);
 
             bool isStation = obj.ObjectType == SpaceObjectType.Station;
+            bool isAiStation = gs.AiMap is { } aiMap && aiMap.Bases.Any(b => string.Equals(b.ObjectId, obj.ObjectId, StringComparison.OrdinalIgnoreCase));
             bool isPlayerShip = obj.ObjectType == SpaceObjectType.PlayerShip;
             bool isShip = isPlayerShip || obj.ObjectType == SpaceObjectType.NpcShip;
             bool isAsteroid = obj.ObjectType == SpaceObjectType.Asteroid;
@@ -291,7 +305,7 @@ public sealed partial class SimulationEngine : IDisposable
                     : ResolveProfileStationCredits(obj, marketProfile, stationSize)
                 : 0;
             int priceCoefficient = isStation ? ResolveStationPriceCoefficient(obj, resolvedMasterSeed) : 1000;
-            var inventory = isStation
+            var inventory = isStation && !isAiStation
                 ? marketProfile is null
                     ? ResolveStationInventory(obj, resolvedMasterSeed)
                     : ResolveProfileStationInventory(obj, marketProfile, stationSize)
@@ -434,6 +448,8 @@ public sealed partial class SimulationEngine : IDisposable
             MasterSeed = resolvedMasterSeed;
             _solarSystem = gs.SolarSystem;
             _clusterMap = clusterMap;
+            _aiMap = gs.AiMap;
+            _aiPlacementValidation = aiPlacementValidation;
             MasterSeedWasMissingOnLoad = resolvedMasterSeedWasMissingOnLoad;
 
             // Player Tokens (Documentation\02-FirstRelease\Mechanics\Money.md): the starting balance
@@ -736,7 +752,7 @@ public sealed partial class SimulationEngine : IDisposable
                 TradingRoutes: BuildTradingRouteProjection(clockState.GameTimeMs),
                 LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
                 VoyageFinances: BuildVoyageFinanceProjection(),
-                StationMarketKnowledge: BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: _clusterMap);
+                StationMarketKnowledge: BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: _clusterMap, AiMap: _aiMap);
         }
     }
 
@@ -775,7 +791,7 @@ public sealed partial class SimulationEngine : IDisposable
             return null;
 
         var station = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == ship.DockedStationObjectId);
-        if (station is null || station.Inventory.IsDefaultOrEmpty)
+        if (station is null || IsAiBase(station.InitialMotion.ObjectId) || station.Inventory.IsDefaultOrEmpty)
             return null;
 
         return BuildStationTradeProjection(station);
@@ -1109,7 +1125,7 @@ public sealed partial class SimulationEngine : IDisposable
             MarketKnowledge: CaptureMarketKnowledge(clockState.GameTimeMs),
             VoyageLedgers: CaptureVoyageLedgers(),
             VoyageFuelSettlements: _voyageFuelSettlements.Values.OrderBy(v => v.VoyageId, StringComparer.Ordinal).ToArray(),
-            EngineIdentityCounters: new(_nextEngineCycleId, _nextShipEventId), ClusterMap: _clusterMap);
+            EngineIdentityCounters: new(_nextEngineCycleId, _nextShipEventId), ClusterMap: _clusterMap, AiMap: _aiMap);
 
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
@@ -2140,12 +2156,16 @@ public sealed partial class SimulationEngine : IDisposable
 
     private string? GetRelationToPlayer(SpaceObjectRuntime obj)
     {
+        if (IsAiBase(obj.InitialMotion.ObjectId)) return PlayerRelation.Enemy;
         if (obj.InitialMotion.ObjectId == PlayerShipObjectId)
             return PlayerRelation.Self;
         if (obj.ObjectType == SpaceObjectType.NpcShip)
             return obj.RelationToPlayer ?? PlayerRelation.Neutral;
         return null;
     }
+
+    private bool IsAiBase(string? objectId) => objectId is not null && _aiMap is { } map &&
+        !map.Bases.IsDefaultOrEmpty && map.Bases.Any(b => string.Equals(b.ObjectId, objectId, StringComparison.OrdinalIgnoreCase));
 
     internal AuthoritativeSnapshot CaptureSnapshotForTests(
         long gameTimeMs = 0,
@@ -2438,6 +2458,7 @@ public sealed partial class SimulationEngine : IDisposable
             return CommandStartOutcome.Started;
         }
 
+        if (IsAiBase(command.TargetObjectId)) return CommandStartOutcome.Rejected("station_access_denied");
         if (obj.IsDocked) return CommandStartOutcome.Rejected("already_docked");
         if (_dialogue.Progress.StationAccessStates.TryGetValue(command.TargetObjectId ?? "", out var access) && access.AccessDenied)
             return CommandStartOutcome.Rejected("station_access_denied");
@@ -3075,7 +3096,12 @@ public sealed partial class SimulationEngine : IDisposable
 
     private static bool IsEngineCommandType(ModuleTypeDefinition moduleType, string commandType)
     {
-        return string.Equals(moduleType.TypeId, "module.engine.basic", StringComparison.Ordinal) &&
+        return commandType is (ShipEngineCommandTypes.Accelerate or ShipEngineCommandTypes.Brake or
+                   ShipEngineCommandTypes.MaintainSpeed or ShipEngineCommandTypes.TurnLeftStep or
+                   ShipEngineCommandTypes.TurnRightStep or ShipEngineCommandTypes.TurnLeftUntilCancel or
+                   ShipEngineCommandTypes.TurnRightUntilCancel or ShipEngineCommandTypes.MaintainCourse or
+                   ShipEngineCommandTypes.SpeedSynchronization or ShipEngineCommandTypes.DirectionSynchronization or
+                   ShipEngineCommandTypes.Orbit or ShipEngineCommandTypes.CancelAll or NavigationComputerCommandTypes.Approach) &&
                moduleType.CommandTypeIds.Contains(commandType, StringComparer.Ordinal);
     }
 
@@ -3225,10 +3251,11 @@ public sealed partial class SimulationEngine : IDisposable
 
     private double? GetMaxSpeedKmS(SpaceObjectRuntime obj)
     {
-        foreach (var module in obj.Modules)
+        foreach (var module in obj.Modules.OrderBy(m => m.ModuleId, StringComparer.Ordinal))
         {
             var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-            if (string.Equals(moduleType.TypeId, "module.engine.basic", StringComparison.Ordinal) &&
+            if (string.Equals(module.PowerState, "On", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(module.OperationalState, "Ready", StringComparison.OrdinalIgnoreCase) && module.StructurePoints > 0 &&
                 moduleType.MaxSpeedMps is > 0)
                 return moduleType.MaxSpeedMps.Value / 1000.0;
         }

@@ -238,6 +238,12 @@ public sealed partial class SimulationEngine
         if (!obj.IsDocked)
             return false;
 
+        if (IsAiBase(obj.DockedStationObjectId))
+        {
+            reasonCode = "station_access_denied";
+            return false;
+        }
+
         int stationIndex = _objects.FindIndex(o =>
             string.Equals(o.InitialMotion.ObjectId, obj.DockedStationObjectId, StringComparison.Ordinal));
         if (stationIndex < 0)

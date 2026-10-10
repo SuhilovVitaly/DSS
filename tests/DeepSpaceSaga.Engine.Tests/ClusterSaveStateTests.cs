@@ -123,4 +123,41 @@ public sealed class ClusterSaveStateTests
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(save with { GameState = save.GameState with { ClusterMap = invalid } }, true));
         Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Coincident_station_orbits_are_rejected_atomically_even_with_distinct_serialized_positions(bool stalePosition)
+    {
+        using var engine = new SimulationEngine(SeededWorldBootstrapTests.Registry());
+        var source = SeededWorldBootstrapTests.Scenario();
+        var config = DeepSpaceSaga.Engine.Content.EngineContentLoader.LoadSolarSystemGenerationConfig(
+            Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Settings.json"))!;
+        engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = 42 } }, generation: config);
+        var save = engine.CaptureSaveState();
+        var cluster = save.GameState.ClusterMap!.Clusters.Last();
+        var a = save.GameState.SpaceObjects.Single(o => o.ObjectId == cluster.StationIds[0]);
+        var b = save.GameState.SpaceObjects.Single(o => o.ObjectId == cluster.StationIds[1]);
+        var altered = save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId != b.ObjectId ? o : o with
+                {
+                    Orbit = a.Orbit,
+                    PositionX = stalePosition ? b.PositionX : a.PositionX,
+                    PositionY = stalePosition ? b.PositionY : a.PositionY
+                }).ToArray(),
+                SolarSystem = save.GameState.SolarSystem! with
+                {
+                    Orbits = save.GameState.SolarSystem.Orbits.Select(o =>
+                    o.ObjectId == b.ObjectId ? o with { Elements = a.Orbit! } : o).ToImmutableArray()
+                }
+            }
+        };
+        var before = ScenarioLoader.Serialize(save);
+        Assert.Contains("overlapping stations", Assert.Throws<ScenarioException>(() => engine.LoadScenario(
+            ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(altered), true), true)).Message);
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
 }

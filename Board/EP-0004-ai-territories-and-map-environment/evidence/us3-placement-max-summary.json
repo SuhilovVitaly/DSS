@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "rawReport": "ep4-ai-placement-max-final.json",
+  "bytes": 1306101474,
+  "sourceState": "US-0003 TK-0002 working tree before publication",
+  "command": "--solar-map --clusters --ai-placement --seeds 1:100 --scenarios all --config max",
+  "cases": 600,
+  "placementChecks": 6044448,
+  "criticalEpochCount": 492,
+  "maxAttempts": 1,
+  "minSampledClearanceWorld": 19168.79893827299,
+  "componentCounts": [
+    1
+  ],
+  "scenarios": [
+    "Default",
+    "Default_500",
+    "Docked",
+    "MarketProfiles",
+    "PlayerShipOnly",
+    "Undocked"
+  ],
+  "sha256": "708058865970309a4a6c2319cd28fd0da50268b2c11c854cb3924ace11f081d6",
+  "sourceRevision": "86c022e80ac95478516f1af410fcf02d167f8009",
+  "verdict": "geometry-passed; performance-and-balance-not-assessed"
+}

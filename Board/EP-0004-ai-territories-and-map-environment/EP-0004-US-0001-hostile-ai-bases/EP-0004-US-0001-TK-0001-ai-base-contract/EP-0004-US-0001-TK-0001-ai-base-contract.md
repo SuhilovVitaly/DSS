@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0001-hostile-ai-bases
 ticket: EP-0004-US-0001-TK-0001-ai-base-contract
 title: Принадлежность баз и привязки объектов ИИ
-stage: approved
+stage: done
 layer: contracts
 depends_on: [EP-0002-US-0006-TK-0001-known-map-projection, EP-0002-US-0006-TK-0002-system-map-navigation, EP-0003-US-0002-TK-0001-multi-cluster-placement, EP-0003-US-0002-TK-0002-full-cluster-content, EP-0003-US-0002-TK-0003-multi-cluster-overview]
 files_touched: 3
@@ -11,6 +11,11 @@ serves: [AC-0001, AC-0002]
 created: 2026-09-22T14:40:41Z
 revision: 1
 ---
+
+## Текущий контракт — 2026-10-08
+
+Исходный план и скопированные dependency inputs ниже сохранены для трассировки. Фактические версии/API и расширенный scope определяются Execution/Resolved sections и [текущим контрактом](../../../../Documentation/04-Engineering/AiMapEnvironment.md). SaveFormat15, AiMap rulesVersion1, шесть сценариев, inline poiTemplates; Field/POI metadata не являются entities или engine command targets. Исторический NOT RUN не заменяет финальное native evidence US8; FPS80 acceptance остаётся OPEN.
+
 
 # Принадлежность баз и привязки объектов ИИ
 
@@ -129,3 +134,9 @@ public sealed record StationClusterData(string Id,string Name,string BeltId,Immu
 ### EP-0003-US-0003-TK-0001-resource-orbit-binding
 
 public sealed record ClusterResourceBinding(string FieldId,string ClusterId,string AnchorStationId,double OffsetX,double OffsetY); StationClusterMapSnapshot: ImmutableArray<ClusterResourceBinding> ResourceBindings=default. Offset вращается с группой; source composition остаётся StationResourceFieldsState EP-0001. Все новые properties используют явные JsonPropertyName camelCase; ImmutableArray optional/default использует существующий ImmutableArrayDefaultJsonConverter<T>, как AuthoritativeSnapshot. Отсутствующие optional поля совместимы со старым JSON.
+
+## Выполнение 2026-10-08
+
+Контракт реализован в трёх заявленных файлах. AiMap optional; camelCase JSON, default Bases сериализуется пустым массивом. Планетный и орбитальный anchors сохраняются. Owner не выводится из market profile. Runtime validation принадлежит следующим Engine tickets.
+
+Проверено: полный Contracts suite 167/167 PASS (включая оба named tests); build через test PASS; scoped dotnet format production/test PASS; git diff --check PASS. Первый прогон выявил сравнение ImmutableArray по identity; тест исправлен на сравнение элементов и повторный полный прогон прошёл. Dependency probes Engine 7/7, Client 11/11 PASS. Review: additive optional API, отсутствие graphics/Engine dependencies, поля и legacy совместимость проверены.

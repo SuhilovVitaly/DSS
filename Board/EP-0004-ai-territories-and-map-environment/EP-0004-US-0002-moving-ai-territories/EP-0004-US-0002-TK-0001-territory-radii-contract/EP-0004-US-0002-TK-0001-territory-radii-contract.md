@@ -3,7 +3,7 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0002-moving-ai-territories
 ticket: EP-0004-US-0002-TK-0001-territory-radii-contract
 title: Радиусы с независимыми владельцами
-stage: approved
+stage: done
 layer: contracts
 depends_on: [EP-0004-US-0001-TK-0001-ai-base-contract, EP-0004-US-0001-TK-0002-seeded-ai-bases, EP-0004-US-0001-TK-0003-authoritative-hostile-access, EP-0004-US-0001-TK-0004-ai-base-content, EP-0004-US-0001-TK-0005-ai-base-presentation]
 files_touched: 2
@@ -11,6 +11,11 @@ serves: [AC-0001, AC-0002]
 created: 2026-09-22T14:40:41Z
 revision: 1
 ---
+
+## Текущий контракт — 2026-10-08
+
+Исходный план и скопированные dependency inputs ниже сохранены для трассировки. Фактические версии/API и расширенный scope определяются Execution/Resolved sections и [текущим контрактом](../../../../Documentation/04-Engineering/AiMapEnvironment.md). SaveFormat15, AiMap rulesVersion1, шесть сценариев, inline poiTemplates; Field/POI metadata не являются entities или engine command targets. Исторический NOT RUN не заменяет финальное native evidence US8; FPS80 acceptance остаётся OPEN.
+
 
 # Радиусы с независимыми владельцами
 
@@ -132,3 +137,7 @@ public sealed record ClusterResourceBinding(string FieldId,string ClusterId,stri
 ### EP-0004-US-0001-TK-0001-ai-base-contract
 
 public sealed record AiBaseMapData(string ObjectId,string BaseType,string Owner,string? ParentObjectId,OrbitalElements? Orbit,double OffsetX,double OffsetY);  public sealed record AiMapEnvironmentSnapshot(int RulesVersion,ImmutableArray<AiBaseMapData> Bases); AuthoritativeSnapshot: AiMapEnvironmentSnapshot? AiMap=null. Owner="Ai"; BaseType="Planetary"|"Orbital"; ровно один parent/own orbit. Не вводить новую общую diplomacy system. Все новые properties используют явные JsonPropertyName camelCase; ImmutableArray optional/default использует существующий ImmutableArrayDefaultJsonConverter<T>, как AuthoritativeSnapshot. Отсутствующие optional поля совместимы со старым JSON.
+
+## Выполнение 2026-10-08
+
+TerritoryMapData и optional Territories: два радиуса km, ссылка на base, отдельные IDs при перекрытии; явный camelCase/default-array converter. Roundtrip/default/legacy покрыты named tests. Contracts full169/169 PASS, focused2/2 PASS, build/scopedformat/diff PASS. Валидация диапазонов принадлежит Engine TK2; DTO не создаёт gameplay effects.

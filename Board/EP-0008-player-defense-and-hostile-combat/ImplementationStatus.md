@@ -25,7 +25,9 @@ Execution started 2026-10-07 under [EpicExecutionPrompt](../EpicExecutionPrompt.
 | Check | Observed result |
 |---|---|
 | Contracts project, `dotnet test ... --no-restore` | PASS: 161/161 |
-| Solution baseline test run | Engine still RUNNING; Contracts 161/161, Motion 141/141, Client 1735/1735, EconomyBalance 58/58 and Performance 4/4 completed |
+| Solution baseline test run | PASS 3859/3859: Contracts 161, Motion 141, Engine 1760, Client 1735, EconomyBalance 58, Performance 4 |
+| Contracts after TK-0001 / TK-0002 | PASS 165/165 / 170/170 |
+| Whole solution build after both contract tickets | PASS, 0 warnings/errors |
 | Native acceptance | NOT RUN |
 
 The solution run uses `dotnet test DeepSpaceSaga.sln --no-restore --logger "trx;LogFilePrefix=ep8-baseline" --results-directory D:/DeepSpaceSaga/ep8-validation/baseline-tests`.
@@ -34,7 +36,20 @@ The solution run uses `dotnet test DeepSpaceSaga.sln --no-restore --logger "trx;
 
 Preparation commit `198d20a76e8812a0a2c1e268b5613daa2ad1284d`: pushed and verified on origin/base-fight.
 
-TK-0001 weapon-contract implemented and validated (Contracts 165/165; build/format/diff PASS); its commit/push is the next publication step. Runtime formulas and other epic criteria remain open. Planning/readiness checks do not establish gameplay acceptance.
+| Ticket | Commit | Push |
+|---|---|---|
+| EP-0008-US-0001-TK-0001 | `4233f52346b7d77edc4e04d677f52d7328353fda` | Verified on origin/base-fight |
+| EP-0008-US-0001-TK-0002 | `02c89d4a51687ed291a11285a8b704991b42cf20` | BLOCKED: four GitHub receive-side Internal Server Error responses |
+
+TK-0002 defense-contract is implemented and validated but not published. No story is complete. Runtime formulas and the remaining 42 implementation tickets, native acceptance and final documentation/graph work remain open. Planning/readiness checks do not establish gameplay acceptance.
+
+## Publication blocker — 2026-10-07 18:12 Asia/Jerusalem
+
+Four pushes of TK-0002 to the verified `origin/base-fight` failed with remote `Internal Server Error`, including a retry after independent solution verification and one using `git -c http.version=HTTP/1.1 push origin HEAD:refs/heads/base-fight`. The remote remains `4233f52346b7d77edc4e04d677f52d7328353fda`; the local TK-0002 commit is intact. No force push, remote change, rollback or published-history rewrite was attempted.
+
+Server request IDs: `E852:267251:1924F4:20D0A1:6AC660A9`, `D415:40AB9:18F7FF:20A2B6:6AC660D1`, `F50A:1D648:195FA3:2123D9:6AC6612E`, `CD42:14BCD9:1977BF:214355:6AC6615B`. Final responses saved in `D:/DeepSpaceSaga/ep8-validation/tk0002-push-retry.log` and `tk0002-push-http11.log`.
+
+EpicExecutionPrompt requires successful publication before proceeding to the next ticket. Therefore TK-0003 has not been started. The next action is to retry the existing TK-0002 commit's push, verify the remote SHA, then continue the dependency sequence. This blocker note and the matching ticket note are local uncommitted evidence; production/test changes are committed. The epic is **PARTIAL / BLOCKED ON PUBLICATION**, not complete.
 
 ## Execution scope notes
 

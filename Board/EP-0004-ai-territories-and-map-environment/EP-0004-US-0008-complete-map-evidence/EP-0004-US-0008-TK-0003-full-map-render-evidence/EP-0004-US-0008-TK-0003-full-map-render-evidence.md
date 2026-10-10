@@ -3,14 +3,22 @@ epic: EP-0004-ai-territories-and-map-environment
 story: EP-0004-US-0008-complete-map-evidence
 ticket: EP-0004-US-0008-TK-0003-full-map-render-evidence
 title: Проверка взаимодействия и кадров полной карты
-stage: approved
+stage: in_progress
+implementation: complete
+evidence: recorded
+performance_acceptance: open
 layer: client
 depends_on: [EP-0004-US-0007-TK-0001-map-environment-save, EP-0004-US-0007-TK-0002-full-map-local-load, EP-0003-US-0008-TK-0001-cluster-correctness-corpus, EP-0003-US-0008-TK-0002-cluster-performance-report, EP-0003-US-0008-TK-0003-cluster-interaction-evidence, EP-0002-US-0008-TK-0001-system-correctness-corpus, EP-0002-US-0008-TK-0002-system-performance-report, EP-0002-US-0008-TK-0003-presented-frame-evidence, EP-0004-US-0008-TK-0002-full-map-performance-report]
-files_touched: 2
+files_touched: 7
 serves: [AC-0002, AC-0003]
 created: 2026-09-22T14:40:41Z
 revision: 1
 ---
+
+## Текущий контракт — 2026-10-08
+
+Исходный план и скопированные dependency inputs ниже сохранены для трассировки. Фактические версии/API и расширенный scope определяются Execution/Resolved sections и [текущим контрактом](../../../../Documentation/04-Engineering/AiMapEnvironment.md). SaveFormat15, AiMap rulesVersion1, шесть сценариев, inline poiTemplates; Field/POI metadata не являются entities или engine command targets. Исторический NOT RUN не заменяет финальное native evidence US8; FPS80 acceptance остаётся OPEN.
+
 
 # Проверка взаимодействия и кадров полной карты
 
@@ -154,3 +162,31 @@ No API change. Корпус фиксирует versions/seed/settings; неза�
 ### EP-0004-US-0008-TK-0002-full-map-performance-report
 
 CLI: --solar-map --clusters --all-map-layers --seeds 1:100 --scenarios all --config max. Схема evidence общая с EP-0002, layer flags и counts присутствуют явно.
+
+## Resolved scope before implementation — 2026-10-08
+
+Add src/DeepSpaceSaga.Client/UI/SkiaWindow.cs and tools/DeepSpaceSaga.Performance/SolarNativeEvidence.cs to the two planned files. The real window must supply live counts/flags/epochs to the existing collector; the existing native CLI must force min/max AI+cluster counts, exclude new layers in baseline, and exercise actual mouse/speed/layer handlers with --all-map-layers. No session/gameplay API changes. Snapshot metadata is read locally; GPU execution and physical scanout remain unmeasured, swap intervals are measured. Native scripted acceptance plus PNG inspection is distinct from human playthrough. FullMapInteractionMatrix complements existing all-scale overlap and generated-map matrix; tests are not FPS proof. Native views system/belt/cluster/selected plus base/field/poi allow inspection of each local descriptor panel.
+
+### Confirmed integration repair
+
+FullMapInteractionMatrix reproduced POI selection failure at1280x720/UI1.2: aggregate LOD hit-test consumed the click on a visible POI marker and reframed the map before descriptor selection. Add src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs to scope: an enabled POI marker, like an explicit real target, prevents aggregate expansion at its hit point. Keep field-area priority below real objects/aggregates. Also repair the test-only throwing connection lifetime (an immediately ended snapshot stream correctly fails the session; hold it until cancellation).
+
+The same regression next isolated a second interruption: cycling through an overlapping player marker enabled Follow and moved the camera before reaching POI. Add src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs: automatic Follow on player click applies only to a unique candidate; overlapping candidates preserve the camera for cycling. Explicit Follow toolbar remains available. This supersedes legacy auto-follow only for overlap; regression must pass at all scales before publication.
+
+At1920x1080/UI1.2 the regression also reproduced aggregate expansion over the Sun marker, preventing selection of its radiation area. Preserve explicit Sun/Planet markers over nearby aggregates as well; these unclustered celestial markers are already drawn individually. Fields themselves still do not blanket-block aggregates.
+
+Native PNG review and added assertion reproduced toolbar/Object Info overlap at1280x720/UI1.5 after AI selection. Add src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ObjectInfoPanel.cs: optional maximum bottom reserves space for the full-map toolbar while retaining both scrolling rows. Native script closes the optional diagnostic text panel through its actual X button before acceptance, and explicitly verifies running/paused/resumed states plus selected-base info scrolling. The legacy optional diagnostic overlay can crowd bottom controls at small logical sizes; closing it is an existing user path, not a hidden frame optimization. Earlier native measurements remain failed intermediate evidence; final matrix reruns after repair.
+
+The strengthened native1280/UI1.5 case reproduced an unreachable diagnostic X: toolbar hit-test consumed it. Repair in already allowed GameSessionScreen.cs: paint the diagnostic close control last and hit-test it first among left-click UI controls. This keeps the existing optional overlay dismissible without changing its data. Repeat the affected native case after the fix; other seven successful final interaction cases closed the panel before measured frames and do not execute this changed branch thereafter. All FPS failures remain recorded.
+
+## Execution and self-review — 2026-10-08
+
+Implementation and required measurements complete; ticket acceptance remains OPEN because the 80 FPS goal was measured and failed. Final scripted native interaction 8/8 PASS across min/max, system/belt/cluster/base/field/POI, UI1/1.2/1.5, 1280x720/1920x1080. Each case checks actual layer buttons, real/descriptor selection, pause/resume, diagnostic close and info scrolling. All eight final PNGs inspected. Seven passing cases precede the final close-control repair; the affected eighth case was repeated afterwards. Earlier failures and individual module IDs retained in [native evidence](../../evidence/us8-native-summary.json).
+
+Final Release Client1758/1758 PASS (1m21s), Engine1803/1803, Contracts173/173, Motion141/141, tooling9/9 PASS. Client and tooling builds: zero warnings/errors; scoped format and diff check PASS. Named FullMapRenderEvidenceTests cover render with a throwing session, generated all-scale mouse interaction and live report context. Review confirmed no synchronous Engine call from Render, no decorative entity multiplication, no gameplay effects.
+
+Native collector: 120 warmup +600 measured swap-completion intervals per case, VSync enabled, 100Hz Intel Arc140V, OpenGL3.3 driver32.0.101.8860. Final p99=50.5839–54.4007ms (target<=12.5ms); all eight FPS verdicts FAILED. Fresh no-new-layers baseline also fails (p9953.2056ms); empty OpenGL VSync control p9945.7321ms. Empty no-VSync control reduces swap wait below1ms but is not gameplay evidence; temporary1ms process-timer diagnostic failed and was removed. No exact driver/OS root cause proven. GPU execution, physical scanout and human playthrough NOT RUN/unmeasured; do not substitute raster for them.
+
+Actual reproduction: `dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll <absolute-root> <absolute-output.json> --solar-window max base 1.5 1280x720 --clusters --all-map-layers`. Vary final case matrix as recorded in evidence. Separate one-case PlayerShipOnly --solar-map probe with absolute --client-frame-report path verified hashed native reference and retained failed verdict. Temporary native JSON/PNG removed after durable summaries/hashes and visual review, as required.
+
+Remaining work: diagnose presentation pacing on the target environment and obtain native p99<=12.5ms before performance acceptance. This is measured failure, not an unavailable native run. US9 documentation may proceed independently under the user's execution prompt; it must preserve this open gate. Self-review is not independent approval.

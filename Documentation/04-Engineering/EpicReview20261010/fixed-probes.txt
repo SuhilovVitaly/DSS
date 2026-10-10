@@ -1,0 +1,4 @@
+COLLAPSED_CLUSTER: REJECTED; ScenarioException: clusterMap: overlapping stations CLUSTER-4-STATION-1/CLUSTER-4-STATION-10. Running world was not replaced.
+UNBOUNDED_CONFIG: REJECTED solarSystem: invalid generation ranges, dimensions or enabledScenarios.
+UNBOUNDED_CONFIG: REJECTED solarSystem: invalid generation ranges, dimensions or enabledScenarios.
+CUSTOM_ENGINE: generated; configuredMaxSpeedKmS=1.4; snapshotMaxSpeedKmS=1.4

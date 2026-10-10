@@ -8,6 +8,44 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class EngineCommandTests
 {
+    [Theory]
+    [InlineData("On", "Ready", 100, true)]
+    [InlineData("Off", "Ready", 100, false)]
+    [InlineData("On", "Ready", 0, false)]
+    public void Custom_engine_type_uses_content_speed_and_executes_motion(string power, string operational, int structure, bool available)
+    {
+        var original = CreateRegistry();
+        var type = original.ModuleTypes.GetDefinition(0) with { TypeId = "module.engine.custom", MaxSpeedMps = 1400 };
+        var registry = GameDataRegistry.Create([], [type], [],
+            Enumerable.Range(0, original.CommandDefinitions.Count).Select(i => original.CommandDefinitions.GetDefinition(i) with { Type = type.TypeId }));
+        using var baseline = CreateEngine();
+        var state = baseline.CaptureSaveState().GameState;
+        var ship = state.SpaceObjects.Single(o => o.ObjectId == PlayerShipId);
+        ship = ship with
+        {
+            Modules = ship.Modules!.Select(m => m with
+            {
+                ModuleTypeId = type.TypeId,
+                PowerState = power,
+                OperationalState = operational,
+                StructurePoints = structure
+            }).ToArray()
+        };
+        var source = new ScenarioFile(new("custom", "Custom"), new(0, "Speed0", PlayerShipId, null, [ship]));
+        using var engine = new SimulationEngine(registry);
+        engine.LoadScenario(source);
+        Assert.Equal(available ? 1.4 : (double?)null, PlayerShipFrom(engine.CaptureSnapshot()).MaxSpeedKmS);
+        Assert.Equal(available ? 1.4 : (double?)null, SolarSystemGenerator.OperationalMaxSpeedKmS(ship, registry));
+        engine.ReceiveCommand(Command(ShipEngineCommandTypes.Accelerate));
+        var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed1, 0);
+        if (available)
+        {
+            Assert.Equal(ShipEngineCommandTypes.Accelerate, Assert.Single(snapshot.InstalledModules).ActiveCommandType);
+            Assert.Equal(1.4, PlayerShipFrom(engine.CaptureSnapshotForTests(300000, SimulationSpeed.Speed1, 1000)).SpeedKmS);
+        }
+        else Assert.Equal(CommandResultStatus.Rejected, Assert.Single(snapshot.CommandResults).Status);
+    }
+
     [Fact]
     public void Real_second_advances_calendar_five_minutes_but_motion_one_second()
     {

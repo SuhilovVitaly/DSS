@@ -52,8 +52,8 @@ internal static class StationClusterGenerator
         var lanes = Enumerable.Range(1, count * 3).Select(i => belt.InnerRadius + (belt.OuterRadius - belt.InnerRadius) * i / (count * 3 + 1.0))
             .Where(r => r < minHome - padding || r > maxHome + padding).OrderBy(r => Math.Abs(r - radius)).Take(count - 1).ToArray();
         if (lanes.Length != count - 1) throw new ScenarioException("clusters: belt cannot fit separate swept radial lanes.");
-        var engine = (player.Modules ?? []).Select(m => registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId))).First(m => m.MaxSpeedMps is > 0);
-        double unitsPerDay = engine.MaxSpeedMps!.Value / 1000.0 * 86400 / 300 * 10;
+        double unitsPerDay = (SolarSystemGenerator.OperationalMaxSpeedKmS(player, registry) ??
+            throw new ScenarioException("clusters: no operational engine Vmax.")) * 86400 / 300 * 10;
         double spacing = (config.InterclusterMinDays + config.InterclusterMaxDays) / 2 * unitsPerDay;
         if (spacing >= 2 * lanes.Min()) throw new ScenarioException("clusters: intercluster spacing does not fit belt circumference.");
         var clusters = first.Map.Clusters.ToBuilder();
@@ -130,9 +130,8 @@ internal static class StationClusterGenerator
         double radius = Math.Sqrt(player.PositionX * player.PositionX + player.PositionY * player.PositionY);
         var belt = system.Belts.SingleOrDefault(b => b.InnerRadius <= radius && b.OuterRadius >= radius)
             ?? throw new ScenarioException("clusters: start is outside every belt.");
-        double vmax = (player.Modules ?? []).Where(m => m.PowerState == "On" && m.OperationalState == "Ready" && m.StructurePoints > 0)
-            .Select(m => registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId)))
-            .First(m => m.MaxSpeedMps is > 0).MaxSpeedMps!.Value / 1000.0;
+        double vmax = SolarSystemGenerator.OperationalMaxSpeedKmS(player, registry) ??
+            throw new ScenarioException("clusters: no operational engine Vmax.");
         double unitsPerDay = vmax * 86400 / SimulationSpeedExtensions.BaseGameSecondsPerRealSecond * 10;
         var rng = new SolarSystemGenerator.GeneratorRng(seed, "clusters/roles", attempt);
         int count = rng.NextInt(config.MinStations, config.MaxStations + 1);

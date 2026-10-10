@@ -14,6 +14,34 @@
   "asteroidsPerBelt": 24,
   "decorationSamplesPerBelt": 2048,
   "enabledScenarios": ["Default", "Default_500", "Docked", "Undocked", "MarketProfiles", "PlayerShipOnly"],
+  "poiTemplates": [
+    {
+      "id": "abandoned-relay",
+      "name": "Заброшенный ретранслятор",
+      "description": "Неактивный узел связи. Исследование пока недоступно."
+    },
+    {
+      "id": "abandoned-platform",
+      "name": "Пустая платформа",
+      "description": "Покинутая техническая платформа. Здесь пока нет доступных действий."
+    }
+  ],
+  "environment": {
+    "radiationCount": 1,
+    "dustCount": 2,
+    "debrisCount": 2,
+    "radiationRadiusKm": 5000,
+    "dustWidthKm": 100,
+    "debrisRadiusKm": 250,
+    "intensity": 0.5
+  },
+  "ai": {
+    "minBases": 2,
+    "maxBases": 4,
+    "defenceRadiusKm": 200,
+    "patrolRadiusKm": 1000,
+    "maxPlacementAttempts": 64
+  },
   "clusters": {
     "minClusters": 3,
     "maxClusters": 5,

@@ -3,7 +3,7 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0001-module-owned-weapon-rules
 ticket: EP-0008-US-0001-TK-0002-defense-contract
 title: "Контракт пуска ПРО, времени жизни и preview"
-stage: draft
+stage: implemented
 layer: contracts
 depends_on: ["EP-0008-US-0001-TK-0001-weapon-contract"]
 files_touched: 5
@@ -14,7 +14,7 @@ revision: 1
 
 # Контракт пуска ПРО, времени жизни и preview
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED / PUBLICATION BLOCKED — automated checks passed; self-review completed.
 
 ## Why
 
@@ -70,8 +70,8 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Countermeasure_lifetime_and_mode_roundtrip`
-- [ ] `Preview_is_bound_to_module_and_target`
+- [x] `Countermeasure_lifetime_and_mode_roundtrip`
+- [x] `Preview_is_bound_to_module_and_target`
 
 Команды из корня DSS после реализации:
 
@@ -95,3 +95,13 @@ git diff --check
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-07
+
+Implemented in the five planned files. Added `defense.fire`, per-flight mode, captured accuracy/target maneuverability/speed/turn, maximum physical lifetime and absolute expiry. Module DTO carries independent auto/manual ranges and a target-bound `DefenseLaunchPreview`; two modules can publish different eligibility without sharing identity/state. Missing preview/chance stays distinct from a valid zero-percent manual shot. Runtime execution and deadline enforcement remain later ticket responsibilities.
+
+Validation: `dotnet test tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj --no-restore` PASS 170/170; `dotnet build src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.csproj --no-restore` PASS 0 warnings/errors. `dotnet format whitespace DeepSpaceSaga.sln --verify-no-changes --no-restore --include` followed by the five Code context C# paths PASS; `git diff --check` PASS. Tests cover Auto/Manual and Guiding/MissedCoast roundtrip, decimal captured values, unknown ETA, independent module/target identity and missing legacy optional fields.
+
+Self-review found no confirmed defect in the DTO scope. No native behavior changed here; native epic gate remains NOT RUN. Publication is verified from the Git commit carrying this ticket ID, not a guessed future SHA. No user APPROVED claimed.
+
+Publication update: commit `02c89d4a51687ed291a11285a8b704991b42cf20` exists locally. Four push attempts returned GitHub `Internal Server Error`; remote still points to TK-0001 `4233f52`. See [ImplementationStatus](../../ImplementationStatus.md) for exact diagnostics and resumption point. This ticket's publication gate remains open.

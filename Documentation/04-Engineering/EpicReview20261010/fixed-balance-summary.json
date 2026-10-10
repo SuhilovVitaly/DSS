@@ -1,0 +1,1608 @@
+{
+  "status": "violations",
+  "summary": {
+    "isAcceptanceCorpus": true,
+    "caseCount": 24,
+    "sampleCount": 5784,
+    "strategyCount": 12840,
+    "completedStrategyCount": 6784,
+    "rejectedStrategyCount": 4512,
+    "partialStrategyCount": 1544,
+    "unknownStrategyCount": 0,
+    "violationCount": 125,
+    "caseSummaries": [
+      {
+        "seed": 1,
+        "shipConfigurationId": "cargo-upgrade",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 170,
+        "strategyCount": 535,
+        "knownLedgerCount": 507,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0005",
+            "itemTypeId": "item.steel",
+            "netProfitCredits": 931,
+            "marginPermille": 526,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0005/item.steel"
+            ]
+          },
+          {
+            "stateGameTimeMs": 7200000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0005",
+            "itemTypeId": "item.steel",
+            "netProfitCredits": 931,
+            "marginPermille": 526,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0005/item.steel"
+            ]
+          },
+          {
+            "stateGameTimeMs": 93600000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 1,
+        "shipConfigurationId": "starter",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 170,
+        "strategyCount": 535,
+        "knownLedgerCount": 507,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0005",
+            "itemTypeId": "item.steel",
+            "netProfitCredits": 931,
+            "marginPermille": 526,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0005/item.steel"
+            ]
+          },
+          {
+            "stateGameTimeMs": 7200000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0005",
+            "itemTypeId": "item.steel",
+            "netProfitCredits": 931,
+            "marginPermille": 526,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0005/item.steel"
+            ]
+          },
+          {
+            "stateGameTimeMs": 93600000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 2,
+        "shipConfigurationId": "cargo-upgrade",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 204,
+        "strategyCount": 535,
+        "knownLedgerCount": 495,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0005",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1758,
+            "marginPermille": 883,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0005/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 7200000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0005",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1758,
+            "marginPermille": 883,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0005/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 36000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 761,
+            "marginPermille": 382,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 2,
+        "shipConfigurationId": "starter",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 204,
+        "strategyCount": 535,
+        "knownLedgerCount": 495,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0005",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1758,
+            "marginPermille": 883,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0005/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 7200000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0005",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1758,
+            "marginPermille": 883,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0005/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 36000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 761,
+            "marginPermille": 382,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 3,
+        "shipConfigurationId": "cargo-upgrade",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 164,
+        "strategyCount": 535,
+        "knownLedgerCount": 464,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1623,
+            "marginPermille": 902,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 18000000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1623,
+            "marginPermille": 902,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 244800000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 3,
+        "shipConfigurationId": "starter",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 164,
+        "strategyCount": 535,
+        "knownLedgerCount": 464,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1623,
+            "marginPermille": 902,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 18000000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1623,
+            "marginPermille": 902,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 244800000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 5,
+        "shipConfigurationId": "cargo-upgrade",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 158,
+        "strategyCount": 535,
+        "knownLedgerCount": 479,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0002/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1415,
+            "marginPermille": 882,
+            "tiedRouteItems": [
+              "SPC-0002/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 14400000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 194400000,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0007",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1562,
+            "marginPermille": 784,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0007/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1707,
+            "marginPermille": 857,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 2011,
+            "marginPermille": 1199,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 5,
+        "shipConfigurationId": "starter",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 158,
+        "strategyCount": 535,
+        "knownLedgerCount": 479,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0002/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1415,
+            "marginPermille": 882,
+            "tiedRouteItems": [
+              "SPC-0002/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 14400000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 194400000,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0007",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1562,
+            "marginPermille": 784,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0007/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1707,
+            "marginPermille": 857,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 2011,
+            "marginPermille": 1199,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 8,
+        "shipConfigurationId": "cargo-upgrade",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 194,
+        "strategyCount": 535,
+        "knownLedgerCount": 509,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0005",
+            "itemTypeId": "item.steel",
+            "netProfitCredits": 818,
+            "marginPermille": 462,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0005/item.steel"
+            ]
+          },
+          {
+            "stateGameTimeMs": 14400000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 28800000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 8,
+        "shipConfigurationId": "starter",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 194,
+        "strategyCount": 535,
+        "knownLedgerCount": 509,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0005",
+            "itemTypeId": "item.steel",
+            "netProfitCredits": 818,
+            "marginPermille": 462,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0005/item.steel"
+            ]
+          },
+          {
+            "stateGameTimeMs": 14400000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 28800000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 13,
+        "shipConfigurationId": "cargo-upgrade",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 177,
+        "strategyCount": 535,
+        "knownLedgerCount": 496,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0002/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1763,
+            "marginPermille": 1098,
+            "tiedRouteItems": [
+              "SPC-0002/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 14400000,
+            "eventState": true,
+            "routeId": "SPC-0002/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1617,
+            "marginPermille": 1108,
+            "tiedRouteItems": [
+              "SPC-0002/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 172800000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 2316,
+            "marginPermille": 1381,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 13,
+        "shipConfigurationId": "starter",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 177,
+        "strategyCount": 535,
+        "knownLedgerCount": 496,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0002/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1763,
+            "marginPermille": 1098,
+            "tiedRouteItems": [
+              "SPC-0002/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 14400000,
+            "eventState": true,
+            "routeId": "SPC-0002/SPC-0008",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1617,
+            "marginPermille": 1108,
+            "tiedRouteItems": [
+              "SPC-0002/SPC-0008/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 172800000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 2316,
+            "marginPermille": 1381,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 21,
+        "shipConfigurationId": "cargo-upgrade",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 204,
+        "strategyCount": 535,
+        "knownLedgerCount": 473,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 2011,
+            "marginPermille": 1199,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 14400000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 115200000,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0007",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1562,
+            "marginPermille": 784,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0007/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 21,
+        "shipConfigurationId": "starter",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 204,
+        "strategyCount": 535,
+        "knownLedgerCount": 473,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 2011,
+            "marginPermille": 1199,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 14400000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 115200000,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0007",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1562,
+            "marginPermille": 784,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0007/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 34,
+        "shipConfigurationId": "cargo-upgrade",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 183,
+        "strategyCount": 535,
+        "knownLedgerCount": 509,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1895,
+            "marginPermille": 1130,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 10800000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 2003,
+            "marginPermille": 1194,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 57600000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0008",
+            "itemTypeId": "item.steel",
+            "netProfitCredits": 801,
+            "marginPermille": 449,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0008/item.steel"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 34,
+        "shipConfigurationId": "starter",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 183,
+        "strategyCount": 535,
+        "knownLedgerCount": 509,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1895,
+            "marginPermille": 1130,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 10800000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 2003,
+            "marginPermille": 1194,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 57600000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0008",
+            "itemTypeId": "item.steel",
+            "netProfitCredits": 801,
+            "marginPermille": 449,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0008/item.steel"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 55,
+        "shipConfigurationId": "cargo-upgrade",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 173,
+        "strategyCount": 535,
+        "knownLedgerCount": 509,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 2316,
+            "marginPermille": 1381,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 18000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 46800000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0005",
+            "itemTypeId": "item.steel",
+            "netProfitCredits": 776,
+            "marginPermille": 435,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0005/item.steel"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 55,
+        "shipConfigurationId": "starter",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 173,
+        "strategyCount": 535,
+        "knownLedgerCount": 509,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 2316,
+            "marginPermille": 1381,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 18000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 46800000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0005",
+            "itemTypeId": "item.steel",
+            "netProfitCredits": 776,
+            "marginPermille": 435,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0005/item.steel"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 89,
+        "shipConfigurationId": "cargo-upgrade",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 177,
+        "strategyCount": 535,
+        "knownLedgerCount": 506,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0007",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1562,
+            "marginPermille": 784,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0007/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 25200000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 75600000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 89,
+        "shipConfigurationId": "starter",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 177,
+        "strategyCount": 535,
+        "knownLedgerCount": 506,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0007",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1562,
+            "marginPermille": 784,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0007/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 25200000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 75600000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1249,
+            "marginPermille": 745,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 144,
+        "shipConfigurationId": "cargo-upgrade",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 211,
+        "strategyCount": 535,
+        "knownLedgerCount": 453,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0007",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1562,
+            "marginPermille": 784,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0007/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 3600000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0007",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1562,
+            "marginPermille": 784,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0007/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 25200000,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0007",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1562,
+            "marginPermille": 784,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0007/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 144,
+        "shipConfigurationId": "starter",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 211,
+        "strategyCount": 535,
+        "knownLedgerCount": 453,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0007",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1562,
+            "marginPermille": 784,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0007/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 3600000,
+            "eventState": true,
+            "routeId": "SPC-0006/SPC-0007",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1562,
+            "marginPermille": 784,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0007/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 25200000,
+            "eventState": false,
+            "routeId": "SPC-0006/SPC-0007",
+            "itemTypeId": "item.energy-cells",
+            "netProfitCredits": 1562,
+            "marginPermille": 784,
+            "tiedRouteItems": [
+              "SPC-0006/SPC-0007/item.energy-cells"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 233,
+        "shipConfigurationId": "cargo-upgrade",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 162,
+        "strategyCount": 535,
+        "knownLedgerCount": 509,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 3354,
+            "marginPermille": 2000,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 57600000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 2326,
+            "marginPermille": 1387,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 100800000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      },
+      {
+        "seed": 233,
+        "shipConfigurationId": "starter",
+        "hourlySampleCount": 241,
+        "stationCount": 5,
+        "eventSampleCount": 162,
+        "strategyCount": 535,
+        "knownLedgerCount": 509,
+        "leaders": [
+          {
+            "stateGameTimeMs": 0,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 3354,
+            "marginPermille": 2000,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 57600000,
+            "eventState": true,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 2326,
+            "marginPermille": 1387,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 100800000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 432000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          },
+          {
+            "stateGameTimeMs": 864000000,
+            "eventState": false,
+            "routeId": "SPC-0008/SPC-0002",
+            "itemTypeId": "item.electronics",
+            "netProfitCredits": 1259,
+            "marginPermille": 751,
+            "tiedRouteItems": [
+              "SPC-0008/SPC-0002/item.electronics"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "violationCounts": {
+    "event_did_not_change_leader": 2,
+    "long_upgrade_crossover": 1,
+    "route_always_best": 2,
+    "route_margin_dominance": 108,
+    "short_margin_band": 12
+  },
+  "continuationHashesMatch": true
+}
