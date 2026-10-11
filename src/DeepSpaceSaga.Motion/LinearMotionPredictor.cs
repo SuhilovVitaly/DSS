@@ -29,7 +29,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
     }
 
     public static bool IsLinear(ObjectMotionSnapshot state) =>
-        state.Orbit is null && state.Torpedo is null && state.Countermeasure is null &&
+        state.Orbit is null && state.Torpedo is null && state.Countermeasure is null && state.HostileCombat is null &&
         state.ActiveEngineCommandType is not (NavigationComputerCommandTypes.Approach or ShipEngineCommandTypes.Orbit) &&
         (state.TurnStepDegrees == 0 || state.TurnStepIntervalMs <= 0);
 
@@ -41,6 +41,8 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             return CountermeasureGuidanceMath.Predict(state, elapsedMs);
         if (state.Torpedo is not null)
             return TorpedoGuidanceMath.Predict(state, elapsedMs);
+        if (state.HostileCombat is not null)
+            return HostileOrbitMath.Predict(state, elapsedMs);
 
         if (state.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach &&
             state.ApproachRoute is not null)
@@ -96,7 +98,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
     {
         terminalState = state;
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sampleIntervalMs);
-        if (state.Torpedo is not null || state.Countermeasure is not null || positions.IsEmpty || state.TurnStepDegrees == 0 || state.TurnStepIntervalMs <= 0 ||
+        if (state.Torpedo is not null || state.Countermeasure is not null || state.HostileCombat is not null || positions.IsEmpty || state.TurnStepDegrees == 0 || state.TurnStepIntervalMs <= 0 ||
             state.TurnStepRemainingMs < 0 ||
             state.ActiveEngineCommandType is NavigationComputerCommandTypes.Approach or ShipEngineCommandTypes.Orbit)
             return false;

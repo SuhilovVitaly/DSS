@@ -133,3 +133,7 @@ TK-0002 `e33ba130e62ae8dd84439274207b5a48d1ed316d` published/remote verified. Ra
 ## EP-0008-US-0004-TK-0001 — 2026-10-11
 
 US-0003 TK-0003 `d21057c0d26b3f4b3e372117ec74e6310cc36789` published/remote verified. Hostile motion DTO implemented; Contracts182/182, build/format/diff PASS. Next after publication: relative-orbit math. Native/final corpus OPEN.
+
+## EP-0008-US-0004-TK-0002 — 2026-10-11
+
+TK-0001 `9424ad264b60bab32eabbef9f1f41b3fb6cde9fc` published/remote verified. Shared relative-orbit math implemented; full Motion162/162, expanded review14/14, build/format/diff PASS. Next after publication: authoritative controller. Native/final corpus OPEN.
