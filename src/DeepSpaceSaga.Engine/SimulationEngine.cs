@@ -2348,6 +2348,8 @@ public sealed partial class SimulationEngine : IDisposable
 
         if (command.CommandType == CombatCommandTypes.Fire)
             return TryStartTorpedoFire(command, gameTimeMs);
+        if (command.CommandType == DefenseCommandTypes.Fire)
+            return TryManualDefenseFire(command, gameTimeMs);
         if (command.CommandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
             return TrySetDefense(command, gameTimeMs);
         if (command.CommandType == CombatCommandTypes.SelfDestruct)

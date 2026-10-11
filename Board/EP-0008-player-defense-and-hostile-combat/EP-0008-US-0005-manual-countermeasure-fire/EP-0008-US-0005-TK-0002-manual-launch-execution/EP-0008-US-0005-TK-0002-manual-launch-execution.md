@@ -3,7 +3,7 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0005-manual-countermeasure-fire
 ticket: EP-0008-US-0005-TK-0002-manual-launch-execution
 title: "Команда ручного пуска с безопасным повтором"
-stage: draft
+stage: implemented
 layer: engine
 depends_on: ["EP-0008-US-0005-TK-0001-manual-guidance"]
 files_touched: 4
@@ -14,7 +14,7 @@ revision: 1
 
 # Команда ручного пуска с безопасным повтором
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED / AUTOMATED PASS
 
 ## Why
 
@@ -69,10 +69,10 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Paused_manual_fire_creates_busy_without_time`
-- [ ] `Zero_chance_and_unreachable_manual_fire_allowed`
-- [ ] `Two_modules_can_manually_target_same_torpedo`
-- [ ] `Duplicate_or_rejected_fire_does_not_spawn`
+- [x] `Paused_manual_fire_creates_busy_without_time`
+- [x] `Zero_chance_and_unreachable_manual_fire_allowed`
+- [x] `Two_modules_can_manually_target_same_torpedo`
+- [x] `Duplicate_or_rejected_fire_does_not_spawn`
 
 Команды из корня DSS после реализации:
 
@@ -86,13 +86,21 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `6b0d1f29d74c78c19a721df8e081466f25102333` published/remote verified. Real defense.fire dispatcher validates owner/module/readiness/operator, selected torpedo/current owner hostility with captured orphan fallback and inclusive manual range. Shared auto/manual spawn captures mode/accuracy/maneuverability/lifetime/deadline, records module/mode facts and marks attempt only on successful spawn. Per-module busy remains independent. Durable successful launch CommandIds reuse the persisted combat identity set. Manual no-solution re-plans use remaining captured lifetime and never invent ETA. No generic module cooldown introduced; catalog declaration follows TK-0003.
+
+Full non-corpus Engine **1799/1799 PASS** (`ep8-us5-tk2-engine.trx`), final manual review **21/21 PASS** (`ep8-us5-tk2-engine-review.trx`), affected Client **20/20 PASS** (`ep8-us5-tk2-client.trx`). Covers pause/auto toggle, two modules, zero chance/unreachable, busy/invalid/own/friendly/neutral, exact range, operator/power/structure, receipt eviction, repeat after miss/reload, captured hostility after real owner destruction, valid custom third-object target, real-file positive-chance manual continuation and replay. File fixture initially used NewGame loader flag and was corrected to explicit Load mode. Solution build 0 warnings/errors; format verify/diff PASS.
+
+Self-review complete. Lifetime event removal/arbitration is assigned US-0006; full new-format validation (including 0% manual save) and hostile-state persistence remain US-0011. Native/final corpus OPEN. These downstream gates are not claimed complete by this ticket.

@@ -153,3 +153,7 @@ TK-0004 `56f5b53c1425e0fc603ad2d2e2a19dd8aea627dc` published/remote verified. Mi
 ## EP-0008-US-0005-TK-0001 — 2026-10-11
 
 US-0004 TK-0005 `9548761b9084755ccefc8f791edf762ac61190e9` published/remote verified. Manual geometry and bounded no-solution pursuit implemented; full Motion170/170, build/format/diff PASS. Next after publication: manual Engine command. Native/final corpus OPEN.
+
+## EP-0008-US-0005-TK-0002 — 2026-10-11
+
+TK-0001 `6b0d1f29d74c78c19a721df8e081466f25102333` published/remote verified. Manual Engine fire implemented; full Engine1799/1799, final manual21/21, affected Client20/20, solution build/format/diff PASS. Next after publication: command catalog, then authoritative preview. Lifetime scheduler/new-format validation/native remain downstream.
