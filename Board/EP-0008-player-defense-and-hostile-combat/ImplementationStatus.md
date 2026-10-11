@@ -113,3 +113,7 @@ to their downstream tickets; native and final corpus gates remain OPEN.
 ## EP-0008-US-0002-TK-0001 — 2026-10-11
 
 Previous TK-0005 published as `70ddbc40b20d3209ccfc56b5481997f5677d08dc`; live SHA verified. Dual-defense/three-cabin player data implemented. Client1762/1762 and non-corpus Engine1728/1728 PASS; solution build/format/diff PASS. Details and corrected obsolete fixtures in ticket. Native/final corpus OPEN. Next: publish this ticket, then dual-bootstrap TK-0002.
+
+## EP-0008-US-0002-TK-0002 — 2026-10-11
+
+TK-0001 `42425af97885d10763d39eb3ef469e55d407316c` published and remote verified. TK-0002 production behavior confirmed by new tests: focused17/17, non-corpus Engine1731/1731, build/format/diff PASS. US-0002 self-review complete; native/final corpus OPEN. Next after publication: US-0003 shared-launch validation.

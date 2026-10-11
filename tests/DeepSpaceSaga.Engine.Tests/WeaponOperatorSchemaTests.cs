@@ -5,6 +5,27 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class WeaponOperatorSchemaTests
 {
+    [Fact]
+    public void Duplicate_operator_assignment_rejected()
+    {
+        using var engine = Create(CountermeasureBootstrapTests.RealScenario());
+        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        var scenario = CountermeasureBootstrapTests.RealScenario();
+        scenario = scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Player ? o with
+                {
+                    Modules = o.Modules!.Select(m => m.ModuleId == "MOD-PLAYER-COUNTERMEASURE-02"
+                        ? m with { OperatorCrewId = "CHR-PLAYER-DEFENSE" } : m).ToArray()
+                } : o).ToArray()
+            }
+        };
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+
     internal static ScenarioFile Assigned(int? attack = 50, int? defense = 50) => TorpedoImpactTests.Scenario(o => o with
     {
         Crew = [new ShipCrewMemberData("operator-" + o.ObjectId, "Operator", attack, defense)],

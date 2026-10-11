@@ -2,12 +2,12 @@
 epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0002-dual-defense-loadout
 title: "Две установки ПРО и три оператора в боевом сценарии"
-stage: draft
+stage: implemented
 dependencies: ["EP-0008-US-0001-module-owned-weapon-rules"]
 created: 2026-10-07
 revision: 1
 current_review: complete
-validation_status: planning-only
+validation_status: automated-pass
 ---
 
 # Две установки ПРО и три оператора в боевом сценарии
@@ -46,3 +46,7 @@ validation_status: planning-only
 Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История draft и не является утверждением о пройденных тестах.
 
 При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Текущая задача только создаёт план.
+
+## Execution self-review — 2026-10-11
+
+AC-0001/0003: real source and generated NewGame, 3 cabins/crew, preserved geometry and other starts, meal consumes3 rations. AC-0002:2 distinct module/operator IDs, independent toggle and file-restored physical reload deadlines; duplicate assignment atomically rejected. Client1762/1762 (TK-0001), Engine1731/1731 (TK-0002) PASS. Build/format/diff PASS; native NOT RUN. Production dual-module storage already existed and required no rewrite. Launch/lifetime scheduling is tested further in downstream combat stories. Both tickets receive separate commits/pushes. This supersedes planning-only prose above; review is self-review.
