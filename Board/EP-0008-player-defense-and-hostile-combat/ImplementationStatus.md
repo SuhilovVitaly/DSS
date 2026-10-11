@@ -201,3 +201,7 @@ US-0007 TK-0004 `74248c9f51fc1641548cb2f741a5c658f451e4a7` published/remote veri
 ## EP-0008-US-0008-TK-0002 — 2026-10-11
 
 TK-0001 `fcbb0811eb67fa36fb58591690731aee10004675` published/remote verified. Hover-only weapon rings and physical map flight countdown implemented; initial Client1822/1825 fixed new zoom-boundary test assumptions, final affected32/32, build/format/diffPASS. Next after publication: journal presentation. Native/final corpus OPEN.
+
+## EP-0008-US-0008-TK-0003 — 2026-10-11
+
+TK-0002 `499074810ba3e29e122ed2b55fe4c5410348fe5b` published/remote verified. Complete journal facts/scrolling and real-file expiry history replay guard verified; Client1832/1832, build/format/diffPASS. US-0008 self-review complete. Next after publication: US-0009 authoritative defeat. Native/final corpus OPEN.

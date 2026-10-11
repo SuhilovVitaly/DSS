@@ -13,6 +13,7 @@ internal sealed class CombatJournalPanel
     private ImmutableArray<CombatJournalEntry> _layoutEntries;
     private float _layoutWidth;
     private int _visibleLineCount;
+    internal IEnumerable<string> VisibleLines => _lines.Skip(_offset).Take(_visibleLineCount);
     internal void Render(SKCanvas canvas, float width, float height, ImmutableArray<CombatJournalEntry> entries)
     {
         Entries = entries.IsDefault ? [] : entries;
@@ -51,7 +52,7 @@ internal sealed class CombatJournalPanel
         canvas.Save();
         canvas.ClipRect(new SKRect(left + 6, 78, left + w - 6, Bounds.Bottom - 6));
         float y = 92;
-        foreach (var line in _lines.Skip(_offset).Take(_visibleLineCount))
+        foreach (var line in VisibleLines)
         {
             canvas.DrawText(line, left + 10, y, text);
             y += 16;
@@ -79,6 +80,10 @@ internal sealed class CombatJournalPanel
         string type = T("Event." + entry.Type);
         var lines = new List<string> { $"{entry.MotionTimeMs / 1000:0.000} {T("Seconds")} · {type} · {entry.ProjectileObjectId}",
             $"{entry.ActorObjectId} → {entry.TargetObjectId}" };
+        if (entry.LauncherModuleId is { } module) lines.Add($"{T("Module")}: {module}");
+        if (entry.LaunchMode is { } mode) lines.Add($"{T("LaunchMode")}: {T(mode == LaunchMode.Manual ? "Manual" : "Auto")}");
+        if (entry.Accuracy is { } accuracy && entry.TargetManeuverability is { } maneuverability)
+            lines.Add($"{T("Accuracy")} {accuracy:0.##} − {T("Maneuverability")} {maneuverability:0.##}");
         if (entry.ChanceTenths is { } chance) lines.Add($"{T("Chance")} {chance / 10m:0.0}%" + (entry.Roll is { } roll ? $" · {T("Roll")} {roll}/1000" : " · " + T("NoRoll")));
         if (entry.RatingBreakdown is { } ratings)
         {
@@ -86,7 +91,17 @@ internal sealed class CombatJournalPanel
             lines.Add(ratings.TorpedoOperator is { } attack ? $"{T("Torpedo")}: {Describe(attack)}" : $"{T("Maneuverability")}: {ratings.TorpedoRating:0.##}");
         }
         else if (entry.TorpedoOperator is { } op) lines.Add(Describe(op));
-        if (entry.Damage is { } damage) lines.Add($"{T("Damage")} {damage}");
+        if (entry.Type is CombatEventType.Hit or CombatEventType.Destroyed && entry.Damage is { } damage)
+            lines.Add($"{T("Damage")} {damage}");
+        string? reason = entry.TerminationKind switch
+        {
+            CountermeasureTerminationKind.LifetimeExpired => "lifetime_expired",
+            CountermeasureTerminationKind.MissedCoastExpired => "missed_coast_expired",
+            CountermeasureTerminationKind.TargetLost => "target_lost",
+            CountermeasureTerminationKind.OwnerLost => "owner_lost",
+            _ => null
+        };
+        if (reason is not null) lines.Add($"{T("State")}: {GameSessionScreen.DefenseReasonText(reason)}");
         return lines;
         static string Describe(WeaponOperatorSnapshot op) => $"{op.DisplayName}: {T("SkillMetadata")} {op.Skill}";
     }
