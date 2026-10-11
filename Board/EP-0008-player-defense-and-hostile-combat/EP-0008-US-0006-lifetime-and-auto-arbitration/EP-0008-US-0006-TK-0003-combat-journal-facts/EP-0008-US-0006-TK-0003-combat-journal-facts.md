@@ -3,10 +3,10 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0006-lifetime-and-auto-arbitration
 ticket: EP-0008-US-0006-TK-0003-combat-journal-facts
 title: "Журнал ручных пусков и истечения времени полёта"
-stage: draft
+stage: implemented
 layer: engine
 depends_on: ["EP-0008-US-0006-TK-0002-auto-launcher-selection"]
-files_touched: 4
+files_touched: 5
 serves: ["AC-0001","AC-0002","AC-0004"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Журнал ручных пусков и истечения времени полёта
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED (automated checks; self-review)
 
 ## Why
 
@@ -40,6 +40,10 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 | `tests/DeepSpaceSaga.Engine.Tests/PhaseThreeJournalTests.cs` | Новый файл этого тикета | Только результат и шаги этой карточки |
 
 ## Dependencies
+
+Execution scope update — 2026-10-11: baseline `e606480fbc22f726b65f102746cb08186a012388` published/remote verified. Add `src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs` to route the authoritative expiry event through journal recording. ManualDefense.cs needs no edit because shared spawn already records manual launch facts. Effective scope remains four files including tests.
+
+Full Engine regression found one obsolete journal event sequence. Before edit, add `tests/DeepSpaceSaga.Engine.Tests/CombatJournalTests.cs` to include the new explicit Expired transition and verify its termination reason; retain event uniqueness/time/RNG assertions. Effective scope is five files including tests.
 
 Шаг **22** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0006-TK-0002-auto-launcher-selection](../../EP-0008-US-0006-lifetime-and-auto-arbitration/EP-0008-US-0006-TK-0002-auto-launcher-selection/EP-0008-US-0006-TK-0002-auto-launcher-selection.md).
@@ -69,9 +73,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Zero_percent_contact_records_roll_and_miss`
-- [ ] `Expiry_is_not_miss_or_damage`
-- [ ] `Concurrent_intercepts_record_single_target_destruction`
+- [x] `Zero_percent_contact_records_roll_and_miss`
+- [x] `Expiry_is_not_miss_or_damage`
+- [x] `Concurrent_intercepts_record_single_target_destruction`
 
 Команды из корня DSS после реализации:
 
@@ -85,13 +89,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0002, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0002, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `e606480fbc22f726b65f102746cb08186a012388` published/remote verified. Countermeasure resolution/loss/expiry journal facts now include module/mode/captured accuracy/maneuverability/chance and explicit termination. Expired distinguishes lifetime from normal missed-coast completion; neither invents a roll or damage. Contact at lifetime emits actual resolution before expiry. Owner loss is distinct from target loss. Existing shared spawn already supplied manual/auto launch facts.
+
+Focused lifecycle/journal tests **37/37 PASS**, full non-corpus Engine **1836/1837** initially found one obsolete expected journal sequence, fixed within documented scope. Final complete affected journal/defense group **131/131 PASS** (`ep8-us6-tk3-review.trx`); affected Client **68/68 PASS** (`ep8-us6-tk3-client.trx`). No repeated clean full-suite claim. New5 tests prove zero/100% contact, two simultaneous interceptors with one target termination, owner destruction, same-time miss/expiry, snapshot non-duplication and actual serializer/loader journal continuation. Initial new test assertions corrected ImmutableArray identity comparison and allowed the separately authorized A07 next hostile shot while still asserting original target removal. Solution build 0 warnings/errors, scoped format verify and diff PASS. Self-review complete; native/final corpus OPEN.

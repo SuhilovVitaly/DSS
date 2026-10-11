@@ -173,3 +173,7 @@ US-0005 TK-0004 `04357623f643e10c798bf5a348e8b46353e8aded` published/remote veri
 ## EP-0008-US-0006-TK-0002 — 2026-10-11
 
 TK-0001 `862fb97810c54f255a2ed874af7ca0f763dea1b6` published/remote verified. Auto launcher arbitration implemented; Engine1832/1832, affected Client68/68, build/format/diff PASS. Next after publication: journal facts. Native/final corpus OPEN.
+
+## EP-0008-US-0006-TK-0003 — 2026-10-11
+
+TK-0002 `e606480fbc22f726b65f102746cb08186a012388` published/remote verified. Journal facts implemented; initial full Engine1836/1837 corrected obsolete event expectation, final affected131/131 and Client68/68 PASS, build/format/diff PASS. US-0006 self-review complete. Next after publication: US-0007 independent module panels. Native/final corpus OPEN.

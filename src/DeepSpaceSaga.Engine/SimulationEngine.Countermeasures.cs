@@ -205,9 +205,9 @@ public sealed partial class SimulationEngine
         var flight = projectile.InitialMotion.Countermeasure!;
         int roll = _countermeasureRng.NextRoll();
         bool success = roll <= flight.FrozenChanceTenths;
-        AppendCombatEvent(new(0, contact.MotionTimeMs,
-            success ? CombatEventType.Intercept : CombatEventType.Miss, flight.OwnerObjectId, flight.TargetTorpedoId,
-            projectile.InitialMotion.ObjectId, contact.X, contact.Y, flight.FrozenChanceTenths, roll, flight.RatingBreakdown));
+        AppendCountermeasureEvent(projectile, contact.MotionTimeMs,
+            success ? CombatEventType.Intercept : CombatEventType.Miss, success ? "intercept" : "miss", roll,
+            success ? CountermeasureTerminationKind.Intercept : null);
         if (success)
         {
             RemoveCountermeasure(projectile, contact.MotionTimeMs);
@@ -298,10 +298,9 @@ public sealed partial class SimulationEngine
             bool targetExists = _objects.Any(o => o.InitialMotion.ObjectId == flight.TargetTorpedoId && o.InitialMotion.Torpedo is not null);
             if (!ownerExists || (flight.Phase == CountermeasurePhase.Guiding && !targetExists))
             {
-                var point = CombatPath(projectile).Position(motionTimeMs);
-                AppendCombatEvent(new(0, motionTimeMs, CombatEventType.TargetLost, flight.OwnerObjectId, flight.TargetTorpedoId,
-                    projectile.InitialMotion.ObjectId, point.X, point.Y, flight.FrozenChanceTenths, RatingBreakdown: flight.RatingBreakdown,
-                    Result: ownerExists ? "target_lost" : "owner_lost"));
+                AppendCountermeasureEvent(projectile, motionTimeMs, CombatEventType.TargetLost,
+                    ownerExists ? "target_lost" : "owner_lost", termination: ownerExists
+                        ? CountermeasureTerminationKind.TargetLost : CountermeasureTerminationKind.OwnerLost);
                 RemoveCountermeasure(projectile, motionTimeMs, ownerExists);
             }
         }
@@ -311,6 +310,15 @@ public sealed partial class SimulationEngine
         flight.ExpiresAtMotionTimeMs ?? double.PositiveInfinity,
         flight.Phase == CountermeasurePhase.MissedCoast
             ? flight.MissExpiresAtMotionTimeMs ?? double.PositiveInfinity : double.PositiveInfinity);
+
+    private void ExpireCountermeasure(SpaceObjectRuntime projectile, double time)
+    {
+        bool lifetime = projectile.InitialMotion.Countermeasure!.ExpiresAtMotionTimeMs <= time;
+        AppendCountermeasureEvent(projectile, time, CombatEventType.Expired,
+            lifetime ? "lifetime_expired" : "missed_coast_expired", termination: lifetime
+                ? CountermeasureTerminationKind.LifetimeExpired : CountermeasureTerminationKind.MissedCoastExpired);
+        RemoveCountermeasure(projectile, time);
+    }
 
     private void RemoveCountermeasure(SpaceObjectRuntime projectile, double motionTimeMs, bool reload = true)
     {

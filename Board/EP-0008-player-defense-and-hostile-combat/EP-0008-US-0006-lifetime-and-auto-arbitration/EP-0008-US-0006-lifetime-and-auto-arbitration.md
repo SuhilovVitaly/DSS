@@ -2,12 +2,12 @@
 epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0006-lifetime-and-auto-arbitration
 title: "Ограниченный полёт и согласованная автоматика двух установок"
-stage: draft
+stage: implemented
 dependencies: ["EP-0008-US-0005-manual-countermeasure-fire"]
 created: 2026-10-07
 revision: 1
 current_review: complete
-validation_status: planning-only
+validation_status: automated-pass; native-open
 ---
 
 # Ограниченный полёт и согласованная автоматика двух установок
@@ -45,6 +45,10 @@ validation_status: planning-only
 
 ## Gaps и исполнение
 
-Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История draft и не является утверждением о пройденных тестах.
+Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История реализована; фактические проверки и первоначальные failures описаны в карточках.
 
-При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Текущая задача только создаёт план.
+При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Автономное исполнение выполнено; публикация сверяется через Git.
+
+## Story execution self-review — 2026-10-11
+
+AC-0001: captured absolute lifetime covers Guiding/MissedCoast, configurable/full60s tests, no-roll timeout and exact reload. AC-0002: hull/contact/expiry ties and stable concurrent target resolution tested. AC-0003: earliest threat then actual encounter/chance/ordinal module candidate comparison and successful-spawn-only shared attempt tested. AC-0004: actual0%/100% contact draws, manual repeats, two concurrent flights, pause, terminal removal facts and save journal continuation tested. No unresolved finding in story scope. This is self-review, not user approval; new-format validation, UI presentation, final corpus and native acceptance remain assigned downstream.

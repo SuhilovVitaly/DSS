@@ -174,7 +174,7 @@ public sealed partial class SimulationEngine
             }
             if (expiry is not null && expiryTime <= eventTime && expiryTime <= motionTimeMs)
             {
-                RemoveCountermeasure(expiry, expiryTime);
+                ExpireCountermeasure(expiry, expiryTime);
                 cursor = expiryTime;
                 continue;
             }
