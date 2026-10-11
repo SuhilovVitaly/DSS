@@ -29,7 +29,7 @@ public sealed class TorpedoImpactTests
                         Modules = o.Modules?.Select(m => m with
                         {
                             AutoDefenseEnabled = false,
-                            PowerState = o.ObjectType == SpaceObjectType.NpcShip && m.ModuleTypeId == "module.torpedo.launcher.basic" ? "Off" : m.PowerState
+                            PowerState = o.ObjectType == SpaceObjectType.NpcShip && m.ModuleTypeId is "module.torpedo.launcher.basic" or "module.engine.basic" ? "Off" : m.PowerState
                         }).ToArray(),
                         PositionX = 0,
                         PositionY = o.ObjectId == Player ? 0 : -100,
@@ -64,7 +64,7 @@ public sealed class TorpedoImpactTests
                 {
                     PositionX = player.PositionX + (o.PositionX - player.PositionX) * 0.1,
                     PositionY = player.PositionY + (o.PositionY - player.PositionY) * 0.1,
-                    Modules = o.Modules!.Select(m => m.ModuleTypeId == "module.torpedo.launcher.basic" ? m with { PowerState = "Off" } : m).ToArray()
+                    Modules = o.Modules!.Select(m => m.ModuleTypeId is "module.torpedo.launcher.basic" or "module.engine.basic" ? m with { PowerState = "Off" } : m).ToArray()
                 } : o).ToArray()
             }
         };

@@ -25,7 +25,7 @@ public sealed class CombatSaveLoadTests : IDisposable
                     MovementType = "Stationary"
                 } : o with
                 {
-                    Modules = o.Modules?.Select(m => o.ObjectType == SpaceObjectType.NpcShip && m.ModuleTypeId == "module.torpedo.launcher.basic"
+                    Modules = o.Modules?.Select(m => o.ObjectType == SpaceObjectType.NpcShip && m.ModuleTypeId is "module.torpedo.launcher.basic" or "module.engine.basic"
                     ? m with { PowerState = "Off" } : m).ToArray()
                 }).ToArray()
             }

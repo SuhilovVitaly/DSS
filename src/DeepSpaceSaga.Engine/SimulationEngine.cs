@@ -470,6 +470,8 @@ public sealed partial class SimulationEngine : IDisposable
             _countermeasureTargetPlans.Clear();
             _countermeasureRng = new(resolvedMasterSeed);
             _combatProcessedTimeMs = gs.MotionTimeMs;
+            _hostileCombat.Clear();
+            _nextHostileDecisionMs = gs.MotionTimeMs;
             _torpedoSequence = 0;
             _combatImpactSequence = 0;
             _wreckSequence = 0;
@@ -3342,7 +3344,9 @@ public sealed partial class SimulationEngine : IDisposable
 
     private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt)
     {
-        if (!HasActiveTorpedoes && !HasDefenseActivity && !HasHostileFireCandidates && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        if (gameTimeMs > _combatProcessedTimeMs)
+            RefreshHostileCombat(_combatProcessedTimeMs);
+        if (!HasActiveTorpedoes && !HasDefenseActivity && !HasHostileFireCandidates && !HasHostileMotionCandidates && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
             _combatProcessedTimeMs = gameTimeMs;
@@ -3354,7 +3358,8 @@ public sealed partial class SimulationEngine : IDisposable
         {
             long next = gameTimeMs;
             if (HasActiveTorpedoes) next = Math.Min(next, _nextCombatGuidanceMs);
-            if (NextHostileLaunch(_combatProcessedTimeMs, gameTimeMs) is { } hostileLaunch)
+            if (HasHostileMotionCandidates) next = Math.Min(next, _nextHostileDecisionMs);
+            if (NextHostileLaunch(_combatProcessedTimeMs, next) is { } hostileLaunch)
                 next = Math.Min(next, hostileLaunch.Time);
             foreach (var obj in _objects)
             {
@@ -3368,10 +3373,12 @@ public sealed partial class SimulationEngine : IDisposable
                     _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed) &&
                     _objects.Any(o => o.InitialMotion.ObjectId == incident.StationObjectId && o.SecurityZoneRadiusKm is not null))
                     next = Math.Min(next, incident.DeadlineGameTimeMs);
+            bool advanced = next > _combatProcessedTimeMs;
             AdvanceCombatTo(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
             UpdateStationSecurity(next);
             CompleteActiveEngineCycles(next);
+            if (advanced && next >= _nextHostileDecisionMs) RefreshHostileCombat(next);
             RefreshCombatGuidance(next);
             RefreshCountermeasureGuidance(next);
             UpdateStationSecurity(next);

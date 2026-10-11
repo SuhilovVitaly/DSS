@@ -45,7 +45,7 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
                 {
                     PositionX = player.PositionX + (o.PositionX - player.PositionX) * 0.1,
                     PositionY = player.PositionY + (o.PositionY - player.PositionY) * 0.1,
-                    Modules = o.Modules!.Select(m => m.ModuleTypeId == "module.torpedo.launcher.basic" ? m with { PowerState = "Off" } : m).ToArray()
+                    Modules = o.Modules!.Select(m => m.ModuleTypeId is "module.torpedo.launcher.basic" or "module.engine.basic" ? m with { PowerState = "Off" } : m).ToArray()
                 } : o).ToArray()
             }
         };

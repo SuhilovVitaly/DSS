@@ -249,6 +249,17 @@ public sealed partial class SimulationEngine
 
     private static CollisionPath CombatPath(SpaceObjectRuntime obj)
     {
+        if (obj.InitialMotion.HostileCombat is { Segment: var segment })
+        {
+            double maxSpeed = Math.Max(segment.StartSpeedKmS,
+                segment.StartSpeedKmS + segment.AccelerationKmS2 * segment.DurationMs / 1000.0);
+            return new(t =>
+            {
+                var p = HostileOrbitMath.Sample(segment, t - segment.EpochMs);
+                return (p.X, p.Y);
+            }, maxSpeed / 100,
+                Math.Abs(segment.AccelerationKmS2) / 100_000 + maxSpeed / 100 * Math.Abs(segment.TurnRateDegPerSec) * Math.PI / 180_000);
+        }
         if (obj.InitialMotion.Countermeasure is { } defenseFlight)
             return new(t =>
             {

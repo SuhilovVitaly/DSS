@@ -66,7 +66,7 @@ public sealed class PirateScenarioTests
         }
     }
     [Fact]
-    public void Pirate_motion_and_identity_unchanged()
+    public void Pirate_initial_identity_is_preserved_and_motion_enters_hostile_pursuit()
     {
         Assert.Contains(ScenarioRepository.ListScenarios(Path.Combine(ClientRoot, "Scenarios")), s => s.ScenarioPath == ScenarioPath);
         using var engine = Create();
@@ -97,9 +97,11 @@ public sealed class PirateScenarioTests
         Assert.Equal(JsonSerializer.Serialize(originalPlayerModules.Select(m => m with { ModuleId = "test", OperatorCrewId = m.OperatorCrewId is null ? null : m.ModuleTypeId })),
             JsonSerializer.Serialize(npc.Modules!.Select(m => m with { ModuleId = "test", OperatorCrewId = m.OperatorCrewId is null ? null : m.ModuleTypeId })));
         var moved = Pirate(engine.CaptureSnapshotForTests(1000));
-        Assert.Equal(3.4641016151377544, moved.X - pirate.X, 6);
-        Assert.Equal(2d, moved.Y - pirate.Y, 6);
-        Assert.Equal((0.4d, 120d), (moved.SpeedKmS, moved.Direction));
+        Assert.InRange(Math.Sqrt(Math.Pow(moved.X - pirate.X, 2) + Math.Pow(moved.Y - pirate.Y, 2)), 4, 8);
+        Assert.Equal(0.8d, moved.SpeedKmS, 8);
+        Assert.InRange(Math.Abs(moved.Direction - pirate.Direction), 0, 4.00000001);
+        Assert.Equal(HostileCombatPhase.Pursuit, moved.HostileCombat!.Phase);
+        Assert.Equal(100, moved.HostileCombat.DesiredRadiusKm);
         Assert.Null(moved.ActiveEngineCommandType);
     }
 

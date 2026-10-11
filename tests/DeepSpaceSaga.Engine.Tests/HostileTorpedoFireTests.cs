@@ -11,7 +11,7 @@ public class HostileTorpedoFireTests
     {
         PositionY = o.ObjectId == Player ? 0 : -distance,
         RelationToPlayer = o.ObjectId == Target ? PlayerRelation.Enemy : null,
-        Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = false, PowerState = "On" }).ToArray()
+        Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = false, PowerState = m.ModuleTypeId == "module.engine.basic" ? "Off" : "On" }).ToArray()
     });
 
     [Fact]

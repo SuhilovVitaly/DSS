@@ -137,3 +137,7 @@ US-0003 TK-0003 `d21057c0d26b3f4b3e372117ec74e6310cc36789` published/remote veri
 ## EP-0008-US-0004-TK-0002 — 2026-10-11
 
 TK-0001 `9424ad264b60bab32eabbef9f1f41b3fb6cde9fc` published/remote verified. Shared relative-orbit math implemented; full Motion162/162, expanded review14/14, build/format/diff PASS. Next after publication: authoritative controller. Native/final corpus OPEN.
+
+## EP-0008-US-0004-TK-0003 — 2026-10-11
+
+TK-0002 `96e7113ded5f2bb1b88458ec543237dac87f73d9` published/remote verified. Authoritative hostile movement wired; final affected Engine281/281, Client14/14, solution build/format/diff PASS after documented initial fixture failures. Next after publication: swept combat integration. Native/final corpus/current-format hostile persistence OPEN.
