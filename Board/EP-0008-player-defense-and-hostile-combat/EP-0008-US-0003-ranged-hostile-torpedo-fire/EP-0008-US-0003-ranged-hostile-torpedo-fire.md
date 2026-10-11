@@ -2,12 +2,12 @@
 epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0003-ranged-hostile-torpedo-fire
 title: "Враждебные корабли стреляют по игроку"
-stage: draft
+stage: implemented
 dependencies: ["EP-0008-US-0002-dual-defense-loadout"]
 created: 2026-10-07
 revision: 1
 current_review: complete
-validation_status: planning-only
+validation_status: automated-pass
 ---
 
 # Враждебные корабли стреляют по игроку
@@ -47,3 +47,16 @@ validation_status: planning-only
 Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История draft и не является утверждением о пройденных тестах.
 
 При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Текущая задача только создаёт план.
+
+## Execution self-review — 2026-10-11
+
+AC-0001: shared inclusive range in Engine/Client, physical launch poses, alternate
+module ranges, surviving active flights after exit, UI disabled/rejected/pending
+identity checks. AC-0002: real Enemy-NPC launch path, all owners/modules, live-player
+guard, pause/calendar-only no-fire, no forged player receipts. AC-0003: per-launcher
+busy state, immediate eligible integer-ms relaunch under A07, overlap termination
+and exhausted-ID progress guards, large/split intervals and real-file continuation.
+All three tickets validated and separately committed/pushed. Last ticket: Client1770,
+Motion9 and Engine32 PASS, build/format/diff PASS. Self-review is not independent
+review or user approval. Native/final corpus remain epic gates. This evidence
+supersedes the historical planning-only prose above.

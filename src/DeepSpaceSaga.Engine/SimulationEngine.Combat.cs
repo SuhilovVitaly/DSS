@@ -60,7 +60,7 @@ public sealed partial class SimulationEngine
 
         var origin = PredictMotion(owner, motionTimeMs - owner.StartGameTimeMs);
         var targetPose = PredictMotion(target, motionTimeMs - target.StartGameTimeMs);
-        if (!WithinTorpedoRange(origin, targetPose, launcher.RangeKm!.Value))
+        if (!CombatRangeMath.IsWithinRange(origin, targetPose, launcher.RangeKm!.Value))
             return CommandStartOutcome.Rejected("target_out_of_range");
         var route = TorpedoGuidanceMath.Plan(origin, targetPose, launcher.SpeedKmS, launcher.TurnRateDegPerSec, motionTimeMs);
         if (!TryGetNextTorpedoId(out string id, out long sequence))

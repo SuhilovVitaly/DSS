@@ -125,3 +125,7 @@ Previous TK-0002 `ec24573d5ae1b7aa5d6e937f19e7f7cbdc33de5e` published/remote ver
 ## EP-0008-US-0003-TK-0002 — 2026-10-11
 
 TK-0001 `ccf67af0f8019d42ccadefe576397a898a9d852e` published/remote verified. Hostile fire scheduler implemented; full non-corpus Engine1762/1762 PASS, final review70/70 PASS after exhausted-ID fix, affected Client30/30 PASS. Full Client initial13 failures resolved in affected regression; no clean repeated full Client claim. Solution build/format/diff PASS. Next after publication: range feedback UI. Native/final corpus OPEN.
+
+## EP-0008-US-0003-TK-0003 — 2026-10-11
+
+TK-0002 `e33ba130e62ae8dd84439274207b5a48d1ed316d` published/remote verified. Range-feedback UI and shared Motion range math implemented. Full Client1770/1770, Motion9/9, Engine32/32 PASS; build0 warnings/errors, scoped format/diff PASS. US-0003 self-review complete. Next after publication: US-0004 hostile-motion contract. Native/final corpus OPEN.

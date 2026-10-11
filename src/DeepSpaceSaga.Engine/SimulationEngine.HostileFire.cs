@@ -13,16 +13,6 @@ public sealed partial class SimulationEngine
     private bool IsHostileActor(SpaceObjectRuntime owner) => owner.ObjectType == SpaceObjectType.NpcShip &&
         !owner.IsDestroyed && GetRelationToPlayer(owner) == PlayerRelation.Enemy;
 
-    private static bool WithinTorpedoRange(ObjectMotionSnapshot origin, ObjectMotionSnapshot target, double rangeKm)
-    {
-        double dx = Math.Abs(target.X / WorldUnitsPerKm - origin.X / WorldUnitsPerKm);
-        double dy = Math.Abs(target.Y / WorldUnitsPerKm - origin.Y / WorldUnitsPerKm);
-        double longest = Math.Max(dx, dy);
-        double ratio = longest == 0 ? 0 : Math.Min(dx, dy) / longest;
-        double distanceKm = longest * Math.Sqrt(1 + ratio * ratio);
-        return double.IsFinite(distanceKm) && distanceKm <= rangeKm;
-    }
-
     private HostileLaunch? NextHostileLaunch(double cursor, long to)
     {
         if (to <= _combatProcessedTimeMs || cursor > to || _combatProcessedTimeMs == long.MaxValue || !TryGetNextTorpedoId(out _, out _)) return null;
@@ -49,7 +39,7 @@ public sealed partial class SimulationEngine
                     long time = (long)Math.Ceiling(entry.Value.MotionTimeMs);
                     if (time > to) break;
                     // A sub-ms grazing contact need not contain an eligible integer launch instant.
-                    if (WithinTorpedoRange(PredictMotion(owner, time - owner.StartGameTimeMs),
+                    if (CombatRangeMath.IsWithinRange(PredictMotion(owner, time - owner.StartGameTimeMs),
                         PredictMotion(player, time - player.StartGameTimeMs), launcher.RangeKm.Value))
                     {
                         if (first is null || time < first.Time) first = new(owner.InitialMotion.ObjectId, module.ModuleId, time);

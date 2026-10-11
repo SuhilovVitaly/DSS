@@ -11,7 +11,7 @@ public sealed class TorpedoCommandPanelTests
 {
     private static readonly InstalledModuleSnapshot Launcher = new("actual-launcher", "module.torpedo.launcher.basic", "Launcher", 1,
         [CombatCommandTypes.Fire], "On", "Ready", 60, Commands: [new(CombatCommandTypes.Fire, "Fire", "object")],
-        LauncherCombat: new(null, 3, 90, 150, new("crew", "Operator", WeaponSkillType.TorpedoAttack, 50, 30, 30)));
+        LauncherCombat: new(null, 3, 90, 150, new("crew", "Operator", WeaponSkillType.TorpedoAttack, 50, 30, 30), RangeKm: 200));
 
     [Fact]
     public async Task Busy_and_pending_launcher_disable_fire()
@@ -138,7 +138,7 @@ public sealed class TorpedoCommandPanelTests
     private static CommandResult Result(PlayerCommand command, CommandResultStatus status) =>
         new(command.CommandId, command.ObjectId, command.ModuleId, command.CommandType, status, 0);
 
-    private static void ClickFire(Fixture f)
+    internal static void ClickFire(Fixture f)
     {
         var button = Button(f.Screen);
         f.Screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
@@ -212,7 +212,7 @@ public sealed class TorpedoCommandPanelTests
         Assert.True(panel.BodyRect.Bottom * scale <= height);
     }
 
-    private static void SelectTarget(Fixture f)
+    internal static void SelectTarget(Fixture f)
     {
         Render(f.Screen);
         f.Screen.OnMouseDown(640, 420);
@@ -220,17 +220,17 @@ public sealed class TorpedoCommandPanelTests
         Assert.True(Button(f.Screen).Enabled);
     }
 
-    private static CommandButtonGeometry Button(GameSessionScreen screen) =>
+    internal static CommandButtonGeometry Button(GameSessionScreen screen) =>
         Assert.Single(screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == CombatCommandTypes.Fire);
 
-    private static void Render(GameSessionScreen screen, int height = 720)
+    internal static void Render(GameSessionScreen screen, int height = 720)
     {
         using var bitmap = new SKBitmap(1280, height);
         using var canvas = new SKCanvas(bitmap);
         screen.Render(canvas, 1280, height);
     }
 
-    private sealed class Fixture : IAsyncDisposable
+    internal sealed class Fixture : IAsyncDisposable
     {
         public RecordingConnection Connection { get; } = new();
         public GameSessionHandle Handle { get; }
@@ -251,7 +251,7 @@ public sealed class TorpedoCommandPanelTests
         public ValueTask DisposeAsync() => Handle.DisposeAsync();
     }
 
-    private sealed class RecordingConnection : IGameSessionConnection
+    internal sealed class RecordingConnection : IGameSessionConnection
     {
         public List<PlayerCommand> Commands { get; } = [];
         public Func<PlayerCommand, ValueTask>? OnSend { get; set; }

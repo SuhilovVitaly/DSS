@@ -3,10 +3,10 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0003-ranged-hostile-torpedo-fire
 ticket: EP-0008-US-0003-TK-0003-player-range-feedback
 title: "Понятная недоступность торпедного пуска вне дальности"
-stage: draft
+stage: implemented
 layer: client
 depends_on: ["EP-0008-US-0003-TK-0002-hostile-fire-scheduler"]
-files_touched: 3
+files_touched: 9
 serves: ["AC-0001"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Понятная недоступность торпедного пуска вне дальности
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED
 
 ## Why
 
@@ -39,6 +39,18 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 | `tests/DeepSpaceSaga.Client.Tests/RangedTorpedoUiTests.cs` | Новый файл этого тикета | Только результат и шаги этой карточки |
 
 ## Dependencies
+
+### Execution scope — 2026-10-11
+
+Dependency published as `e33ba130e62ae8dd84439274207b5a48d1ed316d`, remote SHA verified.
+Extend scope before edits to shared `Motion/CombatRangeMath.cs` and matching
+`Motion.Tests/CombatRangeMathTests.cs`, plus Engine Combat/HostileFire call sites:
+extract the existing inclusive range math so Client cannot drift from the Engine
+formula. Client uses confirmed snapshot poses/launcher range, while Engine still
+validates the launch boundary. Unknown/missing range fails closed.
+Update `TorpedoCommandPanelTests`, `DefenseCommandPanelTests`, `TorpedoInspectionTests`
+fixtures with explicit range and reuse the panel test fixture for new pending/range
+regressions. These fixtures previously omitted the newly required capability.
 
 Шаг **10** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0003-TK-0002-hostile-fire-scheduler](../../EP-0008-US-0003-ranged-hostile-torpedo-fire/EP-0008-US-0003-TK-0002-hostile-fire-scheduler/EP-0008-US-0003-TK-0002-hostile-fire-scheduler.md).
@@ -68,9 +80,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Out_of_range_fire_is_disabled`
-- [ ] `Selection_change_does_not_retarget_pending_fire`
-- [ ] `Boundary_rejection_clears_only_matching_pending`
+- [x] `Out_of_range_fire_is_disabled`
+- [x] `Selection_change_does_not_retarget_pending_fire`
+- [x] `Boundary_rejection_clears_only_matching_pending`
 
 Команды из корня DSS после реализации:
 
@@ -84,13 +96,35 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Client gates Fire from confirmed snapshot poses and module range through shared
+Motion geometry also used by Engine. Inclusive200km/custom50km boundaries agree;
+missing/invalid range disables Fire. The launcher reports out-of-range and a matching
+server range rejection. Pending target is captured when sending; unrelated or old
+CommandIds cannot release the current pending command, including coalesced receipts.
+No authoritative busy state is synthesized after rejection.
+
+- Full Client **1770/1770 PASS** (`ep8-us3-tk3-client.trx`).
+- Shared Motion range geometry **9/9 PASS** (`ep8-us3-tk3-motion.trx`), including extreme finite coordinates.
+- Engine ranged/hostile launch regression **32/32 PASS** (`ep8-us3-tk3-engine.trx`).
+- Scoped format/diff PASS; solution build **0 warnings/errors**. Initial new-file CRLF
+  findings corrected by scoped formatting. A build overlapping the running Client
+  testhost hit a temporary DLL lock; the sequential build after test completion passed.
+- Initial UI theory data used integer literals for nullable doubles; corrected to
+  double literals before the full passing Client run.
+
+Self-review completed against AC-0001 and US-0003. Native NOT RUN; final corpus
+remains OPEN. Unit UI transport tests are supplemented by existing real session/UI
+flows in the full Client run; no native window/GPU acceptance is claimed.
