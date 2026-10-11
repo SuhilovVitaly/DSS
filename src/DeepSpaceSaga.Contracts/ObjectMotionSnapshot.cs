@@ -136,7 +136,9 @@ public sealed record ObjectMotionSnapshot(
     [property: JsonPropertyName("orbit")] OrbitalElements? Orbit = null,
     [property: JsonPropertyName("orbitSampleSimulationTimeMs")] long? OrbitSampleSimulationTimeMs = null,
     [property: JsonPropertyName("worldOffsetX")] double WorldOffsetX = 0,
-    [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0);
+    [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0,
+    /// <summary>Confirmed hostile maneuver; no client-side AI decisions are required.</summary>
+    HostileCombatSnapshot? HostileCombat = null);
 
 /// <summary>
 /// A revealed mineralogical fraction in integer thousandths, not cargo quantity or mining yield.

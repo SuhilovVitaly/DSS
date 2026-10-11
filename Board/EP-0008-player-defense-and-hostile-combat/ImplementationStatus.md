@@ -129,3 +129,7 @@ TK-0001 `ccf67af0f8019d42ccadefe576397a898a9d852e` published/remote verified. Ho
 ## EP-0008-US-0003-TK-0003 — 2026-10-11
 
 TK-0002 `e33ba130e62ae8dd84439274207b5a48d1ed316d` published/remote verified. Range-feedback UI and shared Motion range math implemented. Full Client1770/1770, Motion9/9, Engine32/32 PASS; build0 warnings/errors, scoped format/diff PASS. US-0003 self-review complete. Next after publication: US-0004 hostile-motion contract. Native/final corpus OPEN.
+
+## EP-0008-US-0004-TK-0001 — 2026-10-11
+
+US-0003 TK-0003 `d21057c0d26b3f4b3e372117ec74e6310cc36789` published/remote verified. Hostile motion DTO implemented; Contracts182/182, build/format/diff PASS. Next after publication: relative-orbit math. Native/final corpus OPEN.

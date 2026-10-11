@@ -3,7 +3,7 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0004-hostile-pursuit-and-orbit
 ticket: EP-0008-US-0004-TK-0001-hostile-motion-contract
 title: "Контракт подтверждённого движения и фаз противника"
-stage: draft
+stage: implemented
 layer: contracts
 depends_on: ["EP-0008-US-0003-TK-0003-player-range-feedback"]
 files_touched: 3
@@ -14,7 +14,7 @@ revision: 1
 
 # Контракт подтверждённого движения и фаз противника
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED / AUTOMATED PASS
 
 ## Why
 
@@ -68,8 +68,8 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Hostile_state_and_motion_segment_roundtrip`
-- [ ] `Orbit_direction_is_explicit`
+- [x] `Hostile_state_and_motion_segment_roundtrip`
+- [x] `Orbit_direction_is_explicit`
 
 Команды из корня DSS после реализации:
 
@@ -83,13 +83,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Baseline/dependency `d21057c0d26b3f4b3e372117ec74e6310cc36789` published and live remote verified. Added immutable phase/target/module IDs/radius/retained direction and versioned physical segment (epoch, duration, elapsed, anchored pose, acceleration and turn). Optional snapshot member preserves ordinary motion. Prediction contract stops at the confirmed boundary; only Engine will plan its successor. DTO serialization tested both directions and all phases.
+
+Full Contracts **182/182 PASS** (`ep8-us4-tk1-contracts.trx`); Contracts build **0 warnings/errors**; scoped whitespace verification and `git diff --check` PASS. Self-review found no remaining issue in this contract scope. Runtime controller, save validation and native evidence belong to downstream tickets; this is not user approval. Commit/push checked in Git before next ticket.
