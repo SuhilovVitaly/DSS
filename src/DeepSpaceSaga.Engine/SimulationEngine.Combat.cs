@@ -151,10 +151,10 @@ public sealed partial class SimulationEngine
             var launch = NextDefenseLaunch(cursor, motionTimeMs);
             var hostileLaunch = NextHostileLaunch(cursor, motionTimeMs);
             var intercept = FindFirstIntercept(cursor, motionTimeMs);
-            var expiry = _objects.Where(o => o.InitialMotion.Countermeasure is { Phase: CountermeasurePhase.MissedCoast })
-                .OrderBy(o => o.InitialMotion.Countermeasure!.MissExpiresAtMotionTimeMs)
+            var expiry = _objects.Where(o => o.InitialMotion.Countermeasure is not null)
+                .OrderBy(o => CountermeasureExpiry(o.InitialMotion.Countermeasure!))
                 .ThenBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).FirstOrDefault();
-            double expiryTime = expiry?.InitialMotion.Countermeasure?.MissExpiresAtMotionTimeMs ?? double.PositiveInfinity;
+            double expiryTime = expiry is null ? double.PositiveInfinity : CountermeasureExpiry(expiry.InitialMotion.Countermeasure!);
             double eventTime = Math.Min(launch?.Time ?? double.PositiveInfinity,
                 Math.Min(intercept?.Contact.MotionTimeMs ?? double.PositiveInfinity, expiryTime));
             eventTime = Math.Min(eventTime, hostileLaunch?.Time ?? double.PositiveInfinity);

@@ -165,3 +165,7 @@ TK-0002 `83166f856df987c718d97a6eec5de4f92ef197a3` published/remote verified. Ma
 ## EP-0008-US-0005-TK-0004 — 2026-10-11
 
 TK-0003 `a4091e3f72ed06d0c89766352fb840a2f05b0d92` published/remote verified. Authoritative per-module selected-target preview implemented; Engine1808/1808, Client1780/1780, expanded review10/10, build/format/diff PASS. US-0005 self-review complete. Next after publication: US-0006 global lifetime. Native/final corpus OPEN.
+
+## EP-0008-US-0006-TK-0001 — 2026-10-11
+
+US-0005 TK-0004 `04357623f643e10c798bf5a348e8b46353e8aded` published/remote verified. Global flight lifetime and capped miss coast implemented; Engine1819/1819, affected Client68/68, final review10/10, build/format/diff PASS. Next after publication: auto launcher arbitration. Native/final corpus OPEN.

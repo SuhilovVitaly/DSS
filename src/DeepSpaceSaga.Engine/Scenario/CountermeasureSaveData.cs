@@ -124,7 +124,8 @@ internal static class CountermeasureSaveValidation
             }
             else Require(f.ResolutionRoll is >= 1 and <= 1000 && f.ResolutionRoll > f.FrozenChanceTenths &&
                 f.ResolvedAtMotionTimeMs is { } resolved && double.IsFinite(resolved) && resolved >= f.LaunchMotionTimeMs && resolved <= state.MotionTimeMs &&
-                f.MissExpiresAtMotionTimeMs == resolved + 2000 && f.MissExpiresAtMotionTimeMs > state.MotionTimeMs, "invalid missed coast");
+                f.MissExpiresAtMotionTimeMs == Math.Min(resolved + 2000, f.ExpiresAtMotionTimeMs ?? double.PositiveInfinity) &&
+                f.MissExpiresAtMotionTimeMs > state.MotionTimeMs, "invalid missed coast");
             var route = f.Route;
             Require(route is not null && route.PlannerVersion == 1 && !route.Segments.IsDefaultOrEmpty &&
                 route.StartMotionTimeMs >= f.LaunchMotionTimeMs && route.StartMotionTimeMs <= state.MotionTimeMs &&
