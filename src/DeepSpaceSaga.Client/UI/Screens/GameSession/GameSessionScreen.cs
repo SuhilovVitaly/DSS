@@ -2338,7 +2338,10 @@ public sealed partial class GameSessionScreen : IScreen
             cluster is not null && distanceKm is { } distance && player is { } playerState
                 ? ClusterMapPresentation.EstimateStraightDays(distance * 10, playerState.Source.MaxSpeedKmS ?? 0) : null,
             cluster is null ? null : _travelEstimateMotionTimeMs, ai?.Owner, ai?.BaseType,
-            territory?.DefenceRadiusKm, territory?.PatrolRadiusKm);
+            territory?.DefenceRadiusKm, territory?.PatrolRadiusKm,
+            HostileCombat: p.ObjectId == _selectedObjectId && s.Source.ObjectType == SpaceObjectType.NpcShip &&
+                p.RenderObjectType == SpaceObjectType.NpcShip && s.Source.RelationToPlayer == PlayerRelation.Enemy
+                ? s.Source.HostileCombat : null);
     }
 
     /// <summary>

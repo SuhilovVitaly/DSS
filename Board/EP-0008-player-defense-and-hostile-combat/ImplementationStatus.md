@@ -145,3 +145,7 @@ TK-0002 `96e7113ded5f2bb1b88458ec543237dac87f73d9` published/remote verified. Au
 ## EP-0008-US-0004-TK-0004 — 2026-10-11
 
 TK-0003 `6658a78c7f28c286f919740ec21b03056d064939` published/remote verified. Swept motion/guidance/PR/death integration verified: focused5/5, full non-corpus Engine1779/1779, full Client1770/1770, build/format/diff PASS. Review added missing selected-info TK-0005, now45 tickets and0 broken normalized Board links. Next after publication: TK-0005, then US-0005. Native/final corpus/current-format hostile persistence OPEN.
+
+## EP-0008-US-0004-TK-0005 — 2026-10-11
+
+TK-0004 `56f5b53c1425e0fc603ad2d2e2a19dd8aea627dc` published/remote verified. Missing selected-info delivered; affected Client58/58, expanded10/10, build/format/diff PASS. US-0004 automated implementation and self-review complete. Next after publication: US-0005 manual countermeasure guidance. Native/final corpus/current-format hostile persistence OPEN.

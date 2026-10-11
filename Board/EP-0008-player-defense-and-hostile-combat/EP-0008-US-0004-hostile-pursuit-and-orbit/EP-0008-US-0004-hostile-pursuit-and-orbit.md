@@ -2,12 +2,12 @@
 epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0004-hostile-pursuit-and-orbit
 title: "Преследование и орбита вокруг игрока"
-stage: draft
+stage: implemented
 dependencies: ["EP-0008-US-0003-ranged-hostile-torpedo-fire"]
 created: 2026-10-07
 revision: 1
 current_review: complete
-validation_status: planning-only
+validation_status: automated-pass
 ---
 
 # Преследование и орбита вокруг игрока
@@ -52,4 +52,8 @@ validation_status: planning-only
 
 При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Текущая задача только создаёт план.
 
-Execution review 2026-10-11: runtime AC-0001/2/3 covered by TK-0001..0004; selected-info part of AC-0004 remains OPEN until added TK-0005. Persistence/native remain assigned to US-0011/0012.
+Execution review 2026-10-11: runtime AC-0001/2/3 covered by TK-0001..0004; selected-info part of AC-0004 is covered by added TK-0005. Persistence/native remain assigned to US-0011/0012.
+
+## Story execution review — 2026-10-11
+
+AC-0001: all armed Enemy including undetected NPC, stable internal selection, Friend/Neutral and public ownership guards. AC-0002: configured engine limits and radius, no fuel cost, bounded analytic motion and sweeps. AC-0003: shortest-turn direction with CW tie, retention through phase/fallback, geometric convergence and 3 full orbit band checks. AC-0004: fixed physical boundaries, pause/split equality, real torpedo/PR integration and selected-info. Evidence: Contracts182/182; Motion162/162 plus final14/14; Engine1779/1779; Client1770/1770 before final UI, affected58/58 plus expanded10/10. Builds/format/diff PASS. Self-review complete; current-format persistence and final corpus/native acceptance still assigned downstream.
