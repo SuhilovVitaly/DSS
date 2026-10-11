@@ -225,3 +225,7 @@ US-0009 TK-0003 `bd10a68f565846c57a973c9d4bf07517a970f78c` published/remote veri
 ## EP-0008-US-0010-TK-0002 — 2026-10-11
 
 TK-0001 `63eb4d35c2c3b9ea9f9da56bb55dfdc36a96b406` published/remote verified. Defeat screen/layout implemented with exactly two actions and actual UI scaling; Client1837/1837, final affected12/12, build/format/diffPASS. Next after publication: actual terminal navigation/keyboard/save guards. Native/final corpus OPEN.
+
+## EP-0008-US-0010-TK-0003 — 2026-10-11
+
+TK-0002 `197077f03454d00a063f1b6f228c02da4c9ea316` published/remote verified. Actual window terminal/modal/Load/MainMenu/save/keyboard integration implemented; Client1843/1843, solution build/format/diffPASS. US-0010 self-review complete. Next after publication: US-0011 version16 and strict combat continuation. Native/final corpus OPEN.

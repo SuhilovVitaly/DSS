@@ -6,7 +6,7 @@ title: "Открытие поражения, загрузка и выход че
 stage: draft
 layer: client
 depends_on: ["EP-0008-US-0010-TK-0002-defeat-modal"]
-files_touched: 5
+files_touched: 6
 serves: ["AC-0001","AC-0002","AC-0003"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Открытие поражения, загрузка и выход через реальную оболочку
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED — self-reviewed; publication recorded by the next execution entry
 
 ## Why
 
@@ -39,6 +39,8 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 | `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs:14 (baseline 6907c58) | Только результат и шаги этой карточки |
 | `tests/DeepSpaceSaga.Client.Tests/DefeatNavigationTests.cs` | Новый файл этого тикета | Только результат и шаги этой карточки |
 | `tests/DeepSpaceSaga.Client.Tests/SaveReliabilityTests.cs` | Существует: tests/DeepSpaceSaga.Client.Tests/SaveReliabilityTests.cs:9 (baseline 6907c58) | Только результат и шаги этой карточки |
+
+Execution scope expansion before implementation: add `src/DeepSpaceSaga.Client/UI/KeyboardEdgeTracker.cs` to route Tab/Enter through the real polling path. SkiaWindow also sizes both edge buffers for all reported keys; its previous two-slot release buffer did not match PollBoth semantics. Tests use the actual window event router with native window creation disabled, rather than copying its modal logic.
 
 ## Dependencies
 
@@ -70,10 +72,10 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Terminal_snapshot_opens_one_defeat_screen`
-- [ ] `Cancel_or_failed_load_keeps_defeat`
-- [ ] `Compatible_predeath_load_restores_play`
-- [ ] `Quick_save_never_overwrites_after_defeat`
+- [x] `Terminal_snapshot_opens_one_defeat_screen`
+- [x] `Cancel_or_failed_load_keeps_defeat`
+- [x] `Compatible_predeath_load_restores_play`
+- [x] `Quick_save_never_overwrites_after_defeat`
 
 Команды из корня DSS после реализации:
 
@@ -87,13 +89,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0002, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0002, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `197077f03454d00a063f1b6f228c02da4c9ea316` published/remote verified. SkiaWindow routes terminal snapshots under its existing transition lock, replaces obsolete modal stack once per session, clears pending undock/map reference and saved speed without resuming. Only Load/close-Load/MainMenu remain usable; cancel/failed load retains defeat, successful real-file load creates a new handle/screen with fresh pending/effect state and disposes old connection. Main Menu now awaits disposal. Shell save/quick-save/stale callbacks and GameSessionHandle SaveAsync reject terminal state, while Engine remains final authority. Handle speed projection checks defeat both before and after awaiting transport. GameSessionScreen input rejects stale gameplay while the terminal modal is being installed.
+
+Keyboard polling now includes Tab/Enter; their returned events reach the actual router. Both press/release buffers cover all tracked keys (the previous release array held only2 despite PollBoth reporting every key). Six integration regressions execute real SkiaWindow production methods with only native window creation disabled, using actual Engine/LocalSession/file loading, including all-key simultaneous release, keyboard MainMenu, existing-modal defeat, repeated snapshots, cancelled/missing Load, loaded living state, connection disposal, unchanged quicksave bytes and stale save callbacks. Initial compile missing Motion namespace corrected. Full Client1843/1843 PASS; solution build0warnings/errors, scoped format verify/diffPASS. Own review complete. Native rendering remains OPEN for US-0012; file version rejection/complete hostile continuation follows US-0011.

@@ -7,7 +7,7 @@ dependencies: ["EP-0008-US-0009-authoritative-player-defeat"]
 created: 2026-10-07
 revision: 1
 current_review: complete
-validation_status: planning-only
+validation_status: automated-pass
 ---
 
 # Окно поражения и загрузка живого состояния
@@ -47,3 +47,7 @@ validation_status: planning-only
 Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История draft и не является утверждением о пройденных тестах.
 
 При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Текущая задача только создаёт план.
+
+## Execution review — 2026-10-11
+
+AC-0001: one terminal screen replaces any modal stack; exactly two localized responsive keyboard/mouse actions, no Escape/outside/Resume. AC-0002: actual file-save gate/Engine and Client guards preserve existing bytes and reject queued post-death capture; cancel and missing-file Load keep the terminal session. AC-0003: actual CreateFromSaveFile through the window router replaces handle/screen at Speed0, clears old UI state and disposes old connection; MainMenu awaits disposal. Engine transport17/17, final Client1843/1843, build/format/diffPASS. Own review complete, not independent/user approval. Native visual acceptance OPEN; current-version compatibility and AI continuation are the following story.
