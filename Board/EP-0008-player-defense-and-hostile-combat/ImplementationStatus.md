@@ -221,3 +221,7 @@ TK-0002 `f7b8ecd753e17f5c762ffbea086bb8033becd944` published/remote verified. Te
 ## EP-0008-US-0010-TK-0001 — 2026-10-11
 
 US-0009 TK-0003 `bd10a68f565846c57a973c9d4bf07517a970f78c` published/remote verified. Actual saveGate/filesystem guard and fresh-session recovery verified; affected Engine17/17, build/format/diffPASS. Existing production ordering retained. Next after publication: defeat screen. Native/final corpus OPEN.
+
+## EP-0008-US-0010-TK-0002 — 2026-10-11
+
+TK-0001 `63eb4d35c2c3b9ea9f9da56bb55dfdc36a96b406` published/remote verified. Defeat screen/layout implemented with exactly two actions and actual UI scaling; Client1837/1837, final affected12/12, build/format/diffPASS. Next after publication: actual terminal navigation/keyboard/save guards. Native/final corpus OPEN.
