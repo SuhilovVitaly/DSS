@@ -148,6 +148,7 @@ public sealed class CommandsPanel
     private readonly Action<WeaponPanelInstance, string>? _weaponCommandClicked;
     private readonly Func<WeaponPanelInstance, string?>? _weaponStatus;
     private readonly Func<WeaponPanelInstance, string?>? _weaponOperatorText;
+    private readonly Func<WeaponPanelInstance, IReadOnlyList<string>>? _weaponDetails;
     private float _viewportHeight = float.PositiveInfinity;
     private float _scrollOffset;
     private float _maxScroll;
@@ -231,7 +232,8 @@ public sealed class CommandsPanel
         Func<WeaponPanelInstance, string, bool>? weaponCommandEnabled = null,
         Action<WeaponPanelInstance, string>? weaponCommandClicked = null,
         Func<WeaponPanelInstance, string?>? weaponStatus = null,
-        Func<WeaponPanelInstance, string?>? weaponOperatorText = null)
+        Func<WeaponPanelInstance, string?>? weaponOperatorText = null,
+        Func<WeaponPanelInstance, IReadOnlyList<string>>? weaponDetails = null)
     {
         _isCommandEnabled = isCommandEnabled ?? (_ => true);
         _commandClicked = commandClicked ?? (_ => { });
@@ -242,6 +244,7 @@ public sealed class CommandsPanel
         _weaponCommandClicked = weaponCommandClicked;
         _weaponStatus = weaponStatus;
         _weaponOperatorText = weaponOperatorText;
+        _weaponDetails = weaponDetails;
 
         var typeface = XenonStyle.TypefaceRegular;
 
@@ -517,6 +520,9 @@ public sealed class CommandsPanel
             var safeModules = modules is ImmutableArray<InstalledModuleSnapshot> { IsDefault: true }
                 ? ImmutableArray<InstalledModuleSnapshot>.Empty : modules;
             var panels = BuildPanels(safeModules, ownerObjectId);
+            using var detailPaint = new SKPaint { TextSize = 12f, IsAntialias = true };
+            var details = panels.ToDictionary(p => p.Key, p => WrapDetails(
+                p.Weapon is { } w ? _weaponDetails?.Invoke(w) ?? [] : [], detailPaint), StringComparer.Ordinal);
 
             // Reserve every caption so all five groups remain reachable. Give an
             // explicitly opened group priority, then the installed launcher.
@@ -531,7 +537,8 @@ public sealed class CommandsPanel
                 var definition = panels.First(p => p.Key == name);
                 int rows = (definition.CommandTypeIds.Length + 3) / 4;
                 return BodyPaddingY * 2 + rows * CommandButtonHeight + (rows - 1) * CommandButtonGap +
-                    StatusBarHeight + XenonBodySliceInset + (definition.Weapon is not null || name is "Torpedo Launcher" or "Countermeasure Launcher" ? 32f : 0);
+                    StatusBarHeight + XenonBodySliceInset + (definition.Weapon is not null || name is "Torpedo Launcher" or "Countermeasure Launcher" ? 32f : 0)
+                    + details[name].Length * 16f;
             }
             if (hasLauncher)
             {
@@ -543,7 +550,7 @@ public sealed class CommandsPanel
                 {
                     if (!panels.Any(p => p.Key == name)) continue;
                     if (_panelOpenedByName.TryGetValue(name, out bool requested) && !requested) continue;
-                    if (remaining < BodyHeight(name)) continue;
+                    if (remaining < BodyHeight(name) && name != _preferredOpenedPanel) continue;
                     visibleBodies.Add(name);
                     remaining -= BodyHeight(name);
                 }
@@ -600,7 +607,7 @@ public sealed class CommandsPanel
                 if (opened && panel.Weapon is { } weapon) statusBarText = _weaponStatus?.Invoke(weapon) ?? statusBarText;
 
                 _panelRows.Add(new CommandPanelGeometry(
-                    panel.Name, opened, captionRect, bodyRect, buttons, statusBarRect, statusBarText, panel.Weapon));
+                    panel.Name, opened, captionRect, bodyRect, buttons, statusBarRect, statusBarText, panel.Weapon, details[panel.Key]));
 
                 rowY += opened ? (captionHeight + BodyHeight(panel.Key)) : captionHeight;
                 if (!opened && panelIndex < panels.Length - 1)
@@ -631,6 +638,25 @@ public sealed class CommandsPanel
 
     private bool RowsContain(float x, float y) => _state != CommandsPanelState.Closed && x >= Margin && x <= Margin + PanelWidth &&
         y >= _captionRect.Bottom && y < _viewportHeight;
+
+    private static ImmutableArray<string> WrapDetails(IReadOnlyList<string> source, SKPaint paint)
+    {
+        var lines = ImmutableArray.CreateBuilder<string>();
+        foreach (string line in source)
+        {
+            string remaining = line;
+            while (paint.MeasureText(remaining) > PanelWidth - 20)
+            {
+                int count = Math.Max(1, (int)paint.BreakText(remaining, PanelWidth - 20));
+                int space = remaining.LastIndexOf(' ', count - 1, count);
+                if (space > 0) count = space;
+                lines.Add(remaining[..count].TrimEnd());
+                remaining = remaining[count..].TrimStart();
+            }
+            lines.Add(remaining);
+        }
+        return lines.ToImmutable();
+    }
 
     public bool OnMouseWheel(float x, float y, float delta)
     {
@@ -805,6 +831,15 @@ public sealed class CommandsPanel
                 canvas.Restore();
             }
             DrawPanelStatusBar(canvas, row);
+            if (!row.DetailLines.IsDefaultOrEmpty)
+            {
+                using var paint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 12f, IsAntialias = true };
+                canvas.Save();
+                canvas.ClipRect(new SKRect(row.BodyRect.Left + 8, row.BodyRect.Top + 84, row.BodyRect.Right - 8, row.StatusBarRect.Top));
+                for (int i = 0; i < row.DetailLines.Length; i++)
+                    canvas.DrawText(row.DetailLines[i], row.BodyRect.Left + 10, row.BodyRect.Top + 96 + i * 16, paint);
+                canvas.Restore();
+            }
         }
     }
 
@@ -968,7 +1003,8 @@ public readonly record struct CommandPanelGeometry(
     ImmutableArray<CommandButtonGeometry> Buttons,
     SKRect StatusBarRect,
     string? StatusBarText,
-    WeaponPanelInstance? Weapon = null)
+    WeaponPanelInstance? Weapon = null,
+    ImmutableArray<string> DetailLines = default)
 {
     public string Key => Weapon?.Key ?? Name;
 }

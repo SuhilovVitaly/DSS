@@ -185,3 +185,7 @@ US-0006 TK-0003 `9d6a26ecf0be0e9c84d9831450775f44f9878f96` published/remote veri
 ## EP-0008-US-0007-TK-0002 — 2026-10-11
 
 TK-0001 `5dfef548496649749f274cc884dff0db7e5a51c7` published/remote verified. Real per-module manual/toggle command routing implemented; initial Client1793/1796 fixed obsolete singleton lookup, final affected152/152, build/format/diff PASS. Real paused LocalSession two-launch flow passes100%/150% scale. Next after publication: combat info. Native/final corpus OPEN.
+
+## EP-0008-US-0007-TK-0003 — 2026-10-11
+
+TK-0002 `300a4e561be2fe53513ed558c060a0c7d3aee0b2` published/remote verified. Per-module combat info and selected PR captured facts/physical lifetime implemented; Client1808/1808, build/format/diff PASS. Next after publication: localization. Native/final corpus OPEN.

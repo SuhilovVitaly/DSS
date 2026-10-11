@@ -279,17 +279,22 @@ public sealed class ObjectInfoPanel
     {
         var defense = flight.RatingBreakdown.DefenseOperator;
         var attack = flight.RatingBreakdown.TorpedoOperator;
+        string T(string key, string fallback) => GameSessionScreen.CombatText(key, fallback);
         return [
-            ("Цель", flight.TargetTorpedoId),
-            ("Состояние", flight.Phase == CountermeasurePhase.Guiding ? "Наведение" : "Промах"),
-            ("Шанс", $"{flight.FrozenChanceTenths / 10m:0.0}%"),
-            ("Оператор ПР", defense.DisplayName),
-            ("База / навык", $"{defense.BaseRating:0.##} / {defense.Skill}"),
-            ("Рейтинг ПР", $"{defense.EffectiveRating:0.##}"),
-            ("Торпедист", attack?.DisplayName ?? "Legacy"),
-            ("База / навык", attack is null ? "—" : $"{attack.BaseRating:0.##} / {attack.Skill}"),
-            ("Рейтинг цели", $"{flight.RatingBreakdown.TorpedoRating:0.##}"),
-            ("Формула", "clamp(50 + Rпр − Rт, 0, 100)")
+            (T("LaunchMode", "Режим пуска"), flight.Mode == LaunchMode.Manual ? T("Manual", "Ручной") : T("Auto", "Автоматический")),
+            (T("Owner", "Носитель"), flight.OwnerObjectId),
+            (T("Module", "Аппарат"), flight.LauncherModuleId),
+            (T("Target", "Цель"), flight.TargetTorpedoId),
+            (T("State", "Состояние"), flight.Phase == CountermeasurePhase.Guiding ? T("Guiding", "Наведение") : T("MissedCoast", "Полёт после промаха")),
+            (T("FrozenChance", "Шанс активной ПРО"), $"{flight.FrozenChanceTenths / 10m:0.0}%"),
+            (T("Accuracy", "Точность"), $"{flight.CapturedAccuracy ?? defense.EffectiveRating:0.##}"),
+            (T("Maneuverability", "манёвренность"), $"{flight.CapturedTargetManeuverability ?? flight.RatingBreakdown.TorpedoRating:0.##}"),
+            (T("Formula", "Формула"), T("ChanceFormula", "clamp(точность − манёвренность, 0, 100)")),
+            (T("RemainingFlight", "Осталось полёта"), GameSessionScreen.RemainingFlightText(flight, flight.Route.StartMotionTimeMs + flight.Route.ElapsedMs)),
+            (T("MaxFlight", "Лимит полёта"), flight.MaxFlightTimeMs is { } lifetime ? $"{lifetime / 1000.0:0.0} " + T("Seconds", "с") : "—"),
+            (T("DefenseOperator", "Оператор ПРО"), defense.DisplayName),
+            (T("SkillMetadata", "Навык (справочно)"), defense.Skill.ToString()),
+            (T("TorpedoOperator", "Торпедист"), attack?.DisplayName ?? "—")
         ];
     }
 
@@ -436,7 +441,7 @@ public sealed class ObjectInfoPanel
 
     private List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data, List<(string Label, string Value)> source, float valueOffset)
     {
-        if (data?.HostileCombat is null && data?.MarketKnowledge is null && data?.ClusterName is null && data?.Owner is null && data?.FieldKind is null && data?.PoiDescription is null) return source;
+        if (data?.Countermeasure is null && data?.HostileCombat is null && data?.MarketKnowledge is null && data?.ClusterName is null && data?.Owner is null && data?.FieldKind is null && data?.PoiDescription is null) return source;
         float width = Math.Max(32, _renderPanelWidth - _renderImageWidth - 4 * Padding - valueOffset);
         var result = new List<(string Label, string Value)>();
         foreach (var (label, value) in source)

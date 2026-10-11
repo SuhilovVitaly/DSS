@@ -88,5 +88,39 @@ public sealed partial class GameSessionScreen
         return DefenseModule(weapon)?.Defense is { } defense ? DefenseStatusText(defense, DefensePresentationTime) : null;
     }
 
-    private string? GetDefenseInstanceOperatorText(WeaponPanelInstance weapon) => WeaponOperatorText(DefenseModule(weapon)?.Defense?.Operator);
+    private string? GetDefenseInstanceOperatorText(WeaponPanelInstance weapon) => DefenseModule(weapon)?.Defense?.Operator is { } op
+        ? $"{op.DisplayName} · {CombatText("SkillMetadata", "Навык (справочно)")} {op.Skill}"
+        : CombatText("NoOperator", "Нет оператора");
+
+    internal static string CombatText(string key, string fallback)
+    {
+        string fullKey = "Combat." + key;
+        string value = Localization.Get(fullKey);
+        return value == fullKey ? fallback : value;
+    }
+
+    internal static string RemainingFlightText(CountermeasureSnapshot flight, double time)
+    {
+        double? deadline = flight.ExpiresAtMotionTimeMs;
+        if (flight.Phase == CountermeasurePhase.MissedCoast && flight.MissExpiresAtMotionTimeMs is { } coast)
+            deadline = Math.Min(deadline ?? coast, coast);
+        return deadline is { } end ? $"{Math.Max(0, (end - time) / 1000):0.0} " + CombatText("Seconds", "с") : "—";
+    }
+
+    private IReadOnlyList<string> GetDefenseInstanceDetails(WeaponPanelInstance weapon)
+    {
+        var module = DefenseModule(weapon);
+        var lines = new List<string>();
+        if (module?.DefensePreview is { TargetTorpedoId: { } target, ChanceTenths: { } chance } preview &&
+            target == _selectedObjectId && preview.OwnerObjectId == weapon.OwnerObjectId && preview.ModuleId == weapon.ModuleId)
+            lines.Add($"{CombatText("Accuracy", "Точность")} {preview.Accuracy:0.##} − " +
+                $"{CombatText("Maneuverability", "манёвренность")} {preview.TargetManeuverability:0.##} → {chance / 10m:0.0}%");
+        if (module?.Defense?.ActiveProjectileId is { } id &&
+            _buffer.Latest?.Snapshot.Objects.FirstOrDefault(o => o.ObjectId == id)?.Countermeasure is { } flight)
+        {
+            lines.Add($"{CombatText("FrozenChance", "Шанс активной ПРО")}: {flight.FrozenChanceTenths / 10m:0.0}%");
+            lines.Add($"{CombatText("RemainingFlight", "Осталось полёта")}: {RemainingFlightText(flight, DefensePresentationTime)}");
+        }
+        return lines;
+    }
 }
