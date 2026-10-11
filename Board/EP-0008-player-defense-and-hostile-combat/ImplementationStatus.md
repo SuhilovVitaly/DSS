@@ -245,3 +245,7 @@ TK-0002 `af510f1800b10e4c9376c262cddd75c0c6550eba` published/remote verified. El
 ## EP-0008-US-0011-TK-0004 — 2026-10-11
 
 TK-0003 `c195d6ac4f91cc536e6a0dd2e54739b0bbaca8bd` published/remote verified. Localized recoverable Load/F9 errors and six real-session/file/UI continuation tests implemented. Client1849/1849, Russian16/16, solution build/format/diffPASS. US-0011 self-review complete. Next after publication: US-0012 compatibility fixtures and complete validation. Native/final corpus OPEN.
+
+## EP-0008-US-0012-TK-0001 — 2026-10-11
+
+US-0011 TK-0004 `222e5bb45063c60e5a689ee5e854f2e9c8867ab6` published/remote verified. Five remaining formula/phase fixtures aligned without weakening motion/UI/serializer assertions. Full solution4302/4302 with all Engine corpus (2030/2030), skipped0; final Contracts185/185, Motion170/170 and affected Client3/3, solution build/format/diffPASS. TRX and log at `D:/DeepSpaceSaga/ep8-us12tk1-results` and `D:/DeepSpaceSaga/ep8-us12tk1-solution.log`. Next after publication: full generated-scenario battle acceptance. Native OPEN.

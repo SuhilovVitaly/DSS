@@ -28,8 +28,8 @@ public class CountermeasureGuidanceTests
     public void Prediction_is_partition_invariant()
     {
         var route = new TorpedoRoute(0, 1, TorpedoRoutePhase.Turning, true, [new(0, 0, 0, 12, 90, 1000)]);
-        var op = new WeaponOperatorSnapshot("c", "Crew", WeaponSkillType.CountermeasureDefense, 50, 30, 30);
-        var state = new ObjectMotionSnapshot("pr", 0, 0, 0, 12, Countermeasure: new("ship", "module", "torpedo", CountermeasurePhase.Guiding, route, 0, 500, new(op, 30)));
+        var op = new WeaponOperatorSnapshot("c", "Crew", WeaponSkillType.CountermeasureDefense, 50, 55, 55);
+        var state = new ObjectMotionSnapshot("pr", 0, 0, 0, 12, Countermeasure: new("ship", "module", "torpedo", CountermeasurePhase.Guiding, route, 0, 500, new(op, 5)));
         var predictor = new LinearMotionPredictor();
         var a = predictor.Predict(state, 1500);
         var b = predictor.Predict(predictor.Predict(state, 600), 900);
