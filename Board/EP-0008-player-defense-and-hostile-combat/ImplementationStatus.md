@@ -117,3 +117,7 @@ Previous TK-0005 published as `70ddbc40b20d3209ccfc56b5481997f5677d08dc`; live S
 ## EP-0008-US-0002-TK-0002 — 2026-10-11
 
 TK-0001 `42425af97885d10763d39eb3ef469e55d407316c` published and remote verified. TK-0002 production behavior confirmed by new tests: focused17/17, non-corpus Engine1731/1731, build/format/diff PASS. US-0002 self-review complete; native/final corpus OPEN. Next after publication: US-0003 shared-launch validation.
+
+## EP-0008-US-0003-TK-0001 — 2026-10-11
+
+Previous TK-0002 `ec24573d5ae1b7aa5d6e937f19e7f7cbdc33de5e` published/remote verified. Shared validated launch and range implemented, public ownership retained, no AI player receipts. Engine1750/1750 PASS; Client full1761/1762 followed by final affected14/14 PASS after correcting selection fixture. Build/format/diff PASS. Initial fixture failures and exact scopes documented in ticket. Native/final corpus OPEN. Next after publication: hostile-fire scheduler.

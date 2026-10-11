@@ -11,7 +11,7 @@ public class CountermeasureEndToEndTests
     [InlineData(42UL, CombatEventType.Miss, 801)]
     public void Real_scenario_success_and_miss(ulong seed, CombatEventType expected, int roll)
     {
-        var source = CountermeasureBootstrapTests.RealScenario();
+        var source = WithinLaunchRange(CountermeasureBootstrapTests.RealScenario());
         using var engine = Create(source with { GameState = source.GameState with { MasterSeed = seed } });
         engine.ReceiveCommand(Fire("real-fire")); At(engine, 0);
         AuthoritativeSnapshot snapshot = At(engine, 1);
@@ -36,7 +36,7 @@ public class CountermeasureEndToEndTests
     }
     private static CountermeasureStateData Run(bool reload)
     {
-        var source = CountermeasureBootstrapTests.RealScenario();
+        var source = WithinLaunchRange(CountermeasureBootstrapTests.RealScenario());
         var engine = Create(source with { GameState = source.GameState with { MasterSeed = 42 } });
         try
         {

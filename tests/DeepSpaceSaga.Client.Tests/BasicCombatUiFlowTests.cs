@@ -97,7 +97,8 @@ public sealed class BasicCombatUiFlowTests
         var original = Assert.Single(launched.Objects, o => o.Torpedo is not null);
         f.Screen.OnKeyDown(Key.Right);
         await f.Wait(s => s.Objects.Single(o => o.ObjectId == Fixture.Player).ActiveEngineCommandType == ShipEngineCommandTypes.TurnRightStep);
-        var mid = await f.AdvanceTo(launched.MotionTimeMs + 30000);
+        // Inspect while the projectile is still visually separated from the now closer target.
+        var mid = await f.AdvanceTo(launched.MotionTimeMs + 10000);
         Assert.NotEqual(launched.Objects.Single(o => o.ObjectId == Fixture.Player).Direction,
             mid.Objects.Single(o => o.ObjectId == Fixture.Player).Direction);
         f.Select(Fixture.Player);
@@ -155,7 +156,7 @@ public sealed class BasicCombatUiFlowTests
             (_width, _height, _scale) = (width, height, scale);
             Directory.CreateDirectory(DirectoryPath);
             var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Settings, out _, out _);
-            var source = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json"));
+            var source = CombatSessionFixture.WithinLaunchRange(ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json")));
             var engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
             engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = 42 } });
             Handle = new GameSessionHandle(new LocalGameSessionConnection(engine, DirectoryPath));
@@ -192,7 +193,9 @@ public sealed class BasicCombatUiFlowTests
             }
             Screen.OnKeyDown(Key.End);
             // Frame through ordinary camera input, never select an offscreen coordinate.
-            while (Screen.CameraPixelsPerWorldUnit > .1) Screen.OnKeyDown(Key.Minus);
+            double framingScale = Screen.RenderStates.Single(o => o.Source.ObjectId == id).Source.Torpedo is null ? .1 : .5;
+            while (Screen.CameraPixelsPerWorldUnit > framingScale) Screen.OnKeyDown(Key.Minus);
+            while (Screen.CameraPixelsPerWorldUnit < framingScale * .8) Screen.OnKeyDown(Key.Equal);
             Render();
             SKPoint Position(string objectId)
             {

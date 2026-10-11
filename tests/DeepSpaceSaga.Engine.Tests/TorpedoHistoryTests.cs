@@ -94,7 +94,8 @@ public sealed class TorpedoHistoryTests
     [Fact]
     public void Long_straight_flight_does_not_add_per_tick_samples()
     {
-        using var engine = Create(TorpedoImpactTests.Scenario(o => o.ObjectId == Target ? o with { PositionY = -100000 } : o));
+        using var engine = Create(TorpedoImpactTests.Scenario(o => o.ObjectId == Target
+            ? o with { PositionY = -1000, SpeedMps = 4000, MovementType = "Linear" } : o));
         engine.ReceiveCommand(Fire("long"));
         At(engine, 0);
         for (long time = 37; time < 60000; time += 137) At(engine, time);

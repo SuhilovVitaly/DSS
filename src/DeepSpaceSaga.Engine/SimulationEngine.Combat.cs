@@ -20,28 +20,39 @@ public sealed partial class SimulationEngine
 
     private CommandStartOutcome TryStartTorpedoFire(PlayerCommand command, long motionTimeMs)
     {
-        // Launch identities outlive the bounded general command receipt journal.
+        var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.ObjectId &&
+            o.InitialMotion.ObjectId == PlayerShipObjectId && o.ObjectType == SpaceObjectType.PlayerShip && !o.IsDestroyed);
+        if (owner is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
+        // Player receipts are never synthesized by the internal hostile actor.
         if (_processedLaunchCommandIds.Contains(command.CommandId))
         {
             RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
             return CommandStartOutcome.Started;
         }
-        var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.ObjectId &&
-            o.InitialMotion.ObjectId == PlayerShipObjectId && o.ObjectType == SpaceObjectType.PlayerShip && !o.IsDestroyed);
-        if (owner is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
-        int index = FindModuleIndex(owner.Modules, command.ModuleId);
+        var outcome = TryLaunchTorpedo(owner, command.ModuleId, command.TargetObjectId, motionTimeMs);
+        if (outcome.Disposition == CommandStartDisposition.Started)
+        {
+            _processedLaunchCommandIds.Add(command.CommandId);
+            RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
+        }
+        return outcome;
+    }
+
+    private CommandStartOutcome TryLaunchTorpedo(SpaceObjectRuntime owner, string moduleId, string? targetObjectId, long motionTimeMs)
+    {
+        int index = FindModuleIndex(owner.Modules, moduleId);
         if (index < 0) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
         var module = owner.Modules[index];
-        var key = (command.ObjectId, command.ModuleId);
+        var key = (owner.InitialMotion.ObjectId, moduleId);
         if (!_launcherCombat.TryGetValue(key, out var launcher) ||
             !_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CommandTypeIds.Contains(CombatCommandTypes.Fire))
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
         if (!CanExecuteModuleCommand(module)) return CommandStartOutcome.Rejected(CommandReasonCodes.ModuleUnavailable);
         if (launcher.ActiveTorpedoObjectId is not null || module.ActiveCycle is not null)
             return CommandStartOutcome.Rejected(CommandReasonCodes.Busy);
-        if (string.IsNullOrWhiteSpace(command.TargetObjectId)) return CommandStartOutcome.Rejected(CommandReasonCodes.MissingTarget);
-        var target = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.TargetObjectId && !o.IsDestroyed);
-        if (target is null || target.ObjectType == SpaceObjectType.Countermeasure || command.TargetObjectId == command.ObjectId)
+        if (string.IsNullOrWhiteSpace(targetObjectId)) return CommandStartOutcome.Rejected(CommandReasonCodes.MissingTarget);
+        var target = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == targetObjectId && !o.IsDestroyed);
+        if (target is null || target.ObjectType == SpaceObjectType.Countermeasure || targetObjectId == owner.InitialMotion.ObjectId)
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownTarget);
 
         var weaponOperator = ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack);
@@ -49,6 +60,13 @@ public sealed partial class SimulationEngine
 
         var origin = PredictMotion(owner, motionTimeMs - owner.StartGameTimeMs);
         var targetPose = PredictMotion(target, motionTimeMs - target.StartGameTimeMs);
+        double dx = Math.Abs(targetPose.X / WorldUnitsPerKm - origin.X / WorldUnitsPerKm);
+        double dy = Math.Abs(targetPose.Y / WorldUnitsPerKm - origin.Y / WorldUnitsPerKm);
+        double longest = Math.Max(dx, dy);
+        double ratio = longest == 0 ? 0 : Math.Min(dx, dy) / longest;
+        double distanceKm = longest * Math.Sqrt(1 + ratio * ratio);
+        if (!double.IsFinite(distanceKm) || distanceKm > launcher.RangeKm!.Value)
+            return CommandStartOutcome.Rejected("target_out_of_range");
         var route = TorpedoGuidanceMath.Plan(origin, targetPose, launcher.SpeedKmS, launcher.TurnRateDegPerSec, motionTimeMs);
         long sequence = _torpedoSequence;
         string id;
@@ -57,7 +75,7 @@ public sealed partial class SimulationEngine
             if (sequence == long.MaxValue) return CommandStartOutcome.Rejected("projectile_id_exhausted");
             id = "torpedo-" + (++sequence).ToString(System.Globalization.CultureInfo.InvariantCulture);
         } while (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, id, StringComparison.OrdinalIgnoreCase)));
-        var flight = new TorpedoSnapshot(command.ObjectId, command.ModuleId, command.TargetObjectId!, motionTimeMs,
+        var flight = new TorpedoSnapshot(owner.InitialMotion.ObjectId, moduleId, targetObjectId!, motionTimeMs,
             launcher.SpeedKmS, launcher.TurnRateDegPerSec, launcher.Damage, 0, route, [], ImpactTime(route),
             TorpedoRating: weaponOperator.EffectiveRating, RatingBreakdown: weaponOperator,
             CapturedManeuverability: weaponOperator.EffectiveRating,
@@ -67,11 +85,9 @@ public sealed partial class SimulationEngine
         _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = id, Operator = weaponOperator };
         _torpedoTargets[id] = (targetPose, motionTimeMs);
         _torpedoSequence = sequence;
-        _processedLaunchCommandIds.Add(command.CommandId);
-        AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Launch, command.ObjectId, command.TargetObjectId!, id,
+        AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Launch, owner.InitialMotion.ObjectId, targetObjectId!, id,
             origin.X, origin.Y, TorpedoOperator: weaponOperator, Result: "torpedo"));
         _nextCombatGuidanceMs = Math.Min(_nextCombatGuidanceMs, NextGuidanceBoundary(motionTimeMs));
-        RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
         return CommandStartOutcome.Started;
     }
 

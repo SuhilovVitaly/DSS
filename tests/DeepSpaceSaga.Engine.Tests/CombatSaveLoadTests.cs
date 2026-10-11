@@ -9,6 +9,25 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class CombatSaveLoadTests : IDisposable
 {
+    private static void MovePlayerWithinRange(SimulationEngine engine, string targetId)
+    {
+        var save = engine.CaptureSaveState();
+        var target = save.GameState.SpaceObjects.Single(o => o.ObjectId == targetId);
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId == Player ? o with
+                {
+                    PositionX = target.PositionX,
+                    PositionY = target.PositionY + 1500,
+                    SpeedMps = 0,
+                    MovementType = "Stationary"
+                } : o).ToArray()
+            }
+        }, isSave: true);
+    }
+
     [Fact]
     public void Case_variant_existing_id_does_not_break_save_reload()
     {
@@ -91,7 +110,7 @@ public sealed class CombatSaveLoadTests : IDisposable
     }
     private static ScenarioFile RealScenario()
     {
-        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
+        var scenario = WithinLaunchRange(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
         return scenario with { GameState = scenario.GameState with { MasterSeed = 42 } };
     }
     private static ObjectMotionSnapshot Flight(AuthoritativeSnapshot snapshot) => Assert.Single(snapshot.Objects.Where(o => o.Torpedo is not null));
@@ -138,6 +157,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         string settingsPath = Path.Combine(_directory, "Settings.json");
         File.WriteAllText(settingsPath, settings.ToJsonString());
         using var engine = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
+        MovePlayerWithinRange(engine, Target);
         engine.ReceiveCommand(Fire("fractional-speed"));
         At(engine, 0);
         var save = engine.CaptureSaveStateForTests(1234, SimulationSpeed.Speed0);
@@ -344,6 +364,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         using var engine = EngineContentLoader.CreateEngineFromSettingsFile(Settings);
         var initial = engine.CaptureSaveState();
         var target = initial.GameState.SpaceObjects.Last(o => o.ObjectType == SpaceObjectType.Station);
+        MovePlayerWithinRange(engine, target.ObjectId);
         engine.ReceiveCommand(Fire("rng-continuation", target.ObjectId));
         At(engine, 0);
         var save = engine.CaptureSaveStateForTests(1234, SimulationSpeed.Speed0);

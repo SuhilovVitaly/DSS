@@ -49,6 +49,22 @@ public sealed class TorpedoImpactTests
         }
     };
 
+    internal static ScenarioFile WithinLaunchRange(ScenarioFile scenario)
+    {
+        var player = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == Player);
+        return scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? o with
+                {
+                    PositionX = player.PositionX + (o.PositionX - player.PositionX) * 0.1,
+                    PositionY = player.PositionY + (o.PositionY - player.PositionY) * 0.1
+                } : o).ToArray()
+            }
+        };
+    }
+
     [Fact]
     public void Legacy_fixtures_explicitly_disable_defense()
     {
@@ -242,7 +258,7 @@ public sealed class TorpedoImpactTests
     [Fact]
     public void Real_pirate_scenario_contact_closes_arc_and_straight_history()
     {
-        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
+        var scenario = WithinLaunchRange(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
         using var engine = Create(WithoutDefense(scenario));
         engine.ReceiveCommand(Fire("real-flight"));
         var launched = At(engine, 0);
