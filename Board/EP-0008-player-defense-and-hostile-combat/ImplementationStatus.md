@@ -237,3 +237,7 @@ US-0010 TK-0003 `332f0c788ee2767df472e2c440f918c7a259fe49` published/remote veri
 ## EP-0008-US-0011-TK-0002 — 2026-10-11
 
 TK-0001 `857a251ccd05239fb2fd9c6f0769ef7df1bf662d` published/remote verified. Strict defense/hostile capture-validation and staged restore implemented; initial Engine1884/1903 and1902/1903 regressions repaired, final affected202/202; full Client1843/1843, solution build/format/diffPASS. Next after publication: real-file multi-phase continuation. Native/final corpus OPEN.
+
+## EP-0008-US-0011-TK-0003 — 2026-10-11
+
+TK-0002 `af510f1800b10e4c9376c262cddd75c0c6550eba` published/remote verified. Eleven actual-file continuation cases implemented; initial Engine1915/1916 corrected new fractional-contact test assumption, final affected254/254 PASS; build/format/diffPASS. Production atomic restore already delivered with prerequisite schema. Next after publication: localized recoverable Load errors and client roundtrip. Native/final corpus OPEN.

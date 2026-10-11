@@ -70,10 +70,10 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Two_launchers_resume_with_distinct_deadlines`
-- [ ] `Reload_does_not_reset_automatic_attempt`
-- [ ] `Orbit_handedness_and_rng_continue_exactly`
-- [ ] `Saved_geography_and_voyage_finance_are_preserved`
+- [x] `Two_launchers_resume_with_distinct_deadlines`
+- [x] `Reload_does_not_reset_automatic_attempt`
+- [x] `Orbit_handedness_and_rng_continue_exactly`
+- [x] `Saved_geography_and_voyage_finance_are_preserved`
 
 Команды из корня DSS после реализации:
 
@@ -87,13 +87,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Capture/atomic hostile restore shipped together in prerequisite TK-0002 to avoid an invalid intermediate writer. This ticket adds 11 real-file continuation cases through strict current-version loader and fresh Engine: pursuit/orbit at middle and exact controller boundary; both manual launchers in Guiding/MissedCoast/Reloading with distinct TTL/reload deadlines; durable command identity; automatic attempt retention; exact named RNG/journal/whole-save equality; A07 next-shot floor(last termination)+1 boundary; registry-stage invalid engine rejection without world replacement; generated geography and active voyage finance preservation. Existing defeat tests prove live Load clears terminal state. No unnecessary production rewrite.
+
+Validation: initial9 cases8/9 corrected test fixture (automatic defense requires positive chance). Full Engine1915/1916 exposed only a new test's hard-coded integer contact assumption; replaced it with the contractual floor(actual precise hit)+1 assertion. Final affected254/254 PASS, including all11 new cases; scoped format verification, build and diff PASS. Self-review against AC-0002/0003/0004 complete. Native acceptance/final corpus OPEN. Separate commit/push; remote SHA recorded by next ticket.
