@@ -120,7 +120,7 @@ public sealed partial class SimulationEngine
         _countermeasureSequence = sequence;
         _countermeasureTargetPlans[id] = torpedo.Route.StartMotionTimeMs;
         AppendCombatEvent(new(0, launch.Time, CombatEventType.Launch, flight.OwnerObjectId, flight.TargetTorpedoId, id,
-            origin.X, origin.Y, flight.FrozenChanceTenths, RatingBreakdown: flight.RatingBreakdown, Result: "countermeasure",
+            origin.X, origin.Y, flight.FrozenChanceTenths, RatingBreakdown: flight.RatingBreakdown, Damage: 0, Result: "countermeasure",
             LauncherModuleId: flight.LauncherModuleId, LaunchMode: mode, Accuracy: flight.CapturedAccuracy,
             TargetManeuverability: flight.CapturedTargetManeuverability));
         var key = (flight.OwnerObjectId, flight.LauncherModuleId);

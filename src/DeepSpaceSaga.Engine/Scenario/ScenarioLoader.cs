@@ -125,8 +125,10 @@ public static class ScenarioLoader
             SpaceObjects = objects
         };
         normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
+        normalizedState = CombatSaveValidation.NormalizeReferences(normalizedState);
         normalizedState = CountermeasureSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
         CombatSaveValidation.Validate(normalizedState, scenario.SaveFormatVersion);
+        normalizedState = HostileCombatSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
         return TradingEconomySaveMigration.Normalize(scenario with { GameState = normalizedState });
     }
 

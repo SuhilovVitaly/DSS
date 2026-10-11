@@ -68,7 +68,10 @@ public class WeaponOperatorRuntimeTests
         Assert.Equal(30m, flight.TorpedoRating);
         Assert.True(flight.RatingMigratedFromLegacySave);
         Assert.Null(flight.RatingBreakdown);
-        using var twice = Create(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(restored.CaptureSaveState()), true));
+        var migrated = restored.CaptureSaveState();
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(migrated), true, isSave: true));
+        // Historical internal fixture still exercises migration; it cannot become a current save.
+        using var twice = Create(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(migrated with { SaveFormatVersion = 15 }), true));
         Assert.True(Assert.Single(At(twice, 0).Objects, o => o.Torpedo is not null).Torpedo!.RatingMigratedFromLegacySave);
         Assert.Equal(Target, Assert.Single(At(twice, 5000).CombatImpacts).HitObjectId);
         twice.ReceiveCommand(Fire("new-launch"));

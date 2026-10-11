@@ -233,3 +233,7 @@ TK-0002 `197077f03454d00a063f1b6f228c02da4c9ea316` published/remote verified. Ac
 ## EP-0008-US-0011-TK-0001 — 2026-10-11
 
 US-0010 TK-0003 `332f0c788ee2767df472e2c440f918c7a259fe49` published/remote verified. Version16/current-only real save gate and hostile payload DTO introduced; initial Engine1845/1871 obsolete version expectations repaired, final affected233/233; full Client1843/1843, build/format/diffPASS. Next after publication: strict combat/hostile payload validation. Native/final corpus OPEN.
+
+## EP-0008-US-0011-TK-0002 — 2026-10-11
+
+TK-0001 `857a251ccd05239fb2fd9c6f0769ef7df1bf662d` published/remote verified. Strict defense/hostile capture-validation and staged restore implemented; initial Engine1884/1903 and1902/1903 regressions repaired, final affected202/202; full Client1843/1843, solution build/format/diffPASS. Next after publication: real-file multi-phase continuation. Native/final corpus OPEN.

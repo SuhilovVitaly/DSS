@@ -424,6 +424,7 @@ public sealed partial class SimulationEngine : IDisposable
         var restoredKnowledge = InitializeOrLoadMarketKnowledge(gs, runtimeObjects, scenario.SaveFormatVersion, loadingSave);
         var combatState = BuildCombatState(gs.SpaceObjects, runtimeObjects);
         StageCombatRestore(gs.CombatState, runtimeObjects, combatState.Launchers);
+        StageHostileRestore(gs.HostileCombatState, runtimeObjects);
         StageLegacyWeaponRatings(runtimeObjects);
         var defenses = BuildDefenseState(runtimeObjects);
         StageDefenseRestore(gs.DefenseState, runtimeObjects, defenses);
@@ -474,7 +475,9 @@ public sealed partial class SimulationEngine : IDisposable
             _countermeasureRng = new(resolvedMasterSeed);
             _combatProcessedTimeMs = gs.MotionTimeMs;
             _hostileCombat.Clear();
-            _nextHostileDecisionMs = gs.MotionTimeMs;
+            if (gs.HostileCombatState is { } hostile)
+                foreach (var row in hostile.Actors) _hostileCombat.Add(row.ObjectId, row.State);
+            _nextHostileDecisionMs = gs.HostileCombatState?.NextDecisionMotionTimeMs ?? gs.MotionTimeMs;
             _torpedoSequence = 0;
             _combatImpactSequence = 0;
             _wreckSequence = 0;
@@ -1138,6 +1141,7 @@ public sealed partial class SimulationEngine : IDisposable
             StationResourceFields: _stationResourceFields,
             VoyageState: _voyageState,
             CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState(), SolarSystem: _solarSystem,
+            HostileCombatState: CaptureHostileState(gameTimeMs),
             MarketEventCatalogFingerprint: _registry.StationMarketEvents.Count > 0 ? _registry.StationMarketEventCatalogFingerprint : null,
             LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
             MarketKnowledge: CaptureMarketKnowledge(clockState.GameTimeMs),
