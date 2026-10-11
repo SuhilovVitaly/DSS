@@ -149,3 +149,7 @@ TK-0003 `6658a78c7f28c286f919740ec21b03056d064939` published/remote verified. Sw
 ## EP-0008-US-0004-TK-0005 — 2026-10-11
 
 TK-0004 `56f5b53c1425e0fc603ad2d2e2a19dd8aea627dc` published/remote verified. Missing selected-info delivered; affected Client58/58, expanded10/10, build/format/diff PASS. US-0004 automated implementation and self-review complete. Next after publication: US-0005 manual countermeasure guidance. Native/final corpus/current-format hostile persistence OPEN.
+
+## EP-0008-US-0005-TK-0001 — 2026-10-11
+
+US-0004 TK-0005 `9548761b9084755ccefc8f791edf762ac61190e9` published/remote verified. Manual geometry and bounded no-solution pursuit implemented; full Motion170/170, build/format/diff PASS. Next after publication: manual Engine command. Native/final corpus OPEN.

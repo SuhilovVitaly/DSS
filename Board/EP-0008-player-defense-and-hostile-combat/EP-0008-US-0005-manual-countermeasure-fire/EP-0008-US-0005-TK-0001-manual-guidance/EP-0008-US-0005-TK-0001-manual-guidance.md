@@ -3,7 +3,7 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0005-manual-countermeasure-fire
 ticket: EP-0008-US-0005-TK-0001-manual-guidance
 title: "План и преследование без гарантированной встречи"
-stage: draft
+stage: implemented
 layer: motion
 depends_on: ["EP-0008-US-0004-TK-0005-hostile-selected-info"]
 files_touched: 2
@@ -14,7 +14,7 @@ revision: 1
 
 # План и преследование без гарантированной встречи
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED / AUTOMATED PASS
 
 ## Why
 
@@ -67,9 +67,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Manual_unreachable_target_still_has_flight`
-- [ ] `Manual_horizon_uses_captured_lifetime`
-- [ ] `Auto_requires_contact_before_hull`
+- [x] `Manual_unreachable_target_still_has_flight`
+- [x] `Manual_horizon_uses_captured_lifetime`
+- [x] `Auto_requires_contact_before_hull`
 
 Команды из корня DSS после реализации:
 
@@ -83,13 +83,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `9548761b9084755ccefc8f791edf762ac61190e9` published/remote verified. Manual planning uses full curved target path and captured remaining lifetime, returns actual first-contact estimate or bounded 100ms pursuit with null ETA/HasIntercept=false. Known earlier obstacle contact suppresses forecast. Auto planning retains strict pre-hull contact and accepts independent expiry deadline. No Engine behavior is mocked as complete.
+
+Full Motion **170/170 PASS** (`ep8-us5-tk1-motion.trx`) covers unreachable flight, remaining lifetime, curved first contact, obstacle suppression and short remaining segment. Motion build 0 warnings/errors; scoped format verify/diff PASS. Self-review complete; runtime command and persistence downstream, native/final corpus OPEN.
