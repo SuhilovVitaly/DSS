@@ -356,7 +356,8 @@ public sealed partial class GameSessionScreen : IScreen
         _mechanicsBtnHoverPaint = new SKPaint { Color = new SKColor(55, 55, 55), Style = SKPaintStyle.Fill };
         _mechanicsBtnTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 13f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
-        _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel, GetLauncherStatus, GetDefenseStatus, GetWeaponOperatorText);
+        _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel, GetLauncherStatus, GetDefenseStatus, GetWeaponOperatorText,
+            IsDefenseCommandEnabled, SendDefenseCommand, GetDefenseInstanceStatus, GetDefenseInstanceOperatorText);
         _objectInfoPanel = new ObjectInfoPanel();
     }
 
@@ -591,6 +592,7 @@ public sealed partial class GameSessionScreen : IScreen
     {
         if (_combatJournalPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_objectInfoPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
+        if (_commandsPanel.OnMouseWheel(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (!float.IsFinite(delta) || delta == 0 || _viewportW <= 0 || _viewportH <= 0 ||
             IsClickOnUiPanel(x / _uiScale, y / _uiScale))
             return ScreenEvent.None;
@@ -1318,7 +1320,8 @@ public sealed partial class GameSessionScreen : IScreen
         float commandsBottom = _panelVisible && _lastPanelRect.Left < CommandsPanel.PanelWidth + PanelMargin
             ? _lastPanelRect.Top - PanelMargin : _uiViewportH;
         _commandsPanel.Render(canvas,
-            buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty, commandsBottom);
+            buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty, commandsBottom,
+            buffered?.Snapshot.PlayerShipObjectId);
         CompleteRenderStage("command_panel");
 
         _combatJournalPanel.Render(canvas, _uiViewportW, _uiViewportH, buffered?.Snapshot.CombatJournal ?? default);

@@ -181,3 +181,7 @@ TK-0002 `e606480fbc22f726b65f102746cb08186a012388` published/remote verified. Jo
 ## EP-0008-US-0007-TK-0001 — 2026-10-11
 
 US-0006 TK-0003 `9d6a26ecf0be0e9c84d9831450775f44f9878f96` published/remote verified. Instance-panel API/layout implemented; Client1786/1786, final affected125/125, build/format/diff PASS. Actual screen owner/callback wiring is next TK-0002. Native/final corpus OPEN.
+
+## EP-0008-US-0007-TK-0002 — 2026-10-11
+
+TK-0001 `5dfef548496649749f274cc884dff0db7e5a51c7` published/remote verified. Real per-module manual/toggle command routing implemented; initial Client1793/1796 fixed obsolete singleton lookup, final affected152/152, build/format/diff PASS. Real paused LocalSession two-launch flow passes100%/150% scale. Next after publication: combat info. Native/final corpus OPEN.
