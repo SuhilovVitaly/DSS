@@ -3,7 +3,7 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0001-module-owned-weapon-rules
 ticket: EP-0008-US-0001-TK-0004-weapon-catalog
 title: "Базовые установки 55/5 и их дальности"
-stage: draft
+stage: implemented
 layer: content-data
 depends_on: ["EP-0008-US-0001-TK-0003-weapon-content-schema"]
 files_touched: 4
@@ -14,7 +14,7 @@ revision: 1
 
 # Базовые установки 55/5 и их дальности
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED
 
 ## Why
 
@@ -69,8 +69,8 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Basic_weapon_values_load_from_real_catalog`
-- [ ] `Shared_module_has_same_values_for_both_sides`
+- [x] `Basic_weapon_values_load_from_real_catalog`
+- [x] `Shared_module_has_same_values_for_both_sides`
 
 Команды из корня DSS после реализации:
 
@@ -84,13 +84,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0002 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0002 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency TK-0003 `f5285d87466a08bf369d706badda98b0de4ea757` pushed and remote SHA verified. Its strict-ingress prerequisite already added the agreed JSON fields. This ticket adds independent source/build-output catalog checks and verifies both real PlayerShipOnly owners resolve the shared module values: accuracy55, maneuverability5, torpedo/manual range200, auto range100, lifetime60000, speed3/12, turn90, damage150 and reload10000.
+
+`dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore --logger 'trx;LogFileName=ep8-tk4-client.trx'`: **1761/1761 PASS**. Client build PASS (zero warnings/errors), scoped whitespace verification of both changed tests PASS, `git diff --check` PASS. An initial xUnit analyzer error in the new assertion was fixed using Assert.Single's predicate overload before the final run. Self-review found no remaining catalog issue; no claim of runtime chance/range enforcement (TK-0005 / US-0003). Native NOT RUN, no presentation change. Publication verified after commit, not prefilled.

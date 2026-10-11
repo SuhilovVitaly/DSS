@@ -91,3 +91,9 @@ Schema and strict validation implemented; see the ticket for exact scope. Focuse
 Preparation/evidence correction `db78b314a7cc25dc77a17411a676253c95674881` pushed and live remote SHA verified. TK-0003 SHA is resolved after commit; proceed to TK-0004 only after successful push and remote verification.
 
 Continuation reused the prior complete documentation/Board reading at preparation `198d20a` and reviewed the 34 changed/new Markdown documents since then; the current Documentation inventory is 78 Markdown files. New evidence is separated from the historical tests above. Graphify query of ModuleTypeDefinition/CountermeasureContentLoaderTests confirmed registry and loader navigation; the 1200-token graph traversal was truncated and used only to locate primary files, which were inspected directly.
+
+## EP-0008-US-0001-TK-0004 — 2026-10-11
+
+Catalog source/output and shared-owner checks implemented. Full Client **1761/1761 PASS**, Client build (0 warnings/errors), scoped formatting and diff checks PASS. The JSON fields were necessarily delivered with strict schema TK-0003; this ticket separately validates real shipped catalog behavior.
+
+TK-0003: `f5285d87466a08bf369d706badda98b0de4ea757`, push verified on origin/base-fight. Next after TK-0004 publication: TK-0005 chance resolution. Native and final map corpus gates remain open.
