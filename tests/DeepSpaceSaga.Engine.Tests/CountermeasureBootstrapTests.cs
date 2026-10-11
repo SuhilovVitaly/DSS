@@ -21,7 +21,8 @@ public class CountermeasureBootstrapTests
             Assert.Equal(100, o.Defense.RangeKm);
         });
         Assert.Equal(snapshot.Objects.Single(o => o.ObjectId == Player).Defense,
-            Assert.Single(snapshot.InstalledModules, m => m.Defense is not null).Defense);
+            Assert.Single(snapshot.InstalledModules, m => m.ModuleId == "MOD-PLAYER-COUNTERMEASURE-01").Defense);
+        Assert.Equal(2, snapshot.InstalledModules.Count(m => m.Defense is not null));
     }
 
     [Fact]

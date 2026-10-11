@@ -562,7 +562,7 @@ public class ScenarioEngineTests
 
         int passiveTypes = Enumerable.Range(0, registry.ModuleTypes.Count)
             .Count(i => registry.ModuleTypes.GetDefinition(i).CommandTypeIds.Length == 0);
-        Assert.Equal(5, passiveTypes); // includes living.quarters.mk1 (requirements §57); container moved to active (story-20260822-193700, Batch 3)
+        Assert.Equal(6, passiveTypes); // Includes the separate two- and three-cabin living variants.
     }
 
     [Theory]

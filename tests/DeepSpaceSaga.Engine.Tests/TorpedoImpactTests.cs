@@ -55,9 +55,13 @@ public sealed class TorpedoImpactTests
         var scenario = Scenario();
         foreach (var ship in scenario.GameState.SpaceObjects)
         {
-            var defense = Assert.Single(ship.Modules!, m => m.ModuleTypeId == "module.countermeasure.launcher.basic");
-            Assert.False(defense.AutoDefenseEnabled);
-            Assert.Contains(ship.Crew!, c => c.CrewId == defense.OperatorCrewId);
+            var defenses = ship.Modules!.Where(m => m.ModuleTypeId == "module.countermeasure.launcher.basic").ToArray();
+            Assert.Equal(ship.ObjectType == SpaceObjectType.PlayerShip ? 2 : 1, defenses.Length);
+            Assert.All(defenses, defense =>
+            {
+                Assert.False(defense.AutoDefenseEnabled);
+                Assert.Contains(ship.Crew!, c => c.CrewId == defense.OperatorCrewId);
+            });
         }
     }
 

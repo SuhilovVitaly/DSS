@@ -61,9 +61,11 @@ public class CountermeasureContentTests
         var registry = Registry(output);
         foreach (var ship in ships)
         {
-            var defense = Assert.Single(ship.Modules!, m => m.ModuleTypeId == "module.countermeasure.launcher.basic");
+            var defenses = ship.Modules!.Where(m => m.ModuleTypeId == "module.countermeasure.launcher.basic").ToArray();
+            Assert.Equal(ship.ObjectType == "PlayerShip" ? 2 : 1, defenses.Length);
             var launcher = Assert.Single(ship.Modules!, m => m.ModuleTypeId == "module.torpedo.launcher.basic");
-            var defenseType = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(defense.ModuleTypeId));
+            var defenseType = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(defenses[0].ModuleTypeId));
+            Assert.All(defenses, m => Assert.Equal(defenses[0].ModuleTypeId, m.ModuleTypeId));
             var launcherType = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(launcher.ModuleTypeId));
             Assert.Equal(55m, defenseType.CountermeasureAccuracy);
             Assert.Equal(5m, launcherType.TorpedoManeuverability);

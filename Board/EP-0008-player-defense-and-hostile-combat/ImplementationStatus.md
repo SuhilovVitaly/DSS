@@ -109,3 +109,7 @@ US-0001 self-review: schema, shared shipped catalog, DTO roundtrip and actual
 Fire -> interception -> real-file Save/Load cover AC-0001/0002/0003 at this layer.
 Runtime range/manual Fire/lifetime and current-format-only guards remain assigned
 to their downstream tickets; native and final corpus gates remain OPEN.
+
+## EP-0008-US-0002-TK-0001 — 2026-10-11
+
+Previous TK-0005 published as `70ddbc40b20d3209ccfc56b5481997f5677d08dc`; live SHA verified. Dual-defense/three-cabin player data implemented. Client1762/1762 and non-corpus Engine1728/1728 PASS; solution build/format/diff PASS. Details and corrected obsolete fixtures in ticket. Native/final corpus OPEN. Next: publish this ticket, then dual-bootstrap TK-0002.

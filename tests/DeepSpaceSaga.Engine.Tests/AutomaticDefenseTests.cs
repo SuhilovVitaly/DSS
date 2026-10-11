@@ -106,7 +106,7 @@ public class AutomaticDefenseTests
     public void Disable_blocks_future_launches()
     {
         using var engine = Create(DefenseScenario());
-        var module = Assert.Single(At(engine, 0).InstalledModules, m => m.Defense is not null);
+        var module = Assert.Single(At(engine, 0).InstalledModules, m => m.ModuleId == "MOD-PLAYER-COUNTERMEASURE-01");
         engine.ReceiveCommand(new("disable", 1, Player, module.ModuleId, DefenseCommandTypes.Disable));
         Assert.False(At(engine, 0).InstalledModules.Single(m => m.ModuleId == module.ModuleId).Defense!.AutoEnabled);
     }

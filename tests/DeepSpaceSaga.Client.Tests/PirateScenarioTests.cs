@@ -22,31 +22,47 @@ public sealed class PirateScenarioTests
     private static ObjectMotionSnapshot Pirate(AuthoritativeSnapshot snapshot) => Assert.Single(snapshot.Objects, o => o.ObjectType == SpaceObjectType.NpcShip);
 
     [Fact]
-    public void Two_distinct_operators_fit_two_cabins()
+    public void Three_distinct_operators_fit_three_cabins()
     {
         using var engine = Create();
         var saved = engine.CaptureSaveState();
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
         foreach (var ship in saved.GameState.SpaceObjects.Where(o => o.ObjectType is "PlayerShip" or "NpcShip"))
         {
-            Assert.Equal(2, ship.Crew!.Count);
+            int expected = ship.ObjectType == "PlayerShip" ? 3 : 2;
+            Assert.Equal(expected, ship.Crew!.Count);
             int cabins = ship.Modules!.Sum(m => registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId)).CabinesCount ?? 0);
-            Assert.Equal(2, cabins);
+            Assert.Equal(expected, cabins);
             var assignments = ship.Modules!.Where(m => m.OperatorCrewId is not null).Select(m => m.OperatorCrewId).ToArray();
-            Assert.Equal(2, assignments.Distinct().Count());
+            Assert.Equal(expected, assignments.Length);
+            Assert.Equal(expected, assignments.Distinct().Count());
             Assert.All(assignments, id => Assert.Contains(ship.Crew, c => c.CrewId == id));
         }
     }
 
     [Fact]
-    public void Both_ships_have_defense_in_new_room()
+    public void Three_crew_consume_three_rations_at_existing_meal_boundary()
+    {
+        using var engine = Create();
+        var snapshot = engine.CaptureSnapshotForTests(12 * GameCalendar.HourMs, simulationTimeMs: 0);
+        Assert.Equal(0, snapshot.MissingRations);
+        var save = engine.CaptureSaveStateForTests(12 * GameCalendar.HourMs, SimulationSpeed.Speed0, simulationTimeMs: 0);
+        var player = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId);
+        Assert.Equal(197, player.Modules!.SelectMany(m => m.Cargo ?? []).Single(c => c.ItemTypeId == "item.food-rations").Quantity);
+    }
+
+    [Fact]
+    public void Only_combat_player_gets_two_defenses()
     {
         var scenario = ScenarioLoader.LoadFromFile(ScenarioPath);
         foreach (var ship in scenario.GameState.SpaceObjects)
         {
-            var module = Assert.Single(ship.Modules!, m => m.ModuleTypeId == "module.countermeasure.launcher.basic");
+            var modules = ship.Modules!.Where(m => m.ModuleTypeId == "module.countermeasure.launcher.basic").ToArray();
+            Assert.Equal(ship.ObjectType == "PlayerShip" ? 2 : 1, modules.Length);
+            var module = modules[0];
             Assert.Equal(new HullCellCoordinate(5, 2), Assert.Single(module.OccupiedCells));
-            Assert.True(module.AutoDefenseEnabled);
+            if (modules.Length == 2) Assert.Equal(new HullCellCoordinate(3, 1), Assert.Single(modules[1].OccupiedCells));
+            Assert.All(modules, m => Assert.True(m.AutoDefenseEnabled));
         }
     }
     [Fact]
@@ -75,8 +91,10 @@ public sealed class PirateScenarioTests
         var npc = save.SpaceObjects.Single(o => o.ObjectId == pirate.ObjectId);
         Assert.Equal(JsonSerializer.Serialize(player.HullLayout), JsonSerializer.Serialize(npc.HullLayout));
         Assert.Equal(player.Image, npc.Image);
-        Assert.Equal(player.Modules!.Select(m => m.ModuleTypeId), npc.Modules!.Select(m => m.ModuleTypeId));
-        Assert.Equal(JsonSerializer.Serialize(player.Modules!.Select(m => m with { ModuleId = "test", OperatorCrewId = m.OperatorCrewId is null ? null : m.ModuleTypeId })),
+        var originalPlayerModules = player.Modules!.Where(m => m.ModuleId != "MOD-PLAYER-COUNTERMEASURE-02")
+            .Select(m => m.ModuleTypeId == "living.quarters.mk1.three-cabins" ? m with { ModuleTypeId = "living.quarters.mk1" } : m).ToArray();
+        Assert.Equal(originalPlayerModules.Select(m => m.ModuleTypeId), npc.Modules!.Select(m => m.ModuleTypeId));
+        Assert.Equal(JsonSerializer.Serialize(originalPlayerModules.Select(m => m with { ModuleId = "test", OperatorCrewId = m.OperatorCrewId is null ? null : m.ModuleTypeId })),
             JsonSerializer.Serialize(npc.Modules!.Select(m => m with { ModuleId = "test", OperatorCrewId = m.OperatorCrewId is null ? null : m.ModuleTypeId })));
         var moved = Pirate(engine.CaptureSnapshotForTests(1000));
         Assert.Equal(3.4641016151377544, moved.X - pirate.X, 6);

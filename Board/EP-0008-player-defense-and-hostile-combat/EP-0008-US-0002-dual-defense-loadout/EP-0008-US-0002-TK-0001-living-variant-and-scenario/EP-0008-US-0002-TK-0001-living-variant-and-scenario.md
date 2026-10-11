@@ -3,10 +3,10 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0002-dual-defense-loadout
 ticket: EP-0008-US-0002-TK-0001-living-variant-and-scenario
 title: "Новый жилой вариант и комплектация игрока"
-stage: draft
+stage: implemented
 layer: content-data
 depends_on: ["EP-0008-US-0001-TK-0005-chance-resolution"]
-files_touched: 5
+files_touched: 10
 serves: ["AC-0001","AC-0002","AC-0003"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Новый жилой вариант и комплектация игрока
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED
 
 ## Why
 
@@ -41,6 +41,17 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 | `tests/DeepSpaceSaga.Client.Tests/TetrarchLoadoutTests.cs` | Существует: tests/DeepSpaceSaga.Client.Tests/TetrarchLoadoutTests.cs:8 (baseline 6907c58) | Только результат и шаги этой карточки |
 
 ## Dependencies
+
+### Execution scope — 2026-10-11
+
+TK-0005 published as `70ddbc40b20d3209ccfc56b5481997f5677d08dc`.
+The real scenario now supplies two player defenses. Extend scope before edits to
+Engine tests `CountermeasureBootstrapTests`, `TorpedoImpactTests`,
+`AutomaticDefenseTests`, `WeaponOperatorRuntimeTests`, `ScenarioEngineTests`:
+replace obsolete single-defense/catalog-count expectations with explicit per-module
+assertions while preserving behavior assertions. The new bootstrap/toggle/reload
+integration scenarios belong to the following TK-0002. Run full Client and
+non-corpus Engine regression; corpus/native remain final epic gates.
 
 Шаг **6** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0001-TK-0005-chance-resolution](../../EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-TK-0005-chance-resolution/EP-0008-US-0001-TK-0005-chance-resolution.md).
@@ -70,9 +81,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Only_combat_player_gets_two_defenses`
-- [ ] `Three_distinct_operators_fit_three_cabins`
-- [ ] `Other_starts_keep_loadout`
+- [x] `Only_combat_player_gets_two_defenses`
+- [x] `Three_distinct_operators_fit_three_cabins`
+- [x] `Other_starts_keep_loadout`
 
 Команды из корня DSS после реализации:
 
@@ -86,13 +97,28 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0002, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0002, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Review notes — 2026-10-11
+
+Only PlayerShipOnly player loadout changed: separate three-cabin type, launcher02
+at(3,1), crew CHR-PLAYER-DEFENSE-02. Existing module positions, hull, pirate
+and other starts retained. Scenario description anticipates the planned hostile
+AI from US-0003/0004; pursuing behavior is not claimed in this data ticket.
+Full Client1762/1762 PASS (`ep8-us2-tk1-client.trx`), including generated-world
+loadout, source/output catalog parity, unchanged neighboring starts and three
+rations consumed at the existing 12-hour calendar boundary with motion frozen.
+Build0 warnings/errors, scoped format and diff PASS. Initial Engine regression
+found five obsolete cardinality expectations; updated without reducing checks.
+Native NOT RUN. Self-review, not user APPROVED.
+
+Final non-corpus Engine regression **1728/1728 PASS** (`ep8-us2-tk1-engine-final.trx`). All ticket-local gates passed; commit/push verification recorded in the next execution entry.

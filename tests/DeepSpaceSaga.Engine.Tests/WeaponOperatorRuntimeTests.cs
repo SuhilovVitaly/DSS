@@ -18,7 +18,7 @@ public class WeaponOperatorRuntimeTests
         using var engine = Create(scenario);
         var modules = At(engine, 0).InstalledModules;
         var attack = modules.Single(m => m.ModuleId == Launcher).Operator!;
-        var defense = modules.Single(m => m.ModuleTypeId == "module.countermeasure.launcher.basic").Operator!;
+        var defense = modules.Single(m => m.ModuleId == "MOD-PLAYER-COUNTERMEASURE-01").Operator!;
         Assert.NotEqual(attack.CrewId, defense.CrewId);
         Assert.Equal(WeaponSkillType.TorpedoAttack, attack.SkillType);
         Assert.Equal(WeaponSkillType.CountermeasureDefense, defense.SkillType);
