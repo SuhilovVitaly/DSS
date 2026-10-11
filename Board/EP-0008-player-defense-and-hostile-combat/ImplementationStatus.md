@@ -177,3 +177,7 @@ TK-0001 `862fb97810c54f255a2ed874af7ca0f763dea1b6` published/remote verified. Au
 ## EP-0008-US-0006-TK-0003 — 2026-10-11
 
 TK-0002 `e606480fbc22f726b65f102746cb08186a012388` published/remote verified. Journal facts implemented; initial full Engine1836/1837 corrected obsolete event expectation, final affected131/131 and Client68/68 PASS, build/format/diff PASS. US-0006 self-review complete. Next after publication: US-0007 independent module panels. Native/final corpus OPEN.
+
+## EP-0008-US-0007-TK-0001 — 2026-10-11
+
+US-0006 TK-0003 `9d6a26ecf0be0e9c84d9831450775f44f9878f96` published/remote verified. Instance-panel API/layout implemented; Client1786/1786, final affected125/125, build/format/diff PASS. Actual screen owner/callback wiring is next TK-0002. Native/final corpus OPEN.

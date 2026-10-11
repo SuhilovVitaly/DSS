@@ -6,7 +6,7 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 
 /// <summary>
-/// Commands Panel (top-left) — the fixed command-group widget.
+/// Commands Panel (top-left) — fixed navigation groups and module-addressed weapon panels.
 /// A Caption (360×32) with a Hide/Show toggle button (26×26) + a list of
 /// fixed command-panel groups (Navigation, Maneuver, Engine, Space Control),
 /// each caption 360×36 with a fixed-height body (same size for every panel,
@@ -144,6 +144,14 @@ public sealed class CommandsPanel
     private readonly Func<string?>? _launcherStatus;
     private readonly Func<string?>? _defenseStatus;
     private readonly Func<string, string?>? _operatorText;
+    private readonly Func<WeaponPanelInstance, string, bool>? _weaponCommandEnabled;
+    private readonly Action<WeaponPanelInstance, string>? _weaponCommandClicked;
+    private readonly Func<WeaponPanelInstance, string?>? _weaponStatus;
+    private readonly Func<WeaponPanelInstance, string?>? _weaponOperatorText;
+    private float _viewportHeight = float.PositiveInfinity;
+    private float _scrollOffset;
+    private float _maxScroll;
+    internal WeaponPanelInstance? HoveredWeaponPanel { get; private set; }
     private string? _preferredOpenedPanel;
     internal string? HoveredCommandTypeId => _hoveredCommandButtonIndex >= 0 &&
         _hoveredCommandButtonIndex < _allCommandButtons.Count
@@ -155,9 +163,9 @@ public sealed class CommandsPanel
         if (_state == CommandsPanelState.Closed) return null;
         foreach (var row in _panelRows)
         {
-            if (!row.Opened || (_panelOpenedByName.TryGetValue(row.Name, out bool opened) && !opened)) continue;
+            if (!RowsContain(x, y) || !row.Opened || (_panelOpenedByName.TryGetValue(row.Key, out bool opened) && !opened)) continue;
             foreach (var button in row.Buttons)
-                if (button.Rect.Contains(x, y) && button.Enabled && _isCommandEnabled(button.CommandTypeId))
+                if (button.Rect.Contains(x, y) && button.Enabled && ButtonEnabled(button))
                     return button.CommandTypeId;
         }
         return null;
@@ -219,13 +227,21 @@ public sealed class CommandsPanel
     public CommandsPanel(
         Func<string, bool>? isCommandEnabled = null,
         Action<string>? commandClicked = null,
-        Func<string?>? launcherStatus = null, Func<string?>? defenseStatus = null, Func<string, string?>? operatorText = null)
+        Func<string?>? launcherStatus = null, Func<string?>? defenseStatus = null, Func<string, string?>? operatorText = null,
+        Func<WeaponPanelInstance, string, bool>? weaponCommandEnabled = null,
+        Action<WeaponPanelInstance, string>? weaponCommandClicked = null,
+        Func<WeaponPanelInstance, string?>? weaponStatus = null,
+        Func<WeaponPanelInstance, string?>? weaponOperatorText = null)
     {
         _isCommandEnabled = isCommandEnabled ?? (_ => true);
         _commandClicked = commandClicked ?? (_ => { });
         _launcherStatus = launcherStatus;
         _defenseStatus = defenseStatus;
         _operatorText = operatorText;
+        _weaponCommandEnabled = weaponCommandEnabled;
+        _weaponCommandClicked = weaponCommandClicked;
+        _weaponStatus = weaponStatus;
+        _weaponOperatorText = weaponOperatorText;
 
         var typeface = XenonStyle.TypefaceRegular;
 
@@ -404,12 +420,14 @@ public sealed class CommandsPanel
             return true;
         }
 
+        if (!RowsContain(x, y)) return _captionRect.Contains(x, y);
+
         // Panel captions — toggle per-panel Opened/Closed.
         foreach (var row in _panelRows)
         {
             if (row.CaptionRect.Contains(x, y))
             {
-                string name = row.Name;
+                string name = row.Key;
                 bool wasOpened = row.Opened;
                 _panelOpenedByName[name] = !wasOpened;
                 if (!wasOpened) _preferredOpenedPanel = name;
@@ -423,10 +441,12 @@ public sealed class CommandsPanel
         {
             if (_commandButtons[i].Button.Rect.Contains(x, y))
             {
-                if (_commandButtons[i].Button.Enabled)
+                if (_commandButtons[i].Button.Enabled && ButtonEnabled(_commandButtons[i].Button))
                 {
                     _pressedCommandButtonIndex = i;
-                    _commandClicked(_commandButtons[i].Button.CommandTypeId);
+                    var button = _commandButtons[i].Button;
+                    if (button.Weapon is { } weapon) _weaponCommandClicked?.Invoke(weapon, button.CommandTypeId);
+                    else _commandClicked(button.CommandTypeId);
                 }
 
                 return true;
@@ -446,12 +466,14 @@ public sealed class CommandsPanel
 
     public bool OnMouseMove(float x, float y)
     {
+        HoveredWeaponPanel = RowsContain(x, y) ? _panelRows.FirstOrDefault(r =>
+            r.CaptionRect.Contains(x, y) || (r.Opened && r.BodyRect.Contains(x, y))).Weapon : null;
         _hoveredButtonIndex = _hideShowButtonRect.Contains(x, y) ? 0 : -1;
 
         _hoveredCommandButtonIndex = -1;
         for (int i = 0; i < _commandButtons.Count; i++)
         {
-            if (_commandButtons[i].Button.Rect.Contains(x, y))
+            if (RowsContain(x, y) && _commandButtons[i].Button.Rect.Contains(x, y))
             {
                 _hoveredCommandButtonIndex = i;
                 break;
@@ -460,7 +482,7 @@ public sealed class CommandsPanel
 
         return _hoveredButtonIndex >= 0 ||
                _hoveredCommandButtonIndex >= 0 ||
-               _panelRows.Any(r => r.CaptionRect.Contains(x, y));
+               (RowsContain(x, y) && _panelRows.Any(r => r.CaptionRect.Contains(x, y)));
     }
 
     public void OnMouseUp(float x, float y)
@@ -471,8 +493,12 @@ public sealed class CommandsPanel
 
     // ── Render ──────────────────────────────────────────────────
 
-    public void Render(SKCanvas canvas, IReadOnlyList<InstalledModuleSnapshot> modules, float viewportHeight = float.PositiveInfinity)
+    public void Render(SKCanvas canvas, IReadOnlyList<InstalledModuleSnapshot> modules, float viewportHeight = float.PositiveInfinity,
+        string? ownerObjectId = null)
     {
+        if (modules is ImmutableArray<InstalledModuleSnapshot> { IsDefault: true } ||
+            !modules.Any(m => m.LauncherCombat is not null || m.Defense is not null)) viewportHeight = float.PositiveInfinity;
+        _viewportHeight = viewportHeight;
         LayoutButtons();
 
         _captionRect = new SKRect(
@@ -488,42 +514,49 @@ public sealed class CommandsPanel
         if (_state != CommandsPanelState.Closed)
         {
             rowY += MainCaptionToPanelsGap;
-            var safeModules = modules is ImmutableArray<InstalledModuleSnapshot> { IsDefault: false } arr
-                ? arr
-                : ImmutableArray<InstalledModuleSnapshot>.Empty;
+            var safeModules = modules is ImmutableArray<InstalledModuleSnapshot> { IsDefault: true }
+                ? ImmutableArray<InstalledModuleSnapshot>.Empty : modules;
+            var panels = BuildPanels(safeModules, ownerObjectId);
 
             // Reserve every caption so all five groups remain reachable. Give an
             // explicitly opened group priority, then the installed launcher.
             HashSet<string>? visibleBodies = null;
             bool hasLauncher = safeModules.Any(m => m.LauncherCombat is not null || m.Defense is not null);
-            float captionHeight = hasLauncher && viewportHeight < MinimumExpandedHeight ? 28f : PanelCaptionHeight;
+            float captionHeight = hasLauncher && viewportHeight < MinimumExpandedHeight
+                ? Math.Clamp((viewportHeight - rowY - 128 - (panels.Length - 1) * CollapsedPanelGap) / panels.Length, 18f, 28f)
+                : PanelCaptionHeight;
             float BodyHeight(string name)
             {
                 if (!hasLauncher) return PanelBodyHeight;
-                int rows = (Panels.First(p => p.Name == name).CommandTypeIds.Length + 3) / 4;
+                var definition = panels.First(p => p.Key == name);
+                int rows = (definition.CommandTypeIds.Length + 3) / 4;
                 return BodyPaddingY * 2 + rows * CommandButtonHeight + (rows - 1) * CommandButtonGap +
-                    StatusBarHeight + XenonBodySliceInset + (name is "Torpedo Launcher" or "Countermeasure Launcher" ? 32f : 0);
+                    StatusBarHeight + XenonBodySliceInset + (definition.Weapon is not null || name is "Torpedo Launcher" or "Countermeasure Launcher" ? 32f : 0);
             }
             if (hasLauncher)
             {
                 visibleBodies = new(StringComparer.Ordinal);
-                float remaining = viewportHeight - rowY - Panels.Length * captionHeight -
-                    (Panels.Length - 1) * CollapsedPanelGap;
+                float remaining = viewportHeight - rowY - panels.Length * captionHeight -
+                    (panels.Length - 1) * CollapsedPanelGap;
                 foreach (string name in new[] { _preferredOpenedPanel, "Torpedo Launcher", "Navigation", "Space Control" }
-                    .Concat(Panels.Select(p => p.Name)).OfType<string>().Distinct(StringComparer.Ordinal))
+                    .Concat(panels.Select(p => p.Key)).OfType<string>().Distinct(StringComparer.Ordinal))
                 {
+                    if (!panels.Any(p => p.Key == name)) continue;
                     if (_panelOpenedByName.TryGetValue(name, out bool requested) && !requested) continue;
                     if (remaining < BodyHeight(name)) continue;
                     visibleBodies.Add(name);
                     remaining -= BodyHeight(name);
                 }
+                if (visibleBodies.Count == 0 && _preferredOpenedPanel is { } preferred && panels.Any(p => p.Key == preferred) &&
+                    (!_panelOpenedByName.TryGetValue(preferred, out bool preferredRequested) || preferredRequested)) visibleBodies.Add(preferred);
             }
 
-            for (int panelIndex = 0; panelIndex < Panels.Length; panelIndex++)
+            rowY -= _scrollOffset;
+            for (int panelIndex = 0; panelIndex < panels.Length; panelIndex++)
             {
-                var panel = Panels[panelIndex];
-                bool opened = !_panelOpenedByName.TryGetValue(panel.Name, out bool o) || o;
-                if (visibleBodies is not null) opened &= visibleBodies.Contains(panel.Name);
+                var panel = panels[panelIndex];
+                bool opened = !_panelOpenedByName.TryGetValue(panel.Key, out bool o) || o;
+                if (visibleBodies is not null) opened &= visibleBodies.Contains(panel.Key);
 
                 if (_state == CommandsPanelState.ActivePanels && !opened)
                     continue;
@@ -535,7 +568,7 @@ public sealed class CommandsPanel
                 var bodyRect = opened
                     ? new SKRect(
                         Margin, rowY + captionHeight,
-                        Margin + PanelWidth, rowY + captionHeight + BodyHeight(panel.Name))
+                        Margin + PanelWidth, rowY + captionHeight + BodyHeight(panel.Key))
                     : SKRect.Empty;
 
                 int rowStartOrdinal = _commandButtons.Count;
@@ -564,25 +597,68 @@ public sealed class CommandsPanel
                         : null;
                 if (opened && panel.Name == "Torpedo Launcher") statusBarText = _launcherStatus?.Invoke() ?? statusBarText;
                 if (opened && panel.Name == "Countermeasure Launcher") statusBarText = _defenseStatus?.Invoke() ?? statusBarText;
+                if (opened && panel.Weapon is { } weapon) statusBarText = _weaponStatus?.Invoke(weapon) ?? statusBarText;
 
                 _panelRows.Add(new CommandPanelGeometry(
-                    panel.Name, opened, captionRect, bodyRect, buttons, statusBarRect, statusBarText));
+                    panel.Name, opened, captionRect, bodyRect, buttons, statusBarRect, statusBarText, panel.Weapon));
 
-                rowY += opened ? (captionHeight + BodyHeight(panel.Name)) : captionHeight;
-                if (!opened && panelIndex < Panels.Length - 1)
+                rowY += opened ? (captionHeight + BodyHeight(panel.Key)) : captionHeight;
+                if (!opened && panelIndex < panels.Length - 1)
                     rowY += CollapsedPanelGap;
             }
         }
 
-        float bodyBottom = rowY;
+        _maxScroll = Math.Max(0, rowY + _scrollOffset - viewportHeight);
+        if (_scrollOffset > _maxScroll)
+        {
+            _scrollOffset = _maxScroll;
+            Render(canvas, modules, viewportHeight, ownerObjectId);
+            return;
+        }
+        float bodyBottom = Math.Min(rowY, viewportHeight);
         _bodyRect = new SKRect(
             Margin, _captionRect.Bottom,
             Margin + PanelWidth, bodyBottom);
 
         _commandButtonDrawOrdinal = 0;
         DrawCaption(canvas);
+        canvas.Save();
+        canvas.ClipRect(new SKRect(Margin, _captionRect.Bottom, Margin + PanelWidth, float.IsFinite(viewportHeight) ? viewportHeight : float.MaxValue));
         foreach (var row in _panelRows)
             DrawCommandPanel(canvas, row);
+        canvas.Restore();
+    }
+
+    private bool RowsContain(float x, float y) => _state != CommandsPanelState.Closed && x >= Margin && x <= Margin + PanelWidth &&
+        y >= _captionRect.Bottom && y < _viewportHeight;
+
+    public bool OnMouseWheel(float x, float y, float delta)
+    {
+        if (!float.IsFinite(delta) || delta == 0 || _state == CommandsPanelState.Closed || !RowsContain(x, y) || _maxScroll == 0) return false;
+        _scrollOffset = Math.Clamp(_scrollOffset - delta * 48, 0, _maxScroll);
+        return true;
+    }
+
+    private bool ButtonEnabled(CommandButtonGeometry button) => button.Weapon is { } weapon
+        ? _weaponCommandEnabled?.Invoke(weapon, button.CommandTypeId) == true
+        : _isCommandEnabled(button.CommandTypeId);
+
+    private static ImmutableArray<CommandPanelDefinition> BuildPanels(IReadOnlyList<InstalledModuleSnapshot> modules, string? owner)
+    {
+        if (string.IsNullOrWhiteSpace(owner)) return Panels; // Ownerless template rendering for non-session callers.
+        var defense = modules.Where(m => m.Defense is not null).OrderBy(m => m.Position).ThenBy(m => m.ModuleId, StringComparer.Ordinal).ToArray();
+        var builder = ImmutableArray.CreateBuilder<CommandPanelDefinition>();
+        foreach (var panel in Panels)
+        {
+            if (panel.Name != "Countermeasure Launcher" || defense.Length == 0) { builder.Add(panel); continue; }
+            for (int i = 0; i < defense.Length; i++)
+            {
+                string caption = defense.Length == 1 ? panel.Name : panel.Name + " " + (i + 1);
+                builder.Add(new(caption, [DefenseCommandTypes.Fire, DefenseCommandTypes.Enable, DefenseCommandTypes.Disable],
+                    new(owner, defense[i].ModuleId, caption)));
+            }
+        }
+        return builder.ToImmutable();
     }
 
     /// <summary>
@@ -598,7 +674,9 @@ public sealed class CommandsPanel
         for (int i = 0; i < panel.CommandTypeIds.Length; i++)
         {
             string commandTypeId = panel.CommandTypeIds[i];
-            var metadata = FindCommandMetadataAcrossModules(modules, commandTypeId);
+            var metadata = panel.Weapon is { } weapon
+                ? FindCommandMetadataAcrossModules(modules.Where(m => m.ModuleId == weapon.ModuleId).ToArray(), commandTypeId)
+                : FindCommandMetadataAcrossModules(modules, commandTypeId);
             string label = metadata?.DisplayName ?? commandTypeId;
 
             int col = i % (int)CommandButtonColumns;
@@ -609,7 +687,7 @@ public sealed class CommandsPanel
             var geometry = new CommandButtonGeometry(
                 commandTypeId,
                 new SKRect(x, y, x + CommandButtonWidth, y + CommandButtonHeight),
-                _isCommandEnabled(commandTypeId));
+                panel.Weapon is { } instance ? _weaponCommandEnabled?.Invoke(instance, commandTypeId) == true : _isCommandEnabled(commandTypeId), panel.Weapon);
 
             builder.Add(geometry);
             _commandButtons.Add((label, geometry));
@@ -717,7 +795,7 @@ public sealed class CommandsPanel
                 DrawCommandButton(canvas, _commandButtonDrawOrdinal++);
             }
 
-            if (_operatorText?.Invoke(row.Name) is { } operatorText)
+            if ((row.Weapon is { } weapon ? _weaponOperatorText?.Invoke(weapon) : _operatorText?.Invoke(row.Name)) is { } operatorText)
             {
                 using var paint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 12f, IsAntialias = true };
                 var rect = row.BodyRect;
@@ -877,7 +955,10 @@ public enum CommandsPanelState
 /// row. Not derived from installed modules — the panel/command order is fixed
 /// by design (see ТЗ "Command Panels по наборам команд").
 /// </summary>
-public sealed record CommandPanelDefinition(string Name, ImmutableArray<string> CommandTypeIds);
+public sealed record CommandPanelDefinition(string Name, ImmutableArray<string> CommandTypeIds, WeaponPanelInstance? Weapon = null)
+{
+    public string Key => Weapon?.Key ?? Name;
+}
 
 public readonly record struct CommandPanelGeometry(
     string Name,
@@ -886,9 +967,14 @@ public readonly record struct CommandPanelGeometry(
     SKRect BodyRect,
     ImmutableArray<CommandButtonGeometry> Buttons,
     SKRect StatusBarRect,
-    string? StatusBarText);
+    string? StatusBarText,
+    WeaponPanelInstance? Weapon = null)
+{
+    public string Key => Weapon?.Key ?? Name;
+}
 
 public readonly record struct CommandButtonGeometry(
     string CommandTypeId,
     SKRect Rect,
-    bool Enabled);
+    bool Enabled,
+    WeaponPanelInstance? Weapon = null);
