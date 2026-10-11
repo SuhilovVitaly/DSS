@@ -39,8 +39,6 @@ internal sealed record ModuleTypeDefinition(
     double? TorpedoSpeedKmS = null,
     /// <summary>Positive maximum projectile turn rate in degrees per physical second.</summary>
     double? TorpedoTurnRateDegPerSec = null,
-    decimal? TorpedoBaseRating = null,
-    decimal? CountermeasureBaseRating = null,
     double? CountermeasureSpeedKmS = null,
     double? CountermeasureTurnRateDegPerSec = null,
     double? CountermeasureRangeKm = null,

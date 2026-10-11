@@ -97,3 +97,15 @@ Continuation reused the prior complete documentation/Board reading at preparatio
 Catalog source/output and shared-owner checks implemented. Full Client **1761/1761 PASS**, Client build (0 warnings/errors), scoped formatting and diff checks PASS. The JSON fields were necessarily delivered with strict schema TK-0003; this ticket separately validates real shipped catalog behavior.
 
 TK-0003: `f5285d87466a08bf369d706badda98b0de4ea757`, push verified on origin/base-fight. Next after TK-0004 publication: TK-0005 chance resolution. Native and final map corpus gates remain open.
+
+## EP-0008-US-0001-TK-0005 — 2026-10-11
+
+TK-0004 `08abe0a2ef55ab381f8cd0a53003c86c9e7d533b` pushed and live SHA verified.
+TK-0005 implements the formula and immutable launch captures. Engine non-corpus
+1728/1728, final focused19/19, Client1761/1761, build/format/diff PASS.
+See ticket for initial failures and fixes. Publication must be verified before US-0002.
+
+US-0001 self-review: schema, shared shipped catalog, DTO roundtrip and actual
+Fire -> interception -> real-file Save/Load cover AC-0001/0002/0003 at this layer.
+Runtime range/manual Fire/lifetime and current-format-only guards remain assigned
+to their downstream tickets; native and final corpus gates remain OPEN.

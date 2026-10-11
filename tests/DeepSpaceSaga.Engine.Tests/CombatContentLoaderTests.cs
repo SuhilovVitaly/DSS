@@ -298,7 +298,6 @@ public sealed class CombatContentLoaderTests : IDisposable
         WriteModules(root);
         var module = Launcher(Load());
         Assert.Equal((decimal)validManeuverability, module.TorpedoManeuverability);
-        Assert.Null(module.TorpedoBaseRating);
         foreach (var invalid in new[]
         {
             module with { TorpedoManeuverability = null },

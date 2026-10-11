@@ -59,7 +59,9 @@ public sealed partial class SimulationEngine
         } while (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, id, StringComparison.OrdinalIgnoreCase)));
         var flight = new TorpedoSnapshot(command.ObjectId, command.ModuleId, command.TargetObjectId!, motionTimeMs,
             launcher.SpeedKmS, launcher.TurnRateDegPerSec, launcher.Damage, 0, route, [], ImpactTime(route),
-            TorpedoRating: weaponOperator.EffectiveRating, RatingBreakdown: weaponOperator);
+            TorpedoRating: weaponOperator.EffectiveRating, RatingBreakdown: weaponOperator,
+            CapturedManeuverability: weaponOperator.EffectiveRating,
+            OwnerPlayerRelationAtLaunch: GetRelationToPlayer(owner) ?? PlayerRelation.Neutral);
         var motion = new ObjectMotionSnapshot(id, origin.X, origin.Y, launcher.SpeedKmS, origin.Direction, Torpedo: flight);
         _objects.Add(new(motion, SpaceObjectType.Missile, motionTimeMs, [], Name: "Torpedo", IsKnown: true));
         _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = id, Operator = weaponOperator };
@@ -475,7 +477,7 @@ public sealed partial class SimulationEngine
             foreach (var module in obj.Modules)
             {
                 var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-                if (definition.CountermeasureBaseRating is not null)
+                if (definition.CountermeasureAccuracy is not null)
                     _ = ResolveWeaponOperator(obj, module, WeaponSkillType.CountermeasureDefense);
                 if (definition.TorpedoDamage is not { } damage)
                     continue;
@@ -486,7 +488,9 @@ public sealed partial class SimulationEngine
                     SpeedKmS: definition.TorpedoSpeedKmS!.Value,
                     TurnRateDegPerSec: definition.TorpedoTurnRateDegPerSec!.Value,
                     Damage: damage,
-                    Operator: ResolveWeaponOperator(obj, module, WeaponSkillType.TorpedoAttack)));
+                    Operator: ResolveWeaponOperator(obj, module, WeaponSkillType.TorpedoAttack),
+                    RangeKm: definition.TorpedoRangeKm,
+                    Maneuverability: definition.TorpedoManeuverability));
             }
         }
 

@@ -83,8 +83,8 @@ public sealed class CountermeasureContentLoaderTests : IDisposable
     {
         var legacy = new ModuleTypeDefinition("legacy", "Legacy", 1, 1, 1, 0, ImmutableArray<string>.Empty);
         GameDataRegistry.ValidateWeaponRatings(legacy);
-        Assert.Null(legacy.CountermeasureBaseRating);
-        Assert.Null(legacy.TorpedoBaseRating);
+        Assert.Null(legacy.CountermeasureAccuracy);
+        Assert.Null(legacy.TorpedoManeuverability);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public sealed class CountermeasureContentLoaderTests : IDisposable
     {
         var module = Load(JsonNode.Parse(Valid)!);
         Assert.Throws<ContentException>(() => GameDataRegistry.ValidateWeaponRatings(module with { CategoryTypeId = "module.torpedo.launcher" }));
-        Assert.Throws<ContentException>(() => GameDataRegistry.ValidateWeaponRatings(module with { TorpedoBaseRating = 30 }));
+        Assert.Throws<ContentException>(() => GameDataRegistry.ValidateWeaponRatings(module with { TorpedoManeuverability = 30 }));
     }
 
     [Theory]
@@ -107,7 +107,6 @@ public sealed class CountermeasureContentLoaderTests : IDisposable
         Assert.Equal((decimal)accuracy, module.CountermeasureAccuracy);
         Assert.Equal(100, module.CountermeasureRangeKm);
         Assert.Equal(25.5, module.CountermeasureManualRangeKm);
-        Assert.Null(module.CountermeasureBaseRating);
     }
 
     [Fact]

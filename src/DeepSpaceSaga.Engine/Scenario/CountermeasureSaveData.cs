@@ -112,6 +112,9 @@ internal static class CountermeasureSaveValidation
             if (f.RatingBreakdown.TorpedoOperator is { } attack) ValidateOperator(attack);
             Require(f.RatingBreakdown.TorpedoRating >= 0 && f.FrozenChanceTenths == InterceptionMath.ChanceTenths(
                 f.RatingBreakdown.DefenseOperator.EffectiveRating, f.RatingBreakdown.TorpedoRating), "chance mismatch");
+            Require((f.CapturedAccuracy is null || f.CapturedAccuracy == f.RatingBreakdown.DefenseOperator.EffectiveRating) &&
+                (f.CapturedTargetManeuverability is null || f.CapturedTargetManeuverability == f.RatingBreakdown.TorpedoRating),
+                "captured weapon values mismatch");
             if (f.Phase == CountermeasurePhase.Guiding)
             {
                 Require(objects.TryGetValue(f.TargetTorpedoId, out var target) && target.ObjectType == SpaceObjectType.Missile && attempted.Contains(f.TargetTorpedoId),
@@ -192,6 +195,8 @@ internal static class CountermeasureSaveValidation
         if (format < 11 && flight.TorpedoRating is null && flight.RatingBreakdown is null &&
             !flight.RatingMigratedFromLegacySave) return;
         Require(flight.TorpedoRating is >= 0, "missing or negative captured torpedo rating");
+        Require(flight.CapturedManeuverability is null || flight.CapturedManeuverability == flight.TorpedoRating,
+            "captured maneuverability mismatch");
         if (flight.RatingMigratedFromLegacySave)
         {
             Require(flight.TorpedoRating == 30m && flight.RatingBreakdown is null, "invalid legacy rating provenance");
@@ -206,8 +211,7 @@ internal static class CountermeasureSaveValidation
     {
         Require(op is not null && !string.IsNullOrWhiteSpace(op.CrewId) && !string.IsNullOrWhiteSpace(op.DisplayName) &&
             Enum.IsDefined(op.SkillType) && op.Skill is >= 0 and <= 100 && op.BaseRating >= 0 && op.EffectiveRating >= 0, "invalid operator");
-        try { Require(op!.EffectiveRating == checked(op.BaseRating * (op.Skill / 50m)), "rating mismatch"); }
-        catch (OverflowException) { throw new ScenarioException("Invalid defense rating overflow."); }
+        Require(op!.EffectiveRating == op.BaseRating && op.BaseRating <= 100, "rating mismatch");
     }
     private static void ValidateSegment(TorpedoRouteSegment? s) => Require(s is not null &&
         new[] { s.X, s.Y, s.Direction, s.SpeedKmS, s.AngularVelocityDegPerSec, s.DurationMs }.All(double.IsFinite) &&

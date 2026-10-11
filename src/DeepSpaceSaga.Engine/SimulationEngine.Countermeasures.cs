@@ -45,7 +45,7 @@ public sealed partial class SimulationEngine
                 {
                     if (target.InitialMotion.Torpedo is not { } torpedo || target.InitialMotion.CountermeasureAttempted ||
                         torpedo.TargetObjectId != owner.InitialMotion.ObjectId) continue;
-                    int chance = InterceptionMath.ChanceTenths(op.EffectiveRating, torpedo.TorpedoRating!.Value);
+                    int chance = InterceptionMath.ChanceTenths(op.EffectiveRating, torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value);
                     if (chance == 0) continue;
                     double start = Math.Max(readyAt, Math.Max(target.StartGameTimeMs, owner.StartGameTimeMs));
                     if (start > to) continue;
@@ -72,14 +72,19 @@ public sealed partial class SimulationEngine
 
     private void LaunchCountermeasure(DefenseLaunch launch)
     {
+        var definition = _registry.ModuleTypes.GetDefinition(launch.Module.ModuleTypeIndex);
         string id;
         do { id = "countermeasure-" + checked(++_countermeasureSequence).ToString(System.Globalization.CultureInfo.InvariantCulture); }
         while (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, id, StringComparison.OrdinalIgnoreCase)));
         var torpedo = launch.Target.InitialMotion.Torpedo!;
         var flight = new CountermeasureSnapshot(launch.Owner.InitialMotion.ObjectId, launch.Module.ModuleId,
             launch.Target.InitialMotion.ObjectId, CountermeasurePhase.Guiding, launch.Route, launch.Time, launch.Chance,
-            new(launch.Operator, torpedo.TorpedoRating!.Value, torpedo.RatingBreakdown), [],
-            PredictedEncounterMotionTimeMs: launch.Time + launch.Route.Segments.Sum(s => s.DurationMs));
+            new(launch.Operator, torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value, torpedo.RatingBreakdown), [],
+            PredictedEncounterMotionTimeMs: launch.Time + launch.Route.Segments.Sum(s => s.DurationMs),
+            CapturedAccuracy: launch.Operator.EffectiveRating,
+            CapturedTargetManeuverability: torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value,
+            SpeedKmS: definition.CountermeasureSpeedKmS,
+            TurnRateDegPerSec: definition.CountermeasureTurnRateDegPerSec);
         int index = _objects.IndexOf(launch.Target);
         _objects[index] = launch.Target with { InitialMotion = launch.Target.InitialMotion with { CountermeasureAttempted = true } };
         var origin = launch.Route.Segments[0];
@@ -129,13 +134,18 @@ public sealed partial class SimulationEngine
             foreach (var module in owner.Modules)
             {
                 var type = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-                if (type.CountermeasureBaseRating is null) continue;
+                if (type.CountermeasureAccuracy is null) continue;
                 if (owner.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip))
                     throw new ScenarioException($"Defense module '{module.ModuleId}' must be installed on a ship.");
                 var weaponOperator = ResolveWeaponOperator(owner, module, WeaponSkillType.CountermeasureDefense);
                 result.Add((owner.InitialMotion.ObjectId, module.ModuleId), new DefenseSnapshot(
                     module.AutoDefenseEnabled, weaponOperator, weaponOperator is null ? DefenseState.NoOperator : DefenseState.Ready,
-                    RangeKm: type.CountermeasureRangeKm!.Value));
+                    RangeKm: type.CountermeasureRangeKm!.Value,
+                    ManualRangeKm: type.CountermeasureManualRangeKm,
+                    Accuracy: type.CountermeasureAccuracy,
+                    SpeedKmS: type.CountermeasureSpeedKmS,
+                    TurnRateDegPerSec: type.CountermeasureTurnRateDegPerSec,
+                    MaxFlightTimeMs: type.CountermeasureMaxFlightTimeMs));
             }
         return result;
     }
@@ -214,8 +224,8 @@ public sealed partial class SimulationEngine
             double deadline = torpedo.Route.StartMotionTimeMs + torpedo.Route.Segments.Sum(s => s.DurationMs);
             var owner = _objects.First(o => o.InitialMotion.ObjectId == flight.OwnerObjectId);
             var module = owner.Modules.First(m => m.ModuleId == flight.LauncherModuleId);
-            double turnRate = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CountermeasureTurnRateDegPerSec!.Value;
-            double speed = projectile.InitialMotion.SpeedKmS;
+            double turnRate = flight.TurnRateDegPerSec ?? _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CountermeasureTurnRateDegPerSec!.Value;
+            double speed = flight.SpeedKmS ?? projectile.InitialMotion.SpeedKmS;
             var route = CountermeasureGuidanceMath.Plan(projectile.InitialMotion, torpedo.Route, time, deadline, speed, turnRate) ??
                 TorpedoGuidanceMath.Plan(projectile.InitialMotion, target.InitialMotion, speed, turnRate, time);
             _objects[_objects.IndexOf(projectile)] = projectile with

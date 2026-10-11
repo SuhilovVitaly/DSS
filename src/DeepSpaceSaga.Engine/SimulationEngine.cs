@@ -909,7 +909,7 @@ public sealed partial class SimulationEngine : IDisposable
                 Defense: _defenses.GetValueOrDefault((ship.InitialMotion.ObjectId, module.ModuleId)),
                 Operator: moduleType.TorpedoDamage is not null
                     ? ResolveWeaponOperator(ship, module, WeaponSkillType.TorpedoAttack)
-                    : moduleType.CountermeasureBaseRating is not null
+                    : moduleType.CountermeasureAccuracy is not null
                         ? ResolveWeaponOperator(ship, module, WeaponSkillType.CountermeasureDefense) : null));
         }
 

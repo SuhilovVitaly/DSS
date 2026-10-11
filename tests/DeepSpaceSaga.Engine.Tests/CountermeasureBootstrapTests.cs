@@ -17,7 +17,7 @@ public class CountermeasureBootstrapTests
         {
             Assert.True(o.Defense!.AutoEnabled);
             Assert.Equal(DefenseState.Ready, o.Defense.State);
-            Assert.Equal(30m, o.Defense.Operator!.EffectiveRating);
+            Assert.Equal(55m, o.Defense.Operator!.EffectiveRating);
             Assert.Equal(100, o.Defense.RangeKm);
         });
         Assert.Equal(snapshot.Objects.Single(o => o.ObjectId == Player).Defense,

@@ -443,11 +443,7 @@ internal sealed class GameDataRegistry
         else if (module.TorpedoManeuverability.HasValue || module.TorpedoRangeKm.HasValue)
             throw new ContentException($"Module '{module.TypeId}': torpedo parameters require category module.torpedo.launcher.");
 
-        if (module.TorpedoBaseRating is < 0 || module.CountermeasureBaseRating is < 0)
-            throw new ContentException($"Module '{module.TypeId}': weapon base rating must be nonnegative.");
-        if (module.TorpedoBaseRating.HasValue && module.CategoryTypeId != "module.torpedo.launcher")
-            throw new ContentException($"Module '{module.TypeId}': torpedoBaseRating requires category module.torpedo.launcher.");
-        bool hasDefense = module.CountermeasureBaseRating.HasValue || module.CountermeasureSpeedKmS.HasValue ||
+        bool hasDefense = module.CountermeasureSpeedKmS.HasValue ||
             module.CountermeasureTurnRateDegPerSec.HasValue || module.CountermeasureRangeKm.HasValue || module.CountermeasureReloadMs.HasValue ||
             module.CountermeasureAccuracy.HasValue || module.CountermeasureManualRangeKm.HasValue || module.CountermeasureMaxFlightTimeMs.HasValue;
         if (!hasDefense && module.CategoryTypeId != "module.countermeasure.launcher") return;

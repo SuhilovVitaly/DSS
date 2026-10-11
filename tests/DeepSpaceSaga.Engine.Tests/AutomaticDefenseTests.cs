@@ -5,6 +5,19 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class AutomaticDefenseTests
 {
+    internal static DeepSpaceSaga.Engine.Content.GameDataRegistry WeaponRegistry(decimal accuracy, decimal maneuverability)
+    {
+        var source = Registry.Value;
+        static IEnumerable<T> All<T>(DeepSpaceSaga.Engine.Content.TypeRegistry<T> registry)
+            where T : DeepSpaceSaga.Engine.Content.ITypeDefinition => Enumerable.Range(0, registry.Count).Select(registry.GetDefinition);
+        return DeepSpaceSaga.Engine.Content.GameDataRegistry.Create(All(source.ModuleCategories),
+            All(source.ModuleTypes).Select(m => m.CountermeasureAccuracy is not null
+                ? m with { CountermeasureAccuracy = accuracy }
+                : m.TorpedoManeuverability is not null ? m with { TorpedoManeuverability = maneuverability } : m),
+            All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
+            All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
+            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
+    }
     [Theory]
     [InlineData(45)]
     [InlineData(120)]
@@ -14,7 +27,7 @@ public class AutomaticDefenseTests
         static IEnumerable<T> All<T>(DeepSpaceSaga.Engine.Content.TypeRegistry<T> registry)
             where T : DeepSpaceSaga.Engine.Content.ITypeDefinition => Enumerable.Range(0, registry.Count).Select(registry.GetDefinition);
         var registry = DeepSpaceSaga.Engine.Content.GameDataRegistry.Create(All(source.ModuleCategories),
-            All(source.ModuleTypes).Select(m => m.CountermeasureBaseRating is null ? m :
+            All(source.ModuleTypes).Select(m => m.CountermeasureAccuracy is null ? m :
                 m with { CountermeasureSpeedKmS = 8, CountermeasureTurnRateDegPerSec = turnRate }),
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses));
@@ -82,7 +95,8 @@ public class AutomaticDefenseTests
     [Fact]
     public void Zero_chance_does_not_consume_attempt()
     {
-        using var engine = Create(DefenseScenario(600, 100, 0));
+        using var engine = new SimulationEngine(WeaponRegistry(0, 100));
+        engine.LoadScenario(DefenseScenario(600, 100, 0));
         engine.ReceiveCommand(Fire("fire")); At(engine, 0);
         var snapshot = At(engine, 1000);
         Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);

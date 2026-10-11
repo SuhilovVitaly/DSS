@@ -14,15 +14,10 @@ public sealed partial class SimulationEngine
         var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
         int skill = (skillType == WeaponSkillType.TorpedoAttack ? crew.TorpedoSkill : crew.CountermeasureSkill) ?? 0;
         decimal baseRating = skillType == WeaponSkillType.TorpedoAttack
-            ? definition.TorpedoBaseRating ?? 30m : definition.CountermeasureBaseRating ?? 30m;
-        // Divide the bounded integer first to avoid overflowing base*skill unnecessarily.
-        decimal effectiveRating;
-        try { effectiveRating = baseRating * (skill / 50m); }
-        catch (OverflowException ex)
-        {
-            throw new ScenarioException($"Module '{module.ModuleId}' effective weapon rating exceeds decimal range.", ex);
-        }
-        return new WeaponOperatorSnapshot(crew.Id, crew.DisplayName, skillType, skill, baseRating, effectiveRating);
+            ? definition.TorpedoManeuverability ?? throw new ScenarioException($"Module '{module.ModuleId}' lacks torpedoManeuverability.")
+            : definition.CountermeasureAccuracy ?? throw new ScenarioException($"Module '{module.ModuleId}' lacks countermeasureAccuracy.");
+        // EP-0008 keeps operator identity and skill metadata, without a skill multiplier.
+        return new WeaponOperatorSnapshot(crew.Id, crew.DisplayName, skillType, skill, baseRating, baseRating);
     }
 
     private LauncherCombatSnapshot? ProjectWeaponLauncher(SpaceObjectRuntime owner, InstalledModuleRuntime module)

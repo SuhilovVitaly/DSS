@@ -22,8 +22,8 @@ public class WeaponOperatorRuntimeTests
         Assert.NotEqual(attack.CrewId, defense.CrewId);
         Assert.Equal(WeaponSkillType.TorpedoAttack, attack.SkillType);
         Assert.Equal(WeaponSkillType.CountermeasureDefense, defense.SkillType);
-        Assert.Equal(48m, attack.EffectiveRating);
-        Assert.Equal(6m, defense.EffectiveRating);
+        Assert.Equal(5m, attack.EffectiveRating);
+        Assert.Equal(55m, defense.EffectiveRating);
         Assert.Null(modules.Single(m => m.ModuleId == "MOD-PLAYER-ENGINE-01").Operator);
     }
     [Fact]
@@ -51,7 +51,15 @@ public class WeaponOperatorRuntimeTests
                 {
                     Launchers = combat.Launchers.Select(l => l with { State = l.State with { Operator = null } }).ToArray(),
                     Projectiles = combat.Projectiles.Select(p => p with
-                    { Flight = p.Flight with { TorpedoRating = null, RatingBreakdown = null } }).ToArray()
+                    {
+                        Flight = p.Flight with
+                        {
+                            TorpedoRating = null,
+                            RatingBreakdown = null,
+                            CapturedManeuverability = null,
+                            OwnerPlayerRelationAtLaunch = null
+                        }
+                    }).ToArray()
                 }
             }
         };
@@ -92,7 +100,7 @@ public class WeaponOperatorRuntimeTests
         using var engine = Create(WeaponOperatorSchemaTests.Assigned(77, 50));
         engine.ReceiveCommand(Fire("capture"));
         var launched = Assert.Single(At(engine, 0).Objects, o => o.Torpedo is not null).Torpedo!;
-        Assert.Equal(46.2m, launched.TorpedoRating);
+        Assert.Equal(5m, launched.TorpedoRating);
         Assert.Equal(77, launched.RatingBreakdown!.Skill);
         var saved = engine.CaptureSaveState();
         saved = saved with
@@ -112,25 +120,60 @@ public class WeaponOperatorRuntimeTests
             using var restored = EngineContentLoader.CreateEngineFromSaveFile(Path.Combine(ClientRoot, "Settings.json"), path);
             var snapshot = At(restored, 100);
             var flight = Assert.Single(snapshot.Objects, o => o.Torpedo is not null).Torpedo!;
-            Assert.Equal(46.2m, flight.TorpedoRating);
+            Assert.Equal(5m, flight.TorpedoRating);
             Assert.Equal(launched.RatingBreakdown, flight.RatingBreakdown);
-            Assert.Equal(0.6m, snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.Operator!.EffectiveRating);
+            Assert.Equal(5m, snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.Operator!.EffectiveRating);
             Assert.Equal(Target, Assert.Single(At(restored, 5000).CombatImpacts).HitObjectId);
         }
         finally { File.Delete(path); }
     }
 
     [Theory]
-    [InlineData(0, 0)]
-    [InlineData(50, 30)]
-    [InlineData(100, 60)]
-    public void Zero_skill_operator_has_zero_rating(int skill, int expected)
+    [InlineData(0, 5)]
+    [InlineData(50, 5)]
+    [InlineData(100, 5)]
+    public void Skills_zero_fifty_hundred_do_not_change_chance(int skill, int expected)
     {
-        using var engine = Create(WeaponOperatorSchemaTests.Assigned(skill));
+        using var engine = Create(AutomaticDefenseTests.DefenseScenario(attack: skill, defense: skill));
         engine.ReceiveCommand(Fire("skill"));
         var flight = Assert.Single(At(engine, 0).Objects, o => o.Torpedo is not null).Torpedo!;
         Assert.Equal((decimal)expected, flight.TorpedoRating);
         Assert.NotNull(flight.RatingBreakdown);
+        Assert.Equal(5m, flight.CapturedManeuverability);
+        Assert.Equal(500, DeepSpaceSaga.Engine.Combat.InterceptionMath.ChanceTenths(55, flight.CapturedManeuverability!.Value));
+        var interception = Assert.Single(At(engine, 1000).Objects, o => o.Countermeasure is not null).Countermeasure!;
+        Assert.Equal(55m, interception.CapturedAccuracy);
+        Assert.Equal(500, interception.FrozenChanceTenths);
+        Assert.Equal(skill, interception.RatingBreakdown.DefenseOperator.Skill);
+    }
+
+    [Fact]
+    public void Frozen_values_survive_catalog_changes()
+    {
+        using var engine = Create(AutomaticDefenseTests.DefenseScenario());
+        engine.ReceiveCommand(Fire("frozen"));
+        At(engine, 0);
+        var snapshot = At(engine, 1000);
+        var original = Assert.Single(snapshot.Objects, o => o.Countermeasure is not null).Countermeasure!;
+        Assert.Equal(55m, original.CapturedAccuracy);
+        Assert.Equal(5m, original.CapturedTargetManeuverability);
+        Assert.Equal(500, original.FrozenChanceTenths);
+        string path = Path.Combine(Path.GetTempPath(), $"frozen-weapons-{Guid.NewGuid():N}.json");
+        try
+        {
+            File.WriteAllText(path, ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(1000, SimulationSpeed.Speed0)));
+            using var loaded = new SimulationEngine(AutomaticDefenseTests.WeaponRegistry(20, 90));
+            loaded.LoadScenario(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true), isSave: true);
+            var restored = Assert.Single(At(loaded, 1000).Objects, o => o.Countermeasure is not null).Countermeasure!;
+            Assert.Equal(original.CapturedAccuracy, restored.CapturedAccuracy);
+            Assert.Equal(original.CapturedTargetManeuverability, restored.CapturedTargetManeuverability);
+            Assert.Equal(original.FrozenChanceTenths, restored.FrozenChanceTenths);
+            Assert.Equal(5m, Assert.Single(At(loaded, 1000).Objects, o => o.Torpedo is not null).Torpedo!.CapturedManeuverability);
+            var result = Assert.Single(At(loaded, 5000).CombatJournal, e => e.Roll is not null);
+            Assert.Equal(500, result.ChanceTenths);
+            Assert.Equal(801, result.Roll);
+        }
+        finally { File.Delete(path); }
     }
 
     [Fact]
@@ -150,8 +193,8 @@ public class WeaponOperatorRuntimeTests
         Assert.Equal("operator-" + Player, weaponOperator.CrewId);
         Assert.Equal(WeaponSkillType.TorpedoAttack, weaponOperator.SkillType);
         Assert.Equal(80, weaponOperator.Skill);
-        Assert.Equal(30m, weaponOperator.BaseRating);
-        Assert.Equal(48m, weaponOperator.EffectiveRating);
+        Assert.Equal(5m, weaponOperator.BaseRating);
+        Assert.Equal(5m, weaponOperator.EffectiveRating);
         var unknown = snapshot.Objects.Single(o => o.ObjectId == Target);
         Assert.Null(unknown.HullCombat);
         Assert.Null(unknown.Defense);

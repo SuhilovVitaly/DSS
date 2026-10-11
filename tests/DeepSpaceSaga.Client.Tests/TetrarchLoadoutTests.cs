@@ -129,11 +129,11 @@ public sealed class TetrarchLoadoutTests
         }
         var launcher = Assert.Single(snapshot.InstalledModules, m => m.ModuleTypeId == LauncherId);
         Assert.NotNull(launcher.LauncherCombat);
-        Assert.Equal(new LauncherCombatSnapshot(null, 3, 90, 150), launcher.LauncherCombat with { Operator = null });
+        Assert.Equal(new LauncherCombatSnapshot(null, 3, 90, 150, RangeKm: 200, Maneuverability: 5), launcher.LauncherCombat with { Operator = null });
         var assignedOperator = Assert.IsType<WeaponOperatorSnapshot>(launcher.LauncherCombat.Operator);
         Assert.Equal("CHR-0001", assignedOperator.CrewId);
         Assert.Equal(50, assignedOperator.Skill);
-        Assert.Equal(30m, assignedOperator.EffectiveRating);
+        Assert.Equal(5m, assignedOperator.EffectiveRating);
         Assert.Equal("Ready", launcher.OperationalState);
         Assert.Equal("On", launcher.PowerState);
         Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct }, launcher.CommandTypeIds);
