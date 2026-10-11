@@ -95,7 +95,7 @@
       "typeId": "module.countermeasure.launcher",
       "displayName": "Countermeasure Launcher",
       "slotSize": 1,
-      "commandTypeIds": ["defense.enable", "defense.disable"]
+      "commandTypeIds": ["defense.fire", "defense.enable", "defense.disable"]
     },
     {
       "typeId": "living.quarters",

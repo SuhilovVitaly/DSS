@@ -157,3 +157,7 @@ US-0004 TK-0005 `9548761b9084755ccefc8f791edf762ac61190e9` published/remote veri
 ## EP-0008-US-0005-TK-0002 — 2026-10-11
 
 TK-0001 `6b0d1f29d74c78c19a721df8e081466f25102333` published/remote verified. Manual Engine fire implemented; full Engine1799/1799, final manual21/21, affected Client20/20, solution build/format/diff PASS. Next after publication: command catalog, then authoritative preview. Lifetime scheduler/new-format validation/native remain downstream.
+
+## EP-0008-US-0005-TK-0003 — 2026-10-11
+
+TK-0002 `83166f856df987c718d97a6eec5de4f92ef197a3` published/remote verified. Manual Fire catalog and category binding implemented; Client1780/1780, affected Engine93/93, build/format/diff PASS. Next after publication: authoritative preview. Native/final corpus OPEN.

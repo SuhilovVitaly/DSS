@@ -13,17 +13,18 @@ public class CountermeasureContentTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Catalog_has_automatic_defense_only(bool output)
+    public void Catalog_registers_manual_fire_and_preserves_automatic_toggles(bool output)
     {
         var registry = Registry(output);
         var module = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.countermeasure.launcher.basic"));
-        Assert.Equal(new[] { DefenseCommandTypes.Enable, DefenseCommandTypes.Disable }, module.CommandTypeIds);
+        Assert.Equal(new[] { DefenseCommandTypes.Fire, DefenseCommandTypes.Enable, DefenseCommandTypes.Disable }, module.CommandTypeIds);
         Assert.Equal(1, module.SlotSize);
         Assert.Equal(1, module.BaseCycleTimeMs); // Required content metadata; defense reload has its own physical deadline.
         foreach (var id in module.CommandTypeIds)
         {
             var command = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(id));
-            Assert.Equal("none", command.Target);
+            Assert.Equal(id == DefenseCommandTypes.Fire ? "object" : "none", command.Target);
+            Assert.Equal("module.countermeasure.launcher", command.Type);
             Assert.Equal(0, command.ActivationEnergyCellsCost);
         }
     }
@@ -72,6 +73,17 @@ public class CountermeasureContentTests
             Assert.Equal(200, launcherType.TorpedoRangeKm);
             Assert.Equal(100, defenseType.CountermeasureRangeKm);
             Assert.Equal(200, defenseType.CountermeasureManualRangeKm);
+            Assert.Contains(DefenseCommandTypes.Fire, defenseType.CommandTypeIds);
         }
+        using var engine = new DeepSpaceSaga.Engine.SimulationEngine(registry);
+        engine.LoadScenario(scenario);
+        var modules = engine.CaptureSnapshotForTests().InstalledModules.Where(m => m.Defense is not null).ToArray();
+        Assert.Equal(2, modules.Length);
+        Assert.All(modules, m =>
+        {
+            Assert.Contains(m.Commands, c => c.CommandTypeId == DefenseCommandTypes.Fire && c.Target == "object");
+            Assert.Equal(DefenseState.Ready, m.Defense!.State);
+            Assert.Null(m.ActiveCommandType);
+        });
     }
 }

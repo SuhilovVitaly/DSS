@@ -3,10 +3,10 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0005-manual-countermeasure-fire
 ticket: EP-0008-US-0005-TK-0003-defense-fire-catalog
 title: "Ручная команда в каталоге ПРО"
-stage: draft
+stage: implemented
 layer: content-data
 depends_on: ["EP-0008-US-0005-TK-0002-manual-launch-execution"]
-files_touched: 2
+files_touched: 4
 serves: ["AC-0001"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Ручная команда в каталоге ПРО
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED (automated checks; self-review)
 
 ## Why
 
@@ -36,6 +36,12 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 |---|---|---|
 | `src/DeepSpaceSaga.Client/Data/Commands/CountermeasureLauncher/commands.json` | Существует: src/DeepSpaceSaga.Client/Data/Commands/CountermeasureLauncher/commands.json:4 (baseline 6907c58) | Только результат и шаги этой карточки |
 | `tests/DeepSpaceSaga.Client.Tests/CountermeasureContentTests.cs` | Существует: tests/DeepSpaceSaga.Client.Tests/CountermeasureContentTests.cs:6 (baseline 6907c58) | Только результат и шаги этой карточки |
+
+## Execution scope update — 2026-10-11
+
+Baseline `83166f8` published/remote verified. Add `tests/DeepSpaceSaga.Engine.Tests/ScenarioEngineTests.cs` to update its obsolete automatic-only command catalog expectation while retaining module values and target assertions.
+
+Catalog scope correction before edit: add `src/DeepSpaceSaga.Client/Data/module-types.json`; module category owns commandTypeIds independently of the command definition file. Source/output tests reproduced the missing binding, so both declarations must change together.
 
 ## Dependencies
 
@@ -67,8 +73,8 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Defense_fire_is_registered_for_countermeasure_module`
-- [ ] `Toggle_commands_remain_available`
+- [x] `Defense_fire_is_registered_for_countermeasure_module`
+- [x] `Toggle_commands_remain_available`
 
 Команды из корня DSS после реализации:
 
@@ -82,13 +88,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `83166f856df987c718d97a6eec5de4f92ef197a3` published/remote verified. Real source/output catalogs bind defense.fire to the countermeasure category with explicit object target and zero energy cost; Enable/Disable remain available. Both real player module instances start Ready without generic active command cooldown.
+
+Initial focused catalog tests exposed missing category binding (4 failures); corrected module-types.json as documented before edit. Full Client **1780/1780 PASS** (`ep8-us5-tk3-client.trx`); affected Engine ScenarioEngineTests/ManualCountermeasureFireTests **93/93 PASS** (`ep8-us5-tk3-engine.trx`). Client build 0 warnings/errors, scoped whitespace verify and git diff --check PASS. Self-review complete; native/final corpus OPEN. Separate ticket commit/push is the required publication gate before TK-0004.
