@@ -188,6 +188,9 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
+            // Capture stays inside the gate: Engine rejects a terminal world before any
+            // directory/temp-file write, including saves queued while the player was alive.
+            // An immutable pre-death capture may still finish its atomic write afterwards.
             var saveState = _engine.CaptureSaveState();
             string json = ScenarioLoader.Serialize(saveState);
             Directory.CreateDirectory(_saveDirectory);
