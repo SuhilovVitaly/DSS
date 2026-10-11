@@ -249,3 +249,7 @@ TK-0003 `c195d6ac4f91cc536e6a0dd2e54739b0bbaca8bd` published/remote verified. Lo
 ## EP-0008-US-0012-TK-0001 — 2026-10-11
 
 US-0011 TK-0004 `222e5bb45063c60e5a689ee5e854f2e9c8867ab6` published/remote verified. Five remaining formula/phase fixtures aligned without weakening motion/UI/serializer assertions. Full solution4302/4302 with all Engine corpus (2030/2030), skipped0; final Contracts185/185, Motion170/170 and affected Client3/3, solution build/format/diffPASS. TRX and log at `D:/DeepSpaceSaga/ep8-us12tk1-results` and `D:/DeepSpaceSaga/ep8-us12tk1-solution.log`. Next after publication: full generated-scenario battle acceptance. Native OPEN.
+
+## EP-0008-US-0012-TK-0002 — 2026-10-11
+
+TK-0001 `0cdcc7af7b774096a307fc5520e92f4ac12acffc` published/remote verified. Generated PlayerShipOnly actual-session battle, real-file continuation/recovery, three-seed pause/x100 partition determinism and two-hostile0/100% custom-weapon matrix implemented. New6/6 and Engine1922/1922 PASS; scoped format/diffPASS. Next after separate publication: native UI matrix. Native OPEN.
