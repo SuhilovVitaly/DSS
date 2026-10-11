@@ -60,21 +60,11 @@ public sealed partial class SimulationEngine
 
         var origin = PredictMotion(owner, motionTimeMs - owner.StartGameTimeMs);
         var targetPose = PredictMotion(target, motionTimeMs - target.StartGameTimeMs);
-        double dx = Math.Abs(targetPose.X / WorldUnitsPerKm - origin.X / WorldUnitsPerKm);
-        double dy = Math.Abs(targetPose.Y / WorldUnitsPerKm - origin.Y / WorldUnitsPerKm);
-        double longest = Math.Max(dx, dy);
-        double ratio = longest == 0 ? 0 : Math.Min(dx, dy) / longest;
-        double distanceKm = longest * Math.Sqrt(1 + ratio * ratio);
-        if (!double.IsFinite(distanceKm) || distanceKm > launcher.RangeKm!.Value)
+        if (!WithinTorpedoRange(origin, targetPose, launcher.RangeKm!.Value))
             return CommandStartOutcome.Rejected("target_out_of_range");
         var route = TorpedoGuidanceMath.Plan(origin, targetPose, launcher.SpeedKmS, launcher.TurnRateDegPerSec, motionTimeMs);
-        long sequence = _torpedoSequence;
-        string id;
-        do
-        {
-            if (sequence == long.MaxValue) return CommandStartOutcome.Rejected("projectile_id_exhausted");
-            id = "torpedo-" + (++sequence).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        } while (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, id, StringComparison.OrdinalIgnoreCase)));
+        if (!TryGetNextTorpedoId(out string id, out long sequence))
+            return CommandStartOutcome.Rejected("projectile_id_exhausted");
         var flight = new TorpedoSnapshot(owner.InitialMotion.ObjectId, moduleId, targetObjectId!, motionTimeMs,
             launcher.SpeedKmS, launcher.TurnRateDegPerSec, launcher.Damage, 0, route, [], ImpactTime(route),
             TorpedoRating: weaponOperator.EffectiveRating, RatingBreakdown: weaponOperator,
@@ -89,6 +79,20 @@ public sealed partial class SimulationEngine
             origin.X, origin.Y, TorpedoOperator: weaponOperator, Result: "torpedo"));
         _nextCombatGuidanceMs = Math.Min(_nextCombatGuidanceMs, NextGuidanceBoundary(motionTimeMs));
         return CommandStartOutcome.Started;
+    }
+
+    private bool TryGetNextTorpedoId(out string id, out long sequence)
+    {
+        sequence = _torpedoSequence;
+        id = string.Empty;
+        while (sequence < long.MaxValue)
+        {
+            string candidate = "torpedo-" + (++sequence).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, candidate, StringComparison.OrdinalIgnoreCase))) continue;
+            id = candidate;
+            return true;
+        }
+        return false;
     }
 
     private CommandStartOutcome TrySelfDestruct(PlayerCommand command, long motionTimeMs)
@@ -145,6 +149,7 @@ public sealed partial class SimulationEngine
         {
             var impact = FindFirstImpact(cursor, motionTimeMs);
             var launch = NextDefenseLaunch(cursor, motionTimeMs);
+            var hostileLaunch = NextHostileLaunch(cursor, motionTimeMs);
             var intercept = FindFirstIntercept(cursor, motionTimeMs);
             var expiry = _objects.Where(o => o.InitialMotion.Countermeasure is { Phase: CountermeasurePhase.MissedCoast })
                 .OrderBy(o => o.InitialMotion.Countermeasure!.MissExpiresAtMotionTimeMs)
@@ -152,6 +157,7 @@ public sealed partial class SimulationEngine
             double expiryTime = expiry?.InitialMotion.Countermeasure?.MissExpiresAtMotionTimeMs ?? double.PositiveInfinity;
             double eventTime = Math.Min(launch?.Time ?? double.PositiveInfinity,
                 Math.Min(intercept?.Contact.MotionTimeMs ?? double.PositiveInfinity, expiryTime));
+            eventTime = Math.Min(eventTime, hostileLaunch?.Time ?? double.PositiveInfinity);
             if (impact is { } hit && hit.Contact.MotionTimeMs <= eventTime)
             {
                 ApplyImpact(hit.Projectile, hit.Target, hit.Contact);
@@ -172,10 +178,18 @@ public sealed partial class SimulationEngine
                 cursor = expiryTime;
                 continue;
             }
-            if (launch is not null)
+            if (launch is not null && launch.Time <= eventTime)
             {
                 LaunchCountermeasure(launch);
                 cursor = launch.Time;
+                continue;
+            }
+            if (hostileLaunch is not null)
+            {
+                var result = TryStartHostileTorpedoFire(hostileLaunch.OwnerId, hostileLaunch.ModuleId, hostileLaunch.Time);
+                if (result.Disposition != CommandStartDisposition.Started)
+                    throw new InvalidOperationException($"Validated hostile launch was rejected: {result.ReasonCode}.");
+                cursor = hostileLaunch.Time;
                 continue;
             }
             break;

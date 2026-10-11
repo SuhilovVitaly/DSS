@@ -156,7 +156,7 @@ public sealed class BasicCombatUiFlowTests
             (_width, _height, _scale) = (width, height, scale);
             Directory.CreateDirectory(DirectoryPath);
             var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Settings, out _, out _);
-            var source = CombatSessionFixture.WithinLaunchRange(ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json")));
+            var source = CombatSessionFixture.InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json")));
             var engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
             engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = 42 } });
             Handle = new GameSessionHandle(new LocalGameSessionConnection(engine, DirectoryPath));

@@ -195,7 +195,7 @@ public sealed class BasicCombatEndToEndTests
         internal ScenarioFile Source { get; }
         internal CombatRun(string? savePath = null)
         {
-            Source = WithoutDefense(WithinLaunchRange(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"))));
+            Source = WithoutDefense(InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"))));
             Engine = new SimulationEngine(Registry.Value, clock: new SimulationClock(SimulationSpeed.Speed0, () => _now));
             Engine.LoadScenario(savePath is null
                 ? Source with { GameState = Source.GameState with { MasterSeed = 42 } }

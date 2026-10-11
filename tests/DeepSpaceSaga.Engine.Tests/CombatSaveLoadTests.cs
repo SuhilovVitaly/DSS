@@ -23,7 +23,11 @@ public sealed class CombatSaveLoadTests : IDisposable
                     PositionY = target.PositionY + 1500,
                     SpeedMps = 0,
                     MovementType = "Stationary"
-                } : o).ToArray()
+                } : o with
+                {
+                    Modules = o.Modules?.Select(m => o.ObjectType == SpaceObjectType.NpcShip && m.ModuleTypeId == "module.torpedo.launcher.basic"
+                    ? m with { PowerState = "Off" } : m).ToArray()
+                }).ToArray()
             }
         }, isSave: true);
     }
@@ -110,7 +114,7 @@ public sealed class CombatSaveLoadTests : IDisposable
     }
     private static ScenarioFile RealScenario()
     {
-        var scenario = WithinLaunchRange(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
+        var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
         return scenario with { GameState = scenario.GameState with { MasterSeed = 42 } };
     }
     private static ObjectMotionSnapshot Flight(AuthoritativeSnapshot snapshot) => Assert.Single(snapshot.Objects.Where(o => o.Torpedo is not null));

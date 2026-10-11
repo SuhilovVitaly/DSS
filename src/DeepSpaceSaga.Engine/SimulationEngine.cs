@@ -3342,7 +3342,7 @@ public sealed partial class SimulationEngine : IDisposable
 
     private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt)
     {
-        if (!HasActiveTorpedoes && !HasDefenseActivity && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        if (!HasActiveTorpedoes && !HasDefenseActivity && !HasHostileFireCandidates && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
             _combatProcessedTimeMs = gameTimeMs;
@@ -3354,6 +3354,8 @@ public sealed partial class SimulationEngine : IDisposable
         {
             long next = gameTimeMs;
             if (HasActiveTorpedoes) next = Math.Min(next, _nextCombatGuidanceMs);
+            if (NextHostileLaunch(_combatProcessedTimeMs, gameTimeMs) is { } hostileLaunch)
+                next = Math.Min(next, hostileLaunch.Time);
             foreach (var obj in _objects)
             {
                 if (obj.InitialMotion.ObjectId != PlayerShipObjectId) continue;

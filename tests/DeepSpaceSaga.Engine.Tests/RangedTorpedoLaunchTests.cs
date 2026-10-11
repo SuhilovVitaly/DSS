@@ -10,6 +10,16 @@ public class RangedTorpedoLaunchTests
 {
     private const string PirateLauncher = "MOD-PIRATE-TORPEDO-01";
 
+    private static ScenarioFile LaunchScenario(bool hostile, Func<SpaceObjectData, SpaceObjectData> configure) =>
+        TorpedoImpactTests.Scenario(o =>
+        {
+            var configured = configure(o);
+            return hostile && o.ObjectId == Target ? configured with
+            {
+                Modules = configured.Modules!.Select(m => m.ModuleId == PirateLauncher ? m with { PowerState = "On" } : m).ToArray()
+            } : configured;
+        });
+
     [Theory]
     [InlineData(false, 500, true)]
     [InlineData(false, 500.01, false)]
@@ -26,7 +36,7 @@ public class RangedTorpedoLaunchTests
             All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
             shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
         using var engine = new SimulationEngine(registry);
-        engine.LoadScenario(TorpedoImpactTests.Scenario(o => o.ObjectId == Target ? o with { PositionY = -distance } : o));
+        engine.LoadScenario(LaunchScenario(hostile, o => o.ObjectId == Target ? o with { PositionY = -distance } : o));
         if (hostile) engine.TryStartHostileTorpedoFire(Target, PirateLauncher, 0);
         else engine.ReceiveCommand(Fire("configured-range"));
         Assert.Equal(allowed ? 1 : 0, At(engine, 0).Objects.Count(o => o.Torpedo is not null));
@@ -39,7 +49,7 @@ public class RangedTorpedoLaunchTests
     [InlineData(true, false)]
     public void Range_uses_physical_launch_pose(bool hostile, bool approaching)
     {
-        using var engine = Create(TorpedoImpactTests.Scenario(o => o.ObjectId == (hostile ? Player : Target)
+        using var engine = Create(LaunchScenario(hostile, o => o.ObjectId == (hostile ? Player : Target)
             ? o with
             {
                 PositionY = approaching ? -2010 : -1990,
@@ -49,9 +59,16 @@ public class RangedTorpedoLaunchTests
             }
             : o with { PositionY = 0 }));
         At(engine, 2000);
-        if (hostile) engine.TryStartHostileTorpedoFire(Target, PirateLauncher, 2000);
-        else engine.ReceiveCommand(Fire("moving-range"));
-        Assert.Equal(approaching ? 1 : 0, At(engine, 2000).Objects.Count(o => o.Torpedo is not null));
+        if (hostile)
+        {
+            var automatic = Assert.Single(At(engine, 2000).Objects, o => o.Torpedo is not null).Torpedo!;
+            Assert.Equal(approaching ? 1000 : 1, automatic.LaunchMotionTimeMs);
+        }
+        else
+        {
+            engine.ReceiveCommand(Fire("moving-range"));
+            Assert.Equal(approaching ? 1 : 0, At(engine, 2000).Objects.Count(o => o.Torpedo is not null));
+        }
     }
 
     [Theory]
@@ -63,7 +80,7 @@ public class RangedTorpedoLaunchTests
     [InlineData(true, 2000.01, false)]
     public void Both_sides_obey_inclusive_range(bool hostile, double distance, bool allowed)
     {
-        using var engine = Create(TorpedoImpactTests.Scenario(o => o.ObjectId == Target ? o with { PositionY = -distance } : o));
+        using var engine = Create(LaunchScenario(hostile, o => o.ObjectId == Target ? o with { PositionY = -distance } : o));
         if (hostile)
         {
             var result = engine.TryStartHostileTorpedoFire(Target, PirateLauncher, 0);
@@ -106,7 +123,7 @@ public class RangedTorpedoLaunchTests
     [InlineData(true)]
     public void Active_torpedo_survives_range_exit(bool hostile)
     {
-        using var engine = Create(TorpedoImpactTests.Scenario(o => o.ObjectId == (hostile ? Player : Target)
+        using var engine = Create(LaunchScenario(hostile, o => o.ObjectId == (hostile ? Player : Target)
             ? o with { PositionY = -1990, SpeedMps = 4000, DirectionDegrees = 0, MovementType = "Linear" }
             : o with { PositionY = 0 }));
         if (hostile) Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostileTorpedoFire(Target, PirateLauncher, 0).Disposition);
@@ -122,7 +139,7 @@ public class RangedTorpedoLaunchTests
     [InlineData("neutral")]
     public void Non_enemy_internal_actor_cannot_launch(string relation)
     {
-        using var engine = Create(TorpedoImpactTests.Scenario(o => o.ObjectId == Target ? o with { RelationToPlayer = relation } : o));
+        using var engine = Create(LaunchScenario(true, o => o.ObjectId == Target ? o with { RelationToPlayer = relation } : o));
         Assert.Equal(CommandStartDisposition.Rejected, engine.TryStartHostileTorpedoFire(Target, PirateLauncher, 0).Disposition);
         Assert.DoesNotContain(At(engine, 0).Objects, o => o.Torpedo is not null);
     }
