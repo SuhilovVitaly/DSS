@@ -391,8 +391,8 @@ public sealed partial class GameSessionScreen
         : _buffer.Latest?.Snapshot.MotionTimeMs ?? 0;
     private string? GetDefenseStatus() => FindDefense()?.Defense is { } defense
         ? DefenseStatusText(defense, DefensePresentationTime) : null;
-    internal static string WeaponOperatorText(WeaponOperatorSnapshot? op) => op is null ? "Нет оператора" :
-        $"{op.DisplayName} · Навык {op.Skill} · R {op.EffectiveRating:0.##}";
+    internal static string WeaponOperatorText(WeaponOperatorSnapshot? op) => op is null ? CombatText("NoOperator", "Нет оператора") :
+        $"{op.DisplayName} · {CombatText("SkillMetadata", "Навык (справочно)")} {op.Skill}";
     private string? GetWeaponOperatorText(string panel) => panel switch
     {
         "Torpedo Launcher" => WeaponOperatorText(FindLauncher()?.LauncherCombat?.Operator),
@@ -400,12 +400,12 @@ public sealed partial class GameSessionScreen
         _ => null
     };
     internal static string DefenseStatusText(DefenseSnapshot defense, double time) =>
-        (defense.AutoEnabled ? "Авто ВКЛ · " : "Авто ВЫКЛ · ") + (defense.State switch
+        (defense.AutoEnabled ? CombatText("AutoOn", "Авто ВКЛ") : CombatText("AutoOff", "Авто ВЫКЛ")) + " · " + (defense.State switch
         {
-            DefenseState.NoOperator => "Нет оператора",
-            DefenseState.Guiding => "Наведение",
-            DefenseState.Reloading => $"Перезарядка {Math.Max(0, (defense.ReloadDueMotionTimeMs!.Value - time) / 1000):0.0} с",
-            _ => "Готов"
+            DefenseState.NoOperator => CombatText("NoOperator", "Нет оператора"),
+            DefenseState.Guiding => CombatText("Guiding", "Наведение"),
+            DefenseState.Reloading => CombatText("Reloading", "Перезарядка") + $" {Math.Max(0, (defense.ReloadDueMotionTimeMs!.Value - time) / 1000):0.0} " + CombatText("Seconds", "с"),
+            _ => CombatText("Ready", "Готов")
         });
 
     private string? GetLauncherStatus()

@@ -83,9 +83,14 @@ public sealed partial class GameSessionScreen
     {
         RefreshDefenseSubmissions();
         var key = (weapon.OwnerObjectId, weapon.ModuleId);
-        if (_defenseSubmissions.ContainsKey(key)) return "Sending...";
-        if (_defenseSubmissionErrors.TryGetValue(key, out var error)) return error == "send_failed" ? "Send failed" : error;
-        return DefenseModule(weapon)?.Defense is { } defense ? DefenseStatusText(defense, DefensePresentationTime) : null;
+        if (_defenseSubmissions.ContainsKey(key)) return CombatText("Sending", "Sending...");
+        if (_defenseSubmissionErrors.TryGetValue(key, out var error)) return error == "send_failed"
+            ? CombatText("SendFailed", "Send failed") : DefenseReasonText(error);
+        var module = DefenseModule(weapon);
+        if (module?.Defense is not { } defense) return null;
+        string status = DefenseStatusText(defense, DefensePresentationTime);
+        return defense.State == DefenseState.Ready && module.DefensePreview is { CanFire: false, Reason: { } reason }
+            ? status + " · " + DefenseReasonText(reason) : status;
     }
 
     private string? GetDefenseInstanceOperatorText(WeaponPanelInstance weapon) => DefenseModule(weapon)?.Defense?.Operator is { } op
@@ -98,6 +103,9 @@ public sealed partial class GameSessionScreen
         string value = Localization.Get(fullKey);
         return value == fullKey ? fallback : value;
     }
+
+    internal static string DefenseReasonText(string reason) =>
+        CombatText("Reason." + reason, CombatText("CommandRejected", "Command rejected"));
 
     internal static string RemainingFlightText(CountermeasureSnapshot flight, double time)
     {

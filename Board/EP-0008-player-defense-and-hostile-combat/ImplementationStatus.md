@@ -189,3 +189,7 @@ TK-0001 `5dfef548496649749f274cc884dff0db7e5a51c7` published/remote verified. Re
 ## EP-0008-US-0007-TK-0003 — 2026-10-11
 
 TK-0002 `300a4e561be2fe53513ed558c060a0c7d3aee0b2` published/remote verified. Per-module combat info and selected PR captured facts/physical lifetime implemented; Client1808/1808, build/format/diff PASS. Next after publication: localization. Native/final corpus OPEN.
+
+## EP-0008-US-0007-TK-0004 — 2026-10-11
+
+TK-0003 `df38090d8cdb31bcc3d5dc54638a0c92ceaf4de3` published/remote verified. Localization and actual UI consumers implemented; Client1811/1811, Russian23/23, build/format/diff PASS. US-0007 self-review complete. Next after publication: US-0008 manual preview geometry. Native/final corpus OPEN.

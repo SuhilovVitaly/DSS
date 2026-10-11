@@ -229,14 +229,14 @@ public sealed class ObjectInfoPanel
                 lines.Add(("Distance", TacticalMapSettings.FormatDistance(distanceKm * 1000)));
             if (d.HostileCombat is { } hostile && d.RenderObjectType == SpaceObjectType.NpcShip && d.RelationToPlayer == PlayerRelation.Enemy)
             {
-                lines.Add(("Манёвр", hostile.Phase switch
+                lines.Add((GameSessionScreen.CombatText("Maneuver", "Манёвр"), hostile.Phase switch
                 {
-                    HostileCombatPhase.Pursuit => "Сближение",
-                    HostileCombatPhase.OrbitEntry => "Выход на орбиту",
-                    HostileCombatPhase.OrbitHold => "Удержание орбиты",
+                    HostileCombatPhase.Pursuit => GameSessionScreen.CombatText("Phase.Pursuit", "Сближение"),
+                    HostileCombatPhase.OrbitEntry => GameSessionScreen.CombatText("Phase.OrbitEntry", "Выход на орбиту"),
+                    HostileCombatPhase.OrbitHold => GameSessionScreen.CombatText("Phase.OrbitHold", "Удержание орбиты"),
                     _ => "—"
                 }));
-                lines.Add(("Радиус орбиты", $"{hostile.DesiredRadiusKm:0.##} км"));
+                lines.Add((GameSessionScreen.CombatText("DesiredRadius", "Радиус орбиты"), $"{hostile.DesiredRadiusKm:0.##} " + GameSessionScreen.CombatText("Kilometers", "км")));
             }
             if (d.ClusterName is { } cluster)
             {

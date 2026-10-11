@@ -11,10 +11,10 @@ public class HostileSelectedInfoTests
         false, phase, new(0, 100, 0, 10000, 10060, 0, 0, 0, 4));
 
     [Theory]
-    [InlineData(HostileCombatPhase.Pursuit, "Сближение")]
-    [InlineData(HostileCombatPhase.OrbitEntry, "Выход на орбиту")]
-    [InlineData(HostileCombatPhase.OrbitHold, "Удержание орбиты")]
-    public async Task Selected_known_enemy_shows_confirmed_phase_and_configured_radius(HostileCombatPhase phase, string label)
+    [InlineData(HostileCombatPhase.Pursuit)]
+    [InlineData(HostileCombatPhase.OrbitEntry)]
+    [InlineData(HostileCombatPhase.OrbitHold)]
+    public async Task Selected_known_enemy_shows_confirmed_phase_and_configured_radius(HostileCombatPhase phase)
     {
         await using var fixture = new Fixture();
         SelectTarget(fixture);
@@ -26,9 +26,9 @@ public class HostileSelectedInfoTests
         Render(fixture.Screen);
         var data = fixture.Screen.SelectedOrActiveObjectInfo;
         var lines = ObjectInfoPanel.BuildLines(data);
-        Assert.Contains(("Манёвр", label), lines);
-        Assert.Contains(("Радиус орбиты", $"{37.25:0.##} км"), lines);
-        Assert.DoesNotContain(ObjectInfoPanel.BuildLines(fixture.Screen.PlayerShipInfo), line => line.Label == "Манёвр");
+        Assert.Contains((Localization.Get("Combat.Maneuver"), Localization.Get("Combat.Phase." + phase)), lines);
+        Assert.Contains((Localization.Get("Combat.DesiredRadius"), $"{37.25:0.##} " + Localization.Get("Combat.Kilometers")), lines);
+        Assert.DoesNotContain(ObjectInfoPanel.BuildLines(fixture.Screen.PlayerShipInfo), line => line.Label == Localization.Get("Combat.Maneuver"));
         Render(fixture.Screen);
         Assert.Equal(data, fixture.Screen.SelectedOrActiveObjectInfo);
         fixture.Update(s => s with
@@ -37,12 +37,12 @@ public class HostileSelectedInfoTests
             { HostileCombat = State(HostileCombatPhase.Pursuit) with { DesiredRadiusKm = 80 } })
         });
         Render(fixture.Screen);
-        Assert.Contains(("Манёвр", "Сближение"), ObjectInfoPanel.BuildLines(fixture.Screen.SelectedOrActiveObjectInfo));
-        Assert.Contains(("Радиус орбиты", "80 км"), ObjectInfoPanel.BuildLines(fixture.Screen.SelectedOrActiveObjectInfo));
+        Assert.Contains((Localization.Get("Combat.Maneuver"), Localization.Get("Combat.Phase.Pursuit")), ObjectInfoPanel.BuildLines(fixture.Screen.SelectedOrActiveObjectInfo));
+        Assert.Contains((Localization.Get("Combat.DesiredRadius"), "80 " + Localization.Get("Combat.Kilometers")), ObjectInfoPanel.BuildLines(fixture.Screen.SelectedOrActiveObjectInfo));
         fixture.Screen.OnMouseDown(740, 420);
         Render(fixture.Screen);
         Assert.Equal("hover", fixture.Screen.SelectedObjectId);
-        Assert.DoesNotContain(ObjectInfoPanel.BuildLines(fixture.Screen.SelectedOrActiveObjectInfo), line => line.Label == "Манёвр");
+        Assert.DoesNotContain(ObjectInfoPanel.BuildLines(fixture.Screen.SelectedOrActiveObjectInfo), line => line.Label == Localization.Get("Combat.Maneuver"));
     }
 
     [Theory]
@@ -61,7 +61,7 @@ public class HostileSelectedInfoTests
         });
         Render(fixture.Screen);
         Assert.Null(fixture.Screen.SelectedOrActiveObjectInfo!.Value.HostileCombat);
-        Assert.DoesNotContain(ObjectInfoPanel.BuildLines(fixture.Screen.SelectedOrActiveObjectInfo), line => line.Label == "Манёвр");
+        Assert.DoesNotContain(ObjectInfoPanel.BuildLines(fixture.Screen.SelectedOrActiveObjectInfo), line => line.Label == Localization.Get("Combat.Maneuver"));
     }
 
     [Fact]
@@ -98,9 +98,8 @@ public class HostileSelectedInfoTests
         using var canvas = new SKCanvas(bitmap);
         panel.Render(canvas, width, 0, null, data, height, height);
         var lines = panel.BuildRenderLines(data);
-        Assert.Contains(lines, line => line.Label == "Радиус орбиты");
-        Assert.Contains("Удержание", string.Join(" ", lines.Select(line => line.Value)));
-        Assert.Contains("орбиты", string.Join(" ", lines.Select(line => line.Value)));
+        Assert.Contains(lines, line => line.Label == Localization.Get("Combat.DesiredRadius"));
+        Assert.Contains(Localization.Get("Combat.Phase.OrbitHold"), string.Join(" ", lines.Select(line => line.Value)));
         Assert.Contains("37", string.Join(" ", lines.Select(line => line.Value)));
     }
 }

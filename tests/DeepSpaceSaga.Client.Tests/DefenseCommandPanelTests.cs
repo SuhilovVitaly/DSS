@@ -53,8 +53,8 @@ public class DefenseCommandPanelTests
     public void Operator_zero_skill_is_a_person_and_breakdown_is_frozen()
     {
         Assert.Contains("Alex", GameSessionScreen.WeaponOperatorText(Operator));
-        Assert.Contains("Навык 0", GameSessionScreen.WeaponOperatorText(Operator));
-        Assert.Equal("Нет оператора", GameSessionScreen.WeaponOperatorText(null));
+        Assert.Contains(Localization.Get("Combat.SkillMetadata") + " 0", GameSessionScreen.WeaponOperatorText(Operator));
+        Assert.Equal(Localization.Get("Combat.NoOperator"), GameSessionScreen.WeaponOperatorText(null));
         var flight = new CountermeasureSnapshot("ship", "launcher", "torpedo", CountermeasurePhase.Guiding,
             new(0, 1, TorpedoRoutePhase.Straight, true), 0, 320, new(Operator, 48));
         Assert.Contains(ObjectInfoPanel.CountermeasureLines(flight), l => l.Value == "32.0%");

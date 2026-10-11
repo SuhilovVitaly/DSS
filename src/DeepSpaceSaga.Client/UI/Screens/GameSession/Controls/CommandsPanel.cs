@@ -603,8 +603,8 @@ public sealed class CommandsPanel
                         ? _commandButtons[_hoveredCommandButtonIndex].Label
                         : null;
                 if (opened && panel.Name == "Torpedo Launcher") statusBarText = _launcherStatus?.Invoke() ?? statusBarText;
-                if (opened && panel.Name == "Countermeasure Launcher") statusBarText = _defenseStatus?.Invoke() ?? statusBarText;
-                if (opened && panel.Weapon is { } weapon) statusBarText = _weaponStatus?.Invoke(weapon) ?? statusBarText;
+                if (opened && panel.Weapon is null && panel.Name == "Countermeasure Launcher") statusBarText = _defenseStatus?.Invoke() ?? statusBarText;
+                if (opened && statusBarText is null && panel.Weapon is { } weapon) statusBarText = _weaponStatus?.Invoke(weapon);
 
                 _panelRows.Add(new CommandPanelGeometry(
                     panel.Name, opened, captionRect, bodyRect, buttons, statusBarRect, statusBarText, panel.Weapon, details[panel.Key]));
@@ -704,6 +704,8 @@ public sealed class CommandsPanel
                 ? FindCommandMetadataAcrossModules(modules.Where(m => m.ModuleId == weapon.ModuleId).ToArray(), commandTypeId)
                 : FindCommandMetadataAcrossModules(modules, commandTypeId);
             string label = metadata?.DisplayName ?? commandTypeId;
+            if (commandTypeId is DefenseCommandTypes.Fire or DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
+                label = GameSessionScreen.CombatText("Command." + commandTypeId, label);
 
             int col = i % (int)CommandButtonColumns;
             int rowIdx = i / (int)CommandButtonColumns;
@@ -859,7 +861,7 @@ public sealed class CommandsPanel
         canvas.DrawRect(row.StatusBarRect, _statusBarBorderPaint);
 
         float textY = row.StatusBarRect.MidY + _statusBarTextPaint.TextSize / 3f;
-        canvas.DrawText(row.StatusBarText, row.StatusBarRect.MidX, textY, _statusBarTextPaint);
+        canvas.DrawText(TruncateLabel(row.StatusBarText, _statusBarTextPaint, row.StatusBarRect.Width - 12), row.StatusBarRect.MidX, textY, _statusBarTextPaint);
     }
 
     private void DrawBeveledCaption(SKCanvas canvas, SKRect rect, SKPaint backgroundPaint)
