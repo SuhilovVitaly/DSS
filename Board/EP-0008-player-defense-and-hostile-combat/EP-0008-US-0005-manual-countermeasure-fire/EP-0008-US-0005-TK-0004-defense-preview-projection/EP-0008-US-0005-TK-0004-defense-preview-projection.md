@@ -3,10 +3,10 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0005-manual-countermeasure-fire
 ticket: EP-0008-US-0005-TK-0004-defense-preview-projection
 title: "Авторитетный шанс и причины недоступности каждого аппарата"
-stage: draft
+stage: implemented
 layer: engine
 depends_on: ["EP-0008-US-0005-TK-0003-defense-fire-catalog"]
-files_touched: 4
+files_touched: 3
 serves: ["AC-0002","AC-0004"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Авторитетный шанс и причины недоступности каждого аппарата
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED (automated checks; self-review)
 
 ## Why
 
@@ -69,9 +69,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Distinct_module_accuracies_produce_distinct_previews`
-- [ ] `Preview_does_not_draw_rng_or_reserve_attempt`
-- [ ] `Preview_target_identity_prevents_stale_display`
+- [x] `Distinct_module_accuracies_produce_distinct_previews`
+- [x] `Preview_does_not_draw_rng_or_reserve_attempt`
+- [x] `Preview_target_identity_prevents_stale_display`
 
 Команды из корня DSS после реализации:
 
@@ -85,13 +85,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0002, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0002, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `a4091e3f72ed06d0c89766352fb840a2f05b0d92` published/remote verified. Installed player modules now project an authoritative DefenseLaunchPreview bound to selected torpedo identity. Chance uses each module's current accuracy and target captured maneuverability. Shared execution guard provides readiness/operator/hostility/inclusive range reasons; zero chance remains eligible and no geometry/RNG/attempt reservation occurs. Invalid time and exhausted IDs also match execution. WeaponOperators required no edit.
+
+Focused manual/preview **29/29 PASS**, full non-corpus Engine **1808/1808 PASS** (`ep8-us5-tk4-engine.trx`), full Client **1780/1780 PASS** (`ep8-us5-tk4-client.trx`), expanded review **10/10 PASS** (`ep8-us5-tk4-review.trx`). Review adds captured rating after catalog change and target removal/stale command regression. Tests also cover distinct module accuracy, rounding, pause, unchanged RNG/sequence/attempt, selection vs hover, own torpedo, power/structure/operator, per-module busy, zero chance and exact manual range. Solution build 0 warnings/errors, scoped whitespace verify and diff check PASS. Self-review has no unresolved finding in this scope. Native/UI integration and current-format persistence remain downstream.

@@ -724,7 +724,7 @@ public sealed partial class SimulationEngine : IDisposable
             var shipEvents = _shipEvents.ToImmutableArray();
             _shipEvents.Clear();
 
-            var installedModules = BuildInstalledModuleProjection();
+            var installedModules = BuildInstalledModuleProjection(gameTimeMs);
 
             return new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
@@ -872,7 +872,7 @@ public sealed partial class SimulationEngine : IDisposable
     /// the Commands Panel performs its own data-driven filtering.
     /// Returns empty when there is no player ship or no module type registry.
     /// </summary>
-    private ImmutableArray<InstalledModuleSnapshot> BuildInstalledModuleProjection()
+    private ImmutableArray<InstalledModuleSnapshot> BuildInstalledModuleProjection(long motionTimeMs)
     {
         if (string.IsNullOrWhiteSpace(PlayerShipObjectId))
             return ImmutableArray<InstalledModuleSnapshot>.Empty;
@@ -912,7 +912,8 @@ public sealed partial class SimulationEngine : IDisposable
                 Operator: moduleType.TorpedoDamage is not null
                     ? ResolveWeaponOperator(ship, module, WeaponSkillType.TorpedoAttack)
                     : moduleType.CountermeasureAccuracy is not null
-                        ? ResolveWeaponOperator(ship, module, WeaponSkillType.CountermeasureDefense) : null));
+                        ? ResolveWeaponOperator(ship, module, WeaponSkillType.CountermeasureDefense) : null,
+                DefensePreview: BuildDefensePreview(ship, module, motionTimeMs)));
         }
 
         return builder.MoveToImmutable();

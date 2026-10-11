@@ -161,3 +161,7 @@ TK-0001 `6b0d1f29d74c78c19a721df8e081466f25102333` published/remote verified. Ma
 ## EP-0008-US-0005-TK-0003 — 2026-10-11
 
 TK-0002 `83166f856df987c718d97a6eec5de4f92ef197a3` published/remote verified. Manual Fire catalog and category binding implemented; Client1780/1780, affected Engine93/93, build/format/diff PASS. Next after publication: authoritative preview. Native/final corpus OPEN.
+
+## EP-0008-US-0005-TK-0004 — 2026-10-11
+
+TK-0003 `a4091e3f72ed06d0c89766352fb840a2f05b0d92` published/remote verified. Authoritative per-module selected-target preview implemented; Engine1808/1808, Client1780/1780, expanded review10/10, build/format/diff PASS. US-0005 self-review complete. Next after publication: US-0006 global lifetime. Native/final corpus OPEN.

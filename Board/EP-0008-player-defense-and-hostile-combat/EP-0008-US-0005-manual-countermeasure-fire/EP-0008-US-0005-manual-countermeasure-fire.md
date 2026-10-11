@@ -2,12 +2,12 @@
 epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0005-manual-countermeasure-fire
 title: "Ручной перехват любой вражеской торпеды"
-stage: draft
+stage: implemented
 dependencies: ["EP-0008-US-0004-hostile-pursuit-and-orbit"]
 created: 2026-10-07
 revision: 1
 current_review: complete
-validation_status: planning-only
+validation_status: automated-pass; native-open
 ---
 
 # Ручной перехват любой вражеской торпеды
@@ -46,6 +46,10 @@ validation_status: planning-only
 
 ## Gaps и исполнение
 
-Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История draft и не является утверждением о пройденных тестах.
+Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История реализована и проверена автоматически; evidence приведено в карточках.
 
-При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Текущая задача только создаёт план.
+При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Автономное исполнение выполнено; публикация проверяется по Git.
+
+## Story execution self-review — 2026-10-11
+
+AC-0001: real paused command validates module/operator/range with durable idempotency; catalog source/output binds explicit target. AC-0002: current hostile or captured orphan provenance, arbitrary torpedo target and invalid paths covered by real runtime tests. AC-0003: zero chance/no-solution pursuit, repeat after reload and two simultaneous modules covered. AC-0004: independent selected-target previews and successful-spawn-only attempt flag covered without RNG consumption. No unresolved finding within story scope. This is self-review, not user approval. Global lifetime/arbitration, Client controls, new save format and native acceptance are downstream gates.
