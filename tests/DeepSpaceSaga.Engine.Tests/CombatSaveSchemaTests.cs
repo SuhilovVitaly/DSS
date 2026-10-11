@@ -78,14 +78,15 @@ public sealed class CombatSaveSchemaTests
     }
 
     [Fact]
-    public void Legacy_v9_without_combat_remains_readable()
+    public void Legacy_v9_save_is_rejected_but_internal_scenario_fixture_remains_readable()
     {
         using var engine = Create(TorpedoImpactTests.Scenario(o => o with { ShipClassId = null, Modules = null }));
         var save = engine.CaptureSaveState();
         save = TradingEconomySaveSchemaTests.WithoutNewContinuation(save, 9);
         save = save with { GameState = save.GameState with { CombatState = null } };
         var loaded = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true);
-        engine.LoadScenario(loaded, true);
+        Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() => engine.LoadScenario(loaded, true)).Message);
+        engine.LoadScenario(loaded); // Internal unclassified scenario fixture.
         Assert.All(At(engine, 0).Objects, o => Assert.Null(o.HullCombat));
         Assert.Empty(At(engine, 0).InstalledModules);
     }

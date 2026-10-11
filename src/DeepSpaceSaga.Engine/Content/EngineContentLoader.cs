@@ -31,8 +31,8 @@ public static class EngineContentLoader
     /// </summary>
     public static SimulationEngine CreateEngineFromSaveFile(string settingsPath, string savePath)
     {
+        var saveScenario = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true, isSave: true);
         var registry = LoadRegistryFromSettingsFile(settingsPath, out _, out _);
-        var saveScenario = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true);
         var fields = LoadStationResourceFields(settingsPath, registry);
         var engine = new SimulationEngine(registry, LoadCrewPortraits(settingsPath));
         engine.ConfigureStationResourceFields(fields);

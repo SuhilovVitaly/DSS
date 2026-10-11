@@ -599,7 +599,7 @@ public class StationEconomyGenerationTests
     }
 
     [Fact]
-    public void Legacy_unprofiled_save_remains_compatible_with_matching_catalog()
+    public void Legacy_unprofiled_save_is_rejected_but_internal_fixture_preserves_catalog()
     {
         var registry = CreateProfileRegistry();
         using var engine = new SimulationEngine(registry);
@@ -612,7 +612,8 @@ public class StationEconomyGenerationTests
         };
 
         using var loaded = new SimulationEngine(registry);
-        loaded.LoadScenario(legacy, isSave: true);
+        Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() => loaded.LoadScenario(legacy, isSave: true)).Message);
+        loaded.LoadScenario(legacy); // Internal scenario fixture, not file-save acceptance.
         Assert.Equal(engine.PlayerCredits, loaded.PlayerCredits);
         Assert.All(loaded.RuntimeObjects.Where(obj => obj.ObjectType == SpaceObjectType.Station),
             station => Assert.Null(station.MarketProfileId));

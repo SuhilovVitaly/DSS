@@ -127,7 +127,8 @@ public sealed class CargoCostAccountingTests
         var old = QuotedTradeExecutionTests.WithShipModules(Save(engine), m => m with
         { Cargo = m.Cargo?.Select(c => c with { CostBasisCredits = null, AcquisitionSources = null }).ToArray() });
         old = TradingEconomySaveSchemaTests.WithoutNewContinuation(old, 12);
-        engine.LoadScenario(old, true);
+        Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() => engine.LoadScenario(old, true)).Message);
+        engine.LoadScenario(old); // Historical internal fixture; real save loading is denied.
         Trade(engine, "mixed-purchase", TradeCommandTypes.Buy, 1);
         Assert.Null(Stack(engine)!.CostBasisCredits);
         Assert.Equal(new[] { "legacy-unknown" }, Stack(engine)!.AcquisitionSources);

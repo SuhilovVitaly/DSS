@@ -213,6 +213,7 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     public void LoadScenario(ScenarioFile scenario, bool isSave = false, SolarSystemGenerationConfig? generation = null)
     {
+        if (isSave) ScenarioLoader.RequireCurrentSaveVersion(scenario.SaveFormatVersion);
         scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true);
         var gs = scenario.GameState;
         PlacementValidationResult? aiPlacementValidation = null;

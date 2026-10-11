@@ -245,11 +245,9 @@ public class LocalSessionIntegrationTests
     }
 
     [Fact]
-    public async Task MasterSeedWasMissingOnLoad_surfaces_through_the_connection_for_legacy_saves()
+    public async Task Legacy_save_without_seed_is_rejected_before_connection_creation()
     {
-        // Closes the plumbing ТЗ-02A relies on: Program.cs's LocalGameSessionFactory checks
-        // this connection-level property (not the engine directly) to decide whether to
-        // write an InterfaceLog warning after CreateFromSaveFile.
+        // Phase three rejects old save files before seed generation or migration.
         string dir = Path.Combine(Path.GetTempPath(), $"dss-save-legacy-{Guid.NewGuid():N}");
         string savePath = Path.Combine(dir, "quicksave.json");
         Directory.CreateDirectory(dir);
@@ -259,9 +257,10 @@ public class LocalSessionIntegrationTests
 
         try
         {
-            await using var connection = LocalGameSessionConnection.CreateFromSaveFile(settingsPath, savePath);
-
-            Assert.True(connection.MasterSeedWasMissingOnLoad);
+            byte[] before = await File.ReadAllBytesAsync(savePath);
+            var error = Assert.Throws<ScenarioException>(() => LocalGameSessionConnection.CreateFromSaveFile(settingsPath, savePath));
+            Assert.Contains("incompatible_save_version", error.Message);
+            Assert.Equal(before, await File.ReadAllBytesAsync(savePath));
         }
         finally
         {
@@ -1190,7 +1189,7 @@ public class LocalSessionIntegrationTests
             string path = Path.Combine(dir, "economy-roundtrip.json");
             var disk = ScenarioLoader.LoadFromFile(path, true);
             Assert.Equal(EconomicState(f.Save), EconomicState(disk));
-            Assert.Equal(15, disk.SaveFormatVersion); Assert.NotNull(disk.GameState.TradingMap);
+            Assert.Equal(16, disk.SaveFormatVersion); Assert.NotNull(disk.GameState.TradingMap);
             Assert.NotNull(disk.GameState.StationResourceFields); Assert.NotNull(disk.GameState.TradingEconomyContinuation);
             Assert.Single(disk.GameState.VoyageLedgers!);
             Assert.Equal(inFlight ? VoyageFinanceStates.InTransit : VoyageFinanceStates.AwaitingRealization, disk.GameState.VoyageLedgers![0].Finance.State);

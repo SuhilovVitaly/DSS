@@ -289,8 +289,16 @@ public class MarketRevisionTests
         var missing = WithObject(save, StationId, o => o with { MarketRevision = null });
         missing = missing with { SaveFormatVersion = 13, GameState = missing.GameState with { MarketKnowledge = null, TradingEconomyContinuation = null } };
 
-        // No field and no receipt: the profile market starts over at 1.
-        using (var migrated = LoadInto(RoundTrip(missing)))
+        // Historical scenario normalization remains independently testable, but real saves reject it.
+        SimulationEngine HistoricalFixture(ScenarioFile legacy)
+        {
+            var fixture = new SimulationEngine(Registry, [], new SimulationClock(SimulationSpeed.Speed0, () => 0));
+            Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() => fixture.LoadScenario(legacy, true)).Message);
+            fixture.LoadScenario(RoundTrip(legacy));
+            return fixture;
+        }
+        // No field and no receipt: the internal fixture starts at 1.
+        using (var migrated = HistoricalFixture(missing))
             Assert.Equal(1, Revision(migrated));
 
         // No field but a trade receipt: max(1, newest receipt).
@@ -299,13 +307,13 @@ public class MarketRevisionTests
         Assert.Equal(3, executed.TradeReceipt!.ResultMarketRevision);
         var withReceipt = TradingEconomySaveSchemaTests.WithoutNewContinuation(
             WithObject(engine.CaptureSaveState(), StationId, o => o with { MarketRevision = null }), 13);
-        using (var migrated = LoadInto(RoundTrip(withReceipt)))
+        using (var migrated = HistoricalFixture(withReceipt))
             Assert.Equal(3, Revision(migrated));
 
         // A saved value below the newest receipt never rewinds the revision: max(saved, receipts).
         var behind = TradingEconomySaveSchemaTests.WithoutNewContinuation(
             WithObject(engine.CaptureSaveState(), StationId, o => o with { MarketRevision = 1 }), 13);
-        using (var migrated = LoadInto(RoundTrip(behind)))
+        using (var migrated = HistoricalFixture(behind))
             Assert.Equal(3, Revision(migrated));
 
         var invalid = new (string Name, ScenarioFile Save)[]

@@ -216,7 +216,7 @@ public sealed class CatalogCompatibilityTests
         string path = Path.Combine(Path.GetDirectoryName(SettingsPath)!, "Scenarios", scenarioName, "scenario.json");
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, path);
         var save = engine.CaptureSaveState();
-        Assert.Equal(15, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(16, SaveFormat.CurrentSaveFormatVersion);
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         var registry = RealRegistry();
         Assert.Equal(registry.CatalogCompatibility, save.GameState.CatalogCompatibility);
@@ -265,7 +265,8 @@ public sealed class CatalogCompatibilityTests
         string approvedBaseline = initial.CatalogCompatibility.Fingerprint;
         var baseline = SyntheticRegistry(baselineItems, approvedBaseline);
         using var compatible = new SimulationEngine(baseline);
-        compatible.LoadScenario(AnonymousLegacySave(), isSave: true);
+        Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() => compatible.LoadScenario(AnonymousLegacySave(), isSave: true)).Message);
+        compatible.LoadScenario(AnonymousLegacySave()); // Historical scenario fixture, not the save entrypoint.
 
         var expanded = SyntheticRegistry(
             [.. baselineItems, new ItemTypeDefinition("item.electronics", "Electronics", 1, 150,
@@ -275,7 +276,7 @@ public sealed class CatalogCompatibilityTests
         Assert.NotEqual(approvedBaseline, expanded.CatalogCompatibility.Fingerprint);
         using var incompatible = new SimulationEngine(expanded);
         Assert.Contains("legacyCatalogFingerprint",
-            Assert.Throws<ScenarioException>(() => incompatible.LoadScenario(AnonymousLegacySave(), isSave: true)).Message);
+            Assert.Throws<ScenarioException>(() => incompatible.LoadScenario(AnonymousLegacySave())).Message);
     }
 
     private static GameDataRegistry SyntheticRegistry(
@@ -841,10 +842,12 @@ public sealed class CargoCostPersistenceTests
     [Theory]
     [InlineData(8)]
     [InlineData(12)]
-    public void Legacy_save_without_basis_stays_unknown_instead_of_zero_or_current_price(int version)
+    public void Legacy_save_is_rejected_and_internal_fixture_keeps_unknown_basis(int version)
     {
         using var engine = new SimulationEngine(QuotedTradeExecutionTests.Registry);
-        engine.LoadScenario(Template(version, new("item.ice", 3)), true);
+        var fixture = Template(version, new("item.ice", 3));
+        Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() => engine.LoadScenario(fixture, true)).Message);
+        engine.LoadScenario(fixture); // Internal historical scenario normalization remains testable.
         var stack = Stack(engine);
         Assert.Null(stack.CostBasisCredits);
         Assert.Equal(new[] { "legacy-unknown" }, stack.AcquisitionSources);
@@ -886,7 +889,7 @@ public sealed class CargoCostPersistenceTests
     public void Current_save_rejects_invalid_cost_metadata_without_world_replacement(string failure)
     {
         using var engine = new SimulationEngine(QuotedTradeExecutionTests.Registry);
-        var good = Template(13, new("item.ice", 3, 123, ["purchased"]));
+        var good = Template(SaveFormat.CurrentSaveFormatVersion, new("item.ice", 3, 123, ["purchased"]));
         engine.LoadScenario(good, true);
         var badStack = failure switch
         {

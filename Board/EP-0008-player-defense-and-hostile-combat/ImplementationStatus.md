@@ -229,3 +229,7 @@ TK-0001 `63eb4d35c2c3b9ea9f9da56bb55dfdc36a96b406` published/remote verified. De
 ## EP-0008-US-0010-TK-0003 — 2026-10-11
 
 TK-0002 `197077f03454d00a063f1b6f228c02da4c9ea316` published/remote verified. Actual window terminal/modal/Load/MainMenu/save/keyboard integration implemented; Client1843/1843, solution build/format/diffPASS. US-0010 self-review complete. Next after publication: US-0011 version16 and strict combat continuation. Native/final corpus OPEN.
+
+## EP-0008-US-0011-TK-0001 — 2026-10-11
+
+US-0010 TK-0003 `332f0c788ee2767df472e2c440f918c7a259fe49` published/remote verified. Version16/current-only real save gate and hostile payload DTO introduced; initial Engine1845/1871 obsolete version expectations repaired, final affected233/233; full Client1843/1843, build/format/diffPASS. Next after publication: strict combat/hostile payload validation. Native/final corpus OPEN.

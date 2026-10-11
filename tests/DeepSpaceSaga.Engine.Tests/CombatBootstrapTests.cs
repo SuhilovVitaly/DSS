@@ -139,7 +139,9 @@ public sealed class CombatBootstrapTests
         string path = Path.Combine(Path.GetTempPath(), $"combat-bootstrap-{Guid.NewGuid():N}.json");
         try
         {
-            File.WriteAllText(path, json.ToJsonString());
+            using var source = new SimulationEngine(Registry());
+            source.LoadScenario(ScenarioLoader.LoadFromJson(json.ToJsonString(), true));
+            File.WriteAllText(path, ScenarioLoader.Serialize(source.CaptureSaveState()));
             using var engine = new SimulationEngine(Registry());
             engine.LoadScenario(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true), isSave: true);
             Assert.Equal(new HullCombatSnapshot("ship.tetrarch", hp, 450), Hull(engine.CaptureSnapshot()));
@@ -181,7 +183,8 @@ public sealed class CombatBootstrapTests
                 SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o with { ShipClassId = null, Modules = null }).ToArray()
             }
         };
-        engine.LoadScenario(legacy, isSave: true);
+        Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() => engine.LoadScenario(legacy, isSave: true)).Message);
+        engine.LoadScenario(legacy); // New scenario clears combat; an old save cannot.
         snapshot = engine.CaptureSnapshot();
         Assert.All(snapshot.Objects, o => Assert.Null(o.HullCombat));
         Assert.Empty(snapshot.InstalledModules);

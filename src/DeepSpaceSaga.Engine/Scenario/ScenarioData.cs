@@ -27,9 +27,9 @@ public static class SaveFormat
     /// Version 13 requires cargo acquisition basis/provenance; versions 1-12 migrate missing history as unknown.
     /// Version 14 requires last-observed coarse station market knowledge; older saves omit unknown observations.
     /// Version 15 requires a versioned trading continuation manifest and complete voyage finance history.
-    /// Integer-valued motion fields from earlier supported saves remain readable.
+    /// Version 16 requires phase-three combat continuation; earlier files are rejected by the save entrypoint.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 15;
+    public const int CurrentSaveFormatVersion = 16;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -99,7 +99,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("voyageFuelSettlements")] IReadOnlyList<DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot>? VoyageFuelSettlements = null,
     [property: JsonPropertyName("engineIdentityCounters")] EngineIdentityCountersData? EngineIdentityCounters = null,
     [property: JsonPropertyName("clusterMap")] DeepSpaceSaga.Contracts.StationClusterMapSnapshot? ClusterMap = null,
-    [property: JsonPropertyName("aiMap")] DeepSpaceSaga.Contracts.AiMapEnvironmentSnapshot? AiMap = null)
+    [property: JsonPropertyName("aiMap")] DeepSpaceSaga.Contracts.AiMapEnvironmentSnapshot? AiMap = null,
+    [property: JsonPropertyName("hostileCombatState")] HostileCombatSaveData? HostileCombatState = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]

@@ -40,7 +40,7 @@ public static class ScenarioLoader
     /// gameTimeMs &gt; 0 — pass true only for the explicit save/load bootstrap path
     /// (see SimulationEngine.CreateFromSaveFile / EngineContentLoader.CreateEngineFromSaveFile).
     /// </param>
-    public static ScenarioFile LoadFromFile(string path, bool allowNonZeroGameTime = false)
+    public static ScenarioFile LoadFromFile(string path, bool allowNonZeroGameTime = false, bool isSave = false)
     {
         if (!File.Exists(path))
             throw new ScenarioException($"Scenario file not found: {path}");
@@ -55,14 +55,23 @@ public static class ScenarioLoader
             throw new ScenarioException($"Failed to read scenario file: {path}", ex);
         }
 
-        return LoadFromJson(json, allowNonZeroGameTime);
+        return LoadFromJson(json, allowNonZeroGameTime, isSave);
     }
 
-    public static ScenarioFile LoadFromJson(string json, bool allowNonZeroGameTime = false)
+    public static ScenarioFile LoadFromJson(string json, bool allowNonZeroGameTime = false, bool isSave = false)
     {
         ScenarioFile scenario;
         try
         {
+            // Inspect the envelope before deserializing historical payloads or invoking migrations.
+            if (isSave)
+            {
+                using var envelope = JsonDocument.Parse(json);
+                if (envelope.RootElement.ValueKind != JsonValueKind.Object) throw new JsonException("Save envelope must be an object.");
+                int version = envelope.RootElement.TryGetProperty("saveFormatVersion", out var field) &&
+                    field.ValueKind == JsonValueKind.Number && field.TryGetInt32(out int parsed) ? parsed : 0;
+                RequireCurrentSaveVersion(version);
+            }
             scenario = JsonSerializer.Deserialize<ScenarioFile>(json, JsonOptions)
                        ?? throw new ScenarioException("Scenario JSON deserialized to null.");
         }
@@ -72,6 +81,12 @@ public static class ScenarioLoader
         }
 
         return ValidateAndNormalize(scenario, allowNonZeroGameTime);
+    }
+
+    internal static void RequireCurrentSaveVersion(int version)
+    {
+        if (version != SaveFormat.CurrentSaveFormatVersion)
+            throw new ScenarioException($"incompatible_save_version: expected {SaveFormat.CurrentSaveFormatVersion}, found {version}. Save was not modified.");
     }
 
     internal static ScenarioFile ValidateAndNormalize(ScenarioFile scenario, bool allowNonZeroGameTime)
