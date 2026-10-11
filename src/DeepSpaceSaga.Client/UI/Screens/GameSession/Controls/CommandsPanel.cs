@@ -172,6 +172,14 @@ public sealed class CommandsPanel
         return null;
     }
 
+    internal CommandPanelGeometry? PanelAt(float x, float y)
+    {
+        if (!RowsContain(x, y)) return null;
+        foreach (var row in _panelRows)
+            if (row.CaptionRect.Contains(x, y) || row.Opened && row.BodyRect.Contains(x, y)) return row;
+        return null;
+    }
+
     // ── Paints ──────────────────────────────────────────────────
     private readonly SKPaint _panelBgPaint;
     private readonly SKPaint _mainCaptionBgPaint;

@@ -3,7 +3,7 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0008-manual-preview-and-map
 ticket: EP-0008-US-0008-TK-0002-hover-ranges-and-countdown
 title: "Круги hover и время полёта на карте"
-stage: draft
+stage: implemented
 layer: client
 depends_on: ["EP-0008-US-0008-TK-0001-preview-geometry"]
 files_touched: 5
@@ -14,7 +14,7 @@ revision: 1
 
 # Круги hover и время полёта на карте
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED; self-review complete; native OPEN
 
 ## Why
 
@@ -70,10 +70,10 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `No_hover_has_no_weapon_range_rings`
-- [ ] `Hovered_module_uses_own_ranges`
-- [ ] `Countdown_freezes_on_pause_and_resumes`
-- [ ] `Multiple_countermeasures_keep_distinct_labels`
+- [x] `No_hover_has_no_weapon_range_rings`
+- [x] `Hovered_module_uses_own_ranges`
+- [x] `Countdown_freezes_on_pause_and_resumes`
+- [x] `Multiple_countermeasures_keep_distinct_labels`
 
 Команды из корня DSS после реализации:
 
@@ -87,13 +87,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0002, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0002, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `fcbb0811eb67fa36fb58591690731aee10004675` published/remote verified. Current panel hit geometry selects only the hovered weapon: torpedo range or the specific defense module auto/manual ranges (solid/dashed), in world-space scaled by camera zoom. No hover/closed panel/selection alone produces circles. Old permanent selected-NPC circle removed. Visible PR labels identify projectile/module and show frozen chance plus separately labeled remaining physical flight time. Wrapped labels avoid each other and stay within viewport; offscreen projectiles/encounters do not produce clamped ghost labels. Tooltip uses shared predicted PR time. Existing trails,5px markers and2s real effect lifetime unchanged.
+
+Initial focused31/31PASS. Full Client **1822/1825** exposed three new test assumptions that zoom-in would move beyond maximum scale; changed to zoom-out and retained radius/PPU equality assertions. Final affected **32/32 PASS**, `ep8-us8-tk2-review.trx`, includes seven new cases for100/120/150% hover identity/zoom/closed panels, paused and5x physical countdown, disappearance, coincident long labels at1280x720/640x360 and offscreen labels. Client build0warnings/errors, scoped format verify/diffPASS. Self-review complete; no repeated clean full-suite claim; native remains OPEN.

@@ -197,3 +197,7 @@ TK-0003 `df38090d8cdb31bcc3d5dc54638a0c92ceaf4de3` published/remote verified. Lo
 ## EP-0008-US-0008-TK-0001 — 2026-10-11
 
 US-0007 TK-0004 `74248c9f51fc1641548cb2f741a5c658f451e4a7` published/remote verified. Manual hover geometry implemented on the real render path; Client1818/1818, Engine1837/1837, final affected38/38, build/format/diff PASS. Next after publication: hover ranges and physical map countdown. Native/final corpus OPEN.
+
+## EP-0008-US-0008-TK-0002 — 2026-10-11
+
+TK-0001 `fcbb0811eb67fa36fb58591690731aee10004675` published/remote verified. Hover-only weapon rings and physical map flight countdown implemented; initial Client1822/1825 fixed new zoom-boundary test assumptions, final affected32/32, build/format/diffPASS. Next after publication: journal presentation. Native/final corpus OPEN.
