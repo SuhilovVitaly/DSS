@@ -241,3 +241,7 @@ TK-0001 `857a251ccd05239fb2fd9c6f0769ef7df1bf662d` published/remote verified. St
 ## EP-0008-US-0011-TK-0003 — 2026-10-11
 
 TK-0002 `af510f1800b10e4c9376c262cddd75c0c6550eba` published/remote verified. Eleven actual-file continuation cases implemented; initial Engine1915/1916 corrected new fractional-contact test assumption, final affected254/254 PASS; build/format/diffPASS. Production atomic restore already delivered with prerequisite schema. Next after publication: localized recoverable Load errors and client roundtrip. Native/final corpus OPEN.
+
+## EP-0008-US-0011-TK-0004 — 2026-10-11
+
+TK-0003 `c195d6ac4f91cc536e6a0dd2e54739b0bbaca8bd` published/remote verified. Localized recoverable Load/F9 errors and six real-session/file/UI continuation tests implemented. Client1849/1849, Russian16/16, solution build/format/diffPASS. US-0011 self-review complete. Next after publication: US-0012 compatibility fixtures and complete validation. Native/final corpus OPEN.

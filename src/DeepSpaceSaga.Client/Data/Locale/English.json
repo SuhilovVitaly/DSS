@@ -364,5 +364,6 @@
   "Combat.Defeat": "Your ship was destroyed",
   "Combat.Defeat.Load": "Load game",
   "Combat.Defeat.MainMenu": "Main menu",
-  "Combat.LoadIncompatible": "This save uses an incompatible combat format. Start a new game."
+  "Combat.LoadIncompatible": "This save is incompatible. Choose another save or start a new game.",
+  "Combat.LoadFailed": "Could not load this save. Choose another save or close this window."
 }

@@ -1549,6 +1549,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task<bool> LoadSlotCoreAsync(string slotId, string logPrefix)
     {
+        if (_screens.Current is LoadScreen loading) loading.ClearError();
         GameSessionHandle? newSession = null;
         GameSessionScreen newScreen;
         try
@@ -1569,6 +1570,11 @@ public sealed class SkiaWindow : IDisposable
         {
             InterfaceLog.Write($"{logPrefix} failed: {ex.Message}");
             if (newSession is not null) await newSession.DisposeAsync();
+            if (!_closing)
+            {
+                await OpenLoadWindowAsync();
+                if (_screens.Current is LoadScreen load) load.ShowError(SessionConnectionLoader.LoadErrorKey(ex));
+            }
             return false;
         }
 

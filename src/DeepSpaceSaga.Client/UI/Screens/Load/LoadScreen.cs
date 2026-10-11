@@ -60,6 +60,10 @@ public sealed class LoadScreen : IScreen
     /// </summary>
     public string? LastRequestedSlotId { get; private set; }
 
+    internal string? ErrorMessage { get; private set; }
+    internal void ShowError(string key) => ErrorMessage = Localization.Get(key);
+    internal void ClearError() => ErrorMessage = null;
+
     private static readonly SKPaint _titleTextPaint = new()
     {
         Color = MenuStyle.ColorText,
@@ -154,46 +158,47 @@ public sealed class LoadScreen : IScreen
                 return ScreenEvent.CloseLoadWindow;
 
             case LoadZone.Row:
-            {
-                int index = AbsoluteIndex(hit.RowIndex);
-                if (index >= 0 && index < _slots.Count)
-                    _selectedIndex = index;
-                return ScreenEvent.None;
-            }
+                {
+                    ClearError();
+                    int index = AbsoluteIndex(hit.RowIndex);
+                    if (index >= 0 && index < _slots.Count)
+                        _selectedIndex = index;
+                    return ScreenEvent.None;
+                }
 
             case LoadZone.Load:
-            {
-                if (_selectedIndex < 0 || _selectedIndex >= _slots.Count)
-                    return ScreenEvent.None;
+                {
+                    if (_selectedIndex < 0 || _selectedIndex >= _slots.Count)
+                        return ScreenEvent.None;
 
-                LastRequestedSlotId = _slots[_selectedIndex].SlotId;
-                return ScreenEvent.LoadSlotRequested;
-            }
+                    LastRequestedSlotId = _slots[_selectedIndex].SlotId;
+                    return ScreenEvent.LoadSlotRequested;
+                }
 
             case LoadZone.Delete:
-            {
-                if (_selectedIndex < 0 || _selectedIndex >= _slots.Count)
+                {
+                    if (_selectedIndex < 0 || _selectedIndex >= _slots.Count)
+                        return ScreenEvent.None;
+
+                    if (_slots[_selectedIndex].SlotId == SaveSlots.Quicksave)
+                        return ScreenEvent.None; // protected slot — never deletable from here
+
+                    bool isConfirmedSecondClick =
+                        _deleteConfirmIndex == _selectedIndex && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
+
+                    if (isConfirmedSecondClick)
+                    {
+                        _deleteSlot(_slots[_selectedIndex].SlotId);
+                        _deleteConfirmIndex = -1;
+                        RefreshSlots();
+                    }
+                    else
+                    {
+                        _deleteConfirmIndex = _selectedIndex;
+                        _deleteConfirmStartedAtMs = _nowMs();
+                    }
                     return ScreenEvent.None;
-
-                if (_slots[_selectedIndex].SlotId == SaveSlots.Quicksave)
-                    return ScreenEvent.None; // protected slot — never deletable from here
-
-                bool isConfirmedSecondClick =
-                    _deleteConfirmIndex == _selectedIndex && _nowMs() - _deleteConfirmStartedAtMs <= DeleteConfirmWindowMs;
-
-                if (isConfirmedSecondClick)
-                {
-                    _deleteSlot(_slots[_selectedIndex].SlotId);
-                    _deleteConfirmIndex = -1;
-                    RefreshSlots();
                 }
-                else
-                {
-                    _deleteConfirmIndex = _selectedIndex;
-                    _deleteConfirmStartedAtMs = _nowMs();
-                }
-                return ScreenEvent.None;
-            }
 
             default:
                 return ScreenEvent.None;
@@ -236,6 +241,14 @@ public sealed class LoadScreen : IScreen
             DrawScrollbar(canvas, pl, pt);
 
         DrawBottomButtons(canvas, pl, pt);
+        if (ErrorMessage is { } error)
+        {
+            using var paint = new SKPaint { Color = new SKColor(255, 170, 110), TextSize = 14, IsAntialias = true, Typeface = MenuStyle.TypefaceRegular };
+            float available = LoadLayout.ContentPanelWidth;
+            float measured = paint.MeasureText(error);
+            if (measured > available) paint.TextSize *= available / measured;
+            canvas.DrawText(error, pl + LoadLayout.Margin, pt + LoadLayout.BottomButtonsY - 10, paint);
+        }
     }
 
     /// <summary>Only rendered when the slot list overflows <see cref="LoadLayout.VisibleRows"/>; scrolling itself works via <see cref="OnMouseWheel"/> regardless.</summary>
