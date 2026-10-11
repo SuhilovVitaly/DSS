@@ -25,7 +25,8 @@ public sealed partial class SimulationEngine
     }
 
     private sealed record DefenseLaunch(SpaceObjectRuntime Owner, InstalledModuleRuntime Module,
-        SpaceObjectRuntime Target, TorpedoRoute Route, long Time, double HullContact, int Chance, WeaponOperatorSnapshot Operator);
+        SpaceObjectRuntime Target, TorpedoRoute Route, long Time, double HullContact, int Chance, WeaponOperatorSnapshot Operator,
+        double EncounterTime = double.PositiveInfinity);
 
     private DefenseLaunch? NextDefenseLaunch(double from, long to)
     {
@@ -63,13 +64,36 @@ public sealed partial class SimulationEngine
                         type.CountermeasureSpeedKmS!.Value, type.CountermeasureTurnRateDegPerSec!.Value,
                         launchAt + type.CountermeasureMaxFlightTimeMs!.Value);
                     if (route is null) continue;
-                    var candidate = new DefenseLaunch(owner, module, target, route, launchAt, hull.Value.MotionTimeMs, chance, op);
-                    if (first is null || candidate.Time < first.Time || candidate.Time == first.Time &&
-                        (candidate.HullContact < first.HullContact || candidate.HullContact == first.HullContact &&
-                         string.CompareOrdinal(candidate.Target.InitialMotion.ObjectId, first.Target.InitialMotion.ObjectId) < 0)) first = candidate;
+                    var path = new CollisionPath(t =>
+                    {
+                        var point = TorpedoGuidanceMath.PredictPose(route, t - route.StartMotionTimeMs);
+                        return (point.X, point.Y);
+                    }, type.CountermeasureSpeedKmS.Value / 100);
+                    var contact = TorpedoCollisionMath.FirstContact(path, CombatPath(target), launchAt,
+                        Math.Min(hull.Value.MotionTimeMs, launchAt + type.CountermeasureMaxFlightTimeMs.Value));
+                    if (contact is null || contact.Value.MotionTimeMs >= hull.Value.MotionTimeMs) continue;
+                    var candidate = new DefenseLaunch(owner, module, target, route, launchAt, hull.Value.MotionTimeMs,
+                        chance, op, contact.Value.MotionTimeMs);
+                    if (first is null || CompareDefenseLaunch(candidate, first) < 0) first = candidate;
                 }
             }
         return first;
+    }
+
+    private static int CompareDefenseLaunch(DefenseLaunch a, DefenseLaunch b)
+    {
+        int order = a.Time.CompareTo(b.Time);
+        if (order != 0) return order;
+        order = a.HullContact.CompareTo(b.HullContact);
+        if (order != 0) return order;
+        order = string.CompareOrdinal(a.Target.InitialMotion.ObjectId, b.Target.InitialMotion.ObjectId);
+        if (order != 0) return order;
+        order = a.EncounterTime.CompareTo(b.EncounterTime);
+        if (order != 0) return order;
+        order = b.Chance.CompareTo(a.Chance);
+        if (order != 0) return order;
+        order = string.CompareOrdinal(a.Module.ModuleId, b.Module.ModuleId);
+        return order != 0 ? order : string.CompareOrdinal(a.Owner.InitialMotion.ObjectId, b.Owner.InitialMotion.ObjectId);
     }
 
     private bool LaunchCountermeasure(DefenseLaunch launch, LaunchMode mode = LaunchMode.Auto, double? predictedEncounter = null)
@@ -80,7 +104,7 @@ public sealed partial class SimulationEngine
         var flight = new CountermeasureSnapshot(launch.Owner.InitialMotion.ObjectId, launch.Module.ModuleId,
             launch.Target.InitialMotion.ObjectId, CountermeasurePhase.Guiding, launch.Route, launch.Time, launch.Chance,
             new(launch.Operator, torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value, torpedo.RatingBreakdown), [],
-            PredictedEncounterMotionTimeMs: mode == LaunchMode.Manual ? predictedEncounter : launch.Time + launch.Route.Segments.Sum(s => s.DurationMs),
+            PredictedEncounterMotionTimeMs: mode == LaunchMode.Manual ? predictedEncounter : launch.EncounterTime,
             Mode: mode,
             CapturedAccuracy: launch.Operator.EffectiveRating,
             CapturedTargetManeuverability: torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value,
