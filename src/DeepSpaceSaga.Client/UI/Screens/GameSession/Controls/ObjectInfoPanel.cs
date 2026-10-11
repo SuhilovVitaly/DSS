@@ -227,6 +227,17 @@ public sealed class ObjectInfoPanel
             }
             if (d.DistanceKm is { } distanceKm)
                 lines.Add(("Distance", TacticalMapSettings.FormatDistance(distanceKm * 1000)));
+            if (d.HostileCombat is { } hostile && d.RenderObjectType == SpaceObjectType.NpcShip && d.RelationToPlayer == PlayerRelation.Enemy)
+            {
+                lines.Add((GameSessionScreen.CombatText("Maneuver", "Манёвр"), hostile.Phase switch
+                {
+                    HostileCombatPhase.Pursuit => GameSessionScreen.CombatText("Phase.Pursuit", "Сближение"),
+                    HostileCombatPhase.OrbitEntry => GameSessionScreen.CombatText("Phase.OrbitEntry", "Выход на орбиту"),
+                    HostileCombatPhase.OrbitHold => GameSessionScreen.CombatText("Phase.OrbitHold", "Удержание орбиты"),
+                    _ => "—"
+                }));
+                lines.Add((GameSessionScreen.CombatText("DesiredRadius", "Радиус орбиты"), $"{hostile.DesiredRadiusKm:0.##} " + GameSessionScreen.CombatText("Kilometers", "км")));
+            }
             if (d.ClusterName is { } cluster)
             {
                 lines.Add(("Cluster", cluster));
@@ -268,17 +279,22 @@ public sealed class ObjectInfoPanel
     {
         var defense = flight.RatingBreakdown.DefenseOperator;
         var attack = flight.RatingBreakdown.TorpedoOperator;
+        string T(string key, string fallback) => GameSessionScreen.CombatText(key, fallback);
         return [
-            ("Цель", flight.TargetTorpedoId),
-            ("Состояние", flight.Phase == CountermeasurePhase.Guiding ? "Наведение" : "Промах"),
-            ("Шанс", $"{flight.FrozenChanceTenths / 10m:0.0}%"),
-            ("Оператор ПР", defense.DisplayName),
-            ("База / навык", $"{defense.BaseRating:0.##} / {defense.Skill}"),
-            ("Рейтинг ПР", $"{defense.EffectiveRating:0.##}"),
-            ("Торпедист", attack?.DisplayName ?? "Legacy"),
-            ("База / навык", attack is null ? "—" : $"{attack.BaseRating:0.##} / {attack.Skill}"),
-            ("Рейтинг цели", $"{flight.RatingBreakdown.TorpedoRating:0.##}"),
-            ("Формула", "clamp(50 + Rпр − Rт, 0, 100)")
+            (T("LaunchMode", "Режим пуска"), flight.Mode == LaunchMode.Manual ? T("Manual", "Ручной") : T("Auto", "Автоматический")),
+            (T("Owner", "Носитель"), flight.OwnerObjectId),
+            (T("Module", "Аппарат"), flight.LauncherModuleId),
+            (T("Target", "Цель"), flight.TargetTorpedoId),
+            (T("State", "Состояние"), flight.Phase == CountermeasurePhase.Guiding ? T("Guiding", "Наведение") : T("MissedCoast", "Полёт после промаха")),
+            (T("FrozenChance", "Шанс активной ПРО"), $"{flight.FrozenChanceTenths / 10m:0.0}%"),
+            (T("Accuracy", "Точность"), $"{flight.CapturedAccuracy ?? defense.EffectiveRating:0.##}"),
+            (T("Maneuverability", "манёвренность"), $"{flight.CapturedTargetManeuverability ?? flight.RatingBreakdown.TorpedoRating:0.##}"),
+            (T("Formula", "Формула"), T("ChanceFormula", "clamp(точность − манёвренность, 0, 100)")),
+            (T("RemainingFlight", "Осталось полёта"), GameSessionScreen.RemainingFlightText(flight, flight.Route.StartMotionTimeMs + flight.Route.ElapsedMs)),
+            (T("MaxFlight", "Лимит полёта"), flight.MaxFlightTimeMs is { } lifetime ? $"{lifetime / 1000.0:0.0} " + T("Seconds", "с") : "—"),
+            (T("DefenseOperator", "Оператор ПРО"), defense.DisplayName),
+            (T("SkillMetadata", "Навык (справочно)"), defense.Skill.ToString()),
+            (T("TorpedoOperator", "Торпедист"), attack?.DisplayName ?? "—")
         ];
     }
 
@@ -413,7 +429,7 @@ public sealed class ObjectInfoPanel
     }
 
     private float ValueOffset(ObjectInfoPanelData? data, List<(string Label, string Value)> lines) =>
-        data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null || data?.MarketKnowledge is not null || data?.ClusterName is not null || data?.Owner is not null || data?.FieldKind is not null || data?.PoiDescription is not null
+        data?.HostileCombat is not null || data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null || data?.MarketKnowledge is not null || data?.ClusterName is not null || data?.Owner is not null || data?.FieldKind is not null || data?.PoiDescription is not null
             ? Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding) : 62f;
 
     /// <summary>Wrap market values using the same measured text width used for rendering and body height.</summary>
@@ -425,7 +441,7 @@ public sealed class ObjectInfoPanel
 
     private List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data, List<(string Label, string Value)> source, float valueOffset)
     {
-        if (data?.MarketKnowledge is null && data?.ClusterName is null && data?.Owner is null && data?.FieldKind is null && data?.PoiDescription is null) return source;
+        if (data?.Countermeasure is null && data?.HostileCombat is null && data?.MarketKnowledge is null && data?.ClusterName is null && data?.Owner is null && data?.FieldKind is null && data?.PoiDescription is null) return source;
         float width = Math.Max(32, _renderPanelWidth - _renderImageWidth - 4 * Padding - valueOffset);
         var result = new List<(string Label, string Value)>();
         foreach (var (label, value) in source)
@@ -586,7 +602,8 @@ public readonly record struct ObjectInfoPanelData(
     double? StraightFlightDays = null, long? EstimateMotionTimeMs = null,
     string? Owner = null, string? BaseType = null,
     double? DefenceRadiusKm = null, double? PatrolRadiusKm = null,
-    string? FieldKind = null, double? FieldIntensity = null, string? PoiDescription = null);
+    string? FieldKind = null, double? FieldIntensity = null, string? PoiDescription = null,
+    HostileCombatSnapshot? HostileCombat = null);
 
 /// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
 public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);

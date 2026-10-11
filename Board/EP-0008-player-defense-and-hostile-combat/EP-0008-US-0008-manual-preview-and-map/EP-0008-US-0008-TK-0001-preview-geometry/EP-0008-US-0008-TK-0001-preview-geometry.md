@@ -3,10 +3,10 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0008-manual-preview-and-map
 ticket: EP-0008-US-0008-TK-0001-preview-geometry
 title: "Геометрия прогноза ручного пуска конкретного аппарата"
-stage: draft
+stage: implemented
 layer: client
 depends_on: ["EP-0008-US-0007-TK-0004-combat-localization"]
-files_touched: 3
+files_touched: 6
 serves: ["AC-0001","AC-0003"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Геометрия прогноза ручного пуска конкретного аппарата
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED; self-review complete; native OPEN
 
 ## Why
 
@@ -38,9 +38,11 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 | `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.ManualDefense.cs` | Создаётся предыдущим тикетом EP-0008-US-0007-TK-0002-panel-command-routing | Только результат и шаги этой карточки |
 | `tests/DeepSpaceSaga.Client.Tests/ManualDefensePreviewTests.cs` | Новый файл этого тикета | Только результат и шаги этой карточки |
 
+Execution scope update — 2026-10-11: baseline `74248c9f51fc1641548cb2f741a5c658f451e4a7` published/remote verified. Add `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs` for the actual render/pose hook; add `src/DeepSpaceSaga.Contracts/DefenseLaunchPreview.cs` and `src/DeepSpaceSaga.Engine/SimulationEngine.DefensePreview.cs` to publish the same known first target collision deadline that Engine passes to PlanManual. This avoids inventing a Client collision search over hidden objects or a second set of combat rules. Client geometry uses the confirmed snapshot time/pose and shared Motion; deadline is only a prediction, never a promised outcome. Tests exercise the real Engine command path and complete save-state immutability while hovering. Effective scope six files.
+
 ## Dependencies
 
-Шаг **26** [общего порядка](../../Tickets.md).
+Шаг **27** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0007-TK-0004-combat-localization](../../EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-TK-0004-combat-localization/EP-0008-US-0007-TK-0004-combat-localization.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
@@ -68,9 +70,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Hover_preview_matches_real_launch_geometry`
-- [ ] `Unreachable_preview_has_no_false_cross`
-- [ ] `Preview_does_not_change_rng_or_busy`
+- [x] `Hover_preview_matches_real_launch_geometry`
+- [x] `Unreachable_preview_has_no_false_cross`
+- [x] `Preview_does_not_change_rng_or_busy`
 
 Команды из корня DSS после реализации:
 
@@ -84,13 +86,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `74248c9f51fc1641548cb2f741a5c658f451e4a7` published/remote verified. Actual Fire hover resolves the current owner/module button and matching authoritative selected-target preview. Shared PlanManual uses confirmed snapshot pose/time, that module speed/turn/lifetime, and the Engine projected first target-contact deadline. Geometry stops at the first500m contact or the bounded no-solution pursuit segment, never invents an infinite ray or later centre rendezvous. Gray configured preview includes authoritative chance; unknown encounter is explicit without a cross. Cache clears on pending/stale target/overlay/hover leave and never mutates world/RNG.
+
+Seven new real-screen cases cover exact real Engine launch geometry and first collision6501ms at100/120/150%, whole save-state immutability, per-module constraints,0% eligibility, short lifetime/earlier target collision, overlay/stale target and raster color. Full Client **1818/1818 PASS**, Engine **1837/1837 PASS** (excluding final CorrectnessCorpus); TRX `ep8-us8-tk1-client.trx`, `ep8-us8-tk1-engine.trx`. Final hover identity/chance label review **38/38 PASS**, `ep8-us8-tk1-review.trx`. Solution build0warnings/errors, scoped format verify/diffPASS. Self-review complete; native/final corpus OPEN.

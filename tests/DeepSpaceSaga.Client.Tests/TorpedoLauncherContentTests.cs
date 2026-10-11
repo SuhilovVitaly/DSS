@@ -50,6 +50,8 @@ public sealed class TorpedoLauncherContentTests
         Assert.Equal(150, launcher.TorpedoDamage);
         Assert.Equal(3, launcher.TorpedoSpeedKmS);
         Assert.Equal(90, launcher.TorpedoTurnRateDegPerSec);
+        Assert.Equal(5m, launcher.TorpedoManeuverability);
+        Assert.Equal(200, launcher.TorpedoRangeKm);
         Assert.Equal(2000, launcher.MassKg);
         Assert.Equal(60, launcher.StructurePointsMax);
         Assert.Equal(0, launcher.PowerConsumptionW);

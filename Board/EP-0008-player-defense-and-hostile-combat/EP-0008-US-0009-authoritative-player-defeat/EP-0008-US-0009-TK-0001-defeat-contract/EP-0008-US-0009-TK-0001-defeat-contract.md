@@ -3,7 +3,7 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0009-authoritative-player-defeat
 ticket: EP-0008-US-0009-TK-0001-defeat-contract
 title: "Контракт терминального состояния сессии"
-stage: draft
+stage: implemented
 layer: contracts
 depends_on: ["EP-0008-US-0008-TK-0003-journal-presentation"]
 files_touched: 4
@@ -14,7 +14,7 @@ revision: 1
 
 # Контракт терминального состояния сессии
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED; contract self-review complete; Engine integration follows TK-0002
 
 ## Why
 
@@ -41,7 +41,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **29** [общего порядка](../../Tickets.md).
+Шаг **30** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0008-TK-0003-journal-presentation](../../EP-0008-US-0008-manual-preview-and-map/EP-0008-US-0008-TK-0003-journal-presentation/EP-0008-US-0008-TK-0003-journal-presentation.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
@@ -69,8 +69,8 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Defeat_outcome_roundtrip`
-- [ ] `Outcome_survives_empty_command_journal`
+- [x] `Defeat_outcome_roundtrip`
+- [x] `Outcome_survives_empty_command_journal`
 
 Команды из корня DSS после реализации:
 
@@ -84,13 +84,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `f22c723d92061e7f1acc6124b6940dd66eeee1a0` published/remote verified. Added immutable Running/Defeated SessionOutcomeSnapshot with player/wreck/death-event identity, fractional physical death time and integer calendar time. Snapshot repeats Outcome independently of recent command/journal buffers; EffectiveOutcome preserves old producer compatibility as Running. CanSave and SaveDeniedReason are derived from State, cannot be overridden by serialized permission fields, and unknown states fail closed. Stable command reason is `session_defeated`. This is a session snapshot contract, not permission to save a defeated world.
+
+Full Contracts **185/185 PASS**, `ep8-us9-tk1-contracts.trx`, including3new tests for full outcome roundtrip, empty/coalesced event buffers, Running/legacy defaults and derived permission. Full solution build0warnings/errors, scoped format verify/diffPASS. Own contract review complete. Actual Engine projection/transition is TK-0002 and terminal interval cutoff TK-0003; not claimed by this contract ticket.

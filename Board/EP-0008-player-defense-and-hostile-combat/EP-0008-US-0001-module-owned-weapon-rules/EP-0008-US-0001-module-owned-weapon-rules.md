@@ -2,12 +2,12 @@
 epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0001-module-owned-weapon-rules
 title: "Характеристики оружия и понятный шанс перехвата"
-stage: draft
+stage: implemented
 dependencies: []
 created: 2026-10-07
 revision: 1
 current_review: complete
-validation_status: planning-only
+validation_status: automated-pass
 ---
 
 # Характеристики оружия и понятный шанс перехвата
@@ -49,3 +49,7 @@ validation_status: planning-only
 Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История draft и не является утверждением о пройденных тестах.
 
 При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Текущая задача только создаёт план.
+
+## Execution self-review — 2026-10-11
+
+All five tickets published separately; TK-0005 remote SHA `70ddbc40b20d3209ccfc56b5481997f5677d08dc` verified. AC-0001 formula/skills: real launches and contacts; AC-0002 strict catalog bounds and immutable captures: changed-catalog file roundtrip; AC-0003 DTO/JSON roundtrips and launcher projections. Engine1728, Client1761 and focused19 PASS, build/format/diff PASS. Manual launch zero-percent RNG, lifetime/range enforcement and final current-save rejection are downstream gates. Native NOT RUN. This is implementation self-review, not independent review or user approval. Historical planning prose above is superseded by this evidence.

@@ -10,10 +10,10 @@ public class DefenseMapAnnotationsTests
     [Fact]
     public void Chance_shown_at_projectile_and_encounter_with_frozen_tooltip()
     {
-        var op = new WeaponOperatorSnapshot("crew", "Crew", WeaponSkillType.CountermeasureDefense, 50, 30, 30);
+        var op = new WeaponOperatorSnapshot("crew", "Crew", WeaponSkillType.CountermeasureDefense, 50, 55, 55);
         var route = new TorpedoRoute(0, 1, TorpedoRoutePhase.Straight, true, [new(0, 0, 90, 12, 0, 1000)]);
         var pr = new ObjectMotionSnapshot("pr", 0, 0, 12, 90, RenderObjectType: SpaceObjectType.Countermeasure,
-            Countermeasure: new("player", "launcher", "target", CountermeasurePhase.Guiding, route, 0, 500, new(op, 30), []));
+            Countermeasure: new("player", "launcher", "target", CountermeasurePhase.Guiding, route, 0, 500, new(op, 5), []));
         var buffer = new SnapshotBuffer(() => 0);
         buffer.Update(new(1, 0, SimulationSpeed.Speed0, [new("player", 0, 0, 0, 0), pr, new("target", 120, 0, 0, 0)], "player"));
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);

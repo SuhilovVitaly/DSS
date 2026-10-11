@@ -30,6 +30,34 @@ public sealed record ProjectileSaveData(
 
 internal static class CombatSaveValidation
 {
+    internal static GameStateData NormalizeReferences(GameStateData state)
+    {
+        if (state.CombatState is not { Launchers: not null, Projectiles: not null } saved) return state;
+        var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.OrdinalIgnoreCase);
+        string Canon(string id) => !string.IsNullOrWhiteSpace(id) && objects.TryGetValue(id, out var obj) ? obj.ObjectId : id;
+        string Module(string owner, string module) => !string.IsNullOrWhiteSpace(owner) && objects.TryGetValue(owner, out var obj)
+            ? obj.Modules?.FirstOrDefault(m => string.Equals(m.ModuleId, module, StringComparison.OrdinalIgnoreCase))?.ModuleId ?? module : module;
+        return state with
+        {
+            CombatState = saved with
+            {
+                Launchers = saved.Launchers.Select(l => l is null || l.State is null ? l! : l with
+                {
+                    OwnerObjectId = Canon(l.OwnerObjectId),
+                    ModuleId = Module(l.OwnerObjectId, l.ModuleId),
+                    State = l.State with { ActiveTorpedoObjectId = l.State.ActiveTorpedoObjectId is { } id ? Canon(id) : null }
+                }).ToArray(),
+                Projectiles = saved.Projectiles.Select(p => p is null || p.Flight is null ? p! : p with
+                {
+                    ObjectId = Canon(p.ObjectId),
+                    Flight = p.Flight with
+                    { OwnerObjectId = Canon(p.Flight.OwnerObjectId), LauncherModuleId = Module(p.Flight.OwnerObjectId, p.Flight.LauncherModuleId), TargetObjectId = Canon(p.Flight.TargetObjectId) },
+                    TargetBaseline = p.TargetBaseline is { } target ? target with { ObjectId = Canon(target.ObjectId) } : null
+                }).ToArray()
+            }
+        };
+    }
+
     internal static void Validate(GameStateData state, int format)
     {
         static void Require(bool condition, string reason)
@@ -83,11 +111,13 @@ internal static class CombatSaveValidation
             Require(objects.TryGetValue(row!.ObjectId, out var obj) && obj.ObjectType == SpaceObjectType.Missile &&
                 (obj.Modules?.Count ?? 0) == 0 && !obj.IsDestroyed && Finite(obj.PositionX, obj.PositionY), "orphan projectile or invalid pose.");
             var f = row.Flight;
+            if (format >= 16) Require(CountermeasureSaveValidation.SequenceWithin(row.ObjectId, "torpedo-", combat.ProjectileSequence), "projectile sequence behind identity.");
             Require(f is not null && Parameters(f.SpeedKmS, f.TurnRateDegPerSec, f.Damage), "invalid captured weapon.");
             CountermeasureSaveValidation.ValidateCapturedTorpedoRating(f!, format);
             Require(!string.IsNullOrWhiteSpace(f!.OwnerObjectId) && !string.IsNullOrWhiteSpace(f.LauncherModuleId) &&
+                (!objects.ContainsKey(f.OwnerObjectId) && format >= 16 ||
                 launchers.TryGetValue((f.OwnerObjectId, f.LauncherModuleId), out var launcher) && launcher.ActiveTorpedoObjectId == row.ObjectId &&
-                launcher.SpeedKmS == f.SpeedKmS && launcher.TurnRateDegPerSec == f.TurnRateDegPerSec && launcher.Damage == f.Damage,
+                launcher.SpeedKmS == f.SpeedKmS && launcher.TurnRateDegPerSec == f.TurnRateDegPerSec && launcher.Damage == f.Damage),
                 "busy/projectile mismatch.");
             Require(!string.IsNullOrWhiteSpace(f.TargetObjectId) && f.TargetObjectId != f.OwnerObjectId && f.TargetObjectId != row.ObjectId &&
                 row.TargetLost == (!objects.TryGetValue(f.TargetObjectId, out var targetObject) || targetObject.IsDestroyed),

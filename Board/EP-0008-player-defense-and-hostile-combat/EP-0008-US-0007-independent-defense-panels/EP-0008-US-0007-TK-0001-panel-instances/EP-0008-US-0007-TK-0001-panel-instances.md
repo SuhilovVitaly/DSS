@@ -3,10 +3,10 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0007-independent-defense-panels
 ticket: EP-0008-US-0007-TK-0001-panel-instances
 title: "Командные панели по конкретным экземплярам модулей"
-stage: draft
+stage: implemented
 layer: client
 depends_on: ["EP-0008-US-0006-TK-0003-combat-journal-facts"]
-files_touched: 4
+files_touched: 3
 serves: ["AC-0001","AC-0004"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Командные панели по конкретным экземплярам модулей
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED (panel API; screen routing follows TK-0002)
 
 ## Why
 
@@ -41,7 +41,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **22** [общего порядка](../../Tickets.md).
+Шаг **23** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0006-TK-0003-combat-journal-facts](../../EP-0008-US-0006-lifetime-and-auto-arbitration/EP-0008-US-0006-TK-0003-combat-journal-facts/EP-0008-US-0006-TK-0003-combat-journal-facts.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
@@ -69,9 +69,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Two_defense_panels_have_distinct_module_keys`
-- [ ] `Collapsing_one_panel_preserves_other`
-- [ ] `Small_viewport_keeps_both_panels_reachable`
+- [x] `Two_defense_panels_have_distinct_module_keys`
+- [x] `Collapsing_one_panel_preserves_other`
+- [x] `Small_viewport_keeps_both_panels_reachable`
 
 Команды из корня DSS после реализации:
 
@@ -85,13 +85,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `9d6a26ecf0be0e9c84d9831450775f44f9878f96` published/remote verified. CommandsPanel accepts owner identity and builds repeated defense instances with stable owner/module keys, independent open state, module-only metadata and command/status/operator callbacks. Buttons retain instance identity and recheck live enablement at click. Compact captions and prioritized bodies keep both instances reachable; very short viewports scroll and clip both drawing and hit-testing. Existing group templates/Xenon rendering remain available for ownerless callers and absent modules. CommandsPanelSkeletonTests required no edits. Actual GameSessionScreen owner/callback/wheel wiring is explicitly TK-0002, not claimed here.
+
+Initial compilation caught a local-name collision, fixed. Focused panel suites **123/123 PASS**; full Client **1786/1786 PASS** (`ep8-us7-tk1-client.trx`); expanded review **125/125 PASS** (`ep8-us7-tk1-review.trx`) includes live per-module click enablement. New8 layout cases cover independent keys/collapse/reorder/owner change, callbacks,320/480/720 heights and200px scrolling/clipped clicks. Client build 0 warnings/errors, scoped format verify and diff PASS. Self-review complete; actual game command routing/native screenshots remain downstream.

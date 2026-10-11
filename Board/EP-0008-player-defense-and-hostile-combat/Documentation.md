@@ -139,7 +139,7 @@ SaveFormat **16** предлагается относительно текуще
 
 ## Порядок, покрытие и gates
 
-13 историй,44 тикета. Полная карта: [Tickets.md](Tickets.md). Консервативная последовательная цепочка учитывает общие SimulationEngine partials. Каждая история имеет AC, каждый тикет serves; ссылки на решения Q находятся в историях. Последняя история обновляет **все релевантные документы проекта**, включая папки вне Documentation, затем Graphify.
+13 историй,45 тикетов. Полная карта: [Tickets.md](Tickets.md). Консервативная последовательная цепочка учитывает общие SimulationEngine partials. Каждая история имеет AC, каждый тикет serves; ссылки на решения Q находятся в историях. Последняя история обновляет **все релевантные документы проекта**, включая папки вне Documentation, затем Graphify.
 
 Функциональные gates: новые module values → loadout → NPC fire/range → AI motion → manual fire → lifetime/arbitration → panels → map/journal → terminal state → recovery UI → save continuation → integrated/native acceptance → project documentation.
 
@@ -154,5 +154,5 @@ SaveFormat **16** предлагается относительно текуще
 - 2026-10-07: зафиксирован журнал51 вопросов, позднее решение variable-speed orbit сохранено вместо постоянной скорости.
 - Проверены текущие version15, common combat math, singleton panel, actual save path и engine limits; новые API не выданы за существующие.
 - Созданы только Board-артефакты EP-0008. Canonical requirements, production, тесты, предыдущие эпики и промт выполнения не изменены.
-- Planning validation: PASS — 60 Markdown-файлов,13 историй,44 тикета. Проверены уникальность ID/соответствие папок и файлов, dependency DAG и существование зависимостей, ссылки, coverage всех AC, до5 тикетов на историю и до5 файлов обычного production-тикета. Явные inventory-исключения A12 проверены отдельно. Битых относительных ссылок, replacement characters, conflict markers и trailing whitespace не найдено.
+- Planning validation: PASS — 60 Markdown-файлов,13 историй,45 тикетов. Проверены уникальность ID/соответствие папок и файлов, dependency DAG и существование зависимостей, ссылки, coverage всех AC, до5 тикетов на историю и до5 файлов обычного production-тикета. Явные inventory-исключения A12 проверены отдельно. Битых относительных ссылок, replacement characters, conflict markers и trailing whitespace не найдено.
 - Реализация, сборки, тесты продукта, native acceptance и commit/push в этой задаче не выполнялись. Все карточки остаются draft; planning PASS не является одобрением пользователя или runtime PASS.

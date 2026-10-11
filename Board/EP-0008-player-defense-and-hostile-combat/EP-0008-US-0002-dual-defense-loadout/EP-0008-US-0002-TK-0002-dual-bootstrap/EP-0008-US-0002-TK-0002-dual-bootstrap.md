@@ -3,10 +3,10 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0002-dual-defense-loadout
 ticket: EP-0008-US-0002-TK-0002-dual-bootstrap
 title: "Независимое состояние двух аппаратов после New Game"
-stage: draft
+stage: implemented
 layer: engine
 depends_on: ["EP-0008-US-0002-TK-0001-living-variant-and-scenario"]
-files_touched: 4
+files_touched: 2
 serves: ["AC-0002","AC-0003"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Независимое состояние двух аппаратов после New Game
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED
 
 ## Why
 
@@ -69,9 +69,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Both_launchers_bootstrap_independently`
-- [ ] `Duplicate_operator_assignment_rejected`
-- [ ] `Generated_world_keeps_loadout`
+- [x] `Both_launchers_bootstrap_independently`
+- [x] `Duplicate_operator_assignment_rejected`
+- [x] `Generated_world_keeps_loadout`
 
 Команды из корня DSS после реализации:
 
@@ -85,13 +85,28 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0002, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0002, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution review — 2026-10-11
+
+Dependency TK-0001 published as `42425af97885d10763d39eb3ef469e55d407316c`,
+live remote SHA verified. Inspection confirmed existing production storage and
+bootstrap already key defenses by (ownerId,moduleId), visit every installed module,
+and enforce unique assignments per ship. No redundant production rewrite needed.
+Added actual generated NewGame/toggle tests, file roundtrip of valid independent
+reload states with 1000/2000ms boundaries, and atomic duplicate-operator rejection.
+The reload fixture intentionally sets two valid saved deadlines; launch scheduling
+coverage belongs to later hostile-fire/manual/automatic-defense tickets.
+Focused Engine17/17 PASS (`ep8-us2-tk2-focused.trx`). Native NOT RUN; unrelated map
+corpus remains a final epic gate. Self-review, not independent review or approval.
+
+Final non-corpus Engine **1731/1731 PASS** (`ep8-us2-tk2-engine.trx`); Engine build0 warnings/errors, scoped format and diff PASS.

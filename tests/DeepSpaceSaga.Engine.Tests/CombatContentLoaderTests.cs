@@ -19,7 +19,8 @@ public sealed class CombatContentLoaderTests : IDisposable
         {"moduleImplementations":[{
           "typeId":"module.torpedo.launcher.basic","displayName":"Launcher","type":"module.torpedo.launcher",
           "massKg":2000,"structurePointsMax":60,"powerConsumptionW":0,"baseCycleTimeMs":1000,
-          "torpedoDamage":150,"torpedoSpeedKmS":3,"torpedoTurnRateDegPerSec":90
+          "torpedoDamage":150,"torpedoSpeedKmS":3,"torpedoTurnRateDegPerSec":90,
+          "torpedoManeuverability":5,"torpedoRangeKm":200
         }]}
         """;
 
@@ -74,6 +75,8 @@ public sealed class CombatContentLoaderTests : IDisposable
         Assert.Equal(150, launcher.TorpedoDamage);
         Assert.Equal(3, launcher.TorpedoSpeedKmS);
         Assert.Equal(90, launcher.TorpedoTurnRateDegPerSec);
+        Assert.Equal(5m, launcher.TorpedoManeuverability);
+        Assert.Equal(200, launcher.TorpedoRangeKm);
         Assert.Equal(CombatCommandTypes.Fire, Assert.Single(launcher.CommandTypeIds));
         Assert.Equal(1, launcher.SlotSize);
 
@@ -96,6 +99,16 @@ public sealed class CombatContentLoaderTests : IDisposable
 
     [Theory]
     [InlineData("torpedoDamage", null)]
+    [InlineData("torpedoManeuverability", null)]
+    [InlineData("torpedoManeuverability", "null")]
+    [InlineData("torpedoManeuverability", "-0.1")]
+    [InlineData("torpedoManeuverability", "100.1")]
+    [InlineData("torpedoManeuverability", "1e999")]
+    [InlineData("torpedoRangeKm", null)]
+    [InlineData("torpedoRangeKm", "null")]
+    [InlineData("torpedoRangeKm", "0")]
+    [InlineData("torpedoRangeKm", "-1")]
+    [InlineData("torpedoRangeKm", "1e999")]
     [InlineData("torpedoSpeedKmS", null)]
     [InlineData("torpedoTurnRateDegPerSec", null)]
     [InlineData("torpedoDamage", "null")]
@@ -160,7 +173,7 @@ public sealed class CombatContentLoaderTests : IDisposable
         File.Delete(ClassesPath);
         var root = Modules();
         Module(root)["type"] = "module.passive";
-        foreach (var field in new[] { "torpedoDamage", "torpedoSpeedKmS", "torpedoTurnRateDegPerSec" })
+        foreach (var field in new[] { "torpedoDamage", "torpedoSpeedKmS", "torpedoTurnRateDegPerSec", "torpedoManeuverability", "torpedoRangeKm" })
             Module(root).Remove(field);
         WriteModules(root);
 
@@ -273,6 +286,28 @@ public sealed class CombatContentLoaderTests : IDisposable
         var registry = GameDataRegistry.Create([], [], [], [],
             shipClasses: [new ShipClassDefinition("ship.tetrarch", int.MaxValue)]);
         Assert.Equal(int.MaxValue, Ship(registry).HullHitPointsMax);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(100)]
+    public void Weapon_schema_rejects_invalid_values(int validManeuverability)
+    {
+        var root = Modules();
+        Module(root)["torpedoManeuverability"] = validManeuverability;
+        WriteModules(root);
+        var module = Launcher(Load());
+        Assert.Equal((decimal)validManeuverability, module.TorpedoManeuverability);
+        foreach (var invalid in new[]
+        {
+            module with { TorpedoManeuverability = null },
+            module with { TorpedoManeuverability = -1 },
+            module with { TorpedoManeuverability = 100.1m },
+            module with { TorpedoRangeKm = double.NaN },
+            module with { TorpedoRangeKm = double.PositiveInfinity },
+            module with { TorpedoRangeKm = 0 }
+        })
+            Assert.Throws<ContentException>(() => GameDataRegistry.Create([], [invalid], [], []));
     }
 
     public void Dispose() => Directory.Delete(_directory, recursive: true);

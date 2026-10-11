@@ -3,10 +3,10 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0006-lifetime-and-auto-arbitration
 ticket: EP-0008-US-0006-TK-0002-auto-launcher-selection
 title: "Выбор одного аппарата для автоматического перехвата"
-stage: draft
+stage: implemented
 layer: engine
 depends_on: ["EP-0008-US-0006-TK-0001-global-lifetime"]
-files_touched: 3
+files_touched: 2
 serves: ["AC-0003","AC-0004"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Выбор одного аппарата для автоматического перехвата
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED (automated checks; self-review)
 
 ## Why
 
@@ -40,7 +40,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **20** [общего порядка](../../Tickets.md).
+Шаг **21** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0006-TK-0001-global-lifetime](../../EP-0008-US-0006-lifetime-and-auto-arbitration/EP-0008-US-0006-TK-0001-global-lifetime/EP-0008-US-0006-TK-0001-global-lifetime.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
@@ -68,10 +68,10 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Earlier_encounter_wins_over_higher_chance`
-- [ ] `Chance_then_module_id_break_ties`
-- [ ] `Manual_first_consumes_shared_auto_attempt`
-- [ ] `Rejected_candidates_do_not_reserve`
+- [x] `Earlier_encounter_wins_over_higher_chance`
+- [x] `Chance_then_module_id_break_ties`
+- [x] `Manual_first_consumes_shared_auto_attempt`
+- [x] `Rejected_candidates_do_not_reserve`
 
 Команды из корня DSS после реализации:
 
@@ -85,13 +85,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `862fb97810c54f255a2ed874af7ca0f763dea1b6` published/remote verified. Candidate comparison preserves event time then earliest hull threat/target ID; for the same threat it selects actual swept encounter time, descending frozen chance, ordinal module ID then owner ID. Auto launch records the contact estimate rather than centre rendezvous. Shared spawn atomically marks the one auto attempt; manual remains independent. Existing AutomaticDefenseTests required no edit.
+
+Focused arbitration/auto/lifetime **29/29 PASS**, full non-corpus Engine **1832/1832 PASS** (`ep8-us6-tk2-engine.trx`), affected Client **68/68 PASS** (`ep8-us6-tk2-client.trx`). New12 cases cover faster/lower-chance winner, chance and ordinal ties with reversed module enumeration, invalid candidates without attempt/RNG, earliest threat, manual-before-auto and simultaneous manual resolution. Initial no-solution fixture incorrectly assumed low speed alone prevented interception; its captured lifetime now explicitly bounds reachability. Solution build 0 warnings/errors, scoped format verify and diff PASS. Self-review complete; journal facts next. Native/final corpus OPEN.

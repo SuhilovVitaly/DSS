@@ -6,7 +6,7 @@ title: "Файловая загрузка и понятное сообщение
 stage: draft
 layer: client
 depends_on: ["EP-0008-US-0011-TK-0003-save-runtime-continuation"]
-files_touched: 5
+files_touched: 8
 serves: ["AC-0001","AC-0002","AC-0003","AC-0004"]
 created: 2026-10-07
 revision: 1
@@ -40,9 +40,11 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 | `tests/DeepSpaceSaga.Client.Tests/PhaseThreeSessionRoundtripTests.cs` | Новый файл этого тикета | Только результат и шаги этой карточки |
 | `tests/DeepSpaceSaga.Client.Tests/SaveReliabilityTests.cs` | Существует: tests/DeepSpaceSaga.Client.Tests/SaveReliabilityTests.cs:9 (baseline 6907c58) | Только результат и шаги этой карточки |
 
+Execution scope expansion before implementation: add `src/DeepSpaceSaga.Client/UI/Screens/Load/LoadScreen.cs`, `src/DeepSpaceSaga.Client/Data/Locale/English.json` and `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` for a visible localized recoverable error on the actual Load screen, including failed quickload. Existing locale key for incompatible combat saves is reused; generic failed-load text added.
+
 ## Dependencies
 
-Шаг **38** [общего порядка](../../Tickets.md).
+Шаг **39** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0011-TK-0003-save-runtime-continuation](../../EP-0008-US-0011-phase-three-save-continuation/EP-0008-US-0011-TK-0003-save-runtime-continuation/EP-0008-US-0011-TK-0003-save-runtime-continuation.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
@@ -70,9 +72,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Real_file_roundtrip_restores_both_panels`
-- [ ] `Old_save_error_keeps_current_session`
-- [ ] `Load_has_no_old_effect_or_pending_replay`
+- [x] `Real_file_roundtrip_restores_both_panels`
+- [x] `Old_save_error_keeps_current_session`
+- [x] `Load_has_no_old_effect_or_pending_replay`
 
 Команды из корня DSS после реализации:
 
@@ -86,13 +88,21 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Real window Load/QuickLoad failure path now shows a localized recoverable error in LoadScreen; the current session and rejected file bytes survive. A compatible retry replaces the session only after successful factory validation and Speed0. Separate EN/RU incompatible/generic text renders between save list and action buttons.
+
+Six new actual LocalSession/file/window-router cases cover old UI Load and F9, malformed current save plus retry, both projectile panels/frozen values/selection, AI phase/info, old pending command and effect watermark isolation. No native window is created by these automated cases. Existing manual-defense screen state lifecycle already isolates replacement sessions and needed no rewrite.
+
+Validation: full Client1849/1849 PASS, separate Russian16/16 PASS; scoped format, solution build0 warnings/errors and diffPASS. Initial new test sent a command then advanced fake clock before receipt; corrected by awaiting authoritative spawn, preserving transport semantics. Self-review and US-0011 AC coverage complete. Native/final corpus OPEN. Separate commit/push follows; remote SHA recorded in next ticket.

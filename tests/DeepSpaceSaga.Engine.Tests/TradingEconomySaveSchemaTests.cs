@@ -62,7 +62,7 @@ public sealed class TradingEconomySaveSchemaTests
     {
         using var f = TradingVoyageFixture.Create();
         var save = f.Save();
-        Assert.Equal(15, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(16, SaveFormat.CurrentSaveFormatVersion);
         var manifest = save.GameState.TradingEconomyContinuation!;
         Assert.Equal(1, manifest.SchemaVersion);
         Assert.Equal(64, manifest.ConfigurationFingerprint.Length);
@@ -164,7 +164,7 @@ public sealed class TradingEconomySaveSchemaTests
     {
         using var f = TradingVoyageFixture.Create();
         var save = f.Save();
-        Assert.Throws<ScenarioException>(() => TradingEconomySaveMigration.Normalize(save with { SaveFormatVersion = 16 }));
+        Assert.Throws<ScenarioException>(() => TradingEconomySaveMigration.Normalize(save with { SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion + 1 }));
         var scenario = Legacy(save, 0);
         Assert.Same(scenario, TradingEconomySaveMigration.Normalize(scenario));
         Assert.Throws<ScenarioException>(() => TradingEconomySaveMigration.Normalize(scenario with

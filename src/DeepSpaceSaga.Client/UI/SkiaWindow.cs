@@ -9,6 +9,7 @@ using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.Load;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
+using DeepSpaceSaga.Client.UI.Screens.Defeat;
 using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
@@ -49,6 +50,8 @@ public sealed class SkiaWindow : IDisposable
     private RawImage? _interactiveCursorImage;
 
     private GameSessionHandle? _session;
+    private GameSessionHandle? _defeatSession;
+    private Task? _defeatTransitionTask;
     private string? _pendingUndockCommandId;
     private GameSessionScreen? _gameSessionScreen;
     private static readonly double[] AllowedUiScales = { 0.8, 1.0, 1.2, 1.5 };
@@ -61,7 +64,7 @@ public sealed class SkiaWindow : IDisposable
     private bool _quickSaveLoadInFlight;
     private readonly KeyboardEdgeTracker _keyboardEdges = new();
     private readonly Key[] _keyboardPressedKeys = new Key[32]; // must cover every key KeyboardEdgeTracker.PollBoth can report in one call
-    private readonly Key[] _keyboardReleasedKeys = new Key[2]; // Ctrl release edges only (left/right)
+    private readonly Key[] _keyboardReleasedKeys = new Key[32]; // PollBoth reports releases for every tracked key.
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
     private bool _closing;
@@ -82,6 +85,10 @@ public sealed class SkiaWindow : IDisposable
     private double? _monitorRefreshHz;
 
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory, System.Diagnostics.Stopwatch? startupStopwatch = null)
+        : this(initialScreen, sessionFactory, startupStopwatch, createNativeWindow: true) { }
+
+    internal SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory,
+        System.Diagnostics.Stopwatch? startupStopwatch, bool createNativeWindow)
     {
         _sessionFactory = sessionFactory;
         _combatSettings = CombatVisualSettings.Load(Path.Combine(AppContext.BaseDirectory, CombatVisualSettings.RelativePath));
@@ -90,6 +97,8 @@ public sealed class SkiaWindow : IDisposable
         _startupStopwatch = startupStopwatch;
 
         _screens.SetRoot(initialScreen);
+        _window = null!;
+        if (!createNativeWindow) return;
 
         var options = WindowOptions.Default with
         {
@@ -409,6 +418,12 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private void PollGameSessionAutoTransition()
     {
+        if (_session?.IsDefeated == true)
+        {
+            if (!ReferenceEquals(_defeatSession, _session) && (_defeatTransitionTask?.IsCompleted ?? true))
+                _defeatTransitionTask = HandleScreenEvent(ScreenEvent.None);
+            return;
+        }
         RequestStationCleanup();
         if (_screens.Current is StationScreen && _pendingUndockCommandId is { } pendingId &&
             _session?.Buffer.Latest?.Snapshot is { } stationSnapshot)
@@ -651,7 +666,8 @@ public sealed class SkiaWindow : IDisposable
             return;
         }
 
-        _screens.Current.OnKeyDown(key);
+        var action = _screens.Current.OnKeyDown(key);
+        if (action != ScreenEvent.None) _pendingKeyboardTransition = HandleScreenEvent(action);
     }
 
     private const string ScreenshotsDirectory = "Screenshots";
@@ -712,6 +728,8 @@ public sealed class SkiaWindow : IDisposable
         try
         {
             if (_closing) return;
+            if (EnsureDefeatScreen() && evt is not (ScreenEvent.None or ScreenEvent.MainMenu or
+                ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.Exit)) return;
             await _stationNavigation.RemoveInvalidOverlaysAsync(_screens,
                 () => _session?.Buffer.Latest?.Snapshot, PopModalAsync);
             switch (evt)
@@ -730,7 +748,7 @@ public sealed class SkiaWindow : IDisposable
                     await CloseOverlayAsync();
                     break;
                 case ScreenEvent.MainMenu:
-                    ReturnToMainMenu();
+                    await ReturnToMainMenuAsync();
                     break;
                 case ScreenEvent.Exit:
                     _window.Close();
@@ -757,7 +775,7 @@ public sealed class SkiaWindow : IDisposable
                     await OpenLoadWindowAsync();
                     break;
                 case ScreenEvent.CloseLoadWindow:
-                    await CloseOverlayAsync();
+                    if (_screens.Current is LoadScreen) await CloseOverlayAsync();
                     break;
                 case ScreenEvent.LoadSlotRequested:
                     if (payload is not null)
@@ -961,6 +979,7 @@ public sealed class SkiaWindow : IDisposable
             return;
         }
 
+        if (EnsureDefeatScreen() && screen is not LoadScreen) return;
         _screens.Push(screen);
         _modalDepth++;
     }
@@ -971,6 +990,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task PopModalAsync()
     {
+        if (_screens.Current is DefeatScreen) return;
         _screens.Pop();
         _modalDepth--;
 
@@ -1157,6 +1177,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task OpenSaveWindowAsync()
     {
+        if (_session?.IsDefeated == true) return;
         // Guard: don't push overlay on top of another overlay
         if (_screens.Current is SaveScreen)
             return;
@@ -1197,7 +1218,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task SaveToSlotAsync(string slotId)
     {
-        if (_session is null)
+        if (_session is null || _session.IsDefeated)
             return;
 
         try
@@ -1429,7 +1450,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task QuickSaveAsync()
     {
-        if (_session is null || _quickSaveLoadInFlight)
+        if (_session is null || _session.IsDefeated || _quickSaveLoadInFlight)
             return;
 
         _quickSaveLoadInFlight = true;
@@ -1528,6 +1549,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task<bool> LoadSlotCoreAsync(string slotId, string logPrefix)
     {
+        if (_screens.Current is LoadScreen loading) loading.ClearError();
         GameSessionHandle? newSession = null;
         GameSessionScreen newScreen;
         try
@@ -1548,12 +1570,18 @@ public sealed class SkiaWindow : IDisposable
         {
             InterfaceLog.Write($"{logPrefix} failed: {ex.Message}");
             if (newSession is not null) await newSession.DisposeAsync();
+            if (!_closing)
+            {
+                await OpenLoadWindowAsync();
+                if (_screens.Current is LoadScreen load) load.ShowError(SessionConnectionLoader.LoadErrorKey(ex));
+            }
             return false;
         }
 
         var oldSession = _session;
         if (_closing) { await newSession.DisposeAsync().ConfigureAwait(false); return false; }
         _session = newSession;
+        _defeatSession = null;
         _gameSessionScreen = newScreen;
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed0;
@@ -1563,11 +1591,25 @@ public sealed class SkiaWindow : IDisposable
         return true;
     }
 
-    private void ReturnToMainMenu()
+    private bool EnsureDefeatScreen()
+    {
+        if (_session?.IsDefeated != true) return false;
+        if (ReferenceEquals(_defeatSession, _session)) return true;
+        _defeatSession = _session;
+        _modalDepth = 0;
+        _savedSpeed = SimulationSpeed.Speed0;
+        _pendingUndockCommandId = null;
+        _gameSessionScreen = null;
+        _screens.ReplaceAll(new DefeatScreen((float)GetUiScale()));
+        return true;
+    }
+
+    private async Task ReturnToMainMenuAsync()
     {
         // End the game session explicitly — no resume needed
-        _ = _session?.DisposeAsync();
+        var oldSession = _session;
         _session = null;
+        _defeatSession = null;
         _gameSessionScreen = null;
 
         _modalDepth = 0;
@@ -1575,6 +1617,7 @@ public sealed class SkiaWindow : IDisposable
 
         var mainMenu = new MainMenuScreen();
         _screens.ReplaceAll(mainMenu);
+        if (oldSession is not null) await oldSession.DisposeAsync();
     }
 
     public void Dispose()
@@ -1613,6 +1656,6 @@ public sealed class SkiaWindow : IDisposable
         _renderTarget?.Dispose();
         _grContext?.Dispose();
         _gl?.Dispose();
-        _window.Dispose();
+        _window?.Dispose();
     }
 }

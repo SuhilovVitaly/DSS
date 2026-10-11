@@ -3,7 +3,7 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0004-hostile-pursuit-and-orbit
 ticket: EP-0008-US-0004-TK-0002-relative-orbit-math
 title: "Ограниченное двигателем движение вокруг движущейся цели"
-stage: draft
+stage: implemented
 layer: motion
 depends_on: ["EP-0008-US-0004-TK-0001-hostile-motion-contract"]
 files_touched: 3
@@ -14,7 +14,7 @@ revision: 1
 
 # Ограниченное двигателем движение вокруг движущейся цели
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED / AUTOMATED PASS
 
 ## Why
 
@@ -68,10 +68,10 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Stationary_target_reaches_orbit_band`
-- [ ] `Moving_target_orbit_respects_engine_limits`
-- [ ] `Faster_target_uses_pursuit_without_teleport`
-- [ ] `Split_prediction_matches_single_step`
+- [x] `Stationary_target_reaches_orbit_band`
+- [x] `Moving_target_orbit_respects_engine_limits`
+- [x] `Faster_target_uses_pursuit_without_teleport`
+- [x] `Split_prediction_matches_single_step`
 
 Команды из корня DSS после реализации:
 
@@ -85,13 +85,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `9424ad264b60bab32eabbef9f1f41b3fb6cde9fc` published/remote verified. Shared 100ms bounded steering, retained shortest-turn handedness, relative radial/tangent velocity field, 5% entry/10% exit hysteresis and max-pursuit fallback implemented. Segment integrates constant tangential acceleration plus turn analytically from immutable anchor; predictor does not run AI or predict past confirmed end. No kinematic target binding.
+
+Full Motion **162/162 PASS** (`ep8-us4-tk2-motion.trx`), then final expanded focused review **14/14 PASS** (`ep8-us4-tk2-motion-review.trx`). Covers stationary/moving/near/coincident/seam, fast near-limit/equal/faster targets, independent geometric stabilization bound, >=3 full orbits in 5% band, engine bounds each step, direction and hysteresis, single/split/backward prediction and independent numerical integration. Initial two failures were insufficient observation time (acceleration limited orbital speed); corrected conservative geometric time bound without weakening radius/revolution assertions. Motion build 0 warnings/errors; scoped format verify/diff PASS. Self-review complete, Engine wiring is next ticket; native/final corpus OPEN.

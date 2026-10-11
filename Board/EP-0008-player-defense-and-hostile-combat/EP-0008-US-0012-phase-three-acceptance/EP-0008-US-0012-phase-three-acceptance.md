@@ -35,10 +35,10 @@ validation_status: planning-only
 
 | Шаг | Тикет | Layer | Serves |
 |---|---|---|---|
-| 39 | [EP-0008-US-0012-TK-0001-compatibility-fixtures](EP-0008-US-0012-TK-0001-compatibility-fixtures/EP-0008-US-0012-TK-0001-compatibility-fixtures.md) — Адаптация существующих проверок к новой фазе | validation | AC-0002 |
-| 40 | [EP-0008-US-0012-TK-0002-end-to-end-combat](EP-0008-US-0012-TK-0002-end-to-end-combat/EP-0008-US-0012-TK-0002-end-to-end-combat.md) — Сквозное доказательство боя с настоящим AI | engine | AC-0001, AC-0002, AC-0004 |
-| 41 | [EP-0008-US-0012-TK-0003-native-ui-acceptance](EP-0008-US-0012-TK-0003-native-ui-acceptance/EP-0008-US-0012-TK-0003-native-ui-acceptance.md) — Нативная приёмка панелей, боя и поражения | client | AC-0001, AC-0003, AC-0004 |
-| 42 | [EP-0008-US-0012-TK-0004-epic-review](EP-0008-US-0012-TK-0004-epic-review/EP-0008-US-0012-TK-0004-epic-review.md) — Итоговое review контрактов и границ | validation | AC-0001, AC-0002, AC-0003, AC-0004 |
+| 40 | [EP-0008-US-0012-TK-0001-compatibility-fixtures](EP-0008-US-0012-TK-0001-compatibility-fixtures/EP-0008-US-0012-TK-0001-compatibility-fixtures.md) — Адаптация существующих проверок к новой фазе | validation | AC-0002 |
+| 41 | [EP-0008-US-0012-TK-0002-end-to-end-combat](EP-0008-US-0012-TK-0002-end-to-end-combat/EP-0008-US-0012-TK-0002-end-to-end-combat.md) — Сквозное доказательство боя с настоящим AI | engine | AC-0001, AC-0002, AC-0004 |
+| 42 | [EP-0008-US-0012-TK-0003-native-ui-acceptance](EP-0008-US-0012-TK-0003-native-ui-acceptance/EP-0008-US-0012-TK-0003-native-ui-acceptance.md) — Нативная приёмка панелей, боя и поражения | client | AC-0001, AC-0003, AC-0004 |
+| 43 | [EP-0008-US-0012-TK-0004-epic-review](EP-0008-US-0012-TK-0004-epic-review/EP-0008-US-0012-TK-0004-epic-review.md) — Итоговое review контрактов и границ | validation | AC-0001, AC-0002, AC-0003, AC-0004 |
 
 ## Completion evidence
 

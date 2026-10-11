@@ -13,12 +13,15 @@ public class CountermeasureUiFlowTests
         await using var f = await Fixture.Create(width, height, scale);
         async Task Toggle(string command, bool enabled)
         {
-            var row = f.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Countermeasure Launcher");
+            const string moduleId = "MOD-PLAYER-COUNTERMEASURE-01";
+            bool otherAuto = f.Latest.InstalledModules.Single(m => m.ModuleId == "MOD-PLAYER-COUNTERMEASURE-02").Defense!.AutoEnabled;
+            var row = f.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Weapon?.ModuleId == moduleId);
             if (!row.Opened) { f.Screen.OnMouseDown(row.CaptionRect.MidX * scale, row.CaptionRect.MidY * scale); f.Render(); }
-            var button = Assert.Single(f.Screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == command);
+            var button = Assert.Single(f.Screen.CommandsPanel.AllCommandButtons, b => b.Weapon?.ModuleId == moduleId && b.CommandTypeId == command);
             Assert.True(button.Enabled);
             f.Screen.OnMouseDown(button.Rect.MidX * scale, button.Rect.MidY * scale);
-            await f.Wait(s => s.InstalledModules.Any(m => m.Defense?.AutoEnabled == enabled));
+            await f.Wait(s => s.InstalledModules.Single(m => m.ModuleId == moduleId).Defense!.AutoEnabled == enabled);
+            Assert.Equal(otherAuto, f.Latest.InstalledModules.Single(m => m.ModuleId == "MOD-PLAYER-COUNTERMEASURE-02").Defense!.AutoEnabled);
             f.Render();
         }
         await Toggle(DefenseCommandTypes.Disable, false);

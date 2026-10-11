@@ -196,7 +196,9 @@ public sealed class MarketKnowledgeTests
         using var f = TradingVoyageFixture.Create();
         var save = f.Save();
         using var loaded = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
-        loaded.LoadScenario(save with { SaveFormatVersion = 13, GameState = save.GameState with { MarketKnowledge = null, TradingEconomyContinuation = null } }, isSave: true);
+        var fixture = save with { SaveFormatVersion = 13, GameState = save.GameState with { MarketKnowledge = null, TradingEconomyContinuation = null } };
+        Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() => loaded.LoadScenario(fixture, isSave: true)).Message);
+        loaded.LoadScenario(fixture); // Internal historical fixture still tests unknown observations.
         var snapshot = loaded.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
         Assert.Equal(f.Origin, Assert.Single(snapshot.StationMarketKnowledge).StationObjectId);
         Assert.NotNull(snapshot.DockedStationTrade);

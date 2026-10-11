@@ -41,7 +41,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **44** [общего порядка](../../Tickets.md).
+Шаг **45** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0013-TK-0001-update-project-documents](../../EP-0008-US-0013-project-documentation-and-graph/EP-0008-US-0013-TK-0001-update-project-documents/EP-0008-US-0013-TK-0001-update-project-documents.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 

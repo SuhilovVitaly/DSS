@@ -7,7 +7,7 @@ dependencies: ["EP-0008-US-0010-defeat-screen-and-recovery"]
 created: 2026-10-07
 revision: 1
 current_review: complete
-validation_status: planning-only
+validation_status: automated-pass-native-open
 ---
 
 # Новые сохранения продолжают весь бой без миграции старых
@@ -35,10 +35,10 @@ validation_status: planning-only
 
 | Шаг | Тикет | Layer | Serves |
 |---|---|---|---|
-| 35 | [EP-0008-US-0011-TK-0001-new-save-version-gate](EP-0008-US-0011-TK-0001-new-save-version-gate/EP-0008-US-0011-TK-0001-new-save-version-gate.md) — Новая версия и явный отказ старым сохранениям | engine | AC-0001, AC-0003 |
-| 36 | [EP-0008-US-0011-TK-0002-save-combat-validation](EP-0008-US-0011-TK-0002-save-combat-validation/EP-0008-US-0011-TK-0002-save-combat-validation.md) — Полная схема и preflight боя новой фазы | engine | AC-0002, AC-0003 |
-| 37 | [EP-0008-US-0011-TK-0003-save-runtime-continuation](EP-0008-US-0011-TK-0003-save-runtime-continuation/EP-0008-US-0011-TK-0003-save-runtime-continuation.md) — Атомарное восстановление активного боя и AI | engine | AC-0002, AC-0003, AC-0004 |
-| 38 | [EP-0008-US-0011-TK-0004-load-ui-and-transport](EP-0008-US-0011-TK-0004-load-ui-and-transport/EP-0008-US-0011-TK-0004-load-ui-and-transport.md) — Файловая загрузка и понятное сообщение несовместимости | client | AC-0001, AC-0002, AC-0003, AC-0004 |
+| 36 | [EP-0008-US-0011-TK-0001-new-save-version-gate](EP-0008-US-0011-TK-0001-new-save-version-gate/EP-0008-US-0011-TK-0001-new-save-version-gate.md) — Новая версия и явный отказ старым сохранениям | engine | AC-0001, AC-0003 |
+| 37 | [EP-0008-US-0011-TK-0002-save-combat-validation](EP-0008-US-0011-TK-0002-save-combat-validation/EP-0008-US-0011-TK-0002-save-combat-validation.md) — Полная схема и preflight боя новой фазы | engine | AC-0002, AC-0003 |
+| 38 | [EP-0008-US-0011-TK-0003-save-runtime-continuation](EP-0008-US-0011-TK-0003-save-runtime-continuation/EP-0008-US-0011-TK-0003-save-runtime-continuation.md) — Атомарное восстановление активного боя и AI | engine | AC-0002, AC-0003, AC-0004 |
+| 39 | [EP-0008-US-0011-TK-0004-load-ui-and-transport](EP-0008-US-0011-TK-0004-load-ui-and-transport/EP-0008-US-0011-TK-0004-load-ui-and-transport.md) — Файловая загрузка и понятное сообщение несовместимости | client | AC-0001, AC-0002, AC-0003, AC-0004 |
 
 ## Completion evidence
 
@@ -49,3 +49,7 @@ validation_status: planning-only
 Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История draft и не является утверждением о пройденных тестах.
 
 При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Текущая задача только создаёт план.
+
+## Story self-review — 2026-10-11
+
+AC-0001: version16 writer/current-only actual save factory, old0–15 rejection and version0 NewGame tests. AC-0002: strict captured fields and real-file dual-module Guiding/MissedCoast/Reloading, AI pursuit/orbit/cursor/handedness and exact RNG/journal continuation. AC-0003: invalid schema and staged registry checks preserve world/slot; UI load errors preserve current session and allow retry. AC-0004: live pre-death recovery, generated map/voyage finances, pending/preview/effect isolation after fresh session. Engine affected254/254 and Client1849/1849 plus Russian16/16 PASS. Native UI/final corpus remain OPEN; no independent or user approval claimed.

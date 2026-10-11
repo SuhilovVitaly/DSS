@@ -63,6 +63,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
 
     public IGameSessionConnection Connection => _connection;
     public SnapshotBuffer Buffer { get; }
+    public bool IsDefeated => Buffer.Latest?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated;
     private int _stationTravelPending;
     public bool StationTravelPending => Volatile.Read(ref _stationTravelPending) != 0;
     public bool KeepPausedAfterStationTravel { get; private set; }
@@ -248,13 +249,15 @@ public sealed class GameSessionHandle : IAsyncDisposable
     /// </summary>
     public async ValueTask SetSpeedAsync(SimulationSpeed speed)
     {
+        if (IsDefeated) { Buffer.CurrentSpeed = SimulationSpeed.Speed0; return; }
         await _connection.SetSimulationSpeedAsync(speed);
-        Buffer.CurrentSpeed = Failure is null ? speed : SimulationSpeed.Speed0;
+        Buffer.CurrentSpeed = Failure is null && !IsDefeated ? speed : SimulationSpeed.Speed0;
     }
 
     /// <summary>Capture and persist the current authoritative world state into the given save slot.</summary>
     public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default)
     {
+        if (IsDefeated) throw new InvalidOperationException(CommandReasonCodes.SessionDefeated);
         return _connection.SaveAsync(slotId, cancellationToken);
     }
 

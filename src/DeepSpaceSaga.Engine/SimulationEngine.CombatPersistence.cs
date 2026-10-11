@@ -5,7 +5,7 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
-    private CountermeasureStateData CaptureDefenseState() => new(1, _countermeasureSequence,
+    private CountermeasureStateData CaptureDefenseState() => new(2, _countermeasureSequence,
         Combat.CountermeasureRng.AlgorithmVersion, _countermeasureRng.State, _countermeasureRng.Counter, _combatJournalSequence,
         _defenses.OrderBy(p => p.Key.ObjectId, StringComparer.Ordinal).ThenBy(p => p.Key.ModuleId, StringComparer.Ordinal)
             .Select(p => new DefenseLauncherSaveData(p.Key.ObjectId, p.Key.ModuleId, p.Value)).ToArray(),
@@ -15,6 +15,31 @@ public sealed partial class SimulationEngine
         _objects.Where(o => o.InitialMotion.Torpedo is not null && o.InitialMotion.CountermeasureAttempted)
             .Select(o => o.InitialMotion.ObjectId).Order(StringComparer.Ordinal).ToArray(), _combatJournal.ToArray(),
         _objects.Any(o => o.InitialMotion.ObjectId == SelectedObjectId && o.InitialMotion.Countermeasure is not null) ? SelectedObjectId : null);
+
+    private HostileCombatSaveData CaptureHostileState(long time) => new(HostileCombatSaveData.CurrentVersion,
+        _nextHostileDecisionMs, _hostileCombat.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p =>
+        {
+            var active = _objects.First(o => o.InitialMotion.ObjectId == p.Key).InitialMotion.HostileCombat;
+            return new HostileCombatActorSaveData(p.Key, active is null ? p.Value : active with
+            { Segment = active.Segment with { ElapsedMs = time - active.Segment.EpochMs } }, active is not null);
+        }).ToArray());
+
+    private void StageHostileRestore(HostileCombatSaveData? saved, List<SpaceObjectRuntime> objects)
+    {
+        if (saved is null) return;
+        foreach (var row in saved.Actors)
+        {
+            int index = objects.FindIndex(o => o.InitialMotion.ObjectId == row.ObjectId);
+            var owner = objects[index];
+            var module = owner.Modules.Single(m => m.ModuleId == row.State.EngineModuleId);
+            var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+            if (definition.MaxSpeedMps is not > 0 || definition.LinearInertiaMps2 is not > 0 ||
+                definition.AngularInertiaDegPerSec is not > 0 || definition.TurnStepDegrees is not > 0 ||
+                row.ActiveMotion && !CanExecuteEngineCommand(module, definition))
+                throw new ScenarioException("Invalid hostile combat save: assigned engine is unavailable or not an engine.");
+            objects[index] = owner with { InitialMotion = owner.InitialMotion with { HostileCombat = row.ActiveMotion ? row.State : null } };
+        }
+    }
 
     private static void StageDefenseRestore(CountermeasureStateData? saved, List<SpaceObjectRuntime> objects,
         Dictionary<(string ObjectId, string ModuleId), DefenseSnapshot> defenses)

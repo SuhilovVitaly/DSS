@@ -249,7 +249,9 @@ public sealed class TorpedoPreviewTests
                         PositionY = o.ObjectId == "SPC-0001" ? 0 : moving ? -100 : 100,
                         DirectionDegrees = 0,
                         SpeedMps = moving ? 100 : 0,
-                        MovementType = moving ? "Linear" : "Stationary"
+                        MovementType = moving ? "Linear" : "Stationary",
+                        Modules = o.Modules!.Select(m => o.ObjectType == SpaceObjectType.NpcShip && m.ModuleTypeId == "module.torpedo.launcher.basic"
+                            ? m with { PowerState = "Off" } : m).ToArray()
                     }).ToArray()
                 }
             });

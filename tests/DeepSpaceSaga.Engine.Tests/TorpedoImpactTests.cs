@@ -26,7 +26,11 @@ public sealed class TorpedoImpactTests
                 {
                     var configured = o with
                     {
-                        Modules = o.Modules?.Select(m => m with { AutoDefenseEnabled = false }).ToArray(),
+                        Modules = o.Modules?.Select(m => m with
+                        {
+                            AutoDefenseEnabled = false,
+                            PowerState = o.ObjectType == SpaceObjectType.NpcShip && m.ModuleTypeId is "module.torpedo.launcher.basic" or "module.engine.basic" ? "Off" : m.PowerState
+                        }).ToArray(),
                         PositionX = 0,
                         PositionY = o.ObjectId == Player ? 0 : -100,
                         SpeedMps = 0,
@@ -49,15 +53,36 @@ public sealed class TorpedoImpactTests
         }
     };
 
+    internal static ScenarioFile InRangePlayerAttackScenario(ScenarioFile scenario)
+    {
+        var player = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == Player);
+        return scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? o with
+                {
+                    PositionX = player.PositionX + (o.PositionX - player.PositionX) * 0.1,
+                    PositionY = player.PositionY + (o.PositionY - player.PositionY) * 0.1,
+                    Modules = o.Modules!.Select(m => m.ModuleTypeId is "module.torpedo.launcher.basic" or "module.engine.basic" ? m with { PowerState = "Off" } : m).ToArray()
+                } : o).ToArray()
+            }
+        };
+    }
+
     [Fact]
     public void Legacy_fixtures_explicitly_disable_defense()
     {
         var scenario = Scenario();
         foreach (var ship in scenario.GameState.SpaceObjects)
         {
-            var defense = Assert.Single(ship.Modules!, m => m.ModuleTypeId == "module.countermeasure.launcher.basic");
-            Assert.False(defense.AutoDefenseEnabled);
-            Assert.Contains(ship.Crew!, c => c.CrewId == defense.OperatorCrewId);
+            var defenses = ship.Modules!.Where(m => m.ModuleTypeId == "module.countermeasure.launcher.basic").ToArray();
+            Assert.Equal(ship.ObjectType == SpaceObjectType.PlayerShip ? 2 : 1, defenses.Length);
+            Assert.All(defenses, defense =>
+            {
+                Assert.False(defense.AutoDefenseEnabled);
+                Assert.Contains(ship.Crew!, c => c.CrewId == defense.OperatorCrewId);
+            });
         }
     }
 
@@ -238,7 +263,7 @@ public sealed class TorpedoImpactTests
     [Fact]
     public void Real_pirate_scenario_contact_closes_arc_and_straight_history()
     {
-        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
+        var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
         using var engine = Create(WithoutDefense(scenario));
         engine.ReceiveCommand(Fire("real-flight"));
         var launched = At(engine, 0);

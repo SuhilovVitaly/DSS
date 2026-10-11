@@ -16,7 +16,10 @@ public class CountermeasureSnapshotTests
             new(new("crew", "Defense", WeaponSkillType.CountermeasureDefense, 0, 55, 55), 5),
             Mode: mode, CapturedAccuracy: 55, CapturedTargetManeuverability: 5,
             MaxFlightTimeMs: 60000, ExpiresAtMotionTimeMs: 60100,
-            SpeedKmS: 12.5, TurnRateDegPerSec: 85.25);
+            SpeedKmS: 12.5, TurnRateDegPerSec: 85.25,
+            ResolutionRoll: phase == CountermeasurePhase.MissedCoast ? 801 : null,
+            ResolvedAtMotionTimeMs: phase == CountermeasurePhase.MissedCoast ? 150.5 : null,
+            MissExpiresAtMotionTimeMs: phase == CountermeasurePhase.MissedCoast ? 2150.5 : null);
         var restored = JsonSerializer.Deserialize<CountermeasureSnapshot>(JsonSerializer.Serialize(flight))!;
         Assert.Equal(mode, restored.Mode);
         Assert.Equal(phase, restored.Phase);
@@ -27,7 +30,9 @@ public class CountermeasureSnapshotTests
         Assert.Equal(12.5, restored.SpeedKmS);
         Assert.Equal(85.25, restored.TurnRateDegPerSec);
         Assert.Null(restored.PredictedEncounterMotionTimeMs);
-        Assert.Null(restored.ResolutionRoll);
+        Assert.Equal(flight.ResolutionRoll, restored.ResolutionRoll);
+        Assert.Equal(flight.ResolvedAtMotionTimeMs, restored.ResolvedAtMotionTimeMs);
+        Assert.Equal(flight.MissExpiresAtMotionTimeMs, restored.MissExpiresAtMotionTimeMs);
         Assert.Empty(restored.Trail);
     }
 
@@ -36,16 +41,21 @@ public class CountermeasureSnapshotTests
     [InlineData(CountermeasurePhase.MissedCoast)]
     public void Countermeasure_states_roundtrip(CountermeasurePhase phase)
     {
-        var breakdown = new InterceptionRatingBreakdown(new("crew", "Defense", WeaponSkillType.CountermeasureDefense, 50, 30, 30), 48);
+        var breakdown = new InterceptionRatingBreakdown(new("crew", "Defense", WeaponSkillType.CountermeasureDefense, 50, 55, 55), 5);
         var projectile = new CountermeasureSnapshot("owner", "module", "torpedo", phase,
-            new(100, 1, TorpedoRoutePhase.Straight, false), 100, 320, breakdown,
-            MissExpiresAtMotionTimeMs: phase == CountermeasurePhase.MissedCoast ? 2100.5 : null);
+            new(100, 1, TorpedoRoutePhase.Straight, false), 100, 500, breakdown,
+            MissExpiresAtMotionTimeMs: phase == CountermeasurePhase.MissedCoast ? 2100.5 : null,
+            ResolutionRoll: phase == CountermeasurePhase.MissedCoast ? 801 : null,
+            ResolvedAtMotionTimeMs: phase == CountermeasurePhase.MissedCoast ? 100.5 : null,
+            Mode: LaunchMode.Manual, CapturedAccuracy: 55, CapturedTargetManeuverability: 5,
+            MaxFlightTimeMs: 60000, ExpiresAtMotionTimeMs: 60100, SpeedKmS: 12, TurnRateDegPerSec: 90);
         var motion = new ObjectMotionSnapshot("pr", 0, 0, 12, 0, ObjectType: SpaceObjectType.Countermeasure, Countermeasure: projectile);
         var restored = JsonSerializer.Deserialize<ObjectMotionSnapshot>(JsonSerializer.Serialize(motion))!;
         Assert.Null(restored.Torpedo);
         Assert.Equal(phase, restored.Countermeasure!.Phase);
         Assert.Equal(breakdown, restored.Countermeasure.RatingBreakdown);
-        Assert.Equal(320, restored.Countermeasure.FrozenChanceTenths);
+        Assert.Equal(500, restored.Countermeasure.FrozenChanceTenths);
+        Assert.Equal(projectile.ResolutionRoll, restored.Countermeasure.ResolutionRoll);
         Assert.Equal(projectile.MissExpiresAtMotionTimeMs, restored.Countermeasure.MissExpiresAtMotionTimeMs);
         Assert.Null(restored.Countermeasure.PredictedEncounterMotionTimeMs);
         Assert.Empty(restored.Countermeasure.Trail);

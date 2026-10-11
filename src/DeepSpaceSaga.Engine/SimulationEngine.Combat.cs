@@ -20,28 +20,39 @@ public sealed partial class SimulationEngine
 
     private CommandStartOutcome TryStartTorpedoFire(PlayerCommand command, long motionTimeMs)
     {
-        // Launch identities outlive the bounded general command receipt journal.
+        var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.ObjectId &&
+            o.InitialMotion.ObjectId == PlayerShipObjectId && o.ObjectType == SpaceObjectType.PlayerShip && !o.IsDestroyed);
+        if (owner is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
+        // Player receipts are never synthesized by the internal hostile actor.
         if (_processedLaunchCommandIds.Contains(command.CommandId))
         {
             RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
             return CommandStartOutcome.Started;
         }
-        var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.ObjectId &&
-            o.InitialMotion.ObjectId == PlayerShipObjectId && o.ObjectType == SpaceObjectType.PlayerShip && !o.IsDestroyed);
-        if (owner is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
-        int index = FindModuleIndex(owner.Modules, command.ModuleId);
+        var outcome = TryLaunchTorpedo(owner, command.ModuleId, command.TargetObjectId, motionTimeMs);
+        if (outcome.Disposition == CommandStartDisposition.Started)
+        {
+            _processedLaunchCommandIds.Add(command.CommandId);
+            RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
+        }
+        return outcome;
+    }
+
+    private CommandStartOutcome TryLaunchTorpedo(SpaceObjectRuntime owner, string moduleId, string? targetObjectId, long motionTimeMs)
+    {
+        int index = FindModuleIndex(owner.Modules, moduleId);
         if (index < 0) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
         var module = owner.Modules[index];
-        var key = (command.ObjectId, command.ModuleId);
+        var key = (owner.InitialMotion.ObjectId, moduleId);
         if (!_launcherCombat.TryGetValue(key, out var launcher) ||
             !_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CommandTypeIds.Contains(CombatCommandTypes.Fire))
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
         if (!CanExecuteModuleCommand(module)) return CommandStartOutcome.Rejected(CommandReasonCodes.ModuleUnavailable);
         if (launcher.ActiveTorpedoObjectId is not null || module.ActiveCycle is not null)
             return CommandStartOutcome.Rejected(CommandReasonCodes.Busy);
-        if (string.IsNullOrWhiteSpace(command.TargetObjectId)) return CommandStartOutcome.Rejected(CommandReasonCodes.MissingTarget);
-        var target = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.TargetObjectId && !o.IsDestroyed);
-        if (target is null || target.ObjectType == SpaceObjectType.Countermeasure || command.TargetObjectId == command.ObjectId)
+        if (string.IsNullOrWhiteSpace(targetObjectId)) return CommandStartOutcome.Rejected(CommandReasonCodes.MissingTarget);
+        var target = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == targetObjectId && !o.IsDestroyed);
+        if (target is null || target.ObjectType == SpaceObjectType.Countermeasure || targetObjectId == owner.InitialMotion.ObjectId)
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownTarget);
 
         var weaponOperator = ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack);
@@ -49,28 +60,39 @@ public sealed partial class SimulationEngine
 
         var origin = PredictMotion(owner, motionTimeMs - owner.StartGameTimeMs);
         var targetPose = PredictMotion(target, motionTimeMs - target.StartGameTimeMs);
+        if (!CombatRangeMath.IsWithinRange(origin, targetPose, launcher.RangeKm!.Value))
+            return CommandStartOutcome.Rejected("target_out_of_range");
         var route = TorpedoGuidanceMath.Plan(origin, targetPose, launcher.SpeedKmS, launcher.TurnRateDegPerSec, motionTimeMs);
-        long sequence = _torpedoSequence;
-        string id;
-        do
-        {
-            if (sequence == long.MaxValue) return CommandStartOutcome.Rejected("projectile_id_exhausted");
-            id = "torpedo-" + (++sequence).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        } while (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, id, StringComparison.OrdinalIgnoreCase)));
-        var flight = new TorpedoSnapshot(command.ObjectId, command.ModuleId, command.TargetObjectId!, motionTimeMs,
+        if (!TryGetNextTorpedoId(out string id, out long sequence))
+            return CommandStartOutcome.Rejected("projectile_id_exhausted");
+        var flight = new TorpedoSnapshot(owner.InitialMotion.ObjectId, moduleId, targetObjectId!, motionTimeMs,
             launcher.SpeedKmS, launcher.TurnRateDegPerSec, launcher.Damage, 0, route, [], ImpactTime(route),
-            TorpedoRating: weaponOperator.EffectiveRating, RatingBreakdown: weaponOperator);
+            TorpedoRating: weaponOperator.EffectiveRating, RatingBreakdown: weaponOperator,
+            CapturedManeuverability: weaponOperator.EffectiveRating,
+            OwnerPlayerRelationAtLaunch: GetRelationToPlayer(owner) ?? PlayerRelation.Neutral);
         var motion = new ObjectMotionSnapshot(id, origin.X, origin.Y, launcher.SpeedKmS, origin.Direction, Torpedo: flight);
         _objects.Add(new(motion, SpaceObjectType.Missile, motionTimeMs, [], Name: "Torpedo", IsKnown: true));
         _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = id, Operator = weaponOperator };
         _torpedoTargets[id] = (targetPose, motionTimeMs);
         _torpedoSequence = sequence;
-        _processedLaunchCommandIds.Add(command.CommandId);
-        AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Launch, command.ObjectId, command.TargetObjectId!, id,
+        AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Launch, owner.InitialMotion.ObjectId, targetObjectId!, id,
             origin.X, origin.Y, TorpedoOperator: weaponOperator, Result: "torpedo"));
         _nextCombatGuidanceMs = Math.Min(_nextCombatGuidanceMs, NextGuidanceBoundary(motionTimeMs));
-        RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
         return CommandStartOutcome.Started;
+    }
+
+    private bool TryGetNextTorpedoId(out string id, out long sequence)
+    {
+        sequence = _torpedoSequence;
+        id = string.Empty;
+        while (sequence < long.MaxValue)
+        {
+            string candidate = "torpedo-" + (++sequence).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, candidate, StringComparison.OrdinalIgnoreCase))) continue;
+            id = candidate;
+            return true;
+        }
+        return false;
     }
 
     private CommandStartOutcome TrySelfDestruct(PlayerCommand command, long motionTimeMs)
@@ -119,6 +141,7 @@ public sealed partial class SimulationEngine
 
     private void AdvanceCombatTo(long motionTimeMs)
     {
+        if (IsDefeated) return;
         // Recompute after each mutation: a previous contact may remove an obstacle
         // (or, in the wreck lifecycle, replace it) inside this same physical interval.
         if (motionTimeMs <= _combatProcessedTimeMs) return;
@@ -127,18 +150,21 @@ public sealed partial class SimulationEngine
         {
             var impact = FindFirstImpact(cursor, motionTimeMs);
             var launch = NextDefenseLaunch(cursor, motionTimeMs);
+            var hostileLaunch = NextHostileLaunch(cursor, motionTimeMs);
             var intercept = FindFirstIntercept(cursor, motionTimeMs);
-            var expiry = _objects.Where(o => o.InitialMotion.Countermeasure is { Phase: CountermeasurePhase.MissedCoast })
-                .OrderBy(o => o.InitialMotion.Countermeasure!.MissExpiresAtMotionTimeMs)
+            var expiry = _objects.Where(o => o.InitialMotion.Countermeasure is not null)
+                .OrderBy(o => CountermeasureExpiry(o.InitialMotion.Countermeasure!))
                 .ThenBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).FirstOrDefault();
-            double expiryTime = expiry?.InitialMotion.Countermeasure?.MissExpiresAtMotionTimeMs ?? double.PositiveInfinity;
+            double expiryTime = expiry is null ? double.PositiveInfinity : CountermeasureExpiry(expiry.InitialMotion.Countermeasure!);
             double eventTime = Math.Min(launch?.Time ?? double.PositiveInfinity,
                 Math.Min(intercept?.Contact.MotionTimeMs ?? double.PositiveInfinity, expiryTime));
+            eventTime = Math.Min(eventTime, hostileLaunch?.Time ?? double.PositiveInfinity);
             if (impact is { } hit && hit.Contact.MotionTimeMs <= eventTime)
             {
                 ApplyImpact(hit.Projectile, hit.Target, hit.Contact);
                 cursor = hit.Contact.MotionTimeMs;
                 RemoveLostCountermeasures(cursor);
+                if (IsDefeated) return;
                 continue;
             }
             if (intercept is { } encounter && encounter.Contact.MotionTimeMs <= eventTime)
@@ -150,14 +176,22 @@ public sealed partial class SimulationEngine
             }
             if (expiry is not null && expiryTime <= eventTime && expiryTime <= motionTimeMs)
             {
-                RemoveCountermeasure(expiry, expiryTime);
+                ExpireCountermeasure(expiry, expiryTime);
                 cursor = expiryTime;
                 continue;
             }
-            if (launch is not null)
+            if (launch is not null && launch.Time <= eventTime)
             {
                 LaunchCountermeasure(launch);
                 cursor = launch.Time;
+                continue;
+            }
+            if (hostileLaunch is not null)
+            {
+                var result = TryStartHostileTorpedoFire(hostileLaunch.OwnerId, hostileLaunch.ModuleId, hostileLaunch.Time);
+                if (result.Disposition != CommandStartDisposition.Started)
+                    throw new InvalidOperationException($"Validated hostile launch was rejected: {result.ReasonCode}.");
+                cursor = hostileLaunch.Time;
                 continue;
             }
             break;
@@ -215,8 +249,29 @@ public sealed partial class SimulationEngine
         return first;
     }
 
-    private static CollisionPath CombatPath(SpaceObjectRuntime obj)
+    internal static CollisionPath CombatPath(SpaceObjectRuntime obj)
     {
+        if (obj.InitialMotion.HostileCombat is { Segment: var segment })
+        {
+            double maxSpeed = Math.Max(segment.StartSpeedKmS,
+                segment.StartSpeedKmS + segment.AccelerationKmS2 * segment.DurationMs / 1000.0);
+            return new(t =>
+            {
+                var p = HostileOrbitMath.Sample(segment, t - segment.EpochMs);
+                // Defense forecasts may look beyond the confirmed segment. Continue its
+                // terminal velocity for that estimate, never freeze the moving hull or run AI.
+                // Actual outcomes are searched only up to the next controller boundary.
+                double coastMs = t - segment.EpochMs - segment.DurationMs;
+                if (coastMs > 0)
+                {
+                    double angle = p.Direction * Math.PI / 180;
+                    return (p.X + p.SpeedKmS / 100 * coastMs * Math.Sin(angle),
+                        p.Y - p.SpeedKmS / 100 * coastMs * Math.Cos(angle));
+                }
+                return (p.X, p.Y);
+            }, maxSpeed / 100,
+                Math.Abs(segment.AccelerationKmS2) / 100_000 + maxSpeed / 100 * Math.Abs(segment.TurnRateDegPerSec) * Math.PI / 180_000);
+        }
         if (obj.InitialMotion.Countermeasure is { } defenseFlight)
             return new(t =>
             {
@@ -299,7 +354,10 @@ public sealed partial class SimulationEngine
         } while (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, id, StringComparison.OrdinalIgnoreCase)));
         string destroyedId = destroyed.InitialMotion.ObjectId;
         var point = CombatPath(destroyed).Position(impactMotionTimeMs);
+        // Hit and Destroyed facts are appended immediately after this wreck transition.
+        RecordPlayerDefeat(destroyedId, id, impactMotionTimeMs, checked(_combatJournalSequence + 2));
         _objects.Remove(destroyed);
+        _hostileCombat.Remove(destroyedId);
         _hullCombat.Remove(destroyedId);
         foreach (var defenseKey in _defenses.Keys.Where(k => k.ObjectId == destroyedId).ToArray()) _defenses.Remove(defenseKey);
         foreach (var key in _launcherCombat.Keys.Where(k => k.ObjectId == destroyedId).ToArray())
@@ -475,7 +533,7 @@ public sealed partial class SimulationEngine
             foreach (var module in obj.Modules)
             {
                 var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-                if (definition.CountermeasureBaseRating is not null)
+                if (definition.CountermeasureAccuracy is not null)
                     _ = ResolveWeaponOperator(obj, module, WeaponSkillType.CountermeasureDefense);
                 if (definition.TorpedoDamage is not { } damage)
                     continue;
@@ -486,7 +544,9 @@ public sealed partial class SimulationEngine
                     SpeedKmS: definition.TorpedoSpeedKmS!.Value,
                     TurnRateDegPerSec: definition.TorpedoTurnRateDegPerSec!.Value,
                     Damage: damage,
-                    Operator: ResolveWeaponOperator(obj, module, WeaponSkillType.TorpedoAttack)));
+                    Operator: ResolveWeaponOperator(obj, module, WeaponSkillType.TorpedoAttack),
+                    RangeKm: definition.TorpedoRangeKm,
+                    Maneuverability: definition.TorpedoManeuverability));
             }
         }
 

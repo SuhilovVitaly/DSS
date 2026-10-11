@@ -7,6 +7,7 @@ public class CountermeasureSaveSchemaTests
     [Theory]
     [InlineData("missing-rating")]
     [InlineData("mismatched-rating")]
+    [InlineData("captured-maneuverability")]
     [InlineData("missing-operator")]
     [InlineData("invalid-skill")]
     [InlineData("wrong-skill-type")]
@@ -24,6 +25,7 @@ public class CountermeasureSaveSchemaTests
         {
             "missing-rating" => flight with { TorpedoRating = null },
             "mismatched-rating" => flight with { TorpedoRating = 0 },
+            "captured-maneuverability" => flight with { CapturedManeuverability = 6 },
             "missing-operator" => flight with { RatingBreakdown = null },
             "invalid-skill" => flight with { RatingBreakdown = flight.RatingBreakdown! with { Skill = 101 } },
             "wrong-skill-type" => flight with { RatingBreakdown = flight.RatingBreakdown! with { SkillType = DeepSpaceSaga.Contracts.WeaponSkillType.CountermeasureDefense } },
@@ -37,6 +39,8 @@ public class CountermeasureSaveSchemaTests
 
     [Theory]
     [InlineData("chance")]
+    [InlineData("captured-accuracy")]
+    [InlineData("captured-target")]
     [InlineData("attempt")]
     [InlineData("busy")]
     [InlineData("phase")]
@@ -48,11 +52,14 @@ public class CountermeasureSaveSchemaTests
         using var engine = Create(AutomaticDefenseTests.DefenseScenario());
         engine.ReceiveCommand(Fire("launch")); At(engine, 0); At(engine, 1000);
         var save = engine.CaptureSaveStateForTests(1000, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0);
+        string before = ScenarioLoader.Serialize(save);
         var state = save.GameState.DefenseState!;
         var projectile = Assert.Single(state.Projectiles);
         state = mutation switch
         {
             "chance" => state with { Projectiles = [projectile with { Flight = projectile.Flight with { FrozenChanceTenths = 501 } }] },
+            "captured-accuracy" => state with { Projectiles = [projectile with { Flight = projectile.Flight with { CapturedAccuracy = 54 } }] },
+            "captured-target" => state with { Projectiles = [projectile with { Flight = projectile.Flight with { CapturedTargetManeuverability = 6 } }] },
             "attempt" => state with { AttemptedTorpedoIds = [] },
             "busy" => state with { Launchers = state.Launchers.Select(l => l with { State = l.State with { ActiveProjectileId = "missing" } }).ToArray() },
             "phase" => state with { Projectiles = [projectile with { Flight = projectile.Flight with { Phase = (DeepSpaceSaga.Contracts.CountermeasurePhase)99 } }] },
@@ -62,6 +69,8 @@ public class CountermeasureSaveSchemaTests
         };
         save = save with { GameState = save.GameState with { DefenseState = state } };
         Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(save, isSave: true));
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(1000, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0)));
     }
     [Fact]
     public void Unknown_rng_version_rejected()

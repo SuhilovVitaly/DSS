@@ -3,7 +3,7 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0008-manual-preview-and-map
 ticket: EP-0008-US-0008-TK-0003-journal-presentation
 title: "Читаемый журнал новых событий боя"
-stage: draft
+stage: implemented
 layer: client
 depends_on: ["EP-0008-US-0008-TK-0002-hover-ranges-and-countdown"]
 files_touched: 4
@@ -14,7 +14,7 @@ revision: 1
 
 # Читаемый журнал новых событий боя
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED; self-review complete; native OPEN
 
 ## Why
 
@@ -41,7 +41,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **28** [общего порядка](../../Tickets.md).
+Шаг **29** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0008-TK-0002-hover-ranges-and-countdown](../../EP-0008-US-0008-manual-preview-and-map/EP-0008-US-0008-TK-0002-hover-ranges-and-countdown/EP-0008-US-0008-TK-0002-hover-ranges-and-countdown.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
@@ -69,10 +69,10 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Manual_and_auto_launches_are_distinguishable`
-- [ ] `Expiry_message_is_not_hull_hit`
-- [ ] `Long_breakdown_scrolls_to_last_line`
-- [ ] `Load_does_not_replay_expiry_effect`
+- [x] `Manual_and_auto_launches_are_distinguishable`
+- [x] `Expiry_message_is_not_hull_hit`
+- [x] `Long_breakdown_scrolls_to_last_line`
+- [x] `Load_does_not_replay_expiry_effect`
 
 Команды из корня DSS после реализации:
 
@@ -86,13 +86,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `499074810ba3e29e122ed2b55fe4c5410348fe5b` published/remote verified. Journal renders launcher identity, manual/auto mode, captured accuracy/maneuverability, authoritative frozen chance/roll and distinct lifetime/coast/target/owner termination reasons. Only actual Hit/Destroyed entries display damage; expiry is not a miss or explosion. Existing CombatEffectStore excludes expiry and retains its session watermark and2s real effects, so no production change to that store was needed. Scroll tests inspect the same visible lines drawn by the panel and reach the actual final reason.
+
+Seven new cases cover manual/auto distinctions, four termination kinds, long wrapping/last-line scroll and a real Engine missed-coast expiry saved to JSON and loaded through ScenarioLoader. Reopening loaded screen three times preserves journal facts with no old effects. Focused13/13; full Client **1832/1832 PASS**, `ep8-us8-tk3-client.trx`. Client build0warnings/errors, scoped format verify and diffPASS. Self-review complete; native/final corpus OPEN.

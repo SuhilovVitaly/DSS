@@ -16,67 +16,29 @@ public class EngineContentLoaderSaveFileTests
     {
         string settingsPath = ResolveRealSettingsPath();
 
-        // Hand-written save: gameTimeMs > 0 (rejected for New Game, allowed here), and
-        // the engine module's turn cycle is already 500 ms into its 1000 ms window.
-        // It carries the current catalog identity so this test exercises save loading,
-        // rather than the intentional rejection of an unidentified incompatible legacy save.
+        // Produce a real current-format save halfway through an actual engine turn cycle.
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settingsPath, out _, out _);
-        string catalogCompatibility = JsonSerializer.Serialize(registry.CatalogCompatibility);
-        string saveJson = """
-        {
-          "scenarioMetadata": { "scenarioId": "quicksave", "name": "Quicksave" },
-          "saveFormatVersion": 1,
-          "gameState": {
-            "gameTimeMs": 5000,
-            "currentSpeed": "Speed0",
-            "playerShipObjectId": "SPC-0001",
-            "spaceObjects": [
-              {
-                "objectId": "SPC-0001", "objectType": "PlayerShip", "persistenceType": "Permanent",
-                "name": "Player Ship",
-                "positionX": 10000.0, "positionY": 10000.0,
-                "speedMps": 0, "directionDegrees": 90, "movementType": "Stationary",
-                "hullLayout": { "width": 1, "height": 1, "cells": [ {"x":0,"y":0} ] },
-                "modules": [
-                  {
-                    "moduleId": "MOD-PLAYER-ENGINE-01",
-                    "moduleTypeId": "module.engine.basic",
-                    "occupiedCells": [ {"x":0,"y":0} ],
-                    "structurePoints": 100,
-                    "powerState": "On",
-                    "operationalState": "Ready",
-                    "activeCycle": {
-                      "cycleId": "CYC-ENGINE-000001",
-                      "startedGameTimeMs": 4500,
-                      "durationMs": 1000,
-                      "commandType": "engine.turnRightUntilCancel",
-                      "isAutoRepeat": true
-                    },
-                    "cargo": []
-                  }
-                ]
-              }
-            ]
-          }
-        }
-        """;
-        saveJson = saveJson
-            .Replace("\"saveFormatVersion\": 1,", "\"saveFormatVersion\": 7,", StringComparison.Ordinal)
-            .Replace("\"gameTimeMs\": 5000,", $"\"gameTimeMs\": 5000,\n            \"simulationTimeMs\": 5000,\n            \"economyTime\": {{ \"rulesVersion\": 1, \"stationDistrict\": 0, \"missingRations\": 0 }},\n            \"catalogCompatibility\": {catalogCompatibility},", StringComparison.Ordinal);
+        using var source = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => 0));
+        source.LoadScenario(TorpedoImpactTests.Scenario(o => o.ObjectId == TorpedoImpactTests.Player
+            ? o with { DirectionDegrees = 90 } : o));
+        source.ReceiveCommand(new PlayerCommand("turn", 1, TorpedoImpactTests.Player, "MOD-PLAYER-ENGINE-01",
+            ShipEngineCommandTypes.TurnRightUntilCancel));
+        source.CaptureSnapshotForTests(0);
+        string saveJson = Scenario.ScenarioLoader.Serialize(source.CaptureSaveStateForTests(500, SimulationSpeed.Speed0));
 
         string savePath = Path.Combine(Path.GetTempPath(), $"dss-save-{Guid.NewGuid():N}.json");
         File.WriteAllText(savePath, saveJson);
         try
         {
-            var engine = EngineContentLoader.CreateEngineFromSaveFile(settingsPath, savePath);
+            using var engine = EngineContentLoader.CreateEngineFromSaveFile(settingsPath, savePath);
 
             Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
             Assert.Equal(SimulationSpeed.Speed0, engine.CurrentSpeed);
 
             // The cycle was 500 ms into its 1000 ms turn-step window when saved.
-            // The next tick at gameTimeMs = 5500 completes it — direction advances by
+            // The next tick at motionTimeMs = 1000 completes it — direction advances by
             // exactly one turn step, and the auto-repeat cycle carries on.
-            var next = engine.CaptureSnapshotForTests(5500, SimulationSpeed.Speed1);
+            var next = engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1);
             var ship = next.Objects.Single(o => o.ObjectId == "SPC-0001");
 
             Assert.Equal(91, ship.Direction);

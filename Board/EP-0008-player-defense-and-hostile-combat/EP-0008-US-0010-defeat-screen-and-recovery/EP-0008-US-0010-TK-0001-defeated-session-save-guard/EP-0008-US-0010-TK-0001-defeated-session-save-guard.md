@@ -14,7 +14,7 @@ revision: 1
 
 # Защита файлового сохранения и session lifecycle
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED — self-reviewed; publication recorded by the next execution entry
 
 ## Why
 
@@ -39,7 +39,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **32** [общего порядка](../../Tickets.md).
+Шаг **33** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0009-TK-0003-defeat-clock-boundary](../../EP-0008-US-0009-authoritative-player-defeat/EP-0008-US-0009-TK-0003-defeat-clock-boundary/EP-0008-US-0009-TK-0003-defeat-clock-boundary.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
@@ -67,9 +67,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Save_after_defeat_keeps_existing_bytes`
-- [ ] `Queued_postdeath_capture_is_rejected`
-- [ ] `Fresh_session_has_no_terminal_state`
+- [x] `Save_after_defeat_keeps_existing_bytes`
+- [x] `Queued_postdeath_capture_is_rejected`
+- [x] `Fresh_session_has_no_terminal_state`
 
 Команды из корня DSS после реализации:
 
@@ -83,13 +83,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0002, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0002, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `bd10a68f565846c57a973c9d4bf07517a970f78c` published/remote verified. Existing LocalSession SaveAsync already captures inside saveGate and before all filesystem writes; central terminal Engine guard therefore supplies the required production behavior. Kept that ordering and documented the distinction between queued post-death capture and completing an immutable pre-death capture.
+
+Four real transport/file regressions verify unchanged existing slot bytes, no directory creation for rejected new slots, deterministic queued capture behind the actual saveGate rejected after a lethal hit, no temp files, disposal and creating a fresh Running connection from a real pre-death save through CreateFromSaveFile, followed by a successful new file save. No mocked engine/file transport. Affected Engine17/17 PASS (DefeatedSessionSave, LocalWorldSaveRoundtrip, FullMapLocalLoad), dependent projects build0warnings/errors; scoped format normalized new-file line endings then verification/diffPASS. Own review complete. Next is the defeat screen and actual window navigation integration; native remains OPEN.

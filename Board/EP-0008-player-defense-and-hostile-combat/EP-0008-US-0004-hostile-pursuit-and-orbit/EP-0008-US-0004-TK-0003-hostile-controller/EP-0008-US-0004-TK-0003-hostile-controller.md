@@ -3,10 +3,10 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0004-hostile-pursuit-and-orbit
 ticket: EP-0008-US-0004-TK-0003-hostile-controller
 title: "Авторитетное управление двигателем и фазами AI"
-stage: draft
+stage: implemented
 layer: engine
 depends_on: ["EP-0008-US-0004-TK-0002-relative-orbit-math"]
-files_touched: 5
+files_touched: 9
 serves: ["AC-0001","AC-0002","AC-0003","AC-0004"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Авторитетное управление двигателем и фазами AI
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED / AUTOMATED PASS
 
 ## Why
 
@@ -39,6 +39,14 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 | `src/DeepSpaceSaga.Engine/RuntimeMotion.cs` | Существует: src/DeepSpaceSaga.Engine/RuntimeMotion.cs:6 (baseline 6907c58) | Только результат и шаги этой карточки |
 | `src/DeepSpaceSaga.Engine/SimulationEngine.EconomyTime.cs` | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.EconomyTime.cs:6 (baseline 6907c58) | Только результат и шаги этой карточки |
 | `tests/DeepSpaceSaga.Engine.Tests/HostileOrbitRuntimeTests.cs` | Новый файл этого тикета | Только результат и шаги этой карточки |
+
+## Execution scope update — 2026-10-11
+
+Baseline `96e7113`, remote verified. Add `SimulationEngine.Combat.cs` for the minimum continuous segment adapter required when enabling accelerating NPC motion (the old speed bound can be zero). TK-0004 retains dedicated swept-collision/guidance/death integration acceptance. Existing deterministic combat fixtures in Engine/Client may explicitly disable NPC engines where the scenario tests stationary/linear targets; document exact changed paths and preserve those assertions. Current-format hostile persistence remains US-0011. RuntimeMotion and EconomyTime already dispatch through shared predictor and AdvanceMotionTo; change them only if needed.
+
+Fixture scope before edits: `tests/DeepSpaceSaga.Engine.Tests/TorpedoImpactTests.cs`, `HostileTorpedoFireTests.cs`, `CombatSaveLoadTests.cs`, and `tests/DeepSpaceSaga.Client.Tests/CombatSessionRoundtripTests.cs`. Existing stationary/linear target scenarios explicitly power off NPC engines; the new hostile-motion tests enable them deliberately.
+
+Additional scope: `tests/DeepSpaceSaga.Client.Tests/PirateScenarioTests.cs` retains initial identity/loadout checks and replaces obsolete constant-velocity continuation with bounded hostile pursuit.
 
 ## Dependencies
 
@@ -70,10 +78,10 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Hostile_ai_starts_without_detection_gate`
-- [ ] `Engine_power_and_docking_gate_motion`
-- [ ] `Pause_freezes_hostile_controller`
-- [ ] `Orbit_direction_persists_between_phases`
+- [x] `Hostile_ai_starts_without_detection_gate`
+- [x] `Engine_power_and_docking_gate_motion`
+- [x] `Pause_freezes_hostile_controller`
+- [x] `Orbit_direction_persists_between_phases`
 
 Команды из корня DSS после реализации:
 
@@ -87,13 +95,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `96e7113ded5f2bb1b88458ec543237dac87f73d9` published/remote verified. Every armed Enemy receives internal stable module selection and 100ms physical decisions, regardless of detection. Shared segments carry actual engine max speed/acceleration/turn; no fuel consumption or player receipts. Engine power/structure/readiness and docking prevent AI steering. Calendar-only/paused frames do not initialize or advance control, including a nonzero initial epoch. Split snapshots and Motion prediction match; direction survives phase changes. RuntimeMotion and EconomyTime required no edits. Minimal continuous collision adapter introduced together with activation to avoid invalid zero-speed bounds during acceleration.
+
+Initial full non-corpus Engine: 1731 passed / 41 obsolete stationary-target failures. Updated explicit static/linear fixtures; final full affected combat filter **281/281 PASS** (`ep8-us4-tk3-engine-final.trx`), including all prior failures and 11 new runtime checks. Initial full Client: 1769 passed / 1 obsolete constant-velocity expectation; updated real pirate pursuit check; final affected Client **14/14 PASS** (`ep8-us4-tk3-client-regression.trx`). Solution build 0 warnings/errors, scoped format verify/diff PASS. Self-review fixed nonzero-epoch paused initialization with regression. Native/corpus and hostile current-format Save/Load remain downstream gates (US-0011 handles persistence). Not user APPROVED.

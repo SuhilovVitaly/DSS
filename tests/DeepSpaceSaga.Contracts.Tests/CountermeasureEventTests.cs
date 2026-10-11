@@ -6,9 +6,10 @@ public class CountermeasureEventTests
     [Fact]
     public void Journal_entry_roundtrips_chance_roll_and_breakdown()
     {
-        var op = new WeaponOperatorSnapshot("crew", "Operator", WeaponSkillType.CountermeasureDefense, 50, 30, 30);
+        var op = new WeaponOperatorSnapshot("crew", "Operator", WeaponSkillType.CountermeasureDefense, 50, 55, 55);
         var entry = new CombatJournalEntry(1, 10.5, CombatEventType.Miss, "ship", "torpedo", "pr", 1, 2,
-            500, 801, new(op, 30));
+            500, 801, new(op, 5), Damage: 0, LauncherModuleId: "defense-2",
+            LaunchMode: LaunchMode.Manual, Accuracy: 55, TargetManeuverability: 5);
         Assert.Equal(entry, JsonSerializer.Deserialize<CombatJournalEntry>(JsonSerializer.Serialize(entry)));
     }
     [Fact]

@@ -1,13 +1,17 @@
 using DeepSpaceSaga.Contracts;
 namespace DeepSpaceSaga.Motion;
 
+public sealed record CountermeasurePlan(TorpedoRoute Route, double? PredictedEncounterMotionTimeMs);
+
 /// <summary>Predictive interception of the confirmed curved projectile trajectory, from the carrier centre.</summary>
 public static class CountermeasureGuidanceMath
 {
     public static TorpedoRoute? Plan(ObjectMotionSnapshot defender, TorpedoRoute target, long now,
-        double firstHullContactMotionTimeMs, double speedKmS = 12, double turnRateDegPerSec = 90)
+        double firstHullContactMotionTimeMs, double speedKmS = 12, double turnRateDegPerSec = 90,
+        double? expiresAtMotionTimeMs = null)
     {
-        double horizon = firstHullContactMotionTimeMs - now;
+        double deadline = Math.Min(firstHullContactMotionTimeMs, expiresAtMotionTimeMs ?? firstHullContactMotionTimeMs);
+        double horizon = deadline - now;
         if (!double.IsFinite(horizon) || horizon <= 0) return null;
         double low = 0;
         double previous = Residual(0, out _);
@@ -37,7 +41,7 @@ public static class CountermeasureGuidanceMath
                     var p = TorpedoGuidanceMath.PredictPose(r, t - r.StartMotionTimeMs);
                     return (p.X, p.Y);
                 }, r.Segments.Max(s => s.SpeedKmS) / 100);
-                var contact = TorpedoCollisionMath.FirstContact(Path(boundaryRoute), Path(target), now, firstHullContactMotionTimeMs);
+                var contact = TorpedoCollisionMath.FirstContact(Path(boundaryRoute), Path(target), now, deadline);
                 return contact is { } hit && hit.MotionTimeMs < firstHullContactMotionTimeMs ? boundaryRoute : null;
             }
             low = high;
@@ -51,6 +55,42 @@ public static class CountermeasureGuidanceMath
                 new("intercept-point", point.X, point.Y, 0, 0), speedKmS, turnRateDegPerSec, now);
             return route.HasIntercept ? route.Segments.Sum(s => s.DurationMs) - ms : double.PositiveInfinity;
         }
+    }
+
+    /// <summary>
+    /// Manual fire always has a bounded flight, even when geometry has no intercept within
+    /// captured remaining lifetime. A known earlier target collision suppresses the estimate.
+    /// The estimate concerns geometry only; it never promises a successful interception roll.
+    /// </summary>
+    public static CountermeasurePlan PlanManual(ObjectMotionSnapshot defender, TorpedoRoute target, long now,
+        long remainingLifetimeMs, double speedKmS = 12, double turnRateDegPerSec = 90,
+        double? firstTargetContactMotionTimeMs = null)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(remainingLifetimeMs);
+        if (!double.IsFinite(speedKmS) || speedKmS <= 0) throw new ArgumentOutOfRangeException(nameof(speedKmS));
+        if (!double.IsFinite(turnRateDegPerSec) || turnRateDegPerSec <= 0) throw new ArgumentOutOfRangeException(nameof(turnRateDegPerSec));
+        double expires = now + (double)remainingLifetimeMs;
+        var route = Plan(defender, target, now, Math.BitIncrement(expires), speedKmS, turnRateDegPerSec, expires);
+        if (route is not null)
+        {
+            CollisionPath Path(TorpedoRoute r) => new(t =>
+            {
+                var p = TorpedoGuidanceMath.PredictPose(r, t - r.StartMotionTimeMs);
+                return (p.X, p.Y);
+            }, r.Segments.Max(s => s.SpeedKmS) / 100);
+            var contact = TorpedoCollisionMath.FirstContact(Path(route), Path(target), now, expires);
+            if (contact is { } hit && (firstTargetContactMotionTimeMs is null || hit.MotionTimeMs < firstTargetContactMotionTimeMs))
+                return new(route, hit.MotionTimeMs);
+        }
+
+        double segmentMs = Math.Min(100, remainingLifetimeMs);
+        var aim = TorpedoGuidanceMath.PredictPose(target, now - target.StartMotionTimeMs + segmentMs);
+        double bearing = Math.Atan2(aim.X - defender.X, -(aim.Y - defender.Y)) * 180 / Math.PI;
+        double delta = (bearing - defender.Direction + 540) % 360 - 180;
+        double turn = Math.Clamp(delta / (segmentMs / 1000), -turnRateDegPerSec, turnRateDegPerSec);
+        var segment = new TorpedoRouteSegment(defender.X, defender.Y, defender.Direction, speedKmS, turn, segmentMs);
+        return new(new(now, TorpedoGuidanceMath.PlannerVersion,
+            turn == 0 ? TorpedoRoutePhase.Straight : TorpedoRoutePhase.Turning, false, [segment]), null);
     }
 
     public static ObjectMotionSnapshot Predict(ObjectMotionSnapshot state, long elapsedMs)

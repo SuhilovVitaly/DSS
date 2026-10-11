@@ -104,4 +104,6 @@ Validation: `dotnet test tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contr
 
 Self-review found no confirmed defect in the DTO scope. No native behavior changed here; native epic gate remains NOT RUN. Publication is verified from the Git commit carrying this ticket ID, not a guessed future SHA. No user APPROVED claimed.
 
-Publication update: commit `02c89d4a51687ed291a11285a8b704991b42cf20` exists locally. Four push attempts returned GitHub `Internal Server Error`; remote still points to TK-0001 `4233f52`. See [ImplementationStatus](../../ImplementationStatus.md) for exact diagnostics and resumption point. This ticket's publication gate remains open.
+Historical publication update (2026-10-07): commit `02c89d4a51687ed291a11285a8b704991b42cf20` existed locally while four push attempts returned GitHub `Internal Server Error`. The remote then pointed to TK-0001 `4233f52`.
+
+Publication recheck (2026-10-11): **verified published**. Live `origin/base-fight` is `99e15a2414b753d91eca9a2cbbe0a1309cb23c80`; `git merge-base --is-ancestor 02c89d4a51687ed291a11285a8b704991b42cf20 origin/base-fight` exits 0. This resolves the old publication blocker without changing the ticket implementation. See [ImplementationStatus](../../ImplementationStatus.md) for the current resumption point.

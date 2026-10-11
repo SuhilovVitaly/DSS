@@ -3,10 +3,10 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0007-independent-defense-panels
 ticket: EP-0008-US-0007-TK-0003-combat-info
 title: "Расчёт шанса, lifetime и поведение выбранного врага"
-stage: draft
+stage: implemented
 layer: client
 depends_on: ["EP-0008-US-0007-TK-0002-panel-command-routing"]
-files_touched: 4
+files_touched: 5
 serves: ["AC-0002","AC-0003"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Расчёт шанса, lifetime и поведение выбранного врага
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED; self-review complete; native OPEN
 
 ## Why
 
@@ -41,7 +41,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **24** [общего порядка](../../Tickets.md).
+Execution scope update — 2026-10-11: baseline `300a4e561be2fe53513ed558c060a0c7d3aee0b2` published/remote verified. Add `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` to wire per-instance detail lines and project the shared predicted PR pose into selected info for the physical remaining-flight timer. Effective scope is five files including tests. Selected hostile phase/radius is already implemented and covered by US-0004-TK-0005; retain it.
+
+Шаг **25** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0007-TK-0002-panel-command-routing](../../EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-TK-0002-panel-command-routing/EP-0008-US-0007-TK-0002-panel-command-routing.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
@@ -69,9 +71,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Selected_enemy_info_has_ai_phase_and_radius`
-- [ ] `Each_panel_uses_own_preview`
-- [ ] `Flight_and_reload_timers_are_not_confused`
+- [x] `Selected_enemy_info_has_ai_phase_and_radius`
+- [x] `Each_panel_uses_own_preview`
+- [x] `Flight_and_reload_timers_are_not_confused`
 
 Команды из корня DSS после реализации:
 
@@ -85,13 +87,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0002, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0002, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `300a4e561be2fe53513ed558c060a0c7d3aee0b2` published/remote verified. Per-module selected-target preview displays authoritative accuracy, maneuverability and chance; active flight retains its captured chance. Remaining flight uses physical time and the earlier coast/global deadline; reload remains separately labeled. Selected PR includes mode/owner/module/target/captured parameters/maximum and remaining lifetime, uses shared predicted motion, and describes skill as metadata. Details wrap with measured widths; tall preferred panels remain reachable through clipped scrolling. Existing selected hostile phase/radius retained.
+
+Initial focused37/38 exposed an incorrectly constructed test route (plannerVersion mistaken for elapsed time); corrected to explicit ElapsedMs. Full Client **1808/1808 PASS**, `ep8-us7-tk3-client.trx`, including five new combat-info cases and10 hostile selected-info regressions. Client build0 warnings/errors, scoped format verify and diff PASS. Self-review complete; localization follows TK-0004. Native/window acceptance remains OPEN.

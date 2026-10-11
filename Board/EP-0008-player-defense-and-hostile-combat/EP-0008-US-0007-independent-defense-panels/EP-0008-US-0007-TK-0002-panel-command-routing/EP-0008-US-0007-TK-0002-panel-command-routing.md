@@ -3,7 +3,7 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0007-independent-defense-panels
 ticket: EP-0008-US-0007-TK-0002-panel-command-routing
 title: "Ручные команды и независимый pending каждого аппарата"
-stage: draft
+stage: implemented
 layer: client
 depends_on: ["EP-0008-US-0007-TK-0001-panel-instances"]
 files_touched: 4
@@ -14,7 +14,7 @@ revision: 1
 
 # Ручные команды и независимый pending каждого аппарата
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED (automated checks; self-review)
 
 ## Why
 
@@ -41,7 +41,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **23** [общего порядка](../../Tickets.md).
+Execution scope update — 2026-10-11: baseline `5dfef548496649749f274cc884dff0db7e5a51c7` published/remote verified. Real screen now passes owner and instance callbacks to TK-0001 panels. Full Client tests found the old CountermeasureUiFlowTests locating a singleton caption/command; before edit, add `tests/DeepSpaceSaga.Client.Tests/CountermeasureUiFlowTests.cs` to address the intended module key explicitly. GameSessionScreen.Combat.cs needs no production edit; ownerless compatibility helpers are not used for instance dispatch.
+
+Шаг **24** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0007-TK-0001-panel-instances](../../EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-TK-0001-panel-instances/EP-0008-US-0007-TK-0001-panel-instances.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
@@ -69,10 +71,10 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Two_paused_clicks_launch_from_two_modules`
-- [ ] `Double_click_does_not_duplicate_launch`
-- [ ] `Selection_change_preserves_captured_target`
-- [ ] `Panel_click_does_not_select_map_object`
+- [x] `Two_paused_clicks_launch_from_two_modules`
+- [x] `Double_click_does_not_duplicate_launch`
+- [x] `Selection_change_preserves_captured_target`
+- [x] `Panel_click_does_not_select_map_object`
 
 Команды из корня DSS после реализации:
 
@@ -86,13 +88,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0002, AC-0003, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `5dfef548496649749f274cc884dff0db7e5a51c7` published/remote verified. Real GameSessionScreen supplies owner identity, module-specific Fire/toggle/status/operator callbacks and wheel routing. Fire requires matching authoritative owner/module/selected-torpedo preview;0% stays eligible. Per-owner/module pending retains CommandId and captured target, survives successful transport until matching final receipt, ignores unrelated/deferred receipts and independently handles sync/async/cancel failures. Existing overlay priority retained.
+
+Initial focused **128/128 PASS**; full Client **1793/1796** exposed three scale variants of the old singleton-caption test, fixed to explicit module identity and unchanged second-auto assertion. Final affected panel/real UI flows **152/152 PASS** (`ep8-us7-tk2-review.trx`), including15 new manual-flow cases and real LocalSession double clicks from both modules at paused physical1ms with100%/150% UI scale. Coverage includes coalesced receipts, per-module pending, zero chance, selection change, stale owner/module/target/preview/power, overlay and target preservation. Client build 0 warnings/errors, scoped format verify and diff PASS. No repeated clean full-suite claim. Self-review complete; text/formula/timers follow TK-0003/0004; native remains OPEN.

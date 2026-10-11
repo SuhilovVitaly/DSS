@@ -1,6 +1,16 @@
 {
   "commandDefinitions": [
     {
+      "typeId": "defense.fire",
+      "displayName": "Fire",
+      "timeFactor": 1.0,
+      "complexityFactor": 1.0,
+      "consumptionFactor": 1.0,
+      "target": "object",
+      "activationEnergyCellsCost": 0,
+      "type": "module.countermeasure.launcher"
+    },
+    {
       "typeId": "defense.enable",
       "displayName": "Enable defense",
       "timeFactor": 1.0,

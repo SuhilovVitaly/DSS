@@ -2,7 +2,7 @@
   "scenarioMetadata": {
     "scenarioId": "player_ship_only",
     "name": "Player Ship and Pirate",
-    "description": "A standard Tetrarch player ship and a visible hostile Tetrarch moving on a fixed course. The pirate ship and captain receive random names each new game."
+    "description": "A Tetrarch player ship with two countermeasure launchers faces a hostile pirate. The pirate pursues and attacks the player; ship and captain names vary with each new game."
   },
   "gameState": {
     "gameTimeMs": 0,
@@ -98,7 +98,7 @@
           },
           {
             "moduleId": "MOD-PLAYER-LIVING-QUARTERS-01",
-            "moduleTypeId": "living.quarters.mk1",
+            "moduleTypeId": "living.quarters.mk1.three-cabins",
             "occupiedCells": [
               {
                 "x": 4,
@@ -213,6 +213,23 @@
             "cargo": [],
             "operatorCrewId": "CHR-PLAYER-DEFENSE",
             "autoDefenseEnabled": true
+          },
+          {
+            "moduleId": "MOD-PLAYER-COUNTERMEASURE-02",
+            "moduleTypeId": "module.countermeasure.launcher.basic",
+            "occupiedCells": [
+              {
+                "x": 3,
+                "y": 1
+              }
+            ],
+            "structurePoints": 60,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "operatorCrewId": "CHR-PLAYER-DEFENSE-02",
+            "autoDefenseEnabled": true
           }
         ],
         "crew": [
@@ -227,6 +244,12 @@
             "countermeasureSkill": 50,
             "torpedoSkill": 50,
             "displayName": "Defense operator"
+          },
+          {
+            "crewId": "CHR-PLAYER-DEFENSE-02",
+            "countermeasureSkill": 50,
+            "torpedoSkill": 50,
+            "displayName": "Second defense operator"
           }
         ]
       },

@@ -35,7 +35,7 @@ public sealed partial class GameSessionScreen
             _combatPoseObjectIds.Add(obj.ObjectId);
             _combatPoseObjectIds.Add(flight.TargetObjectId);
         }
-        if (IsLaunchPreviewRequested())
+        if (IsLaunchPreviewRequested() || ManualPreviewWeapon() is not null)
         {
             if (snapshot.PlayerShipObjectId is { } playerId) _combatPoseObjectIds.Add(playerId);
             if (_selectedObjectId is { } targetId) _combatPoseObjectIds.Add(targetId);
@@ -51,6 +51,7 @@ public sealed partial class GameSessionScreen
 
     private void DrawLaunchPreview(SKCanvas canvas, SnapshotPrediction? prediction, bool viewportResized)
     {
+        DrawManualDefensePreview(canvas, prediction, viewportResized);
         if (viewportResized || prediction is null || !IsLaunchPreviewRequested() ||
             FindLauncher()?.LauncherCombat is not { } launcher ||
             FindPlayerShip(_renderStates) is not { } ownerState ||
@@ -253,6 +254,8 @@ public sealed partial class GameSessionScreen
     private string? _pendingTorpedoCommandId;
     private Task? _torpedoSendTask;
     private bool _torpedoSendFailed;
+    private string? _pendingTorpedoTargetId;
+    private bool _torpedoRejectedOutOfRange;
 
     private void RefreshTorpedoSubmission()
     {
@@ -261,6 +264,7 @@ public sealed partial class GameSessionScreen
         var result = _pendingTorpedoCommandId is { } id ? _buffer.FindCommandResult(id) : null;
         if (result is { Status: not CommandResultStatus.Deferred })
         {
+            _torpedoRejectedOutOfRange = result.Status == CommandResultStatus.Rejected && result.ReasonCode == "target_out_of_range";
             _torpedoSubmitPending = false;
             return;
         }
@@ -278,6 +282,8 @@ public sealed partial class GameSessionScreen
         var snapshot = _buffer.Latest!.Snapshot;
         string moduleId = FindLauncher()!.ModuleId;
         string? targetId = _selectedObjectId;
+        _pendingTorpedoTargetId = targetId;
+        _torpedoRejectedOutOfRange = false;
         _torpedoSubmitPending = true;
         _torpedoSendFailed = false;
         _pendingTorpedoCommandId = null;
@@ -308,6 +314,8 @@ public sealed partial class GameSessionScreen
         var launcher = FindLauncher()!;
         var snapshot = _buffer.Latest!.Snapshot;
         string targetId = launcher.LauncherCombat!.ActiveTorpedoObjectId!;
+        _pendingTorpedoTargetId = targetId;
+        _torpedoRejectedOutOfRange = false;
         _torpedoSubmitPending = true;
         _torpedoSendFailed = false;
         _pendingTorpedoCommandId = null;
@@ -349,7 +357,25 @@ public sealed partial class GameSessionScreen
                 PowerState: "On", OperationalState: "Ready", StructurePoints: > 0,
                 ActiveCommandType: null, LauncherCombat.ActiveTorpedoObjectId: null, LauncherCombat.Operator: not null
             } launcher && !launcher.Commands.IsDefaultOrEmpty &&
-            launcher.Commands.Any(c => c.CommandTypeId == CombatCommandTypes.Fire && c.Target == "object");
+            launcher.Commands.Any(c => c.CommandTypeId == CombatCommandTypes.Fire && c.Target == "object") &&
+            IsSelectedTargetInTorpedoRange(snapshot, launcher.LauncherCombat!);
+    }
+
+    private bool IsSelectedTargetInTorpedoRange(AuthoritativeSnapshot snapshot, LauncherCombatSnapshot launcher) =>
+        launcher.RangeKm is { } range && FindPlayerShipMotion(snapshot) is { } owner &&
+        snapshot.Objects.FirstOrDefault(o => o.ObjectId == _selectedObjectId) is { } target &&
+        CombatRangeMath.IsWithinRange(owner, target, range);
+
+    private string ReadyLauncherStatus(LauncherCombatSnapshot launcher)
+    {
+        if (_torpedoRejectedOutOfRange && _selectedObjectId == _pendingTorpedoTargetId)
+            return "Пуск отклонён: цель вне дальности";
+        if (launcher.RangeKm is not { } range || !double.IsFinite(range) || range <= 0) return "Дальность неизвестна";
+        if (_buffer.Latest?.Snapshot is { } snapshot && _selectedObjectId is not null &&
+            _selectedObjectId != snapshot.PlayerShipObjectId && snapshot.Objects.Any(o => o.ObjectId == _selectedObjectId) &&
+            !IsSelectedTargetInTorpedoRange(snapshot, launcher))
+            return $"Вне дальности ({range:0.##} км)";
+        return "Ready";
     }
 
     private InstalledModuleSnapshot? FindDefense() => _buffer.Latest?.Snapshot is { InstalledModules.IsDefaultOrEmpty: false } snapshot
@@ -366,8 +392,8 @@ public sealed partial class GameSessionScreen
         : _buffer.Latest?.Snapshot.MotionTimeMs ?? 0;
     private string? GetDefenseStatus() => FindDefense()?.Defense is { } defense
         ? DefenseStatusText(defense, DefensePresentationTime) : null;
-    internal static string WeaponOperatorText(WeaponOperatorSnapshot? op) => op is null ? "Нет оператора" :
-        $"{op.DisplayName} · Навык {op.Skill} · R {op.EffectiveRating:0.##}";
+    internal static string WeaponOperatorText(WeaponOperatorSnapshot? op) => op is null ? CombatText("NoOperator", "Нет оператора") :
+        $"{op.DisplayName} · {CombatText("SkillMetadata", "Навык (справочно)")} {op.Skill}";
     private string? GetWeaponOperatorText(string panel) => panel switch
     {
         "Torpedo Launcher" => WeaponOperatorText(FindLauncher()?.LauncherCombat?.Operator),
@@ -375,12 +401,12 @@ public sealed partial class GameSessionScreen
         _ => null
     };
     internal static string DefenseStatusText(DefenseSnapshot defense, double time) =>
-        (defense.AutoEnabled ? "Авто ВКЛ · " : "Авто ВЫКЛ · ") + (defense.State switch
+        (defense.AutoEnabled ? CombatText("AutoOn", "Авто ВКЛ") : CombatText("AutoOff", "Авто ВЫКЛ")) + " · " + (defense.State switch
         {
-            DefenseState.NoOperator => "Нет оператора",
-            DefenseState.Guiding => "Наведение",
-            DefenseState.Reloading => $"Перезарядка {Math.Max(0, (defense.ReloadDueMotionTimeMs!.Value - time) / 1000):0.0} с",
-            _ => "Готов"
+            DefenseState.NoOperator => CombatText("NoOperator", "Нет оператора"),
+            DefenseState.Guiding => CombatText("Guiding", "Наведение"),
+            DefenseState.Reloading => CombatText("Reloading", "Перезарядка") + $" {Math.Max(0, (defense.ReloadDueMotionTimeMs!.Value - time) / 1000):0.0} " + CombatText("Seconds", "с"),
+            _ => CombatText("Ready", "Готов")
         });
 
     private string? GetLauncherStatus()
@@ -392,7 +418,7 @@ public sealed partial class GameSessionScreen
         {
             { LauncherCombat.ActiveTorpedoObjectId: not null } => "Guiding",
             { LauncherCombat.Operator: null } => "Нет оператора",
-            { PowerState: "On", OperationalState: "Ready", StructurePoints: > 0, LauncherCombat: not null } => "Ready",
+            { PowerState: "On", OperationalState: "Ready", StructurePoints: > 0, LauncherCombat: { } launcher } => ReadyLauncherStatus(launcher),
             { LauncherCombat: not null } => "Unavailable",
             _ => null
         };

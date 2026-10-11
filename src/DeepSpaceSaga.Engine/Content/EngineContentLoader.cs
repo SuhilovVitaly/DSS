@@ -31,8 +31,8 @@ public static class EngineContentLoader
     /// </summary>
     public static SimulationEngine CreateEngineFromSaveFile(string settingsPath, string savePath)
     {
+        var saveScenario = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true, isSave: true);
         var registry = LoadRegistryFromSettingsFile(settingsPath, out _, out _);
-        var saveScenario = ScenarioLoader.LoadFromFile(savePath, allowNonZeroGameTime: true);
         var fields = LoadStationResourceFields(settingsPath, registry);
         var engine = new SimulationEngine(registry, LoadCrewPortraits(settingsPath));
         engine.ConfigureStationResourceFields(fields);
@@ -472,15 +472,19 @@ public static class EngineContentLoader
                 dto.TorpedoDamage,
                 dto.TorpedoSpeedKmS,
                 dto.TorpedoTurnRateDegPerSec,
-                dto.TorpedoBaseRating,
-                dto.CountermeasureBaseRating,
                 dto.CountermeasureSpeedKmS,
                 dto.CountermeasureTurnRateDegPerSec,
                 dto.CountermeasureRangeKm,
                 dto.CountermeasureReloadMs,
                 category.TypeId,
-                dto.FuelEfficiencyKmPerKg);
-            GameDataRegistry.ValidateWeaponRatings(definition);
+                dto.FuelEfficiencyKmPerKg,
+                dto.TorpedoManeuverability,
+                dto.TorpedoRangeKm,
+                dto.CountermeasureAccuracy,
+                dto.CountermeasureManualRangeKm,
+                dto.CountermeasureMaxFlightTimeMs);
+            try { GameDataRegistry.ValidateWeaponRatings(definition); }
+            catch (ContentException error) { throw new ContentException($"{filePath}: {error.Message}", error); }
             return definition;
         });
     }
@@ -928,8 +932,11 @@ public static class EngineContentLoader
         [property: JsonPropertyName("torpedoDamage")] int? TorpedoDamage = null,
         [property: JsonPropertyName("torpedoSpeedKmS")] double? TorpedoSpeedKmS = null,
         [property: JsonPropertyName("torpedoTurnRateDegPerSec")] double? TorpedoTurnRateDegPerSec = null,
-        [property: JsonPropertyName("torpedoBaseRating")] decimal? TorpedoBaseRating = null,
-        [property: JsonPropertyName("countermeasureBaseRating")] decimal? CountermeasureBaseRating = null,
+        [property: JsonPropertyName("torpedoManeuverability")] decimal? TorpedoManeuverability = null,
+        [property: JsonPropertyName("torpedoRangeKm")] double? TorpedoRangeKm = null,
+        [property: JsonPropertyName("countermeasureAccuracy")] decimal? CountermeasureAccuracy = null,
+        [property: JsonPropertyName("countermeasureManualRangeKm")] double? CountermeasureManualRangeKm = null,
+        [property: JsonPropertyName("countermeasureMaxFlightTimeMs")] long? CountermeasureMaxFlightTimeMs = null,
         [property: JsonPropertyName("countermeasureSpeedKmS")] double? CountermeasureSpeedKmS = null,
         [property: JsonPropertyName("countermeasureTurnRateDegPerSec")] double? CountermeasureTurnRateDegPerSec = null,
         [property: JsonPropertyName("countermeasureRangeKm")] double? CountermeasureRangeKm = null,

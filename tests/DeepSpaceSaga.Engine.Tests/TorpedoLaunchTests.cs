@@ -17,7 +17,7 @@ public sealed class TorpedoLaunchTests
     private static ObjectMotionSnapshot Projectile(AuthoritativeSnapshot snapshot) => Assert.Single(snapshot.Objects.Where(o => o.Torpedo is not null));
     private static SimulationEngine Create(Func<SpaceObjectData, SpaceObjectData>? configure = null)
     {
-        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
+        var scenario = TorpedoImpactTests.WithoutDefense(TorpedoImpactTests.InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"))));
         var engine = new SimulationEngine(Registry.Value);
         engine.LoadScenario(scenario with
         {
@@ -138,10 +138,10 @@ public sealed class TorpedoLaunchTests
         engine.CaptureSnapshot();
         long real = 0;
         var clock = new SimulationClock(speed, () => real);
-        real = 1000;
+        real = 100;
         var time = clock.UpdateAndCapture();
         var snapshot = engine.CaptureSnapshotForTests(time.GameTimeMs, speed, time.MotionTimeMs);
-        Assert.Equal((int)speed * 30, Projectile(snapshot).Torpedo!.DistanceTravelledWorldUnits);
+        Assert.Equal((int)speed * 3, Projectile(snapshot).Torpedo!.DistanceTravelledWorldUnits);
     }
 
     [Theory]

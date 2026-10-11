@@ -7,7 +7,7 @@ dependencies: ["EP-0008-US-0007-independent-defense-panels"]
 created: 2026-10-07
 revision: 1
 current_review: complete
-validation_status: planning-only
+validation_status: automated-pass-native-open
 ---
 
 # Прогноз ручного перехвата и дальности без перегрузки карты
@@ -34,9 +34,9 @@ Hover над пуском показывает прогноз конкретно
 
 | Шаг | Тикет | Layer | Serves |
 |---|---|---|---|
-| 26 | [EP-0008-US-0008-TK-0001-preview-geometry](EP-0008-US-0008-TK-0001-preview-geometry/EP-0008-US-0008-TK-0001-preview-geometry.md) — Геометрия прогноза ручного пуска конкретного аппарата | client | AC-0001, AC-0003 |
-| 27 | [EP-0008-US-0008-TK-0002-hover-ranges-and-countdown](EP-0008-US-0008-TK-0002-hover-ranges-and-countdown/EP-0008-US-0008-TK-0002-hover-ranges-and-countdown.md) — Круги hover и время полёта на карте | client | AC-0002, AC-0003 |
-| 28 | [EP-0008-US-0008-TK-0003-journal-presentation](EP-0008-US-0008-TK-0003-journal-presentation/EP-0008-US-0008-TK-0003-journal-presentation.md) — Читаемый журнал новых событий боя | client | AC-0003 |
+| 27 | [EP-0008-US-0008-TK-0001-preview-geometry](EP-0008-US-0008-TK-0001-preview-geometry/EP-0008-US-0008-TK-0001-preview-geometry.md) — Геометрия прогноза ручного пуска конкретного аппарата | client | AC-0001, AC-0003 |
+| 28 | [EP-0008-US-0008-TK-0002-hover-ranges-and-countdown](EP-0008-US-0008-TK-0002-hover-ranges-and-countdown/EP-0008-US-0008-TK-0002-hover-ranges-and-countdown.md) — Круги hover и время полёта на карте | client | AC-0002, AC-0003 |
+| 29 | [EP-0008-US-0008-TK-0003-journal-presentation](EP-0008-US-0008-TK-0003-journal-presentation/EP-0008-US-0008-TK-0003-journal-presentation.md) — Читаемый журнал новых событий боя | client | AC-0003 |
 
 ## Completion evidence
 
@@ -47,3 +47,7 @@ Hover над пуском показывает прогноз конкретно
 Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История draft и не является утверждением о пройденных тестах.
 
 При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Текущая задача только создаёт план.
+
+## Execution review — 2026-10-11
+
+All three tickets implemented and individually published by this execution chain. AC-0001: real hover preview equals real Engine manual launch at100/120/150%, captured deadline suppresses false encounters,0% remains legal and full save state is unchanged by hover. AC-0002: per-module auto/manual/torpedo rings only on hover, camera-scaled; no selected-enemy circle. AC-0003: physical pause/5x countdown, distinct wrapped labels, gray prediction, frozen facts and real-file loaded journal without effect replay. Final full Client1832/1832PASS; Engine1837/1837 at TK-0001. Own review complete, not independent approval. Native remains OPEN for US-0012. Next: authoritative defeat contract/transition/clock.

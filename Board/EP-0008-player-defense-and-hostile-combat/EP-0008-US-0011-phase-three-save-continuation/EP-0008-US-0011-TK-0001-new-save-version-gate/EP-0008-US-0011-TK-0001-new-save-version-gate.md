@@ -6,7 +6,7 @@ title: "Новая версия и явный отказ старым сохра
 stage: draft
 layer: engine
 depends_on: ["EP-0008-US-0010-TK-0003-defeat-navigation"]
-files_touched: 5
+files_touched: 18
 serves: ["AC-0001","AC-0003"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Новая версия и явный отказ старым сохранениям
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED — self-reviewed; publication recorded by the next execution entry
 
 ## Why
 
@@ -40,9 +40,13 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 | `src/DeepSpaceSaga.Engine/Scenario/HostileCombatSaveData.cs` | Новый файл этого тикета | Versioned payload AI, используемый GameStateData |
 | `tests/DeepSpaceSaga.Engine.Tests/PhaseThreeSaveVersionTests.cs` | Новый файл этого тикета | Только результат и шаги этой карточки |
 
+Execution scope expansion before implementation: add `src/DeepSpaceSaga.Engine/SimulationEngine.cs` for the direct isSave gate before validation/migration/world replacement, plus `tests/DeepSpaceSaga.Engine.Tests/CatalogCompatibilityTests.cs`, `tests/DeepSpaceSaga.Engine.Tests/TradingEconomySaveSchemaTests.cs`, and `tests/DeepSpaceSaga.Client.Tests/LocalSessionIntegrationTests.cs` to update explicit version15 and legacy-file acceptance expectations. Internal scenario fixtures continue to use scenario parsing; actual save loading is explicit.
+
+Regression scope expansion before repairs: `tests/DeepSpaceSaga.Engine.Tests/{MarketRevisionTests,VoyageSaveLoadContinuityTests,CombatSaveSchemaTests,StationEconomyGenerationTests,MarketKnowledgeTests,EngineContentLoaderSaveFileTests,GeneratedWorldPersistenceTests,CombatBootstrapTests,CargoCostAccountingTests}.cs`. Full regression found26 obsolete legacy-isSave/version assertions. Preserve historical scenario-fixture checks with explicit real-save rejection, and use actual current capture for active-cycle/HP file tests; never retag an old file as current.
+
 ## Dependencies
 
-Шаг **35** [общего порядка](../../Tickets.md).
+Шаг **36** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0010-TK-0003-defeat-navigation](../../EP-0008-US-0010-defeat-screen-and-recovery/EP-0008-US-0010-TK-0003-defeat-navigation/EP-0008-US-0010-TK-0003-defeat-navigation.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
@@ -70,9 +74,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Old_save_versions_are_rejected_without_mutation`
-- [ ] `Version_zero_new_game_is_allowed`
-- [ ] `Legacy_zero_version_save_is_rejected_as_save`
+- [x] `Old_save_versions_are_rejected_without_mutation`
+- [x] `Version_zero_new_game_is_allowed`
+- [x] `Legacy_zero_version_save_is_rejected_as_save`
 
 Команды из корня DSS после реализации:
 
@@ -86,13 +90,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0003 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `332f0c788ee2767df472e2c440f918c7a259fe49` published/remote verified. SaveFormat16 and version1 HostileCombatSaveData/actor payload introduced. Real file bootstrap passes explicit isSave into ScenarioLoader; envelope version is checked before historical body deserialization/migration and before catalog/world creation. Direct Engine.LoadScenario(isSave:true) applies the same current-only gate before normalization and world replacement. All prior versions0..15 and future/string versions reject with incompatible_save_version; version0 NewGame remains legal. Internal historical scenario normalization stays available for existing fixture coverage and is explicitly distinguished from save acceptance.
+
+22 new version tests verify all old file versions preserve bytes, direct rejections preserve full existing save state, same v0 file works only as NewGame, envelope check precedes invalid historical payload, and current serialized roundtrip. Updated obsolete version15 assertions/legacy connection warning test. Full initial Engine1845/1871 exposed26 older legacy-isSave/version assumptions; repaired every affected expectation while retaining independent economic/cargo/geography fixture assertions and adding explicit save-entry rejection. Actual current capture replaces handwritten old file for active turn-cycle test; HP file tests also use real capture. Final affected Engine233/233 PASS; full Client1843/1843 PASS; solution build0warnings/errors, scoped format verify/diffPASS. Own review complete. Payload validation and runtime capture/restore of hostile AI are the next two tickets; this gate commit alone does not claim complete phase-three continuation.

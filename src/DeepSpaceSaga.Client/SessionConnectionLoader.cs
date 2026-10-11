@@ -9,6 +9,10 @@ internal sealed class SessionConnectionLoader : IAsyncDisposable
     private readonly HashSet<IGameSessionConnection> _pending = new();
     private bool _closed;
 
+    internal static string LoadErrorKey(Exception error) =>
+        error.Message.StartsWith("incompatible_save_version:", StringComparison.Ordinal)
+            ? "Combat.LoadIncompatible" : "Combat.LoadFailed";
+
     internal Task<IGameSessionConnection> CreateAsync(Func<IGameSessionConnection> factory) => Task.Run(async () =>
     {
         var connection = factory();

@@ -12,7 +12,8 @@ public sealed class CountermeasureContentLoaderTests : IDisposable
     private const string Valid = """
         {"moduleImplementations":[{"typeId":"defense","displayName":"Defense","type":"module.countermeasure.launcher",
         "massKg":2000,"structurePointsMax":60,"powerConsumptionW":0,"baseCycleTimeMs":123,
-        "countermeasureBaseRating":30,"countermeasureSpeedKmS":12,"countermeasureTurnRateDegPerSec":90,
+        "countermeasureAccuracy":55,"countermeasureManualRangeKm":200,"countermeasureMaxFlightTimeMs":60000,
+        "countermeasureSpeedKmS":12,"countermeasureTurnRateDegPerSec":90,
         "countermeasureRangeKm":100,"countermeasureReloadMs":10000}]}
         """;
     private ModuleTypeDefinition Load(JsonNode root)
@@ -27,7 +28,9 @@ public sealed class CountermeasureContentLoaderTests : IDisposable
     public void Countermeasure_parameters_load_and_validate()
     {
         var module = Load(JsonNode.Parse(Valid)!);
-        Assert.Equal(30m, module.CountermeasureBaseRating);
+        Assert.Equal(55m, module.CountermeasureAccuracy);
+        Assert.Equal(200, module.CountermeasureManualRangeKm);
+        Assert.Equal(60000, module.CountermeasureMaxFlightTimeMs);
         Assert.Equal(12, module.CountermeasureSpeedKmS);
         Assert.Equal(90, module.CountermeasureTurnRateDegPerSec);
         Assert.Equal(100, module.CountermeasureRangeKm);
@@ -37,7 +40,9 @@ public sealed class CountermeasureContentLoaderTests : IDisposable
     }
 
     [Theory]
-    [InlineData("countermeasureBaseRating")]
+    [InlineData("countermeasureAccuracy")]
+    [InlineData("countermeasureManualRangeKm")]
+    [InlineData("countermeasureMaxFlightTimeMs")]
     [InlineData("countermeasureSpeedKmS")]
     [InlineData("countermeasureTurnRateDegPerSec")]
     [InlineData("countermeasureRangeKm")]
@@ -50,7 +55,16 @@ public sealed class CountermeasureContentLoaderTests : IDisposable
     }
 
     [Theory]
-    [InlineData("countermeasureBaseRating", "-1")]
+    [InlineData("countermeasureAccuracy", "-1")]
+    [InlineData("countermeasureAccuracy", "100.1")]
+    [InlineData("countermeasureAccuracy", "1e999")]
+    [InlineData("countermeasureManualRangeKm", "0")]
+    [InlineData("countermeasureManualRangeKm", "-1")]
+    [InlineData("countermeasureManualRangeKm", "1e999")]
+    [InlineData("countermeasureMaxFlightTimeMs", "0")]
+    [InlineData("countermeasureMaxFlightTimeMs", "-1")]
+    [InlineData("countermeasureMaxFlightTimeMs", "1.5")]
+    [InlineData("countermeasureMaxFlightTimeMs", "9223372036854775808")]
     [InlineData("countermeasureSpeedKmS", "0")]
     [InlineData("countermeasureSpeedKmS", "1e999")]
     [InlineData("countermeasureTurnRateDegPerSec", "-1")]
@@ -69,8 +83,8 @@ public sealed class CountermeasureContentLoaderTests : IDisposable
     {
         var legacy = new ModuleTypeDefinition("legacy", "Legacy", 1, 1, 1, 0, ImmutableArray<string>.Empty);
         GameDataRegistry.ValidateWeaponRatings(legacy);
-        Assert.Null(legacy.CountermeasureBaseRating);
-        Assert.Null(legacy.TorpedoBaseRating);
+        Assert.Null(legacy.CountermeasureAccuracy);
+        Assert.Null(legacy.TorpedoManeuverability);
     }
 
     [Fact]
@@ -78,6 +92,36 @@ public sealed class CountermeasureContentLoaderTests : IDisposable
     {
         var module = Load(JsonNode.Parse(Valid)!);
         Assert.Throws<ContentException>(() => GameDataRegistry.ValidateWeaponRatings(module with { CategoryTypeId = "module.torpedo.launcher" }));
-        Assert.Throws<ContentException>(() => GameDataRegistry.ValidateWeaponRatings(module with { TorpedoBaseRating = 30 }));
+        Assert.Throws<ContentException>(() => GameDataRegistry.ValidateWeaponRatings(module with { TorpedoManeuverability = 30 }));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(100)]
+    public void Manual_and_auto_ranges_are_independent(int accuracy)
+    {
+        var root = JsonNode.Parse(Valid)!;
+        root["moduleImplementations"]![0]!["countermeasureAccuracy"] = accuracy;
+        root["moduleImplementations"]![0]!["countermeasureManualRangeKm"] = 25.5;
+        var module = Load(root);
+        Assert.Equal((decimal)accuracy, module.CountermeasureAccuracy);
+        Assert.Equal(100, module.CountermeasureRangeKm);
+        Assert.Equal(25.5, module.CountermeasureManualRangeKm);
+    }
+
+    [Fact]
+    public void Weapon_schema_rejects_invalid_values_through_direct_registry()
+    {
+        var module = Load(JsonNode.Parse(Valid)!);
+        foreach (var invalid in new[]
+        {
+            module with { CountermeasureAccuracy = null },
+            module with { CountermeasureAccuracy = 100.1m },
+            module with { CountermeasureManualRangeKm = double.NaN },
+            module with { CountermeasureMaxFlightTimeMs = 0 },
+            module with { CountermeasureRangeKm = double.PositiveInfinity },
+            module with { CategoryTypeId = null }
+        })
+            Assert.Throws<ContentException>(() => GameDataRegistry.Create([], [invalid], [], []));
     }
 }

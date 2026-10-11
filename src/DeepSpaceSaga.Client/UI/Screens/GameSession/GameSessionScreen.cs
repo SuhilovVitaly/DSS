@@ -356,7 +356,8 @@ public sealed partial class GameSessionScreen : IScreen
         _mechanicsBtnHoverPaint = new SKPaint { Color = new SKColor(55, 55, 55), Style = SKPaintStyle.Fill };
         _mechanicsBtnTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 13f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
-        _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel, GetLauncherStatus, GetDefenseStatus, GetWeaponOperatorText);
+        _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel, GetLauncherStatus, GetDefenseStatus, GetWeaponOperatorText,
+            IsDefenseCommandEnabled, SendDefenseCommand, GetDefenseInstanceStatus, GetDefenseInstanceOperatorText, GetDefenseInstanceDetails);
         _objectInfoPanel = new ObjectInfoPanel();
     }
 
@@ -398,6 +399,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
+        if (_buffer.Latest?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
         // UI panels are laid out and hit-tested in logical (unscaled) space — the
         // raw window coordinates must be converted before testing against them.
         // The map (below) always uses the raw x, y.
@@ -591,6 +593,7 @@ public sealed partial class GameSessionScreen : IScreen
     {
         if (_combatJournalPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_objectInfoPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
+        if (_commandsPanel.OnMouseWheel(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (!float.IsFinite(delta) || delta == 0 || _viewportW <= 0 || _viewportH <= 0 ||
             IsClickOnUiPanel(x / _uiScale, y / _uiScale))
             return ScreenEvent.None;
@@ -600,6 +603,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public ScreenEvent OnKeyDown(Key key)
     {
+        if (_buffer.Latest?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
         if (key is Key.Equal or Key.KeypadAdd or Key.Minus or Key.KeypadSubtract)
         {
             ZoomBy(key is Key.Equal or Key.KeypadAdd ? 1 : -1, _viewportW / 2f, _viewportH / 2f);
@@ -1318,7 +1322,8 @@ public sealed partial class GameSessionScreen : IScreen
         float commandsBottom = _panelVisible && _lastPanelRect.Left < CommandsPanel.PanelWidth + PanelMargin
             ? _lastPanelRect.Top - PanelMargin : _uiViewportH;
         _commandsPanel.Render(canvas,
-            buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty, commandsBottom);
+            buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty, commandsBottom,
+            buffered?.Snapshot.PlayerShipObjectId);
         CompleteRenderStage("command_panel");
 
         _combatJournalPanel.Render(canvas, _uiViewportW, _uiViewportH, buffered?.Snapshot.CombatJournal ?? default);
@@ -2333,12 +2338,15 @@ public sealed partial class GameSessionScreen : IScreen
         var resource = ClusterMapPresentation.Resource(_buffer.Latest?.Snapshot, p.ObjectId);
         var resourceCluster = resource is null ? null : _buffer.Latest?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
-            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), s.Source.Countermeasure, market,
+            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), p.Motion.Countermeasure, market,
             cluster?.ClusterName, cluster?.Profile, cluster?.Directions, resourceCluster, resource?.AnchorStationId,
             cluster is not null && distanceKm is { } distance && player is { } playerState
                 ? ClusterMapPresentation.EstimateStraightDays(distance * 10, playerState.Source.MaxSpeedKmS ?? 0) : null,
             cluster is null ? null : _travelEstimateMotionTimeMs, ai?.Owner, ai?.BaseType,
-            territory?.DefenceRadiusKm, territory?.PatrolRadiusKm);
+            territory?.DefenceRadiusKm, territory?.PatrolRadiusKm,
+            HostileCombat: p.ObjectId == _selectedObjectId && s.Source.ObjectType == SpaceObjectType.NpcShip &&
+                p.RenderObjectType == SpaceObjectType.NpcShip && s.Source.RelationToPlayer == PlayerRelation.Enemy
+                ? s.Source.HostileCombat : null);
     }
 
     /// <summary>

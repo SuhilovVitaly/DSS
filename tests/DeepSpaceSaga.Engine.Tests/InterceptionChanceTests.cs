@@ -4,13 +4,17 @@ namespace DeepSpaceSaga.Engine.Tests;
 public class InterceptionChanceTests
 {
     [Theory]
-    [InlineData(30, 30, 500)]
-    [InlineData(30, 48, 320)]
+    [InlineData(55, 5, 500)]
+    [InlineData(30, 30, 0)]
+    [InlineData(30, 48, 0)]
     [InlineData(0, 60, 0)]
-    [InlineData(60, 0, 1000)]
-    [InlineData(30.05, 30, 501)]
-    public void Chance_uses_unrounded_difference_and_away_from_zero(decimal defense, decimal torpedo, int expected)
+    [InlineData(60, 0, 600)]
+    [InlineData(100, 0, 1000)]
+    [InlineData(30.05, 30, 1)]
+    public void Clamp_and_tenths_are_exact(decimal defense, decimal torpedo, int expected)
         => Assert.Equal(expected, InterceptionMath.ChanceTenths(defense, torpedo));
+    [Fact]
+    public void FiftyFive_minus_five_is_fifty() => Assert.Equal(500, InterceptionMath.ChanceTenths(55, 5));
     [Fact]
     public void Decimal_extremes_clamp_without_overflow()
     {

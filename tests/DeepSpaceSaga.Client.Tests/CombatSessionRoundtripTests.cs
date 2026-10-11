@@ -34,6 +34,23 @@ public sealed class CombatSessionRoundtripTests
 /// <summary>Real content, local transport, file writer and loader, with a deterministic physical clock.</summary>
 internal sealed class CombatSessionFixture : IAsyncDisposable
 {
+    internal static ScenarioFile InRangePlayerAttackScenario(ScenarioFile scenario)
+    {
+        var player = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == Player);
+        return scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? o with
+                {
+                    PositionX = player.PositionX + (o.PositionX - player.PositionX) * 0.1,
+                    PositionY = player.PositionY + (o.PositionY - player.PositionY) * 0.1,
+                    Modules = o.Modules!.Select(m => m.ModuleTypeId is "module.torpedo.launcher.basic" or "module.engine.basic" ? m with { PowerState = "Off" } : m).ToArray()
+                } : o).ToArray()
+            }
+        };
+    }
+
     internal const string Player = "SPC-0001", Target = "SPC-0002", Launcher = "MOD-PLAYER-TORPEDO-01";
     private static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
     private static string Settings => Path.Combine(Root, "Settings.json");
@@ -47,7 +64,7 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
         Directory.CreateDirectory(DirectoryPath);
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Settings, out _, out _);
         Engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _now)));
-        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json"));
+        var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json")));
         if (!defense) scenario = scenario with
         {
             GameState = scenario.GameState with

@@ -14,7 +14,7 @@ revision: 1
 
 # Экран поражения с двумя действиями
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED — self-reviewed; publication recorded by the next execution entry
 
 ## Why
 
@@ -41,7 +41,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **33** [общего порядка](../../Tickets.md).
+Шаг **34** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0010-TK-0001-defeated-session-save-guard](../../EP-0008-US-0010-defeat-screen-and-recovery/EP-0008-US-0010-TK-0001-defeated-session-save-guard/EP-0008-US-0010-TK-0001-defeated-session-save-guard.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
@@ -69,9 +69,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Defeat_has_only_load_and_main_menu`
-- [ ] `Escape_and_outside_do_not_resume`
-- [ ] `Buttons_fit_supported_ui_scales`
+- [x] `Defeat_has_only_load_and_main_menu`
+- [x] `Escape_and_outside_do_not_resume`
+- [x] `Buttons_fit_supported_ui_scales`
 
 Команды из корня DSS после реализации:
 
@@ -85,13 +85,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `63eb4d35c2c3b9ea9f9da56bb55dfdc36a96b406` published/remote verified. DefeatScreen uses existing TypeA shell/buttons and Combat locale keys, offers exactly OpenLoadWindow/MainMenu events, ignores Escape/outside/right click/wheel and save hotkeys. Keyboard focus supports Tab/arrows and Enter/Space. Responsive measured title and two separate buttons fit the small viewport; screen applies actual interface scale and converts mouse coordinates consistently. Reused existing ScreenEvent values; IScreen needed no change.
+
+Five new screen/raster/hit-test cases, including1280x720/100%,640x360/120%,480x320/150%. Full Client1837/1837 PASS; final affected12/12 after review wired actual interface scaling rather than only testing reduced logical dimensions. Dependent build0warnings/errors, scoped format verify/diffPASS. Own review complete. Window keyboard/event routing and terminal stack lifecycle are explicitly the next TK-0003; this commit does not claim end-to-end modal integration or native acceptance.

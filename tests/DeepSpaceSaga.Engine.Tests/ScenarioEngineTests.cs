@@ -495,12 +495,12 @@ public class ScenarioEngineTests
         Assert.Equal("module.torpedo.launcher", cancel.Type);
         Assert.Equal("none", cancel.Target);
         var defenseType = Assert.Single(activeTypes, t => t.TypeId == "module.countermeasure.launcher.basic");
-        Assert.Equal(new[] { DefenseCommandTypes.Enable, DefenseCommandTypes.Disable }, defenseType.CommandTypeIds);
+        Assert.Equal(new[] { DefenseCommandTypes.Fire, DefenseCommandTypes.Enable, DefenseCommandTypes.Disable }, defenseType.CommandTypeIds);
         foreach (var id in defenseType.CommandTypeIds)
         {
             var command = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(id));
             Assert.Equal("module.countermeasure.launcher", command.Type);
-            Assert.Equal("none", command.Target);
+            Assert.Equal(id == DefenseCommandTypes.Fire ? "object" : "none", command.Target);
         }
         var fireCommand = registry.CommandDefinitions.GetDefinition(
             registry.CommandDefinitions.GetIndex(CombatCommandTypes.Fire));
@@ -562,7 +562,7 @@ public class ScenarioEngineTests
 
         int passiveTypes = Enumerable.Range(0, registry.ModuleTypes.Count)
             .Count(i => registry.ModuleTypes.GetDefinition(i).CommandTypeIds.Length == 0);
-        Assert.Equal(5, passiveTypes); // includes living.quarters.mk1 (requirements §57); container moved to active (story-20260822-193700, Batch 3)
+        Assert.Equal(6, passiveTypes); // Includes the separate two- and three-cabin living variants.
     }
 
     [Theory]

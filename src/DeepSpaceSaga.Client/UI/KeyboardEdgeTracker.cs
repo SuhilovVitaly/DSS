@@ -9,6 +9,8 @@ internal sealed class KeyboardEdgeTracker
     private bool _prevFPressed;
     private bool _prevSPressed;
     private bool _prevSpacePressed;
+    private bool _prevTabPressed;
+    private bool _prevEnterPressed;
     private bool _prev1Pressed;
     private bool _prev2Pressed;
     private bool _prev3Pressed;
@@ -60,6 +62,8 @@ internal sealed class KeyboardEdgeTracker
         AddBoth(Key.ControlRight, keyboard.IsKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref p, released, ref r);
 
         AddBoth(Key.Space, keyboard.IsKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref p, released, ref r);
+        AddBoth(Key.Tab, keyboard.IsKeyPressed(Key.Tab), ref _prevTabPressed, pressed, ref p, released, ref r);
+        AddBoth(Key.Enter, keyboard.IsKeyPressed(Key.Enter), ref _prevEnterPressed, pressed, ref p, released, ref r);
         AddBoth(Key.Number1, keyboard.IsKeyPressed(Key.Number1), ref _prev1Pressed, pressed, ref p, released, ref r);
         AddBoth(Key.Number2, keyboard.IsKeyPressed(Key.Number2), ref _prev2Pressed, pressed, ref p, released, ref r);
         AddBoth(Key.Number3, keyboard.IsKeyPressed(Key.Number3), ref _prev3Pressed, pressed, ref p, released, ref r);
@@ -107,6 +111,8 @@ internal sealed class KeyboardEdgeTracker
         AddBoth(Key.ControlRight, isKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref p, released, ref r);
 
         AddBoth(Key.Space, isKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref p, released, ref r);
+        AddBoth(Key.Tab, isKeyPressed(Key.Tab), ref _prevTabPressed, pressed, ref p, released, ref r);
+        AddBoth(Key.Enter, isKeyPressed(Key.Enter), ref _prevEnterPressed, pressed, ref p, released, ref r);
         AddBoth(Key.Number1, isKeyPressed(Key.Number1), ref _prev1Pressed, pressed, ref p, released, ref r);
         AddBoth(Key.Number2, isKeyPressed(Key.Number2), ref _prev2Pressed, pressed, ref p, released, ref r);
         AddBoth(Key.Number3, isKeyPressed(Key.Number3), ref _prev3Pressed, pressed, ref p, released, ref r);
@@ -147,6 +153,8 @@ internal sealed class KeyboardEdgeTracker
         AddEdge(Key.ControlLeft, keyboard.IsKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref count);
         AddEdge(Key.ControlRight, keyboard.IsKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref count);
         AddEdge(Key.Space, keyboard.IsKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref count);
+        AddEdge(Key.Tab, keyboard.IsKeyPressed(Key.Tab), ref _prevTabPressed, pressed, ref count);
+        AddEdge(Key.Enter, keyboard.IsKeyPressed(Key.Enter), ref _prevEnterPressed, pressed, ref count);
         AddEdge(Key.Number1, keyboard.IsKeyPressed(Key.Number1), ref _prev1Pressed, pressed, ref count);
         AddEdge(Key.Number2, keyboard.IsKeyPressed(Key.Number2), ref _prev2Pressed, pressed, ref count);
         AddEdge(Key.Number3, keyboard.IsKeyPressed(Key.Number3), ref _prev3Pressed, pressed, ref count);
@@ -184,6 +192,8 @@ internal sealed class KeyboardEdgeTracker
         AddEdge(Key.ControlLeft, isKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref count);
         AddEdge(Key.ControlRight, isKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref count);
         AddEdge(Key.Space, isKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref count);
+        AddEdge(Key.Tab, isKeyPressed(Key.Tab), ref _prevTabPressed, pressed, ref count);
+        AddEdge(Key.Enter, isKeyPressed(Key.Enter), ref _prevEnterPressed, pressed, ref count);
         AddEdge(Key.Number1, isKeyPressed(Key.Number1), ref _prev1Pressed, pressed, ref count);
         AddEdge(Key.Number2, isKeyPressed(Key.Number2), ref _prev2Pressed, pressed, ref count);
         AddEdge(Key.Number3, isKeyPressed(Key.Number3), ref _prev3Pressed, pressed, ref count);
@@ -274,6 +284,8 @@ internal sealed class KeyboardEdgeTracker
         _prevCtrlLeftPressed = isKeyPressed(Key.ControlLeft);
         _prevCtrlRightPressed = isKeyPressed(Key.ControlRight);
         _prevSpacePressed = isKeyPressed(Key.Space);
+        _prevTabPressed = isKeyPressed(Key.Tab);
+        _prevEnterPressed = isKeyPressed(Key.Enter);
         _prev1Pressed = isKeyPressed(Key.Number1);
         _prev2Pressed = isKeyPressed(Key.Number2);
         _prev3Pressed = isKeyPressed(Key.Number3);

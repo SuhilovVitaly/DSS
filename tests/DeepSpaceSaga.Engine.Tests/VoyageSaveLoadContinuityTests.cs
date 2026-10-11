@@ -198,12 +198,15 @@ public sealed class VoyageSaveLoadContinuityTests
     }
 
     [Fact]
-    public void Legacy_active_history_is_unknown_and_next_current_save_remains_loadable()
+    public void Legacy_save_is_rejected_and_internal_history_fixture_keeps_unknown_cost()
     {
         using var f = TradingVoyageFixture.Create(calendarRatio: 1);
         Depart(f);
         var legacy = TradingEconomySaveSchemaTests.WithoutNewContinuation(f.Save(), 14);
-        f.Engine.LoadScenario(legacy, true); f.Capture();
+        string before = Json(f.Save());
+        Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() => f.Engine.LoadScenario(legacy, true)).Message);
+        Assert.Equal(before, Json(f.Save()));
+        f.Engine.LoadScenario(legacy); f.Capture(); // Historical scenario fixture only.
         Assert.True(Assert.Single(f.Engine.VoyageFinancesForTests).HasUnknownCostOfGoodsSold);
         Assert.Null(f.Engine.VoyageFinancesForTests[0].NetProfitCredits);
         using var loaded = f.Reload();

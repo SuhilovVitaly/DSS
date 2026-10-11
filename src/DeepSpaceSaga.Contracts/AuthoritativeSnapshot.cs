@@ -69,8 +69,13 @@ public sealed record AuthoritativeSnapshot(
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<StationMarketKnowledgeSnapshot>))]
     ImmutableArray<StationMarketKnowledgeSnapshot> StationMarketKnowledge = default,
     [property: JsonPropertyName("clusterMap")] StationClusterMapSnapshot? ClusterMap = null,
-    [property: JsonPropertyName("aiMap")] AiMapEnvironmentSnapshot? AiMap = null)
+    [property: JsonPropertyName("aiMap")] AiMapEnvironmentSnapshot? AiMap = null,
+    /// <summary>Current session outcome, repeated on every modern snapshot. Null only for older producers.</summary>
+    SessionOutcomeSnapshot? Outcome = null)
 {
+    [JsonIgnore]
+    public SessionOutcomeSnapshot EffectiveOutcome => Outcome ?? SessionOutcomeSnapshot.Running;
+
     /// <summary>Motion/cycle timestamp; legacy snapshots use GameTimeMs for both domains.</summary>
     [JsonIgnore]
     public long MotionTimeMs => SimulationTimeMs ?? GameTimeMs;

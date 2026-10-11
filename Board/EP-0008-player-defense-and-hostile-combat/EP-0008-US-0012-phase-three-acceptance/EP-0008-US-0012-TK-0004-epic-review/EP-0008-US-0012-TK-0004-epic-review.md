@@ -39,7 +39,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **42** [общего порядка](../../Tickets.md).
+Шаг **43** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0012-TK-0003-native-ui-acceptance](../../EP-0008-US-0012-phase-three-acceptance/EP-0008-US-0012-TK-0003-native-ui-acceptance/EP-0008-US-0012-TK-0003-native-ui-acceptance.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
