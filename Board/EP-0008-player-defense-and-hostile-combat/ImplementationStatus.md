@@ -209,3 +209,7 @@ TK-0002 `499074810ba3e29e122ed2b55fe4c5410348fe5b` published/remote verified. Co
 ## EP-0008-US-0009-TK-0001 — 2026-10-11
 
 US-0008 TK-0003 `f22c723d92061e7f1acc6124b6940dd66eeee1a0` published/remote verified. Terminal outcome/save-permission contract implemented; Contracts185/185, solution build/format/diffPASS. Next after publication: actual Engine defeat transition, then interval/clock cutoff. Native/final corpus OPEN.
+
+## EP-0008-US-0009-TK-0002 — 2026-10-11
+
+TK-0001 `a4b8a71b1b80be55f0ad948e9dccd4d47ab4d0b2` published/remote verified. Real Engine defeat transition and central gameplay/save guards implemented; Engine1842/1842, affected Client130/130, build/format/diffPASS. Next after publication: dedicated clock terminal latch and complete time-boundary regressions. Native/final corpus OPEN.

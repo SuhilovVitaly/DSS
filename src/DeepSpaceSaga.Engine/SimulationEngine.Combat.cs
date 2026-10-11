@@ -141,6 +141,7 @@ public sealed partial class SimulationEngine
 
     private void AdvanceCombatTo(long motionTimeMs)
     {
+        if (IsDefeated) return;
         // Recompute after each mutation: a previous contact may remove an obstacle
         // (or, in the wreck lifecycle, replace it) inside this same physical interval.
         if (motionTimeMs <= _combatProcessedTimeMs) return;
@@ -163,6 +164,7 @@ public sealed partial class SimulationEngine
                 ApplyImpact(hit.Projectile, hit.Target, hit.Contact);
                 cursor = hit.Contact.MotionTimeMs;
                 RemoveLostCountermeasures(cursor);
+                if (IsDefeated) return;
                 continue;
             }
             if (intercept is { } encounter && encounter.Contact.MotionTimeMs <= eventTime)
@@ -352,6 +354,8 @@ public sealed partial class SimulationEngine
         } while (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, id, StringComparison.OrdinalIgnoreCase)));
         string destroyedId = destroyed.InitialMotion.ObjectId;
         var point = CombatPath(destroyed).Position(impactMotionTimeMs);
+        // Hit and Destroyed facts are appended immediately after this wreck transition.
+        RecordPlayerDefeat(destroyedId, id, impactMotionTimeMs, checked(_combatJournalSequence + 2));
         _objects.Remove(destroyed);
         _hostileCombat.Remove(destroyedId);
         _hullCombat.Remove(destroyedId);

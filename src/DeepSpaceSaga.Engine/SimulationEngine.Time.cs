@@ -8,7 +8,8 @@ public sealed partial class SimulationEngine
     private StationDistrict _stationDistrict;
     private EconomyTimeData _economyTime = new();
 
-    private EconomyTimeData CaptureEconomyTime() => _economyTime with {
+    private EconomyTimeData CaptureEconomyTime() => _economyTime with
+    {
         StationDistrict = _stationDistrict,
         TravelReceipts = _stationTravelReceipts.Order(StringComparer.Ordinal).ToArray()
     };
@@ -20,12 +21,15 @@ public sealed partial class SimulationEngine
 
     private void ApplyContractDeadlines(long time)
     {
-        _economyTime = _economyTime with { ActiveContracts = (_economyTime.ActiveContracts ?? []).Select(c =>
+        _economyTime = _economyTime with
+        {
+            ActiveContracts = (_economyTime.ActiveContracts ?? []).Select(c =>
         {
             if (c.DeadlineMissed || c.DeadlineGameTimeMs > time) return c;
             RecordShipEvent(PlayerShipObjectId!, "", "contract_deadline_missed", c.ContractId, c.DeadlineGameTimeMs);
             return c with { DeadlineMissed = true };
-        }).ToArray() };
+        }).ToArray()
+        };
     }
 
     public StationTravelResult TravelStation(StationTravelCommand command)
@@ -33,6 +37,7 @@ public sealed partial class SimulationEngine
         ArgumentNullException.ThrowIfNull(command);
         lock (_worldStateLock)
         {
+            if (IsDefeated) return new(false, CommandReasonCodes.SessionDefeated, CaptureSnapshot());
             if (string.IsNullOrWhiteSpace(command.CommandId) || !Enum.IsDefined(command.Destination))
                 return new(false, "invalid_transition", CaptureSnapshot());
             if (_stationTravelReceipts.Contains(command.CommandId))
@@ -48,6 +53,7 @@ public sealed partial class SimulationEngine
             long targetSimulationTime = checked(_clock.SimulationTimeMs +
                 GameCalendar.HourMs / SimulationSpeedExtensions.BaseGameSecondsPerRealSecond);
             AdvanceWorldTo(targetTime, targetSimulationTime);
+            if (IsDefeated) return new(false, CommandReasonCodes.SessionDefeated, CaptureSnapshot());
             _clock.Reset(targetTime, SimulationSpeed.Speed0, targetSimulationTime);
             _stationDistrict = command.Destination;
             _stationTravelReceipts.Add(command.CommandId);
