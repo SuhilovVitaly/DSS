@@ -1,5 +1,33 @@
 # EP-0008 — execution evidence
 
+## Resumption — 2026-10-11
+
+The user explicitly authorized completing EP-0008 and then EP-0009 autonomously,
+with a separate commit and immediate verified push for every ticket. The active
+branch remains `base-fight`, upstream `origin/base-fight`, remote
+`https://github.com/SuhilovVitaly/DSS`.
+
+The old TK-0002 publication blocker below is historical and **resolved**:
+`git ls-remote --heads origin` and `git fetch origin` confirmed remote
+`base-fight` at `99e15a2414b753d91eca9a2cbbe0a1309cb23c80`;
+`git merge-base --is-ancestor 02c89d4a51687ed291a11285a8b704991b42cf20 origin/base-fight`
+returned 0. Both existing contract tickets are published. No duplicate
+implementation or empty ticket commit is needed.
+
+Next implementation ticket: **EP-0008-US-0001-TK-0003-weapon-content-schema**.
+The remaining 42 tickets, story/epic reviews and native acceptance remain open.
+US-0013 already supplies the mandatory final documentation and Graphify story,
+with dependencies on all preceding stories. EP-0009 starts only after the
+EP-0008 dependency is satisfied.
+
+Initial unrelated/uncommitted input is the untracked `Board/EP-0009-battle/`
+folder (user specification and baseline report); it is excluded from this
+EP-0008 resumption commit. The historical documentation-reading/test evidence
+below is not a claim that the current revision has passed those checks.
+
+This resumption change only corrects publication evidence. Production and test
+sources have not changed; current validation is recorded separately below.
+
 Execution started 2026-10-07 under [EpicExecutionPrompt](../EpicExecutionPrompt.md).
 
 ## Baseline and authorization
