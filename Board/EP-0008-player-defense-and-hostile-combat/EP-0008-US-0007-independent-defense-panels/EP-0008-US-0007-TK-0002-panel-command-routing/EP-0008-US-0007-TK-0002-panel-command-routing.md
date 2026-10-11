@@ -41,7 +41,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **23** [общего порядка](../../Tickets.md).
+Шаг **24** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0007-TK-0001-panel-instances](../../EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-TK-0001-panel-instances/EP-0008-US-0007-TK-0001-panel-instances.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 

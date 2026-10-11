@@ -247,7 +247,7 @@ public sealed partial class SimulationEngine
         return first;
     }
 
-    private static CollisionPath CombatPath(SpaceObjectRuntime obj)
+    internal static CollisionPath CombatPath(SpaceObjectRuntime obj)
     {
         if (obj.InitialMotion.HostileCombat is { Segment: var segment })
         {
@@ -256,6 +256,16 @@ public sealed partial class SimulationEngine
             return new(t =>
             {
                 var p = HostileOrbitMath.Sample(segment, t - segment.EpochMs);
+                // Defense forecasts may look beyond the confirmed segment. Continue its
+                // terminal velocity for that estimate, never freeze the moving hull or run AI.
+                // Actual outcomes are searched only up to the next controller boundary.
+                double coastMs = t - segment.EpochMs - segment.DurationMs;
+                if (coastMs > 0)
+                {
+                    double angle = p.Direction * Math.PI / 180;
+                    return (p.X + p.SpeedKmS / 100 * coastMs * Math.Sin(angle),
+                        p.Y - p.SpeedKmS / 100 * coastMs * Math.Cos(angle));
+                }
                 return (p.X, p.Y);
             }, maxSpeed / 100,
                 Math.Abs(segment.AccelerationKmS2) / 100_000 + maxSpeed / 100 * Math.Abs(segment.TurnRateDegPerSec) * Math.PI / 180_000);
@@ -343,6 +353,7 @@ public sealed partial class SimulationEngine
         string destroyedId = destroyed.InitialMotion.ObjectId;
         var point = CombatPath(destroyed).Position(impactMotionTimeMs);
         _objects.Remove(destroyed);
+        _hostileCombat.Remove(destroyedId);
         _hullCombat.Remove(destroyedId);
         foreach (var defenseKey in _defenses.Keys.Where(k => k.ObjectId == destroyedId).ToArray()) _defenses.Remove(defenseKey);
         foreach (var key in _launcherCombat.Keys.Where(k => k.ObjectId == destroyedId).ToArray())

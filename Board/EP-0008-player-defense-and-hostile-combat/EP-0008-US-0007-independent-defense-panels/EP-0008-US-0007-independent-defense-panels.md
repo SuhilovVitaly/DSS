@@ -35,10 +35,10 @@ validation_status: planning-only
 
 | Шаг | Тикет | Layer | Serves |
 |---|---|---|---|
-| 22 | [EP-0008-US-0007-TK-0001-panel-instances](EP-0008-US-0007-TK-0001-panel-instances/EP-0008-US-0007-TK-0001-panel-instances.md) — Командные панели по конкретным экземплярам модулей | client | AC-0001, AC-0004 |
-| 23 | [EP-0008-US-0007-TK-0002-panel-command-routing](EP-0008-US-0007-TK-0002-panel-command-routing/EP-0008-US-0007-TK-0002-panel-command-routing.md) — Ручные команды и независимый pending каждого аппарата | client | AC-0001, AC-0002, AC-0003, AC-0004 |
-| 24 | [EP-0008-US-0007-TK-0003-combat-info](EP-0008-US-0007-TK-0003-combat-info/EP-0008-US-0007-TK-0003-combat-info.md) — Расчёт шанса, lifetime и поведение выбранного врага | client | AC-0002, AC-0003 |
-| 25 | [EP-0008-US-0007-TK-0004-combat-localization](EP-0008-US-0007-TK-0004-combat-localization/EP-0008-US-0007-TK-0004-combat-localization.md) — Локализованные команды, причины и состояния | content-data | AC-0002, AC-0003 |
+| 23 | [EP-0008-US-0007-TK-0001-panel-instances](EP-0008-US-0007-TK-0001-panel-instances/EP-0008-US-0007-TK-0001-panel-instances.md) — Командные панели по конкретным экземплярам модулей | client | AC-0001, AC-0004 |
+| 24 | [EP-0008-US-0007-TK-0002-panel-command-routing](EP-0008-US-0007-TK-0002-panel-command-routing/EP-0008-US-0007-TK-0002-panel-command-routing.md) — Ручные команды и независимый pending каждого аппарата | client | AC-0001, AC-0002, AC-0003, AC-0004 |
+| 25 | [EP-0008-US-0007-TK-0003-combat-info](EP-0008-US-0007-TK-0003-combat-info/EP-0008-US-0007-TK-0003-combat-info.md) — Расчёт шанса, lifetime и поведение выбранного врага | client | AC-0002, AC-0003 |
+| 26 | [EP-0008-US-0007-TK-0004-combat-localization](EP-0008-US-0007-TK-0004-combat-localization/EP-0008-US-0007-TK-0004-combat-localization.md) — Локализованные команды, причины и состояния | content-data | AC-0002, AC-0003 |
 
 ## Completion evidence
 

@@ -40,6 +40,8 @@ validation_status: planning-only
 | 13 | [EP-0008-US-0004-TK-0003-hostile-controller](EP-0008-US-0004-TK-0003-hostile-controller/EP-0008-US-0004-TK-0003-hostile-controller.md) — Авторитетное управление двигателем и фазами AI | engine | AC-0001, AC-0002, AC-0003, AC-0004 |
 | 14 | [EP-0008-US-0004-TK-0004-combat-path-integration](EP-0008-US-0004-TK-0004-combat-path-integration/EP-0008-US-0004-TK-0004-combat-path-integration.md) — Попадания и наведение учитывают маневрирующего противника | engine | AC-0002, AC-0004 |
 
+| 15 | [EP-0008-US-0004-TK-0005-hostile-selected-info](EP-0008-US-0004-TK-0005-hostile-selected-info/EP-0008-US-0004-TK-0005-hostile-selected-info.md) — Фаза и радиус выбранного врага | client | AC-0004 |
+
 ## Completion evidence
 
 Все AC доказаны связанными тикетами, проверками реального результата и review. Конкретные команды и запланированные регрессии находятся в карточках. Native/UI требования подтверждаются реальным окном отдельно от automated tests; при недоступности это NOT RUN, не PASS.
@@ -49,3 +51,5 @@ validation_status: planning-only
 Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История draft и не является утверждением о пройденных тестах.
 
 При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Текущая задача только создаёт план.
+
+Execution review 2026-10-11: runtime AC-0001/2/3 covered by TK-0001..0004; selected-info part of AC-0004 remains OPEN until added TK-0005. Persistence/native remain assigned to US-0011/0012.

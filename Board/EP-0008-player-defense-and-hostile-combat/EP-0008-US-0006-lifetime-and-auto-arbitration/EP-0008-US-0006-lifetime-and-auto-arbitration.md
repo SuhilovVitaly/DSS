@@ -35,9 +35,9 @@ validation_status: planning-only
 
 | Шаг | Тикет | Layer | Serves |
 |---|---|---|---|
-| 19 | [EP-0008-US-0006-TK-0001-global-lifetime](EP-0008-US-0006-TK-0001-global-lifetime/EP-0008-US-0006-TK-0001-global-lifetime.md) — Абсолютный deadline полёта во всех фазах ПРО | engine | AC-0001, AC-0002, AC-0004 |
-| 20 | [EP-0008-US-0006-TK-0002-auto-launcher-selection](EP-0008-US-0006-TK-0002-auto-launcher-selection/EP-0008-US-0006-TK-0002-auto-launcher-selection.md) — Выбор одного аппарата для автоматического перехвата | engine | AC-0003, AC-0004 |
-| 21 | [EP-0008-US-0006-TK-0003-combat-journal-facts](EP-0008-US-0006-TK-0003-combat-journal-facts/EP-0008-US-0006-TK-0003-combat-journal-facts.md) — Журнал ручных пусков и истечения времени полёта | engine | AC-0001, AC-0002, AC-0004 |
+| 20 | [EP-0008-US-0006-TK-0001-global-lifetime](EP-0008-US-0006-TK-0001-global-lifetime/EP-0008-US-0006-TK-0001-global-lifetime.md) — Абсолютный deadline полёта во всех фазах ПРО | engine | AC-0001, AC-0002, AC-0004 |
+| 21 | [EP-0008-US-0006-TK-0002-auto-launcher-selection](EP-0008-US-0006-TK-0002-auto-launcher-selection/EP-0008-US-0006-TK-0002-auto-launcher-selection.md) — Выбор одного аппарата для автоматического перехвата | engine | AC-0003, AC-0004 |
+| 22 | [EP-0008-US-0006-TK-0003-combat-journal-facts](EP-0008-US-0006-TK-0003-combat-journal-facts/EP-0008-US-0006-TK-0003-combat-journal-facts.md) — Журнал ручных пусков и истечения времени полёта | engine | AC-0001, AC-0002, AC-0004 |
 
 ## Completion evidence
 

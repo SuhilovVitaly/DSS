@@ -41,7 +41,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **28** [общего порядка](../../Tickets.md).
+Шаг **29** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0008-TK-0002-hover-ranges-and-countdown](../../EP-0008-US-0008-manual-preview-and-map/EP-0008-US-0008-TK-0002-hover-ranges-and-countdown/EP-0008-US-0008-TK-0002-hover-ranges-and-countdown.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 

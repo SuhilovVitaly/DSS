@@ -1,0 +1,31 @@
+---
+epic: EP-0008-player-defense-and-hostile-combat
+story: EP-0008-US-0004-hostile-pursuit-and-orbit
+ticket: EP-0008-US-0004-TK-0005-hostile-selected-info
+title: "Подтвержденная фаза и радиус в информации выбранного врага"
+stage: draft
+layer: client
+depends_on: ["EP-0008-US-0004-TK-0004-combat-path-integration"]
+files_touched: 3
+serves: ["AC-0004"]
+created: 2026-10-11
+revision: 1
+---
+
+# Подтвержденная фаза и радиус в информации выбранного врага
+
+Добавлен при execution review US-0004: Q45 и AC-0004 требуют selected-info, но исходные 44 тикета не назначали реализацию этого UI. Разрешение: [EpicExecutionPrompt](../../../EpicExecutionPrompt.md). Источники: [история](../EP-0008-US-0004-hostile-pursuit-and-orbit.md), [контракт](../../Documentation.md), Q45 в [Decisions](../../Decisions.md).
+
+## Code context
+
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs`: проекция подтвержденного HostileCombat только для известного Enemy NPC в выбранной информации.
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ObjectInfoPanel.cs`: строки фазы и радиуса, существующие перенос/scroll.
+- `tests/DeepSpaceSaga.Client.Tests/HostileSelectedInfoTests.cs`: реальная проекция через screen, все фазы, маскирование, узкая панель.
+
+## Implementation and acceptance
+
+- Показать Сближение / Выход на орбиту / Удержание орбиты и желаемый радиус в км только в info выбранного известного Enemy; игрок/Friend/Neutral/unknown не получают эти строки.
+- Значения исключительно из authoritative snapshot; не рассчитывать решения AI в Client и не добавлять надписи на карте.
+- Смена выбора/фазы и pause обновляют/сохраняют правильные значения. Длинные строки используют существующий перенос и прокрутку панели.
+- Targeted Client tests, Client build, scoped format verify, diff check; self-review, evidence, отдельные commit/push перед US-0005.
+- Native gate отдельно в US-0012, не выдавать headless за native. Current-format persistence в US-0011.

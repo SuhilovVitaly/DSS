@@ -35,10 +35,10 @@ validation_status: planning-only
 
 | Шаг | Тикет | Layer | Serves |
 |---|---|---|---|
-| 15 | [EP-0008-US-0005-TK-0001-manual-guidance](EP-0008-US-0005-TK-0001-manual-guidance/EP-0008-US-0005-TK-0001-manual-guidance.md) — План и преследование без гарантированной встречи | motion | AC-0003 |
-| 16 | [EP-0008-US-0005-TK-0002-manual-launch-execution](EP-0008-US-0005-TK-0002-manual-launch-execution/EP-0008-US-0005-TK-0002-manual-launch-execution.md) — Команда ручного пуска с безопасным повтором | engine | AC-0001, AC-0002, AC-0003, AC-0004 |
-| 17 | [EP-0008-US-0005-TK-0003-defense-fire-catalog](EP-0008-US-0005-TK-0003-defense-fire-catalog/EP-0008-US-0005-TK-0003-defense-fire-catalog.md) — Ручная команда в каталоге ПРО | content-data | AC-0001 |
-| 18 | [EP-0008-US-0005-TK-0004-defense-preview-projection](EP-0008-US-0005-TK-0004-defense-preview-projection/EP-0008-US-0005-TK-0004-defense-preview-projection.md) — Авторитетный шанс и причины недоступности каждого аппарата | engine | AC-0002, AC-0004 |
+| 16 | [EP-0008-US-0005-TK-0001-manual-guidance](EP-0008-US-0005-TK-0001-manual-guidance/EP-0008-US-0005-TK-0001-manual-guidance.md) — План и преследование без гарантированной встречи | motion | AC-0003 |
+| 17 | [EP-0008-US-0005-TK-0002-manual-launch-execution](EP-0008-US-0005-TK-0002-manual-launch-execution/EP-0008-US-0005-TK-0002-manual-launch-execution.md) — Команда ручного пуска с безопасным повтором | engine | AC-0001, AC-0002, AC-0003, AC-0004 |
+| 18 | [EP-0008-US-0005-TK-0003-defense-fire-catalog](EP-0008-US-0005-TK-0003-defense-fire-catalog/EP-0008-US-0005-TK-0003-defense-fire-catalog.md) — Ручная команда в каталоге ПРО | content-data | AC-0001 |
+| 19 | [EP-0008-US-0005-TK-0004-defense-preview-projection](EP-0008-US-0005-TK-0004-defense-preview-projection/EP-0008-US-0005-TK-0004-defense-preview-projection.md) — Авторитетный шанс и причины недоступности каждого аппарата | engine | AC-0002, AC-0004 |
 
 ## Completion evidence
 

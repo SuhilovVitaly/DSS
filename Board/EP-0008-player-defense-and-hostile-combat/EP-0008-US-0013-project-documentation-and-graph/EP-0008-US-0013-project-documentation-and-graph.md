@@ -45,8 +45,8 @@ validation_status: planning-only
 
 | Шаг | Тикет | Layer | Serves |
 |---|---|---|---|
-| 43 | [EP-0008-US-0013-TK-0001-update-project-documents](EP-0008-US-0013-TK-0001-update-project-documents/EP-0008-US-0013-TK-0001-update-project-documents.md) — Обновить релевантные документы во всех папках | documentation | AC-0001, AC-0002, AC-0003 |
-| 44 | [EP-0008-US-0013-TK-0002-refresh-graph-and-links](EP-0008-US-0013-TK-0002-refresh-graph-and-links/EP-0008-US-0013-TK-0002-refresh-graph-and-links.md) — Перестроить граф и проверить навигацию финального проекта | tooling | AC-0003 |
+| 44 | [EP-0008-US-0013-TK-0001-update-project-documents](EP-0008-US-0013-TK-0001-update-project-documents/EP-0008-US-0013-TK-0001-update-project-documents.md) — Обновить релевантные документы во всех папках | documentation | AC-0001, AC-0002, AC-0003 |
+| 45 | [EP-0008-US-0013-TK-0002-refresh-graph-and-links](EP-0008-US-0013-TK-0002-refresh-graph-and-links/EP-0008-US-0013-TK-0002-refresh-graph-and-links.md) — Перестроить граф и проверить навигацию финального проекта | tooling | AC-0003 |
 
 ## Completion evidence
 

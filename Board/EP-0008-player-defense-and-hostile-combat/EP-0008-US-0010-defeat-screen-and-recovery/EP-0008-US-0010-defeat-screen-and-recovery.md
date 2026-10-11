@@ -34,9 +34,9 @@ validation_status: planning-only
 
 | Шаг | Тикет | Layer | Serves |
 |---|---|---|---|
-| 32 | [EP-0008-US-0010-TK-0001-defeated-session-save-guard](EP-0008-US-0010-TK-0001-defeated-session-save-guard/EP-0008-US-0010-TK-0001-defeated-session-save-guard.md) — Защита файлового сохранения и session lifecycle | engine-localclient | AC-0002, AC-0003 |
-| 33 | [EP-0008-US-0010-TK-0002-defeat-modal](EP-0008-US-0010-TK-0002-defeat-modal/EP-0008-US-0010-TK-0002-defeat-modal.md) — Экран поражения с двумя действиями | client | AC-0001 |
-| 34 | [EP-0008-US-0010-TK-0003-defeat-navigation](EP-0008-US-0010-TK-0003-defeat-navigation/EP-0008-US-0010-TK-0003-defeat-navigation.md) — Открытие поражения, загрузка и выход через реальную оболочку | client | AC-0001, AC-0002, AC-0003 |
+| 33 | [EP-0008-US-0010-TK-0001-defeated-session-save-guard](EP-0008-US-0010-TK-0001-defeated-session-save-guard/EP-0008-US-0010-TK-0001-defeated-session-save-guard.md) — Защита файлового сохранения и session lifecycle | engine-localclient | AC-0002, AC-0003 |
+| 34 | [EP-0008-US-0010-TK-0002-defeat-modal](EP-0008-US-0010-TK-0002-defeat-modal/EP-0008-US-0010-TK-0002-defeat-modal.md) — Экран поражения с двумя действиями | client | AC-0001 |
+| 35 | [EP-0008-US-0010-TK-0003-defeat-navigation](EP-0008-US-0010-TK-0003-defeat-navigation/EP-0008-US-0010-TK-0003-defeat-navigation.md) — Открытие поражения, загрузка и выход через реальную оболочку | client | AC-0001, AC-0002, AC-0003 |
 
 ## Completion evidence
 

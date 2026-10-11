@@ -34,9 +34,9 @@ validation_status: planning-only
 
 | Шаг | Тикет | Layer | Serves |
 |---|---|---|---|
-| 29 | [EP-0008-US-0009-TK-0001-defeat-contract](EP-0008-US-0009-TK-0001-defeat-contract/EP-0008-US-0009-TK-0001-defeat-contract.md) — Контракт терминального состояния сессии | contracts | AC-0001, AC-0003 |
-| 30 | [EP-0008-US-0009-TK-0002-defeat-transition](EP-0008-US-0009-TK-0002-defeat-transition/EP-0008-US-0009-TK-0002-defeat-transition.md) — Атомарная гибель игрока и запрет действий | engine | AC-0001, AC-0002, AC-0003 |
-| 31 | [EP-0008-US-0009-TK-0003-defeat-clock-boundary](EP-0008-US-0009-TK-0003-defeat-clock-boundary/EP-0008-US-0009-TK-0003-defeat-clock-boundary.md) — Остановка времени на событии поражения | engine | AC-0001, AC-0002 |
+| 30 | [EP-0008-US-0009-TK-0001-defeat-contract](EP-0008-US-0009-TK-0001-defeat-contract/EP-0008-US-0009-TK-0001-defeat-contract.md) — Контракт терминального состояния сессии | contracts | AC-0001, AC-0003 |
+| 31 | [EP-0008-US-0009-TK-0002-defeat-transition](EP-0008-US-0009-TK-0002-defeat-transition/EP-0008-US-0009-TK-0002-defeat-transition.md) — Атомарная гибель игрока и запрет действий | engine | AC-0001, AC-0002, AC-0003 |
+| 32 | [EP-0008-US-0009-TK-0003-defeat-clock-boundary](EP-0008-US-0009-TK-0003-defeat-clock-boundary/EP-0008-US-0009-TK-0003-defeat-clock-boundary.md) — Остановка времени на событии поражения | engine | AC-0001, AC-0002 |
 
 ## Completion evidence
 

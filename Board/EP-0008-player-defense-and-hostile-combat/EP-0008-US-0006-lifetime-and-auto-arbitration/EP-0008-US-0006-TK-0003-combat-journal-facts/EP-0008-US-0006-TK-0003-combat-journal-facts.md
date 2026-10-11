@@ -41,7 +41,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **21** [общего порядка](../../Tickets.md).
+Шаг **22** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0006-TK-0002-auto-launcher-selection](../../EP-0008-US-0006-lifetime-and-auto-arbitration/EP-0008-US-0006-TK-0002-auto-launcher-selection/EP-0008-US-0006-TK-0002-auto-launcher-selection.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 

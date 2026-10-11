@@ -3,10 +3,10 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0004-hostile-pursuit-and-orbit
 ticket: EP-0008-US-0004-TK-0004-combat-path-integration
 title: "Попадания и наведение учитывают маневрирующего противника"
-stage: draft
+stage: implemented
 layer: engine
 depends_on: ["EP-0008-US-0004-TK-0003-hostile-controller"]
-files_touched: 4
+files_touched: 2
 serves: ["AC-0002","AC-0004"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Попадания и наведение учитывают маневрирующего противника
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED / AUTOMATED PASS
 
 ## Why
 
@@ -69,9 +69,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Swept_collision_uses_hostile_curve`
-- [ ] `Guidance_replans_on_hostile_maneuver`
-- [ ] `Destroyed_hostile_stops_controller`
+- [x] `Swept_collision_uses_hostile_curve`
+- [x] `Guidance_replans_on_hostile_maneuver`
+- [x] `Destroyed_hostile_stops_controller`
 
 Команды из корня DSS после реализации:
 
@@ -85,13 +85,21 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0002, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0002, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `6658a78c7f28c286f919740ec21b03056d064939` published/remote verified. Actual sweeps sample confirmed accelerating/turning segment with conservative speed and acceleration bounds. Defense long-horizon planning now coasts terminal velocity past the segment instead of incorrectly freezing its hull; actual outcomes stay inside confirmed boundaries. Destroyed actor is removed from internal hostile state immediately. Existing guidance already re-plans on 100ms pose/velocity changes and needed no rewrite.
+
+Focused **5/5 PASS**: fractional curved sweep/bounds/coast, real maneuver guidance and split equality, real PR interception from orbiting owner, player acceleration forces orbit->pursuit retaining direction, three real hits remove moving actor. Full non-corpus Engine **1779/1779 PASS** (`ep8-us4-tk4-engine.trx`), full Client **1770/1770 PASS** (`ep8-us4-tk4-client.trx`); solution build 0 warnings/errors; scoped format verify/diff PASS.
+
+US-0004 review found Q45 selected-info unassigned in the original plan. Added explicit client TK-0005, updated following dependency/order and counts: 13 stories,45 tickets. Normalized relative-link check **0 broken** (unnormalized Windows paths falsely reported 43 missing due to path length). Story completion awaits that ticket. Save/Load current-format and native gates remain US-0011/0012; self-review is not user approval.

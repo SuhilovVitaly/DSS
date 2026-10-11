@@ -41,7 +41,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **33** [общего порядка](../../Tickets.md).
+Шаг **34** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0010-TK-0001-defeated-session-save-guard](../../EP-0008-US-0010-defeat-screen-and-recovery/EP-0008-US-0010-TK-0001-defeated-session-save-guard/EP-0008-US-0010-TK-0001-defeated-session-save-guard.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 

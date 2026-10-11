@@ -34,9 +34,9 @@ Hover над пуском показывает прогноз конкретно
 
 | Шаг | Тикет | Layer | Serves |
 |---|---|---|---|
-| 26 | [EP-0008-US-0008-TK-0001-preview-geometry](EP-0008-US-0008-TK-0001-preview-geometry/EP-0008-US-0008-TK-0001-preview-geometry.md) — Геометрия прогноза ручного пуска конкретного аппарата | client | AC-0001, AC-0003 |
-| 27 | [EP-0008-US-0008-TK-0002-hover-ranges-and-countdown](EP-0008-US-0008-TK-0002-hover-ranges-and-countdown/EP-0008-US-0008-TK-0002-hover-ranges-and-countdown.md) — Круги hover и время полёта на карте | client | AC-0002, AC-0003 |
-| 28 | [EP-0008-US-0008-TK-0003-journal-presentation](EP-0008-US-0008-TK-0003-journal-presentation/EP-0008-US-0008-TK-0003-journal-presentation.md) — Читаемый журнал новых событий боя | client | AC-0003 |
+| 27 | [EP-0008-US-0008-TK-0001-preview-geometry](EP-0008-US-0008-TK-0001-preview-geometry/EP-0008-US-0008-TK-0001-preview-geometry.md) — Геометрия прогноза ручного пуска конкретного аппарата | client | AC-0001, AC-0003 |
+| 28 | [EP-0008-US-0008-TK-0002-hover-ranges-and-countdown](EP-0008-US-0008-TK-0002-hover-ranges-and-countdown/EP-0008-US-0008-TK-0002-hover-ranges-and-countdown.md) — Круги hover и время полёта на карте | client | AC-0002, AC-0003 |
+| 29 | [EP-0008-US-0008-TK-0003-journal-presentation](EP-0008-US-0008-TK-0003-journal-presentation/EP-0008-US-0008-TK-0003-journal-presentation.md) — Читаемый журнал новых событий боя | client | AC-0003 |
 
 ## Completion evidence
 

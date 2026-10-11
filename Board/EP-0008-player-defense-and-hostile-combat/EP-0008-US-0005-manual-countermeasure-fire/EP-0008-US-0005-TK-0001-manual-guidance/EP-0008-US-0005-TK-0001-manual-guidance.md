@@ -5,7 +5,7 @@ ticket: EP-0008-US-0005-TK-0001-manual-guidance
 title: "План и преследование без гарантированной встречи"
 stage: draft
 layer: motion
-depends_on: ["EP-0008-US-0004-TK-0004-combat-path-integration"]
+depends_on: ["EP-0008-US-0004-TK-0005-hostile-selected-info"]
 files_touched: 2
 serves: ["AC-0003"]
 created: 2026-10-07
@@ -39,8 +39,8 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **15** [общего порядка](../../Tickets.md).
-- [EP-0008-US-0004-TK-0004-combat-path-integration](../../EP-0008-US-0004-hostile-pursuit-and-orbit/EP-0008-US-0004-TK-0004-combat-path-integration/EP-0008-US-0004-TK-0004-combat-path-integration.md).
+Шаг **16** [общего порядка](../../Tickets.md).
+- [EP-0008-US-0004-TK-0005-hostile-selected-info](../../EP-0008-US-0004-hostile-pursuit-and-orbit/EP-0008-US-0004-TK-0005-hostile-selected-info/EP-0008-US-0004-TK-0005-hostile-selected-info.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
 ## Public API after the change

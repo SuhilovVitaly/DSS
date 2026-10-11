@@ -42,7 +42,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **38** [общего порядка](../../Tickets.md).
+Шаг **39** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0011-TK-0003-save-runtime-continuation](../../EP-0008-US-0011-phase-three-save-continuation/EP-0008-US-0011-TK-0003-save-runtime-continuation/EP-0008-US-0011-TK-0003-save-runtime-continuation.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 

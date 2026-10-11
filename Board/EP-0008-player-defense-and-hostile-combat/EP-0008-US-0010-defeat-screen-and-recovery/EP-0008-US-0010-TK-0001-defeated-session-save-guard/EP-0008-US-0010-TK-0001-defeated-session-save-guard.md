@@ -39,7 +39,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **32** [общего порядка](../../Tickets.md).
+Шаг **33** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0009-TK-0003-defeat-clock-boundary](../../EP-0008-US-0009-authoritative-player-defeat/EP-0008-US-0009-TK-0003-defeat-clock-boundary/EP-0008-US-0009-TK-0003-defeat-clock-boundary.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 

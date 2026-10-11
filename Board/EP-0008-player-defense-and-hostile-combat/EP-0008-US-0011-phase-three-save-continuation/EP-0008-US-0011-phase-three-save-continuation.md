@@ -35,10 +35,10 @@ validation_status: planning-only
 
 | Шаг | Тикет | Layer | Serves |
 |---|---|---|---|
-| 35 | [EP-0008-US-0011-TK-0001-new-save-version-gate](EP-0008-US-0011-TK-0001-new-save-version-gate/EP-0008-US-0011-TK-0001-new-save-version-gate.md) — Новая версия и явный отказ старым сохранениям | engine | AC-0001, AC-0003 |
-| 36 | [EP-0008-US-0011-TK-0002-save-combat-validation](EP-0008-US-0011-TK-0002-save-combat-validation/EP-0008-US-0011-TK-0002-save-combat-validation.md) — Полная схема и preflight боя новой фазы | engine | AC-0002, AC-0003 |
-| 37 | [EP-0008-US-0011-TK-0003-save-runtime-continuation](EP-0008-US-0011-TK-0003-save-runtime-continuation/EP-0008-US-0011-TK-0003-save-runtime-continuation.md) — Атомарное восстановление активного боя и AI | engine | AC-0002, AC-0003, AC-0004 |
-| 38 | [EP-0008-US-0011-TK-0004-load-ui-and-transport](EP-0008-US-0011-TK-0004-load-ui-and-transport/EP-0008-US-0011-TK-0004-load-ui-and-transport.md) — Файловая загрузка и понятное сообщение несовместимости | client | AC-0001, AC-0002, AC-0003, AC-0004 |
+| 36 | [EP-0008-US-0011-TK-0001-new-save-version-gate](EP-0008-US-0011-TK-0001-new-save-version-gate/EP-0008-US-0011-TK-0001-new-save-version-gate.md) — Новая версия и явный отказ старым сохранениям | engine | AC-0001, AC-0003 |
+| 37 | [EP-0008-US-0011-TK-0002-save-combat-validation](EP-0008-US-0011-TK-0002-save-combat-validation/EP-0008-US-0011-TK-0002-save-combat-validation.md) — Полная схема и preflight боя новой фазы | engine | AC-0002, AC-0003 |
+| 38 | [EP-0008-US-0011-TK-0003-save-runtime-continuation](EP-0008-US-0011-TK-0003-save-runtime-continuation/EP-0008-US-0011-TK-0003-save-runtime-continuation.md) — Атомарное восстановление активного боя и AI | engine | AC-0002, AC-0003, AC-0004 |
+| 39 | [EP-0008-US-0011-TK-0004-load-ui-and-transport](EP-0008-US-0011-TK-0004-load-ui-and-transport/EP-0008-US-0011-TK-0004-load-ui-and-transport.md) — Файловая загрузка и понятное сообщение несовместимости | client | AC-0001, AC-0002, AC-0003, AC-0004 |
 
 ## Completion evidence
 

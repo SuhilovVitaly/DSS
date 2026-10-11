@@ -141,3 +141,7 @@ TK-0001 `9424ad264b60bab32eabbef9f1f41b3fb6cde9fc` published/remote verified. Sh
 ## EP-0008-US-0004-TK-0003 — 2026-10-11
 
 TK-0002 `96e7113ded5f2bb1b88458ec543237dac87f73d9` published/remote verified. Authoritative hostile movement wired; final affected Engine281/281, Client14/14, solution build/format/diff PASS after documented initial fixture failures. Next after publication: swept combat integration. Native/final corpus/current-format hostile persistence OPEN.
+
+## EP-0008-US-0004-TK-0004 — 2026-10-11
+
+TK-0003 `6658a78c7f28c286f919740ec21b03056d064939` published/remote verified. Swept motion/guidance/PR/death integration verified: focused5/5, full non-corpus Engine1779/1779, full Client1770/1770, build/format/diff PASS. Review added missing selected-info TK-0005, now45 tickets and0 broken normalized Board links. Next after publication: TK-0005, then US-0005. Native/final corpus/current-format hostile persistence OPEN.

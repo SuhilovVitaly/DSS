@@ -42,7 +42,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 ## Dependencies
 
-Шаг **27** [общего порядка](../../Tickets.md).
+Шаг **28** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0008-TK-0001-preview-geometry](../../EP-0008-US-0008-manual-preview-and-map/EP-0008-US-0008-TK-0001-preview-geometry/EP-0008-US-0008-TK-0001-preview-geometry.md).
 Предыдущий шаг должен быть выполнен и проверен; при автономном исполнении — также опубликован. Нельзя заменять отсутствующий production-контракт временным mock.
 
