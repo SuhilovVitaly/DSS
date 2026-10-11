@@ -35,7 +35,7 @@ public sealed partial class GameSessionScreen
             _combatPoseObjectIds.Add(obj.ObjectId);
             _combatPoseObjectIds.Add(flight.TargetObjectId);
         }
-        if (IsLaunchPreviewRequested())
+        if (IsLaunchPreviewRequested() || ManualPreviewWeapon() is not null)
         {
             if (snapshot.PlayerShipObjectId is { } playerId) _combatPoseObjectIds.Add(playerId);
             if (_selectedObjectId is { } targetId) _combatPoseObjectIds.Add(targetId);
@@ -51,6 +51,7 @@ public sealed partial class GameSessionScreen
 
     private void DrawLaunchPreview(SKCanvas canvas, SnapshotPrediction? prediction, bool viewportResized)
     {
+        DrawManualDefensePreview(canvas, prediction, viewportResized);
         if (viewportResized || prediction is null || !IsLaunchPreviewRequested() ||
             FindLauncher()?.LauncherCombat is not { } launcher ||
             FindPlayerShip(_renderStates) is not { } ownerState ||

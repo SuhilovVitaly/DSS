@@ -25,13 +25,15 @@ public sealed partial class SimulationEngine
             }
         }
         string? reason = ValidateManualDefense(ownerId, module.ModuleId, SelectedObjectId, time, out _);
+        double? firstContact = null;
         if (reason is null)
         {
             long lifetime = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CountermeasureMaxFlightTimeMs!.Value;
             if (time > long.MaxValue - lifetime) reason = "invalid_time";
             else if (!TryGetNextCountermeasureId(out _, out _)) reason = "projectile_id_exhausted";
+            else firstContact = FirstPredictedTorpedoContact(target!, time, time + lifetime);
         }
         return new(ownerId, module.ModuleId, target?.InitialMotion.ObjectId, chance, reason is null,
-            reason, accuracy, maneuverability);
+            reason, accuracy, maneuverability, firstContact);
     }
 }

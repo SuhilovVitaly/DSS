@@ -1,10 +1,65 @@
 using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Motion;
+using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 public sealed partial class GameSessionScreen
 {
+    internal CountermeasurePlan? ManualDefensePreviewPlan { get; private set; }
+    internal CombatTrajectoryProjector.Geometry? ManualDefensePreviewGeometry { get; private set; }
+    internal WeaponPanelInstance? ManualDefensePreviewWeapon { get; private set; }
+    internal string? ManualDefensePreviewMessage { get; private set; }
+    private (AuthoritativeSnapshot Snapshot, WeaponPanelInstance Weapon)? _manualPreviewKey;
+
+    private WeaponPanelInstance? ManualPreviewWeapon() => _hasMousePosition &&
+        !(_panelVisible && _lastPanelRect.Contains(_uiMouseX, _uiMouseY)) &&
+        _commandsPanel.EnabledCommandAt(_uiMouseX, _uiMouseY) == DefenseCommandTypes.Fire &&
+        _commandsPanel.AllCommandButtons.FirstOrDefault(b => b.CommandTypeId == DefenseCommandTypes.Fire &&
+            b.Rect.Contains(_uiMouseX, _uiMouseY)).Weapon is { } weapon && IsDefenseCommandEnabled(weapon, DefenseCommandTypes.Fire)
+            ? weapon : null;
+
+    private void DrawManualDefensePreview(SKCanvas canvas, SnapshotPrediction? prediction, bool resized)
+    {
+        var snapshot = prediction?.BufferedSnapshot.Snapshot;
+        var weapon = ManualPreviewWeapon();
+        if (resized || snapshot is null || weapon is null || DefenseModule(weapon) is not { Defense: { } defense } module ||
+            defense.SpeedKmS is not > 0 || defense.TurnRateDegPerSec is not > 0 || defense.MaxFlightTimeMs is not > 0 ||
+            snapshot.Objects.FirstOrDefault(o => o.ObjectId == weapon.OwnerObjectId) is not { } owner ||
+            snapshot.Objects.FirstOrDefault(o => o.ObjectId == _selectedObjectId)?.Torpedo is not { } target)
+        {
+            ManualDefensePreviewPlan = null;
+            ManualDefensePreviewGeometry = null;
+            ManualDefensePreviewWeapon = null;
+            ManualDefensePreviewMessage = null;
+            _manualPreviewKey = null;
+            return;
+        }
+        var key = (snapshot, weapon);
+        if (_manualPreviewKey != key)
+        {
+            ManualDefensePreviewPlan = CountermeasureGuidanceMath.PlanManual(owner, target.Route, snapshot.MotionTimeMs,
+                defense.MaxFlightTimeMs.Value, defense.SpeedKmS.Value, defense.TurnRateDegPerSec.Value,
+                module.DefensePreview?.FirstTargetContactMotionTimeMs);
+            _manualPreviewKey = key;
+        }
+        ManualDefensePreviewWeapon = weapon;
+        ManualDefensePreviewGeometry = CombatTrajectoryProjector.ProjectManual(ManualDefensePreviewPlan!, target.Route,
+            snapshot.MotionTimeMs, defense.MaxFlightTimeMs.Value, _camera);
+        DrawCombatGeometry(canvas, ManualDefensePreviewGeometry, CombatSettings.Preview, CombatSettings.Preview);
+        ManualDefensePreviewMessage = ManualDefensePreviewGeometry.Intercept is null ? CombatText("UnknownIntercept", "Intercept unknown") : null;
+        var labelPoint = ManualDefensePreviewGeometry.Intercept ?? new FutureTrajectoryPoint(owner.X, owner.Y);
+        var (x, y) = _camera.WorldToScreen(labelPoint.X, labelPoint.Y, _viewportW, _viewportH);
+        using var text = new SKPaint { Color = CombatSettings.Preview, TextSize = 12, IsAntialias = true };
+        if (module.DefensePreview?.ChanceTenths is { } chance)
+            canvas.DrawText($"{chance / 10m:0.0}%", x + 10, y - 10, text);
+        if (ManualDefensePreviewMessage is { } message)
+        {
+            canvas.DrawText(message, x + 10, y + 18, text);
+        }
+    }
+
     private sealed class DefenseSubmission
     {
         public string? CommandId;

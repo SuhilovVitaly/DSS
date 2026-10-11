@@ -14,4 +14,7 @@ public sealed record DefenseLaunchPreview(
     bool CanFire,
     string? Reason = null,
     decimal? Accuracy = null,
-    decimal? TargetManeuverability = null);
+    decimal? TargetManeuverability = null,
+    /// <summary>Known earliest target collision in the captured launch horizon. Prediction only;
+    /// Client must not promise a later encounter or independently search hidden world objects.</summary>
+    double? FirstTargetContactMotionTimeMs = null);

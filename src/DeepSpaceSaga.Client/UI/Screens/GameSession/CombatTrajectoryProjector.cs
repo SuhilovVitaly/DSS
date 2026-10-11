@@ -12,6 +12,23 @@ internal static class CombatTrajectoryProjector
         List<FutureTrajectoryPoint> Target,
         FutureTrajectoryPoint? Intercept);
 
+    /// <summary>Bounded manual flight: the marker is the first 500 m contact, not a later
+    /// centre rendezvous. Unknown solutions show only the confirmed short pursuit segment.</summary>
+    internal static Geometry ProjectManual(CountermeasurePlan plan, TorpedoRoute target, long now,
+        long lifetime, CameraState camera)
+    {
+        var points = new List<FutureTrajectoryPoint>();
+        var targetPoints = new List<FutureTrajectoryPoint>();
+        double expires = now + (double)lifetime;
+        double? encounter = plan.PredictedEncounterMotionTimeMs is { } contact && contact >= now && contact <= expires
+            ? contact : null;
+        double end = encounter ?? Math.Min(expires, plan.Route.StartMotionTimeMs + plan.Route.Segments.Sum(s => s.DurationMs));
+        SampleRoute(plan.Route, Math.Max(0, now - plan.Route.StartMotionTimeMs), end - plan.Route.StartMotionTimeMs, camera, points);
+        if (encounter is null || points.Count == 0) return new(points, targetPoints, null);
+        SampleRoute(target, now - target.StartMotionTimeMs, encounter.Value - target.StartMotionTimeMs, camera, targetPoints);
+        return new(points, targetPoints, points[^1]);
+    }
+
     internal static Geometry Project(TorpedoSnapshot flight, ObjectMotionSnapshot? target,
         IMotionPredictor predictor, CameraState camera, int width, int height)
     {
