@@ -1,0 +1,111 @@
+using System.Reflection;
+using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Content;
+using DeepSpaceSaga.Engine.Scenario;
+using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
+
+namespace DeepSpaceSaga.Engine.Tests;
+
+public class DefeatTimeBoundaryTests
+{
+    [Fact]
+    public void Lethal_hit_in_large_step_stops_all_systems()
+    {
+        var source = Registry.Value;
+        static IEnumerable<T> All<T>(TypeRegistry<T> types) where T : ITypeDefinition =>
+            Enumerable.Range(0, types.Count).Select(types.GetDefinition);
+        var recipe = new RecipeDefinition("recipe.defeat", "Food", [new("item.food-rations", 1)],
+            [new("item.food-rations", 2)], 12 * GameCalendar.HourMs);
+        var registry = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes),
+            All(source.ItemTypes), All(source.CommandDefinitions), factoryTypes: [new("factory.defeat", "Food", recipe)],
+            shipClasses: All(source.ShipClasses), stationMarketProfiles: All(source.StationMarketProfiles),
+            stationMarketEvents: All(source.StationMarketEvents));
+        var scenario = PlayerDefeatTests.LethalScenario(150);
+        scenario = scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                SpaceObjects = scenario.GameState.SpaceObjects.Append(new SpaceObjectData("factory", SpaceObjectType.Station,
+                "Permanent", "Factory", 100000, 100000, 0, 0, "Stationary", null, null, null,
+                IsKnown: true, Credits: 1000, PriceCoefficient: 1000,
+                Inventory: [new("item.food-rations", 100)], ProducingModules: [new("factory.defeat")])).ToArray()
+            }
+        };
+        using var engine = new SimulationEngine(registry);
+        engine.LoadScenario(scenario);
+        var final = At(engine, 2 * GameCalendar.DayMs / 300, 2 * GameCalendar.DayMs);
+        Assert.Equal(SessionOutcomeState.Defeated, final.EffectiveOutcome.State);
+        Assert.InRange(final.MotionTimeMs, 5000, 5001);
+        Assert.InRange(final.GameTimeMs, 1500000, 1500300);
+        Assert.Equal(0, final.MissingRations);
+        Assert.Empty(final.ShipEvents);
+        var factory = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "factory");
+        Assert.Equal(99, Assert.Single(factory.Inventory, i => i.ItemTypeIndex == registry.ItemTypes.GetIndex("item.food-rations")).StockQuantity);
+        Assert.Equal(12 * GameCalendar.HourMs, Assert.Single(factory.ProducingModules).NextProductionDueGameTimeMs);
+        Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.Launch);
+        var world = engine.RuntimeObjects.ToArray();
+        var rngField = typeof(SimulationEngine).GetField("_countermeasureRng", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var rng = (Combat.CountermeasureRng)rngField.GetValue(engine)!;
+        var rngBefore = (rng.State, rng.Counter);
+        engine.SetSpeed(SimulationSpeed.Speed4);
+        var later = At(engine, 100 * GameCalendar.DayMs, 300 * GameCalendar.DayMs);
+        Assert.Equal(final.Outcome, later.Outcome);
+        Assert.Equal(world, engine.RuntimeObjects.ToArray());
+        Assert.Equal(rngBefore, (rng.State, rng.Counter));
+        Assert.Equal(final.CombatJournal.ToArray(), later.CombatJournal.ToArray());
+        Assert.Empty(later.ShipEvents);
+    }
+
+    [Fact]
+    public void Split_steps_have_same_defeat_boundary()
+    {
+        using var whole = Create(PlayerDefeatTests.LethalScenario(150));
+        using var split = Create(PlayerDefeatTests.LethalScenario(150));
+        var expected = At(whole, 600000, 180000000);
+        foreach (long time in new long[] { 7, 123, 1111, 4999, 5000 }) At(split, time, time * 300);
+        var actual = At(split, 600000, 180000000);
+        Assert.Equal(expected.EffectiveOutcome.DeathEventId, actual.EffectiveOutcome.DeathEventId);
+        Assert.Equal(expected.EffectiveOutcome.WreckObjectId, actual.EffectiveOutcome.WreckObjectId);
+        Assert.Equal(expected.GameTimeMs, actual.GameTimeMs);
+        Assert.Equal(expected.MotionTimeMs, actual.MotionTimeMs);
+        Assert.InRange(Math.Abs(expected.EffectiveOutcome.DeathMotionTimeMs!.Value - actual.EffectiveOutcome.DeathMotionTimeMs!.Value), 0, .0001);
+        Assert.Equal(expected.CombatJournal.Select(e => (e.Type, e.EventId)), actual.CombatJournal.Select(e => (e.Type, e.EventId)));
+    }
+
+    [Fact]
+    public void Resume_and_modal_close_cannot_restart_defeated_world()
+    {
+        long now = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed0, () => now);
+        var scenario = PlayerDefeatTests.LethalScenario(150);
+        using var engine = new SimulationEngine(Registry.Value, [], clock);
+        engine.LoadScenario(scenario);
+        engine.SetSpeed(SimulationSpeed.Speed1);
+        now = 600000;
+        var final = engine.CaptureSnapshot(advanceClock: true);
+        Assert.Equal(SessionOutcomeState.Defeated, final.EffectiveOutcome.State);
+        var stopped = clock.Capture();
+        Assert.Equal(final.GameTimeMs, stopped.GameTimeMs);
+        Assert.Equal(final.MotionTimeMs, stopped.MotionTimeMs);
+        foreach (var speed in Enum.GetValues<SimulationSpeed>())
+        {
+            now += 10000;
+            engine.SetSpeed(speed);
+            clock.SetSpeed(speed); // A stale pause owner must not unlatch the underlying clock either.
+            clock.ResetRealBaseline();
+            now += 10000;
+            clock.Update();
+            Assert.Equal(stopped, clock.UpdateAndCapture());
+            Assert.Equal(final.Outcome, engine.CaptureSnapshot(advanceClock: true).Outcome);
+        }
+        clock.StopAtTerminal(99999, 99999);
+        Assert.Equal(stopped, clock.Capture());
+        engine.LoadScenario(scenario);
+        engine.SetSpeed(SimulationSpeed.Speed1);
+        now += 100;
+        var fresh = engine.CaptureSnapshot(advanceClock: true);
+        Assert.Equal(SessionOutcomeState.Running, fresh.EffectiveOutcome.State);
+        Assert.Equal(100, fresh.MotionTimeMs);
+        Assert.Equal(30000, fresh.GameTimeMs);
+    }
+}

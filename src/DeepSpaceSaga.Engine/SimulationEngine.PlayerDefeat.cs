@@ -24,7 +24,7 @@ public sealed partial class SimulationEngine
         long calendar = _defeatFromCalendar + (long)decimal.Floor((_defeatToCalendar - (decimal)_defeatFromCalendar) * fraction);
         _sessionOutcome = new(SessionOutcomeState.Defeated, playerId, wreckId, deathEventId, motionTime, calendar);
         var stopped = DefeatedClock;
-        _clock.Reset(stopped.GameTimeMs, SimulationSpeed.Speed0, stopped.MotionTimeMs);
+        _clock.StopAtTerminal(stopped.GameTimeMs, stopped.MotionTimeMs);
     }
 
     private SimulationClockState DefeatedClock => new(_sessionOutcome.DeathGameTimeMs!.Value,

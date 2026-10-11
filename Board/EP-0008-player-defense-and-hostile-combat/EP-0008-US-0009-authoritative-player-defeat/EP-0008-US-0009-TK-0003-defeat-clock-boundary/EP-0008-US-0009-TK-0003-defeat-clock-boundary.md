@@ -14,7 +14,7 @@ revision: 1
 
 # Остановка времени на событии поражения
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED — self-reviewed; publication recorded by the next execution entry
 
 ## Why
 
@@ -70,9 +70,9 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Lethal_hit_in_large_step_stops_all_systems`
-- [ ] `Split_steps_have_same_defeat_boundary`
-- [ ] `Resume_and_modal_close_cannot_restart_defeated_world`
+- [x] `Lethal_hit_in_large_step_stops_all_systems`
+- [x] `Split_steps_have_same_defeat_boundary`
+- [x] `Resume_and_modal_close_cannot_restart_defeated_world`
 
 Команды из корня DSS после реализации:
 
@@ -86,13 +86,19 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0002 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0002 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency `f7b8ecd753e17f5c762ffbea086bb8033becd944` published/remote verified. SimulationClock now latches the first terminal boundary: direct speed changes, baseline reset and repeated updates cannot resume it; validated new-world Reset clears the latch. Player defeat uses this operation under the existing world-lock then clock-lock order. World cutoff/processed cursors introduced necessarily in TK-0002 are exercised by the new tests without redundant scheduler changes.
+
+Three regressions cover real large clock advancement into a lethal hit, identical whole/split death boundaries, station production input reservation without later completion, no meal/ship events or residual launches, frozen runtime world/RNG/history, repeated direct and Engine speed changes, and independent New Game clocks. Initial full Engine1844/1845 exposed a new test attempting to JSON-serialize default internal ImmutableArrays; replaced with direct immutable runtime record comparison. Final affected Engine113/113 PASS (Defeat, SimulationClock, EconomyTimeContinuity), solution build0warnings/errors, scoped format verify/diffPASS. Initial focused fixture assumption that station inventory contained only its one explicit row was corrected to identify the ration row; default catalog rows remain enabled. Self-review complete, not independent approval. Native modal integration remains US-0010/0012.

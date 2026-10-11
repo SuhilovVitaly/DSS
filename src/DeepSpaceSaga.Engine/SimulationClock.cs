@@ -22,6 +22,7 @@ public sealed class SimulationClock
     private readonly object _lock = new();
     private long _lastRealTick;
     private readonly Func<long> _realTimeMs;
+    private bool _terminalStopped;
 
     public SimulationClock(SimulationSpeed initialSpeed = SimulationSpeed.Speed1)
         // Match the client's high-resolution monotonic source; coarse platform ticks
@@ -100,6 +101,7 @@ public sealed class SimulationClock
     {
         lock (_lock)
         {
+            _terminalStopped = false;
             GameTimeMs = gameTimeMs;
             // Legacy saves used one timestamp for both domains. Preserve their baselines.
             SimulationTimeMs = simulationTimeMs ?? gameTimeMs;
@@ -118,6 +120,7 @@ public sealed class SimulationClock
     {
         lock (_lock)
         {
+            if (_terminalStopped) return;
             long now = _realTimeMs();
             long deltaReal = now - _lastRealTick;
 
@@ -139,6 +142,20 @@ public sealed class SimulationClock
     {
         lock (_lock)
         {
+            _lastRealTick = _realTimeMs();
+        }
+    }
+
+    /// <summary>Latch the first terminal boundary until an explicit new-world Reset.</summary>
+    internal void StopAtTerminal(long gameTimeMs, long simulationTimeMs)
+    {
+        lock (_lock)
+        {
+            if (_terminalStopped) return;
+            _terminalStopped = true;
+            GameTimeMs = gameTimeMs;
+            SimulationTimeMs = simulationTimeMs;
+            Speed = SimulationSpeed.Speed0;
             _lastRealTick = _realTimeMs();
         }
     }

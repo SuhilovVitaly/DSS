@@ -213,3 +213,7 @@ US-0008 TK-0003 `f22c723d92061e7f1acc6124b6940dd66eeee1a0` published/remote veri
 ## EP-0008-US-0009-TK-0002 — 2026-10-11
 
 TK-0001 `a4b8a71b1b80be55f0ad948e9dccd4d47ab4d0b2` published/remote verified. Real Engine defeat transition and central gameplay/save guards implemented; Engine1842/1842, affected Client130/130, build/format/diffPASS. Next after publication: dedicated clock terminal latch and complete time-boundary regressions. Native/final corpus OPEN.
+
+## EP-0008-US-0009-TK-0003 — 2026-10-11
+
+TK-0002 `f7b8ecd753e17f5c762ffbea086bb8033becd944` published/remote verified. Terminal clock latch and large/split interval proof implemented; initial Engine1844/1845 corrected new internal-array test serialization, final affected113/113 PASS, solution build/format/diffPASS. US-0009 self-review complete. Next after publication: US-0010 file-save transport guard. Native/final corpus OPEN.
