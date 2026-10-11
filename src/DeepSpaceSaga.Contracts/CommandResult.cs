@@ -124,6 +124,8 @@ public sealed record TradeExecutionReceipt(
 /// </summary>
 public static class CommandReasonCodes
 {
+    /// <summary>The player was defeated; gameplay commands and world saves are unavailable.</summary>
+    public const string SessionDefeated = "session_defeated";
     public const string VoyageDestinationRequired = "voyage_destination_required";
     public const string VoyageDestinationUnavailable = "voyage_destination_unavailable";
     public const string RouteUnavailable = "route_unavailable";

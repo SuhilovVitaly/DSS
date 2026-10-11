@@ -205,3 +205,7 @@ TK-0001 `fcbb0811eb67fa36fb58591690731aee10004675` published/remote verified. Ho
 ## EP-0008-US-0008-TK-0003 — 2026-10-11
 
 TK-0002 `499074810ba3e29e122ed2b55fe4c5410348fe5b` published/remote verified. Complete journal facts/scrolling and real-file expiry history replay guard verified; Client1832/1832, build/format/diffPASS. US-0008 self-review complete. Next after publication: US-0009 authoritative defeat. Native/final corpus OPEN.
+
+## EP-0008-US-0009-TK-0001 — 2026-10-11
+
+US-0008 TK-0003 `f22c723d92061e7f1acc6124b6940dd66eeee1a0` published/remote verified. Terminal outcome/save-permission contract implemented; Contracts185/185, solution build/format/diffPASS. Next after publication: actual Engine defeat transition, then interval/clock cutoff. Native/final corpus OPEN.
