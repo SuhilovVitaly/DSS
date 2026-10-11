@@ -432,20 +432,37 @@ internal sealed class GameDataRegistry
 
     internal static void ValidateWeaponRatings(ModuleTypeDefinition module)
     {
+        bool isTorpedo = module.CategoryTypeId == "module.torpedo.launcher";
+        if (isTorpedo)
+        {
+            if (module.TorpedoManeuverability is null or < 0 or > 100)
+                throw new ContentException($"Module '{module.TypeId}': torpedoManeuverability is required in [0,100].");
+            if (module.TorpedoRangeKm is not > 0 || !double.IsFinite(module.TorpedoRangeKm.Value))
+                throw new ContentException($"Module '{module.TypeId}': torpedoRangeKm is required and must be positive and finite.");
+        }
+        else if (module.TorpedoManeuverability.HasValue || module.TorpedoRangeKm.HasValue)
+            throw new ContentException($"Module '{module.TypeId}': torpedo parameters require category module.torpedo.launcher.");
+
         if (module.TorpedoBaseRating is < 0 || module.CountermeasureBaseRating is < 0)
             throw new ContentException($"Module '{module.TypeId}': weapon base rating must be nonnegative.");
         if (module.TorpedoBaseRating.HasValue && module.CategoryTypeId != "module.torpedo.launcher")
             throw new ContentException($"Module '{module.TypeId}': torpedoBaseRating requires category module.torpedo.launcher.");
         bool hasDefense = module.CountermeasureBaseRating.HasValue || module.CountermeasureSpeedKmS.HasValue ||
-            module.CountermeasureTurnRateDegPerSec.HasValue || module.CountermeasureRangeKm.HasValue || module.CountermeasureReloadMs.HasValue;
+            module.CountermeasureTurnRateDegPerSec.HasValue || module.CountermeasureRangeKm.HasValue || module.CountermeasureReloadMs.HasValue ||
+            module.CountermeasureAccuracy.HasValue || module.CountermeasureManualRangeKm.HasValue || module.CountermeasureMaxFlightTimeMs.HasValue;
         if (!hasDefense && module.CategoryTypeId != "module.countermeasure.launcher") return;
         if (module.CategoryTypeId != "module.countermeasure.launcher")
             throw new ContentException($"Module '{module.TypeId}': countermeasure parameters require category module.countermeasure.launcher.");
-        if (module.CountermeasureBaseRating is null ||
-            module.CountermeasureSpeedKmS is not > 0 || !double.IsFinite(module.CountermeasureSpeedKmS.Value) ||
+        if (module.CountermeasureAccuracy is null or < 0 or > 100)
+            throw new ContentException($"Module '{module.TypeId}': countermeasureAccuracy is required in [0,100].");
+        if (module.CountermeasureManualRangeKm is not > 0 || !double.IsFinite(module.CountermeasureManualRangeKm.Value))
+            throw new ContentException($"Module '{module.TypeId}': countermeasureManualRangeKm is required and must be positive and finite.");
+        if (module.CountermeasureMaxFlightTimeMs is not > 0)
+            throw new ContentException($"Module '{module.TypeId}': countermeasureMaxFlightTimeMs is required and must be a positive integer.");
+        if (module.CountermeasureSpeedKmS is not > 0 || !double.IsFinite(module.CountermeasureSpeedKmS.Value) ||
             module.CountermeasureTurnRateDegPerSec is not > 0 || !double.IsFinite(module.CountermeasureTurnRateDegPerSec.Value) ||
             module.CountermeasureRangeKm is not > 0 || !double.IsFinite(module.CountermeasureRangeKm.Value) ||
             module.CountermeasureReloadMs is not > 0)
-            throw new ContentException($"Module '{module.TypeId}': complete countermeasure parameters with nonnegative rating and positive finite speed/turn/range/reload are required.");
+            throw new ContentException($"Module '{module.TypeId}': positive finite countermeasureSpeedKmS/countermeasureTurnRateDegPerSec/countermeasureRangeKm/countermeasureReloadMs are required.");
     }
 }

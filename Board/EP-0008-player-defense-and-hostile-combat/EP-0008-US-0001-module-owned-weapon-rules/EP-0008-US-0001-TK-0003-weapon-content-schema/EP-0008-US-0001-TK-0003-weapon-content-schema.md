@@ -3,10 +3,10 @@ epic: EP-0008-player-defense-and-hostile-combat
 story: EP-0008-US-0001-module-owned-weapon-rules
 ticket: EP-0008-US-0001-TK-0003-weapon-content-schema
 title: "Схема и валидация новых параметров оружия"
-stage: draft
+stage: implemented
 layer: engine
 depends_on: ["EP-0008-US-0001-TK-0002-defense-contract"]
-files_touched: 4
+files_touched: 7
 serves: ["AC-0001","AC-0002"]
 created: 2026-10-07
 revision: 1
@@ -14,7 +14,7 @@ revision: 1
 
 # Схема и валидация новых параметров оружия
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED — validation complete; publication verified separately
 
 ## Why
 
@@ -40,6 +40,28 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 | `tests/DeepSpaceSaga.Engine.Tests/CombatContentLoaderTests.cs` | Существует: tests/DeepSpaceSaga.Engine.Tests/CombatContentLoaderTests.cs:8 (baseline 6907c58) | Только результат и шаги этой карточки |
 
 ## Dependencies
+
+### Execution scope clarification — 2026-10-11
+
+Baseline: `db78b31`; TK-0002 publication verified. Extend this ticket to
+`src/DeepSpaceSaga.Engine/Content/GameDataRegistry.cs` because direct registry
+construction must apply the same validation, and to the two shipped weapon
+JSON files listed in TK-0004 because making fields required without updating
+real content would break New Game. Add the agreed values there now; TK-0004
+will independently verify the shipped catalog and both owners through its
+Client tests. This is an ingress/schema change, not early range/fire/AI logic.
+
+Existing internal base-rating fields remain transitional inputs for the old
+runtime until TK-0005 replaces all chance callers. They no longer satisfy or
+substitute for required new weapon fields. Their removal and the final
+skill-independent probability rule belong to TK-0005, keeping each published
+step buildable. Non-weapon definitions remain valid without weapon fields.
+
+Validation scope: run every Engine test except the long, unrelated map
+`CorrectnessCorpus` suites for this schema-only change. Those corpuses remain
+part of final epic regression. The initial full run found stale Client output
+content and was explicitly stopped during map generation; it is not a PASS.
+Build Client/solution before the repeated regression to refresh copied JSON.
 
 Шаг **3** [общего порядка](../../Tickets.md).
 - [EP-0008-US-0001-TK-0002-defense-contract](../../EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-TK-0002-defense-contract/EP-0008-US-0001-TK-0002-defense-contract.md).
@@ -69,8 +91,8 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Weapon_schema_rejects_invalid_values`
-- [ ] `Manual_and_auto_ranges_are_independent`
+- [x] `Weapon_schema_rejects_invalid_values`
+- [x] `Manual_and_auto_ranges_are_independent`
 
 Команды из корня DSS после реализации:
 
@@ -84,13 +106,25 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0002 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0002 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Added five required module-owned fields with category-specific validation in JSON ingress and direct registry construction. Missing, negative, overflow, nonfinite, out-of-range and wrong-category inputs are rejected; error diagnostics retain the source file and field. Independent manual/auto ranges and 0/100 accuracy/maneuverability boundaries are covered. Real catalog additions are the declared prerequisite for strict ingress; range enforcement and new chance calculations are not claimed by this schema ticket.
+
+- Focused Engine content tests: 83/83 PASS.
+- Final `dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj --no-restore --filter 'FullyQualifiedName!~CorrectnessCorpus' --logger 'trx;LogFileName=ep8-tk3-engine-regression.trx'`: **1721/1721 PASS**, including loading from refreshed Client build output.
+- `dotnet build DeepSpaceSaga.sln --no-restore`: PASS, zero warnings/errors; final Engine rebuild also passed during the regression run after preserving the inner validation exception.
+- Scoped `dotnet format whitespace DeepSpaceSaga.sln --verify-no-changes --no-restore --include` on the five changed C# files: PASS.
+- `git diff --check` and changed Board relative links: PASS.
+- Sandbox testhost/named-pipe failures were resolved by authorized execution outside the sandbox; they are not test failures. Initial full Engine run found stale copied content and was stopped during map corpus processing, not counted as PASS. Map corpuses remain required at final epic validation.
+- Self-review: no confirmed remaining defect in the schema scope. Native: NOT RUN, no UI behavior changed. Not user APPROVED.

@@ -46,4 +46,9 @@ internal sealed record ModuleTypeDefinition(
     double? CountermeasureRangeKm = null,
     long? CountermeasureReloadMs = null,
     string? CategoryTypeId = null,
-    long? FuelEfficiencyKmPerKg = null) : ITypeDefinition;
+    long? FuelEfficiencyKmPerKg = null,
+    decimal? TorpedoManeuverability = null,
+    double? TorpedoRangeKm = null,
+    decimal? CountermeasureAccuracy = null,
+    double? CountermeasureManualRangeKm = null,
+    long? CountermeasureMaxFlightTimeMs = null) : ITypeDefinition;

@@ -479,8 +479,14 @@ public static class EngineContentLoader
                 dto.CountermeasureRangeKm,
                 dto.CountermeasureReloadMs,
                 category.TypeId,
-                dto.FuelEfficiencyKmPerKg);
-            GameDataRegistry.ValidateWeaponRatings(definition);
+                dto.FuelEfficiencyKmPerKg,
+                dto.TorpedoManeuverability,
+                dto.TorpedoRangeKm,
+                dto.CountermeasureAccuracy,
+                dto.CountermeasureManualRangeKm,
+                dto.CountermeasureMaxFlightTimeMs);
+            try { GameDataRegistry.ValidateWeaponRatings(definition); }
+            catch (ContentException error) { throw new ContentException($"{filePath}: {error.Message}", error); }
             return definition;
         });
     }
@@ -929,6 +935,11 @@ public static class EngineContentLoader
         [property: JsonPropertyName("torpedoSpeedKmS")] double? TorpedoSpeedKmS = null,
         [property: JsonPropertyName("torpedoTurnRateDegPerSec")] double? TorpedoTurnRateDegPerSec = null,
         [property: JsonPropertyName("torpedoBaseRating")] decimal? TorpedoBaseRating = null,
+        [property: JsonPropertyName("torpedoManeuverability")] decimal? TorpedoManeuverability = null,
+        [property: JsonPropertyName("torpedoRangeKm")] double? TorpedoRangeKm = null,
+        [property: JsonPropertyName("countermeasureAccuracy")] decimal? CountermeasureAccuracy = null,
+        [property: JsonPropertyName("countermeasureManualRangeKm")] double? CountermeasureManualRangeKm = null,
+        [property: JsonPropertyName("countermeasureMaxFlightTimeMs")] long? CountermeasureMaxFlightTimeMs = null,
         [property: JsonPropertyName("countermeasureBaseRating")] decimal? CountermeasureBaseRating = null,
         [property: JsonPropertyName("countermeasureSpeedKmS")] double? CountermeasureSpeedKmS = null,
         [property: JsonPropertyName("countermeasureTurnRateDegPerSec")] double? CountermeasureTurnRateDegPerSec = null,

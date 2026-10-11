@@ -83,3 +83,11 @@ EpicExecutionPrompt requires successful publication before proceeding to the nex
 
 - Required new weapon schema fields need matching real catalogs and affected fixtures in the same validated change. Record exact ownership/scope in the applicable tickets before implementation; do not publish a loader that rejects the shipped catalogs.
 - Reviews performed by the implementing agent are self-review, not independent review or user APPROVED.
+
+## EP-0008-US-0001-TK-0003 — 2026-10-11
+
+Schema and strict validation implemented; see the ticket for exact scope. Focused 83/83 and Engine non-corpus regression 1721/1721 PASS; solution build, scoped format, diff and Board links PASS. Initial stale copied-content failure resolved by rebuilding Client. Unrelated long map corpuses were explicitly deferred to final epic regression, not declared passed. Native remains NOT RUN. Current Contracts recheck: 178/178 PASS.
+
+Preparation/evidence correction `db78b314a7cc25dc77a17411a676253c95674881` pushed and live remote SHA verified. TK-0003 SHA is resolved after commit; proceed to TK-0004 only after successful push and remote verification.
+
+Continuation reused the prior complete documentation/Board reading at preparation `198d20a` and reviewed the 34 changed/new Markdown documents since then; the current Documentation inventory is 78 Markdown files. New evidence is separated from the historical tests above. Graphify query of ModuleTypeDefinition/CountermeasureContentLoaderTests confirmed registry and loader navigation; the 1200-token graph traversal was truncated and used only to locate primary files, which were inspected directly.
